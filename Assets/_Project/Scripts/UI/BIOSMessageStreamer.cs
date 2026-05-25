@@ -12,7 +12,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Submarine/BIOS Message Streamer")]
-    public sealed class BIOSMessageStreamer : MonoBehaviour, ILateFrameTickable, ISubmarineOsEventListener
+    public sealed class BIOSMessageStreamer : MonoBehaviour, ILateFrameTickable, ISubmarineOsEventListener, IGlobalRegistryHotSwapListener
     {
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
@@ -65,6 +65,7 @@ namespace Hecton8.UI
         private float _typingAccumulator;
         private bool _typingActive;
         private bool _registeredUpdatable;
+        private bool _hotSwapListenerRegistered;
 
         /// <summary>
         /// Ensures one streamer exists on the supplied host.
@@ -143,6 +144,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             HectonSubmarineOsEvents.Register(this);
             RefreshTickRegistration();
             RefreshTerminal();
@@ -153,6 +155,7 @@ namespace Hecton8.UI
             ResetTerminalVisibility();
             HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -160,6 +163,7 @@ namespace Hecton8.UI
             ResetTerminalVisibility();
             HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void TryRegister()
@@ -191,6 +195,44 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredUpdatable = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registeredUpdatable = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregister();
+                RefreshTickRegistration();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void HandleSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)

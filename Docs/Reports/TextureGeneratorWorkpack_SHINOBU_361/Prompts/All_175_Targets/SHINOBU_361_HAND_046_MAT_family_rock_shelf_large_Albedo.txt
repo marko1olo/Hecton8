@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_046
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_046_MAT_family_rock_shelf_large_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\MAT_family_rock_shelf_large_Albedo.png
+FINAL_FILENAME: MAT_family_rock_shelf_large_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Large rock shelf albedo for walkable or backdrop Hecton geology. Create broad horizontal stone ledges in cool graphite basalt, pale cream sediment layers, opal blue mineral ribbons, and smooth pressure-worn edges. The material should feel stable, spacious, and premium, like a natural platform shaped by deep ocean currents. Preserve large readable slabs and gentle color transitions for traversal clarity. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

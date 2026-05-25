@@ -280,13 +280,13 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             float u = majorIndex * (6.28318530718f / majorSegments);
             float v = minorIndex * (6.28318530718f / minorSegments);
             float twist = u * math.max(TwistTurns, 0f);
-            float rough = math.sin(u * 5.0f + v * 1.7f) * math.lerp(0.03f, 0.14f, quality);
+            float rough = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(u * 5.0f + v * 1.7f) * math.lerp(0.03f, 0.14f, quality);
             float majorRadius = math.max(MajorRadius, 0.001f);
             float minorRadius = math.max(MinorRadius, 0.001f) * (1f + rough);
-            float cv = math.cos(v + twist);
-            float sv = math.sin(v + twist);
-            float cu = math.cos(u);
-            float su = math.sin(u);
+            float cv = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(v + twist);
+            float sv = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(v + twist);
+            float cu = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(u);
+            float su = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(u);
             float ring = majorRadius + minorRadius * cv;
             return new float3(ring * cu, minorRadius * sv, ring * su);
         }

@@ -8,12 +8,19 @@ using Unity.Profiling;
 
 namespace Hecton8.World
 {
+    internal static class ChunkLocalOffsetQuantizationLayout
+    {
+        public const int Short3StrideBytes = 8;
+        public const int QuantizationParamsStrideBytes = 48;
+        public const int QuantizedLocalOffsetStrideBytes = 8;
+    }
+
     /// <summary>
     /// Burst quantization helpers for compressing chunk-local float3 offsets into aligned millimeter payloads.
     /// </summary>
     internal static class ChunkLocalOffsetQuantization
     {
-        [StructLayout(LayoutKind.Explicit, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = ChunkLocalOffsetQuantizationLayout.Short3StrideBytes)]
         internal struct Short3
         {
             [FieldOffset(0)]
@@ -34,7 +41,7 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = ChunkLocalOffsetQuantizationLayout.QuantizationParamsStrideBytes)]
         internal struct QuantizationParams
         {
             [FieldOffset(0)]
@@ -47,7 +54,7 @@ namespace Hecton8.World
             private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = ChunkLocalOffsetQuantizationLayout.QuantizedLocalOffsetStrideBytes)]
         internal struct QuantizedLocalOffset
         {
             [FieldOffset(0)]

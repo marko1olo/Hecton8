@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Physics;
 using Unity.Collections;
 using UnityEditor;
@@ -152,7 +153,7 @@ namespace Hecton8.Physics.Editor
             SetLabel(_statusLabel, "Active runtime: Vault buffers resolved.");
             SetLabel(_phaseLabel, (c.Flags & AsyncBuoyancyReadbackConstants.FlagMockPath) != 0 ? "MOCK_DELAYED" : "GPU_ASYNC");
             SetLabel(_frameLabel, t.FrameIndex.ToString());
-            SetLabel(_qualityLabel, t.GlobalQualityWeight.ToString("0.000"));
+            SetLabel(_qualityLabel, t.GlobalQualityWeight.ToString("0.000", CultureInfo.InvariantCulture));
             SetLabel(_requestsLabel, c.DispatchCount.ToString());
             SetLabel(_completedLabel, c.CompletedCount.ToString());
             SetLabel(_activeSlotsLabel, c.ActiveRingSlots.ToString());
@@ -160,11 +161,11 @@ namespace Hecton8.Physics.Editor
             SetLabel(_droppedLabel, c.DroppedRequests.ToString());
             SetLabel(_failedLabel, c.FailedRequests.ToString());
             SetLabel(_maxStaleLabel, c.MaxStaleFrames.ToString());
-            SetLabel(_dispatchMicrosLabel, c.DispatchMicros.ToString("0.00"));
-            SetLabel(_applyMicrosLabel, c.ApplyMicros.ToString("0.00"));
-            SetLabel(_smoothingLabel, t.SmoothingAlpha.ToString("0.000"));
+            SetLabel(_dispatchMicrosLabel, c.DispatchMicros.ToString("0.00", CultureInfo.InvariantCulture));
+            SetLabel(_applyMicrosLabel, c.ApplyMicros.ToString("0.00", CultureInfo.InvariantCulture));
+            SetLabel(_smoothingLabel, t.SmoothingAlpha.ToString("0.000", CultureInfo.InvariantCulture));
             SetLabel(_entityLabel, "0x" + c.LastEntityHash.ToString("X8"));
-            SetLabel(_heightLabel, c.LastLocalHeight.ToString("0.000"));
+            SetLabel(_heightLabel, c.LastLocalHeight.ToString("0.000", CultureInfo.InvariantCulture));
 
             _updatingControls = true;
             _sampleCapSlider.SetValueWithoutNotify(math.clamp(t.MaxSampleCount, 4, AsyncBuoyancyReadbackConstants.RequestCapacity));

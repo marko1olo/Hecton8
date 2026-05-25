@@ -13,11 +13,11 @@ namespace Hecton8.Visor.Editor
     public sealed class ScreenSpaceDecalTunerWindow : EditorWindow
     {
         private const double RefreshSeconds = 0.2d;
-        private const string DefaultCsvPath = "Assets/_Project/Data/Decals/visor_decal_profiles.csv";
-        private const string CsvSchemaVersion = "H8_VISOR_DECAL_PROFILE_CSV_V1";
+        private const string DefaultCsvPath = "Assets/_Project/Data/Decals/visor_trauma_profiles.csv";
+        private const string CsvSchemaVersion = "H8_VISOR_TRAUMA_PROFILE_CSV_V1";
         private const string CsvHeader = "source,atlasSlice,lifetimeSeconds,radiusMeters,projectionDepthMeters";
         private const string DataMonolithOutputPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
-        private const string RuntimeProfileVaultRoute = "GlobalDataVault BufferID 71495 MaterialProfiles / 71496 CsvScratch";
+        private const string RuntimeProfileVaultRoute = "GlobalDataVault BufferID 73195 MaterialProfiles / 73196 CsvScratch / 73197 RequestRing / 73198 RequestState";
         private static readonly uint CsvSchemaHash32 = ComputeFnv1a32(CsvHeader);
 
         private readonly VisualElement[] _histogramBars = new VisualElement[16];
@@ -41,23 +41,23 @@ namespace Hecton8.Visor.Editor
         private bool _lastCsvValid;
         private double _nextRefreshTime;
 
-        [MenuItem("HECTON-8/Rendering/Screen-Space Visor Wound Tuner")]
+        [MenuItem("HECTON-8/Rendering/Screen-Space Trauma Tuner")]
         public static void Open()
         {
-            GetWindow<ScreenSpaceDecalTunerWindow>("Visor Wounds");
+            GetWindow<ScreenSpaceDecalTunerWindow>("Visor Trauma");
         }
 
         private void OnEnable()
         {
             EditorApplication.update += OnEditorUpdate;
-            SceneView.duringSceneGui -= OnDrawGizmos;
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
         }
 
         private void OnDisable()
         {
             EditorApplication.update -= OnEditorUpdate;
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         public void CreateGUI()
@@ -95,8 +95,8 @@ namespace Hecton8.Visor.Editor
             rootVisualElement.Add(_depthSlider);
             rootVisualElement.Add(_drawGizmoToggle);
             rootVisualElement.Add(_gizmoLimitSlider);
-            rootVisualElement.Add(new Button(GenerateMockLoad) { text = "Generate Mock Visor Wounds" });
-            rootVisualElement.Add(new Button(LoadCsvProfiles) { text = "Load Visor Wound CSV" });
+            rootVisualElement.Add(new Button(GenerateMockLoad) { text = "Generate Mock Visor Trauma" });
+            rootVisualElement.Add(new Button(LoadCsvProfiles) { text = "Load Visor Trauma CSV" });
             rootVisualElement.Add(_bridgeLabel);
             rootVisualElement.Add(_layoutLabel);
             rootVisualElement.Add(_validationLabel);
@@ -191,7 +191,7 @@ namespace Hecton8.Visor.Editor
 
         private void GenerateMockLoad()
         {
-            DynamicDecalVaultRuntime.GenerateMockVisorWounds(DynamicDecalVaultRuntime.MaxCapacity);
+            DynamicDecalVaultRuntime.GenerateMockTraumaWounds(DynamicDecalVaultRuntime.MaxCapacity);
             RefreshStats();
         }
 
@@ -199,7 +199,7 @@ namespace Hecton8.Visor.Editor
         {
             string projectPath = Application.dataPath;
             string defaultPath = Path.GetFullPath(Path.Combine(projectPath, "..", DefaultCsvPath));
-            string selected = EditorUtility.OpenFilePanel("Load visor_decal_profiles.csv", Path.GetDirectoryName(defaultPath), "csv");
+            string selected = EditorUtility.OpenFilePanel("Load visor_trauma_profiles.csv", Path.GetDirectoryName(defaultPath), "csv");
             if (string.IsNullOrEmpty(selected))
                 return;
 
@@ -224,7 +224,7 @@ namespace Hecton8.Visor.Editor
 
             RefreshBridgeMetadata();
             DynamicDecalVaultRuntime.TryGetRuntimeState(out DecalRuntimeStateDTO state);
-            DynamicDecalVaultRuntime.TryGetLatestTelemetry(out VisorWoundTelemetryEntry telemetry);
+            DynamicDecalVaultRuntime.TryGetLatestTelemetry(out TraumaWoundTelemetryEntry telemetry);
             float capacity = math.max(1f, state.MaxActiveThisFrame);
             float fill = math.saturate(state.ActiveCount / capacity);
             for (int i = 0; i < _histogramBars.Length; i++)
@@ -283,7 +283,9 @@ namespace Hecton8.Visor.Editor
             if (_layoutLabel != null)
             {
                 _layoutLabel.text =
-                    "ABI: VisorDecalDTO 80B [LocalToWorld@0:64, DecalTypeHash@64:4, Opacity01@68:4, BirthTime@72:4, Flags@76:4]; " +
+                    "ABI: TraumaDecalDTO 80B [LocalToWorld@0:64, DecalTypeHash@64:4, Opacity01@68:4, BirthTime@72:4, Flags@76:4]; " +
+                    "DecalRequestSignal 64B [ImpactAup@0:24, Normal@24:12, Radius@36:4, Depth@40:4, Lifetime@44:4, Material/Flags/Seed/Frame@48..60]; " +
+                    "DecalRequestQueueStateDTO 64B [Write@0:4, Read@4:4, Pending@8:4, Capacity@12:4, counters@16..28, pad@32:32]; " +
                     "DecalMaterialProfileDTO 32B [SourceHash@0:4, AtlasSlice@4:4, LifetimeSeconds@8:4, RadiusMeters@12:4, ProjectionDepthMeters@16:4, Flags@20:4, pad@24:8].";
             }
 
@@ -362,12 +364,12 @@ namespace Hecton8.Visor.Editor
             return hash != 0u ? hash : 1u;
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             if (_drawGizmoToggle == null || !_drawGizmoToggle.value || sceneView == null)
                 return;
 
-            if (!DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<VisorDecalDTO>.ReadOnly decals, out _, out Vector3 cameraWorldPosition))
+            if (!DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<TraumaDecalDTO>.ReadOnly decals, out _, out Vector3 cameraWorldPosition))
                 return;
 
             Matrix4x4 previousMatrix = Handles.matrix;
@@ -380,7 +382,7 @@ namespace Hecton8.Visor.Editor
                 int drawn = 0;
                 for (int i = 0; i < decals.Length && drawn < limit; i++)
                 {
-                    VisorDecalDTO decal = decals[i];
+                    TraumaDecalDTO decal = decals[i];
                     if ((decal.Flags & DynamicDecalFlags.Active) == 0u || decal.Opacity01 <= 0.0001f)
                         continue;
 

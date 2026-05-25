@@ -505,7 +505,7 @@ namespace Hecton8.SaveSystem.Editor
                 return false;
             }
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.SavePersistence,

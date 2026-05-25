@@ -55,7 +55,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            HashSet<string> uniqueIds = new HashSet<string>();
+            HashSet<string> uniqueIds = new HashSet<string>(targets.Length);
             for (int i = 0; i < targets.Length; i++)
             {
                 ScannableTarget target = targets[i];

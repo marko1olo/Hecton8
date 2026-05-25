@@ -1,40 +1,39 @@
-# Vehicle Component Damage Router
+﻿# Vehicle Component Damage Router
 
 Owner: SHINOBU_152
+
 Domain: Echelon 5 vehicle localized damage truth
-
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-21 R51 Root/Architecture Actuality Boundary
-
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Global Authority Route Card
 
 Evidence class: STATIC_SOURCE route-card completion only. This block does not prove Unity import, Burst compile, Play Mode, profiler, GCMonitor, player build, or vehicle damage correctness.
 
 | Field | Value |
+
 |---|---|
+
 | Owner | SHINOBU_152 / Vehicle component damage router |
+
 | First-20-minutes route moment | Hazard damage feedback only if the Copper Wire route reaches vehicle/submarine integrity; otherwise parked |
+
 | Authority surface | GlobalDataVault buffers `71640`-`71649`; combat AUP impacts enter through signal payloads and publish `VehicleDamageStateDTO` |
+
 | Producer phase | `SIMULATION` for damage grid writes and component-state solve |
+
 | Consumer phase | `POST_SIMULATION` for state publication; downstream hydrodynamics consumes the DTO after publication |
+
 | Cadence | Fixed simulation cadence for damage truth; editor tuner is cold/editor-only |
+
 | Capacity | Default `16 x 6 x 8` cell grid, bounded impact buffer, telemetry ring `300` |
+
 | Overflow policy | Bounded impact ingestion; excess or invalid impacts must fail closed with telemetry rather than grow managed collections |
+
 | Failure mode | Non-finite AUP math, missing kinematic root snapshot, or invalid grid state sets telemetry flags and dumps `Docs/AgentLogs/Dump_VEHICLE_SURGEON.bin` |
+
 | Shutdown | Damage owner releases/clears Vault buffers and tuner state; consumers never own grid teardown |
+
 | Review disposition | `YELLOW / STATIC_SOURCE_ONLY` until route-card review, guarded compile, Unity import, profiler, and player-build artifacts exist |
+
 | Proof required | Artifact path, command/tool, timestamp, environment, output tuple for compile/import/runtime/profiler claims |
 
 ## Runtime Truth
@@ -44,20 +43,31 @@ Evidence class: STATIC_SOURCE route-card completion only. This block does not pr
 Authoritative cell layout:
 
 - `VehicleGridCellDTO`, 16 bytes, explicit offsets: `Integrity01` 0, `ComponentHash` 4, `StatusFlags` 8, `ArmorValue` 12.
+
 - Default grid: 16 x 6 x 8 cells.
+
 - Write/read buffers are separate; readers consume only the read buffer after `PublishVehicleDamageStateJob`.
 
 ## Vault Buffers
 
 - `71640` write grid
+
 - `71641` read grid
+
 - `71642` impact signal buffer
+
 - `71643` mock impact signal buffer
+
 - `71644` write state
+
 - `71645` read state
+
 - `71646` tuning
+
 - `71647` 300-frame telemetry ring
+
 - `71648` telemetry cursor
+
 - `71649` CSV scratch
 
 ## Mapping Rule
@@ -68,7 +78,10 @@ Impact mapping must subtract root AUP in double precision first:
 
 Absolute AUP is never cast to `float3` before subtraction.
 
-Runtime `FixedTick` consumes only a cached root pose snapshot. That snapshot is refreshed in cold boot/LateFrame from `BufferID.SubmarineKinematicConfig.LocalOriginAup` plus the last completed vehicle local pose/rotation already published to the transform by the kinematic owner. The damage router does not read live `SubmarineKinematicStates` while the integrator can be scheduled. The only transform-only fallback is guarded to `UNITY_EDITOR || DEVELOPMENT_BUILD` for isolated mock profiling; player builds fail closed until a kinematic config-backed snapshot exists.
+- Runtime `FixedTick` consumes only a cached root pose snapshot.
+- That snapshot is refreshed in cold boot/LateFrame from `BufferID.SubmarineKinematicConfig.LocalOriginAup` plus the last completed vehicle local pose/rotation already published to the transform by the kinematic owner.
+- The damage router does not read live `SubmarineKinematicStates` while the integrator can be scheduled.
+- The only transform-only fallback is guarded to `UNITY_EDITOR || DEVELOPMENT_BUILD` for isolated mock profiling; player builds fail closed until a kinematic config-backed snapshot exists.
 
 ## Output Contract
 
@@ -76,12 +89,32 @@ Runtime `FixedTick` consumes only a cached root pose snapshot. That snapshot is 
 
 ## Component Hash Contract
 
-Canonical component hashes are lowercase FNV-1a values: `hull=0x6EA478B6`, `engine=0xEE05D83B`, `ballast=0x16368F10`, `sensors=0x5FD70E98`, `power=0xF54F2346`. The CSV bridge folds common aliases (`sensor`, `sonar`, `engines`, `reactor`, `battery`) into those canonical hashes and ORs component-derived critical/flammable flags with existing initialized flags. CSV rows cannot accidentally erase `OuterHull` breach semantics by omitting a flags column.
+Canonical component hashes are lowercase FNV-1a values:
+
+| Component | Hash |
+|---|---:|
+| `hull` | `0x6EA478B6` |
+| `engine` | `0xEE05D83B` |
+| `ballast` | `0x16368F10` |
+| `sensors` | `0x5FD70E98` |
+| `power` | `0xF54F2346` |
+
+CSV bridge folds common aliases (`sensor`, `sonar`, `engines`, `reactor`, `battery`) into canonical hashes and ORs component-derived critical/flammable flags with initialized flags. Omitted flags cannot erase `OuterHull` breach semantics.
 
 ## Debug And Tools
 
-`Vehicle Integrity Tuner` is editor-only UI Toolkit. It calls editor-only runtime snapshot methods that refuse to read while a damage job is pending, use short Vault locks, expose numeric fields without per-refresh `.ToString()` formatting, and write `VehicleDamageTuningDTO` directly in the Vault using editor override flags. CSV layout hot-reload is compiled only for `UNITY_EDITOR || DEVELOPMENT_BUILD`; shipping player builds do not poll `vehicle_component_layouts.csv` from `SlowTick`. `OnDrawGizmosSelected` samples the read grid only. Fatal NaN state dumps `Docs/AgentLogs/Dump_VEHICLE_SURGEON.bin`.
+- `Vehicle Integrity Tuner` is editor-only UI Toolkit.
+- Runtime snapshot methods are editor-only.
+- They refuse reads while a damage job is pending.
+- They use short Vault locks.
+- Numeric fields avoid per-refresh `.ToString()` formatting.
+- Writes target `VehicleDamageTuningDTO` directly in Vault with editor override flags.
+- CSV layout hot-reload is compiled only for `UNITY_EDITOR || DEVELOPMENT_BUILD`; shipping player builds do not poll `vehicle_component_layouts.csv` from `SlowTick`.
+- `OnDrawGizmosSelected` samples the read grid only.
+- Fatal NaN state dumps `Docs/AgentLogs/Dump_VEHICLE_SURGEON.bin`.
 
 ## Collision Boundary
 
-`SubmarineStructuralGrid` no longer owns an `OnCollisionEnter` damage ingress for SHINOBU_152. Heavy hull/component damage must arrive as AUP damage signals or through the existing explicit local-impact API. This prevents Unity contact callbacks from becoming a second damage truth.
+- `SubmarineStructuralGrid` no longer owns `OnCollisionEnter` damage ingress for SHINOBU_152.
+- Heavy hull/component damage arrives through AUP damage signals or the explicit local-impact API.
+- Unity contact callbacks cannot become a second damage truth.

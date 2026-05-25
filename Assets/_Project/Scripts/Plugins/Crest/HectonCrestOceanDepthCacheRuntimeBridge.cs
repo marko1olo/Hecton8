@@ -73,6 +73,7 @@ namespace Hecton8.World
 
         internal static bool HectonSaveDepthCacheTexturePng(this OceanDepthCache depthCache, string absolutePath)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (depthCache == null || string.IsNullOrWhiteSpace(absolutePath))
                 return false;
 
@@ -87,36 +88,30 @@ namespace Hecton8.World
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            RenderTexture previousActive = RenderTexture.active;
-            Texture2D readbackTexture = null;
-            try
+            int cacheWidth = cacheTexture.width;
+            int cacheHeight = cacheTexture.height;
+            UnityEngine.Rendering.AsyncGPUReadback.Request(cacheTexture, 0, TextureFormat.RGBA32, request =>
             {
-                RenderTexture.active = cacheTexture;
-                readbackTexture = new Texture2D(cacheTexture.width, cacheTexture.height, TextureFormat.RGBA32, false, true)
+                if (request.hasError)
+                    return;
+
+                Texture2D readbackTexture = new Texture2D(cacheWidth, cacheHeight, TextureFormat.RGBA32, false, true)
                 {
                     name = "__HectonDepthCacheDebugReadback",
                     hideFlags = HideFlags.HideAndDontSave
-                }; // COLD ALLOC: Texture2D[1] — one-shot depth-cache forensic readback for PNG dump — owner: HectonCrestOceanDepthCacheRuntimeBridge
-                readbackTexture.ReadPixels(new Rect(0f, 0f, cacheTexture.width, cacheTexture.height), 0, 0, false);
+                }; // COLD ALLOC: Texture2D[1] - one-shot async depth-cache forensic PNG dump - owner: HectonCrestOceanDepthCacheRuntimeBridge
+                readbackTexture.SetPixelData(request.GetData<Color32>(), 0);
                 readbackTexture.Apply(false, false);
                 byte[] pngBytes = readbackTexture.EncodeToPNG();
-                if (pngBytes == null || pngBytes.Length <= 0)
-                    return false;
+                if (pngBytes != null && pngBytes.Length > 0)
+                    File.WriteAllBytes(absolutePath, pngBytes);
 
-                fixed (byte* pngPtr = pngBytes)
-                {
-                    if (!AsyncWriteManager.WriteAll(absolutePath, pngPtr, pngBytes.Length, out _))
-                        return false;
-                }
-
-                return true;
-            }
-            finally
-            {
-                RenderTexture.active = previousActive;
-                if (readbackTexture != null)
-                    UnityEngine.Object.DestroyImmediate(readbackTexture);
-            }
+                UnityEngine.Object.DestroyImmediate(readbackTexture);
+            });
+            return true;
+#else
+            return false;
+#endif
         }
     }
 }

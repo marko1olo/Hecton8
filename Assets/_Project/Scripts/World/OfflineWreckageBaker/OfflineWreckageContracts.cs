@@ -3,6 +3,15 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.OfflineWreckageBaker
 {
+    internal static class OfflineWreckageContractsLayout
+    {
+        public const int MeshDamageStateMappingDTOStrideBytes = 32;
+        public const int OfflineWreckageBakeVertexDTOStrideBytes = 64;
+        public const int WreckageDeformationProfileDTOStrideBytes = 64;
+        public const int OfflineWreckageBakeCounters64StrideBytes = 64;
+        public const int OfflineWreckageTelemetryEntryStrideBytes = 64;
+    }
+
     /// <summary>
     /// Constants for the offline structural wreckage bake pipeline.
     /// </summary>
@@ -34,7 +43,7 @@ namespace Hecton8.World.OfflineWreckageBaker
     /// <summary>
     /// ARM64-safe mapping from a pristine mesh hash to three immutable damaged mesh hashes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineWreckageContractsLayout.MeshDamageStateMappingDTOStrideBytes)]
     public struct MeshDamageStateMappingDTO
     {
         [FieldOffset(0)] public uint PristineMeshHash;
@@ -48,7 +57,7 @@ namespace Hecton8.World.OfflineWreckageBaker
     /// <summary>
     /// Interleaved 64-byte vertex record written directly into Unity MeshData.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineWreckageContractsLayout.OfflineWreckageBakeVertexDTOStrideBytes)]
     public struct OfflineWreckageBakeVertexDTO
     {
         [FieldOffset(0)] public float3 Position;
@@ -62,7 +71,7 @@ namespace Hecton8.World.OfflineWreckageBaker
     /// <summary>
     /// Single deformation profile parsed from CSV without string splitting.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineWreckageContractsLayout.WreckageDeformationProfileDTOStrideBytes)]
     public struct WreckageDeformationProfileDTO
     {
         [FieldOffset(0)] public uint ProfileHash;
@@ -82,7 +91,7 @@ namespace Hecton8.World.OfflineWreckageBaker
     /// <summary>
     /// Single cache-line counter row for chained offline bake jobs.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineWreckageContractsLayout.OfflineWreckageBakeCounters64StrideBytes)]
     public struct OfflineWreckageBakeCounters64
     {
         [FieldOffset(0)] public int ActiveVertexCount;
@@ -101,7 +110,7 @@ namespace Hecton8.World.OfflineWreckageBaker
     /// <summary>
     /// Bake telemetry entry for the fixed 300-entry offline black box.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineWreckageContractsLayout.OfflineWreckageTelemetryEntryStrideBytes)]
     public struct OfflineWreckageTelemetryEntry
     {
         [FieldOffset(0)] public double3 ModuleAup;

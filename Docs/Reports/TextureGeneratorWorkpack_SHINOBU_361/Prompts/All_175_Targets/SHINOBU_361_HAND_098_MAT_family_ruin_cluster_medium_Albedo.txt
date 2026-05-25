@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_098
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_098_MAT_family_ruin_cluster_medium_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_ruin_cluster_medium_Albedo.png
+FINAL_FILENAME: MAT_family_ruin_cluster_medium_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Medium ruin cluster family albedo for HECTON-8 ancient engineered fragments. Use off-white ceramic relic plates, satin graphite internal ribs, opal teal mineral growth in seams, pearl sediment dust, and sparse amber survey flecks. The material should feel like valuable ruins discovered under pressure: elegant, readable, and integrated with ocean mineralization. Keep broken shapes organized and premium rather than noisy. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

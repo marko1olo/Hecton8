@@ -208,13 +208,9 @@ namespace Hecton8.Editor.ProceduralGen
         private static float SmoothMinExp(float a, float b, float k)
         {
             float kk = math.max(0.01f, k);
-            float invK = math.rcp(kk);
-            float limit = 80f * invK;
-            float aa = math.clamp(a, -limit, limit);
-            float bb = math.clamp(b, -limit, limit);
-            float ea = math.exp(-kk * aa);
-            float eb = math.exp(-kk * bb);
-            return -math.log(math.max(1e-20f, ea + eb)) * invK;
+            float radius = 8f * math.rcp(kk);
+            float h = math.saturate(0.5f + 0.5f * (b - a) * math.rcp(radius));
+            return math.lerp(b, a, h) - (radius * h * (1f - h));
         }
 
         private float3 HashDirection(uint index)
@@ -423,7 +419,7 @@ namespace Hecton8.Editor.ProceduralGen
         {
             float cx = (BoundsMin.x + BoundsMax.x) * 0.5f;
             float cz = (BoundsMin.z + BoundsMax.z) * 0.5f;
-            float angle = math.atan2(p.z - cz, p.x - cx);
+            float angle = global::Hecton8.Core.MathLodApproximation.ApproxAtan2Fast(p.z - cz, p.x - cx);
             return angle * 0.15915494309189535f + 0.5f;
         }
 

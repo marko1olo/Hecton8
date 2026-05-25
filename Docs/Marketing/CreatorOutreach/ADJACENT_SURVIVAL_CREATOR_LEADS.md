@@ -1,4 +1,4 @@
-# Adjacent Survival Creator Leads
+﻿# Adjacent Survival Creator Leads
 
 Status: raw public prospecting list / not outreach-ready
 Date: 2026-05-18

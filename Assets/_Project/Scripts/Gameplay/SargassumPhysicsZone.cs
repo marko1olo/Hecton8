@@ -5,6 +5,8 @@
 
 namespace Hecton8.Gameplay
 {
+    using Hecton8.Core;
+    using Hecton8.Physics;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -14,8 +16,11 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Gameplay/Sargassum Physics Zone")]
-    public sealed class SargassumPhysicsZone : MonoBehaviour
+    public sealed class SargassumPhysicsZone : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
+        private const uint KccVelocitySargassumMaxAgeFrames = 12u;
+        private const uint CutRegistrationFrameStride = 6u;
+
         [Header("── Sticky Drag ─────────────────────────")]
         [Tooltip("Target max-speed multiplier while fully inside the sargassum mass.")]
         [SerializeField, Range(0.3f, 1f)] private float speedMultiplier = 0.68f;
@@ -37,6 +42,15 @@ namespace Hecton8.Gameplay
         [SerializeField] private int _debugInfluencedBodies;
 
         private Collider _triggerCollider;
+        private Transform _cachedTransform;
+        private CachedTriggerVolume _cachedVolume;
+        private IPlayerRuntimeContext _playerRuntime;
+        private Transform _playerTransform;
+        private SargassumMovementInfluence _playerInfluence;
+        private bool _playerInside;
+        private bool _registered;
+        private bool _hotSwapRegistered;
+        private uint _lastCutFrame;
 
         /// <summary>
         /// Configures the sticky-drag and cut-response defaults for this zone.
@@ -62,84 +76,182 @@ namespace Hecton8.Gameplay
 
         private void Reset()
         {
-            _triggerCollider = GetComponent<Collider>();
+            TryGetComponent(out _triggerCollider);
             if (_triggerCollider != null)
                 _triggerCollider.isTrigger = true;
+            _cachedVolume = CachedTriggerVolume.FromCollider(_triggerCollider, cutRadius);
         }
 
         private void Awake()
         {
-            _triggerCollider = GetComponent<Collider>();
+            _cachedTransform = transform;
+            TryGetComponent(out _triggerCollider);
             if (_triggerCollider != null)
                 _triggerCollider.isTrigger = true;
+            _cachedVolume = CachedTriggerVolume.FromCollider(_triggerCollider, cutRadius);
+            RefreshPlayerReferencesCold();
+        }
+
+        private void OnEnable()
+        {
+            RefreshPlayerReferencesCold();
+            TryRegister();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
+            ClearPlayerInfluence();
+            TryUnregisterHotSwapListener();
+            TryUnregister();
             _debugInfluencedBodies = 0;
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void OnDestroy()
         {
-            if (!TryResolveInfluence(other, out SargassumMovementInfluence influence))
-                return;
-
-            influence.EnterZone(speedMultiplier, dragMultiplier);
-            _debugInfluencedBodies++;
-            TryRegisterCut(other);
+            ClearPlayerInfluence();
+            TryUnregisterHotSwapListener();
+            TryUnregister();
         }
 
-        private void OnTriggerExit(Collider other)
+        public void Tick(float deltaTime)
         {
-            if (!TryResolveInfluence(other, out SargassumMovementInfluence influence))
-                return;
-
-            influence.ExitZone();
-            if (_debugInfluencedBodies > 0)
-                _debugInfluencedBodies--;
-        }
-
-        private bool TryResolveInfluence(Collider other, out SargassumMovementInfluence influence)
-        {
-            influence = null;
-            if (other == null || other.isTrigger)
-                return false;
-
-            Rigidbody attachedBody = other.attachedRigidbody;
-            if (attachedBody != null)
+            Transform playerTransform = _playerTransform;
+            SargassumMovementInfluence influence = _playerInfluence;
+            if (playerTransform == null && _playerRuntime != null)
             {
-                if (attachedBody.TryGetComponent(out influence))
-                    return true;
-
-                return attachedBody.TryGetComponent(out HectonPlayerMovement _) &&
-                       attachedBody.TryGetComponent(out influence);
+                playerTransform = _playerRuntime.PlayerTransform;
+                _playerTransform = playerTransform;
             }
 
-            if (other.TryGetComponent(out influence))
-                return true;
+            bool playerInside = playerTransform != null &&
+                                influence != null &&
+                                _cachedVolume.Contains(_cachedTransform, playerTransform.position);
 
-            return other.TryGetComponent(out HectonPlayerMovement _) &&
-                   other.TryGetComponent(out influence);
+            if (playerInside)
+            {
+                if (_playerInside)
+                    influence.StayZone(speedMultiplier, dragMultiplier);
+                else
+                    EnterPlayerInfluence(influence);
+
+                TryRegisterPlayerCut(playerTransform);
+                return;
+            }
+
+            if (_playerInside)
+                ExitPlayerInfluence();
         }
 
-        private void TryRegisterCut(Collider other)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            if (cutResponder == null || other == null)
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                RefreshPlayerReferencesCold(currentService as IPlayerRuntimeContext, false);
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+                TryRegister();
+        }
+
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying)
                 return;
 
-            Rigidbody attachedBody = other.attachedRigidbody;
-            if (attachedBody == null)
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
                 return;
 
-            Vector3 velocity = attachedBody.linearVelocity;
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void RefreshPlayerReferencesCold(IPlayerRuntimeContext playerContext = null, bool useRegistryFallback = true)
+        {
+            if (_playerInside)
+                ExitPlayerInfluence();
+
+            _playerRuntime = playerContext ?? (useRegistryFallback ? GlobalRegistry.Player : null);
+            IPlayerRuntimeContext runtime = _playerRuntime;
+            _playerTransform = runtime != null ? runtime.PlayerTransform : null;
+            HectonPlayerMovement movement = runtime != null ? runtime.PlayerMovement : null;
+            _playerInfluence = null;
+            if (movement != null)
+                movement.TryGetComponent(out _playerInfluence);
+
+            if (_playerInfluence == null && _playerTransform != null)
+                _playerTransform.TryGetComponent(out _playerInfluence);
+        }
+
+        private void EnterPlayerInfluence(SargassumMovementInfluence influence)
+        {
+            _playerInside = true;
+            influence.EnterZone(speedMultiplier, dragMultiplier);
+            _debugInfluencedBodies = 1;
+        }
+
+        private void ExitPlayerInfluence()
+        {
+            SargassumMovementInfluence influence = _playerInfluence;
+            if (influence != null)
+                influence.ExitZone();
+
+            _playerInside = false;
+            _debugInfluencedBodies = 0;
+        }
+
+        private void ClearPlayerInfluence()
+        {
+            if (_playerInside)
+                ExitPlayerInfluence();
+
+            _playerTransform = null;
+            _playerInfluence = null;
+        }
+
+        private void TryRegisterPlayerCut(Transform playerTransform)
+        {
+            if (cutResponder == null || playerTransform == null)
+                return;
+
+            uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            if (_lastCutFrame != 0u && frame - _lastCutFrame < CutRegistrationFrameStride)
+                return;
+
+            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocitySargassumMaxAgeFrames, out Vector3 velocity))
+                return;
+
             float speedSq = velocity.sqrMagnitude;
             float cutSpeedThresholdSq = cutSpeedThreshold * cutSpeedThreshold;
             if (speedSq < cutSpeedThresholdSq)
                 return;
 
             float speed = speedSq * math.rsqrt(speedSq);
-            Vector3 contactPoint = other.ClosestPoint(transform.position);
+            Vector3 contactPoint = _cachedVolume.ResolveSurfacePoint(_cachedTransform, playerTransform.position);
             cutResponder.RegisterCut(contactPoint, velocity, speed);
+            _lastCutFrame = frame;
         }
     }
 }

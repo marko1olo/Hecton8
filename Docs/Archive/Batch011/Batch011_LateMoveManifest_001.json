@@ -1,0 +1,102 @@
+[
+    {
+        "bucket":  "Tasks",
+        "pass":  111,
+        "name":  "Status_SHINOBU_202.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_202.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\Tasks\\Status_SHINOBU_202__late111_1.md",
+        "isDirectory":  false,
+        "length":  562590,
+        "lastWriteTimeUtc":  "2026-05-22T08:23:18.2013788Z"
+    },
+    {
+        "bucket":  "Tasks",
+        "pass":  111,
+        "name":  "Status_SHINOBU_260.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_260.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\Tasks\\Status_SHINOBU_260__late111_1.md",
+        "isDirectory":  false,
+        "length":  55873,
+        "lastWriteTimeUtc":  "2026-05-22T00:03:22.2634173Z"
+    },
+    {
+        "bucket":  "Tasks",
+        "pass":  111,
+        "name":  "Status_SHINOBU_270.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_270.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\Tasks\\Status_SHINOBU_270__late111_1.md",
+        "isDirectory":  false,
+        "length":  55505,
+        "lastWriteTimeUtc":  "2026-05-22T08:21:45.4614859Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  111,
+        "name":  "LOG_SHINOBU_202.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_202.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\AgentLogs\\LOG_SHINOBU_202__late111_1.md",
+        "isDirectory":  false,
+        "length":  488339,
+        "lastWriteTimeUtc":  "2026-05-22T08:23:39.9370564Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  111,
+        "name":  "LOG_SHINOBU_260.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_260.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\AgentLogs\\LOG_SHINOBU_260__late111_1.md",
+        "isDirectory":  false,
+        "length":  87126,
+        "lastWriteTimeUtc":  "2026-05-22T00:03:22.2634173Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  111,
+        "name":  "LOG_SHINOBU_270.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_270.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\AgentLogs\\LOG_SHINOBU_270__late111_1.md",
+        "isDirectory":  false,
+        "length":  78218,
+        "lastWriteTimeUtc":  "2026-05-22T08:21:45.4456032Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  111,
+        "name":  "Rationale_SHINOBU_202.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_202.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\AgentLogs\\Rationale_SHINOBU_202__late111_1.md",
+        "isDirectory":  false,
+        "length":  461849,
+        "lastWriteTimeUtc":  "2026-05-22T08:23:28.4138794Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  111,
+        "name":  "Rationale_SHINOBU_260.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_260.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\AgentLogs\\Rationale_SHINOBU_260__late111_1.md",
+        "isDirectory":  false,
+        "length":  46829,
+        "lastWriteTimeUtc":  "2026-05-22T00:03:22.2634173Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  111,
+        "name":  "Rationale_SHINOBU_270.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_270.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\AgentLogs\\Rationale_SHINOBU_270__late111_1.md",
+        "isDirectory":  false,
+        "length":  66503,
+        "lastWriteTimeUtc":  "2026-05-22T08:21:45.4614859Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  111,
+        "name":  "VaultPointerAudit_SHINOBU_202.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\VaultPointerAudit_SHINOBU_202.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\AgentLogs\\VaultPointerAudit_SHINOBU_202__late111_1.md",
+        "isDirectory":  false,
+        "length":  191628,
+        "lastWriteTimeUtc":  "2026-05-22T08:21:59.9789869Z"
+    }
+]

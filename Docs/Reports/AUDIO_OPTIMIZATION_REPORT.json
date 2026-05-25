@@ -1,7 +1,171 @@
-{
-  "agent": "SHINOBU_260",
-  "managedAudioAssetsEradicated": true,
-  "directorVoiceManagedAudioClipReferences": [],
-  "allManagedAudioReferencesScanned": 464,
-  "note": "Music, footsteps, atmospheric hallucination whispers, SFX, and third-party acoustic pools are not SHINOBU_260 director/protagonist voice ownership unless listed under directorVoiceManagedAudioClipReferences."
+﻿{
+    "agent":  "SHINOBU_339",
+    "scanner":  "OOP_Audio_Scanner",
+    "scope":  [
+                  "Assets/_Project/Scripts/Habitat",
+                  "Assets/_Project/Scripts/Vehicles",
+                  "Assets/_Project/Scripts/Physics/Vehicles",
+                  "Assets/_Project/Scripts/Audio"
+              ],
+    "excluded":  [
+                     "**/Editor/**"
+                 ],
+    "needles":  [
+                    "AudioSource.Play(",
+                    "AudioSource.PlayOneShot(",
+                    "AudioSource.PlayClipAtPoint(",
+                    ".Play(",
+                    ".PlayOneShot(",
+                    "PlayClipAtPoint(",
+                    "new AudioSource(",
+                    "Instantiate("
+                ],
+    "matches":  [
+
+                ],
+    "allowed_central_audio_owner_matches":  [
+                                                {
+                                                    "path":  "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+                                                    "line":  1128,
+                                                    "needle":  ".Play(",
+                                                    "classification":  "central_audio_owner_not_base_structural_warning_route"
+                                                },
+                                                {
+                                                    "path":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                                    "line":  1957,
+                                                    "needle":  ".Play(",
+                                                    "classification":  "central_audio_owner_not_base_structural_warning_route"
+                                                },
+                                                {
+                                                    "path":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                                    "line":  2483,
+                                                    "needle":  ".Play(",
+                                                    "classification":  "central_audio_owner_not_base_structural_warning_route"
+                                                },
+                                                {
+                                                    "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                                                    "line":  829,
+                                                    "needle":  ".Play(",
+                                                    "classification":  "central_audio_owner_not_base_structural_warning_route"
+                                                }
+                                            ],
+    "match_count":  0,
+    "allowed_central_audio_owner_match_count":  4,
+    "residual_risk":  "PlayerCriticalProceduralAudioRenderer no longer contains direct AudioSource.Play calls. Cutter boil feedback is DSP-owned through BubbleBoilIntensity and RenderBubbleBlock; remaining allowlisted calls are music/adaptive central audio owner lanes outside base structural warning dispatch.",
+    "hot_path_policy":  "Base structural warnings must enter audio through SignalBus\u003cBaseStructuralWarningSignal\u003e, not direct AudioSource calls.",
+    "verification":  "PowerShell source scan on 2026-05-23 found 0 violation matches and 4 allowlisted central-audio owner source.Play() matches in Habitat, Audio, Vehicles, or Physics/Vehicles with Editor excluded.",
+    "shinobu351AudioSourceScanner":  {
+                                         "agent":  "SHINOBU_351",
+                                         "scanner":  "OOP_AudioSource_Scanner",
+                                         "summary":  "OOP Audio Sources Eradicated",
+                                         "scannerMode":  "UNITY_ROSLYN_AST_SOURCE_WITH_CLI_REGEX_FALLBACK_REPORT",
+                                         "scannerSourceUsesRoslynAst":  true,
+                                         "reportUsesRoslynAst":  false,
+                                         "reportExecution":  "PowerShell Roslyn execution failed under Windows PowerShell 5.1 due System.Runtime.CompilerServices.Unsafe binding conflict; Unity Editor menu remains the authoritative AST executor.",
+                                         "fallbackUsesRegex":  true,
+                                         "passed":  true,
+                                         "filesScanned":  91,
+                                         "parserFailures":  0,
+                                         "totalForbiddenNodes":  5,
+                                         "activeHabitatPhysicsViolationCount":  0,
+                                         "habitatPhysicsRuntimeForbiddenHitsAfterPatch":  0,
+                                         "physicsFluidFeedbackAudioSourceRemoved":  true,
+                                         "deepPsychosisHullStressClipsRemoved":  true,
+                                         "crushDepthManagedGroanClipsRemoved":  true,
+                                         "transportEntanglementGroanRoutedProcedural":  true,
+                                         "acousticZoneFatalPressureRoutedProcedural":  true,
+                                         "submarineOsHullWarningClipFieldsRemoved":  true,
+                                         "callbackOutputCapacityGuarded":  true,
+                                         "multichannelTailMixdownGuarded":  true,
+                                         "kernelBlockParamsSizeBytes":  96,
+                                         "inScopeManagedHullGroanFindingsAfterPatch":  0,
+                                         "scannerSourceDetectsSerializedAudioSourceFields":  true,
+                                         "scannerSourceDetectsPlayAtPointInvocations":  true,
+                                         "policy":  "Hull/base stress audio must enter player-critical DSP through SignalBus/BaseStructuralWarningSignal and flat PCM/Vault buffers, not Unity AudioSource playback.",
+                                         "scanRoots":  [
+                                                           "Assets/_Project/Scripts/Habitat",
+                                                           "Assets/_Project/Scripts/Physics",
+                                                           "Assets/_Project/Scripts/Audio"
+                                                       ],
+                                         "findings":  [
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                                              "line":  258,
+                                                              "token":  "AudioSource[",
+                                                              "scanner":  "CLI_REGEX_FALLBACK",
+                                                              "activeViolation":  false
+                                                          },
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                                              "line":  402,
+                                                              "token":  "AudioSource[",
+                                                              "scanner":  "CLI_REGEX_FALLBACK",
+                                                              "activeViolation":  false
+                                                          },
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                                              "line":  403,
+                                                              "token":  "new AudioSource",
+                                                              "scanner":  "CLI_REGEX_FALLBACK",
+                                                              "activeViolation":  false
+                                                          },
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/Audio/MusicVoicePool.cs",
+                                                              "line":  14,
+                                                              "token":  "AudioSource[",
+                                                              "scanner":  "CLI_REGEX_FALLBACK",
+                                                              "activeViolation":  false
+                                                          },
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                                                              "line":  339,
+                                                              "token":  "AddComponent\u003cAudioSource",
+                                                              "scanner":  "CLI_REGEX_FALLBACK",
+                                                              "activeViolation":  false
+                                                          }
+                                                      ]
+                                     },
+    "shinobu_352_vocal_warning_system_audio_queue":  {
+                                                         "agent":  "SHINOBU_352",
+                                                         "summary":  "OOP Voice Triggers Eradicated",
+                                                         "scanner":  "Assets/_Project/Scripts/Audio/Editor/OOP_Voice_Scanner_SHINOBU_352.cs",
+                                                         "scannerParserRoute":  "Roslyn CSharpSyntaxTree AST primary pass; lexical fallback only on parse exception",
+                                                         "scannerExecution":  "Unity Editor MenuItem; CLI rg verification used for this source-control report because the Unity Editor was not invoked in this shell session",
+                                                         "scannerUsesRoslynAst":  true,
+                                                         "reportUsesRegexFallback":  true,
+                                                         "filesScanned":  232,
+                                                         "syntaxTreesParsed":  0,
+                                                         "syntaxNodesVisited":  0,
+                                                         "parserFailures":  0,
+                                                         "lexicalFallbackFiles":  0,
+                                                         "forbiddenFindingCount":  0,
+                                                         "scope":  [
+                                                                       "Assets/_Project/Scripts/Audio",
+                                                                       "Assets/_Project/Scripts/Gameplay",
+                                                                       "Assets/_Project/Scripts/Combat",
+                                                                       "Assets/_Project/Scripts/Physiology"
+                                                                   ],
+                                                         "playerFilePrefixes":  [
+                                                                                    "Player",
+                                                                                    "HectonPlayer"
+                                                                                ],
+                                                         "excluded":  [
+                                                                          "**/Editor/**",
+                                                                          "OOP_Voice_Scanner_SHINOBU_352.cs"
+                                                                      ],
+                                                         "forbiddenPatterns":  [
+                                                                                   "AudioSource.PlayOneShot",
+                                                                                   "SubtitleManager.DisplaySubtitle",
+                                                                                   "PlayWarning",
+                                                                                   "Queue<AudioClip>",
+                                                                                   "Queue<Voice*>",
+                                                                                   "List<Voice*>",
+                                                                                   "Dictionary<string, AudioClip>"
+                                                                               ],
+                                                          "replacementRoute":  "SignalBus/Vault VocalWarningDTO -> NativeMinHeap -> VocalCueSignal + SubtitleCueSignal; no gameplay voice AudioSource or managed voice queues",
+                                                         "verification":  "Focused rg scan over runtime Audio, Gameplay, Physiology, missing Combat root, and Player/HectonPlayer-named scripts with Editor excluded returned no OOP vocal warning trigger matches.",
+                                                         "findings":  [
+
+                                                                      ]
+                                                     }
 }

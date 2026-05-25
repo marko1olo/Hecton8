@@ -30,6 +30,8 @@ namespace Hecton8.Construction
         private const string AirReserveSummarySuffix = "% inside the dry shelter loop. Scrubber support is no longer keeping pace with occupancy.";
         private const string Co2CriticalSummaryPrefix = "CO2 saturation reached ";
         private const string Co2CriticalSummarySuffix = "% of scrubber capacity. Mechanical circulation is no longer restoring breathable air without botanical conversion.";
+        private const float FireSuitBurnStatusDurationSeconds = 0.35f;
+        private const float FireSuitBurnMagnitudeScale = 0.25f;
 
         private float _oxygenRefillRate;
         private float _baseBreathableReserveCapacity;
@@ -188,11 +190,40 @@ namespace Hecton8.Construction
                     break;
                 case BaseModuleFailureMode.Fire:
                     if (fireSuitDamageRate > 0f)
-                        trackedPlayerSurvival.TakeDamage(FiniteNonNegativeOrZero(fireSuitDamageRate) * safeDt);
+                        QueueFireSuitBurnStatus(trackedPlayerSurvival, FiniteNonNegativeOrZero(fireSuitDamageRate) * safeDt);
                     if (fireSuitEnergyDrainRate > 0f)
                         trackedPlayerSurvival.DrainEnergy(FiniteNonNegativeOrZero(fireSuitEnergyDrainRate) * safeDt);
                     break;
             }
+        }
+
+        private static void QueueFireSuitBurnStatus(HectonSurvivalSystem trackedPlayerSurvival, float damageAmount)
+        {
+            if (trackedPlayerSurvival == null)
+                return;
+
+            float safeDamage = FiniteNonNegativeOrZero(damageAmount);
+            if (safeDamage <= 0f)
+                return;
+
+            int targetId = ResolveSurvivalCombatTargetId(trackedPlayerSurvival);
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return;
+
+            CombatDamageRuntime.TryQueueStatusEffect(
+                targetId,
+                CombatStatusBits.Burning64,
+                FireSuitBurnStatusDurationSeconds,
+                DamageSourceIds.EnvironmentHazard,
+                math.saturate(safeDamage * FireSuitBurnMagnitudeScale));
+        }
+
+        private static int ResolveSurvivalCombatTargetId(HectonSurvivalSystem trackedPlayerSurvival)
+        {
+            if (trackedPlayerSurvival.TryGetComponent(out HectonPlayerHealth playerHealth))
+                return CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+
+            return CombatDamageRuntime.ResolveTargetId(trackedPlayerSurvival.gameObject);
         }
 
         public ModuleLifeSupportSignals Tick(

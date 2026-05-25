@@ -152,7 +152,7 @@ namespace Hecton8.UI.Editor
 
         private void FindRuntime()
         {
-            _runtime = FindFirstObjectByType<TerminalOsRuntime>();
+            _runtime = FindAnyObjectByType<TerminalOsRuntime>();
             _runtimeField.value = _runtime;
             SyncTuningFromRuntime();
             RefreshReadout();

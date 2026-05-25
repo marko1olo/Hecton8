@@ -42,7 +42,7 @@ namespace Hecton8.Power
                 Gizmos.DrawWireSphere(position, math.max(sphereRadius, sphereRadius + thermal * thermalRadiusScale));
                 if (drawDivergence && (node.Flags & SubmarineThermalGridStatusFlags.FaultDivergent) != 0u)
                 {
-                    float pulse = 0.5f + 0.5f * math.sin((float)Time.realtimeSinceStartup * 8f);
+                    float pulse = 0.5f + 0.5f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((float)Time.realtimeSinceStartup * 8f);
                     Gizmos.color = new Color(1f, 0f, 0f, 0.55f + pulse * 0.45f);
                     Gizmos.DrawWireSphere(position, math.max(sphereRadius, sphereRadius * divergenceRadiusScale * (1f + pulse * 0.25f)));
                 }

@@ -19,7 +19,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class HectonRockManager : MonoBehaviour, ISlowTickable
+    public sealed class HectonRockManager : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -206,6 +206,9 @@ namespace Hecton8.World
         private void OnEnable()
         {
             TryRegisterToGlobalRegistry();
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegisterToTickManager();
         }
 
@@ -222,11 +225,14 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregisterFromTickManager();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             TryUnregisterFromGlobalRegistry();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterFromTickManager();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             TryUnregisterFromGlobalRegistry();
 
         }
@@ -268,8 +274,7 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFromTickManager()
@@ -279,6 +284,27 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registeredToTickManager = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregisterFromTickManager();
+                TryRegisterToTickManager();
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -308,7 +334,7 @@ namespace Hecton8.World
             _isDirty = true;
 
 #if UNITY_EDITOR
-            Debug.Log($"[HectonRockManager] RegisterChunk: layer={layerId}, " +
+            Hecton8.Core.H8Debug.Log($"[HectonRockManager] RegisterChunk: layer={layerId}, " +
                       $"chunk={chunkCoord}, count={matrices.Length}");
 #endif
         }
@@ -324,7 +350,7 @@ namespace Hecton8.World
             }
 
 #if UNITY_EDITOR
-            Debug.Log($"[HectonRockManager] UnregisterChunk: {chunkCoord}");
+            Hecton8.Core.H8Debug.Log($"[HectonRockManager] UnregisterChunk: {chunkCoord}");
 #endif
         }
 

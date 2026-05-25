@@ -29,7 +29,9 @@ namespace Hecton8.Atmosphere
         private const float MinimumScheduleIntervalSeconds = 1f / 60f;
         private const float MaximumScheduleIntervalSeconds = 1f / 5f;
         private const uint HotSwapReasonHash = 0x53504853u; // SPHS
+#if UNITY_EDITOR
         private const string ImpactCsvRelativePath = "Assets/_SourceData/Atmosphere/storm_depth_impact_profiles.csv";
+#endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_234.bin";
         private const uint JobLockWeather = 1u << 0;
         private const uint JobLockTuning = 1u << 1;
@@ -59,7 +61,9 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<MockHurricaneStateDTO> _mockWeatherHandle;
         private VaultGenerationHandle<StormDepthImpactProfileDTO> _profilesHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<byte> _dumpScratchHandle;
         private VaultGenerationHandle<float4> _flowScalarHandle;
         private VaultGenerationHandle<float4> _audioScalarHandle;
@@ -408,31 +412,33 @@ namespace Hecton8.Atmosphere
 
             TryRefreshWeatherHandleCold();
             if (_publishedStateHandle.BufferID == 0u)
-                _publishedStateHandle = vault.GetGenerationHandle<StormPropagationDTO>(BufferID.ShinobuStormPropagationState, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _publishedStateHandle = vault.EnsureGenerationHandle<StormPropagationDTO>(BufferID.ShinobuStormPropagationState, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_writeStateHandle.BufferID == 0u)
-                _writeStateHandle = vault.GetGenerationHandle<StormPropagationWriteSnapshotDTO>(BufferID.ShinobuStormPropagationWriteState, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _writeStateHandle = vault.EnsureGenerationHandle<StormPropagationWriteSnapshotDTO>(BufferID.ShinobuStormPropagationWriteState, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_tuningHandle.BufferID == 0u)
-                _tuningHandle = vault.GetGenerationHandle<StormPropagationTuningDTO>(BufferID.ShinobuStormPropagationTuning, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _tuningHandle = vault.EnsureGenerationHandle<StormPropagationTuningDTO>(BufferID.ShinobuStormPropagationTuning, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_telemetryHandle.BufferID == 0u)
-                _telemetryHandle = vault.GetGenerationHandle<StormPropagationTelemetryEntry>(BufferID.ShinobuStormPropagationTelemetryRing, ShinobuStormPropagationConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _telemetryHandle = vault.EnsureGenerationHandle<StormPropagationTelemetryEntry>(BufferID.ShinobuStormPropagationTelemetryRing, ShinobuStormPropagationConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_telemetryCursorHandle.BufferID == 0u)
-                _telemetryCursorHandle = vault.GetGenerationHandle<int>(BufferID.ShinobuStormPropagationTelemetryCursor, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(BufferID.ShinobuStormPropagationTelemetryCursor, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_mockWeatherHandle.BufferID == 0u)
-                _mockWeatherHandle = vault.GetGenerationHandle<MockHurricaneStateDTO>(BufferID.ShinobuStormPropagationMockWeather, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _mockWeatherHandle = vault.EnsureGenerationHandle<MockHurricaneStateDTO>(BufferID.ShinobuStormPropagationMockWeather, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_profilesHandle.BufferID == 0u)
-                _profilesHandle = vault.GetGenerationHandle<StormDepthImpactProfileDTO>(BufferID.ShinobuStormPropagationImpactProfiles, ShinobuStormPropagationConstants.ImpactProfileCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _profilesHandle = vault.EnsureGenerationHandle<StormDepthImpactProfileDTO>(BufferID.ShinobuStormPropagationImpactProfiles, ShinobuStormPropagationConstants.ImpactProfileCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
             if (_csvScratchHandle.BufferID == 0u)
-                _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuStormPropagationCsvScratch, ShinobuStormPropagationConstants.CsvScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuStormPropagationCsvScratch, ShinobuStormPropagationConstants.CsvScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
+#endif
             if (_dumpScratchHandle.BufferID == 0u)
-                _dumpScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuStormPropagationDumpScratch, ShinobuStormPropagationConstants.DumpScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _dumpScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuStormPropagationDumpScratch, ShinobuStormPropagationConstants.DumpScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_flowScalarHandle.BufferID == 0u)
-                _flowScalarHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuStormPropagationFlowScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _flowScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationFlowScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_audioScalarHandle.BufferID == 0u)
-                _audioScalarHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuStormPropagationAudioScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _audioScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationAudioScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_biolumScalarHandle.BufferID == 0u)
-                _biolumScalarHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuStormPropagationBiolumScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _biolumScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationBiolumScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_fogScalarHandle.BufferID == 0u)
-                _fogScalarHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuStormPropagationFogScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+                _fogScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationFogScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
 
             _vaultReady =
                 Resolve(in _publishedStateHandle, out NativeArray<StormPropagationDTO> published) && published.Length > 0 &&
@@ -478,7 +484,9 @@ namespace Hecton8.Atmosphere
             _telemetryCursorHandle = default;
             _mockWeatherHandle = default;
             _profilesHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _dumpScratchHandle = default;
             _flowScalarHandle = default;
             _audioScalarHandle = default;

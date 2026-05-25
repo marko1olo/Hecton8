@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -239,7 +240,8 @@ namespace Hecton8.Environment.Editor
                     new Vector3(0.5f, 0.3f, 0.18f),
                     1.15f);
 
-            if (!string.IsNullOrWhiteSpace(biomeName) && biomeName.ToLowerInvariant().Contains("reef"))
+            if (!string.IsNullOrWhiteSpace(biomeName) &&
+                biomeName.ToLowerInvariant().Contains("reef", StringComparison.Ordinal))
                 return new VisualSeed(
                     new Color(0.024f, 0.11f, 0.15f, 1f),
                     new Color(0.14f, 0.36f, 0.34f, 1f),
@@ -325,7 +327,9 @@ namespace Hecton8.Environment.Editor
                 return;
 
             string lower = biomeName.ToLowerInvariant();
-            if (lower.Contains("crystal") || lower.Contains("alabaster") || lower.Contains("glass"))
+            if (lower.Contains("crystal", StringComparison.Ordinal) ||
+                lower.Contains("alabaster", StringComparison.Ordinal) ||
+                lower.Contains("glass", StringComparison.Ordinal))
             {
                 Color accent = new Color(0.1f, 0.27f, 0.34f, 1f);
                 seed = new VisualSeed(
@@ -337,7 +341,9 @@ namespace Hecton8.Environment.Editor
                 return;
             }
 
-            if (lower.Contains("silt") || lower.Contains("ash") || lower.Contains("dune"))
+            if (lower.Contains("silt", StringComparison.Ordinal) ||
+                lower.Contains("ash", StringComparison.Ordinal) ||
+                lower.Contains("dune", StringComparison.Ordinal))
             {
                 Color accent = new Color(0.086f, 0.132f, 0.156f, 1f);
                 seed = new VisualSeed(
@@ -349,7 +355,10 @@ namespace Hecton8.Environment.Editor
                 return;
             }
 
-            if (lower.Contains("lava") || lower.Contains("magma") || lower.Contains("thermal") || lower.Contains("brine"))
+            if (lower.Contains("lava", StringComparison.Ordinal) ||
+                lower.Contains("magma", StringComparison.Ordinal) ||
+                lower.Contains("thermal", StringComparison.Ordinal) ||
+                lower.Contains("brine", StringComparison.Ordinal))
             {
                 Color accent = new Color(0.18f, 0.11f, 0.06f, 1f);
                 seed = new VisualSeed(
@@ -361,7 +370,9 @@ namespace Hecton8.Environment.Editor
                 return;
             }
 
-            if (lower.Contains("void") || lower.Contains("rift") || lower.Contains("wound"))
+            if (lower.Contains("void", StringComparison.Ordinal) ||
+                lower.Contains("rift", StringComparison.Ordinal) ||
+                lower.Contains("wound", StringComparison.Ordinal))
             {
                 Color accent = new Color(0.018f, 0.06f, 0.114f, 1f);
                 seed = new VisualSeed(

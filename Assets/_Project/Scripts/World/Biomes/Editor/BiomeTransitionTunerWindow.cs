@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -164,15 +165,15 @@ namespace Hecton8.World.Biomes.Editor
             _readout.text =
                 "Dominant 0x" + counters.CurrentDominantBiomeHash.ToString("X8") +
                 " | Blend " + counters.LastBlendCount +
-                " | Weight Sum " + counters.LastWeightSum.ToString("0.000") +
-                " | Q " + counters.LastQualityWeight.ToString("0.000") +
-                " | Fog " + atmosphere.FogColor.x.ToString("0.000") + "," +
-                atmosphere.FogColor.y.ToString("0.000") + "," +
-                atmosphere.FogColor.z.ToString("0.000") +
-                " | Weights " + mask.Weights.x.ToString("0.000") + "/" +
-                mask.Weights.y.ToString("0.000") + "/" +
-                mask.Weights.z.ToString("0.000") + "/" +
-                mask.Weights.w.ToString("0.000");
+                " | Weight Sum " + counters.LastWeightSum.ToString("0.000", CultureInfo.InvariantCulture) +
+                " | Q " + counters.LastQualityWeight.ToString("0.000", CultureInfo.InvariantCulture) +
+                " | Fog " + atmosphere.FogColor.x.ToString("0.000", CultureInfo.InvariantCulture) + "," +
+                atmosphere.FogColor.y.ToString("0.000", CultureInfo.InvariantCulture) + "," +
+                atmosphere.FogColor.z.ToString("0.000", CultureInfo.InvariantCulture) +
+                " | Weights " + mask.Weights.x.ToString("0.000", CultureInfo.InvariantCulture) + "/" +
+                mask.Weights.y.ToString("0.000", CultureInfo.InvariantCulture) + "/" +
+                mask.Weights.z.ToString("0.000", CultureInfo.InvariantCulture) + "/" +
+                mask.Weights.w.ToString("0.000", CultureInfo.InvariantCulture);
         }
 
         private static void ValidateLayout()
@@ -182,7 +183,7 @@ namespace Hecton8.World.Biomes.Editor
             if (!layoutOk)
                 Debug.LogError("[BiomeTransitionTunerWindow] Native layout validation failed.");
             else if (!auditOk)
-                Debug.LogWarning("[BiomeTransitionTunerWindow] Self audit pending/faulted. Flags=0x" + faultFlags.ToString("X8") + " weightError=" + weightError.ToString("0.000000"));
+                Debug.LogWarning("[BiomeTransitionTunerWindow] Self audit pending/faulted. Flags=0x" + faultFlags.ToString("X8") + " weightError=" + weightError.ToString("0.000000", CultureInfo.InvariantCulture));
             else
                 Debug.Log("[BiomeTransitionTunerWindow] Native layout and blend self-audit passed.");
         }

@@ -1,5 +1,4 @@
 using System;
-using Hecton8.Audio;
 using Hecton8.Core;
 using TMPro;
 using UnityEngine;
@@ -22,7 +21,7 @@ namespace Hecton8.UI
     /// Prevents broken bootstrap appearance by maintaining visual continuity during async operations.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class LoadingScreenController : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class LoadingScreenController : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private enum VisibilityState
         {
@@ -85,6 +84,7 @@ namespace Hecton8.UI
         private float _delayRemaining;
         private float _lastUnscaledTickTime;
         private bool _runtimeRegistered;
+        private bool _hotSwapListenerRegistered;
         private bool _serviceShuttingDown;
         private VisibilityState _visibilityState;
         private int _currentProgressPercent = -1;
@@ -151,6 +151,7 @@ namespace Hecton8.UI
             if (_serviceShuttingDown)
                 return;
 
+            TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegisterToTickManager();
             _lastUnscaledTickTime = Time.unscaledTime;
@@ -158,6 +159,7 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegisterToTickManager();
         }
@@ -166,6 +168,7 @@ namespace Hecton8.UI
         {
             UnregisterFromTickManager();
             TryUnregisterRuntime();
+            TryUnregisterHotSwapListener();
             _lastUnscaledTickTime = 0f;
         }
 
@@ -182,6 +185,7 @@ namespace Hecton8.UI
             _serviceShuttingDown = true;
             UnregisterFromTickManager();
             TryUnregisterRuntime();
+            TryUnregisterHotSwapListener();
         }
 
         /// <summary>
@@ -205,11 +209,6 @@ namespace Hecton8.UI
             _visibilityState = VisibilityState.FadingIn;
             _canvasGroup.blocksRaycasts = true;
             TryRegisterToTickManager();
-
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null)
-            {
-                // Loading audio hook stays cold-path only.
-            }
         }
 
         /// <summary>
@@ -331,7 +330,7 @@ namespace Hecton8.UI
                 return;
 
             _currentTipText = tip;
-            _tipText.SetText(tip);
+            TmpTextNoAlloc.Set(_tipText, tip);
         }
 
         /// <summary>
@@ -550,6 +549,38 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher &&
+                currentService != null &&
+                isActiveAndEnabled &&
+                !_serviceShuttingDown)
+            {
+                UnregisterFromTickManager();
+                TryRegisterToTickManager();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
 #if UNITY_EDITOR

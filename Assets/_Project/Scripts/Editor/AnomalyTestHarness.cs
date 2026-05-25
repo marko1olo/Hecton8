@@ -50,6 +50,7 @@ namespace Hecton8.Editor
         private const string VisitedStampLabel = "visitedStamp";
         private const string AcceptedCellsLabel = "acceptedCells";
         private const string SliceStatusLabel = "sliceStatus";
+        private const string DeferredStateBudgetLabel = "deferredStateBudget";
         private const string PendingFloodStatesLabel = "pendingFloodStates";
         private const string DeferredFloodStatesLabel = "deferredFloodStates";
         private const string CliffInputSdfLabel = "cliffInputSdf";
@@ -82,7 +83,7 @@ namespace Hecton8.Editor
             RunFeatureDetectionAssertion();
             RunSeamStitchAssertion();
             RunSdfInjectionAssertion();
-            Debug.Log("ANOMALY_TEST_HARNESS_PASS");
+            H8Debug.Log("ANOMALY_TEST_HARNESS_PASS");
         }
 
         /// <summary>
@@ -524,6 +525,7 @@ namespace Hecton8.Editor
             NativeArray<int> visitedStamp = default;
             NativeArray<int> acceptedCells = default;
             NativeArray<int> sliceStatus = default;
+            NativeArray<int> deferredStateBudget = default;
             NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
             NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
 
@@ -539,12 +541,15 @@ namespace Hecton8.Editor
                 acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<int>[2] - sliced flood-fill status slots - owner: AnomalyTestHarness
                 sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<int>[2] - sliced flood-fill deferred-state budget/drop slots - owner: AnomalyTestHarness
+                deferredStateBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - current sliced flood-fill state lane - owner: AnomalyTestHarness
                 pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - deferred sliced flood-fill state lane - owner: AnomalyTestHarness
                 deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
                 RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
                 NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeArray(deferredStateBudget, NativeMemoryOwner, DeferredStateBudgetLabel, NativeAllocationLifetime.TempJob);
                 NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
                 NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
 
@@ -588,6 +593,7 @@ namespace Hecton8.Editor
                         acceptedCells,
                         pending,
                         deferred,
+                        deferredStateBudget,
                         sliceStatus,
                         settings);
 
@@ -625,6 +631,7 @@ namespace Hecton8.Editor
                 DisposeTracked(ref visitedStamp);
                 DisposeTracked(ref acceptedCells);
                 DisposeTracked(ref sliceStatus);
+                DisposeTracked(ref deferredStateBudget);
                 DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
                 DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
             }
@@ -645,6 +652,7 @@ namespace Hecton8.Editor
             NativeArray<int> visitedStamp = default;
             NativeArray<int> acceptedCells = default;
             NativeArray<int> sliceStatus = default;
+            NativeArray<int> deferredStateBudget = default;
             NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
             NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
 
@@ -660,12 +668,15 @@ namespace Hecton8.Editor
                 acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<int>[2] - stamp-overflow sliced flood-fill status slots - owner: AnomalyTestHarness
                 sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<int>[2] - stamp-overflow deferred-state budget/drop slots - owner: AnomalyTestHarness
+                deferredStateBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - stamp-overflow current state lane - owner: AnomalyTestHarness
                 pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - stamp-overflow deferred state lane - owner: AnomalyTestHarness
                 deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
                 RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
                 NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeArray(deferredStateBudget, NativeMemoryOwner, DeferredStateBudgetLabel, NativeAllocationLifetime.TempJob);
                 NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
                 NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
 
@@ -703,6 +714,7 @@ namespace Hecton8.Editor
                     acceptedCells,
                     pendingFloodStates,
                     deferredFloodStates,
+                    deferredStateBudget,
                     sliceStatus,
                     settings);
                 // COLD SYNC JOB: Editor harness inspects deterministic stamp-overflow state immediately.
@@ -725,6 +737,7 @@ namespace Hecton8.Editor
                     acceptedCells,
                     pendingFloodStates,
                     deferredFloodStates,
+                    deferredStateBudget,
                     sliceStatus,
                     settings);
                 // COLD SYNC JOB: Editor harness inspects deterministic partial clear state immediately.
@@ -753,6 +766,7 @@ namespace Hecton8.Editor
                         acceptedCells,
                         pending,
                         deferred,
+                        deferredStateBudget,
                         sliceStatus,
                         settings);
                     // COLD SYNC JOB: Editor harness advances the deterministic stamp-overflow resume path.
@@ -782,6 +796,7 @@ namespace Hecton8.Editor
                 DisposeTracked(ref visitedStamp);
                 DisposeTracked(ref acceptedCells);
                 DisposeTracked(ref sliceStatus);
+                DisposeTracked(ref deferredStateBudget);
                 DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
                 DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
             }
@@ -800,6 +815,7 @@ namespace Hecton8.Editor
             NativeArray<int> visitedStamp = default;
             NativeArray<int> acceptedCells = default;
             NativeArray<int> sliceStatus = default;
+            NativeArray<int> deferredStateBudget = default;
             NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
             NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
 
@@ -815,12 +831,15 @@ namespace Hecton8.Editor
                 acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<int>[2] - corrupt-state sliced flood-fill status slots - owner: AnomalyTestHarness
                 sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<int>[2] - corrupt-state deferred-state budget/drop slots - owner: AnomalyTestHarness
+                deferredStateBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - corrupt-state current state lane - owner: AnomalyTestHarness
                 pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - corrupt-state deferred state lane - owner: AnomalyTestHarness
                 deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
                 RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
                 NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeArray(deferredStateBudget, NativeMemoryOwner, DeferredStateBudgetLabel, NativeAllocationLifetime.TempJob);
                 NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
                 NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
 
@@ -860,6 +879,7 @@ namespace Hecton8.Editor
                     acceptedCells,
                     pendingFloodStates,
                     deferredFloodStates,
+                    deferredStateBudget,
                     sliceStatus,
                     settings);
 
@@ -881,6 +901,7 @@ namespace Hecton8.Editor
                 DisposeTracked(ref visitedStamp);
                 DisposeTracked(ref acceptedCells);
                 DisposeTracked(ref sliceStatus);
+                DisposeTracked(ref deferredStateBudget);
                 DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
                 DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
             }

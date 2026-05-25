@@ -16,7 +16,7 @@ namespace Hecton8.Crafting
     /// <summary>
     /// Zero-GC fabrication helper that flattens authored recipe costs into contiguous native buffers.
     /// </summary>
-    internal static class CraftingSystem
+    internal static partial class CraftingSystem
     {
         public const int MaxRecipeIngredientCount = 32;
         public const int MaxDeconstructionOutputCount = MaxRecipeIngredientCount;

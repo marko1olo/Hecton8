@@ -23,7 +23,7 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private bool _hotSwapRegistered;
         private LoreDatabaseManager _loreDatabase;
-        private QuestManager _questManager;
+        private IQuestSystem _questManager;
 
         private void Awake()
         {
@@ -136,7 +136,7 @@ namespace Hecton8.Gameplay
             if (node.LoreUnlockBits != 0UL && loreDatabase != null)
                 loreDatabase.UnlockByPackedBits(node.LoreUnlockBits);
 
-            QuestManager questManager = _questManager;
+            IQuestSystem questManager = _questManager;
             if (!string.IsNullOrWhiteSpace(node.UnlockQuestId) && questManager != null)
                 questManager.ActivateQuest(node.UnlockQuestId);
         }
@@ -152,11 +152,8 @@ namespace Hecton8.Gameplay
                     _loreDatabase = currentService as LoreDatabaseManager;
                     break;
                 case GlobalRegistryServiceSlot.QuestRuntime:
-                    _questManager = currentService as QuestManager;
-                    break;
                 case GlobalRegistryServiceSlot.QuestSystem:
-                    if (currentService is QuestManager questManager)
-                        _questManager = questManager;
+                    _questManager = currentService as IQuestSystem;
                     break;
             }
         }
@@ -164,7 +161,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _loreDatabase = GlobalRegistry.LoreDatabase;
-            _questManager = QuestManager.ActiveRuntimeInstance;
+            _questManager = GlobalRegistry.QuestSystem;
         }
 
         private void TryRegisterHotSwapListener()

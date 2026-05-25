@@ -181,9 +181,9 @@ namespace Hecton8.Power
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        public struct JacobiPowerGridSolverJob : IJob
+        public struct TwoPassPowerGridSolverJob : IJob
         {
-            public const int FixedIterationCount = 8;
+            public const int FixedPropagationPassCount = 2;
             public const float BrownoutPotentialThreshold = 0.2f;
             public const float FloodedShortCircuitPotentialThreshold = 0.5f;
 
@@ -218,103 +218,20 @@ namespace Hecton8.Power
                 if (safeNodeCount <= 0)
                     return;
 
-                NativeArray<float> input = PowerPotentials;
-                NativeArray<float> output = NextPowerPotentials;
-                float qualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight;
-                int iterationBudget = math.clamp(PowerSolverConvergenceMath.ResolvePropagationIterations(qualityWeight), 1, FixedIterationCount);
-                float targetTolerance = PowerSolverConvergenceMath.ResolveSolverTargetTolerance(0.001f, qualityWeight);
-                float omega = PowerSolverConvergenceMath.ResolveSolverOmega(qualityWeight);
-                float previousResidual = float.MaxValue;
-                int residualGrowthCount = 0;
-                for (int iteration = 0; iteration < iterationBudget; iteration++)
+                if (!HasAnySource(safeNodeCount))
                 {
-                    float maxResidual = 0f;
-                    bool divergenceFault = false;
-                    for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-                    {
-                        byte flags = NodeFlags[nodeIndex];
-                        if ((flags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) != 0)
-                        {
-                            output[nodeIndex] = 0f;
-                            continue;
-                        }
-
-                        if ((flags & (byte)PowerGridNodeFlags.Source) != 0)
-                        {
-                            output[nodeIndex] = ClampPotential(1f, PowerCapacities[nodeIndex]);
-                            continue;
-                        }
-
-                        float weightedPotential = 0f;
-                        int neighborCount = 0;
-                        if (Connections.TryGetFirstValue(nodeIndex, out int neighborIndex, out NativeParallelMultiHashMapIterator<int> iterator))
-                        {
-                            do
-                            {
-                                if ((uint)neighborIndex >= (uint)safeNodeCount)
-                                    continue;
-
-                                byte neighborFlags = NodeFlags[neighborIndex];
-                                if ((neighborFlags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) != 0)
-                                    continue;
-
-                                weightedPotential += ClampPotential(input[neighborIndex], PowerCapacities[neighborIndex]);
-                                neighborCount++;
-                            }
-                            while (Connections.TryGetNextValue(out neighborIndex, ref iterator));
-                        }
-
-                        float sourcePotential = ClampPotential(input[nodeIndex], PowerCapacities[nodeIndex]);
-                        float nextPotential = weightedPotential * math.rcp(math.max(1f + neighborCount, 1f));
-                        nextPotential = sourcePotential + (nextPotential - sourcePotential) * omega;
-                        bool potentialFault = !math.isfinite(nextPotential) || math.abs(nextPotential) > 16f;
-                        if (potentialFault)
-                        {
-                            nextPotential = sourcePotential;
-                            flags |= (byte)PowerGridNodeFlags.Divergent;
-                            divergenceFault = true;
-                        }
-
-                        float resolvedPotential = ClampPotential(nextPotential, PowerCapacities[nodeIndex]);
-                        output[nodeIndex] = resolvedPotential;
-                        NodeFlags[nodeIndex] = flags;
-                        maxResidual = math.max(maxResidual, math.abs(resolvedPotential - sourcePotential));
-                    }
-
-                    NativeArray<float> swap = input;
-                    input = output;
-                    output = swap;
-                    if (maxResidual <= targetTolerance || divergenceFault)
-                        break;
-
-                    bool residualGrew = previousResidual < float.MaxValue * 0.5f &&
-                                        maxResidual > math.max(previousResidual + targetTolerance * 0.25f, previousResidual * 1.08f);
-                    if (residualGrew)
-                    {
-                        residualGrowthCount++;
-                        omega = math.max(0.55f, omega * 0.86f);
-                        if (residualGrowthCount >= 3)
-                        {
-                            for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-                            {
-                                input[nodeIndex] = ClampPotential(output[nodeIndex], PowerCapacities[nodeIndex]);
-                                NodeFlags[nodeIndex] = (byte)(NodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Divergent);
-                            }
-
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        residualGrowthCount = 0;
-                    }
-
-                    previousResidual = maxResidual;
+                    ClearPowerState(safeNodeCount);
+                    return;
                 }
+
+                SeedSourcePotentials(safeNodeCount);
+                float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+                PropagateNeighborDelta(safeNodeCount, PowerPotentials, NextPowerPotentials, math.lerp(0.70f, 0.94f, q));
+                PropagateNeighborDelta(safeNodeCount, NextPowerPotentials, PowerPotentials, math.lerp(0.35f, 0.68f, q));
 
                 for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
                 {
-                    float resolvedPotential = ClampPotential(input[nodeIndex], PowerCapacities[nodeIndex]);
+                    float resolvedPotential = ClampPotential(PowerPotentials[nodeIndex], PowerCapacities[nodeIndex]);
                     byte flags = NodeFlags[nodeIndex];
                     if (resolvedPotential < BrownoutPotentialThreshold)
                         flags = (byte)((flags & ~(byte)PowerGridNodeFlags.Powered) | (byte)PowerGridNodeFlags.Offline);
@@ -340,6 +257,113 @@ namespace Hecton8.Power
                     return 0f;
 
                 return math.saturate(safePotential);
+            }
+
+            private bool HasAnySource(int safeNodeCount)
+            {
+                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                {
+                    byte flags = NodeFlags[nodeIndex];
+                    if ((flags & (byte)PowerGridNodeFlags.Source) != 0 &&
+                        (flags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) == 0 &&
+                        ClampPotential(1f, PowerCapacities[nodeIndex]) > 0f)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private void ClearPowerState(int safeNodeCount)
+            {
+                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                {
+                    byte flags = NodeFlags[nodeIndex];
+                    flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+                    PowerPotentials[nodeIndex] = 0f;
+                    NextPowerPotentials[nodeIndex] = 0f;
+                    NodeFlags[nodeIndex] = flags;
+                }
+            }
+
+            private void SeedSourcePotentials(int safeNodeCount)
+            {
+                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                {
+                    byte flags = NodeFlags[nodeIndex];
+                    if ((flags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) != 0)
+                    {
+                        PowerPotentials[nodeIndex] = 0f;
+                        NextPowerPotentials[nodeIndex] = 0f;
+                        continue;
+                    }
+
+                    float potential = (flags & (byte)PowerGridNodeFlags.Source) != 0
+                        ? ClampPotential(1f, PowerCapacities[nodeIndex])
+                        : ClampPotential(PowerPotentials[nodeIndex], PowerCapacities[nodeIndex]);
+                    PowerPotentials[nodeIndex] = potential;
+                    NextPowerPotentials[nodeIndex] = potential;
+                }
+            }
+
+            private void PropagateNeighborDelta(
+                int safeNodeCount,
+                NativeArray<float> input,
+                NativeArray<float> output,
+                float propagationGain)
+            {
+                float gain = math.saturate(math.isfinite(propagationGain) ? propagationGain : 1f);
+                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                {
+                    byte flags = NodeFlags[nodeIndex];
+                    if ((flags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) != 0)
+                    {
+                        output[nodeIndex] = 0f;
+                        continue;
+                    }
+
+                    if ((flags & (byte)PowerGridNodeFlags.Source) != 0)
+                    {
+                        output[nodeIndex] = ClampPotential(1f, PowerCapacities[nodeIndex]);
+                        continue;
+                    }
+
+                    float weightedPotential = 0f;
+                    float conductanceSum = 0f;
+                    if (Connections.TryGetFirstValue(nodeIndex, out int neighborIndex, out NativeParallelMultiHashMapIterator<int> iterator))
+                    {
+                        do
+                        {
+                            if ((uint)neighborIndex >= (uint)safeNodeCount)
+                                continue;
+
+                            byte neighborFlags = NodeFlags[neighborIndex];
+                            if ((neighborFlags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) != 0)
+                                continue;
+
+                            float neighborCapacity = math.max(0f, PowerCapacities[neighborIndex]);
+                            float conductance = neighborCapacity > 0f ? math.rcp(1f + neighborCapacity) + 1f : 1f;
+                            weightedPotential += conductance * ClampPotential(input[neighborIndex], neighborCapacity);
+                            conductanceSum += conductance;
+                        }
+                        while (Connections.TryGetNextValue(out neighborIndex, ref iterator));
+                    }
+
+                    float currentPotential = ClampPotential(input[nodeIndex], PowerCapacities[nodeIndex]);
+                    float targetPotential = conductanceSum > 0f
+                        ? weightedPotential * math.rcp(conductanceSum)
+                        : currentPotential;
+                    float solvedPotential = currentPotential + (targetPotential - currentPotential) * gain;
+                    if (!math.isfinite(solvedPotential))
+                    {
+                        solvedPotential = currentPotential;
+                        flags |= (byte)PowerGridNodeFlags.Divergent;
+                        NodeFlags[nodeIndex] = flags;
+                    }
+
+                    output[nodeIndex] = ClampPotential(solvedPotential, PowerCapacities[nodeIndex]);
+                }
             }
 
             private bool IsBoundBaseHibernating()
@@ -489,7 +513,7 @@ namespace Hecton8.Power
                     int topologyCycleCount = TopologySummaryBuffer.IsCreated && TopologySummaryBuffer.Length > 0
                         ? TopologySummaryBuffer[0].CycleCount
                         : 0;
-                    ApplyJacobiPowerRelaxation(topologyCycleCount);
+                    ApplyTwoPassPowerDeltaPropagation(topologyCycleCount);
                     return;
                 }
 
@@ -620,7 +644,7 @@ namespace Hecton8.Power
                     ? LogisticsBrownoutTier.EmergencyOnly
                     : LogisticsBrownoutTier.None;
                 ApplyBinaryNodeLoads();
-                ApplyJacobiPowerRelaxation(topologyCycleCount);
+                ApplyTwoPassPowerDeltaPropagation(topologyCycleCount);
                 return summary;
             }
 
@@ -872,7 +896,7 @@ namespace Hecton8.Power
                 }
             }
 
-            private void ApplyJacobiPowerRelaxation(int topologyCycleCount)
+            private void ApplyTwoPassPowerDeltaPropagation(int topologyCycleCount)
             {
                 if (NetworkType != LogisticsNetworkType.PowerDc ||
                     !PotentialFront.IsCreated ||
@@ -889,6 +913,12 @@ namespace Hecton8.Power
                     RuntimeConductiveEdgeCount[0] <= 0)
                 {
                     ClearEdgeFlows();
+                    return;
+                }
+
+                if (!HasAnyPoweredComponent())
+                {
+                    CommitUnpoweredPowerState();
                     return;
                 }
 
@@ -910,117 +940,18 @@ namespace Hecton8.Power
                 if (solveEndNode <= solveStartNode)
                     return;
 
-                NativeArray<float> input = PotentialFront;
-                NativeArray<float> output = PotentialBack;
-                float qualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight;
-                int iterationBudget = PowerSolverConvergenceMath.ResolvePropagationIterations(qualityWeight);
-                float targetTolerance = PowerSolverConvergenceMath.ResolveSolverTargetTolerance(0.001f, qualityWeight);
-                float omega = PowerSolverConvergenceMath.ResolveSolverOmega(qualityWeight);
-                float previousResidual = float.MaxValue;
-                int residualGrowthCount = 0;
-                for (int iteration = 0; iteration < iterationBudget; iteration++)
-                {
-                    float maxResidual = 0f;
-                    bool divergenceFault = false;
-                    for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
-                    {
-                        LogisticsNode node = Nodes[nodeIndex];
-                        if ((node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
-                        {
-                            output[nodeIndex] = 0f;
-                            continue;
-                        }
-
-                        float sourceAnchorPotential = NodeSourcePotential[nodeIndex];
-                        if (sourceAnchorPotential > Epsilon)
-                        {
-                            output[nodeIndex] = 1f;
-                            continue;
-                        }
-
-                        float weightedPotential = 0f;
-                        float conductanceSum = 0f;
-                        int edgeStart = EdgeOffsets[nodeIndex];
-                        int edgeEnd = EdgeOffsets[nodeIndex + 1];
-                        for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-                        {
-                            if ((EdgeStates[edgeIndex] & (byte)LogisticsEdgeState.Ruptured) != 0)
-                                continue;
-
-                            int destinationNodeIndex = EdgeDestinations[edgeIndex];
-                            if ((uint)destinationNodeIndex >= (uint)NodeCount)
-                                continue;
-
-                            LogisticsNode destinationNode = Nodes[destinationNodeIndex];
-                            if ((destinationNode.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
-                                continue;
-
-                            float conductance = math.max(0f, EdgeConductance[edgeIndex]);
-                            if (conductance <= Epsilon)
-                                continue;
-
-                            weightedPotential += conductance * math.saturate(input[destinationNodeIndex]);
-                            conductanceSum += conductance;
-                        }
-
-                        float sourcePotential = math.saturate(input[nodeIndex]);
-                        float nodeCapacity = math.max(Epsilon, math.isfinite(node.Capacity) ? node.Capacity : 0f);
-                        float normalizedNetInjection = math.clamp(
-                            (math.isfinite(NodeNetInjection[nodeIndex]) ? NodeNetInjection[nodeIndex] : 0f) * math.rcp(nodeCapacity),
-                            -1f,
-                            1f);
-                        float nextPotential = (weightedPotential + normalizedNetInjection) * math.rcp(math.max(conductanceSum + 1f, 1f));
-                        nextPotential = sourcePotential + (nextPotential - sourcePotential) * omega;
-                        bool potentialFault = !math.isfinite(nextPotential) || math.abs(nextPotential) > 16f;
-                        if (potentialFault)
-                        {
-                            nextPotential = sourcePotential;
-                            divergenceFault = true;
-                            if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
-                                PowerNodeFlags[nodeIndex] = (byte)(PowerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Divergent);
-                        }
-
-                        float resolvedPotential = math.saturate(math.isfinite(nextPotential) ? nextPotential : sourcePotential);
-                        output[nodeIndex] = resolvedPotential;
-                        maxResidual = math.max(maxResidual, math.abs(resolvedPotential - sourcePotential));
-                    }
-
-                    NativeArray<float> swap = input;
-                    input = output;
-                    output = swap;
-                    if (maxResidual <= targetTolerance || divergenceFault)
-                        break;
-
-                    bool residualGrew = previousResidual < float.MaxValue * 0.5f &&
-                                        maxResidual > math.max(previousResidual + targetTolerance * 0.25f, previousResidual * 1.08f);
-                    if (residualGrew)
-                    {
-                        residualGrowthCount++;
-                        omega = math.max(0.55f, omega * 0.86f);
-                        if (residualGrowthCount >= 3)
-                        {
-                            for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
-                            {
-                                input[nodeIndex] = math.saturate(math.isfinite(output[nodeIndex]) ? output[nodeIndex] : input[nodeIndex]);
-                                if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
-                                    PowerNodeFlags[nodeIndex] = (byte)(PowerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Divergent);
-                            }
-
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        residualGrowthCount = 0;
-                    }
-
-                    previousResidual = maxResidual;
-                }
+                float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+                float distributionGain = math.lerp(0.72f, 0.96f, quality);
+                float equalizationGain = topologyCycleCount > 0
+                    ? math.lerp(0.42f, 0.74f, quality)
+                    : math.lerp(0.28f, 0.55f, quality);
+                ApplyPowerDeltaPass(solveStartNode, solveEndNode, PotentialFront, PotentialBack, distributionGain);
+                ApplyPowerDeltaPass(solveStartNode, solveEndNode, PotentialBack, PotentialFront, equalizationGain);
 
                 for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
                 {
                     LogisticsNode node = Nodes[nodeIndex];
-                    float resolvedPotential = math.isfinite(input[nodeIndex]) ? math.saturate(input[nodeIndex]) : 0f;
+                    float resolvedPotential = math.isfinite(PotentialFront[nodeIndex]) ? math.saturate(PotentialFront[nodeIndex]) : 0f;
                     if (NodeSourcePotential[nodeIndex] > Epsilon &&
                         (node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) == 0)
                     {
@@ -1029,7 +960,7 @@ namespace Hecton8.Power
 
                     node.Potential = resolvedPotential;
                     node.CurrentLoad = math.max(node.CurrentLoad, math.abs(NodeNetInjection[nodeIndex]));
-                    if (resolvedPotential < JacobiPowerGridSolverJob.BrownoutPotentialThreshold)
+                    if (resolvedPotential < TwoPassPowerGridSolverJob.BrownoutPotentialThreshold)
                         node.Flags |= LogisticsNodeFlags.Brownout;
                     Nodes[nodeIndex] = node;
                     PotentialFront[nodeIndex] = resolvedPotential;
@@ -1040,13 +971,13 @@ namespace Hecton8.Power
                     if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
                     {
                         byte flags = PowerNodeFlags[nodeIndex];
-                        if (resolvedPotential < JacobiPowerGridSolverJob.BrownoutPotentialThreshold)
+                        if (resolvedPotential < TwoPassPowerGridSolverJob.BrownoutPotentialThreshold)
                             flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
                         else
                             flags = (byte)((flags | (byte)PowerGridNodeFlags.Powered) & ~(byte)PowerGridNodeFlags.Offline);
 
                         if ((flags & (byte)PowerGridNodeFlags.Flooded) != 0 &&
-                            resolvedPotential > JacobiPowerGridSolverJob.FloodedShortCircuitPotentialThreshold)
+                            resolvedPotential > TwoPassPowerGridSolverJob.FloodedShortCircuitPotentialThreshold)
                         {
                             flags |= (byte)PowerGridNodeFlags.Damaged;
                         }
@@ -1078,7 +1009,7 @@ namespace Hecton8.Power
                         }
 
                         float edgeConductance = math.max(0f, EdgeConductance[edgeIndex]);
-                        float flow = (input[sourceNodeIndex] - input[destinationNodeIndex]) * edgeConductance;
+                        float flow = (PotentialFront[sourceNodeIndex] - PotentialFront[destinationNodeIndex]) * edgeConductance;
                         float sourceEdgeLoadWatts = sourceConductanceSum > Epsilon
                             ? sourceLoadWatts * math.saturate(edgeConductance * math.rcp(sourceConductanceSum))
                             : sourceLoadWatts;
@@ -1117,6 +1048,116 @@ namespace Hecton8.Power
                         AccumulateNodeLoad(sourceNodeIndex, edgeLoadWatts);
                         AccumulateNodeLoad(destinationNodeIndex, edgeLoadWatts);
                     }
+                }
+            }
+
+            private bool HasAnyPoweredComponent()
+            {
+                for (int componentIndex = 0; componentIndex < NodeCount; componentIndex++)
+                {
+                    if (ComponentAnchorNode[componentIndex] >= 0 &&
+                        ComponentGeneration[componentIndex] > Epsilon)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private void CommitUnpoweredPowerState()
+            {
+                for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
+                {
+                    LogisticsNode node = Nodes[nodeIndex];
+                    node.Potential = 0f;
+                    node.CurrentLoad = math.max(0f, NodeServedDemand[nodeIndex]);
+                    if (NodeServedDemand[nodeIndex] > Epsilon)
+                        node.Flags |= LogisticsNodeFlags.Brownout;
+
+                    Nodes[nodeIndex] = node;
+                    PotentialFront[nodeIndex] = 0f;
+                    PotentialBack[nodeIndex] = 0f;
+                    NodeVoltageSupplyRatio[nodeIndex] = 0f;
+                    if (PowerCapacities.IsCreated && nodeIndex < PowerCapacities.Length)
+                        PowerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
+                    if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                    {
+                        byte flags = ResolvePowerGridNodeFlags(node.Flags, node.Reserved);
+                        flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+                        PowerNodeFlags[nodeIndex] = flags;
+                    }
+                }
+
+                ClearEdgeFlows();
+            }
+
+            private void ApplyPowerDeltaPass(
+                int solveStartNode,
+                int solveEndNode,
+                NativeArray<float> input,
+                NativeArray<float> output,
+                float propagationGain)
+            {
+                float gain = math.saturate(math.isfinite(propagationGain) ? propagationGain : 1f);
+                for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
+                {
+                    LogisticsNode node = Nodes[nodeIndex];
+                    if ((node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
+                    {
+                        output[nodeIndex] = 0f;
+                        continue;
+                    }
+
+                    if (NodeSourcePotential[nodeIndex] > Epsilon)
+                    {
+                        output[nodeIndex] = 1f;
+                        continue;
+                    }
+
+                    float weightedPotential = 0f;
+                    float conductanceSum = 0f;
+                    int edgeStart = EdgeOffsets[nodeIndex];
+                    int edgeEnd = EdgeOffsets[nodeIndex + 1];
+                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                    {
+                        if ((EdgeStates[edgeIndex] & (byte)LogisticsEdgeState.Ruptured) != 0)
+                            continue;
+
+                        int destinationNodeIndex = EdgeDestinations[edgeIndex];
+                        if ((uint)destinationNodeIndex >= (uint)NodeCount)
+                            continue;
+
+                        LogisticsNode destinationNode = Nodes[destinationNodeIndex];
+                        if ((destinationNode.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
+                            continue;
+
+                        float conductance = math.max(0f, EdgeConductance[edgeIndex]);
+                        if (conductance <= Epsilon)
+                            continue;
+
+                        weightedPotential += conductance * math.saturate(input[destinationNodeIndex]);
+                        conductanceSum += conductance;
+                    }
+
+                    float currentPotential = math.saturate(input[nodeIndex]);
+                    float nodeCapacity = math.max(Epsilon, math.isfinite(node.Capacity) ? node.Capacity : 0f);
+                    float injectionBias = math.clamp(
+                        (math.isfinite(NodeNetInjection[nodeIndex]) ? NodeNetInjection[nodeIndex] : 0f) * math.rcp(nodeCapacity),
+                        -1f,
+                        1f);
+                    float targetPotential = conductanceSum > Epsilon
+                        ? (weightedPotential + injectionBias) * math.rcp(conductanceSum + 1f)
+                        : currentPotential;
+                    float nextPotential = currentPotential + (targetPotential - currentPotential) * gain;
+                    if (!math.isfinite(nextPotential) || math.abs(nextPotential) > 16f)
+                    {
+                        nextPotential = currentPotential;
+                        if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                            PowerNodeFlags[nodeIndex] = (byte)(PowerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Divergent);
+                    }
+
+                    output[nodeIndex] = math.saturate(nextPotential);
                 }
             }
 
@@ -1419,10 +1460,10 @@ namespace Hecton8.Power
 
         private const int MinPriority = 0;
         private const int MaxPriority = 100;
-        private const int MaxSearchDepth = 100;
+        private const int MaxActiveCompartmentSearchNodes = 4096;
+        private const int MaxSearchDepth = MaxActiveCompartmentSearchNodes;
         private const int ParallelNodeBatchSize = 64;
-        private const int RadialJacobiRelaxationIterations = JacobiPowerGridSolverJob.FixedIterationCount;
-        private const int LoopedJacobiRelaxationIterations = JacobiPowerGridSolverJob.FixedIterationCount;
+        private const int FixedPowerDeltaPropagationPassCount = TwoPassPowerGridSolverJob.FixedPropagationPassCount;
         private const int AdaptiveSolveNodeThreshold = 500;
         private const int LowAdaptiveSolveNodesPerFrame = 128;
         private const int Mx350AdaptiveSolveNodesPerFrame = 160;
@@ -1440,7 +1481,7 @@ namespace Hecton8.Power
         private const uint PowerBlackBoxBrownoutFlag = 1u << 2;
         private const uint PowerBlackBoxOverloadFlag = 1u << 3;
         private const uint PowerBlackBoxHibernatingFlag = 1u << 4;
-        private const string PowerBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_223.bin";
+        private const string PowerBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_340_Logistics.bin";
         private const string NativeMemoryOwner = nameof(LogisticsNetworkGraph);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const Allocator DataVaultExemptGraphStateAllocator = Allocator.Persistent;
@@ -1522,6 +1563,8 @@ namespace Hecton8.Power
         private bool _scheduledAdaptiveSolveSlice;
         private bool _powerBlackBoxDumped;
         private bool _buildOpen;
+        private bool _unpoweredZeroStateLatched;
+        private bool _noEdgeZeroStateLatched;
 
         public LogisticsNetworkGraph(int nodeCapacity = 16, int edgeCapacity = 32, int consumerCapacity = 16)
         {
@@ -1554,13 +1597,13 @@ namespace Hecton8.Power
             // COLD ALLOC: int[nodeCapacity] — CSR write cursor scratch — owner: LogisticsNetworkGraph
             _edgeWriteCursor = new NativeArray<int>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeArray(_edgeWriteCursor, nameof(_edgeWriteCursor));
-            _potentialFront = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - Jacobi potential front buffer - owner: LogisticsNetworkGraph
+            _potentialFront = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - two-pass potential front buffer - owner: LogisticsNetworkGraph
             RegisterNativeArray(_potentialFront, nameof(_potentialFront));
-            _potentialBack = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - Jacobi potential back buffer - owner: LogisticsNetworkGraph
+            _potentialBack = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - two-pass potential back buffer - owner: LogisticsNetworkGraph
             RegisterNativeArray(_potentialBack, nameof(_potentialBack));
-            _powerCapacities = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[nodeCapacity] - node SOA capacity lane for Jacobi solver - owner: LogisticsNetworkGraph
+            _powerCapacities = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[nodeCapacity] - node SOA capacity lane for two-pass solver - owner: LogisticsNetworkGraph
             RegisterNativeArray(_powerCapacities, nameof(_powerCapacities));
-            _powerNodeFlags = new NativeArray<byte>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[nodeCapacity] - packed node state flags for Jacobi solver - owner: LogisticsNetworkGraph
+            _powerNodeFlags = new NativeArray<byte>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[nodeCapacity] - packed node state flags for two-pass solver - owner: LogisticsNetworkGraph
             RegisterNativeArray(_powerNodeFlags, nameof(_powerNodeFlags));
             _nodeConductanceSum = new NativeArray<float>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[nodeCapacity] - precomputed outgoing conductance sum - owner: LogisticsNetworkGraph
             RegisterNativeArray(_nodeConductanceSum, nameof(_nodeConductanceSum));
@@ -1730,7 +1773,7 @@ namespace Hecton8.Power
 
             LogisticsNode node = _nodeBuffer[nodeIndex];
             node.Potential = nextPotential;
-            if (nextPotential < JacobiPowerGridSolverJob.BrownoutPotentialThreshold)
+            if (nextPotential < TwoPassPowerGridSolverJob.BrownoutPotentialThreshold)
             {
                 node.Flags |= LogisticsNodeFlags.Brownout;
                 if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
@@ -2015,6 +2058,8 @@ namespace Hecton8.Power
             int safeConsumerCapacity = math.max(1, consumerCapacity);
 
             _buildOpen = true;
+            _unpoweredZeroStateLatched = false;
+            _noEdgeZeroStateLatched = false;
             _networkType = networkType;
             _nodeCount = 0;
             _edgeCount = 0;
@@ -2219,6 +2264,8 @@ namespace Hecton8.Power
             _lastPowerBlackBoxSolveStartNode = 0;
             _lastPowerBlackBoxSolveNodeCount = 0;
             _scheduledAdaptiveSolveSlice = false;
+            _unpoweredZeroStateLatched = false;
+            _noEdgeZeroStateLatched = false;
             _buildOpen = false;
         }
 
@@ -2440,10 +2487,28 @@ namespace Hecton8.Power
                 : _conductiveEdgeCount;
             if (_nodeCount <= 0 || _edgeCount <= 0 || runtimeConductiveEdgeCount <= 0)
             {
+                if (_noEdgeZeroStateLatched)
+                    return default;
+
                 CommitNoEdgeEvaluation();
+                _noEdgeZeroStateLatched = true;
+                _unpoweredZeroStateLatched = false;
                 return default;
             }
 
+            if (_networkType == LogisticsNetworkType.PowerDc && ComputeTotalGeneration() <= Epsilon)
+            {
+                if (_unpoweredZeroStateLatched)
+                    return default;
+
+                CommitUnpoweredEvaluation();
+                _unpoweredZeroStateLatched = true;
+                _noEdgeZeroStateLatched = false;
+                return default;
+            }
+
+            _unpoweredZeroStateLatched = false;
+            _noEdgeZeroStateLatched = false;
             EnsureWorkingCapacity(_nodeCount, ConsumerCount);
             EnsureSummaryBuffers();
 
@@ -2452,7 +2517,8 @@ namespace Hecton8.Power
 
         private JobHandle ScheduleEvaluationSlice(bool relaxationSliceOnly)
         {
-            ResolveAdaptiveSolveWindow(out int solveStartNode, out int solveNodeCount);
+            float qualityWeight = ResolveEvaluationQualityWeight();
+            ResolveAdaptiveSolveWindow(qualityWeight, out int solveStartNode, out int solveNodeCount);
             _lastPowerBlackBoxSolveStartNode = solveStartNode;
             _lastPowerBlackBoxSolveNodeCount = solveNodeCount;
 
@@ -2466,7 +2532,7 @@ namespace Hecton8.Power
                 SolveNodeCount = solveNodeCount,
                 BaseAwakeIndex = _baseAwakeIndex,
                 RelaxationSliceOnly = relaxationSliceOnly ? (byte)1 : (byte)0,
-                GlobalQualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight,
+                GlobalQualityWeight = qualityWeight,
                 Nodes = _nodeBuffer,
                 EdgeOffsets = _edgeOffsets,
                 EdgeDestinations = _edgeDestinations,
@@ -2514,7 +2580,7 @@ namespace Hecton8.Power
             return _evaluateGraphJobHandle;
         }
 
-        private void ResolveAdaptiveSolveWindow(out int solveStartNode, out int solveNodeCount)
+        private void ResolveAdaptiveSolveWindow(float globalQualityWeight, out int solveStartNode, out int solveNodeCount)
         {
             solveStartNode = 0;
             solveNodeCount = _nodeCount;
@@ -2533,7 +2599,7 @@ namespace Hecton8.Power
             if (_adaptiveSolveRemainingNodes <= 0 || _adaptiveSolveRemainingNodes > _nodeCount)
                 _adaptiveSolveRemainingNodes = _nodeCount;
 
-            int solveBudget = ResolveAdaptiveSolveNodesPerFrame(PowerSolverConvergenceMath.AuthoritativeQualityWeight);
+            int solveBudget = ResolveAdaptiveSolveNodesPerFrame(globalQualityWeight);
             int contiguousNodeCount = _nodeCount - _adaptiveSolveCursor;
             solveStartNode = _adaptiveSolveCursor;
             solveNodeCount = math.min(
@@ -2549,9 +2615,58 @@ namespace Hecton8.Power
             _scheduledSolveNodeCount = solveNodeCount;
         }
 
+        private static float ResolveEvaluationQualityWeight()
+        {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, PowerSolverConvergenceMath.AuthoritativeQualityWeight);
+
+            return PowerSolverConvergenceMath.AuthoritativeQualityWeight;
+        }
+
         private static int ResolveAdaptiveSolveNodesPerFrame(float globalQualityWeight)
         {
-            return UltraAdaptiveSolveNodesPerFrame;
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float lowToMiddle = math.lerp(LowAdaptiveSolveNodesPerFrame, Mx350AdaptiveSolveNodesPerFrame, math.saturate(q * 3f));
+            float middleToHigh = math.lerp(Mx350AdaptiveSolveNodesPerFrame, MidAdaptiveSolveNodesPerFrame, math.saturate((q - 0.33f) * 3f));
+            float highToUltra = math.lerp(HighAdaptiveSolveNodesPerFrame, UltraAdaptiveSolveNodesPerFrame, math.saturate((q - 0.66f) * 3f));
+            float lowerBand = math.lerp(lowToMiddle, middleToHigh, math.saturate((q - 0.20f) * 2.5f));
+            return math.clamp((int)math.round(math.lerp(lowerBand, highToUltra, math.saturate((q - 0.55f) * 2.22f))), LowAdaptiveSolveNodesPerFrame, UltraAdaptiveSolveNodesPerFrame);
+        }
+
+        private void CommitUnpoweredEvaluation()
+        {
+            EnsureSummaryBuffers();
+            _adaptiveSolveCursor = 0;
+            _adaptiveSolveRemainingNodes = 0;
+            _scheduledSolveNodeCount = 0;
+            _scheduledAdaptiveSolveSlice = false;
+            ResetUnpoweredRuntimeState();
+
+            float totalConsumption = ComputeTotalConsumption();
+            _scheduledTopologySummary[0] = new TopologySummary
+            {
+                NodeCount = _nodeCount,
+                EdgeCount = _edgeCount,
+                IslandCount = _nodeCount > 0 ? 1 : 0,
+                BfsVisitedCount = 0,
+                ProducerReachableCount = 0
+            };
+            _scheduledDistributionSummary[0] = new DistributionSummary
+            {
+                TotalGeneration = 0f,
+                TotalConsumption = totalConsumption,
+                Balance = -totalConsumption,
+                SupplyRatio = totalConsumption > Epsilon ? 0f : 1f,
+                ServedDemand = 0f,
+                UnservedDemand = totalConsumption,
+                PoweredCount = 0,
+                DisabledCount = ConsumerCount,
+                HasDeficit = totalConsumption > Epsilon ? (byte)1 : (byte)0,
+                BrownoutTier = totalConsumption > Epsilon
+                    ? LogisticsBrownoutTier.EmergencyOnly
+                    : LogisticsBrownoutTier.None
+            };
+            CommitScheduledEvaluation();
         }
 
         private void CommitNoEdgeEvaluation()
@@ -2597,10 +2712,7 @@ namespace Hecton8.Power
                 node.CurrentLoad = 0f;
                 node.Potential = 0f;
                 node.Flags &= ~(LogisticsNodeFlags.Brownout | LogisticsNodeFlags.Overloaded | LogisticsNodeFlags.Dirty);
-                if (_producerMap.TryGetValue(nodeIndex, out _))
-                    node.Flags &= ~LogisticsNodeFlags.Isolated;
-                else
-                    node.Flags |= LogisticsNodeFlags.Isolated;
+                node.Flags |= LogisticsNodeFlags.Isolated;
                 _nodeBuffer[nodeIndex] = node;
                 if (_powerCapacities.IsCreated && nodeIndex < _powerCapacities.Length)
                     _powerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
@@ -2608,9 +2720,8 @@ namespace Hecton8.Power
                 {
                     byte flags = ResolvePowerGridNodeFlags(node.Flags, node.Reserved);
                     if (_producerMap.TryGetValue(nodeIndex, out _))
-                        flags |= (byte)(PowerGridNodeFlags.Source | PowerGridNodeFlags.Powered);
-                    else
-                        flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+                        flags |= (byte)PowerGridNodeFlags.Source;
+                    flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
                     _powerNodeFlags[nodeIndex] = flags;
                 }
 
@@ -2636,6 +2747,46 @@ namespace Hecton8.Power
                 _nodeBuffer[nodeIndex] = node;
                 if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
                     _powerNodeFlags[nodeIndex] = (byte)((_powerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+            }
+
+            int safeEdgeCount = math.min(_edgeCount, _edgeFlow.IsCreated ? _edgeFlow.Length : 0);
+            for (int edgeIndex = 0; edgeIndex < safeEdgeCount; edgeIndex++)
+                _edgeFlow[edgeIndex] = 0f;
+        }
+
+        private void ResetUnpoweredRuntimeState()
+        {
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+            {
+                LogisticsNode node = _nodeBuffer[nodeIndex];
+                node.CurrentLoad = 0f;
+                node.Potential = 0f;
+                node.Flags &= ~(LogisticsNodeFlags.Overloaded | LogisticsNodeFlags.Dirty);
+                if (ConsumerCount > 0)
+                    node.Flags |= LogisticsNodeFlags.Brownout;
+                _nodeBuffer[nodeIndex] = node;
+
+                if (_powerCapacities.IsCreated && nodeIndex < _powerCapacities.Length)
+                    _powerCapacities[nodeIndex] = math.max(Epsilon, node.Capacity);
+                if (_powerNodeFlags.IsCreated && nodeIndex < _powerNodeFlags.Length)
+                {
+                    byte flags = ResolvePowerGridNodeFlags(node.Flags, node.Reserved);
+                    flags = (byte)((flags | (byte)PowerGridNodeFlags.Offline) & ~(byte)PowerGridNodeFlags.Powered);
+                    _powerNodeFlags[nodeIndex] = flags;
+                }
+
+                if (_nodeNetInjection.IsCreated && (uint)nodeIndex < (uint)_nodeNetInjection.Length)
+                    _nodeNetInjection[nodeIndex] = 0f;
+                if (_nodeServedDemand.IsCreated && (uint)nodeIndex < (uint)_nodeServedDemand.Length)
+                    _nodeServedDemand[nodeIndex] = 0f;
+                if (_nodeVoltageSupplyRatio.IsCreated && (uint)nodeIndex < (uint)_nodeVoltageSupplyRatio.Length)
+                    _nodeVoltageSupplyRatio[nodeIndex] = 0f;
+                if (_nodeSourcePotential.IsCreated && (uint)nodeIndex < (uint)_nodeSourcePotential.Length)
+                    _nodeSourcePotential[nodeIndex] = 0f;
+                if (_potentialFront.IsCreated && (uint)nodeIndex < (uint)_potentialFront.Length)
+                    _potentialFront[nodeIndex] = 0f;
+                if (_potentialBack.IsCreated && (uint)nodeIndex < (uint)_potentialBack.Length)
+                    _potentialBack[nodeIndex] = 0f;
             }
 
             int safeEdgeCount = math.min(_edgeCount, _edgeFlow.IsCreated ? _edgeFlow.Length : 0);

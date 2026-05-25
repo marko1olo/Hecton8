@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_175
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_175_Snow_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Snow_Normal.png
+FINAL_FILENAME: Snow_Normal.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Heightfield source for Hecton snow or pale cryo-sediment normal map. Create shallow compacted sediment waves, fine ice-dust grain, soft opal mineral fleck relief, gentle compression ridges, and smooth current-polished troughs. This is a normal-source image, so focus on clean height logic, low amplitude, and seamless tiling for broad surfaces. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

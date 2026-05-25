@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Hecton8.Core;
 
 namespace Hecton8.Editor.HydraulicErosionForge
 {
@@ -187,7 +188,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
                 return;
 
             SetProgress(0f);
-            Debug.LogWarning("[SHINOBU_242] Hydraulic erosion bake request ignored: another bake is active.");
+            H8Debug.LogWarning("[SHINOBU_242] Hydraulic erosion bake request ignored: another bake is active.");
         }
 
         private void SetProgress(float value)

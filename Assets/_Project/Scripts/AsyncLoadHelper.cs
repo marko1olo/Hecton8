@@ -183,7 +183,7 @@ namespace Hecton8.Core
                 requestCount > 1 ? requestCount : 1);
 
 #if UNITY_EDITOR
-            Debug.LogError("AsyncLoadHelper is disabled. Runtime Resources/Addressables loading is not available in this project. Use scene-owned references, ObjectPoolManager, or an approved async content pipeline.");
+            Hecton8.Core.H8Debug.LogError("AsyncLoadHelper is disabled. Runtime Resources/Addressables loading is not available in this project. Use scene-owned references, ObjectPoolManager, or an approved async content pipeline.");
 #endif
         }
     }

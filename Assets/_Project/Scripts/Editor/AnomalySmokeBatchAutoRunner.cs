@@ -31,7 +31,7 @@ namespace Hecton8.Editor
             }
             catch (Exception exception)
             {
-                File.WriteAllText(ErrorPath, exception.ToString());
+                File.WriteAllText(ErrorPath, exception.ToString(), new UTF8Encoding(false));
             }
         }
 
@@ -53,7 +53,7 @@ namespace Hecton8.Editor
             AppendCase(builder, "openEdgeBowl", report.OpenEdgeBowl, false);
             AppendCase(builder, "dualBowl", report.DualBowl, true);
             builder.AppendLine("}");
-            File.WriteAllText(ReportPath, builder.ToString());
+            File.WriteAllText(ReportPath, builder.ToString(), new UTF8Encoding(false));
         }
 
         private static void AppendCase(

@@ -1,6 +1,7 @@
 using Hecton8.Items;
 using Hecton8.Tools;
 using Hecton8.Core;
+using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/Physical Battery Compartment")]
-    public sealed class PhysicalBatteryCompartment : MonoBehaviour, IUpdatable
+    public sealed class PhysicalBatteryCompartment : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
@@ -56,9 +57,16 @@ namespace Hecton8.Interaction
         private bool _snapBodyDetectedCollisions;
         private bool _snapInProgress;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
         private bool _tickDormant;
         private bool _batteryVisualStateCached;
         private bool _batteryVisualActive;
+        private Transform _pendingSnapPoseTransform;
+        private Vector3 _pendingSnapPoseLocalPosition;
+        private Quaternion _pendingSnapPoseLocalRotation;
+        private bool _hasPendingSnapPose;
+        private bool _hasPendingBatteryVisualRefresh;
 
         public float DoorOpen01 => _doorOpen01;
         public bool DoorOpenEnoughForSwap => _doorOpen01 >= _resolvedDoorOpenThreshold01;
@@ -100,6 +108,7 @@ namespace Hecton8.Interaction
             CacheScalarConfig();
             CacheDoorAxis();
             _batteryVisualStateCached = false;
+            TryRegisterHotSwapListener();
             ApplyDoorVisual();
             ApplyBatteryVisual();
         }
@@ -109,6 +118,23 @@ namespace Hecton8.Interaction
             AbortBatterySnap();
             _batteryVisualStateCached = false;
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            bool shouldRestoreTick = (_registeredTick && !_tickDormant)
+                || _registeredLateFrame
+                || HasPendingRuntimeWork();
+            TryUnregisterTick(false);
+            if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
+                TryRegisterTick();
         }
 
         public void SetBatteryDoorOpen01(float open01)
@@ -177,10 +203,16 @@ namespace Hecton8.Interaction
             float safeDeltaTime = SanitizeDeltaSeconds(deltaTime);
             _snapElapsedSeconds = math.min(_resolvedBatterySnapDurationSeconds, _snapElapsedSeconds + safeDeltaTime);
             float t = math.saturate(_snapElapsedSeconds / _resolvedBatterySnapDurationSeconds);
-            ApplyBatterySnapPose(t);
+            QueueBatterySnapPose(t);
 
             if (t >= 1f)
                 CompleteBatterySnap(false);
+        }
+
+        public void LateFrameTick()
+        {
+            FlushBatteryVisualRefresh();
+            FlushPendingSnapPose();
         }
 
         private bool TryResolveTool(out IBatteryTool tool)
@@ -221,6 +253,20 @@ namespace Hecton8.Interaction
             _batteryVisualStateCached = true;
         }
 
+        private void QueueBatteryVisualRefresh()
+        {
+            _hasPendingBatteryVisualRefresh = true;
+        }
+
+        private void FlushBatteryVisualRefresh()
+        {
+            if (!_hasPendingBatteryVisualRefresh)
+                return;
+
+            _hasPendingBatteryVisualRefresh = false;
+            ApplyBatteryVisual();
+        }
+
         private void BeginBatterySnap(Transform cell, Transform snapTarget, ItemData battery, float charge01)
         {
             _snappingCell = cell;
@@ -238,8 +284,6 @@ namespace Hecton8.Interaction
                 _snapBodyDetectedCollisions = _snappingCellBody.detectCollisions;
                 _snapBodyLinearVelocity = SanitizeVector(_snappingCellBody.linearVelocity, Vector3.zero);
                 _snapBodyAngularVelocity = SanitizeVector(_snappingCellBody.angularVelocity, Vector3.zero);
-                _snappingCellBody.linearVelocity = Vector3.zero;
-                _snappingCellBody.angularVelocity = Vector3.zero;
                 _snappingCellBody.isKinematic = true;
                 _snappingCellBody.detectCollisions = false;
             }
@@ -252,20 +296,58 @@ namespace Hecton8.Interaction
 
         private void ApplyBatterySnapPose(float t)
         {
-            if (_snappingCell == null)
+            if (!TryResolveBatterySnapPose(t, out Transform cell, out Vector3 position, out Quaternion rotation))
                 return;
+
+            cell.localPosition = position;
+            cell.localRotation = rotation;
+        }
+
+        private void QueueBatterySnapPose(float t)
+        {
+            if (!TryResolveBatterySnapPose(t, out Transform cell, out Vector3 position, out Quaternion rotation))
+                return;
+
+            _pendingSnapPoseTransform = cell;
+            _pendingSnapPoseLocalPosition = position;
+            _pendingSnapPoseLocalRotation = rotation;
+            _hasPendingSnapPose = true;
+        }
+
+        private bool TryResolveBatterySnapPose(float t, out Transform cell, out Vector3 position, out Quaternion rotation)
+        {
+            cell = _snappingCell;
+            position = default;
+            rotation = default;
+            if (_snappingCell == null)
+                return false;
 
             float3 fromPosition = new float3(_snapStartLocalPosition.x, _snapStartLocalPosition.y, _snapStartLocalPosition.z);
             float3 toPosition = new float3(_snapTargetLocalPosition.x, _snapTargetLocalPosition.y, _snapTargetLocalPosition.z);
-            float3 position = math.lerp(fromPosition, toPosition, t);
-            _snappingCell.localPosition = new Vector3(position.x, position.y, position.z);
+            float3 resolvedPosition = math.lerp(fromPosition, toPosition, t);
+            position = new Vector3(resolvedPosition.x, resolvedPosition.y, resolvedPosition.z);
             float4 from = _snapStartLocalRotation.value;
             float4 to = _snapTargetLocalRotation.value;
             if (math.dot(from, to) < 0f)
                 to = -to;
 
-            quaternion rotation = NormalizeQuaternionLerp(from, to, t, _snapTargetLocalRotation);
-            _snappingCell.localRotation = new Quaternion(rotation.value.x, rotation.value.y, rotation.value.z, rotation.value.w);
+            quaternion resolvedRotation = NormalizeQuaternionLerp(from, to, t, _snapTargetLocalRotation);
+            rotation = new Quaternion(resolvedRotation.value.x, resolvedRotation.value.y, resolvedRotation.value.z, resolvedRotation.value.w);
+            return true;
+        }
+
+        private void FlushPendingSnapPose()
+        {
+            if (!_hasPendingSnapPose)
+                return;
+
+            _hasPendingSnapPose = false;
+            if (_pendingSnapPoseTransform == null)
+                return;
+
+            _pendingSnapPoseTransform.localPosition = _pendingSnapPoseLocalPosition;
+            _pendingSnapPoseTransform.localRotation = _pendingSnapPoseLocalRotation;
+            _pendingSnapPoseTransform = null;
         }
 
         private static quaternion NormalizeQuaternionLerp(float4 from, float4 to, float t, quaternion fallback)
@@ -280,7 +362,7 @@ namespace Hecton8.Interaction
 
         private void CompleteBatterySnap(bool unregisterTick = true)
         {
-            ApplyBatterySnapPose(1f);
+            QueueBatterySnapPose(1f);
             bool inserted = TryResolveTool(out IBatteryTool tool) && !tool.HasBattery &&
                             tool.InsertBattery(_pendingBattery, _pendingCharge01);
             if (!inserted)
@@ -306,7 +388,7 @@ namespace Hecton8.Interaction
             _snapBodyLinearVelocity = Vector3.zero;
             _snapBodyAngularVelocity = Vector3.zero;
             _snapInProgress = false;
-            ApplyBatteryVisual();
+            QueueBatteryVisualRefresh();
             if (unregisterTick)
                 TryUnregisterTick();
             else
@@ -335,7 +417,7 @@ namespace Hecton8.Interaction
             _snapBodyLinearVelocity = Vector3.zero;
             _snapBodyAngularVelocity = Vector3.zero;
             _snapInProgress = false;
-            ApplyBatteryVisual();
+            QueueBatteryVisualRefresh();
             if (unregisterTick)
                 TryUnregisterTick();
             else
@@ -347,16 +429,24 @@ namespace Hecton8.Interaction
             if (_snappingCell == null)
                 return;
 
-            if (IsFiniteVector(_snapStartLocalPosition))
-                _snappingCell.localPosition = _snapStartLocalPosition;
-
             Quaternion startRotation = new Quaternion(
                 _snapStartLocalRotation.value.x,
                 _snapStartLocalRotation.value.y,
                 _snapStartLocalRotation.value.z,
                 _snapStartLocalRotation.value.w);
-            if (IsFiniteQuaternion(startRotation))
-                _snappingCell.localRotation = startRotation;
+            if (IsFiniteQuaternion(startRotation) && IsFiniteVector(_snapStartLocalPosition))
+                QueueSnappingCellPose(_snapStartLocalPosition, startRotation);
+        }
+
+        private void QueueSnappingCellPose(Vector3 localPosition, Quaternion localRotation)
+        {
+            if (_snappingCell == null)
+                return;
+
+            _pendingSnapPoseTransform = _snappingCell;
+            _pendingSnapPoseLocalPosition = localPosition;
+            _pendingSnapPoseLocalRotation = localRotation;
+            _hasPendingSnapPose = true;
         }
 
         private void RestoreSnappingCellBodyState()
@@ -366,8 +456,7 @@ namespace Hecton8.Interaction
 
             _snappingCellBody.isKinematic = _snapBodyWasKinematic;
             _snappingCellBody.detectCollisions = _snapBodyDetectedCollisions;
-            _snappingCellBody.linearVelocity = _snapBodyLinearVelocity;
-            _snappingCellBody.angularVelocity = _snapBodyAngularVelocity;
+            QueueBodyVelocityRestore(_snappingCellBody, _snapBodyLinearVelocity, _snapBodyAngularVelocity);
         }
 
         private void LockInsertedCellBodyState()
@@ -375,10 +464,24 @@ namespace Hecton8.Interaction
             if (_snappingCellBody == null)
                 return;
 
-            _snappingCellBody.linearVelocity = Vector3.zero;
-            _snappingCellBody.angularVelocity = Vector3.zero;
             _snappingCellBody.isKinematic = true;
             _snappingCellBody.detectCollisions = false;
+        }
+
+        private static void QueueBodyVelocityRestore(Rigidbody body, Vector3 targetLinearVelocity, Vector3 targetAngularVelocity)
+        {
+            if (body == null)
+                return;
+
+            Vector3 currentLinearVelocity = SanitizeVector(body.linearVelocity, Vector3.zero);
+            Vector3 linearDelta = SanitizeVector(targetLinearVelocity - currentLinearVelocity, Vector3.zero);
+            if (linearDelta.sqrMagnitude > 0.000001f)
+                PhysicsForceRouter.QueueForce(body, linearDelta, ForceMode.VelocityChange);
+
+            Vector3 currentAngularVelocity = SanitizeVector(body.angularVelocity, Vector3.zero);
+            Vector3 angularDelta = SanitizeVector(targetAngularVelocity - currentAngularVelocity, Vector3.zero);
+            if (angularDelta.sqrMagnitude > 0.000001f)
+                PhysicsForceRouter.QueueTorque(body, angularDelta, ForceMode.VelocityChange);
         }
 
         private static void ResolveSnapTargetLocalPose(
@@ -422,22 +525,61 @@ namespace Hecton8.Interaction
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
             if (_registeredTick)
                 _tickDormant = false;
         }
 
-        private void TryUnregisterTick()
+        private void TryUnregisterTick(bool clearPending = true)
         {
-            if (!_registeredTick)
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
+
+            if (clearPending)
+            {
+                _hasPendingSnapPose = false;
+                _hasPendingBatteryVisualRefresh = false;
+                _pendingSnapPoseTransform = null;
+            }
+
+            _tickDormant = false;
+        }
+
+        private bool HasPendingRuntimeWork()
+        {
+            return _snapInProgress || _hasPendingSnapPose || _hasPendingBatteryVisualRefresh;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registeredTick = false;
-            _tickDormant = false;
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void CacheDoorAxis()

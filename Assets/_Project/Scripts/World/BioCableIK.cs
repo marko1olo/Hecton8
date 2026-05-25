@@ -120,7 +120,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            _splineLinkId = GetInstanceID();
+            _splineLinkId = GetEntityId().GetHashCode();
             ResolveRuntimeWiring();
             EnsureStorage();
             EnsureChargeEffects();

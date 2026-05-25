@@ -9,6 +9,13 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
     [InitializeOnLoad]
     public static class OfflineWreckageLayoutValidator
     {
+        private const int DamageStateMappingStrideBytes = 32;
+        private const int BakeVertexStrideBytes = 64;
+        private const int DeformationProfileStrideBytes = 64;
+        private const int BakeCountersStrideBytes = 64;
+        private const int TelemetryStrideBytes = 64;
+        private const int SubMeshIndexRangeStrideBytes = 16;
+
         static OfflineWreckageLayoutValidator()
         {
             Validate(logSuccess: false);
@@ -23,22 +30,22 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
         public static bool Validate(bool logSuccess)
         {
             bool ok = true;
-            ok &= ValidateSize<MeshDamageStateMappingDTO>(32);
+            ok &= ValidateSize<MeshDamageStateMappingDTO>(DamageStateMappingStrideBytes);
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.PristineMeshHash), 0);
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.StressedMeshHash), 4);
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.RupturedMeshHash), 8);
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO.CollapsedMeshHash), 12);
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO._pad0), 16);
             ok &= ValidateOffset<MeshDamageStateMappingDTO>(nameof(MeshDamageStateMappingDTO._pad1), 24);
-            ok &= ValidateSize<OfflineWreckageBakeVertexDTO>(64);
+            ok &= ValidateSize<OfflineWreckageBakeVertexDTO>(BakeVertexStrideBytes);
             ok &= ValidateOffset<OfflineWreckageBakeVertexDTO>(nameof(OfflineWreckageBakeVertexDTO.Position), 0);
             ok &= ValidateOffset<OfflineWreckageBakeVertexDTO>(nameof(OfflineWreckageBakeVertexDTO.Normal), 12);
             ok &= ValidateOffset<OfflineWreckageBakeVertexDTO>(nameof(OfflineWreckageBakeVertexDTO.Tangent), 24);
             ok &= ValidateOffset<OfflineWreckageBakeVertexDTO>(nameof(OfflineWreckageBakeVertexDTO.Uv0), 40);
             ok &= ValidateOffset<OfflineWreckageBakeVertexDTO>(nameof(OfflineWreckageBakeVertexDTO.PackedColor), 48);
             ok &= ValidateOffset<OfflineWreckageBakeVertexDTO>(nameof(OfflineWreckageBakeVertexDTO.Uv3AupLocal), 52);
-            ok &= ValidateSize<WreckageDeformationProfileDTO>(64);
-            ok &= ValidateSize<OfflineWreckageBakeCounters64>(64);
+            ok &= ValidateSize<WreckageDeformationProfileDTO>(DeformationProfileStrideBytes);
+            ok &= ValidateSize<OfflineWreckageBakeCounters64>(BakeCountersStrideBytes);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64.ActiveVertexCount), 0);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64.TornVertexCount), 4);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64.DegenerateTriangleCount), 8);
@@ -50,8 +57,8 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad3), 40);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad4), 48);
             ok &= ValidateOffset<OfflineWreckageBakeCounters64>(nameof(OfflineWreckageBakeCounters64._pad5), 56);
-            ok &= ValidateSize<OfflineWreckageTelemetryEntry>(64);
-            ok &= ValidateSize<OfflineWreckageSubMeshIndexRangeDTO>(16);
+            ok &= ValidateSize<OfflineWreckageTelemetryEntry>(TelemetryStrideBytes);
+            ok &= ValidateSize<OfflineWreckageSubMeshIndexRangeDTO>(SubMeshIndexRangeStrideBytes);
             ok &= ValidateOffset<OfflineWreckageSubMeshIndexRangeDTO>(nameof(OfflineWreckageSubMeshIndexRangeDTO.SourceIndexStart), 0);
             ok &= ValidateOffset<OfflineWreckageSubMeshIndexRangeDTO>(nameof(OfflineWreckageSubMeshIndexRangeDTO.IndexCount), 4);
             ok &= ValidateOffset<OfflineWreckageSubMeshIndexRangeDTO>(nameof(OfflineWreckageSubMeshIndexRangeDTO.DestinationIndexStart), 8);

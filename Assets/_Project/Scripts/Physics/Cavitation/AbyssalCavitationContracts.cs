@@ -1,5 +1,5 @@
 using System;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
 using System.Reflection;
 #endif
 using System.Runtime.CompilerServices;
@@ -127,6 +127,7 @@ namespace Hecton8.Physics
         public const uint ForceSaturated = 1u << 2;
         public const uint MockFallback = 1u << 3;
         public const uint EpsilonClamped = 1u << 4;
+        public const uint SignalDrop = 1u << 5;
     }
 
     public static class AbyssalCavitationSdfFlags
@@ -327,7 +328,7 @@ namespace Hecton8.Physics
 
         public static bool Validate()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             return UnsafeUtility.SizeOf<ShockwaveEventDTO>() == ShockwaveEventSize &&
                    UnsafeUtility.GetFieldOffset(Field<ShockwaveEventDTO>(nameof(ShockwaveEventDTO.EpicenterAUP))) == 0 &&
                    UnsafeUtility.GetFieldOffset(Field<ShockwaveEventDTO>(nameof(ShockwaveEventDTO.CurrentRadius))) == 24 &&
@@ -376,13 +377,13 @@ namespace Hecton8.Physics
 
         public static void ValidateOrThrow()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!Validate())
                 throw new InvalidOperationException("SHINOBU_248 cavitation DTO layout mismatch. Expected explicit 32-byte force packet and aligned shockwave DTOs.");
 #endif
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private static FieldInfo Field<T>(string name)
         {
             return typeof(T).GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -468,6 +469,7 @@ namespace Hecton8.Physics
         }
     }
 
+    #if UNITY_EDITOR
     public static class AbyssalCavitationOrdnanceCsv
     {
         public static int Parse(ReadOnlySpan<byte> csvBytes, NativeArray<OrdnanceProfileDTO> profiles)
@@ -723,4 +725,5 @@ namespace Hecton8.Physics
             return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
         }
     }
+    #endif
 }

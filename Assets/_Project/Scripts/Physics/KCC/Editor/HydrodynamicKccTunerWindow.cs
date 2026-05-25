@@ -234,7 +234,7 @@ namespace Hecton8.Physics.KCC.Editor
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetGenerationHandle<T>(
+                handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     requiredLength,
                     SystemID.Physics,

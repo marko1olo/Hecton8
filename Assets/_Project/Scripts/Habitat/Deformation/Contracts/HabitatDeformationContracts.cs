@@ -6,7 +6,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.Habitat.Deformation.Contracts
 {
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    internal static class HabitatDeformationContractLayout
+    {
+        public const int ModuleDeformationSampleStrideBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = HabitatDeformationContractLayout.ModuleDeformationSampleStrideBytes)]
     public readonly struct HabitatModuleDeformationSample
     {
         [FieldOffset(0)] public readonly uint NodeId;
@@ -48,6 +53,12 @@ namespace Hecton8.Habitat.Deformation.Contracts
 
 namespace Hecton8.Habitat.Deformation
 {
+    internal static class StructuralIntegrityContractLayout
+    {
+        public const int IntegrityStateStrideBytes = 32;
+        public const int StructuralTuningStrideBytes = 96;
+    }
+
     public static class StructuralIntegrityConstants
     {
         public const int MaxNodeCapacity = 4096;
@@ -68,6 +79,7 @@ namespace Hecton8.Habitat.Deformation
         public const uint StateFlagLeakEmitted = 1u << 2;
         public const uint StateFlagWarn80Emitted = 1u << 3;
         public const uint StateFlagWarn90Emitted = 1u << 4;
+        public const uint StateFlagSignalDrop = 1u << 5;
         public const uint StateFlagNonFinite = 1u << 31;
 
         public const byte EdgeFlagSevered = 1 << 0;
@@ -75,9 +87,10 @@ namespace Hecton8.Habitat.Deformation
         public const uint TelemetryFlagNonFinite = 1u << 0;
         public const uint TelemetryFlagMassCollapse = 1u << 1;
         public const uint TelemetryFlagSdfFallback = 1u << 2;
+        public const uint TelemetryFlagSignalDrop = 1u << 3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = StructuralIntegrityContractLayout.IntegrityStateStrideBytes)]
     public unsafe struct IntegrityStateDTO
     {
         [FieldOffset(0)] public uint NodeHash;
@@ -103,7 +116,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = StructuralIntegrityContractLayout.StructuralTuningStrideBytes)]
     public struct StructuralTuningDTO
     {
         [FieldOffset(0)] public double3 SeaLevelAup;

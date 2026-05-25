@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
@@ -40,6 +39,7 @@ namespace Hecton8.Core
         private const int ListenerCapacity = 16;
         private const int PointOfInterestListenerCapacity = 8;
         private const int PendingEventCapacity = 16;
+        private const int DiscoveryIdCapacity = 64;
         private const uint NarrativeListenerOverflowWarningHash = 0x4E41564Cu; // NAVL
         private const uint NarrativeListenerContextHash = 0x4E415652u; // NAVR
         private const uint NarrativeListenerExceptionWarningHash = 0x4E415645u; // NAVE
@@ -65,6 +65,20 @@ namespace Hecton8.Core
             public void Clear()
             {
                 Listener = null;
+            }
+        }
+
+        private struct DiscoveryIdSlot
+        {
+            public uint DiscoveryHash;
+            public string DiscoveryId;
+            public byte IsValid;
+
+            public void Clear()
+            {
+                DiscoveryHash = 0u;
+                DiscoveryId = null;
+                IsValid = 0;
             }
         }
 
@@ -200,10 +214,11 @@ namespace Hecton8.Core
         private static readonly NarrativePointOfInterestListenerSlot[] _deferredPoiRegisterListeners = new NarrativePointOfInterestListenerSlot[PointOfInterestListenerCapacity];
         // COLD ALLOC: NarrativePointOfInterestListenerSlot[8] - POI listener removals deferred while dispatching direct callbacks - owner: NarrativeEvents
         private static readonly NarrativePointOfInterestListenerSlot[] _deferredPoiUnregisterListeners = new NarrativePointOfInterestListenerSlot[PointOfInterestListenerCapacity];
-        // COLD ALLOC: Dictionary<uint,string>[64] - hashed narrative discovery id lookup for queue listeners that still persist authored ids - owner: NarrativeEvents
-        private static readonly Dictionary<uint, string> _discoveryIdsByHash = new Dictionary<uint, string>(64);
+        // COLD ALLOC: DiscoveryIdSlot[64] - fixed hashed narrative discovery id lookup for cold listener resolution - owner: NarrativeEvents
+        private static readonly DiscoveryIdSlot[] _discoveryIdsByHash = new DiscoveryIdSlot[DiscoveryIdCapacity];
         private static NativeQueue<NarrativeEventPayload> _pendingEvents;
         private static NativeQueue<NarrativeEventPayload> _nextFrameEvents;
+        private static int _discoveryIdCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
@@ -246,7 +261,7 @@ namespace Hecton8.Core
 
             _listeners.Clear();
             _pointOfInterestListeners.Clear();
-            _discoveryIdsByHash.Clear();
+            ClearDiscoveryIds();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
             Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             Array.Clear(_deferredPoiRegisterListeners, 0, _deferredPoiRegisterCount);
@@ -340,7 +355,10 @@ namespace Hecton8.Core
                     return;
 
                 if (!_pendingEvents.TryDequeue(out NarrativeEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -381,13 +399,13 @@ namespace Hecton8.Core
 
         public static bool TryResolveDiscoveryId(uint discoveryHash, out string discoveryId)
         {
-            return _discoveryIdsByHash.TryGetValue(discoveryHash, out discoveryId);
+            return TryResolveDiscoveryIdSlot(discoveryHash, out discoveryId);
         }
 
-        public static void RaiseNarrativePOIRegistered(NarrativeDiscovery poi)
+        public static bool TryNotifyNarrativePOIRegistered(NarrativeDiscovery poi)
         {
             if (poi == null || _pointOfInterestListeners.Count <= 0)
-                return;
+                return false;
 
             int count = _pointOfInterestListeners.Count;
             _isDispatchingPointOfInterest = true;
@@ -415,12 +433,20 @@ namespace Hecton8.Core
                 _isDispatchingPointOfInterest = false;
                 ApplyDeferredPointOfInterestListenerMutations();
             }
+
+            return true;
         }
 
-        public static void RaiseNarrativePOIDisposed(NarrativeDiscovery poi)
+        [Obsolete("Narrative POI direct callbacks must use TryNotifyNarrativePOIRegistered so dispatch success is explicit.", true)]
+        public static void RaiseNarrativePOIRegistered(NarrativeDiscovery poi)
+        {
+            TryNotifyNarrativePOIRegistered(poi);
+        }
+
+        public static bool TryNotifyNarrativePOIDisposed(NarrativeDiscovery poi)
         {
             if (poi == null || _pointOfInterestListeners.Count <= 0)
-                return;
+                return false;
 
             int count = _pointOfInterestListeners.Count;
             _isDispatchingPointOfInterest = true;
@@ -448,22 +474,51 @@ namespace Hecton8.Core
                 _isDispatchingPointOfInterest = false;
                 ApplyDeferredPointOfInterestListenerMutations();
             }
+
+            return true;
         }
 
+        [Obsolete("Narrative POI direct callbacks must use TryNotifyNarrativePOIDisposed so dispatch success is explicit.", true)]
+        public static void RaiseNarrativePOIDisposed(NarrativeDiscovery poi)
+        {
+            TryNotifyNarrativePOIDisposed(poi);
+        }
+
+        [Obsolete("Use TryRaiseDiscoveryMade(uint discoveryHash). String ingress is not allowed on first-party event lanes.", true)]
         public static void RaiseDiscoveryMade(string discoveryId)
+        {
+            TryRaiseDiscoveryMadeFromString(discoveryId);
+        }
+
+        private static bool TryRaiseDiscoveryMadeFromString(string discoveryId)
         {
             uint discoveryHash = ComputeDiscoveryHash(discoveryId);
             if (discoveryHash == 0u)
-                return;
+                return false;
 
-            if (!RaiseDiscoveryMade(discoveryHash))
-                return;
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow((ushort)NarrativeEventType.DiscoveryMade);
+                return false;
+            }
 
-            if (!_discoveryIdsByHash.ContainsKey(discoveryHash))
-                _discoveryIdsByHash.Add(discoveryHash, discoveryId);
+            if (!TryRegisterDiscoveryId(discoveryHash, discoveryId))
+            {
+                ReportQueueOverflow((ushort)NarrativeEventType.DiscoveryMade);
+                return false;
+            }
+
+            return TryRaiseDiscoveryMade(discoveryHash);
         }
 
+        [Obsolete("Use TryRaiseDiscoveryMade(uint discoveryHash) so overflow/drop semantics stay visible at the producer.", true)]
         public static bool RaiseDiscoveryMade(uint discoveryHash)
+        {
+            return TryRaiseDiscoveryMade(discoveryHash);
+        }
+
+        public static bool TryRaiseDiscoveryMade(uint discoveryHash)
         {
             if (discoveryHash == 0u)
                 return false;
@@ -476,20 +531,41 @@ namespace Hecton8.Core
             });
         }
 
+        [Obsolete("Use TryRaiseAudioLogFound(uint logHash). String ingress is not allowed on first-party event lanes.", true)]
         public static void RaiseAudioLogFound(string logId)
+        {
+            TryRaiseAudioLogFoundFromString(logId);
+        }
+
+        private static bool TryRaiseAudioLogFoundFromString(string logId)
         {
             uint logHash = ComputeDiscoveryHash(logId);
             if (logHash == 0u)
-                return;
+                return false;
 
-            if (!RaiseAudioLogFound(logHash))
-                return;
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow((ushort)NarrativeEventType.AudioLogFound);
+                return false;
+            }
 
-            if (!_discoveryIdsByHash.ContainsKey(logHash))
-                _discoveryIdsByHash.Add(logHash, logId);
+            if (!TryRegisterDiscoveryId(logHash, logId))
+            {
+                ReportQueueOverflow((ushort)NarrativeEventType.AudioLogFound);
+                return false;
+            }
+
+            return TryRaiseAudioLogFound(logHash);
         }
 
+        [Obsolete("Use TryRaiseAudioLogFound(uint logHash) so overflow/drop semantics stay visible at the producer.", true)]
         public static bool RaiseAudioLogFound(uint logHash)
+        {
+            return TryRaiseAudioLogFound(logHash);
+        }
+
+        public static bool TryRaiseAudioLogFound(uint logHash)
         {
             if (logHash == 0u)
                 return false;
@@ -502,14 +578,76 @@ namespace Hecton8.Core
             });
         }
 
+        [Obsolete("Use TryRaiseDepthTierReached(int tier) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseDepthTierReached(int tier)
         {
-            Enqueue(new NarrativeEventPayload
+            TryRaiseDepthTierReached(tier);
+        }
+
+        public static bool TryRaiseDepthTierReached(int tier)
+        {
+            return Enqueue(new NarrativeEventPayload
             {
                 DiscoveryHash = 0u,
                 EventType = (ushort)NarrativeEventType.DepthTierReached,
                 DepthTier = (short)tier
             });
+        }
+
+        private static bool TryRegisterDiscoveryId(uint discoveryHash, string discoveryId)
+        {
+            if (discoveryHash == 0u)
+                return false;
+
+            if (TryFindDiscoveryId(discoveryHash, out _))
+                return true;
+
+            if (_discoveryIdCount >= _discoveryIdsByHash.Length)
+                return false;
+
+            _discoveryIdsByHash[_discoveryIdCount++] = new DiscoveryIdSlot
+            {
+                DiscoveryHash = discoveryHash,
+                DiscoveryId = discoveryId,
+                IsValid = 1
+            };
+            return true;
+        }
+
+        private static bool TryResolveDiscoveryIdSlot(uint discoveryHash, out string discoveryId)
+        {
+            if (TryFindDiscoveryId(discoveryHash, out int index))
+            {
+                discoveryId = _discoveryIdsByHash[index].DiscoveryId ?? string.Empty;
+                return true;
+            }
+
+            discoveryId = string.Empty;
+            return false;
+        }
+
+        private static bool TryFindDiscoveryId(uint discoveryHash, out int index)
+        {
+            for (int i = 0; i < _discoveryIdCount; i++)
+            {
+                DiscoveryIdSlot slot = _discoveryIdsByHash[i];
+                if (slot.IsValid != 0 && slot.DiscoveryHash == discoveryHash)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = -1;
+            return false;
+        }
+
+        private static void ClearDiscoveryIds()
+        {
+            for (int i = 0; i < _discoveryIdCount; i++)
+                _discoveryIdsByHash[i].Clear();
+
+            _discoveryIdCount = 0;
         }
 
         private static bool Enqueue(in NarrativeEventPayload payload)
@@ -606,7 +744,10 @@ namespace Hecton8.Core
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -882,7 +1023,7 @@ namespace Hecton8.Core
         private static void ReportQueueOverflow(ushort eventType)
         {
             _droppedEventCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastQueueOverflowTelemetryFrame == frame)
                 return;
 
@@ -896,7 +1037,7 @@ namespace Hecton8.Core
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -910,7 +1051,7 @@ namespace Hecton8.Core
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

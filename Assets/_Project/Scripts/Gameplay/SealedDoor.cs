@@ -51,7 +51,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class SealedDoor : MonoBehaviour, ICuttable, ITickable, IUpdatable, IWfcDoorLaserCutTarget
+    public sealed class SealedDoor : MonoBehaviour, ICuttable, ITickable, IUpdatable, ILateFrameTickable, IWfcDoorLaserCutTarget, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
@@ -153,6 +153,16 @@ namespace Hecton8.Gameplay
         private IAudioService _cachedAudioService;
         private AbsoluteUniversePosition _cachedRuntimeOriginAup;
         private bool _hasCachedRuntimeOriginAup;
+        private bool _lateFrameRegistered;
+        private bool _registeredHotSwap;
+        private bool _pendingProgressVisualDirty;
+        private bool _pendingProgressVisualReset;
+        private bool _pendingCuttingVfx;
+        private bool _pendingOpenedVfx;
+        private bool _pendingCuttingAudio;
+        private bool _pendingOpenAudio;
+        private bool _pendingOpenAnimatorTrigger;
+        private float _pendingProgressVisualValue;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for progress VFX.
@@ -286,7 +296,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
-            _collider = GetComponent<Collider>();
+            TryGetComponent(out _collider);
             LaserCutterTargetRegistry.RegisterDoor(this, _collider);
             _openTriggerHash = Animator.StringToHash(string.IsNullOrEmpty(openTriggerName) ? "Open" : openTriggerName);
             CacheColdDependencies();
@@ -310,6 +320,7 @@ namespace Hecton8.Gameplay
         {
             CacheColdDependencies();
             RefreshCachedRuntimeOriginAup();
+            TryRegisterHotSwapListener();
             LaserCutterTargetRegistry.RegisterDoor(this, _collider);
             ResetState();
         }
@@ -317,6 +328,8 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             LaserCutterTargetRegistry.UnregisterDoor(this, _collider);
+            StopLateFrameTicking();
+            TryUnregisterHotSwapListener();
             ClearWfcOutpostPersistence();
             ClearColdDependencies();
             _cachedRuntimeOriginAup = default;
@@ -326,6 +339,8 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             LaserCutterTargetRegistry.UnregisterDoor(this, _collider);
+            StopLateFrameTicking();
+            TryUnregisterHotSwapListener();
             ClearColdDependencies();
             _cachedRuntimeOriginAup = default;
             _hasCachedRuntimeOriginAup = false;
@@ -347,6 +362,24 @@ namespace Hecton8.Gameplay
             //   - Progress decay when not cutting
             //   - Visual effects during cutting
             //   - Audio loop management
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                bool shouldRestoreLateFrame = _lateFrameRegistered || HasPendingLateFrameWork();
+                StopLateFrameTicking();
+                if (shouldRestoreLateFrame && currentService != null && isActiveAndEnabled)
+                    StartLateFrameTicking();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                _cachedAudioService = currentService as IAudioService;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -475,14 +508,9 @@ namespace Hecton8.Gameplay
             _state = DoorState.Cutting;
             _isBeingCut = true;
 
-            PublishDoorGpuVfx(0.55f, DebrisSpawnSignal.DebrisKindSparks);
+            QueueDoorGpuVfx(DebrisSpawnSignal.DebrisKindSparks);
 
-            // Play cutting sound
-            IAudioService audio = _cachedAudioService;
-            if (cuttingLoopSound != null && audio != null)
-            {
-                audio.PlayAtPoint(cuttingLoopSound, _transform.position, cuttingVolume);
-            }
+            QueueDoorAudio(cutting: true);
 
             // Fire started event
             OnCuttingStarted?.Invoke();
@@ -495,20 +523,10 @@ namespace Hecton8.Gameplay
             _state = DoorState.Opened;
             _isBeingCut = false;
 
-            PublishDoorGpuVfx(1f, DebrisSpawnSignal.DebrisKindRockShard);
+            QueueDoorGpuVfx(DebrisSpawnSignal.DebrisKindRockShard);
 
-            // Play open sound
-            IAudioService audio = _cachedAudioService;
-            if (openSound != null && audio != null)
-            {
-                audio.PlayAtPoint(openSound, _transform.position, openVolume);
-            }
-
-            // Trigger animation
-            if (animator != null)
-            {
-                animator.SetTrigger(_openTriggerHash);
-            }
+            QueueDoorAudio(cutting: false);
+            QueueOpenAnimatorTrigger();
 
             // Disable collider
             if (_collider != null)
@@ -535,7 +553,7 @@ namespace Hecton8.Gameplay
             float clampedProgress = Mathf.Clamp01(progressNormalized);
             if (force || ShouldPublishProgress(clampedProgress, _lastVisualProgress))
             {
-                UpdateProgressVisuals(clampedProgress);
+                QueueProgressVisuals(clampedProgress);
                 _lastVisualProgress = clampedProgress;
             }
 
@@ -554,6 +572,14 @@ namespace Hecton8.Gameplay
                    Mathf.Abs(currentProgress - lastProgress) >= ProgressPublishEpsilon;
         }
 
+        private void QueueProgressVisuals(float progressNormalized)
+        {
+            _pendingProgressVisualValue = math.saturate(progressNormalized);
+            _pendingProgressVisualDirty = true;
+            _pendingProgressVisualReset = false;
+            StartLateFrameTicking();
+        }
+
         private void UpdateProgressVisuals(float progressNormalized)
         {
             if (doorRenderer == null) return;
@@ -568,13 +594,138 @@ namespace Hecton8.Gameplay
 
         private void ResetProgressVisuals()
         {
+            _pendingProgressVisualValue = 0f;
+            _pendingProgressVisualDirty = true;
+            _pendingProgressVisualReset = true;
+            _lastVisualProgress = 0f;
+            StartLateFrameTicking();
+        }
+
+        private void ApplyProgressVisualsReset()
+        {
             if (doorRenderer == null) return;
             if (_mpb == null) return;
 
             doorRenderer.GetPropertyBlock(_mpb);
             _mpb.SetFloat(_ProgressID, 0f);
             doorRenderer.SetPropertyBlock(_mpb);
-            _lastVisualProgress = 0f;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_pendingProgressVisualDirty)
+            {
+                _pendingProgressVisualDirty = false;
+                if (_pendingProgressVisualReset)
+                    ApplyProgressVisualsReset();
+                else
+                    UpdateProgressVisuals(_pendingProgressVisualValue);
+                _pendingProgressVisualReset = false;
+            }
+
+            if (_pendingCuttingVfx)
+            {
+                _pendingCuttingVfx = false;
+                PublishDoorGpuVfx(0.55f, DebrisSpawnSignal.DebrisKindSparks);
+            }
+
+            if (_pendingOpenedVfx)
+            {
+                _pendingOpenedVfx = false;
+                PublishDoorGpuVfx(1f, DebrisSpawnSignal.DebrisKindRockShard);
+            }
+
+            IAudioService audio = _cachedAudioService;
+            if (_pendingCuttingAudio)
+            {
+                _pendingCuttingAudio = false;
+                if (cuttingLoopSound != null && audio != null)
+                    audio.PlayAtPoint(cuttingLoopSound, _transform.position, cuttingVolume);
+            }
+
+            if (_pendingOpenAudio)
+            {
+                _pendingOpenAudio = false;
+                if (openSound != null && audio != null)
+                    audio.PlayAtPoint(openSound, _transform.position, openVolume);
+            }
+
+            if (_pendingOpenAnimatorTrigger)
+            {
+                _pendingOpenAnimatorTrigger = false;
+                if (animator != null)
+                    animator.SetTrigger(_openTriggerHash);
+            }
+
+            StopLateFrameTicking();
+        }
+
+        private void QueueDoorGpuVfx(byte debrisKind)
+        {
+            if (debrisKind == DebrisSpawnSignal.DebrisKindSparks)
+                _pendingCuttingVfx = true;
+            else
+                _pendingOpenedVfx = true;
+            StartLateFrameTicking();
+        }
+
+        private void QueueDoorAudio(bool cutting)
+        {
+            if (cutting)
+                _pendingCuttingAudio = true;
+            else
+                _pendingOpenAudio = true;
+            StartLateFrameTicking();
+        }
+
+        private void QueueOpenAnimatorTrigger()
+        {
+            _pendingOpenAnimatorTrigger = true;
+            StartLateFrameTicking();
+        }
+
+        private void StartLateFrameTicking()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void StopLateFrameTicking()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
+        }
+
+        private bool HasPendingLateFrameWork()
+        {
+            return _pendingProgressVisualDirty
+                || _pendingCuttingVfx
+                || _pendingOpenedVfx
+                || _pendingCuttingAudio
+                || _pendingOpenAudio
+                || _pendingOpenAnimatorTrigger;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -705,10 +856,9 @@ namespace Hecton8.Gameplay
             _lastPublishedProgress = 1f;
             _lastVisualProgress = 1f;
 
-            UpdateProgressVisuals(1f);
+            QueueProgressVisuals(1f);
 
-            if (animator != null)
-                animator.SetTrigger(_openTriggerHash);
+            QueueOpenAnimatorTrigger();
 
             if (_collider != null)
                 _collider.enabled = false;
@@ -742,7 +892,7 @@ namespace Hecton8.Gameplay
                 SourceHash = WfcOutpostDoorSourceHash,
                 Flags = 0
             };
-            SignalBus<WfcOutpostStateChangedSignal>.Push(in signal);
+            SignalBus<WfcOutpostStateChangedSignal>.TryPush(in signal);
         }
 
         private static uint ResolveCurrentFrameId()
@@ -753,7 +903,7 @@ namespace Hecton8.Gameplay
 
         private void CacheColdDependencies()
         {
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = GlobalRegistry.Audio;
         }
 
         private void ClearColdDependencies()

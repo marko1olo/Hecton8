@@ -160,7 +160,7 @@ namespace Hecton8.Lighting.Editor
 
         private DynamicPointLightCullingDirector ResolveTargetCold()
         {
-            return Object.FindFirstObjectByType<DynamicPointLightCullingDirector>(FindObjectsInactive.Include);
+            return Object.FindAnyObjectByType<DynamicPointLightCullingDirector>(FindObjectsInactive.Include);
         }
 
         private void FindRuntimeTarget()

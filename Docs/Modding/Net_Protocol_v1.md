@@ -1,4 +1,4 @@
-# HECTON-8 Network Protocol v1
+﻿# HECTON-8 Network Protocol v1
 
 Date: 2026-05-17
 Owner: NET_SYNC_MERKLE_ARCHITECT / BACKEND_ENGINEER

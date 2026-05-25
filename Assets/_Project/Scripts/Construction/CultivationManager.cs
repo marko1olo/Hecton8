@@ -8,7 +8,6 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.World;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -19,7 +18,7 @@ namespace Hecton8.Construction
     /// into the existing base-module atmosphere, power, and hazard systems.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CultivationManager : MonoBehaviour, ISlowTickable
+    public sealed class CultivationManager : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxCultivationSlots = 4;
         private const float SlowTickDt = 0.5f;
@@ -32,9 +31,6 @@ namespace Hecton8.Construction
         private const ulong GeneRapidGrowth = (ulong)GeneticTraitProfile.GeneticTraitMask.FastGrowing;
         private const ulong DefinedCultivationGeneMask = 0x000000000000000FUL;
         private const ulong SpliceMutationGeneMask = (GeneBioluminescent | GeneOxygenProducing | GeneToxic | GeneRapidGrowth) & DefinedCultivationGeneMask;
-        private const string NativeMemoryOwner = nameof(CultivationManager);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-
         /// <summary>
         /// Fixed cultivation slot payload shared with atmosphere jobs without managed allocation.
         /// </summary>
@@ -140,8 +136,10 @@ namespace Hecton8.Construction
         [SerializeField] private int _debugDeadSlotCount;
         [SerializeField] private bool _debugHazardActive;
 
-        private NativeArray<CultivationSlotState> _slots;
+        private readonly CultivationSlotState[] _slots = new CultivationSlotState[MaxCultivationSlots];
         private bool _registered;
+        private IPlayerInventoryService _cachedInventoryService;
+        private bool _hotSwapListenerRegistered;
         private uint _slowTickSequence;
         private int _hazardZoneId;
         private int _rotHazardZoneId;
@@ -154,7 +152,7 @@ namespace Hecton8.Construction
         {
             get
             {
-                if (!_slots.IsCreated)
+                if (_slots == null)
                     return 0;
 
                 int count = 0;
@@ -168,9 +166,6 @@ namespace Hecton8.Construction
             }
         }
 
-        /// <summary>Read-only fixed cultivation slot state for atmosphere and UI consumers.</summary>
-        internal NativeArray<CultivationSlotState>.ReadOnly SlotStateReadOnly => _slots.IsCreated ? _slots.AsReadOnly() : default;
-
         private void Awake()
         {
             if (targetModule == null)
@@ -179,15 +174,15 @@ namespace Hecton8.Construction
             if (planterBridge == null)
                 TryGetComponent(out planterBridge);
 
-            // COLD ALLOC: NativeArray<CultivationSlotState>[4] - fixed cultivation slot runtime state - owner: CultivationManager
-            _slots = new NativeArray<CultivationSlotState>(MaxCultivationSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_slots, NativeMemoryOwner, nameof(_slots), NativeMemoryLifetime);
+            ClearSlots();
             _hazardZoneId = unchecked((int)EntityId.ToULong(GetEntityId()) * 397) ^ 0x43554C54;
             _rotHazardZoneId = _hazardZoneId ^ 0x524F54;
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -202,6 +197,8 @@ namespace Hecton8.Construction
             }
 
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
@@ -215,7 +212,18 @@ namespace Hecton8.Construction
             }
 
             TryUnregister();
-            DisposeSlots();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
+            ClearSlots();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+                _cachedInventoryService = currentService as IPlayerInventoryService;
         }
 
         /// <summary>
@@ -290,7 +298,7 @@ namespace Hecton8.Construction
         /// </summary>
         public int CopyBufferSnapshot(ItemData[] items, int[] quantities, ItemCatalog itemCatalog = null)
         {
-            if (items == null || quantities == null || !_slots.IsCreated)
+            if (items == null || quantities == null || _slots == null)
                 return 0;
 
             int copyCount = math.min(items.Length, quantities.Length);
@@ -312,7 +320,7 @@ namespace Hecton8.Construction
         /// </summary>
         public int CopyTraitSnapshot(uint[] geneticsMasks, float[] growthValues)
         {
-            if (geneticsMasks == null || growthValues == null || !_slots.IsCreated)
+            if (geneticsMasks == null || growthValues == null || _slots == null)
                 return 0;
 
             int copyCount = math.min(math.min(geneticsMasks.Length, growthValues.Length), _slots.Length);
@@ -330,7 +338,7 @@ namespace Hecton8.Construction
         /// </summary>
         public int CopyTraitSnapshot(ulong[] geneticsMasks, float[] growthValues)
         {
-            if (geneticsMasks == null || growthValues == null || !_slots.IsCreated)
+            if (geneticsMasks == null || growthValues == null || _slots == null)
                 return 0;
 
             int copyCount = math.min(math.min(geneticsMasks.Length, growthValues.Length), _slots.Length);
@@ -348,7 +356,7 @@ namespace Hecton8.Construction
         /// </summary>
         public int CopyTraitSnapshot(uint[] geneticsMasks, float[] growthValues, float[] qualityValues)
         {
-            if (geneticsMasks == null || growthValues == null || qualityValues == null || !_slots.IsCreated)
+            if (geneticsMasks == null || growthValues == null || qualityValues == null || _slots == null)
                 return 0;
 
             int copyCount = math.min(math.min(math.min(geneticsMasks.Length, growthValues.Length), qualityValues.Length), _slots.Length);
@@ -367,7 +375,7 @@ namespace Hecton8.Construction
         /// </summary>
         public int CopyTraitSnapshot(ulong[] geneticsMasks, float[] growthValues, float[] qualityValues)
         {
-            if (geneticsMasks == null || growthValues == null || qualityValues == null || !_slots.IsCreated)
+            if (geneticsMasks == null || growthValues == null || qualityValues == null || _slots == null)
                 return 0;
 
             int copyCount = math.min(math.min(math.min(geneticsMasks.Length, growthValues.Length), qualityValues.Length), _slots.Length);
@@ -382,6 +390,32 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
+        /// Sums mature oxygen-producing slots without exposing a retained native or managed collection view.
+        /// </summary>
+        internal float CalculateMatureOxygenUnits(float oxygenUnitsPerMaturePlant)
+        {
+            if (oxygenUnitsPerMaturePlant <= 0f || _slots == null)
+                return 0f;
+
+            float oxygenUnits = 0f;
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                CultivationSlotState slot = _slots[i];
+                if (slot.SeedItemHashId == 0 ||
+                    slot.Growth01 < MatureThreshold ||
+                    slot.Quality01 <= 0f ||
+                    (slot.GeneticsMask & GeneOxygenProducing) == 0UL)
+                {
+                    continue;
+                }
+
+                oxygenUnits += oxygenUnitsPerMaturePlant;
+            }
+
+            return oxygenUnits;
+        }
+
+        /// <summary>
         /// Persists cultivation slots into the construction module DTO.
         /// </summary>
         public void PopulateSaveData(ref ModuleDTO moduleDto, ItemCatalog itemCatalog)
@@ -392,7 +426,7 @@ namespace Hecton8.Construction
             moduleDto.cultivationGrowth01 = null;
             moduleDto.cultivationQuality01 = null;
 
-            if (!_slots.IsCreated)
+            if (_slots == null)
                 return;
 
             string[] seedIds = new string[MaxCultivationSlots];
@@ -434,7 +468,7 @@ namespace Hecton8.Construction
         public void RestoreFromSaveData(ModuleDTO moduleDto, ItemCatalog itemCatalog)
         {
             ClearSlots();
-            if (!_slots.IsCreated)
+            if (_slots == null)
                 return;
 
             int safeCount = math.max(0, moduleDto.cultivationSlotCount);
@@ -470,7 +504,7 @@ namespace Hecton8.Construction
         /// </summary>
         public void SlowTick()
         {
-            if (!_slots.IsCreated)
+            if (_slots == null)
                 return;
 
             _slowTickSequence++;
@@ -544,8 +578,9 @@ namespace Hecton8.Construction
             }
 
             float oxygenUnitsPerMaturePlant = ResolveOxygenContribution(GeneOxygenProducing);
-            if (oxygenUnitsPerMaturePlant > 0f)
-                targetModule.ApplyCultivationOxygen(this, oxygenUnitsPerMaturePlant);
+            float oxygenUnits = CalculateMatureOxygenUnits(oxygenUnitsPerMaturePlant);
+            if (oxygenUnits > 0f)
+                targetModule.ApplyCultivationOxygen(oxygenUnits);
 
             if (scrubAmount > 0f)
                 targetModule.ApplyBotanyScrub(scrubAmount);
@@ -630,7 +665,7 @@ namespace Hecton8.Construction
 
         private bool TryGetEmptySlotIndex(out int slotIndex)
         {
-            if (_slots.IsCreated)
+            if (_slots != null)
             {
                 for (int i = 0; i < _slots.Length; i++)
                 {
@@ -648,21 +683,8 @@ namespace Hecton8.Construction
 
         private void ClearSlots()
         {
-            if (!_slots.IsCreated)
-                return;
-
-            for (int i = 0; i < _slots.Length; i++)
-                _slots[i] = default;
-        }
-
-        private void DisposeSlots()
-        {
-            if (!_slots.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_slots);
-            _slots.Dispose();
-            _slots = default;
+            if (_slots != null)
+                Array.Clear(_slots, 0, _slots.Length);
         }
 
         private void ClearHazardState()
@@ -898,11 +920,38 @@ namespace Hecton8.Construction
 
         private ItemCatalog ResolveItemCatalog()
         {
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService inventoryService = _cachedInventoryService;
             PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
                 ? inventoryService.Inventory
                 : null;
             return inventory != null ? inventory.ItemCatalog : null;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedInventoryService = GlobalRegistry.PlayerInventory;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _cachedInventoryService = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private static float NormalizeQuality01(float quality01)

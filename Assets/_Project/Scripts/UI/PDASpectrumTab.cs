@@ -12,6 +12,7 @@
 //   • Pokazyvaet status sonara (posledniy puls, radius).
 // ============================================================================
 
+using System;
 using Hecton8.Environment;
 using Hecton8.Core;
 using Hecton8.Visor;
@@ -26,7 +27,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Spectrum Tab")]
-    public sealed class PDASpectrumTab : MonoBehaviour, IPDAEventListener, ISpectrumModeEventListener, ISonarSnapshotEventListener, IBiomeMatrixEventListener
+    public sealed class PDASpectrumTab : MonoBehaviour, IPDAEventListener, ISpectrumModeEventListener, ISonarSnapshotEventListener, IBiomeMatrixEventListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -68,6 +69,8 @@ namespace Hecton8.UI
         private PDAMapTab _mapTab;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapListenerRegistered;
         // COLD ALLOC: char[512] — spectrum diagnostic line assembly buffer — owner: PDASpectrumTab
         private readonly char[] _lineBuffer = new char[512];
         private int _lineLength;
@@ -118,6 +121,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CachePlayerRuntimeContextCold();
+            TryRegisterHotSwapListener();
             if (!_built) EnsureBuilt();
 
             SpectrumEvents.RegisterModeListener(this);
@@ -134,6 +139,7 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
             PDAEvents.Unregister(this);
             BiomeMatrixEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -142,7 +148,52 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
             PDAEvents.Unregister(this);
             BiomeMatrixEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             PDAEvents.AssertUnregistered(this, nameof(PDASpectrumTab));
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+            RefreshModeDisplay();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CachePlayerRuntimeContextCold()
+        {
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            if (ReferenceEquals(_cachedPlayerContext, playerContext))
+                return;
+
+            _cachedPlayerContext = playerContext;
+            _playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            _survivalSystem = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -233,7 +284,7 @@ namespace Hecton8.UI
             hBg.color = new Color(0.04f, 0.08f, 0.06f, 1f);
 
             TextMeshProUGUI title = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            title.SetText("SPECTRUM — UPRAVLENIE VIZOROM");
+            TmpTextNoAlloc.Set(title, "SPECTRUM - UPRAVLENIE VIZOROM");
             title.fontStyle = FontStyles.Bold;
             Anchor(title.rectTransform, new Vector2(0, 0), new Vector2(1, 1),
                 new Vector2(12, 0), new Vector2(-12, 0));
@@ -266,13 +317,13 @@ namespace Hecton8.UI
 
                 TextMeshProUGUI modeLabel = CreateText("ModeLabel", btn, 12f, colorText, TextAlignmentOptions.Midline);
                 modeLabel.fontStyle = FontStyles.Bold;
-                modeLabel.SetText(ModeNames[i]);
+                TmpTextNoAlloc.Set(modeLabel, ModeNames[i]);
                 Anchor(modeLabel.rectTransform, new Vector2(0, 0.5f), new Vector2(1, 1),
                     new Vector2(8, 0), new Vector2(-8, 0));
 
                 TextMeshProUGUI descLabel = CreateText("Desc", btn, 8.5f, colorDim, TextAlignmentOptions.TopLeft);
                 descLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
-                descLabel.SetText(ModeDescriptions[i]);
+                TmpTextNoAlloc.Set(descLabel, ModeDescriptions[i]);
                 Anchor(descLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0.5f),
                     new Vector2(8, 4), new Vector2(-8, 0));
 
@@ -556,7 +607,7 @@ namespace Hecton8.UI
 
         private bool TryResolveSurvivalSystem(out HectonSurvivalSystem survival)
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
                 _playerMovement = playerContext.PlayerMovement;
 
@@ -613,7 +664,7 @@ namespace Hecton8.UI
         {
             if (_playerMovement == null)
             {
-                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 if (playerContext != null)
                     _playerMovement = playerContext.PlayerMovement;
             }
@@ -645,7 +696,7 @@ namespace Hecton8.UI
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -671,13 +722,13 @@ namespace Hecton8.UI
         private void AppendInt(int value)
         {
             int clampedValue = math.clamp(value, 0, HudNumericStringCache.MaxIntegerValue);
-            Append(HudNumericStringCache.IntStrings[clampedValue]);
+            Append(HudNumericStringCache.GetIntSpan(clampedValue));
         }
 
         private void AppendDistance(int distanceMeters)
         {
             int clampedDistance = math.clamp(distanceMeters, 0, HudNumericStringCache.MaxIntegerValue);
-            Append(HudNumericStringCache.IntStrings[clampedDistance]);
+            Append(HudNumericStringCache.GetIntSpan(clampedDistance));
             Append('M');
         }
 
@@ -686,9 +737,9 @@ namespace Hecton8.UI
             int roundedTenths = math.abs((int)math.round(value * 10f));
             int maxHudTenths = HudNumericStringCache.MaxIntegerValue * 10 + 9;
             int clampedTenths = math.clamp(roundedTenths, 0, maxHudTenths);
-            Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
+            Append(HudNumericStringCache.GetIntSpan(clampedTenths / 10));
             Append('.');
-            Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
+            Append(HudNumericStringCache.GetIntSpan(clampedTenths % 10));
         }
 
         private void AppendSignedTenths(float value)
@@ -702,9 +753,9 @@ namespace Hecton8.UI
 
             int maxHudTenths = HudNumericStringCache.MaxIntegerValue * 10 + 9;
             int clampedTenths = math.clamp(roundedTenths, 0, maxHudTenths);
-            Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
+            Append(HudNumericStringCache.GetIntSpan(clampedTenths / 10));
             Append('.');
-            Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
+            Append(HudNumericStringCache.GetIntSpan(clampedTenths % 10));
         }
 
         private void AppendBiomeName(HectonBiomeMatrixProfile matrixProfile)
@@ -871,7 +922,7 @@ namespace Hecton8.UI
         private static void SetLabelText(TextMeshProUGUI label, string value)
         {
             if (label != null)
-                label.SetText(value);
+                TmpTextNoAlloc.Set(label, value);
         }
 
         private void ClearLine()
@@ -895,6 +946,16 @@ namespace Hecton8.UI
             int copyLength = math.min(value.Length, _lineBuffer.Length - _lineLength);
             for (int i = 0; i < copyLength; i++)
                 _lineBuffer[_lineLength + i] = value[i];
+            _lineLength += copyLength;
+        }
+
+        private void Append(ReadOnlySpan<char> value)
+        {
+            if (value.IsEmpty || _lineLength >= _lineBuffer.Length)
+                return;
+
+            int copyLength = math.min(value.Length, _lineBuffer.Length - _lineLength);
+            value.Slice(0, copyLength).CopyTo(_lineBuffer.AsSpan(_lineLength));
             _lineLength += copyLength;
         }
 

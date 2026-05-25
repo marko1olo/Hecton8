@@ -1,0 +1,1785 @@
+﻿{
+  "agent": "X_010",
+  "failureCount": 0,
+  "findingCount": 139,
+  "findings": [
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 61,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<UInt32,RuptureNodeState>[64] - last-known rupture state per habitat graph node - owner: BaseDegradationSystem",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 62,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<uint, RuptureNodeState> _ruptureStates = new Dictionary<uint, RuptureNodeState>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 62,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<uint, RuptureNodeState> _ruptureStates = new Dictionary<uint, RuptureNodeState>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 63,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<UInt32>[64] - stale-node scratch for rupture-state eviction after graph synchronization - owner: BaseDegradationSystem",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 64,
+      "severity": "INFO",
+      "text": "private static readonly List<uint> _staleNodeIds = new List<uint>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 64,
+      "severity": "INFO",
+      "text": "private static readonly List<uint> _staleNodeIds = new List<uint>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 65,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<Int32,Boolean>[64] - integrity-threshold latch per runtime module instance - owner: BaseDegradationSystem",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 66,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, bool> _integritySocketStates = new Dictionary<int, bool>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 66,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, bool> _integritySocketStates = new Dictionary<int, bool>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 67,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<Int32,Boolean>[64] - rupture-state mirror keyed by runtime module id for fleet arbitration - owner: BaseDegradationSystem",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 68,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, bool> _moduleRuptureStates = new Dictionary<int, bool>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 68,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, bool> _moduleRuptureStates = new Dictionary<int, bool>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 69,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<Int32,ParasiteSporeHazardState>[32] - active parasite spore room hazards keyed by runtime module id - owner: BaseDegradationSystem",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 70,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, ParasiteSporeHazardState> _parasiteSporeHazards = new Dictionary<int, ParasiteSporeHazardState>(32);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 70,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, ParasiteSporeHazardState> _parasiteSporeHazards = new Dictionary<int, ParasiteSporeHazardState>(32);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 71,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<Int32,PressureCompressionState>[64] - pressure-compressed module render state keyed by runtime module id - owner: BaseDegradationSystem",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 72,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, PressureCompressionState> _pressureCompressionStates = new Dictionary<int, PressureCompressionState>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 72,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, PressureCompressionState> _pressureCompressionStates = new Dictionary<int, PressureCompressionState>(64);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 73,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<Int32,ParasiteStructuralState>[32] - mature parasite structural-collapse latch keyed by runtime module id - owner: BaseDegradationSystem",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 74,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, ParasiteStructuralState> _parasiteStructuralStates = new Dictionary<int, ParasiteStructuralState>(32);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 74,
+      "severity": "INFO",
+      "text": "private static readonly Dictionary<int, ParasiteStructuralState> _parasiteStructuralStates = new Dictionary<int, ParasiteStructuralState>(32);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+      "line": 280,
+      "severity": "INFO",
+      "text": "Dictionary<uint, RuptureNodeState>.Enumerator enumerator = _ruptureStates.GetEnumerator();",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 102,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<StorageEndpoint>[16] \u2014 logistics storage registry \u2014 owner: BaseLogisticsNetwork",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 103,
+      "severity": "INFO",
+      "text": "private static readonly List<StorageEndpoint> s_StorageEndpoints = new List<StorageEndpoint>(16);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 103,
+      "severity": "INFO",
+      "text": "private static readonly List<StorageEndpoint> s_StorageEndpoints = new List<StorageEndpoint>(16);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 104,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<FabricatorEndpoint>[8] \u2014 fabrication endpoint registry \u2014 owner: BaseLogisticsNetwork",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 105,
+      "severity": "INFO",
+      "text": "private static readonly List<FabricatorEndpoint> s_FabricatorEndpoints = new List<FabricatorEndpoint>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 105,
+      "severity": "INFO",
+      "text": "private static readonly List<FabricatorEndpoint> s_FabricatorEndpoints = new List<FabricatorEndpoint>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 106,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<RecyclerEndpoint>[8] \u2014 recycler endpoint registry \u2014 owner: BaseLogisticsNetwork",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 107,
+      "severity": "INFO",
+      "text": "private static readonly List<RecyclerEndpoint> s_RecyclerEndpoints = new List<RecyclerEndpoint>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 107,
+      "severity": "INFO",
+      "text": "private static readonly List<RecyclerEndpoint> s_RecyclerEndpoints = new List<RecyclerEndpoint>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 316,
+      "severity": "INFO",
+      "text": "List<PowerNode> topologyNodes = grid.TopologyNodes;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 388,
+      "severity": "INFO",
+      "text": "private static int CountTopologyEdges(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount)",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 397,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = sourceNode.Neighbors;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 413,
+      "severity": "INFO",
+      "text": "private static void BuildRouteStorageCapacityFlags(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount)",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 438,
+      "severity": "INFO",
+      "text": "private static void BuildRouteCsr(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount, int edgeCount)",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 449,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = sourceNode.Neighbors;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 481,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = sourceNode.Neighbors;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 502,
+      "severity": "INFO",
+      "text": "private static bool TryResolveTopologyNodeIndex(List<PowerNode> topologyNodes, PowerNode node, out int nodeIndex)",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 587,
+      "severity": "INFO",
+      "text": "Dictionary<string, int> costs,",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "line": 623,
+      "severity": "INFO",
+      "text": "List<InventoryCost> costs,",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/Editor/OOP_Drone_Nav_Scanner.cs",
+      "line": 154,
+      "severity": "INFO",
+      "text": "json.AppendLine(\"  \\\"tokens\\\": [\\\"NavMeshAgent\\\", \\\"NavMesh.CalculatePath\\\", \\\"NavMeshPath\\\", \\\"Physics.SphereCast\\\", \\\"SphereCastAll\\\", \\\"RaycastCommand\\\", \\\"RaycastHit\\\", \\\"Queue<PathRequest>\\\", \\\"List<Vector3>\\\"],\");",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/Editor/OOP_Drone_Nav_Scanner.cs",
+      "line": 154,
+      "severity": "INFO",
+      "text": "json.AppendLine(\"  \\\"tokens\\\": [\\\"NavMeshAgent\\\", \\\"NavMesh.CalculatePath\\\", \\\"NavMeshPath\\\", \\\"Physics.SphereCast\\\", \\\"SphereCastAll\\\", \\\"RaycastCommand\\\", \\\"RaycastHit\\\", \\\"Queue<PathRequest>\\\", \\\"List<Vector3>\\\"],\");",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/Editor/OOP_Drone_Nav_Scanner.cs",
+      "line": 183,
+      "severity": "INFO",
+      "text": "json.AppendLine(\"    \\\"tokens\\\": [\\\"NavMeshAgent\\\", \\\"NavMesh.CalculatePath\\\", \\\"NavMeshPath\\\", \\\"Physics.SphereCast\\\", \\\"SphereCastAll\\\", \\\"RaycastCommand\\\", \\\"RaycastHit\\\", \\\"Queue<PathRequest>\\\", \\\"List<Vector3>\\\"],\");",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/Editor/OOP_Drone_Nav_Scanner.cs",
+      "line": 183,
+      "severity": "INFO",
+      "text": "json.AppendLine(\"    \\\"tokens\\\": [\\\"NavMeshAgent\\\", \\\"NavMesh.CalculatePath\\\", \\\"NavMeshPath\\\", \\\"Physics.SphereCast\\\", \\\"SphereCastAll\\\", \\\"RaycastCommand\\\", \\\"RaycastHit\\\", \\\"Queue<PathRequest>\\\", \\\"List<Vector3>\\\"],\");",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 263,
+      "severity": "INFO",
+      "text": "private readonly List<ModuleRecord> _moduleBuffer;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 264,
+      "severity": "INFO",
+      "text": "private readonly List<EdgeRecord> _edgeBuffer;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 265,
+      "severity": "INFO",
+      "text": "private readonly List<TemporaryBypassRecord> _temporaryBypassBuffer;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 266,
+      "severity": "INFO",
+      "text": "private readonly List<long> _submittedLinkIds;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 267,
+      "severity": "INFO",
+      "text": "private readonly List<long> _emittedRuptureEdgeVfxKeys;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 268,
+      "severity": "INFO",
+      "text": "private readonly HashSet<long> _emittedRuptureEdgeVfxLookup;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 269,
+      "severity": "INFO",
+      "text": "private readonly List<uint> _ruptureCascadeAppliedNodeIds;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 270,
+      "severity": "INFO",
+      "text": "private readonly Dictionary<uint, int> _moduleIndexByNodeId;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 271,
+      "severity": "INFO",
+      "text": "private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 344,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<ModuleRecord>[64] \u2014 reusable module staging buffer for CSR rebuilds \u2014 owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 345,
+      "severity": "INFO",
+      "text": "_moduleBuffer = new List<ModuleRecord>(safeModuleCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 346,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<EdgeRecord>[128] \u2014 reusable undirected base-link staging buffer for CSR rebuilds \u2014 owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 347,
+      "severity": "INFO",
+      "text": "_edgeBuffer = new List<EdgeRecord>(InitialEdgeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 348,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<TemporaryBypassRecord>[16] \u2014 authored runtime bypass links appended into habitat CSR rebuilds \u2014 owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 349,
+      "severity": "INFO",
+      "text": "_temporaryBypassBuffer = new List<TemporaryBypassRecord>(InitialTemporaryBypassCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 350,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<Int64>[128] \u2014 submitted visual spline link ids for removal during rebuild \u2014 owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 351,
+      "severity": "INFO",
+      "text": "_submittedLinkIds = new List<long>(InitialEdgeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 352,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<Int64>[128] - emitted rupture edge VFX keys - owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 353,
+      "severity": "INFO",
+      "text": "_emittedRuptureEdgeVfxKeys = new List<long>(InitialEdgeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 354,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: HashSet<Int64>[256] - capped duplicate guard for rupture edge VFX keys - owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 355,
+      "severity": "INFO",
+      "text": "_emittedRuptureEdgeVfxLookup = new HashSet<long>(InitialEdgeCapacity * 2);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 356,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<UInt32>[64] - one-shot rupture cascade source guard - owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 357,
+      "severity": "INFO",
+      "text": "_ruptureCascadeAppliedNodeIds = new List<uint>(safeModuleCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 358,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<UInt32,Int32>[64] \u2014 node-id to module-index lookup for temporary bypass stitching \u2014 owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 359,
+      "severity": "INFO",
+      "text": "_moduleIndexByNodeId = new Dictionary<uint, int>(safeModuleCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 360,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<SocketKey,SocketMatchEntry>[128] \u2014 quantized socket lookup for zero-GC adjacency assembly \u2014 owner: HabitatGraphManager",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 361,
+      "severity": "INFO",
+      "text": "_socketLookup = new Dictionary<SocketKey, SocketMatchEntry>(InitialEdgeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/LogisticsPipeTransportScheduler.cs",
+      "line": 26,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<LogisticsPipeNode>[32] \u2014 active pipe-node registry for shared DAG transport scheduling \u2014 owner: LogisticsPipeTransportScheduler",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/LogisticsPipeTransportScheduler.cs",
+      "line": 27,
+      "severity": "INFO",
+      "text": "private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(InitialNodeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/LogisticsPipeTransportScheduler.cs",
+      "line": 27,
+      "severity": "INFO",
+      "text": "private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(InitialNodeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/RepairDroneHub.cs",
+      "line": 29,
+      "severity": "INFO",
+      "text": "private static readonly List<RepairDroneHub> s_ActiveHubs = new List<RepairDroneHub>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/RepairDroneHub.cs",
+      "line": 29,
+      "severity": "INFO",
+      "text": "private static readonly List<RepairDroneHub> s_ActiveHubs = new List<RepairDroneHub>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "bound": "FixedDrainageDeltaPassCount",
+      "file": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "line": 585,
+      "severity": "INFO",
+      "text": "for (int passIndex = 0; passIndex < FixedDrainageDeltaPassCount; passIndex++)",
+      "type": "fixed_two_pass_loop"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "line": 146,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<StorageCrate>[4] - temporary cargo storage bridge for the currently docked transport - owner: VehicleDockingModule",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "line": 147,
+      "severity": "INFO",
+      "text": "private readonly List<StorageCrate> _connectedCargoCrates = new List<StorageCrate>(4);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "line": 147,
+      "severity": "INFO",
+      "text": "private readonly List<StorageCrate> _connectedCargoCrates = new List<StorageCrate>(4);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "line": 148,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<StorageCrate>[4] - component query buffer for docked transport cargo discovery - owner: VehicleDockingModule",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "line": 149,
+      "severity": "INFO",
+      "text": "private readonly List<StorageCrate> _cargoDiscoveryBuffer = new List<StorageCrate>(4);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "line": 149,
+      "severity": "INFO",
+      "text": "private readonly List<StorageCrate> _cargoDiscoveryBuffer = new List<StorageCrate>(4);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/WaterPumpModule.cs",
+      "line": 33,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<WaterPumpModule>[16] - active pump registry for CSR flood drainage - owner: WaterPumpModule",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/WaterPumpModule.cs",
+      "line": 34,
+      "severity": "INFO",
+      "text": "private static readonly List<WaterPumpModule> s_activePumps = new List<WaterPumpModule>(InitialPumpCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Construction/WaterPumpModule.cs",
+      "line": 34,
+      "severity": "INFO",
+      "text": "private static readonly List<WaterPumpModule> s_activePumps = new List<WaterPumpModule>(InitialPumpCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/Editor/Charger_OOP_Scanner.cs",
+      "line": 1146,
+      "severity": "INFO",
+      "text": "counts.ManagedBatteryLists = CountToken(scanText, \"List<Battery\") + CountToken(scanText, \"List<PowerCell\");",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/Editor/Charger_OOP_Scanner.cs",
+      "line": 1146,
+      "severity": "INFO",
+      "text": "counts.ManagedBatteryLists = CountToken(scanText, \"List<Battery\") + CountToken(scanText, \"List<PowerCell\");",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 53,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<long>[8] - submitted relay cable link ids retained between SlowTick refreshes - owner: PowerRelayNode",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 54,
+      "severity": "INFO",
+      "text": "private readonly List<long> _submittedLinkIds = new List<long>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 54,
+      "severity": "INFO",
+      "text": "private readonly List<long> _submittedLinkIds = new List<long>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 55,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<long>[8] - scratch relay cable link ids for zero-GC diffing during SlowTick - owner: PowerRelayNode",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 56,
+      "severity": "INFO",
+      "text": "private readonly List<long> _scratchLinkIds = new List<long>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 56,
+      "severity": "INFO",
+      "text": "private readonly List<long> _scratchLinkIds = new List<long>(8);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 159,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = _powerNode.Neighbors;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 197,
+      "severity": "INFO",
+      "text": "private void RefreshCableVisuals(Vector3 relayPosition, List<PowerNode> neighbors, int neighborCount)",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "line": 264,
+      "severity": "INFO",
+      "text": "private static bool ContainsLinkId(List<long> linkIds, long linkId)",
+      "type": "managed_container_reference"
+    },
+    {
+      "bound": "FixedDeltaPassCount",
+      "file": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "line": 419,
+      "severity": "INFO",
+      "text": "for (int passIndex = 0; passIndex < FixedDeltaPassCount; passIndex++)",
+      "type": "fixed_two_pass_loop"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 167,
+      "severity": "INFO",
+      "text": "private readonly HashSet<PowerNode> _nodes;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 168,
+      "severity": "INFO",
+      "text": "private readonly List<IPowerComponent> _consumerRefs;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 169,
+      "severity": "INFO",
+      "text": "private readonly List<uint> _consumerNodeIds;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 170,
+      "severity": "INFO",
+      "text": "private readonly List<BatteryBankModule> _batteryRefs;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 171,
+      "severity": "INFO",
+      "text": "private readonly List<PowerNode> _topologyNodes;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 172,
+      "severity": "INFO",
+      "text": "private readonly List<OverloadThermalBinding> _overloadThermalBindings;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 173,
+      "severity": "INFO",
+      "text": "private readonly Dictionary<PowerNode, float> _overloadThermalDamageByNode;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 252,
+      "severity": "INFO",
+      "text": "public HashSet<PowerNode> Nodes => _nodes;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 296,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: HashSet<PowerNode>[initialCapacity] \u2014 grid membership cache \u2014 owner: PowerGrid",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 297,
+      "severity": "INFO",
+      "text": "_nodes = new HashSet<PowerNode>(safeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 298,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<IPowerComponent>[initialCapacity] \u2014 consumer reference cache \u2014 owner: PowerGrid",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 299,
+      "severity": "INFO",
+      "text": "_consumerRefs = new List<IPowerComponent>(safeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 300,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<uint>[initialCapacity] - stable node ids parallel to consumer references - owner: PowerGrid",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 301,
+      "severity": "INFO",
+      "text": "_consumerNodeIds = new List<uint>(safeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 302,
+      "severity": "INFO",
+      "text": "_batteryRefs = new List<BatteryBankModule>(safeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 303,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<PowerNode>[initialCapacity] \u2014 topology node snapshot \u2014 owner: PowerGrid",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 304,
+      "severity": "INFO",
+      "text": "_topologyNodes = new List<PowerNode>(safeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 305,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: List<OverloadThermalBinding>[initialCapacity] \u2014 per-node overload heat ownership cache \u2014 owner: PowerGrid",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 306,
+      "severity": "INFO",
+      "text": "_overloadThermalBindings = new List<OverloadThermalBinding>(safeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 307,
+      "severity": "INFO",
+      "text": "// COLD ALLOC: Dictionary<PowerNode,float>[initialCapacity] \u2014 persistent overload damage accumulation keyed by live nodes \u2014 owner: PowerGrid",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 308,
+      "severity": "INFO",
+      "text": "_overloadThermalDamageByNode = new Dictionary<PowerNode, float>(safeCapacity);",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 402,
+      "severity": "INFO",
+      "text": "HashSet<PowerNode>.Enumerator enumerator = other._nodes.GetEnumerator();",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 609,
+      "severity": "INFO",
+      "text": "internal List<PowerNode> TopologyNodes => _topologyNodes;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 672,
+      "severity": "INFO",
+      "text": "HashSet<PowerNode>.Enumerator nodeEnumerator = _nodes.GetEnumerator();",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 699,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = node.Neighbors;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 718,
+      "severity": "INFO",
+      "text": "List<IPowerComponent> components = node.Components;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 763,
+      "severity": "INFO",
+      "text": "List<IPowerComponent> components = node.Components;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 831,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = node.Neighbors;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1171,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = node != null ? node.Neighbors : null;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1190,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = node != null ? node.Neighbors : null;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1214,
+      "severity": "INFO",
+      "text": "List<PowerNode> neighbors = node != null ? node.Neighbors : null;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1243,
+      "severity": "INFO",
+      "text": "List<IPowerComponent> components = node.Components;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1398,
+      "severity": "INFO",
+      "text": "List<IPowerComponent> components = node.Components;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1424,
+      "severity": "INFO",
+      "text": "List<IPowerComponent> components = node.Components;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1469,
+      "severity": "INFO",
+      "text": "List<IPowerComponent> components = node.Components;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1503,
+      "severity": "INFO",
+      "text": "List<IPowerComponent> components = node.Components;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGridManager.cs",
+      "line": 21,
+      "severity": "INFO",
+      "text": "private static List<PowerGrid> _allGrids;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGridManager.cs",
+      "line": 150,
+      "severity": "INFO",
+      "text": "_allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGridManager.cs",
+      "line": 380,
+      "severity": "INFO",
+      "text": "List<PowerNode> topologyNodes = grid.TopologyNodes;",
+      "type": "managed_container_reference"
+    },
+    {
+      "classification": "cold_or_authoring",
+      "file": "Assets/_Project/Scripts/PowerGridManager.cs",
+      "line": 440,
+      "severity": "INFO",
+      "text": "_allGrids = new List<PowerGrid>(16);",
+      "type": "managed_container_reference"
+    }
+  ],
+  "hotPathCount": 7,
+  "hotWarningCount": 0,
+  "proof": {
+    "blackBox": "Power and drainage dump paths target Docs/AgentLogs/Dump_SHINOBU_340_Logistics.bin; both rings keep 300 frames.",
+    "drainageHotPath": "SumpPumpPipeGridRuntime schedules exactly two EvaluatePipePressureDeltaPassJob passes.",
+    "dtoLayout": "PowerNodeDTO, PowerGridEdgeDTO, DrainageNodeDTO, and PipeEdgeDTO are explicit 32-byte structs.",
+    "gridTorture": "LogisticsGridTortureJob materializes a 2000-node/6000-edge CSR graph, injects 384 short circuits, and runs two fixed delta passes.",
+    "latchedFastPath": "Repeated unpowered and open-circuit frames return after the first zero-state commit without touching CSR buffers.",
+    "powerHotPath": "LogisticsNetworkGraph.ApplyTwoPassPowerDeltaPropagation uses exactly two fixed CSR delta passes.",
+    "routerHotPath": "ShinobuLogisticsRouter schedules exactly two LogisticsFlowDeltaPassJob passes."
+  },
+  "scannedFileCount": 2383,
+  "scanner": "OOP_Fluid_Scanner",
+  "scope": "Power, sump-pipe, and logistics CSR scripts under Assets/_Project/Scripts",
+  "status": "PASS",
+  "targetCount": 76,
+  "targets": [
+    {
+      "excludedContext": true,
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsJobs.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": true,
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": true,
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsTypes.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/AutomationSmokeTester.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/BaseModule.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "hotPath": false,
+      "tokens": [
+        "LogisticsNetworkGraph"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "hotPath": false,
+      "tokens": [
+        "PowerGridManager"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/BatteryChargerModule.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentJobs.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/CultivationManager.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/DroneCognitionJob.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray",
+        "GlobalDataVault"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/DroneFleetManager_Transactions.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray",
+        "GlobalDataVault"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/DroneFleetTransactionKernel.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/Editor/BulkheadContainmentEditor.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/Editor/ModuleDeconstructionResourceReturnEditor_SHINOBU336.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR",
+        "NativeArray",
+        "GlobalDataVault"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+      "hotPath": true,
+      "tokens": [
+        "SumpPumpPipeGridRuntime",
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorJobs.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/HabitatDeconstructionTransactionKernel.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "hotPath": false,
+      "tokens": [
+        "PowerGridManager",
+        "LogisticsNetworkGraph",
+        "SumpPumpPipeGridRuntime",
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/HabitatStressJobs.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/LogisticsPipeRoutingKernel.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/LogisticsPipeTransportScheduler.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/LogisticsRouteScratchMemory.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionJobs.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridContracts.cs",
+      "hotPath": true,
+      "tokens": [
+        "DrainageNodeDTO",
+        "PipeEdgeDTO",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs",
+      "hotPath": true,
+      "tokens": [
+        "SumpPumpPipeGridRuntime",
+        "EvaluatePipePressureDeltaPassJob",
+        "DrainageNodeDTO",
+        "PipeEdgeDTO",
+        "NativeArray",
+        "GlobalDataVault"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "hotPath": true,
+      "tokens": [
+        "SumpPumpPipeGridRuntime",
+        "EvaluatePipePressureDeltaPassJob",
+        "DrainageNodeDTO",
+        "PipeEdgeDTO",
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Construction/WaterPumpModule.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Editor/GridArchitectTunerWindow.cs",
+      "hotPath": false,
+      "tokens": [
+        "SumpPumpPipeGridRuntime",
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Editor/OOP_Solar_Scanner.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Editor/SumpPumpPipeGridPressureGizmo.cs",
+      "hotPath": false,
+      "tokens": [
+        "SumpPumpPipeGridRuntime"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Editor/SumpPumpPipeGridTunerWindow.cs",
+      "hotPath": false,
+      "tokens": [
+        "SumpPumpPipeGridRuntime"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Logistics/FluidPipePressureJobs.cs",
+      "hotPath": true,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Logistics/Grid/WfcOutpostGraphTranslationJob.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsRuntime.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/Editor/BatteryLogisticsXRayWindow.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/Editor/Charger_OOP_Scanner.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/LogisticsGridTortureJob.cs",
+      "hotPath": false,
+      "tokens": [
+        "LogisticsGridTortureJob",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "hotPath": true,
+      "tokens": [
+        "LogisticsNetworkGraph",
+        "TwoPassPowerGridSolverJob",
+        "ApplyTwoPassPowerDeltaPropagation",
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/PowerGridTelemetryEvents.cs",
+      "hotPath": false,
+      "tokens": [
+        "PowerGridManager"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "hotPath": true,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridGizmo.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray",
+        "GlobalDataVault"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/WfcOutpostGridRegistry.cs",
+      "hotPath": false,
+      "tokens": [
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs",
+      "hotPath": false,
+      "tokens": [
+        "LogisticsNetworkGraph",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "hotPath": false,
+      "tokens": [
+        "LogisticsNetworkGraph",
+        "TwoPassPowerGridSolverJob",
+        "CSR",
+        "NativeArray"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/PowerGridManager.cs",
+      "hotPath": false,
+      "tokens": [
+        "PowerGridManager",
+        "LogisticsNetworkGraph",
+        "NativeArray",
+        "GlobalDataVault"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/PowerNode.cs",
+      "hotPath": false,
+      "tokens": [
+        "PowerGridManager"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/World/BasePollutionManager.cs",
+      "hotPath": false,
+      "tokens": [
+        "PowerGridManager"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "hotPath": false,
+      "tokens": [
+        "CSR"
+      ]
+    },
+    {
+      "excludedContext": false,
+      "file": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+      "hotPath": false,
+      "tokens": [
+        "PowerGridManager"
+      ]
+    }
+  ]
+}

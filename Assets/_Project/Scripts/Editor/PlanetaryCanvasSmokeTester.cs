@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.World;
@@ -22,14 +23,14 @@ namespace Hecton8.Editor
             {
                 throw new InvalidOperationException(
                     "Planetary canvas border blend smoke failed. blend01=" +
-                    blend01.ToString("F6") +
+                    blend01.ToString("F6", CultureInfo.InvariantCulture) +
                     " blend255=" +
                     blend255);
             }
 
             Debug.Log(
                 "[PlanetaryCanvasSmokeTester] PASS borderBlend01=" +
-                blend01.ToString("F6") +
+                blend01.ToString("F6", CultureInfo.InvariantCulture) +
                 " blend255=" +
                 blend255 +
                 " packed=" +

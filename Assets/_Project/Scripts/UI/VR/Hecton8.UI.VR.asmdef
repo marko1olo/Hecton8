@@ -4,9 +4,9 @@
     "references": [
         "Hecton8.UI.VR.Contracts",
         "Hecton8.Core",
+        "Hecton8.Core.Memory",
         "Hecton8.Core.Contracts",
         "Hecton8.Bootstrap.Contracts",
-        "Hecton8.Input.Universal",
         "Unity.Mathematics",
         "Unity.Collections",
         "Unity.Jobs"

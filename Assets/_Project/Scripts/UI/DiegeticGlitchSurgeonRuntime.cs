@@ -230,7 +230,9 @@ namespace Hecton8.UI
         private const uint FaultTableFallback = 1u << 3;
         private const uint FaultRngDeadlock = 1u << 4;
         private const string DefaultGlitchTableRelativePath = "Assets/_Project/Data/UI/GlitchTable.bytes";
+#if UNITY_EDITOR
         private const string DefaultCsvRelativePath = "glitch_profiles.csv";
+#endif
         private const string DefaultDumpRelativePath = "Docs/AgentLogs/Dump_GLITCH_SURGEON.bin";
 
         private const BufferID StateBufferId = (BufferID)70900;
@@ -261,8 +263,10 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Project-relative binary substitution table path.")]
         private string glitchTableRelativePath = DefaultGlitchTableRelativePath;
 
+#if UNITY_EDITOR
         [SerializeField, Tooltip("Project-relative CSV override path for live glitch glyph authoring.")]
         private string csvRelativePath = DefaultCsvRelativePath;
+#endif
 
         [SerializeField, Tooltip("Project-relative binary black-box dump path.")]
         private string dumpRelativePath = DefaultDumpRelativePath;
@@ -304,13 +308,19 @@ namespace Hecton8.UI
         private VaultGenerationHandle<GlitchSynthParametersDTO> _synthHandle;
         private VaultGenerationHandle<DiegeticGlitchTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<uint> _telemetryCursorHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private JobHandle _activeHandle;
         private string _projectRoot;
         private string _glitchTableFullPath;
+#if UNITY_EDITOR
         private string _csvFullPath;
+#endif
         private string _dumpFullPath;
+#if UNITY_EDITOR
         private DateTime _csvLastWriteUtc;
+#endif
         private long _jobStartTimestamp;
         private float _lastComputeMs;
         private float _lastShaderIntensity = -1f;
@@ -332,8 +342,10 @@ namespace Hecton8.UI
         private bool _tableFallbackGenerated;
         private bool _dumpWrittenForCurrentFault;
         private bool _pendingTuningWrite;
+#if UNITY_EDITOR
         private bool _pendingTableReload;
         private bool _pendingCsvReload;
+#endif
         private bool _pendingExternalLeaseRelease;
         private bool _pendingDisableTeardown;
         private bool _pendingVaultSwap;
@@ -900,6 +912,7 @@ namespace Hecton8.UI
             }
         }
 
+#if UNITY_EDITOR
         /// <summary>Forces a cold reload of GlitchTable.bytes or the emergency fallback, then applies CSV glyph overrides.</summary>
         public void ReloadGlitchTableForEditor()
         {
@@ -932,8 +945,10 @@ namespace Hecton8.UI
                 _vault.TryUnlockBuffer(GlitchTableBufferId, SystemID.UI);
             }
 
+#if UNITY_EDITOR
             if (!TryApplyCsvOverride(out bool retryCsv) && retryCsv)
                 _pendingCsvReload = true;
+#endif
         }
 
         /// <summary>Forces a zero-GC parser pass over the configured glitch_profiles.csv file.</summary>
@@ -948,9 +963,12 @@ namespace Hecton8.UI
             if (!_nativeReady || _vault == null || !IsGlitchVaultHandle(in _csvScratchHandle, CsvScratchBufferId))
                 return;
 
+#if UNITY_EDITOR
             if (!TryApplyCsvOverride(out bool retryCsv) && retryCsv)
                 _pendingCsvReload = true;
+#endif
         }
+#endif
 
 #if UNITY_EDITOR
         /// <summary>Editor-only CSV watch poll. Kept outside gameplay Tick to avoid runtime file I/O in hot paths.</summary>
@@ -1045,8 +1063,24 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService != null && isActiveAndEnabled)
+                if (currentService == null)
+                {
+                    _registeredUpdate = false;
+                    _registeredLateFrame = false;
+                    return;
+                }
+
+                if (isActiveAndEnabled)
+                {
+                    if (_registeredUpdate)
+                    {
+                        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                        _registeredUpdate = false;
+                    }
+
+                    UnregisterLateFrameCold();
                     TryRegister();
+                }
                 return;
             }
 
@@ -1076,7 +1110,9 @@ namespace Hecton8.UI
 
             _projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             _glitchTableFullPath = Path.GetFullPath(Path.Combine(_projectRoot, glitchTableRelativePath));
+#if UNITY_EDITOR
             _csvFullPath = Path.GetFullPath(Path.Combine(_projectRoot, csvRelativePath));
+#endif
             _dumpFullPath = Path.GetFullPath(Path.Combine(_projectRoot, dumpRelativePath));
         }
 
@@ -1103,21 +1139,23 @@ namespace Hecton8.UI
                 return;
             }
 
-            _stateHandle = _vault.GetGenerationHandle<GlitchStateDTO>(StateBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _glitchTableHandle = _vault.GetGenerationHandle<byte>(GlitchTableBufferId, GlitchTableCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _originalTextHandle = _vault.GetGenerationHandle<ushort>(OriginalTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _workTextHandle = _vault.GetGenerationHandle<ushort>(WorkTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _textSpanHandle = _vault.GetGenerationHandle<MockTextSpan>(TextSpanBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _corruptionSignalHandle = _vault.GetGenerationHandle<MockCorruptionLevelSignal>(CorruptionSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _depthSignalHandle = _vault.GetGenerationHandle<MockDepthSignal>(DepthSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _breachSignalHandle = _vault.GetGenerationHandle<MockModuleBreachSignal>(BreachSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = _vault.GetGenerationHandle<GlitchTuningDTO>(TuningBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _quadHandle = _vault.GetGenerationHandle<GlitchQuadTransformDTO>(MockQuadBufferId, MockQuadCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _radarBlipHandle = _vault.GetGenerationHandle<RadarBlipDTO>(RadarBlipBufferId, RadarBlipCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _synthHandle = _vault.GetGenerationHandle<GlitchSynthParametersDTO>(SynthParameterBufferId, SynthParameterCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _vault.GetGenerationHandle<DiegeticGlitchTelemetryEntry>(TelemetryRingBufferId, TelemetryFrameCount, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _telemetryCursorHandle = _vault.GetGenerationHandle<uint>(TelemetryCursorBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _vault.GetGenerationHandle<byte>(CsvScratchBufferId, CsvScratchCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _stateHandle = _vault.EnsureGenerationHandle<GlitchStateDTO>(StateBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _glitchTableHandle = _vault.EnsureGenerationHandle<byte>(GlitchTableBufferId, GlitchTableCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _originalTextHandle = _vault.EnsureGenerationHandle<ushort>(OriginalTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _workTextHandle = _vault.EnsureGenerationHandle<ushort>(WorkTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _textSpanHandle = _vault.EnsureGenerationHandle<MockTextSpan>(TextSpanBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _corruptionSignalHandle = _vault.EnsureGenerationHandle<MockCorruptionLevelSignal>(CorruptionSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _depthSignalHandle = _vault.EnsureGenerationHandle<MockDepthSignal>(DepthSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _breachSignalHandle = _vault.EnsureGenerationHandle<MockModuleBreachSignal>(BreachSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = _vault.EnsureGenerationHandle<GlitchTuningDTO>(TuningBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _quadHandle = _vault.EnsureGenerationHandle<GlitchQuadTransformDTO>(MockQuadBufferId, MockQuadCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _radarBlipHandle = _vault.EnsureGenerationHandle<RadarBlipDTO>(RadarBlipBufferId, RadarBlipCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _synthHandle = _vault.EnsureGenerationHandle<GlitchSynthParametersDTO>(SynthParameterBufferId, SynthParameterCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _telemetryHandle = _vault.EnsureGenerationHandle<DiegeticGlitchTelemetryEntry>(TelemetryRingBufferId, TelemetryFrameCount, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _telemetryCursorHandle = _vault.EnsureGenerationHandle<uint>(TelemetryCursorBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
+            _csvScratchHandle = _vault.EnsureGenerationHandle<byte>(CsvScratchBufferId, CsvScratchCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+#endif
 
             if (!ValidateStructLayouts() || !ValidateHandles())
             {
@@ -1141,7 +1179,7 @@ namespace Hecton8.UI
                          UnsafeUtility.SizeOf<GlitchSynthParametersDTO>() == 16 &&
                          UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>() == 64 &&
                          UnsafeUtility.SizeOf<GlitchBlackBoxDumpHeader>() == 32;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!valid)
                 Debug.LogError("SHINOBU_49 glitch DTO layout mismatch.");
 #endif
@@ -1150,21 +1188,25 @@ namespace Hecton8.UI
 
         private bool ValidateHandles()
         {
-            return TryReadGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _originalTextHandle, OriginalTextBufferId, MockTextCapacity, out NativeArray<ushort> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _textSpanHandle, TextSpanBufferId, 1, out NativeArray<MockTextSpan> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _corruptionSignalHandle, CorruptionSignalBufferId, 1, out NativeArray<MockCorruptionLevelSignal> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _depthSignalHandle, DepthSignalBufferId, 1, out NativeArray<MockDepthSignal> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _breachSignalHandle, BreachSignalBufferId, 1, out NativeArray<MockModuleBreachSignal> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _radarBlipHandle, RadarBlipBufferId, RadarBlipCapacity, out NativeArray<RadarBlipDTO> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out NativeArray<GlitchSynthParametersDTO> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryFrameCount, out NativeArray<DiegeticGlitchTelemetryEntry> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<uint> _) &&
-                   TryReadGlitchVaultBuffer(_vault, in _csvScratchHandle, CsvScratchBufferId, CsvScratchCapacity, out NativeArray<byte> _);
+            bool valid = TryReadGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _originalTextHandle, OriginalTextBufferId, MockTextCapacity, out NativeArray<ushort> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _textSpanHandle, TextSpanBufferId, 1, out NativeArray<MockTextSpan> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _corruptionSignalHandle, CorruptionSignalBufferId, 1, out NativeArray<MockCorruptionLevelSignal> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _depthSignalHandle, DepthSignalBufferId, 1, out NativeArray<MockDepthSignal> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _breachSignalHandle, BreachSignalBufferId, 1, out NativeArray<MockModuleBreachSignal> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _radarBlipHandle, RadarBlipBufferId, RadarBlipCapacity, out NativeArray<RadarBlipDTO> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out NativeArray<GlitchSynthParametersDTO> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryFrameCount, out NativeArray<DiegeticGlitchTelemetryEntry> _) &&
+                         TryReadGlitchVaultBuffer(_vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<uint> _);
+#if UNITY_EDITOR
+            valid = valid &&
+                    TryReadGlitchVaultBuffer(_vault, in _csvScratchHandle, CsvScratchBufferId, CsvScratchCapacity, out NativeArray<byte> _);
+#endif
+            return valid;
         }
 
         private void ReleaseGlitchVaultHandles(IDataVault vault)
@@ -1183,7 +1225,9 @@ namespace Hecton8.UI
             ReleaseGlitchVaultHandle(vault, ref _synthHandle, SynthParameterBufferId);
             ReleaseGlitchVaultHandle(vault, ref _telemetryHandle, TelemetryRingBufferId);
             ReleaseGlitchVaultHandle(vault, ref _telemetryCursorHandle, TelemetryCursorBufferId);
+#if UNITY_EDITOR
             ReleaseGlitchVaultHandle(vault, ref _csvScratchHandle, CsvScratchBufferId);
+#endif
         }
 
         private static void ReleaseGlitchVaultHandle<T>(
@@ -1371,13 +1415,16 @@ namespace Hecton8.UI
                 {
                     using (FileStream stream = new FileStream(_glitchTableFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 64))
                     {
+                        Span<byte> readBuffer = stackalloc byte[256];
                         while (written < length)
                         {
-                            int value = stream.ReadByte();
-                            if (value < 0)
+                            int read = stream.Read(readBuffer);
+                            if (read <= 0)
                                 break;
 
-                            table[written++] = SanitizeGlyphByte((byte)value);
+                            int copy = math.min(read, length - written);
+                            for (int i = 0; i < copy; i++)
+                                table[written++] = SanitizeGlyphByte(readBuffer[i]);
                         }
                     }
                 }
@@ -1405,6 +1452,7 @@ namespace Hecton8.UI
             _lastTableHash = HashBytes(table, length);
         }
 
+#if UNITY_EDITOR
         private bool TryApplyCsvOverride(out bool shouldRetry)
         {
             shouldRetry = false;
@@ -1445,13 +1493,14 @@ namespace Hecton8.UI
                 {
                     using (FileStream stream = new FileStream(_csvFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128))
                     {
+                        Span<byte> destination = new Span<byte>(scratch, CsvScratchCapacity);
                         while (length < CsvScratchCapacity)
                         {
-                            int value = stream.ReadByte();
-                            if (value < 0)
+                            int read = stream.Read(destination.Slice(length));
+                            if (read <= 0)
                                 break;
 
-                            scratch[length++] = (byte)value;
+                            length += read;
                         }
                     }
                 }
@@ -1481,6 +1530,7 @@ namespace Hecton8.UI
                 _vault.TryUnlockBuffer(CsvScratchBufferId, SystemID.UI);
             }
         }
+#endif
 
         private void PrepareFrameTuning(GlitchTuningDTO* tuning)
         {
@@ -1947,6 +1997,7 @@ namespace Hecton8.UI
             return BuildMockQuadMatrix(new float3(x, y, 0.6f), new float2(0.012f, 0.012f));
         }
 
+#if UNITY_EDITOR
         private static int ParseGlyphCsv(byte* source, int sourceLength, byte* destination, int destinationLength)
         {
             if (source == null || sourceLength <= 0 || destination == null || destinationLength <= 0)
@@ -1999,6 +2050,7 @@ namespace Hecton8.UI
 
             return written;
         }
+#endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte SanitizeGlyphByte(byte value)
@@ -2085,10 +2137,12 @@ namespace Hecton8.UI
                 ref GlitchTuningDTO tuning = ref UnsafeUtility.AsRef<GlitchTuningDTO>(Tuning);
                 float quality = Sanitize01(tuning.GlobalQualityWeight, 1f);
                 float deterministicSeconds = Frame * (1f / 60f);
-                float pulse = math.sin(deterministicSeconds * 0.83f) * 0.5f + 0.5f;
-                float surge = math.pow(pulse, math.lerp(3.5f, 1.1f, Smooth01(quality)));
+                float pulse = Triangle01(deterministicSeconds * 0.1321f);
+                float pulse2 = pulse * pulse;
+                float pulse4 = pulse2 * pulse2;
+                float surge = math.lerp(pulse4, pulse, Smooth01(quality));
                 float corruption01 = Sanitize01(surge * tuning.MasterIntensity, 0f);
-                float depthMeters = 850f + (math.sin(deterministicSeconds * 0.071f + 0.4f) * 0.5f + 0.5f) * 2600f;
+                float depthMeters = 850f + Triangle01(deterministicSeconds * 0.0113f + 0.4f) * 2600f;
                 float depthRange = math.max(1f, tuning.DepthFullMeters - tuning.DepthStartMeters);
                 float depthBaseline = math.saturate((depthMeters - tuning.DepthStartMeters) / depthRange);
                 uint breachBit = 1u << (int)((Frame / 240u) & 15u);
@@ -2335,9 +2389,9 @@ namespace Hecton8.UI
                 float ghostBudget = math.saturate(math.lerp(0.2f, 1f, Smooth01(quality))) * math.max(0f, Tuning->GhostBlipCount) * surge;
                 float alpha = math.saturate(ghostBudget - index);
                 Unity.Mathematics.Random rng = new Unity.Mathematics.Random(NonZeroRandomSeed(Frame ^ math.asuint(State->Seed) ^ ((uint)index * 374761393u)));
-                float angle = rng.NextFloat(0f, 6.2831853f);
                 float radius = 0.018f + rng.NextFloat(0f, 0.075f);
-                float2 local = new float2(math.cos(angle), math.sin(angle)) * radius;
+                float2 direction = math.normalizesafe(new float2(rng.NextFloat(-1f, 1f), rng.NextFloat(-1f, 1f)), new float2(1f, 0f));
+                float2 local = direction * radius;
                 RadarBlips[index] = new RadarBlipDTO
                 {
                     LocalPositionIntensity = new float4(local.x, local.y, 0f, alpha * intensity),
@@ -2456,6 +2510,12 @@ namespace Hecton8.UI
         {
             float x = math.saturate(value);
             return x * x * (3f - 2f * x);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Triangle01(float phase)
+        {
+            return math.abs(math.frac(phase) * 2f - 1f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

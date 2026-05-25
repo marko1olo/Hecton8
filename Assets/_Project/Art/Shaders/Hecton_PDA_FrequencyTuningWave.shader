@@ -31,17 +31,11 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct FrequencyTuningWaveGpuSegment
-            {
-                float4 CenterRadius;
-                float4 TangentLength;
-                float4 ColorStage;
-            };
-
-            StructuredBuffer<FrequencyTuningWaveGpuSegment> _HectonFrequencyTuningSegments;
             float4x4 _HectonFrequencyTuningLocalToWorld;
             float _HectonFrequencyTuningTubeRadius;
             float4 _HectonFrequencyTuningTimeErrorStage;
+            float4 _HectonFrequencyTuningWaveScalars;
+            float4 _HectonFrequencyTuningWaveLayout;
 
             struct Attributes
             {
@@ -60,19 +54,42 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                FrequencyTuningWaveGpuSegment segment = _HectonFrequencyTuningSegments[input.instanceID];
+                const float TwoPi = 6.28318530718;
+                uint segmentCount = max(1u, (uint)round(_HectonFrequencyTuningWaveLayout.x));
+                bool playerWave = input.instanceID >= segmentCount;
+                uint segmentIndex = playerWave ? input.instanceID - segmentCount : input.instanceID;
+                float invSegmentCount = rcp(max(1.0, (float)segmentCount));
+                float normalized0 = (float)segmentIndex * invSegmentCount;
+                float normalized1 = (float)(segmentIndex + 1u) * invSegmentCount;
+                float localWidth = max(0.01, _HectonFrequencyTuningWaveLayout.y);
+                float localHeight = max(0.01, _HectonFrequencyTuningWaveLayout.z);
+                float frequency = playerWave ? _HectonFrequencyTuningWaveScalars.z : _HectonFrequencyTuningWaveScalars.x;
+                float amplitude = playerWave ? _HectonFrequencyTuningWaveScalars.w : _HectonFrequencyTuningWaveScalars.y;
+                float baseY = playerWave ? -0.18 : 0.18;
+                float wave0 = sin(normalized0 * TwoPi * frequency) * amplitude;
+                float wave1 = sin(normalized1 * TwoPi * frequency) * amplitude;
+                float2 start = float2((normalized0 - 0.5) * localWidth, baseY * localHeight + wave0 * localHeight * 0.32);
+                float2 finish = float2((normalized1 - 0.5) * localWidth, baseY * localHeight + wave1 * localHeight * 0.32);
+                float2 delta = finish - start;
+                float lengthSq = max(dot(delta, delta), 0.00000001);
+                float invLength = rsqrt(lengthSq);
+                float length = lengthSq * invLength;
+                float2 tangent = delta * invLength;
+                float2 center = (start + finish) * 0.5;
                 float pulse = 1.0 + saturate(1.0 - _HectonFrequencyTuningTimeErrorStage.y) * 0.22;
-                float2 tangent = segment.TangentLength.xy;
                 float2 normal = float2(-tangent.y, tangent.x);
-                float tubeRadius = _HectonFrequencyTuningTubeRadius * segment.CenterRadius.w * pulse;
-                float2 local2 = segment.CenterRadius.xy +
-                    tangent * (input.positionOS.x * segment.TangentLength.w) +
+                float tubeRadius = _HectonFrequencyTuningTubeRadius * pulse;
+                float2 local2 = center +
+                    tangent * (input.positionOS.x * length) +
                     normal * (input.positionOS.y * tubeRadius * 2.0);
-                float3 local = float3(local2, segment.CenterRadius.z);
+                float3 local = float3(local2, 0.0);
                 float3 world = mul(_HectonFrequencyTuningLocalToWorld, float4(local, 1.0)).xyz;
+                float stage = _HectonFrequencyTuningTimeErrorStage.z;
                 output.positionCS = TransformWorldToHClip(world);
                 output.uv = input.uv;
-                output.color = half4(segment.ColorStage);
+                output.color = playerWave
+                    ? half4(0.02h, 0.82h, 1.0h, 0.92h)
+                    : half4(1.0h, 0.08h, 0.04h, (half)(0.92 + stage * 0.02));
                 return output;
             }
 

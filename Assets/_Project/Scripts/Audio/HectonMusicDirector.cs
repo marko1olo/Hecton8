@@ -4,7 +4,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
-using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -16,7 +15,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3900)] // Consumes zone/acoustic state resolved by earlier managers.
-    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private enum PlaybackState : byte
         {
@@ -42,7 +41,7 @@ namespace Hecton8.Audio
         private const float StormDepthAttenuationInv = 0.008333333f;
         private const float AuthoredPressureRangeInv = 0.25f;
         private const float Random24ToUnit = 0.000000059604648f;
-        private const bool ProceduralSynthOwnsMusicPlayback = true;
+        private static readonly bool ProceduralSynthOwnsMusicPlayback = true;
         private static readonly int _PredatorThreatLayerMask = HectonLayerMasks.CreatureLayerMask;
 
         private static readonly string[] MenuSceneTokens = { "main_menu" };
@@ -84,8 +83,8 @@ namespace Hecton8.Audio
         [Tooltip("Optional explicit biome matrix director. If null, runtime instance is used.")]
         [SerializeField] private BiomeMatrixDirector _biomeMatrixDirector;
 
-        [Tooltip("Optional explicit depth-zone director. If null, runtime instance is used when available.")]
-        [SerializeField] private DepthZoneDirector _depthZoneDirector;
+        [Tooltip("Optional explicit depth-zone read model. If null, runtime instance is used when available.")]
+        [SerializeField] private MonoBehaviour _depthZoneDirector;
 
         [Tooltip("Optional explicit AI director reference. If null, runtime instance is used when available.")]
         [SerializeField] private HectonDirectorAI _directorAI;
@@ -274,6 +273,10 @@ namespace Hecton8.Audio
         private AudioSource _stingerSource;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
+        private bool _pendingMusicTickDirty;
+        private bool _pendingMusicSlowTickDirty;
+        private float _pendingMusicTickDeltaTime;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private PlaybackState _playbackState = PlaybackState.Silent;
@@ -336,9 +339,10 @@ namespace Hecton8.Audio
         private HectonSurvivalSystem _survivalSystem;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IAudioService _cachedAudioService;
-        private AcousticZoneController _cachedAcousticZone;
-        private HectonSurfaceWeatherDirector _cachedSurfaceWeatherDirector;
-        private FirstHourDirector _cachedFirstHourDirector;
+        private IAcousticZoneReadModel _cachedAcousticZone;
+        private IDepthZoneReadModel _cachedDepthZoneReadModel;
+        private ISurfaceWeatherReadModel _cachedSurfaceWeatherDirector;
+        private IFirstHourReadModel _cachedFirstHourDirector;
         private bool _depthZoneDirectorRuntimeCached;
         private bool _playerMovementLookupAttempted;
         private bool _survivalLookupAttempted;
@@ -493,6 +497,30 @@ namespace Hecton8.Audio
         /// </summary>
         public void Tick(float deltaTime)
         {
+            _pendingMusicTickDeltaTime += math.max(0f, deltaTime);
+            _pendingMusicTickDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        public void LateFrameTick()
+        {
+            if (_pendingMusicSlowTickDirty)
+            {
+                _pendingMusicSlowTickDirty = false;
+                RunMusicSlowTick();
+            }
+
+            if (!_pendingMusicTickDirty)
+                return;
+
+            float deltaTime = _pendingMusicTickDeltaTime;
+            _pendingMusicTickDeltaTime = 0f;
+            _pendingMusicTickDirty = false;
+            RunMusicTick(deltaTime);
+        }
+
+        private void RunMusicTick(float deltaTime)
+        {
             DrainAcousticZoneSignal();
             DrainDirectorAISignals();
             PublishDynamicMusicScalars(deltaTime);
@@ -594,6 +622,12 @@ namespace Hecton8.Audio
         /// Synchronizes music routing with zone, biome, scene, and tension context.
         /// </summary>
         public void SlowTick()
+        {
+            _pendingMusicSlowTickDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void RunMusicSlowTick()
         {
             DrainAcousticZoneSignal();
             DrainDirectorAISignals();
@@ -765,6 +799,8 @@ namespace Hecton8.Audio
             {
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
+
+            TryRegisterLateFrameTick();
         }
 
         private void TryUnregisterTickHandlers()
@@ -780,6 +816,20 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterHotSwapListener()
@@ -854,7 +904,7 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            ObjectPoolManager pool = ResolveRuntimeObjectPool();
+            IObjectPoolService pool = ResolveRuntimeObjectPool();
             if (pool == null)
                 return false;
 
@@ -866,9 +916,9 @@ namespace Hecton8.Audio
             return GlobalRegistry.MusicDirector != null;
         }
 
-        private static ObjectPoolManager ResolveRuntimeObjectPool()
+        private static IObjectPoolService ResolveRuntimeObjectPool()
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
             return pool != null ? pool : ObjectPoolManager.ActiveRuntimeInstance;
         }
 
@@ -921,7 +971,7 @@ namespace Hecton8.Audio
             _cachedAcousticZone = null;
             if (_depthZoneDirectorRuntimeCached)
             {
-                _depthZoneDirector = null;
+                _cachedDepthZoneReadModel = null;
                 _depthZoneDirectorRuntimeCached = false;
             }
 
@@ -940,7 +990,7 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Player:
@@ -953,29 +1003,29 @@ namespace Hecton8.Audio
                         _voicePool.ApplyRuntimeRouting(ResolveMusicMixerGroup(), ResolveStingerMixerGroup());
                     break;
                 case GlobalRegistryServiceSlot.AcousticZoneRuntime:
-                    CacheAcousticZone(currentService as AcousticZoneController, frame);
+                    CacheAcousticZone(currentService as IAcousticZoneReadModel, frame);
                     _hasLastAcousticInteriorState = false;
                     break;
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
                     if (_depthZoneDirectorRuntimeCached ||
-                        _depthZoneDirector == null ||
-                        ReferenceEquals(previousService, _depthZoneDirector))
+                        _cachedDepthZoneReadModel == null ||
+                        ReferenceEquals(previousService, _cachedDepthZoneReadModel))
                     {
-                        CacheDepthZoneDirector(currentService as DepthZoneDirector, frame);
+                        CacheDepthZoneReadModel(currentService as IDepthZoneReadModel, frame);
                     }
                     break;
                 case GlobalRegistryServiceSlot.SurfaceWeatherRuntime:
-                    CacheSurfaceWeatherDirector(currentService as HectonSurfaceWeatherDirector, frame);
+                    CacheSurfaceWeatherDirector(currentService as ISurfaceWeatherReadModel, frame);
                     break;
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
-                    CacheFirstHourDirector(currentService as FirstHourDirector, frame);
+                    CacheFirstHourDirector(currentService as IFirstHourReadModel, frame);
                     break;
             }
         }
 
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && playerContext.IsInitialized && frame < _nextPlayerContextResolveFrame)
                 return playerContext;
@@ -989,7 +1039,7 @@ namespace Hecton8.Audio
 
         private IAudioService ResolveAudioService()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IAudioService audioService = _cachedAudioService;
             if (audioService != null && audioService.IsInitialized && frame < _nextAudioServiceResolveFrame)
                 return audioService;
@@ -1001,10 +1051,10 @@ namespace Hecton8.Audio
             return _cachedAudioService;
         }
 
-        private AcousticZoneController ResolveAcousticZone()
+        private IAcousticZoneReadModel ResolveAcousticZone()
         {
-            int frame = Time.frameCount;
-            AcousticZoneController acousticZone = _cachedAcousticZone;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            IAcousticZoneReadModel acousticZone = _cachedAcousticZone;
             if (acousticZone != null && frame < _nextAcousticZoneResolveFrame)
                 return acousticZone;
 
@@ -1015,23 +1065,26 @@ namespace Hecton8.Audio
             return _cachedAcousticZone;
         }
 
-        private DepthZoneDirector ResolveDepthZoneDirector()
+        private IDepthZoneReadModel ResolveDepthZoneReadModel()
         {
-            if (_depthZoneDirector != null)
-                return _depthZoneDirector;
+            if (_depthZoneDirector is IDepthZoneReadModel explicitReadModel)
+                return explicitReadModel;
 
-            int frame = Time.frameCount;
+            if (_cachedDepthZoneReadModel != null)
+                return _cachedDepthZoneReadModel;
+
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextDepthZoneResolveFrame)
                 return null;
 
             RefreshDepthZoneDirectorIfStale(frame);
-            return _depthZoneDirector;
+            return _cachedDepthZoneReadModel;
         }
 
-        private HectonSurfaceWeatherDirector ResolveSurfaceWeatherDirector()
+        private ISurfaceWeatherReadModel ResolveSurfaceWeatherDirector()
         {
-            int frame = Time.frameCount;
-            HectonSurfaceWeatherDirector surfaceWeather = _cachedSurfaceWeatherDirector;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            ISurfaceWeatherReadModel surfaceWeather = _cachedSurfaceWeatherDirector;
             if (surfaceWeather != null && frame < _nextSurfaceWeatherResolveFrame)
                 return surfaceWeather;
 
@@ -1042,10 +1095,10 @@ namespace Hecton8.Audio
             return _cachedSurfaceWeatherDirector;
         }
 
-        private FirstHourDirector ResolveFirstHourDirector()
+        private IFirstHourReadModel ResolveFirstHourDirector()
         {
-            int frame = Time.frameCount;
-            FirstHourDirector firstHourDirector = _cachedFirstHourDirector;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            IFirstHourReadModel firstHourDirector = _cachedFirstHourDirector;
             if (firstHourDirector != null && frame < _nextFirstHourResolveFrame)
                 return firstHourDirector;
 
@@ -1058,32 +1111,32 @@ namespace Hecton8.Audio
 
         private void RefreshPlayerRuntimeContextIfStale(int frame)
         {
-            CachePlayerRuntimeContext(PlayerRuntimeContextService.ActiveRuntimeContext, frame);
+            CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
         }
 
         private void RefreshAudioServiceIfStale(int frame)
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
+            CacheAudioService(GlobalRegistry.Audio, frame);
         }
 
         private void RefreshAcousticZoneIfStale(int frame)
         {
-            CacheAcousticZone(GlobalRegistry.AcousticZone, frame);
+            CacheAcousticZone(GlobalRegistry.AcousticZoneReadModel, frame);
         }
 
         private void RefreshDepthZoneDirectorIfStale(int frame)
         {
-            CacheDepthZoneDirector(GlobalRegistry.DepthZone, frame);
+            CacheDepthZoneReadModel(GlobalRegistry.DepthZoneReadModel, frame);
         }
 
         private void RefreshSurfaceWeatherDirectorIfStale(int frame)
         {
-            CacheSurfaceWeatherDirector(GlobalRegistry.SurfaceWeather, frame);
+            CacheSurfaceWeatherDirector(GlobalRegistry.SurfaceWeatherReadModel, frame);
         }
 
         private void RefreshFirstHourDirectorIfStale(int frame)
         {
-            CacheFirstHourDirector(GlobalRegistry.FirstHour, frame);
+            CacheFirstHourDirector(GlobalRegistry.FirstHourReadModel, frame);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, int frame)
@@ -1108,26 +1161,26 @@ namespace Hecton8.Audio
             _nextAudioServiceResolveFrame = frame + DependencyRetryFrameInterval;
         }
 
-        private void CacheAcousticZone(AcousticZoneController acousticZone, int frame)
+        private void CacheAcousticZone(IAcousticZoneReadModel acousticZone, int frame)
         {
             _cachedAcousticZone = acousticZone;
             _nextAcousticZoneResolveFrame = frame + DependencyRetryFrameInterval;
         }
 
-        private void CacheDepthZoneDirector(DepthZoneDirector depthZoneDirector, int frame)
+        private void CacheDepthZoneReadModel(IDepthZoneReadModel depthZoneReadModel, int frame)
         {
-            _depthZoneDirector = depthZoneDirector;
-            _depthZoneDirectorRuntimeCached = depthZoneDirector != null;
+            _cachedDepthZoneReadModel = depthZoneReadModel;
+            _depthZoneDirectorRuntimeCached = depthZoneReadModel != null;
             _nextDepthZoneResolveFrame = frame + DependencyRetryFrameInterval;
         }
 
-        private void CacheSurfaceWeatherDirector(HectonSurfaceWeatherDirector surfaceWeather, int frame)
+        private void CacheSurfaceWeatherDirector(ISurfaceWeatherReadModel surfaceWeather, int frame)
         {
             _cachedSurfaceWeatherDirector = surfaceWeather;
             _nextSurfaceWeatherResolveFrame = frame + DependencyRetryFrameInterval;
         }
 
-        private void CacheFirstHourDirector(FirstHourDirector firstHourDirector, int frame)
+        private void CacheFirstHourDirector(IFirstHourReadModel firstHourDirector, int frame)
         {
             _cachedFirstHourDirector = firstHourDirector;
             _nextFirstHourResolveFrame = frame + DependencyRetryFrameInterval;
@@ -1154,8 +1207,7 @@ namespace Hecton8.Audio
             if (_biomeMatrixDirector == null)
                 _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
 
-            if (_depthZoneDirector == null)
-                _depthZoneDirector = ResolveDepthZoneDirector();
+            ResolveDepthZoneReadModel();
 
             if (_directorAI == null)
                 _directorAI = HectonDirectorAI.ActiveRuntimeInstance;
@@ -1188,7 +1240,7 @@ namespace Hecton8.Audio
             if ((_playerMovement == null && _playerMovementLookupAttempted) ||
                 (_survivalSystem == null && _survivalLookupAttempted))
             {
-                if (Time.frameCount >= _nextDependencyRetryFrame)
+                if (Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _nextDependencyRetryFrame)
                 {
                     _playerMovementLookupAttempted = _playerMovement != null;
                     _survivalLookupAttempted = _survivalSystem != null;
@@ -1209,7 +1261,7 @@ namespace Hecton8.Audio
                 _playerMovementLookupAttempted = true;
                 _playerTransform.TryGetComponent(out _playerMovement);
                 if (_playerMovement == null)
-                    _nextDependencyRetryFrame = Time.frameCount + DependencyRetryFrameInterval;
+                    _nextDependencyRetryFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + DependencyRetryFrameInterval;
             }
 
             if (_survivalSystem == null && !_survivalLookupAttempted)
@@ -1218,7 +1270,7 @@ namespace Hecton8.Audio
                 if (_playerTransform != null)
                     _playerTransform.TryGetComponent(out _survivalSystem);
                 if (_survivalSystem == null)
-                    _nextDependencyRetryFrame = Time.frameCount + DependencyRetryFrameInterval;
+                    _nextDependencyRetryFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + DependencyRetryFrameInterval;
             }
 
             AudioMixerGroup musicGroup = ResolveMusicMixerGroup();
@@ -1324,7 +1376,7 @@ namespace Hecton8.Audio
             uint flags)
         {
             DynamicMusicScalarSignal signal = default;
-            signal.Frame = (uint)math.max(0, Time.frameCount);
+            signal.Frame = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
             signal.Flags = flags;
             signal.Tension01 = math.saturate(math.isfinite(tension01) ? tension01 : 0f);
             signal.DepthMeters = math.max(0f, math.isfinite(depthMeters) ? depthMeters : 0f);
@@ -1436,7 +1488,7 @@ namespace Hecton8.Audio
 
         private void DrainAcousticZoneSignal()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastAcousticZoneSignalFrame == frame)
                 return;
 
@@ -1451,7 +1503,7 @@ namespace Hecton8.Audio
 
         private void DrainDirectorAISignals()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastDirectorAISignalFrame == frame)
                 return;
 
@@ -1519,10 +1571,11 @@ namespace Hecton8.Audio
 
         private void RefreshObservedDepthZoneState()
         {
-            if (_depthZoneDirector == null)
+            IDepthZoneReadModel depthZoneReadModel = ResolveDepthZoneReadModel();
+            if (depthZoneReadModel == null)
                 return;
 
-            DepthZoneProfile currentZone = _depthZoneDirector.CurrentZone;
+            DepthZoneProfile currentZone = depthZoneReadModel.CurrentZone;
             if (!_hasObservedDepthZone)
             {
                 _hasObservedDepthZone = true;
@@ -1585,7 +1638,7 @@ namespace Hecton8.Audio
 
         private float ResolveStormPressure01(float depthMeters)
         {
-            HectonSurfaceWeatherDirector weatherDirector = ResolveSurfaceWeatherDirector();
+            ISurfaceWeatherReadModel weatherDirector = ResolveSurfaceWeatherDirector();
             if (weatherDirector == null || depthMeters > 120f)
                 return 0f;
 
@@ -1741,7 +1794,8 @@ namespace Hecton8.Audio
 
             HectonBiomeMatrixProfile matrixProfile = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentProfile : null;
             WorldZoneAnchor currentZone = _worldZoneDirector != null ? _worldZoneDirector.CurrentZone : null;
-            DepthZoneProfile depthZone = _depthZoneDirector != null ? _depthZoneDirector.CurrentZone : null;
+            IDepthZoneReadModel depthZoneReadModel = ResolveDepthZoneReadModel();
+            DepthZoneProfile depthZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
 
             float aiTension01 = _directorAI != null
                 ? math.saturate(_directorAI.TensionScore * 0.01f)
@@ -1778,7 +1832,7 @@ namespace Hecton8.Audio
 
         private bool ResolveBaseContext()
         {
-            AcousticZoneController acoustic = ResolveAcousticZone();
+            IAcousticZoneReadModel acoustic = ResolveAcousticZone();
             if (acoustic != null && acoustic.IsInterior)
                 return true;
 
@@ -2867,8 +2921,9 @@ namespace Hecton8.Audio
             if (zone == null || _currentBaseContext)
                 return;
 
-            FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
-            if (firstHourDirector != null && !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.Orientation))
+            IFirstHourReadModel firstHourDirector = ResolveFirstHourDirector();
+            if (firstHourDirector != null &&
+                !firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.Orientation))
                 return;
 
             if (ShouldPlayDepthDangerStinger(zone))
@@ -2893,9 +2948,9 @@ namespace Hecton8.Audio
 
         private void HandleRareDiscoveryRequested(Vector3 position)
         {
-            FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
+            IFirstHourReadModel firstHourDirector = ResolveFirstHourDirector();
             if (firstHourDirector != null &&
-                !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
+                !firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.FirstCraft))
             {
                 return;
             }
@@ -2961,9 +3016,9 @@ namespace Hecton8.Audio
             if (zone == null || _combatLatched || _overrideActive)
                 return false;
 
-            FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
+            IFirstHourReadModel firstHourDirector = ResolveFirstHourDirector();
             if (firstHourDirector != null &&
-                !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
+                !firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.FirstCraft))
             {
                 return false;
             }
@@ -2999,7 +3054,8 @@ namespace Hecton8.Audio
             if (!ShouldPlayDepthDangerStinger(exitedZone))
                 return false;
 
-            DepthZoneProfile currentZone = _depthZoneDirector != null ? _depthZoneDirector.CurrentZone : null;
+            IDepthZoneReadModel depthZoneReadModel = ResolveDepthZoneReadModel();
+            DepthZoneProfile currentZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
             if (currentZone == null)
                 return true;
 
@@ -3013,13 +3069,7 @@ namespace Hecton8.Audio
             if (!_enableTelemetry)
                 return;
 
-            string rootLabel = rootProfile != null && !string.IsNullOrEmpty(rootProfile.ProfileLabel) ? rootProfile.ProfileLabel : "None";
-            string playbackLabel = playbackProfile != null && !string.IsNullOrEmpty(playbackProfile.ProfileLabel) ? playbackProfile.ProfileLabel : "None";
-            string cueId = !string.IsNullOrEmpty(selectedCue.CueId) ? selectedCue.CueId : (selectedCue.Clip != null ? selectedCue.Clip.name : "None");
-            string tensionLabel = highTension ? "tense" : "calm";
-            string formLabel = preferShort ? "short" : "long";
-            string routeLabel = _selectionUsedDepthBlend ? "depth-blend" : (_selectionUsedCrossTension ? "cross-tension" : "local");
-            _debugLastSelectionReason = rootLabel + " -> " + playbackLabel + " | " + tensionLabel + " | " + formLabel + " | " + routeLabel + " | " + cueId;
+            _debugLastSelectionReason = "music-selection";
             TraceEvent(
                 ResolveSelectionTraceLabel(_selectionUsedDepthBlend, _selectionUsedCrossTension, highTension, preferShort),
                 playbackProfile,
@@ -3252,7 +3302,7 @@ namespace Hecton8.Audio
 
         private float ResolveFirstHourPressureBoost01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)
         {
-            FirstHourDirector firstHourDirector = ResolveFirstHourDirector();
+            IFirstHourReadModel firstHourDirector = ResolveFirstHourDirector();
             if (firstHourDirector == null || firstHourDirector.IsFirstHourComplete)
                 return 0f;
 
@@ -3275,10 +3325,10 @@ namespace Hecton8.Audio
                     boost01 = math.max(boost01, 0.26f);
             }
 
-            if (!firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
+            if (!firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.FirstCraft))
                 boost01 = math.max(boost01, 0.18f);
 
-            if (!firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstModule))
+            if (!firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.FirstModule))
                 boost01 = math.max(boost01, 0.32f);
 
             return math.saturate(boost01);

@@ -3,7 +3,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts.Physics
 {
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal static class KinematicStateLayout
+    {
+        internal const int KinematicStateStrideBytes = 64;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = KinematicStateLayout.KinematicStateStrideBytes)]
     public struct KinematicStateDTO
     {
         [FieldOffset(0)] public double3 AUP_Position;

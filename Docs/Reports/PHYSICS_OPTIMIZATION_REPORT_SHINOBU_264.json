@@ -1,4 +1,4 @@
-{
+﻿{
   "agent": "SHINOBU_264",
   "scanner": "SynchronousGpuReadbackScanner.RoslynAST",
   "verdict": "PASS_STATIC_UNITY_EXECUTION_PENDING",

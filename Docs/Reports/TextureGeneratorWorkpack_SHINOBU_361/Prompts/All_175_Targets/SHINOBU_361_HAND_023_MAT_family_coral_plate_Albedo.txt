@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_023
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_023_MAT_family_coral_plate_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_coral_plate_Albedo.png
+FINAL_FILENAME: MAT_family_coral_plate_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Plate coral albedo for layered alien reef shelves. Build overlapping fan plates in warm ivory, pale coral pink, and subtle lavender shadows painted as material color only. Add translucent teal rim cells, pearl mineral dust, and tiny amber biological points along selected edges. The surface should feel graceful and decorative but still natural, like reef architecture grown in slow pressure currents. Avoid busy camouflage and random speckle noise. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

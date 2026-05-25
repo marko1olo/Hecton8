@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_045
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_045_MAT_family_rock_cluster_medium_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\MAT_family_rock_cluster_medium_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_rock_cluster_medium_Placeholder_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Medium rock cluster albedo for modular Hecton seabed props. Use rounded pressure-polished stones in slate, soft blue-gray, and pale mineral beige, with thin teal seam deposits and pearl sediment caught between cluster forms. The texture should give simple rock meshes a premium expedition-game finish: clear boulder separation, calm color variety, and refined abyssal geology. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

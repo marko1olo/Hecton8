@@ -258,7 +258,10 @@ namespace Hecton8.EditorTools
                     float t = i / (float)segments;
                     float angle = math.lerp(startAngle, endAngle, t);
                     Vertex vertex = default;
-                    vertex.position = new Vector3(center.x + math.cos(angle) * radius, center.y + math.sin(angle) * radius, 0f);
+                    vertex.position = new Vector3(
+                        center.x + Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angle) * radius,
+                        center.y + Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle) * radius,
+                        0f);
                     vertex.tint = color;
                     vertex.uv = Vector2.zero;
                     mesh.SetNextVertex(vertex);

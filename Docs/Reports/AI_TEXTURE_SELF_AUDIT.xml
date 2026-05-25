@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_269" status="PENDING_UNITY_VERIFICATION">
+﻿<SELF_AUDIT agent="SHINOBU_269" status="PENDING_UNITY_VERIFICATION">
   <Check name="RuntimeControlMapExecution" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="All SHINOBU_269 systems are wrapped in UNITY_EDITOR folders and no runtime MonoBehaviour capture route is emitted." />
   <Check name="DearLieUvFlattening" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Bake shaders force clip-space XY from UV coordinates for template PNG generation." />
   <Check name="NoSynchronousPixelReadback" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="No Texture2D ReadPixels/GetPixels/EncodeToPNG or Camera.Render capture call exists in SHINOBU_269 source." />

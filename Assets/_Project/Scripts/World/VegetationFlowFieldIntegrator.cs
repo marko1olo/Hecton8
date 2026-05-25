@@ -670,9 +670,9 @@ namespace Hecton8.World
             _abyssalThermalGridScheduled = true;
         }
 
-        private static WeatherRuntimeSnapshot ResolveWeatherSnapshot()
+        private WeatherRuntimeSnapshot ResolveWeatherSnapshot()
         {
-            IWeatherService weatherService = GlobalRegistry.Weather;
+            IWeatherService weatherService = _weatherService;
             if (weatherService == null || !weatherService.IsInitialized)
                 return default;
 
@@ -734,9 +734,9 @@ namespace Hecton8.World
             return false;
         }
 
-        private static void TryRegisterBiolumeSurge(float durationSeconds)
+        private void TryRegisterBiolumeSurge(float durationSeconds)
         {
-            if (GlobalRegistry.Weather is GlobalWeatherDirector weatherDirector && weatherDirector.IsInitialized)
+            if (_weatherService is GlobalWeatherDirector weatherDirector && weatherDirector.IsInitialized)
                 weatherDirector.RegisterBiolumeSurge(durationSeconds);
         }
 

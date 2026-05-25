@@ -11,7 +11,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/LifePod Damage System")]
-    public sealed class LifePodDamageSystem : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class LifePodDamageSystem : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxShortCircuitBits = 16;
         private const int MaxVisibleSparkInstances = 4;
@@ -85,8 +85,10 @@ namespace Hecton8.Gameplay
         private float _resolvedShortCircuitHapticFrequencyHz;
         private int _resolvedRenderLayer;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _tickDormant;
+        private bool _sparkDrawDirty;
 
         /// <summary>
         /// Active short-circuit state. Each bit maps to one possible spark anchor.
@@ -273,6 +275,15 @@ namespace Hecton8.Gameplay
             }
 
             _sparkPhase = math.frac(_sparkPhase + safeDeltaTime * _resolvedSparkFlickerRateHz);
+            _sparkDrawDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_sparkDrawDirty)
+                return;
+
+            _sparkDrawDirty = false;
             DrawActiveSparks();
         }
 
@@ -405,7 +416,7 @@ namespace Hecton8.Gameplay
             if (!hapticsEnabled)
                 return;
 
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 _resolvedShortCircuitLowFrequency,
                 _resolvedShortCircuitHighFrequency,
                 _resolvedShortCircuitHapticDurationSeconds,
@@ -463,19 +474,29 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
         {
-            if (!_registeredTick)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = false;
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
         }
 
         private void TryRegisterHotSwapListener()

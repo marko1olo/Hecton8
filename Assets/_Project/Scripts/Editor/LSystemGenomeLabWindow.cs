@@ -2,6 +2,7 @@
 using System;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.Graphics.Materials;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
@@ -315,11 +316,11 @@ namespace Hecton8.Editor
                 {
                     hideFlags = HideFlags.HideAndDontSave
                 };
-                _previewMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                _previewMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                _previewMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
-                _previewMaterial.SetInt("_ZWrite", 0);
-                _previewMaterial.SetColor("_Color", new Color(0.26f, 0.95f, 0.78f, 0.62f));
+                _previewMaterial.SetInt(H8ShaderIDs.SrcBlend, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                _previewMaterial.SetInt(H8ShaderIDs.DstBlend, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                _previewMaterial.SetInt(H8ShaderIDs.Cull, (int)UnityEngine.Rendering.CullMode.Off);
+                _previewMaterial.SetInt(H8ShaderIDs.ZWrite, 0);
+                _previewMaterial.SetColor(H8ShaderIDs.Color, new Color(0.26f, 0.95f, 0.78f, 0.62f));
             }
 
             return _previewMaterial != null;

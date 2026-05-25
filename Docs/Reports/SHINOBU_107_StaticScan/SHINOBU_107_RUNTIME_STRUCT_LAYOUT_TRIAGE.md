@@ -1,4 +1,4 @@
-# SHINOBU_107 Runtime Struct Layout Triage
+﻿# SHINOBU_107 Runtime Struct Layout Triage
 
 Source report: `Docs/Reports/SHINOBU_107_StaticScan/SHINOBU_140_Runtime_Struct_Layout.json`
 

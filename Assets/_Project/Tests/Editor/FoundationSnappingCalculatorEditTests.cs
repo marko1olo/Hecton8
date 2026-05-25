@@ -56,9 +56,10 @@ namespace Hecton8.Tests.Editor
             using NativeArray<FoundationPylonFrameCounters> frame = new NativeArray<FoundationPylonFrameCounters>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             using NativeArray<FoundationDebugRayDTO> debug = new NativeArray<FoundationDebugRayDTO>(FoundationSnappingCalculatorRuntime.MaxRaysPerModule, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             using NativeArray<FoundationPylonIndirectArgsDTO> args = new NativeArray<FoundationPylonIndirectArgsDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<FoundationModuleAupDTO> writableModules = modules;
 
             FoundationSdfConfigDTO config = FoundationSnappingCalculatorRuntime.CreateDefaultMockSdfConfig(new double3(32d, 32d, 32d));
-            modules[0] = new FoundationModuleAupDTO
+            writableModules[0] = new FoundationModuleAupDTO
             {
                 CenterAup = new double3(32d, 32d, 32d),
                 Rotation = quaternion.identity,
@@ -182,8 +183,9 @@ namespace Hecton8.Tests.Editor
         {
             using NativeArray<FoundationTelemetryEntry> telemetry = new NativeArray<FoundationTelemetryEntry>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             using NativeArray<int> cursor = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<int> writableCursor = cursor;
 
-            cursor[0] = int.MinValue;
+            writableCursor[0] = int.MinValue;
             FoundationPylonFrameCounters counters = default;
             counters.SlotCount = 1;
             counters.ResultHash = 0x252u;

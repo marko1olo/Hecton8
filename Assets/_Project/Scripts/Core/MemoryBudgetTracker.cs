@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -110,7 +111,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static string FormatBytes(long bytes)
         {
-            return (bytes * GlobalTelemetryBus.BytesToMegabytes).ToString("F2") + " MB";
+            return (bytes * GlobalTelemetryBus.BytesToMegabytes).ToString("F2", CultureInfo.InvariantCulture) + " MB";
         }
 #endif
     }

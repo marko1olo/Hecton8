@@ -1,4 +1,4 @@
-# HECTON-8 Pricing, Discount, And Early Access Policy
+﻿# HECTON-8 Pricing, Discount, And Early Access Policy
 
 Status: planning policy / no price chosen
 Owner lane: SHINOBU_81 / Steam commercial ops

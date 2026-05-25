@@ -64,9 +64,10 @@ namespace Hecton8.Optimization
         private long _lastObservedVramBytes;
         private long _graphicsBudgetBytes;
         private bool _uiMipBiasGateActive;
-        private VRAMMonitor _vramMonitor;
-        private VRAMPressureMonitor _vramPressure;
-        private AssetLifecycleGovernor _assetLifecycle;
+        private IVramBudgetReadModel _vramMonitor;
+        private IVramPressureReadModel _vramPressure;
+        private IVramPressureMipBiasSink _vramPressureMipBias;
+        private IAssetLifecyclePressureSink _assetLifecycle;
 #if UNITY_ADDRESSABLES_EXIST
         private uint _lastAddressableDependencyGroupHash;
         private int _lastAddressableDependencyOrder;
@@ -298,7 +299,7 @@ namespace Hecton8.Optimization
 
         private void ForceDrainDeferredReleasesCached()
         {
-            AssetLifecycleGovernor governor = _assetLifecycle;
+            IAssetLifecyclePressureSink governor = _assetLifecycle;
             if (governor != null)
                 governor.ForceDrainPendingReleaseQueue();
         }
@@ -360,9 +361,9 @@ namespace Hecton8.Optimization
 
         private void EvaluateUiMipBiasGate()
         {
-            VRAMMonitor monitor = _vramMonitor;
-            VRAMPressureMonitor pressureMonitor = _vramPressure;
-            if (monitor == null || pressureMonitor == null)
+            IVramBudgetReadModel monitor = _vramMonitor;
+            IVramPressureMipBiasSink pressureMipBias = _vramPressureMipBias;
+            if (monitor == null || pressureMipBias == null)
                 return;
 
             monitor.GetVRAMBreakdown(out _, out _, out long totalVramBytes);
@@ -378,21 +379,21 @@ namespace Hecton8.Optimization
 
             if (mipDelta > 0)
             {
-                ApplyUiMipBiasGate(pressureMonitor, totalVramBytes, gateResponse);
+                ApplyUiMipBiasGate(pressureMipBias, totalVramBytes, gateResponse);
                 return;
             }
 
             if (_uiMipBiasGateActive && vramPressure <= ResolveUiMipRestoreFraction())
             {
-                RestoreUiMipBiasGate(pressureMonitor);
+                RestoreUiMipBiasGate(pressureMipBias);
                 return;
             }
 
             if (_uiMipBiasGateActive)
-                pressureMonitor.SetExternalMipPressureResponse(gateResponse, totalVramBytes);
+                pressureMipBias.SetExternalMipPressureResponse(gateResponse, totalVramBytes);
         }
 
-        private void ApplyUiMipBiasGate(VRAMPressureMonitor pressureMonitor, long observedVramBytes, float gateResponse)
+        private void ApplyUiMipBiasGate(IVramPressureMipBiasSink pressureMonitor, long observedVramBytes, float gateResponse)
         {
             pressureMonitor.SetExternalMipPressureResponse(gateResponse, observedVramBytes);
 
@@ -403,7 +404,7 @@ namespace Hecton8.Optimization
             GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateHighHash, UiTextureContextHash, observedVramBytes / (float)BytesPerMegabyte);
         }
 
-        private void RestoreUiMipBiasGate(VRAMPressureMonitor pressureMonitor)
+        private void RestoreUiMipBiasGate(IVramPressureMipBiasSink pressureMonitor)
         {
             pressureMonitor.SetExternalMipPressureResponse(0f, _lastObservedVramBytes);
             _uiMipBiasGateActive = false;
@@ -415,7 +416,7 @@ namespace Hecton8.Optimization
             if (!_uiMipBiasGateActive)
                 return;
 
-            VRAMPressureMonitor pressureMonitor = _vramPressure;
+            IVramPressureMipBiasSink pressureMonitor = _vramPressureMipBias;
             if (pressureMonitor != null)
                 pressureMonitor.SetExternalMipPressureResponse(0f, _lastObservedVramBytes);
 
@@ -432,8 +433,7 @@ namespace Hecton8.Optimization
                 return;
 
             CacheDependencies();
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -501,17 +501,20 @@ namespace Hecton8.Optimization
         private void CacheDependencies()
         {
             if (_vramMonitor == null)
-                _vramMonitor = GlobalRegistry.VRAMMonitor;
+                _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
             if (_vramPressure == null)
-                _vramPressure = GlobalRegistry.VRAMPressure;
+                _vramPressure = GlobalRegistry.VRAMPressureReadModel;
+            if (_vramPressureMipBias == null)
+                _vramPressureMipBias = GlobalRegistry.VRAMPressureMipBiasSink;
             if (_assetLifecycle == null)
-                _assetLifecycle = GlobalRegistry.AssetLifecycle;
+                _assetLifecycle = GlobalRegistry.AssetLifecyclePressureSink;
         }
 
         private void ClearCachedDependencies()
         {
             _vramMonitor = null;
             _vramPressure = null;
+            _vramPressureMipBias = null;
             _assetLifecycle = null;
         }
 
@@ -528,13 +531,14 @@ namespace Hecton8.Optimization
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
-                    _vramMonitor = currentService as VRAMMonitor;
+                    _vramMonitor = currentService as IVramBudgetReadModel;
                     break;
                 case GlobalRegistryServiceSlot.VRAMPressureRuntime:
-                    _vramPressure = currentService as VRAMPressureMonitor;
+                    _vramPressure = currentService as IVramPressureReadModel;
+                    _vramPressureMipBias = currentService as IVramPressureMipBiasSink;
                     break;
                 case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
-                    _assetLifecycle = currentService as AssetLifecycleGovernor;
+                    _assetLifecycle = currentService as IAssetLifecyclePressureSink;
                     break;
             }
         }
@@ -678,7 +682,7 @@ namespace Hecton8.Optimization
         private int ResolveAllowedConcurrentLoads(AssetPriorityTier priority)
         {
             int band = ResolveBand(priority);
-            VRAMPressureMonitor pressureMonitor = _vramPressure;
+            IVramPressureReadModel pressureMonitor = _vramPressure;
             float ramPressure = pressureMonitor != null ? pressureMonitor.RamPressureFactor : 0f;
             float totalPressure = pressureMonitor != null ? pressureMonitor.PressureFactor : ramPressure;
             float pressure = math.saturate(math.select(0f, totalPressure, math.isfinite(totalPressure)));
@@ -758,6 +762,9 @@ namespace Hecton8.Optimization
 
         private static float ResolveGlobalQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }

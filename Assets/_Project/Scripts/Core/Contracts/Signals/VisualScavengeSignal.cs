@@ -2,8 +2,14 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.Core.Contracts.Signals
 {
+    internal static class VisualScavengeSignalLayout
+    {
+        internal const int AupTransferStrideBytes = 64;
+        internal const int SignalStrideBytes = 128;
+    }
+
     /// <summary>Contract-local AUP transfer payload for visual scavenging signals. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VisualScavengeSignalLayout.AupTransferStrideBytes)]
     public struct VisualScavengeAup48
     {
         [FieldOffset(0)] public long GridX;
@@ -19,7 +25,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Visual-only scavenging pickup fake. Size: 128 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = VisualScavengeSignalLayout.SignalStrideBytes)]
     public struct VisualScavengeSignal : ISignal
     {
         [FieldOffset(0)] public VisualScavengeAup48 PositionAup;

@@ -68,7 +68,7 @@ namespace Hecton8.EditorTools
 
         public static bool IsPlaceholderFinalVariant(WorldPrefabFamilyProfile.VariantEntry variant)
         {
-            return variant != null && variant.prefab != null && variant.prefab.GetComponent<WorldProceduralPlaceholderMarker>() != null;
+            return variant != null && variant.prefab != null && variant.prefab.TryGetComponent(out WorldProceduralPlaceholderMarker _);
         }
 
         private static bool EnsurePlaceholderFinalVariant(WorldPrefabFamilyProfile family, GameObject prefab)
@@ -341,7 +341,7 @@ namespace Hecton8.EditorTools
             {
                 float angle = i * 90f + 22f;
                 float radians = angle * Mathf.Deg2Rad;
-                Vector3 position = new Vector3(Mathf.Cos(radians) * 0.42f, 2.96f + (i % 2 == 0 ? 0.08f : -0.04f), Mathf.Sin(radians) * 0.42f);
+                Vector3 position = new Vector3(Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(radians) * 0.42f, 2.96f + (i % 2 == 0 ? 0.08f : -0.04f), Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(radians) * 0.42f);
                 shapes.Add(Shape(
                     PrimitiveType.Cube,
                     $"CanopyBlade_{i}",
@@ -500,7 +500,7 @@ namespace Hecton8.EditorTools
             {
                 float angle = i * 90f;
                 float radians = angle * Mathf.Deg2Rad;
-                Vector3 position = new Vector3(Mathf.Cos(radians) * 0.72f, 0.22f, Mathf.Sin(radians) * 0.72f);
+                Vector3 position = new Vector3(Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(radians) * 0.72f, 0.22f, Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(radians) * 0.72f);
                 shapes.Add(Shape(
                     hazard ? PrimitiveType.Cylinder : PrimitiveType.Sphere,
                     $"PocketMarker_{i}",
@@ -532,7 +532,7 @@ namespace Hecton8.EditorTools
                 shapes.Add(Shape(
                     PrimitiveType.Cube,
                     $"Fin_{i}",
-                    new Vector3(Mathf.Cos(radians) * 0.42f, predator ? 0.44f : 0.28f, Mathf.Sin(radians) * 0.42f),
+                    new Vector3(Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(radians) * 0.42f, predator ? 0.44f : 0.28f, Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(radians) * 0.42f),
                     new Vector3(predator ? -18f : -8f, angle, predator ? 24f : 12f),
                     new Vector3(0.14f, predator ? 0.72f : 0.42f, 0.34f)));
             }
@@ -746,11 +746,9 @@ namespace Hecton8.EditorTools
             primitive.transform.localPosition = shape.position;
             primitive.transform.localEulerAngles = shape.euler;
             primitive.transform.localScale = shape.scale;
-            Renderer renderer = primitive.GetComponent<Renderer>();
-            if (renderer != null)
+            if (primitive.TryGetComponent(out Renderer renderer))
                 renderer.sharedMaterial = material;
-            Collider collider = primitive.GetComponent<Collider>();
-            if (collider != null)
+            if (primitive.TryGetComponent(out Collider collider))
                 UnityEngine.Object.DestroyImmediate(collider);
         }
 
@@ -761,7 +759,7 @@ namespace Hecton8.EditorTools
         {
             float angle = Stable01(seed, salt) * Mathf.PI * 2f;
             float distance = radius * Mathf.Lerp(0.3f, 1f, Stable01(seed, salt + 17));
-            return new Vector3(Mathf.Cos(angle) * distance, y, Mathf.Sin(angle) * distance);
+            return new Vector3(Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angle) * distance, y, Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle) * distance);
         }
 
         private static Vector3 StableEuler(string seed, int salt, float xMagnitude, float zMagnitude)

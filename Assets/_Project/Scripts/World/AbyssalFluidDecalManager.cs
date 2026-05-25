@@ -14,7 +14,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-103)]
-    public sealed class AbyssalFluidDecalManager : MonoBehaviour, ITickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class AbyssalFluidDecalManager : MonoBehaviour, ITickable, ILateFrameTickable, IOriginShiftListener, IFluidDecalPresentationSink, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string DecalMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/MAT_AbyssalFluidDecal.mat";
@@ -165,8 +165,12 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _playerContext;
         private bool _serviceRegistered;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _loggedMissingDecalMaterial;
+        private bool _drawDecalsDirty;
+        private bool _pressureSprayDrawDirty;
+        private int _pressureSprayMatrixCount;
 
         private void Awake()
         {
@@ -434,10 +438,25 @@ namespace Hecton8.World
                 decal.Radius = MoveTowardsFast(decal.Radius, decal.TargetRadius, spreadSpeed * deltaTime);
                 _decalStates[i] = decal;
                 if (!screenSpaceFluidDecals)
-                    DrawDecal(decal);
+                    _drawDecalsDirty = true;
             }
 
             TickPressureSprays(deltaTime, driftDelta);
+        }
+
+        public void LateFrameTick()
+        {
+            if (_drawDecalsDirty)
+            {
+                _drawDecalsDirty = false;
+                DrawActiveDecals();
+            }
+
+            if (_pressureSprayDrawDirty)
+            {
+                _pressureSprayDrawDirty = false;
+                DrawPressureSprayBatch(_pressureSprayMatrixCount);
+            }
         }
 
         private void RegisterDecal(Vector3 positionWS, Color color, float startRadius, float targetRadius, float lifetime)
@@ -668,7 +687,21 @@ namespace Hecton8.World
                 AppendPressureSprayMatrix(in spray, cameraTransform, ref matrixCount);
             }
 
-            DrawPressureSprayBatch(matrixCount);
+            _pressureSprayMatrixCount = matrixCount;
+            _pressureSprayDrawDirty = matrixCount > 0;
+        }
+
+        private void DrawActiveDecals()
+        {
+            if (_decalStates == null || screenSpaceFluidDecals)
+                return;
+
+            for (int i = 0; i < _decalStates.Length; i++)
+            {
+                FluidDecalState decal = _decalStates[i];
+                if (decal.Active != 0)
+                    DrawDecal(in decal);
+            }
         }
 
         private void AppendPressureSprayMatrix(in PressureSprayState spray, Transform cameraTransform, ref int matrixCount)
@@ -913,17 +946,22 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            if (!_registeredTick)
+            {
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            }
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void CacheRegistryServicesCold()
         {
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             if (_sargassumDrag == null)
                 _sargassumDrag = GlobalRegistry.SargassumDrag;
@@ -966,12 +1004,17 @@ namespace Hecton8.World
 
         private void TryUnregister()
         {
-            if (!_registeredTick)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-
-            _registeredTick = false;
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
         }
 
         private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)

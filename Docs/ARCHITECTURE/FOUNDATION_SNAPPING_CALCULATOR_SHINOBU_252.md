@@ -1,29 +1,60 @@
-# SHINOBU_252 Foundation Snapping Calculator
+﻿# SHINOBU_252 Foundation Snapping Calculator
 
-Status: STATIC_SOURCE / STATIC_DOC only. Unity import, Console, Burst Inspector, Play Mode, Frame Debugger, profiler, GCMonitor, Memory Profiler, shader import, visual-route capture, crash dump repro, and player-build proof remain pending. The guarded C# build is blocked before SHINOBU_252 diagnostics by external missing project files: `Assets/_Project/Scripts/World/Contracts/GroundRadarContracts.cs` and `Assets/_Project/Scripts/IBuildPlacementRule.cs`.
+Status: STATIC_SOURCE / STATIC_DOC only.
+
+Pending proof:
+
+- Unity import, Console, Burst Inspector, Play Mode, Frame Debugger.
+- Profiler, GCMonitor, Memory Profiler, shader import, visual capture.
+- Crash dump repro, player build.
+
+Guarded C# build is blocked before SHINOBU_252 diagnostics by missing `GroundRadarContracts.cs` and `IBuildPlacementRule.cs`.
 
 ## Authority Route
+
 - Owner fact: construction module placement/preview stays with Construction owners. SHINOBU_252 owns only presentation pylon matrices, SDF surface embedding rows, counters, debug rays, and telemetry.
 - Presentation route: `BuildFoundationModulesFromSocketModulesJob` -> `CalculateFoundationPylonsJob` -> `ReduceFoundationPylonCountersJob` -> `CompactFoundationPylonDrawListJob` -> camera-relative `PylonMatrixDTO`/`FoundationPylonSurfaceDTO` -> `FoundationPylonGpuBatch` -> shader world reconstruction with `_H8FoundationPylonCameraWorldOffset`.
 - Hot broadcast: `BaseStructuralWarningSignal` through `SignalBus<T>` only when pylon extension exceeds the configured mathematical limit.
 - Rollback/netcode: `PylonMatrixDTO` is presentation-only and excluded from rollback/Merkle state.
 - Cold dependency route: `GlobalRegistry.DataVault` is cached only from cold component setup/editor actions. The late-frame schedule path fails closed when Vault/material/GPU buffers are not already prepared.
 - Origin route: `FoundationPylonGpuBatch` caches floating-origin AUP during cold setup and updates it via `IOriginShiftListener`; pending batches are discarded on origin shift.
-- Vault alias route: scheduled jobs lock SHINOBU-owned buffers including telemetry/cursor rows, consumed socket input buffers, and optional encoded voxel SDF with `TryLockBuffer(..., SystemID.Construction)` until finalize/upload or teardown. Vault views are re-resolved after locks before Burst scheduling.
-- Profile reload route: CSV profile writes acquire a SHINOBU profile write fence and Vault locks for ray origins/profile ranges/CSV scratch. Scheduled pylon jobs hold a profile read fence until their `JobHandle` is finalized, so designer reloads cannot mutate rows currently read by Burst.
-- Profile edit lock route: CSV file import tracks partial lock acquisition and releases only locks held by that import attempt. This avoids decrementing unrelated owner-phase Vault locks when `RayOrigin`, `ProfileRange`, or `CsvScratch` acquisition fails partway through.
-- Socket read route: the socket dependency exposes `ShinobuSocketConstructionRuntime.TryReadVaultViews`, which resolves consumed socket buffers through `TryReadHandle` for foundation preflight instead of fault-telemetry-mutating resolve access. The legacy `TryResolveVaultViews` compatibility method now delegates to the pure read facade, so old callers do not reintroduce resolve-side mutation. `FoundationPylonGpuBatch` also holds `TryBeginModuleReadFence` across scheduled jobs; socket mock writes use `TryBeginModuleWriteFence`. This is the executable bridge until a broader socket owner immutable-front-buffer contract exists.
+- Vault alias route: scheduled jobs lock SHINOBU-owned buffers with `TryLockBuffer(..., SystemID.Construction)`.
+- Locked buffers include telemetry/cursor rows, consumed socket inputs, and optional encoded voxel SDF.
+- Locks last until finalize/upload or teardown.
+- Vault views re-resolve before Burst scheduling.
+- Profile reload route: CSV writes acquire a SHINOBU profile write fence.
+- Vault locks cover ray origins, profile ranges, and CSV scratch.
+- Scheduled pylon jobs hold a profile read fence until their `JobHandle` is finalized.
+- Designer reloads cannot mutate rows currently read by Burst.
+- Profile edit lock route tracks partial lock acquisition during CSV import.
+- It releases only locks held by that import attempt.
+- This avoids decrementing unrelated owner-phase locks when `RayOrigin`, `ProfileRange`, or `CsvScratch` acquisition fails.
+- Socket read route:
+  - Facade: `ShinobuSocketConstructionRuntime.TryReadVaultViews`.
+  - Read method: consumed socket buffers through `TryReadHandle`.
+  - Forbidden path: fault-telemetry-mutating resolve access during foundation preflight.
+  - Compatibility: `TryResolveVaultViews` delegates to the pure read facade.
+  - Job fence: `FoundationPylonGpuBatch` holds `TryBeginModuleReadFence`.
+  - Mock write fence: `TryBeginModuleWriteFence`.
+  - Scope: bridge until a socket-owner immutable-front-buffer contract exists.
 
 ## Math Contract
+
 - Ray origin is module bottom/corner in AUP double precision.
 - The job subtracts camera AUP before casting to float matrix space.
 - The shader adds the exact camera world offset captured at scheduling before calling `TransformWorldToHClip`; draw bounds are built from the same reconstructed world centers.
 - SDF sampling reads a DataVault byte SDF when present; otherwise deterministic mock seafloor SDF is generated by `GenerateMockSeafloorSDFJob`.
-- Below quality `0.3`, SDF sampling collapses to nearest-neighbor, one distance-proxy lookup per ray, and an up-normal without the 6-sample gradient. From `0.3..0.55`, sampling blends nearest/trilinear. High/Ultra execute full trilinear raymarch and SDF-gradient normal extraction.
+- Below quality `0.3`: nearest-neighbor SDF, one distance-proxy lookup per ray, up-normal without 6-sample gradient.
+- From `0.3..0.55`: nearest/trilinear blend.
+- High/Ultra: full trilinear raymarch and SDF-gradient normal extraction.
 - Ray density is a continuous shaped budget. Extra support rays fade in by radius/flare scale through `smoothstep` instead of appearing at full thickness on one quality threshold.
-- In the default no-CSV profile, the first support remains centered at Low and slides continuously toward the fourth corner only near Ultra. This keeps the cheap center-pillar silhouette on weak devices while making the max-quality 4-ray pattern cover all four corners without raising `MaxRaysPerModule`.
+- Default no-CSV profile: first support remains centered at Low and slides toward the fourth corner only near Ultra.
+- Result: weak devices keep cheap center-pillar silhouette; max-quality 4-ray pattern covers all corners without raising `MaxRaysPerModule`.
 - Pylon length is the distance from module bottom to the first downward SDF hit; culled pylons write zero-scale matrices and are compacted out before GPU upload/indirect draw.
-- Matrix scale contract: X/Z columns store pylon diameter because the procedural shader ring is authored at local radius `0.5`; Y stores resolved length. Bounds use the same local half-extents and flare inflation.
+- Matrix scale contract: X/Z columns store pylon diameter.
+- Reason: procedural shader ring is authored at local radius `0.5`.
+- Y stores resolved length.
+- Bounds use the same local half-extents and flare inflation.
 
 ## Payloads
 - BufferID range: `70960..70974`, registered both in `BufferID.FoundationSnapping*` enum entries and `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
@@ -32,7 +63,14 @@ Status: STATIC_SOURCE / STATIC_DOC only. Unity import, Console, Burst Inspector,
 - Counter row: `FoundationPylonFrameCounters=64`, active fields `0..31`, isolation padding `32..63` to avoid parallel counter false sharing.
 - Telemetry row: `FoundationTelemetryEntry=64`, fixed 300-entry black-box ring.
 - Indirect draw row: `FoundationPylonIndirectArgsDTO=16`; `InstanceCount` is rewritten from compacted active support count, not fixed capacity.
-- CSV bridge: designer profile bytes are read into Vault scratch buffer `FoundationSnappingCsvScratch` and parsed into fixed `profileIndex * MaxRaysPerModule + rayIndex` rows, so repeated module hashes cannot overlap adjacent profiles. The public byte parser owns the profile write fence; the file importer uses the private parser only while it already holds the write fence and Vault edit locks. Header detection is exact first-token matching, and empty module-hash cells are rejected.
+- CSV bridge:
+  - Bytes land in Vault scratch buffer `FoundationSnappingCsvScratch`.
+  - Row address: `profileIndex * MaxRaysPerModule + rayIndex`.
+  - Repeated module hashes cannot overlap adjacent profiles.
+  - Public byte parser owns the profile write fence.
+  - File importer calls the private parser only while holding write fence and Vault edit locks.
+  - Header detection: exact first-token match.
+  - Empty module-hash cells: rejected.
 - Fence bridge: SHINOBU profile fences and socket module fences use `Interlocked`/`Volatile`; schedule failure cleanup force-completes only exceptional partial handles before releasing locks/fences.
 
 ## Scalability
@@ -50,5 +88,10 @@ Status: STATIC_SOURCE / STATIC_DOC only. Unity import, Console, Burst Inspector,
 - Shared report slot: `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT.json`.
 - Editor sidecar report: `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_252.json`.
 - Black box: `Docs/AgentLogs/Dump_FOUNDATION_CALCULATOR.bin`.
-- Shader inclusion: `ProjectSettings/GraphicsSettings.asset` includes shader GUID `0e3d6c95b94344c7b864f17da3f25205` in `m_AlwaysIncludedShaders` and preloads pylon variant collection GUID `0e3d6c95b94344c7b864f17da3f25207`. `Assets/_Project/Scenes/00_BOOTSTRAP.unity` also serializes the same SVC GUID in `shaderVariantCollections`, which is the route `GameBootstrapper` warms during boot. Runtime import/player proof remains pending.
+- Shader inclusion:
+  - `GraphicsSettings.asset` includes shader GUID `0e3d6c95b94344c7b864f17da3f25205` in `m_AlwaysIncludedShaders`.
+  - It preloads pylon SVC GUID `0e3d6c95b94344c7b864f17da3f25207`.
+  - `00_BOOTSTRAP.unity` serializes the same SVC GUID in `shaderVariantCollections`.
+  - `GameBootstrapper` warms that route during boot.
+- Runtime import/player proof remains pending.
 - Editor allocation boundary: UI Toolkit controls, file panels, status strings, AssetDatabase refresh, and report file writes are editor-only proof/tooling paths, not runtime zero-GC claims.

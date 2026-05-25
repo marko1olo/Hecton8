@@ -1,4 +1,5 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Threading;
 using Hecton8.Audio;
 using Hecton.Localization;
 using Hecton8.Construction;
@@ -168,6 +169,7 @@ namespace Hecton8.World
         private const int ThermalMapDiffusionSliceMask = ThermalMapDiffusionSliceCount - 1;
         private const int ThermalMapDiffusionSliceCellCount = ThermalMapCellCount / ThermalMapDiffusionSliceCount;
         private const int ThermalMapAxisShift = 5;
+        private const uint KccVelocityThermalMaxAgeFrames = 12u;
         private const int ThermalGridSaveRleCapacity = ThermalMapCellCount;
         private const int ThermalTelemetryCapacity = 300;
         private const int VentBufferRingSize = 3;
@@ -181,6 +183,9 @@ namespace Hecton8.World
         private const float ThermalShockHotThresholdCelsius = 100f;
         private const float ThermalShockColdThresholdCelsius = -5f;
         private const float ThermalShockDamageMagnitude = 14f;
+        private const float ThermalGridEnableQualityThreshold01 = 0.35f;
+        private const int ThermalGridMinimumVramMb = 1024;
+        private const int ThermalGridFullVramMb = 3072;
         private const float SubmarineColdSpeedMultiplier = 0.7f;
         private const float BoilingDamageThresholdCelsius = 80f;
         private const float FaunaThermalAvoidanceThresholdCelsius = 50f;
@@ -684,20 +689,31 @@ namespace Hecton8.World
         private int _thermalTelemetryIndex;
         private int _thermalGridRleRunCount;
         private int _thermalGridRleByteCount;
+        private int _thermalMapReadbackRetainCount;
         private uint _thermalGridRleChecksum;
         private uint _lastProcessedAupShiftFrameId;
         private int _lastPersistentThermalVentRevision = int.MinValue;
+        private bool _thermalMapDisposePending;
         private float _thermalColdTickAccumulator;
         private float _thermalMapCellSizeMeters = DefaultThermalMapWorldSizeMeters * math.rcp(ThermalMapResolution);
         private Vector3 _thermalMapOriginWS;
         private float _lastLocalThermalHeat01 = -1f;
         private float _lastLocalThermalTemperatureCelsius = float.NaN;
+        private float _pendingLocalThermalHeat01;
+        private float _pendingLocalThermalTemperatureCelsius;
         private float _previousPlayerTemperatureCelsius = DefaultAmbientWaterTemperatureCelsius;
         private float _previousSubmarineTemperatureCelsius = DefaultAmbientWaterTemperatureCelsius;
         private float _thermalCondensation01;
         private float _lastPublishedThermalCondensation01 = -1f;
         private float _thermalRoarCooldown;
         private float _thermalEruptionGpuRefreshTimer;
+        private float _pendingSmokeVisualDeltaTime;
+        private int _pendingThermalBubbleCommandCount;
+        private bool _localThermalPresentationDirty;
+        private bool _smokeVisualSyncRequested;
+        private bool _thermalBubbleCommandsDirty;
+        private bool _thermalMapMetadataDirty;
+        private bool _pendingThermalMapActive;
         private Vector4[] _thermalBubbleCommands;
 
         /// <summary>
@@ -722,7 +738,7 @@ namespace Hecton8.World
                    || string.Equals(familyId, "biome.family.volcanic_hadal", System.StringComparison.OrdinalIgnoreCase);
         }
 
-        internal bool TryResolveApexMigrationThermalAttractor(out Vector3 attractorPosition, out float strength01)
+        public bool TryResolveApexMigrationThermalAttractor(out Vector3 attractorPosition, out float strength01)
         {
             attractorPosition = default;
             strength01 = 0f;
@@ -1087,7 +1103,6 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             ResolveDependencies();
-            UploadThermalMapTextureIfDirty();
             float deltaTime = Mathf.Max(0f, dt);
             AdvanceThermalMapColdTick(deltaTime);
             _simulationTime += deltaTime;
@@ -1110,20 +1125,8 @@ namespace Hecton8.World
             if (!_hasSmokeData || blackSmokeCompute == null || blackSmokeMaterial == null || _activeVentCount <= 0)
                 return;
 
-            if (_forceVentBufferUpload)
-                UploadVentBuffer();
-
-            if (_forceParticleReset)
-                ResetParticles();
-
-            BindSmokeUniforms(deltaTime);
-            blackSmokeCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);
-            _frameParity ^= 1;
-
-            if (IsSmokeVisible())
-                RenderSmoke();
-
-            CaptureInFlightFences(_activeVentBufferIndex);
+            _pendingSmokeVisualDeltaTime = deltaTime;
+            _smokeVisualSyncRequested = true;
         }
 
         /// <summary>
@@ -1194,6 +1197,16 @@ namespace Hecton8.World
             ConsumeAupShiftSignals();
             CompleteThermalMapJobIfReady();
             CompleteCrystallizationJobIfReady();
+            UploadThermalMapTextureIfDirty();
+            FlushThermalMapMetadata();
+            FlushLocalThermalPresentation();
+            FlushThermalBubbleCommands();
+
+            if (_smokeVisualSyncRequested)
+            {
+                FlushSmokeVisualSync(_pendingSmokeVisualDeltaTime);
+                _smokeVisualSyncRequested = false;
+            }
         }
 
         /// <summary>
@@ -1298,6 +1311,92 @@ namespace Hecton8.World
             return UsesThermalGrid() && _thermalMapReadCelsius.IsCreated;
         }
 
+        public bool TryGetThermalGridReadbackAup(
+            out NativeArray<float>.ReadOnly temperatureCelsius,
+            out int width,
+            out int height,
+            out int depth,
+            out double3 originAup,
+            out float cellSizeMeters,
+            out int version)
+        {
+            bool available = TryGetThermalGridReadback(
+                out temperatureCelsius,
+                out width,
+                out height,
+                out depth,
+                out Vector3 originWS,
+                out cellSizeMeters,
+                out version);
+            originAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(originWS);
+            if (!available || !math.all(math.isfinite(originAup)))
+            {
+                originAup = double3.zero;
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool TryAcquireThermalGridReadbackAup(
+            out NativeArray<float>.ReadOnly temperatureCelsius,
+            out int width,
+            out int height,
+            out int depth,
+            out double3 originAup,
+            out float cellSizeMeters,
+            out int version)
+        {
+            if (!UsesThermalGrid() || !_thermalMapReadCelsius.IsCreated)
+            {
+                temperatureCelsius = default;
+                width = 0;
+                height = 0;
+                depth = 0;
+                originAup = double3.zero;
+                cellSizeMeters = 0f;
+                version = 0;
+                return false;
+            }
+
+            Interlocked.Increment(ref _thermalMapReadbackRetainCount);
+            if (TryGetThermalGridReadbackAup(
+                    out temperatureCelsius,
+                    out width,
+                    out height,
+                    out depth,
+                    out originAup,
+                    out cellSizeMeters,
+                    out version))
+            {
+                return true;
+            }
+
+            ReleaseThermalGridReadback();
+            return false;
+        }
+
+        public void ReleaseThermalGridReadback()
+        {
+            while (true)
+            {
+                int observed = Volatile.Read(ref _thermalMapReadbackRetainCount);
+                if (observed <= 0)
+                {
+                    Interlocked.Exchange(ref _thermalMapReadbackRetainCount, 0);
+                    return;
+                }
+
+                int next = observed - 1;
+                if (Interlocked.CompareExchange(ref _thermalMapReadbackRetainCount, next, observed) != observed)
+                    continue;
+
+                if (next == 0 && _thermalMapDisposePending)
+                    DisposeThermalMapBuffers();
+                return;
+            }
+        }
+
         public bool TryInjectTransientHeatSource(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId)
         {
             if (!Application.isPlaying ||
@@ -1318,6 +1417,22 @@ namespace Hecton8.World
                 unchecked((int)(sourceId & 0x7FFFFFFFu)),
                 TemperatureChangedSignal.FlagSubmarineAmbient);
             return true;
+        }
+
+        bool IThermodynamicsService.SampleThermalFlow(Vector3 positionWS, float radiusWS, out ThermodynamicFlowSampleDTO sample)
+        {
+            bool hasSample = SampleThermalFlow(positionWS, radiusWS, out ThermalFlowSample legacy);
+            sample = default;
+            sample.FlowVelocityWS = legacy.FlowVelocityWS;
+            sample.Heat01 = legacy.Heat01;
+            sample.DragMultiplier = legacy.DragMultiplier;
+            sample.CableAnchorWS = legacy.CableAnchorWS;
+            sample.CableTension01 = legacy.CableTension01;
+            sample.CableCutProgress01 = legacy.CableCutProgress01;
+            sample.CableEscapeSuppression01 = legacy.CableEscapeSuppression01;
+            sample.HasFlow = legacy.HasFlow;
+            sample.IsCableZone = legacy.IsCableZone;
+            return hasSample;
         }
 
         /// <summary>
@@ -1460,13 +1575,16 @@ namespace Hecton8.World
             float fixedDeltaTime,
             int sourceId)
         {
-            int targetId = CombatDamageRuntime.ResolveTargetId(targetObject);
-            if (targetId == 0)
-                return;
-
             float amount = boilingDamagePerSecond * math.saturate(heat01) * math.max(0f, fixedDeltaTime);
             if (!(amount > 0f) || !math.isfinite(amount))
                 return;
+
+            if (!TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))
+            {
+                if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))
+                    ApplyThermalOwnerFallbackDamage(fallbackReceiver, fallbackTransform, positionWS, amount, temperatureCelsius, sourceId);
+                return;
+            }
 
             Hecton8.Gameplay.CombatDamageRequest signal = new Hecton8.Gameplay.CombatDamageRequest
             {
@@ -1483,13 +1601,14 @@ namespace Hecton8.World
 
             CombatDamageSignalDetail detail = new CombatDamageSignalDetail
             {
-                LocalPoint = new float3(positionWS.x, positionWS.y, positionWS.z),
+                LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),
                 ArmorNormal = new float3(0f, 1f, 0f),
                 LocalTemperatureCelsius = temperatureCelsius,
                 StatusDurationSeconds = math.max(0.25f, heat01 * 2f)
             };
 
-            CombatDamageRuntime.TryQueueDamage(in signal, in detail);
+            double3 impactAup = ResolveCombatImpactAup(positionWS);
+            CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);
         }
 
         private bool TrySampleTemperatureCelsius(Vector3 positionWS, out float temperatureCelsius, out int sourceId)
@@ -1584,38 +1703,58 @@ namespace Hecton8.World
             signal.SourceId = sourceId <= 0 ? (ushort)0 : (ushort)math.min(sourceId, ushort.MaxValue);
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.Flags = flags;
-            GlobalSignals.Publish(in signal);
+            SignalBus<TemperatureChangedSignal>.TryPush(in signal);
         }
 
         private void EmitThermalShock(Vector3 positionWS, float deltaCelsius, int sourceId, GameObject targetObject, byte temperatureFlags)
         {
-            uint targetHash = targetObject != null ? unchecked((uint)EntityId.ToULong(targetObject.GetEntityId())) : 0u;
-            Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
-            damage.ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(positionWS);
-            damage.Direction = new float3(0f, 1f, 0f);
-            damage.Magnitude = ThermalShockDamageMagnitude;
-            damage.DamageType = CombatDamageTypes.Thermal;
-            damage.TargetHash = targetHash;
-            damage.SourceHash = sourceId <= 0 ? (uint)_instanceId : (uint)sourceId;
-            damage.Frame = unchecked((uint)Time.frameCount);
-            damage.SourceId = sourceId <= 0 ? (ushort)0 : (ushort)math.min(sourceId, ushort.MaxValue);
-            damage.TargetId = targetObject != null
-                ? (ushort)math.min(CombatDamageRuntime.ResolveTargetId(targetObject), ushort.MaxValue)
-                : (ushort)0;
-            damage.Channel = ThermalShockAcousticChannel;
-            damage.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
-            damage.IntegrityDelta = 1;
-            GlobalSignals.Publish(in damage);
+            if (TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))
+            {
+                int resolvedSourceId = sourceId <= 0 ? _instanceId : sourceId;
+                CombatDamageRequest request = new CombatDamageRequest
+                {
+                    TargetId = targetId,
+                    SourceId = resolvedSourceId,
+                    Amount = ThermalShockDamageMagnitude,
+                    ImpulseMagnitude = 0f,
+                    Direction = new float3(0f, 1f, 0f),
+                    PackedMeta = CombatDamageRuntime.PackSignalMeta(
+                        CombatDamageTypes.Thermal,
+                        CombatStatusBits.Burning,
+                        CombatWeakspotTier.None)
+                };
+
+                CombatDamageSignalDetail detail = new CombatDamageSignalDetail
+                {
+                    LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),
+                    ArmorNormal = new float3(0f, 1f, 0f),
+                    LocalTemperatureCelsius = math.select(0f, math.abs(deltaCelsius), math.isfinite(deltaCelsius)),
+                    StatusDurationSeconds = 2f
+                };
+
+                double3 impactAup = ResolveCombatImpactAup(positionWS);
+                CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);
+            }
+            else if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))
+            {
+                ApplyThermalOwnerFallbackDamage(
+                    fallbackReceiver,
+                    fallbackTransform,
+                    positionWS,
+                    ThermalShockDamageMagnitude,
+                    math.select(0f, math.abs(deltaCelsius), math.isfinite(deltaCelsius)),
+                    sourceId);
+            }
 
             AcousticPingSignal acoustic = default;
             if (TryResolveAupFromRuntimeOrigin(positionWS, out acoustic.PositionAup))
             {
                 acoustic.RadiusMeters = 140f;
                 acoustic.Intensity01 = math.saturate(math.abs(deltaCelsius) / 140f);
-                acoustic.SourceId = damage.SourceHash;
+                acoustic.SourceId = unchecked((uint)(sourceId <= 0 ? _instanceId : sourceId));
                 acoustic.Channel = ThermalShockAcousticChannel;
                 acoustic.Flags = 1;
-                GlobalSignals.Publish(in acoustic);
+                SignalBus<AcousticPingSignal>.TryPush(in acoustic);
             }
 
             PublishTemperatureChangedSignal(
@@ -1627,6 +1766,116 @@ namespace Hecton8.World
             RecordThermalTelemetry(positionWS, ThermalShockColdThresholdCelsius, 0f, ThermalTelemetryFlagThermalShock);
         }
 
+        private static bool TryResolveRegisteredCombatTarget(
+            GameObject targetObject,
+            out int targetId,
+            out Transform targetTransform)
+        {
+            targetId = 0;
+            targetTransform = null;
+            Transform current = targetObject != null ? targetObject.transform : null;
+            for (int depth = 0; depth < 6 && current != null; depth++)
+            {
+                int candidateId = CombatDamageRuntime.ResolveTargetId(current.gameObject);
+                if (candidateId != 0 && CombatDamageRuntime.IsTargetRegistered(candidateId))
+                {
+                    targetId = candidateId;
+                    targetTransform = current;
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveDamageReceiver(
+            GameObject targetObject,
+            out IDamageReceiver receiver,
+            out Transform receiverTransform)
+        {
+            receiver = null;
+            receiverTransform = null;
+            Transform current = targetObject != null ? targetObject.transform : null;
+            for (int depth = 0; depth < 6 && current != null; depth++)
+            {
+                IDamageReceiver candidateReceiver = current.GetComponent<IDamageReceiver>();
+                if (candidateReceiver != null)
+                {
+                    receiver = candidateReceiver;
+                    receiverTransform = current;
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private void ApplyThermalOwnerFallbackDamage(
+            IDamageReceiver receiver,
+            Transform targetTransform,
+            Vector3 positionWS,
+            float amount,
+            float temperatureCelsius,
+            int sourceId)
+        {
+            if (receiver == null || !(amount > 0f) || !math.isfinite(amount))
+                return;
+
+            int resolvedSourceId = sourceId != 0 ? sourceId : _instanceId;
+            DamagePacket packet = new DamagePacket
+            {
+                Channel = DamageChannel.Integrity,
+                PreviousValue = 0f,
+                NextValue = 0f,
+                Magnitude = amount,
+                LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),
+                DamageType = CombatDamageTypes.Thermal,
+                IntegrityDelta = 0,
+                Depth = ResolveDamageDepthMeters(positionWS),
+                SourceId = (ushort)math.clamp(resolvedSourceId, 0, ushort.MaxValue),
+                TraumaLevel = 0
+            };
+            receiver.ReceiveDamage(in packet);
+        }
+
+        private static float ResolveDamageDepthMeters(Vector3 positionWS)
+        {
+            return math.isfinite(positionWS.y) ? math.max(0f, -positionWS.y) : 0f;
+        }
+
+        private static double3 ResolveCombatImpactAup(Vector3 positionWS)
+        {
+            double3 impactAup = double3.zero;
+            if (TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition resolvedAup) &&
+                resolvedAup.IsFinite())
+            {
+                double3 resolved = resolvedAup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(resolved)))
+                    impactAup = resolved;
+            }
+
+            return impactAup;
+        }
+
+        private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 positionWS)
+        {
+            if (targetTransform == null ||
+                !math.isfinite(positionWS.x) ||
+                !math.isfinite(positionWS.y) ||
+                !math.isfinite(positionWS.z))
+            {
+                return float3.zero;
+            }
+
+            Vector3 localPoint = targetTransform.InverseTransformPoint(positionWS);
+            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
+            return math.all(math.isfinite(localPoint3)) ? localPoint3 : float3.zero;
+        }
+
         private void PublishLocalThermalPresentation(Vector3 positionWS, float temperatureCelsius, float heat01)
         {
             if (!math.isfinite(temperatureCelsius) || !math.isfinite(heat01))
@@ -1635,13 +1884,27 @@ namespace Hecton8.World
                 return;
             }
 
-            float clampedHeat = math.saturate(heat01);
+            _pendingLocalThermalHeat01 = math.saturate(heat01);
+            _pendingLocalThermalTemperatureCelsius = temperatureCelsius;
+            _localThermalPresentationDirty = true;
+        }
+
+        private void FlushLocalThermalPresentation()
+        {
+            if (!_localThermalPresentationDirty &&
+                Mathf.Abs(_thermalCondensation01 - _lastPublishedThermalCondensation01) <= 0.001f)
+            {
+                return;
+            }
+
+            float clampedHeat = _pendingLocalThermalHeat01;
             if (Mathf.Abs(clampedHeat - _lastLocalThermalHeat01) > 0.001f)
             {
                 Shader.SetGlobalFloat(_LocalThermalHeatId, clampedHeat);
                 _lastLocalThermalHeat01 = clampedHeat;
             }
 
+            float temperatureCelsius = _pendingLocalThermalTemperatureCelsius;
             if (!float.IsFinite(_lastLocalThermalTemperatureCelsius) ||
                 Mathf.Abs(temperatureCelsius - _lastLocalThermalTemperatureCelsius) > 0.05f)
             {
@@ -1654,6 +1917,8 @@ namespace Hecton8.World
                 Shader.SetGlobalFloat(_ThermalCondensationId, _thermalCondensation01);
                 _lastPublishedThermalCondensation01 = _thermalCondensation01;
             }
+
+            _localThermalPresentationDirty = false;
         }
 
         private void UpdateThermalPresentationDecay(float deltaTime)
@@ -1664,8 +1929,7 @@ namespace Hecton8.World
             _thermalCondensation01 = math.max(0f, _thermalCondensation01 - (math.max(0f, deltaTime) * condensationDecayPerSecond));
             if (Mathf.Abs(_thermalCondensation01 - _lastPublishedThermalCondensation01) > 0.001f)
             {
-                Shader.SetGlobalFloat(_ThermalCondensationId, _thermalCondensation01);
-                _lastPublishedThermalCondensation01 = _thermalCondensation01;
+                _localThermalPresentationDirty = true;
             }
         }
 
@@ -1675,7 +1939,7 @@ namespace Hecton8.World
                 return;
 
             float intensity = math.saturate(heat01);
-            ProceduralAudioEvents.RaiseAudioPingTriggered(
+            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
                 positionWS,
                 intensity,
                 0.65f,
@@ -1691,7 +1955,7 @@ namespace Hecton8.World
             signal.Intensity = intensity;
             signal.PrimaryBodyId = (uint)_instanceId;
             signal.WeightClass = 2;
-            GlobalSignals.Publish(in signal);
+            SignalBus<ImpactSignal>.TryPush(in signal);
             _thermalRoarCooldown = thermalRoarCooldownSeconds;
         }
 
@@ -1973,6 +2237,9 @@ namespace Hecton8.World
             if (!_thermalMapJobActive || !_thermalMapJobHandle.IsCompleted)
                 return;
 
+            if (Volatile.Read(ref _thermalMapReadbackRetainCount) > 0)
+                return;
+
             if (!DispatcherJobSwap.TryComplete(ref _thermalMapJobHandle, forceComplete: false))
                 return;
 
@@ -2063,10 +2330,21 @@ namespace Hecton8.World
 
         private void PublishThermalMapMetadata(bool active)
         {
+            _pendingThermalMapActive = active;
+            _thermalMapMetadataDirty = true;
+        }
+
+        private void FlushThermalMapMetadata()
+        {
+            bool active = _pendingThermalMapActive;
+            if (!_thermalMapMetadataDirty)
+                return;
+
             Shader.SetGlobalFloat(_ThermalMapActiveId, active ? 1f : 0f);
             if (!active)
             {
                 BindInactiveThermalMapTexture();
+                _thermalMapMetadataDirty = false;
                 return;
             }
 
@@ -2081,6 +2359,8 @@ namespace Hecton8.World
                 _thermalMapOriginWS.z,
                 worldSize,
                 FaunaThermalAvoidanceThresholdCelsius));
+
+            _thermalMapMetadataDirty = false;
         }
 
         private void MarkThermalMapTextureDirty()
@@ -2153,12 +2433,24 @@ namespace Hecton8.World
 
         private bool UsesThermalGrid()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
-                return false;
+            float effectiveQuality = ResolveThermalGridQualityWeight01() * ResolveThermalGridVramWeight01();
+            return effectiveQuality >= ThermalGridEnableQualityThreshold01;
+        }
 
+        private static float ResolveThermalGridQualityWeight01()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(weight) ? math.saturate(weight) : 1f;
+        }
+
+        private static float ResolveThermalGridVramWeight01()
+        {
             int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
-            return graphicsMemoryMb <= 0 || graphicsMemoryMb > 2048;
+            if (graphicsMemoryMb <= 0)
+                return 1f;
+
+            float span = math.max(1f, ThermalGridFullVramMb - ThermalGridMinimumVramMb);
+            return math.saturate((graphicsMemoryMb - ThermalGridMinimumVramMb) / span);
         }
 
         private static float ResolveVoxelInsulation01(Vector3 runtimePosition)
@@ -2443,6 +2735,13 @@ namespace Hecton8.World
 
         private void DisposeThermalMapBuffers()
         {
+            if (Volatile.Read(ref _thermalMapReadbackRetainCount) > 0)
+            {
+                _thermalMapDisposePending = true;
+                return;
+            }
+
+            _thermalMapDisposePending = false;
             JobHandle dependency = _thermalMapJobActive ? _thermalMapJobHandle : default;
             if (_thermalMapReadCelsius.IsCreated)
             {
@@ -2495,13 +2794,14 @@ namespace Hecton8.World
             _thermalGridRleByteCount = 0;
             _thermalGridRleChecksum = 0u;
             _thermalMapTextureDirty = false;
-            Shader.SetGlobalFloat(_ThermalMapActiveId, 0f);
+            PublishThermalMapMetadata(active: false);
             ReleaseThermalMapTexture();
         }
 
         private void ReleaseThermalMapTexture()
         {
-            BindInactiveThermalMapTexture();
+            _thermalMapTextureUploadedVersion = -1;
+            PublishThermalMapMetadata(active: false);
             _thermalMapTextureFormatRejected = false;
             if (_thermalMapTexture == null)
                 return;
@@ -2585,7 +2885,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             if (cutManager == null)
                 cutManager = GlobalRegistry.SargassumCut;
@@ -2950,7 +3250,7 @@ namespace Hecton8.World
             ReleaseBuffer(ref buffer);
 
             // COLD ALLOC: GraphicsBuffer[count] - persistent abyssal smoke or vent GPU storage sized from the owning blittable struct - owner: AbyssalThermalManager
-            buffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<T>(safeCount);
+            buffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<T>(safeCount);
             return true;
         }
 
@@ -3048,9 +3348,16 @@ namespace Hecton8.World
 
             UpdateSmokeBounds();
             UpdateHazardSources();
-            UploadVentBuffer();
+            QueueSmokeTopologyVisualSync();
+        }
+
+        private void QueueSmokeTopologyVisualSync()
+        {
+            _forceVentBufferUpload = true;
             if (RequiresParticleReset())
-                ResetParticles();
+                _forceParticleReset = true;
+
+            _smokeVisualSyncRequested = true;
         }
 
         private void RegisterVent(WorldZoneAnchor anchor, int ventIndex, float anchorWeight)
@@ -3233,7 +3540,7 @@ namespace Hecton8.World
             signal.IntensityCelsiusPerSecond = math.max(0f, heatIntensity);
             signal.SourceId = sourceId != 0u ? sourceId : BuildTransientThermalSourceId(positionWS, radiusWS);
             signal.Frame = unchecked((uint)math.max(0, HectonArenaAllocator.CurrentFrameSequence));
-            SignalBus<ThermalSourceSignal>.Push(in signal);
+            SignalBus<ThermalSourceSignal>.TryPush(in signal);
         }
 
         private static uint BuildTransientThermalSourceId(Vector3 positionWS, float radiusWS)
@@ -3306,12 +3613,25 @@ namespace Hecton8.World
 
         private void PublishThermalBubbleCommands(int bubbleCommandCount)
         {
-            int safeCount = Mathf.Clamp(bubbleCommandCount, 0, MaxVentCapacity);
-            Shader.SetGlobalInt(_ThermalBubbleCommandCountId, safeCount);
-            if (safeCount <= 0 || _thermalBubbleCommands == null)
+            _pendingThermalBubbleCommandCount = Mathf.Clamp(bubbleCommandCount, 0, MaxVentCapacity);
+            _thermalBubbleCommandsDirty = true;
+        }
+
+        private void FlushThermalBubbleCommands()
+        {
+            if (!_thermalBubbleCommandsDirty)
                 return;
 
+            int safeCount = _pendingThermalBubbleCommandCount;
+            Shader.SetGlobalInt(_ThermalBubbleCommandCountId, safeCount);
+            if (safeCount <= 0 || _thermalBubbleCommands == null)
+            {
+                _thermalBubbleCommandsDirty = false;
+                return;
+            }
+
             Shader.SetGlobalVectorArray(_ThermalBubbleCommandDataId, _thermalBubbleCommands);
+            _thermalBubbleCommandsDirty = false;
         }
 
         private bool RequiresVentBufferUpload()
@@ -3512,7 +3832,7 @@ namespace Hecton8.World
             if (!TryResolveReusableVentUploadBuffer(out GraphicsBuffer uploadBuffer, out int uploadBufferIndex))
                 return;
 
-            GraphicsBufferUploadUtility.UploadArraySetData(uploadBuffer, _ventGpuData, MaxVentCapacity);
+            GraphicsBufferUploadUtility.UploadArray(uploadBuffer, _ventGpuData, MaxVentCapacity);
             CacheUploadedVentData();
             _activeVentBufferIndex = uploadBufferIndex;
             _nextVentBufferUploadIndex = (_activeVentBufferIndex + 1) % VentBufferRingSize;
@@ -3533,8 +3853,8 @@ namespace Hecton8.World
             if (_activeVentCount <= 0)
             {
                 System.Array.Clear(_initialParticles, 0, _initialParticles.Length);
-                GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferA, _initialParticles, smokeParticleCount);
-                GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferB, _initialParticles, smokeParticleCount);
+                GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _initialParticles, smokeParticleCount);
+                GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _initialParticles, smokeParticleCount);
                 CacheSeededVentTopology();
                 _forceParticleReset = false;
                 return;
@@ -3567,8 +3887,8 @@ namespace Hecton8.World
                 };
             }
 
-            GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferA, _initialParticles, smokeParticleCount);
-            GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferB, _initialParticles, smokeParticleCount);
+            GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _initialParticles, smokeParticleCount);
+            GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _initialParticles, smokeParticleCount);
             CacheSeededVentTopology();
             _forceParticleReset = false;
             _frameParity = 0;
@@ -3608,6 +3928,27 @@ namespace Hecton8.World
             _materialPropertyBlock.SetColor(_AshTintId, smokeTint);
             _materialPropertyBlock.SetColor(_AshHotTintId, smokeHotTint);
             _materialPropertyBlock.SetFloat(_SoftnessId, smokeSoftness);
+        }
+
+        private void FlushSmokeVisualSync(float dt)
+        {
+            if (_forceVentBufferUpload)
+                UploadVentBuffer();
+
+            if (_forceParticleReset)
+                ResetParticles();
+
+            if (!_hasSmokeData || blackSmokeCompute == null || blackSmokeMaterial == null || _activeVentCount <= 0)
+                return;
+
+            BindSmokeUniforms(dt);
+            blackSmokeCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);
+            _frameParity ^= 1;
+
+            if (IsSmokeVisible())
+                RenderSmoke();
+
+            CaptureInFlightFences(_activeVentBufferIndex);
         }
 
         private bool IsSmokeVisible()
@@ -3837,9 +4178,8 @@ namespace Hecton8.World
             if (hitPlayerTransport)
             {
                 mantaScooter.ApplyEmpDisruption(empMisfireDuration);
-                LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-                if (manager != null)
-                    manager.RequestExternalPdaCorrosion(1f, empPdaCorrosionDuration);
+                IPdaCorrosionPresentationSink corrosionSink = Hecton8.Core.GlobalRegistry.PdaCorrosionPresentationSink;
+                corrosionSink?.RequestExternalPdaCorrosion(1f, empPdaCorrosionDuration);
             }
 
             TriggerEmpChainReaction(nest.SourceVentIndex, nest.PositionWS);
@@ -3891,7 +4231,7 @@ namespace Hecton8.World
             if (!MathGuard.IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 
@@ -3966,7 +4306,9 @@ namespace Hecton8.World
             if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
                 return;
 
-            Vector3 playerVelocity = hasPlayer && _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
+            Vector3 playerVelocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityThermalMaxAgeFrames, out Vector3 kccVelocity)
+                ? kccVelocity
+                : Vector3.zero;
 
             float hullRadius = Mathf.Max(0.1f, cableVisualHullRadius);
             for (int i = 0; i < _bioCableVisuals.Length; i++)
@@ -4260,7 +4602,7 @@ namespace Hecton8.World
 
         private void ApplySeismicSignalEruptionScalar()
         {
-            if (!GlobalSignals.TryGetLatestSeismicSignal(out SeismicSignal signal, out int sequence) ||
+            if (!SignalBus<SeismicSignal>.TryGetLatest(out SeismicSignal signal, out int sequence) ||
                 sequence == _lastSeismicSignalSequence)
             {
                 return;
@@ -4377,26 +4719,22 @@ namespace Hecton8.World
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredFixedTick)
             {
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-                _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredLateFrameTick)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
         }
 

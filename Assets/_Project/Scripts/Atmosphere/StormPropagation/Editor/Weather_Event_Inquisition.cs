@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System;
 using System.IO;
 using System.Text;
@@ -29,8 +29,8 @@ namespace Hecton8.Atmosphere.Editor
             "OnWeatherChanged",
             "OnWeatherStateChanged",
             "WeatherEvents.Register",
-            "WeatherEvents.RaiseSnapshotUpdated",
-            "WeatherEvents.RaiseLightning"
+            "WeatherEvents.TryRaiseSnapshotUpdated",
+            "WeatherEvents.TryRaiseLightning"
         };
 
         private static readonly string[] ForceApplicationPatterns =
@@ -65,17 +65,16 @@ namespace Hecton8.Atmosphere.Editor
                 if (!Directory.Exists(absoluteRoot))
                     continue;
 
-                string[] files = Directory.GetFiles(absoluteRoot, "*.cs", SearchOption.AllDirectories);
-                for (int i = 0; i < files.Length; i++)
+                foreach (string file in Directory.EnumerateFiles(absoluteRoot, "*.cs", SearchOption.AllDirectories))
                 {
-                    string normalized = files[i].Replace('\\', '/');
+                    string normalized = file.Replace('\\', '/');
                     if (normalized.IndexOf("/Editor/", StringComparison.Ordinal) >= 0 ||
                         normalized.EndsWith("/Environment/WeatherEvents.cs", StringComparison.Ordinal))
                     {
                         continue;
                     }
 
-                    ScanFile(root, files[i], findings, ref weatherListenerHits, ref weatherBridgeHits, ref forceApplicationHits, ref physicsReferenceHits);
+                    ScanFile(root, file, findings, ref weatherListenerHits, ref weatherBridgeHits, ref forceApplicationHits, ref physicsReferenceHits);
                 }
             }
 

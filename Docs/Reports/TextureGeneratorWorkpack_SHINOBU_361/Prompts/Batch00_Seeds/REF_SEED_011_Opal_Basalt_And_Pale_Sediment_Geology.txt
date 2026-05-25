@@ -1,0 +1,10 @@
+﻿JOB_ID: REF_SEED_011
+ROLE: LOOKDEV_REFERENCE
+CATEGORY: SEED_REFERENCE
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch00_Seeds\REF_SEED_011
+FINAL_TARGET_PATH: LOOKDEV_ONLY_NOT_ASSET_TARGET
+FINAL_FILENAME: LOOKDEV_APPROVED_REF_SEED_011.png
+REFERENCES: project planet/cloud mood image if useful; no random primary refs
+
+PROMPT:
+Create a seamless albedo reference for premium alien abyssal geology on Hecton. Use blue-charcoal basalt as a restrained base, not pure black, with pale silt deposits, opal mineral veins, turquoise hydrothermal staining, pearl-white fracture dust, soft sediment pockets, and small polished wet mineral faces. The surface should feel ancient, readable, and beautiful, like a scientific sample from a deep ocean planet. Keep cracks and veins orientation-neutral for triplanar projection, with no scenic cliff forms and no directional shadow. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

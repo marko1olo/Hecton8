@@ -11,7 +11,7 @@ namespace Hecton8.Power
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Power/Power Relay Node")]
-    public sealed class PowerRelayNode : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable
+    public sealed class PowerRelayNode : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float PositionRefreshEpsilonSqr = 0.0004f;
 
@@ -45,7 +45,11 @@ namespace Hecton8.Power
         private PowerNode _powerNode;
         private Transform _cachedTransform;
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _hotSwapRegistered;
         private bool _hasPower = true;
+        private bool _cableVisualRefreshPending;
+        private bool _cableVisualClearPending;
         private float _currentPassiveLoss;
         private Vector3 _lastPosition;
         private int _lastVisualPointCount = -1;
@@ -79,6 +83,7 @@ namespace Hecton8.Power
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
             RefreshRelayLinks(true);
         }
@@ -86,6 +91,7 @@ namespace Hecton8.Power
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ClearCableVisuals();
         }
 
@@ -94,6 +100,7 @@ namespace Hecton8.Power
             _hasPower = true;
             _debugHasPower = true;
             ResolveReferences();
+            TryRegisterHotSwapListener();
             TryRegister();
             RefreshRelayLinks(true);
         }
@@ -101,6 +108,7 @@ namespace Hecton8.Power
         public void OnDespawn()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             _currentPassiveLoss = 0f;
             _debugPassiveLoss = 0f;
             _debugCableLengthMeters = 0f;
@@ -112,9 +120,54 @@ namespace Hecton8.Power
             _lastTopologyRevision = -1;
         }
 
+        private void OnDestroy()
+        {
+            TryUnregister();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregister();
+            TryRegister();
+        }
+
         public void SlowTick()
         {
             RefreshRelayLinks(false);
+        }
+
+        public void LateFrameTick()
+        {
+            if (_cableVisualClearPending)
+            {
+                _cableVisualClearPending = false;
+                _cableVisualRefreshPending = false;
+                ClearCableVisuals();
+                return;
+            }
+
+            if (!_cableVisualRefreshPending)
+                return;
+
+            _cableVisualRefreshPending = false;
+            ResolveReferences();
+            if (_powerNode == null)
+            {
+                ClearCableVisuals();
+                return;
+            }
+
+            List<PowerNode> neighbors = _powerNode.Neighbors;
+            int neighborCount = neighbors != null ? neighbors.Count : 0;
+            Vector3 relayPosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            RefreshCableVisuals(relayPosition, neighbors, neighborCount);
         }
 
         private void ResolveReferences()
@@ -129,20 +182,48 @@ namespace Hecton8.Power
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
+
+            _cableVisualRefreshPending = false;
+            _cableVisualClearPending = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = false;
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void RefreshRelayLinks(bool forceVisualRefresh)
@@ -152,7 +233,7 @@ namespace Hecton8.Power
             if (_powerNode == null)
             {
                 _currentPassiveLoss = 0f;
-                ClearCableVisuals();
+                QueueCableVisualClear();
                 return;
             }
 
@@ -191,7 +272,19 @@ namespace Hecton8.Power
             _debugPassiveLoss = _currentPassiveLoss;
 
             if (forceVisualRefresh || moved || neighborCount != _submittedLinkIds.Count)
-                RefreshCableVisuals(relayPosition, neighbors, neighborCount);
+                QueueCableVisualRefresh();
+        }
+
+        private void QueueCableVisualRefresh()
+        {
+            _cableVisualRefreshPending = true;
+            _cableVisualClearPending = false;
+        }
+
+        private void QueueCableVisualClear()
+        {
+            _cableVisualRefreshPending = false;
+            _cableVisualClearPending = true;
         }
 
         private void RefreshCableVisuals(Vector3 relayPosition, List<PowerNode> neighbors, int neighborCount)

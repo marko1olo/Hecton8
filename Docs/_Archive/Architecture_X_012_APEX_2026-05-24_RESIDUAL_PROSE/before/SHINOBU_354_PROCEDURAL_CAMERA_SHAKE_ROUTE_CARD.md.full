@@ -1,0 +1,122 @@
+﻿# SHINOBU_354 Procedural Camera Shake Route Card
+
+Date: 2026-05-23
+Owner: `SHINOBU_354 / PROCEDURAL_CAMERA_SHAKE_IMPULSE`
+Owner domain: Echelon 9 Camera Juice & Shake / VFX presentation
+Owning file/system: `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs` plus `CameraJuiceSystem_CameraJuiceBurst.cs`
+Status: `YELLOW_STATIC_SOURCE`
+
+Adjacent boundary:
+  `Assets/_Project/Scripts/CameraJuiceProcessor.cs`, `Assets/_Project/Scripts/HectonPlayerMovement.cs`, and `Assets/_Project/Scripts/Gameplay/HectonPlayerCameraRig.cs` still own player locomotion/somatic camera presentation: bob, landing dip, suit collision dip, water-entry FOV, sonar ping, sargassum/transport feedback, and final rig transform composition. SHINOBU_354 does not mutate that route because it is not the explosive/seismic AUP projection-shake mandate and because removing it from VFX would seize Player-domain camera ownership. Any future migration of those offsets must be a separate Player camera composition pass.
+
+## Route Card
+
+```text
+Route ID: SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_IMPULSE
+Date: 2026-05-23
+Owner: SHINOBU_354 / CameraJuiceSystem
+Owner domain: VFX.CameraJuice presentation
+Owning file/system: Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs
+
+Problem:
+  Camera shake must not use Animator, AnimationClip, coroutine jitter, UnityEngine.Random, or camera hierarchy transform mutation. Explosions and seismic events need directional, AUP-correct presentation feedback without entering gameplay rollback truth.
+Why owner-local data is insufficient:
+  The effect consumes cross-domain impact/seismic/damage broadcasts, stores native black-box proof, and exposes designer tuning/projection rows across editor/runtime diagnostics.
+Why direct caller/owner interface is insufficient:
+  Producers are physics, combat, seismic, and VFX lanes in different phases. The owner reads immutable typed snapshots instead of direct callbacks or registry polling.
+
+Instrument:
+  [ ] GlobalRegistry cold service/interface
+  [x] SignalBus<T> first-party broadcast
+  [ ] GlobalSignals bridge/direct queue
+  [ ] HectonEventBus mod/API/cold event
+  [x] GlobalDataVault / IDataVault
+  [x] Black-box/telemetry route
+
+- Producer/consumer phase: Producers: physics/combat/seismic owners publish typed SignalBus snapshots in their owner phases.
+- Consumer: `CameraJuiceSystem.Tick` consumes frame snapshots, runs Burst `IJob.Run()` kernels, and `LateFrameTick` applies projection matrix offset only.
+- Cold lifecycle only: `Awake`, `OnEnable`, `BindDataVault`, and editor tuning may seed/acquire SHINOBU_354 Vault rows.
+- Tick only opens cached handles and clears projection/fails closed when `_cameraJuiceBuffersSeeded` is false.
+- Cadence/capacity: Per visual frame when camera juice is enabled.
+- Signal processing is capped by `PROCEDURAL_MAX_IMPACTS_PER_FRAME=32`.
+- Vault rows: State[1], Impulse[1], Projection[1], Tuning[1], Profiles[16], MockSignals[32], CsvScratch[4096 bytes], Telemetry[300].
+- Expected max events/reads per frame: 32 accepted impulse records, 1 state row write, 1 projection row write, 1 telemetry row write.
+- Empty SignalBus lanes are accepted as absent `NativeArray<T>.ReadOnly` snapshots; Burst trauma evaluation checks `.IsCreated` before `.Length` or indexing.
+- GlobalQualityWeight behavior: Continuous scalar drives radius, frequency, octave weight, and ultra grit.
+- `EvaluateCameraTraumaJob` reads `CameraJuiceTuningDTO.LowTierRadiusMeters` / `UltraRadiusMeters` from the read-only Vault tuning row, finite-gates them, and lerps AUP attenuation radius by quality with safe `32..120m` fallbacks.
+- High/ultra Simplex tap admission is deterministic temporal admission: `TemporalAdmission01(sequence, salt, smoothWeight)`.
+- The helper returns exact zero admission for zero smooth weight, exact one for full weight, and strict dither admission in between.
+- Expected ALU cost scales continuously with the smooth quality weights; low-quality zero-weight frames pay only damped sine/triangle math, while visual contribution still ramps through the same smooth weights without a hard `quality >= threshold` gate or `IsLowEndHardware` branch.
+- Long-run stability: `CameraJuiceStateDTO.TimeAccumulator` stays inside the mandated 32-byte state DTO as a float, but the Burst integrator wraps it to a 1024-cycle window.
+- This prevents fractional precision decay during long endurance sessions without widening the DTO.
+- Legacy authoring boundary: `ShakeProfile` remains only a cold scalar compatibility facade for legacy species/prefab references.
+- Its runtime source no longer declares `AnimationCurve`; falloff is scalar authoring data, while actual decay is owned by Vault `CameraJuiceTuningDTO` and the Burst integrator.
+- Existing asset YAML may retain stale `FalloffCurve` blocks until Unity reserializes the ScriptableObject assets; those blocks are not executable source fields.
+- Cold CSV tuning boundary: `camera_trauma_profiles.csv` is streamed into Vault scratch and parsed through `ReadOnlySpan<byte>` tokens.
+- Required numeric cells must parse; blank optional cells keep safe defaults; malformed non-empty optional cells, extra non-empty columns, and trailing junk reject the row.
+- Valid profile radius cells hydrate the same Vault tuning row consumed by the Burst trauma evaluator; there is no separate managed profile radius route.
+
+Accessor purity:
+  [x] No Get/TryGet/Resolve/Read API publishes signals
+  [x] No Get/TryGet/Resolve/Read API syncs scene state
+  [x] No Get/TryGet/Resolve/Read API allocates/grows buffers
+  [x] No Get/TryGet/Resolve/Read API completes jobs
+  [x] No Get/TryGet/Resolve/Read API mutates global state
+  [x] No Get/TryGet/Resolve/Read API searches the scene
+
+- Payload/data shape: Managed fields present: no UnityEngine.Object fields present: no Layout proof: CameraJuiceStateDTO=32 bytes: float3 translation @0, float3 rotation @12, float trauma @24, float time @28.
+- CameraJuiceImpulseDTO=64 bytes, CameraJuiceProjectionDTO=64 bytes, CameraJuiceTuningDTO=64 bytes, CameraTraumaProfileDTO=32 bytes, CameraJuiceMockSignalDTO=64 bytes, CameraJuiceTelemetryEntry=64 bytes.
+- Overflow/failure: Signal processing clamps at 32 records.
+- Non-finite math zeroes projection/state, flags telemetry, and writes `Docs/AgentLogs/Dump_SHINOBU_354.bin`.
+- AUP impulse math rejects non-finite player/epicenter/delta values and clamps localized double deltas to +/-262144 meters before casting to float.
+- Projection output records `CameraJuiceFlagNanSanitized` before invalid vectors are zeroed, so black-box telemetry shows repaired NaN/fault inputs instead of silently reporting a clean row.
+- Manual presentation impulses are finite-gated and bounded inside `EvaluateCameraTraumaJob`; repaired or oversized manual direction, stale/oversized directional memory, or invalid directional timer set `CameraJuiceFlagNanSanitized` before projection emission.
+- Signal severity/radius, global quality, read-only Vault tuning radii, effective scale, and Vault tuning scalars are finite-gated before attenuation, sine/noise, and projection math; raw SignalBus scalars are checked before any `math.max`, `math.abs`, amplitude sum, or radius max can hide malformed lanes.
+- Repaired scalar lanes set `CameraJuiceFlagNanSanitized`.
+- Managed shake exceptions call `FailClosedProceduralCameraJuiceFault()`, force a telemetry row, fail closed through native state/projection rows, and request `Dump_SHINOBU_354.bin`.
+- Burst sections above 100 us set `CameraJuiceFlagBurstBudgetExceeded` in the projection/telemetry row and request `Dump_SHINOBU_354.bin` after the current telemetry row is written.
+- Dump header is fixed little-endian and 32 bytes: magic `SCJ5`, version `4`, `CameraJuiceTelemetryEntry` stride, capacity, unsigned cursor, emitted count, ring start index, and reserved pad before raw fixed 64-byte rows.
+- Dump throttling flips only after successful raw stream write completion.
+- Wrapped rings emit oldest-to-newest as at most two native `ReadOnlySpan<byte>` writes; `BinaryWriter` is not used.
+- The cold fault path ensures the `Docs/AgentLogs` directory exists before opening the dump stream.
+
+- Telemetry fields: Frame, Flags, TraumaScalar, MaxTranslationalOffsetMagnitude, Offset, RotationDegrees, IncomingSignalCount, BurstExecutionMicroseconds, GlobalQualityWeight01, DirectionalImpulseMagnitude, StateHash, Sequence.
+- Frame is the owner-local unsigned telemetry cursor, not Unity `Time.frameCount`; ring indexing uses unsigned modulo to avoid signed overflow indexes during endurance runs.
+- Scoped SHINOBU_354 runtime no longer uses Unity `Time.*`; development budget timing uses `Stopwatch` and dependency refresh cadence uses an owner slow-tick countdown.
+- Black-box fields: Fixed 300-row `CameraJuiceTelemetryEntry` ring in DataVault.
+- Profiler marker: Stopwatch proxy around Burst section is recorded into telemetry; Unity Profiler/Burst Inspector proof remains required.
+- GC proof required: Unity Play Mode + GCMonitor 0 B/frame for `Tick` and `LateFrameTick`; current evidence is static scan only.
+
+- Shutdown/disposal: Owner releases only buffers it acquired and clears generation descriptors on disable/destroy or DataVault rebind.
+- Scene unload behavior: Projection is cleared; telemetry/procedural buffers are released through DataVault when owned.
+- Stale-handle behavior: Cached player kinematic and camera-juice handles must have nonzero BufferID/generation, successful resolve/read-only resolve, `IsCreated`, and minimum length.
+- Failure closes projection shake, clears pending manual trauma, clears cached state hash, and zeroes state/impulse/projection rows when cached handles resolve.
+- Missing player AUP fails closed and records `CameraJuiceFlagNoPlayerAup`; the hot procedural route does not fall back to `_playerMovement.CurrentAup`.
+- Missing/stale Vault rows record `CameraJuiceFlagVaultUnavailable`.
+- No hot `TryGetLatestCreated`.
+- Player AUP readback, editor telemetry graph, dump readback, and selected-camera gizmo use `IDataVault.TryReadOnlyHandle`; mutable resolves are reserved for owner write/tuning/seed routes.
+- Hot camera juice execution does not call `EnsureProceduralCameraJuiceBuffers()` and cannot acquire/grow Vault rows; stale or missing rows clear projection instead of retaining old shake.
+
+Adjacent route boundary:
+  `CameraJuiceProcessor` remains a Player locomotion presentation route, not a SHINOBU_354 explosive/seismic AUP route. It is documented for integrator review but intentionally untouched in this VFX pass.
+
+Rejected alternatives:
+  [x] owner-local field
+  [x] cached owner interface
+  [x] existing SignalBus lane
+  [x] existing Vault buffer
+  [x] cold HectonEventBus hook
+  [ ] no global route needed
+
+Why this does not increase global monolith risk:
+  The route adds no registry service and no new SignalBus lane. It consumes existing typed snapshots and owns local-casted presentation Vault rows documented in the binary ledger.
+H-Phi impact expected:
+  Positive by deleting transform/AnimationClip shake pressure; H-Phi is not approval evidence.
+Proof required before GREEN:
+  Unity import, Console clean, Burst Inspector, GCMonitor 0 B/frame, profiler timing under 0.1 ms, scanner execution report, and external compile wall cleared.
+Reviewer:
+  Pending Integrator/Architecture review.
+Review disposition:
+  YELLOW
+Status: ACCEPTED_STATIC_SOURCE / RUNTIME_PROOF_PENDING
+```

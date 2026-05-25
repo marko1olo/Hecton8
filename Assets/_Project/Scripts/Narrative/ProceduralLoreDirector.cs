@@ -13,7 +13,7 @@ namespace Hecton8.Narrative
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Narrative/Procedural Lore Director")]
-    public sealed class ProceduralLoreDirector : MonoBehaviour, ISlowTickable, ISaveable
+    public sealed class ProceduralLoreDirector : MonoBehaviour, ISlowTickable, ISaveable, IGlobalRegistryHotSwapListener
     {
         private struct ActiveLorePlacement
         {
@@ -22,6 +22,7 @@ namespace Hecton8.Narrative
             public long chunkKey;
             public Vector3 position;
             public GameObject instance;
+            public IObjectPoolService owningPool;
         }
 
         private static readonly Vector2Int[] _neighborOffsets =
@@ -52,19 +53,24 @@ namespace Hecton8.Narrative
         private readonly List<ActiveLorePlacement> _activePlacements = new List<ActiveLorePlacement>(ProceduralLoreStateDTO.MaxActivePlacements);
         // COLD ALLOC: HashSet<long>[12] - occupied frontier chunk keys - owner: ProceduralLoreDirector
         private readonly HashSet<long> _occupiedChunkKeys = new HashSet<long>(ProceduralLoreStateDTO.MaxActivePlacements);
-        // COLD ALLOC: Vector2Int[ExplorationMapDTO.MaxExploredChunks] - exploration snapshot buffer - owner: ProceduralLoreDirector
-        private readonly Vector2Int[] _exploredChunkBuffer = new Vector2Int[ExplorationMapDTO.MaxExploredChunks];
+        // COLD ALLOC: long[ExplorationMapDTO.MaxExploredChunks] - exploration chunk key snapshot buffer - owner: ProceduralLoreDirector
+        private readonly long[] _exploredChunkKeyBuffer = new long[ExplorationMapDTO.MaxExploredChunks];
+        // COLD ALLOC: HashSet<long>[ExplorationMapDTO.MaxExploredChunks] - explored frontier membership cache - owner: ProceduralLoreDirector
+        private readonly HashSet<long> _exploredChunkKeys = new HashSet<long>(ExplorationMapDTO.MaxExploredChunks);
         // COLD ALLOC: AudioLogData[256] - PDA archive catalog snapshot - owner: ProceduralLoreDirector
         private readonly AudioLogData[] _catalogBuffer = new AudioLogData[256];
 
-        private PlayerExplorationTracker _explorationTracker;
+        private IPlayerExplorationChunkReadModel _explorationTracker;
         private AudioLogSystem _audioLogSystem;
+        private IObjectPoolService _objectPool;
+        private ISaveService _saveService;
         private float _spawnCheckTimer;
         private int _catalogCount;
         private int _nextCatalogIndex;
         private int _nextChunkScanIndex;
         private bool _registeredToTick;
         private bool _registeredToSave;
+        private bool _registeredHotSwapListener;
         private bool _poolWarmed;
         private bool _needsRespawn;
         /// <inheritdoc />
@@ -75,17 +81,19 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            RefreshCachedOwners();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
-            ResolveOwners();
             _needsRespawn = true;
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
+            RefreshCachedOwners();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
-            ResolveOwners();
             _needsRespawn = true;
         }
 
@@ -93,6 +101,7 @@ namespace Hecton8.Narrative
         {
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
+            TryUnregisterHotSwapListener();
             DespawnAllInstances();
         }
 
@@ -100,6 +109,7 @@ namespace Hecton8.Narrative
         {
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
+            TryUnregisterHotSwapListener();
             DespawnAllInstances();
         }
 
@@ -212,7 +222,7 @@ namespace Hecton8.Narrative
 
             _activePlacements.Add(placement);
             _occupiedChunkKeys.Add(chunkKey);
-            NotificationEvents.PushInfo("PDA archive anomaly detected near the frontier. Route updated with a probable data lead.");
+            NotificationEvents.TryPushInfo("PDA archive anomaly detected near the frontier. Route updated with a probable data lead.".AsSpan());
         }
 
         private void RefreshActivePlacements()
@@ -266,7 +276,7 @@ namespace Hecton8.Narrative
 
         private bool TrySpawnInstance(ref ActiveLorePlacement placement)
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _objectPool;
             if (pickupTemplate == null || _audioLogSystem == null || pool == null)
                 return false;
 
@@ -292,6 +302,7 @@ namespace Hecton8.Narrative
 
             pickup.ConfigureRecoveryPickup(logData, true);
             placement.instance = spawnedObject;
+            placement.owningPool = pool;
             return true;
         }
 
@@ -310,24 +321,34 @@ namespace Hecton8.Narrative
             if (placement.instance == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = placement.owningPool;
             if (pool != null)
                 pool.Despawn(placement.instance);
             else
                 placement.instance.SetActive(false);
 
             placement.instance = null;
+            placement.owningPool = null;
         }
 
         private bool ResolveOwners()
         {
+            return _explorationTracker != null && _audioLogSystem != null;
+        }
+
+        private void RefreshCachedOwners()
+        {
             if (_explorationTracker == null)
-                _explorationTracker = GlobalRegistry.PlayerExploration;
+                _explorationTracker = GlobalRegistry.PlayerExplorationReadModel;
 
             if (_audioLogSystem == null)
                 _audioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
 
-            return _explorationTracker != null && _audioLogSystem != null;
+            if (_objectPool == null)
+                _objectPool = GlobalRegistry.ObjectPoolService;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
         }
 
         private bool ResolveCatalog()
@@ -367,21 +388,25 @@ namespace Hecton8.Narrative
             if (_explorationTracker == null)
                 return false;
 
-            int exploredCount = _explorationTracker.CopyExploredChunks(_exploredChunkBuffer);
+            int exploredCount = _explorationTracker.CopyExploredChunkKeys(_exploredChunkKeyBuffer);
             if (exploredCount <= 0)
                 return false;
+
+            _exploredChunkKeys.Clear();
+            for (int i = 0; i < exploredCount; i++)
+                _exploredChunkKeys.Add(_exploredChunkKeyBuffer[i]);
 
             int startIndex = _nextChunkScanIndex % exploredCount;
             for (int i = 0; i < exploredCount; i++)
             {
                 int scanIndex = (startIndex + i) % exploredCount;
-                Vector2Int exploredChunk = _exploredChunkBuffer[scanIndex];
+                Vector2Int exploredChunk = PDAKeyUtility.UnpackChunkKey(_exploredChunkKeyBuffer[scanIndex]);
 
                 for (int neighborIndex = 0; neighborIndex < _neighborOffsets.Length; neighborIndex++)
                 {
                     Vector2Int candidate = exploredChunk + _neighborOffsets[neighborIndex];
                     long candidateKey = PDAKeyUtility.PackChunkKey(candidate.x, candidate.y);
-                    if (_explorationTracker.IsChunkExplored(candidate) || _occupiedChunkKeys.Contains(candidateKey))
+                    if (_exploredChunkKeys.Contains(candidateKey) || _occupiedChunkKeys.Contains(candidateKey))
                         continue;
 
                     _nextChunkScanIndex = scanIndex + 1;
@@ -452,7 +477,7 @@ namespace Hecton8.Narrative
 
         private Vector3 BuildSpawnPosition(Vector2Int chunkCoordinates, long chunkKey)
         {
-            float chunkSize = _explorationTracker != null ? Mathf.Max(4f, _explorationTracker.ChunkWorldSize) : 32f;
+            float chunkSize = ExplorationMapDTO.DenseChunkSizeMeters;
             Vector3 basePosition = new Vector3(
                 (chunkCoordinates.x + 0.5f) * chunkSize,
                 transform.position.y,
@@ -461,8 +486,9 @@ namespace Hecton8.Narrative
             uint hash = unchecked((uint)(chunkKey ^ (chunkKey >> 32)));
             float angle = (hash & 1023u) / 1024f * Mathf.PI * 2f;
             float radius = Mathf.Min(chunkPlacementRadius, chunkSize * 0.35f) * (((hash >> 10) & 1023u) / 1023f);
-            basePosition.x += Mathf.Cos(angle) * radius;
-            basePosition.z += Mathf.Sin(angle) * radius;
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+            basePosition.x += cos * radius;
+            basePosition.z += sin * radius;
             return basePosition;
         }
 
@@ -474,8 +500,7 @@ namespace Hecton8.Narrative
                 return;
 
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
         }
 
         private void UnregisterFromTickManager()
@@ -488,16 +513,60 @@ namespace Hecton8.Narrative
             _registeredToTick = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Save:
+                    UnregisterFromSaveManager();
+                    _saveService = currentService as ISaveService;
+                    TryRegisterWithSaveManager();
+                    break;
+                case GlobalRegistryServiceSlot.PlayerExplorationRuntime:
+                    _explorationTracker = currentService as IPlayerExplorationChunkReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.AudioLogRuntime:
+                    _audioLogSystem = currentService as AudioLogSystem;
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as IObjectPoolService;
+                    _poolWarmed = false;
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
         private void TryRegisterWithSaveManager()
         {
-            if (_registeredToSave)
+            if (_registeredToSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
-            if (saveManager == null)
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
                 return;
 
-            saveManager.Register(this);
+            _saveService.Register(this);
             _registeredToSave = true;
         }
 
@@ -506,9 +575,9 @@ namespace Hecton8.Narrative
             if (!_registeredToSave)
                 return;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
-            if (saveManager != null)
-                saveManager.Unregister(this);
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
 
             _registeredToSave = false;
         }

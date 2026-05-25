@@ -134,7 +134,7 @@ namespace Hecton8.Core
         public static void Raise(in ScalabilityChangedEvent payload)
         {
             EnsureTypedSignalLaneConfigured();
-            global::Hecton8.Core.Contracts.Signals.SignalBus<ScalabilityChangedEvent>.Push(in payload);
+            global::Hecton8.Core.Contracts.Signals.SignalBus<ScalabilityChangedEvent>.TryPush(in payload);
         }
 
         /// <summary>Flushes queued scalability events to listeners on the main dispatcher lane.</summary>

@@ -1,0 +1,27 @@
+﻿{
+  "agent": "SHINOBU_321",
+  "scanner": "OOP_Bends_Scanner.StaticMirror",
+  "summary": "OOP Ascent Timers Eradicated",
+  "findingCount": 0,
+  "scanProof": "rg found zero AscentTimer, CheckAscent, TheBends, DepthDamage, depthDamage, or yield return new WaitForSeconds patterns in Physiology/HectonSurvivalSystem/SurvivalPhysiologyScalarJob runtime scope.",
+  "legacyArcadeRouteDisabled": {
+    "file": "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
+    "decision": "Immediate velocity-based decompression damage now returns false and rapid-ascent decompression signal publishing is bypassed.",
+    "reason": "Decompression damage authority moved to ShinobuPhysiologyRuntime 16-tissue Vault model."
+  },
+  "runtimeRouteProof": {
+    "owner": "ShinobuPhysiologyRuntime",
+    "decompressionState": "GlobalDataVault 70221 DecompressionStateDTO[entityCapacity], 128-byte explicit layout, fixed TissueTensionsN2[16]",
+    "tissueRows": "GlobalDataVault 70235 TissueCompartmentDTO[entityCapacity*16]",
+    "coefficientRows": "GlobalDataVault 70222 HaldaneTissueCoefficientDTO[16], Buhlmann half-time/a/b rows",
+    "schreinerRoute": "IntegrateBloodGasTensionsJob SIMD v128/float4 lanes over fixed Vault rows",
+    "damageRoute": "SignalBus<CombatDamageSignal> with CombatDamageTypeBarotrauma; no direct HectonPlayerHealth mutation",
+    "blackBox": "GlobalDataVault 73343 DecompressionTelemetryEntry[300] plus 70226 PhysiologyTelemetryEntry[300] -> Docs/AgentLogs/Dump_SHINOBU_321.bin version 2 on fatal/invalid/non-finite or >=200us current-row execution time",
+    "pureReadAccessors": "Public TryGet* copy accessors use GlobalDataVault.TryReadHandle via TryReadPhysiologyVaultArray; owner acquire/resolve helpers stay out of read accessors.",
+    "editorWriteLocks": "SetEditorTuning, SetEditorGasTuning, and SetEditorBreathingGasNitrogenFraction acquire Vault write locks and release in finally.",
+    "editorFacade": "HaldaneanDecompressionTunerWindow reads DecompressionStateDTO plus latest DecompressionTelemetryEntry for ambient pressure markers and black-box fault status, with PhysiologyTelemetryEntry fallback.",
+    "legacyEditorShim": "DcsPhysiologyTunerWindow now opens HaldaneanDecompressionTunerWindow and owns no managed tissue arrays",
+    "dataMonolithProof": "MISSING static_data.h8bin at loop 7 static check; no Data Monolith readiness claimed."
+  },
+  "compileProof": "BLOCKED_BY_EXTERNAL_COMPILE_WALL_AFTER_LOOP7_BUILD_ATTEMPT: RadiationHazardGrid.cs missing RadiationStateDTO; VRSomaticProvider.Comfort.cs missing VRSomaticKinematicStateMirrorDTO and VRSomaticComfortDTO. Final M-value fallback patch was static-checked; repeat build suppressed because VBCSCompiler PID 2036 was active."
+}

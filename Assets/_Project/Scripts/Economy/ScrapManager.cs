@@ -4,7 +4,7 @@ using Hecton8.Crafting;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Meta;
-using Hecton8.Modding;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Economy
@@ -15,13 +15,15 @@ namespace Hecton8.Economy
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6260)]
     [AddComponentMenu("Hecton8/Economy/Scrap Manager")]
-    public sealed class ScrapManager : MonoBehaviour
+    public sealed class ScrapManager : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         private const float MaterialRecoveryRatio = 0.50f;
         private const float ComponentRecoveryRatio = 0.40f;
         private const float EquipmentRecoveryRatio = 0.25f;
 
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
+        private IPlayerInventoryService _playerInventoryService;
 
         /// <summary>
         /// Active runtime owner while the gameplay scene is loaded.
@@ -39,17 +41,30 @@ namespace Hecton8.Economy
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterToGlobalRegistry();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterFromGlobalRegistry();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterFromGlobalRegistry();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+                _playerInventoryService = currentService as IPlayerInventoryService;
         }
 
         private void TryRegisterToGlobalRegistry()
@@ -80,14 +95,26 @@ namespace Hecton8.Economy
         /// <summary>
         /// Attempts to recycle one unit of the specified item from player inventory.
         /// </summary>
-        /// <param name="itemId">Stable item identifier stored in the runtime item catalog.</param>
-        public bool ProcessRecycle(string itemId)
+        /// <param name="legacyItemId">Stable authoring identifier. Converted once at the seam.</param>
+        public bool ProcessRecycle(string legacyItemId)
         {
-            PlayerInventory inventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
-            if (inventory == null || inventory.ItemCatalog == null || string.IsNullOrWhiteSpace(itemId))
+            if (string.IsNullOrWhiteSpace(legacyItemId))
                 return false;
 
-            ItemData item = inventory.ItemCatalog.FindById(itemId.Trim());
+            return ProcessRecycle(unchecked((uint)LocHash.Compute(legacyItemId.Trim())));
+        }
+
+        /// <summary>
+        /// Attempts to recycle one unit of the specified item hash from player inventory.
+        /// </summary>
+        public bool ProcessRecycle(uint targetHashId)
+        {
+            IPlayerInventoryService inventoryService = _playerInventoryService;
+            PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : null;
+            if (inventory == null || inventory.ItemCatalog == null || targetHashId == 0u)
+                return false;
+
+            ItemData item = inventory.ItemCatalog.FindByHash(unchecked((int)targetHashId));
             return ProcessRecycle(item);
         }
 
@@ -99,7 +126,8 @@ namespace Hecton8.Economy
             if (sourceItem == null)
                 return false;
 
-            PlayerInventory inventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
+            IPlayerInventoryService inventoryService = _playerInventoryService;
+            PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : null;
             if (inventory == null)
                 return false;
 
@@ -117,8 +145,30 @@ namespace Hecton8.Economy
                 return false;
             }
 
-            HectonEventBus.Publish(new ItemRecycledEvent(sourceItem, 1, CountYieldUnits(resolvedYield)));
+            ItemLifecycleSignalRoute.TryPublishRecycled(sourceItem, 1, CountYieldUnits(resolvedYield));
             return true;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         internal static bool TryResolveRecycleYield(ItemData sourceItem, out ResourceStack[] resolvedYield)
@@ -129,7 +179,7 @@ namespace Hecton8.Economy
                 return false;
             }
 
-            if (RecyclingRegistry.TryGetYield(sourceItem.PersistentId, out resolvedYield) &&
+            if (RecyclingRegistry.TryGetYield(unchecked((uint)sourceItem.PersistentHashId), out resolvedYield) &&
                 resolvedYield != null &&
                 resolvedYield.Length > 0)
             {

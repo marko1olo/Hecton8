@@ -83,7 +83,7 @@ namespace Hecton8.EditorTools
 
         private static DiegeticVisorLensRuntime FindRuntime()
         {
-            return UnityEngine.Object.FindFirstObjectByType<DiegeticVisorLensRuntime>(FindObjectsInactive.Include);
+            return UnityEngine.Object.FindAnyObjectByType<DiegeticVisorLensRuntime>(FindObjectsInactive.Include);
         }
 
         private static void DrawPreview(VisorStateDTO state, DiegeticVisorLensGpuGlobalsDTO globals)

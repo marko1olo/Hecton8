@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_032
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_032_MAT_family_plant_giant_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_plant_giant_Albedo.png
+FINAL_FILENAME: MAT_family_plant_giant_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Giant alien plant epidermis albedo for large abyssal flora props. Use broad living plates in muted teal and soft jade, pearl-white vein highways, gentle violet undertones, and small amber bioluminescent pores arranged like a controlled biological circuit. The texture should feel majestic and high budget, with large readable forms for big meshes and fine surface character only as a second layer. Keep the plant tissue elegant, resilient, clean, and non-grotesque. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

@@ -166,12 +166,18 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Publishes one electrolysis acoustic payload to the deferred event lane.
         /// </summary>
+        [System.Obsolete("Use TryNotify(in ElectrolysisAcousticEvent) so bounded queue rejection stays visible at the producer.", true)]
         public static void Notify(in ElectrolysisAcousticEvent acousticEvent)
         {
-            if (_listenerCount <= 0)
-                return;
+            TryNotify(in acousticEvent);
+        }
 
-            Enqueue(new ElectrolysisAcousticPayload
+        public static bool TryNotify(in ElectrolysisAcousticEvent acousticEvent)
+        {
+            if (_listenerCount <= 0)
+                return false;
+
+            return Enqueue(new ElectrolysisAcousticPayload
             {
                 Position = acousticEvent.Position,
                 DumpedPowerWatts = acousticEvent.DumpedPowerWatts,
@@ -203,7 +209,10 @@ namespace Hecton8.Gameplay
                     return;
 
                 if (!_pendingEvents.TryDequeue(out ElectrolysisAcousticPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -380,7 +389,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton/Gameplay/Submarine Electrolysis Module")]
-    public sealed class SubmarineElectrolysisModule : MonoBehaviour, ISlowTickable, IPowerComponent
+    public sealed class SubmarineElectrolysisModule : MonoBehaviour, ISlowTickable, IPowerComponent, IGlobalRegistryHotSwapListener
     {
         private const float SlowTickDeltaTime = 0.5f;
         private const int InitialElectrolysisCapacity = 8;
@@ -475,6 +484,9 @@ namespace Hecton8.Gameplay
         {
             CacheReferences();
             RegisterActiveModule();
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryStartRuntimeLifecycle();
         }
 
@@ -501,6 +513,7 @@ namespace Hecton8.Gameplay
             DisableOxygenPipeNode(forgetNode: false);
             UnregisterActiveModule();
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
         private void OnDestroy()
@@ -508,6 +521,7 @@ namespace Hecton8.Gameplay
             DisableOxygenPipeNode(forgetNode: true);
             UnregisterActiveModule();
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
         /// <inheritdoc />
@@ -570,7 +584,7 @@ namespace Hecton8.Gameplay
                 oxygenUnits,
                 safeThreatStrength,
                 safeThreatRadius);
-            ElectrolysisAcousticEvents.Notify(in acousticEvent);
+            ElectrolysisAcousticEvents.TryNotify(in acousticEvent);
 
             _debugLastDumpedPowerWatts = consumedPowerWatts;
             _debugLastOxygenUnits = oxygenUnits;
@@ -601,13 +615,16 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out powerNode);
 
             if (hostModule == null)
-                hostModule = GetComponent<BaseModule>() ?? GetComponentInParent<BaseModule>();
+            {
+                if (!TryGetComponent(out hostModule))
+                    hostModule = GetComponentInParent<BaseModule>();
+            }
 
             if (atmosphereSystem == null)
                 atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
 
             if (fluidDynamics == null && atmosphereSystem != null)
-                fluidDynamics = atmosphereSystem.GetComponent<SubmarineFluidDynamics>();
+                atmosphereSystem.TryGetComponent(out fluidDynamics);
 
             if (_pipeGraphService == null)
                 _pipeGraphService = GlobalRegistry.FluidPipeGraph;
@@ -733,7 +750,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -914,8 +931,7 @@ namespace Hecton8.Gameplay
             if (!CanUseRuntimeDispatcher())
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -925,6 +941,15 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryStartRuntimeLifecycle();
         }
 
         private static bool CanUseRuntimeDispatcher()

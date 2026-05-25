@@ -80,7 +80,7 @@ namespace Hecton8.Tests.Editor
                         NodeCount = 3,
                         EdgeCount = 4,
                         MaxNodeExpansions = AcousticPortalConstants.MaxPathNodes,
-                        QualityTier = 4,
+                        GlobalQualityWeight = 1f,
                         DisablePortalPath = 0
                     }
                 }.Run();

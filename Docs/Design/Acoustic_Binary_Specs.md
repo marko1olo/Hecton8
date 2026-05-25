@@ -1,4 +1,4 @@
-# Acoustic Binary Specs
+﻿# Acoustic Binary Specs
 
 Date: 2026-05-17
 Status: PENDING VERIFICATION

@@ -26,6 +26,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.World;
+using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
@@ -53,7 +54,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
     [AddComponentMenu("Hecton/Gameplay/Bio Reactor")]
-    public sealed class BioReactor : MonoBehaviour, IPowerComponent, ITickable, IUpdatable, IInteractable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class BioReactor : MonoBehaviour, IPowerComponent, ITickable, IUpdatable, ILateFrameTickable, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -152,8 +153,11 @@ namespace Hecton8.Gameplay
 
         private const string DefaultInteractText = "Deposit Fuel";
         private const string DefaultInteractFullText = "Reactor Full";
-        private string _cachedInteractText;
-        private string _cachedInteractFullText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedInteractFullTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedInteractTextLength;
+        private int _cachedInteractFullTextLength;
 
         // ══════════════════════════════════════════════════════════
         //  IInteractable IMPLEMENTATION
@@ -171,12 +175,7 @@ namespace Hecton8.Gameplay
 
         void IInteractable.Interact(Transform interactor)
         {
-            // Try to deposit fuel from player inventory
-            PlayerInventory playerInventory = interactor.GetComponentInParent<PlayerInventory>();
-            if (playerInventory == null)
-            {
-                playerInventory = _playerRuntime != null ? _playerRuntime.Inventory : null;
-            }
+            PlayerInventory playerInventory = _playerRuntime != null ? _playerRuntime.Inventory : null;
 
             if (playerInventory != null)
             {
@@ -188,7 +187,15 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
-            return _fuelItems.Count >= maxFuelSlots ? _cachedInteractFullText : _cachedInteractText;
+            return _fuelItems.Count >= maxFuelSlots ? DefaultInteractFullText : DefaultInteractText;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            ReadOnlySpan<char> text = _fuelItems.Count >= maxFuelSlots
+                ? _cachedInteractFullTextBuffer.AsSpan(0, _cachedInteractFullTextLength)
+                : _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength);
+            return InteractableTextCopy.TryCopy(text, destination, out length);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -318,15 +325,19 @@ namespace Hecton8.Gameplay
         private bool _isProducing;
         private bool _wasProducing;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _hasPower = true; // IPowerComponent requirement
         private int _emissionPropertyId;
         private float _overheatTimer;
         private float _debugGridUtilization;
         private bool _meltdownTriggered;
+        private bool _fuelIndicatorDirty;
+        private bool _pendingInsertAudio;
+        private bool _pendingDepletedAudio;
         private IAudioService _audioService;
         private IPlayerRuntimeContext _playerRuntime;
-        private LocalizationManager _localizationRuntime;
+        private ILocalizationTextReadModel _localizationRuntime;
 
         // Cached references
         private Transform _cachedTransform;
@@ -337,6 +348,10 @@ namespace Hecton8.Gameplay
         private static readonly Collider[] MeltdownOverlapBuffer = new Collider[48];
         private readonly int[] _damagedModuleIds = new int[24];
         private readonly int[] _damagedSurvivalIds = new int[8];
+        private const float MeltdownBurnStatusDurationSeconds = 8f;
+        private const float MeltdownRadiationStatusDurationSeconds = 12f;
+        private const float MeltdownRadiationDoseScale = 0.1f;
+        private const byte MeltdownRadiationDoseKind = 8;
 
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent IMPLEMENTATION
@@ -404,11 +419,12 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             RefreshColdRegistryReferences();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             TryRegisterHotSwap();
             RebuildLocalizedTextCache();
-            UpdateFuelIndicator();
+            QueueFuelIndicatorUpdate();
         }
 
         private void OnDisable()
@@ -428,19 +444,32 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            _fuelIndicatorDirty = false;
+            _pendingInsertAudio = false;
+            _pendingDepletedAudio = false;
         }
 
         private void TryRegisterHotSwap()
@@ -462,9 +491,9 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _playerRuntime = PlayerRuntimeContextService.ActiveRuntimeContext;
-            _localizationRuntime = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
+            _playerRuntime = GlobalRegistry.Player;
+            _localizationRuntime = GlobalRegistry.LocalizationText;
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
@@ -478,7 +507,7 @@ namespace Hecton8.Gameplay
                     _playerRuntime = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localizationRuntime = currentService as LocalizationManager;
+                    _localizationRuntime = currentService as ILocalizationTextReadModel;
                     RebuildLocalizedTextCache();
                     break;
             }
@@ -501,7 +530,7 @@ namespace Hecton8.Gameplay
                     _isProducing = false;
                     OnReactorStopped?.Invoke();
                     NotifyGridBalanceChanged();
-                    UpdateFuelIndicator();
+                    QueueFuelIndicatorUpdate();
                 }
 
                 UpdateOverheat(deltaTime);
@@ -521,7 +550,32 @@ namespace Hecton8.Gameplay
             }
 
             UpdateOverheat(deltaTime);
-            UpdateFuelIndicator();
+            QueueFuelIndicatorUpdate();
+        }
+
+        public void LateFrameTick()
+        {
+            if (_fuelIndicatorDirty)
+            {
+                _fuelIndicatorDirty = false;
+                UpdateFuelIndicator();
+            }
+
+            IAudioService audio = _audioService;
+            Vector3 audioPosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            if (_pendingInsertAudio)
+            {
+                _pendingInsertAudio = false;
+                if (insertSound != null && audio != null)
+                    audio.PlayAtPoint(insertSound, audioPosition);
+            }
+
+            if (_pendingDepletedAudio)
+            {
+                _pendingDepletedAudio = false;
+                if (depletedSound != null && audio != null)
+                    audio.PlayAtPoint(depletedSound, audioPosition);
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -555,11 +609,7 @@ namespace Hecton8.Gameplay
             _totalFuelCapacity += fuelValue;
             _currentFuelLevel += fuelValue;
 
-            // Play insert sound
-            if (insertSound != null && _audioService is IAudioService audio)
-            {
-                audio.PlayAtPoint(insertSound, _cachedTransform.position);
-            }
+            _pendingInsertAudio = insertSound != null;
 
             OnFuelInserted?.Invoke(_fuelItems.Count - 1);
             OnFuelLevelChanged?.Invoke(FuelLevel);
@@ -622,11 +672,7 @@ namespace Hecton8.Gameplay
                     int slotIndex = 0;
                     _fuelItems.RemoveAt(0);
 
-                    // Play depleted sound
-                    if (depletedSound != null && _audioService is IAudioService audio)
-                    {
-                        audio.PlayAtPoint(depletedSound, _cachedTransform.position);
-                    }
+                    _pendingDepletedAudio = depletedSound != null;
 
                     OnFuelDepleted?.Invoke(slotIndex);
                 }
@@ -717,32 +763,33 @@ namespace Hecton8.Gameplay
             _totalFuelCapacity = 0f;
             _fuelItems.Clear();
             OnReactorStopped?.Invoke();
-            UpdateFuelIndicator();
+            QueueFuelIndicatorUpdate();
             NotifyGridBalanceChanged();
 
             Vector3 origin = _cachedTransform != null ? _cachedTransform.position : transform.position;
             PublishReactorGasLeak(1f);
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                origin,
-                meltdownRadius,
-                MeltdownOverlapBuffer,
-                meltdownMask,
-                QueryTriggerInteraction.Ignore);
-
             float safeMeltdownRadius = math.max(0.1f, meltdownRadius);
             float meltdownRadiusSq = safeMeltdownRadius * safeMeltdownRadius;
             float inverseMeltdownRadiusSq = math.rcp(meltdownRadiusSq);
             int damagedModuleCount = 0;
             int damagedSurvivalCount = 0;
-            for (int i = 0; i < hitCount; i++)
+
+            int activeModuleCount = BaseModule.ActiveModuleCount;
+            for (int i = 0; i < activeModuleCount; i++)
             {
-                Collider hit = MeltdownOverlapBuffer[i];
-                MeltdownOverlapBuffer[i] = null;
-                if (hit == null)
+                BaseModule module = BaseModule.GetActiveModuleAt(i);
+                if (module == null)
                     continue;
 
-                Vector3 offset = hit.bounds.ClosestPoint(origin) - origin;
-                float distanceSq = math.lengthsq(new float3(offset.x, offset.y, offset.z));
+                Vector3 moduleCenter = module.transform.position;
+                float moduleRadius = 0f;
+                if (module.TryGetInteriorHazardBounds(out Vector3 hazardCenter, out float hazardRadius))
+                {
+                    moduleCenter = hazardCenter;
+                    moduleRadius = math.max(0f, hazardRadius);
+                }
+
+                float distanceSq = DistanceSqToSphereSurface(origin, moduleCenter, moduleRadius);
                 if (distanceSq >= meltdownRadiusSq)
                     continue;
 
@@ -750,25 +797,43 @@ namespace Hecton8.Gameplay
                 if (damage01 <= 0f)
                     continue;
 
-                BaseModule module = hit.GetComponentInParent<BaseModule>();
-                if (module != null)
-                {
-                    int moduleId = GetRuntimeId(module);
-                    if (TryRegisterUniqueId(_damagedModuleIds, ref damagedModuleCount, moduleId))
-                        module.ApplyDamage(meltdownModuleDamage * damage01);
-                }
+                int moduleId = GetRuntimeId(module);
+                if (TryRegisterUniqueId(_damagedModuleIds, ref damagedModuleCount, moduleId))
+                    module.ApplyDamage(meltdownModuleDamage * damage01);
+            }
 
-                HectonSurvivalSystem survival = hit.GetComponentInParent<HectonSurvivalSystem>();
-                if (survival != null)
+            IPlayerRuntimeContext playerContext = _playerRuntime;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            HectonSurvivalSystem survival = playerTransform != null
+                ? playerTransform.GetComponentInParent<HectonSurvivalSystem>()
+                : null;
+            if (survival != null && playerTransform != null)
+            {
+                float distanceSq = (playerTransform.position - origin).sqrMagnitude;
+                if (distanceSq < meltdownRadiusSq)
                 {
-                    int survivalId = GetRuntimeId(survival);
-                    if (TryRegisterUniqueId(_damagedSurvivalIds, ref damagedSurvivalCount, survivalId))
-                        survival.TakeDamage(meltdownPlayerDamage * damage01);
+                    float damage01 = 1f - math.saturate(distanceSq * inverseMeltdownRadiusSq);
+                    if (damage01 > 0f)
+                    {
+                        int survivalId = GetRuntimeId(survival);
+                        if (TryRegisterUniqueId(_damagedSurvivalIds, ref damagedSurvivalCount, survivalId))
+                        {
+                            QueueMeltdownPlayerStatus(survival, damage01);
+                            PublishMeltdownRadiationDose(origin, damage01);
+                        }
+                    }
                 }
             }
 
             if (_hostModule != null && !_hostModule.IsFlooded)
                 _hostModule.ForceFlood();
+        }
+
+        private static float DistanceSqToSphereSurface(Vector3 point, Vector3 sphereCenter, float sphereRadius)
+        {
+            float centerDistance = (point - sphereCenter).magnitude;
+            float surfaceDistance = math.max(0f, centerDistance - math.max(0f, sphereRadius));
+            return surfaceDistance * surfaceDistance;
         }
 
         private void PublishReactorGasLeak(float severity01)
@@ -788,7 +853,68 @@ namespace Hecton8.Gameplay
             SignalBus<ReactorDamageSignal>.TryPush(in signal);
         }
 
+        private void QueueMeltdownPlayerStatus(HectonSurvivalSystem survival, float damage01)
+        {
+            int targetId = ResolveSurvivalCombatTargetId(survival);
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return;
+
+            float severity01 = math.saturate(damage01);
+            if (severity01 <= 0.0001f)
+                return;
+
+            CombatDamageRuntime.TryQueueStatusEffect(
+                targetId,
+                CombatStatusBits.Burning64,
+                MeltdownBurnStatusDurationSeconds * math.max(0.25f, severity01),
+                DamageSourceIds.EnvironmentHazard,
+                severity01);
+            CombatDamageRuntime.TryQueueStatusEffect(
+                targetId,
+                CombatStatusBits.Irradiated64,
+                MeltdownRadiationStatusDurationSeconds * math.max(0.25f, severity01),
+                DamageSourceIds.EnvironmentHazard,
+                severity01);
+        }
+
+        private static int ResolveSurvivalCombatTargetId(HectonSurvivalSystem survival)
+        {
+            if (survival == null)
+                return 0;
+
+            if (survival.TryGetComponent(out HectonPlayerHealth playerHealth))
+                return CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+
+            return CombatDamageRuntime.ResolveTargetId(survival.gameObject);
+        }
+
+        private void PublishMeltdownRadiationDose(Vector3 origin, float damage01)
+        {
+            float severity01 = math.saturate(damage01);
+            if (severity01 <= 0.0001f || !TryResolveRuntimeAupPosition(origin, out AbsoluteUniversePosition positionAup))
+                return;
+
+            RadiationDoseSignal signal = default;
+            signal.PositionAup = positionAup;
+            signal.Dose = meltdownPlayerDamage * severity01 * MeltdownRadiationDoseScale;
+            signal.Intensity01 = severity01;
+            signal.SourceId = unchecked((uint)GetRuntimeId(this));
+            signal.DoseKind = MeltdownRadiationDoseKind;
+            signal.Flags = 1;
+            SignalBus<RadiationDoseSignal>.TryPush(in signal);
+        }
+
         private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 positionAup)
+        {
+            positionAup = default;
+            if (!TryResolveRuntimeAupPosition(runtimePosition, out AbsoluteUniversePosition resolvedAup))
+                return false;
+
+            positionAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(positionAup));
+        }
+
+        private static bool TryResolveRuntimeAupPosition(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
             positionAup = default;
             if (!math.isfinite(runtimePosition.x) ||
@@ -796,18 +922,14 @@ namespace Hecton8.Gameplay
                 !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
-            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            if (!resolvedAup.IsFinite())
-                return false;
-
-            positionAup = resolvedAup.ToAbsoluteDouble3();
-            return math.all(math.isfinite(positionAup));
+            return positionAup.IsFinite();
         }
 
         private static bool TryRegisterUniqueId(int[] ids, ref int count, int value)
@@ -867,6 +989,11 @@ namespace Hecton8.Gameplay
             fuelIndicator.SetPropertyBlock(_mpb);
         }
 
+        private void QueueFuelIndicatorUpdate()
+        {
+            _fuelIndicatorDirty = true;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
@@ -896,8 +1023,8 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            _cachedInteractText = ResolveLocalized(LocalizationKeys.INTERACT_DEPOSIT_FUEL, DefaultInteractText);
-            _cachedInteractFullText = ResolveLocalized(LocalizationKeys.INTERACT_REACTOR_FULL, DefaultInteractFullText);
+            _cachedInteractTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationRuntime, LocalizationKeys.INTERACT_DEPOSIT_FUEL, DefaultInteractText, _cachedInteractTextBuffer);
+            _cachedInteractFullTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationRuntime, LocalizationKeys.INTERACT_REACTOR_FULL, DefaultInteractFullText, _cachedInteractFullTextBuffer);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -914,13 +1041,6 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
         }
 
-        private string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = _localizationRuntime;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
-        }
     }
 }
 

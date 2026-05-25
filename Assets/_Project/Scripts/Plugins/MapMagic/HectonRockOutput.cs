@@ -141,7 +141,7 @@ namespace Hecton8.World
             HectonRockApplyData applyData = new HectonRockApplyData
             {
                 chunkCoord = chunkCoord,
-                layerMatrices = new Dictionary<int, Matrix4x4[]>()
+                layerMatrices = new Dictionary<int, Matrix4x4[]>(layerMatrices.Count)
             };
 
             foreach (var kvp in layerMatrices)
@@ -162,7 +162,7 @@ namespace Hecton8.World
             public Vector2Int chunkCoord;
             public Dictionary<int, Matrix4x4[]> layerMatrices;
 
-            public void Apply(Terrain terrain)
+            public void Apply(UnityEngine.Terrain terrain)
             {
                 HectonRockManager manager = GlobalRegistry.RockManager;
                 if (manager == null)
@@ -198,7 +198,7 @@ namespace Hecton8.World
         //  CLEAR APPLIED — runs on main thread when tile unloads
         // ══════════════════════════════════════════════════════════
 
-        public override void ClearApplied(TileData data, Terrain terrain)
+        public override void ClearApplied(TileData data, UnityEngine.Terrain terrain)
         {
             HectonRockManager manager = GlobalRegistry.RockManager;
             if (manager == null) return;

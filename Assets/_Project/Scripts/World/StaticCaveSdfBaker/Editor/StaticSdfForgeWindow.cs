@@ -831,7 +831,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             json.Append(rows);
             json.Append("\n  ]\n");
             json.Append("}\n");
-            File.WriteAllText(reportPath, json.ToString());
+            File.WriteAllText(reportPath, json.ToString(), new UTF8Encoding(false));
             return findings;
         }
 

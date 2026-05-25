@@ -62,6 +62,21 @@ namespace Hecton8.World.ProceduralWreckage
                    math.all(math.isfinite(value.c3));
         }
 
+        public static quaternion FastSmallAngleRotation(float3 axis, float radians)
+        {
+            float axisLenSq = math.lengthsq(axis);
+            float3 safeAxis = math.isfinite(axisLenSq) && axisLenSq > 0.000001f
+                ? axis * math.rsqrt(axisLenSq)
+                : new float3(1f, 0f, 0f);
+            float half = math.clamp(math.select(0f, radians, math.isfinite(radians)), -0.5f, 0.5f) * 0.5f;
+            float halfSq = half * half;
+            quaternion result = new quaternion(new float4(safeAxis * half, 1f - (0.5f * halfSq)));
+            float lenSq = math.lengthsq(result.value);
+            return math.isfinite(lenSq) && lenSq > 0.000001f
+                ? new quaternion(result.value * math.rsqrt(lenSq))
+                : quaternion.identity;
+        }
+
         public static ushort BuildRuleMask(int activeRuleCount)
         {
             int safeCount = math.clamp(activeRuleCount, 1, ProceduralWreckageConstants.MaxModuleRules);
@@ -703,9 +718,9 @@ namespace Hecton8.World.ProceduralWreckage
             float axisSq = math.dot(axis, axis);
             axis = axis * math.rsqrt(math.max(axisSq, ProceduralWreckageConstants.Epsilon));
             float angle = (random.NextFloat(-1f, 1f) * severity) * math.lerp(0.08f, 0.36f, ProceduralWreckageMath.Smooth01(quality));
-            quaternion shear = quaternion.AxisAngle(axis, angle);
+            quaternion shear = ProceduralWreckageMath.FastSmallAngleRotation(axis, angle);
             float3 translation = node.LocalMatrix.c3.xyz;
-            float4x4 rotated = math.mul(float4x4.Rotate(shear), node.LocalMatrix);
+            float4x4 rotated = math.mul(new float4x4(shear, float3.zero), node.LocalMatrix);
             rotated.c3 = new float4(translation, 1f);
             node.LocalMatrix = ProceduralWreckageMath.IsFinite(rotated) ? rotated : node.LocalMatrix;
             node.StateFlags |= WreckageNodeFlags.Sheared;
@@ -758,7 +773,9 @@ namespace Hecton8.World.ProceduralWreckage
                 float v = ProceduralWreckageMath.HashToUnit(h ^ 0x9E3779B9u);
                 float angle = u * 6.28318530718f;
                 float ring = math.lerp(0.2f, 1f, v);
-                float2 baseDir = new float2(math.cos(angle), math.sin(angle));
+                float2 baseDir = new float2(
+                    Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angle),
+                    Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle));
                 float2 curl = CurlNoise(baseDir * ring, seed);
                 float2 offset2 = (baseDir + curl * math.lerp(0.12f, 0.38f, curve)) * (radius * ring);
                 float3 local = new float3(offset2.x, math.lerp(-2f, 2f, ProceduralWreckageMath.HashToUnit(h ^ 0x51515151u)), offset2.y);

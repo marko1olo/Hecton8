@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.World;
 using UnityEngine;
 
@@ -183,7 +184,10 @@ namespace Hecton8.EditorTools
                 || !MatchesLodTransition(lods[2].screenRelativeTransitionHeight, RequiredLod2Threshold))
             {
                 failureLabel =
-                    $"stale-thresholds:{lods[0].screenRelativeTransitionHeight:0.###}/{lods[1].screenRelativeTransitionHeight:0.###}/{lods[2].screenRelativeTransitionHeight:0.###}";
+                    "stale-thresholds:" +
+                    FormatLodThreshold(lods[0].screenRelativeTransitionHeight) + "/" +
+                    FormatLodThreshold(lods[1].screenRelativeTransitionHeight) + "/" +
+                    FormatLodThreshold(lods[2].screenRelativeTransitionHeight);
                 return true;
             }
 
@@ -194,6 +198,11 @@ namespace Hecton8.EditorTools
         private static bool MatchesLodTransition(float actual, float expected)
         {
             return Mathf.Abs(actual - expected) <= LodThresholdTolerance;
+        }
+
+        private static string FormatLodThreshold(float value)
+        {
+            return value.ToString("0.###", CultureInfo.InvariantCulture);
         }
     }
 }

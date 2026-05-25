@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -186,8 +187,8 @@ namespace Hecton8.Editor
             _telemetry.text =
                 "Telemetry: nodes " + entry.NodeCount +
                 " | iters " + entry.IterationCount +
-                " | tension " + entry.MaxTension.ToString("F2") +
-                " | us " + entry.CpuMicroseconds.ToString("F2") +
+                " | tension " + entry.MaxTension.ToString("F2", CultureInfo.InvariantCulture) +
+                " | us " + entry.CpuMicroseconds.ToString("F2", CultureInfo.InvariantCulture) +
                 " | hash 0x" + entry.StateHash.ToString("X8");
         }
 

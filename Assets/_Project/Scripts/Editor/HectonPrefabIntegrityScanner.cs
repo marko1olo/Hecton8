@@ -278,16 +278,13 @@ namespace Hecton8.EditorTools
             if (missingScriptCount > 0)
                 result.BrokenReferences.Add($"{ownerPath}: {hierarchyPath}: missing script components={missingScriptCount}.");
 
-            MeshFilter meshFilter = target.GetComponent<MeshFilter>();
-            if (meshFilter != null && meshFilter.sharedMesh == null)
+            if (target.TryGetComponent(out MeshFilter meshFilter) && meshFilter.sharedMesh == null)
                 result.BrokenReferences.Add($"{ownerPath}: {hierarchyPath}: MeshFilter missing sharedMesh.");
 
-            SkinnedMeshRenderer skinnedMeshRenderer = target.GetComponent<SkinnedMeshRenderer>();
-            if (skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh == null)
+            if (target.TryGetComponent(out SkinnedMeshRenderer skinnedMeshRenderer) && skinnedMeshRenderer.sharedMesh == null)
                 result.BrokenReferences.Add($"{ownerPath}: {hierarchyPath}: SkinnedMeshRenderer missing sharedMesh.");
 
-            Renderer renderer = target.GetComponent<Renderer>();
-            if (renderer != null)
+            if (target.TryGetComponent(out Renderer renderer))
             {
                 Material[] sharedMaterials = renderer.sharedMaterials;
                 for (int materialIndex = 0; materialIndex < sharedMaterials.Length; materialIndex++)
@@ -542,12 +539,10 @@ namespace Hecton8.EditorTools
             try
             {
                 temporaryRoot.name = "PFB_ErrorCube";
-                Collider collider = temporaryRoot.GetComponent<Collider>();
-                if (collider != null)
+                if (temporaryRoot.TryGetComponent(out Collider collider))
                     UnityEngine.Object.DestroyImmediate(collider);
 
-                MeshRenderer renderer = temporaryRoot.GetComponent<MeshRenderer>();
-                if (renderer != null)
+                if (temporaryRoot.TryGetComponent(out MeshRenderer renderer))
                     renderer.sharedMaterial = errorMaterial;
 
                 PrefabUtility.SaveAsPrefabAsset(temporaryRoot, ErrorPrefabPath);

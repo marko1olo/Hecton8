@@ -218,7 +218,9 @@ namespace Hecton8.EditorTools
             _cameraStates.Clear();
             _audioSourceStates.Clear();
 
-            Camera[] cameras = Resources.FindObjectsOfTypeAll<Camera>();
+            Camera[] cameras = Object.FindObjectsByType<Camera>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int i = 0; i < cameras.Length; i++)
             {
                 Camera camera = cameras[i];
@@ -229,7 +231,9 @@ namespace Hecton8.EditorTools
                 camera.enabled = false;
             }
 
-            MeshRenderer[] meshRenderers = Resources.FindObjectsOfTypeAll<MeshRenderer>();
+            MeshRenderer[] meshRenderers = Object.FindObjectsByType<MeshRenderer>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int i = 0; i < meshRenderers.Length; i++)
             {
                 MeshRenderer meshRenderer = meshRenderers[i];
@@ -240,7 +244,9 @@ namespace Hecton8.EditorTools
                 meshRenderer.enabled = false;
             }
 
-            SkinnedMeshRenderer[] skinnedRenderers = Resources.FindObjectsOfTypeAll<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer[] skinnedRenderers = Object.FindObjectsByType<SkinnedMeshRenderer>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int i = 0; i < skinnedRenderers.Length; i++)
             {
                 SkinnedMeshRenderer skinnedRenderer = skinnedRenderers[i];
@@ -251,7 +257,9 @@ namespace Hecton8.EditorTools
                 skinnedRenderer.enabled = false;
             }
 
-            AudioSource[] audioSources = Resources.FindObjectsOfTypeAll<AudioSource>();
+            AudioSource[] audioSources = Object.FindObjectsByType<AudioSource>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int i = 0; i < audioSources.Length; i++)
             {
                 AudioSource audioSource = audioSources[i];
@@ -302,7 +310,9 @@ namespace Hecton8.EditorTools
         private static void CaptureSimulationBehaviours()
         {
             _simulationBehaviours.Clear();
-            MonoBehaviour[] behaviours = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
+            MonoBehaviour[] behaviours = Object.FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int i = 0; i < behaviours.Length; i++)
             {
                 MonoBehaviour behaviour = behaviours[i];

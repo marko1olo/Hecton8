@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using Hecton8.Core;
-using Hecton8.Input;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -31,7 +30,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private bool _visible;
         private int _nextSampleFrame;
-        private InputManager _inputManager;
+        private INativeInputManagerRuntime _inputManager;
 
         private void Awake()
         {
@@ -73,7 +72,7 @@ namespace Hecton8.UI
             if (!_visible)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextSampleFrame)
                 return;
 
@@ -108,7 +107,7 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return;
 
-            TrySubscribeInput(currentService as InputManager);
+            TrySubscribeInput(currentService as INativeInputManagerRuntime);
         }
 
         private void TryRegister()
@@ -141,10 +140,10 @@ namespace Hecton8.UI
             if (_inputManager != null)
                 return;
 
-            TrySubscribeInput(GlobalRegistry.NativeInputManager);
+            TrySubscribeInput(GlobalRegistry.NativeInputRuntime);
         }
 
-        private void TrySubscribeInput(InputManager inputManager)
+        private void TrySubscribeInput(INativeInputManagerRuntime inputManager)
         {
             if (_inputManager != null || inputManager == null)
                 return;

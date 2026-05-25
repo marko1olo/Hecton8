@@ -1,0 +1,47 @@
+﻿{
+  "agent": "SHINOBU_342",
+  "scanner": "OOP_Thermal_Scanner.StaticMirror.Lexical",
+  "analysisMode": "lexical token scanner; not a Roslyn AST parser; scans Power/Habitat/Thermodynamics legacy generator patterns",
+  "sharedReportKey": "shinobu342NuclearThermalScanner",
+  "summary": "Nuclear reactor thermodynamics route implemented; editor scanner route is non-destructive",
+  "status": "STATIC_IMPLEMENTED_BLOCKED_BY_EXTERNAL_COMPILE_DEPENDENCY",
+  "compileProof": "Unity batchmode compile reached external Hecton8.Core.Memory failure before Hecton8.Thermodynamics: H8Memory.cs lines 2862 and 2879 cannot resolve Hecton8.Core.DispatcherJobFence. See Docs/AgentLogs/UnityCompile_SHINOBU_342.log.",
+  "route": "BaseReactorStateDTO -> EvaluateFissionReactionJob -> CalculateThermoelectricPowerJob -> PowerNodeDTO/airlock/fluid atomics -> SignalBus meltdown lanes",
+  "forbiddenRuntimeRoute": "OnTriggerStay/SphereCollider/List<HeatSource>/Update timer generator",
+  "dedicatedReport": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_342.json",
+  "sharedReportBehavior": "Editor scanner appends shinobu342NuclearThermalScanner to Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json only if absent; it does not overwrite sibling sections.",
+  "sharedReportStatus": "shinobu342NuclearThermalScanner present in Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json after polish patch",
+  "hardening": [
+    "meltdown SignalBus publication moved from IJobParallelFor to deterministic serial IJob",
+    "coolant height mirror write removed from reactor job after atomic subtraction",
+    "power/fluid/airlock Vault buffers locked across the pending reactor job window and released after dispatcher completion",
+    "reactor visual StructuredBuffer is double-buffered and allocated only during cold setup",
+    "LockBufferForWrite upload now uses try/finally before UnlockBufferAfterWrite"
+  ],
+  "vaultBuffers": [
+    73642,
+    73643,
+    73644,
+    73645,
+    73646,
+    73647,
+    73648,
+    73649,
+    73650
+  ],
+  "dtoLayout": {
+    "BaseReactorStateDTO": "64 bytes; PowerNodeHashID@0, FluidRoomHashID@4, CoreTemperatureCelsius@8, FuelRemainingScalar@12, ControlRodInsertion01@16, ReactorFlags@20, padding@24..60",
+    "NuclearReactorTelemetryEntry": "128 bytes; HotReactorAup@0, LastExecutionMicroseconds@40, RingIndex@84"
+  },
+  "hotPathStaticScan": {
+    "linq": 0,
+    "foreach": 0,
+    "IEnumerator": 0,
+    "Instantiate": 0,
+    "ParticleSystem": 0,
+    "floatParse": 0,
+    "doubleParse": 0,
+    "hiddenComplete": 0
+  },
+  "findings": []
+}

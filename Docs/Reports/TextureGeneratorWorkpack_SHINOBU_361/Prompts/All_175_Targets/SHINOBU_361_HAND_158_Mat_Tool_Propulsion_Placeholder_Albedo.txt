@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_158
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_158_Mat_Tool_Propulsion_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Tool_Propulsion_Placeholder_Albedo.png
+FINAL_FILENAME: Mat_Tool_Propulsion_Placeholder_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Propulsion tool albedo for underwater movement equipment. Create satin titanium thruster collars, off-white ceramic cowling panels, graphite intake gaskets, teal flow arrows, amber power nodes, and subtle mineral streaks along water-flow edges. The texture should feel hydrodynamic, compact, and premium, supporting a tool that belongs in a deep-sea research kit. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

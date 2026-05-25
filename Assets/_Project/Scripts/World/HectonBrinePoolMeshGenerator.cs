@@ -320,7 +320,7 @@ namespace Hecton8.World
             double maxWorldX = (poolBounds.MaxX + 1) * safeCellSize;
             double minWorldZ = poolBounds.MinZ * safeCellSize;
             double maxWorldZ = (poolBounds.MaxZ + 1) * safeCellSize;
-            AbsoluteUniversePosition runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!runtimeOriginAup.IsFinite())
                 return false;
 

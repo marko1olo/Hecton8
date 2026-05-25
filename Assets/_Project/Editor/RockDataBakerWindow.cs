@@ -38,6 +38,7 @@ namespace Hecton8.Building.Editor
         private GameObject _selectedRoot;
         private RockAttachmentData _lastExportedAsset;
         private Vector2 _scrollPos;
+        private readonly List<HectonSocketHelper> _socketHelperScratch = new List<HectonSocketHelper>(64);
         private string _statusMessage = "";
         private MessageType _statusType = MessageType.None;
 
@@ -195,12 +196,13 @@ namespace Hecton8.Building.Editor
 
             if (_selectedRoot == null) return;
 
-            var helpers = _selectedRoot.GetComponentsInChildren<HectonSocketHelper>(true);
-            _previewTotal = helpers.Length;
+            _socketHelperScratch.Clear();
+            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
+            _previewTotal = _socketHelperScratch.Count;
 
-            for (int i = 0; i < helpers.Length; i++)
+            for (int i = 0; i < _socketHelperScratch.Count; i++)
             {
-                var type = GetSocketType(helpers[i]);
+                var type = GetSocketType(_socketHelperScratch[i]);
                 switch (type)
                 {
                     case HectonSocketHelper.SocketType.Top:   _previewTop++;   break;
@@ -222,9 +224,10 @@ namespace Hecton8.Building.Editor
                 return;
             }
 
-            var helpers = _selectedRoot.GetComponentsInChildren<HectonSocketHelper>(true);
+            _socketHelperScratch.Clear();
+            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
 
-            if (helpers.Length == 0)
+            if (_socketHelperScratch.Count == 0)
             {
                 SetStatus(
                     $"No HectonSocketHelper found on children of {_selectedRoot.name}",
@@ -261,9 +264,9 @@ namespace Hecton8.Building.Editor
 
             Transform root = _selectedRoot.transform;
 
-            for (int i = 0; i < helpers.Length; i++)
+            for (int i = 0; i < _socketHelperScratch.Count; i++)
             {
-                var helper = helpers[i];
+                var helper = _socketHelperScratch[i];
                 Transform t = helper.transform;
 
                 // Compute local position/rotation relative to root
@@ -296,7 +299,7 @@ namespace Hecton8.Building.Editor
             _lastExportedAsset = data;
 
             SetStatus(
-                $"Saved {helpers.Length} sockets to {assetPath}\n" +
+                $"Saved {_socketHelperScratch.Count} sockets to {assetPath}\n" +
                 $"Top: {_previewTop}, Side: {_previewSide}, Under: {_previewUnder}",
                 MessageType.Info);
 
@@ -316,9 +319,10 @@ namespace Hecton8.Building.Editor
                 return;
             }
 
-            var helpers = _selectedRoot.GetComponentsInChildren<HectonSocketHelper>(true);
+            _socketHelperScratch.Clear();
+            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
 
-            if (helpers.Length == 0)
+            if (_socketHelperScratch.Count == 0)
             {
                 SetStatus("No sockets to deactivate.", MessageType.Warning);
                 return;
@@ -328,9 +332,9 @@ namespace Hecton8.Building.Editor
 
             Undo.SetCurrentGroupName("Prepare Sockets for Mesh Baker");
 
-            for (int i = 0; i < helpers.Length; i++)
+            for (int i = 0; i < _socketHelperScratch.Count; i++)
             {
-                GameObject go = helpers[i].gameObject;
+                GameObject go = _socketHelperScratch[i].gameObject;
                 if (go.activeSelf)
                 {
                     Undo.RecordObject(go, "Deactivate Socket");
@@ -358,15 +362,16 @@ namespace Hecton8.Building.Editor
             }
 
             // GetComponentsInChildren(true) finds inactive too
-            var helpers = _selectedRoot.GetComponentsInChildren<HectonSocketHelper>(true);
+            _socketHelperScratch.Clear();
+            _selectedRoot.GetComponentsInChildren(true, _socketHelperScratch);
 
             int count = 0;
 
             Undo.SetCurrentGroupName("Restore Sockets");
 
-            for (int i = 0; i < helpers.Length; i++)
+            for (int i = 0; i < _socketHelperScratch.Count; i++)
             {
-                GameObject go = helpers[i].gameObject;
+                GameObject go = _socketHelperScratch[i].gameObject;
                 if (!go.activeSelf)
                 {
                     Undo.RecordObject(go, "Activate Socket");

@@ -134,7 +134,7 @@ namespace Hecton8.UI
         private void OnClick()
         {
             EntityCommand command = EntityCommand.CreateOpenPDATab(_tabIndex);
-            ThreadSafeCommandQueue.Enqueue(in command);
+            ThreadSafeCommandQueue.TryEnqueue(in command);
         }
     }
 }

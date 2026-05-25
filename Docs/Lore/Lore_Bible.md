@@ -1,4 +1,4 @@
-# HECTON-8 Lore Bible - Marauder / Corp Payload
+﻿# HECTON-8 Lore Bible - Marauder / Corp Payload
 
 Date: 2026-05-17
 Status: TRUTH SYNCHRONIZED (STATIC/CLI) / UNITY RUNTIME PENDING VERIFICATION

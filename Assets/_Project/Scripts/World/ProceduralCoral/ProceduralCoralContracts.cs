@@ -4,6 +4,26 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.ProceduralCoral
 {
+    internal static class ProceduralCoralContractsLayout
+    {
+        public const int CoralLSystemRuleDTOStrideBytes = 64;
+        public const int CoralBranchDTOStrideBytes = 128;
+        public const int CoralSectorTriggerDTOStrideBytes = 64;
+        public const int CoralSectorSaveDTOStrideBytes = 16;
+        public const int CoralTuningDTOStrideBytes = 64;
+        public const int CoralTurtleStateDTOStrideBytes = 64;
+        public const int CoralSpatialCellDTOStrideBytes = 32;
+        public const int CapsuleColliderDTOStrideBytes = 64;
+        public const int SyncPulseDTOStrideBytes = 32;
+        public const int CoralGenerationTelemetryEntryStrideBytes = 64;
+        public const int CoralDebugSegmentDTOStrideBytes = 64;
+        public const int CoralIndirectArgsDTOStrideBytes = 16;
+        public const int CoralPaddedCounterDTOStrideBytes = 64;
+        public const int CoralGpuSwayDTOStrideBytes = 64;
+        public const int CoralSelfAuditResultDTOStrideBytes = 64;
+        public const int CoralHzbTileDTOStrideBytes = 16;
+    }
+
     public static class ProceduralCoralConstants
     {
         public const int MaxRules = 16;
@@ -91,7 +111,7 @@ namespace Hecton8.World.ProceduralCoral
         public const uint FineRule = 1u << 3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralLSystemRuleDTOStrideBytes)]
     public struct CoralLSystemRuleDTO
     {
         [FieldOffset(0)]
@@ -132,7 +152,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint WeightHash;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralBranchDTOStrideBytes)]
     public struct CoralBranchDTO
     {
         [FieldOffset(0)]
@@ -161,7 +181,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralSectorTriggerDTOStrideBytes)]
     public struct CoralSectorTriggerDTO
     {
         [FieldOffset(0)]
@@ -188,7 +208,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint SeedSalt;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralSectorSaveDTOStrideBytes)]
     public struct CoralSectorSaveDTO
     {
         [FieldOffset(0)]
@@ -201,7 +221,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralTuningDTOStrideBytes)]
     public struct CoralTuningDTO
     {
         [FieldOffset(0)]
@@ -238,7 +258,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint LastRulePayloadHash;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralTurtleStateDTOStrideBytes)]
     public struct CoralTurtleStateDTO
     {
         [FieldOffset(0)]
@@ -265,7 +285,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralSpatialCellDTOStrideBytes)]
     public struct CoralSpatialCellDTO
     {
         [FieldOffset(0)]
@@ -282,7 +302,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CapsuleColliderDTOStrideBytes)]
     public struct CapsuleColliderDTO
     {
         [FieldOffset(0)]
@@ -303,7 +323,7 @@ namespace Hecton8.World.ProceduralCoral
         public ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.SyncPulseDTOStrideBytes)]
     public struct SyncPulseDTO
     {
         [FieldOffset(0)]
@@ -314,7 +334,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint ColorOverride;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralGenerationTelemetryEntryStrideBytes)]
     public struct CoralGenerationTelemetryEntry
     {
         [FieldOffset(0)]
@@ -341,7 +361,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint MatrixCount;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralDebugSegmentDTOStrideBytes)]
     public struct CoralDebugSegmentDTO
     {
         [FieldOffset(0)]
@@ -358,7 +378,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint GenerationDepth;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralIndirectArgsDTOStrideBytes)]
     public struct CoralIndirectArgsDTO
     {
         [FieldOffset(0)]
@@ -371,7 +391,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint StartInstance;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralPaddedCounterDTOStrideBytes)]
     public struct CoralPaddedCounterDTO
     {
         [FieldOffset(0)]
@@ -408,7 +428,7 @@ namespace Hecton8.World.ProceduralCoral
         public float EffectiveQualityWeight;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralGpuSwayDTOStrideBytes)]
     public struct CoralGpuSwayDTO
     {
         [FieldOffset(0)]
@@ -427,7 +447,7 @@ namespace Hecton8.World.ProceduralCoral
         public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralSelfAuditResultDTOStrideBytes)]
     public struct CoralSelfAuditResultDTO
     {
         [FieldOffset(0)]
@@ -458,7 +478,7 @@ namespace Hecton8.World.ProceduralCoral
         public ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralCoralContractsLayout.CoralHzbTileDTOStrideBytes)]
     public struct CoralHzbTileDTO
     {
         [FieldOffset(0)]

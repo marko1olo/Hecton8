@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -36,6 +35,7 @@ namespace Hecton8.AtlasSignal
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 16;
+        private const int DecodedMessageCapacity = 16;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _QueueOverflowWarningHash = unchecked((uint)LocHash.Compute("AtlasSignalEvents.QueueOverflow"));
         private static readonly uint _DuplicateListenerWarningHash = unchecked((uint)LocHash.Compute("AtlasSignalEvents.DuplicateListener"));
@@ -54,6 +54,20 @@ namespace Hecton8.AtlasSignal
             public void Clear()
             {
                 Listener = null;
+            }
+        }
+
+        private struct DecodedMessageSlot
+        {
+            public uint MessageHash;
+            public string MessageId;
+            public byte IsValid;
+
+            public void Clear()
+            {
+                MessageHash = 0u;
+                MessageId = null;
+                IsValid = 0;
             }
         }
 
@@ -125,10 +139,11 @@ namespace Hecton8.AtlasSignal
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: ListenerSlot[16] - listener removals deferred while dispatching Atlas signal events - owner: AtlasSignalEvents
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        // COLD ALLOC: Dictionary<uint,string>[16] - decoded Atlas message IDs keyed by FNV-1a hash for cold-path listener resolution - owner: AtlasSignalEvents
-        private static readonly Dictionary<uint, string> _decodedMessageIdsByHash = new Dictionary<uint, string>(16);
+        // COLD ALLOC: DecodedMessageSlot[16] - fixed decoded Atlas message IDs keyed by FNV-1a hash - owner: AtlasSignalEvents
+        private static readonly DecodedMessageSlot[] _decodedMessageIdsByHash = new DecodedMessageSlot[DecodedMessageCapacity];
         private static NativeQueue<AtlasSignalEventPayload> _pendingEvents;
         private static NativeQueue<AtlasSignalEventPayload> _nextFrameEvents;
+        private static int _decodedMessageCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
@@ -173,7 +188,7 @@ namespace Hecton8.AtlasSignal
             }
 
             _listeners.Clear();
-            _decodedMessageIdsByHash.Clear();
+            ClearDecodedMessages();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
             Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
@@ -259,7 +274,10 @@ namespace Hecton8.AtlasSignal
                     return;
 
                 if (!_pendingEvents.TryDequeue(out AtlasSignalEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -300,12 +318,18 @@ namespace Hecton8.AtlasSignal
 
         public static bool TryResolveMessageId(uint messageHash, out string messageId)
         {
-            return _decodedMessageIdsByHash.TryGetValue(messageHash, out messageId);
+            return TryResolveDecodedMessage(messageHash, out messageId);
         }
 
+        [Obsolete("Use TryRaisePulse(float) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaisePulse(float intensity)
         {
-            Enqueue(new AtlasSignalEventPayload
+            TryRaisePulse(intensity);
+        }
+
+        public static bool TryRaisePulse(float intensity)
+        {
+            return Enqueue(new AtlasSignalEventPayload
             {
                 SourcePosition = default,
                 SignalStrength = intensity,
@@ -315,9 +339,15 @@ namespace Hecton8.AtlasSignal
             });
         }
 
+        [Obsolete("Use TryRaiseDetected(Vector3) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseDetected(Vector3 sourcePos)
         {
-            Enqueue(new AtlasSignalEventPayload
+            TryRaiseDetected(sourcePos);
+        }
+
+        public static bool TryRaiseDetected(Vector3 sourcePos)
+        {
+            return Enqueue(new AtlasSignalEventPayload
             {
                 SourcePosition = sourcePos,
                 SignalStrength = 0f,
@@ -327,9 +357,15 @@ namespace Hecton8.AtlasSignal
             });
         }
 
+        [Obsolete("Use TryRaiseStrengthChanged(float) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseStrengthChanged(float strength)
         {
-            Enqueue(new AtlasSignalEventPayload
+            TryRaiseStrengthChanged(strength);
+        }
+
+        public static bool TryRaiseStrengthChanged(float strength)
+        {
+            return Enqueue(new AtlasSignalEventPayload
             {
                 SourcePosition = default,
                 SignalStrength = strength,
@@ -339,26 +375,44 @@ namespace Hecton8.AtlasSignal
             });
         }
 
+        [Obsolete("Use TryRaiseDecoded(uint messageHash). String ingress is not allowed on first-party event lanes.", true)]
         public static void RaiseDecoded(string messageId)
+        {
+            TryRaiseDecodedFromString(messageId);
+        }
+
+        private static bool TryRaiseDecodedFromString(string messageId)
         {
             uint messageHash = ComputeMessageHash(messageId);
             if (messageHash == 0u)
-                return;
+                return false;
 
-            if (!RaiseDecoded(messageHash))
-                return;
-
-            if (!_decodedMessageIdsByHash.TryGetValue(messageHash, out string existingMessageId))
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
-                _decodedMessageIdsByHash.Add(messageHash, messageId);
-                return;
+                ReportQueueOverflow((ushort)AtlasSignalEventType.Decoded);
+                return false;
             }
 
-            if (!string.Equals(existingMessageId, messageId, System.StringComparison.Ordinal))
+            if (!TryRegisterDecodedMessage(messageHash, messageId, out bool hashCollision))
+            {
+                ReportQueueOverflow((ushort)AtlasSignalEventType.Decoded);
+                return false;
+            }
+
+            if (hashCollision)
                 ReportDecodedMessageHashCollision(messageHash);
+
+            return TryRaiseDecoded(messageHash);
         }
 
+        [Obsolete("Use TryRaiseDecoded(uint messageHash) so overflow/drop semantics stay visible at the producer.", true)]
         public static bool RaiseDecoded(uint messageHash)
+        {
+            return TryRaiseDecoded(messageHash);
+        }
+
+        public static bool TryRaiseDecoded(uint messageHash)
         {
             if (messageHash == 0u)
                 return false;
@@ -371,6 +425,67 @@ namespace Hecton8.AtlasSignal
                 EventType = (ushort)AtlasSignalEventType.Decoded,
                 Reserved = 0
             });
+        }
+
+        private static bool TryRegisterDecodedMessage(uint messageHash, string messageId, out bool hashCollision)
+        {
+            hashCollision = false;
+            if (messageHash == 0u)
+                return false;
+
+            if (TryFindDecodedMessage(messageHash, out int existingIndex))
+            {
+                string existingMessageId = _decodedMessageIdsByHash[existingIndex].MessageId;
+                hashCollision = !string.Equals(existingMessageId, messageId, StringComparison.Ordinal);
+                return true;
+            }
+
+            if (_decodedMessageCount >= _decodedMessageIdsByHash.Length)
+                return false;
+
+            _decodedMessageIdsByHash[_decodedMessageCount++] = new DecodedMessageSlot
+            {
+                MessageHash = messageHash,
+                MessageId = messageId,
+                IsValid = 1
+            };
+            return true;
+        }
+
+        private static bool TryResolveDecodedMessage(uint messageHash, out string messageId)
+        {
+            if (TryFindDecodedMessage(messageHash, out int index))
+            {
+                messageId = _decodedMessageIdsByHash[index].MessageId ?? string.Empty;
+                return true;
+            }
+
+            messageId = string.Empty;
+            return false;
+        }
+
+        private static bool TryFindDecodedMessage(uint messageHash, out int index)
+        {
+            for (int i = 0; i < _decodedMessageCount; i++)
+            {
+                DecodedMessageSlot slot = _decodedMessageIdsByHash[i];
+                if (slot.IsValid != 0 && slot.MessageHash == messageHash)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = -1;
+            return false;
+        }
+
+        private static void ClearDecodedMessages()
+        {
+            for (int i = 0; i < _decodedMessageCount; i++)
+                _decodedMessageIdsByHash[i].Clear();
+
+            _decodedMessageCount = 0;
         }
 
         private static void EnsureInitialized()
@@ -465,7 +580,10 @@ namespace Hecton8.AtlasSignal
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -634,7 +752,7 @@ namespace Hecton8.AtlasSignal
         private static void ReportQueueOverflow(ushort eventType)
         {
             _droppedEventCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastOverflowTelemetryFrame == frame)
                 return;
 
@@ -649,7 +767,7 @@ namespace Hecton8.AtlasSignal
         private static void ReportDuplicateListenerRegistration()
         {
             _duplicateRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastDuplicateTelemetryFrame == frame)
                 return;
 
@@ -663,7 +781,7 @@ namespace Hecton8.AtlasSignal
         private static void ReportListenerRejected()
         {
             _listenerRejectCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -677,7 +795,7 @@ namespace Hecton8.AtlasSignal
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -691,7 +809,7 @@ namespace Hecton8.AtlasSignal
         private static void ReportUnregisterMiss()
         {
             _unregisterMissCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastUnregisterMissTelemetryFrame == frame)
                 return;
 
@@ -705,7 +823,7 @@ namespace Hecton8.AtlasSignal
         private static void ReportDecodedMessageHashCollision(uint messageHash)
         {
             _decodedMessageHashCollisionCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastDecodedMessageCollisionTelemetryFrame == frame)
                 return;
 

@@ -225,7 +225,10 @@ namespace Hecton8.Environment
                     return;
 
                 if (!_pendingEvents.TryDequeue(out WeatherEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -257,7 +260,13 @@ namespace Hecton8.Environment
             }
         }
 
+        [Obsolete("Use TryRaiseSnapshotUpdated(in WeatherRuntimeSnapshot) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseSnapshotUpdated(in WeatherRuntimeSnapshot snapshot)
+        {
+            TryRaiseSnapshotUpdated(in snapshot);
+        }
+
+        public static bool TryRaiseSnapshotUpdated(in WeatherRuntimeSnapshot snapshot)
         {
             EnsureInitialized();
             WeatherEventPayload payload = new WeatherEventPayload
@@ -271,10 +280,16 @@ namespace Hecton8.Environment
                 Reserved = 0
             };
 
-            EnqueuePayload(in payload);
+            return EnqueuePayload(in payload);
         }
 
+        [Obsolete("Use TryRaiseLightning(float) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseLightning(float flashIntensity01)
+        {
+            TryRaiseLightning(flashIntensity01);
+        }
+
+        public static bool TryRaiseLightning(float flashIntensity01)
         {
             EnsureInitialized();
             WeatherEventPayload payload = new WeatherEventPayload
@@ -288,26 +303,27 @@ namespace Hecton8.Environment
                 Reserved = 0
             };
 
-            EnqueuePayload(in payload);
+            return EnqueuePayload(in payload);
         }
 
-        private static void EnqueuePayload(in WeatherEventPayload payload)
+        private static bool EnqueuePayload(in WeatherEventPayload payload)
         {
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportEventOverflow();
-                return;
+                return false;
             }
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         public static void DropPendingAmbient()
@@ -580,7 +596,10 @@ namespace Hecton8.Environment
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;

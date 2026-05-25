@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -83,7 +83,8 @@ namespace Hecton8.World
         CollapseWatchdogTriggered = 1,
         PropagationWatchdogTriggered = 2,
         ContradictionBudgetExceeded = 3,
-        SelectionFailed = 4
+        SelectionFailed = 4,
+        PropagationQueueOverflow = 5
     }
 
     /// <summary>
@@ -941,7 +942,7 @@ namespace Hecton8.World
     /// Deterministic wave-function-collapse wreck generator operating in absolute-universe space.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ProceduralWreckGenerator : MonoBehaviour, IProceduralGenerator, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class ProceduralWreckGenerator : MonoBehaviour, IProceduralGenerator, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxModuleDefinitions = 16;
         private const byte UncollapsedModuleId = byte.MaxValue;
@@ -982,6 +983,8 @@ namespace Hecton8.World
         private const int MaxPendingLootSpawns = 8;
         private const uint WreckSolveBudgetWarningHash = 0x57534C56u; // WSLV
         private const uint WreckBrgContextHash = 0x57425247u; // WBRG
+        private const float WreckMinimumGenerationQuality01 = 0.0f;
+        private const float WreckMaximumGenerationQuality01 = 1.0f;
         private const string GeneratedMergedMeshName = "ProceduralWreckGenerator_Merged";
         private const string GeneratedProxyMeshName = "ProceduralWreckGenerator_Proxy";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_WORLD_WRECKAGE.bin";
@@ -1205,6 +1208,9 @@ namespace Hecton8.World
         [SerializeField] private WreckSolveTermination _debugLastSolveTermination;
         private NativeArray<WreckGridCell> _grid;
         private NativeQueue<int3> _propagationQueue;
+        private int _propagationQueueCount;
+        private int _propagationQueueCapacity;
+        private int _propagationQueueDroppedCount;
         private NativeList<WreckModulePlacement> _allPlacements;
         private NativeList<WreckModulePlacement> _filteredPlacements;
         private NativeArray<WreckModuleRuntimeDefinition> _runtimeDefinitions;
@@ -1227,11 +1233,10 @@ namespace Hecton8.World
         private static readonly CapsuleCollider[] s_EmptyCapsuleColliders = Array.Empty<CapsuleCollider>();
         private GameObject _activeCollisionProxy;
         private Collider _activeCollisionCollider;
-        private ObjectPoolManager _objectPool;
+        private IObjectPoolService _objectPool;
         private ITickDispatcher _dispatcher;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonVoxelEngine _voxelEngine;
-        private HectonQualityTier _cachedQualityTier;
         private int _activeNavGridObstacleId;
         private int _pendingLootReadIndex;
         private int _pendingLootCount;
@@ -1252,7 +1257,6 @@ namespace Hecton8.World
         private int _telemetryCursor;
         private int _debrisGravityCursor;
         private bool _registeredHotSwapListener;
-        private bool _registeredScalabilityListener;
         private uint _activeGenerationSeed;
         private Bounds _activeWorldBounds;
         private Vector3 _activeRuntimeOrigin;
@@ -1267,7 +1271,6 @@ namespace Hecton8.World
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
         }
 
         private void OnDisable()
@@ -1276,7 +1279,6 @@ namespace Hecton8.World
             TryUnregisterLootTick();
             TryUnregisterWreckSlowTick();
             DespawnActiveCollisionProxy();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             ClearCachedRegistryServices();
         }
@@ -1312,7 +1314,7 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     if (_pendingLootCount > 0)
                         TryRegisterLootTick();
                     break;
@@ -1330,11 +1332,6 @@ namespace Hecton8.World
                     _voxelEngine = currentService as HectonVoxelEngine;
                     break;
             }
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedQualityTier = payload.CurrentQualityTier;
         }
 
         private void OnValidate()
@@ -1559,7 +1556,6 @@ namespace Hecton8.World
             TryUnregisterLootTick();
             TryUnregisterWreckSlowTick();
             DespawnActiveCollisionProxy();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
 
             if (_activeNavigationHandles != null)
@@ -1582,6 +1578,9 @@ namespace Hecton8.World
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralWreckGenerator), _propagationQueueSentinelLabel);
                 _propagationQueue.Dispose();
             }
+            _propagationQueueCount = 0;
+            _propagationQueueCapacity = 0;
+            _propagationQueueDroppedCount = 0;
 
             if (_allPlacements.IsCreated)
             {
@@ -1677,13 +1676,10 @@ namespace Hecton8.World
         private void ApplyGenerationScalability()
         {
             int authoredGridResolution = ClampPowerOfTwo(gridResolution, 4, 32);
-            HectonQualityTier tier = _cachedQualityTier;
-            bool highTier = tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
-            _activeGridResolution = highTier
-                ? authoredGridResolution
-                : math.min(authoredGridResolution, 16);
+            float qualityWeight01 = ResolveWreckQualityWeight01();
+            _activeGridResolution = ResolveScalabilityGridResolution(authoredGridResolution, qualityWeight01);
 
-            int tierPlacementCap = ResolveScalabilityPlacementCap(tier);
+            int tierPlacementCap = ResolveScalabilityPlacementCap(qualityWeight01);
             int storageCapacity = _allPlacements.IsCreated ? _allPlacements.Capacity : maxPlacements;
             _activePlacementLimit = math.max(1, math.min(math.min(maxPlacements, tierPlacementCap), storageCapacity));
         }
@@ -1700,19 +1696,20 @@ namespace Hecton8.World
             return math.max(1, math.min(resolved, storageCapacity));
         }
 
-        private static int ResolveScalabilityPlacementCap(HectonQualityTier tier)
+        private static int ResolveScalabilityGridResolution(int authoredGridResolution, float qualityWeight01)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.Ultra:
-                    return 250;
-                case HectonQualityTier.High:
-                    return 120;
-                case HectonQualityTier.Mid:
-                    return 80;
-                default:
-                    return 50;
-            }
+            int safeAuthored = ClampPowerOfTwo(authoredGridResolution, 4, 32);
+            int minimumResolution = math.min(safeAuthored, 16);
+            float quality = SanitizeQualityWeight01(qualityWeight01);
+            float targetResolution = math.lerp(minimumResolution, safeAuthored, quality);
+            return ClampPowerOfTwoDown((int)math.round(targetResolution), 4, safeAuthored);
+        }
+
+        private static int ResolveScalabilityPlacementCap(float qualityWeight01)
+        {
+            float quality = SanitizeQualityWeight01(qualityWeight01);
+            float curved = quality * quality;
+            return math.clamp((int)math.round(math.lerp(50f, 250f, curved)), 50, 250);
         }
 
         private void SnapOriginToTerrainHeight(ref AbsoluteUniversePosition aup, ref Vector3 runtimeOrigin)
@@ -1835,7 +1832,6 @@ namespace Hecton8.World
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
 
             if (_initialized)
                 return;
@@ -1859,6 +1855,9 @@ namespace Hecton8.World
                 _propagationQueueSentinelLabel,
             NativeAllocationLifetime.Scene);
             PrewarmQueue(ref _propagationQueue, maxCellCount);
+            _propagationQueueCount = 0;
+            _propagationQueueCapacity = maxCellCount;
+            _propagationQueueDroppedCount = 0;
             // COLD ALLOC: NativeList<WreckModulePlacement>[maxPlacements] - merged structural placement list - owner: ProceduralWreckGenerator
             _allPlacements = new NativeList<WreckModulePlacement>(maxPlacements, DataVaultExemptWreckPlacementAllocator);
             NativeMemorySentinel.RegisterNativeList(_allPlacements, nameof(ProceduralWreckGenerator), _allPlacementsSentinelLabel, NativeAllocationLifetime.Scene);
@@ -1909,18 +1908,17 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_objectPool == null)
-                _objectPool = GlobalRegistry.ObjectPool;
+                _objectPool = GlobalRegistry.ObjectPoolService;
 
             if (_dispatcher == null)
                 _dispatcher = GlobalRegistry.Dispatcher;
 
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContext = GlobalRegistry.Player;
 
             if (_voxelEngine == null)
                 _voxelEngine = GlobalRegistry.VoxelEngine;
 
-            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
         }
 
         private void ClearCachedRegistryServices()
@@ -1946,24 +1944,6 @@ namespace Hecton8.World
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
         }
 
         private WreckageData GenerateInternal(in AbsoluteUniversePosition centerAup, Vector3 runtimeOrigin, uint seed)
@@ -2291,7 +2271,7 @@ namespace Hecton8.World
 
         private int ResolveBrgFragmentCount(uint seed)
         {
-            int scalabilityCap = ResolveScalabilityBrgFragmentCap(_cachedQualityTier);
+            int scalabilityCap = ResolveScalabilityBrgFragmentCap(ResolveWreckQualityWeight01());
             int minCount = math.min(math.clamp(brgMinFragmentCount, 50, 200), scalabilityCap);
             int maxCount = math.min(math.clamp(math.max(minCount, brgMaxFragmentCount), 50, 200), scalabilityCap);
             if (minCount == maxCount)
@@ -2301,19 +2281,10 @@ namespace Hecton8.World
             return minCount + (int)(hash % (uint)(maxCount - minCount + 1));
         }
 
-        private static int ResolveScalabilityBrgFragmentCap(HectonQualityTier tier)
+        private static int ResolveScalabilityBrgFragmentCap(float qualityWeight01)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.Ultra:
-                    return 200;
-                case HectonQualityTier.High:
-                    return 160;
-                case HectonQualityTier.Mid:
-                    return 120;
-                default:
-                    return 80;
-            }
+            float quality = SanitizeQualityWeight01(qualityWeight01);
+            return math.clamp((int)math.round(math.lerp(80f, 200f, quality)), 80, 200);
         }
 
         private static uint MixFragmentSeed(uint value)
@@ -2396,7 +2367,7 @@ namespace Hecton8.World
             if (wreckCollisionProxyPrefab == null || !IsFiniteBounds(worldBounds))
                 return;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -2487,7 +2458,7 @@ namespace Hecton8.World
             _activeCollisionProxy = null;
             _activeCollisionCollider = null;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool != null && proxy.activeInHierarchy)
                 pool.Despawn(proxy);
             else if (proxy != null)
@@ -2641,7 +2612,7 @@ namespace Hecton8.World
             if (_pendingLootCount <= 0)
                 return;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -2777,7 +2748,7 @@ namespace Hecton8.World
             if (!_debrisRecords.IsCreated || !_debrisSpatialHash.IsCreated || !IsFiniteBounds(worldBounds))
                 return;
 
-            int budget = math.min(math.min(maxDebrisRecords, MaxDebrisRecords), ResolveDebrisBudget(_cachedQualityTier));
+            int budget = math.min(math.min(maxDebrisRecords, MaxDebrisRecords), ResolveDebrisBudget(ResolveWreckQualityWeight01()));
             if (budget <= 0 || _lootRecordCount <= 0)
                 return;
 
@@ -3150,7 +3121,7 @@ namespace Hecton8.World
                 if (math.lengthsq(record.Position - playerPosition) > record.DiscoveryRadiusSq)
                     continue;
 
-                if (!ScanEvents.RaiseEntryDiscovered(record.EntryHash, 0u, 0u, 0u, ScanEntryKind.Scannable))
+                if (!ScanEvents.TryRaiseEntryDiscovered(record.EntryHash, 0u, 0u, 0u, ScanEntryKind.Scannable))
                     continue;
 
                 record.State = 1;
@@ -3166,7 +3137,7 @@ namespace Hecton8.World
                 return;
 
             int count = math.min(_debrisRecordCount, _debrisRecords.Length);
-            int sliceCount = math.min(count, ResolveDebrisGravitySlice(_cachedQualityTier));
+            int sliceCount = math.min(count, ResolveDebrisGravitySlice(ResolveWreckQualityWeight01()));
             int frameBucket = Time.frameCount & 4095;
             for (int processed = 0; processed < sliceCount; processed++)
             {
@@ -3214,7 +3185,7 @@ namespace Hecton8.World
                 return;
 
             _openedSealedModuleCount++;
-            ScanEvents.RaiseWreckSignalPing(new float3(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z), 6f);
+            ScanEvents.TryRaiseWreckSignalPing(new float3(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z), 6f);
             WriteBlackBoxTelemetry(WreckTelemetryInteractionHash, runtimeHitPoint, capabilityMask, signal.PowerDelivered, _openedSealedModuleCount);
         }
 
@@ -3319,34 +3290,18 @@ namespace Hecton8.World
             }
         }
 
-        private static int ResolveDebrisBudget(HectonQualityTier tier)
+        private static int ResolveDebrisBudget(float qualityWeight01)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.Ultra:
-                    return MaxDebrisRecords;
-                case HectonQualityTier.High:
-                    return 8000;
-                case HectonQualityTier.Mid:
-                    return 5000;
-                default:
-                    return 2500;
-            }
+            float quality = SanitizeQualityWeight01(qualityWeight01);
+            float curved = quality * quality;
+            return math.clamp((int)math.round(math.lerp(2500f, MaxDebrisRecords, curved)), 2500, MaxDebrisRecords);
         }
 
-        private static int ResolveDebrisGravitySlice(HectonQualityTier tier)
+        private static int ResolveDebrisGravitySlice(float qualityWeight01)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.Ultra:
-                    return 2048;
-                case HectonQualityTier.High:
-                    return 1024;
-                case HectonQualityTier.Mid:
-                    return 512;
-                default:
-                    return 256;
-            }
+            float quality = SanitizeQualityWeight01(qualityWeight01);
+            float curved = quality * quality;
+            return math.clamp((int)math.round(math.lerp(256f, 2048f, curved)), 256, 2048);
         }
 
         private static int2 ResolveDebrisSpatialCell(Vector3 position)
@@ -3620,7 +3575,14 @@ namespace Hecton8.World
                 collapsedCount++;
 
                 ClearPropagationQueue();
-                _propagationQueue.Enqueue(DecodeMorton3(selectedIndex));
+                if (!TryEnqueuePropagationCell(DecodeMorton3(selectedIndex)))
+                {
+                    forcedFallbackCellCount = ForceResolveRemainingCellsToFallback(cellCount);
+                    termination = WreckSolveTermination.PropagationQueueOverflow;
+                    LogSolveFallback(termination, cellCount, collapseIterations, maxObservedPropagationIterations, contradictionCount, forcedFallbackCellCount);
+                    break;
+                }
+
                 WreckSolveTermination propagationTermination = PropagateConstraints(
                     moduleCount,
                     maxPropagationIterations,
@@ -3655,6 +3617,26 @@ namespace Hecton8.World
                     break;
                 }
             }
+
+            _propagationQueueCount = 0;
+        }
+
+        private bool TryEnqueuePropagationCell(int3 coordinate)
+        {
+            if (!_propagationQueue.IsCreated)
+                return false;
+
+            int capacity = _propagationQueueCapacity > 0 ? _propagationQueueCapacity : (_grid.IsCreated ? _grid.Length : 0);
+            if (_propagationQueueCount >= capacity)
+            {
+                if (_propagationQueueDroppedCount < int.MaxValue)
+                    _propagationQueueDroppedCount++;
+                return false;
+            }
+
+            _propagationQueue.Enqueue(coordinate);
+            _propagationQueueCount++;
+            return true;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -3712,6 +3694,11 @@ namespace Hecton8.World
             propagationIterations = 0;
             while (_propagationQueue.TryDequeue(out int3 currentCoord))
             {
+                if (_propagationQueueCount > 0)
+                    _propagationQueueCount--;
+                else
+                    _propagationQueueCount = 0;
+
                 if (propagationIterations++ >= maxPropagationIterations)
                     return WreckSolveTermination.PropagationWatchdogTriggered;
 
@@ -3749,7 +3736,8 @@ namespace Hecton8.World
                     neighborCell.PossibleModuleMask = compatibleMask;
                     neighborCell.Entropy = ComputeEntropy(compatibleMask);
                     _grid[neighborIndex] = neighborCell;
-                    _propagationQueue.Enqueue(DecodeMorton3(neighborIndex));
+                    if (!TryEnqueuePropagationCell(DecodeMorton3(neighborIndex)))
+                        return WreckSolveTermination.PropagationQueueOverflow;
                 }
             }
 
@@ -4787,6 +4775,15 @@ namespace Hecton8.World
             return nextPower;
         }
 
+        private static int ClampPowerOfTwoDown(int value, int min, int max)
+        {
+            int safeMin = math.max(1, min);
+            int safeMax = math.max(safeMin, max);
+            int clamped = math.clamp(value, safeMin, safeMax);
+            int power = RoundDownPowerOfTwo(clamped);
+            return math.clamp(power, safeMin, safeMax);
+        }
+
         private static int RoundUpPowerOfTwo(int value)
         {
             int result = math.max(1, value);
@@ -4797,6 +4794,31 @@ namespace Hecton8.World
             result |= result >> 8;
             result |= result >> 16;
             return result + 1;
+        }
+
+        private static int RoundDownPowerOfTwo(int value)
+        {
+            int result = math.max(1, value);
+            result |= result >> 1;
+            result |= result >> 2;
+            result |= result >> 4;
+            result |= result >> 8;
+            result |= result >> 16;
+            return result - (result >> 1);
+        }
+
+        private static float ResolveWreckQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return SanitizeQualityWeight01(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
+        }
+
+        private static float SanitizeQualityWeight01(float qualityWeight01)
+        {
+            return math.clamp(
+                math.select(WreckMaximumGenerationQuality01, qualityWeight01, math.isfinite(qualityWeight01)),
+                WreckMinimumGenerationQuality01,
+                WreckMaximumGenerationQuality01);
         }
 
         private static int EncodeMorton3(int x, int y, int z)
@@ -4831,7 +4853,7 @@ namespace Hecton8.World
 
         private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
         {
-            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return IsFiniteAup(in originAup);
         }
 
@@ -5032,7 +5054,7 @@ namespace Hecton8.World
             EditorUtility.SetDirty(root);
             PrefabUtility.RecordPrefabInstancePropertyModifications(root);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
+            Hecton8.Core.H8Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
 #endif
             return fittedCount;
         }
@@ -5289,7 +5311,7 @@ namespace Hecton8.World
 
         private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
         {
-            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return IsFiniteAup(in originAup);
         }
 

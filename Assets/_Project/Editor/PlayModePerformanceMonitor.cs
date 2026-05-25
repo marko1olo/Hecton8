@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -224,10 +225,15 @@ namespace Hecton8.Editor
         public static string DescribeStatus()
         {
             return
-                $"[RuntimeProfiler] active={_active} windows={_windowCount} " +
-                $"frame={_lastFrameTimeMs:0.00}ms main={_lastMainThreadMs:0.00}ms " +
-                $"gc={_lastGcAllocBytes}B mem={_lastSystemMemoryMb:0.0}MB " +
-                $"setPass={_lastSetPassCalls} batches={_lastBatches} report={_lastReport}";
+                "[RuntimeProfiler] active=" + _active +
+                " windows=" + _windowCount +
+                " frame=" + _lastFrameTimeMs.ToString("0.00", CultureInfo.InvariantCulture) + "ms" +
+                " main=" + _lastMainThreadMs.ToString("0.00", CultureInfo.InvariantCulture) + "ms" +
+                " gc=" + _lastGcAllocBytes +
+                "B mem=" + _lastSystemMemoryMb.ToString("0.0", CultureInfo.InvariantCulture) + "MB" +
+                " setPass=" + _lastSetPassCalls +
+                " batches=" + _lastBatches +
+                " report=" + _lastReport;
         }
 
         internal static bool IsBudgetExceeded(
@@ -365,13 +371,13 @@ namespace Hecton8.Editor
             _reportBuilder.Append("[RuntimeProfiler] window=")
                 .Append(_windowCount)
                 .Append(" frame=")
-                .Append(_peakFrameTimeMs.ToString("0.00"))
+                .Append(_peakFrameTimeMs.ToString("0.00", CultureInfo.InvariantCulture))
                 .Append("ms main=")
-                .Append(_peakMainThreadMs.ToString("0.00"))
+                .Append(_peakMainThreadMs.ToString("0.00", CultureInfo.InvariantCulture))
                 .Append("ms gc=")
                 .Append(_peakGcAllocBytes)
                 .Append("B mem=")
-                .Append(_peakSystemMemoryMb.ToString("0.0"))
+                .Append(_peakSystemMemoryMb.ToString("0.0", CultureInfo.InvariantCulture))
                 .Append("MB setPass=")
                 .Append(_peakSetPassCalls)
                 .Append(" batches=")

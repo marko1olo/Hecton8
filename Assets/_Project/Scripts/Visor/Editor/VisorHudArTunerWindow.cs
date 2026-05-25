@@ -87,7 +87,7 @@ namespace Hecton8.Visor.Editor
             if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            VaultGenerationHandle<VisorHudProfileDTO> handle = vault.GetGenerationHandle<VisorHudProfileDTO>(
+            VaultGenerationHandle<VisorHudProfileDTO> handle = vault.EnsureGenerationHandle<VisorHudProfileDTO>(
                 VisorARStencilContracts.ProfileBufferId,
                 VisorARStencilContracts.ProfileCapacity,
                 SystemID.UI,

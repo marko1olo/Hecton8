@@ -208,7 +208,10 @@ namespace Hecton8.Gameplay
             if ((_coldReferenceSearchMask & ColdReferenceTargetController) == 0u)
             {
                 if (targetController == null)
-                    targetController = GetComponentInParent<LifePodTactilePrologueController>();
+                {
+                    if (!TryGetComponent(out targetController))
+                        targetController = GetComponentInParent<LifePodTactilePrologueController>();
+                }
                 _coldReferenceSearchMask |= ColdReferenceTargetController;
             }
 
@@ -262,7 +265,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _nextHapticPulseSeconds = _resolvedHapticPulseIntervalSeconds;
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 _resolvedHapticLowFrequency,
                 _resolvedHapticHighFrequency,
                 _resolvedHapticDurationSeconds,
@@ -314,7 +317,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()

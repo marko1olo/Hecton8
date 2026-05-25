@@ -536,10 +536,10 @@ namespace Hecton8.EditorTools
 
         private static void ValidateProceduralFamilyCoverage(ref int errorCount, ref int warningCount)
         {
-            Dictionary<WorldStreamingLayer, int> familiesPerLayer = new Dictionary<WorldStreamingLayer, int>();
-            Dictionary<WorldStreamingLayer, int> finalReadyFamiliesPerLayer = new Dictionary<WorldStreamingLayer, int>();
-            Dictionary<WorldStreamingLayer, int> realFinalReadyFamiliesPerLayer = new Dictionary<WorldStreamingLayer, int>();
-            Dictionary<WorldStreamingLayer, int> placeholderFinalReadyFamiliesPerLayer = new Dictionary<WorldStreamingLayer, int>();
+            Dictionary<WorldStreamingLayer, int> familiesPerLayer = new Dictionary<WorldStreamingLayer, int>(8);
+            Dictionary<WorldStreamingLayer, int> finalReadyFamiliesPerLayer = new Dictionary<WorldStreamingLayer, int>(8);
+            Dictionary<WorldStreamingLayer, int> realFinalReadyFamiliesPerLayer = new Dictionary<WorldStreamingLayer, int>(8);
+            Dictionary<WorldStreamingLayer, int> placeholderFinalReadyFamiliesPerLayer = new Dictionary<WorldStreamingLayer, int>(8);
             int explicitOverrideCount = 0;
             int finalReadyFamilyCount = 0;
             int realFinalReadyFamilyCount = 0;

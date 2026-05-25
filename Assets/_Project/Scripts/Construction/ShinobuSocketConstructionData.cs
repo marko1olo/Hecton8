@@ -1103,7 +1103,7 @@ namespace Hecton8.Construction
                 return handle;
             }
 
-            return vault.GetGenerationHandle<T>(
+            return vault.EnsureGenerationHandle<T>(
                 bufferId,
                 math.max(1, requiredLength),
                 SystemID.Construction,

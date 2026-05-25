@@ -23,7 +23,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Map Tab")]
-    public sealed class PDAMapTab : MonoBehaviour, ILateFrameTickable, IPDAEventListener
+    public sealed class PDAMapTab : MonoBehaviour, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
         private const string SonarMapComputePath = "Assets/_Project/Art/Shaders/Hecton_MapMesh.compute";
@@ -154,11 +154,20 @@ namespace Hecton8.UI
         private int _lastGhostSignalRejectedCycle = int.MinValue;
         private GraphicsBuffer _pointCloudAppendBuffer;
         private GraphicsBuffer _pointCloudIndirectArgsBuffer;
-        private GraphicsBuffer _sonarMapConstantsBuffer;
+        private GraphicsBuffer _sonarMapConstantsBufferA;
+        private GraphicsBuffer _sonarMapConstantsBufferB;
+        private GraphicsBuffer _activeSonarMapConstantsBuffer;
         private GraphicsBuffer _emptyPredatorAupBuffer;
-        private GraphicsBuffer _hlodImpostorAupBuffer;
+        private GraphicsBuffer _hlodImpostorAupBufferA;
+        private GraphicsBuffer _hlodImpostorAupBufferB;
+        private GraphicsBuffer _activeHlodImpostorAupBuffer;
+        private int _sonarMapConstantsUploadIndex;
+        private int _hlodImpostorAupUploadIndex;
         private GraphicsBuffer _cartographySectorWordBuffer;
         private GraphicsBuffer _cartographyPackedR8Buffer;
+        private GraphicsBuffer _cartographyPackedR8BufferA;
+        private GraphicsBuffer _cartographyPackedR8BufferB;
+        private bool _cartographyPackedR8WriteFlip;
         private Material _pointCloudMaterial;
         private Material _hologramMapMaterial;
         private Mesh _pointCloudQuadMesh;
@@ -179,13 +188,14 @@ namespace Hecton8.UI
         private CharBufferPool.Lease _statusBufferLease;
         private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] — PDA map point-cloud basis corners — owner: PDAMapTab
         private RectTransform _markerOverlayRoot;
-        private PlayerExplorationTracker _explorationTracker;
+        private IPdaCartographyReadModel _explorationTracker;
         private PDAMarkerRegistry _markerRegistry;
         private IEncounterDirectorService _encounterDirector;
         private IAudioService _audioService;
         private IWorldSeedProvider _worldSeedProvider;
         private IPlayerRuntimeContext _playerContext;
         private IStreamingBackpressureService _streamingBackpressureService;
+        private bool _hotSwapRegistered;
         private void Awake()
         {
             EnsureBuilt();
@@ -194,6 +204,8 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             EnsureBuilt();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryAcquireStatusBuffer();
             TryRegisterPDAEvents();
             RegisterToTickManager();
@@ -204,6 +216,7 @@ namespace Hecton8.UI
         {
             UnregisterPDAEvents();
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             ClearPendingMarkerUpdates();
             ClearMarkerVisualSlots();
             ReleaseStatusBuffer();
@@ -215,6 +228,7 @@ namespace Hecton8.UI
             UnregisterPDAEvents();
             PDAEvents.AssertUnregistered(this, nameof(PDAMapTab));
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             ClearPendingMarkerUpdates();
             ClearMarkerVisualSlots();
             ReleaseStatusBuffer();
@@ -243,6 +257,40 @@ namespace Hecton8.UI
                 EnqueueMarkerUpdate(payload.MarkerHashID);
             else
                 EnqueueAllMarkerUpdates();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PlayerExplorationRuntime:
+                    _explorationTracker = currentService as IPdaCartographyReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.PDAMarkerRuntime:
+                    _markerRegistry = currentService as PDAMarkerRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.EncounterDirector:
+                    _encounterDirector = currentService as IEncounterDirectorService;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.WorldSeedProvider:
+                    _worldSeedProvider = currentService as IWorldSeedProvider;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.StreamingBackpressureRuntime:
+                    _streamingBackpressureService = currentService as IStreamingBackpressureService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegisterLateFrame();
+                    break;
+            }
         }
 
         internal void ConfigurePointCloudAssets(Shader pointCloudShader, ComputeShader mapCompute)
@@ -453,7 +501,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
+            IPdaCartographyReadModel explorationTracker = ResolvePdaCartographyReadModel();
             if (explorationTracker == null ||
                 !explorationTracker.TryPrepareDiscoveredSectorsInfo(
                     out int axisLength,
@@ -473,13 +521,12 @@ namespace Hecton8.UI
             WriteOnlineStatus(new Vector3Int(axisLength, 1, axisLength));
         }
 
-        private PlayerExplorationTracker ResolvePlayerExplorationTracker()
+        private IPdaCartographyReadModel ResolvePdaCartographyReadModel()
         {
-            if (_explorationTracker != null && _explorationTracker.isActiveAndEnabled)
+            if (_explorationTracker != null && _explorationTracker.IsPdaCartographyReadModelActive)
                 return _explorationTracker;
 
-            _explorationTracker = GlobalRegistry.PlayerExploration;
-            return _explorationTracker;
+            return null;
         }
 
         private PDAMarkerRegistry ResolveMarkerRegistry()
@@ -487,48 +534,32 @@ namespace Hecton8.UI
             if (_markerRegistry != null && _markerRegistry.isActiveAndEnabled)
                 return _markerRegistry;
 
-            _markerRegistry = GlobalRegistry.PDAMarkers;
-            return _markerRegistry;
+            return null;
         }
 
         private IEncounterDirectorService ResolveEncounterDirector()
         {
-            if (!IsLiveUnityObjectReference(_encounterDirector))
-                _encounterDirector = GlobalRegistry.EncounterDirector;
-
-            return _encounterDirector;
+            return IsLiveUnityObjectReference(_encounterDirector) ? _encounterDirector : null;
         }
 
         private IAudioService ResolveAudioService()
         {
-            if (!IsLiveUnityObjectReference(_audioService))
-                _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-
-            return _audioService;
+            return IsLiveUnityObjectReference(_audioService) ? _audioService : null;
         }
 
         private IWorldSeedProvider ResolveWorldSeedProvider()
         {
-            if (!IsLiveUnityObjectReference(_worldSeedProvider))
-                _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
-
-            return _worldSeedProvider;
+            return IsLiveUnityObjectReference(_worldSeedProvider) ? _worldSeedProvider : null;
         }
 
         private IPlayerRuntimeContext ResolvePlayerContext()
         {
-            if (!IsLiveUnityObjectReference(_playerContext))
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-
-            return _playerContext;
+            return IsLiveUnityObjectReference(_playerContext) ? _playerContext : null;
         }
 
         private IStreamingBackpressureService ResolveStreamingBackpressureService()
         {
-            if (!IsLiveUnityObjectReference(_streamingBackpressureService))
-                _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;
-
-            return _streamingBackpressureService;
+            return IsLiveUnityObjectReference(_streamingBackpressureService) ? _streamingBackpressureService : null;
         }
 
         private static bool IsLiveUnityObjectReference(object value)
@@ -553,6 +584,34 @@ namespace Hecton8.UI
             _uploadedHlodImpostorCount = -1;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _explorationTracker = GlobalRegistry.PlayerExploration as IPdaCartographyReadModel;
+            _markerRegistry = GlobalRegistry.PDAMarkers;
+            _encounterDirector = GlobalRegistry.EncounterDirector;
+            _audioService = GlobalRegistry.Audio;
+            _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
+            _playerContext = GlobalRegistry.Player;
+            _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         private void EnsurePointCloudResources()
         {
             if (_pointCloudAppendBuffer == null || !_pointCloudAppendBuffer.IsValid())
@@ -572,14 +631,30 @@ namespace Hecton8.UI
             }
 
             if (SystemInfo.supportsSetConstantBuffer &&
-                (_sonarMapConstantsBuffer == null || !_sonarMapConstantsBuffer.IsValid()))
+                (_sonarMapConstantsBufferA == null || !_sonarMapConstantsBufferA.IsValid() ||
+                 _sonarMapConstantsBufferB == null || !_sonarMapConstantsBufferB.IsValid()))
             {
-                _sonarMapConstantsBuffer = new GraphicsBuffer(
+                ReleaseGraphicsBuffer(ref _sonarMapConstantsBufferA);
+                ReleaseGraphicsBuffer(ref _sonarMapConstantsBufferB);
+                _sonarMapConstantsBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     SonarMapConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[96B] — packed PDA sonar compute constants — owner: PDAMapTab
             }
+
+            if (SystemInfo.supportsSetConstantBuffer &&
+                (_sonarMapConstantsBufferB == null || !_sonarMapConstantsBufferB.IsValid()))
+            {
+                _sonarMapConstantsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    SonarMapConstantsStrideBytes);
+            }
+
+            if (_activeSonarMapConstantsBuffer == null || !_activeSonarMapConstantsBuffer.IsValid())
+                _activeSonarMapConstantsBuffer = _sonarMapConstantsBufferA;
 
             if (_emptyPredatorAupBuffer == null || !_emptyPredatorAupBuffer.IsValid())
             {
@@ -587,10 +662,17 @@ namespace Hecton8.UI
                 GraphicsBufferUploadUtility.UploadArray(_emptyPredatorAupBuffer, _emptyPredatorAupUpload, 1);
             }
 
-            if (_hlodImpostorAupBuffer == null || !_hlodImpostorAupBuffer.IsValid())
+            if (_hlodImpostorAupBufferA == null || !_hlodImpostorAupBufferA.IsValid() ||
+                _hlodImpostorAupBufferB == null || !_hlodImpostorAupBufferB.IsValid())
             {
-                _hlodImpostorAupBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(MaxHlodImpostorAupPoints); // COLD ALLOC: GraphicsBuffer[16 x float4] - distant HLOD POI PDA buffer - owner: PDAMapTab
-                GraphicsBufferUploadUtility.UploadArray(_hlodImpostorAupBuffer, _hlodImpostorAupUpload, MaxHlodImpostorAupPoints);
+                ReleaseGraphicsBuffer(ref _hlodImpostorAupBufferA);
+                ReleaseGraphicsBuffer(ref _hlodImpostorAupBufferB);
+                _hlodImpostorAupBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(MaxHlodImpostorAupPoints); // COLD ALLOC: GraphicsBuffer[16 x float4] - distant HLOD POI PDA buffer A - owner: PDAMapTab
+                _hlodImpostorAupBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(MaxHlodImpostorAupPoints); // COLD ALLOC: GraphicsBuffer[16 x float4] - distant HLOD POI PDA buffer B - owner: PDAMapTab
+                GraphicsBufferUploadUtility.UploadArray(_hlodImpostorAupBufferA, _hlodImpostorAupUpload, MaxHlodImpostorAupPoints);
+                GraphicsBufferUploadUtility.UploadArray(_hlodImpostorAupBufferB, _hlodImpostorAupUpload, MaxHlodImpostorAupPoints);
+                _activeHlodImpostorAupBuffer = _hlodImpostorAupBufferA;
+                _hlodImpostorAupUploadIndex = 0;
             }
 
             if (_cartographySectorWordBuffer == null || !_cartographySectorWordBuffer.IsValid())
@@ -601,13 +683,24 @@ namespace Hecton8.UI
                 _cartographySectorBufferUploaded = false;
             }
 
-            if (_cartographyPackedR8Buffer == null || !_cartographyPackedR8Buffer.IsValid())
+            if (_cartographyPackedR8BufferA == null || !_cartographyPackedR8BufferA.IsValid())
             {
-                _cartographyPackedR8Buffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(
+                _cartographyPackedR8BufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(
                     CartographyGridConstants.PackedUploadWordCount);
                 _uploadedPackedCartographyRevision = uint.MaxValue;
                 _packedUploadCountdown = 0;
             }
+
+            if (_cartographyPackedR8BufferB == null || !_cartographyPackedR8BufferB.IsValid())
+            {
+                _cartographyPackedR8BufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(
+                    CartographyGridConstants.PackedUploadWordCount);
+                _uploadedPackedCartographyRevision = uint.MaxValue;
+                _packedUploadCountdown = 0;
+            }
+
+            if (_cartographyPackedR8Buffer == null || !_cartographyPackedR8Buffer.IsValid())
+                _cartographyPackedR8Buffer = _cartographyPackedR8BufferA;
 
             EnsurePointCloudQuadMesh();
 
@@ -724,7 +817,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
+            IPdaCartographyReadModel explorationTracker = ResolvePdaCartographyReadModel();
             if (explorationTracker == null ||
                 !explorationTracker.TryPrepareDiscoveredSectorsInfo(
                     out int axisLength,
@@ -746,13 +839,20 @@ namespace Hecton8.UI
                 return;
 
             bool uploadDue = _packedUploadCountdown <= 0 || _uploadedPackedCartographyRevision != revision;
+            GraphicsBuffer uploadTarget = _cartographyPackedR8WriteFlip
+                ? _cartographyPackedR8BufferB
+                : _cartographyPackedR8BufferA;
             if (uploadDue &&
+                uploadTarget != null &&
+                uploadTarget.IsValid() &&
                 explorationTracker.TryUploadPreparedCartography(
-                    _cartographyPackedR8Buffer,
+                    uploadTarget,
                     quality,
                     out int resolvedCadence,
                     out uint uploadRevision))
             {
+                _cartographyPackedR8Buffer = uploadTarget;
+                _cartographyPackedR8WriteFlip = !_cartographyPackedR8WriteFlip;
                 _uploadedPackedCartographyRevision = uploadRevision;
                 framesBetweenUploads = math.max(1, resolvedCadence);
                 _packedUploadCountdown = framesBetweenUploads;
@@ -813,7 +913,7 @@ namespace Hecton8.UI
             if (!TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out Bounds bounds, out Camera renderCamera))
                 return;
 
-            PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
+            IPdaCartographyReadModel explorationTracker = ResolvePdaCartographyReadModel();
             CartographyTuningDTO tuning = explorationTracker != null &&
                                           explorationTracker.TryGetCartographyTuning(out CartographyTuningDTO resolvedTuning)
                 ? resolvedTuning
@@ -920,8 +1020,8 @@ namespace Hecton8.UI
                 !_pointCloudIndirectArgsBuffer.IsValid() ||
                 _emptyPredatorAupBuffer == null ||
                 !_emptyPredatorAupBuffer.IsValid() ||
-                _hlodImpostorAupBuffer == null ||
-                !_hlodImpostorAupBuffer.IsValid() ||
+                _activeHlodImpostorAupBuffer == null ||
+                !_activeHlodImpostorAupBuffer.IsValid() ||
                 _cartographySectorWordBuffer == null ||
                 !_cartographySectorWordBuffer.IsValid() ||
                 !SystemInfo.supportsComputeShaders ||
@@ -930,7 +1030,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
+            IPdaCartographyReadModel explorationTracker = ResolvePdaCartographyReadModel();
             if (explorationTracker == null ||
                 !explorationTracker.TryPrepareDiscoveredSectorsInfo(
                     out int axisLength,
@@ -1043,13 +1143,16 @@ namespace Hecton8.UI
                     0f)
             };
 
+            GraphicsBuffer constantsWriteBuffer = ResolveSonarMapConstantsWriteBuffer();
             if (SystemInfo.supportsSetConstantBuffer &&
-                _sonarMapConstantsBuffer != null &&
-                _sonarMapConstantsBuffer.IsValid())
+                constantsWriteBuffer != null &&
+                constantsWriteBuffer.IsValid())
             {
                 _sonarMapConstantsUpload[0] = constants;
-                GraphicsBufferUploadUtility.UploadArray(_sonarMapConstantsBuffer, _sonarMapConstantsUpload, 1);
-                sonarMapCompute.SetConstantBuffer(SonarMapConstantsBufferName, _sonarMapConstantsBuffer, 0, SonarMapConstantsStrideBytes);
+                GraphicsBufferUploadUtility.UploadArray(constantsWriteBuffer, _sonarMapConstantsUpload, 1);
+                _activeSonarMapConstantsBuffer = constantsWriteBuffer;
+                _sonarMapConstantsUploadIndex ^= 1;
+                sonarMapCompute.SetConstantBuffer(SonarMapConstantsBufferName, _activeSonarMapConstantsBuffer, 0, SonarMapConstantsStrideBytes);
                 return;
             }
 
@@ -1059,6 +1162,22 @@ namespace Hecton8.UI
             sonarMapCompute.SetVector(SonarScalarParamsId, constants.ScalarParams);
             sonarMapCompute.SetVector(SonarDispatchParamsId, constants.DispatchParams);
             sonarMapCompute.SetVector(SonarOverlayParamsId, constants.OverlayParams);
+        }
+
+        private GraphicsBuffer ResolveSonarMapConstantsWriteBuffer()
+        {
+            if (!SystemInfo.supportsSetConstantBuffer)
+                return null;
+
+            GraphicsBuffer preferred = (_sonarMapConstantsUploadIndex & 1) == 0
+                ? _sonarMapConstantsBufferB
+                : _sonarMapConstantsBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _sonarMapConstantsBufferA != null && _sonarMapConstantsBufferA.IsValid()
+                ? _sonarMapConstantsBufferA
+                : _sonarMapConstantsBufferB;
         }
 
         private bool TryResolvePredatorAupBuffer(out GraphicsBuffer predatorAupBuffer, out int predatorAupCount)
@@ -1082,7 +1201,7 @@ namespace Hecton8.UI
 
         private bool TryResolveHlodImpostorAupBuffer(out GraphicsBuffer hlodAupBuffer, out int hlodAupCount)
         {
-            hlodAupBuffer = _hlodImpostorAupBuffer;
+            hlodAupBuffer = _activeHlodImpostorAupBuffer;
             hlodAupCount = 0;
             if (hlodAupBuffer == null || !hlodAupBuffer.IsValid())
                 return false;
@@ -1115,13 +1234,33 @@ namespace Hecton8.UI
                 for (int i = uploadCount; i < MaxHlodImpostorAupPoints; i++)
                     _hlodImpostorAupUpload[i] = Vector4.zero;
 
-                GraphicsBufferUploadUtility.UploadArray(hlodAupBuffer, _hlodImpostorAupUpload, MaxHlodImpostorAupPoints);
+                GraphicsBuffer writeBuffer = ResolveHlodImpostorAupWriteBuffer();
+                if (writeBuffer == null || !writeBuffer.IsValid())
+                    return false;
+
+                GraphicsBufferUploadUtility.UploadArray(writeBuffer, _hlodImpostorAupUpload, MaxHlodImpostorAupPoints);
+                _activeHlodImpostorAupBuffer = writeBuffer;
+                _hlodImpostorAupUploadIndex ^= 1;
+                hlodAupBuffer = _activeHlodImpostorAupBuffer;
                 _uploadedHlodImpostorVersion = runtimeVersion;
                 _uploadedHlodImpostorCount = uploadCount;
             }
 
             hlodAupCount = uploadCount;
             return true;
+        }
+
+        private GraphicsBuffer ResolveHlodImpostorAupWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_hlodImpostorAupUploadIndex & 1) == 0
+                ? _hlodImpostorAupBufferB
+                : _hlodImpostorAupBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _hlodImpostorAupBufferA != null && _hlodImpostorAupBufferA.IsValid()
+                ? _hlodImpostorAupBufferA
+                : _hlodImpostorAupBufferB;
         }
 
         private bool TryResolvePointCloudCamera(out Camera renderCamera)
@@ -1465,7 +1604,7 @@ namespace Hecton8.UI
             NativeArray<float>.ReadOnly gridEnergy = default;
             int azimuthBins = 0;
             int elevationBins = 0;
-            ComputeBuffer radarGridBuffer = null;
+            GraphicsBuffer radarGridBuffer = null;
             if (!audio.TryGetAcousticRadarGridPayload(
                     out gridEnergy,
                     out azimuthBins,
@@ -1831,6 +1970,15 @@ namespace Hecton8.UI
             return traumaDispatcher != null && traumaDispatcher.IsEmpSensorBlindActive;
         }
 
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
+        }
+
         private void ReleaseResources()
         {
             if (_pointCloudAppendBuffer != null)
@@ -1845,11 +1993,10 @@ namespace Hecton8.UI
                 _pointCloudIndirectArgsBuffer = null;
             }
 
-            if (_sonarMapConstantsBuffer != null)
-            {
-                _sonarMapConstantsBuffer.Release();
-                _sonarMapConstantsBuffer = null;
-            }
+            ReleaseGraphicsBuffer(ref _sonarMapConstantsBufferA);
+            ReleaseGraphicsBuffer(ref _sonarMapConstantsBufferB);
+            _activeSonarMapConstantsBuffer = null;
+            _sonarMapConstantsUploadIndex = 0;
 
             if (_emptyPredatorAupBuffer != null)
             {
@@ -1857,11 +2004,10 @@ namespace Hecton8.UI
                 _emptyPredatorAupBuffer = null;
             }
 
-            if (_hlodImpostorAupBuffer != null)
-            {
-                _hlodImpostorAupBuffer.Release();
-                _hlodImpostorAupBuffer = null;
-            }
+            ReleaseGraphicsBuffer(ref _hlodImpostorAupBufferA);
+            ReleaseGraphicsBuffer(ref _hlodImpostorAupBufferB);
+            _activeHlodImpostorAupBuffer = null;
+            _hlodImpostorAupUploadIndex = 0;
 
             if (_cartographySectorWordBuffer != null)
             {
@@ -1869,11 +2015,20 @@ namespace Hecton8.UI
                 _cartographySectorWordBuffer = null;
             }
 
-            if (_cartographyPackedR8Buffer != null)
+            if (_cartographyPackedR8BufferA != null)
             {
-                _cartographyPackedR8Buffer.Release();
-                _cartographyPackedR8Buffer = null;
+                _cartographyPackedR8BufferA.Release();
+                _cartographyPackedR8BufferA = null;
             }
+
+            if (_cartographyPackedR8BufferB != null)
+            {
+                _cartographyPackedR8BufferB.Release();
+                _cartographyPackedR8BufferB = null;
+            }
+
+            _cartographyPackedR8Buffer = null;
+            _cartographyPackedR8WriteFlip = false;
 
             if (_pointCloudQuadMesh != null)
             {

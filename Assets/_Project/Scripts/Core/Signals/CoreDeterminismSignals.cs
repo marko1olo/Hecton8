@@ -1,4 +1,5 @@
 using Hecton8.Core.Contracts.Signals;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -24,7 +25,13 @@ namespace Hecton8.Core
         public const byte StateCorrectionSignalFlagRotationValid = 1 << 1;
         public const byte StateCorrectionSignalFlagVelocityValid = 1 << 2;
 
+        [Obsolete("Use TryPublishInput(in PlayerInputState,uint,byte) so overflow/drop semantics stay visible at the producer.", true)]
         public static void PublishInput(in PlayerInputState state, uint frame, byte flags = 0)
+        {
+            TryPublishInput(in state, frame, flags);
+        }
+
+        public static bool TryPublishInput(in PlayerInputState state, uint frame, byte flags = 0)
         {
             InputSignal signal = default;
             signal.MoveDelta = new float2(state.MoveDelta.x, state.MoveDelta.y);
@@ -35,10 +42,16 @@ namespace Hecton8.Core
             signal.Frame = frame;
             signal.Sequence = NextSequence(ref _inputSequence);
             signal.Flags = flags;
-            Publish(in signal);
+            return TryPublish(in signal);
         }
 
+        [Obsolete("Use TryPublishInputOverride(in PlayerInputState,uint) so override publication is explicit.", true)]
         public static void PublishInputOverride(in PlayerInputState state, uint frame)
+        {
+            TryPublishInputOverride(in state, frame);
+        }
+
+        public static bool TryPublishInputOverride(in PlayerInputState state, uint frame)
         {
             InputSignal signal = default;
             signal.MoveDelta = new float2(state.MoveDelta.x, state.MoveDelta.y);
@@ -50,6 +63,7 @@ namespace Hecton8.Core
             signal.Sequence = NextSequence(ref _inputOverrideSequence);
             signal.Flags = InputSignalFlagAutomationOverride;
             _latestInputOverrideSignal = signal;
+            return true;
         }
 
         public static void ClearInputOverride()
@@ -57,40 +71,76 @@ namespace Hecton8.Core
             _latestInputOverrideSignal = default;
         }
 
+        [Obsolete("Use TryPublish(in InputSignal) so overflow/drop semantics stay visible at the producer.", true)]
         public static void Publish(in InputSignal signal)
+        {
+            TryPublish(in signal);
+        }
+
+        public static bool TryPublish(in InputSignal signal)
         {
             EnsureInitialized();
             _latestInputSignal = signal;
-            SignalBus<InputSignal>.Push(in signal);
+            return SignalBus<InputSignal>.TryPush(in signal);
         }
 
+        [Obsolete("Use TryPublish(in StateCorrectionSignal) so overflow/drop semantics stay visible at the producer.", true)]
         public static void Publish(in StateCorrectionSignal signal)
         {
-            EnsureInitialized();
-            SignalBus<StateCorrectionSignal>.Push(in signal);
+            TryPublish(in signal);
         }
 
-        public static void Publish(in DesyncDetectedSignal signal)
+        public static bool TryPublish(in StateCorrectionSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DesyncDetectedSignal>.Push(in signal);
+            return SignalBus<StateCorrectionSignal>.TryPush(in signal);
         }
 
+        [Obsolete("Use TryPublish(in DesyncDetectedSignal) so overflow/drop semantics stay visible at the producer.", true)]
+        public static void Publish(in DesyncDetectedSignal signal)
+        {
+            TryPublish(in signal);
+        }
+
+        public static bool TryPublish(in DesyncDetectedSignal signal)
+        {
+            EnsureInitialized();
+            return SignalBus<DesyncDetectedSignal>.TryPush(in signal);
+        }
+
+        [Obsolete("Use TryPublish(in SyncFenceSignal) so overflow/drop semantics stay visible at the producer.", true)]
         public static void Publish(in SyncFenceSignal signal)
+        {
+            TryPublish(in signal);
+        }
+
+        public static bool TryPublish(in SyncFenceSignal signal)
         {
             EnsureInitialized();
             SyncFenceSignal sequenced = signal;
             sequenced.Sequence = NextSequence(ref _syncFenceSequence);
             _latestSyncFenceSignal = sequenced;
-            SignalBus<SyncFenceSignal>.Push(in sequenced);
+            return SignalBus<SyncFenceSignal>.TryPush(in sequenced);
         }
 
+        [Obsolete("Use TryPublishKccVelocity(in KccVelocitySignal) so overflow/drop semantics stay visible at the producer.", true)]
         public static void PublishKccVelocity(in KccVelocitySignal signal)
         {
-            Publish(in signal);
+            TryPublishKccVelocity(in signal);
         }
 
+        public static bool TryPublishKccVelocity(in KccVelocitySignal signal)
+        {
+            return TryPublish(in signal);
+        }
+
+        [Obsolete("Use TryPublish(in KccVelocitySignal) so overflow/drop semantics stay visible at the producer.", true)]
         public static void Publish(in KccVelocitySignal signal)
+        {
+            TryPublish(in signal);
+        }
+
+        public static bool TryPublish(in KccVelocitySignal signal)
         {
             EnsureInitialized();
             KccVelocitySignal sequenced = signal;
@@ -101,7 +151,7 @@ namespace Hecton8.Core
                 0.0f,
                 !math.all(math.isfinite(sequenced.Velocity)));
             _latestKccVelocitySignal = sequenced;
-            SignalBus<KccVelocitySignal>.Push(in sequenced);
+            return SignalBus<KccVelocitySignal>.TryPush(in sequenced);
         }
 
         public static bool TryDequeueInput(out InputSignal signal) => TryReadLane(out signal);
@@ -164,7 +214,7 @@ namespace Hecton8.Core
             if (_initialized)
                 return;
 
-            GlobalSignals.InitializeAllQueues();
+            SignalCorridorRuntime.EnsureInitialized();
             SignalBus<InputSignal>.EnsureInitialized();
             SignalBus<StateCorrectionSignal>.EnsureInitialized();
             SignalBus<DesyncDetectedSignal>.EnsureInitialized();

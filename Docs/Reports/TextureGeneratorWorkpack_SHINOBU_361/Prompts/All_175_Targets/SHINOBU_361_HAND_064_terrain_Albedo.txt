@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_064
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_064_terrain_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\terrain_Albedo.png
+FINAL_FILENAME: terrain_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Main Hecton terrain albedo for broad seabed and rock blending. Create a premium abyssal exploration floor with layered blue basalt fragments, pale pearl sediment, clean teal mineral seams, opal dust fields, and gentle coral-violet geological undertones. The material should look beautiful in motion, support gameplay readability, and blend naturally with the flora and habitat palettes. Use large calm shapes, refined microdetail, and flat diffuse color. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

@@ -9,6 +9,14 @@ using Unity.Mathematics;
 
 namespace Hecton8.Gameplay.Mining.Contracts
 {
+    internal static class DeployableSdfDrillLayout
+    {
+        internal const int ExtractionInputStrideBytes = 128;
+        internal const int ExtractionResultStrideBytes = 64;
+        internal const int MacroRecordStrideBytes = 128;
+        internal const int TelemetryEntryStrideBytes = 64;
+    }
+
     /// <summary>
     /// Runtime state bits for a deployable SDF drill.
     /// </summary>
@@ -40,7 +48,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Blittable input consumed by the Burst extraction job.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = DeployableSdfDrillLayout.ExtractionInputStrideBytes)]
     public struct DeployableSdfDrillExtractionInput
     {
         [FieldOffset(0)] public long GridX;
@@ -72,7 +80,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Blittable extraction result. Slot deltas mirror the exact inventory lanes mutated by the job.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DeployableSdfDrillLayout.ExtractionResultStrideBytes)]
     public struct DeployableSdfDrillExtractionResult
     {
         [FieldOffset(0)] public uint NewSeed;
@@ -100,7 +108,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Macro database record used to dehydrate and rehydrate unloaded drills.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = DeployableSdfDrillLayout.MacroRecordStrideBytes)]
     public struct DeployableSdfDrillMacroRecord
     {
         [FieldOffset(0)] public long GridX;
@@ -139,7 +147,7 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Fixed-size blackbox entry written by the drill telemetry ring.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DeployableSdfDrillLayout.TelemetryEntryStrideBytes)]
     public struct DeployableSdfDrillTelemetryEntry
     {
         [FieldOffset(0)] public long GridX;

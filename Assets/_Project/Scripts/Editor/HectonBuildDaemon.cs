@@ -3,6 +3,7 @@ using System.Diagnostics;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor
 {
@@ -154,7 +155,7 @@ namespace Hecton8.Editor
             }
             catch (Exception exception)
             {
-                UnityEngine.Debug.LogWarning("[HectonBuildDaemon] bee_backend probe failed: " + exception.Message);
+                H8Debug.LogWarning("[HectonBuildDaemon] bee_backend probe failed: " + exception.Message);
                 return false;
             }
         }
@@ -180,7 +181,7 @@ namespace Hecton8.Editor
             }
             catch (Exception exception)
             {
-                UnityEngine.Debug.LogWarning("[HectonBuildDaemon] bee_backend kill failed: " + exception.Message);
+                H8Debug.LogWarning("[HectonBuildDaemon] bee_backend kill failed: " + exception.Message);
             }
 
             return killed;

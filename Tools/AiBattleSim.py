@@ -63,10 +63,7 @@ EXPECTED_GLOBAL_DATA_VAULT_FEEDS = {
     "distanceSq01": {
         "bufferIds": ("PlayerKinematicState", "EntityAUPs"),
         "fields": (
-            "LockstepPlayerKinematicState.LocalPosition",
-            "LockstepPlayerKinematicState.SectorX",
-            "LockstepPlayerKinematicState.SectorY",
-            "LockstepPlayerKinematicState.SectorZ",
+            "LockstepPlayerKinematicState.PositionAup",
             "EntityAUPs",
         ),
     },

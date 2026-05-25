@@ -10,7 +10,6 @@ using System.Threading;
 using Hecton.UI.MainMenu;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
-using Hecton8.Input;
 using Hecton8.SaveSystem;
 using Hecton8.Tools;
 using Hecton8.UI;
@@ -502,7 +501,7 @@ namespace Hecton8.Dev
 
         private string ResolveExistingSaveSlot()
         {
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
             if (saveManager == null)
                 return string.Empty;
 
@@ -521,13 +520,22 @@ namespace Hecton8.Dev
         private void EnsureVerifiers()
         {
             if (_pauseVerifier == null)
-                _pauseVerifier = GetComponent<PauseSystemVerifier>() ?? gameObject.AddComponent<PauseSystemVerifier>();
+            {
+                if (!TryGetComponent(out _pauseVerifier))
+                    _pauseVerifier = gameObject.AddComponent<PauseSystemVerifier>();
+            }
 
             if (_sceneVerifier == null)
-                _sceneVerifier = GetComponent<SceneTransitionVerifier>() ?? gameObject.AddComponent<SceneTransitionVerifier>();
+            {
+                if (!TryGetComponent(out _sceneVerifier))
+                    _sceneVerifier = gameObject.AddComponent<SceneTransitionVerifier>();
+            }
 
             if (_stateVerifier == null)
-                _stateVerifier = GetComponent<StateRecoveryVerifier>() ?? gameObject.AddComponent<StateRecoveryVerifier>();
+            {
+                if (!TryGetComponent(out _stateVerifier))
+                    _stateVerifier = gameObject.AddComponent<StateRecoveryVerifier>();
+            }
         }
 
         private void AutoResolve()
@@ -536,13 +544,13 @@ namespace Hecton8.Dev
                 _mainMenuController = VerificationRuntimeProbe.ResolveMainMenuController();
 
             if (_pauseVerifier == null)
-                _pauseVerifier = GetComponent<PauseSystemVerifier>();
+                TryGetComponent(out _pauseVerifier);
 
             if (_sceneVerifier == null)
-                _sceneVerifier = GetComponent<SceneTransitionVerifier>();
+                TryGetComponent(out _sceneVerifier);
 
             if (_stateVerifier == null)
-                _stateVerifier = GetComponent<StateRecoveryVerifier>();
+                TryGetComponent(out _stateVerifier);
         }
 
         private void TryLogMenuRouteDiagnostics(string reason)
@@ -739,7 +747,7 @@ namespace Hecton8.Dev
         private static void LogDiagnostic(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(message);
+            Hecton8.Core.H8Debug.Log(message);
 #endif
         }
 

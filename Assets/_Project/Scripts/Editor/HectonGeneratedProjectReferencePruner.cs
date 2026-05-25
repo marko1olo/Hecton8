@@ -15,7 +15,6 @@ namespace Hecton8.Editor.Validation
         private const string StaleCecilReferenceName = "Unity.Cecil.Awesome";
         private const string StaleEntitiesReferenceName = "Unity.Entities";
         private const string StaleEntitiesPackageMarker = "com.unity.entities@";
-        private const string LibraryScriptAssembliesMarker = "Library/ScriptAssemblies";
         private const string LibraryPackageCacheMarker = "Library/PackageCache";
 
         private static readonly List<XElement> s_referencesToRemove = new List<XElement>(16); // COLD ALLOC: List<XElement>[16] - generated project item scratch - owner: HectonGeneratedProjectReferencePruner
@@ -120,8 +119,7 @@ namespace Hecton8.Editor.Validation
                 return true;
 
             string normalizedHintPath = hintPath.Replace('\\', '/');
-            return normalizedHintPath.IndexOf(LibraryScriptAssembliesMarker, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   normalizedHintPath.IndexOf(LibraryPackageCacheMarker, StringComparison.OrdinalIgnoreCase) >= 0;
+            return normalizedHintPath.IndexOf(LibraryPackageCacheMarker, StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }

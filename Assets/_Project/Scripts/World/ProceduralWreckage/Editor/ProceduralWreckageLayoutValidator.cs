@@ -9,6 +9,15 @@ namespace Hecton8.World.ProceduralWreckage.Editor
     [InitializeOnLoad]
     public static class ProceduralWreckageLayoutValidator
     {
+        private const int WreckageNodeStrideBytes = 128;
+        private const int PaddedCounterStrideBytes = 64;
+        private const int RuleStrideBytes = 64;
+        private const int GridCellStrideBytes = 16;
+        private const int SectorTriggerStrideBytes = 64;
+        private const int TelemetryStrideBytes = 64;
+        private const int BoxColliderStrideBytes = 64;
+        private const int LootSpawnRequestStrideBytes = 64;
+
         static ProceduralWreckageLayoutValidator()
         {
             ValidateLayouts(logSuccess: false);
@@ -23,7 +32,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
         public static bool ValidateLayouts(bool logSuccess)
         {
             bool ok = true;
-            ok &= ValidateSize<WreckageNodeDTO>(128);
+            ok &= ValidateSize<WreckageNodeDTO>(WreckageNodeStrideBytes);
             ok &= ValidateOffset<WreckageNodeDTO>(nameof(WreckageNodeDTO.LocalMatrix), 0);
             ok &= ValidateOffset<WreckageNodeDTO>(nameof(WreckageNodeDTO.PrefabHash), 64);
             ok &= ValidateOffset<WreckageNodeDTO>(nameof(WreckageNodeDTO.StateFlags), 68);
@@ -34,13 +43,13 @@ namespace Hecton8.World.ProceduralWreckage.Editor
             ok &= ValidateOffset<WreckageNodeDTO>(nameof(WreckageNodeDTO.ModuleId), 116);
             ok &= ValidateOffset<WreckageNodeDTO>(nameof(WreckageNodeDTO.GraphDegree), 120);
             ok &= ValidateOffset<WreckageNodeDTO>(nameof(WreckageNodeDTO.StableId), 124);
-            ok &= ValidateSize<WreckagePaddedCounterDTO>(64);
-            ok &= ValidateSize<WreckageRuleDTO>(64);
-            ok &= ValidateSize<WreckageGridCellDTO>(16);
-            ok &= ValidateSize<WreckageSectorTriggerDTO>(64);
-            ok &= ValidateSize<WreckageGenerationTelemetryEntry>(64);
-            ok &= ValidateSize<WreckageBoxColliderDTO>(64);
-            ok &= ValidateSize<LootSpawnRequestDTO>(64);
+            ok &= ValidateSize<WreckagePaddedCounterDTO>(PaddedCounterStrideBytes);
+            ok &= ValidateSize<WreckageRuleDTO>(RuleStrideBytes);
+            ok &= ValidateSize<WreckageGridCellDTO>(GridCellStrideBytes);
+            ok &= ValidateSize<WreckageSectorTriggerDTO>(SectorTriggerStrideBytes);
+            ok &= ValidateSize<WreckageGenerationTelemetryEntry>(TelemetryStrideBytes);
+            ok &= ValidateSize<WreckageBoxColliderDTO>(BoxColliderStrideBytes);
+            ok &= ValidateSize<LootSpawnRequestDTO>(LootSpawnRequestStrideBytes);
 
             if (ok && logSuccess)
                 Debug.Log("[SHINOBU_121] Procedural wreckage DTO layout validated.");

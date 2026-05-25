@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -181,9 +182,15 @@ namespace Hecton8.EditorTools
             }
 
             ReplayHeaderPreview header = _headers[index];
-            _frameLabel.text = "Frame: " + header.FrameIndex + " | Sequence: " + header.SnapshotSequence + " | Segments: " + header.SegmentCount;
-            _payloadLabel.text = "Payload: " + header.PayloadBytes + " B | Source: " + header.TotalSourceBytes + " B | Dropped: " + header.DroppedBytes + " B";
-            _faultLabel.text = "SubjectHash: 0x" + header.SubjectHash.ToString("X8") + " | ErrorCode: 0x" + header.ErrorCode.ToString("X8") + " | Seed: 0x" + header.ReplaySeed.ToString("X8");
+            _frameLabel.text = "Frame: " + header.FrameIndex.ToString(CultureInfo.InvariantCulture) +
+                               " | Sequence: " + header.SnapshotSequence.ToString(CultureInfo.InvariantCulture) +
+                               " | Segments: " + header.SegmentCount.ToString(CultureInfo.InvariantCulture);
+            _payloadLabel.text = "Payload: " + header.PayloadBytes.ToString(CultureInfo.InvariantCulture) +
+                                 " B | Source: " + header.TotalSourceBytes.ToString(CultureInfo.InvariantCulture) +
+                                 " B | Dropped: " + header.DroppedBytes.ToString(CultureInfo.InvariantCulture) + " B";
+            _faultLabel.text = "SubjectHash: 0x" + header.SubjectHash.ToString("X8", CultureInfo.InvariantCulture) +
+                               " | ErrorCode: 0x" + header.ErrorCode.ToString("X8", CultureInfo.InvariantCulture) +
+                               " | Seed: 0x" + header.ReplaySeed.ToString("X8", CultureInfo.InvariantCulture);
         }
 
         private void CompareSelectedWithNext()
@@ -222,11 +229,11 @@ namespace Hecton8.EditorTools
                 if (diffOffset >= 0)
                 {
                     _compareLabel.text =
-                        "Compare: Frame " + _headers[index].FrameIndex +
-                        " -> " + _headers[index + 1].FrameIndex +
-                        " | Owner 0x" + left.OwnerHash.ToString("X8") +
-                        " Label 0x" + left.LabelHash.ToString("X8") +
-                        " Byte " + diffOffset;
+                        "Compare: Frame " + _headers[index].FrameIndex.ToString(CultureInfo.InvariantCulture) +
+                        " -> " + _headers[index + 1].FrameIndex.ToString(CultureInfo.InvariantCulture) +
+                        " | Owner 0x" + left.OwnerHash.ToString("X8", CultureInfo.InvariantCulture) +
+                        " Label 0x" + left.LabelHash.ToString("X8", CultureInfo.InvariantCulture) +
+                        " Byte " + diffOffset.ToString(CultureInfo.InvariantCulture);
                     return;
                 }
             }

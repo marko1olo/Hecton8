@@ -140,6 +140,21 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 return frac(p.x * p.y);
             }
 
+            float HectonFastAtan2(float y, float x)
+            {
+                float ax = abs(x);
+                float ay = abs(y);
+                float major = max(ax, ay);
+                float minor = min(ax, ay);
+                float ratio = minor / max(major, 0.00000001);
+                float ratioSq = ratio * ratio;
+                float poly = (((-0.0464964749 * ratioSq + 0.15931422) * ratioSq - 0.327622764) * ratioSq + 1.0) * ratio;
+                float angle = lerp(poly, 1.57079633 - poly, step(ax, ay));
+                angle = lerp(angle, 3.14159265 - angle, 1.0 - step(0.0, x));
+                angle = lerp(angle, -angle, 1.0 - step(0.0, y));
+                return angle * step(0.00000001, major);
+            }
+
             float CheapSignedTriangle(float value)
             {
                 value = HectonFiniteValue(value, 0.0);
@@ -286,7 +301,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.5, 0.5);
                 float2 centered = safeUv * 2.0 - 1.0;
                 float radial = saturate(dot(centered, centered));
-                float angleWave = sin(atan2(centered.y, centered.x) * 11.0 + Hash21(floor(safeUv * 9.0)) * 6.2831853);
+                float angleWave = sin(HectonFastAtan2(centered.y, centered.x) * 11.0 + Hash21(floor(safeUv * 9.0)) * 6.2831853);
                 float serration = 0.58 + 0.42 * angleWave;
                 float edgeBand = smoothstep(0.54, 0.98, radial) * edge01;
                 float drive = HectonFinite01(max(damage01, stress01));

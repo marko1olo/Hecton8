@@ -15,7 +15,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6900)] // After MapMagicBridge (-7000) so water level exists before the first cache populate.
-    public sealed class HectonCrestOceanDepthCacheBootstrap : MonoBehaviour, ISlowTickable, IOriginShiftListener
+    public sealed class HectonCrestOceanDepthCacheBootstrap : MonoBehaviour, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private enum DepthCacheOwnershipMode
         {
@@ -65,7 +65,7 @@ namespace Hecton8.World
         // COLD ALLOC: Camera[8] - reusable runtime-camera resolve scratch for Crest viewpoint ownership - owner: HectonCrestOceanDepthCacheBootstrap
         private static readonly Camera[] RuntimeCameraBuffer = new Camera[RuntimeCameraBufferSize];
         // COLD ALLOC: Terrain[64] - reusable MapMagic terrain coverage scratch; populated by MapMagicBridge tile registry - owner: HectonCrestOceanDepthCacheBootstrap
-        private static readonly Terrain[] RuntimeTerrainBuffer = new Terrain[RuntimeTerrainBufferSize];
+        private static readonly UnityEngine.Terrain[] RuntimeTerrainBuffer = new UnityEngine.Terrain[RuntimeTerrainBufferSize];
 
         [Header("-- References ----------------")]
         [Tooltip("Explicit Crest ocean owner. Auto-resolved from the prefab root when left empty.")]
@@ -117,6 +117,9 @@ namespace Hecton8.World
         [SerializeField] private Vector3 _debugTidalAegirDirection;
 
         private bool _registeredToSlowTickManager;
+        private bool _registeredToLateFrame;
+        private bool _hotSwapRegistered;
+        private bool _pendingDepthCacheVisualSync;
         private bool _hasConfiguredBounds;
         private int _lastTerrainCount;
         private int _captureLayerMask;
@@ -152,6 +155,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -172,12 +176,14 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         /// <summary>
@@ -188,6 +194,15 @@ namespace Hecton8.World
             if (_debugCacheReady && !repopulateOnTerrainChange)
                 return;
 
+            _pendingDepthCacheVisualSync = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingDepthCacheVisualSync)
+                return;
+
+            _pendingDepthCacheVisualSync = false;
             TryResolveReferences();
             if (oceanRenderer == null)
             {
@@ -262,23 +277,63 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registeredToSlowTickManager || !Application.isPlaying)
+            if ((_registeredToSlowTickManager && _registeredToLateFrame) || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            if (!_registeredToSlowTickManager)
+            {
+                _registeredToSlowTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            }
+
+            if (!_registeredToLateFrame)
+                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registeredToSlowTickManager)
+            if (!_registeredToSlowTickManager && !_registeredToLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_registeredToSlowTickManager)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_registeredToLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
             _registeredToSlowTickManager = false;
+            _registeredToLateFrame = false;
+            _pendingDepthCacheVisualSync = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregister();
+            TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private bool TryConfigureAndPopulate(bool forcePopulate)
@@ -532,7 +587,7 @@ namespace Hecton8.World
             bool initialized = false;
             for (int terrainIndex = 0; terrainIndex < terrainCount; terrainIndex++)
             {
-                Terrain terrain = RuntimeTerrainBuffer[terrainIndex];
+                UnityEngine.Terrain terrain = RuntimeTerrainBuffer[terrainIndex];
                 if (terrain == null || terrain.terrainData == null)
                     continue;
 
@@ -1005,7 +1060,7 @@ namespace Hecton8.World
         private static bool TryResolveCurrentRuntimeOriginDouble3(out double3 absoluteAup)
         {
             absoluteAup = default;
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

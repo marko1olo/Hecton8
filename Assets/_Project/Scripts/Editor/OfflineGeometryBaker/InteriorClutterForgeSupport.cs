@@ -92,7 +92,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 }
             }
 
-            File.WriteAllText("Docs/AgentLogs/Dump_SHINOBU_211.reason.txt", (reason ?? "UNSPECIFIED") + " entries=" + _written);
+            File.WriteAllText("Docs/AgentLogs/Dump_SHINOBU_211.reason.txt", (reason ?? "UNSPECIFIED") + " entries=" + _written, new UTF8Encoding(false));
         }
 
         private static unsafe void WriteRange(FileStream stream, byte* basePtr, int entrySize, int start, int count)
@@ -596,7 +596,7 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 try
                 {
-                    Graphics.CopyTexture(source, 0, 0, 0, 0, width, height, atlas, 0, 0, rect.X, rect.Y);
+                    UnityEngine.Graphics.CopyTexture(source, 0, 0, 0, 0, width, height, atlas, 0, 0, rect.X, rect.Y);
                     return true;
                 }
                 catch (Exception)
@@ -629,8 +629,8 @@ namespace Hecton8.Editor.OfflineGeometry
             RenderTexture temp = RenderTexture.GetTemporary(rect.Width, rect.Height, 0, RenderTextureFormat.ARGB32, ResolveReadWrite(linear));
             try
             {
-                Graphics.Blit(source, temp);
-                Graphics.CopyTexture(temp, 0, 0, 0, 0, rect.Width, rect.Height, atlas, 0, 0, rect.X, rect.Y);
+                UnityEngine.Graphics.Blit(source, temp);
+                UnityEngine.Graphics.CopyTexture(temp, 0, 0, 0, 0, rect.Width, rect.Height, atlas, 0, 0, rect.X, rect.Y);
             }
             finally
             {
@@ -645,7 +645,7 @@ namespace Hecton8.Editor.OfflineGeometry
             Texture2D tile = null;
             try
             {
-                Graphics.Blit(source, temp);
+                UnityEngine.Graphics.Blit(source, temp);
                 tile = new Texture2D(rect.Width, rect.Height, TextureFormat.RGBA32, false, linear)
                 {
                     name = atlas.name + "_TintTile",
@@ -663,7 +663,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 }.Schedule(pixels.Length, 1024);
                 tintHandle.Complete();
                 tile.Apply(false, false);
-                Graphics.CopyTexture(tile, 0, 0, 0, 0, rect.Width, rect.Height, atlas, 0, 0, rect.X, rect.Y);
+                UnityEngine.Graphics.CopyTexture(tile, 0, 0, 0, 0, rect.Width, rect.Height, atlas, 0, 0, rect.X, rect.Y);
             }
             finally
             {
@@ -683,7 +683,7 @@ namespace Hecton8.Editor.OfflineGeometry
             RenderTexture temp = RenderTexture.GetTemporary(atlas.width, atlas.height, 0, RenderTextureFormat.ARGB32, ResolveReadWrite(linear));
             try
             {
-                Graphics.Blit(atlas, temp);
+                UnityEngine.Graphics.Blit(atlas, temp);
                 RenderTexture.active = temp;
                 atlas.ReadPixels(new Rect(0f, 0f, atlas.width, atlas.height), 0, 0, false);
                 atlas.Apply(true, false);
@@ -1190,7 +1190,7 @@ namespace Hecton8.Editor.OfflineGeometry
             }
 
             builder.Append("\n  ]\n}\n");
-            File.WriteAllText(InteriorClutterForgeConstants.RenderingOptimizationReportPath, builder.ToString());
+            File.WriteAllText(InteriorClutterForgeConstants.RenderingOptimizationReportPath, builder.ToString(), new UTF8Encoding(false));
         }
 
         private static void AddUnique(List<Material> materials, Material material)

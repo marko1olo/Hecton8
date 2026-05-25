@@ -1,0 +1,75 @@
+﻿{
+    "agentId":  "X_012",
+    "loop":  "Loop 12 - Manual Density Audit",
+    "generatedAtUtc":  "2026-05-24T08:29:42.9723169Z",
+    "evidenceClass":  [
+                          "STATIC_DOC",
+                          "STATIC_SOURCE",
+                          "STATIC_FILESYSTEM",
+                          "OFFLINE_VALIDATOR"
+                      ],
+    "rewritePolicy":  "Scripts used only for discovery/proof JSON. Prose rewrites were manual apply_patch edits.",
+    "manualEditedFileCount":  31,
+    "manualEditedFiles":  [
+                              "Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
+                              "Docs/ARCHITECTURE/ARM64_MEMORY_ALIGNMENT_SHINOBU_204.md",
+                              "Docs/ARCHITECTURE/BaseStructuralWarningDispatcher_SHINOBU_339.md",
+                              "Docs/ARCHITECTURE/BILATERAL_DRS_UPSCALER_SHINOBU_236.md",
+                              "Docs/ARCHITECTURE/BIOTA_DENSITY_MAP_BAKER_SHINOBU_308.md",
+                              "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+                              "Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md",
+                              "Docs/ARCHITECTURE/DECOMPRESSION_SICKNESS_SHINOBU_321.md",
+                              "Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
+                              "Docs/ARCHITECTURE/FOUNDATION_SNAPPING_CALCULATOR_SHINOBU_252.md",
+                              "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md",
+                              "Docs/ARCHITECTURE/HABITAT_INTERIOR_CLUTTER_FORGE.md",
+                              "Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md",
+                              "Docs/ARCHITECTURE/SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md",
+                              "Docs/ARCHITECTURE/SHINOBU_233_COMPUTE_VOLUMETRIC_FOG.md",
+                              "Docs/ARCHITECTURE/SHINOBU_236_BILATERAL_DRS_ROUTE_CARD.md",
+                              "Docs/ARCHITECTURE/SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md",
+                              "Docs/ARCHITECTURE/SHINOBU_266_JACOBIAN_FOAM_ROUTE_CARD.md",
+                              "Docs/ARCHITECTURE/SHINOBU_275_SCREEN_SPACE_VISOR_WOUNDS_ROUTE_CARD.md",
+                              "Docs/ARCHITECTURE/SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
+                              "Docs/ARCHITECTURE/SHINOBU_317_CRAFTING_FAST_FAIL_ROUTE.md",
+                              "Docs/ARCHITECTURE/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
+                              "Docs/ARCHITECTURE/SHINOBU_329_PLAYER_RESPAWN_RECONCILIATION_ROUTE_CARD.md",
+                              "Docs/ARCHITECTURE/SHINOBU_345_CELESTIAL_ORBIT_ROUTE_CARD.md",
+                              "Docs/ARCHITECTURE/SHINOBU_41_Geological_Synthesis.md",
+                              "Docs/ARCHITECTURE/STATIC_CAVE_SDF_VOLUME_BAKER.md",
+                              "Docs/ARCHITECTURE/SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md",
+                              "Docs/ARCHITECTURE/SUBNAUTICA2_HECTON8_IMPLEMENTATION_HANDOFF.md",
+                              "Docs/ARCHITECTURE/TERRAIN_CHUNK_PAGING_SYSTEM_SHINOBU_245.md",
+                              "Docs/ARCHITECTURE/VISOR_AR_STENCIL_RENDERER.md",
+                              "Docs/ARCHITECTURE/VOXEL_TERRAIN_SEAM_BINDER_SHINOBU_246.md"
+                          ],
+    "gates":  {
+                  "structuredLineWordsGe60":  0,
+                  "markerHits":  0,
+                  "markerPatterns":  [
+                                         "this document",
+                                         "in this document",
+                                         "how to",
+                                         "for example",
+                                         "tutorial",
+                                         "lesson",
+                                         "academic",
+                                         "over-engineer"
+                                     ]
+              },
+    "sourceConstants":  {
+                            "SaveBinaryStorage_CurrentVersion":  "0x000B",
+                            "SaveBinaryStorage_CurrentHeaderSize":  56,
+                            "SignalBusRuntime_LaneCapacity":  512,
+                            "H8DataLayoutConstants_HeaderSizeBytes":  64,
+                            "DataMonolithStaticPayloadBytes":  1064384
+                        },
+    "offenders":  {
+                      "structuredLinesGe60":  [
+
+                                              ],
+                      "markerHits":  [
+
+                                     ]
+                  }
+}

@@ -7,7 +7,7 @@ namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/VR Cable Drag Plug")]
-    public sealed class VRCableDragPlug : MonoBehaviour, IInteractable, ILateFrameTickable, IOriginShiftListener
+    public sealed class VRCableDragPlug : MonoBehaviour, IInteractable, IInteractableTextProvider, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const long CableLinkSalt = 0x5643524300000000L;
         private const int MaxParentResolveDepth = 32;
@@ -85,6 +85,12 @@ namespace Hecton8.Interaction
             return _connected ? disconnectPrompt : grabPrompt;
         }
 
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            string source = _dragging ? dropPrompt : (_connected ? disconnectPrompt : grabPrompt);
+            return InteractableTextCopy.TryCopy(source, destination, out length);
+        }
+
         private void Awake()
         {
             _linkId = CableLinkSalt ^ unchecked((long)EntityId.ToULong(GetEntityId()));
@@ -95,6 +101,10 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            InteractableRegistry.RegisterTree(this);
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegisterOriginShiftListener();
             RefreshLateFrameRegistration();
         }
@@ -105,6 +115,7 @@ namespace Hecton8.Interaction
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterOriginShiftListener();
             TryUnregisterLateFrameTickable();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             ConnectionSplineBatchRenderer.RemoveRelayLink(_linkId);
         }
 
@@ -465,7 +476,7 @@ namespace Hecton8.Interaction
         {
             return TryResolveAup(source, out AbsoluteUniversePosition aup)
                 ? aup
-                : GlobalSignals.CurrentRuntimeOriginAup();
+                : RuntimeOriginRoute.CurrentRuntimeOriginAup();
         }
 
         private static bool TryResolveAup(Transform source, out AbsoluteUniversePosition aup)
@@ -499,7 +510,7 @@ namespace Hecton8.Interaction
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 
@@ -688,6 +699,15 @@ namespace Hecton8.Interaction
 
             HectonFloatingOrigin.UnregisterListener(this);
             _registeredOriginShift = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                RefreshLateFrameRegistration();
         }
 
 #if UNITY_EDITOR

@@ -8,7 +8,6 @@ using Den.Tools.Matrices;
 using System.Reflection;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 /// <summary>
 /// Builds the "Asymmetric Continental Divide" MapMagic 2 graph architecture.
@@ -23,6 +22,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
     // ════════════════════════════════════════════════════════════════════
 
     private static ulong _idCounter = 1000UL;
+    private static readonly List<Generator> s_clearGraphGenerators = new List<Generator>(256);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()
@@ -518,30 +518,35 @@ public static class AsymmetricContinentalDivideGraphBuilder
     /// <summary>Remove all generators and links from the graph.</summary>
     private static void ClearGraph(Graph graph)
     {
-        // Get all generators
-        Generator[] existing = null;
+        s_clearGraphGenerators.Clear();
 
         try
         {
             if (graph.generators != null)
-                existing = graph.generators.ToArray();
-        }
-        catch
-        {
-            existing = null;
-        }
-
-        if (existing != null)
-        {
-            foreach (Generator gen in existing)
             {
-                if (gen != null)
+                foreach (Generator generator in graph.generators)
                 {
-                    try { graph.Remove(gen); }
-                    catch { }
+                    if (generator != null)
+                        s_clearGraphGenerators.Add(generator);
                 }
             }
         }
+        catch
+        {
+            s_clearGraphGenerators.Clear();
+        }
+
+        for (int i = 0; i < s_clearGraphGenerators.Count; i++)
+        {
+            Generator gen = s_clearGraphGenerators[i];
+            if (gen != null)
+            {
+                try { graph.Remove(gen); }
+                catch { }
+            }
+        }
+
+        s_clearGraphGenerators.Clear();
 
         // Clear links via reflection if direct access fails
         try
@@ -564,7 +569,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
         try
         {
             if (graph.generators != null)
-                return graph.generators.Count();
+                return graph.generators.Length;
         }
         catch { }
         return 0;

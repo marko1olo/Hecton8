@@ -149,7 +149,7 @@ namespace Hecton8.EditorTools
 
         private static List<string> CollectUnreferencedTextureAndMeshAssets()
         {
-            HashSet<string> referencedPaths = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> referencedPaths = new HashSet<string>(2048, StringComparer.Ordinal);
             AddDependenciesForAssetsOfType("t:Scene", referencedPaths);
             AddDependenciesForAssetsOfType("t:Prefab", referencedPaths);
 
@@ -207,7 +207,7 @@ namespace Hecton8.EditorTools
 
         private static HashSet<string> CollectUniquePaths(List<string>[] candidateSets)
         {
-            HashSet<string> uniquePaths = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> uniquePaths = new HashSet<string>(256, StringComparer.Ordinal);
             for (int setIndex = 0; setIndex < candidateSets.Length; setIndex++)
             {
                 List<string> candidateSet = candidateSets[setIndex];

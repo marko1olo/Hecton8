@@ -261,7 +261,10 @@ namespace Hecton8.Quest
                     return;
 
                 if (!_pendingEvents.TryDequeue(out QuestEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -293,24 +296,48 @@ namespace Hecton8.Quest
             }
         }
 
+        [Obsolete("Use TryRaiseActivated(uint) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseActivated(uint questHash)
         {
-            Enqueue(QuestEventType.Activated, questHash);
+            TryRaiseActivated(questHash);
         }
 
+        public static bool TryRaiseActivated(uint questHash)
+        {
+            return Enqueue(QuestEventType.Activated, questHash);
+        }
+
+        [Obsolete("Use TryRaiseCompleted(uint) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseCompleted(uint questHash)
         {
-            Enqueue(QuestEventType.Completed, questHash);
+            TryRaiseCompleted(questHash);
         }
 
+        public static bool TryRaiseCompleted(uint questHash)
+        {
+            return Enqueue(QuestEventType.Completed, questHash);
+        }
+
+        [Obsolete("Use TryRaiseFailed(uint) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseFailed(uint questHash)
         {
-            Enqueue(QuestEventType.Failed, questHash);
+            TryRaiseFailed(questHash);
         }
 
+        public static bool TryRaiseFailed(uint questHash)
+        {
+            return Enqueue(QuestEventType.Failed, questHash);
+        }
+
+        [Obsolete("Use TryRaiseRevertRequested(in QuestRevertRequest) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseRevertRequested(in QuestRevertRequest request)
         {
-            Enqueue(QuestEventType.RevertRequested, request.QuestHash);
+            TryRaiseRevertRequested(in request);
+        }
+
+        public static bool TryRaiseRevertRequested(in QuestRevertRequest request)
+        {
+            return Enqueue(QuestEventType.RevertRequested, request.QuestHash);
         }
 
         private static void EnsureInitialized()
@@ -414,7 +441,10 @@ namespace Hecton8.Quest
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -595,7 +625,7 @@ namespace Hecton8.Quest
         private static void ReportQueueOverflow(ushort eventType)
         {
             _droppedEventCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastOverflowTelemetryFrame == frame)
                 return;
 
@@ -610,7 +640,7 @@ namespace Hecton8.Quest
         private static void ReportDuplicateListenerRegistration()
         {
             _duplicateRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastDuplicateTelemetryFrame == frame)
                 return;
 
@@ -624,7 +654,7 @@ namespace Hecton8.Quest
         private static void ReportListenerRejected()
         {
             _listenerRejectCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -638,7 +668,7 @@ namespace Hecton8.Quest
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -652,7 +682,7 @@ namespace Hecton8.Quest
         private static void ReportUnregisterMiss()
         {
             _unregisterMissCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastUnregisterMissTelemetryFrame == frame)
                 return;
 

@@ -450,17 +450,17 @@ namespace Hecton8.Editor.Build
             if (!Directory.Exists(root))
                 return;
 
-            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
             int hitCount = 0;
-            for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+            foreach (string file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
-                string file = files[fileIndex];
-                string[] lines = File.ReadAllLines(file);
-                for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+                int lineIndex = 0;
+                foreach (string line in File.ReadLines(file))
                 {
-                    string line = lines[lineIndex];
                     if (line.IndexOf(token, StringComparison.Ordinal) < 0)
+                    {
+                        lineIndex++;
                         continue;
+                    }
 
                     hitCount++;
                     if (hitCount <= 80)
@@ -469,6 +469,8 @@ namespace Hecton8.Editor.Build
                         builder.Append("- ").Append(relativePath.Replace('\\', '/')).Append(':').Append(lineIndex + 1).Append(" `")
                             .Append(line.Trim().Replace("`", "'")).AppendLine("`");
                     }
+
+                    lineIndex++;
                 }
             }
 

@@ -61,6 +61,7 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Applies a debug CSV override file to the vault config using a span parser.
         /// </summary>
+#if UNITY_EDITOR
         public static bool TryApplyMemoryOverridesCsv(IDataVault vault, string csvPath)
         {
             if (vault == null || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
@@ -126,6 +127,7 @@ namespace Hecton8.Core.Memory
             lastWriteTicks = ticks;
             return true;
         }
+#endif
 
         /// <summary>Writes a prepared config into the vault layout buffer.</summary>
         public static void WriteMemoryLayoutConfig(IDataVault vault, in VaultMemoryLayoutConfig config)
@@ -231,6 +233,7 @@ namespace Hecton8.Core.Memory
             return true;
         }
 
+#if UNITY_EDITOR
         private static unsafe void ParseCsvOverrideStream(string csvPath, NativeArray<byte> scratch, ref VaultMemoryLayoutConfig config)
         {
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
@@ -385,7 +388,7 @@ namespace Hecton8.Core.Memory
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
                 !IsHandleCreated(in handle, bufferId))
             {
-                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, owner, options);
+                handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, owner, options);
             }
 
             return TryOpenLane(vault, in handle, bufferId, requiredLength, out buffer);
@@ -456,6 +459,7 @@ namespace Hecton8.Core.Memory
             value = negative ? -result : result;
             return true;
         }
+#endif
 
         private static uint HashLowerAscii(ReadOnlySpan<byte> key)
         {

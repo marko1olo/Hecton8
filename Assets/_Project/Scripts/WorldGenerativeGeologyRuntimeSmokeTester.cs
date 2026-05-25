@@ -270,7 +270,7 @@ namespace Hecton8.Dev
 
                 _debugLastPhase = "Complete";
                 _debugLastPass = true;
-                Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     $"[GeologySmoke] PASS run={_debugRunCount} runtimeKey={_debugSelectedRuntimeKey} " +
                     $"family={_debugSelectedFamilyId} terrain={_debugSelectedRequiresTerrain} " +
                     $"voxel={_debugSelectedRequiresVoxel} pass={_debugLastPass}");
@@ -437,7 +437,7 @@ namespace Hecton8.Dev
         private void LogVerbose(string message)
         {
             if (verboseLogging)
-                Debug.Log($"[GeologySmoke] {message}");
+                Hecton8.Core.H8Debug.Log($"[GeologySmoke] {message}");
         }
 
         private void Fail(string issue)

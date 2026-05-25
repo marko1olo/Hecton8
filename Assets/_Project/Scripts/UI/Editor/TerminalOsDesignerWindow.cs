@@ -55,7 +55,7 @@ namespace Hecton8.UI.Editor
             {
                 _runtime = (TerminalOsRuntime)EditorGUILayout.ObjectField("Runtime", _runtime, typeof(TerminalOsRuntime), true);
                 if (GUILayout.Button("Find", GUILayout.Width(64f)))
-                    _runtime = FindFirstObjectByType<TerminalOsRuntime>();
+                    _runtime = FindAnyObjectByType<TerminalOsRuntime>();
             }
         }
 

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_019
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_019_MAT_family_coral_low_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_coral_low_Albedo.png
+FINAL_FILENAME: MAT_family_coral_low_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Low mat coral epidermis albedo for soft reef ground cover. Design rounded cream and pale peach coral pads, subtle lavender growth seams, tiny teal symbiotic speckles, and occasional amber pin-light cells arranged in gentle clusters. It should read as soft alien reef carpeting, pleasant and tactile, with enough shape contrast for terrain blending. Use a healthy reef palette, clean lobe separation, and purposeful biological variation. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

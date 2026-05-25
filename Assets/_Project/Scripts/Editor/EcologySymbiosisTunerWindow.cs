@@ -51,12 +51,12 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
         }
 
         private void OnDisable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         public void CreateGUI()
@@ -261,7 +261,7 @@ namespace Hecton8.Editor
             _overflowLabel.text = "Overflow: " + counter.OverflowCount;
         }
 
-        private static void OnDrawGizmos(SceneView sceneView)
+        private static void DrawSceneGizmos(SceneView sceneView)
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (!Application.isPlaying || vault == null)

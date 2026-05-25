@@ -94,7 +94,7 @@ namespace Hecton8.Dev
             CelestialCataclysmSmokeTester tester = smokeRoot.AddComponent<CelestialCataclysmSmokeTester>();
             bool pass = tester.RunSmokePass();
             string issue = SanitizeJsonField(tester._debugLastIssue);
-            Debug.Log(BuildBatchJson(pass, issue, tester._debugOmegaSourceChecks, tester._debugOmegaTelemetryContracts));
+            Hecton8.Core.H8Debug.Log(BuildBatchJson(pass, issue, tester._debugOmegaSourceChecks, tester._debugOmegaTelemetryContracts));
             DestroyImmediate(smokeRoot);
 
             if (Application.isBatchMode)
@@ -229,73 +229,73 @@ namespace Hecton8.Dev
                 return Fail("HectonFirmamentBake.compute missing.");
 
             string computeSource = ReadAssetText(FirmamentComputePath);
-            if (!computeSource.Contains("#pragma kernel BakeSpectralStars") ||
-                !computeSource.Contains("#pragma kernel BakeAtmosphereLut") ||
-                !computeSource.Contains("HectonSpectralColor") ||
-                !computeSource.Contains("_BakedStarCubemap") ||
-                !computeSource.Contains("milkyWayDirection.y *= latitudeCompression"))
+            if (!ContainsOrdinal(computeSource, "#pragma kernel BakeSpectralStars") ||
+                !ContainsOrdinal(computeSource, "#pragma kernel BakeAtmosphereLut") ||
+                !ContainsOrdinal(computeSource, "HectonSpectralColor") ||
+                !ContainsOrdinal(computeSource, "_BakedStarCubemap") ||
+                !ContainsOrdinal(computeSource, "milkyWayDirection.y *= latitudeCompression"))
             {
                 return Fail("Firmament compute shader lacks bake kernels or spectral contract.");
             }
             _debugOmegaSourceChecks++;
 
             string celestialSource = ReadAssetText(CelestialEnginePath);
-            if (!celestialSource.Contains("FirmamentStartupStarCount = 100000") ||
-                !celestialSource.Contains("InitializeFirmamentBakeAtStartup") ||
-                !celestialSource.Contains("TryBakeFirmamentOnce") ||
-                !celestialSource.Contains("FirmamentStarBakeThreads = 64") ||
-                !celestialSource.Contains("_BakedStarCubemapReady") ||
-                !celestialSource.Contains("_HectonAtmosphereScatteringLUTReady"))
+            if (!ContainsOrdinal(celestialSource, "FirmamentStartupStarCount = 100000") ||
+                !ContainsOrdinal(celestialSource, "InitializeFirmamentBakeAtStartup") ||
+                !ContainsOrdinal(celestialSource, "TryBakeFirmamentOnce") ||
+                !ContainsOrdinal(celestialSource, "FirmamentStarBakeThreads = 64") ||
+                !ContainsOrdinal(celestialSource, "_BakedStarCubemapReady") ||
+                !ContainsOrdinal(celestialSource, "_HectonAtmosphereScatteringLUTReady"))
             {
                 return Fail("HectonCelestialEngine lacks startup firmament bake contract.");
             }
             _debugOmegaSourceChecks++;
 
             string alienSkySource = ReadAssetText(AlienSkyShaderPath);
-            if (!alienSkySource.Contains("_BakedStarCubemap") ||
-                !alienSkySource.Contains("SAMPLE_TEXTURECUBE"))
+            if (!ContainsOrdinal(alienSkySource, "_BakedStarCubemap") ||
+                !ContainsOrdinal(alienSkySource, "SAMPLE_TEXTURECUBE"))
             {
                 return Fail("Alien sky shader does not sample baked stars.");
             }
             _debugOmegaSourceChecks++;
 
             string atmosphereInclude = ReadAssetText(CelestialAtmosphereIncludePath);
-            if (!atmosphereInclude.Contains("sunView01") ||
-                !atmosphereInclude.Contains("_HectonAtmosphereScatteringLUTReady"))
+            if (!ContainsOrdinal(atmosphereInclude, "sunView01") ||
+                !ContainsOrdinal(atmosphereInclude, "_HectonAtmosphereScatteringLUTReady"))
             {
                 return Fail("Celestial atmosphere include lacks sun-direction LUT sampling.");
             }
             _debugOmegaSourceChecks++;
 
             string coreLitSource = ReadAssetText(CoreLitIncludePath);
-            if (!coreLitSource.Contains("_HectonEclipseWaterShadowParams") ||
-                !coreLitSource.Contains("HectonCoreLitEvaluateRingCausticShadow"))
+            if (!ContainsOrdinal(coreLitSource, "_HectonEclipseWaterShadowParams") ||
+                !ContainsOrdinal(coreLitSource, "HectonCoreLitEvaluateRingCausticShadow"))
             {
                 return Fail("CoreLit shader lacks eclipse water shadow or ring caustic contract.");
             }
             _debugOmegaSourceChecks++;
 
             string randomEventSource = ReadAssetText(RandomEventSystemPath);
-            if (!randomEventSource.Contains("_MeteorWaterImpactParams") ||
-                !randomEventSource.Contains("MeteorWaterPlaneY = 0f") ||
-                !randomEventSource.Contains("RegisterMassiveDisplacement"))
+            if (!ContainsOrdinal(randomEventSource, "_MeteorWaterImpactParams") ||
+                !ContainsOrdinal(randomEventSource, "MeteorWaterPlaneY = 0f") ||
+                !ContainsOrdinal(randomEventSource, "RegisterMassiveDisplacement"))
             {
                 return Fail("RandomEventSystem lacks meteor water impact displacement contract.");
             }
             _debugOmegaSourceChecks++;
 
             string atmosphereManagerSource = ReadAssetText(AtmosphereManagerPath);
-            if (!atmosphereManagerSource.Contains("BuildAxisAngleRotationMatrix") ||
-                !atmosphereManagerSource.Contains("MultiplyVector(Vector3.forward)"))
+            if (!ContainsOrdinal(atmosphereManagerSource, "BuildAxisAngleRotationMatrix") ||
+                !ContainsOrdinal(atmosphereManagerSource, "MultiplyVector(Vector3.forward)"))
             {
                 return Fail("HectonAtmosphereManager lacks Matrix4x4 sun tracking contract.");
             }
             _debugOmegaSourceChecks++;
 
             string syncSmokeSource = ReadAssetText(CelestialSyncSmokeTesterPath);
-            if (!syncSmokeSource.Contains("Run24HourFastForward") ||
-                !syncSmokeSource.Contains("MinimumEclipseDot") ||
-                !syncSmokeSource.Contains("EvaluatePenumbraOverlapForSmoke"))
+            if (!ContainsOrdinal(syncSmokeSource, "Run24HourFastForward") ||
+                !ContainsOrdinal(syncSmokeSource, "MinimumEclipseDot") ||
+                !ContainsOrdinal(syncSmokeSource, "EvaluatePenumbraOverlapForSmoke"))
             {
                 return Fail("CelestialSyncSmokeTester lacks 24h eclipse sync contract.");
             }
@@ -491,7 +491,7 @@ namespace Hecton8.Dev
         private void LogVerbose(string message)
         {
             if (verboseLogging)
-                Debug.Log(message, this);
+                Hecton8.Core.H8Debug.Log(message, this);
         }
 
 #if UNITY_EDITOR
@@ -516,9 +516,15 @@ namespace Hecton8.Dev
 
         private static bool ValidateNativeQueueSentinelPair(string source, string fieldName)
         {
-            return source.Contains("NativeMemorySentinel.RegisterNativeQueue") &&
-                   source.Contains("NativeMemorySentinel.UnregisterNativeQueue") &&
-                   source.Contains("nameof(" + fieldName + ")");
+            return ContainsOrdinal(source, "NativeMemorySentinel.RegisterNativeQueue") &&
+                   ContainsOrdinal(source, "NativeMemorySentinel.UnregisterNativeQueue") &&
+                   ContainsOrdinal(source, "nameof(" + fieldName + ")");
+        }
+
+        private static bool ContainsOrdinal(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   source.IndexOf(token, StringComparison.Ordinal) >= 0;
         }
 
         private static string ReadAssetText(string assetPath)

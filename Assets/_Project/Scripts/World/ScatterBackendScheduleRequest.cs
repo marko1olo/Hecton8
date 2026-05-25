@@ -3,11 +3,16 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class ScatterBackendScheduleRequestLayout
+    {
+        public const int ScatterBackendScheduleRequestStrideBytes = 96;
+    }
+
     /// <summary>
     /// Cold-path input for one scatter backend schedule attempt.
     /// Keeps director-side orchestration thin while preserving director ownership.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterBackendScheduleRequestLayout.ScatterBackendScheduleRequestStrideBytes)]
     internal readonly struct ScatterBackendScheduleRequest
     {
         public ScatterBackendScheduleRequest(

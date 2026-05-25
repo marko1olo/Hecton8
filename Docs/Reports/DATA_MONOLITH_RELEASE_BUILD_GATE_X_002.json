@@ -1,0 +1,95 @@
+﻿{
+  "schema": "HECTON8_DATA_MONOLITH_RELEASE_BUILD_GATE_V2",
+  "status": "PASS_RELEASE_PARSER_GATE",
+  "filesScanned": 1758,
+  "releaseInactiveLinesSkipped": 88072,
+  "blockingFindingCount": 0,
+  "allowedPersistenceFindingCount": 12,
+  "byKind": {},
+  "allowedByKind": {
+    "managedWholeFileByteRead": 3,
+    "managedTextFileRead": 3,
+    "managedTextStreamReader": 2,
+    "managedJsonDeserialize": 4
+  },
+  "findings": [],
+  "allowedPersistenceFindings": [
+    {
+      "kind": "managedWholeFileByteRead",
+      "path": "Assets/_Project/Scripts/SaveThumbnailSystem.cs",
+      "line": 401,
+      "source": "byte[] bytes = File.ReadAllBytes(path);"
+    },
+    {
+      "kind": "managedWholeFileByteRead",
+      "path": "Assets/_Project/Scripts/SaveThumbnailSystem.cs",
+      "line": 430,
+      "source": "bytes = File.ReadAllBytes(path);"
+    },
+    {
+      "kind": "managedTextFileRead",
+      "path": "Assets/_Project/Scripts/Core/RebindingManager.cs",
+      "line": 374,
+      "source": "string json = File.ReadAllText(path);"
+    },
+    {
+      "kind": "managedTextStreamReader",
+      "path": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+      "line": 512,
+      "source": "using (StreamReader reader = new StreamReader(stream, OptionsEncoding, detectEncodingFromByteOrderMarks: true))"
+    },
+    {
+      "kind": "managedJsonDeserialize",
+      "path": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+      "line": 567,
+      "source": "OptionsFile file = JsonUtility.FromJson<OptionsFile>(json);"
+    },
+    {
+      "kind": "managedTextFileRead",
+      "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs",
+      "line": 932,
+      "source": "string json = File.ReadAllText(path);"
+    },
+    {
+      "kind": "managedJsonDeserialize",
+      "path": "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs",
+      "line": 935,
+      "source": ": JsonUtility.FromJson<GlobalProfileData>(json);"
+    },
+    {
+      "kind": "managedWholeFileByteRead",
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs",
+      "line": 191,
+      "source": "pngBytes = File.ReadAllBytes(filePath);"
+    },
+    {
+      "kind": "managedTextStreamReader",
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs",
+      "line": 311,
+      "source": "using (StreamReader reader = new StreamReader(ledgerPath))"
+    },
+    {
+      "kind": "managedTextFileRead",
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs",
+      "line": 240,
+      "source": "string json = File.ReadAllText(manifestPath);"
+    },
+    {
+      "kind": "managedJsonDeserialize",
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs",
+      "line": 241,
+      "source": "ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);"
+    },
+    {
+      "kind": "managedJsonDeserialize",
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs",
+      "line": 272,
+      "source": "payload = JsonUtility.FromJson<ModWorldSavePayload>(json);"
+    }
+  ],
+  "agent": "X_002",
+  "scanner": "H8DataMonolithReleaseParserScanner/PythonParity",
+  "policy": "Non-development player builds are blocked if production code still contains static-data text/config parser routes compiled for release. User save/profile/mod persistence is explicitly classified outside Data Monolith static-config ownership.",
+  "developmentBuild": false,
+  "proofBoundary": "Static source parity report for the installed Unity Editor prebuild gate. It proves scanner-visible release parser residue is blocked/classified; it is not Unity Player profiler proof."
+}

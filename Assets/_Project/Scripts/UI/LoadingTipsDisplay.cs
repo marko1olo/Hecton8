@@ -1,3 +1,4 @@
+using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
@@ -12,7 +13,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Loading Tips Display")]
-    public sealed class LoadingTipsDisplay : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener
+    public sealed class LoadingTipsDisplay : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const int TipBufferCapacity = 256;
 
@@ -37,8 +38,9 @@ namespace Hecton8.UI
         private float _fadeTimer;
         private bool _isFadingIn;
         private bool _isFadingOut;
-        private string[] _tips;
         private uint _tipRandomState;
+        private ILocalizationTextReadModel _cachedLocalization;
+        private bool _hotSwapListenerRegistered;
         private readonly char[] _tipBuffer = new char[TipBufferCapacity]; // COLD ALLOC: char[256] — loading tip TMP staging buffer — owner: LoadingTipsDisplay
 
         private static readonly string[] TipKeys = // COLD ALLOC: localization keys for loading tips — owner: LoadingTipsDisplay
@@ -82,19 +84,22 @@ namespace Hecton8.UI
         private void Awake()
         {
             _tipRandomState = MixSeed(unchecked((uint)EntityId.ToULong(GetEntityId())));
-            LoadTips();
+            CacheRegistryServicesCold();
             if (tipCanvasGroup != null)
                 tipCanvasGroup.alpha = 0f;
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             StartTipCycle();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
 
             LocalizationEvents.UnregisterLanguageListener(this);
@@ -103,6 +108,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
@@ -111,14 +117,11 @@ namespace Hecton8.UI
             if (_isActive)
                 return;
 
-            if (_tips == null || _tips.Length == 0)
-                LoadTips();
-
-            if (_tips == null || _tips.Length == 0)
+            if (TipKeys.Length == 0)
                 return;
 
             _isActive = true;
-            _currentTipIndex = randomOrder ? NextTipIndex(_tips.Length) : 0;
+            _currentTipIndex = randomOrder ? NextTipIndex(TipKeys.Length) : 0;
             _tipTimer = 0f;
             _fadeTimer = 0f;
             _isFadingIn = true;
@@ -191,36 +194,32 @@ namespace Hecton8.UI
             }
         }
 
-        private void LoadTips()
-        {
-            if (_tips == null || _tips.Length != TipKeys.Length)
-            {
-                // COLD ALLOC: string[15] — resolved loading tips cache — owner: LoadingTipsDisplay
-                _tips = new string[TipKeys.Length];
-            }
-
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            for (int i = 0; i < TipKeys.Length; i++)
-            {
-                string fallback = i < DefaultTips.Length ? DefaultTips[i] : string.Empty;
-                _tips[i] = manager != null
-                    ? manager.GetOrFallback(manager.CurrentLanguage, TipKeys[i], fallback)
-                    : fallback;
-            }
-        }
-
         private void ShowTip(int index)
         {
-            if (tipText == null || _tips == null || index < 0 || index >= _tips.Length)
+            if (tipText == null || index < 0 || index >= TipKeys.Length)
                 return;
 
-            int length = CopyTipToBuffer(_tips[index], _tipBuffer);
+            ReadOnlySpan<char> tip = ResolveTipSpan(index);
+            int length = CopyTipToBuffer(tip, _tipBuffer);
             tipText.SetCharArray(_tipBuffer, 0, length);
         }
 
-        private static int CopyTipToBuffer(string tip, char[] buffer)
+        private ReadOnlySpan<char> ResolveTipSpan(int index)
         {
-            if (string.IsNullOrEmpty(tip) || buffer == null || buffer.Length == 0)
+            ReadOnlySpan<char> fallback = index < DefaultTips.Length
+                ? DefaultTips[index].AsSpan()
+                : ReadOnlySpan<char>.Empty;
+
+            ILocalizationTextReadModel manager = _cachedLocalization;
+            string key = index < TipKeys.Length ? TipKeys[index] : null;
+            return manager != null && !string.IsNullOrEmpty(key)
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
+                : fallback;
+        }
+
+        private static int CopyTipToBuffer(ReadOnlySpan<char> tip, char[] buffer)
+        {
+            if (tip.IsEmpty || buffer == null || buffer.Length == 0)
                 return 0;
 
             int length = math.min(tip.Length, buffer.Length);
@@ -241,27 +240,27 @@ namespace Hecton8.UI
 
         private void NextTip()
         {
-            if (_tips == null || _tips.Length == 0)
+            if (TipKeys.Length == 0)
                 return;
 
             if (randomOrder)
             {
-                int newIndex = NextTipIndex(_tips.Length);
-                if (_tips.Length > 1)
+                int newIndex = NextTipIndex(TipKeys.Length);
+                if (TipKeys.Length > 1)
                 {
-                    int rerollWatchdog = _tips.Length << 1;
+                    int rerollWatchdog = TipKeys.Length << 1;
                     while (newIndex == _currentTipIndex && rerollWatchdog-- > 0)
-                        newIndex = NextTipIndex(_tips.Length);
+                        newIndex = NextTipIndex(TipKeys.Length);
 
                     if (newIndex == _currentTipIndex)
-                        newIndex = (_currentTipIndex + 1) % _tips.Length;
+                        newIndex = (_currentTipIndex + 1) % TipKeys.Length;
                 }
 
                 _currentTipIndex = newIndex;
             }
             else
             {
-                _currentTipIndex = (_currentTipIndex + 1) % _tips.Length;
+                _currentTipIndex = (_currentTipIndex + 1) % TipKeys.Length;
             }
 
             ShowTip(_currentTipIndex);
@@ -280,10 +279,43 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
-            LoadTips();
-
             if (_isActive)
                 ShowTip(_currentTipIndex);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                return;
+
+            _cachedLocalization = currentService as ILocalizationTextReadModel;
+            if (_isActive)
+                ShowTip(_currentTipIndex);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void TryRegister()

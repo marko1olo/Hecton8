@@ -6,6 +6,13 @@ using UnityEngine;
 
 namespace Hecton8.AI
 {
+    internal static class FaunaDataTemplateLayout
+    {
+        public const int SpeciesCognitionTuningStrideBytes = 32;
+        public const int InteractionResponseStrideBytes = 32;
+        public const int RuntimeDescriptorStrideBytes = 88;
+    }
+
     public enum FaunaDriveChannel : byte
     {
         Hunger = 0,
@@ -83,7 +90,7 @@ namespace Hecton8.AI
         public bool forceRetreat;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = FaunaDataTemplateLayout.SpeciesCognitionTuningStrideBytes)]
     public readonly struct SpeciesCognitionTuning
     {
         public SpeciesCognitionTuning(
@@ -134,7 +141,7 @@ namespace Hecton8.AI
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = FaunaDataTemplateLayout.InteractionResponseStrideBytes)]
     public readonly struct FaunaInteractionResponse
     {
         [FieldOffset(0)] public readonly float DamageMultiplier;
@@ -176,7 +183,7 @@ namespace Hecton8.AI
     [CreateAssetMenu(fileName = "FaunaDataTemplate_", menuName = "Hecton8/Fauna/Data Template")]
     public sealed class FaunaDataTemplate : ScriptableObject
     {
-        [StructLayout(LayoutKind.Explicit, Size = 88)]
+        [StructLayout(LayoutKind.Explicit, Size = FaunaDataTemplateLayout.RuntimeDescriptorStrideBytes)]
         public struct RuntimeDescriptor
         {
             [FieldOffset(0)]

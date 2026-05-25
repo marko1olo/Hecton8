@@ -4,7 +4,18 @@ using Unity.Mathematics;
 
 namespace Hecton8.Visor
 {
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal static class DiegeticVisorLensLayout
+    {
+        public const int VisorStateDTOStrideBytes = 16;
+        public const int VisorLensTuningDTOStrideBytes = 128;
+        public const int MockPhysiologySignalStrideBytes = 32;
+        public const int MockVisorEnvironmentSignalStrideBytes = 48;
+        public const int DiegeticVisorLensGpuGlobalsDTOStrideBytes = 64;
+        public const int VisorLensTelemetryEntryStrideBytes = 64;
+        public const int VisorBreachSignalStrideBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.VisorStateDTOStrideBytes)]
     public struct VisorStateDTO
     {
         [FieldOffset(0)] public float CondensationLevel;
@@ -13,7 +24,7 @@ namespace Hecton8.Visor
         [FieldOffset(12)] public float DirtAccumulation;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.VisorLensTuningDTOStrideBytes)]
     public struct VisorLensTuningDTO
     {
         [FieldOffset(0)] public float FogRate;
@@ -46,7 +57,7 @@ namespace Hecton8.Visor
         [FieldOffset(120)] private ulong _pad5;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.MockPhysiologySignalStrideBytes)]
     public partial struct MockPhysiologySignal
     {
         [FieldOffset(0)] public float RespirationRate;
@@ -59,7 +70,7 @@ namespace Hecton8.Visor
         [FieldOffset(28)] public float _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.MockVisorEnvironmentSignalStrideBytes)]
     public struct MockVisorEnvironmentSignal
     {
         [FieldOffset(0)] public float ExternalWaterTemperatureC;
@@ -76,7 +87,7 @@ namespace Hecton8.Visor
         [FieldOffset(44)] public float _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.DiegeticVisorLensGpuGlobalsDTOStrideBytes)]
     public struct DiegeticVisorLensGpuGlobalsDTO
     {
         [FieldOffset(0)] public float4 State;
@@ -85,7 +96,7 @@ namespace Hecton8.Visor
         [FieldOffset(48)] public float4 Params2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.VisorLensTelemetryEntryStrideBytes)]
     public struct VisorLensTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
@@ -106,7 +117,7 @@ namespace Hecton8.Visor
         [FieldOffset(60)] public float Anomaly01;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.VisorBreachSignalStrideBytes)]
     public partial struct VisorBreachSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;

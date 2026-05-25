@@ -59,7 +59,7 @@ namespace Hecton8.Editor
 
         private static void DrawScannerGizmos(SceneView sceneView)
         {
-            ScannerDataMiningRouter router = UnityEngine.Object.FindFirstObjectByType<ScannerDataMiningRouter>();
+            ScannerDataMiningRouter router = UnityEngine.Object.FindAnyObjectByType<ScannerDataMiningRouter>();
             if (router == null)
                 return;
 

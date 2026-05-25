@@ -86,6 +86,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         float4 _HectonFlashlightDirectionWS;
         float4 _HectonFlashlightColor;
         float4 _HectonFlashlightConeData;
+        float4 _HectonFlashlightFailureState;
         float4 _HectonFlashlightVoxelHalfExtents;
         float4x4 _HectonFlashlightVoxelWorldToLocal;
         float4 _HectonCaveVoxelHalfExtents;
@@ -270,6 +271,18 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             p = frac(p * float2(123.34, 456.21));
             p += dot(p, p + 34.45);
             return frac(p.x * p.y);
+        }
+
+        float ResolveFlashlightFailureFlicker(float3 surfacePositionWS)
+        {
+            float battery01 = saturate(_HectonFlashlightFailureState.x);
+            float thermal01 = saturate(_HectonFlashlightFailureState.y);
+            float failure01 = saturate(_HectonFlashlightFailureState.z);
+            float lowBatteryDrop = saturate((0.22 - battery01) * 4.5454545);
+            float cellNoise = Hash21(floor(surfacePositionWS.xz * lerp(0.65, 3.4, thermal01)) + floor(HectonShaftAnimationTime() * lerp(5.0, 23.0, failure01)));
+            float carrier = FastTrianglePulse01(HectonShaftAnimationTime() * lerp(3.0, 16.0, failure01) + cellNoise * 6.2831853);
+            float dropout = lerp(0.7, 0.2, max(lowBatteryDrop, thermal01 * thermal01));
+            return saturate(lerp(1.0, lerp(dropout, 1.0, carrier * carrier), max(failure01, lowBatteryDrop)));
         }
 
         float ValueNoise2D(float2 p)
@@ -575,7 +588,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
             float rangeAttenuation = ResolveXRCheapRangeAttenuation(surfaceDistanceSq, invSurfaceDistance, _HectonFlashlightConeData.z);
             float noL = saturate(dot(normalWS, -surfaceDirectionWS));
-            return coneAttenuation * rangeAttenuation * noL * saturate(_HectonFlashlightColor.w * 0.35);
+            float failureFlicker = ResolveFlashlightFailureFlicker(surfacePositionWS);
+            return coneAttenuation * rangeAttenuation * noL * saturate(_HectonFlashlightColor.w * failureFlicker * 0.35);
         }
 
         float EvaluateFlashlightSurfaceShadow(float3 surfacePositionWS, float3 normalWS)

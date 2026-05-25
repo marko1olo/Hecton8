@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
@@ -28,7 +29,9 @@ namespace Hecton8.QA
     public sealed class QAEnduranceWatchdogBot :
         MonoBehaviour,
         IFastTickable,
-        IOriginShiftListener
+        ILateFrameTickable,
+        IOriginShiftListener,
+        IGlobalRegistryHotSwapListener
     {
         private const string AgentId = "QA_WATCHDOG_BOT";
         private const string CsvFileName = "QA_Endurance_Log.csv";
@@ -62,6 +65,7 @@ namespace Hecton8.QA
         internal const uint EventHashOriginShift = 0x41555053u;
         internal const uint EventHashCrash = 0x43525348u;
         internal const uint EventHashComplete = 0x444F4E45u;
+        private const SystemID OwnerSystemId = SystemID.QAEndurance;
 
         private static QAEnduranceWatchdogBot _activeInstance;
         private static bool _autoRunBotCreated;
@@ -78,7 +82,9 @@ namespace Hecton8.QA
         [SerializeField] private int pdaRadarTabIndex = 0;
 
         private QAEnduranceCsvWriter _csvWriter;
-        private NativeArray<QAEnduranceBlackBoxEntry> _blackBox;
+        private IDataVault _dataVault;
+        private ISaveService _saveService;
+        private VaultGenerationHandle<QAEnduranceBlackBoxEntry> _blackBoxHandle;
         private AbsoluteUniversePosition _lastAup;
         private AbsoluteUniversePosition _currentAup;
         private float3 _currentRuntimePosition;
@@ -97,7 +103,6 @@ namespace Hecton8.QA
         private int _fpsSampleCount;
         private int _blackBoxCursor;
         private int _blackBoxCount;
-        private int _nativeBlackBoxSentinelId;
         private int _originShiftCount;
         private int _trapCount;
         private int _saveRequestCount;
@@ -106,7 +111,12 @@ namespace Hecton8.QA
         private bool _hasLastAup;
         private bool _automationInputPublished;
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
+        private bool _hotSwapRegistered;
         private bool _originListenerRegistered;
+        private Transform _pendingRecoveryTransform;
+        private Vector3 _pendingRecoveryTransformPosition;
+        private bool _hasPendingRecoveryTransformPosition;
         private bool _instanceAccepted;
         private bool _active;
         private bool _pdaOpen;
@@ -182,11 +192,49 @@ namespace Hecton8.QA
                 if (!string.Equals(args[i], "-h8QaTier", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                if (Enum.TryParse(args[i + 1], true, out QAEnduranceTier parsed))
+                if (TryResolveTierToken(args[i + 1], out QAEnduranceTier parsed))
                     return parsed;
             }
 
             return QAEnduranceTier.Low;
+        }
+
+        private static bool TryResolveTierToken(string value, out QAEnduranceTier tier)
+        {
+            tier = QAEnduranceTier.Low;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            if (string.Equals(value, "0", StringComparison.Ordinal) ||
+                string.Equals(value, "low", StringComparison.OrdinalIgnoreCase))
+            {
+                tier = QAEnduranceTier.Low;
+                return true;
+            }
+
+            if (string.Equals(value, "1", StringComparison.Ordinal) ||
+                string.Equals(value, "middle", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "mid", StringComparison.OrdinalIgnoreCase))
+            {
+                tier = QAEnduranceTier.Middle;
+                return true;
+            }
+
+            if (string.Equals(value, "2", StringComparison.Ordinal) ||
+                string.Equals(value, "high", StringComparison.OrdinalIgnoreCase))
+            {
+                tier = QAEnduranceTier.High;
+                return true;
+            }
+
+            if (string.Equals(value, "3", StringComparison.Ordinal) ||
+                string.Equals(value, "ultra", StringComparison.OrdinalIgnoreCase))
+            {
+                tier = QAEnduranceTier.Ultra;
+                return true;
+            }
+
+            return false;
         }
 
         private void Awake()
@@ -201,15 +249,7 @@ namespace Hecton8.QA
             _instanceAccepted = true;
             ApplyTierDefaults();
             ResolveArtifactPaths();
-            _blackBox = new NativeArray<QAEnduranceBlackBoxEntry>( // COLD ALLOC: NativeArray[300] — QA crash blackbox ring — owner: QAEnduranceWatchdogBot
-                BlackBoxCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            _nativeBlackBoxSentinelId = NativeMemorySentinel.RegisterNativeArray(
-                _blackBox,
-                nameof(QAEnduranceWatchdogBot),
-                nameof(_blackBox),
-                NativeAllocationLifetime.Session);
+            EnsureBlackBox();
         }
 
         private void OnEnable()
@@ -242,13 +282,7 @@ namespace Hecton8.QA
                     _activeInstance = null;
             }
 
-            if (_blackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                _blackBox.Dispose();
-            }
-
-            _nativeBlackBoxSentinelId = 0;
+            ReleaseBlackBox();
         }
 
         public void BeginRun()
@@ -272,6 +306,8 @@ namespace Hecton8.QA
             _fpsSampleCount = 0;
             _blackBoxCursor = 0;
             _blackBoxCount = 0;
+            EnsureBlackBox();
+            _saveService = GlobalRegistry.Save;
             _originShiftCount = 0;
             _trapCount = 0;
             _saveRequestCount = 0;
@@ -282,6 +318,7 @@ namespace Hecton8.QA
             _faulted = false;
             _active = true;
 
+            TryRegisterHotSwapListener();
             RegisterTickLanes();
             RegisterOriginListener();
             PublishAutomationInput();
@@ -388,8 +425,57 @@ namespace Hecton8.QA
 
         private void RegisterTickLanes()
         {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (_tickRegistered || _lateFrameRegistered)
+                UnregisterTickLanes();
+
             if (!_tickRegistered)
                 _tickRegistered = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
+
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+
+            if (!_tickRegistered || !_lateFrameRegistered)
+                UnregisterTickLanes();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null || !_active || _faulted || _completed || !isActiveAndEnabled)
+                        return;
+
+                    UnregisterTickLanes();
+                    RegisterTickLanes();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseBlackBox();
+                    _dataVault = currentService as IDataVault;
+                    if (_active && !_faulted && !_completed)
+                        EnsureBlackBox();
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _saveService = currentService as ISaveService;
+                    break;
+            }
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_hasPendingRecoveryTransformPosition)
+                return;
+
+            _hasPendingRecoveryTransformPosition = false;
+            if (_pendingRecoveryTransform != null)
+                _pendingRecoveryTransform.position = _pendingRecoveryTransformPosition;
+            _pendingRecoveryTransform = null;
         }
 
         private void RegisterOriginListener()
@@ -408,7 +494,7 @@ namespace Hecton8.QA
             state.LookDelta = new Vector2(0f, -0.012f);
             state.VerticalDelta = 0.15f;
             state.ActionsBitmask = (uint)PlayerInputAction.Sprint;
-            PhysicsDeterminismSignals.PublishInputOverride(in state, (uint)Time.frameCount);
+            PhysicsDeterminismSignals.TryPublishInputOverride(in state, (uint)Time.frameCount);
             _automationInputPublished = true;
         }
 
@@ -509,11 +595,11 @@ namespace Hecton8.QA
                     return;
 
                 body.position = nextPosition;
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
+                PhysicsForceRouter.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+                PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
                 body.WakeUp();
                 if (runtimeContext.PlayerTransform != null)
-                    runtimeContext.PlayerTransform.position = nextPosition;
+                    QueueRecoveryTransformPosition(runtimeContext.PlayerTransform, nextPosition);
                 return;
             }
 
@@ -523,7 +609,14 @@ namespace Hecton8.QA
 
             Vector3 nextTransformPosition = playerTransform.position + offset;
             if (IsFinite(nextTransformPosition))
-                playerTransform.position = nextTransformPosition;
+                QueueRecoveryTransformPosition(playerTransform, nextTransformPosition);
+        }
+
+        private void QueueRecoveryTransformPosition(Transform target, Vector3 position)
+        {
+            _pendingRecoveryTransform = target;
+            _pendingRecoveryTransformPosition = position;
+            _hasPendingRecoveryTransformPosition = true;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -534,9 +627,9 @@ namespace Hecton8.QA
         private void TogglePdaRadar(in AbsoluteUniversePosition aup)
         {
             if (_pdaOpen)
-                ThreadSafeCommandQueue.Enqueue(EntityCommand.CreateClosePDA());
+                ThreadSafeCommandQueue.TryEnqueue(EntityCommand.CreateClosePDA());
             else
-                ThreadSafeCommandQueue.Enqueue(EntityCommand.CreateOpenPDATab(pdaRadarTabIndex));
+                ThreadSafeCommandQueue.TryEnqueue(EntityCommand.CreateOpenPDATab(pdaRadarTabIndex));
 
             _pdaOpen = !_pdaOpen;
             SonarPingSignal sonar = new SonarPingSignal
@@ -547,7 +640,7 @@ namespace Hecton8.QA
                 SourceId = SourceHash,
                 Flags = 1,
             };
-            GlobalSignals.Publish(in sonar);
+            SignalBus<SonarPingSignal>.TryPush(in sonar);
             _nextPdaDistance += pdaIntervalMeters;
             WriteBlackBox(EventHashPdaRadar);
             EnqueueCsvRecord(EventHashPdaRadar);
@@ -589,7 +682,7 @@ namespace Hecton8.QA
             if (_saveInFlight)
                 return;
 
-            ISaveService save = GlobalRegistry.Save;
+            ISaveService save = _saveService;
             if (save == null || !save.IsInitialized || save.IsBusy)
                 return;
 
@@ -675,11 +768,11 @@ namespace Hecton8.QA
         {
             PhysicsDeterminismSignals.ClearInputOverride();
 
-            if (_tickRegistered)
-            {
-                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
-                _tickRegistered = false;
-            }
+            UnregisterTickLanes();
+            TryUnregisterHotSwapListener();
+
+            _hasPendingRecoveryTransformPosition = false;
+            _pendingRecoveryTransform = null;
 
             if (_originListenerRegistered)
             {
@@ -696,6 +789,38 @@ namespace Hecton8.QA
             }
         }
 
+        private void UnregisterTickLanes()
+        {
+            if (_tickRegistered)
+            {
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
+                _tickRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _lateFrameRegistered = false;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         private void PublishCompliance(uint ruleHash, byte severity)
         {
             ComplianceViolationSignal signal = new ComplianceViolationSignal
@@ -707,37 +832,96 @@ namespace Hecton8.QA
                 Severity = severity,
                 Flags = 1,
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<ComplianceViolationSignal>.TryPush(in signal);
+        }
+
+        private void EnsureBlackBox()
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return;
+
+            if (IsVaultHandleCreated(in _blackBoxHandle) &&
+                vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<QAEnduranceBlackBoxEntry>.ReadOnly buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= BlackBoxCapacity)
+            {
+                return;
+            }
+
+            _blackBoxHandle = vault.EnsureGenerationHandle<QAEnduranceBlackBoxEntry>(
+                BufferID.QAEnduranceBlackBoxRing,
+                BlackBoxCapacity,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private void ReleaseBlackBox()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _blackBoxHandle))
+                vault.ReleaseBuffer(in _blackBoxHandle);
+
+            _blackBoxHandle = default;
+            _blackBoxCursor = 0;
+            _blackBoxCount = 0;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static uint AgentIdHash => 0x51415742u;
 
         private void WriteBlackBox(uint eventHash)
         {
-            if (!_blackBox.IsCreated)
-                return;
-
-            QAEnduranceBlackBoxEntry entry = new QAEnduranceBlackBoxEntry
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !vault.TryAcquireWriteLock(in _blackBoxHandle, OwnerSystemId, out NativeArray<QAEnduranceBlackBoxEntry> blackBox))
             {
-                Frame = Time.frameCount,
-                DistanceMeters = _distanceMeters,
-                RuntimePosition = _currentRuntimePosition,
-                Velocity = _currentVelocity,
-                Aup = _currentAup,
-                TotalMemoryBytes = _lastTotalMemoryBytes,
-                ManagedMemoryBytes = _lastManagedMemoryBytes,
-                GraphicsDriverBytes = _lastGraphicsDriverBytes,
-                AverageFps = ResolveAverageFps(),
-                EventHash = eventHash,
-                Flags = BuildBlackBoxFlags(),
-            };
+                return;
+            }
 
-            _blackBox[_blackBoxCursor] = entry;
-            _blackBoxCursor++;
-            if (_blackBoxCursor >= BlackBoxCapacity)
-                _blackBoxCursor = 0;
-            if (_blackBoxCount < BlackBoxCapacity)
-                _blackBoxCount++;
+            try
+            {
+                if (!blackBox.IsCreated || blackBox.Length < BlackBoxCapacity)
+                    return;
+
+                QAEnduranceBlackBoxEntry entry = new QAEnduranceBlackBoxEntry
+                {
+                    Frame = Time.frameCount,
+                    DistanceMeters = _distanceMeters,
+                    RuntimePosition = _currentRuntimePosition,
+                    Velocity = _currentVelocity,
+                    Aup = _currentAup,
+                    TotalMemoryBytes = _lastTotalMemoryBytes,
+                    ManagedMemoryBytes = _lastManagedMemoryBytes,
+                    GraphicsDriverBytes = _lastGraphicsDriverBytes,
+                    AverageFps = ResolveAverageFps(),
+                    EventHash = eventHash,
+                    Flags = BuildBlackBoxFlags(),
+                };
+
+                int index = math.clamp(_blackBoxCursor, 0, BlackBoxCapacity - 1);
+                blackBox[index] = entry;
+                _blackBoxCursor = (index + 1) % BlackBoxCapacity;
+                if (_blackBoxCount < BlackBoxCapacity)
+                    _blackBoxCount++;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _blackBoxHandle, OwnerSystemId);
+            }
         }
 
         private uint BuildBlackBoxFlags()
@@ -785,8 +969,15 @@ namespace Hecton8.QA
 
         private void DumpBlackBox()
         {
-            if (!_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<QAEnduranceBlackBoxEntry>.ReadOnly blackBox) ||
+                !blackBox.IsCreated ||
+                blackBox.Length <= 0)
+            {
                 return;
+            }
 
             Directory.CreateDirectory(Path.GetDirectoryName(_dumpPath));
             using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)) // COLD ALLOC: FileStream[1] — crash blackbox dump — owner: QAEnduranceWatchdogBot
@@ -794,15 +985,16 @@ namespace Hecton8.QA
             {
                 writer.Write(0x51415744);
                 writer.Write(1);
-                writer.Write(_blackBoxCount);
+                int count = math.min(_blackBoxCount, math.min(BlackBoxCapacity, blackBox.Length));
+                writer.Write(count);
                 writer.Write(_blackBoxCursor);
-                for (int i = 0; i < _blackBoxCount; i++)
+                for (int i = 0; i < count; i++)
                 {
-                    int index = _blackBoxCursor - _blackBoxCount + i;
+                    int index = _blackBoxCursor - count + i;
                     if (index < 0)
-                        index += BlackBoxCapacity;
+                        index += count;
 
-                    QAEnduranceBlackBoxEntry entry = _blackBox[index];
+                    QAEnduranceBlackBoxEntry entry = blackBox[index];
                     writer.Write(entry.Frame);
                     writer.Write(entry.DistanceMeters);
                     writer.Write(entry.RuntimePosition.x);

@@ -74,7 +74,7 @@ namespace Hecton8.EditorTools
         {
             _runtime = VolcanicUpdraftDirector.ActiveRuntimeInstance;
             if (_runtime == null)
-                _runtime = FindAnyObjectByType<VolcanicUpdraftDirector>();
+                _runtime = FindAnyObjectByType<VolcanicUpdraftDirector>(FindObjectsInactive.Include);
         }
 
         private void OnSceneGUI(SceneView sceneView)

@@ -21,7 +21,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             where T : unmanaged
         {
             bytes = ReadOnlySpan<byte>.Empty;
-            if (!TryOpenReadBuffer<T>(vault, bufferId, out NativeArray<T> buffer, out int byteLength))
+            if (!TryOpenReadBuffer<T>(vault, bufferId, out NativeArray<T>.ReadOnly buffer, out int byteLength))
                 return false;
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
@@ -32,7 +32,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private static bool TryOpenReadBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
-            out NativeArray<T> buffer,
+            out NativeArray<T>.ReadOnly buffer,
             out int byteLength)
             where T : unmanaged
         {
@@ -42,8 +42,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 return false;
 
             if (!vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
-                !vault.TryReadHandle(in handle, out buffer) ||
-                !buffer.IsCreated ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 buffer.Length <= 0)
             {
                 return false;

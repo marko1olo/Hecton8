@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -15,7 +17,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.Construction
 {
     [DefaultExecutionOrder(-180)]
-    public sealed unsafe class BulkheadContainmentRuntime : MonoBehaviour, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed unsafe partial class BulkheadContainmentRuntime : MonoBehaviour, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const float DefaultPlayerRadiusMeters = 0.38f;
         private const float DefaultCloseSpeed = 2.4f;
@@ -129,7 +131,7 @@ namespace Hecton8.Construction
                 return false;
 
             activeCount = runtime._activeCount;
-            quality = AuthoritativeQualityWeight;
+            quality = ResolveBulkheadQualityWeight();
             cadenceHz = runtime.ResolveAuthorityCadenceHz(quality);
             lastScheduleMicroseconds = runtime._lastScheduleMicroseconds;
             telemetryFrame = runtime._lastTelemetryFrame;
@@ -154,6 +156,7 @@ namespace Hecton8.Construction
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadProfilesFromCsvBytes(ReadOnlySpan<byte> csv)
         {
             BulkheadContainmentRuntime runtime = s_active;
@@ -214,6 +217,7 @@ namespace Hecton8.Construction
                 return false;
             }
         }
+#endif
 
         private void Awake()
         {
@@ -223,6 +227,7 @@ namespace Hecton8.Construction
             _visualSyncPhase = new VisualSyncPhaseSystem(this);
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, "Docs/AgentLogs/Dump_SHINOBU_220.bin"));
+            InitializeHatchLockColdPaths();
         }
 
         private void OnEnable()
@@ -404,6 +409,7 @@ namespace Hecton8.Construction
             _layoutFaultTelemetryWritten = false;
             _playerKinematicStateHandle = default;
             _nextPlayerStateHandleBindFrame = 0u;
+            ResetHatchLockRuntimeState();
             if (clearScheduledFlags)
             {
                 _preSimulationScheduled = false;
@@ -513,6 +519,11 @@ namespace Hecton8.Construction
                 ReleaseVaultHandle(vault, ref _shaderUploadHandle);
                 ReleaseVaultHandle(vault, ref _intentRingHandle);
                 ReleaseVaultHandle(vault, ref _intentControlHandle);
+                ReleaseHatchLockVaultHandles(vault);
+            }
+            else
+            {
+                ReleaseHatchLockVaultHandles(null);
             }
 
             _statesHandle = default;
@@ -556,22 +567,26 @@ namespace Hecton8.Construction
             int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
             if (!_vaultInitialized)
             {
-                _statesHandle = vault.GetGenerationHandle<BulkheadStateDTO>(BufferID.Shinobu220BulkheadStates, capacity, OwnerSystemId);
-                _aupsHandle = vault.GetGenerationHandle<double3>(BufferID.Shinobu220BulkheadAups, capacity, OwnerSystemId);
-                _planesHandle = vault.GetGenerationHandle<BulkheadPlaneDTO>(BufferID.Shinobu220BulkheadPlanes, capacity, OwnerSystemId);
-                _csrEdgesHandle = vault.GetGenerationHandle<BulkheadCsrEdgeDTO>(BufferID.Shinobu220BulkheadCsrEdges, capacity, OwnerSystemId);
-                _edgeConductivityHandle = vault.GetGenerationHandle<float>(BufferID.Shinobu220BulkheadEdgeConductivity, capacity, OwnerSystemId);
-                _fluidFlowHandle = vault.GetGenerationHandle<float>(BufferID.Shinobu220BulkheadFluidFlow, capacity, OwnerSystemId);
-                _moduleIntegrityHandle = vault.GetGenerationHandle<float>(BufferID.Shinobu220BulkheadModuleIntegrity, capacity, OwnerSystemId);
-                _tuningHandle = vault.GetGenerationHandle<BulkheadTuningDTO>(BufferID.Shinobu220BulkheadTuning, 1, OwnerSystemId);
-                _telemetryHandle = vault.GetGenerationHandle<BulkheadTelemetryEntry>(BufferID.Shinobu220BulkheadTelemetryRing, BulkheadContainmentConstants.TelemetryFrameCount, OwnerSystemId);
-                _telemetryCursorHandle = vault.GetGenerationHandle<uint>(BufferID.Shinobu220BulkheadTelemetryCursor, 1, OwnerSystemId);
-                _collisionResultsHandle = vault.GetGenerationHandle<BulkheadCollisionResultDTO>(BufferID.Shinobu220BulkheadCollisionResults, 1, OwnerSystemId);
-                _profilesHandle = vault.GetGenerationHandle<BulkheadProfileDTO>(BufferID.Shinobu220BulkheadProfiles, BulkheadContainmentConstants.ProfileCapacity, OwnerSystemId);
-                _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.Shinobu220BulkheadCsvScratch, 8192, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-                _shaderUploadHandle = vault.GetGenerationHandle<BulkheadStateDTO>(BufferID.Shinobu220BulkheadShaderUpload, BulkheadContainmentConstants.ShaderUploadCapacity, OwnerSystemId);
-                _intentRingHandle = vault.GetGenerationHandle<BulkheadContainmentIntentDTO>(BufferID.Shinobu220BulkheadIntentRing, BulkheadContainmentIntentBus.IntentCapacity, OwnerSystemId);
-                _intentControlHandle = vault.GetGenerationHandle<BulkheadContainmentIntentControlDTO>(BufferID.Shinobu220BulkheadIntentControl, 1, OwnerSystemId);
+                _statesHandle = vault.EnsureGenerationHandle<BulkheadStateDTO>(BufferID.Shinobu220BulkheadStates, capacity, OwnerSystemId);
+                _aupsHandle = vault.EnsureGenerationHandle<double3>(BufferID.Shinobu220BulkheadAups, capacity, OwnerSystemId);
+                _planesHandle = vault.EnsureGenerationHandle<BulkheadPlaneDTO>(BufferID.Shinobu220BulkheadPlanes, capacity, OwnerSystemId);
+                _csrEdgesHandle = vault.EnsureGenerationHandle<BulkheadCsrEdgeDTO>(BufferID.Shinobu220BulkheadCsrEdges, capacity, OwnerSystemId);
+                _edgeConductivityHandle = vault.EnsureGenerationHandle<float>(BufferID.Shinobu220BulkheadEdgeConductivity, capacity, OwnerSystemId);
+                _fluidFlowHandle = vault.EnsureGenerationHandle<float>(BufferID.Shinobu220BulkheadFluidFlow, capacity, OwnerSystemId);
+                _moduleIntegrityHandle = vault.EnsureGenerationHandle<float>(BufferID.Shinobu220BulkheadModuleIntegrity, capacity, OwnerSystemId);
+                _tuningHandle = vault.EnsureGenerationHandle<BulkheadTuningDTO>(BufferID.Shinobu220BulkheadTuning, 1, OwnerSystemId);
+                _telemetryHandle = vault.EnsureGenerationHandle<BulkheadTelemetryEntry>(BufferID.Shinobu220BulkheadTelemetryRing, BulkheadContainmentConstants.TelemetryFrameCount, OwnerSystemId);
+                _telemetryCursorHandle = vault.EnsureGenerationHandle<uint>(BufferID.Shinobu220BulkheadTelemetryCursor, 1, OwnerSystemId);
+                _collisionResultsHandle = vault.EnsureGenerationHandle<BulkheadCollisionResultDTO>(BufferID.Shinobu220BulkheadCollisionResults, 1, OwnerSystemId);
+                _profilesHandle = vault.EnsureGenerationHandle<BulkheadProfileDTO>(BufferID.Shinobu220BulkheadProfiles, BulkheadContainmentConstants.ProfileCapacity, OwnerSystemId);
+                _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.Shinobu220BulkheadCsvScratch, 8192, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+                _shaderUploadHandle = vault.EnsureGenerationHandle<BulkheadStateDTO>(BufferID.Shinobu220BulkheadShaderUpload, BulkheadContainmentConstants.ShaderUploadCapacity, OwnerSystemId);
+                _intentRingHandle = vault.EnsureGenerationHandle<BulkheadContainmentIntentDTO>(BufferID.Shinobu220BulkheadIntentRing, BulkheadContainmentIntentBus.IntentCapacity, OwnerSystemId);
+                _intentControlHandle = vault.EnsureGenerationHandle<BulkheadContainmentIntentControlDTO>(BufferID.Shinobu220BulkheadIntentControl, 1, OwnerSystemId);
+                if (!EnsureHatchLockVaultState(vault, capacity))
+                    return false;
+                if (uploadHatchShaderBuffer && !EnsureHatchGraphicsBuffers())
+                    uploadHatchShaderBuffer = false;
                 _vaultInitialized = true;
             }
 
@@ -580,6 +595,11 @@ namespace Hecton8.Construction
         }
 
         private bool RefreshVaultState(IDataVault vault)
+        {
+            return RefreshVaultState(vault, refreshHatchLocks: true);
+        }
+
+        private bool RefreshVaultState(IDataVault vault, bool refreshHatchLocks)
         {
             if (vault == null || !_vaultInitialized)
                 return false;
@@ -621,10 +641,10 @@ namespace Hecton8.Construction
                 _defaultsInitialized = true;
             }
 
-            float q = AuthoritativeQualityWeight;
+            float q = ResolveBulkheadQualityWeight();
             WriteTuningRow(tuning, capacity, q);
 
-            return true;
+            return !refreshHatchLocks || RefreshHatchLockVaultState(vault, capacity, allowDefaultProfileLoad: false);
         }
 
         private bool TryWriteTuningRow()
@@ -637,7 +657,7 @@ namespace Hecton8.Construction
             }
 
             int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
-            float q = AuthoritativeQualityWeight;
+            float q = ResolveBulkheadQualityWeight();
             WriteTuningRow(tuning, capacity, q);
             return true;
         }
@@ -668,7 +688,7 @@ namespace Hecton8.Construction
             NativeArray<BulkheadCsrEdgeDTO> csrEdges,
             JobHandle dependency)
         {
-            if (!generateMockBulkheads ||
+            if ((!generateMockBulkheads && !generateMockHatchPressure) ||
                 _mockGenerated ||
                 _activeCount > 0 ||
                 !states.IsCreated ||
@@ -1014,7 +1034,7 @@ namespace Hecton8.Construction
             if (vault == null || !RefreshVaultState(vault))
                 return dependency;
 
-            float q = AuthoritativeQualityWeight;
+            float q = ResolveBulkheadQualityWeight();
             float cadenceHz = ResolveAuthorityCadenceHz(q);
             float dt = ResolveSimulationTickDelta(in timing);
             _lastFrame = context.Frame;
@@ -1046,20 +1066,20 @@ namespace Hecton8.Construction
 
             if (generateMockBulkheads && !_mockGenerated && _activeCount <= 0)
             {
-                if (!Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
+                if (!Resolve(in _aupsHandle, out NativeArray<double3> mockAups) ||
                     !Resolve(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
-                    !Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
-                    !aups.IsCreated ||
+                    !Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> mockCsrEdges) ||
+                    !mockAups.IsCreated ||
                     !planes.IsCreated ||
-                    !csrEdges.IsCreated ||
-                    aups.Length <= 0 ||
+                    !mockCsrEdges.IsCreated ||
+                    mockAups.Length <= 0 ||
                     planes.Length <= 0 ||
-                    csrEdges.Length <= 0)
+                    mockCsrEdges.Length <= 0)
                 {
                     return dependency;
                 }
 
-                dependency = ScheduleMockDataIfRequired(states, aups, planes, csrEdges, dependency);
+                dependency = ScheduleMockDataIfRequired(states, mockAups, planes, mockCsrEdges, dependency);
             }
 
             int count = math.clamp(_activeCount, 0, CreatedLength(states));
@@ -1104,6 +1124,7 @@ namespace Hecton8.Construction
             }
 
             if (!Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
+                !Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
                 !Resolve(in _edgeConductivityHandle, out NativeArray<float> conductivity) ||
                 !Resolve(in _fluidFlowHandle, out NativeArray<float> fluidFlow) ||
                 !Resolve(in _moduleIntegrityHandle, out NativeArray<float> moduleIntegrity))
@@ -1122,7 +1143,7 @@ namespace Hecton8.Construction
                     telemetryStart,
                     BulkheadTelemetryFlags.ScheduleTimeOnly);
             }
-            if (!csrEdges.IsCreated || !conductivity.IsCreated || !fluidFlow.IsCreated || !moduleIntegrity.IsCreated)
+            if (!csrEdges.IsCreated || !aups.IsCreated || !conductivity.IsCreated || !fluidFlow.IsCreated || !moduleIntegrity.IsCreated)
             {
                 long telemetryStart = Stopwatch.GetTimestamp();
                 return ScheduleTelemetryJob(
@@ -1140,6 +1161,7 @@ namespace Hecton8.Construction
             }
 
             count = math.min(count, ResolveSimulationMutationCount(states, csrEdges, conductivity, fluidFlow, moduleIntegrity));
+            count = math.min(count, CreatedLength(aups));
             if (count <= 0)
             {
                 long telemetryStart = Stopwatch.GetTimestamp();
@@ -1163,6 +1185,17 @@ namespace Hecton8.Construction
             _authorityAccumulator = 0f;
 
             long start = Stopwatch.GetTimestamp();
+            JobHandle handle = ScheduleHatchLockPipeline(
+                vault,
+                states,
+                aups,
+                moduleIntegrity,
+                count,
+                context.Frame,
+                authorityDelta,
+                q,
+                dependency);
+
             UpdateBulkheadClosureJob updateJob = new UpdateBulkheadClosureJob
             {
                 States = (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(states),
@@ -1172,7 +1205,7 @@ namespace Hecton8.Construction
                 OpenSpeedPerSecond = openSpeedPerSecond,
                 GlobalQualityWeight = q
             };
-            JobHandle handle = updateJob.Schedule(count, 32, dependency);
+            handle = updateJob.Schedule(count, 32, handle);
 
             ApplyCatastrophicDoorDamageJob damageJob = new ApplyCatastrophicDoorDamageJob
             {
@@ -1315,6 +1348,7 @@ namespace Hecton8.Construction
 
             IDataVault vault = ResolveVault();
             DumpBlackBoxIfRequested(vault);
+            VisualSyncHatchLocks(vault);
 
             if (!uploadShaderBuffer)
             {
@@ -1328,7 +1362,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (vault == null || !RefreshVaultState(vault) || !EnsureGraphicsBuffers())
+            if (vault == null || !RefreshVaultState(vault, refreshHatchLocks: false) || !EnsureGraphicsBuffers())
             {
                 DisableShaderGlobals();
                 return;
@@ -1386,7 +1420,7 @@ namespace Hecton8.Construction
             }
 
             Shader.SetGlobalBuffer(GlobalBulkheadStatesId, readBuffer);
-            float q = BulkheadContainmentMath.Sanitize01(HomeostasisBrain.GlobalQualityWeight, 0f);
+            float q = ResolveBulkheadQualityWeight();
             Shader.SetGlobalVector(GlobalBulkheadParamsId, new Vector4(uploadCount, uploadShaderBuffer ? 1f : 0f, _lastFrame, q));
             _shaderGlobalsActive = true;
 
@@ -1510,6 +1544,15 @@ namespace Hecton8.Construction
             return math.lerp(5f, 30f, weight * weight);
         }
 
+        private static float ResolveBulkheadQualityWeight()
+        {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AuthoritativeQualityWeight);
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return MathLodApproximation.SaturateFinite(quality, AuthoritativeQualityWeight);
+        }
+
         private static float ResolveSimulationTickDelta(in DispatcherTimingDTO timing)
         {
             float fixedDelta = timing.FixedDelta;
@@ -1578,6 +1621,7 @@ namespace Hecton8.Construction
         private void ReleaseGraphicsBuffers()
         {
             DisableShaderGlobals();
+            ReleaseHatchGraphicsBuffers();
 
             if (_shaderStateBufferA != null)
             {
@@ -1617,7 +1661,7 @@ namespace Hecton8.Construction
             catch (Exception)
             {
                 if (locked)
-                    TryUnlockBufferAfterFailedWrite(destination, safeCount);
+                    TryUnlockBufferAfterFailedWrite<T>(destination, safeCount);
 
                 return false;
             }
@@ -1733,6 +1777,7 @@ namespace Hecton8.Construction
             return (float)(delta * 1000000.0 / Stopwatch.Frequency);
         }
 
+#if UNITY_EDITOR
         private static int ParseProfiles(ReadOnlySpan<byte> csv, NativeArray<BulkheadProfileDTO> profiles)
         {
             int count = 0;
@@ -1779,6 +1824,7 @@ namespace Hecton8.Construction
 
             return count;
         }
+#endif
 
         private static ReadOnlySpan<byte> SliceNextLine(ReadOnlySpan<byte> csv, ref int index)
         {
@@ -1928,6 +1974,8 @@ namespace Hecton8.Construction
                 Gizmos.color = Color.yellow;
                 Gizmos.DrawRay(center, normal * 1.25f);
             }
+
+            DrawHatchLockGizmos();
         }
 #endif
 

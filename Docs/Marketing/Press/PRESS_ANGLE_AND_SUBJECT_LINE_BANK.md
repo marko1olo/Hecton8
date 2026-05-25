@@ -1,4 +1,4 @@
-# HECTON-8 Press Angle And Subject Line Bank
+﻿# HECTON-8 Press Angle And Subject Line Bank
 
 Status: draft bank / requires asset proof before use
 Owner lane: SHINOBU_81 / press copy
@@ -81,13 +81,13 @@ Use only after a stable demo access route, access terms, honest exclusions, and 
 - HECTON-8 demo focuses on pressure, salvage, and base risk
 - Playable preview: industrial deep-sea survival HECTON-8
 
-### Horror Press
+### Horror Press Batch B
 
 - HECTON-8 turns deep-sea pressure into survival horror
 - Deep-sea dread without jumpscare spam: HECTON-8
 - HECTON-8 hostile visibility, pressure, and black-water dread
 
-### Tech/Dev Press
+### Tech/Dev Press Batch B
 
 - HECTON-8 tech note: fake-first underwater readability
 - How HECTON-8 sells deep-sea pressure without brute-force simulation

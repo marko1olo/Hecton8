@@ -262,7 +262,7 @@ namespace Hecton8.Optimization.Editor
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllText(path, report.ToString());
+            File.WriteAllText(path, report.ToString(), new UTF8Encoding(false));
         }
 
         public readonly struct SceneTextureBudgetResult

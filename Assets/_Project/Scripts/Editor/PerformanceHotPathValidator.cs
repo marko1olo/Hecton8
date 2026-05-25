@@ -316,7 +316,7 @@ namespace Hecton8.EditorTools
                 return string.CompareOrdinal(a.RuleId, b.RuleId);
             });
 
-            Dictionary<string, int> countsByRule = new Dictionary<string, int>(StringComparer.Ordinal);
+            Dictionary<string, int> countsByRule = new Dictionary<string, int>(8, StringComparer.Ordinal);
             int consoleCount = Mathf.Min(MaxConsoleIssues, issues.Count);
             for (int i = 0; i < issues.Count; i++)
             {
@@ -385,7 +385,7 @@ namespace Hecton8.EditorTools
 
         private static int CountUniqueFiles(List<PerformanceIssue> issues)
         {
-            HashSet<string> uniqueFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> uniqueFiles = new HashSet<string>(issues.Count, StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < issues.Count; i++)
                 uniqueFiles.Add(issues[i].AssetPath);
 

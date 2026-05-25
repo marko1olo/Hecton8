@@ -4,6 +4,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.Vehicles.Physics.Contracts
 {
+    internal static class DynamicFloodMassContractLayout
+    {
+        public const int DynamicFloodRoomMassSampleStrideBytes = 64;
+        public const int DynamicFloodMassSolveResultStrideBytes = 128;
+    }
+
     public static class DynamicFloodMassConstants
     {
         public const float SeawaterDensityKgPerM3 = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
@@ -11,7 +17,7 @@ namespace Hecton8.Vehicles.Physics.Contracts
     }
 
     /// <summary>One compartment flood sample. Size: 64 bytes, one L1 cache line.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicFloodMassContractLayout.DynamicFloodRoomMassSampleStrideBytes)]
     public struct DynamicFloodRoomMassSample
     {
         [FieldOffset(0)] public float3 LocalAup;
@@ -26,7 +32,7 @@ namespace Hecton8.Vehicles.Physics.Contracts
     }
 
     /// <summary>Flood mass solve output. Size: 128 bytes, two L1 cache lines.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicFloodMassContractLayout.DynamicFloodMassSolveResultStrideBytes)]
     public struct DynamicFloodMassSolveResult
     {
         [FieldOffset(0)] public double3 GlobalPivotAnchor;

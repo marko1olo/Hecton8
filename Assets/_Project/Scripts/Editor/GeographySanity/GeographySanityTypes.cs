@@ -5,6 +5,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor.GeographySanity
 {
@@ -252,7 +253,7 @@ namespace Hecton8.Editor.GeographySanity
         public static void AssertMenu()
         {
             AssertAll();
-            Debug.Log("Geography Sanity DTO layout assertion passed. Evidence class: STATIC_SOURCE.");
+            H8Debug.Log("Geography Sanity DTO layout assertion passed. Evidence class: STATIC_SOURCE.");
         }
 
         public static void AssertAll()

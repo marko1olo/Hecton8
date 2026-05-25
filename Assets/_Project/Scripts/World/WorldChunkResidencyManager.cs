@@ -182,12 +182,11 @@ namespace Hecton8.World
             double3 player = PlayerAbsolute;
             double3 chunk = ToAbsoluteDouble3(ChunkCenters[index]);
             double3 delta = chunk - player;
-            float3 localDelta = new float3((float)delta.x, (float)delta.y, (float)delta.z);
-            float distSqFloat = math.lengthsq(localDelta);
-            if (!math.isfinite(distSqFloat))
-                distSqFloat = float.MaxValue;
+            double distSq = AupPrecisionMath.DistanceSqSafeDouble(chunk, player);
+            if (!math.isfinite(distSq))
+                distSq = double.MaxValue;
 
-            double distSq = distSqFloat;
+            float distSqFloat = (float)math.min(distSq, float.MaxValue);
             float speedSq = math.lengthsq(PlayerVelocity);
             bool usePrediction = PredictiveEnabled != 0 && PredictiveDistanceMeters > 0d && speedSq > 0.0001f;
             double3 velocityDirection = default;
@@ -599,12 +598,11 @@ namespace Hecton8.World
         private const int HabitatTransitionPauseFrames = 180;
         private const int TeleportImmediateLoadDispatchBudget = 4;
         private const int LowTierLoadDispatchBudget = 1;
-        private const int MiddleTierLoadDispatchBudget = 2;
-        private const int HighTierLoadDispatchBudget = 3;
-        private const int UltraTierLoadDispatchBudget = 4;
+        private const int VisualOverkillLoadDispatchBudget = 4;
         private const int AssetLifecycleFarBehindDrainBudget = 8;
         private const int PagerReadTicketCapacity = 16;
-        private const int PagerReadRetireBudget = 1;
+        private const int PagerReadRetireBudgetMinimum = 1;
+        private const int PagerReadRetireBudgetVisualOverkill = 4;
         private const int MacroDatabaseEvictionScratchCapacity = 128;
         private const int DehydrationMetadataPayloadBytes = 16;
         private const int DefaultHydrationCopyBudgetBytes = 512 * 1024;
@@ -619,6 +617,10 @@ namespace Hecton8.World
         private const float HighTierUnloadRadiusMeters = 800f;
         private const float UltraTierUnloadRadiusMeters = 1000f;
         private const float ActiveImpostorFadeOutSeconds = 1.5f;
+        private const float ChunkImpostorSurvivalSnapQualityThreshold = 0.15f;
+        private const float MacroDatabaseMiddleQualityThreshold = 0.22f;
+        private const float MacroDatabaseHighQualityThreshold = 0.58f;
+        private const float MacroDatabaseUltraQualityThreshold = 0.86f;
         private const float ChunkResidencyRuntimeClockMaxSeconds = 16777215f;
         private const long PredictiveVramAbortBytes = 1600L * 1024L * 1024L;
         private const long PredictiveVramResumeBytes = 1400L * 1024L * 1024L;
@@ -709,6 +711,7 @@ namespace Hecton8.World
         private const ulong ActiveImpostorFadeOutCountVaultBit = 1UL << 15;
         private const ulong PagerReadTicketsVaultBit = 1UL << 16;
         private const ulong MacroDatabaseEvictionScratchVaultBit = 1UL << 17;
+        private const ulong HydrationApplyRecordsVaultBit = 1UL << 18;
         private const uint ChunkStateHashSeed = 2166136261u;
         private static readonly int _chunkFadeMaskId = Shader.PropertyToID("_ChunkFadeMask");
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.World.ChunkResidency.Tick");
@@ -800,7 +803,7 @@ namespace Hecton8.World
         [Tooltip("Automatically schedule a residency evaluation after AUP origin-shift signals.")]
         [SerializeField] private bool reactToAupShiftSignals = true;
 
-        [Tooltip("Apply QualitySettings async upload budgets at runtime based on the detected tier.")]
+        [Tooltip("Apply QualitySettings async upload budgets at runtime from continuous GlobalQualityWeight.")]
         [SerializeField] private bool applyAsyncUploadBudget = true;
 
         [Tooltip("Suspend predictive expansion while habitat or docking systems mark the player as inside dry space.")]
@@ -873,6 +876,7 @@ namespace Hecton8.World
         private NativeArray<int> _activeImpostorFadeOutCountRef;
         private NativeArray<H8WorldPageReadTicket> _pagerReadTickets;
         private NativeArray<ulong> _macroDatabaseEvictionScratch;
+        private NativeArray<ChunkHydrationApplyRecord> _hydrationApplyRecords;
         private JobHandle _residencyJobHandle;
         private long _residencyScheduleTimestamp;
         private bool _residencySortScheduled;
@@ -888,8 +892,8 @@ namespace Hecton8.World
         private IJobAdmissionService _jobAdmissionService;
         private IMacroDatabaseService _macroDatabaseService;
         private Hecton8.Optimization.AssetLifecycleGovernor _assetLifecycleGovernor;
-        private Hecton8.Optimization.VRAMMonitor _vramMonitor;
-        private ObjectPoolManager _objectPoolManager;
+        private IVramBudgetReadModel _vramMonitor;
+        private IObjectPoolService _objectPoolManager;
         private bool _disposed;
         private bool _forceResidencyEvaluation;
         private bool _fadeActive;
@@ -900,6 +904,7 @@ namespace Hecton8.World
         private bool _predictiveVramAborted;
         private bool _streamingVaultBacked;
         private bool _healthRadiusSqueezeActive;
+        private bool _teleportResetPending;
         private float _adrenalinePurgeUntilTime;
         private float _systemHealthPressure01;
         private float _lastHydrationApplyMs;
@@ -908,18 +913,24 @@ namespace Hecton8.World
         private bool _stateDiagnosticsDirty;
         private float _chunkResidencyRuntimeSeconds;
         private float _fadeTimer;
+        private float _pendingChunkFadeMask;
+        private bool _chunkFadeMaskDirty;
         private float _lastPredictionDistanceMeters;
         private float _loadQueueCapacityRcp;
         private float _maxChunkCountRcp;
         private float3 _lastPlayerVelocity;
         private AbsoluteUniversePositionBlit _lastPlayerAup;
         private AbsoluteUniversePositionBlit _lastProjectedAup;
+        private AbsoluteUniversePositionBlit _pendingTeleportAup;
         private AbsoluteUniversePosition _lastTeleportProbeAup;
         private int _chunkCount;
         private int _pendingLoadRequestCount;
+        private int _loadDispatchFrame = -1;
+        private float _loadDispatchBudgetTokens;
         private int _pagerReadTicketCount;
         private int _pagerReadRetiredReadyCount;
         private int _pagerReadRetiredFallbackCount;
+        private uint _pagerReadRequestSequence;
         private int _pendingAdditiveSceneOperationCount;
         private int _activeImpostorCount;
         private int _activeImpostorFadeOutCount;
@@ -942,8 +953,7 @@ namespace Hecton8.World
         private bool _dataLinkDegradedNotificationPublished;
         private bool _activeImpostorGpuDirty = true;
         private uint _debugStateHash = ChunkStateHashSeed;
-        private ChunkStreamingScalabilityTier _activeTier = (ChunkStreamingScalabilityTier)255;
-        private ChunkStreamingScalabilityTier _resolvedTier = ChunkStreamingScalabilityTier.Low;
+        private int _activeAsyncUploadBudgetHash = int.MinValue;
         private WorldStreamingRuntimeTuning _coldStartTuning;
         private IAmbientBiotaService _ambientBiotaService;
         private IDataVault _streamingLedgerVault;
@@ -1064,6 +1074,7 @@ namespace Hecton8.World
             _forceResidencyEvaluation = true;
         }
 
+#if UNITY_EDITOR
         public bool TryApplyStreamingProfileCsvText(string csv)
         {
             if (string.IsNullOrEmpty(csv))
@@ -1076,6 +1087,7 @@ namespace Hecton8.World
             ApplyRuntimeTuning(in tuning);
             return true;
         }
+#endif
 
         private NativeArray<ChunkResidencyDTO> ResolveChunkResidencyDtos()
         {
@@ -1215,8 +1227,7 @@ namespace Hecton8.World
             AllocateNativeState();
             AllocateManagedState();
             BuildChunkTables();
-            _resolvedTier = ResolveScalabilityTier();
-            ApplyAsyncUploadBudgetForTier(_resolvedTier);
+            ApplyAsyncUploadBudgetForQuality();
         }
 
         private void OnEnable()
@@ -1273,9 +1284,11 @@ namespace Hecton8.World
             {
                 AdvanceChunkResidencyRuntimeClock(deltaTime);
                 TickPredictiveSuspension();
+                ApplyAsyncUploadBudgetForQuality();
                 DrainMetabolismSignals();
                 DetectAndHandleTeleport();
                 CompleteResidencyJobIfFinished();
+                TryApplyPendingTeleportReset();
                 ProcessResidencyResults();
                 if (!_residencyJobScheduled)
                 {
@@ -1312,10 +1325,11 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteResidencyJobIfFinished();
-            RetireAsyncPagerReadTickets(PagerReadRetireBudget);
+            RetireAsyncPagerReadTickets(ResolvePagerReadRetireBudget());
             DrainAupShiftSignals();
             DrainHlodSwapSignals();
             CullExpiredHlodFadeouts();
+            FlushQueuedChunkFadeMask();
             PublishLod2ImpostorResidency();
         }
 
@@ -1423,12 +1437,28 @@ namespace Hecton8.World
                     return;
             }
 
-            uint requestId = unchecked((uint)chunkId ^ (uint)(chunkId >> 32) ^ (uint)Time.frameCount);
-            if (requestId == 0u)
-                requestId = 1u;
+            uint requestId = ResolveNextPagerReadRequestId();
 
             if (persistence.TryRequestChunkPageRead(chunkId, H8WorldPagePayloadTypes.VoxelDeltaRle, requestId, out H8WorldPageReadTicket ticket))
                 _pagerReadTickets[_pagerReadTicketCount++] = ticket;
+        }
+
+        private uint ResolveNextPagerReadRequestId()
+        {
+            uint next = unchecked(_pagerReadRequestSequence + 1u);
+            if (next == 0u)
+                next = 1u;
+
+            _pagerReadRequestSequence = next;
+            return next;
+        }
+
+        private static int ResolvePagerReadRetireBudget()
+        {
+            return math.clamp(
+                (int)math.ceil(math.lerp(PagerReadRetireBudgetMinimum, PagerReadRetireBudgetVisualOverkill, ResolveSmoothGlobalQualityWeight01())),
+                PagerReadRetireBudgetMinimum,
+                PagerReadRetireBudgetVisualOverkill);
         }
 
         private void RetireAsyncPagerReadTickets(int budget)
@@ -1622,7 +1652,7 @@ namespace Hecton8.World
             IDataVault vault = _dataVault;
             if (vault != null)
             {
-                VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     length,
                     SystemID.WorldStreaming,
@@ -1656,6 +1686,7 @@ namespace Hecton8.World
             _chunkIndexById = new NativeParallelHashMap<long, int>(capacity, DataVaultExemptChunkStateAllocator);
             // COLD ALLOC: NativeQueue<ChunkLoadRequest>[loadQueueCapacity] - throttled Addressables request lane - owner: WorldChunkResidencyManager
             _loadRequests = new NativeQueue<ChunkLoadRequest>(DataVaultExemptSignalLaneAllocator);
+            PrewarmQueue(ref _loadRequests, loadQueueCapacity);
             // COLD ALLOC: NativeList<long>[maxChunkCount] - Burst load output list - owner: WorldChunkResidencyManager
             _chunksToLoad = new NativeList<long>(capacity, DataVaultExemptChunkScratchAllocator);
             // COLD ALLOC: NativeList<long>[maxChunkCount] - Burst unload output list - owner: WorldChunkResidencyManager
@@ -1694,6 +1725,8 @@ namespace Hecton8.World
             _pagerReadTickets = AcquireWorldStreamingArray<H8WorldPageReadTicket>(PagerReadTicketsVaultBufferId, PagerReadTicketCapacity, NativeArrayOptions.ClearMemory, PagerReadTicketsVaultBit);
             // COLD ALLOC: NativeArray<ulong>[128] - MacroDB distant-sector eviction scratch - owner: WorldChunkResidencyManager
             _macroDatabaseEvictionScratch = AcquireWorldStreamingArray<ulong>(MacroDatabaseEvictionScratchVaultBufferId, MacroDatabaseEvictionScratchCapacity, NativeArrayOptions.UninitializedMemory, MacroDatabaseEvictionScratchVaultBit);
+            // COLD ALLOC: NativeArray<ChunkHydrationApplyRecord>[maxChunkCount] - fixed hydration apply ledger - owner: WorldChunkResidencyManager
+            _hydrationApplyRecords = AcquireWorldStreamingArray<ChunkHydrationApplyRecord>(HydrationApplyRecordVaultBufferId, capacity, NativeArrayOptions.ClearMemory, HydrationApplyRecordsVaultBit);
             _dehydrationMetadataPayload = AcquireWorldStreamingArray<byte>(DehydrationMetadataVaultBufferId, DehydrationMetadataPayloadBytes, NativeArrayOptions.ClearMemory, DehydrationMetadataVaultBit);
 
             NativeMemorySentinel.RegisterNativeArray(_chunkIds, nameof(WorldChunkResidencyManager), nameof(_chunkIds), NativeAllocationLifetime.Session);
@@ -1721,6 +1754,7 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeArray(_activeImpostorFadeOutCountRef, nameof(WorldChunkResidencyManager), nameof(_activeImpostorFadeOutCountRef), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_pagerReadTickets, nameof(WorldChunkResidencyManager), nameof(_pagerReadTickets), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_macroDatabaseEvictionScratch, nameof(WorldChunkResidencyManager), nameof(_macroDatabaseEvictionScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_hydrationApplyRecords, nameof(WorldChunkResidencyManager), nameof(_hydrationApplyRecords), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_dehydrationMetadataPayload, nameof(WorldChunkResidencyManager), nameof(_dehydrationMetadataPayload), NativeAllocationLifetime.Session);
 
             NativeArray<ChunkResidencyDTO> residencyDtos = ResolveChunkResidencyDtos();
@@ -1965,9 +1999,9 @@ namespace Hecton8.World
             _jobAdmissionService = GlobalRegistry.JobAdmission;
             _macroDatabaseService = GlobalRegistry.MacroDatabase;
             _assetLifecycleGovernor = GlobalRegistry.AssetLifecycle;
-            _vramMonitor = GlobalRegistry.VRAMMonitor;
+            _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
 
-            _objectPoolManager = GlobalRegistry.ObjectPool;
+            _objectPoolManager = GlobalRegistry.ObjectPoolService;
 
             IAmbientBiotaService ambientBiota = GlobalRegistry.AmbientBiota;
             if (ambientBiota != null)
@@ -1975,7 +2009,7 @@ namespace Hecton8.World
 
             IAsyncPersistenceService persistence = GlobalRegistry.AsyncPersistence;
             if (persistence == null)
-                persistence = GlobalRegistry.SaveRuntime as IAsyncPersistenceService;
+                persistence = GlobalRegistry.Save as IAsyncPersistenceService;
 
             if (persistence != null)
                 _asyncPersistenceService = persistence;
@@ -2067,10 +2101,10 @@ namespace Hecton8.World
                     _assetLifecycleGovernor = currentService as AssetLifecycleGovernor;
                     break;
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
-                    _vramMonitor = currentService as VRAMMonitor;
+                    _vramMonitor = currentService as IVramBudgetReadModel;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPoolManager = currentService as ObjectPoolManager;
+                    _objectPoolManager = currentService as IObjectPoolService;
                     break;
                 case GlobalRegistryServiceSlot.AmbientBiotaRuntime:
                     _ambientBiotaService = currentService as IAmbientBiotaService;
@@ -2148,7 +2182,30 @@ namespace Hecton8.World
 
         private void HandleTeleport(in AbsoluteUniversePosition playerAup)
         {
-            CompleteResidencyJobForTeleport();
+            if (_residencyJobScheduled)
+            {
+                _pendingTeleportAup = AbsoluteUniversePositionBlit.FromAup(in playerAup);
+                _teleportResetPending = true;
+                _forceResidencyEvaluation = true;
+                return;
+            }
+
+            ApplyTeleportResetNow(in playerAup);
+        }
+
+        private void TryApplyPendingTeleportReset()
+        {
+            if (!_teleportResetPending || _residencyJobScheduled)
+                return;
+
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromAbsolutePosition(ToAbsoluteDouble3(in _pendingTeleportAup));
+            _teleportResetPending = false;
+            _pendingTeleportAup = default;
+            ApplyTeleportResetNow(in playerAup);
+        }
+
+        private void ApplyTeleportResetNow(in AbsoluteUniversePosition playerAup)
+        {
             ClearStreamingQueues();
             _lastPlayerAup = AbsoluteUniversePositionBlit.FromAup(in playerAup);
             _lastPlayerVelocity = default;
@@ -2159,15 +2216,6 @@ namespace Hecton8.World
 
             WriteTelemetrySample(0L, TelemetryTeleportFlag);
             GlobalTelemetryBus.PublishPerformanceWarning(TeleportContextHash, MemoryBreachContextHash, _pendingLoadRequestCount);
-        }
-
-        private void CompleteResidencyJobForTeleport()
-        {
-            if (!_residencyJobScheduled)
-                return;
-
-            DispatcherJobFence.TryComplete(ref _residencyJobHandle, forceComplete: true);
-            _residencyJobScheduled = false;
         }
 
         private void ClearStreamingQueues()
@@ -2185,6 +2233,8 @@ namespace Hecton8.World
                 _chunksToUnload.Clear();
 
             _pendingLoadRequestCount = 0;
+            _loadDispatchFrame = -1;
+            _loadDispatchBudgetTokens = 0f;
             _debugPendingLoadRequests = 0;
             _deferredEvictCount = 0;
 
@@ -2235,7 +2285,7 @@ namespace Hecton8.World
 
         private void ForceImmediateRadiusLoad(in AbsoluteUniversePosition playerAup)
         {
-            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters(_resolvedTier);
+            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters();
             double loadRadiusSq = (double)effectiveLoadRadiusMeters * effectiveLoadRadiusMeters;
             double playerX = ToAbsoluteX(in playerAup);
             double playerY = ToAbsoluteY(in playerAup);
@@ -2273,14 +2323,13 @@ namespace Hecton8.World
                 return;
             }
 
-            ChunkStreamingScalabilityTier tier = _resolvedTier;
             _predictiveVramAborted = ResolvePredictiveVramAbortState();
             bool predictiveEnabled = ShouldLoadSpeculative();
-            float predictionDistanceMeters = predictiveEnabled ? ResolvePredictionDistanceMeters(playerVelocity, tier) : 0f;
+            float predictionDistanceMeters = predictiveEnabled ? ResolvePredictionDistanceMeters(playerVelocity) : 0f;
             if (predictionDistanceMeters > 0f && _predictionConstrainedByStorageDebt)
                 predictionDistanceMeters *= 0.5f;
-            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters(tier);
-            float effectiveUnloadRadiusMeters = ResolveEffectiveUnloadRadiusMeters(tier);
+            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters();
+            float effectiveUnloadRadiusMeters = ResolveEffectiveUnloadRadiusMeters();
             float tailUnloadRadiusMeters = predictiveEnabled
                 ? ResolveTailUnloadRadiusMeters(predictionDistanceMeters, effectiveLoadRadiusMeters, effectiveUnloadRadiusMeters)
                 : effectiveUnloadRadiusMeters;
@@ -2533,9 +2582,7 @@ namespace Hecton8.World
             int cap = math.clamp(maxConcurrentLoads, 1, 16);
             if (_healthRadiusSqueezeActive || _predictiveVramAborted)
                 cap = math.min(cap, 2);
-            if (_resolvedTier == ChunkStreamingScalabilityTier.Low)
-                cap = math.min(cap, 2);
-            return math.max(1, cap);
+            return ResolveQualityScaledConcurrentLoadCap(cap);
         }
 
         private int ResolveLoadDispatchBudget()
@@ -2543,14 +2590,31 @@ namespace Hecton8.World
             if (_predictiveVramAborted)
                 return LowTierLoadDispatchBudget;
 
-            ChunkStreamingScalabilityTier tier = _resolvedTier;
-            if (tier == ChunkStreamingScalabilityTier.Ultra)
-                return UltraTierLoadDispatchBudget;
-            if (tier == ChunkStreamingScalabilityTier.High)
-                return HighTierLoadDispatchBudget;
-            if (tier == ChunkStreamingScalabilityTier.Middle)
-                return MiddleTierLoadDispatchBudget;
-            return LowTierLoadDispatchBudget;
+            int frame = Time.frameCount;
+            if (_loadDispatchFrame != frame)
+            {
+                _loadDispatchFrame = frame;
+                float perFrame = ResolveLoadDispatchBudgetPerFrame();
+                float frameCap = math.ceil(perFrame);
+                _loadDispatchBudgetTokens = math.min(frameCap, _loadDispatchBudgetTokens + perFrame);
+            }
+
+            int budget = math.clamp((int)math.floor(_loadDispatchBudgetTokens), 0, VisualOverkillLoadDispatchBudget);
+            _loadDispatchBudgetTokens = math.max(0f, _loadDispatchBudgetTokens - budget);
+            return budget;
+        }
+
+        private static float ResolveLoadDispatchBudgetPerFrame()
+        {
+            return math.lerp(LowTierLoadDispatchBudget, VisualOverkillLoadDispatchBudget, ResolveSmoothGlobalQualityWeight01());
+        }
+
+        private static int ResolveQualityScaledConcurrentLoadCap(int serializedCap)
+        {
+            int safeCap = math.clamp(serializedCap, 1, 16);
+            int lowCap = math.min(safeCap, 2);
+            float continuousCap = math.lerp(lowCap, safeCap, ResolveSmoothGlobalQualityWeight01());
+            return math.clamp((int)math.ceil(continuousCap), lowCap, safeCap);
         }
 
         private void ProcessOneLoadRequest()
@@ -2561,7 +2625,11 @@ namespace Hecton8.World
             using (_loadDispatchMarker.Auto())
             {
                 if (!_loadRequests.TryDequeue(out ChunkLoadRequest request))
+                {
+                    _pendingLoadRequestCount = 0;
+                    _debugPendingLoadRequests = 0;
                     return;
+                }
 
                 _pendingLoadRequestCount = math.max(0, _pendingLoadRequestCount - 1);
                 _debugPendingLoadRequests = _pendingLoadRequestCount;
@@ -2993,7 +3061,7 @@ namespace Hecton8.World
             signal.Sequence = _storageDebtSequence;
             signal.PendingLoads = (ushort)math.min(ushort.MaxValue, math.max(0, pendingLoads));
             signal.Flags = flags;
-            GlobalSignals.Publish(in signal);
+            SignalBus<StorageDebtSignal>.TryPush(in signal);
             SystemDispatcher.PublishStreamingStorageDebt(_smoothedStorageDebt01);
             CrashTelemetryBuffer.ReportStreamingBackpressureFrame(_smoothedStorageDebt01, _latencyEwmaMs, oldestPendingMs, pendingLoads);
 
@@ -3006,7 +3074,7 @@ namespace Hecton8.World
                 turbulence.Frame = signal.Frame;
                 turbulence.SourceHash = 0x5354494Fu; // "STIO"
                 turbulence.Sequence = _storageDebtSequence;
-                GlobalSignals.Publish(in turbulence);
+                SignalBus<StreamingTurbulenceSignal>.TryPush(in turbulence);
             }
 
             PublishPdaDataLinkState(signal.Frame);
@@ -3026,7 +3094,7 @@ namespace Hecton8.World
             MacroDatabaseAup macroAup = ToMacroDatabaseAup(in playerAup);
             macroDatabase.EvictDistant(
                 in macroAup,
-                ResolveMacroDatabaseTier(_resolvedTier),
+                ResolveMacroDatabaseTier(),
                 _macroDatabaseEvictionScratch);
         }
 
@@ -3043,12 +3111,18 @@ namespace Hecton8.World
             };
         }
 
-        private static MacroDatabaseTier ResolveMacroDatabaseTier(ChunkStreamingScalabilityTier tier)
+        private static MacroDatabaseTier ResolveMacroDatabaseTier()
         {
-            return tier == ChunkStreamingScalabilityTier.Low ? MacroDatabaseTier.Low :
-                   tier == ChunkStreamingScalabilityTier.High ? MacroDatabaseTier.High :
-                   tier == ChunkStreamingScalabilityTier.Ultra ? MacroDatabaseTier.Ultra :
-                   MacroDatabaseTier.Middle;
+            float quality = ResolveSmoothGlobalQualityWeight01();
+            if (quality < MacroDatabaseMiddleQualityThreshold)
+                return MacroDatabaseTier.Low;
+
+            if (quality < MacroDatabaseHighQualityThreshold)
+                return MacroDatabaseTier.Middle;
+
+            return quality < MacroDatabaseUltraQualityThreshold
+                ? MacroDatabaseTier.High
+                : MacroDatabaseTier.Ultra;
         }
 
         private void UpdateStorageDebtHysteresisStates()
@@ -3096,7 +3170,7 @@ namespace Hecton8.World
                 notification.Frame = frame;
                 notification.Severity = 1;
                 notification.Flags = StorageDebtSignal.DataLinkDegradedFlag;
-                GlobalSignals.Publish(in notification);
+                SignalBus<HUDNotificationSignal>.TryPush(in notification);
                 _dataLinkDegradedNotificationPublished = true;
             }
         }
@@ -3181,7 +3255,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                ObjectPoolManager pool = _objectPoolManager;
+                IObjectPoolService pool = _objectPoolManager;
                 if (pool == null)
                 {
                     if (IsActivationCurrent(index, version, chunkId))
@@ -3424,7 +3498,7 @@ namespace Hecton8.World
             bool completed = false;
             try
             {
-                ObjectPoolManager pool = _objectPoolManager;
+                IObjectPoolService pool = _objectPoolManager;
                 if (pool == null || (uint)index >= (uint)(chunkDefinitions != null ? chunkDefinitions.Length : 0))
                     return;
 
@@ -3600,7 +3674,7 @@ namespace Hecton8.World
 
         private void WarmPrefab(GameObject prefab, int count)
         {
-            ObjectPoolManager pool = _objectPoolManager;
+            IObjectPoolService pool = _objectPoolManager;
             if (pool == null || prefab == null)
                 return;
 
@@ -3617,7 +3691,7 @@ namespace Hecton8.World
                 return;
             }
 
-            ObjectPoolManager pool = _objectPoolManager;
+            IObjectPoolService pool = _objectPoolManager;
             GameObject[] slots = _spawnedInstancesByChunk[index];
             int count = _spawnedCountsByChunk[index];
             if (slots != null && count > slots.Length)
@@ -3892,6 +3966,8 @@ namespace Hecton8.World
                 _chunkLoadSortRecords.Clear();
 
             _pendingLoadRequestCount = 0;
+            _loadDispatchFrame = -1;
+            _loadDispatchBudgetTokens = 0f;
             _debugPendingLoadRequests = 0;
             _deferredEvictCount = 0;
         }
@@ -4038,7 +4114,7 @@ namespace Hecton8.World
 
             _fadeTimer += math.max(0f, deltaTime);
             float fade01 = math.saturate(_fadeTimer * ChunkFadeSecondsRcp);
-            Shader.SetGlobalFloat(_chunkFadeMaskId, fade01);
+            QueueChunkFadeMask(fade01);
             if (fade01 >= 1f)
                 _fadeActive = false;
         }
@@ -4047,7 +4123,22 @@ namespace Hecton8.World
         {
             _fadeTimer = 0f;
             _fadeActive = true;
-            Shader.SetGlobalFloat(_chunkFadeMaskId, 0f);
+            QueueChunkFadeMask(0f);
+        }
+
+        private void QueueChunkFadeMask(float fade01)
+        {
+            _pendingChunkFadeMask = math.saturate(fade01);
+            _chunkFadeMaskDirty = true;
+        }
+
+        private void FlushQueuedChunkFadeMask()
+        {
+            if (!_chunkFadeMaskDirty)
+                return;
+
+            _chunkFadeMaskDirty = false;
+            Shader.SetGlobalFloat(_chunkFadeMaskId, _pendingChunkFadeMask);
         }
 
         private void AdvanceChunkResidencyRuntimeClock(float deltaTime)
@@ -4063,45 +4154,23 @@ namespace Hecton8.World
             return _chunkResidencyRuntimeSeconds;
         }
 
-        private void ApplyAsyncUploadBudgetForTier(ChunkStreamingScalabilityTier tier)
+        private void ApplyAsyncUploadBudgetForQuality()
         {
-            if (!applyAsyncUploadBudget || _activeTier == tier)
+            if (!applyAsyncUploadBudget)
                 return;
 
-            _activeTier = tier;
-            switch (tier)
-            {
-                case ChunkStreamingScalabilityTier.Low:
-                    QualitySettings.asyncUploadBufferSize = 64;
-                    QualitySettings.asyncUploadTimeSlice = 1;
-                    break;
-                case ChunkStreamingScalabilityTier.Middle:
-                    QualitySettings.asyncUploadBufferSize = 128;
-                    QualitySettings.asyncUploadTimeSlice = 2;
-                    break;
-                default:
-                    QualitySettings.asyncUploadBufferSize = 256;
-                    QualitySettings.asyncUploadTimeSlice = 4;
-                    break;
-            }
+            float smooth = ResolveSmoothGlobalQualityWeight01();
+            int uploadBufferSize = math.clamp((int)math.round(math.lerp(64f, 256f, smooth)), 64, 256);
+            int uploadTimeSlice = math.clamp((int)math.ceil(math.lerp(1f, 4f, smooth)), 1, 4);
+            int budgetHash = (uploadBufferSize << 8) ^ uploadTimeSlice;
+            if (_activeAsyncUploadBudgetHash == budgetHash)
+                return;
+
+            _activeAsyncUploadBudgetHash = budgetHash;
+            QualitySettings.asyncUploadBufferSize = uploadBufferSize;
+            QualitySettings.asyncUploadTimeSlice = uploadTimeSlice;
 
             QualitySettings.asyncUploadPersistentBuffer = true;
-        }
-
-        private static ChunkStreamingScalabilityTier ResolveScalabilityTier()
-        {
-            int vram = SystemInfo.graphicsMemorySize;
-            int ram = SystemInfo.systemMemorySize;
-            if (vram <= 2048 || ram <= 8192)
-                return ChunkStreamingScalabilityTier.Low;
-
-            if (vram <= 4096 || ram <= 12288)
-                return ChunkStreamingScalabilityTier.Middle;
-
-            if (vram <= 8192 || ram <= 16384)
-                return ChunkStreamingScalabilityTier.High;
-
-            return ChunkStreamingScalabilityTier.Ultra;
         }
 
         private bool TryResolvePlayerMotion(out AbsoluteUniversePosition playerAup, out float3 velocity)
@@ -4189,7 +4258,7 @@ namespace Hecton8.World
             if (until > _adrenalinePurgeUntilTime)
                 _adrenalinePurgeUntilTime = until;
 
-            ObjectPoolManager pool = _objectPoolManager;
+            IObjectPoolService pool = _objectPoolManager;
             if (pool != null)
                 pool.TrimInactivePoolsForMemoryPressure(0.5f);
 
@@ -4264,7 +4333,7 @@ namespace Hecton8.World
                 definition.absoluteCenterMeters.x,
                 definition.absoluteCenterMeters.y,
                 definition.absoluteCenterMeters.z);
-            double radius = math.max(32d, definition.chunkSizeMeters > 0 ? definition.chunkSizeMeters : ResolveEffectiveUnloadRadiusMeters(_resolvedTier));
+            double radius = math.max(32d, definition.chunkSizeMeters > 0 ? definition.chunkSizeMeters : ResolveEffectiveUnloadRadiusMeters());
             double radiusSq = radius * radius;
             for (int i = 0; i < count; i++)
             {
@@ -4438,30 +4507,11 @@ namespace Hecton8.World
             return math.max(16 * 1024, childWeight * 32 * 1024);
         }
 
-        private unsafe void CopyHydrationApplyRecordToVault(int chunkIndex, long chunkId, int prefabIndex, GameObject prefab, int estimatedBytes)
+        private void CopyHydrationApplyRecordToVault(int chunkIndex, long chunkId, int prefabIndex, GameObject prefab, int estimatedBytes)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return;
-
-            int recordBytes = UnsafeUtility.SizeOf<ChunkHydrationApplyRecord>();
             int safeChunkIndex = math.max(0, chunkIndex);
-            int startIndex = safeChunkIndex * recordBytes;
-            int requiredLength = startIndex + recordBytes;
-            if (!vault.TryAcquireSlice<byte>(
-                    HydrationApplyRecordVaultBufferId,
-                    requiredLength,
-                    startIndex,
-                    recordBytes,
-                    SystemID.WorldStreaming,
-                    out VaultBufferSlice<byte> slice,
-                    NativeArrayOptions.UninitializedMemory) ||
-                !slice.IsCreated ||
-                slice.IsReadOnlyDummy ||
-                slice.Length < recordBytes)
-            {
+            if (!_hydrationApplyRecords.IsCreated || (uint)safeChunkIndex >= (uint)_hydrationApplyRecords.Length)
                 return;
-            }
 
             ChunkHydrationApplyRecord record = new ChunkHydrationApplyRecord
             {
@@ -4480,8 +4530,7 @@ namespace Hecton8.World
                 _pad4 = 0UL
             };
 
-            void* source = UnsafeUtility.AddressOf(ref record);
-            UnsafeUtility.MemCpy(slice.Ptr, source, recordBytes);
+            _hydrationApplyRecords[safeChunkIndex] = record;
         }
 
         private void RecordHydrationApplySlice(long startTimestamp, long chunkId)
@@ -4521,7 +4570,7 @@ namespace Hecton8.World
                 return false;
 
             long usedBytes = VRAMBudgetTracker.EstimatedVRAMBytes;
-            Hecton8.Optimization.VRAMMonitor monitor = _vramMonitor;
+            IVramBudgetReadModel monitor = _vramMonitor;
             if (monitor != null && monitor.TotalVRAMBytes > usedBytes)
                 usedBytes = monitor.TotalVRAMBytes;
 
@@ -4530,41 +4579,42 @@ namespace Hecton8.World
                 : usedBytes >= PredictiveVramAbortBytes;
         }
 
-        private float ResolvePredictionDistanceMeters(float3 velocity, ChunkStreamingScalabilityTier tier)
+        private float ResolvePredictionDistanceMeters(float3 velocity)
         {
             float speedSq = math.lengthsq(velocity);
             if (speedSq <= 0.0001f)
                 return 0f;
 
             float speed = speedSq * math.rsqrt(speedSq);
-            float maxDistance = tier == ChunkStreamingScalabilityTier.Low ? 50f :
-                                tier == ChunkStreamingScalabilityTier.Middle ? 100f : 200f;
+            float maxDistance = math.lerp(50f, 200f, ResolveSmoothGlobalQualityWeight01());
             return math.min(maxDistance, speed * PredictiveLookaheadSeconds * math.max(0f, predictiveVelocityStretch));
         }
 
-        private float ResolveEffectiveLoadRadiusMeters(ChunkStreamingScalabilityTier tier)
+        private float ResolveEffectiveLoadRadiusMeters()
         {
-            float unload = ResolveEffectiveUnloadRadiusMeters(tier);
-            float load = tier == ChunkStreamingScalabilityTier.Low
-                ? unload * 0.85f
-                : math.min(loadRadiusMeters * ResolveHealthRadiusScale(), unload - 1f);
+            float unload = ResolveEffectiveUnloadRadiusMeters();
+            float lowLoad = unload * 0.85f;
+            float configuredLoad = math.min(loadRadiusMeters * ResolveHealthRadiusScale(), unload - 1f);
+            float load = math.lerp(lowLoad, configuredLoad, ResolveSmoothGlobalQualityWeight01());
 
             return math.max(1f, math.min(load, unload - 1f));
         }
 
-        private float ResolveEffectiveUnloadRadiusMeters(ChunkStreamingScalabilityTier tier)
+        private float ResolveEffectiveUnloadRadiusMeters()
         {
-            float radius;
-            if (tier == ChunkStreamingScalabilityTier.Low)
-                radius = LowTierUnloadRadiusMeters;
-            else if (tier == ChunkStreamingScalabilityTier.Middle)
-                radius = math.max(unloadRadiusMeters, MiddleTierUnloadRadiusMeters);
-            else if (tier == ChunkStreamingScalabilityTier.High)
-                radius = math.max(unloadRadiusMeters, HighTierUnloadRadiusMeters);
-            else
-                radius = math.max(unloadRadiusMeters, UltraTierUnloadRadiusMeters);
+            float radius = math.lerp(
+                LowTierUnloadRadiusMeters,
+                math.max(unloadRadiusMeters, UltraTierUnloadRadiusMeters),
+                ResolveSmoothGlobalQualityWeight01());
 
             return math.max(2f, radius * ResolveHealthRadiusScale());
+        }
+
+        private static float ResolveSmoothGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            float q = math.saturate(math.isfinite(quality) ? quality : 1f);
+            return q * q * (3f - 2f * q);
         }
 
         private float ResolveHealthRadiusScale()
@@ -4605,7 +4655,7 @@ namespace Hecton8.World
             AbsoluteUniversePositionBlit center = _chunkCenters[index];
             AbsoluteUniversePositionBlit playerAup = _lastPlayerAup;
             double distSq = DistanceSq(in center, in playerAup);
-            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters(_resolvedTier);
+            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters();
             double loadRadiusSq = (double)effectiveLoadRadiusMeters * effectiveLoadRadiusMeters;
             return distSq > loadRadiusSq ? LoadRequestFlagPredictive : (byte)0;
         }
@@ -4636,7 +4686,7 @@ namespace Hecton8.World
             AbsoluteUniversePositionBlit playerAup = _lastPlayerAup;
             double3 delta = ToAbsoluteDouble3(in center) - ToAbsoluteDouble3(in playerAup);
             double behind = math.dot(delta, direction);
-            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters(_resolvedTier);
+            float effectiveLoadRadiusMeters = ResolveEffectiveLoadRadiusMeters();
             if (behind >= -effectiveLoadRadiusMeters)
                 return false;
 
@@ -4728,7 +4778,7 @@ namespace Hecton8.World
             if (!TryResolveChunkSignalPayload(index, state, out AbsoluteUniversePosition centerAup, out ushort radiusQ, out byte flags))
                 return;
 
-            SignalBus<ResidencySectorHydratedSignal>.Push(new ResidencySectorHydratedSignal
+            SignalBus<ResidencySectorHydratedSignal>.TryPush(new ResidencySectorHydratedSignal
             {
                 CenterAup = centerAup,
                 ChunkId = chunkId,
@@ -4744,7 +4794,7 @@ namespace Hecton8.World
             if (!TryResolveChunkSignalPayload(index, state, out AbsoluteUniversePosition centerAup, out ushort radiusQ, out byte flags))
                 return;
 
-            SignalBus<ResidencySectorDehydratedSignal>.Push(new ResidencySectorDehydratedSignal
+            SignalBus<ResidencySectorDehydratedSignal>.TryPush(new ResidencySectorDehydratedSignal
             {
                 CenterAup = centerAup,
                 ChunkId = chunkId,
@@ -4754,7 +4804,7 @@ namespace Hecton8.World
                 ResidencyState = unchecked((byte)state)
             });
 
-            SignalBus<ChunkDehydratedSignal>.Push(new ChunkDehydratedSignal
+            SignalBus<ChunkDehydratedSignal>.TryPush(new ChunkDehydratedSignal
             {
                 CenterAup = centerAup,
                 SectorHash = chunkId,
@@ -5021,7 +5071,7 @@ namespace Hecton8.World
 
             float chunkSize = definition.chunkSizeMeters > 0
                 ? definition.chunkSizeMeters
-                : math.max(1f, ResolveEffectiveUnloadRadiusMeters(_resolvedTier));
+                : math.max(1f, ResolveEffectiveUnloadRadiusMeters());
             size = new float3(
                 math.max(1f, chunkSize),
                 math.max(1f, chunkSize),
@@ -5032,7 +5082,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (_resolvedTier == ChunkStreamingScalabilityTier.Low)
+            if (ResolveSmoothGlobalQualityWeight01() <= ChunkImpostorSurvivalSnapQualityThreshold)
                 flags |= HectonChunkImpostorResidency.FlagSurvivalSnap;
             else
                 flags |= HectonChunkImpostorResidency.FlagDitherBlend;
@@ -5070,7 +5120,7 @@ namespace Hecton8.World
 
         private float ResolveActiveImpostorDefaultRadius()
         {
-            return math.max(1f, ResolveEffectiveUnloadRadiusMeters(_resolvedTier) * 0.5f);
+            return math.max(1f, ResolveEffectiveUnloadRadiusMeters() * 0.5f);
         }
 
         private void MuteAssociatedAcousticPortals(long chunkId, bool muted)
@@ -5282,6 +5332,7 @@ namespace Hecton8.World
             ReleaseWorldStreamingArray(ref _activeImpostorFadeOutCountRef, nameof(_activeImpostorFadeOutCountRef), ActiveImpostorFadeOutCountVaultBit);
             ReleaseWorldStreamingArray(ref _pagerReadTickets, nameof(_pagerReadTickets), PagerReadTicketsVaultBit);
             ReleaseWorldStreamingArray(ref _macroDatabaseEvictionScratch, nameof(_macroDatabaseEvictionScratch), MacroDatabaseEvictionScratchVaultBit);
+            ReleaseWorldStreamingArray(ref _hydrationApplyRecords, nameof(_hydrationApplyRecords), HydrationApplyRecordsVaultBit);
             ReleaseWorldStreamingArray(ref _dehydrationMetadataPayload, nameof(_dehydrationMetadataPayload), DehydrationMetadataVaultBit);
             _pagerReadTicketCount = 0;
             _worldStreamingVaultArrayMask = 0UL;
@@ -5327,7 +5378,7 @@ namespace Hecton8.World
                     handle = default;
             }
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
             return TryResolveWorldStreamingVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
@@ -5521,6 +5572,20 @@ namespace Hecton8.World
             }
 
             return hash == 0u ? 1u : hash;
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

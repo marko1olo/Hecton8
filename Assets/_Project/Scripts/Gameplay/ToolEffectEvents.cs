@@ -3,6 +3,7 @@
 // Zero-GC gameplay event bus for tool-driven effect signals.
 // ============================================================================
 
+using System.Runtime.InteropServices;
 using UnityEngine;
 using Hecton8.Interaction;
 
@@ -20,6 +21,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Value-type payload for gameplay tool effects. Struct dispatch avoids heap allocations in held-beam hot paths.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public readonly struct ToolEffectSignal
     {
         /// <summary>
@@ -33,26 +35,41 @@ namespace Hecton8.Gameplay
             Vector3 hitPointWorld)
         {
             EffectType = effectType;
-            ModuleTarget = moduleTarget;
-            SourceTransform = sourceTransform;
+            ModuleTargetInstanceId = ResolveModuleTargetInstanceId(moduleTarget);
+            SourceTransformInstanceId = sourceTransform != null ? sourceTransform.GetInstanceID() : 0;
             Magnitude = magnitude;
             HitPointWorld = hitPointWorld;
+            SourcePositionWorld = sourceTransform != null ? sourceTransform.position : hitPointWorld;
         }
 
         /// <summary>Resolved gameplay effect type.</summary>
+        [FieldOffset(0)]
         public readonly EffectType EffectType;
 
-        /// <summary>Repairable module target under the active tool beam.</summary>
-        public readonly IRepairableModuleTarget ModuleTarget;
+        /// <summary>Unity instance id of the repairable module target under the active tool beam.</summary>
+        [FieldOffset(4)]
+        public readonly int ModuleTargetInstanceId;
 
-        /// <summary>Transform that emitted the tool effect, when available.</summary>
-        public readonly Transform SourceTransform;
+        /// <summary>Unity instance id of the transform that emitted the tool effect, when available.</summary>
+        [FieldOffset(8)]
+        public readonly int SourceTransformInstanceId;
 
         /// <summary>Effect magnitude in gameplay units for this frame.</summary>
+        [FieldOffset(12)]
         public readonly float Magnitude;
 
         /// <summary>World hit point resolved by the active tool query.</summary>
+        [FieldOffset(16)]
         public readonly Vector3 HitPointWorld;
+
+        /// <summary>World position of the emitting transform, or hit point when no transform is available.</summary>
+        [FieldOffset(28)]
+        public readonly Vector3 SourcePositionWorld;
+
+        private static int ResolveModuleTargetInstanceId(IRepairableModuleTarget moduleTarget)
+        {
+            return moduleTarget is Component component ? component.GetInstanceID() : 0;
+        }
     }
 
     /// <summary>
@@ -183,7 +200,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Dispatches a gameplay tool-effect signal without heap allocations.
         /// </summary>
-        public static void RaiseEffectApplied(
+        public static bool TryRaiseEffectApplied(
             EffectType effectType,
             IRepairableModuleTarget moduleTarget,
             Transform sourceTransform,
@@ -191,11 +208,11 @@ namespace Hecton8.Gameplay
             Vector3 hitPointWorld)
         {
             if (moduleTarget == null || effectType == EffectType.None || magnitude <= 0f)
-                return;
+                return false;
 
             int count = _listeners.Count;
             if (count <= 0)
-                return;
+                return false;
 
             ToolEffectSignal signal = new ToolEffectSignal(effectType, moduleTarget, sourceTransform, magnitude, hitPointWorld);
             for (int i = count - 1; i >= 0; i--)
@@ -204,6 +221,19 @@ namespace Hecton8.Gameplay
                 if (listener != null)
                     listener.OnToolEffectApplied(in signal);
             }
+
+            return true;
+        }
+
+        [System.Obsolete("Use TryRaiseEffectApplied so producer-side refusal is visible.", true)]
+        public static void RaiseEffectApplied(
+            EffectType effectType,
+            IRepairableModuleTarget moduleTarget,
+            Transform sourceTransform,
+            float magnitude,
+            Vector3 hitPointWorld)
+        {
+            TryRaiseEffectApplied(effectType, moduleTarget, sourceTransform, magnitude, hitPointWorld);
         }
     }
 }

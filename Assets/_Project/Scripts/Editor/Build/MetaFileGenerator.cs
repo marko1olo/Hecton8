@@ -31,11 +31,10 @@ namespace Hecton8.Editor.Build
             if (EditorApplication.isCompiling || EditorApplication.isUpdating || !Directory.Exists(ScriptRoot))
                 return;
 
-            string[] scriptPaths = Directory.GetFiles(ScriptRoot, "*.cs", SearchOption.AllDirectories);
             int generatedCount = 0;
-            for (int i = 0; i < scriptPaths.Length; i++)
+            foreach (string scriptPath in Directory.EnumerateFiles(ScriptRoot, "*.cs", SearchOption.AllDirectories))
             {
-                string assetPath = NormalizeAssetPath(scriptPaths[i]);
+                string assetPath = NormalizeAssetPath(scriptPath);
                 if (ShouldSkip(assetPath))
                     continue;
 

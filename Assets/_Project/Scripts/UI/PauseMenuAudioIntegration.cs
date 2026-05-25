@@ -113,7 +113,7 @@ namespace Hecton8.UI
         private static bool IsSimulationPaused()
         {
             ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
-            return dispatcher != null ? dispatcher.SimulationPaused : GlobalSignals.SimulationPaused;
+            return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;
         }
     }
 }

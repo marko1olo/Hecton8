@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_039
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_039_Mat_Organic_PlantCanopy_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\Mat_Organic_PlantCanopy_Albedo.png
+FINAL_FILENAME: Mat_Organic_PlantCanopy_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Organic plant canopy albedo for broad alien leaf clusters. Use layered translucent teal leaves, pale jade ribs, pearl mineral dust near edges, soft violet underside mottling painted as material color, and sparse amber vein nodes. The canopy should feel lush, graceful, expensive, bright enough for underwater readability, and clean enough to support shader translucency later. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

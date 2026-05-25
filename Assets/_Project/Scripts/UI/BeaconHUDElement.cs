@@ -28,7 +28,7 @@ namespace Hecton8.UI
     /// HUD element that displays deployed beacons on screen.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class BeaconHUDElement : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public class BeaconHUDElement : MonoBehaviour, IUpdatable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private static readonly char[] s_EmptyChars = new char[1]; // COLD ALLOC: char[1] — empty TMP payload sentinel — owner: BeaconHUDElement
         private const int BeaconLabelTextCapacity = 96;
@@ -78,6 +78,7 @@ namespace Hecton8.UI
         private bool _registered;
         private bool _hotSwapListenerRegistered;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private ILocalizationTextReadModel _cachedLocalization;
         private GameLanguage _distanceLanguage = GameLanguage.English;
         private float _cameraRetryTimer;
         private float _idlePollTimer;
@@ -151,7 +152,17 @@ namespace Hecton8.UI
         //  ITickable
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+        public void LateFrameTick()
+        {
+            SampleBeaconDisplay(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+        }
+
+        /// <inheritdoc />
         public void Tick(float deltaTime)
+        {
+        }
+
+        private void SampleBeaconDisplay(float deltaTime)
         {
             float safeDeltaTime = math.max(0f, deltaTime);
             _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
@@ -269,12 +280,19 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Player)
-                return;
-
-            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-            _mainCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
-            _cameraRetryTimer = 0f;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    _mainCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+                    _cameraRetryTimer = 0f;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as ILocalizationTextReadModel;
+                    RebuildLocalizationCache();
+                    InvalidateDisplayCaches();
+                    break;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -296,7 +314,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             if (_mainCamera == null && _cachedPlayerContext != null)
                 _mainCamera = _cachedPlayerContext.PlayerCamera;
         }
@@ -571,7 +590,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
@@ -579,7 +598,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -613,8 +632,8 @@ namespace Hecton8.UI
 
         private void RebuildLocalizationCache()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            _distanceLanguage = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            ILocalizationTextReadModel manager = _cachedLocalization;
+            _distanceLanguage = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
             string unitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabel(_distanceLanguage);
             if (string.IsNullOrEmpty(unitLabel))
                 unitLabel = "m";

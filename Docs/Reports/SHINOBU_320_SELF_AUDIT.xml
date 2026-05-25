@@ -1,0 +1,50 @@
+﻿<SELF_AUDIT iteration="post_loop_45_static_2026-05-23" agent_id="SHINOBU_320">
+  <TASK_RECONCILIATION prompt_chars="23412" task_count="20">
+    <task id="01" verdict="PASS">Repository archaeology found legacy `HectonSurvivalSystem`, physiology/player surfaces, and overlapping timer debt.</task>
+    <task id="02" verdict="PASS_WITH_ARCHITECTURE_NOTE">Integrated through existing `ShinobuMetabolismRuntime` partial ownership instead of adding a competing manager.</task>
+    <task id="03" verdict="PASS">Starvation, dehydration, hypothermia, and toxicity damage are staged as unmanaged `CombatDamageSignal` rows and published after owner job finalization.</task>
+    <task id="04" verdict="BLOCKED_BY_DEPENDENCY">Legacy composite `HectonSurvivalSystem` timers are documented but not deleted because that owner still carries unrelated O2, pressure, radiation, save, UI, and environment authority.</task>
+    <task id="05" verdict="PASS">Temperature truth samples retained voxel thermal readback instead of biome strings.</task>
+    <task id="06" verdict="PASS">`GenerateMockThermalEnvironmentJob` writes deterministic y-major/x-z thermal gradients matching production grid layout.</task>
+    <task id="07" verdict="PASS">Burst metabolism integration applies Newton cooling with deterministic rational decay, retained thermal pointer fence, and `[NoAlias]` pointers.</task>
+    <task id="08" verdict="PASS">Calories drain from basal rule data plus velocity-squared exertion staging.</task>
+    <task id="09" verdict="PASS">Freezing presentation is shader frost scalar plus editor cube bars, not CPU post-process or mesh frost.</task>
+    <task id="10" verdict="PASS">Fatigue is a metabolism flag/scalar consumed by KCC through a guarded Vault read; SHINOBU does not mutate movement authority.</task>
+    <task id="11" verdict="PASS">SlowTick cadence maps continuously from 1.0s to 0.1s through `GlobalQualityWeight` while preserving accumulated dt.</task>
+    <task id="12" verdict="PASS">Thermal/chemical grid sampling subtracts grid root AUP from entity AUP in double precision before local float indexing.</task>
+    <task id="13" verdict="PASS">All metabolism jobs use deterministic Burst compile attributes and avoid `math.exp` for rollback-sensitive cooling.</task>
+    <task id="14" verdict="PASS">Owned Vault buffers use uninitialized memory where deterministic jobs/default rows overwrite active lanes.</task>
+    <task id="15" verdict="PASS">Aggregate and detail 300-frame telemetry rings plus `Dump_SHINOBU_320.bin` fault path are wired.</task>
+    <task id="16" verdict="PASS">Editor tuning writes Vault rows through explicit locks and `UnsafeUtility.AsRef`.</task>
+    <task id="17" verdict="PASS">Suit thermal CSV parser is cold editor/development only, span-based, and production-gated pending Data Monolith.</task>
+    <task id="18" verdict="PASS">Editor debug gizmo is isolated in a `UNITY_EDITOR` partial and draws zero-label color bars from cached Vault snapshots.</task>
+    <task id="19" verdict="PASS">`OOP_Survival_Scanner` uses Roslyn AST with token fallback and non-destructive report upsert.</task>
+    <task id="20" verdict="PASS_STATIC_BLOCKED_EXTERNAL_BUILD">Static checks pass. Legal rebuild now fails only on external `BaseAirlock` namespace debt.</task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <MetabolicStateDTO size="32">Calories@0 f32, Hydration@4 f32, CoreTemperature@8 f32, Toxicity@12 f32, EntityHashID@16 u32, Flags@20 u32, Fatigue01@24 f32 with _pad0@24 u32 stale-DLL mirror, _pad1@28 u32.</MetabolicStateDTO>
+    <MetabolicSuitThermalProfileDTO size="32">ProfileHash@0 u32, ConductanceMultiplier@4 f32, Insulation01@8 f32, ShiverMultiplier@12 f32, HeatHydrationMultiplier@16 f32, BatteryHeatingCelsiusPerSecond@20 f32, Flags@24 u32, _pad0@28 u32.</MetabolicSuitThermalProfileDTO>
+    <MetabolismTuningDTO size="64">Thermal/scalar fields occupy offsets 0..48, Flags@52 u32, Version@56 u32, _pad0@60 u32.</MetabolismTuningDTO>
+    <MetabolicTelemetryEntry size="64">CoreTemperature@0, Calories@4, Hydration@8, Toxicity@12, AverageCalorieBurnPerSecond@16, AverageThermalDeltaCelsiusPerSecond@20, ExecutionMicroseconds@24, EntityCount@28, StarvingCount@32, DehydratedCount@36, HypothermiaCount@40, ToxicCount@44, GlobalQualityWeight@48, Flags@52, FirstInvalidIndex@56, SignalCount@60.</MetabolicTelemetryEntry>
+    <MetabolicDetailTelemetryEntry size="64">PlayerAup double3@0, PlayerDepthMeters@24, ActiveCalorieBurnPerSecond@28, AmbientCelsius@32, ThermalK@36, CoreAmbientDeltaCelsius@40, ThermalDeltaCelsiusPerSecond@44, Frame@48, EntityHashID@52, Flags@56, SuitProfileHash@60.</MetabolicDetailTelemetryEntry>
+    <ThermodynamicFlowSampleDTO size="64">FlowVelocityWS@0 float3, Heat01@12, DragMultiplier@16, CableAnchorWS@20 float3, CableTension01@32, CableCutProgress01@36, CableEscapeSuppression01@40, HasFlow@44 byte, IsCableZone@45 byte, _pad0@46 ushort, _pad1@48 ulong, _pad2@56 ulong.</ThermodynamicFlowSampleDTO>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    GlobalQualityWeight controls cadence and sampling cost continuously. Low quality runs longer accumulated SlowTicks and collapses thermal/chemical sampling toward nearest-cell plus scalar shader presentation. Middle quality blends toward trilinear through smooth polynomial weight. High/ultra uses richer interpolation and telemetry while preserving DTO layout, BufferIDs, save identity, and authority route.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No SHINOBU private persistent native containers were found. Owned lanes: 70238, 70266, 70267, 70268, 70269, 70270, 70271, 70272, 70273, 70274, 70275, 73340, 73341, 73342. Borrowed KCC, suit, chemical, and thermodynamics lanes use read locks or retained readback release paths.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    `MetabolicIntegrationJob` consumes state/AUP/exertion/rule/suit/thermal/chemical/signal/detail pointers with `[NoAlias]`; `MetabolismTelemetryJob` follows it. Output handle is finalized by dispatcher fence, then staged physiology/combat signals publish. No diagnostic getter completes jobs.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    `Hecton8.Physiology.asmdef` references Core/Core.Contracts/Core.Memory and Unity Burst/Collections/Jobs/Mathematics only. No World/Thermodynamics/KCC/Combat runtime asmdef reference was added. KCC mirrors the mutation guard bit and reads `Fatigue01` through the stable `_pad0@24` bit lane for stale generated Core.Contracts CLI builds.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    Hypothermia uses an unmanaged frost scalar and editor color bars instead of CPU frost meshes, post-process volume mutation, or managed SceneView labels. Truth remains O(N) contiguous Vault rows; presentation remains O(1) shader scalar plus editor-only bars.
+  </DEAR_LIE_CONFIRMATION>
+  <BUILD_PROOF_STATE>
+    Legal gated `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` ran after the `Fatigue01@24` overlay and fatigue telemetry hash at CPU=19.7 with no compiler processes. It failed with one external `Hecton8.Core.csproj` error: `Assets/_Project/Scripts/Gameplay/BaseAirlock.cs(24,24)` missing namespace `Hecton8.Gameplay.AirlockPressurization`. No SHINOBU_320, KCC bridge, thermodynamics readback, or metabolism report file appeared in compiler errors.
+  </BUILD_PROOF_STATE>
+</SELF_AUDIT>

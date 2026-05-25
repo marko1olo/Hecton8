@@ -1,4 +1,4 @@
-{
+﻿{
   "agent": "SHINOBU_244",
   "status": "PENDING_COMPILE_VERIFICATION",
   "summary": "Method-context static scan. SHINOBU_244 owns the offline static cave SDF bake route; cross-domain PhysX/MeshCollider proximity findings are reported for owning agents and were not edited.",

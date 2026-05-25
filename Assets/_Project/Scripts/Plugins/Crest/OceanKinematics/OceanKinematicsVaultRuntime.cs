@@ -301,7 +301,7 @@ namespace Hecton8.Physics
             if (vault.IsAllocationLocked)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return HasHandle(in handle) &&
                    vault.TryResolveHandle(in handle, out NativeArray<T> resolved) &&
                    resolved.IsCreated &&

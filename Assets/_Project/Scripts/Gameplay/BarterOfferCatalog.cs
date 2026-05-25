@@ -6,7 +6,7 @@ namespace Hecton8.Gameplay
     [CreateAssetMenu(fileName = "BarterOfferCatalog", menuName = "Hecton/Barter Offer Catalog", order = 131)]
     public sealed class BarterOfferCatalog : ScriptableObject
     {
-        [SerializeField] private List<BarterOfferData> offers = new List<BarterOfferData>();
+        [SerializeField] private List<BarterOfferData> offers = new List<BarterOfferData>(8);
 
         public int Count => offers != null ? offers.Count : 0;
         public IReadOnlyList<BarterOfferData> Offers => offers;

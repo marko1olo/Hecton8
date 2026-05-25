@@ -66,7 +66,7 @@ namespace Hecton8.Editor
             Image panelImage = panelGO.AddComponent<Image>();
             panelImage.color = new Color(0.05f, 0.05f, 0.1f, 0.95f); // Dark blue semi-transparent
 
-            RectTransform panelRect = panelGO.GetComponent<RectTransform>();
+            panelGO.TryGetComponent(out RectTransform panelRect);
             panelRect.anchorMin = Vector2.zero;
             panelRect.anchorMax = Vector2.one;
             panelRect.offsetMin = Vector2.zero;
@@ -89,7 +89,7 @@ namespace Hecton8.Editor
             slider.interactable = false;
             controllerSerializedObject.FindProperty("_progressBar").objectReferenceValue = slider;
 
-            RectTransform progressRect = progressGO.GetComponent<RectTransform>();
+            progressGO.TryGetComponent(out RectTransform progressRect);
             progressRect.anchorMin = new Vector2(0.1f, 0.4f);
             progressRect.anchorMax = new Vector2(0.9f, 0.5f);
             progressRect.offsetMin = Vector2.zero;
@@ -102,7 +102,7 @@ namespace Hecton8.Editor
             Image fillImage = fillGO.AddComponent<Image>();
             fillImage.color = new Color(0.2f, 0.8f, 1f); // Cyan
 
-            RectTransform fillRect = fillGO.GetComponent<RectTransform>();
+            fillGO.TryGetComponent(out RectTransform fillRect);
             fillRect.anchorMin = Vector2.zero;
             fillRect.anchorMax = Vector2.one;
             fillRect.offsetMin = Vector2.zero;
@@ -121,7 +121,7 @@ namespace Hecton8.Editor
             progressText.alignment = TextAlignmentOptions.Center;
             controllerSerializedObject.FindProperty("_progressText").objectReferenceValue = progressText;
 
-            RectTransform progressTextRect = progressTextGO.GetComponent<RectTransform>();
+            progressTextGO.TryGetComponent(out RectTransform progressTextRect);
             progressTextRect.anchorMin = new Vector2(0.4f, 0.35f);
             progressTextRect.anchorMax = new Vector2(0.6f, 0.4f);
             progressTextRect.offsetMin = Vector2.zero;
@@ -138,7 +138,7 @@ namespace Hecton8.Editor
             statusText.alignment = TextAlignmentOptions.Center;
             controllerSerializedObject.FindProperty("_statusText").objectReferenceValue = statusText;
 
-            RectTransform statusTextRect = statusTextGO.GetComponent<RectTransform>();
+            statusTextGO.TryGetComponent(out RectTransform statusTextRect);
             statusTextRect.anchorMin = new Vector2(0.2f, 0.55f);
             statusTextRect.anchorMax = new Vector2(0.8f, 0.65f);
             statusTextRect.offsetMin = Vector2.zero;
@@ -155,7 +155,7 @@ namespace Hecton8.Editor
             tipText.alignment = TextAlignmentOptions.Center;
             controllerSerializedObject.FindProperty("_tipText").objectReferenceValue = tipText;
 
-            RectTransform tipTextRect = tipTextGO.GetComponent<RectTransform>();
+            tipTextGO.TryGetComponent(out RectTransform tipTextRect);
             tipTextRect.anchorMin = new Vector2(0.1f, 0.1f);
             tipTextRect.anchorMax = new Vector2(0.9f, 0.2f);
             tipTextRect.offsetMin = Vector2.zero;

@@ -1,0 +1,18 @@
+{
+  "agent": "X_002",
+  "slice": "M",
+  "status": "CORE_BUILD_PASS_AFTER_COLD_BINARY_RECORD_HEAP_ALLOCATION_FIX",
+  "generatedUtc": "2026-05-24T06:39:28.5207202Z",
+  "changedFiles": [
+    "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs"
+  ],
+  "fixes": [
+    "Replaced 64-byte managed byte[] legacy vent binary record buffer with stackalloc Span<byte>.",
+    "Converted exact-read and little-endian scalar helpers to Span<byte>/ReadOnlySpan<byte> so the binary bridge keeps the same parser behavior without heap staging."
+  ],
+  "heapAllocationRemovedBytesPerLoaderInvocation": 64,
+  "preprocessorBalance": "PASS_1_FILE_BALANCE_0_MIN_0",
+  "diffCheck": "PASS_WARNINGS_ONLY_LF_CRLF",
+  "compileStatus": "PASS_CORE_DOTNET_BUILD_0_WARNINGS_0_ERRORS_58_77S",
+  "claimBoundary": "Static/source zero-GC improvement only; no Unity player profiler capture."
+}

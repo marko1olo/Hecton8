@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_111
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_111_Mat_HunterProxy_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_HunterProxy_Albedo.png
+FINAL_FILENAME: Mat_HunterProxy_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Hunter proxy albedo for agile Hecton predator placeholders. Create sleek teal biological plates, pearl edge abrasion, coral-red motion streak markings, amber sensory dot rows, and subtle blue-gray mineral dust. The material should feel fast, readable, and refined on simple proxy shapes, with strong directionality and premium biology detail. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

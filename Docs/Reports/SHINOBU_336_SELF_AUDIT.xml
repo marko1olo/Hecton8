@@ -1,0 +1,12 @@
+﻿<SELF_AUDIT agent="SHINOBU_336" domain="MODULE_DECONSTRUCTION_RESOURCE_RETURN" date="2026-05-22">
+  <ROUTE owner="ConstructionManager" graphOwner="HabitatGraphManager" inventoryOwner="PlayerInventory" />
+  <DTO name="DeconstructionTransactionDTO" bytes="32" targetModuleHashOffset="0" initiatorEntityHashOffset="4" originalAupOffset="8" />
+  <DTO name="RefundCommandDTO" bytes="32" />
+  <DTO name="LootCacheDTO" bytes="64" />
+  <DTO name="TeardownTelemetryEntry" bytes="64" capacity="300" />
+  <BUFFER_IDS range="72016..72023" owner="SystemID.Construction" />
+  <SCALABILITY globalQualityWeight="continuous" low="5 teardown transactions/frame" middle="interpolated admission" high="higher admission and cache offset radius" ultra="50 teardown transactions/frame" />
+  <STATIC_SCAN destroyCallHits="0" oldRetireHelperHits="0" inventoryPreflightHits="0" legacyLootPublishHits="0" typedLootSignalHits="1" />
+  <DATA_MONOLITH status="not_claimed" fallback="BuildableData.buildCost converted to ModuleCostDTO only when Vault module-cost rows are absent" />
+  <BUILD_GATE cpu="100" dotnetCscProcesses="9" result="blocked_by_policy" />
+</SELF_AUDIT>

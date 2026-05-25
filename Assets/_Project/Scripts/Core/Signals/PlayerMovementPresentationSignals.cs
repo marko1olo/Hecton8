@@ -3,7 +3,19 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts.Signals
 {
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    internal static class PlayerMovementPresentationSignalLayout
+    {
+        public const int FootstepStrideBytes = 32;
+        public const int WaterSplashStrideBytes = 32;
+        public const int PresentationAupStrideBytes = 48;
+        public const int WaterTransitionStrideBytes = 128;
+        public const int ExhaleStrideBytes = 16;
+        public const int SprintStateStrideBytes = 16;
+        public const int FatalPressureStrideBytes = 16;
+        public const int TransportBailoutStrideBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.FootstepStrideBytes)]
     public struct PlayerFootstepSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;
@@ -31,7 +43,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(31)] private byte _pad18;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.WaterSplashStrideBytes)]
     public struct PlayerWaterSplashSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;
@@ -53,7 +65,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(31)] private byte _pad9;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.PresentationAupStrideBytes)]
     public struct PlayerPresentationAup48
     {
         [FieldOffset(0)] public long GridX;
@@ -66,7 +78,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(40)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.WaterTransitionStrideBytes)]
     public struct WaterTransitionSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;
@@ -90,7 +102,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(120)] public ulong Reserved4;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.ExhaleStrideBytes)]
     public struct PlayerExhaleSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;
@@ -105,7 +117,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(15)] private byte _pad6;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.SprintStateStrideBytes)]
     public struct PlayerSprintStateSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;
@@ -120,7 +132,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(15)] private byte _pad5;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.FatalPressureStrideBytes)]
     public struct PlayerFatalPressureSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;
@@ -132,7 +144,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(15)] private byte _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.TransportBailoutStrideBytes)]
     public struct PlayerTransportBailoutSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;

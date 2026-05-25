@@ -329,7 +329,8 @@ public static class HectonUIBuilder
         go.transform.localRotation = Quaternion.identity;
         go.transform.localScale    = Vector3.one;
 
-        return go.GetComponent<RectTransform>();
+        go.TryGetComponent(out RectTransform rectTransform);
+        return rectTransform;
     }
 
     /// <summary>
@@ -380,8 +381,7 @@ public static class HectonUIBuilder
         // Priority 1: selected object is a Canvas
         if (Selection.activeGameObject != null)
         {
-            Canvas selected = Selection.activeGameObject.GetComponent<Canvas>();
-            if (selected != null) return selected;
+            if (Selection.activeGameObject.TryGetComponent(out Canvas selected)) return selected;
 
             // Priority 2: selected object is inside a Canvas
             Canvas parentCanvas = Selection.activeGameObject.GetComponentInParent<Canvas>();
@@ -400,7 +400,7 @@ public static class HectonUIBuilder
         }
 
         // Priority 3: any Canvas in scene
-        Canvas fallback = Object.FindAnyObjectByType<Canvas>();
+        Canvas fallback = Object.FindAnyObjectByType<Canvas>(FindObjectsInactive.Include);
         return fallback;
     }
 }

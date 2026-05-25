@@ -16,7 +16,7 @@ namespace Hecton8.Core.Memory.Editor
         [InitializeOnLoadMethod]
         private static void RunStrictGateWhenRequested()
         {
-            if (!string.Equals(Environment.GetEnvironmentVariable(StrictEnvVar), "1", StringComparison.Ordinal))
+            if (!string.Equals(System.Environment.GetEnvironmentVariable(StrictEnvVar), "1", StringComparison.Ordinal))
                 return;
 
             if (!RunAudit(writeReport: true))

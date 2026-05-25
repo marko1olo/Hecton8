@@ -8,7 +8,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
-    public sealed class AcousticReverbPresetTrigger : MonoBehaviour
+    public sealed class AcousticReverbPresetTrigger : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         public enum ReverbPreset : byte
         {
@@ -20,44 +20,120 @@ namespace Hecton8.Audio
         [SerializeField] private AudioMixerSnapshot smallRoomSnapshot;
         [SerializeField] private AudioMixerSnapshot largeRoomSnapshot;
         [SerializeField, Min(0f)] private float transitionSeconds = 0.08f;
-        [SerializeField] private LayerMask playerLayerMask = HectonLayerMasks.PlayerLayerMask;
 
-        private int _insideCount;
+        private Transform _cachedTransform;
+        private BoxCollider _triggerCollider;
+        private CachedTriggerVolume _cachedVolume;
+        private IPlayerRuntimeContext _playerRuntime;
+        private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _hotSwapRegistered;
+        private bool _playerInside;
+        private bool _pendingPresetStateDirty;
+        private bool _pendingPlayerInside;
 
         private void Reset()
         {
             ForceTriggerCollider();
+            CacheVolumeCold();
+        }
+
+        private void Awake()
+        {
+            _cachedTransform = transform;
+            CacheVolumeCold();
+            _playerRuntime = GlobalRegistry.Player;
         }
 
         private void OnValidate()
         {
             ForceTriggerCollider();
+            CacheVolumeCold();
+        }
+
+        private void OnEnable()
+        {
+            _playerRuntime = GlobalRegistry.Player;
+            TryRegister();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
-            _insideCount = 0;
+            TryUnregister();
+            TryUnregisterHotSwapListener();
+            _playerInside = false;
             AcousticOcclusionUtility.ClearTriggerReverbPreset();
         }
 
-        private void OnTriggerEnter(Collider other)
+        public void Tick(float deltaTime)
         {
-            if (!IsPlayerCollider(other))
+            bool inside = TryResolvePlayerPosition(out Vector3 playerPosition) &&
+                          _cachedVolume.Contains(_cachedTransform, playerPosition);
+            if (inside == _playerInside)
                 return;
 
-            _insideCount++;
-            if (_insideCount == 1)
-                ApplyPreset();
+            _playerInside = inside;
+            _pendingPlayerInside = inside;
+            _pendingPresetStateDirty = true;
         }
 
-        private void OnTriggerExit(Collider other)
+        public void LateFrameTick()
         {
-            if (!IsPlayerCollider(other))
+            if (!_pendingPresetStateDirty)
                 return;
 
-            _insideCount = math.max(0, _insideCount - 1);
-            if (_insideCount == 0)
+            _pendingPresetStateDirty = false;
+            if (_pendingPlayerInside)
+                ApplyPreset();
+            else
                 AcousticOcclusionUtility.ClearTriggerReverbPreset();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _registered = false;
+                }
+                else if (isActiveAndEnabled)
+                {
+                    TryUnregister();
+                    TryRegister();
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _playerRuntime = currentService as IPlayerRuntimeContext;
+        }
+
+        private bool TryResolvePlayerPosition(out Vector3 position)
+        {
+            position = Vector3.zero;
+            IPlayerRuntimeContext runtime = _playerRuntime;
+            if (runtime == null)
+                return false;
+
+            if (runtime.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose))
+            {
+                float3 runtimePosition = pose.RuntimePosition;
+                position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                return math.all(math.isfinite(runtimePosition));
+            }
+
+            Transform playerTransform = runtime.PlayerTransform;
+            if (playerTransform == null)
+                return false;
+
+            position = playerTransform.position;
+            return math.all(math.isfinite((float3)position));
         }
 
         private void ApplyPreset()
@@ -74,19 +150,70 @@ namespace Hecton8.Audio
                 snapshot.TransitionTo(transitionSeconds);
         }
 
-        private bool IsPlayerCollider(Collider other)
+        private void CacheVolumeCold()
         {
-            if (other == null)
-                return false;
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
 
-            int mask = playerLayerMask.value;
-            return (mask & (1 << other.gameObject.layer)) != 0;
+            if (_triggerCollider == null)
+                TryGetComponent(out _triggerCollider);
+
+            if (_triggerCollider != null)
+                _cachedVolume = CachedTriggerVolume.FromCollider(_triggerCollider, 1f);
         }
 
         private void ForceTriggerCollider()
         {
             if (TryGetComponent(out BoxCollider boxCollider))
+            {
                 boxCollider.isTrigger = true;
+                _triggerCollider = boxCollider;
+                _cachedVolume = CachedTriggerVolume.FromCollider(boxCollider, 1f);
+            }
+        }
+
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregister()
+        {
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
+
+            _pendingPresetStateDirty = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

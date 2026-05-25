@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -7,8 +8,8 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4150)]
-    public sealed class WorldStreamingDirector : MonoBehaviour, ISlowTickable
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    public sealed class WorldStreamingDirector : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
+#if UNITY_EDITOR
         , RuntimeWatchdog.IEmergencyResetTarget
 #endif
     {
@@ -24,6 +25,7 @@ namespace Hecton8.World
         private const string TerrainResolution513Label = "513";
         private const string TerrainResolution1025Label = "1025";
         private const string TerrainResolution2049Label = "2049";
+        private const uint KccVelocityStreamingMaxAgeFrames = 12u;
 
         private enum DepthZone
         {
@@ -230,9 +232,12 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.WorldStreaming, this);
 #endif
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
         }
 
@@ -245,17 +250,41 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.WorldStreaming, this);
 #endif
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
         private void OnDestroy()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.WorldStreaming, this);
 #endif
+            TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registeredToTickManager = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregister();
+                TryRegister();
+            }
         }
 
         internal void ServiceEmergencyReset()
@@ -274,7 +303,7 @@ namespace Hecton8.World
             ApplyStreamingProfile(force: true);
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         void RuntimeWatchdog.IEmergencyResetTarget.ServiceEmergencyReset()
         {
             ServiceEmergencyReset();
@@ -301,7 +330,7 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.WorldStreaming);
 #endif
             ApplyStreamingProfile(force: false);
@@ -349,7 +378,7 @@ namespace Hecton8.World
                 }
 
                 ApplyMapMagicTerrainProfile(surfaceSurveyProfile);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 _debugApplied = false;
                 UpdateDiagnostics();
 #endif
@@ -379,7 +408,7 @@ namespace Hecton8.World
                     terrainHeightmapMaximumLod);
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _debugDepth = depth;
             _debugSpeed = ApproximateSqrtPositive(_smoothedSpeedSq);
             _debugDepthZone = GetDepthZoneLabel(depthZone);
@@ -398,7 +427,7 @@ namespace Hecton8.World
 
             if (!changed)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 UpdateDiagnostics();
 #endif
                 return;
@@ -421,7 +450,7 @@ namespace Hecton8.World
             _lastTerrainBaseMapDistance = profile.terrainBaseMapDistance;
             _lastTerrainDetailDistance = profile.terrainDetailDistance;
             _lastTerrainDetailDensity = profile.terrainDetailDensity;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _debugNearSliceScale = profile.nearSliceScale;
             _debugMidSliceScale = profile.midSliceScale;
             _debugApplied = true;
@@ -433,7 +462,7 @@ namespace Hecton8.World
         {
             if (mapMagicBridge == null || !mapMagicBridge.IsAvailable)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 _debugMapMagicObjectsPerFrame = -1;
 #endif
                 return;
@@ -447,7 +476,7 @@ namespace Hecton8.World
                 profile.terrainDetailDensity,
                 terrainHeightmapMaximumLod);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _debugMapMagicObjectsPerFrame = profile.mapMagicObjectsPerFrame;
             _debugTerrainDraftsInPlaymode = terrainDraftsInPlaymode;
             _debugTerrainDraftResolution = GetTerrainResolutionLabel(terrainDraftResolution);
@@ -508,8 +537,8 @@ namespace Hecton8.World
 
         private float GetCurrentSpeedSq()
         {
-            if (playerRigidbody != null)
-                return playerRigidbody.linearVelocity.sqrMagnitude;
+            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityStreamingMaxAgeFrames, out float3 velocity))
+                return math.lengthsq(velocity);
 
             return 0f;
         }
@@ -631,7 +660,7 @@ namespace Hecton8.World
 
         private void RefreshRuntimeProfilesFromChunkProfile()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _debugUsingSharedChunkProfile = chunkStreamingProfile != null;
 #endif
             if (chunkStreamingProfile == null)
@@ -703,7 +732,7 @@ namespace Hecton8.World
 
         private void UpdateDiagnostics()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _debugPlayerReady = playerTransform != null && playerRigidbody != null;
             _debugBridgeReady = mapMagicBridge != null && mapMagicBridge.IsAvailable;
             _debugBiomeCacheReady = biomeSamplerCache != null && biomeSamplerCache.IsReady;

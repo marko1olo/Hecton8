@@ -5,7 +5,13 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    internal static class HectonSpatialLayout
+    {
+        internal const int AabbStrideBytes = 32;
+        internal const int SphereStrideBytes = 16;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = HectonSpatialLayout.AabbStrideBytes)]
     public struct HectonAabb
     {
         [FieldOffset(0)]
@@ -18,7 +24,7 @@ namespace Hecton8.Core
         public float2 Reserved;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonSpatialLayout.SphereStrideBytes)]
     public struct HectonSphere
     {
         [FieldOffset(0)]

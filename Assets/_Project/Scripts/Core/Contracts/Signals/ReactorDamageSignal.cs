@@ -12,6 +12,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ReactorDamageSignal : ISignal
     {
+        public const int ExpectedCapacity = 64;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 64;
+        public const uint LaneHash = 0x52474153u; // RGAS
+
         [FieldOffset(0)] public double3 DamageAup;
         [FieldOffset(24)] public uint ReactorHash;
         [FieldOffset(28)] public float Damage01;

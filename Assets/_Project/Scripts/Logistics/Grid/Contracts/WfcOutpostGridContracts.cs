@@ -4,6 +4,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.Logistics.Grid.Contracts
 {
+    internal static class WfcOutpostGridContractLayout
+    {
+        public const int DescriptorStrideBytes = 96;
+        public const int PowerNodeStrideBytes = 40;
+    }
+
     /// <summary>
     /// Shared byte layout for the marauder WFC outpost grid. Lower four bits are kind, upper four bits are planar exits.
     /// </summary>
@@ -92,7 +98,7 @@ namespace Hecton8.Logistics.Grid.Contracts
     /// <summary>
     /// Cold-path descriptor copied with the native WFC byte grid.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = WfcOutpostGridContractLayout.DescriptorStrideBytes)]
     public struct WfcOutpostGridDescriptor
     {
         [FieldOffset(0)]
@@ -122,7 +128,7 @@ namespace Hecton8.Logistics.Grid.Contracts
     /// <summary>
     /// SOA node payload produced by Burst translation and consumed by the logistics graph builder.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = WfcOutpostGridContractLayout.PowerNodeStrideBytes)]
     public struct WfcOutpostPowerNode
     {
         [FieldOffset(0)]

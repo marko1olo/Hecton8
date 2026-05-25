@@ -4,7 +4,6 @@ using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Modding;
 using Hecton8.Power;
 using Unity.Mathematics;
 using UnityEngine;
@@ -19,7 +18,7 @@ namespace Hecton8.Economy
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Economy/Resource Recycler Module")]
-    public sealed class ResourceRecyclerModule : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IInteractable
+    public sealed class ResourceRecyclerModule : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IInteractable, IInteractableTextProvider, IGlobalRegistryHotSwapListener
     {
         private const string DefaultReadyText = "Start Recycler Batch";
         private const string DefaultEmptyText = "Recycler Buffer Empty";
@@ -116,6 +115,10 @@ namespace Hecton8.Economy
 
         private void OnEnable()
         {
+            InteractableRegistry.RegisterTree(this);
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             RegisterModuleInstance();
             BaseLogisticsNetwork.RegisterRecycler(this, _powerNode);
             TryRegister();
@@ -123,7 +126,9 @@ namespace Hecton8.Economy
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             BaseLogisticsNetwork.UnregisterRecycler(this);
             UnregisterModuleInstance();
         }
@@ -169,6 +174,11 @@ namespace Hecton8.Economy
 
         string IInteractable.GetInteractText()
         {
+            return ResolveInteractText();
+        }
+
+        private string ResolveInteractText()
+        {
             if (_hasPendingOutput)
                 return DefaultCollectText;
 
@@ -179,6 +189,11 @@ namespace Hecton8.Economy
                 return DefaultPausedText;
 
             return _bufferedItemCount > 0 ? DefaultReadyText : DefaultEmptyText;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(ResolveInteractText(), destination, out length);
         }
 
         public void OnPowerStatusChanged(bool hasPower)
@@ -246,8 +261,7 @@ namespace Hecton8.Economy
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -257,6 +271,27 @@ namespace Hecton8.Economy
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registered = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregister();
+                TryRegister();
+            }
         }
 
         private void RegisterModuleInstance()
@@ -284,11 +319,9 @@ namespace Hecton8.Economy
             if (_cachedInventory != null)
                 return _cachedInventory;
 
-            if (interactor != null)
-                _cachedInventory = interactor.GetComponentInParent<PlayerInventory>();
-
-            if (_cachedInventory == null)
-                _cachedInventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
+            IPlayerInventoryService inventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
+            if (inventoryService != null && inventoryService.IsInitialized)
+                _cachedInventory = inventoryService.Inventory;
 
             return _cachedInventory;
         }
@@ -340,7 +373,7 @@ namespace Hecton8.Economy
                 return false;
             }
 
-            HectonEventBus.Publish(new ItemRecycledEvent(_activeSourceItem, 1, _pendingYieldUnits));
+            ItemLifecycleSignalRoute.TryPublishRecycled(_activeSourceItem, 1, _pendingYieldUnits);
             _processedBatchCount++;
             _debugProcessedBatchCount = _processedBatchCount;
             ClearPendingOutput();

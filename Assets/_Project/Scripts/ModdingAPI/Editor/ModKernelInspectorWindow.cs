@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Modding;
 using Unity.Mathematics;
 using UnityEditor;
@@ -99,7 +100,10 @@ namespace Hecton8.EditorTools
                 rejected += entry.Rejected;
             }
 
-            _statusLabel.text = $"quality {tuning.GlobalQualityWeightOverride:0.00} thermal {tuning.CpuThermalPressure01:0.00} pending {FutureCommandSandboxValidator.GetPendingEnvelopeCount()}";
+            _statusLabel.text =
+                "quality " + tuning.GlobalQualityWeightOverride.ToString("0.00", CultureInfo.InvariantCulture) +
+                " thermal " + tuning.CpuThermalPressure01.ToString("0.00", CultureInfo.InvariantCulture) +
+                " pending " + FutureCommandSandboxValidator.GetPendingEnvelopeCount();
             _shedLabel.text = $"survival {survival} haptic {haptic} subtitle {subtitle} shed {shedTotal} rejected {rejected}";
             _histogram.MarkDirtyRepaint();
 

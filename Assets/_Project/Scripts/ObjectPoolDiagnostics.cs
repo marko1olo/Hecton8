@@ -21,11 +21,11 @@
 //
 //   // Query current stats
 //   var stats = ObjectPoolDiagnostics.GetPoolStats("RobotDronePrefab");
-//   Debug.Log(stats.peakConcurrentCount);
+//   Hecton8.Core.H8Debug.Log(stats.peakConcurrentCount);
 //
 //   // Get comprehensive report
 //   string report = ObjectPoolDiagnostics.GenerateReport();
-//   Debug.Log(report);
+//   Hecton8.Core.H8Debug.Log(report);
 //
 // ZERO-GC DESIGN:
 //   • PoolStatSnapshot is struct (stack allocation only).
@@ -147,12 +147,29 @@ namespace Hecton8.Core
         // COLD ALLOC: ListenerSlot[4] - pool diagnostics listeners drained on dispatcher LateUpdate - owner: ObjectPoolDiagnostics
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private const int PendingEventCapacity = 4;
+        private const int PoolNameSlotCapacity = 32;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-        // COLD ALLOC: Dictionary<uint,string>[32] - pool names keyed by FNV-1a hash for cold-path diagnostics resolution - owner: ObjectPoolDiagnostics
-        private static readonly Dictionary<uint, string> _poolNamesByHash = new Dictionary<uint, string>(32);
+
+        private struct PoolNameSlot
+        {
+            public uint PoolHash;
+            public string PoolName;
+            public byte IsValid;
+
+            public void Clear()
+            {
+                PoolHash = 0u;
+                PoolName = null;
+                IsValid = 0;
+            }
+        }
+
+        // COLD ALLOC: PoolNameSlot[32] - fixed pool-name sidecar keyed by FNV-1a hash; no dictionary growth - owner: ObjectPoolDiagnostics
+        private static readonly PoolNameSlot[] _poolNamesByHash = new PoolNameSlot[PoolNameSlotCapacity];
         private static NativeQueue<PoolDiagnosticsEventPayload> _pendingEvents;
         private static NativeQueue<PoolDiagnosticsEventPayload> _nextFrameEvents;
         private static int _listenerCount;
+        private static int _poolNameSlotCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -205,7 +222,7 @@ namespace Hecton8.Core
                 _listeners[i].Clear();
 
             _listenerCount = 0;
-            _poolNamesByHash.Clear();
+            ClearPoolNameSlots();
             _poolMetrics.Clear();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
@@ -271,7 +288,10 @@ namespace Hecton8.Core
                     return;
 
                 if (!_pendingEvents.TryDequeue(out PoolDiagnosticsEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     return;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -302,13 +322,29 @@ namespace Hecton8.Core
 
         public static bool TryResolvePoolName(uint poolHash, out string poolName)
         {
-            return _poolNamesByHash.TryGetValue(poolHash, out poolName);
+            for (int i = 0; i < _poolNameSlotCount; i++)
+            {
+                if (_poolNamesByHash[i].IsValid == 0 || _poolNamesByHash[i].PoolHash != poolHash)
+                    continue;
+
+                poolName = _poolNamesByHash[i].PoolName;
+                return !string.IsNullOrEmpty(poolName);
+            }
+
+            poolName = null;
+            return false;
         }
 
+        [Obsolete("Use TryPublishDataBusDepth(uint,int) so bounded diagnostics enqueue refusal is visible.", true)]
         public static void PublishDataBusDepth(uint queueHash, int pendingCount)
         {
+            TryPublishDataBusDepth(queueHash, pendingCount);
+        }
+
+        public static bool TryPublishDataBusDepth(uint queueHash, int pendingCount)
+        {
             if (queueHash == 0u || pendingCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             bool saturated = pendingCount > 128;
@@ -316,7 +352,7 @@ namespace Hecton8.Core
             {
                 if (saturated)
                     PublishDataBusSaturationWarning();
-                return;
+                return false;
             }
 
             PoolDiagnosticsEventPayload payload = new PoolDiagnosticsEventPayload
@@ -340,6 +376,8 @@ namespace Hecton8.Core
 
             if (saturated)
                 PublishDataBusSaturationWarning();
+
+            return true;
         }
 
         /// <summary>
@@ -353,7 +391,7 @@ namespace Hecton8.Core
                 RegisterPoolName(poolName);
                 _poolMetrics[poolName] = new PoolMetrics
                 {
-                    lastMeasurementFrame = Time.frameCount
+                    lastMeasurementFrame = SystemDispatcher.CurrentFrameIndex
                 };
             }
         }
@@ -408,10 +446,11 @@ namespace Hecton8.Core
         /// </summary>
         public static void PollPoolHealth(Func<string, int, int> getPoolCapacity)
         {
-            if (_lastDiagnosticsFrame == Time.frameCount)
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastDiagnosticsFrame == currentFrame)
                 return; // Already polled this frame
 
-            _lastDiagnosticsFrame = Time.frameCount;
+            _lastDiagnosticsFrame = currentFrame;
 
             Dictionary<string, PoolMetrics>.Enumerator metricsEnumerator = _poolMetrics.GetEnumerator();
             while (metricsEnumerator.MoveNext())
@@ -470,7 +509,7 @@ namespace Hecton8.Core
                 sb.AppendLine("═════════════════════════════════════════════════════════");
                 sb.AppendLine("OBJECT POOL DIAGNOSTICS REPORT");
                 sb.Append("Frame: ");
-                sb.Append(Time.frameCount);
+                sb.Append(SystemDispatcher.CurrentFrameIndex);
                 sb.Append(" | Time: ");
                 sb.Append(Time.realtimeSinceStartup);
                 sb.AppendLine("s");
@@ -567,8 +606,32 @@ namespace Hecton8.Core
         private static void RegisterPoolName(string poolName)
         {
             uint poolHash = ComputePoolHash(poolName);
-            if (poolHash != 0u && !_poolNamesByHash.ContainsKey(poolHash))
-                _poolNamesByHash.Add(poolHash, poolName);
+            if (poolHash == 0u)
+                return;
+
+            for (int i = 0; i < _poolNameSlotCount; i++)
+            {
+                if (_poolNamesByHash[i].IsValid != 0 && _poolNamesByHash[i].PoolHash == poolHash)
+                    return;
+            }
+
+            if (_poolNameSlotCount >= _poolNamesByHash.Length)
+                return;
+
+            _poolNamesByHash[_poolNameSlotCount++] = new PoolNameSlot
+            {
+                PoolHash = poolHash,
+                PoolName = poolName,
+                IsValid = 1
+            };
+        }
+
+        private static void ClearPoolNameSlots()
+        {
+            for (int i = 0; i < _poolNameSlotCount; i++)
+                _poolNamesByHash[i].Clear();
+
+            _poolNameSlotCount = 0;
         }
 
         private static uint ComputePoolHash(string poolName)
@@ -610,12 +673,12 @@ namespace Hecton8.Core
 
         private static void PublishDataBusSaturationWarning()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastDataBusSaturationWarningFrame == frame)
                 return;
 
             _lastDataBusSaturationWarningFrame = frame;
-            Hecton8.UI.NotificationEvents.PushWarning("DATA_BUS_SATURATED");
+            Hecton8.UI.NotificationEvents.TryPushWarning("DATA_BUS_SATURATED".AsSpan());
         }
 
         private static void DrainWithoutDispatch()
@@ -645,7 +708,10 @@ namespace Hecton8.Core
             while (scanBudget > 0 && !queue.IsEmpty())
             {
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     return false;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -682,7 +748,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
         public static void PrintReport()
         {
-            Debug.Log(GenerateReport());
+            Hecton8.Core.H8Debug.Log(GenerateReport());
         }
 #endif
     }

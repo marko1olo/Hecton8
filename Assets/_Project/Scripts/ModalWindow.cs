@@ -4,6 +4,8 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using TMPro;
 using Hecton.Localization;
+using Hecton8.Core;
+using Hecton8.UI;
 
 namespace Hecton.UI.MainMenu
 {
@@ -13,7 +15,7 @@ namespace Hecton.UI.MainMenu
     /// Button labels auto-update on language change.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ModalWindow : MonoBehaviour, ILocalizationLanguageChangedListener, Hecton8.Core.IModalWindowService
+    public sealed class ModalWindow : MonoBehaviour, ILocalizationLanguageChangedListener, Hecton8.Core.IModalWindowService, IGlobalRegistryHotSwapListener
     {
         // ──────────────────────────────────────────────
         // SINGLETON
@@ -40,6 +42,8 @@ namespace Hecton.UI.MainMenu
         private UnityAction _confirmClickAction;
         private UnityAction _cancelClickAction;
         private bool _runtimeBindingsReady;
+        private ILocalizationTextReadModel _localization;
+        private bool _hotSwapRegistered;
 
         // ══════════════════════════════════════════════
         // LIFECYCLE
@@ -141,6 +145,8 @@ namespace Hecton.UI.MainMenu
             if (!TryClaimInstance())
                 return;
 
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             EnsureRuntimeBindings(hideAfterBinding: !_runtimeBindingsReady);
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshButtonLabels();
@@ -149,11 +155,13 @@ namespace Hecton.UI.MainMenu
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            TryUnregisterHotSwapListener();
             ReleaseServiceIfOwner();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             if (btnConfirm != null)
                 btnConfirm.onClick.RemoveListener(_confirmClickAction);
 
@@ -183,14 +191,33 @@ namespace Hecton.UI.MainMenu
 
         private void RefreshButtonLabels()
         {
-            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextReadModel loc = _localization;
             if (loc == null) return;
 
             if (confirmButtonLabel != null)
-                confirmButtonLabel.SetText(loc.Get(LocalizationKeys.MODAL_CONFIRM));
+                TmpTextNoAlloc.Set(confirmButtonLabel, ResolveLocalizedSpan(loc, LocalizationKeys.MODAL_CONFIRM, "CONFIRM"));
 
             if (cancelButtonLabel != null)
-                cancelButtonLabel.SetText(loc.Get(LocalizationKeys.MODAL_CANCEL));
+                TmpTextNoAlloc.Set(cancelButtonLabel, ResolveLocalizedSpan(loc, LocalizationKeys.MODAL_CANCEL, "CANCEL"));
+        }
+
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(ILocalizationTextReadModel manager, string key, ReadOnlySpan<char> fallback)
+        {
+            return manager != null
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
+                : fallback;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                return;
+
+            _localization = currentService as ILocalizationTextReadModel;
+            RefreshButtonLabels();
         }
 
         // ══════════════════════════════════════════════
@@ -219,6 +246,19 @@ namespace Hecton.UI.MainMenu
             service.ShowModal(title, message, onConfirm, onCancel, null, null);
         }
 
+        public static void Show(
+            string title,
+            char[] messageBuffer,
+            int messageLength,
+            Action onConfirm,
+            Action onCancel = null)
+        {
+            if (!TryResolveService(out Hecton8.Core.IModalWindowService service))
+                return;
+
+            service.ShowModal(title, messageBuffer, messageLength, onConfirm, onCancel, null, null);
+        }
+
         /// <summary>
         /// Shows the modal window with custom button labels.
         /// Title, message, and button labels should already be localized by the caller.
@@ -243,15 +283,29 @@ namespace Hecton.UI.MainMenu
             service.ShowModal(title, message, onConfirm, onCancel, confirmLabel, cancelLabel);
         }
 
+        public static void ShowWithCustomLabels(
+            string title,
+            char[] messageBuffer,
+            int messageLength,
+            Action onConfirm,
+            Action onCancel,
+            string confirmLabel,
+            string cancelLabel)
+        {
+            if (!TryResolveService(out Hecton8.Core.IModalWindowService service))
+                return;
+
+            service.ShowModal(title, messageBuffer, messageLength, onConfirm, onCancel, confirmLabel, cancelLabel);
+        }
+
         /// <summary>
         /// Statically closes the modal window.
         /// </summary>
         public static void Close()
         {
-            if (Hecton8.Core.GlobalRegistry.TryGet(out Hecton8.Core.IModalWindowService service))
-            {
+            Hecton8.Core.IModalWindowService service = Hecton8.Core.GlobalRegistry.ModalWindow;
+            if (service != null)
                 service.CloseModal();
-            }
         }
 
         // ══════════════════════════════════════════════
@@ -260,22 +314,20 @@ namespace Hecton.UI.MainMenu
 
         private static bool TryResolveService(out Hecton8.Core.IModalWindowService service)
         {
-            if (Hecton8.Core.GlobalRegistry.TryGet(out service))
+            service = Hecton8.Core.GlobalRegistry.ModalWindow;
+            if (service != null)
                 return true;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(
-                "[ModalWindow] No ModalWindow instance found in scene! " +
-                "Add ModalWindow component to your Canvas."
-            );
+            Debug.LogError("[ModalWindow] No ModalWindow instance found in scene. Add ModalWindow component to your Canvas.");
 #endif
             return false;
         }
 
         private bool TryClaimInstance()
         {
-            if (Hecton8.Core.GlobalRegistry.TryGet(out Hecton8.Core.IModalWindowService existing) &&
-                !ReferenceEquals(existing, this))
+            Hecton8.Core.IModalWindowService existing = Hecton8.Core.GlobalRegistry.ModalWindow;
+            if (existing != null && !ReferenceEquals(existing, this))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[ModalWindow] Duplicate detected. Destroying extra instance.");
@@ -288,13 +340,33 @@ namespace Hecton.UI.MainMenu
             return true;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = Hecton8.Core.GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            Hecton8.Core.GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         private void ReleaseServiceIfOwner()
         {
-            if (Hecton8.Core.GlobalRegistry.TryGet(out Hecton8.Core.IModalWindowService existing) &&
-                ReferenceEquals(existing, this))
-            {
+            Hecton8.Core.IModalWindowService existing = Hecton8.Core.GlobalRegistry.ModalWindow;
+            if (ReferenceEquals(existing, this))
                 Hecton8.Core.GlobalRegistry.UnregisterModalWindowService(this);
-            }
         }
 
         void Hecton8.Core.IModalWindowService.ShowModal(
@@ -307,6 +379,19 @@ namespace Hecton.UI.MainMenu
         {
             EnsureRuntimeBindings(hideAfterBinding: false);
             ShowInternal(title, message, onConfirm, onCancel, confirmLabel, cancelLabel);
+        }
+
+        void Hecton8.Core.IModalWindowService.ShowModal(
+            string title,
+            char[] messageBuffer,
+            int messageLength,
+            Action onConfirm,
+            Action onCancel,
+            string confirmLabel,
+            string cancelLabel)
+        {
+            EnsureRuntimeBindings(hideAfterBinding: false);
+            ShowInternal(title, messageBuffer, messageLength, onConfirm, onCancel, confirmLabel, cancelLabel);
         }
 
         void Hecton8.Core.IModalWindowService.CloseModal()
@@ -360,8 +445,8 @@ namespace Hecton.UI.MainMenu
             string customConfirmLabel,
             string customCancelLabel)
         {
-            if (titleText   != null) titleText.SetText(title);
-            if (messageText != null) messageText.SetText(message);
+            if (titleText   != null) TmpTextNoAlloc.Set(titleText, title);
+            if (messageText != null) TmpTextNoAlloc.Set(messageText, message);
 
             _cachedOnConfirm = onConfirm;
             _cachedOnCancel  = onCancel;
@@ -369,10 +454,53 @@ namespace Hecton.UI.MainMenu
             RefreshButtonLabels();
 
             if (!string.IsNullOrEmpty(customConfirmLabel) && confirmButtonLabel != null)
-                confirmButtonLabel.SetText(customConfirmLabel);
+                TmpTextNoAlloc.Set(confirmButtonLabel, customConfirmLabel);
 
             if (!string.IsNullOrEmpty(customCancelLabel) && cancelButtonLabel != null)
-                cancelButtonLabel.SetText(customCancelLabel);
+                TmpTextNoAlloc.Set(cancelButtonLabel, customCancelLabel);
+
+            if (btnCancel != null)
+            {
+                btnCancel.gameObject.SetActive(true);
+            }
+
+            if (modalGroup != null)
+            {
+                modalGroup.alpha          = 1f;
+                modalGroup.interactable   = true;
+                modalGroup.blocksRaycasts = true;
+            }
+        }
+
+        private void ShowInternal(
+            string title,
+            char[] messageBuffer,
+            int messageLength,
+            Action onConfirm,
+            Action onCancel,
+            string customConfirmLabel,
+            string customCancelLabel)
+        {
+            if (titleText != null) TmpTextNoAlloc.Set(titleText, title);
+            if (messageText != null)
+            {
+                int safeLength = messageBuffer == null ? 0 : Mathf.Clamp(messageLength, 0, messageBuffer.Length);
+                if (safeLength > 0)
+                    messageText.SetCharArray(messageBuffer, 0, safeLength);
+                else
+                    messageText.SetCharArray(Array.Empty<char>(), 0, 0);
+            }
+
+            _cachedOnConfirm = onConfirm;
+            _cachedOnCancel  = onCancel;
+
+            RefreshButtonLabels();
+
+            if (!string.IsNullOrEmpty(customConfirmLabel) && confirmButtonLabel != null)
+                TmpTextNoAlloc.Set(confirmButtonLabel, customConfirmLabel);
+
+            if (!string.IsNullOrEmpty(customCancelLabel) && cancelButtonLabel != null)
+                TmpTextNoAlloc.Set(cancelButtonLabel, customCancelLabel);
 
             if (btnCancel != null)
             {

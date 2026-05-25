@@ -437,7 +437,11 @@ namespace Hecton8.Editor.AITextureControlMaps
             try
             {
                 Transform rendererTransform = root.transform.Find(rendererPath);
-                MeshRenderer renderer = rendererTransform != null ? rendererTransform.GetComponent<MeshRenderer>() : null;
+                MeshRenderer renderer = null;
+                if (rendererTransform != null)
+                {
+                    renderer = rendererTransform.TryGetComponent(out MeshRenderer resolvedRenderer) ? resolvedRenderer : null;
+                }
                 if (renderer == null)
                 {
                     WritePrefabBindingReport(assetKey, material.name, "REJECTED_RENDERER_PATH_MISSING", prefabPath, rendererPath, materialSlot);

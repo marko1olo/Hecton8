@@ -11,7 +11,7 @@ namespace Hecton8.Core
         private const int SetCount = 16;
         private const int WayCount = 4;
         private const int SlotCount = SetCount * WayCount;
-        private const int MaxCharsPerPrompt = 64;
+        public const int MaxCharsPerPrompt = 64;
         private const int CharCapacity = SlotCount * MaxCharsPerPrompt;
 
         // COLD ALLOC: uint[64] - prompt hash slots - owner: PlayerLookTargetPromptCache
@@ -43,6 +43,17 @@ namespace Hecton8.Core
         public static void Store(uint promptHash, string prompt)
         {
             if (promptHash == 0u || string.IsNullOrEmpty(prompt))
+                return;
+
+            Store(promptHash, prompt.AsSpan());
+        }
+
+        /// <summary>
+        /// Stores a bounded copy of prompt text without materializing a managed string.
+        /// </summary>
+        public static void Store(uint promptHash, ReadOnlySpan<char> prompt)
+        {
+            if (promptHash == 0u || prompt.IsEmpty)
                 return;
 
             byte writeAge = NextAge();

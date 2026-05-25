@@ -1,0 +1,6 @@
+species,layer,min_depth,max_depth,min_slope,max_slope,biome_hash,preferred_temperature,temperature_tolerance,spawn_weight,silt_affinity,thermal_affinity
+KELP_CANOPY,0,10,180,0,18,reef,8,12,0.72,0.10,0.00
+SILT_WEED,0,260,2600,0,11,silt,4,14,0.88,0.95,0.10
+GHOST_RAY_PREY,1,900,4200,0,24,any,3,20,0.50,0.22,0.18
+ABYSSAL_PREDATOR,2,1600,4700,0,28,hadal,2,18,0.34,0.12,0.20
+VENT_TUBE_WORM,3,600,4600,0,32,vent,38,28,0.96,0.18,1.00

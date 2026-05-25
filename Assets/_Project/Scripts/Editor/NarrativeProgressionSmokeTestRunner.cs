@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Text;
 using Hecton8.Dev;
 using UnityEditor;
 using UnityEngine;
@@ -41,7 +42,7 @@ namespace Hecton8.Editor
             if (!string.IsNullOrEmpty(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
 
-            File.WriteAllText(outputPath, json);
+            File.WriteAllText(outputPath, json, new UTF8Encoding(false));
             Debug.Log("[NarrativeProgressionSmokeTestRunner] " + json);
 
             if (Application.isBatchMode)

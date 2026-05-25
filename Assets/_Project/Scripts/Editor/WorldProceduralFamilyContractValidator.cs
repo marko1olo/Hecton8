@@ -66,7 +66,7 @@ namespace Hecton8.EditorTools
             List<FamilyRecord> records = LoadFamilyRecords();
             Dictionary<string, int> familyIdCounts = BuildFamilyIdCounts(records);
             List<FamilyStatus> statuses = new List<FamilyStatus>(records.Count);
-            Dictionary<string, VerticalSummary> summaries = new Dictionary<string, VerticalSummary>(StringComparer.Ordinal);
+            Dictionary<string, VerticalSummary> summaries = new Dictionary<string, VerticalSummary>(records.Count, StringComparer.Ordinal);
 
             for (int i = 0; i < records.Count; i++)
             {
@@ -206,8 +206,8 @@ namespace Hecton8.EditorTools
             ref int warningCount)
         {
             WorldPrefabFamilyProfile family = record.Family;
-            HashSet<string> variantIds = new HashSet<string>(StringComparer.Ordinal);
             WorldPrefabFamilyProfile.VariantEntry[] variants = family.variants ?? Array.Empty<WorldPrefabFamilyProfile.VariantEntry>();
+            HashSet<string> variantIds = new HashSet<string>(Math.Max(variants.Length, 1), StringComparer.Ordinal);
 
             for (int i = 0; i < variants.Length; i++)
             {

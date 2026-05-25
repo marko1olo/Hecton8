@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_096
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_096_MAT_family_route_power_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_route_power_Albedo.png
+FINAL_FILENAME: MAT_family_route_power_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Route power family albedo for HECTON-8 traversal guidance and energized infrastructure. Create a clean material with warm off-white cable housings, satin titanium conduit ribs, teal energy-routing paint, amber capacitor dots, graphite insulation bands, and pale salt dust caught along seam edges. The texture should clearly imply powered route infrastructure without becoming a glowing billboard. Keep the design premium, readable, and modular for repeated world use. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

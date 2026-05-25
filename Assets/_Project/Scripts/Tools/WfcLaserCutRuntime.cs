@@ -51,6 +51,12 @@ namespace Hecton8.Tools
         private static uint _blackBoxCursor;
         private static uint _doorsCutCount;
         private static float _latestSystemStress01;
+        private static Vector4 _pendingCutSphereWs;
+        private static float _pendingCutProgress01;
+        private static float _pendingCutHeat01;
+        private static float _pendingCutMolten01;
+        private static float _pendingCutOverkill01;
+        private static bool _cutShaderGlobalsDirty;
 
         public static void RefreshOwnerPhaseContext()
         {
@@ -167,7 +173,7 @@ namespace Hecton8.Tools
                 telemetryFlags,
                 blackBox);
 
-            PublishShaderClipGlobals(runtimeHitPoint, progress01, safeHeat, systemStress01);
+            QueueShaderClipGlobals(runtimeHitPoint, progress01, safeHeat, systemStress01);
             PublishReactiveFeedback(hitAup, toolHash, sectorHash, cellIndex, progress01, safePower, safeHeat, systemStress01, frame);
 
             if (completed && !alreadyUnlocked)
@@ -252,7 +258,7 @@ namespace Hecton8.Tools
                 handle = default;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GameplayTools,
@@ -375,7 +381,20 @@ namespace Hecton8.Tools
             _latestSystemStress01 = Clamp01Finite(stress01);
         }
 
-        private static void PublishShaderClipGlobals(Vector3 runtimeHitPoint, float progress01, float heat01, float systemStress01)
+        public static void FlushVisualSync()
+        {
+            if (!_cutShaderGlobalsDirty)
+                return;
+
+            _cutShaderGlobalsDirty = false;
+            Shader.SetGlobalVector(_CutSphereWsId, _pendingCutSphereWs);
+            Shader.SetGlobalFloat(_CutProgressId, _pendingCutProgress01);
+            Shader.SetGlobalFloat(_CutHeatId, _pendingCutHeat01);
+            Shader.SetGlobalFloat(_CutMoltenId, _pendingCutMolten01);
+            Shader.SetGlobalFloat(_CutOverkillId, _pendingCutOverkill01);
+        }
+
+        private static void QueueShaderClipGlobals(Vector3 runtimeHitPoint, float progress01, float heat01, float systemStress01)
         {
             if (!IsFinite(runtimeHitPoint))
                 return;
@@ -383,11 +402,12 @@ namespace Hecton8.Tools
             float safeProgress01 = Clamp01Finite(progress01);
             float safeHeat01 = Clamp01Finite(heat01);
             float radius = math.lerp(BaseClipRadiusMeters, MaxClipRadiusMeters, safeProgress01);
-            Shader.SetGlobalVector(_CutSphereWsId, new Vector4(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z, radius));
-            Shader.SetGlobalFloat(_CutProgressId, safeProgress01);
-            Shader.SetGlobalFloat(_CutHeatId, safeHeat01);
-            Shader.SetGlobalFloat(_CutMoltenId, Clamp01Finite(safeHeat01 * (0.35f + safeProgress01)));
-            Shader.SetGlobalFloat(_CutOverkillId, ResolveVisualOverkill01(systemStress01));
+            _pendingCutSphereWs = new Vector4(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z, radius);
+            _pendingCutProgress01 = safeProgress01;
+            _pendingCutHeat01 = safeHeat01;
+            _pendingCutMolten01 = Clamp01Finite(safeHeat01 * (0.35f + safeProgress01));
+            _pendingCutOverkill01 = ResolveVisualOverkill01(systemStress01);
+            _cutShaderGlobalsDirty = true;
         }
 
         private static float ResolveVisualOverkill01(float systemStress01)
@@ -431,7 +451,7 @@ namespace Hecton8.Tools
                 Flags = DebrisSpawnSignal.FlagToolSparks,
                 Quantity = sparkQuantity
             };
-            SignalBus<DebrisSpawnSignal>.Push(in debris);
+            SignalBus<DebrisSpawnSignal>.TryPush(in debris);
 
             ToolAcousticSignal acoustic = new ToolAcousticSignal
             {
@@ -444,7 +464,7 @@ namespace Hecton8.Tools
                 State = ToolAcousticSignal.StateLaserLoop,
                 Flags = ToolAcousticSignal.FlagLooping
             };
-            SignalBus<ToolAcousticSignal>.Push(in acoustic);
+            SignalBus<ToolAcousticSignal>.TryPush(in acoustic);
 
             HapticRequest haptic = new HapticRequest
             {
@@ -456,7 +476,7 @@ namespace Hecton8.Tools
                 Channel = HapticRequest.ChannelMicroVibration,
                 Flags = HapticRequest.FlagMicroVibration
             };
-            SignalBus<HapticRequest>.Push(in haptic);
+            SignalBus<HapticRequest>.TryPush(in haptic);
         }
 
         private static uint ComposeDoorTargetHash(ulong sectorHash, ushort cellIndex)

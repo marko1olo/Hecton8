@@ -1,6 +1,8 @@
 using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
@@ -13,7 +15,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Presentation Controller")]
-    public sealed class PlayerSwimPresentationController : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerSwimPresentationController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
@@ -557,6 +559,7 @@ namespace Hecton8.Gameplay
 #endif
 
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
         private SwimPresentationProfile _activeProfile;
         private PlayerSwimPresentationMode _currentMode;
@@ -672,6 +675,26 @@ namespace Hecton8.Gameplay
         private int _lastBreathingPhaseShaderByte = int.MinValue;
         private int _lastSwimVatSpeedScalarByte = int.MinValue;
         private float _swimVatSpeedScalar;
+        private float _pendingWaveSlopeForwardShaderValue;
+        private float _pendingWaveSlopeLateralShaderValue;
+        private float _pendingWaveSlopeXShaderValue;
+        private float _pendingWaveSlopeZShaderValue;
+        private float _pendingWaveCrestReachShaderValue;
+        private float _pendingWaveDescentTuckShaderValue;
+        private float _pendingWaveLeanWeightShaderValue;
+        private float _pendingImmersionDepthShaderValue;
+        private float _pendingBreathingPhaseShaderValue;
+        private float _pendingSwimVatSpeedScalarShaderValue;
+        private bool _waveSlopeForwardShaderDirty;
+        private bool _waveSlopeLateralShaderDirty;
+        private bool _waveSlopeXShaderDirty;
+        private bool _waveSlopeZShaderDirty;
+        private bool _waveCrestReachShaderDirty;
+        private bool _waveDescentTuckShaderDirty;
+        private bool _waveLeanWeightShaderDirty;
+        private bool _immersionDepthShaderDirty;
+        private bool _breathingPhaseShaderDirty;
+        private bool _swimVatSpeedScalarShaderDirty;
         private bool _hasInitializedActiveBlend;
         private bool _cameraYawInitialized;
         private bool _poseStateInitialized;
@@ -767,7 +790,7 @@ namespace Hecton8.Gameplay
 
             _lastSwimVatSpeedScalarByte = quantized;
             _swimVatSpeedScalar = quantized * 0.00392156862f;
-            Shader.SetGlobalFloat(_SwimVatSpeedScalarShaderId, _swimVatSpeedScalar);
+            QueueSwimShaderFloat(_SwimVatSpeedScalarShaderId, _swimVatSpeedScalar);
         }
 
         private void Awake()
@@ -858,6 +881,11 @@ namespace Hecton8.Gameplay
             SyncFromLocomotion(dt);
         }
 
+        public void LateFrameTick()
+        {
+            FlushQueuedSwimShaderFloats();
+        }
+
         internal void ApplyPhysicalTrauma(Vector3 worldImpulse, float weight)
         {
             float clampedWeight = math.saturate(weight);
@@ -898,7 +926,7 @@ namespace Hecton8.Gameplay
             if (dt <= 0f)
                 return;
 
-            if (playerMovement == null || playerRigidbody == null)
+            if (playerMovement == null)
             {
                 if (frame >= _nextReferenceResolveFrame)
                 {
@@ -907,7 +935,7 @@ namespace Hecton8.Gameplay
                     ResolveGuideReferences();
                 }
 
-                if (playerMovement == null || playerRigidbody == null)
+                if (playerMovement == null)
                     return;
             }
 
@@ -918,9 +946,9 @@ namespace Hecton8.Gameplay
             if (profile == null)
                 return;
 
-            Vector3 velocity = playerMovement != null
-                ? playerMovement.InterpolatedLinearVelocity
-                : playerRigidbody.linearVelocity;
+            Vector3 velocity = TryResolveKccPresentationVelocity(out Vector3 kccVelocity)
+                ? kccVelocity
+                : Vector3.zero;
             float speed = ApproximateVectorMagnitude(velocity);
             float planarSpeed = ApproximatePlanarMagnitude(velocity.x, velocity.z);
             float speedDelta = speed - _previousSpeed;
@@ -980,15 +1008,23 @@ namespace Hecton8.Gameplay
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registered = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1471,7 +1507,7 @@ namespace Hecton8.Gameplay
             _lastImmersionDepthShaderByte = int.MinValue;
         }
 
-        private static void PublishQuantizedShaderFloat(int shaderId, float value, ref int previousByte, float minValue, float maxValue)
+        private void PublishQuantizedShaderFloat(int shaderId, float value, ref int previousByte, float minValue, float maxValue)
         {
             float span = math.max(0.0001f, maxValue - minValue);
             float normalized = math.saturate((value - minValue) * math.rcp(span));
@@ -1480,7 +1516,7 @@ namespace Hecton8.Gameplay
                 return;
 
             previousByte = quantized;
-            Shader.SetGlobalFloat(shaderId, minValue + quantized * 0.00392156862745f * span);
+            QueueSwimShaderFloat(shaderId, minValue + quantized * 0.00392156862745f * span);
         }
 
         private void PublishBreathingPhase(float phase)
@@ -1492,7 +1528,8 @@ namespace Hecton8.Gameplay
                 return;
 
             _lastBreathingPhaseShaderByte = quantized;
-            Shader.SetGlobalFloat(_BreathingPhaseShaderId, quantized * 0.00787401575f);
+            float breathingPhase = quantized * 0.00787401575f;
+            QueueSwimShaderFloat(_BreathingPhaseShaderId, breathingPhase);
             if (TryGetKineticMatrixSinkHot(out IKineticCharacterPresentationSink kineticSink))
             {
                 kineticSink.SubmitSwimPresentation(
@@ -1502,8 +1539,125 @@ namespace Hecton8.Gameplay
                     _waveDescentTuckCurrent,
                     _waveLeanWeightCurrent,
                     _immersionDepthCurrent,
-                    quantized * 0.00787401575f,
+                    breathingPhase,
                     _equippedToolBlendCurrent);
+            }
+        }
+
+        private void QueueSwimShaderFloat(int shaderId, float value)
+        {
+            if (shaderId == _WaveSlopeForwardShaderId)
+            {
+                _pendingWaveSlopeForwardShaderValue = value;
+                _waveSlopeForwardShaderDirty = true;
+            }
+            else if (shaderId == _WaveSlopeLateralShaderId)
+            {
+                _pendingWaveSlopeLateralShaderValue = value;
+                _waveSlopeLateralShaderDirty = true;
+            }
+            else if (shaderId == _WaveSlopeXShaderId)
+            {
+                _pendingWaveSlopeXShaderValue = value;
+                _waveSlopeXShaderDirty = true;
+            }
+            else if (shaderId == _WaveSlopeZShaderId)
+            {
+                _pendingWaveSlopeZShaderValue = value;
+                _waveSlopeZShaderDirty = true;
+            }
+            else if (shaderId == _WaveCrestReachShaderId)
+            {
+                _pendingWaveCrestReachShaderValue = value;
+                _waveCrestReachShaderDirty = true;
+            }
+            else if (shaderId == _WaveDescentTuckShaderId)
+            {
+                _pendingWaveDescentTuckShaderValue = value;
+                _waveDescentTuckShaderDirty = true;
+            }
+            else if (shaderId == _WaveLeanWeightShaderId)
+            {
+                _pendingWaveLeanWeightShaderValue = value;
+                _waveLeanWeightShaderDirty = true;
+            }
+            else if (shaderId == _ImmersionDepthShaderId)
+            {
+                _pendingImmersionDepthShaderValue = value;
+                _immersionDepthShaderDirty = true;
+            }
+            else if (shaderId == _BreathingPhaseShaderId)
+            {
+                _pendingBreathingPhaseShaderValue = value;
+                _breathingPhaseShaderDirty = true;
+            }
+            else if (shaderId == _SwimVatSpeedScalarShaderId)
+            {
+                _pendingSwimVatSpeedScalarShaderValue = value;
+                _swimVatSpeedScalarShaderDirty = true;
+            }
+        }
+
+        private void FlushQueuedSwimShaderFloats()
+        {
+            if (_waveSlopeForwardShaderDirty)
+            {
+                _waveSlopeForwardShaderDirty = false;
+                Shader.SetGlobalFloat(_WaveSlopeForwardShaderId, _pendingWaveSlopeForwardShaderValue);
+            }
+
+            if (_waveSlopeLateralShaderDirty)
+            {
+                _waveSlopeLateralShaderDirty = false;
+                Shader.SetGlobalFloat(_WaveSlopeLateralShaderId, _pendingWaveSlopeLateralShaderValue);
+            }
+
+            if (_waveSlopeXShaderDirty)
+            {
+                _waveSlopeXShaderDirty = false;
+                Shader.SetGlobalFloat(_WaveSlopeXShaderId, _pendingWaveSlopeXShaderValue);
+            }
+
+            if (_waveSlopeZShaderDirty)
+            {
+                _waveSlopeZShaderDirty = false;
+                Shader.SetGlobalFloat(_WaveSlopeZShaderId, _pendingWaveSlopeZShaderValue);
+            }
+
+            if (_waveCrestReachShaderDirty)
+            {
+                _waveCrestReachShaderDirty = false;
+                Shader.SetGlobalFloat(_WaveCrestReachShaderId, _pendingWaveCrestReachShaderValue);
+            }
+
+            if (_waveDescentTuckShaderDirty)
+            {
+                _waveDescentTuckShaderDirty = false;
+                Shader.SetGlobalFloat(_WaveDescentTuckShaderId, _pendingWaveDescentTuckShaderValue);
+            }
+
+            if (_waveLeanWeightShaderDirty)
+            {
+                _waveLeanWeightShaderDirty = false;
+                Shader.SetGlobalFloat(_WaveLeanWeightShaderId, _pendingWaveLeanWeightShaderValue);
+            }
+
+            if (_immersionDepthShaderDirty)
+            {
+                _immersionDepthShaderDirty = false;
+                Shader.SetGlobalFloat(_ImmersionDepthShaderId, _pendingImmersionDepthShaderValue);
+            }
+
+            if (_breathingPhaseShaderDirty)
+            {
+                _breathingPhaseShaderDirty = false;
+                Shader.SetGlobalFloat(_BreathingPhaseShaderId, _pendingBreathingPhaseShaderValue);
+            }
+
+            if (_swimVatSpeedScalarShaderDirty)
+            {
+                _swimVatSpeedScalarShaderDirty = false;
+                Shader.SetGlobalFloat(_SwimVatSpeedScalarShaderId, _pendingSwimVatSpeedScalarShaderValue);
             }
         }
 
@@ -2994,6 +3148,29 @@ namespace Hecton8.Gameplay
             _leftGuideEulerCurrent = _leftGuideCurrentLocalRotation.eulerAngles;
             _rightGuideEulerCurrent = _rightGuideCurrentLocalRotation.eulerAngles;
             _poseStateInitialized = true;
+        }
+
+        private static bool TryResolveKccPresentationVelocity(out Vector3 velocity)
+        {
+            velocity = Vector3.zero;
+            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal))
+                return false;
+
+            uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
+            if (currentFrame != 0u &&
+                signalFrame != 0u &&
+                (signalFrame > currentFrame || currentFrame - signalFrame > 2u))
+            {
+                return false;
+            }
+
+            float3 value = signal.Velocity;
+            if (!math.all(math.isfinite(value)))
+                return false;
+
+            velocity = new Vector3(value.x, value.y, value.z);
+            return true;
         }
 
         private static float ShapeStrokeHalfWave(float value, float sharpness)

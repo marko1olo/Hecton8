@@ -1,0 +1,71 @@
+﻿{
+    "agent":  "SHINOBU_351",
+    "scanner":  "OOP_AudioSource_Scanner",
+    "summary":  "OOP Audio Sources Eradicated",
+    "scannerMode":  "UNITY_ROSLYN_AST_SOURCE_WITH_CLI_REGEX_FALLBACK_REPORT",
+    "scannerSourceUsesRoslynAst":  true,
+    "reportUsesRoslynAst":  false,
+    "reportExecution":  "PowerShell Roslyn execution failed under Windows PowerShell 5.1 due System.Runtime.CompilerServices.Unsafe binding conflict; Unity Editor menu remains the authoritative AST executor.",
+    "fallbackUsesRegex":  true,
+    "passed":  true,
+    "filesScanned":  91,
+    "parserFailures":  0,
+    "totalForbiddenNodes":  5,
+    "activeHabitatPhysicsViolationCount":  0,
+    "habitatPhysicsRuntimeForbiddenHitsAfterPatch":  0,
+    "physicsFluidFeedbackAudioSourceRemoved":  true,
+    "deepPsychosisHullStressClipsRemoved":  true,
+    "crushDepthManagedGroanClipsRemoved":  true,
+    "transportEntanglementGroanRoutedProcedural":  true,
+    "acousticZoneFatalPressureRoutedProcedural":  true,
+    "submarineOsHullWarningClipFieldsRemoved":  true,
+    "callbackOutputCapacityGuarded":  true,
+    "multichannelTailMixdownGuarded":  true,
+    "kernelBlockParamsSizeBytes":  96,
+    "inScopeManagedHullGroanFindingsAfterPatch":  0,
+    "scannerSourceDetectsSerializedAudioSourceFields":  true,
+    "scannerSourceDetectsPlayAtPointInvocations":  true,
+    "policy":  "Hull/base stress audio must enter player-critical DSP through SignalBus/BaseStructuralWarningSignal and flat PCM/Vault buffers, not Unity AudioSource playback.",
+    "scanRoots":  [
+                      "Assets/_Project/Scripts/Habitat",
+                      "Assets/_Project/Scripts/Physics",
+                      "Assets/_Project/Scripts/Audio"
+                  ],
+    "findings":  [
+                     {
+                         "path":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                         "line":  258,
+                         "token":  "AudioSource[",
+                         "scanner":  "CLI_REGEX_FALLBACK",
+                         "activeViolation":  false
+                     },
+                     {
+                         "path":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                         "line":  402,
+                         "token":  "AudioSource[",
+                         "scanner":  "CLI_REGEX_FALLBACK",
+                         "activeViolation":  false
+                     },
+                     {
+                         "path":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                         "line":  403,
+                         "token":  "new AudioSource",
+                         "scanner":  "CLI_REGEX_FALLBACK",
+                         "activeViolation":  false
+                     },
+                     {
+                         "path":  "Assets/_Project/Scripts/Audio/MusicVoicePool.cs",
+                         "line":  14,
+                         "token":  "AudioSource[",
+                         "scanner":  "CLI_REGEX_FALLBACK",
+                         "activeViolation":  false
+                     },
+                     {
+                         "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                         "line":  339,
+                         "token":  "AddComponent\u003cAudioSource",
+                         "scanner":  "CLI_REGEX_FALLBACK",
+                         "activeViolation":  false
+                     }
+                 ]
+}

@@ -180,7 +180,7 @@ namespace Hecton8.World
             if (_memory == null || !_memory.StrictSubstrateMissingLoggedChunks.Add(chunkKey))
                 return;
 
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 "[WorldProceduralScatterDirector] Strict flora substrate unavailable; rejecting strict-envelope flora for chunk " +
                 chunkX +
                 "," +

@@ -316,7 +316,12 @@ namespace Hecton8.EditorTools
             if (!changed)
                 return false;
 
-            family.variants = variants.ToArray();
+            if (family.variants == null || family.variants.Length != variants.Count)
+                family.variants = new WorldPrefabFamilyProfile.VariantEntry[variants.Count];
+
+            for (int i = 0; i < variants.Count; i++)
+                family.variants[i] = variants[i];
+
             EditorUtility.SetDirty(family);
             return true;
         }

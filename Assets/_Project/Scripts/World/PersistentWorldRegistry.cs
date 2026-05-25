@@ -88,7 +88,7 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(localRuntime)))
                 return default;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return default;
 
@@ -177,7 +177,7 @@ namespace Hecton8.World
 
         public float3 ToRuntimeFloat3()
         {
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return float3.zero;
 
@@ -328,6 +328,26 @@ namespace Hecton8.World
         [FieldOffset(52)] public float Integrity01;
         [FieldOffset(56)] public int InventoryHash;
         [FieldOffset(60)] public uint InstanceUid;
+    }
+
+    /// <summary>
+    /// Fauna persistence route that lets AI cache hibernation/egg records without depending on the concrete registry owner.
+    /// </summary>
+    internal interface IFaunaPersistentWorldStateService : ISystem
+    {
+        bool TryCacheFaunaHibernationState(in EntityDataRecord faunaState);
+
+        bool TryCacheFaunaEggState(in EntityDataRecord eggState);
+
+        int ConsumeCachedFaunaHibernationStates(
+            in AbsoluteUniversePosition playerAup,
+            float restoreRadiusMeters,
+            List<EntityDataRecord> destination);
+
+        int MigrateApexFaunaHibernationStatesToward(
+            in AbsoluteUniversePosition attractorAup,
+            float searchRadiusMeters,
+            float stepMeters);
     }
 
     [BinaryBlittableSafe]
@@ -664,7 +684,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5850)]
-    public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISceneTransitionWorldResidencyBridge, IRuntimeWatchdogWorldHealthBridge
+    public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISceneTransitionWorldResidencyBridge, IRuntimeWatchdogWorldHealthBridge, INutrientThermalVentReadModel, IFaunaPersistentWorldStateService, IGlobalRegistryHotSwapListener
     {
         private sealed class SectorOverrideState
         {
@@ -819,6 +839,22 @@ namespace Hecton8.World
         public int ActiveThermalVentCount => _activeThermalVentCount;
         public int ActiveThermalVentRevision => _activeThermalVentRevision;
 
+        /// <summary>
+        /// Reads the active thermal vent count through the nutrient-facing owner interface.
+        /// </summary>
+        public int ReadActiveNutrientThermalVentCount()
+        {
+            return _activeThermalVentCount;
+        }
+
+        /// <summary>
+        /// Reads the active thermal vent revision through the nutrient-facing owner interface.
+        /// </summary>
+        public int ReadActiveNutrientThermalVentRevision()
+        {
+            return _activeThermalVentRevision;
+        }
+
         internal static ushort PackFloraStateOverride(float normalizedHealth, byte harvestState)
         {
             byte packedHealth = QuantizeFloraStateChannel(normalizedHealth);
@@ -902,6 +938,7 @@ namespace Hecton8.World
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private bool _hydrationSessionRunning;
         private bool _playerChunkValid;
         private bool _hasLastHydrationScanAup;
@@ -928,6 +965,9 @@ namespace Hecton8.World
         private int _tombstoneDecayCurrentDay;
         private bool _tombstoneDecaySweepScheduled;
         private bool _tombstoneDecayApplyPending;
+        private ISaveService _saveService;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private IPlayerInventoryService _playerInventoryService;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -991,17 +1031,21 @@ namespace Hecton8.World
             if (submarine != null && IsInsideSubmarineFallbackBounds(submarine, runtimePosition))
                 return true;
 
-            if (!TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup))
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            if (registry == null ||
+                !registry.TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup))
+            {
                 return false;
+            }
 
             return AbsoluteUniversePosition.DistanceSq(in position, in playerAup) <= ModCoreProtectionRadiusSq;
         }
 
-        private static bool TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
 
-            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = _playerRuntimeContext;
             if (player == null)
                 return false;
 
@@ -1036,7 +1080,7 @@ namespace Hecton8.World
             if (!TryEnsureItemLookup() || _resolvedItemCatalog == null)
                 return false;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
             if (pool == null)
                 return false;
 
@@ -1171,6 +1215,8 @@ namespace Hecton8.World
         private void OnEnable()
         {
             TryRegisterService();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterRuntimeLoops();
         }
 
@@ -1192,6 +1238,29 @@ namespace Hecton8.World
 
             record = _activeThermalVents[index];
             return record.RuntimeKey != 0L;
+        }
+
+        /// <summary>
+        /// Copies one active thermal vent row into a nutrient-specific unmanaged DTO.
+        /// </summary>
+        public bool TryGetActiveNutrientThermalVent(int index, out NutrientThermalVentSnapshotDTO record)
+        {
+            record = default;
+            if (!TryGetActiveThermalVent(index, out PersistentThermalVentRecord source))
+                return false;
+
+            record = new NutrientThermalVentSnapshotDTO
+            {
+                RuntimeKey = source.RuntimeKey,
+                PositionAup = source.PositionAup,
+                RadiusWS = source.RadiusWS,
+                HeightWS = source.HeightWS,
+                UpdraftVelocity = source.UpdraftVelocity,
+                HeatIntensity = source.HeatIntensity,
+                SmokeDensity = source.SmokeDensity,
+                CableRadiusWS = source.CableRadiusWS
+            };
+            return true;
         }
 
         public bool RegisterActiveThermalVent(
@@ -1265,22 +1334,30 @@ namespace Hecton8.World
         {
             CompleteTombstoneDecayBeforeDeltaMutation();
             CancelHydrationSession(clearQueue: false);
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntimeLoops();
             TryUnregisterService();
             DehydrateAll(syncTransformsBackToRecords: false);
             DrainPendingEntityStateTempWrites(int.MaxValue);
             DisposePendingEntityStateTempWritesDeferred();
+            _saveService = null;
+            _playerRuntimeContext = null;
+            _playerInventoryService = null;
         }
 
         private void OnDestroy()
         {
             CancelHydrationSession(clearQueue: false);
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntimeLoops();
             TryUnregisterService();
             DehydrateAll(syncTransformsBackToRecords: false);
             DrainPendingEntityStateTempWrites(int.MaxValue);
             DisposePendingEntityStateTempWritesDeferred();
             CompleteTombstoneDecayBeforeDeltaMutation();
+            _saveService = null;
+            _playerRuntimeContext = null;
+            _playerInventoryService = null;
             UnregisterNativeMemorySentinelAllocations();
 
             if (_records.IsCreated)
@@ -2629,7 +2706,7 @@ namespace Hecton8.World
 
                 await Awaitable.MainThreadAsync();
                 if (quarantinedSectorResetApplied)
-                    Hecton8.UI.NotificationEvents.PushCritical(LocalizedSectorCorruptionMessage);
+                    Hecton8.UI.NotificationEvents.TryPushCritical(LocalizedSectorCorruptionMessage.AsSpan());
 
                 await AwaitSectorPrefabPrewarmAsync(stagedRecords);
                 RestoreFromLoadedRecords(stagedRecords, scheduleHydration: false);
@@ -2740,20 +2817,17 @@ namespace Hecton8.World
 
             if (!_tickRegistered)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+                _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_slowTickRegistered)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+                _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
 
             if (!_lateFrameRegistered)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
         }
 
@@ -2776,6 +2850,65 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _lateFrameRegistered = false;
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Save)
+            {
+                _saveService = currentService as ISaveService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+            {
+                _playerInventoryService = currentService as IPlayerInventoryService;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                !_serviceRegistered ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            TryUnregisterRuntimeLoops();
+            TryRegisterRuntimeLoops();
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _saveService = GlobalRegistry.Save;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerInventoryService = GlobalRegistry.PlayerInventory;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !_serviceRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void RefreshHydrationWindow(in AbsoluteUniversePosition playerAup)
@@ -2906,7 +3039,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
             if (pool == null)
                 return false;
 
@@ -2947,8 +3080,8 @@ namespace Hecton8.World
             {
                 pooledRigidbody.mass = itemData.MassKg;
                 pooledRigidbody.isKinematic = false;
-                pooledRigidbody.linearVelocity = Vector3.zero;
-                pooledRigidbody.angularVelocity = Vector3.zero;
+                PhysicsForceRouter.QueueLinearVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
+                PhysicsForceRouter.QueueAngularVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
                 _poolSlotRigidbodies[poolIndex] = pooledRigidbody;
                 Vector3 resolvedSpawnVelocity = Vector3.zero;
                 bool hasResolvedSpawnVelocity = false;
@@ -2965,7 +3098,7 @@ namespace Hecton8.World
                 }
 
                 if (hasResolvedSpawnVelocity)
-                    pooledRigidbody.linearVelocity = resolvedSpawnVelocity;
+                    PhysicsForceRouter.QueueLinearVelocitySet(pooledRigidbody, resolvedSpawnVelocity);
 
                 if (TryConsumeSpawnImpulse(record.InstanceUid, out float3 spawnImpulse))
                     PhysicsForceRouter.QueueForce(pooledRigidbody, new Vector3(spawnImpulse.x, spawnImpulse.y, spawnImpulse.z), ForceMode.Impulse);
@@ -3018,13 +3151,13 @@ namespace Hecton8.World
 
             if (pooledRigidbody != null)
             {
-                pooledRigidbody.linearVelocity = Vector3.zero;
-                pooledRigidbody.angularVelocity = Vector3.zero;
+                PhysicsForceRouter.QueueLinearVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
+                PhysicsForceRouter.QueueAngularVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
                 pooledRigidbody.isKinematic = true;
                 pooledRigidbody.Sleep();
             }
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
             if (pool != null)
             {
                 pool.Despawn(instance);
@@ -3173,9 +3306,12 @@ namespace Hecton8.World
 
         private bool TryEnsureItemLookup()
         {
-            PlayerInventory playerInventory = GlobalRegistry.PlayerInventory != null
-                ? GlobalRegistry.PlayerInventory.Inventory
-                : null;
+            IPlayerInventoryService inventoryService = _playerInventoryService;
+            PlayerInventory playerInventory = inventoryService != null
+                ? inventoryService.Inventory
+                : _playerRuntimeContext != null
+                    ? _playerRuntimeContext.Inventory
+                    : null;
             ItemCatalog currentCatalog = playerInventory != null
                 ? playerInventory.ItemCatalog
                 : null;
@@ -3835,6 +3971,32 @@ namespace Hecton8.World
                 return string.Empty;
 
             return Path.Combine(_indexedSectorOverrideDirectory, CreateSectorTempFileName(sectorHash, SectorEntityStateTempFileSuffix));
+        }
+
+        bool IFaunaPersistentWorldStateService.TryCacheFaunaHibernationState(in EntityDataRecord faunaState)
+        {
+            return TryCacheFaunaHibernationState(in faunaState);
+        }
+
+        bool IFaunaPersistentWorldStateService.TryCacheFaunaEggState(in EntityDataRecord eggState)
+        {
+            return TryCacheFaunaEggState(in eggState);
+        }
+
+        int IFaunaPersistentWorldStateService.ConsumeCachedFaunaHibernationStates(
+            in AbsoluteUniversePosition playerAup,
+            float restoreRadiusMeters,
+            List<EntityDataRecord> destination)
+        {
+            return ConsumeCachedFaunaHibernationStates(in playerAup, restoreRadiusMeters, destination);
+        }
+
+        int IFaunaPersistentWorldStateService.MigrateApexFaunaHibernationStatesToward(
+            in AbsoluteUniversePosition attractorAup,
+            float searchRadiusMeters,
+            float stepMeters)
+        {
+            return MigrateApexFaunaHibernationStatesToward(in attractorAup, searchRadiusMeters, stepMeters);
         }
 
         internal bool TryCacheFaunaHibernationState(in EntityDataRecord faunaState)
@@ -4725,7 +4887,7 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (lastTelemetryFrame == frame)
                 return;
 
@@ -5201,7 +5363,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             position = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -6405,10 +6567,11 @@ namespace Hecton8.World
             }
         }
 
-        private static int ResolveTombstoneDayIndex()
+        private int ResolveTombstoneDayIndex()
         {
-            double playSeconds = GlobalRegistry.Save != null
-                ? GlobalRegistry.Save.CurrentPlayTimeSeconds
+            ISaveService saveService = _saveService;
+            double playSeconds = saveService != null
+                ? saveService.CurrentPlayTimeSeconds
                 : Time.timeAsDouble;
             int day = (int)math.floor(math.max(0d, playSeconds) / TombstoneInGameDaySeconds);
             return math.clamp(day, 1, ushort.MaxValue);

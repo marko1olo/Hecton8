@@ -6,7 +6,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4040)]
-    public sealed class WorldPopulationDirector : MonoBehaviour, ISlowTickable
+    public sealed class WorldPopulationDirector : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const string NoneLabel = "None";
         private const string NoMatchingRuleLabel = "No matching rule";
@@ -15,7 +15,7 @@ namespace Hecton8.World
         [SerializeField] private Transform playerTransform;
         [SerializeField] private WorldZoneDirector worldZoneDirector;
         [SerializeField] private WorldContentDirector worldContentDirector;
-        [SerializeField] private List<WorldPopulationRule> rules = new List<WorldPopulationRule>();
+        [SerializeField] private List<WorldPopulationRule> rules = new List<WorldPopulationRule>(16);
 
         [Header("Runtime Auto Resolve")]
         [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
@@ -62,6 +62,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
         }
 
@@ -75,6 +78,28 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registeredToTickManager = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregister();
+                TryRegister();
+            }
         }
 
         private void TryRegister()
@@ -82,8 +107,7 @@ namespace Hecton8.World
             if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()

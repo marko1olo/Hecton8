@@ -14,6 +14,19 @@ namespace Hecton8.UI.Editor
         private const string CoreCsprojRelativePath = "Hecton8.Core.csproj";
         private const string RendererFeatureProjectPath = "Assets\\_Project\\Scripts\\Visor\\HectonVisorARStencilRendererFeature.cs";
         private const string StencilPreviewGizmoProjectPath = "Assets\\_Project\\Scripts\\Visor\\HectonVisorStencilPreviewGizmo.cs";
+        private static readonly string[] LegacyRootShinobu270Keys =
+        {
+            "agent",
+            "domain",
+            "takeoverPath",
+            "runtimeForceUpdateCanvasesCalls",
+            "runtimeGraphicRaycasterTokenCount",
+            "hudCanvasRuntimeOwner",
+            "arWaypointRuntimeOwner",
+            "managedHudElementsPurged",
+            "notes",
+            "shinobu270Polish"
+        };
 
         [MenuItem("Hecton8/UI/HUD Canvas Inquisition")]
         public static void Run()
@@ -93,12 +106,15 @@ namespace Hecton8.UI.Editor
             builder.AppendLine("  \"renderGraphSuppressionProof\": \"Canvas suppression flips true only after ArPass.RecordRenderGraph creates the resolve target, assigns resourceData.cameraColor, and marks the player-camera frame as resolved; endCameraRendering clears renderer-owned suppression on authorized player-camera frames without same-frame resolve proof.\",");
             builder.AppendLine("  \"stencilLaneProof\": \"Hecton_VisorStencilMask and Hidden/Hecton8/VisorAR hard-code reserved stencil bit 0 (Ref 1, WriteMask 1, ReadMask 1); AddRenderPasses does not mutate Material stencil properties.\",");
             builder.AppendLine("  \"vaultBufferIds\": \"73180..73186 visual-only UI lanes, rollback/Merkle/save excluded\",");
-            builder.AppendLine("  \"stencilWaypointSourceProof\": \"Stencil-mode ARWaypointOverlay clears EmergencyServiceRelayDirector and HectonMapMagicVegetationBridge concrete provider caches and copies only externally registered waypoint snapshots until an owner-published relay/anchor snapshot route exists.\",");
+            builder.AppendLine("  \"stencilWaypointSourceProof\": \"ARWaypointOverlay no longer carries legacy Emergency/Vegetation provider fields, hot-swap casts, GlobalRegistry provider reads, or relay/anchor collection; stencil waypoints consume only externally registered cached AUP rows until an owner-published relay/anchor snapshot route exists.\",");
+            builder.AppendLine("  \"stencilWaypointVisualApproximation\": \"External Transform and stored-position waypoints capture AUP only at registration/mode-transition or legacy external-waypoint cadence; active stencil Tick/SlowTick reads cached AUP validity only and does not read Transform.position, camera Transform.position, gameplay authority, PhysX query, or scene search.\",");
+            builder.AppendLine("  \"stencilWaypointOcclusionDearLie\": \"Stencil waypoint occlusion is a bounded cone/distance fake over at most 16 AUP-local rows; no HZB readback, MeshCollider, raycast, or per-waypoint GameObject renderer is used.\",");
+            builder.AppendLine("  \"chromaQualityRoute\": \"Hecton_VisorAR.shader uses branchless smoothstep chroma admission; GlobalQualityWeight changes chroma contribution continuously and does not select a binary shader path.\",");
             builder.AppendLine("  \"h8binValidatorRefresh\": \"Current SHINOBU_258 h8bin validator report was refreshed with the canonical tool against limited Visor/WaterOptics runtime roots; remaining blocker is missing Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin.\",");
             builder.AppendLine("  \"hudCanvasInquisitionPath\": \"Assets/_Project/Scripts/UI/Editor/HUDCanvasInquisition.cs\",");
             builder.AppendLine("  \"compileStatus\": \"PENDING_SHINOBU_270_SOURCE_VERIFICATION: generated Hecton8.Core.csproj is stale for new SHINOBU_270 scripts; latest recorded full Hecton8.slnx build is RED outside this route in Visor RenderGraph texture binding.\",");
             builder.AppendLine("  \"takeoverPath\": \"HectonVisorARStencilRendererFeature + Hecton_VisorAR.shader\",");
-            builder.AppendLine("  \"aggregatePolicy\": \"UPSERT_SECTION_PRESERVE_NEIGHBOR_REPORTS\"");
+            builder.AppendLine("  \"aggregatePolicy\": \"UPSERT_SECTION_PRESERVE_NEIGHBOR_REPORTS_REMOVE_LEGACY_ROOT\"");
             builder.AppendLine("}");
             return builder.ToString();
         }
@@ -112,7 +128,8 @@ namespace Hecton8.UI.Editor
                 return;
             }
 
-            string trimmed = RemoveTopLevelProperty(existing.Trim(), sectionKey).Trim();
+            string trimmed = RemoveLegacyRootShinobu270Properties(existing.Trim());
+            trimmed = RemoveTopLevelProperty(trimmed, sectionKey).Trim();
             if (!LooksLikeJsonObject(trimmed))
             {
                 File.WriteAllText(reportPath, WrapSingleSection(sectionKey, reportObject));
@@ -145,6 +162,14 @@ namespace Hecton8.UI.Editor
             builder.AppendLine();
             builder.AppendLine("}");
             return builder.ToString();
+        }
+
+        private static string RemoveLegacyRootShinobu270Properties(string json)
+        {
+            string trimmed = json;
+            for (int i = 0; i < LegacyRootShinobu270Keys.Length; i++)
+                trimmed = RemoveTopLevelProperty(trimmed, LegacyRootShinobu270Keys[i]).Trim();
+            return trimmed;
         }
 
         private static bool LooksLikeJsonObject(string text)
@@ -253,6 +278,9 @@ namespace Hecton8.UI.Editor
                 return text.Length;
 
             char start = text[valueStart];
+            if (start == '"')
+                return FindStringEnd(text, valueStart) + 1;
+
             if (start == '{' || start == '[')
             {
                 int depth = 0;

@@ -21,6 +21,7 @@
 //   - Shader.SetGlobalFloat publishes bioluminescent response strength.
 // ============================================================================
 
+using System;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Audio;
@@ -40,7 +41,7 @@ namespace Hecton8.AtlasSignal
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-120)]
-    public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalReadModel, IGlobalRegistryHotSwapListener
+    public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IAtlasSignalReadModel, IGlobalRegistryHotSwapListener
     {
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -107,6 +108,7 @@ namespace Hecton8.AtlasSignal
         private bool _registered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private bool _saveRegistered;
         private bool _ghostManifestationAnnounced;
         private bool _identityDiscoverySynchronized;
         private bool _fullDecodeDiscoverySynchronized;
@@ -114,6 +116,9 @@ namespace Hecton8.AtlasSignal
         private bool _stage3LogQueued;
         private bool _stage4LogQueued;
         private bool _atlasCoreAupCached;
+        private bool _lateFrameRegistered;
+        private bool _pendingShaderStrengthDirty;
+        private float _pendingShaderStrength;
         private uint _stage2EncryptedLogHash;
         private uint _stage3EncryptedLogHash;
         private uint _stage4EncryptedLogHash;
@@ -121,10 +126,11 @@ namespace Hecton8.AtlasSignal
         private uint _stage3EncryptedLogDiscoveryHash;
         private uint _stage4EncryptedLogDiscoveryHash;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private FirstHourDirector _firstHourDirector;
-        private HectonNarrativeDirector _narrativeDirector;
-        private AudioLogSystem _audioLogs;
-        private LocalizationManager _localization;
+        private IFirstHourReadModel _firstHourDirector;
+        private INarrativeDiscoveryReadModel _narrativeDiscoveryReadModel;
+        private IAudioLogRuntime _audioLogs;
+        private ILocalizationTextReadModel _localization;
+        private ISaveService _saveService;
 
         private const int FormalDetectionRevealStage = 2;
         private const int IdentityRevealStage = 3;
@@ -165,10 +171,20 @@ namespace Hecton8.AtlasSignal
         public bool IsDetected =>
             _maxRevealStageUnlocked >= FormalDetectionRevealStage &&
             _currentStrength >= detectionThreshold;
+        public float CurrentAtlasSignalStrength01 =>
+            math.saturate(math.select(0f, _currentStrength, math.isfinite(_currentStrength)));
+        public int CurrentAtlasSignalRevealStage => math.max(0, _maxRevealStageUnlocked);
+        public bool IsAtlasSignalDetected => IsDetected;
         public Vector3 AtlasCorePosition => atlasCorePosWorld;
 
         public AbsoluteUniversePosition AtlasCoreAup => ResolveAtlasCoreAup();
         public int CurrentRevealStage => _maxRevealStageUnlocked;
+
+        public bool TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition coreAup)
+        {
+            coreAup = ResolveAtlasCoreAup();
+            return coreAup.IsFinite();
+        }
 
         public bool TryReadAtlasSignalSnapshot(
             in AbsoluteUniversePosition observerAup,
@@ -237,9 +253,8 @@ namespace Hecton8.AtlasSignal
             TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegister();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
+            TryRegisterLateFrame();
+            TryRegisterSaveParticipant();
 
             ResolvePlayer();
         }
@@ -247,10 +262,9 @@ namespace Hecton8.AtlasSignal
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterLateFrame();
             TryUnregisterService();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
+            TryUnregisterSaveParticipant();
 
             TryUnregisterHotSwapListener();
             ClearRuntimeDependencies();
@@ -259,7 +273,9 @@ namespace Hecton8.AtlasSignal
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterLateFrame();
             TryUnregisterService();
+            TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             ClearRuntimeDependencies();
 
@@ -309,7 +325,7 @@ namespace Hecton8.AtlasSignal
             {
                 _currentStrength = newStrength;
                 _lastPublishedStrength = newStrength;
-                AtlasSignalEvents.RaiseStrengthChanged(newStrength);
+                AtlasSignalEvents.TryRaiseStrengthChanged(newStrength);
 
                 // Pervoe obnaruzhenie
                 if (!_signalEverDetected &&
@@ -317,13 +333,13 @@ namespace Hecton8.AtlasSignal
                     _maxRevealStageUnlocked >= FormalDetectionRevealStage)
                 {
                     _signalEverDetected = true;
-                    AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
+                    AtlasSignalEvents.TryRaiseDetected(atlasCorePosWorld);
                     LogSignalFirstDetected();
                 }
 
                 // Sheyder
                 if (publishToShader)
-                    Shader.SetGlobalFloat(_ShaderSignalStrength, newStrength);
+                    QueueShaderStrength(newStrength);
             }
 
             if (_maxRevealStageUnlocked > previousRevealStage)
@@ -340,7 +356,7 @@ namespace Hecton8.AtlasSignal
 
             _pulseTimer = 0f;
             float pulseIntensity = _currentStrength;
-            AtlasSignalEvents.RaisePulse(pulseIntensity);
+            AtlasSignalEvents.TryRaisePulse(pulseIntensity);
 
             LogSignalPulse();
         }
@@ -358,10 +374,19 @@ namespace Hecton8.AtlasSignal
             _currentStrength = 0f;
             _lastPublishedStrength = 0f;
             _currentStrengthBand = 0;
-            AtlasSignalEvents.RaiseStrengthChanged(0f);
+            AtlasSignalEvents.TryRaiseStrengthChanged(0f);
 
             if (publishToShader)
-                Shader.SetGlobalFloat(_ShaderSignalStrength, 0f);
+                QueueShaderStrength(0f);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingShaderStrengthDirty)
+                return;
+
+            _pendingShaderStrengthDirty = false;
+            Shader.SetGlobalFloat(_ShaderSignalStrength, _pendingShaderStrength);
         }
 
         // ----------------------------------------------------------
@@ -381,7 +406,7 @@ namespace Hecton8.AtlasSignal
             if (messageHash == 0u)
                 return;
 
-            AtlasSignalEvents.RaiseDecoded(messageHash);
+            AtlasSignalEvents.TryRaiseDecoded(messageHash);
             if (messageHash == _signalFullyDecodedMessageHash)
             {
                 if (_maxRevealStageUnlocked < FullDecodeRevealStage)
@@ -494,8 +519,7 @@ namespace Hecton8.AtlasSignal
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
@@ -505,6 +529,32 @@ namespace Hecton8.AtlasSignal
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            _lateFrameRegistered = false;
+        }
+
+        private void QueueShaderStrength(float strength01)
+        {
+            _pendingShaderStrength = math.isfinite(strength01)
+                ? math.saturate(strength01)
+                : 0f;
+            _pendingShaderStrengthDirty = true;
+            TryRegisterLateFrame();
         }
 
         private void TryRegisterService()
@@ -537,10 +587,11 @@ namespace Hecton8.AtlasSignal
         private void CacheRuntimeDependencies()
         {
             _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
-            _narrativeDirector = GlobalRegistry.NarrativeDirector;
-            _audioLogs = GlobalRegistry.AudioLogs;
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHourReadModel;
+            _narrativeDiscoveryReadModel = GlobalRegistry.NarrativeDiscoveryReadModel;
+            _audioLogs = GlobalRegistry.AudioLogRuntime;
+            _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
 
         private void ClearRuntimeDependencies()
@@ -548,9 +599,10 @@ namespace Hecton8.AtlasSignal
             _playerRuntimeContext = null;
             _playerMovement = null;
             _firstHourDirector = null;
-            _narrativeDirector = null;
+            _narrativeDiscoveryReadModel = null;
             _audioLogs = null;
             _localization = null;
+            _saveService = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -582,39 +634,82 @@ namespace Hecton8.AtlasSignal
                     ResolvePlayer();
                     break;
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
-                    _firstHourDirector = currentService as FirstHourDirector;
+                    _firstHourDirector = currentService as IFirstHourReadModel;
                     break;
                 case GlobalRegistryServiceSlot.NarrativeDirectorRuntime:
-                    _narrativeDirector = currentService as HectonNarrativeDirector;
+                    _narrativeDiscoveryReadModel = currentService as INarrativeDiscoveryReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogs = currentService as AudioLogSystem;
+                    _audioLogs = currentService as IAudioLogRuntime;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
+                    _localization = currentService as ILocalizationTextReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    if (_saveService != null)
+                    {
+                        _saveService.Register(this);
+                        _saveRegistered = true;
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                    {
+                        TryRegister();
+                        TryRegisterLateFrame();
+                    }
                     break;
             }
         }
 
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            if (_saveService == null)
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
+        }
+
         private bool CanManifestAtlas()
         {
-            FirstHourDirector firstHourDirector = _firstHourDirector;
+            IFirstHourReadModel firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
-            return firstHourDirector.IsMilestoneComplete(minimumMilestoneToManifest);
+            return firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestoneToManifest);
         }
 
         private bool CanManifestGhostBeat()
         {
-            FirstHourDirector firstHourDirector = _firstHourDirector;
+            IFirstHourReadModel firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return false;
 
-            if (firstHourDirector.IsMilestoneComplete(minimumMilestoneToManifest))
+            if (firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestoneToManifest))
                 return false;
 
-            return firstHourDirector.IsMilestoneComplete(minimumMilestoneToGhostManifest);
+            return firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestoneToGhostManifest);
         }
 
         private void HandleRevealStageUnlocked(int revealStage, float manifestedStrength)
@@ -623,8 +718,8 @@ namespace Hecton8.AtlasSignal
                 return;
 
             _pulseTimer = 0f;
-            AtlasSignalEvents.RaisePulse(manifestedStrength);
-            ProceduralAudioEvents.RaiseAudioPingTriggered(
+            AtlasSignalEvents.TryRaisePulse(manifestedStrength);
+            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
                 atlasCorePosWorld,
                 math.saturate(manifestedStrength),
                 AtlasRevealPingDurationSeconds,
@@ -645,11 +740,11 @@ namespace Hecton8.AtlasSignal
                     if (!_signalEverDetected && manifestedStrength >= detectionThreshold)
                     {
                         _signalEverDetected = true;
-                        AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
+                        AtlasSignalEvents.TryRaiseDetected(atlasCorePosWorld);
                     }
 
                     TryQueueEncryptedLog(2);
-                    NotificationEvents.PushInfo(ResolveLocalized(
+                    NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
                         LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_2,
                         "WEAK RHYTHMIC PATTERN CONFIRMED. CONTACT STILL UNSTABLE."));
                     break;
@@ -657,7 +752,7 @@ namespace Hecton8.AtlasSignal
                 case 3:
                     TryEnsureIdentityDiscoveryPublished();
                     TryQueueEncryptedLog(3);
-                    NotificationEvents.PushWarning(ResolveLocalized(
+                    NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
                         LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_3,
                         "THE SIGNAL IS STARTING TO RETURN CONTENT FRAGMENTS. DEPTH IS CLEANING THE BEARING."));
                     break;
@@ -665,7 +760,7 @@ namespace Hecton8.AtlasSignal
                 case 4:
                     TryEnsureFullDecodeDiscoveryPublished();
                     TryQueueEncryptedLog(4);
-                    NotificationEvents.PushWarning(ResolveLocalized(
+                    NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
                         LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_4,
                         "CARRIER STABLE. THE SIGNAL CAN NOW BE DRIVEN ALL THE WAY TO THE SOURCE."));
                     break;
@@ -679,12 +774,12 @@ namespace Hecton8.AtlasSignal
             if (_identityDiscoverySynchronized || _maxRevealStageUnlocked < IdentityRevealStage)
                 return;
 
-            HectonNarrativeDirector narrativeDirector = _narrativeDirector;
-            if (narrativeDirector == null)
+            INarrativeDiscoveryReadModel narrativeDiscovery = _narrativeDiscoveryReadModel;
+            if (narrativeDiscovery == null)
                 return;
 
-            if (!narrativeDirector.HasDiscovery(_signalIdentityDiscoveryHash))
-                NarrativeEvents.RaiseDiscoveryMade(_signalIdentityDiscoveryHash);
+            if (!narrativeDiscovery.HasDiscovery(_signalIdentityDiscoveryHash))
+                NarrativeEvents.TryRaiseDiscoveryMade(_signalIdentityDiscoveryHash);
 
             _identityDiscoverySynchronized = true;
         }
@@ -694,14 +789,14 @@ namespace Hecton8.AtlasSignal
             if (_fullDecodeDiscoverySynchronized || _maxRevealStageUnlocked < FullDecodeRevealStage)
                 return;
 
-            HectonNarrativeDirector narrativeDirector = _narrativeDirector;
-            if (narrativeDirector != null && narrativeDirector.HasDiscovery(_signalFullyDecodedDiscoveryHash))
+            INarrativeDiscoveryReadModel narrativeDiscovery = _narrativeDiscoveryReadModel;
+            if (narrativeDiscovery != null && narrativeDiscovery.HasDiscovery(_signalFullyDecodedDiscoveryHash))
             {
                 _fullDecodeDiscoverySynchronized = true;
                 return;
             }
 
-            NarrativeEvents.RaiseDiscoveryMade(_signalFullyDecodedDiscoveryHash);
+            NarrativeEvents.TryRaiseDiscoveryMade(_signalFullyDecodedDiscoveryHash);
             _fullDecodeDiscoverySynchronized = true;
         }
 
@@ -742,13 +837,13 @@ namespace Hecton8.AtlasSignal
             if (logHash == 0u)
                 return;
 
-            AudioLogSystem audioLogs = _audioLogs;
+            IAudioLogRuntime audioLogs = _audioLogs;
             if (audioLogs != null)
             {
-                if (audioLogs.TryPlayLogByHash(logHash))
+                if (audioLogs.TryPlayAudioLogByHash(logHash))
                     return;
 
-                if ((audioLogs.GetRecoveredEncryptedBits(logHash) & 0xFu) != 0xFu)
+                if ((audioLogs.GetRecoveredEncryptedAudioLogBits(logHash) & 0xFu) != 0xFu)
                     return;
             }
 
@@ -756,7 +851,7 @@ namespace Hecton8.AtlasSignal
                 audioLogs == null ? _AudioLogRuntimeMissingWarningHash : _EncryptedLogFallbackWarningHash,
                 _AtlasSignalContextHash,
                 revealStage);
-            NarrativeEvents.RaiseDiscoveryMade(fallbackLogHash);
+            NarrativeEvents.TryRaiseDiscoveryMade(fallbackLogHash);
         }
 
         private void CacheEncryptedLogHashes()
@@ -773,7 +868,7 @@ namespace Hecton8.AtlasSignal
         private static void LogSignalFirstDetected()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(SignalFirstDetectedLog);
+            H8Debug.Log(SignalFirstDetectedLog);
 #endif
         }
 
@@ -785,7 +880,7 @@ namespace Hecton8.AtlasSignal
                 return;
 
             _nextSignalLogTime = Time.time + 5f;
-            Debug.Log(SignalPulseLog);
+            H8Debug.Log(SignalPulseLog);
 #endif
         }
 
@@ -793,7 +888,7 @@ namespace Hecton8.AtlasSignal
         private static void LogSignalDecoded()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(SignalDecodedLog);
+            H8Debug.Log(SignalDecodedLog);
 #endif
         }
 
@@ -801,14 +896,16 @@ namespace Hecton8.AtlasSignal
         private static void LogRevealStageUnlocked()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(RevealStageUnlockedLog);
+            H8Debug.Log(RevealStageUnlockedLog);
 #endif
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
-            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
+            ILocalizationTextReadModel manager = _localization;
+            return manager != null
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
         private static void PublishSlowTickBudgetIfNeeded(long solveStartTicks)

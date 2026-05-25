@@ -259,6 +259,7 @@ namespace Hecton8.Physics
         }
     }
 
+    #if UNITY_EDITOR
     public static class WaveSpectrumProfileCsvParser
     {
         private const byte Comma = (byte)',';
@@ -465,4 +466,5 @@ namespace Hecton8.Physics
             return value == Space || value == Tab || value == CarriageReturn || value == LineFeed;
         }
     }
+    #endif
 }

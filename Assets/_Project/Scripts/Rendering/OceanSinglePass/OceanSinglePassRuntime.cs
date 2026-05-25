@@ -42,7 +42,9 @@ namespace Hecton8.Rendering.OceanSinglePass
         private VaultGenerationHandle<OceanRenderTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<OceanAestheticProfileDTO> _profilesHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<OceanMockRenderStateDTO> _mockRenderStateHandle;
         private VaultGenerationHandle<PropwashEventDTO> _propwashEventHandle;
         private VaultGenerationHandle<PropwashRingCursorDTO> _propwashCursorHandle;
@@ -209,7 +211,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 return PublishMockConstantBuffer() ||
                        (runtime != null && s_publishedConstantBuffer != null && s_publishedConstantBuffer.IsValid());
 
-            VaultGenerationHandle<OceanMockRenderStateDTO> handle = vault.GetGenerationHandle<OceanMockRenderStateDTO>(
+            VaultGenerationHandle<OceanMockRenderStateDTO> handle = vault.EnsureGenerationHandle<OceanMockRenderStateDTO>(
                 OceanSinglePassConstants.MockRenderStateBuffer,
                 1,
                 OwnerSystemId,
@@ -519,6 +521,10 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private void LoadAestheticProfilesCsvIfNeeded()
         {
+#if !UNITY_EDITOR
+            _csvLoaded = true;
+            return;
+#else
             if (_csvLoaded || !loadAestheticProfilesCsv || string.IsNullOrEmpty(_projectRootPath))
                 return;
 
@@ -547,8 +553,10 @@ namespace Hecton8.Rendering.OceanSinglePass
             ReadOnlySpan<byte> csvBytes = new ReadOnlySpan<byte>(ptr, byteCount);
             OceanAestheticProfileCsvParser.TryParseProfiles(csvBytes, profiles, out _, out _);
             _csvLoaded = true;
+#endif
         }
 
+#if UNITY_EDITOR
         private void EnsureCsvScratch()
         {
             if (TryResolveVaultBuffer(in _csvScratchHandle, OceanSinglePassConstants.CsvScratchBytes, out NativeArray<byte> _))
@@ -582,6 +590,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
             return total;
         }
+#endif
 
         private void EnsureGpuBuffersCold()
         {
@@ -816,7 +825,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (IsHandleValid(in handle))
                 ReleaseVaultHandle(vault, ref handle);
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return IsHandleValid(in handle) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
@@ -900,7 +909,9 @@ namespace Hecton8.Rendering.OceanSinglePass
             ReleaseVaultHandle(vault, ref _telemetryHandle);
             ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
             ReleaseVaultHandle(vault, ref _profilesHandle);
+#if UNITY_EDITOR
             ReleaseVaultHandle(vault, ref _csvScratchHandle);
+#endif
             ReleaseVaultHandle(vault, ref _mockRenderStateHandle);
             _propwashEventHandle = default;
             _propwashCursorHandle = default;

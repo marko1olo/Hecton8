@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -225,7 +226,9 @@ namespace Hecton8.Lighting
                 return;
 
             _csvReloadRequested = false;
+#if UNITY_EDITOR
             TryLoadProfilesFromCsv();
+#endif
         }
 
         /// <summary>
@@ -278,13 +281,19 @@ namespace Hecton8.Lighting
         /// <summary>Requests profile CSV reload on the next slow tick.</summary>
         public void RequestCsvReload()
         {
+#if UNITY_EDITOR
             _csvReloadRequested = true;
+#endif
         }
 
         /// <summary>Runs the CSV reload immediately from editor/cold tooling.</summary>
         public bool ReloadCsvNow()
         {
+#if UNITY_EDITOR
             return TryLoadProfilesFromCsv();
+#else
+            return false;
+#endif
         }
 
         /// <summary>Regenerates deterministic 5000-light mock data through Burst.</summary>
@@ -588,7 +597,7 @@ namespace Hecton8.Lighting
         private void CacheDependencies()
         {
             _vault = GlobalRegistry.DataVault;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private bool EnsureNativeStorage(bool allowMockGeneration = true)
@@ -690,7 +699,7 @@ namespace Hecton8.Lighting
             if (TryResolveDynamicPointLightBuffer(ref handle, bufferId, length, out _))
                 return handle;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, length, MemoryOwner, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, length, MemoryOwner, options);
             if (!TryResolveDynamicPointLightBuffer(ref handle, bufferId, length, out _))
                 return default;
 
@@ -1494,6 +1503,7 @@ namespace Hecton8.Lighting
             }
         }
 
+#if UNITY_EDITOR
         private bool TryLoadProfilesFromCsv()
         {
             if (!_nativeStorageReady && !EnsureNativeStorage())
@@ -1513,12 +1523,15 @@ namespace Hecton8.Lighting
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
+                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(csv);
+                    Span<byte> destination = new Span<byte>(ptr, csv.Length);
                     while (count < csv.Length)
                     {
-                        int value = stream.ReadByte();
-                        if (value < 0)
+                        int read = stream.Read(destination.Slice(count));
+                        if (read <= 0)
                             break;
-                        csv[count++] = (byte)value;
+
+                        count += read;
                     }
                 }
             }
@@ -1534,6 +1547,7 @@ namespace Hecton8.Lighting
             _profileRuleCount = DynamicPointLightProfileCsvParser.Parse(csv, count, rules, rules.Length, out _);
             return _profileRuleCount > 0;
         }
+#endif
 
         private void WriteSelfAudit()
         {

@@ -189,18 +189,16 @@ namespace Hecton8.Editor.GeologyForge
 
             try
             {
-                string[] childDirectories = Directory.GetDirectories(directory);
-                for (int i = 0; i < childDirectories.Length; i++)
+                foreach (string childDirectoryPath in Directory.EnumerateDirectories(directory))
                 {
-                    string childDirectory = childDirectories[i].Replace('\\', '/');
+                    string childDirectory = childDirectoryPath.Replace('\\', '/');
                     if (!IsEditorPath(childDirectory))
                         _asyncDirectoryStack.Add(childDirectory);
                 }
 
-                string[] files = Directory.GetFiles(directory, "*.cs", SearchOption.TopDirectoryOnly);
-                for (int i = 0; i < files.Length; i++)
+                foreach (string file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.TopDirectoryOnly))
                 {
-                    string path = files[i].Replace('\\', '/');
+                    string path = file.Replace('\\', '/');
                     if (!IsEditorPath(path))
                         _asyncFiles.Add(path);
                 }
@@ -230,10 +228,9 @@ namespace Hecton8.Editor.GeologyForge
                 if (!Directory.Exists(root))
                     continue;
 
-                string[] rootFiles = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-                for (int fileIndex = 0; fileIndex < rootFiles.Length; fileIndex++)
+                foreach (string rootFile in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
                 {
-                    string path = rootFiles[fileIndex].Replace('\\', '/');
+                    string path = rootFile.Replace('\\', '/');
                     if (IsEditorPath(path))
                         continue;
 

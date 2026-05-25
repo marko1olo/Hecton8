@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Scavenging;
 using Unity.Collections;
 using Unity.Jobs;
 
@@ -11,7 +12,12 @@ namespace Hecton8.World
     /// </summary>
     internal struct DropBuffer : IDisposable
     {
+        private const int DropBudgetRemainingIndex = 0;
+        private const int DropBudgetDroppedIndex = 1;
+        private const int DropBudgetLength = 2;
+
         private NativeQueue<ItemDropData> _queue;
+        private NativeArray<int> _dropBudget;
         private int _capacity;
 
         public DropBuffer(int capacity, Allocator allocator)
@@ -28,6 +34,10 @@ namespace Hecton8.World
                     NativeAllocationLifetime.Session);
             }
 
+            _dropBudget = new NativeArray<int>(DropBudgetLength, allocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[2] - organic drop writer budget/drop counter - owner: DropBuffer
+            if (allocator == Allocator.Persistent)
+                NativeMemorySentinel.RegisterNativeArray(_dropBudget, nameof(DropBuffer), nameof(_dropBudget), NativeAllocationLifetime.Session);
+            ResetDropBudget();
             PrewarmQueue(ref _queue, _capacity);
         }
 
@@ -49,9 +59,10 @@ namespace Hecton8.World
             int eventCount,
             int innerloopBatchCount)
         {
-            if (!_queue.IsCreated || eventCount <= 0)
+            if (!_queue.IsCreated || !_dropBudget.IsCreated || eventCount <= 0)
                 return default;
 
+            ResetDropBudget();
             return new EntropyYieldJob
             {
                 Events = events,
@@ -59,6 +70,7 @@ namespace Hecton8.World
                 LootEntries = lootEntries,
                 MaterialLut = materialLut,
                 DropWriter = _queue.AsParallelWriter(),
+                DropBudget = _dropBudget,
                 EventCount = eventCount
             }.Schedule(eventCount, innerloopBatchCount);
         }
@@ -84,6 +96,8 @@ namespace Hecton8.World
             while (_queue.TryDequeue(out _))
             {
             }
+
+            ResetDropBudget();
         }
 
         /// <summary>Disposes the persistent native queue.</summary>
@@ -95,7 +109,22 @@ namespace Hecton8.World
                 _queue.Dispose();
             }
 
+            if (_dropBudget.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_dropBudget);
+                _dropBudget.Dispose();
+            }
+
             _capacity = 0;
+        }
+
+        private void ResetDropBudget()
+        {
+            if (!_dropBudget.IsCreated || _dropBudget.Length < DropBudgetLength)
+                return;
+
+            _dropBudget[DropBudgetRemainingIndex] = _capacity;
+            _dropBudget[DropBudgetDroppedIndex] = 0;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

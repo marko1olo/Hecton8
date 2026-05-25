@@ -55,10 +55,9 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 }
 
                 AppendRoot(roots, s_roots[rootIndex], "SCANNED");
-                string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                foreach (string discoveredFile in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
                 {
-                    string file = files[fileIndex].Replace('\\', '/');
+                    string file = discoveredFile.Replace('\\', '/');
                     if (file.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0)
                         continue;
 

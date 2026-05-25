@@ -1,5 +1,6 @@
 namespace Hecton8.Tools.Editor
 {
+    using System.Globalization;
     using Hecton8.Tools;
     using UnityEditor;
     using UnityEngine;
@@ -63,7 +64,7 @@ namespace Hecton8.Tools.Editor
 
             for (int i = 0; i < _bitLabels.Length; i++)
             {
-                Label label = new Label(i.ToString("00"));
+                Label label = new Label(i.ToString("00", CultureInfo.InvariantCulture));
                 label.style.width = 38;
                 label.style.height = 20;
                 label.style.marginRight = 2;

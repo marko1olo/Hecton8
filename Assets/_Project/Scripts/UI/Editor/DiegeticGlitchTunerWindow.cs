@@ -78,7 +78,7 @@ namespace Hecton8.UI.Editor
             {
                 _runtime = (DiegeticGlitchSurgeonRuntime)EditorGUILayout.ObjectField("Runtime", _runtime, typeof(DiegeticGlitchSurgeonRuntime), true);
                 if (GUILayout.Button("Find", GUILayout.Width(64f)))
-                    _runtime = FindFirstObjectByType<DiegeticGlitchSurgeonRuntime>();
+                    _runtime = FindAnyObjectByType<DiegeticGlitchSurgeonRuntime>();
             }
         }
 

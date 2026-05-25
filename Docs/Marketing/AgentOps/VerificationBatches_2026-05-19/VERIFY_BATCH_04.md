@@ -1,4 +1,4 @@
-# Verify Batch 04 - Priority Raw Creator Leads
+﻿# Verify Batch 04 - Priority Raw Creator Leads
 
 Status: assignment sheet / not outreach-ready
 Generated: 2026-05-19

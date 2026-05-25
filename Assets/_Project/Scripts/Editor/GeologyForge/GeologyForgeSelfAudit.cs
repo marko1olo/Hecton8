@@ -19,7 +19,7 @@ namespace Hecton8.Editor.GeologyForge
             int meshFailures = 0;
             int unmanifestedMeshCount = 0;
             StringBuilder failures = new StringBuilder(1024);
-            HashSet<string> manifestMeshPaths = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> manifestMeshPaths = new HashSet<string>(256, StringComparer.Ordinal);
             bool manifestValid = TryValidateManifest(manifestMeshPaths, out uint manifestRecords, out long manifestBytes, out string manifestReason);
             ValidateGeneratedMeshes(manifestMeshPaths, ref meshCount, ref meshFailures, ref unmanifestedMeshCount, failures);
             bool noOutput = meshCount == 0 || manifestRecords == 0u;

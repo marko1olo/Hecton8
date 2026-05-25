@@ -22,6 +22,7 @@ namespace Hecton8.World
     {
         private const int PendingEventCapacity = 16;
         private const int ListenerCapacity = 16;
+        private const int RelaySidecarCapacity = 32;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint ListenerRejectedWarningHash = 0x4552524Au;
         private const uint ListenerExceptionWarningHash = 0x45524558u;
@@ -40,6 +41,18 @@ namespace Hecton8.World
             public void Clear()
             {
                 Listener = null;
+            }
+        }
+
+        private struct RelaySlot
+        {
+            public ulong RelayEntityId;
+            public EmergencyServiceRelay Relay;
+
+            public void Clear()
+            {
+                RelayEntityId = 0UL;
+                Relay = null;
             }
         }
 
@@ -109,9 +122,10 @@ namespace Hecton8.World
         private static EmergencyRelayListenerRegistry _listeners = new EmergencyRelayListenerRegistry(ListenerCapacity);
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        private static readonly System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay> _relaysByInstanceId = new System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay>(32);
+        private static readonly RelaySlot[] _relaySlots = new RelaySlot[RelaySidecarCapacity];
         private static NativeQueue<RelayEventPayload> _pendingEvents;
         private static NativeQueue<RelayEventPayload> _nextFrameEvents;
+        private static int _relaySlotCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
@@ -155,7 +169,7 @@ namespace Hecton8.World
             _listeners.Clear();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterListeners.Length);
             Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterListeners.Length);
-            _relaysByInstanceId.Clear();
+            ClearRelaySlots();
         }
 
         public static void Register(IEmergencyServiceRelayEventListener listener)
@@ -195,14 +209,16 @@ namespace Hecton8.World
         /// </summary>
         /// <param name="relay">Relay that was accessed.</param>
         /// <param name="firstActivation">True when this was the first discovery-grade access.</param>
-        public static void RaiseRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
+        public static bool TryRaiseRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
         {
             if (relay == null || _listeners.Count <= 0 || _pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+                return false;
 
             EnsureInitialized();
             ulong relayEntityId = UnityEngine.EntityId.ToULong(relay.GetEntityId());
-            _relaysByInstanceId[relayEntityId] = relay;
+            if (!TryStoreRelay(relayEntityId, relay))
+                return false;
+
             RelayEventPayload payload = new RelayEventPayload
             {
                 RelayEntityId = relayEntityId,
@@ -213,12 +229,17 @@ namespace Hecton8.World
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
+
+        [System.Obsolete("Use TryRaiseRelayActivated so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
+            => TryRaiseRelayActivated(relay, firstActivation);
 
         public static void FlushPending()
         {
@@ -239,12 +260,15 @@ namespace Hecton8.World
                     return;
 
                 if (!_pendingEvents.TryDequeue(out RelayEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                if (!_relaysByInstanceId.TryGetValue(payload.RelayEntityId, out EmergencyServiceRelay relay) || relay == null)
+                if (!TryResolveRelay(payload.RelayEntityId, out EmergencyServiceRelay relay) || relay == null)
                     continue;
 
                 int count = _listeners.Count;
@@ -508,13 +532,58 @@ namespace Hecton8.World
 
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
-            _relaysByInstanceId.Clear();
+            ClearRelaySlots();
         }
 
         private static void PruneRelayReferencesIfIdle()
         {
             if (_pendingEventCount + _nextFrameEventCount <= 0)
-                _relaysByInstanceId.Clear();
+                ClearRelaySlots();
+        }
+
+        private static bool TryStoreRelay(ulong relayEntityId, EmergencyServiceRelay relay)
+        {
+            for (int i = 0; i < _relaySlotCount; i++)
+            {
+                if (_relaySlots[i].RelayEntityId != relayEntityId)
+                    continue;
+
+                _relaySlots[i].Relay = relay;
+                return true;
+            }
+
+            if (_relaySlotCount >= RelaySidecarCapacity)
+                return false;
+
+            _relaySlots[_relaySlotCount++] = new RelaySlot
+            {
+                RelayEntityId = relayEntityId,
+                Relay = relay
+            };
+            return true;
+        }
+
+        private static bool TryResolveRelay(ulong relayEntityId, out EmergencyServiceRelay relay)
+        {
+            for (int i = 0; i < _relaySlotCount; i++)
+            {
+                if (_relaySlots[i].RelayEntityId != relayEntityId)
+                    continue;
+
+                relay = _relaySlots[i].Relay;
+                return relay != null;
+            }
+
+            relay = null;
+            return false;
+        }
+
+        private static void ClearRelaySlots()
+        {
+            for (int i = 0; i < _relaySlotCount; i++)
+                _relaySlots[i].Clear();
+
+            _relaySlotCount = 0;
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()

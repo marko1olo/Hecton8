@@ -6,7 +6,13 @@ using Unity.Mathematics;
 
 namespace Hecton8.Construction
 {
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    internal static class HabitatStressJobLayout
+    {
+        public const int DirtyRegionResultStrideBytes = 32;
+        public const int FloodPropagationSummaryStrideBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = HabitatStressJobLayout.DirtyRegionResultStrideBytes)]
     internal struct HabitatDirtyRegionResult
     {
         [FieldOffset(0)]
@@ -27,7 +33,7 @@ namespace Hecton8.Construction
         private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HabitatStressJobLayout.FloodPropagationSummaryStrideBytes)]
     internal struct HabitatFloodPropagationSummary
     {
         [FieldOffset(0)]

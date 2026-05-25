@@ -368,7 +368,8 @@ namespace Hecton8.AI
                 float verticalJitter = random.NextFloat(-0.2f, 0.2f);
                 float angle = ((hash & 1023u) * 0.006135923151f) + (FrameId * 0.01171875f) + angleJitter;
                 float radius = math.lerp(6f, 18f, q) + ((slot & 7) * 0.5f) + radiusJitter;
-                float3 offset = new float3(math.cos(angle) * radius, (((slot & 3) - 1.5f) * 0.75f) + verticalJitter, math.sin(angle) * radius);
+                Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                float3 offset = new float3(cos * radius, (((slot & 3) - 1.5f) * 0.75f) + verticalJitter, sin * radius);
                 position = input.Position + offset;
                 velocity = ResolveDirection(new float3(-offset.z, 0f, offset.x), input.Forward) * math.lerp(1.0f, 2.75f, q);
                 threatClass = 3;
@@ -1140,8 +1141,29 @@ namespace Hecton8.AI
         {
             uint hash = Hash(slot, input.SpeciesId, 0x57524D52u);
             float phase = ((hash & 4095u) * 0.0015339808f) + (FrameId * math.lerp(0.015625f, 0.03125f, quality));
-            float3 lateral = new float3(math.sin(phase), math.sin(phase * 0.37f) * 0.25f, math.cos(phase));
+            ApproxSinCosBhaskara(phase, out float sin, out float cos);
+            float3 lateral = new float3(sin, ApproxSinBhaskara(phase * 0.37f) * 0.25f, cos);
             return ResolveDirection((fallbackForward * math.lerp(0.35f, 0.72f, quality)) + lateral, fallbackForward);
+        }
+
+        private static void ApproxSinCosBhaskara(float radians, out float sin, out float cos)
+        {
+            sin = ApproxSinBhaskara(radians);
+            cos = ApproxSinBhaskara(radians + 1.57079632679f);
+        }
+
+        private static float ApproxSinBhaskara(float radians)
+        {
+            float safe = math.select(radians, 0f, !math.isfinite(radians));
+            float cycle = safe * 0.15915494309189535f;
+            float wrapped = cycle - math.floor(cycle);
+            float x = wrapped * 6.28318530718f;
+            bool secondHalf = x > math.PI;
+            float mirrored = math.select(x, 6.28318530718f - x, secondHalf);
+            float sign = math.select(1f, -1f, secondHalf);
+            float shape = mirrored * (math.PI - mirrored);
+            float denominator = math.max(0.0001f, (5f * math.PI * math.PI) - (4f * shape));
+            return math.clamp(sign * ((16f * shape) / denominator), -1f, 1f);
         }
 
         private float ResolveSpeedScalar(byte state, in CognitionInput input, float quality, float aggressionMultiplier, float speedMultiplier)

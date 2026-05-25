@@ -1,4 +1,4 @@
-# Keys And Creator Compliance
+﻿# Keys And Creator Compliance
 
 Status: policy draft
 Purpose: prevent key scams, legal slop, and trust damage

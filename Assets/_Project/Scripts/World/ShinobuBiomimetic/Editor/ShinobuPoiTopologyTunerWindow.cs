@@ -220,35 +220,12 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 length,
                 PoiOwnerSystem,
                 options);
             return TryResolvePoiVaultBuffer(vault, in handle, bufferId, length, out buffer);
-        }
-
-        private static bool TryReadPoiVaultBuffer<T>(
-            IDataVault vault,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            if (vault == null ||
-                requiredLength <= 0 ||
-                vault.IsCompactionFenceActive ||
-                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
-                !IsPoiVaultHandle(in handle, bufferId) ||
-                !vault.TryReadHandle(in handle, out buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
-            {
-                buffer = default;
-                return false;
-            }
-
-            return true;
         }
 
         private static bool TryResolveExistingPoiVaultBuffer<T>(
@@ -392,7 +369,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
         private void DumpBlackBox()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryReadPoiVaultBuffer(
+            if (!TryResolveExistingPoiVaultBuffer(
                     vault,
                     ShinobuPoiVaultBridge.PoiTelemetryRingBufferId,
                     ShinobuPoiVaultBridge.BlackBoxFrameCount,
@@ -414,17 +391,17 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             ImportCsvRules();
 
             IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryReadPoiVaultBuffer(
+            if (!TryResolveExistingPoiVaultBuffer(
                     vault,
                     ShinobuPoiVaultBridge.PoiBakeConfigBufferId,
                     1,
                     out NativeArray<PoiOfflineBakeConfigDTO> config) ||
-                !TryReadPoiVaultBuffer(
+                !TryResolveExistingPoiVaultBuffer(
                     vault,
                     ShinobuPoiVaultBridge.PoiRulesBufferId,
                     DefaultRuleCapacity,
                     out NativeArray<PoiPlacementRuleDTO> rules) ||
-                !TryReadPoiVaultBuffer(
+                !TryResolveExistingPoiVaultBuffer(
                     vault,
                     ShinobuPoiVaultBridge.PoiBoundsBufferId,
                     DefaultBoundsCapacity,
@@ -560,8 +537,8 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             {
                 int x = i % grid;
                 int z = i / grid;
-                float jitterX = math.sin((i + 1) * 12.9898f + phase) * 22f;
-                float jitterZ = math.cos((i + 1) * 78.233f - phase) * 22f;
+                float jitterX = MathLodApproximation.ApproxSinBhaskara((i + 1) * 12.9898f + phase) * 22f;
+                float jitterZ = MathLodApproximation.ApproxCosBhaskara((i + 1) * 78.233f - phase) * 22f;
                 candidates[i] = new double3(x * spacing - half + jitterX, -120.0, z * spacing - half + jitterZ);
             }
         }
@@ -569,7 +546,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
         private void ReadPlacementCounters()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryReadPoiVaultBuffer(
+            if (!TryResolveExistingPoiVaultBuffer(
                     vault,
                     ShinobuPoiVaultBridge.PoiPlacementCountersBufferId,
                     2,
@@ -587,10 +564,10 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             if (!_drawGizmos || _hasQueuedBakeFence || Event.current.type != EventType.Repaint)
                 return;
 
-            OnDrawGizmos(sceneView);
+            DrawSceneGizmos(sceneView);
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null)
@@ -599,7 +576,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             int poiCount = ResolvePlacementCounter(vault, 0, _previewLimit);
             int anchorCount = ResolvePlacementCounter(vault, 1, _previewLimit);
 
-            if (TryReadPoiVaultBuffer(
+            if (TryResolveExistingPoiVaultBuffer(
                     vault,
                     ShinobuPoiVaultBridge.PoiTransformsBufferId,
                     1,
@@ -608,7 +585,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
                 DrawPoiMatrices(poiTransforms, poiCount);
             }
 
-            if (TryReadPoiVaultBuffer(
+            if (TryResolveExistingPoiVaultBuffer(
                     vault,
                     ShinobuPoiVaultBridge.PoiVisualAnchorsBufferId,
                     1,
@@ -659,7 +636,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
 
         private static int ResolvePlacementCounter(IDataVault vault, int counterIndex, int fallback)
         {
-            if (TryReadPoiVaultBuffer(
+            if (TryResolveExistingPoiVaultBuffer(
                     vault,
                     ShinobuPoiVaultBridge.PoiPlacementCountersBufferId,
                     counterIndex + 1,
@@ -729,6 +706,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
                     continue;
 
                 float maxSlopeDegrees = (float)values[4];
+                float maxSlopeRadians = math.radians(math.clamp(maxSlopeDegrees, 0.1f, 89f));
                 uint prefabHash = (uint)math.max(0.0, values[0]);
                 uint biomeId = (uint)math.max(0.0, values[1]);
                 uint questHash = valueCount > 10 ? (uint)math.max(0.0, values[10]) : 0u;
@@ -748,7 +726,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
                     BiomeID = biomeId,
                     MinDepthMeters = (float)values[2],
                     MaxDepthMeters = (float)values[3],
-                    MaxSlopeCos = math.cos(math.radians(math.clamp(maxSlopeDegrees, 0.1f, 89f))),
+                    MaxSlopeCos = MathLodApproximation.ApproxCosBhaskara(maxSlopeRadians),
                     MinClusterSpacingMeters = 2000f,
                     ClusterRadiusMeters = (float)values[6],
                     BoundsIndex = count,

@@ -1,4 +1,4 @@
-{
+﻿{
   "agent": "SHINOBU_263",
   "scanner": "Wave_Math_Scanner fallback static report",
   "verdict": "PASS_PENDING_COMPILE",

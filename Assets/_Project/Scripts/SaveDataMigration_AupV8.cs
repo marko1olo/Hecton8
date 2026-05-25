@@ -6,8 +6,15 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace Hecton8.SaveSystem
 {
+    internal static class SaveDataMigrationAupV8Layout
+    {
+        public const int AbsoluteUniversePositionV7StrideBytes = 36;
+        public const int PayloadPrefixV7StrideBytes = 60;
+        public const int PayloadPrefixV8StrideBytes = 72;
+    }
+
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 36)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDataMigrationAupV8Layout.AbsoluteUniversePositionV7StrideBytes)]
     internal struct AbsoluteUniversePositionV7
     {
         [FieldOffset(0)]
@@ -25,7 +32,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 60)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDataMigrationAupV8Layout.PayloadPrefixV7StrideBytes)]
     internal struct PayloadPrefixV7
     {
         [FieldOffset(0)]
@@ -45,7 +52,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 72)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDataMigrationAupV8Layout.PayloadPrefixV8StrideBytes)]
     internal struct PayloadPrefixV8
     {
         [FieldOffset(0)]

@@ -13,6 +13,7 @@ namespace Hecton8.Editor
     {
         private const string GraphPath = "Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset";
         private const string ArtifactPath = "CodexArtifacts/planetary-canvas-graph-integration-2026-05-05.json";
+        private static readonly Encoding ArtifactEncoding = new UTF8Encoding(false);
 
         [MenuItem("HECTON-8/World/Integrate Planetary Canvas Graph")]
         public static void RunMenu()
@@ -253,7 +254,7 @@ namespace Hecton8.Editor
             builder.Append("  \"siltTextureLinks\": ").Append(report.SiltTextureLinks).AppendLine(",");
             builder.Append("  \"brineMudTextureLinks\": ").Append(report.BrineMudTextureLinks).AppendLine();
             builder.AppendLine("}");
-            File.WriteAllText(ArtifactPath, builder.ToString());
+            File.WriteAllText(ArtifactPath, builder.ToString(), ArtifactEncoding);
         }
 
         private static string Escape(string value)

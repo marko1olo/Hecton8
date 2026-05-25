@@ -1,11 +1,11 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using Stopwatch = System.Diagnostics.Stopwatch;
-using Hecton8.AI.Cognition;
 using Hecton8.AI.Perception;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.AI.Cognition;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
@@ -111,32 +111,6 @@ namespace Hecton8.AI
         {
             return ref UnsafeUtility.AsRef<PredatorCognitionDTO>(ptr);
         }
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
-    internal partial struct PredatorMockAcousticSignal
-    {
-        [FieldOffset(0)]
-        public float3 Position;
-        [FieldOffset(12)]
-        public float Timestamp;
-        [FieldOffset(16)]
-        public float Intensity;
-        [FieldOffset(20)]
-        public uint SourceId;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
-    internal partial struct MockLightSource
-    {
-        [FieldOffset(0)]
-        public float3 Position;
-        [FieldOffset(12)]
-        public float RangeSq;
-        [FieldOffset(16)]
-        public float Intensity;
-        [FieldOffset(20)]
-        public uint SourceId;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -510,7 +484,7 @@ namespace Hecton8.AI
     /// Shared fauna cognition domain backed by contiguous native arrays.
     /// Owner: PredatorCognitionDomain. Cap: 256 slots. Eviction: explicit unregister.
     /// </summary>
-    internal static class PredatorCognitionDomain
+    internal static partial class PredatorCognitionDomain
     {
         internal const int Capacity = 256;
         internal const int MemorySlotsPerCreature = 8;
@@ -713,11 +687,25 @@ namespace Hecton8.AI
                 }
             }
 
-            private NativeArray<T> Open()
+            public NativeArray<T> Open()
             {
                 if (!IsCreated ||
                     _dataVault == null ||
                     !_dataVault.TryResolveHandle(in Handle, out NativeArray<T> buffer) ||
+                    !buffer.IsCreated ||
+                    buffer.Length < Length)
+                {
+                    return default;
+                }
+
+                return buffer;
+            }
+
+            public NativeArray<T> OpenRead()
+            {
+                if (!IsCreated ||
+                    _dataVault == null ||
+                    !_dataVault.TryReadHandle(in Handle, out NativeArray<T> buffer) ||
                     !buffer.IsCreated ||
                     buffer.Length < Length)
                 {
@@ -1421,7 +1409,9 @@ namespace Hecton8.AI
                 return;
 
             float chainMs = (float)((Stopwatch.GetTimestamp() - _evaluationScheduleTimestamp) * _StopwatchMillisecondsPerTick);
-            int reportedJobCount = 1 + (_predatorEvaluationJobScheduled ? 1 : 0) + (_mesofaunaEvaluationJobScheduled ? 1 : 0);
+            int reportedJobCount = 1 + (_predatorEvaluationJobScheduled ? 1 : 0) + (_acousticSdfEvaluationJobScheduled ? 3 : 0) + (_mesofaunaEvaluationJobScheduled ? 1 : 0);
+            if (_steeringEvaluationJobScheduled)
+                reportedJobCount += LeviathanSteeringScheduledJobCount;
             float perJobMs = chainMs / math.max(1, reportedJobCount);
             _mesofaunaLastChainMicroseconds = chainMs * 1000f;
             JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<SwarmAnalysisJob>(JobAdmissionLane.Lane3_AI, perJobMs);
@@ -1429,6 +1419,8 @@ namespace Hecton8.AI
                 JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<PredatorCognitionJob>(JobAdmissionLane.Lane3_AI, perJobMs);
             if (_mesofaunaEvaluationJobScheduled)
                 JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<MesofaunaBehaviorJob>(JobAdmissionLane.Lane3_AI, perJobMs);
+            if (_steeringEvaluationJobScheduled)
+                ReportLeviathanSteeringJobsCompleted(perJobMs);
             _scheduledSwarmHandle = default;
             _evaluationScheduled = false;
             _lastEvaluatedFrame = _lastScheduledFrame;
@@ -1437,10 +1429,16 @@ namespace Hecton8.AI
                 UpdateRetinalPostEvaluationTelemetry(_lastEvaluatedFrame);
                 UpdateAlphaLeviathanPostEvaluationTelemetry(_lastEvaluatedFrame);
             }
+            if (_acousticSdfEvaluationJobScheduled)
+                FinalizeAcousticSdfTelemetry(_lastEvaluatedFrame, chainMs * 1000f);
             if (_mesofaunaEvaluationJobScheduled)
                 UpdateMesofaunaPostEvaluationTelemetry(_lastEvaluatedFrame);
+            if (_steeringEvaluationJobScheduled)
+                FinalizeLeviathanSteeringTelemetry(_lastEvaluatedFrame, chainMs * 1000f);
             _predatorEvaluationJobScheduled = false;
+            _acousticSdfEvaluationJobScheduled = false;
             _mesofaunaEvaluationJobScheduled = false;
+            _steeringEvaluationJobScheduled = false;
         }
 
         internal static unsafe void ScheduleFrameEvaluation(int frameId)
@@ -1454,9 +1452,16 @@ namespace Hecton8.AI
             }
 
             _predatorEvaluationJobScheduled = false;
+            _acousticSdfEvaluationJobScheduled = false;
             _mesofaunaEvaluationJobScheduled = false;
             RefreshThreatVoxelSnapshot(frameId);
+            PrepareAcousticSdfSignals(frameId);
             bool hasDueEvaluations = PrepareEvaluationDueFlags();
+            hasDueEvaluations |= MarkAcousticSdfDueWhenStimuliPresent();
+            bool hasAcousticSdfWork = HasAcousticSdfWorkPending();
+            if (!hasAcousticSdfWork)
+                RecordAcousticSdfIdleTelemetryFromCurrentTuning(frameId);
+
             if (!hasDueEvaluations)
             {
                 _lastScheduledFrame = frameId;
@@ -1516,10 +1521,16 @@ namespace Hecton8.AI
                     default,
                     out _scheduledSwarmHandle))
             {
-                _lastScheduledFrame = frameId;
+                if (!hasAcousticSdfWork)
+                    _lastScheduledFrame = frameId;
+                else
+                    MarkAcousticSdfPendingRetry(frameId);
                 return;
             }
 
+            JobHandle predatorDependency = hasAcousticSdfWork
+                ? ScheduleAcousticSdfIntegration(frameId, _scheduledSwarmHandle)
+                : _scheduledSwarmHandle;
             var job = new PredatorCognitionJob
             {
                 ActiveSlots = _activeSlots,
@@ -1566,6 +1577,11 @@ namespace Hecton8.AI
                 ThreatVoxelCellSize = _threatVoxelCellSize,
                 ThreatVoxelSolidThreshold = _threatVoxelSolidThreshold,
                 ThreatVoxelUsesSignedDistanceEncoding = _threatVoxelUsesSignedDistanceEncoding ? 1 : 0,
+                ChemicalFrontGrid = _chemicalFrontGrid,
+                ChemicalOverlayGrid = _chemicalOverlayGrid,
+                ChemicalGridDimensions = _chemicalGridDimensions,
+                ChemicalGridOrigin = _chemicalGridOrigin,
+                ChemicalGridCellSize = _chemicalGridCellSize,
                 ChemicalBreadcrumbs = _chemicalBreadcrumbs,
                 ChemicalBreadcrumbCount = _chemicalBreadcrumbCount,
                 ChemicalBreadcrumbFollowStepMeters = _chemicalBreadcrumbFollowStepMeters,
@@ -1579,14 +1595,14 @@ namespace Hecton8.AI
                     _activeSlotCount,
                     EvaluationJobBatchSize,
                     JobAdmissionLane.Lane3_AI,
-                    _scheduledSwarmHandle,
+                    predatorDependency,
                     out _scheduledEvaluationHandle))
             {
                 _predatorEvaluationJobScheduled = true;
             }
             else
             {
-                _scheduledEvaluationHandle = _scheduledSwarmHandle;
+                _scheduledEvaluationHandle = predatorDependency;
             }
 
             NativeArray<int> mesofaunaTargetHashBucketHeads = ResolveMesofaunaTargetHashBucketHeads();
@@ -1664,6 +1680,7 @@ namespace Hecton8.AI
                 _scheduledEvaluationHandle = mesofaunaDependency;
             }
 
+            _scheduledEvaluationHandle = ScheduleLeviathanSteering(frameId, _scheduledEvaluationHandle);
             _evaluationScheduled = true;
             _evaluationScheduleTimestamp = Stopwatch.GetTimestamp();
             _lastScheduledFrame = frameId;
@@ -1733,6 +1750,16 @@ namespace Hecton8.AI
             ReleaseVaultHandle(ref _mesofaunaSpeciesProfiles);
             ReleaseVaultHandle(ref _mesofaunaSpeciesProfileCount);
             ReleaseVaultHandle(ref _mesofaunaCsvScratch);
+            ReleaseVaultHandle(ref _acousticSdfStimuli);
+            ReleaseVaultHandle(ref _acousticSdfStimulusCounter);
+            ReleaseVaultHandle(ref _acousticSdfResults);
+            ReleaseVaultHandle(ref _acousticSdfTelemetryRing);
+            ReleaseVaultHandle(ref _acousticSdfTelemetryCursor);
+            ReleaseVaultHandle(ref _acousticHearingProfiles);
+            ReleaseVaultHandle(ref _acousticHearingProfileCount);
+            ReleaseVaultHandle(ref _acousticSdfTuning);
+            ReleaseVaultHandle(ref _acousticCsvScratch);
+            ReleaseLeviathanSteeringVaultHandles();
             _mesofaunaTargetHashBucketHeads = default;
             _mesofaunaTargetHashNext = default;
 
@@ -1794,6 +1821,15 @@ namespace Hecton8.AI
             _mesofaunaSpeciesProfiles = default;
             _mesofaunaSpeciesProfileCount = default;
             _mesofaunaCsvScratch = default;
+            _acousticSdfStimuli = default;
+            _acousticSdfStimulusCounter = default;
+            _acousticSdfResults = default;
+            _acousticSdfTelemetryRing = default;
+            _acousticSdfTelemetryCursor = default;
+            _acousticHearingProfiles = default;
+            _acousticHearingProfileCount = default;
+            _acousticSdfTuning = default;
+            _acousticCsvScratch = default;
             _mesofaunaTargetHashBucketHeads = default;
             _mesofaunaTargetHashNext = default;
             _threatVoxelGrid = default;
@@ -1810,6 +1846,7 @@ namespace Hecton8.AI
             _dataVault = null;
             _evaluationScheduled = false;
             _predatorEvaluationJobScheduled = false;
+            _acousticSdfEvaluationJobScheduled = false;
             _mesofaunaEvaluationJobScheduled = false;
             _activeSlotCount = 0;
             _lastEvaluatedFrame = -1;
@@ -1833,6 +1870,15 @@ namespace Hecton8.AI
             _retinalFaultDumped = false;
             _alphaLeviathanFaultDumped = false;
             _mesofaunaFaultDumped = false;
+            _acousticSdfDefaultsInitialized = false;
+            _acousticProfilesLoadAttempted = false;
+            _acousticSdfDumpPathInitialized = false;
+            _acousticSdfFaultDumped = false;
+            _acousticSdfLastPreparedFrame = -1;
+            _acousticSdfLastDumpFrame = -AcousticTelemetryCapacity;
+            _acousticSdfLastChainMicroseconds = 0f;
+            _acousticSdfPendingStimulusRetry = false;
+            _acousticSdfDumpPath = null;
         }
 
         private static void EnsureInitialized()
@@ -1841,6 +1887,7 @@ namespace Hecton8.AI
             {
                 if (_dataVault == null)
                     _dataVault = GlobalRegistry.DataVault;
+                EnsureLeviathanSteeringVaultState();
                 return;
             }
 
@@ -1850,6 +1897,8 @@ namespace Hecton8.AI
             // VAULT ALIAS: Retinal and Alpha black-box data live in GlobalDataVault.
             EnsureRetinalVaultBuffers();
             EnsureAlphaLeviathanTelemetryVaultBuffer();
+            EnsureAcousticSdfVaultBuffers();
+            EnsureLeviathanSteeringVaultState();
             GenerateMockCognitionProfiles();
             ClearBoidClaims();
             ClearPredatorTargetSpatialHash();
@@ -2258,7 +2307,9 @@ namespace Hecton8.AI
 
             ClearCoreCognitionVaultBuffers();
             InitializeMesofaunaVaultBuffersCold();
+#if UNITY_EDITOR
             TryLoadMesofaunaSpeciesProfilesCsvCold();
+#endif
             _activeSlotCount = 0;
             return true;
         }
@@ -2318,6 +2369,16 @@ namespace Hecton8.AI
             ReleaseVaultHandle(ref _mesofaunaSpeciesProfiles);
             ReleaseVaultHandle(ref _mesofaunaSpeciesProfileCount);
             ReleaseVaultHandle(ref _mesofaunaCsvScratch);
+            ReleaseVaultHandle(ref _acousticSdfStimuli);
+            ReleaseVaultHandle(ref _acousticSdfStimulusCounter);
+            ReleaseVaultHandle(ref _acousticSdfResults);
+            ReleaseVaultHandle(ref _acousticSdfTelemetryRing);
+            ReleaseVaultHandle(ref _acousticSdfTelemetryCursor);
+            ReleaseVaultHandle(ref _acousticHearingProfiles);
+            ReleaseVaultHandle(ref _acousticHearingProfileCount);
+            ReleaseVaultHandle(ref _acousticSdfTuning);
+            ReleaseVaultHandle(ref _acousticCsvScratch);
+            ReleaseLeviathanSteeringVaultHandles();
             _mesofaunaTargetHashBucketHeads = default;
             _mesofaunaTargetHashNext = default;
         }
@@ -2423,7 +2484,7 @@ namespace Hecton8.AI
             if (_dataVault == null || requiredLength <= 0)
                 return default;
 
-            VaultGenerationHandle<T> handle = _dataVault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = _dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 ownerSystem,
@@ -2539,7 +2600,7 @@ namespace Hecton8.AI
             if (!MathGuard.IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -2800,11 +2861,13 @@ namespace Hecton8.AI
             return true;
         }
 
+#if UNITY_EDITOR
         internal static bool TryReloadMesofaunaSpeciesProfiles()
         {
             EnsureInitialized();
             return TryLoadMesofaunaSpeciesProfilesCsvCold();
         }
+#endif
 
         internal static bool TryGetMesofaunaSpeciesProfileCount(out int count)
         {
@@ -2890,11 +2953,13 @@ namespace Hecton8.AI
             return count;
         }
 
+#if UNITY_EDITOR
         internal static bool TryReloadApexCortexBehaviorOverrides()
         {
             EnsureInitialized();
             return TryLoadBehaviorOverridesCsvCold();
         }
+#endif
 
         internal static int CopyApexCortexDebugGizmos(
             Vector3[] origins,
@@ -3073,6 +3138,7 @@ namespace Hecton8.AI
             _speciesTuningCount[0] = count + 1;
         }
 
+#if UNITY_EDITOR
         private static bool TryLoadBehaviorOverridesCsvCold()
         {
             NativeArray<float4> apexCortexTuning = ResolveApexCortexTuning();
@@ -3090,7 +3156,7 @@ namespace Hecton8.AI
 
         private static string ResolveBehaviorOverridesPathCold()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
             string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
             string path = Path.Combine(projectRoot, "Assets", "_SourceData", "Fauna", ApexCortexBehaviorCsvName);
@@ -3306,7 +3372,7 @@ namespace Hecton8.AI
 
         private static string ResolveMesofaunaSpeciesProfilesPathCold()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
             string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
             string path = Path.Combine(projectRoot, "Assets", "_SourceData", "Fauna", MesofaunaSpeciesProfilesCsvName);
@@ -3664,6 +3730,7 @@ namespace Hecton8.AI
         {
             return float.IsFinite(value) && value > 0f ? value : 1f;
         }
+#endif
 
         private static void ValidateAbiLayout()
         {
@@ -3682,7 +3749,9 @@ namespace Hecton8.AI
                 UnsafeUtility.SizeOf<MesofaunaTelemetryEntry>() != MesofaunaTelemetryEntrySizeBytes ||
                 UnsafeUtility.SizeOf<MesofaunaTuningDTO>() != MesofaunaTuningDtoSizeBytes ||
                 UnsafeUtility.SizeOf<MesofaunaSpeciesProfileDTO>() != MesofaunaSpeciesProfileDtoSizeBytes ||
-                !MesofaunaBehaviorConstants.ValidateLayout())
+                !ValidateAcousticSdfAbiLayout() ||
+                !MesofaunaBehaviorConstants.ValidateLayout() ||
+                !ValidateLeviathanSteeringAbiLayout())
             {
                 FatalMemoryException.ThrowAbiLayoutMismatch();
             }
@@ -4071,7 +4140,7 @@ namespace Hecton8.AI
 
             CognitionCore core = _cores[slot];
             AbsoluteUniversePosition signalPosition = ResolveBlindSignalAup(slot, in core);
-            GlobalSignals.Publish(new FaunaStateChangedSignal
+            SignalBus<FaunaStateChangedSignal>.TryPush(new FaunaStateChangedSignal
             {
                 PositionAup = signalPosition,
                 SpeciesHash = unchecked((uint)core.SpeciesId),
@@ -4584,6 +4653,22 @@ namespace Hecton8.AI
                 return;
 
             _lastThreatVoxelBindFrame = frameId;
+            if (TryReadAcousticPublishedVoxelSdfSnapshot(
+                    _dataVault,
+                    out NativeArray<byte>.ReadOnly encodedSdf,
+                    out int3 sdfDimensions,
+                    out float3 sdfOrigin,
+                    out float3 sdfCellSize))
+            {
+                _threatVoxelGrid = encodedSdf;
+                _threatVoxelDimensions = sdfDimensions;
+                _threatVoxelOrigin = sdfOrigin;
+                _threatVoxelCellSize = sdfCellSize;
+                _threatVoxelSolidThreshold = SignedDistanceSolidThreshold;
+                _threatVoxelUsesSignedDistanceEncoding = true;
+                return;
+            }
+
             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (bridge != null &&
                 bridge.TryGetEcosystemThreatVoxelPayload(out NativeArray<byte>.ReadOnly threatVoxels, out Vector3Int gridDimensions, out Vector3 gridOrigin, out Vector3 voxelCellSize))
@@ -4599,12 +4684,12 @@ namespace Hecton8.AI
 
             HectonCaveVoxelLightingVolume caveLightingVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
             if (caveLightingVolume != null &&
-                caveLightingVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte>.ReadOnly signedDistanceVoxels, out Vector3Int sdfDimensions, out Vector3 sdfOrigin, out Vector3 sdfCellSize))
+                caveLightingVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte>.ReadOnly signedDistanceVoxels, out Vector3Int caveSdfDimensions, out Vector3 caveSdfOrigin, out Vector3 caveSdfCellSize))
             {
                 _threatVoxelGrid = signedDistanceVoxels;
-                _threatVoxelDimensions = new int3(sdfDimensions.x, sdfDimensions.y, sdfDimensions.z);
-                _threatVoxelOrigin = new float3(sdfOrigin.x, sdfOrigin.y, sdfOrigin.z);
-                _threatVoxelCellSize = new float3(sdfCellSize.x, sdfCellSize.y, sdfCellSize.z);
+                _threatVoxelDimensions = new int3(caveSdfDimensions.x, caveSdfDimensions.y, caveSdfDimensions.z);
+                _threatVoxelOrigin = new float3(caveSdfOrigin.x, caveSdfOrigin.y, caveSdfOrigin.z);
+                _threatVoxelCellSize = new float3(caveSdfCellSize.x, caveSdfCellSize.y, caveSdfCellSize.z);
                 _threatVoxelSolidThreshold = SignedDistanceSolidThreshold;
                 _threatVoxelUsesSignedDistanceEncoding = true;
                 return;
@@ -4984,125 +5069,6 @@ namespace Hecton8.AI
         private static float DequantizeLane(uint lane)
         {
             return math.saturate(lane * QuantizedByteInvScale);
-        }
-
-        internal static JobHandle ScheduleMockStimulusProbe(
-            NativeArray<PredatorCognitionDTO> dtos,
-            NativeQueue<PredatorMockAcousticSignal>.ParallelWriter acousticSignals,
-            NativeArray<MockLightSource> lightSources,
-            NativeArray<SignalWardenMockDamageSignal> damageSignals,
-            uint seed,
-            float currentTime,
-            JobHandle dependency)
-        {
-            if (!dtos.IsCreated || dtos.Length <= 0)
-                return dependency;
-
-            var job = new MockPredatorStimulusJob
-            {
-                Dtos = dtos,
-                AcousticSignals = acousticSignals,
-                LightSources = lightSources,
-                DamageSignals = damageSignals,
-                Seed = seed == 0u ? 1u : seed,
-                CurrentTime = currentTime
-            };
-            return job.Schedule(dtos.Length, EvaluationJobBatchSize, dependency);
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct MockPredatorStimulusJob : IJobParallelFor
-        {
-            [NativeDisableParallelForRestriction] public NativeArray<PredatorCognitionDTO> Dtos;
-            public NativeQueue<PredatorMockAcousticSignal>.ParallelWriter AcousticSignals;
-            [NativeDisableParallelForRestriction] public NativeArray<MockLightSource> LightSources;
-            [NativeDisableParallelForRestriction] public NativeArray<SignalWardenMockDamageSignal> DamageSignals;
-            public uint Seed;
-            public float CurrentTime;
-
-            public void Execute(int index)
-            {
-                PredatorCognitionDTO* dtoPtr = (PredatorCognitionDTO*)Dtos.GetUnsafePtr() + index;
-                ref PredatorCognitionDTO dto = ref PredatorCognitionDTO.AsMutableRef(dtoPtr);
-                uint localSeed = math.max(1u, Seed ^ ((uint)index * 0x9E3779B9u));
-                Unity.Mathematics.Random random = new Unity.Mathematics.Random(localSeed);
-                double3 currentAup = dto.CurrentAUP;
-                float3 current = AupPrecisionMath.DowncastProceduralPhase(currentAup, float3.zero);
-                float3 forward = ResolveDominantAxis(dto.ForwardVector, new float3(0f, 0f, 1f));
-
-                if (random.NextFloat() < 0.25f)
-                {
-                    float3 noiseOffset = ResolveDominantAxis(new float3(random.NextFloat(-1f, 1f), random.NextFloat(-0.4f, 0.4f), random.NextFloat(-1f, 1f)), forward);
-                    float acousticDistance = random.NextFloat(4f, 24f);
-                    float3 acousticOffset = noiseOffset * acousticDistance;
-                    double3 acousticAup = currentAup + new double3(acousticOffset.x, acousticOffset.y, acousticOffset.z);
-                    PredatorMockAcousticSignal acoustic = default;
-                    acoustic.Position = current + acousticOffset;
-                    acoustic.Timestamp = CurrentTime;
-                    acoustic.Intensity = random.NextFloat(0.35f, 1f);
-                    acoustic.SourceId = unchecked((uint)index + 1u);
-                    AcousticSignals.Enqueue(acoustic);
-                    dto.TargetAUP = math.all(math.isfinite(acousticAup)) ? acousticAup : currentAup;
-                }
-
-                float fearSpike = 0f;
-                if (LightSources.IsCreated && index < LightSources.Length && random.NextFloat() < 0.16f)
-                {
-                    float3 lightOffset = forward * random.NextFloat(5f, 18f);
-                    MockLightSource light = default;
-                    light.Position = current + lightOffset;
-                    light.RangeSq = 400f;
-                    light.Intensity = random.NextFloat(0.65f, 1f);
-                    light.SourceId = unchecked(0x4C495448u + (uint)index);
-                    LightSources[index] = light;
-                }
-
-                if (LightSources.IsCreated)
-                {
-                    int lightCount = math.min(LightSources.Length, 4);
-                    for (int i = 0; i < lightCount; i++)
-                    {
-                        MockLightSource light = LightSources[i];
-                        float3 toLight = light.Position - current;
-                        float distanceSq = math.lengthsq(toLight);
-                        if (distanceSq <= DdaEpsilon || distanceSq > math.max(1f, light.RangeSq))
-                            continue;
-
-                        float3 toLightDir = toLight * math.rsqrt(math.max(distanceSq, MathSafetyEpsilon));
-                        float glareDot = math.dot(forward, toLightDir);
-                        fearSpike = math.max(fearSpike, math.select(0f, light.Intensity, glareDot > 0.8f));
-                    }
-                }
-
-                if (DamageSignals.IsCreated && index < DamageSignals.Length && random.NextFloat() < 0.08f)
-                {
-                    SignalWardenMockDamageSignal damage = default;
-                    damage.Aup = dto.CurrentAUP;
-                    damage.Damage = random.NextFloat(0.2f, 0.85f);
-                    damage.EntityId = dto.TargetID;
-                    DamageSignals[index] = damage;
-                }
-
-                if (DamageSignals.IsCreated)
-                {
-                    int damageCount = math.min(DamageSignals.Length, 4);
-                    for (int i = 0; i < damageCount; i++)
-                    {
-                        SignalWardenMockDamageSignal damage = DamageSignals[i];
-                        if (damage.EntityId != dto.TargetID)
-                            continue;
-
-                        fearSpike = math.max(fearSpike, damage.Damage);
-                    }
-                }
-
-                dto.Fear = math.saturate(math.max(dto.Fear, fearSpike));
-                bool enraged = dto.Fear > 0.75f && dto.Hunger > 0.8f;
-                dto.CurrentState = (byte)math.select(
-                    (int)math.select((int)PredatorUtilityState.Stalking, (int)PredatorUtilityState.Attacking, dto.Hunger > 0.55f),
-                    (int)PredatorUtilityState.Fleeing,
-                    dto.Fear > 0.65f && !enraged);
-            }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

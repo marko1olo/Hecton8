@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -16,9 +17,11 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-    public sealed class DiegeticVisorHudMesh : MonoBehaviour, IUpdatable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticVisorHudMesh : MonoBehaviour, IUpdatable, ILateFrameTickable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const int BlackBoxCapacity = 300;
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
+        private const BufferID BlackBoxBufferId = BufferID.DiegeticVisorHudBlackBox;
         private const float DefaultDistanceMeters = 0.48f;
         private const float DefaultHorizontalDegrees = 78f;
         private const float DefaultVerticalDegrees = 48f;
@@ -59,13 +62,16 @@ namespace Hecton8.UI
         private Material _runtimeMaterial;
         private Transform _cameraTransform;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private NativeArray<DiegeticHudTelemetryEntry> _blackBox;
+        private VaultGenerationHandle<DiegeticHudTelemetryEntry> _blackBoxHandle;
+        private IDataVault _dataVault;
         private int _blackBoxCursor;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
         private bool _playerSignalRegistered;
-        private bool _nativeRegistered;
         private bool _blackBoxDumped;
+        private bool _materialStateDirty;
+        private bool _meshRebuildDirty;
         private float _brownout01;
         private float _damageGlitch01;
         private float _humidity01;
@@ -139,11 +145,27 @@ namespace Hecton8.UI
                 _brownout01 = math.max(0f, _brownout01 - dt);
 
             if (RefreshQualityPolicy())
-                RebuildMesh();
+                _meshRebuildDirty = true;
 
             SampleHumidity(dt);
-            ApplyMaterialState();
+            _materialStateDirty = true;
             RecordTelemetry();
+        }
+
+        public void LateFrameTick()
+        {
+            if (_meshRebuildDirty)
+            {
+                _meshRebuildDirty = false;
+                RebuildMesh();
+                _materialStateDirty = true;
+            }
+
+            if (!_materialStateDirty)
+                return;
+
+            _materialStateDirty = false;
+            ApplyMaterialState();
         }
 
         public void OnTraumaHudSignal(in TraumaHudSignal signal)
@@ -257,6 +279,14 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _dataVault = currentService as IDataVault;
+                if (_dataVault != null)
+                    EnsureBlackBox();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
                 return;
 
@@ -284,7 +314,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedQualityWeight01 = ResolveCurrentQualityWeight(_cachedQualityWeight01);
         }
 
@@ -312,11 +342,17 @@ namespace Hecton8.UI
         private static int ResolveSegmentCount(int authoringCount, float qualityWeight01, int min, int max)
         {
             int safeCount = math.clamp(authoringCount, min, max);
-            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
+            float quality = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
             float lowToAuth = math.lerp(min, safeCount, math.saturate(quality * 2f));
             float authToMax = math.lerp(safeCount, max, math.saturate((quality - 0.5f) * 2f));
-            float target = math.lerp(lowToAuth, authToMax, math.step(0.5f, quality));
+            float target = math.lerp(lowToAuth, authToMax, SmoothStep01(math.saturate((quality - 0.5f) * 2f)));
             return math.clamp((int)math.round(target), min, max);
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
         }
 
         private void ResolveComponents()
@@ -530,56 +566,83 @@ namespace Hecton8.UI
 
         private void TryRegisterTick()
         {
-            if (_registered)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTick()
         {
-            if (!_registered)
-                return;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
+
+            _materialStateDirty = false;
+            _meshRebuildDirty = false;
         }
 
         private void EnsureBlackBox()
         {
-            if (_blackBox.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
                 return;
 
-            _blackBox = new NativeArray<DiegeticHudTelemetryEntry>(
+            if (IsVaultHandleCreated(in _blackBoxHandle) &&
+                vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<DiegeticHudTelemetryEntry>.ReadOnly blackBox) &&
+                blackBox.IsCreated &&
+                blackBox.Length >= BlackBoxCapacity)
+                return;
+
+            if (IsVaultHandleCreated(in _blackBoxHandle))
+                vault.ReleaseBuffer(in _blackBoxHandle);
+
+            _blackBoxHandle = vault.EnsureGenerationHandle<DiegeticHudTelemetryEntry>(
+                BlackBoxBufferId,
                 BlackBoxCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DiegeticHudTelemetryEntry>[300] - visor HUD crash black box - owner: DiegeticVisorHudMesh
-            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(DiegeticVisorHudMesh), nameof(_blackBox), NativeAllocationLifetime.Scene);
-            _nativeRegistered = true;
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
             _blackBoxCursor = 0;
             _blackBoxDumped = false;
         }
 
         private void DisposeBlackBox()
         {
-            if (!_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in _blackBoxHandle))
                 return;
 
-            if (_nativeRegistered)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                _nativeRegistered = false;
-            }
-
-            _blackBox.Dispose();
-            _blackBox = default;
+            vault.ReleaseBuffer(in _blackBoxHandle);
+            _blackBoxHandle = default;
             _blackBoxCursor = 0;
             _blackBoxDumped = false;
         }
 
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
         private void RecordTelemetry()
         {
-            if (!_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in _blackBoxHandle))
                 return;
 
             Vector3 localPosition = transform.localPosition;
@@ -589,27 +652,48 @@ namespace Hecton8.UI
                 return;
             }
 
-            _blackBox[_blackBoxCursor] = new DiegeticHudTelemetryEntry
+            if (!vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out NativeArray<DiegeticHudTelemetryEntry> blackBox) ||
+                !blackBox.IsCreated ||
+                blackBox.Length < BlackBoxCapacity)
             {
-                Frame = Time.frameCount,
-                Power01 = math.saturate(panelPower01),
-                Brownout01 = math.saturate(_brownout01),
-                DamageGlitch01 = math.saturate(_damageGlitch01),
-                Humidity01 = math.saturate(_humidity01),
-                LocalX = localPosition.x,
-                LocalY = localPosition.y,
-                LocalZ = localPosition.z,
-                Flags = (uint)((_registered ? 1 : 0) | (_playerSignalRegistered ? 2 : 0) | (_runtimeMaterial != null ? 4 : 0))
-            };
-            _blackBoxCursor++;
-            if (_blackBoxCursor >= BlackBoxCapacity)
-                _blackBoxCursor = 0;
+                return;
+            }
+
+            try
+            {
+                blackBox[_blackBoxCursor] = new DiegeticHudTelemetryEntry
+                {
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
+                    Power01 = math.saturate(panelPower01),
+                    Brownout01 = math.saturate(_brownout01),
+                    DamageGlitch01 = math.saturate(_damageGlitch01),
+                    Humidity01 = math.saturate(_humidity01),
+                    LocalX = localPosition.x,
+                    LocalY = localPosition.y,
+                    LocalZ = localPosition.z,
+                    Flags = (uint)((_registered ? 1 : 0) | (_playerSignalRegistered ? 2 : 0) | (_runtimeMaterial != null ? 4 : 0))
+                };
+                _blackBoxCursor++;
+                if (_blackBoxCursor >= BlackBoxCapacity)
+                    _blackBoxCursor = 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+            }
         }
 
         private void DumpBlackBox()
         {
-            if (_blackBoxDumped || !_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (_blackBoxDumped ||
+                vault == null ||
+                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<DiegeticHudTelemetryEntry>.ReadOnly blackBox) ||
+                !blackBox.IsCreated)
+            {
                 return;
+            }
 
             _blackBoxDumped = true;
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -621,9 +705,9 @@ namespace Hecton8.UI
             {
                 writer.Write(BlackBoxCapacity);
                 writer.Write(_blackBoxCursor);
-                for (int i = 0; i < _blackBox.Length; i++)
+                for (int i = 0; i < blackBox.Length; i++)
                 {
-                    DiegeticHudTelemetryEntry entry = _blackBox[i];
+                    DiegeticHudTelemetryEntry entry = blackBox[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.Power01);
                     writer.Write(entry.Brownout01);

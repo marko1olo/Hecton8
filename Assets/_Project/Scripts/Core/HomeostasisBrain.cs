@@ -212,11 +212,11 @@ namespace Hecton8.Core
             float alpha,
             int seeded);
 
-        public static NativeArray<float> GlobalHardwareMetrics
+        public static NativeArray<float>.ReadOnly GlobalHardwareMetrics
         {
             get
             {
-                return TryResolveHardwareMetrics(out NativeArray<float> metrics) ? metrics : default;
+                return TryReadHardwareMetrics(out NativeArray<float>.ReadOnly metrics) ? metrics : default;
             }
         }
 
@@ -260,7 +260,7 @@ namespace Hecton8.Core
 
             MemoryBudgetTracker.Register(OwnerName, ResolveRequestedVaultBytes(), PersistentNativeBudgetBytes);
 
-            GlobalSignals.InitializeAllQueues();
+            SignalCorridorRuntime.EnsureInitialized();
 
             _computeShi = BurstCompiler.CompileFunctionPointer<ComputeSystemHealthIndexDelegate>(ComputeSystemHealthIndexBurst);
             _computeFrameEwma = BurstCompiler.CompileFunctionPointer<ComputeFrameEwmaDelegate>(ComputeFrameEwmaBurst);
@@ -821,7 +821,7 @@ namespace Hecton8.Core
             signal.PressureLevel = _currentPressureLevel;
             signal.FoveatedPressureTier = foveatedPressureTier;
             signal.Flags = flags;
-            SignalBus<SystemHealthSignal>.Push(in signal);
+            SignalBus<SystemHealthSignal>.TryPush(in signal);
         }
 
         private static void PublishFrameTimeSignal(
@@ -848,7 +848,7 @@ namespace Hecton8.Core
             signal.Flags = unchecked((byte)(flags & 0xFF));
             signal.Reserved = 0;
             signal.Sequence = _frameTimeSignalSequence++;
-            SignalBus<FrameTimeSignal>.Push(in signal);
+            SignalBus<FrameTimeSignal>.TryPush(in signal);
         }
 
         private static void PublishKillSwitchSignal(int frame, ulong previousMask, byte previousLevel, ushort flags)
@@ -861,7 +861,7 @@ namespace Hecton8.Core
             signal.PreviousLevel = previousLevel;
             signal.CurrentLevel = _currentPressureLevel;
             signal.Flags = flags;
-            SignalBus<KillSwitchSignal>.Push(in signal);
+            SignalBus<KillSwitchSignal>.TryPush(in signal);
         }
 
         private static void PublishLegacySystemHealthIndexSignal(int frame)
@@ -875,7 +875,7 @@ namespace Hecton8.Core
                 ? SystemHealthIndexSignal.StateCritical
                 : (_currentPressureLevel > 0 ? SystemHealthIndexSignal.StateWarning : SystemHealthIndexSignal.StateStable);
             signal.Flags = _currentPressureLevel >= 3 ? SystemHealthIndexSignal.FlagAdrenaline : (byte)0;
-            SignalBus<SystemHealthIndexSignal>.Push(in signal);
+            SignalBus<SystemHealthIndexSignal>.TryPush(in signal);
         }
 
         private static void WriteBlackBox(
@@ -1067,6 +1067,17 @@ namespace Hecton8.Core
             return metrics.IsCreated && metrics.Length >= (int)HardwareMetricSlot.Count;
         }
 
+        private static bool TryReadHardwareMetrics(out NativeArray<float>.ReadOnly metrics)
+        {
+            metrics = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || _globalHardwareMetricsHandle.BufferID == 0u || _globalHardwareMetricsHandle.Generation == 0u)
+                return false;
+
+            return vault.TryReadOnlyHandle(in _globalHardwareMetricsHandle, out metrics) &&
+                   metrics.Length >= (int)HardwareMetricSlot.Count;
+        }
+
         private static bool TryResolveOrAcquire<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
@@ -1098,7 +1109,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.HardwareHomeostasis,

@@ -236,7 +236,7 @@ namespace Hecton8.Dev
         private void Log(string message)
         {
             if (verboseLogging)
-                Debug.Log(message, this);
+                Hecton8.Core.H8Debug.Log(message, this);
         }
     }
 }

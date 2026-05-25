@@ -6,6 +6,12 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class OutpostGenerationContractLayout
+    {
+        public const int OutpostGenerationSnapshotStrideBytes = 64;
+        public const int OutpostInteractableSpawnStrideBytes = 32;
+    }
+
     /// <summary>
     /// High-level generation phase for the deterministic marauder outpost runtime.
     /// </summary>
@@ -32,7 +38,7 @@ namespace Hecton8.World
     /// <summary>
     /// Immutable state sample published by the outpost generation service.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OutpostGenerationContractLayout.OutpostGenerationSnapshotStrideBytes)]
     public struct OutpostGenerationSnapshot
     {
         [FieldOffset(0)] public ulong SectorHash;
@@ -52,7 +58,7 @@ namespace Hecton8.World
     /// <summary>
     /// Deferred pooled proxy spawn emitted by native matrix extraction. Shell pieces never become GameObjects.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = OutpostGenerationContractLayout.OutpostInteractableSpawnStrideBytes)]
     public struct OutpostInteractableSpawn
     {
         [FieldOffset(0)] public float3 PositionMeters;

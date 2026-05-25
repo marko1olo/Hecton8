@@ -549,15 +549,15 @@ namespace Hecton8.Physics
             {
                 state.RestingFrameCount = IncrementByteSaturated(state.RestingFrameCount);
                 state.DeepSleepTickCount = IncrementByteSaturated(state.DeepSleepTickCount);
-                bool deepSleepNow = state.DeepSleepTickCount >= math.min(255, requiredDeepSleepTicks);
+                bool persistedDeepSleepNow = state.DeepSleepTickCount >= math.min(255, requiredDeepSleepTicks);
                 bool seafloorSleeping = (state.Flags & BuoyancyDisplacementConstants.FlagSeafloorSleeping) != 0u;
                 state.Velocity = float3.zero;
                 state.AngularSpeedSq = 0f;
                 uint sleepingFlags = state.Flags |
                                      BuoyancyDisplacementConstants.FlagSleeping |
                                      math.select(0u, BuoyancyDisplacementConstants.FlagSdfGrounded, seafloorSleeping) |
-                                     math.select(0u, BuoyancyDisplacementConstants.FlagDeepSleeping, deepSleepNow) |
-                                     math.select(0u, BuoyancyDisplacementConstants.FlagStaticPromotionPending, deepSleepNow) |
+                                     math.select(0u, BuoyancyDisplacementConstants.FlagDeepSleeping, persistedDeepSleepNow) |
+                                     math.select(0u, BuoyancyDisplacementConstants.FlagStaticPromotionPending, persistedDeepSleepNow) |
                                      math.select(0u, BuoyancyDisplacementConstants.FlagWakeSignal, wokeFromSignal) |
                                      math.select(0u, BuoyancyDisplacementConstants.FlagAmbientCurrentWake, wokeFromAmbientCurrent);
                 state.Flags = sleepingFlags;

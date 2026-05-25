@@ -1,0 +1,10 @@
+﻿JOB_ID: B01_003
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch01_Blockers\B01_003_ceiling_10_trimsheet_normal_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\ceiling_10_trimsheet_normal_Normal.png
+FINAL_FILENAME: ceiling_10_trimsheet_normal_Normal.png
+REFERENCES: `LOOKDEV_APPROVED_REF_SEED_001.png` `LOOKDEV_APPROVED_REF_SEED_003.png` if available
+
+PROMPT:
+Create a beautiful modular abyssal habitat ceiling trim heightfield source for BC5 normal baking. Design recessed service channels, quiet acoustic baffles, gasketed inspection seams, countersunk fastener wells, cable raceway lips, shallow pressed ribs, and small maintenance hatch outlines. The construction language should be calm and premium: off-white ceramic-coated pressure panels, satin titanium ribs, graphite rubber separators, amber locator inserts, and pale mineral dust gathered only in the deepest grooves. Leave clean open panel areas so the ceiling feels engineered and spacious, not busy. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

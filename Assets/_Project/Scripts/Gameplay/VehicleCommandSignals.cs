@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace Hecton8.Core.Contracts.Signals
 {
+    internal static class VehicleCommandSignalLayout
+    {
+        internal const int SignalStrideBytes = 32;
+    }
+
     [System.Flags]
     public enum VehicleCommandSignalFlags : byte
     {
@@ -17,7 +22,7 @@ namespace Hecton8.Core.Contracts.Signals
         CriticalList = 1 << 5
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = VehicleCommandSignalLayout.SignalStrideBytes)]
     public struct VehicleCommandSignal : ISignal
     {
         [FieldOffset(0)] public int TargetInstanceId;
@@ -149,7 +154,13 @@ namespace Hecton8.Core
             _listeners.TryUnregister(listener);
         }
 
+        [global::System.Obsolete("Use TryPublish and handle bounded vehicle command rejection explicitly.", true)]
         public static bool Publish(in VehicleCommandSignal signal)
+        {
+            return TryPublish(in signal);
+        }
+
+        public static bool TryPublish(in VehicleCommandSignal signal)
         {
             if (signal.TargetInstanceId == 0)
                 return false;

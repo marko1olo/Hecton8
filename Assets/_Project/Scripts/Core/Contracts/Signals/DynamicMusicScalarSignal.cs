@@ -2,10 +2,15 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.Core.Contracts.Signals
 {
+    internal static class DynamicMusicScalarSignalLayout
+    {
+        internal const int SignalStrideBytes = 64;
+    }
+
     /// <summary>
     /// Presentation-only dynamic music scalar packet. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicMusicScalarSignalLayout.SignalStrideBytes)]
     public struct DynamicMusicScalarSignal : ISignal
     {
         public const uint LaneHash = 0x44594D55u; // DYMU

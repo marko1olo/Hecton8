@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_213" domain="OFFLINE_LOD_AND_COLLIDER_BAKER" status="PENDING_VERIFICATION">
+﻿<SELF_AUDIT agent="SHINOBU_213" domain="OFFLINE_LOD_AND_COLLIDER_BAKER" status="PENDING_VERIFICATION">
   <TASK_RECONCILIATION>
     <Task id="01" name="REALTIME_MESH_COLLIDER_INQUISITION" status="STATIC_SOURCE_PASS" sourceStatus="PASS" verification="PENDING_COMPILE_IMPORT_PROFILER">Scanner reports high-poly concave MeshCollider findings and optional editor repair uses BoxCollider.</Task>
     <Task id="02" name="MANUAL_LOD_AUTHORING_PURGE" status="STATIC_SOURCE_PASS" sourceStatus="PASS" verification="PENDING_COMPILE_IMPORT_PROFILER">Manual LOD drift and material slot mismatch are reported; bake output overwrites with deterministic budgets.</Task>

@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor
 {
@@ -64,7 +65,7 @@ namespace Hecton8.Editor
 
             File.WriteAllText(reportPath, report.ToString(), ReportEncoding);
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-            Debug.Log("[OrphanedComponentSweeper] Wrote report: " + reportPath);
+            H8Debug.Log("[OrphanedComponentSweeper] Wrote report: " + reportPath);
         }
 
         private static int CountMissingScripts(GameObject root)

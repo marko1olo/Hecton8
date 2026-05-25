@@ -1,7 +1,7 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Items;
 using Hecton8.Meta;
-using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using UnityEngine;
 
@@ -13,7 +13,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6240)]
     [AddComponentMenu("Hecton8/World/Environmental Strain Manager")]
-    public sealed class EnvironmentalStrainManager : MonoBehaviour, ISaveable
+    public sealed class EnvironmentalStrainManager : MonoBehaviour, ISaveable, IUpdatable, IEnvironmentalStrainReadModel, IGlobalRegistryHotSwapListener
     {
         private const float BasePlasticRecycleStrain = 1.2f;
         private const float BaseDiscardPollution = 1.0f;
@@ -23,10 +23,12 @@ namespace Hecton8.World
         private const float PreyKillSectorStrainPerUnit = 0.08f;
         private const float EcologicalCollapseThreshold = 0.8f;
 
-        private HectonEventSubscription _itemCollectedSubscription;
-        private HectonEventSubscription _itemRecycledSubscription;
-        private HectonEventSubscription _itemDiscardedSubscription;
         private bool _serviceRegistered;
+        private bool _tickRegistered;
+        private bool _hotSwapRegistered;
+        private bool _duplicateServiceSuppressed;
+        private uint _lastProcessedItemLifecycleSequence;
+        private ISaveService _saveService;
 
         // COLD ALLOC: long[128] — packed 1 km sector keys for local ecological strain lookup — owner: EnvironmentalStrainManager
         private readonly long[] _sectorStrainKeys = new long[MaxTrackedSectorStrainSlots];
@@ -102,47 +104,51 @@ namespace Hecton8.World
             EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                SuppressDuplicateService();
             }
         }
 
         private void OnEnable()
         {
+            if (_duplicateServiceSuppressed)
+                return;
+
             TryRegisterService();
-            GlobalRegistry.Save?.Register(this);
+            if (_duplicateServiceSuppressed)
+                return;
 
-            if (_itemCollectedSubscription == null)
-                _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, "world.environment");
+            CacheSaveServiceCold();
+            TryRegisterHotSwapListener();
+            TryRegisterTick();
+            _saveService?.Register(this);
+        }
 
-            if (_itemRecycledSubscription == null)
-                _itemRecycledSubscription = HectonEventBus.Subscribe<ItemRecycledEvent>(HandleItemRecycled, "world.environment");
-
-            if (_itemDiscardedSubscription == null)
-                _itemDiscardedSubscription = HectonEventBus.Subscribe<ItemDiscardedEvent>(HandleItemDiscarded, "world.environment");
+        private void Start()
+        {
+            TryRegisterTick();
         }
 
         private void OnDisable()
         {
-            GlobalRegistry.Save?.Unregister(this);
-            _itemCollectedSubscription?.Dispose();
-            _itemCollectedSubscription = null;
-            _itemRecycledSubscription?.Dispose();
-            _itemRecycledSubscription = null;
-            _itemDiscardedSubscription?.Dispose();
-            _itemDiscardedSubscription = null;
+            _saveService?.Unregister(this);
+            TryUnregisterHotSwapListener();
+            _saveService = null;
+            TryUnregisterTick();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
-            GlobalRegistry.Save?.Unregister(this);
-            _itemCollectedSubscription?.Dispose();
-            _itemCollectedSubscription = null;
-            _itemRecycledSubscription?.Dispose();
-            _itemRecycledSubscription = null;
-            _itemDiscardedSubscription?.Dispose();
-            _itemDiscardedSubscription = null;
+            _saveService?.Unregister(this);
+            TryUnregisterHotSwapListener();
+            _saveService = null;
+            TryUnregisterTick();
             TryUnregisterService();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            DrainItemLifecycleSignals();
         }
 
         private void TryRegisterService()
@@ -153,12 +159,21 @@ namespace Hecton8.World
             EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
             if (registered != null && registered != this)
             {
-                Destroy(gameObject);
+                SuppressDuplicateService();
                 return;
             }
 
             GlobalRegistry.RegisterEnvironmentalStrainRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EnvironmentalStrain, this);
+        }
+
+        private void SuppressDuplicateService()
+        {
+            _duplicateServiceSuppressed = true;
+            _serviceRegistered = false;
+            _tickRegistered = false;
+            enabled = false;
+            Destroy(gameObject);
         }
 
         private void TryUnregisterService()
@@ -170,44 +185,129 @@ namespace Hecton8.World
             _serviceRegistered = false;
         }
 
-        private void HandleItemCollected(ItemCollectedEvent itemCollectedEvent)
+        private void TryRegisterTick()
         {
-            if (itemCollectedEvent == null || itemCollectedEvent.Item == null || itemCollectedEvent.Quantity <= 0)
+            if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (!itemCollectedEvent.HasInteractorPosition)
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterTick()
+        {
+            if (!_tickRegistered)
                 return;
 
-            ItemData item = itemCollectedEvent.Item;
-            if (!item.isRawResource && item.category != ItemCategory.Material)
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _tickRegistered = false;
+        }
+
+        private void CacheSaveServiceCold()
+        {
+            _saveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            if (Application.isPlaying && previousService is ISaveService previousSave)
+                previousSave.Unregister(this);
+
+            _saveService = currentService as ISaveService;
+
+            if (Application.isPlaying && _saveService != null && isActiveAndEnabled && !_duplicateServiceSuppressed)
+                _saveService.Register(this);
+        }
+
+        private void DrainItemLifecycleSignals()
+        {
+            global::System.ReadOnlySpan<ItemLifecycleSignal> signals = SignalBus<ItemLifecycleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ItemLifecycleSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastProcessedItemLifecycleSequence))
+                    continue;
+
+                _lastProcessedItemLifecycleSequence = signal.Sequence;
+                HandleItemLifecycleSignal(in signal);
+            }
+        }
+
+        private void HandleItemLifecycleSignal(in ItemLifecycleSignal signal)
+        {
+            int quantity = Mathf.Max(0, signal.Quantity);
+            if (quantity <= 0)
+                return;
+
+            switch (signal.Action)
+            {
+                case ItemLifecycleSignal.ActionCollected:
+                    HandleItemCollectedSignal(in signal, quantity);
+                    break;
+                case ItemLifecycleSignal.ActionRecycled:
+                    HandleItemRecycledSignal(in signal, quantity);
+                    break;
+                case ItemLifecycleSignal.ActionDiscarded:
+                    HandleItemDiscardedSignal(in signal, quantity);
+                    break;
+            }
+        }
+
+        private void HandleItemCollectedSignal(in ItemLifecycleSignal signal, int quantity)
+        {
+            if ((signal.Flags & ItemLifecycleSignal.FlagHasRuntimePosition) == 0)
+                return;
+
+            if ((signal.Flags & (ItemLifecycleSignal.FlagRawResource | ItemLifecycleSignal.FlagMaterialCategory)) == 0)
                 return;
 
             AccumulateSectorStrain(
-                itemCollectedEvent.InteractorPosition,
-                itemCollectedEvent.Quantity * HarvestedResourceSectorStrainPerUnit);
+                new Vector3(signal.RuntimePosition.x, signal.RuntimePosition.y, signal.RuntimePosition.z),
+                quantity * HarvestedResourceSectorStrainPerUnit);
         }
 
-        private void HandleItemRecycled(ItemRecycledEvent itemRecycledEvent)
+        private void HandleItemRecycledSignal(in ItemLifecycleSignal signal, int quantity)
         {
-            if (itemRecycledEvent == null || itemRecycledEvent.Item == null || itemRecycledEvent.Quantity <= 0)
+            if ((signal.Flags & ItemLifecycleSignal.FlagPlasticLike) == 0)
                 return;
 
-            if (!IsPlasticLike(itemRecycledEvent.Item))
-                return;
-
-            float strainDelta = ApplyGreenTechReduction(BasePlasticRecycleStrain * itemRecycledEvent.Quantity);
+            float strainDelta = ApplyGreenTechReduction(BasePlasticRecycleStrain * quantity);
             _microplasticStrain += strainDelta;
-            _recycledPlasticItemCount += itemRecycledEvent.Quantity;
+            _recycledPlasticItemCount += quantity;
         }
 
-        private void HandleItemDiscarded(ItemDiscardedEvent itemDiscardedEvent)
+        private void HandleItemDiscardedSignal(in ItemLifecycleSignal signal, int quantity)
         {
-            if (itemDiscardedEvent == null || itemDiscardedEvent.Item == null || itemDiscardedEvent.Quantity <= 0)
-                return;
-
-            float pollutionDelta = ApplyGreenTechReduction(ResolveDiscardPollution(itemDiscardedEvent.Item) * itemDiscardedEvent.Quantity);
+            float pollutionDelta = ApplyGreenTechReduction(ResolveDiscardPollution(signal) * quantity);
             _generalPollution += pollutionDelta;
-            _discardedItemCount += itemDiscardedEvent.Quantity;
+            _discardedItemCount += quantity;
+        }
+
+        private static bool IsNewerSequence(uint candidate, uint lastProcessed)
+        {
+            return candidate != 0u && (lastProcessed == 0u || unchecked((int)(candidate - lastProcessed)) > 0);
         }
 
         private float GetPredatorAggressionScale()
@@ -308,13 +408,10 @@ namespace Hecton8.World
             return ((long)sectorX << 32) | (uint)sectorZ;
         }
 
-        private static float ResolveDiscardPollution(ItemData item)
+        private static float ResolveDiscardPollution(in ItemLifecycleSignal signal)
         {
-            if (item == null)
-                return BaseDiscardPollution;
-
             float categoryWeight;
-            switch (item.category)
+            switch ((ItemCategory)signal.Category)
             {
                 case ItemCategory.Material:
                     categoryWeight = 0.8f;
@@ -331,36 +428,10 @@ namespace Hecton8.World
                     break;
             }
 
-            return BaseDiscardPollution + Mathf.Clamp(item.weight * 0.35f, 0f, 1.5f) + (categoryWeight - 1f);
-        }
+            if (signal.PollutionMilli != 0u)
+                return signal.PollutionMilli * 0.001f;
 
-        private static bool IsPlasticLike(ItemData item)
-        {
-            if (item == null)
-                return false;
-
-            string persistentId = item.PersistentId ?? string.Empty;
-            string displayName = item.itemName ?? string.Empty;
-
-            if (ContainsKeyword(persistentId, "Resin") || ContainsKeyword(displayName, "Resin"))
-                return true;
-
-            if (ContainsKeyword(persistentId, "Poly") || ContainsKeyword(displayName, "Poly"))
-                return true;
-
-            if (ContainsKeyword(persistentId, "FiberMesh") || ContainsKeyword(displayName, "Fiber Mesh"))
-                return true;
-
-            if (ContainsKeyword(persistentId, "Sealant") || ContainsKeyword(displayName, "Sealant"))
-                return true;
-
-            return false;
-        }
-
-        private static bool ContainsKeyword(string source, string keyword)
-        {
-            return !string.IsNullOrEmpty(source) &&
-                   source.IndexOf(keyword, System.StringComparison.OrdinalIgnoreCase) >= 0;
+            return BaseDiscardPollution + Mathf.Clamp(signal.UnitWeightKg * 0.35f, 0f, 1.5f) + (categoryWeight - 1f);
         }
 
         private static float ApplyGreenTechReduction(float baseAmount)

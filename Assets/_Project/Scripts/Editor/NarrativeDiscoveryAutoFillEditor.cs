@@ -12,6 +12,7 @@ using Hecton8.Interaction;
 using Hecton8.Narrative;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor
 {
@@ -98,7 +99,7 @@ namespace Hecton8.Editor
             serializedObject.ApplyModifiedProperties();
             EditorUtility.SetDirty(discovery);
 
-            Debug.Log($"[NarrativeDiscovery] Auto-filled from registry: {entry.displayName}");
+            H8Debug.Log($"[NarrativeDiscovery] Auto-filled from registry: {entry.displayName}");
         }
     }
 }

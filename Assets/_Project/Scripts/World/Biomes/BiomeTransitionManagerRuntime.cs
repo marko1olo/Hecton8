@@ -462,7 +462,7 @@ namespace Hecton8.World.Biomes
             }
 
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             if (_playerContext != null && _playerContext.PlayerTransform != null)
             {
@@ -537,8 +537,7 @@ namespace Hecton8.World.Biomes
 
             if (_vaultReady)
             {
-                NativeQueue<BiomeChangedSignal>.ParallelWriter unusedWriter = SignalBus<BiomeChangedSignal>.ParallelWriter;
-                _ = unusedWriter;
+                SignalBus<BiomeChangedSignal>.EnsureInitialized();
             }
 
             EnsureTuningDefaultNoRead();
@@ -641,6 +640,7 @@ namespace Hecton8.World.Biomes
 
             EnsureTuningDefaultNoRead();
 
+#if UNITY_EDITOR
             if (!_seedCsvAttempted && TryScheduleCsvRules(states, centers, counters, out JobHandle csvHandle))
             {
                 _seedCsvAttempted = true;
@@ -664,6 +664,7 @@ namespace Hecton8.World.Biomes
                 H8Memory.RegisterActiveJob(OwnerSystem, _seedHandle);
                 return;
             }
+#endif
 
             if (!_seedFallbackScheduled && TryScheduleEmergencyMockBiomes(states, centers, counters, out _seedHandle))
             {
@@ -691,6 +692,7 @@ namespace Hecton8.World.Biomes
             _seedFallbackScheduled = false;
         }
 
+#if UNITY_EDITOR
         private bool TryScheduleCsvRules(
             NativeArray<BiomeStateDTO> states,
             NativeArray<BiomeCenterDTO> centers,
@@ -723,6 +725,7 @@ namespace Hecton8.World.Biomes
             handle = parseJob.Schedule();
             return true;
         }
+#endif
 
         private bool TryScheduleEmergencyMockBiomes(
             NativeArray<BiomeStateDTO> states,
@@ -828,6 +831,7 @@ namespace Hecton8.World.Biomes
                 Influence = influence,
                 Counters = counters,
                 BiomeChangedWriter = SignalBus<BiomeChangedSignal>.ParallelWriter,
+                BiomeChangedWriterBudget = SignalBus<BiomeChangedSignal>.ParallelWriterBudget,
                 PlayerAup = playerAup,
                 GlobalQualityWeight = quality,
                 RadiusScale = math.max(0.0001f, tuning.RadiusScale),
@@ -1004,7 +1008,7 @@ namespace Hecton8.World.Biomes
         {
             counters = default;
             if (_vault == null ||
-                !TryReadBiomeVaultBuffer(_vault, in _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counterArray))
+                !TryReadBiomeVaultBuffer(_vault, in _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO>.ReadOnly counterArray))
             {
                 return false;
             }
@@ -1017,7 +1021,7 @@ namespace Hecton8.World.Biomes
         {
             tuning = default;
             if (_vault == null ||
-                !TryReadBiomeVaultBuffer(_vault, in _tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO> tuningArray))
+                !TryReadBiomeVaultBuffer(_vault, in _tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO>.ReadOnly tuningArray))
             {
                 return false;
             }
@@ -1239,7 +1243,7 @@ namespace Hecton8.World.Biomes
             }
             catch (Exception exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 Debug.LogWarning("[BiomeTransitionManagerRuntime] CSV load failed: " + exception.Message, this);
 #endif
                 return 0;
@@ -1257,7 +1261,7 @@ namespace Hecton8.World.Biomes
             int cursor = TryResolveBiomeVaultBuffer(_vault, ref _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counters)
                 ? counters[0].TelemetryCursor
                 : 0;
-            TryDumpTelemetry(telemetry, cursor, ProjectRoot(), BlackBoxDumpPath);
+            TryDumpTelemetry(telemetry.AsReadOnly(), cursor, ProjectRoot(), BlackBoxDumpPath);
             GlobalTelemetryBus.PublishPerformanceWarning(NonFiniteStateHash, RuntimeContextHash, 1f);
         }
 
@@ -1293,7 +1297,10 @@ namespace Hecton8.World.Biomes
             }
 
             if (blendMask.IsCreated && blendMask.Length > 0)
-                DrawContributionLines(in blendMask[0], centers, count);
+            {
+                BiomeBlendMaskDTO mask = blendMask[0];
+                DrawContributionLines(in mask, centers, count);
+            }
         }
 
         private void DrawContributionLines(in BiomeBlendMaskDTO mask, NativeArray<BiomeCenterDTO> centers, int count)
@@ -1358,9 +1365,9 @@ namespace Hecton8.World.Biomes
             mask = default;
             counters = default;
             IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCurrentAtmosphere, OwnerSystem, 1, out NativeArray<CurrentAtmosphereDTO> atmosphereArray) ||
-                !TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionBlendMask, OwnerSystem, 1, out NativeArray<BiomeBlendMaskDTO> maskArray) ||
-                !TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counterArray))
+            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCurrentAtmosphere, OwnerSystem, 1, out NativeArray<CurrentAtmosphereDTO>.ReadOnly atmosphereArray) ||
+                !TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionBlendMask, OwnerSystem, 1, out NativeArray<BiomeBlendMaskDTO>.ReadOnly maskArray) ||
+                !TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO>.ReadOnly counterArray))
             {
                 return false;
             }
@@ -1378,7 +1385,7 @@ namespace Hecton8.World.Biomes
         {
             tuning = default;
             IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO> tuningArray))
+            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO>.ReadOnly tuningArray))
                 return false;
 
             tuning = tuningArray[0];
@@ -1435,10 +1442,10 @@ namespace Hecton8.World.Biomes
         public static bool TryDumpBlackBoxFromEditor()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, out NativeArray<BiomeTransitionTelemetryEntry> telemetry))
+            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, out NativeArray<BiomeTransitionTelemetryEntry>.ReadOnly telemetry))
                 return false;
 
-            int cursor = TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counters)
+            int cursor = TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO>.ReadOnly counters)
                 ? counters[0].TelemetryCursor
                 : 0;
             return TryDumpTelemetry(telemetry, cursor, ProjectRoot(), BlackBoxDumpPath);
@@ -1476,7 +1483,7 @@ namespace Hecton8.World.Biomes
             if (TryResolveBiomeVaultBuffer(vault, ref handle, bufferId, owner, requiredLength, out buffer))
                 return true;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, owner, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, owner, options);
             return TryResolveBiomeVaultBuffer(vault, ref handle, bufferId, owner, requiredLength, out buffer);
         }
 
@@ -1520,14 +1527,14 @@ namespace Hecton8.World.Biomes
             BufferID bufferId,
             SystemID owner,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
                    requiredLength > 0 &&
                    IsBiomeVaultHandle(in handle, bufferId, owner) &&
-                   vault.TryReadHandle(in handle, out buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -1561,7 +1568,7 @@ namespace Hecton8.World.Biomes
             BufferID bufferId,
             SystemID owner,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
@@ -1569,7 +1576,7 @@ namespace Hecton8.World.Biomes
 
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
                 !IsBiomeVaultHandle(in handle, bufferId, owner) ||
-                !vault.TryReadHandle(in handle, out buffer) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -1603,7 +1610,7 @@ namespace Hecton8.World.Biomes
         }
 
         private static bool TryDumpTelemetry(
-            NativeArray<BiomeTransitionTelemetryEntry> telemetry,
+            NativeArray<BiomeTransitionTelemetryEntry>.ReadOnly telemetry,
             int cursor,
             string root,
             string relativePath)
@@ -1635,7 +1642,7 @@ namespace Hecton8.World.Biomes
             }
             catch (Exception exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
 #endif
                 return false;

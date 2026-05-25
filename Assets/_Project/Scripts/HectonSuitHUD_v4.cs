@@ -27,6 +27,9 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
         results.Clear();
         for (int i = 0; i < s_activeHuds.Count; i++)
         {
+            if (results.Count >= results.Capacity)
+                break;
+
             HectonSuitHUD_v4 hud = s_activeHuds[i];
             if (hud != null && hud.isActiveAndEnabled)
                 results.Add(hud);

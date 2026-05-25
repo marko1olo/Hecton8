@@ -178,8 +178,8 @@ namespace Hecton8.EditorTools
             public int EmitCallHits;
             public int CollisionModuleHits;
             public int ForbiddenHits;
-            public readonly List<string> MissingPaths = new List<string>();
-            public readonly List<string> Hits = new List<string>();
+            public readonly List<string> MissingPaths = new List<string>(16);
+            public readonly List<string> Hits = new List<string>(64);
         }
     }
 }

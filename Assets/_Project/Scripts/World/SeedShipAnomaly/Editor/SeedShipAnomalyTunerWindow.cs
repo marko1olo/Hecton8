@@ -87,9 +87,9 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
             if (vault == null)
                 return false;
 
-            if (!TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyField, out NativeArray<AnomalyFieldDTO> fieldArray) ||
-                !TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyTuning, out NativeArray<AnomalyTuningDTO> tuningArray) ||
-                !TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyGlobals, out NativeArray<AnomalyGlobalScalarsDTO> globalsArray))
+            if (!TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyField, out NativeArray<AnomalyFieldDTO>.ReadOnly fieldArray) ||
+                !TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyTuning, out NativeArray<AnomalyTuningDTO>.ReadOnly tuningArray) ||
+                !TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyGlobals, out NativeArray<AnomalyGlobalScalarsDTO>.ReadOnly globalsArray))
             {
                 return false;
             }
@@ -154,7 +154,7 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
 
             double3 aup = field.EpicenterAUP;
             Vector3 center = new Vector3((float)aup.x, (float)aup.y, (float)aup.z);
-            float pulse = 1f + 0.035f * Mathf.Sin((float)EditorApplication.timeSinceStartup * 3.5f);
+            float pulse = 1f + 0.035f * MathLodApproximation.ApproxSinBhaskara((float)EditorApplication.timeSinceStartup * 3.5f);
             float outerRadius = Mathf.Max(1f, field.Radius) * pulse;
             float innerRadius = Mathf.Max(1f, field.Radius * Mathf.Lerp(0.45f, 0.65f, Mathf.Clamp01(globals.Corruption01)));
 
@@ -174,12 +174,12 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
         private static bool TryReadExistingView<T>(
             IDataVault vault,
             BufferID bufferId,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             return vault != null &&
                    vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
-                   vault.TryReadHandle(in handle, out buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length > 0;
         }

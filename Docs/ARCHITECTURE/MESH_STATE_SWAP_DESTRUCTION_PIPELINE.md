@@ -1,4 +1,4 @@
-# Mesh State Swap Destruction Pipeline
+﻿# Mesh State Swap Destruction Pipeline
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION
@@ -49,4 +49,4 @@ It must not change module integrity, save identity, or damage authority.
 
 ## Non-Claims
 
-This document defines the architecture standard. Runtime proof requires Frame Debugger, profiler, GCMonitor, and destruction replay artifacts.
+Scope: architecture standard. Runtime proof requires Frame Debugger, profiler, GCMonitor, and destruction replay artifacts.

@@ -60,7 +60,7 @@ namespace Hecton8.MockDomain.Runtime
             return new PhysicsFacade(default, bodyBuffer);
         }
 
-        public ref MockDomainState GetStateRef()
+        public ref readonly MockDomainState GetStateRef()
         {
             return ref _state;
         }

@@ -40,12 +40,13 @@ namespace Hecton8.Editor.GeologyForge
                 if (!Directory.Exists(root))
                     continue;
 
-                string[] files = Directory.GetFiles(root, "*.asset", SearchOption.AllDirectories);
-                Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-                for (int i = 0; i < files.Length; i++)
+                List<string> files = new List<string>(Directory.EnumerateFiles(root, "*.asset", SearchOption.AllDirectories));
+                files.Sort(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < files.Count; i++)
                 {
                     filesScanned++;
-                    string text = File.ReadAllText(files[i]);
+                    string file = files[i];
+                    string text = File.ReadAllText(file);
                     if (!Contains(text, "MapMagic") && !Contains(text, "Noise200") && !Contains(text, "HeightOutput200"))
                         continue;
 
@@ -58,10 +59,10 @@ namespace Hecton8.Editor.GeologyForge
                     erosionNodes += fileErosion;
                     terraceNodes += fileTerrace;
                     heightOutputs += fileOutput;
-                    if (IsUnder(files[i], "Assets/_Project/Data/Terrain"))
+                    if (IsUnder(file, "Assets/_Project/Data/Terrain"))
                         targetTerrainFindings++;
 
-                    findings.Append("    { \"path\": \"").Append(Escape(files[i].Replace('\\', '/'))).Append("\", ");
+                    findings.Append("    { \"path\": \"").Append(Escape(file.Replace('\\', '/'))).Append("\", ");
                     findings.Append("\"noise_nodes\": ").Append(fileNoise.ToString(CultureInfo.InvariantCulture)).Append(", ");
                     findings.Append("\"erosion_nodes\": ").Append(fileErosion.ToString(CultureInfo.InvariantCulture)).Append(", ");
                     findings.Append("\"terrace_nodes\": ").Append(fileTerrace.ToString(CultureInfo.InvariantCulture)).Append(", ");
@@ -71,7 +72,7 @@ namespace Hecton8.Editor.GeologyForge
             }
 
             if (findings.Length > 0)
-                findings.Length -= Environment.NewLine.Length + 1;
+                findings.Length -= global::System.Environment.NewLine.Length + 1;
 
             StringBuilder report = new StringBuilder(8192); // COLD ALLOC: graph inquisition JSON report - owner: SHINOBU_240
             report.AppendLine("{");
@@ -179,11 +180,12 @@ namespace Hecton8.Editor.GeologyForge
             int parserFailures = 0;
             int guardedFindings = 0;
             StringBuilder findingJson = new StringBuilder(8192); // COLD ALLOC: runtime terrain scanner findings - owner: SHINOBU_240
-            string[] files = Directory.GetFiles("Assets/_Project/Scripts", "*.cs", SearchOption.AllDirectories);
-            Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < files.Length; i++)
+            List<string> files = new List<string>(Directory.EnumerateFiles("Assets/_Project/Scripts", "*.cs", SearchOption.AllDirectories));
+            files.Sort(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < files.Count; i++)
             {
-                string path = files[i].Replace('\\', '/');
+                string file = files[i];
+                string path = file.Replace('\\', '/');
                 if (path.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     editorExcluded++;
@@ -191,7 +193,7 @@ namespace Hecton8.Editor.GeologyForge
                 }
 
                 filesScanned++;
-                string text = File.ReadAllText(files[i]);
+                string text = File.ReadAllText(file);
                 SyntaxTree tree;
                 try
                 {
@@ -244,7 +246,7 @@ namespace Hecton8.Editor.GeologyForge
             }
 
             if (findingJson.Length > 0)
-                findingJson.Length -= Environment.NewLine.Length + 1;
+                findingJson.Length -= global::System.Environment.NewLine.Length + 1;
 
             StringBuilder report = new StringBuilder(12288); // COLD ALLOC: runtime terrain scanner JSON report - owner: SHINOBU_240
             report.AppendLine("{");

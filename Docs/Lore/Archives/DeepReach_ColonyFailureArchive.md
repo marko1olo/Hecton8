@@ -1,4 +1,4 @@
-# Deep Reach Auxiliary Node - Colony Failure Archive
+﻿# Deep Reach Auxiliary Node - Colony Failure Archive
 
 Date: 2026-05-17
 Status: ARCHIVAL SOURCE / PENDING RUNTIME VERIFICATION

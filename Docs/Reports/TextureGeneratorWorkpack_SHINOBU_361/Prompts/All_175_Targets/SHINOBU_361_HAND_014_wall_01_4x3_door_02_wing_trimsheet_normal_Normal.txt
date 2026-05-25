@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_014
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_014_wall_01_4x3_door_02_wing_trimsheet_normal_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\wall_01_4x3_door_02_wing_trimsheet_normal_Normal.png
+FINAL_FILENAME: wall_01_4x3_door_02_wing_trimsheet_normal_Normal.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Create a heightfield source for a sealed habitat door wing trim sheet normal map. Design layered pressure-door relief: broad inset pressure skin, rounded gasket grooves, latch recesses, hinge rail bevels, mounting channels, small inspection caps, shallow handle-wear depressions, and soft maintenance cover outlines. Avoid decorative tile repetition; this must read as a heavy functional door surface that can receive separate handles, sensors, and cable attachments. The geometry should feel robust, elegant, and pressure-rated, with strong premium industrial rhythm and clean open areas. Avoid jagged damage, ruin texture, random scratches, and deep gouges. This door is maintained and mission-critical. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

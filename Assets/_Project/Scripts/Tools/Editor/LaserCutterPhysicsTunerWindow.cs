@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 namespace Hecton8.Tools.Editor
 {
+    using System.Globalization;
     using Hecton8.Core;
     using UnityEditor;
     using UnityEditor.UIElements;
@@ -251,7 +252,7 @@ namespace Hecton8.Tools.Editor
         private void ValidateLayout()
         {
             bool ok = LaserCutterDodLayoutValidator.Validate(out uint faults);
-            _status.text = ok ? "Layout OK: LaserCutRequestDTO = 64 bytes." : "Layout fault mask: 0x" + faults.ToString("X8");
+            _status.text = ok ? "Layout OK: LaserCutRequestDTO = 64 bytes." : "Layout fault mask: 0x" + faults.ToString("X8", CultureInfo.InvariantCulture);
         }
     }
 }

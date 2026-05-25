@@ -3,6 +3,15 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
+    /// <summary>
+    /// Optional rigidbody-side metadata provider for procedural impact material synthesis.
+    /// Kept in contracts so AI/audio/VFX consumers can query metadata without referencing physics runtime types.
+    /// </summary>
+    public interface IImpactMaterialProvider
+    {
+        byte ImpactAudioMaterialId { get; }
+    }
+
     public static class HectonPhysicsContract
     {
         public const double AupSectorSizeMetersDouble = 5000.0d;
@@ -124,6 +133,195 @@ namespace Hecton8.Core.Contracts
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return ref s_OneOverSoundSpeedAirMetersPerSecond; }
+        }
+    }
+}
+
+namespace Hecton8.Core.Contracts.Physics
+{
+    /// <summary>
+    /// Primitive-only deterministic math helpers for gameplay owners that must not reference the physics runtime assembly.
+    /// </summary>
+    public static class DeterministicContractMath
+    {
+        public const uint FnvOffsetBasis = 2166136261u;
+        public const uint FnvPrime = 16777619u;
+        private const float MillimeterScale = HectonPhysicsContract.DeterministicMillimeterScale;
+        private const float InvMillimeterScale = HectonPhysicsContract.DeterministicInvMillimeterScale;
+        private const float MaxQuantizedMillimeterFloat = HectonPhysicsContract.DeterministicMaxQuantizedMillimeterFloat;
+        private const float MinQuantizedMillimeterFloat = HectonPhysicsContract.DeterministicMinQuantizedMillimeterFloat;
+        private const int MaxQuantizedMillimeter = HectonPhysicsContract.DeterministicMaxQuantizedMillimeter;
+        private const int MinQuantizedMillimeter = HectonPhysicsContract.DeterministicMinQuantizedMillimeter;
+        private const float Pi = HectonPhysicsContract.DeterministicPi;
+        private const float TwoPi = HectonPhysicsContract.DeterministicTwoPi;
+        private const float InvTwoPi = HectonPhysicsContract.DeterministicInvTwoPi;
+        private const float MaxWrapInput = HectonPhysicsContract.DeterministicMaxWrapInput;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SnapMillimeter(float value)
+        {
+            if (!(value <= float.MaxValue && value >= -float.MaxValue))
+                return 0f;
+
+            return QuantizeMillimeter(value) * InvMillimeterScale;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int QuantizeMillimeter(float value)
+        {
+            if (!(value <= float.MaxValue && value >= -float.MaxValue))
+                return 0;
+
+            float scaled = value * MillimeterScale;
+            if (scaled >= MaxQuantizedMillimeterFloat)
+                return MaxQuantizedMillimeter;
+            if (scaled <= MinQuantizedMillimeterFloat)
+                return MinQuantizedMillimeter;
+
+            return scaled >= 0f ? (int)(scaled + 0.5f) : (int)(scaled - 0.5f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint Fnv1a(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * FnvPrime;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint Fnv1a(uint hash, int value)
+        {
+            return Fnv1a(hash, unchecked((uint)value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint Fnv1a(uint hash, long value)
+        {
+            ulong bits = unchecked((ulong)value);
+            hash = Fnv1a(hash, (uint)bits);
+            return Fnv1a(hash, (uint)(bits >> 32));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint Fnv1aQuantizedMillimeter(uint hash, float value)
+        {
+            return Fnv1a(hash, QuantizeMillimeter(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SinApprox(float radians)
+        {
+            float x = WrapSignedPi(radians);
+            float sign = 1f;
+            if (x < 0f)
+            {
+                x = -x;
+                sign = -1f;
+            }
+
+            if (x > Pi)
+            {
+                x = TwoPi - x;
+                sign = -sign;
+            }
+
+            float y = x * (Pi - x);
+            float denominator = (5f * Pi * Pi) - (4f * y);
+            return sign * ((16f * y) / (denominator > 0.000001f ? denominator : 0.000001f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float WrapSignedPi(float radians)
+        {
+            if (!(radians <= MaxWrapInput && radians >= -MaxWrapInput))
+                return 0f;
+
+            return WrapPi(radians);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float WrapPi(float radians)
+        {
+            int turns = (int)(radians * InvTwoPi);
+            float x = radians - (turns * TwoPi);
+            if (x > Pi)
+                x -= TwoPi;
+            else if (x < -Pi)
+                x += TwoPi;
+
+            return x;
+        }
+    }
+
+    /// <summary>
+    /// Burst-safe contract math for kinematic CCD producers outside the physics assembly.
+    /// </summary>
+    public static class KinematicCcdContractMath
+    {
+        public const float SpeedGateMetersPerSecondSq = HectonPhysicsContract.KinematicCcdSpeedGateMetersPerSecondSq;
+        public const float RollbackFractionBias = HectonPhysicsContract.KinematicCcdRollbackFractionBias;
+        public const float MinVectorMagnitudeSq = HectonPhysicsContract.KinematicCcdMinVectorMagnitudeSq;
+        public const float CornerNormalDotThreshold = HectonPhysicsContract.KinematicCcdCornerNormalDotThreshold;
+        public const float MassiveLostKineticEnergyJoules = HectonPhysicsContract.MassiveLostKineticEnergyJoules;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ShouldSchedule(float3 velocity)
+        {
+            return math.all(math.isfinite(velocity)) &&
+                   math.lengthsq(velocity) >= SpeedGateMetersPerSecondSq;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveHitFraction(float hitDistance, float sweepDistance, float skinWidth)
+        {
+            float denominator = math.max(HectonPhysicsContract.FluidDistanceEpsilon, sweepDistance + math.max(0f, skinWidth));
+            return math.saturate(hitDistance * math.rcp(denominator));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveRollbackDistance(float hitDistance, float sweepDistance, float skinWidth)
+        {
+            float hitFraction = ResolveHitFraction(hitDistance, sweepDistance, skinWidth);
+            return math.max(0f, sweepDistance * math.max(0f, hitFraction - RollbackFractionBias));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 NormalizeOrFallback(float3 value, float3 fallback)
+        {
+            if (!math.all(math.isfinite(value)))
+                return fallback;
+
+            float lengthSq = math.lengthsq(value);
+            if (lengthSq <= MinVectorMagnitudeSq)
+                return fallback;
+
+            return value * math.rsqrt(math.max(lengthSq, MinVectorMagnitudeSq));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ProjectOnCollisionPlane(float3 velocity, float3 unitNormal)
+        {
+            return velocity - (math.dot(velocity, unitNormal) * unitNormal);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float KineticEnergy(float mass, float velocityMagnitudeSq)
+        {
+            return 0.5f * math.max(HectonPhysicsContract.DeterministicInvMillimeterScale, mass) * math.max(0f, velocityMagnitudeSq);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LostKineticEnergy(float mass, float beforeVelocitySq, float afterVelocitySq)
+        {
+            return math.max(0f, KineticEnergy(mass, beforeVelocitySq) - KineticEnergy(mass, afterVelocitySq));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsCornerNormal(float3 primaryNormal, float3 candidateNormal)
+        {
+            float3 primary = NormalizeOrFallback(primaryNormal, new float3(0f, 1f, 0f));
+            float3 candidate = NormalizeOrFallback(candidateNormal, primary);
+            return math.dot(primary, candidate) <= CornerNormalDotThreshold;
         }
     }
 }

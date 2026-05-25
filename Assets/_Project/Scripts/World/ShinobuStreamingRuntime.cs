@@ -349,6 +349,7 @@ namespace Hecton8.World
         }
     }
 
+#if UNITY_EDITOR
     public static class WorldStreamingProfileCsvParser
     {
         public static bool TryParse(ReadOnlySpan<char> csv, ref WorldStreamingRuntimeTuning tuning)
@@ -494,6 +495,7 @@ namespace Hecton8.World
             return hash != 0u ? hash : 1u;
         }
     }
+#endif
 
     public static class WorldStreamingLegacyProfileArchaeology
     {

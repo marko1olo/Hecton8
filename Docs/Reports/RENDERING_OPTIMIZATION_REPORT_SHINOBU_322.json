@@ -1,0 +1,16 @@
+﻿{
+  "agent": "SHINOBU_322",
+  "scanner": "SensoryImpairmentOopScanner",
+  "summary": "OOP Visual Mutations Eradicated",
+  "evidenceClass": "STATIC_SOURCE_TARGETED",
+  "generatedWithoutBuild": true,
+  "postProcessVolumeMutations": 0,
+  "oxygenChromaticAberrationRoutes": 0,
+  "kccSpeedModifierRoutes": 0,
+  "runtimeRoute": "GasPhysiologyStateDTO -> SensoryImpairmentDTO Vault lane -> PRE_SIMULATION CorruptPlayerInputJob -> InputStateDTO/PredictedInputDTO -> VISUAL_SYNC shader gas toxicity scalar",
+  "shaderRoute": "HectonShaderGlobalDataVaultBridge.PublishPhysiologyGasToxicity(x=hypoxia tunnel, y=CNS O2, z=CO2 toxicity, w=GlobalQualityWeight)",
+  "bufferIds": "75220 SensoryImpairment, 75221 Tuning, 75222 Telemetry300, 75223 Profiles, 75224 CsvScratch, 75225 DriftDebug",
+  "abi": "SensoryImpairmentDTO=32, SensoryImpairmentTuningDTO=64, SensoryImpairmentTelemetryEntry=64, SensoryInputDriftDebugDTO=64, SensoryImpairmentProfileDTO=32",
+  "compileStatus": "NOT_LAUNCHED_CPU_100_ACTIVE_EXTERNAL_DOTNET_CSC_GUARD",
+  "findings": []
+}

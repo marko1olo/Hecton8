@@ -163,7 +163,7 @@ namespace Hecton8.Modding
             if (handler == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonEventBus] Cannot subscribe a null handler.");
+                Hecton8.Core.H8Debug.LogError("[HectonEventBus] Cannot subscribe a null handler.");
 #endif
                 return null;
             }
@@ -214,7 +214,7 @@ namespace Hecton8.Modding
             if (handler == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonEventBus] Cannot subscribe a null native payload handler.");
+                Hecton8.Core.H8Debug.LogError("[HectonEventBus] Cannot subscribe a null native payload handler.");
 #endif
                 return null;
             }
@@ -241,7 +241,7 @@ namespace Hecton8.Modding
             if (handler == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonEventBus] Cannot subscribe a null projected event handler.");
+                Hecton8.Core.H8Debug.LogError("[HectonEventBus] Cannot subscribe a null projected event handler.");
 #endif
                 return null;
             }
@@ -272,7 +272,7 @@ namespace Hecton8.Modding
             if (evt == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonEventBus] Cannot publish a null event instance.");
+                Hecton8.Core.H8Debug.LogError("[HectonEventBus] Cannot publish a null event instance.");
 #endif
                 return null;
             }
@@ -391,7 +391,7 @@ namespace Hecton8.Modding
                 return;
 
             _lastCascadeWarningFrame = frame;
-            Debug.LogError(RecursiveCascadeCriticalMessage);
+            Hecton8.Core.H8Debug.LogError(RecursiveCascadeCriticalMessage);
 #endif
         }
 
@@ -430,7 +430,7 @@ namespace Hecton8.Modding
             float elapsedMilliseconds = elapsedTicks * 1000f / Stopwatch.Frequency;
             GlobalTelemetryBus.PublishModStallWarning(modHash, eventHash, elapsedMilliseconds);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(ModStallWarningMessage);
+            Hecton8.Core.H8Debug.LogWarning(ModStallWarningMessage);
 #endif
             if (consecutiveStallFrames < 3)
                 return false;
@@ -565,7 +565,7 @@ namespace Hecton8.Modding
                             _needsCompaction = true;
                             ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                            Debug.LogError("[HectonEventBus] Unmanaged subscriber threw during payload dispatch.");
+                            Hecton8.Core.H8Debug.LogError("[HectonEventBus] Unmanaged subscriber threw during payload dispatch.");
 #endif
                         }
                     }
@@ -728,7 +728,7 @@ namespace Hecton8.Modding
                             _needsCompaction = true;
                             ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                            Debug.LogError("[HectonEventBus] Native subscriber threw during payload dispatch.");
+                            Hecton8.Core.H8Debug.LogError("[HectonEventBus] Native subscriber threw during payload dispatch.");
 #endif
                         }
                     }
@@ -900,7 +900,7 @@ namespace Hecton8.Modding
                             _needsCompaction = true;
                             ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                            Debug.LogError("[HectonEventBus] Subscriber threw during managed payload dispatch.");
+                            Hecton8.Core.H8Debug.LogError("[HectonEventBus] Subscriber threw during managed payload dispatch.");
 #endif
                         }
                     }

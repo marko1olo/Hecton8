@@ -1,0 +1,63 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_PLAYER_CSV_STAGING_FENCE_SLICE_T_V1",
+    "agent":  "X_002",
+    "generated":  "2026-05-24T13:01:36Z",
+    "status":  "PASS_STATIC_CLI_AND_CORE_COMPILE",
+    "proofBoundary":  "Static player-symbol source scan over this slice plus DataMonolith CLI bake/parser/fail-closed/load probes. Core compile was rerun after fixing current-source namespace compile walls and passed with 0 warnings and 0 errors. Unity player profiler proof remains separate.",
+    "touchedFiles":  [
+                         "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+                         "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorTypes.cs",
+                         "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+                         "Assets/_Project/Scripts/ConstructionManager.cs",
+                         "Assets/_Project/Scripts/Construction/HabitatDeconstructionTransactionKernel.cs",
+                         "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs",
+                         "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                         "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationRuntime.cs",
+                         "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationContracts.cs",
+                         "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs"
+                     ],
+    "changes":  [
+                    "Moved Kinetic Character rig CSV scratch constants, handle allocation, release, and scratch import facade dependencies behind UNITY_EDITOR.",
+                    "Moved Fabrication timing CSV scratch capacity, handle allocation, validation, and release behind UNITY_EDITOR.",
+                    "Moved Construction deconstruction CSV scratch handle and HabitatDeconstruction CSV capacity behind UNITY_EDITOR.",
+                    "Moved UtilityAI Anxiety psychology CSV scratch BufferID, handles, views, acquisition, and recovery behind UNITY_EDITOR without changing runtime anxiety DTO buffers.",
+                    "Moved Symbiosis CSV scratch constants, path constants, handle, timestamp state, allocation, and reset behind UNITY_EDITOR while preserving legacy binary link scratch.",
+                    "Moved Storm Propagation depth-impact CSV path, scratch capacity, handle, allocation, and reset behind UNITY_EDITOR while preserving runtime storm DTO/profile buffers.",
+                    "Moved Ocean Surface weather CSV and legacy weather file fallback scratch path behind UNITY_EDITOR; player now uses baked/default weather rows instead of project file fallback."
+                ],
+    "staticVerification":  {
+                               "touchedFilePlayerActiveCsvTokenFindings":  0,
+                               "preprocessorBalance":  "PASS",
+                               "diffCheck":  "PASS_WITH_EXISTING_LF_CRLF_WARNINGS_ONLY",
+                               "managedParserAdded":  false,
+                               "binarySchemaChanged":  false,
+                               "gameplayAuthorityChanged":  false
+                           },
+    "compileVerification":  {
+                                "coreCompileStatus":  "PASS",
+                                "waitSeconds":  280,
+                                "gateRule":  "Do not launch dotnet build while CPU is above 50 percent or any dotnet/csc/VBCSCompiler process exists.",
+                                "observedCompilerProcessCountRange":  "0-2 before gate open; gate opened at attempt 29 with CPU 42.27 and 0 compiler processes",
+                                "buildLaunched":  true,
+                                "buildCommand":  "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+                                "warnings":  0,
+                                "errors":  0,
+                                "elapsed":  "00:02:05.11"
+                            },
+    "cliVerification":  {
+                            "dataMonolithCliExitCode":  0,
+                            "blobBytes":  1064384,
+                            "checksumHex":  "0x0D49885F30E5DF35",
+                            "parserAbsenceStatus":  "PASS_PLAYER_STATIC_CONFIG_PARSER_ABSENCE",
+                            "parserAbsenceReleaseBlockingFindings":  0,
+                            "parserAbsenceDevelopmentBlockingFindings":  0,
+                            "directFileStreamReadByteCount":  0,
+                            "failClosedStatus":  "PASS_FAIL_CLOSED_NO_POISON_PUBLISH",
+                            "failClosedValidationAllocatedBytes":  0,
+                            "failClosedValidationMeanMicroseconds":  464.673,
+                            "loadStressStatus":  "PASS_NATIVE_READ_ZERO_GC_TARGET_TIME",
+                            "nativeReadMicroseconds":  211.4,
+                            "nativeResidentLoadEstimateMicroseconds":  917.35,
+                            "nativeResidentLoadEstimateAllocatedBytes":  0
+                        }
+}

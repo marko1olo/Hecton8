@@ -1,0 +1,445 @@
+﻿{
+  "schema": "hecton8.architecture_line_concision_audit.x012.v1",
+  "generatedUtc": "2026-05-24T06:05:49.930685+00:00",
+  "thresholdWords": 70,
+  "modifiedFileCount": 20,
+  "splitLineItemCount": 39,
+  "modifiedFiles": [
+    {
+      "path": "Docs/ARCHITECTURE/ABYSSAL_THERMODYNAMICS_SOLVER.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_ABYSSAL_THERMODYNAMICS_SOLVER.md",
+      "lineItemsSplit": [
+        {
+          "line": 55,
+          "beforeWords": 113,
+          "afterItems": 4,
+          "preview": "- `HeatDiffusionSolverJob` is scheduled as a dependency chain with `ThermalSolverResidualReductionJob` after each pass. Each scheduled pass performs one double-buffer Jacobi relaxa"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 846,
+      "wordsAfter": 846
+    },
+    {
+      "path": "Docs/ARCHITECTURE/ARM64_MEMORY_ALIGNMENT_SHINOBU_204.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_ARM64_MEMORY_ALIGNMENT_SHINOBU_204.md",
+      "lineItemsSplit": [
+        {
+          "line": 7,
+          "beforeWords": 72,
+          "afterItems": 3,
+          "preview": "- Core DTO explicit-layout coverage was expanded for Bridge, input, black-box, foveated telemetry, simulation-bucketing records, weather current metadata, queue payloads, content a"
+        },
+        {
+          "line": 159,
+          "beforeWords": 82,
+          "afterItems": 2,
+          "preview": "- Latest owner-safe Core Sequential conversions: H8Bridge binary entries, InputDeterminism DTOs, duplicate Input/Determinism contracts, GlobalTelemetryBus black-box DTOs/jobs/edito"
+        }
+      ],
+      "lineItemCount": 2,
+      "wordsBefore": 1161,
+      "wordsAfter": 1161
+    },
+    {
+      "path": "Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
+      "lineItemsSplit": [
+        {
+          "line": 243,
+          "beforeWords": 71,
+          "afterItems": 2,
+          "preview": "- 2026-05-20 disk replay polish moved corrupt/replayed `.h8log` deletion outside the open `FileStream` scope and wrapped replay faults so poison files do not kill `H8_Analytics_IO`"
+        },
+        {
+          "line": 247,
+          "beforeWords": 97,
+          "afterItems": 2,
+          "preview": "- 2026-05-20 partial-read/fallback-publication/AUP-gate polish treats short reads against a closed `.h8log` length as poison-file faults, marks the file for after-close deletion, s"
+        }
+      ],
+      "lineItemCount": 2,
+      "wordsBefore": 1638,
+      "wordsAfter": 1638
+    },
+    {
+      "path": "Docs/ARCHITECTURE/BILATERAL_DRS_UPSCALER_SHINOBU_236.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_BILATERAL_DRS_UPSCALER_SHINOBU_236.md",
+      "lineItemsSplit": [
+        {
+          "line": 14,
+          "beforeWords": 168,
+          "afterItems": 9,
+          "preview": "- `HectonBilateralDrsUpscalerRuntime` owns Vault lanes `71050-71056`, caches `DataVault`/`ResolutionScalerService` during cold init, and rebinds them through `IGlobalRegistryHotSwa"
+        },
+        {
+          "line": 15,
+          "beforeWords": 209,
+          "afterItems": 8,
+          "preview": "- `HectonBilateralDrsUpscalerFeature` injects a URP RenderGraph pass before post processing. `AddRenderPasses` enqueues clear-only mode for compute-missing or compute-unsupported f"
+        },
+        {
+          "line": 16,
+          "beforeWords": 117,
+          "afterItems": 7,
+          "preview": "- `Hecton_BilateralUpscale.compute` normally runs `SobelDepthMask` or `SobelDepthMaskArray` first. When quality is inside the zero-contribution edge of the continuous `smoothstep(0"
+        },
+        {
+          "line": 17,
+          "beforeWords": 121,
+          "afterItems": 4,
+          "preview": "- `BilateralDrsRendererFeatureInstaller` is editor-only glue: it attaches the feature to PC, PC High, Mobile, and Quest renderer assets via `SerializedObject`, rebuilds `m_Renderer"
+        }
+      ],
+      "lineItemCount": 4,
+      "wordsBefore": 1016,
+      "wordsAfter": 1016
+    },
+    {
+      "path": "Docs/ARCHITECTURE/BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md",
+      "lineItemsSplit": [
+        {
+          "line": 102,
+          "beforeWords": 86,
+          "afterItems": 4,
+          "preview": "- `terrain_splatmap_profiles.csv` ingestion is a cold Editor route that streams bytes through `FileStream.ReadByte` into a stackalloc line buffer and parses `ReadOnlySpan<byte>` ce"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 991,
+      "wordsAfter": 991
+    },
+    {
+      "path": "Docs/ARCHITECTURE/BIOTA_DENSITY_MAP_BAKER_SHINOBU_308.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_BIOTA_DENSITY_MAP_BAKER_SHINOBU_308.md",
+      "lineItemsSplit": [
+        {
+          "line": 24,
+          "beforeWords": 96,
+          "afterItems": 6,
+          "preview": "- Async write lifetime: completed TempJob working buffers are disposed before Unity `Awaitable` background file I/O; only method-local Persistent RLE/telemetry buffers survive the "
+        },
+        {
+          "line": 26,
+          "beforeWords": 126,
+          "afterItems": 6,
+          "preview": "- Rule staging: `SanitizeConfig` honors nonzero public `config.RuleCount`, falls back to source row count only when `RuleCount == 0`, and then falls back to `DefaultRuleCount=5` fo"
+        },
+        {
+          "line": 29,
+          "beforeWords": 89,
+          "afterItems": 6,
+          "preview": "- Evidence text output: `BIOTA_BAKE_REPORT.json`, generated self-audit, and the SHINOBU scanner upsert route through `WriteUtf8TextAtomic`. Text evidence is encoded once to UTF-8, "
+        },
+        {
+          "line": 31,
+          "beforeWords": 81,
+          "afterItems": 4,
+          "preview": "- Scanner route: `Runtime_Spawner_Scanner` strips comments, strings, verbatim strings, and char literals before classifying runtime raycast, trigger-zone, and managed scene-instant"
+        }
+      ],
+      "lineItemCount": 4,
+      "wordsBefore": 949,
+      "wordsAfter": 949
+    },
+    {
+      "path": "Docs/ARCHITECTURE/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "lineItemsSplit": [
+        {
+          "line": 274,
+          "beforeWords": 176,
+          "afterItems": 30,
+          "preview": "- Static scans passed for the SHINOBU_228 route: no builder `_currentGhostObj` state, no first-party `PlacementGhost` source/assets, no `PFB_Ghost_*` prefabs, no non-null `Buildabl"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 1866,
+      "wordsAfter": 1866
+    },
+    {
+      "path": "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "lineItemsSplit": [
+        {
+          "line": 17,
+          "beforeWords": 85,
+          "afterItems": 4,
+          "preview": "- Vault lanes `ConstructionSocket*` hold `ConstructionSocketModuleDTO` records, socket states, AUP positions, snap results, tuning, bounds, counters, connection pairs, and the 300-"
+        },
+        {
+          "line": 21,
+          "beforeWords": 73,
+          "afterItems": 2,
+          "preview": "- `EvaluateSocketSnappingJob` performs socket delta math in `double3` AUP space, reads only the inverse-direction CSR bucket for each ghost socket, consumes the continuous quality "
+        },
+        {
+          "line": 29,
+          "beforeWords": 125,
+          "afterItems": 6,
+          "preview": "- Runtime proxy sockets no longer create trigger colliders. For active preview, `PlayerBuilder.SpawnGhost()` is data-only: it releases any legacy ghost object, sets `_builderGhostP"
+        },
+        {
+          "line": 37,
+          "beforeWords": 478,
+          "afterItems": 17,
+          "preview": "- `PlayerBuilder` uses cached DataVault views and a scheduled deterministic Burst chain instead of `Physics.OverlapSphereNonAlloc` for active structural socket snapping. The SHINOB"
+        },
+        {
+          "line": 49,
+          "beforeWords": 111,
+          "afterItems": 5,
+          "preview": "- The authored semantic placement-rule cache no longer owns a reusable `List<MonoBehaviour>` buffer or active `IBuildPlacementRule` interface dispatch. `CacheActivePlacementRule()`"
+        },
+        {
+          "line": 53,
+          "beforeWords": 114,
+          "afterItems": 6,
+          "preview": "- The adjacent extractor runtime no longer uses a growable managed module registry. `AutonomousExtractorSystem` keeps a fixed `AutonomousExtractorModule[256]` plus `_moduleCount`, "
+        },
+        {
+          "line": 61,
+          "beforeWords": 74,
+          "afterItems": 4,
+          "preview": "- Active module selection does not cross the compile/runtime service boundary. `CycleBuildable()` and `DebugDeployActiveBuildable()` consume cold-cached references and do not call "
+        },
+        {
+          "line": 81,
+          "beforeWords": 93,
+          "afterItems": 4,
+          "preview": "- `HabitatConstructionManager` now uses a SHINOBU socket-Vault topology signature for existing integrity graph cache invalidation when Vault module count matches the construction r"
+        }
+      ],
+      "lineItemCount": 8,
+      "wordsBefore": 2059,
+      "wordsAfter": 2059
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_GEOLOGY_MESH_BAKER.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_OFFLINE_GEOLOGY_MESH_BAKER.md",
+      "lineItemsSplit": [
+        {
+          "line": 69,
+          "beforeWords": 71,
+          "afterItems": 2,
+          "preview": "- UI and menu batch baking are driven through `BakeProfilesAsync` and `EditorApplication.update`; one variation is baked per editor tick, asset editing is opened only inside `SaveM"
+        },
+        {
+          "line": 197,
+          "beforeWords": 83,
+          "afterItems": 3,
+          "preview": "- CSV profile ingestion fails closed on malformed authoring data: existing empty, oversized above `MaximumCsvBytes=4194304`, short-read, or length-changing CSV files throw `CsvErro"
+        }
+      ],
+      "lineItemCount": 2,
+      "wordsBefore": 2611,
+      "wordsAfter": 2611
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md",
+      "lineItemsSplit": [
+        {
+          "line": 41,
+          "beforeWords": 238,
+          "afterItems": 4,
+          "preview": "- The current explicit-endian fallback, bounded-hull support-index source, fail-closed hull asset-binding guard, read-write hull vertex safety annotation, finite inverse-square-roo"
+        },
+        {
+          "line": 127,
+          "beforeWords": 98,
+          "afterItems": 4,
+          "preview": "- Convex fallback is a bounded 8..32 point conservative support hull with plane-deduped fan-triangulated indices. The UI hull limit is honored from the explicit 8-vertex minimum up"
+        }
+      ],
+      "lineItemCount": 2,
+      "wordsBefore": 1497,
+      "wordsAfter": 1497
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_WRECKAGE_GEOMETRY_BAKER_SHINOBU_209.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_OFFLINE_WRECKAGE_GEOMETRY_BAKER_SHINOBU_209.md",
+      "lineItemsSplit": [
+        {
+          "line": 350,
+          "beforeWords": 137,
+          "afterItems": 13,
+          "preview": "- Pass 11 static scans were clean for stale index-copy symbols and sibling runtime references; Pass 12 hardened submesh descriptor bounds and 16-bit `baseVertex` clamping; Pass 13 "
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 1530,
+      "wordsAfter": 1530
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
+      "lineItemsSplit": [
+        {
+          "line": 104,
+          "beforeWords": 77,
+          "afterItems": 4,
+          "preview": "- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` was attempted only after CPU gate opened; it is blocked by unrelated dependency-wall errors. Generated csproj coverage "
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 1109,
+      "wordsAfter": 1109
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_233_COMPUTE_VOLUMETRIC_FOG.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SHINOBU_233_COMPUTE_VOLUMETRIC_FOG.md",
+      "lineItemsSplit": [
+        {
+          "line": 41,
+          "beforeWords": 90,
+          "afterItems": 4,
+          "preview": "- `_HectonMarineSnowFogDensityTex` and `_AbyssalFlowFieldTexture` are legacy shader-global bridge inputs. They are sampled once into an owner-local bridge snapshot after compute-ke"
+        },
+        {
+          "line": 45,
+          "beforeWords": 72,
+          "afterItems": 4,
+          "preview": "- XR cameras are routed through the Dear Lie proxy until a per-eye 3D frustum-grid contract exists. The compute shader uses `RW_TEXTURE2D_X`, `COORD_TEXTURE2D_X`, and `UNITY_XR_ASS"
+        }
+      ],
+      "lineItemCount": 2,
+      "wordsBefore": 908,
+      "wordsAfter": 908
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_236_BILATERAL_DRS_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SHINOBU_236_BILATERAL_DRS_ROUTE_CARD.md",
+      "lineItemsSplit": [
+        {
+          "line": 58,
+          "beforeWords": 107,
+          "afterItems": 4,
+          "preview": "- Editor-only installer `BilateralDrsRendererFeatureInstaller` creates/repairs renderer feature sub-assets for `PC_Renderer`, `PC_High_Renderer`, `Mobile_Renderer`, and `Quest_VR_R"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 1697,
+      "wordsAfter": 1697
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md",
+      "lineItemsSplit": [
+        {
+          "line": 34,
+          "beforeWords": 92,
+          "afterItems": 4,
+          "preview": "- Cold bootstrap: `WaterOpticsRuntime` must be authored or explicitly bootstrapped by the owning scene/bootstrap composition. `WaterOpticsRuntimeOwnerInstaller` provides the manual"
+        },
+        {
+          "line": 38,
+          "beforeWords": 71,
+          "afterItems": 4,
+          "preview": "- Editor/build: `WaterOpticsRendererFeatureInstaller` ensures the feature exists in PC, PC_High, Mobile, and Quest renderer assets through Unity serialized object APIs only on expl"
+        }
+      ],
+      "lineItemCount": 2,
+      "wordsBefore": 1176,
+      "wordsAfter": 1176
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
+      "lineItemsSplit": [
+        {
+          "line": 29,
+          "beforeWords": 83,
+          "afterItems": 3,
+          "preview": "- When that authority is active, legacy exosuit grapple and jump jet Rigidbody force routes are bypassed, environment-handler force buffers are consumed without motor writes, queue"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 1236,
+      "wordsAfter": 1236
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_317_CRAFTING_FAST_FAIL_ROUTE.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SHINOBU_317_CRAFTING_FAST_FAIL_ROUTE.md",
+      "lineItemsSplit": [
+        {
+          "line": 31,
+          "beforeWords": 102,
+          "afterItems": 5,
+          "preview": "- DIEGETIC UI GATE: `HectonFabricatorUI.RebuildRecipeListEntries` reads one SoA inventory snapshot per visible-list rebuild and caches one `RecipeRequirementDTO` plus the max scarc"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 902,
+      "wordsAfter": 902
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_329_PLAYER_RESPAWN_RECONCILIATION_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SHINOBU_329_PLAYER_RESPAWN_RECONCILIATION_ROUTE_CARD.md",
+      "lineItemsSplit": [
+        {
+          "line": 14,
+          "beforeWords": 123,
+          "afterItems": 4,
+          "preview": "- Inventory loot route: `ResetPlayerPhysiologyJob` emits `InventoryCommandSignal=32` and matching `InventoryRespawnDeathAupSignal=64` so the inventory command can resolve the autho"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 521,
+      "wordsAfter": 521
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "lineItemsSplit": [
+        {
+          "line": 41,
+          "beforeWords": 100,
+          "afterItems": 4,
+          "preview": "- Publication: only the job-visible rows are Vault-locked before schedule/resolve; public scalar rows are not pinned for the worker lifetime. The job writes only the hidden 96-byte"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 2004,
+      "wordsAfter": 2004
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/ARCHITECTURE_APEX_PRE_LINE_SPLIT_SYSTEM_INTERCONNECT_MATRIX.md",
+      "lineItemsSplit": [
+        {
+          "line": 85,
+          "beforeWords": 86,
+          "afterItems": 3,
+          "preview": "- GPU route: `EnvironmentLightingDTO` is uploaded to `HectonEnvironmentLighting` constant buffer and SH coefficients are uploaded to `_HectonGIRelaySHBuffer` through cold-precreate"
+        }
+      ],
+      "lineItemCount": 1,
+      "wordsBefore": 3616,
+      "wordsAfter": 3616
+    }
+  ],
+  "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/",
+  "postValidationUtc": "2026-05-24T06:31:57.233840+00:00",
+  "postValidation": {
+    "oopDocScannerFinalPass": true,
+    "sourceSyncPass": true,
+    "activeStaleParameterFileCount": 0,
+    "activeFileCount": 581,
+    "activeWordCount": 551183,
+    "wordReductionPercent": 47.94267094824329,
+    "architectureFileCount": 192,
+    "architectureWordCount": 186799,
+    "strictStructuredLineThresholdWords": 70,
+    "strictStructuredLineCount": 0,
+    "strictUnstructuredParagraphCount": 0,
+    "tutorialMarkerHitCount": 0,
+    "verifyDocStructurePass": true,
+    "activeDocCountStructure": 581,
+    "brokenLinkFileCount": 0,
+    "duplicateHeaderFileCount": 0,
+    "fenceIssueFileCount": 0,
+    "encodingWithoutUtf8SigCount": 0
+  }
+}

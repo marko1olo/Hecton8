@@ -25,6 +25,8 @@ using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton.Localization;
 using Hecton8.Physics;
+using Hecton8.World;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -46,10 +48,19 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class Floater : MonoBehaviour, IInteractable, IFixedTickable, ILocalizationLanguageChangedListener
+    public sealed class Floater : MonoBehaviour, IInteractable, IInteractableTextProvider, IFixedTickable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const string DefaultPickupText = "Pick Up Floater";
         private const string DefaultAttachText = "Attach to Object";
+        private const int AttachQueryCapacity = 16;
+        private const int AttachParentSearchDepth = 8;
+        private const float AttachMinimumConeRadius = 0.18f;
+        private const float AttachConeRadiusPerMeter = 0.12f;
+        private static readonly SpatialTargetKind AttachTargetKinds =
+            SpatialTargetKind.Pickup |
+            SpatialTargetKind.Resource |
+            SpatialTargetKind.Scannable |
+            SpatialTargetKind.Module;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — BUOYANCY
@@ -138,15 +149,31 @@ namespace Hecton8.Gameplay
         private Transform _attachedTransform;
         private Vector3 _localAttachPosition;
         private bool _isRegistered;
-        // COLD ALLOC: RaycastHit[4] - synchronous attach probe buffer - owner: Floater
-        private readonly RaycastHit[] _attachHitBuffer = new RaycastHit[4];
+        private bool _lateFrameRegistered;
+        private Vector3 _pendingRuntimePosition;
+        private bool _runtimePositionDirty;
+        private bool _pendingVisualEnabled;
+        private bool _visualEnabledDirty;
+        private bool _pendingPickupAudio;
+        private bool _pendingAttachAudio;
+        private bool _pendingAttachParticles;
+        private Vector3 _pendingPickupAudioPosition;
+        private Vector3 _pendingAttachPosition;
+        private bool _hotSwapRegistered;
+        private IAudioService _audioService;
+        private ILocalizationTextReadModel _localizationManager;
+        // COLD ALLOC: SpatialQueryHit[16] - registered owner attach probe buffer - owner: Floater
+        private readonly SpatialQueryHit[] _attachQueryHits = new SpatialQueryHit[AttachQueryCapacity];
 
         // Pre-cached player tag
         private const string PlayerTag = "Player";
 
         // Pre-cached interaction text
-        private string _cachedPickupText;
-        private string _cachedAttachText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedPickupTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedAttachTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedPickupTextLength;
+        private int _cachedAttachTextLength;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -186,25 +213,36 @@ namespace Hecton8.Gameplay
                 attachableLayers = HectonLayerMasks.DefaultLayerMask;
             }
 
+            CacheRegistryServicesCold();
             RebuildLocalizedTextCache();
         }
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             _state = FloaterState.Idle;
+            RegisterToLateFrame();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
             UnregisterFromFixedTick();
+            UnregisterFromLateFrame();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             UnregisterFromFixedTick();
+            UnregisterFromLateFrame();
+            TryUnregisterHotSwapListener();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -240,33 +278,45 @@ namespace Hecton8.Gameplay
         {
             return _state switch
             {
-                FloaterState.Idle => _cachedPickupText,
-                FloaterState.Held => _cachedAttachText,
+                FloaterState.Idle => ResolveLegacyConfigured(pickupText, DefaultPickupText),
+                FloaterState.Held => ResolveLegacyConfigured(attachText, DefaultAttachText),
                 _ => null
             };
         }
 
-        private void RebuildLocalizedTextCache()
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
         {
-            _cachedPickupText = ResolveConfiguredText(
-                pickupText,
-                DefaultPickupText,
-                LocalizationKeys.INTERACT_PICK_UP_FLOATER);
-            _cachedAttachText = ResolveConfiguredText(
-                attachText,
-                DefaultAttachText,
-                LocalizationKeys.INTERACT_ATTACH_TO_OBJECT);
+            ReadOnlySpan<char> source = _state switch
+            {
+                FloaterState.Idle => _cachedPickupTextBuffer.AsSpan(0, _cachedPickupTextLength),
+                FloaterState.Held => _cachedAttachTextBuffer.AsSpan(0, _cachedAttachTextLength),
+                _ => ReadOnlySpan<char>.Empty
+            };
+            return InteractableTextCopy.TryCopy(source, destination, out length);
         }
 
-        private string ResolveConfiguredText(string configuredText, string defaultText, string localizationKey)
+        private void RebuildLocalizedTextCache()
         {
-            if (!string.IsNullOrWhiteSpace(configuredText) &&
-                !string.Equals(configuredText, defaultText, System.StringComparison.Ordinal))
-            {
-                return configuredText;
-            }
+            _cachedPickupTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(
+                pickupText,
+                DefaultPickupText,
+                LocalizationKeys.INTERACT_PICK_UP_FLOATER,
+                _localizationManager,
+                _cachedPickupTextBuffer);
+            _cachedAttachTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(
+                attachText,
+                DefaultAttachText,
+                LocalizationKeys.INTERACT_ATTACH_TO_OBJECT,
+                _localizationManager,
+                _cachedAttachTextBuffer);
+        }
 
-            return ResolveLocalized(localizationKey, defaultText);
+        private static string ResolveLegacyConfigured(string configuredText, string defaultText)
+        {
+            return !string.IsNullOrWhiteSpace(configuredText) &&
+                   !string.Equals(configuredText, defaultText, StringComparison.Ordinal)
+                ? configuredText
+                : defaultText;
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -281,16 +331,6 @@ namespace Hecton8.Gameplay
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
-        }
-
-        private static string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            if (manager == null)
-                return fallback;
-
-            string localized = manager.Get(key);
-            return string.IsNullOrWhiteSpace(localized) ? fallback : localized;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -327,8 +367,50 @@ namespace Hecton8.Gameplay
 
         private void ApplyRuntimePosition(Vector3 runtimePosition)
         {
-            if (_transform != null)
-                _transform.position = runtimePosition;
+            _pendingRuntimePosition = runtimePosition;
+            _runtimePositionDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_runtimePositionDirty)
+            {
+                _runtimePositionDirty = false;
+                if (_transform != null)
+                    _transform.position = _pendingRuntimePosition;
+            }
+
+            if (_visualEnabledDirty)
+            {
+                _visualEnabledDirty = false;
+                if (visualRenderer != null)
+                    visualRenderer.enabled = _pendingVisualEnabled;
+            }
+
+            IAudioService audio = _audioService;
+            if (_pendingPickupAudio)
+            {
+                _pendingPickupAudio = false;
+                if (pickupSound != null && audio != null)
+                    audio.PlayAtPoint(pickupSound, _pendingPickupAudioPosition, floaterVolume);
+            }
+
+            if (_pendingAttachParticles)
+            {
+                _pendingAttachParticles = false;
+                if (attachParticles != null)
+                {
+                    attachParticles.transform.position = _pendingAttachPosition;
+                    attachParticles.Play();
+                }
+            }
+
+            if (_pendingAttachAudio)
+            {
+                _pendingAttachAudio = false;
+                if (attachSound != null && audio != null)
+                    audio.PlayAtPoint(attachSound, _pendingAttachPosition, floaterVolume);
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -354,11 +436,7 @@ namespace Hecton8.Gameplay
             _transform.SetParent(player);
             _transform.localPosition = Vector3.forward * 0.5f;
 
-            // Play pickup sound
-            if (pickupSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
-            {
-                audio.PlayAtPoint(pickupSound, _transform.position, floaterVolume);
-            }
+            QueuePickupAudio(_transform.position);
 
             // Fire event
             OnPickedUp?.Invoke();
@@ -366,36 +444,150 @@ namespace Hecton8.Gameplay
 
         private void TryAttach(Transform player)
         {
-            // Raycast from player camera
+            if (player == null)
+                return;
+
             Vector3 origin = player.position;
             Vector3 direction = player.forward;
 
-            if (TryResolveNearestAttachHit(origin, direction, attachDistance, out RaycastHit hit))
+            if (TryResolveNearestAttachTarget(
+                    origin,
+                    direction,
+                    attachDistance,
+                    out Rigidbody targetBody,
+                    out Transform targetTransform,
+                    out Vector3 hitPoint))
             {
-                AttachTo(hit.collider, hit.point);
+                AttachTo(targetBody, targetTransform, hitPoint);
             }
         }
 
-        private bool TryResolveNearestAttachHit(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit nearestHit)
+        private bool TryResolveNearestAttachTarget(
+            Vector3 origin,
+            Vector3 direction,
+            float maxDistance,
+            out Rigidbody targetBody,
+            out Transform targetTransform,
+            out Vector3 attachPoint)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(origin, direction, _attachHitBuffer, maxDistance, attachableLayers);
-            nearestHit = default;
-            float nearestDistance = float.MaxValue;
+            targetBody = null;
+            targetTransform = null;
+            attachPoint = default;
+
+            if (!IsFiniteVector(origin) || !IsFiniteVector(direction) || !float.IsFinite(maxDistance) || maxDistance <= 0f)
+                return false;
+
+            float directionSqr = direction.sqrMagnitude;
+            if (!float.IsFinite(directionSqr) || directionSqr <= 0.000001f)
+                return false;
+
+            Vector3 forward = direction / Mathf.Sqrt(directionSqr);
+            float maxDistanceSqr = maxDistance * maxDistance;
+            float bestScore = float.MaxValue;
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(origin, maxDistance, AttachTargetKinds, _attachQueryHits);
 
             for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit candidate = _attachHitBuffer[i];
-                if (candidate.collider == null || float.IsNaN(candidate.distance) || float.IsInfinity(candidate.distance))
+                SpatialQueryHit candidate = _attachQueryHits[i];
+                if (candidate.Transform == null ||
+                    ReferenceEquals(candidate.Transform, _transform) ||
+                    ReferenceEquals(candidate.Owner, this) ||
+                    !MatchesLayer(candidate.Layer, attachableLayers.value))
+                {
+                    continue;
+                }
+
+                if (!TryResolveAttachBody(in candidate, out Rigidbody candidateBody, out Transform candidateTransform))
                     continue;
 
-                if (candidate.distance >= nearestDistance)
+                Vector3 candidatePosition = candidate.Position;
+                if (!IsFiniteVector(candidatePosition))
                     continue;
 
-                nearestDistance = candidate.distance;
-                nearestHit = candidate;
+                Vector3 delta = candidatePosition - origin;
+                float distanceSqr = delta.sqrMagnitude;
+                if (!float.IsFinite(distanceSqr) || distanceSqr <= 0.000001f || distanceSqr > maxDistanceSqr)
+                    continue;
+
+                float axial = Vector3.Dot(delta, forward);
+                if (!float.IsFinite(axial) || axial <= 0f || axial > maxDistance)
+                    continue;
+
+                float lateralSqr = Mathf.Max(0f, distanceSqr - axial * axial);
+                float coneRadius = Mathf.Max(AttachMinimumConeRadius, axial * AttachConeRadiusPerMeter);
+                if (lateralSqr > coneRadius * coneRadius)
+                    continue;
+
+                float score = axial + lateralSqr;
+                if (score >= bestScore)
+                    continue;
+
+                bestScore = score;
+                targetBody = candidateBody;
+                targetTransform = candidateTransform;
+                attachPoint = origin + forward * axial;
             }
 
-            return nearestHit.collider != null;
+            return targetBody != null && targetTransform != null;
+        }
+
+        private bool TryResolveAttachBody(
+            in SpatialQueryHit hit,
+            out Rigidbody body,
+            out Transform targetTransform)
+        {
+            body = hit.Rigidbody;
+            targetTransform = hit.Transform != null ? hit.Transform : body != null ? body.transform : null;
+            if (body != null && targetTransform != null)
+                return true;
+
+            if (TryResolveBodyFromTransform(hit.Transform, out body, out targetTransform))
+                return true;
+
+            Component owner = hit.Owner;
+            if (owner != null && owner.TryGetComponent(out body))
+            {
+                targetTransform = hit.Transform != null ? hit.Transform : owner.transform;
+                return targetTransform != null;
+            }
+
+            return TryResolveBodyFromTransform(owner != null ? owner.transform : null, out body, out targetTransform);
+        }
+
+        private static bool TryResolveBodyFromTransform(
+            Transform source,
+            out Rigidbody body,
+            out Transform targetTransform)
+        {
+            body = null;
+            targetTransform = null;
+            Transform current = source;
+            for (int depth = 0; depth < AttachParentSearchDepth && current != null; depth++)
+            {
+                if (current.TryGetComponent(out body))
+                {
+                    targetTransform = source != null ? source : current;
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool MatchesLayer(int layer, int mask)
+        {
+            return layer >= 0 &&
+                   layer < 32 &&
+                   (mask & (1 << layer)) != 0;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
         }
 
         /// <summary>
@@ -405,13 +597,20 @@ namespace Hecton8.Gameplay
         /// <param name="hitPoint">World position where the floater attaches.</param>
         public void AttachTo(Collider target, Vector3 hitPoint)
         {
+            if (target == null)
+                return;
+
+            AttachTo(target.attachedRigidbody, target.transform, hitPoint);
+        }
+
+        private void AttachTo(Rigidbody targetBody, Transform targetTransform, Vector3 hitPoint)
+        {
             if (_state == FloaterState.Attached) return;
 
-            // Get target Rigidbody
-            _attachedBody = target.attachedRigidbody;
-            _attachedTransform = target.transform;
+            _attachedBody = targetBody;
+            _attachedTransform = targetTransform != null ? targetTransform : targetBody != null ? targetBody.transform : null;
 
-            if (_attachedBody == null)
+            if (_attachedBody == null || _attachedTransform == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[Floater] Cannot attach to object without Rigidbody.", this);
@@ -436,21 +635,7 @@ namespace Hecton8.Gameplay
                 _ownRigidbody.isKinematic = true;
             }
 
-            // Disable visual (optional)
-            // if (visualRenderer != null) visualRenderer.enabled = false;
-
-            // Play attach particles
-            if (attachParticles != null)
-            {
-                attachParticles.transform.position = hitPoint;
-                attachParticles.Play();
-            }
-
-            // Play attach sound
-            if (attachSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
-            {
-                audio.PlayAtPoint(attachSound, hitPoint, floaterVolume);
-            }
+            QueueAttachPresentation(hitPoint);
 
             // Register for fixed tick
             RegisterToFixedTick();
@@ -484,7 +669,8 @@ namespace Hecton8.Gameplay
             // Re-enable visual
             if (visualRenderer != null)
             {
-                visualRenderer.enabled = true;
+                _pendingVisualEnabled = true;
+                _visualEnabledDirty = true;
             }
 
             // Unregister from fixed tick
@@ -508,6 +694,54 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
+        private void CacheRegistryServicesCold()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _localizationManager = GlobalRegistry.LocalizationText;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as ILocalizationTextReadModel;
+                    RebuildLocalizedTextCache();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                    {
+                        if (_state == FloaterState.Attached)
+                            RegisterToFixedTick();
+                        RegisterToLateFrame();
+                    }
+                    break;
+            }
+        }
+
         //  TICK REGISTRATION
         // ══════════════════════════════════════════════════════════
 
@@ -516,8 +750,30 @@ namespace Hecton8.Gameplay
             if (_isRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.FixedTickables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+        }
+
+        private void RegisterToLateFrame()
+        {
+            if (_lateFrameRegistered) return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void QueuePickupAudio(Vector3 position)
+        {
+            _pendingPickupAudioPosition = position;
+            _pendingPickupAudio = pickupSound != null;
+            RegisterToLateFrame();
+        }
+
+        private void QueueAttachPresentation(Vector3 position)
+        {
+            _pendingAttachPosition = position;
+            _pendingAttachParticles = attachParticles != null;
+            _pendingAttachAudio = attachSound != null;
+            RegisterToLateFrame();
         }
 
 #if UNITY_EDITOR
@@ -540,6 +796,14 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _isRegistered = false;
+        }
+
+        private void UnregisterFromLateFrame()
+        {
+            if (!_lateFrameRegistered) return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

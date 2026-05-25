@@ -1,4 +1,5 @@
 using Crest;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -130,15 +131,17 @@ namespace Hecton8.Crest.Bridge
                 float2 xz = local.xz;
                 float phase = math.dot(xz, new float2(0.0027f, -0.0036f));
                 float amplitude = math.lerp(0.03f, 0.85f, quality * quality);
-                float height = SeaLevel + math.sin(phase) * amplitude;
+                MathLodApproximation.ApproxSinCosBhaskara(phase, out float phaseSin, out float phaseCos);
+                float height = SeaLevel + phaseSin * amplitude;
                 if (!simplified)
                 {
                     float detailWeight = math.smoothstep(0.35f, 0.95f, quality);
-                    height += math.sin(math.dot(xz, new float2(0.0071f, 0.0053f)) + 2.4f) * amplitude * 0.22f * detailWeight;
+                    float detailPhase = math.dot(xz, new float2(0.0071f, 0.0053f)) + 2.4f;
+                    height += MathLodApproximation.ApproxSinBhaskara(detailPhase) * amplitude * 0.22f * detailWeight;
                 }
 
-                float slopeX = math.cos(phase) * 0.0027f * amplitude;
-                float slopeZ = -math.cos(phase) * 0.0036f * amplitude;
+                float slopeX = phaseCos * 0.0027f * amplitude;
+                float slopeZ = -phaseCos * 0.0036f * amplitude;
                 float3 normal = math.normalize(new float3(-slopeX, 1f, -slopeZ));
                 float3 velocity = new float3(-slopeZ, 0f, slopeX);
 

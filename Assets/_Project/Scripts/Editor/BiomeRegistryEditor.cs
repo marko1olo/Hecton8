@@ -38,12 +38,13 @@ namespace Hecton8.Editor
             Regex entryRegex = new Regex(@"(\d+)\.\s+\*\*([A-Z]+)\s+\(([^)]+)\)\*\*:\s*(.*)", RegexOptions.Multiline);
             MatchCollection matches = entryRegex.Matches(content);
 
-            Debug.Log($"[BiomeRegistryEditor] Found {matches.Count} potential biome entries in vision doc.");
+            Hecton8.Core.H8Debug.Log($"[BiomeRegistryEditor] Found {matches.Count} potential biome entries in vision doc.");
 
             Undo.RecordObject(registry, "Rebuild Biome Registry");
 
-            foreach (Match match in matches)
+            for (int matchIndex = 0; matchIndex < matches.Count; matchIndex++)
             {
+                Match match = matches[matchIndex];
                 int id = int.Parse(match.Groups[1].Value);
                 string region = match.Groups[2].Value;
                 string name = match.Groups[3].Value;
@@ -60,7 +61,7 @@ namespace Hecton8.Editor
             EditorUtility.SetDirty(registry);
             AssetDatabase.SaveAssets();
             
-            Debug.Log($"<color=green>[BiomeRegistryEditor] Successfully updated {matches.Count} biomes in {assetPath}</color>");
+            Hecton8.Core.H8Debug.Log($"<color=green>[BiomeRegistryEditor] Successfully updated {matches.Count} biomes in {assetPath}</color>");
         }
     }
 }

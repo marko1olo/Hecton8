@@ -121,29 +121,35 @@ internal static class Program
 
         private IEnumerable<string> EnumerateScriptFiles(string scriptsRoot)
         {
-            var files = Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
-            if (!string.Equals(_options.Scope, "SignalCritical", StringComparison.OrdinalIgnoreCase))
+            bool signalCriticalOnly = string.Equals(_options.Scope, "SignalCritical", StringComparison.OrdinalIgnoreCase);
+            foreach (var path in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
             {
-                return files;
-            }
+                if (signalCriticalOnly)
+                {
+                    var relative = ToRelativePath(path);
+                    if (!Regex.IsMatch(relative, @"Assets/_Project/Scripts/Core/GlobalSignals\.cs$|Assets/_Project/Scripts/Core/Signals/|Assets/_Project/Scripts/Core/SystemDispatcher\.cs$|Assets/_Project/Scripts/Editor/SignalTrafficMonitorWindow\.cs$"))
+                    {
+                        continue;
+                    }
+                }
 
-            return files.Where(path =>
-            {
-                var relative = ToRelativePath(path);
-                return Regex.IsMatch(relative, @"Assets/_Project/Scripts/Core/GlobalSignals\.cs$|Assets/_Project/Scripts/Core/Signals/|Assets/_Project/Scripts/Core/SystemDispatcher\.cs$|Assets/_Project/Scripts/Editor/SignalTrafficMonitorWindow\.cs$");
-            });
+                yield return path;
+            }
         }
 
         private void ScanAssemblyContractBoundaries(string scriptsRoot)
         {
-            var asmdefs = Directory
-                .EnumerateFiles(scriptsRoot, "*.asmdef", SearchOption.AllDirectories)
-                .Select(TryReadAsmdef)
-                .Where(item => item is not null)
-                .Cast<AsmdefInfo>()
-                .ToArray();
+            var asmdefs = new List<AsmdefInfo>();
+            foreach (var asmdefFile in Directory.EnumerateFiles(scriptsRoot, "*.asmdef", SearchOption.AllDirectories))
+            {
+                var asmdef = TryReadAsmdef(asmdefFile);
+                if (asmdef is not null)
+                {
+                    asmdefs.Add(asmdef);
+                }
+            }
 
-            if (asmdefs.Length == 0)
+            if (asmdefs.Count == 0)
             {
                 return;
             }
@@ -1013,7 +1019,7 @@ internal static class Program
             }
         }
 
-        private static AsmdefInfo? FindNearestAsmdef(string sourcePath, AsmdefInfo[] asmdefs)
+        private static AsmdefInfo? FindNearestAsmdef(string sourcePath, List<AsmdefInfo> asmdefs)
         {
             var full = Path.GetFullPath(sourcePath);
             AsmdefInfo? nearest = null;

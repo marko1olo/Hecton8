@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 namespace Hecton8.Tools
 {
     using System;
@@ -230,4 +231,13 @@ namespace Hecton8.Tools
             return value == (byte)' ' || value == (byte)'\t';
         }
     }
+
+    public static class IlluminationHardwareProfilesCsvParser
+    {
+        public static EquipmentCsvParseResult Parse(ReadOnlySpan<byte> csv, NativeArray<EquipmentHardwareSpecDTO> specs)
+        {
+            return EquipmentHardwareSpecsCsvParser.Parse(csv, specs);
+        }
+    }
 }
+#endif

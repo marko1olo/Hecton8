@@ -1,0 +1,30 @@
+﻿{
+    "agent":  "X_012",
+    "evidenceClass":  "STATIC_DOC_STATIC_SOURCE_STATIC_FILESYSTEM",
+    "generatedUtc":  "2026-05-24T16:42:22.2058913Z",
+    "architecturePath":  "Docs/ARCHITECTURE",
+    "thresholdWords":  40,
+    "initialOffenderCount":  204,
+    "finalOffenderCount":  0,
+    "finalParagraphsGe40":  0,
+    "finalStructuredLinesGe40":  0,
+    "finalMaxOffenderWords":  null,
+    "manualRewriteOnly":  true,
+    "scriptUse":  "discovery_validation_json_proof_only",
+    "sourceConstants":  {
+                            "saveCurrentVersion":  "0x000B",
+                            "saveHeaderBytes":  56,
+                            "signalBusLaneCapacity":  512,
+                            "dataMonolithHeaderBytes":  64,
+                            "staticDataH8binBytes":  1064384
+                        },
+    "sourceEvidence":  {
+                           "saveBinaryStorage":  "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+                           "signalBusRuntime":  "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+                           "h8DataMonolithTypes":  "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+                           "staticPayload":  "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin"
+                       },
+    "stalePromptCorrections":  [
+                                   "SignalBus capacity 256 is stale; source defines 512."
+                               ]
+}

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -67,9 +68,9 @@ namespace Hecton8.EditorTools
             {
                 float t = rootCount <= 1 ? 0f : i / (float)(rootCount - 1);
                 float yaw = t * TwoPi + spec.RootYawOffset;
-                Vector3 dir = new Vector3(Mathf.Cos(yaw), 0f, Mathf.Sin(yaw));
+                Vector3 dir = new Vector3(MathLodApproximation.ApproxCosBhaskara(yaw), 0f, MathLodApproximation.ApproxSinBhaskara(yaw));
                 Vector3 origin = new Vector3(0f, scale.y * 0.06f, 0f) + dir * (scale.x * 0.06f);
-                float length = scale.x * Mathf.Lerp(0.36f, 0.62f, 0.5f + 0.5f * Mathf.Sin((i + 1) * 1.37f));
+                float length = scale.x * Mathf.Lerp(0.36f, 0.62f, 0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara((i + 1) * 1.37f));
                 AddRibbon(
                     buffers,
                     origin,
@@ -102,25 +103,25 @@ namespace Hecton8.EditorTools
             {
                 float v = y / (float)heightSegments;
                 float bendRadians = bend * Mathf.Deg2Rad * v * v;
-                float wobbleX = Mathf.Sin((v * 2.6f + spec.BendDegrees * 0.02f) * Mathf.PI) * scale.x * 0.03f;
-                float wobbleZ = Mathf.Sin((v * 4.3f + spec.RibCount * 0.11f) * Mathf.PI) * scale.z * 0.018f;
+                float wobbleX = MathLodApproximation.ApproxSinBhaskara((v * 2.6f + spec.BendDegrees * 0.02f) * Mathf.PI) * scale.x * 0.03f;
+                float wobbleZ = MathLodApproximation.ApproxSinBhaskara((v * 4.3f + spec.RibCount * 0.11f) * Mathf.PI) * scale.z * 0.018f;
                 Vector3 center = EvaluateStipeCenter(spec, scale, v, baseOffset, clusterYawOffsetDegrees);
                 float bladeBand = EvaluateBand(v, bladeBandMin, bladeBandMax, 0.085f);
                 float bulbBand = EvaluateBand(v, bulbBandMin, bulbBandMax, 0.07f);
                 float nodeBulge = bladeBand * 0.22f + bulbBand * 0.14f;
-                float scarNoise = Mathf.Sin((v * 8.5f + spec.BendDegrees * 0.03f) * Mathf.PI) * 0.035f;
+                float scarNoise = MathLodApproximation.ApproxSinBhaskara((v * 8.5f + spec.BendDegrees * 0.03f) * Mathf.PI) * 0.035f;
                 float radius = Mathf.Lerp(bottomRadius, topRadius, v) * (1f + nodeBulge + scarNoise);
 
                 for (int side = 0; side <= radialSegments; side++)
                 {
                     float u = side / (float)radialSegments;
                     float angle = u * TwoPi;
-                    float rib = 1f + Mathf.Sin(angle * spec.RibCount + v * 2.2f) * spec.RibAmplitude;
+                    float rib = 1f + MathLodApproximation.ApproxSinBhaskara(angle * spec.RibCount + v * 2.2f) * spec.RibAmplitude;
                     float actualRadius = radius * rib;
-                    Vector3 radial = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                    Vector3 radial = new Vector3(MathLodApproximation.ApproxCosBhaskara(angle), 0f, MathLodApproximation.ApproxSinBhaskara(angle));
                     Vector3 normal = radial.normalized;
                     Vector3 vertex = center + radial * actualRadius;
-                    Vector4 tangent = new Vector4(-Mathf.Sin(angle), 0f, Mathf.Cos(angle), 1f);
+                    Vector4 tangent = new Vector4(-MathLodApproximation.ApproxSinBhaskara(angle), 0f, MathLodApproximation.ApproxCosBhaskara(angle), 1f);
                     byte green = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(92f, 188f, v) + bladeBand * 10f - bulbBand * 6f), 0, 255);
                     byte blue = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(32f, 186f, v) - bladeBand * 12f + bulbBand * 8f), 0, 255);
                     buffers.AddVertex(vertex, normal, tangent, new Vector2(u, v), new Color32(spec.TintByte, green, blue, 255));
@@ -171,7 +172,7 @@ namespace Hecton8.EditorTools
             }
             else
             {
-                normalized = Mathf.Lerp(0.16f, 1f, Mathf.Pow(sequence, 0.9f));
+                normalized = Mathf.Lerp(0.16f, 1f, MathLodApproximation.ApproxPow01Curve(sequence, 0.9f));
             }
 
             float primaryAngleOffset = EvaluateBladeAngleOffset(spec, bladeIndex, sequence);
@@ -188,7 +189,7 @@ namespace Hecton8.EditorTools
             float serration = lod == 0 ? spec.SerrationAmplitude : spec.SerrationAmplitude * 0.4f;
             if (spec.GrowthStyle == GrowthStyle.GiantFrond)
             {
-                float morphologyNoise = 0.5f + 0.5f * Mathf.Sin((bladeIndex + 1) * 2.17f + normalized * 4.9f);
+                float morphologyNoise = 0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 2.17f + normalized * 4.9f);
                 float widthMin = spec.ClusterCount > 1 ? 0.84f : 0.9f;
                 float widthMax = spec.ClusterCount > 1 ? 1.22f : 1.14f;
                 float lengthMin = spec.ClusterCount > 1 ? 0.88f : 0.92f;
@@ -1056,7 +1057,7 @@ namespace Hecton8.EditorTools
             {
                 float alternatingTower = (bladeIndex & 1) == 0 ? -1f : 1f;
                 float stepped = Mathf.Lerp(-12f, 12f, sequence) + alternatingTower * Mathf.Lerp(2f, 8f, sequence);
-                float towerNoise = Mathf.Sin((bladeIndex + 1) * 1.31f) * Mathf.Lerp(1.5f, 4.5f, sequence);
+                float towerNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.31f) * Mathf.Lerp(1.5f, 4.5f, sequence);
                 return stepped + towerNoise;
             }
 
@@ -1065,7 +1066,7 @@ namespace Hecton8.EditorTools
                 float alternatingSheet = (bladeIndex & 1) == 0 ? -1f : 1f;
                 float sheetArc = Mathf.Lerp(-5f, 5f, sequence);
                 float stagger = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(0.4f, 2.1f, sequence);
-                float sheetNoise = Mathf.Sin((bladeIndex + 1) * 1.43f) * Mathf.Lerp(0.45f, 1.4f, sequence);
+                float sheetNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.43f) * Mathf.Lerp(0.45f, 1.4f, sequence);
                 return sheetArc + alternatingSheet * Mathf.Lerp(1.1f, 3.8f, sequence) + stagger + sheetNoise;
             }
 
@@ -1076,8 +1077,8 @@ namespace Hecton8.EditorTools
                     float alternatingBroadleaf = (bladeIndex & 1) == 0 ? -1f : 1f;
                     float broadleafArc = Mathf.Lerp(-44f, 44f, sequence);
                     float broadleafStepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(4f, 14f, sequence);
-                    float broadleafNoise = Mathf.Sin((bladeIndex + 1) * 1.22f) * Mathf.Lerp(1.4f, 5.2f, sequence);
-                    float broadleafBias = Mathf.Sin(sequence * Mathf.PI) * ((((bladeIndex / 3) & 1) == 0) ? 1f : -1f) * 4.8f;
+                    float broadleafNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.22f) * Mathf.Lerp(1.4f, 5.2f, sequence);
+                    float broadleafBias = MathLodApproximation.ApproxSinBhaskara(sequence * Mathf.PI) * ((((bladeIndex / 3) & 1) == 0) ? 1f : -1f) * 4.8f;
                     return broadleafArc + alternatingBroadleaf * Mathf.Lerp(8f, 20f, sequence) + broadleafStepped + broadleafNoise + broadleafBias;
                 }
 
@@ -1086,7 +1087,7 @@ namespace Hecton8.EditorTools
                     float alternatingPaddlefan = (bladeIndex & 1) == 0 ? -1f : 1f;
                     float paddlefanArc = Mathf.Lerp(-40f, 40f, sequence);
                     float paddlefanStepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(3f, 12f, sequence);
-                    float paddlefanNoise = Mathf.Sin((bladeIndex + 1) * 1.33f) * Mathf.Lerp(1.8f, 5.8f, sequence);
+                    float paddlefanNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.33f) * Mathf.Lerp(1.8f, 5.8f, sequence);
                     return paddlefanArc + alternatingPaddlefan * Mathf.Lerp(8f, 22f, sequence) + paddlefanStepped + paddlefanNoise;
                 }
 
@@ -1095,14 +1096,14 @@ namespace Hecton8.EditorTools
                     float alternatingPetal = (bladeIndex & 1) == 0 ? -1f : 1f;
                     float petalArc = Mathf.Lerp(-34f, 34f, sequence);
                     float petalStepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(2f, 10f, sequence);
-                    float petalNoise = Mathf.Sin((bladeIndex + 1) * 1.26f) * Mathf.Lerp(1.8f, 5f, sequence);
+                    float petalNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.26f) * Mathf.Lerp(1.8f, 5f, sequence);
                     return petalArc + alternatingPetal * Mathf.Lerp(6f, 18f, sequence) + petalStepped + petalNoise;
                 }
 
                 float alternatingPaddle = (bladeIndex & 1) == 0 ? -1f : 1f;
                 float paddleArc = Mathf.Lerp(-18f, 18f, sequence);
                 float stepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(1f, 6.5f, sequence);
-                float paddleNoise = Mathf.Sin((bladeIndex + 1) * 1.38f) * Mathf.Lerp(1.2f, 4.2f, sequence);
+                float paddleNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.38f) * Mathf.Lerp(1.2f, 4.2f, sequence);
                 return paddleArc + alternatingPaddle * Mathf.Lerp(2f, 8f, sequence) + stepped + paddleNoise;
             }
 
@@ -1111,7 +1112,7 @@ namespace Hecton8.EditorTools
                 float alternatingFrill = (bladeIndex & 1) == 0 ? -1f : 1f;
                 float frillArc = Mathf.Lerp(-24f, 24f, sequence);
                 float stepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(2f, 9f, sequence);
-                float frillNoise = Mathf.Sin((bladeIndex + 1) * 1.41f) * Mathf.Lerp(2.4f, 6.2f, sequence);
+                float frillNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.41f) * Mathf.Lerp(2.4f, 6.2f, sequence);
                 return frillArc + alternatingFrill * Mathf.Lerp(4f, 11f, sequence) + stepped + frillNoise;
             }
 
@@ -1120,7 +1121,7 @@ namespace Hecton8.EditorTools
                 float alternatingSheet = (bladeIndex & 1) == 0 ? -1f : 1f;
                 float sheetArc = Mathf.Lerp(-8f, 8f, sequence);
                 float stagger = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(0.5f, 3.5f, sequence);
-                float canopyNoise = Mathf.Sin((bladeIndex + 1) * 1.47f) * Mathf.Lerp(0.75f, 2.6f, sequence);
+                float canopyNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.47f) * Mathf.Lerp(0.75f, 2.6f, sequence);
                 return sheetArc + alternatingSheet * Mathf.Lerp(1.5f, 5.5f, sequence) + stagger + canopyNoise;
             }
 
@@ -1129,14 +1130,14 @@ namespace Hecton8.EditorTools
                 float alternatingFolded = (bladeIndex & 1) == 0 ? -1f : 1f;
                 float foldedArc = Mathf.Lerp(-7f, 7f, sequence);
                 float stepped = (((bladeIndex / 2) & 1) == 0 ? -1f : 1f) * Mathf.Lerp(0.8f, 3.4f, sequence);
-                float foldedNoise = Mathf.Sin((bladeIndex + 1) * 1.29f) * Mathf.Lerp(0.8f, 2.4f, sequence);
+                float foldedNoise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.29f) * Mathf.Lerp(0.8f, 2.4f, sequence);
                 return foldedArc + alternatingFolded * Mathf.Lerp(1.8f, 5.2f, sequence) + stepped + foldedNoise;
             }
 
             float alternating = (bladeIndex & 1) == 0 ? -1f : 1f;
             float goldenAngle = Mathf.Repeat(bladeIndex * 137.50776f, 360f);
             float centeredGolden = goldenAngle > 180f ? goldenAngle - 360f : goldenAngle;
-            float noise = Mathf.Sin((bladeIndex + 1) * 1.73f) * Mathf.Lerp(4f, 14f, sequence);
+            float noise = MathLodApproximation.ApproxSinBhaskara((bladeIndex + 1) * 1.73f) * Mathf.Lerp(4f, 14f, sequence);
             return centeredGolden * Mathf.Lerp(0.38f, 0.62f, sequence) + alternating * Mathf.Lerp(6f, 18f, sequence) + noise;
         }
 
@@ -1348,7 +1349,7 @@ namespace Hecton8.EditorTools
             bool sailKelp = IsSailKelpVariant(spec);
             bool paddlefanKelp = IsPaddlefanVariant(spec);
             bool deepPetal = IsDeepPetalVariant(spec);
-            float angle = spec.BladeStartYaw + normalized * spec.BladeYawArc + Mathf.Sin((normalized + 0.13f) * Mathf.PI * 3.1f) * 7f + angleOffsetDegrees;
+            float angle = spec.BladeStartYaw + normalized * spec.BladeYawArc + MathLodApproximation.ApproxSinBhaskara((normalized + 0.13f) * Mathf.PI * 3.1f) * 7f + angleOffsetDegrees;
 
             if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
             {
@@ -1376,16 +1377,16 @@ namespace Hecton8.EditorTools
             if (spec.GrowthStyle == GrowthStyle.GiantFrond)
             {
                 float lowerSpread = broadleafKelp
-                    ? Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.78f), 0.42f)
+                    ? Mathf.Lerp(normalized, MathLodApproximation.ApproxPow01Curve(normalized, 0.78f), 0.42f)
                     : spec.ClusterCount > 1
-                    ? Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.82f), 0.34f)
-                    : Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.84f), 0.28f);
-                float nodeRhythm = Mathf.Sin((normalized * 3.7f + spec.BendDegrees * 0.015f) * Mathf.PI) * 0.032f;
+                    ? Mathf.Lerp(normalized, MathLodApproximation.ApproxPow01Curve(normalized, 0.82f), 0.34f)
+                    : Mathf.Lerp(normalized, MathLodApproximation.ApproxPow01Curve(normalized, 0.84f), 0.28f);
+                float nodeRhythm = MathLodApproximation.ApproxSinBhaskara((normalized * 3.7f + spec.BendDegrees * 0.015f) * Mathf.PI) * 0.032f;
                 float midMassBias = broadleafKelp
-                    ? Mathf.Sin(normalized * Mathf.PI) * 0.072f
+                    ? MathLodApproximation.ApproxSinBhaskara(normalized * Mathf.PI) * 0.072f
                     : spec.ClusterCount > 1
-                    ? Mathf.Sin(normalized * Mathf.PI) * 0.06f
-                    : Mathf.Sin(normalized * Mathf.PI) * 0.035f;
+                    ? MathLodApproximation.ApproxSinBhaskara(normalized * Mathf.PI) * 0.06f
+                    : MathLodApproximation.ApproxSinBhaskara(normalized * Mathf.PI) * 0.035f;
                 anchorDistribution = broadleafKelp
                     ? Mathf.Clamp01(Mathf.Lerp(0.05f, 0.84f, lowerSpread) + midMassBias + nodeRhythm * 0.32f)
                     : spec.ClusterCount > 1
@@ -1394,12 +1395,12 @@ namespace Hecton8.EditorTools
             }
             else
             {
-                anchorDistribution = Mathf.Lerp(normalized, 1f - Mathf.Pow(1f - normalized, 1.85f), 0.72f);
+                anchorDistribution = Mathf.Lerp(normalized, 1f - MathLodApproximation.ApproxPow01Curve(1f - normalized, 1.85f), 0.72f);
             }
 
             float anchorHeightAlongStipe = Mathf.Lerp(spec.BladeAnchorHeightMin, spec.BladeAnchorHeightMax, anchorDistribution);
             StipeFrame frame = EvaluateStipeFrame(spec, scale, anchorHeightAlongStipe, angle, baseOffset, clusterYawOffsetDegrees);
-            float helicalSweep = Mathf.Sin((normalized * 2.7f + spec.BendDegrees * 0.01f) * Mathf.PI) * (towerLaminar ? 8f : 16f);
+            float helicalSweep = MathLodApproximation.ApproxSinBhaskara((normalized * 2.7f + spec.BendDegrees * 0.01f) * Mathf.PI) * (towerLaminar ? 8f : 16f);
             Quaternion sweepRotation = Quaternion.AngleAxis(helicalSweep, frame.Tangent);
             Vector3 width = (sweepRotation * frame.Radial).normalized;
             Vector3 growth = spec.GrowthStyle == GrowthStyle.GiantFrond
@@ -1581,12 +1582,12 @@ namespace Hecton8.EditorTools
         {
             float height = scale.y * spec.StipeHeightMultiplier;
             float bendRadians = spec.BendDegrees * Mathf.Deg2Rad * v * v;
-            float wobbleX = Mathf.Sin((v * 2.6f + spec.BendDegrees * 0.02f) * Mathf.PI) * scale.x * 0.03f;
-            float wobbleZ = Mathf.Sin((v * 4.3f + spec.RibCount * 0.11f) * Mathf.PI) * scale.z * 0.018f;
+            float wobbleX = MathLodApproximation.ApproxSinBhaskara((v * 2.6f + spec.BendDegrees * 0.02f) * Mathf.PI) * scale.x * 0.03f;
+            float wobbleZ = MathLodApproximation.ApproxSinBhaskara((v * 4.3f + spec.RibCount * 0.11f) * Mathf.PI) * scale.z * 0.018f;
             Vector3 local = new Vector3(
-                Mathf.Sin(bendRadians) * scale.x * spec.BendRadiusMultiplier + wobbleX,
+                MathLodApproximation.ApproxSinBhaskara(bendRadians) * scale.x * spec.BendRadiusMultiplier + wobbleX,
                 v * height,
-                Mathf.Cos(bendRadians) * scale.z * spec.ForwardOffsetMultiplier - scale.z * spec.ForwardOffsetMultiplier + wobbleZ);
+                MathLodApproximation.ApproxCosBhaskara(bendRadians) * scale.z * spec.ForwardOffsetMultiplier - scale.z * spec.ForwardOffsetMultiplier + wobbleZ);
             Quaternion clusterRotation = Quaternion.Euler(0f, clusterYawOffsetDegrees, 0f);
             return baseOffset + clusterRotation * local;
         }
@@ -1597,8 +1598,8 @@ namespace Hecton8.EditorTools
                 return Vector3.zero;
 
             float angle = (clusterIndex / (float)clusterCount) * TwoPi + spec.RootYawOffset;
-            float radius = scale.x * spec.ClusterSpread * Mathf.Lerp(0.82f, 1.08f, Mathf.Sin((clusterIndex + 1) * 1.23f) * 0.5f + 0.5f);
-            return new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+            float radius = scale.x * spec.ClusterSpread * Mathf.Lerp(0.82f, 1.08f, MathLodApproximation.ApproxSinBhaskara((clusterIndex + 1) * 1.23f) * 0.5f + 0.5f);
+            return new Vector3(MathLodApproximation.ApproxCosBhaskara(angle) * radius, 0f, MathLodApproximation.ApproxSinBhaskara(angle) * radius);
         }
 
         private static float EvaluateClusterYawOffset(VariantSpec spec, int clusterIndex, int clusterCount)
@@ -1606,7 +1607,7 @@ namespace Hecton8.EditorTools
             if (clusterCount <= 1)
                 return 0f;
 
-            return (360f / clusterCount) * clusterIndex + Mathf.Sin((clusterIndex + 1) * 1.31f) * 10f;
+            return (360f / clusterCount) * clusterIndex + MathLodApproximation.ApproxSinBhaskara((clusterIndex + 1) * 1.31f) * 10f;
         }
 
         private static float EvaluateClusterScaleFactor(VariantSpec spec, int clusterIndex, int clusterCount)
@@ -1614,7 +1615,7 @@ namespace Hecton8.EditorTools
             if (clusterCount <= 1)
                 return 1f;
 
-            return Mathf.Lerp(0.68f, 0.9f, Mathf.Sin((clusterIndex + 1) * 0.91f) * 0.5f + 0.5f);
+            return Mathf.Lerp(0.68f, 0.9f, MathLodApproximation.ApproxSinBhaskara((clusterIndex + 1) * 0.91f) * 0.5f + 0.5f);
         }
 
         private static float EvaluateStipeRadius(VariantSpec spec, Vector3 scale, float v)
@@ -1628,7 +1629,7 @@ namespace Hecton8.EditorTools
             float bladeBand = EvaluateBand(v, bladeBandMin, bladeBandMax, 0.085f);
             float bulbBand = EvaluateBand(v, bulbBandMin, bulbBandMax, 0.07f);
             float nodeBulge = bladeBand * 0.22f + bulbBand * 0.14f;
-            float scarNoise = Mathf.Sin((v * 8.5f + spec.BendDegrees * 0.03f) * Mathf.PI) * 0.035f;
+            float scarNoise = MathLodApproximation.ApproxSinBhaskara((v * 8.5f + spec.BendDegrees * 0.03f) * Mathf.PI) * 0.035f;
             return Mathf.Lerp(bottomRadius, topRadius, v) * (1f + nodeBulge + scarNoise);
         }
 
@@ -1713,9 +1714,9 @@ namespace Hecton8.EditorTools
                 {
                     float u = radialIndex / (float)radialSegments;
                     float angle = u * TwoPi;
-                    float rib = 1f + Mathf.Sin(angle * 3f + t * 5.7f) * ribAmplitude;
+                    float rib = 1f + MathLodApproximation.ApproxSinBhaskara(angle * 3f + t * 5.7f) * ribAmplitude;
                     float actualRadius = radius * rib;
-                    Vector3 radial = (normalAxis * Mathf.Cos(angle) + binormal * Mathf.Sin(angle)).normalized;
+                    Vector3 radial = (normalAxis * MathLodApproximation.ApproxCosBhaskara(angle) + binormal * MathLodApproximation.ApproxSinBhaskara(angle)).normalized;
                     Vector3 vertex = center + radial * actualRadius;
                     Vector4 tangent4 = new Vector4(binormal.x, binormal.y, binormal.z, 1f);
                     buffers.AddVertex(vertex, radial, tangent4, new Vector2(u, t), color);
@@ -1757,7 +1758,7 @@ namespace Hecton8.EditorTools
                 ? forwardHint.Value.normalized
                 : Vector3.Cross(widthDir, upDir).normalized;
             int startIndex = buffers.Vertices.Count;
-            float anchorNoise = Mathf.Sin((anchor.x + anchor.z + length) * 9.7f);
+            float anchorNoise = MathLodApproximation.ApproxSinBhaskara((anchor.x + anchor.z + length) * 9.7f);
             float asymmetry = anchorNoise * 0.16f;
             float forwardBow = length * Mathf.Lerp(0.06f, 0.12f, Mathf.Abs(anchorNoise));
             float droop = length * Mathf.Lerp(0.04f, 0.1f, Mathf.Abs(anchorNoise));
@@ -1769,18 +1770,18 @@ namespace Hecton8.EditorTools
                 float twist = Mathf.Lerp(0f, twistDegrees, t);
                 Quaternion rotation = Quaternion.AngleAxis(twist, upDir) * Quaternion.AngleAxis(sideCurveDegrees * t, forwardDir);
                 Vector3 rotatedWidth = rotation * widthDir;
-                float widthTaper = Mathf.Lerp(1.04f, 0.08f, Mathf.Pow(t, 0.72f));
+                float widthTaper = Mathf.Lerp(1.04f, 0.08f, MathLodApproximation.ApproxPow01Curve(t, 0.72f));
                 float halfWidth = width * widthTaper;
-                float edgeWave = serration * Mathf.Sin(t * Mathf.PI * 7f + anchorNoise * 2.4f);
-                float edgeWaveSecondary = serration * 0.65f * Mathf.Sin(t * Mathf.PI * 11f + anchorNoise * 1.7f);
+                float edgeWave = serration * MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI * 7f + anchorNoise * 2.4f);
+                float edgeWaveSecondary = serration * 0.65f * MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI * 11f + anchorNoise * 1.7f);
                 float splitMask = Mathf.Clamp01((t - 0.82f) / 0.18f);
                 float tipSplit = halfWidth * splitMask * 0.32f;
                 float lateralAsymmetry = halfWidth * asymmetry * Mathf.Lerp(0.35f, 1f, t);
-                float curl = centerLift * Mathf.Sin(t * Mathf.PI) * Mathf.Lerp(0.8f, 0.2f, t);
+                float curl = centerLift * MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI) * Mathf.Lerp(0.8f, 0.2f, t);
 
                 Vector3 center = anchor
                     + upDir * (length * t - droop * t * t)
-                    + forwardDir * (Mathf.Sin(t * Mathf.PI) * forwardBow + Mathf.Sin((t + 0.17f) * Mathf.PI * 2.0f) * length * 0.015f);
+                    + forwardDir * (MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI) * forwardBow + MathLodApproximation.ApproxSinBhaskara((t + 0.17f) * Mathf.PI * 2.0f) * length * 0.015f);
 
                 Vector3 normal = Vector3.Cross(rotatedWidth, upDir).normalized;
                 if (normal.sqrMagnitude < 0.0001f)
@@ -1824,7 +1825,7 @@ namespace Hecton8.EditorTools
                 ? forwardHint.Value.normalized
                 : Vector3.Cross(widthDir, upDir).normalized;
             int startIndex = buffers.Vertices.Count;
-            float anchorNoise = Mathf.Sin((anchor.x * 0.73f + anchor.z * 1.11f + length) * 8.4f);
+            float anchorNoise = MathLodApproximation.ApproxSinBhaskara((anchor.x * 0.73f + anchor.z * 1.11f + length) * 8.4f);
             float asymmetry = anchorNoise * 0.14f;
             float profileMidWidthBoost;
             float profileWaveBoost;
@@ -1920,36 +1921,36 @@ namespace Hecton8.EditorTools
                 float twist = Mathf.Lerp(0f, twistDegrees, t);
                 Quaternion rotation = Quaternion.AngleAxis(twist, upDir) * Quaternion.AngleAxis(sideCurveDegrees * t, forwardDir);
                 Vector3 rotatedWidth = rotation * widthDir;
-                float midLamina = Mathf.Sin(t * Mathf.PI);
+                float midLamina = MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI);
                 float taperPower = bladeProfile == BladeProfile.BroadUndulate
                     ? 0.82f
                     : paddleLobed ? 0.96f : frilledRibbon ? 0.78f : 0.72f;
                 float widthBoostPower = bladeProfile == BladeProfile.BroadUndulate
                     ? 0.72f
                     : paddleLobed ? 0.42f : frilledRibbon ? 0.94f : 1.2f;
-                float widthTaper = Mathf.Lerp(1.02f, paddleLobed ? 0.18f : frilledRibbon ? 0.12f : 0.06f, Mathf.Pow(t, taperPower));
-                widthTaper *= Mathf.Lerp(1f, profileMidWidthBoost, Mathf.Pow(midLamina, widthBoostPower));
+                float widthTaper = Mathf.Lerp(1.02f, paddleLobed ? 0.18f : frilledRibbon ? 0.12f : 0.06f, MathLodApproximation.ApproxPow01Curve(t, taperPower));
+                widthTaper *= Mathf.Lerp(1f, profileMidWidthBoost, MathLodApproximation.ApproxPow01Curve(midLamina, widthBoostPower));
                 float baseNarrow = Mathf.Lerp(0.16f, 1f, baseMask);
                 float halfWidth = width * widthTaper * baseNarrow;
                 float innerWidth = halfWidth * Mathf.Lerp(0.38f, 0.46f, 1f - tipMask);
-                float edgeWave = serration * profileWaveBoost * Mathf.Sin(t * Mathf.PI * 8.2f + anchorNoise * 2.6f) * baseMask;
-                float edgeWaveSecondary = serration * 0.55f * profileWaveBoost * Mathf.Sin(t * Mathf.PI * 12.5f + anchorNoise * 1.9f) * baseMask;
-                float frillSlice = frilledRibbon ? Mathf.Sin(t * Mathf.PI * 13.4f + anchorNoise * 2.1f) * halfWidth * 0.08f * baseMask : 0f;
+                float edgeWave = serration * profileWaveBoost * MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI * 8.2f + anchorNoise * 2.6f) * baseMask;
+                float edgeWaveSecondary = serration * 0.55f * profileWaveBoost * MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI * 12.5f + anchorNoise * 1.9f) * baseMask;
+                float frillSlice = frilledRibbon ? MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI * 13.4f + anchorNoise * 2.1f) * halfWidth * 0.08f * baseMask : 0f;
                 float laminaLobes = bladeProfile == BladeProfile.BroadUndulate
-                    ? Mathf.Sin(t * Mathf.PI * 3.2f + anchorNoise * 1.35f) * halfWidth * 0.12f * baseMask
+                    ? MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI * 3.2f + anchorNoise * 1.35f) * halfWidth * 0.12f * baseMask
                     : 0f;
-                float foldMask = Mathf.Sin(t * Mathf.PI) * baseMask;
+                float foldMask = MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI) * baseMask;
                 float centerFold = halfWidth * profileCenterFoldScale * foldMask;
                 float innerFold = halfWidth * profileInnerFoldScale * foldMask;
                 float tipSplit = halfWidth * tipMask * 0.34f * profileTipSplitBoost;
                 float lateralAsymmetry = halfWidth * asymmetry * Mathf.Lerp(0.25f, 1f, t);
-                float curl = centerLift * Mathf.Sin(t * Mathf.PI) * Mathf.Lerp(0.9f, 0.24f, t);
+                float curl = centerLift * MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI) * Mathf.Lerp(0.9f, 0.24f, t);
                 float baseWrap = (1f - baseMask) * width * 0.22f * profileBaseWrapScale;
                 float lobePulse = paddleLobed
-                    ? (0.5f + 0.5f * Mathf.Sin(t * Mathf.PI * 4.4f + anchorNoise * 2.2f)) * foldMask
+                    ? (0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI * 4.4f + anchorNoise * 2.2f)) * foldMask
                     : 0f;
                 float lobeWidth = paddleLobed ? halfWidth * 0.24f * lobePulse : 0f;
-                float lobeInset = paddleLobed ? halfWidth * 0.1f * Mathf.Sin(t * Mathf.PI * 2.2f + 0.7f) * foldMask : 0f;
+                float lobeInset = paddleLobed ? halfWidth * 0.1f * MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI * 2.2f + 0.7f) * foldMask : 0f;
                 float lobePuff = paddleLobed ? centerLift * 0.38f * lobePulse : 0f;
 
                 Vector3 normal = Vector3.Cross(rotatedWidth, upDir).normalized;
@@ -1958,7 +1959,7 @@ namespace Hecton8.EditorTools
 
                 Vector3 center = anchor
                     + upDir * (length * t - droop * t * t)
-                    + forwardDir * (Mathf.Sin(t * Mathf.PI) * forwardBow + Mathf.Sin((t + 0.17f) * Mathf.PI * 2.2f) * length * 0.022f)
+                    + forwardDir * (MathLodApproximation.ApproxSinBhaskara(t * Mathf.PI) * forwardBow + MathLodApproximation.ApproxSinBhaskara((t + 0.17f) * Mathf.PI * 2.2f) * length * 0.022f)
                     - rotatedWidth * baseWrap * 0.18f
                     + rotatedWidth * (laminaLobes * 0.12f)
                     + normal * lobePuff;
@@ -2011,7 +2012,7 @@ namespace Hecton8.EditorTools
             if (lodLevel > 0 || thicknessLikelihood <= 0f)
                 return;
 
-            float thicknessSelector = 0.5f + 0.5f * Mathf.Sin((anchor.x * 1.91f + anchor.y * 0.67f + anchor.z * 1.37f + length * 0.11f) * 5.2f);
+            float thicknessSelector = 0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara((anchor.x * 1.91f + anchor.y * 0.67f + anchor.z * 1.37f + length * 0.11f) * 5.2f);
             if (thicknessSelector > thicknessLikelihood)
                 return;
 
@@ -2126,15 +2127,15 @@ namespace Hecton8.EditorTools
             {
                 float v = lat / (float)latSegments;
                 float phi = Mathf.Lerp(-Mathf.PI * 0.5f, Mathf.PI * 0.5f, v);
-                float cosPhi = Mathf.Cos(phi);
-                float sinPhi = Mathf.Sin(phi);
+                float cosPhi = MathLodApproximation.ApproxCosBhaskara(phi);
+                float sinPhi = MathLodApproximation.ApproxSinBhaskara(phi);
                 for (int lon = 0; lon <= lonSegments; lon++)
                 {
                     float u = lon / (float)lonSegments;
                     float theta = u * TwoPi;
-                    Vector3 normal = new Vector3(Mathf.Cos(theta) * cosPhi, sinPhi, Mathf.Sin(theta) * cosPhi).normalized;
+                    Vector3 normal = new Vector3(MathLodApproximation.ApproxCosBhaskara(theta) * cosPhi, sinPhi, MathLodApproximation.ApproxSinBhaskara(theta) * cosPhi).normalized;
                     Vector3 vertex = center + Vector3.Scale(normal, radii);
-                    Vector3 tangentDir = new Vector3(-Mathf.Sin(theta), 0f, Mathf.Cos(theta)).normalized;
+                    Vector3 tangentDir = new Vector3(-MathLodApproximation.ApproxSinBhaskara(theta), 0f, MathLodApproximation.ApproxCosBhaskara(theta)).normalized;
                     buffers.AddVertex(vertex, normal, new Vector4(tangentDir.x, tangentDir.y, tangentDir.z, 1f), new Vector2(u, v), color);
                 }
             }

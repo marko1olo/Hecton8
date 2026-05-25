@@ -141,7 +141,7 @@ namespace Hecton8.Rendering
             float quality = math.saturate(math.select(GlobalQualityWeight, 1f, !math.isfinite(GlobalQualityWeight)));
             float phase = TimeSeconds * (0.115f + quality * 0.085f);
             float3 lightDir = SafeNormalize(
-                new float3(math.sin(phase) * 0.36f, -0.92f, math.cos(phase * 0.83f) * 0.24f),
+                new float3(MathLodApproximation.ApproxSinBhaskara(phase) * 0.36f, -0.92f, MathLodApproximation.ApproxCosBhaskara(phase * 0.83f) * 0.24f),
                 new float3(0f, -1f, 0f));
             float tileSize = math.max(8f, tuning.DispersionSdfTileProfile.z > 0.001f ? tuning.DispersionSdfTileProfile.z : AbyssalCausticsConstants.DefaultNoiseTileMeters);
             float3 wrappedAup = WrapAup(CameraAupLocalOffset, tileSize);
@@ -263,9 +263,9 @@ namespace Hecton8.Rendering
             float phase = TimeSeconds * (0.07f + windSpeed * 0.013f) + wavePhase * 0.17f;
             float3 sunDir = GenerateMockCausticLightingJob.SafeNormalize(
                 new float3(
-                    math.sin(phase) * (0.22f + waveHeight * 0.04f),
+                    MathLodApproximation.ApproxSinBhaskara(phase) * (0.22f + waveHeight * 0.04f),
                     -math.lerp(0.98f, 0.72f, weatherStorm),
-                    math.cos(phase * 0.71f) * (0.18f + waveFrequency * 0.01f)),
+                    MathLodApproximation.ApproxCosBhaskara(phase * 0.71f) * (0.18f + waveFrequency * 0.01f)),
                 new float3(0f, -1f, 0f));
 
             float baseScale = math.max(0.005f, tuning.ScaleFlowDepthIntensity.x) * profileScale;

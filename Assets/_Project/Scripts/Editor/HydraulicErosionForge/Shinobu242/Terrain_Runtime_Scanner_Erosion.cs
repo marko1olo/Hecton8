@@ -34,10 +34,9 @@ namespace Hecton8.Editor.HydraulicErosionForge
             StringBuilder hitBuilder = new StringBuilder(4096);
             if (Directory.Exists(root))
             {
-                string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-                for (int i = 0; i < files.Length; i++)
+                foreach (string file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
                 {
-                    string path = files[i].Replace('\\', '/');
+                    string path = file.Replace('\\', '/');
                     if (path.Contains("/Editor/"))
                         continue;
 

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_026
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_026_MAT_family_kelp_canopy_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_kelp_canopy_Albedo.png
+FINAL_FILENAME: MAT_family_kelp_canopy_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Canopy kelp albedo for tall readable underwater plant silhouettes. Use layered olive-teal blades, clear pale rib structures, soft cyan translucent edges, and tiny warm amber buoyancy cells embedded along the ribs. The surface should feel healthy and graceful, with a cinematic NASA research-biodome taste and curated botanical patterning. Leave enough value separation for animation and wind sway shaders. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

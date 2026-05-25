@@ -26,6 +26,8 @@ namespace Hecton8.Core
         internal const int DispatcherRuntimeSlotCount = 7;
         internal const int RespawnDearLieSlot = 19;
         internal const int PowerBrownoutSlot = 20;
+        internal const int SuitCrushDearLieSlot = 21;
+        internal const int RadiationMutationSlot = 22;
         internal const int ThermalPackedSlotStart = 32;
         internal const int ThermalPackedSlotCount = 8;
         internal const int TelemetrySlotStart = 64;
@@ -53,10 +55,15 @@ namespace Hecton8.Core
         private static readonly int _HectonPowerBrownoutParamsId = Shader.PropertyToID("_HectonPowerBrownoutParams");
         private static readonly int _HectonRespawnDearLieParamsId = Shader.PropertyToID("_HectonRespawnDearLieParams");
         private static readonly int _HectonDeathFadeIntensityId = Shader.PropertyToID("_HectonDeathFadeIntensity");
+        private static readonly int _HectonSuitCrushDearLieParamsId = Shader.PropertyToID("_HectonSuitCrushDearLieParams");
+        private static readonly int _HectonSuitCrushBucklingId = Shader.PropertyToID("_HectonSuitCrushBuckling");
+        private static readonly int _HectonRadiationMutationParamsId = Shader.PropertyToID("_HectonRadiationMutationParams");
+        private static readonly int _HectonHandRadiationMutation01Id = Shader.PropertyToID("_HectonHandRadiationMutation01");
 
         private static IDataVault _cachedVault;
         private static VaultGenerationHandle<float4> _slotsHandle;
         private static float4 _fallbackBiolumMasterPhase;
+        private static float4 _fallbackAupTotalUniverseOffset;
         private static float4 _fallbackAupShiftOffset;
         private static float4 _fallbackWaterExtinctionRuntime;
         private static float4 _fallbackWaterExtinctionWeather;
@@ -67,7 +74,10 @@ namespace Hecton8.Core
         private static float4 _fallbackPhysiologyGasToxicity;
         private static float4 _fallbackPowerBrownout;
         private static float4 _fallbackRespawnDearLie;
+        private static float4 _fallbackSuitCrushDearLie;
+        private static float4 _fallbackRadiationMutation;
         private static bool _visualSyncDispatcherActive;
+        private static bool _fallbackShaderGlobalsDirty;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -75,6 +85,7 @@ namespace Hecton8.Core
             _cachedVault = null;
             _slotsHandle = default;
             _fallbackBiolumMasterPhase = default;
+            _fallbackAupTotalUniverseOffset = default;
             _fallbackAupShiftOffset = default;
             _fallbackWaterExtinctionRuntime = CreateFloat4(0f, 1f, 1f, 0f);
             _fallbackWaterExtinctionWeather = default;
@@ -85,7 +96,10 @@ namespace Hecton8.Core
             _fallbackPhysiologyGasToxicity = default;
             _fallbackPowerBrownout = CreateFloat4(1f, 0f, 0f, 0f);
             _fallbackRespawnDearLie = default;
+            _fallbackSuitCrushDearLie = default;
+            _fallbackRadiationMutation = default;
             _visualSyncDispatcherActive = false;
+            _fallbackShaderGlobalsDirty = false;
         }
 
         internal static void SetVisualSyncDispatcherActive(bool active)
@@ -95,34 +109,25 @@ namespace Hecton8.Core
 
         public static void PublishBiolumMasterPhase(Vector4 phaseVector)
         {
-            float4 storedPhase = WriteReadSlot(
+            _ = WriteReadSlot(
                 BiolumMasterPhaseSlot,
                 ToFiniteFloat4(phaseVector),
                 ref _fallbackBiolumMasterPhase);
-            Vector4 bridgedPhase = ToVector4(storedPhase);
             if (!_visualSyncDispatcherActive)
-            {
-                Shader.SetGlobalVector(_BiolumMasterPhaseId, bridgedPhase);
-            }
+                MarkFallbackShaderGlobalsDirty();
         }
 
         public static void PublishAupShaderGlobals(Vector4 totalUniverseOffset, Vector4 aupShiftOffset, float aupJitterMask)
         {
             float4 packedShift = ToFiniteFloat4(aupShiftOffset);
             packedShift.w = math.saturate(aupJitterMask);
-            float4 storedShift = WriteReadSlot(
+            _ = WriteReadSlot(
                 AupShiftOffsetSlot,
                 packedShift,
                 ref _fallbackAupShiftOffset);
-            Vector4 bridgedTotal = ToVector4(ToFiniteFloat4(totalUniverseOffset));
-            Vector4 bridgedShift = ToVector4(storedShift);
+            _fallbackAupTotalUniverseOffset = ToFiniteFloat4(totalUniverseOffset);
             if (!_visualSyncDispatcherActive)
-            {
-                Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, bridgedTotal);
-                Shader.SetGlobalVector(_TotalUniverseOffsetId, bridgedTotal);
-                Shader.SetGlobalVector(_AupShiftOffsetId, bridgedShift);
-                Shader.SetGlobalFloat(_AupJitterMaskId, math.saturate(aupJitterMask));
-            }
+                MarkFallbackShaderGlobalsDirty();
         }
 
         public static void ResetAupShaderGlobals()
@@ -141,12 +146,12 @@ namespace Hecton8.Core
             value.y = math.max(0.001f, value.y);
             value.z = math.saturate(value.z);
             value.w = math.saturate(value.w);
-            float4 stored = WriteReadSlot(
+            _ = WriteReadSlot(
                 WaterExtinctionParamsSlot,
                 value,
                 ref _fallbackWaterExtinctionParams);
             if (!_visualSyncDispatcherActive)
-                Shader.SetGlobalVector(_ExtinctionLutParamsId, ToVector4(stored));
+                MarkFallbackShaderGlobalsDirty();
         }
 
         /// <summary>
@@ -159,12 +164,12 @@ namespace Hecton8.Core
             value.y = math.max(0f, value.y);
             value.z = math.saturate(value.z);
             value.w = math.saturate(value.w);
-            float4 stored = WriteReadSlot(
+            _ = WriteReadSlot(
                 WaterExtinctionRuntimeSlot,
                 value,
                 ref _fallbackWaterExtinctionRuntime);
             if (!_visualSyncDispatcherActive)
-                Shader.SetGlobalVector(_ExtinctionLutRuntimeId, ToVector4(stored));
+                MarkFallbackShaderGlobalsDirty();
         }
 
         /// <summary>
@@ -176,12 +181,12 @@ namespace Hecton8.Core
             float4 value = ToFiniteFloat4(weatherVector);
             value.x = math.max(0f, value.x);
             value.y = math.saturate(value.y);
-            float4 stored = WriteReadSlot(
+            _ = WriteReadSlot(
                 WaterExtinctionWeatherSlot,
                 value,
                 ref _fallbackWaterExtinctionWeather);
             if (!_visualSyncDispatcherActive)
-                Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, ToVector4(stored));
+                MarkFallbackShaderGlobalsDirty();
         }
 
         /// <summary>
@@ -216,7 +221,7 @@ namespace Hecton8.Core
             value.y = math.saturate(value.y);
             value.z = math.clamp(value.z, 0f, 16777215f);
             value.w = math.saturate(value.w);
-            float4 storedRuntime = WriteReadSlot(
+            _ = WriteReadSlot(
                 UberNoirRuntimeSlot,
                 value,
                 ref _fallbackUberNoirRuntime);
@@ -225,16 +230,13 @@ namespace Hecton8.Core
                 math.isfinite(featureMask) ? featureMask : 0f,
                 0f,
                 16777215f);
-            float4 storedMask = WriteReadSlot(
+            _ = WriteReadSlot(
                 UberNoirFeatureMaskSlot,
                 CreateFloat4(safeFeatureMask, 0f, 0f, 0f),
                 ref _fallbackUberNoirFeatureMask);
 
             if (!_visualSyncDispatcherActive)
-            {
-                Shader.SetGlobalVector(_HectonUberNoirRuntimeParamsId, ToVector4(storedRuntime));
-                Shader.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, storedMask.x);
-            }
+                MarkFallbackShaderGlobalsDirty();
         }
 
         /// <summary>
@@ -247,18 +249,13 @@ namespace Hecton8.Core
             value.y = math.saturate(value.y);
             value.z = math.max(0f, value.z);
             value.w = math.saturate(value.w);
-            float4 stored = WriteReadSlot(
+            _ = WriteReadSlot(
                 PhysiologyDecompressionSlot,
                 value,
                 ref _fallbackPhysiologyDecompression);
 
             if (!_visualSyncDispatcherActive)
-            {
-                Vector4 vector = ToVector4(stored);
-                Shader.SetGlobalVector(_HectonDcsPhysiologyParamsId, vector);
-                Shader.SetGlobalFloat(_HectonSupersaturationScalarId, vector.x);
-                Shader.SetGlobalFloat(_HectonNarcosisScalarId, vector.y);
-            }
+                MarkFallbackShaderGlobalsDirty();
         }
 
         /// <summary>
@@ -271,17 +268,13 @@ namespace Hecton8.Core
             value.y = math.saturate(value.y);
             value.z = math.saturate(value.z);
             value.w = math.saturate(value.w);
-            float4 stored = WriteReadSlot(
+            _ = WriteReadSlot(
                 PhysiologyGasToxicitySlot,
                 value,
                 ref _fallbackPhysiologyGasToxicity);
 
             if (!_visualSyncDispatcherActive)
-            {
-                Vector4 vector = ToVector4(stored);
-                Shader.SetGlobalVector(_HectonGasToxicityParamsId, vector);
-                Shader.SetGlobalFloat(_HypoxiaSignalId, vector.x);
-            }
+                MarkFallbackShaderGlobalsDirty();
         }
 
         /// <summary>
@@ -294,13 +287,13 @@ namespace Hecton8.Core
             value.y = math.saturate(value.y);
             value.z = math.max(0f, value.z);
             value.w = math.saturate(value.w);
-            float4 stored = WriteReadSlot(
+            _ = WriteReadSlot(
                 PowerBrownoutSlot,
                 value,
                 ref _fallbackPowerBrownout);
 
             if (!_visualSyncDispatcherActive)
-                Shader.SetGlobalVector(_HectonPowerBrownoutParamsId, ToVector4(stored));
+                MarkFallbackShaderGlobalsDirty();
         }
 
         /// <summary>
@@ -321,7 +314,7 @@ namespace Hecton8.Core
             value.y = math.saturate(value.y);
             value.z = math.saturate(value.z);
             value.w = math.saturate(value.w);
-            float4 stored = WriteReadSlot(
+            _ = WriteReadSlot(
                 vault,
                 RespawnDearLieSlot,
                 value,
@@ -329,11 +322,89 @@ namespace Hecton8.Core
                 allowAllocation: false);
 
             if (!_visualSyncDispatcherActive)
-            {
-                Vector4 vector = ToVector4(stored);
-                Shader.SetGlobalVector(_HectonRespawnDearLieParamsId, vector);
-                Shader.SetGlobalFloat(_HectonDeathFadeIntensityId, vector.x);
-            }
+                MarkFallbackShaderGlobalsDirty();
+        }
+
+        /// <summary>
+        /// Publishes suit/hull pressure presentation scalars; x=buckling, y=overpressure, z=integrity loss, w=GlobalQualityWeight.
+        /// </summary>
+        public static void PublishSuitCrushDearLie(Vector4 crushVector)
+        {
+            float4 value = ToFiniteFloat4(crushVector);
+            value.x = math.saturate(value.x);
+            value.y = math.max(0f, value.y);
+            value.z = math.saturate(value.z);
+            value.w = math.saturate(value.w);
+            _ = WriteReadSlot(
+                SuitCrushDearLieSlot,
+                value,
+                ref _fallbackSuitCrushDearLie);
+
+            if (!_visualSyncDispatcherActive)
+                MarkFallbackShaderGlobalsDirty();
+        }
+
+        /// <summary>
+        /// Publishes radiation mutation presentation scalars; x=hand displacement severity, y=stamina penalty, z=healing suppression, w=GlobalQualityWeight.
+        /// </summary>
+        public static void PublishRadiationMutation(Vector4 mutationVector)
+        {
+            float4 value = ToFiniteFloat4(mutationVector);
+            value.x = math.saturate(value.x);
+            value.y = math.saturate(value.y);
+            value.z = math.saturate(value.z);
+            value.w = math.saturate(value.w);
+            _ = WriteReadSlot(
+                RadiationMutationSlot,
+                value,
+                ref _fallbackRadiationMutation);
+
+            if (!_visualSyncDispatcherActive)
+                MarkFallbackShaderGlobalsDirty();
+        }
+
+        internal static void FlushFallbackVisualSync()
+        {
+            if (_visualSyncDispatcherActive || !_fallbackShaderGlobalsDirty)
+                return;
+
+            _fallbackShaderGlobalsDirty = false;
+            Vector4 totalUniverseOffset = ToVector4(_fallbackAupTotalUniverseOffset);
+            Vector4 aupShiftOffset = ToVector4(_fallbackAupShiftOffset);
+            Vector4 uberNoirRuntime = ToVector4(_fallbackUberNoirRuntime);
+            Vector4 physiologyDecompression = ToVector4(_fallbackPhysiologyDecompression);
+            Vector4 physiologyGasToxicity = ToVector4(_fallbackPhysiologyGasToxicity);
+            Vector4 respawnDearLie = ToVector4(_fallbackRespawnDearLie);
+            Vector4 suitCrushDearLie = ToVector4(_fallbackSuitCrushDearLie);
+            Vector4 radiationMutation = ToVector4(_fallbackRadiationMutation);
+
+            Shader.SetGlobalVector(_BiolumMasterPhaseId, ToVector4(_fallbackBiolumMasterPhase));
+            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, totalUniverseOffset);
+            Shader.SetGlobalVector(_TotalUniverseOffsetId, totalUniverseOffset);
+            Shader.SetGlobalVector(_AupShiftOffsetId, aupShiftOffset);
+            Shader.SetGlobalFloat(_AupJitterMaskId, math.saturate(_fallbackAupShiftOffset.w));
+            Shader.SetGlobalVector(_ExtinctionLutParamsId, ToVector4(_fallbackWaterExtinctionParams));
+            Shader.SetGlobalVector(_ExtinctionLutRuntimeId, ToVector4(_fallbackWaterExtinctionRuntime));
+            Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, ToVector4(_fallbackWaterExtinctionWeather));
+            Shader.SetGlobalVector(_HectonUberNoirRuntimeParamsId, uberNoirRuntime);
+            Shader.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, math.clamp(_fallbackUberNoirFeatureMask.x, 0f, 16777215f));
+            Shader.SetGlobalVector(_HectonDcsPhysiologyParamsId, physiologyDecompression);
+            Shader.SetGlobalFloat(_HectonSupersaturationScalarId, math.saturate(physiologyDecompression.x));
+            Shader.SetGlobalFloat(_HectonNarcosisScalarId, math.saturate(physiologyDecompression.y));
+            Shader.SetGlobalVector(_HectonGasToxicityParamsId, physiologyGasToxicity);
+            Shader.SetGlobalFloat(_HypoxiaSignalId, math.saturate(physiologyGasToxicity.x));
+            Shader.SetGlobalVector(_HectonPowerBrownoutParamsId, ToVector4(_fallbackPowerBrownout));
+            Shader.SetGlobalVector(_HectonRespawnDearLieParamsId, respawnDearLie);
+            Shader.SetGlobalFloat(_HectonDeathFadeIntensityId, math.saturate(respawnDearLie.x));
+            Shader.SetGlobalVector(_HectonSuitCrushDearLieParamsId, suitCrushDearLie);
+            Shader.SetGlobalFloat(_HectonSuitCrushBucklingId, math.saturate(suitCrushDearLie.x));
+            Shader.SetGlobalVector(_HectonRadiationMutationParamsId, radiationMutation);
+            Shader.SetGlobalFloat(_HectonHandRadiationMutation01Id, math.saturate(radiationMutation.x));
+        }
+
+        private static void MarkFallbackShaderGlobalsDirty()
+        {
+            _fallbackShaderGlobalsDirty = true;
         }
 
         private static float4 WriteReadSlot(int slot, float4 value, ref float4 fallback)
@@ -353,6 +424,7 @@ namespace Hecton8.Core
             ref float4 fallback,
             bool allowAllocation)
         {
+            fallback = value;
             if (TryPrepareSlotsVault(vault, allowAllocation) &&
                 vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
             {
@@ -381,6 +453,11 @@ namespace Hecton8.Core
         {
             IDataVault vault = _cachedVault;
             return TryPrepareSlotsVault(vault, allowAllocation: false) ? vault : null;
+        }
+
+        internal static bool BindPreparedShaderGlobalSlots(IDataVault vault)
+        {
+            return TryPrepareSlotsVault(vault, allowAllocation: false);
         }
 
         private static bool TryPrepareSlotsVault(IDataVault vault, bool allowAllocation)
@@ -415,7 +492,7 @@ namespace Hecton8.Core
             if (!allowAllocation || vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<float4> allocated = vault.GetGenerationHandle<float4>(
+            VaultGenerationHandle<float4> allocated = vault.EnsureGenerationHandle<float4>(
                 BufferID.ShaderGlobalState,
                 SlotCount,
                 SystemID.GraphicsScalability,
@@ -437,6 +514,8 @@ namespace Hecton8.Core
                    IsSlotRangeValid(ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
                    IsSlotRangeValid(PhysiologyDecompressionSlot, 1) &&
                    IsSlotRangeValid(PhysiologyGasToxicitySlot, 1) &&
+                   IsSlotRangeValid(SuitCrushDearLieSlot, 1) &&
+                   IsSlotRangeValid(RadiationMutationSlot, 1) &&
                    IsSlotRangeValid(DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
                    IsSlotRangeValid(ThermalPackedSlotStart, ThermalPackedSlotCount) &&
                    IsSlotRangeValid(TelemetrySlotStart, TelemetrySlotCount) &&
@@ -446,21 +525,33 @@ namespace Hecton8.Core
                    PhysiologyGasToxicitySlot < DispatcherRuntimeSlotStart &&
                    RespawnDearLieSlot >= DispatcherRuntimeSlotStart + DispatcherRuntimeSlotCount &&
                    PowerBrownoutSlot > RespawnDearLieSlot &&
+                   SuitCrushDearLieSlot > PowerBrownoutSlot &&
+                   SuitCrushDearLieSlot < ThermalPackedSlotStart &&
+                   RadiationMutationSlot > SuitCrushDearLieSlot &&
+                   RadiationMutationSlot < ThermalPackedSlotStart &&
                    PowerBrownoutSlot < ThermalPackedSlotStart &&
                    !SlotInRange(RespawnDearLieSlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
                    !SlotInRange(PowerBrownoutSlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
+                   !SlotInRange(SuitCrushDearLieSlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
+                   !SlotInRange(RadiationMutationSlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
                    !SlotInRange(PhysiologyDecompressionSlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
                    !SlotInRange(PhysiologyGasToxicitySlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
                    !SlotInRange(RespawnDearLieSlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
                    !SlotInRange(PowerBrownoutSlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
+                   !SlotInRange(SuitCrushDearLieSlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
+                   !SlotInRange(RadiationMutationSlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
                    !SlotInRange(PhysiologyDecompressionSlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
                    !SlotInRange(PhysiologyGasToxicitySlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
                    !SlotInRange(RespawnDearLieSlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
                    !SlotInRange(PowerBrownoutSlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
+                   !SlotInRange(SuitCrushDearLieSlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
+                   !SlotInRange(RadiationMutationSlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
                    !SlotInRange(PhysiologyDecompressionSlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
                    !SlotInRange(PhysiologyGasToxicitySlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
                    !SlotInRange(RespawnDearLieSlot, TelemetrySlotStart, TelemetrySlotCount) &&
                    !SlotInRange(PowerBrownoutSlot, TelemetrySlotStart, TelemetrySlotCount) &&
+                   !SlotInRange(SuitCrushDearLieSlot, TelemetrySlotStart, TelemetrySlotCount) &&
+                   !SlotInRange(RadiationMutationSlot, TelemetrySlotStart, TelemetrySlotCount) &&
                    !SlotInRange(PhysiologyDecompressionSlot, TelemetrySlotStart, TelemetrySlotCount) &&
                    !SlotInRange(PhysiologyGasToxicitySlot, TelemetrySlotStart, TelemetrySlotCount);
         }

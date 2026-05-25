@@ -15,7 +15,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IFixedTickable, IPoolable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IFixedTickable, ILateFrameTickable, IPoolable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string ScrapPickupPrefabAssetPath = "Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_TitaniumScrap.prefab";
         private static readonly Vector3[] ScrapEjectDirections =
@@ -134,10 +134,15 @@ namespace Hecton8.World
         private bool _registeredScavengerHost;
         private bool _disintegrating;
         private bool _registeredFixedTick;
+        private bool _registeredLateFrameTick;
         private bool _hotSwapRegistered;
-        private ObjectPoolManager _objectPool;
+        private bool _siltTrailVisualDirty;
+        private bool _pendingSiltTrailPlay;
+        private bool _pendingSiltTrailClear;
+        private float _pendingSiltTrailEmissionRate;
+        private IObjectPoolService _objectPool;
         private SargassumGlobalDragManager _sargassumDrag;
-        private readonly Collider[] _snagColliders = new Collider[8]; // COLD ALLOC: Collider[8] - bounded snag-target probe buffer for collapse chunks - owner: SargassumCollapseChunk
+        private readonly SpatialQueryHit[] _snagContacts = new SpatialQueryHit[8]; // COLD ALLOC: SpatialQueryHit[8] - bounded snag-target probe buffer for collapse chunks - owner: SargassumCollapseChunk
         // COLD ALLOC: ParticleSystem.Particle[192] - reusable world-space silt particle shift buffer - owner: SargassumCollapseChunk
         private ParticleSystem.Particle[] _siltTrailShiftParticles;
 
@@ -184,8 +189,8 @@ namespace Hecton8.World
                 chunkRigidbody.angularDamping = activeAngularDrag;
                 chunkRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 chunkRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-                chunkRigidbody.linearVelocity = linearVelocityWS;
-                chunkRigidbody.angularVelocity = angularVelocityWS;
+                PhysicsForceRouter.QueueLinearVelocitySet(chunkRigidbody, linearVelocityWS);
+                PhysicsForceRouter.QueueAngularVelocitySet(chunkRigidbody, angularVelocityWS);
             }
 
             transform.localScale = _defaultLocalScale * Mathf.Max(0.1f, uniformScale);
@@ -193,8 +198,7 @@ namespace Hecton8.World
             if (siltTrail != null)
             {
                 UpdateSiltTrailEmission();
-                siltTrail.Clear(true);
-                siltTrail.Play(true);
+                QueueSiltTrailVisualSync(_pendingSiltTrailEmissionRate, play: true, clearParticles: true);
             }
 
             _remainingLifetime = despawnDelay > 0f ? despawnDelay : defaultLifetime;
@@ -234,7 +238,7 @@ namespace Hecton8.World
             if (_remainingLifetime > 0f)
                 return;
 
-            ObjectPoolManager poolManager = _objectPool;
+            IObjectPoolService poolManager = _objectPool;
             if (poolManager != null)
                 poolManager.Despawn(gameObject);
         }
@@ -251,6 +255,11 @@ namespace Hecton8.World
             ApplySnagConstraint(fixedDeltaTime);
         }
 
+        public void LateFrameTick()
+        {
+            FlushSiltTrailVisualSync();
+        }
+
         /// <summary>
         /// Resets pooled state before the chunk becomes active.
         /// </summary>
@@ -264,8 +273,8 @@ namespace Hecton8.World
             {
                 chunkRigidbody.detectCollisions = true;
                 chunkRigidbody.isKinematic = false;
-                chunkRigidbody.linearVelocity = Vector3.zero;
-                chunkRigidbody.angularVelocity = Vector3.zero;
+                PhysicsForceRouter.QueueLinearVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
+                PhysicsForceRouter.QueueAngularVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
                 chunkRigidbody.linearDamping = _defaultLinearDamping;
                 chunkRigidbody.angularDamping = _defaultAngularDamping;
                 chunkRigidbody.collisionDetectionMode = _defaultCollisionDetectionMode;
@@ -302,8 +311,8 @@ namespace Hecton8.World
             if (chunkRigidbody != null)
             {
                 chunkRigidbody.detectCollisions = true;
-                chunkRigidbody.linearVelocity = Vector3.zero;
-                chunkRigidbody.angularVelocity = Vector3.zero;
+                PhysicsForceRouter.QueueLinearVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
+                PhysicsForceRouter.QueueAngularVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
                 chunkRigidbody.linearDamping = _defaultLinearDamping;
                 chunkRigidbody.angularDamping = _defaultAngularDamping;
                 chunkRigidbody.collisionDetectionMode = _defaultCollisionDetectionMode;
@@ -327,7 +336,7 @@ namespace Hecton8.World
                 siltTrail.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
-        private void OnCollisionEnter(Collision collision)
+        private void LegacyPhysXSnagCallbackDisabled(Collision collision)
         {
             if (_hasSnag || collision == null || collision.contactCount <= 0 || chunkRigidbody == null)
                 return;
@@ -385,24 +394,28 @@ namespace Hecton8.World
             {
                 if (_registeredFixedTick)
                 {
+                    if (!_registeredLateFrameTick)
+                        _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
                     HectonFloatingOrigin.RegisterListener(this);
                     return;
                 }
             }
             else
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (_registeredFixedTick)
             {
                 HectonFloatingOrigin.RegisterListener(this);
+                if (!_registeredLateFrameTick)
+                    _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
                 return;
             }
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrameTick)
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             HectonFloatingOrigin.RegisterListener(this);
         }
 
@@ -412,6 +425,12 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
             }
 
             if (!_registeredFixedTick)
@@ -429,7 +448,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _objectPool = GlobalRegistry.ObjectPool;
+            _objectPool = GlobalRegistry.ObjectPoolService;
             _sargassumDrag = GlobalRegistry.SargassumDrag;
         }
 
@@ -458,7 +477,7 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     break;
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     if (_registeredScavengerHost && previousService is SargassumGlobalDragManager previousDrag)
@@ -568,30 +587,36 @@ namespace Hecton8.World
             Vector3 safeNormal = ResolveSafeDirection(contactNormalWS, Vector3.up);
             Vector3 connectedAnchorWS = contactPointWS + safeNormal * snagSurfaceOffset;
 
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+            const SpatialTargetKind kindMask =
+                SpatialTargetKind.Resource |
+                SpatialTargetKind.Pickup |
+                SpatialTargetKind.Scannable |
+                SpatialTargetKind.Module;
+
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 contactPointWS,
                 snagSearchRadius,
-                _snagColliders,
-                snagLayers,
-                QueryTriggerInteraction.Ignore);
+                kindMask,
+                _snagContacts);
 
             float nearestDistanceSq = float.PositiveInfinity;
             for (int i = 0; i < hitCount; i++)
             {
-                Collider candidate = _snagColliders[i];
-                if (candidate == null || candidate.attachedRigidbody == chunkRigidbody)
+                SpatialQueryHit candidate = _snagContacts[i];
+                _snagContacts[i] = default;
+                if (!LayerMatchesMask(candidate.Layer, snagLayers) || candidate.Rigidbody == chunkRigidbody)
                     continue;
 
-                Vector3 candidatePoint = candidate.ClosestPoint(contactPointWS);
+                Vector3 candidatePoint = candidate.Position;
                 float distanceSq = (candidatePoint - contactPointWS).sqrMagnitude;
                 if (distanceSq >= nearestDistanceSq)
                     continue;
 
                 nearestDistanceSq = distanceSq;
-                connectedAnchorWS = candidate.attachedRigidbody != null
+                connectedAnchorWS = candidate.Rigidbody != null
                     ? candidatePoint
                     : candidatePoint + safeNormal * snagSurfaceOffset;
-                connectedBody = candidate.attachedRigidbody;
+                connectedBody = candidate.Rigidbody;
             }
 
             Vector3 localAnchor = transform.InverseTransformPoint(contactPointWS);
@@ -606,6 +631,11 @@ namespace Hecton8.World
             _hasSnag = true;
             _siltTrailSettled = true;
             TryRegisterScavengerHost();
+        }
+
+        private static bool LayerMatchesMask(int layer, LayerMask mask)
+        {
+            return layer >= 0 && layer < 32 && (mask.value & (1 << layer)) != 0;
         }
 
         private void ApplySnagConstraint(float fixedDeltaTime)
@@ -648,7 +678,7 @@ namespace Hecton8.World
 
             Vector3 angularVelocity = chunkRigidbody.angularVelocity;
             float angularBlend = 1f / (1f + snagDamper * fixedDeltaTime);
-            chunkRigidbody.angularVelocity = angularVelocity * angularBlend;
+            PhysicsForceRouter.QueueAngularVelocitySet(chunkRigidbody, angularVelocity * angularBlend);
         }
 
         private void UpdateSiltTrailEmission()
@@ -659,19 +689,15 @@ namespace Hecton8.World
             float downwardSpeed = chunkRigidbody != null ? Mathf.Max(0f, -chunkRigidbody.linearVelocity.y) : 0f;
             if (_siltTrailSettled || downwardSpeed <= siltTrailStopSpeed)
             {
-                ParticleSystem.EmissionModule settledEmission = siltTrail.emission;
-                settledEmission.rateOverTime = 0f;
-                if (siltTrail.isPlaying)
-                    siltTrail.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                QueueSiltTrailVisualSync(0f, play: false, clearParticles: false);
                 return;
             }
 
             float speed01 = Mathf.Clamp01(downwardSpeed / Mathf.Max(0.1f, siltTrailFullSpeed));
-            ParticleSystem.EmissionModule emission = siltTrail.emission;
-            emission.rateOverTime = LerpClamped(siltTrailBaseRate, siltTrailMaxRate, speed01) *
-                                    FrameTimeWatchdog.ParticleEmissionScale;
-            if (!siltTrail.isPlaying)
-                siltTrail.Play(true);
+            QueueSiltTrailVisualSync(
+                LerpClamped(siltTrailBaseRate, siltTrailMaxRate, speed01) * FrameTimeWatchdog.ParticleEmissionScale,
+                play: true,
+                clearParticles: false);
         }
 
         private bool ShouldStopSiltTrail(Vector3 contactNormalWS, float impactSpeedSq)
@@ -691,11 +717,43 @@ namespace Hecton8.World
             if (siltTrail == null)
                 return;
 
+            QueueSiltTrailVisualSync(0f, play: false, clearParticles: clearParticles);
+        }
+
+        private void QueueSiltTrailVisualSync(float emissionRate, bool play, bool clearParticles)
+        {
+            _pendingSiltTrailEmissionRate = Mathf.Max(0f, emissionRate);
+            _pendingSiltTrailPlay = play;
+            _pendingSiltTrailClear |= clearParticles;
+            _siltTrailVisualDirty = true;
+        }
+
+        private void FlushSiltTrailVisualSync()
+        {
+            if (!_siltTrailVisualDirty || siltTrail == null)
+                return;
+
+            _siltTrailVisualDirty = false;
             ParticleSystem.EmissionModule emission = siltTrail.emission;
-            emission.rateOverTime = 0f;
-            siltTrail.Stop(true, clearParticles
-                ? ParticleSystemStopBehavior.StopEmittingAndClear
-                : ParticleSystemStopBehavior.StopEmitting);
+            emission.rateOverTime = _pendingSiltTrailEmissionRate;
+            bool clearParticles = _pendingSiltTrailClear;
+            _pendingSiltTrailClear = false;
+
+            if (_pendingSiltTrailPlay)
+            {
+                if (clearParticles)
+                    siltTrail.Clear(true);
+                if (!siltTrail.isPlaying)
+                    siltTrail.Play(true);
+                return;
+            }
+
+            if (siltTrail.isPlaying || clearParticles)
+            {
+                siltTrail.Stop(true, clearParticles
+                    ? ParticleSystemStopBehavior.StopEmittingAndClear
+                    : ParticleSystemStopBehavior.StopEmitting);
+            }
         }
 
         private ParticleSystem CreateFallbackSiltTrail()
@@ -710,7 +768,7 @@ namespace Hecton8.World
             // COLD ALLOC: ParticleSystem[1] Ã¢â‚¬â€ fallback muddy trail component for collapse chunks Ã¢â‚¬â€ owner: SargassumCollapseChunk
             ParticleSystem particleSystem = trailObject.AddComponent<ParticleSystem>();
             // COLD ALLOC: ParticleSystemRenderer[1] Ã¢â‚¬â€ fallback muddy trail renderer for collapse chunks Ã¢â‚¬â€ owner: SargassumCollapseChunk
-            ParticleSystemRenderer particleRenderer = trailObject.GetComponent<ParticleSystemRenderer>();
+            trailObject.TryGetComponent(out ParticleSystemRenderer particleRenderer);
 
             ParticleSystem.MainModule main = particleSystem.main;
             main.loop = true;
@@ -850,7 +908,7 @@ namespace Hecton8.World
 
             _disintegrating = true;
             TryUnregisterScavengerHost();
-            ObjectPoolManager poolManager = _objectPool;
+            IObjectPoolService poolManager = _objectPool;
             if (poolManager != null && scrapPickupPrefab != null)
             {
                 Vector3 origin = transform.position;
@@ -860,7 +918,9 @@ namespace Hecton8.World
                     if (scrap == null || !scrap.TryGetComponent(out Rigidbody scrapRigidbody))
                         continue;
 
-                    scrapRigidbody.linearVelocity = ResolveSafeDirection(ScrapEjectDirections[i], Vector3.up) * scrapEjectSpeed;
+                    PhysicsForceRouter.QueueLinearVelocitySet(
+                        scrapRigidbody,
+                        ResolveSafeDirection(ScrapEjectDirections[i], Vector3.up) * scrapEjectSpeed);
                 }
             }
 

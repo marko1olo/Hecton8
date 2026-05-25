@@ -4009,15 +4009,15 @@ namespace Hecton8.SaveSystem
                 }
 
                 fileStream.Position = payloadOffset;
-                int storedByte = fileStream.ReadByte();
-                if (storedByte < 0)
+                Span<byte> storedByteBytes = stackalloc byte[1];
+                if (fileStream.Read(storedByteBytes) != storedByteBytes.Length)
                 {
                     error = "Smoke corruption payload read ended early.";
                     return false;
                 }
 
                 fileStream.Position = payloadOffset;
-                fileStream.WriteByte((byte)(storedByte ^ 0x5Au));
+                fileStream.WriteByte((byte)(storedByteBytes[0] ^ 0x5Au));
                 fileStream.Flush();
                 AsyncWriteManager.QueueThrottledFlush(absolutePath, fileLength, out _);
                 sectorHash = selectedEntry.SectorHash;
@@ -4269,8 +4269,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly sectorRecordsReadOnly = sectorRecords.AsReadOnly();
             if (!TryBuildPersistentWorldSectionTables(
-                    sectorRecords,
+                    sectorRecordsReadOnly,
                     out NativeParallelHashMap<int3, ushort> chunkLookup,
                     out NativeList<int3> chunkTable,
                     out NativeParallelHashMap<ulong, ushort> itemHashLookup,
@@ -4291,7 +4292,7 @@ namespace Hecton8.SaveSystem
                 using NativeArray<byte> fileBytes = new NativeArray<byte>(fileCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 byte* rawSectionPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawSectionBytes);
                 byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
-                WritePersistentWorldSection(rawSectionPtr, sectorRecords, chunkLookup, chunkTable, itemHashLookup, itemHashTable);
+                WritePersistentWorldSection(rawSectionPtr, sectorRecordsReadOnly, chunkLookup, chunkTable, itemHashLookup, itemHashTable);
                 uint rawSectionChecksum = Hash32(rawSectionPtr, rawSectionLength);
 
                 int fileCursor = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
@@ -8483,7 +8484,7 @@ namespace Hecton8.SaveSystem
             if (!math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z))))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

@@ -1,0 +1,4184 @@
+﻿{
+  "aggregate": {
+    "arm64Violations": [
+      {
+        "field": "IsAnchorNode",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 4998,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+        "struct": "ModuleRecord",
+        "type": "bool"
+      },
+      {
+        "field": "IsEmergencyAirlock",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 4999,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+        "struct": "ModuleRecord",
+        "type": "bool"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 1199,
+        "message": "Struct size 3 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+        "size": 3,
+        "struct": "BurstGridValidationJob"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 236,
+        "message": "Struct size 4 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/Core/Bridge/H8BridgeContracts.cs",
+        "size": 4,
+        "struct": "FloatUInt32Union"
+      },
+      {
+        "field": "RequiredInBuild",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 82,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Core/Content/ContentAssetHashMap.cs",
+        "struct": "ContentAssetEntry",
+        "type": "bool"
+      },
+      {
+        "field": "IsBiomeCache",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 83,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Core/Content/ContentAssetHashMap.cs",
+        "struct": "ContentAssetEntry",
+        "type": "bool"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 12,
+        "message": "Struct size 1 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/Core/Contracts/CoreContractsAssemblyMarker.cs",
+        "size": 1,
+        "struct": "CoreContractsAssemblyMarker"
+      },
+      {
+        "field": "LeakReported",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 105,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+        "struct": "NativeAllocationRecord",
+        "type": "bool"
+      },
+      {
+        "field": "Reported",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 118,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+        "struct": "PersistentReallocationRecord",
+        "type": "bool"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 9,
+        "message": "Struct size 1 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/Core/Persistence/PersistenceAssemblyMarker.cs",
+        "size": 1,
+        "struct": "PersistenceAssemblyMarker"
+      },
+      {
+        "kind": "PACK_ONE_FORBIDDEN",
+        "line": 410,
+        "message": "[StructLayout(Pack=1)] is forbidden for runtime memory structs.",
+        "path": "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs",
+        "struct": "Arm64FieldRecord"
+      },
+      {
+        "field": "Offset",
+        "kind": "MISSING_FIELD_OFFSET",
+        "line": 413,
+        "message": "Explicit layout field has no [FieldOffset].",
+        "path": "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs",
+        "struct": "Arm64FieldRecord",
+        "type": "int"
+      },
+      {
+        "field": "Size",
+        "kind": "MISSING_FIELD_OFFSET",
+        "line": 414,
+        "message": "Explicit layout field has no [FieldOffset].",
+        "path": "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs",
+        "struct": "Arm64FieldRecord",
+        "type": "int"
+      },
+      {
+        "field": "Misaligned",
+        "kind": "MISSING_FIELD_OFFSET",
+        "line": 415,
+        "message": "Explicit layout field has no [FieldOffset].",
+        "path": "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs",
+        "struct": "Arm64FieldRecord",
+        "type": "bool"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 410,
+        "message": "Struct size 1 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs",
+        "size": 1,
+        "struct": "Arm64FieldRecord"
+      },
+      {
+        "alignment": 8,
+        "field": "Value",
+        "kind": "ARM64_ALIGNMENT",
+        "line": 430,
+        "message": "Offset 4 is not divisible by 8.",
+        "offset": 4,
+        "offsetHole": 4,
+        "path": "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs",
+        "size": 8,
+        "struct": "MockMisalignedLayout",
+        "type": "double"
+      },
+      {
+        "field": "forceRetreat",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 83,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs",
+        "struct": "FaunaInteractionMatrixEntry",
+        "type": "bool"
+      },
+      {
+        "field": "isLargeThreat",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 172,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "ResolvedFaunaEntry",
+        "type": "bool"
+      },
+      {
+        "field": "isPredator",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 173,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "ResolvedFaunaEntry",
+        "type": "bool"
+      },
+      {
+        "field": "blockedWhenPressureDisabled",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 174,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "ResolvedFaunaEntry",
+        "type": "bool"
+      },
+      {
+        "field": "prefersClaustrophobicZone",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 175,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "ResolvedFaunaEntry",
+        "type": "bool"
+      },
+      {
+        "field": "prefersThermalZone",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 176,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "ResolvedFaunaEntry",
+        "type": "bool"
+      },
+      {
+        "field": "prefersHighPressureZone",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 177,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "ResolvedFaunaEntry",
+        "type": "bool"
+      },
+      {
+        "field": "isLargeThreat",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 196,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "FaunaResidencyState",
+        "type": "bool"
+      },
+      {
+        "field": "isPredator",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 197,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "FaunaResidencyState",
+        "type": "bool"
+      },
+      {
+        "field": "isResident",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 199,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "FaunaResidencyState",
+        "type": "bool"
+      },
+      {
+        "field": "isDehydrated",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 200,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "FaunaResidencyState",
+        "type": "bool"
+      },
+      {
+        "field": "hasPendingHibernationHuntTarget",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 201,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "FaunaResidencyState",
+        "type": "bool"
+      },
+      {
+        "field": "isResident",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 35,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+        "struct": "ResidencyState",
+        "type": "bool"
+      },
+      {
+        "field": "isDehydrated",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 36,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+        "struct": "ResidencyState",
+        "type": "bool"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 132,
+        "message": "Struct size 4 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/Global/Contracts/FutureSystemSeamContracts.cs",
+        "size": 4,
+        "struct": "FutureFloatBits"
+      },
+      {
+        "field": "IsActive",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 606,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+        "struct": "SubscriptionEntry",
+        "type": "bool"
+      },
+      {
+        "field": "PendingRelease",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 54,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Optimization/AssetRecord.cs",
+        "struct": "AssetRecord",
+        "type": "bool"
+      },
+      {
+        "field": "IsFallback",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 55,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Optimization/AssetRecord.cs",
+        "struct": "AssetRecord",
+        "type": "bool"
+      },
+      {
+        "field": "OwnsAssetInstance",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 56,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Optimization/AssetRecord.cs",
+        "struct": "AssetRecord",
+        "type": "bool"
+      },
+      {
+        "field": "IsChunkAsset",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 57,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Optimization/AssetRecord.cs",
+        "struct": "AssetRecord",
+        "type": "bool"
+      },
+      {
+        "field": "HasAddressableHandle",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 59,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/Optimization/AssetRecord.cs",
+        "struct": "AssetRecord",
+        "type": "bool"
+      },
+      {
+        "alignment": 8,
+        "field": "PlayerPosition",
+        "kind": "ARM64_ALIGNMENT",
+        "line": 2118,
+        "message": "Offset 12 is not divisible by 8.",
+        "offset": 12,
+        "offsetHole": 4,
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "size": 48,
+        "struct": "PayloadPrefix",
+        "type": "AbsoluteUniversePosition"
+      },
+      {
+        "field": "hasLastDeathRecord",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 489,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "PlayerStatsDTO",
+        "type": "bool"
+      },
+      {
+        "field": "visibleOnHud",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 1226,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "PDAMarkerEntryDTO",
+        "type": "bool"
+      },
+      {
+        "field": "isPermadeath",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 1363,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "RunModifiersDTO",
+        "type": "bool"
+      },
+      {
+        "field": "isNightmareMode",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 1364,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "RunModifiersDTO",
+        "type": "bool"
+      },
+      {
+        "field": "isDailySeed",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 1365,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "RunModifiersDTO",
+        "type": "bool"
+      },
+      {
+        "field": "runMarkedDead",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 1366,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "RunModifiersDTO",
+        "type": "bool"
+      },
+      {
+        "field": "isFlooded",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 1474,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ModuleDTO",
+        "type": "bool"
+      },
+      {
+        "field": "interiorReefInfestationActive",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 1478,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ModuleDTO",
+        "type": "bool"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 11,
+        "message": "Struct size 36 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/SaveDataMigration_AupV8.cs",
+        "size": 36,
+        "struct": "AbsoluteUniversePositionV7"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 29,
+        "message": "Struct size 60 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/SaveDataMigration_AupV8.cs",
+        "size": 60,
+        "struct": "PayloadPrefixV7"
+      },
+      {
+        "alignment": 8,
+        "field": "PlayerPosition",
+        "kind": "ARM64_ALIGNMENT",
+        "line": 56,
+        "message": "Offset 12 is not divisible by 8.",
+        "offset": 12,
+        "offsetHole": 4,
+        "path": "Assets/_Project/Scripts/SaveDataMigration_AupV8.cs",
+        "size": 48,
+        "struct": "PayloadPrefixV8",
+        "type": "AbsoluteUniversePosition"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 3102,
+        "message": "Struct size 4 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/SaveManager.cs",
+        "size": 4,
+        "struct": "SaveContextFrameData"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 30,
+        "message": "Struct size 10 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs",
+        "size": 10,
+        "struct": "SaveFileHeaderV10"
+      },
+      {
+        "field": "Resident",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 134,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+        "struct": "Entry",
+        "type": "bool"
+      },
+      {
+        "field": "isSealed",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 224,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+        "struct": "BulkheadDefinition",
+        "type": "bool"
+      },
+      {
+        "kind": "STRUCT_SIZE_NOT_MULTIPLE_OF_8",
+        "line": 41,
+        "message": "Struct size 4 is not a multiple of 8.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+        "size": 4,
+        "struct": "ScrambledCharacterDTO"
+      },
+      {
+        "field": "ReceiveShadows",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 140,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+        "struct": "ModuleRenderContract",
+        "type": "bool"
+      },
+      {
+        "field": "HasMacroZone",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 11718,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirector.cs",
+        "struct": "ScatterRuntimeRuleEntry",
+        "type": "bool"
+      },
+      {
+        "field": "SupportsFinalVariant",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 11719,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirector.cs",
+        "struct": "ScatterRuntimeRuleEntry",
+        "type": "bool"
+      },
+      {
+        "field": "PassiveSpawnFamily",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 11722,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirector.cs",
+        "struct": "ScatterRuntimeRuleEntry",
+        "type": "bool"
+      },
+      {
+        "field": "PredatorSpawnFamily",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 11723,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirector.cs",
+        "struct": "ScatterRuntimeRuleEntry",
+        "type": "bool"
+      },
+      {
+        "field": "StrictEnvelopeMapping",
+        "kind": "RUNTIME_BOOL_FIELD",
+        "line": 11741,
+        "message": "Runtime bool is platform-sensitive; use byte or bit flags.",
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirector.cs",
+        "struct": "ScatterRuntimeRuleEntry",
+        "type": "bool"
+      }
+    ],
+    "aupPrecisionViolations": [
+      {
+        "field": "CameraAupLocalXZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 47,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs",
+        "struct": "OceanWaveAupPhaseDTO",
+        "type": "float4"
+      },
+      {
+        "field": "CameraAupLocalXZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 78,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs",
+        "struct": "OceanSurfaceLodDTO",
+        "type": "float4"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 115,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+        "struct": "AudioPingTriggerInfo",
+        "type": "Vector3"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 198,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+        "struct": "HullStressSignal",
+        "type": "Vector3"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 349,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+        "struct": "StructuralStressAudioInfo",
+        "type": "Vector3"
+      },
+      {
+        "field": "SourceAupLocalX",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 73,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "struct": "VocalWarningDispatchDTO",
+        "type": "float"
+      },
+      {
+        "field": "SourceAupLocalY",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 74,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "struct": "VocalWarningDispatchDTO",
+        "type": "float"
+      },
+      {
+        "field": "SourceAupLocalZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 75,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "struct": "VocalWarningDispatchDTO",
+        "type": "float"
+      },
+      {
+        "field": "AbsoluteUniversePosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 35,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+        "struct": "RuptureNodeState",
+        "type": "Vector3"
+      },
+      {
+        "field": "CurrentSectorAup",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 15,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/Contracts/MacroSwarm.cs",
+        "struct": "MacroSwarm",
+        "type": "float2"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 167,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "struct": "AudioPingTriggerPayload",
+        "type": "Vector3"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 206,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "struct": "StructuralStressAudioPayload",
+        "type": "Vector3"
+      },
+      {
+        "field": "AbsoluteUniversePosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 1109,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "struct": "SplashEvent",
+        "type": "float3"
+      },
+      {
+        "field": "SourceAupLocalX",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 9618,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "struct": "VocalCueSignal",
+        "type": "float"
+      },
+      {
+        "field": "SourceAupLocalY",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 9619,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "struct": "VocalCueSignal",
+        "type": "float"
+      },
+      {
+        "field": "SourceAupLocalZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 9620,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "struct": "VocalCueSignal",
+        "type": "float"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 59,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs",
+        "struct": "TelemetryEvent",
+        "type": "float3"
+      },
+      {
+        "field": "AupTeleportToleranceMeters",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 109,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/Memory/MemorySentinelContracts.cs",
+        "struct": "MemorySentinelRuntimeStateDTO",
+        "type": "float"
+      },
+      {
+        "field": "AupTeleportToleranceMeters",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 191,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/Memory/MemorySentinelContracts.cs",
+        "struct": "MemorySentinelTunerSnapshotDTO",
+        "type": "float"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 38,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+        "struct": "PlayerMovementRuntimeState",
+        "type": "float3"
+      },
+      {
+        "field": "PredictedWorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 39,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+        "struct": "PlayerMovementRuntimeState",
+        "type": "float3"
+      },
+      {
+        "field": "AupHardFenceMs",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 152,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Core/SystemDispatcherContracts.cs",
+        "struct": "DispatcherFenceTelemetryEntry",
+        "type": "float"
+      },
+      {
+        "field": "PlayerAup",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 232,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+        "struct": "TelemetryEntry",
+        "type": "float3"
+      },
+      {
+        "field": "PlayerAup",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 342,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+        "struct": "EditorSnapshotEntry",
+        "type": "Vector3"
+      },
+      {
+        "field": "AupSectorSizeMeters",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 528,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8PhysicsConstantsRecord",
+        "type": "float"
+      },
+      {
+        "field": "PositionFieldAupMeters",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 159,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
+        "struct": "MigrationBloodCloudPoi",
+        "type": "float3"
+      },
+      {
+        "field": "PlayerAup",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 55,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Editor/BlackBoxBinaryReader.cs",
+        "struct": "TelemetryEntry",
+        "type": "Vector3"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 66,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+        "struct": "CognitionMemoryEntry",
+        "type": "float3"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 79,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+        "struct": "AcousticMemoryEntry",
+        "type": "float3"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 20,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkContactTarget",
+        "type": "float3"
+      },
+      {
+        "field": "CameraUp",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 94,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState",
+        "type": "float3"
+      },
+      {
+        "field": "AupMaxDriftErrorMeters",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 38,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+        "struct": "PlayerKinematicsRuntimeTelemetryEntry",
+        "type": "float"
+      },
+      {
+        "field": "AupStart",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 70,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+        "struct": "SeismicShockwaveEvent",
+        "type": "Vector3"
+      },
+      {
+        "field": "AupEnd",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 71,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+        "struct": "SeismicShockwaveEvent",
+        "type": "Vector3"
+      },
+      {
+        "field": "HitAUP",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 78,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+        "struct": "ScannerVfxDTO",
+        "type": "float3"
+      },
+      {
+        "field": "AbsolutePositionWS",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 7708,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "struct": "VoxelSurfaceVertex",
+        "type": "Vector4"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 44,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Interaction/KinematicTerminalInteractionBridge.cs",
+        "struct": "KinematicTerminalPointerState",
+        "type": "Vector3"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 88,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Interaction/KinematicTerminalInteractionBridge.cs",
+        "struct": "PhysicalHandIkTarget",
+        "type": "Vector3"
+      },
+      {
+        "field": "SeafloorAUPY",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 204,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+        "struct": "BuoyancyTuningDTO",
+        "type": "float"
+      },
+      {
+        "field": "AupJitterError",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 48,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs",
+        "struct": "TelemetrySnapshotDTO",
+        "type": "float"
+      },
+      {
+        "field": "CameraLocalAup",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 100,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassContracts.cs",
+        "struct": "OceanMockRenderStateDTO",
+        "type": "float4"
+      },
+      {
+        "field": "AupShiftOffset",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 2202,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
+        "struct": "ScatterBlackBoxEntry",
+        "type": "float3"
+      },
+      {
+        "field": "absolutePositionX",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 803,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ProceduralGeologySeamStateDTO",
+        "type": "float"
+      },
+      {
+        "field": "absolutePositionY",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 804,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ProceduralGeologySeamStateDTO",
+        "type": "float"
+      },
+      {
+        "field": "absolutePositionZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 805,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ProceduralGeologySeamStateDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalX",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 961,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ModuleBlitDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalY",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 962,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ModuleBlitDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 963,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ModuleBlitDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalX",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 1231,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "PDAMarkerEntryDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalY",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 1232,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "PDAMarkerEntryDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 1233,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "PDAMarkerEntryDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalX",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 1507,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ModuleGraphNodeDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalY",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 1508,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ModuleGraphNodeDTO",
+        "type": "float"
+      },
+      {
+        "field": "aupLocalZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 1509,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ModuleGraphNodeDTO",
+        "type": "float"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 9839,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+        "struct": "AudioCaptionPayload",
+        "type": "Vector3"
+      },
+      {
+        "field": "CameraUp",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 159,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/UI/ARWaypointOverlay.cs",
+        "struct": "WaypointProjectionFrame",
+        "type": "float3"
+      },
+      {
+        "field": "PlayerWorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 99,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/UI/PDAMapTab.cs",
+        "struct": "SonarMapConstants",
+        "type": "Vector4"
+      },
+      {
+        "field": "LocalAup",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 17,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Vehicles/Physics/Contracts/DynamicFloodMassContracts.cs",
+        "struct": "DynamicFloodRoomMassSample",
+        "type": "float3"
+      },
+      {
+        "field": "AppliedAupShift",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 2361,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+        "struct": "CarveDebrisTelemetryEntry",
+        "type": "float3"
+      },
+      {
+        "field": "CameraUpDensity",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 127,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+        "struct": "FrameConstantsData",
+        "type": "Vector4"
+      },
+      {
+        "field": "AupShiftSq",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 198,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+        "struct": "MarineSnowTelemetryEntry",
+        "type": "float"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 111,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "struct": "AcousticEchoEvent",
+        "type": "Vector3"
+      },
+      {
+        "field": "WorldPosition",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 218,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "struct": "PingReturnSignal",
+        "type": "Vector3"
+      },
+      {
+        "field": "AupOffsetXZ",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 62,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+        "struct": "ScatterTelemetryEntry",
+        "type": "float2"
+      },
+      {
+        "field": "Uv3AupLocal",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 78,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/OfflineHadalArchContracts.cs",
+        "struct": "HadalArchVertexDTO",
+        "type": "float3"
+      },
+      {
+        "field": "Uv3AupLocal",
+        "kind": "AUP_FLOAT_FIELD",
+        "line": 59,
+        "message": "AUP/world position authority must not be stored as float/Vector.",
+        "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/OfflineWreckageContracts.cs",
+        "struct": "OfflineWreckageBakeVertexDTO",
+        "type": "float3"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 89,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 377,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 662,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 696,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 701,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 157,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Editor/FabricationAssemblerTunerWindow.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 255,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Editor/OOP_Trigger_Scanner.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 273,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Editor/SpatialGridXRayWindow.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 3581,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 588,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 615,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 632,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 2351,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 2369,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1254,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 6785,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 3607,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 3763,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 3862,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 4067,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 8101,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 379,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 552,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 196,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonAnomalyMapMagicNode.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 377,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonAnomalyMapMagicNode.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1902,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1944,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 268,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/AcousticRadarSphereRenderer.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 744,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 745,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 791,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 792,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 807,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1219,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1680,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1795,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1796,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1134,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 443,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/SonarHoloCompass.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 6838,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 479,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 485,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1288,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1322,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 1935,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+      },
+      {
+        "kind": "AUP_FLOAT_CAST",
+        "line": 6366,
+        "message": "Possible absolute AUP/world-position cast to float3/Vector3 before serialization.",
+        "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+      }
+    ],
+    "cs1612PropertyViolations": [
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 258,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+        "struct": "ApexBrainTuning"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 306,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+        "struct": "ApexBrainOutputDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 47,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+        "struct": "SpatialGridEntryDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 85,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderTypes.cs",
+        "struct": "ProceduralBoneRigDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 119,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderTypes.cs",
+        "struct": "ProceduralBoneRigTuningDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 60,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+        "struct": "LadderClimbIkOutput"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 61,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+        "struct": "LadderClimbIkOutput"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 62,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+        "struct": "LadderClimbIkOutput"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 63,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+        "struct": "LadderClimbIkOutput"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 82,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+        "struct": "LadderClimbTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 83,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+        "struct": "LadderClimbTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 84,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+        "struct": "LadderClimbTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 85,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+        "struct": "LadderClimbTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 40,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankContracts.cs",
+        "struct": "VocalBankHeaderDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 57,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankContracts.cs",
+        "struct": "VocalBankIndexRecordDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 104,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankContracts.cs",
+        "struct": "VocalCodecStateDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 151,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+        "struct": "CartographySectorDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 38,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+        "struct": "SocketDefinitionDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 88,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+        "struct": "ModuleCatalogBinaryHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 89,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+        "struct": "ModuleCatalogBinaryHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 90,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+        "struct": "ModuleCatalogBinaryHeader"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 39,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "struct": "DroneFleetTuningConstants"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 41,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "struct": "DroneFleetTuningConstants"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 43,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "struct": "DroneFleetTuningConstants"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 45,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "struct": "DroneFleetTuningConstants"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 760,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "struct": "DroneFleetDebugRoute"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 861,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "struct": "DroneTransactionDebugTask"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 143,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+        "struct": "FoundationRayOriginDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 117,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/HabitatDeconstructionTransactionKernel.cs",
+        "struct": "LootCacheDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 58,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+        "struct": "StructuralBoundsDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 1205,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+        "struct": "BurstGridValidationJob"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 110,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+        "struct": "SocketStateDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 221,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+        "struct": "ConstructionSocketTuningDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 222,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+        "struct": "ConstructionSocketTuningDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 36,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Content/ContentAssetHashMap.cs",
+        "struct": "ContentAssetBinaryRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 69,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Content/ContentAssetHashMap.cs",
+        "struct": "ContentAssetEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 15,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Content/ContentLoreBinaryProvider.cs",
+        "struct": "ContentLoreBlockIndex"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 140,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Contracts/MacroDatabaseContracts.cs",
+        "struct": "MacroDatabasePayloadHandle"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 165,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Contracts/MacroDatabaseContracts.cs",
+        "struct": "MacroDatabaseStats"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 202,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Contracts/MacroDatabaseContracts.cs",
+        "struct": "SectorHydratedSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 215,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Contracts/MacroDatabaseContracts.cs",
+        "struct": "MacroDatabaseTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 41,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Contracts/MemorySentinelSignals.cs",
+        "struct": "HashDeltaUpdateSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 60,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Contracts/MemorySentinelSignals.cs",
+        "struct": "MemorySentinelRollbackSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 162,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "H8StaticDataHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 163,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "H8StaticDataHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 182,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "H8StaticDataLookupEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 195,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "H8BabelDictionaryHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 196,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "H8BabelDictionaryHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 209,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "H8BabelDictionaryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 221,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "BabelIndexDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 233,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "BabelLookupResultDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 269,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "DataOffsetLengthDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 286,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "BTreeTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 288,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "BTreeTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 310,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "BTreeTelemetryAccumulatorDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 312,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "BTreeTelemetryAccumulatorDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1910,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "struct": "H8StaticDataTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 100,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Database/H8MacroDatabaseService.cs",
+        "struct": "HydrationCandidate"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 46,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/DodReplayRecorder.cs",
+        "struct": "DodReplaySnapshotHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 87,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/DodReplayRecorder.cs",
+        "struct": "DodReplaySegmentHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 578,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+        "struct": "GerstnerWaveComponent"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 708,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+        "struct": "CelestialRuntimeSnapshot"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 711,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+        "struct": "CelestialRuntimeSnapshot"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 714,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+        "struct": "CelestialRuntimeSnapshot"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 9166,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "struct": "NarrativeFocusSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 10427,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "struct": "MacroDatabaseSectorHydrationSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 31,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Memory/AlignmentTelemetryContracts.cs",
+        "struct": "AlignmentTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 73,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Memory/MemorySentinelContracts.cs",
+        "struct": "MemorySentinelTargetDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 96,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Memory/MemorySentinelContracts.cs",
+        "struct": "MemorySentinelResultDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 61,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs",
+        "struct": "VaultAupSectorLocal32"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 627,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs",
+        "struct": "VaultSovereigntyMaintenanceStats"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 136,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+        "struct": "AupOriginShiftTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 155,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+        "struct": "MasterRollbackRuntimeStateProbeDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 159,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+        "struct": "MasterRollbackRuntimeStateProbeDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 55,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/CraftingSystem.FastFail.cs",
+        "struct": "CraftingFastFailTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 143,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8DataBlobDirectory"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 146,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8DataBlobDirectory"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 147,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8DataBlobDirectory"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 188,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8ItemRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 189,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8ItemRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 225,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8CreatureTraitRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 249,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8BiomeRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 333,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8AudioClipRegistryRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 412,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8GhostModuleRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 457,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8SopErrorRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 498,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8EconomyRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 499,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8EconomyRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 519,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8PhysicsConstantsRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 520,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8PhysicsConstantsRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 561,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "struct": "H8StaticLocalizationReference"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 413,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs",
+        "struct": "Arm64FieldRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 85,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeJobs.cs",
+        "struct": "InteriorClutterSegment"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 92,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeJobs.cs",
+        "struct": "InteriorClutterSegment"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 56,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+        "struct": "EncounterDirectorState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 130,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "struct": "ShakeOffsetDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 172,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "struct": "SeismicTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 253,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
+        "struct": "AuxiliaryLayoutAuditDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 254,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
+        "struct": "AuxiliaryLayoutAuditDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 255,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
+        "struct": "AuxiliaryLayoutAuditDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 377,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+        "struct": "CreatureUtilityEvaluation"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 112,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "struct": "CorpseSinkKinematicInput"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 19,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs",
+        "struct": "FaunaParasiteAttachInput"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 187,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+        "struct": "CognitionControl"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 222,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+        "struct": "CognitionInput"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 38,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs",
+        "struct": "ProceduralCrabLegEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 45,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs",
+        "struct": "ProceduralCrabLegEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 48,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs",
+        "struct": "ProceduralCrabLegEntityState"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 171,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+        "struct": "DirectorSelectionDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 206,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+        "struct": "DirectorTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 187,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "FaunaResidencyState"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 201,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+        "struct": "FaunaResidencyState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 30,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "struct": "ContextualPhysicalIkTwoBoneSetup"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 47,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "struct": "ContextualPhysicalIkAppendageChainRuntime"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 97,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 98,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 99,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 100,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 109,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 110,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 115,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 118,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 119,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkEntityState"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 165,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 166,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 167,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 168,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "struct": "ContextualPhysicalIkTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 24,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+        "struct": "HazardVolumeData"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 58,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+        "struct": "MeteorShowerEvent"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 101,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Global/Contracts/FutureSystemSeamContracts.cs",
+        "struct": "FutureCommandEnvelope64"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 33,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+        "struct": "TBDRVertexBudgetCounter64"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 264,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+        "struct": "DrsTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 248,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityTypes.cs",
+        "struct": "MockWFCBaseArray"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 576,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+        "struct": "CinematicOrbitState"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 437,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "struct": "PredatorSightRaycastInput"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 170,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "struct": "OceanSurfaceTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 172,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "struct": "OceanSurfaceTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 36,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+        "struct": "FingerRayDefinition"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 82,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Interaction/VRInteractionKinematicBridge.cs",
+        "struct": "VRControllerMatrixDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 146,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs",
+        "struct": "CargoRuntimeSelfAuditDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 147,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs",
+        "struct": "CargoRuntimeSelfAuditDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 148,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs",
+        "struct": "CargoRuntimeSelfAuditDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 149,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs",
+        "struct": "CargoRuntimeSelfAuditDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 283,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/LocRegistry.cs",
+        "struct": "LocalizationEntryDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 3324,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/LocRegistry.cs",
+        "struct": "BabelTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 142,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "struct": "ModSandboxTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 194,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "FrameSnapshotDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 219,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "StatePageHeaderDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 224,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "StatePageHeaderDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 288,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "RollbackRuntimeStateDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 292,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "RollbackRuntimeStateDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 338,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "NetTelemetryEntry64"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 379,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "RollbackVaultBufferDescriptor32"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 394,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "H8NetMerkleNodeRecord32"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 407,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "H8NetLeafDeltaRecord64"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 469,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "struct": "RollbackRequiredSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 49,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Optimization/AssetRecord.cs",
+        "struct": "AssetRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 57,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Optimization/AssetRecord.cs",
+        "struct": "AssetRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 74,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/OriginShiftEventData.cs",
+        "struct": "OriginShiftEventData"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 77,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/OriginShiftEventData.cs",
+        "struct": "OriginShiftEventData"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 80,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/OriginShiftEventData.cs",
+        "struct": "OriginShiftEventData"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 128,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+        "struct": "AutopilotRouteRangeDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 114,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+        "struct": "SubmarineBallastFluidSampleDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 164,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+        "struct": "SubmarinePidState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 316,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+        "struct": "CableSystemDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 318,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+        "struct": "CableSystemDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 72,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+        "struct": "ForcePacket"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 105,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsContracts.cs",
+        "struct": "GerstnerWaveDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 10,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsSelfAudit.cs",
+        "struct": "OceanKinematicsSelfAuditReport"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 11,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsSelfAudit.cs",
+        "struct": "OceanKinematicsSelfAuditReport"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 19,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsSelfAudit.cs",
+        "struct": "OceanKinematicsSelfAuditReport"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 20,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsSelfAudit.cs",
+        "struct": "OceanKinematicsSelfAuditReport"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 21,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Plugins/Crest/OceanKinematics/OceanKinematicsSelfAudit.cs",
+        "struct": "OceanKinematicsSelfAuditReport"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 89,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+        "struct": "GridNodeDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 106,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+        "struct": "ThermalGridAnchorDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 136,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+        "struct": "JacobiFuzzTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 115,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs",
+        "struct": "Shinobu38FileWriteCommand"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 117,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs",
+        "struct": "Shinobu38FileWriteCommand"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 41,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs",
+        "struct": "QuestMarkerCache"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 89,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassContracts.cs",
+        "struct": "OceanRenderTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 2202,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
+        "struct": "ScatterBlackBoxEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1764,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "LegacySectorEntry28"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1780,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "SectorEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1934,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "SaveFileHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1935,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "SaveFileHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1936,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "SaveFileHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1959,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "IndexedSaveFileHeaderV8"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1961,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "IndexedSaveFileHeaderV8"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1963,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "IndexedSaveFileHeaderV8"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1992,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "SaveCloudMetadataHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1993,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "SaveCloudMetadataHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1994,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "SaveCloudMetadataHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 2029,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "LegacySaveFileHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 2031,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "LegacySaveFileHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 2033,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "struct": "LegacySaveFileHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1114,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ExplorationMapDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1122,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "struct": "ExplorationMapDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 2568,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+        "struct": "PageWriteCommand"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 2613,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+        "struct": "PagerTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 113,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveDeltaCompression.cs",
+        "struct": "QuantizedAupSectorHalf3"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 180,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveDeltaCompression.cs",
+        "struct": "SaveChunkHeader32"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 40,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs",
+        "struct": "SaveFileHeaderV10"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 41,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs",
+        "struct": "SaveFileHeaderV10"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 42,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs",
+        "struct": "SaveFileHeaderV10"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 35,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs",
+        "struct": "SectorEntryDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 52,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs",
+        "struct": "StateDeltaRecordDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 53,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs",
+        "struct": "StateDeltaRecordDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 93,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs",
+        "struct": "SaveMerkleWalAppendHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 47,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+        "struct": "WalFuzzerResultDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 58,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+        "struct": "WalFuzzerResultDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 71,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+        "struct": "WalFuzzerTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 84,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+        "struct": "WalSectorIndexEntryDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 23,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+        "struct": "WalFuzzStateDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 37,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+        "struct": "WalFuzzTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 41,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+        "struct": "WalFuzzTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 59,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+        "struct": "WalFuzzMockSaveStatusSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 63,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+        "struct": "WalFuzzMockSaveStatusSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 127,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Tools/ToolKinematics/Contracts/ToolKinematicsContracts.cs",
+        "struct": "ToolRecoilStateDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 155,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/Tools/ToolKinematics/Contracts/ToolKinematicsContracts.cs",
+        "struct": "ToolPoseOutputDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 26,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+        "struct": "GlitchStateDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 57,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+        "struct": "MockTextSpan"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 246,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticHudManualLayout.cs",
+        "struct": "DiegeticHudLayoutInput"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 248,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticHudManualLayout.cs",
+        "struct": "DiegeticHudLayoutInput"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 250,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticHudManualLayout.cs",
+        "struct": "DiegeticHudLayoutInput"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 265,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/DiegeticHudManualLayout.cs",
+        "struct": "DiegeticHudLayoutSettings"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 84,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs",
+        "struct": "RadarCullResult"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 35,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/PdaH8lrLoreStore.cs",
+        "struct": "PdaH8lrRecordDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 47,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+        "struct": "PdaProjectionInputDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 48,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs",
+        "struct": "CameraJuiceTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 87,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+        "struct": "CameraJuiceStateDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 88,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+        "struct": "CameraJuiceStateDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 113,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+        "struct": "CameraJuiceProjectionDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 59,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamContracts.cs",
+        "struct": "FoamRenderTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 546,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs",
+        "struct": "ParasiteSwarmTuningDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 547,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs",
+        "struct": "ParasiteSwarmTuningDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 581,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs",
+        "struct": "SwarmTelemetryEntry"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 4147,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "struct": "VoxelCarveTelemetryEntry"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 82,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakeJobs.cs",
+        "struct": "BiotaDensityBakeConfigDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 181,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Contracts/ScatterSimulationContracts.cs",
+        "struct": "ScatterSimulationConfig"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 39,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+        "struct": "FloraSwayTuningDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 53,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+        "struct": "FloraBiomeSwayProfileDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 647,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeContracts.cs",
+        "struct": "FloraSpawnedSignal"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 523,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+        "struct": "MaterialBindingState"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1259,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "struct": "VegetationDensityChunkRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1357,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "struct": "ChunkSliceMoveRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1358,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "struct": "ChunkSliceMoveRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1364,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "struct": "ActiveAggregateCopyRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 1365,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "struct": "ActiveAggregateCopyRecord"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 103,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/OfflineHadalTrenchContracts.cs",
+        "struct": "HadalTrenchChunkHeaderDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 104,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/OfflineHadalTrenchContracts.cs",
+        "struct": "HadalTrenchChunkHeaderDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 105,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/OfflineHadalTrenchContracts.cs",
+        "struct": "HadalTrenchChunkHeaderDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 311,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+        "struct": "PoolSlotData"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 953,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 955,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 957,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 959,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 961,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 963,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 965,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 967,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 969,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 971,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 973,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+        "struct": "WorldRegrowthPayloadHeader"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 617,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+        "struct": "SimulationFrameConstants"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 58,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/ScatterBackendScheduleRequest.cs",
+        "struct": "ScatterBackendScheduleRequest"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 70,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/ScatterBackendScheduleRequest.cs",
+        "struct": "ScatterBackendScheduleRequest"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 73,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/ScatterBackendScheduleRequest.cs",
+        "struct": "ScatterBackendScheduleRequest"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 50,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyContracts.cs",
+        "struct": "AnomalyTuningDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 51,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyContracts.cs",
+        "struct": "AnomalyTuningDTO"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 71,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyContracts.cs",
+        "struct": "AnomalyGlobalScalarsDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 75,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+        "struct": "StructuralBoundsDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 21,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/SpaceEngine098/SpaceEngine098TerrainKernels.cs",
+        "struct": "SpaceEngine098RidgedMultifractalParams"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 77,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/TerrainChunkPagerTypes.cs",
+        "struct": "ChunkMetadataDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 98,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/World/TerrainChunkPagerTypes.cs",
+        "struct": "TerrainChunkFileHeaderDTO"
+      },
+      {
+        "accessor": "set",
+        "kind": "CS1612_PROPERTY",
+        "line": 111,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/WorldProceduralFieldSampler.cs",
+        "struct": "ZoneData"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 41,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorBackendContexts.cs",
+        "struct": "ScatterBackendShadowScheduleContext"
+      },
+      {
+        "accessor": "get",
+        "kind": "CS1612_PROPERTY",
+        "line": 44,
+        "message": "Property accessor inside unmanaged contract struct.",
+        "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorBackendContexts.cs",
+        "struct": "ScatterBackendShadowScheduleContext"
+      }
+    ],
+    "hotspots": [
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "structs": 175
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "structs": 42
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/SaveData.cs",
+        "structs": 41
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+        "structs": 36
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+        "structs": 35
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+        "structs": 34
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+        "structs": 33
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+        "structs": 33
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+        "structs": 32
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityTypes.cs",
+        "structs": 32
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs",
+        "structs": 32
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "structs": 32
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "structs": 31
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "structs": 31
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "structs": 31
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+        "structs": 31
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+        "structs": 30
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+        "structs": 30
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+        "structs": 30
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs",
+        "structs": 29
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs",
+        "structs": 29
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+        "structs": 27
+      },
+      {
+        "aupCastFindings": 5,
+        "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "structs": 26
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "structs": 26
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+        "structs": 25
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs",
+        "structs": 25
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+        "structs": 24
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+        "structs": 24
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "structs": 23
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "structs": 23
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyData.cs",
+        "structs": 22
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+        "structs": 22
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+        "structs": 22
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+        "structs": 22
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs",
+        "structs": 21
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+        "structs": 21
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+        "structs": 21
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+        "structs": 20
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+        "structs": 19
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs",
+        "structs": 19
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+        "structs": 19
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Tools/ToolKinematics/Contracts/ToolKinematicsContracts.cs",
+        "structs": 19
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "structs": 18
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+        "structs": 18
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+        "structs": 18
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeJobs.cs",
+        "structs": 17
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+        "structs": 17
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+        "structs": 17
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+        "structs": 17
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+        "structs": 17
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "structs": 16
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/SaveSystem/SaveDeltaCompression.cs",
+        "structs": 16
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardTypes.cs",
+        "structs": 16
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs",
+        "structs": 16
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+        "structs": 16
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+        "structs": 16
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralContracts.cs",
+        "structs": 16
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+        "structs": 15
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs",
+        "structs": 15
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+        "structs": 15
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+        "structs": 15
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+        "structs": 15
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+        "structs": 15
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+        "structs": 15
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/InputDeterminismDtos.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/LocRegistry.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 2,
+        "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderJobs.cs",
+        "structs": 14
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Animation/IK/LeviathanProceduralIkStageJobs.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsTypes.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/DodReplayRecorder.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeTypes.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+        "structs": 13
+      },
+      {
+        "aupCastFindings": 0,
+        "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+        "structs": 13
+      }
+    ],
+    "schemaFiles": [],
+    "schemaMismatches": [],
+    "schemaProfiles": {
+      "errors": [],
+      "exists": false,
+      "parseErrorCount": 0,
+      "path": "binary_schema_profiles.csv",
+      "profileCount": 0,
+      "profiles": []
+    },
+    "summary": {
+      "arm64ViolationCount": 60,
+      "aupPrecisionViolationCount": 112,
+      "cacheHits": 2368,
+      "cs1612PropertyViolationCount": 276,
+      "csFilesScanned": 2368,
+      "schemaMismatchCount": 0,
+      "schemaProfileCount": 0,
+      "schemaProfileParseErrorCount": 0,
+      "structsParsed": 4807,
+      "unmanagedContracts": 2967
+    }
+  },
+  "schema": "hecton8.binary_schema_audit_cache.v2",
+  "sourceRoot": "Assets/_Project/Scripts",
+  "treeStamp": {
+    "csTree": {
+      "deletedFileCount": 2,
+      "dirtyFileCount": 648,
+      "fileCount": 0,
+      "gitIndexMtimeNs": 1779498012472342900,
+      "gitIndexSize": 5616841,
+      "hash": "0x96E25AEE",
+      "stampMode": "git-index-file+dirty-stat",
+      "totalMtimeNs": 9399812103197902208,
+      "totalSize": 39785802,
+      "untrackedFileCount": 172
+    },
+    "hash": "0xD75D8A7C",
+    "schemaProfile": {
+      "exists": false,
+      "mtimeNs": 0,
+      "path": "binary_schema_profiles.csv",
+      "size": 0
+    },
+    "schemaRoots": [
+      "Assets/_Project/Data"
+    ],
+    "schemaTree": {
+      "fileCount": 0,
+      "hash": "0x811C9DC5",
+      "totalMtimeNs": 0,
+      "totalSize": 0
+    },
+    "sourceRoot": "Assets/_Project/Scripts"
+  }
+}

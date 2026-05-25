@@ -3,6 +3,7 @@
 // NativeQueue-backed airlock transition lane flushed by SystemDispatcher.
 // ============================================================================
 
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -287,49 +288,85 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Queues an airlock cycle-started payload.
         /// </summary>
+        public static bool TryRaiseCycleStarted(BaseAirlock airlock, Transform interactor)
+        {
+            return TryEnqueue(BaseAirlockEventType.CycleStarted, airlock, interactor);
+        }
+
+        [Obsolete("Airlock event producers must use TryRaiseCycleStarted and handle bounded enqueue failure.", true)]
         public static void RaiseCycleStarted(BaseAirlock airlock, Transform interactor)
         {
-            Enqueue(BaseAirlockEventType.CycleStarted, airlock, interactor);
+            TryRaiseCycleStarted(airlock, interactor);
         }
 
         /// <summary>
         /// Queues an airlock cycle-completed payload.
         /// </summary>
+        public static bool TryRaiseCycleCompleted(BaseAirlock airlock, Transform interactor)
+        {
+            return TryEnqueue(BaseAirlockEventType.CycleCompleted, airlock, interactor);
+        }
+
+        [Obsolete("Airlock event producers must use TryRaiseCycleCompleted and handle bounded enqueue failure.", true)]
         public static void RaiseCycleCompleted(BaseAirlock airlock, Transform interactor)
         {
-            Enqueue(BaseAirlockEventType.CycleCompleted, airlock, interactor);
+            TryRaiseCycleCompleted(airlock, interactor);
         }
 
         /// <summary>
         /// Queues an airlock dry/wet environment-change payload.
         /// </summary>
+        public static bool TryRaiseEnvironmentChanged(BaseAirlock airlock, Transform interactor)
+        {
+            return TryEnqueue(BaseAirlockEventType.EnvironmentChanged, airlock, interactor);
+        }
+
+        [Obsolete("Airlock event producers must use TryRaiseEnvironmentChanged and handle bounded enqueue failure.", true)]
         public static void RaiseEnvironmentChanged(BaseAirlock airlock, Transform interactor)
         {
-            Enqueue(BaseAirlockEventType.EnvironmentChanged, airlock, interactor);
+            TryRaiseEnvironmentChanged(airlock, interactor);
         }
 
         /// <summary>
         /// Queues a lockdown-state change payload.
         /// </summary>
+        public static bool TryRaiseEmergencyLockdownChanged(BaseAirlock airlock)
+        {
+            return TryEnqueue(BaseAirlockEventType.EmergencyLockdownChanged, airlock, null);
+        }
+
+        [Obsolete("Airlock event producers must use TryRaiseEmergencyLockdownChanged and handle bounded enqueue failure.", true)]
         public static void RaiseEmergencyLockdownChanged(BaseAirlock airlock)
         {
-            Enqueue(BaseAirlockEventType.EmergencyLockdownChanged, airlock, null);
+            TryRaiseEmergencyLockdownChanged(airlock);
         }
 
         /// <summary>
         /// Queues a manual override blocked/unblocked payload.
         /// </summary>
+        public static bool TryRaiseManualOverrideBlockedChanged(BaseAirlock airlock)
+        {
+            return TryEnqueue(BaseAirlockEventType.ManualOverrideBlockedChanged, airlock, null);
+        }
+
+        [Obsolete("Airlock event producers must use TryRaiseManualOverrideBlockedChanged and handle bounded enqueue failure.", true)]
         public static void RaiseManualOverrideBlockedChanged(BaseAirlock airlock)
         {
-            Enqueue(BaseAirlockEventType.ManualOverrideBlockedChanged, airlock, null);
+            TryRaiseManualOverrideBlockedChanged(airlock);
         }
 
         /// <summary>
         /// Queues a completed emergency manual-override payload.
         /// </summary>
+        public static bool TryRaiseManualOverrideCompleted(BaseAirlock airlock)
+        {
+            return TryEnqueue(BaseAirlockEventType.ManualOverrideCompleted, airlock, null);
+        }
+
+        [Obsolete("Airlock event producers must use TryRaiseManualOverrideCompleted and handle bounded enqueue failure.", true)]
         public static void RaiseManualOverrideCompleted(BaseAirlock airlock)
         {
-            Enqueue(BaseAirlockEventType.ManualOverrideCompleted, airlock, null);
+            TryRaiseManualOverrideCompleted(airlock);
         }
 
         /// <summary>
@@ -352,7 +389,10 @@ namespace Hecton8.Gameplay
                     return;
 
                 if (!_pendingEvents.TryDequeue(out BaseAirlockEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -411,18 +451,18 @@ namespace Hecton8.Gameplay
             return interactor != null;
         }
 
-        private static void Enqueue(BaseAirlockEventType eventType, BaseAirlock airlock, Transform interactor)
+        private static bool TryEnqueue(BaseAirlockEventType eventType, BaseAirlock airlock, Transform interactor)
         {
             if (airlock == null)
-                return;
+                return false;
 
             if (!TryReserveReferenceSlot(out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Airlock = airlock;
             _referenceSlots[referenceSlot].Interactor = interactor;
 
-            Enqueue(new BaseAirlockEventPayload
+            return TryEnqueue(new BaseAirlockEventPayload
             {
                 AirlockHashId = ComputeReferenceHash(airlock),
                 InteractorHashId = ComputeReferenceHash(interactor),
@@ -439,24 +479,25 @@ namespace Hecton8.Gameplay
             });
         }
 
-        private static void Enqueue(in BaseAirlockEventPayload payload)
+        private static bool TryEnqueue(in BaseAirlockEventPayload payload)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReleaseReferenceSlot(payload.ReferenceSlot);
-                return;
+                return false;
             }
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static void EnsureInitialized()
@@ -495,7 +536,9 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < PendingEventCapacity; i++)
             {
                 if (!queue.TryDequeue(out BaseAirlockEventPayload ignored))
+                {
                     break;
+                }
             }
         }
 
@@ -582,7 +625,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!queue.TryDequeue(out BaseAirlockEventPayload payload))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;

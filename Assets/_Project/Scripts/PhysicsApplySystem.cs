@@ -596,6 +596,7 @@ namespace Hecton8.Physics
         private static int _snapshotReadCursor;
         private static int _lastOverflowWarningFrame = -1;
         private static int _lastCircuitBreakerWarningFrame = -1;
+        private static int _droppedEventCount;
         private static int _activeDispatchDepth;
         private static bool _initialized;
 
@@ -611,6 +612,8 @@ namespace Hecton8.Physics
                 return Math.Max(0, snapshotCount - _snapshotReadCursor);
             }
         }
+
+        public static int DroppedEventCount => _droppedEventCount;
 
         /// <summary>Prewarms native event queues from runtime initialization paths before gameplay producers emit.</summary>
         public static void EnsureReady()
@@ -646,6 +649,7 @@ namespace Hecton8.Physics
             _snapshotReadCursor = 0;
             _lastOverflowWarningFrame = -1;
             _lastCircuitBreakerWarningFrame = -1;
+            _droppedEventCount = 0;
             _activeDispatchDepth = 0;
             _initialized = false;
         }
@@ -771,12 +775,18 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Broadcasts one pressure-impulse payload.</summary>
+        [Obsolete("Use TryNotifyPressureImpulse(in PressureImpulseEvent) so bounded rejection stays visible at the producer.", true)]
         public static void NotifyPressureImpulse(in PressureImpulseEvent pressureEvent)
         {
-            if (_pressureListenerCount <= 0)
-                return;
+            TryNotifyPressureImpulse(in pressureEvent);
+        }
 
-            Enqueue(new PhysicsEventPayload
+        public static bool TryNotifyPressureImpulse(in PressureImpulseEvent pressureEvent)
+        {
+            if (_pressureListenerCount <= 0)
+                return false;
+
+            return Enqueue(new PhysicsEventPayload
             {
                 RuntimePosition = pressureEvent.RuntimePosition,
                 Direction = pressureEvent.Direction,
@@ -795,12 +805,18 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Broadcasts one EMP payload.</summary>
+        [Obsolete("Use TryNotifyElectromagneticPulse(in ElectromagneticPulseEvent) so bounded rejection stays visible at the producer.", true)]
         public static void NotifyElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
         {
-            if (_empListenerCount <= 0)
-                return;
+            TryNotifyElectromagneticPulse(in pulseEvent);
+        }
 
-            Enqueue(new PhysicsEventPayload
+        public static bool TryNotifyElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        {
+            if (_empListenerCount <= 0)
+                return false;
+
+            return Enqueue(new PhysicsEventPayload
             {
                 RuntimePosition = pulseEvent.RuntimePosition,
                 Direction = default,
@@ -819,12 +835,18 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Broadcasts one acoustic-ping payload.</summary>
+        [Obsolete("Use TryNotifyAcousticPing(in AcousticPingEvent) so bounded rejection stays visible at the producer.", true)]
         public static void NotifyAcousticPing(in AcousticPingEvent pingEvent)
         {
-            if (_acousticListenerCount <= 0)
-                return;
+            TryNotifyAcousticPing(in pingEvent);
+        }
 
-            Enqueue(new PhysicsEventPayload
+        public static bool TryNotifyAcousticPing(in AcousticPingEvent pingEvent)
+        {
+            if (_acousticListenerCount <= 0)
+                return false;
+
+            return Enqueue(new PhysicsEventPayload
             {
                 RuntimePosition = pingEvent.RuntimePosition,
                 Direction = default,
@@ -843,9 +865,15 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Broadcasts one kinetic acoustic impulse payload.</summary>
+        [Obsolete("Use TryNotifyAcousticImpulse(in AcousticImpulseEvent) so bounded rejection stays visible at the producer.", true)]
         public static void NotifyAcousticImpulse(in AcousticImpulseEvent impulseEvent)
         {
-            Enqueue(new PhysicsEventPayload
+            TryNotifyAcousticImpulse(in impulseEvent);
+        }
+
+        public static bool TryNotifyAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        {
+            return Enqueue(new PhysicsEventPayload
             {
                 RuntimePosition = impulseEvent.RuntimePosition,
                 Direction = impulseEvent.Direction,
@@ -864,16 +892,29 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Broadcasts one large acoustic impulse payload through the deferred acoustic impulse lane.</summary>
+        [Obsolete("Use TryNotifyLargeAcousticImpulse(in LargeAcousticImpulseEvent) so bounded rejection stays visible at the producer.", true)]
         public static void NotifyLargeAcousticImpulse(in LargeAcousticImpulseEvent impulseEvent)
         {
             AcousticImpulseEvent acousticImpulseEvent = impulseEvent.ToAcousticImpulseEvent();
-            NotifyAcousticImpulse(in acousticImpulseEvent);
+            TryNotifyAcousticImpulse(in acousticImpulseEvent);
+        }
+
+        public static bool TryNotifyLargeAcousticImpulse(in LargeAcousticImpulseEvent impulseEvent)
+        {
+            AcousticImpulseEvent acousticImpulseEvent = impulseEvent.ToAcousticImpulseEvent();
+            return TryNotifyAcousticImpulse(in acousticImpulseEvent);
         }
 
         /// <summary>Broadcasts one scalar flood mass/center-of-mass mutation payload.</summary>
+        [Obsolete("Use TryNotifyFloodMassShift(in FloodMassShiftEvent) so bounded rejection stays visible at the producer.", true)]
         public static void NotifyFloodMassShift(in FloodMassShiftEvent massShiftEvent)
         {
-            Enqueue(new PhysicsEventPayload
+            TryNotifyFloodMassShift(in massShiftEvent);
+        }
+
+        public static bool TryNotifyFloodMassShift(in FloodMassShiftEvent massShiftEvent)
+        {
+            return Enqueue(new PhysicsEventPayload
             {
                 RuntimePosition = massShiftEvent.DynamicCenterOfMassLocal,
                 Direction = massShiftEvent.CenterOfMassOffsetLocal,
@@ -906,14 +947,24 @@ namespace Hecton8.Physics
             if (queuedDepth >= EventCircuitBreakerDepthLimit)
             {
                 ReportCircuitBreakerOncePerFrame(queuedDepth);
+                IncrementDroppedEventCount();
                 return false;
             }
 
             EnsureInitialized();
             PhysicsEventPayload queuedPayload = payload;
             queuedPayload.Reserved = (ushort)math.max(1, queuedDepth);
-            SignalBus<PhysicsEventPayload>.Push(in queuedPayload);
-            return true;
+            if (SignalBus<PhysicsEventPayload>.TryPush(in queuedPayload))
+                return true;
+
+            IncrementDroppedEventCount();
+            return false;
+        }
+
+        private static void IncrementDroppedEventCount()
+        {
+            if (_droppedEventCount < 0x3FFFFFFF)
+                _droppedEventCount++;
         }
 
         private static bool HasAnyListener()
@@ -946,7 +997,7 @@ namespace Hecton8.Physics
             for (int i = startIndex; i < snapshot.Length; i++)
             {
                 PhysicsEventPayload payload = snapshot[i];
-                SignalBus<PhysicsEventPayload>.Push(in payload);
+                SignalBus<PhysicsEventPayload>.TryPush(in payload);
             }
         }
 
@@ -1305,6 +1356,9 @@ namespace Hecton8.Physics
         WakeBody = 1 << 2,
         ApplyAtPosition = 1 << 3,
         BiomeBuoyancy = 1 << 4,
+        SetLinearVelocity = 1 << 5,
+        SetAngularVelocity = 1 << 6,
+        SetPose = 1 << 7,
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1331,10 +1385,14 @@ namespace Hecton8.Physics
             }
 
             ForcePacketFlags flags = (ForcePacketFlags)packet.Flags;
-            bool validForce = (flags & ForcePacketFlags.HasForce) == 0 || IsFinite(packet.Force);
-            bool validTorque = (flags & ForcePacketFlags.HasTorque) == 0 || IsFinite(packet.Torque);
+            bool setsPose = (flags & ForcePacketFlags.SetPose) != 0;
+            bool validForce = (flags & (ForcePacketFlags.HasForce | ForcePacketFlags.SetLinearVelocity | ForcePacketFlags.SetPose)) == 0 || IsFinite(packet.Force);
+            bool validTorque = (flags & (ForcePacketFlags.HasTorque | ForcePacketFlags.SetAngularVelocity | ForcePacketFlags.SetPose)) == 0 || IsFinite(packet.Torque);
             bool validPointOffset = IsFinite(packet.PointOffset);
-            ValidityMask[index] = validForce && validTorque && validPointOffset ? (byte)1 : (byte)0;
+            bool validPoseRotation = !setsPose ||
+                                     (math.isfinite(packet.PointOffset.x) &&
+                                      math.lengthsq(new float4(packet.Torque.x, packet.Torque.y, packet.Torque.z, packet.PointOffset.x)) > 0.000001f);
+            ValidityMask[index] = validForce && validTorque && validPointOffset && validPoseRotation ? (byte)1 : (byte)0;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -1349,7 +1407,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed partial class PhysicsApplySystem : MonoBehaviour, IPhysicsService, ISceneTransitionPhysicsBridge, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed partial class PhysicsApplySystem : MonoBehaviour, IPhysicsService, ISceneTransitionPhysicsBridge, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int MaxTrackedBodies = 64;
         private const int MaxQueuedPackets = 64;
@@ -1361,6 +1419,8 @@ namespace Hecton8.Physics
         private const int ImplosionOverlapCapacity = 64;
         private const SystemID OwnerSystemId = SystemID.Physics;
         private const float MinMagnitudeSq = 0.000001f;
+        private const float HydrodynamicPlayerEquivalentMassKg = 80f;
+        private const uint KccVelocityForceSinkMaxAgeFrames = 12u;
         private const float DepressurizationVortexDistanceFloorMeters = 0.5f;
         private const float HullYieldThresholdJoules = 225000f;
         private const float AcousticImpulseReferenceEnergyJoules = HullYieldThresholdJoules;
@@ -1388,8 +1448,8 @@ namespace Hecton8.Physics
         private static readonly ProfilerMarker _packetValidationProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.ValidatePackets");
         private static readonly ProfilerMarker _flushFrontBufferProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FlushFrontBuffer");
         private static PhysicsApplySystem s_runtimeInstance;
-        // COLD ALLOC: Collider[64] - static implosion overlap query buffer for zero-GC radius impulse dispatch - owner: PhysicsApplySystem
-        private static readonly Collider[] s_implosionOverlapBuffer = new Collider[ImplosionOverlapCapacity];
+        // COLD ALLOC: SpatialQueryHit[64] - registered implosion contact scratch for zero-GC radius impulse dispatch - owner: PhysicsApplySystem
+        private readonly SpatialQueryHit[] _implosionContacts = new SpatialQueryHit[ImplosionOverlapCapacity];
 
         private struct DepressurizationVortex
         {
@@ -1445,6 +1505,7 @@ namespace Hecton8.Physics
         private bool _fixedTickRegistered;
         private bool _postFixedTickRegistered;
         private bool _lateFrameTickRegistered;
+        private bool _hotSwapRegistered;
         private bool _frontBufferValidationReady;
         private bool _packetValidationScheduled;
         private JobHandle _packetValidationHandle;
@@ -1515,14 +1576,6 @@ namespace Hecton8.Physics
                 system.ClearQueuedPackets();
         }
 
-        internal static bool QueueSharedRaycast(
-            IDispatcherRaycastReceiver receiver,
-            int requestId,
-            in RaycastCommand command)
-        {
-            return SystemDispatcher.QueueDispatcherRaycast(receiver, requestId, in command);
-        }
-
         internal static bool TriggerDepressurizationVortex(
             Vector3 roomCenter,
             Vector3 breachPosition,
@@ -1590,11 +1643,16 @@ namespace Hecton8.Physics
         {
             if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
                 VectorLengthSq(sanitizedForce) <= MinMagnitudeSq ||
-                body == null ||
-                body.isKinematic)
+                body == null)
             {
                 return false;
             }
+
+            if (TryRouteToCachedPlayerForceSink(body, sanitizedForce, mode))
+                return true;
+
+            if (body.isKinematic)
+                return false;
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
@@ -1632,8 +1690,7 @@ namespace Hecton8.Physics
         {
             if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
                 VectorLengthSq(sanitizedForce) <= MinMagnitudeSq ||
-                body == null ||
-                body.isKinematic)
+                body == null)
             {
                 return false;
             }
@@ -1644,6 +1701,12 @@ namespace Hecton8.Physics
                 ReportNonFinitePacket(NonFinitePointOffsetLog);
                 return false;
             }
+
+            if (TryRouteToCachedPlayerForceSinkAtPosition(body, sanitizedForce, worldPosition, mode))
+                return true;
+
+            if (body.isKinematic)
+                return false;
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
@@ -1678,11 +1741,16 @@ namespace Hecton8.Physics
         {
             if (!TrySanitizeVector(torque, NonFiniteTorqueLog, out Vector3 sanitizedTorque) ||
                 VectorLengthSq(sanitizedTorque) <= MinMagnitudeSq ||
-                body == null ||
-                body.isKinematic)
+                body == null)
             {
                 return false;
             }
+
+            if (TrySuppressCachedPlayerAngularVelocitySet(body))
+                return true;
+
+            if (body.isKinematic)
+                return false;
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = AcquireBodySlotIndex(body);
@@ -1701,6 +1769,109 @@ namespace Hecton8.Physics
                 RigidbodyIndex = rigidbodyIndex
             };
             return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Torque packet queue saturated.");
+        }
+
+        internal bool QueueLinearVelocitySet(Rigidbody body, Vector3 linearVelocity, ForcePacketPriority priority, bool wake = true)
+        {
+            if (!TrySanitizeVector(linearVelocity, NonFiniteForceLog, out Vector3 sanitizedVelocity) ||
+                body == null)
+            {
+                return false;
+            }
+
+            if (TryRouteToCachedPlayerLinearVelocitySet(body, sanitizedVelocity))
+                return true;
+
+            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            int rigidbodyIndex = AcquireBodySlotIndex(body);
+            if (rigidbodyIndex < 0)
+                return false;
+            CacheLastFiniteBodyAup(rigidbodyIndex, body.position);
+
+            ForcePacket packet = new ForcePacket
+            {
+                Force = sanitizedVelocity,
+                Torque = Vector3.zero,
+                PointOffset = Vector3.zero,
+                Mode = ForceMode.VelocityChange,
+                Flags = (byte)(ForcePacketFlags.SetLinearVelocity | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Priority = priority,
+                RigidbodyIndex = rigidbodyIndex
+            };
+            return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Linear velocity packet queue saturated.");
+        }
+
+        public bool QueueLinearVelocitySet(Rigidbody body, Vector3 linearVelocity, bool wake = true)
+        {
+            return QueueLinearVelocitySet(body, linearVelocity, ForcePacketPriority.Critical, wake);
+        }
+
+        internal bool QueueAngularVelocitySet(Rigidbody body, Vector3 angularVelocity, ForcePacketPriority priority, bool wake = true)
+        {
+            if (!TrySanitizeVector(angularVelocity, NonFiniteTorqueLog, out Vector3 sanitizedVelocity) ||
+                body == null)
+            {
+                return false;
+            }
+
+            if (TrySuppressCachedPlayerAngularVelocitySet(body))
+                return true;
+
+            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            int rigidbodyIndex = AcquireBodySlotIndex(body);
+            if (rigidbodyIndex < 0)
+                return false;
+            CacheLastFiniteBodyAup(rigidbodyIndex, body.position);
+
+            ForcePacket packet = new ForcePacket
+            {
+                Force = Vector3.zero,
+                Torque = sanitizedVelocity,
+                PointOffset = Vector3.zero,
+                Mode = ForceMode.VelocityChange,
+                Flags = (byte)(ForcePacketFlags.SetAngularVelocity | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Priority = priority,
+                RigidbodyIndex = rigidbodyIndex
+            };
+            return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Angular velocity packet queue saturated.");
+        }
+
+        public bool QueueAngularVelocitySet(Rigidbody body, Vector3 angularVelocity, bool wake = true)
+        {
+            return QueueAngularVelocitySet(body, angularVelocity, ForcePacketPriority.Critical, wake);
+        }
+
+        internal bool QueuePoseSet(Rigidbody body, Vector3 position, Quaternion rotation, ForcePacketPriority priority, bool wake = true)
+        {
+            if (!TrySanitizeVector(position, NonFinitePointOffsetLog, out Vector3 sanitizedPosition) ||
+                !TryNormalizeQuaternion(rotation, out Quaternion sanitizedRotation) ||
+                body == null)
+            {
+                return false;
+            }
+
+            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            int rigidbodyIndex = AcquireBodySlotIndex(body);
+            if (rigidbodyIndex < 0)
+                return false;
+            CacheLastFiniteBodyAup(rigidbodyIndex, sanitizedPosition);
+
+            ForcePacket packet = new ForcePacket
+            {
+                Force = sanitizedPosition,
+                Torque = new Vector3(sanitizedRotation.x, sanitizedRotation.y, sanitizedRotation.z),
+                PointOffset = new Vector3(sanitizedRotation.w, 0f, 0f),
+                Mode = ForceMode.VelocityChange,
+                Flags = (byte)(ForcePacketFlags.SetPose | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Priority = priority,
+                RigidbodyIndex = rigidbodyIndex
+            };
+            return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Pose packet queue saturated.");
+        }
+
+        public bool QueuePoseSet(Rigidbody body, Vector3 position, Quaternion rotation, bool wake = true)
+        {
+            return QueuePoseSet(body, position, rotation, ForcePacketPriority.Critical, wake);
         }
 
         /// <summary>
@@ -1914,25 +2085,8 @@ namespace Hecton8.Physics
 
             EnsureRuntimeResources();
 
-            if (GlobalRegistry.Dispatcher != null && !_fixedTickRegistered)
-            {
-                // Flush the previous validated packet snapshot before producers write this fixed step.
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.UI);
-                _fixedTickRegistered = GlobalRegistry.FixedTickables.Contains(this);
-            }
-
-            if (GlobalRegistry.Dispatcher != null && !_postFixedTickRegistered)
-            {
-                // Swap vault packet buffers only after all fixed-step producers have written to the back buffer.
-                GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.UI);
-                _postFixedTickRegistered = SystemDispatcher.GetPostFixedLane(PriorityLayer.UI).Contains(this);
-            }
-
-            if (GlobalRegistry.Dispatcher != null && !_lateFrameTickRegistered)
-            {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-                _lateFrameTickRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
-            }
+            TryRegisterRuntimeLanes();
+            TryRegisterHotSwapListener();
 
             if (!_contactModifySubscribed)
             {
@@ -1961,7 +2115,7 @@ namespace Hecton8.Physics
             if (_physicsCullingOverseer == null)
                 _physicsCullingOverseer = GlobalRegistry.PhysicsCullingOverseer;
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContext = GlobalRegistry.Player;
             IPlayerMovementContracts playerMovementContracts = GlobalRegistry.PlayerMovementContracts;
             if (_playerMovementForceSink == null)
                 _playerMovementForceSink = playerMovementContracts;
@@ -2048,6 +2202,40 @@ namespace Hecton8.Physics
 
         private void UnregisterRuntimeHooks()
         {
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntimeLanes();
+
+            if (_contactModifySubscribed)
+            {
+                UnityEngine.Physics.ContactModifyEvent -= HandleContactModifyEvent;
+                UnityEngine.Physics.ContactModifyEventCCD -= HandleContactModifyEvent;
+                _contactModifySubscribed = false;
+            }
+        }
+
+        private void TryRegisterRuntimeLanes()
+        {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_fixedTickRegistered)
+            {
+                // Flush the previous validated packet snapshot before producers write this fixed step.
+                _fixedTickRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.UI);
+            }
+
+            if (!_postFixedTickRegistered)
+            {
+                // Swap vault packet buffers only after all fixed-step producers have written to the back buffer.
+                _postFixedTickRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.UI);
+            }
+
+            if (!_lateFrameTickRegistered)
+                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterRuntimeLanes()
+        {
             if (_fixedTickRegistered)
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.UI);
@@ -2065,13 +2253,70 @@ namespace Hecton8.Physics
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _lateFrameTickRegistered = false;
             }
+        }
 
-            if (_contactModifySubscribed)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            switch (serviceSlot)
             {
-                UnityEngine.Physics.ContactModifyEvent -= HandleContactModifyEvent;
-                UnityEngine.Physics.ContactModifyEventCCD -= HandleContactModifyEvent;
-                _contactModifySubscribed = false;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                        return;
+
+                    TryUnregisterRuntimeLanes();
+                    TryRegisterRuntimeLanes();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseValidationBufferViews();
+                    ReleaseForcePacketBufferViews();
+                    _dataVault = currentService as IDataVault;
+                    if (_dataVault != null)
+                    {
+                        EnsureForcePacketBuffers();
+                        EnsureValidationBuffers();
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.PhysicsStateManager:
+                    _physicsCullingOverseer = currentService as IPhysicsCullingOverseer;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerMovementContracts:
+                    IPlayerMovementContracts playerMovementContracts = currentService as IPlayerMovementContracts;
+                    _playerMovementForceSink = playerMovementContracts;
+                    _playerMovementPoseReadModel = playerMovementContracts;
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    ISubmarineRuntimeContext submarineContext = currentService as ISubmarineRuntimeContext;
+                    _submarineHullBody = submarineContext?.HullRigidbody;
+                    _submarineFluidDynamics = submarineContext?.FluidDynamics;
+                    _submarineStructuralGrid = submarineContext?.StructuralGrid;
+                    break;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -2150,10 +2395,11 @@ namespace Hecton8.Physics
                         if (!EnsureFiniteBodyState(body, packet.RigidbodyIndex))
                             continue;
 
-                        if (body.isKinematic)
-                            continue;
-
                         ForcePacketFlags flags = (ForcePacketFlags)packet.Flags;
+                        bool setsLinearVelocity = (flags & ForcePacketFlags.SetLinearVelocity) != 0;
+                        bool setsAngularVelocity = (flags & ForcePacketFlags.SetAngularVelocity) != 0;
+                        bool setsPose = (flags & ForcePacketFlags.SetPose) != 0;
+
                         if (ShouldDiscardAmbientPacket(body, in packet, flags, fixedDeltaTime))
                             continue;
 
@@ -2164,7 +2410,41 @@ namespace Hecton8.Physics
                         Vector3 appliedTorque = Vector3.zero;
                         Vector3 impulsePosition = body.position;
                         Vector3 preApplyVelocity = SanitizeFiniteVector(body.linearVelocity);
-                        bool appliedAny = false;
+                        bool appliedForceOrTorque = false;
+
+                        if (setsPose)
+                        {
+                            Vector3 targetPosition = TrySanitizeVector(packet.Force, NonFinitePointOffsetLog, out Vector3 sanitizedPosition)
+                                ? sanitizedPosition
+                                : body.position;
+                            Quaternion packedRotation = new Quaternion(packet.Torque.x, packet.Torque.y, packet.Torque.z, packet.PointOffset.x);
+                            Quaternion targetRotation = TryNormalizeQuaternion(packedRotation, out Quaternion sanitizedRotation)
+                                ? sanitizedRotation
+                                : body.rotation;
+
+                            body.MovePosition(targetPosition);
+                            body.MoveRotation(targetRotation);
+                            CacheLastFiniteBodyAup(packet.RigidbodyIndex, targetPosition);
+                        }
+
+                        if (setsLinearVelocity)
+                        {
+                            if (!TrySanitizeVector(packet.Force, NonFiniteForceLog, out Vector3 sanitizedLinearVelocity))
+                                sanitizedLinearVelocity = Vector3.zero;
+
+                            body.linearVelocity = sanitizedLinearVelocity;
+                        }
+
+                        if (setsAngularVelocity)
+                        {
+                            if (!TrySanitizeVector(packet.Torque, NonFiniteTorqueLog, out Vector3 sanitizedAngularVelocity))
+                                sanitizedAngularVelocity = Vector3.zero;
+
+                            body.angularVelocity = sanitizedAngularVelocity;
+                        }
+
+                        if (body.isKinematic)
+                            continue;
 
                         if ((flags & ForcePacketFlags.HasForce) != 0)
                         {
@@ -2183,14 +2463,14 @@ namespace Hecton8.Physics
                                 {
                                     body.AddForceAtPosition(sanitizedForce, impulsePosition, packet.Mode);
                                     appliedForce = sanitizedForce;
-                                    appliedAny = true;
+                                    appliedForceOrTorque = true;
                                 }
                             }
                             else if (VectorLengthSq(sanitizedForce) > MinMagnitudeSq)
                             {
                                 body.AddForce(sanitizedForce, packet.Mode);
                                 appliedForce = sanitizedForce;
-                                appliedAny = true;
+                                appliedForceOrTorque = true;
                             }
                         }
 
@@ -2201,11 +2481,11 @@ namespace Hecton8.Physics
                             {
                                 body.AddTorque(sanitizedTorque, packet.Mode);
                                 appliedTorque = sanitizedTorque;
-                                appliedAny = true;
+                                appliedForceOrTorque = true;
                             }
                         }
 
-                        if (packet.Priority == ForcePacketPriority.Critical && appliedAny)
+                        if (packet.Priority == ForcePacketPriority.Critical && appliedForceOrTorque)
                             EmitCriticalAcousticImpulse(
                                 body,
                                 appliedForce,
@@ -2294,7 +2574,7 @@ namespace Hecton8.Physics
                 sourceBodyEntityId,
                 0,
                 AcousticImpulseFlags.Critical);
-            PhysicsEventBus.NotifyAcousticImpulse(in impulseEvent);
+            PhysicsEventBus.TryNotifyAcousticImpulse(in impulseEvent);
             TryRegisterMechanicalSparkProxyLight(impulsePosition, sourceBodyEntityId, volume01);
         }
 
@@ -2602,8 +2882,7 @@ namespace Hecton8.Physics
                     {
                         if (forceSink != null)
                         {
-                            float mass = playerBody != null ? math.max(1f, playerBody.mass) : 80f;
-                            forceSink.QueueExternalVelocityChange(impulse / mass);
+                            forceSink.QueueExternalVelocityChange(impulse / HydrodynamicPlayerEquivalentMassKg);
                         }
                         else if (playerBody != null)
                         {
@@ -2624,25 +2903,26 @@ namespace Hecton8.Physics
             float maximumImpulseNewtonSeconds,
             Rigidbody playerBody)
         {
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+            const SpatialTargetKind kindMask =
+                SpatialTargetKind.Resource |
+                SpatialTargetKind.Bioform |
+                SpatialTargetKind.Pickup |
+                SpatialTargetKind.Scannable |
+                SpatialTargetKind.Module;
+
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 roomCenter,
                 radiusMeters,
-                s_implosionOverlapBuffer,
-                HectonLayerMasks.BaseModuleLayerMask |
-                HectonLayerMasks.DroppedItemLayerMask |
-                HectonLayerMasks.CreatureLayerMask |
-                HectonLayerMasks.VehicleLayerMask |
-                HectonLayerMasks.DebrisLayerMask,
-                QueryTriggerInteraction.Ignore);
+                kindMask,
+                _implosionContacts);
             int uniqueBodyCount = 0;
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
-                Collider hitCollider = s_implosionOverlapBuffer[hitIndex];
-                if (hitCollider == null)
-                    continue;
+                SpatialQueryHit hit = _implosionContacts[hitIndex];
+                _implosionContacts[hitIndex] = default;
 
-                Rigidbody body = hitCollider.attachedRigidbody;
+                Rigidbody body = hit.Rigidbody;
                 if (body == null || body.isKinematic || ReferenceEquals(body, playerBody))
                     continue;
 
@@ -2663,9 +2943,6 @@ namespace Hecton8.Physics
                 if (uniqueBodyCount >= _depressurizationVortexBodies.Length)
                     break;
             }
-
-            for (int hitIndex = 0; hitIndex < s_implosionOverlapBuffer.Length; hitIndex++)
-                s_implosionOverlapBuffer[hitIndex] = null;
 
             for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
             {
@@ -2806,7 +3083,7 @@ namespace Hecton8.Physics
                 return TryGetExistingVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = dataVault.GetGenerationHandle<T>(
+            handle = dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystemId,
@@ -2994,7 +3271,7 @@ namespace Hecton8.Physics
                 float3 localNormal = ToFloat3(ResolveDominantAxisDirection(
                     structuralGridWorldToLocal.MultiplyVector(impactNormalWorld)));
                 structuralGrid.QueueImpactLocal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.IntegrityDelta);
-                structuralGrid.QueueHullImpactDecalLocal(localPoint, localNormal, impact.RelativeSpeedMetersPerSecond, impact.Severity01);
+                structuralGrid.QueueHullImpactFeedbackLocal(localPoint, localNormal, impact.RelativeSpeedMetersPerSecond, impact.Severity01);
                 EnqueueSubmarineImpactSignal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.Severity01, impact.IntegrityDelta, depthMeters);
             }
         }
@@ -3022,7 +3299,7 @@ namespace Hecton8.Physics
                 IntegrityDelta = integrityDelta,
                 TraumaLevel = (byte)ResolveSubmarineTraumaLevel(severity01)
             };
-            SignalBus<DeferredSubmarineImpactSignal>.Push(in signal);
+            SignalBus<DeferredSubmarineImpactSignal>.TryPush(in signal);
         }
 
         private void FlushDeferredSubmarineImpactSignals()
@@ -3071,7 +3348,7 @@ namespace Hecton8.Physics
                     queuedSignal.PreviousIntegrityNormalized,
                     queuedSignal.NextIntegrityNormalized,
                     signal);
-                traumaDispatcher.OnTraumaThresholdCrossed((TraumaLevel)queuedSignal.TraumaLevel);
+                traumaDispatcher.OnTraumaThresholdCrossed(ResolveSubmarineTraumaLevel(queuedSignal.TraumaLevel));
             }
         }
 
@@ -3080,7 +3357,7 @@ namespace Hecton8.Physics
             for (int i = startIndex; i < snapshot.Length; i++)
             {
                 DeferredSubmarineImpactSignal signal = snapshot[i];
-                SignalBus<DeferredSubmarineImpactSignal>.Push(in signal);
+                SignalBus<DeferredSubmarineImpactSignal>.TryPush(in signal);
             }
         }
 
@@ -3096,6 +3373,23 @@ namespace Hecton8.Physics
                 return TraumaLevel.Minor;
 
             return TraumaLevel.None;
+        }
+
+        private static TraumaLevel ResolveSubmarineTraumaLevel(byte levelCode)
+        {
+            switch (levelCode)
+            {
+                case (byte)TraumaLevel.Minor:
+                    return TraumaLevel.Minor;
+                case (byte)TraumaLevel.Significant:
+                    return TraumaLevel.Significant;
+                case (byte)TraumaLevel.Critical:
+                    return TraumaLevel.Critical;
+                case (byte)TraumaLevel.Catastrophic:
+                    return TraumaLevel.Catastrophic;
+                default:
+                    return TraumaLevel.None;
+            }
         }
 
         private void ScheduleFrontPacketValidation()
@@ -3370,7 +3664,7 @@ namespace Hecton8.Physics
             }
 
             // Player capsule torque is presentation-noise; route off-center requests as center velocity/acceleration.
-            return QueuePlayerForceSink(forceSink, force, mode, body.mass);
+            return QueuePlayerForceSink(forceSink, force, mode);
         }
 
         internal bool TryRouteToCachedPlayerForceSinkAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode)
@@ -3387,16 +3681,67 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            return QueuePlayerForceSink(forceSink, force, mode, body.mass);
+            return QueuePlayerForceSink(forceSink, force, mode);
+        }
+
+        internal bool TryRouteToCachedPlayerLinearVelocitySet(Rigidbody body, Vector3 targetVelocity)
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            IPlayerMovementForceSink forceSink = _playerMovementForceSink;
+            if (body == null ||
+                playerContext == null ||
+                forceSink == null ||
+                !ReferenceEquals(body, playerContext.PlayerRigidbody) ||
+                !IsFiniteVector(targetVelocity))
+            {
+                return false;
+            }
+
+            Vector3 currentVelocity = TryResolveCachedPlayerVelocity(playerContext, out Vector3 resolvedVelocity)
+                ? resolvedVelocity
+                : Vector3.zero;
+            Vector3 velocityDelta = targetVelocity - currentVelocity;
+            if (VectorLengthSq(velocityDelta) > MinMagnitudeSq)
+                forceSink.QueueExternalVelocityChange(velocityDelta);
+
+            return true;
+        }
+
+        internal bool TrySuppressCachedPlayerAngularVelocitySet(Rigidbody body)
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            return body != null &&
+                   playerContext != null &&
+                   _playerMovementForceSink != null &&
+                   ReferenceEquals(body, playerContext.PlayerRigidbody);
+        }
+
+        private static bool TryResolveCachedPlayerVelocity(IPlayerRuntimeContext playerContext, out Vector3 velocity)
+        {
+            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityForceSinkMaxAgeFrames, out velocity))
+                return true;
+
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+            {
+                float3 stateVelocity = movementState.Velocity;
+                if (math.all(math.isfinite(stateVelocity)))
+                {
+                    velocity = new Vector3(stateVelocity.x, stateVelocity.y, stateVelocity.z);
+                    return true;
+                }
+            }
+
+            velocity = Vector3.zero;
+            return false;
         }
 
         private static bool QueuePlayerForceSink(
             IPlayerMovementForceSink forceSink,
             Vector3 force,
-            ForceMode mode,
-            float bodyMass)
+            ForceMode mode)
         {
-            float safeMass = math.max(bodyMass, 0.0001f);
+            const float safeMass = HydrodynamicPlayerEquivalentMassKg;
             switch (mode)
             {
                 case ForceMode.Force:
@@ -3472,6 +3817,24 @@ namespace Hecton8.Physics
         {
             float4 value4 = new float4(value.x, value.y, value.z, value.w);
             return math.all(math.isfinite(value4));
+        }
+
+        private static bool TryNormalizeQuaternion(Quaternion value, out Quaternion normalized)
+        {
+            float4 value4 = new float4(value.x, value.y, value.z, value.w);
+            float lengthSq = math.lengthsq(value4);
+            if (!math.all(math.isfinite(value4)) || !math.isfinite(lengthSq) || lengthSq <= MinMagnitudeSq)
+            {
+                normalized = Quaternion.identity;
+                return false;
+            }
+
+            value4 *= math.rsqrt(math.max(lengthSq, MinMagnitudeSq));
+            if (value4.w < 0f)
+                value4 = -value4;
+
+            normalized = new Quaternion(value4.x, value4.y, value4.z, value4.w);
+            return true;
         }
 
         private static bool TrySanitizeVector(Vector3 value, string errorMessage, out Vector3 sanitized)
@@ -3600,6 +3963,50 @@ namespace Hecton8.Physics
             return system != null && system.QueueForce(body, safeForce, mode, wake);
         }
 
+        public static bool QueueLinearVelocitySet(Rigidbody body, Vector3 linearVelocity, bool wake = true)
+        {
+            if (!MathGuard.TryAcceptFinite(linearVelocity, out Vector3 acceptedVelocity))
+                return false;
+
+            if (TryRouteToPlayerLinearVelocitySet(body, acceptedVelocity))
+                return true;
+
+            return QueueOwnedLinearVelocitySet(body, acceptedVelocity, wake);
+        }
+
+        internal static bool QueueOwnedLinearVelocitySet(Rigidbody body, Vector3 linearVelocity, bool wake = true)
+        {
+            if (!MathGuard.TryAcceptFinite(linearVelocity, out Vector3 acceptedVelocity))
+                return false;
+
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system != null && system.QueueLinearVelocitySet(body, acceptedVelocity, ForcePacketPriority.Critical, wake);
+        }
+
+        public static bool QueueAngularVelocitySet(Rigidbody body, Vector3 angularVelocity, bool wake = true)
+        {
+            if (!MathGuard.TryAcceptFinite(angularVelocity, out Vector3 acceptedVelocity))
+                return false;
+
+            if (TrySuppressPlayerAngularVelocitySet(body))
+                return true;
+
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system != null && system.QueueAngularVelocitySet(body, acceptedVelocity, ForcePacketPriority.Critical, wake);
+        }
+
+        public static bool QueuePoseSet(Rigidbody body, Vector3 position, Quaternion rotation, bool wake = true)
+        {
+            if (!MathGuard.TryAcceptFinite(position, out Vector3 acceptedPosition) ||
+                !IsFiniteQuaternion(rotation))
+            {
+                return false;
+            }
+
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system != null && system.QueuePoseSet(body, acceptedPosition, rotation, ForcePacketPriority.Critical, wake);
+        }
+
         /// <summary>
         /// Routes an ambient environmental force into the deferred packet system.
         /// </summary>
@@ -3720,6 +4127,18 @@ namespace Hecton8.Physics
         {
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
             return system != null && system.TryRouteToCachedPlayerForceSink(body, force, mode);
+        }
+
+        private static bool TryRouteToPlayerLinearVelocitySet(Rigidbody body, Vector3 targetVelocity)
+        {
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system != null && system.TryRouteToCachedPlayerLinearVelocitySet(body, targetVelocity);
+        }
+
+        private static bool TrySuppressPlayerAngularVelocitySet(Rigidbody body)
+        {
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system != null && system.TrySuppressCachedPlayerAngularVelocitySet(body);
         }
 
         private static ForcePacketFlags ResolveBiomeBuoyancyFlags(Vector3 force, ForceMode mode)

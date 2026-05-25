@@ -1,0 +1,116 @@
+﻿<SELF_AUDIT agent="SHINOBU_319" role="STATUS_EFFECTS_FSM_ENGINE" date="2026-05-22" evidence="STATIC_SOURCE_PLUS_GATED_BUILD_ATTEMPT_EXTERNAL_COMPILE_WALL">
+  <TASK_CHECK>
+    <TASK id="01" status="PASS">CLI prompt extraction and Combat/Physiology status archaeology completed.</TASK>
+    <TASK id="02" status="PASS">CombatDamageRuntime partial integration used.</TASK>
+    <TASK id="03" status="PASS">DoT damage route is Vault-staged CombatDamageSignal published to SignalBus after owner fence.</TASK>
+    <TASK id="04" status="PASS">No touched runtime MonoBehaviour buff path remains; scanner added.</TASK>
+    <TASK id="05" status="PASS">No touched runtime managed dictionary timer path remains.</TASK>
+    <TASK id="06" status="PASS">GenerateMockStatusEffectsJob implemented.</TASK>
+    <TASK id="07" status="PASS">EvaluateStatusEffectsJob implemented with deterministic Burst and NoAlias lanes.</TASK>
+    <TASK id="08" status="PASS">Branchless bit/FSM penalty math implemented.</TASK>
+    <TASK id="09" status="PASS">Toxic bubble VFX is exact-AUP native staging plus owner SignalBus publication.</TASK>
+    <TASK id="10" status="PASS">NativeQueue requests and correct 64B-stride Interlocked CAS OR implemented.</TASK>
+    <TASK id="11" status="PASS">Continuous GlobalQualityWeight cadence implemented.</TASK>
+    <TASK id="12" status="PASS">AUP signal payloads use double3 target root data from Vault.</TASK>
+    <TASK id="13" status="PASS">Rollback-safe explicit unmanaged DTOs implemented.</TASK>
+    <TASK id="14" status="PASS">Uninitialized Vault lanes used for deterministic overwrite where semantic zero is not needed.</TASK>
+    <TASK id="15" status="PASS">300-frame telemetry ring and dump route implemented.</TASK>
+    <TASK id="16" status="PASS">UI Toolkit tuner implemented.</TASK>
+    <TASK id="17" status="PASS">Cold span CSV parser implemented without float.Parse.</TASK>
+    <TASK id="18" status="PASS">Editor debug bars implemented without status GameObjects.</TASK>
+    <TASK id="19" status="PASS">OOP_Buff_Scanner report path implemented.</TASK>
+    <TASK id="20" status="PASS">Layout verifier, route card, ledger, status, rationale, log, and self-audit written.</TASK>
+  </TASK_CHECK>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="CombatStatusEffectRequest" size="64" alignment="8" use="NativeQueue request payload">
+      <FIELD name="TargetId" offset="0" size="4"/>
+      <FIELD name="SourceId" offset="4" size="4"/>
+      <FIELD name="StatusEffectMask" offset="8" size="8"/>
+      <FIELD name="DurationSeconds" offset="16" size="4"/>
+      <FIELD name="Magnitude" offset="20" size="4"/>
+      <FIELD name="ImpactAup" offset="24" size="24"/>
+      <FIELD name="Frame" offset="48" size="4"/>
+      <FIELD name="DamageType" offset="52" size="4"/>
+      <FIELD name="Flags" offset="56" size="1"/>
+      <FIELD name="Padding" offset="57" size="7"/>
+    </DTO>
+    <DTO name="CombatStatusEffectState" size="64" alignment="8">
+      <FIELD name="StatusEffectMask" offset="0" size="8"/>
+      <FIELD name="Durations0123" offset="8" size="16"/>
+      <FIELD name="Durations4567" offset="24" size="16"/>
+      <FIELD name="LastAppliedFrame" offset="40" size="4"/>
+      <FIELD name="LastChangedFrame" offset="44" size="4"/>
+      <FIELD name="BleedFsm..BrittleFsm" offset="48" size="8"/>
+      <FIELD name="StateHash" offset="56" size="4"/>
+      <FIELD name="Reserved" offset="60" size="4"/>
+    </DTO>
+    <DTO name="CombatStatusEffectTuning" size="64" alignment="8" use="Vault tuning row">
+      <FIELD name="Magic" offset="0" size="4"/>
+      <FIELD name="BleedingDamagePerSecond" offset="4" size="4"/>
+      <FIELD name="CrushedDamagePerSecond" offset="8" size="4"/>
+      <FIELD name="IrradiatedDamagePerSecond" offset="12" size="4"/>
+      <FIELD name="HypoxiaDamagePerSecond" offset="16" size="4"/>
+      <FIELD name="PoisonDamagePerSecond" offset="20" size="4"/>
+      <FIELD name="BurningDamagePerSecond" offset="24" size="4"/>
+      <FIELD name="StunMobilityScale" offset="28" size="4"/>
+      <FIELD name="MinCadenceSeconds" offset="32" size="4"/>
+      <FIELD name="MaxCadenceSeconds" offset="36" size="4"/>
+      <FIELD name="GlobalQualityWeight01" offset="40" size="4"/>
+      <FIELD name="ToxicBubbleScale" offset="44" size="4"/>
+      <FIELD name="Flags" offset="48" size="4"/>
+      <FIELD name="ProfileHash" offset="52" size="4"/>
+      <FIELD name="Reserved" offset="56" size="8"/>
+    </DTO>
+    <DTO name="CombatStatusEffectTelemetryEntry" size="64" alignment="8" use="300-frame Vault blackbox ring">
+      <FIELD name="FrameIndex" offset="0" size="4"/>
+      <FIELD name="TargetHash" offset="4" size="4"/>
+      <FIELD name="StatusEffectMask" offset="8" size="8"/>
+      <FIELD name="StateHash" offset="16" size="4"/>
+      <FIELD name="AnomalyHash" offset="20" size="4"/>
+      <FIELD name="PreviousHealth" offset="24" size="4"/>
+      <FIELD name="NextHealth" offset="28" size="4"/>
+      <FIELD name="AppliedDamage" offset="32" size="4"/>
+      <FIELD name="DeltaTime" offset="36" size="4"/>
+      <FIELD name="GlobalQualityWeight01" offset="40" size="4"/>
+      <FIELD name="Flags" offset="44" size="2"/>
+      <FIELD name="FsmPacked0" offset="46" size="1"/>
+      <FIELD name="FsmPacked1" offset="47" size="1"/>
+      <FIELD name="ActiveCount" offset="48" size="4"/>
+      <FIELD name="RequestCount" offset="52" size="4"/>
+      <FIELD name="EstimatedMicroseconds" offset="56" size="4"/>
+      <FIELD name="Reserved" offset="60" size="4"/>
+    </DTO>
+    <DTO name="CombatStatusEffectCounterLane" size="64" falseSharing="padded_cache_line">
+      <FIELD name="Value" offset="0" size="4"/>
+      <FIELD name="ReservedPadding" offset="4" size="60"/>
+    </DTO>
+    <DTO name="CombatStatusEffectVfxRequest" size="64" alignment="8">
+      <FIELD name="PositionAup" offset="0" size="24"/>
+      <FIELD name="Intensity01" offset="24" size="4"/>
+      <FIELD name="RadiusMeters" offset="28" size="4"/>
+      <FIELD name="Frame" offset="32" size="4"/>
+      <FIELD name="SourceHash" offset="36" size="4"/>
+      <FIELD name="EffectHash" offset="40" size="4"/>
+      <FIELD name="Flags" offset="44" size="4"/>
+      <FIELD name="Reserved" offset="48" size="16"/>
+    </DTO>
+    <DTO name="CombatDamageSignal" size="64" alignment="8" use="Vault 71268 staged Core signal ABI">
+      <FIELD name="ImpactAup" offset="0" size="24"/>
+      <FIELD name="Direction" offset="24" size="12"/>
+      <FIELD name="Magnitude" offset="36" size="4"/>
+      <FIELD name="DamageType" offset="40" size="4"/>
+      <FIELD name="TargetHash" offset="44" size="4"/>
+      <FIELD name="SourceHash" offset="48" size="4"/>
+      <FIELD name="Frame" offset="52" size="4"/>
+      <FIELD name="SourceId" offset="56" size="2"/>
+      <FIELD name="TargetId" offset="58" size="2"/>
+      <FIELD name="ChannelFlagsIntegrityReserved" offset="60" size="4"/>
+    </DTO>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>GlobalQualityWeight continuously controls status cadence 1.0s..0.1s, batch size 128..32, toxic bubble cadence 48..8 frames, and request-only scheduling. Request-only frames drain the NativeQueue with ApplyStatusEffectRequestsJob, lock only the five required status/counter/telemetry buffers, do not resolve armor TargetRootAups, do not lock VFX/damage staging buffers, and skip the O(MaxTargets) evaluation pass until cadence debt matures. Low pressure collapses visual density and CPU cadence; high/ultra spends saved cycles on denser VFX without changing mask truth, DTO layout, save identity, or damage authority.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS buffers="71260,71261,71262,71263,71264,71267,71268">Status truth is Vault state rows; VFX and damage staging are Vault row data; request ingress is a bounded native queue. No managed status component owns gameplay truth.</H_PHI_VAULT_STATUS>
+  <DEPENDENCY_GRAPH>ApplyStatusEffectRequestsJob drains requests. If cadence debt is not mature, the scheduled handle ends there and completion writes telemetry without armor/VFX/damage staging dependencies. EvaluateStatusEffectsJob runs only on simulation cadence, consumes the apply handle and borrowed armor Vault target AUP views, and H8Memory registers the resulting active handle. The parallel job does not write modulo telemetry ring slots; owner completion folds result telemetry after the fence, writes the completion row, publishes staged damage and VFX, then unlocks status and borrowed armor buffers.</DEPENDENCY_GRAPH>
+  <NAN_VACCINATION>EvaluateStatusEffectsJob finite-guards duration packs, DPS, raw damage, max health denominator, target AUP, and VFX intensity before state write or signal publication. Owner damage publication records anomaly hashes for SignalBus backpressure or missing native storage.</NAN_VACCINATION>
+  <COMPILE_GUARD>No sibling asmdef reference added. One gated build probe ran only after CPU sampled 39 percent and no dotnet/csc/VBCSCompiler process was active. The build failed in unrelated VR somatic/player kinematics files: missing VRSomaticKinematicStateMirrorDTO, VRSomaticComfortDTO, and PlayerHandIkConfigFlags. No SHINOBU_319 file appeared in the compiler errors.</COMPILE_GUARD>
+  <DEAR_LIE>Poison bubble geometry is not simulated by CPU. Burst writes a scalar AUP request; downstream VFX owns procedural visuals.</DEAR_LIE>
+</SELF_AUDIT>

@@ -114,12 +114,15 @@ namespace Hecton8.Core
         private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _droppedEventCount;
         private static bool _isDispatching;
 
         /// <summary>
         /// Pending payload count in the performance threshold lane.
         /// </summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        public static int DroppedEventCount => _droppedEventCount;
 
         /// <summary>
         /// Registers a performance threshold listener.
@@ -187,7 +190,10 @@ namespace Hecton8.Core
                         return;
 
                     if (!_pendingEvents.TryDequeue(out PerformanceEventPayload payload))
+                    {
+                        _pendingEventCount = 0;
                         break;
+                    }
 
                     if (_pendingEventCount > 0)
                         _pendingEventCount--;
@@ -254,9 +260,15 @@ namespace Hecton8.Core
             }
         }
 
+        [Obsolete("Use TryRaiseFrameTimeSpike(float,float,int) so bounded enqueue refusal is visible.", true)]
         internal static void RaiseFrameTimeSpike(float frameTimeMs, float thresholdMs, int frameCount)
         {
-            Enqueue(new PerformanceEventPayload
+            TryRaiseFrameTimeSpike(frameTimeMs, thresholdMs, frameCount);
+        }
+
+        internal static bool TryRaiseFrameTimeSpike(float frameTimeMs, float thresholdMs, int frameCount)
+        {
+            return Enqueue(new PerformanceEventPayload
             {
                 CurrentRawValue = (long)(frameTimeMs * 1000f),
                 ThresholdRawValue = (long)(thresholdMs * 1000f),
@@ -268,9 +280,15 @@ namespace Hecton8.Core
             });
         }
 
+        [Obsolete("Use TryRaiseGCAllocExceeded(long,long,int) so bounded enqueue refusal is visible.", true)]
         internal static void RaiseGCAllocExceeded(long allocatedBytes, long thresholdBytes, int frameCount)
         {
-            Enqueue(new PerformanceEventPayload
+            TryRaiseGCAllocExceeded(allocatedBytes, thresholdBytes, frameCount);
+        }
+
+        internal static bool TryRaiseGCAllocExceeded(long allocatedBytes, long thresholdBytes, int frameCount)
+        {
+            return Enqueue(new PerformanceEventPayload
             {
                 CurrentRawValue = allocatedBytes,
                 ThresholdRawValue = thresholdBytes,
@@ -282,9 +300,15 @@ namespace Hecton8.Core
             });
         }
 
+        [Obsolete("Use TryRaiseJobQueueBacklog(int,int,int) so bounded enqueue refusal is visible.", true)]
         internal static void RaiseJobQueueBacklog(int pendingJobCount, int thresholdCount, int frameCount)
         {
-            Enqueue(new PerformanceEventPayload
+            TryRaiseJobQueueBacklog(pendingJobCount, thresholdCount, frameCount);
+        }
+
+        internal static bool TryRaiseJobQueueBacklog(int pendingJobCount, int thresholdCount, int frameCount)
+        {
+            return Enqueue(new PerformanceEventPayload
             {
                 CurrentRawValue = pendingJobCount,
                 ThresholdRawValue = thresholdCount,
@@ -296,13 +320,23 @@ namespace Hecton8.Core
             });
         }
 
+        [Obsolete("Use TryRaiseSystemDegradation(float,float,int,SystemDegradationLevel) so bounded enqueue refusal is visible.", true)]
         internal static void RaiseSystemDegradation(
             float frameTimeMs,
             float thresholdMs,
             int frameCount,
             SystemDegradationLevel level = SystemDegradationLevel.Warning)
         {
-            Enqueue(new PerformanceEventPayload
+            TryRaiseSystemDegradation(frameTimeMs, thresholdMs, frameCount, level);
+        }
+
+        internal static bool TryRaiseSystemDegradation(
+            float frameTimeMs,
+            float thresholdMs,
+            int frameCount,
+            SystemDegradationLevel level = SystemDegradationLevel.Warning)
+        {
+            return Enqueue(new PerformanceEventPayload
             {
                 CurrentRawValue = (long)(frameTimeMs * 1000f),
                 ThresholdRawValue = (long)(thresholdMs * 1000f),
@@ -337,27 +371,33 @@ namespace Hecton8.Core
             _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _droppedEventCount = 0;
             _isDispatching = false;
         }
 
-        private static void Enqueue(in PerformanceEventPayload payload)
+        private static bool Enqueue(in PerformanceEventPayload payload)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+            {
+                _droppedEventCount++;
+                return false;
+            }
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
+                return true;
             }
             else
             {
                 _pendingEvents.Enqueue(payload);
                 _pendingEventCount++;
+                return true;
             }
         }
 
@@ -373,7 +413,10 @@ namespace Hecton8.Core
                     return;
 
                 if (!_pendingEvents.TryDequeue(out _))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -416,7 +459,7 @@ namespace Hecton8.Core
         /// <summary>Frame count when sampled.</summary>
         [FieldOffset(36)] public int frameCount;
 
-        /// <summary>Physics.RaycastAll + Physics.Raycast + Physics.OverlapSphere calls this frame.</summary>
+        /// <summary>Legacy scene-query calls counted this frame.</summary>
         [FieldOffset(40)] public int physicsCallCount;
 
         /// <summary>Estimated time spent in physics (calls × avg time per call).</summary>
@@ -488,7 +531,7 @@ namespace Hecton8.Core
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const float MillisecondsPerSecond = 1000f;
         // ════════════════════════════════════════════════════════════
@@ -575,6 +618,7 @@ namespace Hecton8.Core
         private int _lastGCCollectionCount;
         private bool _isRegisteredToTickManager;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
 
         private float _avgFrameTimeMs;
         private float _peakFrameTimeMs;
@@ -648,15 +692,8 @@ namespace Hecton8.Core
             if (Application.isPlaying && !_serviceRegistered)
                 return;
 
-            if (_isRegisteredToTickManager || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            PerformanceEvents.EnsureInitialized();
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _isRegisteredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            TryRegisterHotSwapListener();
+            TryRegisterToDispatcher();
         }
 
         private void OnDisable()
@@ -672,15 +709,30 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public void OnServiceShutdown()
         {
-            if (!_isRegisteredToTickManager)
-            {
-                TryUnregisterService();
+            TryUnregisterFromDispatcher();
+            TryUnregisterHotSwapListener();
+            TryUnregisterService();
+        }
+
+        private void TryRegisterToDispatcher()
+        {
+            if (_isRegisteredToTickManager || !Application.isPlaying)
                 return;
-            }
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            PerformanceEvents.EnsureInitialized();
+            _isRegisteredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterFromDispatcher()
+        {
+            if (!_isRegisteredToTickManager)
+                return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _isRegisteredToTickManager = false;
-            TryUnregisterService();
         }
 
         private void TryRegisterService()
@@ -706,6 +758,35 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterPerformanceMonitorRuntime(this);
             _serviceRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterFromDispatcher();
+            TryRegisterToDispatcher();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         // ════════════════════════════════════════════════════════════
@@ -744,7 +825,7 @@ namespace Hecton8.Core
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogAutoReport()
         {
-            UnityEngine.Debug.Log(GetReport());
+            Hecton8.Core.H8Debug.Log(GetReport());
         }
 
         // ════════════════════════════════════════════════════════════
@@ -811,14 +892,14 @@ namespace Hecton8.Core
         {
             int frameCount = _currentSnapshot.frameCount;
             if (_currentSnapshot.frameTimeMs > peakFrameTimeThreshold)
-                PerformanceEvents.RaiseFrameTimeSpike(_currentSnapshot.frameTimeMs, peakFrameTimeThreshold, frameCount);
+                PerformanceEvents.TryRaiseFrameTimeSpike(_currentSnapshot.frameTimeMs, peakFrameTimeThreshold, frameCount);
 
             long gcThresholdBytes = (long)(peakAllocThreshold * 1048576f);
             if (_currentSnapshot.gcAllocatedThisFrame > gcThresholdBytes)
-                PerformanceEvents.RaiseGCAllocExceeded(_currentSnapshot.gcAllocatedThisFrame, gcThresholdBytes, frameCount);
+                PerformanceEvents.TryRaiseGCAllocExceeded(_currentSnapshot.gcAllocatedThisFrame, gcThresholdBytes, frameCount);
 
             if (_currentSnapshot.pendingJobCount > jobBacklogThreshold)
-                PerformanceEvents.RaiseJobQueueBacklog(_currentSnapshot.pendingJobCount, jobBacklogThreshold, frameCount);
+                PerformanceEvents.TryRaiseJobQueueBacklog(_currentSnapshot.pendingJobCount, jobBacklogThreshold, frameCount);
         }
 
         // ════════════════════════════════════════════════════════════

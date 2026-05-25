@@ -7,6 +7,11 @@ using Unity.Mathematics;
 
 namespace Hecton8.Physics
 {
+    internal static class TetherVerletJobLayout
+    {
+        public const int TelemetryEntryStrideBytes = 64;
+    }
+
     internal static class TetherVerletFaultFlags
     {
         public const int None = 0;
@@ -14,7 +19,7 @@ namespace Hecton8.Physics
         public const int ConstraintNonFinite = 2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = TetherVerletJobLayout.TelemetryEntryStrideBytes)]
     internal struct TetherVerletTelemetryEntry
     {
         [FieldOffset(0)] public uint FrameIndex;

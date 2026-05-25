@@ -13,12 +13,12 @@ namespace Hecton8.EditorTools
     public static class WorldProceduralMatrixBiomeMemoryReport
     {
         private const string ReportFileName = "PROCEDURAL_MATRIX_BIOME_MEMORY_REPORT.md";
-        private static ISet<string> _activeRepresentativeSignatures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static ISet<string> _activeRepresentativeSignatures = new HashSet<string>(16, StringComparer.OrdinalIgnoreCase);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _activeRepresentativeSignatures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            _activeRepresentativeSignatures = new HashSet<string>(16, StringComparer.OrdinalIgnoreCase);
         }
 
         [MenuItem("Hecton/Validation/Generate Procedural Matrix Biome Memory Report", priority = 238)]
@@ -178,9 +178,9 @@ namespace Hecton8.EditorTools
                 }
             }
 
-            HashSet<int> usedMatrixIndices = new HashSet<int>();
-            HashSet<string> usedFamilyIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            HashSet<string> usedMemorySignatures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<int> usedMatrixIndices = new HashSet<int>(candidates.Count);
+            HashSet<string> usedFamilyIds = new HashSet<string>(candidates.Count, StringComparer.OrdinalIgnoreCase);
+            HashSet<string> usedMemorySignatures = new HashSet<string>(candidates.Count, StringComparer.OrdinalIgnoreCase);
             _activeRepresentativeSignatures = usedMemorySignatures;
             return new[]
             {

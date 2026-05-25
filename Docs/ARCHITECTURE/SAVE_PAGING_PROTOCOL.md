@@ -1,26 +1,13 @@
-# SAVE_PAGING_PROTOCOL
+﻿# SAVE_PAGING_PROTOCOL
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
-
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-
-R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 ## Source Anchors
 
-Evidence class: STATIC_SOURCE / FILESYSTEM. These anchors prove only that the cited local paths exist at this capture time; they are not compile, Unity import, Play Mode, profiler, GC, player-build, save/load, platform, or visual proof.
+Evidence: STATIC_SOURCE / FILESYSTEM.
+
+Scope: cited local paths exist at capture time. No compile/import/Play/profiler/GC/player/save/platform/visual proof.
 - `Assets/_Project/Scripts/SaveBinaryStorage.cs`
 - `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs`
 - `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`
@@ -30,8 +17,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. These anchors prove only that the ci
 
 Status: LEGACY SPEC SNAPSHOT FOR VERSION AUTHORITY.
 
-This document still preserves useful dirty-sector and indexed-paging design history, but its
-`Container version: 0x0008` line is not the current runtime truth.
+Legacy snapshot: dirty-sector/indexed-paging history only. `Container version: 0x0008` is not current runtime truth.
 
 Current source-backed authority:
 
@@ -46,12 +32,9 @@ save compatibility. Do not use this file alone to claim the current save contain
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
-- Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
 - Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
 - Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json` (historical snapshot only; do not use for current counts or proof).
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
-- Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) (R46 prior interior-authority/route-field/proof-language correction; R45 prior R43/R44 residue/proof-artifact/source-counter correction); R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; AtlasCheck fails `ATLAS_CHECK_FAIL references=6781 missing=61` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, missing HectonMaskChannelPacker/HectonMaterialChannelPackValidator editor source refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 Historical 2026-05-04 boundary:
@@ -70,7 +53,7 @@ Owner files:
 Historical container version snapshot: `0x0008`.
 Current runtime version authority is listed in the 2026-05-17 live-version supersession above.
 
-This document defines dirty-sector commit behavior for the fixed-slot `4096` entry FileStream/native-window save container.
+Scope: dirty-sector commit behavior for the fixed-slot `4096` entry FileStream/native-window save container.
 
 ## Dirty Sector Rule
 
@@ -98,16 +81,25 @@ Sector paging integrity path:
 
 ## Construction Graph Integrity Boundary
 
-`ConstructionDTO` currently lives in the indexed metadata block, not in a standalone persistent-world sector. The metadata block is still protected by the same `16 KB` LZ4 sub-block framing and low-32-of-`XXHash3-64` validation used for sectors, so `ModuleGraphNodeDTO` payload bytes are protected against partial compressed-block corruption.
+`ConstructionDTO` currently lives in the indexed metadata block, not a standalone persistent-world sector.
 
-Sector-local fallback semantics require a separate construction-sector key before a failed construction graph can be restored independently from `*.sav.bak` while leaving inventory metadata from the primary save resident. Until that sector split exists, a failed metadata block remains a whole-metadata failure, while persistent-world sector failures remain sector-local.
+Protection still matches sectors: `16 KB` LZ4 sub-block framing plus low-32-of-`XXHash3-64` validation.
+
+`ModuleGraphNodeDTO` payload bytes are protected against partial compressed-block corruption.
+
+Sector-local fallback requires a separate construction-sector key before a failed construction graph can restore independently from `*.sav.bak`.
+
+Until that split exists, a failed construction metadata block remains a whole-metadata failure. Persistent-world sector failures remain sector-local.
 
 ## Master Index
 
 Directory layout is fixed:
 
-Legacy v8 file-format illustration only. These snippets are not current runtime DTO authority;
-current save truth is active writer `0x000B` / 56-byte header / `AlignedSectionHeaderVersion = 0x000B`, while `SaveMasterHashV10.HeaderVersion = 0x000A` remains staged helper context. Runtime layouts must follow ARM64 natural/explicit alignment.
+Legacy v8 file-format illustration only.
+
+These snippets are not current runtime DTO authority. Current save truth: active writer `0x000B`, 56-byte header, `AlignedSectionHeaderVersion = 0x000B`.
+
+`SaveMasterHashV10.HeaderVersion = 0x000A` remains staged helper context. Runtime layouts must follow ARM64 natural/explicit alignment.
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
@@ -208,7 +200,6 @@ writeOffset = originalLength
 newFileLength = originalLength + overrideCompressedSize
 ```
 
-
 ## Atomic Header / Directory Update
 
 After block write:
@@ -277,7 +268,9 @@ Rules:
 
 ## Mod Payload Sidecar Sectors
 
-Mod save payloads are stored as isolated `16 KB` sub-sector records under the `MODP` sector hash prefix. The main save metadata still carries a hashed fallback key, but the FileStream/native-window sidecar is the authoritative large-payload path.
+Mod save payloads are isolated `16 KB` sub-sector records under `MODP` sector hash prefix.
+
+Main save metadata still carries hashed fallback key. FileStream/native-window sidecar is authoritative large-payload path.
 
 Batch load path:
 
@@ -298,7 +291,6 @@ Rules:
 ## Defrag Relationship
 
 Dirty-sector commit may create holes when a block relocates to EOF.
-
 
 ## Async Dehydration Pipeline
 
@@ -343,7 +335,10 @@ uncompleted handles are disposed with NativeArray.Dispose(JobHandle)
 no mid-frame Complete() is allowed on the runtime dehydration lane
 ```
 
-The compression job uses the static `64 KB` save dictionary copied into job-owned native scratch before scheduling. The job writes protected `16 KB` LZ4 sub-blocks and stores low-32-of-`XXHash3-64` for each raw sub-block.
+- Compression job uses static `64 KB` save dictionary.
+- Dictionary is copied into job-owned native scratch before scheduling.
+- Job writes protected `16 KB` LZ4 sub-blocks.
+- Each raw sub-block stores low-32-of-`XXHash3-64`.
 
 ## Time-Sliced Hydration Apply
 
@@ -379,7 +374,8 @@ Status: STATIC_SOURCE / COMPILE BLOCKED BY CPU GATE.
 - A 5,000-sector seek test derives hashes from double-precision +/-49.9 km AUP coordinates quantized to 100 m sectors, then verifies targeted sector reads instead of full directory hydration.
 - Failure artifacts: `Docs/Reports/HEADLESS_WAL_FAILURES.csv` and versioned `Docs/AgentLogs/Dump_SHINOBU_256.bin`. Success artifact: `Docs/Reports/QA_OPTIMIZATION_REPORT.json`.
 - Batchmode artifact paths resolve against the Unity project root through editor `Application.dataPath` or an upward `Assets` + `ProjectSettings` root scan, not the process launch directory alone.
-- Runtime proof is still pending because CPU preflight reported 100%, later `csc` and `dotnet` processes were active, generated `.csproj` files are stale for the new SaveSystem asmdefs, and project policy forbids `dotnet build` above 50% CPU.
-
+- Runtime proof remains pending.
+- Blockers: CPU preflight `100%`, later active `csc`/`dotnet`, generated `.csproj` stale for new SaveSystem asmdefs.
+- Project policy forbids `dotnet build` above `50%` CPU.
 
 Verification: PENDING VERIFICATION

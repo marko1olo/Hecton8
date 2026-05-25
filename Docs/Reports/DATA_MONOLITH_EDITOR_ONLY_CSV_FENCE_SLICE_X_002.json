@@ -1,0 +1,191 @@
+{
+    "schema":  "HECTON8_DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_V1",
+    "agent":  "X_002",
+    "generated":  "2026-05-23T20:06:34.8804355Z",
+    "status":  "PATCHED_STATIC_CONFIG_DEV_GUARD_SLICE_CORE_COMPILE_PASS",
+    "policy":  "CSV/text/static-config parser authoring bridges in this touched slice are narrowed from UNITY_EDITOR || DEVELOPMENT_BUILD to UNITY_EDITOR. Release gate was already clean; this closes development-player parser leakage in the selected slice.",
+    "filesTouched":  41,
+    "guardReplacements":  195,
+    "directUnityEditorOrDevelopmentBuildGuardsInTouchedSlice":  0,
+    "preprocessorBalance":  "PASS: #if/#endif counts equal in touched slice",
+    "diffCheck":  "PASS with LF/CRLF warnings only",
+    "releaseGateStatus":  "PASS_RELEASE_PARSER_GATE",
+    "releaseGateBlockingFindings":  0,
+    "releaseGateAllowedPersistenceFindings":  12,
+    "compileStatus":  "PASS_HECTON8_CORE_0_WARNINGS_0_ERRORS_108340MS",
+    "compileGate":  "OPENED: CPU 47.49%, compiler processes 0; dotnet build Hecton8.Core.csproj --no-restore -v:minimal PASS",
+    "changedFiles":  [
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+                             "Replacements":  7
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                             "Replacements":  6
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+                             "Replacements":  5
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs",
+                             "Replacements":  5
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Quest/QuestDagDataLoading.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                             "Replacements":  15
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridContracts.cs",
+                             "Replacements":  10
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyRuntime.cs",
+                             "Replacements":  8
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/LocalizationManager.cs",
+                             "Replacements":  8
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+                             "Replacements":  6
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                             "Replacements":  6
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                             "Replacements":  5
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+                             "Replacements":  5
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+                             "Replacements":  4
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+                             "Replacements":  4
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                             "Replacements":  31
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                             "Replacements":  16
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+                             "Replacements":  4
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+                             "Replacements":  4
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                             "Replacements":  4
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                             "Replacements":  4
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+                             "Replacements":  3
+                         }
+                     ],
+    "gitDiffChangedCodeFiles":  37,
+    "targetFilesWithoutCurrentDiff":  4,
+    "noCurrentDiffFiles":  [
+                               "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                               "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+                               "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+                               "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs"
+                           ]
+}

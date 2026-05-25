@@ -83,12 +83,10 @@ namespace Hecton8.Editor.Build
             if (!Directory.Exists(root))
                 return 0;
 
-            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
             int findingCount = 0;
 
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
-                string file = files[i];
                 string normalized = ToAssetPath(file);
                 if (IsEditorSource(normalized))
                     continue;

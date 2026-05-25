@@ -12,7 +12,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class HarpoonLauncherTool : PlayerTool, ILateFrameTickable
+    public sealed class HarpoonLauncherTool : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string HarpoonCategory = "HARPOON";
         private const string TracerShaderName = "Hecton8/Physics/TetherLineStrip";
@@ -143,6 +143,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float impulse = 18f;
         [SerializeField] private float reelImpulse = 14f;
         [SerializeField] private float maxReelMass = 55f;
+        private const float PlayerRecoilEquivalentMassKg = 80f;
         [SerializeField] private float shotCooldown = 0.85f;
         [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
@@ -178,7 +179,7 @@ namespace Hecton8.Gameplay
         private bool _cachedAssessmentValid;
         private HarpoonAssessment _cachedAssessment;
         private float _tetherRemaining;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private FixedCharBuffer _hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon HUD staging buffer - owner: HarpoonLauncherTool
         private FixedCharBuffer _logTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - harpoon operation log title staging buffer - owner: HarpoonLauncherTool
         private FixedCharBuffer _logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon operation log summary staging buffer - owner: HarpoonLauncherTool
@@ -199,7 +200,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.LocalizationText;
             ResolveHeavyTowWinch();
             ResolvePlayerMovement();
             _feedbackCooldownRemaining = 0f;
@@ -210,7 +211,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.LocalizationText;
             ResolveHeavyTowWinch();
             ResolvePlayerMovement();
             InvalidateAssessmentCache();
@@ -223,6 +224,27 @@ namespace Hecton8.Gameplay
             _localization = null;
             _feedbackCooldownRemaining = 0f;
             ClearTether();
+        }
+
+        protected override void OnToolRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            base.OnToolRegistryServiceReplaced(serviceSlot, previousService, currentService);
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null || !isActiveAndEnabled || !_lateFrameRegistered)
+                        return;
+
+                    TryUnregisterLateFrameTick();
+                    TryRegisterLateFrameTick();
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as ILocalizationTextReadModel;
+                    break;
+            }
         }
 
         protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
@@ -257,7 +279,9 @@ namespace Hecton8.Gameplay
                     runtimeDamage * GetEfficiency(),
                     hit.point,
                     toolForward,
-                    impulse);
+                    impulse,
+                    DamageSourceIds.Harpoon,
+                    CombatDamageTypes.Impact);
 
                 TetherRegistrationResult tetherResult = TryRegisterTether(hit);
 
@@ -646,7 +670,7 @@ namespace Hecton8.Gameplay
                 worldBounds = new Bounds(midpoint, size),
                 layer = gameObject.layer
             };
-            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, 1);
+            UnityEngine.Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, 1);
         }
 
         private void UploadTracerGpuData(Vector3 start, Vector3 end)
@@ -989,7 +1013,7 @@ namespace Hecton8.Gameplay
         {
             Vector3 fallback = TryResolveToolPose(out _, out Vector3 toolForward) ? toolForward : Vector3.forward;
             Vector3 safeDirection = ResolveSafeDirection(direction, fallback);
-            float mass = _playerRigidbody != null ? Mathf.Max(_playerRigidbody.mass, 0.1f) : 1f;
+            float mass = PlayerRecoilEquivalentMassKg;
             float runtimeRecoil = GetRuntimeRecoilImpulse(impulse);
             float impulseMagnitude = Mathf.Min(12f, (runtimeRecoil * Mathf.Max(0.1f, runtimeDamage / Mathf.Max(damage, 0.1f))) / mass);
             if (impulseMagnitude <= 0.0001f)
@@ -1285,9 +1309,9 @@ namespace Hecton8.Gameplay
 
         private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetOrFallback(key, fallback)
                 : fallback;
         }
 

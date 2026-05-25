@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_241" domain="OFFLINE_HADAL_TRENCH_FAULT_GENERATOR" status="STATIC_SOURCE_ONLY_PENDING_COMPILE_BAKE_BOOT">
+﻿<SELF_AUDIT agent="SHINOBU_241" domain="OFFLINE_HADAL_TRENCH_FAULT_GENERATOR" status="STATIC_SOURCE_ONLY_PENDING_COMPILE_BAKE_BOOT">
   <TaskReconciliation>
     <Task id="01" status="PASS_STATIC">Environment prefab folder is absent; fallback CLI scan found no strict trench/canyon/fault/chasm .fbx/.prefab rows in Assets.</Task>
     <Task id="02" status="PASS_CODE">Runtime macroscopic seismic trench route is inert; localized gameplay crater/collapse code remains outside trench authority.</Task>

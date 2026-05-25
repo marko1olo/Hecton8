@@ -1,4 +1,4 @@
-# Compliance And Disclosure Playbook
+﻿# Compliance And Disclosure Playbook
 
 Status: compliance guardrail / pre-outreach
 Public stance: single-player-first scope / proof-first public copy

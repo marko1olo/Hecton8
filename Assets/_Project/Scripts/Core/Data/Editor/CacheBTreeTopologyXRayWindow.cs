@@ -468,20 +468,16 @@ namespace Hecton8.Core.Data.Editor
             using (NativeArray<DataOffsetLengthDTO> output = new NativeArray<DataOffsetLengthDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
             using (NativeArray<uint> trace = new NativeArray<uint>(MaxTraceNodes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
             {
-                byte* basePointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
-                H8CacheBTree.TraceBTreeTraversalJob job = new H8CacheBTree.TraceBTreeTraversalJob
-                {
-                    BasePointer = basePointer,
-                    Output = output,
-                    TouchedNodeOffsets = trace,
-                    TreeOffset = _treeOffset,
-                    RootOffset = _treeRootOffset,
-                    TreeEndOffset = _treeEndOffset,
-                    TargetHash = _lastSearchHash,
-                    GlobalQualityWeight = 1f
-                };
-
-                JobHandle handle = job.Schedule();
+                JobHandle handle = H8CacheBTree.ScheduleTraceBTreeTraversal(
+                    bytes,
+                    output,
+                    trace,
+                    _treeOffset,
+                    _treeRootOffset,
+                    _treeEndOffset,
+                    _lastSearchHash,
+                    1f,
+                    default(JobHandle));
                 handle.Complete();
                 DataOffsetLengthDTO result = output[0];
                 _lastSearchFound = (result.Flags & H8CacheBTree.ResultFoundFlag) != 0u;
@@ -503,8 +499,7 @@ namespace Hecton8.Core.Data.Editor
                     H8CacheBTree.BTreeTelemetryRingBufferId,
                     out VaultGenerationHandle<BTreeTelemetryEntry> ringHandle) ||
                 ringHandle.BufferID != unchecked((uint)(int)H8CacheBTree.BTreeTelemetryRingBufferId) ||
-                !vault.TryReadHandle(in ringHandle, out NativeArray<BTreeTelemetryEntry> ring) ||
-                !ring.IsCreated)
+                !vault.TryReadOnlyHandle(in ringHandle, out NativeArray<BTreeTelemetryEntry>.ReadOnly ring))
             {
                 return;
             }
@@ -562,8 +557,7 @@ namespace Hecton8.Core.Data.Editor
                     H8CacheBTree.BTreeTuningProfilesBufferId,
                     out VaultGenerationHandle<BTreeTuningProfileDTO> existing) &&
                 existing.BufferID == unchecked((uint)(int)H8CacheBTree.BTreeTuningProfilesBufferId) &&
-                vault.TryReadHandle(in existing, out NativeArray<BTreeTuningProfileDTO> existingProfiles) &&
-                existingProfiles.IsCreated &&
+                vault.TryReadOnlyHandle(in existing, out NativeArray<BTreeTuningProfileDTO>.ReadOnly existingProfiles) &&
                 existingProfiles.Length >= H8CacheBTree.BTreeTuningProfileCapacity)
             {
                 handle = existing;
@@ -573,7 +567,7 @@ namespace Hecton8.Core.Data.Editor
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetGenerationHandle<BTreeTuningProfileDTO>(
+                handle = vault.EnsureGenerationHandle<BTreeTuningProfileDTO>(
                     H8CacheBTree.BTreeTuningProfilesBufferId,
                     H8CacheBTree.BTreeTuningProfileCapacity,
                     SystemID.CoreDataVault,

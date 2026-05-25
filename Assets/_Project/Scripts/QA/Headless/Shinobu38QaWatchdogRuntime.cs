@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -19,6 +19,7 @@ using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
+#if UNITY_EDITOR
 namespace Hecton8.QA.Headless
 {
     public enum Shinobu38QaTier : byte
@@ -231,7 +232,7 @@ namespace Hecton8.QA.Headless
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9200)]
-    public sealed class Shinobu38QaWatchdogRuntime : MonoBehaviour, IFastTickable, IColdTickable, ILateFrameTickable
+    public sealed class Shinobu38QaWatchdogRuntime : MonoBehaviour, IFastTickable, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string AgentId = "SHINOBU_79";
         private const string RuntimeRootName = "[SHINOBU_79_QA_WATCHDOG]";
@@ -403,6 +404,7 @@ namespace Hecton8.QA.Headless
         private bool _registeredFast;
         private bool _registeredCold;
         private bool _registeredLate;
+        private bool _registeredHotSwap;
         private bool _navigationPending;
         private bool _vaultBuffersLocked;
         private bool _runtimePolicyCaptured;
@@ -738,22 +740,22 @@ namespace Hecton8.QA.Headless
             if (vault == null)
                 throw new InvalidOperationException("SHINOBU_79 requires GlobalRegistry.DataVault.");
 
-            _stateHandle = vault.GetGenerationHandle<WatchdogStateDTO>(StateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _snapshotHandle = vault.GetGenerationHandle<TelemetrySnapshotDTO>(SnapshotBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _agent36InputHandle = vault.GetGenerationHandle<InputStateDTO>(BufferID.ShinobuInputCurrentDto, InputBufferCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _waypointsHandle = vault.GetGenerationHandle<Shinobu38RouteWaypointDTO>(WaypointsBufferId, RouteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _mockRebaseSignalsHandle = vault.GetGenerationHandle<MockRebaseSignal>(RebaseSignalsBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetGenerationHandle<Shinobu38TuningDTO>(TuningBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _mockVaultHandle = vault.GetGenerationHandle<Shinobu38MockVaultDTO>(MockVaultBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetGenerationHandle<Shinobu38WatchdogTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(CsvScratchBufferId, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _waypointScratchHandle = vault.GetGenerationHandle<byte>(WaypointScratchBufferId, CsvOverrideBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _dumpScratchHandle = vault.GetGenerationHandle<byte>(DumpScratchBufferId, CrashDumpBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _fileWriteCommandsHandle = vault.GetGenerationHandle<Shinobu38FileWriteCommand>(FileWriteCommandsBufferId, FileWriteQueueCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _fileWritePayloadHandle = vault.GetGenerationHandle<byte>(FileWritePayloadBufferId, FileWritePayloadTotalBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _fileWriterStateHandle = vault.GetGenerationHandle<Shinobu38FileWriterStateDTO>(FileWriterStateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _fileWriterCursorHandle = vault.GetGenerationHandle<Shinobu38FileWriterCursorDTO>(FileWriterCursorBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _waypointIngestStateHandle = vault.GetGenerationHandle<Shinobu38WaypointIngestStateDTO>(WaypointIngestStateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _stateHandle = vault.EnsureGenerationHandle<WatchdogStateDTO>(StateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _snapshotHandle = vault.EnsureGenerationHandle<TelemetrySnapshotDTO>(SnapshotBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _agent36InputHandle = vault.EnsureGenerationHandle<InputStateDTO>(BufferID.ShinobuInputCurrentDto, InputBufferCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _waypointsHandle = vault.EnsureGenerationHandle<Shinobu38RouteWaypointDTO>(WaypointsBufferId, RouteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _mockRebaseSignalsHandle = vault.EnsureGenerationHandle<MockRebaseSignal>(RebaseSignalsBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = vault.EnsureGenerationHandle<Shinobu38TuningDTO>(TuningBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _mockVaultHandle = vault.EnsureGenerationHandle<Shinobu38MockVaultDTO>(MockVaultBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _telemetryRingHandle = vault.EnsureGenerationHandle<Shinobu38WatchdogTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(CsvScratchBufferId, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _waypointScratchHandle = vault.EnsureGenerationHandle<byte>(WaypointScratchBufferId, CsvOverrideBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _dumpScratchHandle = vault.EnsureGenerationHandle<byte>(DumpScratchBufferId, CrashDumpBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _fileWriteCommandsHandle = vault.EnsureGenerationHandle<Shinobu38FileWriteCommand>(FileWriteCommandsBufferId, FileWriteQueueCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _fileWritePayloadHandle = vault.EnsureGenerationHandle<byte>(FileWritePayloadBufferId, FileWritePayloadTotalBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _fileWriterStateHandle = vault.EnsureGenerationHandle<Shinobu38FileWriterStateDTO>(FileWriterStateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _fileWriterCursorHandle = vault.EnsureGenerationHandle<Shinobu38FileWriterCursorDTO>(FileWriterCursorBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _waypointIngestStateHandle = vault.EnsureGenerationHandle<Shinobu38WaypointIngestStateDTO>(WaypointIngestStateBufferId, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
         }
 
         private static bool TryResolveWatchdogVaultBuffer<T>(
@@ -910,15 +912,36 @@ namespace Hecton8.QA.Headless
         {
             ForceRuntimePolicy();
             ApplyQualityWeightModulation(0f);
+            TryRegisterHotSwapListener();
+            RegisterRuntimeLanes();
+            if (!_started)
+                Finish(ResultStatusFault, EventHashCrash);
+        }
+
+        private void RegisterRuntimeLanes()
+        {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (_registeredFast || _registeredCold || _registeredLate)
+                UnregisterRuntimeLanes();
+
             _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Core);
             _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Core);
             _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
             _started = _registeredFast && _registeredCold && _registeredLate;
             if (!_started)
-                Finish(ResultStatusFault, EventHashCrash);
+                UnregisterRuntimeLanes();
         }
 
         private void UnregisterRuntime()
+        {
+            TryUnregisterHotSwapListener();
+            UnregisterRuntimeLanes();
+            UnlockRuntimeBuffers();
+        }
+
+        private void UnregisterRuntimeLanes()
         {
             if (_registeredFast)
             {
@@ -938,7 +961,42 @@ namespace Hecton8.QA.Headless
                 _registeredLate = false;
             }
 
-            UnlockRuntimeBuffers();
+            _started = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                _finished ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            RegisterRuntimeLanes();
+            if (!_started)
+                Finish(ResultStatusFault, EventHashCrash);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void ConsumeNavigationResult()
@@ -1141,7 +1199,7 @@ namespace Hecton8.QA.Headless
                     State = SystemHealthIndexSignal.StateCritical,
                     Flags = SystemHealthIndexSignal.FlagAdrenaline
                 };
-                SignalBus<SystemHealthIndexSignal>.Push(in signal);
+                SignalBus<SystemHealthIndexSignal>.TryPush(in signal);
                 vault.Flags |= VaultFlagLowTierEmergency;
                 _healthStressWasActive = true;
                 mockVault[0] = vault;
@@ -1791,7 +1849,7 @@ namespace Hecton8.QA.Headless
             state.ActionsBitmask = input.ButtonMask;
             state.PlatformInputFlags = InputMaskAutomation;
             state.CurrentInputSchemeHash = SourceHash;
-            PhysicsDeterminismSignals.PublishInputOverride(in state, unchecked((uint)Time.frameCount));
+            PhysicsDeterminismSignals.TryPublishInputOverride(in state, unchecked((uint)Time.frameCount));
         }
 
         private float ApplyQualityWeightModulation(float testDurationSeconds)
@@ -1821,13 +1879,19 @@ namespace Hecton8.QA.Headless
         {
             float finiteDuration = math.isfinite(testDurationSeconds) && testDurationSeconds > 0f ? testDurationSeconds : 0f;
             float phase = finiteDuration - math.floor(finiteDuration / QualityCycleSeconds) * QualityCycleSeconds;
-            float recoveryGate = math.step(QualityClampSeconds, phase);
-            float fullGate = math.step(QualityClampSeconds + QualityReleaseRampSeconds, phase);
+            float recoveryGate = Smooth01((phase - QualityClampSeconds) * math.rcp(math.max(QualityReleaseRampSeconds, 0.0001f)));
+            float fullGate = Smooth01((phase - QualityClampSeconds - QualityReleaseRampSeconds) * math.rcp(math.max(QualityReleaseRampSeconds, 0.0001f)));
             float t = math.saturate((phase - QualityClampSeconds) / math.max(QualityReleaseRampSeconds, 0.0001f));
             float eased = t * t * (3f - (2f * t));
             float rampWeight = math.lerp(QualityClampWeight, 1f, eased);
             float clampOrRamp = math.lerp(QualityClampWeight, rampWeight, recoveryGate);
             return math.lerp(clampOrRamp, 1f, fullGate);
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private static int ResolveAupSector(double absoluteMeters)
@@ -2271,7 +2335,7 @@ namespace Hecton8.QA.Headless
                 if (sdf < 10f)
                 {
                     float quality = math.saturate(QualityWeight);
-                    float richNormalGate = math.step(LowQualityNormalCollapseThreshold, quality);
+                    float richNormalGate = Smooth01((quality - LowQualityNormalCollapseThreshold) * math.rcp(math.max(0.0001f, 1f - LowQualityNormalCollapseThreshold)));
                     float3 cheapNormal = math.normalizesafe(new float3(-desired.x * 0.25f, 1f, -desired.z * 0.25f), new float3(0f, 1f, 0f));
                     float3 richNormal = richNormalGate > 0f ? Shinobu38MockTerrainSdf.SampleNormal(ahead) : cheapNormal;
                     float normalBlend = quality * quality * (3f - (2f * quality));
@@ -2363,11 +2427,11 @@ namespace Hecton8.QA.Headless
     {
         public static float SampleDistance(float3 point)
         {
-            float waveA = math.sin(point.z * 0.013f) * 9f;
-            float waveB = math.sin(point.x * 0.017f + point.z * 0.007f) * 6f;
+            float waveA = MathLodApproximation.ApproxSinBhaskara(point.z * 0.013f) * 9f;
+            float waveB = MathLodApproximation.ApproxSinBhaskara(point.x * 0.017f + point.z * 0.007f) * 6f;
             float caveRadius = 26f + waveA + waveB;
-            float vertical = math.abs(point.y + 50f + math.sin(point.z * 0.009f) * 12f);
-            float lateral = math.abs(math.sin(point.x * 0.006f) * 18f);
+            float vertical = math.abs(point.y + 50f + MathLodApproximation.ApproxSinBhaskara(point.z * 0.009f) * 12f);
+            float lateral = math.abs(MathLodApproximation.ApproxSinBhaskara(point.x * 0.006f) * 18f);
             return caveRadius - math.max(vertical, lateral);
         }
 
@@ -2570,3 +2634,4 @@ namespace Hecton8.QA.Headless
         }
     }
 }
+#endif

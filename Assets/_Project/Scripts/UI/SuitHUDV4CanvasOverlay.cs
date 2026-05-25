@@ -33,10 +33,12 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener, IGlobalRegistryHotSwapListener
     {
         // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] — active HUD overlay registry — owner: SuitHUDV4CanvasOverlay
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
+        private const int MaxHudDynamicTextBufferChars = 4096;
+        private static readonly char[] s_sharedOversizedHudTextBuffer = new char[MaxHudDynamicTextBufferChars]; // COLD ALLOC: char[4096] - editor/no-GC fallback for oversized HUD text staging - owner: SuitHUDV4CanvasOverlay
         private static bool s_stencilRenderGraphRuntimeActive;
         // COLD ALLOC: List<VisorHUDController>[2] — controller resolve scratch — owner: SuitHUDV4CanvasOverlay
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
@@ -142,6 +144,7 @@ namespace Hecton8.UI
         private const float HelmetScissorInsetPixelsY = 36f;
         private const float ProjectionNearClipSafetyPaddingMeters = 0.05f;
         private const float ProjectionPosePositionTolerance = 0.0001f;
+        private const float ProjectionPoseRotationSinHalfSqTolerance = 0.00000000761543549f;
         private const float ProjectionPoseScaleTolerance = 0.000001f;
         private const float MaterialFloatWriteEpsilon = 0.0005f;
         private const float ScannerEvidenceEpsilon = 0.0001f;
@@ -681,6 +684,9 @@ namespace Hecton8.UI
         private bool _pendingRuntimeCanvasRefresh = true;
         private bool _forceResolveOnSlowTick = true;
         private bool _pendingDepthSignalRefresh = true;
+        private readonly char[] _oxygenGaugeValueBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity]; // COLD ALLOC: char[64] - O2 gauge numeric buffer - owner: SuitHUDV4CanvasOverlay
+        private readonly char[] _healthGaugeValueBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity]; // COLD ALLOC: char[64] - health gauge numeric buffer - owner: SuitHUDV4CanvasOverlay
+        private readonly char[] _powerGaugeValueBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity]; // COLD ALLOC: char[64] - power gauge numeric buffer - owner: SuitHUDV4CanvasOverlay
         private SuitData _cachedSuitLabelSuit;
         private string _cachedSuitLabelOverride;
         private bool _cachedSuitLabelRtl;
@@ -1120,7 +1126,6 @@ namespace Hecton8.UI
 
         private bool _ownsGlobalUiSlot;
         private bool _hotSwapRegistered;
-        private bool _scalabilityRegistered;
         private bool _floatingOriginRegistered;
         private int _hudProxyLightKey;
         private bool _hudProxyLightRegistered;
@@ -1180,7 +1185,6 @@ namespace Hecton8.UI
             CacheGlitchTableVaultCold();
             TryRegisterUiService();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             TryRegisterFloatingOriginListener();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             TryRegisterRuntimeTick();
@@ -1237,7 +1241,6 @@ namespace Hecton8.UI
             TryRegisterFloatingOriginListener();
             TryRegisterUiService();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             ToolHapticsRuntime.EnsureRuntimeInstance();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             TryRegisterRuntimeTick();
@@ -1269,7 +1272,6 @@ namespace Hecton8.UI
             SaveEvents.Unregister(this);
             TryUnregisterFloatingOriginListener();
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             UnregisterUiService();
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
@@ -1309,7 +1311,6 @@ namespace Hecton8.UI
         {
             SaveEvents.Unregister(this);
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             UnregisterUiService();
             UnregisterHudProxyLight();
             DisposeDitheredUiBackgroundRuntimeResources();
@@ -1553,7 +1554,7 @@ namespace Hecton8.UI
 
             long hudSolveStartTimestamp = Stopwatch.GetTimestamp();
             UpdateSavingProgressHud(deltaTime);
-            int cadenceFrame = Time.frameCount;
+            int cadenceFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             bool reactiveDirty = ConsumeReactiveSignals();
             int cadenceStride = math.max(1, _reactiveUiCadenceStride);
             bool cadenceGateOpen = cadenceStride <= 1 ||
@@ -1579,7 +1580,7 @@ namespace Hecton8.UI
         private void PublishHudSolveWarningIfNeeded(long startTimestamp)
         {
             long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
-            if (elapsedTicks <= _HudSolveBudgetWarningTicks || Time.frameCount < _nextHudPerformanceWarningFrame)
+            if (elapsedTicks <= _HudSolveBudgetWarningTicks || Hecton8.Core.SystemDispatcher.CurrentFrameIndex < _nextHudPerformanceWarningFrame)
                 return;
 
             double elapsedMilliseconds = elapsedTicks * 1000.0d / Stopwatch.Frequency;
@@ -1587,7 +1588,7 @@ namespace Hecton8.UI
                 _HudSolveBudgetWarningHash,
                 _HudSolveBudgetContextHash,
                 (float)elapsedMilliseconds);
-            _nextHudPerformanceWarningFrame = Time.frameCount + HudPerformanceWarningCooldownFrames;
+            _nextHudPerformanceWarningFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + HudPerformanceWarningCooldownFrames;
         }
 
         public void SlowTick()
@@ -1603,7 +1604,7 @@ namespace Hecton8.UI
 
             RefreshQualityPolicy();
             TryRegisterRuntimeTick();
-            ProcessPendingRuntimeCanvasRefresh();
+            QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             RefreshThreatChevronTargets();
         }
 
@@ -1647,6 +1648,8 @@ namespace Hecton8.UI
                 ApplyStencilRenderGraphSuppressionIfNeeded();
                 return;
             }
+
+            ProcessPendingRuntimeCanvasRefresh();
 
             if (!Application.isPlaying || _root == null)
                 return;
@@ -1734,7 +1737,7 @@ namespace Hecton8.UI
             if (now < _nextSavingProgressHapticTime)
                 return;
 
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 0.08f,
                 0.16f,
                 SavingProgressHapticDurationSeconds,
@@ -2025,8 +2028,8 @@ namespace Hecton8.UI
             LocalizationManager localizationRuntime = GlobalRegistry.Localization;
             bool localizationChanged = !ReferenceEquals(_localizationRuntime, localizationRuntime);
             _localizationRuntime = localizationRuntime;
-            _spatialAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _spatialAudioManager = GlobalRegistry.Audio;
+            _playerRuntimeContext = GlobalRegistry.Player;
             if (_vegetationBridge == null)
                 _vegetationBridge = GlobalRegistry.MapMagicVegetation;
             RebindInventoryService(GlobalRegistry.PlayerInventory);
@@ -2091,20 +2094,10 @@ namespace Hecton8.UI
             TryRegisterRuntimeTick();
         }
 
-        /// <inheritdoc />
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshQualityPolicy();
-            if (!isActiveAndEnabled)
-                return;
-
-            QueueRuntimeCanvasRefresh(forceResolve: false, refreshDepthSignal: false);
-            TryRegisterRuntimeTick();
-        }
-
         private void RefreshQualityPolicy()
         {
-            _qualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            _qualityWeight01 = math.saturate(math.select(_qualityWeight01, qualityWeight, math.isfinite(qualityWeight)));
             float curve = SmoothStep01(_qualityWeight01);
             _reactiveUiCadenceStride = math.clamp(
                 (int)math.round(math.lerp(MaxReactiveUiCadenceStride, 1f, curve)),
@@ -2145,24 +2138,6 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityRegistered = false;
         }
 
         private void TryRegisterFloatingOriginListener()
@@ -2538,7 +2513,9 @@ namespace Hecton8.UI
             if (math.lengthsq(poseDelta3) > ProjectionPosePositionTolerance)
                 return false;
 
-            if (Quaternion.Angle(canvasRect.rotation, cameraTransform.rotation) > 0.01f)
+            float rotationDot = math.abs(Quaternion.Dot(canvasRect.rotation, cameraTransform.rotation));
+            float rotationSinHalfSq = math.max(0f, 1f - math.min(rotationDot * rotationDot, 1f));
+            if (rotationSinHalfSq > ProjectionPoseRotationSinHalfSqTolerance)
                 return false;
 
             if (!IsProjectionCanvasLayerValid(canvasRect.gameObject, projectionCamera))
@@ -3831,9 +3808,9 @@ namespace Hecton8.UI
             Anchor(_gaugeClusterRoot, new Vector2(0f, 0f), new Vector2(0f, 0f), resolvedGaugeClusterOffset, resolvedGaugeClusterSize);
             _gaugeClusterRoot.localEulerAngles = Vector3.zero;
 
-            _oxygenGauge = CreateGauge("Gauge_O2", _gaugeClusterRoot, new Vector2(-resolvedGaugeColumnSpacing, 0f), oxygenIconTexture, _HudOxygenKeyHash);
-            _healthGauge = CreateGauge("Gauge_HLT", _gaugeClusterRoot, Vector2.zero, healthIconTexture, _HudHullKeyHash);
-            _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(resolvedGaugeColumnSpacing, 0f), energyIconTexture, _HudPowerKeyHash);
+            _oxygenGauge = CreateGauge("Gauge_O2", _gaugeClusterRoot, new Vector2(-resolvedGaugeColumnSpacing, 0f), oxygenIconTexture, _HudOxygenKeyHash, _oxygenGaugeValueBuffer);
+            _healthGauge = CreateGauge("Gauge_HLT", _gaugeClusterRoot, Vector2.zero, healthIconTexture, _HudHullKeyHash, _healthGaugeValueBuffer);
+            _powerGauge = CreateGauge("Gauge_PWR", _gaugeClusterRoot, new Vector2(resolvedGaugeColumnSpacing, 0f), energyIconTexture, _HudPowerKeyHash, _powerGaugeValueBuffer);
 
             _quickbarRoot = CreateRect("QuickbarRoot", _root);
             Anchor(_quickbarRoot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), quickbarOffset, quickbarSize);
@@ -4217,7 +4194,7 @@ namespace Hecton8.UI
             bool corruptedMode = !_biosRecoveryMode && displayCorruptionIntensity > 0f;
             bool toolDepletedWarningActive = !_biosRecoveryMode && _toolDepletedWarningTimer > 0f;
             EvaluateCriticalHapticCoupling(oxygen, power, health);
-            HectonUnderwaterVisuals.PublishHudAverageLuminance(ResolveHudFogLuminance(oxygen, power, health, toolDepletedWarningActive, displayCorruptionIntensity));
+            HectonUnderwaterVisuals.TryPublishHudAverageLuminance(ResolveHudFogLuminance(oxygen, power, health, toolDepletedWarningActive, displayCorruptionIntensity));
             if (corruptedMode)
                 _corruptionFrameVersion++;
 
@@ -4599,7 +4576,7 @@ namespace Hecton8.UI
             float lowMotor = math.saturate(math.max(oxygenCritical, healthCritical) * 0.78f + powerCritical * 0.18f);
             float highMotor = math.saturate(math.max(powerCritical, healthCritical) * 0.86f + oxygenCritical * 0.34f);
 
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 lowMotor,
                 highMotor,
                 CriticalHapticDurationSeconds,
@@ -5325,7 +5302,7 @@ namespace Hecton8.UI
                 SetLocalizedRtlState(gauge.Sub, localizedRtl);
         }
 
-        private GaugeRefs CreateGauge(string name, RectTransform parent, Vector2 anchoredPosition, Texture2D iconTexture, int labelKeyHash)
+        private GaugeRefs CreateGauge(string name, RectTransform parent, Vector2 anchoredPosition, Texture2D iconTexture, int labelKeyHash, char[] valueBuffer)
         {
             GaugeRefs refs = new GaugeRefs();
             refs.LabelKeyHash = labelKeyHash;
@@ -5336,7 +5313,7 @@ namespace Hecton8.UI
             Anchor(refs.Root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), anchoredPosition, new Vector2(86f, 92f));
             refs.CanvasGroup = EnsureCanvasGroup(refs.Root);
 
-            RectTransform iconRect = CreateRect(name + "_Icon", refs.Root);
+            RectTransform iconRect = CreateRect("GaugeIcon", refs.Root);
             Anchor(iconRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-26f, 28f), gaugeIconSize);
             // COLD ALLOC: RawImage[1] — gauge icon hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
             refs.Icon = iconRect.gameObject.AddComponent<RawImage>();
@@ -5349,7 +5326,7 @@ namespace Hecton8.UI
             float resolvedValueOffsetY = math.clamp(gaugeValueOffsetY, -4f, 4f);
             float resolvedLabelOffsetY = math.clamp(gaugeLabelOffsetY, -42f, -24f);
 
-            RectTransform backRect = CreateRect(name + "_RingBack", refs.Root);
+            RectTransform backRect = CreateRect("GaugeRingBack", refs.Root);
             Anchor(backRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
             // COLD ALLOC: GaugeRingGraphic[1] — gauge backdrop ring hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
             refs.RingBack = backRect.gameObject.AddComponent<GaugeRingGraphic>();
@@ -5358,7 +5335,7 @@ namespace Hecton8.UI
             refs.RingBack.raycastTarget = false;
             ApplyDitheredBackgroundMaterial(refs.RingBack);
 
-            RectTransform fillRect = CreateRect(name + "_RingFill", refs.Root);
+            RectTransform fillRect = CreateRect("GaugeRingFill", refs.Root);
             Anchor(fillRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
             // COLD ALLOC: GaugeRingGraphic[1] — gauge fill ring hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
             refs.RingFill = fillRect.gameObject.AddComponent<GaugeRingGraphic>();
@@ -5366,7 +5343,7 @@ namespace Hecton8.UI
             refs.RingFill.SetFillAmount(1f);
             refs.RingFill.raycastTarget = false;
 
-            RectTransform frameRect = CreateRect(name + "_RingFrame", refs.Root);
+            RectTransform frameRect = CreateRect("GaugeRingFrame", refs.Root);
             Anchor(frameRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f), new Vector2(resolvedRingSize, resolvedRingSize));
             // COLD ALLOC: GaugeRingGraphic[1] — gauge frame ring hierarchy bootstrap — owner: SuitHUDV4CanvasOverlay
             refs.RingFrame = frameRect.gameObject.AddComponent<GaugeRingGraphic>();
@@ -5374,15 +5351,15 @@ namespace Hecton8.UI
             refs.RingFrame.SetFillAmount(1f);
             refs.RingFrame.raycastTarget = false;
 
-            refs.Label = CreateText(name + "_Label", refs.Root, 10f, FontStyles.Bold, TextAlignmentOptions.Center, 0.82f, ResolveLabelFontAsset());
+            refs.Label = CreateText("GaugeLabel", refs.Root, 10f, FontStyles.Bold, TextAlignmentOptions.Center, 0.82f, ResolveLabelFontAsset());
             Anchor(refs.Label.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, resolvedLabelOffsetY), new Vector2(86f, 16f));
             TMP_TextRegistry.SetMetadata(refs.Label, labelKeyHash, LocLayer.Core);
 
-            refs.Value = CreateText(name + "_Value", refs.Root, 15f, FontStyles.Bold, TextAlignmentOptions.Center, 0.98f, ResolveNumericFontAsset());
+            refs.Value = CreateText("GaugeValue", refs.Root, 15f, FontStyles.Bold, TextAlignmentOptions.Center, 0.98f, ResolveNumericFontAsset());
             Anchor(refs.Value.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 6f + resolvedValueOffsetY), new Vector2(44f, 22f));
-            refs.ValueBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity]; // COLD ALLOC: char[64] — O2/power/health gauge numeric buffer — owner: SuitHUDV4CanvasOverlay
+            refs.ValueBuffer = valueBuffer;
 
-            refs.Sub = CreateText(name + "_Sub", refs.Root, 10f, FontStyles.Normal, TextAlignmentOptions.Center, 0.52f, ResolveLabelFontAsset());
+            refs.Sub = CreateText("GaugeSub", refs.Root, 10f, FontStyles.Normal, TextAlignmentOptions.Center, 0.52f, ResolveLabelFontAsset());
             Anchor(refs.Sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -48f), new Vector2(86f, 12f));
             refs.SubCanvasGroup = EnsureCanvasGroup(refs.Sub.rectTransform);
             SetCanvasGroupVisible(refs.SubCanvasGroup, false);
@@ -5403,7 +5380,7 @@ namespace Hecton8.UI
             for (int slotIndex = 0; slotIndex < QuickbarSlotCount; slotIndex++)
             {
                 QuickbarSlotRefs refs = new QuickbarSlotRefs();
-                refs.Root = CreateRect("QuickbarSlot_" + slotIndex, parent);
+                refs.Root = CreateRect("QuickbarSlot", parent);
                 Anchor(
                     refs.Root,
                     new Vector2(0.5f, 0.5f),
@@ -5643,7 +5620,7 @@ namespace Hecton8.UI
 
             int itemHashId = 0;
             if (prefab != null &&
-                prefab.TryGetComponent(out PlayerTool tool) &&
+                prefab.TryGetComponent(out IPlayerToolDataReadModel tool) &&
                 tool.ToolData != null)
             {
                 string persistentId = tool.ToolData.PersistentId;
@@ -5851,7 +5828,7 @@ namespace Hecton8.UI
         private static float ExactPrimaryHudTanPositive(float radians)
         {
             float x = math.clamp(radians, 0.001f, 1.55334306f);
-            return (float)Math.Tan(x);
+            return MathLodApproximation.ApproxTanClamped(x, 4096f);
         }
 
         private static int CeilPositiveToInt(float value)
@@ -6122,12 +6099,12 @@ namespace Hecton8.UI
                     (signal.Flags & (ushort)HomeostasisSignalFlags.HudWarning) != 0;
                 _systemHealthWarningActive = warning;
                 _systemHealthPressureLevel = signal.PressureLevel;
-                _systemHealthWarningFrame = Time.frameCount;
+                _systemHealthWarningFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 dirty = true;
             }
 
             if (_systemHealthWarningActive &&
-                Time.frameCount - _systemHealthWarningFrame > SystemHealthWarningStaleFrames)
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex - _systemHealthWarningFrame > SystemHealthWarningStaleFrames)
             {
                 _systemHealthWarningActive = false;
                 _systemHealthPressureLevel = 0;
@@ -6152,7 +6129,7 @@ namespace Hecton8.UI
             Color color = Alpha(warningColor, math.max(0.18f, warningColor.a * flickerAlpha));
             int version = unchecked((int)(0x484F0000u |
                 ((uint)_systemHealthPressureLevel << 8) |
-                (uint)((Time.frameCount >> 2) & 0xFF)));
+                (uint)((Hecton8.Core.SystemDispatcher.CurrentFrameIndex >> 2) & 0xFF)));
 
             SetDisplayBufferIfChanged(
                 _statusLabel,
@@ -6745,23 +6722,7 @@ namespace Hecton8.UI
             if (Application.isPlaying)
                 return;
 
-            int capacity = CharBufferPool.RequiredVrTextCapacity;
-            int growthWatchdog = 31;
-            while (capacity < requiredLength && growthWatchdog-- > 0)
-            {
-                if (capacity > (int.MaxValue >> 1))
-                {
-                    capacity = requiredLength;
-                    break;
-                }
-
-                capacity <<= 1;
-            }
-
-            if (capacity < requiredLength)
-                capacity = requiredLength;
-
-            buffer = new char[capacity]; // COLD ALLOC: char[capacity] — expanded HUD text staging buffer — owner: SuitHUDV4CanvasOverlay
+            buffer = s_sharedOversizedHudTextBuffer;
         }
 
         private static void CopyChars(char[] source, int sourceLength, char[] destination, ref int destinationIndex)
@@ -7493,7 +7454,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton UI Scaler")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class HectonUIScaler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener
+    public sealed class HectonUIScaler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string ContentRootName = "HectonUI_ScaledRoot";
 
@@ -7511,6 +7472,7 @@ namespace Hecton8.UI
         private RectTransform _contentRoot;
         private bool _registeredToTickManager;
         private bool _registeredToSlowTickManager;
+        private bool _hotSwapRegistered;
         private bool _pendingContentRootBootstrap = true;
         private int _lastScreenWidth = -1;
         private int _lastScreenHeight = -1;
@@ -7539,17 +7501,20 @@ namespace Hecton8.UI
 
             HectonFloatingOrigin.RegisterListener(this);
             RegisterToTickManager();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
         }
 
@@ -7814,15 +7779,46 @@ namespace Hecton8.UI
 
             if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             }
 
             if (_registeredToSlowTickManager || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToSlowTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            UnregisterFromTickManager();
+            RegisterToTickManager();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void UnregisterFromTickManager()

@@ -57,7 +57,9 @@ namespace Hecton8.AI.Ecosystem
         private const int AcousticTapCapacity = 64;
         private const int SpatialBucketCapacity = 65536;
         private const int SpatialBucketMask = SpatialBucketCapacity - 1;
+#if UNITY_EDITOR
         private const int CsvMaxBytes = 8192;
+#endif
         private const int LegacyScratchBytes = 512;
         private const int MaxSpatialHashChainSteps = 64;
         private const int MaxNeighborSamples = 48;
@@ -66,8 +68,10 @@ namespace Hecton8.AI.Ecosystem
         private const float DefaultSimulationTickDelta = 1f;
         private const float AuthoritativeQualityWeight = 1f;
         private const double AupCellSizeMetersDouble = HectonPhysicsContract.AupSectorSizeMetersDouble;
+#if UNITY_EDITOR
         private const string CsvRelativePath = "symbiosis_links.csv";
         private const string CsvPrecomputedRelativePath = "Data/Precomputed/symbiosis_links.csv";
+#endif
         private const string LegacyLinksFile = "symbiosis_chemical_links.h8bin";
         private const uint LegacyLinksMagicLittleEndian = 0x4C323653u; // S62L
         private const uint LegacyLinksMagicBigEndian = 0x42323653u; // S62B
@@ -93,7 +97,9 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<SymbiosisExchangeDTO> _exchangeHandle;
         private VaultGenerationHandle<SymbiosisTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<SymbiosisCounterDTO> _counterHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<ScannerVfxDTO> _scannerVfxHandle;
         private VaultGenerationHandle<SymbiosisOxygenEmitterDTO> _oxygenEmitterHandle;
         private VaultGenerationHandle<AdherenceDTO> _adherenceHandle;
@@ -114,7 +120,9 @@ namespace Hecton8.AI.Ecosystem
         private AbsoluteUniversePosition _centerAup;
         private AbsoluteUniversePosition _lastSubmarineAup;
         private AbsoluteUniversePosition _submarineAup;
+#if UNITY_EDITOR
         private long _csvTimestampTicks;
+#endif
         private long _scheduleTicks;
         private int _telemetryCursor;
         private int _ambientFishCapacity = DefaultAmbientFishCapacity;
@@ -210,7 +218,9 @@ namespace Hecton8.AI.Ecosystem
 
             RefreshAupSignals();
             RefreshSubmarineIdleState();
+#if UNITY_EDITOR
             MonitorCsvOverrides(vault);
+#endif
             RefreshAuthorityTuning(vault);
 
             if (!TryBindJobBuffers(
@@ -246,13 +256,13 @@ namespace Hecton8.AI.Ecosystem
                 int floraCount = math.min(DefaultFloraCapacity, math.min(flora.Length, floraAups.Length));
                 int mockFishCount = math.min(DefaultMockFishCapacity, mockFish.Length);
                 int ambientCount = math.min(_ambientFishCapacity, math.min(ambientEntities.Length, ambientAups.Length));
-                const float quality = AuthoritativeQualityWeight;
+                float quality = ResolveSymbiosisQualityWeight();
                 uint frame = AdvanceSimulationFrame(counters);
                 uint seed = ResolveFrameSectorSeed(in _centerAup, frame);
                 SymbiosisTuningDTO activeTuning = tuning.IsCreated && tuning.Length > 0
                     ? SymbiosisTuningDTO.Sanitize(tuning[0])
                     : SymbiosisTuningDTO.Default();
-                activeTuning.GlobalQualityWeight = AuthoritativeQualityWeight;
+                activeTuning.GlobalQualityWeight = quality;
                 if (tuning.IsCreated && tuning.Length > 0)
                     tuning[0] = activeTuning;
                 bool runMicroExchangeFrame = true;
@@ -370,7 +380,7 @@ namespace Hecton8.AI.Ecosystem
                     : default;
             }
 
-            return vault.GetGenerationHandle<T>(
+            return vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AIEcology,
@@ -448,11 +458,13 @@ namespace Hecton8.AI.Ecosystem
                 BufferID.ShinobuSymbiosisCounters,
                 1,
                 NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
             _csvScratchHandle = ClaimGenerationHandle<byte>(
                 vault,
                 BufferID.ShinobuSymbiosisCsvScratch,
                 CsvMaxBytes,
                 NativeArrayOptions.UninitializedMemory);
+#endif
             _scannerVfxHandle = ClaimGenerationHandle<ScannerVfxDTO>(
                 vault,
                 BufferID.ShinobuSymbiosisScannerVfx,
@@ -537,7 +549,6 @@ namespace Hecton8.AI.Ecosystem
                          IsHandleCreated(in _exchangeHandle) &&
                          IsHandleCreated(in _telemetryHandle) &&
                          IsHandleCreated(in _counterHandle) &&
-                         IsHandleCreated(in _csvScratchHandle) &&
                          IsHandleCreated(in _scannerVfxHandle) &&
                          IsHandleCreated(in _oxygenEmitterHandle) &&
                          IsHandleCreated(in _adherenceHandle) &&
@@ -703,11 +714,20 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             SymbiosisTuningDTO dto = SymbiosisTuningDTO.Sanitize(tuning[0]);
-            dto.GlobalQualityWeight = AuthoritativeQualityWeight;
+            dto.GlobalQualityWeight = ResolveSymbiosisQualityWeight();
             dto.SimulationTickDelta = DefaultSimulationTickDelta;
             tuning[0] = dto;
         }
 
+        private static float ResolveSymbiosisQualityWeight()
+        {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AuthoritativeQualityWeight);
+
+            return MathLodApproximation.SaturateFinite(HomeostasisBrain.GlobalQualityWeight, AuthoritativeQualityWeight);
+        }
+
+#if UNITY_EDITOR
         private void MonitorCsvOverrides(IDataVault vault)
         {
             try
@@ -1073,7 +1093,9 @@ namespace Hecton8.AI.Ecosystem
             _exchangeHandle = default;
             _telemetryHandle = default;
             _counterHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _scannerVfxHandle = default;
             _oxygenEmitterHandle = default;
             _adherenceHandle = default;
@@ -1094,7 +1116,9 @@ namespace Hecton8.AI.Ecosystem
         {
             _dataVault = null;
             ResetVaultHandles();
+#if UNITY_EDITOR
             _csvTimestampTicks = 0L;
+#endif
             _scheduleTicks = 0L;
             _telemetryCursor = 0;
             _simulationFrameCounter = 0u;
@@ -1385,6 +1409,7 @@ namespace Hecton8.AI.Ecosystem
 
             return hash;
         }
+#endif
 
         private static void ResolveLegacyLinkEncoding(NativeArray<byte> bytes, int bytesRead, out bool bigEndian, out int payloadOffset)
         {
@@ -2283,7 +2308,8 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             SymbiosisTuningDTO tuning = SymbiosisTuningDTO.Sanitize(Tuning[0]);
-            const float qualityCurve = 1f;
+            float q = math.saturate(tuning.GlobalQualityWeight);
+            float qualityCurve = q * q * (3f - 2f * q);
             int floraCount = math.min(FloraCount, math.min(Flora.Length, FloraAups.Length));
             int linkCount = math.min(tuning.ActiveLinkCount > 0 ? tuning.ActiveLinkCount : Links.Length, Links.Length);
             SymbiosisCounterDTO counter = default;
@@ -2344,7 +2370,8 @@ namespace Hecton8.AI.Ecosystem
             }
 
             float avg = totalBiomass / math.max(1, active);
-            float macroRate = avg * tuning.FeedingRate * SimulationTickDelta * math.lerp(0.02f, 0.18f, qualityCurve);
+            const float truthCurve = 1f;
+            float macroRate = avg * tuning.FeedingRate * SimulationTickDelta * math.lerp(0.02f, 0.18f, truthCurve);
             int stride = math.max(1, (int)math.round(math.lerp(16f, 2f, qualityCurve)));
             ProcessMacroMockFish(ref counter, macroRate, stride);
 
@@ -2621,7 +2648,8 @@ namespace Hecton8.AI.Ecosystem
             uint sectorHash = aup.SectorHash != 0u
                 ? aup.SectorHash
                 : ShinobuFloraFaunaSymbiosisSolver.ResolveSectorHash(ShinobuFloraFaunaSymbiosisSolver.ResolveSectorCoord(in aup.PositionAup, SectorSizeMeters));
-            float oxygen = flora.Biomass * flora.OxygenRate * tuning.OxygenRateScale * math.lerp(0.25f, 1f, qualityCurve);
+            const float truthCurve = 1f;
+            float oxygen = flora.Biomass * flora.OxygenRate * tuning.OxygenRateScale * math.lerp(0.25f, 1f, truthCurve);
             for (int i = 0; i < counter.OxygenEmitterCount && i < OxygenEmitters.Length; i++)
             {
                 SymbiosisOxygenEmitterDTO existing = OxygenEmitters[i];

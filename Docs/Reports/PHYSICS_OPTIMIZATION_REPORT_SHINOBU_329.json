@@ -1,0 +1,12 @@
+﻿{
+  "agent": "SHINOBU_329",
+  "scanner": "Scene_Reload_Scanner",
+  "summary": "OOP Scene Reloads Eradicated",
+  "status": "STATIC_SOURCE",
+  "scanScope": "Assets/_Project/Scripts/{Player,Core,Gameplay,Physiology,Combat}",
+  "scannedFileCount": 375,
+  "findingCount": 0,
+  "runtimeRouteProof": "death request -> bridge-sanitized PlayerRespawnSignal truth lane -> GlobalDataVault respawn buffers -> Burst ResetPlayerPhysiologyJob -> sanitized InventoryRespawnDeathAupSignal sideband + non-shedding InventoryDeathLootCacheSignal + Dear Lie shader scalar",
+  "allowedSceneRoute": "Core SceneRuntimeService boot/menu scene authority and RuntimeWatchdog fatal process exit are excluded from player-death routing",
+  "findings": []
+}

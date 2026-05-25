@@ -285,7 +285,7 @@ namespace Hecton8.Editor
                     signal.Intensity01 = math.saturate(magnitude);
                     signal.EntityId = entityId;
                     signal.Frame = unchecked((uint)Time.frameCount);
-                    signal.SurfaceName.Append(_surfaceField.value);
+                    signal.SurfaceHash = unchecked((uint)Animator.StringToHash(_surfaceField.value ?? string.Empty));
                     signal.Flags = 1;
                     SignalBus<MockPlayerFootstepSignal>.TryPush(in signal);
                     break;

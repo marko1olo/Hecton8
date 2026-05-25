@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_157
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_157_Mat_Tool_LaserCutter_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Tool_LaserCutter_Placeholder_Albedo.png
+FINAL_FILENAME: Mat_Tool_LaserCutter_Placeholder_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Laser cutter tool albedo for HECTON-8 salvage work. Create pearl ceramic heat-shield panels, satin titanium focusing rings, teal calibration bands, amber emitter-status dots, graphite insulated grip sections, and pale cyan lens accents. The texture should feel precise, scientific, and powerful, with clean high-tech shape language suitable for close first-person inspection. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

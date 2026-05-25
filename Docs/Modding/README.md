@@ -1,4 +1,4 @@
-# HECTON-8 Modding API Contract Index
+﻿# HECTON-8 Modding API Contract Index
 
 Date: 2026-05-19
 Status: ENVELOPE-ONLY MODDING AUTHORITY / SDK PLAN ADDED / RUNTIME_PENDING

@@ -71,11 +71,10 @@ namespace Hecton8.Editor.AITextureControlMaps
             if (!Directory.Exists(absoluteInbox))
                 Directory.CreateDirectory(absoluteInbox);
 
-            string[] files = Directory.GetFiles(absoluteInbox, "*.png", SearchOption.AllDirectories);
-            lock (Gate)
+            foreach (string file in Directory.EnumerateFiles(absoluteInbox, "*.png", SearchOption.AllDirectories))
             {
-                for (int i = 0; i < files.Length; i++)
-                    EnqueuePendingImport(BuildPendingImport(files[i], 0.0, 0));
+                lock (Gate)
+                    EnqueuePendingImport(BuildPendingImport(file, 0.0, 0));
             }
 
             EnsureDrainRegistered();

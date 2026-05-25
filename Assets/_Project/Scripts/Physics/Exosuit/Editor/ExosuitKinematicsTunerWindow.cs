@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Physics.Exosuit;
 using Unity.Mathematics;
 using UnityEditor;
@@ -157,28 +158,32 @@ namespace Hecton8.Physics.Exosuit.Editor
             ExosuitKinematicsRuntime.TryReadScreen(out ExoScreenDTO screen);
             ExosuitKinematicsRuntime.TryReadLastTelemetry(out ExosuitTelemetryEntry telemetry);
             _status.text = "Live unmanaged exosuit authority.";
-            _pressure.text = "Pressure: " + screen.HydraulicPressure.ToString("0.000");
-            _heat.text = "Heat: " + state.ThrusterHeat.ToString("0.000");
+            _pressure.text = "Pressure: " + screen.HydraulicPressure.ToString("0.000", CultureInfo.InvariantCulture);
+            _heat.text = "Heat: " + state.ThrusterHeat.ToString("0.000", CultureInfo.InvariantCulture);
             _position.text = "AUP: " + FormatDouble3(state.AUP_Position);
             _velocity.text = "Velocity: " + FormatFloat3(state.Velocity);
-            _cpu.text = "Burst CPU: " + telemetry.SolverComputeTimeMs.ToString("0.000 ms");
-            _speed.text = "Speed: " + output.Speed.ToString("0.000 m/s");
-            _pushOut.text = "Push-Out: " + output.PushOutMagnitude.ToString("0.000 m");
+            _cpu.text = "Burst CPU: " + telemetry.SolverComputeTimeMs.ToString("0.000 ms", CultureInfo.InvariantCulture);
+            _speed.text = "Speed: " + output.Speed.ToString("0.000 m/s", CultureInfo.InvariantCulture);
+            _pushOut.text = "Push-Out: " + output.PushOutMagnitude.ToString("0.000 m", CultureInfo.InvariantCulture);
             _flags.text = "Flags: 0x" + state.Flags.ToString("X8") +
-                " | Q " + tuning.GlobalQualityWeight.ToString("0.000") +
-                " | G " + tuning.GravityMultiplier.ToString("0.00") +
-                " | Eps " + tuning.SdfEpsilonMeters.ToString("0.000") +
+                " | Q " + tuning.GlobalQualityWeight.ToString("0.000", CultureInfo.InvariantCulture) +
+                " | G " + tuning.GravityMultiplier.ToString("0.00", CultureInfo.InvariantCulture) +
+                " | Eps " + tuning.SdfEpsilonMeters.ToString("0.000", CultureInfo.InvariantCulture) +
                 " | Steps " + tuning.MaxSubsteps.ToString();
         }
 
         private static string FormatDouble3(double3 value)
         {
-            return value.x.ToString("0.000") + ", " + value.y.ToString("0.000") + ", " + value.z.ToString("0.000");
+            return value.x.ToString("0.000", CultureInfo.InvariantCulture) + ", " +
+                value.y.ToString("0.000", CultureInfo.InvariantCulture) + ", " +
+                value.z.ToString("0.000", CultureInfo.InvariantCulture);
         }
 
         private static string FormatFloat3(float3 value)
         {
-            return value.x.ToString("0.000") + ", " + value.y.ToString("0.000") + ", " + value.z.ToString("0.000");
+            return value.x.ToString("0.000", CultureInfo.InvariantCulture) + ", " +
+                value.y.ToString("0.000", CultureInfo.InvariantCulture) + ", " +
+                value.z.ToString("0.000", CultureInfo.InvariantCulture);
         }
 
         private static void DrawSceneGizmos(SceneView sceneView)

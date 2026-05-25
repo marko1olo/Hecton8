@@ -12,7 +12,7 @@ namespace Hecton8.Core
     {
         private const string BudgetOwner = nameof(JobFenceManager);
 
-        public NativeArray<JobHandle> Handles;
+        private NativeArray<JobHandle> Handles;
         public int Capacity;
         public int Count;
         public int WriteIndex;

@@ -7,6 +7,11 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.GPR
 {
+    internal static class GroundRadarJobLayout
+    {
+        public const int GroundRadarTelemetryEntryStrideBytes = 64;
+    }
+
     public static class GroundRadarConstants
     {
         public const int MaxRays = 64;
@@ -22,7 +27,7 @@ namespace Hecton8.World.GPR
         public const uint AupShiftFlag = 1u << 1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = GroundRadarJobLayout.GroundRadarTelemetryEntryStrideBytes)]
     public struct GroundRadarTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;

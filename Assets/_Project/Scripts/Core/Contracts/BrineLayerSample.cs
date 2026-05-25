@@ -3,10 +3,15 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class BrineLayerSampleLayout
+    {
+        internal const int SampleStrideBytes = 32;
+    }
+
     /// <summary>
     /// Blittable brine plane sample for allocation-free handoff between world sampling and runtime consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = BrineLayerSampleLayout.SampleStrideBytes)]
     public struct BrineLayerSample
     {
         [FieldOffset(0)] public int2 CartographySector;

@@ -26,6 +26,15 @@ float4 _H8InteriorGIProbeOrigin;      // xyz=runtime root, w=published
 float4 _H8InteriorGIProbeRootAup;     // xyz=AUP residue, w=root hash
 float4 _H8CustomLightProbeGridState;  // x=active count, y=grid version, z=published capacity, w=buffer index
 
+CBUFFER_START(HectonEnvironmentLighting)
+    float4 _H8EnvironmentAmbientColor;           // xyz=GPU-resolved ambient, w=GlobalQualityWeight
+    float4 _H8EnvironmentFogColor;               // xyz=biome/depth fog, w=deep gloom
+    float4 _H8EnvironmentDirectionalLightColor;  // xyz=directional tint, w=biome weight
+    float4 _H8EnvironmentScalarParams;           // x=sun, y=moon, z=SH coefficient count, w=SH quality
+CBUFFER_END
+StructuredBuffer<float> _HectonGIRelaySHBuffer;
+float _H8EnvironmentDebugBlocks;
+
 float H8CustomLightProbeSafeRcp(float value)
 {
     return rcp(max(abs(value), H8_CUSTOM_LIGHT_PROBE_EPS));
@@ -39,6 +48,68 @@ float H8CustomLightProbeSafeScalar(float value, float fallbackValue)
 float3 H8CustomLightProbeSafeFloat3(float3 value, float3 fallbackValue)
 {
     return all(isfinite(value)) ? value : fallbackValue;
+}
+
+float3 H8EnvironmentLightingEvaluateGlobalSH(float3 normalWS, float3 fallbackAmbient, float quality)
+{
+    float coeffCount = floor(H8CustomLightProbeSafeScalar(_H8EnvironmentScalarParams.z, 0.0) + 0.5);
+    [branch]
+    if (coeffCount < 27.0)
+        return fallbackAmbient;
+
+    float3 d = H8CustomLightProbeSafeFloat3(normalWS, float3(0.0, 1.0, 0.0));
+    float lenSq = max(dot(d, d), H8_CUSTOM_LIGHT_PROBE_EPS);
+    d *= rsqrt(lenSq);
+
+    float l1Source = saturate((quality - 0.16) * 3.125);
+    float l2Source = saturate((quality - 0.44) * 2.2727273);
+    float l1Weight = l1Source * l1Source * (3.0 - 2.0 * l1Source);
+    float l2Weight = l2Source * l2Source * (3.0 - 2.0 * l2Source);
+    float xy = d.x * d.y;
+    float yz = d.y * d.z;
+    float zz = (3.0 * d.z * d.z) - 1.0;
+    float xz = d.x * d.z;
+    float xxmyy = (d.x * d.x) - (d.y * d.y);
+
+    float3 sh;
+    sh.x = _HectonGIRelaySHBuffer[0] +
+        (_HectonGIRelaySHBuffer[1] * d.y + _HectonGIRelaySHBuffer[2] * d.z + _HectonGIRelaySHBuffer[3] * d.x) * l1Weight +
+        (_HectonGIRelaySHBuffer[4] * xy + _HectonGIRelaySHBuffer[5] * yz + _HectonGIRelaySHBuffer[6] * zz + _HectonGIRelaySHBuffer[7] * xz + _HectonGIRelaySHBuffer[8] * xxmyy) * l2Weight;
+    sh.y = _HectonGIRelaySHBuffer[9] +
+        (_HectonGIRelaySHBuffer[10] * d.y + _HectonGIRelaySHBuffer[11] * d.z + _HectonGIRelaySHBuffer[12] * d.x) * l1Weight +
+        (_HectonGIRelaySHBuffer[13] * xy + _HectonGIRelaySHBuffer[14] * yz + _HectonGIRelaySHBuffer[15] * zz + _HectonGIRelaySHBuffer[16] * xz + _HectonGIRelaySHBuffer[17] * xxmyy) * l2Weight;
+    sh.z = _HectonGIRelaySHBuffer[18] +
+        (_HectonGIRelaySHBuffer[19] * d.y + _HectonGIRelaySHBuffer[20] * d.z + _HectonGIRelaySHBuffer[21] * d.x) * l1Weight +
+        (_HectonGIRelaySHBuffer[22] * xy + _HectonGIRelaySHBuffer[23] * yz + _HectonGIRelaySHBuffer[24] * zz + _HectonGIRelaySHBuffer[25] * xz + _HectonGIRelaySHBuffer[26] * xxmyy) * l2Weight;
+
+    float shSource = saturate((quality - 0.22) * 2.7777777);
+    float shWeight = shSource * shSource * (3.0 - 2.0 * shSource);
+    return lerp(fallbackAmbient, max(sh, float3(0.0, 0.0, 0.0)), shWeight);
+}
+
+float3 H8EnvironmentLightingResolveFallback(float3 fallbackAmbient, float3 normalWS)
+{
+    float3 safeFallback = max(H8CustomLightProbeSafeFloat3(fallbackAmbient, float3(0.0, 0.0, 0.0)), float3(0.0, 0.0, 0.0));
+    float3 gpuAmbient = max(H8CustomLightProbeSafeFloat3(_H8EnvironmentAmbientColor.rgb, safeFallback), float3(0.0, 0.0, 0.0));
+    float quality = saturate(max(
+        H8CustomLightProbeSafeScalar(_H8EnvironmentAmbientColor.w, 0.0),
+        H8CustomLightProbeSafeScalar(_H8EnvironmentScalarParams.w, 0.0)));
+    float gloom = saturate(H8CustomLightProbeSafeScalar(_H8EnvironmentFogColor.w, 0.0));
+    float valid = step(H8_CUSTOM_LIGHT_PROBE_EPS, dot(gpuAmbient, float3(0.3333333, 0.3333333, 0.3333333)) + quality + gloom);
+    return H8EnvironmentLightingEvaluateGlobalSH(normalWS, lerp(safeFallback, gpuAmbient, valid), quality);
+}
+
+float3 H8EnvironmentLightingApplyDebugBlocks(float3 baseColor, float3 positionWS)
+{
+    if (_H8EnvironmentDebugBlocks < 0.5)
+        return baseColor;
+
+    float band = frac(positionWS.x * 0.05);
+    float3 ambientBlock = max(_H8EnvironmentAmbientColor.rgb, float3(0.0, 0.0, 0.0));
+    float3 fogBlock = max(_H8EnvironmentFogColor.rgb, float3(0.0, 0.0, 0.0));
+    float3 directionalBlock = max(_H8EnvironmentDirectionalLightColor.rgb, float3(0.0, 0.0, 0.0));
+    float3 blockColor = band < 0.3333333 ? ambientBlock : (band < 0.6666667 ? fogBlock : directionalBlock);
+    return lerp(baseColor, blockColor, 0.72);
 }
 
 float H8CustomLightProbeSmooth01(float value)
@@ -134,7 +205,7 @@ float3 H8CustomLightProbeSampleTrilinear(float3 gridCoord, float3 normalWS, uint
 
 half3 H8CustomLightProbeResolveAmbient(float3 positionWS, half3 normalWS, half3 fallbackAmbient)
 {
-    float3 safeFallback = max((float3)fallbackAmbient, float3(0.0, 0.0, 0.0));
+    float3 safeFallback = H8EnvironmentLightingResolveFallback((float3)fallbackAmbient, (float3)normalWS);
     float activeCountSource = max(0.0, floor(H8CustomLightProbeSafeScalar(_H8CustomLightProbeGridState.x, 0.0) + 0.5));
     float capacityFloat = min(max(0.0, floor(H8CustomLightProbeSafeScalar(_H8CustomLightProbeGridState.z, activeCountSource) + 0.5)), H8_CUSTOM_LIGHT_PROBE_MAX_COUNT);
     float activeCountFloat = min(activeCountSource, capacityFloat);
@@ -143,14 +214,14 @@ half3 H8CustomLightProbeResolveAmbient(float3 positionWS, half3 normalWS, half3 
     float quality = saturate(H8CustomLightProbeSafeScalar(_H8InteriorGIProbeParams.z, 0.0));
     float useGrid = active * H8CustomLightProbeSmooth01((quality - 0.12) * 5.5555553);
     if (useGrid <= H8_CUSTOM_LIGHT_PROBE_EPS)
-        return (half3)safeFallback;
+        return (half3)H8EnvironmentLightingApplyDebugBlocks(safeFallback, positionWS);
 
     float resolutionFloat = min(max(floor(H8CustomLightProbeSafeScalar(_H8InteriorGIProbeParams.x, 1.0) + 0.5), 1.0), H8_CUSTOM_LIGHT_PROBE_MAX_RESOLUTION);
     uint resolution = (uint)resolutionFloat;
     uint activeCount = (uint)min(activeCountFloat, H8_CUSTOM_LIGHT_PROBE_MAX_COUNT);
     uint requiredCount = resolution * resolution * resolution;
     if (activeCount < requiredCount || capacityFloat < (float)requiredCount)
-        return (half3)safeFallback;
+        return (half3)H8EnvironmentLightingApplyDebugBlocks(safeFallback, positionWS);
 
     float cellSize = max(H8CustomLightProbeSafeScalar(_H8InteriorGIProbeParams.y, 1.0), H8_CUSTOM_LIGHT_PROBE_EPS);
     float3 origin = H8CustomLightProbeSafeFloat3(_H8InteriorGIProbeOrigin.xyz, positionWS);
@@ -171,7 +242,7 @@ half3 H8CustomLightProbeResolveAmbient(float3 positionWS, half3 normalWS, half3 
         customAmbient = lerp(nearest, trilinear, richWeight);
     }
 
-    return (half3)lerp(safeFallback, customAmbient, useGrid);
+    return (half3)H8EnvironmentLightingApplyDebugBlocks(lerp(safeFallback, customAmbient, useGrid), positionWS);
 }
 
 #endif

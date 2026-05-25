@@ -204,7 +204,10 @@ namespace Hecton8.Power
                     return;
 
                 if (!_pendingEvents.TryDequeue(out PowerGridTelemetrySnapshot snapshot))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -262,25 +265,29 @@ namespace Hecton8.Power
         /// <summary>
         /// Publishes one aggregate runtime snapshot.
         /// </summary>
-        public static void Raise(in PowerGridTelemetrySnapshot snapshot)
+        public static bool TryRaise(in PowerGridTelemetrySnapshot snapshot)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(snapshot);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(snapshot);
             _pendingEventCount++;
+            return true;
         }
+
+        [System.Obsolete("Use TryRaise so bounded queue refusal is visible at the producer.", true)]
+        public static void Raise(in PowerGridTelemetrySnapshot snapshot) => TryRaise(in snapshot);
 
         private static void EnsureInitialized()
         {
@@ -355,7 +362,10 @@ namespace Hecton8.Power
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;

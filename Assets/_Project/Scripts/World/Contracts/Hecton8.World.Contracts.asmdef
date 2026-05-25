@@ -2,6 +2,7 @@
     "name": "Hecton8.World.Contracts",
     "rootNamespace": "Hecton8.World",
     "references": [
+        "Hecton8.Core.Contracts",
         "Unity.Collections",
         "Unity.Mathematics"
     ],

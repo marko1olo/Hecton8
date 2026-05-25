@@ -1,57 +1,61 @@
-# Procedural Wreckage Global Authority Route Card - SHINOBU_121
+﻿# Procedural Wreckage Global Authority Route Card - SHINOBU_121
 
 Date: 2026-05-19
+
 Status: YELLOW / PENDING VERIFICATION
+
 Evidence class: STATIC_SOURCE / UNITY IMPORT PENDING
 
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-21 R51 Root/Architecture Actuality Boundary
-
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 ## Source Anchors
 
-Evidence class: STATIC_SOURCE / FILESYSTEM. These anchors prove only that the cited local paths exist at this capture time; they are not compile, Unity import, Play Mode, profiler, GC, player-build, save/load, platform, or visual proof.
+Evidence: STATIC_SOURCE / FILESYSTEM.
+
+Scope: cited local paths exist at capture time. No compile/import/Play/profiler/GC/player/save/platform/visual proof.
+
 - `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs`
+
 - `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs`
+
 - `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageGpuUploadDispatcher.cs`
+
 - `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageContracts.cs`
+
 - `Assets/_Project/Scripts/World/ProceduralWreckage/Editor/ProceduralWreckageLayoutValidator.cs`
 
 ## Route Card
 
 Route ID: PROCEDURAL_WRECKAGE_VAULT_ROUTE_SHINOBU_121
+
 Owner: SHINOBU_121
+
 Owner domain: Echelon 2 World Generation / Procedural Wreckage Assembler
+
 Owning file/system: `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs`
 
 Problem: WFC wreck generation produces cross-domain, save-visible, render-visible, crash-forensic native state. Owner-local arrays would hide state from renderer upload, save paging, rollback hashing, collision proxy staging, loot staging, and black-box dumps.
 
-Why owner-local data is insufficient: generated nodes, matrices, indirect args, collision proxies, loot requests, tuning, and telemetry must survive scheduler phase boundaries and be read by other owner systems through stable handles.
+Why owner-local data is insufficient: nodes, matrices, indirect args, collision proxies, loot requests, tuning, and telemetry cross scheduler phases and need stable handles.
 
 Why direct caller/owner interface is insufficient: the data is not a one-caller request/response. Multiple consumers need immutable snapshots or staged DTOs, while Burst jobs need unmanaged buffers.
 
 Instrument:
 
 - [ ] GlobalRegistry cold service/interface
+
 - [ ] SignalBus<T> first-party broadcast
+
 - [ ] GlobalSignals bridge/direct queue
+
 - [ ] HectonEventBus mod/API/cold event
+
 - [x] GlobalDataVault / IDataVault
+
 - [x] Black-box/telemetry route
 
-
 Producer/consumer phase: owner-local boot resolves Vault handles; generation jobs run in the world simulation dependency chain; renderer, physics, inventory, save/rollback, and QA consumers read staged snapshots in their owned phases.
+
 Cadence/capacity: generation/event driven, editor CSV poll 1 Hz editor-only, GPU upload dirty-output only; bounded Vault lanes for nodes, matrices, args, loot requests, collision proxies, and 300 telemetry rows.
+
 Producer phase: owner-local boot resolves Vault handles; generation jobs run in World simulation dependency chain; GPU upload occurs after returned JobHandle is completed by the caller's visual-sync phase.
 
 Consumer phase: renderer upload reads `RenderMatrices`, `IndirectArgs`, `GpuScalars`; physics apply reads `CollisionProxies`; inventory/scavenging owner reads `LootRequests`; save/rollback owner reads `Nodes` and sector hash; QA reads `TelemetryRing`.
@@ -65,30 +69,54 @@ GlobalQualityWeight behavior: continuous quality drives WFC target node count, d
 Payload/data shape: explicit unmanaged DTOs only. Primary node DTO is 128 bytes; counters are 64 bytes. No managed fields. No UnityEngine.Object fields.
 
 Managed fields present: no.
+
 UnityEngine.Object fields present: no.
+
 Layout proof: `ProceduralWreckageLayoutValidator` checks sizes and `WreckageNodeDTO` field offsets with `UnsafeUtility.SizeOf` and `UnsafeUtility.GetFieldOffset`.
 
 Capacity:
 
 - Rules 16
+
 - Grid 1024
+
 - Nodes 1024
+
 - DebrisNodes 4096
+
 - RenderMatrices 5120
+
 - IndirectArgs 1
+
 - SectorTriggers 1
+
 - LootRequests 512
+
 - CollisionProxies 1024
+
 - TelemetryRing 300
+
 - Tuning 1
+
 - CsvScratch 32768 bytes
+
 - Counters 1
+
 - DebugCells 1024
+
 - GpuScalars 1
+
 - SelfAudit 1
+
 - HzbTiles 4096
 
-Overflow/failure: jobs clamp writes to capacity, set fault flags, preserve fallback mock rules, and request `Dump_WRECKAGE_ASSEMBLER.bin` and `Dump_SHINOBU_121.bin` as planned/generated-on-fault telemetry artifacts. No existing dump artifact is implied unless a timestamped runtime trigger and output are linked.
+Overflow/failure:
+
+- Jobs clamp writes to capacity.
+- Fault flags are set.
+- Fallback mock rules are preserved.
+- Planned dumps: `Dump_WRECKAGE_ASSEMBLER.bin`, `Dump_SHINOBU_121.bin`.
+- No dump implied without timestamped trigger and output.
 
 Telemetry fields: root AUP, frame, sector hash, collapsed modules, backtrack iterations, estimated compute ms, quality, state hash, fault flags, rendered modules, debris count.
 
@@ -107,19 +135,31 @@ Stale-handle behavior: `TryResolveExisting` refuses missing handles after Vault 
 Rejected alternatives:
 
 - [x] owner-local field: rejected because state crosses render/save/collision/loot/telemetry boundaries.
+
 - [x] cached owner interface: rejected because Burst jobs and multiple consumers need native snapshots, not live calls.
+
 - [x] existing SignalBus lane: rejected because bulk arrays/matrices are not event payloads.
+
 - [x] existing Vault buffer: no procedural wreckage BufferID lane existed.
+
 - [x] cold HectonEventBus hook: rejected because first-party hot/native data must not use managed event transport.
+
 - [ ] no global route needed.
 
-Why this does not increase global monolith risk: the route adds no `GlobalRegistry` slot, no signal lane, and no EventBus traffic. All IDs are local constants in the SHINOBU asmdef until integrator review promotes them.
+Global monolith risk is unchanged.
+
+- Route adds no `GlobalRegistry` slot.
+- Adds no signal lane or EventBus traffic.
+- IDs remain local constants in the SHINOBU asmdef until integrator promotion.
 
 H-Phi impact expected: improves DataSovereignty for wreckage generation by replacing local persistent containers with Vault handles. This is not used as readiness proof.
 
 Proof required before GREEN: Unity import, Burst compile, layout validator menu pass, GCMonitor generation run, Frame Debugger confirmation for `DrawProceduralIndirect`, and black-box dump smoke test.
 
 Reviewer: SHINOBU_121 self-review only
+
 Review disposition: YELLOW
+
 Reason: route-card fields are populated for `STATIC_SOURCE` orientation; compile/Unity/profiler proof is absent under the CPU build gate.
+
 Required fixes before GREEN: run Unity import/compile and profiler evidence when CPU guard allows; attach artifacts.

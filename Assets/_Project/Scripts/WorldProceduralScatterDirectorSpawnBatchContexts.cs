@@ -8,7 +8,7 @@ namespace Hecton8.World
     {
         private struct ScatterPoolWarmupContext
         {
-            public ObjectPoolManager Pool;
+            public IObjectPoolService Pool;
             public Dictionary<int, int> PrefabCreateAllowances;
             public Dictionary<int, int> PrefabWarmupCounts;
             public Dictionary<int, GameObject> PrefabWarmupPrefabs;
@@ -23,7 +23,7 @@ namespace Hecton8.World
             public bool DiagnosticsTraceActive;
 
             public ScatterPoolWarmupContext(
-                ObjectPoolManager pool,
+                IObjectPoolService pool,
                 Dictionary<int, int> prefabCreateAllowances,
                 Dictionary<int, int> prefabWarmupCounts,
                 Dictionary<int, GameObject> prefabWarmupPrefabs,

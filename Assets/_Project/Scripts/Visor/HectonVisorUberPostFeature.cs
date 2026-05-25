@@ -739,7 +739,7 @@ namespace Hecton8.Visor
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetGenerationHandle<MockReconstructionInputSignal>(
+                handle = vault.EnsureGenerationHandle<MockReconstructionInputSignal>(
                     ReconstructionMockSignalVaultId,
                     1,
                     SystemID.GraphicsScalability,
@@ -838,8 +838,10 @@ namespace Hecton8.Visor
                 EnsureNoirConstantsBuffersCold();
                 EnsureNoirVaultHandles();
                 _noirColorCsvLoadAttempted = false;
+#if UNITY_EDITOR
                 if (settings.loadNoirColorCsv)
                     TryLoadNoirColorCsvCold();
+#endif
                 TryRegisterLateFrameTickable();
                 return;
             }
@@ -848,8 +850,10 @@ namespace Hecton8.Visor
             EnsureReconstructionVaultHandles();
             _aestheticCsvLoadAttempted = false;
             _aestheticProfileCacheCount = 0;
+#if UNITY_EDITOR
             if (settings != null && settings.loadAestheticCsv)
                 TryLoadAestheticCsvCold();
+#endif
             TryRegisterLateFrameTickable();
         }
 
@@ -1245,7 +1249,7 @@ namespace Hecton8.Visor
             if (TryReadReconstructionVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
                 return true;
 
-            handle = _dataVault.GetGenerationHandle<T>(
+            handle = _dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GraphicsScalability,
@@ -1635,6 +1639,7 @@ namespace Hecton8.Visor
             return true;
         }
 
+#if UNITY_EDITOR
         private unsafe bool TryLoadAestheticCsvCold()
         {
             if (_aestheticCsvLoaded || _aestheticCsvLoadAttempted)
@@ -2035,6 +2040,7 @@ namespace Hecton8.Visor
             value = (integer + fraction) * sign;
             return math.isfinite(value);
         }
+#endif
 
         private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, float memoryQualityPressureFloor01, out RuntimeState runtimeState)
         {
@@ -2082,7 +2088,7 @@ namespace Hecton8.Visor
             float lightShaftActiveCount = math.max(0f, SanitizeFinite(Shader.GetGlobalVector(ShaderConstants.LightShaftParamsId).x, 0f));
 
             float visualBudget01 = 1f - qualityPressure01;
-            float bulletTimeVisual01 = Sanitize01(GlobalSignals.BulletTimeVisualIntensity01) * visualBudget01;
+            float bulletTimeVisual01 = Sanitize01(SimulationSignalRoute.BulletTimeVisualIntensity01) * visualBudget01;
             float pressureSurge01 = ResolvePressureSurgeVisual01(ambientPressure, hullStress, qualityPressure01, settings);
             float playerStress = math.saturate(math.max(frequencyTuningError01, math.max(globalStress, math.max(hullStress, 1f - healthFraction))));
             playerStress = math.max(playerStress, math.max(bulletTimeVisual01, pressureSurge01 * 0.5f));

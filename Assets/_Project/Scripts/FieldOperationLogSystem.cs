@@ -164,7 +164,7 @@ namespace Hecton8.Gameplay
             ISaveService saveService = _saveService;
             if (saveService == null)
             {
-                saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                saveService = GlobalRegistry.Save;
                 _saveService = saveService;
             }
             if (saveService == null)
@@ -327,7 +327,7 @@ namespace Hecton8.Gameplay
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (verboseLogging)
-                Debug.Log(VerboseOperationRecordedMessage);
+                Hecton8.Core.H8Debug.Log(VerboseOperationRecordedMessage);
 #endif
 
             LogChanged?.Invoke();

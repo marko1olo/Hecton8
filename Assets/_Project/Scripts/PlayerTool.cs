@@ -23,13 +23,16 @@ namespace Hecton8.Gameplay
     /// Bazovyy klass dlya vseh instrumentov, kotorye igrok
     /// mozhet derzhat v rukah. Upravlyaetsya cherez <see cref="PlayerToolManager"/>.
     /// </summary>
-    public abstract class PlayerTool : MonoBehaviour, IPoolable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public abstract class PlayerTool : MonoBehaviour, IPoolable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IPlayerToolDataReadModel
     {
         private const uint ToolLifecycleTelemetryHash = 0x544C4946u; // TLIF
         private const uint ToolLifecycleSpawnHash = 0x544C5350u; // TLSP
         private const uint ToolLifecycleDespawnHash = 0x544C4453u; // TLDS
         private const float RuntimeActiveIntentHoldSeconds = 0.075f;
+        private const float RuntimeOverchargeStatusDurationSeconds = 2.5f;
+        private const float RuntimeOverchargeStatusMagnitudeScale = 0.05f;
         private const float NeverUsedSeconds = 1000000f;
+        private const float PlayerEquivalentMassKg = 80f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -75,7 +78,7 @@ namespace Hecton8.Gameplay
             get
             {
                 if (_toolMetadata == null) return 0f;
-                ToolDurabilitySystem system = _toolDurabilityService;
+                IToolDurabilityService system = _toolDurabilityService;
                 if (system == null) return _toolMetadata.maxDurability;
                 return system.GetDurability(_toolMetadata.toolID, _toolMetadata.maxDurability);
             }
@@ -95,7 +98,7 @@ namespace Hecton8.Gameplay
             get
             {
                 if (_toolMetadata == null) return false;
-                ToolDurabilitySystem system = _toolDurabilityService;
+                IToolDurabilityService system = _toolDurabilityService;
                 if (system == null) return false;
                 return system.IsBroken(_toolMetadata.toolID);
             }
@@ -132,7 +135,7 @@ namespace Hecton8.Gameplay
         private IInputService _inputService;
         private IInteractionSignalService _interactionSignalService;
         private IPlayerMovementForceSink _playerMovementForceSink;
-        private ToolDurabilitySystem _toolDurabilityService;
+        private IToolDurabilityService _toolDurabilityService;
         private FixedCharBuffer _legacyOperationalBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - legacy string bridge for non-HUD callers - owner: PlayerTool
 
         // ══════════════════════════════════════════════════════════
@@ -520,7 +523,7 @@ namespace Hecton8.Gameplay
 
         private void ApplyDurabilityDrain(float deltaTime, bool isPrimary)
         {
-            ToolDurabilitySystem system = _toolDurabilityService;
+            IToolDurabilityService system = _toolDurabilityService;
             if (system == null || _toolMetadata == null) return;
             float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
             float drainRate = FiniteNonNegativeOrZero(isPrimary ? _toolMetadata.durabilityDrainRate : _toolMetadata.durabilityDrainRateSecondary);
@@ -660,13 +663,7 @@ namespace Hecton8.Gameplay
             if (forceSink == null)
                 return false;
 
-            float playerMass = 1f;
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
-            if (playerBody != null && math.isfinite(playerBody.mass) && playerBody.mass > 0.0001f)
-                playerMass = playerBody.mass;
-
-            Vector3 velocityDelta = (-safeDirection * impulseMagnitude) / math.max(playerMass, 0.0001f);
+            Vector3 velocityDelta = (-safeDirection * impulseMagnitude) / PlayerEquivalentMassKg;
             if (!IsFiniteVector(velocityDelta))
                 return false;
 
@@ -714,7 +711,7 @@ namespace Hecton8.Gameplay
 
         protected void QueueToolHapticFeedback(float powerDelivered, float ratedPower, byte priority = 1)
         {
-            ToolHapticsRuntime.EnqueueToolFeedback(powerDelivered, ratedPower, priority);
+            ToolHapticsRuntime.TryEnqueueToolFeedback(powerDelivered, ratedPower, priority);
         }
 
         private static bool IsFiniteVector(Vector3 value)
@@ -802,7 +799,28 @@ namespace Hecton8.Gameplay
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
             if (playerHealth != null)
-                playerHealth.TakeDamage(FiniteNonNegativeOrZero(playerDamage), true);
+                QueueRuntimeOverchargeStatus(playerHealth, FiniteNonNegativeOrZero(playerDamage));
+        }
+
+        private static void QueueRuntimeOverchargeStatus(HectonPlayerHealth playerHealth, float playerDamage)
+        {
+            if (playerHealth == null)
+                return;
+
+            float safeDamage = FiniteNonNegativeOrZero(playerDamage);
+            if (safeDamage <= 0f)
+                return;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return;
+
+            CombatDamageRuntime.TryQueueStatusEffect(
+                targetId,
+                CombatStatusBits.Stunned64 | CombatStatusBits.Burning64,
+                RuntimeOverchargeStatusDurationSeconds,
+                DamageSourceIds.EnvironmentHazard,
+                math.saturate(safeDamage * RuntimeOverchargeStatusMagnitudeScale));
         }
 
         private void CacheRuntimeToolIdsCold()
@@ -902,12 +920,12 @@ namespace Hecton8.Gameplay
             _modularEquipmentService = GlobalRegistry.ModularEquipment;
             _powerGridService = GlobalRegistry.PowerGrid;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _inputService = GlobalRegistry.Input;
             _interactionSignalService = GlobalRegistry.InteractionSignals;
             _playerMovementForceSink = GlobalRegistry.PlayerMovementContracts;
-            _toolDurabilityService = GlobalRegistry.ToolDurability;
+            _toolDurabilityService = GlobalRegistry.ToolDurabilityService;
         }
 
         private void TryRegisterModularHotSwap()
@@ -956,7 +974,7 @@ namespace Hecton8.Gameplay
                     _playerMovementForceSink = currentService as IPlayerMovementForceSink;
                     break;
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
-                    _toolDurabilityService = currentService as ToolDurabilitySystem;
+                    _toolDurabilityService = currentService as IToolDurabilityService;
                     break;
             }
         }

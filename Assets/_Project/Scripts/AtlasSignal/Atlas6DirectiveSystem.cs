@@ -29,7 +29,6 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Core;
@@ -87,6 +86,7 @@ namespace Hecton8.AtlasSignal
     {
         private const int ListenerCapacity = 4;
         private const int PendingEventCapacity = 4;
+        private const int ConflictIdCapacity = 8;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _ListenerRejectedWarningHash = unchecked((uint)LocHash.Compute("Atlas6Events.ListenerRejected"));
         private static readonly uint _ListenerExceptionWarningHash = unchecked((uint)LocHash.Compute("Atlas6Events.ListenerException"));
@@ -99,6 +99,20 @@ namespace Hecton8.AtlasSignal
             public void Clear()
             {
                 Listener = null;
+            }
+        }
+
+        private struct ConflictIdSlot
+        {
+            public uint ConflictHash;
+            public string ConflictId;
+            public byte IsValid;
+
+            public void Clear()
+            {
+                ConflictHash = 0u;
+                ConflictId = null;
+                IsValid = 0;
             }
         }
 
@@ -171,10 +185,11 @@ namespace Hecton8.AtlasSignal
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: ListenerSlot[4] - listener removals deferred while dispatching Atlas-6 directive events - owner: Atlas6Events
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        // COLD ALLOC: Dictionary<uint,string>[8] - hashed directive conflict IDs for cold-path resolution - owner: Atlas6Events
-        private static readonly Dictionary<uint, string> _conflictIdsByHash = new Dictionary<uint, string>(8);
+        // COLD ALLOC: ConflictIdSlot[8] - fixed hashed directive conflict IDs for cold-path resolution - owner: Atlas6Events
+        private static readonly ConflictIdSlot[] _conflictIdsByHash = new ConflictIdSlot[ConflictIdCapacity];
         private static NativeQueue<Atlas6EventPayload> _pendingEvents;
         private static NativeQueue<Atlas6EventPayload> _nextFrameEvents;
+        private static int _conflictIdCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
@@ -207,7 +222,7 @@ namespace Hecton8.AtlasSignal
             }
 
             _listeners.Clear();
-            _conflictIdsByHash.Clear();
+            ClearConflictIds();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
             Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
@@ -269,7 +284,10 @@ namespace Hecton8.AtlasSignal
                     return;
 
                 if (!_pendingEvents.TryDequeue(out Atlas6EventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -303,7 +321,7 @@ namespace Hecton8.AtlasSignal
 
         public static bool TryResolveDirectiveConflict(uint conflictHash, out string conflictId)
         {
-            return _conflictIdsByHash.TryGetValue(conflictHash, out conflictId);
+            return TryResolveConflictId(conflictHash, out conflictId);
         }
 
         public static uint ComputeDirectiveConflictHash(string conflictId)
@@ -313,9 +331,15 @@ namespace Hecton8.AtlasSignal
                 : unchecked((uint)LocHash.Compute(conflictId));
         }
 
+        [Obsolete("Use TryRaisePlayerStatusChanged(Atlas6PlayerStatus) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaisePlayerStatusChanged(Atlas6PlayerStatus status)
         {
-            Enqueue(new Atlas6EventPayload
+            TryRaisePlayerStatusChanged(status);
+        }
+
+        public static bool TryRaisePlayerStatusChanged(Atlas6PlayerStatus status)
+        {
+            return Enqueue(new Atlas6EventPayload
             {
                 TransactionCount = 0,
                 ConflictHash = 0u,
@@ -326,20 +350,35 @@ namespace Hecton8.AtlasSignal
             });
         }
 
+        [Obsolete("Use TryRaiseDirectiveConflict(uint conflictHash). String ingress is not allowed on first-party event lanes.", true)]
         public static void RaiseDirectiveConflict(string conflictId)
+        {
+            TryRaiseDirectiveConflictFromString(conflictId);
+        }
+
+        private static bool TryRaiseDirectiveConflictFromString(string conflictId)
         {
             uint conflictHash = ComputeDirectiveConflictHash(conflictId);
             if (conflictHash == 0u)
-                return;
+                return false;
 
-            if (!RaiseDirectiveConflict(conflictHash))
-                return;
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return false;
 
-            if (!_conflictIdsByHash.ContainsKey(conflictHash))
-                _conflictIdsByHash.Add(conflictHash, conflictId);
+            if (!TryRegisterConflictId(conflictHash, conflictId))
+                return false;
+
+            return TryRaiseDirectiveConflict(conflictHash);
         }
 
+        [Obsolete("Use TryRaiseDirectiveConflict(uint conflictHash) so overflow/drop semantics stay visible at the producer.", true)]
         public static bool RaiseDirectiveConflict(uint conflictHash)
+        {
+            return TryRaiseDirectiveConflict(conflictHash);
+        }
+
+        public static bool TryRaiseDirectiveConflict(uint conflictHash)
         {
             if (conflictHash == 0u)
                 return false;
@@ -355,9 +394,15 @@ namespace Hecton8.AtlasSignal
             });
         }
 
+        [Obsolete("Use TryRaiseBarterAccepted(int) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseBarterAccepted(int transactionCount)
         {
-            Enqueue(new Atlas6EventPayload
+            TryRaiseBarterAccepted(transactionCount);
+        }
+
+        public static bool TryRaiseBarterAccepted(int transactionCount)
+        {
+            return Enqueue(new Atlas6EventPayload
             {
                 TransactionCount = transactionCount,
                 ConflictHash = 0u,
@@ -368,12 +413,18 @@ namespace Hecton8.AtlasSignal
             });
         }
 
+        [Obsolete("Use TryRaiseScarcityDirective(uint,uint) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseScarcityDirective(uint questHash, uint resourceHash)
         {
-            if (questHash == 0u || resourceHash == 0u)
-                return;
+            TryRaiseScarcityDirective(questHash, resourceHash);
+        }
 
-            Enqueue(new Atlas6EventPayload
+        public static bool TryRaiseScarcityDirective(uint questHash, uint resourceHash)
+        {
+            if (questHash == 0u || resourceHash == 0u)
+                return false;
+
+            return Enqueue(new Atlas6EventPayload
             {
                 TransactionCount = 0,
                 ConflictHash = 0u,
@@ -382,6 +433,62 @@ namespace Hecton8.AtlasSignal
                 EventType = (ushort)Atlas6EventType.ScarcityDirectiveIssued,
                 StatusValue = 0
             });
+        }
+
+        private static bool TryRegisterConflictId(uint conflictHash, string conflictId)
+        {
+            if (conflictHash == 0u)
+                return false;
+
+            if (TryFindConflictId(conflictHash, out _))
+                return true;
+
+            if (_conflictIdCount >= _conflictIdsByHash.Length)
+                return false;
+
+            _conflictIdsByHash[_conflictIdCount++] = new ConflictIdSlot
+            {
+                ConflictHash = conflictHash,
+                ConflictId = conflictId,
+                IsValid = 1
+            };
+            return true;
+        }
+
+        private static bool TryResolveConflictId(uint conflictHash, out string conflictId)
+        {
+            if (TryFindConflictId(conflictHash, out int index))
+            {
+                conflictId = _conflictIdsByHash[index].ConflictId ?? string.Empty;
+                return true;
+            }
+
+            conflictId = string.Empty;
+            return false;
+        }
+
+        private static bool TryFindConflictId(uint conflictHash, out int index)
+        {
+            for (int i = 0; i < _conflictIdCount; i++)
+            {
+                ConflictIdSlot slot = _conflictIdsByHash[i];
+                if (slot.IsValid != 0 && slot.ConflictHash == conflictHash)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = -1;
+            return false;
+        }
+
+        private static void ClearConflictIds()
+        {
+            for (int i = 0; i < _conflictIdCount; i++)
+                _conflictIdsByHash[i].Clear();
+
+            _conflictIdCount = 0;
         }
 
         private static void EnsureInitialized()
@@ -473,7 +580,10 @@ namespace Hecton8.AtlasSignal
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -648,7 +758,7 @@ namespace Hecton8.AtlasSignal
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -662,7 +772,7 @@ namespace Hecton8.AtlasSignal
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -686,6 +796,7 @@ namespace Hecton8.AtlasSignal
         private const string CoreDataAccessedDiscoveryId = "atlas6_core_data_accessed";
         private const string DirectiveConflictColonyDeadId = "directive_2_impossible_colony_dead";
         private const string ScarcityDirectiveFallbackWarning = "ATLAS-6 DIRECTIVE: RESTOCK ESSENTIAL RESOURCE.";
+        private const int ScarcityDirectiveTitleCapacity = 160;
         private static readonly uint _signalIdentityDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(SignalIdentityDiscoveryId);
         private static readonly uint _signalFullyDecodedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(SignalFullyDecodedDiscoveryId);
         private static readonly uint _terminalSectorDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(TerminalSectorDiscoveryId);
@@ -693,11 +804,11 @@ namespace Hecton8.AtlasSignal
         private static readonly uint _coreDataAccessedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(CoreDataAccessedDiscoveryId);
         private static readonly uint _directiveConflictColonyDeadHash = Atlas6Events.ComputeDirectiveConflictHash(DirectiveConflictColonyDeadId);
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Thresholds ──────────────────────────────")]
+        [Header("-- Thresholds ------------------------------")]
         [Tooltip("Kolichestvo barter-tranzaktsiy dlya perehoda v Collaborator.")]
         [SerializeField] private int collaboratorThreshold = 5;
 
@@ -709,13 +820,13 @@ namespace Hecton8.AtlasSignal
         [Tooltip("Rasstoyanie do yadra dlya perehoda v Anomaly status.")]
         [SerializeField] private float anomalyRange = 500f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  GLOBAL REGISTRY COMPATIBILITY
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private Atlas6PlayerStatus _playerStatus = Atlas6PlayerStatus.Unknown;
         private int  _barterTransactionCount;
@@ -725,25 +836,26 @@ namespace Hecton8.AtlasSignal
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
         private HectonPlayerMovement _playerMovement;
-        private AtlasSignalSystem _atlasSignal;
-        private FirstHourDirector _firstHourDirector;
-        private Quest.QuestManager _questManager;
+        private IAtlasSignalReadModel _atlasSignal;
+        private IFirstHourReadModel _firstHourDirector;
+        private IQuestSystem _questManager;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private ISaveService _saveService;
         private uint _latestScarcityDirectiveQuestHash;
         private uint _latestScarcityDirectiveResourceHash;
+        private readonly char[] _scarcityDirectiveTitleBuffer = new char[ScarcityDirectiveTitleCapacity];
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public int SavePriority => 11;
         public int LoadPriority => 11;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public Atlas6PlayerStatus PlayerStatus => _playerStatus;
         public int BarterTransactionCount => _barterTransactionCount;
@@ -769,9 +881,9 @@ namespace Hecton8.AtlasSignal
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnEnable()
         {
@@ -809,19 +921,20 @@ namespace Hecton8.AtlasSignal
             ClearAtlasDependencies();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISlowTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void SlowTick()
         {
-            AtlasSignalSystem signal = _atlasSignal;
+            IAtlasSignalReadModel signal = _atlasSignal;
             if (signal == null) return;
-            if (!signal.IsDetected) return;
+            if (!signal.IsAtlasSignalDetected) return;
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
+            if (!signal.TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition coreAup))
+                return;
 
-            AbsoluteUniversePosition coreAup = signal.AtlasCoreAup;
             double distanceToCoreSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
             double anomalyRangeSq = (double)anomalyRange * anomalyRange;
 
@@ -831,7 +944,7 @@ namespace Hecton8.AtlasSignal
                 _playerStatus != Atlas6PlayerStatus.Threat)
             {
                 SetStatus(Atlas6PlayerStatus.Anomaly);
-                NotificationEvents.PushWarning(ResolveLocalized(
+                NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
                     LocalizationKeys.ATLAS6_ANOMALY_DETECTED,
                     "ATLAS-6: UNIDENTIFIED BIOLOGICAL AGENT DETECTED. ANALYSIS..."));
             }
@@ -841,7 +954,7 @@ namespace Hecton8.AtlasSignal
                 _playerStatus >= Atlas6PlayerStatus.Detected)
             {
                 _directiveConflictTriggered = true;
-                Atlas6Events.RaiseDirectiveConflict(_directiveConflictColonyDeadHash);
+                Atlas6Events.TryRaiseDirectiveConflict(_directiveConflictColonyDeadHash);
 
                 LogDirectiveConflict();
             }
@@ -852,8 +965,7 @@ namespace Hecton8.AtlasSignal
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
@@ -899,20 +1011,20 @@ namespace Hecton8.AtlasSignal
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
-                    _atlasSignal = currentService as AtlasSignalSystem;
+                    _atlasSignal = currentService as IAtlasSignalReadModel;
                     break;
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
-                    _firstHourDirector = currentService as FirstHourDirector;
+                    _firstHourDirector = currentService as IFirstHourReadModel;
                     break;
                 case GlobalRegistryServiceSlot.QuestRuntime:
-                    _questManager = currentService as Quest.QuestManager;
+                    _questManager = currentService as IQuestSystem;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     ResolvePlayer();
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
+                    _localization = currentService as ILocalizationTextReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     TryUnregisterSaveParticipant();
@@ -923,25 +1035,29 @@ namespace Hecton8.AtlasSignal
                         _saveRegistered = true;
                     }
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
+                    break;
             }
         }
 
         private void CacheAtlasDependenciesCold()
         {
             if (_atlasSignal == null)
-                _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+                _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
 
             if (_firstHourDirector == null)
-                _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+                _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHourReadModel;
 
             if (_questManager == null)
-                _questManager = GlobalRegistry.Quest;
+                _questManager = GlobalRegistry.QuestSystem;
 
             if (_playerRuntimeContext == null)
                 _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_localization == null)
-                _localization = LocalizationManager.ActiveRuntimeInstance;
+                _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterSaveParticipant()
@@ -949,7 +1065,7 @@ namespace Hecton8.AtlasSignal
             if (_saveRegistered)
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 
@@ -997,15 +1113,15 @@ namespace Hecton8.AtlasSignal
             _hotSwapRegistered = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>Zaregistrirovat barter-tranzaktsiyu.</summary>
         public void RegisterBarterTransaction()
         {
             _barterTransactionCount++;
-            Atlas6Events.RaiseBarterAccepted(_barterTransactionCount);
+            Atlas6Events.TryRaiseBarterAccepted(_barterTransactionCount);
 
             // Perehod v Collaborator
             if (_barterTransactionCount >= collaboratorThreshold &&
@@ -1013,21 +1129,21 @@ namespace Hecton8.AtlasSignal
                 _playerStatus != Atlas6PlayerStatus.Threat)
             {
                 SetStatus(Atlas6PlayerStatus.Collaborator);
-                NotificationEvents.PushInfo(ResolveLocalized(
+                NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
                     LocalizationKeys.ATLAS6_COLLABORATOR_STATUS,
                     "ATLAS-6: UTILITARIAN CALCULATION - EXCHANGE EFFICIENT. STATUS: COLLABORATOR."));
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void SetStatus(Atlas6PlayerStatus newStatus)
         {
             if (newStatus == _playerStatus) return;
             _playerStatus = newStatus;
-            Atlas6Events.RaisePlayerStatusChanged(newStatus);
+            Atlas6Events.TryRaisePlayerStatusChanged(newStatus);
 
             LogPlayerStatusChanged();
         }
@@ -1067,23 +1183,30 @@ namespace Hecton8.AtlasSignal
             _latestScarcityDirectiveQuestHash = directiveQuestHash;
             _latestScarcityDirectiveResourceHash = resourceHash;
 
-            Quest.QuestManager questManager = _questManager;
+            IQuestSystem questManager = _questManager;
             if (questManager != null &&
                 directiveQuestHash != 0u &&
-                questManager.TryGetQuestPresentation(
+                questManager.TryCopyQuestPresentation(
                     directiveQuestHash,
-                    out string title,
+                    _scarcityDirectiveTitleBuffer,
+                    out int titleLength,
+                    null,
                     out _,
                     out _,
                     out _,
                     out _)
-                && !string.IsNullOrWhiteSpace(title))
+                && titleLength > 0)
             {
-                NotificationEvents.PushWarning(title);
-                return;
+                uint messageHash = NotificationEvents.RegisterMessage(
+                    _scarcityDirectiveTitleBuffer.AsSpan(0, math.min(titleLength, _scarcityDirectiveTitleBuffer.Length)));
+                if (messageHash != 0u)
+                {
+                    NotificationEvents.TryPushRegisteredWarning(messageHash);
+                    return;
+                }
             }
 
-            NotificationEvents.PushWarning(ScarcityDirectiveFallbackWarning);
+            NotificationEvents.TryPushWarning(ScarcityDirectiveFallbackWarning.AsSpan());
         }
 
         private bool CanAdoptAtlasStatusFromDiscovery(uint discoveryHash)
@@ -1094,13 +1217,13 @@ namespace Hecton8.AtlasSignal
             if (!IsDirectiveIdentityDiscovery(discoveryHash))
                 return false;
 
-            AtlasSignalSystem signal = _atlasSignal;
+            IAtlasSignalReadModel signal = _atlasSignal;
             if (signal != null)
-                return signal.CurrentRevealStage >= MinimumRevealStageForDirectiveIdentity;
+                return signal.CurrentAtlasSignalRevealStage >= MinimumRevealStageForDirectiveIdentity;
 
-            FirstHourDirector firstHourDirector = _firstHourDirector;
+            IFirstHourReadModel firstHourDirector = _firstHourDirector;
             if (firstHourDirector != null)
-                return firstHourDirector.IsMilestoneComplete(FirstHourMilestone.HumCloser);
+                return firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.HumCloser);
 
             return true;
         }
@@ -1143,7 +1266,7 @@ namespace Hecton8.AtlasSignal
         private static void LogDirectiveConflict()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.Log("[Atlas6] Directive conflict: Directive #2 (protect colony) impossible; colony dead.");
+            H8Debug.Log("[Atlas6] Directive conflict: Directive #2 (protect colony) impossible; colony dead.");
 #endif
         }
 
@@ -1151,19 +1274,21 @@ namespace Hecton8.AtlasSignal
         private static void LogPlayerStatusChanged()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.Log("[Atlas6] Player status changed.");
+            H8Debug.Log("[Atlas6] Player status changed.");
 #endif
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
-            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
+            ILocalizationTextReadModel manager = _localization;
+            return manager != null
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void PopulateSaveData(SaveData data)
         {

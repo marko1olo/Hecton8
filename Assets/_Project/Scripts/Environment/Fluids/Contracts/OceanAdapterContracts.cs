@@ -5,6 +5,15 @@ using Unity.Mathematics;
 
 namespace Hecton8.Environment.Fluids
 {
+    internal static class OceanAdapterLayout
+    {
+        internal const int SampleRequestStrideBytes = 32;
+        internal const int SampleResultStrideBytes = 64;
+        internal const int TelemetryEntryStrideBytes = 64;
+        internal const int PerformanceProfileStrideBytes = 32;
+        internal const int GlobalWaterLevelStrideBytes = 16;
+    }
+
     [System.Flags]
     public enum OceanSampleStatus : uint
     {
@@ -16,7 +25,7 @@ namespace Hecton8.Environment.Fluids
         NonFiniteInput = 1u << 31
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = OceanAdapterLayout.SampleRequestStrideBytes)]
     public struct OceanSampleRequestDTO
     {
         [FieldOffset(0)] public double3 RequestAUP;
@@ -24,7 +33,7 @@ namespace Hecton8.Environment.Fluids
         [FieldOffset(28)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OceanAdapterLayout.SampleResultStrideBytes)]
     public struct OceanSampleResultDTO
     {
         [FieldOffset(0)] public double3 SourceAUP;
@@ -36,7 +45,7 @@ namespace Hecton8.Environment.Fluids
         [FieldOffset(60)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OceanAdapterLayout.TelemetryEntryStrideBytes)]
     public struct OceanAdapterTelemetryEntry
     {
         [FieldOffset(0)] public ulong SimulationFrame;
@@ -51,7 +60,7 @@ namespace Hecton8.Environment.Fluids
         [FieldOffset(60)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = OceanAdapterLayout.PerformanceProfileStrideBytes)]
     public struct OceanPerformanceProfileDTO
     {
         [FieldOffset(0)] public uint ProfileHash;
@@ -64,7 +73,7 @@ namespace Hecton8.Environment.Fluids
         [FieldOffset(28)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = OceanAdapterLayout.GlobalWaterLevelStrideBytes)]
     public struct OceanGlobalWaterLevelDTO
     {
         [FieldOffset(0)] public float WaterLevel;

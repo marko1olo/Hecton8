@@ -195,7 +195,7 @@ namespace Hecton8.UI
             if (_signalCooldownRemaining > 0f)
                 _signalCooldownRemaining = math.max(0f, _signalCooldownRemaining - safeDeltaTime);
 
-            bool handInside = _lastHandInsideFrame == Time.frameCount;
+            bool handInside = _lastHandInsideFrame == Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             float target = handInside ? 1f : 0f;
             float speed = handInside ? _resolvedDepressSpeed : _resolvedReleaseSpeed;
             float alpha = FastDecayBlend(speed, safeDeltaTime);
@@ -266,7 +266,7 @@ namespace Hecton8.UI
             if (!IsFinite(handPosition))
                 return false;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             int frame = sampleFrame >= 0 ? sampleFrame : currentFrame;
             if (frame > currentFrame || frame < _lastHandInsideFrame)
                 return false;
@@ -383,7 +383,7 @@ namespace Hecton8.UI
                 return;
 
             byte motorMask = ResolveHapticMotorMask(handSourceCollider, fallbackHandSide);
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 _resolvedPressHapticLowFrequency,
                 _resolvedPressHapticHighFrequency,
                 _resolvedPressHapticDurationSeconds,
@@ -529,7 +529,7 @@ namespace Hecton8.UI
                 }
             }
 
-            if (audio is SpatialAudioManager spatialAudio)
+            if (audio is ISpatialAudioLowPassPlayback spatialAudio)
             {
                 spatialAudio.PlayAtPointWithLowPass(
                     pressClickSound,
@@ -574,8 +574,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -624,7 +624,7 @@ namespace Hecton8.UI
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

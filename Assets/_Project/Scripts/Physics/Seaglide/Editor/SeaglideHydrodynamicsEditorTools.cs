@@ -222,11 +222,10 @@ namespace Hecton8.Physics.Editor
             StringBuilder findings = new StringBuilder(256);
             if (Directory.Exists(equipmentPath))
             {
-                string[] files = Directory.GetFiles(equipmentPath, "*.cs", SearchOption.AllDirectories);
-                fileCount = files.Length;
-                for (int i = 0; i < files.Length; i++)
+                foreach (string file in Directory.EnumerateFiles(equipmentPath, "*.cs", SearchOption.AllDirectories))
                 {
-                    string text = File.ReadAllText(files[i]);
+                    fileCount++;
+                    string text = File.ReadAllText(file);
                     bool hit = text.IndexOf("AddForce", StringComparison.Ordinal) >= 0 ||
                                text.IndexOf("AddRelativeForce", StringComparison.Ordinal) >= 0 ||
                                text.IndexOf("FixedUpdate", StringComparison.Ordinal) >= 0;
@@ -235,7 +234,7 @@ namespace Hecton8.Physics.Editor
 
                     hits++;
                     findings.Append("{\"file\":\"")
-                        .Append(files[i].Replace("\\", "/"))
+                        .Append(file.Replace("\\", "/"))
                         .Append("\"},");
                 }
             }

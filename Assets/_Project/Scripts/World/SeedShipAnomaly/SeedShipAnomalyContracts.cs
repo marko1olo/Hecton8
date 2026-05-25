@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Mathematics;
 
@@ -153,7 +154,7 @@ namespace Hecton8.World.SeedShipAnomaly
         {
             float corruption = math.saturate(corruption01);
             float gate = SmoothStep(0.45f, 0.65f, corruption);
-            float pulse01 = 0.5f + 0.5f * math.sin(pulseSeconds);
+            float pulse01 = 0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara(pulseSeconds);
             float inverted = math.lerp(9.80665f, -2f, math.saturate(pulse01 * math.saturate(inversionStrength)));
             return math.lerp(9.80665f, inverted, gate);
         }
@@ -169,10 +170,9 @@ namespace Hecton8.World.SeedShipAnomaly
             float corruptionGate = SmoothStep(0.05f, 0.25f, math.saturate(corruption01));
             float qualitySq = quality * quality;
             float curvedQuality = qualitySq * qualitySq;
-            float activeGate = math.step(0.000001f, curvedQuality * corruptionGate);
             float minFloor = math.lerp(0f, math.max(0, minBudget), SmoothStep(0.35f, 0.75f, quality));
             float maxTarget = math.max(minFloor, math.max(minBudget, maxBudget));
-            float requested = math.lerp(minFloor, maxTarget, curvedQuality) * corruptionGate * activeGate;
+            float requested = math.lerp(minFloor, maxTarget, curvedQuality) * corruptionGate;
             return math.clamp((int)math.ceil(requested), 0, capacity);
         }
 

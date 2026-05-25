@@ -11,13 +11,14 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9485)]
-    public sealed class GCMonitor : MonoBehaviour, IPostFixedTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class GCMonitor : MonoBehaviour, IPostFixedTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int MemoryPressureSampleIntervalFrames = 60;
         private const int NativeLeakAuditIntervalFrames = 300;
         private const double CriticalMemoryPressureRatio = 0.85d;
 
         private bool _registeredPostFixed;
+        private bool _hotSwapRegistered;
         private int _nextMemoryPressureSampleFrame;
         private int _lastMemoryPressureDispatchFrame = -MemoryPressureSampleIntervalFrames;
         private int _nextNativeLeakAuditFrame;
@@ -62,6 +63,7 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegisterPostFixed();
         }
 
@@ -72,11 +74,8 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
-            if (!_registeredPostFixed)
-                return;
-
-            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Core);
-            _registeredPostFixed = false;
+            TryUnregisterPostFixed();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -90,6 +89,18 @@ namespace Hecton8.Core
             OnDisable();
             GlobalRegistry.ClearGCMonitorRuntime(this);
             PrimeSamplingFrames();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterPostFixed();
+            TryRegisterPostFixed();
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -151,10 +162,33 @@ namespace Hecton8.Core
             if (_registeredPostFixed || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Core);
-            _registeredPostFixed = SystemDispatcher
-                .GetPostFixedLane(PriorityLayer.Core)
-                .Contains(this);
+            _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterPostFixed()
+        {
+            if (!_registeredPostFixed)
+                return;
+
+            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Core);
+            _registeredPostFixed = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

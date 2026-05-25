@@ -10,8 +10,9 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ParticleSystem))]
-    public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
+    public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ITickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private const int MaxQueuedParticleEmits = 64;
         private static readonly int _DryColorId = Shader.PropertyToID("_DryColor");
         private static readonly int _WetColorId = Shader.PropertyToID("_WetColor");
         private static readonly int _BubbleColorId = Shader.PropertyToID("_BubbleColor");
@@ -154,8 +155,11 @@ namespace Hecton8.World
         private float _ambientSpawnAccumulator;
         private uint _emitSeed = 1u;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
+        private int _queuedEmitCount;
         private SargassumGlobalDragManager _sargassumDrag;
+        private readonly PendingParticleEmit[] _queuedEmits = new PendingParticleEmit[MaxQueuedParticleEmits];
 
         private void Awake()
         {
@@ -190,6 +194,7 @@ namespace Hecton8.World
             _debugAmbientDensity01 = 0f;
             _debugAmbientSpawnBudget = 0f;
             _debugAmbientEmissionThisTick = 0;
+            _queuedEmitCount = 0;
         }
 
         private void OnDestroy()
@@ -356,6 +361,11 @@ namespace Hecton8.World
             _debugAmbientSpawnBudget = _ambientSpawnAccumulator;
         }
 
+        public void LateFrameTick()
+        {
+            FlushQueuedParticleEmits();
+        }
+
         private Vector3 ResolvePlayerRuntimePosition()
         {
             return _playerTransform != null ? _playerTransform.position : Vector3.zero;
@@ -364,14 +374,14 @@ namespace Hecton8.World
         private void ResolveDependencies()
         {
             if (particleSystemOverride == null)
-                particleSystemOverride = GetComponent<ParticleSystem>();
+                TryGetComponent(out particleSystemOverride);
 
             _particleSystem = particleSystemOverride;
             if (_particleSystem == null)
                 return;
 
             if (particleSystemRendererOverride == null)
-                particleSystemRendererOverride = _particleSystem.GetComponent<ParticleSystemRenderer>();
+                _particleSystem.TryGetComponent(out particleSystemRendererOverride);
 
             _particleRenderer = particleSystemRendererOverride;
         }
@@ -404,12 +414,19 @@ namespace Hecton8.World
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
             if (!_registered)
                 return;
 
@@ -496,26 +513,69 @@ namespace Hecton8.World
             if (count <= 0)
                 return;
 
-            ParticleSystem.EmitParams emitParams = default;
-            emitParams.position = positionWS;
-            emitParams.velocity = velocityWS + BuildJitterVector();
-            emitParams.startLifetime = lifetime;
-            emitParams.startSize = size;
-            emitParams.startColor = color;
-            emitParams.randomSeed = NextSeed();
-            _particleSystem.Emit(emitParams, count);
+            QueueParticleEmit(
+                positionWS,
+                velocityWS + BuildJitterVector(),
+                lifetime,
+                size,
+                color,
+                NextSeed(),
+                count);
         }
 
         private void EmitSingle(Vector3 positionWS, Vector3 velocityWS, float lifetime, float size, Color color)
         {
+            QueueParticleEmit(positionWS, velocityWS, lifetime, size, color, NextSeed(), 1);
+        }
+
+        private void QueueParticleEmit(
+            Vector3 positionWS,
+            Vector3 velocityWS,
+            float lifetime,
+            float size,
+            Color color,
+            uint randomSeed,
+            int count)
+        {
+            if (_queuedEmitCount >= MaxQueuedParticleEmits)
+                return;
+
+            _queuedEmits[_queuedEmitCount++] = new PendingParticleEmit
+            {
+                PositionWS = positionWS,
+                VelocityWS = velocityWS,
+                Lifetime = lifetime,
+                Size = size,
+                Color = color,
+                RandomSeed = randomSeed,
+                Count = Mathf.Max(1, count)
+            };
+        }
+
+        private void FlushQueuedParticleEmits()
+        {
+            if (_queuedEmitCount <= 0 || _particleSystem == null)
+            {
+                _queuedEmitCount = 0;
+                return;
+            }
+
             ParticleSystem.EmitParams emitParams = default;
-            emitParams.position = positionWS;
-            emitParams.velocity = velocityWS;
-            emitParams.startLifetime = lifetime;
-            emitParams.startSize = size;
-            emitParams.startColor = color;
-            emitParams.randomSeed = NextSeed();
-            _particleSystem.Emit(emitParams, 1);
+            int safeCount = Mathf.Min(_queuedEmitCount, _queuedEmits.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                PendingParticleEmit queued = _queuedEmits[i];
+                emitParams.position = queued.PositionWS;
+                emitParams.velocity = queued.VelocityWS;
+                emitParams.startLifetime = queued.Lifetime;
+                emitParams.startSize = queued.Size;
+                emitParams.startColor = queued.Color;
+                emitParams.randomSeed = queued.RandomSeed;
+                _particleSystem.Emit(emitParams, queued.Count);
+                _queuedEmits[i] = default;
+            }
+
+            _queuedEmitCount = 0;
         }
 
         private Vector3 BuildJitterVector()
@@ -551,6 +611,17 @@ namespace Hecton8.World
         private float Next01()
         {
             return (NextSeed() & 0x00FFFFFFu) * (1.0f / 16777215.0f);
+        }
+
+        private struct PendingParticleEmit
+        {
+            public Vector3 PositionWS;
+            public Vector3 VelocityWS;
+            public float Lifetime;
+            public float Size;
+            public Color Color;
+            public uint RandomSeed;
+            public int Count;
         }
     }
 }

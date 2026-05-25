@@ -1,4 +1,4 @@
-# Zero-GC UI Pipeline
+﻿# Zero-GC UI Pipeline
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION

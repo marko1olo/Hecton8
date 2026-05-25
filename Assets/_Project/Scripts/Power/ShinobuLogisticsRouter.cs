@@ -56,7 +56,7 @@ namespace Hecton8.Power
         [FieldOffset(8)] public float OxygenDiffusionRate;
         [FieldOffset(12)] public float CrushDepthMultiplier;
         [FieldOffset(16)] public float BasePipeResistance;
-        [FieldOffset(20)] public float JacobiSmoothingFactor;
+        [FieldOffset(20)] public float DeltaSmoothingFactor;
         [FieldOffset(24)] public float GlobalQualityWeight;
         [FieldOffset(28)] public uint Flags;
     }
@@ -90,7 +90,7 @@ namespace Hecton8.Power
         [FieldOffset(44)] public int UnpoweredCount;
         [FieldOffset(48)] public int OxygenCadence;
         [FieldOffset(52)] public int ComponentCount;
-        [FieldOffset(56)] public int JacobiIterations;
+        [FieldOffset(56)] public int DeltaPassCount;
         [FieldOffset(60)] public int SolverMicros;
     }
 
@@ -121,7 +121,7 @@ namespace Hecton8.Power
         public const int OxygenNan = 1 << 3;
         public const int MissingGenerator = 1 << 4;
         public const int DumpedBlackBox = 1 << 5;
-        public const int CsvParseFault = 1 << 6;
+        public const int AuthoringImportFault = 1 << 6;
         public const int SignalOverflow = 1 << 7;
         public const int SolverDivergent = 1 << 8;
     }
@@ -149,7 +149,7 @@ namespace Hecton8.Power
         private const int CounterAdjacencyEntryCount = 6;
         private const int CounterComponentCount = 7;
         private const int CounterGeneratorComponent = 8;
-        private const int CounterJacobiIterations = 9;
+        private const int CounterDeltaPassCount = 9;
         private const int CounterSpecCount = 10;
         private const int CounterBreachSignalCount = 11;
         private const int CounterCount = 16;
@@ -167,7 +167,8 @@ namespace Hecton8.Power
         private const float OxygenTickSeconds = 0.1f;
         private const float MockDockingWatts = 400f;
         private const float DefaultBasePipeResistance = 0.35f;
-        private const float DefaultJacobiSmoothing = 0.82f;
+        private const int FixedDeltaPassCount = 2;
+        private const float DefaultDeltaSmoothing = 0.82f;
         private const uint SourceHash = 0x5348494Eu; // SHIN
 
         private static ShinobuLogisticsRouter _active;
@@ -248,7 +249,7 @@ namespace Hecton8.Power
         private int _frameIndex;
         private int _oxygenCadenceCounter;
         private int _oxygenCadenceDivisor = NormalOxygenCadence;
-        private int _jacobiIterations = 10;
+        private int _deltaPassCount = FixedDeltaPassCount;
         private float _globalQualityWeight = 1f;
         private long _solveStartTimestamp;
         private uint _activeGridHandle;
@@ -281,6 +282,11 @@ namespace Hecton8.Power
 
             _dataVault = dataVault;
             _missingVaultWarned = false;
+        }
+
+        internal void BindPipeRenderer(IConnectionSplineBatchRendererService pipeRenderer)
+        {
+            _pipeRenderer = pipeRenderer;
         }
 
         public void EnsureInitialized()
@@ -321,7 +327,6 @@ namespace Hecton8.Power
 
             ConfigurePublicSignalLanes();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
-            GlobalRegistry.TryGet(out _pipeRenderer);
 
             _tuning[0] = _offlineTuning;
             LogisticsGraphInitializeJob initializeJob = new LogisticsGraphInitializeJob
@@ -396,7 +401,7 @@ namespace Hecton8.Power
             _frameIndex++;
             bool runOxygen = ShouldRunOxygenSolver();
             _solveStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            int iterations = math.clamp(_jacobiIterations, 1, 10);
+            int deltaPassCount = _deltaPassCount;
             int scheduledNodeCount = math.max(1, math.clamp(_nodeCount, 0, MaxNodes));
             JobHandle solveHandle = new LogisticsFlowPrepareJob
             {
@@ -415,11 +420,10 @@ namespace Hecton8.Power
                 ReachableBaseIndex = ReachableOrderBase
             }.Schedule();
 
-            // Residual guard lives inside LogisticsFlowSolverJob; stable nodes copy forward without re-solving.
-            for (int iteration = 0; iteration < iterations; iteration++)
+            for (int passIndex = 0; passIndex < FixedDeltaPassCount; passIndex++)
             {
-                bool frontToBack = (iteration & 1) == 0;
-                solveHandle = new LogisticsFlowSolverJob
+                bool frontToBack = (passIndex & 1) == 0;
+                solveHandle = new LogisticsFlowDeltaPassJob
                 {
                     NodesPtr = (LogisticsNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
                     NodeCount = _nodeCount,
@@ -437,7 +441,7 @@ namespace Hecton8.Power
                 }.Schedule(scheduledNodeCount, 64, solveHandle);
             }
 
-            if ((iterations & 1) != 0)
+            if ((deltaPassCount & 1) != 0)
             {
                 solveHandle = new LogisticsPressureCopyJob
                 {
@@ -454,7 +458,7 @@ namespace Hecton8.Power
                 EdgeCount = _edgeCount,
                 FrameIndex = _frameIndex,
                 RunOxygen = runOxygen ? 1 : 0,
-                JacobiIterations = iterations,
+                DeltaPassCount = deltaPassCount,
                 OxygenDeltaSeconds = OxygenTickSeconds * _oxygenCadenceDivisor,
                 DockingPowerWatts = MockDockingWatts,
                 StateFlags = _stateFlags,
@@ -597,7 +601,7 @@ namespace Hecton8.Power
                    OffsetOf<LogisticsTuningDTO>(nameof(LogisticsTuningDTO.OxygenDiffusionRate)) == 8 &&
                    OffsetOf<LogisticsTuningDTO>(nameof(LogisticsTuningDTO.CrushDepthMultiplier)) == 12 &&
                    OffsetOf<LogisticsTuningDTO>(nameof(LogisticsTuningDTO.BasePipeResistance)) == 16 &&
-                   OffsetOf<LogisticsTuningDTO>(nameof(LogisticsTuningDTO.JacobiSmoothingFactor)) == 20 &&
+                   OffsetOf<LogisticsTuningDTO>(nameof(LogisticsTuningDTO.DeltaSmoothingFactor)) == 20 &&
                    OffsetOf<LogisticsTuningDTO>(nameof(LogisticsTuningDTO.GlobalQualityWeight)) == 24 &&
                    OffsetOf<LogisticsTuningDTO>(nameof(LogisticsTuningDTO.Flags)) == 28;
         }
@@ -629,7 +633,7 @@ namespace Hecton8.Power
                    OffsetOf<LogisticsGraphTelemetryEntry>(nameof(LogisticsGraphTelemetryEntry.UnpoweredCount)) == 44 &&
                    OffsetOf<LogisticsGraphTelemetryEntry>(nameof(LogisticsGraphTelemetryEntry.OxygenCadence)) == 48 &&
                    OffsetOf<LogisticsGraphTelemetryEntry>(nameof(LogisticsGraphTelemetryEntry.ComponentCount)) == 52 &&
-                   OffsetOf<LogisticsGraphTelemetryEntry>(nameof(LogisticsGraphTelemetryEntry.JacobiIterations)) == 56 &&
+                   OffsetOf<LogisticsGraphTelemetryEntry>(nameof(LogisticsGraphTelemetryEntry.DeltaPassCount)) == 56 &&
                    OffsetOf<LogisticsGraphTelemetryEntry>(nameof(LogisticsGraphTelemetryEntry.SolverMicros)) == 60;
         }
 
@@ -746,7 +750,7 @@ namespace Hecton8.Power
             }
             else
             {
-                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.UninitializedMemory);
+                handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.UninitializedMemory);
             }
 
             return vault.TryResolveHandle(in handle, out buffer) &&
@@ -962,6 +966,7 @@ namespace Hecton8.Power
                 _active = null;
 
             ClearVaultAliases();
+            _pipeRenderer = null;
 
             _initialized = false;
             _hasGraph = false;
@@ -1120,7 +1125,7 @@ namespace Hecton8.Power
 
             _globalQualityWeight = quality;
             float qualityCurve = quality * quality * (3f - (2f * quality));
-            _jacobiIterations = PowerSolverConvergenceMath.ResolvePropagationIterations(quality);
+            _deltaPassCount = FixedDeltaPassCount;
             _oxygenCadenceDivisor = math.clamp((int)math.round(math.lerp(LowTierOxygenCadence, NormalOxygenCadence, qualityCurve)), NormalOxygenCadence, LowTierOxygenCadence);
             if (_tuning.IsCreated)
             {
@@ -1159,7 +1164,7 @@ namespace Hecton8.Power
 
         private void ApplyDeterministicMockModuleToggle()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (_nodeCount <= 2 || (_frameIndex % 240) != 0)
                 return;
 
@@ -1312,7 +1317,7 @@ namespace Hecton8.Power
                 OxygenDiffusionRate = 0.18f,
                 CrushDepthMultiplier = 1f,
                 BasePipeResistance = DefaultBasePipeResistance,
-                JacobiSmoothingFactor = DefaultJacobiSmoothing,
+                DeltaSmoothingFactor = DefaultDeltaSmoothing,
                 GlobalQualityWeight = 1f,
                 Flags = 0u
             };
@@ -1507,7 +1512,7 @@ namespace Hecton8.Power
                     Priority = 90,
                     Flags = 1 << 2
                 };
-                SignalBus<BrownoutSignal>.Push(in signal);
+                SignalBus<BrownoutSignal>.TryPush(in signal);
             }
         }
 
@@ -1613,7 +1618,7 @@ namespace Hecton8.Power
                         writer.Write(entry.UnpoweredCount);
                         writer.Write(entry.OxygenCadence);
                         writer.Write(entry.ComponentCount);
-                        writer.Write(entry.JacobiIterations);
+                        writer.Write(entry.DeltaPassCount);
                         writer.Write(entry.SolverMicros);
                     }
                 }
@@ -1651,6 +1656,7 @@ namespace Hecton8.Power
             return SignalBus<FluidIncursionSignal>.TryPush(in incursion);
         }
 
+#if UNITY_EDITOR
         private void TryReloadCsvOverrides()
         {
             string path = _csvPath;
@@ -1675,7 +1681,7 @@ namespace Hecton8.Power
                 int read = ReadFileIntoNativeScratch(path, _csvScratch);
                 if (read <= 0)
                 {
-                    _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.CsvParseFault;
+                    _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.AuthoringImportFault;
                     GlobalTelemetryBus.PublishPerformanceWarning(0x5348435Au, SourceHash, 0);
                     return;
                 }
@@ -1685,7 +1691,7 @@ namespace Hecton8.Power
             }
             catch (Exception exception)
             {
-                _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.CsvParseFault;
+                _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.AuthoringImportFault;
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53484353u, SourceHash, exception.HResult);
             }
         }
@@ -1758,8 +1764,8 @@ namespace Hecton8.Power
                     tuning.CrushDepthMultiplier = value;
                 else if (KeyEquals(keyStart, keyLength, "basepiperesistance", keyHash))
                     tuning.BasePipeResistance = value;
-                else if (KeyEquals(keyStart, keyLength, "jacobismoothingfactor", keyHash))
-                    tuning.JacobiSmoothingFactor = value;
+                else if (KeyEquals(keyStart, keyLength, "deltasmoothingfactor", keyHash))
+                    tuning.DeltaSmoothingFactor = value;
                 else if (KeyEquals(keyStart, keyLength, "globalqualityweight", keyHash))
                     tuning.GlobalQualityWeight = value;
 
@@ -1860,7 +1866,7 @@ namespace Hecton8.Power
                 }
             }
 
-            _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.CsvParseFault;
+            _counters[CounterFaultFlags] |= LogisticsGraphFaultFlags.AuthoringImportFault;
             return false;
         }
 
@@ -1950,6 +1956,7 @@ namespace Hecton8.Power
 
             return negative ? -value : value;
         }
+#endif
 
         private static LogisticsTuningDTO SanitizeTuning(in LogisticsTuningDTO tuning)
         {
@@ -1960,7 +1967,7 @@ namespace Hecton8.Power
                 OxygenDiffusionRate = math.clamp(FiniteOr(tuning.OxygenDiffusionRate, 0.18f), 0.01f, 2f),
                 CrushDepthMultiplier = math.clamp(FiniteOr(tuning.CrushDepthMultiplier, 1f), 0.1f, 10f),
                 BasePipeResistance = math.clamp(FiniteOr(tuning.BasePipeResistance, DefaultBasePipeResistance), 0.001f, 8f),
-                JacobiSmoothingFactor = math.clamp(FiniteOr(tuning.JacobiSmoothingFactor, DefaultJacobiSmoothing), 0.05f, 1f),
+                DeltaSmoothingFactor = math.clamp(FiniteOr(tuning.DeltaSmoothingFactor, DefaultDeltaSmoothing), 0.05f, 1f),
                 GlobalQualityWeight = math.saturate(FiniteOr(tuning.GlobalQualityWeight, 1f)),
                 Flags = tuning.Flags
             };
@@ -1969,10 +1976,11 @@ namespace Hecton8.Power
         private static void ConfigurePublicSignalLanes()
         {
             SignalBus<FluidIncursionSignal>.Configure(
-                FluidIncursionSignalCapacity,
-                FluidIncursionSignalCapacity,
-                FluidIncursionSignalCapacity,
-                SourceHash);
+                FluidIncursionSignal.ExpectedCapacity,
+                FluidIncursionSignal.MaxFrameSignals,
+                FluidIncursionSignal.LowTierFrameSignals,
+                FluidIncursionSignal.LaneHash);
+            SignalBus<FluidIncursionSignal>.EnsureInitialized();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2555,7 +2563,7 @@ namespace Hecton8.Power
         }
 
         [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
-        private unsafe struct LogisticsFlowSolverJob : IJobParallelFor
+        private unsafe struct LogisticsFlowDeltaPassJob : IJobParallelFor
         {
             [NoAlias] [NativeDisableUnsafePtrRestriction] public LogisticsNodeDTO* NodesPtr;
             public int NodeCount;
@@ -2590,9 +2598,7 @@ namespace Hecton8.Power
                 LogisticsTuningDTO tuning = Tuning[0];
                 float qualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
                 float qualityCurve = qualityWeight * qualityWeight * (3f - (2f * qualityWeight));
-                float smoothing = math.clamp(FiniteOr(tuning.JacobiSmoothingFactor, DefaultJacobiSmoothing) * math.lerp(0.72f, 1f, qualityCurve), 0.05f, 1f);
-                float omega = PowerSolverConvergenceMath.ResolveSolverOmega(GlobalQualityWeight);
-                float targetTolerance = PowerSolverConvergenceMath.ResolveSolverTargetTolerance(0.001f, GlobalQualityWeight);
+                float smoothing = math.clamp(FiniteOr(tuning.DeltaSmoothingFactor, DefaultDeltaSmoothing) * math.lerp(0.72f, 1f, qualityCurve), 0.05f, 1f);
                 bool source = IsSource(flags);
                 bool pressureFault = !math.isfinite(ReadPressure[index]);
                 float previousPressure = Sanitize01(ReadPressure[index]);
@@ -2620,8 +2626,8 @@ namespace Hecton8.Power
                 float demandRate = source ? 0f : math.saturate(FiniteOr(node.Capacity, 0f) / reactorOutput);
                 float relaxed = (weightedPotential + generatorRate - demandRate) * math.rcp(math.max(conductanceSum + 1f, 1f));
 
-                float jacobiPressure = math.saturate(relaxed);
-                float pressure = previousPressure + (jacobiPressure - previousPressure) * math.clamp(smoothing * omega, 0.05f, 1.85f);
+                float deltaPressure = math.saturate(relaxed);
+                float pressure = previousPressure + (deltaPressure - previousPressure) * smoothing;
                 pressureFault |= !math.isfinite(pressure);
                 if (pressureFault)
                 {
@@ -2631,8 +2637,7 @@ namespace Hecton8.Power
                 }
 
                 float resolvedPressure = math.saturate(pressure);
-                float residual = math.abs(resolvedPressure - previousPressure);
-                WritePressure[index] = residual <= targetTolerance ? previousPressure : resolvedPressure;
+                WritePressure[index] = resolvedPressure;
                 node.Flags = flags;
             }
 
@@ -2694,7 +2699,7 @@ namespace Hecton8.Power
             public int EdgeCount;
             public int FrameIndex;
             public int RunOxygen;
-            public int JacobiIterations;
+            public int DeltaPassCount;
             public float OxygenDeltaSeconds;
             public float DockingPowerWatts;
             [NoAlias] public NativeArray<ulong> StateFlags;
@@ -2725,7 +2730,7 @@ namespace Hecton8.Power
                 int edgeCount = math.clamp(EdgeCount, 0, math.min(MaxDirectedEdges, Edges.Length));
                 int adjacencyCount = math.clamp(AdjacencyEntryCount, 0, math.min(MaxAdjacencyEntries, CsrEdgeCapacities.Length));
                 int componentCount = math.clamp(Counters[CounterComponentCount], 0, nodeCount);
-                int iterations = math.clamp(JacobiIterations, 1, 8);
+                int deltaPassCount = math.clamp(DeltaPassCount, FixedDeltaPassCount, FixedDeltaPassCount);
                 LogisticsTuningDTO tuning = Tuning[0];
 
                 float totalGenerated = 0f;
@@ -2781,7 +2786,7 @@ namespace Hecton8.Power
                 Counters[CounterBreachedCount] = breachedCount;
                 Counters[CounterUnpoweredCount] = unpoweredCount;
                 Counters[CounterComponentCount] = componentCount;
-                Counters[CounterJacobiIterations] = iterations;
+                Counters[CounterDeltaPassCount] = deltaPassCount;
 
                 int telemetryIndex = FrameIndex % TelemetryFrames;
                 BlackBox[telemetryIndex] = new LogisticsGraphTelemetryEntry
@@ -2799,7 +2804,7 @@ namespace Hecton8.Power
                     UnpoweredCount = unpoweredCount,
                     OxygenCadence = RunOxygen,
                     ComponentCount = componentCount,
-                    JacobiIterations = iterations,
+                    DeltaPassCount = deltaPassCount,
                     SolverMicros = 0
                 };
             }

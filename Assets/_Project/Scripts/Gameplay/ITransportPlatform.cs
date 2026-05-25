@@ -28,4 +28,14 @@ namespace Hecton8.Gameplay
         /// <param name="worldPoint">World-space point on or inside the platform.</param>
         Vector3 GetPlatformPointVelocity(Vector3 worldPoint);
     }
+
+    /// <summary>
+    /// Narrow predictive voxel proxy route for transports with an authored vehicle motor.
+    /// </summary>
+    public interface ITransportPredictiveVoxelProxySource
+    {
+        bool TryResolvePredictiveVoxelProxy(out Rigidbody body, out Vector3 velocity);
+
+        void ApplyPredictiveVoxelProxyDampener(float strength01);
+    }
 }

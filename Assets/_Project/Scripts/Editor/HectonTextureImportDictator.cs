@@ -172,10 +172,10 @@ namespace Hecton8.EditorTools
                 return true;
 
             string lowerPath = Normalize(path);
-            return lowerPath.Contains("normal") ||
-                   lowerPath.Contains("_n.") ||
-                   lowerPath.Contains("_n_") ||
-                   lowerPath.Contains("nrm");
+            return ContainsOrdinal(lowerPath, "normal") ||
+                   ContainsOrdinal(lowerPath, "_n.") ||
+                   ContainsOrdinal(lowerPath, "_n_") ||
+                   ContainsOrdinal(lowerPath, "nrm");
         }
 
         private static bool IsManagedArtTexture(string path)
@@ -311,16 +311,16 @@ namespace Hecton8.EditorTools
         private static bool IsMaskMap(string path)
         {
             string lowerPath = Normalize(path);
-            return lowerPath.Contains("mask") ||
-                   lowerPath.Contains("detail") ||
-                   lowerPath.Contains("metal") ||
-                   lowerPath.Contains("rough") ||
-                   lowerPath.Contains("smooth") ||
-                   lowerPath.Contains("occlusion") ||
-                   lowerPath.Contains("_ao") ||
-                   lowerPath.Contains("ambient") ||
-                   lowerPath.Contains("height") ||
-                   lowerPath.Contains("emissive");
+            return ContainsOrdinal(lowerPath, "mask") ||
+                   ContainsOrdinal(lowerPath, "detail") ||
+                   ContainsOrdinal(lowerPath, "metal") ||
+                   ContainsOrdinal(lowerPath, "rough") ||
+                   ContainsOrdinal(lowerPath, "smooth") ||
+                   ContainsOrdinal(lowerPath, "occlusion") ||
+                   ContainsOrdinal(lowerPath, "_ao") ||
+                   ContainsOrdinal(lowerPath, "ambient") ||
+                   ContainsOrdinal(lowerPath, "height") ||
+                   ContainsOrdinal(lowerPath, "emissive");
         }
 
         private static bool IsUiTexture(string path, TextureImporter importer)
@@ -329,36 +329,36 @@ namespace Hecton8.EditorTools
                 return true;
 
             string lowerPath = Normalize(path);
-            return lowerPath.Contains("/sprites/") ||
-                   lowerPath.Contains("/ui/") ||
-                   lowerPath.Contains("/icons/");
+            return ContainsOrdinal(lowerPath, "/sprites/") ||
+                   ContainsOrdinal(lowerPath, "/ui/") ||
+                   ContainsOrdinal(lowerPath, "/icons/");
         }
 
         private static bool IsScatterTexture(string path)
         {
             string lowerPath = Normalize(path);
-            return lowerPath.Contains("scatter") ||
-                   lowerPath.Contains("flora") ||
-                   lowerPath.Contains("coral") ||
-                   lowerPath.Contains("kelp") ||
-                   lowerPath.Contains("rock") ||
-                   lowerPath.Contains("rocks") ||
-                   lowerPath.Contains("gravel") ||
-                   lowerPath.Contains("sand") ||
-                   lowerPath.Contains("moss") ||
-                   lowerPath.Contains("mud") ||
-                   lowerPath.Contains("basalt") ||
-                   lowerPath.Contains("debris") ||
-                   lowerPath.Contains("terrain textures") ||
-                   lowerPath.Contains("worldproceduralflora");
+            return ContainsOrdinal(lowerPath, "scatter") ||
+                   ContainsOrdinal(lowerPath, "flora") ||
+                   ContainsOrdinal(lowerPath, "coral") ||
+                   ContainsOrdinal(lowerPath, "kelp") ||
+                   ContainsOrdinal(lowerPath, "rock") ||
+                   ContainsOrdinal(lowerPath, "rocks") ||
+                   ContainsOrdinal(lowerPath, "gravel") ||
+                   ContainsOrdinal(lowerPath, "sand") ||
+                   ContainsOrdinal(lowerPath, "moss") ||
+                   ContainsOrdinal(lowerPath, "mud") ||
+                   ContainsOrdinal(lowerPath, "basalt") ||
+                   ContainsOrdinal(lowerPath, "debris") ||
+                   ContainsOrdinal(lowerPath, "terrain textures") ||
+                   ContainsOrdinal(lowerPath, "worldproceduralflora");
         }
 
         private static bool IsAtlasTexture(string path)
         {
             string lowerPath = Normalize(path);
-            return lowerPath.Contains("atlas") ||
-                   lowerPath.Contains("sheet") ||
-                   lowerPath.Contains("flipbook");
+            return ContainsOrdinal(lowerPath, "atlas") ||
+                   ContainsOrdinal(lowerPath, "sheet") ||
+                   ContainsOrdinal(lowerPath, "flipbook");
         }
 
         private static string Normalize(string path)
@@ -371,27 +371,33 @@ namespace Hecton8.EditorTools
         private static bool ShouldFlipNormalGreenChannel(string path, Texture2D texture)
         {
             string lowerPath = Normalize(path);
-            if (lowerPath.Contains("normalgl") ||
-                lowerPath.Contains("opengl") ||
-                lowerPath.Contains("_gl.") ||
-                lowerPath.Contains("_gl_"))
+            if (ContainsOrdinal(lowerPath, "normalgl") ||
+                ContainsOrdinal(lowerPath, "opengl") ||
+                ContainsOrdinal(lowerPath, "_gl.") ||
+                ContainsOrdinal(lowerPath, "_gl_"))
             {
                 return false;
             }
 
-            if (lowerPath.Contains("normaldx") ||
-                lowerPath.Contains("directx") ||
-                lowerPath.Contains("_dx.") ||
-                lowerPath.Contains("_dx_") ||
-                lowerPath.Contains("-dx") ||
-                lowerPath.Contains("y-") ||
-                lowerPath.Contains("green_inverted") ||
-                lowerPath.Contains("green-inverted"))
+            if (ContainsOrdinal(lowerPath, "normaldx") ||
+                ContainsOrdinal(lowerPath, "directx") ||
+                ContainsOrdinal(lowerPath, "_dx.") ||
+                ContainsOrdinal(lowerPath, "_dx_") ||
+                ContainsOrdinal(lowerPath, "-dx") ||
+                ContainsOrdinal(lowerPath, "y-") ||
+                ContainsOrdinal(lowerPath, "green_inverted") ||
+                ContainsOrdinal(lowerPath, "green-inverted"))
             {
                 return true;
             }
 
             return HasInvertedGreenHistogram(texture);
+        }
+
+        private static bool ContainsOrdinal(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   source.IndexOf(token, StringComparison.Ordinal) >= 0;
         }
 
         private static bool HasInvertedGreenHistogram(Texture2D texture)

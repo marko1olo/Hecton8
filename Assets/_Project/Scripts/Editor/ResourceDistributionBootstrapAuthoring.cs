@@ -48,9 +48,10 @@ namespace Hecton8.Editor
                 if (managersRoot == null)
                     managersRoot = new GameObject(ManagersRootName);
 
-                director = managersRoot.GetComponent<ResourceDistributionDirector>();
-                if (director == null)
+                if (!managersRoot.TryGetComponent(out ResourceDistributionDirector existingDirector))
                     director = Undo.AddComponent<ResourceDistributionDirector>(managersRoot);
+                else
+                    director = existingDirector;
             }
 
             SerializedObject serializedDirector = new SerializedObject(director);

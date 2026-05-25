@@ -1,4 +1,4 @@
-# Hardware Adaptive UI Scaler Runbook
+﻿# Hardware Adaptive UI Scaler Runbook
 
 Date: 2026-05-17
 Status: STATIC UI SCALE RUNBOOK / ARTIFACT RERUN REQUIRED / UNITY PENDING

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.Graphics.Materials;
 using UnityEditor;
 using UnityEngine;
@@ -37,7 +38,7 @@ namespace Hecton8.Graphics.Materials.Editor
             {
                 EditorGUILayout.LabelField("Runtime", _bound ? "GlobalDataVault bound" : "Play Mode bridge pending");
                 EditorGUILayout.LabelField("Visible DTOs", _visibleCount.ToString());
-                EditorGUILayout.LabelField("Last Upload ms", _lastUploadMs.ToString("0.000"));
+                EditorGUILayout.LabelField("Last Upload ms", _lastUploadMs.ToString("0.000", CultureInfo.InvariantCulture));
             }
 
             EditorGUI.BeginChangeCheck();

@@ -34,6 +34,8 @@ namespace Hecton8.Core.Memory
         Construction = 71,
         Power = 72,
         HullIntegrity = 73,
+        GameplayCombat = 74,
+        Crafting = 75,
         WorldStreaming = 128,
         TerrainSeams = 129,
         WorldSargassum = 130,
@@ -55,6 +57,14 @@ namespace Hecton8.Core.Memory
         ContentAuthority = 194,
         CoreDiagnostics = 195,
         QuestDag = 196,
+        NarrativePoiTriggers = 349,
+        PrologueSequence = 350,
+        QAEndurance = 351,
+        GameplayDebris = 352,
+        LoreDatabase = 353,
+        QAHeadless = 354,
+        MetaCampaign = 355,
+        WorldProceduralFieldSampler = 356,
         EndgameAnomaly = 197,
         GraphicsMaterials = 198,
         ModSandbox = 199,
@@ -88,6 +98,36 @@ namespace Hecton8.Core.Memory
         H8Time = 9,
         TerrainSeamHeightmap = 10,
         PlayerKinematicState = 11,
+        PlayerHandIkStates = 315730,
+        PlayerHandIkTargets = 315731,
+        PlayerHandIkBoneMatrices = 315732,
+        PlayerHandIkTelemetryRing = 315733,
+        PlayerHandIkTelemetryCursor = 315734,
+        PlayerHandIkConfig = 315735,
+        PlayerHandIkPublishedStates = 315736,
+        AtmosphereLogisticsCellsFront = 71500,
+        AtmosphereLogisticsCellsBack = 71501,
+        AtmosphereLogisticsNodes = 71502,
+        AtmosphereLogisticsConnections = 71503,
+        AtmosphereLogisticsEdgeOffsets = 71504,
+        AtmosphereLogisticsEdgeDestinations = 71505,
+        AtmosphereLogisticsEdgeConductance = 71506,
+        AtmosphereLogisticsEdgeWriteCursor = 71507,
+        AtmosphereLogisticsConsumers = 71508,
+        AtmosphereLogisticsToxicSources = 71509,
+        AtmosphereLogisticsVents = 71510,
+        AtmosphereLogisticsCounters = 71511,
+        AtmosphereLogisticsTuning = 71512,
+        AtmosphereLogisticsTelemetryRing = 71513,
+        AtmosphereLogisticsOxygenDeltaUnits = 71514,
+        AtmosphereLogisticsCarbonDioxideDeltaUnits = 71515,
+        AtmosphereLogisticsNitrogenDeltaUnits = 71516,
+        AtmosphereLogisticsToxinDeltaUnits = 71517,
+        AtmosphereLogisticsTemperatureDeltaMilli = 71518,
+        AtmosphereLogisticsGasRemainders = 71519,
+        AtmosphereLogisticsShaderPayload = 71520,
+        AtmosphereLogisticsCsvScratch = 71521,
+        AtmosphereLogisticsProfiles = 71522,
         RoomWaterLevels = 12,
         EntityAUPs = 13,
         VoxelSdfTexture3D = 14,
@@ -262,10 +302,10 @@ namespace Hecton8.Core.Memory
         LeviathanTerrainIkTelemetryRing = 183,
         LeviathanTerrainIkTelemetryCursor = 184,
         SargassumBoidSensoryBlackBox = 185,
-        PlayerMotorScheduledSweepCommands = 186,
-        PlayerMotorScheduledSweepResults = 187,
-        PlayerMotorKinematicRepairTargetCommands = 188,
-        PlayerMotorKinematicRepairTargetResults = 189,
+        PlayerMotorReserved186 = 186,
+        PlayerMotorReserved187 = 187,
+        PlayerMotorReserved188 = 188,
+        PlayerMotorReserved189 = 189,
         HandPresenceInput = 190,
         HandPresenceOutput = 191,
         LockstepMasterHashHistory = 192,
@@ -393,6 +433,10 @@ namespace Hecton8.Core.Memory
         EcosystemHeadlessMutationBrine = 313,
         EcosystemHeadlessMutationStableHashes = 314,
         EcosystemHeadlessMutationResults = 315,
+        EcosystemFaunaGeneticsTelemetry = 70510,
+        EcosystemFaunaGeneticsTuning = 70511,
+        EcosystemFaunaGeneticsProfiles = 70512,
+        EcosystemFaunaGeneticsCsvScratch = 70513,
         EcosystemApexTerritorySamples = 316,
         EcosystemApexTerritoryOverlapResults = 317,
         EcosystemApexSpawnGateCommands = 318,
@@ -494,6 +538,24 @@ namespace Hecton8.Core.Memory
         AudioVocalSynthesisMockBankRecords = 72427,
         AudioVocalSynthesisCsvMetadata = 72428,
         AudioVocalSynthesisCsvScratch = 72429,
+        Shinobu303SteeringParams = 72500,
+        Shinobu303SteeringAvoidance = 72501,
+        Shinobu303SteeringWhiskers = 72502,
+        Shinobu303KinematicStates = 72503,
+        Shinobu303SteeringTelemetryRing = 72504,
+        Shinobu303SteeringTelemetryCursor = 72505,
+        Shinobu303MockSdf = 72506,
+        Shinobu303SdfConfig = 72507,
+        Shinobu303SteeringProfiles = 72508,
+        Shinobu303CsvScratch = 72509,
+        ShinobuSuitIntegrityStates = 72510,
+        ShinobuSuitIntegrityProfiles = 72511,
+        ShinobuSuitIntegrityTuning = 72512,
+        ShinobuSuitIntegrityTelemetryRing = 72513,
+        ShinobuSuitIntegrityVisuals = 72514,
+        ShinobuSuitIntegrityMockAups = 72515,
+        ShinobuSuitIntegrityCsvScratch = 72516,
+        ShinobuSuitIntegrityDumpScratch = 72517,
         Shinobu220BulkheadStates = 72000,
         Shinobu220BulkheadAups = 72001,
         Shinobu220BulkheadPlanes = 72002,
@@ -510,6 +572,22 @@ namespace Hecton8.Core.Memory
         Shinobu220BulkheadModuleIntegrity = 72013,
         Shinobu220BulkheadIntentRing = 72014,
         Shinobu220BulkheadIntentControl = 72015,
+        Shinobu336TeardownTransactions = 72016,
+        Shinobu336RefundCommands = 72017,
+        Shinobu336LootCaches = 72018,
+        Shinobu336TelemetryRing = 72019,
+        Shinobu336TelemetryCursor = 72020,
+        Shinobu336RefundProfiles = 72021,
+        Shinobu336CsvScratch = 72022,
+        Shinobu336Counters = 72023,
+        Shinobu343HatchStates = 72024,
+        Shinobu343HatchTelemetryRing = 72025,
+        Shinobu343HatchTelemetryCursor = 72026,
+        Shinobu343HatchTuning = 72027,
+        Shinobu343HatchProfiles = 72028,
+        Shinobu343HatchCsvScratch = 72029,
+        Shinobu343HatchShaderUpload = 72030,
+        Shinobu343HatchMockFluidCompartments = 72031,
         ShinobuModSandboxBlackboxMemory = 70900,
         ShinobuModSandboxTuning = 70901,
         ShinobuModSandboxTelemetryRing = 70902,
@@ -624,9 +702,9 @@ namespace Hecton8.Core.Memory
         ProceduralCrabLegFootPositions = 478,
         ProceduralCrabLegTargetFootPositions = 479,
         ProceduralCrabLegStepStates = 480,
-        ProceduralCrabLegRaycastCommands = 481,
-        ProceduralCrabLegRaycastHits = 482,
-        ProceduralCrabLegRaycastLegMask = 483,
+        ProceduralCrabLegSurfaceProbeScratchA = 481,
+        ProceduralCrabLegSurfaceProbeScratchB = 482,
+        ProceduralCrabLegSurfaceProbeMask = 483,
         ProceduralCrabBodyPoses = 484,
         ProceduralCrabSolvedJointMatrices = 485,
         ProceduralCrabIkTelemetryRing = 486,
@@ -665,6 +743,9 @@ namespace Hecton8.Core.Memory
         TerminalDecryptionTerminals = 71377,
         TerminalDecryptionKnobInput = 71378,
         TerminalDecryptionTelemetryRing = 71379,
+        DataMonolithPayload = 71103,
+        DataMonolithTelemetryRing = 71104,
+        DataMonolithTelemetryCursor = 71105,
         SurvivalDatabaseStableHashes = 518,
         SurvivalDatabaseMassKilograms = 519,
         SurvivalDatabaseVolumeLiters = 520,
@@ -704,8 +785,8 @@ namespace Hecton8.Core.Memory
         VaultEntityBucketMap = 554,
         VaultSharedTransformMatrices = 555,
         VehicleMotorSubmarineStates = 556,
-        VehicleMotorSweepCommands = 557,
-        VehicleMotorSweepResults = 558,
+        VehicleMotorReserved557 = 557,
+        VehicleMotorReserved558 = 558,
         VaultSovereigntyTelemetryRing = 559,
         VoxelSdfPayloadDescriptor = 620,
         MarineSnowTuningConstants = 622,
@@ -768,6 +849,15 @@ namespace Hecton8.Core.Memory
         StructuralIntegrityTuning = 70495,
         StructuralIntegrityMaterialStrengths = 70496,
         StructuralIntegrityCsvScratch = 70497,
+        BaseStructuralWarningRawWarnings = 70498,
+        BaseStructuralWarningGroups = 70499,
+        BaseStructuralWarningTimers = 70503,
+        BaseStructuralWarningCounters = 70504,
+        BaseStructuralWarningTelemetryRing = 70505,
+        BaseStructuralWarningTelemetryCursor = 70506,
+        BaseStructuralWarningTuning = 70507,
+        BaseStructuralWarningProfiles = 70508,
+        BaseStructuralWarningCsvScratch = 70509,
         VerletCableNodes = 575,
         VerletCableConstraints = 576,
         VerletCableSystems = 577,
@@ -854,6 +944,11 @@ namespace Hecton8.Core.Memory
         ShinobuFabricationTuning = 71145,
         ShinobuFabricationTimingLookup = 71146,
         ShinobuFabricationCsvScratch = 71147,
+        ShinobuFastFailRequirementDtos = 71203,
+        ShinobuFastFailCraftableWords = 71204,
+        ShinobuFastFailTelemetryRing = 71205,
+        ShinobuFastFailTelemetryCursor = 71206,
+        ShinobuFastFailTransactionResults = 71207,
         ShinobuMesofaunaStates = 71180,
         ShinobuMesofaunaMockPreyTargets = 71181,
         ShinobuMesofaunaVisualSync = 71182,
@@ -942,6 +1037,7 @@ namespace Hecton8.Core.Memory
         SaveMacroDatabaseSectorCoordScratch = 70374,
         SaveMacroDatabaseHydrationScratch = 70375,
         SaveMacroDatabaseBlackBox = 70376,
+        SaveMacroDatabasePayloadCopyScratch = 70377,
         BiolumGlowStates = 70300,
         BiolumGlowGpuColorFront = 70301,
         BiolumGlowGpuColorBack = 70302,
@@ -979,8 +1075,17 @@ namespace Hecton8.Core.Memory
         ShinobuVRSomaticMockSickness = 70172,
         ShinobuVRSomaticCsvScratch = 70173,
         ShinobuVRSomaticProfileLookup = 70174,
+        ShinobuVRSomaticKccStateMirror = 70175,
+        ShinobuVRSomaticRawRotation = 70176,
+        ShinobuVRSomaticHorizonWrite = 70177,
+        ShinobuVRSomaticHorizonRead = 70178,
+        ShinobuVRSomaticHorizonTelemetry = 70179,
         ShinobuDeltaCrusherVoxelBlackBox = 70130,
         ShinobuDeltaCrusherCarveWrites = 70131,
+        ShinobuDeltaCrusherDirtyMaskPool = 70132,
+        ShinobuDeltaCrusherSdfBitsPool = 70133,
+        ShinobuDeltaCrusherMaterialPool = 70134,
+        ShinobuDeltaCrusherCellFlagsPool = 70135,
         ShinobuAmbientEntities = 70400,
         ShinobuAmbientAups = 70401,
         ShinobuAmbientEntitySnapshot = 70402,
@@ -1025,6 +1130,33 @@ namespace Hecton8.Core.Memory
         ShinobuMacroEcosystemTelemetryRing = 70441,
         ShinobuMacroEcosystemCsvScratch = 70442,
         ShinobuMacroEcosystemFaultFlags = 70447,
+        ShinobuSpatialGridEntries = 70448,
+        ShinobuSpatialGridSortScratch = 70449,
+        ShinobuSpatialGridBucketRanges = 70450,
+        ShinobuSpatialGridTelemetryRing = 70451,
+        ShinobuSpatialGridTelemetryCursor = 70452,
+        ShinobuSpatialGridTuning = 70453,
+        ShinobuSpatialGridProfiles = 70454,
+        ShinobuSpatialGridCsvScratch = 70455,
+        ShinobuSpatialGridMockCoordinates = 70456,
+        ShinobuFlockingThreats = 70457,
+        ShinobuFlockingThreatCount = 70458,
+        ShinobuFlockingTelemetryRing = 70459,
+        ShinobuFlockingCounters64 = 70474,
+        ShinobuNutrientDriftCellFront = 70460,
+        ShinobuNutrientDriftCellBack = 70461,
+        ShinobuNutrientDriftFlowField = 70462,
+        ShinobuNutrientDriftInjection = 70463,
+        ShinobuNutrientDriftSources = 70464,
+        ShinobuNutrientDriftSourceCount = 70465,
+        ShinobuNutrientDriftTuning = 70466,
+        ShinobuNutrientDriftTelemetryRing = 70467,
+        ShinobuNutrientDriftTelemetryCursor = 70468,
+        ShinobuNutrientDriftDensityUpload = 70469,
+        ShinobuNutrientDriftGridHeader = 70470,
+        ShinobuNutrientDriftCsvScratch = 70471,
+        ShinobuNutrientDriftProfiles = 70472,
+        ShinobuNutrientDriftFaultFlags = 70473,
         ShinobuSwarmSpeciesProfiles = 70443,
         ShinobuBoidIndirectArgs = 70444,
         ShinobuBoidStates = 70445,
@@ -1037,6 +1169,9 @@ namespace Hecton8.Core.Memory
         ShinobuScalabilityTunerState = 70485,
         ShinobuScalabilityDumpScratch = 70486,
         ShinobuScalabilityOscilloscope = 70487,
+        ShinobuMathLodConfig = 74400,
+        ShinobuMathLodTelemetryRing = 74401,
+        ShinobuMathLodTelemetryCursor = 74402,
         ShinobuInputCurrentDto = 70520,
         ShinobuInputJournalRing = 70521,
         ShinobuInputButtonMaskWindow = 70522,
@@ -1081,6 +1216,17 @@ namespace Hecton8.Core.Memory
         ShinobuInventoryContainerRanges = 73130,
         ShinobuInventoryContainerRangeCount = 73131,
         ShinobuInventoryContainerSyncResult = 73132,
+        ShinobuInventorySoaTelemetry = 73133,
+        ShinobuInventorySoaTelemetryCursor = 73134,
+        ShinobuInventorySoaCapacityProfiles = 73135,
+        ShinobuCargoTransactions = 73136,
+        ShinobuCargoLootCaches = 73137,
+        ShinobuCargoSyncTelemetry = 73138,
+        ShinobuCargoSyncTelemetryCursor = 73139,
+        ShinobuCargoSyncProgress = 73140,
+        ShinobuCargoSyncTuning = 73141,
+        ShinobuCargoFilterProfiles = 73142,
+        ShinobuCargoOverflowCounter = 73143,
         QuestDagGlobalStateMasks = 70150,
         QuestDagOldStateMasks = 70151,
         QuestDagNodes = 70152,
@@ -1097,6 +1243,79 @@ namespace Hecton8.Core.Memory
         QuestDagTriggerNodeIndices = 70163,
         QuestDagCsvMonitor = 70164,
         QuestDagNoTriggerNodeIndices = 70165,
+        NarrativePoiTriggers = 74000,
+        NarrativePoiBucketRanges = 74001,
+        NarrativePoiBucketIndices = 74002,
+        NarrativePoiStateMasks = 74003,
+        NarrativePoiTelemetryRing = 74004,
+        NarrativePoiTelemetryCursor = 74005,
+        NarrativePoiCounters = 74006,
+        NarrativePoiCsvScratch = 74007,
+        NarrativePoiPresentation = 74008,
+        PrologueSequenceTelemetryRing = 74009,
+        OrbitalDropReentryVfxTelemetryRing = 74010,
+        QAEnduranceBlackBoxRing = 74200,
+        SargassumCutStampCommands = 74300,
+        SargassumCutDamageVolumeStampCommands = 74301,
+        GameplayDebrisFrontStates = 74310,
+        GameplayDebrisBackStates = 74311,
+        InternalFloodWaterlineTelemetryRing = 74312,
+        DiegeticVisorHudBlackBox = 74313,
+        DiegeticTooltipBlackBox = 74314,
+        HudNotificationQueue = 74315,
+        VoxelMeshPipelineBlackBox = 74316,
+        LoreDatabaseUnlockedWords = 74317,
+        QAHeadlessStressFractureBlackBoxRing = 74318,
+        QAHeadlessStressFractureScratchBlock = 74319,
+        InstanceCullingIndirectArgsReadback = 74320,
+        InstanceCullingTelemetryRing = 74321,
+        TraumaDispatcherParasiteSporeLosCommands = 74322,
+        TraumaDispatcherParasiteSporeLosHits = 74323,
+        RaycastBatchHelperCommands = 74324,
+        RaycastBatchHelperHits = 74325,
+        FontStreamingVisibleHashPrefetch = 74326,
+        FontStreamingVisibleSlicePrefetch = 74327,
+        VehicleSubOsButtonStates = 74328,
+        VehicleSubOsButtonTargets = 74329,
+        VehicleSubOsButtonProgress = 74330,
+        VehicleSubOsButtonOffsets = 74331,
+        VehicleSubOsButtonBaseLocalPositions = 74332,
+        VehicleSubOsButtonMatrices = 74333,
+        VehicleSubOsTelemetryRing = 74334,
+        AbyssalPathTelemetryRing = 74335,
+        CaveVoxelLightingOccupancyVolume = 74336,
+        CaveVoxelLightingSdfVolume = 74337,
+        ResourceDistributionMetamorphismInputs = 74338,
+        ResourceDistributionMetamorphismResults = 74339,
+        SubmarineCoreHullIntegritySummary = 74340,
+        SubmarineCorePhysicsBinding = 74341,
+        SubmarineCoreGridState = 74342,
+        GpuScatterTelemetryRing = 74343,
+        ProximityColliderPositions = 74344,
+        ProximityColliderJobResults = 74345,
+        ProximityColliderPrevStatus = 74346,
+        OpenXrManualOverrideLeverBlackBox = 74347,
+        HeadlessSimulationGhostState = 74348,
+        HeadlessSimulationGhostNextState = 74349,
+        HeadlessSimulationBlackBox = 74350,
+        HeadlessSimulationMemoryWindowBytes = 74351,
+        HeadlessSimulationMemoryWindowH8Bytes = 74352,
+        HeadlessSimulationMemoryWindowAllocationCounts = 74353,
+        MetaCampaignVariables = 74354,
+        MetaCampaignRules = 74355,
+        MetaCampaignBlackBox = 74356,
+        AutonomousExtractorJobInputs = 74357,
+        AutonomousExtractorJobResults = 74358,
+        AutonomousExtractorCycleTimers = 74359,
+        AutonomousExtractorBufferedItemHashIds = 74360,
+        AutonomousExtractorBufferedUnitCounts = 74361,
+        AutonomousExtractorCompletedCycleCounts = 74362,
+        WorldProceduralFieldZones = 74363,
+        WorldProceduralFieldBiomeMatrices = 74364,
+        WorldProceduralFieldBiomeMatrixIndex = 74365,
+        WorldProceduralFieldBiomeFamilies = 74366,
+        WorldProceduralFieldCaveEntranceHints = 74367,
+        WorldProceduralFieldNoiseLookup = 74368,
         ShinobuLogisticsNodes = 70180,
         ShinobuLogisticsEdges = 70181,
         ShinobuLogisticsStateFlags = 70182,
@@ -1156,6 +1375,13 @@ namespace Hecton8.Core.Memory
         FoundationSnappingCsvScratch = 70972,
         FoundationSnappingDebugRays = 70973,
         FoundationSnappingIndirectArgs = 70974,
+        ShinobuHapticSynthesisPulses = 70975,
+        ShinobuHapticSynthesisFinalPulse = 70976,
+        ShinobuHapticSynthesisMockImpulses = 70977,
+        ShinobuHapticSynthesisTelemetryRing = 70978,
+        ShinobuHapticSynthesisProfileTable = 70979,
+        ShinobuHapticSynthesisTuning = 70980,
+        ShinobuHapticSynthesisCsvScratch = 70981,
         BaseModuleCatalogState = 70330,
         BaseModuleCatalogDefinitions = 70331,
         BaseModuleCatalogSockets = 70332,
@@ -1214,9 +1440,9 @@ namespace Hecton8.Core.Memory
         ShinobuDroneFleetAStarTelemetry = 70255,
         ShinobuDroneFleetTaskClaimOwners = 70256,
         ShinobuDroneFleetTelemetryAccumulator = 70257,
-        ShinobuDroneFleetDockingRaycastCommands = 70258,
-        ShinobuDroneFleetDockingRaycastHits = 70259,
-        ShinobuDroneFleetDockingRaycastSlots = 70260,
+        ShinobuDroneFleetDockingSurfaceProbeScratchA = 70258,
+        ShinobuDroneFleetDockingSurfaceProbeScratchB = 70259,
+        ShinobuDroneFleetDockingSurfaceProbeSlots = 70260,
         ShinobuDroneFleetTaskClaimCounts = 70261,
         ShinobuDroneFleetTaskPriorityHeap = 70262,
         ShinobuDroneFleetMacroRouteNodes = 70263,
@@ -1281,6 +1507,11 @@ namespace Hecton8.Core.Memory
         ShinobuMaterialBiomassScalar = 70668,
         ShinobuMaterialCsvScratch = 70670,
         ShinobuMaterialVisiblePayload = 70671,
+        AudioLogPlaybackQueue = 70672,
+        AudioLogEncryptedFragmentHashes = 70673,
+        AudioLogEncryptedFragmentRecoveredBits = 70674,
+        AudioLogTelemetryRing = 70675,
+        AudioLogTelemetryCursor = 70676,
         ShinobuExosuitState = 70680,
         ShinobuExosuitFrameInput = 70681,
         ShinobuExosuitTuning = 70682,
@@ -1376,6 +1607,10 @@ namespace Hecton8.Core.Memory
         BiomeTransitionTuning = 71229,
         BiomeTransitionCsvScratch = 71230,
         BiomeTransitionMockCameraAup = 71231,
+        BiomeBoundaryGlobalBiomeMap = 71232,
+        BiomeBoundaryGlobalBiomeHashMap = 71233,
+        BiomeBoundarySampleResult = 71234,
+        BiomeBoundaryTelemetryRing = 71235,
         VisualPressureAgingParams = 71240,
         VisualPressureAgingRuntime = 71241,
         VisualPressureAgingTelemetryRing = 71242,
@@ -1386,6 +1621,25 @@ namespace Hecton8.Core.Memory
         UberNoirInstanceDegradation = 71247,
         UberNoirDegradationTelemetryRing = 71248,
         UberNoirDegradationTelemetryCursor = 71249,
+        ShinobuCarrionStates = 71250,
+        ShinobuCarrionDeathIngress = 71251,
+        ShinobuCarrionRuntimeCounters = 71252,
+        ShinobuCarrionTuning = 71253,
+        ShinobuCarrionTelemetryRing = 71254,
+        ShinobuCarrionAttractionRecords = 71255,
+        ShinobuCarrionProfiles = 71256,
+        ShinobuCarrionCsvScratch = 71257,
+        ShinobuCarrionFaunaStates = 71258,
+        ShinobuCarrionFaultFlags = 71259,
+        Shinobu319StatusEffectStates = 71260,
+        Shinobu319StatusEffectTelemetryRing = 71261,
+        Shinobu319StatusEffectTelemetryCursor = 71262,
+        Shinobu319StatusEffectTuning = 71263,
+        Shinobu319StatusEffectCounters = 71264,
+        Shinobu319StatusEffectCsvProfiles = 71265,
+        Shinobu319StatusEffectScannerReport = 71266,
+        Shinobu319StatusEffectVfxRequests = 71267,
+        Shinobu319StatusEffectDamageSignals = 71268,
         ShinobuFluidCompartmentFront = 70780,
         ShinobuFluidCompartmentBack = 70781,
         ShinobuFluidIntegrityState = 70782,
@@ -1405,6 +1659,36 @@ namespace Hecton8.Core.Memory
         ShinobuFluidCsvScratch = 70796,
         ShinobuFluidMockBreach = 70797,
         ShinobuFluidCompartmentTelemetry = 70798,
+        ShinobuFluidEdgeConductivity = 73330,
+        ShinobuFluidTransferRemainders = 73331,
+        Shinobu345TideTelemetry = 73350,
+        Shinobu345SeismicEvents = 73351,
+        Shinobu345ShakeOffsets = 73352,
+        Shinobu345TurbiditySpikes = 73353,
+        Shinobu345SeismicTelemetryRing = 73354,
+        Shinobu345SeismicTuning = 73355,
+        Shinobu345MockNarrativeTriggers = 73356,
+        Shinobu345MockCameraPositions = 73357,
+        Shinobu345MockSiltSignals = 73358,
+        Shinobu345MockBaseModules = 73359,
+        Shinobu345CelestialStateWrite = 73360,
+        Shinobu345CelestialStateRead = 73361,
+        Shinobu345CelestialTelemetryRing = 73362,
+        Shinobu345CelestialTuning = 73363,
+        Shinobu345CelestialCsvScratch = 73364,
+        Shinobu345CelestialFlowModifiers = 73365,
+        Shinobu345CelestialMockTimeline = 73366,
+        Shinobu345CelestialOrbitalParameters = 73367,
+        Shinobu345EnvironmentState = 73368,
+        Shinobu345SeismicStates = 73369,
+        Shinobu345WaterSurfaceAupY = 73370,
+        Shinobu345SeismicFaultProfiles = 73371,
+        Shinobu345SeismicCsvScratch = 73372,
+        Shinobu345CelestialPresentationBlackBox = 73393,
+        Shinobu345CelestialGradientDay = 73394,
+        Shinobu345CelestialGradientSunset = 73395,
+        Shinobu345CelestialGradientNight = 73396,
+        Shinobu345CelestialLegacyOrbitOutput = 73397,
         ShinobuNetcodeFuzzerInput = 71880,
         ShinobuNetcodeFuzzerHostAuthoritativeInput = 71881,
         ShinobuNetcodeFuzzerClientAuthoritativeInput = 71882,
@@ -1463,6 +1747,42 @@ namespace Hecton8.Core.Memory
         JacobianFoamProfiles = 71924,
         JacobianFoamCsvScratch = 71925,
         JacobianFoamDumpScratch = 71926,
+        ShinobuVoxelPathRequests = 73420,
+        ShinobuVoxelPathRingState = 73421,
+        ShinobuVoxelPathSolverState = 73422,
+        ShinobuVoxelPathNodes = 73423,
+        ShinobuVoxelPathOpenHeap = 73424,
+        ShinobuVoxelPathHeapPositions = 73425,
+        ShinobuVoxelPathRawPath = 73426,
+        ShinobuVoxelPathWaypoints = 73427,
+        ShinobuVoxelPathResults = 73428,
+        ShinobuVoxelPathTelemetryRing = 73429,
+        ShinobuVoxelPathTuning = 73430,
+        ShinobuVoxelPathMockSdf = 73431,
+        ShinobuVoxelPathSdfHeader = 73432,
+        ShinobuVoxelPathSpeciesProfiles = 73433,
+        ShinobuVoxelPathSpeciesProfileCount = 73434,
+        ShinobuVoxelPathCsvScratch = 73435,
+        ShinobuVoxelPathClosedDebug = 73436,
+        ShinobuSpawnSdfValidationRequests = 72600,
+        ShinobuSpawnSdfValidationRingState = 72601,
+        ShinobuSpawnSdfValidationTelemetryRing = 72602,
+        ShinobuSpawnSdfValidationTelemetryCursor = 72603,
+        ShinobuSpawnSdfValidationTuning = 72604,
+        ShinobuSpawnSdfMockSdf = 72605,
+        ShinobuSpawnSdfMockHeader = 72606,
+        ShinobuSpawnClearanceProfiles = 72607,
+        ShinobuSpawnClearanceCsvScratch = 72608,
+        ShinobuParasiteTargets = 71980,
+        ShinobuParasiteTargetCandidates = 71981,
+        ShinobuParasiteTargetCount = 71982,
+        ShinobuParasiteTuning = 71983,
+        ShinobuParasiteTelemetryRing = 71984,
+        ShinobuParasiteTelemetryCursor = 71985,
+        ShinobuParasiteProfiles = 71986,
+        ShinobuParasiteCsvScratch = 71987,
+        ShinobuParasiteScannerSummary = 71989,
+        ShinobuParasiteProfileCount = 71990,
         ShinobuTradeMarauderStates = 70720,
         ShinobuTradeMarauderInventories = 70721,
         ShinobuTradeMarauderEconomyWeights = 70722,
@@ -1580,6 +1900,14 @@ namespace Hecton8.Core.Memory
         Shinobu251HullProfiles = 71732,
         Shinobu251CsvScratch = 71733,
         Shinobu251AddedMassTuning = 71734,
+        Shinobu332SubmarineGyros = 71780,
+        Shinobu332GyroErrors = 71781,
+        Shinobu332GyroForcePackets = 71782,
+        Shinobu332GyroTelemetry = 71783,
+        Shinobu332GyroVisualStates = 71784,
+        Shinobu332GyroProfiles = 71785,
+        Shinobu332GyroCounters = 71786,
+        Shinobu332GyroCsvScratch = 71787,
         ShinobuKccEnvironmentProfile = 71760,
         ShinobuKccEnvironmentGrid = 71761,
         ShinobuKccEnvironmentFlowField = 71762,
@@ -1591,6 +1919,14 @@ namespace Hecton8.Core.Memory
         ShinobuKccEnvironmentProfiles = 71768,
         ShinobuKccEnvironmentProfileBuckets = 71769,
         ShinobuKccEnvironmentProfileHashes = 71770,
+        Shinobu333BallastTanks = 71771,
+        Shinobu333BallastCommands = 71772,
+        Shinobu333BallastFluidSamples = 71773,
+        Shinobu333BallastForcePackets = 71774,
+        Shinobu333BallastTelemetryRing = 71775,
+        Shinobu333BallastProfiles = 71776,
+        Shinobu333BallastTuning = 71777,
+        Shinobu333BallastCsvScratch = 71778,
         Shinobu263WaveSpectrum = 71800,
         Shinobu263WaveTuning = 71801,
         Shinobu263WaveRequests = 71802,
@@ -1601,6 +1937,25 @@ namespace Hecton8.Core.Memory
         Shinobu263WaveCsvScratch = 71807,
         Shinobu263WaveProfiles = 71808,
         Shinobu263WaveCounters = 71809,
+        Shinobu337ReactorStates = 73620,
+        Shinobu337ReactorKinematics = 73621,
+        Shinobu337ReactorCount = 73622,
+        Shinobu337ReactorTuning = 73623,
+        Shinobu337ReactorTelemetryRing = 73624,
+        Shinobu337ReactorTelemetryCursor = 73625,
+        Shinobu337ReactorProfiles = 73626,
+        Shinobu337ReactorProfileCount = 73627,
+        Shinobu337ReactorCsvScratch = 73628,
+        Shinobu337ReactorScratch = 73629,
+        Shinobu337ReactorDumpLatch = 73630,
+        VRInteractionHandStates = 73680,
+        VRInteractionPreviousHandStates = 73681,
+        VRInteractionControllerMatrixInputs = 73682,
+        VRInteractionSockets = 73683,
+        VRInteractionTuning = 73684,
+        VRInteractionTelemetryRing = 73685,
+        VRInteractionTelemetryCursor = 73686,
+        VRInteractionResolvedHandMatrices = 73687,
         Shinobu274RadiationStates = 72740,
         Shinobu274RadiationSources = 72741,
         Shinobu274RadiationSourceCount = 72742,
@@ -1670,9 +2025,9 @@ namespace Hecton8.Core.Memory
     /// Blittable record copied to crash dumps and leak-reap passes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 48)]
-    public struct H8AllocationRecord
+    internal struct H8AllocationRecord
     {
-        [FieldOffset(0)] public IntPtr Pointer;
+        [FieldOffset(0)] internal IntPtr Pointer;
         [FieldOffset(8)] public long Bytes;
         [FieldOffset(16)] public int Length;
         [FieldOffset(20)] public int Stride;
@@ -1763,6 +2118,11 @@ namespace Hecton8.Core.Memory
         {
             throw new FatalMemoryException("H8Memory ABI layout mismatch.");
         }
+
+        public static void ThrowNonBlittableAllocation()
+        {
+            throw new FatalMemoryException("H8Memory allocation element type is not blittable.");
+        }
     }
 
     /// <summary>
@@ -1784,7 +2144,9 @@ namespace Hecton8.Core.Memory
         private const int H8AllocationRecordSizeBytes = 48;
         private const int H8MemoryTelemetryEntrySizeBytes = 64;
         private const ulong FatalLeakDumpMagic = 0x3130444D454D3848UL; // H8MEMD01
-        private const int FatalLeakDumpVersion = 3;
+        private const int FatalLeakDumpVersion = 4;
+        private const ulong AddressFingerprintSeed = 14695981039346656037UL;
+        private const ulong AddressFingerprintPrime = 1099511628211UL;
         private const byte BlackBoxRingKindHeartbeat = 1;
         private const byte BlackBoxRingKindLifecycleEvent = 2;
         private const string AgentDumpFileName = "Dump_SENTINEL_DISPOSAL_GUARD.bin";
@@ -1978,12 +2340,84 @@ namespace Hecton8.Core.Memory
 
         private static void ValidateAbiLayout()
         {
-            if (UnsafeUtility.SizeOf<BlockDescriptor>() != BlockDescriptorSizeBytes ||
-                UnsafeUtility.SizeOf<H8AllocationRecord>() != H8AllocationRecordSizeBytes ||
-                UnsafeUtility.SizeOf<H8MemoryTelemetryEntry>() != H8MemoryTelemetryEntrySizeBytes)
+            bool valid =
+                UnsafeUtility.SizeOf<BlockDescriptor>() == BlockDescriptorSizeBytes &&
+                UnsafeUtility.SizeOf<H8AllocationRecord>() == H8AllocationRecordSizeBytes &&
+                UnsafeUtility.SizeOf<H8MemoryTelemetryEntry>() == H8MemoryTelemetryEntrySizeBytes &&
+                ValidateBlockDescriptorAbiOffsets() &&
+                ValidateAllocationRecordAbiOffsets() &&
+                ValidateTelemetryEntryAbiOffsets();
+
+            if (!valid)
             {
                 FatalMemoryException.ThrowAbiLayoutMismatch();
             }
+        }
+
+        private static bool ValidateBlockDescriptorAbiOffsets()
+        {
+            BlockDescriptor descriptor = default;
+            byte* descriptorBase = (byte*)&descriptor;
+
+            return
+                ByteOffset(descriptorBase, &descriptor.BasePointer) == 0 &&
+                ByteOffset(descriptorBase, &descriptor.OffsetBytes) == 8 &&
+                ByteOffset(descriptorBase, &descriptor.Bytes) == 16 &&
+                ByteOffset(descriptorBase, &descriptor.OwnerKey) == 24 &&
+                ByteOffset(descriptorBase, &descriptor.Generation) == 28 &&
+                ByteOffset(descriptorBase, &descriptor.Owner) == 32 &&
+                ByteOffset(descriptorBase, &descriptor.Flags) == 34 &&
+                ByteOffset(descriptorBase, &descriptor.State) == 36 &&
+                ByteOffset(descriptorBase, &descriptor.Reserved) == 37 &&
+                ByteOffset(descriptorBase, &descriptor.Reserved2) == 38;
+        }
+
+        private static bool ValidateAllocationRecordAbiOffsets()
+        {
+            H8AllocationRecord record = default;
+            byte* recordBase = (byte*)&record;
+
+            return
+                ByteOffset(recordBase, &record.Pointer) == 0 &&
+                ByteOffset(recordBase, &record.Bytes) == 8 &&
+                ByteOffset(recordBase, &record.Length) == 16 &&
+                ByteOffset(recordBase, &record.Stride) == 20 &&
+                ByteOffset(recordBase, &record.Alignment) == 24 &&
+                ByteOffset(recordBase, &record.AllocationIndex) == 28 &&
+                ByteOffset(recordBase, &record.Generation) == 32 &&
+                ByteOffset(recordBase, &record.Allocator) == 36 &&
+                ByteOffset(recordBase, &record.Owner) == 40 &&
+                ByteOffset(recordBase, &record.Flags) == 42 &&
+                ByteOffset(recordBase, &record.Reserved) == 44 &&
+                ByteOffset(recordBase, &record.Reserved2) == 46;
+        }
+
+        private static bool ValidateTelemetryEntryAbiOffsets()
+        {
+            H8MemoryTelemetryEntry telemetry = default;
+            byte* telemetryBase = (byte*)&telemetry;
+
+            return
+                ByteOffset(telemetryBase, &telemetry.TotalBytes) == 0 &&
+                ByteOffset(telemetryBase, &telemetry.TransitionBaselineBytes) == 8 &&
+                ByteOffset(telemetryBase, &telemetry.LastTransitionReleasedBytes) == 16 &&
+                ByteOffset(telemetryBase, &telemetry.Sequence) == 24 &&
+                ByteOffset(telemetryBase, &telemetry.ActiveAllocationCount) == 28 &&
+                ByteOffset(telemetryBase, &telemetry.BlockDescriptorCount) == 32 &&
+                ByteOffset(telemetryBase, &telemetry.AllocationGeneration) == 36 &&
+                ByteOffset(telemetryBase, &telemetry.TransitionCutoffGeneration) == 40 &&
+                ByteOffset(telemetryBase, &telemetry.TransitionSequence) == 44 &&
+                ByteOffset(telemetryBase, &telemetry.LastTransitionReleasedCount) == 48 &&
+                ByteOffset(telemetryBase, &telemetry.FatalLeakPreventedCount) == 52 &&
+                ByteOffset(telemetryBase, &telemetry.Owner) == 56 &&
+                ByteOffset(telemetryBase, &telemetry.Flags) == 58 &&
+                ByteOffset(telemetryBase, &telemetry.Frame) == 60;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ByteOffset(void* basePtr, void* fieldPtr)
+        {
+            return (int)((byte*)fieldPtr - (byte*)basePtr);
         }
 
         /// <summary>
@@ -2020,6 +2454,8 @@ namespace Hecton8.Core.Memory
                 return default;
             if (owner == SystemID.Unknown)
                 FatalMemoryException.ThrowUnknownAllocationOwner();
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || !UnsafeUtility.IsBlittable<T>())
+                FatalMemoryException.ThrowNonBlittableAllocation();
 
             int stride = UnsafeUtility.SizeOf<T>();
             long bytes = (long)stride * length;
@@ -2234,7 +2670,7 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Reallocates a raw vault buffer with copy/free semantics and refreshed sentinel ownership.
         /// </summary>
-        public static void* ReallocateRaw(
+        internal static void* ReallocateRaw(
             void* oldPointer,
             long oldBytes,
             long newBytes,
@@ -2354,14 +2790,22 @@ namespace Hecton8.Core.Memory
             if (reader == SystemID.Unknown)
                 FatalMemoryException.ThrowUnknownAliasReader();
 
+            return CreateReadOnlyNativeArrayView<T>(pointer, length);
+        }
+
+        /// <summary>
+        /// Converts owned raw memory into a read-only NativeArray view.
+        /// </summary>
+        public static NativeArray<T>.ReadOnly CreateReadOnlyNativeArrayView<T>(void* pointer, int length) where T : struct
+        {
             NativeArray<T> array = CreateNativeArrayView<T>(pointer, length);
-            return array.AsReadOnly();
+            return array.IsCreated ? array.AsReadOnly() : default;
         }
 
         /// <summary>
         /// Converts owned raw memory into a NativeArray view.
         /// </summary>
-        internal static NativeArray<T> CreateNativeArrayView<T>(void* pointer, int length) where T : struct
+        public static NativeArray<T> CreateNativeArrayView<T>(void* pointer, int length) where T : struct
         {
             if (pointer == null || length <= 0)
                 return default;
@@ -2402,8 +2846,8 @@ namespace Hecton8.Core.Memory
                     H8AllocationRecord record = _records[i];
                     writer.Write("Index=");
                     writer.Write(record.AllocationIndex);
-                    writer.Write(" Ptr=");
-                    writer.Write(record.Pointer.ToInt64());
+                    writer.Write(" AddressFingerprint=");
+                    writer.Write(ComputeAllocationAddressFingerprint(in record));
                     writer.Write(" Bytes=");
                     writer.Write(record.Bytes);
                     writer.Write(" Owner=");
@@ -2421,7 +2865,7 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Registers or reuses a memory-map descriptor slot. Cold path only.
         /// </summary>
-        public static int RegisterBlockDescriptor(in BlockDescriptor descriptor)
+        internal static int RegisterBlockDescriptor(in BlockDescriptor descriptor)
         {
             if (!_initialized)
                 Initialize();
@@ -2432,7 +2876,7 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Updates a memory-map descriptor in-place.
         /// </summary>
-        public static bool TryUpdateBlockDescriptor(int index, in BlockDescriptor descriptor)
+        internal static bool TryUpdateBlockDescriptor(int index, in BlockDescriptor descriptor)
         {
             if (!_initialized || !_blockDescriptors.IsCreated || (uint)index >= (uint)_blockDescriptors.Length)
                 return false;
@@ -2667,7 +3111,7 @@ namespace Hecton8.Core.Memory
                 return;
 
             // [BLOCKING_SYNC_POINT] Scene transition and owner teardown may wait; gameplay Tick paths may not call this.
-            Hecton8.Core.DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);
+            TryCompleteOwnerJobHandle(ref ownerHandle);
             _ownerJobHandles.Remove(ownerKey);
             RemoveOwnerJobKey(ownerKey);
         }
@@ -2684,11 +3128,18 @@ namespace Hecton8.Core.Memory
                     continue;
 
                 // [BLOCKING_SYNC_POINT] Shutdown may wait; gameplay Tick paths may not call this.
-                Hecton8.Core.DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);
+                TryCompleteOwnerJobHandle(ref ownerHandle);
                 _ownerJobHandles.Remove(ownerKey);
             }
 
             _ownerJobKeys.Clear();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void TryCompleteOwnerJobHandle(ref JobHandle ownerHandle)
+        {
+            ownerHandle.Complete();
+            ownerHandle = default;
         }
 
         private static void RemoveOwnerJobKey(ushort ownerKey)
@@ -2974,7 +3425,7 @@ namespace Hecton8.Core.Memory
                 flags |= H8MemoryTelemetryFlags.BaselineMismatch;
             RecordBlackBox(owner, flags);
 
-            string path = ResolveAgentDumpPath(AgentDumpFileName);
+            string path = BuildAgentDumpPath(AgentDumpFileName);
             if (string.IsNullOrEmpty(path))
                 return;
 
@@ -2986,7 +3437,7 @@ namespace Hecton8.Core.Memory
 
                 WriteFatalLeakBlackBoxFile(path, owner, releaseCount, releasedBytes, baselineMismatch);
 
-                string h8Path = ResolveAgentDumpPath(AgentH8DumpFileName);
+                string h8Path = BuildAgentDumpPath(AgentH8DumpFileName);
                 if (!string.IsNullOrEmpty(h8Path))
                     WriteFatalLeakBlackBoxFile(h8Path, owner, releaseCount, releasedBytes, baselineMismatch);
             }
@@ -3029,7 +3480,7 @@ namespace Hecton8.Core.Memory
                 for (int i = 0; i < dumpCount; i++)
                 {
                     H8AllocationRecord record = _records[i];
-                    writer.Write(record.Pointer.ToInt64());
+                    writer.Write(ComputeAllocationAddressFingerprint(in record));
                     writer.Write(record.Bytes);
                     writer.Write(record.Length);
                     writer.Write(record.Stride);
@@ -3117,6 +3568,25 @@ namespace Hecton8.Core.Memory
             WriteBlackBoxRing(writer, BlackBoxRingKindLifecycleEvent, _eventBlackBox, _eventBlackBoxRecordedCount, _eventBlackBoxCursor);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong ComputeAllocationAddressFingerprint(in H8AllocationRecord record)
+        {
+            ulong hash = AddressFingerprintSeed;
+            hash = MixAddressFingerprint(hash, unchecked((ulong)record.Pointer.ToInt64()));
+            hash = MixAddressFingerprint(hash, unchecked((ulong)record.Bytes));
+            hash = MixAddressFingerprint(hash, (uint)record.AllocationIndex);
+            hash = MixAddressFingerprint(hash, (uint)record.Generation);
+            hash = MixAddressFingerprint(hash, (ushort)record.Owner);
+            hash = MixAddressFingerprint(hash, (ushort)record.Flags);
+            return hash != 0UL ? hash : 1UL;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong MixAddressFingerprint(ulong hash, ulong value)
+        {
+            return unchecked((hash ^ value) * AddressFingerprintPrime);
+        }
+
         private static void WriteBlackBoxRing(
             BinaryWriter writer,
             byte ringKind,
@@ -3165,7 +3635,7 @@ namespace Hecton8.Core.Memory
             }
         }
 
-        private static string ResolveAgentDumpPath(string fileName)
+        private static string BuildAgentDumpPath(string fileName)
         {
             string currentDirectory = Directory.GetCurrentDirectory();
             if (string.IsNullOrEmpty(currentDirectory))

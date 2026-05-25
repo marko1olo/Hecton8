@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Habitat.Deformation;
 using Unity.Burst;
@@ -1026,7 +1027,7 @@ namespace Hecton8.Graphics.Materials
                 return true;
             }
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return IsHandleForBuffer(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
@@ -1569,7 +1570,7 @@ namespace Hecton8.Graphics.Materials
             {
                 if (!failureLogged)
                 {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                     Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to open black-box dump stream.");
 #endif
                     failureLogged = true;
@@ -1657,6 +1658,7 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
+#if UNITY_EDITOR
         private bool ReloadCsvFromDisk(IDataVault vault, string csvPath, ref long lastWriteTicks, bool force)
         {
             if (string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
@@ -1802,6 +1804,7 @@ namespace Hecton8.Graphics.Materials
                 default: return false;
             }
         }
+#endif
 
         private int CopyTelemetryDumpSnapshot(
             NativeArray<VisualAgingTelemetryEntry> telemetry,
@@ -1887,7 +1890,7 @@ namespace Hecton8.Graphics.Materials
             {
                 if (!failureLogged)
                 {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                     Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to write black-box dump.");
 #endif
                     failureLogged = true;

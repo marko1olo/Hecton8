@@ -9,6 +9,7 @@ namespace Hecton8.Core.Contracts.Physiology
     {
         public const int MetabolismStatesBufferId = 70238;
         public const int MetabolicStateSizeBytes = 32;
+        public const ulong MetabolismStateMutationGuardMask = 1UL << 48;
 
         public const uint FlagStarving = 1u << 0;
         public const uint FlagDehydrated = 1u << 1;
@@ -16,6 +17,7 @@ namespace Hecton8.Core.Contracts.Physiology
         public const uint FlagToxic = 1u << 3;
         public const uint FlagInvalidMath = 1u << 4;
         public const uint FlagMockEntity = 1u << 5;
+        public const uint FlagFatigue = 1u << 9;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = ShinobuMetabolismVaultContract.MetabolicStateSizeBytes)]
@@ -27,6 +29,7 @@ namespace Hecton8.Core.Contracts.Physiology
         [FieldOffset(12)] public float Toxicity;
         [FieldOffset(16)] public uint EntityHashID;
         [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public float Fatigue01;
         [FieldOffset(24)] public uint _pad0;
         [FieldOffset(28)] public uint _pad1;
     }

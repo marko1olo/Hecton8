@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -22,9 +23,11 @@ namespace Hecton8.Atmosphere
             float q = ShinobuStormPropagationMath.Sanitize01(GlobalQualityWeight);
             float time = math.isfinite(TimeSeconds) ? math.max(0f, TimeSeconds) : 0f;
             float seedPhase = (Seed & 1023u) * 0.006135923f;
-            float2 direction = new float2(math.cos(time * 0.037f + seedPhase), math.sin(time * 0.029f + seedPhase * 1.37f));
+            float2 direction = new float2(
+                MathLodApproximation.ApproxCosBhaskara(time * 0.037f + seedPhase),
+                MathLodApproximation.ApproxSinBhaskara(time * 0.029f + seedPhase * 1.37f));
             direction = math.normalizesafe(direction, new float2(1f, 0f));
-            float pulse = 0.5f + 0.5f * math.sin(time * math.lerp(0.031f, 0.073f, q) + seedPhase);
+            float pulse = 0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara(time * math.lerp(0.031f, 0.073f, q) + seedPhase);
             float storm = math.saturate(math.lerp(0.64f, 0.96f, pulse) * math.lerp(0.82f, 1f, q));
             float windSpeed = math.lerp(28f, 58f, storm);
 

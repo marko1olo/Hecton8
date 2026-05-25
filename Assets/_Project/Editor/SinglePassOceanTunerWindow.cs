@@ -158,7 +158,7 @@ namespace Hecton8.EditorTools
                 painter.ClosePath();
                 painter.Stroke();
 
-                if (!OceanSinglePassRuntime.TryReadTelemetry(out NativeArray<OceanRenderTelemetryEntry> telemetry, out int cursor) ||
+                if (!OceanSinglePassRuntime.TryReadTelemetry(out NativeArray<OceanRenderTelemetryEntry>.ReadOnly telemetry, out int cursor) ||
                     !telemetry.IsCreated ||
                     telemetry.Length <= 1)
                 {

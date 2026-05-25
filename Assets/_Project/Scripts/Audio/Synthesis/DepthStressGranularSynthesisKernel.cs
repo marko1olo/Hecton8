@@ -168,9 +168,9 @@ namespace Hecton8.Audio.Synthesis
             float stressHz = math.max(0.01f, DepthStressGranularMath.FiniteOrDefault(StressFrequencyHz, 0.21f));
             float tensionHz = math.max(0.01f, DepthStressGranularMath.FiniteOrDefault(TensionFrequencyHz, 0.37f));
             float depthHz = math.max(0.005f, DepthStressGranularMath.FiniteOrDefault(DepthFrequencyHz, 0.047f));
-            float stress = 0.5f + 0.5f * math.sin(time * stressHz * 6.28318530718f);
-            float tension = 0.5f + 0.5f * math.sin((time * tensionHz * 6.28318530718f) + 1.7f);
-            float depth = 0.5f + 0.5f * math.sin((time * depthHz * 6.28318530718f) + 0.42f);
+            float stress = 0.5f + 0.5f * DepthStressGranularMath.ApproxSinBhaskara(time * stressHz * 6.28318530718f);
+            float tension = 0.5f + 0.5f * DepthStressGranularMath.ApproxSinBhaskara((time * tensionHz * 6.28318530718f) + 1.7f);
+            float depth = 0.5f + 0.5f * DepthStressGranularMath.ApproxSinBhaskara((time * depthHz * 6.28318530718f) + 0.42f);
             float safeStress = math.saturate(stress);
             float safeTension = math.saturate(tension);
             float safeDepth = math.saturate(depth);
@@ -227,7 +227,7 @@ namespace Hecton8.Audio.Synthesis
 
             float denominator = math.max(1f, HanningLut.Length - 1f);
             float t = math.saturate(index * math.rcp(denominator));
-            HanningLut[index] = 0.5f - 0.5f * math.cos(t * 6.28318530718f);
+            HanningLut[index] = DepthStressGranularMath.SmoothWindow01(t);
         }
     }
 
@@ -259,9 +259,9 @@ namespace Hecton8.Audio.Synthesis
                 uint seed = (uint)i * 747796405u + 2891336453u;
                 float grit = HashSigned(seed) * 0.18f;
                 float ring =
-                    math.sin(t * frequency * 6.28318530718f) * 0.44f +
-                    math.sin(t * frequency * 2.71f * 6.28318530718f) * 0.25f +
-                    math.sin(t * frequency * 5.39f * 6.28318530718f) * 0.12f;
+                    DepthStressGranularMath.ApproxSinBhaskara(t * frequency * 6.28318530718f) * 0.44f +
+                    DepthStressGranularMath.ApproxSinBhaskara(t * frequency * 2.71f * 6.28318530718f) * 0.25f +
+                    DepthStressGranularMath.ApproxSinBhaskara(t * frequency * 5.39f * 6.28318530718f) * 0.12f;
                 baseGrainBuffer[i] = math.clamp((ring + grit) * ResolveRaisedCosine(i, baseGrainBuffer.Length), -1f, 1f);
             }
         }
@@ -273,7 +273,7 @@ namespace Hecton8.Audio.Synthesis
                 return 1f;
 
             float t = math.saturate(index * math.rcp(length - 1f));
-            return 0.5f - 0.5f * math.cos(t * 6.28318530718f);
+            return DepthStressGranularMath.SmoothWindow01(t);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -385,6 +385,30 @@ namespace Hecton8.Audio.Synthesis
         {
             float x = math.max(0f, FiniteOrZero(value));
             return math.rcp(1f + x + 0.48f * x * x);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SmoothWindow01(float value)
+        {
+            float t = math.saturate(FiniteOrZero(value));
+            float triangle = 1f - math.abs(t * 2f - 1f);
+            return triangle * triangle * (3f - (2f * triangle));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproxSinBhaskara(float radians)
+        {
+            float angle = FiniteOrZero(radians);
+            float cycle = angle * 0.15915494309189535f;
+            float wrapped = cycle - math.floor(cycle);
+            float x = wrapped * (2f * math.PI);
+            float mirrored = math.select(x, (2f * math.PI) - x, x > math.PI);
+            float sign = math.select(1f, -1f, x > math.PI);
+            float shape = mirrored * (math.PI - mirrored);
+            float numerator = 16f * shape;
+            float denominator = math.max(0.0001f, (5f * math.PI * math.PI) - (4f * shape));
+            float sine = sign * numerator * math.rcp(denominator);
+            return math.clamp(math.select(0f, sine, math.isfinite(sine)), -1f, 1f);
         }
 
         public static void TrimVoicesToBudget(NativeArray<DepthStressGranularVoice> voices, int voiceLimit)
@@ -688,7 +712,7 @@ namespace Hecton8.Audio.Synthesis
                     state.Phase -= 6.283185307179586d;
 
                 float envelope = math.saturate(age * 200f) * (1f - t) * (1f - t);
-                float raw = math.sin((float)state.Phase) * envelope * amplitude;
+                float raw = DepthStressGranularMath.ApproxSinBhaskara((float)state.Phase) * envelope * amplitude;
                 float filtered = raw + lowPassAlpha * (state.LowPassState - raw);
                 state.LowPassState = filtered;
                 float clipped = math.clamp(filtered * math.lerp(1f, 2.85f, distortion), -0.82f, 0.82f);

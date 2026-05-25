@@ -9,7 +9,7 @@ namespace Hecton8.Gameplay
     /// Two-quad meteor splash fake. No particle systems, no per-impact mesh mutation.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MeteorSplashQuadVfx : MonoBehaviour, IPoolable, IUpdatable
+    public sealed class MeteorSplashQuadVfx : MonoBehaviour, IPoolable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int SingleQuad = 1;
         private static readonly Matrix4x4[] s_splashMatrix = new Matrix4x4[SingleQuad];
@@ -42,6 +42,7 @@ namespace Hecton8.Gameplay
         private float _ageSeconds;
         private bool _active;
         private bool _registeredToDispatcher;
+        private bool _hotSwapRegistered;
         private Transform _cachedTransform;
         private Vector3 _cachedOrigin;
         private Quaternion _cachedRotation;
@@ -53,6 +54,7 @@ namespace Hecton8.Gameplay
             CacheRuntimeHandles();
             _ageSeconds = 0f;
             _active = true;
+            TryRegisterHotSwapListener();
             TryRegisterDispatcher();
         }
 
@@ -61,6 +63,7 @@ namespace Hecton8.Gameplay
             _ageSeconds = 0f;
             _active = false;
             TryUnregisterDispatcher();
+            TryUnregisterHotSwapListener();
         }
 
         private void Awake()
@@ -73,9 +76,31 @@ namespace Hecton8.Gameplay
         {
             _active = false;
             TryUnregisterDispatcher();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !_active || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterDispatcher();
+            TryRegisterDispatcher();
         }
 
         public void Tick(float deltaTime)
+        {
+        }
+
+        public void LateFrameTick()
+        {
+            RenderSplashVisualSync(Time.deltaTime);
+        }
+
+        private void RenderSplashVisualSync(float deltaTime)
         {
             if (!_active || s_quadMesh == null)
                 return;
@@ -142,7 +167,7 @@ namespace Hecton8.Gameplay
             if (_registeredToDispatcher)
                 return;
 
-            _registeredToDispatcher = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            _registeredToDispatcher = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterDispatcher()
@@ -150,8 +175,25 @@ namespace Hecton8.Gameplay
             if (!_registeredToDispatcher)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registeredToDispatcher = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static void EnsureQuadMesh()

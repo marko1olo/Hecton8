@@ -1,0 +1,74 @@
+﻿<SELF_AUDIT agent_id="SHINOBU_330" domain="ECHELON_6_HABITAT_VEHICLES_FLUID_INCURSION" date="2026-05-22">
+  <TASK_RECONCILIATION task_count="20">
+    <TASK id="01" status="PASS">OOP water trigger scan reports zero findings in Habitat/Vehicles/HFI/BaseModule/BaseAirlock/BuoyancyObject/SubmarineFluidDynamics scope. BaseModule dry-zone dictionary, BaseAirlock BuoyancyObject calls, and BuoyancyObject dry-zone ref-count/EnterDryZone/ExitDryZone authority were removed.</TASK>
+    <TASK id="02" status="PASS">Flood propagation uses flat CSR arrays: EdgeOffsets, EdgeDestinations, EdgeFlags, and EdgeConductivity. No managed room graph is traversed in the solver.</TASK>
+    <TASK id="03" status="PASS">FluidCompartmentDTO exposes raw unmanaged public fields only; hot DTO get/set properties are absent in the scanner scope.</TASK>
+    <TASK id="04" status="PASS">FluidCompartmentDTO is explicit 64 bytes. UnsafeUtility.SizeOf and editor/development offset checks validate the ABI.</TASK>
+    <TASK id="05" status="PASS">GenerateMockFloodIncursionJob injects synthetic water into a selected Vault compartment and updates WaterLevelHeight01 for isolated stress tests.</TASK>
+    <TASK id="06" status="PASS">FluidBfsPressureEqualizationJob is Burst deterministic and traverses CSR topology with BFS queue and visited lanes.</TASK>
+    <TASK id="07" status="PASS">Door/bulkhead seal behavior is represented by scalar EdgeConductivity. Sealed edges resolve to zero conductance.</TASK>
+    <TASK id="08" status="PASS">Transfers are quantized to signed milliliters and per-edge fractional remainders are stored in ShinobuFluidTransferRemainders.</TASK>
+    <TASK id="09" status="PASS_WITH_OWNER_ROUTE_ADJUSTMENT">HFI publishes SubmarineFloodStateSignal and PhysicsEventPayload mass summaries. Vehicle dynamics consumes the signal into SubmarineMassProperties and the existing AddedMass tensor job. Direct HFI mutation of AddedMassProfileDTO was rejected as cross-domain authority violation.</TASK>
+    <TASK id="10" status="PASS">Interior water is shader/global-buffer scalar waterline presentation. BaseModule water planes are not activated or moved as flood truth.</TASK>
+    <TASK id="11" status="PASS">GlobalQualityWeight continuously scales cadence, solver iterations, and BFS node budget from 16 to 128 nodes without binary hardware switches.</TASK>
+    <TASK id="12" status="PASS">Compartment vertical head uses double3 center subtraction in double precision before float flow math.</TASK>
+    <TASK id="13" status="PASS">HFI Burst jobs use FloatMode.Deterministic and milliliter quantization to reduce rollback drift.</TASK>
+    <TASK id="14" status="PASS">New Vault lanes are acquired with NativeArrayOptions.UninitializedMemory and overwritten by initialization/jobs.</TASK>
+    <TASK id="15" status="PASS">The 300-frame FluidIncursionTelemetryEntry ring and Dump_SHINOBU_330.bin route are wired.</TASK>
+    <TASK id="16" status="PASS">Existing UI Toolkit tuner remains the editor-only tuning bridge against Vault tuning/telemetry lanes.</TASK>
+    <TASK id="17" status="PASS">CSV volume parser now targets NodeHashID, MaxWaterVolume, CurrentWaterVolume, and WaterLevelHeight01.</TASK>
+    <TASK id="18" status="PASS">Editor gizmo reads updated DTO fill/capacity fields and does not instantiate debug water objects.</TASK>
+    <TASK id="19" status="PASS">OOP_Water_Trigger_Scanner_SHINOBU_330.py writes dedicated and shared physics reports. Dedicated findingCount is 0 across 19 scanned files.</TASK>
+    <TASK id="20" status="PASS_STATIC_COMPILE_PENDING">Status, rationale, architecture docs, binary ledger, scanner, and self-audit were written. Compile is blocked by CPU/compiler gate at the time of this audit.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT name="FluidCompartmentDTO" size_bytes="64" alignment_target="64B_cache_line">
+    <FIELD name="LocalCenterOfMass" offset="0" size="24" type="double3"/>
+    <FIELD name="NodeHashID" offset="24" size="4" type="uint"/>
+    <FIELD name="CurrentWaterVolume" offset="28" size="4" type="float"/>
+    <FIELD name="MaxWaterVolume" offset="32" size="4" type="float"/>
+    <FIELD name="WaterLevelHeight01" offset="36" size="4" type="float"/>
+    <FIELD name="Flags" offset="40" size="4" type="uint"/>
+    <FIELD name="_pad0" offset="44" size="4" type="uint"/>
+    <FIELD name="_pad1" offset="48" size="4" type="uint"/>
+    <FIELD name="_pad2" offset="52" size="4" type="uint"/>
+    <FIELD name="_pad3" offset="56" size="4" type="uint"/>
+    <FIELD name="_pad4" offset="60" size="4" type="uint"/>
+    <MATH>24 + 4 + 4 + 4 + 4 + 4 + 20 padding = 64 bytes. All 8-byte values begin at offset 0, all 4-byte fields begin at offsets divisible by 4. No Pack=1.</MATH>
+    <FALSE_SHARING>Primary compartment rows are 64 bytes. Parallel contested atomic counters are not introduced by SHINOBU_330; BFS equalization is a single IJob writer over the component queue, so no per-thread false-sharing counter lane is added.</FALSE_SHARING>
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Below GlobalQualityWeight 0.3, cadence approaches the 0.2 second solver window, solver iterations approach 1, and BFS visit budget approaches 16 nodes. The accumulated fixed delta is integrated into the math, so water volume truth is conserved while CPU work is shed. Mid quality raises iterations and visited nodes through smoothstep/lerp. At quality 1.0, the solver approaches 5 iterations, 128 BFS nodes per tick, and richer shader wobble. Quality never changes DTO layout, BufferIDs, save identity, or route authority.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS private_native_array_allocations="0_in_HFI_runtime_owner">
+    <BUFFER id="ShinobuFluidCompartmentsFront" role="front FluidCompartmentDTO lane"/>
+    <BUFFER id="ShinobuFluidCompartmentsBack" role="back FluidCompartmentDTO lane"/>
+    <BUFFER id="ShinobuFluidIntegrityState" role="breach metadata lane"/>
+    <BUFFER id="ShinobuFluidEdgeOffsets" role="CSR node offsets"/>
+    <BUFFER id="ShinobuFluidEdgeDestinations" role="CSR destinations"/>
+    <BUFFER id="ShinobuFluidEdgeFlags" role="sealed/ruptured edge flags"/>
+    <BUFFER id="ShinobuFluidEdgeConductivity" numeric_id="73330" role="scalar conductance per edge"/>
+    <BUFFER id="ShinobuFluidCompartmentCentroids" role="authoring/runtime centroids"/>
+    <BUFFER id="ShinobuFluidWaterlineShader" role="Dear Lie shader waterline rows"/>
+    <BUFFER id="ShinobuFluidMassState" role="mass/COM summary"/>
+    <BUFFER id="ShinobuFluidTuning" role="cold/editor tuning row"/>
+    <BUFFER id="ShinobuFluidTelemetryRing" role="300-frame black-box ring"/>
+    <BUFFER id="ShinobuFluidCompartmentTelemetry" role="editor/debug compartment snapshot"/>
+    <BUFFER id="ShinobuFluidTelemetryCursor" role="telemetry ring cursor"/>
+    <BUFFER id="ShinobuFluidBfsQueue" role="BFS queue"/>
+    <BUFFER id="ShinobuFluidBfsVisited" role="BFS visited flags"/>
+    <BUFFER id="ShinobuFluidDeltaVolumes" role="signed milliliter delta scratch"/>
+    <BUFFER id="ShinobuFluidTransferRemainders" numeric_id="73331" role="per-edge milliliter fractional residue"/>
+    <BUFFER id="ShinobuFluidFrameSummary" role="single-frame summary"/>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <NO_ALIAS>FluidCompartmentClearJob, MockHullBreachJob, GenerateMockFloodIncursionJob, FluidIngressJob, FluidBfsPressureEqualizationJob, FluidWaterlineMassSummaryJob, and FluidTelemetryRecorderJob use NoAlias on non-overlapping pointers/NativeArrays where applicable.</NO_ALIAS>
+    <DEPENDENCIES>FixedTick schedules FluidIngressJob as IJobParallelFor, then FluidBfsPressureEqualizationJob, then FluidWaterlineMassSummaryJob, then FluidTelemetryRecorderJob. The resulting handle is stored in _simulationHandle and completed in PostFixed/authoritative handoff windows.</DEPENDENCIES>
+    <BLOCKING_NOTE>GenerateMockFloodDistribution completes both cold mock jobs immediately by design; it is an explicit mock/test facade, not hot gameplay flow.</BLOCKING_NOTE>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    HFI runtime files use Core/Core.Contracts/SignalBus/DataVault/World value contracts and do not add direct sibling runtime assembly references. The guarded dotnet compile was not launched because CPU was 100 and another dotnet/csc build was active.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    CPU simulation is scalar water volume and mass only. Interior water planes, trigger water volumes, airlock buoyancy dry-zone calls, and BuoyancyObject dry-zone ref-count state are rejected. Visual waterline is a scalar StructuredBuffer/global shader value consumed by presentation shaders. Old object approach is O(objects in triggers + PhysX broadphase sync + per-frame water plane Transform writes + per-transition component lookup). New gameplay truth is O(visited CSR edges) with continuous budget; presentation is O(rooms uploaded) scalar buffer, no CPU water geometry.
+  </DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

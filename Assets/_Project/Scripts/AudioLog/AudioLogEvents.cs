@@ -249,7 +249,10 @@ namespace Hecton8.Narrative
                     return;
 
                 if (!_pendingEvents.TryDequeue(out AudioLogEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -293,24 +296,48 @@ namespace Hecton8.Narrative
             return data != null;
         }
 
+        [Obsolete("Use TryRaiseLogDiscovered(uint,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseLogDiscovered(uint logHash, AudioLogData data = null)
         {
-            Enqueue(AudioLogEventType.Discovered, logHash, 0f, data);
+            TryRaiseLogDiscovered(logHash, data);
         }
 
+        public static bool TryRaiseLogDiscovered(uint logHash, AudioLogData data = null)
+        {
+            return Enqueue(AudioLogEventType.Discovered, logHash, 0f, data);
+        }
+
+        [Obsolete("Use TryRaisePlaybackStarted(uint,float,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaisePlaybackStarted(uint logHash, float durationSeconds, AudioLogData data = null)
         {
-            Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds, data);
+            TryRaisePlaybackStarted(logHash, durationSeconds, data);
         }
 
+        public static bool TryRaisePlaybackStarted(uint logHash, float durationSeconds, AudioLogData data = null)
+        {
+            return Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds, data);
+        }
+
+        [Obsolete("Use TryRaisePlaybackStopped(uint,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaisePlaybackStopped(uint logHash, AudioLogData data = null)
         {
-            Enqueue(AudioLogEventType.PlaybackStopped, logHash, 0f, data);
+            TryRaisePlaybackStopped(logHash, data);
         }
 
+        public static bool TryRaisePlaybackStopped(uint logHash, AudioLogData data = null)
+        {
+            return Enqueue(AudioLogEventType.PlaybackStopped, logHash, 0f, data);
+        }
+
+        [Obsolete("Use TryRaisePlaybackCompleted(uint,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaisePlaybackCompleted(uint logHash, AudioLogData data = null)
         {
-            Enqueue(AudioLogEventType.PlaybackCompleted, logHash, 0f, data);
+            TryRaisePlaybackCompleted(logHash, data);
+        }
+
+        public static bool TryRaisePlaybackCompleted(uint logHash, AudioLogData data = null)
+        {
+            return Enqueue(AudioLogEventType.PlaybackCompleted, logHash, 0f, data);
         }
 
         private static void EnsureInitialized()
@@ -340,16 +367,16 @@ namespace Hecton8.Narrative
             }
         }
 
-        private static void Enqueue(AudioLogEventType type, uint logHash, float durationSeconds, AudioLogData data)
+        private static bool Enqueue(AudioLogEventType type, uint logHash, float durationSeconds, AudioLogData data)
         {
             if (_listeners.Count <= 0)
-                return;
+                return true;
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportQueueOverflow(type);
-                return;
+                return false;
             }
 
             int referenceSlot = -1;
@@ -358,7 +385,7 @@ namespace Hecton8.Narrative
                 if (!TryReserveReferenceSlot(out referenceSlot))
                 {
                     ReportReferenceSlotOverflow(type);
-                    return;
+                    return false;
                 }
 
                 _referenceSlots[referenceSlot].LogData = data;
@@ -377,11 +404,12 @@ namespace Hecton8.Narrative
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -428,7 +456,10 @@ namespace Hecton8.Narrative
                     return false;
 
                 if (!queue.TryDequeue(out AudioLogEventPayload payload))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -608,7 +639,7 @@ namespace Hecton8.Narrative
         private static void ReportQueueOverflow(AudioLogEventType type)
         {
             _droppedEventCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastQueueOverflowTelemetryFrame == frame)
                 return;
 
@@ -623,7 +654,7 @@ namespace Hecton8.Narrative
         private static void ReportReferenceSlotOverflow(AudioLogEventType type)
         {
             _droppedReferenceSlotCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastReferenceSlotOverflowTelemetryFrame == frame)
                 return;
 
@@ -638,7 +669,7 @@ namespace Hecton8.Narrative
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -652,7 +683,7 @@ namespace Hecton8.Narrative
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

@@ -128,16 +128,17 @@ namespace Hecton8.Tests.Editor
         {
             using NativeArray<WaveParametersDTO> waves = CreateSingleWaveArray(Allocator.TempJob);
             uint originalHash = HectonOceanSurfaceMath.HashWaveState(waves, waves.Length, 1.5f, 1f);
+            NativeArray<WaveParametersDTO> writableWaves = waves;
 
             WaveParametersDTO wave = waves[0];
             wave.Wave1.x += 0.37f;
-            waves[0] = HectonOceanSurfaceMath.SanitizeWave(wave);
+            writableWaves[0] = HectonOceanSurfaceMath.SanitizeWave(wave);
             uint phaseHash = HectonOceanSurfaceMath.HashWaveState(waves, waves.Length, 1.5f, 1f);
             Assert.AreNotEqual(originalHash, phaseHash);
 
             wave = waves[0];
             wave.Wave1.w += 0.19f;
-            waves[0] = HectonOceanSurfaceMath.SanitizeWave(wave);
+            writableWaves[0] = HectonOceanSurfaceMath.SanitizeWave(wave);
             uint speedHash = HectonOceanSurfaceMath.HashWaveState(waves, waves.Length, 1.5f, 1f);
             Assert.AreNotEqual(phaseHash, speedHash);
         }

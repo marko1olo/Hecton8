@@ -1,4 +1,4 @@
-# Creator CRM Schema And Scoring
+﻿# Creator CRM Schema And Scoring
 
 Status: operational specification
 Purpose: turn raw leads into outreach ready rows without lying

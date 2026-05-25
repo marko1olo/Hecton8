@@ -24,13 +24,13 @@ namespace Hecton8.Atmosphere
         private void OnEnable()
         {
             RefreshRuntime();
-            SceneView.duringSceneGui -= OnDrawGizmos;
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
         }
 
         private void OnDisable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         private void OnGUI()
@@ -96,11 +96,11 @@ namespace Hecton8.Atmosphere
             _runtime = ToxicOutgassingChemistryRuntime.Instance;
             if (_runtime == null)
             {
-                _runtime = FindObjectOfType<ToxicOutgassingChemistryRuntime>();
+                _runtime = FindAnyObjectByType<ToxicOutgassingChemistryRuntime>();
             }
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             if (!_drawPlume)
             {
@@ -131,7 +131,10 @@ namespace Hecton8.Atmosphere
             Handles.color = new Color(0.1f, 0.75f, 0.25f, 0.18f);
             Handles.DrawWireCube(basePosition, Vector3.one * extent);
 
-            int stride = math.max(1, (int)math.ceil(math.pow((resolution * resolution * resolution) / math.max(1f, _maxWireCells), 1f / 3f)));
+            double cellsPerDraw = (double)resolution * resolution * resolution / math.max(1f, _maxWireCells);
+            int stride = 1;
+            while (stride < resolution && (double)stride * stride * stride < cellsPerDraw)
+                stride++;
             int drawn = 0;
             for (int z = 0; z < resolution && drawn < _maxWireCells; z += stride)
             {

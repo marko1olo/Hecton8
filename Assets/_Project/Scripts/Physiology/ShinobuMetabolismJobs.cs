@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -33,16 +34,26 @@ namespace Hecton8.Physiology
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveCadenceSeconds(float globalQualityWeight)
         {
-            return ShinobuMetabolismConstants.NominalSlowTickSeconds;
+            float q = math.saturate(SanitizeFinite(globalQualityWeight, 1f));
+            return math.lerp(1f, 0.1f, q);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveThermalInterpolationWeight(float globalQualityWeight)
         {
             float q = math.saturate(SanitizeFinite(globalQualityWeight, 1f));
-            float highBlend = math.saturate((q - 0.3f) * math.rcp(0.7f));
-            float smooth = highBlend * highBlend * (3f - 2f * highBlend);
-            return math.step(0.3f, q) * smooth;
+            return q * q * (3f - 2f * q);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(SanitizeFinite(x, 0f), 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator * math.rcp(math.max(denominator, Epsilon)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -109,6 +120,65 @@ namespace Hecton8.Physiology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static MetabolicSuitThermalProfileDTO BuildDefaultSuitProfile(uint profileHash)
+        {
+            MetabolicSuitThermalProfileDTO profile = default;
+            profile.ProfileHash = profileHash;
+            profile.ConductanceMultiplier = 1f;
+            profile.Insulation01 = 0.55f;
+            profile.ShiverMultiplier = 1f;
+            profile.HeatHydrationMultiplier = 1f;
+            profile.BatteryHeatingCelsiusPerSecond = 0f;
+            profile.Flags = ShinobuMetabolismSuitProfileFlags.DefaultProfile;
+            return profile;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static MetabolicSuitThermalProfileDTO SanitizeSuitProfile(MetabolicSuitThermalProfileDTO profile)
+        {
+            if (profile.ProfileHash == 0u)
+                profile = BuildDefaultSuitProfile(ShinobuMetabolismConstants.StandardSuitHash);
+
+            profile.ConductanceMultiplier = math.clamp(SanitizeFinite(profile.ConductanceMultiplier, 1f), 0.01f, 8f);
+            profile.Insulation01 = math.saturate(SanitizeFinite(profile.Insulation01, 0.55f));
+            profile.ShiverMultiplier = math.clamp(SanitizeFinite(profile.ShiverMultiplier, 1f), 0f, 8f);
+            profile.HeatHydrationMultiplier = math.clamp(SanitizeFinite(profile.HeatHydrationMultiplier, 1f), 0f, 8f);
+            profile.BatteryHeatingCelsiusPerSecond = math.clamp(SanitizeFinite(profile.BatteryHeatingCelsiusPerSecond, 0f), 0f, 4f);
+            return profile;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool SuitProfileHashMatches(uint profileHash, uint equippedSuitHash)
+        {
+            if (profileHash == 0u || equippedSuitHash == 0u)
+                return false;
+            if (profileHash == equippedSuitHash)
+                return true;
+
+            uint alias0 = 0u;
+            uint alias1 = 0u;
+            if (equippedSuitHash == ShinobuMetabolismConstants.StandardSuitHash)
+            {
+                alias0 = ShinobuMetabolismConstants.SuitProfileHashStandardWetsuit;
+            }
+            else if (equippedSuitHash == ShinobuMetabolismConstants.ReinforcedSuitHash)
+            {
+                alias0 = ShinobuMetabolismConstants.SuitProfileHashReinforcedSuit;
+                alias1 = ShinobuMetabolismConstants.SuitProfileHashReinforcedWetsuit;
+            }
+            else if (equippedSuitHash == ShinobuMetabolismConstants.ExosuitHash)
+            {
+                alias0 = ShinobuMetabolismConstants.SuitProfileHashThermalPrawnSuit;
+            }
+            else if (equippedSuitHash == ShinobuMetabolismConstants.SubmarineHullHash)
+            {
+                alias0 = ShinobuMetabolismConstants.SuitProfileHashSubmarineHull;
+            }
+
+            return profileHash == alias0 || profileHash == alias1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MetabolicSpeciesRuleDTO SanitizeRule(MetabolicSpeciesRuleDTO rule)
         {
             if (rule.SpeciesHash == 0u)
@@ -144,6 +214,7 @@ namespace Hecton8.Physiology
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* ExertionSpeedSq;
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* ToxinSamples;
         [NativeDisableUnsafePtrRestriction, NoAlias] public ushort* RuleIndices;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ushort* SuitProfileIndices;
         public int Count;
         public uint Seed;
         public uint Frame;
@@ -167,7 +238,7 @@ namespace Hecton8.Physiology
             state.Toxicity = rng.NextFloat(0f, 0.3f);
             state.EntityHashID = 0xA5000000u | (uint)index;
             state.Flags = ShinobuMetabolismFlags.MockEntity;
-            state._pad0 = 0u;
+            state.Fatigue01 = 0f;
             state._pad1 = 0u;
 
             double3 entityAup = default;
@@ -178,6 +249,8 @@ namespace Hecton8.Physiology
             ExertionSpeedSq[index] = ((index * 13) & 7) * 0.08f;
             ToxinSamples[index] = ((index * 29) & 31) * math.rcp(512f);
             RuleIndices[index] = (ushort)(index % 4);
+            if (SuitProfileIndices != null)
+                SuitProfileIndices[index] = (ushort)(index == 0 ? 2 : 0);
         }
     }
 
@@ -185,8 +258,10 @@ namespace Hecton8.Physiology
     public unsafe struct InitMetabolismRulesJob : IJob
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicSpeciesRuleDTO* Rules;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicSuitThermalProfileDTO* SuitProfiles;
         [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolismTuningDTO* Tuning;
         public int RuleCount;
+        public int SuitProfileCount;
 
         public void Execute()
         {
@@ -231,6 +306,46 @@ namespace Hecton8.Physiology
 
             for (int i = 4; i < RuleCount; i++)
                 Rules[i] = default;
+
+            if (SuitProfiles == null || SuitProfileCount <= 0)
+                return;
+
+            SuitProfiles[0] = ShinobuMetabolismJobMath.BuildDefaultSuitProfile(ShinobuMetabolismConstants.StandardSuitHash);
+            if (SuitProfileCount > 1)
+            {
+                MetabolicSuitThermalProfileDTO reinforced = ShinobuMetabolismJobMath.BuildDefaultSuitProfile(ShinobuMetabolismConstants.ReinforcedSuitHash);
+                reinforced.ConductanceMultiplier = 0.78f;
+                reinforced.Insulation01 = 0.7f;
+                reinforced.ShiverMultiplier = 0.75f;
+                SuitProfiles[1] = reinforced;
+            }
+
+            if (SuitProfileCount > 2)
+            {
+                MetabolicSuitThermalProfileDTO exosuit = ShinobuMetabolismJobMath.BuildDefaultSuitProfile(ShinobuMetabolismConstants.ExosuitHash);
+                exosuit.ConductanceMultiplier = 0.42f;
+                exosuit.Insulation01 = 0.88f;
+                exosuit.ShiverMultiplier = 0.35f;
+                exosuit.HeatHydrationMultiplier = 0.72f;
+                exosuit.BatteryHeatingCelsiusPerSecond = 0.018f;
+                exosuit.Flags |= ShinobuMetabolismSuitProfileFlags.HeatedSuit;
+                SuitProfiles[2] = exosuit;
+            }
+
+            if (SuitProfileCount > 3)
+            {
+                MetabolicSuitThermalProfileDTO hull = ShinobuMetabolismJobMath.BuildDefaultSuitProfile(ShinobuMetabolismConstants.SubmarineHullHash);
+                hull.ConductanceMultiplier = 0.24f;
+                hull.Insulation01 = 0.94f;
+                hull.ShiverMultiplier = 0.15f;
+                hull.HeatHydrationMultiplier = 0.5f;
+                hull.BatteryHeatingCelsiusPerSecond = 0.025f;
+                hull.Flags |= ShinobuMetabolismSuitProfileFlags.HeatedSuit;
+                SuitProfiles[3] = hull;
+            }
+
+            for (int i = 4; i < SuitProfileCount; i++)
+                SuitProfiles[i] = default;
         }
     }
 
@@ -242,11 +357,12 @@ namespace Hecton8.Physiology
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* ExertionSpeedSq;
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* ToxinSamples;
         [NativeDisableUnsafePtrRestriction, NoAlias] public ushort* RuleIndices;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ushort* SuitProfileIndices;
         [NativeDisableUnsafePtrRestriction, NoAlias] public PhysiologyStateSignal* PhysiologySignals;
-        [NativeDisableUnsafePtrRestriction, NoAlias] public CombatDamageSignal* CombatSignals;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicExposureSignalDTO* ExposureSignals;
         public int Count;
         public int PhysiologySignalLength;
-        public int CombatSignalLength;
+        public int ExposureSignalLength;
 
         public void Execute(int index)
         {
@@ -260,13 +376,15 @@ namespace Hecton8.Physiology
             state.Toxicity = 0f;
             state.EntityHashID = 0u;
             state.Flags = 0u;
-            state._pad0 = 0u;
+            state.Fatigue01 = 0f;
             state._pad1 = 0u;
 
             EntityAups[index] = double3.zero;
             ExertionSpeedSq[index] = 0f;
             ToxinSamples[index] = 0f;
             RuleIndices[index] = 0;
+            if (SuitProfileIndices != null)
+                SuitProfileIndices[index] = 0;
             ClearSignalSlots(index);
         }
 
@@ -284,8 +402,68 @@ namespace Hecton8.Physiology
                 }
             }
 
-            if (CombatSignals != null && (uint)index < (uint)CombatSignalLength)
-                CombatSignals[index] = default;
+            if (ExposureSignals != null)
+            {
+                int baseSlot = index * ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity;
+                for (int slot = 0; slot < ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity; slot++)
+                {
+                    int signalIndex = baseSlot + slot;
+                    if ((uint)signalIndex < (uint)ExposureSignalLength)
+                        ExposureSignals[signalIndex] = default;
+                }
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct GenerateMockThermalEnvironmentJob : IJobParallelFor
+    {
+        [NativeDisableUnsafePtrRestriction, NoAlias] public float* ThermalCelsiusGrid;
+        public int3 Resolution;
+        public int Length;
+        public float CellSizeMeters;
+        public float BaseColdCelsius;
+        public float HotspotCelsius;
+        public float3 HotspotLocalMeters;
+        public float HotspotRadiusMeters;
+        public float GlobalQualityWeight;
+
+        public void Execute(int index)
+        {
+            if (ThermalCelsiusGrid == null || (uint)index >= (uint)Length)
+                return;
+
+            int3 resolution = new int3(
+                math.max(1, Resolution.x),
+                math.max(1, Resolution.y),
+                math.max(1, Resolution.z));
+            int cellsPerY = math.max(1, resolution.x * resolution.z);
+            int y = index / cellsPerY;
+            int yRemainder = index - y * cellsPerY;
+            int z = yRemainder / resolution.x;
+            int x = yRemainder - z * resolution.x;
+
+            float cellSize = math.max(0.001f, ShinobuMetabolismJobMath.SanitizeFinite(CellSizeMeters, 1f));
+            float3 local = new float3(x + 0.5f, y + 0.5f, z + 0.5f) * cellSize;
+            float3 hotspot = math.select(
+                new float3(resolution.x, resolution.y, resolution.z) * cellSize * 0.5f,
+                HotspotLocalMeters,
+                math.all(math.isfinite(HotspotLocalMeters)));
+            float radius = math.max(cellSize, ShinobuMetabolismJobMath.SanitizeFinite(HotspotRadiusMeters, cellSize * 6f));
+            float dist01 = math.saturate(math.length(local - hotspot) * math.rcp(radius));
+            float falloff = 1f - dist01;
+            falloff = falloff * falloff * (3f - 2f * falloff);
+
+            float q = math.saturate(ShinobuMetabolismJobMath.SanitizeFinite(GlobalQualityWeight, 1f));
+            float turbulence = ShinobuMetabolismJobMath.ResolveThermalInterpolationWeight(q);
+            float3 centered = (local - hotspot) * math.rcp(math.max(cellSize, radius));
+            float phase = math.abs(centered.x * 7.13f + centered.y * 3.71f + centered.z * 5.29f);
+            float phase01 = math.frac(phase);
+            float wave = 1f - math.abs(phase01 * 2f - 1f);
+            float denseGradient = math.lerp(falloff, falloff * wave, turbulence);
+            float cold = math.clamp(ShinobuMetabolismJobMath.SanitizeFinite(BaseColdCelsius, -40f), -90f, 80f);
+            float hot = math.clamp(ShinobuMetabolismJobMath.SanitizeFinite(HotspotCelsius, 88f), cold, 180f);
+            ThermalCelsiusGrid[index] = math.lerp(cold, hot, denseGradient);
         }
     }
 
@@ -298,11 +476,15 @@ namespace Hecton8.Physiology
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* ToxinSamples;
         [NativeDisableUnsafePtrRestriction, NoAlias] public ushort* RuleIndices;
         [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicSpeciesRuleDTO* Rules;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ushort* SuitProfileIndices;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicSuitThermalProfileDTO* SuitProfiles;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public SuitIntegrityDTO* SuitIntegrityStates;
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* ThermalCelsiusGrid;
         [NativeDisableUnsafePtrRestriction, NoAlias] public float4* ChemicalPublishedGrid;
         [NativeDisableUnsafePtrRestriction, NoAlias] public float4* ChemicalOverlayGrid;
         [NativeDisableUnsafePtrRestriction, NoAlias] public PhysiologyStateSignal* PhysiologySignals;
-        [NativeDisableUnsafePtrRestriction, NoAlias] public CombatDamageSignal* CombatSignals;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicExposureSignalDTO* ExposureSignals;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicDetailTelemetryEntry* DetailTelemetry;
         public MetabolismTuningDTO Tuning;
         public double3 ThermalGridRootAup;
         public double3 ChemicalGridRootAup;
@@ -311,7 +493,10 @@ namespace Hecton8.Physiology
         public int ThermalGridLength;
         public int ChemicalGridLength;
         public int PhysiologySignalLength;
-        public int CombatSignalLength;
+        public int ExposureSignalLength;
+        public int DetailTelemetryLength;
+        public int DetailTelemetryCursor;
+        public int SuitIntegrityStateCount;
         public float ThermalCellSizeMeters;
         public float ChemicalCellSizeMeters;
         public float DeltaSeconds;
@@ -319,6 +504,7 @@ namespace Hecton8.Physiology
         public uint Frame;
         public int Count;
         public int RuleCount;
+        public int SuitProfileCount;
         public byte HasThermalGrid;
         public byte HasChemicalGrid;
         public byte EmitSignals;
@@ -345,28 +531,37 @@ namespace Hecton8.Physiology
             MetabolicSpeciesRuleDTO rule = Rules != null && RuleCount > 0
                 ? ShinobuMetabolismJobMath.SanitizeRule(Rules[ruleIndex])
                 : ShinobuMetabolismJobMath.BuildDefaultRule(0x51CCEFFAu);
+            ushort suitProfileIndex = SuitProfileIndices != null ? SuitProfileIndices[index] : (ushort)0;
+            uint equippedSuitHash = ResolveEquippedSuitHash(index);
+            MetabolicSuitThermalProfileDTO suitProfile = ResolveSuitProfile(index, suitProfileIndex, equippedSuitHash);
 
-            uint flags = state.Flags & ~(ShinobuMetabolismFlags.Starving | ShinobuMetabolismFlags.Dehydrated | ShinobuMetabolismFlags.Hypothermia | ShinobuMetabolismFlags.Toxic | ShinobuMetabolismFlags.InvalidMath | ShinobuMetabolismFlags.ThermalSampled | ShinobuMetabolismFlags.ChemicalSampled | ShinobuMetabolismFlags.NanDetected);
+            uint flags = state.Flags & ~(ShinobuMetabolismFlags.Starving | ShinobuMetabolismFlags.Dehydrated | ShinobuMetabolismFlags.Hypothermia | ShinobuMetabolismFlags.Toxic | ShinobuMetabolismFlags.InvalidMath | ShinobuMetabolismFlags.ThermalSampled | ShinobuMetabolismFlags.ChemicalSampled | ShinobuMetabolismFlags.Fatigue | ShinobuMetabolismFlags.ExecutionBudgetExceeded | ShinobuMetabolismFlags.NanDetected);
             float calories = math.clamp(ShinobuMetabolismJobMath.SanitizeFinite(state.Calories, rule.MaxCalories), 0f, rule.MaxCalories);
             float hydration = math.clamp(ShinobuMetabolismJobMath.SanitizeFinite(state.Hydration, rule.MaxHydration), 0f, rule.MaxHydration);
             float coreTemperature = math.clamp(ShinobuMetabolismJobMath.SanitizeFinite(state.CoreTemperature, rule.RecoveryTemperatureCelsius), 18f, 45f);
+            float previousCoreTemperature = coreTemperature;
             float toxicity = math.clamp(ShinobuMetabolismJobMath.SanitizeFinite(state.Toxicity, 0f), 0f, 8f);
             float speedSq = ExertionSpeedSq != null ? math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(ExertionSpeedSq[index], 0f)) : 0f;
             float ambient = SampleAmbientTemperature(entityAup, tuning.AmbientFallbackTemperatureCelsius, q, ref flags);
 
-            float heatLoss = tuning.TemperatureLossRate * rule.ThermalConductance * (coreTemperature - ambient) * dt;
-            if (!math.isfinite(heatLoss))
+            float suitConductance = suitProfile.ConductanceMultiplier * (1f - suitProfile.Insulation01);
+            float thermalK = math.max(0f, tuning.TemperatureLossRate * rule.ThermalConductance * math.max(0.01f, suitConductance));
+            float thermalDecay = ShinobuMetabolismJobMath.ApproximateExpNegPositive(thermalK * dt);
+            if (!math.isfinite(thermalDecay))
             {
-                heatLoss = 0f;
+                thermalDecay = 1f;
                 flags |= ShinobuMetabolismFlags.InvalidMath | ShinobuMetabolismFlags.NanDetected;
             }
 
-            coreTemperature = math.clamp(coreTemperature - heatLoss, 18f, 45f);
+            coreTemperature = math.clamp(ambient + (coreTemperature - ambient) * thermalDecay, 18f, 45f);
+            coreTemperature = math.clamp(coreTemperature + suitProfile.BatteryHeatingCelsiusPerSecond * dt, 18f, 45f);
             float cold01 = math.saturate((rule.ShiverTemperatureCelsius - coreTemperature) * math.rcp(math.max(0.0001f, rule.ShiverTemperatureCelsius - rule.HypothermiaTemperatureCelsius)));
             float hot01 = math.saturate((ambient - rule.RecoveryTemperatureCelsius) * math.rcp(24f));
-            float exertionMultiplier = 1f + speedSq * tuning.ExertionMultiplier;
-            float calorieDrain = rule.BaseCalorieDrainPerSecond * tuning.BaseCalorieDrainScale * exertionMultiplier * (1f + cold01 * tuning.ShiverCalorieBoost);
-            float hydrationDrain = rule.BaseHydrationDrainPerSecond * tuning.BaseHydrationDrainScale * (1f + speedSq * tuning.ExertionHydrationMultiplier + hot01 * rule.HeatHydrationLossScale);
+            float basalCalorieDrain = rule.BaseCalorieDrainPerSecond * tuning.BaseCalorieDrainScale;
+            float exertionCalorieDrain = speedSq * tuning.ExertionMultiplier;
+            float shiverCalorieDrain = basalCalorieDrain * cold01 * tuning.ShiverCalorieBoost * suitProfile.ShiverMultiplier;
+            float calorieDrain = math.max(0f, basalCalorieDrain + exertionCalorieDrain + shiverCalorieDrain);
+            float hydrationDrain = rule.BaseHydrationDrainPerSecond * tuning.BaseHydrationDrainScale * (1f + speedSq * tuning.ExertionHydrationMultiplier + hot01 * rule.HeatHydrationLossScale * suitProfile.HeatHydrationMultiplier);
             calories = math.max(0f, calories - calorieDrain * dt);
             hydration = math.max(0f, hydration - hydrationDrain * dt);
 
@@ -395,11 +590,22 @@ namespace Hecton8.Physiology
             if (toxicity >= 1f)
                 flags |= ShinobuMetabolismFlags.Toxic;
 
+            float calorieFatigue01 = math.saturate((rule.MaxCalories * 0.2f - calories) * math.rcp(math.max(0.0001f, rule.MaxCalories * 0.2f)));
+            float hydrationFatigue01 = math.saturate((rule.MaxHydration * 0.1f - hydration) * math.rcp(math.max(0.0001f, rule.MaxHydration * 0.1f)));
+            float fatigue01 = math.max(calorieFatigue01, hydrationFatigue01);
+            if (fatigue01 > 0.0001f)
+                flags |= ShinobuMetabolismFlags.Fatigue;
+
             state.Calories = calories;
             state.Hydration = hydration;
             state.CoreTemperature = coreTemperature;
             state.Toxicity = toxicity;
             state.Flags = flags;
+            state.Fatigue01 = math.saturate(fatigue01);
+            state._pad1 = 0u;
+
+            if (index == 0)
+                WriteDetailTelemetry(entityAup, state.EntityHashID, flags, ambient, thermalK, previousCoreTemperature, coreTemperature, calorieDrain, suitProfile.ProfileHash, dt);
 
             if (EmitSignals == 0)
                 return;
@@ -411,7 +617,81 @@ namespace Hecton8.Physiology
             if ((flags & ShinobuMetabolismFlags.Hypothermia) != 0u)
                 StagePhysiologySignal(index, 2, state.EntityHashID, ShinobuMetabolismConstants.PhysiologyCauseHypothermia, flags, calories, hydration, coreTemperature, toxicity);
             if (toxicity >= 1f)
-                StageToxicDamage(index, state.EntityHashID, entityAup, rule.ToxicDamagePerSecond * tuning.ToxicDamageScale * (toxicity - 1f) * dt);
+                StageToxicityExposure(index, state.EntityHashID, entityAup, rule.ToxicDamagePerSecond * tuning.ToxicDamageScale * (toxicity - 1f) * dt);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private uint ResolveEquippedSuitHash(int index)
+        {
+            if (SuitIntegrityStates == null || (uint)index >= (uint)SuitIntegrityStateCount)
+                return 0u;
+
+            SuitIntegrityDTO suitState = SuitIntegrityStates[index];
+            return suitState.EquippedSuitHash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private MetabolicSuitThermalProfileDTO ResolveSuitProfile(int entityIndex, ushort suitProfileIndex, uint equippedSuitHash)
+        {
+            if (SuitProfiles == null || SuitProfileCount <= 0)
+                return ShinobuMetabolismJobMath.BuildDefaultSuitProfile(ShinobuMetabolismConstants.StandardSuitHash);
+
+            int index = math.clamp((int)suitProfileIndex, 0, SuitProfileCount - 1);
+            MetabolicSuitThermalProfileDTO indexed = ShinobuMetabolismJobMath.SanitizeSuitProfile(SuitProfiles[index]);
+            if (equippedSuitHash == 0u ||
+                ShinobuMetabolismJobMath.SuitProfileHashMatches(indexed.ProfileHash, equippedSuitHash))
+            {
+                return indexed;
+            }
+
+            for (int i = 0; i < SuitProfileCount; i++)
+            {
+                MetabolicSuitThermalProfileDTO candidate = ShinobuMetabolismJobMath.SanitizeSuitProfile(SuitProfiles[i]);
+                if (!ShinobuMetabolismJobMath.SuitProfileHashMatches(candidate.ProfileHash, equippedSuitHash))
+                    continue;
+
+                if (SuitProfileIndices != null && (uint)entityIndex < (uint)Count)
+                    SuitProfileIndices[entityIndex] = (ushort)i;
+                return candidate;
+            }
+
+            return indexed;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteDetailTelemetry(
+            double3 playerAup,
+            uint entityHash,
+            uint flags,
+            float ambient,
+            float thermalK,
+            float previousCore,
+            float currentCore,
+            float calorieDrainPerSecond,
+            uint suitProfileHash,
+            float dt)
+        {
+            if (DetailTelemetry == null || DetailTelemetryLength <= 0)
+                return;
+
+            int ringIndex = DetailTelemetryCursor % DetailTelemetryLength;
+            if (ringIndex < 0)
+                ringIndex += DetailTelemetryLength;
+
+            float safeDt = math.max(0.0001f, ShinobuMetabolismJobMath.SanitizeFinite(dt, ShinobuMetabolismConstants.NominalSlowTickSeconds));
+            MetabolicDetailTelemetryEntry entry = default;
+            entry.PlayerAup = playerAup;
+            entry.PlayerDepthMeters = math.max(0f, -(float)playerAup.y);
+            entry.ActiveCalorieBurnPerSecond = math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(calorieDrainPerSecond, 0f));
+            entry.AmbientCelsius = ShinobuMetabolismJobMath.SanitizeFinite(ambient, 0f);
+            entry.ThermalK = math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(thermalK, 0f));
+            entry.CoreAmbientDeltaCelsius = ShinobuMetabolismJobMath.SanitizeFinite(currentCore - ambient, 0f);
+            entry.ThermalDeltaCelsiusPerSecond = ShinobuMetabolismJobMath.SanitizeFinite((currentCore - previousCore) * math.rcp(safeDt), 0f);
+            entry.Frame = Frame;
+            entry.EntityHashID = entityHash;
+            entry.Flags = flags;
+            entry.SuitProfileHash = suitProfileHash;
+            DetailTelemetry[ringIndex] = entry;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -428,8 +708,16 @@ namespace Hecton8.Physiology
                 }
             }
 
-            if (CombatSignals != null && (uint)index < (uint)CombatSignalLength)
-                CombatSignals[index] = default;
+            if (ExposureSignals != null)
+            {
+                int baseSlot = index * ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity;
+                for (int slot = 0; slot < ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity; slot++)
+                {
+                    int signalIndex = baseSlot + slot;
+                    if ((uint)signalIndex < (uint)ExposureSignalLength)
+                        ExposureSignals[signalIndex] = default;
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -518,7 +806,7 @@ namespace Hecton8.Physiology
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int ThermalIndex(int x, int y, int z)
         {
-            return (z * ThermalGridResolution.y * ThermalGridResolution.x) + (y * ThermalGridResolution.x) + x;
+            return x + (z * ThermalGridResolution.x) + (y * ThermalGridResolution.x * ThermalGridResolution.z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -651,7 +939,7 @@ namespace Hecton8.Physiology
             signal.NitrogenLoadAtm = 0f;
             signal.AscentRateMetersPerSecond = 0f;
             signal.TissueOverMValueMask = 0u;
-            signal.SourceHash = entityHash;
+            signal.SourceHash = ShinobuMetabolismConstants.SourceHash;
             signal.EntityIndex = index;
             signal.ActiveCompartments = 0;
             signal.FatalSeverity = (byte)math.round(math.saturate(signal.PlayerStress01) * 255f);
@@ -660,32 +948,30 @@ namespace Hecton8.Physiology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void StageToxicDamage(int index, uint entityHash, double3 entityAup, float magnitude)
+        private void StageToxicityExposure(int index, uint entityHash, double3 entityAup, float magnitude)
         {
-            if (CombatSignals == null ||
+            if (ExposureSignals == null ||
                 entityHash == 0u ||
-                (uint)index >= (uint)CombatSignalLength ||
                 !math.isfinite(magnitude) ||
                 magnitude <= 0f)
             {
                 return;
             }
 
-            CombatDamageSignal damage = default;
-            damage.ImpactAup = math.all(math.isfinite(entityAup)) ? entityAup : double3.zero;
-            float3 direction = default;
-            direction.y = 1f;
-            damage.Direction = direction;
-            damage.Magnitude = magnitude;
-            damage.DamageType = ShinobuMetabolismConstants.CombatDamageTypeToxic;
-            damage.TargetHash = entityHash;
-            damage.SourceHash = ShinobuMetabolismConstants.SourceHash;
-            damage.Frame = Frame;
-            damage.SourceId = unchecked((ushort)ShinobuMetabolismConstants.SourceHash);
-            damage.TargetId = (ushort)math.min(index, ushort.MaxValue);
-            damage.Channel = 1;
-            damage.Flags = CombatDamageSignal.DirectRuntimeFlag;
-            CombatSignals[index] = damage;
+            int signalIndex = index * ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity +
+                              ShinobuMetabolismConstants.MetabolicExposureSignalSlotToxic;
+            if ((uint)signalIndex >= (uint)ExposureSignalLength)
+                return;
+
+            MetabolicExposureSignalDTO exposure = default;
+            exposure.AUP = math.all(math.isfinite(entityAup)) ? entityAup : double3.zero;
+            exposure.EntityHash = entityHash;
+            exposure.Frame = Frame;
+            exposure.Exposure01 = math.saturate(magnitude);
+            exposure.ToxemiaDelta = math.saturate(magnitude);
+            exposure.ChemicalHash = 0u;
+            exposure.Flags = 1u;
+            ExposureSignals[signalIndex] = exposure;
         }
     }
 
@@ -729,7 +1015,8 @@ namespace Hecton8.Physiology
                 bool invalid = !math.isfinite(state.Calories) ||
                                !math.isfinite(state.Hydration) ||
                                !math.isfinite(state.CoreTemperature) ||
-                               !math.isfinite(state.Toxicity);
+                               !math.isfinite(state.Toxicity) ||
+                               !math.isfinite(math.asfloat(state._pad0));
                 if (invalid)
                 {
                     flags |= ShinobuMetabolismFlags.NanDetected | ShinobuMetabolismFlags.InvalidMath;
@@ -754,6 +1041,10 @@ namespace Hecton8.Physiology
                 hash ^= math.asuint(state.CoreTemperature);
                 hash *= 1099511628211UL;
                 hash ^= math.asuint(state.Toxicity);
+                hash *= 1099511628211UL;
+                hash ^= state.Flags;
+                hash *= 1099511628211UL;
+                hash ^= state._pad0;
                 hash *= 1099511628211UL;
             }
 

@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core.Contracts;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Core

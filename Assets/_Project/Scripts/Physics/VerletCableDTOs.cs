@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
@@ -9,7 +10,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Physics
 {
-    internal static class VerletCableLayout
+    public static class VerletCableLayout
     {
         public const int NodeStrideBytes = 32;
         public const int ConstraintStrideBytes = 16;
@@ -79,45 +80,61 @@ namespace Hecton8.Physics
                    UnsafeUtility.SizeOf<TetherConstraintDTO>() == TetherAupConstraintStrideBytes &&
                    UnsafeUtility.SizeOf<TetherEndpointAupDTO>() == TetherAupEndpointStrideBytes &&
                    UnsafeUtility.SizeOf<TetherForcePacketDTO>() == TetherAupForcePacketStrideBytes &&
+                   OffsetOf<TetherForcePacketDTO>(nameof(TetherForcePacketDTO.ApplicationAUP)) == 0 &&
+                   OffsetOf<TetherForcePacketDTO>(nameof(TetherForcePacketDTO.Force)) == 24 &&
+                   OffsetOf<TetherForcePacketDTO>(nameof(TetherForcePacketDTO.Tension)) == 36 &&
+                   OffsetOf<TetherForcePacketDTO>(nameof(TetherForcePacketDTO.CableId)) == 40 &&
+                   OffsetOf<TetherForcePacketDTO>(nameof(TetherForcePacketDTO.BodySlot)) == 44 &&
+                   OffsetOf<TetherForcePacketDTO>(nameof(TetherForcePacketDTO.Flags)) == 48 &&
+                   OffsetOf<TetherForcePacketDTO>(nameof(TetherForcePacketDTO.FrameIndex)) == 52 &&
+                   OffsetOf<TetherForcePacketDTO>("_pad0") == 56 &&
                    UnsafeUtility.SizeOf<TetherSplineVertexDTO>() == TetherSplineVertexStrideBytes &&
+                   OffsetOf<TetherSplineVertexDTO>(nameof(TetherSplineVertexDTO.Position)) == 0 &&
+                   OffsetOf<TetherSplineVertexDTO>(nameof(TetherSplineVertexDTO.U)) == 12 &&
+                   OffsetOf<TetherSplineVertexDTO>(nameof(TetherSplineVertexDTO.Tangent)) == 16 &&
+                   OffsetOf<TetherSplineVertexDTO>(nameof(TetherSplineVertexDTO.Tension01)) == 28 &&
                    UnsafeUtility.SizeOf<TetherSplineIndirectArgsDTO>() == TetherSplineIndirectArgsStrideBytes &&
                    UnsafeUtility.SizeOf<TetherAupTelemetryEntry>() == TetherAupTelemetryStrideBytes &&
-                   UnsafeUtility.SizeOf<TetherTelemetryEntry>() == TetherTelemetryStrideBytes;
+                   UnsafeUtility.SizeOf<TetherTelemetryEntry>() == TetherTelemetryStrideBytes &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.FrameIndex)) == 0 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.NodeCount)) == 4 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.IterationCount)) == 8 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.MaxTension)) == 12 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.AnchorAUP)) == 16 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.StateHash)) == 40 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.Flags)) == 44 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.CpuMicroseconds)) == 48 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.GlobalQualityWeight)) == 52 &&
+                   OffsetOf<TetherTelemetryEntry>("_pad0") == 56;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
         {
-            try
-            {
-                return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
-            }
-            catch (ArgumentException)
-            {
-                return -1;
-            }
+            FieldInfo field = typeof(T).GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 
         public static int ResolveIterationBudget(byte tier, int requested)
         {
-            if (requested > 0)
-                return math.clamp(requested, 1, 10);
+            float quality = math.saturate(tier * 0.33333334f);
+            return ResolveIterationBudget(quality, requested);
+        }
 
-            switch (tier)
-            {
-                case 0:
-                case 1:
-                    return 3;
-                case 2:
-                    return 5;
-                case 3:
-                    return 8;
-                default:
-                    return 10;
-            }
+        public static int ResolveIterationBudget(float globalQualityWeight, int requested)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float smooth = q * q * (3f - 2f * q);
+            int ceiling = requested > 0 ? math.clamp(requested, 1, 10) : 10;
+            if (ceiling <= 3)
+                return ceiling;
+
+            return math.clamp((int)math.round(math.lerp(3f, ceiling, smooth)), 3, ceiling);
         }
     }
 
-    internal static class VerletCableSimdMath
+    public static class VerletCableSimdMath
     {
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
@@ -1064,6 +1081,7 @@ namespace Hecton8.Physics
         }
     }
 
+#if UNITY_EDITOR
     public static class CableMaterialCsvParser
     {
         private const uint DefaultHash = 0x5645524Cu;
@@ -1559,4 +1577,5 @@ namespace Hecton8.Physics
             return math.isfinite(value);
         }
     }
+#endif
 }

@@ -52,7 +52,7 @@ namespace Hecton8.World
             float junctionMask = 1f - math.smoothstep(0.026f, 0.16f, junctionDelta);
             float forkNoise = FractalValueNoise(warpedSample * 0.41f + new float2(19.37f, -43.11f), Seed ^ 0x51633E2Du);
             float branching = math.saturate(edgeMask * 0.74f + junctionMask * 0.82f + math.smoothstep(0.42f, 0.9f, forkNoise) * 0.16f);
-            float sharpenedRidge = math.pow(branching, math.max(0.5f, RidgeSharpness));
+            float sharpenedRidge = MathLodApproximation.ApproxPow01Curve(branching, math.max(0.5f, RidgeSharpness));
 
             float slabNoise = FractalValueNoise(warpedSample * 0.47f + new float2(37.13f, -19.71f), Seed ^ 0x9E3779B9u);
             float fracture = math.smoothstep(0.36f, 0.92f, math.abs(slabNoise * 2f - 1f));

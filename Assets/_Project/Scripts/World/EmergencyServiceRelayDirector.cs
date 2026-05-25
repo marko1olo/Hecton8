@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
+using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
@@ -47,9 +48,10 @@ namespace Hecton8.World
         private EmergencyServiceRelay _currentRouteTarget;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
-        private FirstHourDirector _firstHourDirector;
-        private AtlasSignalSystem _atlasSignalSystem;
-        private LocalizationManager _localizationManager;
+        private IFirstHourReadModel _firstHourReadModel;
+        private IFirstHourRouteContactSink _firstHourRouteContactSink;
+        private IAtlasSignalReadModel _atlasSignalSystem;
+        private ILocalizationTextReadModel _localizationManager;
         // COLD ALLOC: EmergencyServiceRelay[8] — driven relay chain cache — owner: EmergencyServiceRelayDirector
         private readonly List<EmergencyServiceRelay> _drivenChainRelays = new List<EmergencyServiceRelay>(8);
         // COLD ALLOC: Dictionary<uint, EmergencyServiceRelay>[8] - relay-hash lookup cache - owner: EmergencyServiceRelayDirector
@@ -134,22 +136,24 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
-                    _firstHourDirector = currentService as FirstHourDirector;
+                    _firstHourReadModel = currentService as IFirstHourReadModel;
+                    _firstHourRouteContactSink = currentService as IFirstHourRouteContactSink;
                     break;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
-                    _atlasSignalSystem = currentService as AtlasSignalSystem;
+                    _atlasSignalSystem = currentService as IAtlasSignalReadModel;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localizationManager = currentService as LocalizationManager;
+                    _localizationManager = currentService as ILocalizationTextReadModel;
                     break;
             }
         }
 
         private void CacheRegistryServicesCold()
         {
-            _firstHourDirector = GlobalRegistry.FirstHour;
-            _atlasSignalSystem = GlobalRegistry.AtlasSignal;
-            _localizationManager = LocalizationManager.ActiveRuntimeInstance;
+            _firstHourReadModel = GlobalRegistry.FirstHourReadModel;
+            _firstHourRouteContactSink = _firstHourReadModel as IFirstHourRouteContactSink;
+            _atlasSignalSystem = GlobalRegistry.AtlasSignalReadModel;
+            _localizationManager = GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterHotSwapListener()
@@ -214,12 +218,9 @@ namespace Hecton8.World
             return !_ambiguousRelayHashes.Contains(discoveryHash) && _relayByHash.ContainsKey(discoveryHash);
         }
 
-        /// <summary>
-        /// Returns a one-shot contextual guidance message that points the player at the next undiscovered relay.
-        /// </summary>
-        public bool TryBuildContextualGuidanceMessage(out string message)
+        public bool TryBuildContextualGuidanceMessageSpan(out ReadOnlySpan<char> message)
         {
-            message = null;
+            message = ReadOnlySpan<char>.Empty;
 
             if (!ShouldDriveBreadcrumbs())
                 return false;
@@ -234,14 +235,14 @@ namespace Hecton8.World
                 return false;
 
             message = _hasAnyRelayDiscovery
-                ? nextRelay.BuildBreadcrumbMessage()
-                : nextRelay.BuildInitialRouteMessage();
+                ? nextRelay.BuildBreadcrumbMessageSpan()
+                : nextRelay.BuildInitialRouteMessageSpan();
 
-            if (string.IsNullOrWhiteSpace(message))
-                message = ResolveLocalized(LocalizationKeys.RELAY_DIRECTOR_FALLBACK, relayFallbackMessage);
+            if (IsWhiteSpace(message))
+                message = ResolveLocalizedSpan(LocalizationKeys.RELAY_DIRECTOR_FALLBACK, relayFallbackMessage);
 
             _lastGuidanceRelayHash = nextRelayHash;
-            return !string.IsNullOrWhiteSpace(message);
+            return !IsWhiteSpace(message);
         }
 
         /// <summary>
@@ -276,14 +277,14 @@ namespace Hecton8.World
             _currentRouteTarget = nextRelay;
 
             if (firstActivation && relay.CountsAsLoreRouteContact)
-                _firstHourDirector?.RegisterServiceRelayRouteContact();
+                _firstHourRouteContactSink?.RegisterServiceRelayRouteContact();
 
             if (!firstActivation || !ShouldDriveBreadcrumbs())
                 return;
 
-            string routeMessage = relay.BuildDownloadedRouteMessage(nextRelay);
-            if (!string.IsNullOrWhiteSpace(routeMessage))
-                NotificationEvents.PushInfo(routeMessage);
+            ReadOnlySpan<char> routeMessage = relay.BuildDownloadedRouteMessageSpan(nextRelay);
+            if (!IsWhiteSpace(routeMessage))
+                NotificationEvents.TryPushInfo(routeMessage);
 
             if (nextRelay != null)
                 _lastGuidanceRelayHash = nextRelay.RelayHash;
@@ -321,18 +322,18 @@ namespace Hecton8.World
 
         private bool ShouldDriveBreadcrumbs()
         {
-            FirstHourDirector firstHourDirector = _firstHourDirector;
+            IFirstHourReadModel firstHourDirector = _firstHourReadModel;
             if (firstHourDirector != null)
             {
-                if (!firstHourDirector.IsMilestoneComplete(minimumMilestoneToDrive))
+                if (!firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestoneToDrive))
                     return false;
 
-                if (firstHourDirector.IsMilestoneComplete(terminalMilestone))
+                if (firstHourDirector.IsFirstHourMilestoneComplete((int)terminalMilestone))
                     return false;
             }
 
-            AtlasSignalSystem atlasSignalSystem = _atlasSignalSystem;
-            if (atlasSignalSystem != null && atlasSignalSystem.CurrentRevealStage > maximumAtlasRevealStageToDrive)
+            IAtlasSignalReadModel atlasSignalSystem = _atlasSignalSystem;
+            if (atlasSignalSystem != null && atlasSignalSystem.CurrentAtlasSignalRevealStage > maximumAtlasRevealStageToDrive)
                 return false;
 
             return true;
@@ -531,12 +532,23 @@ namespace Hecton8.World
             }
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = _localizationManager;
+            ILocalizationTextReadModel manager = _localizationManager;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
+        }
+
+        private static bool IsWhiteSpace(ReadOnlySpan<char> value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

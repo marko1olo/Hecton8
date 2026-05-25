@@ -51,8 +51,11 @@ namespace Hecton8.Editor.OfflineGeometry
         {
             float theta = u * 6.28318530718f;
             float phi = (v - 0.5f) * 3.14159265359f;
-            float cp = math.cos(phi);
-            float3 unit = new float3(math.cos(theta) * cp, math.sin(phi), math.sin(theta) * cp);
+            float cp = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(phi);
+            float3 unit = new float3(
+                Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(theta) * cp,
+                Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phi),
+                Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(theta) * cp);
             float n = noise.snoise(unit * 5.73f + new float3((Seed & 255u) * 0.017f));
             float ridge = 1f - math.abs(noise.snoise(unit * 13.17f + new float3(((Seed >> 8) & 255u) * 0.013f)));
             float r = math.max(0.01f, Radius + (n + ridge * 0.5f) * FractalAmplitude);
@@ -841,7 +844,7 @@ namespace Hecton8.Editor.OfflineGeometry
         private float FaceAngle(int index, float3 faceCenter, float3 axisU, float3 axisV)
         {
             float3 delta = HullVertices[index] - faceCenter;
-            return math.atan2(math.dot(delta, axisV), math.dot(delta, axisU));
+            return global::Hecton8.Core.MathLodApproximation.ApproxAtan2Fast(math.dot(delta, axisV), math.dot(delta, axisU));
         }
 
         private static bool IsPlaneEmitted(ref FixedList4096Bytes<float4> planes, float3 normal, float distance, float epsilon)

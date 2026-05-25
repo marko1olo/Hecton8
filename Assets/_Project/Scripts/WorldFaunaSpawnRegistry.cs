@@ -297,7 +297,7 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(runtime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFinite(in originAup))
                 return false;
 

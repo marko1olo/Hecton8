@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Inventory;
@@ -168,7 +169,9 @@ namespace Hecton8.EditorTools.InventoryRouting
             int count = math.min(HeatmapSlots, buffers.Slots.Length);
             int activeHint = buffers.ActiveSlotCount.IsCreated && buffers.ActiveSlotCount.Length > 0 ? buffers.ActiveSlotCount[0] : count;
             float fragmentation = InventoryRoutingNetwork.ComputeFragmentation01(buffers.Slots, activeHint);
-            _fragmentationLabel.text = $"Fragmentation: {fragmentation:0.000} | Slice: {ResolveSliceCount(buffers.Slots.Length)}";
+            _fragmentationLabel.text =
+                "Fragmentation: " + fragmentation.ToString("0.000", CultureInfo.InvariantCulture) +
+                " | Slice: " + ResolveSliceCount(buffers.Slots.Length);
 
             for (int i = 0; i < count; i++)
             {

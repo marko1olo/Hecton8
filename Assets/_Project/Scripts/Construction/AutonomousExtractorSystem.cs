@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Scavenging;
@@ -21,12 +22,17 @@ namespace Hecton8.Construction
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4041)]
-    public sealed class AutonomousExtractorSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable
+    public sealed class AutonomousExtractorSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxModuleCapacity = 256;
         private const float SlowTickDeltaSeconds = 0.5f;
-        private const string NativeMemoryOwner = nameof(AutonomousExtractorSystem);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const SystemID VaultOwnerSystemId = SystemID.Construction;
+        private const BufferID JobInputsBufferId = BufferID.AutonomousExtractorJobInputs;
+        private const BufferID JobResultsBufferId = BufferID.AutonomousExtractorJobResults;
+        private const BufferID CycleTimersBufferId = BufferID.AutonomousExtractorCycleTimers;
+        private const BufferID BufferedItemHashIdsBufferId = BufferID.AutonomousExtractorBufferedItemHashIds;
+        private const BufferID BufferedUnitCountsBufferId = BufferID.AutonomousExtractorBufferedUnitCounts;
+        private const BufferID CompletedCycleCountsBufferId = BufferID.AutonomousExtractorCompletedCycleCounts;
         private const uint ExtractorCapacityGrowthWarningHash = 0xA8754B21u;
         private const uint ExtractorCapacityGrowthContextHash = 0xE71C92D4u;
         private const uint DuplicateRuntimeWarningHash = 0xB44D12E9u;
@@ -108,17 +114,20 @@ namespace Hecton8.Construction
 
         // COLD ALLOC: AutonomousExtractorModule[MaxModuleCapacity] - fixed runtime extractor registry; no managed growth - owner: AutonomousExtractorSystem
         private readonly AutonomousExtractorModule[] _modules = new AutonomousExtractorModule[MaxModuleCapacity];
-        private NativeArray<ExtractorJobInput> _jobInputs;
-        private NativeArray<ExtractorJobResult> _jobResults;
-        private NativeArray<float> _cycleTimers;
-        private NativeArray<int> _bufferedItemHashIds;
-        private NativeArray<int> _bufferedUnitCounts;
-        private NativeArray<int> _completedCycleCounts;
+        private VaultGenerationHandle<ExtractorJobInput> _jobInputsHandle;
+        private VaultGenerationHandle<ExtractorJobResult> _jobResultsHandle;
+        private VaultGenerationHandle<float> _cycleTimersHandle;
+        private VaultGenerationHandle<int> _bufferedItemHashIdsHandle;
+        private VaultGenerationHandle<int> _bufferedUnitCountsHandle;
+        private VaultGenerationHandle<int> _completedCycleCountsHandle;
+        private IDataVault _dataVault;
         private JobHandle _scheduledJobHandle;
         private bool _scheduledJobActive;
+        private bool _jobBuffersLocked;
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private int _scheduledModuleCount;
         private int _moduleCount;
 
@@ -150,55 +159,28 @@ namespace Hecton8.Construction
             if (!_serviceRegistered)
                 return;
 
-            EnsureNativeCapacity(MaxModuleCapacity);
-
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            if (!_slowTickRegistered)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
-            }
-
-            if (!_lateFrameRegistered)
-            {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
-            }
+            TryRegisterHotSwapListener();
+            EnsureVaultCapacity(MaxModuleCapacity);
+            TryRegisterRuntimeLoops();
         }
 
         private void OnDisable()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
-            {
-                _slowTickRegistered = false;
-                _lateFrameRegistered = false;
-                TryUnregisterFromGlobalRegistry();
-                return;
-            }
-
-            if (_slowTickRegistered)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = false;
-            }
-
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
-            }
-
+            TryUnregisterRuntimeLoops();
+            TryUnregisterHotSwapListener();
             TryUnregisterFromGlobalRegistry();
+            CompleteScheduledJobForTeardown();
+            ReleaseJobBufferLocks();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterRuntimeLoops();
+            TryUnregisterHotSwapListener();
             TryUnregisterFromGlobalRegistry();
-            JobHandle teardownDependency = CancelScheduledJobForTeardown();
-            DisposeNativeBuffers(teardownDependency);
-            JobHandle.ScheduleBatchedJobs();
+            CompleteScheduledJobForTeardown();
+            ReleaseJobBufferLocks();
+            ReleaseVaultBuffers(_dataVault);
         }
 
         private void TryRegisterToGlobalRegistry()
@@ -230,6 +212,80 @@ namespace Hecton8.Construction
             _serviceRegistered = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompleteScheduledJobForTeardown();
+                ReleaseJobBufferLocks();
+                ReleaseVaultBuffers(previousService as IDataVault ?? _dataVault);
+                _dataVault = currentService as IDataVault;
+                if (isActiveAndEnabled)
+                    EnsureVaultCapacity(MaxModuleCapacity);
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterRuntimeLoops();
+            TryRegisterRuntimeLoops();
+        }
+
+        private void TryRegisterRuntimeLoops()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_slowTickRegistered)
+                _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterRuntimeLoops()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            {
+                _slowTickRegistered = false;
+                _lateFrameRegistered = false;
+                return;
+            }
+
+            if (_slowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _slowTickRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         /// <summary>
         /// Schedules the extractor advancement Burst pass on the slow-tick lane.
         /// </summary>
@@ -243,13 +299,25 @@ namespace Hecton8.Construction
             if (moduleCount <= 0)
                 return;
 
-            EnsureNativeCapacity(moduleCount);
+            if (!TryAcquireExtractorJobBuffers(
+                    moduleCount,
+                    out NativeArray<ExtractorJobInput> jobInputs,
+                    out NativeArray<ExtractorJobResult> jobResults,
+                    out NativeArray<float> cycleTimers,
+                    out _,
+                    out NativeArray<int> bufferedUnitCounts,
+                    out _))
+            {
+                return;
+            }
+
+            bool scheduled = false;
             for (int i = 0; i < moduleCount; i++)
             {
                 AutonomousExtractorModule module = _modules[i];
                 if (module == null)
                 {
-                    _jobInputs[i] = default;
+                    jobInputs[i] = default;
                     continue;
                 }
 
@@ -263,13 +331,13 @@ namespace Hecton8.Construction
                                 hostNode.gameObject.activeInHierarchy &&
                                 template != null &&
                                 template.SupportsAutonomousExtraction &&
-                                _bufferedUnitCounts[i] < capacity;
+                                bufferedUnitCounts[i] < capacity;
 
-                _jobInputs[i] = new ExtractorJobInput
+                jobInputs[i] = new ExtractorJobInput
                 {
-                    CycleTimerSeconds = _cycleTimers[i],
+                    CycleTimerSeconds = cycleTimers[i],
                     CycleSeconds = template != null ? template.ExtractorCycleSeconds : 1f,
-                    BufferedUnitCount = _bufferedUnitCounts[i],
+                    BufferedUnitCount = bufferedUnitCounts[i],
                     BufferedUnitCapacity = capacity,
                     ItemHashId = itemHashId,
                     IsActive = isActive ? (byte)1 : (byte)0
@@ -278,14 +346,23 @@ namespace Hecton8.Construction
 
             AdvanceExtractionJob job = new AdvanceExtractionJob
             {
-                Inputs = _jobInputs,
-                Results = _jobResults,
+                Inputs = jobInputs,
+                Results = jobResults,
                 SlowTickDeltaSeconds = SlowTickDeltaSeconds
             };
 
-            _scheduledModuleCount = moduleCount;
-            _scheduledJobHandle = job.Schedule(moduleCount, 8);
-            _scheduledJobActive = true;
+            try
+            {
+                _scheduledModuleCount = moduleCount;
+                _scheduledJobHandle = job.Schedule(moduleCount, 8);
+                _scheduledJobActive = true;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseJobBufferLocks();
+            }
         }
 
         /// <summary>
@@ -299,20 +376,34 @@ namespace Hecton8.Construction
             if (!DispatcherJobSwap.TryComplete(ref _scheduledJobHandle, forceComplete: false))
                 return;
 
+            if (!TryReadLockedExtractorBuffers(
+                    out _,
+                    out NativeArray<ExtractorJobResult> jobResults,
+                    out NativeArray<float> cycleTimers,
+                    out NativeArray<int> bufferedItemHashIds,
+                    out NativeArray<int> bufferedUnitCounts,
+                    out NativeArray<int> completedCycleCounts))
+            {
+                _scheduledJobActive = false;
+                _scheduledModuleCount = 0;
+                ReleaseJobBufferLocks();
+                return;
+            }
+
             for (int i = 0; i < _scheduledModuleCount; i++)
             {
-                ExtractorJobResult result = _jobResults[i];
-                _cycleTimers[i] = result.NextCycleTimerSeconds;
-                _bufferedItemHashIds[i] = result.BufferedItemHashId;
-                _completedCycleCounts[i] += result.CompletedCycleDelta;
+                ExtractorJobResult result = jobResults[i];
+                cycleTimers[i] = result.NextCycleTimerSeconds;
+                bufferedItemHashIds[i] = result.BufferedItemHashId;
+                completedCycleCounts[i] += result.CompletedCycleDelta;
 
                 AutonomousExtractorModule module = i < _moduleCount ? _modules[i] : null;
                 if (module == null)
                 {
-                    _cycleTimers[i] = 0f;
-                    _bufferedItemHashIds[i] = 0;
-                    _bufferedUnitCounts[i] = 0;
-                    _completedCycleCounts[i] = 0;
+                    cycleTimers[i] = 0f;
+                    bufferedItemHashIds[i] = 0;
+                    bufferedUnitCounts[i] = 0;
+                    completedCycleCounts[i] = 0;
                     continue;
                 }
 
@@ -330,17 +421,18 @@ namespace Hecton8.Construction
                     bufferedUnitCount = math.max(0, bufferedUnitCount - routedCount);
                 }
 
-                _bufferedUnitCounts[i] = bufferedUnitCount;
+                bufferedUnitCounts[i] = bufferedUnitCount;
 
                 module.ApplyRuntimeTelemetry(
                     result.BufferedItemHashId,
                     bufferedUnitCount,
-                    _completedCycleCounts[i],
+                    completedCycleCounts[i],
                     result.IsOperating != 0);
             }
 
             _scheduledJobActive = false;
             _scheduledModuleCount = 0;
+            ReleaseJobBufferLocks();
         }
 
         internal int RegisterModule(AutonomousExtractorModule module)
@@ -403,15 +495,31 @@ namespace Hecton8.Construction
             module.SetRuntimeIndex(-1);
             module.ApplyRuntimeTelemetry(0, 0, 0, false);
 
-            if (_cycleTimers.IsCreated && index < _cycleTimers.Length)
+            if (_scheduledJobActive && index < _scheduledModuleCount)
+                return;
+
+            if (!TryAcquireExtractorStateBuffers(
+                    out NativeArray<float> cycleTimers,
+                    out NativeArray<int> bufferedItemHashIds,
+                    out NativeArray<int> bufferedUnitCounts,
+                    out NativeArray<int> completedCycleCounts))
             {
-                if (_scheduledJobActive && index < _scheduledModuleCount)
+                return;
+            }
+
+            try
+            {
+                if ((uint)index >= (uint)cycleTimers.Length)
                     return;
 
-                _cycleTimers[index] = 0f;
-                _bufferedItemHashIds[index] = 0;
-                _bufferedUnitCounts[index] = 0;
-                _completedCycleCounts[index] = 0;
+                cycleTimers[index] = 0f;
+                bufferedItemHashIds[index] = 0;
+                bufferedUnitCounts[index] = 0;
+                completedCycleCounts[index] = 0;
+            }
+            finally
+            {
+                ReleaseExtractorStateBuffers();
             }
         }
 
@@ -472,129 +580,336 @@ namespace Hecton8.Construction
             }
         }
 
-        private void EnsureNativeCapacity(int requiredCount)
+        private bool EnsureVaultCapacity(int requiredCount)
         {
             if (requiredCount <= 0)
-                return;
-
-            int currentCapacity = _jobInputs.IsCreated ? _jobInputs.Length : 0;
-            if (currentCapacity >= requiredCount)
-                return;
+                return true;
 
             if (requiredCount > MaxModuleCapacity)
-                return;
+                return false;
 
-            int nextCapacity = MaxModuleCapacity;
-            NativeArray<ExtractorJobInput> nextInputs = new NativeArray<ExtractorJobInput>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ExtractorJobInput>[capacity] — extractor Burst input lane — owner: AutonomousExtractorSystem
-            NativeArray<ExtractorJobResult> nextResults = new NativeArray<ExtractorJobResult>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ExtractorJobResult>[capacity] — extractor Burst result lane — owner: AutonomousExtractorSystem
-            NativeArray<float> nextCycleTimers = new NativeArray<float>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacity] — extractor cycle SOA timers — owner: AutonomousExtractorSystem
-            NativeArray<int> nextItemHashIds = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] — extractor SOA item hashes — owner: AutonomousExtractorSystem
-            NativeArray<int> nextBufferedCounts = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] — extractor SOA buffered counts — owner: AutonomousExtractorSystem
-            NativeArray<int> nextCompletedCounts = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] — extractor SOA completed-cycle counters — owner: AutonomousExtractorSystem
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return false;
 
-            for (int i = 0; i < currentCapacity; i++)
+            return EnsureVaultBuffer(ref _jobInputsHandle, JobInputsBufferId, MaxModuleCapacity, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(ref _jobResultsHandle, JobResultsBufferId, MaxModuleCapacity, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(ref _cycleTimersHandle, CycleTimersBufferId, MaxModuleCapacity, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(ref _bufferedItemHashIdsHandle, BufferedItemHashIdsBufferId, MaxModuleCapacity, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(ref _bufferedUnitCountsHandle, BufferedUnitCountsBufferId, MaxModuleCapacity, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(ref _completedCycleCountsHandle, CompletedCycleCountsBufferId, MaxModuleCapacity, NativeArrayOptions.ClearMemory);
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault != null)
+                return _dataVault;
+
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private bool EnsureVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCapacity,
+            NativeArrayOptions options) where T : struct
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null || requiredCapacity <= 0)
+                return false;
+
+            if (IsExactVaultHandle(in handle, bufferId) &&
+                vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> current) &&
+                current.Generation == handle.Generation)
             {
-                nextInputs[i] = _jobInputs[i];
-                nextResults[i] = _jobResults[i];
-                nextCycleTimers[i] = _cycleTimers[i];
-                nextItemHashIds[i] = _bufferedItemHashIds[i];
-                nextBufferedCounts[i] = _bufferedUnitCounts[i];
-                nextCompletedCounts[i] = _completedCycleCounts[i];
+                return true;
             }
 
-            DisposeNativeBuffersImmediate();
-            _jobInputs = nextInputs;
-            _jobResults = nextResults;
-            _cycleTimers = nextCycleTimers;
-            _bufferedItemHashIds = nextItemHashIds;
-            _bufferedUnitCounts = nextBufferedCounts;
-            _completedCycleCounts = nextCompletedCounts;
-            RegisterNativeBuffers();
-            if (currentCapacity > 0)
+            VaultGenerationHandle<T> ensured = vault.EnsureGenerationHandle<T>(bufferId, requiredCapacity, VaultOwnerSystemId, options);
+            if (!IsExactVaultHandle(in ensured, bufferId))
+                return false;
+
+            handle = ensured;
+            return true;
+        }
+
+        private bool TryAcquireExtractorJobBuffers(
+            int requiredCount,
+            out NativeArray<ExtractorJobInput> jobInputs,
+            out NativeArray<ExtractorJobResult> jobResults,
+            out NativeArray<float> cycleTimers,
+            out NativeArray<int> bufferedItemHashIds,
+            out NativeArray<int> bufferedUnitCounts,
+            out NativeArray<int> completedCycleCounts)
+        {
+            jobInputs = default;
+            jobResults = default;
+            cycleTimers = default;
+            bufferedItemHashIds = default;
+            bufferedUnitCounts = default;
+            completedCycleCounts = default;
+
+            if (_jobBuffersLocked || requiredCount <= 0 || !EnsureVaultCapacity(requiredCount))
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            bool inputsLocked = false;
+            bool resultsLocked = false;
+            bool timersLocked = false;
+            bool itemHashesLocked = false;
+            bool bufferedCountsLocked = false;
+            bool completedCountsLocked = false;
+            bool success = false;
+            try
             {
-                GlobalTelemetryBus.PublishPerformanceWarning(
-                    ExtractorCapacityGrowthWarningHash,
-                    ExtractorCapacityGrowthContextHash,
-                    nextCapacity);
+                if (!TryAcquireBuffer(vault, in _jobInputsHandle, JobInputsBufferId, requiredCount, out jobInputs))
+                    return false;
+                inputsLocked = true;
+
+                if (!TryAcquireBuffer(vault, in _jobResultsHandle, JobResultsBufferId, requiredCount, out jobResults))
+                    return false;
+                resultsLocked = true;
+
+                if (!TryAcquireBuffer(vault, in _cycleTimersHandle, CycleTimersBufferId, requiredCount, out cycleTimers))
+                    return false;
+                timersLocked = true;
+
+                if (!TryAcquireBuffer(vault, in _bufferedItemHashIdsHandle, BufferedItemHashIdsBufferId, requiredCount, out bufferedItemHashIds))
+                    return false;
+                itemHashesLocked = true;
+
+                if (!TryAcquireBuffer(vault, in _bufferedUnitCountsHandle, BufferedUnitCountsBufferId, requiredCount, out bufferedUnitCounts))
+                    return false;
+                bufferedCountsLocked = true;
+
+                if (!TryAcquireBuffer(vault, in _completedCycleCountsHandle, CompletedCycleCountsBufferId, requiredCount, out completedCycleCounts))
+                    return false;
+                completedCountsLocked = true;
+
+                _jobBuffersLocked = true;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    if (completedCountsLocked)
+                        vault.ReleaseWriteLock(in _completedCycleCountsHandle, VaultOwnerSystemId);
+                    if (bufferedCountsLocked)
+                        vault.ReleaseWriteLock(in _bufferedUnitCountsHandle, VaultOwnerSystemId);
+                    if (itemHashesLocked)
+                        vault.ReleaseWriteLock(in _bufferedItemHashIdsHandle, VaultOwnerSystemId);
+                    if (timersLocked)
+                        vault.ReleaseWriteLock(in _cycleTimersHandle, VaultOwnerSystemId);
+                    if (resultsLocked)
+                        vault.ReleaseWriteLock(in _jobResultsHandle, VaultOwnerSystemId);
+                    if (inputsLocked)
+                        vault.ReleaseWriteLock(in _jobInputsHandle, VaultOwnerSystemId);
+                }
             }
         }
 
-        private JobHandle CancelScheduledJobForTeardown()
+        private bool TryAcquireExtractorStateBuffers(
+            out NativeArray<float> cycleTimers,
+            out NativeArray<int> bufferedItemHashIds,
+            out NativeArray<int> bufferedUnitCounts,
+            out NativeArray<int> completedCycleCounts)
+        {
+            cycleTimers = default;
+            bufferedItemHashIds = default;
+            bufferedUnitCounts = default;
+            completedCycleCounts = default;
+
+            if (_jobBuffersLocked || !EnsureVaultCapacity(MaxModuleCapacity))
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            bool timersLocked = false;
+            bool itemHashesLocked = false;
+            bool bufferedCountsLocked = false;
+            bool completedCountsLocked = false;
+            bool success = false;
+            try
+            {
+                if (!TryAcquireBuffer(vault, in _cycleTimersHandle, CycleTimersBufferId, MaxModuleCapacity, out cycleTimers))
+                    return false;
+                timersLocked = true;
+
+                if (!TryAcquireBuffer(vault, in _bufferedItemHashIdsHandle, BufferedItemHashIdsBufferId, MaxModuleCapacity, out bufferedItemHashIds))
+                    return false;
+                itemHashesLocked = true;
+
+                if (!TryAcquireBuffer(vault, in _bufferedUnitCountsHandle, BufferedUnitCountsBufferId, MaxModuleCapacity, out bufferedUnitCounts))
+                    return false;
+                bufferedCountsLocked = true;
+
+                if (!TryAcquireBuffer(vault, in _completedCycleCountsHandle, CompletedCycleCountsBufferId, MaxModuleCapacity, out completedCycleCounts))
+                    return false;
+                completedCountsLocked = true;
+
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    if (completedCountsLocked)
+                        vault.ReleaseWriteLock(in _completedCycleCountsHandle, VaultOwnerSystemId);
+                    if (bufferedCountsLocked)
+                        vault.ReleaseWriteLock(in _bufferedUnitCountsHandle, VaultOwnerSystemId);
+                    if (itemHashesLocked)
+                        vault.ReleaseWriteLock(in _bufferedItemHashIdsHandle, VaultOwnerSystemId);
+                    if (timersLocked)
+                        vault.ReleaseWriteLock(in _cycleTimersHandle, VaultOwnerSystemId);
+                }
+            }
+        }
+
+        private static bool TryAcquireBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCount,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredCount <= 0 || !IsExactVaultHandle(in handle, bufferId))
+                return false;
+
+            if (!vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+                return false;
+
+            if (buffer.IsCreated && buffer.Length >= requiredCount)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private bool TryReadLockedExtractorBuffers(
+            out NativeArray<ExtractorJobInput> jobInputs,
+            out NativeArray<ExtractorJobResult> jobResults,
+            out NativeArray<float> cycleTimers,
+            out NativeArray<int> bufferedItemHashIds,
+            out NativeArray<int> bufferedUnitCounts,
+            out NativeArray<int> completedCycleCounts)
+        {
+            jobInputs = default;
+            jobResults = default;
+            cycleTimers = default;
+            bufferedItemHashIds = default;
+            bufferedUnitCounts = default;
+            completedCycleCounts = default;
+
+            IDataVault vault = _dataVault;
+            int requiredCount = _scheduledModuleCount;
+            return _jobBuffersLocked &&
+                   vault != null &&
+                   TryReadLockedBuffer(vault, in _jobInputsHandle, JobInputsBufferId, requiredCount, out jobInputs) &&
+                   TryReadLockedBuffer(vault, in _jobResultsHandle, JobResultsBufferId, requiredCount, out jobResults) &&
+                   TryReadLockedBuffer(vault, in _cycleTimersHandle, CycleTimersBufferId, requiredCount, out cycleTimers) &&
+                   TryReadLockedBuffer(vault, in _bufferedItemHashIdsHandle, BufferedItemHashIdsBufferId, requiredCount, out bufferedItemHashIds) &&
+                   TryReadLockedBuffer(vault, in _bufferedUnitCountsHandle, BufferedUnitCountsBufferId, requiredCount, out bufferedUnitCounts) &&
+                   TryReadLockedBuffer(vault, in _completedCycleCountsHandle, CompletedCycleCountsBufferId, requiredCount, out completedCycleCounts);
+        }
+
+        private static bool TryReadLockedBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCount,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   requiredCount >= 0 &&
+                   IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredCount;
+        }
+
+        private void ReleaseExtractorStateBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            vault.ReleaseWriteLock(in _completedCycleCountsHandle, VaultOwnerSystemId);
+            vault.ReleaseWriteLock(in _bufferedUnitCountsHandle, VaultOwnerSystemId);
+            vault.ReleaseWriteLock(in _bufferedItemHashIdsHandle, VaultOwnerSystemId);
+            vault.ReleaseWriteLock(in _cycleTimersHandle, VaultOwnerSystemId);
+        }
+
+        private void ReleaseJobBufferLocks()
+        {
+            if (!_jobBuffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                vault.ReleaseWriteLock(in _completedCycleCountsHandle, VaultOwnerSystemId);
+                vault.ReleaseWriteLock(in _bufferedUnitCountsHandle, VaultOwnerSystemId);
+                vault.ReleaseWriteLock(in _bufferedItemHashIdsHandle, VaultOwnerSystemId);
+                vault.ReleaseWriteLock(in _cycleTimersHandle, VaultOwnerSystemId);
+                vault.ReleaseWriteLock(in _jobResultsHandle, VaultOwnerSystemId);
+                vault.ReleaseWriteLock(in _jobInputsHandle, VaultOwnerSystemId);
+            }
+
+            _jobBuffersLocked = false;
+        }
+
+        private void CompleteScheduledJobForTeardown()
         {
             if (!_scheduledJobActive)
-                return _scheduledJobHandle;
+            {
+                _scheduledJobHandle = default;
+                _scheduledModuleCount = 0;
+                return;
+            }
 
-            JobHandle dependency = _scheduledJobHandle;
-            _scheduledJobHandle = default;
+            DispatcherJobSwap.TryComplete(ref _scheduledJobHandle, forceComplete: true);
             _scheduledJobActive = false;
             _scheduledModuleCount = 0;
-            return dependency;
         }
 
-        private JobHandle DisposeNativeBuffers()
+        private void ReleaseVaultBuffers(IDataVault vault)
         {
-            return DisposeNativeBuffers(default);
+            ReleaseVaultBuffer(vault, ref _completedCycleCountsHandle);
+            ReleaseVaultBuffer(vault, ref _bufferedUnitCountsHandle);
+            ReleaseVaultBuffer(vault, ref _bufferedItemHashIdsHandle);
+            ReleaseVaultBuffer(vault, ref _cycleTimersHandle);
+            ReleaseVaultBuffer(vault, ref _jobResultsHandle);
+            ReleaseVaultBuffer(vault, ref _jobInputsHandle);
+
+            if (ReferenceEquals(_dataVault, vault))
+                _dataVault = null;
         }
 
-        private void DisposeNativeBuffersImmediate()
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            DisposeNativeArrayImmediate(ref _jobInputs);
-            DisposeNativeArrayImmediate(ref _jobResults);
-            DisposeNativeArrayImmediate(ref _cycleTimers);
-            DisposeNativeArrayImmediate(ref _bufferedItemHashIds);
-            DisposeNativeArrayImmediate(ref _bufferedUnitCounts);
-            DisposeNativeArrayImmediate(ref _completedCycleCounts);
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
-        private JobHandle DisposeNativeBuffers(JobHandle dependency)
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            JobHandle disposeHandle = dependency;
-
-            disposeHandle = DisposeNativeArray(ref _jobInputs, disposeHandle);
-            disposeHandle = DisposeNativeArray(ref _jobResults, disposeHandle);
-            disposeHandle = DisposeNativeArray(ref _cycleTimers, disposeHandle);
-            disposeHandle = DisposeNativeArray(ref _bufferedItemHashIds, disposeHandle);
-            disposeHandle = DisposeNativeArray(ref _bufferedUnitCounts, disposeHandle);
-            disposeHandle = DisposeNativeArray(ref _completedCycleCounts, disposeHandle);
-
-            return disposeHandle;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
         }
 
-        private void RegisterNativeBuffers()
-        {
-            RegisterNativeArray(_jobInputs, nameof(_jobInputs));
-            RegisterNativeArray(_jobResults, nameof(_jobResults));
-            RegisterNativeArray(_cycleTimers, nameof(_cycleTimers));
-            RegisterNativeArray(_bufferedItemHashIds, nameof(_bufferedItemHashIds));
-            RegisterNativeArray(_bufferedUnitCounts, nameof(_bufferedUnitCounts));
-            RegisterNativeArray(_completedCycleCounts, nameof(_completedCycleCounts));
-        }
-
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-        }
-
-        private static JobHandle DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
-        {
-            if (!array.IsCreated)
-                return dependency;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            JobHandle disposeHandle = array.Dispose(dependency);
-            array = default;
-            return disposeHandle;
-        }
-
-        private static void DisposeNativeArrayImmediate<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
     }
 
     /// <summary>
@@ -613,7 +928,7 @@ namespace Hecton8.Construction
         private const uint ExtractorOverflowDropWarningHash = 0x6DAE28B7u;
         private const uint ExtractorOverflowDropContextHash = 0xD9113EF2u;
         // COLD ALLOC: Collider[24] — placement/resource-node overlap buffer — owner: AutonomousExtractorModule
-        private static readonly Collider[] PlacementOverlapBuffer = new Collider[PlacementOverlapCapacity];
+        private static readonly SpatialQueryHit[] PlacementSpatialBuffer = new SpatialQueryHit[PlacementOverlapCapacity];
 
         [Header("Placement")]
         [SerializeField, Range(0.5f, 6f)]
@@ -686,7 +1001,7 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
-            _powerNode = GetComponent<PowerNode>();
+            TryGetComponent(out _powerNode);
         }
 
         private void OnEnable()
@@ -928,26 +1243,23 @@ namespace Hecton8.Construction
         {
             node = null;
             float safeRadius = Mathf.Max(0.5f, probeRadius);
-            int overlapCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+            int overlapCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 position,
                 safeRadius,
-                PlacementOverlapBuffer,
-                HectonLayerMasks.StrictInteractionLayerMask,
-                QueryTriggerInteraction.Ignore);
+                SpatialTargetKind.Resource,
+                PlacementSpatialBuffer);
             if (overlapCount <= 0)
                 return false;
 
             float bestDistanceSqr = float.MaxValue;
             for (int i = 0; i < overlapCount; i++)
             {
-                Collider collider = PlacementOverlapBuffer[i];
-                PlacementOverlapBuffer[i] = null;
-                if (collider == null)
+                SpatialQueryHit hit = PlacementSpatialBuffer[i];
+                PlacementSpatialBuffer[i] = default;
+                if (!LayerMatchesMask(hit.Layer, HectonLayerMasks.StrictInteractionLayerMask))
                     continue;
 
-                if (!TryResolveResourceNode(collider, out ResourceNode candidate))
-                    continue;
-
+                ResourceNode candidate = hit.Owner as ResourceNode;
                 if (candidate == null ||
                     candidate.IsDepleted ||
                     !candidate.gameObject.activeInHierarchy ||
@@ -968,6 +1280,11 @@ namespace Hecton8.Construction
             }
 
             return node != null;
+        }
+
+        private static bool LayerMatchesMask(int layer, int mask)
+        {
+            return layer >= 0 && layer < 32 && (mask & (1 << layer)) != 0;
         }
 
         private static float ResolveCandidateDistanceSq(
@@ -994,7 +1311,7 @@ namespace Hecton8.Construction
             if (!math.all(math.isfinite(runtime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFinite(in originAup))
                 return false;
 

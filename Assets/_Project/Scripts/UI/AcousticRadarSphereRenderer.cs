@@ -1,4 +1,3 @@
-using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -48,9 +47,9 @@ namespace Hecton8.UI
         [SerializeField, Range(0f, 0.1f)] private float minimumAmplitude = 0.001f;
         [SerializeField, Range(0f, 1f)] private float minimumRadiusFraction = 0.08f;
 
-        // COLD ALLOC: ActiveImpactEmitterSample[64] -- fixed acoustic impact copy buffer with cached AUP -- owner: AcousticRadarSphereRenderer
-        private readonly SpatialAudioManager.ActiveImpactEmitterSample[] _samples =
-            new SpatialAudioManager.ActiveImpactEmitterSample[MaxBlips];
+        // COLD ALLOC: SpatialAudioImpactEmitterSample[64] -- fixed acoustic impact copy buffer with cached AUP -- owner: AcousticRadarSphereRenderer
+        private readonly SpatialAudioImpactEmitterSample[] _samples =
+            new SpatialAudioImpactEmitterSample[MaxBlips];
         // COLD ALLOC: Matrix4x4[64] -- DrawMeshInstanced payload -- owner: AcousticRadarSphereRenderer
         private readonly Matrix4x4[] _matrices = new Matrix4x4[MaxBlips];
 
@@ -60,9 +59,14 @@ namespace Hecton8.UI
         private Material _runtimeMaterial;
         private Mesh _runtimeVoxelMesh;
         private Camera _viewCamera;
-        private SpatialAudioManager _cachedAudioManager;
+        private ISpatialAudioImpactEmitterReadModel _cachedAudioManager;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private Color _appliedVoxelColor;
+        private float _appliedPulseIntensity;
         private bool _hotSwapListenerRegistered;
+        private bool _materialPropertiesDirty = true;
+        private bool _runtimeMaterialHasBaseColor;
+        private bool _runtimeMaterialHasPulseIntensity;
         private int _qualityMatrixCapacity = MaxBlips;
 
         private void OnEnable()
@@ -113,7 +117,7 @@ namespace Hecton8.UI
             if (_runtimeMaterial == null || _runtimeVoxelMesh == null)
                 return;
 
-            SpatialAudioManager audioManager = _cachedAudioManager;
+            ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
             if (audioManager == null)
                 return;
 
@@ -150,7 +154,7 @@ namespace Hecton8.UI
 
             for (int i = 0; i < sampleCount && _matrixCount < matrixCapacity; i++)
             {
-                SpatialAudioManager.ActiveImpactEmitterSample sample = _samples[i];
+                SpatialAudioImpactEmitterSample sample = _samples[i];
                 float amplitude = math.saturate(sample.Amplitude);
                 if (amplitude <= minimumAmplitude)
                     continue;
@@ -208,7 +212,7 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedAudioManager = currentService as SpatialAudioManager;
+                    _cachedAudioManager = currentService as ISpatialAudioImpactEmitterReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
@@ -237,8 +241,8 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             RefreshQualityPolicy();
-            _cachedAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as SpatialAudioManager;
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedAudioManager = GlobalRegistry.Audio as ISpatialAudioImpactEmitterReadModel;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (!ReferenceEquals(_cachedPlayerContext, playerContext))
             {
                 _cachedPlayerContext = playerContext;
@@ -271,10 +275,11 @@ namespace Hecton8.UI
             }
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (movement != null)
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState cachedMovementState) &&
+                (cachedMovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                listenerAup = movement.CurrentAup;
+                listenerAup = cachedMovementState.PredictedAup;
                 return true;
             }
 
@@ -424,15 +429,45 @@ namespace Hecton8.UI
                     enableInstancing = true,
                     hideFlags = HideFlags.DontSave
                 };
+                _runtimeMaterialHasBaseColor = _runtimeMaterial.HasProperty(BaseColorId);
+                _runtimeMaterialHasPulseIntensity = _runtimeMaterial.HasProperty(PulseIntensityId);
+                _materialPropertiesDirty = true;
             }
 
             if (_runtimeMaterial == null)
                 return;
 
-            if (_runtimeMaterial.HasProperty(BaseColorId))
+            ApplyMaterialPropertiesIfNeeded();
+        }
+
+        private void ApplyMaterialPropertiesIfNeeded()
+        {
+            if (_runtimeMaterial == null)
+                return;
+
+            if (!_materialPropertiesDirty &&
+                SameColor(_appliedVoxelColor, voxelColor) &&
+                math.abs(_appliedPulseIntensity - pulseIntensity) <= 0.0001f)
+            {
+                return;
+            }
+
+            if (_runtimeMaterialHasBaseColor)
                 _runtimeMaterial.SetColor(BaseColorId, voxelColor);
-            if (_runtimeMaterial.HasProperty(PulseIntensityId))
+            if (_runtimeMaterialHasPulseIntensity)
                 _runtimeMaterial.SetFloat(PulseIntensityId, pulseIntensity);
+
+            _appliedVoxelColor = voxelColor;
+            _appliedPulseIntensity = pulseIntensity;
+            _materialPropertiesDirty = false;
+        }
+
+        private static bool SameColor(Color lhs, Color rhs)
+        {
+            return math.abs(lhs.r - rhs.r) <= 0.0001f &&
+                   math.abs(lhs.g - rhs.g) <= 0.0001f &&
+                   math.abs(lhs.b - rhs.b) <= 0.0001f &&
+                   math.abs(lhs.a - rhs.a) <= 0.0001f;
         }
 
         private void TryRegisterTickManager()
@@ -518,6 +553,7 @@ namespace Hecton8.UI
             maxContactDistanceMeters = math.max(1f, maxContactDistanceMeters);
             minimumAmplitude = math.clamp(minimumAmplitude, 0f, 0.1f);
             minimumRadiusFraction = math.saturate(minimumRadiusFraction);
+            _materialPropertiesDirty = true;
         }
 #endif
     }

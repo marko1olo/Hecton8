@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -206,194 +207,13 @@ namespace Hecton8.Gameplay
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct ContextualPhysicalIkGroundDetectionJob : IJobParallelFor
+    internal struct ContextualPhysicalIkClearHitsJob : IJobParallelFor
     {
-        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkEntityState> Entities;
-        [NoAlias] public NativeArray<RaycastCommand> Commands;
+        [WriteOnly, NoAlias] public NativeArray<RaycastHit> Hits;
 
         public void Execute(int index)
         {
-            int baseCommandIndex = index * ContextualPhysicalIkRuntime.RaysPerEntity;
-            ContextualPhysicalIkEntityState entity = Entities[index];
-
-            if (entity.IsActive == 0 || entity.UpdateThisFrame == 0)
-            {
-                WriteDisabledCommands(baseCommandIndex);
-                return;
-            }
-
-            QueryParameters groundQuery = new QueryParameters(entity.GroundLayerMask, false, QueryTriggerInteraction.Ignore, false);
-            QueryParameters wallQuery = new QueryParameters(entity.WallLayerMask, false, QueryTriggerInteraction.Ignore, false);
-
-            float3 safeRootPosition = SanitizeFloat3(entity.RootPosition, float3.zero);
-            float footPlacementMask = math.select(0.0f, 1.0f, entity.EnableFootPlacement != 0);
-            float footProbeScale = SanitizeNonNegative(entity.FootProbeDistanceScale);
-            float handProbeScale = SanitizeNonNegative(entity.HandProbeDistanceScale);
-            float leftFootDistance = math.max(ContextualPhysicalIkRuntime.GroundPresenceDistanceMeters, SanitizeNonNegative(entity.LeftLegReach * footProbeScale)) * footPlacementMask;
-            float rightFootDistance = math.max(ContextualPhysicalIkRuntime.GroundPresenceDistanceMeters, SanitizeNonNegative(entity.RightLegReach * footProbeScale)) * footPlacementMask;
-            bool leftHandUsesPredictiveLatch =
-                SanitizeBlend(entity.PredictiveLeftHandBlend) > 0.0001f &&
-                math.all(math.isfinite(entity.PredictiveLeftHandPosition));
-            bool rightHandUsesPredictiveLatch =
-                SanitizeBlend(entity.PredictiveRightHandBlend) > 0.0001f &&
-                math.all(math.isfinite(entity.PredictiveRightHandPosition));
-            float wallTouchMask = math.select(0.0f, 1.0f, entity.EnableHandBracing != 0 && entity.EnableWallTouch != 0);
-            float leftHandMask = math.select(0.0f, 1.0f, wallTouchMask > 0.0f && entity.LeftHandEmpty != 0 && !leftHandUsesPredictiveLatch);
-            float rightHandMask = math.select(0.0f, 1.0f, wallTouchMask > 0.0f && !rightHandUsesPredictiveLatch);
-            float leftHandDistance = SanitizeNonNegative(entity.LeftArmReach * handProbeScale) * leftHandMask;
-            float rightHandDistance = SanitizeNonNegative(entity.RightArmReach * handProbeScale) * rightHandMask;
-
-            float3 leftBraceDirection = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(entity.RootRotation, new float3(-0.70710677f, -0.70710677f, 0.0f)),
-                new float3(-0.70710677f, -0.70710677f, 0.0f));
-            float3 rightBraceDirection = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(entity.RootRotation, new float3(0.70710677f, -0.70710677f, 0.0f)),
-                new float3(0.70710677f, -0.70710677f, 0.0f));
-            float3 rootForward = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(entity.RootRotation, new float3(0.0f, 0.0f, 1.0f)),
-                new float3(0.0f, 0.0f, 1.0f));
-            float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(entity.RootRotation, new float3(0.0f, 1.0f, 0.0f)),
-                new float3(0.0f, 1.0f, 0.0f));
-            float3 rootRight = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(entity.RootRotation, new float3(1.0f, 0.0f, 0.0f)),
-                new float3(1.0f, 0.0f, 0.0f));
-            float3 cameraForward = ContextualPhysicalIkMath.SafeNormalize(entity.CameraForward, rootForward);
-            float3 cameraUp = ContextualPhysicalIkMath.SafeNormalize(entity.CameraUp, rootUp);
-            float3 cameraRight = ContextualPhysicalIkMath.SafeNormalize(entity.CameraRight, rootRight);
-            float3 cameraPosition = math.select(safeRootPosition, entity.CameraPosition, entity.HasCameraPose != 0);
-            cameraPosition = SanitizeFloat3(cameraPosition, safeRootPosition);
-            float cameraHandLateralOffset = SanitizeNonNegative(entity.CameraHandLateralOffset);
-            float cameraHandVerticalOffset = math.select(entity.CameraHandVerticalOffset, 0.0f, !math.isfinite(entity.CameraHandVerticalOffset));
-            float toolDistance = SanitizeNonNegative(entity.ToolCollisionDistance) *
-                math.select(0.0f, 1.0f, entity.EnableToolRetraction != 0 && entity.HasCameraPose != 0);
-            float3 leftToolRayOrigin = cameraPosition - (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
-            float3 rightToolRayOrigin = cameraPosition + (cameraRight * cameraHandLateralOffset) + (cameraUp * cameraHandVerticalOffset);
-            leftToolRayOrigin = SanitizeFloat3(leftToolRayOrigin, safeRootPosition);
-            rightToolRayOrigin = SanitizeFloat3(rightToolRayOrigin, safeRootPosition);
-            float3 leftHandProbeOrigin = SanitizeFloat3(entity.LeftHandProbeOrigin, safeRootPosition);
-            float3 rightHandProbeOrigin = SanitizeFloat3(entity.RightHandProbeOrigin, safeRootPosition);
-            float3 leftFootRayOrigin = ResolveHipFootRayOrigin(in entity, safeRootPosition, rootRight, rootForward, rootUp, -1.0f);
-            float3 rightFootRayOrigin = ResolveHipFootRayOrigin(in entity, safeRootPosition, rootRight, rootForward, rootUp, 1.0f);
-            leftFootRayOrigin = SanitizeFloat3(leftFootRayOrigin, safeRootPosition);
-            rightFootRayOrigin = SanitizeFloat3(rightFootRayOrigin, safeRootPosition);
-
-            Commands[baseCommandIndex + 0] = new RaycastCommand(
-                ContextualPhysicalIkMath.ToUnityVector3(leftFootRayOrigin),
-                Vector3.down,
-                groundQuery,
-                leftFootDistance);
-
-            Commands[baseCommandIndex + 1] = new RaycastCommand(
-                ContextualPhysicalIkMath.ToUnityVector3(rightFootRayOrigin),
-                Vector3.down,
-                groundQuery,
-                rightFootDistance);
-
-            if (leftHandUsesPredictiveLatch || leftHandDistance <= 0.0001f)
-            {
-                WriteDisabledCommand(baseCommandIndex + 2);
-            }
-            else
-            {
-                Commands[baseCommandIndex + 2] = new RaycastCommand(
-                    ContextualPhysicalIkMath.ToUnityVector3(leftHandProbeOrigin),
-                    ContextualPhysicalIkMath.ToUnityVector3(leftBraceDirection),
-                    wallQuery,
-                    leftHandDistance);
-            }
-
-            if (rightHandUsesPredictiveLatch || rightHandDistance <= 0.0001f)
-            {
-                WriteDisabledCommand(baseCommandIndex + 3);
-            }
-            else
-            {
-                Commands[baseCommandIndex + 3] = new RaycastCommand(
-                    ContextualPhysicalIkMath.ToUnityVector3(rightHandProbeOrigin),
-                    ContextualPhysicalIkMath.ToUnityVector3(rightBraceDirection),
-                    wallQuery,
-                    rightHandDistance);
-            }
-
-            if (toolDistance <= 0.0001f)
-            {
-                WriteDisabledCommand(baseCommandIndex + 4);
-                WriteDisabledCommand(baseCommandIndex + 5);
-            }
-            else
-            {
-                Commands[baseCommandIndex + 4] = new RaycastCommand(
-                    ContextualPhysicalIkMath.ToUnityVector3(leftToolRayOrigin),
-                    ContextualPhysicalIkMath.ToUnityVector3(cameraForward),
-                    wallQuery,
-                    toolDistance);
-
-                Commands[baseCommandIndex + 5] = new RaycastCommand(
-                    ContextualPhysicalIkMath.ToUnityVector3(rightToolRayOrigin),
-                    ContextualPhysicalIkMath.ToUnityVector3(cameraForward),
-                    wallQuery,
-                    toolDistance);
-            }
-        }
-
-        private void WriteDisabledCommands(int baseCommandIndex)
-        {
-            for (int i = 0; i < ContextualPhysicalIkRuntime.RaysPerEntity; i++)
-                WriteDisabledCommand(baseCommandIndex + i);
-        }
-
-        private void WriteDisabledCommand(int commandIndex)
-        {
-            Commands[commandIndex] = new RaycastCommand(
-                Vector3.zero,
-                Vector3.down,
-                new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore, false),
-                0.0f);
-        }
-
-        private static float SanitizeNonNegative(float value)
-        {
-            return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
-        }
-
-        private static float SanitizeBlend(float value)
-        {
-            return math.select(math.saturate(value), 0.0f, !math.isfinite(value));
-        }
-
-        private static float3 SanitizeFloat3(float3 value, float3 fallback)
-        {
-            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
-            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
-        }
-
-        private static float3 ResolveHipFootRayOrigin(
-            in ContextualPhysicalIkEntityState entity,
-            float3 safeRootPosition,
-            float3 rootRight,
-            float3 rootForward,
-            float3 rootUp,
-            float side)
-        {
-            float3 safePelvis = SanitizeFloat3(entity.PelvisPosition, safeRootPosition);
-            float3 authoredProbe = side < 0.0f ? entity.LeftFootProbeOrigin : entity.RightFootProbeOrigin;
-            authoredProbe = SanitizeFloat3(authoredProbe, safePelvis);
-            float3 pelvisToProbe = authoredProbe - safePelvis;
-            float lateral = math.clamp(math.abs(math.dot(pelvisToProbe, rootRight)), 0.08f, 0.45f);
-            float forward = math.clamp(math.dot(pelvisToProbe, rootForward), -0.35f, 0.45f);
-            float3 planarVelocity = entity.KccVelocity - (rootUp * math.dot(entity.KccVelocity, rootUp));
-            float planarSpeedSq = math.lengthsq(planarVelocity);
-            planarSpeedSq = math.select(0.0f, planarSpeedSq, math.isfinite(planarSpeedSq));
-            float velocityLeadMeters = math.min(
-                ContextualPhysicalIkRuntime.FootRayVelocityLeadMaxMeters,
-                planarSpeedSq * ContextualPhysicalIkRuntime.FootRayVelocityLeadScale);
-            float3 velocityLead = ContextualPhysicalIkMath.SafeNormalize(planarVelocity, float3.zero) * velocityLeadMeters;
-            float3 hipOrigin = safePelvis +
-                (rootRight * (side * lateral)) +
-                (rootForward * forward) +
-                velocityLead;
-            return SanitizeFloat3(hipOrigin, authoredProbe);
+            Hits[index] = default;
         }
     }
 
@@ -1541,7 +1361,6 @@ namespace Hecton8.Gameplay
         private readonly int[] _freeSlots = new int[MaxEntities];
 
         private NativeArray<ContextualPhysicalIkEntityState> _scheduledEntityStates;
-        private NativeArray<RaycastCommand> _scheduledCommands;
         private NativeArray<RaycastHit> _scheduledHits;
         private NativeArray<ContextualPhysicalIkTargetFrame> _frontTargetFrames;
         private NativeArray<ContextualPhysicalIkTargetFrame> _backTargetFrames;
@@ -1556,6 +1375,8 @@ namespace Hecton8.Gameplay
         private JobHandle _disposeHandle;
         private Transform _cameraTransform;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private IVoxelSonarSdfReadModel _voxelSdfReadModel;
+        private ITerrainProvider _terrainProvider;
         private bool _groundResponseScheduled;
         private bool _registered;
         private bool _registeredFastTick;
@@ -1597,6 +1418,7 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterContextualPhysicalIkRuntime(this);
             CachePlayerContextCold();
+            CacheSpatialReadModelsCold();
             InitializeFreeSlots();
             EnsurePersistentBuffers();
         }
@@ -1604,6 +1426,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CachePlayerContextCold();
+            CacheSpatialReadModelsCold();
             EnsurePersistentBuffers();
             TryRegisterHotSwapListener();
             TryRegister();
@@ -1635,20 +1458,30 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Player)
-                return;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+                    Camera previousCamera = previousContext != null ? previousContext.PlayerCamera : null;
+                    if (previousCamera != null && ReferenceEquals(_cameraTransform, previousCamera.transform))
+                        _cameraTransform = null;
 
-            IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
-            Camera previousCamera = previousContext != null ? previousContext.PlayerCamera : null;
-            if (previousCamera != null && ReferenceEquals(_cameraTransform, previousCamera.transform))
-                _cameraTransform = null;
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    Camera currentCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+                    if (currentCamera != null)
+                        _cameraTransform = currentCamera.transform;
 
-            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-            Camera currentCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
-            if (currentCamera != null)
-                _cameraTransform = currentCamera.transform;
+                    _cameraResolveRetryTimer = 0.0f;
+                    break;
 
-            _cameraResolveRetryTimer = 0.0f;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _voxelSdfReadModel = currentService as IVoxelSonarSdfReadModel;
+                    break;
+
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _terrainProvider = currentService as ITerrainProvider;
+                    break;
+            }
         }
 
         /// <inheritdoc />
@@ -1794,15 +1627,6 @@ namespace Hecton8.Gameplay
                 NativeMemorySentinel.RegisterNativeArray(_scheduledEntityStates, NativeMemoryOwner, nameof(_scheduledEntityStates), NativeMemoryLifetime);
             }
 
-            if (!_scheduledCommands.IsCreated)
-            {
-                _scheduledCommands = new NativeArray<RaycastCommand>(
-                    MaxEntities * RaysPerEntity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[768] - contextual IK ground/hand/tool probes - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_scheduledCommands, NativeMemoryOwner, nameof(_scheduledCommands), NativeMemoryLifetime);
-            }
-
             if (!_scheduledHits.IsCreated)
             {
                 _scheduledHits = new NativeArray<RaycastHit>(
@@ -1889,7 +1713,6 @@ namespace Hecton8.Gameplay
         {
             _disposeHandle = default;
             DisposeNativeArray(ref _scheduledEntityStates, dependency);
-            DisposeNativeArray(ref _scheduledCommands, dependency);
             DisposeNativeArray(ref _scheduledHits, dependency);
             DisposeNativeArray(ref _frontTargetFrames, dependency);
             DisposeNativeArray(ref _backTargetFrames, dependency);
@@ -1974,10 +1797,16 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerContextCold()
         {
-            _cachedPlayerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             Camera playerCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
             if (playerCamera != null)
                 _cameraTransform = playerCamera.transform;
+        }
+
+        private void CacheSpatialReadModelsCold()
+        {
+            _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
+            _terrainProvider = GlobalRegistry.Terrain;
         }
 
         private void TryRegisterHotSwapListener()
@@ -2265,7 +2094,6 @@ namespace Hecton8.Gameplay
             int handLaneCount = MaxEntities * HandsPerEntity;
             int footLaneCount = MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity;
             return _scheduledEntityStates.IsCreated && _scheduledEntityStates.Length >= MaxEntities &&
-                   _scheduledCommands.IsCreated && _scheduledCommands.Length >= rayLaneCount &&
                    _scheduledHits.IsCreated && _scheduledHits.Length >= rayLaneCount &&
                    _frontTargetFrames.IsCreated && _frontTargetFrames.Length >= MaxEntities &&
                    _backTargetFrames.IsCreated && _backTargetFrames.Length >= MaxEntities &&
@@ -2278,7 +2106,7 @@ namespace Hecton8.Gameplay
 
         private float3 ConsumeKccVelocitySignal(uint fallbackFrame)
         {
-            uint currentFrame = unchecked((uint)Time.frameCount);
+            uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
             if (PhysicsDeterminismSignals.TryGetLatestKccVelocity(out Hecton8.Core.Contracts.Signals.KccVelocitySignal signal))
             {
                 uint fallbackSignalFrame = currentFrame != 0u ? currentFrame : fallbackFrame;
@@ -2394,19 +2222,7 @@ namespace Hecton8.Gameplay
 
         private void ScheduleGroundPipeline()
         {
-            ContextualPhysicalIkGroundDetectionJob groundDetectionJob = new ContextualPhysicalIkGroundDetectionJob
-            {
-                Entities = _scheduledEntityStates,
-                Commands = _scheduledCommands,
-            };
-
-            JobHandle commandBuildHandle = groundDetectionJob.Schedule(MaxEntities, 32);
-            JobHandle raycastHandle = RaycastCommand.ScheduleBatch(
-                _scheduledCommands,
-                _scheduledHits,
-                MinCommandsPerJob,
-                commandBuildHandle);
-            JobHandle groundDetectionHandle = JobHandle.CombineDependencies(commandBuildHandle, raycastHandle);
+            FillContextualIkSdfHits();
 
             ContextualPhysicalIkGroundResponseJob responseJob = new ContextualPhysicalIkGroundResponseJob
             {
@@ -2421,9 +2237,174 @@ namespace Hecton8.Gameplay
                 FootCurrentPos = _footCurrentPos,
             };
 
-            JobHandle responseHandle = responseJob.Schedule(MaxEntities, 32, groundDetectionHandle);
-            _pendingGroundResponseHandle = JobHandle.CombineDependencies(groundDetectionHandle, responseHandle);
+            JobHandle responseHandle = responseJob.Schedule(MaxEntities, 32);
+            _pendingGroundResponseHandle = responseHandle;
             _groundResponseScheduled = true;
+        }
+
+        private void FillContextualIkSdfHits()
+        {
+            if (!_scheduledHits.IsCreated)
+                return;
+
+            for (int i = 0; i < _scheduledHits.Length; i++)
+                _scheduledHits[i] = default;
+
+            if (!_scheduledEntityStates.IsCreated)
+                return;
+
+            for (int slot = 0; slot < MaxEntities; slot++)
+            {
+                if (!_slotActive[slot] || slot >= _scheduledEntityStates.Length)
+                    continue;
+
+                ContextualPhysicalIkEntityState entity = _scheduledEntityStates[slot];
+                if (entity.IsActive == 0 || entity.UpdateThisFrame == 0)
+                    continue;
+
+                int baseHitIndex = slot * RaysPerEntity;
+                if (baseHitIndex + 5 >= _scheduledHits.Length)
+                    continue;
+
+                float3 down = new float3(0.0f, -1.0f, 0.0f);
+                float leftFootDistance = math.max(0.01f, entity.LeftLegReach * math.max(0.1f, entity.FootProbeDistanceScale));
+                float rightFootDistance = math.max(0.01f, entity.RightLegReach * math.max(0.1f, entity.FootProbeDistanceScale));
+                if (TryResolveIkProbe(entity.LeftFootProbeOrigin, down, leftFootDistance, entity.GroundLayerMask, out RaycastHit leftFootHit))
+                    _scheduledHits[baseHitIndex + 0] = leftFootHit;
+                if (TryResolveIkProbe(entity.RightFootProbeOrigin, down, rightFootDistance, entity.GroundLayerMask, out RaycastHit rightFootHit))
+                    _scheduledHits[baseHitIndex + 1] = rightFootHit;
+
+                float3 forward = ContextualPhysicalIkMath.SafeNormalize(entity.CameraForward, new float3(0.0f, 0.0f, 1.0f));
+                float leftHandDistance = math.max(0.01f, entity.LeftArmReach * math.max(0.1f, entity.HandProbeDistanceScale));
+                float rightHandDistance = math.max(0.01f, entity.RightArmReach * math.max(0.1f, entity.HandProbeDistanceScale));
+                if (TryResolveIkProbe(entity.LeftHandProbeOrigin, forward, leftHandDistance, entity.WallLayerMask, out RaycastHit leftHandHit))
+                    _scheduledHits[baseHitIndex + 2] = leftHandHit;
+                if (TryResolveIkProbe(entity.RightHandProbeOrigin, forward, rightHandDistance, entity.WallLayerMask, out RaycastHit rightHandHit))
+                    _scheduledHits[baseHitIndex + 3] = rightHandHit;
+
+                float toolDistance = math.max(0.01f, entity.ToolCollisionDistance);
+                if (TryResolveIkProbe(entity.LeftHandProbeOrigin, forward, toolDistance, entity.WallLayerMask, out RaycastHit leftToolHit))
+                    _scheduledHits[baseHitIndex + 4] = leftToolHit;
+                if (TryResolveIkProbe(entity.RightHandProbeOrigin, forward, toolDistance, entity.WallLayerMask, out RaycastHit rightToolHit))
+                    _scheduledHits[baseHitIndex + 5] = rightToolHit;
+            }
+        }
+
+        private bool TryResolveIkProbe(float3 origin, float3 direction, float range, int layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            if (!math.all(math.isfinite(origin)) ||
+                !math.all(math.isfinite(direction)) ||
+                !math.isfinite(range) ||
+                range <= 0.0f)
+            {
+                return false;
+            }
+
+            float3 safeDirection = ContextualPhysicalIkMath.SafeNormalize(direction, new float3(0.0f, 0.0f, 1.0f));
+            if (TryResolveIkSdfProbe(origin, safeDirection, range, layerMask, out hit))
+                return true;
+
+            return TryResolveIkTerrainProbe(origin, safeDirection, range, layerMask, out hit);
+        }
+
+        private bool TryResolveIkSdfProbe(float3 origin, float3 direction, float range, int layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            if (!IncludesAnyLayer(layerMask, HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask))
+                return false;
+
+            IVoxelSonarSdfReadModel readModel = _voxelSdfReadModel;
+            if (readModel == null)
+                return false;
+
+            float stepMeters = ResolveIkSdfStepMeters(range);
+            if (!readModel.TryRaymarchNearestSonarSdf(
+                    origin,
+                    direction,
+                    range,
+                    stepMeters,
+                    out VoxelSonarSdfRaycastHit sdfHit,
+                    out NativeArray<byte>.ReadOnly _,
+                    out int3 _,
+                    out float3 _,
+                    out float3 _,
+                    out float _) ||
+                (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
+                !math.all(math.isfinite(sdfHit.Point)) ||
+                !math.all(math.isfinite(sdfHit.Normal)) ||
+                !math.isfinite(sdfHit.Distance) ||
+                sdfHit.Distance < 0.0f ||
+                sdfHit.Distance > range)
+            {
+                return false;
+            }
+
+            float3 normal = ContextualPhysicalIkMath.SafeNormalize(sdfHit.Normal, -direction);
+            if (math.dot(normal, direction) >= 0.0f)
+                normal = -normal;
+
+            hit.point = new Vector3(sdfHit.Point.x, sdfHit.Point.y, sdfHit.Point.z);
+            hit.normal = new Vector3(normal.x, normal.y, normal.z);
+            hit.distance = math.max(0.0f, sdfHit.Distance);
+            return true;
+        }
+
+        private bool TryResolveIkTerrainProbe(float3 origin, float3 direction, float range, int layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            if (!IncludesAnyLayer(layerMask, HectonLayerMasks.TerrainLayerMask) ||
+                direction.y >= -0.0001f)
+            {
+                return false;
+            }
+
+            ITerrainProvider terrainProvider = _terrainProvider;
+            if (terrainProvider == null ||
+                !terrainProvider.IsAvailable ||
+                !terrainProvider.TryGetHeight(origin.x, origin.z, out float terrainHeight) ||
+                !math.isfinite(terrainHeight))
+            {
+                return false;
+            }
+
+            float distance = (terrainHeight - origin.y) / direction.y;
+            if (!math.isfinite(distance) ||
+                distance < 0.0f ||
+                distance > range)
+            {
+                return false;
+            }
+
+            float3 point = origin + direction * distance;
+            Vector3 normal = Vector3.up;
+            if (terrainProvider.TryGetNormal(point.x, point.z, 1.0f, out Vector3 sampledNormal) &&
+                math.all(math.isfinite(new float3(sampledNormal.x, sampledNormal.y, sampledNormal.z))))
+            {
+                float3 sampled = ContextualPhysicalIkMath.SafeNormalize(new float3(sampledNormal.x, sampledNormal.y, sampledNormal.z), new float3(0.0f, 1.0f, 0.0f));
+                normal = new Vector3(sampled.x, sampled.y, sampled.z);
+            }
+
+            if (Vector3.Dot(normal, new Vector3(direction.x, direction.y, direction.z)) >= 0.0f)
+                normal = -normal;
+
+            hit.point = new Vector3(point.x, point.y, point.z);
+            hit.normal = normal;
+            hit.distance = distance;
+            return true;
+        }
+
+        private static bool IncludesAnyLayer(int queryMask, int requiredMask)
+        {
+            return queryMask == -1 || (queryMask & requiredMask) != 0;
+        }
+
+        private static float ResolveIkSdfStepMeters(float range)
+        {
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1.0f);
+            float coarse = math.max(0.10f, range * 0.12f);
+            float fine = math.max(0.035f, range * 0.04f);
+            return math.lerp(coarse, fine, quality);
         }
 
         private void SwapTargetBuffers()
@@ -2535,7 +2516,7 @@ namespace Hecton8.Gameplay
             int telemetryCursor = (uint)_telemetryCursor < (uint)telemetryCapacity ? _telemetryCursor : 0;
             _telemetryRing[telemetryCursor] = new ContextualPhysicalIkTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 Flags = flags,
                 StateHash = stateHash,
                 ActiveEntities = activeCount,

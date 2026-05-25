@@ -6,11 +6,23 @@ using Unity.Mathematics;
 
 namespace Hecton8.Modding
 {
+    internal static class ModSpatialContractLayout
+    {
+        public const int Long3StrideBytes = 24;
+        public const int AupStrideBytes = 40;
+        public const int AupCommandStrideBytes = 120;
+        public const int AupResponseStrideBytes = 64;
+        public const int RenderInstanceCommandStrideBytes = 80;
+        public const int RaycastResultPayloadStrideBytes = 48;
+        public const int InteractionRejectedPayloadStrideBytes = 16;
+        public const int CriticalMemoryEvictionPayloadStrideBytes = 24;
+    }
+
     /// <summary>
     /// Signed 64-bit integer grid coordinate for AUP payloads.
     /// Unity.Mathematics in this project does not provide long3.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.Long3StrideBytes)]
     public struct long3
     {
         /// <summary>X cell coordinate.</summary>
@@ -30,7 +42,7 @@ namespace Hecton8.Modding
     /// Absolute Universe Position payload accepted from sandboxed mods.
     /// Grid is measured in 5000 m cells; local is the float precision offset inside the cell.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.AupStrideBytes)]
     public struct ModAup
     {
         /// <summary>Signed 64-bit AUP cell coordinates.</summary>
@@ -50,7 +62,7 @@ namespace Hecton8.Modding
     /// The dispatcher rebases this payload against the current floating-origin offset at drain time.
     /// </summary>
     [System.Obsolete("Legacy AUP mod command wrapper is quarantined. Use FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.", false)]
-    [StructLayout(LayoutKind.Explicit, Size = 120)]
+    [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.AupCommandStrideBytes)]
     public struct ModAupCommand
     {
         /// <summary>Base 64-byte command header/payload.</summary>
@@ -121,7 +133,7 @@ namespace Hecton8.Modding
     /// Bytes 52..63 pack opcode-specific data. Flow responses store x/y/z as
     /// math.asuint(float) in Payload.x/y/z.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.AupResponseStrideBytes)]
     public struct ModAupResponse
     {
         /// <summary>Stable mod hash.</summary>
@@ -157,7 +169,7 @@ namespace Hecton8.Modding
     /// Matrix submission packet for the reserved mod instancing layer.
     /// </summary>
     [System.Obsolete("Legacy render-instance mod command wrapper is quarantined. Use FutureCommandEnvelope plus an approved future kernel lane.", false)]
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.RenderInstanceCommandStrideBytes)]
     public struct ModRenderInstanceCommand
     {
         /// <summary>Engine-assigned mod hash. User input is overwritten at enqueue time.</summary>
@@ -199,7 +211,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Unmanaged next-frame result payload for proxied mod raycasts.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.RaycastResultPayloadStrideBytes)]
     public struct ModRaycastResultPayload
     {
         /// <summary>Stable mod hash.</summary>
@@ -238,7 +250,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Unmanaged rejection event emitted when the security gate arbitrates a mod command out.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.InteractionRejectedPayloadStrideBytes)]
     public struct ModInteractionRejectedPayload : ISignal
     {
         /// <summary>Stable mod hash.</summary>
@@ -269,7 +281,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Unmanaged event emitted before a mod is disabled by heap quota enforcement.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.CriticalMemoryEvictionPayloadStrideBytes)]
     public struct ModCriticalMemoryEvictionPayload
     {
         /// <summary>Stable mod hash.</summary>

@@ -13,6 +13,14 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Hecton8.Optimization
 {
+    internal static class AssetRecordLayout
+    {
+        public const int AssetTrackerDTOStrideBytes = 64;
+        public const int AssetHandleMapEntryDTOStrideBytes = 64;
+        public const int AssetCacheProfileDTOStrideBytes = 16;
+        public const int AssetHeapTelemetryEntryStrideBytes = 64;
+    }
+
     internal enum AssetPriorityTier : byte
     {
         Tier0PlayerCritical = 0x00,
@@ -85,7 +93,7 @@ namespace Hecton8.Optimization
         public int AgeFrames;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AssetRecordLayout.AssetTrackerDTOStrideBytes)]
     public struct AssetTrackerDTO
     {
         [FieldOffset(0)] public uint AssetHash;
@@ -102,7 +110,7 @@ namespace Hecton8.Optimization
         [FieldOffset(60)] public uint AupShiftGeneration;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AssetRecordLayout.AssetHandleMapEntryDTOStrideBytes)]
     internal struct AssetHandleMapEntryDTO
     {
         [FieldOffset(0)] public ulong AssetHash;
@@ -121,7 +129,7 @@ namespace Hecton8.Optimization
         [FieldOffset(60)] private uint _pad6;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = AssetRecordLayout.AssetCacheProfileDTOStrideBytes)]
     internal struct AssetCacheProfileDTO
     {
         [FieldOffset(0)] public uint AssetHash;
@@ -130,7 +138,7 @@ namespace Hecton8.Optimization
         [FieldOffset(12)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AssetRecordLayout.AssetHeapTelemetryEntryStrideBytes)]
     internal struct AssetHeapTelemetryEntry
     {
         [FieldOffset(0)] public uint FrameIndex;

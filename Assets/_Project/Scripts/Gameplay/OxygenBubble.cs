@@ -44,7 +44,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class OxygenBubble : MonoBehaviour, ITickable, IUpdatable
+    public sealed class OxygenBubble : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — MOVEMENT
@@ -75,6 +75,9 @@ namespace Hecton8.Gameplay
         [Header("── Oxygen ─────────────────────────────────────")]
         [Tooltip("Amount of oxygen to restore on collection.")]
         [SerializeField, Range(1f, 50f)] private float oxygenAmount = 15f;
+
+        [Tooltip("Fallback player collection radius used by dispatcher polling when no spherical trigger size is available.")]
+        [SerializeField, Range(0.1f, 5f)] private float collectionRadius = 0.85f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — AUDIO / VFX
@@ -113,6 +116,17 @@ namespace Hecton8.Gameplay
         private uint _driftSequence;
         private uint _driftSeedBase;
         private bool _isRegistered;
+        private bool _lateFrameRegistered;
+        private bool _hotSwapRegistered;
+        private IAudioService _audioService;
+        private IObjectPoolService _objectPool;
+        private IPlayerRuntimeContext _playerRuntime;
+        private Vector3 _pendingRuntimePosition;
+        private bool _runtimePositionDirty;
+        private float _effectiveCollectionRadius;
+        private bool _pendingCollectEffects;
+        private bool _pendingCollectDespawn;
+        private Vector3 _pendingCollectPosition;
 
         // Pre-cached player tag for CompareTag
         private const string PlayerTag = "Player";
@@ -143,11 +157,15 @@ namespace Hecton8.Gameplay
                 _collider.isTrigger = true;
             }
 
+            _effectiveCollectionRadius = ResolveCollectionRadius(_collider, collectionRadius, _transform);
             _driftPhase = ResolveDeterministicDriftPhase(_driftSequence);
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
             _state = BubbleState.Floating;
             _lifetimeTimer = 0f;
             _driftPhase = ResolveDeterministicDriftPhase(_driftSequence);
@@ -158,6 +176,13 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             UnregisterFromTick();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterFromTick();
+            TryUnregisterHotSwapListener();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -175,6 +200,8 @@ namespace Hecton8.Gameplay
 
             // Move upward with drift
             FloatUpward(deltaTime);
+            if (TryCollectPlayerByRuntimePosition())
+                return;
 
             // Lifetime countdown
             _lifetimeTimer += deltaTime;
@@ -185,18 +212,41 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  TRIGGER DETECTION
+        //  PLAYER COLLECTION DETECTION
         // ══════════════════════════════════════════════════════════
 
-        private void OnTriggerEnter(Collider other)
+        private bool TryCollectPlayerByRuntimePosition()
         {
-            if (_state != BubbleState.Floating) return;
+            IPlayerRuntimeContext playerRuntime = _playerRuntime;
+            if (playerRuntime == null)
+                return false;
 
-            // Check for player using CompareTag (zero GC)
-            if (other.CompareTag(PlayerTag))
+            Transform playerTransform = playerRuntime.PlayerTransform;
+            Vector3 playerPosition;
+            if (playerRuntime.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose))
             {
-                Collect(other.transform);
+                playerPosition = new Vector3(pose.RuntimePosition.x, pose.RuntimePosition.y, pose.RuntimePosition.z);
             }
+            else
+            {
+                if (playerTransform == null)
+                    return false;
+
+                playerPosition = playerTransform.position;
+            }
+
+            if (playerTransform != null && !playerTransform.CompareTag(PlayerTag))
+                return false;
+
+            Vector3 bubblePosition = _runtimePositionDirty
+                ? _pendingRuntimePosition
+                : (_transform != null ? _transform.position : Vector3.zero);
+            float radius = math.max(0.01f, _effectiveCollectionRadius);
+            if ((playerPosition - bubblePosition).sqrMagnitude > radius * radius)
+                return false;
+
+            Collect(playerTransform);
+            return true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -219,7 +269,33 @@ namespace Hecton8.Gameplay
                 movement.z += driftZ;
             }
 
-            _transform.position += movement;
+            if (!_runtimePositionDirty)
+                _pendingRuntimePosition = _transform != null ? _transform.position : Vector3.zero;
+
+            _pendingRuntimePosition += movement;
+            _runtimePositionDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_runtimePositionDirty)
+            {
+                _runtimePositionDirty = false;
+                if (_transform != null)
+                    _transform.position = _pendingRuntimePosition;
+            }
+
+            if (_pendingCollectEffects)
+            {
+                _pendingCollectEffects = false;
+                PlayCollectEffects(_pendingCollectPosition);
+            }
+
+            if (_pendingCollectDespawn)
+            {
+                _pendingCollectDespawn = false;
+                DespawnSelf();
+            }
         }
 
         private static float EvaluateSignedTriangle(float phase01)
@@ -232,14 +308,12 @@ namespace Hecton8.Gameplay
         {
             _state = BubbleState.Collected;
 
-            // Play collection effects
-            PlayCollectEffects();
+            QueueCollectEffects();
 
             // Fire event with oxygen amount
             OnCollected?.Invoke(oxygenAmount);
 
-            // Despawn or destroy
-            DespawnSelf();
+            _pendingCollectDespawn = true;
         }
 
         private void Expire()
@@ -257,14 +331,18 @@ namespace Hecton8.Gameplay
         //  VFX / AUDIO
         // ══════════════════════════════════════════════════════════
 
-        private void PlayCollectEffects()
+        private void QueueCollectEffects()
         {
-            Vector3 pos = _transform.position;
+            _pendingCollectPosition = _transform != null ? _transform.position : transform.position;
+            _pendingCollectEffects = true;
+        }
 
+        private void PlayCollectEffects(Vector3 pos)
+        {
             // Play sound
-            if (collectSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
+            if (collectSound != null && _audioService != null)
             {
-                audio.PlayAtPoint(collectSound, pos, collectVolume);
+                _audioService.PlayAtPoint(collectSound, pos, collectVolume);
             }
 
             // Play particles
@@ -285,7 +363,7 @@ namespace Hecton8.Gameplay
             UnregisterFromTick();
 
             // Try pool despawn
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);
@@ -343,23 +421,111 @@ namespace Hecton8.Gameplay
 
         private void RegisterToTick()
         {
-            if (_isRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_isRegistered)
+                _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTick()
         {
-            if (!_isRegistered) return;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = false;
+            if (_isRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _isRegistered = false;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
+
+        private void CacheRegistryServicesCold()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _objectPool = GlobalRegistry.ObjectPoolService;
+            _playerRuntime = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as IObjectPoolService;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntime = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        RegisterToTick();
+                    break;
+            }
+        }
+
+        private static float ResolveCollectionRadius(Collider source, float fallbackRadius, Transform owner)
+        {
+            float scale = ResolveMaxAbsScale(owner);
+            float safeFallback = math.max(0.01f, fallbackRadius) * scale;
+            if (source is SphereCollider sphere)
+                return math.max(0.01f, sphere.radius) * scale;
+
+            if (source is CapsuleCollider capsule)
+                return math.max(math.max(0.01f, capsule.radius), capsule.height * 0.5f) * scale;
+
+            if (source is BoxCollider box)
+            {
+                Vector3 size = box.size;
+                float3 halfExtents = new float3(
+                    math.abs(size.x),
+                    math.abs(size.y),
+                    math.abs(size.z)) * (0.5f * scale);
+                return math.max(0.01f, math.length(halfExtents));
+            }
+
+            return safeFallback;
+        }
+
+        private static float ResolveMaxAbsScale(Transform owner)
+        {
+            if (owner == null)
+                return 1f;
+
+            Vector3 scale = owner.lossyScale;
+            return math.max(0.01f, math.max(math.abs(scale.x), math.max(math.abs(scale.y), math.abs(scale.z))));
+        }
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()

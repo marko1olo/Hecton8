@@ -1160,7 +1160,7 @@ namespace Hecton8.Editor.GeographySanity
             AppendDiagnosticValue(builder, "configuredVerticalProbeSteps", settings.VerticalProbeSteps);
             AppendDiagnosticValue(builder, "effectiveVerticalProbeSteps", ResolveVerticalProbeSteps(settings.VerticalProbeSteps, settings.GlobalQualityWeight));
             AppendDiagnosticValue(builder, "globalQualityWeight", settings.GlobalQualityWeight);
-            File.WriteAllText(path, builder.ToString(), Encoding.UTF8);
+            File.WriteAllText(path, builder.ToString(), JsonEncoding);
         }
 
         private static void AppendDiagnosticValue(StringBuilder builder, string key, string value)

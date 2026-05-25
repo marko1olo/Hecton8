@@ -12,13 +12,16 @@ namespace Hecton8.World
     /// </summary>
     internal sealed class ScatterGPUIBackend : IDisposable
     {
-        private GraphicsBuffer _instanceBuffer;
+        private GraphicsBuffer _instanceBufferA;
+        private GraphicsBuffer _instanceBufferB;
+        private GraphicsBuffer _activeInstanceBuffer;
         private GraphicsBuffer _argsBuffer;
         private int _instanceCapacity;
+        private int _instanceUploadBufferIndex;
         private Mesh _argsUploadMesh;
         private int _argsUploadInstanceCount = -1;
 
-        public GraphicsBuffer InstanceBuffer => _instanceBuffer;
+        public GraphicsBuffer InstanceBuffer => _activeInstanceBuffer;
 
         public GraphicsBuffer ArgsBuffer => _argsBuffer;
 
@@ -41,30 +44,47 @@ namespace Hecton8.World
             if (requiredCapacity <= 0)
                 return false;
 
-            if (_instanceBuffer != null && _instanceCapacity >= requiredCapacity)
+            if (_instanceBufferA != null &&
+                _instanceBufferB != null &&
+                _instanceCapacity >= requiredCapacity)
+            {
+                if (_activeInstanceBuffer == null)
+                    _activeInstanceBuffer = _instanceBufferA;
                 return true;
+            }
 
-            ReleaseBuffer(ref _instanceBuffer);
+            ReleaseBuffer(ref _instanceBufferA);
+            ReleaseBuffer(ref _instanceBufferB);
             _instanceCapacity = Mathf.NextPowerOfTwo(requiredCapacity);
-            _instanceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<T>(_instanceCapacity); // COLD ALLOC: GraphicsBuffer[nextCapacity] - scatter instance payload buffer - owner: ScatterGPUIBackend
-            return _instanceBuffer != null;
+            _instanceBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<T>(_instanceCapacity); // COLD ALLOC: GraphicsBuffer[nextCapacity] A - scatter instance payload buffer - owner: ScatterGPUIBackend
+            _instanceBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<T>(_instanceCapacity); // COLD ALLOC: GraphicsBuffer[nextCapacity] B - scatter instance payload buffer - owner: ScatterGPUIBackend
+            _activeInstanceBuffer = _instanceBufferA;
+            _instanceUploadBufferIndex = 0;
+            return _instanceBufferA != null && _instanceBufferB != null;
         }
 
         public bool Upload<T>(NativeArray<T> source, int count) where T : struct
         {
-            if (_instanceBuffer == null || !source.IsCreated || count <= 0)
+            if (!source.IsCreated || count <= 0)
                 return false;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_instanceBuffer, source, count);
+            GraphicsBuffer writeBuffer = _instanceUploadBufferIndex == 0 ? _instanceBufferA : _instanceBufferB;
+            if (writeBuffer == null)
+                return false;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, source, count);
+            _activeInstanceBuffer = writeBuffer;
+            _instanceUploadBufferIndex ^= 1;
             return true;
         }
 
         public bool BindInstanceBuffer(Material material, int propertyId)
         {
-            if (material == null || _instanceBuffer == null)
+            GraphicsBuffer activeBuffer = _activeInstanceBuffer;
+            if (material == null || activeBuffer == null)
                 return false;
 
-            material.SetBuffer(propertyId, _instanceBuffer);
+            material.SetBuffer(propertyId, activeBuffer);
             return true;
         }
 
@@ -108,9 +128,12 @@ namespace Hecton8.World
 
         public void Dispose()
         {
-            ReleaseBuffer(ref _instanceBuffer);
+            ReleaseBuffer(ref _instanceBufferA);
+            ReleaseBuffer(ref _instanceBufferB);
             ReleaseBuffer(ref _argsBuffer);
+            _activeInstanceBuffer = null;
             _instanceCapacity = 0;
+            _instanceUploadBufferIndex = 0;
             _argsUploadMesh = null;
             _argsUploadInstanceCount = -1;
         }

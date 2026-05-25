@@ -1,4 +1,4 @@
-# Discord And Community Server Setup
+﻿# Discord And Community Server Setup
 
 Status: future setup / do not open too early
 Public stance: single-player-first scope / proof-first public copy

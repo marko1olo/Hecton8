@@ -277,7 +277,7 @@ namespace Hecton8.Core
             int spawnModeValue = PlayerPrefs.GetInt(PersistKeySpawnMode, -1);
             string issuedAtUtcTicksRaw = PlayerPrefs.GetString(PersistKeyIssuedAtUtcTicks, string.Empty);
 
-            if (!long.TryParse(issuedAtUtcTicksRaw, out long issuedAtUtcTicks))
+            if (!TryParsePositiveInt64(issuedAtUtcTicksRaw, out long issuedAtUtcTicks))
             {
                 ClearPersistedHandoff();
                 return false;
@@ -313,6 +313,28 @@ namespace Hecton8.Core
             }
 
             Current = context;
+            return true;
+        }
+
+        private static bool TryParsePositiveInt64(string value, out long parsed)
+        {
+            parsed = 0L;
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (c < '0' || c > '9')
+                    return false;
+
+                long digit = c - '0';
+                if (parsed > (long.MaxValue - digit) / 10L)
+                    return false;
+
+                parsed = parsed * 10L + digit;
+            }
+
             return true;
         }
     }

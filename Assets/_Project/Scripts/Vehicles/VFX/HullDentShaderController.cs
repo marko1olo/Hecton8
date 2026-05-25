@@ -36,7 +36,9 @@ namespace Hecton8.Vehicles.VFX
         [SerializeField] private uint acceptedTargetHash;
         [SerializeField] private ushort acceptedTargetId;
         [SerializeField] private bool acceptUnfilteredSignals = true;
+#pragma warning disable CS0414
         [SerializeField] private bool acceptLegacyLocalPoints = true;
+#pragma warning restore CS0414
         [SerializeField, Min(1f)] private float maxLocalImpactDistanceMeters = 42f;
 
         [Header("Dent Shape")]
@@ -600,7 +602,7 @@ namespace Hecton8.Vehicles.VFX
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<float4> acquired = vault.GetGenerationHandle<float4>(
+            VaultGenerationHandle<float4> acquired = vault.EnsureGenerationHandle<float4>(
                 BufferID.HullDents,
                 MaxHullDents,
                 SystemID.Vfx,
@@ -738,7 +740,7 @@ namespace Hecton8.Vehicles.VFX
                 Channel = signal.Channel,
                 DamageType = signal.DamageType
             };
-            SignalBus<HullDeformedSignal>.Push(in deformedSignal);
+            SignalBus<HullDeformedSignal>.TryPush(in deformedSignal);
         }
 
         private uint BuildTelemetryFlags()

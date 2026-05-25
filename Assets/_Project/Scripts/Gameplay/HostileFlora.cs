@@ -44,7 +44,7 @@ namespace Hecton8.Gameplay
     /// Subnautica Tiger Plant equivalent.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HostileFlora : MonoBehaviour, ISlowTickable
+    public sealed class HostileFlora : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DETECTION
@@ -113,10 +113,22 @@ namespace Hecton8.Gameplay
         private uint _sourceEntityId;
         private uint _shotSeed;
         private bool _isRegistered;
+        private bool _lateFrameRegistered;
         private bool _playerFound;
+        private bool _hotSwapRegistered;
+        private bool _hasLogicalAimRotation;
+        private bool _pendingShootAudio;
+        private Vector3 _pendingShootAudioPosition;
+        private Quaternion _logicalAimRotation;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private IAudioService _audioService;
 
         private const float FacingDotThresholdSq = 0.81f; // 0.9^2, avoids normalizing target vector.
         private const float NominalSlowTickSeconds = 0.1f;
+        private const float DegreesToRadians = 0.01745329252f;
+        private const float TwoPi = 6.28318530718f;
+        private const float HalfPi = 1.57079632679f;
+        private const float Pi = 3.14159265359f;
         private const double SectorHashInvMeters = 0.001;
 
         // ══════════════════════════════════════════════════════════
@@ -136,7 +148,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
-            _sourceEntityId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+            _sourceEntityId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             _shotSeed = MixHash(_sourceEntityId ^ 0x48464C52u);
 
             // Use self as muzzle if not assigned
@@ -157,17 +169,29 @@ namespace Hecton8.Gameplay
         {
             _cooldownTimer = 0f;
             _state = FloraState.Idle;
+            _logicalAimRotation = aimingBone != null ? aimingBone.rotation : _transform.rotation;
+            _hasLogicalAimRotation = true;
+            _pendingShootAudio = false;
 
+            CacheRegistryServicesCold();
             RegisterToSlowTick();
+            RegisterToLateFrameTick();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterFromSlowTick();
+            UnregisterFromLateFrameTick();
 
             // Clear player reference
             _playerTarget = null;
             _playerFound = false;
+            _hasLogicalAimRotation = false;
+            _pendingShootAudio = false;
+            _playerRuntimeContext = null;
+            _audioService = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -218,7 +242,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            IPlayerRuntimeContext player = PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = _playerRuntimeContext;
             _playerTarget = player != null && player.IsInitialized ? player.PlayerTransform : null;
             _playerFound = _playerTarget != null;
         }
@@ -290,19 +314,20 @@ namespace Hecton8.Gameplay
             Vector3 flatDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
             if (flatDirection.sqrMagnitude < 0.01f) return;
 
-            float pitch = Vector3.SignedAngle(flatDirection, direction, Vector3.right);
+            float pitch = ResolvePitchDegreesNoSignedAngle(flatDirection, direction);
             pitch = math.clamp(pitch, -maxPitchAngle, maxPitchAngle);
 
             // Calculate target rotation
             Quaternion yawRotation = Quaternion.LookRotation(flatDirection, Vector3.up);
-            Quaternion pitchRotation = Quaternion.AngleAxis(-pitch, Vector3.right);
+            Quaternion pitchRotation = ApproximateRotationDegreesNoTrig(-pitch, Vector3.right);
             Quaternion targetRotation = yawRotation * pitchRotation;
 
-            // Smooth rotation
-            aimingBone.rotation = Quaternion.Slerp(
-                aimingBone.rotation,
+            Quaternion currentRotation = _hasLogicalAimRotation ? _logicalAimRotation : aimingBone.rotation;
+            _logicalAimRotation = Quaternion.Slerp(
+                currentRotation,
                 targetRotation,
                 math.saturate(rotationSpeed * NominalSlowTickSeconds));
+            _hasLogicalAimRotation = true;
         }
 
         private bool IsFacingTarget()
@@ -313,7 +338,7 @@ namespace Hecton8.Gameplay
             float toTargetLengthSq = toTarget.sqrMagnitude;
             if (toTargetLengthSq <= 0.0001f) return false;
 
-            Vector3 forward = aimingBone.forward;
+            Vector3 forward = _hasLogicalAimRotation ? _logicalAimRotation * Vector3.forward : aimingBone.forward;
 
             float dot = Vector3.Dot(forward, toTarget);
             return dot > 0f && dot * dot >= FacingDotThresholdSq * toTargetLengthSq; // Within ~25 degrees
@@ -330,10 +355,10 @@ namespace Hecton8.Gameplay
 
             Transform muzzle = muzzlePoint != null ? muzzlePoint : _transform;
             Vector3 spawnPos = muzzle.position;
-            Quaternion spawnRot = muzzle.rotation;
+            Quaternion spawnRot = muzzle == aimingBone && _hasLogicalAimRotation ? _logicalAimRotation : muzzle.rotation;
 
             float randomAngle = ResolveShotSpreadAngle(spawnPos);
-            spawnRot = Quaternion.AngleAxis(randomAngle, Vector3.up) * spawnRot;
+            spawnRot = ApproximateRotationDegreesNoTrig(randomAngle, Vector3.up) * spawnRot;
 
             Vector3 projectileVelocity = ResolveSafeProjectileVelocity(spawnRot, projectileSpeed);
             BallisticsRuntime.QueueTrajectoryFromVelocity(
@@ -344,13 +369,24 @@ namespace Hecton8.Gameplay
                 _sourceEntityId,
                 BallisticTrajectoryFlags.HostileFlora);
 
-            // Play shoot sound
-            if (shootSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
-            {
-                audio.PlayAtPoint(shootSound, spawnPos, shootVolume);
-            }
+            _pendingShootAudioPosition = spawnPos;
+            _pendingShootAudio = shootSound != null;
 
             _state = FloraState.Cooldown;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_hasLogicalAimRotation && aimingBone != null)
+                aimingBone.rotation = _logicalAimRotation;
+
+            if (!_pendingShootAudio)
+                return;
+
+            _pendingShootAudio = false;
+            IAudioService audio = _audioService;
+            if (shootSound != null && audio != null && audio.IsInitialized)
+                audio.PlayAtPoint(shootSound, _pendingShootAudioPosition, shootVolume);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -387,8 +423,7 @@ namespace Hecton8.Gameplay
             if (_isRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.SlowTickables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromSlowTick()
@@ -397,6 +432,76 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _isRegistered = false;
+        }
+
+        private void RegisterToLateFrameTick()
+        {
+            if (_lateFrameRegistered) return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void UnregisterFromLateFrameTick()
+        {
+            if (!_lateFrameRegistered) return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            _audioService = GlobalRegistry.Audio;
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    Transform previousTarget = previousService is IPlayerRuntimeContext previousPlayer
+                        ? previousPlayer.PlayerTransform
+                        : null;
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    if (_playerTarget == null || ReferenceEquals(_playerTarget, previousTarget))
+                        _playerTarget = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerTransform : null;
+                    _playerFound = _playerTarget != null;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        RegisterToSlowTick();
+                    break;
+            }
         }
 
         private static Vector3 ResolveSafeProjectileVelocity(Quaternion spawnRotation, float authoredSpeed)
@@ -455,7 +560,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -481,9 +586,82 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  EDITOR
+        //  MATH HELPERS
         // ══════════════════════════════════════════════════════════
 
+        private static float ResolvePitchDegreesNoSignedAngle(Vector3 flatDirection, Vector3 direction)
+        {
+            float lengthSq = direction.sqrMagnitude;
+            if (lengthSq <= 0.0001f)
+                return 0f;
+
+            float invLength = math.rsqrt(lengthSq);
+            float vertical01 = math.saturate(math.abs(direction.y) * invLength);
+            float pitchMagnitude = FastAsinDegrees(vertical01);
+            float signDot = Vector3.Dot(Vector3.right, Vector3.Cross(flatDirection, direction));
+            float signedPitch = math.select(-pitchMagnitude, pitchMagnitude, signDot >= 0f);
+            return math.select(0f, signedPitch, vertical01 > 0.000001f);
+        }
+
+        private static Quaternion ApproximateRotationDegreesNoTrig(float angleDegrees, Vector3 axis)
+        {
+            float axisLengthSq = axis.sqrMagnitude;
+            if (axisLengthSq <= 0.000001f || !float.IsFinite(axisLengthSq))
+                return Quaternion.identity;
+
+            Vector3 safeAxis = axis * math.rsqrt(axisLengthSq);
+            ApproximateSinCosFullNoTrig(math.select(0f, angleDegrees, math.isfinite(angleDegrees)) * DegreesToRadians * 0.5f, out float sinHalf, out float cosHalf);
+            Quaternion rotation = new Quaternion(
+                safeAxis.x * sinHalf,
+                safeAxis.y * sinHalf,
+                safeAxis.z * sinHalf,
+                cosHalf);
+            return NormalizeQuaternion(rotation);
+        }
+
+        private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float cosSign = 1f;
+            if (x > HalfPi)
+            {
+                x = Pi - x;
+                cosSign = -1f;
+            }
+            else if (x < -HalfPi)
+            {
+                x = -Pi - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
+        private static Quaternion NormalizeQuaternion(Quaternion value)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            float lengthSq = math.lengthsq(q);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return Quaternion.identity;
+
+            q *= math.rsqrt(lengthSq);
+            return new Quaternion(q.x, q.y, q.z, q.w);
+        }
+
+        private static float FastAsinDegrees(float value)
+        {
+            float x = math.clamp(value, -1f, 1f);
+            float ax = math.abs(x);
+            float oneMinus = math.max(0f, 1f - ax);
+            float root = oneMinus * math.rsqrt(math.max(oneMinus, 0.000001f));
+            float acosRadians = (((-0.0187293f * ax + 0.0742610f) * ax - 0.2121144f) * ax + 1.5707288f) * root;
+            float asinRadians = 1.57079632679f - acosRadians;
+            return math.select(asinRadians, -asinRadians, x < 0f) * 57.2957795131f;
+        }
+
+        //  EDITOR
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {

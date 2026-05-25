@@ -134,7 +134,7 @@ namespace Hecton8.Environment.Fluids
             if (vault == null || requiredLength <= 0)
                 return default;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystem,

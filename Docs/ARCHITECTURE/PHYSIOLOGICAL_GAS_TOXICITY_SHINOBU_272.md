@@ -1,4 +1,4 @@
-# SHINOBU_272 Physiological Gas Toxicity
+﻿# SHINOBU_272 Physiological Gas Toxicity
 
 Owner: `Hecton8.Physiology.ShinobuPhysiologyRuntime`
 
@@ -15,7 +15,8 @@ Hot routes:
 - Damage: severe CNS/CO2/hypoxia emits unmanaged `CombatDamageSignal`.
 - Visual: Physiology publishes only unmanaged `PhysiologyStateSignal`/`HypoxiaSignal`; `GlobalShaderDispatcher` owns shader-slot projection into slot 7/11 (`_HectonDcsPhysiologyParams`, `_HectonGasToxicityParams`, `_HypoxiaSignal`).
 - Runtime tick does not poll CSV files. `physiological_gas_profiles.csv` and `tissue_halftime_profiles.csv` are loaded only during cold Vault initialization; editor sliders write the Vault tuning rows directly.
-- Editor/test injectors and diagnostic readers fail closed while a physiology job is scheduled. Scheduled jobs own their Vault locks from seed/resolve/schedule through post-job publish, telemetry patch, visual sync, fatal dump check, and unlock.
+- Editor/test injectors and diagnostic readers fail closed while a physiology job is scheduled.
+- Scheduled jobs own Vault locks through seed, resolve, schedule, post-job publish, telemetry patch, visual sync, fatal dump check, and unlock.
 
 Black box:
 - `PhysiologyTelemetryEntry` ring remains 300 entries.

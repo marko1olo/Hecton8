@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Unity.Burst;
+using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -16,7 +16,7 @@ namespace Hecton8.Lighting
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-2600)]
-    public sealed class HectonGIRelaySystem : MonoBehaviour, IGIRelaySystem, ISlowTickable, ILateFrameTickable, IWeatherEventListener
+    public sealed partial class HectonGIRelaySystem : MonoBehaviour, IGIRelaySystem, ISlowTickable, ILateFrameTickable, IWeatherEventListener, IGlobalRegistryHotSwapListener
     {
         private const int SHCoefficientCount = 27;
         private const int SHChannelCoefficientCount = 9;
@@ -38,24 +38,13 @@ namespace Hecton8.Lighting
         private const float CascadeOneExitDepthMeters = 170f;
         private const float CascadeZeroEnterDepthMeters = 500f;
         private const float CascadeZeroExitDepthMeters = 450f;
-        private const float ShaderColorEpsilon = 0.0005f;
         private const uint RelayContextHash = 0x47495245u;
         private const uint SHLayoutMismatchHash = 0x53484C4Fu;
         private const uint NonFiniteInputHash = 0x4749464Eu;
-        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_RENDER_GI_RELAY_SYNC.bin";
+        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SHINOBU_347_GI_RELAY_SYNC.bin";
 
-        private static readonly int _HectonAtmosphereColorId = Shader.PropertyToID("_HectonAtmosphereColor");
-        private static readonly int _HectonFogLodId = Shader.PropertyToID("_HectonFogLOD");
-        private static readonly int _FaunaEmissiveMultiplierId = Shader.PropertyToID("_FaunaEmissiveMultiplier");
-        private static readonly int _HectonWaterSurfaceEmissionId = Shader.PropertyToID("_HectonWaterSurfaceEmission");
-        private static readonly int _HectonUnderwaterSurfaceColorId = Shader.PropertyToID("_HectonUnderwaterSurfaceColor");
-        private static readonly int _HectonGIProbeTintId = Shader.PropertyToID("_HectonGIProbeTint");
-        private static readonly int _HectonGIRelayStateId = Shader.PropertyToID("_HectonGIRelayState");
-        private static readonly int _HectonBiomeGradientStateId = Shader.PropertyToID("_HectonBiomeGradientState");
         private static readonly int _WaterVolumeId = Shader.PropertyToID("_WaterVolume");
-        private static readonly int _WaterVolumeDepthPaletteId = Shader.PropertyToID("_WaterVolumeDepthPalette");
         private static readonly int _HectonGIRelaySHBufferId = Shader.PropertyToID("_HectonGIRelaySHBuffer");
-        private static readonly int _HectonGIRelaySHStateId = Shader.PropertyToID("_HectonGIRelaySHState");
 
         [Header("Global Reflection")]
         [SerializeField] private Cubemap waterVolumeLowResCubemap;
@@ -67,6 +56,10 @@ namespace Hecton8.Lighting
         [SerializeField, Range(0f, 1f)] private float depthPaletteStrength = 0.82f;
 
         private IDataVault _vault;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private BiomeMatrixDirector _cachedBiomeMatrix;
+        private float _cachedGlobalQualityWeight01 = 1f;
+        private VaultGenerationHandle<CelestialStateDTO> _celestialStateRead;
         private VaultGenerationHandle<float> _shDay;
         private VaultGenerationHandle<float> _shNight;
         private VaultGenerationHandle<float> _shDiscreteStates;
@@ -79,30 +72,17 @@ namespace Hecton8.Lighting
 
         private JobHandle _pendingSHJob;
         private GIRelayRuntimeSnapshot _snapshot;
-        private Color _lastAtmosphereColor;
-        private Color _lastSurfaceEmissionColor;
-        private Color _lastDepthPaletteColor;
-        private UnityEngine.Object _lastSurfaceEmissionTarget;
         private Cubemap _lastWaterVolumeCubemap;
-        private Vector4 _lastRelayState;
-        private Vector4 _lastBiomeGradientState;
-        private float _lastFogLod;
-        private float _lastFaunaEmissive;
-        private bool _lastAtmosphereColorValid;
-        private bool _lastSurfaceEmissionColorValid;
-        private bool _lastDepthPaletteColorValid;
-        private bool _lastRelayStateValid;
-        private bool _lastBiomeGradientStateValid;
-        private bool _lastFogLodValid;
-        private bool _lastFaunaEmissiveValid;
         private bool _hasPendingSHJob;
         private bool _nativeStorageReady;
+        private bool _registeredGIRelayRuntime;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _registeredWeatherListener;
+        private bool _registeredHotSwap;
         private bool _ambientProbeAuthorityActive;
         private bool _restoreBaseProbeAfterLightning;
-        private bool _globalReflectionBound;
+        private bool _waterVolumeCubemapDirty;
         private int _baselineShadowCascades;
         private int _shadowCascadeLevel = -1;
         private int _lightningFramesRemaining;
@@ -127,9 +107,8 @@ namespace Hecton8.Lighting
         private void Awake()
         {
             EnsureNativeStorage();
+            RefreshColdRuntimeDependencies();
             CaptureBaselineShadowCascades();
-            if (Application.isPlaying)
-                GlobalRegistry.RegisterGIRelayRuntime(this);
         }
 
         private void OnEnable()
@@ -140,13 +119,21 @@ namespace Hecton8.Lighting
 #endif
 
             EnsureNativeStorage();
+            RefreshColdRuntimeDependencies();
             CaptureBaselineShadowCascades();
-            GlobalRegistry.RegisterGIRelayRuntime(this);
+            if (!_registeredGIRelayRuntime)
+            {
+                GlobalRegistry.RegisterGIRelayRuntime(this);
+                _registeredGIRelayRuntime = true;
+            }
+
+            TryRegisterHotSwapListener();
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             WeatherEvents.Register(this);
             _registeredWeatherListener = true;
             InvalidateShaderStateCache();
+            _waterVolumeCubemapDirty = true;
             _ambientProbeAuthorityActive = true;
         }
 
@@ -168,15 +155,10 @@ namespace Hecton8.Lighting
                 return;
 
             if (_hasPendingSHJob)
-            {
-                if (!_pendingSHJob.IsCompleted)
-                    return;
-
-                CompleteAndPushPendingSHJob();
-            }
+                return;
 
             BiomeGradientSignal biomeGradient = ResolveLatestBiomeGradientSignal();
-            GIRelayRuntimeSnapshot nextSnapshot = ResolveRuntimeSnapshot(in biomeGradient);
+            GIRelayRuntimeSnapshot nextSnapshot = BuildRuntimeSnapshot(in biomeGradient);
             if (!IsSnapshotFinite(in nextSnapshot))
             {
                 RecordTelemetry(in nextSnapshot, GIRelayTelemetryFlags.NonFinite);
@@ -187,14 +169,19 @@ namespace Hecton8.Lighting
 
             _snapshot = nextSnapshot;
             ApplyShadowCascadeState(nextSnapshot.DepthMeters);
-            ApplyShaderRelayState(in nextSnapshot, in biomeGradient);
-            BindGlobalWaterVolumeCubemap();
+            _waterVolumeCubemapDirty = true;
             ScheduleSHJob(in nextSnapshot, in biomeGradient);
             RecordTelemetry(in nextSnapshot, GIRelayTelemetryFlags.Scheduled);
         }
 
         public void LateFrameTick()
         {
+            if (_waterVolumeCubemapDirty)
+            {
+                _waterVolumeCubemapDirty = false;
+                BindGlobalWaterVolumeCubemap();
+            }
+
             if (_hasPendingSHJob && _pendingSHJob.IsCompleted)
                 CompleteAndPushPendingSHJob();
 
@@ -227,6 +214,37 @@ namespace Hecton8.Lighting
             _lightningFramesRemaining = LightningFrameBudget;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                bool restoreSlow = _registeredSlowTick;
+                bool restoreLate = _registeredLateFrameTick || HasLateFrameWork();
+                UnregisterTickLanes();
+                if (currentService != null && isActiveAndEnabled)
+                    RegisterTickLanes(restoreSlow, restoreLate);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVault(currentService as IDataVault);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.BiomeMatrixRuntime)
+                _cachedBiomeMatrix = currentService as BiomeMatrixDirector;
+        }
+
         public bool ValidateSphericalHarmonicsLayout(out int expectedBytes, out int actualBytes)
         {
             expectedBytes = SHCoefficientCount * UnsafeUtility.SizeOf<float>();
@@ -242,20 +260,12 @@ namespace Hecton8.Lighting
                 _registeredWeatherListener = false;
             }
 
-            if (_registeredSlowTick)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = false;
-            }
+            UnregisterTickLanes();
+            TryUnregisterHotSwapListener();
 
-            if (_registeredLateFrameTick)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = false;
-            }
-
-            if (ReferenceEquals(GlobalRegistry.GIRelay, this))
+            if (_registeredGIRelayRuntime && ReferenceEquals(GlobalRegistry.GIRelay, this))
                 GlobalRegistry.UnregisterGIRelayRuntime(this);
+            _registeredGIRelayRuntime = false;
 
             _ambientProbeAuthorityActive = false;
             if (_hasPendingSHJob)
@@ -269,16 +279,79 @@ namespace Hecton8.Lighting
 
         private void InvalidateShaderStateCache()
         {
-            _lastAtmosphereColorValid = false;
-            _lastSurfaceEmissionColorValid = false;
-            _lastDepthPaletteColorValid = false;
-            _lastRelayStateValid = false;
-            _lastBiomeGradientStateValid = false;
-            _lastFogLodValid = false;
-            _lastFaunaEmissiveValid = false;
-            _lastSurfaceEmissionTarget = null;
             _lastWaterVolumeCubemap = null;
-            _globalReflectionBound = false;
+        }
+
+        private void RegisterTickLanes(bool restoreSlow, bool restoreLate)
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (restoreSlow && !_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (restoreLate && !_registeredLateFrameTick)
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void UnregisterTickLanes()
+        {
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+        }
+
+        private bool HasLateFrameWork()
+        {
+            return _waterVolumeCubemapDirty
+                || _hasPendingSHJob
+                || _lightningFramesRemaining > 0
+                || _restoreBaseProbeAfterLightning;
+        }
+
+        private void RebindDataVault(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            if (_hasPendingSHJob)
+            {
+                DispatcherJobFence.TryComplete(ref _pendingSHJob, forceComplete: true);
+                _hasPendingSHJob = false;
+            }
+
+            DisposeNativeStorage();
+            _vault = nextVault;
+            if (_vault != null && isActiveAndEnabled)
+            {
+                EnsureNativeStorage();
+                RefreshColdRuntimeDependencies();
+                _waterVolumeCubemapDirty = true;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void EnsureNativeStorage()
@@ -290,12 +363,13 @@ namespace Hecton8.Lighting
             if (_vault == null)
                 return;
 
-            _shDay = AcquireBuffer<float>(SHDayBuffer, SHCoefficientCount);
-            _shNight = AcquireBuffer<float>(SHNightBuffer, SHCoefficientCount);
-            _shDiscreteStates = AcquireBuffer<float>(SHDiscreteStatesBuffer, SHCoefficientCount * SHStateCount);
-            _shOutput = AcquireBuffer<float>(SHOutputBuffer, SHCoefficientCount);
-            _shLightningScratch = AcquireBuffer<float>(SHLightningScratchBuffer, SHCoefficientCount);
+            _shDay = AcquireBuffer<float>(SHDayBuffer, SHCoefficientCount, NativeArrayOptions.UninitializedMemory);
+            _shNight = AcquireBuffer<float>(SHNightBuffer, SHCoefficientCount, NativeArrayOptions.UninitializedMemory);
+            _shDiscreteStates = AcquireBuffer<float>(SHDiscreteStatesBuffer, SHCoefficientCount * SHStateCount, NativeArrayOptions.UninitializedMemory);
+            _shOutput = AcquireBuffer<float>(SHOutputBuffer, SHCoefficientCount, NativeArrayOptions.UninitializedMemory);
+            _shLightningScratch = AcquireBuffer<float>(SHLightningScratchBuffer, SHCoefficientCount, NativeArrayOptions.UninitializedMemory);
             _telemetryRing = AcquireBuffer<GIRelayTelemetryEntry>(SHTelemetryRingBuffer, TelemetryCapacity);
+            EnsureDayNightRelayNativeStorage();
             EnsureShUploadBuffers();
 
             BuildSHProfiles();
@@ -310,17 +384,25 @@ namespace Hecton8.Lighting
                 _hasPendingSHJob = false;
             }
 
+            ReleaseDayNightRelayNativeStorage();
             ReleaseGIRelayVaultDescriptors();
             ReleaseShUploadBuffers();
             _vault = null;
+            _cachedPlayerContext = null;
+            _cachedBiomeMatrix = null;
+            _cachedGlobalQualityWeight01 = 1f;
+            _celestialStateRead = default;
             _telemetryCursor = 0;
             _telemetryCount = 0;
             _nativeStorageReady = false;
         }
 
-        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
+        private VaultGenerationHandle<T> AcquireBuffer<T>(
+            BufferID bufferId,
+            int length,
+            NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
         {
-            VaultGenerationHandle<T> handle = _vault.GetGenerationHandle<T>(bufferId, length, MemoryOwner, NativeArrayOptions.ClearMemory);
+            VaultGenerationHandle<T> handle = _vault.EnsureGenerationHandle<T>(bufferId, length, MemoryOwner, options);
             if (!TryOpenGIRelayBuffer(in handle, bufferId, length, out NativeArray<T> buffer) || !buffer.IsCreated)
                 throw new InvalidOperationException("GI relay DataVault buffer acquisition failed.");
 
@@ -329,8 +411,19 @@ namespace Hecton8.Lighting
 
         private IDataVault ResolveDataVault()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            return vault;
+            return _vault ?? GlobalRegistry.DataVault;
+        }
+
+        private void RefreshColdRuntimeDependencies()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedBiomeMatrix = GlobalRegistry.BiomeMatrix;
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight();
+            if (_vault != null &&
+                _vault.TryGetGenerationHandle<CelestialStateDTO>(BufferID.Shinobu345CelestialStateRead, out VaultGenerationHandle<CelestialStateDTO> celestialHandle))
+            {
+                _celestialStateRead = celestialHandle;
+            }
         }
 
         private NativeArray<T> OpenGIRelayArray<T>(in VaultGenerationHandle<T> handle, BufferID bufferId, int requiredLength) where T : struct
@@ -394,12 +487,26 @@ namespace Hecton8.Lighting
 
         private void EnsureShUploadBuffers()
         {
-            if (_shUploadBufferA != null && _shUploadBufferB != null)
+            if (AreShUploadBuffersReady())
                 return;
 
+            ReleaseShUploadBuffers();
             int stride = UnsafeUtility.SizeOf<float>();
             _shUploadBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, SHCoefficientCount, stride);
             _shUploadBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, SHCoefficientCount, stride);
+        }
+
+        private bool AreShUploadBuffersReady()
+        {
+            int stride = UnsafeUtility.SizeOf<float>();
+            return _shUploadBufferA != null &&
+                   _shUploadBufferB != null &&
+                   _shUploadBufferA.IsValid() &&
+                   _shUploadBufferB.IsValid() &&
+                   _shUploadBufferA.count >= SHCoefficientCount &&
+                   _shUploadBufferB.count >= SHCoefficientCount &&
+                   _shUploadBufferA.stride == stride &&
+                   _shUploadBufferB.stride == stride;
         }
 
         private void ReleaseShUploadBuffers()
@@ -450,14 +557,20 @@ namespace Hecton8.Lighting
             target[offset + SHChannelCoefficientCount * 2 + 6] = l0Color.z * directionalStrength * -0.35f;
         }
 
-        private GIRelayRuntimeSnapshot ResolveRuntimeSnapshot(in BiomeGradientSignal biomeGradient)
+        private GIRelayRuntimeSnapshot BuildRuntimeSnapshot(in BiomeGradientSignal biomeGradient)
         {
-            CelestialRuntimeSnapshot celestial = GlobalRegistry.CelestialRuntimeSnapshot;
+            bool hasCelestialState = TryReadCelestialState(out CelestialStateDTO celestialState);
+            float previousTime = math.isfinite(_snapshot.TimeOfDay01) ? math.saturate(_snapshot.TimeOfDay01) : 0.5f;
+            float timeOfDay01 = hasCelestialState ? H8SaturateFinite(celestialState.TimeOfDay01) : previousTime;
+            float previousEclipse = math.isfinite(_snapshot.EclipseScalar) ? math.saturate(_snapshot.EclipseScalar) : 0f;
+            float eclipse01 = hasCelestialState ? H8SaturateFinite(celestialState.EclipseShadowScalar01) : previousEclipse;
+            float moonPhase01 = math.isfinite(_snapshot.MoonPhase01) ? math.saturate(_snapshot.MoonPhase01) : 0.35f;
+            double dayBase = math.isfinite(_snapshot.AbsoluteUniverseTime)
+                ? math.floor(_snapshot.AbsoluteUniverseTime * SecondsPerDayRcp) * SecondsPerDay
+                : 0d;
+            double absoluteUniverseTime = dayBase + timeOfDay01 * SecondsPerDay;
             float depthMeters = ResolveDepthMetersAbsolute();
             float depth01 = math.saturate(depthMeters * DepthPaletteFullDepthMetersRcp);
-            float timeOfDay01 = ResolveTimeOfDay01(celestial.AbsoluteUniverseTime);
-            float moonPhase01 = math.saturate(math.max(celestial.Moon0Phase01, celestial.Moon1Phase01));
-            float eclipse01 = math.saturate(celestial.EclipseOcclusion01);
             float fogLod = ResolveFogLod(depth01, eclipse01, biomeGradient.BlendFactor01);
             uint flags = (uint)GIRelayTelemetryFlags.Valid;
             if (_lightningFramesRemaining > 0)
@@ -466,7 +579,7 @@ namespace Hecton8.Lighting
             _sequence++;
             return new GIRelayRuntimeSnapshot
             {
-                AbsoluteUniverseTime = celestial.AbsoluteUniverseTime,
+                AbsoluteUniverseTime = absoluteUniverseTime,
                 TimeOfDay01 = timeOfDay01,
                 DepthMeters = depthMeters,
                 Depth01 = depth01,
@@ -478,6 +591,23 @@ namespace Hecton8.Lighting
                 Flags = flags,
                 Sequence = _sequence
             };
+        }
+
+        private bool TryReadCelestialState(out CelestialStateDTO state)
+        {
+            state = default;
+            if (_vault == null ||
+                _celestialStateRead.BufferID != unchecked((uint)(int)BufferID.Shinobu345CelestialStateRead) ||
+                _celestialStateRead.Generation == 0u ||
+                !_vault.TryReadHandle(in _celestialStateRead, out NativeArray<CelestialStateDTO> states) ||
+                !states.IsCreated ||
+                states.Length <= 0)
+            {
+                return false;
+            }
+
+            state = states[0];
+            return math.isfinite(state.TimeOfDay01) && math.isfinite(state.EclipseShadowScalar01);
         }
 
         private static float ResolveTimeOfDay01(double absoluteUniverseTime)
@@ -492,20 +622,16 @@ namespace Hecton8.Lighting
             return math.saturate((float)(daySeconds * SecondsPerDayRcp));
         }
 
-        private static float ResolveDepthMetersAbsolute()
+        private float ResolveDepthMetersAbsolute()
         {
-            var biomeMatrix = GlobalRegistry.BiomeMatrix;
+            BiomeMatrixDirector biomeMatrix = _cachedBiomeMatrix;
             if (biomeMatrix != null && math.isfinite(biomeMatrix.CurrentDepthMeters))
                 return math.max(0f, biomeMatrix.CurrentDepthMeters);
 
-            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = _cachedPlayerContext;
             var movement = player != null ? player.PlayerMovement : null;
             if (movement != null && math.isfinite(movement.CurrentDepth))
                 return math.max(0f, movement.CurrentDepth);
-
-            var underwaterVisuals = GlobalRegistry.UnderwaterVisuals;
-            if (underwaterVisuals != null && math.isfinite(underwaterVisuals.CurrentDepth))
-                return math.max(0f, underwaterVisuals.CurrentDepth);
 
             if (movement != null)
             {
@@ -533,16 +659,16 @@ namespace Hecton8.Lighting
                    math.isfinite(snapshot.LightningScalar);
         }
 
-        private static float ResolveGlobalQualityWeight()
+        private float ResolveGlobalQualityWeight()
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
             if (math.isfinite(weight))
-                return math.saturate(weight);
+            {
+                _cachedGlobalQualityWeight01 = math.saturate(weight);
+                return _cachedGlobalQualityWeight01;
+            }
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            float tierIndex = math.clamp((float)tier, (float)HectonQualityTier.Low, (float)HectonQualityTier.Ultra);
-            float normalized = math.saturate((tierIndex - (float)HectonQualityTier.Low) / math.max(0.0001f, (float)HectonQualityTier.Ultra - (float)HectonQualityTier.Low));
-            return normalized * normalized * (3f - 2f * normalized);
+            return _cachedGlobalQualityWeight01;
         }
 
         private void ScheduleSHJob(in GIRelayRuntimeSnapshot snapshot, in BiomeGradientSignal biomeGradient)
@@ -551,24 +677,39 @@ namespace Hecton8.Lighting
             NativeArray<float> night = OpenGIRelayArray(in _shNight, SHNightBuffer, SHCoefficientCount);
             NativeArray<float> states = OpenGIRelayArray(in _shDiscreteStates, SHDiscreteStatesBuffer, SHCoefficientCount * SHStateCount);
             NativeArray<float> output = OpenGIRelayArray(in _shOutput, SHOutputBuffer, SHCoefficientCount);
+            NativeArray<LightingGradientProfileDTO> profiles = OpenDayNightRelayArray(in _lightingGradientProfiles, DayNightGradientProfilesBuffer, DayNightGradientProfileCapacity);
+            NativeArray<int> profileCount = OpenDayNightRelayArray(in _lightingGradientProfileCount, DayNightGradientProfileCountBuffer, 1);
             if (!day.IsCreated || !night.IsCreated || !states.IsCreated || !output.IsCreated)
                 return;
 
-            GIRelaySHLerpJob job = new GIRelaySHLerpJob
+            NativeArray<EnvironmentLightingDTO> environment = OpenDayNightRelayArray(in _environmentLighting, DayNightEnvironmentLightingBuffer, 1);
+            if (!environment.IsCreated)
+                return;
+
+            EvaluateGlobalIlluminationJob job = new EvaluateGlobalIlluminationJob
             {
                 SHDay = day,
                 SHNight = night,
                 SHDiscreteStates = states,
+                GradientProfiles = profiles,
+                GradientProfileCount = profileCount,
                 SHOutput = output,
+                EnvironmentLighting = environment,
+                BiomeGradient = biomeGradient,
+                PlayerAup = ResolvePlayerAupDouble(),
+                BiomeCenterAup = ResolveBiomeCenterAup(in biomeGradient),
                 TimeOfDay01 = snapshot.TimeOfDay01,
+                DepthMeters = snapshot.DepthMeters,
                 Depth01 = snapshot.Depth01,
                 Eclipse01 = snapshot.EclipseScalar,
                 MoonPhase01 = snapshot.MoonPhase01,
-                BiomeBlend01 = math.saturate(biomeGradient.BlendFactor01),
                 DepthPaletteStrength = math.saturate(depthPaletteStrength),
-                QualityWeight = ResolveGlobalQualityWeight()
+                QualityWeight = ResolveDayNightQualityWeight(),
+                WaterExtinctionConstant = ResolveWaterExtinctionConstant(),
+                EclipseDarkeningMultiplier = ResolveEclipseDarkeningMultiplier()
             };
 
+            _pendingDayNightScheduleTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             _pendingSHJob = job.Schedule();
             _hasPendingSHJob = true;
         }
@@ -588,6 +729,7 @@ namespace Hecton8.Lighting
                 return;
             }
 
+            TryUploadDayNightLightingCBuffer();
             _snapshot.ShadowCascadeLevel = _shadowCascadeLevel;
             RecordTelemetry(in _snapshot, GIRelayTelemetryFlags.Pushed);
         }
@@ -603,18 +745,26 @@ namespace Hecton8.Lighting
                 return false;
             }
 
-            EnsureShUploadBuffers();
+            if (!AreShUploadBuffersReady())
+                return false;
+
             GraphicsBuffer target = _shUploadWriteIndex == 0 ? _shUploadBufferA : _shUploadBufferB;
             if (target == null || target.count < SHCoefficientCount || target.stride != UnsafeUtility.SizeOf<float>())
                 return false;
 
             NativeArray<float> mapped = target.LockBufferForWrite<float>(0, SHCoefficientCount);
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-            void* targetPtr = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
-            UnsafeUtility.MemCpy(targetPtr, sourcePtr, expectedBytes);
-            target.UnlockBufferAfterWrite<float>(SHCoefficientCount);
+            try
+            {
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                void* targetPtr = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
+                UnsafeUtility.MemCpy(targetPtr, sourcePtr, expectedBytes);
+            }
+            finally
+            {
+                target.UnlockBufferAfterWrite<float>(SHCoefficientCount);
+            }
+
             Shader.SetGlobalBuffer(_HectonGIRelaySHBufferId, target);
-            Shader.SetGlobalVector(_HectonGIRelaySHStateId, new Vector4(SHCoefficientCount, _sequence, _snapshot.Depth01, ResolveGlobalQualityWeight()));
             _shUploadWriteIndex ^= 1;
             return true;
         }
@@ -647,7 +797,7 @@ namespace Hecton8.Lighting
 
         private void ApplyShadowCascadeState(float depthMeters)
         {
-            int target = _shadowCascadeLevel < 0 ? QualitySettings.shadowCascades : _shadowCascadeLevel;
+            int target = _shadowCascadeLevel < 0 ? _baselineShadowCascades : _shadowCascadeLevel;
             if (target <= 0)
             {
                 if (depthMeters <= CascadeZeroExitDepthMeters)
@@ -672,100 +822,6 @@ namespace Hecton8.Lighting
                 return;
 
             _shadowCascadeLevel = target;
-            if (QualitySettings.shadowCascades != target)
-                QualitySettings.shadowCascades = target;
-        }
-
-        private void ApplyShaderRelayState(in GIRelayRuntimeSnapshot snapshot, in BiomeGradientSignal biomeGradient)
-        {
-            Color atmosphereColor = ResolveAtmosphereColor(snapshot.Depth01, snapshot.EclipseScalar);
-            if (!_lastAtmosphereColorValid || HasColorShift(atmosphereColor, _lastAtmosphereColor))
-            {
-                Shader.SetGlobalColor(_HectonAtmosphereColorId, atmosphereColor);
-                _lastAtmosphereColor = atmosphereColor;
-                _lastAtmosphereColorValid = true;
-            }
-
-            if (!_lastFogLodValid || math.abs(snapshot.FogLod - _lastFogLod) > 0.0001f)
-            {
-                Shader.SetGlobalFloat(_HectonFogLodId, snapshot.FogLod);
-                _lastFogLod = snapshot.FogLod;
-                _lastFogLodValid = true;
-            }
-
-            float faunaEmissive = snapshot.EclipseScalar > 0.5f
-                ? 1f + math.saturate((snapshot.EclipseScalar - 0.5f) * 2f) * 1.35f
-                : 1f;
-            if (!_lastFaunaEmissiveValid || math.abs(faunaEmissive - _lastFaunaEmissive) > 0.0001f)
-            {
-                Shader.SetGlobalFloat(_FaunaEmissiveMultiplierId, faunaEmissive);
-                _lastFaunaEmissive = faunaEmissive;
-                _lastFaunaEmissiveValid = true;
-            }
-
-            Color surfaceEmission = ResolveSurfaceEmission(snapshot.MoonPhase01, snapshot.EclipseScalar);
-            bool surfaceEmissionChanged = !_lastSurfaceEmissionColorValid ||
-                HasColorShift(surfaceEmission, _lastSurfaceEmissionColor);
-            if (surfaceEmissionChanged)
-            {
-                Shader.SetGlobalColor(_HectonWaterSurfaceEmissionId, surfaceEmission);
-                Shader.SetGlobalColor(_HectonUnderwaterSurfaceColorId, surfaceEmission);
-                _lastSurfaceEmissionColor = surfaceEmission;
-                _lastSurfaceEmissionColorValid = true;
-            }
-
-            var underwaterVisuals = GlobalRegistry.UnderwaterVisuals;
-            if (underwaterVisuals != null &&
-                (surfaceEmissionChanged || !ReferenceEquals(underwaterVisuals, _lastSurfaceEmissionTarget)))
-            {
-                underwaterVisuals.ApplyGIRelaySurfaceEmission(surfaceEmission);
-                _lastSurfaceEmissionTarget = underwaterVisuals;
-            }
-            else if (underwaterVisuals == null)
-            {
-                _lastSurfaceEmissionTarget = null;
-            }
-
-            Color depthPalette = ResolveDepthPaletteColor(snapshot.Depth01);
-            if (!_lastDepthPaletteColorValid || HasColorShift(depthPalette, _lastDepthPaletteColor))
-            {
-                Shader.SetGlobalColor(_HectonGIProbeTintId, depthPalette);
-                Shader.SetGlobalColor(_WaterVolumeDepthPaletteId, depthPalette);
-                _lastDepthPaletteColor = depthPalette;
-                _lastDepthPaletteColorValid = true;
-            }
-
-            Vector4 relayState = new Vector4(snapshot.Depth01, snapshot.TimeOfDay01, snapshot.EclipseScalar, snapshot.FogLod);
-            Vector4 relayDelta = relayState - _lastRelayState;
-            float relayDeltaSq =
-                (relayDelta.x * relayDelta.x) +
-                (relayDelta.y * relayDelta.y) +
-                (relayDelta.z * relayDelta.z) +
-                (relayDelta.w * relayDelta.w);
-            if (!_lastRelayStateValid || relayDeltaSq > ShaderColorEpsilon)
-            {
-                Shader.SetGlobalVector(_HectonGIRelayStateId, relayState);
-                _lastRelayState = relayState;
-                _lastRelayStateValid = true;
-            }
-
-            Vector4 biomeGradientState = new Vector4(
-                biomeGradient.BiomeA,
-                biomeGradient.BiomeB,
-                math.saturate(biomeGradient.BlendFactor01),
-                math.max(0f, biomeGradient.BoundaryDistanceMeters));
-            Vector4 biomeDelta = biomeGradientState - _lastBiomeGradientState;
-            float biomeDeltaSq =
-                (biomeDelta.x * biomeDelta.x) +
-                (biomeDelta.y * biomeDelta.y) +
-                (biomeDelta.z * biomeDelta.z) +
-                (biomeDelta.w * biomeDelta.w);
-            if (!_lastBiomeGradientStateValid || biomeDeltaSq > ShaderColorEpsilon)
-            {
-                Shader.SetGlobalVector(_HectonBiomeGradientStateId, biomeGradientState);
-                _lastBiomeGradientState = biomeGradientState;
-                _lastBiomeGradientStateValid = true;
-            }
         }
 
         private void BindGlobalWaterVolumeCubemap()
@@ -781,53 +837,6 @@ namespace Hecton8.Lighting
                 Shader.SetGlobalTexture(_WaterVolumeId, waterVolumeLowResCubemap);
                 _lastWaterVolumeCubemap = waterVolumeLowResCubemap;
             }
-
-            if (!_globalReflectionBound || RenderSettings.customReflectionTexture != waterVolumeLowResCubemap)
-            {
-                RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
-                RenderSettings.customReflectionTexture = waterVolumeLowResCubemap;
-                _globalReflectionBound = true;
-            }
-        }
-
-        private static Color ResolveAtmosphereColor(float depth01, float eclipse01)
-        {
-            Color shallow = new Color(0.035f, 0.46f, 0.58f, 1f);
-            Color deep = new Color(0.001f, 0.002f, 0.004f, 1f);
-            Color eclipse = new Color(0.018f, 0.024f, 0.048f, 1f);
-            Color depthColor = Color.Lerp(shallow, deep, depth01);
-            depthColor = Color.Lerp(depthColor, eclipse, eclipse01 * 0.55f);
-            depthColor.a = 1f;
-            return depthColor;
-        }
-
-        private static Color ResolveSurfaceEmission(float moonPhase01, float eclipse01)
-        {
-            Color lunar = Color.Lerp(
-                new Color(0.015f, 0.025f, 0.045f, 1f),
-                new Color(0.16f, 0.23f, 0.34f, 1f),
-                math.saturate(moonPhase01));
-            Color eclipse = new Color(0.04f, 0.08f, 0.14f, 1f);
-            Color result = Color.Lerp(lunar, eclipse, math.saturate(eclipse01));
-            result.a = 1f;
-            return result;
-        }
-
-        private static Color ResolveDepthPaletteColor(float depth01)
-        {
-            Color shallow = new Color(0.08f, 0.82f, 0.94f, 1f);
-            Color deep = new Color(0.002f, 0.003f, 0.006f, 1f);
-            Color result = Color.Lerp(shallow, deep, math.saturate(depth01));
-            result.a = 1f;
-            return result;
-        }
-
-        private static bool HasColorShift(Color lhs, Color rhs)
-        {
-            float dr = lhs.r - rhs.r;
-            float dg = lhs.g - rhs.g;
-            float db = lhs.b - rhs.b;
-            return (dr * dr) + (dg * dg) + (db * db) > ShaderColorEpsilon;
         }
 
         private static BiomeGradientSignal ResolveLatestBiomeGradientSignal()
@@ -863,7 +872,7 @@ namespace Hecton8.Lighting
                 _telemetryCount++;
         }
 
-        private void DumpBlackBox()
+        private unsafe void DumpBlackBox()
         {
             NativeArray<GIRelayTelemetryEntry> telemetryRing = OpenGIRelayArray(in _telemetryRing, SHTelemetryRingBuffer, TelemetryCapacity);
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
@@ -877,7 +886,18 @@ namespace Hecton8.Lighting
                     Directory.CreateDirectory(directory);
 
                 using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
+                GIRelayDumpHeader header = new GIRelayDumpHeader
+                {
+                    Magic = 0x47495245u,
+                    EntryStrideBytes = UnsafeUtility.SizeOf<GIRelayTelemetryEntry>(),
+                    EntryCount = telemetryRing.Length,
+                    Cursor = _telemetryCursor,
+                    RecordedCount = _telemetryCount,
+                    Sequence = _snapshot.Sequence,
+                    Reserved0 = 0u,
+                    Reserved1 = 0u
+                };
+                stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref header), UnsafeUtility.SizeOf<GIRelayDumpHeader>()));
                 int count = telemetryRing.Length;
                 int startIndex = _telemetryCount >= count ? _telemetryCursor : 0;
                 for (int i = 0; i < count; i++)
@@ -887,22 +907,13 @@ namespace Hecton8.Lighting
                         entryIndex -= count;
 
                     GIRelayTelemetryEntry entry = telemetryRing[entryIndex];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.Sequence);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.ShadowCascadeLevel);
-                    writer.Write(entry.DepthMeters);
-                    writer.Write(entry.TimeOfDay01);
-                    writer.Write(entry.EclipseScalar);
-                    writer.Write(entry.FogLod);
-                    writer.Write(entry.LightningScalar);
+                    stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), UnsafeUtility.SizeOf<GIRelayTelemetryEntry>()));
                 }
             }
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonGIRelaySystem] Black-box dump failed: " + exception.Message, this);
+                Debug.LogException(exception, this);
 #endif
             }
         }
@@ -947,81 +958,6 @@ namespace Hecton8.Lighting
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct GIRelaySHLerpJob : IJob
-        {
-            [ReadOnly, NoAlias] public NativeArray<float> SHDay;
-            [ReadOnly, NoAlias] public NativeArray<float> SHNight;
-            [ReadOnly, NoAlias] public NativeArray<float> SHDiscreteStates;
-            [WriteOnly, NoAlias] public NativeArray<float> SHOutput;
-            public float TimeOfDay01;
-            public float Depth01;
-            public float Eclipse01;
-            public float MoonPhase01;
-            public float BiomeBlend01;
-            public float DepthPaletteStrength;
-            public float QualityWeight;
-
-            public void Execute()
-            {
-                float daylight01 = ResolveDaylight(TimeOfDay01, Eclipse01);
-                float3 depthTint = ResolveDepthTint(Depth01, DepthPaletteStrength, MoonPhase01, BiomeBlend01);
-                int state = ResolveDiscreteState(TimeOfDay01, daylight01);
-                int offset = state * SHCoefficientCount;
-                float discreteWeight = 1f - Smooth01((math.saturate(QualityWeight) - 0.18f) * 5.0f);
-
-                for (int i = 0; i < SHCoefficientCount; i++)
-                {
-                    float continuous = math.lerp(SHNight[i], SHDay[i], daylight01);
-                    float snapped = SHDiscreteStates[offset + i];
-                    float value = math.lerp(continuous, snapped, discreteWeight);
-                    SHOutput[i] = value * ResolveChannelTint(i, depthTint);
-                }
-            }
-
-            private static float ResolveDaylight(float timeOfDay01, float eclipse01)
-            {
-                float daylight = math.saturate(1f - math.abs(timeOfDay01 - 0.5f) * 2f);
-                return daylight * (1f - math.saturate(eclipse01) * 0.72f);
-            }
-
-            private static int ResolveDiscreteState(float timeOfDay01, float daylight01)
-            {
-                if (daylight01 < 0.18f)
-                    return 0;
-                if (timeOfDay01 < 0.5f)
-                    return 1;
-                if (daylight01 > 0.66f)
-                    return 2;
-                return 3;
-            }
-
-            private static float3 ResolveDepthTint(float depth01, float strength, float moonPhase01, float biomeBlend01)
-            {
-                float3 shallow = new float3(0.34f, 0.94f, 1f);
-                float3 deep = new float3(0.006f, 0.008f, 0.014f);
-                float3 palette = math.lerp(shallow, deep, math.saturate(depth01));
-                palette += new float3(0.015f, 0.025f, 0.04f) * math.saturate(moonPhase01) * (1f - math.saturate(depth01));
-                palette = math.lerp(palette, new float3(0.08f, 0.20f, 0.16f), math.saturate(biomeBlend01) * 0.18f);
-                return math.lerp(new float3(1f, 1f, 1f), palette, math.saturate(strength));
-            }
-
-            private static float ResolveChannelTint(int coefficientIndex, float3 tint)
-            {
-                if (coefficientIndex < SHChannelCoefficientCount)
-                    return tint.x;
-                if (coefficientIndex < SHChannelCoefficientCount * 2)
-                    return tint.y;
-                return tint.z;
-            }
-
-            private static float Smooth01(float value)
-            {
-                float x = math.saturate(value);
-                return x * x * (3f - 2f * x);
-            }
-        }
-
         [Flags]
         private enum GIRelayTelemetryFlags : uint
         {
@@ -1033,6 +969,27 @@ namespace Hecton8.Lighting
             Pushed = 1u << 4,
             NonFinite = 1u << 5,
             SHLayoutMismatch = 1u << 6
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        private struct GIRelayDumpHeader
+        {
+            [FieldOffset(0)]
+            public uint Magic;
+            [FieldOffset(4)]
+            public int EntryStrideBytes;
+            [FieldOffset(8)]
+            public int EntryCount;
+            [FieldOffset(12)]
+            public int Cursor;
+            [FieldOffset(16)]
+            public int RecordedCount;
+            [FieldOffset(20)]
+            public uint Sequence;
+            [FieldOffset(24)]
+            public uint Reserved0;
+            [FieldOffset(28)]
+            public uint Reserved1;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]

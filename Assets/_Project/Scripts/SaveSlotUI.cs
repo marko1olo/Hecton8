@@ -38,7 +38,7 @@ namespace Hecton.UI.MainMenu
         private Color _detailsBaseColor;
         private bool _useCompactSingleTextLayout;
         private UnityAction _buttonClickAction;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private bool _hotSwapRegistered;
         private readonly char[] _slotLineBuffer = new char[128]; // COLD ALLOC: char[128] - save slot title staging buffer - owner: SaveSlotUI
         private readonly char[] _detailsLineBuffer = new char[512]; // COLD ALLOC: char[512] - save slot metadata staging buffer - owner: SaveSlotUI
@@ -298,9 +298,9 @@ namespace Hecton.UI.MainMenu
 
         private void ApplyPresentation()
         {
-            LocalizationManager loc = _localization;
+            ILocalizationTextReadModel loc = _localization;
             string prefix = loc != null
-                ? loc.Get(LocalizationKeys.SLOT_PREFIX)
+                ? loc.GetOrFallback(LocalizationKeys.SLOT_PREFIX, "SLOT")
                 : "SLOT";
             int slotLineLength = BuildSlotLine(prefix.AsSpan(), ExtractSlotNumberSpan(_slotId), _slotLineBuffer);
             int detailsLineLength = _useCompactSingleTextLayout
@@ -366,7 +366,7 @@ namespace Hecton.UI.MainMenu
             return cursor;
         }
 
-        private int BuildDetailsLine(LocalizationManager loc, char[] destination)
+        private int BuildDetailsLine(ILocalizationTextReadModel loc, char[] destination)
         {
             if (_useCompactSingleTextLayout)
                 return BuildCompactDetailsLine(loc, destination);
@@ -399,19 +399,19 @@ namespace Hecton.UI.MainMenu
             }
 
             string noData = loc != null
-                ? loc.Get(LocalizationKeys.SLOT_NO_DATA)
+                ? loc.GetOrFallback(LocalizationKeys.SLOT_NO_DATA, "NO DATA")
                 : "NO DATA";
             Append(noData.AsSpan(), destination, ref cursor);
             return cursor;
         }
 
-        private int BuildCompactDetailsLine(LocalizationManager loc, char[] destination)
+        private int BuildCompactDetailsLine(ILocalizationTextReadModel loc, char[] destination)
         {
             int cursor = 0;
             if (!_exists)
             {
                 string noData = loc != null
-                    ? loc.Get(LocalizationKeys.SLOT_NO_DATA)
+                    ? loc.GetOrFallback(LocalizationKeys.SLOT_NO_DATA, "NO DATA")
                     : "NO DATA";
                 Append("<size=58%>".AsSpan(), destination, ref cursor);
                 Append(noData.AsSpan(), destination, ref cursor);
@@ -454,7 +454,7 @@ namespace Hecton.UI.MainMenu
         }
 
         private static string GetCompactStatusLabel(
-            LocalizationManager loc,
+            ILocalizationTextReadModel loc,
             SaveSlotIntegrityState integrityState,
             string fallbackStatusLabel)
         {
@@ -479,7 +479,7 @@ namespace Hecton.UI.MainMenu
             }
         }
 
-        private static string ResolveSceneLabel(LocalizationManager loc, string sceneName)
+        private static string ResolveSceneLabel(ILocalizationTextReadModel loc, string sceneName)
         {
             if (string.IsNullOrEmpty(sceneName))
                 return string.Empty;
@@ -487,7 +487,7 @@ namespace Hecton.UI.MainMenu
             if (string.Equals(sceneName, "02_HECTON_WORLD", StringComparison.Ordinal))
             {
                 return loc != null
-                    ? loc.Get(LocalizationKeys.SLOT_SCENE_WORLD)
+                    ? loc.GetOrFallback(LocalizationKeys.SLOT_SCENE_WORLD, "WORLD")
                     : "WORLD";
             }
 
@@ -495,7 +495,7 @@ namespace Hecton.UI.MainMenu
         }
 
         private static string ResolveStatusLabel(
-            LocalizationManager loc,
+            ILocalizationTextReadModel loc,
             SaveSlotIntegrityState integrityState,
             string fallbackStatusLabel)
         {
@@ -520,10 +520,10 @@ namespace Hecton.UI.MainMenu
             }
         }
 
-        private static string ResolveCompactLabel(LocalizationManager loc, string key, string fallback)
+        private static string ResolveCompactLabel(ILocalizationTextReadModel loc, string key, string fallback)
         {
             return loc != null
-                ? loc.GetOrFallback(loc.CurrentLanguage, key, fallback)
+                ? loc.GetOrFallback(key, fallback)
                 : fallback;
         }
 
@@ -560,14 +560,14 @@ namespace Hecton.UI.MainMenu
             if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
                 return;
 
-            _localization = currentService as LocalizationManager;
+            _localization = currentService as ILocalizationTextReadModel;
             if (!string.IsNullOrEmpty(_slotId))
                 ApplyPresentation();
         }
 
         private void CacheRegistryServicesCold()
         {
-            _localization = LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterHotSwapListener()

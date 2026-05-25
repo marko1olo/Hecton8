@@ -188,7 +188,8 @@ namespace Hecton8.Editor
             HectonMaterialChannelPackValidator.AuditResult materialResult = HectonMaterialChannelPackValidator.RunAudit();
             HectonLodGroupAudit.AuditResult lodResult = HectonLodGroupAudit.RunAudit();
 
-            HashSet<string> quarantinePaths = new HashSet<string>(StringComparer.Ordinal);
+            int quarantineCapacity = materialResult.QuarantineCandidatePaths.Count + lodResult.QuarantineCandidatePaths.Count;
+            HashSet<string> quarantinePaths = new HashSet<string>(quarantineCapacity, StringComparer.Ordinal);
             for (int i = 0; i < materialResult.QuarantineCandidatePaths.Count; i++)
                 quarantinePaths.Add(materialResult.QuarantineCandidatePaths[i]);
 

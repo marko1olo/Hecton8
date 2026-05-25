@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Mathematics;
@@ -196,7 +197,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
             WreckageGenerationTelemetryEntry telemetry = buffers.TelemetryRing[cursor];
             WreckagePaddedCounterDTO counters = buffers.Counters[0];
             _telemetryLabel.text =
-                "Sector 0x" + telemetry.SectorHash.ToString("X8") +
+                "Sector 0x" + telemetry.SectorHash.ToString("X8", CultureInfo.InvariantCulture) +
                 " | Modules " + telemetry.CollapsedModules +
                 " | Render " + counters.RenderMatrixCount +
                 " | Debris " + counters.DebrisCount +
@@ -205,7 +206,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
                 " | H8BIN " + counters.BinaryRuleCount +
                 " | CSV " + counters.CsvRuleCount +
                 " | Backtracks " + telemetry.BacktrackIterations +
-                " | Est. Burst ms " + telemetry.EstimatedComputeMs.ToString("0.000");
+                " | Est. Burst ms " + telemetry.EstimatedComputeMs.ToString("0.000", CultureInfo.InvariantCulture);
         }
 
         private static string ProjectRoot()

@@ -6,11 +6,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Meta;
-using Hecton8.Tools;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -33,7 +29,6 @@ namespace Hecton8.UI
         private const int TelemetryCapacity = 300;
         private const float UnlockErrorThreshold = 0.05f;
         private const float UnlockHoldSeconds = 2f;
-        private const float TwoPi = math.PI * 2f;
         private const float Hash24ToUnit = 0.00000005960464833f;
         private const uint DefaultArtifactHash = 0x534F5648u; // SOVH
         private const uint DefaultBlueprintHash = 0x46485455u; // FHTU
@@ -41,10 +36,11 @@ namespace Hecton8.UI
         private const float ShaderFloatEpsilon = 0.0001f;
         private const string TelemetryDumpPath = "Docs/AgentLogs/Dump_MINIGAME_FREQUENCY_TUNING.bin";
 
-        private static readonly int SegmentsId = Shader.PropertyToID("_HectonFrequencyTuningSegments");
         private static readonly int LocalToWorldId = Shader.PropertyToID("_HectonFrequencyTuningLocalToWorld");
         private static readonly int TubeRadiusId = Shader.PropertyToID("_HectonFrequencyTuningTubeRadius");
         private static readonly int TimeErrorStageId = Shader.PropertyToID("_HectonFrequencyTuningTimeErrorStage");
+        private static readonly int WaveScalarsId = Shader.PropertyToID("_HectonFrequencyTuningWaveScalars");
+        private static readonly int WaveLayoutId = Shader.PropertyToID("_HectonFrequencyTuningWaveLayout");
         private static readonly int ErrorGlobalId = Shader.PropertyToID("_HectonFrequencyTuningError01");
 
         [Header("PDA Surface")]
@@ -73,25 +69,22 @@ namespace Hecton8.UI
         [SerializeField, Min(0.01f)] private float hardDriftFrequency = 0.17f;
         [SerializeField, Min(0.02f)] private float feedbackIntervalSeconds = 0.1f;
 
-        private VaultGenerationHandle<float> _targetWaveHandle;
-        private VaultGenerationHandle<float> _playerWaveHandle;
-        private VaultGenerationHandle<float> _errorOutputHandle;
-        private VaultGenerationHandle<FrequencyTuningWaveGpuSegment> _gpuSegmentsHandle;
         private VaultGenerationHandle<FrequencyTuningStageTarget> _stageTargetsHandle;
         private VaultGenerationHandle<FrequencyTuningTelemetryEntry> _telemetryRingHandle;
-        private GraphicsBuffer _segmentBuffer;
         private GraphicsBuffer _argsBuffer;
+        private GraphicsBuffer _argsBufferA;
+        private GraphicsBuffer _argsBufferB;
         private Material _runtimeMaterial;
         private Material _runtimeSourceMaterial;
         private IDataVault _cachedDataVault;
         private IInputService _cachedInputService;
         private Mesh _resolvedMesh;
         private Mesh _runtimeQuadMesh;
-        private JobHandle _waveJobHandle;
         private int _pointCount = HighPointCount;
         private int _waveSegmentCount = HighPointCount - 1;
         private int _gpuSegmentCapacity = (HighPointCount - 1) * 2;
         private int _lastArgsInstanceCount = -1;
+        private int _argsBufferWriteIndex;
         private int _telemetryCursor;
         private int _stageIndex;
         private int _lockedStageMask;
@@ -109,6 +102,7 @@ namespace Hecton8.UI
         private float _lastTickUnscaledTime;
         private float _nextFeedbackTime;
         private float _lastShaderError = float.PositiveInfinity;
+        private float _pendingWaveError01 = 1f;
         private uint _lastTickFrame;
         private bool _scannerActive;
         private bool _unlocked;
@@ -116,10 +110,12 @@ namespace Hecton8.UI
         private bool _registeredLateFrame;
         private bool _nativeReady;
         private bool _graphicsReady;
-        private bool _waveJobScheduled;
         private bool _disposed;
-        private bool _materialBufferBound;
         private bool _registeredHotSwapListener;
+        private bool _presentationFeedbackClearRequested;
+        private bool _waveResultDirty;
+        private bool _nativeResourcesDirty;
+        private bool _graphicsResourcesDirty;
         private float _cachedQualityWeight01 = 1f;
 
         private void Awake()
@@ -148,7 +144,6 @@ namespace Hecton8.UI
         {
             TryUnregisterTickHandlers();
             TryUnregisterHotSwapListener();
-            CompleteWaveJobForTeardown();
             ClearPresentationFeedback();
             DisposeNativeResources();
         }
@@ -166,7 +161,6 @@ namespace Hecton8.UI
             _disposed = true;
             TryUnregisterTickHandlers();
             TryUnregisterHotSwapListener();
-            CompleteWaveJobForTeardown();
             DisposeNativeResources();
             DisposeGraphicsResources();
         }
@@ -176,44 +170,59 @@ namespace Hecton8.UI
             RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: true);
 
             if (!_nativeReady)
-                EnsureNativeResources();
+            {
+                _nativeResourcesDirty = true;
+                return;
+            }
+
             if (!_graphicsReady)
-                EnsureGraphicsResources();
-            if (!_nativeReady || !_graphicsReady)
+                _graphicsResourcesDirty = true;
+            if (!_graphicsReady)
                 return;
 
             DrainScannerToolSignals();
             if (!_scannerActive || _unlocked)
             {
-                ClearPresentationFeedback();
+                QueuePresentationFeedbackClear();
                 return;
             }
 
             float safeDeltaTime = SanitizePositive(deltaTime, 0f);
             _lastTickDeltaTime = safeDeltaTime;
             _lastTickUnscaledTime = Time.unscaledTime;
-            _lastTickFrame = unchecked((uint)Time.frameCount);
+            _lastTickFrame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
             SampleInputState(safeDeltaTime);
             ResolveTargetForCurrentStage(out _targetFrequency, out _targetAmplitude);
-
-            if (!_waveJobScheduled)
-                ScheduleWaveJobs();
+            QueueWaveResult(EvaluateScalarWaveError());
         }
 
         public void LateFrameTick()
         {
+            if (_nativeResourcesDirty || !_nativeReady)
+            {
+                _nativeResourcesDirty = false;
+                EnsureNativeResources();
+            }
+
             if (!_nativeReady)
                 return;
 
-            if (_waveJobScheduled)
+            if (_graphicsResourcesDirty || !_graphicsReady)
             {
-                if (!_waveJobHandle.IsCompleted)
-                    return;
+                _graphicsResourcesDirty = false;
+                EnsureGraphicsResources();
+            }
 
-                Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _waveJobHandle);
-                _waveJobScheduled = false;
-                CommitWaveResult(_lastTickDeltaTime);
-                UploadGpuWave();
+            if (!_graphicsReady)
+                return;
+
+            if (_presentationFeedbackClearRequested)
+                ClearPresentationFeedback();
+
+            if (_waveResultDirty)
+            {
+                _waveResultDirty = false;
+                CommitWaveResult(_lastTickDeltaTime, _pendingWaveError01);
             }
 
             if (_scannerActive && !_unlocked)
@@ -237,58 +246,14 @@ namespace Hecton8.UI
             _waveSegmentCount = math.max(1, _pointCount - 1);
             _gpuSegmentCapacity = _waveSegmentCount * 2;
 
-            if (!TryResolveTargetWave(out NativeArray<float> targetWave) ||
-                !TryResolvePlayerWave(out NativeArray<float> playerWave) ||
-                !TryResolveErrorOutput(out NativeArray<float> errorOutput) ||
-                !TryResolveGpuSegments(out NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments) ||
-                !TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets) ||
+            if (!TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets) ||
                 !TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
             {
                 return;
             }
 
-            ClearNativeState(targetWave, playerWave, errorOutput, gpuSegments, stageTargets, telemetryRing);
+            ClearNativeState(stageTargets, telemetryRing);
             _nativeReady = true;
-        }
-
-        private bool TryResolveTargetWave(out NativeArray<float> targetWave)
-        {
-            return TryResolveVaultBuffer(
-                ref _targetWaveHandle,
-                BufferID.PdaFrequencyTargetWave,
-                math.max(1, _pointCount),
-                NativeArrayOptions.ClearMemory,
-                out targetWave);
-        }
-
-        private bool TryResolvePlayerWave(out NativeArray<float> playerWave)
-        {
-            return TryResolveVaultBuffer(
-                ref _playerWaveHandle,
-                BufferID.PdaFrequencyPlayerWave,
-                math.max(1, _pointCount),
-                NativeArrayOptions.ClearMemory,
-                out playerWave);
-        }
-
-        private bool TryResolveErrorOutput(out NativeArray<float> errorOutput)
-        {
-            return TryResolveVaultBuffer(
-                ref _errorOutputHandle,
-                BufferID.PdaFrequencyErrorOutput,
-                1,
-                NativeArrayOptions.ClearMemory,
-                out errorOutput);
-        }
-
-        private bool TryResolveGpuSegments(out NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments)
-        {
-            return TryResolveVaultBuffer(
-                ref _gpuSegmentsHandle,
-                BufferID.PdaFrequencyGpuSegments,
-                math.max(1, _gpuSegmentCapacity),
-                NativeArrayOptions.ClearMemory,
-                out gpuSegments);
         }
 
         private bool TryResolveStageTargets(out NativeArray<FrequencyTuningStageTarget> stageTargets)
@@ -333,7 +298,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.UI, options);
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.UI, options);
             if (!IsVaultHandleCreated(in acquired) ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||
@@ -361,21 +326,9 @@ namespace Hecton8.UI
         }
 
         private static void ClearNativeState(
-            NativeArray<float> targetWave,
-            NativeArray<float> playerWave,
-            NativeArray<float> errorOutput,
-            NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments,
             NativeArray<FrequencyTuningStageTarget> stageTargets,
             NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
         {
-            for (int i = 0; i < targetWave.Length; i++)
-                targetWave[i] = 0f;
-            for (int i = 0; i < playerWave.Length; i++)
-                playerWave[i] = 0f;
-            for (int i = 0; i < errorOutput.Length; i++)
-                errorOutput[i] = 0f;
-            for (int i = 0; i < gpuSegments.Length; i++)
-                gpuSegments[i] = default;
             for (int i = 0; i < stageTargets.Length; i++)
                 stageTargets[i] = default;
             for (int i = 0; i < telemetryRing.Length; i++)
@@ -384,26 +337,27 @@ namespace Hecton8.UI
 
         private void EnsureGraphicsResources()
         {
-            if (_graphicsReady && _segmentBuffer != null && _argsBuffer != null && _resolvedMesh != null && _segmentBuffer.count >= _gpuSegmentCapacity)
-                return;
-
-            _resolvedMesh = waveMesh != null ? waveMesh : ResolveRuntimeQuadMesh();
-            if (_segmentBuffer != null && _segmentBuffer.count < _gpuSegmentCapacity)
+            if (_graphicsReady &&
+                _argsBufferA != null &&
+                _argsBufferB != null &&
+                _resolvedMesh != null)
             {
-                _segmentBuffer.Dispose();
-                _segmentBuffer = null;
-                _materialBufferBound = false;
+                return;
             }
 
-            if (_segmentBuffer == null)
-                _segmentBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrequencyTuningWaveGpuSegment>(_gpuSegmentCapacity); // COLD ALLOC: GraphicsBuffer[62/254] - PDA wave segment buffer - owner: PDADecryptionSpectrogramPanel
+            _resolvedMesh = waveMesh != null ? waveMesh : ResolveRuntimeQuadMesh();
 
-            if (_argsBuffer == null)
-                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - PDA wave indirect args - owner: PDADecryptionSpectrogramPanel
+            if (_argsBufferA == null)
+                _argsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - PDA wave indirect args A - owner: PDADecryptionSpectrogramPanel
+
+            if (_argsBufferB == null)
+                _argsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - PDA wave indirect args B - owner: PDADecryptionSpectrogramPanel
 
             ResolveRuntimeMaterial();
+            if (_argsBuffer == null)
+                _argsBuffer = _argsBufferA;
             UpdateDrawArgs(_gpuSegmentCapacity);
-            _graphicsReady = _resolvedMesh != null && _segmentBuffer != null && _argsBuffer != null;
+            _graphicsReady = _resolvedMesh != null && _argsBufferA != null && _argsBufferB != null;
         }
 
         private void ResolveRuntimeMaterial()
@@ -420,7 +374,6 @@ namespace Hecton8.UI
                     hideFlags = HideFlags.DontSave,
                     enableInstancing = true
                 }; // COLD ALLOC: Material[1] - PDA frequency tuning buffer-bound draw material - owner: PDADecryptionSpectrogramPanel
-                _materialBufferBound = false;
                 return;
             }
 
@@ -441,7 +394,6 @@ namespace Hecton8.UI
                 enableInstancing = true
             }; // COLD ALLOC: Material[1] - editor fallback PDA frequency tuning material - owner: PDADecryptionSpectrogramPanel
             _runtimeSourceMaterial = null;
-            _materialBufferBound = false;
         }
 
         private void ResetRuntimeState(uint artifactHash, uint blueprintHash)
@@ -476,7 +428,7 @@ namespace Hecton8.UI
 
             if (!hadSignal)
             {
-                if (!GlobalSignals.TryGetLatestScannerToolActiveSignal(out latest, out int latestSequence) ||
+                if (!ScannerSignalRoute.TryGetLatestActive(out latest, out int latestSequence) ||
                     latestSequence == _lastScannerToolSignalSequence)
                 {
                     return;
@@ -484,7 +436,7 @@ namespace Hecton8.UI
 
                 _lastScannerToolSignalSequence = latestSequence;
             }
-            else if (GlobalSignals.TryGetLatestScannerToolActiveSignal(out _, out int latestSequence))
+            else if (ScannerSignalRoute.TryGetLatestActive(out _, out int latestSequence))
             {
                 _lastScannerToolSignalSequence = latestSequence;
             }
@@ -514,50 +466,23 @@ namespace Hecton8.UI
             _playerFrequency = math.lerp(_playerFrequency, targetFrequency, lerpAlpha);
         }
 
-        private void ScheduleWaveJobs()
+        private float EvaluateScalarWaveError()
         {
-            int safePointCount = math.clamp(_pointCount, LowPointCount, HighPointCount);
-            if (!TryResolveTargetWave(out NativeArray<float> targetWave) ||
-                !TryResolvePlayerWave(out NativeArray<float> playerWave) ||
-                !TryResolveErrorOutput(out NativeArray<float> errorOutput) ||
-                !TryResolveGpuSegments(out NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments))
-            {
-                return;
-            }
-
-            FrequencyWaveGenerateJob generateJob = new FrequencyWaveGenerateJob
-            {
-                TargetWave = new NativeSlice<float>(targetWave, 0, safePointCount),
-                PlayerWave = new NativeSlice<float>(playerWave, 0, safePointCount),
-                GpuSegments = new NativeSlice<FrequencyTuningWaveGpuSegment>(gpuSegments, 0, math.max(1, _gpuSegmentCapacity)),
-                PointCount = safePointCount,
-                SegmentCount = math.min(_waveSegmentCount, math.max(1, safePointCount - 1)),
-                TargetFrequency = _targetFrequency,
-                TargetAmplitude = _targetAmplitude,
-                PlayerFrequency = _playerFrequency,
-                PlayerAmplitude = _playerAmplitude,
-                LocalWidth = math.max(0.01f, localSurfaceSize.x),
-                LocalHeight = math.max(0.01f, localSurfaceSize.y),
-                StageIndex = _stageIndex
-            };
-            JobHandle generateHandle = generateJob.Schedule(safePointCount, 32);
-            FrequencyWaveErrorJob errorJob = new FrequencyWaveErrorJob
-            {
-                TargetWave = new NativeSlice<float>(targetWave, 0, safePointCount),
-                PlayerWave = new NativeSlice<float>(playerWave, 0, safePointCount),
-                ErrorOutput = new NativeSlice<float>(errorOutput, 0, 1),
-                PointCount = safePointCount
-            };
-            _waveJobHandle = errorJob.Schedule(generateHandle);
-            _waveJobScheduled = true;
+            float frequencyRange = math.max(0.0001f, playerFrequencyMax - playerFrequencyMin);
+            float amplitudeRange = math.max(0.0001f, playerAmplitudeMax - playerAmplitudeMin);
+            float frequencyError = math.abs(_targetFrequency - _playerFrequency) * math.rcp(frequencyRange);
+            float amplitudeError = math.abs(_targetAmplitude - _playerAmplitude) * math.rcp(amplitudeRange);
+            return math.saturate(frequencyError * 0.62f + amplitudeError * 0.38f);
         }
 
-        private void CommitWaveResult(float deltaTime)
+        private void QueueWaveResult(float error01)
         {
-            if (!TryResolveErrorOutput(out NativeArray<float> errorOutput))
-                return;
+            _pendingWaveError01 = Sanitize01(error01);
+            _waveResultDirty = true;
+        }
 
-            float rawError = errorOutput[0];
+        private void CommitWaveResult(float deltaTime, float rawError)
+        {
             if (!math.isfinite(rawError))
             {
                 DumpTelemetryCold();
@@ -603,7 +528,7 @@ namespace Hecton8.UI
                 return;
 
             _unlocked = true;
-            GlobalSignals.Publish(new BlueprintUnlockedSignal
+            SignalBus<BlueprintUnlockedSignal>.TryPush(new BlueprintUnlockedSignal
             {
                 EntityHash = _artifactHash,
                 BlueprintHash = _blueprintHash != 0u ? _blueprintHash : DefaultBlueprintHash,
@@ -614,25 +539,11 @@ namespace Hecton8.UI
             });
         }
 
-        private void UploadGpuWave()
-        {
-            if (_segmentBuffer == null || !TryResolveGpuSegments(out NativeArray<FrequencyTuningWaveGpuSegment> gpuSegments))
-                return;
-
-            GraphicsBufferUploadUtility.UploadNativeArray(_segmentBuffer, gpuSegments, _gpuSegmentCapacity);
-        }
-
         private void RenderWaveMesh()
         {
             ResolveRuntimeMaterial();
-            if (_runtimeMaterial == null || _resolvedMesh == null || _segmentBuffer == null || _argsBuffer == null)
+            if (_runtimeMaterial == null || _resolvedMesh == null || _argsBuffer == null)
                 return;
-
-            if (!_materialBufferBound)
-            {
-                _runtimeMaterial.SetBuffer(SegmentsId, _segmentBuffer);
-                _materialBufferBound = true;
-            }
 
             Transform anchor = surfaceAnchor != null ? surfaceAnchor : transform;
             Matrix4x4 localToWorld = anchor.localToWorldMatrix * Matrix4x4.Translate(localSurfaceOffset);
@@ -640,6 +551,12 @@ namespace Hecton8.UI
             Vector3 worldCenter = new Vector3(origin.x, origin.y, origin.z);
             _runtimeMaterial.SetMatrix(LocalToWorldId, localToWorld);
             _runtimeMaterial.SetFloat(TubeRadiusId, math.max(0.0005f, tubeRadius));
+            _runtimeMaterial.SetVector(
+                WaveScalarsId,
+                new Vector4(_targetFrequency, _targetAmplitude, _playerFrequency, _playerAmplitude));
+            _runtimeMaterial.SetVector(
+                WaveLayoutId,
+                new Vector4(math.max(1, _waveSegmentCount), math.max(0.01f, localSurfaceSize.x), math.max(0.01f, localSurfaceSize.y), _pointCount));
             _runtimeMaterial.SetVector(
                 TimeErrorStageId,
                 new Vector4(_lastTickUnscaledTime, _currentError01, _stageIndex, _holdTimerSeconds * math.rcp(UnlockHoldSeconds)));
@@ -659,15 +576,19 @@ namespace Hecton8.UI
 
         private void UpdateDrawArgs(int instanceCount)
         {
-            if (_argsBuffer == null || _resolvedMesh == null)
+            if ((_argsBufferA == null && _argsBufferB == null) || _resolvedMesh == null)
                 return;
 
             int safeInstanceCount = math.max(0, instanceCount);
             if (_lastArgsInstanceCount == safeInstanceCount)
                 return;
 
+            GraphicsBuffer target = _argsBufferWriteIndex == 0 ? _argsBufferA : _argsBufferB;
+            if (target == null)
+                return;
+
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
-                _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+                target.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
                 indexCountPerInstance = _resolvedMesh.GetIndexCount(0),
@@ -676,12 +597,15 @@ namespace Hecton8.UI
                 baseVertexIndex = (uint)Mathf.Max(0, _resolvedMesh.GetBaseVertex(0)),
                 startInstance = 0u
             };
-            _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            target.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            _argsBuffer = target;
+            _argsBufferWriteIndex ^= 1;
             _lastArgsInstanceCount = safeInstanceCount;
         }
 
         private void PushFeedback(float error01)
         {
+            _presentationFeedbackClearRequested = false;
             float safeError = Sanitize01(error01);
             if (math.abs(_lastShaderError - safeError) > ShaderFloatEpsilon)
             {
@@ -693,7 +617,7 @@ namespace Hecton8.UI
                 return;
 
             float match01 = math.saturate(1f - safeError);
-            GlobalSignals.Publish(new ToolAcousticSignal
+            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
             {
                 ToolHash = ToolHash,
                 TargetHash = _artifactHash,
@@ -704,14 +628,14 @@ namespace Hecton8.UI
                 State = 2,
                 Flags = 0
             });
-            PlayerSignalEvents.RaiseInteractionSignal(new PlayerInteractionStressSignal(
+            PlayerSignalEvents.TryRaiseInteractionSignal(new PlayerInteractionStressSignal(
                 safeError * 0.15f,
                 math.saturate(0.25f + safeError * 0.65f),
                 math.lerp(0.62f, 1.12f, match01),
                 match01));
             if (match01 > 0.05f)
             {
-                ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                Hecton8.Tools.ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                     match01 * 0.10f,
                     match01 * 0.26f,
                     0.08f,
@@ -723,8 +647,14 @@ namespace Hecton8.UI
             _nextFeedbackTime = _lastTickUnscaledTime + math.max(0.02f, feedbackIntervalSeconds);
         }
 
+        private void QueuePresentationFeedbackClear()
+        {
+            _presentationFeedbackClearRequested = true;
+        }
+
         private void ClearPresentationFeedback()
         {
+            _presentationFeedbackClearRequested = false;
             if (math.abs(_lastShaderError) <= ShaderFloatEpsilon)
                 return;
 
@@ -830,10 +760,23 @@ namespace Hecton8.UI
             if (!ResolveHardDifficultyActive())
                 return;
 
-            float driftFrequency = noise.cnoise(new float2(_stageSeed * 0.00037f + safeStage * 3.11f, _lastTickUnscaledTime * hardDriftFrequency));
-            float driftAmplitude = noise.cnoise(new float2(_stageSeed * 0.00053f + safeStage * 5.17f, _lastTickUnscaledTime * hardDriftFrequency * 0.73f));
+            float driftFrequency = ResolveTriangleDriftSigned(_stageSeed, safeStage, _lastTickUnscaledTime, hardDriftFrequency, 0.00037f, 1f);
+            float driftAmplitude = ResolveTriangleDriftSigned(_stageSeed, safeStage, _lastTickUnscaledTime, hardDriftFrequency, 0.00053f, 0.73f);
             frequency = math.clamp(frequency + driftFrequency * hardDriftAmplitude, playerFrequencyMin, playerFrequencyMax);
             amplitude = math.clamp(amplitude + driftAmplitude * hardDriftAmplitude * 0.5f, playerAmplitudeMin, playerAmplitudeMax);
+        }
+
+        private static float ResolveTriangleDriftSigned(
+            uint seed,
+            int stage,
+            float timeSeconds,
+            float frequency,
+            float seedScale,
+            float timeScale)
+        {
+            float phase = math.frac(seed * seedScale + stage * 0.173f + timeSeconds * math.max(0f, frequency) * timeScale);
+            float triangle01 = 1f - math.abs(phase * 2f - 1f);
+            return triangle01 * 2f - 1f;
         }
 
         private static bool ResolveHardDifficultyActive()
@@ -863,12 +806,10 @@ namespace Hecton8.UI
             if (!rebuildResourcesOnPointChange || resolvedPointCount == previousPointCount)
                 return;
 
-            if (_waveJobScheduled)
-                return;
-
             _nativeReady = false;
             _graphicsReady = false;
-            _materialBufferBound = false;
+            _nativeResourcesDirty = true;
+            _graphicsResourcesDirty = true;
         }
 
         private float ResolveVideoMemoryQualityClamp01()
@@ -893,12 +834,12 @@ namespace Hecton8.UI
                     IDataVault previousVault = previousService as IDataVault ?? _cachedDataVault;
                     if (!ReferenceEquals(previousVault, currentService))
                     {
-                        CompleteWaveJobForTeardown();
                         ReleaseNativeBuffers(previousVault);
                     }
 
                     _cachedDataVault = currentService as IDataVault;
                     _nativeReady = false;
+                    _nativeResourcesDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.Input:
                     _cachedInputService = currentService as IInputService;
@@ -956,45 +897,31 @@ namespace Hecton8.UI
             }
         }
 
-        private void CompleteWaveJobForTeardown()
-        {
-            if (!_waveJobScheduled)
-                return;
-
-            Hecton8.Core.DispatcherJobFence.TryComplete(ref _waveJobHandle, forceComplete: true);
-            _waveJobScheduled = false;
-        }
-
         private void DisposeNativeResources()
         {
-            if (_waveJobScheduled)
-                CompleteWaveJobForTeardown();
-
             ReleaseNativeBuffers(_cachedDataVault);
             _nativeReady = false;
         }
 
         private void ReleaseNativeBuffers(IDataVault vault)
         {
-            ReleaseVaultBuffer(vault, ref _targetWaveHandle);
-            ReleaseVaultBuffer(vault, ref _playerWaveHandle);
-            ReleaseVaultBuffer(vault, ref _errorOutputHandle);
-            ReleaseVaultBuffer(vault, ref _gpuSegmentsHandle);
             ReleaseVaultBuffer(vault, ref _stageTargetsHandle);
             ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
         }
 
         private void DisposeGraphicsResources()
         {
-            _segmentBuffer?.Dispose();
-            _segmentBuffer = null;
-            _argsBuffer?.Dispose();
+            _argsBufferA?.Dispose();
+            _argsBufferA = null;
+            _argsBufferB?.Dispose();
+            _argsBufferB = null;
             _argsBuffer = null;
             DestroyRuntimeMaterial();
             DestroyRuntimeQuadMesh();
             _resolvedMesh = null;
             _graphicsReady = false;
             _lastArgsInstanceCount = -1;
+            _argsBufferWriteIndex = 0;
         }
 
         private Mesh ResolveRuntimeQuadMesh()
@@ -1045,7 +972,6 @@ namespace Hecton8.UI
             }
 
             _runtimeSourceMaterial = null;
-            _materialBufferBound = false;
         }
 
         private static float ResolveDampedLerpAlpha(float speed, float deltaTime)
@@ -1076,91 +1002,6 @@ namespace Hecton8.UI
             return (state & 0x00FFFFFFu) * Hash24ToUnit;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct FrequencyWaveGenerateJob : IJobParallelFor
-        {
-            [WriteOnly, NoAlias] public NativeSlice<float> TargetWave;
-            [WriteOnly, NoAlias] public NativeSlice<float> PlayerWave;
-            [NativeDisableParallelForRestriction, NoAlias] public NativeSlice<FrequencyTuningWaveGpuSegment> GpuSegments;
-            public int PointCount;
-            public int SegmentCount;
-            public float TargetFrequency;
-            public float TargetAmplitude;
-            public float PlayerFrequency;
-            public float PlayerAmplitude;
-            public float LocalWidth;
-            public float LocalHeight;
-            public int StageIndex;
-
-            public void Execute(int index)
-            {
-                float invCount = math.rcp(math.max(1, PointCount - 1));
-                float normalized = index * invCount;
-                float x = normalized * TwoPi;
-                float target = math.sin(x * TargetFrequency) * TargetAmplitude;
-                float player = math.sin(x * PlayerFrequency) * PlayerAmplitude;
-                TargetWave[index] = target;
-                PlayerWave[index] = player;
-
-                if (index >= SegmentCount)
-                    return;
-
-                float localX = (normalized - 0.5f) * LocalWidth;
-                float targetY = 0.18f * LocalHeight + target * LocalHeight * 0.32f;
-                float playerY = -0.18f * LocalHeight + player * LocalHeight * 0.32f;
-                float nextNormalized = (index + 1) * invCount;
-                float nextX = nextNormalized * TwoPi;
-                float nextLocalX = (nextNormalized - 0.5f) * LocalWidth;
-                float nextTarget = math.sin(nextX * TargetFrequency) * TargetAmplitude;
-                float nextPlayer = math.sin(nextX * PlayerFrequency) * PlayerAmplitude;
-                float nextTargetY = 0.18f * LocalHeight + nextTarget * LocalHeight * 0.32f;
-                float nextPlayerY = -0.18f * LocalHeight + nextPlayer * LocalHeight * 0.32f;
-                GpuSegments[index] = BuildSegment(
-                    new float2(localX, targetY),
-                    new float2(nextLocalX, nextTargetY),
-                    new float4(1f, 0.08f, 0.04f, 0.92f + StageIndex * 0.02f));
-                GpuSegments[SegmentCount + index] = BuildSegment(
-                    new float2(localX, playerY),
-                    new float2(nextLocalX, nextPlayerY),
-                    new float4(0.02f, 0.82f, 1f, 0.92f));
-            }
-
-            private static FrequencyTuningWaveGpuSegment BuildSegment(float2 start, float2 end, float4 color)
-            {
-                float2 delta = end - start;
-                float lengthSq = math.max(math.dot(delta, delta), 0.00000001f);
-                float invLength = math.rsqrt(lengthSq);
-                float length = lengthSq * invLength;
-                float2 tangent = delta * invLength;
-                float2 center = (start + end) * 0.5f;
-                return new FrequencyTuningWaveGpuSegment
-                {
-                    CenterRadius = new float4(center.x, center.y, 0f, 1f),
-                    TangentLength = new float4(tangent.x, tangent.y, 0f, length),
-                    ColorStage = color
-                };
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct FrequencyWaveErrorJob : IJob
-        {
-            [ReadOnly, NoAlias] public NativeSlice<float> TargetWave;
-            [ReadOnly, NoAlias] public NativeSlice<float> PlayerWave;
-            [WriteOnly, NoAlias] public NativeSlice<float> ErrorOutput;
-            public int PointCount;
-
-            public void Execute()
-            {
-                float error = 0f;
-                int count = math.max(1, PointCount);
-                for (int i = 0; i < count; i++)
-                    error += math.abs(TargetWave[i] - PlayerWave[i]);
-
-                ErrorOutput[0] = math.saturate(error * math.rcp(count * 2f));
-            }
-        }
-
         [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct FrequencyTuningStageTarget
         {
@@ -1168,17 +1009,6 @@ namespace Hecton8.UI
             public float Frequency;
             [FieldOffset(4)]
             public float Amplitude;
-        }
-
-        [StructLayout(LayoutKind.Explicit, Size = 48)]
-        private struct FrequencyTuningWaveGpuSegment
-        {
-            [FieldOffset(0)]
-            public float4 CenterRadius;
-            [FieldOffset(16)]
-            public float4 TangentLength;
-            [FieldOffset(32)]
-            public float4 ColorStage;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]

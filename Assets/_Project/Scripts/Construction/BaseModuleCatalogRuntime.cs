@@ -275,7 +275,7 @@ namespace Hecton8.Construction
             if (vault == null || vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 math.max(1, requiredLength),
                 SystemID.Construction,
@@ -901,6 +901,7 @@ namespace Hecton8.Construction
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryParseBuildCostCsv(ReadOnlySpan<byte> bytes, NativeArray<ModuleCostDTO> costs, out int count)
         {
             count = 0;
@@ -930,6 +931,7 @@ namespace Hecton8.Construction
 
             return count > 0;
         }
+#endif
 
         private static uint HashTelemetry(in ModuleCatalogTelemetryEntry entry)
         {

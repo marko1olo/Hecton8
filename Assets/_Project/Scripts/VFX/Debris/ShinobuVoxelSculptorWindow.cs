@@ -394,7 +394,7 @@ namespace Hecton8.VFX.Debris
                 return false;
             }
 
-            VaultGenerationHandle<int> jobStateHandle = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> jobStateHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.CarveDebrisJobState,
                 ShinobuDeltaCrusher.CarveDebrisJobStateLength,
                 SystemID.Vfx,
@@ -623,9 +623,16 @@ namespace Hecton8.VFX.Debris
             uint hash = 2166136261u;
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                int value;
-                while ((value = stream.ReadByte()) >= 0)
-                    hash = (hash ^ (byte)value) * 16777619u;
+                Span<byte> readBuffer = stackalloc byte[4096];
+                while (true)
+                {
+                    int read = stream.Read(readBuffer);
+                    if (read <= 0)
+                        break;
+
+                    for (int i = 0; i < read; i++)
+                        hash = (hash ^ readBuffer[i]) * 16777619u;
+                }
             }
 
             return hash;

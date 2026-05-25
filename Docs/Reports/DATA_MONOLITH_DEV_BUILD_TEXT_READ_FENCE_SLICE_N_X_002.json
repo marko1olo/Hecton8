@@ -1,0 +1,47 @@
+﻿{
+    "agent":  "X_002",
+    "slice":  "N",
+    "status":  "PATCHED_DEV_PLAYER_SOURCE_AUDIT_TEXT_READ_CORE_COMPILE_PASS",
+    "generatedUtc":  "2026-05-24T06:59:56.6463868Z",
+    "changedFiles":  [
+                         "Assets/_Project/Scripts/VisualOmegaSmokeTester.cs"
+                     ],
+    "fixes":  [
+                  "Narrowed VisualOmegaSmokeTester source-audit File.ReadAllText route from UNITY_EDITOR || DEVELOPMENT_BUILD to UNITY_EDITOR only.",
+                  "Development players no longer compile the source/shader text audit reader; editor source audit remains intact."
+              ],
+    "developmentAwareScanner":  {
+                                    "candidateFiles":  302,
+                                    "findingCount":  0,
+                                    "symbolModel":  "UNITY_EDITOR=false, DEVELOPMENT_BUILD=true, DEBUG=true, unknown_symbols=true",
+                                    "scope":  "Assets/_Project/Scripts non-Editor/non-Tests C# files with parser/file-IO tokens"
+                                },
+    "extendedReleaseDevelopmentScanner":  {
+                                              "candidateFiles":  1332,
+                                              "productionCandidates":  862,
+                                              "editorOrTestSkipped":  470,
+                                              "releaseFindingCount":  0,
+                                              "developmentFindingCount":  0,
+                                              "releaseAllowedPersistenceFindingCount":  12,
+                                              "developmentAllowedPersistenceFindingCount":  12,
+                                              "symbolModels":  [
+                                                                   "UNITY_EDITOR=false, DEVELOPMENT_BUILD=false, DEBUG=false, unknown_symbols=true",
+                                                                   "UNITY_EDITOR=false, DEVELOPMENT_BUILD=true, DEBUG=true, unknown_symbols=true"
+                                                               ],
+                                              "scope":  "Assets/_Project/Scripts C# files containing parser/file-IO/static-config tokens, excluding Editor/Test paths and allowing documented save/profile/mod persistence only."
+                                          },
+    "preprocessorBalance":  "PASS_1_FILE_IF_6_ENDIF_6_DELTA_0",
+    "diffCheck":  "PASS_WARNINGS_ONLY_LF_CRLF",
+    "compileStatus":  "CORE_BUILD_PASS_WITH_DUPLICATE_SOURCE_WARNINGS",
+    "coreBuildProof":  {
+                           "command":  "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+                           "buildServerShutdownBeforeBuild":  true,
+                           "result":  "PASS",
+                           "errors":  0,
+                           "warnings":  5,
+                           "warningClass":  "CS2002 duplicate source entries in generated Hecton8.Core.csproj; not introduced by this slice.",
+                           "elapsed":  "00:01:24.55",
+                           "generatedUtc":  "2026-05-24T08:36:51.1927326Z"
+                       },
+    "claimBoundary":  "Static/source scanner proof only; Unity player profiler capture still pending."
+}

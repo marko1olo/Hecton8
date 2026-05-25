@@ -147,7 +147,7 @@ namespace Hecton8.Power
                 OwnerName,
                 nameof(_powerEdges),
                 NativeAllocationLifetime.Session);
-            GlobalSignals.InitializeAllQueues();
+            SignalCorridorRuntime.EnsureInitialized();
 
             _initialized = _nodes.IsCreated &&
                            _cellToNode.IsCreated &&
@@ -489,7 +489,7 @@ namespace Hecton8.Power
                     Unlocked = (byte)(voltage > DoorUnlockVoltage ? 1 : 0),
                     Flags = (byte)(voltage > DoorUnlockVoltage ? 1 : 0)
                 };
-                SignalBus<WfcOutpostDoorPowerSignal>.Push(in signal);
+                SignalBus<WfcOutpostDoorPowerSignal>.TryPush(in signal);
             }
         }
 
@@ -510,7 +510,7 @@ namespace Hecton8.Power
                 Priority = (byte)LogisticsBrownoutTier.EmergencyOnly,
                 Flags = 1 << 2
             };
-            SignalBus<BrownoutSignal>.Push(in signal);
+            SignalBus<BrownoutSignal>.TryPush(in signal);
         }
 
         private void TrySeedGasRooms()

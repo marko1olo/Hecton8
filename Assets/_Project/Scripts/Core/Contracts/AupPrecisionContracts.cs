@@ -5,11 +5,20 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class AupPrecisionContractLayout
+    {
+        public const int Long3StrideBytes = 24;
+        public const int ToleranceProfileStrideBytes = 64;
+        public const int TelemetryEntryStrideBytes = 64;
+        public const int RuntimeStateStrideBytes = 64;
+        public const int FaultCounterStrideBytes = 64;
+    }
+
     /// <summary>
     /// Signed 64-bit integer vector for quantized AUP millimeter hashes.
     /// Unity.Mathematics in this project does not provide long3.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = AupPrecisionContractLayout.Long3StrideBytes)]
     public struct long3
     {
         [FieldOffset(0)] public long x;
@@ -468,7 +477,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Cold-boot AUP tolerance profile parsed from CSV without managed string splitting.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AupPrecisionContractLayout.ToleranceProfileStrideBytes)]
     public struct AupToleranceProfileDTO
     {
         [FieldOffset(0)] public uint SubsystemHash;
@@ -488,7 +497,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// 64-byte AUP precision black-box row for the last 300 localization frames.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AupPrecisionContractLayout.TelemetryEntryStrideBytes)]
     public struct AupPrecisionTelemetryEntry
     {
         [FieldOffset(0)] public double MaxLocalDistanceMeters;
@@ -509,7 +518,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Owner-local AUP precision runtime control row. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AupPrecisionContractLayout.RuntimeStateStrideBytes)]
     public struct AupPrecisionRuntimeStateDTO
     {
         [FieldOffset(0)] public double3 ObserverAup;
@@ -527,7 +536,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Cache-line isolated precision fault counters. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AupPrecisionContractLayout.FaultCounterStrideBytes)]
     public struct AupPrecisionFaultCounter64
     {
         [FieldOffset(0)] public int NonFiniteCount;

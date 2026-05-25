@@ -20,7 +20,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public unsafe sealed class TerminalOsRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed partial class TerminalOsRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int ActiveRuntimeCapacity = 4;
         private const int MaxQualityResolution = 512;
@@ -101,7 +101,7 @@ namespace Hecton8.UI
 
         [Header("Cold Data")]
         [SerializeField] private bool mockGeneratorEnabled = true;
-        [SerializeField] private string layoutCsvRelativePath = "Assets/_SourceData/UI/TerminalOS/terminal_layouts.csv";
+        [SerializeField] private string layoutCsvRelativePath = "Assets/_SourceData/UI/TerminalOS/terminal_ui_layouts.csv";
 
         [Header("Interaction Solver")]
         [SerializeField, Range(0.5f, 30f)] private float interactionMaxDistanceMeters = 10f;
@@ -239,7 +239,7 @@ namespace Hecton8.UI
             if (!_nativeResourcesReady)
                 return;
 
-            int ownerFrame = Time.frameCount;
+            int ownerFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             bool hasSimulationFrame = TryResolveSimulationFrame(out int simulationFrame);
             RefreshRuntimeOriginSnapshotForOwner();
             RefreshScalabilityPolicy();
@@ -299,6 +299,7 @@ namespace Hecton8.UI
             if (faultFlags != 0u)
                 TryDumpBlackBox(faultFlags);
             RecordTelemetry(ownerFrame, dirtyCount, dispatchedCount, faultFlags);
+            RecordTerminalInputTelemetry(ownerFrame, faultFlags);
         }
 
         public bool QueueClick(in TerminalClickSignal signal)
@@ -898,6 +899,7 @@ namespace Hecton8.UI
                 _dumpFullPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
                 _dumpMirrorFullPath = Path.GetFullPath(Path.Combine(projectRoot, DumpMirrorRelativePath));
                 _decryptionDumpFullPath = Path.GetFullPath(Path.Combine(projectRoot, DecryptionDumpRelativePath));
+                EnsureTerminalProjectionColdPaths(projectRoot);
             }
 
             EnsureDecryptionDumpWriterCold();
@@ -926,7 +928,8 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _input = GlobalRegistry.Input;
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _vault = GlobalRegistry.DataVault;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             _cachedPlayerContext = playerContext;
             RefreshRuntimeOriginSnapshotForOwner();
 
@@ -968,7 +971,7 @@ namespace Hecton8.UI
 
         private void RefreshScalabilityPolicy()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             float quality = math.max(ResolveGlobalQualityWeight01(), math.saturate(minimumQualityWeight));
             float previousQuality = _globalQualityWeight;
             _globalQualityWeight = quality;
@@ -1035,6 +1038,14 @@ namespace Hecton8.UI
                         _nextCameraResolveFrame = 0;
                     }
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (!ReferenceEquals(_vault, currentService))
+                    {
+                        DisposeNativeResources();
+                        _vault = currentService as IDataVault;
+                        _bindingsDirty = true;
+                    }
+                    break;
             }
         }
 
@@ -1094,12 +1105,12 @@ namespace Hecton8.UI
             if (_nativeResourcesReady)
                 return;
 
-            int frame = Application.isPlaying ? Time.frameCount : 0;
+            int frame = Application.isPlaying ? Hecton8.Core.SystemDispatcher.CurrentFrameIndex : 0;
             if (Application.isPlaying && frame < _nextNativeResourceRetryFrame)
                 return;
 
             _terminalCount = TerminalOsConstants.TerminalCapacity;
-            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _vault;
             if (vault == null)
             {
                 _lastFaultFlags |= FaultVaultUnavailable;
@@ -1125,6 +1136,7 @@ namespace Hecton8.UI
             OpenNativeBufferForOwner(vault, TerminalPlanesBufferId, _terminalCount, NativeArrayOptions.UninitializedMemory, out _terminalPlanesHandle);
             OpenNativeBufferForOwner(vault, GazeRayBufferId, 1, NativeArrayOptions.UninitializedMemory, out _gazeRayHandle);
             OpenNativeBufferForOwner(vault, TerminalInteractionsBufferId, _terminalCount, NativeArrayOptions.UninitializedMemory, out _terminalInteractionsHandle);
+            OpenTerminalProjectionNativeBuffers(vault);
             OpenNativeBufferForOwner(vault, DecryptionPuzzlesBufferId, _terminalCount, NativeArrayOptions.UninitializedMemory, out _decryptionPuzzlesHandle);
             OpenNativeBufferForOwner(vault, DecryptionTerminalsBufferId, _terminalCount, NativeArrayOptions.UninitializedMemory, out _decryptionTerminalsHandle);
             OpenNativeBufferForOwner(vault, DecryptionKnobInputBufferId, 1, NativeArrayOptions.UninitializedMemory, out _decryptionKnobInputHandle);
@@ -1140,6 +1152,7 @@ namespace Hecton8.UI
             }
 
             InitializeTerminalState();
+            InitializeTerminalProjectionState();
             InitializeDecryptionState();
             GenerateEmergencyMockFont();
             _layoutUploadDirty = true;
@@ -1193,7 +1206,7 @@ namespace Hecton8.UI
             if (vault == null)
                 return;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, length, SystemID.UI, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, length, SystemID.UI, options);
         }
 
         private bool ValidateNativeBuffers()
@@ -1238,6 +1251,7 @@ namespace Hecton8.UI
                    terminalPlanes.Length >= _terminalCount &&
                    gazeRays.Length >= 1 &&
                    interactions.Length >= _terminalCount &&
+                   ValidateTerminalProjectionNativeBuffers() &&
                    decryptionPuzzles.Length >= _terminalCount &&
                    decryptionTerminals.Length >= _terminalCount &&
                    decryptionKnobInput.Length >= 1 &&
@@ -1466,6 +1480,7 @@ namespace Hecton8.UI
                 _dirtyIndexBuffer = CreateStructuredLockBuffer<int>(_terminalCount);
             if (_panelInstanceBuffer == null)
                 _panelInstanceBuffer = CreateStructuredLockBuffer<TerminalPanelInstanceDTO>(_terminalCount);
+            EnsureTerminalProjectionGraphicsResources();
             if (_decryptionPuzzleBuffer0 == null)
                 _decryptionPuzzleBuffer0 = CreateStructuredLockBuffer<DecryptionPuzzleDTO>(_terminalCount);
             if (_decryptionPuzzleBuffer1 == null)
@@ -1479,6 +1494,8 @@ namespace Hecton8.UI
                 UploadGlyphUvs();
             if (_panelInstanceUploadDirty)
                 UploadPanelInstances();
+            if (_terminalInputUploadDirty)
+                UploadTerminalInputStates();
             if (_decryptionBufferUploadDirty)
                 UploadDecryptionPuzzles();
             if (_bindingsDirty)
@@ -1493,6 +1510,7 @@ namespace Hecton8.UI
                                       _glyphUvBuffer != null &&
                                       _dirtyIndexBuffer != null &&
                                       _panelInstanceBuffer != null &&
+                                      TerminalProjectionGraphicsReady() &&
                                       _decryptionPuzzleBuffer0 != null &&
                                       _decryptionPuzzleBuffer1 != null &&
                                       _decryptionPuzzleBuffer != null;
@@ -2099,7 +2117,8 @@ namespace Hecton8.UI
                 ClickCount = count,
                 Buttons = buttons,
                 ButtonCount = math.min(_buttonCount, buttons.Length),
-                Commands = SignalBus<TerminalCommandSignal>.OpenParallelWriter()
+                Commands = SignalBus<TerminalCommandSignal>.OpenParallelWriter(),
+                CommandsBudget = SignalBus<TerminalCommandSignal>.ParallelWriterBudget
             }.Schedule(count, 1);
             _clickResolveScheduled = true;
         }
@@ -2120,12 +2139,13 @@ namespace Hecton8.UI
                 !TryOpenVaultBuffer(ref _terminalPlanesHandle, out NativeArray<TerminalPlaneDTO> terminalPlanes) ||
                 !TryOpenVaultBuffer(ref _gazeRayHandle, out NativeArray<GazeRayDTO> gazeRays) ||
                 !TryOpenVaultBuffer(ref _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO> interactions) ||
+                !TryOpenVaultBuffer(ref _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO> inputStates) ||
                 !TryOpenVaultBuffer(ref _buttonAabbHandle, out NativeArray<ButtonAABBDTO> buttons))
             {
                 return;
             }
 
-            int terminalJobCount = math.min(_terminalCount, math.min(terminalPlanes.Length, interactions.Length));
+            int terminalJobCount = math.min(_terminalCount, math.min(terminalPlanes.Length, math.min(interactions.Length, inputStates.Length)));
             if (terminalJobCount <= 0 || gazeRays.Length <= 0)
                 return;
 
@@ -2137,13 +2157,22 @@ namespace Hecton8.UI
                 out float3 forward,
                 out float2 scrollDelta,
                 out uint interactionFlags);
+            RefreshTerminalProjectionTuningFromVault();
 
             int batchSize = math.clamp((int)math.round(math.lerp(1f, 32f, _globalQualityWeight)), 1, 32);
             float maxDistance = math.max(0.5f, interactionMaxDistanceMeters);
             float viewCone = math.clamp(interactionViewConeCos, -0.5f, 0.95f);
+            float quality01 = math.saturate(_globalQualityWeight);
+            float curveBlend = math.saturate((math.clamp(_terminalProjectionQualityCurvePower, 0.25f, 4f) - 0.25f) * (1f / 3.75f));
+            float shapedQuality = math.lerp(quality01, quality01 * quality01 * quality01, curveBlend);
+            float qualityRadius = math.lerp(
+                math.max(0.5f, _terminalProjectionLowRadiusMeters),
+                math.max(_terminalProjectionLowRadiusMeters, _terminalProjectionUltraRadiusMeters),
+                shapedQuality);
+            _lastTerminalProjectionEvalRadiusMeters = math.min(maxDistance, qualityRadius);
             _interactionScheduleTicks = Stopwatch.GetTimestamp();
 
-            JobHandle gazeHandle = new MockGazeRayJob
+            JobHandle gazeHandle = new GenerateMockGazeVectorsJob
             {
                 GazeRays = gazeRays,
                 FallbackOriginAup = originAup,
@@ -2152,38 +2181,33 @@ namespace Hecton8.UI
                 InteractionFlags = interactionFlags,
                 Frame = (uint)frame,
                 MicroSwayRadians = math.lerp(0.0125f, 0.0005f, _globalQualityWeight) * math.saturate(hologramDistortionIntensity)
-            }.Schedule();
+            }.Schedule(math.max(1, gazeRays.Length), 1);
 
-            JobHandle cullHandle = new CullTerminalsJob
+            TerminalInputStateDTO* inputStatePtr = (TerminalInputStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(inputStates);
+            TerminalInteractionDTO* interactionPtr = (TerminalInteractionDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(interactions);
+            _terminalInteractionHandle = new EvaluateTerminalGazeJob
             {
                 Planes = terminalPlanes,
                 GazeRays = gazeRays,
-                Interactions = interactions,
-                TerminalCount = terminalJobCount,
-                MaxDistanceMeters = maxDistance,
-                ViewConeCos = viewCone
-            }.Schedule(terminalJobCount, batchSize, gazeHandle);
-
-            JobHandle intersectionHandle = new TerminalIntersectionJob
-            {
-                Planes = terminalPlanes,
-                GazeRays = gazeRays,
-                Interactions = interactions,
-                TerminalCount = terminalJobCount,
-                MaxDistanceMeters = maxDistance
-            }.Schedule(terminalJobCount, batchSize, cullHandle);
-
-            _terminalInteractionHandle = new EvaluateTerminalButtonsJob
-            {
-                Interactions = interactions,
-                Planes = terminalPlanes,
                 Buttons = buttons,
+                InputStates = inputStatePtr,
+                Interactions = interactionPtr,
                 TerminalCount = terminalJobCount,
                 ButtonCount = math.min(_buttonCount, buttons.Length),
+                GlobalQualityWeight = _globalQualityWeight,
+                MaxDistanceMeters = maxDistance,
+                ViewConeCos = viewCone,
+                CursorSnappingTolerance = terminalCursorSnappingTolerance,
+                RaycastThickness = terminalRaycastThickness,
+                QualityCurvePower = _terminalProjectionQualityCurvePower,
+                LowRadiusMeters = _terminalProjectionLowRadiusMeters,
+                UltraRadiusMeters = _terminalProjectionUltraRadiusMeters,
                 Frame = (uint)frame,
                 Commands = SignalBus<TerminalCommandSignal>.OpenParallelWriter(),
-                UiSignals = SignalBus<InteractionUiSignal>.OpenParallelWriter()
-            }.Schedule(terminalJobCount, batchSize, intersectionHandle);
+                CommandsBudget = SignalBus<TerminalCommandSignal>.ParallelWriterBudget,
+                UiSignals = SignalBus<InteractionUiSignal>.OpenParallelWriter(),
+                UiSignalsBudget = SignalBus<InteractionUiSignal>.ParallelWriterBudget
+            }.Schedule(terminalJobCount, batchSize, gazeHandle);
             _terminalInteractionScheduled = true;
         }
 
@@ -2201,6 +2225,7 @@ namespace Hecton8.UI
                 : 0f;
             _interactionScheduleTicks = 0;
             AuditLatestInteractions();
+            OnTerminalProjectionFinalized();
         }
 
         private void TryScheduleDecryptionPipeline(int simulationFrame)
@@ -2248,7 +2273,8 @@ namespace Hecton8.UI
                 SolveThreshold01 = 1f - math.clamp(decryptionSnapTolerance01, 0.001f, 0.2f),
                 Frame = (uint)simulationFrame,
                 StepFrames = (uint)evaluationStride,
-                UnlockedSignals = SignalBus<TerminalUnlockedSignal>.OpenParallelWriter()
+                UnlockedSignals = SignalBus<TerminalUnlockedSignal>.OpenParallelWriter(),
+                UnlockedSignalsBudget = SignalBus<TerminalUnlockedSignal>.ParallelWriterBudget
             }.Schedule();
             _decryptionScheduled = true;
         }
@@ -2506,7 +2532,7 @@ namespace Hecton8.UI
 
         private void TryMonitorLayoutCsv(int frame)
         {
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+#if !UNITY_EDITOR
             return;
 #else
             if (string.IsNullOrEmpty(_csvFullPath))
@@ -2541,7 +2567,7 @@ namespace Hecton8.UI
 
         private void TryMonitorDecryptionCsv(int frame)
         {
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+#if !UNITY_EDITOR
             return;
 #else
             if (string.IsNullOrEmpty(_decryptionCsvFullPath))
@@ -2575,6 +2601,7 @@ namespace Hecton8.UI
 #endif
         }
 
+#if UNITY_EDITOR
         private bool ParseDecryptionPuzzleCsv(ReadOnlySpan<byte> bytes)
         {
             bool changed = false;
@@ -2851,6 +2878,7 @@ namespace Hecton8.UI
             while (end > start && bytes[end - 1] <= 32)
                 end--;
         }
+#endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float WrapPhase(float value)
@@ -3034,13 +3062,17 @@ namespace Hecton8.UI
             }
 
             TryOpenVaultBuffer(ref _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO> interactions);
+            TryOpenVaultBuffer(ref _terminalInputStatesHandle, out NativeArray<TerminalInputStateDTO> inputStates);
+            TryOpenVaultBuffer(ref _gazeRayHandle, out NativeArray<GazeRayDTO> gazeRays);
             TryOpenVaultBuffer(ref _decryptionPuzzlesHandle, out NativeArray<DecryptionPuzzleDTO> puzzles);
             int count = math.min(_terminalCount, terminalPlanes.Length);
             for (int i = 0; i < count; i++)
             {
                 TerminalInteractionDTO interaction = interactions.IsCreated && i < interactions.Length ? interactions[i] : default;
+                TerminalInputStateDTO inputState = inputStates.IsCreated && i < inputStates.Length ? inputStates[i] : default;
                 TerminalPlaneDTO plane = terminalPlanes[i];
                 DrawTerminalPlaneGizmo(in plane, buttons, in interaction);
+                DrawTerminalInputProjectionGizmo(in plane, in inputState, gazeRays);
                 if (puzzles.IsCreated && i < puzzles.Length)
                 {
                     DecryptionPuzzleDTO puzzle = puzzles[i];
@@ -3115,7 +3147,7 @@ namespace Hecton8.UI
             for (int i = 0; i <= segmentCount; i++)
             {
                 float x01 = i * (1f / segmentCount);
-                float wave = math.sin((x01 * safeFrequency + safePhase) * math.PI * 2f) * 0.16f;
+                float wave = MathLodApproximation.ApproxSinBhaskara((x01 * safeFrequency + safePhase) * math.PI * 2f) * 0.16f;
                 float3 point = center +
                     right * ((x01 - 0.5f) * width) +
                     up * ((0.46f + wave - 0.5f) * height);
@@ -3264,6 +3296,7 @@ namespace Hecton8.UI
                     terminalArrayMaterial.SetBuffer(GlobalDecryptionPuzzlesId, _decryptionPuzzleBuffer);
                 if (_panelInstanceBuffer != null)
                     terminalArrayMaterial.SetBuffer(TerminalPanelInstancesId, _panelInstanceBuffer);
+                BindTerminalProjectionBuffers();
             }
 
             _bindingsDirty = false;
@@ -3274,7 +3307,7 @@ namespace Hecton8.UI
             if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextLateFrameRegisterRetryFrame)
                 return;
 
@@ -3547,6 +3580,7 @@ namespace Hecton8.UI
             ReleaseBuffer(ref _glyphUvBuffer);
             ReleaseBuffer(ref _dirtyIndexBuffer);
             ReleaseBuffer(ref _panelInstanceBuffer);
+            DisposeTerminalProjectionGraphicsResources();
             ReleaseBuffer(ref _decryptionPuzzleBuffer0);
             ReleaseBuffer(ref _decryptionPuzzleBuffer1);
             _decryptionPuzzleBuffer = null;
@@ -3633,6 +3667,7 @@ namespace Hecton8.UI
             _terminalPlanesHandle = default;
             _gazeRayHandle = default;
             _terminalInteractionsHandle = default;
+            ClearTerminalProjectionVaultHandles();
             _decryptionPuzzlesHandle = default;
             _decryptionTerminalsHandle = default;
             _decryptionKnobInputHandle = default;

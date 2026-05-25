@@ -73,14 +73,15 @@ namespace Hecton8.Construction
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct DroneStateDTO
     {
-        [FieldOffset(0)] public double3 AUP_Position;
+        [FieldOffset(0)] public double3 CurrentAUP;
         [FieldOffset(24)] public float3 Velocity;
-        [FieldOffset(36)] public uint CurrentTaskHash;
-        [FieldOffset(40)] public float BatteryLevel;
-        [FieldOffset(44)] public uint Flags;
-        [FieldOffset(48)] public uint _pad0;
-        [FieldOffset(52)] public uint _pad1;
-        [FieldOffset(56)] public ulong _pad2;
+        [FieldOffset(36)] public uint CurrentTargetHashID;
+        [FieldOffset(40)] public uint TaskStateFlags;
+        [FieldOffset(44)] public float BatteryLevel;
+        [FieldOffset(48)] private uint _pad0;
+        [FieldOffset(52)] private uint _pad1;
+        [FieldOffset(56)] private uint _pad2;
+        [FieldOffset(60)] private uint _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -118,7 +119,7 @@ namespace Hecton8.Construction
         [FieldOffset(24)] public float CargoCapacity;
         [FieldOffset(28)] public float MiningHoldSeconds;
         [FieldOffset(32)] public float SdfRepulsionScale;
-        [FieldOffset(36)] public float Reserved0;
+        [FieldOffset(36)] public float ClearanceRadiusMeters;
         [FieldOffset(40)] public ulong _pad0;
         [FieldOffset(48)] public ulong _pad1;
         [FieldOffset(56)] public ulong _pad2;
@@ -130,14 +131,15 @@ namespace Hecton8.Construction
         public static bool ValidateDroneStateDTO()
         {
             return UnsafeUtility.SizeOf<DroneStateDTO>() == 64 &&
-                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.AUP_Position)) == 0 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.CurrentAUP)) == 0 &&
                 OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.Velocity)) == 24 &&
-                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.CurrentTaskHash)) == 36 &&
-                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.BatteryLevel)) == 40 &&
-                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.Flags)) == 44 &&
-                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO._pad0)) == 48 &&
-                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO._pad1)) == 52 &&
-                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO._pad2)) == 56;
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.CurrentTargetHashID)) == 36 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.TaskStateFlags)) == 40 &&
+                OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.BatteryLevel)) == 44 &&
+                OffsetOf<DroneStateDTO>("_pad0") == 48 &&
+                OffsetOf<DroneStateDTO>("_pad1") == 52 &&
+                OffsetOf<DroneStateDTO>("_pad2") == 56 &&
+                OffsetOf<DroneStateDTO>("_pad3") == 60;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -158,7 +160,50 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ValidateDroneTaskDTO()
         {
-            return UnsafeUtility.SizeOf<DroneTaskDTO>() == 64 &&
+            return UnsafeUtility.SizeOf<DroneTaskDTO>() == 32 &&
+                OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TargetEntityHash)) == 0 &&
+                OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TaskTypeHash)) == 4 &&
+                OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TaskProgress01)) == 8 &&
+                OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TaskEfficiencyScalar)) == 12 &&
+                OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.InventoryPayloadHash)) == 16 &&
+                OffsetOf<DroneTaskDTO>("_pad0") == 20 &&
+                OffsetOf<DroneTaskDTO>("_pad1") == 24 &&
+                OffsetOf<DroneTaskDTO>("_pad2") == 28 &&
+                UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() == 16;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ValidateDroneAssignmentTaskDTO()
+        {
+            return UnsafeUtility.SizeOf<DroneAssignmentTaskDTO>() == 64 &&
+                UnsafeUtility.SizeOf<PathWaypointDTO>() == 64 &&
+                UnsafeUtility.SizeOf<DroneAStarPersistentState>() == 64 &&
+                OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.PositionAUP)) == 0 &&
+                OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.LocalPosition)) == 24 &&
+                OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.ActionCode)) == 36 &&
+                OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.NodeIndex)) == 40 &&
+                OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.Flags)) == 44 &&
+                OffsetOf<PathWaypointDTO>("_pad0") == 48 &&
+                OffsetOf<PathWaypointDTO>("_pad1") == 52 &&
+                OffsetOf<PathWaypointDTO>("_pad2") == 56 &&
+                OffsetOf<PathWaypointDTO>("_pad3") == 60 &&
+                UnsafeUtility.SizeOf<MockDroneSDFHeader>() == 64 &&
+                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.OriginAUP)) == 0 &&
+                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.Dimensions)) == 24 &&
+                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.VoxelSizeMeters)) == 36 &&
+                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.MainTunnelRadiusMeters)) == 40 &&
+                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.CrossShaftRadiusMeters)) == 44 &&
+                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.GridVersion)) == 48 &&
+                OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.Flags)) == 52 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.SearchHash)) == 0 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.OpenCount)) == 4 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.BestNode)) == 8 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.GoalNode)) == 12 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.IterationCount)) == 16 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.Active)) == 20 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.BestHeuristic)) == 24 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.CellSize)) == 28 &&
+                OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.Flags)) == 32 &&
                 UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() == 16;
         }
 
@@ -175,7 +220,7 @@ namespace Hecton8.Construction
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.CargoCapacity)) == 24 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.MiningHoldSeconds)) == 28 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.SdfRepulsionScale)) == 32 &&
-                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.Reserved0)) == 36 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.ClearanceRadiusMeters)) == 36 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad0)) == 40 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad1)) == 48 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad2)) == 56;
@@ -190,7 +235,7 @@ namespace Hecton8.Construction
     internal static class DroneFleetMockTasks
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int GenerateMockDroneTasks(NativeArray<DroneTaskDTO> tasks, double3 fleetAup, int requestedCount)
+        public static int GenerateMockDroneTasks(NativeArray<DroneAssignmentTaskDTO> tasks, double3 fleetAup, int requestedCount)
         {
             if (!tasks.IsCreated || requestedCount <= 0)
                 return 0;
@@ -200,8 +245,9 @@ namespace Hecton8.Construction
             {
                 float angle = i * 2.3999631f;
                 float radius = 6f + ((i & 7) * 2.5f);
-                float3 local = new float3(math.cos(angle) * radius, -1.5f + ((i % 3) * 1.5f), math.sin(angle) * radius);
-                tasks[i] = new DroneTaskDTO
+                Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                float3 local = new float3(cos * radius, -1.5f + ((i % 3) * 1.5f), sin * radius);
+                tasks[i] = new DroneAssignmentTaskDTO
                 {
                     TargetAup = fleetAup + new double3(local.x, local.y, local.z),
                     LocalPosition = local,
@@ -222,7 +268,7 @@ namespace Hecton8.Construction
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateMockDroneTasksJob : IJob
     {
-        [NoAlias] public NativeArray<DroneTaskDTO> Tasks;
+        [NoAlias] public NativeArray<DroneAssignmentTaskDTO> Tasks;
         public double3 FleetAup;
         public int RequestedCount;
 
@@ -235,7 +281,8 @@ namespace Hecton8.Construction
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateMockDroneTasksQueueJob : IJob
     {
-        public NativeQueue<DroneTaskDTO>.ParallelWriter Tasks;
+        public NativeQueue<DroneAssignmentTaskDTO>.ParallelWriter Tasks;
+        [NativeDisableParallelForRestriction] public NativeArray<int> TaskBudget;
         public double3 FleetAup;
         public int RequestedCount;
 
@@ -246,8 +293,9 @@ namespace Hecton8.Construction
             {
                 float angle = i * 2.3999631f;
                 float radius = 6f + ((i & 7) * 2.5f);
-                float3 local = new float3(math.cos(angle) * radius, -1.5f + ((i % 3) * 1.5f), math.sin(angle) * radius);
-                Tasks.Enqueue(new DroneTaskDTO
+                Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                float3 local = new float3(cos * radius, -1.5f + ((i % 3) * 1.5f), sin * radius);
+                DroneAssignmentTaskDTO task = new DroneAssignmentTaskDTO
                 {
                     TargetAup = FleetAup + new double3(local.x, local.y, local.z),
                     LocalPosition = local,
@@ -258,8 +306,32 @@ namespace Hecton8.Construction
                     ModuleIndex = i,
                     TaskKind = (i & 1) == 0 ? 1 : 3,
                     Reserved0 = 0u
-                });
+                };
+                TryEnqueueBounded(Tasks, TaskBudget, in task);
             }
+        }
+
+        private static unsafe bool TryEnqueueBounded(
+            NativeQueue<DroneAssignmentTaskDTO>.ParallelWriter writer,
+            NativeArray<int> writerBudget,
+            in DroneAssignmentTaskDTO task)
+        {
+            const int remainingIndex = 0;
+            const int droppedIndex = 1;
+            const int budgetLength = 2;
+            if (!writerBudget.IsCreated || writerBudget.Length < budgetLength)
+                return false;
+
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
+            int remainingAfterClaim = Interlocked.Decrement(ref budget[remainingIndex]);
+            if (remainingAfterClaim < 0)
+            {
+                Interlocked.Increment(ref budget[droppedIndex]);
+                return false;
+            }
+
+            writer.Enqueue(task);
+            return true;
         }
     }
 
@@ -270,10 +342,17 @@ namespace Hecton8.Construction
         private const int EmptyTaskIndex = -1;
         private const float MinimumScoreDistanceSq = 0.5625f;
 
+        // SAFETY JUSTIFICATION 1/3: this assignment kernel executes one job index per drone slot.
+        // `Drones`, `DroneStatesDto`, and `DroneTargets` are indexed only by `index`, so two workers do not
+        // write the same row unless Unity violates the IJobParallelFor contract.
+        // SAFETY JUSTIFICATION 2/3: `TaskClaimOwners` is the only cross-index write lane. It is accessed
+        // through Interlocked.CompareExchange, so contested task claims are atomic and deterministic.
+        // SAFETY JUSTIFICATION 3/3: all five arrays are separate Vault lanes with independent BufferIDs;
+        // `[NoAlias]` documents that the slices do not overlap and lets Burst keep vector-safe assumptions.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<HeadlessDroneState> Drones;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneStateDTO> DroneStatesDto;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneTargetDTO> DroneTargets;
-        [ReadOnly, NoAlias] public NativeArray<DroneTaskDTO> Tasks;
+        [ReadOnly, NoAlias] public NativeArray<DroneAssignmentTaskDTO> Tasks;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> TaskClaimOwners;
 
         public int TaskCount;
@@ -311,11 +390,11 @@ namespace Hecton8.Construction
             float battery01 = math.saturate(drone.BatteryPercent * 0.01f);
             float bestScore = -1f;
             int bestTaskIndex = -1;
-            DroneTaskDTO bestTask = default;
+            DroneAssignmentTaskDTO bestTask = default;
             int count = math.min(TaskCount, math.min(Tasks.Length, TaskClaimOwners.Length));
             for (int taskIndex = 0; taskIndex < count; taskIndex++)
             {
-                DroneTaskDTO task = Tasks[taskIndex];
+                DroneAssignmentTaskDTO task = Tasks[taskIndex];
                 if (task.ModuleIndex < 0)
                     continue;
 
@@ -389,8 +468,8 @@ namespace Hecton8.Construction
             {
                 DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
                 ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
-                if (IsFinite(dto.AUP_Position))
-                    return dto.AUP_Position;
+                if (IsFinite(dto.CurrentAUP))
+                    return dto.CurrentAUP;
             }
 
             return ToDouble3(drone.Position);
@@ -403,14 +482,14 @@ namespace Hecton8.Construction
 
             DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
             ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
-            dto.AUP_Position = ResolveDroneAup(index, in drone);
+            dto.CurrentAUP = ResolveDroneAup(index, in drone);
             dto.Velocity = drone.Velocity;
-            dto.CurrentTaskHash = taskHash;
+            dto.CurrentTargetHashID = taskHash;
+            dto.TaskStateFlags = PackFlags(in drone);
             dto.BatteryLevel = math.clamp(drone.BatteryPercent, 0f, 100f);
-            dto.Flags = PackFlags(in drone);
         }
 
-        private static uint ResolveTaskHash(int taskIndex, in DroneTaskDTO task)
+        private static uint ResolveTaskHash(int taskIndex, in DroneAssignmentTaskDTO task)
         {
             uint3 hashInput = new uint3(
                 (uint)math.max(0, taskIndex + 1),
@@ -463,6 +542,11 @@ namespace Hecton8.Construction
         private const int EmptyTaskIndex = -1;
         private const float ReturnBatteryThresholdPercent = 15f;
 
+        // SAFETY JUSTIFICATION 1/3: metabolism mutates only the drone row matching Execute index.
+        // SAFETY JUSTIFICATION 2/3: DTO mirrors are written at the same index as the drone source row;
+        // no cross-drone accumulation or shared counter mutation occurs in this job.
+        // SAFETY JUSTIFICATION 3/3: drone state, DTO, and target lanes are separate Vault buffers, so
+        // `[NoAlias]` is valid and the disabled parallel restriction does not hide overlapping storage.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<HeadlessDroneState> Drones;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneStateDTO> DroneStatesDto;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneTargetDTO> DroneTargets;
@@ -538,11 +622,11 @@ namespace Hecton8.Construction
 
             DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
             ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
-            dto.AUP_Position = IsFinite(drone.PositionAup) ? drone.PositionAup : ToDouble3(drone.Position);
+            dto.CurrentAUP = IsFinite(drone.PositionAup) ? drone.PositionAup : ToDouble3(drone.Position);
             dto.Velocity = drone.Velocity;
-            dto.CurrentTaskHash = math.hash(new uint3((uint)math.max(0, drone.TargetTaskIndex + 1), (uint)math.max(0, drone.DroneId), (uint)drone.State));
+            dto.CurrentTargetHashID = math.hash(new uint3((uint)math.max(0, drone.TargetTaskIndex + 1), (uint)math.max(0, drone.DroneId), (uint)drone.State));
+            dto.TaskStateFlags = ((uint)drone.State) | ((uint)drone.FactionBit << 8) | ((uint)drone.CorridorTight << 16);
             dto.BatteryLevel = math.clamp(drone.BatteryPercent, 0f, 100f);
-            dto.Flags = ((uint)drone.State) | ((uint)drone.FactionBit << 8) | ((uint)drone.CorridorTight << 16);
         }
 
         private static bool IsFinite(double3 value)
@@ -576,6 +660,11 @@ namespace Hecton8.Construction
     internal unsafe struct ExtractDroneMatricesJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<HeadlessDroneState> Drones;
+        // SAFETY JUSTIFICATION 1/3: matrix extraction writes `DroneStatesDto[index]` only for the current
+        // drone row; workers do not write neighboring DTO rows through shared indices.
+        // SAFETY JUSTIFICATION 2/3: render matrix output is a separate lane and is also written at index.
+        // SAFETY JUSTIFICATION 3/3: source drones, DTO mirror, and matrix lanes are independent Vault buffers;
+        // disabling the restriction removes false-positive alias constraints without changing ownership.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneStateDTO> DroneStatesDto;
         [NoAlias] public NativeArray<float4x4> Matrices;
         public double3 CameraAup;
@@ -600,8 +689,8 @@ namespace Hecton8.Construction
             {
                 DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
                 ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
-                if (IsFinite(dto.AUP_Position))
-                    positionAup = dto.AUP_Position;
+                if (IsFinite(dto.CurrentAUP))
+                    positionAup = dto.CurrentAUP;
             }
 
             float3 localPosition = IsFinite(positionAup)
@@ -666,16 +755,30 @@ namespace Hecton8.Construction
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct PathWaypointDTO
     {
         [FieldOffset(0)]
+        public double3 PositionAUP;
+        [FieldOffset(24)]
         public float3 LocalPosition;
-        [FieldOffset(12)]
+        [FieldOffset(36)]
         public uint ActionCode;
+        [FieldOffset(40)]
+        public uint NodeIndex;
+        [FieldOffset(44)]
+        public uint Flags;
+        [FieldOffset(48)]
+        private uint _pad0;
+        [FieldOffset(52)]
+        private uint _pad1;
+        [FieldOffset(56)]
+        private uint _pad2;
+        [FieldOffset(60)]
+        private uint _pad3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     public struct DroneFleetDebugRoute
     {
         [FieldOffset(0)]
@@ -718,6 +821,14 @@ namespace Hecton8.Construction
         public uint Reserved3;
         [FieldOffset(140)]
         private uint _pad0;
+        [FieldOffset(144)]
+        public float3 ClosedPoint0;
+        [FieldOffset(156)]
+        public float3 ClosedPoint1;
+        [FieldOffset(168)]
+        public float3 ClosedPoint2;
+        [FieldOffset(180)]
+        public float3 ClosedPoint3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 48)]
@@ -747,6 +858,50 @@ namespace Hecton8.Construction
         public float AStarCellSize;
         [FieldOffset(44)]
         public float AverageBatteryPercent;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DroneTransactionTelemetrySnapshot
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint StateHash;
+        [FieldOffset(8)] public int TransactionCount;
+        [FieldOffset(12)] public int RepairCount;
+        [FieldOffset(16)] public int MiningCount;
+        [FieldOffset(20)] public int InventoryAdds;
+        [FieldOffset(24)] public int AtomicConflicts;
+        [FieldOffset(28)] public int VfxSignals;
+        [FieldOffset(32)] public float GlobalQualityWeight;
+        [FieldOffset(36)] public float EstimatedMicroseconds;
+        [FieldOffset(40)] public uint FaultFlags;
+        [FieldOffset(44)] public uint LastTargetHash;
+        [FieldOffset(48)] public int ActiveInventorySlots;
+        [FieldOffset(52)] public int CommandCount;
+        [FieldOffset(56)] public uint LayoutHash;
+        [FieldOffset(60)] private uint _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    public struct DroneTransactionDebugTask
+    {
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Target;
+        [FieldOffset(24)] public float3 Velocity;
+        [FieldOffset(36)] public uint TargetEntityHash;
+        [FieldOffset(40)] public uint TaskTypeHash;
+        [FieldOffset(44)] public float Progress01;
+        [FieldOffset(48)] public float VfxIntensity01;
+        [FieldOffset(52)] public int DroneId;
+        [FieldOffset(56)] public int Slot;
+        [FieldOffset(60)] public int InventorySlot;
+        [FieldOffset(64)] public uint InventoryHash;
+        [FieldOffset(68)] public int InventoryQuantityAdded;
+        [FieldOffset(72)] public uint Flags;
+        [FieldOffset(76)] public uint ActiveInventorySlots;
+        [FieldOffset(80)] public uint AtomicConflicts;
+        [FieldOffset(84)] public float BatteryPercent;
+        [FieldOffset(88)] public uint StateFlags;
+        [FieldOffset(92)] private uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -787,8 +942,29 @@ namespace Hecton8.Construction
         [FieldOffset(56)] public ulong Reserved3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct DroneTaskDTO
+    {
+        [FieldOffset(0)]
+        public uint TargetEntityHash;
+        [FieldOffset(4)]
+        public uint TaskTypeHash;
+        [FieldOffset(8)]
+        public float TaskProgress01;
+        [FieldOffset(12)]
+        public float TaskEfficiencyScalar;
+        [FieldOffset(16)]
+        public uint InventoryPayloadHash;
+        [FieldOffset(20)]
+        private uint _pad0;
+        [FieldOffset(24)]
+        private uint _pad1;
+        [FieldOffset(28)]
+        private uint _pad2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct DroneAssignmentTaskDTO
     {
         [FieldOffset(0)]
         public double3 TargetAup;
@@ -854,16 +1030,31 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsBlocked(float3 position)
         {
+            return IsBlockedForRadius(position, 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsBlockedForRadius(float3 position, float requiredRadius)
+        {
             if (Enabled == 0 || !IsFinite(position))
                 return false;
 
-            if (position.x <= BoundsMin.x || position.y <= BoundsMin.y || position.z <= BoundsMin.z ||
-                position.x >= BoundsMax.x || position.y >= BoundsMax.y || position.z >= BoundsMax.z)
-            {
-                return true;
-            }
+            return SampleClearance(position) < math.max(0f, requiredRadius);
+        }
 
-            return ResolveSeamDistance(position, out _) <= SeamHalfWidth;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float SampleClearance(float3 position)
+        {
+            if (Enabled == 0 || !IsFinite(position))
+                return float.MaxValue;
+
+            float3 minDelta = position - BoundsMin;
+            float3 maxDelta = BoundsMax - position;
+            float boundaryClearance = math.min(
+                math.min(math.min(minDelta.x, maxDelta.x), math.min(minDelta.y, maxDelta.y)),
+                math.min(minDelta.z, maxDelta.z));
+            float seamClearance = ResolveSeamDistance(position, out _) - math.max(0f, SeamHalfWidth);
+            return math.min(boundaryClearance, seamClearance);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -932,6 +1123,109 @@ namespace Hecton8.Construction
         }
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct MockDroneSDFHeader
+    {
+        [FieldOffset(0)] public double3 OriginAUP;
+        [FieldOffset(24)] public int3 Dimensions;
+        [FieldOffset(36)] public float VoxelSizeMeters;
+        [FieldOffset(40)] public float MainTunnelRadiusMeters;
+        [FieldOffset(44)] public float CrossShaftRadiusMeters;
+        [FieldOffset(48)] public uint GridVersion;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct GenerateMockDroneSDFJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<float> SdfDistances;
+        // SAFETY JUSTIFICATION 1/3: header writes are idempotent; every worker writes the same sanitized
+        // `MockDroneSDFHeader` value into row zero for isolated CI/editor fallback data.
+        // SAFETY JUSTIFICATION 2/3: the header lane is a single-row metadata buffer and does not alias the SDF
+        // distance payload lane; SDF distance writes remain one index per worker.
+        // SAFETY JUSTIFICATION 3/3: this job is a mock/fallback bootstrap generator, not the gameplay solver;
+        // the disabled restriction avoids a one-row metadata setup job and keeps initialization batched.
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<MockDroneSDFHeader> Header;
+        public double3 OriginAUP;
+        public int3 Dimensions;
+        public float VoxelSizeMeters;
+        public float MainTunnelRadiusMeters;
+        public float CrossShaftRadiusMeters;
+        public uint GridVersion;
+
+        public void Execute(int index)
+        {
+            int3 dims = new int3(math.max(1, Dimensions.x), math.max(1, Dimensions.y), math.max(1, Dimensions.z));
+            int total = SafeVolume(dims);
+            if (!SdfDistances.IsCreated || (uint)index >= (uint)SdfDistances.Length || index >= total)
+                return;
+
+            float voxelSize = math.max(0.125f, FiniteOrFallback(VoxelSizeMeters, 2f));
+            int3 coord = IndexToCoord(index, dims);
+            float3 p = (new float3(coord.x, coord.y, coord.z) + 0.5f) * voxelSize;
+            float3 extents = new float3(dims.x, dims.y, dims.z) * voxelSize;
+            float t = dims.x > 1 ? (coord.x + 0.5f) * math.rcp((float)dims.x) : 0f;
+
+            float mainRadius = math.max(voxelSize, FiniteOrFallback(MainTunnelRadiusMeters, 6f));
+            float shaftRadius = math.max(voxelSize, FiniteOrFallback(CrossShaftRadiusMeters, mainRadius * 0.7f));
+            float centerY = extents.y * math.lerp(0.3f, 0.7f, TriangleWave((t * 3.0f) + 0.13f));
+            float centerZ = extents.z * math.lerp(0.35f, 0.65f, TriangleWave((t * 5.0f) + 0.37f));
+
+            float tunnelClearance = mainRadius - math.length(new float2(p.y - centerY, p.z - centerZ));
+            float shaftClearance = shaftRadius - math.length(new float2(p.x - (extents.x * 0.5f), p.z - (extents.z * 0.5f)));
+            float chamberClearance = (1.15f - math.length((p - (extents * 0.5f)) * math.rcp(math.max(voxelSize, mainRadius * 1.35f)))) * mainRadius;
+            float boundaryClearance = math.min(
+                math.min(math.min(p.x, extents.x - p.x), math.min(p.y, extents.y - p.y)),
+                math.min(p.z, extents.z - p.z));
+            SdfDistances[index] = math.min(math.max(tunnelClearance, math.max(shaftClearance, chamberClearance)), boundaryClearance);
+
+            if (index == 0 && Header.IsCreated && Header.Length > 0)
+            {
+                Header[0] = new MockDroneSDFHeader
+                {
+                    OriginAUP = OriginAUP,
+                    Dimensions = dims,
+                    VoxelSizeMeters = voxelSize,
+                    MainTunnelRadiusMeters = mainRadius,
+                    CrossShaftRadiusMeters = shaftRadius,
+                    GridVersion = GridVersion == 0u ? 1u : GridVersion,
+                    Flags = 1u
+                };
+            }
+        }
+
+        private static int3 IndexToCoord(int index, int3 dims)
+        {
+            int slice = dims.x * dims.y;
+            int z = index / slice;
+            int remainder = index - (z * slice);
+            int y = remainder / dims.x;
+            int x = remainder - (y * dims.x);
+            return new int3(x, y, z);
+        }
+
+        private static int SafeVolume(int3 dims)
+        {
+            long volume = (long)math.max(1, dims.x) * math.max(1, dims.y) * math.max(1, dims.z);
+            return (int)math.min(volume, int.MaxValue);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float TriangleWave(float value)
+        {
+            float centered = math.frac(value) - 0.5f;
+            return 1f - (math.abs(centered) * 2f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteOrFallback(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 8)]
     internal struct DroneNativeMinHeapNode
     {
@@ -944,6 +1238,8 @@ namespace Hecton8.Construction
     internal struct DroneNativeMinHeap
     {
         public NativeArray<DroneNativeMinHeapNode> Nodes;
+        public int BaseOffset;
+        public int Capacity;
         public int Count;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -954,15 +1250,16 @@ namespace Hecton8.Construction
 
         public bool TryPush(int nodeIndex, float cost)
         {
-            if (!Nodes.IsCreated || Count >= Nodes.Length)
+            int capacity = ResolveCapacity();
+            if (!Nodes.IsCreated || Count >= capacity)
                 return false;
 
             int cursor = Count++;
-            Nodes[cursor] = new DroneNativeMinHeapNode { NodeIndex = nodeIndex, Cost = cost };
+            Set(cursor, new DroneNativeMinHeapNode { NodeIndex = nodeIndex, Cost = cost });
             while (cursor > 0)
             {
                 int parent = (cursor - 1) >> 1;
-                if (Nodes[parent].Cost <= Nodes[cursor].Cost)
+                if (Get(parent).Cost <= Get(cursor).Cost)
                     break;
 
                 Swap(parent, cursor);
@@ -979,10 +1276,10 @@ namespace Hecton8.Construction
             if (Count <= 0 || !Nodes.IsCreated)
                 return false;
 
-            DroneNativeMinHeapNode root = Nodes[0];
+            DroneNativeMinHeapNode root = Get(0);
             Count--;
             if (Count > 0)
-                Nodes[0] = Nodes[Count];
+                Set(0, Get(Count));
 
             int cursor = 0;
             while (true)
@@ -992,8 +1289,8 @@ namespace Hecton8.Construction
                 if (left >= Count)
                     break;
 
-                int best = right < Count && Nodes[right].Cost < Nodes[left].Cost ? right : left;
-                if (Nodes[cursor].Cost <= Nodes[best].Cost)
+                int best = right < Count && Get(right).Cost < Get(left).Cost ? right : left;
+                if (Get(cursor).Cost <= Get(best).Cost)
                     break;
 
                 Swap(cursor, best);
@@ -1008,15 +1305,35 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Swap(int a, int b)
         {
-            DroneNativeMinHeapNode tmp = Nodes[a];
-            Nodes[a] = Nodes[b];
-            Nodes[b] = tmp;
+            DroneNativeMinHeapNode tmp = Get(a);
+            Set(a, Get(b));
+            Set(b, tmp);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ResolveCapacity()
+        {
+            int remaining = Nodes.IsCreated ? Nodes.Length - math.max(0, BaseOffset) : 0;
+            int requested = Capacity > 0 ? Capacity : remaining;
+            return math.max(0, math.min(requested, remaining));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private DroneNativeMinHeapNode Get(int index)
+        {
+            return Nodes[BaseOffset + index];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Set(int index, DroneNativeMinHeapNode value)
+        {
+            Nodes[BaseOffset + index] = value;
         }
     }
 
     internal struct DroneTaskNativeMinHeap
     {
-        public NativeArray<DroneTaskDTO> Nodes;
+        public NativeArray<DroneAssignmentTaskDTO> Nodes;
         public int Count;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1025,7 +1342,7 @@ namespace Hecton8.Construction
             Count = 0;
         }
 
-        public bool TryPush(in DroneTaskDTO node)
+        public bool TryPush(in DroneAssignmentTaskDTO node)
         {
             if (!Nodes.IsCreated || Count >= Nodes.Length)
                 return false;
@@ -1035,8 +1352,8 @@ namespace Hecton8.Construction
             while (cursor > 0)
             {
                 int parent = (cursor - 1) >> 1;
-                DroneTaskDTO parentNode = Nodes[parent];
-                DroneTaskDTO cursorNode = Nodes[cursor];
+                DroneAssignmentTaskDTO parentNode = Nodes[parent];
+                DroneAssignmentTaskDTO cursorNode = Nodes[cursor];
                 if (LessThanOrEqual(in parentNode, in cursorNode))
                     break;
 
@@ -1047,7 +1364,7 @@ namespace Hecton8.Construction
             return true;
         }
 
-        public bool TryPop(out DroneTaskDTO node)
+        public bool TryPop(out DroneAssignmentTaskDTO node)
         {
             node = default;
             if (Count <= 0 || !Nodes.IsCreated)
@@ -1069,14 +1386,14 @@ namespace Hecton8.Construction
                 int best = left;
                 if (right < Count)
                 {
-                    DroneTaskDTO rightNode = Nodes[right];
-                    DroneTaskDTO leftNode = Nodes[left];
+                    DroneAssignmentTaskDTO rightNode = Nodes[right];
+                    DroneAssignmentTaskDTO leftNode = Nodes[left];
                     if (LessThan(in rightNode, in leftNode))
                         best = right;
                 }
 
-                DroneTaskDTO cursorNode = Nodes[cursor];
-                DroneTaskDTO bestNode = Nodes[best];
+                DroneAssignmentTaskDTO cursorNode = Nodes[cursor];
+                DroneAssignmentTaskDTO bestNode = Nodes[best];
                 if (LessThanOrEqual(in cursorNode, in bestNode))
                     break;
 
@@ -1088,7 +1405,7 @@ namespace Hecton8.Construction
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool LessThan(in DroneTaskDTO a, in DroneTaskDTO b)
+        private static bool LessThan(in DroneAssignmentTaskDTO a, in DroneAssignmentTaskDTO b)
         {
             if (a.Priority < b.Priority)
                 return true;
@@ -1099,7 +1416,7 @@ namespace Hecton8.Construction
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool LessThanOrEqual(in DroneTaskDTO a, in DroneTaskDTO b)
+        private static bool LessThanOrEqual(in DroneAssignmentTaskDTO a, in DroneAssignmentTaskDTO b)
         {
             if (a.Priority < b.Priority)
                 return true;
@@ -1112,7 +1429,7 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Swap(int a, int b)
         {
-            DroneTaskDTO tmp = Nodes[a];
+            DroneAssignmentTaskDTO tmp = Nodes[a];
             Nodes[a] = Nodes[b];
             Nodes[b] = tmp;
         }
@@ -1139,6 +1456,24 @@ namespace Hecton8.Construction
         public int Reserved2;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct DroneAStarPersistentState
+    {
+        [FieldOffset(0)] public uint SearchHash;
+        [FieldOffset(4)] public int OpenCount;
+        [FieldOffset(8)] public int BestNode;
+        [FieldOffset(12)] public int GoalNode;
+        [FieldOffset(16)] public int IterationCount;
+        [FieldOffset(20)] public int Active;
+        [FieldOffset(24)] public float BestHeuristic;
+        [FieldOffset(28)] public float CellSize;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint Reserved0;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct DroneMacroAStarJob : IJob
     {
@@ -1160,21 +1495,29 @@ namespace Hecton8.Construction
         [NoAlias] public NativeArray<int> RouteNodes;
         [NoAlias] public NativeArray<byte> RouteNodeCounts;
         [NoAlias] public NativeArray<DroneAStarTelemetry> Telemetry;
+        [NoAlias] public NativeArray<DroneAStarPersistentState> SearchStates;
         public MockSDFGrid SdfGrid;
         public int FrameIndex;
         public int MaxSolves;
         public int RouteNodeStride;
         public float CellSize;
+        public int MaxNodesExpandedPerDrone;
+        public float HeuristicWeight;
+        public float RequiredDroneRadius;
 
         public void Execute()
         {
             if (!Drones.IsCreated || !Waypoints.IsCreated || !WaypointStates.IsCreated ||
-                !OpenHeap.IsCreated || !GCosts.IsCreated || !CameFrom.IsCreated || !NodeStates.IsCreated)
+                !OpenHeap.IsCreated || !GCosts.IsCreated || !CameFrom.IsCreated || !NodeStates.IsCreated ||
+                !SearchStates.IsCreated)
             {
                 return;
             }
 
-            int droneLimit = math.min(Drones.Length, math.min(Waypoints.Length, WaypointStates.Length));
+            int droneLimit = math.min(Drones.Length, math.min(SearchStates.Length, math.min(Waypoints.Length, WaypointStates.Length)));
+            if (droneLimit <= 0)
+                return;
+
             for (int i = 0; i < droneLimit; i++)
             {
                 Waypoints[i] = default;
@@ -1234,7 +1577,7 @@ namespace Hecton8.Construction
 
             if (math.lengthsq(toDestination) <= cell * cell)
             {
-                Waypoints[droneIndex] = new PathWaypointDTO { LocalPosition = destination, ActionCode = 1u };
+                WriteWaypoint(droneIndex, destination, 1u, (uint)StartNode, 1u, in drone);
                 WaypointStates[droneIndex] = 1;
                 WriteRouteNodes(droneIndex, StartNode, math.max(1, RouteNodeStride));
                 return 1;
@@ -1242,28 +1585,55 @@ namespace Hecton8.Construction
 
             int3 goalCoord = ResolveGoalCoord(toDestination, cell);
             int goalNode = PackNode(goalCoord);
-            ClearScratch();
+            int nodeBase = ResolveNodeBase(droneIndex);
+            if (!HasNodeSlice(nodeBase))
+                return 2;
 
-            DroneNativeMinHeap heap = new DroneNativeMinHeap { Nodes = OpenHeap, Count = 0 };
-            GCosts[StartNode] = 0f;
-            CameFrom[StartNode] = -1;
-            NodeStates[StartNode] = 1;
-            heap.TryPush(StartNode, ResolveHeuristic(UnpackNode(StartNode), goalCoord, cell));
+            float heuristicWeight = math.max(1f, HeuristicWeight);
+            float requiredRadius = ResolveDroneRequiredRadius(in drone);
+            int maxExpansions = math.clamp(MaxNodesExpandedPerDrone, 16, NodeCapacity);
+            uint searchHash = ResolveSearchHash(in drone, goalCoord);
+            DroneAStarPersistentState search = SearchStates[droneIndex];
+            bool resume = search.Active != 0 &&
+                search.SearchHash == searchHash &&
+                search.GoalNode == goalNode &&
+                math.abs(search.CellSize - cell) <= 0.0001f &&
+                search.OpenCount > 0;
 
-            int bestNode = StartNode;
-            float bestHeuristic = ResolveHeuristic(UnpackNode(StartNode), goalCoord, cell);
+            DroneNativeMinHeap heap = new DroneNativeMinHeap
+            {
+                Nodes = OpenHeap,
+                BaseOffset = nodeBase,
+                Capacity = NodeCapacity,
+                Count = resume ? math.clamp(search.OpenCount, 0, NodeCapacity) : 0
+            };
+
+            int bestNode = resume ? math.clamp(search.BestNode, 0, NodeCapacity - 1) : StartNode;
+            float bestHeuristic = resume && math.isfinite(search.BestHeuristic)
+                ? search.BestHeuristic
+                : ResolveHeuristic(UnpackNode(StartNode), goalCoord, cell, heuristicWeight);
+
+            if (!resume)
+            {
+                ClearScratch(nodeBase);
+                SetGCost(nodeBase, StartNode, 0f);
+                SetCameFrom(nodeBase, StartNode, -1);
+                SetNodeState(nodeBase, StartNode, 1);
+                heap.TryPush(StartNode, ResolveHeuristic(UnpackNode(StartNode), goalCoord, cell, heuristicWeight));
+            }
+
             int localIterations = 0;
             bool complete = false;
 
-            while (heap.TryPop(out int current, out _) && localIterations < NodeCapacity)
+            while (heap.TryPop(out int current, out _) && localIterations < maxExpansions)
             {
                 localIterations++;
-                if (NodeStates[current] == 2)
+                if (GetNodeState(nodeBase, current) == 2)
                     continue;
 
-                NodeStates[current] = 2;
+                SetNodeState(nodeBase, current, 2);
                 int3 currentCoord = UnpackNode(current);
-                float heuristic = ResolveHeuristic(currentCoord, goalCoord, cell);
+                float heuristic = ResolveHeuristic(currentCoord, goalCoord, cell, heuristicWeight);
                 if (heuristic < bestHeuristic)
                 {
                     bestHeuristic = heuristic;
@@ -1278,20 +1648,27 @@ namespace Hecton8.Construction
                 }
 
                 for (int direction = 0; direction < 6; direction++)
-                    TryVisitNeighbor(current, currentCoord, goalNode, goalCoord, drone.Position, cell, direction, ref heap);
+                    TryVisitNeighbor(nodeBase, current, currentCoord, goalNode, goalCoord, drone.Position, cell, requiredRadius, heuristicWeight, direction, ref heap);
             }
 
             iterationAccumulator += localIterations;
             int pathNode = complete ? goalNode : bestNode;
+            search.SearchHash = searchHash;
+            search.OpenCount = heap.Count;
+            search.BestNode = bestNode;
+            search.GoalNode = goalNode;
+            search.IterationCount = math.min(int.MaxValue, search.IterationCount + localIterations);
+            search.Active = complete || heap.Count <= 0 ? 0 : 1;
+            search.BestHeuristic = bestHeuristic;
+            search.CellSize = cell;
+            search.Flags = complete ? 1u : (heap.Count > 0 ? 2u : 4u);
+            SearchStates[droneIndex] = search;
+
             if (pathNode == StartNode)
             {
                 if (SdfGrid.TrySampleRepulsion(drone.Position, out float3 normal, out _))
                 {
-                    Waypoints[droneIndex] = new PathWaypointDTO
-                    {
-                        LocalPosition = drone.Position + (normal * cell),
-                        ActionCode = 2u
-                    };
+                    WriteWaypoint(droneIndex, drone.Position + (normal * cell), 2u, (uint)StartNode, 4u, in drone);
                     WaypointStates[droneIndex] = 2;
                     return 2;
                 }
@@ -1299,18 +1676,40 @@ namespace Hecton8.Construction
                 return 2;
             }
 
-            float3 waypoint = ResolveFirstStep(pathNode, drone.Position, destination, cell);
-            WriteRouteNodes(droneIndex, pathNode, math.max(1, RouteNodeStride));
-            Waypoints[droneIndex] = new PathWaypointDTO
-            {
-                LocalPosition = waypoint,
-                ActionCode = complete ? 1u : 2u
-            };
+            float3 waypoint = ResolveStringPulledWaypoint(nodeBase, pathNode, goalNode, complete, drone.Position, destination, cell, requiredRadius);
+            WriteRouteNodes(nodeBase, droneIndex, pathNode, math.max(1, RouteNodeStride));
+            WriteWaypoint(droneIndex, waypoint, complete ? 1u : 2u, (uint)math.max(0, pathNode), complete ? 1u : 2u, in drone);
             WaypointStates[droneIndex] = complete ? (byte)1 : (byte)2;
             return complete ? (byte)1 : (byte)2;
         }
 
+        private void WriteWaypoint(
+            int droneIndex,
+            float3 localPosition,
+            uint actionCode,
+            uint nodeIndex,
+            uint flags,
+            in HeadlessDroneState drone)
+        {
+            if ((uint)droneIndex >= (uint)Waypoints.Length)
+                return;
+
+            Waypoints[droneIndex] = new PathWaypointDTO
+            {
+                PositionAUP = ResolveWaypointAup(in drone, localPosition),
+                LocalPosition = localPosition,
+                ActionCode = actionCode,
+                NodeIndex = nodeIndex,
+                Flags = flags
+            };
+        }
+
         private void WriteRouteNodes(int droneIndex, int pathNode, int stride)
+        {
+            WriteRouteNodes(ResolveNodeBase(droneIndex), droneIndex, pathNode, stride);
+        }
+
+        private void WriteRouteNodes(int nodeBase, int droneIndex, int pathNode, int stride)
         {
             if (!RouteNodes.IsCreated || !RouteNodeCounts.IsCreated ||
                 droneIndex < 0 || droneIndex >= RouteNodeCounts.Length ||
@@ -1329,19 +1728,22 @@ namespace Hecton8.Construction
             while (current >= 0 && current != StartNode && count < stride && offset + count < RouteNodes.Length && guard++ < NodeCapacity)
             {
                 RouteNodes[offset + count] = current;
-                current = CameFrom[current];
+                current = GetCameFrom(nodeBase, current);
             }
 
             RouteNodeCounts[droneIndex] = (byte)math.min(count, 255);
         }
 
         private void TryVisitNeighbor(
+            int nodeBase,
             int current,
             int3 currentCoord,
             int goalNode,
             int3 goalCoord,
             float3 origin,
             float cell,
+            float requiredRadius,
+            float heuristicWeight,
             int direction,
             ref DroneNativeMinHeap heap)
         {
@@ -1353,32 +1755,81 @@ namespace Hecton8.Construction
             }
 
             int neighbor = PackNode(neighborCoord);
-            if (NodeStates[neighbor] == 2)
+            if (GetNodeState(nodeBase, neighbor) == 2)
                 return;
 
             float3 world = WorldFromCoord(neighborCoord, origin, cell);
-            if (neighbor != goalNode && SdfGrid.IsBlocked(world))
+            if (neighbor != goalNode && SdfGrid.IsBlockedForRadius(world, requiredRadius))
                 return;
 
-            float tentativeG = GCosts[current] + ResolveStepCost(currentCoord, neighborCoord, world, cell);
-            if (tentativeG >= GCosts[neighbor])
+            float tentativeG = GetGCost(nodeBase, current) + ResolveStepCost(currentCoord, neighborCoord, world, cell);
+            if (tentativeG >= GetGCost(nodeBase, neighbor))
                 return;
 
-            CameFrom[neighbor] = current;
-            GCosts[neighbor] = tentativeG;
-            NodeStates[neighbor] = 1;
-            heap.TryPush(neighbor, tentativeG + ResolveHeuristic(neighborCoord, goalCoord, cell));
+            SetCameFrom(nodeBase, neighbor, current);
+            SetGCost(nodeBase, neighbor, tentativeG);
+            SetNodeState(nodeBase, neighbor, 1);
+            heap.TryPush(neighbor, tentativeG + ResolveHeuristic(neighborCoord, goalCoord, cell, heuristicWeight));
         }
 
-        private float3 ResolveFirstStep(int pathNode, float3 origin, float3 destination, float cell)
+        private float3 ResolveStringPulledWaypoint(
+            int nodeBase,
+            int pathNode,
+            int goalNode,
+            bool complete,
+            float3 origin,
+            float3 destination,
+            float cell,
+            float requiredRadius)
+        {
+            float3 fallback = ResolveFirstStep(nodeBase, pathNode, origin, destination, cell);
+            int current = pathNode;
+            int guard = 0;
+            while (current >= 0 && current != StartNode && guard++ < NodeCapacity)
+            {
+                float3 candidate = complete && current == goalNode
+                    ? destination
+                    : WorldFromCoord(UnpackNode(current), origin, cell);
+                if (HasLineClearance(origin, candidate, cell, requiredRadius))
+                    return candidate;
+
+                current = GetCameFrom(nodeBase, current);
+            }
+
+            return fallback;
+        }
+
+        private bool HasLineClearance(float3 start, float3 end, float cell, float requiredRadius)
+        {
+            float3 delta = end - start;
+            float distance = math.length(delta);
+            if (!math.isfinite(distance))
+                return false;
+
+            if (distance <= 0.01f)
+                return true;
+
+            int samples = math.clamp((int)math.ceil(distance * math.rcp(math.max(0.25f, cell * 0.5f))), 1, 16);
+            for (int i = 1; i <= samples; i++)
+            {
+                float t = (float)i * math.rcp((float)samples + 1f);
+                float3 point = start + (delta * t);
+                if (SdfGrid.IsBlockedForRadius(point, requiredRadius))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private float3 ResolveFirstStep(int nodeBase, int pathNode, float3 origin, float3 destination, float cell)
         {
             int current = pathNode;
-            int parent = CameFrom[current];
+            int parent = GetCameFrom(nodeBase, current);
             int guard = 0;
             while (parent >= 0 && parent != StartNode && guard++ < NodeCapacity)
             {
                 current = parent;
-                parent = CameFrom[current];
+                parent = GetCameFrom(nodeBase, current);
             }
 
             if (current == pathNode && parent < 0)
@@ -1387,15 +1838,77 @@ namespace Hecton8.Construction
             return WorldFromCoord(UnpackNode(current), origin, cell);
         }
 
-        private void ClearScratch()
+        private void ClearScratch(int nodeBase)
         {
-            int limit = math.min(NodeCapacity, math.min(GCosts.Length, math.min(CameFrom.Length, NodeStates.Length)));
+            int limit = math.min(NodeCapacity, math.min(GCosts.Length - nodeBase, math.min(CameFrom.Length - nodeBase, NodeStates.Length - nodeBase)));
             for (int i = 0; i < limit; i++)
             {
-                GCosts[i] = HugeCost;
-                CameFrom[i] = -1;
-                NodeStates[i] = 0;
+                GCosts[nodeBase + i] = HugeCost;
+                CameFrom[nodeBase + i] = -1;
+                NodeStates[nodeBase + i] = 0;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ResolveNodeBase(int droneIndex)
+        {
+            return math.max(0, droneIndex) * NodeCapacity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasNodeSlice(int nodeBase)
+        {
+            return nodeBase >= 0 &&
+                nodeBase + NodeCapacity <= OpenHeap.Length &&
+                nodeBase + NodeCapacity <= GCosts.Length &&
+                nodeBase + NodeCapacity <= CameFrom.Length &&
+                nodeBase + NodeCapacity <= NodeStates.Length;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float GetGCost(int nodeBase, int node)
+        {
+            return GCosts[nodeBase + node];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetGCost(int nodeBase, int node, float value)
+        {
+            GCosts[nodeBase + node] = value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetCameFrom(int nodeBase, int node)
+        {
+            return CameFrom[nodeBase + node];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetCameFrom(int nodeBase, int node, int value)
+        {
+            CameFrom[nodeBase + node] = value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte GetNodeState(int nodeBase, int node)
+        {
+            return NodeStates[nodeBase + node];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetNodeState(int nodeBase, int node, byte value)
+        {
+            NodeStates[nodeBase + node] = value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveSearchHash(in HeadlessDroneState drone, int3 goalCoord)
+        {
+            return math.hash(new uint4(
+                (uint)math.max(0, drone.TargetTaskIndex + 1),
+                (uint)drone.State,
+                (uint)PackNode(goalCoord),
+                (uint)math.max(0, drone.DroneId)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1415,6 +1928,14 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 ResolveDestination(in HeadlessDroneState drone)
         {
+            double3 destinationAup = ResolveDestinationAup(in drone);
+            if (IsFinite(destinationAup) && IsFinite(drone.PositionAup))
+            {
+                float3 localDelta = ToFloat3(destinationAup - drone.PositionAup);
+                if (IsFinite(localDelta))
+                    return drone.Position + localDelta;
+            }
+
             if (drone.State == (byte)HeadlessDroneRuntimeState.Return ||
                 drone.State == (byte)HeadlessDroneRuntimeState.Docking)
             {
@@ -1425,6 +1946,38 @@ namespace Hecton8.Construction
                 return drone.SupplyPosition;
 
             return drone.TargetPosition;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double3 ResolveDestinationAup(in HeadlessDroneState drone)
+        {
+            if (drone.State == (byte)HeadlessDroneRuntimeState.Return ||
+                drone.State == (byte)HeadlessDroneRuntimeState.Docking)
+            {
+                return drone.HomeAup;
+            }
+
+            if (drone.State == (byte)HeadlessDroneRuntimeState.ResupplyTravel)
+                return drone.SupplyAup;
+
+            return drone.TargetAup;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double3 ResolveWaypointAup(in HeadlessDroneState drone, float3 localPosition)
+        {
+            if (IsFinite(drone.PositionAup) && IsFinite(drone.Position) && IsFinite(localPosition))
+                return drone.PositionAup + ToDouble3(localPosition - drone.Position);
+
+            return ToDouble3(localPosition);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveDroneRequiredRadius(in HeadlessDroneState drone)
+        {
+            float encodedRadius = math.asfloat(drone.ReservedTail0);
+            float radius = math.max(math.max(0f, RequiredDroneRadius), math.isfinite(encodedRadius) ? encodedRadius : 0f);
+            return math.clamp(radius, 0.2f, 2f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1462,10 +2015,10 @@ namespace Hecton8.Construction
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveHeuristic(int3 coord, int3 goal, float cell)
+        private static float ResolveHeuristic(int3 coord, int3 goal, float cell, float heuristicWeight)
         {
             int3 delta = math.abs(goal - coord);
-            return ((delta.x + delta.z) + (delta.y * VerticalPenalty)) * cell;
+            return ((delta.x + delta.z) + (delta.y * VerticalPenalty)) * cell * math.max(1f, heuristicWeight);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1494,6 +2047,24 @@ namespace Hecton8.Construction
         private static bool IsFinite(float3 value)
         {
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFinite(double3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ToFloat3(double3 value)
+        {
+            return new float3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double3 ToDouble3(float3 value)
+        {
+            return new double3(value.x, value.y, value.z);
         }
     }
 }

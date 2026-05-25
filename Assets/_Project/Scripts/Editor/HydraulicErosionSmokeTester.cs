@@ -111,7 +111,7 @@ namespace Hecton8.Editor
             string folder = Path.Combine(Directory.GetParent(Application.dataPath).FullName, OutputFolder);
             Directory.CreateDirectory(folder);
             string path = Path.Combine(folder, OutputFile);
-            File.WriteAllText(path, BuildJson(results, passCount));
+            File.WriteAllText(path, BuildJson(results, passCount), new UTF8Encoding(false));
             AssetDatabase.Refresh();
             return path;
         }

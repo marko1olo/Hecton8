@@ -8,6 +8,12 @@ namespace Hecton8.Editor.GeologyForge
 {
     internal static class GeologyVertexLayoutValidator
     {
+        private const int RawVertexStrideBytes = 64;
+        private const int BakeTelemetryStrideBytes = 64;
+        private const int DumpHeaderStrideBytes = 32;
+        private const int MeshManifestHeaderStrideBytes = 64;
+        private const int MeshManifestRecordStrideBytes = 128;
+
         private static readonly VertexAttributeDescriptor[] _GeologyLayout =
         {
             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, 0),
@@ -33,24 +39,24 @@ namespace Hecton8.Editor.GeologyForge
                 throw new InvalidOperationException($"GeologyVertex32 stride mismatch. Expected 32, got {size}.");
 
             int rawSize = UnsafeUtility.SizeOf<GeologyRawVertex>();
-            if (rawSize != 64)
-                throw new InvalidOperationException($"GeologyRawVertex stride mismatch. Expected 64, got {rawSize}.");
+            if (rawSize != RawVertexStrideBytes)
+                throw new InvalidOperationException($"GeologyRawVertex stride mismatch. Expected {RawVertexStrideBytes}, got {rawSize}.");
 
             int telemetrySize = UnsafeUtility.SizeOf<GeologyBakeTelemetryEntry>();
-            if (telemetrySize != 64)
-                throw new InvalidOperationException($"GeologyBakeTelemetryEntry stride mismatch. Expected 64, got {telemetrySize}.");
+            if (telemetrySize != BakeTelemetryStrideBytes)
+                throw new InvalidOperationException($"GeologyBakeTelemetryEntry stride mismatch. Expected {BakeTelemetryStrideBytes}, got {telemetrySize}.");
 
             int dumpHeaderSize = UnsafeUtility.SizeOf<GeologyBakeDumpHeader>();
-            if (dumpHeaderSize != 32)
-                throw new InvalidOperationException($"GeologyBakeDumpHeader stride mismatch. Expected 32, got {dumpHeaderSize}.");
+            if (dumpHeaderSize != DumpHeaderStrideBytes)
+                throw new InvalidOperationException($"GeologyBakeDumpHeader stride mismatch. Expected {DumpHeaderStrideBytes}, got {dumpHeaderSize}.");
 
             int manifestHeaderSize = UnsafeUtility.SizeOf<GeologyMeshManifestHeader>();
-            if (manifestHeaderSize != 64)
-                throw new InvalidOperationException($"GeologyMeshManifestHeader stride mismatch. Expected 64, got {manifestHeaderSize}.");
+            if (manifestHeaderSize != MeshManifestHeaderStrideBytes)
+                throw new InvalidOperationException($"GeologyMeshManifestHeader stride mismatch. Expected {MeshManifestHeaderStrideBytes}, got {manifestHeaderSize}.");
 
             int manifestRecordSize = UnsafeUtility.SizeOf<GeologyMeshManifestRecord>();
-            if (manifestRecordSize != 128)
-                throw new InvalidOperationException($"GeologyMeshManifestRecord stride mismatch. Expected 128, got {manifestRecordSize}.");
+            if (manifestRecordSize != MeshManifestRecordStrideBytes)
+                throw new InvalidOperationException($"GeologyMeshManifestRecord stride mismatch. Expected {MeshManifestRecordStrideBytes}, got {manifestRecordSize}.");
 
             ValidateOffset<GeologyVertex32>(nameof(GeologyVertex32.Position), 0);
             ValidateOffset<GeologyVertex32>(nameof(GeologyVertex32.Normal), 12);

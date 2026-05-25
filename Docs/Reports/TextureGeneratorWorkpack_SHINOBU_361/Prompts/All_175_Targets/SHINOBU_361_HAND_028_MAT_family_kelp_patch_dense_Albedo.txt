@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_028
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_028_MAT_family_kelp_patch_dense_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_kelp_patch_dense_Albedo.png
+FINAL_FILENAME: MAT_family_kelp_patch_dense_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Dense kelp patch albedo for seabed clusters. Make overlapping narrow fronds in deep teal, clean olive, and desaturated blue-green, with pale rib highlights as material color and scattered amber growth nodes. The texture should tile into a rich living patch without becoming unreadable camouflage. Add small sediment freckles and soft edge variation, but maintain a refined, bright-enough underwater palette. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

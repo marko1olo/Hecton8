@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Hecton8.Editor;
@@ -56,7 +57,7 @@ namespace Hecton8.EditorTools
             StringBuilder builder = new StringBuilder(32768);
             builder.AppendLine("# AGENT 06 TechArt Log");
             builder.AppendLine();
-            builder.AppendLine($"Generated: `{DateTime.Now:yyyy-MM-dd HH:mm:ss}`");
+            builder.AppendLine("Generated: `" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) + "`");
             builder.AppendLine("Status: `PENDING VERIFICATION`");
             builder.AppendLine();
             builder.AppendLine("Mandates followed:");

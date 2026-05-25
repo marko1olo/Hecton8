@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_156
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_156_Mat_Tool_Knife_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Tool_Knife_Placeholder_Albedo.png
+FINAL_FILENAME: Mat_Tool_Knife_Placeholder_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Knife tool albedo for HECTON-8 utility survival equipment. Create brushed titanium blade facets, off-white ceramic spine inserts, graphite grip texture, teal alignment notch, amber safety pin, and fine salt-polished contact wear. It should read as a compact premium tool for cutting fiber, membrane, and salvage, with clean material separation and no excessive damage. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

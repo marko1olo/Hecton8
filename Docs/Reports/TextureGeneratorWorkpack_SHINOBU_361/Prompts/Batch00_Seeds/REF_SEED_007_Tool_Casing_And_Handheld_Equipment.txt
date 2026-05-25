@@ -1,0 +1,10 @@
+﻿JOB_ID: REF_SEED_007
+ROLE: LOOKDEV_REFERENCE
+CATEGORY: SEED_REFERENCE
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch00_Seeds\REF_SEED_007
+FINAL_TARGET_PATH: LOOKDEV_ONLY_NOT_ASSET_TARGET
+FINAL_FILENAME: LOOKDEV_APPROVED_REF_SEED_007.png
+REFERENCES: project planet/cloud mood image if useful; no random primary refs
+
+PROMPT:
+Create a seamless albedo reference for handheld HECTON-8 expedition tool casing material. Combine warm off-white impact composite, satin titanium heat-sink ribs, graphite rubber grip fields, teal diagnostic enamel, amber power-window accents, fine screw wells, molded seam lines, small polished contact spots, and precise salt dust at gasket edges. It should look practical and expensive, like a real scientific rescue tool built for ocean pressure, not a toy and not a weapon. Keep the design readable in first person, with confident shape rhythm and controlled micro-detail. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

@@ -826,7 +826,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             builder.Append("  \"binaryAsset\": \"").Append(result.BinaryAssetPath).Append("\",\n");
             builder.Append("  \"texture3DAsset\": \"").Append(result.TextureAssetPath).Append("\"\n");
             builder.Append("}\n");
-            File.WriteAllText(ReportPath, builder.ToString());
+            File.WriteAllText(ReportPath, builder.ToString(), new UTF8Encoding(false));
         }
 
         private static void WriteSelfAudit(in StaticCaveSdfBakeResult result, in StaticCaveSdfBakeConfigDTO config)
@@ -898,7 +898,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             builder.Append("  <STATIC_GATES>Forge-generated audit preserves the rich schema. Latest static gate results are recorded in Status_SHINOBU_244 and LOG_SHINOBU_244; Unity import/Burst proof is not implied. Scanner coverage proof includes scanIncomplete=false/true and diagnostics[] when the scanner report is generated.</STATIC_GATES>\n");
             builder.Append("  <COMPILE_STATUS>NOT_RUN_CPU_GATE. Unity import, Burst Inspector, Play Mode, profiler, and player proof remain absent.</COMPILE_STATUS>\n");
             builder.Append("</SELF_AUDIT>\n");
-            File.WriteAllText(SelfAuditPath, builder.ToString());
+            File.WriteAllText(SelfAuditPath, builder.ToString(), new UTF8Encoding(false));
         }
 
         private static string SanitizeFileName(string name)

@@ -16,7 +16,7 @@ namespace Hecton8.Construction
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
-    public sealed class MaintenanceStationModule : MonoBehaviour, ITickable, IUpdatable, IPoolable, IPowerComponent, IInteractable, IGlobalRegistryHotSwapListener
+    public sealed class MaintenanceStationModule : MonoBehaviour, ITickable, IUpdatable, IPoolable, IPowerComponent, IInteractable, IInteractableTextProvider, IGlobalRegistryHotSwapListener
     {
         private const string DefaultTitaniumRepairItemId = "Data_TitaniumScrap";
         private const string DefaultLubricantItemId = "Comp_LubricantResin";
@@ -78,7 +78,7 @@ namespace Hecton8.Construction
         private int _reservationCostCount;
         private bool _reservationCostOverflowed;
         private bool _isRepairing;
-        private ToolDurabilitySystem _toolDurabilitySystem;
+        private IToolDurabilityService _toolDurabilitySystem;
         private IPlayerInventoryService _playerInventoryService;
         private bool _toolManagerFromRegistry;
         private bool _hotSwapRegistered;
@@ -110,7 +110,7 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
-            _powerNode = GetComponent<PowerNode>();
+            TryGetComponent(out _powerNode);
             CacheRegistryServicesCold();
             ResolveFallbackItems();
         }
@@ -119,11 +119,13 @@ namespace Hecton8.Construction
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             TryRegister();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             CancelActiveRepair();
             TryUnregister();
             TryUnregisterHotSwapListener();
@@ -131,6 +133,7 @@ namespace Hecton8.Construction
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             CancelActiveRepair();
             TryUnregister();
             TryUnregisterHotSwapListener();
@@ -168,7 +171,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            ToolDurabilitySystem durabilitySystem = _toolDurabilitySystem;
+            IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem == null || string.IsNullOrEmpty(_slottedToolMetadata.toolID))
             {
                 _debugIsRepairing = false;
@@ -255,12 +258,7 @@ namespace Hecton8.Construction
 
         void IInteractable.Interact(Transform interactor)
         {
-            if (interactor == null)
-                return;
-
-            PlayerInventory inventory = interactor.GetComponentInParent<PlayerInventory>();
-            if (inventory == null)
-                inventory = ResolvePlayerInventory();
+            PlayerInventory inventory = ResolvePlayerInventory();
             if (inventory == null)
                 return;
 
@@ -278,6 +276,12 @@ namespace Hecton8.Construction
             return _isRepairing ? RepairingPrompt : ReadyPrompt;
         }
 
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            string source = _slottedToolItem == null ? EmptyPrompt : (_isRepairing ? RepairingPrompt : ReadyPrompt);
+            return InteractableTextCopy.TryCopy(source, destination, out length);
+        }
+
         /// <summary>
         /// Explicit UI bridge for future station panels. Moves one tool item from the player inventory into the service slot.
         /// </summary>
@@ -290,7 +294,7 @@ namespace Hecton8.Construction
             if (!TryResolveToolMetadata(item, out metadata))
                 return false;
 
-            ToolDurabilitySystem durabilitySystem = _toolDurabilitySystem;
+            IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem == null || string.IsNullOrEmpty(metadata.toolID))
                 return false;
 
@@ -353,7 +357,7 @@ namespace Hecton8.Construction
             _repairTargetDurability = Mathf.Max(1f, metadata.maxDurability);
             _debugToolId = metadata.toolID;
 
-            ToolDurabilitySystem durabilitySystem = _toolDurabilitySystem;
+            IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem != null && !string.IsNullOrEmpty(metadata.toolID))
             {
                 float maxDurability = Mathf.Max(1f, metadata.maxDurability);
@@ -391,8 +395,7 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -428,8 +431,19 @@ namespace Hecton8.Construction
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registered = false;
+                    }
+                    else if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    break;
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
-                    _toolDurabilitySystem = currentService as ToolDurabilitySystem;
+                    _toolDurabilitySystem = currentService as IToolDurabilityService;
                     break;
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     _playerInventoryService = currentService as IPlayerInventoryService;
@@ -443,9 +457,9 @@ namespace Hecton8.Construction
 
         private void CacheRegistryServicesCold()
         {
-            _toolDurabilitySystem = GlobalRegistry.ToolDurability;
+            _toolDurabilitySystem = GlobalRegistry.ToolDurabilityService;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            RebindPlayerToolManager(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            RebindPlayerToolManager(GlobalRegistry.Player);
         }
 
         private void RebindPlayerToolManager(IPlayerRuntimeContext playerContext)
@@ -627,7 +641,7 @@ namespace Hecton8.Construction
 
         private void CompleteActiveRepair()
         {
-            ToolDurabilitySystem durabilitySystem = _toolDurabilitySystem;
+            IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem != null && _slottedToolMetadata != null && !string.IsNullOrEmpty(_slottedToolMetadata.toolID))
                 durabilitySystem.RepairToolFull(_slottedToolMetadata.toolID, Mathf.Max(1f, _slottedToolMetadata.maxDurability));
 

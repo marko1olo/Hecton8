@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_242" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE_NO_UNITY_IMPORT">
+﻿<SELF_AUDIT agent="SHINOBU_242" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE_NO_UNITY_IMPORT">
   <TASK_RECONCILIATION total="20">
     <TASK id="01" status="PASS" name="REALTIME_EROSION_INQUISITION" evidence="Terrain_Runtime_Scanner_Erosion exists; runtime terrain mutation remains scanner-reported debt, not modified here." />
     <TASK id="02" status="PASS" name="MANAGED_PARTICLE_PURGE" evidence="Droplets are NativeArray&lt;ErosionDropletDTO&gt;, no managed droplet objects." />

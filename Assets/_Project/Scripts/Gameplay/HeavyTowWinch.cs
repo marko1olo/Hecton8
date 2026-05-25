@@ -214,16 +214,15 @@ namespace Hecton8.Gameplay
         {
             _cachedTransform = transform;
             if (!TryGetComponent(out _playerRigidbody))
-                _playerRigidbody = GetComponent<Rigidbody>();
+                _playerRigidbody = null;
 
             if (playerMovement == null)
                 TryGetComponent(out playerMovement);
 
-            if (!TryGetComponent(out _playerMotor))
-                TryGetComponent(out _playerMotor);
+            TryGetComponent(out _playerMotor);
 
             if (!TryGetComponent(out _tetherManager))
-                _tetherManager = GetComponent<TetherManager>();
+                _tetherManager = null;
 
             if (towAnchor == null)
             {
@@ -255,7 +254,7 @@ namespace Hecton8.Gameplay
             if (_playerMotor == null || _playerRigidbody == null)
                 return false;
 
-            if (!TetherSignals.PublishFire(
+            if (!TetherSignals.TryPublishFire(
                     ResolveStableObjectId(_tetherManager),
                     ResolveStableObjectId(this),
                     ResolveStableObjectId(payloadBody),

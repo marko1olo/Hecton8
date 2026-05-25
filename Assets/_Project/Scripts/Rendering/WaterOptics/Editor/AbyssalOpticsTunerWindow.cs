@@ -1,4 +1,5 @@
 using Hecton8.Rendering.WaterOptics;
+using Hecton8.Core;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -234,9 +235,9 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                 float t = PreviewSwatchCount <= 1 ? 0f : i / (float)(PreviewSwatchCount - 1);
                 float distance = maxDistance * t;
                 Color color = new Color(
-                    Mathf.Exp(-distance * extinction.x),
-                    Mathf.Exp(-distance * extinction.y),
-                    Mathf.Exp(-distance * extinction.z),
+                    MathLodApproximation.ApproxExpNegPade33Wide40(distance * extinction.x),
+                    MathLodApproximation.ApproxExpNegPade33Wide40(distance * extinction.y),
+                    MathLodApproximation.ApproxExpNegPade33Wide40(distance * extinction.z),
                     1f);
                 _previewSwatches[i].style.backgroundColor = color;
             }

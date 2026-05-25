@@ -464,7 +464,7 @@ namespace Hecton8.Editor.GeologyForge
                     ThrowInvalidCell(row, column, field, exponentOverflow ? CsvErrorIntegerOverflow : CsvErrorMalformedCell);
 
                 int signedExponent = exponentNegative ? -exponent : exponent;
-                result *= Math.Pow(10d, signedExponent);
+                result = ScaleByFloatPow10(result, signedExponent);
             }
 
             if (result == 0d)
@@ -474,6 +474,23 @@ namespace Hecton8.Editor.GeologyForge
 
             ConsumeColumnTerminatorOrThrow(bytes, length, ref cursor, row, column, field);
             return result;
+        }
+
+        private static double ScaleByFloatPow10(double value, int exponent)
+        {
+            if (value == 0d || exponent == 0)
+                return value;
+            if (exponent > 38)
+                return value > 0d ? double.PositiveInfinity : double.NegativeInfinity;
+            if (exponent < -46)
+                return 0d;
+
+            int count = exponent < 0 ? -exponent : exponent;
+            double scale = 1d;
+            for (int i = 0; i < count; i++)
+                scale *= 10d;
+
+            return exponent < 0 ? value / scale : value * scale;
         }
 
         private static float RequirePositive(float value, int row, int column, string field)

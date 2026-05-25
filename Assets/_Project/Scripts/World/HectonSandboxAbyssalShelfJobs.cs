@@ -276,7 +276,7 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SlopeAngleDegreesToGradient(float angleDegrees)
         {
-            return math.tan(math.radians(math.clamp(angleDegrees, 0.001f, 89f)));
+            return global::Hecton8.Core.MathLodApproximation.ApproxTanClamped(math.radians(math.clamp(angleDegrees, 0.001f, 89f)), 4096f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

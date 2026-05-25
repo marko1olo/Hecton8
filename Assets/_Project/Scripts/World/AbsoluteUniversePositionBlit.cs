@@ -4,8 +4,13 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    internal static class AbsoluteUniversePositionBlitLayout
+    {
+        public const int AbsoluteUniversePositionBlitStrideBytes = 48;
+    }
+
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = AbsoluteUniversePositionBlitLayout.AbsoluteUniversePositionBlitStrideBytes)]
     public struct AbsoluteUniversePositionBlit
     {
         [FieldOffset(0)]

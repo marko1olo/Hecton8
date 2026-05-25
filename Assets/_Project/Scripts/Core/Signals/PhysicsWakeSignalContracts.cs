@@ -3,12 +3,17 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts.Signals
 {
+    internal static class PhysicsWakeSignalLayout
+    {
+        internal const int WakeRequestSignalStrideBytes = 64;
+    }
+
     /// <summary>
     /// Deferred physics-culling wake pulse. Absolute AUP is stored as double3 to avoid
     /// truncating a 100 km world-space event origin to float before culling math.
     /// Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = PhysicsWakeSignalLayout.WakeRequestSignalStrideBytes)]
     public struct WakeRequestSignal : ISignal
     {
         [FieldOffset(0)] public double3 OriginAup;

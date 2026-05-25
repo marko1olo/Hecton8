@@ -15,15 +15,16 @@ namespace Hecton8.Audio.Editor
     public static class ShinobuAcousticDspSmokeTester
     {
         private const string ContractsPath = "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs";
-        private const string JobsPath = "Assets/_Project/Scripts/Audio/Virtualization/AudioVirtualizationJobs.cs";
-        private const string VirtualizationAsmdefPath = "Assets/_Project/Scripts/Audio/Virtualization/Hecton8.Audio.Virtualization.asmdef";
+        private const string JobsPath = "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs";
+        private const string CoreAsmdefPath = "Assets/_Project/Scripts/Hecton8.Core.asmdef";
         private const string VirtualizationContractsAsmdefPath = "Assets/_Project/Scripts/Audio/Virtualization/Contracts/Hecton8.Audio.Virtualization.Contracts.asmdef";
         private const string SpatialAudioPath = "Assets/_Project/Scripts/SpatialAudioManager.cs";
-        private const string AcousticAupPath = "Assets/_Project/Scripts/Core/Contracts/AcousticAup.cs";
+        private const string AcousticAupPath = "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs";
         private const string AbyssalTunerPath = "Assets/_Project/Scripts/Audio/Editor/AbyssalAcousticsTunerWindow.cs";
         private const string AcousticMaterialsCsvPath = "Assets/_Project/Data/Audio/acoustic_materials.csv";
         private static readonly string TuningDefaultPropertyNeedle = "VirtualVoiceTuningSnapshot." + "Default";
         private static readonly string PropagationAssemblyNeedle = "Hecton8.Audio." + "Propagation";
+        private static readonly string VirtualizationAssemblyNeedle = "\"Hecton8.Audio." + "Virtualization\"";
         private static readonly string PropagationUsingNeedle = "using Hecton8.Audio." + "Propagation;";
         private static readonly string BurstFastModeNeedle = "FloatMode = FloatMode." + "Fast";
         private static readonly string CompactPackWithSpacesNeedle = "Pack " + "= 1";
@@ -47,7 +48,7 @@ namespace Hecton8.Audio.Editor
 
             string contracts = ReadAssetText(ContractsPath, builder, ref failures);
             string jobs = ReadAssetText(JobsPath, builder, ref failures);
-            string virtualizationAsmdef = ReadAssetText(VirtualizationAsmdefPath, builder, ref failures);
+            string coreAsmdef = ReadAssetText(CoreAsmdefPath, builder, ref failures);
             string virtualizationContractsAsmdef = ReadAssetText(VirtualizationContractsAsmdefPath, builder, ref failures);
             string spatial = ReadAssetText(SpatialAudioPath, builder, ref failures);
             string acousticAup = ReadAssetText(AcousticAupPath, builder, ref failures);
@@ -58,6 +59,9 @@ namespace Hecton8.Audio.Editor
             AssertNotContains(contracts, CompactPackNeedle, "Virtualization contracts do not use compact packing syntax", builder, ref failures);
             AssertNotContains(acousticAup, CompactPackWithSpacesNeedle, "AcousticAup uses natural packing", builder, ref failures);
             AssertNotContains(acousticAup, CompactPackNeedle, "AcousticAup does not use compact packing syntax", builder, ref failures);
+            AssertContains(acousticAup, "public struct AcousticAup", "AcousticAup remains in an included Core contract source", builder, ref failures);
+            AssertContains(acousticAup, "[StructLayout(LayoutKind.Explicit, Size = 40)]", "AcousticAup remains exact 40 bytes", builder, ref failures);
+            AssertContains(acousticAup, "[FieldOffset(24)] public float3 Local;", "AcousticAup keeps local float3 at offset 24", builder, ref failures);
             AssertContains(contracts, "[StructLayout(LayoutKind.Explicit, Size = 48)]", "VirtualVoiceDTO remains exact 48 bytes", builder, ref failures);
             AssertContains(contracts, "public double3 AupMeters;", "VirtualVoiceDTO keeps double3 AUP first", builder, ref failures);
             AssertContains(contracts, "[StructLayout(LayoutKind.Explicit, Size = 64)]", "AcousticSourceDTO/output DTO are explicit one-cache-line layouts", builder, ref failures);
@@ -76,7 +80,7 @@ namespace Hecton8.Audio.Editor
             AssertContains(contracts, "[StructLayout(LayoutKind.Explicit, Size = 16)]", "VirtualVoiceSortKey is one 16-byte cache key", builder, ref failures);
             AssertContains(contracts, "public enum VirtualVoicePortalFlags : byte", "Virtualization owns byte portal mirror without propagation assembly coupling", builder, ref failures);
             AssertNotContains(contracts, PropagationUsingNeedle, "Virtualization contracts do not import sibling propagation runtime", builder, ref failures);
-            AssertNotContains(virtualizationAsmdef, PropagationAssemblyNeedle, "Virtualization asmdef avoids direct propagation sibling reference", builder, ref failures);
+            AssertNotContains(coreAsmdef, VirtualizationAssemblyNeedle, "Core owns virtualization jobs without a concrete virtualization assembly reference", builder, ref failures);
             AssertNotContains(virtualizationContractsAsmdef, PropagationAssemblyNeedle, "Virtualization contracts asmdef avoids direct propagation sibling reference", builder, ref failures);
             AssertContains(jobs, "[NoAlias] public NativeArray<VirtualVoiceSortKey> SortKeys;", "Burst job sorts compact no-alias keys, not full voices", builder, ref failures);
             AssertNotContains(jobs, "SortVoicesDescending(NativeArray<VirtualVoice>", "Burst job does not swap 160-byte voice structs", builder, ref failures);

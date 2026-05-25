@@ -21,12 +21,15 @@ namespace Hecton8.Atmosphere
     {
         private const uint SystemHash = 0x53483232u; // SH22
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
+#if UNITY_EDITOR
         private const string CsvRelativePath = "Docs/Atmosphere/gas_diffusion_profiles.csv";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_221.bin";
         private const int CsvPollCadenceFrames = 128;
-        private const uint ReactorSignalLaneHash = 0x52474153u; // RGAS
+#endif
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_221.bin";
         private const float AuthoritativeQualityWeight = 1f;
+        private const int MinQualityDiffusionIterations = 2;
         private const int AuthoritativeDiffusionIterations = 8;
+        private const int MaxQualityDiffusionIterations = AuthoritativeDiffusionIterations;
 
         private static readonly int _GasScalarsShaderId = Shader.PropertyToID("_H8BaseAtmosphereGasScalars");
         private static readonly int _GasQualityShaderId = Shader.PropertyToID("_H8BaseAtmosphereQualityWeight");
@@ -36,7 +39,9 @@ namespace Hecton8.Atmosphere
         private static float s_pendingInhalationMultiplier = 1.0f;
         private static float s_pendingToxinDissipationSpeed = 0.005f;
 
+#if UNITY_EDITOR
         private readonly string _csvPath;
+#endif
         private readonly string _dumpPath;
         private readonly PreSimulationPhaseSystem _preSimulationPhase;
         private readonly SimulationPhaseSystem _simulationPhase;
@@ -71,7 +76,9 @@ namespace Hecton8.Atmosphere
         private int _lastNodeCount;
         private int _lastIterations;
         private int _lastMicros;
+#if UNITY_EDITOR
         private DateTime _csvLastWriteUtc;
+#endif
 
         private VaultGenerationHandle<AtmosphereCellDTO> _frontCells;
         private VaultGenerationHandle<AtmosphereCellDTO> _backCells;
@@ -94,8 +101,10 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<AtmosphereDeltaLane64> _temperatureDeltaMilli;
         private VaultGenerationHandle<AtmosphereGasRemainderDTO> _remainders;
         private VaultGenerationHandle<AtmosphereShaderPayloadDTO> _shaderPayload;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratch;
         private VaultGenerationHandle<AtmosphereGasProfileDTO> _profiles;
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -127,7 +136,9 @@ namespace Hecton8.Atmosphere
         private BaseAtmosphereLogisticsRuntime()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+#if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(projectRoot, CsvRelativePath));
+#endif
             _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
             _preSimulationPhase = new PreSimulationPhaseSystem(this);
             _simulationPhase = new SimulationPhaseSystem(this);
@@ -274,7 +285,11 @@ namespace Hecton8.Atmosphere
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
             SignalBus<PlayerBaseEnterSignal>.EnsureInitialized();
             SignalBus<PlayerBaseExitSignal>.EnsureInitialized();
-            SignalBus<ReactorDamageSignal>.Configure(64, maxFrameSignals: 64, lowTierFrameSignals: 64, laneHash: ReactorSignalLaneHash);
+            SignalBus<ReactorDamageSignal>.Configure(
+                ReactorDamageSignal.ExpectedCapacity,
+                maxFrameSignals: ReactorDamageSignal.MaxFrameSignals,
+                lowTierFrameSignals: ReactorDamageSignal.LowTierFrameSignals,
+                laneHash: ReactorDamageSignal.LaneHash);
             SignalBus<ReactorDamageSignal>.EnsureInitialized();
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
@@ -467,7 +482,8 @@ namespace Hecton8.Atmosphere
             }
 
             AtmosphereTuningDTO tune = tuning.Length > 0 ? tuning[0] : DefaultTuning();
-            int iterations = AuthoritativeDiffusionIterations;
+            float qualityWeight = MathLodApproximation.SaturateFinite(tune.GlobalQualityWeight, AuthoritativeQualityWeight);
+            int iterations = ResolveDiffusionIterations(qualityWeight);
             float dt = ResolveSimulationTickDelta(in timing);
 
                 JobHandle handle = new AtmosphereClearDeltaJob
@@ -647,29 +663,31 @@ namespace Hecton8.Atmosphere
         {
             if (!_vaultInitialized)
             {
-                _frontCells = vault.GetGenerationHandle<AtmosphereCellDTO>(AtmosphereLogisticsBufferIds.CellsFront, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _backCells = vault.GetGenerationHandle<AtmosphereCellDTO>(AtmosphereLogisticsBufferIds.CellsBack, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _nodes = vault.GetGenerationHandle<AtmosphereNodeDTO>(AtmosphereLogisticsBufferIds.Nodes, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _connections = vault.GetGenerationHandle<AtmosphereConnectionDTO>(AtmosphereLogisticsBufferIds.Connections, AtmosphereLogisticsConstants.MaxMockConnections, OwnerSystemId);
-                _edgeOffsets = vault.GetGenerationHandle<int>(AtmosphereLogisticsBufferIds.EdgeOffsets, AtmosphereLogisticsConstants.MaxMockNodes + 1, OwnerSystemId);
-                _edgeDestinations = vault.GetGenerationHandle<int>(AtmosphereLogisticsBufferIds.EdgeDestinations, AtmosphereLogisticsConstants.MaxCsrEdges, OwnerSystemId);
-                _edgeConductance = vault.GetGenerationHandle<float>(AtmosphereLogisticsBufferIds.EdgeConductance, AtmosphereLogisticsConstants.MaxCsrEdges, OwnerSystemId);
-                _edgeWriteCursor = vault.GetGenerationHandle<int>(AtmosphereLogisticsBufferIds.EdgeWriteCursor, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _consumers = vault.GetGenerationHandle<AtmosphereConsumerDTO>(AtmosphereLogisticsBufferIds.Consumers, AtmosphereLogisticsConstants.MaxConsumers, OwnerSystemId);
-                _sources = vault.GetGenerationHandle<AtmosphereToxicSourceDTO>(AtmosphereLogisticsBufferIds.ToxicSources, AtmosphereLogisticsConstants.MaxToxicSources, OwnerSystemId);
-                _vents = vault.GetGenerationHandle<AtmosphereVentDTO>(AtmosphereLogisticsBufferIds.Vents, AtmosphereLogisticsConstants.MaxVents, OwnerSystemId);
-                _counters = vault.GetGenerationHandle<AtmosphereGraphCountersDTO>(AtmosphereLogisticsBufferIds.Counters, 1, OwnerSystemId);
-                _tuning = vault.GetGenerationHandle<AtmosphereTuningDTO>(AtmosphereLogisticsBufferIds.Tuning, 1, OwnerSystemId);
-                _telemetry = vault.GetGenerationHandle<AtmosphereTelemetryEntry>(AtmosphereLogisticsBufferIds.TelemetryRing, AtmosphereLogisticsConstants.TelemetryRingCapacity, OwnerSystemId);
-                _oxygenDeltaUnits = vault.GetGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.OxygenDeltaUnits, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _carbonDioxideDeltaUnits = vault.GetGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _nitrogenDeltaUnits = vault.GetGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.NitrogenDeltaUnits, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _toxinDeltaUnits = vault.GetGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.ToxinDeltaUnits, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _temperatureDeltaMilli = vault.GetGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.TemperatureDeltaMilli, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _remainders = vault.GetGenerationHandle<AtmosphereGasRemainderDTO>(AtmosphereLogisticsBufferIds.GasRemainders, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
-                _shaderPayload = vault.GetGenerationHandle<AtmosphereShaderPayloadDTO>(AtmosphereLogisticsBufferIds.ShaderPayload, 1, OwnerSystemId);
-                _csvScratch = vault.GetGenerationHandle<byte>(AtmosphereLogisticsBufferIds.CsvScratch, AtmosphereLogisticsConstants.CsvScratchBytes, OwnerSystemId);
-                _profiles = vault.GetGenerationHandle<AtmosphereGasProfileDTO>(AtmosphereLogisticsBufferIds.Profiles, AtmosphereLogisticsConstants.MaxProfiles, OwnerSystemId);
+                _frontCells = vault.EnsureGenerationHandle<AtmosphereCellDTO>(AtmosphereLogisticsBufferIds.CellsFront, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _backCells = vault.EnsureGenerationHandle<AtmosphereCellDTO>(AtmosphereLogisticsBufferIds.CellsBack, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _nodes = vault.EnsureGenerationHandle<AtmosphereNodeDTO>(AtmosphereLogisticsBufferIds.Nodes, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _connections = vault.EnsureGenerationHandle<AtmosphereConnectionDTO>(AtmosphereLogisticsBufferIds.Connections, AtmosphereLogisticsConstants.MaxMockConnections, OwnerSystemId);
+                _edgeOffsets = vault.EnsureGenerationHandle<int>(AtmosphereLogisticsBufferIds.EdgeOffsets, AtmosphereLogisticsConstants.MaxMockNodes + 1, OwnerSystemId);
+                _edgeDestinations = vault.EnsureGenerationHandle<int>(AtmosphereLogisticsBufferIds.EdgeDestinations, AtmosphereLogisticsConstants.MaxCsrEdges, OwnerSystemId);
+                _edgeConductance = vault.EnsureGenerationHandle<float>(AtmosphereLogisticsBufferIds.EdgeConductance, AtmosphereLogisticsConstants.MaxCsrEdges, OwnerSystemId);
+                _edgeWriteCursor = vault.EnsureGenerationHandle<int>(AtmosphereLogisticsBufferIds.EdgeWriteCursor, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _consumers = vault.EnsureGenerationHandle<AtmosphereConsumerDTO>(AtmosphereLogisticsBufferIds.Consumers, AtmosphereLogisticsConstants.MaxConsumers, OwnerSystemId);
+                _sources = vault.EnsureGenerationHandle<AtmosphereToxicSourceDTO>(AtmosphereLogisticsBufferIds.ToxicSources, AtmosphereLogisticsConstants.MaxToxicSources, OwnerSystemId);
+                _vents = vault.EnsureGenerationHandle<AtmosphereVentDTO>(AtmosphereLogisticsBufferIds.Vents, AtmosphereLogisticsConstants.MaxVents, OwnerSystemId);
+                _counters = vault.EnsureGenerationHandle<AtmosphereGraphCountersDTO>(AtmosphereLogisticsBufferIds.Counters, 1, OwnerSystemId);
+                _tuning = vault.EnsureGenerationHandle<AtmosphereTuningDTO>(AtmosphereLogisticsBufferIds.Tuning, 1, OwnerSystemId);
+                _telemetry = vault.EnsureGenerationHandle<AtmosphereTelemetryEntry>(AtmosphereLogisticsBufferIds.TelemetryRing, AtmosphereLogisticsConstants.TelemetryRingCapacity, OwnerSystemId);
+                _oxygenDeltaUnits = vault.EnsureGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.OxygenDeltaUnits, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _carbonDioxideDeltaUnits = vault.EnsureGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _nitrogenDeltaUnits = vault.EnsureGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.NitrogenDeltaUnits, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _toxinDeltaUnits = vault.EnsureGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.ToxinDeltaUnits, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _temperatureDeltaMilli = vault.EnsureGenerationHandle<AtmosphereDeltaLane64>(AtmosphereLogisticsBufferIds.TemperatureDeltaMilli, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _remainders = vault.EnsureGenerationHandle<AtmosphereGasRemainderDTO>(AtmosphereLogisticsBufferIds.GasRemainders, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
+                _shaderPayload = vault.EnsureGenerationHandle<AtmosphereShaderPayloadDTO>(AtmosphereLogisticsBufferIds.ShaderPayload, 1, OwnerSystemId);
+#if UNITY_EDITOR
+                _csvScratch = vault.EnsureGenerationHandle<byte>(AtmosphereLogisticsBufferIds.CsvScratch, AtmosphereLogisticsConstants.CsvScratchBytes, OwnerSystemId);
+                _profiles = vault.EnsureGenerationHandle<AtmosphereGasProfileDTO>(AtmosphereLogisticsBufferIds.Profiles, AtmosphereLogisticsConstants.MaxProfiles, OwnerSystemId);
+#endif
                 _vaultInitialized = true;
             }
 
@@ -748,7 +766,7 @@ namespace Hecton8.Atmosphere
             tune.BaseDiffusionRate = math.clamp(FiniteOr(s_pendingBaseDiffusionRate, 0.35f), 0f, 4f);
             tune.InhalationMultiplier = math.clamp(FiniteOr(s_pendingInhalationMultiplier, 1f), 0f, 4f);
             tune.ToxinDissipationSpeed = math.clamp(FiniteOr(s_pendingToxinDissipationSpeed, 0.005f), 0f, 1f);
-            tune.GlobalQualityWeight = AuthoritativeQualityWeight;
+            tune.GlobalQualityWeight = targetQuality;
             tune.CellSizeMeters = math.clamp(FiniteOr(tune.CellSizeMeters, 2f), AtmosphereLogisticsConstants.MinimumCellSizeMeters, AtmosphereLogisticsConstants.MaximumCellSizeMeters);
             tune.AmbientTemperatureCelsius = FiniteOr(tune.AmbientTemperatureCelsius, AtmosphereLogisticsConstants.DefaultTemperatureCelsius);
             tune.LeakDrainMultiplier = math.clamp(FiniteOr(tune.LeakDrainMultiplier, 1f), 0f, 8f);
@@ -889,6 +907,7 @@ namespace Hecton8.Atmosphere
         }
 #endif
 
+#if UNITY_EDITOR
         public static bool TryParseGasProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<AtmosphereGasProfileDTO> profiles, out int count)
         {
             count = 0;
@@ -945,6 +964,7 @@ namespace Hecton8.Atmosphere
 
             return count > 0 && !anyMalformed;
         }
+#endif
 
         private bool TryResolveInitializationBuffers(
             out NativeArray<AtmosphereNodeDTO> nodes,
@@ -1143,12 +1163,23 @@ namespace Hecton8.Atmosphere
 
         private BufferID ActiveFrontBufferId()
         {
-            return (BufferID)_frontCells.BufferID;
+            return ResolveActiveCellBufferId(_frontCells.BufferID, AtmosphereLogisticsBufferIds.CellsFront);
         }
 
         private BufferID ActiveBackBufferId()
         {
-            return (BufferID)_backCells.BufferID;
+            return ResolveActiveCellBufferId(_backCells.BufferID, AtmosphereLogisticsBufferIds.CellsBack);
+        }
+
+        private static BufferID ResolveActiveCellBufferId(uint bufferId, BufferID fallback)
+        {
+            if (bufferId == AtmosphereLogisticsBufferIds.CellsFrontValue)
+                return AtmosphereLogisticsBufferIds.CellsFront;
+
+            if (bufferId == AtmosphereLogisticsBufferIds.CellsBackValue)
+                return AtmosphereLogisticsBufferIds.CellsBack;
+
+            return fallback;
         }
 
         private void WriteDump(IDataVault vault)
@@ -1193,7 +1224,7 @@ namespace Hecton8.Atmosphere
                 BaseDiffusionRate = s_pendingBaseDiffusionRate,
                 InhalationMultiplier = s_pendingInhalationMultiplier,
                 ToxinDissipationSpeed = s_pendingToxinDissipationSpeed,
-                GlobalQualityWeight = AuthoritativeQualityWeight,
+                GlobalQualityWeight = ResolveVisualQualityWeight(),
                 CellSizeMeters = 2f,
                 AmbientTemperatureCelsius = AtmosphereLogisticsConstants.DefaultTemperatureCelsius,
                 LeakDrainMultiplier = 1f,
@@ -1201,6 +1232,7 @@ namespace Hecton8.Atmosphere
             };
         }
 
+#if UNITY_EDITOR
         private static int ReadCsvFileNoStringAlloc(string path, NativeArray<byte> scratch)
         {
             if (!scratch.IsCreated || scratch.Length == 0)
@@ -1211,6 +1243,7 @@ namespace Hecton8.Atmosphere
             int readLength = fileLength <= 0L ? 0 : fileLength > scratch.Length ? scratch.Length : (int)fileLength;
             return stream.Read(new Span<byte>((byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch), readLength));
         }
+#endif
 
         private static bool IsGasProfileHeaderLine(ReadOnlySpan<byte> bytes, int lineStart)
         {
@@ -1404,7 +1437,17 @@ namespace Hecton8.Atmosphere
 
         private static float ResolveVisualQualityWeight()
         {
-            return math.saturate(FiniteOr(HomeostasisBrain.GlobalQualityWeight, 1f));
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AuthoritativeQualityWeight);
+
+            return MathLodApproximation.SaturateFinite(HomeostasisBrain.GlobalQualityWeight, AuthoritativeQualityWeight);
+        }
+
+        private static int ResolveDiffusionIterations(float globalQualityWeight)
+        {
+            float q = MathLodApproximation.SmoothStep01(MathLodApproximation.SaturateFinite(globalQualityWeight, AuthoritativeQualityWeight));
+            int iterations = (int)math.round(math.lerp(MinQualityDiffusionIterations, MaxQualityDiffusionIterations, q));
+            return math.clamp(iterations, MinQualityDiffusionIterations, MaxQualityDiffusionIterations);
         }
 
         private static int ElapsedMicroseconds(long startTimestamp)

@@ -34,7 +34,7 @@ namespace Hecton8.Input
         private static readonly Encoding OptionsEncoding = new UTF8Encoding(false);
 
         private readonly Dictionary<string, OptionRecord> _records =
-            new Dictionary<string, OptionRecord>(64); // COLD ALLOC: Dictionary<string, OptionRecord>[64] - user options key/value cache - owner: UserOptionsPersistence
+            new Dictionary<string, OptionRecord>(64, StringComparer.Ordinal); // COLD ALLOC: Dictionary<string, OptionRecord>[64] - user options key/value cache - owner: UserOptionsPersistence
         private readonly OptionsFile _optionsFile = new OptionsFile(); // COLD ALLOC: OptionsFile[1] - reusable payload wrapper for options.h8cfg - owner: UserOptionsPersistence
 
         private OptionRecord[] _writeRecords = Array.Empty<OptionRecord>();

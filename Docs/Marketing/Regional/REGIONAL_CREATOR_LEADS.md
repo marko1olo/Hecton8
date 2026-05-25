@@ -1,4 +1,4 @@
-# Regional Creator Leads
+﻿# Regional Creator Leads
 
 Status: raw public prospecting list / not outreach-ready
 Date: 2026-05-18

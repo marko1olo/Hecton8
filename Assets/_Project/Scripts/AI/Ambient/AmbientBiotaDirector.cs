@@ -5,6 +5,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -17,7 +18,7 @@ using UnityEngine.Serialization;
 namespace Hecton8.AI.Ambient
 {
     [DisallowMultipleComponent]
-    public sealed class AmbientBiotaDirector : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IAmbientBiotaService
+    public sealed class AmbientBiotaDirector : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IAmbientBiotaService, IGlobalRegistryHotSwapListener
     {
         private const float AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
         private const double AupCellSizeMetersDouble = HectonPhysicsContract.AupSectorSizeMetersDouble;
@@ -86,7 +87,7 @@ namespace Hecton8.AI.Ambient
         private IDataVault _vault;
         private IEcosystemDirectorService _ecosystem;
         private ISimulationBucketer _bucketer;
-        private HectonMapMagicVegetationBridge _vegetationBridge;
+        private IAbyssalFlowVolumeReadModel _abyssalFlowReadModel;
         private VaultGenerationHandle<AbsoluteUniversePosition> _biotaAupHandle;
         private VaultGenerationHandle<float4> _biotaVelocityHandle;
         private VaultGenerationHandle<AmbientBiotaState> _biotaStateHandle;
@@ -133,6 +134,7 @@ namespace Hecton8.AI.Ambient
         private bool _tickRegistered;
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
+        private bool _hotSwapListenerRegistered;
 
         public bool IsInitialized => _capacity > 0 &&
                                      IsHandleCreated(in _biotaAupHandle) &&
@@ -166,6 +168,7 @@ namespace Hecton8.AI.Ambient
             EnsureVaultBuffers();
             EnsureFallbackDrawMeshReady();
             EnsureSignalLanesReady();
+            TryRegisterHotSwapListener();
             RegisterRuntime();
         }
 
@@ -173,12 +176,13 @@ namespace Hecton8.AI.Ambient
         {
             CompleteActiveJobForTeardown();
             UnregisterRuntime();
+            TryUnregisterHotSwapListener();
             ReleaseGraphicsResources();
             ClearVaultHandles();
             _vault = null;
             _ecosystem = null;
             _bucketer = null;
-            _vegetationBridge = null;
+            _abyssalFlowReadModel = null;
             _capacity = 0;
             _activeBiotaCount = 0;
             _previousActiveBiotaCount = 0;
@@ -393,7 +397,7 @@ namespace Hecton8.AI.Ambient
                                (macroQualityWeight01 >= 0.95f ? EntitySpawnVisualOverkillFlag : 0)),
                 Frame = _frameIndex
             };
-            SignalBus<EntitySpawnSignal>.Push(in spawnSignal);
+            SignalBus<EntitySpawnSignal>.TryPush(in spawnSignal);
             return true;
         }
 
@@ -457,8 +461,8 @@ namespace Hecton8.AI.Ambient
             if (_bucketer == null || !_bucketer.IsInitialized)
                 _bucketer = GlobalRegistry.SimulationBucketer;
 
-            if (_vegetationBridge == null)
-                _vegetationBridge = GlobalRegistry.MapMagicVegetation;
+            if (_abyssalFlowReadModel == null)
+                _abyssalFlowReadModel = GlobalRegistry.AbyssalFlowVolume;
         }
 
         private void RegisterRuntime()
@@ -484,6 +488,17 @@ namespace Hecton8.AI.Ambient
 
         private void UnregisterRuntime()
         {
+            UnregisterDispatcherLanes();
+
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterAmbientBiotaRuntime(this);
+                _serviceRegistered = false;
+            }
+        }
+
+        private void UnregisterDispatcherLanes()
+        {
             if (_tickRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -501,12 +516,68 @@ namespace Hecton8.AI.Ambient
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _lateFrameRegistered = false;
             }
+        }
 
-            if (_serviceRegistered)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
             {
-                GlobalRegistry.UnregisterAmbientBiotaRuntime(this);
-                _serviceRegistered = false;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _tickRegistered = false;
+                        _slowTickRegistered = false;
+                        _lateFrameRegistered = false;
+                        return;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        UnregisterDispatcherLanes();
+                        RegisterRuntime();
+                    }
+                    return;
+
+                case GlobalRegistryServiceSlot.DataVault:
+                    CompleteActiveJobForTeardown();
+                    ClearVaultHandles();
+                    _vault = currentService as IDataVault;
+                    EnsureVaultBuffers();
+                    _gpuPayloadDirty = true;
+                    return;
+
+                case GlobalRegistryServiceSlot.EcosystemDirector:
+                    _ecosystem = currentService as IEcosystemDirectorService;
+                    return;
+
+                case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
+                    _bucketer = currentService as ISimulationBucketer;
+                    return;
+
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _abyssalFlowReadModel = currentService as IAbyssalFlowVolumeReadModel;
+                    return;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private bool EnsureVaultBuffers()
@@ -615,7 +686,7 @@ namespace Hecton8.AI.Ambient
                     : default;
             }
 
-            return vault.GetGenerationHandle<T>(bufferId, length, SystemID.AmbientBiota, options);
+            return vault.EnsureGenerationHandle<T>(bufferId, length, SystemID.AmbientBiota, options);
         }
 
         private bool TryOpenVaultView<T>(
@@ -662,6 +733,9 @@ namespace Hecton8.AI.Ambient
             out NativeArray<float4> velocities,
             out NativeArray<AmbientBiotaState> states)
         {
+            aups = default;
+            velocities = default;
+            states = default;
             return TryResolveBiotaAupBuffer(requiredCapacity, out aups) &&
                    TryResolveBiotaVelocityBuffer(requiredCapacity, out velocities) &&
                    TryResolveBiotaStateBuffer(requiredCapacity, out states);
@@ -706,6 +780,8 @@ namespace Hecton8.AI.Ambient
             out NativeArray<AmbientBiotaTelemetryEntry> telemetryRing,
             out NativeArray<int> telemetryCursor)
         {
+            telemetryRing = default;
+            telemetryCursor = default;
             return TryOpenVaultView(in _telemetryRingHandle, BlackBoxFrameCount, out telemetryRing) &&
                    TryOpenVaultView(in _telemetryCursorHandle, 1, out telemetryCursor);
         }
@@ -867,11 +943,11 @@ namespace Hecton8.AI.Ambient
                 return;
             }
 
-            HectonMapMagicVegetationBridge bridge = _vegetationBridge;
-            if (bridge != null)
+            IAbyssalFlowVolumeReadModel flowReadModel = _abyssalFlowReadModel;
+            if (flowReadModel != null)
             {
                 Vector3 position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-                if (bridge.TrySampleAbyssalFlow(position, out Vector3 flow) &&
+                if (flowReadModel.TrySampleAbyssalFlow(position, out Vector3 flow) &&
                     math.isfinite(flow.x) &&
                     math.isfinite(flow.y) &&
                     math.isfinite(flow.z))
@@ -1290,7 +1366,7 @@ namespace Hecton8.AI.Ambient
                     Flags = DebrisSpawnSignal.FlagComputeShard,
                     Quantity = (ushort)math.clamp((int)math.round(math.lerp(2f, 6f, _visualOverkillWeight01)), 1, ushort.MaxValue)
                 };
-                SignalBus<DebrisSpawnSignal>.Push(in debrisSignal);
+                SignalBus<DebrisSpawnSignal>.TryPush(in debrisSignal);
 
                 states[i] = default;
                 aups[i] = default;

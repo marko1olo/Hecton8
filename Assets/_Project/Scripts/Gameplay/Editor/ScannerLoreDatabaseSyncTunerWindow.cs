@@ -127,10 +127,11 @@ namespace Hecton8.Gameplay.Editor
                 : ComputeFnv1a32Ascii(_tokenField.value);
             uint loreIndex = (uint)math.clamp(_loreIndexField.value, 0, 1023);
 
-            using (NativeArray<ScanProgressDTO> progress = new NativeArray<ScanProgressDTO>(1, Allocator.TempJob))
-            using (NativeArray<ScannerLoreIndexDTO> index = new NativeArray<ScannerLoreIndexDTO>(32, Allocator.TempJob))
-            using (NativeArray<ScannerEncyclopediaStateDTO> state = new NativeArray<ScannerEncyclopediaStateDTO>(1, Allocator.TempJob))
-            using (NativeArray<ScannerTelemetryEntry> telemetry = new NativeArray<ScannerTelemetryEntry>(4, Allocator.TempJob))
+            NativeArray<ScanProgressDTO> progress = new NativeArray<ScanProgressDTO>(1, Allocator.TempJob);
+            NativeArray<ScannerLoreIndexDTO> index = new NativeArray<ScannerLoreIndexDTO>(32, Allocator.TempJob);
+            NativeArray<ScannerEncyclopediaStateDTO> state = new NativeArray<ScannerEncyclopediaStateDTO>(1, Allocator.TempJob);
+            NativeArray<ScannerTelemetryEntry> telemetry = new NativeArray<ScannerTelemetryEntry>(4, Allocator.TempJob);
+            try
             {
                 ScannerDataMiningRouter.InsertLoreIndex(index, hash, loreIndex);
                 progress[0] = new ScanProgressDTO
@@ -157,6 +158,17 @@ namespace Hecton8.Gameplay.Editor
                 _resultLabel.text =
                     $"Hash=0x{hash:X8} LoreBit={loreIndex} " +
                     $"Mask0={mask.Mask0:X16} Mask1={mask.Mask1:X16} Mask2={mask.Mask2:X16} Mask3={mask.Mask3:X16}";
+            }
+            finally
+            {
+                if (telemetry.IsCreated)
+                    telemetry.Dispose();
+                if (state.IsCreated)
+                    state.Dispose();
+                if (index.IsCreated)
+                    index.Dispose();
+                if (progress.IsCreated)
+                    progress.Dispose();
             }
         }
 

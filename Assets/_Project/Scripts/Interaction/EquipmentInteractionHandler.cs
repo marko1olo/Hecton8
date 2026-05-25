@@ -3,8 +3,8 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World;
+using System.Runtime.InteropServices;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -21,7 +21,6 @@ namespace Hecton8.Interaction
         private const int MaxInteractionPacketsPerFrame = 256;
         private const int MaxQueuedRayRequests = 64;
         private const int MaxParentResolveDepth = 32;
-        private const int MinCommandsPerJob = 1;
         private const int MaxCompletedRaycastAgeFrames = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
@@ -56,11 +55,12 @@ namespace Hecton8.Interaction
         private readonly bool[] _queuedHasPlatformLocalHit = new bool[MaxQueuedSignals];
 
         private IDataVault _dataVault;
+        private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _voxelSdfReadModel;
+        private ITerrainProvider _terrainProvider;
         private VaultGenerationHandle<InteractionSignal> _signalQueueHandle;
-        private VaultGenerationHandle<RaycastCommand> _scheduledCommandsHandle;
+        private VaultGenerationHandle<InteractionRaycastRequestDTO> _scheduledRequestsHandle;
         private VaultGenerationHandle<RaycastHit> _scheduledHitsHandle;
-        private VaultGenerationHandle<RaycastCommand> _stagingCommandsHandle;
-        private JobHandle _scheduledRaycastHandle;
+        private VaultGenerationHandle<InteractionRaycastRequestDTO> _stagingRequestsHandle;
         private int _queueHead;
         private int _queueTail;
         private int _queueCount;
@@ -260,13 +260,13 @@ namespace Hecton8.Interaction
             if (EnsureRaycastBufferHandles(createIfMissing: true))
             {
                 IDataVault vault = ResolveDataVault();
-                ResetCommandLaneLocked(
+                ResetRequestLaneLocked(
                     vault,
-                    ref _scheduledCommandsHandle,
+                    ref _scheduledRequestsHandle,
                     BufferID.InteractionRaycastScheduledCommands);
-                ResetCommandLaneLocked(
+                ResetRequestLaneLocked(
                     vault,
-                    ref _stagingCommandsHandle,
+                    ref _stagingRequestsHandle,
                     BufferID.InteractionRaycastStagingCommands);
             }
         }
@@ -341,7 +341,6 @@ namespace Hecton8.Interaction
 
             ReleaseInteractionVaultDescriptor(_dataVault, ref _signalQueueHandle);
             DisposeRaycastBuffers();
-            _scheduledRaycastHandle = default;
             _scheduledRaycastActive = false;
             _scheduledRequestCount = 0;
             _stagedRequestCount = 0;
@@ -536,7 +535,7 @@ namespace Hecton8.Interaction
             if (!IsFinite(runtimePosition))
                 return false;
 
-            var originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            var originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -797,6 +796,126 @@ namespace Hecton8.Interaction
             return toHit.sqrMagnitude > 0.0001f;
         }
 
+        private bool TryResolveKinematicRaycastHit(in InteractionRaycastRequestDTO request, out RaycastHit hit)
+        {
+            hit = default;
+            if (request.Valid == 0u ||
+                !IsFinite(request.Origin) ||
+                !IsFinite(request.Direction) ||
+                !math.isfinite(request.Range) ||
+                request.Range <= MinHitDistance)
+            {
+                return false;
+            }
+
+            Vector3 normalizedDirection = NormalizeFinite(request.Direction, Vector3.forward);
+            if (TryResolveSdfRaycastHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out hit))
+                return true;
+
+            return TryResolveTerrainRaycastHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out hit);
+        }
+
+        private bool TryResolveSdfRaycastHit(Vector3 origin, Vector3 direction, float range, int layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            if (!IncludesAnyLayer(layerMask, HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask))
+                return false;
+
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadModel readModel = _voxelSdfReadModel;
+            if (readModel == null)
+                return false;
+
+            float3 origin3 = new float3(origin.x, origin.y, origin.z);
+            float3 direction3 = math.normalizesafe(new float3(direction.x, direction.y, direction.z), new float3(0f, 0f, 1f));
+            float stepMeters = ResolveToolSdfStepMeters(range);
+            if (!readModel.TryRaymarchNearestSonarSdf(
+                    origin3,
+                    direction3,
+                    range,
+                    stepMeters,
+                    out VoxelSonarSdfRaycastHit sdfHit,
+                    out NativeArray<byte>.ReadOnly _,
+                    out int3 _,
+                    out float3 _,
+                    out float3 _,
+                    out float _) ||
+                (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
+                !math.all(math.isfinite(sdfHit.Point)) ||
+                !math.all(math.isfinite(sdfHit.Normal)) ||
+                !math.isfinite(sdfHit.Distance) ||
+                sdfHit.Distance <= MinHitDistance ||
+                sdfHit.Distance > range)
+            {
+                return false;
+            }
+
+            float normalSq = math.lengthsq(sdfHit.Normal);
+            if (!math.isfinite(normalSq) || normalSq <= 0.0001f)
+                return false;
+
+            float3 normal = sdfHit.Normal * math.rsqrt(math.max(normalSq, 0.0001f));
+            if (math.dot(normal, direction3) >= 0f)
+                normal = -normal;
+
+            hit.point = new Vector3(sdfHit.Point.x, sdfHit.Point.y, sdfHit.Point.z);
+            hit.normal = new Vector3(normal.x, normal.y, normal.z);
+            hit.distance = math.max(0f, sdfHit.Distance);
+            return true;
+        }
+
+        private bool TryResolveTerrainRaycastHit(Vector3 origin, Vector3 direction, float range, int layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            if (!IncludesAnyLayer(layerMask, HectonLayerMasks.TerrainLayerMask) ||
+                direction.y >= -0.0001f)
+            {
+                return false;
+            }
+
+            ITerrainProvider terrainProvider = _terrainProvider;
+            if (terrainProvider == null ||
+                !terrainProvider.IsAvailable ||
+                !terrainProvider.TryGetHeight(origin.x, origin.z, out float terrainHeight) ||
+                !math.isfinite(terrainHeight))
+            {
+                return false;
+            }
+
+            float distance = (terrainHeight - origin.y) / direction.y;
+            if (!math.isfinite(distance) ||
+                distance <= MinHitDistance ||
+                distance > range)
+            {
+                return false;
+            }
+
+            Vector3 point = origin + (direction * distance);
+            Vector3 normal = Vector3.up;
+            if (terrainProvider.TryGetNormal(point.x, point.z, 1f, out Vector3 sampledNormal) && IsFinite(sampledNormal))
+                normal = NormalizeFinite(sampledNormal, Vector3.up);
+
+            if (Vector3.Dot(normal, direction) >= 0f)
+                normal = -normal;
+
+            hit.point = point;
+            hit.normal = normal;
+            hit.distance = distance;
+            return true;
+        }
+
+        private static bool IncludesAnyLayer(int queryMask, int requiredMask)
+        {
+            return queryMask == -1 || (queryMask & requiredMask) != 0;
+        }
+
+        private static float ResolveToolSdfStepMeters(float range)
+        {
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float coarse = math.max(0.12f, range * 0.04f);
+            float fine = math.max(0.04f, range * 0.015f);
+            return math.lerp(coarse, fine, quality);
+        }
+
         private void QueuePrimaryRaycast(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
             if (!EnsureRaycastBufferHandles(createIfMissing: false))
@@ -820,10 +939,10 @@ namespace Hecton8.Interaction
             {
                 if (!TryOpenExistingInteractionVaultBuffer(
                         vault,
-                        ref _stagingCommandsHandle,
+                        ref _stagingRequestsHandle,
                         BufferID.InteractionRaycastStagingCommands,
                         MaxQueuedRayRequests,
-                        out NativeArray<RaycastCommand> stagingCommands))
+                        out NativeArray<InteractionRaycastRequestDTO> stagingRequests))
                 {
                     return;
                 }
@@ -834,7 +953,7 @@ namespace Hecton8.Interaction
                     _stagedRequestCount++;
                 }
 
-                stagingCommands[requestIndex] = CreateRaycastCommand(origin, direction, range, layerMask, queryTriggerInteraction);
+                stagingRequests[requestIndex] = CreateRaycastRequest(origin, direction, range, layerMask, queryTriggerInteraction);
             }
             finally
             {
@@ -882,9 +1001,6 @@ namespace Hecton8.Interaction
             if (!_scheduledRaycastActive)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: false))
-                return;
-
             if (!EnsureRaycastBufferHandles(createIfMissing: false))
             {
                 UnlockScheduledRaycastVaultBuffers();
@@ -904,10 +1020,10 @@ namespace Hecton8.Interaction
 
             if (!TryOpenExistingInteractionVaultBuffer(
                     vault,
-                    ref _scheduledCommandsHandle,
+                    ref _scheduledRequestsHandle,
                     BufferID.InteractionRaycastScheduledCommands,
                     MaxQueuedRayRequests,
-                    out NativeArray<RaycastCommand> scheduledCommands) ||
+                    out NativeArray<InteractionRaycastRequestDTO> scheduledRequests) ||
                 !TryOpenExistingInteractionVaultBuffer(
                     vault,
                     ref _scheduledHitsHandle,
@@ -926,11 +1042,11 @@ namespace Hecton8.Interaction
             int completionFrame = ResolveSimulationFrameIndex();
             for (int i = 0; i < _scheduledRequestCount; i++)
             {
-                RaycastCommand command = scheduledCommands[i];
-                RaycastHit candidate = scheduledHits[i];
-                int layerMask = command.queryParameters.layerMask;
+                InteractionRaycastRequestDTO request = scheduledRequests[i];
+                bool hasAuthoritativeHit = TryResolveKinematicRaycastHit(in request, out RaycastHit candidate);
+                scheduledHits[i] = hasAuthoritativeHit ? candidate : default;
                 _completedRequesterIds[i] = _scheduledRequesterIds[i];
-                _completedHasHit[i] = IsValidHit(command.from, command.direction, command.distance, layerMask, candidate);
+                _completedHasHit[i] = hasAuthoritativeHit;
                 _completedHits[i] = _completedHasHit[i] ? candidate : default;
                 _completedHitFrames[i] = completionFrame;
                 _scheduledRequesterIds[i] = 0UL;
@@ -946,8 +1062,10 @@ namespace Hecton8.Interaction
 
             _scheduledRequestCount = 0;
             _scheduledRaycastActive = false;
-            for (int i = 0; i < scheduledCommands.Length; i++)
-                scheduledCommands[i] = CreateInvalidRaycastCommand();
+            for (int i = 0; i < scheduledRequests.Length; i++)
+                scheduledRequests[i] = default;
+            for (int i = 0; i < scheduledHits.Length; i++)
+                scheduledHits[i] = default;
             UnlockScheduledRaycastVaultBuffers();
         }
 
@@ -986,16 +1104,16 @@ namespace Hecton8.Interaction
 
                 if (!TryOpenExistingInteractionVaultBuffer(
                         vault,
-                        ref _stagingCommandsHandle,
+                        ref _stagingRequestsHandle,
                         BufferID.InteractionRaycastStagingCommands,
                         MaxQueuedRayRequests,
-                        out NativeArray<RaycastCommand> stagingCommands) ||
+                        out NativeArray<InteractionRaycastRequestDTO> stagingRequests) ||
                     !TryOpenExistingInteractionVaultBuffer(
                         vault,
-                        ref _scheduledCommandsHandle,
+                        ref _scheduledRequestsHandle,
                         BufferID.InteractionRaycastScheduledCommands,
                         MaxQueuedRayRequests,
-                        out NativeArray<RaycastCommand> scheduledCommands) ||
+                        out NativeArray<InteractionRaycastRequestDTO> scheduledRequests) ||
                     !TryOpenExistingInteractionVaultBuffer(
                         vault,
                         ref _scheduledHitsHandle,
@@ -1007,23 +1125,22 @@ namespace Hecton8.Interaction
                 }
 
                 int scheduledCount = _stagedRequestCount;
-                for (int i = 0; i < scheduledCommands.Length; i++)
-                    scheduledCommands[i] = CreateInvalidRaycastCommand();
+                for (int i = 0; i < scheduledRequests.Length; i++)
+                    scheduledRequests[i] = default;
 
                 for (int i = 0; i < scheduledCount; i++)
-                    scheduledCommands[i] = stagingCommands[i];
+                    scheduledRequests[i] = stagingRequests[i];
+                for (int i = 0; i < scheduledHits.Length; i++)
+                    scheduledHits[i] = default;
 
-                var commandBatch = scheduledCommands.GetSubArray(0, scheduledCount);
-                var hitBatch = scheduledHits.GetSubArray(0, scheduledCount);
-                _scheduledRaycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, MinCommandsPerJob, default);
                 _scheduledRaycastActive = true;
                 _scheduledRequestCount = scheduledCount;
                 _scheduledRaycastVaultLocked = true;
 
                 System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, scheduledCount);
                 System.Array.Clear(_stagingRequesterIds, 0, scheduledCount);
-                for (int i = 0; i < stagingCommands.Length; i++)
-                    stagingCommands[i] = CreateInvalidRaycastCommand();
+                for (int i = 0; i < stagingRequests.Length; i++)
+                    stagingRequests[i] = default;
 
                 _stagedRequestCount = 0;
                 scheduledCommandsLocked = false;
@@ -1044,19 +1161,18 @@ namespace Hecton8.Interaction
 
         private void DisposeRaycastBuffers()
         {
-            if (_scheduledRaycastActive)
-                DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);
-
             UnlockScheduledRaycastVaultBuffers();
-            ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledCommandsHandle);
+            ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledRequestsHandle);
             ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledHitsHandle);
-            ReleaseInteractionVaultDescriptor(_dataVault, ref _stagingCommandsHandle);
+            ReleaseInteractionVaultDescriptor(_dataVault, ref _stagingRequestsHandle);
             _dataVault = null;
         }
 
         private void CacheRegistryDependenciesCold()
         {
             RebindDataVaultCold(GlobalRegistry.DataVault);
+            _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
+            _terrainProvider = GlobalRegistry.Terrain;
             s_submarineRuntimeContext = GlobalRegistry.Submarine;
             s_organicToolHits = GlobalRegistry.OrganicToolHits;
         }
@@ -1067,9 +1183,6 @@ namespace Hecton8.Interaction
                 return;
 
             IDataVault oldVault = _dataVault;
-            if (_scheduledRaycastActive)
-                DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);
-
             UnlockScheduledRaycastVaultBuffers();
             ReleaseAllInteractionVaultDescriptors(oldVault);
             _dataVault = dataVault;
@@ -1119,6 +1232,14 @@ namespace Hecton8.Interaction
                 case GlobalRegistryServiceSlot.DestructibleOrganicRuntime:
                     s_organicToolHits = currentService as IOrganicToolHitService;
                     break;
+
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _voxelSdfReadModel = currentService as Hecton8.Core.Contracts.IVoxelSonarSdfReadModel;
+                    break;
+
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _terrainProvider = currentService as ITerrainProvider;
+                    break;
             }
         }
 
@@ -1140,7 +1261,7 @@ namespace Hecton8.Interaction
 
             if (!EnsureRaycastBufferHandle(
                     vault,
-                    ref _scheduledCommandsHandle,
+                    ref _scheduledRequestsHandle,
                     BufferID.InteractionRaycastScheduledCommands,
                     MaxQueuedRayRequests,
                     createIfMissing))
@@ -1156,7 +1277,7 @@ namespace Hecton8.Interaction
 
             if (!EnsureRaycastBufferHandle(
                     vault,
-                    ref _stagingCommandsHandle,
+                    ref _stagingRequestsHandle,
                     BufferID.InteractionRaycastStagingCommands,
                     MaxQueuedRayRequests,
                     createIfMissing))
@@ -1274,7 +1395,7 @@ namespace Hecton8.Interaction
                 return TryOpenExistingInteractionVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GameplayTools,
@@ -1328,9 +1449,9 @@ namespace Hecton8.Interaction
             _scheduledRaycastVaultLocked = false;
         }
 
-        private static void ResetCommandLaneLocked(
+        private static void ResetRequestLaneLocked(
             IDataVault vault,
-            ref VaultGenerationHandle<RaycastCommand> handle,
+            ref VaultGenerationHandle<InteractionRaycastRequestDTO> handle,
             BufferID bufferId)
         {
             if (vault == null || !IsGameplayToolsVaultHandle(in handle, bufferId))
@@ -1346,10 +1467,10 @@ namespace Hecton8.Interaction
                         ref handle,
                         bufferId,
                         MaxQueuedRayRequests,
-                        out NativeArray<RaycastCommand> commands))
+                        out NativeArray<InteractionRaycastRequestDTO> requests))
                 {
-                    for (int i = 0; i < commands.Length; i++)
-                        commands[i] = CreateInvalidRaycastCommand();
+                    for (int i = 0; i < requests.Length; i++)
+                        requests[i] = default;
                 }
             }
             finally
@@ -1361,9 +1482,9 @@ namespace Hecton8.Interaction
         private void ReleaseAllInteractionVaultDescriptors(IDataVault vault)
         {
             ReleaseInteractionVaultDescriptor(vault, ref _signalQueueHandle);
-            ReleaseInteractionVaultDescriptor(vault, ref _scheduledCommandsHandle);
+            ReleaseInteractionVaultDescriptor(vault, ref _scheduledRequestsHandle);
             ReleaseInteractionVaultDescriptor(vault, ref _scheduledHitsHandle);
-            ReleaseInteractionVaultDescriptor(vault, ref _stagingCommandsHandle);
+            ReleaseInteractionVaultDescriptor(vault, ref _stagingRequestsHandle);
         }
 
         private static void ReleaseInteractionVaultDescriptor<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
@@ -1375,27 +1496,28 @@ namespace Hecton8.Interaction
             handle = default;
         }
 
-        private static RaycastCommand CreateRaycastCommand(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
+        private static InteractionRaycastRequestDTO CreateRaycastRequest(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
-            return new RaycastCommand
+            return new InteractionRaycastRequestDTO
             {
-                from = origin,
-                direction = direction,
-                distance = range,
-                queryParameters = new QueryParameters
-                {
-                    layerMask = layerMask,
-                    hitTriggers = queryTriggerInteraction,
-                    hitBackfaces = false,
-                    hitMultipleFaces = false
-                }
+                Origin = origin,
+                Direction = direction,
+                Range = range,
+                LayerMask = layerMask,
+                TriggerMode = (int)queryTriggerInteraction,
+                Valid = 1u
             };
         }
 
-        private static RaycastCommand CreateInvalidRaycastCommand()
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct InteractionRaycastRequestDTO
         {
-            return CreateRaycastCommand(Vector3.zero, Vector3.forward, 0f, 0, QueryTriggerInteraction.Ignore);
+            [FieldOffset(0)] public Vector3 Origin;
+            [FieldOffset(12)] public Vector3 Direction;
+            [FieldOffset(24)] public float Range;
+            [FieldOffset(28)] public int LayerMask;
+            [FieldOffset(32)] public int TriggerMode;
+            [FieldOffset(36)] public uint Valid;
         }
-
     }
 }

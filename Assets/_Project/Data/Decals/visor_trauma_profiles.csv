@@ -1,0 +1,6 @@
+source,atlasSlice,lifetimeSeconds,radiusMeters,projectionDepthMeters
+blood,1,7.5,0.45,0.18
+glass_crack,4,60.0,0.32,0.10
+burn,5,12.0,0.50,0.20
+acid,2,8.0,0.50,0.18
+scorch,0,9.5,0.42,0.18

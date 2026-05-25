@@ -53,7 +53,7 @@ namespace Hecton8.Editor
         {
             SmokeReport report = RunSmoke();
             string path = WriteReport(report);
-            Debug.Log("ANOMALY_SMOKE_PASS " + path);
+            Hecton8.Core.H8Debug.Log("ANOMALY_SMOKE_PASS " + path);
         }
 
         /// <summary>
@@ -394,7 +394,7 @@ namespace Hecton8.Editor
             AppendCase(builder, "openEdgeBowl", report.OpenEdgeBowl, false);
             AppendCase(builder, "dualBowl", report.DualBowl, true);
             builder.AppendLine("}");
-            File.WriteAllText(path, builder.ToString());
+            File.WriteAllText(path, builder.ToString(), new UTF8Encoding(false));
             AssetDatabase.Refresh();
             return path;
         }

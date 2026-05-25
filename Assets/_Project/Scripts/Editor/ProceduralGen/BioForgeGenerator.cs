@@ -692,8 +692,8 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static void EmitBranch(BioRuleData rule, ref TurtleState state, NativeList<Matrix4x4> branchMatrices, NativeList<BioForgeBranch> branches)
         {
-            float depthLengthScale = math.pow(rule.LengthTaper, state.Depth);
-            float depthRadiusScale = math.pow(rule.RadiusTaper, state.Depth);
+            float depthLengthScale = PowByDepth(rule.LengthTaper, state.Depth);
+            float depthRadiusScale = PowByDepth(rule.RadiusTaper, state.Depth);
             float length = rule.StepLength * depthLengthScale;
             float radius0 = math.max(rule.MinimumRadius, rule.RootRadius * depthRadiusScale);
             float radius1 = math.max(rule.MinimumRadius, radius0 * rule.RadiusTaper);
@@ -725,6 +725,17 @@ namespace Hecton8.Editor.ProceduralGen
             });
 
             state.Position = end;
+        }
+
+        private static float PowByDepth(float value, int depth)
+        {
+            int count = math.max(0, depth);
+            float result = 1f;
+            float multiplier = math.max(0f, value);
+            for (int i = 0; i < count; i++)
+                result *= multiplier;
+
+            return math.isfinite(result) ? result : 0f;
         }
 
         private static void BuildBounds(NativeArray<BioForgeBranch> branches, float padding, out float3 boundsMin, out float3 boundsMax)

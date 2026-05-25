@@ -1,6 +1,5 @@
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Input;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -103,7 +102,7 @@ namespace Hecton.UI.MainMenu
 
             inputSystemModule.enabled = true;
 
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
             bool configuredProjectActions = false;
             if (inputManager != null)
                 configuredProjectActions = inputManager.TryConfigureUiInputModule(inputSystemModule) &&

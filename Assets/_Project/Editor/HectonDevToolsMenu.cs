@@ -157,7 +157,9 @@ namespace Hecton8.Editor
         [MenuItem(MenuRoot + "Select Main Camera In Loaded Scenes", false, 51)]
         public static void SelectMainCamera()
         {
-            Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>();
+            Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
             for (int i = 0; i < cameras.Length; i++)
             {
                 Camera c = cameras[i];
@@ -326,7 +328,8 @@ namespace Hecton8.Editor
             }
 
             SpatialAudioManager[] sams = UnityEngine.Object.FindObjectsByType<SpatialAudioManager>(
-                FindObjectsInactive.Include);
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             sb.Append("SpatialAudioManager count: ").Append(sams.Length).AppendLine();
             if (sams.Length > 1)
             {
@@ -356,7 +359,8 @@ namespace Hecton8.Editor
             int gameObjectsTouched = 0;
             int removedComponents = 0;
             GameObject[] gos = UnityEngine.Object.FindObjectsByType<GameObject>(
-                FindObjectsInactive.Include);
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
 
             for (int i = 0; i < gos.Length; i++)
             {
@@ -892,7 +896,8 @@ namespace Hecton8.Editor
         private static int LogMissingScriptsInLoadedScenes()
         {
             GameObject[] gos = UnityEngine.Object.FindObjectsByType<GameObject>(
-                FindObjectsInactive.Include);
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
 
             int missing = 0;
             for (int i = 0; i < gos.Length; i++)

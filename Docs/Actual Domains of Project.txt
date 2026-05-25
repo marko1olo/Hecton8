@@ -1,209 +1,209 @@
-Date: 2026-05-20
-Status: PENDING VERIFICATION
-
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-21 R51 Root/Architecture Actuality Boundary
-
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-ECHELON 1: CORE & MEMORY INFRASTRUCTURE (Engine Foundation)
-
-1. BIOS Bootstrapper: Awaitable boot orchestration, startup state machine,
-initialization validation of all systems before removing the boot screen.
-2. Typed SignalBus Corridor (SPSC/MPSC): first-party hot broadcasts use
-typed `SignalBus<T>` lanes; `GlobalSignals` remains a documented NativeQueue
-bridge surface. `HectonEventBus` is mod/API/cold only. Zero-GC runtime status
-requires fresh profiler/GCMonitor proof.
-3. Data Archivist (MMF Codec): Read/write slot_0.sav, binary
-delta packing, checksums (XXHash3), MMF chunk paging.
-4. Data Monolith (Static DB): Parses balances/recipes from binary blobs into a
-NativeArray at startup. No ScriptableObjects in hot paths.
-5. Origin Shift (AUP Manager): 64-bit coordinate shift math (int64x3 + float3). RebaseSignal broadcast at sector boundaries.
-6. Native Arena Allocator: Custom UnsafeUtility allocator for bypassing TempJob limits and memory pooling for Burst Jobs.
-7. Crash Telemetry (Blackbox): Circular event buffer (32-byte structures).
-Dump to .h8dump during crashes or FPS drops on a background thread.
+﻿Date: 2026-05-20
+Status: PENDING VERIFICATION
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
+
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+ECHELON 1: CORE & MEMORY INFRASTRUCTURE (Engine Foundation)
+
+1. BIOS Bootstrapper: Awaitable boot orchestration, startup state machine,
+initialization validation of all systems before removing the boot screen.
+2. Typed SignalBus Corridor (SPSC/MPSC): first-party hot broadcasts use
+typed `SignalBus<T>` lanes; `GlobalSignals` remains a documented NativeQueue
+bridge surface. `HectonEventBus` is mod/API/cold only. Zero-GC runtime status
+requires fresh profiler/GCMonitor proof.
+3. Data Archivist (MMF Codec): Read/write slot_0.sav, binary
+delta packing, checksums (XXHash3), MMF chunk paging.
+4. Data Monolith (Static DB): Parses balances/recipes from binary blobs into a
+NativeArray at startup. No ScriptableObjects in hot paths.
+5. Origin Shift (AUP Manager): 64-bit coordinate shift math (int64x3 + float3). RebaseSignal broadcast at sector boundaries.
+6. Native Arena Allocator: Custom UnsafeUtility allocator for bypassing TempJob limits and memory pooling for Burst Jobs.
+7. Crash Telemetry (Blackbox): Circular event buffer (32-byte structures).
+Dump to .h8dump during crashes or FPS drops on a background thread.
 8. Scalability Dictator (Hardware): Continuous `GlobalQualityWeight` scaling of Math LOD, cadence, capacity, and presentation cost from survival budget to visual-overrun budget.
-9. Platform Abstraction Layer (PAL): IInputProvider. Steam Deck broadcasting of Trackpad/gyro/gamepad inputs without API leaks in Core.
-10. Tick Dispatcher & Time Dilation: Cadence control (FastTick 60Hz, SlowTick 10Hz, ColdTick 1Hz, FrostTick 0.2Hz) and Bullet Time effects.
-
-ECHELON 2: WORLD GENERATION & TERRAIN (Topology and Environment)
-
-11. MapMagic Runtime Bridge: 2D Heightmap reader. O(1) height access without allocations. Isolation from third-party SDKs.
-12. Voxel SDF Pipeline: 3D distance fields. sbyte density for caves and arches.
-13. Marching Cubes Mesher: Asynchronous voxel polygonization on worker threads. 2-frame latency hiding.
-14. Voxel Carving (Deformation): Laser drilling, RLE compression of modified cells,
-writing deltas to savegames.
-15. BRG Scatter Director: BatchRendererGroup instancing of grass and coral. 15Hz
-Frustum Culling in Compute Shader.
-16. Procedural Wreckage Assembler: Modular assembly of ghost ships (wrecks) based
-on WorldSeed and AUP.
-17. Geological Node Spawner: Distribution of ore veins. Deterministic LCG
-spawning based on a terrain mask.
-18. Biome Transition Manager: Mathematical blending of colors, fog, and
-biome parameters at boundaries (Dithered blending).
-19. Abyssal Flow Fields: 3D vector field of underwater currents. Affects the physics of
-submarines, GPU fish, and particles.
-20. Thermal Vents & Geysers: Danger zones. Ejects boiling water (physical impulse +
-damage) based on TriangleWave cycles.
-
-ECHELON 3: FLORA, FAUNA & BIOTA (Ecosystem and AI)
-
-21. Ecosystem Director (Macro): Lotka-Volterra equations. FrostTick migration
-of biomass without GameObjects.
-22. Fauna Spatial Hash Grid: O(1) neighbor search. Collision resolution and aggression radii in Burst.
-23. Swarm Compute Director (Boids): GPU simulation of small fish schools. Swarm fragmentation
-during sonic booms.
-24. Predator Cognition (Utility AI): Polynomial scoring of hunger, fear, and aggression. 1km headless fast-fail.
-25. Predator Steering & Lunge: Octant-aligned navigation, S-curved attacks, obstacle avoidance (SDF raycasts).
-26. Funnel Smoothing: 3D voxel-based pathfinding with smoothed "square"
-corners (String Pulling).
-27. Leviathan Procedural IK: Boneless VAT body blending + burst calculation of tentacles/tails (Constrained S-Curves).
-28. Flora Procedural Sway: Vertex shaders for algae animation (interactive bending from submarine propellers).
-29. Bioluminescence Sync: Coral pulsation. Glow phases are tied to
-global _Time and moon cycles.
-30. Fauna Genetics & Mutation: 64-bit trait masks (size, aggression,
-coloration) transferred when spawning in biomes.
-
-ECHELON 4: PLAYER, KINEMATICS & TOOLS (Locomotion and Equipment)
-
+9. Platform Abstraction Layer (PAL): IInputProvider. Steam Deck broadcasting of Trackpad/gyro/gamepad inputs without API leaks in Core.
+10. Tick Dispatcher & Time Dilation: Cadence control (FastTick 60Hz, SlowTick 10Hz, ColdTick 1Hz, FrostTick 0.2Hz) and Bullet Time effects.
+
+ECHELON 2: WORLD GENERATION & TERRAIN (Topology and Environment)
+
+11. MapMagic Runtime Bridge: 2D Heightmap reader. O(1) height access without allocations. Isolation from third-party SDKs.
+12. Voxel SDF Pipeline: 3D distance fields. sbyte density for caves and arches.
+13. Marching Cubes Mesher: Asynchronous voxel polygonization on worker threads. 2-frame latency hiding.
+14. Voxel Carving (Deformation): Laser drilling, RLE compression of modified cells,
+writing deltas to savegames.
+15. BRG Scatter Director: BatchRendererGroup instancing of grass and coral. 15Hz
+Frustum Culling in Compute Shader.
+16. Procedural Wreckage Assembler: Modular assembly of ghost ships (wrecks) based
+on WorldSeed and AUP.
+17. Geological Node Spawner: Distribution of ore veins. Deterministic LCG
+spawning based on a terrain mask.
+18. Biome Transition Manager: Mathematical blending of colors, fog, and
+biome parameters at boundaries (Dithered blending).
+19. Abyssal Flow Fields: 3D vector field of underwater currents. Affects the physics of
+submarines, GPU fish, and particles.
+20. Thermal Vents & Geysers: Danger zones. Ejects boiling water (physical impulse +
+damage) based on TriangleWave cycles.
+
+ECHELON 3: FLORA, FAUNA & BIOTA (Ecosystem and AI)
+
+21. Ecosystem Director (Macro): Lotka-Volterra equations. FrostTick migration
+of biomass without GameObjects.
+22. Fauna Spatial Hash Grid: O(1) neighbor search. Collision resolution and aggression radii in Burst.
+23. Swarm Compute Director (Boids): GPU simulation of small fish schools. Swarm fragmentation
+during sonic booms.
+24. Predator Cognition (Utility AI): Polynomial scoring of hunger, fear, and aggression. 1km headless fast-fail.
+25. Predator Steering & Lunge: Octant-aligned navigation, S-curved attacks, obstacle avoidance (SDF raycasts).
+26. Funnel Smoothing: 3D voxel-based pathfinding with smoothed "square"
+corners (String Pulling).
+27. Leviathan Procedural IK: Boneless VAT body blending + burst calculation of tentacles/tails (Constrained S-Curves).
+28. Flora Procedural Sway: Vertex shaders for algae animation (interactive bending from submarine propellers).
+29. Bioluminescence Sync: Coral pulsation. Glow phases are tied to
+global _Time and moon cycles.
+30. Fauna Genetics & Mutation: 64-bit trait masks (size, aggression,
+coloration) transferred when spawning in biomes.
+
+ECHELON 4: PLAYER, KINEMATICS & TOOLS (Locomotion and Equipment)
+
 31. Kinematic Character Controller (KCC): Asynchronous capsule casts.
 Speculative collisions. Main-thread `SphereCastNonAlloc` is forbidden.
-32. Hydrodynamic Drag & Buoyancy: Scalar mass and inertia calculation. force *
-math.rcp(mass + addedMass).
-33. Contextual Hand IK (FABRIK): Procedural sticking of player hands to ladders,
-airlocks, and tools.
-34. Tether & Cable Physics: Tether physics using acceleration constraints. Without Unity Joints.
-35. Equipment Runtime (Tools): Cutter heating math, scanner power consumption (SOA arrays).
-36. Scavenging & Harvesting: Convert procedural loot points to ItemIds upon
-cutting/interaction.
-37. S.O.A. Inventory System: Inventory as a NativeArray<int> (ID,
-Quantity, Wear). Search via math.tzcnt.
-38. Crafting Fast-Fail Validator: Bitmasks for checking the presence of recipes
-for 1 CPU cycle before the discard cycle.
-39. VR Somatic Comfort: OpenXR bridge. Virtual horizon locking,
-FOV tunneling during jerks, Foveated Rendering.
-
-40. VR Interaction Bridge: Physically grabbing objects with your hands, translating
-controllers into the 3D world.
-
-ECHELON 5: COMBAT & SURVIVAL PHYSIOLOGY (Combat and Body)
-
-41. Combat Damage Router: NativeQueue for ForcePackets. Damage distribution to
-modules, players, or creatures in a single pass.
-42. Armor Penetration LUT: 8x8 penetration tables. Hitboxes based on local
-AABB primitives (Headshot multipliers).
-43. Status Effects Engine: 32-bit masks. Bleeding, poison, and stun processing
-in the SlowTick job.
-44. Player Stress & Fear System: Panic buildup from darkness and sounds. Affects
-O2 consumption and distortion shaders.
-45. Decompression Sickness (Bends): Calculates tissue nitrogen saturation. Instantaneous
-damage when ascending > 10 m/s from a depth of > 100 m.
-46. Hypoxia & Gas Toxicity: Nitrogen intoxication (introduces noise into controls),
-CO2 poisoning (stamina penalty).
-47. Crush Depth Integrity: Pressure calculation. Exponential suit destruction
-overDepth * math.rsqrt(overDepth).
-48. Diet & Metabolism: Hunger, hydration, core body temperature. Affects
-regeneration rate.
-49. Radiation Scrubber: Contaminated areas from reactors. Rad dose accumulation,
-hand texture mutation.
-50. Screen-Space Wounds & Decals: Rendering visor cracks and blood through decals/postprocess (Math LODs).
-
-ECHELON 6: HABITAT & VEHICLES (Engineering and Bases)
-
-51. Grid Snapping & Ghost Preview: Snapping modules to a 4x4m grid (Integer AUP).
-Checking AABB collisions without prefab instantiation.
-52. Structural Integrity Math: Scalar calculation of base deformation (Depth -
-Reinforcements). Stress factor output to the shader.
-53. Fluid Incursion (Flooding): BFS water distribution between compartments. The mass of
-water bends the submarine.
-54. Power Grid (Jacobi Solver): Relaxation algorithm for energy distribution over the
-network. Bitwise disconnection of broken wires.
-55. Pipe & Sump Pump Logistics: Liquid and oxygen transfer system.
-Automatic pumping when energy is surplus.
-56. Module Deconstruction: Mathematically net return of 50% of resources with a rollback
-
-of the connection graph.
-57. Submarine OS (Core): Submarine terminal. Engine temperature, sonar
-
-telemetry, battery consumption.
-58. Submarine Navigation (Auto-Level): Physical pitch and roll stabilizers
-
-of the vessel. Buoyancy control (Ballast).
-59. Drone Fleet Commander: AI for repair and mining mini-bots.
-Stateless solutions based on distances.
-60. Scooter (Seaglide) Kinematics: Additional thrust vectors and physics for a manual
-
-submarine tug.
-
-ECHELON 7: ATMOSPHERE & CELESTIAL (Macro-World)
-
-61. Celestial Orbit Mechanics: Triangular waves of moon and planet orbits on
-FrostTick. Without Kepler.
-62. Tide & Seismic Generator: Deterministic earthquakes (affect caves)
-and tides (affect AUP water levels).
-63. Weather & Wind Director: Merging storms on the surface with turbidity (Silt) at
-depth.
-64. Gas Dynamics (Dalton's Law): O2/CO2 partial pressure in compartments.
-Calculated without particle simulation.
-65. Thermodynamics (Heat Diffusion): Heat diffusion from geothermal
-sources. Boiling of water around.
-66. Marine Snow & Silt Compute: GPU fog that reacts to localized flows
-of submarine propellers (Propwash).
-67. Volumetric Fog & Light Shafts: Bezier fog ray-marching. Dithered masks for
-MX350.
-68. Day/Night GI Relay: Changing ocean lighting and color (Cyan to Deep Blue).
-Affects predators.
-
-ECHELON 8: PRESENTATION & UX (Interaction and Perception)
-
-69. Zero-GC Subtitles (Babel): ReadOnlySpan<char> + CharBufferPool. Localization
-without a single string allocation.
-70. Diegetic Terminals (3D UI): Projecting mouse/gamepad inputs into
-UV space of 3D monitors.
-71. Visor AR (HUD): Stencil helmet masks. Rational approximations
-of tangents for the scanner.
-72. PDA Encyclopedia Streaming: MMF reading of ENT pages directly from
-disk. 128-byte masks of open records.
-73. AUP Narrative Triggers: Spatial POIs (points of interest). Triggered
-via math.distancesq.
-74. Cartography & Fog of War: Opening a 3D sonar map with data packing
-in 1-bit voxels.
-75. Frequency Tuning (Scanning): Artifact search minigame by matching
-signal/noise sine waves.
-76. DSP Acoustic Radar: Zonal sound occlusion. Muffle zones (muffling) without
-ray checks.
-77. Granular Synthesis: Procedural grinding of hull metal under pressure.
-On-the-fly sample slicing.
-78. Vocal Warning System (VWS): "Bitchin' Betty". Audio warning queue
-(alarm bitmasks).
-ECHELON 9: META, POLISH & INTEGRATION (Quality Control)
-
-79. Haptic Feedback Director: Translates ImpactEvents into micro-vibrations
-
-of controllers (Steam Deck/DualSense).
-80. Camera Juice & Shake: Procedural camera shake impulses (without
-
-AnimationClip).
-81. Physics Culling Overseer: Rigidbody.Sleep() for objects further than 50m.
-
-Deactivate colliders.
-82. The Integrator (Compile Medic): Blind compiler. Fixes cyclic
-
-dependencies and .asmdef files.
-83. The Chronicler (Docs): Reads AST (code) and automatically generates PROJECT_ATLAS.md and
-
-dependency graph.
-84. QA Watchdog Bot: A bot that swims 10 km in PlayMode. FPS and memory dump to CSV
-via TryFormat.
-85. Tech Researcher (Mandate Evolver): An agent that updates rules
-.agents-skills/ for Unity 6000.x features.
+32. Hydrodynamic Drag & Buoyancy: Scalar mass and inertia calculation. force *
+math.rcp(mass + addedMass).
+33. Contextual Hand IK (FABRIK): Procedural sticking of player hands to ladders,
+airlocks, and tools.
+34. Tether & Cable Physics: Tether physics using acceleration constraints. Without Unity Joints.
+35. Equipment Runtime (Tools): Cutter heating math, scanner power consumption (SOA arrays).
+36. Scavenging & Harvesting: Convert procedural loot points to ItemIds upon
+cutting/interaction.
+37. S.O.A. Inventory System: Inventory as a NativeArray<int> (ID,
+Quantity, Wear). Search via math.tzcnt.
+38. Crafting Fast-Fail Validator: Bitmasks for checking the presence of recipes
+for 1 CPU cycle before the discard cycle.
+39. VR Somatic Comfort: OpenXR bridge. Virtual horizon locking,
+FOV tunneling during jerks, Foveated Rendering.
+
+40. VR Interaction Bridge: Physically grabbing objects with your hands, translating
+controllers into the 3D world.
+
+ECHELON 5: COMBAT & SURVIVAL PHYSIOLOGY (Combat and Body)
+
+41. Combat Damage Router: NativeQueue for ForcePackets. Damage distribution to
+modules, players, or creatures in a single pass.
+42. Armor Penetration LUT: 8x6 material-row x angle-step penetration tables. Hitboxes based on local
+AABB primitives (Headshot multipliers).
+43. Status Effects Engine: 32-bit masks. Bleeding, poison, and stun processing
+in the SlowTick job.
+44. Player Stress & Fear System: Panic buildup from darkness and sounds. Affects
+O2 consumption and distortion shaders.
+45. Decompression Sickness (Bends): Calculates tissue nitrogen saturation. Instantaneous
+damage when ascending > 10 m/s from a depth of > 100 m.
+46. Hypoxia & Gas Toxicity: Nitrogen intoxication (introduces noise into controls),
+CO2 poisoning (stamina penalty).
+47. Crush Depth Integrity: Pressure calculation. Exponential suit destruction
+overDepth * math.rsqrt(overDepth).
+48. Diet & Metabolism: Hunger, hydration, core body temperature. Affects
+regeneration rate.
+49. Radiation Scrubber: Contaminated areas from reactors. Rad dose accumulation,
+hand texture mutation.
+50. Screen-Space Wounds & Decals: Rendering visor cracks and blood through decals/postprocess (Math LODs).
+
+ECHELON 6: HABITAT & VEHICLES (Engineering and Bases)
+
+51. Grid Snapping & Ghost Preview: Snapping modules to a 4x4m grid (Integer AUP).
+Checking AABB collisions without prefab instantiation.
+52. Structural Integrity Math: Scalar calculation of base deformation (Depth -
+Reinforcements). Stress factor output to the shader.
+53. Fluid Incursion (Flooding): BFS water distribution between compartments. The mass of
+water bends the submarine.
+54. Power Grid (Jacobi Solver): Relaxation algorithm for energy distribution over the
+network. Bitwise disconnection of broken wires.
+55. Pipe & Sump Pump Logistics: Liquid and oxygen transfer system.
+Automatic pumping when energy is surplus.
+56. Module Deconstruction: Mathematically net return of 50% of resources with a rollback
+
+of the connection graph.
+57. Submarine OS (Core): Submarine terminal. Engine temperature, sonar
+
+telemetry, battery consumption.
+58. Submarine Navigation (Auto-Level): Physical pitch and roll stabilizers
+
+of the vessel. Buoyancy control (Ballast).
+59. Drone Fleet Commander: AI for repair and mining mini-bots.
+Stateless solutions based on distances.
+60. Scooter (Seaglide) Kinematics: Additional thrust vectors and physics for a manual
+
+submarine tug.
+
+ECHELON 7: ATMOSPHERE & CELESTIAL (Macro-World)
+
+61. Celestial Orbit Mechanics: Triangular waves of moon and planet orbits on
+FrostTick. Without Kepler.
+62. Tide & Seismic Generator: Deterministic earthquakes (affect caves)
+and tides (affect AUP water levels).
+63. Weather & Wind Director: Merging storms on the surface with turbidity (Silt) at
+depth.
+64. Gas Dynamics (Dalton's Law): O2/CO2 partial pressure in compartments.
+Calculated without particle simulation.
+65. Thermodynamics (Heat Diffusion): Heat diffusion from geothermal
+sources. Boiling of water around.
+66. Marine Snow & Silt Compute: GPU fog that reacts to localized flows
+of submarine propellers (Propwash).
+67. Volumetric Fog & Light Shafts: Bezier fog ray-marching. Dithered masks for
+MX350.
+68. Day/Night GI Relay: Changing ocean lighting and color (Cyan to Deep Blue).
+Affects predators.
+
+ECHELON 8: PRESENTATION & UX (Interaction and Perception)
+
+69. Zero-GC Subtitles (Babel): ReadOnlySpan<char> + CharBufferPool. Localization
+without a single string allocation.
+70. Diegetic Terminals (3D UI): Projecting mouse/gamepad inputs into
+UV space of 3D monitors.
+71. Visor AR (HUD): Stencil helmet masks. Rational approximations
+of tangents for the scanner.
+72. PDA Encyclopedia Streaming: MMF reading of ENT pages directly from
+disk. 128-byte masks of open records.
+73. AUP Narrative Triggers: Spatial POIs (points of interest). Triggered
+via math.distancesq.
+74. Cartography & Fog of War: Opening a 3D sonar map with data packing
+in 1-bit voxels.
+75. Frequency Tuning (Scanning): Artifact search minigame by matching
+signal/noise sine waves.
+76. DSP Acoustic Radar: Zonal sound occlusion. Muffle zones (muffling) without
+ray checks.
+77. Granular Synthesis: Procedural grinding of hull metal under pressure.
+On-the-fly sample slicing.
+78. Vocal Warning System (VWS): "Bitchin' Betty". Audio warning queue
+(alarm bitmasks).
+ECHELON 9: META, POLISH & INTEGRATION (Quality Control)
+
+79. Haptic Feedback Director: Translates ImpactEvents into micro-vibrations
+
+of controllers (Steam Deck/DualSense).
+80. Camera Juice & Shake: Procedural camera shake impulses (without
+
+AnimationClip).
+81. Physics Culling Overseer: Rigidbody.Sleep() for objects further than 50m.
+
+Deactivate colliders.
+82. The Integrator (Compile Medic): Blind compiler. Fixes cyclic
+
+dependencies and .asmdef files.
+83. The Chronicler (Docs): Reads AST (code) and automatically generates PROJECT_ATLAS.md and
+
+dependency graph.
+84. QA Watchdog Bot: A bot that swims 10 km in PlayMode. FPS and memory dump to CSV
+via TryFormat.
+85. Tech Researcher (Mandate Evolver): An agent that updates rules
+.agents-skills/ for Unity 6000.x features.

@@ -68,7 +68,7 @@ namespace Hecton8.World.SeedShipAnomaly
             if (vault.IsAllocationLocked)
                 return false;
 
-            _shaderSlotsHandle = vault.GetGenerationHandle<float4>(
+            _shaderSlotsHandle = vault.EnsureGenerationHandle<float4>(
                 BufferID.ShaderGlobalState,
                 RequiredShaderSlots,
                 SystemID.EndgameAnomaly,

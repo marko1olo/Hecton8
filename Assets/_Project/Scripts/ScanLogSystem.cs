@@ -12,7 +12,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Scan Log System")]
-    public sealed class ScanLogSystem : MonoBehaviour, ISaveable, IScanEventListener
+    public sealed class ScanLogSystem : MonoBehaviour, ISaveable, IScanEventListener, IScanLogService, IGlobalRegistryHotSwapListener
     {
         public readonly struct ScanEntrySnapshot
         {
@@ -92,8 +92,10 @@ namespace Hecton8.Gameplay
         private readonly Dictionary<uint, int> _entryIndexByHash = new Dictionary<uint, int>(128);
         private readonly List<ScanEntryRecord> _entries = new List<ScanEntryRecord>(64);
         private readonly List<uint> _recentEntryHashes = new List<uint>(8);
+        private ISaveService _saveService;
         private bool _saveRegistered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private uint _scanArchivedNotificationHash;
         private uint _signalSourceId;
         private uint _changeRevision;
@@ -110,6 +112,9 @@ namespace Hecton8.Gameplay
         public int EntryCount => _entries.Count;
         public int RecentCount => _recentEntryHashes.Count;
         public uint ChangeRevision => _changeRevision;
+        public uint SourceId => _signalSourceId != 0u
+            ? _signalSourceId
+            : RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
 
         private void Awake()
         {
@@ -120,12 +125,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage);
-            _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+            _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage.AsSpan());
+            _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
         }
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegisterSaveParticipant();
             ScanEvents.Register(this);
@@ -141,11 +147,14 @@ namespace Hecton8.Gameplay
             TryUnregisterSaveParticipant();
             TryUnregisterService();
             ScanEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterSaveParticipant();
             TryUnregisterService();
+            TryUnregisterHotSwapListener();
         }
 
         private void TryRegisterService()
@@ -212,14 +221,16 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered)
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            ISaveService saveService = GlobalRegistry.Save;
-            if (saveService == null)
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
                 return;
 
-            saveService.Register(this);
+            _saveService.Register(this);
             _saveRegistered = true;
         }
 
@@ -228,11 +239,41 @@ namespace Hecton8.Gameplay
             if (!_saveRegistered)
                 return;
 
-            ISaveService saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
             _saveRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            TryUnregisterSaveParticipant();
+            _saveService = currentService as ISaveService;
+            TryRegisterSaveParticipant();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public bool ContainsEntry(uint entryHash)
@@ -461,7 +502,7 @@ namespace Hecton8.Gameplay
         private void PublishScanLogChanged(uint entryHash, byte reason, uint categoryHash = 0u)
         {
             if (_signalSourceId == 0u)
-                _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+                _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
 
             _changeRevision = unchecked(_changeRevision + 1u);
             if (_changeRevision == 0u)
@@ -480,7 +521,7 @@ namespace Hecton8.Gameplay
                 CategoryHash = categoryHash
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<ScanLogChangedSignal>.TryPush(in signal);
         }
 
         private void PushRecent(uint entryHash)
@@ -534,9 +575,9 @@ namespace Hecton8.Gameplay
         private void ShowUnlockFeedback()
         {
             if (_scanArchivedNotificationHash == 0u)
-                _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage);
+                _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage.AsSpan());
 
-            NotificationEvents.PushRegisteredInfo(_scanArchivedNotificationHash);
+            NotificationEvents.TryPushRegisteredInfo(_scanArchivedNotificationHash);
         }
 
         private static ScanEntrySnapshot ToSnapshot(in ScanEntryRecord entry)

@@ -185,7 +185,16 @@ namespace Hecton8.EditorTools
         private static bool FileContains(string assetPath, string token)
         {
             string path = ResolveProjectPath(assetPath);
-            return File.Exists(path) && File.ReadAllText(path).Contains(token);
+            if (!File.Exists(path))
+                return false;
+
+            foreach (string line in File.ReadLines(path))
+            {
+                if (line.Contains(token))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool MethodBlockContains(string assetPath, string methodStart, string token)

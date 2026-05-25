@@ -1,0 +1,1416 @@
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using Hecton8.Core;
+using Hecton8.Core.Contracts.Physiology;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Determinism;
+using Hecton8.Core.Memory;
+using Hecton8.World;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using Stopwatch = System.Diagnostics.Stopwatch;
+
+namespace Hecton8.Physiology
+{
+    [DisallowMultipleComponent]
+    public sealed unsafe class ShinobuSuitIntegrityRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    {
+        private const SystemID OwnerSystem = SystemID.GameplayPlayer;
+        private const int LockBufferCount = 6;
+        private const string CsvRelativePath = "suit_pressure_profiles.csv";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_323.bin";
+        private const ulong DumpMagic = 0x5333323350524553UL; // S323PRES
+        private const uint DumpVersion = 1u;
+        private const float SlowTickNominalSeconds = 0.1f;
+        private static readonly uint _HeaderSuitNameHash = HashLowerAsciiString("suit_name");
+        private static readonly uint _HeaderNameHash = HashLowerAsciiString("name");
+
+        [Header("Runtime Capacity")]
+        [SerializeField, Min(1)] private int entityCapacity = ShinobuSuitIntegrityConstants.DefaultEntityCapacity;
+
+        [Header("AUP Pressure")]
+        [Tooltip("Sea-level Y in AUP meters. Depth is seaLevelAup.y - playerAup.y in double precision.")]
+        [SerializeField] private double seaLevelAupY;
+
+        [Tooltip("Use the 0m..8000m synthetic AUP pressure profile when no player AUP is available.")]
+        [SerializeField] private bool enableEmergencyMockPressureProfile = true;
+
+        private VaultGenerationHandle<SuitIntegrityDTO> _integrityHandle;
+        private VaultGenerationHandle<SuitPressureProfileDTO> _profileHandle;
+        private VaultGenerationHandle<SuitIntegrityTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<SuitIntegrityTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<SuitIntegrityVisualDTO> _visualHandle;
+        private VaultGenerationHandle<SuitHydrostaticMockAupDTO> _mockAupHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<byte> _dumpScratchHandle;
+        private VaultGenerationHandle<LockstepPlayerKinematicState> _playerKinematicStateHandle;
+        private VaultGenerationHandle<MetabolicStateDTO> _metabolismStateHandle;
+
+        private IDataVault _dataVault;
+        private IPlayerRuntimeContext _playerContext;
+        private ITickDispatcher _tickDispatcher;
+        private JobHandle _activeJobHandle;
+        private AbsoluteUniversePosition _lastPlayerAup;
+        private double3 _lastPlayerAupDouble;
+        private string _csvPath;
+        private string _dumpPath;
+        private double _lastDispatcherTimeSeconds = -1d;
+        private long _csvLastWriteTicks;
+        private long _jobScheduleTimestamp;
+        private int _telemetryCursor;
+        private int _scheduledCount;
+        private uint _frameCounter;
+        private uint _metabolicDamageTargetHash;
+        private uint _kinematicDamageTargetHash;
+        private uint _coldDamageTargetHash;
+        private float _simulationAccumulator;
+        private float _lastTickInterval = 1f;
+        private bool _registeredSlow;
+        private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
+        private bool _jobScheduled;
+        private bool _jobLocksHeld;
+        private bool _defaultsInitialized;
+        private bool _autopsyDumped;
+        private bool _playerAupValid;
+
+        private void Awake()
+        {
+            entityCapacity = math.max(1, entityCapacity);
+            _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
+            _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
+        }
+
+        private void OnEnable()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            SignalBus<CombatDamageSignal>.EnsureInitialized();
+            SignalBus<MovementAcousticSignal>.EnsureInitialized();
+            TryRegisterHotSwapListener();
+            RebindColdServices();
+            if (EnsureVaultState())
+                TryRegisterTicks();
+        }
+
+        private void Start()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            RebindColdServices();
+            if (EnsureVaultState())
+                TryRegisterTicks();
+        }
+
+        private void OnDisable()
+        {
+            CompleteFrameJobForTeardown();
+            TryUnregisterTicks();
+            TryUnregisterHotSwapListener();
+            UnlockJobBuffers();
+            ReleaseVaultHandles();
+            ClearCachedHandles();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompleteFrameJobForTeardown();
+                UnlockJobBuffers();
+                ReleaseVaultHandles();
+                _dataVault = currentService as IDataVault;
+                ClearCachedHandles();
+                _defaultsInitialized = false;
+                _autopsyDumped = false;
+                ClearTargetHashCache();
+                RefreshPlayerCombatTargetHashCold(_playerContext);
+                if (_dataVault != null && EnsureVaultState())
+                    TryRegisterTicks();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerContext = currentService as IPlayerRuntimeContext;
+                ClearTargetHashCache();
+                _playerAupValid = false;
+                RefreshPlayerCombatTargetHashCold(_playerContext);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _tickDispatcher = currentService as ITickDispatcher;
+                _lastDispatcherTimeSeconds = -1d;
+            }
+        }
+
+        public void SlowTick()
+        {
+            if (_jobScheduled)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || !_defaultsInitialized || !HandlesReady())
+                return;
+
+            SuitIntegrityTuningDTO tuning = ReadSanitizedTuning(vault);
+            float quality = ResolveGlobalQualityWeight();
+            float slowDeltaSeconds = ResolveSlowTickDeltaSeconds();
+            if (slowDeltaSeconds <= 0f)
+                return;
+
+            tuning.GlobalQualityWeight = quality;
+            _lastTickInterval = ShinobuSuitIntegrityJobMath.ResolveTickInterval(quality);
+            _simulationAccumulator = math.min(_simulationAccumulator + slowDeltaSeconds, 2f);
+            if (_simulationAccumulator < _lastTickInterval)
+                return;
+
+            float dt = math.clamp(_simulationAccumulator, SlowTickNominalSeconds, 1.25f);
+            uint frame = ++_frameCounter;
+            RefreshPlayerAup();
+            uint playerTargetHash = ResolvePlayerDamageTargetHash();
+            bool hasPlayerAup = _playerAupValid;
+            bool useMock = enableEmergencyMockPressureProfile && !hasPlayerAup;
+            if (!SignalBus<CombatDamageSignal>.HasNativeStorage ||
+                !SignalBus<MovementAcousticSignal>.HasNativeStorage)
+            {
+                return;
+            }
+
+            if (!TryLockJobBuffers(vault))
+                return;
+
+            if (!TryResolveBuffers(
+                    vault,
+                    out NativeArray<SuitIntegrityDTO> integrity,
+                    out NativeArray<SuitPressureProfileDTO> profiles,
+                    out NativeArray<SuitIntegrityTuningDTO> tuningArray,
+                    out NativeArray<SuitIntegrityTelemetryEntry> telemetry,
+                    out NativeArray<SuitIntegrityVisualDTO> visuals,
+                    out NativeArray<SuitHydrostaticMockAupDTO> mockAups))
+            {
+                UnlockJobBuffers();
+                return;
+            }
+
+            int count = math.min(entityCapacity, integrity.Length);
+            count = math.min(count, visuals.Length);
+            if (count <= 0)
+            {
+                UnlockJobBuffers();
+                return;
+            }
+
+            tuningArray[0] = tuning;
+            double3 playerDouble = hasPlayerAup ? _lastPlayerAupDouble : new double3(0d, seaLevelAupY, 0d);
+            AbsoluteUniversePosition playerAup = hasPlayerAup ? _lastPlayerAup : AbsoluteUniversePosition.FromAbsolutePosition(playerDouble);
+            double3 seaLevelAup = new double3(playerDouble.x, seaLevelAupY, playerDouble.z);
+            long scheduleTimestamp = Stopwatch.GetTimestamp();
+
+            JobHandle handle = new EvaluateHydrostaticPressureJob
+            {
+                Integrity = integrity,
+                MockAups = mockAups,
+                PlayerAup = playerAup,
+                PlayerAupOverride = playerDouble,
+                SeaLevelAup = seaLevelAup,
+                Tuning = tuning,
+                Frame = frame,
+                Count = count,
+                UseMockAup = useMock ? (byte)1 : (byte)0,
+                UsePlayerAupOverride = !hasPlayerAup && !useMock ? (byte)1 : (byte)0
+            }.Schedule(count, ShinobuSuitIntegrityConstants.FrameJobBatchSize);
+
+            handle = new CalculateStructuralYieldJob
+            {
+                Integrity = integrity,
+                Visuals = visuals,
+                Telemetry = telemetry,
+                Profiles = profiles,
+                DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter,
+                DamageWriterBudget = SignalBus<CombatDamageSignal>.ParallelWriterBudget,
+                AcousticWriter = SignalBus<MovementAcousticSignal>.ParallelWriter,
+                AcousticWriterBudget = SignalBus<MovementAcousticSignal>.ParallelWriterBudget,
+                PlayerAup = playerAup,
+                PlayerImpactAup = playerDouble,
+                Tuning = tuning,
+                PlayerTargetHash = playerTargetHash,
+                Frame = frame,
+                Count = count,
+                ProfileCount = math.min(ShinobuSuitIntegrityConstants.ProfileCapacity, profiles.Length),
+                TelemetryCursor = _telemetryCursor,
+                DeltaSeconds = dt,
+                TickIntervalSeconds = _lastTickInterval
+            }.Schedule(count, ShinobuSuitIntegrityConstants.FrameJobBatchSize, handle);
+
+            _activeJobHandle = handle;
+            _scheduledCount = count;
+            _jobScheduleTimestamp = scheduleTimestamp;
+            _simulationAccumulator = 0f;
+            _jobScheduled = true;
+            H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
+        }
+
+        public void LateFrameTick()
+        {
+            TryFinalizeFrameJobNoWait();
+        }
+
+        public bool TryGetIntegrity(int entityIndex, out SuitIntegrityDTO integrity)
+        {
+            integrity = default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<SuitIntegrityDTO> states = ReadVaultArray(ref _integrityHandle, ShinobuSuitIntegrityConstants.StateBuffer, entityCapacity);
+            if (!states.IsCreated || (uint)entityIndex >= (uint)states.Length)
+                return false;
+
+            integrity = states[entityIndex];
+            return true;
+        }
+
+        public bool TryGetVisual(int entityIndex, out SuitIntegrityVisualDTO visual)
+        {
+            visual = default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<SuitIntegrityVisualDTO> visuals = ReadVaultArray(ref _visualHandle, ShinobuSuitIntegrityConstants.VisualBuffer, entityCapacity);
+            if (!visuals.IsCreated || (uint)entityIndex >= (uint)visuals.Length)
+                return false;
+
+            visual = visuals[entityIndex];
+            return true;
+        }
+
+        public bool TryGetLatestTelemetry(out SuitIntegrityTelemetryEntry entry)
+        {
+            entry = default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<SuitIntegrityTelemetryEntry> telemetry = ReadVaultArray(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount);
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
+            int index = (_telemetryCursor + telemetry.Length - 1) % telemetry.Length;
+            entry = telemetry[index];
+            return entry.Frame != 0u;
+        }
+
+        public bool TryGetTuning(out SuitIntegrityTuningDTO tuning)
+        {
+            tuning = default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<SuitIntegrityTuningDTO> tuningArray = ReadVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+                return false;
+
+            tuning = ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningArray[0]);
+            return true;
+        }
+
+        public void SetEditorTuning(SuitIntegrityTuningDTO tuning)
+        {
+            if (_jobScheduled)
+                return;
+
+            NativeArray<SuitIntegrityTuningDTO> tuningArray = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+                return;
+
+            tuningArray[0] = ShinobuSuitIntegrityJobMath.SanitizeTuning(tuning);
+            GenerateMockHydrostaticPressureData();
+        }
+
+        public bool SetEquippedSuitHash(int entityIndex, uint suitHash)
+        {
+            if (_jobScheduled || suitHash == 0u)
+                return false;
+
+            NativeArray<SuitIntegrityDTO> states = OpenVaultArray(ref _integrityHandle, ShinobuSuitIntegrityConstants.StateBuffer, entityCapacity);
+            if (!states.IsCreated || (uint)entityIndex >= (uint)states.Length)
+                return false;
+
+            SuitIntegrityDTO state = states[entityIndex];
+            state.EquippedSuitHash = suitHash;
+            state.IntegrityFlags |= SuitIntegrityFlags.Initialized;
+            states[entityIndex] = state;
+            return true;
+        }
+
+        public bool GenerateMockHydrostaticPressureData()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            NativeArray<SuitIntegrityTuningDTO> tuningArray = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            NativeArray<SuitHydrostaticMockAupDTO> mock = OpenVaultArray(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount);
+            if (!tuningArray.IsCreated || tuningArray.Length <= 0 || !mock.IsCreated)
+                return false;
+
+            SuitIntegrityTuningDTO tuning = ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningArray[0]);
+            double3 seaLevel = new double3(0d, seaLevelAupY, 0d);
+            new GenerateMockHydrostaticPressureJob
+            {
+                Samples = mock,
+                SeaLevelAup = seaLevel,
+                MaxDepthMeters = tuning.MockMaxDepthMeters,
+                DurationSeconds = tuning.MockDurationSeconds,
+                FrameBase = 0u,
+                Count = math.min(ShinobuSuitIntegrityConstants.MockPressureSampleCount, mock.Length)
+            }.Run(math.min(ShinobuSuitIntegrityConstants.MockPressureSampleCount, mock.Length));
+            return true;
+        }
+
+        private void RebindColdServices()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            _playerContext = GlobalRegistry.Player;
+            _tickDispatcher = GlobalRegistry.TickDispatcher;
+            _lastDispatcherTimeSeconds = -1d;
+            ClearTargetHashCache();
+            RefreshPlayerCombatTargetHashCold(_playerContext);
+        }
+
+        private bool EnsureVaultState()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            entityCapacity = math.max(1, entityCapacity);
+            if (HandlesReady())
+            {
+                TryBindBorrowedStateHandles(vault);
+                if (!_defaultsInitialized)
+                    InitializeDefaults(vault);
+                return true;
+            }
+            if (!ShinobuSuitIntegrityLayoutGuards.ValidateLayouts())
+                return false;
+
+            bool created =
+                OpenOrAcquireVaultBuffer(ref _integrityHandle, ShinobuSuitIntegrityConstants.StateBuffer, entityCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquireVaultBuffer(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquireVaultBuffer(ref _visualHandle, ShinobuSuitIntegrityConstants.VisualBuffer, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquireVaultBuffer(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(ref _csvScratchHandle, ShinobuSuitIntegrityConstants.CsvScratchBuffer, ShinobuSuitIntegrityConstants.CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(ref _dumpScratchHandle, ShinobuSuitIntegrityConstants.DumpScratchBuffer, ShinobuSuitIntegrityConstants.DumpScratchBytes, NativeArrayOptions.UninitializedMemory, out _);
+            if (!created || !HandlesReady())
+                return false;
+
+            TryBindBorrowedStateHandles(vault);
+            InitializeDefaults(vault);
+            return true;
+        }
+
+        private bool HandlesReady()
+        {
+            return OpenVaultBuffer(ref _integrityHandle, ShinobuSuitIntegrityConstants.StateBuffer, entityCapacity, out _) &&
+                   OpenVaultBuffer(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity, out _) &&
+                   OpenVaultBuffer(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1, out _) &&
+                   OpenVaultBuffer(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount, out _) &&
+                   OpenVaultBuffer(ref _visualHandle, ShinobuSuitIntegrityConstants.VisualBuffer, entityCapacity, out _) &&
+                   OpenVaultBuffer(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount, out _) &&
+                   OpenVaultBuffer(ref _csvScratchHandle, ShinobuSuitIntegrityConstants.CsvScratchBuffer, ShinobuSuitIntegrityConstants.CsvMaxBytes, out _) &&
+                   OpenVaultBuffer(ref _dumpScratchHandle, ShinobuSuitIntegrityConstants.DumpScratchBuffer, ShinobuSuitIntegrityConstants.DumpScratchBytes, out _);
+        }
+
+        private void InitializeDefaults(IDataVault vault)
+        {
+            if (_defaultsInitialized)
+                return;
+
+            NativeArray<SuitIntegrityTuningDTO> tuningArray = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            SuitIntegrityTuningDTO tuning = tuningArray.IsCreated && tuningArray.Length > 0
+                ? ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningArray[0])
+                : ShinobuSuitIntegrityJobMath.SanitizeTuning(default);
+            if (tuningArray.IsCreated && tuningArray.Length > 0)
+                tuningArray[0] = tuning;
+
+            NativeArray<SuitPressureProfileDTO> profiles = OpenVaultArray(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity);
+            if (profiles.IsCreated)
+                WriteDefaultProfiles(profiles);
+
+#if UNITY_EDITOR
+            LoadCsvProfilesFromDisk(vault);
+#endif
+            NativeArray<SuitIntegrityDTO> states = OpenVaultArray(ref _integrityHandle, ShinobuSuitIntegrityConstants.StateBuffer, entityCapacity);
+            if (states.IsCreated)
+            {
+                new InitializeSuitIntegrityJob
+                {
+                    Integrity = states,
+                    DefaultSuitHash = tuning.DefaultSuitHash,
+                    Count = math.min(entityCapacity, states.Length)
+                }.Run(math.min(entityCapacity, states.Length));
+            }
+
+            GenerateMockHydrostaticPressureData();
+            _defaultsInitialized = true;
+        }
+
+        private static void WriteDefaultProfiles(NativeArray<SuitPressureProfileDTO> profiles)
+        {
+            int length = profiles.Length;
+            if (length <= 0)
+                return;
+
+            profiles[0] = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
+            {
+                SuitHash = ShinobuSuitIntegrityConstants.StandardSuitHash,
+                MaxSafePressureATM = 61f,
+                YieldConstant = 0.004f,
+                CriticalFractureThreshold = 1f,
+                FractureIntegrityDamageRate = 0.08f,
+                VisualBucklingGain = 0.26f,
+                GroanOverpressureThreshold = 0.06f,
+                LowTierYieldScale = 0.65f,
+                MiddleTierYieldScale = 0.85f,
+                HighTierYieldScale = 1f,
+                UltraTierYieldScale = 1.2f,
+                ProfileIndex = 0u,
+                Flags = SuitIntegrityFlags.Initialized
+            }, ShinobuSuitIntegrityConstants.StandardSuitHash);
+
+            if (length > 1)
+                profiles[1] = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
+                {
+                    SuitHash = ShinobuSuitIntegrityConstants.ReinforcedSuitHash,
+                    MaxSafePressureATM = 181f,
+                    YieldConstant = 0.0025f,
+                    CriticalFractureThreshold = 1.25f,
+                    FractureIntegrityDamageRate = 0.055f,
+                    VisualBucklingGain = 0.18f,
+                    GroanOverpressureThreshold = 0.08f,
+                    LowTierYieldScale = 0.7f,
+                    MiddleTierYieldScale = 0.9f,
+                    HighTierYieldScale = 1f,
+                    UltraTierYieldScale = 1.18f,
+                    ProfileIndex = 1u,
+                    Flags = SuitIntegrityFlags.Initialized
+                }, ShinobuSuitIntegrityConstants.ReinforcedSuitHash);
+
+            if (length > 2)
+                profiles[2] = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
+                {
+                    SuitHash = ShinobuSuitIntegrityConstants.ExosuitHash,
+                    MaxSafePressureATM = 401f,
+                    YieldConstant = 0.0014f,
+                    CriticalFractureThreshold = 1.6f,
+                    FractureIntegrityDamageRate = 0.04f,
+                    VisualBucklingGain = 0.13f,
+                    GroanOverpressureThreshold = 0.1f,
+                    LowTierYieldScale = 0.75f,
+                    MiddleTierYieldScale = 0.92f,
+                    HighTierYieldScale = 1f,
+                    UltraTierYieldScale = 1.15f,
+                    ProfileIndex = 2u,
+                    Flags = SuitIntegrityFlags.Initialized
+                }, ShinobuSuitIntegrityConstants.ExosuitHash);
+
+            if (length > 3)
+                profiles[3] = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
+                {
+                    SuitHash = ShinobuSuitIntegrityConstants.SubmarineHullHash,
+                    MaxSafePressureATM = 651f,
+                    YieldConstant = 0.0009f,
+                    CriticalFractureThreshold = 2.1f,
+                    FractureIntegrityDamageRate = 0.03f,
+                    VisualBucklingGain = 0.1f,
+                    GroanOverpressureThreshold = 0.12f,
+                    LowTierYieldScale = 0.8f,
+                    MiddleTierYieldScale = 0.95f,
+                    HighTierYieldScale = 1f,
+                    UltraTierYieldScale = 1.12f,
+                    ProfileIndex = 3u,
+                    Flags = SuitIntegrityFlags.Initialized
+                }, ShinobuSuitIntegrityConstants.SubmarineHullHash);
+
+            for (int i = 4; i < length; i++)
+                profiles[i] = default;
+        }
+
+        private SuitIntegrityTuningDTO ReadSanitizedTuning(IDataVault vault)
+        {
+            NativeArray<SuitIntegrityTuningDTO> tuningArray = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            SuitIntegrityTuningDTO tuning = tuningArray.IsCreated && tuningArray.Length > 0
+                ? tuningArray[0]
+                : default;
+            return ShinobuSuitIntegrityJobMath.SanitizeTuning(tuning);
+        }
+
+        private void RefreshPlayerAup()
+        {
+            _playerAupValid = false;
+            TryRefreshPlayerTargetHashFromMetabolism();
+            if (TryRefreshPlayerAupFromKinematicVault())
+                return;
+
+            IPlayerRuntimeContext player = _playerContext;
+            if (player == null || !player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+                return;
+
+            AbsoluteUniversePosition aup = snapshot.Aup;
+            double3 playerAup = ShinobuSuitIntegrityJobMath.ToAbsoluteDouble3(in aup);
+            if (!math.all(math.isfinite(playerAup)))
+                return;
+
+            _lastPlayerAup = aup;
+            _lastPlayerAupDouble = playerAup;
+            _playerAupValid = true;
+        }
+
+        private bool TryRefreshPlayerAupFromKinematicVault()
+        {
+            NativeArray<LockstepPlayerKinematicState> playerStates = BorrowVaultArray(
+                ref _playerKinematicStateHandle,
+                BufferID.PlayerKinematicState,
+                SystemID.GameplayPlayer,
+                1);
+            if (!playerStates.IsCreated || playerStates.Length <= 0)
+                return false;
+
+            LockstepPlayerKinematicState state = playerStates[0];
+            if (state.Frame == 0u || !math.all(math.isfinite(state.LocalPosition)))
+                return false;
+
+            AbsoluteUniversePosition aup = new AbsoluteUniversePosition
+            {
+                GridX = state.SectorX,
+                GridY = state.SectorY,
+                GridZ = state.SectorZ,
+                LocalX = state.LocalPosition.x,
+                LocalY = state.LocalPosition.y,
+                LocalZ = state.LocalPosition.z
+            };
+            double3 playerAup = ShinobuSuitIntegrityJobMath.ToAbsoluteDouble3(in aup);
+            if (!math.all(math.isfinite(playerAup)))
+                return false;
+
+            _lastPlayerAup = aup;
+            _lastPlayerAupDouble = playerAup;
+            _playerAupValid = true;
+            if (state.StableId != 0u)
+                _kinematicDamageTargetHash = state.StableId;
+            return true;
+        }
+
+        private void TryRefreshPlayerTargetHashFromMetabolism()
+        {
+            NativeArray<MetabolicStateDTO> states = BorrowVaultArray(
+                ref _metabolismStateHandle,
+                ShinobuMetabolismConstants.MetabolismStatesBuffer,
+                SystemID.GameplayPlayer,
+                1);
+            if (!states.IsCreated || states.Length <= 0)
+                return;
+
+            uint entityHash = states[0].EntityHashID;
+            _metabolicDamageTargetHash = entityHash;
+        }
+
+        private uint ResolvePlayerDamageTargetHash()
+        {
+            if (_metabolicDamageTargetHash != 0u)
+                return _metabolicDamageTargetHash;
+
+            if (_kinematicDamageTargetHash != 0u)
+                return _kinematicDamageTargetHash;
+
+            return _coldDamageTargetHash != 0u
+                ? _coldDamageTargetHash
+                : ShinobuSuitIntegrityConstants.PlayerTargetHash;
+        }
+
+        private void RefreshPlayerCombatTargetHashCold(IPlayerRuntimeContext player)
+        {
+            GameObject playerObject = player != null ? player.PlayerObject : null;
+            if (playerObject != null)
+            {
+                uint entityHash = unchecked((uint)EntityId.ToULong(playerObject.GetEntityId()));
+                if (entityHash != 0u)
+                    _coldDamageTargetHash = entityHash;
+            }
+        }
+
+        private void ClearTargetHashCache()
+        {
+            _metabolicDamageTargetHash = 0u;
+            _kinematicDamageTargetHash = 0u;
+            _coldDamageTargetHash = 0u;
+        }
+
+        private void TryFinalizeFrameJobNoWait()
+        {
+            if (!_jobScheduled || !_activeJobHandle.IsCompleted)
+                return;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
+                return;
+
+            FinishFrameJobCompletion();
+        }
+
+        private void CompleteFrameJobForTeardown()
+        {
+            if (!_jobScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                return;
+
+            FinishFrameJobCompletion();
+        }
+
+        private void FinishFrameJobCompletion()
+        {
+            float elapsedMicroseconds = ResolveElapsedMicroseconds(_jobScheduleTimestamp, Stopwatch.GetTimestamp());
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                PatchLatestTelemetryExecutionTime(elapsedMicroseconds);
+                PublishVisualSyncScalars();
+                TryDumpAutopsyIfFaulted();
+            }
+
+            UnlockJobBuffers();
+            _telemetryCursor++;
+            if (_telemetryCursor >= ShinobuSuitIntegrityConstants.TelemetryFrameCount)
+                _telemetryCursor %= ShinobuSuitIntegrityConstants.TelemetryFrameCount;
+            _scheduledCount = 0;
+            _jobScheduled = false;
+        }
+
+        private static float ResolveElapsedMicroseconds(long startTimestamp, long endTimestamp)
+        {
+            long rawDelta = endTimestamp - startTimestamp;
+            long delta = rawDelta > 0L ? rawDelta : 0L;
+            double microseconds = delta * 1000000.0 / Stopwatch.Frequency;
+            return math.isfinite(microseconds) ? (float)math.min(microseconds, float.MaxValue) : 0f;
+        }
+
+        private void PatchLatestTelemetryExecutionTime(float elapsedMicroseconds)
+        {
+            NativeArray<SuitIntegrityTelemetryEntry> telemetry = OpenVaultArray(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount);
+            NativeArray<SuitIntegrityTuningDTO> tuningArray = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return;
+
+            int telemetryIndex = _telemetryCursor % telemetry.Length;
+            SuitIntegrityTelemetryEntry entry = telemetry[telemetryIndex];
+            entry.ExecutionMicroseconds = math.max(0f, ShinobuSuitIntegrityJobMath.SanitizeFinite(elapsedMicroseconds, 0f));
+            float budget = ShinobuSuitIntegrityConstants.DefaultTickBudgetMicroseconds;
+            if (tuningArray.IsCreated && tuningArray.Length > 0)
+                budget = ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningArray[0]).TickBudgetMicroseconds;
+            if (entry.ExecutionMicroseconds > budget)
+                entry.Flags |= SuitIntegrityFlags.OverBudget;
+            telemetry[telemetryIndex] = entry;
+        }
+
+        private void PublishVisualSyncScalars()
+        {
+            NativeArray<SuitIntegrityVisualDTO> visuals = OpenVaultArray(ref _visualHandle, ShinobuSuitIntegrityConstants.VisualBuffer, entityCapacity);
+            if (!visuals.IsCreated || visuals.Length <= 0)
+                return;
+
+            SuitIntegrityVisualDTO visual = visuals[0];
+            Vector4 vector = new Vector4(
+                math.saturate(visual.Buckling01),
+                math.max(0f, visual.OverpressureScalar),
+                math.saturate(1f - visual.CurrentIntegrity01),
+                math.saturate(visual.GlobalQualityWeight));
+            HectonShaderGlobalDataVaultBridge.PublishSuitCrushDearLie(vector);
+        }
+
+        private void TryDumpAutopsyIfFaulted()
+        {
+            if (_autopsyDumped)
+                return;
+
+            NativeArray<SuitIntegrityTelemetryEntry> telemetry = OpenVaultArray(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount);
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return;
+
+            int latestIndex = _telemetryCursor % telemetry.Length;
+            SuitIntegrityTelemetryEntry entry = telemetry[latestIndex];
+            bool faulted = (entry.Flags & (SuitIntegrityFlags.NonFinitePressure | SuitIntegrityFlags.OverBudget | SuitIntegrityFlags.Imploded)) != 0u;
+            if (!faulted)
+                return;
+
+            _autopsyDumped = true;
+            DumpAutopsyReport(telemetry);
+        }
+
+        private void DumpAutopsyReport(NativeArray<SuitIntegrityTelemetryEntry> telemetry)
+        {
+            if (!telemetry.IsCreated)
+                return;
+
+            try
+            {
+                NativeArray<byte> scratch = OpenVaultArray(ref _dumpScratchHandle, ShinobuSuitIntegrityConstants.DumpScratchBuffer, ShinobuSuitIntegrityConstants.DumpScratchBytes);
+                int byteCount = telemetry.Length * UnsafeUtility.SizeOf<SuitIntegrityTelemetryEntry>();
+                int totalBytes = 32 + byteCount;
+                if (!scratch.IsCreated || scratch.Length < totalBytes)
+                    return;
+
+                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+                Span<byte> header = new Span<byte>(scratchPtr, 32);
+                WriteUInt64LittleEndian(header.Slice(0, 8), DumpMagic);
+                WriteUInt32LittleEndian(header.Slice(8, 4), DumpVersion);
+                WriteUInt32LittleEndian(header.Slice(12, 4), (uint)telemetry.Length);
+                WriteUInt32LittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<SuitIntegrityTelemetryEntry>());
+                WriteUInt32LittleEndian(header.Slice(20, 4), unchecked((uint)_telemetryCursor));
+                WriteUInt32LittleEndian(header.Slice(24, 4), ShinobuSuitIntegrityConstants.SourceHash);
+                WriteUInt32LittleEndian(header.Slice(28, 4), _frameCounter);
+
+                void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                UnsafeUtility.MemCpy(scratchPtr + 32, telemetryPtr, byteCount);
+
+                string directory = Path.GetDirectoryName(_dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    stream.Write(new ReadOnlySpan<byte>(scratchPtr, totalBytes));
+                    stream.Flush();
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+#if UNITY_EDITOR
+        private void LoadCsvProfilesFromDisk(IDataVault vault)
+        {
+            if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))
+                return;
+
+            DateTime stamp = File.GetLastWriteTimeUtc(_csvPath);
+            if (stamp.Ticks == 0L || stamp.Ticks == _csvLastWriteTicks)
+                return;
+
+            _csvLastWriteTicks = stamp.Ticks;
+            try
+            {
+                NativeArray<byte> scratch = OpenVaultArray(ref _csvScratchHandle, ShinobuSuitIntegrityConstants.CsvScratchBuffer, ShinobuSuitIntegrityConstants.CsvMaxBytes);
+                NativeArray<SuitPressureProfileDTO> profiles = OpenVaultArray(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity);
+                if (!scratch.IsCreated || !profiles.IsCreated)
+                    return;
+
+                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+                Span<byte> buffer = new Span<byte>(scratchPtr, math.min(scratch.Length, ShinobuSuitIntegrityConstants.CsvMaxBytes));
+                using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    int byteCount = math.min((int)stream.Length, buffer.Length);
+                    if (byteCount <= 0)
+                        return;
+
+                    int read = stream.Read(buffer.Slice(0, byteCount));
+                    if (read > 0)
+                        ParseSuitProfilesCsv(buffer.Slice(0, read), profiles);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private static void ParseSuitProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<SuitPressureProfileDTO> profiles)
+        {
+            int cursor = 0;
+            int profileIndex = 0;
+            while (cursor < bytes.Length && profileIndex < profiles.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < bytes.Length && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                    cursor++;
+
+                int lineEnd = cursor;
+                while (cursor < bytes.Length && (bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r'))
+                    cursor++;
+
+                if (TryParseProfileLine(bytes.Slice(lineStart, lineEnd - lineStart), (uint)profileIndex, out SuitPressureProfileDTO profile))
+                {
+                    profiles[profileIndex] = profile;
+                    profileIndex++;
+                }
+            }
+        }
+#endif
+
+        private static bool TryParseProfileLine(ReadOnlySpan<byte> line, uint profileIndex, out SuitPressureProfileDTO profile)
+        {
+            profile = default;
+            line = Trim(line);
+            if (line.Length <= 0 || line[0] == (byte)'#')
+                return false;
+
+            int cursor = 0;
+            ReadOnlySpan<byte> name = NextToken(line, ref cursor);
+            uint nameHash = HashLowerAscii(name);
+            if (nameHash == _HeaderSuitNameHash || nameHash == _HeaderNameHash || name.Length <= 0)
+                return false;
+
+            if (!TryParseAsciiFloat(NextToken(line, ref cursor), out float safePressureAtm))
+                return false;
+
+            TryParseAsciiFloat(NextToken(line, ref cursor), out float yieldConstant);
+            TryParseAsciiFloat(NextToken(line, ref cursor), out float fractureThreshold);
+            TryParseAsciiFloat(NextToken(line, ref cursor), out float damageRate);
+            TryParseAsciiFloat(NextToken(line, ref cursor), out float visualGain);
+            TryParseAsciiFloat(NextToken(line, ref cursor), out float groanThreshold);
+
+            profile = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
+            {
+                SuitHash = nameHash,
+                MaxSafePressureATM = safePressureAtm,
+                YieldConstant = yieldConstant,
+                CriticalFractureThreshold = fractureThreshold,
+                FractureIntegrityDamageRate = damageRate,
+                VisualBucklingGain = visualGain,
+                GroanOverpressureThreshold = groanThreshold,
+                LowTierYieldScale = 0.65f,
+                MiddleTierYieldScale = 0.85f,
+                HighTierYieldScale = 1f,
+                UltraTierYieldScale = 1.2f,
+                ProfileIndex = profileIndex,
+                Flags = SuitIntegrityFlags.CsvProfile
+            }, nameHash);
+            return true;
+        }
+
+        private static ReadOnlySpan<byte> NextToken(ReadOnlySpan<byte> line, ref int cursor)
+        {
+            if (cursor >= line.Length)
+                return ReadOnlySpan<byte>.Empty;
+
+            int start = cursor;
+            while (cursor < line.Length && line[cursor] != (byte)',')
+                cursor++;
+
+            int end = cursor;
+            if (cursor < line.Length && line[cursor] == (byte)',')
+                cursor++;
+
+            return Trim(line.Slice(start, end - start));
+        }
+
+        private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> value)
+        {
+            int start = 0;
+            int end = value.Length - 1;
+            while (start < value.Length && IsCsvSpace(value[start]))
+                start++;
+            while (end >= start && IsCsvSpace(value[end]))
+                end--;
+            return start <= end ? value.Slice(start, end - start + 1) : ReadOnlySpan<byte>.Empty;
+        }
+
+        private bool TryResolveBuffers(
+            IDataVault vault,
+            out NativeArray<SuitIntegrityDTO> integrity,
+            out NativeArray<SuitPressureProfileDTO> profiles,
+            out NativeArray<SuitIntegrityTuningDTO> tuning,
+            out NativeArray<SuitIntegrityTelemetryEntry> telemetry,
+            out NativeArray<SuitIntegrityVisualDTO> visuals,
+            out NativeArray<SuitHydrostaticMockAupDTO> mockAups)
+        {
+            integrity = OpenVaultArray(ref _integrityHandle, ShinobuSuitIntegrityConstants.StateBuffer, entityCapacity);
+            profiles = OpenVaultArray(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity);
+            tuning = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            telemetry = OpenVaultArray(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount);
+            visuals = OpenVaultArray(ref _visualHandle, ShinobuSuitIntegrityConstants.VisualBuffer, entityCapacity);
+            mockAups = OpenVaultArray(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount);
+            return integrity.IsCreated &&
+                   profiles.IsCreated &&
+                   tuning.IsCreated &&
+                   tuning.Length > 0 &&
+                   telemetry.IsCreated &&
+                   visuals.IsCreated &&
+                   mockAups.IsCreated;
+        }
+
+        private bool OpenOrAcquireVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (OpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                return OpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
+            return OpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private NativeArray<T> OpenVaultArray<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return OpenVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? buffer
+                : default;
+        }
+
+        private NativeArray<T> ReadVaultArray<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return ReadVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? buffer
+                : default;
+        }
+
+        private bool OpenVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            return OpenVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool OpenVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool ReadVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsVaultHandle(in handle, bufferId) ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private void TryBindBorrowedStateHandles(IDataVault vault)
+        {
+            TryBindBorrowedVaultHandle(
+                vault,
+                BufferID.PlayerKinematicState,
+                SystemID.GameplayPlayer,
+                1,
+                ref _playerKinematicStateHandle);
+            TryBindBorrowedVaultHandle(
+                vault,
+                ShinobuMetabolismConstants.MetabolismStatesBuffer,
+                SystemID.GameplayPlayer,
+                1,
+                ref _metabolismStateHandle);
+        }
+
+        private NativeArray<T> BorrowVaultArray<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID expectedOwner,
+            int requiredLength) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (ReadBorrowedVaultBuffer(vault, in handle, bufferId, expectedOwner, requiredLength, out NativeArray<T> buffer))
+                return buffer;
+
+            handle = default;
+            if (!TryBindBorrowedVaultHandle(vault, bufferId, expectedOwner, requiredLength, ref handle))
+                return default;
+
+            return ReadBorrowedVaultBuffer(vault, in handle, bufferId, expectedOwner, requiredLength, out buffer)
+                ? buffer
+                : default;
+        }
+
+        private static bool TryBindBorrowedVaultHandle<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            SystemID expectedOwner,
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (ReadBorrowedVaultBuffer(vault, in handle, bufferId, expectedOwner, requiredLength, out _))
+                return true;
+
+            handle = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> candidate))
+                return false;
+
+            if (!ReadBorrowedVaultBuffer(vault, in candidate, bufferId, expectedOwner, requiredLength, out _))
+                return false;
+
+            handle = candidate;
+            return true;
+        }
+
+        private static bool ReadBorrowedVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID expectedOwner,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)expectedOwner ||
+                handle.Generation == 0u ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private bool TryLockJobBuffers(IDataVault vault)
+        {
+            if (vault == null || _jobLocksHeld)
+                return false;
+
+            int locked = 0;
+            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.StateBuffer, OwnerSystem)) return false;
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.ProfileBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.TuningBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.TelemetryBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.VisualBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.MockAupBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+
+            _jobLocksHeld = true;
+            return true;
+        }
+
+        private void UnlockJobBuffers()
+        {
+            if (!_jobLocksHeld)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                UnlockLockedJobBuffers(vault, LockBufferCount);
+            _jobLocksHeld = false;
+        }
+
+        private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
+        {
+            if (lockedCount >= 6) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.MockAupBuffer, OwnerSystem);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.VisualBuffer, OwnerSystem);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.TelemetryBuffer, OwnerSystem);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.TuningBuffer, OwnerSystem);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.ProfileBuffer, OwnerSystem);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.StateBuffer, OwnerSystem);
+        }
+
+        private void TryRegisterTicks()
+        {
+            if (!_registeredSlow)
+                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+
+            if (!_registeredSlow || !_registeredLateFrame)
+                TryUnregisterTicks();
+        }
+
+        private void TryUnregisterTicks()
+        {
+            if (_registeredSlow)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlow = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            if (GlobalRegistry.TryUnregisterHotSwapListener(this))
+                _registeredHotSwap = false;
+        }
+
+        private void ClearCachedHandles()
+        {
+            _integrityHandle = default;
+            _profileHandle = default;
+            _tuningHandle = default;
+            _telemetryHandle = default;
+            _visualHandle = default;
+            _mockAupHandle = default;
+            _csvScratchHandle = default;
+            _dumpScratchHandle = default;
+            _playerKinematicStateHandle = default;
+            _metabolismStateHandle = default;
+            _jobScheduled = false;
+            _jobLocksHeld = false;
+            _scheduledCount = 0;
+        }
+
+        private void ReleaseVaultHandles()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _integrityHandle);
+            ReleaseVaultHandle(vault, ref _profileHandle);
+            ReleaseVaultHandle(vault, ref _tuningHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _visualHandle);
+            ReleaseVaultHandle(vault, ref _mockAupHandle);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, ref _dumpScratchHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(weight) ? weight : 1f);
+        }
+
+        private float ResolveSlowTickDeltaSeconds()
+        {
+            ITickDispatcher dispatcher = _tickDispatcher;
+            if (dispatcher != null && dispatcher.SimulationPaused)
+                return 0f;
+
+            if (dispatcher != null)
+            {
+                H8TimeSnapshot snapshot = dispatcher.TimeSnapshot;
+                if (double.IsFinite(snapshot.Time))
+                {
+                    double delta = _lastDispatcherTimeSeconds >= 0d
+                        ? snapshot.Time - _lastDispatcherTimeSeconds
+                        : SlowTickNominalSeconds;
+                    _lastDispatcherTimeSeconds = snapshot.Time;
+                    if (double.IsFinite(delta) && delta > 0d)
+                        return math.clamp((float)delta, 0.0001f, 2f);
+                }
+            }
+
+            return SlowTickNominalSeconds;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsCsvSpace(byte value)
+        {
+            return value == (byte)' ' || value == (byte)'\t';
+        }
+
+        private static bool TryParseAsciiFloat(ReadOnlySpan<byte> bytes, out float value)
+        {
+            value = 0f;
+            int cursor = 0;
+            while (cursor < bytes.Length && IsCsvSpace(bytes[cursor]))
+                cursor++;
+
+            float sign = 1f;
+            if (cursor < bytes.Length && bytes[cursor] == (byte)'-')
+            {
+                sign = -1f;
+                cursor++;
+            }
+            else if (cursor < bytes.Length && bytes[cursor] == (byte)'+')
+            {
+                cursor++;
+            }
+
+            float whole = 0f;
+            bool hasDigit = false;
+            while (cursor < bytes.Length && bytes[cursor] >= (byte)'0' && bytes[cursor] <= (byte)'9')
+            {
+                hasDigit = true;
+                whole = whole * 10f + (bytes[cursor] - (byte)'0');
+                cursor++;
+            }
+
+            float fraction = 0f;
+            float divisor = 1f;
+            if (cursor < bytes.Length && bytes[cursor] == (byte)'.')
+            {
+                cursor++;
+                while (cursor < bytes.Length && bytes[cursor] >= (byte)'0' && bytes[cursor] <= (byte)'9')
+                {
+                    hasDigit = true;
+                    fraction = fraction * 10f + (bytes[cursor] - (byte)'0');
+                    divisor *= 10f;
+                    cursor++;
+                }
+            }
+
+            if (!hasDigit)
+                return false;
+
+            value = sign * (whole + fraction * math.rcp(math.max(1f, divisor)));
+            return math.isfinite(value);
+        }
+
+        private static uint HashLowerAscii(ReadOnlySpan<byte> bytes)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                byte value = bytes[i];
+                if (value >= (byte)'A' && value <= (byte)'Z')
+                    value = (byte)(value + 32);
+                hash ^= value;
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static uint HashLowerAsciiString(string value)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (c >= 'A' && c <= 'Z')
+                    c = (char)(c + 32);
+                hash ^= c;
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static void WriteUInt64LittleEndian(Span<byte> span, ulong value)
+        {
+            span[0] = (byte)value;
+            span[1] = (byte)(value >> 8);
+            span[2] = (byte)(value >> 16);
+            span[3] = (byte)(value >> 24);
+            span[4] = (byte)(value >> 32);
+            span[5] = (byte)(value >> 40);
+            span[6] = (byte)(value >> 48);
+            span[7] = (byte)(value >> 56);
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> span, uint value)
+        {
+            span[0] = (byte)value;
+            span[1] = (byte)(value >> 8);
+            span[2] = (byte)(value >> 16);
+            span[3] = (byte)(value >> 24);
+        }
+    }
+}

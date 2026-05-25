@@ -19,6 +19,8 @@
 // LOD: LOD0 polnyy, LOD1 uproschennyy, LOD2 siluet.
 // ============================================================================
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -144,9 +146,9 @@ namespace Hecton8.World
                 float angle = (i / (float)count) * Mathf.PI * 2f + (h * 0.37f);
                 float radius = baseSize * Mathf.Lerp(0.3f, 0.7f, ((h + i * 31) * 0.19f) % 1f);
                 Vector3 offset = new Vector3(
-                    Mathf.Cos(angle) * radius,
+                    FastCos(angle) * radius,
                     0f,
-                    Mathf.Sin(angle) * radius);
+                    FastSin(angle) * radius);
 
                 float sz = baseSize * Mathf.Lerp(0.55f, 1.0f, ((h + i * 17) * 0.23f) % 1f);
                 float szY = sz * Mathf.Lerp(0.6f, 1.1f, ((h + i * 43) * 0.31f) % 1f);
@@ -182,9 +184,9 @@ namespace Hecton8.World
             for (int i = 0; i < count; i++)
             {
                 Vector3 top = offsets[i] + new Vector3(
-                    Mathf.Sin(h + i * 1.17f) * sizes[i] * 0.18f,
+                    FastSin(h + i * 1.17f) * sizes[i] * 0.18f,
                     heights[i] * 0.55f,
-                    Mathf.Cos(h + i * 1.31f) * sizes[i] * 0.18f);
+                    FastCos(h + i * 1.31f) * sizes[i] * 0.18f);
                 AppendDeformedEllipsoid(verts0, tris0, top,
                     sizes[i] * 0.42f, heights[i] * 0.34f, sizes[i] * 0.30f,
                     h + 131 + i * 11, 3, 5, 0.17f, 0.2f);
@@ -571,7 +573,7 @@ namespace Hecton8.World
                 float t = (i + 1f) / (crownCount + 1f);
                 float rx = Mathf.Lerp(leftX, rightX, t);
                 float ry = height + thick * Mathf.Lerp(0.28f, 0.52f, ((seed + i * 17) * 0.21f) % 1f);
-                AppendDeformedBox(verts, tris, new Vector3(rx, ry, Mathf.Sin(seed + i) * thick * 0.18f),
+                AppendDeformedBox(verts, tris, new Vector3(rx, ry, FastSin(seed + i) * thick * 0.18f),
                     thick * 0.5f, thick * 0.55f, thick * 0.72f, seed + 61 + i * 13, 2, noiseAmp * 0.4f);
             }
 
@@ -628,14 +630,14 @@ namespace Hecton8.World
                 float a0 = Mathf.PI * t0;
                 float a1 = Mathf.PI * t1;
 
-                float x0 = midX + Mathf.Cos(a0) * halfSpan;
-                float y0 = height - Mathf.Sin(a0) * halfSpan * 0.55f;
-                float x1 = midX + Mathf.Cos(a1) * halfSpan;
-                float y1 = height - Mathf.Sin(a1) * halfSpan * 0.55f;
+                float x0 = midX + FastCos(a0) * halfSpan;
+                float y0 = height - FastSin(a0) * halfSpan * 0.55f;
+                float x1 = midX + FastCos(a1) * halfSpan;
+                float y1 = height - FastSin(a1) * halfSpan * 0.55f;
 
                 Vector3 center = new Vector3((x0 + x1) * 0.5f, (y0 + y1) * 0.5f, 0);
                 float segLen = Vector2.Distance(new Vector2(x0, y0), new Vector2(x1, y1));
-                float angle = Mathf.Atan2(y1 - y0, x1 - x0) * Mathf.Rad2Deg;
+                float angle = MathLodApproximation.ApproxAtan2Fast(y1 - y0, x1 - x0) * Mathf.Rad2Deg;
 
                 // Shumovoe smeschenie segmenta
                 float noise = noiseAmp > 0f ? Noise3D(center * 1.3f + Vector3.one * seed * 0.17f) * noiseAmp * 0.5f : 0f;
@@ -758,9 +760,9 @@ namespace Hecton8.World
                 float angle = (i / (float)debrisCount) * Mathf.PI * 2f;
                 float r = w * 0.55f + (seed + i * 13) % 10 * 0.1f * w;
                 Vector3 debrisPos = new Vector3(
-                    Mathf.Cos(angle) * r * 0.5f,
+                    FastCos(angle) * r * 0.5f,
                     0.15f * h,
-                    Mathf.Sin(angle) * r * 0.3f + d * 0.2f);
+                    FastSin(angle) * r * 0.3f + d * 0.2f);
                 float ds = w * Mathf.Lerp(0.08f, 0.18f, ((seed + i * 7) * 0.19f) % 1f);
                 AppendDeformedBox(verts, tris, debrisPos, ds, ds * 0.6f, ds, seed + i * 31, 1, noiseAmp * 0.5f);
             }
@@ -834,9 +836,9 @@ namespace Hecton8.World
                 float secR = baseW * Mathf.Lerp(0.4f, 0.8f, ((seed + i * 7) * 0.19f) % 1f);
 
                 Vector3 secPos = new Vector3(
-                    Mathf.Cos(angle) * secR,
+                    FastCos(angle) * secR,
                     secY,
-                    Mathf.Sin(angle) * secR);
+                    FastSin(angle) * secR);
 
                 Mesh shard = BuildDeformedEllipsoid(secW, secH, secW * 0.82f, seed + i * 29, 4 + Mathf.Max(1, sub - 1), 5 + sub, noiseAmp * 0.55f, 0.1f);
                 Quaternion tilt = Quaternion.Euler(
@@ -865,7 +867,7 @@ namespace Hecton8.World
                 float angle = seed * 0.19f + i * Mathf.PI;
                 float y = totalH * Mathf.Lerp(0.48f, 0.82f, ((seed + i * 13) * 0.21f) % 1f);
                 float radius = baseW * Mathf.Lerp(0.65f, 0.95f, ((seed + i * 31) * 0.13f) % 1f);
-                Vector3 pos = new Vector3(Mathf.Cos(angle) * radius, y, Mathf.Sin(angle) * radius);
+                Vector3 pos = new Vector3(FastCos(angle) * radius, y, FastSin(angle) * radius);
                 Mesh shard = BuildDeformedEllipsoid(baseW * 0.28f, totalH * 0.22f, baseW * 0.24f, seed + 101 + i * 19, 4 + Mathf.Max(1, sub - 1), 5 + sub, noiseAmp * 0.35f, 0.08f);
                 Quaternion tilt = Quaternion.Euler(
                     Mathf.Lerp(-26f, 26f, ((seed + i * 61) * 0.17f) % 1f),
@@ -894,9 +896,9 @@ namespace Hecton8.World
             {
                 float angle = seed * 0.23f + i * (Mathf.PI * 2f / lobeCount);
                 Vector3 pos = new Vector3(
-                    Mathf.Cos(angle) * w * 0.22f,
+                    FastCos(angle) * w * 0.22f,
                     h * Mathf.Lerp(0.26f, 0.42f, ((seed + i * 13) * 0.17f) % 1f),
-                    Mathf.Sin(angle) * d * 0.22f);
+                    FastSin(angle) * d * 0.22f);
 
                 AppendDeformedEllipsoid(verts, tris, pos,
                     w * 0.44f, h * 0.38f, d * 0.4f,
@@ -963,15 +965,15 @@ namespace Hecton8.World
             {
                 float v = y / (float)ringCount;
                 float latitude = Mathf.Lerp(-Mathf.PI * 0.5f, Mathf.PI * 0.5f, v);
-                float sinLat = Mathf.Sin(latitude);
-                float cosLat = Mathf.Cos(latitude);
+                float sinLat = FastSin(latitude);
+                float cosLat = FastCos(latitude);
 
                 for (int x = 0; x <= segmentCount; x++)
                 {
                     float u = x / (float)segmentCount;
                     float longitude = u * Mathf.PI * 2f;
-                    float sinLon = Mathf.Sin(longitude);
-                    float cosLon = Mathf.Cos(longitude);
+                    float sinLon = FastSin(longitude);
+                    float cosLon = FastCos(longitude);
 
                     Vector3 normal = new Vector3(cosLat * cosLon, sinLat, cosLat * sinLon);
                     Vector3 pos = new Vector3(
@@ -1143,13 +1145,25 @@ namespace Hecton8.World
         /// </summary>
         private static float Noise3D(Vector3 p)
         {
-            float x = Mathf.Sin(p.x * 127.1f + p.y * 311.7f + p.z * 74.7f) * 43758.5453f;
-            float y = Mathf.Sin(p.x * 269.5f + p.y * 183.3f + p.z * 246.1f) * 43758.5453f;
-            float z = Mathf.Sin(p.x * 419.2f + p.y * 371.9f + p.z * 168.3f) * 43758.5453f;
+            float x = FastSin(p.x * 127.1f + p.y * 311.7f + p.z * 74.7f) * 43758.5453f;
+            float y = FastSin(p.x * 269.5f + p.y * 183.3f + p.z * 246.1f) * 43758.5453f;
+            float z = FastSin(p.x * 419.2f + p.y * 371.9f + p.z * 168.3f) * 43758.5453f;
             x -= Mathf.Floor(x);
             y -= Mathf.Floor(y);
             z -= Mathf.Floor(z);
             return (x + y + z) / 3f * 2f - 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastSin(float radians)
+        {
+            return MathLodApproximation.ApproxSinBhaskara(radians);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastCos(float radians)
+        {
+            return MathLodApproximation.ApproxCosBhaskara(radians);
         }
     }
 }

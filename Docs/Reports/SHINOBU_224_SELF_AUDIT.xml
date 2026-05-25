@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_224" domain="ACTIVE_EQUIPMENT_PROCESSOR" taskCount="20" evidence="STATIC_SOURCE" generatedDate="2026-05-21">
+﻿<SELF_AUDIT agent="SHINOBU_224" domain="ACTIVE_EQUIPMENT_PROCESSOR" taskCount="20" evidence="STATIC_SOURCE" generatedDate="2026-05-21">
   <nonClaims>
     <nonClaim>Unity import, Unity Console, Play Mode, profiler, GCMonitor, Burst Inspector, Quest runtime, RTX runtime, and player-build proof are not claimed in this artifact.</nonClaim>
     <nonClaim>Build/rebuild was not launched for this audit because the active user gate forbids rebuild when CPU is above 50 percent or another compiler is active.</nonClaim>

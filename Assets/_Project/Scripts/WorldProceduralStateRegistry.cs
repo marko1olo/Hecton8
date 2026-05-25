@@ -8,7 +8,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5900)]
-    public sealed class WorldProceduralStateRegistry : MonoBehaviour, ISaveable
+    public sealed class WorldProceduralStateRegistry : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
     {
         private const float FaunaStateCleanupInterval = 5f;
         private const float DiagnosticsRefreshInterval = 1f;
@@ -40,6 +40,9 @@ namespace Hecton8.World
         private float _nextFaunaStateCleanupPlayTime;
         private float _nextDiagnosticsRefreshPlayTime;
         private bool _diagnosticsDirty;
+        private bool _hotSwapRegistered;
+        private bool _saveRegistered;
+        private ISaveService _saveService;
 
         internal static WorldProceduralStateRegistry ActiveRuntimeInstance { get; private set; }
 
@@ -60,18 +63,39 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            GlobalRegistry.Save?.Register(this);
+            TryRegisterHotSwapListener();
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
-            GlobalRegistry.Save?.Unregister(this);
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            TryUnregisterSaveParticipant();
+            _saveService = currentService as ISaveService;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
         }
 
         public bool IsPlacementSuppressed(long runtimeKey)
@@ -200,8 +224,10 @@ namespace Hecton8.World
             int suppressedIndex = 0;
             if (_suppressedPlacementKeys != null)
             {
-                foreach (long runtimeKey in _suppressedPlacementKeys)
+                HashSet<long>.Enumerator placementKeyEnumerator = _suppressedPlacementKeys.GetEnumerator();
+                while (placementKeyEnumerator.MoveNext())
                 {
+                    long runtimeKey = placementKeyEnumerator.Current;
                     if (suppressedIndex >= ProceduralWorldStateDTO.MaxSuppressedPlacements)
                     {
                         Debug.LogWarning($"[WorldProceduralStateRegistry] Max suppressed placements ({ProceduralWorldStateDTO.MaxSuppressedPlacements}) reached. Extra entries were not saved.");
@@ -345,9 +371,53 @@ namespace Hecton8.World
 
         private float GetCurrentPlayTimeSeconds()
         {
-            return GlobalRegistry.Save != null
-                ? GlobalRegistry.Save.CurrentPlayTimeSeconds
+            ISaveService saveService = _saveService;
+            return saveService != null
+                ? saveService.CurrentPlayTimeSeconds
                 : Time.realtimeSinceStartup;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            _saveService = GlobalRegistry.Save;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
         }
 
         private void UpdateDiagnostics()

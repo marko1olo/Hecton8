@@ -1,0 +1,38 @@
+﻿{
+  "scanner": "OOP_Spawn_Query_Scanner",
+  "agent": "SHINOBU_310",
+  "domain": "SPAWNING_ZONE_SDF_VALIDATOR",
+  "status": "OOP Proximity Queries Eradicated - STATIC SCAN",
+  "tokens": ["Physics.CheckSphere", "Physics.OverlapCapsule", "NavMesh.SamplePosition"],
+  "runtimeScan": {
+    "command": "rg -n --glob '!**/Editor/**' \"Physics\\.CheckSphere\\b|Physics\\.OverlapCapsule\\b|NavMesh\\.SamplePosition\\b\" Assets/_Project/Scripts/AI Assets/_Project/Scripts/World Assets/_Project/Scripts/Fauna",
+    "findings": 0,
+    "status": "PASS"
+  },
+  "newHotPath": "Assets/_Project/Scripts/World/SpawnZoneSdfValidation.cs",
+  "integration": "ResourceDistributionDirector partial -> GlobalDataVault VoxelSdfPayloadDescriptor/VoxelSdfTexture3D -> SpawnValidationRequestDTO",
+  "dtoLayout": "SpawnValidationRequestDTO=32 bytes: TargetAUP@0 RequiredClearanceRadius@24 ValidationResultFlags@28",
+  "qualityCurve": "math.smoothstep(0.4,1.0,GlobalQualityWeight) gates 1-tap nearest toward 8-tap trilinear without hardware-tier switches",
+  "vaultBuffers": [
+    "ShinobuSpawnSdfValidationRequests",
+    "ShinobuSpawnSdfValidationRingState",
+    "ShinobuSpawnSdfValidationTelemetryRing",
+    "ShinobuSpawnSdfValidationTelemetryCursor",
+    "ShinobuSpawnSdfValidationTuning",
+    "ShinobuSpawnSdfMockSdf",
+    "ShinobuSpawnSdfMockHeader",
+    "ShinobuSpawnClearanceProfiles",
+    "ShinobuSpawnClearanceCsvScratch"
+  ],
+  "vaultBufferIds": [72600, 72601, 72602, 72603, 72604, 72605, 72606, 72607, 72608],
+  "bufferIdCollisionAudit": "PASS: SHINOBU_310 moved off 71960..71968 because SHINOBU_302 owns cognition lanes there",
+  "blackBoxTelemetryFrames": 300,
+  "failClosedNoVaultInPlayMode": true,
+  "faultDumpTrigger": "NaNDetected or BoundsInvalid validation telemetry writes Docs/AgentLogs/Dump_SHINOBU_310.bin",
+  "clearanceProfiles": "entity_clearance_profiles.csv -> ShinobuSpawnClearanceCsvScratch -> ReadOnlySpan<byte> parser -> ShinobuSpawnClearanceProfiles",
+  "editorDiagnosticVaultRoute": "GlobalDataVault.TryGetLatestCreated, not GlobalRegistry.DataVault polling",
+  "scannerUsesRoslynAst": false,
+  "scannerParserRoute": "editor-only source token scanner; Roslyn asmdef mutation rejected to avoid compile-wall churn",
+  "timingTruth": "QueryMicroseconds exact value must be supplied by the scheduling owner; single sync bridge records -1 sentinel.",
+  "compileProof": "BUILD_NOT_RUN_CPU_100_ACTIVE_UNITY_DOTNET_PIDS_1548_15892"
+}

@@ -117,7 +117,7 @@ namespace Hecton8.Optimization
                     capsule.name = "BIOS_Profile_Capsule";
                     capsule.hideFlags = HideFlags.HideAndDontSave;
                     capsule.transform.position = new Vector3(localX, localY, localZ);
-                    MeshRenderer renderer = capsule.GetComponent<MeshRenderer>();
+                    capsule.TryGetComponent(out MeshRenderer renderer);
                     if (renderer != null)
                         renderer.enabled = false;
 

@@ -237,10 +237,8 @@ namespace Hecton8.Construction.Editor
             if (!Directory.Exists(directory))
                 return;
 
-            string[] sourceFiles = Directory.GetFiles(directory, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < sourceFiles.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
             {
-                string file = sourceFiles[i];
                 string normalizedPath = file.Replace('\\', '/');
                 if (normalizedPath.IndexOf("/Editor/", StringComparison.Ordinal) >= 0)
                     continue;

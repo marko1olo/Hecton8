@@ -1,4 +1,4 @@
-# Mod API Change Control Checklist
+﻿# Mod API Change Control Checklist
 
 Date: 2026-05-19
 Status: ENVELOPE-ONLY STATIC_CHANGE_GATE / RUNTIME_PENDING

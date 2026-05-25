@@ -1,6 +1,6 @@
-# Archive Index
+﻿# Archive Index
 
-Date: 2026-05-21
+Date: 2026-05-24
 Status: HISTORICAL SNAPSHOTS
 Owner: SHINOBU_ARCHIVARIUS_SURGEON
 Evidence class: STATIC_DOC
@@ -15,3 +15,12 @@ Archive rules:
 - each bundle should contain `README.md`
 - large bundles should contain `MANIFEST.md`
 - archived paths may contain stale constants and stale readiness labels
+
+Current bundles:
+
+- `Reports_X_012_2026-05-23/` - 160 historical top-level markdown reports moved out of active `Docs/Reports`; active report index remains `Docs/Reports/README.md`.
+- `Architecture_X_012_APEX_2026-05-23/` - full pre-compression binary-payload and documentation-actuality ledger snapshots; active replacements are `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` and `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- `Architecture_X_012_APEX_2026-05-24/` - pre-strict snapshots for 39 architecture files whose long prose paragraphs were converted to bullet/list structure; active replacements remain under `Docs/ARCHITECTURE/`.
+- `Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/` - pre-line-split snapshots for architecture files whose long list items were split; active replacements remain under `Docs/ARCHITECTURE/`.
+- `Architecture_X_012_APEX_2026-05-24_FILE_CAP/` - full snapshots for six active architecture files compressed under the 2500-word file cap; active replacements remain under `Docs/ARCHITECTURE/`.
+- `Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/` - active `.diff` provenance moved out of `Docs/ARCHITECTURE/` and pre-rewrite copies for the 55-word/35-word residual prose pass.

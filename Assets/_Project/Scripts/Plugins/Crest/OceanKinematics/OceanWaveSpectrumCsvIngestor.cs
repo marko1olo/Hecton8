@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Mathematics;
 
+#if UNITY_EDITOR
 namespace Hecton8.Physics
 {
     /// <summary>
@@ -248,3 +249,4 @@ namespace Hecton8.Physics
         }
     }
 }
+#endif

@@ -7,6 +7,11 @@ using UnityEngine.AddressableAssets;
 
 namespace Hecton8.Core.Content
 {
+    internal static class ContentAssetBinaryLayout
+    {
+        public const int RecordStrideBytes = 32;
+    }
+
     public enum ContentAssetKind : byte
     {
         Unknown = 0,
@@ -28,7 +33,7 @@ namespace Hecton8.Core.Content
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ContentAssetBinaryLayout.RecordStrideBytes)]
     public struct ContentAssetBinaryRecord
     {
         [FieldOffset(0)] public long EstimatedVramBytes;

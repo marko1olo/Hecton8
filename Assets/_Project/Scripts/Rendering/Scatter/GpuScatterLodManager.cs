@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -126,10 +125,10 @@ namespace Hecton8.Rendering.Scatter
     [AddComponentMenu("Hecton8/Rendering/GPU Scatter LOD Manager")]
     public sealed unsafe class GpuScatterLodManager : MonoBehaviour,
         IUpdatable,
+        ILateFrameTickable,
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener,
-        IGlobalRegistryHotSwapRefListener,
-        IScalabilityChangedEventListener
+        IGlobalRegistryHotSwapRefListener
     {
         private const int DefaultInstanceCapacity = 100000;
         private const int DoubleBufferCount = 2;
@@ -306,11 +305,16 @@ namespace Hecton8.Rendering.Scatter
         private GraphicsBuffer _visibleIndexBuffer;
         private GraphicsBuffer _visibleMatrixBuffer;
         private GraphicsBuffer _motionVectorBuffer;
-        private GraphicsBuffer _floraAgeBuffer;
-        private GraphicsBuffer _floraPhaseSeedBuffer;
-        private GraphicsBuffer _floraVisualPayloadBuffer;
+        private GraphicsBuffer[] _floraAgeBuffers;
+        private GraphicsBuffer[] _floraPhaseSeedBuffers;
+        private GraphicsBuffer[] _floraVisualPayloadBuffers;
+        private GraphicsBuffer _activeFloraAgeBuffer;
+        private GraphicsBuffer _activeFloraPhaseSeedBuffer;
+        private GraphicsBuffer _activeFloraVisualPayloadBuffer;
         private GraphicsBuffer _argsBuffer;
-        private GraphicsBuffer _frameConstantsBuffer;
+        private GraphicsBuffer _frameConstantsBufferA;
+        private GraphicsBuffer _frameConstantsBufferB;
+        private GraphicsBuffer _activeFrameConstantsBuffer;
         private MaterialPropertyBlock _materialProperties;
         private Plane[] _cameraPlanes;
         private Vector4[] _frustumPlaneUpload;
@@ -345,6 +349,7 @@ namespace Hecton8.Rendering.Scatter
         private uint _lastVisualPayloadGeneration;
         private int _activeInstanceCount;
         private int _gpuBufferIndex;
+        private int _frameConstantsUploadIndex;
         private int _scatterCullKernel = -1;
         private int _dispatchThreadGroupSizeX = FallbackThreadGroupSize;
         private int _blackBoxCursor;
@@ -352,8 +357,8 @@ namespace Hecton8.Rendering.Scatter
         private int _lastVisibleFloraCount;
         private int _nextMissingRegistryRefreshFrame;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
-        private bool _scalabilityEventsRegistered;
         private bool _originShiftListenerRegistered;
         private bool _gpuReady;
         private bool _forceUpload;
@@ -368,16 +373,18 @@ namespace Hecton8.Rendering.Scatter
         private bool _blackBoxDumped;
         private bool _pendingHighTier;
         private bool _cachedHighTier;
-        private bool _tierCacheInitialized;
+        private bool _qualityCacheInitialized;
         private bool _visibleStateDirty;
         private bool _auxiliaryShaderLanesInitialized;
+        private bool _pendingVisualTickDirty;
+        private float _pendingVisualTickDeltaTime;
         private bool _visualPayloadDefaultsInitialized;
         private bool _abiLayoutValid;
         private bool _materialVariantCacheInitialized;
         private bool _cachedMaterialVariantHighTier;
         private bool _cachedMaterialVariantValid;
-        private HectonQualityTier _pendingQualityTier;
-        private HectonQualityTier _cachedQualityTier;
+        private float _pendingQualityWeight01 = 1f;
+        private float _cachedQualityWeight01 = 1f;
         private AsyncGPUReadbackRequest _visibleCountReadbackRequest;
         private bool _visibleCountReadbackPending;
         private Mesh _boundMesh;
@@ -468,6 +475,9 @@ namespace Hecton8.Rendering.Scatter
         {
             _matrixBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] - double-buffered matrix upload handles - owner: GpuScatterLodManager
             _metadataBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] - double-buffered flora metadata upload handles - owner: GpuScatterLodManager
+            _floraAgeBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] - double-buffered flora age upload handles - owner: GpuScatterLodManager
+            _floraPhaseSeedBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] - double-buffered flora phase upload handles - owner: GpuScatterLodManager
+            _floraVisualPayloadBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] - double-buffered flora visual payload handles - owner: GpuScatterLodManager
             _cameraPlanes = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - camera frustum cache - owner: GpuScatterLodManager
             _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - compute frustum upload cache - owner: GpuScatterLodManager
             _materialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-draw indirect flora shader state - owner: GpuScatterLodManager
@@ -493,17 +503,18 @@ namespace Hecton8.Rendering.Scatter
 
             RefreshAupOffsetCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityEvents();
+            RefreshContinuousQualityPolicy(forceCommit: true);
             TryRegisterOriginShiftListener();
             TryRegisterTick();
+            TryRegisterLateFrame();
             _forceUpload = true;
         }
 
         private void OnDisable()
         {
             TryUnregisterTick();
+            TryUnregisterLateFrame();
             TryUnregisterOriginShiftListener();
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             ReleaseOwnedVaultHandles(_dataVault);
             ReleaseGpuBuffers();
@@ -524,11 +535,30 @@ namespace Hecton8.Rendering.Scatter
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            _pendingVisualTickDeltaTime += math.max(0f, deltaTime);
+            _pendingVisualTickDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingVisualTickDirty)
+                return;
+
+            float deltaTime = _pendingVisualTickDeltaTime;
+            _pendingVisualTickDeltaTime = 0f;
+            _pendingVisualTickDirty = false;
+            RunScatterVisualTick(deltaTime);
+        }
+
+        private void RunScatterVisualTick(float deltaTime)
+        {
             if (!TryEnsureGpuState())
                 return;
 
             ConsumeCameraFrustumSignals();
             ConsumeSystemHealthSignals();
+            RefreshContinuousQualityPolicy(forceCommit: false);
             UpdateCullDistance(deltaTime);
             if (!TryBuildFrustumPlanes())
             {
@@ -614,13 +644,6 @@ namespace Hecton8.Rendering.Scatter
             ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
-        /// <inheritdoc />
-        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _pendingQualityTier = payload.CurrentQualityTier;
-            _pendingHighTier = IsHighTier(payload.CurrentQualityTier);
-        }
-
         private void TryRegisterTick()
         {
             if (_registered)
@@ -638,6 +661,23 @@ namespace Hecton8.Rendering.Scatter
             _registered = false;
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (!_hotSwapRegistered)
@@ -653,34 +693,6 @@ namespace Hecton8.Rendering.Scatter
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
-        }
-
-        private void TryRegisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-            {
-                ScalabilityEvents.Register(this);
-                _scalabilityEventsRegistered = true;
-            }
-
-            if (!_tierCacheInitialized)
-            {
-                HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-                _cachedQualityTier = tier;
-                _pendingQualityTier = tier;
-                _cachedHighTier = IsHighTier(tier);
-                _pendingHighTier = _cachedHighTier;
-                _tierCacheInitialized = true;
-            }
-        }
-
-        private void TryUnregisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityEventsRegistered = false;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -789,9 +801,15 @@ namespace Hecton8.Rendering.Scatter
                    _visibleIndexBuffer != null &&
                    _visibleMatrixBuffer != null &&
                    _motionVectorBuffer != null &&
-                   _floraAgeBuffer != null &&
-                   _floraPhaseSeedBuffer != null &&
-                   _floraVisualPayloadBuffer != null &&
+                   _floraAgeBuffers != null &&
+                   _floraAgeBuffers[0] != null &&
+                   _floraAgeBuffers[1] != null &&
+                   _floraPhaseSeedBuffers != null &&
+                   _floraPhaseSeedBuffers[0] != null &&
+                   _floraPhaseSeedBuffers[1] != null &&
+                   _floraVisualPayloadBuffers != null &&
+                   _floraVisualPayloadBuffers[0] != null &&
+                   _floraVisualPayloadBuffers[1] != null &&
                    _argsBuffer != null &&
                    _scatterCullKernel >= 0;
         }
@@ -834,7 +852,7 @@ namespace Hecton8.Rendering.Scatter
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.Vfx,
@@ -946,13 +964,37 @@ namespace Hecton8.Rendering.Scatter
 
         private void EnsureGpuBuffers()
         {
+            if (_matrixBuffers == null)
+                _matrixBuffers = new GraphicsBuffer[DoubleBufferCount];
+            if (_metadataBuffers == null)
+                _metadataBuffers = new GraphicsBuffer[DoubleBufferCount];
+            if (_floraAgeBuffers == null)
+                _floraAgeBuffers = new GraphicsBuffer[DoubleBufferCount];
+            if (_floraPhaseSeedBuffers == null)
+                _floraPhaseSeedBuffers = new GraphicsBuffer[DoubleBufferCount];
+            if (_floraVisualPayloadBuffers == null)
+                _floraVisualPayloadBuffers = new GraphicsBuffer[DoubleBufferCount];
+
             for (int i = 0; i < DoubleBufferCount; i++)
             {
                 if (_matrixBuffers[i] == null || _matrixBuffers[i].count < instanceCapacity)
                     RecreateStructuredLockBuffer(ref _matrixBuffers[i], instanceCapacity, Matrix4x4StrideBytes);
                 if (_metadataBuffers[i] == null || _metadataBuffers[i].count < instanceCapacity)
                     RecreateStructuredLockBuffer(ref _metadataBuffers[i], instanceCapacity, GpuScatterFloraInstanceData.Stride);
+                if (_floraAgeBuffers[i] == null || _floraAgeBuffers[i].count < instanceCapacity)
+                    RecreateStructuredLockBuffer(ref _floraAgeBuffers[i], instanceCapacity, sizeof(float));
+                if (_floraPhaseSeedBuffers[i] == null || _floraPhaseSeedBuffers[i].count < instanceCapacity)
+                    RecreateStructuredLockBuffer(ref _floraPhaseSeedBuffers[i], instanceCapacity, sizeof(float));
+                if (_floraVisualPayloadBuffers[i] == null || _floraVisualPayloadBuffers[i].count < instanceCapacity)
+                    RecreateStructuredLockBuffer(ref _floraVisualPayloadBuffers[i], instanceCapacity, UnsafeSizeOfVector4());
             }
+
+            if (_activeFloraAgeBuffer == null || !_activeFloraAgeBuffer.IsValid())
+                _activeFloraAgeBuffer = _floraAgeBuffers[0];
+            if (_activeFloraPhaseSeedBuffer == null || !_activeFloraPhaseSeedBuffer.IsValid())
+                _activeFloraPhaseSeedBuffer = _floraPhaseSeedBuffers[0];
+            if (_activeFloraVisualPayloadBuffer == null || !_activeFloraVisualPayloadBuffer.IsValid())
+                _activeFloraVisualPayloadBuffer = _floraVisualPayloadBuffers[0];
 
             if (_visibleIndexBuffer == null || _visibleIndexBuffer.count < instanceCapacity)
                 RecreateAppendBuffer(ref _visibleIndexBuffer, instanceCapacity, sizeof(uint));
@@ -960,12 +1002,6 @@ namespace Hecton8.Rendering.Scatter
                 RecreateAppendBuffer(ref _visibleMatrixBuffer, instanceCapacity, Matrix4x4StrideBytes);
             if (_motionVectorBuffer == null || _motionVectorBuffer.count < instanceCapacity)
                 RecreateStructuredBuffer(ref _motionVectorBuffer, instanceCapacity, UnsafeSizeOfVector4());
-            if (_floraAgeBuffer == null || _floraAgeBuffer.count < instanceCapacity)
-                RecreateStructuredLockBuffer(ref _floraAgeBuffer, instanceCapacity, sizeof(float));
-            if (_floraPhaseSeedBuffer == null || _floraPhaseSeedBuffer.count < instanceCapacity)
-                RecreateStructuredLockBuffer(ref _floraPhaseSeedBuffer, instanceCapacity, sizeof(float));
-            if (_floraVisualPayloadBuffer == null || _floraVisualPayloadBuffer.count < instanceCapacity)
-                RecreateStructuredLockBuffer(ref _floraVisualPayloadBuffer, instanceCapacity, UnsafeSizeOfVector4());
             if (_argsBuffer == null)
             {
                 _argsBuffer = new GraphicsBuffer(
@@ -976,13 +1012,22 @@ namespace Hecton8.Rendering.Scatter
             }
 
             if (SystemInfo.supportsSetConstantBuffer &&
-                (_frameConstantsBuffer == null || !_frameConstantsBuffer.IsValid()))
+                (_frameConstantsBufferA == null || !_frameConstantsBufferA.IsValid() ||
+                 _frameConstantsBufferB == null || !_frameConstantsBufferB.IsValid()))
             {
-                _frameConstantsBuffer = new GraphicsBuffer(
+                ReleaseBuffer(ref _frameConstantsBufferA);
+                ReleaseBuffer(ref _frameConstantsBufferB);
+                _frameConstantsBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
-                    ScatterFrameConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - packed scatter compute constants - owner: GpuScatterLodManager
+                    ScatterFrameConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - packed scatter compute constants A - owner: GpuScatterLodManager
+                _frameConstantsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    ScatterFrameConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - packed scatter compute constants B - owner: GpuScatterLodManager
+                _activeFrameConstantsBuffer = _frameConstantsBufferA;
             }
         }
 
@@ -1031,11 +1076,31 @@ namespace Hecton8.Rendering.Scatter
             ReleaseBuffer(ref _visibleIndexBuffer);
             ReleaseBuffer(ref _visibleMatrixBuffer);
             ReleaseBuffer(ref _motionVectorBuffer);
-            ReleaseBuffer(ref _floraAgeBuffer);
-            ReleaseBuffer(ref _floraPhaseSeedBuffer);
-            ReleaseBuffer(ref _floraVisualPayloadBuffer);
+            if (_floraAgeBuffers != null)
+            {
+                for (int i = 0; i < _floraAgeBuffers.Length; i++)
+                    ReleaseBuffer(ref _floraAgeBuffers[i]);
+            }
+
+            if (_floraPhaseSeedBuffers != null)
+            {
+                for (int i = 0; i < _floraPhaseSeedBuffers.Length; i++)
+                    ReleaseBuffer(ref _floraPhaseSeedBuffers[i]);
+            }
+
+            if (_floraVisualPayloadBuffers != null)
+            {
+                for (int i = 0; i < _floraVisualPayloadBuffers.Length; i++)
+                    ReleaseBuffer(ref _floraVisualPayloadBuffers[i]);
+            }
+
+            _activeFloraAgeBuffer = null;
+            _activeFloraPhaseSeedBuffer = null;
+            _activeFloraVisualPayloadBuffer = null;
             ReleaseBuffer(ref _argsBuffer);
-            ReleaseBuffer(ref _frameConstantsBuffer);
+            ReleaseBuffer(ref _frameConstantsBufferA);
+            ReleaseBuffer(ref _frameConstantsBufferB);
+            _activeFrameConstantsBuffer = null;
             InvalidateIndirectArgsCache();
             _dispatchThreadGroupSizeX = FallbackThreadGroupSize;
             _visibleCountReadbackPending = false;
@@ -1167,9 +1232,12 @@ namespace Hecton8.Rendering.Scatter
             int writeIndex = 1 - _gpuBufferIndex;
             GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffers[writeIndex], matrices, activeCount);
             GraphicsBufferUploadUtility.UploadNativeArray(_metadataBuffers[writeIndex], metadata, activeCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_floraAgeBuffer, ages01, activeCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_floraPhaseSeedBuffer, phaseSeeds, activeCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_floraVisualPayloadBuffer, visualPayload, activeCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_floraAgeBuffers[writeIndex], ages01, activeCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_floraPhaseSeedBuffers[writeIndex], phaseSeeds, activeCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_floraVisualPayloadBuffers[writeIndex], visualPayload, activeCount);
+            _activeFloraAgeBuffer = _floraAgeBuffers[writeIndex];
+            _activeFloraPhaseSeedBuffer = _floraPhaseSeedBuffers[writeIndex];
+            _activeFloraVisualPayloadBuffer = _floraVisualPayloadBuffers[writeIndex];
             _gpuBufferIndex = writeIndex;
             CaptureVaultGenerations(vault);
             _forceUpload = false;
@@ -1307,7 +1375,7 @@ namespace Hecton8.Rendering.Scatter
                     SanitizePositiveFinite(maxDistanceSq, 1f),
                     SanitizeNonNegativeFinite(swayMotionStrength),
                     _frameIndex & 0x00FFFFFF),
-                Params1 = new Vector4(_aupShiftOffset.x, _aupShiftOffset.y, _aupShiftOffset.z, _cachedHighTier ? 1f : 0f),
+                Params1 = new Vector4(_aupShiftOffset.x, _aupShiftOffset.y, _aupShiftOffset.z, _cachedQualityWeight01),
                 Params2 = new Vector4(_lastCameraSignalPosition.x, _lastCameraSignalPosition.y, _lastCameraSignalPosition.z, 0f),
                 Params3 = new Vector4(safeLocalBoundsCenter.x, safeLocalBoundsCenter.y, safeLocalBoundsCenter.z, 0f),
                 Params4 = new Vector4(safeLocalBoundsExtents.x, safeLocalBoundsExtents.y, safeLocalBoundsExtents.z, instanceCapacity),
@@ -1320,12 +1388,13 @@ namespace Hecton8.Rendering.Scatter
             };
 
             if (SystemInfo.supportsSetConstantBuffer &&
-                _frameConstantsBuffer != null &&
-                _frameConstantsBuffer.IsValid())
+                TryResolveFrameConstantsWriteBuffer(out GraphicsBuffer constantsWriteBuffer))
             {
                 _frameConstantsUpload[0] = constants;
-                GraphicsBufferUploadUtility.UploadArray(_frameConstantsBuffer, _frameConstantsUpload, 1);
-                scatterCullCompute.SetConstantBuffer(ScatterFrameConstantsBufferName, _frameConstantsBuffer, 0, ScatterFrameConstantsStrideBytes);
+                GraphicsBufferUploadUtility.UploadArray(constantsWriteBuffer, _frameConstantsUpload, 1);
+                _activeFrameConstantsBuffer = constantsWriteBuffer;
+                _frameConstantsUploadIndex ^= 1;
+                scatterCullCompute.SetConstantBuffer(ScatterFrameConstantsBufferName, _activeFrameConstantsBuffer, 0, ScatterFrameConstantsStrideBytes);
                 return;
             }
 
@@ -1340,6 +1409,20 @@ namespace Hecton8.Rendering.Scatter
             scatterCullCompute.SetVector(_ScatterFrustumPlane3Id, constants.FrustumPlane3);
             scatterCullCompute.SetVector(_ScatterFrustumPlane4Id, constants.FrustumPlane4);
             scatterCullCompute.SetVector(_ScatterFrustumPlane5Id, constants.FrustumPlane5);
+        }
+
+        private bool TryResolveFrameConstantsWriteBuffer(out GraphicsBuffer constantsWriteBuffer)
+        {
+            constantsWriteBuffer = (_frameConstantsUploadIndex & 1) == 0
+                ? _frameConstantsBufferB
+                : _frameConstantsBufferA;
+            if (constantsWriteBuffer != null && constantsWriteBuffer.IsValid())
+                return true;
+
+            constantsWriteBuffer = _frameConstantsBufferA != null && _frameConstantsBufferA.IsValid()
+                ? _frameConstantsBufferA
+                : _frameConstantsBufferB;
+            return constantsWriteBuffer != null && constantsWriteBuffer.IsValid();
         }
 
         private bool Render(int activeCount)
@@ -1363,17 +1446,17 @@ namespace Hecton8.Rendering.Scatter
             properties.Clear();
             properties.SetBuffer(_ShaderInstanceMatricesId, _matrixBuffers[_gpuBufferIndex]);
             properties.SetBuffer(_ShaderInstanceDataId, _metadataBuffers[_gpuBufferIndex]);
-            properties.SetBuffer(_ShaderFloraAges01Id, _floraAgeBuffer);
-            properties.SetBuffer(_ShaderFloraPhaseSeedsId, _floraPhaseSeedBuffer);
-            properties.SetBuffer(_ShaderFloraScatterVisualPayloadId, _floraVisualPayloadBuffer);
-            properties.SetFloat(_FloraScatterVisualPayloadEnabledId, _cachedHighTier ? 1f : 0f);
+            properties.SetBuffer(_ShaderFloraAges01Id, _activeFloraAgeBuffer);
+            properties.SetBuffer(_ShaderFloraPhaseSeedsId, _activeFloraPhaseSeedBuffer);
+            properties.SetBuffer(_ShaderFloraScatterVisualPayloadId, _activeFloraVisualPayloadBuffer);
+            properties.SetFloat(_FloraScatterVisualPayloadEnabledId, _cachedQualityWeight01);
             properties.SetBuffer(_ShaderVisibleIndicesId, _visibleIndexBuffer);
             properties.SetBuffer(_ShaderMotionVectorsId, _motionVectorBuffer);
             properties.SetVector(_GlobalFloatingOffsetId, _aupShiftOffset);
             properties.SetVector(_HectonFloatingOriginOffsetId, _aupShiftOffset);
             properties.SetFloat(_LodNearDistanceId, SanitizePositiveFinite(lowTierCullDistanceMeters, 100f));
             properties.SetFloat(_LodFarDistanceId, SanitizePositiveFinite(_effectiveCullDistanceMeters, ResolveDesiredCullDistance()));
-            properties.SetFloat(_LodTransitionRangeId, _cachedHighTier ? SanitizeNonNegativeFinite(lodCrossfadeRangeMeters) : 0f);
+            properties.SetFloat(_LodTransitionRangeId, SanitizeNonNegativeFinite(lodCrossfadeRangeMeters) * _cachedQualityWeight01);
             ApplyOptionalShaderFallbacks(properties);
             ApplyMaterialScalability(properties);
 
@@ -1435,7 +1518,7 @@ namespace Hecton8.Rendering.Scatter
             if (material == null || material.shader == null)
                 return false;
 
-            int materialId = material.GetInstanceID();
+            int materialId = material.GetEntityId().GetHashCode();
             bool highTier = _cachedHighTier;
             bool hasIndirectVariant = material.IsKeywordEnabled(GpuIndirectKeyword);
             bool hasHighVariant = material.IsKeywordEnabled(QualityHighKeyword);
@@ -1464,19 +1547,11 @@ namespace Hecton8.Rendering.Scatter
 
         private void ApplyMaterialScalability(MaterialPropertyBlock properties)
         {
-            if (_cachedHighTier)
-            {
-                properties.SetFloat(_AnisotropicSssStrengthId, SanitizeNonNegativeFinite(highTierAnisotropicSssStrength));
-                properties.SetFloat(_OrganicSssScaleId, SanitizeNonNegativeFinite(highTierOrganicSssScale));
-                properties.SetFloat(_EdgeBloomStrengthId, SanitizeNonNegativeFinite(highTierEdgeBloomStrength));
-                properties.SetFloat(_LocalCausticStrengthId, SanitizeNonNegativeFinite(highTierLocalCausticStrength));
-                return;
-            }
-
-            properties.SetFloat(_AnisotropicSssStrengthId, SanitizeNonNegativeFinite(lowTierAnisotropicSssStrength));
-            properties.SetFloat(_OrganicSssScaleId, SanitizeNonNegativeFinite(lowTierOrganicSssScale));
-            properties.SetFloat(_EdgeBloomStrengthId, SanitizeNonNegativeFinite(lowTierEdgeBloomStrength));
-            properties.SetFloat(_LocalCausticStrengthId, SanitizeNonNegativeFinite(lowTierLocalCausticStrength));
+            float quality = Smooth01(_cachedQualityWeight01);
+            properties.SetFloat(_AnisotropicSssStrengthId, math.lerp(SanitizeNonNegativeFinite(lowTierAnisotropicSssStrength), SanitizeNonNegativeFinite(highTierAnisotropicSssStrength), quality));
+            properties.SetFloat(_OrganicSssScaleId, math.lerp(SanitizeNonNegativeFinite(lowTierOrganicSssScale), SanitizeNonNegativeFinite(highTierOrganicSssScale), quality));
+            properties.SetFloat(_EdgeBloomStrengthId, math.lerp(SanitizeNonNegativeFinite(lowTierEdgeBloomStrength), SanitizeNonNegativeFinite(highTierEdgeBloomStrength), quality));
+            properties.SetFloat(_LocalCausticStrengthId, math.lerp(SanitizeNonNegativeFinite(lowTierLocalCausticStrength), SanitizeNonNegativeFinite(highTierLocalCausticStrength), quality));
         }
 
         private void UpdateVisibleCountReadback(int frameIndex)
@@ -1555,7 +1630,7 @@ namespace Hecton8.Rendering.Scatter
             float signalFarClip = SanitizePositiveFinite(_lastCameraSignalFarMeters, effectiveCullDistance);
             float farClip = math.max(nearClip + 1f, math.min(signalFarClip, effectiveCullDistance));
             float signalFovDegrees = math.isfinite(_lastCameraSignalFovDegrees) ? _lastCameraSignalFovDegrees : 70f;
-            float verticalTan = math.tan(math.radians(math.clamp(signalFovDegrees, 5f, 160f) * 0.5f));
+            float verticalTan = global::Hecton8.Core.MathLodApproximation.ApproxTanClamped(math.radians(math.clamp(signalFovDegrees, 5f, 160f) * 0.5f), 4096f);
             float nearHalfY = verticalTan * nearClip;
             float nearHalfX = nearHalfY * SanitizePositiveFinite(fallbackAspect, DefaultFallbackAspect);
 
@@ -1631,14 +1706,39 @@ namespace Hecton8.Rendering.Scatter
             _systemStress01 = Sanitize01(stress01);
         }
 
+        private void RefreshContinuousQualityPolicy(bool forceCommit)
+        {
+            float quality = ResolveGlobalQualityWeight01();
+            _pendingQualityWeight01 = quality;
+            _pendingHighTier = IsHighQuality(quality);
+
+            if (_qualityCacheInitialized && !forceCommit)
+                return;
+
+            _cachedQualityWeight01 = quality;
+            _cachedHighTier = _pendingHighTier;
+            _qualityCacheInitialized = true;
+            _cullDistanceHysteresisTimer = 0f;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float signalWeight = SignalBusRegistry.GlobalQualityWeight01;
+            if (math.isfinite(signalWeight) && signalWeight > 0f)
+                return math.saturate(signalWeight);
+
+            float brainWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(brainWeight) ? brainWeight : 1f);
+        }
+
         private void UpdateCullDistance(float deltaTime)
         {
-            if (_pendingHighTier != _cachedHighTier || _pendingQualityTier != _cachedQualityTier)
+            if (_pendingHighTier != _cachedHighTier || math.abs(_pendingQualityWeight01 - _cachedQualityWeight01) > 0.02f)
             {
                 _cullDistanceHysteresisTimer += SanitizeNonNegativeFinite(deltaTime);
                 if (_cullDistanceHysteresisTimer >= CullingHysteresisSeconds)
                 {
-                    _cachedQualityTier = _pendingQualityTier;
+                    _cachedQualityWeight01 = _pendingQualityWeight01;
                     _cachedHighTier = _pendingHighTier;
                     _cullDistanceHysteresisTimer = 0f;
                 }
@@ -1679,13 +1779,12 @@ namespace Hecton8.Rendering.Scatter
 
         private float ResolveDesiredCullDistance()
         {
-            if (_cachedHighTier)
-                return SanitizePositiveFinite(highTierCullDistanceMeters, 500f);
-
-            if (_cachedQualityTier == HectonQualityTier.Mid)
-                return SanitizePositiveFinite(midTierCullDistanceMeters, 250f);
-
-            return SanitizePositiveFinite(lowTierCullDistanceMeters, 100f);
+            float quality = Smooth01(_cachedQualityWeight01);
+            float lowCull = SanitizePositiveFinite(lowTierCullDistanceMeters, 100f);
+            float midCull = SanitizePositiveFinite(midTierCullDistanceMeters, 250f);
+            float highCull = SanitizePositiveFinite(highTierCullDistanceMeters, 500f);
+            float lowToMid = math.lerp(lowCull, midCull, math.smoothstep(0.15f, 0.65f, quality));
+            return math.lerp(lowToMid, highCull, math.smoothstep(0.55f, 1f, quality));
         }
 
         private Bounds ResolveFallbackDrawBounds()
@@ -2024,9 +2123,9 @@ namespace Hecton8.Rendering.Scatter
             return true;
         }
 
-        private static bool IsHighTier(HectonQualityTier tier)
+        private static bool IsHighQuality(float qualityWeight01)
         {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+            return math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f) >= 0.68f;
         }
 
         private static bool IsFiniteBounds(Bounds bounds)
@@ -2057,6 +2156,12 @@ namespace Hecton8.Rendering.Scatter
         private static float Sanitize01(float value)
         {
             return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(math.isfinite(value) ? value : 0f);
+            return x * x * (3f - 2f * x);
         }
 
         private static float SanitizeNonNegativeFinite(float value)

@@ -1,4 +1,4 @@
-{
+﻿{
   "agent": "SHINOBU_274",
   "domain": "Radiation Scrubber",
   "scanner": "RadiationTriggerDebtScanner",
@@ -14,7 +14,7 @@
   "finding_count": 3,
   "broad_static_finding_count": 78,
   "finding_list_policy": "deterministic alphabetical scan, editor folder ignored, comments and string literals masked, first three generic trigger/physics findings emitted",
-  "accepted_runtime_route": "RadiationHazardGrid -> DataVault RadiationStateDTO -> CalculateRadiationExposureJob -> HectonPlayerHealth/CombatDamageSignal",
+  "accepted_runtime_route": "RadiationHazardGrid -> DataVault RadiationStateDTO -> CalculateRadiationExposureJob -> HectonPlayerHealth plus RadiationStatusSignal -> CombatStatusBits.Irradiated64",
   "finding_scope_note": "Broad static scanner includes generic hazard/toxicity/reactor files; SHINOBU_274 runtime authority is the DataVault/Burst route, not these legacy generic collider users.",
   "dispatcher_route": "SystemDispatcher Simulation schedules CalculateRadiationExposureJob; PostSimulation consumes completed Vault state; VisualSync uploads shader globals.",
   "vault_buffers": "72740 states, 72741 sources, 72742 source count, 72743 telemetry, 72744 telemetry cursor, 72745 profiles, 72746 csv scratch, 72747 tuning, 72748 damage signal, 72749 grid read, 72750 grid write, 72751 grid source",

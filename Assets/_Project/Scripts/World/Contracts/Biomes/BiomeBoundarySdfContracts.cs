@@ -4,6 +4,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.Biomes.Contracts
 {
+    internal static class BiomeBoundarySdfContractLayout
+    {
+        public const int BiomeBoundarySdfSettingsStrideBytes = 64;
+        public const int BiomeBoundarySdfResultStrideBytes = 64;
+    }
+
     [Flags]
     public enum BiomeBoundarySdfFlags : byte
     {
@@ -16,7 +22,7 @@ namespace Hecton8.World.Biomes.Contracts
         OutOfBounds = 1 << 5
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = BiomeBoundarySdfContractLayout.BiomeBoundarySdfSettingsStrideBytes)]
     public struct BiomeBoundarySdfSettings
     {
         [FieldOffset(0)] public int2 Resolution;
@@ -32,7 +38,7 @@ namespace Hecton8.World.Biomes.Contracts
         [FieldOffset(56)] private ulong _pad4;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = BiomeBoundarySdfContractLayout.BiomeBoundarySdfResultStrideBytes)]
     public struct BiomeBoundarySdfResult
     {
         [FieldOffset(0)] public byte BiomeA;

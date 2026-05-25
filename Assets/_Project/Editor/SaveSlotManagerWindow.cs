@@ -15,10 +15,10 @@ namespace Hecton8.Editor
     {
         private const int MaxCachedThumbnails = 12;
 
-        private List<SaveSlotInfo> _slots = new List<SaveSlotInfo>();
-        private List<SaveSlotAuditResult> _auditResults = new List<SaveSlotAuditResult>();
-        private List<SaveSlotRepairResult> _repairResults = new List<SaveSlotRepairResult>();
-        private Dictionary<string, SaveSlotMaintenanceRecord> _maintenanceRecords = new Dictionary<string, SaveSlotMaintenanceRecord>(StringComparer.OrdinalIgnoreCase);
+        private List<SaveSlotInfo> _slots = new List<SaveSlotInfo>(16);
+        private List<SaveSlotAuditResult> _auditResults = new List<SaveSlotAuditResult>(16);
+        private List<SaveSlotRepairResult> _repairResults = new List<SaveSlotRepairResult>(16);
+        private Dictionary<string, SaveSlotMaintenanceRecord> _maintenanceRecords = new Dictionary<string, SaveSlotMaintenanceRecord>(32, StringComparer.OrdinalIgnoreCase);
         private Vector2 _scrollPos;
         private bool _autoRefresh = true;
         private float _lastRefreshTime;

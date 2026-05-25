@@ -1,4 +1,4 @@
-# Priority 250 Pitch Sheet From Raw Leads
+﻿# Priority 250 Pitch Sheet From Raw Leads
 
 Status: generated from raw public index / not outreach-ready
 Generated: 2026-05-19

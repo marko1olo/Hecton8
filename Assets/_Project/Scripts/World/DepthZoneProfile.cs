@@ -1,4 +1,6 @@
+using System;
 using Hecton.Localization;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -55,21 +57,52 @@ namespace Hecton8.World
         [Header("── Discovery ───────────────────────────")]
         [SerializeField] public string discoveryId;
 
-        [System.NonSerialized] public string cachedHudLabel;
         [System.NonSerialized] private uint _cachedZoneHash;
+        [System.NonSerialized] private uint _cachedDiscoveryHash;
 
-        public string DisplayNameOrFallback => ResolveDisplayName(LocalizationManager.ActiveRuntimeInstance);
-        public string DescriptionOrFallback => ResolveDescription(LocalizationManager.ActiveRuntimeInstance);
+        public string DisplayNameOrFallback => ResolveDisplayName(GlobalRegistry.LocalizationText);
+        public string DescriptionOrFallback => ResolveDescription(GlobalRegistry.LocalizationText);
         public uint ZoneHash => _cachedZoneHash;
+        public uint DiscoveryHash => _cachedDiscoveryHash;
 
         public string ResolveDisplayName(LocalizationManager manager)
         {
             return localizedDisplayName.ResolveOrFallback(manager, FallbackOrDefault(displayName, "UNKNOWN ZONE"));
         }
 
+        public string ResolveDisplayName(ILocalizationTextReadModel manager)
+        {
+            return localizedDisplayName.ResolveOrFallback(manager, FallbackOrDefault(displayName, "UNKNOWN ZONE"));
+        }
+
+        public ReadOnlySpan<char> ResolveDisplayNameSpan(LocalizationManager manager)
+        {
+            return localizedDisplayName.ResolveSpanOrFallback(manager, FallbackOrDefault(displayName, "UNKNOWN ZONE"));
+        }
+
+        public ReadOnlySpan<char> ResolveDisplayNameSpan(ILocalizationTextReadModel manager)
+        {
+            return localizedDisplayName.ResolveSpanOrFallback(manager, FallbackOrDefault(displayName, "UNKNOWN ZONE"));
+        }
+
         public string ResolveDescription(LocalizationManager manager)
         {
             return localizedDescription.ResolveOrFallback(manager, description);
+        }
+
+        public string ResolveDescription(ILocalizationTextReadModel manager)
+        {
+            return localizedDescription.ResolveOrFallback(manager, description);
+        }
+
+        public ReadOnlySpan<char> ResolveDescriptionSpan(LocalizationManager manager)
+        {
+            return localizedDescription.ResolveSpanOrFallback(manager, description);
+        }
+
+        public ReadOnlySpan<char> ResolveDescriptionSpan(ILocalizationTextReadModel manager)
+        {
+            return localizedDescription.ResolveSpanOrFallback(manager, description);
         }
 
         private void OnEnable()
@@ -83,15 +116,9 @@ namespace Hecton8.World
                 ? 0u
                 : unchecked((uint)LocHash.Compute(zoneId));
 
-            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
-            string resolvedDisplayName = ResolveDisplayName(manager);
-            string upperDisplayName = string.IsNullOrWhiteSpace(resolvedDisplayName)
-                ? "UNKNOWN ZONE"
-                : resolvedDisplayName.ToUpperInvariant();
-
-            cachedHudLabel = manager != null
-                ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_ENTER, upperDisplayName)
-                : "ZONE: " + upperDisplayName;
+            _cachedDiscoveryHash = string.IsNullOrWhiteSpace(discoveryId)
+                ? 0u
+                : NarrativeEvents.ComputeDiscoveryHash(discoveryId);
         }
 
         public bool ContainsDepth(float depth) => depth >= minDepth && depth < maxDepth;
@@ -116,6 +143,8 @@ namespace Hecton8.World
 
             if (maxDepth <= minDepth)
                 maxDepth = minDepth + 100f;
+
+            RebuildCache();
         }
 #endif
     }

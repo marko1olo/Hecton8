@@ -197,13 +197,35 @@ namespace Hecton8.Equipment.Auxiliary
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct AuxiliaryCsvParseResult
+    public struct AuxiliaryProfileLoadResult
     {
         [FieldOffset(0)] public int ParsedRows;
         [FieldOffset(4)] public int SkippedRows;
         [FieldOffset(8)] public uint LastProfileHash;
         [FieldOffset(12)] public uint FaultFlags;
     }
+
+#if UNITY_EDITOR
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct AuxiliaryCsvParseResult
+    {
+        [FieldOffset(0)] public int ParsedRows;
+        [FieldOffset(4)] public int SkippedRows;
+        [FieldOffset(8)] public uint LastProfileHash;
+        [FieldOffset(12)] public uint FaultFlags;
+
+        public AuxiliaryProfileLoadResult ToProfileLoadResult()
+        {
+            return new AuxiliaryProfileLoadResult
+            {
+                ParsedRows = ParsedRows,
+                SkippedRows = SkippedRows,
+                LastProfileHash = LastProfileHash,
+                FaultFlags = FaultFlags
+            };
+        }
+    }
+#endif
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AuxiliaryFlareLightSignal : ISignal

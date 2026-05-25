@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using UnityEngine;
 
@@ -10,12 +11,13 @@ namespace Hecton8.World
     /// This is a local lighting proxy, not an authoritative world-voxel streamer.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxOverlapHits = 8;
         private const int LightLevelSignalFrameStride = 6;
-        private const string NativeMemoryOwner = nameof(HectonCaveVoxelLightingVolume);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const SystemID VaultOwnerSystemId = SystemID.WorldStreaming;
+        private const BufferID OccupancyVolumeBufferId = BufferID.CaveVoxelLightingOccupancyVolume;
+        private const BufferID SdfVolumeBufferId = BufferID.CaveVoxelLightingSdfVolume;
         private const float InvByteMax = 1f / 255f;
         internal static HectonCaveVoxelLightingVolume ActiveRuntimeInstance { get; private set; }
 
@@ -92,9 +94,16 @@ namespace Hecton8.World
         [SerializeField] private float _debugPublishedSdfRange;
 
         private bool _registered;
+        private bool _registeredLateFrameTick;
+        private bool _hotSwapListenerRegistered;
         private bool _scanInProgress;
         private bool _restartQueued;
         private bool _hasValidPublishedVolume;
+        private bool _globalsDirty;
+        private bool _pendingHasVolume;
+        private bool _textureUploadDirty;
+        private bool _textureBindingDirty;
+        private bool _resourceRefreshRequested;
         private int _resolutionRuntime;
         private int _scanSliceCursor;
         private int _lastLightLevelSignalFrame = -1;
@@ -102,10 +111,12 @@ namespace Hecton8.World
         private Transform _followTargetRuntime;
         private Transform _excludedRoot;
         private Texture3D _voxelDensityTexture;
-        private NativeArray<byte> _occupancyVolume;
-        private NativeArray<byte> _sdfVolume;
-        private Collider[] _overlapHits;
+        private VaultGenerationHandle<byte> _occupancyVolumeHandle;
+        private VaultGenerationHandle<byte> _sdfVolumeHandle;
+        private IDataVault _dataVault;
+        private SpatialQueryHit[] _overlapHits;
         private Matrix4x4 _scanLocalToWorld = Matrix4x4.identity;
+        private int _voxelVolumeCapacity;
         private Vector3 _scanCenterWs;
         private Vector3 _scanHalfExtents;
         private Vector3 _scanCellSize;
@@ -130,6 +141,7 @@ namespace Hecton8.World
         {
             ActiveRuntimeInstance = this;
             ResolveFollowTarget();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -139,6 +151,7 @@ namespace Hecton8.World
                 ActiveRuntimeInstance = null;
 
             TryUnregister();
+            TryUnregisterHotSwapListener();
             PublishInactiveGlobals();
         }
 
@@ -148,6 +161,7 @@ namespace Hecton8.World
                 ActiveRuntimeInstance = null;
 
             TryUnregister();
+            TryUnregisterHotSwapListener();
             PublishInactiveGlobals();
             ReleaseResources();
         }
@@ -159,11 +173,17 @@ namespace Hecton8.World
         public void Tick(float deltaTime)
         {
             ResolveFollowTarget();
-            EnsureResources();
+            if (!HasRequiredResources())
+            {
+                _resourceRefreshRequested = true;
+                QueueGlobals(hasVolume: false);
+                PublishPlayerLightLevelSignal();
+                return;
+            }
 
             if (_followTargetRuntime == null)
             {
-                PublishInactiveGlobals();
+                QueueGlobals(hasVolume: false);
                 PublishPlayerLightLevelSignal();
                 return;
             }
@@ -197,12 +217,50 @@ namespace Hecton8.World
                 }
             }
 
-            PublishGlobals(_hasValidPublishedVolume);
+            QueueGlobals(_hasValidPublishedVolume);
             PublishPlayerLightLevelSignal();
             _debugHasValidVolume = _hasValidPublishedVolume;
             _debugSliceCursor = _scanSliceCursor;
             _debugPublishedCenterWs = _publishedCenterWs;
             _debugPublishedSdfRange = _publishedSdfRange;
+        }
+
+        /// <summary>
+        /// Uploads the generated cave SDF texture and shader globals after the scan phase has finished.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            if (_resourceRefreshRequested)
+            {
+                EnsureResources();
+                _resourceRefreshRequested = false;
+            }
+
+            if (_textureUploadDirty)
+            {
+                if (_voxelDensityTexture != null && TryAcquireSdfUploadBuffer(out NativeArray<byte> sdfVolume))
+                {
+                    try
+                    {
+                        _voxelDensityTexture.SetPixelData(sdfVolume, 0);
+                        _voxelDensityTexture.Apply(false, false);
+                        _textureBindingDirty = true;
+                    }
+                    finally
+                    {
+                        ReleaseSdfWriteBuffer();
+                    }
+                }
+
+                _textureUploadDirty = false;
+            }
+
+            if (!_globalsDirty && !_textureBindingDirty)
+                return;
+
+            FlushGlobals(_pendingHasVolume);
+            _globalsDirty = false;
+            _textureBindingDirty = false;
         }
 
         internal bool TryGetPublishedSignedDistanceVoxelPayload(
@@ -211,7 +269,7 @@ namespace Hecton8.World
             out Vector3 gridOrigin,
             out Vector3 voxelCellSize)
         {
-            signedDistanceVoxels = _sdfVolume.IsCreated ? _sdfVolume.AsReadOnly() : default;
+            TryReadSdfVolume(out signedDistanceVoxels);
             int resolution = _resolutionRuntime;
             gridDimensions = new Vector3Int(resolution, resolution, resolution);
             gridOrigin = _publishedCenterWs - _publishedHalfExtents;
@@ -253,20 +311,66 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            if (!_registered)
+            {
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            }
+
+            if (!_registeredLateFrameTick)
+            {
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            }
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault && !ReferenceEquals(previousService, currentService))
+            {
+                ReleaseResources(previousService as IDataVault);
+                _dataVault = currentService as IDataVault;
+                _resourceRefreshRequested = isActiveAndEnabled;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void ResolveFollowTarget()
@@ -279,27 +383,40 @@ namespace Hecton8.World
         {
             int clampedResolution = Mathf.Clamp(voxelResolution, 12, 24);
             int voxelCount = clampedResolution * clampedResolution * clampedResolution;
-            if (_resolutionRuntime == clampedResolution &&
-                _occupancyVolume.IsCreated &&
-                _occupancyVolume.Length == voxelCount &&
-                _sdfVolume.IsCreated &&
-                _sdfVolume.Length == voxelCount &&
-                _voxelDensityTexture != null)
+            if (HasRequiredResources(clampedResolution, voxelCount))
             {
                 return;
             }
 
-            ReleaseResources();
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+            {
+                ReleaseResources();
+                return;
+            }
+
+            ReleaseResources(vault);
 
             _resolutionRuntime = clampedResolution;
-            // COLD ALLOC: NativeArray<byte>[voxelCount] - player-centered cave occupancy staging volume - owner: HectonCaveVoxelLightingVolume
-            _occupancyVolume = new NativeArray<byte>(voxelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[voxelCount] - player-centered encoded cave signed-distance volume - owner: HectonCaveVoxelLightingVolume
-            _sdfVolume = new NativeArray<byte>(voxelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_occupancyVolume, NativeMemoryOwner, nameof(_occupancyVolume), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_sdfVolume, NativeMemoryOwner, nameof(_sdfVolume), NativeMemoryLifetime);
+            _voxelVolumeCapacity = voxelCount;
+            _occupancyVolumeHandle = vault.EnsureGenerationHandle<byte>(
+                OccupancyVolumeBufferId,
+                voxelCount,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            _sdfVolumeHandle = vault.EnsureGenerationHandle<byte>(
+                SdfVolumeBufferId,
+                voxelCount,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            if (!HasVaultVolumeCapacity(voxelCount))
+            {
+                ReleaseResources(vault);
+                return;
+            }
+
             // COLD ALLOC: Collider[8] - reusable overlap-box hit cache for cave lighting volume voxelization - owner: HectonCaveVoxelLightingVolume
-            _overlapHits = new Collider[MaxOverlapHits];
+            _overlapHits = new SpatialQueryHit[MaxOverlapHits];
             TextureFormat textureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.R8)
                 ? TextureFormat.R8
                 : TextureFormat.Alpha8;
@@ -315,31 +432,55 @@ namespace Hecton8.World
             _restartQueued = false;
             _hasValidPublishedVolume = false;
             _scanInProgress = false;
-            Shader.SetGlobalTexture(_CaveVoxelSdfTexId, _voxelDensityTexture);
+            _textureBindingDirty = true;
+            QueueGlobals(hasVolume: false);
+        }
+
+        private bool HasRequiredResources()
+        {
+            int clampedResolution = Mathf.Clamp(voxelResolution, 12, 24);
+            int voxelCount = clampedResolution * clampedResolution * clampedResolution;
+            return HasRequiredResources(clampedResolution, voxelCount);
+        }
+
+        private bool HasRequiredResources(int clampedResolution, int voxelCount)
+        {
+            return _resolutionRuntime == clampedResolution &&
+                   HasVaultVolumeCapacity(voxelCount) &&
+                   _voxelDensityTexture != null;
+        }
+
+        private bool HasVaultVolumeCapacity(int voxelCount)
+        {
+            return _voxelVolumeCapacity == voxelCount &&
+                   TryReadOccupancyVolume(out NativeArray<byte>.ReadOnly occupancyVolume) &&
+                   occupancyVolume.Length == voxelCount &&
+                   TryReadSdfVolume(out NativeArray<byte>.ReadOnly sdfVolume) &&
+                   sdfVolume.Length == voxelCount;
         }
 
         private void ReleaseResources()
         {
-            if (_occupancyVolume.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_occupancyVolume);
-                _occupancyVolume.Dispose();
-            }
+            ReleaseResources(_dataVault);
+        }
 
-            if (_sdfVolume.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_sdfVolume);
-                _sdfVolume.Dispose();
-            }
-
+        private void ReleaseResources(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _occupancyVolumeHandle);
+            ReleaseVaultHandle(vault, ref _sdfVolumeHandle);
             if (_voxelDensityTexture != null)
                 Destroy(_voxelDensityTexture);
 
             _overlapHits = null;
             _voxelDensityTexture = null;
             _resolutionRuntime = 0;
+            _voxelVolumeCapacity = 0;
             _scanSliceCursor = 0;
             _hasValidPublishedVolume = false;
+            _globalsDirty = false;
+            _pendingHasVolume = false;
+            _textureUploadDirty = false;
+            _textureBindingDirty = false;
             _scanInProgress = false;
             _restartQueued = false;
         }
@@ -398,42 +539,66 @@ namespace Hecton8.World
         private void ScanSlice(int zIndex)
         {
             int resolution = _resolutionRuntime;
+            if (!TryAcquireOccupancyWriteBuffer(out NativeArray<byte> occupancyVolume))
+                return;
+
             int sliceOffset = zIndex * resolution * resolution;
             float localZ = -_scanHalfExtents.z + (zIndex + 0.5f) * _scanCellSize.z;
 
-            for (int yIndex = 0; yIndex < resolution; yIndex++)
+            try
             {
-                float localY = -_scanHalfExtents.y + (yIndex + 0.5f) * _scanCellSize.y;
-
-                for (int xIndex = 0; xIndex < resolution; xIndex++)
+                for (int yIndex = 0; yIndex < resolution; yIndex++)
                 {
-                    float localX = -_scanHalfExtents.x + (xIndex + 0.5f) * _scanCellSize.x;
-                    int voxelIndex = sliceOffset + (yIndex * resolution) + xIndex;
-                    Vector3 localCenter = new Vector3(localX, localY, localZ);
+                    float localY = -_scanHalfExtents.y + (yIndex + 0.5f) * _scanCellSize.y;
 
-                    Vector3 worldCenter = _scanLocalToWorld.MultiplyPoint3x4(localCenter);
-                    _occupancyVolume[voxelIndex] = IsCellOccupied(worldCenter) ? byte.MaxValue : byte.MinValue;
+                    for (int xIndex = 0; xIndex < resolution; xIndex++)
+                    {
+                        float localX = -_scanHalfExtents.x + (xIndex + 0.5f) * _scanCellSize.x;
+                        int voxelIndex = sliceOffset + (yIndex * resolution) + xIndex;
+                        Vector3 localCenter = new Vector3(localX, localY, localZ);
+
+                        Vector3 worldCenter = _scanLocalToWorld.MultiplyPoint3x4(localCenter);
+                        occupancyVolume[voxelIndex] = IsCellOccupied(worldCenter) ? byte.MaxValue : byte.MinValue;
+                    }
                 }
+            }
+            finally
+            {
+                ReleaseOccupancyWriteBuffer();
             }
         }
 
         private bool IsCellOccupied(Vector3 worldCenter)
         {
-            int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(
+            const SpatialTargetKind kindMask =
+                SpatialTargetKind.Resource |
+                SpatialTargetKind.Pickup |
+                SpatialTargetKind.Scannable |
+                SpatialTargetKind.Module;
+
+            float queryRadius = Mathf.Max(0.01f, _scanCellHalfExtents.magnitude);
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 worldCenter,
-                _scanCellHalfExtents,
-                _overlapHits,
-                Quaternion.identity,
-                occluderLayers,
-                triggerInteraction);
+                queryRadius,
+                kindMask,
+                _overlapHits);
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
-                Collider hit = _overlapHits[hitIndex];
-                if (hit == null || !hit.enabled)
+                SpatialQueryHit hit = _overlapHits[hitIndex];
+                _overlapHits[hitIndex] = default;
+                if (!LayerMatchesMask(hit.Layer, occluderLayers))
                     continue;
 
-                Transform hitRoot = hit.transform.root;
+                Vector3 delta = hit.Position - worldCenter;
+                if (Mathf.Abs(delta.x) > _scanCellHalfExtents.x ||
+                    Mathf.Abs(delta.y) > _scanCellHalfExtents.y ||
+                    Mathf.Abs(delta.z) > _scanCellHalfExtents.z)
+                {
+                    continue;
+                }
+
+                Transform hitRoot = hit.Transform != null ? hit.Transform.root : null;
                 if (_excludedRoot != null && hitRoot == _excludedRoot)
                     continue;
 
@@ -443,24 +608,48 @@ namespace Hecton8.World
             return false;
         }
 
+        private static bool LayerMatchesMask(int layer, LayerMask mask)
+        {
+            return layer >= 0 && layer < 32 && (mask.value & (1 << layer)) != 0;
+        }
+
         private void FinalizeScan()
         {
             EncodeSignedDistanceField();
-            _voxelDensityTexture.SetPixelData(_sdfVolume, 0);
-            _voxelDensityTexture.Apply(false, false);
 
             _publishedCenterWs = _scanCenterWs;
             _publishedHalfExtents = _scanHalfExtents;
             _publishedSdfRange = _scanSdfRange;
             _publishedWorldToLocal = _scanLocalToWorld.inverse;
             _hasValidPublishedVolume = true;
+            _textureUploadDirty = true;
             _restartQueued = false;
             _scanInProgress = false;
             _scanSliceCursor = 0;
-            Shader.SetGlobalTexture(_CaveVoxelSdfTexId, _voxelDensityTexture);
+            QueueGlobals(hasVolume: true);
         }
 
         private void EncodeSignedDistanceField()
+        {
+            if (!TryReadOccupancyVolume(out NativeArray<byte>.ReadOnly occupancyVolume) ||
+                !TryAcquireSdfWriteBuffer(out NativeArray<byte> sdfVolume))
+            {
+                return;
+            }
+
+            try
+            {
+                EncodeSignedDistanceField(occupancyVolume, sdfVolume);
+            }
+            finally
+            {
+                ReleaseSdfWriteBuffer();
+            }
+        }
+
+        private void EncodeSignedDistanceField(
+            NativeArray<byte>.ReadOnly occupancyVolume,
+            NativeArray<byte> sdfVolume)
         {
             int resolution = _resolutionRuntime;
             int voxelCount = resolution * resolution * resolution;
@@ -471,7 +660,7 @@ namespace Hecton8.World
             bool foundEmpty = false;
             for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
             {
-                if (_occupancyVolume[voxelIndex] > 0)
+                if (occupancyVolume[voxelIndex] > 0)
                     foundOccupied = true;
                 else
                     foundEmpty = true;
@@ -481,7 +670,7 @@ namespace Hecton8.World
             {
                 byte fill = foundOccupied ? byte.MinValue : byte.MaxValue;
                 for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
-                    _sdfVolume[voxelIndex] = fill;
+                    sdfVolume[voxelIndex] = fill;
                 return;
             }
 
@@ -494,16 +683,16 @@ namespace Hecton8.World
                     for (int xIndex = 0; xIndex < resolution; xIndex++)
                     {
                         int voxelIndex = rowOffset + xIndex;
-                        bool occupied = _occupancyVolume[voxelIndex] > 0;
-                        bool directShell = HasOppositeNeighbor(xIndex, yIndex, zIndex, occupied, 1);
+                        bool occupied = occupancyVolume[voxelIndex] > 0;
+                        bool directShell = HasOppositeNeighbor(occupancyVolume, xIndex, yIndex, zIndex, occupied, 1);
                         if (occupied)
                         {
-                            _sdfVolume[voxelIndex] = directShell ? (byte)115 : byte.MinValue;
+                            sdfVolume[voxelIndex] = directShell ? (byte)115 : byte.MinValue;
                             continue;
                         }
 
-                        bool wideShell = !directShell && HasOppositeNeighbor(xIndex, yIndex, zIndex, occupied, 2);
-                        _sdfVolume[voxelIndex] = directShell
+                        bool wideShell = !directShell && HasOppositeNeighbor(occupancyVolume, xIndex, yIndex, zIndex, occupied, 2);
+                        sdfVolume[voxelIndex] = directShell
                             ? (byte)140
                             : wideShell
                                 ? (byte)166
@@ -513,27 +702,39 @@ namespace Hecton8.World
             }
         }
 
-        private bool HasOppositeNeighbor(int x, int y, int z, bool occupied, int radius)
+        private bool HasOppositeNeighbor(
+            NativeArray<byte>.ReadOnly occupancyVolume,
+            int x,
+            int y,
+            int z,
+            bool occupied,
+            int radius)
         {
-            return IsOccupiedAt(x + radius, y, z) != occupied ||
-                   IsOccupiedAt(x - radius, y, z) != occupied ||
-                   IsOccupiedAt(x, y + radius, z) != occupied ||
-                   IsOccupiedAt(x, y - radius, z) != occupied ||
-                   IsOccupiedAt(x, y, z + radius) != occupied ||
-                   IsOccupiedAt(x, y, z - radius) != occupied;
+            return IsOccupiedAt(occupancyVolume, x + radius, y, z) != occupied ||
+                   IsOccupiedAt(occupancyVolume, x - radius, y, z) != occupied ||
+                   IsOccupiedAt(occupancyVolume, x, y + radius, z) != occupied ||
+                   IsOccupiedAt(occupancyVolume, x, y - radius, z) != occupied ||
+                   IsOccupiedAt(occupancyVolume, x, y, z + radius) != occupied ||
+                   IsOccupiedAt(occupancyVolume, x, y, z - radius) != occupied;
         }
 
-        private bool IsOccupiedAt(int x, int y, int z)
+        private bool IsOccupiedAt(NativeArray<byte>.ReadOnly occupancyVolume, int x, int y, int z)
         {
             int resolution = _resolutionRuntime;
             if (x < 0 || y < 0 || z < 0 || x >= resolution || y >= resolution || z >= resolution)
                 return false;
 
             int index = x + y * resolution + z * resolution * resolution;
-            return _occupancyVolume[index] > 0;
+            return occupancyVolume[index] > 0;
         }
 
-        private void PublishGlobals(bool hasVolume)
+        private void QueueGlobals(bool hasVolume)
+        {
+            _pendingHasVolume = hasVolume;
+            _globalsDirty = true;
+        }
+
+        private void FlushGlobals(bool hasVolume)
         {
             Shader.SetGlobalFloat(_CaveVoxelActiveId, hasVolume ? 1f : 0f);
             Shader.SetGlobalVector(
@@ -561,7 +762,8 @@ namespace Hecton8.World
                     _publishedHalfExtents.y,
                     _publishedHalfExtents.z,
                     _publishedSdfRange));
-            Shader.SetGlobalTexture(_CaveVoxelSdfTexId, _voxelDensityTexture);
+            if (_voxelDensityTexture != null)
+                Shader.SetGlobalTexture(_CaveVoxelSdfTexId, _voxelDensityTexture);
         }
 
         private void PublishPlayerLightLevelSignal()
@@ -584,13 +786,13 @@ namespace Hecton8.World
                 SampleKind = LightLevelSignalSampleKinds.CaveVoxelSdf,
                 Flags = _hasValidPublishedVolume ? LightLevelSignalFlags.ValidSample : (byte)0
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<LightLevelSignal>.TryPush(in signal);
         }
 
         private float ResolvePlayerLightLevel01()
         {
             if (!_hasValidPublishedVolume ||
-                !_sdfVolume.IsCreated ||
+                !TryReadSdfVolume(out NativeArray<byte>.ReadOnly sdfVolume) ||
                 _followTargetRuntime == null ||
                 _resolutionRuntime <= 0)
             {
@@ -618,13 +820,112 @@ namespace Hecton8.World
             int yIndex = Mathf.Clamp((int)(normalizedY * resolution), 0, resolution - 1);
             int zIndex = Mathf.Clamp((int)(normalizedZ * resolution), 0, resolution - 1);
             int voxelIndex = (zIndex * resolution * resolution) + (yIndex * resolution) + xIndex;
-            if (voxelIndex < 0 || voxelIndex >= _sdfVolume.Length)
+            if (voxelIndex < 0 || voxelIndex >= sdfVolume.Length)
                 return 1f;
 
-            float sdf01 = Mathf.Clamp01(_sdfVolume[voxelIndex] * InvByteMax);
+            float sdf01 = Mathf.Clamp01(sdfVolume[voxelIndex] * InvByteMax);
             float occlusion01 = 1f - sdf01;
             float darken01 = Mathf.Clamp01(occlusion01 * aoIntensity);
             return Mathf.Clamp01(Mathf.Max(aoFloor, 1f - darken01));
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private bool TryReadOccupancyVolume(out NativeArray<byte>.ReadOnly occupancyVolume)
+        {
+            return TryReadVaultVolume(in _occupancyVolumeHandle, OccupancyVolumeBufferId, out occupancyVolume);
+        }
+
+        private bool TryReadSdfVolume(out NativeArray<byte>.ReadOnly sdfVolume)
+        {
+            return TryReadVaultVolume(in _sdfVolumeHandle, SdfVolumeBufferId, out sdfVolume);
+        }
+
+        private bool TryReadVaultVolume(
+            in VaultGenerationHandle<byte> handle,
+            BufferID expectedBufferId,
+            out NativeArray<byte>.ReadOnly volume)
+        {
+            volume = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in handle, expectedBufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out volume) &&
+                   volume.IsCreated &&
+                   volume.Length >= _voxelVolumeCapacity;
+        }
+
+        private bool TryAcquireOccupancyWriteBuffer(out NativeArray<byte> occupancyVolume)
+        {
+            return TryAcquireVolumeWriteBuffer(in _occupancyVolumeHandle, OccupancyVolumeBufferId, out occupancyVolume);
+        }
+
+        private bool TryAcquireSdfWriteBuffer(out NativeArray<byte> sdfVolume)
+        {
+            return TryAcquireVolumeWriteBuffer(in _sdfVolumeHandle, SdfVolumeBufferId, out sdfVolume);
+        }
+
+        private bool TryAcquireSdfUploadBuffer(out NativeArray<byte> sdfVolume)
+        {
+            return TryAcquireSdfWriteBuffer(out sdfVolume);
+        }
+
+        private bool TryAcquireVolumeWriteBuffer(
+            in VaultGenerationHandle<byte> handle,
+            BufferID expectedBufferId,
+            out NativeArray<byte> volume)
+        {
+            volume = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in handle, expectedBufferId) ||
+                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out volume))
+            {
+                return false;
+            }
+
+            if (volume.IsCreated && volume.Length >= _voxelVolumeCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            volume = default;
+            return false;
+        }
+
+        private void ReleaseOccupancyWriteBuffer()
+        {
+            ReleaseVolumeWriteBuffer(in _occupancyVolumeHandle, OccupancyVolumeBufferId);
+        }
+
+        private void ReleaseSdfWriteBuffer()
+        {
+            ReleaseVolumeWriteBuffer(in _sdfVolumeHandle, SdfVolumeBufferId);
+        }
+
+        private void ReleaseVolumeWriteBuffer(in VaultGenerationHandle<byte> handle, BufferID expectedBufferId)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
+                vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+        }
+
+        private static void ReleaseVaultHandle(IDataVault vault, ref VaultGenerationHandle<byte> handle)
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
         }
 
         private static void PublishInactiveGlobals()

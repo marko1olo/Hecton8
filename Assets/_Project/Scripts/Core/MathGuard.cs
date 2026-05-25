@@ -27,8 +27,7 @@ namespace Hecton8.Core
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<int> _invalidNumberCodesHandle;
         private static VaultGenerationHandle<InvalidNumberCounter64> _invalidNumberCounterHandle;
-        private static NativeArray<int> _invalidNumberCodes;
-        private static NativeArray<InvalidNumberCounter64> _invalidNumberCounters;
+        private static bool _dataVaultColdCacheAttempted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -39,10 +38,16 @@ namespace Hecton8.Core
         /// <summary>Resolves the vault-owned invalid-number ring before Burst jobs can request a writer.</summary>
         public static void Initialize()
         {
-            if (!EnsureInvalidNumberBuffers(allowAllocate: true))
+            CacheDataVaultCold();
+            if (!TryResolveInvalidNumberBuffers(
+                    allowAllocate: true,
+                    out _,
+                    out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
+            {
                 return;
+            }
 
-            ref InvalidNumberCounter64 counter = ref ResolveCounterRef();
+            ref InvalidNumberCounter64 counter = ref ResolveCounterRef(invalidNumberCounters);
             ResetInvalidNumberCounters(ref counter);
         }
 
@@ -58,18 +63,20 @@ namespace Hecton8.Core
                     vault.ReleaseBuffer(in _invalidNumberCounterHandle);
             }
 
-            _invalidNumberCodes = default;
-            _invalidNumberCounters = default;
             _invalidNumberCodesHandle = default;
             _invalidNumberCounterHandle = default;
             _dataVault = null;
+            _dataVaultColdCacheAttempted = false;
         }
 
         /// <summary>Returns a Burst-safe writer for invalid-number error codes.</summary>
         public static InvalidNumberWriter AsParallelWriter()
         {
-            return EnsureInvalidNumberBuffers(allowAllocate: false)
-                ? new InvalidNumberWriter(_invalidNumberCodes, _invalidNumberCounters)
+            return TryResolveInvalidNumberBuffers(
+                    allowAllocate: false,
+                    out NativeArray<int> invalidNumberCodes,
+                    out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
+                ? new InvalidNumberWriter(invalidNumberCodes, invalidNumberCounters)
                 : default;
         }
 
@@ -119,10 +126,16 @@ namespace Hecton8.Core
         /// <param name="maxDrainCount">Maximum codes to consume this frame.</param>
         public static int DrainInvalidNumberErrors(int maxDrainCount = MaxMainThreadDrainPerLateFrame)
         {
-            if (!EnsureInvalidNumberBuffers(allowAllocate: false) || maxDrainCount <= 0)
+            if (!TryResolveInvalidNumberBuffers(
+                    allowAllocate: false,
+                    out NativeArray<int> invalidNumberCodes,
+                    out NativeArray<InvalidNumberCounter64> invalidNumberCounters) ||
+                maxDrainCount <= 0)
+            {
                 return 0;
+            }
 
-            ref InvalidNumberCounter64 counter = ref ResolveCounterRef();
+            ref InvalidNumberCounter64 counter = ref ResolveCounterRef(invalidNumberCounters);
             int writeCursor = Volatile.Read(ref counter.WriteCursor);
             int readCursor = counter.ReadCursor;
             int readable = math.min(writeCursor, InvalidNumberQueuePrewarmCapacity) - readCursor;
@@ -137,7 +150,7 @@ namespace Hecton8.Core
             int drainTarget = math.min(maxDrainCount, readable);
             while (drainedCount < drainTarget)
             {
-                int errorCode = _invalidNumberCodes[readCursor];
+                int errorCode = invalidNumberCodes[readCursor];
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(errorCode);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 DodReplayRecorder.RequestFullStateDump(
@@ -312,15 +325,18 @@ namespace Hecton8.Core
             return new float3(0f, 0f, value.z < 0f ? -1f : 1f);
         }
 
-        private static bool EnsureInvalidNumberBuffers(bool allowAllocate)
+        private static bool TryResolveInvalidNumberBuffers(
+            bool allowAllocate,
+            out NativeArray<int> invalidNumberCodes,
+            out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
         {
-            if (_invalidNumberCodes.IsCreated &&
-                _invalidNumberCounters.IsCreated &&
-                _invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity &&
-                _invalidNumberCounters.Length > 0)
-                return true;
+            invalidNumberCodes = default;
+            invalidNumberCounters = default;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (allowAllocate)
+                CacheDataVaultCold();
+
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -338,7 +354,7 @@ namespace Hecton8.Core
                 }
                 else
                 {
-                    _invalidNumberCodesHandle = vault.GetGenerationHandle<int>(
+                    _invalidNumberCodesHandle = vault.EnsureGenerationHandle<int>(
                         InvalidNumberCodesBufferId,
                         InvalidNumberQueuePrewarmCapacity,
                         VaultOwner,
@@ -359,7 +375,7 @@ namespace Hecton8.Core
                 }
                 else
                 {
-                    _invalidNumberCounterHandle = vault.GetGenerationHandle<InvalidNumberCounter64>(
+                    _invalidNumberCounterHandle = vault.EnsureGenerationHandle<InvalidNumberCounter64>(
                         InvalidNumberCounterBufferId,
                         1,
                         VaultOwner,
@@ -367,22 +383,22 @@ namespace Hecton8.Core
                 }
             }
 
-            bool resolved =
-                vault.TryResolveHandle(in _invalidNumberCodesHandle, out _invalidNumberCodes) &&
-                vault.TryResolveHandle(in _invalidNumberCounterHandle, out _invalidNumberCounters) &&
-                _invalidNumberCodes.IsCreated &&
-                _invalidNumberCounters.IsCreated &&
-                _invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity &&
-                _invalidNumberCounters.Length > 0;
+            return
+                vault.TryResolveHandle(in _invalidNumberCodesHandle, out invalidNumberCodes) &&
+                vault.TryResolveHandle(in _invalidNumberCounterHandle, out invalidNumberCounters) &&
+                invalidNumberCodes.IsCreated &&
+                invalidNumberCounters.IsCreated &&
+                invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity &&
+                invalidNumberCounters.Length > 0;
+        }
 
-            if (!resolved)
-            {
-                _invalidNumberCodes = default;
-                _invalidNumberCounters = default;
-                return false;
-            }
+        private static void CacheDataVaultCold()
+        {
+            if (_dataVaultColdCacheAttempted)
+                return;
 
-            return true;
+            _dataVault = GlobalRegistry.DataVault;
+            _dataVaultColdCacheAttempted = true;
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
@@ -391,9 +407,9 @@ namespace Hecton8.Core
             return handle.BufferID != 0u;
         }
 
-        private static unsafe ref InvalidNumberCounter64 ResolveCounterRef()
+        private static unsafe ref InvalidNumberCounter64 ResolveCounterRef(NativeArray<InvalidNumberCounter64> invalidNumberCounters)
         {
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(_invalidNumberCounters);
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(invalidNumberCounters);
             return ref UnsafeUtility.AsRef<InvalidNumberCounter64>(ptr);
         }
 

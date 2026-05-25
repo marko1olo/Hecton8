@@ -19,7 +19,7 @@ namespace Hecton8.Interaction
 
     [RequireComponent(typeof(InteractionHighlighter))]
     [RequireComponent(typeof(Collider))]
-    public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Physics.IPhysicsImpactMaterialProvider
+    public class PickupItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, IFaunaBaitSource, Hecton8.Physics.IPhysicsImpactMaterialProvider
     {
         private const int WorldStateRegistryCapacity = 8192;
 
@@ -29,7 +29,9 @@ namespace Hecton8.Interaction
         private static IPlayerRuntimeContext s_playerRuntimeContext;
         private static IPlayerInventoryService s_playerInventoryService;
         private static IPhysicsService s_physicsService;
-        private static ObjectPoolManager s_objectPool;
+        private static IObjectPoolService s_objectPool;
+        private static readonly StaticRegistryHotSwapListener s_hotSwapListener = new StaticRegistryHotSwapListener();
+        private static bool s_hotSwapListenerRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -40,6 +42,7 @@ namespace Hecton8.Interaction
             s_playerInventoryService = null;
             s_physicsService = null;
             s_objectPool = null;
+            s_hotSwapListenerRegistered = false;
         }
 
         private const float LooseCurrentVelocityInfluence = 0.45f;
@@ -52,6 +55,11 @@ namespace Hecton8.Interaction
         private const float LooseItemUnderwaterAngularDamping = 6.5f;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
         private const ushort DefaultQualityMilli = 1000;
+        private const int InteractTextBufferCapacity = 128;
+        private static readonly char[] UnknownInteractText =
+        {
+            'P', 'i', 'c', 'k', ' ', 'u', 'p', ' ', 'U', 'n', 'k', 'n', 'o', 'w', 'n'
+        };
 
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -74,7 +82,8 @@ namespace Hecton8.Interaction
         private bool _lootMagnetRestoreRigidbodyDetectCollisions;
         private WorldStateManager _worldStateManager;
         private HectonPlayerMovement _playerMovement;
-        private string _cachedInteractText;
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedInteractTextLength;
         private int _cachedItemHashId;
         private int _spatialHandle;
         private int _faunaSpatialHandle;
@@ -154,8 +163,6 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            _rigidbody.linearVelocity = Vector3.zero;
-            _rigidbody.angularVelocity = Vector3.zero;
             _rigidbody.isKinematic = _lootMagnetRestoreRigidbodyKinematic;
             _rigidbody.detectCollisions = _lootMagnetRestoreRigidbodyDetectCollisions;
             _lootMagnetPhysicsSuppressed = false;
@@ -213,8 +220,6 @@ namespace Hecton8.Interaction
 
             _lootMagnetRestoreRigidbodyKinematic = _rigidbody.isKinematic;
             _lootMagnetRestoreRigidbodyDetectCollisions = _rigidbody.detectCollisions;
-            _rigidbody.linearVelocity = Vector3.zero;
-            _rigidbody.angularVelocity = Vector3.zero;
             _rigidbody.detectCollisions = false;
             _rigidbody.isKinematic = true;
             _lootMagnetPhysicsSuppressed = true;
@@ -267,6 +272,7 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             RefreshColdRegistryReferences();
+            InteractableRegistry.RegisterTree(this);
             RegisterWorldStateRegistry();
 
             if (ActiveRuntimeInstance == null)
@@ -560,7 +566,7 @@ namespace Hecton8.Interaction
                 Flags = InventoryPickupSignalConstants.SignalFlagManualPickup,
                 Frame = ResolveCurrentFrameId()
             };
-            SignalBus<ItemAcquiredSignal>.Push(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
         }
 
         private static uint ResolveCurrentFrameId()
@@ -623,25 +629,36 @@ namespace Hecton8.Interaction
 
         public string GetInteractText()
         {
-            return _cachedInteractText;
+            return itemData != null ? itemData.GetInteractText() : "Pick up Unknown";
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopyWithQuantity(
+                _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength),
+                quantity,
+                destination,
+                out length);
         }
 
         private void RebuildInteractTextCache()
         {
             if (itemData == null)
             {
-                _cachedInteractText = "Pick up Unknown";
+                _cachedInteractTextLength = CopySpanToInteractBuffer(UnknownInteractText);
                 return;
             }
 
-            string baseText = itemData.GetInteractText();
-            if (quantity > 1)
-            {
-                _cachedInteractText = baseText + " x" + quantity;
-                return;
-            }
+            if (!itemData.TryWriteInteractText(Hecton8.Core.GlobalRegistry.Localization, _cachedInteractTextBuffer, out _cachedInteractTextLength))
+                _cachedInteractTextLength = CopySpanToInteractBuffer(itemData.GetInteractText().AsSpan());
+        }
 
-            _cachedInteractText = baseText;
+        private int CopySpanToInteractBuffer(System.ReadOnlySpan<char> source)
+        {
+            int length = math.min(source.Length, _cachedInteractTextBuffer.Length);
+            if (length > 0)
+                source.Slice(0, length).CopyTo(_cachedInteractTextBuffer);
+            return length;
         }
 
         private void RegisterWorldStateRegistry()
@@ -667,7 +684,7 @@ namespace Hecton8.Interaction
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
 
-            ObjectPoolManager pool = s_objectPool;
+            IObjectPoolService pool = s_objectPool;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);
@@ -854,11 +871,45 @@ namespace Hecton8.Interaction
         private void RefreshColdRegistryReferences()
         {
             _worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
-            s_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            s_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
             s_playerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
             s_physicsService = Hecton8.Core.GlobalRegistry.Physics;
-            s_objectPool = Hecton8.Core.GlobalRegistry.ObjectPool;
+            s_objectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
+            TryRegisterStaticHotSwapListener();
             RefreshCachedPlayerMovement();
+        }
+
+        private static void TryRegisterStaticHotSwapListener()
+        {
+            if (s_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            s_hotSwapListenerRegistered = Hecton8.Core.GlobalRegistry.TryRegisterHotSwapListener(s_hotSwapListener);
+        }
+
+        private sealed class StaticRegistryHotSwapListener : IGlobalRegistryHotSwapListener
+        {
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                switch (serviceSlot)
+                {
+                    case GlobalRegistryServiceSlot.Player:
+                        s_playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                        break;
+                    case GlobalRegistryServiceSlot.PlayerInventory:
+                        s_playerInventoryService = currentService as IPlayerInventoryService;
+                        break;
+                    case GlobalRegistryServiceSlot.Physics:
+                        s_physicsService = currentService as IPhysicsService;
+                        break;
+                    case GlobalRegistryServiceSlot.ObjectPool:
+                        s_objectPool = currentService as IObjectPoolService;
+                        break;
+                }
+            }
         }
 
         private void RefreshCachedPlayerMovement()

@@ -235,7 +235,7 @@ namespace Hecton8.Construction
             {
                 float3 basis = math.abs(f.x) < 0.9f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
                 float3 axis = math.normalizesafe(math.cross(f, basis), new float3(0f, 1f, 0f));
-                return quaternion.AxisAngle(axis, math.PI);
+                return new quaternion(axis.x, axis.y, axis.z, 0f);
             }
 
             float3 cross = math.cross(f, t);
@@ -696,7 +696,7 @@ namespace Hecton8.Construction
             double3 aup = new double3(x * GridSizeMeters, -40.0d, z * GridSizeMeters);
             double3 runtimeDouble = aup - RuntimeOriginAup;
             float3 runtime = new float3((float)runtimeDouble.x, (float)runtimeDouble.y, (float)runtimeDouble.z);
-            float terrainFake = math.sin((x * 0.173f) + (z * 0.097f));
+            float terrainFake = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((x * 0.173f) + (z * 0.097f));
             uint flags = BuilderGhostValidationFlags.Active |
                          BuilderGhostValidationFlags.PresentationOnly |
                          BuilderGhostValidationFlags.RollbackExcluded |

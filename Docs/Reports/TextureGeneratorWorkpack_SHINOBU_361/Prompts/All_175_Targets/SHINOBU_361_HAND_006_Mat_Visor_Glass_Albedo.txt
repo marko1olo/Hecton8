@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_006
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_006_Mat_Visor_Glass_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Visor_Glass_Albedo.png
+FINAL_FILENAME: Mat_Visor_Glass_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_005.png; approved habitat material anchor
+
+PROMPT:
+Premium deep sea visor glass albedo texture for a player helmet surface. Make a clean smoked glass material with faint sea-green tint, subtle laminated layers, transparent graphite edge seals, tiny micro-scratches, a few pressure stress arcs, and barely visible anti-fog coating swirls. The result should feel expensive, sharp, wearable, and aerospace-grade. Keep the diffuse mostly clear and restrained; reflection and shader should provide shine later. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

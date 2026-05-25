@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_204" domain="ARM64_MEMORY_ALIGNER" status="STATIC_SOURCE_VERIFIED_BUILD_BLOCKED_BY_EXTERNAL_DEPENDENCY_WALL">
+﻿<SELF_AUDIT agent="SHINOBU_204" domain="ARM64_MEMORY_ALIGNER" status="STATIC_SOURCE_VERIFIED_BUILD_BLOCKED_BY_EXTERNAL_DEPENDENCY_WALL">
   <TASK_RECONCILIATION>
     <Task id="01" name="PACK_EQUALS_ONE_EXTERMINATION" status="PASS" verification="STATIC_SOURCE_NO_UNITY_EXECUTION">Strict StructLayout Pack attribute scan under Assets/_Project/Scripts returns 0 real attributes.</Task>
     <Task id="02" name="SEQUENTIAL_LAYOUT_INQUISITION" status="PARTIAL" verification="STATIC_SOURCE_NO_UNITY_EXECUTION">Owner-safe DTO, Signal, Vault, save, telemetry, and native rows were converted to explicit layout. Four strict Sequential attributes remain as documented non-DTO Unity MeshData/serialized-authoring exceptions.</Task>

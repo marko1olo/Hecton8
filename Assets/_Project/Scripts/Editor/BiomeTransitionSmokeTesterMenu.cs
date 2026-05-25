@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
@@ -23,12 +24,22 @@ namespace Hecton8.Editor
             if (passed)
             {
                 Debug.Log(
-                    $"[BiomeTransitionSmokeTester] PASS density={fogDensity:F4} absorption={absorption:F4} packed=0x{packedInfluence:X8}");
+                    "[BiomeTransitionSmokeTester] PASS density=" +
+                    fogDensity.ToString("F4", CultureInfo.InvariantCulture) +
+                    " absorption=" +
+                    absorption.ToString("F4", CultureInfo.InvariantCulture) +
+                    " packed=0x" +
+                    packedInfluence.ToString("X8"));
             }
             else
             {
                 Debug.LogError(
-                    $"[BiomeTransitionSmokeTester] FAIL density={fogDensity:F4} absorption={absorption:F4} packed=0x{packedInfluence:X8}");
+                    "[BiomeTransitionSmokeTester] FAIL density=" +
+                    fogDensity.ToString("F4", CultureInfo.InvariantCulture) +
+                    " absorption=" +
+                    absorption.ToString("F4", CultureInfo.InvariantCulture) +
+                    " packed=0x" +
+                    packedInfluence.ToString("X8"));
             }
 
             if (Application.isBatchMode)

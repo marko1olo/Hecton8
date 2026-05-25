@@ -1,0 +1,119 @@
+﻿# Data Monolith Runtime Integration
+
+Date: 2026-05-23
+Status: CORE BLOB BAKED / CORRUPTION STRESS PASS / NATIVE READ ZERO-GC TARGET PASS / RELEASE STATIC-CONFIG GATE PASS / DIRECT FILESTREAM READBYTE PASS / UNITY PROFILER PROOF PENDING
+Owner: X_002 DATA_MONOLITH_ARCHITECT
+Evidence class: STATIC_DOC / STATIC_SOURCE / CLI_BAKE_HEADER_PROOF / CLI_CORRUPTION_FUZZER / CLI_RESIDENT_LOAD_STRESS / SOURCE_INVENTORY / RELEASE_BUILD_GATE_SOURCE / FILESTREAM_READBYTE_SCAN
+
+## Runtime Contract
+
+The runtime loader consumes `Hecton8/DataMonolith/static_data.h8bin` from StreamingAssets through `H8StaticDataArena`.
+
+Binary contract after X_002 pass:
+
+- 64-byte explicit `H8DataBlobHeader`
+- 64-byte explicit `H8DataBlobDirectory`
+- 16-byte `H8DataSectionEntry` rows
+- 64-byte cache-line section start alignment
+- 16-byte fixed-record alignment, except `LocalizationUtf8` byte stream records
+- XXHash3-64 checksum over bytes `[64..blobLength)`
+- little-endian flag and schema hash in the header
+- fixed 300-entry Data Monolith telemetry ring
+
+Current artifact:
+
+- `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`
+- bytes: `1064384`
+- magic: `0x4D443848`
+- version: `1`
+- header bytes: `64`
+- checksum64: `0x0D49885F30E5DF35`
+- data start offset: `576`
+- section count: `26`
+- schema hash: `0x58303032`
+
+Data Monolith readiness is `CORE BLOB BAKED / CORRUPTION STRESS PASS / RELEASE CLI LOAD TARGET PASS / UNITY PROFILER PROOF PENDING`: the CLI fallback materialized and validated the Data/Balance blob, and `Docs/Reports/DATA_MONOLITH_CORRUPTION_FUZZER_X_002.json` passed 12/12 corruption cases. Unity player profiler proof has not been claimed.
+
+Runtime allocation note: payload storage is native `GlobalDataVault` arena-backed. On Windows Standalone/Editor the runtime source now attempts native `CreateFileW`/`ReadFile` directly into the Vault-backed arena before MMF/FileStream fallback. Unity player-profiler proof is still required before final readiness language.
+
+Resident load stress evidence:
+
+- `Docs/Reports/DATA_MONOLITH_LOAD_STRESS_X_002.json`
+- Release CLI status: `PASS_NATIVE_READ_ZERO_GC_TARGET_TIME`
+- Scope: native file read plus resident pointer validation in CLI; not a real Unity player profiler trace.
+- Blob bytes: `1064384`
+- Native file read: `233.900 us`, heap `0 bytes`
+- Full resident validation mean across `1024` iterations: `461.574 us`, heap `0 bytes`
+- Native read+validate estimate: `695.474 us`, heap `0 bytes`
+- Target threshold: `<1000 us`, `targetLoadMet=true`
+- Managed file-read comparison: `253.700 us`, heap `1064664` bytes
+- Forced corruption checks: `badChecksumRejected=true`, `badOffsetRejected=true`, failure codes `BadChecksum` and `SectionOutOfRange`
+
+Binary layout evidence:
+
+- `Docs/Reports/DATA_MONOLITH_BINARY_LAYOUT_X_002.json`
+- Header fields are little-endian explicit byte writes.
+- Validation flags: `headerBlobBytesMatchesFile=true`, `directoryBlobBytesMatchesFile=true`, `dataStart64Aligned=true`, `allSectionOffsets64Aligned=true`, `allFixedRecords16Aligned=true`, `allSectionsInBlobRangeOrEmpty=true`, `littleEndianFlagSet=true`.
+- Requested block groups are mapped in the report under `Ecology`, `Crafting`, `Audio`, and `Physiology`.
+
+Parser isolation evidence:
+
+- `Docs/Reports/DATA_MONOLITH_LOCAL_PARSER_ISOLATION_X_002.json`: Data Monolith runtime CSV/text parser matches `0`, runtime `FileStream.ReadByte` matches `0`; CSV parser code is in `Assets/_Project/Scripts/Editor/DataMonolith`, fenced by `#if UNITY_EDITOR` and an Editor-only asmdef.
+- `Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_X_002.json`: the Editor-only `IPreprocessBuildWithReport` release gate is installed and the current static parity report is `PASS_RELEASE_PARSER_GATE` with `0` blocking static-config parser findings. The only remaining text/JSON/file reads in that report are explicitly classified user save/profile/mod persistence, outside Data Monolith static-config ownership.
+- `Docs/Reports/DATA_MONOLITH_FILESTREAM_READBYTE_SCAN_X_002.json`: direct production-path `FileStream.ReadByte` / `stream.ReadByte` matches are `0`; remaining `ReadByte` symbols are editor-only tools, memory accessors, or custom binary readers.
+- `Docs/Reports/DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_X_002.json`: 41 parser-heavy static-config bridge target files, producing 37 current code diffs, were narrowed from `#if UNITY_EDITOR || DEVELOPMENT_BUILD` to `#if UNITY_EDITOR` in the touched slice.
+- `Docs/Reports/DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_B_X_002.json`: a second 32-file target slice, producing 25 current code diffs, was narrowed the same way. These slices are stricter than the non-development release gate and remove those CSV/text parser bridges from Development Build player code. Compile proof for these newest slices is still pending the CPU/compiler gate.
+- `Docs/Reports/DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_C_X_002.json`: a third 28-file target slice, producing 23 current code diffs and 55 guard replacements, was narrowed the same way across atmosphere, construction, equipment, rendering, physics, power, and world profile bridges. Compile proof for slice C is still pending the CPU/compiler gate.
+- `Docs/Reports/DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_D_X_002.json`: a fourth 40-file target slice, producing 30 current code diffs and 71 guard replacements, was narrowed the same way across animation, audio DSP, construction, crafting, ecosystem, gameplay, graphics, voxel, interaction, inventory, physics, physiology, power, and ocean/rendering profile bridges. Rebuild after slice D exposed and fixed an unrelated `HectonOSBootManager` missing `System.Text`; final rebuild is pending the CPU/compiler gate.
+- `Docs/Reports/DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_E_X_002.json`: a fifth 22-file target slice, producing 18 current code diffs and 31 guard replacements, was narrowed the same way across procedural IK, cartography, vault archaeology, scanner data mining, physics, suit integrity, QA, quest, DRS, thermodynamics, tools, sonar, VFX, and decal vault bridges. Core rebuild after slices D/E and compile-wall fixes is pending the CPU/compiler gate.
+- `Docs/Reports/DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_F_X_002.json`: a sixth 5-file target slice, producing 5 current code diffs and 8 guard replacements, fixed a Terminal OS development-player CSV monitor mismatch and narrowed Flora genome, procedural geology, terrain streaming profile, and SpatialAudio acoustic CSV/LUT fallback bridges to editor-only. Core rebuild after slices D/E/F and compile-wall fixes is pending the CPU/compiler gate.
+- `Docs/Reports/DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_G_X_002.json`: a seventh 4-file target slice, producing 4 current code diffs, 5 guard replacements, and one helper-function fence, narrowed biome atmosphere CSV ingest, flora stiffness CSV reload, world streaming profile parsing, and flora ambient sway biome parser helpers to editor-only. Core rebuild after slices D/E/F/G and compile-wall fixes is pending the CPU/compiler gate.
+- `Docs/Reports/DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_H_X_002.json`: an eighth 5-file target slice, producing 5 current code diffs and 5 guard replacements, narrowed world chunk streaming profile text import, flora genome CSV overrides, PDA scanner profile import, bootstrap memory overrides, and AUP floating-origin tuner reload to editor-only.
+- Post-slice Core compile proof: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` passed after slices A-H and compile-wall fixes with `0` warnings, `0` errors, elapsed `108.34s`.
+- `Docs/Reports/DATA_MONOLITH_DEV_BUILD_CSV_FENCE_SLICE_I_X_002.json`: a ninth static-config/development-build slice fixed the build gate symbol model (`DEVELOPMENT_BUILD` and `DEBUG` now match the scan mode), split release/development report paths, and narrowed telemetry/DataVault/rollback netcode/save-compression/Merkle/WAL CSV parser routes to `UNITY_EDITOR`. Touched-file broad development CSV guards are `0`; Core build proof is PASS with `0` warnings and `0` errors.
+- `Docs/Reports/DATA_MONOLITH_DEV_BUILD_CSV_FENCE_SLICE_J_X_002.json`: a tenth static-config/development-build slice narrowed Ballistics, Metabolism, telemetry endpoint, terrain streaming profile, nutrient/radiation/sensory/ocean/shoreline/predator acoustic, and Haptic CSV ingest lanes to `UNITY_EDITOR`. Remaining negated broad-development static-config candidates are `0`; production-path direct FileStream/stream `ReadByte` matches are `0`; Core build proof is PASS with `0` warnings and `0` errors.
+- `Docs/Reports/DATA_MONOLITH_DEV_BUILD_CSV_FENCE_SLICE_K_X_002.json`: an eleventh static-config/development-build slice fenced player-compiled helper bodies for StressDirector rule CSV reload, VocalWarning profile parser, FoundationSnapping profile CSV loaders/token parsers, and BaseAtmosphere gas-profile CSV file helper. Development-player touched static-config/file/parser hit scan is `0`; Core build proof is PASS with `0` warnings and `0` errors.
+- `Docs/Reports/DATA_MONOLITH_ZERO_GC_COLD_BINARY_FIX_SLICE_L_X_002.json`: a zero-GC cold binary fix replaced a managed 4096-byte rig-definition read buffer in `FaunaKinematicsRuntime` with `stackalloc Span<byte>`. This is outside CSV parser isolation but reduces runtime heap staging in a binary hydration path. Core build proof is PASS with `0` warnings and `0` errors.
+- `Docs/Reports/DATA_MONOLITH_ZERO_GC_COLD_BINARY_FIX_SLICE_M_X_002.json`: a zero-GC cold binary fix replaced a managed 64-byte legacy vent record buffer in `VolcanicUpdraftDirector` with `stackalloc Span<byte>` plus span-based little-endian readers. This is outside CSV parser isolation but removes another runtime binary heap staging point. Core build proof is PASS with `0` warnings and `0` errors.
+- `Docs/Reports/DATA_MONOLITH_CORE_BUILD_CLOSURE_I_TO_M_X_002.json`: Core project compile closure after slices I/J/K/L/M, `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` PASS, `0` warnings, `0` errors, `58.77s`.
+
+Cross-domain CSV migration is not complete. `Docs/Reports/DATA_MONOLITH_SOURCE_INVENTORY_X_002.json` records:
+
+- `215` CSV files on disk
+- `125` data/asset/root CSVs
+- `18` active Data/Balance tables in the current monolith bake lane
+- `22` Data/Balance schema templates
+- `2` allowed external Data/Balance CSVs not sectioned into the blob
+- `3` StreamingAssets CSV runtime risks
+- `8` repo-root CSV runtime risks
+- `70` cross-domain authoring CSVs requiring owner route cards before migration
+- `68` docs/archive/report CSVs outside runtime truth
+
+## Ownership
+
+- immutable static data belongs to Data Monolith
+- mutable save data belongs to the save container / paging protocols
+- cross-domain native runtime buffers belong to `GlobalDataVault`
+- Addressables or visual asset groups are delivery mechanisms, not gameplay truth stores
+
+Bootstrap route:
+
+- `GameBootstrapper.InitializeBootstrapDataMonolith` runs during MemoryPreWarm after `_globalDataVault` creation.
+- `H8StaticDataArena.TryInitializeFromStreamingAssets(IDataVault, ...)` receives the bootstrap-owned Vault explicitly.
+- Data Monolith buffers are named in the central `BufferID` ledger: `DataMonolithPayload`, `DataMonolithTelemetryRing`, `DataMonolithTelemetryCursor`.
+
+## Failure Rule
+
+Runtime boot must fail closed or enter a documented fallback if the H8DM payload is required and missing. Silent fallback to generated defaults is rejected unless a route card names the owner, version, checksum, and diagnostic artifact.
+
+## Verification Wall
+
+Latest completed project compile pass:
+
+- Command: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`.
+- Result: `0` warnings, `0` errors, `58.77s`.
+- Covered scope: slices I+J+K plus zero-GC cold binary fixes L+M. Previous A-H proof remains green at `0` warnings, `0` errors, `108.34s`.
+- Not covered: Unity import, player build, profiler capture.
+- Blocker: no current Core compile blocker.
+- Narrow DataMonolith Release CLI build: green with `0` errors and `38` warnings in editor JSON DTO/stub fields.
+- Missing proof: Unity import, player build, profiler.

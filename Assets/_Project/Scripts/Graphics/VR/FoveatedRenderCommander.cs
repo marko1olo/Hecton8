@@ -785,37 +785,22 @@ namespace Hecton8.Graphics.VR
 
         private void TryRegisterTick()
         {
+            if (_registeredTick)
+                return;
+
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
             {
                 _registeredTick = false;
                 return;
             }
 
-            RegistryBucket<IUpdatable> updatables = GlobalRegistry.Updatables;
-            RegistryBucket<IUpdatable> dispatcherLane = SystemDispatcher.GetLane(PriorityLayer.Core);
-            bool inGlobalBucket = updatables.Contains(this);
-            bool inDispatcherLane = dispatcherLane.Contains(this);
-            if (inGlobalBucket && inDispatcherLane)
-            {
-                _registeredTick = true;
-                return;
-            }
-
-            if (inGlobalBucket || inDispatcherLane)
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterTick()
         {
-            RegistryBucket<IUpdatable> updatables = GlobalRegistry.Updatables;
-            RegistryBucket<IUpdatable> dispatcherLane = SystemDispatcher.GetLane(PriorityLayer.Core);
-            if (!_registeredTick && !updatables.Contains(this) && !dispatcherLane.Contains(this))
-            {
-                _registeredTick = false;
+            if (!_registeredTick)
                 return;
-            }
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = false;
@@ -855,26 +840,18 @@ namespace Hecton8.Graphics.VR
             if (!Application.isPlaying)
                 return;
 
-            RegistryBucket<IRenderable> renderables = GlobalRegistry.Renderables;
-            if (renderables.Contains(this))
-            {
-                _registeredRenderable = true;
+            if (_registeredRenderable)
                 return;
-            }
 
-            _registeredRenderable = renderables.TryRegister(this);
+            _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
         }
 
         private void TryUnregisterRenderable()
         {
-            RegistryBucket<IRenderable> renderables = GlobalRegistry.Renderables;
-            if (!_registeredRenderable && !renderables.Contains(this))
-            {
-                _registeredRenderable = false;
+            if (!_registeredRenderable)
                 return;
-            }
 
-            renderables.TryUnregister(this);
+            GlobalRegistry.Renderables.TryUnregister(this);
             _registeredRenderable = false;
             _uiSuppressionActive = false;
             _lastFlags = (ushort)(_lastFlags & ~FlagUiSuppressed);
@@ -923,7 +900,7 @@ namespace Hecton8.Graphics.VR
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<FoveatedRenderTelemetryEntry> acquired = vault.GetGenerationHandle<FoveatedRenderTelemetryEntry>(
+            VaultGenerationHandle<FoveatedRenderTelemetryEntry> acquired = vault.EnsureGenerationHandle<FoveatedRenderTelemetryEntry>(
                 BufferID.FoveatedRenderBlackBox,
                 TelemetryCapacity,
                 SystemID.GraphicsScalability,
@@ -1252,7 +1229,7 @@ namespace Hecton8.Graphics.VR
             byte thermalSeverity)
         {
             float stressPressure = math.smoothstep(StressMediumThreshold, StressHighThreshold, Sanitize01(systemStress01));
-            float systemPressure = math.saturate(math.max(pressureLevel, foveatedPressureTier) * (1f / 3f));
+            float systemPressure = math.saturate(math.max((int)pressureLevel, (int)foveatedPressureTier) * (1f / 3f));
             float gpuPressure = math.smoothstep(GpuUtilReliefStart, GpuPressureHighThreshold, Sanitize01(gpuUtil01));
             float gpuTimePressure = math.smoothstep(GpuTimeReliefStartMs, GpuTimeHighPressureMs, math.max(0f, gpuTimeMs));
             float thermalPressure = math.saturate(((float)thermalSeverity - (float)HardwareThermalSeverity.Warm) * 0.5f);

@@ -1,0 +1,563 @@
+﻿{
+  "agent": "X_009",
+  "role": "PHYSIOLOGY_AND_STATUS_EFFECTS_PRAGMATIST",
+  "domain": "Echelon 5 Combat & Survival Physiology",
+  "phase": "PHASE_0_ARCHITECTURAL_ARCHAEOLOGY",
+  "promptTaskCount": 10,
+  "generatedUtc": "2026-05-23T00:00:00Z",
+  "sourceRoot": "Assets/_Project/Scripts",
+  "scanMode": {
+    "primary": "ripgrep source scan plus manual source-line review",
+    "astRequiredByPrompt": true,
+    "astExecuted": false,
+    "astBlocker": "PowerShell Roslyn load failed with Roslyn.Utilities.StringTable type initializer exception. dotnet fallback was not launched because Win32_Processor LoadPercentage returned 100 and project rule forbids dotnet/csc while CPU is above 50.",
+    "compileExecuted": false,
+    "compileBlocker": "CPU guard active; latest Win32_Processor LoadPercentage returned 79 with no active compiler processes, above the project limit of 50."
+  },
+  "summary": {
+    "sixteenTissueAuthorityPresent": false,
+    "currentTissueCompartmentCount": 3,
+    "requiredTissueCompartmentCount": 3,
+    "currentDecompressionStateBytes": 64,
+    "requiredDecompressionStateBytes": 64,
+    "currentStatusMaskType": "ulong StatusEffectMask plus low-32 compatibility mirrors",
+    "requiredStatusMaskType": "ulong StatusEffectMask",
+    "currentCadence": "ISlowTickable SlowTick at dispatcher 0.1 second cadence plus no-wait LateFrame completion",
+    "requiredCadence": "SystemDispatcher SlowTickIntervalSeconds = 0.1, with ColdTickIntervalSeconds = 1.0 for maintenance",
+    "hotLoopVerdict": "Current physiology hot route is the requested 3-lane solver. Residual survival facade and atmosphere DCS routes were neutralized in the follow-up cut."
+  },
+  "latestFollowUpAudit": {
+    "generatedLocalDate": "2026-05-23",
+    "scope": "Assets/_Project/Scripts plus active three-row CSV profile",
+    "sixteenTissueHotLoopMarkersFound": false,
+    "runtimeProfilePath": "buhlmann_3tissue_profiles.csv",
+    "legacyProfileRuntimeReferenced": false,
+    "managedRuntimeStatusEngineFound": false,
+    "parseCallsInPhysiologyCombatRuntimeFound": false,
+    "physiologyFrameLaneRouteFound": false,
+    "survivalFacadeResidualRouteSevered": true,
+    "survivalFacadeScalarVaultHandleRemoved": true,
+    "atmosphereDamageRouteSevered": true,
+    "legacyScalarDcsHelpersNeutralized": true,
+    "statusEffectMaskBridge": {
+      "dto": "StatusEffectStateDTO",
+      "sizeBytes": 64,
+      "maskOffset": 0,
+      "mockCombatDamageSignalSizeBytes": 32,
+      "combatStatusMaskOffset": 20,
+      "mergedBits": [
+        "bleeding",
+        "poison",
+        "stun",
+        "radiation",
+        "suffocation/hypoxia",
+        "bends",
+        "narcosis",
+        "oxygen",
+        "co2",
+        "cns"
+      ]
+    },
+    "numericSmoke500m": {
+      "profile": "500m depth, 600s dwell, 60s ascent, 120s surface, dt 0.1",
+      "activeCsvRows": "n2_0:300s;n2_1:2298s;n2_2:11220s",
+      "airOverrideWorstCase": {
+        "maxExactVsPadeErrorAtm": 0.00000000049658410717,
+        "invalidCount": 0,
+        "peakThreeCorrectedRawRisk": 13.703730659583233,
+        "localSixteenRowReferenceRawRisk": 13.593088775058543,
+        "correctedToReferenceRatio": 1.0081395690380321,
+        "runtimeSaturatedRisk01": 1.0,
+        "allWarningPulsesIncludingNarcosis": 781,
+        "allWarningTransitionsIncludingNarcosis": 4,
+        "dcsOnlyWarningPulses": 137,
+        "dcsOnlyWarningTransitions": 2,
+        "dcsOnlyFirstWarningFrame": 6439,
+        "dcsOnlyLastWarningPulseFrame": 7799
+      },
+      "defaultAutoHeliox": {
+        "maxExactVsPadeErrorAtm": 0.00000000021009327611,
+        "invalidCount": 0,
+        "peakThreeCorrectedRawRisk": 0.0,
+        "localSixteenRowReferenceRawRisk": 0.0,
+        "runtimeSaturatedRisk01": 0.0,
+        "dcsOnlyWarningPulses": 0,
+        "allWarningPulsesIncludingNarcosis": 13,
+        "firstNarcosisWarningFrame": 6433,
+        "lastNarcosisWarningActiveFrame": 6551
+      }
+    },
+    "limits": [
+      "Compiler-backed AST and Unity compile are still blocked by CPU guard; latest observed CPU load was 79 with no active compiler processes.",
+      "Runtime profiler microseconds are not measured.",
+      "The historical targetList below records the original Phase 0 findings and is kept for audit trail; latestFollowUpAudit reflects the current source state."
+    ]
+  },
+  "targetList": [
+    {
+      "id": "X009-T01-001",
+      "severity": "critical",
+      "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyData.cs",
+      "lines": [13, 182, 185, 208, 386, 542],
+      "finding": "Core physiology constants and DTOs are still built around 16 tissue compartments, a 128-byte DecompressionStateDTO, per-tissue rows, and uint status flags.",
+      "evidence": [
+        "line 13: TissueCompartmentCount = 16",
+        "line 182: DecompressionStateDTO Size = 128",
+        "line 185: fixed float TissueTensionsN2[16]",
+        "line 542: PhysiologyScalarsDTO.StatusFlags is uint"
+      ],
+      "requiredAction": "Replace 16-row tissue authority with 3 explicit float lanes and introduce StatusEffectStateDTO with ulong StatusEffectMask at offset 0. Remove hot authority dependence on TissueCompartmentDTO[entityCapacity*16]."
+    },
+    {
+      "id": "X009-T01-002",
+      "severity": "critical",
+      "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs",
+      "lines": [58, 669, 727, 750, 806, 836, 1041, 1168, 1364],
+      "finding": "IntegrateBloodGasTensionsJob still evaluates a 16-compartment path and mutates uint status flags.",
+      "evidence": [
+        "line 58: ResolveActiveCompartmentCount scales from 4 to TissueCompartmentCount",
+        "line 750: loop increments tissueIndex across TissueCompartmentCount",
+        "line 836: scalar.StatusFlags is cleared and ORed with gas status bits",
+        "line 1364: telemetry iterates TissueCompartmentCount"
+      ],
+      "requiredAction": "Create EvaluatePhysiologyStateJob over exactly Fast, Medium, Slow lanes. Replace status flag updates with branch-minimized ulong mask set/clear operations."
+    },
+    {
+      "id": "X009-T01-003",
+      "severity": "critical",
+      "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+      "lines": [20, 30, 327, 336, 337, 1275, 1400, 1438, 2159, 2161],
+      "finding": "Runtime is registered as IUpdatable plus ILateFrameTickable and uses a 0.016 second authoritative interval instead of the existing 10 Hz SlowTick lane.",
+      "evidence": [
+        "line 20: ShinobuPhysiologyRuntime implements IUpdatable",
+        "line 30: AuthoritativeUpdateIntervalSeconds = 0.016f",
+        "line 1275: ResolvePhysiologyUpdateIntervalSeconds returns that constant",
+        "lines 2159-2161: registers Updatable and LateFrameTickable"
+      ],
+      "requiredAction": "Move scheduling gate to ISlowTickable on PriorityLayer.Player or retain a cold injected accumulator driven by dispatcher SlowTick. Keep ILateFrameTickable only for no-wait completion and publish after completion."
+    },
+    {
+      "id": "X009-T01-004",
+      "severity": "high",
+      "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+      "lines": [793, 794, 795, 972, 973, 974, 1549, 2023],
+      "finding": "Vault allocation and initialization routes still allocate/read decompression state, tissue rows, and Haldane coefficient rows sized by TissueCompartmentCount.",
+      "evidence": [
+        "lines 793-795: opens DecompressionStates, TissueCompartments, and HaldaneCoefficients",
+        "line 973: opens entityCapacity * TissueCompartmentCount tissues",
+        "line 2023: initializes tissues with TissueCompartmentCount stride"
+      ],
+      "requiredAction": "Collapse Vault descriptors to DecompressionStateDTO[entityCapacity] and StatusEffectStateDTO[entityCapacity]. Remove coefficient buffer from hot truth route or reduce to a 3-lane tuning DTO."
+    },
+    {
+      "id": "X009-T01-005",
+      "severity": "high",
+      "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime_Decompression.cs",
+      "lines": [12, 29, 35, 44],
+      "finding": "Editor diagnostic accessors expose the current decompression DTO and Haldane coefficient route.",
+      "evidence": [
+        "line 29: TryGetHaldaneCoefficient exists",
+        "line 35: reads ShinobuHaldaneCoefficients with TissueCompartmentCount"
+      ],
+      "requiredAction": "Replace coefficient accessor with 3-lane profile diagnostics or clearly editor-only compatibility output generated from the new compact state."
+    },
+    {
+      "id": "X009-T01-006",
+      "severity": "medium",
+      "file": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+      "lines": [472, 480, 481, 482, 508],
+      "finding": "Respawn reset path writes 16 decompression tensions and clears uint StatusFlags/ActiveTraumaMask.",
+      "evidence": [
+        "lines 480-482: DecompressionStateDTO reset loops TissueCompartmentCount",
+        "line 508: scalars.StatusFlags = 0u"
+      ],
+      "requiredAction": "Reset exactly 3 tissue lanes and clear StatusEffectMask with 0UL. Respawn reconciliation must not keep old tissue buffer pointers."
+    },
+    {
+      "id": "X009-T01-007",
+      "severity": "medium",
+      "file": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+      "lines": [21, 224, 1615],
+      "finding": "Metabolism already runs through ISlowTickable and Vault-backed DTOs. It is a usable cadence pattern for physiology integration.",
+      "evidence": [
+        "line 21: runtime implements ISlowTickable",
+        "line 224: SlowTick entry point",
+        "line 1615: registers SlowTickable on PriorityLayer.Player"
+      ],
+      "requiredAction": "Use metabolism runtime as registration/cadence precedent. Do not merge metabolism state into decompression truth; bridge through Vault/status mask outputs."
+    },
+    {
+      "id": "X009-T01-008",
+      "severity": "medium",
+      "file": "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentJobs.cs",
+      "lines": [61, 63, 64, 128, 130],
+      "finding": "Hypoxia and narcosis presentation has separate flags and sensory state. It must consume the new ulong mask or an immutable snapshot, not duplicate authority.",
+      "evidence": [
+        "line 63: sets ShinobuPhysiologyFlags.Narcosis on gas flags",
+        "line 64: sets Hypoxia when oxygen pressure is low",
+        "lines 128-130: sensory flags duplicate hypoxia/narcosis presentation state"
+      ],
+      "requiredAction": "Keep sensory impairment as presentation/visual drift. Feed it from the unified StatusEffectMask and gas scalar snapshot after physiology POST_SIMULATION."
+    },
+    {
+      "id": "X009-T01-009",
+      "severity": "medium",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "lines": [71, 73, 6272, 6393],
+      "finding": "Required cadence lanes already exist: SlowTick is 0.1 seconds and ColdTick is 1.0 seconds.",
+      "evidence": [
+        "line 71: SlowTickIntervalSeconds = 0.1",
+        "line 73: ColdTickIntervalSeconds = 1.0",
+        "line 6272: RunSlowTick",
+        "line 6393: RunColdTick"
+      ],
+      "requiredAction": "Register physiology solver on SlowTick for 10 Hz truth updates and reserve ColdTick for mock generation, hygiene, or report snapshots."
+    },
+    {
+      "id": "X009-T01-010",
+      "severity": "medium",
+      "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
+      "lines": [640, 657],
+      "finding": "Health presentation currently reads uint gas status masks. This is a downstream compatibility target for ulong status migration.",
+      "evidence": [
+        "line 640: checks signal.StatusFlags against ShinobuGasStatusMask",
+        "line 657: checks latest.StatusFlags"
+      ],
+      "requiredAction": "Expose compatibility low 32 bits during migration or update PhysiologyStateSignal to carry ulong StatusEffectMask."
+    },
+    {
+      "id": "X009-T01-011",
+      "severity": "medium",
+      "file": "Assets/_Project/Scripts/Gameplay/SurvivalStatusMasks.cs",
+      "lines": [10, 14],
+      "finding": "Gameplay status mask constants are uint. They are a naming/compatibility source for new ulong bits.",
+      "evidence": [
+        "line 10: Bends = 1u << 0",
+        "line 14: Narcosis = 1u << 4"
+      ],
+      "requiredAction": "Introduce ulong StatusEffectBits without destroying public meaning. Keep old constants only as adapter values until call sites migrate."
+    }
+  ],
+  "dtoDesign": {
+    "decompressionStateDto": {
+      "name": "DecompressionStateDTO",
+      "layout": "LayoutKind.Explicit",
+      "sizeBytes": 64,
+      "arm64Alignment": "Offsets are multiples of 8 for the three tissue floats and the 64-bit hash/identity fields. Struct size is one cache line.",
+      "fields": [
+        { "offset": 0, "type": "ulong", "name": "StateHash" },
+        { "offset": 8, "type": "float", "name": "FastTissueN2Atm" },
+        { "offset": 12, "type": "float", "name": "FastTissueLimitAtm" },
+        { "offset": 16, "type": "float", "name": "MediumTissueN2Atm" },
+        { "offset": 20, "type": "float", "name": "MediumTissueLimitAtm" },
+        { "offset": 24, "type": "float", "name": "SlowTissueN2Atm" },
+        { "offset": 28, "type": "float", "name": "SlowTissueLimitAtm" },
+        { "offset": 32, "type": "float", "name": "AmbientPressureAtm" },
+        { "offset": 36, "type": "float", "name": "NitrogenPartialPressureAtm" },
+        { "offset": 40, "type": "float", "name": "Supersaturation01" },
+        { "offset": 44, "type": "float", "name": "AscentRateMetersPerSecond" },
+        { "offset": 48, "type": "uint", "name": "OverLimitMask3" },
+        { "offset": 52, "type": "uint", "name": "Flags" },
+        { "offset": 56, "type": "uint", "name": "FrameIndex" },
+        { "offset": 60, "type": "uint", "name": "_pad0" }
+      ],
+      "notes": "Fast, Medium, and Slow tissue values begin at offsets 8, 16, and 24. Limit floats are co-located for branch-minimized threshold checks."
+    },
+    "statusEffectStateDto": {
+      "name": "StatusEffectStateDTO",
+      "layout": "LayoutKind.Explicit",
+      "sizeBytes": 64,
+      "arm64Alignment": "StatusEffectMask is at offset 0. Duration and severity lanes are float pairs aligned on 8-byte boundaries where possible.",
+      "fields": [
+        { "offset": 0, "type": "ulong", "name": "StatusEffectMask" },
+        { "offset": 8, "type": "float", "name": "BleedingSeconds" },
+        { "offset": 12, "type": "float", "name": "BleedingSeverity01" },
+        { "offset": 16, "type": "float", "name": "PoisonSeconds" },
+        { "offset": 20, "type": "float", "name": "PoisonSeverity01" },
+        { "offset": 24, "type": "float", "name": "StunSeconds" },
+        { "offset": 28, "type": "float", "name": "SuffocationSeverity01" },
+        { "offset": 32, "type": "float", "name": "RadiationDose01" },
+        { "offset": 36, "type": "float", "name": "NarcosisSeverity01" },
+        { "offset": 40, "type": "float", "name": "Fatigue01" },
+        { "offset": 44, "type": "float", "name": "OxygenDebt01" },
+        { "offset": 48, "type": "uint", "name": "LastTransitionFrame" },
+        { "offset": 52, "type": "uint", "name": "SanitizedFaultMask" },
+        { "offset": 56, "type": "ulong", "name": "StateHash" }
+      ],
+      "statusBits": [
+        { "bit": 0, "name": "Bleeding" },
+        { "bit": 1, "name": "Poison" },
+        { "bit": 2, "name": "Suffocation" },
+        { "bit": 3, "name": "Stun" },
+        { "bit": 4, "name": "Radiation" },
+        { "bit": 5, "name": "NitrogenNarcosis" },
+        { "bit": 6, "name": "Bends" },
+        { "bit": 7, "name": "FatalBends" },
+        { "bit": 8, "name": "Hypoxia" },
+        { "bit": 9, "name": "Hyperoxia" },
+        { "bit": 10, "name": "CarbonDioxideToxicity" },
+        { "bit": 11, "name": "Hypothermia" },
+        { "bit": 12, "name": "FatiguePenalty" },
+        { "bit": 63, "name": "InvalidMathSanitized" }
+      ],
+      "transitionRules": [
+        "set: mask |= bit",
+        "clear: mask &= ~bit",
+        "toggle is forbidden for gameplay truth because repeated job execution can re-enable resolved effects",
+        "duration resolution writes severity to zero and clears the bit in the same job output row"
+      ]
+    }
+  },
+  "cadenceAndSignalMap": {
+    "currentRoute": [
+      "ShinobuPhysiologyRuntime implements IUpdatable and ILateFrameTickable.",
+      "Tick accumulates frame delta and schedules IntegrateBloodGasTensionsJob when accumulated time reaches 0.016 seconds.",
+      "LateFrameTick finalizes completed jobs without forced completion.",
+      "Some hot outputs already use SignalBus parallel writers, but survival/gas publish still uses GlobalSignals in runtime publish methods."
+    ],
+    "availableDispatcherCadences": [
+      { "lane": "SlowTick", "intervalSeconds": 0.1, "source": "Assets/_Project/Scripts/Core/SystemDispatcher.cs:71" },
+      { "lane": "ColdTick", "intervalSeconds": 1.0, "source": "Assets/_Project/Scripts/Core/SystemDispatcher.cs:73" }
+    ],
+    "requiredBridge": [
+      "Cold boot: open Vault handles for DecompressionStateDTO[entityCapacity], StatusEffectStateDTO[entityCapacity], gas/metabolism snapshots, telemetry ring, and cursor.",
+      "SlowTick: if no active physiology job is scheduled, schedule EvaluatePhysiologyStateJob and EvaluateStatusEffectsJob with deltaSeconds = 0.1. Do not poll GlobalRegistry or scene state.",
+      "LateFrameTick or POST_SIMULATION: finalize only completed jobs, advance telemetry cursor, publish PhysiologyStateSignal/CombatDamageSignal through typed SignalBus, and export immutable latest snapshots.",
+      "ColdTick: execute stress/mock generation, stale-row hygiene, or report snapshots only. No gameplay authority should wait for ColdTick.",
+      "VisualSync/UI: consume immutable snapshot and smooth warnings locally. Presentation smoothing must not mutate status truth."
+    ],
+    "signalDecision": {
+      "preferredHotPath": "SignalBus<T>.ParallelWriter inside Burst jobs for bounded native queues",
+      "allowedColdPath": "HectonEventBus or GlobalSignals only for legacy/cold bridge until downstream code migrates",
+      "forbidden": "GlobalRegistry hot polling, managed EventBus fanout, per-effect managed timer classes, dictionaries, or same-frame forced JobHandle.Complete"
+    }
+  },
+  "physiologyCallGraph": {
+    "currentAuthorityPath": [
+      {
+        "node": "ShinobuPhysiologyRuntime.Tick(deltaTime)",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:208",
+        "role": "Frame-lane entry point. Accumulates delta, gates at 0.016 seconds, locks Vault buffers, schedules chained Burst jobs.",
+        "risk": "Runs through IUpdatable instead of 10 Hz SlowTick."
+      },
+      {
+        "node": "MockEnvironmentDropJob",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:288",
+        "role": "Writes mock/environment pressure and depth seed.",
+        "risk": "Uses mock depth fallback when player depth is invalid; implementation must keep AUP-derived depth as authority after rebuild."
+      },
+      {
+        "node": "GenerateMockBreathingGasJob",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:299",
+        "role": "Writes breathing gas fractions.",
+        "risk": "Acceptable cold/test path, but must not hide managed mock generation in hot path."
+      },
+      {
+        "node": "CalculatePartialPressuresJob",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:308",
+        "role": "Converts breathing gas fractions and ambient pressure into gas partial pressures.",
+        "risk": "Should remain as cheap gas scalar producer for 3-tissue solver."
+      },
+      {
+        "node": "PhysiologySignalIngestJob",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:316",
+        "role": "Ingests combat, predator, toxemia, and medical mock signals; mutates vitals/scalars.",
+        "risk": "Currently feeds uint trauma/status flags; must emit/merge ulong StatusEffectMask bits."
+      },
+      {
+        "node": "IntegrateBloodGasTensionsJob",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:327",
+        "role": "Current decompression authority solver.",
+        "risk": "Uses TissueCompartments, DecompressionStates, Haldane coefficients, and TissueCompartmentCount. This is the primary 16-tissue removal target."
+      },
+      {
+        "node": "CalculateCnsToxicityJob",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:347",
+        "role": "Applies O2/CO2/narcosis gas toxicity and emits damage/physiology signals.",
+        "risk": "Writes uint status flags. Must update unified mask and preserve toxicity gameplay thresholds."
+      },
+      {
+        "node": "OxygenConsumptionJob",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:363",
+        "role": "Consumes O2, applies fatigue/metabolic penalties, writes telemetry and vitals export.",
+        "risk": "Reads decompression state and current uint status fields; telemetry must be migrated to 3 tissue lanes plus ulong mask."
+      },
+      {
+        "node": "ShinobuPhysiologyRuntime.LateFrameTick()",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:394",
+        "role": "No-wait finalize path through TryFinalizeFrameJobNoWait.",
+        "risk": "Good completion pattern; keep this shape after SlowTick scheduling."
+      },
+      {
+        "node": "FinishFrameJobCompletion()",
+        "source": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:1308",
+        "role": "Patches execution telemetry, publishes gas/state/vitals/visual sync, dumps fatal blackbox.",
+        "risk": "Publication mixes GlobalSignals and SignalBus; new hot effects should prefer typed SignalBus lanes."
+      }
+    ],
+    "currentEdges": [
+      "Tick -> MockEnvironmentDropJob -> GenerateMockBreathingGasJob -> CalculatePartialPressuresJob -> PhysiologySignalIngestJob -> IntegrateBloodGasTensionsJob -> CalculateCnsToxicityJob -> OxygenConsumptionJob -> H8Memory.RegisterActiveJob",
+      "LateFrameTick -> TryFinalizeFrameJobNoWait -> FinishFrameJobCompletion",
+      "FinishFrameJobCompletion -> PatchLatestTelemetryExecutionTime -> PublishLatestGasPhysiologyState -> PublishSurvivalVitals -> PublishVisualSyncScalars -> TryDumpAutopsyIfFatal",
+      "IntegrateBloodGasTensionsJob -> SignalBus<PhysiologyStateSignal>.ParallelWriter and SignalBus<CombatDamageSignal>.ParallelWriter",
+      "PublishLatestGasPhysiologyState -> GlobalSignals.Publish(PhysiologyStateSignal)",
+      "PublishSurvivalVitals -> GlobalSignals.Publish(SurvivalVitalsChangedSignal)",
+      "PublishVisualSyncScalars -> SignalBus<HypoxiaSignal>.TryPush"
+    ],
+    "replacementEdges": [
+      "ISlowTickable.SlowTick -> EvaluatePhysiologyStateJob(3 lanes) -> EvaluateStatusEffectsJob(ulong mask) -> H8Memory.RegisterActiveJob",
+      "ILateFrameTickable.LateFrameTick -> TryFinalizeCompleted only -> Telemetry ring cursor advance -> typed SignalBus publish",
+      "IColdTickable.ColdTick -> GenerateMockPhysiologyDataJob or hygiene only; no gameplay truth dependency",
+      "VisualSync/UI -> immutable latest snapshot smoothing; no status truth mutation"
+    ]
+  },
+  "scalabilityPlan": {
+    "low": "3 tissue lanes at 10 Hz, no coefficient buffer, no presentation extras; UI reads smoothed snapshot.",
+    "middle": "Same truth cadence; telemetry ring writes every solve; warning smoothing and audio alerts enabled.",
+    "high": "Same truth route; extra VISUAL_SYNC distortion, richer telemetry sampling, and chamber stress overlays.",
+    "ultra": "Same gameplay truth; spend saved CPU on visual overkill only. Do not change DTO layout, authority route, save identity, or damage thresholds."
+  },
+  "phase0Decision": {
+    "safeToPatchRuntimeNow": true,
+    "reason": "Runtime code has been patched under explicit APEX override. Compile/profiler verification is still blocked by CPU guard, so source-level proof and numeric smoke are the current evidence artifacts.",
+    "nextImplementationCut": [
+      "Run Unity/dotnet compile only after CPU is <= 50 and no csc/dotnet is active.",
+      "Run profiler smoke on 500m ascent once compile is clear.",
+      "Keep 16-row CSV as offline comparison only; runtime remains on buhlmann_3tissue_profiles.csv.",
+      "Keep radiation/toxin dose mutation on SlowTick routes only."
+    ]
+  },
+  "latestApexAudit": {
+    "timestampLocal": "2026-05-24T00:00:00+04:00",
+    "scope": "Repeated total audit of physiology, status effects, decompression, toxin, and radiation routes.",
+    "sourceFindings": {
+      "hidden16TissueRuntimeCalls": false,
+      "runtimeBuhlmannZh16PathActive": false,
+      "physiologyIUpdatableRoutes": false,
+      "scopedHazardIUpdatableRoutes": false,
+      "runtimeFloatParseInAuditedScope": false,
+      "managedStatusEffectEngineInAuditedScope": false,
+      "editorOnlyStatusEffectScannerHits": true,
+      "toxicOutgassingPublishesPhysiologyStateSignal": false,
+      "toxicityExposureSignalConsumedByShinobuPhysiology": true,
+      "nonShinobuStressPhysiologyStatePublishersRemoved": true
+    },
+    "patchesApplied": [
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+        "change": "Removed IUpdatable registration and moved toxic outgassing simulation work into SlowTick with 0.1s cadence input."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs",
+        "change": "Kept frame Tick for HUD/channel decay, but moved RadiationHazardGrid.ReportExternalDose into ISlowTickable.SlowTick."
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
+        "change": "Aligned survival SlowTick dt with SystemDispatcher 0.1s cadence and moved rapid-ascent risk, pressure exposure, oxygen grace, pressure hull stress, life telemetry, and death checks out of frame Tick into SlowTick."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+        "change": "Aligned solar flare radiation/event SlowTick dt with SystemDispatcher 0.1s cadence."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+        "change": "Added ISlowTickable cadence budget; radiation evaluation remains phase-fenced for jobs but dose truth is gated by 0.1s SlowTick, and PostSimulation skips player dose mutation on non-evaluation frames."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+        "change": "Moved toxic hazard dose accumulation, toxic damage pulses, exposure job scheduling, and diagnostics from IUpdatable frame cadence to ISlowTickable."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
+        "change": "Kept frame Tick for combat/invulnerability, but moved nutritional toxicity and gas physiology bridge timers to ISlowTickable."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
+        "change": "Moved legacy non-radiation environmental hazard damage timer from IUpdatable to ISlowTickable."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonHazardSource.cs",
+        "change": "Moved dynamic hazard source refresh, including radiation source registration updates, from IUpdatable to ISlowTickable."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs",
+        "change": "Moved parasite spore toxic survival damage from frame Tick to ISlowTickable beside radiation fatigue dose reporting."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+        "change": "Removed the managed completion gas-signal publisher; gas status signals now come only from the gated Burst gas job writer."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+        "change": "Added typed ToxicityExposureSignal ingestion into MockToxemiaSignal before the SlowTick physiology job chain so atmosphere poison reaches StatusEffectStateDTO.StatusEffectMask."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+        "change": "Removed SourceHash=0 PhysiologyStateSignal emission and physiology lane prewarm; toxic exposure now publishes only ToxicityExposureSignal plus combat damage where needed."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/PlayerStressMetricsRuntime.cs; Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs; Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs; Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+        "change": "Removed stress-only PhysiologyStateSignal publishing; stress routes now use PlayerStressSignal."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs",
+        "change": "Decompression visuals now require SourceShinobuPhysiology, preventing non-owner physiology signals from changing DCS shader state."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismJobs.cs",
+        "change": "Metabolism physiology output now tags SourceHash with ShinobuMetabolismConstants.SourceHash instead of an entity hash."
+      }
+    ],
+    "radiationDoseRoutes": [
+      "RadiationHazardGrid.SlowTick -> radiation evaluation budget -> ScheduleRadiationSimulation",
+      "TraumaDispatcher.SlowTick -> UpdateRadiationFatigue -> RadiationHazardGrid.ReportExternalDose",
+      "HectonSurvivalSystem.SlowTick -> HandleRadiation -> RadiationHazardGrid.ReportExternalDose",
+      "RandomEventSystem.SlowTick -> ApplySolarFlareRadiation -> RadiationHazardGrid.ReportExternalDose"
+    ],
+    "toxinStatusRoutes": [
+      "ToxicOutgassingChemistryRuntime.SlowTick -> ToxicityExposureSignal -> ShinobuPhysiologyRuntime.IngestAtmosphereToxicitySignals -> MockToxemiaSignal -> PhysiologySignalIngestJob -> StatusEffectStateDTO.Poison",
+      "HazardZoneManager.SlowTick -> ApplyToxicityDose -> ApplyToxicityDamagePulse",
+      "EnvironmentalHazard.SlowTick -> ApplyDamage",
+      "HectonHazardSource.SlowTick -> InternalUpdateRegistry",
+      "HectonPlayerHealth.SlowTick -> UpdateNutritionalToxicity + UpdateGasPhysiologyBridge",
+      "TraumaDispatcher.SlowTick -> UpdateActiveParasiteSporeHazard"
+    ],
+    "statusEffectStateDTO": {
+      "sizeBytes": 64,
+      "statusEffectMaskOffset": 0,
+      "managedReferences": false,
+      "runtimeParseCalls": false
+    },
+    "numericProof500m": {
+      "profile": "500m depth, 600s dwell, 60s ascent, 120s surface, dt 0.1",
+      "activeCsv": "C:/hades/Hecton8/buhlmann_3tissue_profiles.csv",
+      "activeRowsSeconds": [300, 2298, 11220],
+      "maxExactVsPadeErrorAtm": 0.0000000022082531359,
+      "invalidCount": 0,
+      "peakThreeRawRisk": 13.051673752094917,
+      "peakThreeCorrectedRawRisk": 13.704257439699663,
+      "peakReference16RowRawRisk": 13.593805270969174,
+      "correctedRawRatio": 1.0081251839737893,
+      "runtimeSaturatedRisk01": 1.0,
+      "dcsOnlyWarningPulses": 137,
+      "dcsOnlyWarningTransitions": 2,
+      "firstWarningFrame": 6439,
+      "lastWarningPulseFrame": 7794,
+      "gasWarningPulses": 657,
+      "gasWarningTransitions": 2,
+      "firstGasWarningFrame": 1,
+      "lastGasWarningFrame": 6552,
+      "narcosisOnlyFalseCauseDecompressionSignals": 0,
+      "toxicDamageCadenceHz": 10,
+      "defaultAutoHelioxPeakCorrectedRawRisk": 0.0,
+      "defaultAutoHelioxDcsWarningPulses": 0
+    },
+    "verification": {
+      "promptReExtractedLines": 43,
+      "diffCheck": "Scoped git diff --check on X_009 touched C# files produced LF->CRLF warnings only and no whitespace errors.",
+      "authorityLaneScan": "ToxicOutgassingChemistryRuntime has no PhysiologyStateSignal references. Non-SHINOBU stress producers no longer push PhysiologyStateSignal. The remaining runtime push outside SHINOBU decompression/gas is ShinobuMetabolismRuntime and is tagged with ShinobuMetabolismConstants.SourceHash.",
+      "compile": "Not launched after toxicity/source cleanup because the latest guard returned CPU 79 with no active compiler processes, above the project limit of 50. Earlier bounded compile probe timed out after 120s with no diagnostics.",
+      "profiler": "Not run."
+    }
+  }
+}

@@ -1,0 +1,624 @@
+{
+  "agent": "X_007",
+  "aiEcosystemQualityRouteProof": {
+    "boidSocialLodReadsMathLodConfig": true,
+    "migrationCadenceContinuousResolved": true,
+    "migrationJobUsesResolvedQuality": true,
+    "migrationReadsMathLodConfig": true,
+    "symbiosisComplexityUsesContinuousQuality": true,
+    "symbiosisReadsMathLodConfig": true,
+    "symbiosisTruthAmplitudeInvariant": true,
+    "symbiosisTuningUsesResolvedQuality": true,
+    "truthPolicy": "ecosystem quality scales cadence/stride/social visual detail; oxygen, feeding, migration authority amplitudes are not reduced by binary quality tiers"
+  },
+  "animationQualityGateProof": {
+    "kineticCharacterSdfGradientContinuous": true,
+    "leviathanTerrainIkSdfContinuous": true,
+    "proceduralBoneJawContinuous": true,
+    "proceduralBoneSecondaryContinuous": true,
+    "truthPolicy": "animation quality scales interpolation/detail weights continuously; bone identity, pose authority, and collision/SDF validity checks remain unchanged"
+  },
+  "asmdefDependencyAudit": {
+    "asmdefCount": 162,
+    "mathLodApproximationMissingCoreReferenceCount": 0,
+    "mathLodApproximationMissingCoreReferenceFirst": []
+  },
+  "baseAtmosphereQualityRouteProof": {
+    "coldTickRangeSeconds": [
+      1.0,
+      0.2
+    ],
+    "diffusionIterationsContinuous": true,
+    "engineColdTickCadenceContinuous": true,
+    "engineReadsMathLodConfig": true,
+    "iterationRange": [
+      2,
+      8
+    ],
+    "readsMathLodConfig": true,
+    "truthPolicy": "gas source/consumer rates stay unchanged; quality scales diffusion solver passes only",
+    "tuningUsesResolvedQuality": true
+  },
+  "batteryChargerQualityRouteProof": {
+    "cadenceContinuous": true,
+    "cadenceRangeHz": [
+      5.0,
+      60.0
+    ],
+    "overridePolicy": "QualityOverride >= 0 clamps to 0..1 and overrides the MathLodRuntimeConfig snapshot; negative override follows global quality.",
+    "readsMathLodConfig": true,
+    "samplesQualityUnderTuningLock": true,
+    "scheduleUsesTuningQuality": true,
+    "tuningUsesResolvedQuality": true
+  },
+  "branchAudit": {
+    "Assets/_Project/Scripts/MathLodApproximation.cs": {
+      "burstCompileCount": 1,
+      "floatModeFastCount": 0,
+      "ifCount": 28,
+      "switchCount": 3,
+      "ternaryCount": 11
+    },
+    "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs": {
+      "burstCompileCount": 9,
+      "floatModeFastCount": 0,
+      "ifCount": 53,
+      "switchCount": 3,
+      "ternaryCount": 81
+    },
+    "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs": {
+      "burstCompileCount": 6,
+      "floatModeFastCount": 0,
+      "ifCount": 54,
+      "switchCount": 0,
+      "ternaryCount": 26
+    },
+    "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs": {
+      "burstCompileCount": 8,
+      "floatModeFastCount": 0,
+      "ifCount": 206,
+      "switchCount": 0,
+      "ternaryCount": 48
+    },
+    "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs": {
+      "burstCompileCount": 11,
+      "floatModeFastCount": 0,
+      "ifCount": 206,
+      "switchCount": 0,
+      "ternaryCount": 46
+    },
+    "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs": {
+      "burstCompileCount": 6,
+      "floatModeFastCount": 0,
+      "ifCount": 130,
+      "switchCount": 0,
+      "ternaryCount": 65
+    },
+    "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsJobs.cs": {
+      "burstCompileCount": 12,
+      "floatModeFastCount": 0,
+      "ifCount": 48,
+      "switchCount": 0,
+      "ternaryCount": 9
+    }
+  },
+  "codeAnchorAudit": {
+    "abyssalCavitationReadsMathLodConfig": true,
+    "abyssalReactorDefaultsUseResolvedQuality": true,
+    "abyssalReactorWriteFallbackUsesResolvedQuality": true,
+    "abyssalThermodynamicsBuildTuningUsesResolvedQuality": true,
+    "abyssalThermodynamicsReadsMathLodConfig": true,
+    "abyssalThermodynamicsWriteTuningUsesResolvedQuality": true,
+    "acosCoreIfCount": 0,
+    "aiAnxietyApproxIfCount": 0,
+    "aiAnxietyDirectExpRemoved": true,
+    "analyticalWaveReadsMathLodConfig": true,
+    "approxCoreIfCount": 0,
+    "approxCoreTernaryCount": 0,
+    "approxCoreUsesMathSelect": true,
+    "assetLifecycleReadsMathLodConfig": true,
+    "assetLoadDispatcherReadsMathLodConfig": true,
+    "asyncBuoyancyReadsMathLodConfig": true,
+    "atan2CoreIfCount": 0,
+    "atanCoreIfCount": 0,
+    "atanCoreUsesMathSelect": true,
+    "ballisticsDirectExpRemoved": true,
+    "baseAtmosphereDiffusionIterationsContinuous": true,
+    "baseAtmosphereEngineColdTickCadenceContinuous": true,
+    "baseAtmosphereEngineReadsMathLodConfigQuality": true,
+    "baseAtmosphereReadsMathLodConfigQuality": true,
+    "baseAtmosphereTuningUsesResolvedQuality": true,
+    "batteryChargerCadenceContinuous": true,
+    "batteryChargerReadsMathLodConfigQuality": true,
+    "batteryChargerSamplesQualityUnderLock": true,
+    "batteryChargerScheduleUsesTuningQuality": true,
+    "batteryChargerTuningUsesResolvedQuality": true,
+    "bhaskaraCoreIfCount": 0,
+    "bhaskaraCoreTernaryCount": 0,
+    "bhaskaraCoreUsesMathSelect": true,
+    "boidSocialLodReadsMathLodConfig": true,
+    "bulkheadAuthorityCadenceUsesResolvedQuality": true,
+    "bulkheadHatchTuningUsesResolvedQuality": true,
+    "bulkheadRuntimeReadsMathLodConfig": true,
+    "buoyancyDisplacementReadsMathLodConfig": true,
+    "cable132CatmullContinuous": true,
+    "decompressionApproxPresent": true,
+    "decompressionAuthorityConstantTissues": true,
+    "decompressionAuthorityTissueCount": 3,
+    "decompressionDirectExpRemoved": true,
+    "directionalInfinityClampIfCount": 0,
+    "directionalInfinityClampUsesMathSelect": true,
+    "distanceMathContinuousDistanceWeight": true,
+    "distanceMathContinuousShaderWeight": true,
+    "dynamicMusicInterpolationContinuous": true,
+    "editorBioForgeExpLogRemoved": true,
+    "exosuitReadsMathLodConfig": true,
+    "expPositiveInfinityClampsToMaxRange": true,
+    "externalHeatRetentionQualityInvariant": true,
+    "externalThermalInjectionQualityInvariantHeatShape": true,
+    "fluidAbyssalVisualReadsMathLodConfig": true,
+    "fluidAdvectionReadsMathLodConfig": true,
+    "gasDynamicsCadenceContinuous": true,
+    "gasDynamicsReadsMathLodConfig": true,
+    "gasLeakDirectExpRemoved": true,
+    "habitatFluidReadsMathLodConfig": true,
+    "hullIntegrityReadsMathLodConfig": true,
+    "hydraulicErosionExpRemoved": true,
+    "hydrodynamicKccReadsMathLodConfig": true,
+    "interiorGICadenceContinuous": true,
+    "interiorGIDirectionalWeightsContinuous": true,
+    "interiorGIReadsMathLodConfig": true,
+    "jacobiContinuousIterationsPresent": true,
+    "jacobiRuntimeUsesGlobalQualityParameter": true,
+    "jacobiSelfAuditMonotonic": true,
+    "kineticCharacterSdfGradientContinuous": true,
+    "leviathanTerrainIkSdfContinuous": true,
+    "logisticsGraphAdaptiveWindowUsesResolvedQuality": true,
+    "logisticsGraphJobUsesResolvedQuality": true,
+    "logisticsGraphReadsMathLodConfigQuality": true,
+    "mathLodApproximationContractPresent": true,
+    "mathLodBlackBoxDumpWriterPresent": true,
+    "mathLodBlackBoxFaultDumpIntegrated": true,
+    "mathLodConfigBufferIdsPresent": true,
+    "mathLodConfigDto64BytesDeclared": true,
+    "mathLodConfigPublishedByHomeostasis": true,
+    "mathLodReadAccessorPure": true,
+    "mathLodRuntimeConfigPresent": true,
+    "mathLodTelemetryEntry64BytesDeclared": true,
+    "mathLodTortureChecksNonFiniteAllKernels": true,
+    "mathLodTortureCoversAngleKernels": true,
+    "mathLodTortureCoversExtremePressureTemperature": true,
+    "mathLodTortureJobPresent": true,
+    "mathLodTortureSanitizesEnvelope": true,
+    "metabolismRuntimeReadsMathLodConfig": true,
+    "metabolismThermalInterpolationContinuous": true,
+    "migrationCadenceContinuousResolved": true,
+    "migrationJobUsesResolvedQuality": true,
+    "migrationReadsMathLodConfig": true,
+    "oceanFoamQualityContinuous": true,
+    "physiologyDirectExpRemoved": true,
+    "physiologyRuntimeCadenceContinuous": true,
+    "physiologyRuntimeReadsMathLodConfig": true,
+    "powerGridCableThermalIterationBudgetUsesResolvedQuality": true,
+    "powerGridManagerReadsMathLodConfigQuality": true,
+    "powerGridManagerThermalCadenceContinuous": true,
+    "powerGridManagerThermalScheduleUsesResolvedQuality": true,
+    "powerHotFiniteGuardsUseMathSelect": true,
+    "powerJacobiConductanceCapPresent": true,
+    "powerJacobiFuzzerConductanceCurrentCaps": true,
+    "powerJacobiFuzzerContinuousIterationsPresent": true,
+    "powerJacobiFuzzerDampedOmega": true,
+    "powerJacobiFuzzerIsolatedVault": true,
+    "powerJacobiFuzzerUsesMathLodBudget": true,
+    "powerJacobiNetCurrentCapPresent": true,
+    "powerJacobiTickCapPresent": true,
+    "powerVoltageBrownoutUsesMathSelect": true,
+    "powerVoltageConductanceMaskBranchless": true,
+    "proceduralBoneJawContinuous": true,
+    "proceduralBoneSecondaryContinuous": true,
+    "remainingFloatModeFastCount": 700,
+    "rollbackDirectExpRemoved": true,
+    "seaglideJobUsesGlobalQualityWeight": true,
+    "seaglideRuntimeReadsMathLodConfig": true,
+    "seismicTideReadsMathLodConfig": true,
+    "solarDirectExpRemoved": true,
+    "stormAttenuationDirectExpRemoved": true,
+    "stormNoiseOctavesContinuous": true,
+    "structuralVisualReadsMathLodConfig": true,
+    "submarineAutopilotReadsMathLodConfig": true,
+    "submarineDynamicsReadsMathLodConfig": true,
+    "symbiosisComplexityUsesContinuousQuality": true,
+    "symbiosisReadsMathLodConfig": true,
+    "symbiosisTruthAmplitudeInvariant": true,
+    "symbiosisTuningUsesResolvedQuality": true,
+    "tanCoreIfCount": 0,
+    "tetherAupCatmullContinuous": true,
+    "vehicleDamageReadsMathLodConfig": true,
+    "volcanicUpdraftContinuousVisualWeights": true,
+    "volcanicUpdraftJobsUseSettingsQuality": true,
+    "volcanicUpdraftReadsMathLodConfig": true,
+    "voxelSurfaceDensityContinuous": true,
+    "vramEnforcerReadsMathLodConfig": true,
+    "vramPressureReadsMathLodConfig": true
+  },
+  "firstOccurrences": [],
+  "generatedBy": "Tools/OOP_MathLOD_Scanner.py",
+  "hardFailures": [],
+  "jacobiProof": {
+    "convergenceClaimAtMinQuality": "not claimed",
+    "headlessFuzzerContract": {
+      "conductanceCap": 4096.0,
+      "edgeCurrentCap": 4096.0,
+      "isolatedVaultDoesNotPublishLatestCreated": true,
+      "maximumIterations": 50,
+      "minimumIterations": 2,
+      "omegaRange": [
+        0.55,
+        0.92
+      ],
+      "usesGlobalQualityWeight": true
+    },
+    "safetyInvariant": "bounded relaxation: capped non-negative conductance, guarded denominator, saturated [0,1] potential, finite current caps, divergence flags",
+    "samples": [
+      {
+        "curve": 0.0,
+        "globalQualityWeight": 0.0,
+        "iterations": 2,
+        "omega": 0.55,
+        "residualSampleMask": 7,
+        "targetToleranceAtBase0_001": 0.032
+      },
+      {
+        "curve": 0.028000000000000004,
+        "globalQualityWeight": 0.1,
+        "iterations": 3,
+        "omega": 0.5603600000000001,
+        "residualSampleMask": 7,
+        "targetToleranceAtBase0_001": 0.031118
+      },
+      {
+        "curve": 0.5,
+        "globalQualityWeight": 0.5,
+        "iterations": 26,
+        "omega": 0.7350000000000001,
+        "residualSampleMask": 4,
+        "targetToleranceAtBase0_001": 0.01625
+      },
+      {
+        "curve": 1.0,
+        "globalQualityWeight": 1.0,
+        "iterations": 50,
+        "omega": 0.92,
+        "residualSampleMask": 0,
+        "targetToleranceAtBase0_001": 0.0005000000000000004
+      }
+    ]
+  },
+  "logisticsQualityRouteProof": {
+    "adaptiveWindowUsesResolvedQuality": true,
+    "fallback": "AuthoritativeQualityWeight only when MathLodRuntimeConfig has no published snapshot",
+    "jobUsesResolvedQuality": true,
+    "readsMathLodConfig": true
+  },
+  "physicsLightingQualityGateProof": {
+    "cable132CatmullContinuous": true,
+    "interiorGICadenceContinuous": true,
+    "interiorGIDirectionalWeightsContinuous": true,
+    "interiorGIReadsMathLodConfig": true,
+    "tetherAupCatmullContinuous": true,
+    "truthPolicy": "quality scales cable/tether spline presentation and GI directional/cadence detail; tether constraints, tension events, light sources, and occlusion validity stay authoritative"
+  },
+  "powerGridManagerQualityRouteProof": {
+    "cableThermalIterationBudgetUsesResolvedQuality": true,
+    "cadenceRangeSeconds": [
+      0.2,
+      0.016666666666666666
+    ],
+    "readsMathLodConfig": true,
+    "thermalCadenceContinuous": true,
+    "thermalScheduleUsesResolvedQuality": true
+  },
+  "presentationQualityGateProof": {
+    "dynamicMusicInterpolationContinuous": true,
+    "oceanFoamQualityContinuous": true,
+    "stormNoiseOctavesContinuous": true,
+    "truthPolicy": "quality scales audio interpolation, storm visual octaves, foam scalar, and voxel density interpolation only; biome state, survival state, and source scalar truth stay unchanged",
+    "voxelSurfaceDensityContinuous": true
+  },
+  "qualityDropProof": {
+    "authorityTissueCount": 3,
+    "authorityUsesGlobalQualityWeightForTissueCount": false,
+    "expectedTissueStateDeltaForEqualPhysicalInputs": 0.0,
+    "globalQualityWeightInputs": [
+      1.0,
+      0.1
+    ]
+  },
+  "remainingTranscendentalTotal": 0,
+  "remainingTranscendentals": {
+    "SystemMath.Acos": 0,
+    "SystemMath.Asin": 0,
+    "SystemMath.Atan": 0,
+    "SystemMath.Atan2": 0,
+    "SystemMath.Cos": 0,
+    "SystemMath.Exp": 0,
+    "SystemMath.Log": 0,
+    "SystemMath.Pow": 0,
+    "SystemMath.Sin": 0,
+    "SystemMath.Tan": 0,
+    "SystemMathF.Acos": 0,
+    "SystemMathF.Asin": 0,
+    "SystemMathF.Atan": 0,
+    "SystemMathF.Atan2": 0,
+    "SystemMathF.Cos": 0,
+    "SystemMathF.Exp": 0,
+    "SystemMathF.Log": 0,
+    "SystemMathF.Pow": 0,
+    "SystemMathF.Sin": 0,
+    "SystemMathF.Tan": 0,
+    "UnityMathf.Acos": 0,
+    "UnityMathf.Asin": 0,
+    "UnityMathf.Atan": 0,
+    "UnityMathf.Atan2": 0,
+    "UnityMathf.Cos": 0,
+    "UnityMathf.Exp": 0,
+    "UnityMathf.Log": 0,
+    "UnityMathf.Pow": 0,
+    "UnityMathf.Sin": 0,
+    "UnityMathf.Tan": 0,
+    "math.acos": 0,
+    "math.asin": 0,
+    "math.atan": 0,
+    "math.atan2": 0,
+    "math.cos": 0,
+    "math.exp": 0,
+    "math.log": 0,
+    "math.pow": 0,
+    "math.sin": 0,
+    "math.sincos": 0,
+    "math.tan": 0
+  },
+  "residualProof": {
+    "acosScan0To1": {
+      "domain": [
+        0.0,
+        1.0
+      ],
+      "maxAbsAtX": 0.0,
+      "maxAbsError": 6.754795578522987e-05,
+      "step": 0.0001
+    },
+    "approximation": "P33(clamp(x,0,4)/4)^4",
+    "atanScan0To16": {
+      "domain": [
+        0.0,
+        16.0
+      ],
+      "maxAbsAtX": 0.6613,
+      "maxAbsError": 0.004680133605322934,
+      "step": 0.0001
+    },
+    "bhaskaraCosScan0To2Pi": {
+      "domain": [
+        0.0,
+        6.283185307179586
+      ],
+      "maxAbsAtX": 4.5096,
+      "maxAbsError": 0.0016323108809562503,
+      "step": 0.0001
+    },
+    "bhaskaraSinScan0To2Pi": {
+      "domain": [
+        0.0,
+        6.283185307179586
+      ],
+      "maxAbsAtX": 6.08,
+      "maxAbsError": 0.0016321921131719486,
+      "step": 0.0001
+    },
+    "extremeInputs": [
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "nan",
+        "within01": true
+      },
+      {
+        "approx": 0.01831487938761711,
+        "finite": true,
+        "input": "inf",
+        "within01": true
+      },
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "-inf",
+        "within01": true
+      },
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "-1000000000.0",
+        "within01": true
+      },
+      {
+        "approx": 0.01831487938761711,
+        "finite": true,
+        "input": "1000000.0",
+        "within01": true
+      },
+      {
+        "approx": 0.01831487938761711,
+        "finite": true,
+        "input": "1000.0",
+        "within01": true
+      },
+      {
+        "approx": 0.01831487938761711,
+        "finite": true,
+        "input": "4.0",
+        "within01": true
+      },
+      {
+        "approx": 0.3678794503211975,
+        "finite": true,
+        "input": "1.0",
+        "within01": true
+      },
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "0.0",
+        "within01": true
+      }
+    ],
+    "floatScan0To1": {
+      "domain": [
+        0.0,
+        1.0
+      ],
+      "maxAbsAtX": 0.0142,
+      "maxAbsError": 4.1522231497559403e-07,
+      "maxRelAtX": 0.9599000000000001,
+      "maxRelError": 5.560966548862889e-07,
+      "step": 0.0001
+    },
+    "floatScan0To4": {
+      "domain": [
+        0.0,
+        4.0
+      ],
+      "maxAbsAtX": 3.9988,
+      "maxAbsError": 7.629343333620531e-07,
+      "maxRelAtX": 3.9991000000000003,
+      "maxRelError": 4.161334768844376e-05,
+      "step": 0.0001
+    },
+    "p33Denominator": "1 + y/2 + y^2/10 + y^3/120",
+    "p33Numerator": "1 - y/2 + y^2/10 - y^3/120",
+    "physiologyWorstCase": {
+      "absError": 6.080794978657877e-08,
+      "approx": 0.8625420928001404,
+      "exact": 0.8625420319921906,
+      "x": 0.147871398519455
+    },
+    "positiveExpScan0To4": {
+      "domain": [
+        0.0,
+        4.0
+      ],
+      "maxAbsAtX": 3.9991000000000003,
+      "maxAbsError": 0.0022700597923801524,
+      "maxRelAtX": 3.9991000000000003,
+      "maxRelError": 4.1615032092920464e-05,
+      "step": 0.0001
+    },
+    "positiveInfinityDecayPolicy": {
+      "approx": 0.01831487938761711,
+      "expected": "clamp to x=4 maximum finite decay range, not NaN fallback",
+      "finite": true,
+      "withinMaxDecayRange": true
+    },
+    "tanScan0To1_4": {
+      "domain": [
+        0.0,
+        1.4
+      ],
+      "maxAbsAtX": 1.3999000000000001,
+      "maxAbsError": 0.05517876098057872,
+      "step": 0.0001
+    },
+    "wideExpNegScan0To40": {
+      "domain": [
+        0.0,
+        40.0
+      ],
+      "maxAbsAtX": 0.012,
+      "maxAbsError": 3.7819043048337164e-06,
+      "maxRelAtX": 39.976,
+      "maxRelError": 0.00041646376305333374,
+      "step": 0.001
+    }
+  },
+  "runtimeContinuousCadenceAndVisualProof": {
+    "abyssalReactorDefaultsUseResolvedQuality": true,
+    "abyssalReactorWriteFallbackUsesResolvedQuality": true,
+    "abyssalThermodynamicsBuildTuningUsesResolvedQuality": true,
+    "abyssalThermodynamicsSnapshotRoute": true,
+    "abyssalThermodynamicsWriteTuningUsesResolvedQuality": true,
+    "boidSocialLodSnapshotRoute": true,
+    "bulkheadAuthorityCadenceUsesResolvedQuality": true,
+    "bulkheadHatchTuningUsesResolvedQuality": true,
+    "bulkheadRuntimeSnapshotRoute": true,
+    "gasDynamicsCadenceContinuous": true,
+    "gasDynamicsSnapshotRoute": true,
+    "metabolismRuntimeSnapshotRoute": true,
+    "metabolismThermalInterpolationContinuous": true,
+    "migrationCadenceContinuous": true,
+    "migrationJobUsesResolvedQuality": true,
+    "migrationSnapshotRoute": true,
+    "physiologyCadenceContinuous": true,
+    "physiologyRuntimeSnapshotRoute": true,
+    "policy": "cadence changes integrate accumulated delta time; visual turbulence/debris use smooth continuous quality curves; gameplay truth amplitudes are not reduced by binary quality tiers",
+    "seaglideBurstJobUsesGlobalQualityWeight": true,
+    "seaglideRuntimeSnapshotRoute": true,
+    "symbiosisComplexityContinuous": true,
+    "symbiosisSnapshotRoute": true,
+    "symbiosisTruthAmplitudeInvariant": true,
+    "symbiosisTuningUsesResolvedQuality": true,
+    "volcanicJobsUseSettingsQuality": true,
+    "volcanicUpdraftSnapshotRoute": true,
+    "volcanicVisualWeightsContinuous": true
+  },
+  "runtimeQualitySnapshotRouteProof": {
+    "abyssalCavitation": true,
+    "analyticalGerstnerWave": true,
+    "assetLifecycleGovernor": true,
+    "assetLoadDispatcher": true,
+    "asyncBuoyancyReadback": true,
+    "buoyancyDisplacement": true,
+    "exosuitKinematics": true,
+    "fluidAbyssalVisual": true,
+    "fluidAdvection": true,
+    "habitatFluidIncursion": true,
+    "hullIntegrity": true,
+    "hydrodynamicKcc": true,
+    "policy": "heavy runtime readers consume the owner-published zero-GC MathLodRuntimeConfig snapshot first; HomeostasisBrain remains a cold bootstrap fallback only",
+    "seismicTide": true,
+    "structuralVisual": true,
+    "submarineAutopilotSdf": true,
+    "submarineDynamics": true,
+    "vehicleComponentDamage": true,
+    "vramEnforcer": true,
+    "vramPressureMonitor": true
+  },
+  "scannedCSharpFiles": 2406,
+  "sourceRoot": "C:\\hades\\Hecton8",
+  "thermalInjectionTruthProof": {
+    "heatRetention": "quality-invariant 0.55 carry-over",
+    "heatRetentionQualityInvariant": true,
+    "heatShape": "quality-invariant smoothstep radial mask",
+    "heatShapeQualityInvariant": true,
+    "qualityAffectsExternalHeatTruth": false,
+    "reason": "external thermal heat can trip damage/brownout flags, so quality must not change its source amplitude or decay"
+  },
+  "tortureProof": {
+    "checksNonFiniteAcrossAllKernels": true,
+    "coversAngleAndPowKernels": true,
+    "coversExtremeInputs": true,
+    "extremePressureAtmSamples": [
+      0.0,
+      1.0,
+      1000.0,
+      1000000.0
+    ],
+    "extremeTemperatureCelsiusSamples": [
+      -273.15,
+      37.0,
+      1000000.0,
+      -1000000.0
+    ],
+    "sampleCount": 16,
+    "sanitizesResultEnvelope": true
+  }
+}

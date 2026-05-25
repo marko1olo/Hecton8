@@ -1,13 +1,15 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 - SaveStation.cs
 // Mirnyy terminal sohraneniya s defensive-povedeniem i integratsiey v HUD.
 // ============================================================================
 
+using System;
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Interaction
@@ -34,10 +36,17 @@ namespace Hecton8.Interaction
         [Tooltip("Zvuk aktivatsii terminala.")]
         [SerializeField] private AudioClip _interactionSound;
 
-        private string _cachedInteractText;
-        private SaveManager _saveManager;
+        private const string SaveGameFallbackLabel = "Save Game";
+        private const string SaveStationFallbackName = "Save Station";
+        private const int InteractTextCapacity = 128;
+
+        private string _cachedInteractText = SaveGameFallbackLabel;
+        private readonly char[] _interactTextBuffer = new char[InteractTextCapacity];
+        private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - save-station HUD notification staging buffer - owner: SaveStation
+        private int _interactTextLength;
+        private ISaveService _saveService;
         private Hecton8.Core.IAudioService _audioService;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private bool _hotSwapRegistered;
 
         private void Awake()
@@ -50,12 +59,14 @@ namespace Hecton8.Interaction
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshCachedInteractText();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
         }
@@ -73,21 +84,19 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void Interact(Transform interactor)
         {
-            SaveManager saveManager = _saveManager;
-            if (saveManager == null)
+            ISaveService saveService = _saveService;
+            if (saveService == null)
             {
-                ResolveHudNotification();
-                _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_OFFLINE, "SAVE SYSTEM OFFLINE"));
+                ShowHudWarning(LocalizationKeys.SAVE_STATION_OFFLINE, "SAVE SYSTEM OFFLINE");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SaveStation] SaveManager instance not found.", this);
+                Debug.LogError("[SaveStation] Save service instance not found.", this);
 #endif
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(_saveSlot))
             {
-                ResolveHudNotification();
-                _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED"));
+                ShowHudWarning(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[SaveStation] Save slot is not configured.", this);
 #endif
@@ -96,31 +105,28 @@ namespace Hecton8.Interaction
 
             if (!SaveManager.IsSafeSlotName(_saveSlot))
             {
-                ResolveHudNotification();
-                _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED"));
+                ShowHudWarning(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[SaveStation] Save slot rejected by SaveManager slot-name guard.", this);
 #endif
                 return;
             }
 
-            if (saveManager.IsBusy)
+            if (saveService.IsBusy)
             {
-                ResolveHudNotification();
-                _hudNotification?.ShowInfo(ResolveLocalized(LocalizationKeys.SAVE_STATION_BUSY, "SAVE ALREADY IN PROGRESS"));
+                ShowHudInfo(LocalizationKeys.SAVE_STATION_BUSY, "SAVE ALREADY IN PROGRESS");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SaveStation] Save skipped for '{_saveSlot}' because another save/load is already running.", this);
+                Debug.LogWarning("[SaveStation] Save skipped because another save/load is already running.", this);
 #endif
                 return;
             }
 
             PlayInteractionSound();
 
-            ResolveHudNotification();
-            _hudNotification?.ShowInfo(ResolveLocalized(LocalizationKeys.SAVE_STATION_REQUESTED, "SAVE REQUESTED"));
+            ShowHudInfo(LocalizationKeys.SAVE_STATION_REQUESTED, "SAVE REQUESTED");
 
-            _ = saveManager.SaveGameAsync(_saveSlot);
-            InteractionEvents.RaiseInteractionStarted(this, interactor);
+            _ = saveService.SaveGameAsync(_saveSlot);
+            InteractionEvents.TryRaiseInteractionStarted(this, interactor);
         }
 
         /// <inheritdoc />
@@ -131,7 +137,14 @@ namespace Hecton8.Interaction
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
         {
-            return InteractableTextCopy.TryCopy(_cachedInteractText, destination, out length);
+            length = 0;
+            if (_interactTextLength <= 0)
+                return InteractableTextCopy.TryCopy(_cachedInteractText, destination, out length);
+
+            int copyLength = math.min(_interactTextLength, destination.Length);
+            _interactTextBuffer.AsSpan(0, copyLength).CopyTo(destination);
+            length = copyLength;
+            return copyLength == _interactTextLength;
         }
 
         private void PlayInteractionSound()
@@ -154,9 +167,20 @@ namespace Hecton8.Interaction
 
         private void RefreshCachedInteractText()
         {
-            string stationName = _localizedStationName.ResolveOrFallback(_localization, FallbackOrDefault(_stationName, "Save Station"));
-            string actionLabel = ResolveLocalized(LocalizationKeys.INTERACT_SAVE_GAME, "Save Game");
-            _cachedInteractText = actionLabel + " (" + stationName + ")";
+            _cachedInteractText = SaveGameFallbackLabel;
+            _interactTextLength = 0;
+
+            ReadOnlySpan<char> actionLabel = ResolveLocalizedSpan(LocalizationKeys.INTERACT_SAVE_GAME, SaveGameFallbackLabel);
+            ReadOnlySpan<char> stationName = _localizedStationName.ResolveSpanOrFallback(
+                _localization,
+                FallbackOrDefault(_stationName, SaveStationFallbackName));
+
+            int length = 0;
+            TryAppendSpan(actionLabel, _interactTextBuffer, ref length);
+            TryAppendSpan(" (".AsSpan(), _interactTextBuffer, ref length);
+            TryAppendSpan(stationName, _interactTextBuffer, ref length);
+            TryAppendSpan(")".AsSpan(), _interactTextBuffer, ref length);
+            _interactTextLength = length;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -167,13 +191,13 @@ namespace Hecton8.Interaction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Save:
-                    _saveManager = currentService as SaveManager;
+                    _saveService = currentService as ISaveService;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     _audioService = currentService as Hecton8.Core.IAudioService;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
+                    _localization = currentService as ILocalizationTextReadModel;
                     RefreshCachedInteractText();
                     break;
             }
@@ -181,9 +205,9 @@ namespace Hecton8.Interaction
 
         private void CacheRegistryServicesCold()
         {
-            _saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _localization = LocalizationManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
+            _audioService = GlobalRegistry.Audio;
+            _localization = GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterHotSwapListener()
@@ -217,12 +241,50 @@ namespace Hecton8.Interaction
             RefreshCachedInteractText();
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
+        }
+
+        private void ShowHudWarning(string key, string fallback)
+        {
+            if (!TryBuildNotification(key, fallback))
+                return;
+
+            ResolveHudNotification();
+            _hudNotification?.ShowWarning(in _notificationBuffer);
+        }
+
+        private void ShowHudInfo(string key, string fallback)
+        {
+            if (!TryBuildNotification(key, fallback))
+                return;
+
+            ResolveHudNotification();
+            _hudNotification?.ShowInfo(in _notificationBuffer);
+        }
+
+        private bool TryBuildNotification(string key, string fallback)
+        {
+            _notificationBuffer.Clear();
+            return _notificationBuffer.Append(ResolveLocalizedSpan(key, fallback));
+        }
+
+        private static bool TryAppendSpan(ReadOnlySpan<char> source, char[] destination, ref int length)
+        {
+            if (destination == null || length < 0 || length > destination.Length)
+                return false;
+
+            int copyLength = math.min(source.Length, destination.Length - length);
+            if (copyLength <= 0)
+                return source.Length == 0;
+
+            source.Slice(0, copyLength).CopyTo(destination.AsSpan(length, copyLength));
+            length += copyLength;
+            return copyLength == source.Length;
         }
 
         private static string FallbackOrDefault(string value, string fallback)

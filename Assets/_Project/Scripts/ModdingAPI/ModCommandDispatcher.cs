@@ -244,6 +244,7 @@ namespace Hecton8.Modding
             public ushort Reserved1;
         }
 
+#pragma warning disable 0649
         private struct ModRaycastRequestRecord
         {
             public uint ModHash;
@@ -252,6 +253,7 @@ namespace Hecton8.Modding
             public byte Reserved0;
             public ushort Reserved1;
         }
+#pragma warning restore 0649
 
         private struct AupExecutionCandidate
         {
@@ -1117,7 +1119,7 @@ namespace Hecton8.Modding
             }
 
             float normalizedIntensity = math.saturate(intensity01);
-            IAudioService audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            IAudioService audioManager = GlobalRegistry.Audio;
             if (audioManager == null || !audioManager.TryEmitModAcousticPing(runtimePosition, normalizedIntensity))
             {
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.AcousticUnavailable);
@@ -1223,52 +1225,6 @@ namespace Hecton8.Modding
 
         private static bool QueueModRaycast(in ModCommand command)
         {
-            int slot = FindFreeRaycastSlot();
-            if (slot < 0)
-                return false;
-
-            UnpackFloat2(command.Payload1, out float originX, out float originY);
-            UnpackFloat2(command.Payload2, out float originZ, out float range);
-            UnpackFloat2(command.Payload3, out float directionX, out float directionY);
-            UnpackFloat2(command.Payload4, out float directionZ, out _);
-
-            float3 direction = new float3(directionX, directionY, directionZ);
-            float directionLengthSq = math.lengthsq(direction);
-            if (directionLengthSq <= 0.0001f || range <= 0f)
-                return false;
-
-            direction *= math.rsqrt(directionLengthSq);
-            int layerMask = unchecked((int)(command.Payload5 & 0xFFFFFFFFUL));
-            if (layerMask == 0)
-                layerMask = HectonLayerMasks.DefaultRaycastLayerMask;
-
-            RaycastCommand raycastCommand = new RaycastCommand
-            {
-                from = new Vector3(originX, originY, originZ),
-                direction = new Vector3(direction.x, direction.y, direction.z),
-                distance = range,
-                queryParameters = new QueryParameters
-                {
-                    layerMask = layerMask,
-                    hitTriggers = QueryTriggerInteraction.Ignore,
-                    hitBackfaces = false,
-                    hitMultipleFaces = false
-                }
-            };
-
-            _raycastRequestRecords[slot] = new ModRaycastRequestRecord
-            {
-                ModHash = command.ModHash,
-                RequestId = command.RequestId,
-                IsActive = 1,
-                Reserved0 = 0,
-                Reserved1 = 0
-            };
-
-            if (SystemDispatcher.QueueDispatcherRaycast(_raycastReceiver, slot, in raycastCommand))
-                return true;
-
-            _raycastRequestRecords[slot] = default;
             return false;
         }
 

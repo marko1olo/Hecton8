@@ -1,5 +1,5 @@
 using Hecton8.Core;
-using Hecton8.Modding;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
 using UnityEngine;
 
@@ -11,16 +11,21 @@ namespace Hecton8.Meta
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6350)]
     [AddComponentMenu("Hecton8/Meta/Run Modifier Controller")]
-    public sealed class RunModifierController : MonoBehaviour, ISaveable, IServiceHeartbeat, IServiceShutdown
+    public sealed class RunModifierController : MonoBehaviour, ISaveable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static RunModifiersDTO _pendingNewGameModifiers;
         private static bool _hasPendingNewGameModifiers;
 
-        private HectonEventSubscription _playerDiedSubscription;
-        private HectonEventSubscription _gameLoadedSubscription;
         private RunModifiersDTO _currentModifiers;
         private bool _deleteIssuedForCurrentRun;
         private bool _serviceRegistered;
+        private bool _saveRegistered;
+        private bool _registeredToUpdate;
+        private bool _hotSwapRegistered;
+        private ISaveService _saveService;
+        private SaveManager _saveManager;
+        private int _lastSurvivalDeathSignalSequence;
+        private uint _lastSessionLifecycleSequence;
 
         /// <summary>
         /// Current local-run modifier snapshot.
@@ -73,8 +78,10 @@ namespace Hecton8.Meta
             if (Application.isPlaying && !_serviceRegistered)
                 return;
 
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
-            SubscribeToEventBus();
+            TryRegisterHotSwapListener();
+            RefreshColdRegistryDependencies();
+            TryRegisterSaveOwner();
+            TryRegisterWithUpdateDispatcher();
             ResetForCurrentContext();
         }
 
@@ -84,12 +91,14 @@ namespace Hecton8.Meta
                 return;
 
             ResetForCurrentContext();
+            TryRegisterWithUpdateDispatcher();
         }
 
         private void OnDisable()
         {
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
-            UnsubscribeFromEventBus();
+            TryUnregisterSaveOwner();
+            UnregisterFromUpdateDispatcher();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
@@ -101,9 +110,30 @@ namespace Hecton8.Meta
         /// <inheritdoc />
         public void OnServiceShutdown()
         {
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
-            UnsubscribeFromEventBus();
+            TryUnregisterSaveOwner();
+            UnregisterFromUpdateDispatcher();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            if (_saveRegistered && previousService is ISaveService previousSave)
+                previousSave.Unregister(this);
+
+            _saveRegistered = false;
+            _saveService = currentService as ISaveService;
+            _saveManager = currentService as SaveManager;
+
+            if (Application.isPlaying && isActiveAndEnabled)
+                TryRegisterSaveOwner();
         }
 
         private void TryRegisterService()
@@ -169,7 +199,14 @@ namespace Hecton8.Meta
             _deleteIssuedForCurrentRun = false;
         }
 
-        private void HandlePlayerDied(PlayerDiedEvent playerDiedEvent)
+        /// <inheritdoc />
+        public void Tick(float deltaTime)
+        {
+            ProcessSessionLifecycleSignals();
+            ConsumeSurvivalDeathSignal();
+        }
+
+        private void HandlePlayerDied()
         {
             if (!_currentModifiers.isPermadeath)
                 return;
@@ -178,28 +215,38 @@ namespace Hecton8.Meta
             TryDeleteCurrentSlot();
         }
 
-        private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
+        private void HandleGameLoaded()
         {
             _deleteIssuedForCurrentRun = false;
             if (_currentModifiers.runMarkedDead && _currentModifiers.isPermadeath)
                 TryDeleteCurrentSlot();
         }
 
-        private void SubscribeToEventBus()
+        private void ProcessSessionLifecycleSignals()
         {
-            if (_playerDiedSubscription == null)
-                _playerDiedSubscription = HectonEventBus.Subscribe<PlayerDiedEvent>(HandlePlayerDied, "meta.run-modifiers");
+            global::System.ReadOnlySpan<SessionLifecycleSignal> signals = SignalBus<SessionLifecycleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                SessionLifecycleSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastSessionLifecycleSequence))
+                    continue;
 
-            if (_gameLoadedSubscription == null)
-                _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "meta.run-modifiers");
+                _lastSessionLifecycleSequence = signal.Sequence;
+                if (signal.Kind == SessionLifecycleSignal.KindGameLoaded)
+                    HandleGameLoaded();
+            }
         }
 
-        private void UnsubscribeFromEventBus()
+        private void ConsumeSurvivalDeathSignal()
         {
-            _playerDiedSubscription?.Dispose();
-            _playerDiedSubscription = null;
-            _gameLoadedSubscription?.Dispose();
-            _gameLoadedSubscription = null;
+            if (!SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence))
+                return;
+
+            if (sequence == _lastSurvivalDeathSignalSequence)
+                return;
+
+            _lastSurvivalDeathSignalSequence = sequence;
+            HandlePlayerDied();
         }
 
         private void ResetForCurrentContext()
@@ -243,7 +290,7 @@ namespace Hecton8.Meta
             if (string.IsNullOrWhiteSpace(slotName))
                 return;
 
-            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            SaveManager saveManager = _saveManager;
             if (saveManager == null)
                 return;
 
@@ -251,17 +298,87 @@ namespace Hecton8.Meta
             _deleteIssuedForCurrentRun = true;
         }
 
-        private static string ResolveCurrentSlotName()
+        private string ResolveCurrentSlotName()
         {
             GameStartContext context = GameStartContextHolder.Current;
             if (!string.IsNullOrWhiteSpace(context.TargetSaveSlot))
                 return context.TargetSaveSlot;
 
-            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            SaveManager saveManager = _saveManager;
             if (saveManager != null && !string.IsNullOrWhiteSpace(saveManager.LastOperationSlot))
                 return saveManager.LastOperationSlot;
 
             return string.Empty;
+        }
+
+        private void RefreshColdRegistryDependencies()
+        {
+            _saveService = GlobalRegistry.Save;
+            _saveManager = _saveService as SaveManager;
+        }
+
+        private void TryRegisterSaveOwner()
+        {
+            if (!Application.isPlaying || _saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveOwner()
+        {
+            if (!_saveRegistered)
+                return;
+
+            _saveService?.Unregister(this);
+            _saveRegistered = false;
+        }
+
+        private void TryRegisterWithUpdateDispatcher()
+        {
+            if (_registeredToUpdate || !Application.isPlaying)
+                return;
+
+            _lastSurvivalDeathSignalSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)
+                ? sequence
+                : 0;
+            _registeredToUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void UnregisterFromUpdateDispatcher()
+        {
+            if (!_registeredToUpdate)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredToUpdate = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private static bool IsNewerSequence(uint candidate, uint lastProcessed)
+        {
+            return candidate != 0u && (lastProcessed == 0u || unchecked((int)(candidate - lastProcessed)) > 0);
         }
     }
 }

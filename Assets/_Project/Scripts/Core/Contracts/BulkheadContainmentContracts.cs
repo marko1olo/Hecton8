@@ -3,6 +3,13 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class BulkheadContainmentContractLayout
+    {
+        public const int IntentStrideBytes = 64;
+        public const int IntentControlStrideBytes = 64;
+        public const int CollisionResultStrideBytes = 32;
+    }
+
     public static class BulkheadContainmentIntentFlags
     {
         public const uint None = 0u;
@@ -12,7 +19,7 @@ namespace Hecton8.Core.Contracts
         public const uint NonFinite = 1u << 31;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadContainmentContractLayout.IntentStrideBytes)]
     public struct BulkheadContainmentIntentDTO
     {
         [FieldOffset(0)] public double3 CenterAup;
@@ -26,7 +33,7 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(60)] public uint Frame;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadContainmentContractLayout.IntentControlStrideBytes)]
     public struct BulkheadContainmentIntentControlDTO
     {
         [FieldOffset(0)] public uint WriteCursor;
@@ -52,7 +59,7 @@ namespace Hecton8.Core.Contracts
         public const uint NonFinite = 1u << 31;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadContainmentContractLayout.CollisionResultStrideBytes)]
     public struct BulkheadCollisionResultDTO
     {
         [FieldOffset(0)] public float3 Normal;

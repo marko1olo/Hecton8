@@ -1,4 +1,4 @@
-# Multiplayer-Scope Public Positioning
+﻿# Multiplayer-Scope Public Positioning
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary

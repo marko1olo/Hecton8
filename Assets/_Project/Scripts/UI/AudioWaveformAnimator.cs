@@ -13,6 +13,7 @@ namespace Hecton8.UI
     public sealed class AudioWaveformAnimator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxCueTextChars = 1024;
+        private const int MaxWaveformBars = 4;
         private const float AmplitudeIdleEpsilon = 0.001f;
 
         [Header("References")]
@@ -42,8 +43,10 @@ namespace Hecton8.UI
         private int _cueSeed;
         private int _optionalCueTextLength = -1;
         private RectTransform _selfRect;
-        private float[] _baseScaleX;
-        private float[] _baseScaleZ;
+        private int _waveformBarCount;
+        private readonly RectTransform[] _runtimeWaveformBars = new RectTransform[MaxWaveformBars]; // COLD ALLOC: RectTransform[4] - fixed waveform target cache - owner: AudioWaveformAnimator
+        private readonly float[] _baseScaleX = new float[MaxWaveformBars]; // COLD ALLOC: float[4] - waveform X scale cache - owner: AudioWaveformAnimator
+        private readonly float[] _baseScaleZ = new float[MaxWaveformBars]; // COLD ALLOC: float[4] - waveform Z scale cache - owner: AudioWaveformAnimator
         private readonly char[] _optionalCueTextCache = new char[MaxCueTextChars]; // COLD ALLOC: char[1024] - optional waveform cue text cache for zero-GC TMP updates - owner: AudioWaveformAnimator
 
         /// <summary>
@@ -53,8 +56,28 @@ namespace Hecton8.UI
         {
             waveformBars = bars;
             optionalCueText = cueText;
+            _waveformBarCount = 0;
             _selfRect = transform as RectTransform;
             EnsureWaveformTargets();
+            ApplyIdlePose();
+        }
+
+        public void ConfigureWaveformTargets(
+            RectTransform bar0,
+            RectTransform bar1,
+            RectTransform bar2,
+            RectTransform bar3,
+            TMP_Text cueText = null)
+        {
+            waveformBars = null;
+            optionalCueText = cueText;
+            _selfRect = transform as RectTransform;
+            _runtimeWaveformBars[0] = bar0;
+            _runtimeWaveformBars[1] = bar1;
+            _runtimeWaveformBars[2] = bar2;
+            _runtimeWaveformBars[3] = bar3;
+            _waveformBarCount = CountNonNullWaveformBars();
+            CacheBaseScales(_waveformBarCount);
             ApplyIdlePose();
         }
 
@@ -175,9 +198,22 @@ namespace Hecton8.UI
 
         private void EnsureWaveformTargets()
         {
+            if (_waveformBarCount > 0)
+            {
+                CacheBaseScales(_waveformBarCount);
+                return;
+            }
+
             if (waveformBars != null && waveformBars.Length > 0)
             {
-                EnsureBaseScaleBuffers(waveformBars.Length);
+                _waveformBarCount = math.min(waveformBars.Length, MaxWaveformBars);
+                for (int i = 0; i < _waveformBarCount; i++)
+                    _runtimeWaveformBars[i] = waveformBars[i];
+
+                for (int i = _waveformBarCount; i < MaxWaveformBars; i++)
+                    _runtimeWaveformBars[i] = null;
+
+                CacheBaseScales(_waveformBarCount);
                 return;
             }
 
@@ -185,40 +221,59 @@ namespace Hecton8.UI
             if (_selfRect == null)
                 return;
 
-            waveformBars = new[] { _selfRect }; // COLD ALLOC: RectTransform[1] — waveform fallback target — owner: AudioWaveformAnimator
-            EnsureBaseScaleBuffers(1);
+            _runtimeWaveformBars[0] = _selfRect;
+            for (int i = 1; i < MaxWaveformBars; i++)
+                _runtimeWaveformBars[i] = null;
+
+            _waveformBarCount = 1;
+            CacheBaseScales(1);
         }
 
-        private void EnsureBaseScaleBuffers(int count)
+        private int CountNonNullWaveformBars()
         {
-            if (_baseScaleX != null && _baseScaleX.Length == count &&
-                _baseScaleZ != null && _baseScaleZ.Length == count)
+            int count = 0;
+            for (int i = 0; i < MaxWaveformBars; i++)
             {
-                return;
+                if (_runtimeWaveformBars[i] != null)
+                    count = i + 1;
             }
 
-            _baseScaleX = new float[count]; // COLD ALLOC: float[count] — waveform X scale cache — owner: AudioWaveformAnimator
-            _baseScaleZ = new float[count]; // COLD ALLOC: float[count] — waveform Z scale cache — owner: AudioWaveformAnimator
-            for (int i = 0; i < count; i++)
+            return count;
+        }
+
+        private void CacheBaseScales(int count)
+        {
+            int safeCount = math.clamp(count, 0, MaxWaveformBars);
+            for (int i = 0; i < safeCount; i++)
             {
-                RectTransform rect = waveformBars[i];
+                RectTransform rect = _runtimeWaveformBars[i];
                 if (rect == null)
+                {
+                    _baseScaleX[i] = 1f;
+                    _baseScaleZ[i] = 1f;
                     continue;
+                }
 
                 Vector3 localScale = rect.localScale;
                 _baseScaleX[i] = Mathf.Approximately(localScale.x, 0f) ? 1f : localScale.x;
                 _baseScaleZ[i] = Mathf.Approximately(localScale.z, 0f) ? 1f : localScale.z;
             }
+
+            for (int i = safeCount; i < MaxWaveformBars; i++)
+            {
+                _baseScaleX[i] = 1f;
+                _baseScaleZ[i] = 1f;
+            }
         }
 
         private void ApplyIdlePose()
         {
-            if (waveformBars == null)
+            if (_waveformBarCount <= 0)
                 return;
 
-            for (int i = 0; i < waveformBars.Length; i++)
+            for (int i = 0; i < _waveformBarCount; i++)
             {
-                RectTransform rect = waveformBars[i];
+                RectTransform rect = _runtimeWaveformBars[i];
                 if (rect == null)
                     continue;
 
@@ -228,13 +283,13 @@ namespace Hecton8.UI
 
         private void ApplyWaveformPose()
         {
-            if (waveformBars == null)
+            if (_waveformBarCount <= 0)
                 return;
 
             float liveBlend = math.saturate(_amplitude);
-            for (int i = 0; i < waveformBars.Length; i++)
+            for (int i = 0; i < _waveformBarCount; i++)
             {
-                RectTransform rect = waveformBars[i];
+                RectTransform rect = _runtimeWaveformBars[i];
                 if (rect == null)
                     continue;
 

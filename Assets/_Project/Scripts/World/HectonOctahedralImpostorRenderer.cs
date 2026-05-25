@@ -11,7 +11,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-88)]
-    public sealed class HectonOctahedralImpostorRenderer : MonoBehaviour, IUpdatable, IOriginShiftListener, IStreamingHlodMatrixRenderer
+    public sealed class HectonOctahedralImpostorRenderer : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IStreamingHlodMatrixRenderer, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryIntervalFrames = 60;
         private const uint TelemetryHash = 0x4F435449u; // "OCTI"
@@ -43,8 +43,12 @@ namespace Hecton8.World
         [Header("-- Diagnostics --------------")]
         [SerializeField] private int _debugBoundInstanceCount;
 
-        private GraphicsBuffer _instanceBuffer;
-        private GraphicsBuffer _matrixSourceBuffer;
+        private GraphicsBuffer _instanceBufferA;
+        private GraphicsBuffer _instanceBufferB;
+        private GraphicsBuffer _activeInstanceBuffer;
+        private GraphicsBuffer _matrixSourceBufferA;
+        private GraphicsBuffer _matrixSourceBufferB;
+        private GraphicsBuffer _activeMatrixSourceBuffer;
         private GraphicsBuffer _argsBuffer;
         private Mesh _argsMesh;
         private Bounds _drawBounds;
@@ -55,6 +59,8 @@ namespace Hecton8.World
         private int _telemetryTickCounter;
         private int _matrixSourceCapacity;
         private int _matrixSourceUploadedCount;
+        private int _instanceUploadBufferIndex;
+        private int _matrixSourceUploadBufferIndex;
         private float _lastBoundsRadius = 1f;
         private float _impostorTimeSeconds;
         private bool _useVisibleMatrixStream;
@@ -74,6 +80,7 @@ namespace Hecton8.World
         private bool _staticMaterialDirty = true;
         private bool _staticPayloadValid;
         private bool _floatingOffsetDirty = true;
+        private bool _hotSwapListenerRegistered;
 
         public int BoundInstanceCount => _instanceCount;
 
@@ -91,6 +98,7 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.RegisterListener(this);
             InvalidateMaterialCaches();
+            TryRegisterHotSwapListener();
             RegisterTick();
         }
 
@@ -105,16 +113,24 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterTick();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            UnregisterTick();
+            TryUnregisterHotSwapListener();
             ReleaseResources();
         }
 
         public void Tick(float deltaTime)
         {
+        }
+
+        public void LateFrameTick()
+        {
+            float deltaTime = Time.deltaTime;
             _telemetryTickCounter++;
             if (deltaTime > 0f && math.isfinite(deltaTime))
                 _impostorTimeSeconds += math.min(deltaTime, 0.25f);
@@ -136,7 +152,7 @@ namespace Hecton8.World
                                    _instanceCullingService != null &&
                                    _instanceCullingService.VisibleInstancesBuffer != null &&
                                    _instanceCullingService.IndirectArgsBuffer != null;
-            if (!useMatrixStream && _instanceBuffer == null)
+            if (!useMatrixStream && _activeInstanceBuffer == null)
                 return;
 
             if (!useMatrixStream)
@@ -148,7 +164,7 @@ namespace Hecton8.World
             if (useMatrixStream)
                 material.SetBuffer(VisibleInstancesId, _instanceCullingService.VisibleInstancesBuffer);
             else
-                material.SetBuffer(ImpostorInstancesId, _instanceBuffer);
+                material.SetBuffer(ImpostorInstancesId, _activeInstanceBuffer);
             ApplyGlobalFloatingOffset(material);
 
             RenderParams renderParams = new RenderParams(material)
@@ -173,7 +189,8 @@ namespace Hecton8.World
             }
 
             EnsureInstanceBufferCapacity(instanceCount);
-            if (_instanceBuffer == null || !_instanceBuffer.IsValid())
+            GraphicsBuffer instanceWriteBuffer = ResolveInstanceWriteBuffer();
+            if (instanceWriteBuffer == null || !instanceWriteBuffer.IsValid())
             {
                 ClearBinding();
                 return;
@@ -197,7 +214,9 @@ namespace Hecton8.World
                 }
             }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_instanceBuffer, instances, instanceCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(instanceWriteBuffer, instances, instanceCount);
+            _activeInstanceBuffer = instanceWriteBuffer;
+            _instanceUploadBufferIndex ^= 1;
             _instanceCount = instanceCount;
             _debugBoundInstanceCount = instanceCount;
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _fallbackBoundsCenterOffset, _fallbackBoundsSize);
@@ -220,7 +239,8 @@ namespace Hecton8.World
             }
 
             EnsureMatrixSourceCapacity(instanceCount);
-            if (_matrixSourceBuffer == null || !_matrixSourceBuffer.IsValid())
+            GraphicsBuffer matrixSourceWriteBuffer = ResolveMatrixSourceWriteBuffer();
+            if (matrixSourceWriteBuffer == null || !matrixSourceWriteBuffer.IsValid())
             {
                 BindMatricesAsOctahedralFallback(matrices, instanceCount);
                 return;
@@ -229,7 +249,9 @@ namespace Hecton8.World
             bool needsUpload = forceUpload || _matrixSourceUploadedCount != instanceCount;
             if (needsUpload)
             {
-                GraphicsBufferUploadUtility.UploadNativeArray(_matrixSourceBuffer, matrices, instanceCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(matrixSourceWriteBuffer, matrices, instanceCount);
+                _activeMatrixSourceBuffer = matrixSourceWriteBuffer;
+                _matrixSourceUploadBufferIndex ^= 1;
                 _matrixSourceUploadedCount = instanceCount;
             }
 
@@ -245,7 +267,7 @@ namespace Hecton8.World
             if (culling == null || !culling.IsAvailable || mesh == null)
             {
                 _useVisibleMatrixStream = false;
-                if (needsUpload || wasUsingVisibleMatrixStream || _instanceBuffer == null || _instanceCount != instanceCount)
+                if (needsUpload || wasUsingVisibleMatrixStream || _activeInstanceBuffer == null || _instanceCount != instanceCount)
                     BindMatricesAsOctahedralFallback(matrices, instanceCount);
                 else
                     EnsureIndirectArgsBuffer(mesh);
@@ -256,7 +278,7 @@ namespace Hecton8.World
             float globalQualityWeight = ResolveGlobalQualityWeight01();
             InstanceCullingDispatchDescriptor descriptor = new InstanceCullingDispatchDescriptor
             {
-                AllInstancesBuffer = _matrixSourceBuffer,
+                AllInstancesBuffer = _activeMatrixSourceBuffer,
                 InstanceCount = instanceCount,
                 BoundsRadius = _lastBoundsRadius,
                 MaxCullDistanceMeters = Mathf.Max(1000f, _lastBoundsRadius * 64f),
@@ -276,7 +298,7 @@ namespace Hecton8.World
             _useVisibleMatrixStream = culling.Dispatch(in descriptor);
             if (!_useVisibleMatrixStream)
             {
-                if (needsUpload || wasUsingVisibleMatrixStream || _instanceBuffer == null || _instanceCount != instanceCount)
+                if (needsUpload || wasUsingVisibleMatrixStream || _activeInstanceBuffer == null || _instanceCount != instanceCount)
                     BindMatricesAsOctahedralFallback(matrices, instanceCount);
                 else
                     EnsureIndirectArgsBuffer(mesh);
@@ -292,7 +314,8 @@ namespace Hecton8.World
             }
 
             EnsureInstanceBufferCapacity(hlodCount);
-            if (_instanceBuffer == null || !_instanceBuffer.IsValid())
+            GraphicsBuffer instanceWriteBuffer = ResolveInstanceWriteBuffer();
+            if (instanceWriteBuffer == null || !instanceWriteBuffer.IsValid())
             {
                 ClearBinding();
                 return;
@@ -301,7 +324,7 @@ namespace Hecton8.World
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
             Vector3 floatingOffset = ResolveGlobalFloatingOffset();
-            NativeArray<OctahedralImpostorInstance> upload = _instanceBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, hlodCount);
+            NativeArray<OctahedralImpostorInstance> upload = instanceWriteBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, hlodCount);
             try
             {
                 for (int i = 0; i < hlodCount; i++)
@@ -332,9 +355,11 @@ namespace Hecton8.World
             }
             finally
             {
-                _instanceBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(hlodCount);
+                instanceWriteBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(hlodCount);
             }
 
+            _activeInstanceBuffer = instanceWriteBuffer;
+            _instanceUploadBufferIndex ^= 1;
             _instanceCount = hlodCount;
             _debugBoundInstanceCount = hlodCount;
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _fallbackBoundsCenterOffset, _fallbackBoundsSize);
@@ -346,7 +371,8 @@ namespace Hecton8.World
         private void BindMatricesAsOctahedralFallback(NativeArray<float4x4> matrices, int instanceCount)
         {
             EnsureInstanceBufferCapacity(instanceCount);
-            if (_instanceBuffer == null || !_instanceBuffer.IsValid())
+            GraphicsBuffer instanceWriteBuffer = ResolveInstanceWriteBuffer();
+            if (instanceWriteBuffer == null || !instanceWriteBuffer.IsValid())
             {
                 ClearBinding();
                 return;
@@ -355,7 +381,7 @@ namespace Hecton8.World
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
             Vector3 floatingOffset = ResolveGlobalFloatingOffset();
-            NativeArray<OctahedralImpostorInstance> upload = _instanceBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, instanceCount);
+            NativeArray<OctahedralImpostorInstance> upload = instanceWriteBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, instanceCount);
             try
             {
                 for (int i = 0; i < instanceCount; i++)
@@ -388,9 +414,11 @@ namespace Hecton8.World
             }
             finally
             {
-                _instanceBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(instanceCount);
+                instanceWriteBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(instanceCount);
             }
 
+            _activeInstanceBuffer = instanceWriteBuffer;
+            _instanceUploadBufferIndex ^= 1;
             _useVisibleMatrixStream = false;
             _instanceCount = instanceCount;
             _debugBoundInstanceCount = instanceCount;
@@ -430,22 +458,40 @@ namespace Hecton8.World
         private void EnsureMatrixSourceCapacity(int instanceCount)
         {
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, instanceCount));
-            if (_matrixSourceBuffer != null &&
-                _matrixSourceBuffer.IsValid() &&
+            if (_matrixSourceBufferA != null &&
+                _matrixSourceBufferA.IsValid() &&
+                _matrixSourceBufferB != null &&
+                _matrixSourceBufferB.IsValid() &&
                 _matrixSourceCapacity >= nextCapacity)
             {
+                if (_activeMatrixSourceBuffer == null)
+                    _activeMatrixSourceBuffer = _matrixSourceBufferA;
                 return;
             }
 
-            if (_matrixSourceBuffer != null)
-            {
-                _matrixSourceBuffer.Release();
-                _matrixSourceBuffer = null;
-            }
+            ReleaseGraphicsBuffer(ref _matrixSourceBufferA);
+            ReleaseGraphicsBuffer(ref _matrixSourceBufferB);
 
-            _matrixSourceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD matrix source for instance culling - owner: HectonOctahedralImpostorRenderer
+            _matrixSourceBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] A - HLOD matrix source for instance culling - owner: HectonOctahedralImpostorRenderer
+            _matrixSourceBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] B - HLOD matrix source for instance culling - owner: HectonOctahedralImpostorRenderer
+            _activeMatrixSourceBuffer = _matrixSourceBufferA;
+            _matrixSourceUploadBufferIndex = 0;
             _matrixSourceCapacity = nextCapacity;
             _matrixSourceUploadedCount = 0;
+        }
+
+        private GraphicsBuffer ResolveMatrixSourceWriteBuffer()
+        {
+            GraphicsBuffer writeBuffer = _matrixSourceUploadBufferIndex == 0
+                ? _matrixSourceBufferA
+                : _matrixSourceBufferB;
+            if (writeBuffer != null && writeBuffer.IsValid())
+                return writeBuffer;
+
+            GraphicsBuffer fallback = ReferenceEquals(_activeMatrixSourceBuffer, _matrixSourceBufferA)
+                ? _matrixSourceBufferB
+                : _matrixSourceBufferA;
+            return fallback != null && fallback.IsValid() ? fallback : null;
         }
 
         private IInstanceCullingService ResolveInstanceCullingService()
@@ -504,8 +550,7 @@ namespace Hecton8.World
             if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterTick()
@@ -513,27 +558,76 @@ namespace Hecton8.World
             if (!_registeredTick)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registeredTick = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.InstanceCullingRuntime)
+            {
+                _instanceCullingService = currentService as IInstanceCullingService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                RegisterTick();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void EnsureInstanceBufferCapacity(int instanceCount)
         {
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, instanceCount));
-            if (_instanceBuffer != null &&
-                _instanceBuffer.IsValid() &&
-                _instanceBuffer.count >= nextCapacity)
+            if (_instanceBufferA != null &&
+                _instanceBufferA.IsValid() &&
+                _instanceBufferA.count >= nextCapacity &&
+                _instanceBufferB != null &&
+                _instanceBufferB.IsValid() &&
+                _instanceBufferB.count >= nextCapacity)
             {
+                if (_activeInstanceBuffer == null)
+                    _activeInstanceBuffer = _instanceBufferA;
                 return;
             }
 
-            if (_instanceBuffer != null)
-            {
-                _instanceBuffer.Release();
-                _instanceBuffer = null;
-            }
+            ReleaseGraphicsBuffer(ref _instanceBufferA);
+            ReleaseGraphicsBuffer(ref _instanceBufferB);
 
-            _instanceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<OctahedralImpostorInstance>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - impostor instance buffer - owner: HectonOctahedralImpostorRenderer
+            _instanceBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<OctahedralImpostorInstance>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] A - impostor instance buffer - owner: HectonOctahedralImpostorRenderer
+            _instanceBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<OctahedralImpostorInstance>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] B - impostor instance buffer - owner: HectonOctahedralImpostorRenderer
+            _activeInstanceBuffer = _instanceBufferA;
+            _instanceUploadBufferIndex = 0;
+        }
+
+        private GraphicsBuffer ResolveInstanceWriteBuffer()
+        {
+            GraphicsBuffer writeBuffer = _instanceUploadBufferIndex == 0 ? _instanceBufferA : _instanceBufferB;
+            if (writeBuffer != null && writeBuffer.IsValid())
+                return writeBuffer;
+
+            GraphicsBuffer fallback = ReferenceEquals(_activeInstanceBuffer, _instanceBufferA)
+                ? _instanceBufferB
+                : _instanceBufferA;
+            return fallback != null && fallback.IsValid() ? fallback : null;
         }
 
         private void EnsureIndirectArgsBuffer(Mesh mesh)
@@ -701,18 +795,14 @@ namespace Hecton8.World
 
         private void ReleaseResources()
         {
-            if (_instanceBuffer != null)
-            {
-                _instanceBuffer.Release();
-                _instanceBuffer = null;
-            }
-
-            if (_matrixSourceBuffer != null)
-            {
-                _matrixSourceBuffer.Release();
-                _matrixSourceBuffer = null;
-                _matrixSourceCapacity = 0;
-            }
+            ReleaseGraphicsBuffer(ref _instanceBufferA);
+            ReleaseGraphicsBuffer(ref _instanceBufferB);
+            ReleaseGraphicsBuffer(ref _matrixSourceBufferA);
+            ReleaseGraphicsBuffer(ref _matrixSourceBufferB);
+            _activeInstanceBuffer = null;
+            _activeMatrixSourceBuffer = null;
+            _instanceUploadBufferIndex = 0;
+            _matrixSourceUploadBufferIndex = 0;
 
             if (_argsBuffer != null)
             {
@@ -734,6 +824,15 @@ namespace Hecton8.World
         private static Vector3 ResolveGlobalFloatingOffset()
         {
             return HectonFloatingOrigin.CurrentTotalOffset;
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
     }
 }

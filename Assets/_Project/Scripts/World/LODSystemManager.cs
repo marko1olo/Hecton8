@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using Unity.Mathematics;
 using Hecton8.Bootstrap;
@@ -217,7 +218,7 @@ namespace Hecton8.World
             TryRegisterSaveParticipant();
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[LODSystemManager] Initialized. Max LOD groups: " + _maxLODGroupsPerFrame);
+            Hecton8.Core.H8Debug.Log("[LODSystemManager] Initialized. Max LOD groups: " + _maxLODGroupsPerFrame);
             #endif
         }
 
@@ -237,6 +238,7 @@ namespace Hecton8.World
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
             TryUnregister();
+            TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
 
@@ -318,11 +320,11 @@ namespace Hecton8.World
             if (_saveRegistered)
                 return;
 
-            _saveService = GlobalRegistry.Save;
-            if (_saveService == null)
+            ISaveService saveService = _saveService;
+            if (saveService == null)
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
             _saveRegistered = true;
         }
 
@@ -342,7 +344,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContext = GlobalRegistry.Player;
 
             if (_dispatcher == null)
                 _dispatcher = GlobalRegistry.Dispatcher;
@@ -352,6 +354,9 @@ namespace Hecton8.World
 
             if (_impostorSystem == null)
                 _impostorSystem = GlobalRegistry.Impostors;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
         }
 
         private void ClearCachedRegistryServices()
@@ -360,6 +365,7 @@ namespace Hecton8.World
             _dispatcher = null;
             _dynamicResolutionScaler = null;
             _impostorSystem = null;
+            _saveService = null;
             _mainCamera = null;
             _cameraTransform = null;
         }
@@ -408,11 +414,8 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.Save:
                     TryUnregisterSaveParticipant();
                     _saveService = currentService as ISaveService;
-                    if (_saveService != null)
-                    {
-                        _saveService.Register(this);
-                        _saveRegistered = true;
-                    }
+                    if (isActiveAndEnabled)
+                        TryRegisterSaveParticipant();
                     break;
             }
         }
@@ -1082,7 +1085,7 @@ namespace Hecton8.World
                 // Draw label
                 UnityEditor.Handles.Label(
                     camPos + Vector3.up * distance,
-                    $"LOD{i} ({distance:F1}m)",
+                    "LOD" + i + " (" + distance.ToString("F1", CultureInfo.InvariantCulture) + "m)",
                     UnityEditor.EditorStyles.whiteBoldLabel
                 );
             }
@@ -1104,7 +1107,9 @@ namespace Hecton8.World
                 }
             }
 
-            string label = currentLOD >= 0 ? $"LOD{currentLOD} ({distSqr:F0}m2)" : $"Culled ({distSqr:F0}m2)";
+                string label = currentLOD >= 0
+                    ? "LOD" + currentLOD + " (" + distSqr.ToString("F0", CultureInfo.InvariantCulture) + "m2)"
+                    : "Culled (" + distSqr.ToString("F0", CultureInfo.InvariantCulture) + "m2)";
             UnityEditor.Handles.Label(objPos + Vector3.up * 2f, label, UnityEditor.EditorStyles.whiteBoldLabel);
         }
 

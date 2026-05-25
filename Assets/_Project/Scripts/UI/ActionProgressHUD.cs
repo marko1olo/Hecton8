@@ -28,7 +28,8 @@ namespace Hecton8.UI
     /// Reads PlayerAction signal snapshots from the dispatcher late-frame lane.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class ActionProgressHUD : MonoBehaviour, ILateFrameTickable
+    [DisallowMultipleComponent]
+    public sealed class ActionProgressHUD : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -78,6 +79,7 @@ namespace Hecton8.UI
         private float _fadeTimer;
         private float _currentAlpha;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private int _cachedActionTextVersion = -1;
 
         private static readonly char[] s_EatingTextChars = { 'E', 'a', 't', 'i', 'n', 'g', '.', '.', '.' };
@@ -110,18 +112,27 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ResetTransientState();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -316,6 +327,35 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null) return;
 
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            {
+                TryUnregister();
+                TryRegister();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void TryUnregister()

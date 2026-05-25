@@ -1,29 +1,31 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace Hecton8.Construction
 {
     /// <summary>
-    /// Vault-backed CSR/Jacobi sump-pump drainage runtime for flooded rooms and pipe visuals.
+    /// Vault-backed CSR two-pass sump-pump drainage runtime for flooded rooms and pipe visuals.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Construction/Sump Pump Pipe Grid Runtime")]
-    public sealed unsafe class SumpPumpPipeGridRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IServiceShutdown
+    public sealed unsafe class SumpPumpPipeGridRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystem = SystemID.Construction;
         private const float SlowTickStepSeconds = 0.1f;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_222.bin";
-        private const uint RuntimeHash = 0x50323232u;
+        private const int FixedDrainageDeltaPassCount = 2;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_340_Logistics.bin";
+        private const uint RuntimeHash = 0x53333430u;
+        private const ulong DumpMagic = 0x00384E4F54434548UL;
+        private const uint DumpVersion = 1u;
 
         private static readonly int s_DrainagePipeEdgeFlowId = Shader.PropertyToID("_H8DrainagePipeEdgeFlow");
         private static readonly int s_DrainagePipeEdgeCountId = Shader.PropertyToID("_H8DrainagePipeEdgeCount");
@@ -31,13 +33,13 @@ namespace Hecton8.Construction
         private static DrainageTuningDTO s_offlineTuning = DefaultTuning();
 
         [Header("Graph")]
-        [Tooltip("Maximum Vault pump/pipe node count. Mock topology defaults to 1000.")]
+        [Tooltip("Maximum Vault pump/pipe node count. Mock topology defaults to 2000.")]
         [SerializeField, Range(16, SumpPumpPipeGridConstants.MaxPumpNodes)] private int nodeCapacity = SumpPumpPipeGridConstants.MaxPumpNodes;
 
-        [Tooltip("Maximum flat directed pipe edge count. Mock topology defaults to 2500.")]
+        [Tooltip("Maximum flat directed pipe edge count. Mock topology defaults to 6000.")]
         [SerializeField, Range(16, SumpPumpPipeGridConstants.MaxPipeEdges)] private int edgeCapacity = SumpPumpPipeGridConstants.MaxPipeEdges;
 
-        [Tooltip("Builds a deterministic 1000-node / 2500-edge drainage graph on enable when Vault buffers are empty.")]
+        [Tooltip("Builds a deterministic 2000-node / 6000-edge drainage graph on enable when Vault buffers are empty.")]
         [SerializeField] private bool generateMockOnEnable = true;
 
         [Header("Visual Sync")]
@@ -58,7 +60,7 @@ namespace Hecton8.Construction
         [SerializeField] private float _debugAveragePressure;
 
         private IDataVault _vault;
-        private VaultGenerationHandle<PumpNodeDTO> _pumpNodesHandle;
+        private VaultGenerationHandle<DrainageNodeDTO> _pumpNodesHandle;
         private VaultGenerationHandle<PipeEdgeDTO> _pipeEdgesHandle;
         private VaultGenerationHandle<double3> _nodeAupHandle;
         private VaultGenerationHandle<int> _pumpRoomIndicesHandle;
@@ -71,6 +73,8 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<float> _pressureFrontHandle;
         private VaultGenerationHandle<float> _pressureBackHandle;
         private VaultGenerationHandle<float> _powerPotentialHandle;
+        private VaultGenerationHandle<float> _pumpBaseMaxRateHandle;
+        private VaultGenerationHandle<uint> _pumpPowerNodeHashesHandle;
         private VaultGenerationHandle<float> _pumpRemainderHandle;
         private VaultGenerationHandle<float> _pumpMassErrorHandle;
         private VaultGenerationHandle<DrainageRoomDrainLock64> _roomDrainLocksHandle;
@@ -87,9 +91,17 @@ namespace Hecton8.Construction
         private JobHandle _mockSeedHandle;
         private GraphicsBuffer _flowBufferA;
         private GraphicsBuffer _flowBufferB;
+        private Thread _dumpThread;
+        private AutoResetEvent _dumpSignal;
+        private byte[] _dumpBytes;
+        private string _dumpPath;
         private ulong _lockedBufferMask;
         private long _solverScheduleTimestamp;
         private uint _frameIndex;
+        private int _dumpByteCount;
+        private int _dumpPending;
+        private int _dumpThreadStop;
+        private int _dumpWriteFault;
         private int _flowBufferCapacity;
         private int _flowBufferWriteIndex;
         private float _solveAccumulator;
@@ -117,6 +129,30 @@ namespace Hecton8.Construction
             return false;
         }
 
+#if UNITY_EDITOR
+        /// <summary>Copies the fixed telemetry ring into an editor-owned buffer without allocating per refresh.</summary>
+        public static bool TryCopyTelemetry(DrainageTelemetryEntry[] target, out int count)
+        {
+            SumpPumpPipeGridRuntime runtime = s_active;
+            if (runtime != null)
+                return runtime.TryCopyTelemetryTo(target, out count);
+
+            count = 0;
+            return false;
+        }
+
+        /// <summary>Editor-only profile import bridge. Runtime must already own its cold Vault handles.</summary>
+        public static bool TryLoadPipeProfilesFromCsvBytes(byte[] csvBytes, out int profileCount)
+        {
+            profileCount = 0;
+            SumpPumpPipeGridRuntime runtime = s_active;
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   csvBytes != null &&
+                   runtime.TryLoadPipeProfilesFromCsv(csvBytes, out profileCount);
+        }
+#endif
+
         /// <summary>Reads the active Vault-backed drainage tuning.</summary>
         public static bool TryGetTuning(out DrainageTuningDTO tuning)
         {
@@ -138,13 +174,27 @@ namespace Hecton8.Construction
             s_offlineTuning = SanitizeTuning(tuning);
         }
 
+        /// <summary>Editor/cold facade for seeding the deterministic mock graph without scene search.</summary>
+        public static bool TryGenerateMockDrainageNetwork()
+        {
+            SumpPumpPipeGridRuntime runtime = s_active;
+            if (runtime == null || !runtime.isActiveAndEnabled || runtime._solverScheduled)
+                return false;
+
+            runtime.GenerateMockDrainageNetwork();
+            return true;
+        }
+
         private void OnEnable()
         {
             s_active = this;
-            _buffersReady = TryResolveAndInitializeBuffers();
+            _vault = GlobalRegistry.DataVault;
+            InitializeDumpWriterCold();
+            _buffersReady = TryInitializeBuffers();
             if (_buffersReady && generateMockOnEnable)
                 GenerateMockDrainageNetwork();
 
+            TryRegisterHotSwapListener();
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -157,6 +207,7 @@ namespace Hecton8.Construction
             if (_buffersReady && TryReadTuning(out DrainageTuningDTO tuning))
                 s_offlineTuning = tuning;
 
+            TryUnregisterHotSwapListener();
             if (_registeredLateFrameTick)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             if (_registeredSlowTick)
@@ -165,12 +216,72 @@ namespace Hecton8.Construction
             ReleaseOwnedBuffers();
             ReleaseGraphicsBuffer(ref _flowBufferA);
             ReleaseGraphicsBuffer(ref _flowBufferB);
+            ShutdownDumpWriterCold();
             if (ReferenceEquals(s_active, this))
                 s_active = null;
 
             _registeredLateFrameTick = false;
             _registeredSlowTick = false;
             _buffersReady = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            {
+                if (_registeredLateFrameTick)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _registeredLateFrameTick = false;
+                }
+
+                if (_registeredSlowTick)
+                {
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                    _registeredSlowTick = false;
+                }
+
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault && currentService != null)
+            {
+                CompleteMockSeedForTeardown();
+                CompleteScheduledSolverForTeardown();
+                UnlockJobBuffers();
+                ReleaseOwnedBuffers();
+                _vault = currentService as IDataVault;
+                _buffersReady = TryInitializeBuffers();
+                if (_buffersReady && generateMockOnEnable)
+                    GenerateMockDrainageNetwork();
+            }
+        }
+
+        private bool _registeredHotSwap;
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         /// <summary>Dispatcher shutdown bridge.</summary>
@@ -185,12 +296,12 @@ namespace Hecton8.Construction
             if (_solverScheduled || _mockSeedScheduled)
                 return;
 
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady)
                 return;
 
             float quality = ResolveGlobalQualityWeight();
             _solveAccumulator = math.min(1f, _solveAccumulator + SlowTickStepSeconds);
-            float cadence = math.lerp(0.5f, 0.1f, quality * quality);
+            float cadence = ResolveSolveCadenceSeconds(quality);
             if (_solveAccumulator + 0.00001f < cadence)
                 return;
 
@@ -205,18 +316,28 @@ namespace Hecton8.Construction
             if (!TryFinalizeMockSeedNoWait())
                 return;
 
+            bool solverWasScheduled = _solverScheduled;
             if (!TryFinalizeScheduledSolverNoWait())
                 return;
 
-            UnlockJobBuffers();
-            StampSolverWallTime(ResolveElapsedMicroseconds(_solverScheduleTimestamp));
+            if (solverWasScheduled)
+            {
+                UnlockJobBuffers();
+                StampSolverWallTime(ResolveElapsedMicroseconds(_solverScheduleTimestamp));
+                _solverScheduleTimestamp = 0L;
+            }
+            else
+            {
+                RecordTelemetryHeartbeat();
+            }
+
             DrainageTelemetryEntry entry = ReadFrameSummary();
             _debugActivePumps = (int)math.min(int.MaxValue, entry.ActivePumpCount);
             _debugFrameEvacuatedM3 = entry.FrameEvacuatedM3;
             _debugAveragePressure = entry.AveragePressure;
 
-            if ((entry.Flags & SumpDrainageTelemetryFlags.NonFinite) != 0u)
-                DumpBlackBoxOnce();
+            if ((entry.Flags & (SumpDrainageTelemetryFlags.NonFinite | SumpDrainageTelemetryFlags.SolverOverBudget)) != 0u)
+                RequestBlackBoxDumpOnce();
 
             if (_flowUploadDirty)
             {
@@ -225,11 +346,12 @@ namespace Hecton8.Construction
             }
         }
 
+#if UNITY_EDITOR
         /// <summary>Cold CSV ingestion entry point for pipe_and_pump_specs.csv bytes.</summary>
         public bool TryLoadPipeProfilesFromCsv(ReadOnlySpan<byte> csvBytes, out int profileCount)
         {
             profileCount = 0;
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady)
                 return false;
 
             if (!_vault.TryLockBuffer(SumpPumpDrainageBufferIds.PipeProfiles, OwnerSystem))
@@ -237,7 +359,7 @@ namespace Hecton8.Construction
 
             try
             {
-                NativeArray<PipeProfileDTO> profiles = Resolve(in _profilesHandle);
+                NativeArray<PipeProfileDTO> profiles = BorrowMutable(in _profilesHandle);
                 return SumpPumpPipeGridValidation.TryParsePipeProfilesCsv(csvBytes, profiles, out profileCount);
             }
             finally
@@ -245,17 +367,17 @@ namespace Hecton8.Construction
                 _vault.TryUnlockBuffer(SumpPumpDrainageBufferIds.PipeProfiles, OwnerSystem);
             }
         }
+#endif
 
-        /// <summary>Rebuilds the deterministic 1000-node / 2500-edge mock drainage topology in Vault buffers.</summary>
+        /// <summary>Rebuilds the deterministic 2000-node / 6000-edge mock drainage topology in Vault buffers.</summary>
         public void GenerateMockDrainageNetwork()
         {
-            if (_mockSeedScheduled)
+            if (_mockSeedScheduled || _solverScheduled)
                 return;
 
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady)
                 return;
 
-            CompleteScheduledSolverForTeardown();
             UnlockJobBuffers();
             if (!TryLockJobBuffers())
                 return;
@@ -263,30 +385,34 @@ namespace Hecton8.Construction
             bool scheduled = false;
             try
             {
-                NativeArray<PumpNodeDTO> pumps = Resolve(in _pumpNodesHandle);
-                NativeArray<PipeEdgeDTO> edges = Resolve(in _pipeEdgesHandle);
-                NativeArray<double3> nodeAup = Resolve(in _nodeAupHandle);
-                NativeArray<int> roomIndices = Resolve(in _pumpRoomIndicesHandle);
-                NativeArray<float> power = Resolve(in _powerPotentialHandle);
-                NativeArray<int> counters = Resolve(in _countersHandle);
-                NativeArray<DrainageTuningDTO> tuning = Resolve(in _tuningHandle);
-                if (!pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated || !power.IsCreated || !counters.IsCreated || !tuning.IsCreated)
+                NativeArray<DrainageNodeDTO> pumps = BorrowMutable(in _pumpNodesHandle);
+                NativeArray<PipeEdgeDTO> edges = BorrowMutable(in _pipeEdgesHandle);
+                NativeArray<double3> nodeAup = BorrowMutable(in _nodeAupHandle);
+                NativeArray<int> roomIndices = BorrowMutable(in _pumpRoomIndicesHandle);
+                NativeArray<float> power = BorrowMutable(in _powerPotentialHandle);
+                NativeArray<float> baseRates = BorrowMutable(in _pumpBaseMaxRateHandle);
+                NativeArray<uint> powerNodeHashes = BorrowMutable(in _pumpPowerNodeHashesHandle);
+                NativeArray<int> counters = BorrowMutable(in _countersHandle);
+                NativeArray<DrainageTuningDTO> tuning = BorrowMutable(in _tuningHandle);
+                if (!pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated || !power.IsCreated || !baseRates.IsCreated || !powerNodeHashes.IsCreated || !counters.IsCreated || !tuning.IsCreated)
                     return;
 
                 DrainageTuningDTO current = tuning.Length > 0 ? SanitizeTuning(tuning[0]) : DefaultTuning();
-                DrainageMockNetworkJob job = new DrainageMockNetworkJob
+                GenerateMockPipeNetworkJob job = new GenerateMockPipeNetworkJob
                 {
                     PumpNodes = pumps,
                     PipeEdges = edges,
                     NodeAup = nodeAup,
                     PumpRoomIndices = roomIndices,
                     PowerPotential = power,
+                    PumpBaseMaxRate = baseRates,
+                    PumpPowerNodeHashes = powerNodeHashes,
                     Counters = counters,
                     Tuning = tuning,
                     RequestedNodeCount = math.min(nodeCapacity, SumpPumpPipeGridConstants.MaxPumpNodes),
                     RequestedEdgeCount = math.min(edgeCapacity, SumpPumpPipeGridConstants.MaxPipeEdges),
                     BaseConductance = current.BasePipeConductance,
-                    MaxPumpRate = SumpPumpPipeGridConstants.DefaultMaxPumpRateM3PerSecond,
+                    MaxPumpRate = current.MaxPumpThroughputM3PerSecond,
                     PumpPowerDraw = current.PumpPowerDraw
                 };
 
@@ -302,62 +428,76 @@ namespace Hecton8.Construction
             }
         }
 
-        private bool TryResolveAndInitializeBuffers()
+        private bool TryInitializeBuffers()
         {
-            _vault = GlobalRegistry.DataVault;
             if (_vault == null ||
                 !SumpPumpPipeGridValidation.ValidatePumpNodeLayout() ||
                 !SumpPumpPipeGridValidation.ValidatePipeEdgeLayout() ||
-                !SumpPumpPipeGridValidation.ValidateRoomDrainLockLayout())
+                !SumpPumpPipeGridValidation.ValidateRoomDrainLockLayout() ||
+                !SumpPumpPipeGridValidation.ValidateDrainageTuningLayout() ||
+                !SumpPumpPipeGridValidation.ValidatePipeProfileLayout() ||
+                !SumpPumpPipeGridValidation.ValidateDrainageTelemetryLayout() ||
+                !SumpPumpPipeGridValidation.ValidateDrainagePipeFlowGpuLayout() ||
+                !SumpPumpPipeGridValidation.ValidateDrainageDumpHeaderLayout())
                 return false;
 
             nodeCapacity = math.clamp(nodeCapacity, 16, SumpPumpPipeGridConstants.MaxPumpNodes);
             edgeCapacity = math.clamp(edgeCapacity, 16, SumpPumpPipeGridConstants.MaxPipeEdges);
-            int roomLockCapacity = math.max(nodeCapacity, HabitatFluidIncursionConstants.MaxCompartments);
-            _pumpNodesHandle = _vault.GetGenerationHandle<PumpNodeDTO>(SumpPumpDrainageBufferIds.PumpNodes, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _pipeEdgesHandle = _vault.GetGenerationHandle<PipeEdgeDTO>(SumpPumpDrainageBufferIds.PipeEdges, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _nodeAupHandle = _vault.GetGenerationHandle<double3>(SumpPumpDrainageBufferIds.NodeAup, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _pumpRoomIndicesHandle = _vault.GetGenerationHandle<int>(SumpPumpDrainageBufferIds.PumpRoomIndices, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csrOffsetsHandle = _vault.GetGenerationHandle<int>(SumpPumpDrainageBufferIds.CsrOffsets, nodeCapacity + 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csrDestinationsHandle = _vault.GetGenerationHandle<int>(SumpPumpDrainageBufferIds.CsrDestinations, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csrConductanceHandle = _vault.GetGenerationHandle<float>(SumpPumpDrainageBufferIds.CsrConductance, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csrFlowHandle = _vault.GetGenerationHandle<float>(SumpPumpDrainageBufferIds.CsrFlow, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csrFlatEdgeIndexHandle = _vault.GetGenerationHandle<int>(SumpPumpDrainageBufferIds.CsrFlatEdgeIndex, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csrWriteCursorHandle = _vault.GetGenerationHandle<int>(SumpPumpDrainageBufferIds.CsrWriteCursor, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _pressureFrontHandle = _vault.GetGenerationHandle<float>(SumpPumpDrainageBufferIds.PressureFront, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _pressureBackHandle = _vault.GetGenerationHandle<float>(SumpPumpDrainageBufferIds.PressureBack, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _powerPotentialHandle = _vault.GetGenerationHandle<float>(SumpPumpDrainageBufferIds.PowerPotential, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _pumpRemainderHandle = _vault.GetGenerationHandle<float>(SumpPumpDrainageBufferIds.PumpRemainder, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _pumpMassErrorHandle = _vault.GetGenerationHandle<float>(SumpPumpDrainageBufferIds.PumpMassError, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _roomDrainLocksHandle = _vault.GetGenerationHandle<DrainageRoomDrainLock64>(SumpPumpDrainageBufferIds.RoomDrainLocks, roomLockCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _tuningHandle = _vault.GetGenerationHandle<DrainageTuningDTO>(SumpPumpDrainageBufferIds.Tuning, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _vault.GetGenerationHandle<DrainageTelemetryEntry>(SumpPumpDrainageBufferIds.TelemetryRing, SumpPumpPipeGridConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _telemetryCursorHandle = _vault.GetGenerationHandle<int>(SumpPumpDrainageBufferIds.TelemetryCursor, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _countersHandle = _vault.GetGenerationHandle<int>(SumpPumpDrainageBufferIds.Counters, SumpPumpPipeGridConstants.CounterCount, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _profilesHandle = _vault.GetGenerationHandle<PipeProfileDTO>(SumpPumpDrainageBufferIds.PipeProfiles, SumpPumpPipeGridConstants.MaxPipeProfiles, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _vault.GetGenerationHandle<byte>(SumpPumpDrainageBufferIds.CsvScratch, SumpPumpPipeGridConstants.CsvScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _frameSummaryHandle = _vault.GetGenerationHandle<DrainageTelemetryEntry>(SumpPumpDrainageBufferIds.FrameSummary, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _flowGpuHandle = _vault.GetGenerationHandle<DrainagePipeFlowGpuDTO>(SumpPumpDrainageBufferIds.FlowGpu, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            int roomLockCapacity = math.max(nodeCapacity, Hecton8.Physics.HabitatFluidIncursionConstants.MaxCompartments);
+            _pumpNodesHandle = _vault.EnsureGenerationHandle<DrainageNodeDTO>(SumpPumpDrainageBufferIds.PumpNodes, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _pipeEdgesHandle = _vault.EnsureGenerationHandle<PipeEdgeDTO>(SumpPumpDrainageBufferIds.PipeEdges, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _nodeAupHandle = _vault.EnsureGenerationHandle<double3>(SumpPumpDrainageBufferIds.NodeAup, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _pumpRoomIndicesHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.PumpRoomIndices, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csrOffsetsHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.CsrOffsets, nodeCapacity + 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csrDestinationsHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.CsrDestinations, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csrConductanceHandle = _vault.EnsureGenerationHandle<float>(SumpPumpDrainageBufferIds.CsrConductance, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csrFlowHandle = _vault.EnsureGenerationHandle<float>(SumpPumpDrainageBufferIds.CsrFlow, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csrFlatEdgeIndexHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.CsrFlatEdgeIndex, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csrWriteCursorHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.CsrWriteCursor, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _pressureFrontHandle = _vault.EnsureGenerationHandle<float>(SumpPumpDrainageBufferIds.PressureFront, nodeCapacity, OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _pressureBackHandle = _vault.EnsureGenerationHandle<float>(SumpPumpDrainageBufferIds.PressureBack, nodeCapacity, OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _powerPotentialHandle = _vault.EnsureGenerationHandle<float>(SumpPumpDrainageBufferIds.PowerPotential, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _pumpBaseMaxRateHandle = _vault.EnsureGenerationHandle<float>(SumpPumpDrainageBufferIds.PumpBaseMaxRate, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _pumpPowerNodeHashesHandle = _vault.EnsureGenerationHandle<uint>(SumpPumpDrainageBufferIds.PumpPowerNodeHashes, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _pumpRemainderHandle = _vault.EnsureGenerationHandle<float>(SumpPumpDrainageBufferIds.PumpRemainder, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _pumpMassErrorHandle = _vault.EnsureGenerationHandle<float>(SumpPumpDrainageBufferIds.PumpMassError, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _roomDrainLocksHandle = _vault.EnsureGenerationHandle<DrainageRoomDrainLock64>(SumpPumpDrainageBufferIds.RoomDrainLocks, roomLockCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _tuningHandle = _vault.EnsureGenerationHandle<DrainageTuningDTO>(SumpPumpDrainageBufferIds.Tuning, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = _vault.EnsureGenerationHandle<DrainageTelemetryEntry>(SumpPumpDrainageBufferIds.TelemetryRing, SumpPumpPipeGridConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _telemetryCursorHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.TelemetryCursor, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _countersHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.Counters, SumpPumpPipeGridConstants.CounterCount, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _profilesHandle = _vault.EnsureGenerationHandle<PipeProfileDTO>(SumpPumpDrainageBufferIds.PipeProfiles, SumpPumpPipeGridConstants.MaxPipeProfiles, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = _vault.EnsureGenerationHandle<byte>(SumpPumpDrainageBufferIds.CsvScratch, SumpPumpPipeGridConstants.CsvScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _frameSummaryHandle = _vault.EnsureGenerationHandle<DrainageTelemetryEntry>(SumpPumpDrainageBufferIds.FrameSummary, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _flowGpuHandle = _vault.EnsureGenerationHandle<DrainagePipeFlowGpuDTO>(SumpPumpDrainageBufferIds.FlowGpu, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (!ValidateOwnedBuffers())
             {
                 ReleaseOwnedBuffers();
                 return false;
             }
 
+            if (uploadVisualFlowBuffer && !EnsureFlowGraphicsBuffers(edgeCapacity))
+                uploadVisualFlowBuffer = false;
+
             InitializeTuningIfNeeded();
             return true;
         }
 
-        private NativeArray<T> Resolve<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private NativeArray<T> BorrowMutable<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
             return _vault != null && _vault.TryResolveHandle(in handle, out NativeArray<T> buffer) ? buffer : default;
+        }
+
+        private NativeArray<T> Read<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return _vault != null && _vault.TryReadHandle(in handle, out NativeArray<T> buffer) ? buffer : default;
         }
 
         private bool ValidateOwnedBuffers()
         {
             int safeNodes = math.max(1, nodeCapacity);
             int safeEdges = math.max(1, edgeCapacity);
-            int safeRoomLocks = math.max(safeNodes, HabitatFluidIncursionConstants.MaxCompartments);
+            int safeRoomLocks = math.max(safeNodes, Hecton8.Physics.HabitatFluidIncursionConstants.MaxCompartments);
             return HasResolvedBuffer(in _pumpNodesHandle, safeNodes) &&
                    HasResolvedBuffer(in _pipeEdgesHandle, safeEdges) &&
                    HasResolvedBuffer(in _nodeAupHandle, safeNodes) &&
@@ -371,6 +511,8 @@ namespace Hecton8.Construction
                    HasResolvedBuffer(in _pressureFrontHandle, safeNodes) &&
                    HasResolvedBuffer(in _pressureBackHandle, safeNodes) &&
                    HasResolvedBuffer(in _powerPotentialHandle, safeNodes) &&
+                   HasResolvedBuffer(in _pumpBaseMaxRateHandle, safeNodes) &&
+                   HasResolvedBuffer(in _pumpPowerNodeHashesHandle, safeNodes) &&
                    HasResolvedBuffer(in _pumpRemainderHandle, safeNodes) &&
                    HasResolvedBuffer(in _pumpMassErrorHandle, safeNodes) &&
                    HasResolvedBuffer(in _roomDrainLocksHandle, safeRoomLocks) &&
@@ -399,32 +541,34 @@ namespace Hecton8.Construction
             if (!TryLockJobBuffers())
                 return;
 
-            NativeArray<PumpNodeDTO> pumps = Resolve(in _pumpNodesHandle);
-            NativeArray<PipeEdgeDTO> edges = Resolve(in _pipeEdgesHandle);
-            NativeArray<double3> nodeAup = Resolve(in _nodeAupHandle);
-            NativeArray<int> roomIndices = Resolve(in _pumpRoomIndicesHandle);
-            NativeArray<int> csrOffsets = Resolve(in _csrOffsetsHandle);
-            NativeArray<int> csrDestinations = Resolve(in _csrDestinationsHandle);
-            NativeArray<float> csrConductance = Resolve(in _csrConductanceHandle);
-            NativeArray<float> csrFlow = Resolve(in _csrFlowHandle);
-            NativeArray<int> csrFlatEdgeIndex = Resolve(in _csrFlatEdgeIndexHandle);
-            NativeArray<int> csrWriteCursor = Resolve(in _csrWriteCursorHandle);
-            NativeArray<float> pressureFront = Resolve(in _pressureFrontHandle);
-            NativeArray<float> pressureBack = Resolve(in _pressureBackHandle);
-            NativeArray<float> powerPotential = Resolve(in _powerPotentialHandle);
-            NativeArray<float> pumpRemainder = Resolve(in _pumpRemainderHandle);
-            NativeArray<float> pumpMassError = Resolve(in _pumpMassErrorHandle);
-            NativeArray<DrainageRoomDrainLock64> roomDrainLocks = Resolve(in _roomDrainLocksHandle);
-            NativeArray<DrainageTuningDTO> tuning = Resolve(in _tuningHandle);
-            NativeArray<DrainageTelemetryEntry> telemetry = Resolve(in _telemetryHandle);
-            NativeArray<int> telemetryCursor = Resolve(in _telemetryCursorHandle);
-            NativeArray<int> counters = Resolve(in _countersHandle);
-            NativeArray<DrainageTelemetryEntry> frameSummary = Resolve(in _frameSummaryHandle);
-            NativeArray<DrainagePipeFlowGpuDTO> flowGpu = Resolve(in _flowGpuHandle);
+            NativeArray<DrainageNodeDTO> pumps = BorrowMutable(in _pumpNodesHandle);
+            NativeArray<PipeEdgeDTO> edges = BorrowMutable(in _pipeEdgesHandle);
+            NativeArray<double3> nodeAup = BorrowMutable(in _nodeAupHandle);
+            NativeArray<int> roomIndices = BorrowMutable(in _pumpRoomIndicesHandle);
+            NativeArray<int> csrOffsets = BorrowMutable(in _csrOffsetsHandle);
+            NativeArray<int> csrDestinations = BorrowMutable(in _csrDestinationsHandle);
+            NativeArray<float> csrConductance = BorrowMutable(in _csrConductanceHandle);
+            NativeArray<float> csrFlow = BorrowMutable(in _csrFlowHandle);
+            NativeArray<int> csrFlatEdgeIndex = BorrowMutable(in _csrFlatEdgeIndexHandle);
+            NativeArray<int> csrWriteCursor = BorrowMutable(in _csrWriteCursorHandle);
+            NativeArray<float> pressureFront = BorrowMutable(in _pressureFrontHandle);
+            NativeArray<float> pressureBack = BorrowMutable(in _pressureBackHandle);
+            NativeArray<float> powerPotential = BorrowMutable(in _powerPotentialHandle);
+            NativeArray<float> pumpBaseMaxRate = BorrowMutable(in _pumpBaseMaxRateHandle);
+            NativeArray<uint> pumpPowerNodeHashes = BorrowMutable(in _pumpPowerNodeHashesHandle);
+            NativeArray<float> pumpRemainder = BorrowMutable(in _pumpRemainderHandle);
+            NativeArray<float> pumpMassError = BorrowMutable(in _pumpMassErrorHandle);
+            NativeArray<DrainageRoomDrainLock64> roomDrainLocks = BorrowMutable(in _roomDrainLocksHandle);
+            NativeArray<DrainageTuningDTO> tuning = BorrowMutable(in _tuningHandle);
+            NativeArray<DrainageTelemetryEntry> telemetry = BorrowMutable(in _telemetryHandle);
+            NativeArray<int> telemetryCursor = BorrowMutable(in _telemetryCursorHandle);
+            NativeArray<int> counters = BorrowMutable(in _countersHandle);
+            NativeArray<DrainageTelemetryEntry> frameSummary = BorrowMutable(in _frameSummaryHandle);
+            NativeArray<DrainagePipeFlowGpuDTO> flowGpu = BorrowMutable(in _flowGpuHandle);
             if (!pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated ||
                 !csrOffsets.IsCreated || !csrDestinations.IsCreated || !csrConductance.IsCreated ||
                 !csrFlow.IsCreated || !csrFlatEdgeIndex.IsCreated || !csrWriteCursor.IsCreated ||
-                !pressureFront.IsCreated || !pressureBack.IsCreated || !powerPotential.IsCreated ||
+                !pressureFront.IsCreated || !pressureBack.IsCreated || !powerPotential.IsCreated || !pumpBaseMaxRate.IsCreated || !pumpPowerNodeHashes.IsCreated ||
                 !pumpRemainder.IsCreated || !pumpMassError.IsCreated || !roomDrainLocks.IsCreated || !tuning.IsCreated || !telemetry.IsCreated ||
                 !telemetryCursor.IsCreated || !counters.IsCreated || !frameSummary.IsCreated || !flowGpu.IsCreated)
             {
@@ -435,8 +579,10 @@ namespace Hecton8.Construction
             int nodeCount = ResolveNodeCount(counters);
             int edgeCount = ResolveEdgeCount(counters);
             uint telemetryFlags = SumpDrainageTelemetryFlags.None;
-            bool hasFluidFront = TryResolveLockedExistingBuffer(BufferID.ShinobuFluidCompartmentFront, 20, out NativeArray<FluidCompartmentDTO> fluidFront);
-            bool hasFluidBack = TryResolveLockedExistingBuffer(BufferID.ShinobuFluidCompartmentBack, 21, out NativeArray<FluidCompartmentDTO> fluidBack);
+            bool hasFluidFront = TryLockAndReadExistingBuffer(BufferID.ShinobuFluidCompartmentFront, 20, out NativeArray<Hecton8.Physics.FluidCompartmentDTO> fluidFront);
+            bool hasFluidBack = TryLockAndBorrowMutableExistingBuffer(BufferID.ShinobuFluidCompartmentBack, 21, out NativeArray<Hecton8.Physics.FluidCompartmentDTO> fluidBack);
+            bool hasPowerNodes = TryLockAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.Nodes, 24, out NativeArray<Hecton8.Power.PowerNodeDTO> powerNodes);
+            bool hasPowerPotential = TryLockAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.PotentialFront, 25, out NativeArray<float> powerPotentialFront);
             int compartmentCount = hasFluidFront && hasFluidBack ? math.min(fluidFront.Length, fluidBack.Length) : 0;
             if (compartmentCount <= 0)
             {
@@ -444,13 +590,20 @@ namespace Hecton8.Construction
                 UnlockTrackedBuffer(BufferID.ShinobuFluidCompartmentBack, 21);
                 UnlockTrackedBuffer(BufferID.ShinobuFluidCompartmentFront, 20);
             }
+            if (!hasPowerNodes || !hasPowerPotential)
+            {
+                telemetryFlags |= SumpDrainageTelemetryFlags.MissingPowerVault;
+                UnlockTrackedBuffer(Hecton8.Power.PowerGridBufferIds.PotentialFront, 25);
+                UnlockTrackedBuffer(Hecton8.Power.PowerGridBufferIds.Nodes, 24);
+                powerNodes = default;
+                powerPotentialFront = default;
+            }
 
-            telemetryFlags |= HydratePowerPotentialFromVault(powerPotential, nodeCount);
             ResetFrameCounters(counters, nodeCount, edgeCount);
             DrainageTuningDTO activeTuning = RefreshTuning(tuning, deltaTime, quality, nodeCount, edgeCount);
-            int iterations = ResolveSolverIterations(quality);
-            counters[SumpPumpPipeGridConstants.CounterSolverIterations] = iterations;
-            PumpNodeDTO* pumpPtr = (PumpNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(pumps);
+            int deltaPassCount = FixedDrainageDeltaPassCount;
+            counters[SumpPumpPipeGridConstants.CounterDeltaPassCount] = deltaPassCount;
+            DrainageNodeDTO* pumpPtr = (DrainageNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(pumps);
             JobHandle dependency = default;
 
             if (_topologyDirty)
@@ -477,19 +630,35 @@ namespace Hecton8.Construction
             NativeArray<float> pressureRead = _pressureFrontIsA ? pressureFront : pressureBack;
             NativeArray<float> pressureWrite = _pressureFrontIsA ? pressureBack : pressureFront;
             bool nextFrontIsA = _pressureFrontIsA;
-            for (int i = 0; i < iterations; i++)
+            ApplyPumpPowerConstraintJob powerJob = new ApplyPumpPowerConstraintJob
             {
-                PipePressureSolverJob pressureJob = new PipePressureSolverJob
+                PumpNodes = pumpPtr,
+                PumpBaseMaxRate = pumpBaseMaxRate,
+                PumpPowerNodeHashes = pumpPowerNodeHashes,
+                PowerNodes = powerNodes,
+                PowerPotentialFront = powerPotentialFront,
+                PowerPotential = powerPotential,
+                NodeCount = nodeCount,
+                MaxPumpThroughputM3PerSecond = activeTuning.MaxPumpThroughputM3PerSecond
+            };
+            dependency = powerJob.Schedule(nodeCount, 64, dependency);
+
+            for (int passIndex = 0; passIndex < FixedDrainageDeltaPassCount; passIndex++)
+            {
+                EvaluatePipePressureDeltaPassJob pressureJob = new EvaluatePipePressureDeltaPassJob
                 {
                     PumpNodes = pumpPtr,
                     NodeEdgeOffsets = csrOffsets,
                     EdgeDestinations = csrDestinations,
                     EdgeConductance = csrConductance,
+                    NodeAup = nodeAup,
                     PressureFront = pressureRead,
                     PressureBack = pressureWrite,
                     PowerPotential = powerPotential,
                     NodeCount = nodeCount,
-                    JacobiSmoothingFactor = activeTuning.JacobiSmoothingFactor
+                    DeltaSmoothingFactor = activeTuning.DeltaSmoothingFactor,
+                    GravityAssistScalar = activeTuning.GravityAssistScalar,
+                    GravityResistanceScalar = activeTuning.GravityResistanceScalar
                 };
                 dependency = pressureJob.Schedule(nodeCount, 64, dependency);
                 NativeArray<float> swap = pressureRead;
@@ -522,11 +691,11 @@ namespace Hecton8.Construction
                 };
                 dependency = clearLocksJob.Schedule(compartmentCount, 64, dependency);
 
-                EvacuateWaterVolumeJob evacuateJob = new EvacuateWaterVolumeJob
+                ExecuteWaterEvacuationJob evacuateJob = new ExecuteWaterEvacuationJob
                 {
                     PumpNodes = pumpPtr,
-                    FrontCompartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidFront),
-                    BackCompartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidBack),
+                    FrontCompartments = (Hecton8.Physics.FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(fluidFront),
+                    BackCompartments = (Hecton8.Physics.FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidBack),
                     PumpRoomIndices = roomIndices,
                     PumpRemainderM3 = pumpRemainder,
                     PumpMassErrorM3 = pumpMassError,
@@ -552,9 +721,10 @@ namespace Hecton8.Construction
                 TelemetryCursor = telemetryCursor,
                 NodeCount = nodeCount,
                 EdgeCount = edgeCount,
-                SolverIterations = iterations,
+                DeltaPassCount = deltaPassCount,
                 FrameIndex = _frameIndex,
                 GlobalQualityWeight = quality,
+                PumpPowerDrawWatts = activeTuning.PumpPowerDraw,
                 InputFlags = telemetryFlags
             };
             _solverHandle = telemetryJob.Schedule(dependency);
@@ -635,6 +805,8 @@ namespace Hecton8.Construction
                    TryLock(SumpPumpDrainageBufferIds.PressureFront, 10) &&
                    TryLock(SumpPumpDrainageBufferIds.PressureBack, 11) &&
                    TryLock(SumpPumpDrainageBufferIds.PowerPotential, 12) &&
+                   TryLock(SumpPumpDrainageBufferIds.PumpBaseMaxRate, 26) &&
+                   TryLock(SumpPumpDrainageBufferIds.PumpPowerNodeHashes, 27) &&
                    TryLock(SumpPumpDrainageBufferIds.PumpRemainder, 13) &&
                    TryLock(SumpPumpDrainageBufferIds.Tuning, 14) &&
                    TryLock(SumpPumpDrainageBufferIds.TelemetryRing, 15) &&
@@ -658,7 +830,7 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private bool TryResolveLockedExistingBuffer<T>(BufferID bufferId, int bit, out NativeArray<T> buffer) where T : struct
+        private bool TryLockAndBorrowMutableExistingBuffer<T>(BufferID bufferId, int bit, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             if (_vault == null || !_vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
@@ -676,8 +848,28 @@ namespace Hecton8.Construction
             return false;
         }
 
+        private bool TryLockAndReadExistingBuffer<T>(BufferID bufferId, int bit, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (_vault == null || !_vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            if (!_vault.TryLockBuffer(bufferId, OwnerSystem))
+                return false;
+
+            _lockedBufferMask |= 1UL << bit;
+            if (_vault.TryReadHandle(in handle, out buffer) && buffer.IsCreated)
+                return true;
+
+            UnlockTrackedBuffer(bufferId, bit);
+            buffer = default;
+            return false;
+        }
+
         private void UnlockJobBuffers()
         {
+            UnlockIf(Hecton8.Power.PowerGridBufferIds.PotentialFront, 25);
+            UnlockIf(Hecton8.Power.PowerGridBufferIds.Nodes, 24);
             UnlockIf(BufferID.ShinobuFluidCompartmentBack, 21);
             UnlockIf(BufferID.ShinobuFluidCompartmentFront, 20);
             UnlockIf(SumpPumpDrainageBufferIds.RoomDrainLocks, 23);
@@ -689,6 +881,8 @@ namespace Hecton8.Construction
             UnlockIf(SumpPumpDrainageBufferIds.TelemetryRing, 15);
             UnlockIf(SumpPumpDrainageBufferIds.Tuning, 14);
             UnlockIf(SumpPumpDrainageBufferIds.PumpRemainder, 13);
+            UnlockIf(SumpPumpDrainageBufferIds.PumpPowerNodeHashes, 27);
+            UnlockIf(SumpPumpDrainageBufferIds.PumpBaseMaxRate, 26);
             UnlockIf(SumpPumpDrainageBufferIds.PowerPotential, 12);
             UnlockIf(SumpPumpDrainageBufferIds.PressureBack, 11);
             UnlockIf(SumpPumpDrainageBufferIds.PressureFront, 10);
@@ -717,45 +911,6 @@ namespace Hecton8.Construction
                 _vault?.TryUnlockBuffer(bufferId, OwnerSystem);
         }
 
-        private uint HydratePowerPotentialFromVault(NativeArray<float> powerPotential, int nodeCount)
-        {
-            if (_vault == null ||
-                !_vault.TryGetGenerationHandle<float>(BufferID.ShinobuLogisticsPressureFront, out VaultGenerationHandle<float> logisticsPressureHandle) ||
-                !_vault.TryLockBuffer(BufferID.ShinobuLogisticsPressureFront, OwnerSystem))
-            {
-                for (int i = 0; i < nodeCount && i < powerPotential.Length; i++)
-                    powerPotential[i] = 0f;
-                return SumpDrainageTelemetryFlags.MissingPowerVault;
-            }
-
-            try
-            {
-                if (!_vault.TryResolveHandle(in logisticsPressureHandle, out NativeArray<float> logisticsPressure) ||
-                    !logisticsPressure.IsCreated ||
-                    logisticsPressure.Length <= 0)
-                {
-                    for (int i = 0; i < nodeCount && i < powerPotential.Length; i++)
-                        powerPotential[i] = 0f;
-                    return SumpDrainageTelemetryFlags.MissingPowerVault;
-                }
-
-                int copyCount = math.min(nodeCount, powerPotential.Length);
-                for (int i = 0; i < copyCount; i++)
-                {
-                    float potential = i < logisticsPressure.Length ? logisticsPressure[i] : 0f;
-                    powerPotential[i] = math.saturate(math.isfinite(potential) ? potential : 0f);
-                }
-
-                return logisticsPressure.Length < copyCount
-                    ? SumpDrainageTelemetryFlags.MissingPowerVault
-                    : SumpDrainageTelemetryFlags.None;
-            }
-            finally
-            {
-                _vault.TryUnlockBuffer(BufferID.ShinobuLogisticsPressureFront, OwnerSystem);
-            }
-        }
-
         private void ResetFrameCounters(NativeArray<int> counters, int nodeCount, int edgeCount)
         {
             counters[SumpPumpPipeGridConstants.CounterFrameDrainedMilliM3] = 0;
@@ -774,14 +929,14 @@ namespace Hecton8.Construction
             tuning.DeltaTimeSeconds = math.max(0f, deltaTime);
             tuning.NodeCount = (ushort)math.min(ushort.MaxValue, math.max(0, nodeCount));
             tuning.EdgeCount = (ushort)math.min(ushort.MaxValue, math.max(0, edgeCount));
-            tuning.SolverIterations = (ushort)ResolveSolverIterations(quality);
+            tuning.DeltaPassCount = FixedDrainageDeltaPassCount;
             tuningArray[0] = tuning;
             return tuning;
         }
 
         private void InitializeTuningIfNeeded()
         {
-            NativeArray<DrainageTuningDTO> tuning = Resolve(in _tuningHandle);
+            NativeArray<DrainageTuningDTO> tuning = BorrowMutable(in _tuningHandle);
             if (!tuning.IsCreated || tuning.Length <= 0)
                 return;
 
@@ -797,8 +952,11 @@ namespace Hecton8.Construction
             sanitized.GlobalQualityWeight = math.saturate(math.isfinite(sanitized.GlobalQualityWeight) ? sanitized.GlobalQualityWeight : 1f);
             sanitized.BasePipeConductance = math.max(0.000001f, math.isfinite(sanitized.BasePipeConductance) ? sanitized.BasePipeConductance : SumpPumpPipeGridConstants.DefaultBasePipeConductance);
             sanitized.PumpPowerDraw = math.max(0f, math.isfinite(sanitized.PumpPowerDraw) ? sanitized.PumpPowerDraw : SumpPumpPipeGridConstants.DefaultPumpPowerDrawWatts);
-            sanitized.JacobiSmoothingFactor = math.saturate(math.isfinite(sanitized.JacobiSmoothingFactor) ? sanitized.JacobiSmoothingFactor : SumpPumpPipeGridConstants.DefaultJacobiSmoothingFactor);
+            sanitized.DeltaSmoothingFactor = math.saturate(math.isfinite(sanitized.DeltaSmoothingFactor) ? sanitized.DeltaSmoothingFactor : SumpPumpPipeGridConstants.DefaultDeltaSmoothingFactor);
             sanitized.MaxPumpRateScale = math.max(0.001f, math.isfinite(sanitized.MaxPumpRateScale) ? sanitized.MaxPumpRateScale : 1f);
+            sanitized.MaxPumpThroughputM3PerSecond = math.max(0.000001f, math.isfinite(sanitized.MaxPumpThroughputM3PerSecond) ? sanitized.MaxPumpThroughputM3PerSecond : SumpPumpPipeGridConstants.DefaultMaxPumpRateM3PerSecond);
+            sanitized.GravityAssistScalar = math.max(0f, math.isfinite(sanitized.GravityAssistScalar) ? sanitized.GravityAssistScalar : SumpPumpPipeGridConstants.DefaultGravityAssistScalar);
+            sanitized.GravityResistanceScalar = math.max(0f, math.isfinite(sanitized.GravityResistanceScalar) ? sanitized.GravityResistanceScalar : SumpPumpPipeGridConstants.DefaultGravityResistanceScalar);
             sanitized.VisualFlowGain = math.max(0.001f, math.isfinite(sanitized.VisualFlowGain) ? sanitized.VisualFlowGain : SumpPumpPipeGridConstants.DefaultVisualFlowGain);
             sanitized.MassQuantumM3 = math.max(0.000001f, math.isfinite(sanitized.MassQuantumM3) ? sanitized.MassQuantumM3 : SumpPumpPipeGridConstants.DefaultMassQuantumM3);
             return sanitized;
@@ -811,8 +969,11 @@ namespace Hecton8.Construction
                 GlobalQualityWeight = 1f,
                 BasePipeConductance = SumpPumpPipeGridConstants.DefaultBasePipeConductance,
                 PumpPowerDraw = SumpPumpPipeGridConstants.DefaultPumpPowerDrawWatts,
-                JacobiSmoothingFactor = SumpPumpPipeGridConstants.DefaultJacobiSmoothingFactor,
+                DeltaSmoothingFactor = SumpPumpPipeGridConstants.DefaultDeltaSmoothingFactor,
                 MaxPumpRateScale = 1f,
+                MaxPumpThroughputM3PerSecond = SumpPumpPipeGridConstants.DefaultMaxPumpRateM3PerSecond,
+                GravityAssistScalar = SumpPumpPipeGridConstants.DefaultGravityAssistScalar,
+                GravityResistanceScalar = SumpPumpPipeGridConstants.DefaultGravityResistanceScalar,
                 VisualFlowGain = SumpPumpPipeGridConstants.DefaultVisualFlowGain,
                 MassQuantumM3 = SumpPumpPipeGridConstants.DefaultMassQuantumM3
             };
@@ -834,9 +995,14 @@ namespace Hecton8.Construction
             return math.clamp(count <= 0 ? edgeCapacity : count, 0, math.min(edgeCapacity, SumpPumpPipeGridConstants.MaxPipeEdges));
         }
 
-        private static int ResolveSolverIterations(float quality)
+        private static float ResolveSolveCadenceSeconds(float quality)
         {
-            return math.clamp((int)math.lerp(1f, 8f, math.saturate(quality)), 1, 8);
+            float q = math.saturate(quality);
+            float thermalCurve = math.smoothstep(0f, 1f, q);
+            float lowPowerT = math.saturate((0.30f - q) * 3.3333333f);
+            lowPowerT = lowPowerT * lowPowerT * (3f - 2f * lowPowerT);
+            float lowPowerHold = lowPowerT * math.max(0f, 0.30f - q) * 0.12f;
+            return math.lerp(0.5f, 0.1f, thermalCurve) + lowPowerHold;
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -861,16 +1027,19 @@ namespace Hecton8.Construction
 
         private void StampSolverWallTime(uint solverWallMicroseconds)
         {
-            NativeArray<DrainageTelemetryEntry> summary = Resolve(in _frameSummaryHandle);
+            NativeArray<DrainageTelemetryEntry> summary = BorrowMutable(in _frameSummaryHandle);
             if (summary.IsCreated && summary.Length > 0)
             {
                 DrainageTelemetryEntry entry = summary[0];
                 entry.SolverWallMicroseconds = solverWallMicroseconds;
+                entry.Flags |= SumpDrainageTelemetryFlags.ScheduleWindowTiming;
+                if (solverWallMicroseconds > 500u)
+                    entry.Flags |= SumpDrainageTelemetryFlags.SolverOverBudget;
                 summary[0] = entry;
             }
 
-            NativeArray<int> cursor = Resolve(in _telemetryCursorHandle);
-            NativeArray<DrainageTelemetryEntry> telemetry = Resolve(in _telemetryHandle);
+            NativeArray<int> cursor = BorrowMutable(in _telemetryCursorHandle);
+            NativeArray<DrainageTelemetryEntry> telemetry = BorrowMutable(in _telemetryHandle);
             if (!cursor.IsCreated || !telemetry.IsCreated || cursor.Length <= 0 || telemetry.Length <= 0)
                 return;
 
@@ -880,12 +1049,57 @@ namespace Hecton8.Construction
                 index += capacity;
             DrainageTelemetryEntry ringEntry = telemetry[index];
             ringEntry.SolverWallMicroseconds = solverWallMicroseconds;
+            ringEntry.Flags |= SumpDrainageTelemetryFlags.ScheduleWindowTiming;
+            if (solverWallMicroseconds > 500u)
+                ringEntry.Flags |= SumpDrainageTelemetryFlags.SolverOverBudget;
             telemetry[index] = ringEntry;
+        }
+
+        private void RecordTelemetryHeartbeat()
+        {
+            if (!_buffersReady || _solverScheduled || _mockSeedScheduled)
+                return;
+
+            NativeArray<DrainageTelemetryEntry> summary = BorrowMutable(in _frameSummaryHandle);
+            NativeArray<int> cursor = BorrowMutable(in _telemetryCursorHandle);
+            NativeArray<DrainageTelemetryEntry> telemetry = BorrowMutable(in _telemetryHandle);
+            if (!summary.IsCreated || summary.Length <= 0 || !cursor.IsCreated || cursor.Length <= 0 || !telemetry.IsCreated || telemetry.Length <= 0)
+                return;
+
+            DrainageTelemetryEntry entry = summary[0];
+            uint baseHash = entry.StateHash != 0u ? entry.StateHash : SumpPumpPipeGridConstants.FnvOffset;
+            float averagePressure = math.isfinite(entry.AveragePressure) ? entry.AveragePressure : 0f;
+            float maxPressure = math.isfinite(entry.MaxPressure) ? entry.MaxPressure : 0f;
+            float totalEvacuated = math.isfinite(entry.TotalEvacuatedM3) ? math.max(0f, entry.TotalEvacuatedM3) : 0f;
+            float quality = ResolveGlobalQualityWeight();
+
+            entry.FrameIndex = _frameIndex++;
+            entry.StateHash = SumpPumpPipeGridValidation.MixHash(baseHash, entry.FrameIndex);
+            entry.StateHash = SumpPumpPipeGridValidation.MixHash(entry.StateHash, math.asuint(averagePressure));
+            entry.StateHash = SumpPumpPipeGridValidation.MixHash(entry.StateHash, math.asuint(totalEvacuated));
+            entry.FrameEvacuatedM3 = 0f;
+            entry.TotalEvacuatedM3 = totalEvacuated;
+            entry.AveragePressure = averagePressure;
+            entry.MaxPressure = math.max(0f, maxPressure);
+            entry.GlobalQualityWeight = quality;
+            entry.TotalPowerDrawWatts = math.isfinite(entry.TotalPowerDrawWatts) ? math.max(0f, entry.TotalPowerDrawWatts) : 0f;
+            entry.SolverWallMicroseconds = 0u;
+            entry.Flags &= ~(SumpDrainageTelemetryFlags.ScheduleWindowTiming | SumpDrainageTelemetryFlags.SolverOverBudget);
+            entry.Flags |= SumpDrainageTelemetryFlags.HeartbeatFrame;
+            summary[0] = entry;
+
+            int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
+            int writeCursor = cursor[0];
+            int index = writeCursor % capacity;
+            if (index < 0)
+                index += capacity;
+            telemetry[index] = entry;
+            cursor[0] = writeCursor + 1;
         }
 
         private DrainageTelemetryEntry ReadFrameSummary()
         {
-            NativeArray<DrainageTelemetryEntry> summary = Resolve(in _frameSummaryHandle);
+            NativeArray<DrainageTelemetryEntry> summary = Read(in _frameSummaryHandle);
             return summary.IsCreated && summary.Length > 0 ? summary[0] : default;
         }
 
@@ -901,15 +1115,33 @@ namespace Hecton8.Construction
             return entry.FrameIndex != 0u || entry.StateHash != 0u;
         }
 
+#if UNITY_EDITOR
+        private bool TryCopyTelemetryTo(DrainageTelemetryEntry[] target, out int count)
+        {
+            count = 0;
+            if (target == null || target.Length <= 0 || !_buffersReady || _solverScheduled)
+                return false;
+
+            NativeArray<DrainageTelemetryEntry> telemetry = Read(in _telemetryHandle);
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
+            count = math.min(target.Length, telemetry.Length);
+            for (int i = 0; i < count; i++)
+                target[i] = telemetry[i];
+            return count > 0;
+        }
+#endif
+
         private bool TryReadTuning(out DrainageTuningDTO tuning)
         {
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady)
             {
                 tuning = s_offlineTuning;
                 return false;
             }
 
-            NativeArray<DrainageTuningDTO> tuningArray = Resolve(in _tuningHandle);
+            NativeArray<DrainageTuningDTO> tuningArray = Read(in _tuningHandle);
             if (!tuningArray.IsCreated || tuningArray.Length <= 0)
             {
                 tuning = s_offlineTuning;
@@ -922,7 +1154,7 @@ namespace Hecton8.Construction
 
         private bool TryWriteTuning(in DrainageTuningDTO tuning)
         {
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady)
                 return false;
             if (_solverScheduled)
                 return false;
@@ -932,11 +1164,12 @@ namespace Hecton8.Construction
 
             try
             {
-                NativeArray<DrainageTuningDTO> tuningArray = Resolve(in _tuningHandle);
+                NativeArray<DrainageTuningDTO> tuningArray = BorrowMutable(in _tuningHandle);
                 if (!tuningArray.IsCreated || tuningArray.Length <= 0)
                     return false;
 
-                tuningArray[0] = SanitizeTuning(tuning);
+                DrainageTuningDTO* tuningPtr = (DrainageTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuningArray);
+                UnsafeUtility.AsRef<DrainageTuningDTO>(tuningPtr) = SanitizeTuning(tuning);
                 return true;
             }
             finally
@@ -947,17 +1180,21 @@ namespace Hecton8.Construction
 
         private void ClearRuntimeScalarBuffers()
         {
-            NativeArray<float> pressureFront = Resolve(in _pressureFrontHandle);
-            NativeArray<float> pressureBack = Resolve(in _pressureBackHandle);
-            NativeArray<float> remainder = Resolve(in _pumpRemainderHandle);
-            NativeArray<float> massError = Resolve(in _pumpMassErrorHandle);
-            NativeArray<DrainageRoomDrainLock64> roomLocks = Resolve(in _roomDrainLocksHandle);
+            NativeArray<DrainageNodeDTO> pumps = BorrowMutable(in _pumpNodesHandle);
+            NativeArray<float> pressureFront = BorrowMutable(in _pressureFrontHandle);
+            NativeArray<float> pressureBack = BorrowMutable(in _pressureBackHandle);
+            NativeArray<float> remainder = BorrowMutable(in _pumpRemainderHandle);
+            NativeArray<float> massError = BorrowMutable(in _pumpMassErrorHandle);
+            NativeArray<DrainageRoomDrainLock64> roomLocks = BorrowMutable(in _roomDrainLocksHandle);
             for (int i = 0; i < nodeCapacity; i++)
             {
+                float seededPressure = pumps.IsCreated && i < pumps.Length
+                    ? math.max(0f, pumps[i].HydraulicPressure)
+                    : 0f;
                 if (pressureFront.IsCreated && i < pressureFront.Length)
-                    pressureFront[i] = 0f;
+                    pressureFront[i] = seededPressure;
                 if (pressureBack.IsCreated && i < pressureBack.Length)
-                    pressureBack[i] = 0f;
+                    pressureBack[i] = seededPressure;
                 if (remainder.IsCreated && i < remainder.Length)
                     remainder[i] = 0f;
                 if (massError.IsCreated && i < massError.Length)
@@ -973,7 +1210,7 @@ namespace Hecton8.Construction
 
         private void UploadFlowVisuals()
         {
-            NativeArray<int> counters = Resolve(in _countersHandle);
+            NativeArray<int> counters = BorrowMutable(in _countersHandle);
             int validEdges = counters.IsCreated && counters.Length > SumpPumpPipeGridConstants.CounterValidCsrEdges
                 ? counters[SumpPumpPipeGridConstants.CounterValidCsrEdges]
                 : edgeCapacity;
@@ -985,12 +1222,12 @@ namespace Hecton8.Construction
 
         private void UploadStructuredFlowBuffer(int validEdges)
         {
-            NativeArray<DrainagePipeFlowGpuDTO> flowGpu = Resolve(in _flowGpuHandle);
+            NativeArray<DrainagePipeFlowGpuDTO> flowGpu = BorrowMutable(in _flowGpuHandle);
             int safeCount = math.min(math.max(0, validEdges), flowGpu.IsCreated ? flowGpu.Length : 0);
-            if (safeCount <= 0 || !EnsureFlowGraphicsBuffers(safeCount))
+            if (safeCount <= 0 || !HasFlowGraphicsBuffers(safeCount))
                 return;
 
-            GraphicsBuffer target = ResolveNextFlowWriteBuffer();
+            GraphicsBuffer target = AdvanceFlowWriteBuffer();
             if (target == null || !target.IsValid())
                 return;
 
@@ -1005,44 +1242,67 @@ namespace Hecton8.Construction
 
         private void PublishConnectionSplineNodeFlow()
         {
-            NativeArray<int> offsets = Resolve(in _csrOffsetsHandle);
-            NativeArray<float> flows = Resolve(in _csrFlowHandle);
-            NativeArray<int> counters = Resolve(in _countersHandle);
+            NativeArray<int> offsets = BorrowMutable(in _csrOffsetsHandle);
+            NativeArray<float> flows = BorrowMutable(in _csrFlowHandle);
+            NativeArray<int> counters = BorrowMutable(in _countersHandle);
             if (!offsets.IsCreated || !flows.IsCreated || !counters.IsCreated)
                 return;
 
             int nodeCount = ResolveNodeCount(counters);
             DrainageTuningDTO tuning = ReadTuningOrDefault();
             float visualGain = math.max(0.001f, tuning.VisualFlowGain);
-            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            float qualityCurve = math.smoothstep(0f, 1f, ResolveGlobalQualityWeight());
+            int publishBudget = math.clamp((int)math.lerp(16f, math.max(16f, nodeCount), qualityCurve), 1, math.max(1, nodeCount));
+            int stride = math.max(1, nodeCount / publishBudget);
+            int startNode = stride > 1 ? (int)(_frameIndex % (uint)stride) : 0;
+            for (int nodeIndex = startNode; nodeIndex < nodeCount; nodeIndex += stride)
             {
                 int start = math.clamp(offsets[nodeIndex], 0, flows.Length);
                 int end = math.clamp(offsets[nodeIndex + 1], start, flows.Length);
                 float flow01 = 0f;
                 for (int edgeIndex = start; edgeIndex < end; edgeIndex++)
                     flow01 = math.max(flow01, math.saturate(math.abs(flows[edgeIndex]) * visualGain));
-                if (flow01 > 0.001f)
+                if (flow01 > 0.01f)
                     ConnectionSplineBatchRenderer.SetPipeNodeFlow((uint)nodeIndex, flow01);
             }
         }
 
         private DrainageTuningDTO ReadTuningOrDefault()
         {
-            NativeArray<DrainageTuningDTO> tuning = Resolve(in _tuningHandle);
+            NativeArray<DrainageTuningDTO> tuning = Read(in _tuningHandle);
             return tuning.IsCreated && tuning.Length > 0 ? SanitizeTuning(tuning[0]) : s_offlineTuning;
         }
 
         private bool EnsureFlowGraphicsBuffers(int safeCount)
         {
-            if (_flowBufferA != null && _flowBufferB != null && _flowBufferCapacity >= safeCount)
-                return _flowBufferA.IsValid() && _flowBufferB.IsValid();
+            try
+            {
+                if (_flowBufferA != null && _flowBufferB != null && _flowBufferCapacity >= safeCount)
+                    return _flowBufferA.IsValid() && _flowBufferB.IsValid();
 
-            ReleaseGraphicsBuffer(ref _flowBufferA);
-            ReleaseGraphicsBuffer(ref _flowBufferB);
-            _flowBufferCapacity = math.max(1, math.ceilpow2(safeCount));
-            _flowBufferA = CreateFlowGraphicsBuffer(_flowBufferCapacity);
-            _flowBufferB = CreateFlowGraphicsBuffer(_flowBufferCapacity);
-            return _flowBufferA.IsValid() && _flowBufferB.IsValid();
+                ReleaseGraphicsBuffer(ref _flowBufferA);
+                ReleaseGraphicsBuffer(ref _flowBufferB);
+                _flowBufferCapacity = math.max(1, math.ceilpow2(safeCount));
+                _flowBufferA = CreateFlowGraphicsBuffer(_flowBufferCapacity);
+                _flowBufferB = CreateFlowGraphicsBuffer(_flowBufferCapacity);
+                return _flowBufferA.IsValid() && _flowBufferB.IsValid();
+            }
+            catch
+            {
+                ReleaseGraphicsBuffer(ref _flowBufferA);
+                ReleaseGraphicsBuffer(ref _flowBufferB);
+                _flowBufferCapacity = 0;
+                return false;
+            }
+        }
+
+        private bool HasFlowGraphicsBuffers(int safeCount)
+        {
+            return _flowBufferA != null &&
+                   _flowBufferB != null &&
+                   _flowBufferCapacity >= safeCount &&
+                   _flowBufferA.IsValid() &&
+                   _flowBufferB.IsValid();
         }
 
         private static GraphicsBuffer CreateFlowGraphicsBuffer(int capacity)
@@ -1054,7 +1314,7 @@ namespace Hecton8.Construction
                 UnsafeUtility.SizeOf<DrainagePipeFlowGpuDTO>());
         }
 
-        private GraphicsBuffer ResolveNextFlowWriteBuffer()
+        private GraphicsBuffer AdvanceFlowWriteBuffer()
         {
             _flowBufferWriteIndex ^= 1;
             return _flowBufferWriteIndex == 0 ? _flowBufferA : _flowBufferB;
@@ -1088,6 +1348,8 @@ namespace Hecton8.Construction
             _vault.ReleaseBuffer(in _roomDrainLocksHandle);
             _vault.ReleaseBuffer(in _pumpMassErrorHandle);
             _vault.ReleaseBuffer(in _pumpRemainderHandle);
+            _vault.ReleaseBuffer(in _pumpPowerNodeHashesHandle);
+            _vault.ReleaseBuffer(in _pumpBaseMaxRateHandle);
             _vault.ReleaseBuffer(in _powerPotentialHandle);
             _vault.ReleaseBuffer(in _pressureBackHandle);
             _vault.ReleaseBuffer(in _pressureFrontHandle);
@@ -1120,6 +1382,8 @@ namespace Hecton8.Construction
             _pressureBackHandle = default;
             _powerPotentialHandle = default;
             _pumpRemainderHandle = default;
+            _pumpBaseMaxRateHandle = default;
+            _pumpPowerNodeHashesHandle = default;
             _pumpMassErrorHandle = default;
             _roomDrainLocksHandle = default;
             _tuningHandle = default;
@@ -1132,70 +1396,270 @@ namespace Hecton8.Construction
             _flowGpuHandle = default;
         }
 
-        private void DumpBlackBoxOnce()
+        private void RequestBlackBoxDumpOnce()
         {
             if (_blackBoxDumped)
                 return;
 
-            NativeArray<DrainageTelemetryEntry> telemetry = Resolve(in _telemetryHandle);
-            if (!telemetry.IsCreated)
+            NativeArray<DrainageTelemetryEntry> telemetry = Read(in _telemetryHandle);
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || _dumpBytes == null || _dumpSignal == null)
                 return;
 
-            _blackBoxDumped = true;
+            try
+            {
+                NativeArray<int> telemetryCursor = Read(in _telemetryCursorHandle);
+                int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
+                int writeCount = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) : capacity;
+                int validCount = math.min(capacity, writeCount);
+                int oldestIndex = capacity > 0 && writeCount > capacity ? writeCount % capacity : 0;
+                uint aggregateFlags = 0u;
+                for (int i = 0; i < validCount; i++)
+                    aggregateFlags |= telemetry[(oldestIndex + i) % capacity].Flags;
+
+                DrainageDumpHeader header = new DrainageDumpHeader
+                {
+                    Magic = DumpMagic,
+                    EntryCount = (uint)validCount,
+                    StructSizeBytes = (uint)UnsafeUtility.SizeOf<DrainageTelemetryEntry>(),
+                    Version = DumpVersion,
+                    Capacity = (uint)capacity,
+                    WriteCount = (uint)writeCount,
+                    OldestIndex = (uint)oldestIndex,
+                    RuntimeHash = RuntimeHash,
+                    Flags = aggregateFlags
+                };
+
+                int headerBytes = UnsafeUtility.SizeOf<DrainageDumpHeader>();
+                int rowBytes = UnsafeUtility.SizeOf<DrainageTelemetryEntry>();
+                int requiredBytes = headerBytes + (validCount * rowBytes);
+                if (requiredBytes <= headerBytes || requiredBytes > _dumpBytes.Length)
+                    return;
+
+                fixed (byte* dumpPtr = _dumpBytes)
+                {
+                    byte* cursor = dumpPtr;
+                    UnsafeUtility.MemCpy(cursor, UnsafeUtility.AddressOf(ref header), headerBytes);
+                    cursor += headerBytes;
+                    for (int i = 0; i < validCount; i++)
+                    {
+                        int telemetryIndex = (oldestIndex + i) % capacity;
+                        DrainageTelemetryEntry entry = telemetry[telemetryIndex];
+                        UnsafeUtility.MemCpy(cursor, UnsafeUtility.AddressOf(ref entry), rowBytes);
+                        cursor += rowBytes;
+                    }
+                }
+
+                _blackBoxDumped = true;
+                Volatile.Write(ref _dumpByteCount, requiredBytes);
+                Interlocked.Exchange(ref _dumpPending, 1);
+                _dumpSignal.Set();
+            }
+            catch
+            {
+                Interlocked.Exchange(ref _dumpWriteFault, 1);
+            }
+        }
+
+        private void InitializeDumpWriterCold()
+        {
+            if (_dumpSignal != null)
+                return;
+
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
-                Directory.CreateDirectory(Path.GetDirectoryName(dumpPath));
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                _dumpPath = Path.Combine(projectRoot, DumpRelativePath);
+                string directory = Path.GetDirectoryName(_dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                int byteCapacity = UnsafeUtility.SizeOf<DrainageDumpHeader>() +
+                                   (SumpPumpPipeGridConstants.TelemetryFrameCount * UnsafeUtility.SizeOf<DrainageTelemetryEntry>());
+                _dumpBytes = new byte[byteCapacity];
+                _dumpThreadStop = 0;
+                _dumpPending = 0;
+                _dumpByteCount = 0;
+                _dumpWriteFault = 0;
+                _dumpSignal = new AutoResetEvent(false);
+                _dumpThread = new Thread(DumpWriterLoop)
                 {
-                    writer.Write(RuntimeHash);
-                    writer.Write(telemetry.Length);
-                    for (int i = 0; i < telemetry.Length; i++)
-                    {
-                        DrainageTelemetryEntry entry = telemetry[i];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.FrameEvacuatedM3);
-                        writer.Write(entry.TotalEvacuatedM3);
-                        writer.Write(entry.AveragePressure);
-                        writer.Write(entry.MaxPressure);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.TotalPowerDrawWatts);
-                        writer.Write(entry.ActivePumpCount);
-                        writer.Write(entry.NanCount);
-                        writer.Write(entry.SolverWallMicroseconds);
-                        writer.Write(entry.NodeCount);
-                        writer.Write(entry.EdgeCount);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.ConservativeMassErrorMilli);
-                    }
-                }
+                    IsBackground = true,
+                    Name = "SHINOBU_340_BlackBox"
+                };
+                _dumpThread.Start();
             }
-            catch (Exception exception)
+            catch
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
-#endif
+                _dumpPath = null;
+                _dumpBytes = null;
+                _dumpSignal = null;
+                _dumpThread = null;
+                _dumpWriteFault = 1;
+            }
+        }
+
+        private void ShutdownDumpWriterCold()
+        {
+            AutoResetEvent signal = _dumpSignal;
+            Thread thread = _dumpThread;
+            if (signal == null)
+                return;
+
+            Interlocked.Exchange(ref _dumpThreadStop, 1);
+            signal.Set();
+            if (thread == null)
+            {
+                signal.Dispose();
+                _dumpSignal = null;
+                return;
+            }
+
+            if (thread.Join(50))
+            {
+                signal.Dispose();
+                _dumpSignal = null;
+                _dumpThread = null;
+            }
+        }
+
+        private void DumpWriterLoop()
+        {
+            while (true)
+            {
+                AutoResetEvent signal = _dumpSignal;
+                if (signal == null)
+                    return;
+
+                signal.WaitOne();
+                if (Volatile.Read(ref _dumpThreadStop) != 0 && Volatile.Read(ref _dumpPending) == 0)
+                    return;
+
+                if (Interlocked.Exchange(ref _dumpPending, 0) == 0)
+                    continue;
+
+                int byteCount = Volatile.Read(ref _dumpByteCount);
+                if (byteCount <= 0 || _dumpBytes == null || string.IsNullOrEmpty(_dumpPath))
+                {
+                    Interlocked.Exchange(ref _dumpWriteFault, 1);
+                    continue;
+                }
+
+                try
+                {
+                    using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                        stream.Write(_dumpBytes, 0, math.min(byteCount, _dumpBytes.Length));
+                }
+                catch
+                {
+                    Interlocked.Exchange(ref _dumpWriteFault, 1);
+                }
+
+                if (Volatile.Read(ref _dumpThreadStop) != 0)
+                    return;
             }
         }
 
 #if UNITY_EDITOR
+        public struct PressureDebugNode
+        {
+            public double3 Aup;
+            public float Pressure;
+            public uint Flags;
+        }
+
+        public struct PressureDebugEdge
+        {
+            public int SourceIndex;
+            public int DestinationIndex;
+            public float Flow01;
+            public uint Flags;
+        }
+
+        public static bool TryCopyPressureDebugSnapshot(
+            PressureDebugNode[] nodeSink,
+            PressureDebugEdge[] edgeSink,
+            out int nodeCount,
+            out int edgeCount)
+        {
+            nodeCount = 0;
+            edgeCount = 0;
+            SumpPumpPipeGridRuntime runtime = s_active;
+            return runtime != null &&
+                   runtime.isActiveAndEnabled &&
+                   runtime.CopyPressureDebugSnapshot(nodeSink, edgeSink, out nodeCount, out edgeCount);
+        }
+
+        private bool CopyPressureDebugSnapshot(
+            PressureDebugNode[] nodeSink,
+            PressureDebugEdge[] edgeSink,
+            out int nodeCount,
+            out int edgeCount)
+        {
+            nodeCount = 0;
+            edgeCount = 0;
+            if (!_buffersReady || _solverScheduled || _mockSeedScheduled || nodeSink == null || edgeSink == null)
+                return false;
+
+            NativeArray<DrainageNodeDTO> nodes = Read(in _pumpNodesHandle);
+            NativeArray<PipeEdgeDTO> edges = Read(in _pipeEdgesHandle);
+            NativeArray<double3> aup = Read(in _nodeAupHandle);
+            NativeArray<float> pressure = _pressureFrontIsA ? Read(in _pressureFrontHandle) : Read(in _pressureBackHandle);
+            NativeArray<int> counters = Read(in _countersHandle);
+            if (!nodes.IsCreated || !edges.IsCreated || !aup.IsCreated || !pressure.IsCreated || !counters.IsCreated)
+                return false;
+
+            int resolvedNodeCount = math.min(ResolveNodeCount(counters), math.min(nodes.Length, math.min(aup.Length, pressure.Length)));
+            resolvedNodeCount = math.min(math.max(0, resolvedNodeCount), nodeSink.Length);
+            if (resolvedNodeCount <= 0)
+                return false;
+
+            for (int i = 0; i < resolvedNodeCount; i++)
+            {
+                DrainageNodeDTO node = nodes[i];
+                nodeSink[i] = new PressureDebugNode
+                {
+                    Aup = aup[i],
+                    Pressure = math.max(0f, math.isfinite(pressure[i]) ? pressure[i] : 0f),
+                    Flags = node.Flags
+                };
+            }
+
+            DrainageTuningDTO tuning = ReadTuningOrDefault();
+            float visualFlowGain = math.max(0.001f, tuning.VisualFlowGain);
+            int resolvedEdgeCount = math.min(ResolveEdgeCount(counters), math.min(edges.Length, edgeSink.Length));
+            for (int i = 0; i < resolvedEdgeCount; i++)
+            {
+                PipeEdgeDTO edge = edges[i];
+                edgeSink[i] = new PressureDebugEdge
+                {
+                    SourceIndex = edge.SourceNodeIndex,
+                    DestinationIndex = edge.DestinationNodeIndex,
+                    Flow01 = math.saturate(math.abs(edge.CurrentFlow) * visualFlowGain),
+                    Flags = edge.Flags
+                };
+            }
+
+            nodeCount = resolvedNodeCount;
+            edgeCount = resolvedEdgeCount;
+            return true;
+        }
+
         private void OnDrawGizmos()
         {
             if (!_buffersReady || _solverScheduled)
                 return;
 
-            NativeArray<PipeEdgeDTO> edges = Resolve(in _pipeEdgesHandle);
-            NativeArray<double3> aup = Resolve(in _nodeAupHandle);
-            NativeArray<float> pressure = _pressureFrontIsA ? Resolve(in _pressureFrontHandle) : Resolve(in _pressureBackHandle);
-            NativeArray<int> counters = Resolve(in _countersHandle);
+            NativeArray<PipeEdgeDTO> edges = Read(in _pipeEdgesHandle);
+            NativeArray<double3> aup = Read(in _nodeAupHandle);
+            NativeArray<float> pressure = _pressureFrontIsA ? Read(in _pressureFrontHandle) : Read(in _pressureBackHandle);
+            NativeArray<int> counters = Read(in _countersHandle);
             if (!edges.IsCreated || !aup.IsCreated || !pressure.IsCreated || !counters.IsCreated || aup.Length <= 0)
                 return;
 
             int edgeCount = ResolveEdgeCount(counters);
             double3 origin = aup[0];
+            DrainageTuningDTO tuning = ReadTuningOrDefault();
+            float visualFlowGain = math.max(0.001f, tuning.VisualFlowGain);
             for (int edgeIndex = 0; edgeIndex < edgeCount && edgeIndex < edges.Length; edgeIndex++)
             {
                 PipeEdgeDTO edge = edges[edgeIndex];
@@ -1206,7 +1670,7 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                float flow01 = math.saturate(math.abs(edge.CurrentFlow) * ReadTuningOrDefault().VisualFlowGain);
+                float flow01 = math.saturate(math.abs(edge.CurrentFlow) * visualFlowGain);
                 Gizmos.color = Color.Lerp(Color.blue, Color.white, flow01);
                 Gizmos.DrawLine(ToGizmoPosition(aup[edge.SourceNodeIndex], origin), ToGizmoPosition(aup[edge.DestinationNodeIndex], origin));
             }

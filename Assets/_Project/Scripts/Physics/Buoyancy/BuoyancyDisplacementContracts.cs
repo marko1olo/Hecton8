@@ -839,6 +839,8 @@ namespace Hecton8.Physics
         }
     }
 
+#if UNITY_EDITOR
+    #if UNITY_EDITOR
     public static class BuoyancyMaterialVolumeCsvParser
     {
         private const byte Comma = (byte)',';
@@ -1059,7 +1061,9 @@ namespace Hecton8.Physics
             return value == Space || value == Tab || value == CarriageReturn || value == LineFeed;
         }
     }
+    #endif
 
+    #if UNITY_EDITOR
     public static class BuoyancyMaterialSettlingProfileCsvParser
     {
         private const byte Comma = (byte)',';
@@ -1315,4 +1319,6 @@ namespace Hecton8.Physics
             return value == Space || value == Tab || value == CarriageReturn || value == LineFeed;
         }
     }
+    #endif
+#endif
 }

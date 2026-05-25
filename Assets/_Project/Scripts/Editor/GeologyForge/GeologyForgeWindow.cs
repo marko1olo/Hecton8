@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Hecton8.Core;
 
 namespace Hecton8.Editor.GeologyForge
 {
@@ -176,7 +177,7 @@ namespace Hecton8.Editor.GeologyForge
                 return;
 
             SetBakeProgress(0f);
-            Debug.LogWarning("Geology Forge async bake request ignored: no profiles loaded or a bake is already running.");
+            H8Debug.LogWarning("Geology Forge async bake request ignored: no profiles loaded or a bake is already running.");
         }
 
         private void SetBakeProgress(float value)

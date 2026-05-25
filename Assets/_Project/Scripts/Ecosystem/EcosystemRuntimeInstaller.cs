@@ -21,16 +21,16 @@ namespace Hecton8.Ecosystem
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for ecosystem systems per gameplay scene - owner: EcosystemRuntimeInstaller
 
-            if (runtimeRoot.GetComponent<FaunaGeneticsManager>() == null)
+            if (!runtimeRoot.TryGetComponent<FaunaGeneticsManager>(out _))
                 runtimeRoot.AddComponent<FaunaGeneticsManager>();
 
-            if (runtimeRoot.GetComponent<EcosystemHealthDirector>() == null)
+            if (!runtimeRoot.TryGetComponent<EcosystemHealthDirector>(out _))
                 runtimeRoot.AddComponent<EcosystemHealthDirector>();
 
-            if (runtimeRoot.GetComponent<MigrationDirector>() == null)
+            if (!runtimeRoot.TryGetComponent<MigrationDirector>(out _))
                 runtimeRoot.AddComponent<MigrationDirector>();
 
-            if (runtimeRoot.GetComponent<EcosystemPopulationBalancer>() == null)
+            if (!runtimeRoot.TryGetComponent<EcosystemPopulationBalancer>(out _))
                 runtimeRoot.AddComponent<EcosystemPopulationBalancer>();
 
             ShinobuEcosystemBalancer.EnsureRuntimeService();

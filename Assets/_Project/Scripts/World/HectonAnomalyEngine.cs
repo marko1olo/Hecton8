@@ -1,5 +1,7 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Collections;
@@ -9,10 +11,17 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    internal static class HectonAnomalyEngineLayout
+    {
+        public const int AnomalyBasinDetectionSettingsStrideBytes = 32;
+        public const int AnomalyBasinRecordStrideBytes = 56;
+        public const int AnomalyBasinFloodFillStateStrideBytes = 48;
+    }
+
     /// <summary>
     /// Configuration for closed basin detection on a 2D heightmap.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonAnomalyEngineLayout.AnomalyBasinDetectionSettingsStrideBytes)]
     public struct AnomalyBasinDetectionSettings
     {
         /// <summary>Heightmap width in samples.</summary>
@@ -74,7 +83,7 @@ namespace Hecton8.World
     /// <summary>
     /// Closed basin record emitted by the anomaly detector.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonAnomalyEngineLayout.AnomalyBasinRecordStrideBytes)]
     public struct AnomalyBasinRecord
     {
         /// <summary>One-based basin identifier. Zero means no valid basin.</summary>
@@ -139,7 +148,7 @@ namespace Hecton8.World
     /// <summary>
     /// Serializable continuation state for the interruptible closed-basin flood fill.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonAnomalyEngineLayout.AnomalyBasinFloodFillStateStrideBytes)]
     public struct AnomalyBasinFloodFillState
     {
         [FieldOffset(0)]
@@ -267,6 +276,7 @@ namespace Hecton8.World
             NativeArray<int> acceptedCells,
             NativeQueue<AnomalyBasinFloodFillState> pendingStates,
             NativeQueue<AnomalyBasinFloodFillState> deferredStates,
+            NativeArray<int> deferredStateBudget,
             NativeArray<int> sliceStatus,
             AnomalyBasinDetectionSettings settings,
             JobHandle dependency = default)
@@ -291,8 +301,13 @@ namespace Hecton8.World
                 throw new ArgumentException("Pending flood-fill state queue is not created.", nameof(pendingStates));
             if (!deferredStates.IsCreated)
                 throw new ArgumentException("Deferred flood-fill state queue is not created.", nameof(deferredStates));
+            if (!deferredStateBudget.IsCreated || deferredStateBudget.Length < 2)
+                throw new ArgumentException("Deferred flood-fill state budget requires at least two integer slots.", nameof(deferredStateBudget));
             if (!sliceStatus.IsCreated || sliceStatus.Length < 2)
                 throw new ArgumentException("Slice status requires at least two integer slots.", nameof(sliceStatus));
+
+            deferredStateBudget[0] = 1;
+            deferredStateBudget[1] = 0;
 
             var job = new ClosedBasinFloodFillSliceJob
             {
@@ -305,6 +320,7 @@ namespace Hecton8.World
                 AcceptedCells = acceptedCells,
                 PendingStates = pendingStates,
                 DeferredStates = deferredStates,
+                DeferredStateBudget = deferredStateBudget,
                 SliceStatus = sliceStatus,
                 Settings = safeSettings
             };
@@ -1260,6 +1276,9 @@ namespace Hecton8.World
         private const int PhaseScanCandidate = 0;
         private const int PhaseFlood = 1;
         private const int PhaseClearVisitedStamp = 2;
+        private const int StatusDeferred = 1;
+        private const int StatusCompleted = 2;
+        private const int StatusDeferredOverflow = 3;
 
         [ReadOnly, NoAlias] public NativeArray<float> Heightmap;
         [NoAlias] public NativeArray<byte> CandidateMask;
@@ -1270,6 +1289,8 @@ namespace Hecton8.World
         [NoAlias] public NativeArray<int> AcceptedCells;
         public NativeQueue<AnomalyBasinFloodFillState> PendingStates;
         public NativeQueue<AnomalyBasinFloodFillState> DeferredStates;
+        [NoAlias]
+        public NativeArray<int> DeferredStateBudget;
         [NoAlias]
         public NativeArray<int> SliceStatus;
         public AnomalyBasinDetectionSettings Settings;
@@ -1334,7 +1355,7 @@ namespace Hecton8.World
                 }
             }
 
-            SliceStatus[0] = 2;
+            SliceStatus[0] = StatusCompleted;
             SliceStatus[1] = operations;
         }
 
@@ -1630,9 +1651,35 @@ namespace Hecton8.World
 
         private void Defer(AnomalyBasinFloodFillState state, int operations)
         {
-            DeferredStates.Enqueue(state);
-            SliceStatus[0] = 1;
             SliceStatus[1] = operations;
+            if (!TryEnqueueDeferredStateBounded(DeferredStates, DeferredStateBudget, in state))
+            {
+                SliceStatus[0] = StatusDeferredOverflow;
+                return;
+            }
+
+            SliceStatus[0] = StatusDeferred;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe bool TryEnqueueDeferredStateBounded(
+            NativeQueue<AnomalyBasinFloodFillState> queue,
+            NativeArray<int> budgetArray,
+            in AnomalyBasinFloodFillState state)
+        {
+            if (!budgetArray.IsCreated || budgetArray.Length < 2)
+                return false;
+
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(budgetArray);
+            int remainingAfterClaim = Interlocked.Decrement(ref budget[0]);
+            if (remainingAfterClaim < 0)
+            {
+                Interlocked.Increment(ref budget[1]);
+                return false;
+            }
+
+            queue.Enqueue(state);
+            return true;
         }
 
         private bool HasUnvisitedLowerNeighbor(int cellIndex, float cellHeight, int stamp, float epsilon)

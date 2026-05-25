@@ -309,6 +309,12 @@ namespace Hecton8.Construction
 
         [ReadOnly, NoAlias] public NativeArray<HeadlessDroneState> ReadDrones;
         [NoAlias] public NativeArray<HeadlessDroneState> Drones;
+        // SAFETY JUSTIFICATION 1/3: this cognition kernel owns one drone slot per Execute index; DTO,
+        // target, position, and state lanes are written only at the current index.
+        // SAFETY JUSTIFICATION 2/3: command cursor, service command, claim-owner, and telemetry lanes
+        // use Interlocked/CAS helpers for every cross-index write, so disabled range checks do not hide races.
+        // SAFETY JUSTIFICATION 3/3: all suppressed arrays are distinct Vault buffers and are annotated
+        // `[NoAlias]`; no aliasing is expected between state, target, command, telemetry, or spatial rows.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneStateDTO> DroneStatesDto;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DroneTargetDTO> DroneTargets;
         [NoAlias] public NativeArray<float4x4> RenderMatrices;
@@ -486,11 +492,11 @@ namespace Hecton8.Construction
             {
                 DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
                 ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
-                dto.AUP_Position = IsFinite(drone.PositionAup) ? drone.PositionAup : ToDouble3(drone.Position);
+                dto.CurrentAUP = IsFinite(drone.PositionAup) ? drone.PositionAup : ToDouble3(drone.Position);
                 dto.Velocity = drone.Velocity;
-                dto.CurrentTaskHash = ResolveCurrentTaskHash(index, in drone);
+                dto.CurrentTargetHashID = ResolveCurrentTaskHash(index, in drone);
+                dto.TaskStateFlags = ((uint)drone.State) | ((uint)drone.FactionBit << 8) | ((uint)drone.CorridorTight << 16);
                 dto.BatteryLevel = math.clamp(drone.BatteryPercent, 0f, 100f);
-                dto.Flags = ((uint)drone.State) | ((uint)drone.FactionBit << 8) | ((uint)drone.CorridorTight << 16);
             }
 
             if (DronePositions.IsCreated && index < DronePositions.Length)
@@ -645,7 +651,8 @@ namespace Hecton8.Construction
                 }
             }
 
-            float3 force = routeDirection + (separation * SeparationWeight);
+            float separationWeight = ResolveSeparationWeight();
+            float3 force = routeDirection + (separation * separationWeight);
             if (neighborCount > 0)
             {
                 float invCount = math.rcp((float)neighborCount);
@@ -659,7 +666,7 @@ namespace Hecton8.Construction
                 float3 playerOffset = drone.Position - PlayerPosition;
                 float playerDistanceSq = math.lengthsq(playerOffset);
                 if (playerDistanceSq <= PlayerSeparationRadiusSq)
-                    force += SafeNormalize(playerOffset) * (SeparationWeight * 3f * math.rcp(math.max(0.04f, playerDistanceSq)));
+                    force += SafeNormalize(playerOffset) * (separationWeight * 3f * math.rcp(math.max(0.04f, playerDistanceSq)));
             }
 
             if (SdfRepulsionStrength > 0f &&
@@ -674,10 +681,15 @@ namespace Hecton8.Construction
             if (forceLengthSq > MaxSteering * MaxSteering)
                 force *= math.rsqrt(forceLengthSq) * MaxSteering;
 
-            if (drone.CorridorTight != 0 && forceLengthSq > SeparationWeight * SeparationWeight)
+            if (drone.CorridorTight != 0 && forceLengthSq > separationWeight * separationWeight)
                 drone.AvoidanceHysteresisSeconds = math.max(drone.AvoidanceHysteresisSeconds, CollisionAvoidanceHoldSeconds);
 
             return force;
+        }
+
+        private float ResolveSeparationWeight()
+        {
+            return math.max(0f, SdfRepulsionStrength * (SeparationWeight * 0.25f));
         }
 
         private static void ResolveArrival(ref HeadlessDroneState drone)
@@ -756,7 +768,25 @@ namespace Hecton8.Construction
         private bool TryResolveMacroWaypoint(int index, in HeadlessDroneState drone, out float3 waypoint)
         {
             waypoint = default;
-            return false;
+            if (!MacroWaypoints.IsCreated ||
+                !MacroWaypointStates.IsCreated ||
+                (uint)index >= (uint)MacroWaypoints.Length ||
+                (uint)index >= (uint)MacroWaypointStates.Length ||
+                MacroWaypointStates[index] == 0)
+            {
+                return false;
+            }
+
+            PathWaypointDTO route = MacroWaypoints[index];
+            waypoint = IsFinite(route.PositionAUP) && IsFinite(drone.PositionAup)
+                ? ResolveAupDestination(route.PositionAUP, drone.PositionAup, drone.Position, route.LocalPosition)
+                : route.LocalPosition;
+
+            if (!IsFinite(waypoint))
+                return false;
+
+            float3 delta = waypoint - drone.Position;
+            return math.lengthsq(delta) > MinimumVectorLengthSq;
         }
 
         private float3 ResolveFormationDestination(int index, int formationMode)

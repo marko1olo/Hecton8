@@ -1,0 +1,11 @@
+﻿JOB_ID: WALL_LAYER_003
+ROLE: ATTACHMENT_ATLAS
+CATEGORY: HABITAT_INTERIORS_LAYERED_WALL
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\LayeredWallSystem\WALL_LAYER_003_InstrumentAttachmentKit
+FINAL_TARGET_PATH: LOOKDEV_LAYER_SOURCE
+FINAL_FILENAME: LOOKDEV_WALL_LAYER_003_InstrumentAttachmentKit_Atlas.png
+REFERENCES: approved base wall or conduit overlay; terminal seed if available
+
+PROMPT:
+Create a clean atlas-style albedo source for separate wall-mounted HECTON-8 habitat instruments and attachments. Include blank sealed instrument housings, small pressure gauges without readable markings, sensor blocks, utility boxes, cable junction collars, clamp brackets, removable tool hooks, blank label plates with no text, and small teal/amber locator material inserts. These are separate objects that would be placed onto a wall, not part of a tile texture. Arrange them with clean spacing on a neutral flat background, as production source pieces for later placement. Materials: warm off-white impact composite, satin titanium fasteners, graphite rubber gaskets, smoky teal polymer inserts, amber opaque locator enamel, controlled salt dust at contact seams. No readable text, no numbers, no logos, no glowing UI screens, no military weapon styling. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, no perspective object scene, no watermark, no border.
+

@@ -34,6 +34,9 @@ namespace Hecton8.Power
         public const uint TelemetryReasonNonFinite = 1u << 0;
         public const uint TelemetryReasonBrownout = 1u << 1;
         public const float MinimumConductance = 0.000001f;
+        public const float MaximumConductance = 4096f;
+        public const float MaximumNetCurrentAbs = 1048576f;
+        public const float MaximumTickDeltaSeconds = 1f;
         public const float BrownoutThreshold01 = 0.20f;
     }
 
@@ -315,21 +318,21 @@ namespace Hecton8.Power
             int safeNodes = math.max(1, nodeCapacity);
             int safeEdges = math.max(1, edgeCapacity);
             int safeAdjacency = math.max(2, math.min(safeEdges, int.MaxValue / 2) * 2);
-            handles.Nodes = vault.GetGenerationHandle<PowerNodeDTO>(PowerGridBufferIds.Nodes, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.Edges = vault.GetGenerationHandle<PowerGridEdgeDTO>(PowerGridBufferIds.Edges, safeEdges, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.NodeAup = vault.GetGenerationHandle<double3>(PowerGridBufferIds.NodeAup, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.NodeEdgeOffsets = vault.GetGenerationHandle<int>(PowerGridBufferIds.CsrOffsets, safeNodes + 1, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.EdgeDestinations = vault.GetGenerationHandle<int>(PowerGridBufferIds.CsrDestinations, safeAdjacency, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.EdgeConductance = vault.GetGenerationHandle<float>(PowerGridBufferIds.CsrConductance, safeAdjacency, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.EdgeCurrentFlow = vault.GetGenerationHandle<float>(PowerGridBufferIds.CsrFlow, safeAdjacency, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.PotentialFront = vault.GetGenerationHandle<float>(PowerGridBufferIds.PotentialFront, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.PotentialBack = vault.GetGenerationHandle<float>(PowerGridBufferIds.PotentialBack, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.DemandRate = vault.GetGenerationHandle<float>(PowerGridBufferIds.DemandRate, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.BatteryMilliRemainder = vault.GetGenerationHandle<float>(PowerGridBufferIds.BatteryRemainderMilli, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetGenerationHandle<PowerTelemetryEntry>(PowerGridBufferIds.TelemetryRing, PowerGridJacobiConstants.TelemetryFrameCount, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetGenerationHandle<PowerGridCounter64>(PowerGridBufferIds.TelemetryCursor, 1, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.Profiles = vault.GetGenerationHandle<PowerProfileDTO>(PowerGridBufferIds.Profiles, 128, SystemID.Power, NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetGenerationHandle<byte>(PowerGridBufferIds.CsvScratch, 16 * 1024, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.Nodes = vault.EnsureGenerationHandle<PowerNodeDTO>(PowerGridBufferIds.Nodes, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.Edges = vault.EnsureGenerationHandle<PowerGridEdgeDTO>(PowerGridBufferIds.Edges, safeEdges, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.NodeAup = vault.EnsureGenerationHandle<double3>(PowerGridBufferIds.NodeAup, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.NodeEdgeOffsets = vault.EnsureGenerationHandle<int>(PowerGridBufferIds.CsrOffsets, safeNodes + 1, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.EdgeDestinations = vault.EnsureGenerationHandle<int>(PowerGridBufferIds.CsrDestinations, safeAdjacency, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.EdgeConductance = vault.EnsureGenerationHandle<float>(PowerGridBufferIds.CsrConductance, safeAdjacency, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.EdgeCurrentFlow = vault.EnsureGenerationHandle<float>(PowerGridBufferIds.CsrFlow, safeAdjacency, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.PotentialFront = vault.EnsureGenerationHandle<float>(PowerGridBufferIds.PotentialFront, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.PotentialBack = vault.EnsureGenerationHandle<float>(PowerGridBufferIds.PotentialBack, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.DemandRate = vault.EnsureGenerationHandle<float>(PowerGridBufferIds.DemandRate, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.BatteryMilliRemainder = vault.EnsureGenerationHandle<float>(PowerGridBufferIds.BatteryRemainderMilli, safeNodes, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.TelemetryRing = vault.EnsureGenerationHandle<PowerTelemetryEntry>(PowerGridBufferIds.TelemetryRing, PowerGridJacobiConstants.TelemetryFrameCount, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.TelemetryCursor = vault.EnsureGenerationHandle<PowerGridCounter64>(PowerGridBufferIds.TelemetryCursor, 1, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.Profiles = vault.EnsureGenerationHandle<PowerProfileDTO>(PowerGridBufferIds.Profiles, 128, SystemID.Power, NativeArrayOptions.ClearMemory);
+            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(PowerGridBufferIds.CsvScratch, 16 * 1024, SystemID.Power, NativeArrayOptions.ClearMemory);
 
             bool valid = HasResolvedBuffer(vault, in handles.Nodes, safeNodes) &&
                          HasResolvedBuffer(vault, in handles.Edges, safeEdges) &&
@@ -516,7 +519,7 @@ namespace Hecton8.Power
             if (((sourceFlags | destinationFlags) & PowerGridJacobiConstants.NodeFlagDamaged) != 0u)
                 return 0f;
 
-            return math.max(0f, math.isfinite(edge.Conductance) ? edge.Conductance : 0f);
+            return math.clamp(math.select(0f, edge.Conductance, math.isfinite(edge.Conductance)), 0f, PowerGridJacobiConstants.MaximumConductance);
         }
     }
 
@@ -565,9 +568,8 @@ namespace Hecton8.Power
                 if ((uint)destination >= (uint)NodeCount || (uint)destination >= (uint)FrontPotential.Length)
                     continue;
 
-                float conductance = math.max(0f, math.isfinite(EdgeConductance[edgeCursor]) ? EdgeConductance[edgeCursor] : 0f);
-                if (conductance <= PowerGridJacobiConstants.MinimumConductance)
-                    continue;
+                float conductance = math.clamp(math.select(0f, EdgeConductance[edgeCursor], math.isfinite(EdgeConductance[edgeCursor])), 0f, PowerGridJacobiConstants.MaximumConductance);
+                conductance *= math.select(1f, 0f, conductance <= PowerGridJacobiConstants.MinimumConductance);
 
                 weightedPotential += conductance * Sanitize01(FrontPotential[destination]);
                 conductanceSum += conductance;
@@ -577,27 +579,24 @@ namespace Hecton8.Power
             float demandRaw = DemandRate.IsCreated && (uint)index < (uint)DemandRate.Length
                 ? DemandRate[index]
                 : 0f;
-            float demandRate = math.saturate(math.max(0f, math.isfinite(demandRaw) ? demandRaw : 0f));
+            float demandRate = math.saturate(math.max(0f, math.select(0f, demandRaw, math.isfinite(demandRaw))));
             float targetPotential = (weightedPotential + generatorRate - demandRate) * math.rcp(math.max(conductanceSum + 1f, 1f));
             float currentPotential = Sanitize01(FrontPotential[index]);
-            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
-            float smoothingInput = math.isfinite(SmoothingFactor) ? SmoothingFactor : 1f;
+            float q = math.saturate(math.select(0f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float smoothingInput = math.select(1f, SmoothingFactor, math.isfinite(SmoothingFactor));
             float smoothing = math.clamp(smoothingInput * math.lerp(0.35f, 1f, q), 0.05f, 1f);
             float solvedPotential = currentPotential + (targetPotential - currentPotential) * smoothing;
             solvedPotential = Sanitize01(solvedPotential);
 
             node.Potential = solvedPotential;
-            if (solvedPotential < PowerGridJacobiConstants.BrownoutThreshold01)
-                node.Flags = flags | PowerGridJacobiConstants.NodeFlagBrownout;
-            else
-                node.Flags = flags & ~PowerGridJacobiConstants.NodeFlagBrownout;
+            node.Flags = math.select(flags & ~PowerGridJacobiConstants.NodeFlagBrownout, flags | PowerGridJacobiConstants.NodeFlagBrownout, solvedPotential < PowerGridJacobiConstants.BrownoutThreshold01);
             BackPotential[index] = solvedPotential;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float Sanitize01(float value)
         {
-            return math.saturate(math.isfinite(value) ? value : 0f);
+            return math.saturate(math.select(0f, value, math.isfinite(value)));
         }
     }
 
@@ -635,9 +634,9 @@ namespace Hecton8.Power
                     continue;
 
                 ref PowerNodeDTO destinationNode = ref UnsafeUtility.AsRef<PowerNodeDTO>(NodesPtr + destination);
-                float conductance = math.max(0f, math.isfinite(EdgeConductance[edgeCursor]) ? EdgeConductance[edgeCursor] : 0f);
-                float current = (potential - Sanitize01(destinationNode.Potential)) * conductance;
-                netCurrentOut += current;
+                float conductance = math.clamp(math.select(0f, EdgeConductance[edgeCursor], math.isfinite(EdgeConductance[edgeCursor])), 0f, PowerGridJacobiConstants.MaximumConductance);
+                float current = math.clamp((potential - Sanitize01(destinationNode.Potential)) * conductance, -PowerGridJacobiConstants.MaximumConductance, PowerGridJacobiConstants.MaximumConductance);
+                netCurrentOut = math.clamp(netCurrentOut + current, -PowerGridJacobiConstants.MaximumNetCurrentAbs, PowerGridJacobiConstants.MaximumNetCurrentAbs);
                 if ((uint)edgeCursor < (uint)EdgeCurrentFlow.Length)
                     EdgeCurrentFlow[edgeCursor] = current;
             }
@@ -645,17 +644,17 @@ namespace Hecton8.Power
             if ((node.Flags & PowerGridJacobiConstants.NodeFlagBattery) == 0u)
                 return;
 
-            float capacity = math.max(0f, math.isfinite(node.MaxCapacity) ? node.MaxCapacity : 0f);
+            float capacity = math.max(0f, math.select(0f, node.MaxCapacity, math.isfinite(node.MaxCapacity)));
             if (capacity <= 0f)
             {
                 node.CurrentStorage = 0f;
                 return;
             }
 
-            float tickDelta = math.max(0f, math.isfinite(DeltaTimeSeconds) ? DeltaTimeSeconds : 0f);
+            float tickDelta = math.clamp(math.select(0f, DeltaTimeSeconds, math.isfinite(DeltaTimeSeconds)), 0f, PowerGridJacobiConstants.MaximumTickDeltaSeconds);
             float carriedRemainder = 0f;
             if ((uint)index < (uint)BatteryMilliRemainder.Length)
-                carriedRemainder = math.isfinite(BatteryMilliRemainder[index]) ? BatteryMilliRemainder[index] : 0f;
+                carriedRemainder = math.select(0f, BatteryMilliRemainder[index], math.isfinite(BatteryMilliRemainder[index]));
 
             float rawMilliWattSeconds = (-netCurrentOut * tickDelta * 1000f) + carriedRemainder;
             int wholeMilliWattSeconds = (int)math.trunc(rawMilliWattSeconds);
@@ -669,7 +668,7 @@ namespace Hecton8.Power
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float Sanitize01(float value)
         {
-            return math.saturate(math.isfinite(value) ? value : 0f);
+            return math.saturate(math.select(0f, value, math.isfinite(value)));
         }
     }
 
@@ -691,14 +690,14 @@ namespace Hecton8.Power
             for (int i = 0; i < DemandRate.Length; i++)
                 DemandRate[i] = 0f;
 
-            float tickDelta = math.max(0.001f, math.isfinite(DeltaTimeSeconds) ? DeltaTimeSeconds : 0.001f);
+            float tickDelta = math.max(0.001f, math.select(0.001f, DeltaTimeSeconds, math.isfinite(DeltaTimeSeconds)));
             float invDt = math.rcp(tickDelta);
             if (EquipmentRequests.IsCreated && ToolToNode.IsCreated)
             {
                 for (int i = 0; i < EquipmentRequests.Length; i++)
                 {
                     PowerEquipmentLoadRequest request = EquipmentRequests[i];
-                    float energyWattSeconds = math.max(0f, math.isfinite(request.EnergyWattSeconds) ? request.EnergyWattSeconds : 0f);
+                    float energyWattSeconds = math.max(0f, math.select(0f, request.EnergyWattSeconds, math.isfinite(request.EnergyWattSeconds)));
                     if (request.ToolHashID == 0u || energyWattSeconds <= 0f)
                         continue;
                     if (ToolToNode.TryGetValue(request.ToolHashID, out int nodeIndex) && (uint)nodeIndex < (uint)DemandRate.Length)
@@ -711,7 +710,7 @@ namespace Hecton8.Power
                 for (int i = 0; i < PumpRequests.Length; i++)
                 {
                     PumpPowerRequest request = PumpRequests[i];
-                    float energyWattSeconds = math.max(0f, math.isfinite(request.EnergyWattSeconds) ? request.EnergyWattSeconds : 0f);
+                    float energyWattSeconds = math.max(0f, math.select(0f, request.EnergyWattSeconds, math.isfinite(request.EnergyWattSeconds)));
                     if (request.NodeHash == 0u || energyWattSeconds <= 0f)
                         continue;
                     if (PumpToNode.TryGetValue(request.NodeHash, out int nodeIndex) && (uint)nodeIndex < (uint)DemandRate.Length)
@@ -723,7 +722,7 @@ namespace Hecton8.Power
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SanitizeDemand(float value)
         {
-            return math.saturate(math.isfinite(value) ? value : 0f);
+            return math.saturate(math.select(0f, value, math.isfinite(value)));
         }
     }
 
@@ -949,6 +948,7 @@ namespace Hecton8.Power
         }
     }
 
+    #if UNITY_EDITOR
     public static class PowerProfileCsvParser
     {
         public static bool TryParsePowerProfiles(ReadOnlySpan<byte> csvBytes, NativeArray<PowerProfileDTO> profiles, out int profileCount)
@@ -1083,7 +1083,8 @@ namespace Hecton8.Power
                 }
             }
 
-            return math.isfinite(result) ? result * sign : 0f;
+            return math.select(0f, result * sign, math.isfinite(result));
         }
     }
+    #endif
 }

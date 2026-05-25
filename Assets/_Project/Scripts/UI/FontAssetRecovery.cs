@@ -25,9 +25,7 @@ namespace Hecton8.UI
         private const string PrimaryTextFontName = "tekst SDF";
         private const string NumericTextFontName = "tsifry SDF";
         private const string LiberationSansFontName = "LiberationSans SDF";
-        private const string GlyphSeed =
-            " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" +
-            ".,:;!?+-=*/%()[]{}<>_|\\/@#$&\"'~";
+        private const string GlyphSeed = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,:;!?+-=*/%()[]{}<>_|\\/@#$&\"'~";
 
         private static readonly string[] _knownFontAssetPaths =
         {

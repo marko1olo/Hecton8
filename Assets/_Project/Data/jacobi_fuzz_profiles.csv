@@ -1,0 +1,4 @@
+name,nodeCount,edgeCapacity,loopRatio01,starRatio01,islandRatio01,flags
+Cyclic_Loop_Overload_Profile,5000,20000,0.78,0.20,0.15,0
+Disconnected_Island_Profile,5000,20000,0.45,0.05,0.40,0
+Injected_Fault_Profile,5000,20000,0.78,0.20,0.15,3

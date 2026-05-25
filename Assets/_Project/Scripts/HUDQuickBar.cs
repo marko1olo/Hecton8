@@ -24,7 +24,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Quick Bar")]
-    public sealed class HUDQuickBar : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HUDQuickBar : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -93,15 +93,21 @@ namespace Hecton8.UI
         private string _cachedDirectiveAdvicePreset;
         private float _nextFieldAdviceRefreshAt;
         private bool _registeredToTickManager;
+        private bool _registeredToLateFrame;
         private bool _slotVisualsDirty;
         private bool _statusDirty;
+        private bool _presentationDirty;
+        private bool _alphaDirty;
+        private float _pendingCanvasAlpha = 1f;
         private IPlayerInventoryService _inventoryService;
         private PlayerInventory _playerInventory;
         private ItemCatalog _itemCatalog;
+        private IToolDurabilityService _toolDurabilitySystem;
         private PlayerToolManager _subscribedToolManager;
         private uint _toolLoadoutSignalSourceId;
         private uint _lastToolLoadoutSignalSequence;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
+        private bool _hotSwapRegistered;
         private readonly int[] _slotItemHashCache = new int[SlotCount]; // COLD ALLOC: int[4] - quickbar resolved item hash cache - owner: HUDQuickBar
         private readonly bool[] _slotItemHashResolved = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar item hash cache validity flags - owner: HUDQuickBar
         private int _lastInventoryVersion = -1;
@@ -114,6 +120,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             AutoResolve();
             _nextAutoResolveAttemptTime = Time.unscaledTime + AutoResolveRetryInterval;
             EnsureBuilt();
@@ -126,7 +134,30 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             Unsubscribe();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    ApplyInventoryService(currentService as IPlayerInventoryService);
+                    RefreshToolManagerSubscription();
+                    MarkAllDirty();
+                    break;
+                case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
+                    _toolDurabilitySystem = currentService as IToolDurabilityService;
+                    _slotVisualsDirty = true;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    RegisterToTickManager();
+                    break;
+            }
         }
 
         public void Tick(float deltaTime)
@@ -142,35 +173,62 @@ namespace Hecton8.UI
                 _slotVisualsDirty = true;
             }
 
-            // Dim when PDA is open
             if (_canvasGroup != null)
             {
                 float target = PlayerPDA.IsOpen ? 0.15f : 1f;
-                _canvasGroup.alpha = math.lerp(_canvasGroup.alpha, target, ResolveFadeBlend01(deltaTime));
+                _pendingCanvasAlpha = math.lerp(_canvasGroup.alpha, target, ResolveFadeBlend01(deltaTime));
+                _alphaDirty = true;
             }
 
+            _presentationDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_alphaDirty)
+            {
+                _alphaDirty = false;
+                if (_canvasGroup != null)
+                    _canvasGroup.alpha = _pendingCanvasAlpha;
+            }
+
+            if (!_presentationDirty)
+                return;
+
+            _presentationDirty = false;
             Refresh();
         }
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            if (!_registeredToTickManager)
+                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredToLateFrame)
+                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTickManager)
-                return;
+            if (_registeredToLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredToLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = false;
+            if (_registeredToTickManager)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredToTickManager = false;
+            }
+
+            _presentationDirty = false;
+            _alphaDirty = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -179,15 +237,7 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
-            if (!ReferenceEquals(_inventoryService, inventoryService))
-            {
-                _inventoryService = inventoryService;
-                _playerInventory = null;
-                _itemCatalog = null;
-                _lastInventoryVersion = -1;
-                InvalidateSlotBindingCache();
-            }
+            ApplyInventoryService(_inventoryService);
 
             if (_inventoryService != null)
             {
@@ -236,7 +286,7 @@ namespace Hecton8.UI
             if (font == null || toolManager == null || _inventoryService == null || _playerInventory == null)
                 return true;
 
-            return !ReferenceEquals(_inventoryService, GlobalRegistry.PlayerInventory);
+            return false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -299,7 +349,8 @@ namespace Hecton8.UI
 
             _slotVisualsDirty = true;
             _statusDirty = true;
-            Refresh(forceStatus: true);
+            _nextStatusRefreshAt = 0f;
+            _presentationDirty = true;
         }
 
         private bool ConsumeToolLoadoutChangedSignals()
@@ -367,7 +418,7 @@ namespace Hecton8.UI
         private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
         {
             return manager != null && manager.gameObject != null
-                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
                 : 0u;
         }
 
@@ -392,8 +443,7 @@ namespace Hecton8.UI
             self.anchoredPosition = barOffset;
 
             // Canvas group for fade
-            _canvasGroup = gameObject.GetComponent<CanvasGroup>();
-            if (_canvasGroup == null)
+            if (!gameObject.TryGetComponent(out _canvasGroup))
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
@@ -583,9 +633,9 @@ namespace Hecton8.UI
             float desiredWidth = 0f;
             Color desiredColor = DurHidden;
 
-            if (prefab != null && prefab.TryGetComponent(out PlayerTool tool) && tool.Metadata != null)
+            if (prefab != null && prefab.TryGetComponent(out IPlayerToolDataReadModel tool) && tool.Metadata != null)
             {
-                ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+                IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
                 if (durabilitySystem != null)
                 {
                     float maxDurability = tool.Metadata.maxDurability;
@@ -637,7 +687,7 @@ namespace Hecton8.UI
 
             int itemHashId = 0;
             if (prefab != null &&
-                prefab.TryGetComponent(out PlayerTool tool) &&
+                prefab.TryGetComponent(out IPlayerToolDataReadModel tool) &&
                 tool.ToolData != null)
             {
                 string persistentId = tool.ToolData.PersistentId;
@@ -652,7 +702,7 @@ namespace Hecton8.UI
 
         private Sprite ResolveSlotIconSprite(GameObject prefab)
         {
-            if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.ToolData == null)
+            if (prefab == null || !prefab.TryGetComponent(out IPlayerToolDataReadModel tool) || tool.ToolData == null)
                 return null;
 
             return tool.ToolData.icon;
@@ -759,7 +809,7 @@ namespace Hecton8.UI
         private RectTransform MakeRect(string name, RectTransform parent)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
-            RectTransform r = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform r);
             r.SetParent(parent, false);
             r.localScale = Vector3.one;
             if (parent != null) go.layer = parent.gameObject.layer;
@@ -842,6 +892,41 @@ namespace Hecton8.UI
                 from.g + ((to.g - from.g) * t),
                 from.b + ((to.b - from.b) * t),
                 from.a + ((to.a - from.a) * t));
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            ApplyInventoryService(GlobalRegistry.PlayerInventory);
+            _toolDurabilitySystem = GlobalRegistry.ToolDurabilityService;
+        }
+
+        private void ApplyInventoryService(IPlayerInventoryService inventoryService)
+        {
+            if (ReferenceEquals(_inventoryService, inventoryService))
+                return;
+
+            _inventoryService = inventoryService;
+            _playerInventory = null;
+            _itemCatalog = null;
+            _lastInventoryVersion = -1;
+            InvalidateSlotBindingCache();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private bool TryGetCachedAdvicePreset(out string advicePreset)

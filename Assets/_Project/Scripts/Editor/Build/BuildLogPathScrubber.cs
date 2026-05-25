@@ -75,9 +75,13 @@ namespace Hecton8.Editor.Build
                 return;
 
             EnsureOutputDirectory();
-            string sanitized = Sanitize(File.ReadAllText(logPath, Encoding.UTF8));
             string outputPath = Path.Combine(OutputDirectory, "EditorLog.sanitized.txt");
-            File.WriteAllText(outputPath, sanitized, NoBomUtf8);
+            using (StreamReader reader = new StreamReader(logPath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            using (StreamWriter writer = new StreamWriter(outputPath, append: false, NoBomUtf8))
+            {
+                while (!reader.EndOfStream)
+                    writer.WriteLine(Sanitize(reader.ReadLine()));
+            }
         }
 
         private static void EnsureOutputDirectory()

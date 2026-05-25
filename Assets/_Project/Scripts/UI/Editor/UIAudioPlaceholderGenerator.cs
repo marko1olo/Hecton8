@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Hecton8.Core;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -51,7 +52,7 @@ namespace Hecton8.UI.Editor
             {
                 float t = (float)i / SampleRate;
                 float envelope = 1f - (t / duration); // Decay envelope
-                samples[i] = Mathf.Sin(2f * Mathf.PI * frequency * t) * envelope * volume;
+                samples[i] = MathLodApproximation.ApproxSinBhaskara(2f * Mathf.PI * frequency * t) * envelope * volume;
             }
 
             SaveAudioClip(folderPath, name, samples);
@@ -65,8 +66,8 @@ namespace Hecton8.UI.Editor
             for (int i = 0; i < sampleCount; i++)
             {
                 float t = (float)i / SampleRate;
-                float envelope = Mathf.Exp(-t * 50f); // Fast decay
-                samples[i] = Mathf.Sin(2f * Mathf.PI * frequency * t) * envelope * volume;
+                float envelope = MathLodApproximation.ApproxExpNegPade33Wide40(t * 50f); // Fast decay
+                samples[i] = MathLodApproximation.ApproxSinBhaskara(2f * Mathf.PI * frequency * t) * envelope * volume;
             }
 
             SaveAudioClip(folderPath, name, samples);
@@ -80,8 +81,8 @@ namespace Hecton8.UI.Editor
             for (int i = 0; i < sampleCount; i++)
             {
                 float t = (float)i / SampleRate;
-                float envelope = Mathf.Sin(Mathf.PI * t / duration); // Sine envelope
-                samples[i] = Mathf.Sin(2f * Mathf.PI * frequency * t) * envelope * volume;
+                float envelope = MathLodApproximation.ApproxSinBhaskara(Mathf.PI * t / duration);
+                samples[i] = MathLodApproximation.ApproxSinBhaskara(2f * Mathf.PI * frequency * t) * envelope * volume;
             }
 
             SaveAudioClip(folderPath, name, samples);
@@ -97,8 +98,8 @@ namespace Hecton8.UI.Editor
                 float t = (float)i / SampleRate;
                 float progress = t / duration;
                 float frequency = Mathf.Lerp(startFreq, endFreq, progress);
-                float envelope = Mathf.Sin(Mathf.PI * progress); // Sine envelope
-                samples[i] = Mathf.Sin(2f * Mathf.PI * frequency * t) * envelope * volume;
+                float envelope = MathLodApproximation.ApproxSinBhaskara(Mathf.PI * progress);
+                samples[i] = MathLodApproximation.ApproxSinBhaskara(2f * Mathf.PI * frequency * t) * envelope * volume;
             }
 
             SaveAudioClip(folderPath, name, samples);

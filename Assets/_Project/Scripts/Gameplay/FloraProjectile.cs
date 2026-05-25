@@ -1,7 +1,6 @@
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Hecton8.Gameplay
 {
@@ -35,19 +34,14 @@ namespace Hecton8.Gameplay
         [Tooltip("Legacy impact volume retained for serialized prefab compatibility.")]
         [SerializeField, Range(0f, 1f)] private float impactVolume = 0.5f;
 
-        [Header("Events")]
-        [Tooltip("Legacy event retained for prefab compatibility. Combat damage now routes through CombatDamageSignal.")]
-        [SerializeField] private UnityEvent<float> OnHitPlayer;
-
-        [Tooltip("Legacy event retained for prefab compatibility. Combat damage now routes through CombatDamageSignal.")]
-        [SerializeField] private UnityEvent OnHitEnvironment;
-
         private Transform _cachedTransform;
         private Vector3 _initialVelocity;
         private bool _initialized;
 
         /// <summary>Legacy damage scalar retained for old prefab inspectors.</summary>
         public float Damage => damage;
+        public float MaxLifetime => maxLifetime;
+        public float ImpactVolume => impactVolume;
 
         private void Awake()
         {
@@ -78,7 +72,7 @@ namespace Hecton8.Gameplay
             if (safeVelocity.sqrMagnitude > 0.000001f)
             {
                 float mass = math.max(0.001f, damage * 0.0018f);
-                uint source = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(gameObject.GetEntityId()));
+                uint source = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(gameObject.GetEntityId()));
                 BallisticsRuntime.QueueTrajectoryFromVelocity(
                     _cachedTransform != null ? _cachedTransform.position : transform.position,
                     safeVelocity,
@@ -105,7 +99,7 @@ namespace Hecton8.Gameplay
 
         private void DespawnSelf()
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);

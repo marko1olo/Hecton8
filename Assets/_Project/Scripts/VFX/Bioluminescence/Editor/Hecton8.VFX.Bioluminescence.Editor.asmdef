@@ -2,6 +2,7 @@
     "name": "Hecton8.VFX.Bioluminescence.Editor",
     "rootNamespace": "Hecton8.VFX.Bioluminescence.Editor",
     "references": [
+        "Hecton8.Core",
         "Hecton8.VFX.Bioluminescence.Runtime",
         "Unity.Collections",
         "Unity.Mathematics"

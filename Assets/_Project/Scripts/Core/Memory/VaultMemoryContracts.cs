@@ -9,6 +9,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Core.Memory
 {
@@ -106,18 +107,19 @@ namespace Hecton8.Core.Memory
     }
 
     /// <summary>
-    /// Pointer-alias record for static transforms using the Dear Lie protocol. Size: 32 bytes.
+    /// Descriptor record for static transform matrices using the Dear Lie protocol. Size: 32 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VaultTransformAlias
     {
-        [FieldOffset(0)] public long MatrixPointer;
-        [FieldOffset(8)] public uint TransformHash;
-        [FieldOffset(12)] public uint EntityId;
-        [FieldOffset(16)] public byte Flags;
-        [FieldOffset(17)] private byte _pad0;
-        [FieldOffset(18)] private ushort _pad1;
-        [FieldOffset(20)] private uint _pad2;
+        [FieldOffset(0)] public uint MatrixBufferId;
+        [FieldOffset(4)] public uint MatrixOffsetBytes;
+        [FieldOffset(8)] public uint MatrixGeneration;
+        [FieldOffset(12)] public uint TransformHash;
+        [FieldOffset(16)] public uint EntityId;
+        [FieldOffset(20)] public byte Flags;
+        [FieldOffset(21)] private byte _pad0;
+        [FieldOffset(22)] private ushort _pad1;
         [FieldOffset(24)] private ulong _pad3;
     }
 
@@ -152,8 +154,8 @@ namespace Hecton8.Core.Memory
         public const byte FlagFenceProtected = 1 << 1;
         public const byte FlagSwapPopIndexMove = 1 << 2;
 
-        [FieldOffset(0)] public long OldPointer;
-        [FieldOffset(8)] public long NewPointer;
+        [FieldOffset(0)] public long OldOffsetBytes;
+        [FieldOffset(8)] public long NewOffsetBytes;
         [FieldOffset(16)] public int BufferId;
         [FieldOffset(20)] public int ByteLength;
         [FieldOffset(24)] public uint Version;
@@ -249,7 +251,7 @@ namespace Hecton8.Core.Memory
             if (vault.IsAllocationLocked)
                 return false;
 
-            _ringHandle = vault.GetGenerationHandle<VaultSovereigntyTelemetryEntry>(
+            _ringHandle = vault.EnsureGenerationHandle<VaultSovereigntyTelemetryEntry>(
                 BufferID.VaultSovereigntyTelemetryRing,
                 Capacity,
                 SystemID.CoreDataVault,
@@ -267,12 +269,27 @@ namespace Hecton8.Core.Memory
                    ring.IsCreated;
         }
 
-        public static bool TryDump(IDataVault vault, string projectRoot)
+        private static bool TryReadRing(IDataVault vault, out NativeArray<VaultSovereigntyTelemetryEntry>.ReadOnly ring)
         {
-            if (!EnsureRing(vault))
+            ring = default;
+            if (vault == null)
                 return false;
 
-            if (!TryResolveRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry> ring) ||
+            VaultGenerationHandle<VaultSovereigntyTelemetryEntry> handle = _ringHandle;
+            if (handle.BufferID == 0u &&
+                !vault.TryGetGenerationHandle(BufferID.VaultSovereigntyTelemetryRing, out handle))
+            {
+                return false;
+            }
+
+            return handle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in handle, out ring) &&
+                   ring.IsCreated;
+        }
+
+        public static bool TryDump(IDataVault vault, string projectRoot)
+        {
+            if (!TryReadRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry>.ReadOnly ring) ||
                 ring.Length == 0 ||
                 string.IsNullOrEmpty(projectRoot))
             {
@@ -419,10 +436,12 @@ namespace Hecton8.Core.Memory
         public const int ColdFlagsOffset = 36;
         public const int ColdMaterialSetOffset = 38;
 
-        public const int TransformAliasMatrixPointerOffset = 0;
-        public const int TransformAliasTransformHashOffset = 8;
-        public const int TransformAliasEntityIdOffset = 12;
-        public const int TransformAliasFlagsOffset = 16;
+        public const int TransformAliasMatrixBufferIdOffset = 0;
+        public const int TransformAliasMatrixOffsetBytesOffset = 4;
+        public const int TransformAliasMatrixGenerationOffset = 8;
+        public const int TransformAliasTransformHashOffset = 12;
+        public const int TransformAliasEntityIdOffset = 16;
+        public const int TransformAliasFlagsOffset = 20;
 
         [FieldOffset(0)] public readonly int LayoutConfigSize;
         [FieldOffset(4)] public readonly int Aup64Size;
@@ -470,8 +489,6 @@ namespace Hecton8.Core.Memory
                 case BufferID.VaultEntityBucketMap:
                 case BufferID.VaultSharedTransformMatrices:
                 case BufferID.VehicleMotorSubmarineStates:
-                case BufferID.VehicleMotorSweepCommands:
-                case BufferID.VehicleMotorSweepResults:
                 case BufferID.VaultSovereigntyTelemetryRing:
                 case BufferID.AcousticEchoPendingTaps:
                 case BufferID.VaultAupSectorLocal32:
@@ -569,7 +586,7 @@ namespace Hecton8.Core.Memory
     /// Converts 64-bit AUP authority to hot local float positions for downstream SIMD jobs.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct VaultAupLocalOffsetResolverJob : IJobParallelFor
+    internal unsafe struct VaultAupLocalOffsetResolverJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<VaultAup64> EntityAups;
         [NoAlias] public NativeArray<VaultHotEntityData> HotEntities;
@@ -620,7 +637,7 @@ namespace Hecton8.Core.Memory
         public const int DefaultHotEntityCapacity = 1024;
         private const int MinimumSweepRows = 64;
         private const uint FlagAupWrapped = 1u << 0;
-        private const uint FlagSweepScheduled = 1u << 1;
+        private const uint FlagSweepExecuted = 1u << 1;
         private const uint FlagCompleted = 1u << 2;
 
         public static bool PrewarmBuffers(IDataVault vault, int hotEntityCapacity)
@@ -656,7 +673,7 @@ namespace Hecton8.Core.Memory
                 out NativeArray<byte> csvScratch);
 
             int aupCapacity = capacity;
-            if (TryReadCoreVaultBuffer(vault, BufferID.VaultAup64, 1, out NativeArray<VaultAup64> aups))
+            if (TryReadCoreVaultBuffer(vault, BufferID.VaultAup64, 1, out NativeArray<VaultAup64>.ReadOnly aups))
                 aupCapacity = math.max(aupCapacity, aups.Length);
             bool hasSectorLocal = TryEnsureCoreVaultBuffer(
                 vault,
@@ -690,8 +707,7 @@ namespace Hecton8.Core.Memory
             long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             float strideAggressiveness = ResolveStrideAggressiveness(vault);
-            JobHandle handle = default;
-            bool scheduled = false;
+            bool executed = false;
 
             NativeArray<VaultHotEntityData> hotEntities = default;
             TryResolveCoreVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out hotEntities);
@@ -711,15 +727,17 @@ namespace Hecton8.Core.Memory
                         out NativeArray<VaultAupSectorLocal32> sectorLocal);
                     if (hasSectorLocal && sectorLocal.IsCreated)
                     {
-                        handle = new VaultAupPrecisionDeltaCompactionJob
+                        VaultAupPrecisionDeltaCompactionJob job = new VaultAupPrecisionDeltaCompactionJob
                         {
                             Aups = aups,
                             SectorLocal32 = sectorLocal,
                             HotEntities = hotEntities,
                             SectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat,
                             Frame = frame
-                        }.Schedule(count, 128, handle);
-                        scheduled = true;
+                        };
+                        for (int index = 0; index < count; index++)
+                            job.Execute(index);
+                        executed = true;
                         stats.AupRowsVisited = count;
                         stats.Flags |= FlagAupWrapped;
                     }
@@ -757,7 +775,7 @@ namespace Hecton8.Core.Memory
                     if (shiftCount.IsCreated && shiftCount.Length > 0)
                         shiftCount[0] = 0;
 
-                    handle = new VaultOrphanedPointerSweepJob
+                    VaultOrphanedPointerSweepJob job = new VaultOrphanedPointerSweepJob
                     {
                         HotEntities = hotEntities,
                         Aups = ResolveOptionalAup64(vault),
@@ -770,21 +788,17 @@ namespace Hecton8.Core.Memory
                         Frame = frame,
                         SourceHash = SourceHash,
                         SystemId = (byte)SystemID.CoreDataVault
-                    }.Schedule(handle);
-                    scheduled = true;
-                    stats.Flags |= FlagSweepScheduled;
+                    };
+                    job.Execute();
+                    executed = true;
+                    stats.Flags |= FlagSweepExecuted;
                 }
             }
 
-            if (scheduled)
-            {
-                H8Memory.RegisterActiveJob(SystemID.CoreDataVault, handle);
-                Hecton8.Core.DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            if (executed)
                 stats.Flags |= FlagCompleted;
-            }
 
-            if (TryReadCoreVaultBuffer(vault, BufferID.VaultSovereigntyActiveEntityCount, 1, out NativeArray<int> resolvedCount) &&
-                resolvedCount.IsCreated &&
+            if (TryReadCoreVaultBuffer(vault, BufferID.VaultSovereigntyActiveEntityCount, 1, out NativeArray<int>.ReadOnly resolvedCount) &&
                 resolvedCount.Length > 0)
             {
                 stats.ActiveCount = resolvedCount[0];
@@ -809,8 +823,7 @@ namespace Hecton8.Core.Memory
 
         private static float ResolveStrideAggressiveness(IDataVault vault)
         {
-            if (TryReadCoreVaultBuffer(vault, BufferID.VaultMemoryLayoutConfig, 1, out NativeArray<VaultMemoryLayoutConfig> configs) &&
-                configs.IsCreated &&
+            if (TryReadCoreVaultBuffer(vault, BufferID.VaultMemoryLayoutConfig, 1, out NativeArray<VaultMemoryLayoutConfig>.ReadOnly configs) &&
                 configs.Length > 0)
             {
                 float value = configs[0].StrideAggressiveness;
@@ -836,7 +849,7 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.CoreDataVault,
@@ -875,7 +888,7 @@ namespace Hecton8.Core.Memory
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             if (vault == null ||
@@ -883,8 +896,7 @@ namespace Hecton8.Core.Memory
                 vault.IsCompactionFenceActive ||
                 !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
                 !IsCoreVaultHandle(in handle, bufferId) ||
-                !vault.TryReadHandle(in handle, out NativeArray<T> resolved) ||
-                !resolved.IsCreated ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) ||
                 resolved.Length < requiredLength)
             {
                 return false;
@@ -922,7 +934,7 @@ namespace Hecton8.Core.Memory
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct VaultAupPrecisionDeltaCompactionJob : IJobParallelFor
+    internal struct VaultAupPrecisionDeltaCompactionJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<VaultAup64> Aups;
         [NoAlias] public NativeArray<VaultAupSectorLocal32> SectorLocal32;
@@ -1015,7 +1027,7 @@ namespace Hecton8.Core.Memory
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct VaultOrphanedPointerSweepJob : IJob
+    internal struct VaultOrphanedPointerSweepJob : IJob
     {
         [NoAlias] public NativeArray<VaultHotEntityData> HotEntities;
         [NoAlias] public NativeArray<VaultAup64> Aups;
@@ -1129,10 +1141,10 @@ namespace Hecton8.Core.Memory
     public sealed class VaultConfigurationAsset : ScriptableObject
     {
         [Header("Vault Limits")]
-        [Tooltip("Low profile vault arena limit in bytes.")]
-        [SerializeField] private long lowArenaLimitBytes = GlobalDataVault.LowTierArenaLimitBytes;
-        [Tooltip("High profile vault arena limit in bytes.")]
-        [SerializeField] private long highArenaLimitBytes = GlobalDataVault.HighTierArenaLimitBytes;
+        [Tooltip("Minimum-quality vault arena limit in bytes.")]
+        [SerializeField, FormerlySerializedAs("lowArenaLimitBytes")] private long minimumQualityArenaLimitBytes = GlobalDataVault.MinimumQualityArenaLimitBytes;
+        [Tooltip("Maximum-quality vault arena limit in bytes.")]
+        [SerializeField, FormerlySerializedAs("highArenaLimitBytes")] private long maximumQualityArenaLimitBytes = GlobalDataVault.MaximumQualityArenaLimitBytes;
         [Tooltip("GlobalDataVault buffer table capacity.")]
         [SerializeField, Range(128, 32768)] private int bufferCapacity = 512;
 
@@ -1149,18 +1161,18 @@ namespace Hecton8.Core.Memory
         /// <summary>Resolves the arena limit for the active scalability profile.</summary>
         public long ResolveArenaLimitBytes(byte scalabilityProfile)
         {
-            long low = lowArenaLimitBytes > 0L
-                ? lowArenaLimitBytes
+            long minimum = minimumQualityArenaLimitBytes > 0L
+                ? minimumQualityArenaLimitBytes
                 : GlobalDataVault.ResolveArenaCapacityLimit(0);
-            long high = highArenaLimitBytes > 0L
-                ? highArenaLimitBytes
+            long maximum = maximumQualityArenaLimitBytes > 0L
+                ? maximumQualityArenaLimitBytes
                 : GlobalDataVault.ResolveArenaCapacityLimit(3);
-            if (high < low)
-                high = low;
+            if (maximum < minimum)
+                maximum = minimum;
 
             float profile01 = GlobalDataVault.DecodeScalabilityProfile01(scalabilityProfile);
             float curve01 = profile01 * profile01 * (3f - (2f * profile01));
-            return (long)math.round(low + ((double)(high - low) * curve01));
+            return (long)math.round(minimum + ((double)(maximum - minimum) * curve01));
         }
 
         /// <summary>Builds the runtime layout config written into the vault.</summary>

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_029
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_029_MAT_family_kelp_patch_dense_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_kelp_patch_dense_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_kelp_patch_dense_Placeholder_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Replacement albedo for dense kelp patch placeholder, optimized for lush but readable ground vegetation. Use layered satin teal leaves, pale turquoise rim cells, warm amber seed nodes, and restrained violet undertones in shaded membrane tissue painted without directional light. The final texture should feel abundant and premium, not messy. Create a rhythmic tile with clear blade groups and small negative spaces between clusters. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

@@ -1293,6 +1293,7 @@ namespace Hecton8.Physics
         }
     }
 
+    #if UNITY_EDITOR
     public static class SimdToleranceCsvParser
     {
         public static bool TryApply(ReadOnlySpan<byte> csv, NativeArray<SimdMathToleranceDTO> output, out int rowsWritten)
@@ -1455,4 +1456,5 @@ namespace Hecton8.Physics
             return value == (byte)' ' || value == (byte)'\t' || value == (byte)'\r' || value == (byte)'\n';
         }
     }
+    #endif
 }

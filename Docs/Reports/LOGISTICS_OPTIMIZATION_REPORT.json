@@ -1,0 +1,13 @@
+﻿{
+  "agent": "SHINOBU_344",
+  "domain": "CARGO_MANIFEST_CONTAINER_INVENTORY_SYNC",
+  "status": "OOP Inventory Merges Eradicated",
+  "parser": "ROSLYN_CSHARP_SYNTAX_TREE_WITH_LEXICAL_FALLBACK",
+  "parserRuntime": "SOURCE_IMPLEMENTED_UNITY_MENU_EXECUTION_PENDING",
+  "filesScanned": 2,
+  "violations": 0,
+  "firstViolationPath": null,
+  "firstViolationLine": 0,
+  "firstViolationPattern": null,
+  "evidence": "rg scoped to Assets/_Project/Scripts/Logistics and Assets/_Project/Scripts/Vehicles returned no List.AddRange, TransferItems, Inventory.Sync, foreach(item), or string Category cargo-transfer matches. Separate archaeology scan covered Assets/_Project/Scripts/Inventory."
+}

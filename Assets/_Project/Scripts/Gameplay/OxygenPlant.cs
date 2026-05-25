@@ -30,8 +30,10 @@ namespace Hecton8.Gameplay
     /// Subnautica Brain Coral equivalent.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class OxygenPlant : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class OxygenPlant : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private const int MaxPendingBubbleReleases = 4;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SPAWN SETTINGS
         // ══════════════════════════════════════════════════════════
@@ -73,9 +75,13 @@ namespace Hecton8.Gameplay
         private uint _releaseSeed;
         private uint _releaseOrdinal;
         private bool _isRegistered;
+        private bool _lateFrameRegistered;
         private bool _registeredHotSwapListener;
         private bool _poolMissingLogged;
-        private ObjectPoolManager _objectPool;
+        private int _pendingBubbleReleaseCount;
+        private bool _pendingReleaseAudio;
+        private Vector3 _pendingReleaseAudioPosition;
+        private IObjectPoolService _objectPool;
         private IAudioService _audioService;
 
         // ══════════════════════════════════════════════════════════
@@ -114,6 +120,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
+            UnregisterFromLateFrame();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -131,7 +138,7 @@ namespace Hecton8.Gameplay
 
             if (_releaseTimer >= _nextReleaseTime)
             {
-                ReleaseBubble();
+                QueueBubbleRelease();
                 _releaseTimer = 0f;
                 CalculateNextReleaseTime();
             }
@@ -141,13 +148,20 @@ namespace Hecton8.Gameplay
         //  BUBBLE RELEASE
         // ══════════════════════════════════════════════════════════
 
-        private void ReleaseBubble()
+        private void QueueBubbleRelease()
+        {
+            if (_pendingBubbleReleaseCount < MaxPendingBubbleReleases)
+                _pendingBubbleReleaseCount++;
+            RegisterToLateFrame();
+        }
+
+        private void FlushBubbleRelease()
         {
             if (oxygenBubblePrefab == null) return;
 
             Vector3 spawnPos = spawnPoint.position;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
             {
                 if (!_poolMissingLogged)
@@ -164,12 +178,36 @@ namespace Hecton8.Gameplay
             GameObject bubble = pool.Spawn(oxygenBubblePrefab, spawnPos, Quaternion.identity);
             if (bubble == null) return;
 
-            // Play release sound
-            IAudioService audio = _audioService;
-            if (releaseSound != null && audio != null)
+            QueueReleaseAudio(spawnPos);
+        }
+
+        public void LateFrameTick()
+        {
+            int releaseCount = _pendingBubbleReleaseCount;
+            if (releaseCount > 0)
             {
-                audio.PlayAtPoint(releaseSound, spawnPos, releaseVolume);
+                _pendingBubbleReleaseCount = 0;
+                for (int i = 0; i < releaseCount; i++)
+                    FlushBubbleRelease();
             }
+
+            if (_pendingReleaseAudio)
+            {
+                _pendingReleaseAudio = false;
+                IAudioService audio = _audioService;
+                if (releaseSound != null && audio != null)
+                    audio.PlayAtPoint(releaseSound, _pendingReleaseAudioPosition, releaseVolume);
+            }
+
+            UnregisterFromLateFrame();
+        }
+
+        private void QueueReleaseAudio(Vector3 position)
+        {
+            _pendingReleaseAudioPosition = position;
+            _pendingReleaseAudio = releaseSound != null;
+            if (_pendingReleaseAudio)
+                RegisterToLateFrame();
         }
 
         private void CalculateNextReleaseTime()
@@ -207,7 +245,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ForceRelease()
         {
-            ReleaseBubble();
+            QueueBubbleRelease();
             _releaseTimer = 0f;
             CalculateNextReleaseTime();
         }
@@ -233,6 +271,14 @@ namespace Hecton8.Gameplay
             _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
+        private void RegisterToLateFrame()
+        {
+            if (_lateFrameRegistered) return;
+            if (!Application.isPlaying) return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
         private void UnregisterFromTick()
         {
             if (!_isRegistered) return;
@@ -241,14 +287,22 @@ namespace Hecton8.Gameplay
             _isRegistered = false;
         }
 
+        private void UnregisterFromLateFrame()
+        {
+            if (!_lateFrameRegistered) return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
 
         private void RefreshColdRegistryReferences()
         {
-            _objectPool = GlobalRegistry.ObjectPool;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _objectPool = GlobalRegistry.ObjectPoolService;
+            _audioService = GlobalRegistry.Audio;
         }
 
         private void TryRegisterHotSwapListener()
@@ -276,7 +330,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     _poolMissingLogged = false;
                     break;
                 case GlobalRegistryServiceSlot.Audio:

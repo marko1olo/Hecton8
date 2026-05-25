@@ -6,6 +6,7 @@
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",
+        "Hecton8.Audio.Virtualization.Contracts",
         "Hecton8.Environment.Fluids.Contracts",
         "Unity.Collections",
         "Unity.Burst",

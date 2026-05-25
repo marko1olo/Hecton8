@@ -1,4 +1,4 @@
-# Future Command Kernel Reservations
+﻿# Future Command Kernel Reservations
 
 Date: 2026-05-19
 Status: CONTRACT RESERVATION / NOT PUBLIC API / ENVELOPE-ONLY / PENDING RUNTIME VERIFICATION

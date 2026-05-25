@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_042
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_042_MAT_family_cave_entrance_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\MAT_family_cave_entrance_Albedo.png
+FINAL_FILENAME: MAT_family_cave_entrance_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Premium Hecton cave entrance albedo for a triplanar rock material. Create pressure-smoothed basalt in deep blue-gray, pale limestone abrasion bands, opal-cyan mineral seams, pearl sediment dust, and small amber sulfur freckles placed with restraint. The surface should feel like a beautiful abyssal threshold carved by ancient current and maintained by mineral flow. Use broad readable geology first, fine pores second, with clean value separation for gameplay pathfinding. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

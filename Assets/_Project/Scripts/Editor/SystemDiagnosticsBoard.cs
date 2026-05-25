@@ -5,6 +5,7 @@ using Hecton8.Core;
 using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Editor
 {
@@ -69,6 +70,8 @@ namespace Hecton8.Editor
         private readonly List<CrashTelemetryBuffer.EditorSnapshotEntry> _telemetryScratch = new List<CrashTelemetryBuffer.EditorSnapshotEntry>(50);
         // COLD ALLOC: List<TelemetrySnapshotRow>[50] - formatted crash telemetry dashboard rows - owner: SystemDiagnosticsBoard
         private readonly List<TelemetrySnapshotRow> _telemetryRows = new List<TelemetrySnapshotRow>(50);
+        private static readonly List<GameObject> s_sceneRoots = new List<GameObject>(8);
+        private static readonly List<CrashTelemetryBuffer> s_telemetryBuffers = new List<CrashTelemetryBuffer>(2);
 
         [ShowInInspector, ReadOnly, PropertySpace(SpaceBefore = 4f)]
         private string LastRefreshUtc { get; set; } = "Never";
@@ -134,7 +137,7 @@ namespace Hecton8.Editor
             _telemetryScratch.Clear();
             _telemetryRows.Clear();
 
-            CrashTelemetryBuffer telemetry = UnityEngine.Object.FindAnyObjectByType<CrashTelemetryBuffer>(FindObjectsInactive.Include);
+            CrashTelemetryBuffer telemetry = FindTelemetryBuffer();
             if (telemetry == null)
                 return;
 
@@ -155,6 +158,40 @@ namespace Hecton8.Editor
                 row.ExportReason = entry.ExportReason == 0u ? "None" : $"0x{entry.ExportReason:X8}";
                 _telemetryRows.Add(row);
             }
+        }
+
+        private static CrashTelemetryBuffer FindTelemetryBuffer()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || !activeScene.isLoaded)
+                return null;
+
+            s_sceneRoots.Clear();
+            s_telemetryBuffers.Clear();
+            if (s_sceneRoots.Capacity < activeScene.rootCount)
+                s_sceneRoots.Capacity = activeScene.rootCount;
+
+            activeScene.GetRootGameObjects(s_sceneRoots);
+
+            for (int i = 0; i < s_sceneRoots.Count; i++)
+            {
+                GameObject root = s_sceneRoots[i];
+                if (root == null)
+                    continue;
+
+                root.GetComponentsInChildren<CrashTelemetryBuffer>(true, s_telemetryBuffers);
+                if (s_telemetryBuffers.Count <= 0)
+                    continue;
+
+                CrashTelemetryBuffer result = s_telemetryBuffers[0];
+                s_sceneRoots.Clear();
+                s_telemetryBuffers.Clear();
+                return result;
+            }
+
+            s_sceneRoots.Clear();
+            s_telemetryBuffers.Clear();
+            return null;
         }
 
         private static string ResolveOwnerName(object entry)

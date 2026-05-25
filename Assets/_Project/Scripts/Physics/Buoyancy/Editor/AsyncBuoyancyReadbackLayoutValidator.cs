@@ -10,6 +10,8 @@ namespace Hecton8.Physics.Editor
 {
     public static class AsyncBuoyancyReadbackLayoutValidator
     {
+        private const int RequiredAlignmentBytes = 16;
+
         [MenuItem("HECTON-8/Physics/Validate Async Buoyancy Readback Layout")]
         public static void ValidateFromMenu()
         {
@@ -29,13 +31,13 @@ namespace Hecton8.Physics.Editor
             }
 
             return AsyncBuoyancyReadbackLayout.Validate() &&
-                   UnsafeUtility.SizeOf<ReadbackRequestDTO>() == 16 &&
-                   (UnsafeUtility.SizeOf<ReadbackRequestDTO>() % 16) == 0 &&
+                   UnsafeUtility.SizeOf<ReadbackRequestDTO>() == AsyncBuoyancyReadbackConstants.ReadbackRequestBytes &&
+                   (UnsafeUtility.SizeOf<ReadbackRequestDTO>() % RequiredAlignmentBytes) == 0 &&
                    Marshal.OffsetOf<ReadbackRequestDTO>(nameof(ReadbackRequestDTO.LocalXZ)).ToInt32() == 0 &&
                    Marshal.OffsetOf<ReadbackRequestDTO>(nameof(ReadbackRequestDTO.ResultHeight)).ToInt32() == 8 &&
                    Marshal.OffsetOf<ReadbackRequestDTO>(nameof(ReadbackRequestDTO.EntityHash)).ToInt32() == 12 &&
-                   UnsafeUtility.SizeOf<AsyncBuoyancyWaveParametersDTO>() == 64 &&
-                   UnsafeUtility.SizeOf<ReadbackTelemetryEntry>() == 64 &&
+                   UnsafeUtility.SizeOf<AsyncBuoyancyWaveParametersDTO>() == AsyncBuoyancyReadbackConstants.WaveParametersBytes &&
+                   UnsafeUtility.SizeOf<ReadbackTelemetryEntry>() == AsyncBuoyancyReadbackConstants.ReadbackTelemetryBytes &&
                    pointerAligned;
         }
 
@@ -50,7 +52,8 @@ namespace Hecton8.Physics.Editor
                 ReadbackRequestDTO* ptr = (ReadbackRequestDTO*)sample.GetUnsafePtr();
                 long first = (long)ptr;
                 long second = (long)(ptr + 1);
-                return (first & 15L) == 0L && (second - first) == 16L;
+                return (first & (RequiredAlignmentBytes - 1L)) == 0L &&
+                       (second - first) == AsyncBuoyancyReadbackConstants.ReadbackRequestBytes;
             }
             finally
             {

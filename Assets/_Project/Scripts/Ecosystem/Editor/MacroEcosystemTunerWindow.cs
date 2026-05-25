@@ -3,6 +3,7 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Ecosystem;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
@@ -11,13 +12,14 @@ using UnityEngine.UIElements;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// UI Toolkit facade for SHINOBU_116 macro ecosystem tuning.
+    /// UI Toolkit facade for SHINOBU_300 macro ecosystem tuning.
     /// </summary>
     public sealed class MacroEcosystemTunerWindow : EditorWindow
     {
         private MacroEcosystemGraphElement _graph;
         private Slider _birthRate;
         private Slider _predationRate;
+        private Slider _predatorConversionRate;
         private Slider _starvationRate;
         private Label _status;
 
@@ -40,9 +42,11 @@ namespace Hecton8.Editor
 
             _birthRate = CreateSlider("Base Birth Rate", 0f, 0.15f);
             _predationRate = CreateSlider("Predation Rate", 0f, 0.00001f);
+            _predatorConversionRate = CreateSlider("Predator Conversion Rate", 0f, 0.00001f);
             _starvationRate = CreateSlider("Starvation Rate", 0f, 0.12f);
             root.Add(_birthRate);
             root.Add(_predationRate);
+            root.Add(_predatorConversionRate);
             root.Add(_starvationRate);
 
             _graph = new MacroEcosystemGraphElement();
@@ -52,6 +56,7 @@ namespace Hecton8.Editor
 
             _birthRate.RegisterValueChangedCallback(OnBirthRateChanged);
             _predationRate.RegisterValueChangedCallback(OnPredationRateChanged);
+            _predatorConversionRate.RegisterValueChangedCallback(OnPredatorConversionRateChanged);
             _starvationRate.RegisterValueChangedCallback(OnStarvationRateChanged);
 
             EditorApplication.update += OnEditorUpdate;
@@ -86,35 +91,43 @@ namespace Hecton8.Editor
 
             _birthRate.SetValueWithoutNotify(tuning.BaseBirthRate);
             _predationRate.SetValueWithoutNotify(tuning.PredationRate);
+            _predatorConversionRate.SetValueWithoutNotify(tuning.PredatorConversionRate);
             _starvationRate.SetValueWithoutNotify(tuning.PredatorStarvationRate);
             _status.text = "Vault-backed macro ecosystem tuning active.";
         }
 
         private void OnBirthRateChanged(ChangeEvent<float> evt)
         {
-            MutateTuning(evt.newValue, _predationRate.value, _starvationRate.value);
+            MutateTuning(evt.newValue, _predationRate.value, _predatorConversionRate.value, _starvationRate.value);
         }
 
         private void OnPredationRateChanged(ChangeEvent<float> evt)
         {
-            MutateTuning(_birthRate.value, evt.newValue, _starvationRate.value);
+            MutateTuning(_birthRate.value, evt.newValue, _predatorConversionRate.value, _starvationRate.value);
+        }
+
+        private void OnPredatorConversionRateChanged(ChangeEvent<float> evt)
+        {
+            MutateTuning(_birthRate.value, _predationRate.value, evt.newValue, _starvationRate.value);
         }
 
         private void OnStarvationRateChanged(ChangeEvent<float> evt)
         {
-            MutateTuning(_birthRate.value, _predationRate.value, evt.newValue);
+            MutateTuning(_birthRate.value, _predationRate.value, _predatorConversionRate.value, evt.newValue);
         }
 
-        private void MutateTuning(float birthRate, float predationRate, float starvationRate)
+        private unsafe void MutateTuning(float birthRate, float predationRate, float conversionRate, float starvationRate)
         {
             if (!TryOpenTuningView(out NativeArray<MacroEcosystemTuningDTO> buffer))
                 return;
 
-            MacroEcosystemTuningDTO tuning = buffer[0];
+            ref MacroEcosystemTuningDTO tuning = ref UnsafeUtility.AsRef<MacroEcosystemTuningDTO>(
+                NativeArrayUnsafeUtility.GetUnsafePtr(buffer));
             tuning.BaseBirthRate = math.max(0f, birthRate);
             tuning.PredationRate = math.max(0f, predationRate);
+            tuning.PredatorConversionRate = math.max(0f, conversionRate);
             tuning.PredatorStarvationRate = math.max(0f, starvationRate);
-            buffer[0] = MacroEcosystemTuningDTO.Sanitize(tuning);
+            tuning = MacroEcosystemTuningDTO.Sanitize(tuning);
             _status.text = "Tuning written to DataVault.";
         }
 
@@ -179,46 +192,78 @@ namespace Hecton8.Editor
             if (rect.width <= 2f || rect.height <= 2f)
                 return;
 
-            ulong maxValue = 1UL;
+            float maxValue = 1f;
             for (int i = 0; i < telemetry.Length; i++)
             {
                 MacroEcosystemTelemetryEntry entry = telemetry[i];
-                if (entry.TotalPreyBiomass > maxValue)
-                    maxValue = entry.TotalPreyBiomass;
-                if (entry.TotalPredatorBiomass > maxValue)
-                    maxValue = entry.TotalPredatorBiomass;
+                float stacked =
+                    math.max(0f, entry.TotalFloraBiomass) +
+                    math.max(0f, entry.TotalPreyBiomass) +
+                    math.max(0f, entry.TotalPredatorBiomass);
+                if (stacked > maxValue)
+                    maxValue = stacked;
             }
 
             Painter2D painter = context.painter2D;
-            DrawLine(painter, telemetry, rect, maxValue, true, new Color(0.1f, 0.35f, 1f, 1f));
-            DrawLine(painter, telemetry, rect, maxValue, false, new Color(1f, 0.15f, 0.1f, 1f));
+            DrawStackedArea(painter, telemetry, rect, maxValue, new Color(0.08f, 0.55f, 0.18f, 0.74f), 0);
+            DrawStackedArea(painter, telemetry, rect, maxValue, new Color(0.08f, 0.25f, 0.82f, 0.70f), 1);
+            DrawStackedArea(painter, telemetry, rect, maxValue, new Color(0.92f, 0.10f, 0.06f, 0.68f), 2);
         }
 
-        private static void DrawLine(
+        private static void DrawStackedArea(
             Painter2D painter,
             NativeArray<MacroEcosystemTelemetryEntry> telemetry,
             Rect rect,
-            ulong maxValue,
-            bool prey,
-            Color color)
+            float maxValue,
+            Color color,
+            int lane)
         {
-            painter.strokeColor = color;
-            painter.lineWidth = 2f;
+            painter.fillColor = color;
             painter.BeginPath();
             float invCount = 1f / math.max(1, telemetry.Length - 1);
-            float invMax = 1f / math.max(1f, (float)maxValue);
+            float invMax = 1f / math.max(1f, maxValue);
             for (int i = 0; i < telemetry.Length; i++)
             {
-                MacroEcosystemTelemetryEntry entry = telemetry[i];
-                float x = rect.xMin + rect.width * (i * invCount);
-                ulong raw = prey ? entry.TotalPreyBiomass : entry.TotalPredatorBiomass;
-                float y = rect.yMax - rect.height * math.saturate(raw * invMax);
+                Vector2 point = ResolveStackPoint(telemetry[i], rect, i, invCount, invMax, lane, true);
                 if (i == 0)
-                    painter.MoveTo(new Vector2(x, y));
+                    painter.MoveTo(point);
                 else
-                    painter.LineTo(new Vector2(x, y));
+                    painter.LineTo(point);
             }
-            painter.Stroke();
+
+            for (int i = telemetry.Length - 1; i >= 0; i--)
+                painter.LineTo(ResolveStackPoint(telemetry[i], rect, i, invCount, invMax, lane, false));
+
+            painter.ClosePath();
+            painter.Fill();
+        }
+
+        private static Vector2 ResolveStackPoint(
+            MacroEcosystemTelemetryEntry entry,
+            Rect rect,
+            int index,
+            float invCount,
+            float invMax,
+            int lane,
+            bool upper)
+        {
+            float x = rect.xMin + rect.width * (index * invCount);
+            float raw = ResolveStackValue(entry, lane, upper);
+            float y = rect.yMax - rect.height * math.saturate(raw * invMax);
+            return new Vector2(x, y);
+        }
+
+        private static float ResolveStackValue(MacroEcosystemTelemetryEntry entry, int lane, bool upper)
+        {
+            float flora = math.max(0f, entry.TotalFloraBiomass);
+            float prey = math.max(0f, entry.TotalPreyBiomass);
+            float predator = math.max(0f, entry.TotalPredatorBiomass);
+
+            if (lane == 0)
+                return upper ? flora : 0f;
+            if (lane == 1)
+                return upper ? flora + prey : flora;
+            return upper ? flora + prey + predator : flora + prey;
         }
 
         private static bool TryReadTelemetry(out NativeArray<MacroEcosystemTelemetryEntry> telemetry)

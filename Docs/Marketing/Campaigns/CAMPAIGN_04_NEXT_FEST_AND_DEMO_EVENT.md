@@ -1,4 +1,4 @@
-# Campaign 04   Next Fest And Demo Event
+﻿# Campaign 04   Next Fest And Demo Event
 
 Status: future / platform rules and `SHOW-001` submission gate must be rechecked before commitment
 Public stance: single player first scope / proof first campaign copy

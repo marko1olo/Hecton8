@@ -1,4 +1,36 @@
-{
+﻿{
+  "shinobu_350_sonar_cartography_fog_of_war": {
+    "agent": "SHINOBU_350",
+    "domain": "SONAR_CARTOGRAPHY_FOG_OF_WAR",
+    "scanner": "Assets/_Project/Scripts/Cartography/Editor/OOP_Map_Scanner.cs",
+    "evidenceClass": "STATIC_SOURCE_TARGETED_R5",
+    "summary": "OOP Map Structures Eradicated",
+    "ownedRuntimeScope": [
+      "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+      "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "Assets/_Project/Scripts/UI/PDAMapTab.cs"
+    ],
+    "forbiddenPatterns": [
+      "Dictionary<Vector3*, bool>",
+      "List<Vector3*> exploration-map state",
+      "GameObject voxel/cube map renderer",
+      "TryReadHandle mutable consumer readback"
+    ],
+    "ownedForbiddenFindingCount": 0,
+    "managedDictionaryMapFindings": 0,
+    "objectVoxelRendererFindings": 0,
+    "mutableConsumerReadbackFindings": 0,
+    "coldPdaUiRootGameObjects": 3,
+    "coldPdaUiRootDisposition": "Allowed as one-time PDA tab UI roots; not voxel/cell map renderers and not fog truth.",
+    "truthRoute": "GlobalDataVault NativeArray<ulong> 71420, 10m AUP voxel bits, atomic CAS-or mutation.",
+    "legacyOptionalRoute": "Legacy PDA dense mask cache moved to 71459..71461 after R6 collision audit; core truth 71420..71437 unchanged.",
+    "readRoute": "CartographyVault.TryReadOnlyViews -> IDataVault.TryReadOnlyHandle -> CartographyVaultReadBuffers NativeArray<T>.ReadOnly.",
+    "writeRoute": "CartographyVault.TryResolveViews -> CartographyVaultBuffers only for owner commands/jobs.",
+    "gpuRoute": "PDAMapTab double-buffered GraphicsBuffer upload plus Hecton_HologramMap shader sampling; no map voxel GameObjects.",
+    "dearLieRoute": "Sonar ping bounds collapse to y/z row spans and ulong word masks instead of per-voxel CPU simulation.",
+    "compileGuard": "C# validation withheld in R5 because active dotnet processes already existed.",
+    "status": "PASS_STATIC_RUNTIME_PENDING"
+  },
   "shinobu_270_visor_ar_stencil": {
     "agent": "SHINOBU_270",
     "domain": "ECHELON 8 Presentation & UX / Visor AR (HUD)",
@@ -325,5 +357,1311 @@
     "telemetry": "300 fixed 64-byte Vault rows plus 32-byte dump header to Docs/AgentLogs/Dump_SHINOBU_265.bin; VisualSync raises fault dump requests and PostSimulation/shutdown flushes them from the owner phase.",
     "rollbackAuthority": "presentation-only; no StateRingBuffer/Merkle/save route",
     "notes": "Static source proof only. Unity import, shader import, Frame Debugger CBUFFER proof, profiler GC proof, and measured GPU timing remain pending under no-premature-rebuild guard."
+  },
+  "shinobu_347_day_night_gi_relay": {
+    "agent": "SHINOBU_347",
+    "domain": "ECHELON 7 Atmosphere & Celestial / Day-Night GI Relay",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "renderSettingsAmbientLightHits": 0,
+    "dynamicGiUpdateEnvironmentHits": 0,
+    "lightingDomainColorLerpHits": 0,
+    "targetShaderSetGlobalColorHits": 0,
+    "targetShaderSetGlobalVectorHits": 0,
+    "targetShaderSetGlobalFloatHits": 1,
+    "targetShaderSetGlobalBufferHits": 1,
+    "targetShaderSetGlobalConstantBufferHits": 1,
+    "targetTryFinalizeCompletedHits": 1,
+    "slowTickFinalizeCalls": 0,
+    "lateFrameFinalizeCalls": 1,
+    "targetJobRunCalls": 1,
+    "cBufferFallbackVectorPushHits": 0,
+    "shStateVectorGlobalHits": 0,
+    "shaderShStateVectorGlobalHits": 0,
+    "shaderEnvironmentCBufferHits": 1,
+    "shaderEnvironmentScalarParamsHits": 3,
+    "giRelayRegisterCalls": 1,
+    "hotDtoProperties": 0,
+    "hotUploadAllocationGuard": "runtime upload paths only use pre-created GraphicsBuffers; buffer creation is cold storage setup only",
+    "hotUploadReleaseGuard": "runtime fallback upload paths do not release GraphicsBuffers; release is cold storage setup or shutdown only",
+    "shMappedUploadGuard": "SH GraphicsBuffer LockBufferForWrite is paired with UnlockBufferAfterWrite in a finally block",
+    "shMetadataRoute": "SH metadata is packed into EnvironmentLightingDTO offsets 56 and 60; no _HectonGIRelaySHState vector global remains.",
+    "duplicateRegistrationGuard": "Awake performs cold dependency capture only; GlobalRegistry.RegisterGIRelayRuntime is called once from OnEnable behind _registeredGIRelayRuntime.",
+    "completionWindowGuard": "SlowTick does not finalize SH jobs; TryFinalizeCompleted is reached through LateFrameTick, which SystemDispatcher invokes inside BeginLateFrameSwapWindow.",
+    "cBufferFallbackGuard": "Player runtime has no SetGlobalVector compatibility fallback for EnvironmentLightingDTO; missing CBuffer records telemetry and fails closed.",
+    "materialBridgeGuard": "GI relay does not cache GlobalRegistry.UnderwaterVisuals and does not call HectonUnderwaterVisuals.ApplyGIRelaySurfaceEmission; surface emission remains CBuffer/SH-buffer driven",
+    "cpuColorRelayGuard": "HectonGIRelaySystem contains no UnityEngine.Color interpolation and no Shader.SetGlobalColor relay path; scene colors are sourced from Burst-written EnvironmentLightingDTO lanes",
+    "gpuRoute": "EnvironmentLightingDTO CBuffer carries ambient/fog/directional color plus SH coefficient-count/quality metadata; _HectonGIRelaySHBuffer carries coefficients to UberNoir ambient resolve",
+    "nativeBuffers": "0x630820..0x63082C SH coefficients, EnvironmentLightingDTO, telemetry, tuning, profiles, mock samples",
+    "rollbackBoundary": "presentation-only VISUAL_SYNC; no save, Merkle, or StateRingBuffer ownership",
+    "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_347.bin",
+    "assessment": "HectonGIRelaySystem uploads EnvironmentLightingDTO and SH coefficients without RenderSettings ambient mutation, duplicate registry registration, CBuffer vector fallback, hot SH state vector globals, underwater material bridge, or CPU Color relay interpolation.",
+    "compileStatus": "NOT_RUN_POLICY_BLOCKED: latest guard read CPU 87.6% (>50%) with no active dotnet/csc/VBCSCompiler; generated csproj files still miss the changed SHINOBU_347 lighting scripts."
+  },
+  "shinobu_361_oop_texture_scanner": {
+    "schema": "hecton8.oop_texture_scanner.v1",
+    "agent": "SHINOBU_361",
+    "evidenceClass": "STATIC_SOURCE",
+    "filesScanned": 2650,
+    "candidateFilesScanned": 130,
+    "elapsedMs": 2835.119,
+    "findings": [
+      {
+        "path": "Assets/_Project/Editor/HectonSphereGenerator.cs",
+        "line": 407,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "return new Material(Shader.Find(\"Universal Render Pipeline/Lit\"));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/BeaconRuntime.cs",
+        "line": 185,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 607,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "s_tracerMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/HectonFabricatorUI.cs",
+        "line": 1188,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeHologramMaterial = new Material(hologramShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/HectonScanMarkerSystem.cs",
+        "line": 402,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMarkerMaterial = new Material(markerShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 4658,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeVoxelBakeGhostMaterial = new Material(ghostShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/TetherManager.cs",
+        "line": 1294,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeRenderMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Tests/Editor/HectonCelestialEngineEditTests.cs",
+        "line": 30,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "_skyMaterial = new Material(skyShader);"
+      },
+      {
+        "path": "Assets/_Project/Tests/Editor/HectonCelestialEngineEditTests.cs",
+        "line": 189,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "Material moonMaterial = new Material(moonShader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs",
+        "line": 152,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+        "line": 4544,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "s_DroneProceduralMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs",
+        "line": 707,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "pylonMaterial = new Material(pylonShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs",
+        "line": 856,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "previewMaterial = new Material(previewShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+        "line": 598,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "previewMaterial = new Material(previewShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs",
+        "line": 414,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/SceneRuntimeService.cs",
+        "line": 825,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_transitionDitherMaterial = new Material(ditherShader); // COLD ALLOC: Material[1] - IGN scene dissolve material - owner: SceneRuntimeService"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/ConstructionBootstrapAuthoring.cs",
+        "line": 585,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/ContentSanityValidator.cs",
+        "line": 1697,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/CreatureProxyPrefabAuthoring.cs",
+        "line": 195,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/FloraFoundationAuthoring.cs",
+        "line": 540,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/HectonArtOptimizationTools.cs",
+        "line": 639,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "Material material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs",
+        "line": 682,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/HectonPrefabIntegrityScanner.cs",
+        "line": 519,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "errorMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 219,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LSystemGenomeLabWindow.cs",
+        "line": 314,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "_previewMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/ResourceWorldBootstrapAuthoring.cs",
+        "line": 175,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+        "line": 138,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+        "line": 160,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/WorldProceduralFloraMaterialAuthoring.cs",
+        "line": 675,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/WorldProceduralInteriorColonyFinalAuthoring.cs",
+        "line": 361,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/WorldProceduralOrganicMiscFinalAuthoring.cs",
+        "line": 215,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader != null ? shader : Shader.Find(StandardShaderName));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+        "line": 153,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/WorldProceduralProxyAuthoring.cs",
+        "line": 920,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/WorldProceduralSupportFinalAuthoring.cs",
+        "line": 557,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader != null ? shader : Shader.Find(WorldProceduralSupportContract.StandardShaderName));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 4303,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material runtimeMaterial = new Material(sourceMaterial); // COLD ALLOC: Material[1] - per-fauna shader presentation state - owner: FaunaBrain"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "line": 3213,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_muscleBulgeMaterialInstance = new Material(_muscleBulgeOriginalMaterial); // COLD ALLOC: Material[1] - per-rig muscle bulge material instance - owner: ContextualPhysicalIkRig"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+        "line": 1108,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(reconstructionShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs",
+        "line": 5147,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_checkerboardMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs",
+        "line": 373,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMarkerMaterial = new Material(markerShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/AcousticRadarSphereRenderer.cs",
+        "line": 422,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(voxelShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/DiegeticPDAController.cs",
+        "line": 1092,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeTabletScreenMaterial = new Material(tabletScreenUnlitShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+        "line": 460,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(shader); // COLD ALLOC: Material[1] - fallback visor shader instance - owner: DiegeticVisorHudMesh"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+        "line": 464,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(sourceMaterial); // COLD ALLOC: Material[1] - per-visor shader state - owner: DiegeticVisorHudMesh"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs",
+        "line": 977,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_radarBlipMaterial = new Material(radarBlipShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 443,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/LocalizedTextMadnessFx.cs",
+        "line": 156,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_materialInstance = new Material(baseMaterial) // COLD ALLOC: Material[1] \u2014 per-label TMP madness effect material \u2014 owner: LocalizedTextMadnessFx"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDADataLogTab.cs",
+        "line": 1841,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeHologramMaterial = new Material(hologramShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+        "line": 418,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(waveMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+        "line": 438,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(resolvedShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDAMapTab.cs",
+        "line": 631,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_hologramMapMaterial = new Material(hologramMapShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDAMapTab.cs",
+        "line": 646,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_pointCloudMaterial = new Material(sonarPointCloudShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDAShellChrome.cs",
+        "line": 1630,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "material = new Material(source); // COLD ALLOC: Material[1] \u2014 UI chrome palette instance \u2014 owner: PDAShellChrome"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDAShellChrome.cs",
+        "line": 1644,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "material = new Material(source); // COLD ALLOC: Material[1] \u2014 TMP chrome palette instance \u2014 owner: PDAShellChrome"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/ShaderCompassRibbon.cs",
+        "line": 169,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(compassShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SubmarineSonarHoloMapRenderer.cs",
+        "line": 427,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(sonarMapShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2663,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_threatChevronMaterial = new Material(threatChevronShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2693,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_ditheredUiBackgroundMaterial = new Material(ditheredUiBackgroundShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2735,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_savingProgressDataPulseMaterial = new Material(dataPulseShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2783,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_acousticRadarMaterial = new Material(acousticRadarShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+        "line": 862,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_radarRuntimeMaterial = new Material(radarBlipMaterial); // COLD ALLOC: material instance prevents shared radar shader state bleed."
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+        "line": 945,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_damageRuntimeMaterial = new Material(damageHologramMaterial); // COLD ALLOC: material instance prevents cockpit hologram shader state bleed."
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/WorldSpaceTMPSharpnessController.cs",
+        "line": 260,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_materialInstance = new Material(baseMaterial); // COLD ALLOC: Material[1] \u2014 per-label TMP SDF sharpness material \u2014 owner: WorldSpaceTMPSharpnessController"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+        "line": 729,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(sdfShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+        "line": 1105,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(shader) // COLD ALLOC: Material[GroundRadarPingRuntime] \u2014 fallback GPR render material \u2014 owner: TERRAIN_GPR_SYSTEM"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "line": 391,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material runtimeMaterial = new Material(material); // COLD ALLOC: Material[1] - temporary first-party voxel dissolve material restored after fade - owner: HectonVoxelStreamingBridg"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+        "line": 685,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": ": new Material(sourceMaterial);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+        "line": 1022,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+        "line": 1058,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+        "line": 2765,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+        "line": 2799,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "Material material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+        "line": 2706,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_fallbackCrateMaterial = new Material(litShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+        "line": 2722,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_fallbackScrapMaterial = new Material(litShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+        "line": 3184,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_fallbackScavengerMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+        "line": 3498,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_scavengerBrgMaterial = new Material(sourceMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+        "line": 686,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeMaterial = new Material(runtimeShader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+        "line": 836,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_runtimeShellMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamPreviewGizmo.cs",
+        "line": 183,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "s_previewMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+        "line": 1583,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_ownedMaterial = new Material(debrisMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+        "line": 1612,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_ownedMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs",
+        "line": 885,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_material = new Material(shader);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/Editor/TerminalOsDesignerWindow.cs",
+        "line": 132,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "_previewMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeSupport.cs",
+        "line": 436,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "Material atlasMaterial = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs",
+        "line": 581,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "fallback = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/ProceduralGen/ShallowsBioForgeBatchBaker.cs",
+        "line": 289,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureControlMapBaker.cs",
+        "line": 189,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "Material material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureImportAndMaterialPipeline.cs",
+        "line": 335,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureLiveMapPreview.cs",
+        "line": 164,
+        "issue": "new Material",
+        "context": "EDITOR",
+        "severity": "EDITOR_REVIEW",
+        "snippet": "_material = new Material(shader)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs",
+        "line": 1678,
+        "issue": "new Material",
+        "context": "RUNTIME",
+        "severity": "BLOCKER",
+        "snippet": "_material = new Material(shader)"
+      }
+    ],
+    "findingCount": 88,
+    "runtimeFindingCount": 59,
+    "editorFindingCount": 29,
+    "reviewFindings": [
+      {
+        "path": "Assets/_Project/Scripts/Core/SceneRuntimeService.cs",
+        "line": 828,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "image.material = _transitionDitherMaterial;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 201,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "Material material = fontAsset.material;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 240,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "fontAsset.material = material;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 280,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (fontAsset.material != null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 281,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "fontAsset.material.SetTexture(ShaderUtilities.ID_MainTex, ResolveAtlasTexture(fontAsset));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 284,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (fontAsset.material != null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 285,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "EditorUtility.SetDirty(fontAsset.material);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 466,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (fontAsset.material != null &&"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 469,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "fontAsset.material.SetTexture(ShaderUtilities.ID_MainTex, atlasTexture);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Editor/LocalizationCjkFontBootstrap.cs",
+        "line": 470,
+        "issue": "material member access",
+        "context": "EDITOR",
+        "severity": "REVIEW_ONLY",
+        "snippet": "EditorUtility.SetDirty(fontAsset.material);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 133,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "bool hasAtlasBinding = ResolveAtlasTexture(fontAsset) != null && fontAsset.material != null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 170,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "Material fontMaterial = fontAsset.material;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 211,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "return fontAsset.material != null"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 212,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "? fontAsset.material.GetTexture(ShaderUtilities.ID_MainTex)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 219,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "return fontAsset.material != null"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 220,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "? fontAsset.material.GetTexture(ShaderUtilities.ID_MainTex)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 225,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "return fontAsset.material != null"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 226,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "? fontAsset.material.GetTexture(ShaderUtilities.ID_MainTex)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 242,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (fontAsset.material != null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 243,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "textComponent.fontSharedMaterial = fontAsset.material;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 349,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (fontAsset.material != null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 350,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "EditorUtility.SetDirty(fontAsset.material);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 425,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (fontAsset == null || fontAsset.material != null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 450,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "fontAsset.material = material;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 510,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (fontAsset.material != null &&"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 513,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "fontAsset.material.SetTexture(ShaderUtilities.ID_MainTex, atlasTexture);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontAssetRecovery.cs",
+        "line": 514,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "EditorUtility.SetDirty(fontAsset.material);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/FontStreamingManager.cs",
+        "line": 211,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "Material targetMaterial = _targetFont != null ? _targetFont.material : null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/LocalizedFontResolver.cs",
+        "line": 157,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (font == null || font.material == null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/LocalizedFontResolver.cs",
+        "line": 321,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (font.material != null && font.material.GetTexture(ShaderUtilities.ID_MainTex) != null)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDAMapTab.cs",
+        "line": 390,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "mapImage.material = null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/PDAShellChrome.cs",
+        "line": 1632,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "graphic.material = material;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/ShaderCompassRibbon.cs",
+        "line": 146,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_ribbonImage.material = _runtimeMaterial;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 1360,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (_acousticRadarMaterial != null && image.material == _acousticRadarMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 1361,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "image.material = null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 1362,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (_ditheredUiBackgroundMaterial != null && image.material == _ditheredUiBackgroundMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 1363,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "image.material = null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2717,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (_ditheredUiBackgroundMaterial != null && image.material != _ditheredUiBackgroundMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2718,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "image.material = _ditheredUiBackgroundMaterial;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2743,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_savingProgressDataLamp.material != _savingProgressDataPulseMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2745,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_savingProgressDataLamp.material = _savingProgressDataPulseMaterial;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2750,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_savingProgressDataNeedle.material != _savingProgressDataPulseMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2752,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_savingProgressDataNeedle.material = _savingProgressDataPulseMaterial;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2758,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (_savingProgressDataLamp != null && _savingProgressDataLamp.material == _savingProgressDataPulseMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2759,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_savingProgressDataLamp.material = null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2761,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (_savingProgressDataNeedle != null && _savingProgressDataNeedle.material == _savingProgressDataPulseMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2762,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_savingProgressDataNeedle.material = null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2790,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (_acousticRadarOverlay != null && _acousticRadarMaterial != null && _acousticRadarOverlay.material != _acousticRadarMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2791,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_acousticRadarOverlay.material = _acousticRadarMaterial;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2796,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (_acousticRadarOverlay != null && _acousticRadarOverlay.material == _acousticRadarMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2797,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_acousticRadarOverlay.material = null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 3470,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (_acousticRadarOverlay.material != _acousticRadarMaterial)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 3471,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_acousticRadarOverlay.material = _acousticRadarMaterial;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 5429,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "refs.Icon.material = null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 5736,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "image.material = null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 5758,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "label.fontSharedMaterial = label.font != null ? label.font.material : null;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Visor/HectonHolographicEdgeFeature.cs",
+        "line": 93,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "passData.material = _material;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Visor/HectonHolographicEdgeFeature.cs",
+        "line": 102,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "HectonScanRenderRegistry.DrawRenderers(context.cmd, data.material, data.requiredFlags, data.maxDrawnTargets);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+        "line": 945,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "passData.material = _dearLieProxyMaterial;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+        "line": 962,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "if (data.material == null ||"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+        "line": 983,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.passIndex);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Visor/VisorHUDController.cs",
+        "line": 1922,
+        "issue": "material member access",
+        "context": "RUNTIME",
+        "severity": "REVIEW_ONLY",
+        "snippet": "_biosFontSwapScheduler.DrainTick(_queuedHudFont, _queuedHudFont.material);"
+      }
+    ],
+    "reviewFindingCount": 62,
+    "oopTextureAllocationsEradicated": false,
+    "status": "PENDING_REMEDIATION",
+    "note": "Static scan only. High-confidence findings target Resources.Load<Texture/Material>, new Material(), and likely Renderer.material access. Review-only material member hits are separated to avoid false renderer.clone claims."
+  },
+  "shinobu_315_fabrik_hand_ik_solver": {
+    "agent": "SHINOBU_315",
+    "domain": "FABRIK_HAND_IK_SOLVER",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "status": "STATIC_SCAN_ONLY_RUNTIME_COMPILE_IMPORT_PENDING",
+    "runtimeRoute": "PlayerKinematicsRuntime_HandIK binds neutral Core.Contracts bridge rows, subtracts double3 PlayerRootAUP before float3 FABRIK math, writes IkHandStateDTO to producer lane 315730, publishes completed rows to read lane 315736, and KineticCharacter consumes the Core.Contracts hand DTO through Vault.",
+    "bridgeDtoContract": "VRHandStateDTO and VRInteractionTuningDTO definitions live only in Hecton8.Core.Contracts.VRInteractionBridgeContracts; Interaction retains shim constants preserving 73680..73687 BufferIDs.",
+    "compileGuard": "No dotnet build was launched in this loop. Latest guard sample was CPU 32% and compiler process count 0, but generated project files are stale, so build proof is withheld until Unity import/regeneration includes the new sources.",
+    "generatedProjectStale": true,
+    "generatedProjectIncludes": {
+      "PlayerKinematicsRuntime_HandIK.cs": true,
+      "PlayerHandIkContracts.cs": true,
+      "VRInteractionBridgeContracts.cs": true,
+      "VRKinematicsTunerWindow.cs": false,
+      "SkinnedMesh_Scanner_Player.cs": false
+    },
+    "scannerUsesRoslynAst": true,
+    "managedIkHits": 0,
+    "animatorIkHits": 0,
+    "dynamicBoneTransformVerdict": "REVIEW_CANDIDATES_PRESENT",
+    "vaultOwnership": "SHINOBU_315 owns 315730..315736 under SystemID.GameplayPlayer; 315730 is producer/write state and 315736 is the Animation read front-buffer. VR bridge lanes remain owner-created by VRInteractionKinematicBridge and are bound with TryBindExisting.",
+    "dearLieRoute": "Release uses quantized scalar blend in IkHandStateDTO.Flags toward raw controller AUP instead of spring joints, PhysX constraints, FinalIK, or Animator IK.",
+    "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_315.bin; emitted on budget breach or non-finite/NaN telemetry."
+  },
+  "shinobu_348_screen_space_pda_projector": {
+    "agent": "SHINOBU_348",
+    "domain": "Echelon 8 Presentation & UX / wrist-mounted PDA projection",
+    "summary": "Wrist PDA World-Space Canvas bypassed by RenderGraph screen-space projector",
+    "scanner": "Assets/_Project/Scripts/UI/Editor/OOP_Canvas_Scanner_SHINOBU_348.cs",
+    "forbiddenWorldSpaceCanvasCount": 0,
+    "scannerScope": "All Assets/_Project source plus prefab/scene YAML; counts only World-Space Canvas hits whose path or local source/YAML context is PDA/Wrist scoped.",
+    "renderRoute": "WristHologramHudRuntime_PdaScreenProjector -> active URP renderer feature -> Hecton_PdaScreen.shader",
+    "gpuCapabilityGate": "Cold runtime gate requires SystemInfo.supportsSetConstantBuffer and graphicsShaderLevel >= 45 before GraphicsBuffer allocation; unsupported targets fail closed with no World-Space Canvas fallback.",
+    "rendererFeatureActivation": "Serialized active in PC_Renderer.asset, PC_High_Renderer.asset, Mobile_Renderer.asset, and Quest_VR_Renderer.asset; each m_RendererFeatureMap matches the m_RendererFeatures local fileID order.",
+    "viewSpaceRoute": "Shader ray-plane math uses UNITY_MATRIX_I_P view rays and rotates the camera-relative PDA matrix through UNITY_MATRIX_V; no _WorldSpaceCameraPos subtraction remains.",
+    "gpuUpload": "LockBufferForWrite plus direct UnsafeUtility.MemCpy; no GraphicsBuffer.SetData",
+    "depthRoute": "_CameraDepthTexture sampled in the PDA shader for soft occlusion",
+    "qualityLodRoute": "Uniform shader math LOD: quality below 0.20 uses one direct atlas sample; 0.20..0.36 fades refraction; 0.52..0.88 fades chroma taps; chroma taps clamp inside the active atlas rect.",
+    "csvProfileSource": "Assets/StreamingAssets/Hecton8/PDA/pda_interface_profiles.csv is the direct-file StreamingAssets source with default plus inventory/loadout/construction/barter/data_log/spectrum/atlas_signal/diagnostics rows; URI-backed Android/Quest StreamingAssets fails closed to the deterministic default row until DataMonolith/binary import proof exists; repo-root pda_interface_profiles.csv remains editor/development fallback.",
+    "csvScratchRoute": "pda_interface_profiles.csv reads directly into Vault byte scratch 348736 and parses ReadOnlySpan<byte> over unmanaged memory.",
+    "csvTabHashRoute": "CSV tokens tab_0/pda_tab_0 and canonical names map to the same ResolvePdaTabHash(int) route as PDAEvents.CurrentTab; unknown names retain FNV fallback.",
+    "shaderWarmupRoute": "Assets/_Project/Art/Shaders/Variants/Hecton_PdaScreen_Warmup.shadervariants is serialized in 00_BOOTSTRAP shaderVariantCollections for boot WarmUp.",
+    "editorAsmdefRoute": "PdaProjectionTunerWindow remains inside Hecton8.UI.Editor, which references Hecton8.Core where wrist projector runtime types are compiled.",
+    "mockRoute": "Mock wrist projection and forced visibility serialize false by default; mock input is accepted only in Unity Editor or DEVELOPMENT_BUILD.",
+    "blackBoxDumpRoute": "Editor writes Docs/AgentLogs/Dump_SHINOBU_348.bin; player builds write Application.persistentDataPath/Hecton8/AgentLogs/Dump_SHINOBU_348.bin. Header v2 is 64 bytes and records valid count/start index before writing telemetry rows oldest-to-newest.",
+    "gizmoRoute": "SceneView gizmo converts camera-relative DTO translation by adding the resolved render camera position only for editor drawing.",
+    "rollbackBoundary": "Presentation-only; Vault IDs 348730..348736 excluded from rollback/save/gameplay truth"
   }
 }

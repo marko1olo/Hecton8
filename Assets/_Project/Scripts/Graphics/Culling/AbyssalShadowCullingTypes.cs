@@ -235,6 +235,7 @@ namespace Hecton8.Graphics.Culling
         [FieldOffset(28)] public uint _pad0;
     }
 
+#if UNITY_EDITOR
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ShadowCullCsvParseResultDTO
     {
@@ -494,6 +495,7 @@ namespace Hecton8.Graphics.Culling
             return hash == 0u ? 1u : hash;
         }
     }
+#endif
 
     public static class AbyssalShadowDumpWriter
     {

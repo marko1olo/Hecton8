@@ -1,4 +1,4 @@
-# HECTON-8 Marketing Asset QA Checklist
+﻿# HECTON-8 Marketing Asset QA Checklist
 
 Status: mandatory pre-publication gate
 Owner lane: SHINOBU_81 / creative QA
@@ -233,6 +233,81 @@ Before posting:
 - make the post useful without requiring a click;
 - do not post the same asset to multiple subs in one wave;
 - log removal/warnings.
+
+### Imageboard / Chan-Specific QA
+
+Use for 4chan, Dvach, or similar anonymous surfaces. This gate is for no-link critique posts only. It does not authorize Steam links, Discord invites, wishlists, key/access routes, signups, or fake discovery posts.
+
+Post-specific permission still applies. If the surface has no account system, the approval record must name the surface/thread instead of an account.
+
+Hard blockers:
+
+- same-day board/thread rules were not checked;
+- the post would hide developer status;
+- the post needs a Steam, Discord, signup, key, or presskit link to make sense;
+- the asset is concept art, AI-looking, placeholder, or lore-only;
+- the first line sounds like an ad;
+- the question is broad opinion bait rather than a narrow readability test;
+- the media cannot answer the question by itself;
+- the post mentions competitor pain, AI agents, engine/toolchain, performance, co-op, or world-size as the hook.
+
+#### Imageboard Readiness Scorecard
+
+Score 0-2 each.
+
+| Criterion | 0 | 1 | 2 |
+|---|---|---|---|
+| Board fit | wrong board/thread or unchecked | plausible but risky | same-day fit checked and critique allowed |
+| Media proof | placeholder/concept/unclear | real but weak | real capture with visible mechanic/state |
+| Decision read | no player choice | implied action | repair/retreat/seal/reroute/scan/operate/recover is visible |
+| No-link discipline | link/CTA required | no link but sales tone | no-link, no-CTA, critique-only |
+| Anti-shill wording | fake player/ad tone | partially disclosed | developer-honest and direct |
+| Derail resistance | invites AI/engine/competitor fight | some bait terms remain | avoids AI/process/engine/competitor framing |
+
+Minimum imageboard readiness score: 10/12.
+
+Any score below 10/12 can still be used internally as a rehearsal prompt, but it cannot be posted. A 12/12 score is not permission to post; it only means the asset/template can proceed to the route gate.
+
+#### Imageboard Rejection Codes
+
+Use these in asset metadata or campaign notes when relevant:
+
+- `BOARD_RULE_UNCHECKED`;
+- `IMAGEBOARD_SHILL_RISK`;
+- `NO_NARROW_CRITIQUE_QUESTION`;
+- `ANON_ACCESS_BAIT_RISK`;
+- `AI_SLOP_READ`;
+- `ENGINE_WAR_DERAIL_RISK`;
+- `COMPETITOR_BAIT_COPY`;
+- `CHAN_DECISION_READ_MISSING`;
+- `REPOST_SPAM_RISK`.
+
+#### Imageboard Preflight Card
+
+Fill before any planned imageboard post:
+
+```text
+Surface:
+Board/thread:
+Rules checked at:
+Post permission gate:
+Route class: no_link_feedback
+Asset ID:
+Asset QA score:
+Imageboard readiness score:
+Question asked:
+Visible player decision:
+Developer disclosure line:
+No-link check:
+No-key/access check:
+No AI/process hook:
+No competitor pain hook:
+Expected stop condition:
+Owner:
+Decision: POST_CANDIDATE / REVISE / KILL
+```
+
+Do not post if the card contains blanks except for fields that are explicitly not applicable.
 
 ## Creator Pitch QA
 

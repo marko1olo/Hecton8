@@ -17,6 +17,11 @@ using UnityEngine;
 
 namespace Hecton8.Core
 {
+    internal static class DispatcherTimeLayout
+    {
+        public const int TimeSnapshotStrideBytes = 32;
+    }
+
     /// <summary>
     /// Fixed slot map for the dispatcher-owned H8 time array.
     /// </summary>
@@ -32,7 +37,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable snapshot of the dispatcher-owned time state.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DispatcherTimeLayout.TimeSnapshotStrideBytes)]
     public readonly struct H8TimeSnapshot
     {
         [FieldOffset(0)]

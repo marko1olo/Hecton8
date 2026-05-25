@@ -10,7 +10,7 @@ namespace Hecton8.Graphics.Materials
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-87)]
-    public sealed class ProceduralFloraBiomeTintBridge : MonoBehaviour, IUpdatable
+    public sealed class ProceduralFloraBiomeTintBridge : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly int FloraBiomeTintId = Shader.PropertyToID("_HectonFloraBiomeTint");
         private static readonly int FloraBiomeTintParamsId = Shader.PropertyToID("_HectonFloraBiomeTintParams");
@@ -28,11 +28,17 @@ namespace Hecton8.Graphics.Materials
         private Vector4 _lastTint;
         private Vector4 _lastParams;
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
+        private Vector4 _pendingTint;
+        private uint _pendingBiomeHash;
+        private bool _tintDirty;
 
         private void OnEnable()
         {
             _lastBiomeHash = uint.MaxValue;
             PublishTint(_defaultTint, 0u);
+            TryRegisterHotSwapListener();
             TryRegisterTick();
         }
 
@@ -43,22 +49,72 @@ namespace Hecton8.Graphics.Materials
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             if (_registered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registered = false;
             }
 
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
             PublishTint(_defaultTint, 0u);
             _lastBiomeHash = uint.MaxValue;
         }
 
-        private void TryRegisterTick()
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            if (_registered || !Application.isPlaying)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            TryRegisterTick();
+        }
+
+        private void TryRegisterTick()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         /// <summary>
@@ -75,8 +131,19 @@ namespace Hecton8.Graphics.Materials
                     continue;
 
                 _lastBiomeHash = currentHash;
-                PublishTint(ResolveBiomeTint(currentHash), currentHash);
+                _pendingTint = ResolveBiomeTint(currentHash);
+                _pendingBiomeHash = currentHash;
+                _tintDirty = true;
             }
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_tintDirty)
+                return;
+
+            _tintDirty = false;
+            PublishTint(_pendingTint, _pendingBiomeHash);
         }
 
         private void PublishTint(Vector4 tint, uint biomeHash)

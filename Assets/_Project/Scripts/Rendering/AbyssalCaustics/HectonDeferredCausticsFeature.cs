@@ -122,7 +122,7 @@ namespace Hecton8.Rendering
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private struct PassData
+            private sealed class PassData
             {
                 internal TextureHandle Source;
                 internal TextureHandle Depth;

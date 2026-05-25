@@ -6,6 +6,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
+using Hecton8.Core;
 
 namespace Hecton8.Editor.AITextureControlMaps
 {
@@ -58,11 +59,11 @@ namespace Hecton8.Editor.AITextureControlMaps
                         WriteEntry(writer, _ring[i]);
                 }
 
-                Debug.Log("[AITextureBakeBlackBox] Dumped " + path + ".");
+                H8Debug.Log("[AITextureBakeBlackBox] Dumped " + path + ".");
             }
             catch (Exception ex)
             {
-                Debug.LogError("[AITextureBakeBlackBox] Dump failed: " + ex.Message);
+                H8Debug.LogError("[AITextureBakeBlackBox] Dump failed: " + ex.Message);
             }
         }
 

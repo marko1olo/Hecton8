@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Hecton8.Core;
-using Hecton8.Input;
 using Hecton8.UI;
 using UnityEngine;
 
@@ -11,7 +10,7 @@ namespace Hecton8.Tools
     /// Verifies pause menu functionality using real runtime state instead of stubbed pass values.
     /// </summary>
     [DefaultExecutionOrder(800)]
-    public sealed class PauseSystemVerifier : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PauseSystemVerifier : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         [Header("Verification Settings")]
         [SerializeField, Tooltip("Enable automatic pause verification")]
@@ -27,31 +26,74 @@ namespace Hecton8.Tools
         private float _settleDelay = 0.1f;
 
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _isPaused;
         private int _testsRun;
         private int _testsPassed;
         private int _testsFailed;
         private PauseMenuController _pauseMenu;
+        private ITickDispatcher _tickDispatcher;
+        private INativeInputManagerRuntime _inputManager;
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             ResolvePauseMenu();
             _isPaused = IsGamePaused();
         }
 
         private void OnEnable()
         {
-            if (_registered || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterTick();
         }
 
         private void OnDisable()
+        {
+            TryUnregisterTick();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterTick();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _tickDispatcher = currentService as ITickDispatcher;
+                if (currentService != null)
+                {
+                    TryUnregisterTick();
+                    TryRegisterTick();
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+                _inputManager = currentService as INativeInputManagerRuntime;
+        }
+
+        private void TryRegisterTick()
+        {
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterTick()
         {
             if (!_registered)
                 return;
@@ -287,10 +329,10 @@ namespace Hecton8.Tools
             return _pauseMenu != null && _pauseMenu.IsOpen && IsSimulationPaused();
         }
 
-        private static bool IsSimulationPaused()
+        private bool IsSimulationPaused()
         {
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
-            return dispatcher != null ? dispatcher.SimulationPaused : GlobalSignals.SimulationPaused;
+            ITickDispatcher dispatcher = _tickDispatcher;
+            return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;
         }
 
         private bool IsPauseMenuVisible()
@@ -301,7 +343,7 @@ namespace Hecton8.Tools
 
         private bool IsPauseInputModeValid()
         {
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            INativeInputManagerRuntime inputManager = _inputManager;
             if (inputManager == null || !inputManager.CanSwitchActionMaps)
                 return false;
 
@@ -310,7 +352,7 @@ namespace Hecton8.Tools
 
         private bool IsGameplayInputModeValid()
         {
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            INativeInputManagerRuntime inputManager = _inputManager;
             if (inputManager == null || !inputManager.CanSwitchActionMaps)
                 return false;
 
@@ -325,13 +367,36 @@ namespace Hecton8.Tools
             _pauseMenu = VerificationRuntimeProbe.ResolvePauseMenu();
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _tickDispatcher = GlobalRegistry.TickDispatcher;
+            _inputManager = GlobalRegistry.NativeInputRuntime;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogVerification(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_enableLogging)
-                Debug.Log($"[PauseSystemVerifier] {message}");
+                Hecton8.Core.H8Debug.Log($"[PauseSystemVerifier] {message}");
 #endif
         }
     }

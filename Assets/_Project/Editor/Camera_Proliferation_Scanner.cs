@@ -270,17 +270,17 @@ namespace Hecton8.EditorTools
                 reportPath,
                 prefix +
                 comma +
-                Environment.NewLine +
+                System.Environment.NewLine +
                 "  \"shinobu_262_camera_guillotine\": " +
                 IndentNestedJson(reportJson) +
-                Environment.NewLine +
+                System.Environment.NewLine +
                 suffix +
-                Environment.NewLine);
+                System.Environment.NewLine);
         }
 
         private static string IndentNestedJson(string json)
         {
-            return json.Replace(Environment.NewLine, Environment.NewLine + "  ");
+            return json.Replace(System.Environment.NewLine, System.Environment.NewLine + "  ");
         }
     }
 

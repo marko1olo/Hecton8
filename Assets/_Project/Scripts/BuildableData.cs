@@ -95,7 +95,7 @@ namespace Hecton8.Building
         // ─────────────────────── Cost ────────────────────────────
         [Header("Build Cost")]
         [Tooltip("Spisok resursov dlya postroyki")]
-        public List<InventoryCost> buildCost = new List<InventoryCost>();
+        public List<InventoryCost> buildCost = new List<InventoryCost>(4);
 
         // ─────────────────────── Power ───────────────────────────
         [Header("Power")]
@@ -221,10 +221,17 @@ namespace Hecton8.Building
         /// </summary>
         public bool IsBlueprintViewable()
         {
+            return IsBlueprintViewable(GlobalRegistry.QuestSystem);
+        }
+
+        /// <summary>
+        /// Returns true when this blueprint is visible through an already-cached quest owner.
+        /// </summary>
+        public bool IsBlueprintViewable(IQuestSystem questSystem)
+        {
             if (blueprintQuestFlagId == 0u)
                 return true;
 
-            IQuestSystem questSystem = GlobalRegistry.QuestSystem;
             return questSystem != null && questSystem.GetFlag(blueprintQuestFlagId);
         }
 

@@ -642,8 +642,11 @@ namespace Hecton8.Habitat.Deformation
         [ReadOnly] [NoAlias] public NativeArray<double3> NodeAups;
         [ReadOnly] [NoAlias] public NativeArray<StructuralTuningDTO> Tuning;
         [WriteOnly] [NoAlias] public NativeQueue<BaseIntegrityEventPayload>.ParallelWriter IntegrityEvents;
+        [NativeDisableParallelForRestriction] public NativeArray<int> IntegrityEventsBudget;
         [WriteOnly] [NoAlias] public NativeQueue<FluidIncursionSignal>.ParallelWriter FluidEvents;
+        [NativeDisableParallelForRestriction] public NativeArray<int> FluidEventsBudget;
         [WriteOnly] [NoAlias] public NativeQueue<BaseModuleCompromisedSignal>.ParallelWriter CompromisedEvents;
+        [NativeDisableParallelForRestriction] public NativeArray<int> CompromisedEventsBudget;
         public int ActiveNodeCount;
         public uint Frame;
 
@@ -708,7 +711,7 @@ namespace Hecton8.Habitat.Deformation
                     Flags = (byte)(collapsedNow ? 1 : 0),
                     SourceId = (ushort)(StructuralIntegrityConstants.AgentHash & 0xFFFFu)
                 };
-                IntegrityEvents.Enqueue(evt);
+                SignalBus<BaseIntegrityEventPayload>.TryEnqueueBounded(IntegrityEvents, IntegrityEventsBudget, evt);
             }
 
             if (stress >= 0.95f && (flags & StructuralIntegrityConstants.StateFlagLeakEmitted) == 0)
@@ -737,8 +740,8 @@ namespace Hecton8.Habitat.Deformation
                     StressIndex = (byte)math.min(255, index),
                     QualityTier = ResolveSignalQualityByte(tuning.GlobalQualityWeight)
                 };
-                FluidEvents.Enqueue(flood);
-                CompromisedEvents.Enqueue(compromised);
+                SignalBus<FluidIncursionSignal>.TryEnqueueBounded(FluidEvents, FluidEventsBudget, flood);
+                SignalBus<BaseModuleCompromisedSignal>.TryEnqueueBounded(CompromisedEvents, CompromisedEventsBudget, compromised);
             }
 
             state.Flags = flags;

@@ -492,8 +492,10 @@ namespace Hecton8.Editor.Build
             if (!Directory.Exists(root))
                 return false;
 
-            foreach (string path in Directory.EnumerateFiles(root, fileName, SearchOption.AllDirectories))
+            string[] paths = Directory.GetFiles(root, fileName, SearchOption.AllDirectories);
+            for (int pathIndex = 0; pathIndex < paths.Length; pathIndex++)
             {
+                string path = paths[pathIndex];
                 if (!string.IsNullOrEmpty(path))
                     return true;
             }

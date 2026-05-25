@@ -13,7 +13,7 @@ namespace Hecton8.Caves
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CurrentVolume))]
-    public sealed class ThermalGeyser : MonoBehaviour, ITickable, IUpdatable, IFixedTickable
+    public sealed class ThermalGeyser : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, IGlobalRegistryHotSwapListener
     {
         private const float MinimumCylinderHeightMeters = 1f;
         private const float EruptionCylinderHeightMultiplier = 2.25f;
@@ -48,10 +48,12 @@ namespace Hecton8.Caves
         private bool _isErupting;
         private bool _registeredTick;
         private bool _registeredFixedTick;
+        private bool _hotSwapRegistered;
         private float _mineralEjectionTimer = DefaultMineralEjectionIntervalSeconds;
         private uint _mineralEjectionSeed;
         private uint _volcanicVentSourceHash;
         private VolcanicUpdraftDirector _volcanicDirector;
+        private PersistentWorldRegistry _persistentWorldRegistry;
 
         internal void Configure(ThermalGeyserConfig config, float globalIntensity)
         {
@@ -110,6 +112,7 @@ namespace Hecton8.Caves
         private void Awake()
         {
             ResolveRuntimeWiring();
+            CacheRegistryServicesCold();
             _mineralEjectionSeed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x9E3779B9u;
             _volcanicVentSourceHash = Mix(_mineralEjectionSeed, VolcanicUpdraftVault.SourceHash);
             _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
@@ -118,6 +121,8 @@ namespace Hecton8.Caves
         private void OnEnable()
         {
             ResolveRuntimeWiring();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -128,12 +133,30 @@ namespace Hecton8.Caves
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegister();
+                    break;
+            }
         }
 
         private void TickMineralEjection(float dt)
@@ -151,7 +174,7 @@ namespace Hecton8.Caves
 
         private void EjectMineralBurst()
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null || ejectedMineralItem == null)
                 return;
 
@@ -235,7 +258,7 @@ namespace Hecton8.Caves
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             aup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -249,15 +272,13 @@ namespace Hecton8.Caves
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (_registeredFixedTick)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -270,6 +291,28 @@ namespace Hecton8.Caves
 
             _registeredTick = false;
             _registeredFixedTick = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

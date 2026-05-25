@@ -58,10 +58,12 @@ namespace Hecton8.Caves
                 float yaw = angle + HashSigned(runtimeSeed, i, 59) * 36f;
                 float roll = HashSigned(runtimeSeed, i, 71) * 10f;
                 float pitch = HashSigned(runtimeSeed, i, 83) * 6f;
+                float sine = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angleRadians);
+                float cosine = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angleRadians);
                 Vector3 localPosition = new Vector3(
-                    volumeBounds.center.x + Mathf.Cos(angleRadians) * radiusX * radial,
+                    volumeBounds.center.x + cosine * radiusX * radial,
                     floorY + Hash01(runtimeSeed, i, 97) * Mathf.Max(0.1f, thickness * 0.25f),
-                    volumeBounds.center.z + Mathf.Sin(angleRadians) * radiusZ * radial);
+                    volumeBounds.center.z + sine * radiusZ * radial);
                 Vector3 localScale = new Vector3(width, thickness, depth);
                 Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
                 Renderer shelfRenderer = CreateOrConfigureShelf(

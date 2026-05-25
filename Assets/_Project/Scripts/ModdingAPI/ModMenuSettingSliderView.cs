@@ -50,10 +50,10 @@ namespace Hecton8.Modding
             _settingName = view.SettingName;
 
             if (label != null)
-                label.SetText(view.DisplayName);
+                Hecton8.UI.TmpTextNoAlloc.Set(label, view.DisplayName);
 
             if (ownerLabel != null)
-                ownerLabel.SetText(view.ModId);
+                Hecton8.UI.TmpTextNoAlloc.Set(ownerLabel, view.ModId);
 
             if (slider != null)
             {
@@ -78,7 +78,7 @@ namespace Hecton8.Modding
         {
             if (!value.TryFormat(_valueLabelBuffer.AsSpan(), out int charsWritten, "0.##", CultureInfo.InvariantCulture))
             {
-                valueLabel.SetText("0");
+                Hecton8.UI.TmpTextNoAlloc.Set(valueLabel, "0");
                 return;
             }
 

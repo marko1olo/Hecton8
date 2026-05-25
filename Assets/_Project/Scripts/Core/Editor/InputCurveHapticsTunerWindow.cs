@@ -35,12 +35,12 @@ namespace Hecton8.Core.Editor
                 return;
             }
 
-            VaultGenerationHandle<InputProfileDTO> profileHandle = vault.GetGenerationHandle<InputProfileDTO>(
+            VaultGenerationHandle<InputProfileDTO> profileHandle = vault.EnsureGenerationHandle<InputProfileDTO>(
                 BufferID.ShinobuInputProfile,
                 1,
                 SystemID.CoreDeterminism,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<InputStateDTO> inputHandle = vault.GetGenerationHandle<InputStateDTO>(
+            VaultGenerationHandle<InputStateDTO> inputHandle = vault.EnsureGenerationHandle<InputStateDTO>(
                 BufferID.ShinobuInputCurrentDto,
                 1,
                 SystemID.CoreDeterminism,
@@ -90,7 +90,7 @@ namespace Hecton8.Core.Editor
             {
                 float x = i / 64f;
                 float normalized = Mathf.Clamp01((x - profile.InnerDeadzone) / Mathf.Max(profile.OuterDeadzone - profile.InnerDeadzone, 0.0001f));
-                float y = Mathf.Pow(normalized, Mathf.Clamp(profile.MoveExponent, 0.25f, 4f));
+                float y = PreviewPower01(normalized, Mathf.Clamp(profile.MoveExponent, 0.25f, 4f));
                 Vector3 point = new Vector3(rect.xMin + (x * rect.width), rect.yMax - (y * rect.height), 0f);
                 if (i > 0)
                     Handles.DrawLine(previous, point);
@@ -101,6 +101,19 @@ namespace Hecton8.Core.Editor
             float hapticY = rect.yMax - Mathf.Clamp01(profile.HapticPowerScale * 0.5f) * rect.height;
             Handles.DrawLine(new Vector3(rect.xMin, hapticY, 0f), new Vector3(rect.xMax, hapticY, 0f));
             Handles.EndGUI();
+        }
+
+        private static float PreviewPower01(float value, float exponent)
+        {
+            float x = Mathf.Clamp01(value);
+            float x2 = x * x;
+            float x4 = x2 * x2;
+            float sqrt = x / Mathf.Sqrt(Mathf.Max(x, 0.000001f));
+            float low = Mathf.Lerp(sqrt, x, Mathf.Clamp01((exponent - 0.25f) / 0.75f));
+            float high = Mathf.Lerp(x2, x4, Mathf.Clamp01((exponent - 2f) * 0.5f));
+            return exponent < 1f
+                ? Mathf.Clamp01(low)
+                : Mathf.Clamp01(Mathf.Lerp(x, high, Mathf.Clamp01((exponent - 1f) / 3f)));
         }
 
         private static void DrawOscilloscope(Rect rect, InputProfileDTO profile, InputStateDTO state)

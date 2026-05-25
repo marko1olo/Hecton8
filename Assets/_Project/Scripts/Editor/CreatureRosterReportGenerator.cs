@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -75,9 +76,9 @@ namespace Hecton8.AI.Editor
                 sb.AppendLine($"- `ID`: `{asset.creatureId}`");
                 sb.AppendLine($"- `Zadacha`: {asset.gameplayPurpose}");
                 sb.AppendLine($"- `Dvizhenie`: `{asset.locomotionType}`");
-                sb.AppendLine($"- `Skorost`: `{asset.cruiseSpeed:0.0} / {asset.burstSpeed:0.0}`");
-                sb.AppendLine($"- `Zhivuchest`: `{asset.maxHealth:0}`");
-                sb.AppendLine($"- `Ataka`: `{asset.attackDamage:0}`");
+                sb.AppendLine("- `Skorost`: `" + asset.cruiseSpeed.ToString("0.0", CultureInfo.InvariantCulture) + " / " + asset.burstSpeed.ToString("0.0", CultureInfo.InvariantCulture) + "`");
+                sb.AppendLine("- `Zhivuchest`: `" + asset.maxHealth.ToString("0", CultureInfo.InvariantCulture) + "`");
+                sb.AppendLine("- `Ataka`: `" + asset.attackDamage.ToString("0", CultureInfo.InvariantCulture) + "`");
                 sb.AppendLine($"- `Osoboe`: {BuildSpecialLine(asset)}");
                 sb.AppendLine($"- `Semeystva fauny`: {Join(asset.recommendedFaunaFamilyIds)}");
                 sb.AppendLine($"- `Biomy`: {Join(asset.recommendedBiomeFamilyIds)}");

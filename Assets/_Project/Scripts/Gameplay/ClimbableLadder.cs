@@ -1,6 +1,8 @@
 using Hecton.Localization;
 using Hecton8.Animation.Locomotion;
+using Hecton8.Core;
 using Hecton8.Interaction;
+using System;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -10,7 +12,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class ClimbableLadder : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class ClimbableLadder : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const string DefaultInteractText = "Climb Ladder";
 
@@ -38,7 +40,12 @@ namespace Hecton8.Gameplay
         private Transform _transform;
         private Collider _collider;
         private bool _isTransitioning;
-        private string _cachedInteractText;
+        private bool _hotSwapRegistered;
+        private IAudioService _audioService;
+        private ILocalizationTextReadModel _localizationManager;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedInteractTextLength;
 
         public bool IsTransitioning => _isTransitioning;
         public Transform EntryPoint => entryPoint;
@@ -47,7 +54,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
-            _collider = GetComponent<Collider>();
+            TryGetComponent(out _collider);
 
             if (_collider != null)
             {
@@ -64,18 +71,38 @@ namespace Hecton8.Gameplay
                 exitPoint = _transform;
             }
 
+            CacheRegistryServicesCold();
             RebuildLocalizedTextCache();
         }
 
         private void OnEnable()
         {
             LocalizationEvents.RegisterLanguageListener(this);
+            TryRegisterHotSwap();
+            CacheRegistryServicesCold();
+            InteractableRegistry.RegisterTree(this);
             RebuildLocalizedTextCache();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
+            TryUnregisterHotSwap();
             LocalizationEvents.UnregisterLanguageListener(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as ILocalizationTextReadModel;
+                    RebuildLocalizedTextCache();
+                    break;
+            }
         }
 
         void IInteractable.OnHoverStart()
@@ -103,7 +130,15 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
-            return _cachedInteractText;
+            return !string.IsNullOrWhiteSpace(interactText) &&
+                   !string.Equals(interactText, DefaultInteractText, System.StringComparison.Ordinal)
+                ? interactText
+                : DefaultInteractText;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(_cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength), destination, out length);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -133,26 +168,12 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            if (!string.IsNullOrWhiteSpace(interactText) &&
-                !string.Equals(interactText, DefaultInteractText, System.StringComparison.Ordinal))
-            {
-                _cachedInteractText = interactText;
-                return;
-            }
-
-            _cachedInteractText = ResolveLocalized(LocalizationKeys.INTERACT_CLIMB_LADDER, DefaultInteractText);
-        }
-
-        private static string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            if (manager == null)
-            {
-                return fallback;
-            }
-
-            string localized = manager.Get(key);
-            return string.IsNullOrWhiteSpace(localized) ? fallback : localized;
+            _cachedInteractTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(
+                interactText,
+                DefaultInteractText,
+                LocalizationKeys.INTERACT_CLIMB_LADDER,
+                _localizationManager,
+                _cachedInteractTextBuffer);
         }
 
         private bool RequestProceduralClimb(Transform player, bool goingUp)
@@ -177,13 +198,41 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (climbSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
+            IAudioService audio = _audioService;
+            if (climbSound != null && audio != null)
             {
                 audio.PlayAtPoint(climbSound, player.position, climbVolume);
             }
 
             _isTransitioning = false;
             return true;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _localizationManager = GlobalRegistry.LocalizationText;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+            {
+                return;
+            }
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_hotSwapRegistered)
+            {
+                return;
+            }
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
 #if UNITY_EDITOR

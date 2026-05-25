@@ -99,7 +99,7 @@ namespace Hecton8.Core
                 return;
 
             _nextIllegalCompletionWarningTime = now + IllegalCompletionWarningIntervalSeconds;
-            Debug.LogWarning(IllegalCompletionWarningMessage);
+            Hecton8.Core.H8Debug.LogWarning(IllegalCompletionWarningMessage);
         }
 #endif
     }

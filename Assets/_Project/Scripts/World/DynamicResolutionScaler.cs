@@ -51,7 +51,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-130)] // Run after CullingManager
-    public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ISaveable, IDynamicResolutionRuntime
+    public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ISaveable, IDynamicResolutionRuntime, IGlobalRegistryHotSwapListener
     {
         private const string StablePressureStateLabel = "Stable";
         private const string RecoveringPressureStateLabel = "Recovering";
@@ -134,6 +134,7 @@ namespace Hecton8.World
         private bool _registered;
         private bool _serviceRegistered;
         private bool _saveRegistered;
+        private bool _hotSwapRegistered;
         private LODQualityPreset _qualityPreset = LODQualityPreset.Medium;
         private float _smoothedFrameTimeMs;
         private float _peakFrameTimeMs;
@@ -278,15 +279,18 @@ namespace Hecton8.World
                 ApplyRenderScale();
             }
 
+            CacheRegistryServicesCold();
             TryRegisterSaveParticipant();
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[DynamicResolutionScaler] Initialized.");
+            Hecton8.Core.H8Debug.Log("[DynamicResolutionScaler] Initialized.");
             #endif
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegisterSaveParticipant();
             TryRegister();
@@ -295,6 +299,8 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
@@ -311,6 +317,7 @@ namespace Hecton8.World
             RestoreDefaultRenderScale();
             TryUnregister();
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
@@ -319,8 +326,7 @@ namespace Hecton8.World
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -369,11 +375,11 @@ namespace Hecton8.World
             if (_saveRegistered)
                 return;
 
-            _saveService = GlobalRegistry.Save;
-            if (_saveService == null)
+            ISaveService saveService = _saveService;
+            if (saveService == null)
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
             _saveRegistered = true;
         }
 
@@ -391,6 +397,43 @@ namespace Hecton8.World
         }
 
         // ══════════════════════════════════════════════════════════
+        private void CacheRegistryServicesCold()
+        {
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            TryUnregisterSaveParticipant();
+            _saveService = currentService as ISaveService;
+            if (isActiveAndEnabled)
+                TryRegisterSaveParticipant();
+        }
+
         //  ISAVEABLE IMPLEMENTATION
         // ══════════════════════════════════════════════════════════
 

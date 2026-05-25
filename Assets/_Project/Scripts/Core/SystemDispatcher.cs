@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -31,6 +31,7 @@ using Hecton8.Power;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
+using Hecton8.Tools;
 using Hecton8.Visor;
 using Hecton8.World;
 
@@ -82,7 +83,6 @@ namespace Hecton8.Core
         private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
         private const float JobAdmissionFrameBudgetMissThresholdSeconds = 1.0f / 60.0f;
         private const int MaxQueuedDispatcherRaycasts = 1024;
-        private const int DispatcherRaycastMinCommandsPerJob = 1;
         private const int DispatcherBlackBoxFrameCount = 300;
         private const int DispatcherBlackBoxEntrySizeBytes = 64;
         private const string DispatcherBlackBoxDumpPath = "Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin";
@@ -104,8 +104,10 @@ namespace Hecton8.Core
         private const uint MasterRollbackHardResyncRequiredFlag = 1u << 14;
         private const float MasterDispatcherStallDumpThresholdMs = 8f;
         private const string MasterDispatcherDumpPath = "Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin";
+#if UNITY_EDITOR
         private const string MasterDispatcherPriorityCsvPath = "Docs/Tasks/execution_priorities.csv";
         private const string VaultMemoryProfileCsvPath = "memory_overrides.csv";
+#endif
         private const ulong DispatcherBlackBoxDumpMagic = 0x00384E4F54434548ul; // HECTON8\0
         private const uint DispatcherBlackBoxDumpVersion = 1u;
         private const uint MasterDispatcherDumpVersion = 1u;
@@ -131,7 +133,7 @@ namespace Hecton8.Core
         private const float VisualStaticGlitchDurationSeconds = 1f;
         private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
         private const double HomeostasisEmergencySlowTickIntervalSeconds = 1.0;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
         private const string HeapLockGuardMessage = "[SystemDispatcher] HEAP LOCK GUARD: managed heap increased during fixed-step dispatch.";
@@ -228,6 +230,8 @@ namespace Hecton8.Core
         private static readonly int _HectonVisualStaticGlitchId = Shader.PropertyToID("_HectonVisualStaticGlitch");
         private static readonly int _HectonVisualStaticGlitchSeedId = Shader.PropertyToID("_HectonVisualStaticGlitchSeed");
         private static readonly int _SimulationBucketInterpolationAlphaId = Shader.PropertyToID("_SimulationBucketInterpolationAlpha");
+        private static float _pendingSimulationBucketInterpolationAlpha;
+        private static bool _hasPendingSimulationBucketInterpolationAlpha;
         private static readonly float[] _arteryFlushMilliseconds = new float[ArteryFlushSampleCapacity];
         private static int _arteryFlushSampleCursor;
         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
@@ -440,10 +444,10 @@ namespace Hecton8.Core
         private ISimulationBucketer _simulationBucketer;
         private IJobAdmissionService _jobAdmission;
         private IInputDeterminismService _inputDeterminism;
-        private VRAMMonitor _vramMonitor;
-        private VRAMPressureMonitor _vramPressure;
+        private IVramBudgetReadModel _vramMonitor;
+        private IVramPressureSampleSink _vramPressure;
         private IMacroDatabaseService _macroDatabase;
-        private ObjectPoolManager _objectPool;
+        private IObjectPoolService _objectPool;
         private float _globalQualityWeight01 = 1f;
         private float _timeDilationScalar = 1f;
         private float _prePauseTimeDilationScalar = 1f;
@@ -564,7 +568,7 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public bool IsServiceReady => _serviceRegistered;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private static object _currentPostFixedGcOwner;
         private static object _lastPostFixedGcOwner;
         private static int _lastPostFixedGcFrame = -1;
@@ -586,10 +590,7 @@ namespace Hecton8.Core
         private static bool _pauseDepthOfFieldTargetActive;
         private static int _temporalCompressionFrameCount;
         private static int _pdaOverBudgetConsecutiveFrames;
-        private static VaultGenerationHandle<RaycastCommand> _pendingDispatcherRaycastCommandsHandle;
-        private static VaultGenerationHandle<RaycastCommand> _scheduledDispatcherRaycastCommandsHandle;
         private static VaultGenerationHandle<RaycastHit> _scheduledDispatcherRaycastHitsHandle;
-        private static bool _scheduledDispatcherRaycastCommandsVaultLocked;
         private static bool _scheduledDispatcherRaycastHitsVaultLocked;
         private static JobHandle _scheduledDispatcherRaycastHandle;
         private static bool _dispatcherRaycastsScheduled;
@@ -664,7 +665,7 @@ namespace Hecton8.Core
                 _moddingBridgeProjectionRuntime = null;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         internal static bool TryGetLastPostFixedGcAttribution(
             out string ownerName,
             out int frame,
@@ -715,7 +716,7 @@ namespace Hecton8.Core
             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
             ResetBaseStressCascadeCircuitBreakerState();
             System.Array.Clear(_arteryFlushMilliseconds, 0, _arteryFlushMilliseconds.Length);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _nextAupNanInquisitorLogTime = 0f;
             _nextDispatcherPhaseWarningLogTime = 0f;
             _nextFoveatedFrameWarningLogTime = 0f;
@@ -742,6 +743,8 @@ namespace Hecton8.Core
             Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 0f);
             Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, 0f);
             Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, 0f);
+            _pendingSimulationBucketInterpolationAlpha = 0f;
+            _hasPendingSimulationBucketInterpolationAlpha = false;
             _criticalPerformanceSpikeReported = false;
             _temporalCompressionActive = false;
             _temporalCompressionFrameCount = 0;
@@ -754,7 +757,7 @@ namespace Hecton8.Core
             Volatile.Write(ref _homeostasisSlowTick2Hz, 0);
             Volatile.Write(ref _homeostasisFoveatedTier, 0);
             ActiveRuntimeInstance = null;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _currentPostFixedGcOwner = null;
             _lastPostFixedGcOwner = null;
             _lastPostFixedGcFrame = -1;
@@ -928,7 +931,7 @@ namespace Hecton8.Core
             signal.Frame = ReadPublishedDispatcherFrameId();
             signal.Severity = severity;
             signal.Flags = flags;
-            GlobalSignals.Publish(in signal);
+            SignalBus<ComplianceViolationSignal>.TryPush(in signal);
         }
 
         internal static uint ReadPublishedDispatcherFrameId()
@@ -941,6 +944,8 @@ namespace Hecton8.Core
         }
 
         public static uint CurrentFrameId => TimeSliceScheduler.CurrentFrameId;
+
+        public static int CurrentFrameIndex => (int)(ReadPublishedDispatcherFrameId() & 0x7FFFFFFFu);
 
         internal static void ApplyHomeostasisKillSwitch(
             ulong mask,
@@ -1014,7 +1019,7 @@ namespace Hecton8.Core
             return false;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         internal static void ResetBaseStressCascadeCircuitBreakerForSmokeTest()
         {
             ResetBaseStressCascadeCircuitBreakerStateForFrame(Time.frameCount);
@@ -1131,29 +1136,6 @@ namespace Hecton8.Core
         }
 
         internal static int DroppedEventsCounter => _droppedEventsCounter;
-
-        internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
-        {
-            if (receiver == null)
-                return false;
-
-            SystemDispatcher dispatcher = ActiveRuntimeInstance;
-            if (dispatcher == null || !dispatcher._serviceRegistered)
-                return false;
-
-            EnsureDispatcherRaycastBuffers();
-            if (!TryResolveDispatcherRaycastCommands(
-                    in _pendingDispatcherRaycastCommandsHandle,
-                    out NativeArray<RaycastCommand> pendingCommands) ||
-                _pendingDispatcherRaycastCount >= MaxQueuedDispatcherRaycasts)
-                return false;
-
-            int writeIndex = _pendingDispatcherRaycastCount++;
-            _pendingDispatcherRaycastReceivers[writeIndex] = receiver;
-            _pendingDispatcherRaycastRequestIds[writeIndex] = requestId;
-            pendingCommands[writeIndex] = command;
-            return true;
-        }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         private static IDispatcherSystem GetMasterRegisteredSystemAt(int index)
@@ -1902,7 +1884,7 @@ namespace Hecton8.Core
             dilationSignal.Frame = frame;
             dilationSignal.ReasonHash = reasonHash;
             dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
-            GlobalSignals.Publish(in dilationSignal);
+            SimulationSignalRoute.TryQueueTimeDilation(in dilationSignal);
 
             BulletTimeVisualSignal visualSignal = default;
             visualSignal.Intensity01 = math.saturate((BulletTimePostScalarThreshold - scalar) / BulletTimePostScalarThreshold);
@@ -1911,12 +1893,12 @@ namespace Hecton8.Core
             visualSignal.Sequence = _timeDilationSequence;
             visualSignal.QualityWeightBits = math.asuint(_globalQualityWeight01);
             visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
-            GlobalSignals.Publish(in visualSignal);
+            SimulationSignalRoute.TryQueueBulletTimeVisual(in visualSignal);
         }
 
         private void DrainSimulationPauseSignals()
         {
-            while (GlobalSignals.TryDequeueSimulationPause(out SimulationPauseSignal signal))
+            while (SignalBus<SimulationPauseSignal>.TryConsumeFrame(out SimulationPauseSignal signal))
             {
                 if (signal.Paused == 0 && math.isfinite(signal.RestoreScalar) && signal.RestoreScalar > 0f)
                     _prePauseTimeDilationScalar = signal.RestoreScalar;
@@ -2090,6 +2072,7 @@ namespace Hecton8.Core
             GlobalRegistry.TryRegisterHotSwapListener(this);
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Dispatcher, this);
+            CombatDamageRuntime.Prewarm();
             EnsureDispatcherPlayerLoopInstalled();
             PublishTimeDilationState(0u);
         }
@@ -3171,7 +3154,7 @@ namespace Hecton8.Core
             uint frameId)
         {
             JobDependencyDTO dto = default;
-            dto.JobHandlePtr = CaptureJobHandleBits(ref handle);
+            dto.JobHandleBits = CaptureJobHandleBits(ref handle);
             dto.SystemIdHash = system.GetSystemIdHash();
             dto.FrameId = frameId;
             dto.DependencyHash0 = system.GetDependencyCount() > 0 ? system.GetDependencyHash(0) : 0u;
@@ -3252,8 +3235,7 @@ namespace Hecton8.Core
                     MasterRollbackRuntimeStateBuffer,
                     SystemID.CoreDeterminism,
                     1,
-                    out NativeArray<MasterRollbackRuntimeStateProbeDTO> rollbackStateBuffer) ||
-                !rollbackStateBuffer.IsCreated ||
+                    out NativeArray<MasterRollbackRuntimeStateProbeDTO>.ReadOnly rollbackStateBuffer) ||
                 rollbackStateBuffer.Length <= 0)
             {
                 return false;
@@ -3508,7 +3490,7 @@ namespace Hecton8.Core
 
         private void TryReloadMasterExecutionPriorityCsv()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             int frame = Time.frameCount;
             if (_masterCsvPollFrame == frame || (frame & MasterDispatcherBucketMask) != 0)
                 return;
@@ -3527,7 +3509,7 @@ namespace Hecton8.Core
 #endif
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private static void ApplyMasterExecutionPriorityCsv()
         {
             for (int i = 0; i < MasterDispatcherMaxSystems; i++)
@@ -3590,11 +3572,13 @@ namespace Hecton8.Core
                     bool hex = false;
                     bool comment = false;
                     uint value = 0u;
+                    Span<byte> singleByte = stackalloc byte[1];
 
                     while (true)
                     {
-                        int read = stream.ReadByte();
-                        bool end = read < 0;
+                        int read = stream.Read(singleByte);
+                        bool end = read <= 0;
+                        read = end ? -1 : singleByte[0];
                         byte c = end ? (byte)'\n' : (byte)read;
 
                         if (comment)
@@ -3877,13 +3861,13 @@ namespace Hecton8.Core
             for (int i = 0; i < jobDependencyTelemetry.Length && jobCount < capacity; i++)
             {
                 JobDependencyDTO dto = jobDependencyTelemetry[i];
-                if (dto.SystemIdHash == 0u && dto.JobHandlePtr == 0ul)
+                if (dto.SystemIdHash == 0u && dto.JobHandleBits == 0ul)
                     continue;
 
                 if (systemHashes != null)
                     systemHashes[jobCount] = dto.SystemIdHash;
                 if (jobHandleBits != null)
-                    jobHandleBits[jobCount] = dto.JobHandlePtr;
+                    jobHandleBits[jobCount] = dto.JobHandleBits;
                 jobCount++;
             }
 
@@ -4021,6 +4005,27 @@ namespace Hecton8.Core
             if (dataVault == null ||
                 requiredLength <= 0 ||
                 !IsVaultGenerationHandleCreated(in handle) ||
+                !dataVault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveDispatcherVaultBuffer<T>(
+            IDataVault dataVault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength <= 0 ||
+                !IsVaultGenerationHandleCreated(in handle) ||
                 !dataVault.TryResolveHandle(in handle, out NativeArray<T> resolved) ||
                 !resolved.IsCreated ||
                 resolved.Length < requiredLength)
@@ -4028,7 +4033,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            buffer = resolved;
+            buffer = resolved.AsReadOnly();
             return true;
         }
 
@@ -4037,7 +4042,7 @@ namespace Hecton8.Core
             BufferID bufferId,
             SystemID ownerSystem,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             if (dataVault == null ||
@@ -4047,8 +4052,7 @@ namespace Hecton8.Core
                 handle.BufferID != (uint)bufferId ||
                 handle.SystemID != (uint)ownerSystem ||
                 handle.Generation == 0u ||
-                !dataVault.TryReadHandle(in handle, out NativeArray<T> resolved) ||
-                !resolved.IsCreated ||
+                !dataVault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) ||
                 resolved.Length < requiredLength)
             {
                 return false;
@@ -4102,7 +4106,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            handle = dataVault.GetGenerationHandle<T>(
+            handle = dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.SystemDispatcher,
@@ -4126,8 +4130,6 @@ namespace Hecton8.Core
             if (!_dispatcherRaycastsScheduled &&
                 !_masterSimulationJobsPending &&
                 !_masterFixedJobsPending &&
-                !IsVaultGenerationHandleCreated(in _pendingDispatcherRaycastCommandsHandle) &&
-                !IsVaultGenerationHandleCreated(in _scheduledDispatcherRaycastCommandsHandle) &&
                 !IsVaultGenerationHandleCreated(in _scheduledDispatcherRaycastHitsHandle) &&
                 !IsVaultGenerationHandleCreated(in _h8TimeHandle) &&
                 !IsVaultGenerationHandleCreated(in _dispatcherBlackBoxHandle) &&
@@ -4173,11 +4175,11 @@ namespace Hecton8.Core
 
         private void RefreshPeripheralDependencies()
         {
-            VRAMMonitor vramMonitor = GlobalRegistry.VRAMMonitor;
+            IVramBudgetReadModel vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
             if (vramMonitor != null)
                 _vramMonitor = vramMonitor;
 
-            VRAMPressureMonitor vramPressure = GlobalRegistry.VRAMPressure;
+            IVramPressureSampleSink vramPressure = GlobalRegistry.VRAMPressureSampleSink;
             if (vramPressure != null)
                 _vramPressure = vramPressure;
 
@@ -4185,7 +4187,7 @@ namespace Hecton8.Core
             if (macroDatabase != null)
                 _macroDatabase = macroDatabase;
 
-            ObjectPoolManager objectPool = GlobalRegistry.ObjectPool;
+            IObjectPoolService objectPool = GlobalRegistry.ObjectPoolService;
             if (objectPool != null)
                 _objectPool = objectPool;
 
@@ -4219,16 +4221,16 @@ namespace Hecton8.Core
                     _simulationBucketer = currentService as ISimulationBucketer;
                     break;
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
-                    _vramMonitor = currentService as VRAMMonitor;
+                    _vramMonitor = currentService as IVramBudgetReadModel;
                     break;
                 case GlobalRegistryServiceSlot.VRAMPressureRuntime:
-                    _vramPressure = currentService as VRAMPressureMonitor;
+                    _vramPressure = currentService as IVramPressureSampleSink;
                     break;
                 case GlobalRegistryServiceSlot.MacroDatabase:
                     _macroDatabase = currentService as IMacroDatabaseService;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     break;
             }
         }
@@ -4251,7 +4253,7 @@ namespace Hecton8.Core
                 VaultSovereigntyTelemetry.EnsureRing(currentVault);
         }
 
-        private static VRAMMonitor ResolveCachedVramMonitor()
+        private static IVramBudgetReadModel ResolveCachedVramMonitor()
         {
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
             if (dispatcher == null)
@@ -4260,7 +4262,7 @@ namespace Hecton8.Core
             return dispatcher._vramMonitor;
         }
 
-        private static VRAMPressureMonitor ResolveCachedVramPressure()
+        private static IVramPressureSampleSink ResolveCachedVramPressure()
         {
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
             if (dispatcher == null)
@@ -4278,7 +4280,7 @@ namespace Hecton8.Core
             return dispatcher._macroDatabase;
         }
 
-        private static ObjectPoolManager ResolveCachedObjectPool()
+        private static IObjectPoolService ResolveCachedObjectPool()
         {
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
             if (dispatcher == null)
@@ -4361,7 +4363,7 @@ namespace Hecton8.Core
 
         private void TryPollVaultMemoryProfileCsv(IDataVault dataVault)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (dataVault == null || dataVault.IsAllocationLocked)
                 return;
 
@@ -4637,14 +4639,14 @@ namespace Hecton8.Core
                     break;
 
                 MemoryAddressShiftSignal signal = default;
-                signal.OldPointer = record.OldPointer;
-                signal.NewPointer = record.NewPointer;
+                signal.OldOffsetBytes = record.OldOffsetBytes;
+                signal.NewOffsetBytes = record.NewOffsetBytes;
                 signal.BufferId = record.BufferId;
                 signal.ByteLength = record.ByteLength;
                 signal.Version = record.Generation;
                 signal.Flags = record.Flags;
                 signal.SystemId = record.SystemId;
-                GlobalSignals.Publish(in signal);
+                SignalBus<MemoryAddressShiftSignal>.TryPush(in signal);
             }
 
             PublishVaultSovereigntyAddressShiftRecords(dataVault);
@@ -4665,8 +4667,7 @@ namespace Hecton8.Core
                     BufferID.VaultMemoryAddressShiftRecords,
                     SystemID.CoreDataVault,
                     1,
-                    out NativeArray<VaultMemoryAddressShiftRecord> records) ||
-                !records.IsCreated)
+                    out NativeArray<VaultMemoryAddressShiftRecord>.ReadOnly records))
             {
                 return;
             }
@@ -4679,8 +4680,8 @@ namespace Hecton8.Core
                     continue;
 
                 MemoryAddressShiftSignal signal = default;
-                signal.OldPointer = record.OldPointer;
-                signal.NewPointer = record.NewPointer;
+                signal.OldOffsetBytes = record.OldOffsetBytes;
+                signal.NewOffsetBytes = record.NewOffsetBytes;
                 signal.BufferId = record.BufferId;
                 signal.ByteLength = record.ByteLength;
                 signal.Version = record.Version;
@@ -4692,7 +4693,7 @@ namespace Hecton8.Core
                 signal.SourceFrame = record.SourceFrame;
                 signal.SourceHash = record.SourceHash;
                 signal.CompactedCount = record.CompactedCount;
-                GlobalSignals.Publish(in signal);
+                SignalBus<MemoryAddressShiftSignal>.TryPush(in signal);
             }
 
             shiftCount[0] = 0;
@@ -4713,7 +4714,7 @@ namespace Hecton8.Core
                 pressureSignal.Frame = frameId;
                 pressureSignal.Severity = vaultPressure01 >= 0.95f ? (byte)2 : (byte)1;
                 pressureSignal.Flags = 2;
-                GlobalSignals.Publish(in pressureSignal);
+                SignalBus<MemoryPressureSignal>.TryPush(in pressureSignal);
             }
 
             if (dataVault.HeapFragmentationRatio > 0f)
@@ -4735,8 +4736,8 @@ namespace Hecton8.Core
             if (dataVault.LastDefragWatchdogExceeded || elapsedMilliseconds > 1.0d)
             {
                 GlobalTelemetryBus.PublishJobBarrierStall(
-                    nameof(GlobalDataVault),
-                    nameof(RunPreSimulationMemoryDefrag),
+                    GlobalTelemetryBus.ComputeContextHash(nameof(GlobalDataVault)),
+                    GlobalTelemetryBus.ComputeContextHash(nameof(RunPreSimulationMemoryDefrag)),
                     (float)elapsedMilliseconds);
                 GlobalTelemetryBus.PublishPerformanceWarning(
                     _DataVaultWatchdogHash,
@@ -4757,7 +4758,7 @@ namespace Hecton8.Core
 
         private static void EmitVramPressureDefragSignalIfNeeded()
         {
-            VRAMMonitor monitor = ResolveCachedVramMonitor();
+            IVramBudgetReadModel monitor = ResolveCachedVramMonitor();
             if (monitor == null || monitor.TotalVRAMBytes <= 1800L * 1024L * 1024L)
                 return;
 
@@ -4767,7 +4768,7 @@ namespace Hecton8.Core
                 _DataVaultDefragContextHash,
                 monitor.TotalVRAMBytes * GlobalTelemetryBus.BytesToMegabytes);
 
-            VRAMPressureMonitor pressureMonitor = ResolveCachedVramPressure();
+            IVramPressureSampleSink pressureMonitor = ResolveCachedVramPressure();
             if (pressureMonitor != null)
                 pressureMonitor.ForceImmediateSampleAndResponse();
         }
@@ -5017,7 +5018,7 @@ namespace Hecton8.Core
         {
             AdvanceDispatcherFrameId();
             FrameTimeWatchdog.TickMathPrecisionTransition(Time.frameCount);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
 #endif
             using (_updateProfilerMarker.Auto())
@@ -5042,7 +5043,7 @@ namespace Hecton8.Core
                 IInputDeterminismService inputDeterminism = _inputDeterminism;
                 if (inputDeterminism != null && inputDeterminism.IsInitialized)
                     inputDeterminism.PreSimulationInputTick(unscaledDeltaTime);
-                GlobalSignals.FlushPreSimulation();
+                SignalCorridorRuntime.FlushPreSimulation();
                 if (SignalBusRegistry.IsSimulationHalted)
                     return;
 
@@ -5117,11 +5118,11 @@ namespace Hecton8.Core
 
                 masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
                 RunMasterSimulationPhase(in masterTiming);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
 #endif
                 _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
 #endif
                 PredatorCognitionDomain.BeginDispatcherFrame(Time.frameCount);
@@ -5139,7 +5140,7 @@ namespace Hecton8.Core
                         continue;
 
                     RegistryBucket<IUpdatable> lane = _priorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                     lane.ValidateNoDestroyedEntriesDebug(nameof(IUpdatable));
 #endif
                     using (_updateLaneProfilerMarkers[laneIndex].Auto())
@@ -5204,7 +5205,8 @@ namespace Hecton8.Core
             float alpha = math.isfinite(frameState.SimulationBucketInterpolationAlpha)
                 ? math.saturate(frameState.SimulationBucketInterpolationAlpha)
                 : 0f;
-            Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, alpha);
+            _pendingSimulationBucketInterpolationAlpha = alpha;
+            _hasPendingSimulationBucketInterpolationAlpha = true;
 
             SimulationBucketSyncSignal signal = default;
             signal.InterpolationAlpha = alpha;
@@ -5214,7 +5216,16 @@ namespace Hecton8.Core
             signal.RebalanceSequence = frameState.RebalanceSequence;
             signal.ActiveSlowBucketCount = frameState.ActiveSlowBucketCount;
             signal.Flags = unchecked((byte)math.min(byte.MaxValue, frameState.FramePacingFlags));
-            SignalBus<SimulationBucketSyncSignal>.Push(in signal);
+            SignalBus<SimulationBucketSyncSignal>.TryPush(in signal);
+        }
+
+        private static void FlushSimulationBucketVisualSync()
+        {
+            if (!_hasPendingSimulationBucketInterpolationAlpha)
+                return;
+
+            _hasPendingSimulationBucketInterpolationAlpha = false;
+            Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, _pendingSimulationBucketInterpolationAlpha);
         }
 
         private void PublishFramePacingWarningIfNeeded(in SimulationBucketFrameState frameState)
@@ -5255,7 +5266,7 @@ namespace Hecton8.Core
             warning.SlowBucketMask = frameState.SlowBucketMask;
             warning.RebalanceSequence = frameState.RebalanceSequence;
             warning.Severity = ResolveFramePacingSeverity(flags, currentFrameMs, warning.PreSimulationMs);
-            SignalBus<FramePacingWarningSignal>.Push(in warning);
+            SignalBus<FramePacingWarningSignal>.TryPush(in warning);
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _FramePacingWarningHash,
                 _SimulationBucketContextHash,
@@ -5346,7 +5357,7 @@ namespace Hecton8.Core
 
         private void RunDispatcherLateFrame()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherLateFrame);
             long completeDispatcherTimestamp = 0L;
             bool dispatcherPhaseTimingStarted = false;
@@ -5368,11 +5379,16 @@ namespace Hecton8.Core
                 UpdatePauseFreezeFrameDitherState();
                 UpdateVisualStaticGlitchState();
                 TickPauseDepthOfField(Time.unscaledTime);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
                 dispatcherPhaseTimingStarted = true;
 #endif
                 CompleteFoveatedFrameJobs();
+                _foveatedSimulationManager.VisualSyncTick();
+                FlushSimulationBucketVisualSync();
+                HectonXRRuntimeState.FlushVisualSyncShaderState();
+                WfcLaserCutRuntime.FlushVisualSync();
+                HectonShaderGlobalDataVaultBridge.FlushFallbackVisualSync();
                 RunMasterVisualSyncPhase();
                 BeginLateFrameEventBudget();
                 SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
@@ -5381,7 +5397,7 @@ namespace Hecton8.Core
                     for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                     {
                         RegistryBucket<ILateFrameTickable> lane = _lateFramePriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                         lane.ValidateNoDestroyedEntriesDebug(nameof(ILateFrameTickable));
 #endif
                         int count = lane.Count;
@@ -5434,10 +5450,10 @@ namespace Hecton8.Core
                 }
                 finally
                 {
-                    GlobalSignals.ClearPostSimulationSnapshots();
+                    SignalCorridorRuntime.ClearPostSimulationSnapshots();
                     NativeArenaAllocator.Reset();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                     if (dispatcherPhaseTimingStarted)
                         EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");
 #endif
@@ -5504,6 +5520,7 @@ namespace Hecton8.Core
                     SpectrumEvents.PendingCount +
                     ProceduralAudioEvents.PendingCount +
                     MapMagicBiomeEvents.PendingCount +
+                    MapMagicTerrainTileEvents.PendingCount +
                     BiomeMatrixEvents.PendingCount +
                     WeatherEvents.PendingCount +
                     RandomEventEvents.PendingCount +
@@ -5533,6 +5550,7 @@ namespace Hecton8.Core
                 SpectrumEvents.FlushPending();
                 ProceduralAudioEvents.FlushPending();
                 MapMagicBiomeEvents.FlushPending();
+                MapMagicTerrainTileEvents.FlushPending();
                 BiomeMatrixEvents.FlushPending();
                 WeatherEvents.FlushPending();
                 RandomEventEvents.FlushPending();
@@ -5705,7 +5723,7 @@ namespace Hecton8.Core
             pressureSignal.Frame = unchecked((uint)memoryPressureEvent.Frame);
             pressureSignal.Severity = 2;
             pressureSignal.Flags = 1;
-            GlobalSignals.Publish(in pressureSignal);
+            SignalBus<MemoryPressureSignal>.TryPush(in pressureSignal);
             IMacroDatabaseService macroDatabase = ResolveCachedMacroDatabase();
             macroDatabase?.NotifyCriticalMemoryPressure(
                 memoryPressureEvent.ReservedMemoryBytes,
@@ -5719,7 +5737,7 @@ namespace Hecton8.Core
                 memoryPressureEvent.PhysicalMemoryBytes,
                 memoryPressureEvent.UsageRatio);
 
-            ObjectPoolManager objectPool = ResolveCachedObjectPool();
+            IObjectPoolService objectPool = ResolveCachedObjectPool();
             if (objectPool != null)
                 objectPool.FlushInactivePoolsForMemoryPressure();
 
@@ -5748,7 +5766,7 @@ namespace Hecton8.Core
 
         private static void ReportLateFrameQueueDepth(uint queueHash, int pendingCount)
         {
-            ObjectPoolDiagnostics.PublishDataBusDepth(queueHash, pendingCount);
+            ObjectPoolDiagnostics.TryPublishDataBusDepth(queueHash, pendingCount);
         }
 
         private static long BeginLateFrameFlushPass()
@@ -5828,6 +5846,7 @@ namespace Hecton8.Core
         private static void DropAmbientEnvironmentEvents()
         {
             WeatherEvents.DropPendingAmbient();
+            MapMagicTerrainTileEvents.DropPendingAmbient();
             RandomEventEvents.DropPendingAmbient();
             SoundscapeEvents.DropPendingAmbient();
         }
@@ -5856,13 +5875,7 @@ namespace Hecton8.Core
             if (untilTime > _visualStaticGlitchUntilTime)
                 _visualStaticGlitchUntilTime = untilTime;
 
-            if (!_visualStaticGlitchActive)
-            {
-                _visualStaticGlitchActive = true;
-                Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 1f);
-            }
-
-            Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, Time.frameCount & 1023);
+            _visualStaticGlitchActive = true;
         }
 
         private static void UpdateVisualStaticGlitchState()
@@ -6054,7 +6067,7 @@ namespace Hecton8.Core
                         continue;
 
                     RegistryBucket<IFixedTickable> lane = _fixedPriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                     lane.ValidateNoDestroyedEntriesDebug(nameof(IFixedTickable));
 #endif
                     using (_fixedLaneProfilerMarkers[laneIndex].Auto())
@@ -6085,13 +6098,13 @@ namespace Hecton8.Core
                                 continue;
 
                             RegistryBucket<IPostFixedTickable> lane = _postFixedPriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                             lane.ValidateNoDestroyedEntriesDebug(nameof(IPostFixedTickable));
 #endif
                             int count = lane.Count;
                             for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
                             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                                 IPostFixedTickable postFixedTickable = lane.GetAt(itemIndex);
                                 int gen0Before = System.GC.CollectionCount(0);
                                 _currentPostFixedGcOwner = postFixedTickable;
@@ -6151,7 +6164,7 @@ namespace Hecton8.Core
 
             CrashTelemetryBuffer.ReportNanPhysicsRecovery();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             float now = Time.unscaledTime;
             if (now < _nextAupNanInquisitorLogTime)
                 return;
@@ -6185,7 +6198,7 @@ namespace Hecton8.Core
                             continue;
 
                         RegistryBucket<IFastTickable> lane = _fastPriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                         lane.ValidateNoDestroyedEntriesDebug(nameof(IFastTickable));
 #endif
                         using (_fastLaneProfilerMarkers[laneIndex].Auto())
@@ -6228,7 +6241,7 @@ namespace Hecton8.Core
                         continue;
 
                     RegistryBucket<IUnscaledFastTickable> lane = _unscaledFastPriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                     lane.ValidateNoDestroyedEntriesDebug(nameof(IUnscaledFastTickable));
 #endif
                     using (_unscaledFastLaneProfilerMarkers[laneIndex].Auto())
@@ -6275,7 +6288,7 @@ namespace Hecton8.Core
                             continue;
 
                         RegistryBucket<ISlowTickable> lane = _slowPriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                         lane.ValidateNoDestroyedEntriesDebug(nameof(ISlowTickable));
 #endif
                         using (_slowLaneProfilerMarkers[laneIndex].Auto())
@@ -6325,7 +6338,7 @@ namespace Hecton8.Core
                         continue;
 
                     RegistryBucket<ISlowTickable> lane = _slowPriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                     lane.ValidateNoDestroyedEntriesDebug(nameof(ISlowTickable));
 #endif
                     using (_slowLaneProfilerMarkers[laneIndex].Auto())
@@ -6393,7 +6406,7 @@ namespace Hecton8.Core
                             continue;
 
                         RegistryBucket<IColdTickable> lane = _coldPriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                         lane.ValidateNoDestroyedEntriesDebug(nameof(IColdTickable));
 #endif
                         using (_coldLaneProfilerMarkers[laneIndex].Auto())
@@ -6437,7 +6450,7 @@ namespace Hecton8.Core
                         continue;
 
                     RegistryBucket<IFrostTickable> lane = _frostPriorityLanes[laneIndex];
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                     lane.ValidateNoDestroyedEntriesDebug(nameof(IFrostTickable));
 #endif
                     using (_frostLaneProfilerMarkers[laneIndex].Auto())
@@ -6457,15 +6470,6 @@ namespace Hecton8.Core
 
         private static void EnsureDispatcherRaycastBuffers()
         {
-            TryEnsureDispatcherRaycastCommands(
-                ref _pendingDispatcherRaycastCommandsHandle,
-                BufferID.SystemDispatcherRaycastPendingCommands,
-                out NativeArray<RaycastCommand> _);
-            TryEnsureDispatcherRaycastCommands(
-                ref _scheduledDispatcherRaycastCommandsHandle,
-                BufferID.SystemDispatcherRaycastScheduledCommands,
-                out NativeArray<RaycastCommand> _);
-
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
                 return;
 
@@ -6476,39 +6480,6 @@ namespace Hecton8.Core
                 MaxQueuedDispatcherRaycasts,
                 NativeArrayOptions.ClearMemory,
                 out NativeArray<RaycastHit> _);
-        }
-
-        private static bool TryEnsureDispatcherRaycastCommands(
-            ref VaultGenerationHandle<RaycastCommand> handle,
-            BufferID bufferId,
-            out NativeArray<RaycastCommand> commands)
-        {
-            commands = default;
-            if (!TryResolveCachedDataVault(out IDataVault dataVault))
-                return false;
-
-            return TryEnsureDispatcherVaultBuffer(
-                dataVault,
-                ref handle,
-                bufferId,
-                MaxQueuedDispatcherRaycasts,
-                NativeArrayOptions.ClearMemory,
-                out commands);
-        }
-
-        private static bool TryResolveDispatcherRaycastCommands(
-            in VaultGenerationHandle<RaycastCommand> handle,
-            out NativeArray<RaycastCommand> commands)
-        {
-            commands = default;
-            if (!TryResolveCachedDataVault(out IDataVault dataVault))
-                return false;
-
-            return TryResolveDispatcherVaultBuffer(
-                dataVault,
-                in handle,
-                MaxQueuedDispatcherRaycasts,
-                out commands);
         }
 
         private static bool TryResolveDispatcherRaycastHits(out NativeArray<RaycastHit> scheduledHits)
@@ -6526,38 +6497,19 @@ namespace Hecton8.Core
 
         private static bool TryLockDispatcherRaycastScheduledVaultBuffers()
         {
-            if (_scheduledDispatcherRaycastCommandsVaultLocked && _scheduledDispatcherRaycastHitsVaultLocked)
+            if (_scheduledDispatcherRaycastHitsVaultLocked)
                 return true;
 
             EnsureDispatcherRaycastBuffers();
-            if (!IsVaultGenerationHandleCreated(in _scheduledDispatcherRaycastCommandsHandle) ||
-                !IsVaultGenerationHandleCreated(in _scheduledDispatcherRaycastHitsHandle))
+            if (!IsVaultGenerationHandleCreated(in _scheduledDispatcherRaycastHitsHandle))
                 return false;
 
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
                 return false;
 
-            bool lockedCommandsHere = false;
-            if (!_scheduledDispatcherRaycastCommandsVaultLocked)
-            {
-                if (!dataVault.TryLockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands, SystemID.SystemDispatcher))
-                    return false;
-
-                _scheduledDispatcherRaycastCommandsVaultLocked = true;
-                lockedCommandsHere = true;
-            }
-
             if (!_scheduledDispatcherRaycastHitsVaultLocked &&
                 !dataVault.TryLockBuffer(BufferID.DispatcherRaycastHits, SystemID.SystemDispatcher))
-            {
-                if (lockedCommandsHere)
-                {
-                    dataVault.TryUnlockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands, SystemID.SystemDispatcher);
-                    _scheduledDispatcherRaycastCommandsVaultLocked = false;
-                }
-
                 return false;
-            }
 
             _scheduledDispatcherRaycastHitsVaultLocked = true;
             return true;
@@ -6571,76 +6523,35 @@ namespace Hecton8.Core
 
         private static void UnlockDispatcherRaycastScheduledVaultBuffers(IDataVault dataVault)
         {
-            if (!_scheduledDispatcherRaycastCommandsVaultLocked && !_scheduledDispatcherRaycastHitsVaultLocked)
+            if (!_scheduledDispatcherRaycastHitsVaultLocked)
                 return;
 
             if (dataVault != null)
             {
-                if (_scheduledDispatcherRaycastCommandsVaultLocked)
-                    dataVault.TryUnlockBuffer(BufferID.SystemDispatcherRaycastScheduledCommands, SystemID.SystemDispatcher);
-
                 if (_scheduledDispatcherRaycastHitsVaultLocked)
                     dataVault.TryUnlockBuffer(BufferID.DispatcherRaycastHits, SystemID.SystemDispatcher);
             }
 
-            _scheduledDispatcherRaycastCommandsVaultLocked = false;
             _scheduledDispatcherRaycastHitsVaultLocked = false;
         }
 
         private static void ScheduleDispatcherRaycasts()
         {
-            if (_dispatcherRaycastsScheduled || _pendingDispatcherRaycastCount <= 0)
-                return;
-
-            EnsureDispatcherRaycastBuffers();
-            if (!TryResolveDispatcherRaycastCommands(
-                    in _pendingDispatcherRaycastCommandsHandle,
-                    out NativeArray<RaycastCommand> pendingCommands) ||
-                !TryResolveDispatcherRaycastCommands(
-                    in _scheduledDispatcherRaycastCommandsHandle,
-                    out NativeArray<RaycastCommand> scheduledCommands) ||
-                !TryResolveDispatcherRaycastHits(out NativeArray<RaycastHit> scheduledHits))
-            {
-                return;
-            }
-
-            if (!TryLockDispatcherRaycastScheduledVaultBuffers())
+            if (_pendingDispatcherRaycastCount <= 0)
                 return;
 
             using (_dispatcherRaycastScheduleProfilerMarker.Auto())
             {
                 int pendingCount = _pendingDispatcherRaycastCount;
-                int scheduledCount = math.min(pendingCount, MaxQueuedDispatcherRaycasts);
-                for (int i = 0; i < scheduledCount; i++)
-                {
-                    scheduledCommands[i] = pendingCommands[i];
-                    _scheduledDispatcherRaycastReceivers[i] = _pendingDispatcherRaycastReceivers[i];
-                    _scheduledDispatcherRaycastRequestIds[i] = _pendingDispatcherRaycastRequestIds[i];
-                    _pendingDispatcherRaycastReceivers[i] = null;
-                    _pendingDispatcherRaycastRequestIds[i] = 0;
-                }
-
-                for (int clearIndex = scheduledCount; clearIndex < pendingCount; clearIndex++)
+                for (int clearIndex = 0; clearIndex < pendingCount; clearIndex++)
                 {
                     _pendingDispatcherRaycastReceivers[clearIndex] = null;
                     _pendingDispatcherRaycastRequestIds[clearIndex] = 0;
                 }
 
-                ClearRaycastCommandRange(pendingCommands, pendingCount);
                 _pendingDispatcherRaycastCount = 0;
-                if (scheduledCount <= 0)
-                {
-                    UnlockDispatcherRaycastScheduledVaultBuffers();
-                    return;
-                }
-
-                _scheduledDispatcherRaycastCount = scheduledCount;
-                _scheduledDispatcherRaycastHandle = RaycastCommand.ScheduleBatch(
-                    scheduledCommands.GetSubArray(0, scheduledCount),
-                    scheduledHits.GetSubArray(0, scheduledCount),
-                    DispatcherRaycastMinCommandsPerJob,
-                    default);
-                _dispatcherRaycastsScheduled = true;
+                _scheduledDispatcherRaycastCount = 0;
+                _dispatcherRaycastsScheduled = false;
             }
         }
 
@@ -6684,16 +6595,6 @@ namespace Hecton8.Core
             }
         }
 
-        private static void ClearRaycastCommandRange(NativeArray<RaycastCommand> commands, int count)
-        {
-            if (!commands.IsCreated || count <= 0)
-                return;
-
-            int clampedCount = math.min(count, commands.Length);
-            for (int i = 0; i < clampedCount; i++)
-                commands[i] = default;
-        }
-
         private static void DisposeDispatcherRaycastBuffers()
         {
             TryResolveCachedDataVault(out IDataVault dataVault);
@@ -6714,8 +6615,6 @@ namespace Hecton8.Core
                 UnlockDispatcherRaycastScheduledVaultBuffers(dataVault);
             }
 
-            ReleaseDispatcherVaultHandle(dataVault, ref _pendingDispatcherRaycastCommandsHandle);
-            ReleaseDispatcherVaultHandle(dataVault, ref _scheduledDispatcherRaycastCommandsHandle);
             ReleaseDispatcherVaultHandle(dataVault, ref _scheduledDispatcherRaycastHitsHandle);
 
             _pendingDispatcherRaycastCount = 0;
@@ -6755,7 +6654,7 @@ namespace Hecton8.Core
 
         private static long BeginDispatcherPhaseTiming()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             return System.Diagnostics.Stopwatch.GetTimestamp();
 #else
             return 0L;
@@ -6764,7 +6663,7 @@ namespace Hecton8.Core
 
         private static void EndDispatcherPhaseTiming(long startTimestamp, string phaseName)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
             double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowDispatcherPhaseWarningMilliseconds)
@@ -6774,8 +6673,8 @@ namespace Hecton8.Core
                 {
                     _nextDispatcherPhaseWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;
                     GlobalTelemetryBus.PublishJobBarrierStall(
-                        nameof(SystemDispatcher),
-                        phaseName,
+                        GlobalTelemetryBus.ComputeContextHash(nameof(SystemDispatcher)),
+                        GlobalTelemetryBus.ComputeContextHash(phaseName),
                         (float)elapsedMilliseconds);
                 }
             }
@@ -6784,7 +6683,7 @@ namespace Hecton8.Core
 
         private void CompleteFoveatedFrameJobs()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             using (_foveatedCompleteProfilerMarker.Auto())
             {
@@ -6800,8 +6699,8 @@ namespace Hecton8.Core
                 {
                     _nextFoveatedFrameWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;
                     GlobalTelemetryBus.PublishJobBarrierStall(
-                        "FoveatedSimulationManager",
-                        "LateFrameComplete",
+                        GlobalTelemetryBus.ComputeContextHash("FoveatedSimulationManager"),
+                        GlobalTelemetryBus.ComputeContextHash("LateFrameComplete"),
                         (float)elapsedMilliseconds);
                 }
             }
@@ -6866,7 +6765,7 @@ namespace Hecton8.Core
             positionSignal.Frame = frame;
             positionSignal.Forward = (float3)forward;
             positionSignal.Flags = 1;
-            SignalBus<Hecton8.Core.Contracts.Signals.CameraPositionSignal>.Push(in positionSignal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CameraPositionSignal>.TryPush(in positionSignal);
 
             Hecton8.Core.Contracts.Signals.CameraFrustumSignal frustumSignal = default;
             frustumSignal.Position = (float3)position;
@@ -6877,7 +6776,7 @@ namespace Hecton8.Core
             frustumSignal.FarClipMeters = camera.farClipPlane;
             frustumSignal.Frame = frame;
             frustumSignal.Flags = 1;
-            SignalBus<Hecton8.Core.Contracts.Signals.CameraFrustumSignal>.Push(in frustumSignal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CameraFrustumSignal>.TryPush(in frustumSignal);
         }
 
         internal static void Clear()
@@ -7194,19 +7093,6 @@ namespace Hecton8.Core
             }
 
             destination.UnlockBufferAfterWrite<T>(safeCount);
-        }
-
-        /// <summary>
-        /// Uploads a blittable managed array into a graphics buffer using SetData.
-        /// Use for infrequent uploads where avoiding lock-contention stalls matters more than raw memcpy throughput.
-        /// </summary>
-        public static void UploadArraySetData<T>(GraphicsBuffer destination, T[] source, int count) where T : struct
-        {
-            int safeCount = ResolveSafeWriteCount<T>(destination, source != null ? source.Length : 0, count);
-            if (safeCount <= 0)
-                return;
-
-            destination.SetData(source, 0, 0, safeCount);
         }
 
         private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : struct

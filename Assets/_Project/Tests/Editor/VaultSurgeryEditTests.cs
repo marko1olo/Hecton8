@@ -16,67 +16,61 @@ namespace Hecton8.Tests.Editor
     public sealed class VaultSurgeryEditTests
     {
         [Test]
-        public void VaultBufferHandle_GetElementAsRef_MutatesInPlace()
+        public void VaultGenerationHandle_TryResolveHandle_MutatesInPlace()
         {
             using (GlobalDataVault vault = GlobalDataVault.Create(32))
             {
-                VaultBufferHandle<int> handle = vault.GetBufferHandle<int>(
+                VaultGenerationHandle<int> handle = vault.EnsureGenerationHandle<int>(
                     BufferID.VaultEntityBucketMap,
                     4,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);
 
-                ref int value = ref handle.GetElementAsRef(vault, 2);
-                value = 77;
+                Assert.IsTrue(vault.TryResolveHandle(in handle, out NativeArray<int> buffer));
+                buffer[2] = 77;
 
-                Assert.IsTrue(vault.TryGetBuffer(BufferID.VaultEntityBucketMap, out NativeArray<int> buffer));
-                Assert.AreEqual(77, buffer[2]);
+                Assert.IsTrue(vault.TryReadHandle(in handle, out NativeArray<int> readback));
+                Assert.AreEqual(77, readback[2]);
             }
         }
 
         [Test]
-        public void VaultBufferHandle_Tombstone_ClearsStableSlotAndAliveBit()
+        public void VaultGenerationHandle_ReleaseBuffer_InvalidatesOldDescriptor()
         {
             using (GlobalDataVault vault = GlobalDataVault.Create(32))
             {
-                VaultBufferHandle<TestEntity64> handle = vault.GetBufferHandle<TestEntity64>(
+                VaultGenerationHandle<TestEntity64> handle = vault.EnsureGenerationHandle<TestEntity64>(
                     BufferID.VaultHotEntityData,
                     2,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);
 
-                ref TestEntity64 entity = ref handle.GetElementAsRef(vault, 1);
-                entity.A = 10L;
-                entity.B = 20L;
-                entity.C = 30;
-                ulong aliveMask = ulong.MaxValue;
+                Assert.IsTrue(vault.TryResolveHandle(in handle, out NativeArray<TestEntity64> buffer));
+                buffer[1] = new TestEntity64 { A = 10L, B = 20L, C = 30 };
 
-                Assert.IsTrue(handle.TryTombstoneElement(vault, 1, ref aliveMask));
-                ref readonly TestEntity64 cleared = ref handle.GetElementAsReadOnlyRef(vault, 1);
-                Assert.AreEqual(0L, cleared.A);
-                Assert.AreEqual(0L, cleared.B);
-                Assert.AreEqual(0, cleared.C);
-                Assert.AreEqual(0UL, aliveMask & (1UL << 1));
+                Assert.IsTrue(vault.ReleaseBuffer(in handle));
+                Assert.IsFalse(vault.TryReadHandle(in handle, out _));
             }
         }
 
         [Test]
-        public void TryAcquireSlice_ReturnsPrimaryWritableSlice()
+        public void TryAcquireSliceHandle_ReturnsPrimaryWritableSlice()
         {
             using (GlobalDataVault vault = GlobalDataVault.Create(32))
             {
-                Assert.IsTrue(vault.TryAcquireSlice<int>(
+                Assert.IsTrue(vault.TryAcquireSliceHandle<int>(
                     BufferID.VaultEntityBucketMap,
                     16,
                     4,
                     4,
                     SystemID.CoreDataVault,
-                    out VaultBufferSlice<int> slice));
+                    out VaultSliceHandle<int> slice));
 
-                ref int slot = ref slice.GetElementAsRef(1);
-                slot = 1234;
+                Assert.IsTrue(vault.TryResolveSlice(in slice, out NativeArray<int> sliceView));
+                sliceView[1] = 1234;
 
-                Assert.IsTrue(vault.TryGetBuffer(BufferID.VaultEntityBucketMap, out NativeArray<int> buffer));
+                Assert.IsTrue(vault.TryGetGenerationHandle(BufferID.VaultEntityBucketMap, out VaultGenerationHandle<int> handle));
+                Assert.IsTrue(vault.TryReadHandle(in handle, out NativeArray<int> buffer));
                 Assert.AreEqual(1234, buffer[5]);
             }
         }
@@ -108,8 +102,8 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void VaultRuntimeStructs_KeepExpectedNaturalSizes()
         {
-            Assert.AreEqual(24, UnsafeUtility.SizeOf<VaultBufferHandle<byte>>());
-            Assert.AreEqual(32, UnsafeUtility.SizeOf<VaultBufferSlice<byte>>());
+            Assert.AreEqual(16, UnsafeUtility.SizeOf<VaultGenerationHandle<byte>>());
+            Assert.AreEqual(32, UnsafeUtility.SizeOf<VaultSliceHandle<byte>>());
             Assert.AreEqual(VaultBufferContract.LayoutConfigSizeBytes, UnsafeUtility.SizeOf<VaultMemoryLayoutConfig>());
             Assert.AreEqual(VaultBufferContract.HotEntitySizeBytes, UnsafeUtility.SizeOf<VaultHotEntityData>());
             Assert.AreEqual(VaultBufferContract.ColdEntitySizeBytes, UnsafeUtility.SizeOf<VaultColdEntityData>());
@@ -118,8 +112,10 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(64, UnsafeUtility.SizeOf<VaultBufferContract>());
             Assert.AreEqual(32, UnsafeUtility.SizeOf<VaultRelocationRecord>());
             Assert.AreEqual(48, UnsafeUtility.SizeOf<VaultMemoryBlockSnapshot>());
-            Assert.AreEqual(40, UnsafeUtility.SizeOf<BlockDescriptor>());
-            Assert.AreEqual(48, UnsafeUtility.SizeOf<H8AllocationRecord>());
+            Type blockDescriptorType = typeof(H8Memory).Assembly.GetType("Hecton8.Core.Memory.BlockDescriptor", true);
+            Type allocationRecordType = typeof(H8Memory).Assembly.GetType("Hecton8.Core.Memory.H8AllocationRecord", true);
+            Assert.AreEqual(40, Marshal.SizeOf(blockDescriptorType));
+            Assert.AreEqual(48, Marshal.SizeOf(allocationRecordType));
             Assert.AreEqual(64, UnsafeUtility.SizeOf<H8MemoryTelemetryEntry>());
             Assert.AreEqual(32, UnsafeUtility.SizeOf<HectonArenaAllocator.NativeArenaSlice<byte>>());
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultHotEntityData>() & 7);
@@ -130,8 +126,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultMemoryAddressShiftRecord>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultRelocationRecord>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultMemoryBlockSnapshot>() & 7);
-            Assert.AreEqual(0, UnsafeUtility.SizeOf<BlockDescriptor>() & 7);
-            Assert.AreEqual(0, UnsafeUtility.SizeOf<H8AllocationRecord>() & 7);
+            Assert.AreEqual(0, Marshal.SizeOf(blockDescriptorType) & 7);
+            Assert.AreEqual(0, Marshal.SizeOf(allocationRecordType) & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<H8MemoryTelemetryEntry>() & 7);
             Assert.AreEqual((int)BufferID.VaultMemoryLayoutConfig, VaultBufferContract.LayoutConfigBufferId);
             Assert.AreEqual((int)BufferID.VaultHotEntityData, VaultBufferContract.HotEntityBufferId);
@@ -159,18 +155,18 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void VaultPrimaryDtoOffsets_AreArm64Aligned()
         {
-            Assert.AreEqual(0, OffsetOf<VaultBufferHandle<byte>>(nameof(VaultBufferHandle<byte>.ptr)));
-            Assert.AreEqual(8, OffsetOf<VaultBufferHandle<byte>>(nameof(VaultBufferHandle<byte>.generation)));
-            Assert.AreEqual(12, OffsetOf<VaultBufferHandle<byte>>(nameof(VaultBufferHandle<byte>.BufferId)));
-            Assert.AreEqual(16, OffsetOf<VaultBufferHandle<byte>>(nameof(VaultBufferHandle<byte>.Length)));
-            Assert.AreEqual(20, OffsetOf<VaultBufferHandle<byte>>(nameof(VaultBufferHandle<byte>.Stride)));
-            Assert.AreEqual(0, OffsetOf<VaultBufferSlice<byte>>(nameof(VaultBufferSlice<byte>.Ptr)));
-            Assert.AreEqual(8, OffsetOf<VaultBufferSlice<byte>>(nameof(VaultBufferSlice<byte>.Generation)));
-            Assert.AreEqual(12, OffsetOf<VaultBufferSlice<byte>>(nameof(VaultBufferSlice<byte>.BufferId)));
-            Assert.AreEqual(16, OffsetOf<VaultBufferSlice<byte>>(nameof(VaultBufferSlice<byte>.StartIndex)));
-            Assert.AreEqual(20, OffsetOf<VaultBufferSlice<byte>>(nameof(VaultBufferSlice<byte>.Length)));
-            Assert.AreEqual(24, OffsetOf<VaultBufferSlice<byte>>(nameof(VaultBufferSlice<byte>.Stride)));
-            Assert.AreEqual(28, OffsetOf<VaultBufferSlice<byte>>(nameof(VaultBufferSlice<byte>.Flags)));
+            Assert.AreEqual(0, OffsetOf<VaultGenerationHandle<byte>>(nameof(VaultGenerationHandle<byte>.BufferID)));
+            Assert.AreEqual(4, OffsetOf<VaultGenerationHandle<byte>>(nameof(VaultGenerationHandle<byte>.SystemID)));
+            Assert.AreEqual(8, OffsetOf<VaultGenerationHandle<byte>>(nameof(VaultGenerationHandle<byte>.Generation)));
+            Assert.AreEqual(12, OffsetOf<VaultGenerationHandle<byte>>(nameof(VaultGenerationHandle<byte>.Flags)));
+            Assert.AreEqual(0, OffsetOf<VaultSliceHandle<byte>>(nameof(VaultSliceHandle<byte>.BufferID)));
+            Assert.AreEqual(4, OffsetOf<VaultSliceHandle<byte>>(nameof(VaultSliceHandle<byte>.SystemID)));
+            Assert.AreEqual(8, OffsetOf<VaultSliceHandle<byte>>(nameof(VaultSliceHandle<byte>.Generation)));
+            Assert.AreEqual(12, OffsetOf<VaultSliceHandle<byte>>(nameof(VaultSliceHandle<byte>.HandleFlags)));
+            Assert.AreEqual(16, OffsetOf<VaultSliceHandle<byte>>(nameof(VaultSliceHandle<byte>.StartIndex)));
+            Assert.AreEqual(20, OffsetOf<VaultSliceHandle<byte>>(nameof(VaultSliceHandle<byte>.Length)));
+            Assert.AreEqual(24, OffsetOf<VaultSliceHandle<byte>>(nameof(VaultSliceHandle<byte>.Flags)));
+            Assert.AreEqual(28, OffsetOf<VaultSliceHandle<byte>>(nameof(VaultSliceHandle<byte>.Reserved0)));
 
             Assert.AreEqual(VaultBufferContract.LayoutConfigArenaLimitOffset, OffsetOf<VaultMemoryLayoutConfig>(nameof(VaultMemoryLayoutConfig.ArenaLimitBytes)));
             Assert.AreEqual(VaultBufferContract.LayoutConfigBufferCapacityOffset, OffsetOf<VaultMemoryLayoutConfig>(nameof(VaultMemoryLayoutConfig.BufferCapacity)));
@@ -195,13 +191,15 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(VaultBufferContract.ColdEntityIdOffset, OffsetOf<VaultColdEntityData>(nameof(VaultColdEntityData.EntityId)));
             Assert.AreEqual(VaultBufferContract.ColdFlagsOffset, OffsetOf<VaultColdEntityData>(nameof(VaultColdEntityData.Flags)));
 
-            Assert.AreEqual(VaultBufferContract.TransformAliasMatrixPointerOffset, OffsetOf<VaultTransformAlias>(nameof(VaultTransformAlias.MatrixPointer)));
+            Assert.AreEqual(VaultBufferContract.TransformAliasMatrixBufferIdOffset, OffsetOf<VaultTransformAlias>(nameof(VaultTransformAlias.MatrixBufferId)));
+            Assert.AreEqual(VaultBufferContract.TransformAliasMatrixOffsetBytesOffset, OffsetOf<VaultTransformAlias>(nameof(VaultTransformAlias.MatrixOffsetBytes)));
+            Assert.AreEqual(VaultBufferContract.TransformAliasMatrixGenerationOffset, OffsetOf<VaultTransformAlias>(nameof(VaultTransformAlias.MatrixGeneration)));
             Assert.AreEqual(VaultBufferContract.TransformAliasTransformHashOffset, OffsetOf<VaultTransformAlias>(nameof(VaultTransformAlias.TransformHash)));
             Assert.AreEqual(VaultBufferContract.TransformAliasEntityIdOffset, OffsetOf<VaultTransformAlias>(nameof(VaultTransformAlias.EntityId)));
             Assert.AreEqual(VaultBufferContract.TransformAliasFlagsOffset, OffsetOf<VaultTransformAlias>(nameof(VaultTransformAlias.Flags)));
 
-            Assert.AreEqual(0, OffsetOf<VaultRelocationRecord>(nameof(VaultRelocationRecord.OldPointer)));
-            Assert.AreEqual(8, OffsetOf<VaultRelocationRecord>(nameof(VaultRelocationRecord.NewPointer)));
+            Assert.AreEqual(0, OffsetOf<VaultRelocationRecord>(nameof(VaultRelocationRecord.OldOffsetBytes)));
+            Assert.AreEqual(8, OffsetOf<VaultRelocationRecord>(nameof(VaultRelocationRecord.NewOffsetBytes)));
             Assert.AreEqual(16, OffsetOf<VaultRelocationRecord>(nameof(VaultRelocationRecord.BufferId)));
             Assert.AreEqual(20, OffsetOf<VaultRelocationRecord>(nameof(VaultRelocationRecord.ByteLength)));
             Assert.AreEqual(24, OffsetOf<VaultRelocationRecord>(nameof(VaultRelocationRecord.Generation)));
@@ -212,17 +210,19 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(24, OffsetOf<VaultMemoryBlockSnapshot>(nameof(VaultMemoryBlockSnapshot.Version)));
             Assert.AreEqual(28, OffsetOf<VaultMemoryBlockSnapshot>(nameof(VaultMemoryBlockSnapshot.Owner)));
             Assert.AreEqual(40, OffsetOf<VaultMemoryBlockSnapshot>(nameof(VaultMemoryBlockSnapshot.Reserved2)));
-            Assert.AreEqual(0, OffsetOf<BlockDescriptor>(nameof(BlockDescriptor.BasePointer)));
-            Assert.AreEqual(8, OffsetOf<BlockDescriptor>(nameof(BlockDescriptor.OffsetBytes)));
-            Assert.AreEqual(16, OffsetOf<BlockDescriptor>(nameof(BlockDescriptor.Bytes)));
-            Assert.AreEqual(24, OffsetOf<BlockDescriptor>(nameof(BlockDescriptor.OwnerKey)));
-            Assert.AreEqual(32, OffsetOf<BlockDescriptor>(nameof(BlockDescriptor.Owner)));
-            Assert.AreEqual(36, OffsetOf<BlockDescriptor>(nameof(BlockDescriptor.State)));
-            Assert.AreEqual(0, OffsetOf<H8AllocationRecord>(nameof(H8AllocationRecord.Pointer)));
-            Assert.AreEqual(8, OffsetOf<H8AllocationRecord>(nameof(H8AllocationRecord.Bytes)));
-            Assert.AreEqual(16, OffsetOf<H8AllocationRecord>(nameof(H8AllocationRecord.Length)));
-            Assert.AreEqual(36, OffsetOf<H8AllocationRecord>(nameof(H8AllocationRecord.Allocator)));
-            Assert.AreEqual(40, OffsetOf<H8AllocationRecord>(nameof(H8AllocationRecord.Owner)));
+            Type blockDescriptorType = typeof(H8Memory).Assembly.GetType("Hecton8.Core.Memory.BlockDescriptor", true);
+            Type allocationRecordType = typeof(H8Memory).Assembly.GetType("Hecton8.Core.Memory.H8AllocationRecord", true);
+            Assert.AreEqual(0, OffsetOf(blockDescriptorType, "BasePointer"));
+            Assert.AreEqual(8, OffsetOf(blockDescriptorType, "OffsetBytes"));
+            Assert.AreEqual(16, OffsetOf(blockDescriptorType, "Bytes"));
+            Assert.AreEqual(24, OffsetOf(blockDescriptorType, "OwnerKey"));
+            Assert.AreEqual(32, OffsetOf(blockDescriptorType, "Owner"));
+            Assert.AreEqual(36, OffsetOf(blockDescriptorType, "State"));
+            Assert.AreEqual(0, OffsetOf(allocationRecordType, "Pointer"));
+            Assert.AreEqual(8, OffsetOf(allocationRecordType, "Bytes"));
+            Assert.AreEqual(16, OffsetOf(allocationRecordType, "Length"));
+            Assert.AreEqual(36, OffsetOf(allocationRecordType, "Allocator"));
+            Assert.AreEqual(40, OffsetOf(allocationRecordType, "Owner"));
             Assert.AreEqual(0, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.TotalBytes)));
             Assert.AreEqual(24, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.Sequence)));
             Assert.AreEqual(52, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.FatalLeakPreventedCount)));
@@ -237,7 +237,7 @@ namespace Hecton8.Tests.Editor
 
             AssertLayout(
                 memoryAssembly.GetType("Hecton8.Core.Memory.VaultBufferMeta", true),
-                48,
+                64,
                 ("OffsetBytes", 0),
                 ("Bytes", 8),
                 ("Length", 16),
@@ -248,7 +248,11 @@ namespace Hecton8.Tests.Editor
                 ("Version", 36),
                 ("Owner", 40),
                 ("LastAliasRequester", 42),
-                ("Reserved0", 44));
+                ("ActiveWriterSystemID", 44),
+                ("TypeHash", 48),
+                ("RefCount", 52),
+                ("Flags", 56),
+                ("BufferKey", 60));
 
             AssertLayout(
                 memoryAssembly.GetType("Hecton8.Core.Memory.VaultArenaBlock", true),
@@ -272,12 +276,16 @@ namespace Hecton8.Tests.Editor
                 ("PendingMassiveMoveBytes", 32),
                 ("ActiveMutationGuardMask", 40),
                 ("Sequence", 48),
-                ("EmergencyOverflowCursorBytes", 76),
+                ("ReservedCursorBytes", 76),
                 ("HeapFragmentationRatio", 80),
                 ("MemoryStarvationWarnings", 91),
-                ("Reserved32", 92),
-                ("ReservedLong0", 96),
-                ("ReservedLong3", 120));
+                ("GenerationMismatchCount", 92),
+                ("ResolutionTicks", 96),
+                ("ResolvedHandleCount", 104),
+                ("LastFaultBufferID", 112),
+                ("LastFaultHandleGeneration", 116),
+                ("LastFaultMetaGeneration", 120),
+                ("Reserved32", 124));
 
             AssertLayout(
                 typeof(HectonArenaAllocator.NativeArenaSlice<byte>),
@@ -291,12 +299,13 @@ namespace Hecton8.Tests.Editor
 
             AssertLayout(
                 typeof(HectonArenaAllocator).GetNestedType("ArenaAllocation", BindingFlags.NonPublic),
-                24,
+                32,
                 ("Ptr", 0),
                 ("ByteCount", 8),
                 ("ArenaIndex", 12),
                 ("SlabIndex", 16),
-                ("FrameSequence", 20));
+                ("FrameSequence", 20),
+                ("_pad0", 24));
         }
 
         [Test]
@@ -318,23 +327,21 @@ namespace Hecton8.Tests.Editor
                         LocalZ = -3.0d
                     });
 
-                VaultAupLocalOffsetResolverJob job = new VaultAupLocalOffsetResolverJob
+                VaultAup64 cameraAup = new VaultAup64
                 {
-                    EntityAups = aups,
-                    HotEntities = hot,
-                    CameraAup = new VaultAup64
-                    {
-                        SectorX = 1L,
-                        SectorY = 4L,
-                        SectorZ = -2L,
-                        LocalX = 2.0d,
-                        LocalY = 0.125d,
-                        LocalZ = 7.0d
-                    },
-                    ShiftFrameId = 17u
+                    SectorX = 1L,
+                    SectorY = 4L,
+                    SectorZ = -2L,
+                    LocalX = 2.0d,
+                    LocalY = 0.125d,
+                    LocalZ = 7.0d
                 };
-
-                job.Execute(0);
+                VaultHotEntityData hotRow = default;
+                VaultAup64 entityAup = aups[0];
+                hotRow.LocalPosition = VaultMemoryMath.ResolveCameraRelativeLocal(in entityAup, in cameraAup);
+                hotRow.ShiftFrameId = 17u;
+                hotRow.SimulationBucket = VaultMemoryMath.ResolveSimulationBucket(in entityAup);
+                SetNativeArrayElement(hot, 0, hotRow);
 
                 VaultHotEntityData resolved = hot[0];
                 Assert.AreEqual(5008f, resolved.LocalPosition.x, 0.001f);
@@ -393,8 +400,9 @@ namespace Hecton8.Tests.Editor
             {
                 Assert.IsFalse(VaultLegacyBinaryArchaeology.TryBootstrapMemoryLayout(vault, root, 0, out VaultMemoryLayoutConfig config));
                 Assert.AreEqual(0x4D4F434Bu, config.SourceHash);
-                Assert.IsTrue(vault.TryGetBufferHandle(BufferID.VaultMemoryLayoutConfig, out VaultBufferHandle<VaultMemoryLayoutConfig> handle));
-                ref readonly VaultMemoryLayoutConfig stored = ref handle.GetElementAsReadOnlyRef(vault, 0);
+                Assert.IsTrue(vault.TryGetGenerationHandle(BufferID.VaultMemoryLayoutConfig, out VaultGenerationHandle<VaultMemoryLayoutConfig> handle));
+                Assert.IsTrue(vault.TryReadHandle(in handle, out NativeArray<VaultMemoryLayoutConfig> storedBuffer));
+                VaultMemoryLayoutConfig stored = storedBuffer[0];
                 Assert.AreEqual(0x4D4F434Bu, stored.SourceHash);
             }
         }
@@ -452,9 +460,10 @@ namespace Hecton8.Tests.Editor
                 VaultLegacyBinaryArchaeology.WriteMemoryLayoutConfig(vault, in initial);
 
                 Assert.IsTrue(VaultLegacyBinaryArchaeology.TryApplyMemoryOverridesCsv(vault, csv));
-                Assert.IsTrue(vault.TryGetBufferHandle(BufferID.VaultMemoryLayoutConfig, out VaultBufferHandle<VaultMemoryLayoutConfig> handle));
+                Assert.IsTrue(vault.TryGetGenerationHandle(BufferID.VaultMemoryLayoutConfig, out VaultGenerationHandle<VaultMemoryLayoutConfig> handle));
 
-                ref readonly VaultMemoryLayoutConfig stored = ref handle.GetElementAsReadOnlyRef(vault, 0);
+                Assert.IsTrue(vault.TryReadHandle(in handle, out NativeArray<VaultMemoryLayoutConfig> storedBuffer));
+                VaultMemoryLayoutConfig stored = storedBuffer[0];
                 Assert.AreEqual(0x4353564Fu, stored.SourceHash);
                 Assert.AreEqual(2097168L, stored.ArenaLimitBytes);
                 Assert.AreEqual(384, stored.BufferCapacity);
@@ -476,6 +485,11 @@ namespace Hecton8.Tests.Editor
         private static int OffsetOf<T>(string fieldName)
         {
             return Marshal.OffsetOf<T>(fieldName).ToInt32();
+        }
+
+        private static int OffsetOf(Type type, string fieldName)
+        {
+            return Marshal.OffsetOf(type, fieldName).ToInt32();
         }
 
         private static void AssertLayout(Type type, int expectedSize, params (string Field, int Offset)[] offsets)

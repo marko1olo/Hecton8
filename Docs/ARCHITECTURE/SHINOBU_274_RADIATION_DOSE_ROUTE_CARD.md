@@ -1,4 +1,4 @@
-# SHINOBU_274 Radiation Dose Route Card
+﻿# SHINOBU_274 Radiation Dose Route Card
 
 Status: YELLOW_STATIC_REVIEW_PENDING_UNITY_IMPORT
 Date: 2026-05-21
@@ -8,7 +8,7 @@ Owner: SHINOBU_274 / Radiation Scrubber
 
 - Radiation physiological truth: `RadiationStateDTO` in `GlobalDataVault`.
 - Radiation source truth: `RadiationSource` lane in `GlobalDataVault`.
-- Health truth: existing `HectonPlayerHealth`; only `RadiationHazardGrid` applies radiation fatigue through `SetRadiationExposure` after owning dose integration and emits `SignalBus<CombatDamageSignal>` for sickness damage.
+- Health truth: existing `HectonPlayerHealth`; only `RadiationHazardGrid` applies radiation fatigue through `SetRadiationExposure` after owning dose integration and queues `CombatStatusBits.Irradiated64` for sickness status.
 - Shielding truth: read-only `BulkheadStateDTO`/`BulkheadPlaneDTO` from SHINOBU_220 and Voxel SDF read model. SHINOBU_274 does not mutate construction state.
 
 ## Route
@@ -18,20 +18,30 @@ Owner: SHINOBU_274 / Radiation Scrubber
 3. Compatibility reads through `HectonHazardManager.GetHazardIntensity(... Radiation)` sample `RadiationHazardGrid` directly; they do not query `HazardZoneManager`.
 4. Atmospheric, solar, and radioactive trauma deltas enter via `SignalBus<RadiationDoseSignal>` and are drained only by `RadiationHazardGrid` into an exact pending-dose lane.
 5. `SystemDispatcher` Simulation phase schedules `CalculateRadiationExposureJob`.
-6. Job reads source AUPs, player AUP, Voxel SDF bytes, and bulkhead DTOs; writes `RadiationStateDTO` and one pending `CombatDamageSignal` lane.
-7. PostSimulation reads completed Vault state, bridges combat damage to `SignalBus<CombatDamageSignal>`, and updates `HectonPlayerHealth`.
+6. Job reads source AUPs, player AUP, Voxel SDF bytes, and bulkhead DTOs; writes `RadiationStateDTO` and one local 32B `RadiationStatusSignal` critical-status staging row.
+7. PostSimulation reads completed Vault state, queues `CombatStatusBits.Irradiated64` through `CombatDamageRuntime.TryQueueStatusEffect`, and updates `HectonPlayerHealth`.
 8. VisualSync uploads scalar globals for visor static and UberNoir hand vertex mutation.
 
 ## Phase And Failure Mode
 
 - Simulation: schedules Burst jobs and returns the `JobHandle` to `SystemDispatcher`.
 - Simulation does not drain source/dose signals or rebuild grids while a previous radiation job is active; deferred processing is preferred over mutating Vault lanes under a live reader.
-- If a previous radiation job is still active at the next Simulation phase, source signals are requeued to the typed SignalBus for the next flush, external dose is folded into `_pendingExternalDoseRad`, and iodine treatment is folded into `_pendingIodineDoseReductionRad`. This prevents PostSimulation snapshot clearing from dropping gameplay facts without forcing completion.
+- Active previous radiation job:
+  - requeue source signals to typed SignalBus for next flush;
+  - fold external dose into `_pendingExternalDoseRad`;
+  - fold iodine treatment into `_pendingIodineDoseReductionRad`;
+  - prevent PostSimulation snapshot clearing from dropping gameplay facts;
+  - do not force completion.
 - Read-only compatibility intensity queries use the stable read grid while a radiation job is active; inverse-square source sampling resumes after the job is finalized.
-- PostSimulation: consumes only after dispatcher completion window. Completed radiation state, pending damage, dose signal, geiger signal, and telemetry are published even when a deferred load/DataVault swap is waiting for diffusion to finish. Structural mutation is applied only when no radiation or diffusion job is active.
+- PostSimulation consumes only after dispatcher completion window.
+- Publishes completed radiation state, pending `RadiationStatusSignal -> CombatStatusBits.Irradiated64`, dose signal, geiger signal, and telemetry even when deferred load/DataVault swap waits for diffusion.
+- Structural mutation applies only when no radiation or diffusion job is active.
 - While deferred load/DataVault swap waits for diffusion completion, Simulation pauses new radiation evaluation and preserves source, external-dose, and iodine snapshots instead of clearing or dropping them.
 - VisualSync: shader globals only; no gameplay authority.
-- Save serialization does not force-complete active jobs; it writes the last completed dose and current read-grid snapshot. Live load and DataVault hot-swap are deferred until PostSimulation observes no active radiation/diffusion job. Forced completion is teardown/disposal-only, where buffers are being released.
+- Save serialization does not force-complete active jobs.
+- It writes last completed dose and current read-grid snapshot.
+- Live load and DataVault hot-swap defer until PostSimulation observes no active radiation/diffusion job.
+- Forced completion is teardown/disposal-only.
 - If Vault handles are unavailable, the system fails closed and keeps the last state; it does not allocate local NativeArrays or run managed dose fallback.
 
 ## Exact Dose And Grid Safety
@@ -40,7 +50,9 @@ Owner: SHINOBU_274 / Radiation Scrubber
 - Iodine reductions consume pending external dose before accumulated dose to prevent same-frame hidden radiation debt.
 - Diffusion read/write parity is tracked by `_gridBuffersSwapped`; `RefreshVaultViews` maps the current front/back buffers without copying the whole grid.
 - Public `RegisterSource` and `ReportExternalDose` scalar ingress is explicit finite-safe before SignalBus payload construction. Non-finite source intensity is rejected; non-finite external intensity fails closed to zero.
-- Public `RegisterSource` zero or invalid normalized intensity emits `UnregisterSource(sourceId)`, matching the internal owner drain and preventing stale source truth when a reactor/anomaly fades out. Invalid or non-positive source radius falls back to `DefaultSourceRadiusMeters`, also matching the owner drain.
+- Public `RegisterSource` zero/invalid normalized intensity emits `UnregisterSource(sourceId)`.
+- This matches owner drain and prevents stale source truth when reactor/anomaly fades.
+- Invalid/non-positive radius falls back to `DefaultSourceRadiusMeters`.
 - `Dump_SHINOBU_274.bin` row order now matches `RadiationTelemetryEntry` explicit layout: AUP, depth, exposure, cumulative dose, shield, degradation, burst microseconds, frame, shift sequence, source count, source version, flags.
 
 ## Generic HazardZoneManager Exception

@@ -48,6 +48,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_246.bin";
         private const string RollbackFenceSuffix = "_RollbackExcluded.bytes";
         private const int IndexCopyTileSize = 384;
+        private static readonly Encoding TextEncoding = new UTF8Encoding(false);
 
         public static SeamBindingProfileDTO BuildDefaultProfile()
         {
@@ -969,7 +970,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
                 Directory.CreateDirectory(directory);
 
             string temp = BuildTempPath(fullPath);
-            File.WriteAllText(temp, text, Encoding.UTF8);
+            File.WriteAllText(temp, text, TextEncoding);
             if (File.Exists(fullPath))
                 File.Delete(fullPath);
             File.Move(temp, fullPath);

@@ -1,4 +1,4 @@
-# SHINOBU_269 AI Texture Control Map Output
+﻿# SHINOBU_269 AI Texture Control Map Output
 
 Generated UV-space template PNGs are written here by the Unity Editor menu:
 

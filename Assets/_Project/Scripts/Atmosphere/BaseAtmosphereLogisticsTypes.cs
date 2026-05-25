@@ -10,8 +10,25 @@ using Unity.Mathematics;
 
 namespace Hecton8.Atmosphere
 {
+    internal static partial class AtmosphereLogisticsLayout
+    {
+        public const int CellStrideBytes = 32;
+        public const int NodeStrideBytes = 32;
+        public const int ConnectionStrideBytes = 16;
+        public const int ConsumerStrideBytes = 64;
+        public const int ToxicSourceStrideBytes = 64;
+        public const int VentStrideBytes = 64;
+        public const int TuningStrideBytes = 32;
+        public const int TelemetryEntryStrideBytes = 64;
+        public const int GraphCountersStrideBytes = 32;
+        public const int GasRemainderStrideBytes = 16;
+        public const int DeltaLaneStrideBytes = 64;
+        public const int ShaderPayloadStrideBytes = 16;
+        public const int GasProfileStrideBytes = 32;
+    }
+
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.CellStrideBytes)]
     public struct AtmosphereCellDTO
     {
         [FieldOffset(0)] public uint NodeHash;
@@ -25,7 +42,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.NodeStrideBytes)]
     public struct AtmosphereNodeDTO
     {
         [FieldOffset(0)] public double3 Aup;
@@ -34,7 +51,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.ConnectionStrideBytes)]
     public struct AtmosphereConnectionDTO
     {
         [FieldOffset(0)] public int FromNode;
@@ -44,7 +61,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.ConsumerStrideBytes)]
     public struct AtmosphereConsumerDTO
     {
         [FieldOffset(0)] public double3 Aup;
@@ -61,7 +78,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.ToxicSourceStrideBytes)]
     public struct AtmosphereToxicSourceDTO
     {
         [FieldOffset(0)] public double3 Aup;
@@ -78,7 +95,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.VentStrideBytes)]
     public struct AtmosphereVentDTO
     {
         [FieldOffset(0)] public double3 Aup;
@@ -95,7 +112,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.TuningStrideBytes)]
     public struct AtmosphereTuningDTO
     {
         [FieldOffset(0)] public float BaseDiffusionRate;
@@ -109,7 +126,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.TelemetryEntryStrideBytes)]
     public struct AtmosphereTelemetryEntry
     {
         [FieldOffset(0)] public ulong StateHash;
@@ -130,7 +147,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.GraphCountersStrideBytes)]
     public struct AtmosphereGraphCountersDTO
     {
         [FieldOffset(0)] public int NodeCount;
@@ -144,7 +161,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.GasRemainderStrideBytes)]
     public struct AtmosphereGasRemainderDTO
     {
         [FieldOffset(0)] public float Oxygen;
@@ -154,7 +171,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.DeltaLaneStrideBytes)]
     public struct AtmosphereDeltaLane64
     {
         [FieldOffset(0)] public int Units;
@@ -169,7 +186,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.ShaderPayloadStrideBytes)]
     public struct AtmosphereShaderPayloadDTO
     {
         [FieldOffset(0)] public float Oxygen01;
@@ -179,7 +196,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = AtmosphereLogisticsLayout.GasProfileStrideBytes)]
     public struct AtmosphereGasProfileDTO
     {
         [FieldOffset(0)] public uint ProfileHash;
@@ -219,29 +236,31 @@ namespace Hecton8.Atmosphere
 
     public static class AtmosphereLogisticsBufferIds
     {
-        public const BufferID CellsFront = (BufferID)71500;
-        public const BufferID CellsBack = (BufferID)71501;
-        public const BufferID Nodes = (BufferID)71502;
-        public const BufferID Connections = (BufferID)71503;
-        public const BufferID EdgeOffsets = (BufferID)71504;
-        public const BufferID EdgeDestinations = (BufferID)71505;
-        public const BufferID EdgeConductance = (BufferID)71506;
-        public const BufferID EdgeWriteCursor = (BufferID)71507;
-        public const BufferID Consumers = (BufferID)71508;
-        public const BufferID ToxicSources = (BufferID)71509;
-        public const BufferID Vents = (BufferID)71510;
-        public const BufferID Counters = (BufferID)71511;
-        public const BufferID Tuning = (BufferID)71512;
-        public const BufferID TelemetryRing = (BufferID)71513;
-        public const BufferID OxygenDeltaUnits = (BufferID)71514;
-        public const BufferID CarbonDioxideDeltaUnits = (BufferID)71515;
-        public const BufferID NitrogenDeltaUnits = (BufferID)71516;
-        public const BufferID ToxinDeltaUnits = (BufferID)71517;
-        public const BufferID TemperatureDeltaMilli = (BufferID)71518;
-        public const BufferID GasRemainders = (BufferID)71519;
-        public const BufferID ShaderPayload = (BufferID)71520;
-        public const BufferID CsvScratch = (BufferID)71521;
-        public const BufferID Profiles = (BufferID)71522;
+        public const uint CellsFrontValue = 71500u;
+        public const uint CellsBackValue = 71501u;
+        public const BufferID CellsFront = BufferID.AtmosphereLogisticsCellsFront;
+        public const BufferID CellsBack = BufferID.AtmosphereLogisticsCellsBack;
+        public const BufferID Nodes = BufferID.AtmosphereLogisticsNodes;
+        public const BufferID Connections = BufferID.AtmosphereLogisticsConnections;
+        public const BufferID EdgeOffsets = BufferID.AtmosphereLogisticsEdgeOffsets;
+        public const BufferID EdgeDestinations = BufferID.AtmosphereLogisticsEdgeDestinations;
+        public const BufferID EdgeConductance = BufferID.AtmosphereLogisticsEdgeConductance;
+        public const BufferID EdgeWriteCursor = BufferID.AtmosphereLogisticsEdgeWriteCursor;
+        public const BufferID Consumers = BufferID.AtmosphereLogisticsConsumers;
+        public const BufferID ToxicSources = BufferID.AtmosphereLogisticsToxicSources;
+        public const BufferID Vents = BufferID.AtmosphereLogisticsVents;
+        public const BufferID Counters = BufferID.AtmosphereLogisticsCounters;
+        public const BufferID Tuning = BufferID.AtmosphereLogisticsTuning;
+        public const BufferID TelemetryRing = BufferID.AtmosphereLogisticsTelemetryRing;
+        public const BufferID OxygenDeltaUnits = BufferID.AtmosphereLogisticsOxygenDeltaUnits;
+        public const BufferID CarbonDioxideDeltaUnits = BufferID.AtmosphereLogisticsCarbonDioxideDeltaUnits;
+        public const BufferID NitrogenDeltaUnits = BufferID.AtmosphereLogisticsNitrogenDeltaUnits;
+        public const BufferID ToxinDeltaUnits = BufferID.AtmosphereLogisticsToxinDeltaUnits;
+        public const BufferID TemperatureDeltaMilli = BufferID.AtmosphereLogisticsTemperatureDeltaMilli;
+        public const BufferID GasRemainders = BufferID.AtmosphereLogisticsGasRemainders;
+        public const BufferID ShaderPayload = BufferID.AtmosphereLogisticsShaderPayload;
+        public const BufferID CsvScratch = BufferID.AtmosphereLogisticsCsvScratch;
+        public const BufferID Profiles = BufferID.AtmosphereLogisticsProfiles;
     }
 
     public static class AtmosphereCellFlags

@@ -2,6 +2,7 @@
 using Hecton8.Tools;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.EditorTools
 {
@@ -65,7 +66,7 @@ namespace Hecton8.EditorTools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[ToolLoadoutPresetAuthoring] Rebuilt starter tool loadout presets.");
+            H8Debug.Log("[ToolLoadoutPresetAuthoring] Rebuilt starter tool loadout presets.");
         }
 
         private static void CreateOrUpdatePreset(string assetName, string presetName, string description, string[] prefabPaths)

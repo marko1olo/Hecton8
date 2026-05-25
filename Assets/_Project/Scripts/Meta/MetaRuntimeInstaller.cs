@@ -21,16 +21,16 @@ namespace Hecton8.Meta
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for meta systems per gameplay scene - owner: MetaRuntimeInstaller
 
-            if (runtimeRoot.GetComponent<GlobalProfileManager>() == null)
+            if (!runtimeRoot.TryGetComponent<GlobalProfileManager>(out _))
                 runtimeRoot.AddComponent<GlobalProfileManager>();
 
-            if (runtimeRoot.GetComponent<DynamicDifficultyDirector>() == null)
+            if (!runtimeRoot.TryGetComponent<DynamicDifficultyDirector>(out _))
                 runtimeRoot.AddComponent<DynamicDifficultyDirector>();
 
-            if (runtimeRoot.GetComponent<RunModifierController>() == null)
+            if (!runtimeRoot.TryGetComponent<RunModifierController>(out _))
                 runtimeRoot.AddComponent<RunModifierController>();
 
-            if (runtimeRoot.GetComponent<MetaBuffInjector>() == null)
+            if (!runtimeRoot.TryGetComponent<MetaBuffInjector>(out _))
                 runtimeRoot.AddComponent<MetaBuffInjector>();
 
             EnsureMetaCampaignService(runtimeRoot);

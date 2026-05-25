@@ -70,7 +70,7 @@ namespace Hecton8.Editor
 
         private void ResolveManager()
         {
-            _manager = UnityEngine.Object.FindFirstObjectByType<WorldChunkResidencyManager>();
+            _manager = UnityEngine.Object.FindAnyObjectByType<WorldChunkResidencyManager>();
         }
 
         private void PullTuning()

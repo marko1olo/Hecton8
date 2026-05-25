@@ -331,14 +331,23 @@ namespace Hecton8.EditorTools
         private static void AssignTextureByToken(string path, Texture2D texture, ref SourceTextureSet set)
         {
             string lower = path.Replace('\\', '/').ToLowerInvariant();
-            if (lower.Contains("_ao") || lower.Contains("ambient") || lower.Contains("occlusion"))
+            if (ContainsOrdinal(lower, "_ao") || ContainsOrdinal(lower, "ambient") || ContainsOrdinal(lower, "occlusion"))
                 set.Ao = texture;
-            else if (lower.Contains("rough"))
+            else if (ContainsOrdinal(lower, "rough"))
                 set.Roughness = texture;
-            else if (lower.Contains("metal"))
+            else if (ContainsOrdinal(lower, "metal"))
                 set.Metallic = texture;
-            else if (lower.Contains("albedo") || lower.Contains("basecolor") || lower.Contains("base_color") || lower.Contains("diffuse"))
+            else if (ContainsOrdinal(lower, "albedo") ||
+                     ContainsOrdinal(lower, "basecolor") ||
+                     ContainsOrdinal(lower, "base_color") ||
+                     ContainsOrdinal(lower, "diffuse"))
                 set.Albedo = texture;
+        }
+
+        private static bool ContainsOrdinal(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   source.IndexOf(token, StringComparison.Ordinal) >= 0;
         }
 
         private static string BuildSetKey(string name)

@@ -1,27 +1,27 @@
-// ============================================================================
-// HECTON-8 — RepairTool.cs
+﻿// ============================================================================
+// HECTON-8 â€” RepairTool.cs
 // Remontnyy instrument igroka.
 //
 // NASLEDOVANIE:
-//   PlayerTool → RepairTool
+//   PlayerTool â†’ RepairTool
 //
 // LOGIKA:
-//   • UsePrimary(dt):
-//       1. Reads the queued interaction RaycastCommand result.
+//   â€¢ UsePrimary(dt):
+//       1. Reads the queued interaction probe result.
 //       2. Converts submarine hits through AUP double3 into local hull space.
 //       3. Erases GlobalDataVault.HullDents and emits typed repair signals.
-//   • ToolTick(dt):
+//   â€¢ ToolTick(dt):
 //       Records the 300-frame blackbox heartbeat and gates idle visuals.
 //
 // VIZUAL:
-//   • sparksVFX         — iskry.
-//   • repairLine        — LineRenderer lucha/dugi.
-//   • weldLight         — yarkiy point light dlya Bloom v shleme.
+//   â€¢ sparksVFX         â€” iskry.
+//   â€¢ repairLine        â€” LineRenderer lucha/dugi.
+//   â€¢ weldLight         â€” yarkiy point light dlya Bloom v shleme.
 //
 // ZERO GC:
-//   • RaycastHit — struct.
-//   • TryGetComponent — zero GC.
-//   • SystemDispatcher tick only.
+//   â€¢ RaycastHit â€” struct.
+//   â€¢ TryGetComponent â€” zero GC.
+//   â€¢ SystemDispatcher tick only.
 // ============================================================================
 
 using System;
@@ -49,7 +49,7 @@ using UnityEngine.Audio;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class RepairTool : PlayerTool, IBatteryTool
+    public sealed class RepairTool : PlayerTool, IBatteryTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string RepairToolNoPowerHeadline = "NO POWER";
         private const string RepairToolDrainingHeadline = "DRAINING";
@@ -186,11 +186,19 @@ namespace Hecton8.Gameplay
             On = 3
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        private enum RepairBeamVisualMode : byte
+        {
+            None = 0,
+            Hit = 1,
+            Miss = 2,
+            Diagnostic = 3
+        }
 
-        [Header("── Repair Settings ───────────────────────────")]
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  INSPECTOR
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        [Header("â”€â”€ Repair Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Maksimalnaya dalnost remonta.")]
         [SerializeField] private float repairRange = 4f;
 
@@ -200,18 +208,18 @@ namespace Hecton8.Gameplay
         [Tooltip("Sloi, po kotorym rabotaet remontnyy luch.")]
         [SerializeField] private LayerMask repairMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
-        [Header("── Visuals ───────────────────────────────────")]
+        [Header("â”€â”€ Visuals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private LineRenderer repairLine;
         [SerializeField] private ParticleSystem sparksVFX;
         [SerializeField] private Light weldLight;
         [SerializeField] private AudioSource repairLoopAudio;
 
-        [Header("── Battery ───────────────────────────────────")]
+        [Header("â”€â”€ Battery â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional battery item type accepted by the repair tool.")]
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  RUNTIME STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private RaycastHit _hit;
         private bool _isRepairing;
@@ -241,17 +249,17 @@ namespace Hecton8.Gameplay
         private bool _ownsRepairBlackBoxBuffer;
         private bool _repairBlackBoxDumpedThisFault;
         private bool _repairBlackBoxDumpPending;
-        private readonly char[] _integrityDiagnosticBuffer = new char[24]; // COLD ALLOC: char[24] — repair-tool floating integrity diagnostic buffer — owner: RepairTool
+        private readonly char[] _integrityDiagnosticBuffer = new char[24]; // COLD ALLOC: char[24] â€” repair-tool floating integrity diagnostic buffer â€” owner: RepairTool
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  IBatteryTool STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Battery Settings ─────────────────────────")]
+        [Header("â”€â”€ Battery Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Battery item type this tool uses.")]
         [SerializeField] private ItemData _batteryItemType;
 
-        [Header("── Battery Visuals ──────────────────────────")]
+        [Header("â”€â”€ Battery Visuals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Mesh to hide when battery is removed.")]
         [SerializeField] private GameObject _batteryMesh;
 
@@ -276,10 +284,21 @@ namespace Hecton8.Gameplay
         private PowerIndicatorVisualState _powerIndicatorVisualState = PowerIndicatorVisualState.Unknown;
         private bool _powerIndicatorAppliedVisible = true;
         private uint _repairBlackBoxFrame;
+        private bool _lateFrameRegistered;
+        private bool _powerIndicatorDirty;
+        private bool _repairVisualStateDirty;
+        private bool _pendingRepairVisualActive;
+        private bool _beamVisualDirty;
+        private RepairBeamVisualMode _pendingBeamVisualMode;
+        private Vector3 _pendingBeamHitPoint;
+        private Vector3 _pendingBeamHitNormal;
+        private bool _pendingSparkEmit;
+        private ushort _pendingSparkQuantity;
+        private float _pendingSparkQuality01;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  IBatteryTool IMPLEMENTATION
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>True if the tool currently has a battery installed.</summary>
         public bool HasBattery => _installedBattery != null;
@@ -304,7 +323,7 @@ namespace Hecton8.Gameplay
             SetRuntimeBatteryNormalized(0f);
 
             UpdateBatteryVisuals();
-            UpdatePowerIndicator();
+            QueuePowerIndicatorUpdate();
 
             return removed;
         }
@@ -322,7 +341,7 @@ namespace Hecton8.Gameplay
             SetRuntimeBatteryNormalized(_batteryCharge);
 
             UpdateBatteryVisuals();
-            UpdatePowerIndicator();
+            QueuePowerIndicatorUpdate();
 
             return true;
         }
@@ -399,9 +418,9 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
@@ -411,7 +430,7 @@ namespace Hecton8.Gameplay
             CacheRepairVaultCold();
             CacheRepairRenderableCold();
             TryAssignRepairAudioMixerRoute();
-            SetRepairVisuals(false);
+            ApplyRepairVisuals(false);
         }
 
         private void OnDisable()
@@ -420,6 +439,8 @@ namespace Hecton8.Gameplay
             ClearRepairRenderableCold();
             FlushPendingRepairBlackBoxDump();
             ReleaseVaultState();
+            ClearPendingRepairVisualSync();
+            TryUnregisterLateFrameTick();
         }
 
         public override void OnSpawn()
@@ -439,7 +460,7 @@ namespace Hecton8.Gameplay
             _secondaryLatched = false;
             _repairBlackBoxDumpedThisFault = false;
             _repairBlackBoxDumpPending = false;
-            SetRepairVisuals(false);
+            ApplyRepairVisuals(false);
         }
 
         public override void OnDespawn()
@@ -454,12 +475,14 @@ namespace Hecton8.Gameplay
             _secondaryLatched = false;
             FlushPendingRepairBlackBoxDump();
             _repairBlackBoxDumpedThisFault = false;
-            SetRepairVisuals(false);
+            ApplyRepairVisuals(false);
             ClearDiagnosticLaserTelemetry();
             ReleaseEquippedAudio();
             ClearRepairAudioCold();
             ClearRepairRenderableCold();
             ReleaseVaultState();
+            ClearPendingRepairVisualSync();
+            TryUnregisterLateFrameTick();
             base.OnDespawn();
         }
 
@@ -478,9 +501,9 @@ namespace Hecton8.Gameplay
             _healthyTargetReportedThisUse = false;
             _activeRepairReportedThisUse = false;
             _secondaryLatched = false;
-            SetRepairVisuals(false);
+            ApplyRepairVisuals(false);
             ClearDiagnosticLaserTelemetry();
-            UpdatePowerIndicator();
+            QueuePowerIndicatorUpdate();
             PrewarmEquippedAudio();
         }
 
@@ -494,13 +517,56 @@ namespace Hecton8.Gameplay
             _healthyTargetReportedThisUse = false;
             _activeRepairReportedThisUse = false;
             _secondaryLatched = false;
-            SetRepairVisuals(false);
+            ApplyRepairVisuals(false);
             ClearDiagnosticLaserTelemetry();
             ReleaseEquippedAudio();
             ClearRepairAudioCold();
             ClearRepairRenderableCold();
             ReleaseVaultState();
+            ClearPendingRepairVisualSync();
+            TryUnregisterLateFrameTick();
             base.OnUnequip();
+        }
+
+        protected override void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            base.OnToolRegistryServiceReplaced(serviceSlot, previousService, currentService);
+
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                        return;
+
+                    bool needsLateFrame = _lateFrameRegistered ||
+                                          _powerIndicatorDirty ||
+                                          _repairVisualStateDirty ||
+                                          _beamVisualDirty ||
+                                          _pendingSparkEmit;
+                    TryUnregisterLateFrameTick();
+                    if (needsLateFrame)
+                        TryRegisterLateFrameTick();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindRepairVault(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedRepairAudioMixerGroup = currentService is IAudioService audioService
+                        ? audioService.AmbientGroup
+                        : null;
+                    if (repairLoopAudio != null)
+                        repairLoopAudio.outputAudioMixerGroup = null;
+                    TryAssignRepairAudioMixerRoute();
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    IBabelLocalization localization = currentService as IBabelLocalization;
+                    s_cachedRepairBabelLocalization = localization;
+                    s_cachedRepairLocalizationLanguageId = localization != null
+                        ? localization.ActiveLanguageId
+                        : ushort.MaxValue;
+                    RefreshRepairLocalizationCache(localization);
+                    break;
+            }
         }
 
         internal override float ResolveModularBatteryNormalized()
@@ -530,7 +596,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRepairAudioCold()
         {
-            IAudioService audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            IAudioService audioService = GlobalRegistry.Audio;
             _cachedRepairAudioMixerGroup = audioService != null ? audioService.AmbientGroup : null;
         }
 
@@ -551,56 +617,56 @@ namespace Hecton8.Gameplay
 
         private static void RefreshRepairLocalizationCache(IBabelLocalization localization)
         {
-            s_locRepairToolCategory = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory);
-            s_locRepairToolHudNoTarget = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_NO_TARGET, "REPAIR TOOL - NO TARGET");
-            s_locRepairToolHudSealed = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED");
-            s_locRepairToolHudRestored = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED");
-            s_locRepairToolHudInvalidTarget = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_INVALID_TARGET, "REPAIR TOOL - INVALID TARGET");
-            s_locRepairToolHudNoModule = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_NO_MODULE, "REPAIR TOOL - NO MODULE IN RANGE");
-            s_locRepairToolHudNotServiceable = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_NOT_SERVICEABLE, "REPAIR TOOL - TARGET NOT SERVICEABLE");
-            s_locRepairToolHudNoPower = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_NO_POWER, "REPAIR TOOL - NO POWER");
-            s_locRepairToolHudDraining = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_DRAINING, "REPAIR TOOL - DRAINING");
-            s_locRepairToolHudFlooded = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_FLOODED, "REPAIR TOOL - FLOODED");
-            s_locRepairToolHudCriticalDamage = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_CRITICAL_DAMAGE, "REPAIR TOOL - CRITICAL DAMAGE");
-            s_locRepairToolHudHeavyDamage = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_HEAVY_DAMAGE, "REPAIR TOOL - HEAVY DAMAGE");
-            s_locRepairToolHudPatching = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_HUD_PATCHING, "REPAIR TOOL - PATCHING");
-            s_locRepairToolLogStartedTitle = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED");
-            s_locRepairToolLogStartedMessage = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_STARTED_MESSAGE, "{0} entered active repair service. {1} {2}");
-            s_locRepairToolLogRestoredTitle = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED");
-            s_locRepairToolLogRestoredMessage = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_RESTORED_MESSAGE, "{0} reached full integrity and dry status.");
-            s_locRepairToolLogDiagNoPower = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_DIAG_NO_POWER, "SERVICE DIAG - NO POWER");
-            s_locRepairToolLogDiagDraining = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_DIAG_DRAINING, "SERVICE DIAG - DRAINING");
-            s_locRepairToolLogDiagFlooded = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_DIAG_FLOODED, "SERVICE DIAG - FLOODED");
-            s_locRepairToolLogDiagSealed = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_DIAG_SEALED, "SERVICE DIAG - SEALED");
-            s_locRepairToolLogDiagCritical = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_DIAG_CRITICAL, "SERVICE DIAG - CRITICAL DAMAGE");
-            s_locRepairToolLogDiagHeavy = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_DIAG_HEAVY, "SERVICE DIAG - HEAVY DAMAGE");
-            s_locRepairToolLogDiagPatching = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING, "SERVICE DIAG - PATCHING");
-            s_locRepairToolLogDiagGeneric = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_LOG_DIAG_GENERIC, "SERVICE DIAG - {0}");
-            s_locRepairToolOperationalActive = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE, "REPAIR TOOL // ACTIVE SERVICE");
-            s_locRepairToolOperationalStandby = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY, "REPAIR TOOL // STANDBY");
-            s_locRepairToolOperationalActiveDirective = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE, "Hold the beam steady until the service window closes.");
-            s_locRepairToolOperationalStandbyDirective = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE, "Sweep a damaged module to diagnose or begin repair.");
-            s_locRepairToolSummaryNoPower = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_SUMMARY_NO_POWER, "Integrity {0:0}% // compartment flooded // pumps offline.");
-            s_locRepairToolSummaryDraining = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_SUMMARY_DRAINING, "Integrity {0:0}% // pumps are clearing floodwater.");
-            s_locRepairToolSummaryFlooded = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_SUMMARY_FLOODED, "Integrity {0:0}% // compartment breach still active.");
-            s_locRepairToolSummarySealed = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_SUMMARY_SEALED, "Integrity 100% // hull stable // compartment dry.");
-            s_locRepairToolSummaryCritical = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_SUMMARY_CRITICAL, "Integrity {0:0}% // hull failure risk elevated.");
-            s_locRepairToolSummaryHeavy = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_SUMMARY_HEAVY, "Integrity {0:0}% // hull is compromised but recoverable.");
-            s_locRepairToolSummaryPatching = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_SUMMARY_PATCHING, "Integrity {0:0}% // module is nearly sealed.");
-            s_locRepairToolRecommendNoPower = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER, "Restore power before expecting water evacuation.");
-            s_locRepairToolRecommendDraining = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_RECOMMEND_DRAINING, "Hold perimeter and let the compartment finish draining.");
-            s_locRepairToolRecommendFlooded = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_RECOMMEND_FLOODED, "Continue repair until integrity reaches 100% and pump cycle can start.");
-            s_locRepairToolRecommendSealed = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_RECOMMEND_SEALED, "No further repair action required.");
-            s_locRepairToolRecommendCritical = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL, "Maintain continuous repair contact until the module exits critical range.");
-            s_locRepairToolRecommendHeavy = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_RECOMMEND_HEAVY, "Keep the repair beam on target and avoid leaving the module unattended.");
-            s_locRepairToolRecommendPatching = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_RECOMMEND_PATCHING, "Finish the repair cycle to restore full integrity.");
-            s_locRepairToolPriorityServiceBlocked = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED, "SERVICE BLOCKED");
-            s_locRepairToolPriorityStabilizing = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_PRIORITY_STABILIZING, "STABILIZING");
-            s_locRepairToolPriorityImmediateService = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE, "IMMEDIATE SERVICE");
-            s_locRepairToolPriorityServiceComplete = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE, "SERVICE COMPLETE");
-            s_locRepairToolPriorityCriticalResponse = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE, "CRITICAL RESPONSE");
-            s_locRepairToolPriorityActiveService = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE, "ACTIVE SERVICE");
-            s_locRepairToolPriorityFinalPass = ResolveBabelString(localization, H8LocHashes.REPAIR_TOOL_PRIORITY_FINAL_PASS, "FINAL PASS");
+            s_locRepairToolCategory = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory);
+            s_locRepairToolHudNoTarget = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_NO_TARGET, "REPAIR TOOL - NO TARGET");
+            s_locRepairToolHudSealed = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED");
+            s_locRepairToolHudRestored = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED");
+            s_locRepairToolHudInvalidTarget = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_INVALID_TARGET, "REPAIR TOOL - INVALID TARGET");
+            s_locRepairToolHudNoModule = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_NO_MODULE, "REPAIR TOOL - NO MODULE IN RANGE");
+            s_locRepairToolHudNotServiceable = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_NOT_SERVICEABLE, "REPAIR TOOL - TARGET NOT SERVICEABLE");
+            s_locRepairToolHudNoPower = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_NO_POWER, "REPAIR TOOL - NO POWER");
+            s_locRepairToolHudDraining = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_DRAINING, "REPAIR TOOL - DRAINING");
+            s_locRepairToolHudFlooded = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_FLOODED, "REPAIR TOOL - FLOODED");
+            s_locRepairToolHudCriticalDamage = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_CRITICAL_DAMAGE, "REPAIR TOOL - CRITICAL DAMAGE");
+            s_locRepairToolHudHeavyDamage = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_HEAVY_DAMAGE, "REPAIR TOOL - HEAVY DAMAGE");
+            s_locRepairToolHudPatching = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_HUD_PATCHING, "REPAIR TOOL - PATCHING");
+            s_locRepairToolLogStartedTitle = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED");
+            s_locRepairToolLogStartedMessage = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_MESSAGE, "{0} entered active repair service. {1} {2}");
+            s_locRepairToolLogRestoredTitle = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED");
+            s_locRepairToolLogRestoredMessage = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_MESSAGE, "{0} reached full integrity and dry status.");
+            s_locRepairToolLogDiagNoPower = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_NO_POWER, "SERVICE DIAG - NO POWER");
+            s_locRepairToolLogDiagDraining = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_DRAINING, "SERVICE DIAG - DRAINING");
+            s_locRepairToolLogDiagFlooded = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_FLOODED, "SERVICE DIAG - FLOODED");
+            s_locRepairToolLogDiagSealed = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_SEALED, "SERVICE DIAG - SEALED");
+            s_locRepairToolLogDiagCritical = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_CRITICAL, "SERVICE DIAG - CRITICAL DAMAGE");
+            s_locRepairToolLogDiagHeavy = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_HEAVY, "SERVICE DIAG - HEAVY DAMAGE");
+            s_locRepairToolLogDiagPatching = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING, "SERVICE DIAG - PATCHING");
+            s_locRepairToolLogDiagGeneric = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_GENERIC, "SERVICE DIAG - {0}");
+            s_locRepairToolOperationalActive = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE, "REPAIR TOOL // ACTIVE SERVICE");
+            s_locRepairToolOperationalStandby = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY, "REPAIR TOOL // STANDBY");
+            s_locRepairToolOperationalActiveDirective = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE, "Hold the beam steady until the service window closes.");
+            s_locRepairToolOperationalStandbyDirective = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE, "Sweep a damaged module to diagnose or begin repair.");
+            s_locRepairToolSummaryNoPower = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_SUMMARY_NO_POWER, "Integrity {0:0}% // compartment flooded // pumps offline.");
+            s_locRepairToolSummaryDraining = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_SUMMARY_DRAINING, "Integrity {0:0}% // pumps are clearing floodwater.");
+            s_locRepairToolSummaryFlooded = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_SUMMARY_FLOODED, "Integrity {0:0}% // compartment breach still active.");
+            s_locRepairToolSummarySealed = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_SUMMARY_SEALED, "Integrity 100% // hull stable // compartment dry.");
+            s_locRepairToolSummaryCritical = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_SUMMARY_CRITICAL, "Integrity {0:0}% // hull failure risk elevated.");
+            s_locRepairToolSummaryHeavy = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_SUMMARY_HEAVY, "Integrity {0:0}% // hull is compromised but recoverable.");
+            s_locRepairToolSummaryPatching = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_SUMMARY_PATCHING, "Integrity {0:0}% // module is nearly sealed.");
+            s_locRepairToolRecommendNoPower = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER, "Restore power before expecting water evacuation.");
+            s_locRepairToolRecommendDraining = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_DRAINING, "Hold perimeter and let the compartment finish draining.");
+            s_locRepairToolRecommendFlooded = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_FLOODED, "Continue repair until integrity reaches 100% and pump cycle can start.");
+            s_locRepairToolRecommendSealed = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_SEALED, "No further repair action required.");
+            s_locRepairToolRecommendCritical = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL, "Maintain continuous repair contact until the module exits critical range.");
+            s_locRepairToolRecommendHeavy = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_HEAVY, "Keep the repair beam on target and avoid leaving the module unattended.");
+            s_locRepairToolRecommendPatching = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_PATCHING, "Finish the repair cycle to restore full integrity.");
+            s_locRepairToolPriorityServiceBlocked = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED, "SERVICE BLOCKED");
+            s_locRepairToolPriorityStabilizing = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_PRIORITY_STABILIZING, "STABILIZING");
+            s_locRepairToolPriorityImmediateService = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE, "IMMEDIATE SERVICE");
+            s_locRepairToolPriorityServiceComplete = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE, "SERVICE COMPLETE");
+            s_locRepairToolPriorityCriticalResponse = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE, "CRITICAL RESPONSE");
+            s_locRepairToolPriorityActiveService = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE, "ACTIVE SERVICE");
+            s_locRepairToolPriorityFinalPass = ResolveBabelString(localization, H8ToolLocHashes.REPAIR_TOOL_PRIORITY_FINAL_PASS, "FINAL PASS");
         }
 
         private static string ResolveBabelString(IBabelLocalization localization, uint keyHash, string fallback)
@@ -664,9 +730,9 @@ namespace Hecton8.Gameplay
             return math.isfinite(runtimePower) ? math.saturate(runtimePower) : 0f;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  TOOL ACTIONS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public override void UsePrimary(float deltaTime)
         {
@@ -684,7 +750,7 @@ namespace Hecton8.Gameplay
                 _isRepairing = false;
                 if (!_noTargetReportedThisUse)
                 {
-                    PublishWarningMessage(ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_NO_POWER, "REPAIR TOOL - NO POWER"));
+                    PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_NO_POWER, "REPAIR TOOL - NO POWER"));
                     _noTargetReportedThisUse = true;
                 }
 
@@ -700,7 +766,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_noTargetReportedThisUse)
                 {
-                    PublishWarningMessage(ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_NO_TARGET, "REPAIR TOOL - NO TARGET"));
+                    PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_NO_TARGET, "REPAIR TOOL - NO TARGET"));
                     _noTargetReportedThisUse = true;
                 }
                 UpdateBeamMiss();
@@ -743,7 +809,7 @@ namespace Hecton8.Gameplay
                 {
                     if (!_healthyTargetReportedThisUse)
                     {
-                        PublishInfoMessage(ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED"));
+                        PublishInfoMessage(ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED"));
                         _healthyTargetReportedThisUse = true;
                     }
 
@@ -754,7 +820,7 @@ namespace Hecton8.Gameplay
                 }
 
                 float repairAmount = ResolveRuntimeRepairPowerPerSecond() * safeDeltaTime;
-                ToolEffectEvents.RaiseEffectApplied(
+                ToolEffectEvents.TryRaiseEffectApplied(
                     EffectType.Weld,
                     module,
                     null,
@@ -772,8 +838,8 @@ namespace Hecton8.Gameplay
                     if (TryWriteRepairStartedLogSummary(ref s_hudBuffer, diagnosis))
                     {
                         FieldOperationLogSystem.RecordOperation(
-                            ResolveLocalized(H8LocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
-                            ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED"),
+                            ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                            ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED"),
                             in s_hudBuffer,
                             "INFO");
                     }
@@ -786,13 +852,13 @@ namespace Hecton8.Gameplay
                     IsModuleIntegrityAtMax(in restoredState) &&
                     (restoredState.Flags & ModuleRepairReadSnapshot.FlagFlooded) == 0u)
                 {
-                    PublishInfoMessage(ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED"));
+                    PublishInfoMessage(ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED"));
                     s_hudBuffer.Clear();
                     if (TryWriteRepairRestoredLogSummary(ref s_hudBuffer))
                     {
                         FieldOperationLogSystem.RecordOperation(
-                            ResolveLocalized(H8LocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
-                            ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED"),
+                            ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                            ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED"),
                             in s_hudBuffer,
                             "INFO");
                     }
@@ -829,7 +895,7 @@ namespace Hecton8.Gameplay
 
                 if (!_invalidTargetReportedThisUse)
                 {
-                    PublishWarningMessage(ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_INVALID_TARGET, "REPAIR TOOL - INVALID TARGET"));
+                    PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_INVALID_TARGET, "REPAIR TOOL - INVALID TARGET"));
                     _invalidTargetReportedThisUse = true;
                 }
                 UpdateBeamMiss();
@@ -850,7 +916,7 @@ namespace Hecton8.Gameplay
 
             if (!didHit)
             {
-                PublishWarningMessage(ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_NO_MODULE, "REPAIR TOOL - NO MODULE IN RANGE"));
+                PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_NO_MODULE, "REPAIR TOOL - NO MODULE IN RANGE"));
                 InvalidateDiagnosisCache();
                 return;
             }
@@ -858,7 +924,7 @@ namespace Hecton8.Gameplay
             CacheRepairTargetsForCollider(_hit.collider, out IRepairableModuleTarget module, out _);
             if (module == null)
             {
-                PublishWarningMessage(ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_NOT_SERVICEABLE, "REPAIR TOOL - TARGET NOT SERVICEABLE"));
+                PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_NOT_SERVICEABLE, "REPAIR TOOL - TARGET NOT SERVICEABLE"));
                 InvalidateDiagnosisCache();
                 return;
             }
@@ -870,7 +936,7 @@ namespace Hecton8.Gameplay
             if (TryWriteDiagnosisLogSummary(ref s_hudBuffer, diagnosis))
             {
                 FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(H8LocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                    ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
                     logTitle,
                     in s_hudBuffer,
                     diagnosis.severity);
@@ -885,7 +951,7 @@ namespace Hecton8.Gameplay
                 SetRepairVisuals(false);
 
             if (_powerIndicatorRenderer != null)
-                UpdatePowerIndicator();
+                QueuePowerIndicatorUpdate();
 
             _wasRepairingLastFrame = _isRepairing;
             bool repairingThisFrame = _isRepairing;
@@ -922,6 +988,88 @@ namespace Hecton8.Gameplay
             AdvanceRepairEvaluationStamps();
         }
 
+        public void LateFrameTick()
+        {
+            if (_powerIndicatorDirty)
+            {
+                _powerIndicatorDirty = false;
+                UpdatePowerIndicator();
+            }
+
+            if (_repairVisualStateDirty)
+            {
+                _repairVisualStateDirty = false;
+                ApplyRepairVisuals(_pendingRepairVisualActive);
+            }
+
+            if (_beamVisualDirty)
+            {
+                _beamVisualDirty = false;
+                switch (_pendingBeamVisualMode)
+                {
+                    case RepairBeamVisualMode.Hit:
+                        ApplyBeamHit(_pendingBeamHitPoint, _pendingBeamHitNormal);
+                        break;
+                    case RepairBeamVisualMode.Miss:
+                        ApplyBeamMiss();
+                        break;
+                    case RepairBeamVisualMode.Diagnostic:
+                        ApplyDiagnosticLaserPreview();
+                        break;
+                }
+
+                _pendingBeamVisualMode = RepairBeamVisualMode.None;
+            }
+
+            if (_pendingSparkEmit)
+            {
+                _pendingSparkEmit = false;
+                EmitRepairSparkParticles(_pendingSparkQuantity, _pendingSparkQuality01);
+            }
+
+            if (!IsEquipped &&
+                !_powerIndicatorDirty &&
+                !_repairVisualStateDirty &&
+                !_beamVisualDirty &&
+                !_pendingSparkEmit)
+            {
+                TryUnregisterLateFrameTick();
+            }
+        }
+
+        private void QueuePowerIndicatorUpdate()
+        {
+            _powerIndicatorDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
+        }
+
+        private void ClearPendingRepairVisualSync()
+        {
+            _powerIndicatorDirty = false;
+            _repairVisualStateDirty = false;
+            _beamVisualDirty = false;
+            _pendingSparkEmit = false;
+            _pendingRepairVisualActive = false;
+            _pendingBeamVisualMode = RepairBeamVisualMode.None;
+        }
+
         public override string BuildLegacyOperationalSummaryString()
         {
             s_hudBuffer.Clear();
@@ -933,7 +1081,7 @@ namespace Hecton8.Gameplay
         {
             if (_isRepairing)
             {
-                AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE, "REPAIR TOOL // ACTIVE SERVICE"));
+                AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE, "REPAIR TOOL // ACTIVE SERVICE"));
                 return;
             }
 
@@ -944,7 +1092,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY, "REPAIR TOOL // STANDBY"));
+            AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY, "REPAIR TOOL // STANDBY"));
         }
 
         public override string BuildLegacyOperationalDirectiveString()
@@ -961,7 +1109,7 @@ namespace Hecton8.Gameplay
                 AppendText(
                     ref buffer,
                     ResolveLocalized(
-                        H8LocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE,
+                        H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE,
                         "Hold the beam steady until the service window closes."));
                 return;
             }
@@ -975,17 +1123,27 @@ namespace Hecton8.Gameplay
             AppendText(
                 ref buffer,
                 ResolveLocalized(
-                    H8LocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE,
+                    H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE,
                     "Sweep a damaged module to diagnose or begin repair."));
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — VISUAL STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PRIVATE â€” VISUAL STATE
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void UpdateBeamHit(Vector3 hitPoint, Vector3 hitNormal)
         {
+            _pendingBeamHitPoint = hitPoint;
+            _pendingBeamHitNormal = hitNormal;
+            _pendingBeamVisualMode = RepairBeamVisualMode.Hit;
+            _beamVisualDirty = true;
             SetRepairVisuals(true);
+            TryRegisterLateFrameTick();
+        }
+
+        private void ApplyBeamHit(Vector3 hitPoint, Vector3 hitNormal)
+        {
+            ApplyRepairVisuals(true);
             Vector3 safeNormal = ResolveFiniteDirection(hitNormal, ResolveRepairForwardFallback());
 
             if (repairLine != null)
@@ -1026,7 +1184,15 @@ namespace Hecton8.Gameplay
 
         private void UpdateBeamMiss()
         {
+            _pendingBeamVisualMode = RepairBeamVisualMode.Miss;
+            _beamVisualDirty = true;
             SetRepairVisuals(true);
+            TryRegisterLateFrameTick();
+        }
+
+        private void ApplyBeamMiss()
+        {
+            ApplyRepairVisuals(true);
 
             if (repairLine != null)
             {
@@ -1067,6 +1233,13 @@ namespace Hecton8.Gameplay
 
         private void SetRepairVisuals(bool active)
         {
+            _pendingRepairVisualActive = active;
+            _repairVisualStateDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void ApplyRepairVisuals(bool active)
+        {
             if (repairLine != null)
                 repairLine.enabled = active;
 
@@ -1084,6 +1257,13 @@ namespace Hecton8.Gameplay
         }
 
         private void UpdateDiagnosticLaserPreview()
+        {
+            _pendingBeamVisualMode = RepairBeamVisualMode.Diagnostic;
+            _beamVisualDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void ApplyDiagnosticLaserPreview()
         {
             if (!TryGetRepairHit(out _hit))
             {
@@ -1117,8 +1297,8 @@ namespace Hecton8.Gameplay
 
         private void ClearDiagnosticLaserTelemetry()
         {
-            if (repairLine != null && !_isRepairing)
-                repairLine.enabled = false;
+            if (!_isRepairing)
+                SetRepairVisuals(false);
             ClearIntegrityDiagnostic();
         }
 
@@ -1295,7 +1475,7 @@ namespace Hecton8.Gameplay
             ushort sparkQuantity = ResolveRepairSparkQuantity(safeIntensity01, quality01);
             byte flags = (byte)(
                 DebrisSpawnSignal.FlagToolSparks |
-                (DebrisSpawnSignal.FlagComputeShard * (int)math.step(0.25f, quality01)));
+                (DebrisSpawnSignal.FlagComputeShard * (ResolveRepairQualityCurve(quality01) > 0.0001f ? 1 : 0)));
 
             if (!TryResolveAupFromPlayerPose(worldPoint, out AbsoluteUniversePosition sparkAup))
                 return;
@@ -1310,8 +1490,16 @@ namespace Hecton8.Gameplay
                 Flags = flags,
                 Quantity = sparkQuantity
             };
-            SignalBus<DebrisSpawnSignal>.Push(in signal);
-            EmitRepairSparkParticles(sparkQuantity, quality01);
+            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            QueueRepairSparkParticles(sparkQuantity, quality01);
+        }
+
+        private void QueueRepairSparkParticles(ushort sparkQuantity, float quality01)
+        {
+            _pendingSparkQuantity = sparkQuantity;
+            _pendingSparkQuality01 = quality01;
+            _pendingSparkEmit = true;
+            TryRegisterLateFrameTick();
         }
 
         private static ushort ResolveRepairSparkQuantity(float intensity01, float quality01)
@@ -1499,7 +1687,11 @@ namespace Hecton8.Gameplay
 
         private void CacheRepairVaultCold()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            RebindRepairVault(GlobalRegistry.DataVault);
+        }
+
+        private void RebindRepairVault(IDataVault vault)
+        {
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
@@ -1582,7 +1774,7 @@ namespace Hecton8.Gameplay
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<RepairToolBlackBoxEntry> acquired = vault.GetGenerationHandle<RepairToolBlackBoxEntry>(
+            VaultGenerationHandle<RepairToolBlackBoxEntry> acquired = vault.EnsureGenerationHandle<RepairToolBlackBoxEntry>(
                 BufferID.RepairToolBlackBox,
                 RepairBlackBoxFrameCount,
                 SystemID.GameplayTools,
@@ -1904,7 +2096,7 @@ namespace Hecton8.Gameplay
 
             float quality01 = ResolveRepairQualityWeight();
             byte qualityWeightByte = ResolveRepairQualityWeightByte();
-            int lowVisualProxy = 1 - (int)math.step(0.3f, quality01);
+            int lowVisualProxy = ResolveRepairQualityCurve(quality01) <= 0.0001f ? 1 : 0;
             byte flags = (byte)(
                 HullRepairedSignal.CompletedFlag |
                 (HullRepairedSignal.LowTierVisualOnlyFlag * lowVisualProxy));
@@ -1920,7 +2112,7 @@ namespace Hecton8.Gameplay
                 QualityTier = qualityWeightByte,
                 Flags = flags
             };
-            SignalBus<HullRepairedSignal>.Push(in signal);
+            SignalBus<HullRepairedSignal>.TryPush(in signal);
         }
 
         private void PublishHullRepairedSignals(Vector3 worldPoint, int roomId, ushort repairedDentMask)
@@ -2289,13 +2481,13 @@ namespace Hecton8.Gameplay
                 {
                     status = "FLOODED",
                     headline = RepairToolNoPowerHeadline,
-                    summaryKey = H8LocHashes.REPAIR_TOOL_SUMMARY_NO_POWER,
+                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_NO_POWER,
                     summaryFallback = "Integrity {0:0}% // compartment flooded // pumps offline.",
                     recommendation = ResolveLocalized(
-                        H8LocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER,
+                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER,
                         "Restore power before expecting water evacuation."),
                     severity = "WARN",
-                    priority = ResolveLocalized(H8LocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED, "SERVICE BLOCKED"),
+                    priority = ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED, "SERVICE BLOCKED"),
                     integrityPercent = integrityPercent,
                     hasIntegrityPercent = true
                 };
@@ -2307,13 +2499,13 @@ namespace Hecton8.Gameplay
                 {
                     status = "DRAINING",
                     headline = RepairToolDrainingHeadline,
-                    summaryKey = H8LocHashes.REPAIR_TOOL_SUMMARY_DRAINING,
+                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_DRAINING,
                     summaryFallback = "Integrity {0:0}% // pumps are clearing floodwater.",
                     recommendation = ResolveLocalized(
-                        H8LocHashes.REPAIR_TOOL_RECOMMEND_DRAINING,
+                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_DRAINING,
                         "Hold perimeter and let the compartment finish draining."),
                     severity = "INFO",
-                    priority = ResolveLocalized(H8LocHashes.REPAIR_TOOL_PRIORITY_STABILIZING, "STABILIZING"),
+                    priority = ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_STABILIZING, "STABILIZING"),
                     integrityPercent = integrityPercent,
                     hasIntegrityPercent = true
                 };
@@ -2325,13 +2517,13 @@ namespace Hecton8.Gameplay
                 {
                     status = "FLOODED",
                     headline = RepairToolFloodedHeadline,
-                    summaryKey = H8LocHashes.REPAIR_TOOL_SUMMARY_FLOODED,
+                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_FLOODED,
                     summaryFallback = "Integrity {0:0}% // compartment breach still active.",
                     recommendation = ResolveLocalized(
-                        H8LocHashes.REPAIR_TOOL_RECOMMEND_FLOODED,
+                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_FLOODED,
                         "Continue repair until integrity reaches 100% and pump cycle can start."),
                     severity = "WARN",
-                    priority = ResolveLocalized(H8LocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE, "IMMEDIATE SERVICE"),
+                    priority = ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE, "IMMEDIATE SERVICE"),
                     integrityPercent = integrityPercent,
                     hasIntegrityPercent = true
                 };
@@ -2344,13 +2536,13 @@ namespace Hecton8.Gameplay
                     status = "SEALED",
                     headline = RepairToolSealedHeadline,
                     summary = ResolveLocalized(
-                        H8LocHashes.REPAIR_TOOL_SUMMARY_SEALED,
+                        H8ToolLocHashes.REPAIR_TOOL_SUMMARY_SEALED,
                         "Integrity 100% // hull stable // compartment dry."),
                     recommendation = ResolveLocalized(
-                        H8LocHashes.REPAIR_TOOL_RECOMMEND_SEALED,
+                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_SEALED,
                         "No further repair action required."),
                     severity = "INFO",
-                    priority = ResolveLocalized(H8LocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE, "SERVICE COMPLETE")
+                    priority = ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE, "SERVICE COMPLETE")
                 };
             }
 
@@ -2360,13 +2552,13 @@ namespace Hecton8.Gameplay
                 {
                     status = "CRITICAL",
                     headline = RepairToolCriticalDamageHeadline,
-                    summaryKey = H8LocHashes.REPAIR_TOOL_SUMMARY_CRITICAL,
+                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_CRITICAL,
                     summaryFallback = "Integrity {0:0}% // hull failure risk elevated.",
                     recommendation = ResolveLocalized(
-                        H8LocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL,
+                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL,
                         "Maintain continuous repair contact until the module exits critical range."),
                     severity = "CRITICAL",
-                    priority = ResolveLocalized(H8LocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE, "CRITICAL RESPONSE"),
+                    priority = ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE, "CRITICAL RESPONSE"),
                     integrityPercent = integrityPercent,
                     hasIntegrityPercent = true
                 };
@@ -2378,13 +2570,13 @@ namespace Hecton8.Gameplay
                 {
                     status = "DAMAGED",
                     headline = RepairToolHeavyDamageHeadline,
-                    summaryKey = H8LocHashes.REPAIR_TOOL_SUMMARY_HEAVY,
+                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_HEAVY,
                     summaryFallback = "Integrity {0:0}% // hull is compromised but recoverable.",
                     recommendation = ResolveLocalized(
-                        H8LocHashes.REPAIR_TOOL_RECOMMEND_HEAVY,
+                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_HEAVY,
                         "Keep the repair beam on target and avoid leaving the module unattended."),
                     severity = "WARN",
-                    priority = ResolveLocalized(H8LocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE, "ACTIVE SERVICE"),
+                    priority = ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE, "ACTIVE SERVICE"),
                     integrityPercent = integrityPercent,
                     hasIntegrityPercent = true
                 };
@@ -2394,13 +2586,13 @@ namespace Hecton8.Gameplay
             {
                 status = "DAMAGED",
                 headline = RepairToolPatchingHeadline,
-                summaryKey = H8LocHashes.REPAIR_TOOL_SUMMARY_PATCHING,
+                summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_PATCHING,
                 summaryFallback = "Integrity {0:0}% // module is nearly sealed.",
                 recommendation = ResolveLocalized(
-                    H8LocHashes.REPAIR_TOOL_RECOMMEND_PATCHING,
+                    H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_PATCHING,
                     "Finish the repair cycle to restore full integrity."),
                 severity = "INFO",
-                priority = ResolveLocalized(H8LocHashes.REPAIR_TOOL_PRIORITY_FINAL_PASS, "FINAL PASS"),
+                priority = ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_FINAL_PASS, "FINAL PASS"),
                 integrityPercent = integrityPercent,
                 hasIntegrityPercent = true
             };
@@ -2462,19 +2654,19 @@ namespace Hecton8.Gameplay
             switch (headline)
             {
                 case RepairToolNoPowerHeadline:
-                    return AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_NO_POWER, "REPAIR TOOL - NO POWER"));
+                    return AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_NO_POWER, "REPAIR TOOL - NO POWER"));
                 case RepairToolDrainingHeadline:
-                    return AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_DRAINING, "REPAIR TOOL - DRAINING"));
+                    return AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_DRAINING, "REPAIR TOOL - DRAINING"));
                 case RepairToolFloodedHeadline:
-                    return AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_FLOODED, "REPAIR TOOL - FLOODED"));
+                    return AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_FLOODED, "REPAIR TOOL - FLOODED"));
                 case RepairToolSealedHeadline:
-                    return AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - SEALED"));
+                    return AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - SEALED"));
                 case RepairToolCriticalDamageHeadline:
-                    return AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_CRITICAL_DAMAGE, "REPAIR TOOL - CRITICAL DAMAGE"));
+                    return AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_CRITICAL_DAMAGE, "REPAIR TOOL - CRITICAL DAMAGE"));
                 case RepairToolHeavyDamageHeadline:
-                    return AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_HEAVY_DAMAGE, "REPAIR TOOL - HEAVY DAMAGE"));
+                    return AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_HEAVY_DAMAGE, "REPAIR TOOL - HEAVY DAMAGE"));
                 case RepairToolPatchingHeadline:
-                    return AppendText(ref buffer, ResolveLocalized(H8LocHashes.REPAIR_TOOL_HUD_PATCHING, "REPAIR TOOL - PATCHING"));
+                    return AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_HUD_PATCHING, "REPAIR TOOL - PATCHING"));
                 default:
                     return AppendText(ref buffer, "REPAIR TOOL - ") &&
                            AppendText(ref buffer, headline);
@@ -2502,7 +2694,7 @@ namespace Hecton8.Gameplay
         private static bool TryWriteRepairStartedLogSummary(ref FixedCharBuffer buffer, ServiceDiagnosis diagnosis)
         {
             string template = ResolveLocalized(
-                H8LocHashes.REPAIR_TOOL_LOG_STARTED_MESSAGE,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_MESSAGE,
                 "{0} entered active repair service. {1} {2}");
             return TryAppendRepairStartedTemplate(ref buffer, template, RepairToolModuleLabel, diagnosis);
         }
@@ -2510,7 +2702,7 @@ namespace Hecton8.Gameplay
         private static bool TryWriteRepairRestoredLogSummary(ref FixedCharBuffer buffer)
         {
             string template = ResolveLocalized(
-                H8LocHashes.REPAIR_TOOL_LOG_RESTORED_MESSAGE,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_MESSAGE,
                 "{0} reached full integrity and dry status.");
             return TryAppendSingleStringTemplate(ref buffer, template, RepairToolModuleLabel);
         }
@@ -2645,25 +2837,25 @@ namespace Hecton8.Gameplay
             switch (headline)
             {
                 case RepairToolNoPowerHeadline:
-                    return ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_NO_POWER, "SERVICE DIAG - NO POWER");
+                    return ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_NO_POWER, "SERVICE DIAG - NO POWER");
                 case RepairToolDrainingHeadline:
-                    return ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_DRAINING, "SERVICE DIAG - DRAINING");
+                    return ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_DRAINING, "SERVICE DIAG - DRAINING");
                 case RepairToolFloodedHeadline:
-                    return ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_FLOODED, "SERVICE DIAG - FLOODED");
+                    return ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_FLOODED, "SERVICE DIAG - FLOODED");
                 case RepairToolSealedHeadline:
-                    return ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_SEALED, "SERVICE DIAG - SEALED");
+                    return ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_SEALED, "SERVICE DIAG - SEALED");
                 case RepairToolCriticalDamageHeadline:
-                    return ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_CRITICAL, "SERVICE DIAG - CRITICAL DAMAGE");
+                    return ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_CRITICAL, "SERVICE DIAG - CRITICAL DAMAGE");
                 case RepairToolHeavyDamageHeadline:
-                    return ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_HEAVY, "SERVICE DIAG - HEAVY DAMAGE");
+                    return ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_HEAVY, "SERVICE DIAG - HEAVY DAMAGE");
                 case RepairToolPatchingHeadline:
-                    return ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING, "SERVICE DIAG - PATCHING");
+                    return ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING, "SERVICE DIAG - PATCHING");
                 default:
                     s_hudBuffer.Clear();
-                    string template = ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_GENERIC, "SERVICE DIAG - {0}");
+                    string template = ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_GENERIC, "SERVICE DIAG - {0}");
                     return TryAppendSingleStringTemplate(ref s_hudBuffer, template, headline)
                         ? CreateLegacyString(in s_hudBuffer)
-                        : ResolveLocalized(H8LocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING, "SERVICE DIAG - PATCHING");
+                        : ResolveLocalized(H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING, "SERVICE DIAG - PATCHING");
             }
         }
 
@@ -2678,105 +2870,105 @@ namespace Hecton8.Gameplay
         {
             switch (keyHash)
             {
-                case H8LocHashes.REPAIR_TOOL_CATEGORY:
+                case H8ToolLocHashes.REPAIR_TOOL_CATEGORY:
                     return s_locRepairToolCategory ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_NO_TARGET:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_NO_TARGET:
                     return s_locRepairToolHudNoTarget ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_SEALED:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED:
                     return s_locRepairToolHudSealed ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_RESTORED:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED:
                     return s_locRepairToolHudRestored ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_INVALID_TARGET:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_INVALID_TARGET:
                     return s_locRepairToolHudInvalidTarget ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_NO_MODULE:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_NO_MODULE:
                     return s_locRepairToolHudNoModule ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_NOT_SERVICEABLE:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_NOT_SERVICEABLE:
                     return s_locRepairToolHudNotServiceable ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_NO_POWER:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_NO_POWER:
                     return s_locRepairToolHudNoPower ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_DRAINING:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_DRAINING:
                     return s_locRepairToolHudDraining ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_FLOODED:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_FLOODED:
                     return s_locRepairToolHudFlooded ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_CRITICAL_DAMAGE:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_CRITICAL_DAMAGE:
                     return s_locRepairToolHudCriticalDamage ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_HEAVY_DAMAGE:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_HEAVY_DAMAGE:
                     return s_locRepairToolHudHeavyDamage ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_HUD_PATCHING:
+                case H8ToolLocHashes.REPAIR_TOOL_HUD_PATCHING:
                     return s_locRepairToolHudPatching ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_STARTED_TITLE:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE:
                     return s_locRepairToolLogStartedTitle ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_STARTED_MESSAGE:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_MESSAGE:
                     return s_locRepairToolLogStartedMessage ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE:
                     return s_locRepairToolLogRestoredTitle ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_RESTORED_MESSAGE:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_MESSAGE:
                     return s_locRepairToolLogRestoredMessage ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_DIAG_NO_POWER:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_NO_POWER:
                     return s_locRepairToolLogDiagNoPower ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_DIAG_DRAINING:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_DRAINING:
                     return s_locRepairToolLogDiagDraining ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_DIAG_FLOODED:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_FLOODED:
                     return s_locRepairToolLogDiagFlooded ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_DIAG_SEALED:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_SEALED:
                     return s_locRepairToolLogDiagSealed ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_DIAG_CRITICAL:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_CRITICAL:
                     return s_locRepairToolLogDiagCritical ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_DIAG_HEAVY:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_HEAVY:
                     return s_locRepairToolLogDiagHeavy ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING:
                     return s_locRepairToolLogDiagPatching ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_LOG_DIAG_GENERIC:
+                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_GENERIC:
                     return s_locRepairToolLogDiagGeneric ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE:
+                case H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE:
                     return s_locRepairToolOperationalActive ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY:
+                case H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY:
                     return s_locRepairToolOperationalStandby ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE:
+                case H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE:
                     return s_locRepairToolOperationalActiveDirective ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE:
+                case H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE:
                     return s_locRepairToolOperationalStandbyDirective ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_SUMMARY_NO_POWER:
+                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_NO_POWER:
                     return s_locRepairToolSummaryNoPower ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_SUMMARY_DRAINING:
+                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_DRAINING:
                     return s_locRepairToolSummaryDraining ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_SUMMARY_FLOODED:
+                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_FLOODED:
                     return s_locRepairToolSummaryFlooded ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_SUMMARY_SEALED:
+                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_SEALED:
                     return s_locRepairToolSummarySealed ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_SUMMARY_CRITICAL:
+                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_CRITICAL:
                     return s_locRepairToolSummaryCritical ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_SUMMARY_HEAVY:
+                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_HEAVY:
                     return s_locRepairToolSummaryHeavy ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_SUMMARY_PATCHING:
+                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_PATCHING:
                     return s_locRepairToolSummaryPatching ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER:
+                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER:
                     return s_locRepairToolRecommendNoPower ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_RECOMMEND_DRAINING:
+                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_DRAINING:
                     return s_locRepairToolRecommendDraining ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_RECOMMEND_FLOODED:
+                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_FLOODED:
                     return s_locRepairToolRecommendFlooded ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_RECOMMEND_SEALED:
+                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_SEALED:
                     return s_locRepairToolRecommendSealed ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL:
+                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL:
                     return s_locRepairToolRecommendCritical ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_RECOMMEND_HEAVY:
+                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_HEAVY:
                     return s_locRepairToolRecommendHeavy ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_RECOMMEND_PATCHING:
+                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_PATCHING:
                     return s_locRepairToolRecommendPatching ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED:
+                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED:
                     return s_locRepairToolPriorityServiceBlocked ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_PRIORITY_STABILIZING:
+                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_STABILIZING:
                     return s_locRepairToolPriorityStabilizing ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE:
+                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE:
                     return s_locRepairToolPriorityImmediateService ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE:
+                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE:
                     return s_locRepairToolPriorityServiceComplete ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE:
+                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE:
                     return s_locRepairToolPriorityCriticalResponse ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE:
+                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE:
                     return s_locRepairToolPriorityActiveService ?? fallback ?? string.Empty;
-                case H8LocHashes.REPAIR_TOOL_PRIORITY_FINAL_PASS:
+                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_FINAL_PASS:
                     return s_locRepairToolPriorityFinalPass ?? fallback ?? string.Empty;
                 default:
                     return fallback ?? string.Empty;
@@ -2788,9 +2980,9 @@ namespace Hecton8.Gameplay
             return string.IsNullOrEmpty(value) || buffer.Append(value);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  IBatteryTool IMPLEMENTATION
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     }
 }

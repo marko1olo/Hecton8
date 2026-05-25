@@ -33,7 +33,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Physics.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
+    public class HectonItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Physics.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
     {
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
@@ -44,7 +44,10 @@ namespace Hecton8.Items
         private static IPlayerRuntimeContext s_playerRuntimeContext;
         private static IPlayerInventoryService s_playerInventoryService;
         private static IPhysicsService s_physicsService;
-        private static ObjectPoolManager s_objectPool;
+        private static IObjectPoolService s_objectPool;
+        // COLD ALLOC: StaticRegistryHotSwapListener[1] - shared pickup service cache rebind bridge - owner: HectonItem
+        private static readonly StaticRegistryHotSwapListener s_hotSwapListener = new StaticRegistryHotSwapListener();
+        private static bool s_hotSwapListenerRegistered;
         // Data
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -84,7 +87,10 @@ namespace Hecton8.Items
         private BuoyancyObject _buoyancy;
         private Collider _collider;
         private PhysicsMaterial _defaultColliderMaterial;
-        private string _cachedInteractText = "???";
+        private const int InteractTextBufferCapacity = 128;
+        private static readonly char[] UnknownInteractText = { '?', '?', '?' };
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedInteractTextLength;
         private int _cachedItemHashId;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
@@ -98,6 +104,7 @@ namespace Hecton8.Items
             s_playerInventoryService = null;
             s_physicsService = null;
             s_objectPool = null;
+            s_hotSwapListenerRegistered = false;
         }
 
         // Lifecycle
@@ -119,6 +126,7 @@ namespace Hecton8.Items
         private void OnEnable()
         {
             CacheColdRegistryReferences();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildInteractTextCache();
 
@@ -445,7 +453,7 @@ namespace Hecton8.Items
                 Flags = InventoryPickupSignalConstants.SignalFlagManualPickup,
                 Frame = ResolveCurrentFrameId()
             };
-            SignalBus<ItemAcquiredSignal>.Push(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
         }
 
         private static uint ResolveCurrentFrameId()
@@ -500,10 +508,44 @@ namespace Hecton8.Items
 
         private static void CacheColdRegistryReferences()
         {
-            s_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            s_playerRuntimeContext = GlobalRegistry.Player;
             s_playerInventoryService = GlobalRegistry.PlayerInventory;
             s_physicsService = GlobalRegistry.Physics;
-            s_objectPool = GlobalRegistry.ObjectPool;
+            s_objectPool = GlobalRegistry.ObjectPoolService;
+            TryRegisterStaticHotSwapListener();
+        }
+
+        private static void TryRegisterStaticHotSwapListener()
+        {
+            if (s_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            s_hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_hotSwapListener);
+        }
+
+        private sealed class StaticRegistryHotSwapListener : IGlobalRegistryHotSwapListener
+        {
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                switch (serviceSlot)
+                {
+                    case GlobalRegistryServiceSlot.Player:
+                        s_playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                        break;
+                    case GlobalRegistryServiceSlot.PlayerInventory:
+                        s_playerInventoryService = currentService as IPlayerInventoryService;
+                        break;
+                    case GlobalRegistryServiceSlot.Physics:
+                        s_physicsService = currentService as IPhysicsService;
+                        break;
+                    case GlobalRegistryServiceSlot.ObjectPool:
+                        s_objectPool = currentService as IObjectPoolService;
+                        break;
+                }
+            }
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)
@@ -516,25 +558,36 @@ namespace Hecton8.Items
 
         public string GetInteractText()
         {
-            return _cachedInteractText;
+            return itemData != null ? itemData.GetInteractText() : "???";
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopyWithQuantity(
+                _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength),
+                quantity,
+                destination,
+                out length);
         }
 
         private void RebuildInteractTextCache()
         {
             if (itemData == null)
             {
-                _cachedInteractText = "???";
+                _cachedInteractTextLength = CopySpanToInteractBuffer(UnknownInteractText);
                 return;
             }
 
-            string baseText = itemData.GetInteractText();
-            if (quantity > 1)
-            {
-                _cachedInteractText = baseText + " x" + quantity;
-                return;
-            }
+            if (!itemData.TryWriteInteractText(Hecton8.Core.GlobalRegistry.Localization, _cachedInteractTextBuffer, out _cachedInteractTextLength))
+                _cachedInteractTextLength = CopySpanToInteractBuffer(itemData.GetInteractText().AsSpan());
+        }
 
-            _cachedInteractText = baseText;
+        private int CopySpanToInteractBuffer(System.ReadOnlySpan<char> source)
+        {
+            int length = math.min(source.Length, _cachedInteractTextBuffer.Length);
+            if (length > 0)
+                source.Slice(0, length).CopyTo(_cachedInteractTextBuffer);
+            return length;
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -556,7 +609,7 @@ namespace Hecton8.Items
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
 
-            ObjectPoolManager pool = s_objectPool;
+            IObjectPoolService pool = s_objectPool;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);

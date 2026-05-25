@@ -6,7 +6,7 @@ namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/VR Valve Wheel Handle")]
-    public sealed class VRValveWheelHandle : MonoBehaviour, IUpdatable
+    public sealed class VRValveWheelHandle : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float RadiansPerDegree = 0.0174532924f;
         private const float HalfPi = 1.57079637f;
@@ -48,6 +48,7 @@ namespace Hecton8.Interaction
         private bool _grabPoseCached;
         private bool _registeredMomentumTick;
         private bool _momentumTickDormant;
+        private bool _registeredHotSwap;
 
         public float IsOpen01 => _isOpen01;
         public bool IsGrabbed => _grabbed;
@@ -70,7 +71,22 @@ namespace Hecton8.Interaction
             RefreshCachedLocalAxis();
             CacheScalarConfig();
             SanitizeRuntimeOpenState();
+            TryRegisterHotSwapListener();
             ApplyWheelVisual();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            bool shouldRestoreTick = (_registeredMomentumTick && !_momentumTickDormant) || ShouldRunMomentumTick();
+            TryUnregisterMomentumTick();
+            if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
+                TryRegisterMomentumTick();
         }
 
         public void BeginGrab(Vector3 controllerWorldPosition)
@@ -422,6 +438,30 @@ namespace Hecton8.Interaction
             _momentumTickDormant = false;
         }
 
+        private bool ShouldRunMomentumTick()
+        {
+            return !_grabbed
+                && !_momentumTickDormant
+                && math.abs(_angularVelocityDegreesPerSecond) > _resolvedMinimumMomentumDegreesPerSecond;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void OnDisable()
         {
             _grabbed = false;
@@ -430,6 +470,7 @@ namespace Hecton8.Interaction
             _previousPlaneVector = Vector3.zero;
             _angularVelocityDegreesPerSecond = 0f;
             TryUnregisterMomentumTick();
+            TryUnregisterHotSwapListener();
         }
 
 #if UNITY_EDITOR

@@ -12,33 +12,35 @@ namespace Hecton8.EditorTools
     public sealed class EquipmentThermoElectricTunerWindow : EditorWindow
     {
         private const int GraphSamples = 120;
-        private const string HardwareSpecsCsvPath = "Assets/_Project/Data/Tools/tool_hardware_specs.csv";
+        private const string IlluminationHardwareProfilesCsvPath = "Assets/_Project/Data/Tools/illumination_hardware_profiles.csv";
+        private const string LegacyHardwareSpecsCsvPath = "Assets/_Project/Data/Tools/tool_hardware_specs.csv";
         private Slider _baseHeatSlider;
         private Slider _waterCoolingSlider;
+        private Slider _coldPenaltySlider;
         private Slider _powerDrawSlider;
         private Toggle _drawGizmosToggle;
         private Label _statusLabel;
         private TelemetryGraphElement _graph;
         private bool _drawGizmos = true;
 
-        [MenuItem("HECTON-8/Tools/Tool Cargo-Electric Tuner")]
+        [MenuItem("HECTON-8/Tools/Illumination Thermodynamics Tuner")]
         public static void Open()
         {
-            GetWindow<EquipmentThermoElectricTunerWindow>("Tool Cargo-Electric");
+            GetWindow<EquipmentThermoElectricTunerWindow>("Illumination Thermodynamics");
         }
 
         private void OnEnable()
         {
             BuildUi();
-            SceneView.duringSceneGui -= OnDrawGizmos;
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 
         private void OnDisable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
             EditorApplication.update -= OnEditorUpdate;
         }
 
@@ -58,6 +60,10 @@ namespace Hecton8.EditorTools
             _waterCoolingSlider.RegisterValueChangedCallback(OnWaterCoolingChanged);
             root.Add(_waterCoolingSlider);
 
+            _coldPenaltySlider = new Slider("Cold Battery Penalty", 0f, 4f) { value = 1.85f };
+            _coldPenaltySlider.RegisterValueChangedCallback(OnColdPenaltyChanged);
+            root.Add(_coldPenaltySlider);
+
             _powerDrawSlider = new Slider("Power Draw Rate", 0f, 250f) { value = 20f };
             _powerDrawSlider.RegisterValueChangedCallback(OnRateSliderChanged);
             root.Add(_powerDrawSlider);
@@ -66,10 +72,10 @@ namespace Hecton8.EditorTools
             _drawGizmosToggle.RegisterValueChangedCallback(OnDrawGizmosChanged);
             root.Add(_drawGizmosToggle);
 
-            Button mockButton = new Button(OnGenerateMockClicked) { text = "Generate Mock Equipment State" };
+            Button mockButton = new Button(OnGenerateMockClicked) { text = "Generate Mock Thermal Equipment State" };
             root.Add(mockButton);
 
-            Button loadCsvButton = new Button(OnLoadHardwareSpecsCsvClicked) { text = "Load tool_hardware_specs.csv" };
+            Button loadCsvButton = new Button(OnLoadHardwareSpecsCsvClicked) { text = "Load illumination_hardware_profiles.csv" };
             root.Add(loadCsvButton);
 
             _graph = new TelemetryGraphElement();
@@ -87,11 +93,14 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            if (engine.TryGetLatestEquipmentTelemetry(out EquipmentTelemetryEntry entry))
+            if (engine.TryGetLatestFlashlightTelemetry(out FlashlightTelemetryEntry entry))
             {
-                _statusLabel.text = "Tick " + entry.TickIndex +
-                    " | peak heat " + entry.PeakThermal01.ToString("0.000") +
+                _statusLabel.text = "Frame " + entry.Frame +
+                    " | heat " + entry.Thermal01.ToString("0.000") +
+                    " | ambient C " + entry.AmbientCelsius.ToString("0.0") +
+                    " | depth m " + entry.DepthMeters.ToString("0.0") +
                     " | battery drain Ws " + entry.BatteryDrainWattSeconds.ToString("0.000") +
+                    " | Q " + entry.GlobalQualityWeight.ToString("0.00") +
                     " | Burst us " + entry.CpuMicroseconds.ToString("0.0");
             }
             else
@@ -122,6 +131,16 @@ namespace Hecton8.EditorTools
             engine.SetEquipmentTuning(in tuning);
         }
 
+        private void OnColdPenaltyChanged(ChangeEvent<float> evt)
+        {
+            ModularEquipmentEngine engine = ResolveEngine();
+            if (engine == null || !engine.TryGetEquipmentTuning(out EquipmentTuningDTO tuning))
+                return;
+
+            tuning.ColdBatteryPenaltyMultiplier = math.max(0f, evt.newValue);
+            engine.SetEquipmentTuning(in tuning);
+        }
+
         private void OnDrawGizmosChanged(ChangeEvent<bool> evt)
         {
             _drawGizmos = evt.newValue;
@@ -143,20 +162,23 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            if (!File.Exists(HardwareSpecsCsvPath))
+            string path = File.Exists(IlluminationHardwareProfilesCsvPath)
+                ? IlluminationHardwareProfilesCsvPath
+                : LegacyHardwareSpecsCsvPath;
+            if (!File.Exists(path))
             {
-                _statusLabel.text = "Missing " + HardwareSpecsCsvPath;
+                _statusLabel.text = "Missing " + IlluminationHardwareProfilesCsvPath;
                 return;
             }
 
-            byte[] csv = File.ReadAllBytes(HardwareSpecsCsvPath);
+            byte[] csv = File.ReadAllBytes(path);
             EquipmentCsvParseResult result = engine.IngestToolHardwareSpecsCsv(csv);
             _statusLabel.text = "CSV rows " + result.ParsedRows +
                 " | skipped " + result.SkippedRows +
                 " | faults 0x" + result.FaultFlags.ToString("X8");
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             if (!_drawGizmos)
                 return;
@@ -196,7 +218,7 @@ namespace Hecton8.EditorTools
             if (service is ModularEquipmentEngine engine)
                 return engine;
 
-            return UnityEngine.Object.FindObjectOfType<ModularEquipmentEngine>();
+            return UnityEngine.Object.FindAnyObjectByType<ModularEquipmentEngine>();
         }
 
         private sealed class TelemetryGraphElement : VisualElement
@@ -212,10 +234,14 @@ namespace Hecton8.EditorTools
             {
                 Rect rect = contentRect;
                 Painter2D painter = context.painter2D;
-                painter.lineWidth = 2f;
-                painter.strokeColor = new Color(0.75f, 0.15f, 0.12f, 1f);
+                painter.fillColor = new Color(0.14f, 0.52f, 0.9f, 0.42f);
+                DrawTelemetryArea(painter, rect, false);
+                painter.fillColor = new Color(0.78f, 0.18f, 0.1f, 0.52f);
+                DrawTelemetryArea(painter, rect, true);
+                painter.lineWidth = 1.5f;
+                painter.strokeColor = new Color(0.9f, 0.28f, 0.18f, 0.95f);
                 DrawTelemetryLine(painter, rect, true);
-                painter.strokeColor = new Color(0.15f, 0.55f, 0.9f, 1f);
+                painter.strokeColor = new Color(0.2f, 0.68f, 1f, 0.95f);
                 DrawTelemetryLine(painter, rect, false);
             }
 
@@ -228,12 +254,12 @@ namespace Hecton8.EditorTools
                 painter.BeginPath();
                 for (int i = 0; i < GraphSamples; i++)
                 {
-                    if (!Engine.TryGetEquipmentTelemetryEntry(GraphSamples - 1 - i, out EquipmentTelemetryEntry entry))
+                    if (!Engine.TryGetFlashlightTelemetryEntry(GraphSamples - 1 - i, out FlashlightTelemetryEntry entry))
                         continue;
 
                     float value = heat
-                        ? math.saturate(entry.PeakThermal01)
-                        : math.saturate(entry.BatteryDrainWattSeconds * 0.02f);
+                        ? math.saturate(entry.Thermal01)
+                        : ResolveAmbientCoolingEffect01(entry.AmbientCelsius);
                     float x = rect.xMin + (rect.width * (i * math.rcp(GraphSamples - 1f)));
                     float y = rect.yMax - (rect.height * value);
                     if (!started)
@@ -249,6 +275,43 @@ namespace Hecton8.EditorTools
 
                 if (started)
                     painter.Stroke();
+            }
+
+            private void DrawTelemetryArea(Painter2D painter, Rect rect, bool heat)
+            {
+                if (Engine == null || rect.width <= 1f || rect.height <= 1f)
+                    return;
+
+                bool started = false;
+                float lastX = rect.xMin;
+                painter.BeginPath();
+                painter.MoveTo(new Vector2(rect.xMin, rect.yMax));
+                for (int i = 0; i < GraphSamples; i++)
+                {
+                    if (!Engine.TryGetFlashlightTelemetryEntry(GraphSamples - 1 - i, out FlashlightTelemetryEntry entry))
+                        continue;
+
+                    float value = heat
+                        ? math.saturate(entry.Thermal01)
+                        : ResolveAmbientCoolingEffect01(entry.AmbientCelsius);
+                    float x = rect.xMin + (rect.width * (i * math.rcp(GraphSamples - 1f)));
+                    float y = rect.yMax - (rect.height * value);
+                    painter.LineTo(new Vector2(x, y));
+                    lastX = x;
+                    started = true;
+                }
+
+                if (!started)
+                    return;
+
+                painter.LineTo(new Vector2(lastX, rect.yMax));
+                painter.ClosePath();
+                painter.Fill();
+            }
+
+            private static float ResolveAmbientCoolingEffect01(float ambientCelsius)
+            {
+                return math.saturate((22f - ambientCelsius) * 0.041666668f);
             }
         }
     }

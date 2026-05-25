@@ -207,9 +207,8 @@ namespace Hecton8.Equipment.Auxiliary.Editor
                 string target = Path.Combine(root, TargetFiles[i].Replace('/', Path.DirectorySeparatorChar));
                 if (Directory.Exists(target))
                 {
-                    string[] files = Directory.GetFiles(target, "*.cs", SearchOption.AllDirectories);
-                    for (int f = 0; f < files.Length; f++)
-                        ScanFile(files[f], root, ref findings, ref first, json);
+                    foreach (string file in Directory.EnumerateFiles(target, "*.cs", SearchOption.AllDirectories))
+                        ScanFile(file, root, ref findings, ref first, json);
                 }
                 else if (File.Exists(target))
                 {

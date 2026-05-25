@@ -1,8 +1,8 @@
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Modding;
-using System.Text;
+using System;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -33,13 +33,11 @@ namespace Hecton8.UI
         private const float FadeSharpness = 5.2f;
         private const float HiddenAlphaCutoff = 0.01f;
         private const int DumpPayloadCharCapacity = 16384;
-        private const int DumpLineStringCharCapacity = 128;
         private const string OverlayName = "PDADeathMemoryDumpOverlay";
         private const string DefaultFinalLine = "LOCALIZATION MODULE... DESTROYED.";
+        private static readonly int FinalLineKeyHash = LocHash.Compute(LocalizationKeys.PDA_DEATH_DUMP_FINAL);
 
-        private static readonly char[] s_emptyDumpChars = new char[1];
-        [System.ThreadStatic]
-        private static char[] s_dumpLineStringBuffer;
+        private static readonly char[] s_emptyDumpChars = System.Array.Empty<char>();
         private static readonly Color BackgroundColor = new Color(0f, 0f, 0f, 0.96f);
         private static readonly Color DumpTextColor = new Color(0.72f, 1f, 0.82f, 0.96f);
         // COLD ALLOC: string[12] — death-dump module token table — owner: PDADeathMemoryDump
@@ -64,13 +62,81 @@ namespace Hecton8.UI
         };
 
         // COLD ALLOC: string[192] — reusable per-session memory-dump line library — owner: PDADeathMemoryDump
-        private readonly string[] _dumpLineLibrary = new string[LibraryLineCount];
+        private readonly char[][] _dumpLineLibrary = new char[LibraryLineCount][];
+        private readonly int[] _dumpLineLibraryLengths = new int[LibraryLineCount];
         // COLD ALLOC: int[180] — visible-character thresholds for line-based reveal without per-frame string rebuilds — owner: PDADeathMemoryDump
         private readonly int[] _lineCharacterThresholds = new int[SequenceLineCount];
         // COLD ALLOC: char[16384] — TMP payload staging buffer for death dump SetCharArray path — owner: PDADeathMemoryDump
         private readonly char[] _dumpPayloadBuffer = new char[DumpPayloadCharCapacity];
-        // COLD ALLOC: StringBuilder[16384] — fixed-capacity death-dump assembly buffer reused for line library and final payload — owner: PDADeathMemoryDump
-        private readonly StringBuilder _dumpBuilder = new StringBuilder(DumpPayloadCharCapacity);
+
+        private struct DumpTextWriter
+        {
+            private readonly char[] _buffer;
+            public int Length;
+
+            public DumpTextWriter(char[] buffer)
+            {
+                _buffer = buffer;
+                Length = 0;
+            }
+
+            public void Clear()
+            {
+                Length = 0;
+            }
+
+            public void Append(ReadOnlySpan<char> text)
+            {
+                if (_buffer == null || text.Length <= 0 || Length >= _buffer.Length)
+                    return;
+
+                int writable = math.min(text.Length, _buffer.Length - Length);
+                text.Slice(0, writable).CopyTo(_buffer.AsSpan(Length, writable));
+                Length += writable;
+            }
+
+            public void Append(char value)
+            {
+                if (_buffer == null || Length >= _buffer.Length)
+                    return;
+
+                _buffer[Length++] = value;
+            }
+
+            public void AppendInt(int value)
+            {
+                if (value == int.MinValue)
+                {
+                    Append("-2147483648".AsSpan());
+                    return;
+                }
+
+                if (value < 0)
+                {
+                    Append('-');
+                    value = -value;
+                }
+
+                Span<char> digits = stackalloc char[10];
+                int count = 0;
+                do
+                {
+                    digits[count++] = (char)('0' + (value % 10));
+                    value /= 10;
+                }
+                while (value > 0 && count < digits.Length);
+
+                for (int i = count - 1; i >= 0; i--)
+                    Append(digits[i]);
+            }
+
+            public void AppendHex(uint value)
+            {
+                const string Hex = "0123456789ABCDEF";
+                for (int shift = 28; shift >= 0; shift -= 4)
+                    Append(Hex[(int)((value >> shift) & 0xFu)]);
+            }
+        }
 
         [Header("── Font ──────────────────")]
         [Tooltip("Optional readable font override for the death memory dump overlay.")]
@@ -89,22 +155,23 @@ namespace Hecton8.UI
         private float _lineProgress;
         private float _holdTimer;
         private int _visibleLineTarget;
-        private HectonEventSubscription _playerDiedSubscription;
+        private int _lastSurvivalDeathSignalSequence;
         private bool _hotSwapListenerRegistered;
+        private ILocalizationTextReadModel _cachedLocalization;
+        private IPlayerRuntimeContext _cachedPlayerContext;
 
         private void OnEnable()
         {
             dumpFont = LocalizedFontResolver.ResolveReadableFont(dumpFont);
+            CacheRegistryServicesCold();
             EnsureLineLibrary();
             EnsureUiBuilt();
             TryRegisterHotSwapListener();
             RegisterToTickManager();
-            Subscribe();
         }
 
         private void OnDisable()
         {
-            Unsubscribe();
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             HideOverlay();
@@ -112,7 +179,6 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            Unsubscribe();
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
         }
@@ -122,13 +188,38 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
-                RegisterToTickManager();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _tickRegistered = false;
+                }
+                else if (isActiveAndEnabled)
+                {
+                    UnregisterFromTickManager();
+                    RegisterToTickManager();
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                _cachedLocalization = currentService as ILocalizationTextReadModel;
+                _libraryBuilt = false;
+                EnsureLineLibrary();
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            }
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            ConsumeSurvivalDeathSignal();
+
             if (_dumpLabel == null || _overlayGroup == null || _state == DumpState.Hidden)
                 return;
 
@@ -170,24 +261,31 @@ namespace Hecton8.UI
             }
         }
 
-        private void Subscribe()
+        private void ConsumeSurvivalDeathSignal()
         {
-            if (_playerDiedSubscription == null)
-                _playerDiedSubscription = HectonEventBus.Subscribe<PlayerDiedEvent>(HandlePlayerDied, "ui.death-memory-dump");
-        }
-
-        private void Unsubscribe()
-        {
-            _playerDiedSubscription?.Dispose();
-            _playerDiedSubscription = null;
-        }
-
-        private void HandlePlayerDied(PlayerDiedEvent playerDiedEvent)
-        {
-            if (playerDiedEvent == null || playerDiedEvent.DeathCause != SurvivalDeathCause.PressureCollapse)
+            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
                 return;
 
-            StartDump(playerDiedEvent.DeathRecord);
+            if (sequence == _lastSurvivalDeathSignalSequence)
+                return;
+
+            _lastSurvivalDeathSignalSequence = sequence;
+            if (signal.DeathCause != (byte)SurvivalDeathCause.PressureCollapse)
+                return;
+
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            HectonSurvivalSystem survival = playerContext != null ? playerContext.SurvivalSystem : null;
+            if (survival == null)
+                return;
+
+            uint sourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()));
+            if (signal.SourceId != sourceId ||
+                !survival.TryGetLastDeathRecord(out SurvivalDeathRecord deathRecord))
+            {
+                return;
+            }
+
+            StartDump(deathRecord);
         }
 
         private void StartDump(SurvivalDeathRecord record)
@@ -199,40 +297,43 @@ namespace Hecton8.UI
 
             int seed = ComputeDumpSeed(record);
             int writeIndex = 0;
-            _dumpBuilder.Clear();
+            DumpTextWriter writer = new DumpTextWriter(_dumpPayloadBuffer);
 
             for (int i = 0; i < SequenceLineCount - 1; i++)
             {
                 switch (i)
                 {
                     case 22:
-                        AppendTelemetryLine(_dumpBuilder, "PRESSURE VECTOR", (int)math.round((float)record.PeakDepthMeters), "M");
+                        AppendTelemetryLine(ref writer, "PRESSURE VECTOR".AsSpan(), (int)math.round((float)record.PeakDepthMeters), "M".AsSpan());
                         break;
 
                     case 61:
-                        AppendTelemetryLine(_dumpBuilder, "INTEGRITY TRACE", (int)math.round(record.LowestIntegrityNormalized * 100f), "%");
+                        AppendTelemetryLine(ref writer, "INTEGRITY TRACE".AsSpan(), (int)math.round(record.LowestIntegrityNormalized * 100f), "%".AsSpan());
                         break;
 
                     case 118:
-                        AppendTelemetryLine(_dumpBuilder, "LIFE TRACE", (int)math.round((float)record.LifeDurationSeconds), "S");
+                        AppendTelemetryLine(ref writer, "LIFE TRACE".AsSpan(), (int)math.round((float)record.LifeDurationSeconds), "S".AsSpan());
                         break;
 
                     default:
-                        _dumpBuilder.Append(_dumpLineLibrary[(seed + (i * 11)) % LibraryLineCount]);
+                        int lineIndex = (seed + (i * 11)) % LibraryLineCount;
+                        char[] line = _dumpLineLibrary[lineIndex];
+                        int lineLength = _dumpLineLibraryLengths[lineIndex];
+                        if (line != null && lineLength > 0)
+                            writer.Append(line.AsSpan(0, math.min(lineLength, line.Length)));
                         break;
                 }
 
-                _dumpBuilder.Append('\n');
-                _lineCharacterThresholds[writeIndex] = _dumpBuilder.Length;
+                writer.Append('\n');
+                _lineCharacterThresholds[writeIndex] = writer.Length;
                 writeIndex++;
             }
 
-            _dumpBuilder.Append(ResolveLocalized(LocalizationKeys.PDA_DEATH_DUMP_FINAL, DefaultFinalLine));
-            _lineCharacterThresholds[writeIndex] = _dumpBuilder.Length;
+            writer.Append(ResolveLocalizedSpan(FinalLineKeyHash, DefaultFinalLine.AsSpan()));
+            _lineCharacterThresholds[writeIndex] = writer.Length;
             _visibleLineTarget = writeIndex + 1;
 
-            int payloadLength = math.min(_dumpBuilder.Length, _dumpPayloadBuffer.Length);
-            _dumpBuilder.CopyTo(0, _dumpPayloadBuffer, 0, payloadLength);
+            int payloadLength = math.min(writer.Length, _dumpPayloadBuffer.Length);
             for (int i = 0; i < _visibleLineTarget; i++)
                 _lineCharacterThresholds[i] = math.min(_lineCharacterThresholds[i], payloadLength);
 
@@ -254,20 +355,20 @@ namespace Hecton8.UI
             if (_libraryBuilt)
                 return;
 
+            DumpTextWriter writer = new DumpTextWriter(_dumpPayloadBuffer);
             for (int i = 0; i < LibraryLineCount; i++)
             {
-                _dumpBuilder.Clear();
-                AppendHex(_dumpBuilder, 0x91F0A000u + (uint)(i * 0x31 + 0x17));
-                _dumpBuilder.Append(" // ");
-                _dumpBuilder.Append(DumpModules[i % DumpModules.Length]);
-                _dumpBuilder.Append(" :: ");
-                _dumpBuilder.Append(DumpOperations[(i * 5 + 3) % DumpOperations.Length]);
-                _dumpBuilder.Append(" -> ");
-                _dumpBuilder.Append(DumpStates[(i * 7 + 1) % DumpStates.Length]);
-                _dumpLineLibrary[i] = CreateStringFromBuilder(_dumpBuilder);
+                writer.Clear();
+                writer.AppendHex(0x91F0A000u + (uint)(i * 0x31 + 0x17));
+                writer.Append(" // ".AsSpan());
+                writer.Append(DumpModules[i % DumpModules.Length].AsSpan());
+                writer.Append(" :: ".AsSpan());
+                writer.Append(DumpOperations[(i * 5 + 3) % DumpOperations.Length].AsSpan());
+                writer.Append(" -> ".AsSpan());
+                writer.Append(DumpStates[(i * 7 + 1) % DumpStates.Length].AsSpan());
+                _dumpLineLibrary[i] = CreateCharsFromBuffer(_dumpPayloadBuffer, writer.Length, out _dumpLineLibraryLengths[i]);
             }
 
-            _dumpBuilder.Clear();
             _libraryBuilt = true;
         }
 
@@ -280,42 +381,28 @@ namespace Hecton8.UI
             return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
         }
 
-        private static void AppendTelemetryLine(StringBuilder builder, string label, int value, string suffix)
+        private static void AppendTelemetryLine(ref DumpTextWriter writer, ReadOnlySpan<char> label, int value, ReadOnlySpan<char> suffix)
         {
-            builder.Append("0x");
-            AppendHex(builder, 0xE11D0000u + (uint)(value & 0xFFFF));
-            builder.Append(" // ");
-            builder.Append(label);
-            builder.Append(" :: ");
-            builder.Append(value);
-            builder.Append(suffix);
-            builder.Append(" -> COMPROMISED");
+            writer.Append("0x".AsSpan());
+            writer.AppendHex(0xE11D0000u + (uint)(value & 0xFFFF));
+            writer.Append(" // ".AsSpan());
+            writer.Append(label);
+            writer.Append(" :: ".AsSpan());
+            writer.AppendInt(value);
+            writer.Append(suffix);
+            writer.Append(" -> COMPROMISED".AsSpan());
         }
 
-        private static string CreateStringFromBuilder(StringBuilder builder)
+        private static char[] CreateCharsFromBuffer(char[] source, int sourceLength, out int length)
         {
-            if (builder == null || builder.Length <= 0)
-                return string.Empty;
+            length = 0;
+            if (source == null || sourceLength <= 0)
+                return s_emptyDumpChars;
 
-            char[] buffer = GetDumpLineStringBuffer();
-            int length = math.min(builder.Length, buffer.Length);
-            builder.CopyTo(0, buffer, 0, length);
-            return new string(buffer, 0, length);
-        }
-
-        private static char[] GetDumpLineStringBuffer()
-        {
-            if (s_dumpLineStringBuffer == null)
-                s_dumpLineStringBuffer = new char[DumpLineStringCharCapacity]; // COLD ALLOC: char[128] — thread-local death-dump line string staging buffer — owner: PDADeathMemoryDump
-
-            return s_dumpLineStringBuffer;
-        }
-
-        private static void AppendHex(StringBuilder builder, uint value)
-        {
-            const string Hex = "0123456789ABCDEF";
-            for (int shift = 28; shift >= 0; shift -= 4)
-                builder.Append(Hex[(int)((value >> shift) & 0xFu)]);
+            length = math.min(sourceLength, math.min(DumpPayloadCharCapacity, source.Length));
+            char[] buffer = new char[length]; // COLD ALLOC: char[length] - death-dump line library entry - owner: PDADeathMemoryDump
+            source.AsSpan(0, length).CopyTo(buffer);
+            return buffer;
         }
 
         private static int ComputeDumpSeed(SurvivalDeathRecord record)
@@ -463,12 +550,18 @@ namespace Hecton8.UI
             return overlay != null && overlay.TryGetComponent(out Canvas canvas) ? canvas : null;
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextReadModel manager = _cachedLocalization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetRawSpanOrFallback(keyHash, fallback)
                 : fallback;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
@@ -492,9 +585,9 @@ namespace Hecton8.UI
             {
                 Transform child = parent.GetChild(i);
                 if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
+                    UnityEngine.Object.Destroy(child.gameObject);
                 else
-                    Object.DestroyImmediate(child.gameObject);
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
         }
 

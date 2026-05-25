@@ -237,6 +237,7 @@ namespace Hecton8.Animation.FaunaProcedural
         }
     }
 
+#if UNITY_EDITOR
     public static class ProceduralBoneProfileCsvParser
     {
         private const uint HashSineFrequency = 0x9BFCEDA1u;
@@ -481,10 +482,27 @@ namespace Hecton8.Animation.FaunaProcedural
 
             double parsed = sign * (whole + fraction / scale);
             if (exponent != 0)
-                parsed *= Math.Pow(10.0, exponentSign * exponent);
+                parsed = ScaleByFloatPow10(parsed, exponentSign * exponent);
 
             result = (float)parsed;
             return math.isfinite(result);
+        }
+
+        private static double ScaleByFloatPow10(double value, int exponent)
+        {
+            if (value == 0d || exponent == 0)
+                return value;
+            if (exponent > 38)
+                return value > 0d ? double.PositiveInfinity : double.NegativeInfinity;
+            if (exponent < -46)
+                return 0d;
+
+            int count = exponent < 0 ? -exponent : exponent;
+            double scale = 1d;
+            for (int i = 0; i < count; i++)
+                scale *= 10d;
+
+            return exponent < 0 ? value / scale : value * scale;
         }
     }
 
@@ -624,4 +642,5 @@ namespace Hecton8.Animation.FaunaProcedural
             writer.Write(value.z);
         }
     }
+#endif
 }

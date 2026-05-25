@@ -13,7 +13,7 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void GlobalRegistryDependencyAttributes_DoNotContainCycles()
         {
-            Dictionary<string, List<string>> graph = new Dictionary<string, List<string>>(256);
+            Dictionary<string, List<string>> graph = new Dictionary<string, List<string>>(256, StringComparer.Ordinal);
             List<string> nodes = new List<string>(256);
             Assembly coreAssembly = typeof(GlobalRegistry).Assembly;
             Type[] types = GetLoadableTypes(coreAssembly);
@@ -40,7 +40,7 @@ namespace Hecton8.Tests.Editor
                 }
             }
 
-            Dictionary<string, byte> state = new Dictionary<string, byte>(nodes.Count);
+            Dictionary<string, byte> state = new Dictionary<string, byte>(nodes.Count, StringComparer.Ordinal);
             List<string> stack = new List<string>(64);
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -132,7 +132,7 @@ namespace Hecton8.Tests.Editor
         {
             for (int i = 0; i < nodes.Count; i++)
             {
-                if (nodes[i] == node)
+                if (string.Equals(nodes[i], node, StringComparison.Ordinal))
                     return;
             }
 

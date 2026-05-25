@@ -1308,7 +1308,7 @@ namespace Hecton8.EditorTools
 
             if (rules != null)
             {
-                HashSet<WorldPrefabFamilyProfile> coveredFamilies = new HashSet<WorldPrefabFamilyProfile>();
+                HashSet<WorldPrefabFamilyProfile> coveredFamilies = new HashSet<WorldPrefabFamilyProfile>(rules.arraySize);
                 for (int i = 0; i < rules.arraySize; i++)
                 {
                     WorldProceduralPlacementRule rule = rules.GetArrayElementAtIndex(i).objectReferenceValue as WorldProceduralPlacementRule;

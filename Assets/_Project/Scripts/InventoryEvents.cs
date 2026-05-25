@@ -3,6 +3,7 @@
 // NativeQueue-backed inventory event lane flushed by SystemDispatcher.LateUpdate.
 // ============================================================================
 
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Items;
@@ -200,6 +201,7 @@ namespace Hecton8.Inventory
         private static int _referencePendingCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _droppedEventCount;
         private static int _dedupFrame = -1;
         private static bool _isDispatching;
 
@@ -207,6 +209,11 @@ namespace Hecton8.Inventory
         /// Number of queued inventory events awaiting LateUpdate dispatch.
         /// </summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        /// <summary>
+        /// Number of inventory payloads rejected by fixed queue, sidecar, or dedup capacity.
+        /// </summary>
+        public static int DroppedEventCount => _droppedEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -238,6 +245,7 @@ namespace Hecton8.Inventory
             _referencePendingCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _droppedEventCount = 0;
             _dedupFrame = -1;
             _isDispatching = false;
         }
@@ -289,7 +297,10 @@ namespace Hecton8.Inventory
                     return;
 
                 if (!_pendingEvents.TryDequeue(out InventoryEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -368,21 +379,33 @@ namespace Hecton8.Inventory
         /// Enqueues an item pickup failure caused by full inventory.
         /// </summary>
         /// <param name="item">Rejected item data.</param>
+        [Obsolete("Use TryNotifyInventoryFull(ItemData) so bounded queue refusal stays visible at the producer.", true)]
         public static void NotifyInventoryFull(ItemData item)
+        {
+            TryNotifyInventoryFull(item);
+        }
+
+        public static bool TryNotifyInventoryFull(ItemData item)
         {
             uint sourceId = item != null
                 ? unchecked((uint)EntityId.ToULong(item.GetEntityId()))
                 : 0u;
-            NotifyInventoryFull(0u, sourceId, item);
+            return TryNotifyInventoryFull(0u, sourceId, item);
         }
 
         /// <summary>
         /// Enqueues an item pickup failure caused by full inventory.
         /// </summary>
         /// <param name="itemHashId">Rejected item numeric hash.</param>
+        [Obsolete("Use TryNotifyInventoryFull(int) so bounded queue refusal stays visible at the producer.", true)]
         public static void NotifyInventoryFull(int itemHashId)
         {
-            NotifyInventoryFull(unchecked((uint)itemHashId), unchecked((uint)itemHashId), null);
+            TryNotifyInventoryFull(itemHashId);
+        }
+
+        public static bool TryNotifyInventoryFull(int itemHashId)
+        {
+            return TryNotifyInventoryFull(unchecked((uint)itemHashId), unchecked((uint)itemHashId), null);
         }
 
         /// <summary>
@@ -390,29 +413,41 @@ namespace Hecton8.Inventory
         /// </summary>
         /// <param name="itemHashId">Rejected item numeric hash.</param>
         /// <param name="item">Rejected item data.</param>
+        [Obsolete("Use TryNotifyInventoryFull(uint,ItemData) so bounded queue refusal stays visible at the producer.", true)]
         public static void NotifyInventoryFull(uint itemHashId, ItemData item)
+        {
+            TryNotifyInventoryFull(itemHashId, item);
+        }
+
+        public static bool TryNotifyInventoryFull(uint itemHashId, ItemData item)
         {
             uint sourceId = itemHashId != 0u
                 ? itemHashId
                 : (item != null ? unchecked((uint)EntityId.ToULong(item.GetEntityId())) : 0u);
-            NotifyInventoryFull(itemHashId, sourceId, item);
+            return TryNotifyInventoryFull(itemHashId, sourceId, item);
         }
 
-        private static void NotifyInventoryFull(uint itemHashId, uint sourceId, ItemData item)
+        private static bool TryNotifyInventoryFull(uint itemHashId, uint sourceId, ItemData item)
         {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             if (!TryRegisterFrameEventKey(InventoryEventType.InventoryFull, sourceId))
-                return;
+            {
+                _droppedEventCount++;
+                return false;
+            }
 
             if (!TryReserveReferenceSlot(out int referenceSlot))
-                return;
+            {
+                _droppedEventCount++;
+                return false;
+            }
 
             _referenceSlots[referenceSlot].Item = item;
             _referenceSlots[referenceSlot].Inventory = null;
 
-            Enqueue(new InventoryEventPayload
+            return Enqueue(new InventoryEventPayload
             {
                 TotalMassKg = 0f,
                 CarryCapacityKg = 0f,
@@ -427,15 +462,24 @@ namespace Hecton8.Inventory
         /// <summary>
         /// Enqueues a coarse inventory contents changed event.
         /// </summary>
+        [Obsolete("Use TryNotifyInventoryChanged() so bounded queue refusal stays visible at the producer.", true)]
         public static void NotifyInventoryChanged()
         {
+            TryNotifyInventoryChanged();
+        }
+
+        public static bool TryNotifyInventoryChanged()
+        {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             if (!TryRegisterFrameEventKey(InventoryEventType.InventoryChanged, 0u))
-                return;
+            {
+                _droppedEventCount++;
+                return false;
+            }
 
-            Enqueue(new InventoryEventPayload
+            return Enqueue(new InventoryEventPayload
             {
                 TotalMassKg = 0f,
                 CarryCapacityKg = 0f,
@@ -451,22 +495,34 @@ namespace Hecton8.Inventory
         /// Enqueues a derived carry-load change.
         /// </summary>
         /// <param name="payload">Managed producer payload.</param>
+        [Obsolete("Use TryNotifyEncumbranceChanged(EncumbranceChangedEvent) so bounded queue refusal stays visible at the producer.", true)]
         public static void NotifyEncumbranceChanged(EncumbranceChangedEvent payload)
         {
+            TryNotifyEncumbranceChanged(payload);
+        }
+
+        public static bool TryNotifyEncumbranceChanged(EncumbranceChangedEvent payload)
+        {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             uint inventorySourceId = payload.Inventory != null ? PlayerInventorySourceId : 0u;
             if (!TryRegisterFrameEventKey(InventoryEventType.EncumbranceChanged, inventorySourceId))
-                return;
+            {
+                _droppedEventCount++;
+                return false;
+            }
 
             if (!TryReserveReferenceSlot(out int referenceSlot))
-                return;
+            {
+                _droppedEventCount++;
+                return false;
+            }
 
             _referenceSlots[referenceSlot].Item = null;
             _referenceSlots[referenceSlot].Inventory = payload.Inventory;
 
-            Enqueue(new InventoryEventPayload
+            return Enqueue(new InventoryEventPayload
             {
                 TotalMassKg = payload.TotalMassKg,
                 CarryCapacityKg = payload.CarryCapacityKg,
@@ -529,24 +585,26 @@ namespace Hecton8.Inventory
             }
         }
 
-        private static void Enqueue(in InventoryEventPayload payload)
+        private static bool Enqueue(in InventoryEventPayload payload)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReleaseReferenceSlot(payload.ReferenceSlot);
-                return;
+                _droppedEventCount++;
+                return false;
             }
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static bool TryRegisterFrameEventKey(InventoryEventType eventType, uint sourceId)
@@ -557,7 +615,7 @@ namespace Hecton8.Inventory
                 return true;
 
             if (_queuedEventKeys.Count() >= _queuedEventKeys.Capacity)
-                return true;
+                return false;
 
             ulong key = ((ulong)sourceId << 32) | ((uint)eventType + 1u);
             return _queuedEventKeys.Add(key);
@@ -651,7 +709,10 @@ namespace Hecton8.Inventory
                     return false;
 
                 if (!queue.TryDequeue(out InventoryEventPayload payload))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;

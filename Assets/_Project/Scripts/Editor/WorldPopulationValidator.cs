@@ -18,8 +18,8 @@ namespace Hecton8.Editor.Validation
             WorldZoneDirector zoneDirector = FindSceneObjectIncludingInactive<WorldZoneDirector>();
             WorldContentSocket[] sockets = FindSceneObjectsIncludingInactive<WorldContentSocket>();
 
-            Dictionary<WorldContentSocket.ContentKind, int> socketCounts = new Dictionary<WorldContentSocket.ContentKind, int>();
-            Dictionary<WorldContentSocket.ContentKind, int> uncoveredCounts = new Dictionary<WorldContentSocket.ContentKind, int>();
+            Dictionary<WorldContentSocket.ContentKind, int> socketCounts = new Dictionary<WorldContentSocket.ContentKind, int>(8);
+            Dictionary<WorldContentSocket.ContentKind, int> uncoveredCounts = new Dictionary<WorldContentSocket.ContentKind, int>(8);
 
             if (populationDirector == null)
                 issues.Add("Active scene is missing WorldPopulationDirector.");

@@ -24,6 +24,7 @@ namespace Hecton8.Physics.Exosuit
         public const uint SdfContact = 1u << 10;
         public const uint VoxelSdfSampled = 1u << 11;
         public const uint BudgetExceeded = 1u << 12;
+        public const uint SignalDrop = 1u << 13;
     }
 
     /// <summary>
@@ -197,21 +198,34 @@ namespace Hecton8.Physics.Exosuit
 
     public static class ExosuitLayoutVerifier
     {
+        private const int ExosuitStateStrideBytes = 64;
+        private const int ExosuitFrameInputStrideBytes = 32;
+        private const int MechHapticSignalStrideBytes = 16;
+        private const int MockCrushDepthSignalStrideBytes = 16;
+        private const int SiltExplosionSignalStrideBytes = 32;
+        private const int ExosuitAcousticEchoStrideBytes = 32;
+        private const int ExoScreenStrideBytes = 16;
+        private const int ExosuitTuningStrideBytes = 80;
+        private const int MockTerrainSdfStrideBytes = 64;
+        private const int MockFlowFieldStrideBytes = 32;
+        private const int ExosuitSolverOutputStrideBytes = 64;
+        private const int ExosuitTelemetryStrideBytes = 64;
+
         public static bool ValidateRuntimeLayouts()
         {
             bool sizeOk =
-                UnsafeUtility.SizeOf<ExosuitStateDTO>() == 64 &&
-                UnsafeUtility.SizeOf<ExosuitFrameInputDTO>() == 32 &&
-                UnsafeUtility.SizeOf<MechHapticSignalDTO>() == 16 &&
-                UnsafeUtility.SizeOf<MockCrushDepthSignal>() == 16 &&
-                UnsafeUtility.SizeOf<SiltExplosionSignal>() == 32 &&
-                UnsafeUtility.SizeOf<ExosuitAcousticEchoTap>() == 32 &&
-                UnsafeUtility.SizeOf<ExoScreenDTO>() == 16 &&
-                UnsafeUtility.SizeOf<ExosuitTuningDTO>() == 80 &&
-                UnsafeUtility.SizeOf<MockTerrainSDF>() == 64 &&
-                UnsafeUtility.SizeOf<MockFlowField>() == 32 &&
-                UnsafeUtility.SizeOf<ExosuitSolverOutput>() == 64 &&
-                UnsafeUtility.SizeOf<ExosuitTelemetryEntry>() == 64;
+                UnsafeUtility.SizeOf<ExosuitStateDTO>() == ExosuitStateStrideBytes &&
+                UnsafeUtility.SizeOf<ExosuitFrameInputDTO>() == ExosuitFrameInputStrideBytes &&
+                UnsafeUtility.SizeOf<MechHapticSignalDTO>() == MechHapticSignalStrideBytes &&
+                UnsafeUtility.SizeOf<MockCrushDepthSignal>() == MockCrushDepthSignalStrideBytes &&
+                UnsafeUtility.SizeOf<SiltExplosionSignal>() == SiltExplosionSignalStrideBytes &&
+                UnsafeUtility.SizeOf<ExosuitAcousticEchoTap>() == ExosuitAcousticEchoStrideBytes &&
+                UnsafeUtility.SizeOf<ExoScreenDTO>() == ExoScreenStrideBytes &&
+                UnsafeUtility.SizeOf<ExosuitTuningDTO>() == ExosuitTuningStrideBytes &&
+                UnsafeUtility.SizeOf<MockTerrainSDF>() == MockTerrainSdfStrideBytes &&
+                UnsafeUtility.SizeOf<MockFlowField>() == MockFlowFieldStrideBytes &&
+                UnsafeUtility.SizeOf<ExosuitSolverOutput>() == ExosuitSolverOutputStrideBytes &&
+                UnsafeUtility.SizeOf<ExosuitTelemetryEntry>() == ExosuitTelemetryStrideBytes;
 
 #if UNITY_EDITOR
             return sizeOk &&

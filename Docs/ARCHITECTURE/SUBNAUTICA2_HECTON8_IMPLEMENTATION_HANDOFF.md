@@ -1,121 +1,205 @@
-# Subnautica 2 To HECTON-8 Implementation Handoff
+﻿# Subnautica 2 To HECTON-8 Implementation Handoff
 
 Date: 2026-05-17
+
 Status: PENDING VERIFICATION
-
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-21 R51 Root/Architecture Actuality Boundary
-
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-
-## 2026-05-20 DOC_GLOBAL R38 Current Boundary Note
-
-R51 root/architecture encoding/boundary/read-order/route-card/source-counter correction (`Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md`) keeps this file as a static architecture/source contract, not runtime proof. Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md`; R50 remains prior at `Docs/Reports/2026-05-21_DOCUMENTATION_R50_ROOT_ARCHITECTURE_ATLAS_REGEN_R48_INTERIOR_DUMPTARGET_AND_COUNTER_DRIFT_LOCAL.md`; R49 remains prior at `Docs/Reports/2026-05-21_DOCUMENTATION_R49_ROOT_ARCHITECTURE_ATLASCHECK_BOUNDARY_ROUTE_FIELDS_AND_COUNTER_DRIFT_LOCAL.md`; R48 remains prior at `Docs/Reports/2026-05-21_DOCUMENTATION_R48_ROOT_ARCHITECTURE_DATE_ROLLOVER_ATLASCHECK_AND_COUNTER_REFRESH_LOCAL.md`; R47 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`; R46/R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current static gates: `Tools/AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6881 missing=60` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HectonMaskChannelPacker and HectonMaterialChannelPackValidator source refs in the current atlas); `Docs/Modding/Validate_Mod_API_Static.ps1` passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only. Runtime proof remains absent.
-
-Owner lane: SUBNAUTICA_RESEARCHER
-Scope: clean-room external reference research mapped to current HECTON-8 source files.
-
-This is not a request to clone Subnautica or Subnautica 2. Do not extract, decompile, copy, or structurally imitate proprietary assets, binaries, levels, scripts, save data, creature logic, or UI text. The useful material is tactical: content packaging shape, route proof, platform proof, visual fakes, player trust gaps, and build gates.
 
 ## Current Verdict
 
-Subnautica 2's screenshot surface is catchable with HECTON-8's fog, silt, cockpit framing, impostor density, and Overkill tier effects. The real threat is operational: stable content payloads, first-hour route proof, creature stimulus contracts, platform presets, comfort settings, save/schema discipline, and live-update trust.
+Subnautica 2's screenshot surface is catchable with HECTON-8 fog, silt, cockpit framing, impostor density, and Overkill tier effects.
+
+Real threat is operational: content payloads, first-hour route proof, creature stimulus contracts, platform presets, comfort settings, save/schema discipline, live-update trust.
 
 HECTON-8 already has many runtime primitives, but too many contracts are not yet backed by populated payloads or build-blocking proof. The next work should harden the foundation before adding more spectacle.
 
 ## Source Map
 
-| Area | Current File Evidence | What Is Real | Gap | Next Gate |
-|---|---|---|---|---|
-| Static data monolith | `Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs`, `Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs`, `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`, `Data/Balance/*.csv` | Compiler targets `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`, writes via temp-validate-promote, and registers a prebuild bake/validate gate. Arena loads StreamingAssets through MMF/FileStream-to-Vault, with Android/Quest URI staging. | `static_data.h8bin` is absent until the baker runs under Unity. Player/non-editor boot fails fatal when the monolith is missing/invalid. Balance CSVs may omit `hash32`; the compiler derives FNV-1a hashes and fails only mismatches. | Capture guarded Unity import/build proof and keep the prebuild gate red when monolith is absent, stale, corrupt, misaligned, or schema-incompatible. |
-| Small balance bake | `Assets/_Project/Scripts/Core/Data/H8DataBaker.cs`, `Assets/_Project/Scripts/Core/Data/StaticDataStore.cs`, `Data/Balance/Baked/H8StaticData.bin` | A small balance binary exists and can serve dev/static data reads. | It is not the StreamingAssets monolith. Treating it as the world/content monolith is a false positive. | Decide one source-of-truth path, then make the other dev-only or a section producer. |
-| ContentAuthority object assets | `Assets/_Project/Scripts/Core/Content/Editor/ContentAuthorityBuildValidators.cs`, `Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs`, `Assets/AddressableAssetsData` | Validators are build-failing and expect `Core`, `High_Res`, and `Overkill` Unity object/visual groups. Runtime has hash-map lookup, refcounting, VRAM ledger, VFX prewarm, and tier policy. This is separate from DataMonolith/world-static truth. | `Assets/AddressableAssetsData` is empty. No populated `ContentAssetHashMap` or VFX prewarm manifest assets were found. | Generate minimal object-asset settings/groups, hash maps, and VFX manifests. Then run ContentAuthority as a real prebuild gate. |
-| Static world dressing batches | `Assets/_Project/Scripts/Core/Content/ObjectBatchBase.cs`, `Assets/_Project/Scripts/Core/Content/VisibilityProxyBase.cs`, `ContentAuthorityBuildValidators.ValidateObjectBatchPayloads` | ABI exists for static object batches, with packed batch instances and visual-hash validation. | No concrete `ObjectBatchBase` or `VisibilityProxyBase` implementations/assets were found in the current scan. | Add a sector object-batch generator for wrecks, debris, flora clusters, and landmark silhouettes. No runtime GameObject swarm. |
-| First-hour route | `Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs`, `Assets/_Project/Scripts/Editor/ContentSanityValidator.cs`, `Assets/_Project/Scripts/Editor/ScanIntelValidator.cs`, `Assets/_Project/Scripts/ScanLogSystem.cs`, `Assets/_Project/Data/Lore/Quests`, `Assets/_Project/Data/Crafting/Recipes` | There is a first-hour director, scan log, quest/craft assets, and validation surface. | `ContentSanityValidator` and `ScanIntelValidator` are mostly menu/scene proof. Scan-gate warnings are not a deterministic build route proof. | Add a build-blocking route verifier: spawn state -> collect item -> scan -> unlock recipe -> craft -> save/load -> quest advance. |
-| Biome visual authority | `Assets/_Project/Data/Biomes/RuntimeVisualProfiles`, `Assets/_Project/Scripts/BiomeMatrixDirector.cs`, `Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs` | 216 runtime visual profile assets exist. Biome matrix and noir runtime hooks exist. | Need proof that required fog, silt, palette, silhouette, caustic, audio, and reward fields are populated and connected to content residency. | Add biome visual schema validator and require minimum/intermediate/high/maximum budget fields per profile. |
-| Visual Overkill budgets | `Assets/_Project/Scripts/Core/Contracts/HectonVisualOverkillContract.cs`, `Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs`, `Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs`, visor/silt/hull systems | Minimum quality has Dear Lie flags. High and maximum quality define raymarch/POM/SSS/silt/salt/hull budgets. Thermal adapter drives Dear Lie and Overkill shader flags. | The Overkill payload group is not populated. Visual budgets exist as code, not as validated content packs. | Bind salt crystals, volumetric silt wakes, hull dents, POM/raymarch assets, and flora density to `Overkill` group with fallback content in `Core`. |
-| Creature stimuli and acoustic threat | `Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs`, `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`, `Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs`, `Assets/_Project/Scripts/Core/GlobalSignals.cs` | Acoustic runtime consumes typed `SignalBus<MovementAcousticSignal>` and `SignalBus<AcousticPingSignal>` via `ReadOnlySpan<T>`. Sargassum has sensory black box and typed swarm signals. | Legacy `GlobalSignals.Publish`, `PhysicsEventBus`, `HectonEventBus`, delegates, and managed `Action` surfaces still exist. | Create a signal inventory. Promote critical creature/route/world stimuli to typed lanes. Leave legacy only as documented bridge or remove it. |
-| Black-box telemetry | `Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs`, `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`, `Assets/_Project/Scripts/Core/BlackBoxHeartbeatThread.cs`, acoustic/sargassum black boxes | Central telemetry, crash export, heartbeat monitor, and several 300-frame rings exist. | Coverage is not uniform across every P0 foundation system. Content payload generation, first-hour route verification, world paging, and platform gates need explicit last-state records. | Add black-box checklist per P0 system and dump path proof. No "unknown crash" for content/route/pager failures. |
-| Platform proof | `Assets/_Project/Scripts/Editor/Build/PlatformCompatibilityAudit.cs`, `Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs`, `ContentAuthorityBuildValidators.ValidateComputeShaderThreadGroups` | Editor audit classifies Android/Quest, macOS/Metal, Linux/Steam Deck, XR, Addressables, plugin, and storage risks. Thermal adapter has Low/Mx350, Mid, High, Ultra policy. | Audit is diagnostic. It does not equal player build/device proof. | Add CI/device matrix gates: Windows, Linux/Steam Deck storage, macOS Metal shader import, Android/Quest IL2CPP/ARM64, XR comfort, and high-end Overkill pack. |
+Small balance bake:
+
+- Evidence: `H8DataBaker.cs`, `StaticDataStore.cs`, `Data/Balance/Baked/H8StaticData.bin`.
+- Real: small balance binary can serve dev/static reads.
+- Gap: not the StreamingAssets monolith.
+- Gate: choose one source-of-truth path; make the other dev-only or a section producer.
+
+ContentAuthority object assets:
+
+- Evidence: `ContentAuthorityBuildValidators.cs`, `ContentRuntimeServices.cs`, `Assets/AddressableAssetsData`.
+- Real: validators expect `Core`, `High_Res`, `Overkill`; runtime has hash-map lookup, refcounting, VRAM ledger, VFX prewarm, tier policy.
+- Gap: `Assets/AddressableAssetsData` is empty; no populated `ContentAssetHashMap` or VFX prewarm manifest assets found.
+- Gate: generate settings/groups, hash maps, VFX manifests; run ContentAuthority as prebuild gate.
+
+Static world dressing batches:
+
+- Evidence: `ObjectBatchBase.cs`, `VisibilityProxyBase.cs`, `ContentAuthorityBuildValidators.ValidateObjectBatchPayloads`.
+- Real: packed batch ABI and visual-hash validation exist.
+- Gap: no concrete `ObjectBatchBase` or `VisibilityProxyBase` implementations/assets found.
+- Gate: add sector object-batch generator for wrecks, debris, flora clusters, landmark silhouettes.
+
+First-hour route:
+
+- Evidence: `FirstHourDirector.cs`, `ContentSanityValidator.cs`, `ScanIntelValidator.cs`, `ScanLogSystem.cs`, quest/craft assets.
+- Real: first-hour director, scan log, quest/craft assets, validation surface exist.
+- Gap: menu/scene proof is not deterministic build route proof.
+- Gate: build-blocking route verifier for spawn -> collect -> scan -> unlock -> craft -> save/load -> quest advance.
+
+Biome visual authority:
+
+- Evidence: runtime visual profiles, `BiomeMatrixDirector.cs`, `HectonUberNoirRuntimeBridge.cs`.
+- Real: 216 runtime visual profile assets plus runtime hooks.
+- Gap: field population and content-residency links unproven.
+- Gate: biome visual schema validator with minimum/intermediate/high/maximum budget fields.
+
+Visual Overkill budgets:
+
+- Evidence: `HectonVisualOverkillContract.cs`, `ContentRuntimeServices.cs`, `ThermalDynamicResolutionAdapter.cs`, visor/silt/hull systems.
+- Real: minimum Dear Lie flags; high/max raymarch, POM, SSS, silt, salt, hull budgets.
+- Gap: `Overkill` payload group not populated.
+- Gate: bind salt crystals, silt wakes, hull dents, POM/raymarch assets, flora density to `Overkill`; keep `Core` fallback.
+
+Creature stimuli and acoustic threat:
+
+- Evidence: `AcousticEchoLocationRuntime.cs`, `SargassumMicroFaunaBoids.cs`, `WorldSpatialHashGrid.cs`, `GlobalSignals.cs`.
+- Real: acoustic runtime consumes typed `SignalBus<MovementAcousticSignal>` / `SignalBus<AcousticPingSignal>`; Sargassum has black box and typed swarm signals.
+- Gap: legacy `GlobalSignals.Publish`, `PhysicsEventBus`, `HectonEventBus`, delegates, managed `Action` surfaces remain.
+- Gate: inventory signals; promote critical stimuli to typed lanes; leave legacy only as documented bridge.
+
+Black-box telemetry:
+
+- Evidence: `GlobalTelemetryBus.cs`, `CrashTelemetryBuffer.cs`, `BlackBoxHeartbeatThread.cs`, acoustic/sargassum rings.
+- Real: central telemetry, crash export, heartbeat monitor, several 300-frame rings.
+- Gap: P0 coverage not uniform.
+- Gate: black-box checklist per P0 system and dump path proof.
+
+Platform proof:
+
+- Evidence: `PlatformCompatibilityAudit.cs`, `ThermalDynamicResolutionAdapter.cs`, `ContentAuthorityBuildValidators.ValidateComputeShaderThreadGroups`.
+- Real: editor audit classifies Android/Quest, macOS/Metal, Linux/Steam Deck, XR, Addressables, plugin, storage risks.
+- Gap: diagnostic audit is not player/device proof.
+- Gate: CI/device matrix for Windows, Linux/Steam Deck, macOS Metal, Android/Quest IL2CPP/ARM64, XR comfort, high-end Overkill pack.
+
+### Static Data Monolith
+
+| Field | Fact |
+|---|---|
+| Source files | `H8DataMonolithCompiler.cs`; `H8StaticDataArena.cs`; `GameBootstrapper.cs`; `Data/Balance/*.csv` |
+| Output target | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
+| Compiler behavior | temp-write, validate, promote, prebuild bake/validate gate |
+| Runtime load | StreamingAssets via MMF/FileStream-to-Vault; Android/Quest URI staging |
+| Current artifact | exists in X_012 scan; Unity/player boot proof pending |
+| Fatal gate | non-editor player boot rejects missing or invalid monolith |
+| CSV hashes | missing `hash32` is derived by FNV-1a; mismatches fail |
+| Next gate | guarded Unity import/build proof; keep prebuild red for absent, stale, corrupt, misaligned, or schema-incompatible payload |
 
 ## P0 Work Orders
 
 1. **Monolith Build Gate**
+
    - Files: `H8DataMonolithCompiler.cs`, `H8StaticDataArena.cs`, `GameBootstrapper.cs`, `Data/Balance/*.csv`.
+
    - Required proof: `static_data.h8bin` generated in `Assets/StreamingAssets/Hecton8/DataMonolith`, schema hash recorded, app-version hash recorded, boot fails in non-dev builds when missing.
+
    - Minimum quality: smallest required static tables only.
    - High and maximum quality: optional visual/content sections allowed only if ABI and fallback sections stay identical.
 
 2. **ContentAuthority Object-Payload Bootstrap**
+
    - Files: `ContentAuthorityBuildValidators.cs`, `ContentRuntimeServices.cs`, `ContentAssetHashMap.cs`, `ContentVfxPrewarmManifest`.
-   - Required proof: `Core`, `High_Res`, `Overkill` Unity object asset groups exist where deliberately chosen; at least one valid hash-map asset is bound; VFX prewarm manifest validates; no first-party `Resources.Load` leak. `static_data.h8bin` and sector payload manifests remain separate static/world-data authority.
+
+   - Required proof: `Core`, `High_Res`, `Overkill` Unity object asset groups exist where chosen.
+   - Required proof: at least one valid hash-map asset is bound.
+   - Required proof: VFX prewarm manifest validates.
+   - Required proof: no first-party `Resources.Load` leak.
+   - Boundary: `static_data.h8bin` and sector manifests remain separate static/world-data authority.
+
    - Minimum quality: `Core` group must cover all mandatory gameplay.
    - Maximum quality: `Overkill` group must be optional, downloadable-safe, XR-disabled when policy says so, and never required for route completion.
 
 3. **First-Hour Route Verifier**
+
    - Files: `FirstHourDirector.cs`, `ContentSanityValidator.cs`, `ScanIntelValidator.cs`, `ScanLogSystem.cs`, quest and recipe assets.
+
    - Required proof: deterministic route from first salvage to scanner/repair/craft/save/load. Validator must fail build for missing route-critical scan entries, recipe gates, quest IDs, or item prefabs.
+
    - Minimum quality: route works with no high-density VFX.
    - Maximum quality: route can add PDA, VO, hologram, and cinematic visor presentation without changing progression facts.
 
 4. **ObjectBatch World Dressing**
+
    - Files: `ObjectBatchBase.cs`, `VisibilityProxyBase.cs`, world/page payload systems.
+
    - Required proof: static wreck/debris/flora dressing exists as packed batches with hash-map visual references. No tactical world density should depend on spawning thousands of GameObjects.
+
    - Minimum quality: impostor and sparse silhouette batches.
    - Maximum quality: dense debris, local decals, material variation, volumetric silt anchors.
 
 5. **Biome Visual Authority Gate**
+
    - Files: runtime visual profiles, `BiomeMatrixDirector.cs`, `HectonUberNoirRuntimeBridge.cs`, `ContentTieredGroupPolicy`.
+
    - Required proof: every shipped biome profile has fog, palette, silt, visibility, audio/material, landmark, reward hook, and tier budgets.
+
    - Minimum quality: 1D LUTs, triangle noise, billboard clusters, projected caustics.
    - Maximum quality: visor salt, volumetric silt wakes, hull dents, raymarched fog, 16-tap POM, SSS.
 
 6. **Stimulus Lane Cleanup**
+
    - Files: `AcousticEchoLocationRuntime.cs`, `SargassumMicroFaunaBoids.cs`, `GlobalSignals.cs`, legacy event buses.
+
    - Required proof: creature threat reacts through typed light/sound/movement/action lanes. No duplicate signal contract for the same gameplay fact.
+
    - Minimum quality: scalar stimulus scores and animation state fakes.
    - Maximum quality: secondary motion, tentacle/appendage presentation, silt/particle reaction layers.
 
 7. **Platform Matrix Proof**
+
    - Files: `PlatformCompatibilityAudit.cs`, `ThermalDynamicResolutionAdapter.cs`, compute shaders, StreamingAssets readers, native plugin metadata.
+
    - Required proof: separate logs for Windows PC, Linux/Steam Deck, macOS Metal import, Android/Quest IL2CPP, and high-end PC Overkill.
+
    - Minimum quality: no 1024+ thread group abuse, no unbounded synchronous I/O spikes, no heavy preload audio.
    - Maximum quality: 4090-class quality is not punished by mobile defaults.
 
 ## P1 Work Orders
 
 1. **Save And Schema Cadence**
+
    - Make content versions, route versions, and monolith schema versions explicit.
+
    - Subnautica 2 is Early Access. HECTON-8 must assume repeated content updates and old saves.
 
 2. **Comfort And Trust**
+
    - Verify FOV, motion, input, accessibility, and permissions settings. Player trust failures are competitive damage, not polish.
 
 3. **Feedback Ingestion**
+
    - Extend telemetry to answer: where first-hour players stop, which route item fails, which platform hitches, and which content hash is missing.
 
 4. **Co-op Ready State Boundaries**
+
    - Do not build co-op now unless commanded, but stop writing systems that would make future shared state impossible.
+
    - Separate player inventory, world mutation, base edits, route flags, and content unlocks.
 
 ## Explicit Non-Goals
 
 - Do not move HECTON-8 back to standard Unity Addressables as the world-paging architecture.
+
 - Do not use Subnautica or Subnautica 2 proprietary assets, binary data, decompiled scripts, creature setups, or world cache payloads.
+
 - Do not chase screenshot parity before `static_data.h8bin`, ContentAuthority payloads, first-hour route proof, and platform audit gates are real.
+
 - Do not make Overkill visuals route-critical.
+
 - Do not accept menu-only validators as shipping proof.
 
 ## Proof Limits
 
-This handoff is documentation and source audit only. No runtime code was changed. No Unity Editor import, Play Mode, player build, Android/Quest, macOS/Metal, Steam Deck, or profiler validation was run during this pass. Microsecond savings are 0us measured. All future performance claims require profiler evidence on target hardware.
+This handoff is documentation and source audit only.
+
+- Runtime code changed: no.
+- Unity Editor import / Play Mode / player build: not run.
+- Platform validation: no Android/Quest, macOS/Metal, or Steam Deck run.
+- Profiler validation: not run.
+- Measured savings: `0us`.
+- Future performance claims require profiler evidence on target hardware.

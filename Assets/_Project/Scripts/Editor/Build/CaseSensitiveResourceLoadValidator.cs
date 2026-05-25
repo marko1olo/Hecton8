@@ -37,8 +37,8 @@ namespace Hecton8.Editor.Build
 
         private static void ValidateOrThrow()
         {
-            HashSet<string> exactResourceKeys = new HashSet<string>(StringComparer.Ordinal);
-            Dictionary<string, string> canonicalByLowerKey = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> exactResourceKeys = new HashSet<string>(512, StringComparer.Ordinal);
+            Dictionary<string, string> canonicalByLowerKey = new Dictionary<string, string>(512, StringComparer.OrdinalIgnoreCase);
             BuildResourceKeyMap(exactResourceKeys, canonicalByLowerKey);
 
             string[] assetPaths = AssetDatabase.GetAllAssetPaths();

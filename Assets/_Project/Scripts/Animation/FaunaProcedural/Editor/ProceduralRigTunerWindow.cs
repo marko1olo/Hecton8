@@ -95,14 +95,17 @@ namespace Hecton8.Animation.FaunaProcedural.Editor
                 return;
             }
 
-            EditorGUILayout.LabelField("GPU Buffer Count", buffer.count.ToString());
-            EditorGUILayout.LabelField("Matrix Upload Count", matrixCount.ToString());
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUILayout.IntField("GPU Buffer Count", buffer.count);
+            EditorGUILayout.IntField("Matrix Upload Count", matrixCount);
             if (runtime.TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO>.ReadOnly tuning) &&
                 tuning.IsCreated &&
                 tuning.Length > 0)
             {
-                EditorGUILayout.LabelField("Vault Quality", math.saturate(tuning[0].GlobalQualityWeight).ToString("0.000"));
+                EditorGUILayout.Slider("Vault Quality", math.saturate(tuning[0].GlobalQualityWeight), 0f, 1f);
             }
+
+            EditorGUI.EndDisabledGroup();
         }
 
         private void OnDrawGizmosSceneHook(SceneView sceneView)

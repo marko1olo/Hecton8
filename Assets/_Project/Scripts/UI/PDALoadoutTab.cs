@@ -24,7 +24,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Loadout Tab")]
-    public sealed class PDALoadoutTab : MonoBehaviour, IUpdatable, IPDAEventListener, IPlayerExpressionEventListener
+    public sealed class PDALoadoutTab : MonoBehaviour, IUpdatable, ILateFrameTickable, IPDAEventListener, IPlayerExpressionEventListener, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -60,19 +60,7 @@ namespace Hecton8.UI
 
         // COLD ALLOC: char[1024] — PDA loadout summary composition buffer — owner: PDALoadoutTab
         private readonly char[] _summaryCharBuffer = new char[1024];
-        private readonly System.Collections.Generic.Dictionary<ulong, PlayerTool> _prefabToolCache = new System.Collections.Generic.Dictionary<ulong, PlayerTool>(32); // COLD ALLOC: Dictionary<ulong, PlayerTool>(32) — caches prefab PlayerTool owners for repeated loadout refreshes — owner: PDALoadoutTab
-
-        /// <summary>Keshirovannye stroki dlya ToUpperInvariant (izbegaet povtornyh allokatsiy)</summary>
-        /// <summary>Keshirovannye stroki dlya ItemCategory enum (bez enum string conversion v hot path)</summary>
-        private static readonly string[] _cachedCategoryStrings = new string[]
-        {
-            "MISCELLANEOUS", // ItemCategory.Miscellaneous = 0
-            "MATERIAL",      // ItemCategory.Material = 1
-            "TOOL",          // ItemCategory.Tool = 2
-            "EQUIPMENT",     // ItemCategory.Equipment = 3
-            "CONSUMABLE",    // ItemCategory.Consumable = 4
-            "COMPONENT"      // ItemCategory.Component = 5
-        };
+        private readonly System.Collections.Generic.Dictionary<ulong, IPlayerToolDataReadModel> _prefabToolCache = new System.Collections.Generic.Dictionary<ulong, IPlayerToolDataReadModel>(32); // COLD ALLOC: Dictionary<ulong, IPlayerToolDataReadModel>(32) — caches prefab tool metadata routes for repeated loadout refreshes — owner: PDALoadoutTab
 
         private bool _built;
         private bool _refreshDirty;
@@ -107,8 +95,12 @@ namespace Hecton8.UI
         private CanvasGroup _recommendedActionCanvasGroup;
         private Image _recommendedActionBg;
         private TextMeshProUGUI _recommendedActionLabel;
-        private PlayerInventoryManager _inventoryManager;
+        private IPlayerInventoryService _inventoryService;
+        private IPlayerExpressionReadModel _playerExpressionReadModel;
         private bool _registeredToDispatcher;
+        private bool _registeredToLateFrameDispatcher;
+        private bool _registeredHotSwap;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
         private uint _toolLoadoutSignalSourceId;
@@ -117,6 +109,8 @@ namespace Hecton8.UI
         private int _summaryMassCharStart = -1;
         private int _summaryMassCharLength;
         private float _massPulsePhase;
+        private float _pendingSummaryMassPulseDelta;
+        private bool _summaryMassPulseDirty;
         private bool _summaryMassVertexRefreshDeferred;
         private Color32 _appliedSummaryMassColor = new Color32(0, 0, 0, 0);
         private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - loadout HUD notification staging buffer - owner: PDALoadoutTab
@@ -131,6 +125,9 @@ namespace Hecton8.UI
         private void Awake()
         {
             AutoResolveTabIndex();
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CachePlayerInventoryService(GlobalRegistry.PlayerInventory);
+            CachePlayerExpressionReadModel(GlobalRegistry.PlayerExpressionReadModel);
             AutoResolve();
         }
 
@@ -151,18 +148,26 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CachePlayerInventoryService(GlobalRegistry.PlayerInventory);
+            CachePlayerExpressionReadModel(GlobalRegistry.PlayerExpressionReadModel);
             AutoResolve();
             EnsureBuilt();
             Subscribe();
+            TryRegisterHotSwapListener();
             RegisterToTickManager();
+            RegisterToLateFrameManager();
             _refreshDirty = true;
             RefreshAll();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             Unsubscribe();
             UnregisterFromTickManager();
+            UnregisterFromLateFrameManager();
+            _playerRuntimeContext = null;
         }
 
         /// <inheritdoc />
@@ -174,12 +179,24 @@ namespace Hecton8.UI
                 signalDirty |= ConsumeToolLoadoutChangedSignals();
                 signalDirty |= ConsumeDurabilityChangedSignals();
                 if (signalDirty)
-                {
                     _refreshDirty = true;
-                    RefreshAll();
-                }
             }
 
+            _pendingSummaryMassPulseDelta += math.max(0f, deltaTime);
+            _summaryMassPulseDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_refreshDirty && IsTabActive)
+                RefreshAll();
+
+            if (!_summaryMassPulseDirty)
+                return;
+
+            float deltaTime = _pendingSummaryMassPulseDelta;
+            _pendingSummaryMassPulseDelta = 0f;
+            _summaryMassPulseDirty = false;
             UpdateSummaryMassPulse(deltaTime);
         }
 
@@ -189,9 +206,7 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            if (_inventoryManager == null)
-                _inventoryManager = GlobalRegistry.PlayerInventory as PlayerInventoryManager;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerInventory == null && playerContext != null)
                 playerInventory = playerContext.Inventory;
             if (toolManager == null && playerContext != null)
@@ -222,14 +237,101 @@ namespace Hecton8.UI
                 }
             }
 
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
             RefreshInventorySignalBinding();
             RefreshToolLoadoutSignalBinding();
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
+        }
+
+        private void CachePlayerInventoryService(object inventoryService)
+        {
+            _inventoryService = inventoryService as IPlayerInventoryService;
+        }
+
+        private void CachePlayerExpressionReadModel(IPlayerExpressionReadModel expressionReadModel)
+        {
+            _playerExpressionReadModel = expressionReadModel ?? playerExpressionManager;
+        }
+
+        private bool TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionReadModel)
+        {
+            expressionReadModel = _playerExpressionReadModel ?? playerExpressionManager;
+            return expressionReadModel != null;
+        }
+
+        private void ClearPlayerOwnedReferences(IPlayerRuntimeContext previousContext)
+        {
+            if (previousContext == null)
+                return;
+
+            if (ReferenceEquals(playerInventory, previousContext.Inventory))
+                playerInventory = null;
+            if (ReferenceEquals(toolManager, previousContext.ToolManager))
+                toolManager = null;
+            if (ReferenceEquals(playerPDA, previousContext.PlayerPDA))
+                playerPDA = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    ClearPlayerOwnedReferences(previousService as IPlayerRuntimeContext);
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    AutoResolve();
+                    _refreshDirty = true;
+                    if (IsTabActive)
+                        RefreshAll();
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    CachePlayerInventoryService(currentService);
+                    AutoResolve();
+                    _refreshDirty = true;
+                    if (IsTabActive)
+                        RefreshAll();
+                    break;
+                case GlobalRegistryServiceSlot.PlayerExpressionRuntime:
+                    CachePlayerExpressionReadModel(currentService as IPlayerExpressionReadModel);
+                    _refreshDirty = true;
+                    if (IsTabActive)
+                        RefreshAll();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                    {
+                        UnregisterFromTickManager();
+                        RegisterToTickManager();
+                    }
+                    break;
+            }
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -369,7 +471,7 @@ namespace Hecton8.UI
         private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
         {
             return manager != null && manager.gameObject != null
-                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
                 : 0u;
         }
 
@@ -482,7 +584,7 @@ namespace Hecton8.UI
                 int col = i % 2;
                 int row = i / 2;
 
-                RectTransform card = CreateRect(self, "LoadoutSlot_" + (i + 1));
+                RectTransform card = CreateRect(self, "LoadoutSlot");
                 card.anchorMin = new Vector2(0f, 1f);
                 card.anchorMax = new Vector2(0f, 1f);
                 card.pivot = new Vector2(0f, 1f);
@@ -677,12 +779,12 @@ namespace Hecton8.UI
         {
             if (_slotRoots == null || toolManager == null) return;
 
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+            IToolDurabilityService durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurabilityService;
 
             for (int i = 0; i < 4; i++)
             {
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                PlayerTool tool = ResolvePrefabTool(prefab);
+                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
                 ItemData item = tool != null ? tool.ToolData : null;
                 ToolMetadata meta = tool != null ? tool.Metadata : null;
 
@@ -748,9 +850,6 @@ namespace Hecton8.UI
                     SetLiteralText(_slotStatuses[i], active ? "READY / ACTIVE".AsSpan() : "READY".AsSpan());
                 }
 
-                string category = item != null && (int)item.category >= 0 && (int)item.category < _cachedCategoryStrings.Length
-                    ? _cachedCategoryStrings[(int)item.category]
-                    : "TOOL";
                 float weight = item != null ? item.weight : 0f;
                 float currentDurability = meta != null && durabilitySystem != null
                     ? durabilitySystem.GetDurability(meta.toolID, meta.maxDurability)
@@ -761,7 +860,7 @@ namespace Hecton8.UI
 
                 SetSlotBodyText(
                     _slotBodies[i],
-                    category,
+                    ResolveCategoryLabel(item),
                     item != null && playerInventory != null
                         ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(item.PersistentId))
                         : 0,
@@ -794,16 +893,16 @@ namespace Hecton8.UI
             int broken = 0;
             float totalWeight = 0f;
             float inventoryMass = playerInventory != null ? Mathf.Max(0f, playerInventory.TotalWeight) : 0f;
-            float carryCapacity = _inventoryManager != null ? _inventoryManager.CarryCapacityKilograms : 200f;
+            float carryCapacity = _inventoryService != null ? _inventoryService.CarryCapacityKilograms : 200f;
             string recommendedPresetName = "GENERAL";
             string recommendedPresetDirective = "No authored target in front of the diver. General-purpose expedition loadout remains valid.";
 
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+            IToolDurabilityService durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurabilityService;
 
             for (int i = 0; i < toolManager.SlotCount; i++)
             {
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                PlayerTool tool = ResolvePrefabTool(prefab);
+                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
                 if (tool == null)
                     continue;
 
@@ -884,25 +983,16 @@ namespace Hecton8.UI
             if (_identityActionRoot == null || _identityActionLabel == null || _identityActionBg == null)
                 return;
 
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
-
-            if (playerExpressionManager == null || playerExpressionManager.ProfileCount <= 1)
-            {
-                SetCanvasGroupVisible(_identityActionCanvasGroup, false);
-                return;
-            }
-
-            int nextProfileIndex = playerExpressionManager.GetNextProfileIndex();
-            PlayerExpressionProfile nextProfile = playerExpressionManager.GetProfile(nextProfileIndex);
-            if (nextProfile == null)
+            if (!TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionManager) ||
+                expressionManager.ProfileCount <= 1 ||
+                !expressionManager.TryGetNextProfileDisplayName(out string nextProfileDisplayName))
             {
                 SetCanvasGroupVisible(_identityActionCanvasGroup, false);
                 return;
             }
 
             SetCanvasGroupVisible(_identityActionCanvasGroup, true);
-            SetPrefixedUpperText(_identityActionLabel, "NEXT IDENTITY - ".AsSpan(), nextProfile.DisplayName);
+            SetPrefixedUpperText(_identityActionLabel, "NEXT IDENTITY - ".AsSpan(), nextProfileDisplayName);
             _identityActionBg.color = new Color(0.08f, 0.18f, 0.2f, 0.82f);
         }
 
@@ -992,7 +1082,7 @@ namespace Hecton8.UI
                 return;
 
             GameObject prefab = toolManager.GetAssignedToolPrefab(slotIndex);
-            PlayerTool tool = ResolvePrefabTool(prefab);
+            IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
             ItemData item = tool != null ? tool.ToolData : null;
 
             if (clearAssignment)
@@ -1015,7 +1105,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+            IToolDurabilityService durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurabilityService;
             if (tool.Metadata != null && durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID))
             {
                 NotifyUpperSuffix(true, item != null ? item.itemName : "TOOL", " IS BROKEN".AsSpan());
@@ -1049,7 +1139,7 @@ namespace Hecton8.UI
             ToolLoadoutPreset preset = loadoutPresets[presetIndex];
             if (preset == null)
             {
-                NotifyWarning("LOADOUT PRESET IS NOT CONFIGURED");
+                NotifyWarning("LOADOUT PRESET IS NOT CONFIGURED".AsSpan());
                 return;
             }
 
@@ -1068,7 +1158,7 @@ namespace Hecton8.UI
             int presetIndex = GetRecommendedPresetIndex();
             if (presetIndex < 0)
             {
-                NotifyWarning("NO SUGGESTED PRESET FOR CURRENT FIELD TARGET");
+                NotifyWarning("NO SUGGESTED PRESET FOR CURRENT FIELD TARGET".AsSpan());
                 return;
             }
 
@@ -1077,7 +1167,7 @@ namespace Hecton8.UI
                 : null;
             if (preset == null)
             {
-                NotifyWarning("SUGGESTED PRESET IS NOT CONFIGURED");
+                NotifyWarning("SUGGESTED PRESET IS NOT CONFIGURED".AsSpan());
                 return;
             }
 
@@ -1092,31 +1182,32 @@ namespace Hecton8.UI
 
         internal void InvokeIdentityCycleAction()
         {
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
-
-            if (playerExpressionManager == null)
+            if (!TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionManager))
             {
-                NotifyWarning("SUIT IDENTITY CATALOG IS NOT AVAILABLE");
+                NotifyWarning("SUIT IDENTITY CATALOG IS NOT AVAILABLE".AsSpan());
                 return;
             }
 
-            if (!playerExpressionManager.CycleNextProfile(false))
+            if (!expressionManager.CycleNextProfile(false))
             {
-                NotifyWarning("FAILED TO SWITCH SUIT IDENTITY");
+                NotifyWarning("FAILED TO SWITCH SUIT IDENTITY".AsSpan());
                 return;
             }
 
             RefreshAll();
         }
 
-        private void NotifyInfo(string message)
+        private void NotifyInfo(ReadOnlySpan<char> message)
         {
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
 
-            if (hudNotification != null)
-                hudNotification.ShowInfo(message);
+            if (hudNotification == null || message.Length <= 0)
+                return;
+
+            _notificationBuffer.Clear();
+            _notificationBuffer.Append(message);
+            hudNotification.ShowInfo(in _notificationBuffer);
         }
 
         private void NotifyInfo(in FixedCharBuffer messageBuffer)
@@ -1128,13 +1219,17 @@ namespace Hecton8.UI
                 hudNotification.ShowInfo(in messageBuffer);
         }
 
-        private void NotifyWarning(string message)
+        private void NotifyWarning(ReadOnlySpan<char> message)
         {
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
 
-            if (hudNotification != null)
-                hudNotification.ShowWarning(message);
+            if (hudNotification == null || message.Length <= 0)
+                return;
+
+            _notificationBuffer.Clear();
+            _notificationBuffer.Append(message);
+            hudNotification.ShowWarning(in _notificationBuffer);
         }
 
         private void NotifyWarning(in FixedCharBuffer messageBuffer)
@@ -1206,7 +1301,7 @@ namespace Hecton8.UI
 
             for (int i = 0; i < _presetRoots.Length; i++)
             {
-                RectTransform root = CreateRect(self, $"Preset_{i + 1}");
+                RectTransform root = CreateRect(self, "Preset");
                 root.anchorMin = new Vector2(0f, 0f);
                 root.anchorMax = new Vector2(0f, 0f);
                 root.pivot = new Vector2(0f, 0f);
@@ -1338,7 +1433,7 @@ namespace Hecton8.UI
             for (int i = 0; i < preset.slotPrefabs.Length; i++)
             {
                 GameObject prefab = preset.slotPrefabs[i];
-                PlayerTool tool = ResolvePrefabTool(prefab);
+                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
                 if (tool?.ToolData != null && playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(tool.ToolData.PersistentId)))
                     count++;
             }
@@ -1346,19 +1441,19 @@ namespace Hecton8.UI
             return count;
         }
 
-        private PlayerTool ResolvePrefabTool(GameObject prefab)
+        private IPlayerToolDataReadModel ResolvePrefabTool(GameObject prefab)
         {
             if (prefab == null)
                 return null;
 
             ulong prefabId = EntityId.ToULong(prefab.GetEntityId());
-            if (_prefabToolCache.TryGetValue(prefabId, out PlayerTool cachedTool) &&
+            if (_prefabToolCache.TryGetValue(prefabId, out IPlayerToolDataReadModel cachedTool) &&
                 cachedTool != null)
             {
                 return cachedTool;
             }
 
-            if (!prefab.TryGetComponent(out PlayerTool resolvedTool))
+            if (!prefab.TryGetComponent(out IPlayerToolDataReadModel resolvedTool))
                 return null;
 
             _prefabToolCache[prefabId] = resolvedTool;
@@ -1367,12 +1462,9 @@ namespace Hecton8.UI
 
         private void AppendActiveExpressionName(Span<char> destination, ref int index)
         {
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
-
-            if (playerExpressionManager != null)
+            if (TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionManager))
             {
-                AppendUpper(destination, ref index, playerExpressionManager.GetActiveProfileName());
+                AppendUpper(destination, ref index, expressionManager.GetActiveProfileName());
                 return;
             }
 
@@ -1381,50 +1473,36 @@ namespace Hecton8.UI
 
         private string GetActiveExpressionSummary()
         {
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
-
-            return playerExpressionManager != null
-                ? playerExpressionManager.GetActiveProfileSummary()
+            return TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionManager)
+                ? expressionManager.GetActiveProfileSummary()
                 : "Suit identity matrix is offline.";
         }
 
         private string GetActiveExpressionLoadoutName()
         {
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
-
-            return playerExpressionManager != null
-                ? playerExpressionManager.GetActiveRecommendedLoadoutName()
+            return TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionManager)
+                ? expressionManager.GetActiveRecommendedLoadoutName()
                 : string.Empty;
         }
 
         private string GetActiveExpressionSuitName()
         {
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
-
-            return playerExpressionManager != null
-                ? playerExpressionManager.GetActiveRecommendedSuitName()
+            return TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionManager)
+                ? expressionManager.GetActiveRecommendedSuitName()
                 : string.Empty;
         }
 
         private string GetLiveExpressionSuitName()
         {
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
-
-            return playerExpressionManager != null
-                ? playerExpressionManager.GetLiveSuitName()
+            return TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionManager)
+                ? expressionManager.GetLiveSuitName()
                 : string.Empty;
         }
 
         private bool IsExpressionSuitApplied()
         {
-            if (playerExpressionManager == null)
-                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
-
-            return playerExpressionManager != null && playerExpressionManager.IsActiveRecommendedSuitApplied();
+            return TryGetPlayerExpressionReadModel(out IPlayerExpressionReadModel expressionManager) &&
+                expressionManager.IsActiveRecommendedSuitApplied();
         }
 
         private static void ClearChildren(Transform parent)
@@ -1475,8 +1553,18 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
+            _registeredToDispatcher = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+        }
+
+        private void RegisterToLateFrameManager()
+        {
+            if (_registeredToLateFrameDispatcher || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredToLateFrameDispatcher = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1486,6 +1574,15 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToDispatcher = false;
+        }
+
+        private void UnregisterFromLateFrameManager()
+        {
+            if (!_registeredToLateFrameDispatcher)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredToLateFrameDispatcher = false;
         }
 
         private void UpdateSummaryMassPulse(float deltaTime)
@@ -1844,7 +1941,31 @@ namespace Hecton8.UI
             }
         }
 
-        private static void SetSlotBodyText(TMP_Text text, string category, int cargoCount, float weight, float normalizedDurability, float energyPerSecond)
+        private static ReadOnlySpan<char> ResolveCategoryLabel(ItemData item)
+        {
+            if (item == null)
+                return "TOOL".AsSpan();
+
+            switch (item.category)
+            {
+                case ItemCategory.Miscellaneous:
+                    return "MISCELLANEOUS".AsSpan();
+                case ItemCategory.Material:
+                    return "MATERIAL".AsSpan();
+                case ItemCategory.Tool:
+                    return "TOOL".AsSpan();
+                case ItemCategory.Equipment:
+                    return "EQUIPMENT".AsSpan();
+                case ItemCategory.Consumable:
+                    return "CONSUMABLE".AsSpan();
+                case ItemCategory.Component:
+                    return "COMPONENT".AsSpan();
+                default:
+                    return "TOOL".AsSpan();
+            }
+        }
+
+        private static void SetSlotBodyText(TMP_Text text, ReadOnlySpan<char> category, int cargoCount, float weight, float normalizedDurability, float energyPerSecond)
         {
             if (text == null || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
                 return;
@@ -1854,7 +1975,7 @@ namespace Hecton8.UI
                 Span<char> destination = lease.Buffer.AsSpan();
                 int index = 0;
                 Append(destination, ref index, "CLASS    ".AsSpan());
-                Append(destination, ref index, string.IsNullOrEmpty(category) ? "TOOL".AsSpan() : category.AsSpan());
+                Append(destination, ref index, category.IsEmpty ? "TOOL".AsSpan() : category);
                 Append(destination, ref index, "\nIN CARGO  ".AsSpan());
                 AppendInt(destination, ref index, cargoCount);
                 Append(destination, ref index, "\nMASS     ".AsSpan());
@@ -1923,7 +2044,7 @@ namespace Hecton8.UI
 
         private static char ToAsciiUpperInvariant(char value)
         {
-            return value >= 'a' && value <= 'z' ? (char)(value - 32) : char.ToUpperInvariant(value);
+            return value >= 'a' && value <= 'z' ? (char)(value - 32) : value;
         }
 
         private static void AppendInt(Span<char> destination, ref int index, int value)

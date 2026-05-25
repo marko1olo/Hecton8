@@ -1,5 +1,4 @@
 #if UNITY_EDITOR
-using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Mathematics;
 using UnityEditor;
@@ -78,7 +77,10 @@ namespace Hecton8.AI.Cognition.Editor
                 return;
 
             _nextCsvPollTime = now + 0.5d;
-            if (ApexBrainVault.TryPollCsvOverrides(GlobalRegistry.DataVault, ref _handles, Application.dataPath + "/.."))
+            if (!TryEnsureVault(out IDataVault vault))
+                return;
+
+            if (ApexBrainVault.TryPollCsvOverrides(vault, ref _handles, Application.dataPath + "/.."))
             {
                 RefreshFromVault();
                 _status = "CSV overrides auto-applied.";
@@ -88,13 +90,19 @@ namespace Hecton8.AI.Cognition.Editor
 
         private bool TryEnsureVault()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            return TryEnsureVault(out _);
+        }
+
+        private bool TryEnsureVault(out IDataVault vault)
+        {
+            vault = null;
+            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
             {
-                _status = "GlobalRegistry.DataVault unavailable.";
+                _status = "GlobalDataVault unavailable.";
                 return false;
             }
 
+            vault = latest;
             if (!_handles.IsCreated() && !ApexBrainVault.TryAcquireHandles(vault, out _handles))
             {
                 _status = "ApexBrain vault handles unavailable.";
@@ -106,10 +114,10 @@ namespace Hecton8.AI.Cognition.Editor
 
         private void RefreshFromVault()
         {
-            if (!TryEnsureVault())
+            if (!TryEnsureVault(out IDataVault vault))
                 return;
 
-            if (ApexBrainVault.TryGetTuning(GlobalRegistry.DataVault, ref _handles, out _tuning))
+            if (ApexBrainVault.TryGetTuning(vault, ref _handles, out _tuning))
                 _status = "Vault tuning sampled.";
             else
                 _status = "Vault tuning unreadable.";
@@ -117,10 +125,10 @@ namespace Hecton8.AI.Cognition.Editor
 
         private void WriteTuning()
         {
-            if (!TryEnsureVault())
+            if (!TryEnsureVault(out IDataVault vault))
                 return;
 
-            _status = ApexBrainVault.TrySetTuning(GlobalRegistry.DataVault, ref _handles, in _tuning)
+            _status = ApexBrainVault.TrySetTuning(vault, ref _handles, in _tuning)
                 ? "Vault tuning updated."
                 : "Vault tuning write failed.";
             SceneView.RepaintAll();
@@ -128,10 +136,10 @@ namespace Hecton8.AI.Cognition.Editor
 
         private void ReloadCsv()
         {
-            if (!TryEnsureVault())
+            if (!TryEnsureVault(out IDataVault vault))
                 return;
 
-            _status = ApexBrainVault.TryLoadCsvOverrides(GlobalRegistry.DataVault, ref _handles, Application.dataPath + "/..")
+            _status = ApexBrainVault.TryLoadCsvOverrides(vault, ref _handles, Application.dataPath + "/..")
                 ? "CSV overrides applied."
                 : "CSV overrides missing or unchanged.";
             RefreshFromVault();
@@ -146,10 +154,10 @@ namespace Hecton8.AI.Cognition.Editor
 
         private void DumpBlackBox()
         {
-            if (!TryEnsureVault())
+            if (!TryEnsureVault(out IDataVault vault))
                 return;
 
-            if (!ApexBrainVault.TryResolveViews(GlobalRegistry.DataVault, ref _handles, out ApexBrainVaultBuffers buffers))
+            if (!ApexBrainVault.TryResolveViews(vault, ref _handles, out ApexBrainVaultBuffers buffers))
             {
                 _status = "Telemetry buffers unavailable.";
                 return;
@@ -162,10 +170,10 @@ namespace Hecton8.AI.Cognition.Editor
 
         private void OnDrawGizmosSceneView(SceneView sceneView)
         {
-            if (!_drawGizmos || !EditorApplication.isPlaying || !TryEnsureVault())
+            if (!_drawGizmos || !EditorApplication.isPlaying || !TryEnsureVault(out IDataVault vault))
                 return;
 
-            if (!ApexBrainVault.TryResolveViews(GlobalRegistry.DataVault, ref _handles, out ApexBrainVaultBuffers buffers) ||
+            if (!ApexBrainVault.TryResolveViews(vault, ref _handles, out ApexBrainVaultBuffers buffers) ||
                 !buffers.Outputs.IsCreated)
             {
                 return;

@@ -21,21 +21,26 @@ namespace Hecton8.Core
 
         private const float MinimumVectorLengthSq = 0.000001f;
         private const float MinimumDistanceSq = 0.000001f;
+        private const float ShaderQualityEpsilon = 0.0005f;
         private const float InvTwoPi = 0.15915494309f;
         private const float HalfPi = 1.57079632679f;
         private const string MathLodModeProperty = "_HectonMathLodMode";
+        private const string MathLodWeightProperty = "_HectonMathLodWeight";
         private const string MathLodDistanceSqProperty = "_HectonMathLodDistanceSq";
         private const string MathLodHighKeyword = "_MATH_LOD_HIGH";
         private const string MathLodLowKeyword = "_MATH_LOD_LOW";
         private static readonly int _mathLodModePropertyId = Shader.PropertyToID(MathLodModeProperty);
+        private static readonly int _mathLodWeightPropertyId = Shader.PropertyToID(MathLodWeightProperty);
         private static readonly int _mathLodDistanceSqPropertyId = Shader.PropertyToID(MathLodDistanceSqProperty);
         private static MathLodMode _lastPushedShaderMode;
+        private static float _lastPushedShaderWeight;
         private static bool _hasPushedShaderMode;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetShaderCache()
         {
             _lastPushedShaderMode = MathLodMode.Low;
+            _lastPushedShaderWeight = -1f;
             _hasPushedShaderMode = false;
         }
 
@@ -65,7 +70,51 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MathLodMode ResolveMathLodMode(HectonQualityTier scalabilityTier)
         {
-            return IsHighQualityTier(scalabilityTier) ? MathLodMode.High : MathLodMode.Low;
+            return ResolveMathLodMode(ResolveTierQualityWeight01(scalabilityTier));
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static MathLodMode ResolveMathLodMode(float globalQualityWeight)
+        {
+            return SanitizeQualityWeight01(globalQualityWeight) >= 0.5f ? MathLodMode.High : MathLodMode.Low;
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveTierQualityWeight01(HectonQualityTier scalabilityTier)
+        {
+            switch (scalabilityTier)
+            {
+                case HectonQualityTier.Low:
+                    return 0.2f;
+                case HectonQualityTier.Mx350:
+                    return 0.35f;
+                case HectonQualityTier.Mid:
+                    return 0.62f;
+                case HectonQualityTier.High:
+                    return 0.84f;
+                case HectonQualityTier.Ultra:
+                    return 1f;
+                default:
+                    return 0.5f;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveDistanceQualityWeight01(float distanceSq, float globalQualityWeight)
+        {
+            float safeDistanceSq = math.select(HighQualityDistanceSq, math.max(0f, distanceSq), math.isfinite(distanceSq));
+            float distanceFade = 1f - DistanceBlend01(safeDistanceSq, HighQualityDistanceSq, HighQualityDistanceSq * 16f);
+            return Smooth01(SanitizeQualityWeight01(globalQualityWeight)) * distanceFade;
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeQualityWeight01(float globalQualityWeight)
+        {
+            return math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -107,6 +156,23 @@ namespace Hecton8.Core
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 Normalize(float3 value, float distanceSq, float globalQualityWeight, float3 fallback)
+        {
+            if (!math.all(math.isfinite(value)))
+                return fallback;
+
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq <= MinimumVectorLengthSq)
+                return fallback;
+
+            float3 exact = value * math.rsqrt(lengthSq);
+            float3 cheap = DominantAxisOrDefault(value, fallback);
+            float quality = ResolveDistanceQualityWeight01(distanceSq, globalQualityWeight);
+            return math.select(fallback, math.lerp(cheap, exact, quality), math.isfinite(quality));
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sin(float radians, float distanceSq)
         {
             return Sin(radians, distanceSq, HectonQualityTier.Ultra);
@@ -123,6 +189,15 @@ namespace Hecton8.Core
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Sin(float radians, float distanceSq, float globalQualityWeight)
+        {
+            float cheap = TriangleSin(radians);
+            float exact = CinematicMath.FastSin(radians);
+            return math.lerp(cheap, exact, ResolveDistanceQualityWeight01(distanceSq, globalQualityWeight));
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Cos(float radians, float distanceSq)
         {
             return Sin(radians + HalfPi, distanceSq);
@@ -133,6 +208,13 @@ namespace Hecton8.Core
         public static float Cos(float radians, float distanceSq, HectonQualityTier scalabilityTier)
         {
             return Sin(radians + HalfPi, distanceSq, scalabilityTier);
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Cos(float radians, float distanceSq, float globalQualityWeight)
+        {
+            return Sin(radians + HalfPi, distanceSq, globalQualityWeight);
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -187,13 +269,57 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void PushShaderMathLod(MathLodMode mode)
         {
-            if (_hasPushedShaderMode && _lastPushedShaderMode == mode)
-                return;
+            PushShaderMathLod(mode == MathLodMode.High ? 1f : 0f, mode);
+        }
 
-            bool high = mode == MathLodMode.High;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void PushShaderMathLod(float frameTimeMilliseconds, float highQualityBudgetMilliseconds)
+        {
+            float safeBudget = math.max(0.0001f, highQualityBudgetMilliseconds);
+            float safeFrame = math.select(safeBudget, math.max(0f, frameTimeMilliseconds), math.isfinite(frameTimeMilliseconds));
+            float pressure = math.saturate((safeFrame - safeBudget) * math.rcp(safeBudget));
+            PushShaderMathLod(1f - pressure);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void PushShaderMathLod(HectonQualityTier scalabilityTier)
+        {
+            PushShaderMathLod(ResolveTierQualityWeight01(scalabilityTier));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void PushShaderMathLod(float globalQualityWeight)
+        {
+            float quality = SanitizeQualityWeight01(globalQualityWeight);
+            PushShaderMathLod(quality, ResolveMathLodMode(quality));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float TriangleSin(float radians)
+        {
+            float phase = radians * InvTwoPi;
+            float wrapped = phase - math.floor(phase);
+            float magnitude = CinematicMath.FastTriangleWave01(wrapped * 2f);
+            return math.select(-magnitude, magnitude, wrapped < 0.5f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void PushShaderMathLod(float globalQualityWeight, MathLodMode legacyMode)
+        {
+            float quality = SanitizeQualityWeight01(globalQualityWeight);
+            if (_hasPushedShaderMode &&
+                _lastPushedShaderMode == legacyMode &&
+                math.abs(_lastPushedShaderWeight - quality) < ShaderQualityEpsilon)
+            {
+                return;
+            }
+
+            bool high = legacyMode == MathLodMode.High;
             Shader.SetGlobalFloat(_mathLodModePropertyId, high ? 1f : 0f);
+            Shader.SetGlobalFloat(_mathLodWeightPropertyId, quality);
             Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);
-            _lastPushedShaderMode = mode;
+            _lastPushedShaderMode = legacyMode;
+            _lastPushedShaderWeight = quality;
             _hasPushedShaderMode = true;
 
             if (high)
@@ -207,25 +333,12 @@ namespace Hecton8.Core
             Shader.EnableKeyword(MathLodLowKeyword);
         }
 
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void PushShaderMathLod(float frameTimeMilliseconds, float highQualityBudgetMilliseconds)
+        private static float Smooth01(float value)
         {
-            PushShaderMathLod(frameTimeMilliseconds <= highQualityBudgetMilliseconds ? MathLodMode.High : MathLodMode.Low);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void PushShaderMathLod(HectonQualityTier scalabilityTier)
-        {
-            PushShaderMathLod(ResolveMathLodMode(scalabilityTier));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float TriangleSin(float radians)
-        {
-            float phase = radians * InvTwoPi;
-            float wrapped = phase - math.floor(phase);
-            float magnitude = CinematicMath.FastTriangleWave01(wrapped * 2f);
-            return math.select(-magnitude, magnitude, wrapped < 0.5f);
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
         }
     }
 }

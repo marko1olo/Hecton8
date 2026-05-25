@@ -2,7 +2,8 @@
     "name": "Hecton8.Optimization.Editor",
     "rootNamespace": "Hecton8.Optimization.Editor",
     "references": [
-        "Hecton8.Core"
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts"
     ],
     "includePlatforms": [
         "Editor"

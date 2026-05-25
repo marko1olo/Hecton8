@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 
@@ -181,10 +182,16 @@ namespace Hecton8.EditorTools
         private static bool IsNormalMapName(string assetPath)
         {
             string lowerPath = assetPath.ToLowerInvariant();
-            return lowerPath.Contains("normal") ||
-                   lowerPath.Contains("_n.") ||
-                   lowerPath.Contains("_n_") ||
-                   lowerPath.Contains("nrm");
+            return ContainsOrdinal(lowerPath, "normal") ||
+                   ContainsOrdinal(lowerPath, "_n.") ||
+                   ContainsOrdinal(lowerPath, "_n_") ||
+                   ContainsOrdinal(lowerPath, "nrm");
+        }
+
+        private static bool ContainsOrdinal(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   source.IndexOf(token, StringComparison.Ordinal) >= 0;
         }
 
         private static bool IsPowerOfTwo(int value)
@@ -196,8 +203,13 @@ namespace Hecton8.EditorTools
         {
             float totalMegabytes = result.TotalEstimatedBytes / (1024f * 1024f);
             string header =
-                $"[HectonArtVramAudit] Assets/_Project/Art compressed VRAM estimate: {totalMegabytes:F2} MB across {result.TextureCount} textures. " +
-                $"Threshold: {WarningThresholdBytes / (1024f * 1024f):F0} MB.";
+                "[HectonArtVramAudit] Assets/_Project/Art compressed VRAM estimate: " +
+                totalMegabytes.ToString("F2", CultureInfo.InvariantCulture) +
+                " MB across " +
+                result.TextureCount.ToString(CultureInfo.InvariantCulture) +
+                " textures. Threshold: " +
+                (WarningThresholdBytes / (1024f * 1024f)).ToString("F0", CultureInfo.InvariantCulture) +
+                " MB.";
 
             if (result.TotalEstimatedBytes > WarningThresholdBytes)
                 Debug.LogWarning(header);
@@ -210,18 +222,38 @@ namespace Hecton8.EditorTools
                 TextureVramEntry entry = result.Entries[i];
                 float entryMegabytes = entry.EstimatedBytes / (1024f * 1024f);
                 Debug.Log(
-                    $"[HectonArtVramAudit] Top VRAM #{i + 1}: {entry.AssetPath} | {entry.Width}x{entry.Height} | {entry.CompressionLabel} | " +
-                    $"MipMaps={(entry.HasMipMaps ? "On" : "Off")} | ~{entryMegabytes:F2} MB");
+                    "[HectonArtVramAudit] Top VRAM #" +
+                    (i + 1).ToString(CultureInfo.InvariantCulture) +
+                    ": " +
+                    entry.AssetPath +
+                    " | " +
+                    entry.Width.ToString(CultureInfo.InvariantCulture) +
+                    "x" +
+                    entry.Height.ToString(CultureInfo.InvariantCulture) +
+                    " | " +
+                    entry.CompressionLabel +
+                    " | MipMaps=" +
+                    (entry.HasMipMaps ? "On" : "Off") +
+                    " | ~" +
+                    entryMegabytes.ToString("F2", CultureInfo.InvariantCulture) +
+                    " MB");
             }
         }
 
         private static void EmitComplianceResult(TextureComplianceResult result)
         {
             string header =
-                $"[HectonArtVramAudit] BC7/POT compliance: scanned={result.ScannedTextureCount}, " +
-                $"nonPOT={result.NonPowerOfTwoCount}, formatViolations={result.FormatViolationCount}, " +
-                $"normalTypeViolations={result.NormalTypeViolationCount}, " +
-                $"totalViolations={result.TotalViolationCount}.";
+                "[HectonArtVramAudit] BC7/POT compliance: scanned=" +
+                result.ScannedTextureCount.ToString(CultureInfo.InvariantCulture) +
+                ", nonPOT=" +
+                result.NonPowerOfTwoCount.ToString(CultureInfo.InvariantCulture) +
+                ", formatViolations=" +
+                result.FormatViolationCount.ToString(CultureInfo.InvariantCulture) +
+                ", normalTypeViolations=" +
+                result.NormalTypeViolationCount.ToString(CultureInfo.InvariantCulture) +
+                ", totalViolations=" +
+                result.TotalViolationCount.ToString(CultureInfo.InvariantCulture) +
+                ".";
 
             if (result.TotalViolationCount > 0)
                 Debug.LogWarning(header);
@@ -230,7 +262,13 @@ namespace Hecton8.EditorTools
 
             int loggedCount = Mathf.Min(result.Violations.Count, MaxLoggedComplianceViolations);
             for (int i = 0; i < loggedCount; i++)
-                Debug.LogWarning($"[HectonArtVramAudit] Texture compliance violation #{i + 1}: {result.Violations[i]}");
+            {
+                Debug.LogWarning(
+                    "[HectonArtVramAudit] Texture compliance violation #" +
+                    (i + 1).ToString(CultureInfo.InvariantCulture) +
+                    ": " +
+                    result.Violations[i]);
+            }
         }
 
         internal readonly struct AuditResult

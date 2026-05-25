@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.UI;
@@ -66,58 +67,55 @@ namespace Hecton8.Tests.Editor
         public void RuntimeSourceContainsNoPhysxOrGameObjectPointCloudRoute()
         {
             string path = Path.Combine(Application.dataPath, "_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs");
-            string source = File.ReadAllText(path);
-            Assert.That(source, Does.Not.Contain("Physics.Raycast"));
-            Assert.That(source, Does.Not.Contain("Physics.SphereCast"));
-            Assert.That(source, Does.Not.Contain("Collider.Raycast"));
-            Assert.That(source, Does.Not.Contain("Instantiate("));
-            Assert.That(source, Does.Not.Contain("File.ReadAllBytes"));
-            Assert.That(source, Does.Not.Contain("Shader.Find"));
-            Assert.That(source, Does.Not.Contain("new Material"));
-            Assert.That(source, Does.Not.Contain("new byte[byteCount]"));
-            Assert.That(source, Does.Not.Contain("File.WriteAllBytes"));
-            Assert.That(source, Does.Not.Contain("Schedule(_activePointCount, 128).Complete"));
-            Assert.That(source, Does.Contain("Graphics.DrawProceduralIndirect"));
-            Assert.That(source, Does.Contain("NativeArrayOptions.UninitializedMemory"));
-            Assert.That(source, Does.Contain("SonarCompactHitsJob"));
-            Assert.That(source, Does.Contain("Points[writeIndex] = Points[i]"));
-            Assert.That(source, Does.Not.Contain("Counters[0] = safeRayCount"));
-            Assert.That(source, Does.Not.Contain("Points[index] = default"));
-            Assert.That(source, Does.Contain("i < _activePointCount && i < points.Length"));
-            Assert.That(source, Does.Contain("_pointBufferA"));
-            Assert.That(source, Does.Contain("_pointBufferB"));
-            Assert.That(source, Does.Contain("ResolveMinimumPingIntervalSeconds"));
-            Assert.That(source, Does.Contain("ResolveWorkCurve"));
-            Assert.That(source, Does.Contain("ExecuteSingleLookup(index, direction, step)"));
-            Assert.That(source, Does.Contain("ResolveSingleLookupDistance01"));
-            Assert.That(source, Does.Not.Contain("public double3 PingAup"));
-            Assert.That(source, Does.Not.Contain("public double3 CameraAup"));
+            AssertFileDoesNotContain(path, "Physics.Raycast");
+            AssertFileDoesNotContain(path, "Physics.SphereCast");
+            AssertFileDoesNotContain(path, "Collider.Raycast");
+            AssertFileDoesNotContain(path, "Instantiate(");
+            AssertFileDoesNotContain(path, "File.ReadAllBytes");
+            AssertFileDoesNotContain(path, "Shader.Find");
+            AssertFileDoesNotContain(path, "new Material");
+            AssertFileDoesNotContain(path, "new byte[byteCount]");
+            AssertFileDoesNotContain(path, "File.WriteAllBytes");
+            AssertFileDoesNotContain(path, "Schedule(_activePointCount, 128).Complete");
+            AssertFileContains(path, "Graphics.DrawProceduralIndirect");
+            AssertFileContains(path, "NativeArrayOptions.UninitializedMemory");
+            AssertFileContains(path, "SonarCompactHitsJob");
+            AssertFileContains(path, "Points[writeIndex] = Points[i]");
+            AssertFileDoesNotContain(path, "Counters[0] = safeRayCount");
+            AssertFileDoesNotContain(path, "Points[index] = default");
+            AssertFileContains(path, "i < _activePointCount && i < points.Length");
+            AssertFileContains(path, "_pointBufferA");
+            AssertFileContains(path, "_pointBufferB");
+            AssertFileContains(path, "ResolveMinimumPingIntervalSeconds");
+            AssertFileContains(path, "ResolveWorkCurve");
+            AssertFileContains(path, "ExecuteSingleLookup(index, direction, step)");
+            AssertFileContains(path, "ResolveSingleLookupDistance01");
+            AssertFileDoesNotContain(path, "public double3 PingAup");
+            AssertFileDoesNotContain(path, "public double3 CameraAup");
         }
 
         [Test]
         public void RollbackMerkleSourceDoesNotHashTopographicalSonarPresentationBuffers()
         {
             string path = Path.Combine(Application.dataPath, "_Project/Scripts/Networking/RollbackNetcodeContracts.cs");
-            string source = File.ReadAllText(path);
-            Assert.That(source, Does.Not.Contain("TopographicalSonar"));
-            Assert.That(source, Does.Not.Contain("SonarPointDTO"));
+            AssertFileDoesNotContain(path, "TopographicalSonar");
+            AssertFileDoesNotContain(path, "SonarPointDTO");
         }
 
         [Test]
         public void ComputeShaderKeepsSamePingLocalDtoContractAsBurstPath()
         {
             string path = Path.Combine(Application.dataPath, "_Project/Art/Shaders/Hecton_SonarRaymarch.compute");
-            string source = File.ReadAllText(path);
-            Assert.That(source, Does.Contain("ResolveWorkCurve"));
-            Assert.That(source, Does.Contain("SingleLookupDistance01"));
-            Assert.That(source, Does.Contain("if (maxSteps <= 1u)"));
-            Assert.That(source, Does.Contain("Load(int4"));
-            Assert.That(source, Does.Contain("_IndirectArgs.InterlockedAdd(4, 1u, writeIndex)"));
-            Assert.That(source, Does.Contain("_SonarPointBuffer[writeIndex].LocalPosition = direction * resolvedDistance"));
-            Assert.That(source, Does.Not.Contain("_PingCameraLocal + direction * resolvedDistance"));
-            Assert.That(source, Does.Not.Contain("_IndirectArgs.Store(16"));
-            Assert.That(source, Does.Not.Contain("_IndirectArgs.Store(4, (uint)_RayCount)"));
-            Assert.That(source, Does.Not.Contain("_SonarPointBuffer[rayIndex].ColorPacked = 0u"));
+            AssertFileContains(path, "ResolveWorkCurve");
+            AssertFileContains(path, "SingleLookupDistance01");
+            AssertFileContains(path, "if (maxSteps <= 1u)");
+            AssertFileContains(path, "Load(int4");
+            AssertFileContains(path, "_IndirectArgs.InterlockedAdd(4, 1u, writeIndex)");
+            AssertFileContains(path, "_SonarPointBuffer[writeIndex].LocalPosition = direction * resolvedDistance");
+            AssertFileDoesNotContain(path, "_PingCameraLocal + direction * resolvedDistance");
+            AssertFileDoesNotContain(path, "_IndirectArgs.Store(16");
+            AssertFileDoesNotContain(path, "_IndirectArgs.Store(4, (uint)_RayCount)");
+            AssertFileDoesNotContain(path, "_SonarPointBuffer[rayIndex].ColorPacked = 0u");
         }
 
         [Test]
@@ -127,6 +125,27 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(File.Exists(Path.Combine(Application.dataPath, "_Project/Art/Shaders/Hecton_SonarRaymarch.compute.meta")));
             Assert.IsTrue(File.Exists(Path.Combine(Application.dataPath, "_Project/Data/UI/sonar_material_colors.csv.meta")));
             Assert.IsTrue(File.Exists(Path.Combine(Application.dataPath, "_Project/Scripts/Editor/TopographicalSonarTunerWindow.cs.meta")));
+        }
+
+        private static void AssertFileContains(string path, string token)
+        {
+            Assert.IsTrue(FileContains(path, token), path + " missing token: " + token);
+        }
+
+        private static void AssertFileDoesNotContain(string path, string token)
+        {
+            Assert.IsFalse(FileContains(path, token), path + " contains forbidden token: " + token);
+        }
+
+        private static bool FileContains(string path, string token)
+        {
+            foreach (string line in File.ReadLines(path))
+            {
+                if (line.IndexOf(token, StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

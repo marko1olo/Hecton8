@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Data;
@@ -23,7 +24,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Radiation Hazard Grid")]
-    public sealed unsafe class RadiationHazardGrid : MonoBehaviour, IOriginShiftListener, ISaveable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class RadiationHazardGrid : MonoBehaviour, ISlowTickable, IOriginShiftListener, ISaveable, IGlobalRegistryHotSwapListener
     {
         public const int GridResolution = 32;
         public const int GridCellCount = GridResolution * GridResolution * GridResolution;
@@ -35,6 +36,7 @@ namespace Hecton8.Gameplay
         private const string NativeMemoryOwner = nameof(RadiationHazardGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const float DoseDecayPerSimulationStep = 0.999f;
+        private const float RadiationSlowTickIntervalSeconds = 0.1f;
         private const float DefaultCellSizeMeters = 4f;
         private const float DefaultSourceRadiusMeters = 18f;
         private const float StaticVfxThreshold = 0.5f;
@@ -48,7 +50,8 @@ namespace Hecton8.Gameplay
         private const int RadiationProfileCapacity = 16;
         private const int RadiationCsvScratchBytes = 8192;
         private const float RadiationCriticalDegradation01 = 0.5f;
-        private const float RadiationDamagePerTickScale = 0.08f;
+        private const float RadiationStatusMagnitudeScale = 0.08f;
+        private const float RadiationCriticalStatusDurationSeconds = 2.0f;
         private const uint RadiationStateFlagIrradiated = 1u << 0;
         private const uint RadiationStateFlagMutated = 1u << 1;
         private const uint RadiationStateFlagCritical = 1u << 2;
@@ -58,6 +61,7 @@ namespace Hecton8.Gameplay
         private const uint RadiationStateFlagNonFinite = 1u << 31;
         private const uint RadiationSystemHash = 0x53483237u;
         private const ushort RadiationCombatSourceId = 274;
+        private const BufferID RadiationStatusSignalBuffer = (BufferID)72748;
         private const SystemID OwnerSystemId = SystemID.GameplayRadiation;
         private const string RadiationDumpFileName = "Dump_SHINOBU_274.bin";
 
@@ -71,6 +75,67 @@ namespace Hecton8.Gameplay
         private static readonly int _HectonHandRadiationTintId = Shader.PropertyToID("_HectonHandRadiationTint");
         internal static RadiationHazardGrid ActiveRuntimeInstance { get; private set; }
 
+        private struct VaultNativeArray<T> where T : struct
+        {
+            private IDataVault _vault;
+            private VaultGenerationHandle<T> _handle;
+
+            public static VaultNativeArray<T> Create(IDataVault vault, VaultGenerationHandle<T> handle)
+            {
+                if (vault == null || handle.BufferID == 0u)
+                    handle = default;
+
+                return new VaultNativeArray<T>
+                {
+                    _vault = vault,
+                    _handle = handle
+                };
+            }
+
+            public bool IsCreated => TryResolve(out _);
+
+            public int Length => TryResolve(out NativeArray<T> buffer) ? buffer.Length : 0;
+
+            public T this[int index]
+            {
+                get
+                {
+                    NativeArray<T> buffer = Resolve();
+                    return buffer[index];
+                }
+                set
+                {
+                    NativeArray<T> buffer = Resolve();
+                    buffer[index] = value;
+                }
+            }
+
+            public NativeArray<T> Resolve()
+            {
+                return TryResolve(out NativeArray<T> buffer) ? buffer : default;
+            }
+
+            private bool TryResolve(out NativeArray<T> buffer)
+            {
+                if (_vault != null &&
+                    _handle.BufferID != 0u &&
+                    _handle.Generation != 0u &&
+                    _vault.TryResolveHandle(in _handle, out buffer) &&
+                    buffer.IsCreated)
+                {
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+
+            public static implicit operator NativeArray<T>(VaultNativeArray<T> view)
+            {
+                return view.Resolve();
+            }
+        }
+
         [SerializeField, Min(0.5f)] private float cellSizeMeters = DefaultCellSizeMeters;
         [FormerlySerializedAs("doseScalePerFrostTick")]
         [SerializeField, Min(0f)] private float doseScalePerSimulationSecond = 1f;
@@ -79,18 +144,18 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0f)] private float emergencyMockIntensity = 80f;
         [SerializeField] private Vector3 emergencyMockOffsetMeters = new Vector3(8f, 0f, 0f);
 
-        private NativeArray<float> _gridRead;
-        private NativeArray<float> _gridWrite;
-        private NativeArray<float> _gridSource;
-        private NativeArray<RadiationStateDTO> _radiationStates;
-        private NativeArray<RadiationSource> _sources;
-        private NativeArray<RadiationTelemetryEntry> _telemetryRing;
-        private NativeArray<int> _sourceCountLane;
-        private NativeArray<uint> _telemetryCursorLane;
-        private NativeArray<RadiationProfileDTO> _profiles;
-        private NativeArray<byte> _csvScratch;
-        private NativeArray<RadiationTuningDTO> _tuningLane;
-        private NativeArray<CombatDamageSignal> _damageSignalLane;
+        private VaultNativeArray<float> _gridRead;
+        private VaultNativeArray<float> _gridWrite;
+        private VaultNativeArray<float> _gridSource;
+        private VaultNativeArray<RadiationStateDTO> _radiationStates;
+        private VaultNativeArray<RadiationSource> _sources;
+        private VaultNativeArray<RadiationTelemetryEntry> _telemetryRing;
+        private VaultNativeArray<int> _sourceCountLane;
+        private VaultNativeArray<uint> _telemetryCursorLane;
+        private VaultNativeArray<RadiationProfileDTO> _profiles;
+        private VaultNativeArray<byte> _csvScratch;
+        private VaultNativeArray<RadiationTuningDTO> _tuningLane;
+        private VaultNativeArray<RadiationStatusSignal> _statusSignalLane;
         private JobHandle _diffusionJobHandle;
         private JobHandle _radiationSimulationJobHandle;
         private VaultGenerationHandle<float> _gridReadHandle;
@@ -104,7 +169,7 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<RadiationProfileDTO> _profilesHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<RadiationTuningDTO> _tuningHandle;
-        private VaultGenerationHandle<CombatDamageSignal> _damageSignalHandle;
+        private VaultGenerationHandle<RadiationStatusSignal> _statusSignalHandle;
         private VaultGenerationHandle<BulkheadStateDTO> _bulkheadStatesReadHandle;
         private VaultGenerationHandle<BulkheadPlaneDTO> _bulkheadPlanesReadHandle;
         private AbsoluteUniversePosition _gridOriginAup;
@@ -154,6 +219,7 @@ namespace Hecton8.Gameplay
         private bool _registeredSimulationPhase;
         private bool _registeredPostSimulationPhase;
         private bool _registeredVisualSyncPhase;
+        private bool _registeredSlowTick;
         private bool _registeredOriginShift;
         private bool _registeredSave;
         private bool _registeredHotSwapListener;
@@ -199,7 +265,7 @@ namespace Hecton8.Gameplay
                 Operation = RadiationSourceSignal.OperationUpsert,
                 Flags = 0
             };
-            SignalBus<RadiationSourceSignal>.Push(in signal);
+            SignalBus<RadiationSourceSignal>.TryPush(in signal);
         }
 
         public static void UnregisterSource(int sourceId)
@@ -212,7 +278,7 @@ namespace Hecton8.Gameplay
                 SourceId = sourceId,
                 Operation = RadiationSourceSignal.OperationRemove
             };
-            SignalBus<RadiationSourceSignal>.Push(in signal);
+            SignalBus<RadiationSourceSignal>.TryPush(in signal);
         }
 
         public static void ReportExternalDose(float dose, float intensity01, Vector3 runtimePosition)
@@ -246,7 +312,7 @@ namespace Hecton8.Gameplay
                 DoseKind = RadiationDoseAtmosphereKind,
                 Flags = 0
             };
-            SignalBus<RadiationDoseSignal>.Push(in signal);
+            SignalBus<RadiationDoseSignal>.TryPush(in signal);
         }
 
         internal static bool TrySampleRadiationIntensity01(Vector3 runtimePosition, out float intensity01)
@@ -413,6 +479,9 @@ namespace Hecton8.Gameplay
             if (HasDeferredStructuralOperations() && !HasActiveRadiationJobs())
                 TryApplyDeferredStructuralOperations();
 
+            if (!_radiationEvaluatedThisFrame)
+                return;
+
             RadiationStateDTO state = _radiationStates.IsCreated && _radiationStates.Length > 0
                 ? _radiationStates[0]
                 : _lastRadiationState;
@@ -448,7 +517,7 @@ namespace Hecton8.Gameplay
                 ? SanitizeNonNegative(_lastGridIntensity01 * safeCompletedDelta)
                 : 0f;
             ApplyDoseToPlayerContext(playerContext, _accumulatedRadiationDose, _lastGridIntensity01);
-            PublishPendingRadiationDamageSignal();
+            PublishPendingRadiationStatusSignal();
             PublishDoseSignal(in playerAup, doseAdd, _lastGridIntensity01, RadiationDoseGridKind);
             EmitGeigerIfNeeded(in playerAup, _lastGridIntensity01);
             RecordTelemetry(playerAup, _lastGridIntensity01, _accumulatedRadiationDose, _radiationEvaluatedThisFrame ? 0u : 1u);
@@ -459,6 +528,13 @@ namespace Hecton8.Gameplay
         {
             _currentSimulationFrame = timing.FrameId != 0u ? timing.FrameId : _currentSimulationFrame;
             PushVisualGlobals(_accumulatedRadiationDose, _lastGridIntensity01);
+        }
+
+        public void SlowTick()
+        {
+            _radiationCadenceAccumulatorSeconds = math.min(
+                SanitizeNonNegative(_radiationCadenceAccumulatorSeconds) + RadiationSlowTickIntervalSeconds,
+                RadiationSlowTickIntervalSeconds * 4f);
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -636,11 +712,11 @@ namespace Hecton8.Gameplay
                    _sourceCountLane.IsCreated &&
                    _telemetryRing.IsCreated &&
                    _telemetryCursorLane.IsCreated &&
-                   _damageSignalLane.IsCreated &&
+                   _statusSignalLane.IsCreated &&
                    _radiationStates.Length >= RadiationEntitySlotCount &&
                    _sources.Length >= MaxSourceCount &&
                    _telemetryRing.Length >= TelemetryCapacity &&
-                   _damageSignalLane.Length > 0;
+                   _statusSignalLane.Length > 0;
         }
 
         private JobHandle ScheduleEmergencyMockSourceIfNeeded(in AbsoluteUniversePosition playerAup, JobHandle dependsOn)
@@ -656,8 +732,8 @@ namespace Hecton8.Gameplay
                 _sourceCountLane[0] = _activeSourceCount;
                 GenerateMockRadiationSourceJob job = new GenerateMockRadiationSourceJob
                 {
-                    Sources = (RadiationSource*)NativeArrayUnsafeUtility.GetUnsafePtr(_sources),
-                    SourceCount = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_sourceCountLane),
+                    Sources = (RadiationSource*)NativeArrayUnsafeUtility.GetUnsafePtr<RadiationSource>(_sources),
+                    SourceCount = (int*)NativeArrayUnsafeUtility.GetUnsafePtr<int>(_sourceCountLane),
                     Capacity = _sources.Length,
                     PlayerAup = playerAup.ToAbsoluteDouble3(),
                     OffsetMeters = new float3(emergencyMockOffsetMeters.x, emergencyMockOffsetMeters.y, emergencyMockOffsetMeters.z),
@@ -693,18 +769,18 @@ namespace Hecton8.Gameplay
             {
                 ReleaseVaultHandles();
                 _dataVault = vault;
-                _gridReadHandle = vault.GetGenerationHandle<float>(BufferID.Shinobu274RadiationGridRead, GridCellCount, OwnerSystemId);
-                _gridWriteHandle = vault.GetGenerationHandle<float>(BufferID.Shinobu274RadiationGridWrite, GridCellCount, OwnerSystemId);
-                _gridSourceHandle = vault.GetGenerationHandle<float>(BufferID.Shinobu274RadiationGridSource, GridCellCount, OwnerSystemId);
-                _stateHandle = vault.GetGenerationHandle<RadiationStateDTO>(BufferID.Shinobu274RadiationStates, RadiationEntitySlotCount, OwnerSystemId);
-                _sourcesHandle = vault.GetGenerationHandle<RadiationSource>(BufferID.Shinobu274RadiationSources, MaxSourceCount, OwnerSystemId);
-                _sourceCountHandle = vault.GetGenerationHandle<int>(BufferID.Shinobu274RadiationSourceCount, 1, OwnerSystemId);
-                _telemetryHandle = vault.GetGenerationHandle<RadiationTelemetryEntry>(BufferID.Shinobu274RadiationTelemetryRing, TelemetryCapacity, OwnerSystemId);
-                _telemetryCursorHandle = vault.GetGenerationHandle<uint>(BufferID.Shinobu274RadiationTelemetryCursor, 1, OwnerSystemId);
-                _profilesHandle = vault.GetGenerationHandle<RadiationProfileDTO>(BufferID.Shinobu274RadiationProfiles, RadiationProfileCapacity, OwnerSystemId);
-                _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.Shinobu274RadiationCsvScratch, RadiationCsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-                _tuningHandle = vault.GetGenerationHandle<RadiationTuningDTO>(BufferID.Shinobu274RadiationTuning, 1, OwnerSystemId);
-                _damageSignalHandle = vault.GetGenerationHandle<CombatDamageSignal>(BufferID.Shinobu274RadiationDamageSignal, 1, OwnerSystemId);
+                _gridReadHandle = vault.EnsureGenerationHandle<float>(BufferID.Shinobu274RadiationGridRead, GridCellCount, OwnerSystemId);
+                _gridWriteHandle = vault.EnsureGenerationHandle<float>(BufferID.Shinobu274RadiationGridWrite, GridCellCount, OwnerSystemId);
+                _gridSourceHandle = vault.EnsureGenerationHandle<float>(BufferID.Shinobu274RadiationGridSource, GridCellCount, OwnerSystemId);
+                _stateHandle = vault.EnsureGenerationHandle<RadiationStateDTO>(BufferID.Shinobu274RadiationStates, RadiationEntitySlotCount, OwnerSystemId);
+                _sourcesHandle = vault.EnsureGenerationHandle<RadiationSource>(BufferID.Shinobu274RadiationSources, MaxSourceCount, OwnerSystemId);
+                _sourceCountHandle = vault.EnsureGenerationHandle<int>(BufferID.Shinobu274RadiationSourceCount, 1, OwnerSystemId);
+                _telemetryHandle = vault.EnsureGenerationHandle<RadiationTelemetryEntry>(BufferID.Shinobu274RadiationTelemetryRing, TelemetryCapacity, OwnerSystemId);
+                _telemetryCursorHandle = vault.EnsureGenerationHandle<uint>(BufferID.Shinobu274RadiationTelemetryCursor, 1, OwnerSystemId);
+                _profilesHandle = vault.EnsureGenerationHandle<RadiationProfileDTO>(BufferID.Shinobu274RadiationProfiles, RadiationProfileCapacity, OwnerSystemId);
+                _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.Shinobu274RadiationCsvScratch, RadiationCsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+                _tuningHandle = vault.EnsureGenerationHandle<RadiationTuningDTO>(BufferID.Shinobu274RadiationTuning, 1, OwnerSystemId);
+                _statusSignalHandle = vault.EnsureGenerationHandle<RadiationStatusSignal>(RadiationStatusSignalBuffer, 1, OwnerSystemId);
                 TryBindBulkheadReadHandles(vault);
                 _vaultInitialized = true;
             }
@@ -728,23 +804,23 @@ namespace Hecton8.Gameplay
                 !vault.TryResolveHandle(in _profilesHandle, out NativeArray<RadiationProfileDTO> profiles) ||
                 !vault.TryResolveHandle(in _csvScratchHandle, out NativeArray<byte> csvScratch) ||
                 !vault.TryResolveHandle(in _tuningHandle, out NativeArray<RadiationTuningDTO> tuning) ||
-                !vault.TryResolveHandle(in _damageSignalHandle, out NativeArray<CombatDamageSignal> damageSignal))
+                !vault.TryResolveHandle(in _statusSignalHandle, out NativeArray<RadiationStatusSignal> statusSignal))
             {
                 return false;
             }
 
-            _gridRead = _gridBuffersSwapped ? gridWrite : gridRead;
-            _gridWrite = _gridBuffersSwapped ? gridRead : gridWrite;
-            _gridSource = gridSource;
-            _radiationStates = states;
-            _sources = sources;
-            _sourceCountLane = sourceCount;
-            _telemetryRing = telemetry;
-            _telemetryCursorLane = telemetryCursor;
-            _profiles = profiles;
-            _csvScratch = csvScratch;
-            _tuningLane = tuning;
-            _damageSignalLane = damageSignal;
+            _gridRead = VaultNativeArray<float>.Create(vault, _gridBuffersSwapped ? _gridWriteHandle : _gridReadHandle);
+            _gridWrite = VaultNativeArray<float>.Create(vault, _gridBuffersSwapped ? _gridReadHandle : _gridWriteHandle);
+            _gridSource = VaultNativeArray<float>.Create(vault, _gridSourceHandle);
+            _radiationStates = VaultNativeArray<RadiationStateDTO>.Create(vault, _stateHandle);
+            _sources = VaultNativeArray<RadiationSource>.Create(vault, _sourcesHandle);
+            _sourceCountLane = VaultNativeArray<int>.Create(vault, _sourceCountHandle);
+            _telemetryRing = VaultNativeArray<RadiationTelemetryEntry>.Create(vault, _telemetryHandle);
+            _telemetryCursorLane = VaultNativeArray<uint>.Create(vault, _telemetryCursorHandle);
+            _profiles = VaultNativeArray<RadiationProfileDTO>.Create(vault, _profilesHandle);
+            _csvScratch = VaultNativeArray<byte>.Create(vault, _csvScratchHandle);
+            _tuningLane = VaultNativeArray<RadiationTuningDTO>.Create(vault, _tuningHandle);
+            _statusSignalLane = VaultNativeArray<RadiationStatusSignal>.Create(vault, _statusSignalHandle);
 
             if (_sourceCountLane.IsCreated && _sourceCountLane.Length > 0)
                 _sourceCountLane[0] = _activeSourceCount;
@@ -752,7 +828,9 @@ namespace Hecton8.Gameplay
                 _telemetryWriteIndex = unchecked((int)_telemetryCursorLane[0]);
 
             EnsureDefaultRadiationTuning();
+#if UNITY_EDITOR
             TryLoadRadiationProfilesCsv();
+#endif
             return gridRead.IsCreated && gridRead.Length >= GridCellCount &&
                    gridWrite.IsCreated && gridWrite.Length >= GridCellCount &&
                    gridSource.IsCreated && gridSource.Length >= GridCellCount &&
@@ -771,7 +849,7 @@ namespace Hecton8.Gameplay
             {
                 tuning.DoseToDegradationScale = 0.01f;
                 tuning.DecayPerTick = DoseDecayPerSimulationStep;
-                tuning.DamagePerTickScale = RadiationDamagePerTickScale;
+                tuning.DamagePerTickScale = RadiationStatusMagnitudeScale;
                 tuning.LeadShieldingEffectiveness = 1f;
                 tuning.MaxSdfSamples = 12;
                 tuning.Flags = 1u;
@@ -779,6 +857,7 @@ namespace Hecton8.Gameplay
             }
         }
 
+#if UNITY_EDITOR
         private void TryLoadRadiationProfilesCsv()
         {
             if (_profilesCsvLoaded || radiationProfilesCsv == null || !_profiles.IsCreated)
@@ -1143,6 +1222,7 @@ namespace Hecton8.Gameplay
 
             return any ? result * sign : fallback;
         }
+#endif
 
         private void TryBindBulkheadReadHandles(IDataVault vault)
         {
@@ -1171,7 +1251,7 @@ namespace Hecton8.Gameplay
                 ReleaseVaultHandle(vault, ref _profilesHandle);
                 ReleaseVaultHandle(vault, ref _csvScratchHandle);
                 ReleaseVaultHandle(vault, ref _tuningHandle);
-                ReleaseVaultHandle(vault, ref _damageSignalHandle);
+                ReleaseVaultHandle(vault, ref _statusSignalHandle);
             }
 
             _gridReadHandle = default;
@@ -1185,7 +1265,7 @@ namespace Hecton8.Gameplay
             _profilesHandle = default;
             _csvScratchHandle = default;
             _tuningHandle = default;
-            _damageSignalHandle = default;
+            _statusSignalHandle = default;
             _bulkheadStatesReadHandle = default;
             _bulkheadPlanesReadHandle = default;
             _gridRead = default;
@@ -1199,7 +1279,7 @@ namespace Hecton8.Gameplay
             _profiles = default;
             _csvScratch = default;
             _tuningLane = default;
-            _damageSignalLane = default;
+            _statusSignalLane = default;
             _gridBuffersSwapped = false;
             _vaultInitialized = false;
         }
@@ -1232,6 +1312,9 @@ namespace Hecton8.Gameplay
 
             if (!_registeredVisualSyncPhase && _visualSyncPhase != null)
                 _registeredVisualSyncPhase = GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhase);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
 
             if (!_registeredOriginShift)
             {
@@ -1267,6 +1350,12 @@ namespace Hecton8.Gameplay
                 _registeredVisualSyncPhase = false;
             }
 
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
             if (_registeredOriginShift)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
@@ -1283,7 +1372,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _dataVault = GlobalRegistry.DataVault;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
         }
@@ -1429,7 +1518,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _diffusionJobActive = false;
-            NativeArray<float> previousRead = _gridRead;
+            VaultNativeArray<float> previousRead = _gridRead;
             _gridRead = _gridWrite;
             _gridWrite = previousRead;
             _gridBuffersSwapped = !_gridBuffersSwapped;
@@ -1443,7 +1532,7 @@ namespace Hecton8.Gameplay
 
             DispatcherJobFence.TryComplete(ref _diffusionJobHandle, forceComplete: true);
             _diffusionJobActive = false;
-            NativeArray<float> previousRead = _gridRead;
+            VaultNativeArray<float> previousRead = _gridRead;
             _gridRead = _gridWrite;
             _gridWrite = previousRead;
             _gridBuffersSwapped = !_gridBuffersSwapped;
@@ -1559,9 +1648,9 @@ namespace Hecton8.Gameplay
         {
             if (!_radiationStates.IsCreated ||
                 !_sources.IsCreated ||
-                !_damageSignalLane.IsCreated ||
+                !_statusSignalLane.IsCreated ||
                 _radiationStates.Length == 0 ||
-                _damageSignalLane.Length == 0)
+                _statusSignalLane.Length == 0)
             {
                 return dependsOn;
             }
@@ -1605,13 +1694,13 @@ namespace Hecton8.Gameplay
                 seedState.CumulativeDoseRad = _accumulatedRadiationDose;
                 _radiationStates[0] = seedState;
             }
-            _damageSignalLane[0] = default;
+            _statusSignalLane[0] = default;
 
             CalculateRadiationExposureJob job = new CalculateRadiationExposureJob
             {
-                States = (RadiationStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_radiationStates),
-                Sources = (RadiationSource*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_sources),
-                DamageSignal = (CombatDamageSignal*)NativeArrayUnsafeUtility.GetUnsafePtr(_damageSignalLane),
+                States = (RadiationStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr<RadiationStateDTO>(_radiationStates),
+                Sources = (RadiationSource*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<RadiationSource>(_sources),
+                StatusSignal = (RadiationStatusSignal*)NativeArrayUnsafeUtility.GetUnsafePtr<RadiationStatusSignal>(_statusSignalLane),
                 EncodedSdf = encodedSdf,
                 BulkheadStates = bulkheadStates.IsCreated ? (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bulkheadStates) : null,
                 BulkheadPlanes = bulkheadPlanes.IsCreated ? (BulkheadPlaneDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bulkheadPlanes) : null,
@@ -1625,7 +1714,7 @@ namespace Hecton8.Gameplay
                 ExternalDoseDelta = math.max(0f, math.isfinite(externalDoseDelta) ? externalDoseDelta : 0f),
                 DoseDecayPerTick = SanitizeRange(tuning.DecayPerTick, DoseDecayPerSimulationStep, 0f, 1f),
                 DoseToDegradationScale = SanitizeRange(tuning.DoseToDegradationScale, 0.01f, 0.0001f, 1f),
-                DamagePerTickScale = SanitizeRange(tuning.DamagePerTickScale, RadiationDamagePerTickScale, 0f, 100f),
+                DamagePerTickScale = SanitizeRange(tuning.DamagePerTickScale, RadiationStatusMagnitudeScale, 0f, 100f),
                 LeadShieldingEffectiveness = SanitizeRange(tuning.LeadShieldingEffectiveness, 1f, 0f, 1f),
                 PlayerTargetId = playerTargetId,
                 Frame = frame,
@@ -1664,22 +1753,38 @@ namespace Hecton8.Gameplay
             return target == 0 ? 0u : unchecked((uint)target);
         }
 
-        private void PublishPendingRadiationDamageSignal()
+        private void PublishPendingRadiationStatusSignal()
         {
-            if (!_damageSignalLane.IsCreated || _damageSignalLane.Length == 0)
+            if (!_statusSignalLane.IsCreated || _statusSignalLane.Length == 0)
                 return;
 
-            CombatDamageSignal signal = _damageSignalLane[0];
-            if (!math.isfinite(signal.Magnitude) ||
-                signal.Magnitude <= 0f ||
-                signal.TargetHash == 0u && signal.TargetId == 0)
+            RadiationStatusSignal signal = _statusSignalLane[0];
+            if (!math.isfinite(signal.Magnitude01) ||
+                signal.Magnitude01 <= 0f ||
+                signal.TargetId == 0u)
             {
-                _damageSignalLane[0] = default;
+                _statusSignalLane[0] = default;
                 return;
             }
 
-            SignalBus<CombatDamageSignal>.Push(in signal);
-            _damageSignalLane[0] = default;
+            int targetId = signal.TargetId <= (uint)int.MaxValue
+                ? (int)signal.TargetId
+                : 0;
+            int sourceId = signal.SourceId <= (uint)int.MaxValue
+                ? (int)signal.SourceId
+                : RadiationCombatSourceId;
+
+            if (targetId != 0)
+            {
+                CombatDamageRuntime.TryQueueStatusEffect(
+                    targetId,
+                    CombatStatusBits.Irradiated64,
+                    RadiationCriticalStatusDurationSeconds,
+                    sourceId != 0 ? sourceId : RadiationCombatSourceId,
+                    math.saturate(signal.Magnitude01));
+            }
+
+            _statusSignalLane[0] = default;
         }
 
         private static bool IsRadiationStateFinite(in RadiationStateDTO state)
@@ -1759,14 +1864,12 @@ namespace Hecton8.Gameplay
             float simulationDeltaSeconds,
             out float integrationDelta)
         {
-            float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
-            float tickInterval = math.lerp(0.2f, 0.016f, q);
-            _radiationCadenceAccumulatorSeconds += math.max(0f, simulationDeltaSeconds);
-            bool forced = _lastRadiationState.EntityHashID == 0u ||
-                          externalExposureRate > 0.0001f ||
-                          math.abs(externalDoseDelta) > 0.0001f;
+            float tickInterval = RadiationSlowTickIntervalSeconds;
+            bool forced = _lastRadiationState.EntityHashID == 0u;
             bool evaluate = forced || _radiationCadenceAccumulatorSeconds >= tickInterval;
-            float accumulatedSeconds = _radiationCadenceAccumulatorSeconds;
+            float accumulatedSeconds = forced && _radiationCadenceAccumulatorSeconds < tickInterval
+                ? tickInterval
+                : _radiationCadenceAccumulatorSeconds;
             integrationDelta = math.max(0f, math.isfinite(doseScalePerSimulationSecond) ? doseScalePerSimulationSecond : 0f) * accumulatedSeconds;
             if (evaluate)
                 _radiationCadenceAccumulatorSeconds = 0f;
@@ -1946,7 +2049,7 @@ namespace Hecton8.Gameplay
                 if (signal.SourceId == 0)
                     continue;
 
-                SignalBus<RadiationSourceSignal>.Push(in signal);
+                SignalBus<RadiationSourceSignal>.TryPush(in signal);
             }
         }
 
@@ -2016,7 +2119,7 @@ namespace Hecton8.Gameplay
             if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -2070,7 +2173,7 @@ namespace Hecton8.Gameplay
                 DoseKind = doseKind,
                 Flags = UsesSparseRadiationCadence(ResolveGlobalQualityWeight(), _currentSimulationFrame) ? (byte)1 : (byte)0
             };
-            SignalBus<RadiationDoseSignal>.Push(in signal);
+            SignalBus<RadiationDoseSignal>.TryPush(in signal);
         }
 
         private void EmitGeigerIfNeeded(in AbsoluteUniversePosition playerAup, float intensity01)
@@ -2101,7 +2204,7 @@ namespace Hecton8.Gameplay
                 Channel = GeigerAcousticChannel,
                 Flags = 1
             };
-            SignalBus<AcousticPingSignal>.Push(in signal);
+            SignalBus<AcousticPingSignal>.TryPush(in signal);
         }
 
         private void PushVisualGlobals(float dose, float intensity01)
@@ -2363,7 +2466,7 @@ namespace Hecton8.Gameplay
 
         private static float3 ResolveRuntimeFromAbsolute(double3 absolute)
         {
-            AbsoluteUniversePosition origin = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition origin = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             double3 originAbsolute = AbsoluteUniversePosition.IsFinite(in origin) ? origin.ToAbsoluteDouble3() : double3.zero;
             return (float3)(absolute - originAbsolute);
         }
@@ -2396,25 +2499,6 @@ namespace Hecton8.Gameplay
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
-        public struct RadiationStateDTO
-        {
-            [FieldOffset(0)] public float CumulativeDoseRad;
-            [FieldOffset(4)] public float CurrentExposureRate;
-            [FieldOffset(8)] public float ShieldingFactor01;
-            [FieldOffset(12)] public float CellularDegradation01;
-            [FieldOffset(16)] public uint EntityHashID;
-            [FieldOffset(20)] public uint Flags;
-            [FieldOffset(24)] public byte _pad0;
-            [FieldOffset(25)] public byte _pad1;
-            [FieldOffset(26)] public byte _pad2;
-            [FieldOffset(27)] public byte _pad3;
-            [FieldOffset(28)] public byte _pad4;
-            [FieldOffset(29)] public byte _pad5;
-            [FieldOffset(30)] public byte _pad6;
-            [FieldOffset(31)] public byte _pad7;
-        }
-
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct RadiationTuningDTO
         {
             [FieldOffset(0)] public float DoseToDegradationScale;
@@ -2434,7 +2518,7 @@ namespace Hecton8.Gameplay
             {
                 DoseToDegradationScale = 0.01f,
                 DecayPerTick = DoseDecayPerSimulationStep,
-                DamagePerTickScale = RadiationDamagePerTickScale,
+                DamagePerTickScale = RadiationStatusMagnitudeScale,
                 LeadShieldingEffectiveness = 1f,
                 MaxSdfSamples = 12,
                 Flags = 1u
@@ -2470,6 +2554,17 @@ namespace Hecton8.Gameplay
             [FieldOffset(56)] public ulong _pad3;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        private struct RadiationStatusSignal
+        {
+            [FieldOffset(0)] public uint TargetId;
+            [FieldOffset(4)] public uint SourceId;
+            [FieldOffset(8)] public float Magnitude01;
+            [FieldOffset(12)] public uint Frame;
+            [FieldOffset(16)] public ulong _pad0;
+            [FieldOffset(24)] public ulong _pad1;
+        }
+
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         public struct RadiationTelemetryEntry
         {
@@ -2490,11 +2585,13 @@ namespace Hecton8.Gameplay
         public static class RadiationStateLayoutGuard
         {
             public const int StateSizeBytes = 32;
+            public const int StatusSignalSizeBytes = 32;
             public const int TelemetrySizeBytes = 64;
 
             public static bool ValidateLayout()
             {
                 bool sizesValid = UnsafeUtility.SizeOf<RadiationStateDTO>() == StateSizeBytes &&
+                                  UnsafeUtility.SizeOf<RadiationStatusSignal>() == StatusSignalSizeBytes &&
                                   UnsafeUtility.SizeOf<RadiationTelemetryEntry>() == TelemetrySizeBytes;
 #if UNITY_EDITOR
                 return sizesValid &&
@@ -2506,6 +2603,10 @@ namespace Hecton8.Gameplay
                        GetOffset<RadiationStateDTO>(nameof(RadiationStateDTO.Flags)) == 20 &&
                        GetOffset<RadiationStateDTO>(nameof(RadiationStateDTO._pad0)) == 24 &&
                        GetOffset<RadiationStateDTO>(nameof(RadiationStateDTO._pad7)) == 31 &&
+                       GetOffset<RadiationStatusSignal>(nameof(RadiationStatusSignal.TargetId)) == 0 &&
+                       GetOffset<RadiationStatusSignal>(nameof(RadiationStatusSignal.SourceId)) == 4 &&
+                       GetOffset<RadiationStatusSignal>(nameof(RadiationStatusSignal.Magnitude01)) == 8 &&
+                       GetOffset<RadiationStatusSignal>(nameof(RadiationStatusSignal.Frame)) == 12 &&
                        GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.PlayerAup)) == 0 &&
                        GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.PlayerDepthMeters)) == 24 &&
                        GetOffset<RadiationTelemetryEntry>(nameof(RadiationTelemetryEntry.CurrentExposureRate)) == 28 &&
@@ -2573,7 +2674,7 @@ namespace Hecton8.Gameplay
         {
             [NativeDisableUnsafePtrRestriction, NoAlias] public RadiationStateDTO* States;
             [NativeDisableUnsafePtrRestriction, NoAlias] public RadiationSource* Sources;
-            [NativeDisableUnsafePtrRestriction, NoAlias] public CombatDamageSignal* DamageSignal;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public RadiationStatusSignal* StatusSignal;
             [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly EncodedSdf;
             [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* BulkheadStates;
             [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadPlaneDTO* BulkheadPlanes;
@@ -2599,7 +2700,7 @@ namespace Hecton8.Gameplay
 
             public void Execute()
             {
-                if (States == null || Sources == null || DamageSignal == null)
+                if (States == null || Sources == null || StatusSignal == null)
                     return;
 
                 RadiationStateDTO previous = States[0];
@@ -2689,24 +2790,17 @@ namespace Hecton8.Gameplay
 
                 if (degradation > RadiationCriticalDegradation01 && PlayerTargetId != 0u)
                 {
-                    DamageSignal[0] = new CombatDamageSignal
+                    StatusSignal[0] = new RadiationStatusSignal
                     {
-                        ImpactAup = PlayerAup,
-                        Direction = new float3(0f, 1f, 0f),
-                        Magnitude = math.max(0f, (degradation - RadiationCriticalDegradation01) * safeDamageScale),
-                        DamageType = CombatDamageTypes.Radioactive,
-                        TargetHash = PlayerTargetId,
-                        SourceHash = RadiationSystemHash,
-                        Frame = Frame,
+                        TargetId = PlayerTargetId,
                         SourceId = RadiationCombatSourceId,
-                        TargetId = (ushort)math.min(PlayerTargetId, 65535u),
-                        Channel = GeigerAcousticChannel,
-                        Flags = CombatDamageSignal.DirectRuntimeFlag
+                        Magnitude01 = math.max(0f, (degradation - RadiationCriticalDegradation01) * safeDamageScale),
+                        Frame = Frame
                     };
                 }
                 else
                 {
-                    DamageSignal[0] = default;
+                    StatusSignal[0] = default;
                 }
             }
 

@@ -36,7 +36,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             float signedNoise = (((hash & 2047u) * (1f / 2047f)) - 0.5f) * noiseScale;
             float shell = math.abs(distance - Config.Radius) - math.max(Config.ShellThickness, voxelSize);
             float sphere = distance - Config.Radius;
-            float sdf = math.lerp(sphere, shell, math.step(0.5f, (float)(Config.Flags & 1u))) + signedNoise;
+            float sdf = math.lerp(sphere, shell, (float)(Config.Flags & 1u)) + signedNoise;
             int packed = (int)math.round(math.clamp(sdf * math.rcp(voxelSize) * 24f, -127f, 127f));
             Densities[index] = (sbyte)packed;
         }
@@ -112,7 +112,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             float voxelSize = math.max(tuning.VoxelSize > 0f ? tuning.VoxelSize : state.VoxelSize, VoxelSurfaceNetsConstants.Epsilon);
             float iso = tuning.IsoSurface;
             float decimationBias = math.saturate(tuning.DecimationAggression) * (1f - qualityCurve);
-            float rawCaptureGate = math.step(0.5f, tuning.DebugRawCapture01);
+            float rawCaptureGate = math.saturate(tuning.DebugRawCapture01);
 
             state.Stage = (byte)VoxelMeshingStage.Extracting;
             state.Flags = (byte)(state.Flags & ~(VoxelMeshingFlags.CapacityClamped | VoxelMeshingFlags.NonFinite | VoxelMeshingFlags.SlowExtraction));
@@ -340,9 +340,10 @@ namespace Hecton8.World.VoxelSurfaceNets
         {
             float invVoxel = math.rcp(math.max(voxelSize, VoxelSurfaceNetsConstants.Epsilon));
             float3 grid = (localPosition * invVoxel) + 1f;
-            float nearestGate = 1f - math.step(0.3f, quality);
-            if (nearestGate > 0.5f)
-                return SampleDensityGrid((int)math.round(grid.x), (int)math.round(grid.y), (int)math.round(grid.z));
+            float interpolationWeight = Smooth01(quality);
+            float nearest = SampleDensityGrid((int)math.round(grid.x), (int)math.round(grid.y), (int)math.round(grid.z));
+            if (interpolationWeight <= 0.0001f)
+                return nearest;
 
             int3 baseGrid = (int3)math.floor(grid);
             float3 t = math.saturate(grid - baseGrid);
@@ -360,7 +361,8 @@ namespace Hecton8.World.VoxelSurfaceNets
             float x11 = math.lerp(c011, c111, t.x);
             float y0 = math.lerp(x00, x10, t.y);
             float y1 = math.lerp(x01, x11, t.y);
-            return math.lerp(y0, y1, t.z);
+            float trilinear = math.lerp(y0, y1, t.z);
+            return math.lerp(nearest, trilinear, interpolationWeight);
         }
 
         private float3 CalculateTetraNormal(float3 vertexLocal, float voxelSize, float quality)

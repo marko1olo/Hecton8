@@ -1,4 +1,4 @@
-# Campaign 05 - Regional Push
+﻿# Campaign 05 - Regional Push
 
 Status: future / after English and RU assets are stable
 Public stance: single-player-first scope / proof-first campaign copy

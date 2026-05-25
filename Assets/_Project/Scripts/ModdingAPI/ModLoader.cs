@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Bridge;
 using Hecton8.SaveSystem;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -25,7 +26,7 @@ namespace Hecton8.Modding
             public void OnSaveEvent(in SaveEventPayload payload)
             {
                 if (payload.Type == SaveEventType.LoadCompleted)
-                    HandleLoadCompleted(SaveEvents.ResolveSlotName(in payload.SlotName));
+                    HandleLoadCompleted(SaveEvents.ResolveSlotName(payload.SlotHash));
             }
         }
 
@@ -370,7 +371,7 @@ namespace Hecton8.Modding
             // COLD ALLOC: Dictionary<string,ModCandidate>[candidate count] — dependency lookup by modId — owner: ModLoader
             Dictionary<uint, ModCandidate> byId = new Dictionary<uint, ModCandidate>(candidates.Count);
             // COLD ALLOC: HashSet<string>[candidate count] — sorted IDs for dependency resolution — owner: ModLoader
-            HashSet<uint> sortedIds = new HashSet<uint>();
+            HashSet<uint> sortedIds = new HashSet<uint>(candidates.Count);
 
             for (int i = 0; i < candidates.Count; i++)
             {
@@ -721,6 +722,9 @@ namespace Hecton8.Modding
 
         private static void HandleLoadCompleted(string slotName)
         {
+            uint slotHash = string.IsNullOrWhiteSpace(slotName) ? 0u : H8BridgeHashes.ComputeFnv1A(slotName);
+            SessionLifecycleSignalRoute.PublishGameLoadedHash(slotHash);
+
             if (ShouldForceFutureCommandEnvelopeOnly())
                 return;
 
@@ -729,6 +733,18 @@ namespace Hecton8.Modding
 
         private static void HandleGameReady()
         {
+            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
+            bool hasPlayer = playerObject != null;
+            ulong playerEntityId = 0ul;
+            Vector3 playerPosition = Vector3.zero;
+            if (hasPlayer)
+            {
+                Transform playerTransform = playerObject.transform;
+                playerEntityId = EntityId.ToULong(playerObject.GetEntityId());
+                playerPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
+                SessionLifecycleSignalRoute.PublishPlayerSpawned(playerEntityId, playerPosition);
+            }
+
             if (ShouldForceFutureCommandEnvelopeOnly())
                 return;
 
@@ -750,14 +766,8 @@ namespace Hecton8.Modding
             ModBuildableRegistry.FlushPendingRegistrations();
             ModRecipeRegistry.FlushPendingRegistrations();
 
-            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
-            if (playerObject != null)
-            {
-                Transform playerTransform = playerObject.transform;
-                ulong playerEntityId = EntityId.ToULong(playerObject.GetEntityId());
-                Vector3 playerPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
+            if (hasPlayer)
                 HectonEventBus.Publish(new PlayerSpawnedEvent(playerEntityId, playerPosition));
-            }
         }
 
         private static void HandleApplicationQuitting()

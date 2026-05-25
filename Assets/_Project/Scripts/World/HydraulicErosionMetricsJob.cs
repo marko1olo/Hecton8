@@ -7,10 +7,15 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    internal static class HydraulicErosionMetricsJobLayout
+    {
+        public const int HydraulicErosionMetricBlockStrideBytes = 56;
+    }
+
     /// <summary>
     /// Block-level erosion result metrics for cold-path verification and editor smoke tests.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = HydraulicErosionMetricsJobLayout.HydraulicErosionMetricBlockStrideBytes)]
     public struct HydraulicErosionMetricBlock
     {
         /// <summary>Minimum finite height in the block.</summary>

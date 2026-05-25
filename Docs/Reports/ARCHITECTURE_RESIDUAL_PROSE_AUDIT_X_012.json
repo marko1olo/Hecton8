@@ -1,0 +1,1919 @@
+﻿{
+  "schema": "hecton8.architecture_residual_prose_audit.x012.v1",
+  "generatedUtc": "2026-05-24T06:56:44.041368+00:00",
+  "paragraphWordThreshold": 55,
+  "sentenceWordThreshold": 35,
+  "structuredLineWordThreshold": 70,
+  "movedDiffCount": 2,
+  "movedDiffWords": 150060,
+  "modifiedFileCount": 68,
+  "paragraphsTransformed": 184,
+  "longLinesSplit": 0,
+  "wordsBefore": 75399,
+  "wordsAfter": 75398,
+  "wordDelta": -1,
+  "archiveDir": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE",
+  "movedDiffs": [
+    {
+      "from": "Docs/ARCHITECTURE/ORGANIC_ENTROPY_FEATURE_DIFF_2026-04-29.diff",
+      "to": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/diff_provenance/ARCHIVE_ORGANIC_ENTROPY_FEATURE_DIFF_2026-04-29.diff",
+      "bytes": 175591,
+      "words": 52543
+    },
+    {
+      "from": "Docs/ARCHITECTURE/ORGANIC_ENTROPY_LIFECYCLE_DIFF_2026-04-29.diff",
+      "to": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/diff_provenance/ARCHIVE_ORGANIC_ENTROPY_LIFECYCLE_DIFF_2026-04-29.diff",
+      "bytes": 324601,
+      "words": 97517
+    }
+  ],
+  "modifiedFiles": [
+    {
+      "path": "Docs/ARCHITECTURE/ABYSSAL_CAUSTICS_SHINOBU_232.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/ABYSSAL_CAUSTICS_SHINOBU_232.md.full",
+      "wordsBefore": 1796,
+      "wordsAfter": 1796,
+      "paragraphsTransformed": 9,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 19,
+          "words": 78,
+          "maxSentenceWords": 28,
+          "preview": "Owner output/tuning/telemetry/profile lanes are cold-acquired once and guarded by `_vaultStateReady`. Per-frame `Tick` skips duplicate owner-lane acquire probes while generation de"
+        },
+        {
+          "paragraph": 22,
+          "words": 89,
+          "maxSentenceWords": 30,
+          "preview": "`HectonDeferredCausticsFeature` injects a URP RenderGraph full-screen pass. The pass binds private `_HectonDeferredCausticsSource` and `_HectonDeferredCausticsDepth` textures inste"
+        },
+        {
+          "paragraph": 24,
+          "words": 66,
+          "maxSentenceWords": 20,
+          "preview": "The old `Hecton_CausticsGenerator.compute` asset and meta have been deleted after active project scans found no remaining references to GUID `27b7cf5d630bd8d4dbc699ff38f19ac2`. `00"
+        },
+        {
+          "paragraph": 25,
+          "words": 79,
+          "maxSentenceWords": 35,
+          "preview": "Material shader fallback branches no longer declare or sample `_HectonCausticsMap`, `_HectonProjectedCaustics*`, `_HectonCausticsRuntimeParams`, `_HectonCausticsSimulationParams*`,"
+        },
+        {
+          "paragraph": 29,
+          "words": 72,
+          "maxSentenceWords": 22,
+          "preview": "`GlobalQualityWeight` is consumed as a continuous scalar. Low quality contracts maximum caustic depth, collapses to one monochrome noise layer, and keeps cave shadowing to the firs"
+        },
+        {
+          "paragraph": 36,
+          "words": 65,
+          "maxSentenceWords": 27,
+          "preview": "The Burst function-pointer ABI passes a pointer to the stack-local kernel carrier, not the carrier by value. `GenerateMockCausticLightingKernelDelegate` and `CalculateCausticParame"
+        },
+        {
+          "paragraph": 38,
+          "words": 82,
+          "maxSentenceWords": 37,
+          "preview": "If `SystemInfo.supportsSetConstantBuffer` is false, `AbyssalDeferredCausticsRuntime` does not create the double CBuffer pair, does not mark the service initialized, does not regist"
+        },
+        {
+          "paragraph": 41,
+          "words": 85,
+          "maxSentenceWords": 29,
+          "preview": "The RenderGraph pass does not read the lifecycle singleton. The owner publishes only the currently active `GraphicsBuffer` plus frame index after a successful upload; pass recordin"
+        },
+        {
+          "paragraph": 42,
+          "words": 86,
+          "maxSentenceWords": 26,
+          "preview": "Current source placement is the root `Hecton8.Core.asmdef`; no standalone `Hecton8.Rendering.Runtime.asmdef` or caustics asmref exists in the tree. SHINOBU_232 did not add any new "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/AI_POTENTIAL_FIELD_NAVIGATION.md.full",
+      "wordsBefore": 911,
+      "wordsAfter": 911,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 53,
+          "words": 61,
+          "maxSentenceWords": 47,
+          "preview": "Every record key is an ASCII-lower FNV-1a 32-bit hash of the semantic field path. `Tools/VerifyAiNavigationTuning.py` regenerates the blob and manifest, checks byte-for-byte parity"
+        },
+        {
+          "paragraph": 58,
+          "words": 78,
+          "maxSentenceWords": 46,
+          "preview": "The guard reloads the exported JSON, reconstructs the selected weights, replays the full candidate search, and rejects stale or weakened data if reach, SDF clearance, jitter, idle "
+        },
+        {
+          "paragraph": 59,
+          "words": 83,
+          "maxSentenceWords": 42,
+          "preview": "The simulator scenario constants are derived from the flow texture cell size, world size, surface storm layer, turbulence scalar, vector-noise resolution, and heat-source capacity."
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md.full",
+      "wordsBefore": 1638,
+      "wordsAfter": 1638,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 20,
+          "words": 77,
+          "maxSentenceWords": 36,
+          "preview": "Frame identity comes from `DispatcherTimingDTO.FrameId`, with an owner-local fallback counter only when the dispatcher sends zero. The emergency mock generator uses `Unity.Mathemat"
+        },
+        {
+          "paragraph": 21,
+          "words": 70,
+          "maxSentenceWords": 50,
+          "preview": "Existing gameplay truth enters through contract `SignalBus` snapshots, not concrete domain references: `EntityDeathSignal` and `SurvivalVitalsChangedSignal` feed death telemetry, `"
+        },
+        {
+          "paragraph": 45,
+          "words": 69,
+          "maxSentenceWords": 28,
+          "preview": "`GlobalQualityWeight` continuously maps routine event retention and per-frame drain work from roughly 10 records per drain at `q=0` to 1000 at `q=1`. Routine pressure culling uses "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/AUXILIARY_EQUIPMENT_ROUTER_SHINOBU_229.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/AUXILIARY_EQUIPMENT_ROUTER_SHINOBU_229.md.full",
+      "wordsBefore": 1053,
+      "wordsAfter": 1053,
+      "paragraphsTransformed": 7,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 21,
+          "words": 60,
+          "maxSentenceWords": 32,
+          "preview": "Scheduled lifecycle/VFX work locks `Deployments`, `States`, `TetherAnchors`, `ActiveCount`, `RouteCounters`, `VfxMatrices`, `TelemetryRing`, `TelemetryCursor`, and `ActiveEquipment"
+        },
+        {
+          "paragraph": 22,
+          "words": 80,
+          "maxSentenceWords": 26,
+          "preview": "`StageAuxiliaryVFXJob` writes `ShinobuAuxiliaryVfxMatrices`. After the pending fence, the router uploads that contiguous matrix payload into double-buffered persistent structured `"
+        },
+        {
+          "paragraph": 24,
+          "words": 67,
+          "maxSentenceWords": 31,
+          "preview": "`Assets/_SourceData/Equipment/Auxiliary/auxiliary_equipment_profiles.csv` is an editor/source-data input only. In editor it can hydrate `ShinobuAuxiliaryCsvScratch`, parse as `Read"
+        },
+        {
+          "paragraph": 32,
+          "words": 67,
+          "maxSentenceWords": 29,
+          "preview": "`ScannerTool` still owns its scientific scan and lore query responsibilities, but its radar pulse visual request is now only a `TryDeploySensorPing` call into the auxiliary router."
+        },
+        {
+          "paragraph": 33,
+          "words": 65,
+          "maxSentenceWords": 28,
+          "preview": "`HectonScannerProjectionFeature` consumes the `AuxiliarySonarRequestSignal` frame snapshot for its screen-space projection. It subtracts `HectonFloatingOrigin.CurrentTotalOffsetDou"
+        },
+        {
+          "paragraph": 39,
+          "words": 84,
+          "maxSentenceWords": 31,
+          "preview": "`dotnet build .\\Assembly-CSharp.csproj --no-restore -v:minimal` was attempted once after CPU guard cleared. It failed before clean verification because ignored generated `Hecton8.C"
+        },
+        {
+          "paragraph": 41,
+          "words": 62,
+          "maxSentenceWords": 31,
+          "preview": "Subagent residual audit: scanner scientific/lore discovery still performs managed string construction and broad scanner knowledge/UI coupling remains in `ScannerTool`. The `Scanner"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md.full",
+      "wordsBefore": 991,
+      "wordsAfter": 991,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 27,
+          "words": 60,
+          "maxSentenceWords": 28,
+          "preview": "Timing proof uses that same single-fence graph. The bake report records one measured `jobChain` timing and marks stage breakdown as `not_isolated_single_fence`; it does not claim f"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/BIOTA_DENSITY_MAP_BAKER_SHINOBU_308.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/BIOTA_DENSITY_MAP_BAKER_SHINOBU_308.md.full",
+      "wordsBefore": 949,
+      "wordsAfter": 949,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 2,
+          "words": 47,
+          "maxSentenceWords": 47,
+          "preview": "Status: DOMAIN ASMDEF COMPILED / GLOBAL COMPILE WALL BLOCKS EDITOR BAKE / AWAITABLE POLISH STATIC / ASYNC SIGNATURE FIX STATIC / DTO_LAYOUT_RLE_CLAMP STATIC / RULE_FALLBACK_HARDENE"
+        },
+        {
+          "paragraph": 13,
+          "words": 54,
+          "maxSentenceWords": 44,
+          "preview": "SHINOBU_308 domain import/compile proof exists for the pre-Awaitable code path. Runtime bake execution, post-Awaitable/signature-fix/RLE-clamp/layout-gate/rule-fallback/readback-va"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md.full",
+      "wordsBefore": 1866,
+      "wordsAfter": 1866,
+      "paragraphsTransformed": 5,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 47,
+          "words": 57,
+          "maxSentenceWords": 27,
+          "preview": "The legacy construction terrain-probe bridge is also fixed truth: `PlayerBuilder.TryFindVoxelSdfIntersection` calls parameterless `ModularBaseConstructionValidator.ResolveTerrainPr"
+        },
+        {
+          "paragraph": 48,
+          "words": 72,
+          "maxSentenceWords": 38,
+          "preview": "Socket magnetism legality is fixed truth as well. `EvaluateSocketSnappingJob` evaluates the full CSR target range for each ghost socket and uses `SearchRadiusUltraMeters` as the le"
+        },
+        {
+          "paragraph": 50,
+          "words": 63,
+          "maxSentenceWords": 26,
+          "preview": "Cache-miss structural graph rebuilds no longer iterate `ConstructionManager.SpawnedModules` through `IReadOnlyList<GameObject>`. `ConstructionManager` owns the placed-module regist"
+        },
+        {
+          "paragraph": 62,
+          "words": 78,
+          "maxSentenceWords": 24,
+          "preview": "`VRPipeBlueprintPreview` uses the same Dear Lie shader and indirect draw path. Its four AUP control points feed `BuildPipeBlueprintPreviewJob`, which emits cuboid pipe segment matr"
+        },
+        {
+          "paragraph": 64,
+          "words": 58,
+          "maxSentenceWords": 42,
+          "preview": "`VRPipeBlueprintPreview` now mirrors the main preview batch descriptor discipline: lanes 70946-70948 are stored as pointer-free `VaultGenerationHandle<T>` descriptors, hot phases r"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/CREST_VERSION_QUARANTINE_SHINOBU_260.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/CREST_VERSION_QUARANTINE_SHINOBU_260.md.full",
+      "wordsBefore": 2171,
+      "wordsAfter": 2171,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 19,
+          "words": 82,
+          "maxSentenceWords": 64,
+          "preview": "Static proof: `Docs/Reports/ARCHITECTURE_OPTIMIZATION_REPORT.json` reports `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_c"
+        },
+        {
+          "paragraph": 39,
+          "words": 47,
+          "maxSentenceWords": 39,
+          "preview": "Legacy `Crest4KinematicsAdapter` remains present for old `Hecton8.Physics` consumers. It is not the strict forward route, but its binding repair was fenced: `ResolveOceanRenderer()"
+        },
+        {
+          "paragraph": 53,
+          "words": 56,
+          "maxSentenceWords": 22,
+          "preview": "Loop 12 low-risk text polish removed donor names from non-serialized comments/tooltips in Visor, Atmosphere, Environment, Fluid, and Sargassum authoring code. Remaining vocabulary "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/DATA_MONOLITH_RUNTIME_INTEGRATION.md.full",
+      "wordsBefore": 1326,
+      "wordsAfter": 1326,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 2,
+          "words": 39,
+          "maxSentenceWords": 39,
+          "preview": "Date: 2026-05-23 Status: CORE BLOB BAKED / CORRUPTION STRESS PASS / NATIVE READ ZERO-GC TARGET PASS / RELEASE STATIC-CONFIG GATE PASS / DIRECT FILESTREAM READBYTE PASS / UNITY PROF"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/DISPATCH_PIPELINE.md.full",
+      "wordsBefore": 1686,
+      "wordsAfter": 1686,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 133,
+          "words": 66,
+          "maxSentenceWords": 66,
+          "preview": "`ModRegistryEvents`, `BootstrapEvents`, `LocalizationEvents`, `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `SaveEvents`, `InventoryEvents`, `WeatherEvents`, `QuestEvents`, "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/FLORA_PROCEDURAL_SWAY_FIELD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/FLORA_PROCEDURAL_SWAY_FIELD.md.full",
+      "wordsBefore": 1920,
+      "wordsAfter": 1920,
+      "paragraphsTransformed": 5,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 29,
+          "words": 77,
+          "maxSentenceWords": 42,
+          "preview": "Biome profile CSV is a cold authoring bridge only. Player runtime does not read `StreamingAssets` or perform text file IO for this lane; the current `flora_biome_sway_profiles.csv`"
+        },
+        {
+          "paragraph": 51,
+          "words": 47,
+          "maxSentenceWords": 38,
+          "preview": "The Task 19 proof route is `FloraAnimationScanner` -> `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` -> `FloraAmbientSwaySelfAudit.reportProofArtifact`. The scanner upserts only"
+        },
+        {
+          "paragraph": 53,
+          "words": 45,
+          "maxSentenceWords": 37,
+          "preview": "The ambient black-box dump format is explicit little-endian. `Dump_SHINOBU_267.bin` writes `\"S267\"` magic, version, `TelemetrySourceHash`, row size, row count, and cursor as a 24-b"
+        },
+        {
+          "paragraph": 54,
+          "words": 65,
+          "maxSentenceWords": 21,
+          "preview": "Alpha-clipped morphology now samples `_FloraAlphaMask.a`, multiplies coverage, and performs an early `clip` before normal/light/caustic work in the indirect vegetation fragment pat"
+        },
+        {
+          "paragraph": 67,
+          "words": 61,
+          "maxSentenceWords": 46,
+          "preview": "On invalid input, upload stall, or NaN, the last 300 field frames dump to `Docs/AgentLogs/Dump_FLORA_SWAY_DIRECTOR.bin`. The telemetry ABI remains a 64B entry; reset, toroidal wrap"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/GEOGRAPHY_SANITY_CHECKER_SHINOBU_247.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/GEOGRAPHY_SANITY_CHECKER_SHINOBU_247.md.full",
+      "wordsBefore": 2015,
+      "wordsAfter": 2015,
+      "paragraphsTransformed": 4,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 20,
+          "words": 47,
+          "maxSentenceWords": 38,
+          "preview": "The SceneView anomaly overlay reloads the report through a bounded stream, caps records at `4096`, resolves type codes from `ReadOnlySpan<char>`, parses AUP doubles from spans, and"
+        },
+        {
+          "paragraph": 22,
+          "words": 67,
+          "maxSentenceWords": 33,
+          "preview": "Final report assembly runs on an `Awaitable.BackgroundThreadAsync` lane. It does not await `CopyToAsync`/`WriteAsync`; it copies the temporary anomaly stream through a pooled byte "
+        },
+        {
+          "paragraph": 33,
+          "words": 57,
+          "maxSentenceWords": 32,
+          "preview": "The loader uses a three-state result: `Missing`, `Loaded`, or `Invalid`. Only `Missing` may use deterministic mock fallback, and only when the window setting allows it. `Invalid` c"
+        },
+        {
+          "paragraph": 76,
+          "words": 79,
+          "maxSentenceWords": 26,
+          "preview": "This route is static-source evidence only. A prior narrow `dotnet build Hecton8.Editor.csproj --no-restore --nologo -v:minimal` attempt timed out after 124017 ms with no compiler d"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/GLOBAL_SIGNAL_CORRIDOR.md.full",
+      "wordsBefore": 907,
+      "wordsAfter": 907,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 30,
+          "words": 62,
+          "maxSentenceWords": 24,
+          "preview": "The `ParallelWriter` API is a retained legacy MPSC bridge for low-frequency job/background producers that cannot touch Unity objects and cannot block the main thread. Cache-line-cr"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/H8BIN_VALIDATOR_SHINOBU_258.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/H8BIN_VALIDATOR_SHINOBU_258.md.full",
+      "wordsBefore": 1433,
+      "wordsAfter": 1433,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 24,
+          "words": 63,
+          "maxSentenceWords": 33,
+          "preview": "The struct/field parser is now a lightweight syntax-tree scanner: it strips comments, walks balanced C# attribute blocks, matches declaration bodies by braces, and extracts `Struct"
+        },
+        {
+          "paragraph": 95,
+          "words": 73,
+          "maxSentenceWords": 26,
+          "preview": "PROJECT_AUDIT route cleanup addendum: those five runtime CSV `StreamingAssets` fallbacks are now removed from player runtime source. The affected CSV bridges resolve only editor/de"
+        },
+        {
+          "paragraph": 113,
+          "words": 36,
+          "maxSentenceWords": 36,
+          "preview": "The propwash route is additionally compile-time guarded: `HectonMarineSnowRenderer` keeps CSV staging buffers, background file IO, and wake-profile parsing behind `UNITY_EDITOR`; p"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/HABITAT_FLUID_INCURSION.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/HABITAT_FLUID_INCURSION.md.full",
+      "wordsBefore": 1334,
+      "wordsAfter": 1334,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 10,
+          "words": 83,
+          "maxSentenceWords": 30,
+          "preview": "`FluidIngressJob` applies Torricelli ingress from `IntegrityStateDTO` breach area and AUP-local water depth. `FluidBfsPressureEqualizationJob` traverses CSR topology and moves cons"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/HABITAT_LOGISTICS_GRAPH.md.full",
+      "wordsBefore": 2352,
+      "wordsAfter": 2352,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 213,
+          "words": 60,
+          "maxSentenceWords": 22,
+          "preview": "The Logic Spanner inserts a temporary bypass edge between two placed modules. If the live CSR buffers have preallocated capacity, `HabitatGraphManager` inserts two directed edges d"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/LOCALIZATION_SUBTITLE_SYNC_ENGINE.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/LOCALIZATION_SUBTITLE_SYNC_ENGINE.md.full",
+      "wordsBefore": 995,
+      "wordsAfter": 995,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 32,
+          "words": 56,
+          "maxSentenceWords": 18,
+          "preview": "`BabelSubtitleSyncRuntime` evaluates subtitle cue visibility against `AudioSettings.dspTime * AudioSettings.outputSampleRate`, stored as `uint AudioFrameClock`. `SubtitleManager` a"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/MACRO_ECOSYSTEM_MATHEMATICIAN.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/MACRO_ECOSYSTEM_MATHEMATICIAN.md.full",
+      "wordsBefore": 1364,
+      "wordsAfter": 1364,
+      "paragraphsTransformed": 7,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 52,
+          "words": 69,
+          "maxSentenceWords": 27,
+          "preview": "`MacroEcosystemTelemetryEntry` is fixed at 64 bytes. Offset 28 stores `SolverMicroseconds` as the exact dispatcher-observed elapsed window from FrostTick schedule to `DispatcherJob"
+        },
+        {
+          "paragraph": 54,
+          "words": 73,
+          "maxSentenceWords": 31,
+          "preview": "Cold boot seeds default biome specs into `ShinobuMacroEcosystemBiomeSpecs` so player builds do not need CSV file probing to get carrying capacity, migration resistance, temperature"
+        },
+        {
+          "paragraph": 55,
+          "words": 56,
+          "maxSentenceWords": 26,
+          "preview": "Consumer assemblies read macro biomass through `Hecton8.Core.Contracts.EcosystemSectorDTO`, `MacroEcosystemSectorIndexRecord`, `MacroEcosystemTuningVaultRecord`, and `MacroEcosyste"
+        },
+        {
+          "paragraph": 57,
+          "words": 58,
+          "maxSentenceWords": 33,
+          "preview": "`MacroEcosystemTuningDTO.Flags` carries `TuningFlagSnapshotWriteInFlight` while the macro FrostTick chain may write the front sector buffer. Consumers must read tuning before and a"
+        },
+        {
+          "paragraph": 58,
+          "words": 56,
+          "maxSentenceWords": 27,
+          "preview": "Macro sector identity is a horizontal regional biomass layer. Sector lookup hashes absolute AUP `X/Z` in double precision and intentionally collapses `Y` to `0`; depth effects belo"
+        },
+        {
+          "paragraph": 84,
+          "words": 44,
+          "maxSentenceWords": 36,
+          "preview": "Invalid LV math is written per sector to `ShinobuMacroEcosystemFaultFlags`; telemetry reduction ORs those sector flags into the 300-frame black box and records total flora/prey/pre"
+        },
+        {
+          "paragraph": 86,
+          "words": 85,
+          "maxSentenceWords": 32,
+          "preview": "`AmbientBiotaDirector` reads `IEcosystemDirectorService` through `GlobalRegistry`. `EcosystemDirector.TryGetBiomassAvailability` fronts the macro Vault biomass snapshot via cached "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md.full",
+      "wordsBefore": 1432,
+      "wordsAfter": 1432,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 57,
+          "words": 58,
+          "maxSentenceWords": 29,
+          "preview": "`OfflineLodManifestHeader` is 64 bytes and `OfflineLodManifestRecord` is 128 bytes. Both are explicit layouts with 4-byte aligned fields and explicit uint reserve lanes; the manife"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_WRECKAGE_GEOMETRY_BAKER_SHINOBU_209.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/OFFLINE_WRECKAGE_GEOMETRY_BAKER_SHINOBU_209.md.full",
+      "wordsBefore": 1530,
+      "wordsAfter": 1530,
+      "paragraphsTransformed": 6,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 41,
+          "words": 87,
+          "maxSentenceWords": 33,
+          "preview": "Source mesh extraction preserves every triangle submesh. The Forge builds 16-byte index-copy tiles of `OfflineWreckageSubMeshIndexRangeDTO` data, 384 indices per full tile, contain"
+        },
+        {
+          "paragraph": 43,
+          "words": 67,
+          "maxSentenceWords": 28,
+          "preview": "Damage-state mapping `.bytes` files remain exactly 32 bytes and are written little-endian from stack spans. The 16 padding bytes are explicitly zeroed before the four hashes are wr"
+        },
+        {
+          "paragraph": 44,
+          "words": 70,
+          "maxSentenceWords": 40,
+          "preview": "When owned `.bytes`, JSON, and black-box dump artifacts are actually generated, publication uses `File.Replace(temp, final, null)` so readers do not observe a missing final path; t"
+        },
+        {
+          "paragraph": 64,
+          "words": 59,
+          "maxSentenceWords": 26,
+          "preview": "Owned `.bytes`, JSON reports, benchmark output, scanner output, and black-box dumps write to unique same-volume `.tmp.<processId>.<ordinal>` paths with `FileMode.CreateNew`. Public"
+        },
+        {
+          "paragraph": 67,
+          "words": 48,
+          "maxSentenceWords": 41,
+          "preview": "Thin structural inputs keep their measured extents. If one bounds axis collapses to zero, the support hull expands only that axis to a 0.01 m half-extent and sets `WarningHullBound"
+        },
+        {
+          "paragraph": 74,
+          "words": 36,
+          "maxSentenceWords": 36,
+          "preview": "The writer no longer uses `BinaryWriter`; it explicitly clears the 32-byte header before writing fields, copies each DTO row through `UnsafeUtility.CopyStructureToPtr` into a stack"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/PROCEDURAL_CORAL_GROWTH_ENGINE.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/PROCEDURAL_CORAL_GROWTH_ENGINE.md.full",
+      "wordsBefore": 633,
+      "wordsAfter": 633,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 16,
+          "words": 62,
+          "maxSentenceWords": 30,
+          "preview": "All persistent coral data is requested from `GlobalDataVault` through local `BufferID` values `71390..71409`. The generator writes `CoralBranchDTO` records, camera-relative `float4"
+        },
+        {
+          "paragraph": 24,
+          "words": 86,
+          "maxSentenceWords": 26,
+          "preview": "`coral_growth_rules.h8bin` is searched in `Assets/StreamingAssets` first, then as a cold project-tree reconnaissance. If absent, `GenerateEmergencyMockCoralRules()` hydrates determ"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/PROCEDURAL_WRECKAGE_ASSEMBLER_SHINOBU_121.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/PROCEDURAL_WRECKAGE_ASSEMBLER_SHINOBU_121.md.full",
+      "wordsBefore": 351,
+      "wordsAfter": 351,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 30,
+          "words": 57,
+          "maxSentenceWords": 18,
+          "preview": "`MockSectorTriggerJob` feeds a deterministic sector trigger. `WreckageCollapseJob` solves a bounded WFC grid. `ApplyStructuralShearJob` applies deterministic torsion and deletions."
+        },
+        {
+          "paragraph": 36,
+          "words": 63,
+          "maxSentenceWords": 28,
+          "preview": "Optional `wreckage_module_rules.h8bin` is cold-loaded only. Header is 16 bytes: `RuleBinaryMagic` (`H8WR` little-endian read value `0x52573848`), endian marker `0x01020304`, versio"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/RADIATION_MUTATION_LINK_SHINOBU_324.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/RADIATION_MUTATION_LINK_SHINOBU_324.md.full",
+      "wordsBefore": 445,
+      "wordsAfter": 445,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 5,
+          "words": 79,
+          "maxSentenceWords": 32,
+          "preview": "Presentation is a Dear Lie. The scalar is published through `HectonShaderGlobalDataVaultBridge.PublishRadiationMutation` into shader slot 22 and mirrored to `_HectonHandRadiationMu"
+        },
+        {
+          "paragraph": 7,
+          "words": 76,
+          "maxSentenceWords": 38,
+          "preview": "Runtime job policy: SHINOBU_324 keeps Burst batch jobs as raw-pointer proof kernels with `[NativeDisableUnsafePtrRestriction, NoAlias]` lanes and explicit counts, but the current o"
+        },
+        {
+          "paragraph": 11,
+          "words": 66,
+          "maxSentenceWords": 31,
+          "preview": "Compile evidence: guarded `Hecton8.Core.csproj` build was relaunched after CPU/compiler gate cleared (`35.97%`, no active `dotnet`/`csc`/`VBCSCompiler`). SHINOBU_324 contract visib"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md.full",
+      "wordsBefore": 1170,
+      "wordsAfter": 1170,
+      "paragraphsTransformed": 4,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 53,
+          "words": 62,
+          "maxSentenceWords": 35,
+          "preview": "External owners can seed routes through `TryWriteRoute(int, ReadOnlySpan<AutopilotWaypointDTO>, float, uint)`. The method writes a fixed per-submarine slice of `AutopilotWaypoints`"
+        },
+        {
+          "paragraph": 57,
+          "words": 82,
+          "maxSentenceWords": 45,
+          "preview": "`SubmarineAutopilotTunerWindow` writes the Vault tuning DTO, exposes an authored quality-cap slider plus resolved-quality readout, assigns default/scout/freighter handling profile "
+        },
+        {
+          "paragraph": 59,
+          "words": 81,
+          "maxSentenceWords": 31,
+          "preview": "NaN desired velocity or estimated solver time above 1.0 ms sets telemetry fault flags and requests dual planned/generated-on-fault binary dumps: `Docs/AgentLogs/Dump_SHINOBU_157.bi"
+        },
+        {
+          "paragraph": 67,
+          "words": 77,
+          "maxSentenceWords": 43,
+          "preview": "No NavMesh, no A*, no `Physics.Raycast`, no `Physics.SphereCast`, no managed waypoint nodes in hot paths. SDF probing and steering jobs are Burst deterministic and use continuous r"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_115_STRUCTURAL_INTEGRITY_CALCULATOR.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_115_STRUCTURAL_INTEGRITY_CALCULATOR.md.full",
+      "wordsBefore": 1328,
+      "wordsAfter": 1328,
+      "paragraphsTransformed": 5,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 51,
+          "words": 60,
+          "maxSentenceWords": 26,
+          "preview": "`IntegrityStateDTO` is explicit 32 bytes and validated in player/runtime builds with `UnsafeUtility.SizeOf`. Runtime size validation also covers `StructuralTuningDTO`, `StructuralT"
+        },
+        {
+          "paragraph": 56,
+          "words": 69,
+          "maxSentenceWords": 23,
+          "preview": "Pressure and SDF jobs vaccinate against corrupted AUP deltas. Non-finite deltas set `StateFlagNonFinite`, force stress/buckling into collapse-safe scalar values, and stop before pr"
+        },
+        {
+          "paragraph": 65,
+          "words": 62,
+          "maxSentenceWords": 23,
+          "preview": "The facade edits Vault-backed `StructuralTuningDTO` values only when the solver fence is not alive, and tuning writes lock `StructuralIntegrityTuning`. `RegenerateMockGraph()` does"
+        },
+        {
+          "paragraph": 68,
+          "words": 57,
+          "maxSentenceWords": 23,
+          "preview": "Editor/facade reads acquire scoped Vault locks before resolving state, AUP, tuning, or telemetry aliases. Runtime `OnDrawGizmos` and the SceneView heatmap use `TryBuildEditorRelati"
+        },
+        {
+          "paragraph": 72,
+          "words": 56,
+          "maxSentenceWords": 30,
+          "preview": "Before scheduling, the runtime locks every Vault buffer captured by the job chain: states, node AUPs, CSR offsets, CSR destinations, edge flags, telemetry ring, telemetry cursor, t"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md.full",
+      "wordsBefore": 1307,
+      "wordsAfter": 1307,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 43,
+          "words": 44,
+          "maxSentenceWords": 44,
+          "preview": "Hot-path value construction proof: gameplay-facing request, resolve, telemetry, publish-signal, visual-AUP, late-frame job descriptor, Vault view, and impact-debris structs use `de"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_138_CHEMICAL_INFLUENCE_GRID_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_138_CHEMICAL_INFLUENCE_GRID_ROUTE_CARD.md.full",
+      "wordsBefore": 718,
+      "wordsAfter": 718,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 70,
+          "words": 90,
+          "maxSentenceWords": 39,
+          "preview": "Prior static forbidden-pattern scan text is documentation/source orientation only: no scent `OnTriggerStay`, `Vector3.Distance`, `string.Format`, LINQ, `Pack=1`, `UnityEngine.Rando"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md.full",
+      "wordsBefore": 1057,
+      "wordsAfter": 1057,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 80,
+          "words": 39,
+          "maxSentenceWords": 39,
+          "preview": "Telemetry ring is 300 x 64-byte entries and records frame, total lights, culled lights, submitted lights, Burst elapsed estimate, quality, thermal pressure, flags, state hash, max "
+        },
+        {
+          "paragraph": 82,
+          "words": 78,
+          "maxSentenceWords": 33,
+          "preview": "Prior static scan text says the owned source avoided forbidden light toggles, managed filtering, DTO properties, `Pack=`, direct sibling imports, `GeometryUtility`, managed `Plane["
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_156_ABYSSAL_CAVITATION_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_156_ABYSSAL_CAVITATION_ROUTE_CARD.md.full",
+      "wordsBefore": 983,
+      "wordsAfter": 983,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 4,
+          "words": 72,
+          "maxSentenceWords": 30,
+          "preview": "`SHINOBU_156_ABYSSAL_CAVITATION_ROUTE_CARD` is retained as historical route context for the original cavitation buffer range `71560..71570`. The current live authority proof for th"
+        },
+        {
+          "paragraph": 75,
+          "words": 60,
+          "maxSentenceWords": 21,
+          "preview": "The solver samples SDF at the midpoint between wave epicenter and entity AUP. Negative SDF applies continuous pressure dampening. At low `GlobalQualityWeight`, SDF lookup collapses"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_158_BUOYANCY_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_158_BUOYANCY_ROUTE_CARD.md.full",
+      "wordsBefore": 1049,
+      "wordsAfter": 1049,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 64,
+          "words": 65,
+          "maxSentenceWords": 26,
+          "preview": "Stale-handle behavior: hot-swap listener completes pending work, clears handles, reacquires Vault handles, and runs one idempotent cold boot. If post-fixed cannot resolve the packe"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_205_AUP_PRECISION_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_205_AUP_PRECISION_ROUTE_CARD.md.full",
+      "wordsBefore": 921,
+      "wordsAfter": 921,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 69,
+          "words": 59,
+          "maxSentenceWords": 43,
+          "preview": "Editorless CI gate: `Tools/AupPrecisionGate_SHINOBU_205.py` scans the same source surface without Unity, writes `Docs/Reports/AUP_PRECISION_SCAN_SHINOBU_205.json`, and upserts `Doc"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_218_DEPTH_BASED_INTEGRITY_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_218_DEPTH_BASED_INTEGRITY_ROUTE_CARD.md.full",
+      "wordsBefore": 1430,
+      "wordsAfter": 1430,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 58,
+          "words": 74,
+          "maxSentenceWords": 32,
+          "preview": "`HullIntegrityRuntime` now follows the same descriptor rule for its hull dent/deformation, breach jet, material strength, CSV scratch, telemetry, and pressure mirror lanes. It reso"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_218_DEPTH_BASED_INTEGRITY_SOLVER.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_218_DEPTH_BASED_INTEGRITY_SOLVER.md.full",
+      "wordsBefore": 902,
+      "wordsAfter": 902,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 12,
+          "words": 54,
+          "maxSentenceWords": 41,
+          "preview": "Habitat deformation cleanup note: `HullIntegrityRuntime` was also migrated off persistent `VaultBufferHandle<T>` storage. It now keeps only `VaultGenerationHandle<T>` descriptors f"
+        },
+        {
+          "paragraph": 40,
+          "words": 56,
+          "maxSentenceWords": 27,
+          "preview": "`StructuralTelemetryJob.StateHash` includes node hash, stress, pressure, buckling scalar, and flags. Visual sync uses two structured `GraphicsBuffer` instances as A/B upload buffer"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md.full",
+      "wordsBefore": 1498,
+      "wordsAfter": 1498,
+      "paragraphsTransformed": 6,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 14,
+          "words": 40,
+          "maxSentenceWords": 40,
+          "preview": "Proof required: Unity import and clean Console for SHINOBU_229 files; Play Mode deploy smoke for flare, sensor ping, and gravity tether; Profiler or GCMonitor 0 B/frame capture; Si"
+        },
+        {
+          "paragraph": 29,
+          "words": 80,
+          "maxSentenceWords": 31,
+          "preview": "Expected max events per frame: 1024 flare, 1024 sonar, 1024 tether configured maximum-quality lane maxima. Each lane prewarms 1024 queue slots to match the maximum one-signal-per-a"
+        },
+        {
+          "paragraph": 44,
+          "words": 56,
+          "maxSentenceWords": 22,
+          "preview": "Overflow/failure: route queues rely on `SignalBus<T>` bounded drop/coalesce behavior; router fail-closes when Vault handles are absent or a job is active. Producer jobs open lanes "
+        },
+        {
+          "paragraph": 56,
+          "words": 61,
+          "maxSentenceWords": 47,
+          "preview": "Job lock fence: lifecycle/VFX scheduling, deploy, cancel, and mock generation lock `Deployments`, `States`, `TetherAnchors`, `ActiveCount`, `RouteCounters`, `VfxMatrices`, `Telemet"
+        },
+        {
+          "paragraph": 68,
+          "words": 58,
+          "maxSentenceWords": 45,
+          "preview": "Scanner projection: `HectonScannerProjectionFeature` reads `AuxiliarySonarRequestSignal` snapshots, subtracts `HectonFloatingOrigin.CurrentTotalOffsetDouble` from the signal AUP be"
+        },
+        {
+          "paragraph": 73,
+          "words": 56,
+          "maxSentenceWords": 17,
+          "preview": "Scanner residual boundary: `ScannerTool` scientific/lore discovery strings and broad scanner knowledge/UI coupling remain outside this route card. The `ScannerToolActiveSignal` pro"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_236_BILATERAL_DRS_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_236_BILATERAL_DRS_ROUTE_CARD.md.full",
+      "wordsBefore": 1697,
+      "wordsAfter": 1697,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 8,
+          "words": 84,
+          "maxSentenceWords": 52,
+          "preview": "Instrument: GlobalDataVault + all-or-fail dispatcher route + dispatcher-scheduled simulation jobs + RenderGraph constant-buffer bridge + black-box telemetry Producer/consumer phase"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_238_BIOLUMINESCENT_MATERIAL_SYNC_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_238_BIOLUMINESCENT_MATERIAL_SYNC_ROUTE_CARD.md.full",
+      "wordsBefore": 1647,
+      "wordsAfter": 1647,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 21,
+          "words": 51,
+          "maxSentenceWords": 36,
+          "preview": "Producer/consumer phase: `IUpdatable.Tick` consumes cached signals, advances scalar support state, schedules the oscillator when cadence is due, and records telemetry without shade"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_251_SUBMARINE_ADDED_MASS_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_251_SUBMARINE_ADDED_MASS_ROUTE_CARD.md.full",
+      "wordsBefore": 1000,
+      "wordsAfter": 1000,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 22,
+          "words": 48,
+          "maxSentenceWords": 37,
+          "preview": "`Data/Physics/vehicle_hull_profiles.csv` is the literal designer hull profile source for this route. The runtime reads it only when no simulation job or Vault lock is active, stage"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_262_SINGLE_PASS_OCEAN_RENDERGRAPH.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_262_SINGLE_PASS_OCEAN_RENDERGRAPH.md.full",
+      "wordsBefore": 354,
+      "wordsAfter": 354,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 9,
+          "words": 56,
+          "maxSentenceWords": 22,
+          "preview": "Depth is derived from the primary camera depth texture in screen space instead of rendering terrain from a top-down ocean camera. Foam uses Gerstner Jacobian/shoreline scalars and "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_263_ANALYTICAL_GERSTNER_WAVE_SOLVER.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_263_ANALYTICAL_GERSTNER_WAVE_SOLVER.md.full",
+      "wordsBefore": 608,
+      "wordsAfter": 608,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 10,
+          "words": 74,
+          "maxSentenceWords": 30,
+          "preview": "The solver records the last 300 high-level frames to `WaveMathTelemetryEntry`. `PostFixedTick` locks `Shinobu263WaveTelemetryRing` and `Shinobu263WaveTelemetryCursor` before writin"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md.full",
+      "wordsBefore": 1176,
+      "wordsAfter": 1176,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 26,
+          "words": 69,
+          "maxSentenceWords": 38,
+          "preview": "Invalid values or estimated opaque budget breaches set telemetry fault flags. VisualSync sets a pending dump request, and `PostSimulationTick`/shutdown flushes a 32-byte unmanaged "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md.full",
+      "wordsBefore": 909,
+      "wordsAfter": 909,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 2,
+          "words": 37,
+          "maxSentenceWords": 37,
+          "preview": "Route ID: `SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE` Date: 2026-05-21 Owner: `SHINOBU_271` Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge Owning file/system"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_273_FREQUENCY_TUNING_DECRYPTION_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_273_FREQUENCY_TUNING_DECRYPTION_ROUTE_CARD.md.full",
+      "wordsBefore": 1061,
+      "wordsAfter": 1061,
+      "paragraphsTransformed": 6,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 27,
+          "words": 73,
+          "maxSentenceWords": 32,
+          "preview": "Puzzle mutation uses `HectonPhysicsContract.FixedDeltaTimeSeconds`, not Unity frame delta. Decryption scheduling requires a nonzero `SystemDispatcher.CurrentFrameId`; if dispatcher"
+        },
+        {
+          "paragraph": 33,
+          "words": 85,
+          "maxSentenceWords": 29,
+          "preview": "The owner frame records `DecryptionTelemetryEntry[300]` in Vault. On non-finite state or >0.1 ms solver budget, the owner frame copies fixed telemetry rows oldest-to-newest into a "
+        },
+        {
+          "paragraph": 37,
+          "words": 66,
+          "maxSentenceWords": 47,
+          "preview": "Static source scans verify DTO layout declarations, SignalBus route, no Canvas/GraphicRaycaster/LineRenderer in `TerminalOS`, no direct `Time.unscaledDeltaTime` in the decryption i"
+        },
+        {
+          "paragraph": 43,
+          "words": 65,
+          "maxSentenceWords": 23,
+          "preview": "Loop 16 shader read-bounds closure: `_GlobalDecryptionPuzzles` upload count is bounded by `_terminalCount`, Vault row count, and GPU buffer capacity. `TerminalOsRuntime` stores `_d"
+        },
+        {
+          "paragraph": 44,
+          "words": 80,
+          "maxSentenceWords": 31,
+          "preview": "Loop 17 dispatcher-frame and Vault-count closure: `TerminalOsRuntime` no longer passes Unity `Time.frameCount` into decryption schedule, knob input, telemetry, or `TerminalUnlocked"
+        },
+        {
+          "paragraph": 45,
+          "words": 77,
+          "maxSentenceWords": 47,
+          "preview": "Loop 18 terminal wrapper bounds closure: public terminal copy/write helpers, dirty-flag routes, terminal text formatting, terminal interaction jobs, screen command uploads, panel i"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_276_EXOSUIT_6D_KINEMATICS.md.full",
+      "wordsBefore": 1236,
+      "wordsAfter": 1236,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 35,
+          "words": 81,
+          "maxSentenceWords": 37,
+          "preview": "`Data/Physics/exosuit_performance_profiles.csv` is parsed once during cold Vault initialization into `ExosuitTuningDTO` by byte hashing and float parsing. The file is loaded into V"
+        },
+        {
+          "paragraph": 39,
+          "words": 79,
+          "maxSentenceWords": 31,
+          "preview": "The black box is `ExosuitTelemetryEntry[300]` in `BufferID.ShinobuExosuitTelemetryRing`. It records AUP, velocity, heat, hydraulic pressure, SDF push, elapsed milliseconds, frame, "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_302_UTILITY_AI_COGNITION_ROUTE.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_302_UTILITY_AI_COGNITION_ROUTE.md.full",
+      "wordsBefore": 606,
+      "wordsAfter": 606,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 19,
+          "words": 63,
+          "maxSentenceWords": 25,
+          "preview": "`CognitionUtilityTunerWindow` is editor-only. It exposes continuous quality, polynomial coefficients, action biases, sensory gains, and target radii. It draws a stacked action-dist"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_303_LEVIATHAN_STEERING_ROUTE.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_303_LEVIATHAN_STEERING_ROUTE.md.full",
+      "wordsBefore": 406,
+      "wordsAfter": 406,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 6,
+          "words": 69,
+          "maxSentenceWords": 20,
+          "preview": "Producer phase: Predator cognition evaluation chain, after cognition outputs and before post-evaluation telemetry. Consumer phase: leviathan presentation bridge reads `KinematicSta"
+        },
+        {
+          "paragraph": 10,
+          "words": 58,
+          "maxSentenceWords": 32,
+          "preview": "Non-finite velocity or steering telemetry budget breach sets telemetry flags, publishes `SteeringDumpFaultHash` through `GlobalTelemetryBus`, and dumps the 300-frame ring to `Docs/"
+        },
+        {
+          "paragraph": 16,
+          "words": 85,
+          "maxSentenceWords": 24,
+          "preview": "`ValidateLeviathanSteeringAbiLayout()` checks `SteeringParamsDTO` size and field offsets: `MaxSpeed@0`, `TurnSpeed@4`, `LungeMultiplier@8`, `ObstacleAvoidanceWeight@12`, `CurrentTa"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_311_ACOUSTIC_SENSORY_ROUTE.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_311_ACOUSTIC_SENSORY_ROUTE.md.full",
+      "wordsBefore": 697,
+      "wordsAfter": 697,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 23,
+          "words": 36,
+          "maxSentenceWords": 36,
+          "preview": "Hot owner-phase read-only helpers that only inspect staged counters or mock tuning flags also use Vault read handles; mutable `Open()` remains reserved for owner writes, job output"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_317_CRAFTING_FAST_FAIL_ROUTE.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_317_CRAFTING_FAST_FAIL_ROUTE.md.full",
+      "wordsBefore": 902,
+      "wordsAfter": 902,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 15,
+          "words": 66,
+          "maxSentenceWords": 26,
+          "preview": "Inventory hash/quantity lanes remain the authoritative rollback/save facts owned by the inventory domain. Requirement DTOs are static payload. Craftable words, telemetry cursor/rin"
+        },
+        {
+          "paragraph": 20,
+          "words": 81,
+          "maxSentenceWords": 41,
+          "preview": "The validator replaces legacy object/list/string recipe checks with two cheap masks before any quantity scan: `(PlayerUnlockMask & BlueprintUnlockMask)` and `(CurrentInventoryMask "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_318_ARMOR_PENETRATION_LUT_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_318_ARMOR_PENETRATION_LUT_ROUTE_CARD.md.full",
+      "wordsBefore": 530,
+      "wordsAfter": 530,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 5,
+          "words": 62,
+          "maxSentenceWords": 31,
+          "preview": "Registered tool-hit route: `ToolHitUtility.TryQueueCentralDamage` now passes finite hit-point AUP through the public `CombatDamageRuntime.TryQueueDamage(..., double3 impactAup)` in"
+        },
+        {
+          "paragraph": 8,
+          "words": 57,
+          "maxSentenceWords": 36,
+          "preview": "Hot-path discipline: Damage enqueue and frame scheduling use `ensure:false`; if core armor Vault lanes are missing, the route fails closed or falls back to existing local hit detai"
+        },
+        {
+          "paragraph": 14,
+          "words": 67,
+          "maxSentenceWords": 24,
+          "preview": "Forbidden route: No armor `Physics.Raycast`, no body-part `MeshCollider`, no child-collider weakspot/limb metadata, no registered-route `Transform.InverseTransformPoint(hitPoint)` "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md.full",
+      "wordsBefore": 567,
+      "wordsAfter": 567,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 12,
+          "words": 62,
+          "maxSentenceWords": 25,
+          "preview": "`GlobalQualityWeight` continuously lerps status cadence from `1.0s` toward `0.1s`, batch size from `128` toward `32`, and toxic bubble cadence from `48` frames toward `8` frames. R"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_332_SUBMARINE_GYRO_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_332_SUBMARINE_GYRO_ROUTE_CARD.md.full",
+      "wordsBefore": 668,
+      "wordsAfter": 668,
+      "paragraphsTransformed": 4,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 2,
+          "words": 36,
+          "maxSentenceWords": 36,
+          "preview": "Date: 2026-05-22 Owner: `SHINOBU_332 / SUBMARINE_PITCH_ROLL_AUTO_LEVEL` Domain: Echelon 6 Vehicles & Kinematics / submarine pitch-roll auto-level Status: YELLOW_STATIC_SOURCE_REPAI"
+        },
+        {
+          "paragraph": 6,
+          "words": 64,
+          "maxSentenceWords": 23,
+          "preview": "Legacy compatibility: `SubmarineAutoLevelBallastController` remains a Gameplay ballast/flood/combat bridge. It refreshes a cached SHINOBU_332 active flag from register/slow lifecyc"
+        },
+        {
+          "paragraph": 19,
+          "words": 80,
+          "maxSentenceWords": 25,
+          "preview": "The cockpit horizon is not a GameObject, transform hierarchy, or CPU mesh. `SubmarineGyroVisualStateDTO` carries only shader-safe floats: error vector, corrective torque, effort, p"
+        },
+        {
+          "paragraph": 25,
+          "words": 58,
+          "maxSentenceWords": 23,
+          "preview": "`RecordGyroTelemetryJob` reduces active controller count, average pitch/roll error, max torque, max error, non-finite count, state hash, quality, and elapsed microseconds. `DumpGyr"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md.full",
+      "wordsBefore": 1139,
+      "wordsAfter": 1139,
+      "paragraphsTransformed": 8,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 2,
+          "words": 49,
+          "maxSentenceWords": 49,
+          "preview": "Date: 2026-05-22 Owner: `SHINOBU_333 / SUBMARINE_BALLAST_BUOYANCY_SOLVER` Domain: Echelon 6 Vehicles & Kinematics / submarine ballast, displacement, and pressure-gated buoyancy Sta"
+        },
+        {
+          "paragraph": 4,
+          "words": 56,
+          "maxSentenceWords": 20,
+          "preview": "One fact: ballast-tank water volume, compressed-air pressure, displaced hull volume, and the derived vertical buoyancy force. One owner: `SubmarineAutoLevelBallastController` owns "
+        },
+        {
+          "paragraph": 7,
+          "words": 56,
+          "maxSentenceWords": 26,
+          "preview": "The XML prompt names a `NativeQueue<ForcePacketDTO>.ParallelWriter` for `PhysicsApplySystem`. The current vehicle path already centralizes Unity rigidbody force application through"
+        },
+        {
+          "paragraph": 16,
+          "words": 84,
+          "maxSentenceWords": 26,
+          "preview": "Read-looking APIs in the SHINOBU_333 hot path do not publish signals, search the scene, complete jobs, or mutate global state. Completion remains explicit in `CompleteBallastSolver"
+        },
+        {
+          "paragraph": 26,
+          "words": 81,
+          "maxSentenceWords": 27,
+          "preview": "`GlobalQualityWeight` is consumed as a continuous `0..1` scalar. The owner phase smooths the scalar, maps it through `smoothstep/lerp` to a `1..4` sample budget, and requires a 2.5"
+        },
+        {
+          "paragraph": 31,
+          "words": 61,
+          "maxSentenceWords": 33,
+          "preview": "`SubmarineBallastTelemetryEntry[300]` records frame, flags, hash, net force, buoyant force, ballast gravity, water liters, compressed-air mass, ambient pressure, displaced volume, "
+        },
+        {
+          "paragraph": 33,
+          "words": 76,
+          "maxSentenceWords": 31,
+          "preview": "Static scans show zero targeted dynamic `Rigidbody.mass` ballast writes, zero targeted water `Physics.OverlapSphere` hacks, and zero targeted direct `AddForceAtPosition` sites. Ful"
+        },
+        {
+          "paragraph": 35,
+          "words": 57,
+          "maxSentenceWords": 30,
+          "preview": "Assembly boundary scan on 2026-05-23 found no SHINOBU-owned runtime asmdef under `Assets/_Project/Scripts/Physics/Vehicles`; only `Hecton8.Physics.Vehicles.Editor.asmdef` exists an"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_338_AIRLOCK_PRESSURIZATION_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_338_AIRLOCK_PRESSURIZATION_ROUTE_CARD.md.full",
+      "wordsBefore": 630,
+      "wordsAfter": 630,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 11,
+          "words": 64,
+          "maxSentenceWords": 33,
+          "preview": "The exchange phase is intentionally `IJob`, not `IJobParallelFor`, because shared Fluid/Atmosphere targets are rollback-critical. Parallel CAS preserved memory safety but not deter"
+        },
+        {
+          "paragraph": 13,
+          "words": 63,
+          "maxSentenceWords": 32,
+          "preview": "KCC keeps reading the existing Construction-owned `BufferID.Shinobu220BulkheadCollisionResults` lane. SHINOBU does not write that lane directly. When pressure or water is unsafe, `"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_340_PIPE_DRAINAGE_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_340_PIPE_DRAINAGE_ROUTE_CARD.md.full",
+      "wordsBefore": 683,
+      "wordsAfter": 683,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 10,
+          "words": 69,
+          "maxSentenceWords": 33,
+          "preview": "YELLOW contract debt: current code no longer has literal `using Hecton8.Physics;` / `using Hecton8.Power;` imports, but it still references exact fully qualified Physics/Power DTOs"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md.full",
+      "wordsBefore": 887,
+      "wordsAfter": 887,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 6,
+          "words": 61,
+          "maxSentenceWords": 29,
+          "preview": "The shader reconstructs a camera ray per pixel, intersects the uploaded PDA plane, resolves atlas UVs, samples `_CameraDepthTexture` for soft scene occlusion, and applies continuou"
+        },
+        {
+          "paragraph": 14,
+          "words": 66,
+          "maxSentenceWords": 34,
+          "preview": "The projector records the last 300 frames in `PdaProjectionTelemetryEntry`. Non-finite matrix input or matrix compilation cost above `100 us` dumps the ring to `Docs/AgentLogs/Dump"
+        },
+        {
+          "paragraph": 16,
+          "words": 63,
+          "maxSentenceWords": 29,
+          "preview": "Mutation routes use generation-checked `TryResolveHandle` only inside the owner write phase. Public/editor read routes use `TryReadOnlyHandle` through `TryReadOnlyPdaProjectionVaul"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_349_AUP_NARRATIVE_POI_TRIGGER_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_349_AUP_NARRATIVE_POI_TRIGGER_ROUTE_CARD.md.full",
+      "wordsBefore": 827,
+      "wordsAfter": 827,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 22,
+          "words": 67,
+          "maxSentenceWords": 25,
+          "preview": "`AupNarrativeTriggerTelemetryEntry[300]` records frame, player AUP, evaluated count, signal count, player cell hash, compatibility state-mask word0, flags, full state hash, and sch"
+        },
+        {
+          "paragraph": 25,
+          "words": 61,
+          "maxSentenceWords": 26,
+          "preview": "Static verification only. No Unity import, Play Mode profiler, GCMonitor, or green build proof is implied. A narrow `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_353_HAPTIC_SYNTHESIS_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_353_HAPTIC_SYNTHESIS_ROUTE_CARD.md.full",
+      "wordsBefore": 786,
+      "wordsAfter": 785,
+      "paragraphsTransformed": 6,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 4,
+          "words": 66,
+          "maxSentenceWords": 26,
+          "preview": "Problem: Physics, damage, and tool systems need tactile presentation without direct managed `Gamepad.current.SetMotorSpeeds` calls from physics or gameplay producers. Why owner-loc"
+        },
+        {
+          "paragraph": 7,
+          "words": 79,
+          "maxSentenceWords": 61,
+          "preview": "Accessor purity: [x] No Get/TryGet/Resolve/Read API publishes signals [x] No Get/TryGet/Resolve/Read API syncs scene state [x] No Get/TryGet/Resolve/Read API completes jobs [x] No "
+        },
+        {
+          "paragraph": 8,
+          "words": 90,
+          "maxSentenceWords": 27,
+          "preview": "Payload/data shape: Managed fields present: no in runtime DTOs and signals. UnityEngine.Object fields present: no in runtime DTOs and signals. Layout proof: `HapticPulseSignal` 16 "
+        },
+        {
+          "paragraph": 9,
+          "words": 64,
+          "maxSentenceWords": 22,
+          "preview": "Telemetry fields: frame, player AUP, raw signal count, dropped count, generated pulse count, final low/high amplitude, burst microseconds, flags, quality, state hash. Black-box fie"
+        },
+        {
+          "paragraph": 10,
+          "words": 66,
+          "maxSentenceWords": 20,
+          "preview": "Shutdown/disposal: `InputDispatcher.ReleaseInputVaultHandles` calls `ReleaseHapticSynthesisVaultHandles`, unregisters dispatcher systems, releases all haptic synthesis Vault handle"
+        },
+        {
+          "paragraph": 11,
+          "words": 77,
+          "maxSentenceWords": 77,
+          "preview": "Rejected alternatives: [x] owner-local field: rejected because producers span physics/gameplay/tools [x] cached owner interface: rejected because haptics need many producer fan-in,"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_ROUTE_CARD.md.full",
+      "wordsBefore": 1321,
+      "wordsAfter": 1321,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 8,
+          "words": 67,
+          "maxSentenceWords": 27,
+          "preview": "`Assets/_Project/Scripts/CameraJuiceProcessor.cs`, `Assets/_Project/Scripts/HectonPlayerMovement.cs`, and `Assets/_Project/Scripts/Gameplay/HectonPlayerCameraRig.cs` still own play"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_355_HEADLESS_KCC_SMOKE_ROUTE_CARD.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_355_HEADLESS_KCC_SMOKE_ROUTE_CARD.md.full",
+      "wordsBefore": 776,
+      "wordsAfter": 776,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 13,
+          "words": 57,
+          "maxSentenceWords": 25,
+          "preview": "The editor graph does not own a private persistent `NativeArray`. After a run, the runner copies the 300-entry telemetry ring into a dedicated 1 MiB telemetry-only `GlobalDataVault"
+        },
+        {
+          "paragraph": 14,
+          "words": 58,
+          "maxSentenceWords": 25,
+          "preview": "The editor window path uses `StartScheduledRun()` instead of the blocking NUnit runner. It schedules SDF generation, phantom initialization, the 10,000-frame KCC loop, escape verif"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_41_Geological_Synthesis.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_41_Geological_Synthesis.md.full",
+      "wordsBefore": 1255,
+      "wordsAfter": 1255,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 46,
+          "words": 68,
+          "maxSentenceWords": 18,
+          "preview": "The sampler writes a 300-entry ring and dumps to `Docs/AgentLogs/Dump_TERRAIN_SPLICER.bin` when the throughput threshold exceeds 800,000 samples. `ResetFrameTelemetryCounters()` is"
+        },
+        {
+          "paragraph": 47,
+          "words": 58,
+          "maxSentenceWords": 25,
+          "preview": "Normal-enabled logical queries do not always cost one terrain sample. `ResolveTerrainSampleCost()` charges cost 1 below the expensive-quality ramp and cost 5 above it when tetrahed"
+        },
+        {
+          "paragraph": 48,
+          "words": 71,
+          "maxSentenceWords": 17,
+          "preview": "The Unity Terrain seam bridge no longer owns native seam allocations. `WorldGenerativeGeologyTerrainSeamApplier` requests `VaultBufferHandle<TerrainSeamTelemetryEntry>` from `Globa"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_61_APEX_COGNITION.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_61_APEX_COGNITION.md.full",
+      "wordsBefore": 1076,
+      "wordsAfter": 1076,
+      "paragraphsTransformed": 4,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 53,
+          "words": 77,
+          "maxSentenceWords": 24,
+          "preview": "The SDF slither lie samples center/head always, midsection after quality `0.25`, and tail after quality `0.55`. `GlobalQualityWeight` interpolates ambush node count from 2 to 16 an"
+        },
+        {
+          "paragraph": 59,
+          "words": 75,
+          "maxSentenceWords": 30,
+          "preview": "Loop 16 hardened NaN vaccination for non-finite inputs: non-finite state/target AUP or velocity writes a fault row and returns before AUP delta downcast, SDF sampling, dot-product "
+        },
+        {
+          "paragraph": 60,
+          "words": 49,
+          "maxSentenceWords": 37,
+          "preview": "Loop 18 moves more bad-data cases out of the fault path by sanitizing cold tuning and sampler inputs before authority math: head/mid/tail offsets, emergency stat `float4` rows, sam"
+        },
+        {
+          "paragraph": 65,
+          "words": 80,
+          "maxSentenceWords": 26,
+          "preview": "Loop 23 removes a sustained low-quality memory-write tax in the ambush scratch hygiene. The sweet-lie midpoint SDF probe was already genuinely gated, but low-quality ambush evaluat"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_61_VOXEL_SURFACE_NETS.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SHINOBU_61_VOXEL_SURFACE_NETS.md.full",
+      "wordsBefore": 485,
+      "wordsAfter": 485,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 33,
+          "words": 41,
+          "maxSentenceWords": 41,
+          "preview": "Static scans are reported for forbidden Mesh APIs, properties in new hot DTOs, `Pack=1`, `LayoutKind.Sequential`, direct sibling domain references, `foreach`, `Time.deltaTime`, `Un"
+        },
+        {
+          "paragraph": 34,
+          "words": 79,
+          "maxSentenceWords": 43,
+          "preview": "A static forbidden-API scan was reported after the mapped-buffer copy pass for managed Mesh API, `Pack=1`, `LayoutKind.Sequential`, hot DTO properties, `JobHandle.Complete`, LINQ/`"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/STATIC_CAVE_SDF_VOLUME_BAKER.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/STATIC_CAVE_SDF_VOLUME_BAKER.md.full",
+      "wordsBefore": 1713,
+      "wordsAfter": 1713,
+      "paragraphsTransformed": 8,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 16,
+          "words": 56,
+          "maxSentenceWords": 30,
+          "preview": "Header endianness is explicitly little-endian because HECTON-8 targets x86 and ARM64 little-endian platforms. The half-distance `ushort` payload is also written as little-endian: l"
+        },
+        {
+          "paragraph": 20,
+          "words": 58,
+          "maxSentenceWords": 30,
+          "preview": "The binary writer never overwrites the active `.h8bin` in place. It writes `GEN_*.h8bin.tmp`, flushes it, verifies `64 + voxelCount * 2` bytes, moves the previous payload to `GEN_*"
+        },
+        {
+          "paragraph": 26,
+          "words": 47,
+          "maxSentenceWords": 39,
+          "preview": "The binary writer emits to `.tmp`, verifies exact byte count, moves the previous `.h8bin` to `.bak`, renames `.tmp` to final, restores `.bak` if final rename fails, and deletes sta"
+        },
+        {
+          "paragraph": 29,
+          "words": 87,
+          "maxSentenceWords": 39,
+          "preview": "`SanitizeConfig` is the only route into bake dimensions. It clamps resolution through a 64-bit voxel-count guard, clamps non-finite narrow-band distance into a finite `0.05m..50000"
+        },
+        {
+          "paragraph": 50,
+          "words": 48,
+          "maxSentenceWords": 40,
+          "preview": "Parallel-for safety suppressions are zero in SHINOBU-owned jobs. Mesh conversion uses per-submesh `NativeSlice<TriangleDTO>` output windows so each scheduled worker writes `Output["
+        },
+        {
+          "paragraph": 51,
+          "words": 65,
+          "maxSentenceWords": 54,
+          "preview": "The Forge-generated self-audit writer preserves the rich proof schema used by `Docs/_Archive/Reports_X_012_2026-05-23/CAVE_SDF_SELF_AUDIT_SHINOBU_244.md`: EvidenceClass, XML task r"
+        },
+        {
+          "paragraph": 52,
+          "words": 60,
+          "maxSentenceWords": 22,
+          "preview": "The physics proximity scanner does not use a single recursive iterator whose first locked folder can terminate coverage. It walks a pending-directory stack, catches file and direct"
+        },
+        {
+          "paragraph": 54,
+          "words": 71,
+          "maxSentenceWords": 28,
+          "preview": "Known deliberate deviations: Task 10's async serialization wording is implemented as a synchronous editor-blocking chunked writer because the source payload is TempJob/native memor"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md.full",
+      "wordsBefore": 2004,
+      "wordsAfter": 2004,
+      "paragraphsTransformed": 5,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 25,
+          "words": 64,
+          "maxSentenceWords": 43,
+          "preview": "Task 13's camera-AUP requirement is blocked until a pure owner-published camera/player AUP snapshot lane exists; SHINOBU does not hot-poll `GlobalRegistry.Player`. Rejected near mi"
+        },
+        {
+          "paragraph": 56,
+          "words": 76,
+          "maxSentenceWords": 24,
+          "preview": "`ShinobuOceanWeatherState` is adopted through an existing generation handle when present. Its absence no longer blocks the SHINOBU-owned emergency mock path or calm fallback public"
+        },
+        {
+          "paragraph": 96,
+          "words": 67,
+          "maxSentenceWords": 27,
+          "preview": "Task 17's requested `NativeHashMap` is reconciled as a fixed-capacity Vault array: `ShinobuStormPropagationImpactProfiles` stores 16 hashed profile rows and the Burst job performs "
+        },
+        {
+          "paragraph": 130,
+          "words": 60,
+          "maxSentenceWords": 22,
+          "preview": "The current implementation stores parsed profile rows in fixed-capacity Vault-backed `StormDepthImpactProfileDTO[]` entries keyed by `ProfileHash`; it does not allocate a persisten"
+        },
+        {
+          "paragraph": 132,
+          "words": 61,
+          "maxSentenceWords": 61,
+          "preview": "Unity import, Unity Console clean, Burst compile/Inspector artifact, Play Mode 10-minute soak, Profiler/GCMonitor 0 B hot-path proof, Memory Profiler no retained growth, Frame Debu"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/TERRAIN_CHUNK_PAGING_SYSTEM_SHINOBU_245.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/TERRAIN_CHUNK_PAGING_SYSTEM_SHINOBU_245.md.full",
+      "wordsBefore": 662,
+      "wordsAfter": 662,
+      "paragraphsTransformed": 3,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 10,
+          "words": 58,
+          "maxSentenceWords": 20,
+          "preview": "Bootstrap stores only `VaultGenerationHandle<T>` descriptors plus raw aliases captured after successful Vault locks. It does not retain private `NativeArray<T>` fields. Method-loca"
+        },
+        {
+          "paragraph": 12,
+          "words": 89,
+          "maxSentenceWords": 30,
+          "preview": "Worker/result safety is fenced without consuming metadata padding: while a slot is `Loading`, `FileOffset@12` temporarily stores the request `Sequence`; after success it is overwri"
+        },
+        {
+          "paragraph": 16,
+          "words": 87,
+          "maxSentenceWords": 25,
+          "preview": "Runtime accepts raw and LZ4 payloads only behind this header. Unheaded raw file fallback is rejected for real files; mock payload generation is the only headerless path. Header siz"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/Vehicle_Component_Damage_Router_SHINOBU_152.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/Vehicle_Component_Damage_Router_SHINOBU_152.md.full",
+      "wordsBefore": 609,
+      "wordsAfter": 609,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 41,
+          "words": 71,
+          "maxSentenceWords": 25,
+          "preview": "Runtime `FixedTick` consumes only a cached root pose snapshot. That snapshot is refreshed in cold boot/LateFrame from `BufferID.SubmarineKinematicConfig.LocalOriginAup` plus the la"
+        },
+        {
+          "paragraph": 47,
+          "words": 74,
+          "maxSentenceWords": 38,
+          "preview": "`Vehicle Integrity Tuner` is editor-only UI Toolkit. It calls editor-only runtime snapshot methods that refuse to read while a damage job is pending, use short Vault locks, expose "
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/VISOR_AR_STENCIL_RENDERER.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/VISOR_AR_STENCIL_RENDERER.md.full",
+      "wordsBefore": 1007,
+      "wordsAfter": 1007,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 4,
+          "words": 69,
+          "maxSentenceWords": 33,
+          "preview": "`HectonVisorARStencilRendererFeature` is a visual-only URP RenderGraph renderer. It owns no gameplay truth. It reads immutable UI scalar snapshots, cached player pose, and the late"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md.full",
+      "wordsBefore": 650,
+      "wordsAfter": 650,
+      "paragraphsTransformed": 1,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 12,
+          "words": 64,
+          "maxSentenceWords": 45,
+          "preview": "`Tools/h8bin_validator.py` routes magic `H8VB` before Data Monolith parsing and validates the vocal sidecar as its own owner schema: 64-byte header, 32-byte sorted records, FNV ban"
+        }
+      ],
+      "lineHits": []
+    },
+    {
+      "path": "Docs/ARCHITECTURE/ZERO_GC_FABRICATION.md",
+      "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/before/ZERO_GC_FABRICATION.md.full",
+      "wordsBefore": 1364,
+      "wordsAfter": 1364,
+      "paragraphsTransformed": 2,
+      "longLinesSplit": 0,
+      "paragraphHits": [
+        {
+          "paragraph": 127,
+          "words": 40,
+          "maxSentenceWords": 40,
+          "preview": "Visual upload scalability consumes continuous `GlobalQualityWeight`: true-zero quality is gated by `math.step(0.0001f, q)`, the active continuum uses cubic `q*q*(3-2*q)`, and `math"
+        },
+        {
+          "paragraph": 129,
+          "words": 72,
+          "maxSentenceWords": 31,
+          "preview": "Legacy local craft timer progression is removed from the active route. `Fabricator` keeps only a seconds mirror for UI/audio compatibility, while smoke testing now injects SHINOBU "
+        }
+      ],
+      "lineHits": []
+    }
+  ],
+  "manualFenceRewriteFiles": [
+    "Docs/ARCHITECTURE/SEAGLIDE_HYDRODYNAMICS_SHINOBU_227.md",
+    "Docs/ARCHITECTURE/SHINOBU_235_DEEP_SEA_NOIR_ROUTE_CARD.md",
+    "Docs/ARCHITECTURE/SHINOBU_266_JACOBIAN_FOAM_ROUTE_CARD.md"
+  ],
+  "lineEndingNormalizedArchitectureFiles": 183,
+  "postValidationUtc": "2026-05-24T07:30:12.784999+00:00",
+  "postValidation": {
+    "oopDocScannerFinalPass": true,
+    "sourceSyncPass": true,
+    "activeStaleParameterFileCount": 0,
+    "activeFileCount": 582,
+    "activeWordCount": 535489,
+    "wordReductionPercent": 55.117430468305386,
+    "architectureFileCount": 192,
+    "architectureWordCount": 169811,
+    "strictFileWordThreshold": 2500,
+    "strictFileWordCount": 0,
+    "strictStructuredLineThresholdWords": 70,
+    "strictStructuredLineCount": 0,
+    "strictUnstructuredParagraphThresholdWords": 55,
+    "strictUnstructuredParagraphCount": 0,
+    "strictUnstructuredSentenceThresholdWords": 35,
+    "strictUnstructuredSentenceCount": 0,
+    "strictNonContractTextFileCount": 0,
+    "tutorialMarkerHitCount": 0,
+    "verifyDocStructurePass": true,
+    "activeDocCountStructure": 582,
+    "rootTextDocCount": 3,
+    "brokenLinkFileCount": 0,
+    "duplicateHeaderFileCount": 0,
+    "fenceIssueFileCount": 0,
+    "encodingWithoutUtf8SigCount": 0,
+    "staleParameterFileCountStructure": 0
+  }
+}

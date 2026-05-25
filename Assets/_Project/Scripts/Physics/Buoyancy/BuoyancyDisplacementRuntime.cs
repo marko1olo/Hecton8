@@ -799,6 +799,7 @@ namespace Hecton8.Physics
         }
 #endif
 
+#if UNITY_EDITOR
         public bool TryLoadMaterialVolumesCsv()
         {
             // COLD TUNING PATH: explicit designer-triggered hydration into Vault scratch; never called by FixedTick.
@@ -883,6 +884,7 @@ namespace Hecton8.Physics
 
             return parsed;
         }
+#endif
 
         private void RefreshColdDependencies()
         {
@@ -905,12 +907,14 @@ namespace Hecton8.Physics
 
             SeedDefaultTuningIfNeeded();
             InitializeColdBuffersIfNeeded();
+#if UNITY_EDITOR
             if (_loadCsvOnEnable)
                 TryLoadMaterialVolumesCsv();
             if (_loadMaterialSettlingProfilesOnEnable)
                 TryLoadMaterialSettlingProfilesCsv();
             if (_loadSimdTolerancesOnEnable)
                 TryLoadSimdMathTolerancesCsv();
+#endif
             if (_seedEmergencyMockObjects && ShouldSeedEmergencyMock())
                 GenerateMockBuoyantObjects();
 
@@ -1045,7 +1049,7 @@ namespace Hecton8.Physics
             if (vault.IsAllocationLocked)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
             return HasHandle(in handle) &&
                    vault.TryResolveHandle(in handle, out NativeArray<T> resolved) &&
                    resolved.IsCreated &&
@@ -1693,6 +1697,9 @@ namespace Hecton8.Physics
 
         private static float ResolveGlobalQualityWeightFromHomeostasis()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float homeostasis = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, homeostasis, math.isfinite(homeostasis)));
         }

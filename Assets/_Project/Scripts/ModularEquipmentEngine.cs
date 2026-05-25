@@ -25,7 +25,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9918)]
-    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed partial class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int MaxTrackedTools = 16;
         private const float OverchargePowerMultiplier = 3f;
@@ -52,15 +52,29 @@ namespace Hecton8.Tools
         private const float EquipmentFallbackAmbientCelsius = 6f;
         private const float EquipmentDefaultCellSizeMeters = 1f;
         private const float EquipmentMockRootOffsetMeters = 0.35f;
+        private const float EquipmentFaultCostThresholdMicroseconds = 100f;
+        private const float EquipmentDryHeatMultiplier = 3.25f;
+        private const BufferID FlashlightTelemetryRingBufferId = (BufferID)71317;
+        private const BufferID FlashlightTelemetryCursorBufferId = (BufferID)71318;
         private const uint EquipmentFaultNonFinite = 1u << 0;
         private const uint EquipmentFaultThermalGridInvalid = 1u << 1;
         private const uint EquipmentFaultCsvOverflow = 1u << 2;
+        private const uint EquipmentFaultOverBudget = 1u << 3;
         private const uint EquipmentOverheatLaneHash = 0xE1480A01u;
         private const uint ToolDepletedLaneHash = 0xE1480A02u;
         private const uint EquipmentMockBaseToolHash = 0x53483148u;
         private const uint EquipmentTelemetryDumpFaultHash = 0x45514446u; // EQDF
         private const uint UpgradeTelemetryDumpFaultHash = 0x55504446u; // UPDF
-        private const string EquipmentFaultDumpPath = "Docs/AgentLogs/Dump_SHINOBU_224.bin";
+        private const string EquipmentFaultDumpPath = "Docs/AgentLogs/Dump_SHINOBU_327.bin";
+        private static readonly int FlashlightFailureStateShaderId = Shader.PropertyToID("_HectonFlashlightFailureState");
+        private static readonly int FlashlightActiveShaderId = Shader.PropertyToID("_HectonFlashlightActive");
+        private static readonly int FlashlightVoxelActiveShaderId = Shader.PropertyToID("_HectonFlashlightVoxelActive");
+        private static readonly int FlashlightPositionWsShaderId = Shader.PropertyToID("_HectonFlashlightPositionWS");
+        private static readonly int FlashlightDirectionWsShaderId = Shader.PropertyToID("_HectonFlashlightDirectionWS");
+        private static readonly int FlashlightColorShaderId = Shader.PropertyToID("_HectonFlashlightColor");
+        private static readonly int FlashlightConeDataShaderId = Shader.PropertyToID("_HectonFlashlightConeData");
+        private static readonly int FlashlightVoxelWorldToLocalShaderId = Shader.PropertyToID("_HectonFlashlightVoxelWorldToLocal");
+        private static readonly int FlashlightVoxelHalfExtentsShaderId = Shader.PropertyToID("_HectonFlashlightVoxelHalfExtents");
 
         // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
         private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
@@ -85,6 +99,8 @@ namespace Hecton8.Tools
         private VaultGenerationHandle<float> _activeEquipmentWearDrainRatesHandle;
         private VaultGenerationHandle<EquipmentTelemetryEntry> _equipmentTelemetryRingHandle;
         private VaultGenerationHandle<int> _equipmentTelemetryCursorHandle;
+        private VaultGenerationHandle<FlashlightTelemetryEntry> _flashlightTelemetryRingHandle;
+        private VaultGenerationHandle<int> _flashlightTelemetryCursorHandle;
         private VaultGenerationHandle<EquipmentIntegrationCounters> _equipmentIntegrationCountersHandle;
         private VaultGenerationHandle<EquipmentTuningDTO> _equipmentTuningHandle;
         private VaultGenerationHandle<EquipmentHardwareSpecDTO> _equipmentHardwareSpecsHandle;
@@ -125,13 +141,14 @@ namespace Hecton8.Tools
         private float _brownoutPulseTime;
         private float _equipmentCadenceAccumulator;
         private float _lastEquipmentTickInterval = 0.016f;
+        private float _lastOwnerStepDeltaTime;
         private float _lastGlobalQualityWeight = 1f;
         private float _thermalGridCellSizeMeters = EquipmentDefaultCellSizeMeters;
         private double3 _thermalGridRootAup;
         private IDataVault _dataVault;
         private IThermodynamicsService _thermodynamicsService;
         private IPowerGridService _powerGridService;
-        private ToolDurabilitySystem _toolDurabilityService;
+        private IToolDurabilityService _toolDurabilityService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private JobHandle _equipmentIntegrationHandle;
@@ -152,6 +169,8 @@ namespace Hecton8.Tools
             public NativeArray<float> ActiveEquipmentWearDrainRates;
             public NativeArray<EquipmentTelemetryEntry> EquipmentTelemetryRing;
             public NativeArray<int> EquipmentTelemetryCursor;
+            public NativeArray<FlashlightTelemetryEntry> FlashlightTelemetryRing;
+            public NativeArray<int> FlashlightTelemetryCursor;
             public NativeArray<EquipmentIntegrationCounters> EquipmentIntegrationCounters;
             public NativeArray<EquipmentTuningDTO> EquipmentTuning;
             public NativeArray<EquipmentHardwareSpecDTO> EquipmentHardwareSpecs;
@@ -246,6 +265,8 @@ namespace Hecton8.Tools
                    IsVaultGenerationHandleCreated(in _activeEquipmentWearDrainRatesHandle) &&
                    IsVaultGenerationHandleCreated(in _equipmentTelemetryRingHandle) &&
                    IsVaultGenerationHandleCreated(in _equipmentTelemetryCursorHandle) &&
+                   IsVaultGenerationHandleCreated(in _flashlightTelemetryRingHandle) &&
+                   IsVaultGenerationHandleCreated(in _flashlightTelemetryCursorHandle) &&
                    IsVaultGenerationHandleCreated(in _equipmentIntegrationCountersHandle) &&
                    IsVaultGenerationHandleCreated(in _equipmentTuningHandle) &&
                    IsVaultGenerationHandleCreated(in _equipmentHardwareSpecsHandle) &&
@@ -265,10 +286,12 @@ namespace Hecton8.Tools
             if (!_isInitialized)
                 return;
 
+            float safeDeltaTime = math.max(0f, deltaTime);
+            _lastOwnerStepDeltaTime = safeDeltaTime;
+
             if (_equipmentIntegrationScheduled)
                 return;
 
-            float safeDeltaTime = math.max(0f, deltaTime);
             RefreshWirelessBrownoutFromPowerSnapshot();
             if (_wirelessBrownoutActive)
                 _brownoutPulseTime += safeDeltaTime;
@@ -323,6 +346,26 @@ namespace Hecton8.Tools
                 return;
 
             CompleteActiveEquipmentJob();
+            StepFlashlightPresentationOwnerShell(_lastOwnerStepDeltaTime);
+            if (EnsureEquipmentViews(out EquipmentVaultViews views))
+            {
+                PublishFlashlightPresentationShaderGlobals();
+                PublishFlashlightFailureShaderGlobals(ref views);
+                return;
+            }
+
+            PublishInactiveFlashlightPresentationShaderGlobals();
+            Shader.SetGlobalVector(FlashlightFailureStateShaderId, Vector4.zero);
+        }
+
+        private void StepFlashlightPresentationOwnerShell(float deltaTime)
+        {
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            PlayerFlashlight flashlight = playerRuntimeContext != null ? playerRuntimeContext.Flashlight : null;
+            if (flashlight == null || !flashlight.isActiveAndEnabled)
+                return;
+
+            flashlight.StepFromEquipmentOwner(deltaTime);
         }
 
         public uint RegisterTool(PlayerTool tool)
@@ -701,6 +744,44 @@ namespace Hecton8.Tools
             return entry.TickIndex != 0u || entry.Frame != 0u;
         }
 
+        public bool TryGetLatestFlashlightTelemetry(out FlashlightTelemetryEntry entry)
+        {
+            entry = default;
+            if (!TryResolveFlashlightTelemetryNoAcquire(
+                    out NativeArray<FlashlightTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor))
+            {
+                return false;
+            }
+
+            int cursor = telemetryCursor[0];
+            int index = ResolveTelemetryHistoryIndex(cursor, 0, telemetryRing.Length);
+            if (index < 0)
+                return false;
+
+            entry = telemetryRing[index];
+            return entry.ToolHashID != 0u || entry.Frame != 0u;
+        }
+
+        public bool TryGetFlashlightTelemetryEntry(int historyIndex, out FlashlightTelemetryEntry entry)
+        {
+            entry = default;
+            if (!TryResolveFlashlightTelemetryNoAcquire(
+                    out NativeArray<FlashlightTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor) ||
+                (uint)historyIndex >= (uint)telemetryRing.Length)
+            {
+                return false;
+            }
+
+            int index = ResolveTelemetryHistoryIndex(telemetryCursor[0], historyIndex, telemetryRing.Length);
+            if (index < 0)
+                return false;
+
+            entry = telemetryRing[index];
+            return entry.ToolHashID != 0u || entry.Frame != 0u;
+        }
+
         private static int ResolveTelemetryHistoryIndex(int cursor, int historyIndex, int ringLength)
         {
             if (ringLength <= 0)
@@ -732,7 +813,13 @@ namespace Hecton8.Tools
                 views.EquipmentTuning.Length <= 0)
                 return;
 
-            views.EquipmentTuning[0] = SanitizeEquipmentTuning(tuning);
+            EquipmentTuningDTO sanitized = SanitizeEquipmentTuning(tuning);
+            unsafe
+            {
+                EquipmentTuningDTO* tuningPtr = (EquipmentTuningDTO*)views.EquipmentTuning.GetUnsafePtr();
+                ref EquipmentTuningDTO tuningRef = ref UnsafeUtility.AsRef<EquipmentTuningDTO>(tuningPtr);
+                tuningRef = sanitized;
+            }
         }
 
         public bool SetEquipmentSlotRatesForEditor(int slotIndex, float powerDrawRate, float heatGenerationRate)
@@ -749,10 +836,22 @@ namespace Hecton8.Tools
             float safeHeat = math.max(0f, math.isfinite(heatGenerationRate) ? heatGenerationRate : dto.HeatGenerationRate);
             dto.PowerDrawRate = safePower;
             dto.HeatGenerationRate = safeHeat;
-            views.ActiveEquipmentStates[slotIndex] = dto;
+            unsafe
+            {
+                ActiveEquipmentDTO* activePtr = (ActiveEquipmentDTO*)views.ActiveEquipmentStates.GetUnsafePtr();
+                ref ActiveEquipmentDTO activeRef = ref UnsafeUtility.AsRef<ActiveEquipmentDTO>(activePtr + slotIndex);
+                activeRef = dto;
+            }
 
             if (views.PublishedActiveEquipmentStates.IsCreated && (uint)slotIndex < (uint)views.PublishedActiveEquipmentStates.Length)
-                views.PublishedActiveEquipmentStates[slotIndex] = dto;
+            {
+                unsafe
+                {
+                    ActiveEquipmentDTO* publishedPtr = (ActiveEquipmentDTO*)views.PublishedActiveEquipmentStates.GetUnsafePtr();
+                    ref ActiveEquipmentDTO publishedRef = ref UnsafeUtility.AsRef<ActiveEquipmentDTO>(publishedPtr + slotIndex);
+                    publishedRef = dto;
+                }
+            }
 
             if (views.ToolStats.IsCreated && (uint)slotIndex < (uint)views.ToolStats.Length && _slotUsed[slotIndex])
             {
@@ -786,7 +885,7 @@ namespace Hecton8.Tools
 
             if (!TryResolvePlayerEquipmentAup(out double3 rootAup))
                 rootAup = double3.zero;
-            GenerateMockEquipmentStateJob job = new GenerateMockEquipmentStateJob
+            GenerateMockThermalEquipmentJob job = new GenerateMockThermalEquipmentJob
             {
                 Equipment = (ActiveEquipmentDTO*)views.ActiveEquipmentStates.GetUnsafePtr(),
                 ToolAups = (double3*)views.ActiveEquipmentAupSamples.GetUnsafePtr(),
@@ -919,6 +1018,7 @@ namespace Hecton8.Tools
 
             ClearActiveEquipmentNativeState(ref views);
             InitializeEquipmentTuningBuffer(ref views);
+            InitializeFlashlightTelemetryBuffer(ref views);
             InitializeUpgradeTelemetryBuffer(ref views);
 
             EnsureEquipmentSignalLanes();
@@ -933,8 +1033,9 @@ namespace Hecton8.Tools
                 return;
 
             SignalBus<EquipmentOverheatSignal>.Configure(EquipmentSignalQueueCapacity, 128, 16, EquipmentOverheatLaneHash);
-            SignalBus<ToolDepletedSignal>.Configure(EquipmentSignalQueueCapacity, 128, 16, ToolDepletedLaneHash);
             SignalBus<EquipmentOverheatSignal>.EnsureInitialized();
+
+            SignalBus<ToolDepletedSignal>.Configure(EquipmentSignalQueueCapacity, 128, 16, ToolDepletedLaneHash);
             SignalBus<ToolDepletedSignal>.EnsureInitialized();
             _equipmentSignalLanesReady = true;
         }
@@ -953,6 +1054,14 @@ namespace Hecton8.Tools
             _upgradeTelemetryFaultDumpPending = false;
             if (views.UpgradeTelemetryCursor.IsCreated && views.UpgradeTelemetryCursor.Length > 0)
                 views.UpgradeTelemetryCursor[0] = 0;
+        }
+
+        private void InitializeFlashlightTelemetryBuffer(ref EquipmentVaultViews views)
+        {
+            _equipmentFaultDumped = false;
+            _equipmentFaultDumpPending = false;
+            if (views.FlashlightTelemetryCursor.IsCreated && views.FlashlightTelemetryCursor.Length > 0)
+                views.FlashlightTelemetryCursor[0] = 0;
         }
 
         private bool EnsureEquipmentViews(out EquipmentVaultViews views, bool createIfMissing = false)
@@ -976,6 +1085,8 @@ namespace Hecton8.Tools
                    EnsureEquipmentBuffer(vault, ref _activeEquipmentWearDrainRatesHandle, BufferID.ShinobuActiveEquipmentWearDrainRates, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentWearDrainRates) &&
                    EnsureEquipmentBuffer(vault, ref _equipmentTelemetryRingHandle, BufferID.ShinobuActiveEquipmentTelemetryRing, EquipmentTelemetryRingLength, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTelemetryRing) &&
                    EnsureEquipmentBuffer(vault, ref _equipmentTelemetryCursorHandle, BufferID.ShinobuActiveEquipmentTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTelemetryCursor) &&
+                   EnsureEquipmentBuffer(vault, ref _flashlightTelemetryRingHandle, FlashlightTelemetryRingBufferId, EquipmentTelemetryRingLength, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.FlashlightTelemetryRing) &&
+                   EnsureEquipmentBuffer(vault, ref _flashlightTelemetryCursorHandle, FlashlightTelemetryCursorBufferId, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.FlashlightTelemetryCursor) &&
                    EnsureEquipmentBuffer(vault, ref _equipmentIntegrationCountersHandle, BufferID.ShinobuActiveEquipmentIntegrationCounters, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentIntegrationCounters) &&
                    EnsureEquipmentBuffer(vault, ref _equipmentTuningHandle, BufferID.ShinobuActiveEquipmentTuning, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTuning) &&
                    EnsureEquipmentBuffer(vault, ref _equipmentHardwareSpecsHandle, BufferID.ShinobuActiveEquipmentHardwareSpecs, EquipmentHardwareSpecCapacity, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentHardwareSpecs) &&
@@ -1015,7 +1126,7 @@ namespace Hecton8.Tools
                 return false;
 
             ReleaseEquipmentVaultHandle(vault, ref handle);
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GameplayTools,
@@ -1075,6 +1186,17 @@ namespace Hecton8.Tools
                    TryResolveEquipmentBuffer(vault, in _equipmentTelemetryCursorHandle, 1, out telemetryCursor);
         }
 
+        public bool TryResolveFlashlightTelemetryNoAcquire(
+            out NativeArray<FlashlightTelemetryEntry> telemetryRing,
+            out NativeArray<int> telemetryCursor)
+        {
+            telemetryRing = default;
+            telemetryCursor = default;
+            IDataVault vault = _dataVault;
+            return TryResolveEquipmentBuffer(vault, in _flashlightTelemetryRingHandle, EquipmentTelemetryRingLength, out telemetryRing) &&
+                   TryResolveEquipmentBuffer(vault, in _flashlightTelemetryCursorHandle, 1, out telemetryCursor);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsVaultGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
             where T : struct
@@ -1088,7 +1210,8 @@ namespace Hecton8.Tools
             if (!array.IsCreated || array.Length <= 0)
                 return;
 
-            UnsafeUtility.MemClear(array.GetUnsafePtr(), (long)array.Length * UnsafeUtility.SizeOf<T>());
+            for (int i = 0; i < array.Length; i++)
+                array[i] = default;
         }
 
         private unsafe void ClearActiveEquipmentNativeState(ref EquipmentVaultViews views)
@@ -1101,6 +1224,8 @@ namespace Hecton8.Tools
             jobLength = math.max(jobLength, GetCreatedLength(views.ActiveEquipmentWearDrainRates));
             jobLength = math.max(jobLength, GetCreatedLength(views.EquipmentTelemetryRing));
             jobLength = math.max(jobLength, GetCreatedLength(views.EquipmentTelemetryCursor));
+            jobLength = math.max(jobLength, GetCreatedLength(views.FlashlightTelemetryRing));
+            jobLength = math.max(jobLength, GetCreatedLength(views.FlashlightTelemetryCursor));
             jobLength = math.max(jobLength, GetCreatedLength(views.EquipmentIntegrationCounters));
             jobLength = math.max(jobLength, GetCreatedLength(views.EquipmentHardwareSpecs));
             if (jobLength <= 0)
@@ -1115,6 +1240,8 @@ namespace Hecton8.Tools
                 WearDrainRates = views.ActiveEquipmentWearDrainRates.IsCreated ? (float*)views.ActiveEquipmentWearDrainRates.GetUnsafePtr() : null,
                 TelemetryRing = views.EquipmentTelemetryRing.IsCreated ? (EquipmentTelemetryEntry*)views.EquipmentTelemetryRing.GetUnsafePtr() : null,
                 TelemetryCursor = views.EquipmentTelemetryCursor.IsCreated ? (int*)views.EquipmentTelemetryCursor.GetUnsafePtr() : null,
+                FlashlightTelemetryRing = views.FlashlightTelemetryRing.IsCreated ? (FlashlightTelemetryEntry*)views.FlashlightTelemetryRing.GetUnsafePtr() : null,
+                FlashlightTelemetryCursor = views.FlashlightTelemetryCursor.IsCreated ? (int*)views.FlashlightTelemetryCursor.GetUnsafePtr() : null,
                 IntegrationCounters = views.EquipmentIntegrationCounters.IsCreated ? (EquipmentIntegrationCounters*)views.EquipmentIntegrationCounters.GetUnsafePtr() : null,
                 HardwareSpecs = views.EquipmentHardwareSpecs.IsCreated ? (EquipmentHardwareSpecDTO*)views.EquipmentHardwareSpecs.GetUnsafePtr() : null,
                 ActiveLength = GetCreatedLength(views.ActiveEquipmentStates),
@@ -1124,6 +1251,8 @@ namespace Hecton8.Tools
                 WearDrainLength = GetCreatedLength(views.ActiveEquipmentWearDrainRates),
                 TelemetryLength = GetCreatedLength(views.EquipmentTelemetryRing),
                 CursorLength = GetCreatedLength(views.EquipmentTelemetryCursor),
+                FlashlightTelemetryLength = GetCreatedLength(views.FlashlightTelemetryRing),
+                FlashlightCursorLength = GetCreatedLength(views.FlashlightTelemetryCursor),
                 CounterLength = GetCreatedLength(views.EquipmentIntegrationCounters),
                 HardwareSpecLength = GetCreatedLength(views.EquipmentHardwareSpecs)
             };
@@ -1389,13 +1518,7 @@ namespace Hecton8.Tools
                 PowerDrawRate = math.max(0f, stats.BatteryDrainPerSecond) * capacity,
                 HeatGenerationRate = math.max(0f, stats.HeatGenerationRate * stats.PowerScalar),
                 _pad0 = 0,
-                _pad1 = 0,
-                _pad2 = 0,
-                _pad3 = 0,
-                _pad4 = 0,
-                _pad5 = 0,
-                _pad6 = 0,
-                _pad7 = 0
+                _pad1 = 0
             };
         }
 
@@ -1409,7 +1532,7 @@ namespace Hecton8.Tools
             {
                 wearRate = owner.ResolveActiveDurabilityDrainRateNormalized();
                 float multiplier = math.max(0f, math.isfinite(stats.DurabilityDrainMultiplier) ? stats.DurabilityDrainMultiplier : 0f);
-                ToolDurabilitySystem durability = _toolDurabilityService;
+                IToolDurabilityService durability = _toolDurabilityService;
                 if (owner.TryGetDurabilityMirror(out _, out uint itemHashId, out _) && durability != null)
                     multiplier *= durability.ResolveCentralizedEquipmentWearMultiplier(itemHashId);
                 wearRate *= multiplier;
@@ -1423,7 +1546,7 @@ namespace Hecton8.Tools
             if (owner == null || !owner.TryGetDurabilityMirror(out string toolId, out uint itemHashId, out float maxDurability))
                 return;
 
-            ToolDurabilitySystem durability = _toolDurabilityService;
+            IToolDurabilityService durability = _toolDurabilityService;
             if (durability == null)
                 return;
 
@@ -1455,7 +1578,7 @@ namespace Hecton8.Tools
             if (owner == null || !owner.TryGetDurabilityMirror(out string toolId, out uint itemHashId, out float maxDurability))
                 return;
 
-            ToolDurabilitySystem durability = _toolDurabilityService;
+            IToolDurabilityService durability = _toolDurabilityService;
             if (durability == null)
                 return;
 
@@ -1471,6 +1594,8 @@ namespace Hecton8.Tools
                 flags |= ActiveEquipmentStateFlags.Overheated;
             if ((runtimeStatusMask & ToolRuntimeStatusMasks.LowPower) != 0u)
                 flags |= ActiveEquipmentStateFlags.Depleted;
+            if ((runtimeStatusMask & ToolRuntimeStatusMasks.Broken) != 0u)
+                flags |= ActiveEquipmentStateFlags.Broken;
             return flags;
         }
 
@@ -1598,6 +1723,8 @@ namespace Hecton8.Tools
                     flags |= ActiveEquipmentStateFlags.Overheated;
                 if ((state.StatusMask & ToolRuntimeStatusMasks.LowPower) != 0u)
                     flags |= ActiveEquipmentStateFlags.Depleted;
+                if ((state.StatusMask & ToolRuntimeStatusMasks.Broken) != 0u)
+                    flags |= ActiveEquipmentStateFlags.Broken;
                 if (playerInWater)
                     flags |= ActiveEquipmentStateFlags.InWater;
                 if (gridPowered)
@@ -1609,16 +1736,10 @@ namespace Hecton8.Tools
                     CurrentBattery = math.max(0f, state.CurrentBattery),
                     ThermalLoad = math.max(0f, state.InternalHeat),
                     StateFlags = flags,
-                    PowerDrawRate = math.max(0f, stats.BatteryDrainPerSecond) * capacity,
-                    HeatGenerationRate = heatRate,
-                    _pad0 = 0,
-                    _pad1 = 0,
-                    _pad2 = 0,
-                    _pad3 = 0,
-                    _pad4 = 0,
-                    _pad5 = 0,
-                    _pad6 = 0,
-                    _pad7 = 0
+                PowerDrawRate = math.max(0f, stats.BatteryDrainPerSecond) * capacity,
+                HeatGenerationRate = heatRate,
+                _pad0 = 0,
+                _pad1 = 0
                 };
 
                 views.ActiveEquipmentAupSamples[i] = TryResolveToolAup(owner, hasPlayerAup, in playerAup, out double3 toolAup)
@@ -1627,6 +1748,7 @@ namespace Hecton8.Tools
             }
         }
 
+#if UNITY_EDITOR
         public EquipmentCsvParseResult IngestToolHardwareSpecsCsv(ReadOnlySpan<byte> csv)
         {
             if (!EnsureEquipmentViews(out EquipmentVaultViews views))
@@ -1640,8 +1762,9 @@ namespace Hecton8.Tools
                 };
             }
 
-            return EquipmentHardwareSpecsCsvParser.Parse(csv, views.EquipmentHardwareSpecs);
+            return IlluminationHardwareProfilesCsvParser.Parse(csv, views.EquipmentHardwareSpecs);
         }
+#endif
 
         private static bool TryResolveHardwareSpec(ref EquipmentVaultViews views, uint runtimeToolId, uint specToolId, out EquipmentHardwareSpecDTO spec)
         {
@@ -1910,11 +2033,14 @@ namespace Hecton8.Tools
                 DeltaSeconds = safeDelta,
                 Frame = _equipmentTickIndex,
                 AmbientFallbackCelsius = EquipmentFallbackAmbientCelsius,
+                DryHeatMultiplier = EquipmentDryHeatMultiplier,
                 Tuning = tuning,
                 FaultNonFiniteMask = EquipmentFaultNonFinite,
                 FaultGridInvalidMask = EquipmentFaultThermalGridInvalid,
                 OverheatWriter = SignalBus<EquipmentOverheatSignal>.ParallelWriter,
-                DepletedWriter = SignalBus<ToolDepletedSignal>.ParallelWriter
+                OverheatWriterBudget = SignalBus<EquipmentOverheatSignal>.ParallelWriterBudget,
+                DepletedWriter = SignalBus<ToolDepletedSignal>.ParallelWriter,
+                DepletedWriterBudget = SignalBus<ToolDepletedSignal>.ParallelWriterBudget
             };
 
             _equipmentIntegrationHandle = job.Schedule(MaxTrackedTools, 4, inputDeps);
@@ -1946,6 +2072,7 @@ namespace Hecton8.Tools
             tuning.AmbientHeatCeilingCelsius = math.max(
                 tuning.AmbientHeatFloorCelsius + 1f,
                 SanitizeTuningFloat(tuning.AmbientHeatCeilingCelsius, 70f));
+            tuning.ColdBatteryPenaltyMultiplier = math.max(0f, SanitizeTuningFloat(tuning.ColdBatteryPenaltyMultiplier, 1.85f));
             return tuning;
         }
 
@@ -1977,6 +2104,7 @@ namespace Hecton8.Tools
             long endTicks = Stopwatch.GetTimestamp();
             float microseconds = (float)((endTicks - startTicks) * 1000000.0 / Stopwatch.Frequency);
             RecordEquipmentTelemetry(ref views, microseconds);
+            RecordFlashlightTelemetry(ref views, microseconds);
             if (_upgradeTelemetryScheduled)
             {
                 PatchUpgradeTelemetryMicroseconds(ref views, microseconds);
@@ -2071,6 +2199,10 @@ namespace Hecton8.Tools
             }
 
             EquipmentIntegrationCounters counters = AggregateIntegrationCounters(ref views);
+            float safeCpuMicroseconds = math.max(0f, math.select(0f, cpuMicroseconds, math.isfinite(cpuMicroseconds)));
+            uint faultFlags = counters.FaultFlags;
+            if (safeCpuMicroseconds > EquipmentFaultCostThresholdMicroseconds)
+                faultFlags |= EquipmentFaultOverBudget;
             int index = math.clamp(views.EquipmentTelemetryCursor[0], 0, views.EquipmentTelemetryRing.Length - 1);
             EquipmentTelemetryEntry entry = new EquipmentTelemetryEntry
             {
@@ -2081,9 +2213,9 @@ namespace Hecton8.Tools
                 PeakThermal01 = counters.PeakThermal01,
                 ActiveToolMask = _lastTelemetryActiveMask,
                 SignalCount = counters.SignalCount,
-                FaultFlags = counters.FaultFlags,
+                FaultFlags = faultFlags,
                 LastFaultToolHashID = counters.LastFaultToolHashID,
-                CpuMicroseconds = math.max(0f, cpuMicroseconds),
+                CpuMicroseconds = safeCpuMicroseconds,
                 GlobalQualityWeight = _lastGlobalQualityWeight,
                 TickIntervalSeconds = _lastEquipmentTickInterval,
                 ThermalGridVersion = _thermalGridVersion,
@@ -2096,6 +2228,163 @@ namespace Hecton8.Tools
             views.EquipmentTelemetryCursor[0] = (index + 1) % views.EquipmentTelemetryRing.Length;
             if (entry.FaultFlags != 0u && !_equipmentFaultDumped && !_equipmentFaultDumpPending)
                 _equipmentFaultDumpPending = true;
+        }
+
+        private void RecordFlashlightTelemetry(ref EquipmentVaultViews views, float cpuMicroseconds)
+        {
+            if (!views.FlashlightTelemetryRing.IsCreated ||
+                !views.FlashlightTelemetryCursor.IsCreated ||
+                !views.ActiveEquipmentStates.IsCreated ||
+                !views.EquipmentIntegrationCounters.IsCreated ||
+                views.FlashlightTelemetryRing.Length == 0 ||
+                views.FlashlightTelemetryCursor.Length == 0)
+            {
+                return;
+            }
+
+            int slotIndex = -1;
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (_slotUsed[i] && _toolOwners[i] is FlashlightTool)
+                {
+                    slotIndex = i;
+                    break;
+                }
+            }
+
+            if (slotIndex < 0 || slotIndex >= views.ActiveEquipmentStates.Length || slotIndex >= views.EquipmentIntegrationCounters.Length)
+                return;
+
+            ActiveEquipmentDTO state = views.ActiveEquipmentStates[slotIndex];
+            EquipmentIntegrationCounters counters = views.EquipmentIntegrationCounters[slotIndex];
+            float safeCpuMicroseconds = math.max(0f, math.select(0f, cpuMicroseconds, math.isfinite(cpuMicroseconds)));
+            float depthMeters = ResolveDepthMeters();
+            uint faultFlags = counters.FaultFlags;
+            if (safeCpuMicroseconds > EquipmentFaultCostThresholdMicroseconds)
+                faultFlags |= EquipmentFaultOverBudget;
+
+            int index = math.clamp(views.FlashlightTelemetryCursor[0], 0, views.FlashlightTelemetryRing.Length - 1);
+            FlashlightTelemetryEntry entry = new FlashlightTelemetryEntry
+            {
+                Frame = _equipmentTickIndex,
+                ToolHashID = state.ToolHashID,
+                Battery01 = counters.LastBattery01,
+                Thermal01 = math.saturate(state.ThermalLoad),
+                DepthMeters = depthMeters,
+                AmbientCelsius = counters.LastAmbientCelsius,
+                BatteryDrainWattSeconds = counters.BatteryDrainWattSeconds,
+                PeakThermal01 = counters.PeakThermal01,
+                CpuMicroseconds = safeCpuMicroseconds,
+                GlobalQualityWeight = _lastGlobalQualityWeight,
+                TickIntervalSeconds = _lastEquipmentTickInterval,
+                StateFlags = state.StateFlags,
+                FaultFlags = faultFlags,
+                SnapshotHash = ComputeActiveEquipmentSnapshotHash(ref views),
+                SignalCount = counters.SignalCount,
+                WearDrainNormalized = counters.WearDrainNormalized
+            };
+
+            views.FlashlightTelemetryRing[index] = entry;
+            views.FlashlightTelemetryCursor[0] = (index + 1) % views.FlashlightTelemetryRing.Length;
+            if (entry.FaultFlags != 0u && !_equipmentFaultDumped && !_equipmentFaultDumpPending)
+                _equipmentFaultDumpPending = true;
+        }
+
+        private void PublishFlashlightFailureShaderGlobals(ref EquipmentVaultViews views)
+        {
+            if (!views.ActiveEquipmentStates.IsCreated || !views.EquipmentIntegrationCounters.IsCreated)
+            {
+                Shader.SetGlobalVector(FlashlightFailureStateShaderId, Vector4.zero);
+                return;
+            }
+
+            int slotIndex = -1;
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (_slotUsed[i] && _toolOwners[i] is FlashlightTool)
+                {
+                    slotIndex = i;
+                    break;
+                }
+            }
+
+            if (slotIndex < 0 || slotIndex >= views.ActiveEquipmentStates.Length || slotIndex >= views.EquipmentIntegrationCounters.Length)
+            {
+                Shader.SetGlobalVector(FlashlightFailureStateShaderId, Vector4.zero);
+                return;
+            }
+
+            ActiveEquipmentDTO state = views.ActiveEquipmentStates[slotIndex];
+            EquipmentIntegrationCounters counters = views.EquipmentIntegrationCounters[slotIndex];
+            float battery01 = math.saturate(counters.LastBattery01);
+            float thermal01 = math.saturate(state.ThermalLoad);
+            uint flags = state.StateFlags;
+            float depleted01 = (flags & ActiveEquipmentStateFlags.Depleted) != 0u ? 1f : math.saturate((0.18f - battery01) * 5.555556f);
+            float overheated01 = (flags & ActiveEquipmentStateFlags.Overheated) != 0u ? 1f : thermal01 * thermal01;
+            float broken01 = (flags & ActiveEquipmentStateFlags.Broken) != 0u ? 1f : 0f;
+            float failure01 = math.saturate(math.max(depleted01, math.max(overheated01, broken01)));
+            Shader.SetGlobalVector(
+                FlashlightFailureStateShaderId,
+                new Vector4(battery01, thermal01, failure01, (float)flags));
+        }
+
+        private void PublishFlashlightPresentationShaderGlobals()
+        {
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            PlayerFlashlight flashlight = playerRuntimeContext != null ? playerRuntimeContext.Flashlight : null;
+            if (flashlight == null || !flashlight.IsBeamPresentationActive || flashlight.PresentationAnchor == null)
+            {
+                PublishInactiveFlashlightPresentationShaderGlobals();
+                return;
+            }
+
+            Transform anchor = flashlight.PresentationAnchor;
+            float range = math.max(0.1f, flashlight.PresentationRange);
+            float outerAngleRadians = math.max(1f, flashlight.PresentationSpotAngle * 0.5f) * 0.017453292519943295f;
+            float innerAngleRadians = outerAngleRadians * 0.76f;
+            float outerCos = ResolveFlashlightConeCos(outerAngleRadians);
+            float innerCos = ResolveFlashlightConeCos(innerAngleRadians);
+            Vector3 position = anchor.position;
+            Vector3 direction = anchor.forward;
+            Color color = flashlight.PresentationColor;
+            float intensity = math.max(0f, flashlight.PresentationIntensity);
+
+            Shader.SetGlobalFloat(FlashlightActiveShaderId, 1f);
+            Shader.SetGlobalFloat(FlashlightVoxelActiveShaderId, 0f);
+            Shader.SetGlobalVector(
+                FlashlightPositionWsShaderId,
+                new Vector4(position.x, position.y, position.z, range));
+            Shader.SetGlobalVector(
+                FlashlightDirectionWsShaderId,
+                new Vector4(direction.x, direction.y, direction.z, innerCos));
+            Shader.SetGlobalVector(
+                FlashlightColorShaderId,
+                new Vector4(color.r, color.g, color.b, intensity));
+            Shader.SetGlobalVector(
+                FlashlightConeDataShaderId,
+                new Vector4(outerCos, 1f, math.rcp(math.max(range, 0.0001f)), 0.08f));
+            Shader.SetGlobalVector(FlashlightVoxelHalfExtentsShaderId, Vector4.zero);
+            Shader.SetGlobalMatrix(FlashlightVoxelWorldToLocalShaderId, Matrix4x4.identity);
+        }
+
+        private static void PublishInactiveFlashlightPresentationShaderGlobals()
+        {
+            Shader.SetGlobalFloat(FlashlightActiveShaderId, 0f);
+            Shader.SetGlobalFloat(FlashlightVoxelActiveShaderId, 0f);
+            Shader.SetGlobalVector(FlashlightPositionWsShaderId, Vector4.zero);
+            Shader.SetGlobalVector(FlashlightDirectionWsShaderId, Vector4.zero);
+            Shader.SetGlobalVector(FlashlightColorShaderId, Vector4.zero);
+            Shader.SetGlobalVector(FlashlightConeDataShaderId, Vector4.zero);
+            Shader.SetGlobalVector(FlashlightVoxelHalfExtentsShaderId, Vector4.zero);
+            Shader.SetGlobalMatrix(FlashlightVoxelWorldToLocalShaderId, Matrix4x4.identity);
+        }
+
+        private static float ResolveFlashlightConeCos(float angleRadians)
+        {
+            float x = math.clamp(angleRadians, 0f, 1.5707964f);
+            float x2 = x * x;
+            float x4 = x2 * x2;
+            return math.saturate(1f - 0.4967f * x2 + 0.03705f * x4);
         }
 
         private void PatchUpgradeTelemetryMicroseconds(ref EquipmentVaultViews views, float cpuMicroseconds)
@@ -2197,11 +2486,12 @@ namespace Hecton8.Tools
 
         private unsafe bool DumpEquipmentTelemetry(ref EquipmentVaultViews views)
         {
-            if (!views.EquipmentTelemetryRing.IsCreated)
+            if (!views.FlashlightTelemetryRing.IsCreated && !views.EquipmentTelemetryRing.IsCreated)
                 return false;
 
             try
             {
+                bool useFlashlightRing = views.FlashlightTelemetryRing.IsCreated && views.FlashlightTelemetryRing.Length > 0;
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, EquipmentFaultDumpPath);
                 string directory = Path.GetDirectoryName(dumpPath);
@@ -2210,16 +2500,24 @@ namespace Hecton8.Tools
 
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    uint header = 0x45515448u; // H8TE
+                    uint header = useFlashlightRing ? 0x46545848u : 0x45515448u; // H8TF / H8TE
+                    uint rowCount = useFlashlightRing
+                        ? unchecked((uint)views.FlashlightTelemetryRing.Length)
+                        : unchecked((uint)views.EquipmentTelemetryRing.Length);
+                    uint rowSize = useFlashlightRing
+                        ? unchecked((uint)UnsafeUtility.SizeOf<FlashlightTelemetryEntry>())
+                        : unchecked((uint)UnsafeUtility.SizeOf<EquipmentTelemetryEntry>());
                     Span<byte> headerBytes = stackalloc byte[16];
                     WriteUInt32LE(headerBytes, 0, header);
-                    WriteUInt32LE(headerBytes, 4, unchecked((uint)views.EquipmentTelemetryRing.Length));
-                    WriteUInt32LE(headerBytes, 8, unchecked((uint)UnsafeUtility.SizeOf<EquipmentTelemetryEntry>()));
+                    WriteUInt32LE(headerBytes, 4, rowCount);
+                    WriteUInt32LE(headerBytes, 8, rowSize);
                     WriteUInt32LE(headerBytes, 12, _equipmentTickIndex);
                     stream.Write(headerBytes);
 
-                    void* source = views.EquipmentTelemetryRing.GetUnsafeReadOnlyPtr();
-                    int byteLength = views.EquipmentTelemetryRing.Length * UnsafeUtility.SizeOf<EquipmentTelemetryEntry>();
+                    void* source = useFlashlightRing
+                        ? views.FlashlightTelemetryRing.GetUnsafeReadOnlyPtr()
+                        : views.EquipmentTelemetryRing.GetUnsafeReadOnlyPtr();
+                    int byteLength = checked((int)(rowCount * rowSize));
                     stream.Write(new ReadOnlySpan<byte>(source, byteLength));
                 }
 
@@ -2302,7 +2600,7 @@ namespace Hecton8.Tools
         {
             if (heat >= HeatWarningThreshold && (status & ToolRuntimeStatusMasks.HeatWarningHapticQueued) == 0u)
             {
-                ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                     0f,
                     0.82f,
                     0.12f,
@@ -2428,7 +2726,7 @@ namespace Hecton8.Tools
             if (!terminalHolster && !ShouldPublishToolStateChanged(slotIndex, in signal, quality01))
                 return;
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<ToolStateChangedSignal>.TryPush(in signal);
             _lastPublishedToolStateChangedSignal = signal;
             _lastPublishedToolStateChangedSlot = slotIndex;
             _lastPublishedToolStateChangedValid = 1;
@@ -2476,8 +2774,8 @@ namespace Hecton8.Tools
             _dataVault = GlobalRegistry.DataVault;
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
             _powerGridService = GlobalRegistry.PowerGrid;
-            _toolDurabilityService = GlobalRegistry.ToolDurability;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _toolDurabilityService = GlobalRegistry.ToolDurabilityService;
+            _playerRuntimeContext = GlobalRegistry.Player;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
         }
 
@@ -2498,7 +2796,7 @@ namespace Hecton8.Tools
                     _powerGridService = currentService as IPowerGridService;
                     break;
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
-                    _toolDurabilityService = currentService as ToolDurabilitySystem;
+                    _toolDurabilityService = currentService as IToolDurabilityService;
                     RegisterDurabilityMirrorsCold();
                     break;
                 case GlobalRegistryServiceSlot.Player:
@@ -2648,8 +2946,7 @@ namespace Hecton8.Tools
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterUpdatable()
@@ -2669,8 +2966,7 @@ namespace Hecton8.Tools
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterLateFrame()
@@ -2800,6 +3096,8 @@ namespace Hecton8.Tools
             ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentWearDrainRatesHandle);
             ReleaseEquipmentVaultHandle(vault, ref _equipmentTelemetryRingHandle);
             ReleaseEquipmentVaultHandle(vault, ref _equipmentTelemetryCursorHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _flashlightTelemetryRingHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _flashlightTelemetryCursorHandle);
             ReleaseEquipmentVaultHandle(vault, ref _equipmentIntegrationCountersHandle);
             ReleaseEquipmentVaultHandle(vault, ref _equipmentTuningHandle);
             ReleaseEquipmentVaultHandle(vault, ref _equipmentHardwareSpecsHandle);
@@ -2830,6 +3128,8 @@ namespace Hecton8.Tools
             _activeEquipmentWearDrainRatesHandle = default;
             _equipmentTelemetryRingHandle = default;
             _equipmentTelemetryCursorHandle = default;
+            _flashlightTelemetryRingHandle = default;
+            _flashlightTelemetryCursorHandle = default;
             _equipmentIntegrationCountersHandle = default;
             _equipmentTuningHandle = default;
             _equipmentHardwareSpecsHandle = default;
@@ -2864,6 +3164,8 @@ namespace Hecton8.Tools
             [NoAlias] [NativeDisableUnsafePtrRestriction] public float* WearDrainRates;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentTelemetryEntry* TelemetryRing;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public int* TelemetryCursor;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public FlashlightTelemetryEntry* FlashlightTelemetryRing;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public int* FlashlightTelemetryCursor;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentIntegrationCounters* IntegrationCounters;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentHardwareSpecDTO* HardwareSpecs;
             public int ActiveLength;
@@ -2873,6 +3175,8 @@ namespace Hecton8.Tools
             public int WearDrainLength;
             public int TelemetryLength;
             public int CursorLength;
+            public int FlashlightTelemetryLength;
+            public int FlashlightCursorLength;
             public int CounterLength;
             public int HardwareSpecLength;
 
@@ -2892,6 +3196,10 @@ namespace Hecton8.Tools
                     TelemetryRing[index] = default;
                 if (TelemetryCursor != null && (uint)index < (uint)CursorLength)
                     TelemetryCursor[index] = 0;
+                if (FlashlightTelemetryRing != null && (uint)index < (uint)FlashlightTelemetryLength)
+                    FlashlightTelemetryRing[index] = default;
+                if (FlashlightTelemetryCursor != null && (uint)index < (uint)FlashlightCursorLength)
+                    FlashlightTelemetryCursor[index] = 0;
                 if (IntegrationCounters != null && (uint)index < (uint)CounterLength)
                     IntegrationCounters[index] = default;
                 if (HardwareSpecs != null && (uint)index < (uint)HardwareSpecLength)
@@ -2900,7 +3208,7 @@ namespace Hecton8.Tools
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct GenerateMockEquipmentStateJob : IJobParallelFor
+        private unsafe struct GenerateMockThermalEquipmentJob : IJobParallelFor
         {
             [NoAlias] [NativeDisableUnsafePtrRestriction] public ActiveEquipmentDTO* Equipment;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public double3* ToolAups;
@@ -2918,22 +3226,19 @@ namespace Hecton8.Tools
                 }
 
                 float rank = index + 1f;
+                bool dryHot = (index & 1) != 0;
+                float battery = math.max(0f, 92f - (rank * 13f));
+                float heat = dryHot ? math.saturate(0.72f + rank * 0.055f) : math.saturate(0.08f * rank);
                 Equipment[index] = new ActiveEquipmentDTO
                 {
                     ToolHashID = BaseToolHash + (uint)index,
-                    CurrentBattery = 95f - (rank * 7f),
-                    ThermalLoad = 0.08f * rank,
-                    StateFlags = ActiveEquipmentStateFlags.Active | ActiveEquipmentStateFlags.InWater,
-                    PowerDrawRate = 6f + (rank * 2.5f),
-                    HeatGenerationRate = 0.06f + (rank * 0.035f),
+                    CurrentBattery = battery,
+                    ThermalLoad = heat,
+                    StateFlags = ActiveEquipmentStateFlags.Active | (dryHot ? 0u : ActiveEquipmentStateFlags.InWater),
+                    PowerDrawRate = 6f + (rank * 3.25f),
+                    HeatGenerationRate = dryHot ? 0.18f + (rank * 0.04f) : 0.06f + (rank * 0.025f),
                     _pad0 = 0,
-                    _pad1 = 0,
-                    _pad2 = 0,
-                    _pad3 = 0,
-                    _pad4 = 0,
-                    _pad5 = 0,
-                    _pad6 = 0,
-                    _pad7 = 0
+                    _pad1 = 0
                 };
 
                 ToolAups[index] = RootAup + new double3(
@@ -2961,6 +3266,7 @@ namespace Hecton8.Tools
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // ModularEquipmentEngine schedules exactly one EquipmentStateIntegrationJob at a time, registers its JobHandle with H8Memory, and the typed lane is flushed by SignalBusRegistry after producer completion.
             [NativeDisableContainerSafetyRestriction] public NativeQueue<EquipmentOverheatSignal>.ParallelWriter OverheatWriter;
+            [NativeDisableParallelForRestriction] public NativeArray<int> OverheatWriterBudget;
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // SignalBus<T>.ParallelWriter safety is intentionally suppressed only for the depleted-tool signal lane; the queue is not snapshotted while the producer handle is live.
             // SAFETY_JUSTIFICATION_PARAGRAPH_2:
@@ -2968,6 +3274,7 @@ namespace Hecton8.Tools
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // Single equipment producer per frame, SignalBusRegistry snapshot consumer after dispatcher fencing; no other equipment job writes this lane in the same frame.
             [NativeDisableContainerSafetyRestriction] public NativeQueue<ToolDepletedSignal>.ParallelWriter DepletedWriter;
+            [NativeDisableParallelForRestriction] public NativeArray<int> DepletedWriterBudget;
             public int ToolCount;
             public int ThermalWidth;
             public int ThermalHeight;
@@ -2979,6 +3286,7 @@ namespace Hecton8.Tools
             public float DeltaSeconds;
             public uint Frame;
             public float AmbientFallbackCelsius;
+            public float DryHeatMultiplier;
             public EquipmentTuningDTO Tuning;
             public uint FaultNonFiniteMask;
             public uint FaultGridInvalidMask;
@@ -3011,7 +3319,10 @@ namespace Hecton8.Tools
                 float drawRate = SanitizeNonNegative(dto.PowerDrawRate, ref counters, dto.ToolHashID);
                 float heatRate = SanitizeNonNegative(dto.HeatGenerationRate, ref counters, dto.ToolHashID);
                 float ambientCelsius = SampleAmbientCelsius(i, ref counters, dto.ToolHashID);
+                counters.LastAmbientCelsius = ambientCelsius;
                 float requestedEnergy = requestedActive ? drawRate * safeDelta : 0f;
+                float batteryDischargeMultiplier = ResolveBatteryDischargeMultiplier(ambientCelsius, in Tuning);
+                float batteryRequestedEnergy = requestedEnergy * batteryDischargeMultiplier;
                 float durability = toolState.Durability;
                 if (IsFinite(durability))
                     durability = math.saturate(durability);
@@ -3038,19 +3349,19 @@ namespace Hecton8.Tools
                     else
                     {
                         float previousBattery = battery;
-                        battery = math.max(0f, battery - requestedEnergy);
-                        counters.BatteryDrainWattSeconds += math.min(previousBattery, requestedEnergy);
+                        battery = math.max(0f, battery - batteryRequestedEnergy);
+                        counters.BatteryDrainWattSeconds += math.min(previousBattery, batteryRequestedEnergy);
                         if (previousBattery > 0.0001f && battery <= 0.0001f)
                         {
                             flags |= ActiveEquipmentStateFlags.Depleted;
                             if ((previousFlags & ActiveEquipmentStateFlags.Depleted) == 0u)
                             {
-                                DepletedWriter.Enqueue(new ToolDepletedSignal
+                                SignalBus<ToolDepletedSignal>.TryEnqueueBounded(DepletedWriter, DepletedWriterBudget, new ToolDepletedSignal
                                 {
                                     ToolHashID = dto.ToolHashID,
                                     Frame = Frame,
                                     Battery01 = 0f,
-                                    RequestedPower = drawRate,
+                                    RequestedPower = drawRate * batteryDischargeMultiplier,
                                     StateFlags = flags,
                                     GridPowered = 0,
                                     Reserved0 = 0,
@@ -3090,17 +3401,26 @@ namespace Hecton8.Tools
                 float quality = math.saturate(IsFinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
                 float coolingLod = math.lerp(0.70f, 1.0f, quality * quality * (3f - 2f * quality));
                 float exchange = (ambient01 - heat) * cooldownRate * math.max(0f, Tuning.CoolingGain) * waterMultiplier * coolingLod * safeDelta;
-                float generatedHeat = active ? heatRate * safeDelta : 0f;
+                float dryHeatMultiplier = math.lerp(1f, math.max(1f, DryHeatMultiplier), inWater ? 0f : 1f);
+                float generatedHeat = active ? heatRate * dryHeatMultiplier * safeDelta : 0f;
                 heat = math.max(0f, heat + generatedHeat + exchange);
 
                 bool wasOverheated = (previousFlags & ActiveEquipmentStateFlags.Overheated) != 0u;
-                if (heat >= 1f || (wasOverheated && heat > OverheatRecoveryThreshold))
+                bool catastrophicOverheat = heat >= 1f;
+                if (catastrophicOverheat || (wasOverheated && heat > OverheatRecoveryThreshold))
                 {
                     flags |= ActiveEquipmentStateFlags.Overheated;
                     flags &= ~ActiveEquipmentStateFlags.Active;
+                    if (catastrophicOverheat)
+                    {
+                        flags |= ActiveEquipmentStateFlags.Broken | ActiveEquipmentStateFlags.Depleted;
+                        battery = 0f;
+                        durability = 0f;
+                    }
+
                     if (!wasOverheated)
                     {
-                        OverheatWriter.Enqueue(new EquipmentOverheatSignal
+                        SignalBus<EquipmentOverheatSignal>.TryEnqueueBounded(OverheatWriter, OverheatWriterBudget, new EquipmentOverheatSignal
                         {
                             ToolHashID = dto.ToolHashID,
                             Frame = Frame,
@@ -3108,7 +3428,7 @@ namespace Hecton8.Tools
                             AmbientCelsius = ambientCelsius,
                             Severity01 = math.saturate((heat - 0.85f) * 6.666667f),
                             StateFlags = flags,
-                            VisualOnly = 1,
+                            VisualOnly = catastrophicOverheat ? (byte)0 : (byte)1,
                             Reserved0 = 0,
                             Reserved1 = 0,
                             Reserved2 = 0u
@@ -3136,6 +3456,7 @@ namespace Hecton8.Tools
                 dto.PowerDrawRate = drawRate;
                 dto.HeatGenerationRate = heatRate;
                 counters.PeakThermal01 = math.max(counters.PeakThermal01, math.saturate(heat));
+                counters.LastBattery01 = math.saturate(battery * math.rcp(math.max(0.0001f, stats.BatteryCapacity)));
                 counters.ActiveCount += (flags & ActiveEquipmentStateFlags.Active) != 0u ? 1u : 0u;
                 Counters[i] = counters;
             }
@@ -3173,7 +3494,7 @@ namespace Hecton8.Tools
 
                 float quality = math.saturate(IsFinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
                 float trilinearWeight = math.saturate((quality - 0.25f) * 1.3333334f);
-                trilinearWeight = math.step(0.25f, quality) * trilinearWeight * trilinearWeight * (3f - (2f * trilinearWeight));
+                trilinearWeight = trilinearWeight * trilinearWeight * (3f - (2f * trilinearWeight));
                 if (trilinearWeight <= 0.0001f)
                     return nearest;
 
@@ -3227,6 +3548,26 @@ namespace Hecton8.Tools
                 return 0f;
             }
 
+            private static float ResolveBatteryDischargeMultiplier(float ambientCelsius, in EquipmentTuningDTO tuning)
+            {
+                float coldDelta = math.max(0f, 2f - ambientCelsius);
+                float penalty = math.max(0f, IsFinite(tuning.ColdBatteryPenaltyMultiplier) ? tuning.ColdBatteryPenaltyMultiplier : 1.85f);
+                float quality = math.saturate(IsFinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
+                float cheapCurve = 1f + coldDelta * 0.018f * penalty;
+                float expCurve = ApproximateExpDeterministic(math.min(4f, coldDelta * 0.0225f * penalty));
+                float qualityBlend = quality * quality * (3f - 2f * quality);
+                return math.clamp(math.lerp(cheapCurve, expCurve, qualityBlend), 1f, 4f);
+            }
+
+            private static float ApproximateExpDeterministic(float x)
+            {
+                float safeX = math.clamp(x, 0f, 4f);
+                float x2 = safeX * safeX;
+                float x3 = x2 * safeX;
+                float x4 = x2 * x2;
+                return 1f + safeX + (0.5f * x2) + (0.16666667f * x3) + (0.041666668f * x4);
+            }
+
             private static float ResolveAmbientHeat01(float ambientCelsius, in EquipmentTuningDTO tuning)
             {
                 float floor = IsFinite(tuning.AmbientHeatFloorCelsius) ? tuning.AmbientHeatFloorCelsius : -2f;
@@ -3259,10 +3600,30 @@ namespace Hecton8.Tools
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO.PowerDrawRate), 16);
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO.HeatGenerationRate), 20);
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO._pad0), 24);
+                AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO._pad1), 28);
 #endif
                 AssertSize<EquipmentGridLoadRequest>(16);
                 AssertSize<EquipmentIntegrationCounters>(64);
                 AssertSize<EquipmentTelemetryEntry>(64);
+                AssertSize<FlashlightTelemetryEntry>(64);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.Frame), 0);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.ToolHashID), 4);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.Battery01), 8);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.Thermal01), 12);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.DepthMeters), 16);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.AmbientCelsius), 20);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.BatteryDrainWattSeconds), 24);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.PeakThermal01), 28);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.CpuMicroseconds), 32);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.GlobalQualityWeight), 36);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.TickIntervalSeconds), 40);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.StateFlags), 44);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.FaultFlags), 48);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.SnapshotHash), 52);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.SignalCount), 56);
+                AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.WearDrainNormalized), 60);
+#endif
                 AssertSize<EquipmentOverheatSignal>(32);
                 AssertSize<ToolDepletedSignal>(32);
                 AssertSize<EquipmentTuningDTO>(32);
@@ -3277,7 +3638,7 @@ namespace Hecton8.Tools
             {
                 int observed = UnsafeUtility.SizeOf<T>();
                 if (observed != expected)
-                    throw new InvalidOperationException($"[SHINOBU_224] Layout size mismatch for {typeof(T).Name}: {observed} != {expected}");
+                    throw new InvalidOperationException($"[SHINOBU_327] Layout size mismatch for {typeof(T).Name}: {observed} != {expected}");
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -3286,10 +3647,10 @@ namespace Hecton8.Tools
             {
                 var fieldInfo = typeof(T).GetField(fieldName);
                 if (fieldInfo == null)
-                    throw new InvalidOperationException($"[SHINOBU_224] Layout field missing for {typeof(T).Name}.{fieldName}");
+                    throw new InvalidOperationException($"[SHINOBU_327] Layout field missing for {typeof(T).Name}.{fieldName}");
                 int observed = (int)UnsafeUtility.GetFieldOffset(fieldInfo);
                 if (observed != expected)
-                    throw new InvalidOperationException($"[SHINOBU_224] Layout offset mismatch for {typeof(T).Name}.{fieldName}: {observed} != {expected}");
+                    throw new InvalidOperationException($"[SHINOBU_327] Layout offset mismatch for {typeof(T).Name}.{fieldName}: {observed} != {expected}");
             }
 #endif
         }

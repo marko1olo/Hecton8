@@ -179,7 +179,9 @@ namespace Hecton8.Core
         private static int _lastGen0CollectionCount;
         private static long _lastMonoUsedBytes;
         private static bool _gcFrozenByDictator;
+#pragma warning disable CS0414
         private static int _gcFreezeFramesRemaining;
+#pragma warning restore CS0414
         private static bool _gcSafeBaseMenuArmed;
         private static uint _lastRegistryKillBits;
         private static bool _scalabilityDumped;
@@ -285,6 +287,16 @@ namespace Hecton8.Core
             _qualityPidPreviousError = 0f;
             _scalabilityTelemetryCursor = 0;
             _scalabilityTelemetrySampleCount = 0;
+            MathLodRuntimeConfig.PublishConfig(
+                _dataVault,
+                0u,
+                _globalQualityWeight,
+                _fractionalTimeSlice,
+                0f,
+                0f,
+                0f,
+                0u,
+                out _);
             hardwareMetrics[(int)HardwareMetricSlot.VramPressure01] = 0f;
 
             IDataVault vault = _dataVault;
@@ -393,6 +405,8 @@ namespace Hecton8.Core
 
         private static void ReleaseScalabilityDictatorVaultHandles(IDataVault vault)
         {
+            MathLodRuntimeConfig.ReleaseRuntimeBuffers(vault);
+
             if (vault == null)
                 return;
 
@@ -712,7 +726,7 @@ namespace Hecton8.Core
             SetMathLodLowLease(mathLodLow);
             UpdateCullingMultiplier(math.lerp(1f, SanitizeLowCullingMultiplier(_lowCullingMultiplier), ResolveMathLodLowWeight()));
             UpdateRegistryKillMask(targetMask);
-            WriteDictatorState(safeFrameMs, vramPressure01, thermalIndex, targetMask);
+            WriteDictatorState(frame, safeFrameMs, vramPressure01, thermalIndex, targetMask);
             ScheduleMockTerrainSamplerJob(frame, targetMask);
 
             bool survivalFailure = safeFrameMs > ScalabilityHardFailFrameMs && GlobalQualityWeight <= 0.0001f;
@@ -851,7 +865,9 @@ namespace Hecton8.Core
                 math.rcp(math.max(0.0001f, MathLodLowThreshold - MathLodHealthSoftStart)));
             healthPressure = healthPressure * healthPressure * (3f - 2f * healthPressure);
 
-            float survivalFloor = 1f - math.step(MathLodSurvivalStep, qualityWeight);
+            float survivalFloor = SmoothStep01(
+                (MathLodSurvivalStep - qualityWeight) *
+                math.rcp(math.max(0.0001f, MathLodSurvivalStep)));
             return math.saturate(math.max(math.max(qualityPressure, healthPressure), survivalFloor));
         }
 
@@ -974,6 +990,7 @@ namespace Hecton8.Core
         }
 
         private static void WriteDictatorState(
+            int frame,
             float frameMs,
             float vramPressure01,
             float thermalIndex,
@@ -1003,6 +1020,21 @@ namespace Hecton8.Core
             state.VramPressure = health.VramPressure;
             state.ThermalIndex = health.ThermalIndex;
             stateArray[0] = state;
+            if (MathLodRuntimeConfig.PublishConfig(
+                    vault,
+                    unchecked((uint)frame),
+                    _globalQualityWeight,
+                    _fractionalTimeSlice,
+                    health.FrameTimeMs,
+                    health.VramPressure,
+                    health.ThermalIndex,
+                    foldedMask != 0u ? MathLodRuntimeConfig.ConfigFlagExternalPressure : 0u,
+                    out uint mathLodFaultFlags) &&
+                mathLodFaultFlags != 0u)
+            {
+                MathLodRuntimeConfig.TryDumpOnFault(null);
+            }
+
             RecordScalabilityTelemetry(health.FrameTimeMs, health.VramPressure, foldedMask);
             RefreshMathLodLowScalar();
             ApplyDictatorRenderScale(frameMs, health.ThermalIndex);
@@ -1355,6 +1387,7 @@ namespace Hecton8.Core
                    UnsafeUtility.SizeOf<MockTerrainSamplerStatus>() +
                    UnsafeUtility.SizeOf<ScalabilityTuningDTO>() +
                    ((long)ScalabilityTelemetryCapacity * UnsafeUtility.SizeOf<ScalabilityTelemetryEntry>()) +
+                   MathLodRuntimeConfig.ResolveRequestedBytes() +
                    ResolveScalabilityCsvScratchRequestedBytes();
         }
 
@@ -1585,6 +1618,7 @@ namespace Hecton8.Core
 #endif
         }
 
+#if UNITY_EDITOR
         private static unsafe int TryReadCsvFile(string path, NativeArray<byte> csvScratch)
         {
             try
@@ -1848,6 +1882,7 @@ namespace Hecton8.Core
         {
             return c == (byte)' ' || c == (byte)'\t';
         }
+#endif
 
         private static void ValidateScalabilityDtoLayouts(NativeArray<HomeostasisBlackBoxEntry> blackBox)
         {
@@ -2049,7 +2084,7 @@ namespace Hecton8.Core
                 thermalIndex = health.ThermalIndex;
             }
 
-            WriteDictatorState(frameMs, vramPressure01, thermalIndex, _currentKillSwitchMask);
+            WriteDictatorState(Time.frameCount, frameMs, vramPressure01, thermalIndex, _currentKillSwitchMask);
         }
 
         /// <summary>

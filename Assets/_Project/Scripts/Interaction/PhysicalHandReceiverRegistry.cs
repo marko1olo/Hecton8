@@ -132,6 +132,40 @@ namespace Hecton8.Interaction
             return false;
         }
 
+        /// <summary>
+        /// Queries registered panel receivers by bounds distance without touching Unity Physics overlap APIs.
+        /// </summary>
+        public static int QuerySphere(Vector3 center, float radius, int layerMask, Collider[] results)
+        {
+            if (results == null || results.Length == 0 || radius <= 0f)
+                return 0;
+
+            float radiusSq = radius * radius;
+            int count = 0;
+            for (int i = 0; i < MaxReceivers && count < results.Length; i++)
+            {
+                if (s_receiverStates[i] != CacheSlotOccupied)
+                    continue;
+
+                Collider collider = s_receiverColliders[i];
+                if (collider == null ||
+                    !collider.enabled ||
+                    !collider.gameObject.activeInHierarchy ||
+                    ((1 << collider.gameObject.layer) & layerMask) == 0)
+                {
+                    continue;
+                }
+
+                Bounds bounds = collider.bounds;
+                if (!IsFinite(bounds.center) || !IsFinite(bounds.extents) || bounds.SqrDistance(center) > radiusSq)
+                    continue;
+
+                results[count++] = collider;
+            }
+
+            return count;
+        }
+
         private static bool WriteReceiver(Collider collider, IPhysicalPanelButtonReceiver receiver)
         {
             ulong key = EntityId.ToULong(collider.GetEntityId());
@@ -253,6 +287,11 @@ namespace Hecton8.Interaction
                 key ^= key >> 33;
                 return (int)key & ReceiverCacheMask;
             }
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
     }
 }

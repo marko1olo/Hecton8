@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -7,7 +7,6 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -36,24 +35,121 @@ namespace Hecton8.Core.Determinism
     /// <summary>
     /// Blittable player truth snapshot hashed by the lockstep validator.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct LockstepPlayerKinematicState
     {
-        [FieldOffset(0)] public long SectorX;
-        [FieldOffset(8)] public long SectorY;
-        [FieldOffset(16)] public long SectorZ;
-        [FieldOffset(24)] public float3 LocalPosition;
-        [FieldOffset(36)] public float3 Velocity;
-        [FieldOffset(48)] public float3 Forward;
-        [FieldOffset(60)] public uint Frame;
-        [FieldOffset(64)] public uint Flags;
-        [FieldOffset(68)] public uint InputActions;
-        [FieldOffset(72)] public uint StableId;
-        [FieldOffset(76)] public uint HashCadenceFrames;
-        [FieldOffset(80)] public uint Reserved1;
-        [FieldOffset(84)] public uint Reserved2;
-        [FieldOffset(88)] public uint Reserved3;
-        [FieldOffset(92)] public uint Reserved4;
+        private const uint StablePlayerHash = 0x504C5952u;
+
+        [FieldOffset(0)] public double3 PositionAup;
+        [FieldOffset(24)] public float3 Velocity;
+        [FieldOffset(36)] public float3 InputVector;
+        [FieldOffset(48)] public uint Frame;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint InputActions;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
+
+        public long SectorX
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ResolveSector(PositionAup.x);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                float3 local = LocalPosition;
+                PositionAup.x = ComposeAup(value, local.x);
+            }
+        }
+
+        public long SectorY
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ResolveSector(PositionAup.y);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                float3 local = LocalPosition;
+                PositionAup.y = ComposeAup(value, local.y);
+            }
+        }
+
+        public long SectorZ
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ResolveSector(PositionAup.z);
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                float3 local = LocalPosition;
+                PositionAup.z = ComposeAup(value, local.z);
+            }
+        }
+
+        public float3 LocalPosition
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                double cellSize = ResolveCellSize();
+                return new float3(
+                    (float)(PositionAup.x - (ResolveSector(PositionAup.x) * cellSize)),
+                    (float)(PositionAup.y - (ResolveSector(PositionAup.y) * cellSize)),
+                    (float)(PositionAup.z - (ResolveSector(PositionAup.z) * cellSize)));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set
+            {
+                PositionAup = new double3(
+                    ComposeAup(SectorX, value.x),
+                    ComposeAup(SectorY, value.y),
+                    ComposeAup(SectorZ, value.z));
+            }
+        }
+
+        public float3 Forward
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => InputVector;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => InputVector = value;
+        }
+
+        public uint StableId
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => StablePlayerHash;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set { }
+        }
+
+        public uint HashCadenceFrames
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => 0u;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set { }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double ResolveCellSize()
+        {
+            return math.max(HectonPhysicsContract.AupSectorSizeMetersDouble, 0.0001d);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long ResolveSector(double absolute)
+        {
+            return math.isfinite(absolute) ? (long)math.floor(absolute / ResolveCellSize()) : 0L;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double ComposeAup(long sector, float local)
+        {
+            double safeLocal = math.isfinite(local) ? local : 0d;
+            return (sector * ResolveCellSize()) + safeLocal;
+        }
     }
 
     /// <summary>
@@ -171,7 +267,7 @@ namespace Hecton8.Core.Determinism
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8900)]
-    public sealed unsafe class LockstepStateValidator : MonoBehaviour, IPostFixedTickable, IScalabilityChangedEventListener
+    public sealed unsafe class LockstepStateValidator : MonoBehaviour, IPostFixedTickable, IGlobalRegistryHotSwapListener
     {
         private const int HashCadenceFrames = 300;
         private const int PrecisionHashCadenceFrames = 60;
@@ -179,7 +275,13 @@ namespace Hecton8.Core.Determinism
         private const int ReplayInputFrameCapacity = 300;
         private const int TelemetryFrameCapacity = 300;
         private const int MasterHashHistoryCapacity = 10;
-        private const int PlayerKinematicStateBytes = 96;
+        private const int PlayerKinematicStateBytes = 64;
+        private const int PlayerKinematicPositionAupOffset = 0;
+        private const int PlayerKinematicVelocityOffset = 24;
+        private const int PlayerKinematicInputVectorOffset = 36;
+        private const int PlayerKinematicFrameOffset = 48;
+        private const int PlayerKinematicFlagsOffset = 52;
+        private const int PlayerKinematicInputActionsOffset = 56;
         private const int ReplayHeaderBytes = 128;
         private const int ReplayInputBytes = 48;
         private const int ArrayHashBytes = 32;
@@ -194,7 +296,7 @@ namespace Hecton8.Core.Determinism
         private const int MaxGhostReplayBlocks = 128;
         private const int ReplayBlockBytes = ReplayHeaderBytes + (ReplayInputFrameCapacity * ReplayInputBytes);
         private const ulong ReplayMagic = 0x48384C4F434B5354ul;
-        private const uint ReplayVersion = 1u;
+        private const uint ReplayVersion = 2u;
         private const uint StablePlayerId = 0x504C5952u;
         private const uint ReasonDesyncHash = 0x4453594Eu;
         private const uint ReasonGhostReplayHash = 0x47525350u;
@@ -240,6 +342,7 @@ namespace Hecton8.Core.Determinism
         private int _inputWriteIndex;
         private int _inputFrameCount;
         private int _registeredPostFixed;
+        private int _registeredHotSwap;
         private int _binaryLayoutInvalid;
         private int _binaryLayoutDumped;
         private int _writerShouldStop;
@@ -287,13 +390,14 @@ namespace Hecton8.Core.Determinism
                 GlobalTelemetryBus.PublishModTelemetry(ReasonDesyncHash, 0x4C41594Fu, 0u);
             EnsureNativeState();
             RestoreTelemetryCursorFromVault();
-            ScalabilityEvents.Register(this);
+            TryRegisterHotSwapListener();
             if (GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
                 _registeredPostFixed = 1;
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             if (_registeredPostFixed != 0)
             {
                 GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Core);
@@ -301,10 +405,44 @@ namespace Hecton8.Core.Determinism
             }
 
             StopReplayWriter();
-            ScalabilityEvents.Unregister(this);
             DisposeNativeState();
             if (ReferenceEquals(_activeInstance, this))
                 _activeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcher = currentService as SystemDispatcher;
+                    if (_registeredPostFixed != 0)
+                    {
+                        GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Core);
+                        _registeredPostFixed = 0;
+                    }
+
+                    if (currentService != null && GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
+                        _registeredPostFixed = 1;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    _dataVault = currentService as IDataVault;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _player = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Logistics:
+                    IHabitatGraphService habitat = currentService as IHabitatGraphService;
+                    if (habitat != null)
+                        _habitat = habitat;
+                    break;
+            }
         }
 
         /// <summary>
@@ -406,24 +544,35 @@ namespace Hecton8.Core.Determinism
             validator._dispatcher?.RequestTimeDilation(1f, ReasonGhostReplayHash);
         }
 
-        /// <inheritdoc />
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshCachedQualityWeight01();
-        }
-
         private void RefreshDependenciesFromRegistry()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _player = PlayerRuntimeContextService.ActiveRuntimeContext;
+            _player = GlobalRegistry.Player;
             _habitat = GlobalRegistry.HabitatGraph;
             _dispatcher = GlobalRegistry.Dispatcher;
             RefreshCachedQualityWeight01();
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap != 0 || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this) ? 1 : 0;
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (_registeredHotSwap == 0)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = 0;
+        }
+
         private static void ConfigureSignalLanes()
         {
-            GlobalSignals.InitializeAllQueues();
+            SignalCorridorRuntime.EnsureInitialized();
             SignalBus<LockstepSnapshotSignal>.EnsureInitialized();
             SignalBus<SystemGlitchSignal>.EnsureInitialized();
         }
@@ -431,6 +580,12 @@ namespace Hecton8.Core.Determinism
         private static bool ValidateBinaryLayout()
         {
             return UnsafeUtility.SizeOf<LockstepPlayerKinematicState>() == PlayerKinematicStateBytes &&
+                FieldOffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.PositionAup)) == PlayerKinematicPositionAupOffset &&
+                FieldOffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Velocity)) == PlayerKinematicVelocityOffset &&
+                FieldOffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.InputVector)) == PlayerKinematicInputVectorOffset &&
+                FieldOffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Frame)) == PlayerKinematicFrameOffset &&
+                FieldOffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Flags)) == PlayerKinematicFlagsOffset &&
+                FieldOffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.InputActions)) == PlayerKinematicInputActionsOffset &&
                 UnsafeUtility.SizeOf<LockstepReplayBlockHeader>() == ReplayHeaderBytes &&
                 UnsafeUtility.SizeOf<LockstepReplayInputFrame>() == ReplayInputBytes &&
                 UnsafeUtility.SizeOf<LockstepArrayHash>() == ArrayHashBytes &&
@@ -438,6 +593,12 @@ namespace Hecton8.Core.Determinism
                 UnsafeUtility.SizeOf<LockstepMasterHashHistoryEntry>() == MasterHashHistoryEntryBytes &&
                 UnsafeUtility.SizeOf<LockstepSnapshotSignal>() == SignalPayloadBytes &&
                 UnsafeUtility.SizeOf<SystemGlitchSignal>() == SignalPayloadBytes;
+        }
+
+        private static int FieldOffsetOf<T>(string fieldName)
+            where T : unmanaged
+        {
+            return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
         }
 
         private int ResolveHashCadenceFrames()
@@ -555,7 +716,7 @@ namespace Hecton8.Core.Determinism
             state.ActionsBitmask = ghost.ActionsBitmask;
             state.CurrentInputSchemeHash = ghost.CurrentInputSchemeHash;
             _lastAppliedInputActions = ghost.ActionsBitmask;
-            CoreDeterminismSignals.PublishInputOverride(in state, (uint)Time.frameCount);
+            CoreDeterminismSignals.TryPublishInputOverride(in state, unchecked((uint)SystemDispatcher.CurrentFrameIndex));
             return false;
         }
 
@@ -570,16 +731,22 @@ namespace Hecton8.Core.Determinism
 
             LockstepPlayerKinematicState state = default;
             state.Frame = frame;
-            state.StableId = StablePlayerId;
             IPlayerRuntimeContext player = _player;
             if (player != null && player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose))
             {
-                state.SectorX = pose.Aup.GridX;
-                state.SectorY = pose.Aup.GridY;
-                state.SectorZ = pose.Aup.GridZ;
                 state.Flags = pose.Flags;
-                state.LocalPosition = SanitizeFinite(new float3(pose.Aup.LocalX, pose.Aup.LocalY, pose.Aup.LocalZ), float3.zero, ref state.Flags);
-                state.Forward = SanitizeFinite(pose.Forward, new float3(0f, 0f, 1f), ref state.Flags);
+                double cellSize = HectonPhysicsContract.AupSectorSizeMetersDouble;
+                state.PositionAup = new double3(
+                    (pose.Aup.GridX * cellSize) + pose.Aup.LocalX,
+                    (pose.Aup.GridY * cellSize) + pose.Aup.LocalY,
+                    (pose.Aup.GridZ * cellSize) + pose.Aup.LocalZ);
+                if (!math.all(math.isfinite(state.PositionAup)))
+                {
+                    state.PositionAup = double3.zero;
+                    state.Flags |= PlayerStateFlagNonFinite;
+                }
+
+                state.InputVector = SanitizeFinite(pose.Forward, new float3(0f, 0f, 1f), ref state.Flags);
             }
 
             if (TryGetVaultBuffer(BufferID.PlayerKinematicVelocities, out NativeArray<float3> velocities) && velocities.Length > 0)
@@ -991,7 +1158,7 @@ namespace Hecton8.Core.Determinism
             signal.MissingMask = BuildCategoryMask(arrayHashes, ArrayFlagMissing);
             signal.NonFiniteMask = BuildCategoryMask(arrayHashes, ArrayFlagNonFinite);
             signal.ReplayBlock = _lastReplayBlockSequence;
-            SignalBus<LockstepSnapshotSignal>.Push(in signal);
+            SignalBus<LockstepSnapshotSignal>.TryPush(in signal);
         }
 
         private void RecordMasterHashHistory(
@@ -1073,7 +1240,7 @@ namespace Hecton8.Core.Determinism
             signal.SourceId = ReasonDesyncHash;
             signal.LastFenceFrame = expected.HashFrame;
             signal.Flags = (byte)flags;
-            CoreDeterminismSignals.Publish(in signal);
+            CoreDeterminismSignals.TryPublish(in signal);
             PublishSystemGlitchSignal(frame, in expected, (byte)flags);
             _dispatcher?.RequestSimulationPause(true, ReasonDesyncHash);
             StopGhostReplayAfterFault();
@@ -1089,7 +1256,7 @@ namespace Hecton8.Core.Determinism
             signal.Intensity01 = DesyncGlitchIntensity01;
             signal.DurationSeconds = DesyncGlitchDurationSeconds;
             signal.Reason = reason;
-            SignalBus<SystemGlitchSignal>.Push(in signal);
+            SignalBus<SystemGlitchSignal>.TryPush(in signal);
             SystemDispatcher.RequestVisualStaticGlitch(DesyncGlitchDurationSeconds);
         }
 
@@ -1602,7 +1769,7 @@ namespace Hecton8.Core.Determinism
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
                 !IsMatchingVaultHandle(in handle, bufferId))
             {
-                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.CoreDeterminism, options);
+                handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.CoreDeterminism, options);
             }
 
             return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
@@ -2050,19 +2217,16 @@ namespace Hecton8.Core.Determinism
         {
             LockstepPlayerKinematicState state = Source[index];
             bool finite =
-                math.all(math.isfinite(state.LocalPosition)) &&
+                math.all(math.isfinite(state.PositionAup)) &&
                 math.all(math.isfinite(state.Velocity)) &&
-                math.all(math.isfinite(state.Forward)) &&
+                math.all(math.isfinite(state.InputVector)) &&
                 (state.Flags & LockstepHashMath.NonFiniteSourceFlag) == 0u;
 
             uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, CategorySalt);
             hash = LockstepHashMath.Fnv1A(hash, index);
-            hash = LockstepHashMath.Fnv1A(hash, state.SectorX);
-            hash = LockstepHashMath.Fnv1A(hash, state.SectorY);
-            hash = LockstepHashMath.Fnv1A(hash, state.SectorZ);
-            hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, state.LocalPosition) : LockstepHashMath.Fnv1A(hash, 0xBADF10A7u);
+            hash = finite ? LockstepHashMath.Fnv1ADouble3(hash, state.PositionAup) : LockstepHashMath.Fnv1A(hash, 0xBADF10A7u);
             hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, state.Velocity) : hash;
-            hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, state.Forward) : hash;
+            hash = finite ? LockstepHashMath.Fnv1AFloat3(hash, state.InputVector) : hash;
             hash = LockstepHashMath.Fnv1A(hash, state.Frame);
             hash = LockstepHashMath.Fnv1A(hash, state.Flags);
             hash = LockstepHashMath.Fnv1A(hash, state.InputActions);

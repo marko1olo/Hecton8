@@ -1,0 +1,26 @@
+﻿{
+  "shinobu_348_screen_space_pda_projector": {
+    "agent": "SHINOBU_348",
+    "domain": "Echelon 8 Presentation & UX / wrist-mounted PDA projection",
+    "summary": "Wrist PDA World-Space Canvas bypassed by RenderGraph screen-space projector",
+    "scanner": "Assets/_Project/Scripts/UI/Editor/OOP_Canvas_Scanner_SHINOBU_348.cs",
+    "forbiddenWorldSpaceCanvasCount": 0,
+    "scannerScope": "All Assets/_Project source plus prefab/scene YAML; counts only World-Space Canvas hits whose path or local source/YAML context is PDA/Wrist scoped.",
+    "renderRoute": "WristHologramHudRuntime_PdaScreenProjector -> active URP renderer feature -> Hecton_PdaScreen.shader",
+    "gpuCapabilityGate": "Cold runtime gate requires SystemInfo.supportsSetConstantBuffer and graphicsShaderLevel >= 45 before GraphicsBuffer allocation; unsupported targets fail closed with no World-Space Canvas fallback.",
+    "rendererFeatureActivation": "Serialized active in PC_Renderer.asset, PC_High_Renderer.asset, Mobile_Renderer.asset, and Quest_VR_Renderer.asset; each m_RendererFeatureMap matches the m_RendererFeatures local fileID order.",
+    "viewSpaceRoute": "Shader ray-plane math uses UNITY_MATRIX_I_P view rays and rotates the camera-relative PDA matrix through UNITY_MATRIX_V; no _WorldSpaceCameraPos subtraction remains.",
+    "gpuUpload": "LockBufferForWrite plus direct UnsafeUtility.MemCpy; no GraphicsBuffer.SetData",
+    "depthRoute": "_CameraDepthTexture sampled in the PDA shader for soft occlusion",
+    "qualityLodRoute": "Uniform shader math LOD: quality below 0.20 uses one direct atlas sample; 0.20..0.36 fades refraction; 0.52..0.88 fades chroma taps; chroma taps clamp inside the active atlas rect.",
+    "csvProfileSource": "Assets/StreamingAssets/Hecton8/PDA/pda_interface_profiles.csv is the direct-file StreamingAssets source with default plus inventory/loadout/construction/barter/data_log/spectrum/atlas_signal/diagnostics rows; URI-backed Android/Quest StreamingAssets fails closed to the deterministic default row until DataMonolith/binary import proof exists; repo-root pda_interface_profiles.csv remains editor/development fallback.",
+    "csvScratchRoute": "pda_interface_profiles.csv reads directly into Vault byte scratch 348736 and parses ReadOnlySpan<byte> over unmanaged memory.",
+    "csvTabHashRoute": "CSV tokens tab_0/pda_tab_0 and canonical names map to the same ResolvePdaTabHash(int) route as PDAEvents.CurrentTab; unknown names retain FNV fallback.",
+    "shaderWarmupRoute": "Assets/_Project/Art/Shaders/Variants/Hecton_PdaScreen_Warmup.shadervariants is serialized in 00_BOOTSTRAP shaderVariantCollections for boot WarmUp.",
+    "editorAsmdefRoute": "PdaProjectionTunerWindow remains inside Hecton8.UI.Editor, which references Hecton8.Core where wrist projector runtime types are compiled.",
+    "mockRoute": "Mock wrist projection and forced visibility serialize false by default; mock input is accepted only in Unity Editor or DEVELOPMENT_BUILD.",
+    "blackBoxDumpRoute": "Editor writes Docs/AgentLogs/Dump_SHINOBU_348.bin; player builds write Application.persistentDataPath/Hecton8/AgentLogs/Dump_SHINOBU_348.bin. Header v2 is 64 bytes and records valid count/start index before writing telemetry rows oldest-to-newest.",
+    "gizmoRoute": "SceneView gizmo converts camera-relative DTO translation by adding the resolved render camera position only for editor drawing.",
+    "rollbackBoundary": "Presentation-only; Vault IDs 348730..348736 excluded from rollback/save/gameplay truth"
+  }
+}

@@ -191,6 +191,7 @@ namespace Hecton8.SaveSystem
         public const int TelemetryRingFrames = 300;
         public const int DefaultBlockCells = 128;
         public const int DefaultSchemaBytes = 256;
+        internal const int MaxVoxelDeltaWalPayloadBytes = (256 * 1024) - 64;
         public const int HashTableSlots = 4096;
         public const int CounterCapacity = 24;
         internal const int CounterRleRunCount = 0;
@@ -350,7 +351,7 @@ namespace Hecton8.SaveSystem
             int requiredLength,
             NativeArrayOptions options) where T : struct
         {
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.SavePersistence,
@@ -561,8 +562,12 @@ namespace Hecton8.SaveSystem
             }
 
             int byteCount = math.clamp(counters[CounterWalPayloadBytes], 0, walPayloadBytes.Length);
-            if (byteCount <= UnsafeUtility.SizeOf<VoxelDeltaHeaderDTO>() || counters[CounterFailure] != 0)
+            if (byteCount <= UnsafeUtility.SizeOf<VoxelDeltaHeaderDTO>() ||
+                byteCount > MaxVoxelDeltaWalPayloadBytes ||
+                counters[CounterFailure] != 0)
+            {
                 return false;
+            }
 
             VoxelDeltaHeaderDTO header = headers[0];
             uint sourceHash = (uint)(header.XXHash3Checksum ^ (header.XXHash3Checksum >> 32));
@@ -1104,6 +1109,77 @@ namespace Hecton8.SaveSystem
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        internal struct VoxelCarvingTortureJob : IJobParallelFor
+        {
+            [NoAlias] public NativeArray<sbyte> RuntimeDensity;
+            [NoAlias] public NativeArray<byte> MaterialIds;
+            [NoAlias] public NativeArray<byte> CellFlags;
+            public ulong SectorHash;
+            public uint SimulationFrame;
+            public float GlobalQualityWeight;
+            public int CellCount;
+            public int OperationCount;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)CellCount || index >= RuntimeDensity.Length)
+                    return;
+
+                float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+                int operations = math.clamp(OperationCount <= 0 ? 128 : OperationCount, 1, 256);
+                float3 cell = new float3(index & 31, (index >> 5) & 31, (index >> 10) & 31);
+                uint baseSeed = BuildStressSeed(SectorHash, SimulationFrame, (uint)index);
+                float carved = 0f;
+
+                for (int op = 0; op < operations; op++)
+                {
+                    uint opSeed = baseSeed ^ ((uint)op * 0x9E3779B9u);
+                    float3 center = new float3(
+                        Hash01(opSeed ^ 0xA511E9B3u) * 31f,
+                        Hash01(opSeed ^ 0x63D83595u) * 31f,
+                        Hash01(opSeed ^ 0xB5297A4Du) * 31f);
+                    float radius = math.lerp(3.5f, 10.0f, quality);
+                    float distanceSq = math.lengthsq(cell - center);
+                    carved = math.max(carved, math.step(distanceSq, radius * radius));
+                }
+
+                sbyte density = carved > 0f
+                    ? (sbyte)127
+                    : (sbyte)math.clamp(((int)((baseSeed >> 9) & 63u)) - 32, -64, 63);
+                RuntimeDensity[index] = density;
+
+                if (MaterialIds.IsCreated && index < MaterialIds.Length)
+                    MaterialIds[index] = carved > 0f ? (byte)12 : (byte)0;
+
+                if (CellFlags.IsCreated && index < CellFlags.Length)
+                    CellFlags[index] = carved > 0f ? (byte)1 : (byte)0;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static uint BuildStressSeed(ulong sectorHash, uint frame, uint index)
+            {
+                ulong x = sectorHash ^ ((ulong)frame << 32) ^ index ^ 0x6A09E667F3BCC909UL;
+                x ^= x >> 33;
+                x *= 0xFF51AFD7ED558CCDUL;
+                x ^= x >> 33;
+                x *= 0xC4CEB9FE1A85EC53UL;
+                x ^= x >> 33;
+                return (uint)(x | 1UL);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float Hash01(uint value)
+            {
+                value ^= value >> 16;
+                value *= 0x7FEB352Du;
+                value ^= value >> 15;
+                value *= 0x846CA68Bu;
+                value ^= value >> 16;
+                return (value & 0x00FFFFFFu) * (1.0f / 16777215.0f);
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct VoxelRleEncoderJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<sbyte> RuntimeDensity;
@@ -1632,7 +1708,9 @@ namespace Hecton8.SaveSystem
                 int headerBytes = UnsafeUtility.SizeOf<VoxelDeltaHeaderDTO>();
                 int compressedBytes = math.clamp(Counters[CounterCompressedBytes], 0, CompressedBytes.Length);
                 int required = headerBytes + compressedBytes;
-                if (Counters[CounterFailure] != 0 || required > WalPayloadBytes.Length)
+                if (Counters[CounterFailure] != 0 ||
+                    required > WalPayloadBytes.Length ||
+                    required > MaxVoxelDeltaWalPayloadBytes)
                 {
                     Counters[CounterFailure] = 1;
                     Counters[CounterWalPayloadBytes] = 0;
@@ -1782,6 +1860,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
+#if UNITY_EDITOR
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct VoxelCompressionProfileCsvParseJob : IJob
         {
@@ -2074,5 +2153,6 @@ namespace Hecton8.SaveSystem
                 return hash == 0UL ? 1UL : hash;
             }
         }
+#endif
     }
 }

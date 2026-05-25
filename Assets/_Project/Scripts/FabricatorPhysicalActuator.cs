@@ -7,7 +7,7 @@ namespace Hecton8.Crafting
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Crafting/Fabricator Physical Actuator")]
-    public sealed class FabricatorPhysicalActuator : MonoBehaviour, IPanelInteractable, IUpdatable
+    public sealed class FabricatorPhysicalActuator : MonoBehaviour, IPanelInteractable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float MechanicalStartThreshold01 = 0.85f;
         private const float Pi = 3.14159265359f;
@@ -49,6 +49,7 @@ namespace Hecton8.Crafting
         private bool _leverLockedDown;
         private bool _emergencyStopPressed;
         private bool _registeredTick;
+        private bool _hotSwapRegistered;
 
         public float Lever01 => _lever01;
         public bool LeverLockedDown => _leverLockedDown;
@@ -71,12 +72,28 @@ namespace Hecton8.Crafting
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             if (_leverLockedDown && (fabricator == null || !fabricator.IsCrafting))
                 ReleaseLeverLock();
 
             CacheScalarConfig();
             ApplyLeverVisual();
             ApplyEmergencyStopVisual();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            if (!_leverLockedDown && !_emergencyStopPressed)
+                return;
+
+            TryUnregisterTick();
+            TryRegisterTick();
         }
 
         public void ArmRecipe(RecipeData recipe, int multiplier)
@@ -205,6 +222,23 @@ namespace Hecton8.Crafting
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void TryUnregisterTickIfIdle()
@@ -357,6 +391,7 @@ namespace Hecton8.Crafting
                 ReleaseLeverLock();
             ApplyEmergencyStopVisual();
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
         }
 
 #if UNITY_EDITOR

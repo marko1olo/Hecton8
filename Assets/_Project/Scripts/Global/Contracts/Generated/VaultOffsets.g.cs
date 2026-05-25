@@ -11,7 +11,7 @@ namespace Hecton8.Global.Contracts.Generated
         public const int GlobalSignalPayload_PayloadBytes = 6;
         public const int GlobalSignalPayload_PayloadStart = 16;
         public const int GlobalNativeBufferHandle_Size = 32;
-        public const int GlobalNativeBufferHandle_Pointer = 0;
+        public const int GlobalNativeBufferHandle_DescriptorToken = 0;
         public const int GlobalNativeBufferHandle_Generation = 20;
         public const int NativeMemoryAliasContract_Size = 64;
         public const int AssemblyRoutingOverride_Size = 64;

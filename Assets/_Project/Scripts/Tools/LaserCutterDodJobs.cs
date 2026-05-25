@@ -8,7 +8,6 @@ namespace Hecton8.Tools
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Mathematics;
-    using UnityEngine;
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateMockCutterTriggersJob : IJobParallelFor
@@ -127,17 +126,27 @@ namespace Hecton8.Tools
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct BuildCutterRaycastsJob : IJobParallelFor
+    public struct BuildCutterSdfProbeHitsJob : IJobParallelFor
     {
+        private const float InvEncodedByteMax = 1f / 255f;
+
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
-        [NoAlias] public NativeArray<RaycastCommand> Commands;
+        [NoAlias] public NativeArray<VoxelSonarSdfRaycastHit> SdfHits;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly EncodedSdf;
         public double3 PresentationOriginAUP;
+        public int3 GridDimensions;
+        public float3 VolumeOrigin;
+        public float3 CellSize;
+        public float SdfRange;
+        public float StepMeters;
+        public int MaxSteps;
         public int LayerMask;
-        public byte HitTriggers;
+        public int VoxelLayerMask;
 
         public void Execute(int index)
         {
+            WriteMiss(index);
             LaserCutRequestDTO request = Requests[index];
             LaserCutRequestMetaDTO meta = RequestMetas[index];
             if ((meta.Flags & LaserCutterDodConstants.RequestFlagValid) == 0u ||
@@ -145,23 +154,145 @@ namespace Hecton8.Tools
                 request.CuttingPower <= 0f ||
                 request.MaximumDistance <= 0f ||
                 !math.all(math.isfinite(request.RayOriginAUP)) ||
-                !math.all(math.isfinite(request.RayDirection)))
+                !math.all(math.isfinite(request.RayDirection)) ||
+                !IncludesAnyLayer(LayerMask, VoxelLayerMask) ||
+                !SdfIsValid())
             {
-                WriteDisabled(index);
                 return;
             }
 
             double3 localDelta = AupPrecisionMath.LocalDeltaDouble(request.RayOriginAUP, PresentationOriginAUP);
             float3 localOrigin = AupPrecisionMath.DowncastLocalDelta(localDelta, float3.zero);
             float3 direction = SafeNormalize(request.RayDirection, new float3(0f, 0f, 1f));
-            QueryParameters query = new QueryParameters(LayerMask, false, HitTriggers != 0 ? QueryTriggerInteraction.Collide : QueryTriggerInteraction.Ignore, false);
-            Commands[index] = new RaycastCommand(ToVector3(localOrigin), ToVector3(direction), query, math.max(0.01f, request.MaximumDistance));
+            float maxDistance = math.max(0.01f, request.MaximumDistance);
+            float step = math.max(0.025f, math.isfinite(StepMeters) ? StepMeters : 0.1f);
+            int maxSteps = math.clamp(MaxSteps, 1, 128);
+            float previousDensity = 0f;
+            float3 previousPosition = localOrigin;
+            bool hasPrevious = false;
+
+            for (int i = 0; i <= maxSteps; i++)
+            {
+                float distance = math.min(maxDistance, i * step);
+                float3 position = localOrigin + direction * distance;
+                if (!TrySampleSdf(position, out float density))
+                    continue;
+
+                if ((density >= 0f && (!hasPrevious || previousDensity < 0f)) ||
+                    (hasPrevious && previousDensity < 0f && density >= 0f))
+                {
+                    float denom = math.max(0.0001f, density - previousDensity);
+                    float t = hasPrevious ? math.saturate(-previousDensity / denom) : 0f;
+                    float resolvedDistance = hasPrevious ? math.max(0f, distance - step + step * t) : distance;
+                    float3 resolvedPoint = math.lerp(previousPosition, position, t);
+                    float3 normal = ResolveSdfGradient(resolvedPoint);
+                    if (math.dot(normal, direction) > 0f)
+                        normal = -normal;
+
+                    SdfHits[index] = new VoxelSonarSdfRaycastHit
+                    {
+                        Point = resolvedPoint,
+                        Normal = normal,
+                        Distance = math.max(0f, resolvedDistance),
+                        Density = density,
+                        Density01 = math.saturate(math.max(0f, density) * math.rcp(math.max(0.0001f, SdfRange))),
+                        SdfRange = SdfRange,
+                        Version = 0,
+                        Flags = VoxelSonarSdfRaycastHit.FlagHit
+                    };
+                    return;
+                }
+
+                previousDensity = density;
+                previousPosition = position;
+                hasPrevious = true;
+                if (distance >= maxDistance)
+                    break;
+            }
         }
 
-        private void WriteDisabled(int index)
+        private void WriteMiss(int index)
         {
-            QueryParameters query = new QueryParameters(0, false, QueryTriggerInteraction.Ignore, false);
-            Commands[index] = new RaycastCommand(Vector3.zero, Vector3.forward, query, 0.0f);
+            if (SdfHits.IsCreated && index < SdfHits.Length)
+                SdfHits[index] = default;
+        }
+
+        private bool SdfIsValid()
+        {
+            if (!EncodedSdf.IsCreated ||
+                GridDimensions.x <= 1 ||
+                GridDimensions.y <= 1 ||
+                GridDimensions.z <= 1 ||
+                !math.all(math.isfinite(VolumeOrigin)) ||
+                !math.all(math.isfinite(CellSize)) ||
+                !math.isfinite(SdfRange) ||
+                SdfRange <= 0.0001f)
+            {
+                return false;
+            }
+
+            long expected = (long)GridDimensions.x * GridDimensions.y * GridDimensions.z;
+            return expected > 0L &&
+                   expected <= int.MaxValue &&
+                   EncodedSdf.Length >= expected;
+        }
+
+        private bool TrySampleSdf(float3 worldPosition, out float density)
+        {
+            density = SdfRange;
+            float3 safeCell = math.max(CellSize, new float3(0.0001f));
+            float3 sample = (worldPosition - VolumeOrigin) / safeCell;
+            if (!math.all(math.isfinite(sample)))
+                return false;
+
+            sample = math.clamp(
+                sample,
+                float3.zero,
+                new float3(GridDimensions.x - 1.001f, GridDimensions.y - 1.001f, GridDimensions.z - 1.001f));
+            int3 p0 = new int3((int)math.floor(sample.x), (int)math.floor(sample.y), (int)math.floor(sample.z));
+            int3 p1 = math.min(p0 + 1, GridDimensions - 1);
+            float3 t = sample - p0;
+
+            float c000 = DecodeSdfAt(p0.x, p0.y, p0.z);
+            float c100 = DecodeSdfAt(p1.x, p0.y, p0.z);
+            float c010 = DecodeSdfAt(p0.x, p1.y, p0.z);
+            float c110 = DecodeSdfAt(p1.x, p1.y, p0.z);
+            float c001 = DecodeSdfAt(p0.x, p0.y, p1.z);
+            float c101 = DecodeSdfAt(p1.x, p0.y, p1.z);
+            float c011 = DecodeSdfAt(p0.x, p1.y, p1.z);
+            float c111 = DecodeSdfAt(p1.x, p1.y, p1.z);
+            float c00 = math.lerp(c000, c100, t.x);
+            float c10 = math.lerp(c010, c110, t.x);
+            float c01 = math.lerp(c001, c101, t.x);
+            float c11 = math.lerp(c011, c111, t.x);
+            density = math.lerp(math.lerp(c00, c10, t.y), math.lerp(c01, c11, t.y), t.z);
+            return math.isfinite(density);
+        }
+
+        private float3 ResolveSdfGradient(float3 worldPosition)
+        {
+            float3 step = math.max(CellSize, new float3(0.0001f));
+            TrySampleSdf(worldPosition + new float3(step.x, 0f, 0f), out float px);
+            TrySampleSdf(worldPosition - new float3(step.x, 0f, 0f), out float nx);
+            TrySampleSdf(worldPosition + new float3(0f, step.y, 0f), out float py);
+            TrySampleSdf(worldPosition - new float3(0f, step.y, 0f), out float ny);
+            TrySampleSdf(worldPosition + new float3(0f, 0f, step.z), out float pz);
+            TrySampleSdf(worldPosition - new float3(0f, 0f, step.z), out float nz);
+            return SafeNormalize(new float3(px - nx, py - ny, pz - nz), new float3(0f, 1f, 0f));
+        }
+
+        private float DecodeSdfAt(int x, int y, int z)
+        {
+            long indexLong = ((long)z * GridDimensions.y + y) * GridDimensions.x + x;
+            if (indexLong < 0L || indexLong >= EncodedSdf.Length)
+                return SdfRange;
+
+            return ((EncodedSdf[(int)indexLong] * InvEncodedByteMax) * 2f - 1f) * SdfRange;
+        }
+
+        private static bool IncludesAnyLayer(int queryMask, int requiredMask)
+        {
+            return queryMask == -1 || (queryMask & requiredMask) != 0;
         }
 
         private static float3 SafeNormalize(float3 value, float3 fallback)
@@ -172,19 +303,14 @@ namespace Hecton8.Tools
 
             return value * math.rsqrt(lengthSq);
         }
-
-        private static Vector3 ToVector3(float3 value)
-        {
-            return new Vector3(value.x, value.y, value.z);
-        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct EvaluateCutterRaycastHitsJob : IJobParallelFor
+    public struct EvaluateCutterProbeHitsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
-        [ReadOnly, NoAlias] public NativeArray<RaycastHit> RaycastHits;
+        [ReadOnly, NoAlias] public NativeArray<VoxelSonarSdfRaycastHit> ProbeHits;
         [WriteOnly, NoAlias] public NativeArray<LaserCutHitDTO> HitResults;
         [WriteOnly, NoAlias] public NativeArray<LaserCutDeformationStateDTO> DeformationStates;
         [WriteOnly, NoAlias] public NativeArray<LaserCutBatteryDrainRequest> BatteryDrainRequests;
@@ -209,7 +335,7 @@ namespace Hecton8.Tools
         {
             LaserCutRequestDTO request = Requests[index];
             LaserCutRequestMetaDTO meta = RequestMetas[index];
-            RaycastHit hit = RaycastHits[index];
+            VoxelSonarSdfRaycastHit hit = ProbeHits[index];
             bool requestValid = (meta.Flags & LaserCutterDodConstants.RequestFlagValid) != 0u &&
                                 (meta.Flags & LaserCutterDodConstants.RequestFlagSuppressedByCooldown) == 0u;
             bool hasHit = requestValid && HasHit(in hit);
@@ -225,9 +351,9 @@ namespace Hecton8.Tools
             float lowSparkCount = math.max(0f, math.isfinite(LowSparkCount) ? LowSparkCount : LaserCutterDodConstants.LowSparkCount);
             float ultraSparkCount = math.max(lowSparkCount, math.isfinite(UltraSparkCount) ? UltraSparkCount : LaserCutterDodConstants.UltraSparkCount);
             int sparkCap = math.clamp((int)math.ceil(ultraSparkCount), 0, LaserCutterDodConstants.UltraSparkCount);
-            float distance = hasHit ? math.max(0f, hit.distance) : 0f;
-            float3 hitPoint = hasHit ? ToFloat3(hit.point) : float3.zero;
-            float3 normal = hasHit ? SafeNormalize(ToFloat3(hit.normal), new float3(0f, 1f, 0f)) : new float3(0f, 1f, 0f);
+            float distance = hasHit ? math.max(0f, hit.Distance) : 0f;
+            float3 hitPoint = hasHit ? hit.Point : float3.zero;
+            float3 normal = hasHit ? SafeNormalize(hit.Normal, new float3(0f, 1f, 0f)) : new float3(0f, 1f, 0f);
             double3 hitAup = hasHit ? PresentationOriginAUP + new double3(hitPoint.x, hitPoint.y, hitPoint.z) : double3.zero;
             bool finite = IsFiniteRequest(in request) && (!hasHit || (math.all(math.isfinite(hitAup)) && math.all(math.isfinite(normal)) && math.isfinite(distance)));
             uint flags = hasHit ? LaserCutterDodConstants.ResultFlagHit : 0u;
@@ -348,9 +474,10 @@ namespace Hecton8.Tools
             };
         }
 
-        private static bool HasHit(in RaycastHit hit)
+        private static bool HasHit(in VoxelSonarSdfRaycastHit hit)
         {
-            return hit.distance > 0f || math.lengthsq(ToFloat3(hit.normal)) > 0.0001f;
+            return (hit.Flags & VoxelSonarSdfRaycastHit.FlagHit) != 0u &&
+                   (hit.Distance > 0f || math.lengthsq(hit.Normal) > 0.0001f);
         }
 
         private static bool IsFiniteRequest(in LaserCutRequestDTO request)
@@ -447,10 +574,5 @@ namespace Hecton8.Tools
             return math.smoothstep(0f, 1f, t);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
-        }
     }
 }

@@ -23,13 +23,13 @@ namespace Hecton8.VFX.PlasmaBeam.Editor
 
         private void OnEnable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
         }
 
         private void OnDisable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         private void OnGUI()
@@ -77,7 +77,7 @@ namespace Hecton8.VFX.PlasmaBeam.Editor
             EditorGUILayout.LabelField("Quality Weight", qualityWeight.ToString("0.000"));
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             if (!_drawMesh || Event.current == null || Event.current.type != EventType.Repaint)
                 return;

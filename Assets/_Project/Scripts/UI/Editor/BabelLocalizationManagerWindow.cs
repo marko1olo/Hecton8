@@ -246,13 +246,12 @@ namespace Hecton8.UI.Editor
                 return;
             }
 
-            string[] lines = File.ReadAllLines(_csvOverridePath);
-            for (int i = 0; i < lines.Length; i++)
+            foreach (string line in File.ReadLines(_csvOverridePath))
             {
-                if (string.IsNullOrWhiteSpace(lines[i]) || lines[i].StartsWith("#", StringComparison.Ordinal))
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#", StringComparison.Ordinal))
                     continue;
 
-                if (TryParseCsvLine(lines[i], out uint hash, out string value))
+                if (TryParseCsvLine(line, out uint hash, out string value))
                     UpsertCsvOverride(hash, value);
             }
 

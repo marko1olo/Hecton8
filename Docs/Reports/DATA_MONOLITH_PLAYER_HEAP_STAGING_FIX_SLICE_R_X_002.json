@@ -1,0 +1,33 @@
+{
+  "agent": "X_002",
+  "slice": "R",
+  "status": "PATCHED_PLAYER_HEAP_STAGING_CORE_COMPILE_PASS",
+  "generatedUtc": "2026-05-24T08:31:00Z",
+  "changedFiles": [
+    "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.FileWorker.cs"
+  ],
+  "fixes": [
+    "Stopped allocating the Thermodynamics CSV worker byte[4096] staging buffer in non-editor players.",
+    "Kept the binary constants worker byte[16] allocation because thermodynamic_constants.h8bin is a runtime binary config lane."
+  ],
+  "staticProof": {
+    "managedPlayerAllocationRemovedBytesPerRuntime": 4096,
+    "runtimeParserAdded": false,
+    "runtimeBinaryLanePreserved": true,
+    "binarySchemaChanged": false,
+    "dataMonolithLayoutChanged": false,
+    "editorCsvAuthoringPreserved": true
+  },
+  "compileStatus": "CORE_BUILD_PASS_WITH_DUPLICATE_SOURCE_WARNINGS",
+  "coreBuildProof": {
+    "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+    "buildServerShutdownBeforeBuild": true,
+    "result": "PASS",
+    "errors": 0,
+    "warnings": 5,
+    "warningClass": "CS2002 duplicate source entries in generated Hecton8.Core.csproj; not introduced by this slice.",
+    "elapsed": "00:01:24.55",
+    "generatedUtc": "2026-05-24T08:36:51.1927326Z"
+  },
+  "claimBoundary": "Source-level heap staging fix only; Core compile is still required before this slice can be marked build-proven."
+}

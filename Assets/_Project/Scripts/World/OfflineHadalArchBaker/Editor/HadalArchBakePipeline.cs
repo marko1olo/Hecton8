@@ -435,7 +435,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
             builder.Append("  \"rollbackExcluded\": true,\n");
             builder.Append("  \"assets\": { \"lod0\": \"").Append(result.Lod0Path).Append("\", \"lod1\": \"").Append(result.Lod1Path).Append("\", \"lod2\": \"").Append(result.Lod2Path).Append("\", \"prefab\": \"").Append(result.PrefabPath).Append("\" }\n");
             builder.Append("}\n");
-            File.WriteAllText(ReportPath, builder.ToString());
+            File.WriteAllText(ReportPath, builder.ToString(), new UTF8Encoding(false));
         }
 
         private static void DumpBlackBox(NativeArray<HadalArchBakeTelemetryEntry> telemetry)

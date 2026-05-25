@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_166
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_166_Mat_ToolTrial_Dark_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_ToolTrial_Dark_Albedo.png
+FINAL_FILENAME: Mat_ToolTrial_Dark_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Low-light tool trial albedo for HECTON-8 prototype equipment tested in reduced visibility. Create graphite-blue casing panels, pearl-white calibration strips, teal visibility marks, amber locator dots, satin titanium edge rails, and pale cyan reflective insets. The material should stay readable and premium in low-light gameplay while keeping clean color separation and a calm expedition identity. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

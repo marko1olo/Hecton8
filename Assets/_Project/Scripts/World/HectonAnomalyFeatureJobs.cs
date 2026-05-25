@@ -7,6 +7,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    internal static class HectonAnomalyFeatureJobsLayout
+    {
+        public const int AnomalyRidgeDetectionSettingsStrideBytes = 80;
+        public const int AnomalyFeatureRecordStrideBytes = 56;
+    }
+
     /// <summary>
     /// Anomaly feature record kind.
     /// </summary>
@@ -25,7 +31,7 @@ namespace Hecton8.World
     /// <summary>
     /// Configuration for ridge-derived pillar and fissure detection.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonAnomalyFeatureJobsLayout.AnomalyRidgeDetectionSettingsStrideBytes)]
     public struct AnomalyRidgeDetectionSettings
     {
         /// <summary>Heightmap width in samples.</summary>
@@ -128,7 +134,7 @@ namespace Hecton8.World
     /// <summary>
     /// Spawn-ready pillar or fissure anomaly feature.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonAnomalyFeatureJobsLayout.AnomalyFeatureRecordStrideBytes)]
     public struct AnomalyFeatureRecord
     {
         /// <summary>One when the record is valid.</summary>

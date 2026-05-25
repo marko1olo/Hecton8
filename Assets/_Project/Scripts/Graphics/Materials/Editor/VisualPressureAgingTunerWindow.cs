@@ -426,10 +426,9 @@ namespace Hecton8.Graphics.Materials.Editor
                 return 0;
 
             int count = 0;
-            string[] files = Directory.GetFiles(directory, fileName, SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(directory, fileName, SearchOption.AllDirectories))
             {
-                if (Path.GetFileName(files[i]) == fileName)
+                if (Path.GetFileName(file) == fileName)
                     count++;
             }
 
@@ -443,10 +442,8 @@ namespace Hecton8.Graphics.Materials.Editor
                 return 0;
 
             int count = 0;
-            string[] files = Directory.GetFiles(directory, searchPattern, SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(directory, searchPattern, SearchOption.AllDirectories))
             {
-                string file = files[i];
                 if (!File.Exists(file))
                     continue;
 

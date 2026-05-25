@@ -145,7 +145,7 @@ namespace Hecton8.Gameplay
         private Collider _cachedHitCollider;
         private Vector3 _cachedHitPoint;
         private float _cachedHitDistance;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — survival blade HUD staging buffer — owner: KnifeTool
 
         private static FixedCharBuffer s_logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — survival blade field log staging buffer — owner: KnifeTool
@@ -155,7 +155,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.LocalizationText;
             _feedbackCooldownRemaining = 0f;
             InvalidateHitCache();
         }
@@ -171,7 +171,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.LocalizationText;
             InvalidateHitCache();
         }
 
@@ -185,7 +185,14 @@ namespace Hecton8.Gameplay
             if (TryFindBestHit(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance, out Vector3 direction))
             {
                 float effectiveDamage = ResolveEffectiveDamage(1f);
-                bool applied = ToolHitUtility.ApplyDamage(bestCollider, effectiveDamage, bestPoint, direction, ResolveImpulse(1f));
+                bool applied = ToolHitUtility.ApplyDamage(
+                    bestCollider,
+                    effectiveDamage,
+                    bestPoint,
+                    direction,
+                    ResolveImpulse(1f),
+                    DamageSourceIds.SurvivalBlade,
+                    CombatDamageTypes.Impact);
                 if (applied && TryConsumeFeedbackGate())
                 {
                     PublishInfoMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_CONTACT, "SURVIVAL BLADE - CONTACT"));
@@ -373,7 +380,14 @@ namespace Hecton8.Gameplay
                 return false;
 
             float effectiveDamage = ResolveEffectiveDamage(precisionStrikeMultiplier);
-            bool applied = ToolHitUtility.ApplyDamage(target, effectiveDamage, point, direction, ResolveImpulse(1.5f));
+            bool applied = ToolHitUtility.ApplyDamage(
+                target,
+                effectiveDamage,
+                point,
+                direction,
+                ResolveImpulse(1.5f),
+                DamageSourceIds.SurvivalBlade,
+                CombatDamageTypes.Impact);
             if (!applied)
                 return false;
 
@@ -480,7 +494,8 @@ namespace Hecton8.Gameplay
             if (candidate.TryGetComponent(out KnifeTool directTool) && ReferenceEquals(directTool, this))
                 return true;
 
-            KnifeTool ownerTool = candidate.GetComponentInParent<KnifeTool>();
+            if (!candidate.TryGetComponent(out KnifeTool ownerTool))
+                ownerTool = candidate.GetComponentInParent<KnifeTool>();
             return ReferenceEquals(ownerTool, this);
         }
 
@@ -843,9 +858,9 @@ namespace Hecton8.Gameplay
 
         private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetOrFallback(key, fallback)
                 : fallback;
         }
 

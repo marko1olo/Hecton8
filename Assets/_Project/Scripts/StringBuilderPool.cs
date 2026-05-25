@@ -48,6 +48,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using UnityEngine;
 
@@ -194,9 +195,9 @@ namespace Hecton8.Core
         /// </summary>
         public static void PrintStats()
         {
-            Debug.Log($"[StringBuilderPool] PoolSize={PoolSize}, " +
-                     $"TotalAllocs={TotalAllocations}, " +
-                     $"Reuse Efficiency={ReuseEfficiency:F1}%");
+            Hecton8.Core.H8Debug.Log("[StringBuilderPool] PoolSize=" + PoolSize + ", " +
+                     "TotalAllocs=" + TotalAllocations + ", " +
+                     "Reuse Efficiency=" + ReuseEfficiency.ToString("F1", CultureInfo.InvariantCulture) + "%");
         }
     }
 

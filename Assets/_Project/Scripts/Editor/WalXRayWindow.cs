@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Persistence.Paging;
 using Hecton8.SaveSystem;
@@ -56,13 +57,13 @@ namespace Hecton8.Editor
                 ? 0f
                 : Mathf.Clamp01((float)_snapshot.FileBytes / H8WalInspector.CommitThresholdBytes);
             Rect commitRect = GUILayoutUtility.GetRect(18f, 18f);
-            EditorGUI.ProgressBar(commitRect, commitRatio, "4 MB commit threshold " + (commitRatio * 100f).ToString("0.0") + "%");
+            EditorGUI.ProgressBar(commitRect, commitRatio, "4 MB commit threshold " + (commitRatio * 100f).ToString("0.0", CultureInfo.InvariantCulture) + "%");
 
             float stallRatio = H8WalInspector.MicroStallThresholdBytes <= 0L
                 ? 0f
                 : Mathf.Clamp01((float)_snapshot.FileBytes / H8WalInspector.MicroStallThresholdBytes);
             Rect stallRect = GUILayoutUtility.GetRect(18f, 18f);
-            EditorGUI.ProgressBar(stallRect, stallRatio, "16 MB micro-stall threshold " + (stallRatio * 100f).ToString("0.0") + "%");
+            EditorGUI.ProgressBar(stallRect, stallRatio, "16 MB micro-stall threshold " + (stallRatio * 100f).ToString("0.0", CultureInfo.InvariantCulture) + "%");
 
             DrawRleEfficiency(_snapshot.RawPayloadBytes, _snapshot.StoredPayloadBytes);
 
@@ -99,16 +100,16 @@ namespace Hecton8.Editor
                 GUI.color = Color.red;
 
             Rect rect = GUILayoutUtility.GetRect(18f, 18f);
-            EditorGUI.ProgressBar(rect, savedRatio, "Compression Ratio " + (savedRatio * 100f).ToString("0.0") + "% saved");
+            EditorGUI.ProgressBar(rect, savedRatio, "Compression Ratio " + (savedRatio * 100f).ToString("0.0", CultureInfo.InvariantCulture) + "% saved");
             GUI.color = previous;
         }
 
         private static string FormatBytes(long bytes)
         {
             if (bytes >= 1024L * 1024L)
-                return (bytes / (1024f * 1024f)).ToString("0.00") + " MB";
+                return (bytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture) + " MB";
             if (bytes >= 1024L)
-                return (bytes / 1024f).ToString("0.0") + " KB";
+                return (bytes / 1024f).ToString("0.0", CultureInfo.InvariantCulture) + " KB";
             return bytes + " B";
         }
     }
@@ -234,9 +235,9 @@ namespace Hecton8.Editor
         private static string FormatBytes(uint bytes)
         {
             if (bytes >= 1024U * 1024U)
-                return (bytes / (1024f * 1024f)).ToString("0.00") + " MB";
+                return (bytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture) + " MB";
             if (bytes >= 1024U)
-                return (bytes / 1024f).ToString("0.0") + " KB";
+                return (bytes / 1024f).ToString("0.0", CultureInfo.InvariantCulture) + " KB";
             return bytes + " B";
         }
     }
@@ -275,9 +276,9 @@ namespace Hecton8.Editor
         private static string WalXRayWindowFormatBytes(long bytes)
         {
             if (bytes >= 1024L * 1024L)
-                return (bytes / (1024f * 1024f)).ToString("0.00") + " MB";
+                return (bytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture) + " MB";
             if (bytes >= 1024L)
-                return (bytes / 1024f).ToString("0.0") + " KB";
+                return (bytes / 1024f).ToString("0.0", CultureInfo.InvariantCulture) + " KB";
             return bytes + " B";
         }
     }

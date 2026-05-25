@@ -279,9 +279,8 @@ public static class HectonBuildPipeline
             return 0L;
 
         long bytes = 0L;
-        string[] files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-        for (int i = 0; i < files.Length; i++)
-            bytes += new FileInfo(files[i]).Length;
+        foreach (string file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+            bytes += new FileInfo(file).Length;
 
         return bytes;
     }

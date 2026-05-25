@@ -1,0 +1,51 @@
+﻿path,estimated_resident_mib,memory_role,width,height
+Art/Models/Rocks/Rock 7/Materials/2.jpg,20.345,BC7_UNKNOWN_8BPP,4000,4000
+Art/TEXTURES/Aegir_storms.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+Art/TEXTURES/clouds.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+Art/TEXTURES/clouds0_diff.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/Aegir_storms.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/clouds.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/clouds0_diff.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png,10.667,BC5_NORMAL_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png,10.667,BC5_NORMAL_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
+Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_AO.jpg,5.333,BC7_ORM_LINEAR_8BPP,2048,2048
+Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_BaseColor.jpg,5.333,BC7_ALBEDO_8BPP,2048,2048
+Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_Normal.jpg,5.333,BC5_NORMAL_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock012_2K-JPG_AmbientOcclusion.jpg,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock012_2K-JPG_Color.jpg,5.333,BC7_ALBEDO_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock012_2K-JPG_NormalGL.jpg,5.333,BC5_NORMAL_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock037_2K-JPG_AmbientOcclusion.jpg,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock037_2K-JPG_Color.jpg,5.333,BC7_ALBEDO_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock037_2K-JPG_NormalGL.jpg,5.333,BC5_NORMAL_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_AmbientOcclusion.jpg,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg,5.333,BC7_ALBEDO_8BPP,2048,2048
+Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg,5.333,BC5_NORMAL_8BPP,2048,2048
+Art/Models/Sandbox/Coral_Albedo.png,5.333,BC7_ALBEDO_8BPP,2048,2048
+Art/Models/Sandbox/Coral_Normal.png,5.333,BC5_NORMAL_8BPP,2048,2048
+Art/TEXTURES/foam.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/Sky/bo2.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/Sky/bo3.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/Sky/clod1.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/Sky/clod2.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/Sky/eb2.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/Sky/oblaka!.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/Sky/oblakajip.png,5.333,BC7_UNKNOWN_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/albedo___family.coral.branching.png,5.333,BC7_ALBEDO_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/detail___family.coral.branching.png,5.333,BC4_BC5_DETAIL_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/mask___family.coral.branching.png,5.333,BC7_ORM_LINEAR_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/normal___family.coral.branching.png,5.333,BC5_NORMAL_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/albedo___family.coral.low.png,5.333,BC7_ALBEDO_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/detail___family.coral.low.png,5.333,BC4_BC5_DETAIL_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/mask___family.coral.low.png,5.333,BC7_ORM_LINEAR_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/normal___family.coral.low.png,5.333,BC5_NORMAL_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/detail___family.coral.plate.png,5.333,BC4_BC5_DETAIL_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/mask___family.coral.plate.png,5.333,BC7_ORM_LINEAR_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/albedo___family.kelp.abyssal.png,5.333,BC7_ALBEDO_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/detail___family.kelp.abyssal.png,5.333,BC4_BC5_DETAIL_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/mask___family.kelp.abyssal.png,5.333,BC7_ORM_LINEAR_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/normal___family.kelp.abyssal.png,5.333,BC5_NORMAL_8BPP,2048,2048
+Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/albedo___family.kelp.canopy.png,5.333,BC7_ALBEDO_8BPP,2048,2048

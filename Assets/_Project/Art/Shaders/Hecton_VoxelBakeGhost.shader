@@ -57,6 +57,12 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
                 half _FresnelPower;
             CBUFFER_END
 
+            TEXTURE3D(_HectonDamageVolumeTex);
+            SAMPLER(sampler_HectonDamageVolumeTex);
+            float4 _HectonDamageVolumeWorldMin;
+            float4 _HectonDamageVolumeInvSize;
+            float _HectonDamageVolumeActive;
+
             struct Attributes
             {
                 UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -97,6 +103,26 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
                 return lerp(lerp(v2, v8, highPowerBlend), v, lowPowerBlend);
             }
 
+            half EvaluateDearLieDamageVolume(float3 positionWS)
+            {
+                if (_HectonDamageVolumeActive < 0.5)
+                    return 0.0h;
+
+                float3 uvw = (positionWS - _HectonDamageVolumeWorldMin.xyz) * _HectonDamageVolumeInvSize.xyz;
+                if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0)
+                    return 0.0h;
+
+                return SAMPLE_TEXTURE3D_LOD(_HectonDamageVolumeTex, sampler_HectonDamageVolumeTex, uvw, 0).r;
+            }
+
+            void ApplyDearLieGhostClip(float3 positionWS, float2 positionCS)
+            {
+                half carveMask = saturate(EvaluateDearLieDamageVolume(positionWS));
+                half clipStrength = saturate((carveMask - 0.45h) * 1.8181818h);
+                half coverage = saturate(1.0h - clipStrength);
+                clip(coverage - ResolveInterleavedGradientNoise(positionCS) * 0.125h);
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -114,6 +140,7 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                ApplyDearLieGhostClip(input.positionWS, input.positionCS.xy);
                 half3 normalWS = SafeNormalize(input.normalWS);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
                 half fresnel = FastGhostFresnel(1.0h - dot(normalWS, viewDirWS), _FresnelPower);

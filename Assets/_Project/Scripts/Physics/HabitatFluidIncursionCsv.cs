@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
+#if UNITY_EDITOR
 namespace Hecton8.Physics
 {
     public static unsafe class HabitatFluidIncursionCsv
@@ -44,11 +45,14 @@ namespace Hecton8.Physics
                     for (int i = 0; i < safeCount; i++)
                     {
                         FluidCompartmentDTO dto = compartments[i];
-                        if (dto.NodeHash != nodeHash)
+                        if (dto.NodeHashID != nodeHash)
                             continue;
 
-                        dto.MaxVolume = maxVolume;
+                        dto.MaxWaterVolume = maxVolume;
                         dto.CurrentWaterVolume = math.min(dto.CurrentWaterVolume, maxVolume);
+                        dto.WaterLevelHeight01 = dto.MaxWaterVolume > HabitatFluidIncursionConstants.WaterEpsilonM3
+                            ? math.saturate(dto.CurrentWaterVolume * math.rcp(dto.MaxWaterVolume))
+                            : 0f;
                         compartments[i] = dto;
                         applied++;
                         break;
@@ -353,3 +357,4 @@ namespace Hecton8.Physics
         }
     }
 }
+#endif

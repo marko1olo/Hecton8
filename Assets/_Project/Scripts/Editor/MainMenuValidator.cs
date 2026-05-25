@@ -105,8 +105,7 @@ namespace Hecton8.Editor
         {
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                MainMenuController controller = root.GetComponent<MainMenuController>();
-                if (controller != null)
+                if (root.TryGetComponent(out MainMenuController controller))
                     return controller;
 
                 controller = root.GetComponentInChildren<MainMenuController>();

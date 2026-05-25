@@ -1,4 +1,4 @@
-name,r,g,b,directional,l2,tint_r,tint_g,tint_b,water_absorption
+﻿name,r,g,b,directional,l2,tint_r,tint_g,tint_b,water_absorption
 abyssal_default,0.020,0.048,0.080,0.28,0.10,0.55,0.92,1.00,0.82
 thermal_vent,0.180,0.090,0.035,0.42,0.24,1.20,0.52,0.24,0.58
 safe_habitat,0.260,0.210,0.150,0.36,0.16,1.00,0.88,0.72,0.32

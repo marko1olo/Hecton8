@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_057
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_057_Rock_4_t_rock_4_basecolor_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\Rock_4_t_rock_4_basecolor_Albedo.png
+FINAL_FILENAME: Rock_4_t_rock_4_basecolor_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Rock 4 base color replacement for a strong modular Hecton stone set. Use angular but elegant basalt plates, cool slate-blue planes, pale cream fractured mineral edges, opal teal seams, and restrained amber crystalline dust. The material should look robust and high fidelity on cliffs, scattered rocks, and cave props, with clear medium-scale forms and refined close-up detail. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

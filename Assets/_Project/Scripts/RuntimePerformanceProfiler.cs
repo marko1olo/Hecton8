@@ -200,7 +200,7 @@ namespace Hecton8.Dev
         private ProfilerRecorder _scatterBackendShadowScheduleRecorder;
         private ProfilerRecorder _scatterBackendShadowPumpRecorder;
 
-        private VRAMMonitor _cachedVramMonitor;
+        private IVramBudgetReadModel _cachedVramMonitor;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredHotSwapListener;
@@ -698,7 +698,7 @@ namespace Hecton8.Dev
                 appended++;
             }
 
-            Debug.Log(_reportBuilder.ToString(), this);
+            Hecton8.Core.H8Debug.Log(_reportBuilder.ToString(), this);
         }
 
         public void Tick(float deltaTime)
@@ -744,7 +744,7 @@ namespace Hecton8.Dev
         [ContextMenu("Log Runtime Performance Profiling Status")]
         public void LogStatusToConsole()
         {
-            Debug.Log("[RuntimeProfiler] " + DescribeStatus(), this);
+            Hecton8.Core.H8Debug.Log("[RuntimeProfiler] " + DescribeStatus(), this);
         }
 
         private void PumpPendingRuntimeRoutes(float deltaTime)
@@ -760,14 +760,12 @@ namespace Hecton8.Dev
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
             }
 
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
             }
         }
 
@@ -779,12 +777,12 @@ namespace Hecton8.Dev
             if (serviceSlot != GlobalRegistryServiceSlot.VRAMMonitorRuntime)
                 return;
 
-            _cachedVramMonitor = currentService as VRAMMonitor;
+            _cachedVramMonitor = currentService as IVramBudgetReadModel;
         }
 
         private void CacheRegistryServicesCold()
         {
-            _cachedVramMonitor = GlobalRegistry.VRAMMonitor;
+            _cachedVramMonitor = GlobalRegistry.VRAMBudgetReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1128,7 +1126,7 @@ namespace Hecton8.Dev
                 if (_debugLastWindowExceededBudget)
                     Debug.LogWarning(_debugLastReport, this);
                 else
-                    Debug.Log(_debugLastReport, this);
+                    Hecton8.Core.H8Debug.Log(_debugLastReport, this);
             }
             else if (!_debugLastWindowExceededBudget)
             {
@@ -1314,7 +1312,7 @@ namespace Hecton8.Dev
         /// </summary>
         private void UpdateVRAMDiagnostics()
         {
-            VRAMMonitor monitor = _cachedVramMonitor;
+            IVramBudgetReadModel monitor = _cachedVramMonitor;
             if (monitor == null)
             {
                 _debugLastTextureMB = 0f;
@@ -2409,9 +2407,9 @@ namespace Hecton8.Dev
                 $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} paused={EditorApplication.isPaused}");
 
             if (context != null)
-                Debug.Log($"[PlayModeExit] owner={safeOwner} reason={safeReason}", context);
+                Hecton8.Core.H8Debug.Log($"[PlayModeExit] owner={safeOwner} reason={safeReason}", context);
             else
-                Debug.Log($"[PlayModeExit] owner={safeOwner} reason={safeReason}");
+                Hecton8.Core.H8Debug.Log($"[PlayModeExit] owner={safeOwner} reason={safeReason}");
 
             EditorApplication.isPlaying = false;
         }

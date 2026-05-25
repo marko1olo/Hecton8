@@ -1,0 +1,66 @@
+﻿# SHINOBU_332 Submarine Gyro Route Card
+
+Date: 2026-05-22
+Owner: `SHINOBU_332 / SUBMARINE_PITCH_ROLL_AUTO_LEVEL`
+Domain: Echelon 6 Vehicles & Kinematics / submarine pitch-roll auto-level
+Status: YELLOW_STATIC_SOURCE_REPAIRED, BUILD/RUNTIME PROOF DEFERRED BY CPU GATE
+Disposition: `YELLOW` until Unity compile and runtime profiler verification run under the project CPU gate.
+
+## Authority
+
+One fact: submarine pitch/roll correction torque.
+One owner: `SubmarineDynamicsRuntime`, the existing kinematic submarine dynamics owner.
+One route: Vault-backed gyro packet lane feeds the existing `SubmarineForceAccumulator` before `Submarine6DIntegratorJob`.
+One proof artifact: `GyroTelemetryEntry[300]` and `Docs/AgentLogs/Dump_SHINOBU_332.bin` on non-finite or over-budget state.
+
+No runtime route uses `ConfigurableJoint`, `Rigidbody.AddTorque`, `Transform.rotation`, `.eulerAngles`, Unity object lookup, or hot `GlobalRegistry` polling.
+
+Legacy compatibility: `SubmarineAutoLevelBallastController` remains a Gameplay ballast/flood/combat bridge. It refreshes a cached SHINOBU_332 active flag from register/slow lifecycle and again before legacy PID schedule/apply, but the lookup is entity-validated through `SubmarineDynamicsRuntime.TryGetActiveGyroRouteForEntity`. One active runtime can no longer suppress unrelated ballast controllers. When the target entity matches the gyro route, the legacy controller resets local PID state, refuses to enqueue `PhysicsForceRouter.QueueTorque`, and stops reporting `SuppressesKinematicPitch`.
+
+## Force Dispatch Decision
+
+The original prompt names a `NativeQueue<ForcePacketDTO>.ParallelWriter` for `PhysicsApplySystem`. The current submarine implementation already owns a deterministic per-vehicle force accumulator inside `SubmarineDynamicsRuntime` and consumes it in `Submarine6DIntegratorJob`. Adding a second queue would create two owners for the same torque fact and would require a second apply phase for the same vehicle body.
+
+Chosen route:
+
+- `CalculateGyroscopicErrorJob` writes quaternion-derived error rows.
+- `EvaluatePdControllerJob` writes one `SubmarineGyroForcePacketDTO` per active vehicle into `BufferID.Shinobu332GyroForcePackets`.
+- The same job writes `SubmarineForceAccumulator.TorqueWorld` and sets `ForceFlagGyroCorrection`.
+- `Submarine6DIntegratorJob` consumes the packet only when `force.Frame == Frame`.
+
+This preserves asynchronous handoff without direct physics mutation. The packet lane remains inspectable for tooling and rollback; the accumulator remains the single apply route for the vehicle owner.
+
+## Buffer IDs
+
+- `71780 Shinobu332SubmarineGyros` - `SubmarineGyroDTO[capacity]`, 32-byte tuning rows.
+- `71781 Shinobu332GyroErrors` - `SubmarineGyroErrorDTO[capacity]`, 64-byte quaternion error rows.
+- `71782 Shinobu332GyroForcePackets` - `SubmarineGyroForcePacketDTO[capacity]`, 128-byte torque packets.
+- `71783 Shinobu332GyroTelemetry` - `GyroTelemetryEntry[300]`, 64-byte blackbox ring, cold-cleared to prevent frame-zero false dumps.
+- `71784 Shinobu332GyroVisualStates` - `SubmarineGyroVisualStateDTO[capacity]`, 64-byte GPU-facing artificial horizon rows.
+- `71785 Shinobu332GyroProfiles` - `SubmarineGyroProfileDTO[16]`, 64-byte cold CSV profile rows.
+- `71786 Shinobu332GyroCounters` - `SubmarineGyroCounterDTO[1]`, 64-byte reduction row.
+- `71787 Shinobu332GyroCsvScratch` - cold CSV scratch bytes.
+
+Rejected draft: `71735..71742` was invalid because terrain pager already owns `71740..71758`. The repaired range `71780..71787` is outside terrain `71740..71758`, KCC environment `71760..71770`, ballast `71771..71778`, and wave `71800..71809` lanes.
+
+All persistent native lanes are requested from `GlobalDataVault`. The runtime does not own private persistent `NativeArray`, `NativeList`, or `NativeHashMap` fields.
+
+## Scalability
+
+`GlobalQualityWeight` enters the PD evaluation through `SubmarineAddedMassMath.ResolveTensorBlend`. Low quality collapses toward diagonal angular inertia; middle quality blends diagonal and full tensor; high/ultra quality admits the full inverse added-mass matrix. Quality changes ALU cost and presentation richness only. It does not change DTO layout, BufferID identity, save identity, frame authority, or the torque apply route.
+
+## Dear Lie
+
+The cockpit horizon is not a GameObject, transform hierarchy, or CPU mesh. `SubmarineGyroVisualStateDTO` carries only shader-safe floats: error vector, corrective torque, effort, pitch, and roll. Two `GraphicsBuffer` instances are created or resized only from the Vault/capacity setup path; `SyncGyroVisualBuffer()` alternates A/B buffers, performs no resource allocation, and uploads through `GraphicsBuffer.LockBufferForWrite`. The dashboard shader owns pixel rotation. CPU upload cost is bounded to `16 vehicles * 64 bytes = 1024 bytes` per new simulation frame; duplicate visual-sync calls are skipped by telemetry frame.
+
+## CSV Scratch
+
+`vehicle_gyro_profiles.csv` is a cold tuning bridge. File bytes are staged through `BufferID.Shinobu332GyroCsvScratch`; the simulation lock path does not lock this scratch lane. No `stackalloc byte[length]`, `float.Parse`, or LINQ route is used for profile hydration.
+
+## Compile Guard
+
+No runtime asmdef exists under `Assets/_Project/Scripts/Physics/Vehicles` or `Assets/_Project/Scripts/Gameplay`; these files compile under the existing root `Assets/_Project/Scripts/Hecton8.Core.asmdef`. SHINOBU_332 did not add or mutate an asmdef reference. The editor scanner stays in `Hecton8.Physics.Vehicles.Editor.asmdef`, which already references `Hecton8.Core` plus Roslyn precompiled references.
+
+## Fault And Blackbox
+
+`RecordGyroTelemetryJob` reduces active controller count, average pitch/roll error, max torque, max error, non-finite count, state hash, quality, and elapsed microseconds. `DumpGyroBlackBoxIfFaulted()` writes a fixed header plus raw telemetry rows to `Docs/AgentLogs/Dump_SHINOBU_332.bin` when non-finite state or >200 us is observed, then publishes existing `SystemGlitchSignal`. The fault signal is cold and diagnostic; it is not a hot gameplay authority route.

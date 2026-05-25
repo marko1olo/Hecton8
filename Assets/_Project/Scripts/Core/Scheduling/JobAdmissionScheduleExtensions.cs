@@ -1,5 +1,6 @@
 using Hecton8.Core.Contracts;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace Hecton8.Core.Scheduling
 {
@@ -85,7 +86,7 @@ namespace Hecton8.Core.Scheduling
                 maxBatch = profileMaxBatch;
             }
 
-            int safeBatchCount = Hecton8.Core.SystemDispatcher.ResolveInnerloopBatchCount(
+            int safeBatchCount = ResolveInnerloopBatchCount(
                 arrayLength,
                 minBatch,
                 maxBatch);
@@ -98,6 +99,16 @@ namespace Hecton8.Core.Scheduling
 
             handle = jobData.Schedule(arrayLength, safeBatchCount, dependsOn);
             return true;
+        }
+
+        private static int ResolveInnerloopBatchCount(int elementCount, int minBatch, int maxBatch)
+        {
+            int safeMin = math.max(1, minBatch);
+            int safeMax = math.max(safeMin, maxBatch);
+            if (elementCount <= safeMin)
+                return safeMin;
+
+            return math.min(safeMax, math.max(safeMin, elementCount));
         }
 
         /// <summary>

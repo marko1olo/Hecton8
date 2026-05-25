@@ -10,6 +10,7 @@ using UnityEngine;
 namespace Hecton8.Atmosphere
 {
     [ExecuteAlways]
+    [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Base Atmosphere Logistics Gizmo")]
     public sealed class BaseAtmosphereLogisticsGizmo : MonoBehaviour
     {

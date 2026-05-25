@@ -25,13 +25,13 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
             PullFromVault();
         }
 
         private void OnDisable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         private void OnGUI()
@@ -87,7 +87,7 @@ namespace Hecton8.Editor
             Repaint();
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             TradeMarauderDirector director = TradeMarauderDirector.ActiveForEditor;
             if (director == null ||

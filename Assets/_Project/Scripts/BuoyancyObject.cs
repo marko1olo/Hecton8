@@ -2,11 +2,11 @@
 // HECTON-8 - BuoyancyObject.cs
 // Buoyancy marker. Attach to any GameObject with a Rigidbody.
 //
-// OnEnable registers with HectonFluidEngine.
-// OnDisable unregisters from HectonFluidEngine.
+// OnEnable registers with the fluid runtime.
+// OnDisable unregisters from the fluid runtime.
 //
 // Rigidbody is cached in Awake: zero GetComponent in runtime flow.
-// No Update: HectonFluidEngine applies forces through the job path.
+// No Update: the fluid runtime applies forces through the job path.
 //
 // PHYSICAL PARAMETERS:
 //   density - object density (kg/m3).
@@ -14,23 +14,23 @@
 //   volume  - object volume (m3). Controls buoyant force.
 //   height  - object height (m). Used for partial-submersion estimates.
 //
-// DRY ZONES + GROUND CHECK:
-//   IsInAir returns true when EITHER:
-//     1. _dryZoneRefCount > 0 (inside unflooded base module), OR
-//     2. _isGrounded == true (standing on terrain/island)
-//
-//   When IsInAir == true, HectonFluidEngine zeroes all buoyancy/drag forces.
-//   This prevents objects from being "pushed out of water" when standing
-//   on an island that sits below the water surface level.
+// GROUND CHECK + EXTERNAL SUPPRESSION:
+//   Interior dry-zone suppression was removed from this component.
+//   Base/player interior state travels through PlayerBaseEnter/Exit signals.
+//   Ground contact still suppresses fluid when the object is effectively above
+//   the waterline, preventing island contact from fighting buoyancy.
 //
 // GROUND CHECK IMPLEMENTATION:
-//   Performs Physics.Raycast downward every N fixed frames (configurable).
-//   Uses a non-water LayerMask to detect terrain, island colliders, etc.
+//   Samples cached terrain/SDF authority every N fixed frames (configurable).
+//   Unsupported collider-only layers intentionally resolve as no-ground instead
+//   of pulling PhysX back into player-adjacent water state.
 //   Staggered execution: not every frame, for O(n) performance with many objects.
 //   Frame offset based on instance ID prevents all objects checking same frame.
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -39,10 +39,22 @@ using Sirenix.OdinInspector;
 
 namespace Hecton8.Physics
 {
+    /// <summary>
+    /// Narrow buoyancy registration route consumed by buoyancy bodies without binding them to the fluid runtime owner.
+    /// </summary>
+    public interface IBuoyancyObjectRegistry : ISystem
+    {
+        /// <summary>Registers one buoyancy body with the active fluid solve.</summary>
+        void Register(BuoyancyObject obj);
+
+        /// <summary>Unregisters one buoyancy body from the active fluid solve.</summary>
+        void Unregister(BuoyancyObject obj);
+    }
+
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Buoyancy Object")]
-    public sealed class BuoyancyObject : MonoBehaviour, IFixedTickable
+    public sealed class BuoyancyObject : MonoBehaviour, IFixedTickable, IGlobalRegistryHotSwapListener
     {
         private static int _WaterLayer = -1;
         private static bool _layerCacheInitialized;
@@ -124,7 +136,7 @@ namespace Hecton8.Physics
         [SerializeField, Range(1, 10)]
         private int groundCheckInterval = 3;
 
-        [Tooltip("Distance to raycast downward for ground detection (meters). " +
+        [Tooltip("Distance to probe downward for ground detection (meters). " +
                  "Should be slightly more than half the object height.")]
 #if UNITY_EDITOR
         [MinValue(0.01d)]
@@ -143,29 +155,21 @@ namespace Hecton8.Physics
         private Rigidbody _rb;
         private Collider _collider;
         private Transform _cachedTransform;
+        private IBuoyancyObjectRegistry _cachedFluidRuntime;
+        private IBuoyancyObjectRegistry _registeredFluidRuntime;
         private float _runtimeLocalFluidDensity = 0f;
         private float _runtimeAngularDragMultiplier = 1f;
         private bool _runtimeLocalFluidDensityOverrideActive;
-
-        // ------------------------------------------------------------
-        //  DRY ZONE STATE
-        // ------------------------------------------------------------
-
-        /// <summary>
-        /// Nested dry-zone reference count.
-        /// The object can be inside overlapping modules at the same time.
-        ///
-        /// Increment: BaseModule entry into an unflooded trigger.
-        /// Decrement: BaseModule exit or flooding.
-        /// </summary>
-        private int _dryZoneRefCount;
+        private bool _registeredHotSwapListener;
+        private ITerrainProvider _terrainProvider;
+        private IVoxelSonarSdfReadModel _voxelSdfReadModel;
 
         // ------------------------------------------------------------
         //  GROUND STATE
         // ------------------------------------------------------------
 
         /// <summary>
-        /// True when raycast detects solid ground below the object.
+        /// True when cached terrain/SDF detects solid ground below the object.
         /// Updated every groundCheckInterval fixed frames.
         /// Causes IsInAir to return true, disabling buoyancy on islands.
         /// </summary>
@@ -186,11 +190,10 @@ namespace Hecton8.Physics
         private int _frameOffset;
 
         /// <summary>
-        /// Cached raycast hit. Avoids stack allocation in hot path.
+        /// Cached ground hit for editor gizmos. Written from terrain/SDF providers, not PhysX.
         /// </summary>
         private RaycastHit _groundHit;
         private bool _registeredToFixedTick;
-        private readonly RaycastHit[] _groundHitBuffer = new RaycastHit[1]; // COLD ALLOC: single-hit ground probe buffer.
 
         // ------------------------------------------------------------
         //  PUBLIC API
@@ -227,21 +230,16 @@ namespace Hecton8.Physics
         public bool IsGrounded => _isGrounded;
 
         /// <summary>
-        /// True only when this object is inside one or more unflooded dry zones.
-        /// Does not include terrain grounding.
+        /// Legacy compatibility bridge. Interior state is no longer owned by buoyancy.
         /// </summary>
-        public bool IsInDryZone => _dryZoneRefCount > 0;
+        public bool IsInDryZone => false;
 
         /// <summary>
-        /// Object is out of water: either inside an unflooded base module
-        /// OR standing on solid ground (island/terrain).
+        /// Object is out of water by solid ground contact.
         ///
-        /// When true, HectonFluidEngine zeros all water forces.
-        ///
-        /// Priority: dryZone OR grounded -> IsInAir = true.
-        /// This prevents buoyancy from pushing objects up through islands.
+        /// When true, the fluid runtime zeros all water forces.
         /// </summary>
-        public bool IsInAir => _dryZoneRefCount > 0 || _isGrounded;
+        public bool IsInAir => _isGrounded;
         public BuoyancyProfile Profile => profile;
         public bool UseLocalFluidDensityOverride => _runtimeLocalFluidDensityOverrideActive;
         public float LocalFluidDensityOverride => _runtimeLocalFluidDensity;
@@ -307,9 +305,6 @@ namespace Hecton8.Physics
             if (_externallySuppressed)
                 return true;
 
-            if (_dryZoneRefCount > 0)
-                return true;
-
             if (!_isGrounded)
                 return false;
 
@@ -329,27 +324,6 @@ namespace Hecton8.Physics
         public void SetExternalSuppression(bool suppressed)
         {
             _externallySuppressed = suppressed;
-        }
-
-        /// <summary>
-        /// Called by BaseModule when the object enters a dry zone.
-        /// Increments the ref-count. Thread safety is not required: main thread only.
-        /// </summary>
-        public void EnterDryZone()
-        {
-            _dryZoneRefCount++;
-        }
-
-        /// <summary>
-        /// Called by BaseModule when the object exits a dry zone
-        /// or when the module floods.
-        /// Decrements the ref-count and clamps to 0 against bad calls.
-        /// </summary>
-        public void ExitDryZone()
-        {
-            _dryZoneRefCount--;
-            if (_dryZoneRefCount < 0)
-                _dryZoneRefCount = 0;
         }
 
         public void ApplyProfile()
@@ -422,14 +396,14 @@ namespace Hecton8.Physics
             int safeGroundCheckInterval = math.max(1, groundCheckInterval);
             _frameOffset = (id < 0 ? -id : id) % safeGroundCheckInterval;
             _groundCheckCountdown = ResolveInitialGroundCheckCountdown(_frameOffset, safeGroundCheckInterval);
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
-            HectonFluidEngine engine = GlobalRegistry.Fluid;
-            if (engine != null)
-                engine.Register(this);
-
+            TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
+            RebindFluidRuntime(_cachedFluidRuntime);
             TryRegisterToFixedTick();
         }
 
@@ -440,19 +414,17 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            // Reset dry-zone state when the object leaves runtime tracking.
-            _dryZoneRefCount = 0;
             _isGrounded = false;
 
-            HectonFluidEngine engine = GlobalRegistry.Fluid;
-            if (engine != null)
-                engine.Unregister(this);
-
+            UnregisterFromFluidRuntime();
+            TryUnregisterHotSwapListener();
             TryUnregisterFromFixedTick();
         }
 
         private void OnDestroy()
         {
+            UnregisterFromFluidRuntime();
+            TryUnregisterHotSwapListener();
             TryUnregisterFromFixedTick();
         }
 
@@ -462,15 +434,14 @@ namespace Hecton8.Physics
 
         /// <summary>
         /// Lightweight fixed tick: only increments a counter and performs
-        /// a raycast every N frames. No other logic.
+        /// a cached terrain/SDF ground probe every N frames. No other logic.
         ///
         /// Driven by GameTickManager via IFixedTickable so the component
         /// stays inside the centralized physics cadence contract.
-        /// Cost: one countdown branch per fixed step plus one raycast
+        /// Cost: one countdown branch per fixed step plus one provider probe
         /// every groundCheckInterval frames (amortized).
         ///
-        /// Zero-GC: no allocations. Uses cached hit state and a preallocated
-        /// RaycastNonAlloc buffer on the instance.
+        /// Zero-GC: no allocations. Uses cached hit state and owner read models.
         /// </summary>
         public void FixedTick(float fixedDeltaTime)
         {
@@ -498,8 +469,7 @@ namespace Hecton8.Physics
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredToFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFromFixedTick()
@@ -511,18 +481,96 @@ namespace Hecton8.Physics
             _registeredToFixedTick = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    if (ReferenceEquals(_registeredFluidRuntime, previousService))
+                        UnregisterFromFluidRuntime();
+
+                    _cachedFluidRuntime = currentService as IBuoyancyObjectRegistry;
+                    RebindFluidRuntime(_cachedFluidRuntime);
+                    break;
+
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _terrainProvider = currentService as ITerrainProvider;
+                    break;
+
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _voxelSdfReadModel = currentService as IVoxelSonarSdfReadModel;
+                    break;
+
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredToFixedTick = false;
+                        break;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregisterFromFixedTick();
+                        TryRegisterToFixedTick();
+                    }
+                    break;
+            }
+        }
+
+        private void RebindFluidRuntime(IBuoyancyObjectRegistry engine)
+        {
+            if (ReferenceEquals(_registeredFluidRuntime, engine))
+                return;
+
+            UnregisterFromFluidRuntime();
+            if (!isActiveAndEnabled || engine == null)
+                return;
+
+            engine.Register(this);
+            _registeredFluidRuntime = engine;
+        }
+
+        private void UnregisterFromFluidRuntime()
+        {
+            IBuoyancyObjectRegistry engine = _registeredFluidRuntime;
+            if (engine != null)
+                engine.Unregister(this);
+
+            _registeredFluidRuntime = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
         /// <summary>
-        /// Raycasts downward from the object's position to detect solid ground.
+        /// Probes downward from the object's position to detect terrain/SDF ground.
         ///
         /// Uses the bottom of the collider bounds if available, otherwise
         /// uses transform.position as the origin.
         ///
         /// Result stored in _isGrounded. When true, IsInAir returns true,
-        /// which causes HectonFluidEngine to zero buoyancy forces.
+        /// which causes the fluid runtime to zero buoyancy forces.
         /// </summary>
         private void PerformGroundCheck()
         {
-            // Determine raycast origin: bottom of collider bounds, or transform position
+            // Determine probe origin: bottom of collider bounds, or transform position.
             Vector3 origin;
 
             if (_collider != null)
@@ -537,17 +585,123 @@ namespace Hecton8.Physics
                 origin = _cachedTransform.position;
             }
 
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                Vector3.down,
-                _groundHitBuffer,
-                groundCheckDistance,
-                groundLayers,
-                QueryTriggerInteraction.Ignore
-            );
+            int layerMask = ResolveGroundProbeMask();
+            _isGrounded = TryResolveCachedGroundHit(origin, groundCheckDistance, layerMask, out _groundHit);
+        }
 
-            _isGrounded = hitCount > 0;
-            _groundHit = _isGrounded ? _groundHitBuffer[0] : default;
+        private void CacheRegistryServicesCold()
+        {
+            _cachedFluidRuntime = GlobalRegistry.BuoyancyObjectRegistry;
+            _terrainProvider = GlobalRegistry.Terrain;
+            _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
+        }
+
+        private int ResolveGroundProbeMask()
+        {
+            int mask = groundLayers.value;
+            if (mask == 0)
+                return HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask;
+
+            if (mask == HectonLayerMasks.StrictInteractionLayerMask)
+                return mask | HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask;
+
+            return mask;
+        }
+
+        private bool TryResolveCachedGroundHit(Vector3 origin, float range, int layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            if (!IsFinite(origin) || !math.isfinite(range) || range <= 0f)
+                return false;
+
+            return TryResolveTerrainGroundHit(origin, range, layerMask, out hit) ||
+                   TryResolveVoxelGroundHit(origin, range, layerMask, out hit);
+        }
+
+        private bool TryResolveTerrainGroundHit(Vector3 origin, float range, int layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            if (!IncludesAnyLayer(layerMask, HectonLayerMasks.TerrainLayerMask))
+                return false;
+
+            ITerrainProvider terrainProvider = _terrainProvider;
+            if (terrainProvider == null ||
+                !terrainProvider.IsAvailable ||
+                !terrainProvider.TryGetHeight(origin.x, origin.z, out float terrainHeight) ||
+                !math.isfinite(terrainHeight))
+            {
+                return false;
+            }
+
+            float distance = origin.y - terrainHeight;
+            if (!math.isfinite(distance) || distance < 0f || distance > range)
+                return false;
+
+            Vector3 point = new Vector3(origin.x, terrainHeight, origin.z);
+            Vector3 normal = Vector3.up;
+            if (terrainProvider.TryGetNormal(point.x, point.z, 1f, out Vector3 sampledNormal) && IsFinite(sampledNormal))
+                normal = sampledNormal.normalized;
+
+            hit.point = point;
+            hit.normal = normal;
+            hit.distance = distance;
+            return true;
+        }
+
+        private bool TryResolveVoxelGroundHit(Vector3 origin, float range, int layerMask, out RaycastHit hit)
+        {
+            hit = default;
+            if (!IncludesAnyLayer(layerMask, HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask))
+                return false;
+
+            IVoxelSonarSdfReadModel readModel = _voxelSdfReadModel;
+            if (readModel == null)
+                return false;
+
+            if (!readModel.TryRaymarchNearestSonarSdf(
+                    new float3(origin.x, origin.y, origin.z),
+                    new float3(0f, -1f, 0f),
+                    range,
+                    ResolveGroundSdfStepMeters(range),
+                    out VoxelSonarSdfRaycastHit sdfHit,
+                    out NativeArray<byte>.ReadOnly _,
+                    out int3 _,
+                    out float3 _,
+                    out float3 _,
+                    out float _) ||
+                (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
+                !math.all(math.isfinite(sdfHit.Point)) ||
+                !math.all(math.isfinite(sdfHit.Normal)) ||
+                !math.isfinite(sdfHit.Distance) ||
+                sdfHit.Distance < 0f ||
+                sdfHit.Distance > range)
+            {
+                return false;
+            }
+
+            float3 normal = math.normalizesafe(sdfHit.Normal, new float3(0f, 1f, 0f));
+            hit.point = new Vector3(sdfHit.Point.x, sdfHit.Point.y, sdfHit.Point.z);
+            hit.normal = new Vector3(normal.x, normal.y, normal.z);
+            hit.distance = sdfHit.Distance;
+            return true;
+        }
+
+        private static float ResolveGroundSdfStepMeters(float range)
+        {
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float coarse = math.max(0.12f, range * 0.35f);
+            float fine = math.max(0.04f, range * 0.1f);
+            return math.lerp(coarse, fine, quality);
+        }
+
+        private static bool IncludesAnyLayer(int queryMask, int requiredMask)
+        {
+            return queryMask == -1 || (queryMask & requiredMask) != 0;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
         // ------------------------------------------------------------
@@ -601,12 +755,12 @@ namespace Hecton8.Physics
                 return;
             }
 
-            HectonFluidEngine engine = GlobalRegistry.Fluid;
-            float waterY = engine != null ? engine.WaterLevel : 5000f;
+            IFluidSurfaceCurrentReadModel fluidSurface = GlobalRegistry.FluidSurfaceCurrent;
+            float waterY = fluidSurface != null ? fluidSurface.WaterLevel : 5000f;
 
             bool submerged = transform.position.y < waterY;
 
-            // Green = dry zone/grounded, blue = underwater, yellow = above water.
+            // Green = grounded/suppressed, blue = underwater, yellow = above water.
             if (IsInAir)
                 Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
             else if (submerged)

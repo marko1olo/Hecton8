@@ -199,7 +199,7 @@ namespace Hecton8.SaveSystem.Editor
             if (_summary == null)
                 return;
 
-            if (!TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryRing, out NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetry) ||
+            if (!TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryRing, out NativeArray<VoxelDeltaCompressionTelemetryEntry>.ReadOnly telemetry) ||
                 telemetry.Length == 0)
             {
                 _summary.text = "Voxel delta WAL telemetry ring is empty.";
@@ -207,7 +207,7 @@ namespace Hecton8.SaveSystem.Editor
             }
 
             int last = 0;
-            if (TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryCursor, out NativeArray<int> cursor) && cursor.Length > 0)
+            if (TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryCursor, out NativeArray<int>.ReadOnly cursor) && cursor.Length > 0)
                 last = math.max(0, cursor[0] - 1);
 
             VoxelDeltaCompressionTelemetryEntry entry = telemetry[last % telemetry.Length];
@@ -229,7 +229,7 @@ namespace Hecton8.SaveSystem.Editor
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaSectorStats, out NativeArray<VoxelDeltaSectorStatsDTO> stats))
+                !TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaSectorStats, out NativeArray<VoxelDeltaSectorStatsDTO>.ReadOnly stats))
             {
                 return;
             }
@@ -268,7 +268,7 @@ namespace Hecton8.SaveSystem.Editor
 
                 IDataVault vault = GlobalRegistry.DataVault;
                 if (vault == null ||
-                    !TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryRing, out NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetry) ||
+                    !TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryRing, out NativeArray<VoxelDeltaCompressionTelemetryEntry>.ReadOnly telemetry) ||
                     telemetry.Length == 0)
                 {
                     painter.strokeColor = new Color(0.35f, 0.35f, 0.35f, 1f);
@@ -339,7 +339,7 @@ namespace Hecton8.SaveSystem.Editor
                 return false;
             }
 
-            VaultGenerationHandle<VoxelDeltaCompressionTuningDTO> handle = vault.GetGenerationHandle<VoxelDeltaCompressionTuningDTO>(
+            VaultGenerationHandle<VoxelDeltaCompressionTuningDTO> handle = vault.EnsureGenerationHandle<VoxelDeltaCompressionTuningDTO>(
                 BufferID.SaveVoxelDeltaTuning,
                 1,
                 SystemID.SavePersistence,
@@ -349,12 +349,12 @@ namespace Hecton8.SaveSystem.Editor
                    buffer.Length > 0;
         }
 
-        private static bool TryReadExistingBuffer<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer) where T : struct
+        private static bool TryReadExistingBuffer<T>(IDataVault vault, BufferID bufferId, out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             return vault != null &&
                    vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
-                   vault.TryReadHandle(in handle, out buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
     }

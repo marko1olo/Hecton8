@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace Hecton8.Physics
 {
+    internal static class HectonOceanKinematicsLayout
+    {
+        public const int SurfaceWeatherStateStrideBytes = 32;
+    }
+
     [System.Flags]
     public enum HectonOceanSurfaceWeatherStateFlags : uint
     {
@@ -15,7 +20,7 @@ namespace Hecton8.Physics
         SupportsFoamScale = 1u << 3
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonOceanKinematicsLayout.SurfaceWeatherStateStrideBytes)]
     public struct HectonOceanSurfaceWeatherState
     {
         [FieldOffset(0)] public float WindSpeed;

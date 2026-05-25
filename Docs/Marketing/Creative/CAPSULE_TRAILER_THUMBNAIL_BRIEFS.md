@@ -1,4 +1,4 @@
-# Capsule, Trailer, And Thumbnail Briefs
+﻿# Capsule, Trailer, And Thumbnail Briefs
 
 Status: creative production brief / pre-asset
 Public stance: single-player-first scope / proof-first public copy
@@ -156,6 +156,41 @@ Goal: readable at small size and honest to the build.
 - REALISTIC OCEAN SIM
 - ZERO STUTTER
 - THIS CHANGES EVERYTHING
+
+## Imageboard Thumbnail / Clip Stress Rules
+
+Imageboard critique should usually use direct gameplay media, not final capsule art. Capsule/key art is optimized for Steam and YouTube; anonymous boards will punish anything that reads like an ad before it reads like proof.
+
+Hard boundaries:
+
+- Do not open with "Subnautica killer", "made with AI", engine labels, sales language, Steam links, Discord links, wishlists, keys, demo access, or "support".
+- Do not use final capsule art as the first anonymous critique asset unless the question is specifically about small-size readability.
+- Do not test a YouTube thumbnail on imageboards with "would you click?". Ask what the frame communicates at small size.
+- Do not use thumbnail text to hide missing player action. If the frame needs the words to explain the verb, revise the asset.
+- Do not count anonymous approval as capsule validation unless cold-read tests also pass.
+
+Imageboard stress prompts:
+
+| Asset / rough | Acceptable prompt | Main risk | Kill if |
+|---|---|---|---|
+| Pressure Hatch | "At small size, does this read as underwater base pressure or generic sci-fi door?" | Clean corridor / spaceship read. | Viewers name spaceship, horror hallway, or no underwater cue. |
+| Floodlight Route | "Can you tell where the player is going and why it is risky?" | Generic diver-in-water read. | Only the diver/ocean is mentioned. |
+| Seed Ship Signal | "Does this read as instrument/system interference or abstract poster art?" | AI-looking concept read. | Viewers ask whether it is AI art or non-game key art. |
+| Heavy Machine | "Does the machine look usable, heavy, and underwater?" | Static prop / mech poster read. | Viewers cannot name a function or pressure context. |
+| Pressure Leak Clip | "At second 3, what would you do next?" | Mood-only leak. | The choice appears after second 3 or requires audio. |
+| Salvage Failure Clip | "Does the reward create a second decision?" | Thin harvest loop. | The clip ends at loot pickup or escalation feels random. |
+
+Thumbnail-route scoring:
+
+| Score item | Pass |
+|---|---|
+| Small-size read | Viewer can name underwater survival, base/route/machine, or threat within 3 seconds. |
+| Shill smell | Prompt has no CTA, no link, no praise request, no fake-player tone. |
+| Clone risk | First association is not only "Subnautica but darker". |
+| AI/process risk | Viewer critique focuses on pixels and composition, not process suspicion. |
+| Player verb | Viewer can name a next action or says the frame is only mood. |
+
+Decision rule: imageboard thumbnail critique can force `REVISE` or `KILL`; it cannot create `PASS` by itself. Steam capsule and YouTube thumbnail decisions still require cold-read results from the capsule rough packet and asset QA.
 
 ## Creator Thumbnail Angles
 

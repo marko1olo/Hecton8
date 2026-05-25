@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -16,7 +16,7 @@ namespace Hecton8.QA.Headless
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9100)]
-    public sealed class HeadlessStressFractureBot : MonoBehaviour, IFastTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class HeadlessStressFractureBot : MonoBehaviour, IFastTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
         private const string RuntimeRootName = "[HeadlessStressFractureBot]";
@@ -81,6 +81,9 @@ namespace Hecton8.QA.Headless
         private const int BlackboxFlagAupSnapFenceActiveBit = 5;
         private const int BlackboxFlagMemorySampleFreshBit = 6;
         private const long LeakToleranceBytes = 1024L * 1024L;
+        private const SystemID OwnerSystemId = SystemID.QAHeadless;
+        private const BufferID BlackboxBufferId = BufferID.QAHeadlessStressFractureBlackBoxRing;
+        private const BufferID ScratchBlockBufferId = BufferID.QAHeadlessStressFractureScratchBlock;
         private const double FlagMaxAgeSeconds = 10800.0;
         private const double FlagFutureSkewToleranceSeconds = 300.0;
         private const float TimeDilationScalar = 100f;
@@ -110,8 +113,8 @@ namespace Hecton8.QA.Headless
         private static HeadlessStressFractureBot _instance;
         private static readonly double StopwatchTickToMilliseconds = 1000.0 / Stopwatch.Frequency;
 
-        private NativeArray<FractureTelemetryEntry> _blackbox;
-        private NativeArray<byte> _scratchBlock;
+        private VaultGenerationHandle<FractureTelemetryEntry> _blackboxHandle;
+        private VaultGenerationHandle<byte> _scratchBlockHandle;
         private CancellationTokenSource _shutdownCts;
         private IDataVault _dataVault;
         private IEcosystemDirectorService _ecosystemDirector;
@@ -134,6 +137,7 @@ namespace Hecton8.QA.Headless
         private int _rigidbodyScanMissCount;
         private int _rigidbodyNanIndex = -1;
         private int _dataVaultApiGapLogged;
+        private int _scratchBlockActive;
         private int _ecosystemStressIssued;
         private int _ecosystemDirectorReadyAtIssue;
         private int _chunkUnloadCheckFrame;
@@ -172,6 +176,7 @@ namespace Hecton8.QA.Headless
         private bool _registeredFast;
         private bool _registeredCold;
         private bool _registeredLate;
+        private bool _registeredHotSwap;
         private bool _originListenerRegistered;
         private bool _runtimePolicyApplied;
         private bool _headlessTimeDilationApplied;
@@ -248,7 +253,7 @@ namespace Hecton8.QA.Headless
             ReleaseScratchBlock();
             UnregisterRuntimeHooks();
             RestoreRuntimePolicy();
-            DisposeNativeArray(ref _blackbox);
+            ReleaseBlackbox();
             _cameraScratch = null;
             _cameraCullingMaskScratch = null;
             _cameraEnabledScratch = null;
@@ -274,7 +279,7 @@ namespace Hecton8.QA.Headless
             if (_ecosystemStressIssued == 0)
                 IssueEcosystemStressRequest();
 
-            if (!_baselineCaptured && _extremeFrame >= WarmupFrames && !_scratchBlock.IsCreated)
+            if (!_baselineCaptured && _extremeFrame >= WarmupFrames && !IsScratchBlockActive())
                 CaptureNativeBaselines();
 
             if (_baselineCaptured)
@@ -357,15 +362,104 @@ namespace Hecton8.QA.Headless
 
             ForceHeadlessRuntimePolicy();
             CacheServices();
-            _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Core);
-            _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Core);
-            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, LateSamplingLayer);
+            EnsureBlackboxCold();
+            RegisterRuntimeLanes();
+            TryRegisterHotSwapListener();
             HectonFloatingOrigin.RegisterListener(this);
             _originListenerRegistered = true;
             ApplyHeadlessTimeDilation();
-            _started = _registeredFast && _registeredCold && _registeredLate;
             if (!_started)
                 FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
+        }
+
+        private void RegisterRuntimeLanes()
+        {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (_registeredFast || _registeredCold || _registeredLate)
+                UnregisterRuntimeLanes();
+
+            _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Core);
+            _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Core);
+            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, LateSamplingLayer);
+            _started = _registeredFast && _registeredCold && _registeredLate;
+            if (!_started)
+                UnregisterRuntimeLanes();
+        }
+
+        private void UnregisterRuntimeLanes()
+        {
+            if (_registeredFast)
+            {
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Core);
+                _registeredFast = false;
+            }
+
+            if (_registeredCold)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
+                _registeredCold = false;
+            }
+
+            if (_registeredLate)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, LateSamplingLayer);
+                _registeredLate = false;
+            }
+
+            _started = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _dispatcher = currentService as ITickDispatcher;
+                if (currentService != null && !_finished && isActiveAndEnabled)
+                {
+                    RegisterRuntimeLanes();
+                    if (_started)
+                        ApplyHeadlessTimeDilation();
+                }
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (!ReferenceEquals(_dataVault, currentService))
+                {
+                    ReleaseScratchBlock();
+                    ReleaseBlackbox();
+                    _dataVault = currentService as IDataVault;
+                    if (!_finished)
+                        EnsureBlackboxCold();
+                }
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.EcosystemDirector)
+                _ecosystemDirector = currentService as IEcosystemDirectorService;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void InitializeColdState()
@@ -400,14 +494,17 @@ namespace Hecton8.QA.Headless
             TryDeleteFile(_blackboxPath);
             TryDeleteFile(_blackboxManifestPath);
             TryDeleteFile(_h8MemoryDumpPath);
-            // COLD ALLOC: NativeArray<FractureTelemetryEntry>[300] - fixed 19200 byte blackbox ring - owner: HeadlessStressFractureBot
-            _blackbox = new NativeArray<FractureTelemetryEntry>(BlackboxFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeArray(_blackbox, nameof(_blackbox));
+            EnsureBlackboxCold();
             SignalBus<SectorDehydratedSignal>.EnsureInitialized();
             SignalBus<SectorResidencyHydratedSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
             HPhiStaticCounters staticHPhiCounters;
+#if UNITY_EDITOR
             _staticHPhiMetric = ComputeStaticHPhiMetric(out staticHPhiCounters);
+#else
+            staticHPhiCounters = default;
+            _staticHPhiMetric = 0f;
+#endif
             _staticHPhiAupPrecisionSafe = staticHPhiCounters.AupPrecisionSafe;
             _staticHPhiAupPrecisionRisk = staticHPhiCounters.AupPrecisionRisk;
             _staticHPhiAupPrecisionIntegrity = CalculateAupPrecisionIntegrity(in staticHPhiCounters);
@@ -517,6 +614,50 @@ namespace Hecton8.QA.Headless
                 _ecosystemDirector = GlobalRegistry.EcosystemDirector;
         }
 
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private void EnsureBlackboxCold()
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return;
+
+            if (IsVaultHandleCreated(in _blackboxHandle) &&
+                vault.TryReadOnlyHandle(in _blackboxHandle, out NativeArray<FractureTelemetryEntry>.ReadOnly blackbox) &&
+                blackbox.IsCreated &&
+                blackbox.Length >= BlackboxFrameCapacity)
+            {
+                return;
+            }
+
+            _blackboxHandle = vault.EnsureGenerationHandle<FractureTelemetryEntry>(
+                BlackboxBufferId,
+                BlackboxFrameCapacity,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+        }
+
+        private void ReleaseBlackbox()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _blackboxHandle))
+                vault.ReleaseBuffer(in _blackboxHandle);
+
+            _blackboxHandle = default;
+            _blackboxCursor = 0;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
         private void CaptureNativeBaselines()
         {
             MemorySnapshot snapshot = CaptureMemorySnapshot();
@@ -533,7 +674,7 @@ namespace Hecton8.QA.Headless
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(0d, -128d, 0d));
             uint frame = unchecked((uint)Time.frameCount);
             long chunkId = unchecked((long)0x4853464200010001UL);
-            SignalBus<SectorResidencyHydratedSignal>.Push(new SectorResidencyHydratedSignal
+            SignalBus<SectorResidencyHydratedSignal>.TryPush(new SectorResidencyHydratedSignal
             {
                 CenterAup = centerAup,
                 ChunkId = chunkId,
@@ -552,7 +693,7 @@ namespace Hecton8.QA.Headless
                 Flags = 1,
                 QualityTier = 0
             };
-            SignalBus<SwarmDispersedSignal>.Push(in swarmSignal);
+            SignalBus<SwarmDispersedSignal>.TryPush(in swarmSignal);
             _ecosystemDirectorReadyAtIssue = _ecosystemDirector != null && _ecosystemDirector.IsInitialized ? 1 : 0;
             _ecosystemStressIssued = 1;
             RecordBlackbox(EcosystemStressHash);
@@ -563,7 +704,7 @@ namespace Hecton8.QA.Headless
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(0d, -128d, 0d));
             uint frame = unchecked((uint)Time.frameCount);
             long chunkId = unchecked((long)(0x4853464200020000UL | (uint)_extremeFrame));
-            SignalBus<SectorDehydratedSignal>.Push(new SectorDehydratedSignal
+            SignalBus<SectorDehydratedSignal>.TryPush(new SectorDehydratedSignal
             {
                 CenterAup = centerAup,
                 ChunkId = chunkId,
@@ -599,16 +740,11 @@ namespace Hecton8.QA.Headless
 
         private void PulseScratchMemory()
         {
-            if (!_scratchBlock.IsCreated)
+            if (!IsScratchBlockActive())
             {
                 _scratchBaselineH8Bytes = H8Memory.TotalBytes;
                 _scratchBaselineH8AllocationCount = H8Memory.ActiveAllocationCount;
-                _scratchBlock = H8Memory.Allocate<byte>(
-                    _scratchBlockBytes,
-                    SystemID.External,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory);
-                if (!_scratchBlock.IsCreated)
+                if (!AcquireScratchBlock())
                 {
                     FailAndQuit(1, AllocationDeniedHash, AllocationDeniedToken);
                     return;
@@ -633,10 +769,52 @@ namespace Hecton8.QA.Headless
 
         private void ReleaseScratchBlock()
         {
-            if (!_scratchBlock.IsCreated)
+            if (!IsScratchBlockActive() && !IsVaultHandleCreated(in _scratchBlockHandle))
                 return;
 
-            H8Memory.Release(ref _scratchBlock, SystemID.External);
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _scratchBlockHandle) && vault.ReleaseBuffer(in _scratchBlockHandle))
+            {
+                _scratchBlockHandle = default;
+                _scratchBlockActive = 0;
+            }
+        }
+
+        private bool AcquireScratchBlock()
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null || _scratchBlockBytes <= 0)
+                return false;
+
+            _scratchBlockHandle = vault.EnsureGenerationHandle<byte>(
+                ScratchBlockBufferId,
+                _scratchBlockBytes,
+                OwnerSystemId,
+                NativeArrayOptions.UninitializedMemory);
+
+            if (!IsVaultHandleCreated(in _scratchBlockHandle) ||
+                !vault.TryAcquireWriteLock(in _scratchBlockHandle, OwnerSystemId, out NativeArray<byte> scratch))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!scratch.IsCreated || scratch.Length < _scratchBlockBytes)
+                    return false;
+
+                _scratchBlockActive = 1;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _scratchBlockHandle, OwnerSystemId);
+            }
+        }
+
+        private bool IsScratchBlockActive()
+        {
+            return _scratchBlockActive != 0;
         }
 
         private void EmitAupShift()
@@ -649,21 +827,21 @@ namespace Hecton8.QA.Headless
             _lastShiftMeters = shiftMeters;
             _lastAupShiftExtremeFrame = _extremeFrame;
             _dispatcher?.RequestAupPreShiftPause(sequence);
-            GlobalSignals.Publish(new AupPreShiftSignal
+            AupSignalRoute.TryQueuePreShift(new AupPreShiftSignal
             {
                 ShiftMeters = shiftMeters,
                 ShiftFrameId = sequence,
                 SectorDelta = delta,
                 Flags = 1u
             });
-            GlobalSignals.Publish(new RebaseSignal
+            SignalBus<RebaseSignal>.TryPush(new RebaseSignal
             {
                 ShiftMeters = shiftMeters,
                 ShiftFrameId = sequence,
                 GridDelta = delta,
                 Flags = 1u
             });
-            GlobalSignals.Publish(new AupShiftSignal
+            AupSignalRoute.TryQueueShift(new AupShiftSignal
             {
                 ShiftMeters = shiftMeters,
                 ShiftFrameId = sequence,
@@ -757,23 +935,8 @@ namespace Hecton8.QA.Headless
 
         private void UnregisterRuntimeHooks()
         {
-            if (_registeredFast)
-            {
-                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Core);
-                _registeredFast = false;
-            }
-
-            if (_registeredCold)
-            {
-                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
-                _registeredCold = false;
-            }
-
-            if (_registeredLate)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, LateSamplingLayer);
-                _registeredLate = false;
-            }
+            TryUnregisterHotSwapListener();
+            UnregisterRuntimeLanes();
 
             if (_originListenerRegistered)
             {
@@ -814,7 +977,7 @@ namespace Hecton8.QA.Headless
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
         {
             MemorySnapshot snapshot = CaptureMemorySnapshot();
-            GlobalSignals.Publish(new CrashTelemetrySignal
+            SignalBus<CrashTelemetrySignal>.TryPush(new CrashTelemetrySignal
             {
                 SystemHash = RunnerHash,
                 ReasonHash = reasonHash,
@@ -829,27 +992,42 @@ namespace Hecton8.QA.Headless
 
         private void RecordBlackbox(uint eventHash)
         {
-            if (!_blackbox.IsCreated)
-                return;
-
-            MemorySnapshot snapshot = CaptureBlackboxMemorySnapshot(eventHash);
-            int index = _blackboxCursor % _blackbox.Length;
-            _blackbox[index] = new FractureTelemetryEntry
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _blackboxHandle) ||
+                !vault.TryAcquireWriteLock(in _blackboxHandle, OwnerSystemId, out NativeArray<FractureTelemetryEntry> blackbox))
             {
-                Frame = unchecked((uint)Time.frameCount),
-                ExtremeFrame = unchecked((uint)_extremeFrame),
-                ShiftSequence = _shiftSequence,
-                EventHash = eventHash,
-                NativeBytes = snapshot.NativeBytes,
-                H8Bytes = snapshot.H8Bytes,
-                NativeAllocations = snapshot.NativeAllocations,
-                H8Allocations = snapshot.H8Allocations,
-                DispatcherPhaseMs = _lastSimulationPhaseMs,
-                DataVaultFragmentation = snapshot.DataVaultFragmentation,
-                LastShiftMeters = _lastShiftMeters,
-                Flags = ComposeBlackboxFlags()
-            };
-            _blackboxCursor++;
+                return;
+            }
+
+            try
+            {
+                if (!blackbox.IsCreated || blackbox.Length <= 0)
+                    return;
+
+                MemorySnapshot snapshot = CaptureBlackboxMemorySnapshot(eventHash);
+                int index = _blackboxCursor % blackbox.Length;
+                blackbox[index] = new FractureTelemetryEntry
+                {
+                    Frame = unchecked((uint)Time.frameCount),
+                    ExtremeFrame = unchecked((uint)_extremeFrame),
+                    ShiftSequence = _shiftSequence,
+                    EventHash = eventHash,
+                    NativeBytes = snapshot.NativeBytes,
+                    H8Bytes = snapshot.H8Bytes,
+                    NativeAllocations = snapshot.NativeAllocations,
+                    H8Allocations = snapshot.H8Allocations,
+                    DispatcherPhaseMs = _lastSimulationPhaseMs,
+                    DataVaultFragmentation = snapshot.DataVaultFragmentation,
+                    LastShiftMeters = _lastShiftMeters,
+                    Flags = ComposeBlackboxFlags()
+                };
+                _blackboxCursor++;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _blackboxHandle, OwnerSystemId);
+            }
         }
 
         private MemorySnapshot CaptureMemorySnapshot()
@@ -884,7 +1062,7 @@ namespace Hecton8.QA.Headless
         private uint ComposeBlackboxFlags()
         {
             uint flags = 0u;
-            if (_scratchBlock.IsCreated)
+            if (IsScratchBlockActive())
                 flags |= 1u << BlackboxFlagScratchActiveBit;
             if (_baselineCaptured)
                 flags |= 1u << BlackboxFlagBaselineCapturedBit;
@@ -936,25 +1114,39 @@ namespace Hecton8.QA.Headless
             }
         }
 
+        private bool TryReadBlackbox(out NativeArray<FractureTelemetryEntry>.ReadOnly blackbox)
+        {
+            blackbox = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                IsVaultHandleCreated(in _blackboxHandle) &&
+                vault.TryReadOnlyHandle(in _blackboxHandle, out blackbox) &&
+                blackbox.IsCreated &&
+                blackbox.Length > 0;
+        }
+
         private void DumpBlackbox()
         {
-            if (!_blackbox.IsCreated || string.IsNullOrEmpty(_blackboxPath))
+            if (!TryReadBlackbox(out NativeArray<FractureTelemetryEntry>.ReadOnly blackbox) ||
+                string.IsNullOrEmpty(_blackboxPath))
+            {
                 return;
+            }
 
             EnsureParentDirectory(_blackboxPath);
             using (FileStream stream = new FileStream(_blackboxPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 writer.Write(BlackboxMagic);
-                int validCount = math.min(_blackboxCursor, _blackbox.Length);
-                int start = _blackboxCursor >= _blackbox.Length ? _blackboxCursor % _blackbox.Length : 0;
+                int validCount = math.min(_blackboxCursor, blackbox.Length);
+                int start = _blackboxCursor >= blackbox.Length ? _blackboxCursor % blackbox.Length : 0;
                 writer.Write(validCount);
                 writer.Write(BlackboxEntrySizeBytes);
                 writer.Write(_blackboxCursor);
                 for (int i = 0; i < validCount; i++)
                 {
-                    int index = (start + i) % _blackbox.Length;
-                    FractureTelemetryEntry entry = _blackbox[index];
+                    int index = (start + i) % blackbox.Length;
+                    FractureTelemetryEntry entry = blackbox[index];
                     writer.Write(entry.Frame);
                     writer.Write(entry.ExtremeFrame);
                     writer.Write(entry.ShiftSequence);
@@ -981,7 +1173,9 @@ namespace Hecton8.QA.Headless
             EnsureParentDirectory(_blackboxManifestPath);
             using (StreamWriter writer = new StreamWriter(_blackboxManifestPath, false))
             {
-                int validCount = _blackbox.IsCreated ? math.min(_blackboxCursor, _blackbox.Length) : 0;
+                int validCount = TryReadBlackbox(out NativeArray<FractureTelemetryEntry>.ReadOnly blackbox)
+                    ? math.min(_blackboxCursor, blackbox.Length)
+                    : 0;
                 writer.Write('{');
                 writer.Write("\"agent\":\"");
                 writer.Write(AgentName);
@@ -1433,7 +1627,7 @@ namespace Hecton8.QA.Headless
                 if (string.Equals(arg, name, StringComparison.OrdinalIgnoreCase))
                 {
                     if (i < args.Length - 1 &&
-                        int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int separatedValue))
+                        TryParseIntInvariant(args[i + 1].AsSpan(), out int separatedValue))
                     {
                         return separatedValue;
                     }
@@ -1445,7 +1639,7 @@ namespace Hecton8.QA.Headless
                 if (arg.Length > separatorIndex + 1 &&
                     arg[separatorIndex] == '=' &&
                     string.Compare(arg, 0, name, 0, separatorIndex, StringComparison.OrdinalIgnoreCase) == 0 &&
-                    int.TryParse(arg.AsSpan(separatorIndex + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out int inlineValue))
+                    TryParseIntInvariant(arg.AsSpan(separatorIndex + 1), out int inlineValue))
                 {
                     return inlineValue;
                 }
@@ -1457,11 +1651,12 @@ namespace Hecton8.QA.Headless
         private static int TryReadEnvironmentInt(string name, int fallback)
         {
             string value = global::System.Environment.GetEnvironmentVariable(name);
-            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+            return TryParseIntInvariant(value.AsSpan(), out int parsed)
                 ? parsed
                 : fallback;
         }
 
+#if UNITY_EDITOR
         private static float ComputeStaticHPhiMetric(out HPhiStaticCounters counters)
         {
             counters = default;
@@ -1497,6 +1692,42 @@ namespace Hecton8.QA.Headless
             {
                 return 0f;
             }
+        }
+#endif
+
+        private static bool TryParseIntInvariant(ReadOnlySpan<char> value, out int parsed)
+        {
+            parsed = 0;
+            if (value.Length == 0)
+                return false;
+
+            int index = 0;
+            int sign = 1;
+            if (value[index] == '-')
+            {
+                sign = -1;
+                index++;
+            }
+            else if (value[index] == '+')
+            {
+                index++;
+            }
+
+            if (index >= value.Length)
+                return false;
+
+            int result = 0;
+            for (; index < value.Length; index++)
+            {
+                char c = value[index];
+                if (c < '0' || c > '9')
+                    return false;
+
+                result = (result * 10) + (c - '0');
+            }
+
+            parsed = result * sign;
+            return true;
         }
 
         private static void AccumulateHPhiCounters(string text, ref HPhiStaticCounters counters)
@@ -1809,21 +2040,6 @@ namespace Hecton8.QA.Headless
             catch (Exception)
             {
             }
-        }
-
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, AgentName, label, NativeAllocationLifetime.Session);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
         }
 
         private static void WriteInvariant(StreamWriter writer, int value)

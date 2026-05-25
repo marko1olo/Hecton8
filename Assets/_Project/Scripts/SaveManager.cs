@@ -1,11 +1,11 @@
 // ============================================================================
-// HECTON-8 — SaveManager.cs
+// HECTON-8 � SaveManager.cs
 // Save persistence service. Runtime owner is injected through the core registry.
 //
 // ARHITEKTURA:
-//   • Reestr ISaveable cherez explicit registration (zero GC pri save/load).
-//   • XXHash3 checksums for header/payload integrity.
-//   • Unity 6 Awaitable API: BackgroundThreadAsync / MainThreadAsync.
+//   � Reestr ISaveable cherez explicit registration (zero GC pri save/load).
+//   � XXHash3 checksums for header/payload integrity.
+//   � Unity 6 Awaitable API: BackgroundThreadAsync / MainThreadAsync.
 // ============================================================================
 
 using System;
@@ -38,7 +38,7 @@ namespace Hecton8.SaveSystem
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
@@ -97,15 +97,13 @@ namespace Hecton8.SaveSystem
         private const uint WfcOutpostSnapshotCacheFlagAppendAny =
             WfcOutpostSnapshotCacheFlagAppendPending | WfcOutpostSnapshotCacheFlagAppendInFlight;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  SAVE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  SERVICE STATE
-        // ══════════════════════════════════════════════════════════
-
-        public static SaveManager ActiveRuntimeInstance { get; private set; }
+        // ----------------------------------------------------------
 
         public bool IsInitialized => _serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this);
         public ServiceHeartbeatState HeartbeatState => IsInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -124,24 +122,24 @@ namespace Hecton8.SaveSystem
         private const int DefaultAutoBackupGenerations = 2;
         private const int DefaultQuickBackupGenerations = 2;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Settings ──────────────────────────────────")]
+        [Header("-- Settings ----------------------------------")]
 
-        [Header("── Backup Policy ─────────────────────────────")]
+        [Header("-- Backup Policy -----------------------------")]
         [SerializeField] private int manualBackupGenerations = DefaultManualBackupGenerations;
         [SerializeField] private int autoBackupGenerations = DefaultAutoBackupGenerations;
         [SerializeField] private int quickBackupGenerations = DefaultQuickBackupGenerations;
 
-        [Header("── Diagnostics ───────────────────────────────")]
+        [Header("-- Diagnostics -------------------------------")]
         [SerializeField] private bool verboseLogging;
         [SerializeField] private int _debugRegisteredCount;
 
-        // COLD ALLOC: ISaveable[256] — fixed persistence registry prevents List resize during scene registration — owner: SaveManager
+        // COLD ALLOC: ISaveable[256] � fixed persistence registry prevents List resize during scene registration � owner: SaveManager
         private readonly ISaveable[] _saveables = new ISaveable[MaxRegisteredSaveables];
-        // COLD ALLOC: List<IndexedSectorEntryInfo>[128] — reusable indexed-save directory probe scratch — owner: SaveManager
+        // COLD ALLOC: List<IndexedSectorEntryInfo>[128] � reusable indexed-save directory probe scratch � owner: SaveManager
         private readonly SaveBinaryStorage.IndexedSectorEntryInfo[] _indexedSectorDirectoryScratch = new SaveBinaryStorage.IndexedSectorEntryInfo[128];
         // COLD ALLOC: List<SaveSlotInfo>[8] - instance-owned metadata projection scratch - owner: SaveManager
         private readonly SaveSlotInfo[] _saveSlotInfoScratch = new SaveSlotInfo[SaveSlotScratchCapacity];
@@ -217,6 +215,7 @@ namespace Hecton8.SaveSystem
         private bool _frostTickRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private bool _compressionThrottleLateFrameArmed;
         private int _compressionThrottleReleaseFrame;
         private int _slowTickSequence;
@@ -505,6 +504,7 @@ namespace Hecton8.SaveSystem
             if (!_serviceRegistered || !Application.isPlaying)
                 return;
 
+            TryRegisterHotSwapListener();
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
@@ -513,6 +513,7 @@ namespace Hecton8.SaveSystem
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterDispatcherLanes();
         }
 
@@ -561,13 +562,11 @@ namespace Hecton8.SaveSystem
 
         private void ShutdownServiceState()
         {
+            TryUnregisterHotSwapListener();
             UnregisterDispatcherLanes();
 
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this))
                 GlobalRegistry.UnregisterSaveService(this);
-
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
 
             _serviceRegistered = false;
             _isBusy = false;
@@ -628,49 +627,74 @@ namespace Hecton8.SaveSystem
 
             if (_serviceRegistered)
             {
-                if (ReferenceEquals(GlobalRegistry.SaveRuntime, this))
-                    ActiveRuntimeInstance = this;
-
                 if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                     TryRegisterDispatcherLanes();
 
+                TryRegisterHotSwapListener();
                 return;
             }
 
             GlobalRegistry.RegisterAsyncPersistenceService(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SaveRuntime, this);
-            if (_serviceRegistered)
-                ActiveRuntimeInstance = this;
 
+            TryRegisterHotSwapListener();
             if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                 TryRegisterDispatcherLanes();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher &&
+                currentService != null &&
+                _serviceRegistered &&
+                isActiveAndEnabled)
+            {
+                UnregisterDispatcherLanes();
+                TryRegisterDispatcherLanes();
+            }
         }
 
         private void TryRegisterDispatcherLanes()
         {
             if (!_updatableRegistered)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _updatableRegistered = GlobalRegistry.Updatables.Contains(this);
+                _updatableRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
             }
 
             if (!_slowTickRegistered)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+                _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
             }
 
             if (!_frostTickRegistered)
             {
-                GlobalRegistry.RegisterFrostTickable(this, PriorityLayer.Core);
-                _frostTickRegistered = GlobalRegistry.FrostTickables.Contains(this);
+                _frostTickRegistered = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
             }
 
             if (!_lateFrameRegistered)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !_serviceRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public unsafe bool TryPersistWfcOutpostStateSnapshot(
@@ -739,7 +763,7 @@ namespace Hecton8.SaveSystem
 
             if (!macroDatabase.MarkDirty(
                     sectorHash,
-                    (IntPtr)_wfcOutpostPayloadBuffer.GetUnsafeReadOnlyPtr(),
+                    _wfcOutpostPayloadBuffer,
                     payloadBytes,
                     0))
             {
@@ -791,18 +815,25 @@ namespace Hecton8.SaveSystem
             }
 
             EnsureWfcOutpostNativeBuffers();
-            if (!macroDatabase.TryGetPayload(sectorHash, out MacroDatabasePayloadHandle handle))
+            if (!macroDatabase.TryCopyPayload(
+                    sectorHash,
+                    0,
+                    _wfcOutpostPayloadBuffer,
+                    _wfcOutpostPayloadBuffer.Length,
+                    out int payloadBytes,
+                    out MacroDatabasePayloadHandle handle) ||
+                payloadBytes != handle.ByteLength)
             {
                 status = WfcOutpostPersistenceStatus.Missing;
                 RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash);
                 return false;
             }
 
-            if (handle.Pointer == IntPtr.Zero ||
-                handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
+            byte* payloadPointer = (byte*)_wfcOutpostPayloadBuffer.GetUnsafeReadOnlyPtr();
+            if (handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
                 handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
                 !SaveBinaryPayloadCodec.TryReadWfcOutpostBitmaskPayload(
-                    (byte*)handle.Pointer,
+                    payloadPointer,
                     handle.ByteLength,
                     _wfcOutpostRestoreWords,
                     WfcOutpostPersistenceConstants.PackedWordCount,
@@ -976,7 +1007,7 @@ namespace Hecton8.SaveSystem
         {
             if (!_savePayloadBuffer.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[67108864] — raw binary save staging buffer for save payload assembly — owner: SaveManager
+                // COLD ALLOC: NativeArray<byte>[67108864] � raw binary save staging buffer for save payload assembly � owner: SaveManager
                 _savePayloadBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_savePayloadBuffer, NativeMemoryOwner, nameof(_savePayloadBuffer), NativeMemoryLifetime);
             }
@@ -986,7 +1017,7 @@ namespace Hecton8.SaveSystem
         {
             if (!_compressedSaveBuffer.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[71303168] — protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget — owner: SaveManager
+                // COLD ALLOC: NativeArray<byte>[71303168] � protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget � owner: SaveManager
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
             }
@@ -1040,7 +1071,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            VaultGenerationHandle<byte> wfcGridHandle = dataVault.GetGenerationHandle<byte>(
+            VaultGenerationHandle<byte> wfcGridHandle = dataVault.EnsureGenerationHandle<byte>(
                 BufferID.WfcOutpostGrid,
                 WfcOutpostPersistenceConstants.CellCount,
                 SystemID.CoreDataVault,
@@ -1259,7 +1290,7 @@ namespace Hecton8.SaveSystem
             {
                 const string reason = "Save already in progress.";
                 LastOperationError = reason;
-                SaveEvents.RaiseSaveFailed(slotName, reason);
+                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
                 return;
             }
@@ -1594,20 +1625,21 @@ namespace Hecton8.SaveSystem
             }
 
             EnsureWfcOutpostNativeBuffers();
-            if (!macroDatabase.TryGetPayload(sectorHash, out MacroDatabasePayloadHandle handle))
+            if (!macroDatabase.TryCopyPayload(
+                    sectorHash,
+                    0,
+                    _wfcOutpostPayloadBuffer,
+                    _wfcOutpostPayloadBuffer.Length,
+                    out int payloadBytes,
+                    out MacroDatabasePayloadHandle handle) ||
+                payloadBytes != handle.ByteLength)
             {
                 RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Missing, sectorHash);
                 return false;
             }
 
-            if (handle.Pointer == IntPtr.Zero)
-            {
-                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.CorruptLength, sectorHash, payloadBytes: handle.ByteLength);
-                PublishWfcCorruptPayloadWarning();
-                return false;
-            }
-
-            if (!SaveBinaryPayloadCodec.HasWfcOutpostBitmaskMagic((byte*)handle.Pointer, handle.ByteLength))
+            byte* payloadPointer = (byte*)_wfcOutpostPayloadBuffer.GetUnsafeReadOnlyPtr();
+            if (!SaveBinaryPayloadCodec.HasWfcOutpostBitmaskMagic(payloadPointer, handle.ByteLength))
             {
                 RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Missing, sectorHash, payloadBytes: handle.ByteLength);
                 return false;
@@ -1617,7 +1649,7 @@ namespace Hecton8.SaveSystem
                 handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
                 handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
                 !SaveBinaryPayloadCodec.TryReadWfcOutpostBitmaskPayload(
-                    (byte*)handle.Pointer,
+                    payloadPointer,
                     handle.ByteLength,
                     _wfcOutpostRestoreWords,
                     WfcOutpostPersistenceConstants.PackedWordCount,
@@ -1657,23 +1689,32 @@ namespace Hecton8.SaveSystem
             _wfcOutpostGrid = default;
         }
 
-        private static unsafe bool IsWfcOutpostHydrationCandidate(
+        private unsafe bool IsWfcOutpostHydrationCandidate(
             in Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal signal,
             IMacroDatabaseService macroDatabase)
         {
             if (macroDatabase == null || !macroDatabase.IsOpen)
                 return signal.PayloadBytes >= WfcOutpostPersistenceConstants.PayloadHeaderBytes;
 
-            if (!macroDatabase.TryGetPayload(signal.SectorHash, out MacroDatabasePayloadHandle handle))
+            EnsureWfcOutpostNativeBuffers();
+            if (!macroDatabase.TryCopyPayload(
+                    signal.SectorHash,
+                    0,
+                    _wfcOutpostPayloadBuffer,
+                    WfcOutpostPersistenceConstants.PayloadHeaderBytes,
+                    out int bytesCopied,
+                    out MacroDatabasePayloadHandle handle))
+            {
                 return signal.PayloadBytes >= WfcOutpostPersistenceConstants.PayloadHeaderBytes;
-
-            if (handle.Pointer == IntPtr.Zero)
-                return signal.PayloadBytes >= WfcOutpostPersistenceConstants.PayloadHeaderBytes;
+            }
 
             if (handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes)
                 return true;
 
-            return SaveBinaryPayloadCodec.HasWfcOutpostBitmaskMagic((byte*)handle.Pointer, handle.ByteLength);
+            return bytesCopied >= WfcOutpostPersistenceConstants.PayloadHeaderBytes &&
+                   SaveBinaryPayloadCodec.HasWfcOutpostBitmaskMagic(
+                       (byte*)_wfcOutpostPayloadBuffer.GetUnsafeReadOnlyPtr(),
+                       bytesCopied);
         }
 
         private bool TryGetCachedWfcOutpostSnapshotHash(ulong sectorHash, out ulong payloadHash)
@@ -2126,7 +2167,7 @@ namespace Hecton8.SaveSystem
                     Severity = 0,
                     Flags = 0
                 };
-                GlobalSignals.Publish(in notification);
+                SignalBus<HUDNotificationSignal>.TryPush(in notification);
                 return;
             }
 
@@ -2212,7 +2253,7 @@ namespace Hecton8.SaveSystem
                 State = state,
                 Flags = clampedFlags
             };
-            SignalBus<SaveStatusSignal>.Push(in status);
+            SignalBus<SaveStatusSignal>.TryPush(in status);
 
             SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
             {
@@ -2223,7 +2264,7 @@ namespace Hecton8.SaveSystem
                 State = state,
                 Flags = clampedFlags
             };
-            GlobalSignals.Publish(in lifecycle);
+            SignalBus<SaveLifecycleSignal>.TryPush(in lifecycle);
         }
 
         private static void PublishSaveCompleted(byte slotIndex, uint operationId, long durationMs, long compressedSizeBytes, bool succeeded)
@@ -2238,7 +2279,7 @@ namespace Hecton8.SaveSystem
                 Result = succeeded ? (byte)1 : (byte)0,
                 Flags = succeeded ? (byte)0 : (byte)1
             };
-            SignalBus<SaveCompletedSignal>.Push(in completed);
+            SignalBus<SaveCompletedSignal>.TryPush(in completed);
         }
 
         private static void RequestSnapshotPause(uint operationId)
@@ -2252,7 +2293,7 @@ namespace Hecton8.SaveSystem
                 Flags = 0,
                 RestoreScalar = 1f
             };
-            GlobalSignals.Publish(in pause);
+            SimulationSignalRoute.TryQueuePause(in pause);
         }
 
         private static void ReleaseSnapshotPause(uint operationId)
@@ -2266,7 +2307,7 @@ namespace Hecton8.SaveSystem
                 Flags = 0,
                 RestoreScalar = 1f
             };
-            GlobalSignals.Publish(in resume);
+            SimulationSignalRoute.TryQueuePause(in resume);
         }
 
         private unsafe void StageSnapshotHeader(
@@ -2585,7 +2626,7 @@ namespace Hecton8.SaveSystem
                 Severity = 1,
                 Flags = 0
             };
-            GlobalSignals.Publish(in notification);
+            SignalBus<HUDNotificationSignal>.TryPush(in notification);
         }
 
         private static void PublishSaveSynchronizedNotification(string slotName)
@@ -2599,7 +2640,7 @@ namespace Hecton8.SaveSystem
                 Severity = 0,
                 Flags = 0
             };
-            GlobalSignals.Publish(in notification);
+            SignalBus<HUDNotificationSignal>.TryPush(in notification);
         }
 
         private void RequestVramAbortGcIfNeeded()
@@ -2785,7 +2826,7 @@ namespace Hecton8.SaveSystem
         private static void LogInfo(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(message);
+            Hecton8.Core.H8Debug.Log(message);
 #endif
         }
 
@@ -2805,9 +2846,9 @@ namespace Hecton8.SaveSystem
 #endif
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ASYNC SAVE/LOAD
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public Awaitable SaveGameAsync(string slotName)
         {
@@ -2829,7 +2870,7 @@ namespace Hecton8.SaveSystem
             {
                 LastOperationError = InvalidSlotNameReason;
                 LogWarning("[SaveManager] Ignored save request: invalid slot name.");
-                SaveEvents.RaiseSaveFailed(string.Empty, InvalidSlotNameReason);
+                SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);
                 return;
             }
 
@@ -2840,7 +2881,7 @@ namespace Hecton8.SaveSystem
                 const string reason = "Save already in progress.";
                 LastOperationError = reason;
                 LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
-                SaveEvents.RaiseSaveFailed(slotName, reason);
+                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
                 return;
             }
@@ -2850,7 +2891,7 @@ namespace Hecton8.SaveSystem
                 const string reason = "Save blocked during floating-origin shift.";
                 LastOperationError = reason;
                 LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
-                SaveEvents.RaiseSaveFailed(slotName, reason);
+                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
                 return;
             }
@@ -2859,7 +2900,7 @@ namespace Hecton8.SaveSystem
                 SaveThumbnailSystem.CaptureThumbnailForSave(slotName, slotIndex, operationId);
             _isBusy = true;
             NotifyMacroDatabasePersistenceGate(true);
-            SaveEvents.RaiseSaveStarted(slotName);
+            SaveEvents.TryRaiseSaveStarted(SaveEvents.ComputeSlotHash(slotName));
             PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.InProgress, 0.05f, 0u);
 
             var totalTimer = Stopwatch.StartNew();
@@ -2873,6 +2914,8 @@ namespace Hecton8.SaveSystem
             NativeArray<uint> packedQuestStateSnapshot = default;
             QuestSaveHeader packedQuestSaveHeader = default;
             NativeArray<byte> voxelDeltaSnapshot = default;
+            bool ownsVoxelDeltaSnapshot = false;
+            VoxelDeltaProcessor borrowedVoxelDeltaSnapshotOwner = null;
 
             try
             {
@@ -2890,30 +2933,31 @@ namespace Hecton8.SaveSystem
 
                     if (saveable is VoxelDeltaProcessor voxelDeltaProcessor)
                     {
-                        if (voxelDeltaSnapshot.IsCreated)
-                            DisposeNativeArray(ref voxelDeltaSnapshot);
-
-                        if (voxelDeltaProcessor.TryMeasureNativeSnapshotByteCount(out int voxelDeltaSnapshotByteCount) &&
-                            voxelDeltaSnapshotByteCount > 0)
+                        if (borrowedVoxelDeltaSnapshotOwner != null)
                         {
-                            voxelDeltaSnapshot = new NativeArray<byte>(
-                                voxelDeltaSnapshotByteCount,
-                                Allocator.Persistent,
-                                NativeArrayOptions.UninitializedMemory);
-                            RegisterVoxelDeltaSnapshot(voxelDeltaSnapshot, "voxelDeltaSnapshot");
+                            borrowedVoxelDeltaSnapshotOwner.ReleaseBorrowedNativeSnapshotScratch();
+                            borrowedVoxelDeltaSnapshotOwner = null;
+                        }
 
-                            unsafe
-                            {
-                                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
-                                if (!voxelDeltaProcessor.TryCopyNativeSnapshot(
-                                        destinationPtr,
-                                        voxelDeltaSnapshot.Length,
-                                        out int bytesWritten) ||
-                                    bytesWritten != voxelDeltaSnapshot.Length)
-                                {
-                                    DisposeNativeArray(ref voxelDeltaSnapshot);
-                                }
-                            }
+                        if (voxelDeltaSnapshot.IsCreated && ownsVoxelDeltaSnapshot)
+                            DisposeNativeArray(ref voxelDeltaSnapshot);
+                        else
+                            voxelDeltaSnapshot = default;
+
+                        ownsVoxelDeltaSnapshot = false;
+                        if (!voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
+                                out voxelDeltaSnapshot,
+                                out int voxelDeltaSnapshotByteCount) ||
+                            voxelDeltaSnapshotByteCount <= 0)
+                        {
+                            if (voxelDeltaSnapshotByteCount > 0)
+                                throw new InvalidOperationException($"Voxel delta native snapshot copy failed for {voxelDeltaSnapshotByteCount} bytes.");
+
+                            voxelDeltaSnapshot = default;
+                        }
+                        else
+                        {
+                            borrowedVoxelDeltaSnapshotOwner = voxelDeltaProcessor;
                         }
 
                         continue;
@@ -2993,7 +3037,7 @@ namespace Hecton8.SaveSystem
 
                 await Awaitable.MainThreadAsync();
                 SaveContextFrameData frameData = SaveContextFrameData.CaptureMainThread();
-                SaveEvents.RaiseMappedWriteStarted(slotName);
+                SaveEvents.TryRaiseMappedWriteStarted(SaveEvents.ComputeSlotHash(slotName));
                 await Awaitable.BackgroundThreadAsync();
 
                 ulong payloadHash64;
@@ -3043,7 +3087,7 @@ namespace Hecton8.SaveSystem
 
                 LastOperationSucceeded = true;
                 LogInfo($"[SaveManager] Saved '{slotName}' (XXH3-64: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms");
-                SaveEvents.RaiseSaveCompleted(slotName);
+                SaveEvents.TryRaiseSaveCompleted(SaveEvents.ComputeSlotHash(slotName));
                 PublishSaveSynchronizedNotification(slotName);
             }
             catch (Exception ex)
@@ -3062,7 +3106,7 @@ namespace Hecton8.SaveSystem
                 RecordFailure(slotName, "save", ex.Message);
                 LastOperationError = ex.Message;
                 LogError("[SaveManager] Save failed: " + ex);
-                SaveEvents.RaiseSaveFailed(slotName, ex.Message);
+                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(ex.Message), ex.Message);
             }
             finally
             {
@@ -3072,8 +3116,14 @@ namespace Hecton8.SaveSystem
                 if (packedQuestStateSnapshot.IsCreated)
                     DisposeNativeArray(ref packedQuestStateSnapshot);
 
-                if (voxelDeltaSnapshot.IsCreated)
+                if (voxelDeltaSnapshot.IsCreated && ownsVoxelDeltaSnapshot)
                     DisposeNativeArray(ref voxelDeltaSnapshot);
+
+                if (borrowedVoxelDeltaSnapshotOwner != null)
+                {
+                    borrowedVoxelDeltaSnapshotOwner.ReleaseBorrowedNativeSnapshotScratch();
+                    borrowedVoxelDeltaSnapshotOwner = null;
+                }
 
                 _isBusy = false;
                 NotifyMacroDatabasePersistenceGate(false);
@@ -3122,8 +3172,8 @@ namespace Hecton8.SaveSystem
         {
             for (int i = 0; i < _saveableCount; i++)
             {
-                if (_saveables[i] is PlayerInventory inventory && inventory != null)
-                    inventory.NotifyMappedInventoryWriteCommitted();
+                if (_saveables[i] is IMappedInventoryWriteCommitSink sink)
+                    sink.NotifyMappedInventoryWriteCommitted();
             }
         }
 
@@ -3169,8 +3219,8 @@ namespace Hecton8.SaveSystem
                 " != runtime world seed " + runtimeSeed +
                 " / version " + runtimeWorldGenerationVersion + ".");
 #endif
-            NotificationEvents.PushWarning(GeologicalAnomalyDetectedMessage);
-            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(
+            NotificationEvents.TryPushWarning(GeologicalAnomalyDetectedMessage.AsSpan());
+            PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal(
                 0.78f,
                 0.12f,
                 1f,
@@ -3218,7 +3268,7 @@ namespace Hecton8.SaveSystem
 
         private static void ReportCriticalSectorCorruptionDialog()
         {
-            NotificationEvents.PushCritical(CriticalSectorCorruptionMessage);
+            NotificationEvents.TryPushCritical(CriticalSectorCorruptionMessage.AsSpan());
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             LogWarning($"[SaveManager] {CriticalSectorCorruptionMessage}");
 #endif
@@ -3229,7 +3279,7 @@ namespace Hecton8.SaveSystem
             if (data == null)
                 return false;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             if (playerTransform == null && !GameBootstrapper.TryGetCurrentPlayerTransform(out playerTransform))
                 return false;
@@ -3319,7 +3369,7 @@ namespace Hecton8.SaveSystem
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -3331,7 +3381,7 @@ namespace Hecton8.SaveSystem
 
         private static double3 ResolveCurrentRuntimeOriginDouble3()
         {
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return originAup.IsFinite()
                 ? originAup.ToAbsoluteDouble3()
                 : double3.zero;
@@ -3350,30 +3400,51 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            bool wasKinematic = playerBody.isKinematic;
-            bool wasDetectingCollisions = playerBody.detectCollisions;
-            bool wasSleeping = playerBody.IsSleeping();
+            if (playerBody.TryGetComponent(out HectonPlayerMotor playerMotor) &&
+                playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+            {
+                playerMotor.MovePosition(position);
+                playerMotor.SetLinearVelocity(HectonPlayerMotor.SafeVelocity(velocity));
+                playerTransform.SetPositionAndRotation(position, rotation);
+                return;
+            }
 
-            playerBody.isKinematic = true;
-            playerBody.detectCollisions = false;
-            playerBody.ResetCenterOfMass();
-            playerBody.transform.SetPositionAndRotation(position, rotation);
-            playerBody.PublishTransform();
-            playerBody.isKinematic = wasKinematic;
-            playerBody.detectCollisions = wasDetectingCollisions;
+            TeleportLegacyLoadedPlayerBody(playerBody, position, rotation, velocity);
+        }
+
+        private static void TeleportLegacyLoadedPlayerBody(
+            Rigidbody body,
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 velocity)
+        {
+            bool wasKinematic = body.isKinematic;
+            bool wasDetectingCollisions = body.detectCollisions;
+            bool wasSleeping = body.IsSleeping();
+
+            body.isKinematic = true;
+            body.detectCollisions = false;
+            body.ResetCenterOfMass();
+            body.transform.SetPositionAndRotation(position, rotation);
+            body.PublishTransform();
+            body.isKinematic = wasKinematic;
+            body.detectCollisions = wasDetectingCollisions;
 
             if (!wasKinematic)
             {
-                playerBody.linearVelocity = HectonPlayerMotor.SafeVelocity(velocity);
-                playerBody.angularVelocity = Vector3.zero;
+                HectonPlayerMotor playerMotor = null;
+                if (body.TryGetComponent(out playerMotor))
+                    playerMotor.SetLinearVelocity(HectonPlayerMotor.SafeVelocity(velocity));
+                if (playerMotor == null || !playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+                    Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
                 if (wasSleeping)
-                    playerBody.Sleep();
+                    body.Sleep();
                 else
-                    playerBody.WakeUp();
+                    body.WakeUp();
             }
             else if (wasSleeping)
             {
-                playerBody.Sleep();
+                body.Sleep();
             }
         }
 
@@ -3403,7 +3474,7 @@ namespace Hecton8.SaveSystem
             {
                 LastOperationError = InvalidSlotNameReason;
                 LogWarning("[SaveManager] Ignored load request: invalid slot name.");
-                SaveEvents.RaiseLoadFailed(string.Empty, InvalidSlotNameReason);
+                SaveEvents.TryRaiseLoadFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);
                 return;
             }
 
@@ -3414,7 +3485,7 @@ namespace Hecton8.SaveSystem
                 const string reason = "Load already in progress.";
                 LastOperationError = reason;
                 LogWarning($"[SaveManager] Ignored load request for '{slotName}': {reason}");
-                SaveEvents.RaiseLoadFailed(slotName, reason);
+                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
                 return;
             }
 
@@ -3423,13 +3494,13 @@ namespace Hecton8.SaveSystem
                 string reason = $"No primary or backup save found for '{slotName}'.";
                 LastOperationError = reason;
                 LogWarning($"[SaveManager] {reason}");
-                SaveEvents.RaiseLoadFailed(slotName, reason);
+                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
                 return;
             }
 
             _isBusy = true;
             NotifyMacroDatabasePersistenceGate(true);
-            SaveEvents.RaiseLoadStarted(slotName);
+            SaveEvents.TryRaiseLoadStarted(SaveEvents.ComputeSlotHash(slotName));
             ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.08f);
             var totalTimer = Stopwatch.StartNew();
             NativeArray<byte> loadedVoxelDeltaSnapshot = default;
@@ -3618,8 +3689,18 @@ namespace Hecton8.SaveSystem
                     }
                 }
 
-                if (voxelDeltaProcessor != null && !voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
-                    throw new Exception(voxelLoadError);
+                if (voxelDeltaProcessor != null)
+                {
+                    if (loadedVoxelDeltaSnapshot.IsCreated && loadedVoxelDeltaSnapshot.Length > 0)
+                    {
+                        if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
+                            throw new Exception(voxelLoadError);
+                    }
+                    else
+                    {
+                        voxelDeltaProcessor.LoadFromSaveData(data);
+                    }
+                }
 
                 if (persistentWorldRegistryForLoad != null)
                 {
@@ -3696,7 +3777,7 @@ namespace Hecton8.SaveSystem
                     : (repairedPrimaryArtifacts ? " and self-repaired primary artifacts." : (appliedSafeAupSnap ? " and snapped player to safe terrain." : "."));
                 ReportLoadPipelineStage(LoadingPipelineStage.Completed, 1f);
                 LogInfo($"[SaveManager] Loaded '{slotName}' from {sourceLabel} in {totalTimer.ElapsedMilliseconds}ms{loadCompletionSuffix}");
-                SaveEvents.RaiseLoadCompleted(slotName);
+                SaveEvents.TryRaiseLoadCompleted(SaveEvents.ComputeSlotHash(slotName));
             }
             catch (Exception ex)
             {
@@ -3704,7 +3785,7 @@ namespace Hecton8.SaveSystem
                 RecordFailure(slotName, "load", ex.Message);
                 LastOperationError = ex.Message;
                 LogError("[SaveManager] Load failed: " + ex);
-                SaveEvents.RaiseLoadFailed(slotName, ex.Message);
+                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(ex.Message), ex.Message);
                 HideLoadingPipelineScreen();
             }
             finally
@@ -4963,7 +5044,7 @@ namespace Hecton8.SaveSystem
                 {
                     if (persistentWorldItems != null && persistentWorldItems.Length > 0)
                     {
-                        // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] — static save assembly staging buffer — owner: SaveManager
+                        // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] � static save assembly staging buffer � owner: SaveManager
                         persistentWorldItemBuffer = new NativeArray<PersistentWorldDeltaRecord>(
                             persistentWorldItems.Length,
                             Allocator.Temp,
@@ -4974,7 +5055,7 @@ namespace Hecton8.SaveSystem
 
                     if (ecosystemSectorStates != null && ecosystemSectorStates.Length > 0)
                     {
-                        // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] — static save assembly staging buffer — owner: SaveManager
+                        // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] � static save assembly staging buffer � owner: SaveManager
                         ecosystemSectorBuffer = new NativeArray<EcosystemSectorSaveRecord>(
                             ecosystemSectorStates.Length,
                             Allocator.Temp,
@@ -4985,7 +5066,7 @@ namespace Hecton8.SaveSystem
 
                     if (packedQuestStateWords != null && packedQuestStateWords.Length > 0)
                     {
-                        // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] — static save assembly staging buffer — owner: SaveManager
+                        // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] � static save assembly staging buffer � owner: SaveManager
                         packedQuestStateBuffer = new NativeArray<uint>(
                             packedQuestStateWords.Length,
                             Allocator.Temp,
@@ -5068,7 +5149,7 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            // COLD ALLOC: NativeArray<byte>[67108864] — fallback raw save read buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67108864] � fallback raw save read buffer when SaveManager instance is unavailable � owner: SaveManager
             buffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, "fallbackReadBuffer", NativeMemoryLifetime);
             ownsBuffer = true;
@@ -5095,9 +5176,9 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            // COLD ALLOC: NativeArray<byte>[67108864] — fallback raw save write buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67108864] � fallback raw save write buffer when SaveManager instance is unavailable � owner: SaveManager
             rawBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<byte>[67378176] — fallback compressed save write buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67378176] � fallback compressed save write buffer when SaveManager instance is unavailable � owner: SaveManager
             compressedBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(rawBuffer, NativeMemoryOwner, "fallbackRawWriteBuffer", NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(compressedBuffer, NativeMemoryOwner, "fallbackCompressedWriteBuffer", NativeMemoryLifetime);

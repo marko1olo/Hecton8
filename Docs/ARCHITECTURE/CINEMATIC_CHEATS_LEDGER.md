@@ -1,4 +1,4 @@
-# Cinematic Cheats Ledger
+﻿# Cinematic Cheats Ledger
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION
@@ -28,6 +28,7 @@ Any physical simulation path above `0.1 ms` per frame is suspicious until a prof
 | sonar/cartography | packed bitmasks and hologram raymarch | persistent point-cloud GameObjects or CPU mesh rebuilds |
 | storm propagation | scalar flow/audio/biolum/fog fields | high-resolution weather physics |
 | destruction | pre-baked mesh state swap plus shader tear/waterline | runtime CPU Voronoi fracture |
+| suit/hull crush | pressure scalar drives shader buckling/HUD cracks and acoustic groans | trigger-zone damage, OverlapBox broadphase, CPU mesh deformation |
 
 ## Continuous Quality
 

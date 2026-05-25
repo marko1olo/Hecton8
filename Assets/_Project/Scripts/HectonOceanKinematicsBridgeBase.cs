@@ -8,6 +8,7 @@ namespace Hecton8.Physics
     /// Shared anti-corruption base for third-party ocean providers.
     /// Gameplay talks only to <see cref="IHectonOceanKinematics"/> while vendor-specific query ownership stays here.
     /// </summary>
+    [DisallowMultipleComponent]
     public abstract class HectonOceanKinematicsBridgeBase : MonoBehaviour, IOceanKinematics
     {
         // COLD ALLOC: Vector3[1] - single-sample ocean query position scratch for interface convenience methods - owner: HectonOceanKinematicsBridgeBase

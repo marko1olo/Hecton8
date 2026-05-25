@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_170
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_170_Meshy_AI_Alien_barnacles_clust_0301230506_texture_image_0_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Meshy_AI_Alien_barnacles_clust_0301230506_texture_image_0_Albedo.png
+FINAL_FILENAME: Meshy_AI_Alien_barnacles_clust_0301230506_texture_image_0_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Alien barnacle cluster albedo replacement for imported Meshy source. Create elegant porcelain barnacle cups, opal cyan inner rims, pearl shell dust, soft coral-pink growth edges, tiny amber nutrient pores, and pale teal symbiotic speckles. The material should feel like beautiful abyssal hard-surface biology, suitable for clustered props and habitat overgrowth without losing clean shape readability. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

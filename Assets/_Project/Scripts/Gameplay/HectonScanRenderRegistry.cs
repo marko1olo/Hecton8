@@ -277,7 +277,7 @@ namespace Hecton8.Gameplay
                 if (distanceSq > bestDistanceSq)
                     continue;
 
-                AbsoluteUniversePosition runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup();
+                AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
                 if (!runtimeOriginAup.IsFinite())
                     continue;
 
@@ -391,7 +391,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (s_lootSphereRefreshFrames[index] == frame && s_lootRadii[index] > 0f)
                 return;
 
@@ -428,7 +428,7 @@ namespace Hecton8.Gameplay
                 !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

@@ -1,7 +1,7 @@
-using Hecton8.Core;
-using Hecton8.Physics;
+﻿using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -11,7 +11,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Environment/Global Weather Director")]
     [DefaultExecutionOrder(-4550)]
-    public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IFrostTickable, IWeatherService, IGlobalRegistryHotSwapListener
+    public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IWeatherService, IGlobalRegistryHotSwapListener
     {
         private const float ExponentialBlendCompletion = 0.99f;
         private const float ExponentialBlendRateScale = 4.6051702f;
@@ -108,8 +108,9 @@ namespace Hecton8.Environment
         private static readonly int _RadiationStormId = Shader.PropertyToID("_HectonRadiationStorm");
 
         [Header("References")]
-        [Tooltip("Optional explicit fluid-engine reference. If empty, the runtime singleton is used.")]
-        [SerializeField] private HectonFluidEngine fluidEngine;
+        [Tooltip("Optional explicit fluid-current sink. If empty, the registry route is used.")]
+        [FormerlySerializedAs("fluidEngine")]
+        [SerializeField] private MonoBehaviour fluidCurrentSinkProvider;
 
         [Header("State Machine")]
         [Tooltip("Random seed for deterministic weather rolls.")]
@@ -250,8 +251,13 @@ namespace Hecton8.Environment
 
         private bool _registeredToTickManager;
         private bool _registeredToFrostTickManager;
+        private bool _registeredToLateFrameTickManager;
         private bool _hotSwapRegistered;
         private bool _initialized;
+        private bool _weatherShaderDirty;
+        private IFluidCurrentWriteSink _fluidCurrentSink;
+        private bool _atmosphericShaderDirty;
+        private bool _noirFogLutDirty;
         private bool _transitioning;
         private float _phaseHoldTimer;
         private float _transitionTimer;
@@ -315,7 +321,10 @@ namespace Hecton8.Environment
             InitializeRuntimeStateIfNeeded();
             UpdateBiomeLutState(transitionDurationSeconds, true);
             PublishSnapshot();
+            PublishWeatherShaderState();
+            _weatherShaderDirty = false;
             PublishAtmosphericBridgeShaderState();
+            _atmosphericShaderDirty = false;
         }
 
         private void OnEnable()
@@ -327,7 +336,10 @@ namespace Hecton8.Environment
             UpdateBiomeLutState(transitionDurationSeconds, true);
             GlobalRegistry.RegisterWeatherService(this);
             PublishSnapshot();
+            PublishWeatherShaderState();
+            _weatherShaderDirty = false;
             PublishAtmosphericBridgeShaderState();
+            _atmosphericShaderDirty = false;
         }
 
         private void Start()
@@ -354,6 +366,9 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_NoirFogStratificationId, Vector4.zero);
             Shader.SetGlobalFloat(_BiolumeSurgeThresholdId, 0f);
             ClearAtmosphericBridgeShaderState();
+            _weatherShaderDirty = false;
+            _atmosphericShaderDirty = false;
+            _noirFogLutDirty = false;
             _hasPublishedWeatherEvent = false;
         }
 
@@ -374,8 +389,8 @@ namespace Hecton8.Environment
             if (serviceSlot != GlobalRegistryServiceSlot.FluidRuntime)
                 return;
 
-            if (fluidEngine == null || ReferenceEquals(previousService, fluidEngine))
-                fluidEngine = currentService as HectonFluidEngine;
+            if (_fluidCurrentSink == null || ReferenceEquals(previousService, _fluidCurrentSink))
+                _fluidCurrentSink = currentService as IFluidCurrentWriteSink;
         }
 
         /// <summary>
@@ -442,7 +457,26 @@ namespace Hecton8.Environment
             if (!_initialized)
                 return;
 
-            PublishAtmosphericBridgeShaderState();
+            _atmosphericShaderDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            InitializeRuntimeStateIfNeeded();
+            if (!_initialized)
+                return;
+
+            if (_weatherShaderDirty)
+            {
+                PublishWeatherShaderState();
+                _weatherShaderDirty = false;
+            }
+
+            if (_atmosphericShaderDirty)
+            {
+                PublishAtmosphericBridgeShaderState();
+                _atmosphericShaderDirty = false;
+            }
         }
 
         /// <summary>
@@ -477,6 +511,9 @@ namespace Hecton8.Environment
 
             if (!_registeredToFrostTickManager)
                 _registeredToFrostTickManager = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredToLateFrameTickManager)
+                _registeredToLateFrameTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTickManager()
@@ -490,8 +527,12 @@ namespace Hecton8.Environment
             if (_registeredToFrostTickManager)
                 GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
 
+            if (_registeredToLateFrameTickManager)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
             _registeredToTickManager = false;
             _registeredToFrostTickManager = false;
+            _registeredToLateFrameTickManager = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -513,8 +554,8 @@ namespace Hecton8.Environment
 
         private void ResolveDependencies()
         {
-            if (fluidEngine == null)
-                fluidEngine = GlobalRegistry.Fluid;
+            if (_fluidCurrentSink == null)
+                _fluidCurrentSink = fluidCurrentSinkProvider as IFluidCurrentWriteSink ?? GlobalRegistry.FluidCurrentWriteSink;
         }
 
         private void InitializeRuntimeStateIfNeeded()
@@ -643,17 +684,12 @@ namespace Hecton8.Environment
 
             Vector3 currentVectorManaged = new Vector3(currentVector.x, currentVector.y, currentVector.z);
             Vector3 windVectorManaged = new Vector3(windVector.x, windVector.y, windVector.z);
-            Shader.SetGlobalVector(_GlobalCurrentVectorId, new Vector4(currentVectorManaged.x, currentVectorManaged.y, currentVectorManaged.z, 0f));
-            Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));
-            Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, ApproximateMagnitude(windVector)));
-            Shader.SetGlobalFloat(_WeatherIntensityId, weatherIntensity01);
-            Shader.SetGlobalInt(_WeatherStateMaskId, (int)_runtimeSnapshot.StateMask);
-            PublishNoirFogShaderState();
+            _weatherShaderDirty = true;
 
-            if (fluidEngine != null && math.lengthsq(currentVector - _lastAppliedCurrentVector) > CurrentSyncEpsilonSq)
+            IFluidCurrentWriteSink fluidCurrentSink = _fluidCurrentSink;
+            if (fluidCurrentSink != null && math.lengthsq(currentVector - _lastAppliedCurrentVector) > CurrentSyncEpsilonSq)
             {
-                fluidEngine.CurrentVector = currentVectorManaged;
-                fluidEngine.CurrentStrength = 1f;
+                fluidCurrentSink.ApplyWeatherCurrent(currentVectorManaged, 1f);
                 _lastAppliedCurrentVector = currentVector;
             }
 
@@ -665,6 +701,37 @@ namespace Hecton8.Environment
             _debugWindVector = windVectorManaged;
             _debugPhaseHoldTimer = _phaseHoldTimer;
             PublishWeatherEventIfChanged();
+        }
+
+        private void PublishWeatherShaderState()
+        {
+            FlushNoirFogLutTexture();
+            Vector3 currentVectorManaged = new Vector3(_runtimeSnapshot.GlobalCurrentVector.x, _runtimeSnapshot.GlobalCurrentVector.y, _runtimeSnapshot.GlobalCurrentVector.z);
+            Vector3 windVectorManaged = new Vector3(_runtimeSnapshot.GlobalWindVector.x, _runtimeSnapshot.GlobalWindVector.y, _runtimeSnapshot.GlobalWindVector.z);
+            Shader.SetGlobalVector(_GlobalCurrentVectorId, new Vector4(currentVectorManaged.x, currentVectorManaged.y, currentVectorManaged.z, 0f));
+            Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));
+            Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, ApproximateMagnitude(_runtimeSnapshot.GlobalWindVector)));
+            Shader.SetGlobalFloat(_WeatherIntensityId, math.saturate(_runtimeSnapshot.WeatherIntensity));
+            Shader.SetGlobalInt(_WeatherStateMaskId, (int)_runtimeSnapshot.StateMask);
+            PublishNoirFogShaderState();
+        }
+
+        private void FlushNoirFogLutTexture()
+        {
+            if (!_noirFogLutDirty && _noirFogLutTexture != null && _noirFogLutPixels != null)
+                return;
+
+            EnsureNoirFogLutResources();
+            if (_noirFogLutTexture == null || _noirFogLutPixels == null)
+                return;
+
+            RebuildNoirFogLutTexture(
+                _activeBiomeLutSourceProfile,
+                _activeBiomeLutTargetProfile,
+                _activeWeatherLutSourceProfile,
+                _activeWeatherLutTargetProfile,
+                _activeWeatherLutInfluence);
+            _noirFogLutDirty = false;
         }
 
         private void PublishWeatherEventIfChanged()
@@ -684,15 +751,11 @@ namespace Hecton8.Environment
             _lastWeatherEventIntensity = _runtimeSnapshot.WeatherIntensity;
             _lastWeatherEventCurrentVector = _runtimeSnapshot.GlobalCurrentVector;
             _lastWeatherEventWindVector = _runtimeSnapshot.GlobalWindVector;
-            WeatherEvents.RaiseSnapshotUpdated(in _runtimeSnapshot);
+            WeatherEvents.TryRaiseSnapshotUpdated(in _runtimeSnapshot);
         }
 
         private void UpdateBiomeLutState(float deltaTime, bool forceImmediate)
         {
-            EnsureNoirFogLutResources();
-            if (_noirFogLutTexture == null || _noirFogLutPixels == null)
-                return;
-
             ResolveBiomeLutProfiles(out WeatherProfile sourceProfile, out WeatherProfile targetProfile, out float targetBlend);
             ResolveWeatherLutProfiles(out WeatherProfile weatherSourceProfile, out WeatherProfile weatherTargetProfile, out float weatherInfluence);
             bool sourceChanged = !ReferenceEquals(sourceProfile, _activeBiomeLutSourceProfile);
@@ -706,7 +769,7 @@ namespace Hecton8.Environment
                 _activeWeatherLutSourceProfile = weatherSourceProfile;
                 _activeWeatherLutTargetProfile = weatherTargetProfile;
                 _activeWeatherLutInfluence = weatherInfluence;
-                RebuildNoirFogLutTexture(sourceProfile, targetProfile, weatherSourceProfile, weatherTargetProfile, weatherInfluence);
+                _noirFogLutDirty = true;
             }
             else
             {
@@ -729,6 +792,7 @@ namespace Hecton8.Environment
                 ResolveBiolumeThreshold(sourceProfile),
                 ResolveBiolumeThreshold(targetProfile),
                 _biomeLutBlend);
+            _weatherShaderDirty = true;
         }
 
         private void EnsureNoirFogLutResources()

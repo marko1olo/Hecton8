@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_133
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_133_MAT_SargassumFoamDamping_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_SargassumFoamDamping_Albedo.png
+FINAL_FILENAME: MAT_SargassumFoamDamping_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Sargassum foam damping albedo for surface ecology and motion-damping visuals. Create pale pearl foam cells, soft teal water films, olive sargassum micro-fragments, amber nutrient dots, and clean cyan meniscus edges. The texture should look airy, premium, and useful for shader layering, with broad foam clusters and gentle biological color. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

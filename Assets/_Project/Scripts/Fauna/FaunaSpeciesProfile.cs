@@ -124,7 +124,7 @@ namespace Hecton8.AI
                 return;
 
             mask = HectonLayerMasks.AllDefinedProjectLayersMask;
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 "[FaunaSpeciesProfile] " + fieldName + " was Everything (-1). Replaced with HectonLayerMasks.AllDefinedProjectLayersMask.",
                 this);
         }

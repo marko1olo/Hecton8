@@ -180,7 +180,7 @@ namespace Hecton8.Editor
 
             string registerBody = ExtractMethodBody(atlasSignalEvents, "public static void Register(IAtlasSignalEventListener listener)");
             string unregisterBody = ExtractMethodBody(atlasSignalEvents, "public static void Unregister(IAtlasSignalEventListener listener)");
-            string raiseDecodedBody = ExtractMethodBody(atlasSignalEvents, "public static void RaiseDecoded(string messageId)");
+            string raiseDecodedBody = ExtractMethodBody(atlasSignalEvents, "private static bool TryRaiseDecodedFromString(string messageId)");
             string enqueueBody = ExtractMethodBody(atlasSignalEvents, "private static bool Enqueue(in AtlasSignalEventPayload payload)");
             string ensureBody = ExtractMethodBody(atlasSignalEvents, "private static void EnsureInitialized()");
             string resetBody = ExtractMethodBody(atlasSignalEvents, "private static void ResetStaticState()");
@@ -209,7 +209,7 @@ namespace Hecton8.Editor
             AssertContains(registerImmediateBody, "ReportListenerRejected()", "Atlas signal listener capacity rejection reports telemetry", report, ref failureCount);
             AssertContains(unregisterBody, "_listeners.TryUnregister(listener)", "Atlas signal unregister avoids RegistryBucket debug string miss path", report, ref failureCount);
             AssertContains(unregisterBody, "ReportUnregisterMiss()", "Atlas signal unregister miss reports hash-only telemetry", report, ref failureCount);
-            AssertContains(raiseDecodedBody, "_decodedMessageIdsByHash.TryGetValue(messageHash, out string existingMessageId)", "Atlas decoded message binding checks existing hash first", report, ref failureCount);
+            AssertContains(raiseDecodedBody, "TryRegisterDecodedMessage(messageHash, messageId, out bool hashCollision)", "Atlas decoded message binding checks existing hash first", report, ref failureCount);
             AssertContains(raiseDecodedBody, "ReportDecodedMessageHashCollision(messageHash)", "Atlas decoded message hash collision reports telemetry", report, ref failureCount);
             AssertContains(enqueueBody, "ReportQueueOverflow(payload.EventType)", "Atlas signal queue overflow preserves event-type context", report, ref failureCount);
             AssertContains(overflowBody, "_droppedEventCount++", "Atlas signal overflow increments a monotonic counter", report, ref failureCount);
@@ -497,34 +497,27 @@ namespace Hecton8.Editor
 
             string tickBody = ExtractMethodBody(spectrogram, "public void Tick(float deltaTime)");
             string lateFrameBody = ExtractMethodBody(spectrogram, "public void LateFrameTick()");
-            string generateJobBody = ExtractMethodBody(spectrogram, "public void Execute(int index)");
-            string errorJobBody = ExtractMethodBody(spectrogram, "public void Execute()");
-            string commitBody = ExtractMethodBody(spectrogram, "private void CommitWaveResult(float deltaTime)");
-            AssertContains(spectrogram, "NativeArray<float> _targetWave", "Frequency tuning owns target wave NativeArray", report, ref failureCount);
-            AssertContains(spectrogram, "NativeArray<float> _playerWave", "Frequency tuning owns player wave NativeArray", report, ref failureCount);
-            AssertContains(spectrogram, "[BurstCompile(FloatMode = FloatMode.Fast", "Frequency tuning jobs use Burst fast math", report, ref failureCount);
-            AssertContains(spectrogram, "IJobParallelFor", "Frequency tuning wave generation is parallel", report, ref failureCount);
-            AssertContains(generateJobBody, "math.sin(x * TargetFrequency) * TargetAmplitude", "Target sine uses Burst math sine with amplitude", report, ref failureCount);
-            AssertContains(generateJobBody, "math.sin(x * PlayerFrequency) * PlayerAmplitude", "Player sine uses Burst math sine with amplitude", report, ref failureCount);
-            AssertContains(errorJobBody, "error += math.abs(TargetWave[i] - PlayerWave[i])", "Frequency tuning error sums math.abs differences", report, ref failureCount);
+            string commitBody = ExtractMethodBody(spectrogram, "private void CommitWaveResult(float deltaTime, float rawError)");
+            AssertContains(spectrogram, "private float EvaluateScalarWaveError()", "Frequency tuning computes scalar analytic error without waveform jobs", report, ref failureCount);
+            AssertContains(spectrogram, "WaveScalarsId", "Frequency tuning binds wave frequencies/amplitudes to shader scalars", report, ref failureCount);
+            AssertContains(spectrogram, "WaveLayoutId", "Frequency tuning binds wave layout to shader scalars", report, ref failureCount);
             AssertContains(spectrogram, "GlobalRegistry.Input", "Frequency tuning reads cached player input state", report, ref failureCount);
             AssertContains(tickBody, "DrainScannerToolSignals()", "Frequency tuning consumes scanner-active signal lane", report, ref failureCount);
             AssertContains(spectrogram, "TryGetLatestScannerToolActiveSignal", "Frequency tuning has latest scanner-active fallback for late PDA panel activation", report, ref failureCount);
             AssertContains(commitBody, "LockCurrentStage()", "Frequency tuning locks stages after continuous match", report, ref failureCount);
-            AssertContains(spectrogram, "GlobalSignals.Publish(new BlueprintUnlockedSignal", "Frequency tuning emits blueprint unlock signal", report, ref failureCount);
+            AssertContains(spectrogram, "SignalBus<BlueprintUnlockedSignal>.TryPush", "Frequency tuning emits blueprint unlock through SignalBus", report, ref failureCount);
             AssertContains(spectrogram, "Graphics.RenderMeshIndirect", "Frequency tuning renders via indirect PDA draw path", report, ref failureCount);
-            AssertContains(spectrogram, "FrequencyTuningWaveGpuSegment", "Frequency tuning uploads continuous tube segments rather than point beads", report, ref failureCount);
-            AssertContains(spectrogram, "_HectonFrequencyTuningSegments", "Frequency tuning binds the segment buffer to the PDA shader", report, ref failureCount);
-            AssertContains(spectrogram, "math.rsqrt", "Frequency tuning segment tangent setup avoids scalar sqrt", report, ref failureCount);
-            AssertContains(spectrogram, "GraphicsBufferUploadUtility.UploadNativeArray", "Frequency tuning uploads wave segments through graphics buffer utility", report, ref failureCount);
+            AssertContains(spectrogram, "_HectonFrequencyTuningWaveScalars", "Frequency tuning binds wave scalars to the PDA shader", report, ref failureCount);
+            AssertContains(spectrogram, "UpdateDrawArgs(_gpuSegmentCapacity)", "Frequency tuning updates indirect draw args without waveform CPU jobs", report, ref failureCount);
             AssertContains(spectrogram, "ToolHapticsRuntime.EnqueueSinusoidalCommand", "Frequency tuning emits haptic feedback through fixed haptic queue", report, ref failureCount);
-            AssertContains(spectrogram, "PlayerSignalEvents.RaiseInteractionSignal", "Frequency tuning routes audio feedback through player signal lane", report, ref failureCount);
+            AssertContains(spectrogram, "PlayerSignalEvents.TryRaiseInteractionSignal", "Frequency tuning routes audio feedback through player signal lane", report, ref failureCount);
             AssertContains(spectrogram, "_HectonFrequencyTuningError01", "Frequency tuning pushes visor-post error scalar", report, ref failureCount);
             AssertContains(spectrogram, "LowPointCount = 32", "Frequency tuning low-tier math LOD uses 32 points", report, ref failureCount);
             AssertContains(spectrogram, "TelemetryCapacity = 300", "Frequency tuning black box tracks 300 frames", report, ref failureCount);
             AssertContains(spectrogram, "private static float Sanitize01(float value)", "Spectrogram centralizes normalized scalar sanitization", report, ref failureCount);
             AssertNotContains(spectrogram, "UnityEngine.UI", "Frequency tuning has no uGUI dependency", report, ref failureCount);
             AssertNotContains(spectrogram, "LineRenderer", "Frequency tuning has no LineRenderer dependency", report, ref failureCount);
+            AssertNotContains(spectrogram, "math.sin", "Frequency tuning source has no direct math.sin calls", report, ref failureCount);
             AssertNotContains(spectrogram, "Mathf.Abs", "Frequency tuning avoids Mathf.Abs in waveform math", report, ref failureCount);
             AssertNotContains(spectrogram, ".text =", "Spectrogram source does not assign TMP text strings", report, ref failureCount);
             AssertNotContains(spectrogram, "SetText(", "Spectrogram source does not call TMP SetText", report, ref failureCount);
@@ -792,7 +785,7 @@ namespace Hecton8.Editor
 
         private static void AssertContains(string source, string token, string label, StringBuilder report, ref int failureCount)
         {
-            if (!string.IsNullOrEmpty(source) && source.Contains(token))
+            if (ContainsOrdinal(source, token))
             {
                 report.Append(" PASS ").Append(label).Append(';');
                 return;
@@ -804,7 +797,7 @@ namespace Hecton8.Editor
 
         private static void AssertNotContains(string source, string token, string label, StringBuilder report, ref int failureCount)
         {
-            if (string.IsNullOrEmpty(source) || !source.Contains(token))
+            if (!ContainsOrdinal(source, token))
             {
                 report.Append(" PASS ").Append(label).Append(';');
                 return;
@@ -812,6 +805,12 @@ namespace Hecton8.Editor
 
             failureCount++;
             report.Append(" FAIL ").Append(label).Append(';');
+        }
+
+        private static bool ContainsOrdinal(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   source.IndexOf(token, StringComparison.Ordinal) >= 0;
         }
 
         private static void AssertOrder(

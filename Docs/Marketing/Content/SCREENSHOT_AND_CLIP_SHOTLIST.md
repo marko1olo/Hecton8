@@ -257,6 +257,34 @@ Use this table the moment a playable scene can produce images. It maps planned a
 | `PLAN-CLIP-003` | Salvage failure | Escalation must follow player action, not random event. | tool hit, reward, reaction, forced choice. | `NO_PLAYER_VERB` | `POST-010`, creator warmup. |
 | `PLAN-CLIP-004` | Heavy machine startup | Machine motion must show weight and underwater context. | lever/pump/ballast, slow mass movement, pressure response. | `GENERIC_VISUAL` | `POST-011`, capsule `CAP-004` stills. |
 
+### Imageboard Candidate Mapping
+
+Use this mapping before any 4chan/Dvach route request. The board question must test the asset's weakest visible claim. Do not use imageboards for a polished announcement, store link, Discord invite, wishlist ask, key ask, or "support the project" beat.
+
+| Asset ID | Imageboard route | Best critique question | Danger read | Kill cue |
+|---|---|---|---|---|
+| `PLAN-SHOT-001` | Optional identity stress test. | "Does this read as industrial deep-sea survival or generic diver ocean?" | Generic Subnautica-adjacent exterior. | Empty water, hero diver pose, blue/purple aquarium, no machine/route cue. |
+| `PLAN-SHOT-002` | Optional Dvach `/gd` or technical critique if interior proof is strong. | "Does this room read as a pressure machine or clean sci-fi corridor?" | Decorative base shot with no affordance. | No gauge/seal/pipe/wet glass; red light doing all the work. |
+| `PLAN-SHOT-003` | Strong first imageboard still candidate. | "Can you tell what the player is doing and what could go wrong?" | Salvage loop looks thin or loot-sparkle generic. | Tool/target/reward/hazard relationship not readable at thumbnail size. |
+| `PLAN-SHOT-004` | Optional only if the machine is real in build. | "Does this read as heavy underwater machinery or a static prop?" | Feature promise without gameplay proof. | Vehicle/exosuit/pump is not usable yet or lacks underwater context. |
+| `PLAN-SHOT-005` | Strong if response path is visible. | "Is there an obvious next move: seal, repair, reroute, or leave?" | Unfair failure or UI-only drama. | Leak/warning exists but no player response path. |
+| `PLAN-SHOT-006` | Strong only when the threat creates a route decision. | "Would you continue, scan, retreat, or reroute from this frame?" | Passive monster poster. | Threat is terrain-like, too dark, or no route/sonar/floodlight relation. |
+| `PLAN-SHOT-007` | Monitor/internal unless gameplay proof is already visible. | "Does this look like system interference or abstract concept art?" | AI-looking anomaly poster. | Instrument corruption is decorative and no route pull exists. |
+| `PLAN-SHOT-008` | Internal only. | "Is the composition still readable on cheap settings?" | Unproven performance claim. | Any FPS, optimization, or hardware boast without profiler artifact. |
+| `PLAN-CLIP-001` | Strongest pressure-system candidate. | "At second 3, what would you do next?" | Mood leak with no decision. | Warning/leak/action choice starts after second 3. |
+| `PLAN-CLIP-002` | Optional atmosphere candidate. | "Does the instrument reveal work before the shape appears?" | Generic sonar monster setup. | Viewer only waits for monster reveal, not system read. |
+| `PLAN-CLIP-003` | Strongest loop-depth candidate. | "Does the salvage success create a second decision?" | Thin harvest loop. | Success ends the clip or escalation feels random. |
+| `PLAN-CLIP-004` | Optional machine-fantasy candidate. | "Does the machine feel heavy and useful?" | Beauty shot of machinery. | No interaction, no consequence, no underwater pressure response. |
+
+### Imageboard Capture Notes
+
+- Export one direct media file with no logo, title card, streamer border, marketing crop, or caption baked in.
+- Keep the question outside the image/video. If the asset needs text overlay to work, it fails the route.
+- Clips must make the first three seconds readable without audio; audio can strengthen, not rescue, the read.
+- Stills must survive thumbnail-size review before public-route approval.
+- Do not crop out the route cue, tool, gauge, warning, or return path just to make a prettier frame.
+- Capture a low/mid/high visual comparison only for internal trust. Public performance use still needs profiler/GC/memory proof.
+
 ### Capture Session Checklist
 
 ```text

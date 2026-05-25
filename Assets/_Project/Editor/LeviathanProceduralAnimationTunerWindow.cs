@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using Hecton8.Animation.IK;
 using Hecton8.Core;
 using Unity.Collections.LowLevel.Unsafe;
@@ -23,6 +24,7 @@ namespace Hecton8.EditorTools
         private Toggle _overrideToggle;
         private Label _layoutLabel;
         private Label _runtimeLabel;
+        private static readonly List<MonoBehaviour> s_BehaviourScratch = new List<MonoBehaviour>(16);
 
         [MenuItem("HECTON-8/Animation/Leviathan Procedural Animation Tuner")]
         public static void Open()
@@ -100,10 +102,11 @@ namespace Hecton8.EditorTools
             GameObject[] selected = Selection.gameObjects;
             for (int i = 0; i < selected.Length; i++)
             {
-                MonoBehaviour[] behaviours = selected[i].GetComponents<MonoBehaviour>();
-                for (int j = 0; j < behaviours.Length; j++)
+                s_BehaviourScratch.Clear();
+                selected[i].GetComponents(s_BehaviourScratch);
+                for (int j = 0; j < s_BehaviourScratch.Count; j++)
                 {
-                    MonoBehaviour behaviour = behaviours[j];
+                    MonoBehaviour behaviour = s_BehaviourScratch[j];
                     if (behaviour == null || behaviour.GetType().FullName != "Hecton8.AI.FaunaKinematicsRuntime")
                         continue;
 
@@ -117,6 +120,8 @@ namespace Hecton8.EditorTools
                     EditorUtility.SetDirty(behaviour);
                 }
             }
+
+            s_BehaviourScratch.Clear();
         }
 
         private void RefreshLayoutLabel()

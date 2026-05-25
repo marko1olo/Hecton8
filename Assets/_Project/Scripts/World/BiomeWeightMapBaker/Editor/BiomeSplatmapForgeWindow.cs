@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.IO;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -122,8 +123,8 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
             _activeRules = loadedRules;
             _activeRuleSetCount = math.max(1, ruleSetCount);
             _csvProfileLoaded = true;
-            _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8") + " | rows " + ruleCount + " | rule sets " + ruleSetCount;
-            _statusLabel.text = "Loaded CSV rules: " + ruleCount + " | rule sets " + ruleSetCount + " | schema 0x" + schemaHash.ToString("X8");
+            _schemaLabel.text = "CSV Schema v" + BiomeSplatmapProfileCsvParser.CsvSchemaVersion + ": hash 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture) + " | rows " + ruleCount + " | rule sets " + ruleSetCount;
+            _statusLabel.text = "Loaded CSV rules: " + ruleCount + " | rule sets " + ruleSetCount + " | schema 0x" + schemaHash.ToString("X8", CultureInfo.InvariantCulture);
             RefreshPreview();
         }
 
@@ -155,7 +156,7 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
                 FixedList4096Bytes<BiomeBlendRuleDTO> rules = _csvProfileLoaded ? _activeRules : BuildRulesFromSliders();
                 bool baked = BiomeWeightMapBakePipeline.BakeMockSector(config, in rules, "TX_BiomeWeightMap_SHINOBU_243.asset", out BiomeSplatmapBakeResult result);
                 _statusLabel.text = baked
-                    ? "Baked " + result.AssetPath + " | " + result.Width + "x" + result.Height + " | BC7 " + result.Bc7Compressed + " | warnings 0x" + result.WarningFlags.ToString("X8")
+                ? "Baked " + result.AssetPath + " | " + result.Width + "x" + result.Height + " | BC7 " + result.Bc7Compressed + " | warnings 0x" + result.WarningFlags.ToString("X8", CultureInfo.InvariantCulture)
                     : "Bake failed. See Console and Docs/AgentLogs/Dump_SHINOBU_243.bin if emitted.";
             }
             finally

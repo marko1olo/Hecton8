@@ -13,7 +13,6 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Burst;
@@ -34,7 +33,7 @@ namespace Hecton8.Biolum
     /// - Floor zones (FloorBiolumZone)
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener, IOriginShiftListener, IGlobalRegistryHotSwapListener, IDisposable
+    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ISonarPulseEventListener, IOriginShiftListener, IGlobalRegistryHotSwapListener, IDisposable
     {
         private static readonly int _FloraOceanBiolumColorId = Shader.PropertyToID("_HectonOceanBiolumColor");
         private static readonly int _FloraOceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
@@ -205,10 +204,11 @@ namespace Hecton8.Biolum
         private Vector3 _cachedCameraPosition = Vector3.zero;
         private bool _serviceRegistered = false;
         private bool _tickRegistered = false;
+        private bool _lateFrameRegistered = false;
         private bool _hotSwapRegistered = false;
         private IDataVault _dataVault;
         private ITickDispatcher _cachedTickDispatcher;
-        private HectonFluidEngine _cachedFluid;
+        private IAbyssalFlowGpuReadModel _cachedFluid;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private float _floraGlobalUpdateTimer = 0f;
         private float _nextCameraResolveTime = 0f;
@@ -247,6 +247,15 @@ namespace Hecton8.Biolum
         private uint _telemetrySequence = 0u;
         private Vector4 _lastPublishedMasterPhase = new Vector4(-1f, -1f, -1f, -1f);
         private Vector4 _lastPublishedBiolumIntensity = new Vector4(-1f, -1f, -1f, -1f);
+        private Vector4 _pendingMasterPhase = new Vector4(-1f, -1f, -1f, -1f);
+        private Vector4 _pendingBiolumIntensity = new Vector4(-1f, -1f, -1f, -1f);
+        private bool _globalBiolumPhaseDirty = false;
+        private bool _floraShaderGlobalsDirty = false;
+        private bool _touchRippleVisualDirty = false;
+        private int _pendingTouchRippleWriteCount = 0;
+        private int _pendingTouchRippleQualityBucket = -1;
+        private float _pendingTouchRippleUploadBlend = 0f;
+        private float _pendingTouchRippleQualityWeight = 1f;
 
         // COLD ALLOC: TouchRippleState[16] - fixed touch ripple state pool; no per-frame containers - owner: HectonBiolumManager
         private readonly TouchRippleState[] _touchRipples = new TouchRippleState[MaxTouchRipples];
@@ -333,6 +342,7 @@ namespace Hecton8.Biolum
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
+            TryUnregisterLateFrameTick();
             HectonFloatingOrigin.UnregisterListener(this);
             CompleteRuntimeJobsForTeardown();
             ReleaseVaultHandlesOnly();
@@ -347,6 +357,7 @@ namespace Hecton8.Biolum
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
+            TryUnregisterLateFrameTick();
             HectonFloatingOrigin.UnregisterListener(this);
             CompleteRuntimeJobsForTeardown();
             SpectrumEvents.UnregisterSonarPulseListener(this);
@@ -386,7 +397,7 @@ namespace Hecton8.Biolum
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugLogUpdates) Debug.Log("[BiolumManager] Registered zone", this);
+            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Registered zone");
 #endif
         }
 
@@ -402,7 +413,7 @@ namespace Hecton8.Biolum
             RemoveZoneNonAlloc(_activeFloorZones, ref _activeFloorZoneCount, zone);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugLogUpdates) Debug.Log("[BiolumManager] Unregistered zone", this);
+            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Unregistered zone");
 #endif
         }
 
@@ -515,7 +526,7 @@ namespace Hecton8.Biolum
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -556,12 +567,11 @@ namespace Hecton8.Biolum
         {
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             TryFinalizeRuntimeJobsNoWait();
-            EnsureRuntimeResources();
             RefreshCameraSnapshotForOwnerPhase(false);
             DrainMovementAcousticSignals();
             UpdateTouchRipples(safeDeltaTime);
             UpdatePredatorBlackout(safeDeltaTime);
-            PublishGlobalBiolumPhase(safeDeltaTime);
+            UpdateGlobalBiolumPhase(safeDeltaTime);
             RecordBiolumTelemetry();
 
 #if UNITY_EDITOR
@@ -586,6 +596,30 @@ namespace Hecton8.Biolum
             UpdateFloraShaderGlobals();
         }
 
+        public void LateFrameTick()
+        {
+            if (_touchRippleVisualDirty)
+                EnsureRuntimeResources();
+
+            FlushGlobalBiolumPhase();
+
+            if (_touchRippleVisualDirty)
+                FlushTouchRippleBuffer();
+
+            if (_floraShaderGlobalsDirty)
+            {
+                _floraShaderGlobalsDirty = false;
+                PublishFloraShaderGlobals();
+            }
+
+            if (!_globalBiolumPhaseDirty &&
+                !_floraShaderGlobalsDirty &&
+                !_touchRippleVisualDirty)
+            {
+                TryUnregisterLateFrameTick();
+            }
+        }
+
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // PRIVATE: Initialization & Updates
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -608,7 +642,7 @@ namespace Hecton8.Biolum
             UpdateFloraShaderGlobals();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugLogUpdates) Debug.Log("[BiolumManager] Initialized", this);
+            if (_debugLogUpdates) H8Debug.Log("[BiolumManager] Initialized");
 #endif
         }
 
@@ -659,10 +693,11 @@ namespace Hecton8.Biolum
                 _cachedFloorBiolumColor = FastLerpColor(_cachedFloorBiolumColor, _SonarResponseColor, sonarColorLift);
             }
 
-            PublishFloraShaderGlobals();
+            _floraShaderGlobalsDirty = true;
+            TryRegisterLateFrameTick();
         }
 
-        private void PublishGlobalBiolumPhase(float deltaTime)
+        private void UpdateGlobalBiolumPhase(float deltaTime)
         {
             UpdateCelestialBiolumStateFromSnapshot(deltaTime, out double celestialTime);
             UpdateAbyssalFlowFrequencyScale();
@@ -678,7 +713,7 @@ namespace Hecton8.Biolum
                 _globalBiolumPhase = math.frac(_globalBiolumPhase + phaseStep);
             }
 
-            _masterPulse01 = math.saturate(0.5f + (math.sin(_globalBiolumPhase * math.PI * 2f) * 0.5f));
+            _masterPulse01 = math.saturate(0.5f + (MathLodApproximation.ApproxSinBhaskara(_globalBiolumPhase * math.PI * 2f) * 0.5f));
             float intensityScale = math.isfinite(_globalIntensityScale) ? math.max(0f, _globalIntensityScale) : 1f;
             // CelestialRuntime already owns _HectonCelestialBiolumMultiplier; this vector only carries director dimming.
             _masterIntensity = intensityScale * _daylightMask * _predatorCurrentIntensity;
@@ -691,6 +726,24 @@ namespace Hecton8.Biolum
             Vector4 phaseVector = new Vector4(_globalBiolumPhase, _masterPulse01, _flowFrequencyScale, _eclipseMask);
             Vector4 intensityVector = new Vector4(_masterIntensity, _predatorCurrentIntensity, _daylightMask, _activeTouchRippleCount);
 
+            if (VectorDeltaExceeds(_lastPublishedMasterPhase, phaseVector, GlobalBiolumPhasePublishEpsilon) ||
+                VectorDeltaExceeds(_lastPublishedBiolumIntensity, intensityVector, GlobalBiolumPhasePublishEpsilon) ||
+                _biolumIntensitySuppressedByPulseSync)
+            {
+                _pendingMasterPhase = phaseVector;
+                _pendingBiolumIntensity = intensityVector;
+                _globalBiolumPhaseDirty = true;
+                TryRegisterLateFrameTick();
+            }
+        }
+
+        private void FlushGlobalBiolumPhase()
+        {
+            if (!_globalBiolumPhaseDirty)
+                return;
+
+            Vector4 phaseVector = _pendingMasterPhase;
+            Vector4 intensityVector = _pendingBiolumIntensity;
             bool pulseSyncOwnsLegacyGlobals = IsGlobalPulseSyncOwningLegacyBiolumGlobals();
             if (!pulseSyncOwnsLegacyGlobals &&
                 VectorDeltaExceeds(_lastPublishedMasterPhase, phaseVector, GlobalBiolumPhasePublishEpsilon))
@@ -707,6 +760,7 @@ namespace Hecton8.Biolum
                 {
                     _biolumIntensitySuppressedByPulseSync = true;
                     _lastPublishedBiolumIntensity = intensityVector;
+                    _globalBiolumPhaseDirty = false;
                     return;
                 }
 
@@ -714,6 +768,8 @@ namespace Hecton8.Biolum
                 _lastPublishedBiolumIntensity = intensityVector;
                 _biolumIntensitySuppressedByPulseSync = false;
             }
+
+            _globalBiolumPhaseDirty = false;
         }
 
         private static bool IsGlobalPulseSyncOwningLegacyBiolumGlobals()
@@ -769,7 +825,7 @@ namespace Hecton8.Biolum
         private void UpdateAbyssalFlowFrequencyScale()
         {
             _flowFrequencyScale = 1f;
-            HectonFluidEngine fluid = _cachedFluid;
+            IAbyssalFlowGpuReadModel fluid = _cachedFluid;
             if (fluid == null)
                 return;
 
@@ -878,7 +934,7 @@ namespace Hecton8.Biolum
                 _rippleSortReady = false;
 
             ScheduleRippleDistanceJob(GetCameraPosition());
-            PublishTouchRippleBuffer();
+            QueueTouchRippleBufferPublish();
         }
 
         private void ScheduleRippleDistanceJob(Vector3 observerPosition)
@@ -931,20 +987,35 @@ namespace Hecton8.Biolum
             _rippleJobScheduled = true;
         }
 
-        private void PublishTouchRippleBuffer()
+        private void QueueTouchRippleBufferPublish()
         {
-            if (_touchRippleBufferA == null || _touchRippleBufferB == null)
-                return;
-
             float qualityWeight = SampleLegacyTouchRippleQualityWeight();
             int qualityBucket = (int)math.round(qualityWeight * 255f);
             float uploadBlend = math.smoothstep(0.12f, 0.72f, qualityWeight);
             int maxWriteCount = (int)math.round(math.lerp(0f, MaxTouchRipples, uploadBlend));
             int writeCount = maxWriteCount > 0 ? StageTouchRippleUpload(maxWriteCount) : 0;
 
+            _pendingTouchRippleWriteCount = writeCount;
+            _pendingTouchRippleQualityBucket = qualityBucket;
+            _pendingTouchRippleUploadBlend = uploadBlend;
+            _pendingTouchRippleQualityWeight = qualityWeight;
+            _touchRippleVisualDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushTouchRippleBuffer()
+        {
+            if (_touchRippleBufferA == null || _touchRippleBufferB == null)
+            {
+                _touchRippleVisualDirty = false;
+                return;
+            }
+
+            int writeCount = _pendingTouchRippleWriteCount;
+
             if (writeCount > 0)
             {
-                    GraphicsBuffer writeBuffer = SelectTouchRippleWriteBuffer();
+                GraphicsBuffer writeBuffer = SelectTouchRippleWriteBuffer();
                 if (writeBuffer != null)
                 {
                     GraphicsBufferUploadUtility.UploadArray(writeBuffer, _touchRippleUpload, MaxTouchRipples);
@@ -954,12 +1025,20 @@ namespace Hecton8.Biolum
             }
 
             if (writeCount != _lastPublishedTouchRippleCount ||
-                qualityBucket != _lastPublishedTouchRippleQualityBucket)
+                _pendingTouchRippleQualityBucket != _lastPublishedTouchRippleQualityBucket)
             {
-                Shader.SetGlobalVector(_BiolumTouchRippleParamsId, new Vector4(writeCount, uploadBlend, qualityWeight, 0f));
+                Shader.SetGlobalVector(
+                    _BiolumTouchRippleParamsId,
+                    new Vector4(
+                        writeCount,
+                        _pendingTouchRippleUploadBlend,
+                        _pendingTouchRippleQualityWeight,
+                        0f));
                 _lastPublishedTouchRippleCount = writeCount;
-                _lastPublishedTouchRippleQualityBucket = qualityBucket;
+                _lastPublishedTouchRippleQualityBucket = _pendingTouchRippleQualityBucket;
             }
+
+            _touchRippleVisualDirty = false;
         }
 
         private static float SampleLegacyTouchRippleQualityWeight()
@@ -1258,7 +1337,7 @@ namespace Hecton8.Biolum
             if (TryResolveBiolumVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
             return TryResolveBiolumVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
         }
 
@@ -1660,7 +1739,7 @@ namespace Hecton8.Biolum
 
             _cachedCameraPosition = _cachedCameraTransform != null ? _cachedCameraTransform.position : Vector3.zero;
             if (!TryBuildAupFromRuntimeOrigin(_cachedCameraPosition, out _cachedCameraAup))
-                _cachedCameraAup = GlobalSignals.CurrentRuntimeOriginAup();
+                _cachedCameraAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
 
             _cachedCameraAupFrame = frame;
         }
@@ -1824,6 +1903,9 @@ namespace Hecton8.Biolum
 
         private void ResetFloraShaderGlobals()
         {
+            _globalBiolumPhaseDirty = false;
+            _floraShaderGlobalsDirty = false;
+            _touchRippleVisualDirty = false;
             _cachedOceanBiolumColor = Color.black;
             _cachedFloorBiolumColor = Color.black;
             _cachedOceanBiolumStrength = 0f;
@@ -1907,8 +1989,8 @@ namespace Hecton8.Biolum
 
             _dataVault = currentVault;
             _cachedTickDispatcher = GlobalRegistry.TickDispatcher;
-            _cachedFluid = GlobalRegistry.Fluid;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedFluid = GlobalRegistry.AbyssalFlowGpu;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1948,7 +2030,7 @@ namespace Hecton8.Biolum
                     _cachedTickDispatcher = currentService as ITickDispatcher;
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
-                    _cachedFluid = currentService as HectonFluidEngine;
+                    _cachedFluid = currentService as IAbyssalFlowGpuReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
@@ -2023,6 +2105,7 @@ namespace Hecton8.Biolum
                 return;
 
             TryUnregisterHotSwapListener();
+            TryUnregisterLateFrameTick();
             CompleteRuntimeJobsForTeardown();
             ReleaseRuntimeResources();
             _disposed = true;
@@ -2037,8 +2120,7 @@ namespace Hecton8.Biolum
             if (_tickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -2048,6 +2130,23 @@ namespace Hecton8.Biolum
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
         }
 
 #if UNITY_EDITOR

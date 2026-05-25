@@ -13,6 +13,7 @@
 // Menyu: Hecton/Authoring/Rebuild Procedural Geology Finals
 // ============================================================================
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -165,6 +166,7 @@ namespace Hecton8.EditorTools
             if (guids == null || guids.Length == 0)
                 return null;
 
+            Array.Sort(guids, StringComparer.Ordinal);
             string assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);
             return AssetDatabase.LoadAssetAtPath<Material>(assetPath);
         }
@@ -230,7 +232,7 @@ namespace Hecton8.EditorTools
             }
             finally
             {
-                Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(root);
             }
         }
 

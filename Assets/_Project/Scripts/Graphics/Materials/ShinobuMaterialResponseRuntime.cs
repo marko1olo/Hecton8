@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
@@ -506,7 +507,7 @@ namespace Hecton8.Graphics.Materials
                 return false;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystemId,
@@ -569,7 +570,7 @@ namespace Hecton8.Graphics.Materials
                 return;
 
             ApplyQualityAndEditorTuning(vault, SanitizeDelta(timing.FrameDelta));
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             uint frame = unchecked(_lastDispatcherFrame + 1u);
             _lastDispatcherFrame = frame;
             if ((frame & (CsvPollCadenceFrames - 1)) == 0u)
@@ -905,14 +906,28 @@ namespace Hecton8.Graphics.Materials
             out NativeArray<MockBiomassDensitySignal> biomassSignals,
             out NativeArray<WearRateDTO> wearRates)
         {
+            states = default;
+            powers = default;
+            visibleIndices = default;
+            visiblePayload = default;
+            constants = default;
+            biomassSignals = default;
+            wearRates = default;
+
             int capacity = math.max(1, _materialCapacity);
-            return TryOpenVaultBuffer(vault, ref _statesHandle, BufferID.ShinobuMaterialStates, capacity, out states) &&
-                TryOpenVaultBuffer(vault, ref _powersHandle, BufferID.ShinobuMaterialPowers, capacity, out powers) &&
-                TryOpenVaultBuffer(vault, ref _visibleIndicesHandle, BufferID.ShinobuMaterialVisibleIndices, capacity, out visibleIndices) &&
-                TryOpenVaultBuffer(vault, ref _visiblePayloadHandle, BufferID.ShinobuMaterialVisiblePayload, capacity, out visiblePayload) &&
-                TryOpenVaultBuffer(vault, ref _constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, out constants) &&
-                TryOpenVaultBuffer(vault, ref _mockBiomassHandle, BufferID.ShinobuMaterialMockBiomassSignals, MockSignalCount, out biomassSignals) &&
-                TryOpenVaultBuffer(vault, ref _wearRateHandle, BufferID.ShinobuMaterialWearRates, WearRateCount, out wearRates);
+            if (!TryOpenVaultBuffer(vault, ref _statesHandle, BufferID.ShinobuMaterialStates, capacity, out states))
+                return false;
+            if (!TryOpenVaultBuffer(vault, ref _powersHandle, BufferID.ShinobuMaterialPowers, capacity, out powers))
+                return false;
+            if (!TryOpenVaultBuffer(vault, ref _visibleIndicesHandle, BufferID.ShinobuMaterialVisibleIndices, capacity, out visibleIndices))
+                return false;
+            if (!TryOpenVaultBuffer(vault, ref _visiblePayloadHandle, BufferID.ShinobuMaterialVisiblePayload, capacity, out visiblePayload))
+                return false;
+            if (!TryOpenVaultBuffer(vault, ref _constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, out constants))
+                return false;
+            if (!TryOpenVaultBuffer(vault, ref _mockBiomassHandle, BufferID.ShinobuMaterialMockBiomassSignals, MockSignalCount, out biomassSignals))
+                return false;
+            return TryOpenVaultBuffer(vault, ref _wearRateHandle, BufferID.ShinobuMaterialWearRates, WearRateCount, out wearRates);
         }
 
         private bool TryLockJobBuffers(IDataVault vault)
@@ -1084,6 +1099,7 @@ namespace Hecton8.Graphics.Materials
             return (index & 1) == 0 ? _materialGlobalsBufferA : _materialGlobalsBufferB;
         }
 
+#if UNITY_EDITOR
         private void MonitorTextureCsv(IDataVault vault)
         {
             if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))
@@ -1281,6 +1297,7 @@ namespace Hecton8.Graphics.Materials
                     break;
             }
         }
+#endif
 
         private void RecordTelemetry(
             IDataVault vault,

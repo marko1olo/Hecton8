@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Equipment.Auxiliary;
 using Unity.Mathematics;
 using UnityEngine;
@@ -13,7 +14,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class DeployableFlare : MonoBehaviour
+    public sealed class DeployableFlare : MonoBehaviour, IFaunaDistractorSignalSource
     {
         [Header("Router Payload")]
         [SerializeField, Min(0.01f)] private float fuelDuration = 60f;

@@ -1,4 +1,4 @@
-# Co-Op Merkle State Delta Protocol
+﻿# Co-Op Merkle State Delta Protocol
 
 Date: 2026-05-21
 Status: STATIC DESIGN / RUNTIME PENDING

@@ -26,12 +26,12 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
         }
 
         private void OnDisable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         private void OnGUI()
@@ -51,7 +51,6 @@ namespace Hecton8.Editor
             float pidD = EditorGUILayout.Slider("PID D", _config.PidD, 0f, 30000f);
             float gyro = EditorGUILayout.Slider("Gyroscopic Strength", _config.GyroStrength, 0f, 160000f);
             float thrust = EditorGUILayout.Slider("Max Thrust", _config.MaxThrustN, 0f, 160000f);
-            float ballast = EditorGUILayout.Slider("Ballast Lift", _config.BallastLiftN, 0f, 280000f);
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -62,7 +61,6 @@ namespace Hecton8.Editor
                 _config.PidD = math.max(0f, pidD);
                 _config.GyroStrength = math.max(0f, gyro);
                 _config.MaxThrustN = math.max(0f, thrust);
-                _config.BallastLiftN = math.max(0f, ballast);
                 _config.SourceHash = SubmarineDynamicsConstants.SourceHashCsv;
                 WriteConfigToVault(in _config);
             }
@@ -89,7 +87,7 @@ namespace Hecton8.Editor
             RefreshSnapshots(true);
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             RefreshSnapshots(false);
             if (!_hasVault)

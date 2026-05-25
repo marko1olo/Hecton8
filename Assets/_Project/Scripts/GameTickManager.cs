@@ -45,7 +45,7 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)] // Tikaet RANShE vseh
-    public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -153,6 +153,7 @@ namespace Hecton8.Core
         private bool _loggedFirstSlowTickExecution;
         private bool _serviceRegistered;
         private bool _registeredToDispatcher;
+        private bool _hotSwapRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -171,16 +172,8 @@ namespace Hecton8.Core
             EnsureInitialized();
             ResetSlowTickState();
 
-            if (_serviceRegistered &&
-                Application.isPlaying &&
-                GlobalRegistry.Dispatcher != null &&
-                !_registeredToDispatcher)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-                _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this) ||
-                                          GlobalRegistry.FixedTickables.Contains(this);
-            }
+            TryRegisterHotSwapListener();
+            TryRegisterDispatcherLanes();
         }
 
         private void OnDisable()
@@ -188,11 +181,12 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (enableSlowTickProfiling && ShouldLogUnexpectedDisable())
             {
-                UnityEngine.Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     $"[GameTickManager] disabled tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}",
                     this);
             }
 #endif
+            TryUnregisterHotSwapListener();
             UnregisterDispatcherLanes();
             ResetSlowTickState();
         }
@@ -215,11 +209,12 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (enableSlowTickProfiling && ShouldLogUnexpectedDisable())
             {
-                UnityEngine.Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     $"[GameTickManager] destroyed isInstance={ReferenceEquals(GlobalRegistry.TickManager, this)} tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}",
                     this);
             }
 #endif
+            TryUnregisterHotSwapListener();
             UnregisterDispatcherLanes();
 
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.TickManager, this))
@@ -237,13 +232,61 @@ namespace Hecton8.Core
             if (!_registeredToDispatcher)
                 return;
 
-            if (GlobalRegistry.Updatables.Contains(this))
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-
-            if (GlobalRegistry.FixedTickables.Contains(this))
-                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
 
             _registeredToDispatcher = false;
+        }
+
+        private void TryRegisterDispatcherLanes()
+        {
+            if (!_serviceRegistered ||
+                _registeredToDispatcher ||
+                !Application.isPlaying ||
+                GlobalRegistry.Dispatcher == null)
+            {
+                return;
+            }
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+            bool registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            bool registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Core);
+            _registeredToDispatcher = registeredUpdate || registeredFixed;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                !_serviceRegistered ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            UnregisterDispatcherLanes();
+            TryRegisterDispatcherLanes();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void InitializeService()
@@ -256,16 +299,8 @@ namespace Hecton8.Core
                 _serviceRegistered = ReferenceEquals(GlobalRegistry.TickManager, this);
             }
 
-            if (isActiveAndEnabled &&
-                !_registeredToDispatcher &&
-                Application.isPlaying &&
-                GlobalRegistry.Dispatcher != null)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-                _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this) ||
-                                          GlobalRegistry.FixedTickables.Contains(this);
-            }
+            TryRegisterHotSwapListener();
+            TryRegisterDispatcherLanes();
         }
 
         private void OnApplicationQuit()

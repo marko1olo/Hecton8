@@ -6,7 +6,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -30,9 +29,9 @@ namespace Hecton8.Graphics.Scalability
     public sealed unsafe class ThermalDynamicResolutionAdapter :
         MonoBehaviour,
         IUpdatable,
+        ILateFrameTickable,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener,
-        IScalabilityChangedEventListener,
         IResolutionScalerService
     {
         private const int TelemetryCapacity = 300;
@@ -179,9 +178,9 @@ namespace Hecton8.Graphics.Scalability
         private int _recoveryFrameCount = RecoveryHysteresisFrames;
         private int _aupShiftLockFrames;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
-        private bool _scalabilityListenerRegistered;
         private bool _systemScalerInstalled;
         private bool _blackBoxDumped;
         private bool _stressEwmaScheduled;
@@ -193,6 +192,12 @@ namespace Hecton8.Graphics.Scalability
         private bool _mockReconstructionScaleActive;
         private bool _mockReconstructionQualityActive;
         private bool _visualFeatureWeightsCommitted;
+        private bool _pendingRenderScaleCommitDirty;
+        private bool _pendingRuntimeSnapshotDirty;
+        private bool _pendingSharpenGlobalDirty;
+        private bool _pendingVisualBudgetGlobalsDirty;
+        private byte _pendingRenderScaleCommitFlags;
+        private byte _pendingRuntimeSnapshotFlags;
         private float _mockQualityWeight01 = 1f;
         private float _mockReconstructionScale01 = PolicyMaxScale;
         private float _mockReconstructionQuality01 = PolicyMaxScale;
@@ -369,9 +374,8 @@ namespace Hecton8.Graphics.Scalability
             SetVector4(ref _lastCommittedVisualFeatureWeights1, -1f, -1f, -1f, -1f);
             s_systemScalePercentage = _currentScale * 100f;
             _bootHardwareTier = ResolveBootHardwareTier();
-            _cachedQualityTier = ResolveInitialScalabilityTier(_bootHardwareTier);
-            _hardwareTier = (byte)_cachedQualityTier;
-            _fsrUpscalerAllowed = ResolveFsrUpscalerAllowed(_cachedQualityTier);
+            _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
+            RefreshQualityTierPolicyFromContinuousWeight(_latestGlobalQualityWeight01);
             GenerateEmergencyMockLimits();
             _minScaleLimit = ResolveMinScaleLimit(_cachedQualityTier);
             _upscalerTypeHash = ResolveUpscalerHash(_cachedQualityTier, _currentScale);
@@ -409,8 +413,8 @@ namespace Hecton8.Graphics.Scalability
             }
 
             TryRegister();
+            TryRegisterLateFrame();
             TryRegisterHotSwap();
-            TryRegisterScalabilityListener();
         }
 
         private void Start()
@@ -420,16 +424,16 @@ namespace Hecton8.Graphics.Scalability
 
             RegisterResolutionScalerService();
             TryRegister();
+            TryRegisterLateFrame();
             TryRegisterHotSwap();
-            TryRegisterScalabilityListener();
         }
 
         private void OnDisable()
         {
             bool ownsAdapter = ReferenceEquals(s_activeAdapter, this);
             TryUnregister();
+            TryUnregisterLateFrame();
             TryUnregisterHotSwap();
-            TryUnregisterScalabilityListener();
             UnregisterResolutionScalerService();
             if (!ownsAdapter)
                 return;
@@ -451,8 +455,8 @@ namespace Hecton8.Graphics.Scalability
         {
             bool ownsAdapter = ReferenceEquals(s_activeAdapter, this);
             TryUnregister();
+            TryUnregisterLateFrame();
             TryUnregisterHotSwap();
-            TryUnregisterScalabilityListener();
             UnregisterResolutionScalerService();
             CompletePendingStressJobForTeardown();
             if (ownsAdapter)
@@ -489,7 +493,7 @@ namespace Hecton8.Graphics.Scalability
             _latestSystemHealth01 = Sanitize01(_latestSystemHealth01);
             _latestGpuUtil01 = Sanitize01(_latestGpuUtil01);
             _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
-            _hardwareTier = ResolveHardwareTierByte();
+            RefreshQualityTierPolicyFromContinuousWeight(_latestGlobalQualityWeight01);
             _stpActive = ResolveStpIntent((HectonQualityTier)_hardwareTier);
             _latestSystemStress01 = ResolveSystemStressInput01();
             if (_latestSystemStressEwma01 <= 0f)
@@ -513,8 +517,8 @@ namespace Hecton8.Graphics.Scalability
                 flags |= FlagAupLocked;
                 _targetScale = _currentScale;
                 UpdateVisualBudget(tier, stress01, _currentScale);
-                CommitRuntimeSnapshot(flags);
-                ApplyVisualBudgetGlobals();
+                QueueRuntimeSnapshotCommit(flags);
+                QueueVisualBudgetGlobals();
                 _aupShiftLockFrames--;
                 UpdateDrsState();
                 UpdateScaleState(flags);
@@ -557,19 +561,54 @@ namespace Hecton8.Graphics.Scalability
             if (math.abs(nextScale - _currentScale) > ScaleEpsilon)
             {
                 _currentScale = nextScale;
-                CommitRenderScale(flags);
+                QueueRenderScaleCommit(flags);
             }
             else
             {
-                CommitRuntimeSnapshot(flags);
-                ApplySharpenGlobal();
-                ApplyVisualBudgetGlobals();
+                QueueRuntimeSnapshotCommit(flags);
+                QueueSharpenGlobal();
+                QueueVisualBudgetGlobals();
             }
 
             UpdateScaleState(flags);
             UpdateDrsState();
             WriteTelemetry(flags);
             ScheduleStressEwmaJob(_latestSystemStress01);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!ReferenceEquals(s_activeAdapter, this))
+                return;
+
+            if (_pendingRenderScaleCommitDirty)
+            {
+                byte flags = _pendingRenderScaleCommitFlags;
+                _pendingRenderScaleCommitDirty = false;
+                _pendingRuntimeSnapshotDirty = false;
+                _pendingSharpenGlobalDirty = false;
+                _pendingVisualBudgetGlobalsDirty = false;
+                CommitRenderScale(flags);
+                return;
+            }
+
+            if (_pendingRuntimeSnapshotDirty)
+            {
+                _pendingRuntimeSnapshotDirty = false;
+                CommitRuntimeSnapshot(_pendingRuntimeSnapshotFlags);
+            }
+
+            if (_pendingSharpenGlobalDirty)
+            {
+                _pendingSharpenGlobalDirty = false;
+                ApplySharpenGlobal();
+            }
+
+            if (_pendingVisualBudgetGlobalsDirty)
+            {
+                _pendingVisualBudgetGlobalsDirty = false;
+                ApplyVisualBudgetGlobals();
+            }
         }
 
         public bool TryGetScaleState(out ResolutionScaleState state)
@@ -618,6 +657,7 @@ namespace Hecton8.Graphics.Scalability
             UpdateDrsState();
         }
 
+#if UNITY_EDITOR
         public bool TryApplyCsvProfile(ReadOnlySpan<char> csvText)
         {
             bool changed = false;
@@ -690,6 +730,7 @@ namespace Hecton8.Graphics.Scalability
 
             return changed;
         }
+#endif
 
         public int CopyTelemetryForEditor(
             float[] currentScale,
@@ -823,14 +864,6 @@ namespace Hecton8.Graphics.Scalability
                 RebindDynamicResolutionRuntime(currentService as IDynamicResolutionRuntime);
             else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
                 RebindDataVault(currentService as IDataVault);
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedQualityTier = ResolveCachedQualityTier(payload.CurrentTier);
-            _hardwareTier = (byte)_cachedQualityTier;
-            _fsrUpscalerAllowed = ResolveFsrUpscalerAllowed(_cachedQualityTier);
-            _minScaleLimit = ResolveMinScaleLimit(_cachedQualityTier);
         }
 
         private void ConsumeSignals()
@@ -1486,6 +1519,23 @@ namespace Hecton8.Graphics.Scalability
             _registered = false;
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            _registeredLateFrame = false;
+        }
+
         private void RegisterResolutionScalerService()
         {
             if (_serviceRegistered || !Application.isPlaying)
@@ -1519,24 +1569,6 @@ namespace Hecton8.Graphics.Scalability
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityListenerRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityListenerRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityListenerRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityListenerRegistered = false;
         }
 
         private void RegisterCameraShield()
@@ -1641,8 +1673,34 @@ namespace Hecton8.Graphics.Scalability
             s_systemScalePercentage = 100f;
             _upscalerTypeHash = ResolveUpscalerHash((HectonQualityTier)_hardwareTier, _currentScale);
             UpdateVisualBudget((HectonQualityTier)_hardwareTier, _latestSystemStressEwma01, _currentScale);
-            CommitRenderScale(FlagInvalidState);
+            QueueRenderScaleCommit(FlagInvalidState);
             UpdateScaleState(FlagInvalidState);
+        }
+
+        private void QueueRenderScaleCommit(byte flags)
+        {
+            _pendingRenderScaleCommitFlags = flags;
+            _pendingRenderScaleCommitDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void QueueRuntimeSnapshotCommit(byte flags)
+        {
+            _pendingRuntimeSnapshotFlags = flags;
+            _pendingRuntimeSnapshotDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void QueueSharpenGlobal()
+        {
+            _pendingSharpenGlobalDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void QueueVisualBudgetGlobals()
+        {
+            _pendingVisualBudgetGlobalsDirty = true;
+            TryRegisterLateFrame();
         }
 
         private void PublishResolutionChangedSignalIfNeeded(byte flags)
@@ -1663,7 +1721,7 @@ namespace Hecton8.Graphics.Scalability
                 : ResolutionChangedSignal.ReasonRenderScaleRaised;
             signal.Flags = (byte)(ResolutionChangedSignal.FlagRenderScale |
                 (_stpActive ? ResolutionChangedSignal.FlagStpActive : 0));
-            SignalBus<ResolutionChangedSignal>.Push(in signal);
+            SignalBus<ResolutionChangedSignal>.TryPush(in signal);
         }
 
         private void ApplyDirectRenderScale(float renderScale, float bufferScale)
@@ -1975,6 +2033,7 @@ namespace Hecton8.Graphics.Scalability
             return math.isfinite(value) ? math.clamp(value, MinScale, MaxScale) : PolicyMaxScale;
         }
 
+#if UNITY_EDITOR
         private static uint HashCsvKey(ReadOnlySpan<char> key)
         {
             uint hash = 2166136261u;
@@ -2071,6 +2130,7 @@ namespace Hecton8.Graphics.Scalability
         {
             return value >= '0' && value <= '9';
         }
+#endif
 
         private static byte MaxByte(byte a, byte b)
         {
@@ -2247,7 +2307,7 @@ namespace Hecton8.Graphics.Scalability
                 return false;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GraphicsScalability,
@@ -2356,7 +2416,7 @@ namespace Hecton8.Graphics.Scalability
             targetScale = ClampRenderScale(targetScale);
             float safeDt = math.isfinite(deltaTime) && deltaTime > 0f ? deltaTime : (1f / 120f);
             float smoothing = math.isfinite(_smoothingFactor) ? math.clamp(_smoothingFactor, 0.1f, 32f) : DefaultSmoothingFactor;
-            float alpha = math.saturate(1f - math.exp(-smoothing * safeDt));
+            float alpha = math.saturate(1f - MathLodApproximation.ApproxExpNegPade33Wide40(smoothing * safeDt));
             return currentScale + (targetScale - currentScale) * alpha;
         }
 
@@ -2369,7 +2429,7 @@ namespace Hecton8.Graphics.Scalability
                 ? math.clamp(_smoothingFactor, 0.1f, 32f)
                 : DefaultSmoothingFactor;
             float targetSmoothing = math.clamp(baseSmoothing * 2f, 0.2f, 64f);
-            float alpha = math.saturate(1f - math.exp(-targetSmoothing * safeDt));
+            float alpha = math.saturate(1f - MathLodApproximation.ApproxExpNegPade33Wide40(targetSmoothing * safeDt));
             return currentTargetScale + (desiredTargetScale - currentTargetScale) * alpha;
         }
 
@@ -2444,19 +2504,12 @@ namespace Hecton8.Graphics.Scalability
             return (byte)_cachedQualityTier;
         }
 
-        private static HectonQualityTier ResolveInitialScalabilityTier(HectonQualityTier bootTier)
+        private void RefreshQualityTierPolicyFromContinuousWeight(float qualityWeight01)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.High &&
-                (bootTier == HectonQualityTier.High || bootTier == HectonQualityTier.Ultra))
-            {
-                return bootTier;
-            }
-
-            if (tier != HectonQualityTier.Unknown)
-                return tier;
-
-            return bootTier;
+            _cachedQualityTier = ResolveQualityTierFromWeight(qualityWeight01);
+            _hardwareTier = ResolveHardwareTierByte();
+            _fsrUpscalerAllowed = ResolveFsrUpscalerAllowed(_cachedQualityTier);
+            _minScaleLimit = ResolveMinScaleLimit(_cachedQualityTier);
         }
 
         private static HectonQualityTier ResolveBootHardwareTier()
@@ -2465,20 +2518,18 @@ namespace Hecton8.Graphics.Scalability
             return profile.QualityTier;
         }
 
-        private HectonQualityTier ResolveCachedQualityTier(byte profileTier)
+        private static HectonQualityTier ResolveQualityTierFromWeight(float qualityWeight01)
         {
-            byte normalizedTier = ScalabilityTierProfiles.Normalize(profileTier);
-            if (normalizedTier == ScalabilityTierProfiles.LowMx350)
+            float quality = Sanitize01(qualityWeight01);
+            if (quality < 0.18f)
+                return HectonQualityTier.Low;
+            if (quality < 0.36f)
                 return HectonQualityTier.Mx350;
-
-            if (_bootHardwareTier == HectonQualityTier.Ultra ||
-                _bootHardwareTier == HectonQualityTier.High ||
-                _bootHardwareTier == HectonQualityTier.Mid)
-            {
-                return _bootHardwareTier;
-            }
-
-            return HectonQualityTier.High;
+            if (quality < 0.62f)
+                return HectonQualityTier.Mid;
+            if (quality < 0.86f)
+                return HectonQualityTier.High;
+            return HectonQualityTier.Ultra;
         }
 
         private float ResolveHysteresisTarget(float requestedScale, bool pressureActive)

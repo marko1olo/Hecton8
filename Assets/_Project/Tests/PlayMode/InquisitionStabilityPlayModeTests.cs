@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using Hecton8.Core;
 using Hecton8.Dev;
 using Hecton8.Optimization;
@@ -561,7 +562,7 @@ namespace Hecton8.Tests.PlayMode
                 "MonoUsedBytes=" + startMonoBytes.ToString(CultureInfo.InvariantCulture) + "->" + monoBytes.ToString(CultureInfo.InvariantCulture) + "\n" +
                 "AllocationDetectionStack:\n" +
                 new StackTrace(true);
-            File.WriteAllText(path, payload);
+            File.WriteAllText(path, payload, new UTF8Encoding(false));
             return path;
         }
 

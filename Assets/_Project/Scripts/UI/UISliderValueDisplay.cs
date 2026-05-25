@@ -33,8 +33,8 @@ namespace Hecton8.UI
         private Slider _slider;
         private UnityAction<float> _cachedValueChangedAction;
         private float _cachedValue = float.MinValue;
-        private string _resolvedTemplate = "{0:F0}";
         private char[] _resolvedTemplateChars;
+        private int _resolvedTemplateLength;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -94,7 +94,7 @@ namespace Hecton8.UI
             _cachedValue = value;
 
             float displayValue = value * multiplier;
-            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(_resolvedTemplateChars), LocNumericArg.Float(displayValue), out char[] buffer, out int length);
+            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(_resolvedTemplateChars, 0, _resolvedTemplateLength), LocNumericArg.Float(displayValue), out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             valueText.SetCharArray(buffer, 0, safeLength);
         }
@@ -102,10 +102,19 @@ namespace Hecton8.UI
         private void RebuildTemplateCache()
         {
             string safeFormat = string.IsNullOrEmpty(format) ? "{0:F0}" : format;
-            _resolvedTemplate = string.IsNullOrEmpty(suffix)
-                ? safeFormat
-                : string.Concat(safeFormat, suffix);
-            _resolvedTemplateChars = _resolvedTemplate.ToCharArray();
+            string safeSuffix = string.IsNullOrEmpty(suffix) ? string.Empty : suffix;
+            int requiredLength = safeFormat.Length + safeSuffix.Length;
+            if (_resolvedTemplateChars == null || _resolvedTemplateChars.Length < requiredLength)
+                _resolvedTemplateChars = new char[requiredLength]; // COLD ALLOC: template char cache only when inspector format/suffix grows.
+
+            int cursor = 0;
+            for (int i = 0; i < safeFormat.Length; i++)
+                _resolvedTemplateChars[cursor++] = safeFormat[i];
+
+            for (int i = 0; i < safeSuffix.Length; i++)
+                _resolvedTemplateChars[cursor++] = safeSuffix[i];
+
+            _resolvedTemplateLength = cursor;
         }
     }
 }

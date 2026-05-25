@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_024
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_024_MAT_family_coral_plate_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_coral_plate_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_coral_plate_Placeholder_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Replacement albedo for plate coral placeholder, with a refined HECTON-8 reef palette. Use layered cream coral fans, salmon edge blush, faint violet mineral lines, teal symbiotic freckles, and clean crescent growth bands. The image should be beautiful in a game engine: clear tiling rhythm, readable layers, flat photographic neutrality, crisp calcified surfaces, and elegant living edges. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

@@ -9,12 +9,20 @@ using Unity.Profiling;
 
 namespace Hecton8.World
 {
+    internal static class HectonSpatialHashLayout
+    {
+        public const int Long3StrideBytes = 24;
+        public const int SpatialEntryStrideBytes = 112;
+        public const int QueryStatsStrideBytes = 24;
+        public const int TransientEventRecordStrideBytes = 80;
+    }
+
     /// <summary>
     /// Native AUP-aware broadphase storing cell occupancy in 64-bit world space instead of presentation-space Unity transforms.
     /// </summary>
     internal sealed class HectonSpatialHash : IDisposable
     {
-        [StructLayout(LayoutKind.Explicit, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = HectonSpatialHashLayout.Long3StrideBytes)]
         internal struct Long3 : IEquatable<Long3>
         {
             [FieldOffset(0)] public long X;
@@ -50,7 +58,7 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 112)]
+        [StructLayout(LayoutKind.Explicit, Size = HectonSpatialHashLayout.SpatialEntryStrideBytes)]
         internal struct SpatialEntry
         {
             [FieldOffset(0)] public double3 AbsoluteCenter;
@@ -65,7 +73,7 @@ namespace Hecton8.World
             [FieldOffset(108)] private uint _pad2;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = HectonSpatialHashLayout.QueryStatsStrideBytes)]
         internal readonly struct QueryStats
         {
             [FieldOffset(0)] public readonly int Mode;
@@ -98,7 +106,7 @@ namespace Hecton8.World
             public bool IsSaturated => Saturated != 0;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = HectonSpatialHashLayout.TransientEventRecordStrideBytes)]
         internal struct TransientEventRecord
         {
             [FieldOffset(0)] public uint EventId;

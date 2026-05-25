@@ -1,0 +1,31 @@
+{
+  "agent": "X_002",
+  "slice": "S",
+  "status": "CORE_BUILD_FAILED_STALE_CONSTRUCTION_IMPORT_PENDING_RETRY",
+  "generatedUtc": "2026-05-24T08:50:00Z",
+  "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal",
+  "buildGate": {
+    "opened": true,
+    "cpuAtLaunchPercent": 48,
+    "compilerProcessesAtLaunch": 0
+  },
+  "result": {
+    "exitCode": 1,
+    "warnings": 2,
+    "errors": 1,
+    "elapsedSeconds": 19.70
+  },
+  "errors": [
+    "Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs(3,15): CS0234 Hecton8.Graphics namespace missing"
+  ],
+  "currentSourceInspection": {
+    "constructionRuntimeProxyFactoryContainsHecton8GraphicsUsing": false,
+    "currentLine3": "using Hecton8.Power;",
+    "assessment": "The compiler error references a stale import not present in the current source snapshot; retry is required after CPU/compiler gate opens."
+  },
+  "warningsObserved": [
+    "CS2002 duplicate source warning for Assets/_Project/Scripts/Input/InputManager.cs",
+    "CS2002 duplicate source warning for Assets/_Project/Scripts/Input/UserOptionsPersistence.cs"
+  ],
+  "claimBoundary": "No compile pass claimed. No source fix was applied for the stale ConstructionRuntimeProxyFactory import because the current file no longer contains the reported line."
+}

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_053
+ROLE: MASK_ORM
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_053_mat_Rock2_ORM
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\mat_Rock2_ORM.png
+FINAL_FILENAME: mat_Rock2_ORM.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Packed ORM RGB mask for the second Hecton rock variant. Design clean channel behavior: red AO in quartz vein margins, plate gaps, and silt pockets; green roughness with smooth vein ridges, medium basalt slabs, and high-roughness pale silt; blue metallic held near zero for a non-metallic stone family. Keep the mask crisp, tileable, and aligned to the Rock2 height language. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

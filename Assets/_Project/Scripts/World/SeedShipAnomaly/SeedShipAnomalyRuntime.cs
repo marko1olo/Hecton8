@@ -19,12 +19,18 @@ namespace Hecton8.World.SeedShipAnomaly
     public sealed unsafe class SeedShipAnomalyRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystem = SystemID.EndgameAnomaly;
+#if UNITY_EDITOR
         private const int CsvMaxBytes = 8192;
+#endif
         private const int DumpScratchBytes = 32 + SeedShipAnomalyConstants.TelemetryFrameCount * 64;
         private const int LockBufferCount = 9;
         private const int JobBatchSize = 64;
         private const float ComputeBudgetMs = 0.1f;
+        private const float RadiationExportSlowTickSeconds = 0.1f;
+        private const float RadiationDosePerSecondScale = 2.5f;
+#if UNITY_EDITOR
         private const string CsvRelativePath = "anomaly_profiles.csv";
+#endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SEED_SHIP_ANOMALY.bin";
         private const string LegacyEmissionFile = "seed_ship_emission_rates.h8bin";
         private const string LegacyGlitchFile = "glitch_zones_007.bin";
@@ -68,9 +74,13 @@ namespace Hecton8.World.SeedShipAnomaly
         private IPlayerRuntimeContext _playerContext;
         private JobHandle _activeJobHandle;
         private string _projectRoot;
+#if UNITY_EDITOR
         private string _csvPath;
+#endif
         private string _dumpPath;
+#if UNITY_EDITOR
         private long _csvLastWriteTicks;
+#endif
         private long _jobStartTimestamp;
         private int _telemetryCursor;
         private int _scheduledEntityBudget;
@@ -81,6 +91,8 @@ namespace Hecton8.World.SeedShipAnomaly
         private bool _registeredLateFrame;
         private bool _registeredSlowTick;
         private bool _registeredHotSwap;
+        private bool _radiationExportRequested;
+        private bool _radiationSourceActive;
         private bool _jobScheduled;
         private bool _jobLocksHeld;
         private bool _defaultsInitialized;
@@ -92,7 +104,9 @@ namespace Hecton8.World.SeedShipAnomaly
         {
             mockLeviathanCapacity = math.max(1, mockLeviathanCapacity);
             _projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+#if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(_projectRoot, CsvRelativePath));
+#endif
             _dumpPath = Path.GetFullPath(Path.Combine(_projectRoot, DumpRelativePath));
         }
 
@@ -219,6 +233,7 @@ namespace Hecton8.World.SeedShipAnomaly
                 RebaseSignals = rebase,
                 Telemetry = telemetry,
                 RadarJamWriter = SignalBus<RadarJamSignal>.ParallelWriter,
+                RadarJamWriterBudget = SignalBus<RadarJamSignal>.ParallelWriterBudget,
                 PlayerAUP = playerAup,
                 DeltaSeconds = dt,
                 TimeSeconds = _localTimeSeconds,
@@ -252,11 +267,14 @@ namespace Hecton8.World.SeedShipAnomaly
 
         public void SlowTick()
         {
+            _radiationExportRequested = true;
             IDataVault vault = _dataVault;
             if (vault == null || _jobScheduled || !EnsureVaultState())
                 return;
 
+#if UNITY_EDITOR
             MonitorCsvOverrides(vault);
+#endif
         }
 
         public ref AnomalyFieldDTO GetAnomalyFieldRef()
@@ -357,7 +375,7 @@ namespace Hecton8.World.SeedShipAnomaly
             }
 
             _dataVault = currentVault;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private bool EnsureVaultState()
@@ -506,7 +524,8 @@ namespace Hecton8.World.SeedShipAnomaly
                 float angle = random.NextFloat(0f, math.PI * 2f);
                 float radius = random.NextFloat(250f, 250f + fieldDto.Radius);
                 float y = random.NextFloat(-850f, 850f);
-                double3 offset = new double3(math.cos(angle) * radius, y, math.sin(angle) * radius);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                double3 offset = new double3(cos * radius, y, sin * radius);
                 leviathans[i] = new MockLeviathanState
                 {
                     AUP = epicenter + offset,
@@ -851,6 +870,10 @@ namespace Hecton8.World.SeedShipAnomaly
                 Flags = (byte)(globals.Corruption01 > 0.001f ? 1 : 0)
             });
 
+            bool publishRadiationThisSlowTick = _radiationExportRequested;
+            if (publishRadiationThisSlowTick)
+                _radiationExportRequested = false;
+
             if (globals.Corruption01 > 0.001f)
             {
                 SignalBus<SystemGlitchSignal>.TryPush(new SystemGlitchSignal
@@ -875,25 +898,44 @@ namespace Hecton8.World.SeedShipAnomaly
                     Flags = (byte)(globals.Flags & 0xFFu)
                 });
 
+                if (publishRadiationThisSlowTick)
+                {
+                    float radiation01 = math.saturate(globals.Radiation01);
+                    float sourceIntensity01 = math.saturate(thermo.Radiation01);
+                    SignalBus<RadiationSourceSignal>.TryPush(new RadiationSourceSignal
+                    {
+                        PositionAup = epicenter,
+                        Intensity = sourceIntensity01,
+                        RadiusMeters = thermo.RadiusMeters,
+                        SourceId = unchecked((int)SeedShipAnomalyConstants.SourceHash),
+                        Operation = RadiationSourceSignal.OperationUpsert,
+                        Flags = 1
+                    });
+                    _radiationSourceActive = sourceIntensity01 > 0.0001f;
+
+                    if (radiation01 > 0.0001f)
+                    {
+                        SignalBus<RadiationDoseSignal>.TryPush(new RadiationDoseSignal
+                        {
+                            PositionAup = epicenter,
+                            Dose = radiation01 * RadiationDosePerSecondScale * RadiationExportSlowTickSeconds,
+                            Intensity01 = radiation01,
+                            SourceId = SeedShipAnomalyConstants.SourceHash,
+                            DoseKind = 48,
+                            Flags = 1
+                        });
+                    }
+                }
+            }
+            else if (publishRadiationThisSlowTick && _radiationSourceActive)
+            {
                 SignalBus<RadiationSourceSignal>.TryPush(new RadiationSourceSignal
                 {
-                    PositionAup = epicenter,
-                    Intensity = thermo.Radiation01,
-                    RadiusMeters = thermo.RadiusMeters,
                     SourceId = unchecked((int)SeedShipAnomalyConstants.SourceHash),
-                    Operation = RadiationSourceSignal.OperationUpsert,
+                    Operation = RadiationSourceSignal.OperationRemove,
                     Flags = 1
                 });
-
-                SignalBus<RadiationDoseSignal>.TryPush(new RadiationDoseSignal
-                {
-                    PositionAup = epicenter,
-                    Dose = globals.Radiation01 * 2.5f,
-                    Intensity01 = globals.Radiation01,
-                    SourceId = SeedShipAnomalyConstants.SourceHash,
-                    DoseKind = 48,
-                    Flags = 1
-                });
+                _radiationSourceActive = false;
             }
         }
 
@@ -993,7 +1035,7 @@ namespace Hecton8.World.SeedShipAnomaly
 
         private float ResolveGlobalQualityWeight(IDataVault vault, float fallback)
         {
-            if (TryResolveBorrowedScalabilityState(vault, out NativeArray<ScalabilityStateDTO> state) &&
+            if (TryResolveBorrowedScalabilityState(vault, out NativeArray<ScalabilityStateDTO>.ReadOnly state) &&
                 math.isfinite(state[0].GlobalQualityWeight))
             {
                 return math.saturate(state[0].GlobalQualityWeight);
@@ -1002,6 +1044,7 @@ namespace Hecton8.World.SeedShipAnomaly
             return math.saturate(math.isfinite(fallback) ? fallback : defaultGlobalQualityWeight);
         }
 
+#if UNITY_EDITOR
         private void MonitorCsvOverrides(IDataVault vault)
         {
             try
@@ -1154,6 +1197,7 @@ namespace Hecton8.World.SeedShipAnomaly
                 tuning.GlobalQualityWeight = value;
             }
         }
+#endif
 
         private void TryRegisterTicks()
         {
@@ -1219,7 +1263,7 @@ namespace Hecton8.World.SeedShipAnomaly
             if (TryResolveSeedShipVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
             return TryResolveSeedShipVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
         }
 
@@ -1266,7 +1310,7 @@ namespace Hecton8.World.SeedShipAnomaly
                    !vault.IsCompactionFenceActive &&
                    requiredLength > 0 &&
                    IsSeedShipVaultHandle(in handle, bufferId) &&
-                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -1283,7 +1327,7 @@ namespace Hecton8.World.SeedShipAnomaly
                 vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !IsSeedShipVaultHandle(in handle, bufferId) ||
-                !vault.TryReadHandle(in handle, out buffer) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -1303,14 +1347,14 @@ namespace Hecton8.World.SeedShipAnomaly
                    handle.Generation != 0u;
         }
 
-        private bool TryResolveBorrowedScalabilityState(IDataVault vault, out NativeArray<ScalabilityStateDTO> state)
+        private bool TryResolveBorrowedScalabilityState(IDataVault vault, out NativeArray<ScalabilityStateDTO>.ReadOnly state)
         {
             state = default;
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             if (IsBorrowedScalabilityHandle(in _scalabilityHandle) &&
-                vault.TryReadHandle(in _scalabilityHandle, out state) &&
+                vault.TryReadOnlyHandle(in _scalabilityHandle, out state) &&
                 state.IsCreated &&
                 state.Length > 0)
             {
@@ -1319,7 +1363,7 @@ namespace Hecton8.World.SeedShipAnomaly
 
             if (!vault.TryGetGenerationHandle<ScalabilityStateDTO>(BufferID.ShinobuScalabilityState, out _scalabilityHandle) ||
                 !IsBorrowedScalabilityHandle(in _scalabilityHandle) ||
-                !vault.TryReadHandle(in _scalabilityHandle, out state) ||
+                !vault.TryReadOnlyHandle(in _scalabilityHandle, out state) ||
                 !state.IsCreated ||
                 state.Length <= 0)
             {
@@ -1404,6 +1448,7 @@ namespace Hecton8.World.SeedShipAnomaly
             SignalBus<RadiationDoseSignal>.EnsureInitialized();
         }
 
+#if UNITY_EDITOR
         private static ReadOnlySpan<byte> TrimAscii(ReadOnlySpan<byte> bytes)
         {
             int start = 0;
@@ -1494,6 +1539,7 @@ namespace Hecton8.World.SeedShipAnomaly
 
             return hash;
         }
+#endif
 
         private static uint HashLowerAsciiString(string value)
         {

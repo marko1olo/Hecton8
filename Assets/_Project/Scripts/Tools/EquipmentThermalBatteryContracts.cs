@@ -11,6 +11,7 @@ namespace Hecton8.Tools
         public const uint InWater = 1u << 2;
         public const uint GridPowered = 1u << 3;
         public const uint Depleted = 1u << 4;
+        public const uint Broken = 1u << 5;
         public const uint Faulted = 1u << 31;
     }
 
@@ -23,14 +24,8 @@ namespace Hecton8.Tools
         [FieldOffset(12)] public uint StateFlags;
         [FieldOffset(16)] public float PowerDrawRate;
         [FieldOffset(20)] public float HeatGenerationRate;
-        [FieldOffset(24)] public byte _pad0;
-        [FieldOffset(25)] public byte _pad1;
-        [FieldOffset(26)] public byte _pad2;
-        [FieldOffset(27)] public byte _pad3;
-        [FieldOffset(28)] public byte _pad4;
-        [FieldOffset(29)] public byte _pad5;
-        [FieldOffset(30)] public byte _pad6;
-        [FieldOffset(31)] public byte _pad7;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -53,7 +48,8 @@ namespace Hecton8.Tools
         [FieldOffset(20)] public uint FaultFlags;
         [FieldOffset(24)] public uint LastFaultToolHashID;
         [FieldOffset(28)] public float WearDrainNormalized;
-        [FieldOffset(32)] public ulong Reserved1;
+        [FieldOffset(32)] public float LastAmbientCelsius;
+        [FieldOffset(36)] public float LastBattery01;
         [FieldOffset(40)] public ulong Reserved2;
         [FieldOffset(48)] public ulong Reserved3;
         [FieldOffset(56)] public ulong Reserved4;
@@ -77,6 +73,27 @@ namespace Hecton8.Tools
         [FieldOffset(48)] public int ThermalGridVersion;
         [FieldOffset(52)] public int ThermalGridCellCount;
         [FieldOffset(56)] public uint SnapshotHash;
+        [FieldOffset(60)] public float WearDrainNormalized;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct FlashlightTelemetryEntry
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint ToolHashID;
+        [FieldOffset(8)] public float Battery01;
+        [FieldOffset(12)] public float Thermal01;
+        [FieldOffset(16)] public float DepthMeters;
+        [FieldOffset(20)] public float AmbientCelsius;
+        [FieldOffset(24)] public float BatteryDrainWattSeconds;
+        [FieldOffset(28)] public float PeakThermal01;
+        [FieldOffset(32)] public float CpuMicroseconds;
+        [FieldOffset(36)] public float GlobalQualityWeight;
+        [FieldOffset(40)] public float TickIntervalSeconds;
+        [FieldOffset(44)] public uint StateFlags;
+        [FieldOffset(48)] public uint FaultFlags;
+        [FieldOffset(52)] public uint SnapshotHash;
+        [FieldOffset(56)] public uint SignalCount;
         [FieldOffset(60)] public float WearDrainNormalized;
     }
 
@@ -119,7 +136,7 @@ namespace Hecton8.Tools
         [FieldOffset(16)] public float WaterCoolingMultiplier;
         [FieldOffset(20)] public float AmbientHeatFloorCelsius;
         [FieldOffset(24)] public float AmbientHeatCeilingCelsius;
-        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(28)] public float ColdBatteryPenaltyMultiplier;
 
         public static EquipmentTuningDTO CreateDefault(float globalQualityWeight)
         {
@@ -132,7 +149,7 @@ namespace Hecton8.Tools
                 WaterCoolingMultiplier = 2.75f,
                 AmbientHeatFloorCelsius = -2f,
                 AmbientHeatCeilingCelsius = 70f,
-                Flags = 0u
+                ColdBatteryPenaltyMultiplier = 1.85f
             };
         }
     }
@@ -150,6 +167,7 @@ namespace Hecton8.Tools
         [FieldOffset(28)] public uint Reserved0;
     }
 
+#if UNITY_EDITOR
     [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct EquipmentCsvParseResult
     {
@@ -158,4 +176,5 @@ namespace Hecton8.Tools
         [FieldOffset(8)] public uint LastToolHashID;
         [FieldOffset(12)] public uint FaultFlags;
     }
+#endif
 }

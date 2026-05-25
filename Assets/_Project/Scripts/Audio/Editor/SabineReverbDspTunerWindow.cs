@@ -210,7 +210,7 @@ namespace Hecton8.Audio.Editor
         private static SpatialAudioManager ResolveSpatialAudioManager()
         {
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>();
+            return UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
 #else
             return UnityEngine.Object.FindObjectOfType<SpatialAudioManager>();
 #endif

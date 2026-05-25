@@ -5,7 +5,6 @@
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",
-        "Hecton8.Inventory.Routing.Runtime",
         "Unity.Mathematics",
         "Unity.Collections",
         "Unity.Burst"
@@ -17,7 +16,7 @@
     "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": true,
+    "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

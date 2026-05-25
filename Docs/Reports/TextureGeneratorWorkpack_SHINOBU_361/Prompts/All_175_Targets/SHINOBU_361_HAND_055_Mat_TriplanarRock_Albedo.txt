@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_055
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_055_Mat_TriplanarRock_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\Mat_TriplanarRock_Albedo.png
+FINAL_FILENAME: Mat_TriplanarRock_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Core triplanar Hecton rock albedo for broad cliffs and terrain. Build a high-quality abyssal stone surface with layered blue basalt, pale mineral crust, opal-cyan fracture ribbons, soft sediment patches, and pressure-polished edge color. The texture must be projection-friendly: no directional scene lighting, no object shadows, no visible perspective, just clean material color and large readable geological rhythm. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

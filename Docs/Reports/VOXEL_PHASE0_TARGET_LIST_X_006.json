@@ -1,0 +1,117 @@
+﻿{
+  "agent": "X_006",
+  "role": "VOXEL_SDF_AND_TERRAIN_PAGING_DIRECTOR",
+  "phase": "0",
+  "date": "2026-05-23",
+  "scope": "Static archaeology for voxel deformation, SDF meshing, terrain paging, and renderer fake-first route.",
+  "task_count_in_batch": 10,
+  "phase0_tasks_closed": [1, 2, 3],
+  "compile_run": false,
+  "compile_reason": "No runtime source changed in Phase 0. Build would add contention without proving static audit facts.",
+  "targets": [
+    {
+      "id": "X006-T01-MC-PER-BUILD-NATIVE-ALLOC",
+      "severity": "critical",
+      "task": 1,
+      "file": "Assets/_Project/Scripts/World/HectonVoxelEngine.cs",
+      "evidence": "ExecuteVoxelPipelineAsync allocates RawVertices, WeldedPositions, TriangleIndices, EdgeVertexX/Y/Z, weldedCounter, normals, curvature, AO, biome, skirt, dirty blend, colors, and cave spawn list per build with Persistent/DataVaultExempt allocators.",
+      "risk": "Chunk rebuild is async-yielded, but allocator churn can still create frame spikes and memory fragmentation under bursts of laser carving.",
+      "required_fix": "Move build-sized arrays to DataVault-owned or chunk-pool-owned lanes with explicit capacity budget and no hot growth."
+    },
+    {
+      "id": "X006-T01-MAIN-THREAD-MESHDATA-UPLOAD",
+      "severity": "critical",
+      "task": 1,
+      "file": "Assets/_Project/Scripts/World/HectonVoxelEngine.cs",
+      "evidence": "UploadSurfaceMesh and UploadColliderMesh copy vertices and indices into MeshData in main-thread loops, then ApplyAndDisposeWritableMeshData. Physics bake is deferred through VoxelMeshBakeJob, but mesh upload is still a main-thread cost center.",
+      "risk": "Geometry rebuild can be time-sliced before upload, then stall when final mesh data is applied.",
+      "required_fix": "Introduce budgeted upload dispatcher and pooled MeshData staging; keep renderer continuity through Dear Lie clipping while mesh upload trails."
+    },
+    {
+      "id": "X006-T01-CARVE-COMMIT-MAIN-THREAD",
+      "severity": "critical",
+      "task": 1,
+      "file": "Assets/_Project/Scripts/World/VoxelDeltaProcessor.cs",
+      "evidence": "CarveSdfJob computes writes off-thread, but TryCommitScheduledCarve commits up to MaxScheduledCarveCommitWritesPerFrame on main thread through Dictionary-backed ChunkDeltaState mutation and rebuild enqueue.",
+      "risk": "Laser carving is not fully nonblocking. Job compute is async; authoritative delta commit remains a bounded main-thread mutation lane.",
+      "required_fix": "Separate authoritative commit from renderer fake. Keep gameplay-truth commit bounded and move visual response to GPU stamp/clip path."
+    },
+    {
+      "id": "X006-T02-CHUNK-DELTA-MANAGED-DICTIONARY",
+      "severity": "high",
+      "task": 2,
+      "file": "Assets/_Project/Scripts/World/VoxelDeltaProcessor.cs",
+      "evidence": "_chunkStates, _compactedChunkStates, and _chunkWriteVersions are managed dictionaries. GetOrCreateChunkState grows capacity and ChunkDeltaState constructor allocates four Persistent NativeArrays per new dirty chunk.",
+      "risk": "First touch of new chunks during combat/mining can allocate and resize on the main thread.",
+      "required_fix": "Preallocate deterministic NativeParallelHashMap or DataVault-backed chunk state tables by residency budget; keep managed dictionaries cold/editor-only."
+    },
+    {
+      "id": "X006-T02-SCRATCH-SLOT-GROWTH-OUTSIDE-DATAVAULT",
+      "severity": "high",
+      "task": 2,
+      "file": "Assets/_Project/Scripts/World/HectonVoxelEngine.cs",
+      "evidence": "VoxelStreamingScratchSlot is a managed class container. EnsureNativeArrayCapacity disposes and reallocates Persistent NativeArrays when required length grows.",
+      "risk": "Scratch growth can occur at runtime outside the DataVault ownership doctrine.",
+      "required_fix": "Bind scratch slot count and capacity to GlobalQualityWeight/residency budget during cold boot; reject hot growth or route growth through DataVault."
+    },
+    {
+      "id": "X006-T02-SURFACE-NETS-DORMANT-DATAVAULT-LANE",
+      "severity": "medium",
+      "task": 2,
+      "file": "Assets/_Project/Scripts/World/VoxelSurfaceNets",
+      "evidence": "VoxelSurfaceNetsVault defines explicit DTOs, DataVault BufferIDs, telemetry, and GPU upload staging, but no runtime caller was found outside the SurfaceNets package/editor tooling. GpuUploadDispatcher.TryUpload returns false.",
+      "risk": "A cleaner DataVault meshing lane exists but is not the active deformation pipeline.",
+      "required_fix": "Either retire as prototype or promote as the active async SDF meshing path with complete upload finalization."
+    },
+    {
+      "id": "X006-T02-PAGER-ASYNC-READ-OK-SYNC-SLICE-RISK",
+      "severity": "medium",
+      "task": 2,
+      "file": "Assets/_Project/Scripts/Core/Serialization/H8BinaryWorldPager.cs",
+      "evidence": "WorldChunkResidencyManager uses async pager tickets for voxel delta RLE reads. H8BinaryWorldPager also exposes TryReadPageIntoVaultSlice, a synchronous read/decompress path using FileStream under stream lock.",
+      "risk": "Current residency route is acceptable; future hot callers must not use the sync slice API in gameplay frames.",
+      "required_fix": "Document and enforce sync slice API as bootstrap/editor/diagnostic only for voxel deltas."
+    },
+    {
+      "id": "X006-T03-DEAR-LIE-SHADER-PARTIAL-NOT-CLIPPING",
+      "severity": "critical",
+      "task": 3,
+      "file": "Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader",
+      "evidence": "Shader samples global cut mask and damage volume, but uses them for scar/fresh-cut material response. Fragment and shadow passes do not clip carved volumes, except unrelated chunk dissolve fade.",
+      "risk": "The visual fake-first path is incomplete. The player sees material damage immediately but geometry voids wait for mesh rebuild.",
+      "required_fix": "Add continuous-quality GPU carve clip using existing damage volume/cut-mask payloads, with shadow/depth parity and no gameplay authority transfer."
+    },
+    {
+      "id": "X006-T03-GHOST-MATERIAL-ONLY-STATE-SWAP",
+      "severity": "medium",
+      "task": 3,
+      "file": "Assets/_Project/Scripts/World/HectonVoxelEngine.cs",
+      "evidence": "HectonVoxelVolume.RefreshBakePresentation swaps to voxel bake ghost material while bake state is pending, then back to resolved material when complete.",
+      "risk": "Current continuity strategy hides bake state but does not display precise carve void before mesh completion.",
+      "required_fix": "Keep ghost as rebuild-state visual, but layer Dear Lie carve clipping above it for immediate cut response."
+    },
+    {
+      "id": "X006-T03-TERRAINMASTER-NO-VOXEL-CARVE-PAYLOAD",
+      "severity": "high",
+      "task": 3,
+      "file": "Assets/_Project/Art/Shaders/TerrainMaster.shader",
+      "evidence": "TerrainMaster samples voxel blend mask but has no 3D damage volume or recent carve clipping payload equivalent to AbyssalVoxelRock.",
+      "risk": "Voxel/terrain boundary can visually desync during delayed mesh rebuilds.",
+      "required_fix": "Route the same GPU carve payload to terrain boundary material or explicitly mark terrain out of X_006 clip authority."
+    },
+    {
+      "id": "X006-T02-BLACKBOX-PRESENT-BUT-NOT-X006-UNIFIED",
+      "severity": "medium",
+      "task": 2,
+      "file": "Assets/_Project/Scripts/World/VoxelDeltaProcessor.cs",
+      "evidence": "VoxelDeltaProcessor and HectonVoxelEngine have 300-frame black boxes, but dump names are legacy SHINOBU/VOXEL_MESH_PIPELINE paths rather than Dump_X_006.bin.",
+      "risk": "Crash proof exists in pieces but is not unified under the current agent/system acceptance path.",
+      "required_fix": "Unify X_006 black-box dump naming and include carve, mesh, pager, and shader-fake state hashes."
+    }
+  ],
+  "summary": {
+    "task01": "Voxel pipeline is async-yielded but not allocation-free and not fully free of main-thread upload/commit costs.",
+    "task02": "Chunk/page infrastructure contains strong DataVault lanes, but active carve state still relies on managed dictionaries and runtime Persistent allocations.",
+    "task03": "Renderer already has damage volume/cut-mask substrate, but Dear Lie is currently scar shading rather than geometry clip."
+  }
+}

@@ -73,6 +73,8 @@ namespace Hecton8.Visor
         }
 
 #if UNITY_EDITOR
+        private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(16);
+
         private void Reset()
         {
             RebuildRendererEntries();
@@ -85,23 +87,26 @@ namespace Hecton8.Visor
 
         private void RebuildRendererEntries()
         {
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-            if (renderers == null || renderers.Length == 0)
+            s_RendererScratch.Clear();
+            GetComponentsInChildren(true, s_RendererScratch);
+            if (s_RendererScratch.Count == 0)
             {
                 rendererEntries = Array.Empty<RendererEntry>();
                 return;
             }
 
-            RendererEntry[] rebuiltEntries = new RendererEntry[renderers.Length];
-            for (int i = 0; i < renderers.Length; i++)
+            RendererEntry[] rebuiltEntries = new RendererEntry[s_RendererScratch.Count];
+            for (int i = 0; i < s_RendererScratch.Count; i++)
             {
+                Renderer renderer = s_RendererScratch[i];
                 rebuiltEntries[i] = new RendererEntry
                 {
-                    renderer = renderers[i],
-                    subMeshCount = ResolveSubMeshCount(renderers[i])
+                    renderer = renderer,
+                    subMeshCount = ResolveSubMeshCount(renderer)
                 };
             }
 
+            s_RendererScratch.Clear();
             rendererEntries = rebuiltEntries;
             EditorUtility.SetDirty(this);
         }

@@ -272,7 +272,7 @@ namespace Hecton8.UI
             if (_survivalSystem != null)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (!force && frame < _nextSurvivalResolveFrame)
                 return;
 
@@ -324,7 +324,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             ApplyCachedPlayerContext();
         }
 

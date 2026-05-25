@@ -71,7 +71,10 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _compositeMaterial;
             private GraphicsBuffer _halfResParticlesGlobalsBuffer;
+            private GraphicsBuffer _halfResParticlesGlobalsBufferA;
+            private GraphicsBuffer _halfResParticlesGlobalsBufferB;
             private HalfResParticlesGlobalsDTO _lastHalfResParticlesGlobals;
+            private int _halfResParticlesGlobalsWriteIndex;
             private bool _hasHalfResParticlesGlobals;
 
             public HalfResParticlesPass()
@@ -95,9 +98,13 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
-                _halfResParticlesGlobalsBuffer?.Release();
+                _halfResParticlesGlobalsBufferA?.Release();
+                _halfResParticlesGlobalsBufferA = null;
+                _halfResParticlesGlobalsBufferB?.Release();
+                _halfResParticlesGlobalsBufferB = null;
                 _halfResParticlesGlobalsBuffer = null;
                 _lastHalfResParticlesGlobals = default;
+                _halfResParticlesGlobalsWriteIndex = 0;
                 _hasHalfResParticlesGlobals = false;
             }
 
@@ -223,17 +230,28 @@ namespace Hecton8.Visor
                 if (!SystemInfo.supportsSetConstantBuffer)
                     return false;
 
-                if (_halfResParticlesGlobalsBuffer == null || !_halfResParticlesGlobalsBuffer.IsValid())
+                if (_halfResParticlesGlobalsBufferA == null || !_halfResParticlesGlobalsBufferA.IsValid() ||
+                    _halfResParticlesGlobalsBufferB == null || !_halfResParticlesGlobalsBufferB.IsValid())
                 {
-                    _halfResParticlesGlobalsBuffer = new GraphicsBuffer(
+                    _halfResParticlesGlobalsBufferA?.Release();
+                    _halfResParticlesGlobalsBufferB?.Release();
+                    _halfResParticlesGlobalsBufferA = new GraphicsBuffer(
                         GraphicsBuffer.Target.Constant,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         1,
-                        HalfResParticlesGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[16B] - half-res particle composite globals - owner: HalfResParticlesPass
+                        HalfResParticlesGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[16B] - half-res particle composite globals A - owner: HalfResParticlesPass
+                    _halfResParticlesGlobalsBufferB = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        1,
+                        HalfResParticlesGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[16B] - half-res particle composite globals B - owner: HalfResParticlesPass
+                    _halfResParticlesGlobalsBuffer = _halfResParticlesGlobalsBufferA;
+                    _halfResParticlesGlobalsWriteIndex = 1;
                     _hasHalfResParticlesGlobals = false;
                 }
 
-                return _halfResParticlesGlobalsBuffer != null && _halfResParticlesGlobalsBuffer.IsValid();
+                return _halfResParticlesGlobalsBufferA != null && _halfResParticlesGlobalsBufferA.IsValid() &&
+                       _halfResParticlesGlobalsBufferB != null && _halfResParticlesGlobalsBufferB.IsValid();
             }
 
             private bool UpdateCompositeGlobals(float compositeStrength, float bilateralDepthScale)
@@ -248,16 +266,22 @@ namespace Hecton8.Visor
                     return true;
                 }
 
-                NativeArray<HalfResParticlesGlobalsDTO> mapped = _halfResParticlesGlobalsBuffer.LockBufferForWrite<HalfResParticlesGlobalsDTO>(0, 1);
+                GraphicsBuffer writeBuffer = _halfResParticlesGlobalsWriteIndex == 0 ? _halfResParticlesGlobalsBufferA : _halfResParticlesGlobalsBufferB;
+                if (writeBuffer == null || !writeBuffer.IsValid())
+                    return false;
+
+                NativeArray<HalfResParticlesGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<HalfResParticlesGlobalsDTO>(0, 1);
                 try
                 {
                     mapped[0] = globals;
                 }
                 finally
                 {
-                    _halfResParticlesGlobalsBuffer.UnlockBufferAfterWrite<HalfResParticlesGlobalsDTO>(1);
+                    writeBuffer.UnlockBufferAfterWrite<HalfResParticlesGlobalsDTO>(1);
                 }
 
+                _halfResParticlesGlobalsBuffer = writeBuffer;
+                _halfResParticlesGlobalsWriteIndex ^= 1;
                 Shader.SetGlobalConstantBuffer(ShaderConstants.HalfResParticlesGlobalsBufferId, _halfResParticlesGlobalsBuffer, 0, HalfResParticlesGlobalsStrideBytes);
                 _lastHalfResParticlesGlobals = globals;
                 _hasHalfResParticlesGlobals = true;

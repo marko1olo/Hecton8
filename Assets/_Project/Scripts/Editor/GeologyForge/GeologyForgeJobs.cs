@@ -561,7 +561,7 @@ namespace Hecton8.Editor.GeologyForge
             float3 v1 = p1 - origin;
             float invDenom = math.rsqrt(math.max(math.lengthsq(v0) * math.lengthsq(v1), 1e-12f));
             float cosAngle = math.clamp(math.dot(v0, v1) * invDenom, -1f, 1f);
-            float angle = math.acos(cosAngle);
+            float angle = global::Hecton8.Core.MathLodApproximation.ApproxAcosFast(cosAngle);
             return math.isfinite(angle) ? angle : 1f;
         }
 
@@ -685,7 +685,10 @@ namespace Hecton8.Editor.GeologyForge
             float radialSq = math.max(0f, 1f - z * z);
             float r = radialSq * math.rsqrt(math.max(radialSq, 1e-12f));
             float angle = v * 6.28318530718f;
-            float3 local = new float3(math.cos(angle) * r, math.sin(angle) * r, z);
+            float3 local = new float3(
+                Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angle) * r,
+                Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle) * r,
+                z);
             float3 up = NormalizeOrFallback(normal, new float3(0f, 1f, 0f));
             float3 helper = math.abs(up.y) > 0.92f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
             float3 tangent = NormalizeOrFallback(math.cross(helper, up), new float3(1f, 0f, 0f));

@@ -16,14 +16,12 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public sealed class HectonDistantLandmarkRenderer : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
+    public sealed class HectonDistantLandmarkRenderer : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string SilhouetteShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_DistantLandmarkSilhouette.shader";
 #endif
         private const int BrgMetadataPlaceholderCount = 1;
-        private const Allocator DataVaultExemptDistantLandmarkBrgAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptDistantLandmarkUploadAllocator = Allocator.Persistent;
 
         private static readonly int LandmarkMatricesId = Shader.PropertyToID("_HectonLandmarkMatrices");
         private static readonly int LandmarkFadeId = Shader.PropertyToID("_HectonLandmarkInstanceFade");
@@ -59,17 +57,21 @@ namespace Hecton8.World
         private Vector3 _boundsSize = new Vector3(1200f, 600f, 1200f);
 
         private GraphicsBuffer _externalMatrixBuffer;
-        private NativeArray<Matrix4x4> _uploadedLandmarkMatrices;
-        private NativeArray<Vector4> _uploadedLandmarkFade;
+        private Matrix4x4[] _uploadedLandmarkMatrices;
+        private Vector4[] _uploadedLandmarkFade;
         private GraphicsBuffer _uploadedMatrixBuffer;
         private GraphicsBuffer _uploadedFadeBuffer;
+        private GraphicsBuffer _uploadedMatrixBufferA;
+        private GraphicsBuffer _uploadedMatrixBufferB;
+        private GraphicsBuffer _uploadedFadeBufferA;
+        private GraphicsBuffer _uploadedFadeBufferB;
+        private int _ownedUploadBufferIndex;
         private Bounds _drawBounds;
         private int _instanceCount;
         private bool _hasBoundsOverride;
         private bool _isRegistered;
         private bool _usingOwnedUploadBuffers;
         private BatchRendererGroup _batchRendererGroup;
-        private NativeArray<MetadataValue> _batchMetadata;
         private GraphicsBuffer _batchHandleBuffer;
         private BatchID _batchId;
         private BatchMeshID _batchMeshId;
@@ -77,6 +79,7 @@ namespace Hecton8.World
         private Mesh _registeredMesh;
         private Material _registeredMaterial;
         private GraphicsBuffer _registeredBatchBuffer;
+        private bool _hotSwapListenerRegistered;
 
         /// <summary>
         /// Gets whether an external landmark matrix buffer is currently bound.
@@ -97,6 +100,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterHotSwapListener();
             RegisterTick();
         }
 
@@ -104,16 +108,23 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterTick();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            UnregisterTick();
+            TryUnregisterHotSwapListener();
             ReleaseResources();
         }
 
         /// <inheritdoc />
         public void Tick(float dt)
+        {
+        }
+
+        public void LateFrameTick()
         {
             if (_instanceCount <= 0)
                 return;
@@ -180,7 +191,7 @@ namespace Hecton8.World
             }
 
             EnsureOwnedMatrixUploadCapacity(landmarkCount);
-            if (!_uploadedLandmarkMatrices.IsCreated || _uploadedMatrixBuffer == null || !_uploadedLandmarkFade.IsCreated || _uploadedFadeBuffer == null)
+            if (_uploadedLandmarkMatrices == null || _uploadedMatrixBuffer == null || _uploadedLandmarkFade == null || _uploadedFadeBuffer == null)
             {
                 ClearBinding();
                 return;
@@ -207,8 +218,7 @@ namespace Hecton8.World
                 }
             }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedMatrixBuffer, _uploadedLandmarkMatrices, landmarkCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedFadeBuffer, _uploadedLandmarkFade, landmarkCount);
+            PublishOwnedUploadBuffers(landmarkCount);
             _externalMatrixBuffer = null;
             _usingOwnedUploadBuffers = true;
             _instanceCount = landmarkCount;
@@ -232,7 +242,7 @@ namespace Hecton8.World
             }
 
             EnsureOwnedMatrixUploadCapacity(hlodCount);
-            if (!_uploadedLandmarkMatrices.IsCreated || _uploadedMatrixBuffer == null || !_uploadedLandmarkFade.IsCreated || _uploadedFadeBuffer == null)
+            if (_uploadedLandmarkMatrices == null || _uploadedMatrixBuffer == null || _uploadedLandmarkFade == null || _uploadedFadeBuffer == null)
             {
                 ClearBinding();
                 return;
@@ -259,8 +269,7 @@ namespace Hecton8.World
                 }
             }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedMatrixBuffer, _uploadedLandmarkMatrices, hlodCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedFadeBuffer, _uploadedLandmarkFade, hlodCount);
+            PublishOwnedUploadBuffers(hlodCount);
             _externalMatrixBuffer = null;
             _usingOwnedUploadBuffers = true;
             _instanceCount = hlodCount;
@@ -285,7 +294,7 @@ namespace Hecton8.World
 
             if (_usingOwnedUploadBuffers &&
                 _instanceCount > 0 &&
-                _uploadedLandmarkMatrices.IsCreated &&
+                _uploadedLandmarkMatrices != null &&
                 _uploadedMatrixBuffer != null)
             {
                 int safeCount = Mathf.Min(_instanceCount, _uploadedLandmarkMatrices.Length);
@@ -298,7 +307,7 @@ namespace Hecton8.World
                     _uploadedLandmarkMatrices[i] = matrix;
                 }
 
-                GraphicsBufferUploadUtility.UploadNativeArray(_uploadedMatrixBuffer, _uploadedLandmarkMatrices, safeCount);
+                PublishOwnedUploadBuffers(safeCount);
             }
 
             if (_batchRendererGroup != null)
@@ -321,8 +330,7 @@ namespace Hecton8.World
             if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterTick()
@@ -330,8 +338,34 @@ namespace Hecton8.World
             if (!_isRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _isRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                RegisterTick();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void EnsureResources()
@@ -344,10 +378,11 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, DataVaultExemptDistantLandmarkBrgAllocator); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for distant landmark renderer - owner: HectonDistantLandmarkRenderer
-                NativeMemorySentinel.RegisterNativeArray(_batchMetadata, nameof(HectonDistantLandmarkRenderer), nameof(_batchMetadata), NativeAllocationLifetime.Session);
                 _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for distant landmark renderer - owner: HectonDistantLandmarkRenderer
-                _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
+                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+                {
+                    _batchId = _batchRendererGroup.AddBatch(batchMetadata, _batchHandleBuffer.bufferHandle);
+                }
                 _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
             }
         }
@@ -391,45 +426,47 @@ namespace Hecton8.World
         private void EnsureOwnedMatrixUploadCapacity(int instanceCount)
         {
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, instanceCount));
-            if (_uploadedLandmarkMatrices.IsCreated &&
+            if (_uploadedLandmarkMatrices != null &&
                 _uploadedLandmarkMatrices.Length >= nextCapacity &&
-                _uploadedMatrixBuffer != null &&
-                _uploadedMatrixBuffer.count >= nextCapacity &&
-                _uploadedLandmarkFade.IsCreated &&
+                HasUploadCapacity(_uploadedMatrixBufferA, nextCapacity) &&
+                HasUploadCapacity(_uploadedMatrixBufferB, nextCapacity) &&
+                _uploadedLandmarkFade != null &&
                 _uploadedLandmarkFade.Length >= nextCapacity &&
-                _uploadedFadeBuffer != null &&
-                _uploadedFadeBuffer.count >= nextCapacity)
+                HasUploadCapacity(_uploadedFadeBufferA, nextCapacity) &&
+                HasUploadCapacity(_uploadedFadeBufferB, nextCapacity))
                 return;
 
-            if (_uploadedLandmarkMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedLandmarkMatrices);
-                _uploadedLandmarkMatrices.Dispose();
-            }
-            if (_uploadedLandmarkFade.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedLandmarkFade);
-                _uploadedLandmarkFade.Dispose();
-            }
+            _uploadedLandmarkMatrices = null;
+            _uploadedLandmarkFade = null;
+            ReleaseUploadBuffer(ref _uploadedMatrixBufferA);
+            ReleaseUploadBuffer(ref _uploadedMatrixBufferB);
+            ReleaseUploadBuffer(ref _uploadedFadeBufferA);
+            ReleaseUploadBuffer(ref _uploadedFadeBufferB);
+            _uploadedMatrixBuffer = null;
+            _uploadedFadeBuffer = null;
+            _registeredBatchBuffer = null;
+            _ownedUploadBufferIndex = 0;
 
-            if (_uploadedMatrixBuffer != null)
-            {
-                _uploadedMatrixBuffer.Release();
-                _uploadedMatrixBuffer = null;
-            }
+            _uploadedLandmarkMatrices = new Matrix4x4[nextCapacity]; // COLD ALLOC: Matrix4x4[NextPowerOfTwo(requiredCount)] - distant landmark CPU upload cache - owner: HectonDistantLandmarkRenderer
+            _uploadedLandmarkFade = new Vector4[nextCapacity]; // COLD ALLOC: Vector4[NextPowerOfTwo(requiredCount)] - distant landmark fade CPU upload cache - owner: HectonDistantLandmarkRenderer
+            _uploadedMatrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark matrix upload buffer A - owner: HectonDistantLandmarkRenderer
+            _uploadedMatrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark matrix upload buffer B - owner: HectonDistantLandmarkRenderer
+            _uploadedFadeBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark fade upload buffer A - owner: HectonDistantLandmarkRenderer
+            _uploadedFadeBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark fade upload buffer B - owner: HectonDistantLandmarkRenderer
+        }
 
-            if (_uploadedFadeBuffer != null)
-            {
-                _uploadedFadeBuffer.Release();
-                _uploadedFadeBuffer = null;
-            }
+        private void PublishOwnedUploadBuffers(int instanceCount)
+        {
+            GraphicsBuffer matrixWrite = _ownedUploadBufferIndex == 0 ? _uploadedMatrixBufferA : _uploadedMatrixBufferB;
+            GraphicsBuffer fadeWrite = _ownedUploadBufferIndex == 0 ? _uploadedFadeBufferA : _uploadedFadeBufferB;
+            if (matrixWrite == null || fadeWrite == null)
+                return;
 
-            _uploadedLandmarkMatrices = new NativeArray<Matrix4x4>(nextCapacity, DataVaultExemptDistantLandmarkUploadAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - distant landmark native upload cache - owner: HectonDistantLandmarkRenderer
-            _uploadedLandmarkFade = new NativeArray<Vector4>(nextCapacity, DataVaultExemptDistantLandmarkUploadAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Vector4>[NextPowerOfTwo(requiredCount)] - distant landmark fade upload cache - owner: HectonDistantLandmarkRenderer
-            NativeMemorySentinel.RegisterNativeArray(_uploadedLandmarkMatrices, nameof(HectonDistantLandmarkRenderer), nameof(_uploadedLandmarkMatrices), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_uploadedLandmarkFade, nameof(HectonDistantLandmarkRenderer), nameof(_uploadedLandmarkFade), NativeAllocationLifetime.Session);
-            _uploadedMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark matrix upload buffer - owner: HectonDistantLandmarkRenderer
-            _uploadedFadeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark fade upload buffer - owner: HectonDistantLandmarkRenderer
+            GraphicsBufferUploadUtility.UploadArray(matrixWrite, _uploadedLandmarkMatrices, instanceCount);
+            GraphicsBufferUploadUtility.UploadArray(fadeWrite, _uploadedLandmarkFade, instanceCount);
+            _uploadedMatrixBuffer = matrixWrite;
+            _uploadedFadeBuffer = fadeWrite;
+            _ownedUploadBufferIndex ^= 1;
         }
 
         private Material ResolveMaterial()
@@ -474,36 +511,17 @@ namespace Hecton8.World
                 _batchHandleBuffer = null;
             }
 
-            if (_batchMetadata.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_batchMetadata);
-                _batchMetadata.Dispose();
-            }
+            ReleaseUploadBuffer(ref _uploadedMatrixBufferA);
+            ReleaseUploadBuffer(ref _uploadedMatrixBufferB);
+            ReleaseUploadBuffer(ref _uploadedFadeBufferA);
+            ReleaseUploadBuffer(ref _uploadedFadeBufferB);
+            _uploadedMatrixBuffer = null;
+            _uploadedFadeBuffer = null;
+            _registeredBatchBuffer = null;
+            _ownedUploadBufferIndex = 0;
 
-            if (_uploadedMatrixBuffer != null)
-            {
-                _uploadedMatrixBuffer.Release();
-                _uploadedMatrixBuffer = null;
-                _registeredBatchBuffer = null;
-            }
-
-            if (_uploadedFadeBuffer != null)
-            {
-                _uploadedFadeBuffer.Release();
-                _uploadedFadeBuffer = null;
-            }
-
-            if (_uploadedLandmarkMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedLandmarkMatrices);
-                _uploadedLandmarkMatrices.Dispose();
-            }
-            if (_uploadedLandmarkFade.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedLandmarkFade);
-                _uploadedLandmarkFade.Dispose();
-            }
-
+            _uploadedLandmarkMatrices = null;
+            _uploadedLandmarkFade = null;
         }
 
         private JobHandle OnPerformCulling(
@@ -544,6 +562,20 @@ namespace Hecton8.World
                 receiveShadows: false,
                 MotionVectorGenerationMode.Camera);
             return default;
+        }
+
+        private static bool HasUploadCapacity(GraphicsBuffer buffer, int requiredCapacity)
+        {
+            return buffer != null && buffer.IsValid() && buffer.count >= requiredCapacity;
+        }
+
+        private static void ReleaseUploadBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
     }
 }

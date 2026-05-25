@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Hecton8.Core.Contracts.AI.Cognition;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -52,6 +53,12 @@ namespace Hecton8.AI.Cognition
                    IsHandleCreated(in TelemetryRing) &&
                    IsHandleCreated(in TelemetryCursor);
         }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
     }
 
     /// <summary>
@@ -96,27 +103,27 @@ namespace Hecton8.AI.Cognition
             if (vault.IsAllocationLocked)
                 return TryReadExistingHandles(vault, capacity, out handles);
 
-            handles.States = vault.GetGenerationHandle<AlphaLeviathanCognitionState>(
+            handles.States = vault.EnsureGenerationHandle<AlphaLeviathanCognitionState>(
                 BufferID.AlphaLeviathanCognitionState,
                 capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.SensoryStimuli = vault.GetGenerationHandle<AlphaLeviathanSensoryStimulus>(
+            handles.SensoryStimuli = vault.EnsureGenerationHandle<AlphaLeviathanSensoryStimulus>(
                 BufferID.AlphaLeviathanSensoryStimulus,
                 capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.SteeringOutputs = vault.GetGenerationHandle<AlphaLeviathanSteeringOutput>(
+            handles.SteeringOutputs = vault.EnsureGenerationHandle<AlphaLeviathanSteeringOutput>(
                 BufferID.AlphaLeviathanSteeringOutput,
                 capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetGenerationHandle<AlphaLeviathanTelemetryEntry>(
+            handles.TelemetryRing = vault.EnsureGenerationHandle<AlphaLeviathanTelemetryEntry>(
                 BufferID.AlphaLeviathanTelemetryRing,
                 AlphaLeviathanStalkConstants.TelemetryCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
+            handles.TelemetryCursor = vault.EnsureGenerationHandle<int>(
                 BufferID.AlphaLeviathanTelemetryCursor,
                 1,
                 SystemID.AICognition,

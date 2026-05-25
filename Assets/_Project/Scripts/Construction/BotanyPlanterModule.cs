@@ -13,7 +13,7 @@ namespace Hecton8.Construction
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class BotanyPlanterModule : MonoBehaviour, ISlowTickable, IInteractable
+    public sealed class BotanyPlanterModule : MonoBehaviour, ISlowTickable, IInteractable, IInteractableTextProvider, IGlobalRegistryHotSwapListener
     {
         private const string DefaultEmptyText = "Botany Planter Empty";
         private const string DefaultLoadedText = "Botany Planter Active";
@@ -38,6 +38,8 @@ namespace Hecton8.Construction
         private readonly ItemData[] _plantedItems = new ItemData[MaxPlanterSlots];
         private readonly int[] _plantedQuantities = new int[MaxPlanterSlots];
         private CultivationManager _cultivationManager;
+        private IPlayerInventoryService _cachedInventoryService;
+        private bool _hotSwapListenerRegistered;
         private bool _registered;
 
         private void Awake()
@@ -56,12 +58,50 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             TryRegister();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
+        }
+
+        private void OnDestroy()
+        {
+            InteractableRegistry.InvalidateTree(this);
+            TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registered = false;
+                    }
+                    else if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _cachedInventoryService = currentService as IPlayerInventoryService;
+                    break;
+            }
         }
 
         public void SlowTick()
@@ -106,6 +146,11 @@ namespace Hecton8.Construction
             return CountPlantedItems() > 0 ? DefaultLoadedText : DefaultEmptyText;
         }
 
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(CountPlantedItems() > 0 ? DefaultLoadedText : DefaultEmptyText, destination, out length);
+        }
+
         /// <summary>
         /// UI / interaction bridge for future planter inventory UI. Moves organic items into planter slots.
         /// </summary>
@@ -142,7 +187,7 @@ namespace Hecton8.Construction
         /// </summary>
         public int CopyBufferSnapshot(ItemData[] items, int[] quantities)
         {
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService inventoryService = _cachedInventoryService;
             PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
                 ? inventoryService.Inventory
                 : null;
@@ -164,6 +209,33 @@ namespace Hecton8.Construction
             return copied;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _cachedInventoryService = GlobalRegistry.PlayerInventory;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _cachedInventoryService = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying)
@@ -172,8 +244,7 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()

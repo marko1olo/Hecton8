@@ -89,7 +89,7 @@ namespace Hecton8.Optimization.Editor
                 throw new BuildFailedException("[HectonTransparentOverdrawBuildGuard] 02_HECTON_WORLD scene not found at " + WorldScenePath);
 
             string[] dependencies = AssetDatabase.GetDependencies(WorldScenePath, true);
-            HashSet<string> materialPaths = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> materialPaths = new HashSet<string>(dependencies.Length, StringComparer.Ordinal);
             for (int i = 0; i < dependencies.Length; i++)
             {
                 string dependencyPath = dependencies[i];

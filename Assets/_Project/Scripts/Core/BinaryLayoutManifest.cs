@@ -1019,7 +1019,7 @@ namespace Hecton8.Core
                 Severity = 3,
                 Flags = 1
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<ComplianceViolationSignal>.TryPush(in signal);
         }
 
         private static void DumpFailure(string structName, int expected, int observed, uint contextHash)

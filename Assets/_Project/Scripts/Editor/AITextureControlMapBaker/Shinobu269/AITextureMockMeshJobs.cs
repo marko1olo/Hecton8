@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -51,24 +52,31 @@ namespace Hecton8.Editor.AITextureControlMaps
             float tau = 6.28318530718f;
             float t = u * tau;
             float twist = math.max(0.1f, config.Twist);
-            float radial = config.MajorRadius + 0.28f * math.cos(t * 3.0f + twist);
+            float t2 = t * 2.0f;
+            float t3 = t * 3.0f;
+            float t3Twist = t3 + twist;
+            MathLodApproximation.ApproxSinCosBhaskara(t2, out float sinT2, out float cosT2);
+            MathLodApproximation.ApproxSinCosBhaskara(t3, out float sinT3, out float cosT3);
+            float sinT3Twist = MathLodApproximation.ApproxSinBhaskara(t3Twist);
+            float radial = config.MajorRadius + 0.28f * MathLodApproximation.ApproxCosBhaskara(t3Twist);
             float3 center = new float3(
-                radial * math.cos(t * 2.0f),
-                0.42f * math.sin(t * 3.0f),
-                radial * math.sin(t * 2.0f));
+                radial * cosT2,
+                0.42f * sinT3,
+                radial * sinT2);
 
             float3 tangent = Normalize(new float3(
-                -2.0f * radial * math.sin(t * 2.0f) - 0.84f * math.sin(t * 3.0f + twist) * math.cos(t * 2.0f),
-                1.26f * math.cos(t * 3.0f),
-                2.0f * radial * math.cos(t * 2.0f) - 0.84f * math.sin(t * 3.0f + twist) * math.sin(t * 2.0f)));
-            float3 radialAxis = Normalize(new float3(math.cos(t * 2.0f), 0.0f, math.sin(t * 2.0f)));
+                -2.0f * radial * sinT2 - 0.84f * sinT3Twist * cosT2,
+                1.26f * cosT3,
+                2.0f * radial * cosT2 - 0.84f * sinT3Twist * sinT2));
+            float3 radialAxis = Normalize(new float3(cosT2, 0.0f, sinT2));
             float3 binormal = Normalize(math.cross(tangent, radialAxis));
             float3 normalAxis = Normalize(math.cross(binormal, tangent));
             float p = v * tau;
             float ridged = 1.0f - math.abs(HashSignedNoise(u * 17.0f + v * 31.0f, config.Seed));
-            float wave = math.sin(t * 7.0f + p * 5.0f + (config.Seed & 15u));
+            float wave = MathLodApproximation.ApproxSinBhaskara(t * 7.0f + p * 5.0f + (config.Seed & 15u));
             float radius = math.max(0.02f, config.TubeRadius * (1.0f + config.Irregularity * (ridged * 0.38f + wave * 0.12f)));
-            float3 shell = normalAxis * math.cos(p) + binormal * math.sin(p);
+            MathLodApproximation.ApproxSinCosBhaskara(p, out float sinP, out float cosP);
+            float3 shell = normalAxis * cosP + binormal * sinP;
             return center + shell * radius;
         }
 

@@ -54,7 +54,7 @@ using ConstructionMockWorldSampler = Hecton8.Construction.MockWorldSampler;
 namespace Hecton8.Building
 {
     [DisallowMultipleComponent]
-    public sealed class PlayerBuilder : PlayerTool
+    public sealed class PlayerBuilder : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         public enum BuildReadiness
         {
@@ -226,11 +226,18 @@ namespace Hecton8.Building
         private static bool s_ConstructionSignalLanesInitialized;
         private HabitatConstructionManager _habitatConstructionManager;
         private ConstructionManager _cachedConstructionManager;
-        private ObjectPoolManager _cachedObjectPool;
+        private IObjectPoolService _cachedObjectPool;
         private IHabitatDeconstructionSystem _cachedHabitatDeconstructionSystem;
         private IInteractionSignalService _cachedInteractionSignalService;
         private AutonomousExtractorSystem _cachedAutonomousExtractorSystem;
         private IAudioService _cachedAudioService;
+        private AudioClip _pendingBuilderAudio0;
+        private AudioClip _pendingBuilderAudio1;
+        private AudioClip _pendingBuilderAudio2;
+        private AudioClip _pendingBuilderAudio3;
+        private int _pendingBuilderAudioCount;
+        private bool _lateFrameRegistered;
+        private IQuestSystem _cachedQuestSystem;
         private ulong _buildRayRequesterId;
         private bool _shinobuHasSnappedPose;
         private Vector3 _shinobuSnappedPosePosition;
@@ -281,7 +288,7 @@ namespace Hecton8.Building
 
         public BuildableData ActiveBuildable => activeBuildable;
         public int ActiveBuildableIndex => _activeBuildableIndex;
-        public int BuildableCount => _buildCatalog != null ? _buildCatalog.ViewableCount : 0;
+        public int BuildableCount => _buildCatalog != null ? _buildCatalog.GetViewableCount(_cachedQuestSystem) : 0;
         public bool HasResourcesForActiveBuildable => _cachedHasResourcesForActiveBuildable;
         public bool CanPlaceActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && _builderGhostPreviewActive && _builderGhostPreviewCanBuild && _semanticPlacementValid && _terrainSdfPlacementValid && _integrityPlacementValid;
         public bool HasPlacementPreview => _builderGhostPreviewActive;
@@ -301,24 +308,25 @@ namespace Hecton8.Building
 
         public BuildableData GetBuildableAt(int index)
         {
-            if (_buildCatalog == null || index < 0 || index >= _buildCatalog.ViewableCount)
+            int viewableCount = _buildCatalog != null ? _buildCatalog.GetViewableCount(_cachedQuestSystem) : 0;
+            if (_buildCatalog == null || index < 0 || index >= viewableCount)
                 return null;
 
-            return _buildCatalog.GetViewableAt(index);
+            return _buildCatalog.GetViewableAt(index, _cachedQuestSystem);
         }
 
         public BuildableData GetRelativeBuildable(int direction)
         {
-            if (_buildCatalog == null || _buildCatalog.ViewableCount <= 0)
+            int viewableCount = _buildCatalog != null ? _buildCatalog.GetViewableCount(_cachedQuestSystem) : 0;
+            if (_buildCatalog == null || viewableCount <= 0)
                 return null;
 
-            int currentIndex = _buildCatalog.IndexOfViewable(activeBuildable);
+            int currentIndex = _buildCatalog.IndexOfViewable(activeBuildable, _cachedQuestSystem);
             if (currentIndex < 0)
                 currentIndex = direction >= 0 ? -1 : 0;
 
-            int viewableCount = _buildCatalog.ViewableCount;
             int nextIndex = (currentIndex + direction + viewableCount) % viewableCount;
-            return _buildCatalog.GetViewableAt(nextIndex);
+            return _buildCatalog.GetViewableAt(nextIndex, _cachedQuestSystem);
         }
 
         public bool DebugDeployActiveBuildable(Vector3 position, Quaternion rotation, bool consumeCost = true)
@@ -357,7 +365,7 @@ namespace Hecton8.Building
                 return false;
             }
 
-            if (!TryGetObjectPool(out ObjectPoolManager pool))
+            if (!TryGetObjectPool(out IObjectPoolService pool))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: ObjectPoolManager unavailable.");
@@ -635,6 +643,7 @@ namespace Hecton8.Building
         private void Awake()
         {
             EnsureHabitatConstructionManagerCold();
+            _cachedQuestSystem = GlobalRegistry.QuestSystem;
         }
 
         public override void OnSpawn()
@@ -649,11 +658,15 @@ namespace Hecton8.Building
         {
             DespawnGhost();
             ResetBuilderState();
+            ClearPendingBuilderAudioSync();
+            TryUnregisterLateFrameTick();
             base.OnDespawn();
         }
 
         private void OnDestroy()
         {
+            ClearPendingBuilderAudioSync();
+            TryUnregisterLateFrameTick();
             CompleteShinobuSocketSnapForTeardown();
             CompleteBuilderGhostValidationForTeardown();
 
@@ -669,7 +682,71 @@ namespace Hecton8.Building
             _cachedInteractionSignalService = null;
             _cachedAutonomousExtractorSystem = null;
             _cachedAudioService = null;
+            _cachedQuestSystem = null;
             _shinobuSocketVault = null;
+        }
+
+        protected override void OnToolRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            base.OnToolRegistryServiceReplaced(serviceSlot, previousService, currentService);
+
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                        return;
+
+                    bool needsLateFrame = _lateFrameRegistered || _pendingBuilderAudioCount > 0;
+                    TryUnregisterLateFrameTick();
+                    if (needsLateFrame)
+                        TryRegisterLateFrameTick();
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _cachedObjectPool = currentService as IObjectPoolService;
+                    break;
+                case GlobalRegistryServiceSlot.HabitatDeconstructionRuntime:
+                    _cachedHabitatDeconstructionSystem = currentService as IHabitatDeconstructionSystem;
+                    break;
+                case GlobalRegistryServiceSlot.InteractionSignals:
+                    _cachedInteractionSignalService = currentService as IInteractionSignalService;
+                    break;
+                case GlobalRegistryServiceSlot.AutonomousExtractorRuntime:
+                    _cachedAutonomousExtractorSystem = currentService as AutonomousExtractorSystem;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedAudioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.QuestSystem:
+                    _cachedQuestSystem = currentService as IQuestSystem;
+                    RefreshActiveBuildReadiness();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindBuilderDataVault(currentService as IDataVault);
+                    break;
+            }
+        }
+
+        private void RebindBuilderDataVault(IDataVault vault)
+        {
+            CompleteShinobuSocketSnapForTeardown();
+            CompleteBuilderGhostValidationForTeardown();
+            _shinobuSocketVault = vault;
+            _shinobuSocketVaultSceneHash = 0u;
+            _shinobuSocketVaultModuleCount = -1;
+            _shinobuSocketVaultTargetCount = 0;
+            _shinobuSocketVaultConnectionCount = 0;
+            _shinobuSocketVaultHasRootAup = false;
+            _shinobuSocketVaultRootAup = default;
+            _shinobuSocketVaultTopologyVersion = 0u;
+            ModularBaseConstructionValidator.InitializeVault(vault);
+            _habitatConstructionManager?.BindCatalogVault(vault);
+            if (vault != null)
+                ShinobuSocketConstructionRuntime.InitializeVault(vault);
+            if (_builderGhostPreviewActive)
+                _integrityValidationDirty = true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -709,6 +786,14 @@ namespace Hecton8.Building
             {
                 RefreshActiveBuildReadiness();
             }
+        }
+
+        public void LateFrameTick()
+        {
+            FlushPendingBuilderAudio();
+
+            if (_pendingBuilderAudioCount <= 0)
+                TryUnregisterLateFrameTick();
         }
 
         private void ConsumeBuilderInputSignals()
@@ -804,14 +889,15 @@ namespace Hecton8.Building
 
         private void CycleBuildable(int direction)
         {
-            if (_buildCatalog == null || _buildCatalog.ViewableCount <= 0)
+            int viewableCount = _buildCatalog != null ? _buildCatalog.GetViewableCount(_cachedQuestSystem) : 0;
+            if (_buildCatalog == null || viewableCount <= 0)
             {
                 NotifyBuildBlocked("MODULE CATALOG OFFLINE");
                 return;
             }
 
-            int count = _buildCatalog.ViewableCount;
-            int startIndex = _buildCatalog.IndexOfViewable(activeBuildable);
+            int count = viewableCount;
+            int startIndex = _buildCatalog.IndexOfViewable(activeBuildable, _cachedQuestSystem);
 
             if (startIndex < 0)
                 startIndex = direction >= 0 ? -1 : 0;
@@ -819,7 +905,7 @@ namespace Hecton8.Building
             for (int step = 1; step <= count; step++)
             {
                 int candidateIndex = WrapIndex(startIndex + (step * direction), count);
-                BuildableData candidate = _buildCatalog.GetViewableAt(candidateIndex);
+                BuildableData candidate = _buildCatalog.GetViewableAt(candidateIndex, _cachedQuestSystem);
                 if (candidate == null) continue;
 
                 SetActiveBuildable(candidate);
@@ -1252,7 +1338,7 @@ namespace Hecton8.Building
             TryResolveExactSnappedPlacementPose(ref placePos, ref placeRot);
             ApplyStructuralPlacementQuantization(ref placePos, ref placeRot);
 
-            if (!TryGetObjectPool(out ObjectPoolManager pool))
+            if (!TryGetObjectPool(out IObjectPoolService pool))
             {
                 NotifyBuildBlocked("OBJECT POOL OFFLINE");
                 PlaySound(errorSound);
@@ -1324,9 +1410,9 @@ namespace Hecton8.Building
             return _habitatConstructionManager.HasBuildResources(inventory, data);
         }
 
-        private static bool IsBuildableBlueprintViewable(BuildableData data)
+        private bool IsBuildableBlueprintViewable(BuildableData data)
         {
-            return data != null && data.IsBlueprintViewable();
+            return data != null && data.IsBlueprintViewable(_cachedQuestSystem);
         }
 
         private void BindRuntimeReferences()
@@ -1346,6 +1432,7 @@ namespace Hecton8.Building
             if (_shinobuSocketVault != null)
                 ShinobuSocketConstructionRuntime.InitializeVault(_shinobuSocketVault);
             EnsureConstructionSignalLanes();
+            _cachedQuestSystem = GlobalRegistry.QuestSystem;
 
             IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             if (inventory == null && playerContext != null)
@@ -1381,7 +1468,7 @@ namespace Hecton8.Building
             if (_cachedConstructionManager == null)
                 _cachedConstructionManager = ResolveConstructionManager();
             if (_cachedObjectPool == null)
-                _cachedObjectPool = GlobalRegistry.ObjectPool;
+                _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             if (_cachedHabitatDeconstructionSystem == null)
                 _cachedHabitatDeconstructionSystem = GlobalRegistry.HabitatDeconstruction;
             if (_cachedInteractionSignalService == null)
@@ -1389,7 +1476,7 @@ namespace Hecton8.Building
             if (_cachedAutonomousExtractorSystem == null)
                 _cachedAutonomousExtractorSystem = GlobalRegistry.AutonomousExtractors;
             if (_cachedAudioService == null)
-                _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+                _cachedAudioService = GlobalRegistry.Audio;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
                 LogBuilderDebug($"BindRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
@@ -1423,12 +1510,12 @@ namespace Hecton8.Building
                 maxFrameSignals: 8,
                 lowTierFrameSignals: 8,
                 laneHash: ConstructionPreviewSignal.LaneHash);
+            SignalBus<ConstructionPreviewSignal>.EnsureInitialized();
             SignalBus<FloraExclusionSignal>.Configure(
                 expectedCapacity: 4,
                 maxFrameSignals: 8,
                 lowTierFrameSignals: 8,
                 laneHash: FloraExclusionSignal.LaneHash);
-            SignalBus<ConstructionPreviewSignal>.EnsureInitialized();
             SignalBus<FloraExclusionSignal>.EnsureInitialized();
             s_ConstructionSignalLanesInitialized = true;
         }
@@ -1447,15 +1534,15 @@ namespace Hecton8.Building
             LogBuilderDebug("EnsureCatalogSelection begin");
             if (!autoResolveCatalogSelection) return;
             if (activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable)) return;
-            if (_buildCatalog == null || _buildCatalog.ViewableCount <= 0) return;
+            int viewableCount = _buildCatalog != null ? _buildCatalog.GetViewableCount(_cachedQuestSystem) : 0;
+            if (_buildCatalog == null || viewableCount <= 0) return;
 
             AssignActiveBuildable(null);
             _activeBuildableIndex = -1;
 
-            int viewableCount = _buildCatalog.ViewableCount;
             for (int i = 0; i < viewableCount; i++)
             {
-                BuildableData candidate = _buildCatalog.GetViewableAt(i);
+                BuildableData candidate = _buildCatalog.GetViewableAt(i, _cachedQuestSystem);
                 if (candidate == null) continue;
 
                 AssignActiveBuildable(candidate);
@@ -1608,13 +1695,13 @@ namespace Hecton8.Building
                 "INFO");
         }
 
-        private bool TryGetObjectPool(out ObjectPoolManager pool)
+        private bool TryGetObjectPool(out IObjectPoolService pool)
         {
             pool = _cachedObjectPool;
             return pool != null;
         }
 
-        private GameObject SpawnPlacedModule(BuildableData data, Vector3 placePos, Quaternion placeRot, ObjectPoolManager pool)
+        private GameObject SpawnPlacedModule(BuildableData data, Vector3 placePos, Quaternion placeRot, IObjectPoolService pool)
         {
             if (data == null)
                 return null;
@@ -1834,7 +1921,7 @@ namespace Hecton8.Building
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(_builderHudBuffer.ToString());
+            Hecton8.Core.H8Debug.Log(_builderHudBuffer.ToString());
 #endif
         }
 
@@ -1858,7 +1945,7 @@ namespace Hecton8.Building
             if (!builderDebugLogging)
                 return;
 
-            Debug.Log("[BuilderDebug] " + message);
+            Hecton8.Core.H8Debug.Log("[BuilderDebug] " + message);
         }
 
         private void NotifyModuleDeconstructionQueued(BaseModule module)
@@ -4144,7 +4231,7 @@ namespace Hecton8.Building
             clunk.SourceId = sourceLow != 0u ? sourceLow : moduleHash;
             clunk.Channel = AcousticPingSignal.ChannelMetalStress;
             clunk.Flags = 0;
-            GlobalSignals.Publish(in clunk);
+            SignalBus<AcousticPingSignal>.TryPush(in clunk);
 
             FloraExclusionSignal flora = default;
             flora.CenterAup = centerAup;
@@ -4189,7 +4276,7 @@ namespace Hecton8.Building
 
         private static IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            return Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            return GlobalRegistry.Player;
         }
 
         private static IEnvironmentRuntimeContext ResolveEnvironmentRuntimeContext()
@@ -4219,9 +4306,80 @@ namespace Hecton8.Building
             if (clip == null)
                 return;
 
+            QueueBuilderAudioCue(clip);
+        }
+
+        private void QueueBuilderAudioCue(AudioClip clip)
+        {
+            switch (_pendingBuilderAudioCount)
+            {
+                case 0:
+                    _pendingBuilderAudio0 = clip;
+                    _pendingBuilderAudioCount = 1;
+                    break;
+                case 1:
+                    _pendingBuilderAudio1 = clip;
+                    _pendingBuilderAudioCount = 2;
+                    break;
+                case 2:
+                    _pendingBuilderAudio2 = clip;
+                    _pendingBuilderAudioCount = 3;
+                    break;
+                default:
+                    _pendingBuilderAudio3 = clip;
+                    _pendingBuilderAudioCount = 4;
+                    break;
+            }
+
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushPendingBuilderAudio()
+        {
+            int count = _pendingBuilderAudioCount;
+            if (count <= 0)
+                return;
+
             IAudioService audioService = _cachedAudioService;
             if (audioService != null)
-                audioService.PlayStatic2D(clip);
+            {
+                if (count > 0 && _pendingBuilderAudio0 != null)
+                    audioService.PlayStatic2D(_pendingBuilderAudio0);
+                if (count > 1 && _pendingBuilderAudio1 != null)
+                    audioService.PlayStatic2D(_pendingBuilderAudio1);
+                if (count > 2 && _pendingBuilderAudio2 != null)
+                    audioService.PlayStatic2D(_pendingBuilderAudio2);
+                if (count > 3 && _pendingBuilderAudio3 != null)
+                    audioService.PlayStatic2D(_pendingBuilderAudio3);
+            }
+
+            ClearPendingBuilderAudioSync();
+        }
+
+        private void ClearPendingBuilderAudioSync()
+        {
+            _pendingBuilderAudio0 = null;
+            _pendingBuilderAudio1 = null;
+            _pendingBuilderAudio2 = null;
+            _pendingBuilderAudio3 = null;
+            _pendingBuilderAudioCount = 0;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

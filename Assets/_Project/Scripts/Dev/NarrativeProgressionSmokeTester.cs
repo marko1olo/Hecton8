@@ -41,7 +41,7 @@ namespace Hecton8.Dev
                    + "\"ghostDepthGate\":{\"pass\":" + ToJsonBool(ghostDepthGatePass) + "},"
                    + "\"ghostDeterminism\":{\"pass\":" + ToJsonBool(ghostDeterminismPass)
                    + ",\"cycleIndex\":" + ghostCycleIndex
-                   + ",\"intensity\":" + ghostIntensity.ToString("0.000", CultureInfo.InvariantCulture) + "},"
+                   + ",\"intensity\":" + string.Format(CultureInfo.InvariantCulture, "{0:0.000}", ghostIntensity) + "},"
                    + "\"sourceAudit\":{\"pass\":" + ToJsonBool(sourceAuditPass)
                    + ",\"singletonResidue\":" + singletonResidue
                    + ",\"queueTokenCount\":" + queueTokenCount
@@ -90,22 +90,18 @@ namespace Hecton8.Dev
             out int telemetryTokenCount,
             out int decompositionTokenCount)
         {
-            string audioLogSystem = ReadProjectFile(AudioLogSystemPath);
-            string atlasSignalSystem = ReadProjectFile(AtlasSignalSystemPath);
-            string pdaMapTab = ReadProjectFile(PdaMapTabPath);
-
-            singletonResidue = CountContains(audioLogSystem, "AudioLogSystem Instance") +
-                               CountContains(atlasSignalSystem, "AtlasSignalSystem Instance");
-            queueTokenCount = CountContains(audioLogSystem, "EnqueuePlayback(logHash);") +
-                              CountContains(audioLogSystem, "TryStartNextQueuedLog();") +
-                              CountContains(audioLogSystem, "_QueueFullWarningHash");
-            telemetryTokenCount = CountContains(audioLogSystem, "PublishPerformanceWarning(_QueueFullWarningHash") +
-                                  CountContains(audioLogSystem, "PublishPerformanceWarning(_LookupMissWarningHash") +
-                                  CountContains(atlasSignalSystem, "_EncryptedLogFallbackWarningHash") +
-                                  CountContains(pdaMapTab, "_GhostSignalRejectedWarningHash");
-            decompositionTokenCount = CountContains(pdaMapTab, "GhostSignalUtility.TryResolveCandidate") +
-                                      CountContains(pdaMapTab, "ResolvePlayerDepthMeters") +
-                                      CountContains(pdaMapTab, "TryPublishGhostSignalRejected");
+            singletonResidue = CountProjectFileContains(AudioLogSystemPath, "AudioLogSystem Instance") +
+                               CountProjectFileContains(AtlasSignalSystemPath, "AtlasSignalSystem Instance");
+            queueTokenCount = CountProjectFileContains(AudioLogSystemPath, "EnqueuePlayback(logHash);") +
+                              CountProjectFileContains(AudioLogSystemPath, "TryStartNextQueuedLog();") +
+                              CountProjectFileContains(AudioLogSystemPath, "_QueueFullWarningHash");
+            telemetryTokenCount = CountProjectFileContains(AudioLogSystemPath, "PublishPerformanceWarning(_QueueFullWarningHash") +
+                                  CountProjectFileContains(AudioLogSystemPath, "PublishPerformanceWarning(_LookupMissWarningHash") +
+                                  CountProjectFileContains(AtlasSignalSystemPath, "_EncryptedLogFallbackWarningHash") +
+                                  CountProjectFileContains(PdaMapTabPath, "_GhostSignalRejectedWarningHash");
+            decompositionTokenCount = CountProjectFileContains(PdaMapTabPath, "GhostSignalUtility.TryResolveCandidate") +
+                                      CountProjectFileContains(PdaMapTabPath, "ResolvePlayerDepthMeters") +
+                                      CountProjectFileContains(PdaMapTabPath, "TryPublishGhostSignalRejected");
 
             return singletonResidue == 0 &&
                    queueTokenCount >= 3 &&
@@ -113,18 +109,23 @@ namespace Hecton8.Dev
                    decompositionTokenCount >= 3;
         }
 
-        private static string ReadProjectFile(string relativePath)
+        private static int CountProjectFileContains(string relativePath, string token)
         {
+            if (string.IsNullOrEmpty(relativePath) || string.IsNullOrEmpty(token))
+                return 0;
+
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string absolutePath = Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
-            return File.Exists(absolutePath) ? File.ReadAllText(absolutePath) : string.Empty;
-        }
+            if (!File.Exists(absolutePath))
+                return 0;
 
-        private static int CountContains(string value, string token)
-        {
-            return string.IsNullOrEmpty(value) || string.IsNullOrEmpty(token) || value.Contains(token)
-                ? string.IsNullOrEmpty(value) || string.IsNullOrEmpty(token) ? 0 : 1
-                : 0;
+            foreach (string line in File.ReadLines(absolutePath))
+            {
+                if (line.IndexOf(token, System.StringComparison.Ordinal) >= 0)
+                    return 1;
+            }
+
+            return 0;
         }
 
         private static string ToJsonBool(bool value)

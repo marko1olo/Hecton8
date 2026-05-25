@@ -228,10 +228,9 @@ namespace Hecton8.Editor
             if (!Directory.Exists(root))
                 return;
 
-            string[] files = Directory.GetFiles(root, pattern, SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories))
             {
-                string path = files[i].Replace('\\', '/');
+                string path = file.Replace('\\', '/');
                 string text = File.ReadAllText(path);
                 int before = standardVolumeForbidden;
                 Count(path, text, "UnityEngine.Rendering.Volume", ref standardVolumeForbidden, findings);

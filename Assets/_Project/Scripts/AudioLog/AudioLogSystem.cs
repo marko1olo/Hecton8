@@ -20,12 +20,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Modding;
 using Hecton8.Quest;
@@ -41,9 +43,27 @@ using UnityEditor;
 
 namespace Hecton8.Narrative
 {
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AudioLogVaultTelemetryEntry
+    {
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public uint FallbackFlags;
+        [FieldOffset(8)] public uint LastBufferId;
+        [FieldOffset(12)] public uint ExpectedGeneration;
+        [FieldOffset(16)] public uint ActualGeneration;
+        [FieldOffset(20)] public int QueueCount;
+        [FieldOffset(24)] public int EncryptedFragmentCount;
+        [FieldOffset(28)] public int SuccessfulVaultResolutions;
+        [FieldOffset(32)] public int StaleHandleFailures;
+        [FieldOffset(36)] public int EstimatedMicroseconds;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
+    }
+
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-140)]
-    public sealed class AudioLogSystem : MonoBehaviour, ISaveable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class AudioLogSystem : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IAudioLogRuntime, IGlobalRegistryHotSwapListener
     {
         //  INSPECTOR
 
@@ -63,28 +83,39 @@ namespace Hecton8.Narrative
 
         private const int PlaybackQueueCapacity = 16;
         private const int EncryptedFragmentStateCapacity = 32;
+        private const int AudioLogTelemetryCapacity = 300;
         private const int ResolvedLogHashCapacity = AudioLogDiscoveryBitMask.MaxLogCount;
         private const uint EncryptedLogCompleteMask = 0xFu;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-        // COLD ALLOC: HashSet<uint>[1024] â€” discovered audio-log hashes per save â€” owner: AudioLogSystem
-        private const string NativeMemoryOwner = nameof(AudioLogSystem);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const SystemID OwnerSystemId = SystemID.Audio;
+        private const uint VaultFallbackMissingVault = 1u;
+        private const uint VaultFallbackPlaybackQueue = 2u;
+        private const uint VaultFallbackEncryptedHashes = 4u;
+        private const uint VaultFallbackEncryptedBits = 8u;
+        private const uint VaultFallbackTelemetry = 16u;
+        // COLD ALLOC: HashSet<uint>[1024] — discovered audio-log hashes per save — owner: AudioLogSystem
         private readonly HashSet<uint> _discoveredLogHashes = new HashSet<uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<uint,AudioLogData>[1024] â€” resolved log lookup by stable log hash â€” owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<uint,AudioLogData>[1024] — resolved log lookup by stable log hash — owner: AudioLogSystem
         private readonly Dictionary<uint, AudioLogData> _logLookupByHash = new Dictionary<uint, AudioLogData>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<AudioLogData,uint>[1024] â€” resolved log reverse lookup by asset reference â€” owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<AudioLogData,uint>[1024] — resolved log reverse lookup by asset reference — owner: AudioLogSystem
         private readonly Dictionary<AudioLogData, uint> _hashByLog = new Dictionary<AudioLogData, uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<uint,uint>[1024] â€” audio log discovery notification hash lookup â€” owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<uint,uint>[1024] — audio log discovery notification hash lookup — owner: AudioLogSystem
         private readonly Dictionary<uint, uint> _discoveryNotificationHashByLogHash = new Dictionary<uint, uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: uint[16] â€” fixed narrative queue dedupe slots â€” owner: AudioLogSystem
+        // COLD ALLOC: uint[16] — fixed narrative queue dedupe slots — owner: AudioLogSystem
         private readonly uint[] _queuedLogHashDedup = new uint[PlaybackQueueCapacity];
-        // COLD ALLOC: uint[1024] â€” flat resolved audio-log catalog for deterministic save iteration â€” owner: AudioLogSystem
+        // COLD ALLOC: uint[1024] — flat resolved audio-log catalog for deterministic save iteration — owner: AudioLogSystem
         private readonly uint[] _resolvedLogHashes = new uint[ResolvedLogHashCapacity];
         private const string AudioLogFolder = "Assets/_Project/Data/Lore/AudioLogs";
-        private NativeQueue<uint> _queuedLogHashes;
-        private NativeArray<uint> _encryptedFragmentLogHashes;
-        private NativeArray<uint> _encryptedFragmentRecoveredBits;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<uint> _queuedLogHashesHandle;
+        private VaultGenerationHandle<uint> _encryptedFragmentLogHashesHandle;
+        private VaultGenerationHandle<uint> _encryptedFragmentRecoveredBitsHandle;
+        private VaultGenerationHandle<AudioLogVaultTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private int _playbackQueueReadIndex;
+        private int _playbackQueueWriteIndex;
         private int _encryptedFragmentStateCount;
+        private int _vaultResolutionSuccessCount;
+        private int _vaultResolutionFailureCount;
         private int _resolvedLogHashCount;
         private static readonly uint _QueueFullWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.QueueFull"));
         private static readonly uint _LookupMissWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.LookupMiss"));
@@ -105,15 +136,22 @@ namespace Hecton8.Narrative
         private bool _isPlaying;
         private bool _atmosphericWarningActive;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
-        private bool _queueRegistered;
         private bool _currentPlaybackBitCrushed;
+        private bool _pendingPlaybackDirty;
+        private bool _pendingPlaybackBitCrushed;
+        private float _pendingPlaybackVolume;
+        private float _pendingNarrativeInterference01;
+        private AudioClip _pendingPlaybackClip;
         private bool _resolvedLogCatalogFullTelemetryArmed = true;
         private bool _encryptedVoiceRouteMissingTelemetryArmed = true;
         private IAudioService _cachedAudioService;
-        private SpatialAudioManager _cachedSpatialAudioManager;
+        private ISpatialAudioNarrativeRadioSink _cachedNarrativeAudioSink;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private ISaveService _cachedSaveService;
+        private bool _saveRegistered;
 
         //  ISaveable
 
@@ -126,14 +164,13 @@ namespace Hecton8.Narrative
         public bool IsNarrativeQueueBlocked => _isPlaying || _atmosphericWarningActive;
         public AudioLogData CurrentLog => _currentLog;
         public int DiscoveredCount => _discoveredLogHashes.Count;
+        public int DiscoveredAudioLogCount => _discoveredLogHashes.Count;
         public bool CurrentPlaybackBitCrushed => _currentPlaybackBitCrushed;
 
         //  LIFECYCLE
 
         private void Awake()
         {
-            EnsurePlaybackQueue();
-            EnsureEncryptedFragmentState();
             BuildLogLookup();
         }
 
@@ -148,22 +185,20 @@ namespace Hecton8.Narrative
         private void OnEnable()
         {
             CacheRegistryServicesCold();
+            EnsureVaultBuffersCold();
             TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegister();
 
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
+            TryUnregisterSaveParticipant();
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
 
             if (_isPlaying)
             {
@@ -171,16 +206,20 @@ namespace Hecton8.Narrative
             }
 
             ClearPlaybackQueue();
+            ClearPendingPlaybackSync();
+            TryUnregisterLateFrame();
             ClearAtmosphericWarningBlocker();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterSaveParticipant();
             TryUnregister();
+            ClearPendingPlaybackSync();
+            TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
-            DisposePlaybackQueue();
-            DisposeEncryptedFragmentState();
+            ReleaseVaultBuffers(_dataVault);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -195,6 +234,24 @@ namespace Hecton8.Narrative
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _cachedSaveService = currentService as ISaveService;
+                    TryRegisterSaveParticipant();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseVaultBuffers(previousService as IDataVault ?? _dataVault);
+                    _dataVault = currentService as IDataVault;
+                    EnsureVaultBuffersCold();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        TryRegister();
+                        if (_isPlaying)
+                            TryRegisterLateFrame();
+                    }
                     break;
             }
         }
@@ -222,10 +279,18 @@ namespace Hecton8.Narrative
             _playbackTimer = 0f;
 
             _currentPlaybackBitCrushed = false;
-            AudioLogEvents.RaisePlaybackCompleted(completedHash, completedLog);
+            AudioLogEvents.TryRaisePlaybackCompleted(completedHash, completedLog);
 
             LogPlaybackCompleted(completedHash);
             TryStartNextQueuedLog();
+        }
+
+        public void LateFrameTick()
+        {
+            FlushPendingPlaybackVisualSync();
+
+            if (!_pendingPlaybackDirty)
+                TryUnregisterLateFrame();
         }
 
         //  PUBLIC API
@@ -246,14 +311,14 @@ namespace Hecton8.Narrative
 
             _discoveredLogHashes.Add(discoveredHash);
             if (discoveredHash != 0u)
-                AudioLogEvents.RaiseLogDiscovered(discoveredHash, data);
+                AudioLogEvents.TryRaiseLogDiscovered(discoveredHash, data);
             uint notificationHash = ResolveDiscoveryNotificationHash(discoveredHash);
             if (notificationHash != 0u)
-                NotificationEvents.PushRegisteredInfo(notificationHash);
+                NotificationEvents.TryPushRegisteredInfo(notificationHash);
 
             // Also register the discovery with narrative systems.
-            NarrativeEvents.RaiseDiscoveryMade(discoveredHash);
-            NarrativeEvents.RaiseAudioLogFound(discoveredHash);
+            NarrativeEvents.TryRaiseDiscoveryMade(discoveredHash);
+            NarrativeEvents.TryRaiseAudioLogFound(discoveredHash);
 
             LogDiscovered(discoveredHash, data);
         }
@@ -311,6 +376,16 @@ namespace Hecton8.Narrative
             return true;
         }
 
+        public bool TryPlayAudioLogByHash(uint logHash)
+        {
+            return TryPlayLogByHash(logHash);
+        }
+
+        public bool TryPlayAudioLog(string logId)
+        {
+            return TryPlayLogById(logId);
+        }
+
         public bool TryPlayLogById(string logId)
         {
             return TryPlayLogByHash(ComputeAudioLogHash(logId));
@@ -327,6 +402,11 @@ namespace Hecton8.Narrative
             return TryGetEncryptedFragmentBits(logHash, out uint recoveredBits)
                 ? recoveredBits & EncryptedLogCompleteMask
                 : 0u;
+        }
+
+        public uint GetRecoveredEncryptedAudioLogBits(uint logHash)
+        {
+            return GetRecoveredEncryptedBits(logHash);
         }
 
         public bool RecoverEncryptedFragment(uint logHash, uint fragmentHash)
@@ -380,12 +460,7 @@ namespace Hecton8.Narrative
             AudioClip playbackClip = data.ResolvedAudioClip;
             if (playbackClip != null)
             {
-                ApplyNarrativeRadioInterference();
-                IAudioService audioManager = _cachedAudioService;
-                if (audioManager != null)
-                {
-                    audioManager.PlayStatic2D(playbackClip, playbackVolume);
-                }
+                QueuePlaybackVisualSync(playbackClip, playbackVolume, false);
             }
 
             _currentLog = data;
@@ -394,7 +469,7 @@ namespace Hecton8.Narrative
             _isPlaying = true;
             _currentPlaybackBitCrushed = false;
 
-            AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
+            AudioLogEvents.TryRaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
 
             LogPlaying(logHash, playbackDuration);
         }
@@ -418,19 +493,7 @@ namespace Hecton8.Narrative
             if (playbackClip == null)
                 return;
 
-            ApplyNarrativeRadioInterference();
-            bool bitCrushRouteActive = false;
-            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
-            if (spatialAudioManager != null)
-            {
-                bitCrushRouteActive = spatialAudioManager.TryPlayStatic2DBitCrushed(playbackClip, playbackVolume);
-            }
-            else
-            {
-                IAudioService audioManager = _cachedAudioService;
-                if (audioManager != null)
-                    audioManager.PlayStatic2D(playbackClip, playbackVolume);
-            }
+            bool bitCrushRouteActive = QueuePlaybackVisualSync(playbackClip, playbackVolume, true);
 
             if (!bitCrushRouteActive && _encryptedVoiceRouteMissingTelemetryArmed)
             {
@@ -448,16 +511,64 @@ namespace Hecton8.Narrative
             _isPlaying = true;
             _currentPlaybackBitCrushed = bitCrushRouteActive;
 
-            AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
+            AudioLogEvents.TryRaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
         }
 
-        private void ApplyNarrativeRadioInterference()
+        private bool QueuePlaybackVisualSync(AudioClip clip, float volume, bool preferBitCrush)
         {
-            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
-            if (spatialAudioManager == null)
+            if (clip == null)
+                return false;
+
+            bool bitCrushRouteAvailable = preferBitCrush && _cachedNarrativeAudioSink != null;
+            _pendingPlaybackClip = clip;
+            _pendingPlaybackVolume = volume;
+            _pendingPlaybackBitCrushed = bitCrushRouteAvailable;
+            _pendingNarrativeInterference01 = ResolveNarrativeRadioInterference01();
+            _pendingPlaybackDirty = true;
+            TryRegisterLateFrame();
+            return bitCrushRouteAvailable;
+        }
+
+        private void FlushPendingPlaybackVisualSync()
+        {
+            if (!_pendingPlaybackDirty)
                 return;
 
-            spatialAudioManager.SetNarrativeRadioInterference(ResolveNarrativeRadioInterference01());
+            AudioClip playbackClip = _pendingPlaybackClip;
+            float volume = _pendingPlaybackVolume;
+            bool useBitCrush = _pendingPlaybackBitCrushed;
+            float interference01 = _pendingNarrativeInterference01;
+            ClearPendingPlaybackSync();
+
+            if (playbackClip == null)
+                return;
+
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = _cachedNarrativeAudioSink;
+            if (narrativeAudioSink != null)
+            {
+                narrativeAudioSink.SetNarrativeRadioInterference(interference01);
+                if (useBitCrush && narrativeAudioSink.TryPlayStatic2DBitCrushed(playbackClip, volume))
+                    return;
+            }
+
+            IAudioService audioManager = _cachedAudioService;
+            if (audioManager == null)
+            {
+                CacheAudioService(GlobalRegistry.Audio);
+                audioManager = _cachedAudioService;
+            }
+
+            if (audioManager != null)
+                audioManager.PlayStatic2D(playbackClip, volume);
+        }
+
+        private void ClearPendingPlaybackSync()
+        {
+            _pendingPlaybackDirty = false;
+            _pendingPlaybackBitCrushed = false;
+            _pendingPlaybackVolume = 0f;
+            _pendingNarrativeInterference01 = 0f;
+            _pendingPlaybackClip = null;
         }
 
         private float ResolveNarrativeRadioInterference01()
@@ -505,7 +616,7 @@ namespace Hecton8.Narrative
             _currentLogHash = 0u;
             _playbackTimer = 0f;
             _currentPlaybackBitCrushed = false;
-            AudioLogEvents.RaisePlaybackStopped(stoppedHash, stoppedLog);
+            AudioLogEvents.TryRaisePlaybackStopped(stoppedHash, stoppedLog);
         }
 
         /// <summary>
@@ -521,13 +632,14 @@ namespace Hecton8.Narrative
             return logHash != 0u && _discoveredLogHashes.Contains(logHash);
         }
 
-        /// <summary>
-        /// Returns all discovered log hashes for PDA archive consumers.
-        /// The returned enumerator does not allocate.
-        /// </summary>
-        public HashSet<uint>.Enumerator GetDiscoveredHashEnumerator()
+        public bool IsAudioLogDiscovered(uint logHash)
         {
-            return _discoveredLogHashes.GetEnumerator();
+            return IsDiscovered(logHash);
+        }
+
+        public bool IsAudioLogDiscovered(string logId)
+        {
+            return IsDiscovered(logId);
         }
 
         //  PRIVATE
@@ -606,10 +718,7 @@ namespace Hecton8.Narrative
                 _discoveryNotificationHashByLogHash.Remove(logHash);
             }
 
-            string displayTitle = data.DisplayTitleOrFallback;
-            uint notificationHash = string.IsNullOrWhiteSpace(displayTitle)
-                ? ResolveFallbackDiscoveryNotificationHash()
-                : NotificationEvents.RegisterMessage("LOG DISCOVERED: " + displayTitle);
+            uint notificationHash = ResolveFallbackDiscoveryNotificationHash();
             if (notificationHash != 0u)
                 _discoveryNotificationHashByLogHash.Add(logHash, notificationHash);
         }
@@ -619,7 +728,7 @@ namespace Hecton8.Narrative
             if (_fallbackDiscoveryNotificationHash == 0u ||
                 !NotificationEvents.TryResolveMessage(_fallbackDiscoveryNotificationHash, out _))
             {
-                _fallbackDiscoveryNotificationHash = NotificationEvents.RegisterMessage("LOG DISCOVERED");
+                _fallbackDiscoveryNotificationHash = NotificationEvents.RegisterMessage("LOG DISCOVERED".AsSpan());
             }
 
             return _fallbackDiscoveryNotificationHash;
@@ -710,10 +819,23 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            EnsurePlaybackQueue();
-            AddQueuedLogHash(logHash);
-            _queuedLogHashes.Enqueue(logHash);
-            _queueCount++;
+            if (!TryAcquireVaultWrite(in _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue, PlaybackQueueCapacity, VaultFallbackPlaybackQueue, out NativeArray<uint> queue))
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(_QueueFullWarningHash, _NarrativeQueueContextHash, _queueCount);
+                return;
+            }
+
+            try
+            {
+                AddQueuedLogHash(logHash);
+                queue[_playbackQueueWriteIndex] = logHash;
+                _playbackQueueWriteIndex = (_playbackQueueWriteIndex + 1) % PlaybackQueueCapacity;
+                _queueCount++;
+            }
+            finally
+            {
+                ReleaseVaultWrite(in _queuedLogHashesHandle);
+            }
         }
 
         private bool IsPlaybackQueued(uint logHash)
@@ -771,14 +893,23 @@ namespace Hecton8.Narrative
             if (_isPlaying || _atmosphericWarningActive || _queueCount <= 0)
                 return;
 
-            EnsurePlaybackQueue();
-            if (_queuedLogHashes.TryDequeue(out uint nextHash))
+            if (TryAcquireVaultWrite(in _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue, PlaybackQueueCapacity, VaultFallbackPlaybackQueue, out NativeArray<uint> queue))
             {
-                _queueCount--;
-                RemoveQueuedLogHash(nextHash);
-                if (_logLookupByHash.TryGetValue(nextHash, out AudioLogData next) && next != null)
+                try
                 {
-                    PlayLogByHash(nextHash, next);
+                    uint nextHash = queue[_playbackQueueReadIndex];
+                    queue[_playbackQueueReadIndex] = 0u;
+                    _playbackQueueReadIndex = (_playbackQueueReadIndex + 1) % PlaybackQueueCapacity;
+                    _queueCount--;
+                    RemoveQueuedLogHash(nextHash);
+                    if (_logLookupByHash.TryGetValue(nextHash, out AudioLogData next) && next != null)
+                    {
+                        PlayLogByHash(nextHash, next);
+                    }
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _queuedLogHashesHandle);
                 }
             }
         }
@@ -803,127 +934,192 @@ namespace Hecton8.Narrative
 
         private void ClearPlaybackQueue()
         {
-            if (_queuedLogHashes.IsCreated)
+            if (TryAcquireVaultWrite(in _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue, PlaybackQueueCapacity, VaultFallbackPlaybackQueue, out NativeArray<uint> queue))
             {
-                while (_queuedLogHashes.TryDequeue(out _))
+                try
                 {
+                    for (int i = 0; i < PlaybackQueueCapacity; i++)
+                    {
+                        queue[i] = 0u;
+                    }
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _queuedLogHashesHandle);
                 }
             }
 
             _queueCount = 0;
+            _playbackQueueReadIndex = 0;
+            _playbackQueueWriteIndex = 0;
             ClearQueuedLogHashes();
         }
 
-        private void EnsurePlaybackQueue()
+        private void EnsureVaultBuffersCold()
         {
-            bool createdQueue = false;
-            if (!_queuedLogHashes.IsCreated)
-            {
-                createdQueue = true;
-                _queuedLogHashes = new NativeQueue<uint>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<uint>[16] â€” hash-only narrative playback queue â€” owner: AudioLogSystem
-            }
-
-            if (!_queueRegistered)
-            {
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _queuedLogHashes,
-                    PlaybackQueueCapacity,
-                    NativeMemoryOwner,
-                    nameof(_queuedLogHashes),
-                NativeMemoryLifetime);
-                _queueRegistered = true;
-                if (createdQueue)
-                    PrewarmPlaybackQueue();
-            }
-        }
-
-        private void PrewarmPlaybackQueue()
-        {
-            if (!_queuedLogHashes.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null)
                 return;
 
-            for (int i = 0; i < PlaybackQueueCapacity; i++)
-                _queuedLogHashes.Enqueue(default);
+            EnsureVaultHandle(vault, ref _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue, PlaybackQueueCapacity, NativeArrayOptions.ClearMemory);
+            EnsureVaultHandle(vault, ref _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes, EncryptedFragmentStateCapacity, NativeArrayOptions.ClearMemory);
+            EnsureVaultHandle(vault, ref _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits, EncryptedFragmentStateCapacity, NativeArrayOptions.ClearMemory);
+            EnsureVaultHandle(vault, ref _telemetryRingHandle, BufferID.AudioLogTelemetryRing, AudioLogTelemetryCapacity, NativeArrayOptions.ClearMemory);
+            EnsureVaultHandle(vault, ref _telemetryCursorHandle, BufferID.AudioLogTelemetryCursor, 1, NativeArrayOptions.ClearMemory);
+        }
 
-            while (_queuedLogHashes.TryDequeue(out _))
+        private static void EnsureVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (vault == null)
+                return;
+
+            if (IsVaultHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
+                return;
             }
 
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+        }
+
+        private void ReleaseVaultBuffers(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _queuedLogHashesHandle);
+            ReleaseVaultHandle(vault, ref _encryptedFragmentLogHashesHandle);
+            ReleaseVaultHandle(vault, ref _encryptedFragmentRecoveredBitsHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
             _queueCount = 0;
-            ClearQueuedLogHashes();
-        }
-
-        private void DisposePlaybackQueue()
-        {
-            if (_queueRegistered)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_queuedLogHashes));
-                _queueRegistered = false;
-            }
-
-            if (_queuedLogHashes.IsCreated)
-                _queuedLogHashes.Dispose();
-
-            _queuedLogHashes = default;
-            _queueCount = 0;
-            ClearQueuedLogHashes();
-        }
-
-        private void EnsureEncryptedFragmentState()
-        {
-            if (!_encryptedFragmentLogHashes.IsCreated)
-            {
-                _encryptedFragmentLogHashes = new NativeArray<uint>(
-                    EncryptedFragmentStateCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[32] â€” encrypted audio-log hash slots â€” owner: AudioLogSystem
-                NativeMemorySentinel.RegisterNativeArray(
-                    _encryptedFragmentLogHashes,
-                    NativeMemoryOwner,
-                    nameof(_encryptedFragmentLogHashes),
-                    NativeMemoryLifetime);
-            }
-
-            if (!_encryptedFragmentRecoveredBits.IsCreated)
-            {
-                _encryptedFragmentRecoveredBits = new NativeArray<uint>(
-                    EncryptedFragmentStateCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[32] â€” encrypted audio-log recovered 4-bit masks â€” owner: AudioLogSystem
-                NativeMemorySentinel.RegisterNativeArray(
-                    _encryptedFragmentRecoveredBits,
-                    NativeMemoryOwner,
-                    nameof(_encryptedFragmentRecoveredBits),
-                    NativeMemoryLifetime);
-            }
-        }
-
-        private void DisposeEncryptedFragmentState()
-        {
-            if (_encryptedFragmentLogHashes.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_encryptedFragmentLogHashes);
-                _encryptedFragmentLogHashes.Dispose();
-            }
-
-            if (_encryptedFragmentRecoveredBits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_encryptedFragmentRecoveredBits);
-                _encryptedFragmentRecoveredBits.Dispose();
-            }
-
-            _encryptedFragmentLogHashes = default;
-            _encryptedFragmentRecoveredBits = default;
+            _playbackQueueReadIndex = 0;
+            _playbackQueueWriteIndex = 0;
             _encryptedFragmentStateCount = 0;
+            ClearQueuedLogHashes();
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private bool TryReadVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in handle))
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in handle, out buffer))
+                return false;
+
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private bool TryAcquireVaultWrite<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            uint fallbackFlag,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in handle))
+            {
+                _vaultResolutionFailureCount++;
+                RecordVaultTelemetry(fallbackFlag | VaultFallbackMissingVault, bufferId);
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                _vaultResolutionFailureCount++;
+                RecordVaultTelemetry(fallbackFlag, bufferId);
+                return false;
+            }
+
+            if (!buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                vault.ReleaseWriteLock(in handle, OwnerSystemId);
+                _vaultResolutionFailureCount++;
+                RecordVaultTelemetry(fallbackFlag, bufferId);
+                return false;
+            }
+
+            _vaultResolutionSuccessCount++;
+            return true;
+        }
+
+        private void ReleaseVaultWrite<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            _dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
+        }
+
+        private bool TryReadEncryptedFragmentState(
+            out NativeArray<uint>.ReadOnly hashes,
+            out NativeArray<uint>.ReadOnly recoveredBits)
+        {
+            bool hasHashes = TryReadVaultBuffer(in _encryptedFragmentLogHashesHandle, EncryptedFragmentStateCapacity, out hashes);
+            bool hasBits = TryReadVaultBuffer(in _encryptedFragmentRecoveredBitsHandle, EncryptedFragmentStateCapacity, out recoveredBits);
+            return hasHashes && hasBits;
+        }
+
+        private bool TryAcquireEncryptedFragmentState(
+            out NativeArray<uint> hashes,
+            out NativeArray<uint> recoveredBits)
+        {
+            hashes = default;
+            recoveredBits = default;
+            if (!TryAcquireVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes, EncryptedFragmentStateCapacity, VaultFallbackEncryptedHashes, out hashes))
+                return false;
+
+            if (TryAcquireVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits, EncryptedFragmentStateCapacity, VaultFallbackEncryptedBits, out recoveredBits))
+                return true;
+
+            ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle);
+            hashes = default;
+            return false;
+        }
+
+        private void ReleaseEncryptedFragmentWriteLocks()
+        {
+            ReleaseVaultWrite(in _encryptedFragmentRecoveredBitsHandle);
+            ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle);
         }
 
         private void ClearEncryptedFragmentState()
         {
-            EnsureEncryptedFragmentState();
-            for (int i = 0; i < _encryptedFragmentStateCount; i++)
+            if (TryAcquireEncryptedFragmentState(out NativeArray<uint> hashes, out NativeArray<uint> recoveredBits))
             {
-                _encryptedFragmentLogHashes[i] = 0u;
-                _encryptedFragmentRecoveredBits[i] = 0u;
+                try
+                {
+                    for (int i = 0; i < _encryptedFragmentStateCount; i++)
+                    {
+                        hashes[i] = 0u;
+                        recoveredBits[i] = 0u;
+                    }
+                }
+                finally
+                {
+                    ReleaseEncryptedFragmentWriteLocks();
+                }
             }
 
             _encryptedFragmentStateCount = 0;
@@ -932,15 +1128,18 @@ namespace Hecton8.Narrative
         private bool TryGetEncryptedFragmentBits(uint logHash, out uint recoveredBits)
         {
             recoveredBits = 0u;
-            if (logHash == 0u || !_encryptedFragmentLogHashes.IsCreated || !_encryptedFragmentRecoveredBits.IsCreated)
+            if (logHash == 0u ||
+                !TryReadEncryptedFragmentState(out NativeArray<uint>.ReadOnly hashes, out NativeArray<uint>.ReadOnly recoveredBitBuffer))
+            {
                 return false;
+            }
 
             for (int i = 0; i < _encryptedFragmentStateCount; i++)
             {
-                if (_encryptedFragmentLogHashes[i] != logHash)
+                if (hashes[i] != logHash)
                     continue;
 
-                recoveredBits = _encryptedFragmentRecoveredBits[i] & EncryptedLogCompleteMask;
+                recoveredBits = recoveredBitBuffer[i] & EncryptedLogCompleteMask;
                 return true;
             }
 
@@ -952,29 +1151,112 @@ namespace Hecton8.Narrative
             if (logHash == 0u)
                 return false;
 
-            EnsureEncryptedFragmentState();
-            for (int i = 0; i < _encryptedFragmentStateCount; i++)
-            {
-                if (_encryptedFragmentLogHashes[i] != logHash)
-                    continue;
+            if (!TryAcquireEncryptedFragmentState(out NativeArray<uint> hashes, out NativeArray<uint> recoveredBitBuffer))
+                return false;
 
-                _encryptedFragmentRecoveredBits[i] = recoveredBits & EncryptedLogCompleteMask;
+            try
+            {
+                for (int i = 0; i < _encryptedFragmentStateCount; i++)
+                {
+                    if (hashes[i] != logHash)
+                        continue;
+
+                    recoveredBitBuffer[i] = recoveredBits & EncryptedLogCompleteMask;
+                    return true;
+                }
+
+                if (_encryptedFragmentStateCount >= EncryptedFragmentStateCapacity)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _EncryptedFragmentStateFullWarningHash,
+                        _NarrativeQueueContextHash,
+                        _encryptedFragmentStateCount);
+                    return false;
+                }
+
+                int slot = _encryptedFragmentStateCount++;
+                hashes[slot] = logHash;
+                recoveredBitBuffer[slot] = recoveredBits & EncryptedLogCompleteMask;
                 return true;
             }
-
-            if (_encryptedFragmentStateCount >= EncryptedFragmentStateCapacity)
+            finally
             {
-                GlobalTelemetryBus.PublishPerformanceWarning(
-                    _EncryptedFragmentStateFullWarningHash,
-                    _NarrativeQueueContextHash,
-                    _encryptedFragmentStateCount);
-                return false;
+                ReleaseEncryptedFragmentWriteLocks();
+            }
+        }
+
+        private void RecordVaultTelemetry(uint fallbackFlags, BufferID bufferId)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _telemetryRingHandle) ||
+                !IsVaultHandleCreated(in _telemetryCursorHandle))
+            {
+                return;
             }
 
-            int slot = _encryptedFragmentStateCount++;
-            _encryptedFragmentLogHashes[slot] = logHash;
-            _encryptedFragmentRecoveredBits[slot] = recoveredBits & EncryptedLogCompleteMask;
-            return true;
+            if (!vault.TryAcquireWriteLock(in _telemetryRingHandle, OwnerSystemId, out NativeArray<AudioLogVaultTelemetryEntry> telemetry))
+                return;
+
+            bool cursorLocked = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, OwnerSystemId, out NativeArray<int> cursor))
+                    return;
+
+                cursorLocked = true;
+                if (!telemetry.IsCreated ||
+                    !cursor.IsCreated ||
+                    telemetry.Length < AudioLogTelemetryCapacity ||
+                    cursor.Length <= 0)
+                {
+                    return;
+                }
+
+                int index = math.clamp(cursor[0], 0, AudioLogTelemetryCapacity - 1);
+                cursor[0] = (index + 1) % AudioLogTelemetryCapacity;
+                telemetry[index] = new AudioLogVaultTelemetryEntry
+                {
+                    FrameIndex = (uint)SystemDispatcher.CurrentFrameIndex,
+                    FallbackFlags = fallbackFlags,
+                    LastBufferId = unchecked((uint)(int)bufferId),
+                    ExpectedGeneration = ResolveExpectedGeneration(bufferId),
+                    ActualGeneration = ResolveActualGeneration(vault, bufferId),
+                    QueueCount = _queueCount,
+                    EncryptedFragmentCount = _encryptedFragmentStateCount,
+                    SuccessfulVaultResolutions = _vaultResolutionSuccessCount,
+                    StaleHandleFailures = _vaultResolutionFailureCount,
+                    EstimatedMicroseconds = 0
+                };
+            }
+            finally
+            {
+                if (cursorLocked)
+                    vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+
+                vault.ReleaseWriteLock(in _telemetryRingHandle, OwnerSystemId);
+            }
+        }
+
+        private uint ResolveExpectedGeneration(BufferID bufferId)
+        {
+            if (bufferId == BufferID.AudioLogPlaybackQueue)
+                return _queuedLogHashesHandle.Generation;
+            if (bufferId == BufferID.AudioLogEncryptedFragmentHashes)
+                return _encryptedFragmentLogHashesHandle.Generation;
+            if (bufferId == BufferID.AudioLogEncryptedFragmentRecoveredBits)
+                return _encryptedFragmentRecoveredBitsHandle.Generation;
+            if (bufferId == BufferID.AudioLogTelemetryRing)
+                return _telemetryRingHandle.Generation;
+            if (bufferId == BufferID.AudioLogTelemetryCursor)
+                return _telemetryCursorHandle.Generation;
+
+            return 0u;
+        }
+
+        private static uint ResolveActualGeneration(IDataVault vault, BufferID bufferId)
+        {
+            return vault != null && vault.TryGetBufferGeneration(bufferId, out uint generation) ? generation : 0u;
         }
 
 #if UNITY_EDITOR
@@ -984,7 +1266,7 @@ namespace Hecton8.Narrative
             if (guids == null || guids.Length == 0)
                 return;
 
-            List<AudioLogData> loadedLogs = new List<AudioLogData>(guids.Length); // COLD ALLOC: List<AudioLogData>[guids.Length] â€” editor-time log catalog bootstrap â€” owner: AudioLogSystem
+            List<AudioLogData> loadedLogs = new List<AudioLogData>(guids.Length); // COLD ALLOC: List<AudioLogData>[guids.Length] — editor-time log catalog bootstrap — owner: AudioLogSystem
             if (allLogs != null)
             {
                 for (int i = 0; i < allLogs.Length; i++)
@@ -1017,8 +1299,7 @@ namespace Hecton8.Narrative
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
@@ -1030,16 +1311,62 @@ namespace Hecton8.Narrative
             _registered = false;
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            _lateFrameRegistered = false;
+        }
+
         private void CacheRegistryServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedSaveService = GlobalRegistry.Save;
+            _dataVault = GlobalRegistry.DataVault;
         }
 
         private void CacheAudioService(IAudioService audioService)
         {
             _cachedAudioService = audioService;
-            _cachedSpatialAudioManager = audioService as SpatialAudioManager;
+            _cachedNarrativeAudioSink = audioService as ISpatialAudioNarrativeRadioSink;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (_cachedSaveService == null)
+                _cachedSaveService = GlobalRegistry.Save;
+
+            if (_cachedSaveService == null)
+                return;
+
+            _cachedSaveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _cachedSaveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1089,7 +1416,7 @@ namespace Hecton8.Narrative
         private static void LogPlaybackCompleted(uint completedHash)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AudioLog] Playback completed: 0x{completedHash:X8}");
+            H8Debug.Log("[AudioLog] Playback completed.");
 #endif
         }
 
@@ -1097,8 +1424,7 @@ namespace Hecton8.Narrative
         private static void LogDiscovered(uint logHash, AudioLogData data)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            string displayTitle = data != null ? data.DisplayTitleOrFallback : string.Empty;
-            Debug.Log($"[AudioLog] Discovered: 0x{logHash:X8} ({displayTitle})");
+            H8Debug.Log("[AudioLog] Discovered.");
 #endif
         }
 
@@ -1106,7 +1432,7 @@ namespace Hecton8.Narrative
         private static void LogPlaying(uint logHash, float duration)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AudioLog] Playing: 0x{logHash:X8} ({duration:F1}s)");
+            H8Debug.Log("[AudioLog] Playing.");
 #endif
         }
 
@@ -1114,7 +1440,7 @@ namespace Hecton8.Narrative
         private static void LogLoadedCount(int discoveredCount)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[AudioLog] Loaded {discoveredCount} discovered logs.");
+            H8Debug.Log("[AudioLog] Loaded discovered logs.");
 #endif
         }
 
@@ -1125,7 +1451,7 @@ namespace Hecton8.Narrative
             if (data == null) return;
 
             if (data.audioLogDiscoveredIds == null)
-                data.audioLogDiscoveredIds = new List<string>(math.max(0, maxSavedLogs)); // COLD ALLOC: List<string>[maxSavedLogs] â€” fallback discovered audio-log save list â€” owner: AudioLogSystem
+                data.audioLogDiscoveredIds = new List<string>(math.max(0, maxSavedLogs)); // COLD ALLOC: List<string>[maxSavedLogs] — fallback discovered audio-log save list — owner: AudioLogSystem
             else
                 data.audioLogDiscoveredIds.Clear();
             AudioLogDiscoveryBitMask.EnsureCapacity(ref data.audioLogDiscoveryBitWords);
@@ -1145,12 +1471,13 @@ namespace Hecton8.Narrative
             }
 
             int partialCount = 0;
-            for (int i = 0; i < _encryptedFragmentStateCount && partialCount < SaveData.MaxEncryptedAudioLogFragments; i++)
+            bool hasEncryptedState = TryReadEncryptedFragmentState(
+                out NativeArray<uint>.ReadOnly encryptedHashes,
+                out NativeArray<uint>.ReadOnly encryptedRecoveredBits);
+            for (int i = 0; hasEncryptedState && i < _encryptedFragmentStateCount && partialCount < SaveData.MaxEncryptedAudioLogFragments; i++)
             {
-                uint logHash = _encryptedFragmentLogHashes.IsCreated ? _encryptedFragmentLogHashes[i] : 0u;
-                uint recoveredBits = _encryptedFragmentRecoveredBits.IsCreated
-                    ? _encryptedFragmentRecoveredBits[i] & EncryptedLogCompleteMask
-                    : 0u;
+                uint logHash = encryptedHashes[i];
+                uint recoveredBits = encryptedRecoveredBits[i] & EncryptedLogCompleteMask;
                 if (logHash == 0u ||
                     recoveredBits == 0u ||
                     recoveredBits == EncryptedLogCompleteMask ||
@@ -1225,6 +1552,11 @@ namespace Hecton8.Narrative
             }
 
             return true;
+        }
+
+        public bool RecoverEncryptedAudioLogFragment(uint logHash, uint fragmentHash)
+        {
+            return RecoverEncryptedFragment(logHash, fragmentHash);
         }
 
         private static void EnsureSaveEncryptedFragmentArrays(SaveData data)

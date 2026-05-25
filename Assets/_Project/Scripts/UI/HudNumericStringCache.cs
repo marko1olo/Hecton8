@@ -1,6 +1,6 @@
 // ============================================================================
-// HECTON-8 — HudNumericStringCache.cs
-// Obschiy zero-GC kesh chislovyh strok dlya HUD i ekrannyh markerov.
+// HECTON-8 - HudNumericStringCache.cs
+// Zero-GC numeric char cache for HUD and screen markers.
 // ============================================================================
 
 using System;
@@ -9,31 +9,39 @@ using Hecton8.Core;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Predvaritelno podgotavlivaet korotkie chislovye stroki dlya HUD-sistem,
-    /// chtoby ne sozdavat novye stroki v hot path.
+    /// Prepares short numeric char buffers so HUD systems do not allocate strings in hot paths.
     /// </summary>
     public static class HudNumericStringCache
     {
         /// <summary>
-        /// Maksimalnoe znachenie, dlya kotorogo garantirovan gotovyy kesh.
+        /// Maximum integer value guaranteed by the cache.
         /// </summary>
         public const int MaxIntegerValue = 5000;
 
         /// <summary>
-        /// Kesh strok ot <c>0</c> do <see cref="MaxIntegerValue"/>.
+        /// Cached char buffers from <c>0</c> to <see cref="MaxIntegerValue"/>.
         /// </summary>
-        public static readonly string[] IntStrings = BuildIntStrings();
+        public static readonly char[][] IntChars = BuildIntChars();
 
-        private static string[] BuildIntStrings()
+        public static ReadOnlySpan<char> GetIntSpan(int value)
         {
-            string[] values = new string[MaxIntegerValue + 1];
-            char[] digits = new char[16]; // COLD ALLOC: char[16] — numeric cache staging buffer — owner: HudNumericStringCache
+            int clamped = Math.Clamp(value, 0, MaxIntegerValue);
+            char[] buffer = IntChars[clamped];
+            return buffer == null ? ReadOnlySpan<char>.Empty : buffer.AsSpan();
+        }
+
+        private static char[][] BuildIntChars()
+        {
+            char[][] values = new char[MaxIntegerValue + 1][];
+            char[] digits = new char[16]; // COLD ALLOC: numeric cache staging buffer - owner: HudNumericStringCache
             for (int i = 0; i <= MaxIntegerValue; i++)
             {
                 if (!ZeroGCFormatter.TryWriteInt(i, digits.AsSpan(), out int length))
                     length = 0;
 
-                values[i] = new string(digits, 0, length);
+                char[] entry = new char[length]; // COLD ALLOC: per-number HUD numeric char cache - owner: HudNumericStringCache
+                Array.Copy(digits, entry, length);
+                values[i] = entry;
             }
 
             return values;

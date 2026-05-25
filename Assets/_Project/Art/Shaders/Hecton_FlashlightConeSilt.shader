@@ -44,6 +44,7 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
                 float4 _BeamParams;
                 float4 _BeamShape;
             CBUFFER_END
+            float4 _HectonFlashlightFailureState;
 
             struct Attributes
             {
@@ -72,6 +73,20 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
             {
                 float2 pixel = floor(positionCS);
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float ResolveFlashlightFailureFlicker(float3 positionOS, float2 positionCS)
+            {
+                float battery01 = saturate(_HectonFlashlightFailureState.x);
+                float thermal01 = saturate(_HectonFlashlightFailureState.y);
+                float failure01 = saturate(_HectonFlashlightFailureState.z);
+                float heatCarrier = Hash21(floor(positionOS.xz * lerp(2.0, 9.0, thermal01)) + floor(_Time.y * lerp(8.0, 27.0, failure01)));
+                float lowBatteryDrop = saturate((0.22 - battery01) * 4.5454545);
+                float triangle = 1.0 - abs(frac((_Time.y * lerp(4.0, 19.0, failure01)) + heatCarrier) * 2.0 - 1.0);
+                float dropout = lerp(0.58, 0.18, max(lowBatteryDrop, thermal01 * thermal01));
+                float shimmer = lerp(1.0, lerp(dropout, 1.0, triangle * triangle), max(failure01, lowBatteryDrop));
+                float screenSpark = lerp(1.0, step(0.06 + failure01 * 0.22, HectonDitherCoverage(positionCS)), failure01 * 0.2);
+                return saturate(shimmer * screenSpark);
             }
 
             Varyings Vert(Attributes input)
@@ -113,7 +128,8 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
                 float siltNoise = Hash21(siltCell);
                 float silt = step(0.38, siltNoise);
 
-                half alpha = (half)(nearFade * tipFade * edgeFade * axialFade * depthFade * silt * max(_BeamParams.x, 0.0));
+                float failureFlicker = ResolveFlashlightFailureFlicker(input.positionOS, input.positionCS.xy);
+                half alpha = (half)(nearFade * tipFade * edgeFade * axialFade * depthFade * silt * failureFlicker * max(_BeamParams.x, 0.0));
                 clip(alpha - max((half)HectonDitherCoverage(input.positionCS.xy), 0.0005h));
                 return half4(_BeamColor.rgb * alpha, alpha);
             }

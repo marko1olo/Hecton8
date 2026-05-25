@@ -22,7 +22,7 @@ namespace Hecton8.World.Outposts
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/World/Marauder Outpost Generation Service")]
-    public sealed class MarauderOutpostGenerationService : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IOutpostGenerationService
+    public sealed class MarauderOutpostGenerationService : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IOutpostGenerationService, IGlobalRegistryHotSwapListener
     {
         private const string OwnerName = "MARAUDER_OUTPOST_ARCHITECT";
         private const ulong DefaultFirstBaseHash = 0x4D41524155444552UL; // MARAUDER
@@ -40,6 +40,9 @@ namespace Hecton8.World.Outposts
         private const uint TelemetryContextHash = 0x4D4F4152u; // MOAR
         private const float ShiftEpsilonMeters = 0.0001f;
         private const float MaxAupShiftMeters = 10000f;
+        private const float MiddleOutpostQualityThreshold01 = 0.25f;
+        private const float HighOutpostQualityThreshold01 = 0.55f;
+        private const float UltraOutpostQualityThreshold01 = 0.85f;
 
         private static readonly int OutpostMatricesId = Shader.PropertyToID("_OutpostMatrices");
         private static readonly int OutpostCellTypesId = Shader.PropertyToID("_OutpostCellTypes");
@@ -86,9 +89,15 @@ namespace Hecton8.World.Outposts
         private NativeArray<byte> _wfcMutableStateGrid;
         private NativeArray<int> _counters;
         private NativeArray<OutpostTelemetryEntry> _telemetryRing;
-        private GraphicsBuffer _matrixBuffer;
-        private GraphicsBuffer _cellTypeBuffer;
-        private GraphicsBuffer _argsBuffer;
+        private GraphicsBuffer _matrixBufferA;
+        private GraphicsBuffer _matrixBufferB;
+        private GraphicsBuffer _activeMatrixBuffer;
+        private GraphicsBuffer _cellTypeBufferA;
+        private GraphicsBuffer _cellTypeBufferB;
+        private GraphicsBuffer _activeCellTypeBuffer;
+        private GraphicsBuffer _argsBufferA;
+        private GraphicsBuffer _argsBufferB;
+        private GraphicsBuffer _activeArgsBuffer;
         private Mesh _runtimeShellMesh;
         private Material _runtimeShellMaterial;
         private MaterialPropertyBlock _renderPropertyBlock;
@@ -96,13 +105,14 @@ namespace Hecton8.World.Outposts
         private GraphicsBuffer _renderPropertyCellTypeBuffer;
         private Vector4 _renderPropertyDecayRuntime;
         private float _renderPropertyAge01;
+        private int _shellUploadBufferIndex;
         private GameObject[] _spawnedInteractables;
         private SealedDoor[] _spawnedDoorControllers;
         private RegistryBucket<IRenderable> _registeredRenderables;
         private MapMagicBridge _cachedMapMagicBridge;
         private IWorldSeedProvider _cachedWorldSeedProvider;
         private IAsyncPersistenceService _cachedPersistence;
-        private ObjectPoolManager _cachedObjectPool;
+        private IObjectPoolService _cachedObjectPool;
         private JobHandle _jobHandle;
         private Bounds _drawBounds;
         private OutpostGenerationSnapshot _latestSnapshot;
@@ -111,6 +121,7 @@ namespace Hecton8.World.Outposts
         private OutpostGenerationState _state;
         private float3 _generationOrigin;
         private float3 _pendingShift;
+        private float3 _pendingInteractableProxyShift;
         private int3 _activeDimensions;
         private ulong _activeSectorHash;
         private uint _activeWorldSeed;
@@ -129,11 +140,13 @@ namespace Hecton8.World.Outposts
         private int _registeredUpdate;
         private int _registeredLateFrame;
         private int _registeredRenderable;
+        private int _registeredHotSwapListener;
         private int _generatedSignalReplayFrames;
         private int _generatedSignalHeartbeatFrames;
         private bool _generated;
         private bool _matrixUploadDirty;
         private bool _hasPendingShift;
+        private bool _interactableProxyShiftDirty;
         private bool _heightmapFallback;
         private bool _renderPropertiesDirty = true;
 
@@ -147,15 +160,16 @@ namespace Hecton8.World.Outposts
             if (!Application.isPlaying)
                 return;
 
-            GlobalSignals.InitializeAllQueues();
+            SignalCorridorRuntime.EnsureInitialized();
             AllocatePersistentState();
             EnsureGraphicsResources();
             BakeInteractableProxyMeshes();
             _registeredRenderables = GlobalRegistry.Renderables;
             GlobalRegistry.RegisterOutpostGenerationService(this);
             _registeredOutpostGeneration = 1;
-            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
+            TryRegisterHotSwapListener();
+            TryRegisterUpdate();
+            TryRegisterLateFrame();
             _registeredRenderable = _registeredRenderables != null && _registeredRenderables.TryRegister(this) ? 1 : 0;
             SetState(OutpostGenerationState.Idle);
         }
@@ -184,23 +198,16 @@ namespace Hecton8.World.Outposts
 
         public void Dispose()
         {
+            TryUnregisterHotSwapListener();
+
             if (_registeredRenderable != 0)
             {
                 _registeredRenderables?.Unregister(this);
                 _registeredRenderable = 0;
             }
 
-            if (_registeredLateFrame != 0)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = 0;
-            }
-
-            if (_registeredUpdate != 0)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdate = 0;
-            }
+            TryUnregisterLateFrame();
+            TryUnregisterUpdate();
 
             if (_registeredOutpostGeneration != 0)
             {
@@ -215,9 +222,18 @@ namespace Hecton8.World.Outposts
             _jobPhase = JobPhase.None;
 
             DespawnInteractables();
-            ReleaseGraphicsBuffer(ref _matrixBuffer);
-            ReleaseGraphicsBuffer(ref _cellTypeBuffer);
-            ReleaseGraphicsBuffer(ref _argsBuffer);
+            ReleaseGraphicsBuffer(ref _matrixBufferA);
+            ReleaseGraphicsBuffer(ref _matrixBufferB);
+            ReleaseGraphicsBuffer(ref _cellTypeBufferA);
+            ReleaseGraphicsBuffer(ref _cellTypeBufferB);
+            ReleaseGraphicsBuffer(ref _argsBufferA);
+            ReleaseGraphicsBuffer(ref _argsBufferB);
+            _activeMatrixBuffer = null;
+            _activeCellTypeBuffer = null;
+            _activeArgsBuffer = null;
+            _renderPropertyMatrixBuffer = null;
+            _renderPropertyCellTypeBuffer = null;
+            _shellUploadBufferIndex = 0;
             DisposeNativeArray(ref WfcGrid, ref nativeDisposeDependency, deferNativeDispose);
             DisposeNativeArray(ref _wfcMutableStateGrid, ref nativeDisposeDependency, deferNativeDispose);
             DisposeNativeArray(ref _shellMatrices, ref nativeDisposeDependency, deferNativeDispose);
@@ -252,6 +268,37 @@ namespace Hecton8.World.Outposts
             ClearCachedRegistryDependencies();
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null || !isActiveAndEnabled)
+                        return;
+
+                    TryUnregisterLateFrame();
+                    TryUnregisterUpdate();
+                    TryRegisterUpdate();
+                    TryRegisterLateFrame();
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    _cachedMapMagicBridge = currentService as MapMagicBridge;
+                    break;
+                case GlobalRegistryServiceSlot.WorldSeedProvider:
+                    _cachedWorldSeedProvider = currentService as IWorldSeedProvider;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _cachedPersistence = currentService as IAsyncPersistenceService;
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _cachedObjectPool = currentService as IObjectPoolService;
+                    break;
+            }
+        }
+
         public void Tick(float deltaTime)
         {
             if (!WfcGrid.IsCreated)
@@ -265,6 +312,8 @@ namespace Hecton8.World.Outposts
 
         public void LateFrameTick()
         {
+            EnsureGraphicsResources();
+
             if (_jobPhase == JobPhase.Solving)
             {
                 if (!DispatcherJobFence.TryFinalizeCompleted(ref _jobHandle))
@@ -296,6 +345,8 @@ namespace Hecton8.World.Outposts
             if (_matrixUploadDirty)
                 UploadMatricesAndArgs();
 
+            FlushInteractableProxyShift();
+
             if (_hasPendingShift && _jobPhase == JobPhase.None)
             {
                 float3 shift = _pendingShift;
@@ -311,7 +362,7 @@ namespace Hecton8.World.Outposts
 
         public void Render(float deltaTime)
         {
-            if (!_generated || _jobPhase == JobPhase.Shifting || _matrixUploadDirty || _matrixCount <= 0 || _matrixBuffer == null || _cellTypeBuffer == null || _argsBuffer == null)
+            if (!_generated || _jobPhase == JobPhase.Shifting || _matrixUploadDirty || _matrixCount <= 0 || _activeMatrixBuffer == null || _activeCellTypeBuffer == null || _activeArgsBuffer == null)
                 return;
 
             Material material = ResolveRenderMaterial();
@@ -331,7 +382,7 @@ namespace Hecton8.World.Outposts
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion,
                 matProps = renderProperties
             };
-            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _activeArgsBuffer, 1, 0);
         }
 
         public bool TryRequestGeneration(ulong sectorHash, float3 originMeters, uint worldSeed)
@@ -344,8 +395,6 @@ namespace Hecton8.World.Outposts
 
             if (!WfcGrid.IsCreated)
                 AllocatePersistentState();
-
-            EnsureGraphicsResources();
 
             if (_jobPhase != JobPhase.None)
                 return false;
@@ -455,7 +504,7 @@ namespace Hecton8.World.Outposts
         public bool TryGetShellGraphicsBuffer(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer, out int instanceCount, out uint generationSequence)
         {
             generationSequence = _generationSequence;
-            if (!_generated || _jobPhase == JobPhase.Shifting || _matrixUploadDirty || _matrixBuffer == null || _argsBuffer == null)
+            if (!_generated || _jobPhase == JobPhase.Shifting || _matrixUploadDirty || _activeMatrixBuffer == null || _activeArgsBuffer == null)
             {
                 matrixBuffer = null;
                 argsBuffer = null;
@@ -463,7 +512,7 @@ namespace Hecton8.World.Outposts
                 return false;
             }
 
-            instanceCount = math.min(math.max(0, _matrixCount), _matrixBuffer.count);
+            instanceCount = math.min(math.max(0, _matrixCount), _activeMatrixBuffer.count);
             if (instanceCount <= 0)
             {
                 matrixBuffer = null;
@@ -471,8 +520,8 @@ namespace Hecton8.World.Outposts
                 return false;
             }
 
-            matrixBuffer = _matrixBuffer;
-            argsBuffer = _argsBuffer;
+            matrixBuffer = _activeMatrixBuffer;
+            argsBuffer = _activeArgsBuffer;
             return true;
         }
 
@@ -685,14 +734,21 @@ namespace Hecton8.World.Outposts
 
         private OutpostGenerationQualityTier ResolveQualityTier()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown)
+            float qualityWeight01 = ResolveOutpostQualityWeight01();
+            if (qualityWeight01 < MiddleOutpostQualityThreshold01)
                 return OutpostGenerationQualityTier.Low;
-            if (tier == HectonQualityTier.High)
+            if (qualityWeight01 < HighOutpostQualityThreshold01)
+                return OutpostGenerationQualityTier.Middle;
+            if (qualityWeight01 < UltraOutpostQualityThreshold01)
                 return OutpostGenerationQualityTier.High;
-            if (tier == HectonQualityTier.Ultra)
-                return OutpostGenerationQualityTier.Ultra;
-            return OutpostGenerationQualityTier.Middle;
+
+            return OutpostGenerationQualityTier.Ultra;
+        }
+
+        private static float ResolveOutpostQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1f;
         }
 
         private MapMagicBridge ResolveMapMagicBridge()
@@ -716,10 +772,10 @@ namespace Hecton8.World.Outposts
             return _cachedPersistence;
         }
 
-        private ObjectPoolManager ResolveObjectPool()
+        private IObjectPoolService ResolveObjectPool()
         {
             if (_cachedObjectPool == null)
-                _cachedObjectPool = GlobalRegistry.ObjectPool;
+                _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             return _cachedObjectPool;
         }
 
@@ -730,6 +786,57 @@ namespace Hecton8.World.Outposts
             _cachedWorldSeedProvider = null;
             _cachedPersistence = null;
             _cachedObjectPool = null;
+        }
+
+        private void TryRegisterUpdate()
+        {
+            if (_registeredUpdate != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
+        }
+
+        private void TryUnregisterUpdate()
+        {
+            if (_registeredUpdate == 0)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registeredUpdate = 0;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (_registeredLateFrame == 0)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = 0;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener != 0 || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this) ? 1 : 0;
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener == 0)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = 0;
         }
 
         private float ResolveCellSizeMeters()
@@ -800,21 +907,33 @@ namespace Hecton8.World.Outposts
             bool cellTypeBufferCreated = false;
             bool argsBufferCreated = false;
 
-            if (_matrixBuffer == null)
+            if (_matrixBufferA == null || _matrixBufferB == null)
             {
-                _matrixBuffer = CreateStructuredLockBuffer<float4x4>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 float4x4] - outpost shell matrices - owner: MARAUDER_OUTPOST_ARCHITECT
+                ReleaseGraphicsBuffer(ref _matrixBufferA);
+                ReleaseGraphicsBuffer(ref _matrixBufferB);
+                _matrixBufferA = CreateStructuredLockBuffer<float4x4>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 float4x4] - outpost shell matrices A - owner: MARAUDER_OUTPOST_ARCHITECT
+                _matrixBufferB = CreateStructuredLockBuffer<float4x4>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 float4x4] - outpost shell matrices B - owner: MARAUDER_OUTPOST_ARCHITECT
+                _activeMatrixBuffer = _matrixBufferA;
                 matrixBufferCreated = true;
             }
 
-            if (_cellTypeBuffer == null)
+            if (_cellTypeBufferA == null || _cellTypeBufferB == null)
             {
-                _cellTypeBuffer = CreateStructuredLockBuffer<uint>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 uint] - outpost shell types - owner: MARAUDER_OUTPOST_ARCHITECT
+                ReleaseGraphicsBuffer(ref _cellTypeBufferA);
+                ReleaseGraphicsBuffer(ref _cellTypeBufferB);
+                _cellTypeBufferA = CreateStructuredLockBuffer<uint>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 uint] - outpost shell types A - owner: MARAUDER_OUTPOST_ARCHITECT
+                _cellTypeBufferB = CreateStructuredLockBuffer<uint>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 uint] - outpost shell types B - owner: MARAUDER_OUTPOST_ARCHITECT
+                _activeCellTypeBuffer = _cellTypeBufferA;
                 cellTypeBufferCreated = true;
             }
 
-            if (_argsBuffer == null)
+            if (_argsBufferA == null || _argsBufferB == null)
             {
-                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - outpost indirect draw args - owner: MARAUDER_OUTPOST_ARCHITECT
+                ReleaseGraphicsBuffer(ref _argsBufferA);
+                ReleaseGraphicsBuffer(ref _argsBufferB);
+                _argsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - outpost indirect draw args A - owner: MARAUDER_OUTPOST_ARCHITECT
+                _argsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - outpost indirect draw args B - owner: MARAUDER_OUTPOST_ARCHITECT
+                _activeArgsBuffer = _argsBufferA;
                 argsBufferCreated = true;
             }
 
@@ -852,27 +971,65 @@ namespace Hecton8.World.Outposts
 
         private void UploadMatricesAndArgs()
         {
-            if (!_shellMatrices.IsCreated || !_shellCellTypes.IsCreated || _matrixBuffer == null || _cellTypeBuffer == null || _argsBuffer == null)
+            if (!_shellMatrices.IsCreated || !_shellCellTypes.IsCreated || _activeMatrixBuffer == null || _activeCellTypeBuffer == null || _activeArgsBuffer == null)
                 return;
 
             int count = math.clamp(_matrixCount, 0, MarauderOutpostConstants.MaxShellMatrices);
             count = math.min(count, _shellMatrices.Length);
             count = math.min(count, _shellCellTypes.Length);
-            count = math.min(count, _matrixBuffer.count);
-            count = math.min(count, _cellTypeBuffer.count);
+            GraphicsBuffer matrixWriteBuffer = ResolveShellMatrixWriteBuffer();
+            GraphicsBuffer cellTypeWriteBuffer = ResolveShellCellTypeWriteBuffer();
+            GraphicsBuffer argsWriteBuffer = ResolveShellArgsWriteBuffer();
+            if (matrixWriteBuffer == null || cellTypeWriteBuffer == null || argsWriteBuffer == null)
+                return;
+
+            _activeArgsBuffer = argsWriteBuffer;
+            count = math.min(count, matrixWriteBuffer.count);
+            count = math.min(count, cellTypeWriteBuffer.count);
             if (count > 0)
             {
-                UploadNativeArray(_matrixBuffer, _shellMatrices, count);
-                UploadNativeArray(_cellTypeBuffer, _shellCellTypes, count);
+                UploadNativeArray(matrixWriteBuffer, _shellMatrices, count);
+                UploadNativeArray(cellTypeWriteBuffer, _shellCellTypes, count);
+                _activeMatrixBuffer = matrixWriteBuffer;
+                _activeCellTypeBuffer = cellTypeWriteBuffer;
+                _activeArgsBuffer = argsWriteBuffer;
+                _shellUploadBufferIndex ^= 1;
             }
 
             UpdateIndirectArgsBuffer((uint)count);
             _matrixUploadDirty = false;
         }
 
+        private GraphicsBuffer ResolveShellMatrixWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_shellUploadBufferIndex & 1) == 0 ? _matrixBufferB : _matrixBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _matrixBufferA != null && _matrixBufferA.IsValid() ? _matrixBufferA : _matrixBufferB;
+        }
+
+        private GraphicsBuffer ResolveShellCellTypeWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_shellUploadBufferIndex & 1) == 0 ? _cellTypeBufferB : _cellTypeBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _cellTypeBufferA != null && _cellTypeBufferA.IsValid() ? _cellTypeBufferA : _cellTypeBufferB;
+        }
+
+        private GraphicsBuffer ResolveShellArgsWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_shellUploadBufferIndex & 1) == 0 ? _argsBufferB : _argsBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _argsBufferA != null && _argsBufferA.IsValid() ? _argsBufferA : _argsBufferB;
+        }
+
         private void UpdateIndirectArgsBuffer(uint instanceCount)
         {
-            if (_argsBuffer == null)
+            if (_activeArgsBuffer == null)
                 return;
 
             Mesh mesh = ResolveRenderMesh();
@@ -889,7 +1046,7 @@ namespace Hecton8.World.Outposts
             }
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
-                _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+                _activeArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
                 indexCountPerInstance = indexCount,
@@ -898,7 +1055,7 @@ namespace Hecton8.World.Outposts
                 baseVertexIndex = baseVertexIndex,
                 startInstance = 0u
             };
-            _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            _activeArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
         }
 
         private void SpawnInteractableProxies()
@@ -906,7 +1063,7 @@ namespace Hecton8.World.Outposts
             if (_interactableCount <= 0 || _spawnedInteractables == null)
                 return;
 
-            ObjectPoolManager pool = ResolveObjectPool();
+            IObjectPoolService pool = ResolveObjectPool();
             if (pool == null)
                 return;
 
@@ -1043,7 +1200,7 @@ namespace Hecton8.World.Outposts
             if (_spawnedInteractables == null)
                 return;
 
-            ObjectPoolManager pool = ResolveObjectPool();
+            IObjectPoolService pool = ResolveObjectPool();
             for (int i = 0; i < _spawnedInteractables.Length; i++)
             {
                 GameObject instance = _spawnedInteractables[i];
@@ -1067,7 +1224,19 @@ namespace Hecton8.World.Outposts
             if (_spawnedInteractables == null)
                 return;
 
-            Vector3 shift = new Vector3(shiftMeters.x, shiftMeters.y, shiftMeters.z);
+            _pendingInteractableProxyShift += shiftMeters;
+            _interactableProxyShiftDirty = math.any(math.abs(_pendingInteractableProxyShift) > new float3(ShiftEpsilonMeters));
+        }
+
+        private void FlushInteractableProxyShift()
+        {
+            if (!_interactableProxyShiftDirty || _spawnedInteractables == null)
+                return;
+
+            float3 pendingShift = _pendingInteractableProxyShift;
+            _pendingInteractableProxyShift = default;
+            _interactableProxyShiftDirty = false;
+            Vector3 shift = new Vector3(pendingShift.x, pendingShift.y, pendingShift.z);
             for (int i = 0; i < _spawnedInteractables.Length; i++)
             {
                 GameObject instance = _spawnedInteractables[i];
@@ -1314,7 +1483,7 @@ namespace Hecton8.World.Outposts
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
                 Flags = ResolveDescriptorFlags()
             };
-            SignalBus<WfcOutpostGeneratedSignal>.Push(in signal);
+            SignalBus<WfcOutpostGeneratedSignal>.TryPush(in signal);
         }
 
         private void ReleasePublishedPowerGrid()
@@ -1482,16 +1651,16 @@ namespace Hecton8.World.Outposts
                 _qualityTier == OutpostGenerationQualityTier.Low ? 1f : 0f,
                 (_activeSolveSeed & 0xFFFFu) * MarauderOutpostConstants.HeightUShortToUnit);
 
-            if (_renderPropertiesDirty || _renderPropertyMatrixBuffer != _matrixBuffer)
+            if (_renderPropertiesDirty || _renderPropertyMatrixBuffer != _activeMatrixBuffer)
             {
-                _renderPropertyBlock.SetBuffer(OutpostMatricesId, _matrixBuffer);
-                _renderPropertyMatrixBuffer = _matrixBuffer;
+                _renderPropertyBlock.SetBuffer(OutpostMatricesId, _activeMatrixBuffer);
+                _renderPropertyMatrixBuffer = _activeMatrixBuffer;
             }
 
-            if (_renderPropertiesDirty || _renderPropertyCellTypeBuffer != _cellTypeBuffer)
+            if (_renderPropertiesDirty || _renderPropertyCellTypeBuffer != _activeCellTypeBuffer)
             {
-                _renderPropertyBlock.SetBuffer(OutpostCellTypesId, _cellTypeBuffer);
-                _renderPropertyCellTypeBuffer = _cellTypeBuffer;
+                _renderPropertyBlock.SetBuffer(OutpostCellTypesId, _activeCellTypeBuffer);
+                _renderPropertyCellTypeBuffer = _activeCellTypeBuffer;
             }
 
             if (_renderPropertiesDirty || _renderPropertyAge01 != age)
@@ -1602,7 +1771,7 @@ namespace Hecton8.World.Outposts
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

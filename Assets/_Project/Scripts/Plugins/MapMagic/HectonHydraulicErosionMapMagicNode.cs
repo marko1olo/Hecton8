@@ -30,6 +30,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         private const string SiltLabel = "silt";
         private const string WearLabel = "wear";
         private const string HeightDeltaQueueLabel = "heightDeltas";
+        private const string HeightDeltaBudgetLabel = "heightDeltaBudget";
         private const int FullDropletTelemetryThreshold = 1000000;
         private const int DraftDropletTelemetryThreshold = 250000;
         private const int MinDropletsPerScheduleSlice = 100;
@@ -262,6 +263,7 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> silt = default;
             NativeArray<float> wear = default;
             NativeQueue<HydraulicErosionHeightDelta> heightDeltas = default;
+            NativeArray<int> heightDeltaBudget = default;
             JobHandle handle = default;
             bool handleScheduled = false;
 
@@ -331,11 +333,14 @@ namespace MapMagic.Nodes.MatrixGenerators
                     int dropletsPerSlice = ResolveDropletsPerSlice(maxOperationsPerSlice, currentOperations);
                     heightDeltas = new NativeQueue<HydraulicErosionHeightDelta>(Allocator.TempJob); // COLD ALLOC: NativeQueue<HydraulicErosionHeightDelta>[tracked cap 8388608 entries, ~128 MiB payload upper-bound] - queued erosion deltas between Burst slice and apply job; cold MapMagic generation cannot pre-warm unknown tile sizes - owner: HectonHydraulicErosionMapMagicNode
                     RegisterTempJobQueue(heightDeltas, ResolveHeightDeltaQueueCapacity(dropletsPerSlice, maxLifetime));
+                    heightDeltaBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                    RegisterTempJobBudget(heightDeltaBudget);
                     handle = HydraulicErosionScheduler.ScheduleFourPhaseSlicedWithDeltaApply(
                         ref erosionJob,
                         dropletsPerSlice,
                         1,
                         heightDeltas,
+                        heightDeltaBudget,
                         ResolveHeightDeltaApplyBudget(dropletsPerSlice, maxLifetime),
                         default);
                     handleScheduled = true;
@@ -500,6 +505,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 DisposeTracked(ref silt);
                 DisposeTracked(ref wear);
                 DisposeTrackedQueue(ref heightDeltas);
+                DisposeTracked(ref heightDeltaBudget);
             }
         }
 
@@ -554,6 +560,15 @@ namespace MapMagic.Nodes.MatrixGenerators
                 NativeAllocationLifetime.TempJob);
         }
 
+        private static void RegisterTempJobBudget(NativeArray<int> budget)
+        {
+            NativeMemorySentinel.RegisterNativeArray(
+                budget,
+                NativeMemoryOwner,
+                HeightDeltaBudgetLabel,
+                NativeAllocationLifetime.TempJob);
+        }
+
         private static int ResolveHeightDeltaQueueCapacity(int dropletsPerSlice, int dropletLifetime)
         {
             return HydraulicErosionScheduler.ResolveTrackedHeightDeltaQueueCapacity(
@@ -600,7 +615,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 barrierMilliseconds);
         }
 
-        private static void DisposeTracked(ref NativeArray<float> array)
+        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;

@@ -3,6 +3,7 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -13,7 +14,7 @@ namespace Hecton8.Thermodynamics
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Thermodynamics/Abyssal Thermodynamics Solver")]
-    public sealed unsafe class AbyssalThermodynamicsSolver : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed unsafe partial class AbyssalThermodynamicsSolver : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         public const int MinResolution = 16;
         public const int MaxResolution = 32;
@@ -97,6 +98,7 @@ namespace Hecton8.Thermodynamics
         private bool _registeredSlow;
         private bool _registeredLate;
         private bool _registeredOrigin;
+        private bool _registeredHotSwapListener;
         private bool _visualDirty;
         private bool _hasRealSources;
         private bool _gridOriginInitialized;
@@ -124,11 +126,15 @@ namespace Hecton8.Thermodynamics
                 return;
 
             if (!ThermalCellLayoutValidator.ValidateThermalCellLayout() ||
-                !ThermalCellLayoutValidator.ValidateThermalSolverConvergenceLayout())
+                !ThermalCellLayoutValidator.ValidateThermalSolverConvergenceLayout() ||
+                !ReactorThermalLayoutValidator.ValidateBaseReactorLayout() ||
+                !ReactorThermalLayoutValidator.ValidateReactorStateLayout() ||
+                !ReactorThermalLayoutValidator.ValidateSupportLayouts())
                 throw new InvalidOperationException("ThermalCellDTO ABI mismatch.");
 
             EnsureNative();
             RegisterRuntime();
+            TryRegisterHotSwapListener();
             ActiveRuntimeInstance = this;
         }
 
@@ -141,27 +147,59 @@ namespace Hecton8.Thermodynamics
                 _hasPendingJob = false;
             }
 
+            ReleaseReactorSharedLocks();
             DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
             H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
 
-            if (_registeredUpdate)
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            if (_registeredSlow)
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            if (_registeredLate)
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntimeLanes();
             if (_registeredOrigin)
                 HectonFloatingOrigin.UnregisterListener(this);
 
-            _registeredUpdate = false;
-            _registeredSlow = false;
-            _registeredLate = false;
             _registeredOrigin = false;
 
             ReleaseVisualBuffers();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null || !isActiveAndEnabled)
+                    return;
+
+                TryUnregisterRuntimeLanes();
+                TryRegisterRuntimeLanes();
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (_hasPendingJob &&
+                !DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+            {
+                return;
+            }
+
+            _hasPendingJob = false;
+            ReleaseReactorSharedLocks();
+            DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
+            H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
+            _vault = currentService as IDataVault;
+            ClearVaultHandles();
+            _nativeReady = false;
+            _lastInitializedResolution = 0;
+            _visualDirty = false;
+
+            if (isActiveAndEnabled && _vault != null)
+                EnsureNative();
         }
 
         public void Tick(float deltaTime)
@@ -256,6 +294,8 @@ namespace Hecton8.Thermodynamics
             hullJob.Tuning = tuning;
             dependency = hullJob.Schedule(_activeCellCount, DefaultBatchSize, dependency);
 
+            dependency = ScheduleReactorThermalLink(vault, front, injection, in tuning, dependency);
+
             ThermalInjectionJob injectionJob;
             injectionJob.Injection = injection;
             injectionJob.Sources = sources;
@@ -267,12 +307,13 @@ namespace Hecton8.Thermodynamics
             injectionJob.SourceCapacity = MaxSourceCount;
             dependency = injectionJob.Schedule(dependency);
 
-            int jacobiPasses = math.max(1, tuning.JacobiIterations);
+            float qualityWeight = math.saturate(AbyssalThermalMath.FiniteOr(tuning.GlobalQualityWeight, AbyssalThermalMath.AuthoritativeQualityWeight));
+            int jacobiPasses = math.max(AbyssalThermalMath.MinQualityJacobiIterations, tuning.JacobiIterations);
             ThermalGridTuningDTO passTuning = tuning;
             passTuning.JacobiIterations = 1;
-            float targetTolerance = AbyssalThermalMath.AuthoritativeSolverTargetTolerance;
-            float baseOmega = AbyssalThermalMath.AuthoritativeSolverOmega;
-            int residualSampleMask = AbyssalThermalMath.AuthoritativeResidualSampleMask;
+            float targetTolerance = AbyssalThermalMath.ResolveSolverTargetTolerance(qualityWeight);
+            float baseOmega = AbyssalThermalMath.ResolveSolverOmega(qualityWeight);
+            int residualSampleMask = AbyssalThermalMath.ResolveResidualSampleMask(qualityWeight);
             dependency = new InitializeThermalSolverConvergenceJob
             {
                 SolverState = solverState,
@@ -295,7 +336,7 @@ namespace Hecton8.Thermodynamics
                     ResidualSlotCount = AbyssalThermalMath.ResidualThreadSlotCount
                 }.Schedule(AbyssalThermalMath.ResidualThreadSlotCount, DefaultBatchSize, dependency);
 
-                HeatDiffusionSolverJob diffusionJob;
+                HeatDiffusionSolverJob diffusionJob = default;
                 diffusionJob.Front = readCells;
                 diffusionJob.Back = writeCells;
                 diffusionJob.Injection = injection;
@@ -357,6 +398,7 @@ namespace Hecton8.Thermodynamics
                 return;
 
             _hasPendingJob = false;
+            ReleaseReactorSharedLocks();
 
             long completed = System.Diagnostics.Stopwatch.GetTimestamp();
             double ticks = completed - _scheduleTimestamp;
@@ -369,8 +411,10 @@ namespace Hecton8.Thermodynamics
 
             _pendingFrontBuffer = PendingFrontBufferCurrent;
             _visualDirty = true;
+            InspectReactorTelemetryAndDumpIfFaulted();
             InspectLatestTelemetryAndDumpIfFaulted();
             UploadVisualBuffer();
+            UploadReactorVisualScalar();
             H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
         }
 
@@ -711,12 +755,13 @@ namespace Hecton8.Thermodynamics
 
             try
             {
+                float safeQuality = ResolveVisualQualityWeight();
                 tuning.CellSizeMeters = math.max(0.001f, math.isfinite(tuning.CellSizeMeters) ? tuning.CellSizeMeters : DefaultCellSizeMeters);
                 tuning.AmbientTemperatureCelsius = math.isfinite(tuning.AmbientTemperatureCelsius) ? tuning.AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
                 tuning.WaterThermalConductivity = math.max(0.0001f, math.isfinite(tuning.WaterThermalConductivity) ? tuning.WaterThermalConductivity : DefaultWaterConductivity);
                 tuning.ConvectionSpeed = math.max(0f, math.isfinite(tuning.ConvectionSpeed) ? tuning.ConvectionSpeed : DefaultConvectionSpeed);
-                tuning.GlobalQualityWeight = AbyssalThermalMath.AuthoritativeQualityWeight;
-                tuning.JacobiIterations = AbyssalThermalMath.ResolveJacobiIterations(AbyssalThermalMath.AuthoritativeQualityWeight);
+                tuning.GlobalQualityWeight = safeQuality;
+                tuning.JacobiIterations = AbyssalThermalMath.ResolveJacobiIterations(safeQuality);
                 tuning.GridResolution = new int3(MaxResolution, MaxResolution, MaxResolution);
                 tuning.ActiveCellCount = MaxCellCount;
                 tuning.DissipationPerStep = math.saturate(math.isfinite(tuning.DissipationPerStep) ? tuning.DissipationPerStep : DefaultDissipationPerStep);
@@ -744,7 +789,7 @@ namespace Hecton8.Thermodynamics
         public bool TryReadTelemetry(int offsetFromLatest, out ThermalTelemetryEntry entry)
         {
             entry = default;
-            if (!_nativeReady)
+            if (!_nativeReady || _hasPendingJob)
                 return false;
 
             IDataVault vault = _vault;
@@ -787,6 +832,7 @@ namespace Hecton8.Thermodynamics
             _solverConvergence = Acquire<ThermalSolverConvergenceStateDTO>(SolverConvergenceStateId, 1);
             _solverResidualSamples = Acquire<ThermalResidualSlot64>(SolverResidualSamplesId, AbyssalThermalMath.ResidualThreadSlotCount);
             _solverDumpLatch = Acquire<int>(SolverDumpLatchId, 1);
+            EnsureReactorThermalVaultBuffers();
 
             ThermalGridTuningDTO tuning = BuildTuning();
             if (!TryResolveArray(_vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray) ||
@@ -842,17 +888,79 @@ namespace Hecton8.Thermodynamics
 
         private void RegisterRuntime()
         {
-            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            TryRegisterRuntimeLanes();
             HectonFloatingOrigin.RegisterListener(this);
             _registeredOrigin = true;
+        }
+
+        private void TryRegisterRuntimeLanes()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredUpdate)
+                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredSlow)
+                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredLate)
+                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterRuntimeLanes()
+        {
+            if (_registeredUpdate)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            if (_registeredSlow)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_registeredLate)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
+            _registeredUpdate = false;
+            _registeredSlow = false;
+            _registeredLate = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void ClearVaultHandles()
+        {
+            _front = default;
+            _back = default;
+            _injection = default;
+            _shiftScratch = default;
+            _sources = default;
+            _sourceCount = default;
+            _tuning = default;
+            _sampleAups = default;
+            _sampleResults = default;
+            _telemetryRing = default;
+            _profileBytes = default;
+            _profiles = default;
+            _profileCount = default;
+            _solverConvergence = default;
+            _solverResidualSamples = default;
+            _solverDumpLatch = default;
         }
 
         private VaultGenerationHandle<T> Acquire<T>(BufferID id, int count) where T : struct
         {
             IDataVault vault = _vault ?? EnsureVault();
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(id, count, SystemID.Thermodynamics, NativeArrayOptions.UninitializedMemory);
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(id, count, SystemID.Thermodynamics, NativeArrayOptions.UninitializedMemory);
             if (!TryResolveArray(vault, in handle, count, out _))
                 throw new InvalidOperationException("Abyssal thermodynamics Vault allocation failed.");
             return handle;
@@ -902,14 +1010,14 @@ namespace Hecton8.Thermodynamics
 
         private ThermalGridTuningDTO BuildTuning()
         {
-            float safeQuality = AbyssalThermalMath.AuthoritativeQualityWeight;
+            float safeQuality = ResolveVisualQualityWeight();
             const float safeSimulationTickDelta = DeterministicSimulationTickSeconds;
             _activeResolution = MaxResolution;
             _activeCellCount = MaxCellCount;
             float safeCellSize = math.max(0.001f, math.isfinite(cellSizeMeters) ? cellSizeMeters : DefaultCellSizeMeters);
             double3 anchorAup = TryResolveAnchorAup(out double3 resolvedAnchorAup)
                 ? resolvedAnchorAup
-                : GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+                : RuntimeOriginRoute.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
             double halfExtent = (_activeResolution * safeCellSize) * 0.5;
             if (!_gridOriginInitialized)
             {
@@ -971,7 +1079,7 @@ namespace Hecton8.Thermodynamics
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -985,10 +1093,13 @@ namespace Hecton8.Thermodynamics
         private float ResolveVisualQualityWeight()
         {
             if (useQualityOverride)
-                return math.saturate(math.isfinite(qualityOverride) ? qualityOverride : 1f);
+                return MathLodApproximation.SaturateFinite(qualityOverride, AbyssalThermalMath.AuthoritativeQualityWeight);
+
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AbyssalThermalMath.AuthoritativeQualityWeight);
 
             float weight = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(weight) ? weight : 1f);
+            return MathLodApproximation.SaturateFinite(weight, AbyssalThermalMath.AuthoritativeQualityWeight);
         }
 
         private static uint ComputeStateHash(int resolution, int iterations, float quality)
@@ -1169,6 +1280,7 @@ namespace Hecton8.Thermodynamics
             _thermalCellsBufferB?.Release();
             _thermalCellsBufferA = null;
             _thermalCellsBufferB = null;
+            ReleaseReactorThermalVisualBuffer();
         }
 
         private void UploadVisualBuffer()
@@ -1186,12 +1298,22 @@ namespace Hecton8.Thermodynamics
 
             GraphicsBuffer uploadBuffer = (_thermalCellsUploadParity & 1) == 0 ? _thermalCellsBufferA : _thermalCellsBufferB;
             int stride = UnsafeUtility.SizeOf<ThermalCellDTO>();
-            NativeArray<ThermalCellDTO> writeWindow = uploadBuffer.LockBufferForWrite<ThermalCellDTO>(0, _activeCellCount);
-            UnsafeUtility.MemCpy(
-                NativeArrayUnsafeUtility.GetUnsafePtr(writeWindow),
-                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(front),
-                (long)_activeCellCount * stride);
-            uploadBuffer.UnlockBufferAfterWrite(_activeCellCount);
+            NativeArray<ThermalCellDTO> writeWindow = default;
+            bool mapped = false;
+            try
+            {
+                writeWindow = uploadBuffer.LockBufferForWrite<ThermalCellDTO>(0, _activeCellCount);
+                mapped = true;
+                UnsafeUtility.MemCpy(
+                    NativeArrayUnsafeUtility.GetUnsafePtr(writeWindow),
+                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(front),
+                    (long)_activeCellCount * stride);
+            }
+            finally
+            {
+                if (mapped)
+                    uploadBuffer.UnlockBufferAfterWrite<ThermalCellDTO>(_activeCellCount);
+            }
 
             Shader.SetGlobalBuffer(ThermalCellsBufferId, uploadBuffer);
             if (TryReadArray(vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray))

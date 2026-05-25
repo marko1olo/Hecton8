@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.AtlasSignal;
@@ -24,7 +24,7 @@ namespace Hecton8.Economy
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6250)]
     [AddComponentMenu("Hecton8/Economy/Resource Scarcity Director")]
-    public sealed class ResourceScarcityDirector : MonoBehaviour, ISaveable, ISlowTickable, IInteractionEventListener
+    public sealed class ResourceScarcityDirector : MonoBehaviour, ISaveable, ISlowTickable, IInteractionEventListener, IGlobalRegistryHotSwapListener
     {
         private const int InitialTrackedCapacity = 64;
         private const int UnitsPerScarcityStep = 100;
@@ -131,6 +131,12 @@ namespace Hecton8.Economy
 
         private bool _registeredSlowTickable;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
+        private bool _saveServiceRegistered;
+        private ISaveService _cachedSaveService;
+        private IQuestSystem _cachedQuestManager;
+        private IPlayerInventoryService _cachedInventoryService;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private int _cachedDirectiveCount;
         private int _runtimeVersion;
 
@@ -156,8 +162,10 @@ namespace Hecton8.Economy
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterService();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
+            TryRegisterWithSaveManager();
             TryRegisterSlowTickable();
             InteractionEvents.Register(this);
             CacheDirectiveDefinitions();
@@ -165,7 +173,8 @@ namespace Hecton8.Economy
 
         private void OnDisable()
         {
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
+            TryUnregisterFromSaveManager();
+            TryUnregisterHotSwapListener();
             TryUnregisterSlowTickable();
             InteractionEvents.Unregister(this);
             TryUnregisterService();
@@ -173,10 +182,50 @@ namespace Hecton8.Economy
 
         private void OnDestroy()
         {
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
+            TryUnregisterFromSaveManager();
+            TryUnregisterHotSwapListener();
             TryUnregisterSlowTickable();
             InteractionEvents.Unregister(this);
             TryUnregisterService();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterFromSaveManager();
+                    _cachedSaveService = currentService as ISaveService;
+                    if (isActiveAndEnabled)
+                        TryRegisterWithSaveManager();
+                    break;
+                case GlobalRegistryServiceSlot.QuestRuntime:
+                case GlobalRegistryServiceSlot.QuestSystem:
+                    _cachedQuestManager = currentService as IQuestSystem;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _cachedInventoryService = currentService as IPlayerInventoryService;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredSlowTickable = false;
+                        break;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregisterSlowTickable();
+                        TryRegisterSlowTickable();
+                    }
+                    break;
+            }
         }
 
         /// <summary>
@@ -409,9 +458,9 @@ namespace Hecton8.Economy
                     break;
 
                 int itemHashId = enumerator.Current.Key;
-                _itemIdsByHash.TryGetValue(itemHashId, out string itemId);
+                _itemIdsByHash.TryGetValue(itemHashId, out string stableItemId);
                 dto.itemHashIds[dto.entryCount] = itemHashId;
-                dto.itemIds[dto.entryCount] = itemId;
+                dto.itemIds[dto.entryCount] = stableItemId;
                 dto.collectedCounts[dto.entryCount] = Mathf.Max(0, enumerator.Current.Value);
                 dto.entryCount++;
             }
@@ -439,10 +488,10 @@ namespace Hecton8.Economy
                 Mathf.Min(Mathf.Max(hashCapacity, itemIdCapacity), dto.collectedCounts.Length));
             for (int i = 0; i < count; i++)
             {
-                string itemId = i < itemIdCapacity ? dto.itemIds[i] : null;
+                string stableItemId = i < itemIdCapacity ? dto.itemIds[i] : null;
                 int itemHashId = i < hashCapacity ? dto.itemHashIds[i] : 0;
-                if (itemHashId == 0 && !string.IsNullOrWhiteSpace(itemId))
-                    itemHashId = LocHash.Compute(itemId);
+                if (itemHashId == 0 && !string.IsNullOrWhiteSpace(stableItemId))
+                    itemHashId = LocHash.Compute(stableItemId);
                 if (itemHashId == 0)
                     continue;
 
@@ -451,8 +500,8 @@ namespace Hecton8.Economy
                     continue;
 
                 _collectedByItemHash[itemHashId] = collectedCount;
-                if (!string.IsNullOrWhiteSpace(itemId))
-                    _itemIdsByHash[itemHashId] = itemId;
+                if (!string.IsNullOrWhiteSpace(stableItemId))
+                    _itemIdsByHash[itemHashId] = stableItemId;
             }
 
             unchecked
@@ -466,8 +515,8 @@ namespace Hecton8.Economy
             if (_cachedDirectiveCount <= 0)
                 return;
 
-            QuestManager questManager = GlobalRegistry.Quest;
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            IQuestSystem questManager = _cachedQuestManager;
+            IPlayerInventoryService inventoryService = _cachedInventoryService;
             PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
                 ? inventoryService.Inventory
                 : null;
@@ -496,7 +545,7 @@ namespace Hecton8.Economy
                         markerTargetHash,
                         markerWorldPosition,
                         Mathf.Max(0f, _directiveMarkerHeightOffsets[definitionIndex]),
-                        _directivePhaseGates[definitionIndex],
+                        (byte)_directivePhaseGates[definitionIndex],
                         Mathf.Max(1, _directiveHarvestUnits[definitionIndex]),
                         shouldActivate,
                         out bool activatedNow))
@@ -505,7 +554,7 @@ namespace Hecton8.Economy
                 }
 
                 if (activatedNow)
-                    Atlas6Events.RaiseScarcityDirective(questHash, unchecked((uint)itemHashId));
+                    Atlas6Events.TryRaiseScarcityDirective(questHash, unchecked((uint)itemHashId));
             }
         }
 
@@ -624,9 +673,9 @@ namespace Hecton8.Economy
             return -1;
         }
 
-        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 playerAup = playerContext.PlayerMovement.CurrentAup;
@@ -639,7 +688,7 @@ namespace Hecton8.Economy
 
         private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
         {
-            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return IsFiniteAup(in originAup);
         }
 
@@ -737,11 +786,7 @@ namespace Hecton8.Economy
             if (_registeredSlowTickable || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTickable = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterSlowTickable()
@@ -891,6 +936,55 @@ namespace Hecton8.Economy
 
             GlobalRegistry.UnregisterResourceScarcityRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedSaveService = GlobalRegistry.Save;
+            _cachedQuestManager = GlobalRegistry.QuestSystem;
+            _cachedInventoryService = GlobalRegistry.PlayerInventory;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+        }
+
+        private void TryRegisterWithSaveManager()
+        {
+            if (_saveServiceRegistered)
+                return;
+
+            ISaveService saveService = _cachedSaveService;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
+            _saveServiceRegistered = true;
+        }
+
+        private void TryUnregisterFromSaveManager()
+        {
+            if (!_saveServiceRegistered)
+                return;
+
+            ISaveService saveService = _cachedSaveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+            _saveServiceRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

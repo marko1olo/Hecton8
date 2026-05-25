@@ -703,17 +703,17 @@ namespace Hecton8.Core.Data
             if (vault == null)
                 return false;
 
-            VaultGenerationHandle<BTreeTelemetryEntry> ringHandle = vault.GetGenerationHandle<BTreeTelemetryEntry>(
+            VaultGenerationHandle<BTreeTelemetryEntry> ringHandle = vault.EnsureGenerationHandle<BTreeTelemetryEntry>(
                 BTreeTelemetryRingBufferId,
                 H8StaticDataFormat.TelemetryFrameCount,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> cursorHandle = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> cursorHandle = vault.EnsureGenerationHandle<int>(
                 BTreeTelemetryCursorBufferId,
                 1,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<BTreeTelemetryAccumulatorDTO> accumulatorHandle = vault.GetGenerationHandle<BTreeTelemetryAccumulatorDTO>(
+            VaultGenerationHandle<BTreeTelemetryAccumulatorDTO> accumulatorHandle = vault.EnsureGenerationHandle<BTreeTelemetryAccumulatorDTO>(
                 BTreeTelemetryAccumulatorBufferId,
                 1,
                 SystemID.CoreDataVault,
@@ -800,7 +800,7 @@ namespace Hecton8.Core.Data
             if (vault == null)
                 return false;
 
-            VaultGenerationHandle<BTreeTuningProfileDTO> handle = vault.GetGenerationHandle<BTreeTuningProfileDTO>(
+            VaultGenerationHandle<BTreeTuningProfileDTO> handle = vault.EnsureGenerationHandle<BTreeTuningProfileDTO>(
                 BTreeTuningProfilesBufferId,
                 BTreeTuningProfileCapacity,
                 SystemID.CoreDataVault,
@@ -1266,10 +1266,40 @@ namespace Hecton8.Core.Data
             return value;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public unsafe struct ScanBTreeNodeJob : IJob
+        public static JobHandle ScheduleTraceBTreeTraversal(
+            NativeArray<byte> bytes,
+            NativeArray<DataOffsetLengthDTO> output,
+            NativeArray<uint> touchedNodeOffsets,
+            uint treeOffset,
+            uint rootOffset,
+            uint treeEndOffset,
+            uint targetHash,
+            float globalQualityWeight,
+            JobHandle dependency)
         {
-            [NoAlias, NativeDisableUnsafePtrRestriction] public BTreeNodeDTO* Node;
+            byte* basePointer = bytes.IsCreated && bytes.Length > 0
+                ? (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes)
+                : null;
+
+            TraceBTreeTraversalJob job = new TraceBTreeTraversalJob
+            {
+                BasePointer = basePointer,
+                Output = output,
+                TouchedNodeOffsets = touchedNodeOffsets,
+                TreeOffset = treeOffset,
+                RootOffset = rootOffset,
+                TreeEndOffset = treeEndOffset,
+                TargetHash = targetHash,
+                GlobalQualityWeight = globalQualityWeight
+            };
+
+            return job.Schedule(dependency);
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal unsafe struct ScanBTreeNodeJob : IJob
+        {
+            [NoAlias, NativeDisableUnsafePtrRestriction] internal BTreeNodeDTO* Node;
             [WriteOnly, NoAlias] public NativeArray<int> OutputIndex;
             public uint TargetHash;
 
@@ -1287,9 +1317,9 @@ namespace Hecton8.Core.Data
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public unsafe struct TraverseBTreeJob : IJob
+        internal unsafe struct TraverseBTreeJob : IJob
         {
-            [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
+            [NoAlias, NativeDisableUnsafePtrRestriction] internal byte* BasePointer;
             [WriteOnly, NoAlias] public NativeArray<DataOffsetLengthDTO> Output;
             public uint TreeOffset;
             public uint RootOffset;
@@ -1325,9 +1355,9 @@ namespace Hecton8.Core.Data
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public unsafe struct DispatchBulkBTreeSearchJob : IJobParallelFor
+        internal unsafe struct DispatchBulkBTreeSearchJob : IJobParallelFor
         {
-            [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
+            [NoAlias, NativeDisableUnsafePtrRestriction] internal byte* BasePointer;
             [ReadOnly, NoAlias] public NativeArray<uint> RequestedHashes;
             [WriteOnly, NoAlias] public NativeArray<DataOffsetLengthDTO> Output;
             public uint TreeOffset;
@@ -1402,9 +1432,9 @@ namespace Hecton8.Core.Data
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public unsafe struct TraceBTreeTraversalJob : IJob
+        internal unsafe struct TraceBTreeTraversalJob : IJob
         {
-            [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
+            [NoAlias, NativeDisableUnsafePtrRestriction] internal byte* BasePointer;
             [WriteOnly, NoAlias] public NativeArray<DataOffsetLengthDTO> Output;
             [WriteOnly, NoAlias] public NativeArray<uint> TouchedNodeOffsets;
             public uint TreeOffset;
@@ -1580,9 +1610,9 @@ namespace Hecton8.Core.Data
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public unsafe struct SpatialMortonRangeQueryJob : IJob
+        internal unsafe struct SpatialMortonRangeQueryJob : IJob
         {
-            [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
+            [NoAlias, NativeDisableUnsafePtrRestriction] internal byte* BasePointer;
             [WriteOnly, NoAlias] public NativeArray<DataOffsetLengthDTO> Output;
             public uint TreeOffset;
             public uint RootOffset;
@@ -1765,9 +1795,9 @@ namespace Hecton8.Core.Data
     /// Blind UI output buffer contract for lookup smoke jobs. Size: 16 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public unsafe struct MockUIBuffer
+    internal unsafe struct MockUIBuffer
     {
-        [FieldOffset(0)] public byte* Ptr;
+        [FieldOffset(0)] internal byte* Ptr;
         [FieldOffset(8)] public int CapacityBytes;
         [FieldOffset(12)] public int WrittenBytes;
     }
@@ -2076,6 +2106,7 @@ namespace Hecton8.Core.Data
     /// <summary>
     /// Allocation-free cold parser for Data/Balance/btree_tuning_profiles.csv.
     /// </summary>
+    #if UNITY_EDITOR
     public static class BTreeTuningCsvParser
     {
         public const uint ErrorNone = 0u;
@@ -2317,13 +2348,28 @@ namespace Hecton8.Core.Data
             return value == (byte)' ' || value == (byte)'\t';
         }
     }
+    #endif
 
     /// <summary>
     /// CRC32 without runtime table allocation.
     /// </summary>
     public static unsafe class H8Crc32
     {
-        public static uint Compute(byte* data, int byteLength)
+        public static uint Compute(ReadOnlySpan<byte> data)
+        {
+            fixed (byte* ptr = data)
+                return Compute(ptr, data.Length);
+        }
+
+        public static uint Compute(NativeArray<byte> data)
+        {
+            if (!data.IsCreated)
+                return 0u;
+
+            return Compute((byte*)data.GetUnsafeReadOnlyPtr(), data.Length);
+        }
+
+        internal static uint Compute(byte* data, int byteLength)
         {
             uint crc = 0xFFFFFFFFu;
             for (int i = 0; i < byteLength; i++)

@@ -4,7 +4,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal static class TerrainChunkGeneratedSignalLayout
+    {
+        public const int TerrainChunkGeneratedSignalStrideBytes = 64;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = TerrainChunkGeneratedSignalLayout.TerrainChunkGeneratedSignalStrideBytes)]
     public struct TerrainChunkGeneratedSignal : ISignal
     {
         [FieldOffset(0)] public int ChunkX;

@@ -100,7 +100,7 @@ namespace Hecton8.Core
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void ReportRuntimeRequirementViolation(string message)
         {
-            Debug.LogWarning($"[HectonUrpTextureRequirementsGuard] {message}");
+            Hecton8.Core.H8Debug.LogWarning($"[HectonUrpTextureRequirementsGuard] {message}");
         }
     }
 }

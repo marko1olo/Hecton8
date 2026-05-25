@@ -1,10 +1,10 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Atmosphere;
 using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -12,9 +12,6 @@ using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
 using Stopwatch = System.Diagnostics.Stopwatch;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.Physiology
 {
@@ -22,16 +19,19 @@ namespace Hecton8.Physiology
     /// Vault-backed survival metabolism runtime. SlowTick schedules pure Burst kernels; LateFrameTick reclaims the fence.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed unsafe class ShinobuMetabolismRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
+    public sealed unsafe partial class ShinobuMetabolismRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const SystemID ChemicalOwnerSystem = SystemID.AISensory;
-        private const int LockBufferCount = 9;
+        private const int LockBufferCount = 12;
         private const uint MockSectorHash = 0x4D455441u; // META
         private const ulong DumpMagic = 0x4D45544153524745ul; // METASRGE
-        private const uint DumpVersion = 1u;
+        private const uint DumpVersion = 2u;
         private const string CsvRelativePath = "biological_metabolism_profiles.csv";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_METABOLISM_SURGEON.bin";
+        private const string SuitCsvRelativePath = "suit_thermal_profiles.csv";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_320.bin";
+        private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
+        private const uint MetabolicToxicChemicalHash = 0x4D54584Eu; // MTXN
 
         private static readonly ProfilerMarker _ScheduleMarker = new ProfilerMarker("ShinobuMetabolism.Schedule");
         private static readonly ProfilerMarker _CompleteMarker = new ProfilerMarker("ShinobuMetabolism.Complete");
@@ -49,11 +49,14 @@ namespace Hecton8.Physiology
         [Tooltip("Load biological_metabolism_profiles.csv from the project root during cold bootstrap.")]
         [SerializeField] private bool loadCsvProfilesOnEnable = true;
 
+        [Tooltip("Load suit_thermal_profiles.csv from the project root during cold bootstrap.")]
+        [SerializeField] private bool loadSuitThermalProfilesOnEnable = true;
+
         [Header("Editor Debug")]
-        [Tooltip("Editor-only labels for the first vault rows. Runtime builds ignore this path.")]
+        [Tooltip("Editor-only temperature bars for the first vault rows. Runtime builds ignore this path.")]
         [SerializeField] private bool drawDebugGizmos = true;
 
-        [Tooltip("Maximum editor-only metabolism labels drawn by OnDrawGizmos.")]
+        [Tooltip("Maximum editor-only metabolism temperature bars drawn by OnDrawGizmos.")]
         [SerializeField, Range(0, 64)] private int debugGizmoRows = 8;
 
         private VaultGenerationHandle<MetabolicStateDTO> _stateHandle;
@@ -66,10 +69,15 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<float> _toxinSampleHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<PhysiologyStateSignal> _physiologySignalHandle;
-        private VaultGenerationHandle<CombatDamageSignal> _combatSignalHandle;
+        private VaultGenerationHandle<MetabolicExposureSignalDTO> _exposureSignalHandle;
+        private VaultGenerationHandle<MetabolicDetailTelemetryEntry> _detailTelemetryHandle;
+        private VaultGenerationHandle<MetabolicSuitThermalProfileDTO> _suitProfileHandle;
+        private VaultGenerationHandle<ushort> _suitProfileIndexHandle;
+        private VaultGenerationHandle<SuitIntegrityDTO> _suitIntegrityStateReadHandle;
 
         private IDataVault _dataVault;
         private IThermodynamicsService _thermodynamicsService;
+        private IThermodynamicsService _thermalGridReadbackService;
         private ITickDispatcher _tickDispatcher;
         private JobHandle _activeJobHandle;
         private GraphicsBuffer _shaderGlobalsBufferA;
@@ -77,7 +85,9 @@ namespace Hecton8.Physiology
         private GraphicsBuffer _activeShaderGlobalsBuffer;
         private MetabolismShaderGlobalsDTO _lastShaderGlobals;
         private MetabolicTelemetryEntry _latestTelemetry;
+        private MetabolicDetailTelemetryEntry _latestDetailTelemetry;
         private string _csvPath;
+        private string _suitCsvPath;
         private string _dumpPath;
         private double _lastDispatcherTimeSeconds = -1d;
         private float _simulationAccumulator;
@@ -95,14 +105,19 @@ namespace Hecton8.Physiology
         private bool _chemicalReadbackLocksHeld;
         private bool _defaultsInitialized;
         private bool _latestTelemetryValid;
+        private bool _latestDetailTelemetryValid;
         private bool _autopsyDumped;
         private bool _shaderGlobalsInitialized;
+        private bool _suitIntegrityReadLockHeld;
+        private bool _metabolismStateMutationGuardHeld;
+        private bool _thermalGridReadbackHeld;
         private int _shaderWriteIndex;
 
         private void Awake()
         {
             entityCapacity = math.max(1, entityCapacity);
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
+            _suitCsvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", SuitCsvRelativePath));
             _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
         }
 
@@ -111,9 +126,18 @@ namespace Hecton8.Physiology
             if (!Application.isPlaying)
                 return;
 
-            _ = GlobalSignals.DamageSignalWriter;
+            SignalBus<PhysiologyStateSignal>.Configure(
+                PhysiologyStateSignal.ExpectedCapacity,
+                maxFrameSignals: PhysiologyStateSignal.MaxFrameSignals,
+                lowTierFrameSignals: PhysiologyStateSignal.LowTierFrameSignals,
+                laneHash: PhysiologyStateSignal.LaneHash);
             SignalBus<PhysiologyStateSignal>.EnsureInitialized();
-            SignalBus<CombatDamageSignal>.EnsureInitialized();
+            SignalBus<ToxicityExposureSignal>.Configure(
+                ToxicityExposureSignal.ExpectedCapacity,
+                maxFrameSignals: ToxicityExposureSignal.MaxFrameSignals,
+                lowTierFrameSignals: ToxicityExposureSignal.LowTierFrameSignals,
+                laneHash: ToxicityExposureSignal.LaneHash);
+            SignalBus<ToxicityExposureSignal>.EnsureInitialized();
             SignalBus<KccVelocitySignal>.EnsureInitialized();
             TryRegisterHotSwapListener();
             RebindColdServices();
@@ -124,6 +148,8 @@ namespace Hecton8.Physiology
                 InitializeDefaultVaultContents();
                 if (loadCsvProfilesOnEnable)
                     TryLoadBiologicalProfilesCsv();
+                if (loadSuitThermalProfilesOnEnable)
+                    TryLoadSuitThermalProfilesCsv();
                 TryRegisterTicks();
             }
         }
@@ -143,8 +169,11 @@ namespace Hecton8.Physiology
             CompleteFrameJobForTeardown();
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
+            ReleaseThermalGridReadback();
             UnlockChemicalReadbackBuffers();
+            UnlockSuitIntegrityReadBuffer();
             UnlockJobBuffers();
+            ReleaseMetabolismStateMutationGuard(_dataVault);
             ReleaseMetabolismVaultHandles(_dataVault);
             ReleaseShaderGlobalsBuffers();
             ClearCachedHandles();
@@ -154,8 +183,11 @@ namespace Hecton8.Physiology
         public void Dispose()
         {
             CompleteFrameJobForTeardown();
+            ReleaseThermalGridReadback();
             UnlockChemicalReadbackBuffers();
+            UnlockSuitIntegrityReadBuffer();
             UnlockJobBuffers();
+            ReleaseMetabolismStateMutationGuard(_dataVault);
             ReleaseMetabolismVaultHandles(_dataVault);
             ReleaseShaderGlobalsBuffers();
             ClearCachedHandles();
@@ -171,8 +203,11 @@ namespace Hecton8.Physiology
             {
                 IDataVault previousVault = previousService as IDataVault ?? _dataVault;
                 CompleteFrameJobForTeardown();
+                ReleaseThermalGridReadback();
                 UnlockChemicalReadbackBuffers();
+                UnlockSuitIntegrityReadBuffer();
                 UnlockJobBuffers();
+                ReleaseMetabolismStateMutationGuard(previousVault);
                 ReleaseMetabolismVaultHandles(previousVault);
                 _dataVault = currentService as IDataVault;
                 ClearCachedHandles();
@@ -188,7 +223,11 @@ namespace Hecton8.Physiology
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
+            {
+                CompleteFrameJobForTeardown();
+                ReleaseThermalGridReadback();
                 _thermodynamicsService = currentService as IThermodynamicsService;
+            }
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
                 _tickDispatcher = currentService as ITickDispatcher;
         }
@@ -228,7 +267,10 @@ namespace Hecton8.Physiology
                         out NativeArray<MetabolismTuningDTO> tuningArray,
                         out NativeArray<float> toxinSamples,
                         out NativeArray<PhysiologyStateSignal> physiologySignals,
-                        out NativeArray<CombatDamageSignal> combatSignals))
+                        out NativeArray<MetabolicExposureSignalDTO> exposureSignals,
+                        out NativeArray<MetabolicDetailTelemetryEntry> detailTelemetry,
+                        out NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles,
+                        out NativeArray<ushort> suitProfileIndices))
                 {
                     return;
                 }
@@ -237,100 +279,141 @@ namespace Hecton8.Physiology
                 if (count <= 0 ||
                     rules.Length <= 0 ||
                     telemetry.Length <= 0 ||
+                    detailTelemetry.Length <= 0 ||
+                    suitProfiles.Length <= 0 ||
                     tuningArray.Length <= 0 ||
                     physiologySignals.Length < ResolvePhysiologySignalCapacity(count) ||
-                    combatSignals.Length < count)
+                    exposureSignals.Length < ResolveExposureSignalCapacity(count))
                 {
                     return;
                 }
 
-                TryApplyLatestKccSignal(states, entityAups, exertion);
-
-                MetabolismTuningDTO tuning = ShinobuMetabolismJobMath.SanitizeTuning(tuningArray[0]);
-                tuning.GlobalQualityWeight = quality;
-                tuningArray[0] = tuning;
-
-                TryResolveThermalGrid(
-                    out NativeArray<float>.ReadOnly thermalGrid,
-                    out int3 thermalResolution,
-                    out double3 thermalRootAup,
-                    out float thermalCellSizeMeters,
-                    out byte hasThermalGrid);
-
-                if (!TryLockJobBuffers(vault))
+                if (!TryAcquireMetabolismStateMutationGuard(vault))
                     return;
 
-                TryResolveChemicalGrid(
-                    vault,
-                    out float4* chemicalPublishedPtr,
-                    out float4* chemicalOverlayPtr,
-                    out int3 chemicalResolution,
-                    out int chemicalGridLength,
-                    out double3 chemicalRootAup,
-                    out float chemicalCellSizeMeters,
-                    out byte hasChemicalGrid);
+                bool scheduled = false;
+                try
+                {
+                    TryApplyLatestKccSignal(states, entityAups, exertion);
 
-                float dt = math.clamp(_simulationAccumulator, 0.0001f, ShinobuMetabolismConstants.MaxAccumulatedDeltaSeconds);
-                uint frame = ++_simulationFrameCounter;
-                int telemetryIndex = _telemetryCursor % telemetry.Length;
-                if (telemetryIndex < 0)
-                    telemetryIndex += telemetry.Length;
+                    MetabolismTuningDTO tuning = ShinobuMetabolismJobMath.SanitizeTuning(tuningArray[0]);
+                    tuning.GlobalQualityWeight = quality;
+                    tuningArray[0] = tuning;
 
-                float* thermalPtr = hasThermalGrid != 0 && thermalGrid.IsCreated
-                    ? (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(thermalGrid)
-                    : null;
+                    TryResolveThermalGrid(
+                        out NativeArray<float>.ReadOnly thermalGrid,
+                        out int3 thermalResolution,
+                        out double3 thermalRootAup,
+                        out float thermalCellSizeMeters,
+                        out byte hasThermalGrid);
 
-                MetabolicIntegrationJob integrationJob = default;
-                integrationJob.States = (MetabolicStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states);
-                integrationJob.EntityAups = (double3*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(entityAups);
-                integrationJob.ExertionSpeedSq = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exertion);
-                integrationJob.ToxinSamples = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(toxinSamples);
-                integrationJob.RuleIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ruleIndices);
-                integrationJob.Rules = (MetabolicSpeciesRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rules);
-                integrationJob.ThermalCelsiusGrid = thermalPtr;
-                integrationJob.ChemicalPublishedGrid = chemicalPublishedPtr;
-                integrationJob.ChemicalOverlayGrid = chemicalOverlayPtr;
-                integrationJob.PhysiologySignals = (PhysiologyStateSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(physiologySignals);
-                integrationJob.CombatSignals = (CombatDamageSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(combatSignals);
-                integrationJob.Tuning = tuning;
-                integrationJob.ThermalGridRootAup = thermalRootAup;
-                integrationJob.ChemicalGridRootAup = chemicalRootAup;
-                integrationJob.ThermalGridResolution = thermalResolution;
-                integrationJob.ChemicalGridResolution = chemicalResolution;
-                integrationJob.ThermalGridLength = hasThermalGrid != 0 && thermalGrid.IsCreated ? thermalGrid.Length : 0;
-                integrationJob.ChemicalGridLength = chemicalGridLength;
-                integrationJob.PhysiologySignalLength = physiologySignals.Length;
-                integrationJob.CombatSignalLength = combatSignals.Length;
-                integrationJob.ThermalCellSizeMeters = thermalCellSizeMeters;
-                integrationJob.ChemicalCellSizeMeters = chemicalCellSizeMeters;
-                integrationJob.DeltaSeconds = dt;
-                integrationJob.GlobalQualityWeight = 1f;
-                integrationJob.Frame = frame;
-                integrationJob.Count = count;
-                integrationJob.RuleCount = rules.Length;
-                integrationJob.HasThermalGrid = hasThermalGrid;
-                integrationJob.HasChemicalGrid = hasChemicalGrid;
-                integrationJob.EmitSignals = 1;
-                JobHandle integrationHandle = integrationJob.Schedule(count, ShinobuMetabolismConstants.FrameJobBatchSize);
+                    if (!TryLockJobBuffers(vault))
+                        return;
 
-                MetabolismTelemetryJob telemetryJob = default;
-                telemetryJob.States = (MetabolicStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states);
-                telemetryJob.Telemetry = (MetabolicTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetry);
-                telemetryJob.Count = count;
-                telemetryJob.TelemetryLength = telemetry.Length;
-                telemetryJob.TelemetryCursor = telemetryIndex;
-                telemetryJob.DeltaSeconds = dt;
-                telemetryJob.GlobalQualityWeight = quality;
-                telemetryJob.Frame = frame;
-                JobHandle telemetryHandle = telemetryJob.Schedule(integrationHandle);
+                    NativeArray<SuitIntegrityDTO> suitIntegrityStates = default;
+                    byte hasSuitIntegrityStates = 0;
+                    if (TryLockSuitIntegrityReadBuffer(vault))
+                    {
+                        if (TryReadSuitIntegrityStates(vault, 1, out suitIntegrityStates))
+                            hasSuitIntegrityStates = 1;
+                        else
+                            UnlockSuitIntegrityReadBuffer();
+                    }
 
-                _activeJobHandle = telemetryHandle;
-                _jobScheduleTimestamp = Stopwatch.GetTimestamp();
-                _pendingTelemetryIndex = telemetryIndex;
-                _scheduledCount = count;
-                _simulationAccumulator = 0f;
-                _jobScheduled = true;
-                H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
+                    TryResolveChemicalGrid(
+                        vault,
+                        out float4* chemicalPublishedPtr,
+                        out float4* chemicalOverlayPtr,
+                        out int3 chemicalResolution,
+                        out int chemicalGridLength,
+                        out double3 chemicalRootAup,
+                        out float chemicalCellSizeMeters,
+                        out byte hasChemicalGrid);
+
+                    float dt = math.clamp(_simulationAccumulator, 0.0001f, ShinobuMetabolismConstants.MaxAccumulatedDeltaSeconds);
+                    uint frame = ++_simulationFrameCounter;
+                    int telemetryIndex = _telemetryCursor % telemetry.Length;
+                    if (telemetryIndex < 0)
+                        telemetryIndex += telemetry.Length;
+
+                    float* thermalPtr = hasThermalGrid != 0 && thermalGrid.IsCreated
+                        ? (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(thermalGrid)
+                        : null;
+
+                    MetabolicIntegrationJob integrationJob = default;
+                    integrationJob.States = (MetabolicStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states);
+                    integrationJob.EntityAups = (double3*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(entityAups);
+                    integrationJob.ExertionSpeedSq = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exertion);
+                    integrationJob.ToxinSamples = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(toxinSamples);
+                    integrationJob.RuleIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ruleIndices);
+                    integrationJob.Rules = (MetabolicSpeciesRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rules);
+                    integrationJob.SuitProfileIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfileIndices);
+                    integrationJob.SuitProfiles = (MetabolicSuitThermalProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfiles);
+                    integrationJob.SuitIntegrityStates = hasSuitIntegrityStates != 0 && suitIntegrityStates.IsCreated
+                        ? (SuitIntegrityDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(suitIntegrityStates)
+                        : null;
+                    integrationJob.ThermalCelsiusGrid = thermalPtr;
+                    integrationJob.ChemicalPublishedGrid = chemicalPublishedPtr;
+                    integrationJob.ChemicalOverlayGrid = chemicalOverlayPtr;
+                    integrationJob.PhysiologySignals = (PhysiologyStateSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(physiologySignals);
+                    integrationJob.ExposureSignals = (MetabolicExposureSignalDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exposureSignals);
+                    integrationJob.DetailTelemetry = (MetabolicDetailTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(detailTelemetry);
+                    integrationJob.Tuning = tuning;
+                    integrationJob.ThermalGridRootAup = thermalRootAup;
+                    integrationJob.ChemicalGridRootAup = chemicalRootAup;
+                    integrationJob.ThermalGridResolution = thermalResolution;
+                    integrationJob.ChemicalGridResolution = chemicalResolution;
+                    integrationJob.ThermalGridLength = hasThermalGrid != 0 && thermalGrid.IsCreated ? thermalGrid.Length : 0;
+                    integrationJob.ChemicalGridLength = chemicalGridLength;
+                    integrationJob.PhysiologySignalLength = physiologySignals.Length;
+                    integrationJob.ExposureSignalLength = exposureSignals.Length;
+                    integrationJob.DetailTelemetryLength = detailTelemetry.Length;
+                    integrationJob.DetailTelemetryCursor = telemetryIndex;
+                    integrationJob.SuitIntegrityStateCount = hasSuitIntegrityStates != 0 && suitIntegrityStates.IsCreated ? suitIntegrityStates.Length : 0;
+                    integrationJob.ThermalCellSizeMeters = thermalCellSizeMeters;
+                    integrationJob.ChemicalCellSizeMeters = chemicalCellSizeMeters;
+                    integrationJob.DeltaSeconds = dt;
+                    integrationJob.GlobalQualityWeight = quality;
+                    integrationJob.Frame = frame;
+                    integrationJob.Count = count;
+                    integrationJob.RuleCount = rules.Length;
+                    integrationJob.SuitProfileCount = suitProfiles.Length;
+                    integrationJob.HasThermalGrid = hasThermalGrid;
+                    integrationJob.HasChemicalGrid = hasChemicalGrid;
+                    integrationJob.EmitSignals = 1;
+                    JobHandle integrationHandle = integrationJob.Schedule(count, ShinobuMetabolismConstants.FrameJobBatchSize);
+
+                    MetabolismTelemetryJob telemetryJob = default;
+                    telemetryJob.States = (MetabolicStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states);
+                    telemetryJob.Telemetry = (MetabolicTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetry);
+                    telemetryJob.Count = count;
+                    telemetryJob.TelemetryLength = telemetry.Length;
+                    telemetryJob.TelemetryCursor = telemetryIndex;
+                    telemetryJob.DeltaSeconds = dt;
+                    telemetryJob.GlobalQualityWeight = quality;
+                    telemetryJob.Frame = frame;
+                    JobHandle telemetryHandle = telemetryJob.Schedule(integrationHandle);
+
+                    _activeJobHandle = telemetryHandle;
+                    _jobScheduleTimestamp = Stopwatch.GetTimestamp();
+                    _pendingTelemetryIndex = telemetryIndex;
+                    _scheduledCount = count;
+                    _simulationAccumulator = 0f;
+                    H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
+                    _jobScheduled = true;
+                    scheduled = true;
+                }
+                finally
+                {
+                    if (!scheduled)
+                    {
+                        ReleaseThermalGridReadback();
+                        UnlockChemicalReadbackBuffers();
+                        UnlockSuitIntegrityReadBuffer();
+                        UnlockJobBuffers();
+                        ReleaseMetabolismStateMutationGuard(vault);
+                    }
+                }
             }
         }
 
@@ -357,7 +440,10 @@ namespace Hecton8.Physiology
                     out NativeArray<MetabolismTuningDTO> tuningArray,
                     out NativeArray<float> toxinSamples,
                     out NativeArray<PhysiologyStateSignal> physiologySignals,
-                    out NativeArray<CombatDamageSignal> combatSignals))
+                    out NativeArray<MetabolicExposureSignalDTO> exposureSignals,
+                    out _,
+                    out NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles,
+                    out NativeArray<ushort> suitProfileIndices))
             {
                 return false;
             }
@@ -368,8 +454,10 @@ namespace Hecton8.Physiology
 
             InitMetabolismRulesJob initRulesJob = default;
             initRulesJob.Rules = (MetabolicSpeciesRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rules);
+            initRulesJob.SuitProfiles = (MetabolicSuitThermalProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfiles);
             initRulesJob.Tuning = (MetabolismTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuningArray);
             initRulesJob.RuleCount = rules.Length;
+            initRulesJob.SuitProfileCount = suitProfiles.Length;
             JobHandle initRules = initRulesJob.Schedule();
 
             InitInactiveMetabolismJob initInactiveJob = default;
@@ -378,11 +466,12 @@ namespace Hecton8.Physiology
             initInactiveJob.ExertionSpeedSq = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exertion);
             initInactiveJob.ToxinSamples = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(toxinSamples);
             initInactiveJob.RuleIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ruleIndices);
+            initInactiveJob.SuitProfileIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfileIndices);
             initInactiveJob.PhysiologySignals = (PhysiologyStateSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(physiologySignals);
-            initInactiveJob.CombatSignals = (CombatDamageSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(combatSignals);
+            initInactiveJob.ExposureSignals = (MetabolicExposureSignalDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exposureSignals);
             initInactiveJob.Count = count;
             initInactiveJob.PhysiologySignalLength = physiologySignals.Length;
-            initInactiveJob.CombatSignalLength = combatSignals.Length;
+            initInactiveJob.ExposureSignalLength = exposureSignals.Length;
             JobHandle initInactive = initInactiveJob.Schedule(count, ShinobuMetabolismConstants.FrameJobBatchSize, initRules);
 
             int mockCount = math.min(count, ShinobuMetabolismConstants.DefaultEntityCapacity);
@@ -392,6 +481,7 @@ namespace Hecton8.Physiology
             initMockJob.ExertionSpeedSq = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exertion);
             initMockJob.ToxinSamples = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(toxinSamples);
             initMockJob.RuleIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ruleIndices);
+            initMockJob.SuitProfileIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfileIndices);
             initMockJob.Count = mockCount;
             initMockJob.Seed = MockSectorHash;
             initMockJob.Frame = _simulationFrameCounter;
@@ -408,17 +498,23 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool TryLoadBiologicalProfilesCsv()
         {
+#if !UNITY_EDITOR
+            return false;
+#else
+            if (_jobScheduled)
+                return false;
+
             IDataVault vault = _dataVault;
             if (vault == null || !EnsureVaultState())
                 return false;
 
-            if (!TryResolveMetabolismVaultBuffer(
+            if (!TryOpenMetabolismVaultBuffer(
                     vault,
                     in _csvScratchHandle,
                     ShinobuMetabolismConstants.MetabolismCsvScratchBuffer,
                     ShinobuMetabolismConstants.CsvMaxBytes,
                     out NativeArray<byte> scratch) ||
-                !TryResolveMetabolismVaultBuffer(
+                !TryOpenMetabolismVaultBuffer(
                     vault,
                     in _speciesRuleHandle,
                     ShinobuMetabolismConstants.MetabolismSpeciesRulesBuffer,
@@ -466,27 +562,77 @@ namespace Hecton8.Physiology
             {
                 return false;
             }
+#endif
         }
 
         /// <summary>
-        /// Returns a mutable reference to a metabolism state row without CS1612 copies.
+        /// Reloads designer-authored suit thermal profiles from the project-root CSV.
         /// </summary>
-        public ref MetabolicStateDTO GetStateRef(int entityIndex)
+        public bool TryLoadSuitThermalProfilesCsv()
         {
+#if !UNITY_EDITOR
+            return false;
+#else
+            if (_jobScheduled)
+                return false;
+
             IDataVault vault = _dataVault;
-            if (!TryResolveMetabolismVaultBuffer(
+            if (vault == null || !EnsureVaultState())
+                return false;
+
+            if (!TryOpenMetabolismVaultBuffer(
                     vault,
-                    in _stateHandle,
-                    ShinobuMetabolismConstants.MetabolismStatesBuffer,
-                    1,
-                    out NativeArray<MetabolicStateDTO> states) ||
-                (uint)entityIndex >= (uint)states.Length)
+                    in _csvScratchHandle,
+                    ShinobuMetabolismConstants.MetabolismCsvScratchBuffer,
+                    ShinobuMetabolismConstants.CsvMaxBytes,
+                    out NativeArray<byte> scratch) ||
+                !TryOpenMetabolismVaultBuffer(
+                    vault,
+                    in _suitProfileHandle,
+                    ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer,
+                    ShinobuMetabolismConstants.MaxSuitThermalProfiles,
+                    out NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles))
             {
-                FatalMemoryException.ThrowStaleVaultHandle();
+                return false;
             }
 
-            void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(states);
-            return ref UnsafeUtility.ArrayElementAsRef<MetabolicStateDTO>(basePtr, entityIndex);
+            if (!scratch.IsCreated || !suitProfiles.IsCreated || scratch.Length <= 0 || suitProfiles.Length <= 0)
+                return false;
+
+            try
+            {
+                if (!File.Exists(_suitCsvPath))
+                    return false;
+
+                int maxBytes = math.min(scratch.Length, ShinobuMetabolismConstants.CsvMaxBytes);
+                if (maxBytes <= 0)
+                    return false;
+
+                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+                Span<byte> buffer = new Span<byte>(scratchPtr, maxBytes);
+                using (FileStream stream = new FileStream(_suitCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    long boundedBytes = stream.Length < maxBytes ? stream.Length : maxBytes;
+                    int byteCount = boundedBytes > int.MaxValue ? int.MaxValue : (int)boundedBytes;
+                    if (byteCount <= 0)
+                        return false;
+
+                    int read = stream.Read(buffer.Slice(0, byteCount));
+                    if (read <= 0)
+                        return false;
+
+                    return ParseSuitThermalProfilesCsv(buffer.Slice(0, read), suitProfiles) > 0;
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+#endif
         }
 
         /// <summary>
@@ -495,6 +641,9 @@ namespace Hecton8.Physiology
         public bool TryGetState(int entityIndex, out MetabolicStateDTO state)
         {
             state = default;
+            if (_jobScheduled)
+                return false;
+
             IDataVault vault = _dataVault;
             TryReadMetabolismVaultBuffer(
                 vault,
@@ -515,6 +664,9 @@ namespace Hecton8.Physiology
         public bool TryGetEntityAup(int entityIndex, out double3 aup)
         {
             aup = default;
+            if (_jobScheduled)
+                return false;
+
             IDataVault vault = _dataVault;
             TryReadMetabolismVaultBuffer(
                 vault,
@@ -554,18 +706,33 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool TrySetTuning(in MetabolismTuningDTO tuning)
         {
-            IDataVault vault = _dataVault;
-            TryResolveMetabolismVaultBuffer(
-                vault,
-                in _tuningHandle,
-                ShinobuMetabolismConstants.MetabolismTuningBuffer,
-                1,
-                out NativeArray<MetabolismTuningDTO> tuningArray);
-            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+            if (_jobScheduled)
                 return false;
 
-            tuningArray[0] = ShinobuMetabolismJobMath.SanitizeTuning(tuning);
-            return true;
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismTuningBuffer, OwnerSystem))
+                return false;
+
+            try
+            {
+                TryOpenMetabolismVaultBuffer(
+                    vault,
+                    in _tuningHandle,
+                    ShinobuMetabolismConstants.MetabolismTuningBuffer,
+                    1,
+                    out NativeArray<MetabolismTuningDTO> tuningArray);
+                if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+                    return false;
+
+                ref MetabolismTuningDTO target = ref UnsafeUtility.AsRef<MetabolismTuningDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuningArray));
+                target = ShinobuMetabolismJobMath.SanitizeTuning(tuning);
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismTuningBuffer, OwnerSystem);
+            }
         }
 
         /// <summary>
@@ -578,10 +745,103 @@ namespace Hecton8.Physiology
         }
 
         /// <summary>
+        /// Reads the most recent detailed player metabolism telemetry row.
+        /// </summary>
+        public bool TryGetLatestDetailTelemetry(out MetabolicDetailTelemetryEntry telemetry)
+        {
+            telemetry = _latestDetailTelemetry;
+            return _latestDetailTelemetryValid;
+        }
+
+        /// <summary>
+        /// Cold bridge for inventory/equipment owners to select a suit thermal profile row.
+        /// </summary>
+        public bool TrySetSuitProfileIndex(int entityIndex, ushort suitProfileIndex)
+        {
+            if (_jobScheduled)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer, OwnerSystem))
+                return false;
+
+            try
+            {
+                TryOpenMetabolismVaultBuffer(
+                    vault,
+                    in _suitProfileIndexHandle,
+                    ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer,
+                    entityCapacity,
+                    out NativeArray<ushort> suitProfileIndices);
+                if (!suitProfileIndices.IsCreated || (uint)entityIndex >= (uint)suitProfileIndices.Length)
+                    return false;
+
+                int clamped = math.clamp((int)suitProfileIndex, 0, ShinobuMetabolismConstants.MaxSuitThermalProfiles - 1);
+                ushort* indices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfileIndices);
+                ref ushort slot = ref UnsafeUtility.AsRef<ushort>((byte*)indices + entityIndex * sizeof(ushort));
+                slot = (ushort)clamped;
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer, OwnerSystem);
+            }
+        }
+
+        /// <summary>
+        /// Cold bridge for equipment owners that publish suit identity instead of profile index.
+        /// </summary>
+        public bool TrySetSuitProfileHash(int entityIndex, uint equippedSuitHash)
+        {
+            if (_jobScheduled || equippedSuitHash == 0u)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer, OwnerSystem))
+                return false;
+
+            try
+            {
+                if (!TryOpenMetabolismVaultBuffer(
+                        vault,
+                        in _suitProfileIndexHandle,
+                        ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer,
+                        entityCapacity,
+                        out NativeArray<ushort> suitProfileIndices) ||
+                    !TryReadMetabolismVaultBuffer(
+                        vault,
+                        in _suitProfileHandle,
+                        ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer,
+                        ShinobuMetabolismConstants.MaxSuitThermalProfiles,
+                        out NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles) ||
+                    (uint)entityIndex >= (uint)suitProfileIndices.Length)
+                {
+                    return false;
+                }
+
+                ushort resolvedIndex = ResolveSuitProfileIndexForHash(suitProfiles, equippedSuitHash, out bool matched);
+                if (!matched)
+                    return false;
+
+                ushort* indices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfileIndices);
+                ref ushort slot = ref UnsafeUtility.AsRef<ushort>((byte*)indices + entityIndex * sizeof(ushort));
+                slot = resolvedIndex;
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer, OwnerSystem);
+            }
+        }
+
+        /// <summary>
         /// Forces the 300-frame metabolism telemetry ring to disk.
         /// </summary>
-        public bool TryDumpBlackBoxForEditor()
+        public bool DumpBlackBoxForEditor()
         {
+            if (_jobScheduled)
+                return false;
+
             IDataVault vault = _dataVault;
             TryReadMetabolismVaultBuffer(
                 vault,
@@ -631,7 +891,7 @@ namespace Hecton8.Physiology
         {
             float executionMicroseconds = ResolveJobExecutionMicroseconds();
             IDataVault vault = _dataVault;
-            TryResolveMetabolismVaultBuffer(
+            TryOpenMetabolismVaultBuffer(
                 vault,
                 in _telemetryHandle,
                 ShinobuMetabolismConstants.MetabolismTelemetryRingBuffer,
@@ -640,13 +900,27 @@ namespace Hecton8.Physiology
             if (telemetry.IsCreated && (uint)_pendingTelemetryIndex < (uint)telemetry.Length)
             {
                 MetabolicTelemetryEntry entry = telemetry[_pendingTelemetryIndex];
+                if (executionMicroseconds > 200f)
+                    entry.Flags |= ShinobuMetabolismFlags.ExecutionBudgetExceeded;
                 entry.ExecutionMicroseconds = executionMicroseconds;
                 telemetry[_pendingTelemetryIndex] = entry;
                 _latestTelemetry = entry;
                 _latestTelemetryValid = true;
+                TryReadMetabolismVaultBuffer(
+                    vault,
+                    in _detailTelemetryHandle,
+                    ShinobuMetabolismConstants.MetabolismDetailTelemetryRingBuffer,
+                    ShinobuMetabolismConstants.TelemetryFrameCount,
+                    out NativeArray<MetabolicDetailTelemetryEntry> detailTelemetry);
+                if (detailTelemetry.IsCreated && (uint)_pendingTelemetryIndex < (uint)detailTelemetry.Length)
+                {
+                    _latestDetailTelemetry = detailTelemetry[_pendingTelemetryIndex];
+                    _latestDetailTelemetryValid = true;
+                }
+
                 _telemetryCursor = (_pendingTelemetryIndex + 1) % telemetry.Length;
                 PublishShaderGlobals(in entry);
-                if (!_autopsyDumped && (entry.Flags & ShinobuMetabolismFlags.NanDetected) != 0u)
+                if (!_autopsyDumped && (entry.Flags & (ShinobuMetabolismFlags.NanDetected | ShinobuMetabolismFlags.ExecutionBudgetExceeded)) != 0u)
                 {
                     DumpBlackBox(telemetry);
                     _autopsyDumped = true;
@@ -654,11 +928,14 @@ namespace Hecton8.Physiology
             }
 
             PublishStagedSignals(vault, _scheduledCount);
+            ReleaseThermalGridReadback();
             _jobScheduled = false;
             _pendingTelemetryIndex = -1;
             _scheduledCount = 0;
             UnlockChemicalReadbackBuffers();
+            UnlockSuitIntegrityReadBuffer();
             UnlockJobBuffers();
+            ReleaseMetabolismStateMutationGuard(vault);
         }
 
         private void PublishStagedSignals(IDataVault vault, int scheduledCount)
@@ -674,14 +951,16 @@ namespace Hecton8.Physiology
                 out NativeArray<PhysiologyStateSignal> physiologySignals);
             TryReadMetabolismVaultBuffer(
                 vault,
-                in _combatSignalHandle,
-                ShinobuMetabolismConstants.MetabolismCombatSignalsBuffer,
-                scheduledCount,
-                out NativeArray<CombatDamageSignal> combatSignals);
+                in _exposureSignalHandle,
+                ShinobuMetabolismConstants.MetabolismExposureSignalsBuffer,
+                ResolveExposureSignalCapacity(scheduledCount),
+                out NativeArray<MetabolicExposureSignalDTO> exposureSignals);
             int physiologyLimit = physiologySignals.IsCreated
                 ? math.min(physiologySignals.Length, ResolvePhysiologySignalCapacity(scheduledCount))
                 : 0;
-            int combatLimit = combatSignals.IsCreated ? math.min(combatSignals.Length, scheduledCount) : 0;
+            int exposureLimit = exposureSignals.IsCreated
+                ? math.min(exposureSignals.Length, ResolveExposureSignalCapacity(scheduledCount))
+                : 0;
 
             for (int i = 0; i < physiologyLimit; i++)
             {
@@ -692,13 +971,30 @@ namespace Hecton8.Physiology
                 SignalBus<PhysiologyStateSignal>.TryPush(in signal);
             }
 
-            for (int i = 0; i < combatLimit; i++)
+            for (int i = 0; i < exposureLimit; i++)
             {
-                CombatDamageSignal signal = combatSignals[i];
-                if (signal.TargetHash == 0u || signal.Frame == 0u || signal.Magnitude <= 0f)
+                MetabolicExposureSignalDTO signal = exposureSignals[i];
+                if (signal.EntityHash == 0u || signal.Frame == 0u || signal.ToxemiaDelta <= 0f)
                     continue;
 
-                SignalBus<CombatDamageSignal>.TryPush(in signal);
+                int slot = i % ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity;
+                if (slot == ShinobuMetabolismConstants.MetabolicExposureSignalSlotToxic)
+                {
+                    ToxicityExposureSignal exposure = default;
+                    exposure.AUP = signal.AUP;
+                    exposure.Exposure01 = math.saturate(signal.Exposure01);
+                    exposure.ToxemiaDelta = math.saturate(signal.ToxemiaDelta);
+                    exposure.EntityId = signal.EntityHash;
+                    exposure.ChemicalHash = signal.ChemicalHash != 0u ? signal.ChemicalHash : MetabolicToxicChemicalHash;
+                    exposure.Frame = signal.Frame;
+                    exposure.Flags = 1;
+                    if (exposure.EntityId != 0u)
+                    {
+                        SignalBus<ToxicityExposureSignal>.TryPush(in exposure);
+                    }
+
+                    continue;
+                }
             }
         }
 
@@ -709,6 +1005,7 @@ namespace Hecton8.Physiology
                 return false;
 
             int physiologySignalCapacity = ResolvePhysiologySignalCapacity(entityCapacity);
+            int exposureSignalCapacity = ResolveExposureSignalCapacity(entityCapacity);
             return OpenOrAcquireMetabolismVaultBuffer(
                        vault,
                        ref _stateHandle,
@@ -781,8 +1078,29 @@ namespace Hecton8.Physiology
                        out _) &&
                    OpenOrAcquireMetabolismVaultBuffer(
                        vault,
-                       ref _combatSignalHandle,
-                       ShinobuMetabolismConstants.MetabolismCombatSignalsBuffer,
+                       ref _exposureSignalHandle,
+                       ShinobuMetabolismConstants.MetabolismExposureSignalsBuffer,
+                       exposureSignalCapacity,
+                       NativeArrayOptions.UninitializedMemory,
+                       out _) &&
+                   OpenOrAcquireMetabolismVaultBuffer(
+                       vault,
+                       ref _detailTelemetryHandle,
+                       ShinobuMetabolismConstants.MetabolismDetailTelemetryRingBuffer,
+                       ShinobuMetabolismConstants.TelemetryFrameCount,
+                       NativeArrayOptions.UninitializedMemory,
+                       out _) &&
+                   OpenOrAcquireMetabolismVaultBuffer(
+                       vault,
+                       ref _suitProfileHandle,
+                       ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer,
+                       ShinobuMetabolismConstants.MaxSuitThermalProfiles,
+                       NativeArrayOptions.UninitializedMemory,
+                       out _) &&
+                   OpenOrAcquireMetabolismVaultBuffer(
+                       vault,
+                       ref _suitProfileIndexHandle,
+                       ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer,
                        entityCapacity,
                        NativeArrayOptions.UninitializedMemory,
                        out _);
@@ -794,6 +1112,14 @@ namespace Hecton8.Physiology
             int maxSafe = int.MaxValue / ShinobuMetabolismConstants.PhysiologySignalsPerEntity;
             count = math.min(count, maxSafe);
             return count * ShinobuMetabolismConstants.PhysiologySignalsPerEntity;
+        }
+
+        private static int ResolveExposureSignalCapacity(int entityCount)
+        {
+            int count = math.max(1, entityCount);
+            int maxSafe = int.MaxValue / ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity;
+            count = math.min(count, maxSafe);
+            return count * ShinobuMetabolismConstants.MetabolicExposureSignalsPerEntity;
         }
 
         private void InitializeDefaultVaultContents()
@@ -821,7 +1147,10 @@ namespace Hecton8.Physiology
                     out NativeArray<MetabolismTuningDTO> tuningArray,
                     out NativeArray<float> toxinSamples,
                     out NativeArray<PhysiologyStateSignal> physiologySignals,
-                    out NativeArray<CombatDamageSignal> combatSignals))
+                    out NativeArray<MetabolicExposureSignalDTO> exposureSignals,
+                    out _,
+                    out NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles,
+                    out NativeArray<ushort> suitProfileIndices))
             {
                 return;
             }
@@ -832,8 +1161,10 @@ namespace Hecton8.Physiology
 
             InitMetabolismRulesJob initRulesJob = default;
             initRulesJob.Rules = (MetabolicSpeciesRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rules);
+            initRulesJob.SuitProfiles = (MetabolicSuitThermalProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfiles);
             initRulesJob.Tuning = (MetabolismTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuningArray);
             initRulesJob.RuleCount = rules.Length;
+            initRulesJob.SuitProfileCount = suitProfiles.Length;
             JobHandle initRules = initRulesJob.Schedule();
 
             InitInactiveMetabolismJob initInactiveJob = default;
@@ -842,11 +1173,12 @@ namespace Hecton8.Physiology
             initInactiveJob.ExertionSpeedSq = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exertion);
             initInactiveJob.ToxinSamples = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(toxinSamples);
             initInactiveJob.RuleIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ruleIndices);
+            initInactiveJob.SuitProfileIndices = (ushort*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfileIndices);
             initInactiveJob.PhysiologySignals = (PhysiologyStateSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(physiologySignals);
-            initInactiveJob.CombatSignals = (CombatDamageSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(combatSignals);
+            initInactiveJob.ExposureSignals = (MetabolicExposureSignalDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exposureSignals);
             initInactiveJob.Count = count;
             initInactiveJob.PhysiologySignalLength = physiologySignals.Length;
-            initInactiveJob.CombatSignalLength = combatSignals.Length;
+            initInactiveJob.ExposureSignalLength = exposureSignals.Length;
             JobHandle initInactive = initInactiveJob.Schedule(count, ShinobuMetabolismConstants.FrameJobBatchSize, initRules);
 
             // COLD SYNC JOB: default metabolism rule and inactive-row hydration, not part of gameplay SlowTick.
@@ -865,19 +1197,26 @@ namespace Hecton8.Physiology
             out NativeArray<MetabolismTuningDTO> tuningArray,
             out NativeArray<float> toxinSamples,
             out NativeArray<PhysiologyStateSignal> physiologySignals,
-            out NativeArray<CombatDamageSignal> combatSignals)
+            out NativeArray<MetabolicExposureSignalDTO> exposureSignals,
+            out NativeArray<MetabolicDetailTelemetryEntry> detailTelemetry,
+            out NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles,
+            out NativeArray<ushort> suitProfileIndices)
         {
             int physiologySignalCapacity = ResolvePhysiologySignalCapacity(entityCapacity);
-            TryResolveMetabolismVaultBuffer(vault, in _stateHandle, ShinobuMetabolismConstants.MetabolismStatesBuffer, entityCapacity, out states);
-            TryResolveMetabolismVaultBuffer(vault, in _entityAupHandle, ShinobuMetabolismConstants.MetabolismEntityAupsBuffer, entityCapacity, out entityAups);
-            TryResolveMetabolismVaultBuffer(vault, in _exertionHandle, ShinobuMetabolismConstants.MetabolismExertionBuffer, entityCapacity, out exertion);
-            TryResolveMetabolismVaultBuffer(vault, in _speciesRuleHandle, ShinobuMetabolismConstants.MetabolismSpeciesRulesBuffer, ShinobuMetabolismConstants.MaxSpeciesRules, out rules);
-            TryResolveMetabolismVaultBuffer(vault, in _ruleIndexHandle, ShinobuMetabolismConstants.MetabolismRuleIndicesBuffer, entityCapacity, out ruleIndices);
-            TryResolveMetabolismVaultBuffer(vault, in _telemetryHandle, ShinobuMetabolismConstants.MetabolismTelemetryRingBuffer, ShinobuMetabolismConstants.TelemetryFrameCount, out telemetry);
-            TryResolveMetabolismVaultBuffer(vault, in _tuningHandle, ShinobuMetabolismConstants.MetabolismTuningBuffer, 1, out tuningArray);
-            TryResolveMetabolismVaultBuffer(vault, in _toxinSampleHandle, ShinobuMetabolismConstants.MetabolismToxinSamplesBuffer, entityCapacity, out toxinSamples);
-            TryResolveMetabolismVaultBuffer(vault, in _physiologySignalHandle, ShinobuMetabolismConstants.MetabolismPhysiologySignalsBuffer, physiologySignalCapacity, out physiologySignals);
-            TryResolveMetabolismVaultBuffer(vault, in _combatSignalHandle, ShinobuMetabolismConstants.MetabolismCombatSignalsBuffer, entityCapacity, out combatSignals);
+            int exposureSignalCapacity = ResolveExposureSignalCapacity(entityCapacity);
+            TryOpenMetabolismVaultBuffer(vault, in _stateHandle, ShinobuMetabolismConstants.MetabolismStatesBuffer, entityCapacity, out states);
+            TryOpenMetabolismVaultBuffer(vault, in _entityAupHandle, ShinobuMetabolismConstants.MetabolismEntityAupsBuffer, entityCapacity, out entityAups);
+            TryOpenMetabolismVaultBuffer(vault, in _exertionHandle, ShinobuMetabolismConstants.MetabolismExertionBuffer, entityCapacity, out exertion);
+            TryOpenMetabolismVaultBuffer(vault, in _speciesRuleHandle, ShinobuMetabolismConstants.MetabolismSpeciesRulesBuffer, ShinobuMetabolismConstants.MaxSpeciesRules, out rules);
+            TryOpenMetabolismVaultBuffer(vault, in _ruleIndexHandle, ShinobuMetabolismConstants.MetabolismRuleIndicesBuffer, entityCapacity, out ruleIndices);
+            TryOpenMetabolismVaultBuffer(vault, in _telemetryHandle, ShinobuMetabolismConstants.MetabolismTelemetryRingBuffer, ShinobuMetabolismConstants.TelemetryFrameCount, out telemetry);
+            TryOpenMetabolismVaultBuffer(vault, in _tuningHandle, ShinobuMetabolismConstants.MetabolismTuningBuffer, 1, out tuningArray);
+            TryOpenMetabolismVaultBuffer(vault, in _toxinSampleHandle, ShinobuMetabolismConstants.MetabolismToxinSamplesBuffer, entityCapacity, out toxinSamples);
+            TryOpenMetabolismVaultBuffer(vault, in _physiologySignalHandle, ShinobuMetabolismConstants.MetabolismPhysiologySignalsBuffer, physiologySignalCapacity, out physiologySignals);
+            TryOpenMetabolismVaultBuffer(vault, in _exposureSignalHandle, ShinobuMetabolismConstants.MetabolismExposureSignalsBuffer, exposureSignalCapacity, out exposureSignals);
+            TryOpenMetabolismVaultBuffer(vault, in _detailTelemetryHandle, ShinobuMetabolismConstants.MetabolismDetailTelemetryRingBuffer, ShinobuMetabolismConstants.TelemetryFrameCount, out detailTelemetry);
+            TryOpenMetabolismVaultBuffer(vault, in _suitProfileHandle, ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer, ShinobuMetabolismConstants.MaxSuitThermalProfiles, out suitProfiles);
+            TryOpenMetabolismVaultBuffer(vault, in _suitProfileIndexHandle, ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer, entityCapacity, out suitProfileIndices);
             return states.IsCreated &&
                    entityAups.IsCreated &&
                    exertion.IsCreated &&
@@ -887,7 +1226,75 @@ namespace Hecton8.Physiology
                    tuningArray.IsCreated &&
                    toxinSamples.IsCreated &&
                    physiologySignals.IsCreated &&
-                   combatSignals.IsCreated;
+                   exposureSignals.IsCreated &&
+                   detailTelemetry.IsCreated &&
+                   suitProfiles.IsCreated &&
+                   suitProfileIndices.IsCreated;
+        }
+
+        private static ushort ResolveSuitProfileIndexForHash(
+            NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles,
+            uint equippedSuitHash,
+            out bool matched)
+        {
+            matched = false;
+            if (!suitProfiles.IsCreated || suitProfiles.Length <= 0 || equippedSuitHash == 0u)
+                return 0;
+
+            for (int i = 0; i < suitProfiles.Length && i <= ushort.MaxValue; i++)
+            {
+                MetabolicSuitThermalProfileDTO profile = ShinobuMetabolismJobMath.SanitizeSuitProfile(suitProfiles[i]);
+                if (!ShinobuMetabolismJobMath.SuitProfileHashMatches(profile.ProfileHash, equippedSuitHash))
+                    continue;
+
+                matched = true;
+                return (ushort)i;
+            }
+
+            return 0;
+        }
+
+        private bool TryReadSuitIntegrityStates(
+            IDataVault vault,
+            int requiredLength,
+            out NativeArray<SuitIntegrityDTO> states)
+        {
+            if (TryReadExistingSuitIntegrityStates(vault, in _suitIntegrityStateReadHandle, requiredLength, out states))
+                return true;
+
+            states = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle<SuitIntegrityDTO>(
+                    ShinobuSuitIntegrityConstants.StateBuffer,
+                    out _suitIntegrityStateReadHandle))
+            {
+                return false;
+            }
+
+            return TryReadExistingSuitIntegrityStates(vault, in _suitIntegrityStateReadHandle, requiredLength, out states);
+        }
+
+        private static bool TryReadExistingSuitIntegrityStates(
+            IDataVault vault,
+            in VaultGenerationHandle<SuitIntegrityDTO> handle,
+            int requiredLength,
+            out NativeArray<SuitIntegrityDTO> states)
+        {
+            states = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsSuitIntegrityStateReadHandle(in handle) &&
+                   vault.TryReadHandle(in handle, out states) &&
+                   states.IsCreated &&
+                   states.Length >= requiredLength;
+        }
+
+        private static bool IsSuitIntegrityStateReadHandle(in VaultGenerationHandle<SuitIntegrityDTO> handle)
+        {
+            return handle.BufferID == unchecked((uint)(int)ShinobuSuitIntegrityConstants.StateBuffer) &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
         }
 
         private static bool OpenOrAcquireMetabolismVaultBuffer<T>(
@@ -898,7 +1305,7 @@ namespace Hecton8.Physiology
             NativeArrayOptions options,
             out NativeArray<T> buffer) where T : struct
         {
-            if (TryResolveMetabolismVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+            if (TryOpenMetabolismVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
                 return true;
 
             if (vault == null ||
@@ -910,15 +1317,15 @@ namespace Hecton8.Physiology
                 return false;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystem,
                 options);
-            return TryResolveMetabolismVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+            return TryOpenMetabolismVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
-        private static bool TryResolveMetabolismVaultBuffer<T>(
+        private static bool TryOpenMetabolismVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -1028,6 +1435,7 @@ namespace Hecton8.Physiology
             out float thermalCellSizeMeters,
             out byte hasThermalGrid)
         {
+            ReleaseThermalGridReadback();
             thermalGrid = default;
             thermalResolution = default;
             thermalRootAup = double3.zero;
@@ -1038,12 +1446,12 @@ namespace Hecton8.Physiology
             if (service == null || !service.IsInitialized)
                 return;
 
-            if (!service.TryGetThermalGridReadback(
+            if (!service.TryAcquireThermalGridReadbackAup(
                     out thermalGrid,
                     out int width,
                     out int height,
                     out int depth,
-                    out Vector3 originWS,
+                    out thermalRootAup,
                     out float cellSizeMeters,
                     out _))
             {
@@ -1052,6 +1460,7 @@ namespace Hecton8.Physiology
 
             if (!thermalGrid.IsCreated || thermalGrid.Length <= 0 || width <= 0 || height <= 0 || depth <= 0)
             {
+                service.ReleaseThermalGridReadback();
                 thermalGrid = default;
                 return;
             }
@@ -1060,31 +1469,17 @@ namespace Hecton8.Physiology
             thermalResolution.y = height;
             thermalResolution.z = depth;
             thermalCellSizeMeters = math.max(0.001f, cellSizeMeters);
-            hasThermalGrid = TryResolveAupDoubleFromRuntimeOrigin(originWS, out thermalRootAup) ? (byte)1 : (byte)0;
-        }
-
-        private static bool TryResolveAupDoubleFromRuntimeOrigin(Vector3 runtimePosition, out double3 absoluteAup)
-        {
-            absoluteAup = default;
-            if (!float.IsFinite(runtimePosition.x) ||
-                !float.IsFinite(runtimePosition.y) ||
-                !float.IsFinite(runtimePosition.z))
+            if (!math.all(math.isfinite(thermalRootAup)))
             {
-                return false;
+                service.ReleaseThermalGridReadback();
+                thermalGrid = default;
+                thermalRootAup = double3.zero;
+                return;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!originAup.IsFinite())
-                return false;
-
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            if (!positionAup.IsFinite())
-                return false;
-
-            absoluteAup = positionAup.ToAbsoluteDouble3();
-            return math.all(math.isfinite(absoluteAup));
+            _thermalGridReadbackService = service;
+            _thermalGridReadbackHeld = true;
+            hasThermalGrid = 1;
         }
 
         private void TryResolveChemicalGrid(
@@ -1230,6 +1625,9 @@ namespace Hecton8.Physiology
 
         private static float ResolveGlobalQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float weight = HomeostasisBrain.GlobalQualityWeight;
             if (math.isfinite(weight))
                 return math.saturate(weight);
@@ -1310,9 +1708,53 @@ namespace Hecton8.Physiology
             locked++;
             if (!vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismPhysiologySignalsBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
             locked++;
-            if (!vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismCombatSignalsBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismExposureSignalsBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismDetailTelemetryRingBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
 
             _jobLocksHeld = true;
+            return true;
+        }
+
+        private bool TryAcquireMetabolismStateMutationGuard(IDataVault vault)
+        {
+            if (vault == null)
+                return false;
+
+            if (_metabolismStateMutationGuardHeld)
+                return true;
+
+            if (!vault.TryAcquireMutationGuard(ShinobuMetabolismVaultContract.MetabolismStateMutationGuardMask))
+                return false;
+
+            _metabolismStateMutationGuardHeld = true;
+            return true;
+        }
+
+        private void ReleaseMetabolismStateMutationGuard(IDataVault vault)
+        {
+            if (!_metabolismStateMutationGuardHeld)
+                return;
+
+            if (vault != null)
+                vault.ReleaseMutationGuard(ShinobuMetabolismVaultContract.MetabolismStateMutationGuardMask);
+            _metabolismStateMutationGuardHeld = false;
+        }
+
+        private bool TryLockSuitIntegrityReadBuffer(IDataVault vault)
+        {
+            if (vault == null || _suitIntegrityReadLockHeld)
+                return false;
+
+            if (!vault.TryLockBuffer(ShinobuSuitIntegrityConstants.StateBuffer, OwnerSystem))
+                return false;
+
+            _suitIntegrityReadLockHeld = true;
             return true;
         }
 
@@ -1350,6 +1792,29 @@ namespace Hecton8.Physiology
             _chemicalReadbackLocksHeld = false;
         }
 
+        private void UnlockSuitIntegrityReadBuffer()
+        {
+            if (!_suitIntegrityReadLockHeld)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(ShinobuSuitIntegrityConstants.StateBuffer, OwnerSystem);
+            _suitIntegrityReadLockHeld = false;
+        }
+
+        private void ReleaseThermalGridReadback()
+        {
+            if (!_thermalGridReadbackHeld)
+                return;
+
+            IThermodynamicsService service = _thermalGridReadbackService;
+            if (service != null)
+                service.ReleaseThermalGridReadback();
+            _thermalGridReadbackService = null;
+            _thermalGridReadbackHeld = false;
+        }
+
         private void UnlockJobBuffers()
         {
             if (!_jobLocksHeld)
@@ -1363,7 +1828,10 @@ namespace Hecton8.Physiology
 
         private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
         {
-            if (lockedCount >= 9) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismCombatSignalsBuffer, OwnerSystem);
+            if (lockedCount >= 12) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer, OwnerSystem);
+            if (lockedCount >= 11) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer, OwnerSystem);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismDetailTelemetryRingBuffer, OwnerSystem);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismExposureSignalsBuffer, OwnerSystem);
             if (lockedCount >= 8) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismPhysiologySignalsBuffer, OwnerSystem);
             if (lockedCount >= 7) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismToxinSamplesBuffer, OwnerSystem);
             if (lockedCount >= 6) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismTelemetryRingBuffer, OwnerSystem);
@@ -1489,6 +1957,7 @@ namespace Hecton8.Physiology
                    left.Flags == right.Flags;
         }
 
+#if UNITY_EDITOR
         private void ParseBiologicalProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<MetabolicSpeciesRuleDTO> rules)
         {
             int cursor = 0;
@@ -1506,6 +1975,55 @@ namespace Hecton8.Physiology
                 if (TryParseSpeciesRuleLine(bytes.Slice(lineStart, lineEnd - lineStart), out MetabolicSpeciesRuleDTO rule))
                     rules[writeIndex++] = ShinobuMetabolismJobMath.SanitizeRule(rule);
             }
+        }
+
+        private static int ParseSuitThermalProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<MetabolicSuitThermalProfileDTO> profiles)
+        {
+            int cursor = 0;
+            int writeIndex = 0;
+            while (cursor < bytes.Length && writeIndex < profiles.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < bytes.Length && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                    cursor++;
+
+                int lineEnd = cursor;
+                while (cursor < bytes.Length && (bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r'))
+                    cursor++;
+
+                if (TryParseSuitProfileLine(bytes.Slice(lineStart, lineEnd - lineStart), out MetabolicSuitThermalProfileDTO profile))
+                    profiles[writeIndex++] = ShinobuMetabolismJobMath.SanitizeSuitProfile(profile);
+            }
+
+            if (writeIndex <= 0)
+                return 0;
+
+            for (int i = writeIndex; i < profiles.Length; i++)
+                profiles[i] = default;
+
+            return writeIndex;
+        }
+        private static bool TryParseSuitProfileLine(ReadOnlySpan<byte> line, out MetabolicSuitThermalProfileDTO profile)
+        {
+            profile = default;
+            int cursor = 0;
+            if (!TryReadColumn(line, ref cursor, out ReadOnlySpan<byte> key))
+                return false;
+            if (key.Length == 0 || key[0] == (byte)'#')
+                return false;
+            if (IsSuitProfileHeader(key))
+                return false;
+
+            uint keyHash = HashLowerAscii(key);
+            profile = ShinobuMetabolismJobMath.BuildDefaultSuitProfile(keyHash);
+            profile.Flags = ShinobuMetabolismSuitProfileFlags.CsvProfile;
+
+            if (TryReadFloatColumn(line, ref cursor, out float value)) profile.ConductanceMultiplier = value;
+            if (TryReadFloatColumn(line, ref cursor, out value)) profile.Insulation01 = value;
+            if (TryReadFloatColumn(line, ref cursor, out value)) profile.ShiverMultiplier = value;
+            if (TryReadFloatColumn(line, ref cursor, out value)) profile.HeatHydrationMultiplier = value;
+            if (TryReadFloatColumn(line, ref cursor, out value)) profile.BatteryHeatingCelsiusPerSecond = value;
+            return true;
         }
 
         private static bool TryParseSpeciesRuleLine(ReadOnlySpan<byte> line, out MetabolicSpeciesRuleDTO rule)
@@ -1535,6 +2053,71 @@ namespace Hecton8.Physiology
             if (TryReadFloatColumn(line, ref cursor, out value)) rule.ToxicDamagePerSecond = value;
             if (TryReadFloatColumn(line, ref cursor, out value)) rule.RecoveryTemperatureCelsius = value;
             return true;
+        }
+
+        private static bool IsSuitProfileHeader(ReadOnlySpan<byte> key)
+        {
+            if (key.Length == 4)
+            {
+                bool isName = EqualsLower(key, 0, (byte)'n') &&
+                              EqualsLower(key, 1, (byte)'a') &&
+                              EqualsLower(key, 2, (byte)'m') &&
+                              EqualsLower(key, 3, (byte)'e');
+                bool isSuit = EqualsLower(key, 0, (byte)'s') &&
+                              EqualsLower(key, 1, (byte)'u') &&
+                              EqualsLower(key, 2, (byte)'i') &&
+                              EqualsLower(key, 3, (byte)'t');
+                return isName || isSuit;
+            }
+
+            if (key.Length == 7)
+                return EqualsLower(key, 0, (byte)'p') &&
+                       EqualsLower(key, 1, (byte)'r') &&
+                       EqualsLower(key, 2, (byte)'o') &&
+                       EqualsLower(key, 3, (byte)'f') &&
+                       EqualsLower(key, 4, (byte)'i') &&
+                       EqualsLower(key, 5, (byte)'l') &&
+                       EqualsLower(key, 6, (byte)'e');
+
+            if (key.Length == 9)
+                return EqualsLower(key, 0, (byte)'s') &&
+                       EqualsLower(key, 1, (byte)'u') &&
+                       EqualsLower(key, 2, (byte)'i') &&
+                       EqualsLower(key, 3, (byte)'t') &&
+                       key[4] == (byte)'_' &&
+                       EqualsLower(key, 5, (byte)'h') &&
+                       EqualsLower(key, 6, (byte)'a') &&
+                       EqualsLower(key, 7, (byte)'s') &&
+                       EqualsLower(key, 8, (byte)'h');
+
+            if (key.Length == 11)
+                return EqualsLower(key, 0, (byte)'p') &&
+                       EqualsLower(key, 1, (byte)'r') &&
+                       EqualsLower(key, 2, (byte)'o') &&
+                       EqualsLower(key, 3, (byte)'f') &&
+                       EqualsLower(key, 4, (byte)'i') &&
+                       EqualsLower(key, 5, (byte)'l') &&
+                       EqualsLower(key, 6, (byte)'e') &&
+                       key[7] == (byte)'_' &&
+                       EqualsLower(key, 8, (byte)'i') &&
+                       EqualsLower(key, 9, (byte)'d') &&
+                       EqualsLower(key, 10, (byte)'x');
+
+            if (key.Length == 12)
+                return EqualsLower(key, 0, (byte)'p') &&
+                       EqualsLower(key, 1, (byte)'r') &&
+                       EqualsLower(key, 2, (byte)'o') &&
+                       EqualsLower(key, 3, (byte)'f') &&
+                       EqualsLower(key, 4, (byte)'i') &&
+                       EqualsLower(key, 5, (byte)'l') &&
+                       EqualsLower(key, 6, (byte)'e') &&
+                       key[7] == (byte)'_' &&
+                       EqualsLower(key, 8, (byte)'h') &&
+                       EqualsLower(key, 9, (byte)'a') &&
+                       EqualsLower(key, 10, (byte)'s') &&
+                       EqualsLower(key, 11, (byte)'h');
+
+            return false;
         }
 
         private static bool IsSpeciesProfileHeader(ReadOnlySpan<byte> key)
@@ -1690,6 +2273,7 @@ namespace Hecton8.Physiology
         {
             return value == (byte)' ' || value == (byte)'\t';
         }
+#endif
 
         private void DumpBlackBox(NativeArray<MetabolicTelemetryEntry> telemetry)
         {
@@ -1698,6 +2282,16 @@ namespace Hecton8.Physiology
 
             if (!TryEnsureBlackBoxDirectory(_dumpPath))
                 return;
+
+            TryReadMetabolismVaultBuffer(
+                _dataVault,
+                in _detailTelemetryHandle,
+                ShinobuMetabolismConstants.MetabolismDetailTelemetryRingBuffer,
+                ShinobuMetabolismConstants.TelemetryFrameCount,
+                out NativeArray<MetabolicDetailTelemetryEntry> detailTelemetry);
+            uint detailStride = detailTelemetry.IsCreated && detailTelemetry.Length > 0
+                ? (uint)UnsafeUtility.SizeOf<MetabolicDetailTelemetryEntry>()
+                : 0u;
 
             string tempPath = _dumpPath + ".tmp";
             try
@@ -1711,12 +2305,18 @@ namespace Hecton8.Physiology
                     WriteUInt32LittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<MetabolicTelemetryEntry>());
                     WriteUInt32LittleEndian(header.Slice(20, 4), _simulationFrameCounter);
                     WriteUInt32LittleEndian(header.Slice(24, 4), (uint)math.max(0, _pendingTelemetryIndex));
-                    WriteUInt32LittleEndian(header.Slice(28, 4), 0u);
+                    WriteUInt32LittleEndian(header.Slice(28, 4), detailStride);
                     stream.Write(header);
 
                     byte* telemetryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
                     int byteLength = telemetry.Length * UnsafeUtility.SizeOf<MetabolicTelemetryEntry>();
                     stream.Write(new ReadOnlySpan<byte>(telemetryPtr, byteLength));
+                    if (detailStride > 0u)
+                    {
+                        byte* detailPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(detailTelemetry);
+                        int detailByteLength = detailTelemetry.Length * UnsafeUtility.SizeOf<MetabolicDetailTelemetryEntry>();
+                        stream.Write(new ReadOnlySpan<byte>(detailPtr, detailByteLength));
+                    }
                 }
 
                 ReplaceBlackBoxDump(tempPath, _dumpPath);
@@ -1847,7 +2447,10 @@ namespace Hecton8.Physiology
             ReleaseMetabolismVaultHandle(vault, ref _toxinSampleHandle, ShinobuMetabolismConstants.MetabolismToxinSamplesBuffer);
             ReleaseMetabolismVaultHandle(vault, ref _csvScratchHandle, ShinobuMetabolismConstants.MetabolismCsvScratchBuffer);
             ReleaseMetabolismVaultHandle(vault, ref _physiologySignalHandle, ShinobuMetabolismConstants.MetabolismPhysiologySignalsBuffer);
-            ReleaseMetabolismVaultHandle(vault, ref _combatSignalHandle, ShinobuMetabolismConstants.MetabolismCombatSignalsBuffer);
+            ReleaseMetabolismVaultHandle(vault, ref _exposureSignalHandle, ShinobuMetabolismConstants.MetabolismExposureSignalsBuffer);
+            ReleaseMetabolismVaultHandle(vault, ref _detailTelemetryHandle, ShinobuMetabolismConstants.MetabolismDetailTelemetryRingBuffer);
+            ReleaseMetabolismVaultHandle(vault, ref _suitProfileHandle, ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer);
+            ReleaseMetabolismVaultHandle(vault, ref _suitProfileIndexHandle, ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer);
         }
 
         private static void ReleaseMetabolismVaultHandle<T>(
@@ -1873,52 +2476,23 @@ namespace Hecton8.Physiology
             _toxinSampleHandle = default;
             _csvScratchHandle = default;
             _physiologySignalHandle = default;
-            _combatSignalHandle = default;
+            _exposureSignalHandle = default;
+            _detailTelemetryHandle = default;
+            _suitProfileHandle = default;
+            _suitProfileIndexHandle = default;
+            _suitIntegrityStateReadHandle = default;
+            _thermalGridReadbackService = null;
             _simulationAccumulator = 0f;
             _lastDispatcherTimeSeconds = -1d;
             _latestTelemetryValid = false;
+            _latestDetailTelemetryValid = false;
             _jobScheduled = false;
             _jobLocksHeld = false;
             _chemicalReadbackLocksHeld = false;
+            _suitIntegrityReadLockHeld = false;
+            _thermalGridReadbackHeld = false;
             _chemicalReadbackLockedCount = 0;
         }
 
-#if UNITY_EDITOR
-        private void OnDrawGizmos()
-        {
-            if (!drawDebugGizmos || debugGizmoRows <= 0 || !Application.isPlaying)
-                return;
-
-            IDataVault vault = _dataVault != null ? _dataVault : GlobalRegistry.DataVault;
-            TryReadMetabolismVaultBuffer(
-                vault,
-                in _stateHandle,
-                ShinobuMetabolismConstants.MetabolismStatesBuffer,
-                1,
-                out NativeArray<MetabolicStateDTO> states);
-            TryReadMetabolismVaultBuffer(
-                vault,
-                in _entityAupHandle,
-                ShinobuMetabolismConstants.MetabolismEntityAupsBuffer,
-                1,
-                out NativeArray<double3> aups);
-            if (!states.IsCreated || !aups.IsCreated)
-                return;
-
-            int count = math.min(math.min(states.Length, aups.Length), debugGizmoRows);
-            for (int i = 0; i < count; i++)
-            {
-                MetabolicStateDTO state = states[i];
-                double3 aup = aups[i];
-                if (!math.all(math.isfinite(aup)))
-                    continue;
-
-                Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(aup);
-                Handles.Label(
-                    runtimePosition,
-                    "Cal " + state.Calories.ToString("0.0") + "\nCore " + state.CoreTemperature.ToString("0.0"));
-            }
-        }
-#endif
     }
 }

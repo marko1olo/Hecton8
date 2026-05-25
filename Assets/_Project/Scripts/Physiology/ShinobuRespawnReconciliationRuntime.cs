@@ -24,12 +24,14 @@ namespace Hecton8.Physiology
     {
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const uint SystemHash = ShinobuRespawnConstants.SourceHash;
-        private const int JobBufferLockCount = 15;
+        private const int JobBufferLockCount = 16;
         private const uint DefaultPlayerHash = 0x504C5952u; // PLYR
         private const ulong DumpMagic = 0x5253504E53524745ul; // RSPNSRGE
         private const uint DumpVersion = 1u;
         private const string CsvRelativePath = "respawn_penalty_rules.csv";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_155.bin";
+        private const string MedicalBayCsvRelativePath = "medical_bay_profiles.csv";
+        private const string LegacyMedicalBayCsvRelativePath = "respawn_medical_bays.csv";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_329.bin";
         private const string LegacyDumpRelativePath = "Docs/AgentLogs/Dump_RECONCILIATION_SURGEON.bin";
 
         private static readonly double s_ticksToMicroseconds = 1000000.0 / Stopwatch.Frequency;
@@ -37,7 +39,7 @@ namespace Hecton8.Physiology
 
         private VaultGenerationHandle<RespawnStateDTO> _stateHandle;
         private VaultGenerationHandle<RespawnRequestDTO> _requestHandle;
-        private VaultGenerationHandle<MedicalBayRespawnPointDTO> _medicalBayHandle;
+        private VaultGenerationHandle<MedicalBayDTO> _medicalBayHandle;
         private VaultGenerationHandle<RespawnFadeDTO> _fadeHandle;
         private VaultGenerationHandle<RespawnTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<RespawnTelemetryCursor64> _telemetryCursorHandle;
@@ -50,6 +52,7 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<TissueCompartmentDTO> _tissueHandle;
         private VaultGenerationHandle<PhysiologyScalarsDTO> _scalarHandle;
         private VaultGenerationHandle<MetabolicStateDTO> _metabolismHandle;
+        private VaultGenerationHandle<GasPhysiologyStateDTO> _gasStateHandle;
         private VaultGenerationHandle<LockstepPlayerKinematicState> _playerKinematicHandle;
 
         private IDataVault _dataVault;
@@ -59,10 +62,16 @@ namespace Hecton8.Physiology
         private PostSimulationPhaseSystem _postSimulationPhase;
         private VisualSyncPhaseSystem _visualSyncPhase;
         private string _csvPath;
+        private string _medicalBayCsvPath;
+        private string _legacyMedicalBayCsvPath;
         private string _dumpPath;
         private string _legacyDumpPath;
         private uint _lastRequestSequence;
+        private uint _lastRequestPlayerHash;
+        private uint _lastCommittedTransformSequence;
+        private uint _mockLethalSequence;
         private uint _lastFrame;
+        private int _lastInventoryPenaltyResultSnapshotGeneration;
         private float _lastQualityWeight = 1f;
         private float _lastScheduleMicroseconds;
         private bool _registeredHotSwap;
@@ -71,6 +80,7 @@ namespace Hecton8.Physiology
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
         private bool _defaultsInitialized;
+        private bool _medicalBayCsvInitialized;
         private bool _penaltyCsvInitialized;
         private bool _jobScheduled;
         private bool _jobBuffersLocked;
@@ -89,7 +99,7 @@ namespace Hecton8.Physiology
             if (!Application.isPlaying || s_active != null)
                 return;
 
-            GameObject host = new GameObject("SHINOBU_155_RespawnReconciliation"); // COLD ALLOC: GameObject[1] - dispatcher host for Vault-only respawn reconciliation - owner: SHINOBU_155
+            GameObject host = new GameObject("SHINOBU_329_RespawnReconciliation"); // COLD ALLOC: GameObject[1] - dispatcher host for Vault-only respawn reconciliation - owner: SHINOBU_329
             host.hideFlags = HideFlags.DontSave;
             host.AddComponent<ShinobuRespawnReconciliationRuntime>();
         }
@@ -105,10 +115,12 @@ namespace Hecton8.Physiology
             s_active = this;
             string root = BuildProjectRootPathCold();
             _csvPath = Path.GetFullPath(Path.Combine(root, CsvRelativePath));
+            _medicalBayCsvPath = Path.GetFullPath(Path.Combine(root, MedicalBayCsvRelativePath));
+            _legacyMedicalBayCsvPath = Path.GetFullPath(Path.Combine(root, LegacyMedicalBayCsvRelativePath));
             _dumpPath = Path.GetFullPath(Path.Combine(root, DumpRelativePath));
             _legacyDumpPath = Path.GetFullPath(Path.Combine(root, LegacyDumpRelativePath));
 
-            // COLD ALLOC: IDispatcherSystem[4] - phase adapters registered into the dispatcher graph - owner: SHINOBU_155
+            // COLD ALLOC: IDispatcherSystem[4] - phase adapters registered into the dispatcher graph - owner: SHINOBU_329
             _preSimulationPhase = new PreSimulationPhaseSystem(this);
             _simulationPhase = new SimulationPhaseSystem(this);
             _postSimulationPhase = new PostSimulationPhaseSystem(this);
@@ -213,6 +225,14 @@ namespace Hecton8.Physiology
 
                 if (WriteRequestFromSignal(vault, in signal))
                     return;
+
+                if ((signal.Flags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u ||
+                    !math.all(math.isfinite(signal.DeathAUP)))
+                {
+                    TryWriteRejectedDeathTelemetry(vault, in signal);
+                    _lastRequestSequence = signal.Sequence;
+                    _lastRequestPlayerHash = 0u;
+                }
             }
         }
 
@@ -257,6 +277,14 @@ namespace Hecton8.Physiology
 
             try
             {
+                FindNearestMedicalBayJob nearestJob = default;
+                nearestJob.RespawnState = pointers.State;
+                nearestJob.RespawnRequest = pointers.Request;
+                nearestJob.MedicalBays = pointers.MedicalBays;
+                nearestJob.Tuning = pointers.Tuning;
+                nearestJob.MedicalBayCount = pointers.MedicalBayCount;
+                JobHandle nearestHandle = nearestJob.Schedule(dependsOn);
+
                 ResetPlayerPhysiologyJob resetJob = default;
                 resetJob.RespawnState = pointers.State;
                 resetJob.RespawnRequest = pointers.Request;
@@ -272,15 +300,19 @@ namespace Hecton8.Physiology
                 resetJob.Tissues = pointers.Tissues;
                 resetJob.Scalars = pointers.Scalars;
                 resetJob.Metabolism = pointers.Metabolism;
+                resetJob.GasState = pointers.GasState;
                 resetJob.PlayerKinematic = pointers.PlayerKinematic;
                 resetJob.InventoryCommands = SignalBus<InventoryCommandSignal>.ParallelWriter;
+                resetJob.InventoryCommandsBudget = SignalBus<InventoryCommandSignal>.ParallelWriterBudget;
+                resetJob.InventoryDeathAupSignals = SignalBus<InventoryRespawnDeathAupSignal>.ParallelWriter;
+                resetJob.InventoryDeathAupSignalsBudget = SignalBus<InventoryRespawnDeathAupSignal>.ParallelWriterBudget;
                 resetJob.MedicalBayCount = pointers.MedicalBayCount;
                 resetJob.TissueCount = pointers.TissueCount;
                 resetJob.PenaltyCapacity = pointers.PenaltyCapacity;
                 resetJob.Frame = context.Frame;
                 resetJob.GlobalQualityWeight = _lastQualityWeight;
                 resetJob.ScheduleMicroseconds = _lastScheduleMicroseconds;
-                JobHandle resetHandle = resetJob.Schedule(dependsOn);
+                JobHandle resetHandle = resetJob.Schedule(nearestHandle);
                 _activeHandle = resetHandle;
                 _jobScheduled = true;
                 H8Memory.RegisterActiveJob(OwnerSystem, _activeHandle);
@@ -313,6 +345,7 @@ namespace Hecton8.Physiology
             if (_jobScheduled)
                 return;
 
+            ConsumeInventoryPenaltyResultSignals();
             TryDumpFaultedTelemetry();
         }
 
@@ -359,7 +392,6 @@ namespace Hecton8.Physiology
         private bool WriteRequestFromSignal(IDataVault vault, in PlayerRespawnSignal signal)
         {
             if (!IsAdmissibleRequestSignal(in signal) ||
-                (signal.Flags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u ||
                 !math.all(math.isfinite(signal.DeathAUP)))
                 return false;
 
@@ -368,110 +400,123 @@ namespace Hecton8.Physiology
             if (!HasRequiredLength(requestArray, 1) || !HasRequiredLength(stateArray, 1))
                 return false;
 
-            double3 target = ResolveNearestMedicalBayAup(vault, signal.DeathAUP, out uint bayHash, out uint flags);
+            if (!TryPrimeDeathSequenceFade(vault, signal.Frame))
+                return false;
+
             uint playerHash = signal.PlayerHash != 0u ? signal.PlayerHash : DefaultPlayerHash;
+            bool invalidDeathAup = (signal.Flags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u;
+            uint invalidRouteFlags = invalidDeathAup
+                ? ShinobuRespawnFlags.NanDetected | ShinobuRespawnFlags.InvalidTargetAup
+                : 0u;
             RespawnRequestDTO request = default;
             request.DeathAUP = signal.DeathAUP;
             request.PlayerHash = playerHash;
             request.DamageHash = signal.DamageHash;
             request.Frame = signal.Frame;
             request.Sequence = signal.Sequence;
-            request.Flags = ShinobuRespawnFlags.PendingRequest | (flags & (ShinobuRespawnFlags.MockMedicalBay | ShinobuRespawnFlags.FallbackLifepod | ShinobuRespawnFlags.InvalidTargetAup));
-            request.MedicalBayHashID = bayHash;
+            request.Flags = ShinobuRespawnFlags.PendingRequest |
+                            ShinobuRespawnFlags.DeathSequenceBlackoutPrimed |
+                            invalidRouteFlags;
+            request.MedicalBayHashID = 0u;
             requestArray[0] = request;
 
-            RespawnStateDTO state = stateArray[0];
-            state.TargetAUP = target;
-            state.MedicalBayHashID = bayHash;
-            state.Flags = ShinobuRespawnFlags.RespawnActive | ShinobuRespawnFlags.PendingRequest | request.Flags;
+            RespawnStateDTO state = default;
+            state.TargetAUP = math.all(math.isfinite(signal.RespawnAUP)) ? signal.RespawnAUP : DefaultFallbackAup();
+            state.MedicalBayHashID = signal.MedicalBayHashID;
+            state.Flags = ShinobuRespawnFlags.RespawnActive |
+                          ShinobuRespawnFlags.PendingRequest |
+                          ShinobuRespawnFlags.DeathSequenceBlackoutPrimed |
+                          invalidRouteFlags;
             stateArray[0] = state;
             _lastRequestSequence = signal.Sequence;
-
-            RespawnSignalResolvedTargetTransformer transformer = default;
-            transformer.Sequence = signal.Sequence;
-            transformer.RespawnAUP = target;
-            transformer.MedicalBayHashID = bayHash;
-            transformer.Flags = PlayerRespawnSignalFlags.Requested |
-                                PlayerRespawnSignalFlags.Committed |
-                                PlayerRespawnSignalFlags.SuspendCollision |
-                                TranslateSignalFlags(flags);
-            transformer.SuspendCollisionFrames = 1;
-            SignalBus<PlayerRespawnSignal>.TransformSnapshot(transformer);
+            _lastRequestPlayerHash = playerHash;
+            _lastCommittedTransformSequence = 0u;
             return true;
         }
 
-        private double3 ResolveNearestMedicalBayAup(IDataVault vault, double3 deathAup, out uint bayHash, out uint flags)
+        private bool TryPrimeDeathSequenceFade(IDataVault vault, uint frame)
         {
-            flags = 0u;
-            bayHash = 0u;
+            NativeArray<RespawnFadeDTO> fadeArray = ResolveVaultBuffer(vault, in _fadeHandle);
             NativeArray<RespawnTuningDTO> tuningArray = ResolveVaultBuffer(vault, in _tuningHandle);
-            RespawnTuningDTO tuning = tuningArray.IsCreated && tuningArray.Length > 0 ? SanitizeTuning(tuningArray[0]) : CreateDefaultTuning();
-            double3 fallback = SanitizeAup(tuning.FallbackLifepodAUP);
-            double3 target = fallback;
-            uint rejectedCandidateFlags = 0u;
-            uint selectedCandidateFlags = 0u;
-            double bestSq = double.MaxValue;
-            double radius = math.max((double)tuning.MedicalBaySearchRadiusMeters, 0.0001d);
-            double maxSearchSq = radius * radius;
-            NativeArray<MedicalBayRespawnPointDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
-            if (bays.IsCreated)
+            if (!HasRequiredLength(fadeArray, 1) || !HasRequiredLength(tuningArray, 1))
+                return false;
+
+            float quality = ResolveQualityWeight();
+            RespawnTuningDTO tuning = SanitizeTuning(tuningArray[0]);
+            float fadeRate = math.lerp(
+                math.max(0.0001f, tuning.HighQualityFadeRate),
+                math.max(0.0001f, tuning.LowQualityFadeRate),
+                1f - quality);
+            float detailGate = Smooth01(math.saturate((quality - 0.18f) * 1.6129032f));
+            RespawnFadeDTO fade = default;
+            fade.DeathFadeIntensity = 1f;
+            fade.FadeRate = fadeRate;
+            fade.ChromaticAberration01 = math.saturate(math.lerp(0f, 0.85f, detailGate));
+            fade.FilmGrain01 = math.saturate(math.lerp(0.25f, 1f, quality));
+            fade.GlobalQualityWeight = quality;
+            fade.Frame = frame;
+            fade.Flags = ShinobuRespawnFlags.RespawnActive |
+                         ShinobuRespawnFlags.PendingRequest |
+                         ShinobuRespawnFlags.DeathSequenceBlackoutPrimed;
+            fadeArray[0] = fade;
+            return true;
+        }
+
+        private bool TryWriteRejectedDeathTelemetry(IDataVault vault, in PlayerRespawnSignal signal)
+        {
+            if (vault == null ||
+                !IsVaultDescriptorCreated(in _telemetryHandle) ||
+                !IsVaultDescriptorCreated(in _telemetryCursorHandle))
             {
-                for (int i = 0; i < bays.Length; i++)
+                return false;
+            }
+
+            int locked = 0;
+            if (!vault.TryLockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem))
+                return false;
+
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem))
+            {
+                vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
+                return false;
+            }
+
+            locked++;
+            try
+            {
+                NativeArray<RespawnTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
+                NativeArray<RespawnTelemetryCursor64> cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+                if (!HasRequiredLength(telemetry, ShinobuRespawnConstants.TelemetryFrameCount) ||
+                    !HasRequiredLength(cursor, 1))
                 {
-                    MedicalBayRespawnPointDTO bay = bays[i];
-                    if (!math.all(math.isfinite(bay.BayAUP)))
-                    {
-                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
-                        continue;
-                    }
-
-                    if (!ValidateMedicalBay(in bay, tuning.ValidationClearanceMeters))
-                    {
-                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
-                        continue;
-                    }
-
-                    double3 delta = bay.BayAUP - deathAup;
-                    if (!math.all(math.isfinite(delta)))
-                    {
-                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
-                        continue;
-                    }
-
-                    float distanceSq = math.lengthsq(AupDeltaToFloat3(delta));
-                    if (!math.isfinite(distanceSq))
-                    {
-                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
-                        continue;
-                    }
-
-                    if ((double)distanceSq > maxSearchSq)
-                    {
-                        rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
-                        continue;
-                    }
-
-                    if (distanceSq >= bestSq)
-                        continue;
-
-                    bestSq = distanceSq;
-                    target = bay.BayAUP;
-                    bayHash = bay.MedicalBayHashID;
-                    selectedCandidateFlags = bay.Flags & ShinobuRespawnFlags.MockMedicalBay;
+                    return false;
                 }
-            }
 
-            if (bayHash == 0u || !math.all(math.isfinite(target)))
-            {
-                target = fallback;
-                flags |= rejectedCandidateFlags | ShinobuRespawnFlags.FallbackLifepod;
-            }
-            else
-            {
-                flags |= selectedCandidateFlags;
-            }
+                RespawnTelemetryCursor64 telemetryCursor = cursor[0];
+                int index = telemetryCursor.Cursor % ShinobuRespawnConstants.TelemetryFrameCount;
+                if (index < 0)
+                    index += ShinobuRespawnConstants.TelemetryFrameCount;
 
-            return target;
+                uint flags = ShinobuRespawnFlags.NanDetected | ShinobuRespawnFlags.InvalidTargetAup;
+                RespawnTelemetryEntry entry = default;
+                entry.DeathAUP = SanitizeAup(signal.DeathAUP);
+                entry.RespawnAUP = DefaultFallbackAup();
+                entry.CauseHash = signal.DamageHash;
+                entry.Frame = signal.Frame;
+                entry.ReconcileMicroseconds = 0f;
+                entry.Flags = flags;
+                telemetry[index] = entry;
+                telemetryCursor.Cursor = (index + 1) % ShinobuRespawnConstants.TelemetryFrameCount;
+                telemetryCursor.Flags = flags;
+                cursor[0] = telemetryCursor;
+                return true;
+            }
+            finally
+            {
+                if (locked >= 2) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem);
+                if (locked >= 1) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
+            }
         }
 
         private bool EnsureVaultState()
@@ -512,6 +557,7 @@ namespace Hecton8.Physiology
                 TryGetExistingVaultDescriptor(vault, BufferID.ShinobuTissueCompartments, OwnerSystem, 1, out _tissueHandle) &&
                 TryGetExistingVaultDescriptor(vault, BufferID.ShinobuPhysiologyScalars, OwnerSystem, 1, out _scalarHandle) &&
                 TryGetExistingVaultDescriptor(vault, ShinobuMetabolismConstants.MetabolismStatesBuffer, OwnerSystem, 1, out _metabolismHandle) &&
+                TryGetExistingVaultDescriptor(vault, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem, 1, out _gasStateHandle) &&
                 TryGetExistingVaultDescriptor(vault, BufferID.PlayerKinematicState, OwnerSystem, 1, out _playerKinematicHandle);
             if (!created)
             {
@@ -530,6 +576,7 @@ namespace Hecton8.Physiology
                    IsVaultDescriptorOwnedBy(in _tissueHandle, OwnerSystem) &&
                    IsVaultDescriptorOwnedBy(in _scalarHandle, OwnerSystem) &&
                    IsVaultDescriptorOwnedBy(in _metabolismHandle, OwnerSystem) &&
+                   IsVaultDescriptorOwnedBy(in _gasStateHandle, OwnerSystem) &&
                    IsVaultDescriptorOwnedBy(in _playerKinematicHandle, OwnerSystem);
         }
 
@@ -555,6 +602,7 @@ namespace Hecton8.Physiology
                    IsVaultDescriptorResolvableByOwner(vault, in _tissueHandle, OwnerSystem, 1) &&
                    IsVaultDescriptorResolvableByOwner(vault, in _scalarHandle, OwnerSystem, 1) &&
                    IsVaultDescriptorResolvableByOwner(vault, in _metabolismHandle, OwnerSystem, 1) &&
+                   IsVaultDescriptorResolvableByOwner(vault, in _gasStateHandle, OwnerSystem, 1) &&
                    IsVaultDescriptorResolvableByOwner(vault, in _playerKinematicHandle, OwnerSystem, 1);
         }
 
@@ -588,6 +636,7 @@ namespace Hecton8.Physiology
                    IsVaultGenerationCurrentByOwner(vault, in _tissueHandle, OwnerSystem) &&
                    IsVaultGenerationCurrentByOwner(vault, in _scalarHandle, OwnerSystem) &&
                    IsVaultGenerationCurrentByOwner(vault, in _metabolismHandle, OwnerSystem) &&
+                   IsVaultGenerationCurrentByOwner(vault, in _gasStateHandle, OwnerSystem) &&
                    IsVaultGenerationCurrentByOwner(vault, in _playerKinematicHandle, OwnerSystem);
         }
 
@@ -706,7 +755,7 @@ namespace Hecton8.Physiology
             if (vault.IsAllocationLocked)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
             return IsOwnedVaultDescriptor(in handle) &&
                    TryResolveVaultBuffer(vault, in handle, out NativeArray<T> created) &&
                    created.IsCreated &&
@@ -782,7 +831,7 @@ namespace Hecton8.Physiology
             NativeArray<RespawnRequestDTO> request = ResolveVaultBuffer(vault, in _requestHandle);
             NativeArray<RespawnTelemetryCursor64> cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
             NativeArray<int> count = ResolveVaultBuffer(vault, in _penaltyRuleCountHandle);
-            NativeArray<MedicalBayRespawnPointDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
+            NativeArray<MedicalBayDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
             if (!HasRequiredLength(tuning, 1) ||
                 !HasRequiredLength(fade, 1) ||
                 !HasRequiredLength(state, 1) ||
@@ -807,7 +856,6 @@ namespace Hecton8.Physiology
             GenerateMockRespawnPointsJob mockJob = default;
             mockJob.MedicalBays = bays;
             mockJob.FallbackLifepodAUP = defaultTuning.FallbackLifepodAUP;
-            mockJob.ValidationClearanceMeters = defaultTuning.ValidationClearanceMeters;
             mockJob.Run(bays.Length);
 
             _defaultsInitialized = true;
@@ -821,10 +869,17 @@ namespace Hecton8.Physiology
             if (!_defaultsInitialized)
                 return false;
 
+#if UNITY_EDITOR
+            if (_defaultsInitialized && !_medicalBayCsvInitialized)
+            {
+                _medicalBayCsvInitialized = TryLoadMedicalBayCsv();
+            }
+
             if (_defaultsInitialized && !_penaltyCsvInitialized)
             {
                 _penaltyCsvInitialized = TryLoadPenaltyCsv();
             }
+#endif
 
             return true;
         }
@@ -834,7 +889,7 @@ namespace Hecton8.Physiology
             pointers = default;
             NativeArray<RespawnStateDTO> state = ResolveVaultBuffer(vault, in _stateHandle);
             NativeArray<RespawnRequestDTO> request = ResolveVaultBuffer(vault, in _requestHandle);
-            NativeArray<MedicalBayRespawnPointDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
+            NativeArray<MedicalBayDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
             NativeArray<RespawnFadeDTO> fade = ResolveVaultBuffer(vault, in _fadeHandle);
             NativeArray<RespawnTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
             NativeArray<RespawnTelemetryCursor64> cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
@@ -846,6 +901,7 @@ namespace Hecton8.Physiology
             NativeArray<TissueCompartmentDTO> tissues = ResolveVaultBuffer(vault, in _tissueHandle);
             NativeArray<PhysiologyScalarsDTO> scalars = ResolveVaultBuffer(vault, in _scalarHandle);
             NativeArray<MetabolicStateDTO> metabolism = ResolveVaultBuffer(vault, in _metabolismHandle);
+            NativeArray<GasPhysiologyStateDTO> gasState = ResolveVaultBuffer(vault, in _gasStateHandle);
             NativeArray<LockstepPlayerKinematicState> kinematic = ResolveVaultBuffer(vault, in _playerKinematicHandle);
 
             if (!HasRequiredLength(state, 1) ||
@@ -862,6 +918,7 @@ namespace Hecton8.Physiology
                 !HasRequiredLength(tissues, 1) ||
                 !HasRequiredLength(scalars, 1) ||
                 !HasRequiredLength(metabolism, 1) ||
+                !HasRequiredLength(gasState, 1) ||
                 !HasRequiredLength(kinematic, 1))
             {
                 return false;
@@ -869,7 +926,7 @@ namespace Hecton8.Physiology
 
             pointers.State = (RespawnStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state);
             pointers.Request = (RespawnRequestDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(request);
-            pointers.MedicalBays = (MedicalBayRespawnPointDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bays);
+            pointers.MedicalBays = (MedicalBayDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bays);
             pointers.Fade = (RespawnFadeDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fade);
             pointers.Telemetry = (RespawnTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetry);
             pointers.TelemetryCursor = (RespawnTelemetryCursor64*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(cursor);
@@ -881,6 +938,7 @@ namespace Hecton8.Physiology
             pointers.Tissues = (TissueCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tissues);
             pointers.Scalars = (PhysiologyScalarsDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scalars);
             pointers.Metabolism = (MetabolicStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(metabolism);
+            pointers.GasState = (GasPhysiologyStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(gasState);
             pointers.PlayerKinematic = (LockstepPlayerKinematicState*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(kinematic);
             pointers.MedicalBayCount = bays.Length;
             pointers.TissueCount = tissues.Length;
@@ -925,6 +983,7 @@ namespace Hecton8.Physiology
             if (!TryLockJobBuffer(vault, BufferID.ShinobuTissueCompartments, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
             if (!TryLockJobBuffer(vault, BufferID.ShinobuPhysiologyScalars, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
             if (!TryLockJobBuffer(vault, ShinobuMetabolismConstants.MetabolismStatesBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
             if (!TryLockJobBuffer(vault, BufferID.PlayerKinematicState, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
 
             _jobBuffersLocked = true;
@@ -956,7 +1015,8 @@ namespace Hecton8.Physiology
             if (vault == null)
                 return;
 
-            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.PlayerKinematicState, OwnerSystem);
+            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.PlayerKinematicState, OwnerSystem);
+            if (lockedCount >= 15) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem);
             if (lockedCount >= 14) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismStatesBuffer, OwnerSystem);
             if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyScalars, OwnerSystem);
             if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuTissueCompartments, OwnerSystem);
@@ -973,6 +1033,184 @@ namespace Hecton8.Physiology
             if (lockedCount >= 1) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnStateBuffer, OwnerSystem);
         }
 
+#if UNITY_EDITOR
+        private bool TryLoadMedicalBayCsv()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultDescriptorCreated(in _csvScratchHandle) ||
+                !IsVaultDescriptorCreated(in _medicalBayHandle))
+            {
+                return false;
+            }
+
+            string medicalBayPath = File.Exists(_medicalBayCsvPath) ? _medicalBayCsvPath : _legacyMedicalBayCsvPath;
+            if (!File.Exists(medicalBayPath))
+                return true;
+
+            NativeArray<byte> scratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
+            NativeArray<MedicalBayDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
+            if (!HasRequiredLength(scratch, ShinobuRespawnConstants.CsvScratchBytes) ||
+                !HasRequiredLength(bays, ShinobuRespawnConstants.MockMedicalBayCapacity))
+            {
+                return false;
+            }
+
+            using FileStream stream = new FileStream(medicalBayPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+            Span<byte> scratchSpan = new Span<byte>(scratchPtr, scratch.Length);
+            int read = stream.Read(scratchSpan);
+            return ParseMedicalBayCsv(scratchSpan.Slice(0, read), bays) > 0;
+        }
+
+        private static int ParseMedicalBayCsv(ReadOnlySpan<byte> bytes, NativeArray<MedicalBayDTO> bays)
+        {
+            int cursor = 0;
+            int written = 0;
+            while (cursor < bytes.Length && written < bays.Length)
+            {
+                SkipLineNoise(bytes, ref cursor);
+                if (cursor >= bytes.Length)
+                    break;
+
+                ReadOnlySpan<byte> hashToken = ReadCsvToken(bytes, ref cursor);
+                if (cursor < bytes.Length && bytes[cursor] == (byte)',')
+                    cursor++;
+                if (IsMedicalBayHeaderToken(hashToken))
+                {
+                    SkipCsvLine(bytes, ref cursor);
+                    continue;
+                }
+
+                uint baseHash = TryParseHashToken(hashToken, out uint parsedHash) ? parsedHash : HashToken(hashToken);
+                if (!ReadDoubleToken(bytes, ref cursor, out double x) ||
+                    !ReadDoubleToken(bytes, ref cursor, out double y) ||
+                    !ReadDoubleToken(bytes, ref cursor, out double z))
+                {
+                    SkipCsvLine(bytes, ref cursor);
+                    continue;
+                }
+
+                byte active = 1;
+                byte powered = 1;
+                byte priority = 0;
+                if (cursor < bytes.Length && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                {
+                    active = ReadBoolToken(bytes, ref cursor);
+                }
+
+                if (cursor < bytes.Length && bytes[cursor] == (byte)',')
+                {
+                    cursor++;
+                    powered = ReadBoolToken(bytes, ref cursor);
+                }
+
+                if (cursor < bytes.Length && bytes[cursor] == (byte)',')
+                {
+                    cursor++;
+                    priority = ReadByteToken(bytes, ref cursor);
+                }
+
+                SkipCsvLine(bytes, ref cursor);
+                double3 aup = new double3(x, y, z);
+                if (baseHash == 0u || !math.all(math.isfinite(aup)))
+                    continue;
+
+                MedicalBayDTO bay = default;
+                bay.BayAUP = aup;
+                bay.AssociatedBaseHash = baseHash;
+                bay.Flags = 0u;
+                if (active != 0)
+                    bay.Flags |= ShinobuRespawnFlags.MedicalBayActive;
+                if (powered != 0)
+                    bay.Flags |= ShinobuRespawnFlags.MedicalBayPowered;
+                bay.Flags |= ((uint)priority << ShinobuRespawnConstants.MedicalBayPriorityShift) &
+                             ShinobuRespawnConstants.MedicalBayPriorityMask;
+                bays[written++] = bay;
+            }
+
+            return written;
+        }
+#endif
+
+        private void ConsumeInventoryPenaltyResultSignals()
+        {
+            int snapshotGeneration = SignalBus<InventoryRespawnPenaltyResultSignal>.SnapshotGeneration;
+            if (snapshotGeneration == _lastInventoryPenaltyResultSnapshotGeneration)
+                return;
+
+            _lastInventoryPenaltyResultSnapshotGeneration = snapshotGeneration;
+            ReadOnlySpan<InventoryRespawnPenaltyResultSignal> signals = SignalBus<InventoryRespawnPenaltyResultSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
+            for (int i = 0; i < signals.Length; i++)
+            {
+                InventoryRespawnPenaltyResultSignal signal = signals[i];
+                if (signal.Sequence == 0u ||
+                    signal.Sequence != _lastRequestSequence ||
+                    (_lastRequestPlayerHash != 0u &&
+                     signal.InventoryHash != 0u &&
+                     signal.InventoryHash != _lastRequestPlayerHash))
+                {
+                    continue;
+                }
+
+                TryWriteDroppedItemTelemetry(signal.DroppedCount);
+            }
+        }
+
+        private bool TryWriteDroppedItemTelemetry(uint droppedCount)
+        {
+            IDataVault vault = _dataVault;
+            if (!HasHotVaultState(vault) || _jobScheduled)
+                return false;
+
+            int locked = 0;
+            if (!vault.TryLockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem))
+                return false;
+
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem))
+            {
+                vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
+                return false;
+            }
+
+            locked++;
+            try
+            {
+                NativeArray<RespawnTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
+                NativeArray<RespawnTelemetryCursor64> cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+                if (!HasRequiredLength(telemetry, ShinobuRespawnConstants.TelemetryFrameCount) ||
+                    !HasRequiredLength(cursor, 1))
+                {
+                    return false;
+                }
+
+                int index = cursor[0].Cursor - 1;
+                if (index < 0)
+                    index += telemetry.Length;
+
+                if ((uint)index >= (uint)telemetry.Length)
+                    return false;
+
+                RespawnTelemetryEntry entry = telemetry[index];
+                uint encodedCount = (math.min(droppedCount, 255u)) << ShinobuRespawnConstants.TelemetryDroppedItemShift;
+                entry.Flags = (entry.Flags & ~(ShinobuRespawnConstants.TelemetryDroppedItemMask | ShinobuRespawnFlags.PenaltyApplied)) | encodedCount;
+                if (droppedCount > 0u)
+                    entry.Flags |= ShinobuRespawnFlags.PenaltyApplied;
+                telemetry[index] = entry;
+                return true;
+            }
+            finally
+            {
+                if (locked >= 2) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem);
+                if (locked >= 1) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
+            }
+        }
+
+#if UNITY_EDITOR
         private bool TryLoadPenaltyCsv()
         {
             IDataVault vault = _dataVault;
@@ -1054,6 +1292,7 @@ namespace Hecton8.Physiology
 
             return written;
         }
+#endif
 
         private void TryDumpFaultedTelemetry()
         {
@@ -1144,6 +1383,38 @@ namespace Hecton8.Physiology
             return true;
         }
 
+        public static bool TryReadEditorTelemetry(out RespawnTelemetryEntry latest, out int cursorIndex)
+        {
+            latest = default;
+            cursorIndex = 0;
+            ShinobuRespawnReconciliationRuntime runtime = s_active;
+            if (runtime == null)
+                return false;
+
+            IDataVault vault = runtime._dataVault;
+            if (!runtime.HasHotVaultState(vault) || runtime._jobScheduled)
+                return false;
+
+            NativeArray<RespawnTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in runtime._telemetryHandle);
+            NativeArray<RespawnTelemetryCursor64> cursor = ResolveVaultBuffer(vault, in runtime._telemetryCursorHandle);
+            if (!HasRequiredLength(telemetry, ShinobuRespawnConstants.TelemetryFrameCount) ||
+                !HasRequiredLength(cursor, 1))
+            {
+                return false;
+            }
+
+            cursorIndex = cursor[0].Cursor;
+            int latestIndex = cursorIndex - 1;
+            if (latestIndex < 0)
+                latestIndex += telemetry.Length;
+
+            if ((uint)latestIndex >= (uint)telemetry.Length)
+                return false;
+
+            latest = telemetry[latestIndex];
+            return latest.Frame != 0u || latest.Flags != 0u;
+        }
+
         public static bool TryWriteEditorTuning(in RespawnTuningDTO tuning)
         {
             ShinobuRespawnReconciliationRuntime runtime = s_active;
@@ -1161,6 +1432,7 @@ namespace Hecton8.Physiology
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryReloadPenaltyCsvFromEditor()
         {
             ShinobuRespawnReconciliationRuntime runtime = s_active;
@@ -1174,6 +1446,20 @@ namespace Hecton8.Physiology
             return loaded;
         }
 
+        public static bool TryReloadMedicalBayCsvFromEditor()
+        {
+            ShinobuRespawnReconciliationRuntime runtime = s_active;
+            if (runtime == null ||
+                !runtime.EnsureVaultState() ||
+                !runtime.FinalizeCompletedEditorFenceForMutation())
+                return false;
+
+            bool loaded = runtime.TryLoadMedicalBayCsv();
+            runtime._medicalBayCsvInitialized = loaded;
+            return loaded;
+        }
+#endif
+
         public static bool TryDumpBlackBoxForEditor()
         {
             ShinobuRespawnReconciliationRuntime runtime = s_active;
@@ -1184,6 +1470,50 @@ namespace Hecton8.Physiology
                    runtime.TryDumpTelemetry(runtime._legacyDumpPath, 0u);
         }
 
+        public static bool TryInjectMockLethalDamageFromEditor()
+        {
+            ShinobuRespawnReconciliationRuntime runtime = s_active;
+            if (runtime == null ||
+                !runtime.EnsureVaultState() ||
+                !runtime.FinalizeCompletedEditorFenceForMutation())
+                return false;
+
+            IDataVault vault = runtime._dataVault;
+            NativeArray<MedicalBayDTO> bays = ResolveVaultBuffer(vault, in runtime._medicalBayHandle);
+            NativeArray<RespawnTuningDTO> tuning = ResolveVaultBuffer(vault, in runtime._tuningHandle);
+            if (!HasRequiredLength(bays, ShinobuRespawnConstants.MockMedicalBayCapacity) ||
+                !HasRequiredLength(tuning, 1))
+            {
+                return false;
+            }
+
+            ConfigureSignalLanes();
+            uint sequence = ++runtime._mockLethalSequence;
+            if (sequence == 0u)
+                sequence = ++runtime._mockLethalSequence;
+
+            GenerateMockLethalDamageJob job = default;
+            job.MedicalBays = bays;
+            job.RespawnSignals = SignalBus<PlayerRespawnSignal>.ParallelWriter;
+            job.RespawnSignalsBudget = SignalBus<PlayerRespawnSignal>.ParallelWriterBudget;
+            job.DeathAUP = SanitizeAup(tuning[0].FallbackLifepodAUP) + new double3(37d, -11d, -29d);
+            job.FallbackLifepodAUP = tuning[0].FallbackLifepodAUP;
+            job.Frame = TimeSliceScheduler.CurrentFrameId;
+            job.Sequence = sequence;
+            job.PlayerHash = DefaultPlayerHash;
+            job.DamageHash = 0x4D4F434Bu; // MOCK
+            job.Intensity01 = 1f;
+            job.Run();
+
+            PlayerFatalPressureSignal fatal = default;
+            fatal.SourceId = ShinobuRespawnConstants.SourceHash;
+            fatal.Frame = job.Frame;
+            fatal.Intensity01 = math.saturate(math.isfinite(job.Intensity01) ? job.Intensity01 : 1f);
+            fatal.Flags = 1;
+            SignalBus<PlayerFatalPressureSignal>.TryPush(in fatal);
+            return true;
+        }
+
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
@@ -1191,20 +1521,22 @@ namespace Hecton8.Physiology
             if (vault == null || !IsVaultDescriptorCreated(in _medicalBayHandle))
                 return;
 
-            NativeArray<MedicalBayRespawnPointDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
+            NativeArray<MedicalBayDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
             if (!HasRequiredLength(bays, 1))
                 return;
 
-            Handles.color = Color.green;
-            Gizmos.color = Color.green;
+            TryDrawLastRespawnRouteGizmo(vault);
             for (int i = 0; i < bays.Length; i++)
             {
-                MedicalBayRespawnPointDTO bay = bays[i];
-                if (bay.MedicalBayHashID == 0u || !math.all(math.isfinite(bay.BayAUP)))
+                MedicalBayDTO bay = bays[i];
+                if (bay.AssociatedBaseHash == 0u || !math.all(math.isfinite(bay.BayAUP)))
                     continue;
 
+                Color color = ValidateMedicalBay(in bay) ? Color.green : Color.red;
+                Handles.color = color;
+                Gizmos.color = color;
                 Vector3 center = HectonFloatingOrigin.ToRuntimePosition(bay.BayAUP);
-                float radius = math.max(0.5f, bay.ClearanceMeters);
+                float radius = 1.5f;
                 Handles.DrawWireDisc(center, Vector3.up, radius);
                 Handles.DrawWireDisc(center + Vector3.up * 2f, Vector3.up, radius);
                 Vector3 xOffset = default;
@@ -1218,6 +1550,28 @@ namespace Hecton8.Physiology
                 Handles.DrawLine(center + zOffset, center + zOffset + yOffset);
                 Handles.DrawLine(center - zOffset, center - zOffset + yOffset);
             }
+        }
+
+        private void TryDrawLastRespawnRouteGizmo(IDataVault vault)
+        {
+            NativeArray<RespawnRequestDTO> requestArray = ResolveVaultBuffer(vault, in _requestHandle);
+            NativeArray<RespawnStateDTO> stateArray = ResolveVaultBuffer(vault, in _stateHandle);
+            if (!HasRequiredLength(requestArray, 1) || !HasRequiredLength(stateArray, 1))
+                return;
+
+            RespawnRequestDTO request = requestArray[0];
+            RespawnStateDTO state = stateArray[0];
+            if (request.Sequence == 0u ||
+                !math.all(math.isfinite(request.DeathAUP)) ||
+                !math.all(math.isfinite(state.TargetAUP)))
+            {
+                return;
+            }
+
+            Handles.color = Color.yellow;
+            Handles.DrawLine(
+                HectonFloatingOrigin.ToRuntimePosition(request.DeathAUP),
+                HectonFloatingOrigin.ToRuntimePosition(state.TargetAUP));
         }
 #endif
 
@@ -1234,6 +1588,7 @@ namespace Hecton8.Physiology
 
             _jobScheduled = false;
             UnlockJobBuffers();
+            TryTransformCommittedRespawnSignal();
             return true;
         }
 
@@ -1247,6 +1602,45 @@ namespace Hecton8.Physiology
 
             _jobScheduled = false;
             UnlockJobBuffers();
+            TryTransformCommittedRespawnSignal();
+        }
+
+        private bool TryTransformCommittedRespawnSignal()
+        {
+            IDataVault vault = _dataVault;
+            if (!HasHotVaultState(vault))
+                return false;
+
+            NativeArray<RespawnRequestDTO> requestArray = ResolveVaultBuffer(vault, in _requestHandle);
+            NativeArray<RespawnStateDTO> stateArray = ResolveVaultBuffer(vault, in _stateHandle);
+            if (!HasRequiredLength(requestArray, 1) || !HasRequiredLength(stateArray, 1))
+                return false;
+
+            RespawnRequestDTO request = requestArray[0];
+            RespawnStateDTO state = stateArray[0];
+            if (request.Sequence == 0u ||
+                request.Sequence == _lastCommittedTransformSequence ||
+                (request.Flags & ShinobuRespawnFlags.Committed) == 0u ||
+                (state.Flags & ShinobuRespawnFlags.Committed) == 0u ||
+                !math.all(math.isfinite(request.DeathAUP)) ||
+                !math.all(math.isfinite(state.TargetAUP)))
+            {
+                return false;
+            }
+
+            uint routeFlags = request.Flags | state.Flags;
+            RespawnSignalResolvedTargetTransformer transformer = default;
+            transformer.Sequence = request.Sequence;
+            transformer.RespawnAUP = state.TargetAUP;
+            transformer.MedicalBayHashID = state.MedicalBayHashID;
+            transformer.Flags = PlayerRespawnSignalFlags.Requested |
+                                PlayerRespawnSignalFlags.Committed |
+                                PlayerRespawnSignalFlags.SuspendCollision |
+                                TranslateSignalFlags(routeFlags);
+            transformer.SuspendCollisionFrames = 1;
+            SignalBus<PlayerRespawnSignal>.TransformSnapshot(transformer);
+            _lastCommittedTransformSequence = request.Sequence;
+            return true;
         }
 
         private bool FinalizeCompletedEditorFenceForMutation()
@@ -1347,14 +1741,20 @@ namespace Hecton8.Physiology
             _tissueHandle = default;
             _scalarHandle = default;
             _metabolismHandle = default;
+            _gasStateHandle = default;
             _playerKinematicHandle = default;
             _defaultsInitialized = false;
+            _medicalBayCsvInitialized = false;
             _penaltyCsvInitialized = false;
             _respawnDearLieVisualActive = false;
+            _lastRequestSequence = 0u;
+            _lastRequestPlayerHash = 0u;
+            _lastCommittedTransformSequence = 0u;
         }
 
         private static void ConfigureSignalLanes()
         {
+            SignalBus<PlayerFatalPressureSignal>.EnsureInitialized();
             SignalBus<PlayerRespawnSignal>.Configure(
                 PlayerRespawnSignal.ExpectedCapacity,
                 maxFrameSignals: PlayerRespawnSignal.MaxFrameSignals,
@@ -1362,6 +1762,18 @@ namespace Hecton8.Physiology
                 laneHash: PlayerRespawnSignal.LaneHash);
             SignalBus<PlayerRespawnSignal>.EnsureInitialized();
             SignalBus<InventoryCommandSignal>.EnsureInitialized();
+            SignalBus<InventoryRespawnDeathAupSignal>.Configure(
+                InventoryRespawnDeathAupSignal.ExpectedCapacity,
+                maxFrameSignals: InventoryRespawnDeathAupSignal.MaxFrameSignals,
+                lowTierFrameSignals: InventoryRespawnDeathAupSignal.LowTierFrameSignals,
+                laneHash: InventoryRespawnDeathAupSignal.LaneHash);
+            SignalBus<InventoryRespawnDeathAupSignal>.EnsureInitialized();
+            SignalBus<InventoryRespawnPenaltyResultSignal>.Configure(
+                InventoryRespawnPenaltyResultSignal.ExpectedCapacity,
+                maxFrameSignals: InventoryRespawnPenaltyResultSignal.MaxFrameSignals,
+                lowTierFrameSignals: InventoryRespawnPenaltyResultSignal.LowTierFrameSignals,
+                laneHash: InventoryRespawnPenaltyResultSignal.LaneHash);
+            SignalBus<InventoryRespawnPenaltyResultSignal>.EnsureInitialized();
         }
 
         private static RespawnTuningDTO CreateDefaultTuning()
@@ -1379,19 +1791,16 @@ namespace Hecton8.Physiology
             return tuning;
         }
 
-        private static bool ValidateMedicalBay(in MedicalBayRespawnPointDTO bay, float clearanceMeters)
+        private static bool ValidateMedicalBay(in MedicalBayDTO bay)
         {
-            if (bay.MedicalBayHashID == 0u)
+            if (bay.AssociatedBaseHash == 0u)
                 return false;
 
-            double3 delta = bay.BayAUP - bay.NearestTerrainAUP;
-            if (!math.all(math.isfinite(delta)))
+            if (!math.all(math.isfinite(bay.BayAUP)))
                 return false;
 
-            float3 local = AupDeltaToFloat3(delta);
-            float distanceSq = math.lengthsq(local);
-            float clearance = math.max(math.max(clearanceMeters, bay.ClearanceMeters), 0.25f);
-            return math.isfinite(distanceSq) && distanceSq >= clearance * clearance;
+            const uint requiredFlags = ShinobuRespawnFlags.MedicalBayActive | ShinobuRespawnFlags.MedicalBayPowered;
+            return (bay.Flags & requiredFlags) == requiredFlags;
         }
 
         private static float ResolveQualityWeight()
@@ -1445,7 +1854,7 @@ namespace Hecton8.Physiology
 
         private static double SafeAupClampMeters()
         {
-            return math.max(HectonPhysicsContract.AupSectorSizeMetersDouble, 0.0001d);
+            return math.max(HectonPhysicsContract.AupMaxDistanceReturnMeters, 0.0001d);
         }
 
         private static uint TranslateSignalFlags(uint flags)
@@ -1476,9 +1885,7 @@ namespace Hecton8.Physiology
 
             public void Transform(ref PlayerRespawnSignal signal)
             {
-                if (signal.Sequence != Sequence ||
-                    (signal.Flags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u ||
-                    !math.all(math.isfinite(signal.DeathAUP)))
+                if (signal.Sequence != Sequence)
                     return;
 
                 signal.RespawnAUP = math.all(math.isfinite(RespawnAUP)) ? RespawnAUP : DefaultFallbackAup();
@@ -1494,6 +1901,7 @@ namespace Hecton8.Physiology
             }
         }
 
+#if UNITY_EDITOR
         private static void SkipLineNoise(ReadOnlySpan<byte> bytes, ref int cursor)
         {
             while (cursor < bytes.Length)
@@ -1527,6 +1935,123 @@ namespace Hecton8.Physiology
             return bytes.Slice(start, end - start);
         }
 
+        private static ReadOnlySpan<byte> ReadCsvToken(ReadOnlySpan<byte> bytes, ref int cursor)
+        {
+            int start = cursor;
+            while (cursor < bytes.Length &&
+                   bytes[cursor] != (byte)',' &&
+                   bytes[cursor] != (byte)'\n' &&
+                   bytes[cursor] != (byte)'\r')
+            {
+                cursor++;
+            }
+
+            ReadOnlySpan<byte> token = Trim(bytes.Slice(start, cursor - start));
+            return token;
+        }
+
+        private static bool ReadDoubleToken(ReadOnlySpan<byte> bytes, ref int cursor, out double value)
+        {
+            value = 0d;
+            ReadOnlySpan<byte> token = ReadCsvToken(bytes, ref cursor);
+            if (token.Length == 0)
+                return false;
+
+            int index = 0;
+            double sign = 1d;
+            if (token[index] == (byte)'-')
+            {
+                sign = -1d;
+                index++;
+            }
+            else if (token[index] == (byte)'+')
+            {
+                index++;
+            }
+
+            double whole = 0d;
+            bool hasDigit = false;
+            while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+            {
+                whole = (whole * 10d) + (token[index] - (byte)'0');
+                index++;
+                hasDigit = true;
+            }
+
+            double fraction = 0d;
+            double divisor = 1d;
+            if (index < token.Length && token[index] == (byte)'.')
+            {
+                index++;
+                while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+                {
+                    fraction = (fraction * 10d) + (token[index] - (byte)'0');
+                    divisor *= 10d;
+                    index++;
+                    hasDigit = true;
+                }
+            }
+
+            if (!hasDigit)
+                return false;
+
+            double result = sign * (whole + (fraction / math.max(divisor, 1d)));
+            if (index < token.Length && (token[index] == (byte)'e' || token[index] == (byte)'E'))
+            {
+                index++;
+                int exponentSign = 1;
+                if (index < token.Length && token[index] == (byte)'-')
+                {
+                    exponentSign = -1;
+                    index++;
+                }
+                else if (index < token.Length && token[index] == (byte)'+')
+                {
+                    index++;
+                }
+
+                int exponent = 0;
+                bool hasExponent = false;
+                while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+                {
+                    exponent = (exponent * 10) + (token[index] - (byte)'0');
+                    index++;
+                    hasExponent = true;
+                }
+
+                if (!hasExponent)
+                    return false;
+
+                result *= Pow10Signed(exponent * exponentSign);
+            }
+
+            if (index != token.Length || !math.isfinite(result))
+                return false;
+
+            if (cursor < bytes.Length && bytes[cursor] == (byte)',')
+                cursor++;
+            value = result;
+            return true;
+        }
+
+        private static double Pow10Signed(int exponent)
+        {
+            int count = math.abs(exponent);
+            double value = 1d;
+            for (int i = 0; i < count; i++)
+                value *= 10d;
+
+            return exponent < 0 ? 1d / value : value;
+        }
+
+        private static void SkipCsvLine(ReadOnlySpan<byte> bytes, ref int cursor)
+        {
+            while (cursor < bytes.Length && bytes[cursor] != (byte)'\n')
+                cursor++;
+            if (cursor < bytes.Length)
+                cursor++;
+        }
+
         private static byte ReadBoolToken(ReadOnlySpan<byte> bytes, ref int cursor)
         {
             while (cursor < bytes.Length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
@@ -1542,6 +2067,25 @@ namespace Hecton8.Physiology
             while (cursor < bytes.Length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
                 cursor++;
             return result;
+        }
+
+        private static byte ReadByteToken(ReadOnlySpan<byte> bytes, ref int cursor)
+        {
+            while (cursor < bytes.Length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
+                cursor++;
+
+            uint value = 0u;
+            bool hasDigit = false;
+            while (cursor < bytes.Length && bytes[cursor] >= (byte)'0' && bytes[cursor] <= (byte)'9')
+            {
+                value = math.min(255u, (value * 10u) + (uint)(bytes[cursor] - (byte)'0'));
+                cursor++;
+                hasDigit = true;
+            }
+
+            while (cursor < bytes.Length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                cursor++;
+            return hasDigit ? (byte)value : (byte)0;
         }
 
         private static uint HashToken(ReadOnlySpan<byte> token)
@@ -1601,6 +2145,15 @@ namespace Hecton8.Physiology
                    EqualsAsciiIgnoreCase(token, "persistent_id");
         }
 
+        private static bool IsMedicalBayHeaderToken(ReadOnlySpan<byte> token)
+        {
+            return EqualsAsciiIgnoreCase(token, "base") ||
+                   EqualsAsciiIgnoreCase(token, "basehash") ||
+                   EqualsAsciiIgnoreCase(token, "base_hash") ||
+                   EqualsAsciiIgnoreCase(token, "associatedbasehash") ||
+                   EqualsAsciiIgnoreCase(token, "associated_base_hash");
+        }
+
         private static bool EqualsAsciiIgnoreCase(ReadOnlySpan<byte> token, string expected)
         {
             if (token.Length != expected.Length)
@@ -1622,6 +2175,13 @@ namespace Hecton8.Physiology
 
             return true;
         }
+#endif
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
+        }
 
         private static string BuildProjectRootPathCold()
         {
@@ -1633,7 +2193,7 @@ namespace Hecton8.Physiology
         {
             public RespawnStateDTO* State;
             public RespawnRequestDTO* Request;
-            public MedicalBayRespawnPointDTO* MedicalBays;
+            public MedicalBayDTO* MedicalBays;
             public RespawnFadeDTO* Fade;
             public RespawnTelemetryEntry* Telemetry;
             public RespawnTelemetryCursor64* TelemetryCursor;
@@ -1645,6 +2205,7 @@ namespace Hecton8.Physiology
             public TissueCompartmentDTO* Tissues;
             public PhysiologyScalarsDTO* Scalars;
             public MetabolicStateDTO* Metabolism;
+            public GasPhysiologyStateDTO* GasState;
             public LockstepPlayerKinematicState* PlayerKinematic;
             public int MedicalBayCount;
             public int TissueCount;

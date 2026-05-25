@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,6 +8,9 @@ namespace Hecton8.Editor
     {
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player.prefab";
         private const string ReserializePlayerMenuPath = "Tools/HECTON-8/Maintenance/Reserialize Player Prefab";
+        private static readonly List<Camera> s_CameraScratch = new List<Camera>(8);
+        private static readonly List<Light> s_LightScratch = new List<Light>(16);
+        private static readonly List<Component> s_ComponentScratch = new List<Component>(128);
 
         [MenuItem(ReserializePlayerMenuPath)]
         private static void ReserializePlayerPrefab()
@@ -28,24 +32,27 @@ namespace Hecton8.Editor
 
             try
             {
-                Camera[] cameras = prefabRoot.GetComponentsInChildren<Camera>(true);
-                for (int i = 0; i < cameras.Length; i++)
+                s_CameraScratch.Clear();
+                prefabRoot.GetComponentsInChildren(true, s_CameraScratch);
+                for (int i = 0; i < s_CameraScratch.Count; i++)
                 {
-                    EditorUtility.SetDirty(cameras[i]);
+                    EditorUtility.SetDirty(s_CameraScratch[i]);
                     dirtyCount++;
                 }
 
-                Light[] lights = prefabRoot.GetComponentsInChildren<Light>(true);
-                for (int i = 0; i < lights.Length; i++)
+                s_LightScratch.Clear();
+                prefabRoot.GetComponentsInChildren(true, s_LightScratch);
+                for (int i = 0; i < s_LightScratch.Count; i++)
                 {
-                    EditorUtility.SetDirty(lights[i]);
+                    EditorUtility.SetDirty(s_LightScratch[i]);
                     dirtyCount++;
                 }
 
-                Component[] components = prefabRoot.GetComponentsInChildren<Component>(true);
-                for (int i = 0; i < components.Length; i++)
+                s_ComponentScratch.Clear();
+                prefabRoot.GetComponentsInChildren(true, s_ComponentScratch);
+                for (int i = 0; i < s_ComponentScratch.Count; i++)
                 {
-                    Component component = components[i];
+                    Component component = s_ComponentScratch[i];
                     if (component == null)
                         continue;
 

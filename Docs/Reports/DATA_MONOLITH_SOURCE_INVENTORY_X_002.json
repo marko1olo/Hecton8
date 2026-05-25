@@ -1,0 +1,1322 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_SOURCE_INVENTORY_V2",
+    "agent":  "X_002",
+    "generated":  "2026-05-23T17:49:24",
+    "promptBlockPresent":  true,
+    "activeBlob":  {
+                       "path":  "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+                       "exists":  true,
+                       "bytes":  1064240
+                   },
+    "totals":  {
+                   "csvAll":  215,
+                   "csvDataOrAssetOrRoot":  125,
+                   "monolithBakedActiveTables":  18,
+                   "monolithSchemaTemplates":  22,
+                   "balanceAllowedExternal":  2,
+                   "streamingAssetsCsvRuntimeRisk":  3,
+                   "repoRootCsvRuntimeRisk":  8,
+                   "crossDomainAuthoringSource":  70,
+                   "docsArchiveReportCsv":  68
+               },
+    "monolithCompilerCoverage":  {
+                                     "sourceRoots":  [
+                                                         "Assets/_SourceData/DataMonolith",
+                                                         "Data/Balance"
+                                                     ],
+                                     "bakedSections":  26,
+                                     "note":  "Compiler bakes recognized Data/Balance and Assets/_SourceData/DataMonolith rows. Other CSV owners require route cards/migration; they are not silently absorbed."
+                                 },
+    "csvInventory":  [
+                         {
+                             "path":  "Assets/_Project/Data/AITexturing/ai_texture_ingestion_profiles.csv",
+                             "bytes":  221,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/AITexturing/ai_texture_prefab_bindings.csv",
+                             "bytes":  195,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Analytics/analytics_endpoint.csv",
+                             "bytes":  144,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Analytics/telemetry_config.csv",
+                             "bytes":  144,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Audio/acoustic_materials.csv",
+                             "bytes":  134,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Audio/audio_synth_profiles.csv",
+                             "bytes":  83,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/biome_ecosystem_specs.csv",
+                             "bytes":  283,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/carrion_decay_profiles.csv",
+                             "bytes":  300,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/cartography_sonar_profiles.csv",
+                             "bytes":  278,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/character_rig_constraints.csv",
+                             "bytes":  550,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/chemical_emitter_profiles.csv",
+                             "bytes":  303,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Combat/ordnance_blast_profiles.csv",
+                             "bytes":  272,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Combat/ordnance_specs.csv",
+                             "bytes":  265,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Construction/module_deconstruction_refund_profiles.csv",
+                             "bytes":  186,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Decals/visor_decal_profiles.csv",
+                             "bytes":  186,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Decals/visor_trauma_profiles.csv",
+                             "bytes":  186,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/fuzzer_topology_profiles.csv",
+                             "bytes":  108,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Geology/geology_generation_profiles.csv",
+                             "bytes":  475,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/impostor_generation_profiles.csv",
+                             "bytes":  232,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/jacobi_fuzz_profiles.csv",
+                             "bytes":  236,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/noir_color_grading_profiles.csv",
+                             "bytes":  350,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Physics/material_settling_profiles.csv",
+                             "bytes":  369,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Rendering/caustic_lighting_profiles.csv",
+                             "bytes":  315,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Rendering/texture_atlas_profiles.csv",
+                             "bytes":  238,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/scanner_hardware_profiles.csv",
+                             "bytes":  231,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/seam_binding_profiles.csv",
+                             "bytes":  239,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Terrain/terrain_macro_biomes.csv",
+                             "bytes":  729,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/Tools/tool_hardware_specs.csv",
+                             "bytes":  653,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/UI/glitch_profiles.csv",
+                             "bytes":  154,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/UI/sonar_material_colors.csv",
+                             "bytes":  125,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/upscaler_quality_profiles.csv",
+                             "bytes":  236,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/VFX/Beam/beam_visuals.csv",
+                             "bytes":  164,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/VFX/parasite_behavior_profiles.csv",
+                             "bytes":  174,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/World/biome_atmosphere_rules.csv",
+                             "bytes":  472,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Data/World/voxel_save_profiles.csv",
+                             "bytes":  286,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/SaveSystem/Editor/io_fuzzer_profiles.csv",
+                             "bytes":  184,
+                             "classification":  "unclassified_csv",
+                             "authority":  "manual_review_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Atmosphere/storm_depth_impact_profiles.csv",
+                             "bytes":  243,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Biota/biota_spawning_rules.csv",
+                             "bytes":  427,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Biota/fauna_genetic_profiles.csv",
+                             "bytes":  284,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Core/Scheduling/job_scheduling_profiles.csv",
+                             "bytes":  436,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Equipment/Auxiliary/auxiliary_equipment_profiles.csv",
+                             "bytes":  148,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/HadalGraphs/hadal_structure_graphs.csv",
+                             "bytes":  610,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/HadalTrenches/tectonic_rift_profiles.csv",
+                             "bytes":  307,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Networking/fuzzer_network_profiles.csv",
+                             "bytes":  238,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Physics/KCC/locomotion_environment_profiles.csv",
+                             "bytes":  193,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Signals/signal_corridor_capacities.csv",
+                             "bytes":  176,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Signals/signal_tuning_profiles.csv",
+                             "bytes":  202,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Terrain/terrain_splatmap_profiles.csv",
+                             "bytes":  543,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/Thermodynamics/vehicle_reactor_profiles.csv",
+                             "bytes":  279,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/_SourceData/VFX/Propwash/vehicle_wake_profiles.csv",
+                             "bytes":  409,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/AstarPathfindingProject/defines.csv",
+                             "bytes":  2761,
+                             "classification":  "third_party_or_vendor",
+                             "authority":  "external"
+                         },
+                         {
+                             "path":  "Assets/StreamingAssets/Hecton8/camera_trauma_profiles.csv",
+                             "bytes":  237,
+                             "classification":  "streamingassets_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/StreamingAssets/Hecton8/haptic_response_profiles.csv",
+                             "bytes":  259,
+                             "classification":  "streamingassets_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Assets/StreamingAssets/Hecton8/PDA/pda_interface_profiles.csv",
+                             "bytes":  240,
+                             "classification":  "streamingassets_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "biological_metabolism_profiles.csv",
+                             "bytes":  447,
+                             "classification":  "repo_root_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "biological_mutation_profiles.csv",
+                             "bytes":  233,
+                             "classification":  "repo_root_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "buhlmann_zh16_profiles.csv",
+                             "bytes":  439,
+                             "classification":  "repo_root_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/AI/director_spawn_rules.csv",
+                             "bytes":  336,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Balance/armor_penetration_matrix.csv",
+                             "bytes":  449,
+                             "classification":  "balance_csv_allowed_external",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Balance/AudioRegistry.csv",
+                             "bytes":  177,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/Biomes.csv",
+                             "bytes":  376,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/btree_tuning_profiles.csv",
+                             "bytes":  235,
+                             "classification":  "balance_csv_allowed_external",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Balance/Economy.csv",
+                             "bytes":  436,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/Fauna.csv",
+                             "bytes":  395,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/GhostModules.csv",
+                             "bytes":  209,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/HudLayout.csv",
+                             "bytes":  166,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/Items.csv",
+                             "bytes":  429,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/Loot.csv",
+                             "bytes":  146,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/Physics.csv",
+                             "bytes":  373,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/PhysicsMaterials.csv",
+                             "bytes":  106,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/Recipes.csv",
+                             "bytes":  236,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/AudioRegistry_template.csv",
+                             "bytes":  30,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/Biomes_template.csv",
+                             "bytes":  141,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/Economy_template.csv",
+                             "bytes":  98,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/Fauna_template.csv",
+                             "bytes":  109,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/GhostModules_template.csv",
+                             "bytes":  62,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/HudLayout_template.csv",
+                             "bytes":  65,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/Items_template.csv",
+                             "bytes":  89,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/LootCdf_template.csv",
+                             "bytes":  24,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/NarrativeTriggers_optional_template.csv",
+                             "bytes":  28,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/Physics_template.csv",
+                             "bytes":  96,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/PhysicsMaterials_template.csv",
+                             "bytes":  30,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/QuestEdges_optional_template.csv",
+                             "bytes":  24,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/QuestNodes_optional_template.csv",
+                             "bytes":  39,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/RadiationMap_optional_template.csv",
+                             "bytes":  24,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/Recipes_template.csv",
+                             "bytes":  60,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/SectorPages_template.csv",
+                             "bytes":  54,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/SopErrors_template.csv",
+                             "bytes":  20,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/SpawnCredits_template.csv",
+                             "bytes":  29,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/SubmarineHull_template.csv",
+                             "bytes":  57,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/ToolHeat_template.csv",
+                             "bytes":  38,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/VfxScalars_template.csv",
+                             "bytes":  41,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/Schemas/VoxelMaterials_template.csv",
+                             "bytes":  62,
+                             "classification":  "monolith_schema_template",
+                             "authority":  "editor_authoring"
+                         },
+                         {
+                             "path":  "Data/Balance/SectorPages.csv",
+                             "bytes":  132,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/SopErrors.csv",
+                             "bytes":  179,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/SpawnCredits.csv",
+                             "bytes":  84,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/SubmarineHull.csv",
+                             "bytes":  143,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/ToolHeat.csv",
+                             "bytes":  76,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/VfxScalars.csv",
+                             "bytes":  136,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Balance/VoxelMaterials.csv",
+                             "bytes":  177,
+                             "classification":  "monolith_baked_active_table",
+                             "authority":  "data_monolith_owned"
+                         },
+                         {
+                             "path":  "Data/Economy/Crafting_Costs.csv",
+                             "bytes":  11708,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Economy/Items.csv",
+                             "bytes":  7884,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Economy/Ore_Distribution_Histogram.csv",
+                             "bytes":  17343,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Economy/Resource_Distribution_Matrix.csv",
+                             "bytes":  32446,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Narrative/node_names.csv",
+                             "bytes":  179,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Narrative/quest_logic_overrides.csv",
+                             "bytes":  110,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/exosuit_performance_profiles.csv",
+                             "bytes":  256,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/material_settling_profiles.csv",
+                             "bytes":  342,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/ocean_wave_spectra.csv",
+                             "bytes":  353,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/seaglide_performance_profiles.csv",
+                             "bytes":  93,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/seaglide_vehicle_profiles.csv",
+                             "bytes":  93,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/simd_math_tolerances.csv",
+                             "bytes":  134,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/Submarine_SpeedPower.csv",
+                             "bytes":  3926,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/vehicle_ballast_profiles.csv",
+                             "bytes":  308,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/vehicle_hull_profiles.csv",
+                             "bytes":  221,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Physics/vehicle_sampling_profiles.csv",
+                             "bytes":  180,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/UX/vr_comfort_profiles.csv",
+                             "bytes":  542,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Visuals/environmental_aging_rules.csv",
+                             "bytes":  397,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Visuals/environmental_degradation_rules.csv",
+                             "bytes":  872,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Data/Visuals/noir_aesthetic_profiles.csv",
+                             "bytes":  410,
+                             "classification":  "cross_domain_authoring_source",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Docs/ambient_lighting_profiles.csv",
+                             "bytes":  250,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_addressable_duplicates.csv",
+                             "bytes":  40,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_addressables.csv",
+                             "bytes":  43,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_alpha_transparent_scan.csv",
+                             "bytes":  159213,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_animation.csv",
+                             "bytes":  34116,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_animation_offenders.csv",
+                             "bytes":  3003,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_audio.csv",
+                             "bytes":  45497,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_audio_offenders.csv",
+                             "bytes":  33169,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_high_mesh_assets.csv",
+                             "bytes":  601,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_high_mesh_prefab_offenders.csv",
+                             "bytes":  204,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_lightmaps.csv",
+                             "bytes":  28,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_material_instancing_scan.csv",
+                             "bytes":  32486,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_material_offenders.csv",
+                             "bytes":  150013,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_materials.csv",
+                             "bytes":  149529,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_renderer_overhead.csv",
+                             "bytes":  651,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_scene_uv2_offenders.csv",
+                             "bytes":  68,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_scene02_textures.csv",
+                             "bytes":  13474,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_texture_offenders.csv",
+                             "bytes":  257631,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_textures.csv",
+                             "bytes":  343882,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch002/AgentLogs/ASSET_SCOUT_uv2_offenders.csv",
+                             "bytes":  69,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch006/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv",
+                             "bytes":  9014,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch006/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_candidates.csv",
+                             "bytes":  1026,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch006/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_material_issues.csv",
+                             "bytes":  8916,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch006/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_import_issues.csv",
+                             "bytes":  762,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch006/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_memory_hotspots.csv",
+                             "bytes":  5348,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch007/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_map_missing_materials.csv",
+                             "bytes":  5494,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch007/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_global_detail_overlay_plan.csv",
+                             "bytes":  1939,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch007/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_god_mode_texture_overrides.csv",
+                             "bytes":  1347,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch007/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_surface_material_migration_queue.csv",
+                             "bytes":  7816,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch007/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_surface_unresolved_texture_refs.csv",
+                             "bytes":  1189,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch007/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_read_errors.csv",
+                             "bytes":  17,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch007/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv",
+                             "bytes":  1639,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch008/AgentLogs/H8BIN_GRAVEYARD_AUDITOR_ReferenceScan.csv",
+                             "bytes":  315439,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch008/Tasks/SHINOBU_04_MathTerrainProbe.csv",
+                             "bytes":  60,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch010/AgentLogs/QA_Endurance_Log.csv",
+                             "bytes":  0,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch011/AgentLogs/Build_SHINOBU_271_core_loop9_20_errors.csv",
+                             "bytes":  31211,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch011/AgentLogs/Build_SHINOBU_271_core_loop9_22_errors.csv",
+                             "bytes":  21438,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch012/AgentLogs/Build_BUILD_MEDIC_20260522_140332_AllCsprojIndividual.csv",
+                             "bytes":  3191,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch012/AgentLogs/Build_BUILD_MEDIC_20260522_161740_AllCsprojRestoreBuild_AfterUnityClean.csv",
+                             "bytes":  9103,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Archive/Batch012/AgentLogs/Build_BUILD_MEDIC_20260522_162435_Active72CsprojRestoreBuild_AfterUnityClean.csv",
+                             "bytes":  6568,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Atmosphere/gas_diffusion_profiles.csv",
+                             "bytes":  313,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Audio/audio_stem_rules.csv",
+                             "bytes":  394,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Audio/dialogue_script.csv",
+                             "bytes":  139,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Audio/synth_presets.csv",
+                             "bytes":  445,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Data/hull_materials.csv",
+                             "bytes":  124,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Data/lighting_gradient_profiles.csv",
+                             "bytes":  279,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Documentation_Bundles_2026-05-21_SANITIZED/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/vram_detail.csv",
+                             "bytes":  13839,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Documentation_Bundles_2026-05-21_SANITIZED/ARCHIVED_BUNDLES_2026-05-21.csv",
+                             "bytes":  5176,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Documentation_Bundles_2026-05-21_SANITIZED/SPACE_ENGINE_RESEARCH/_extracted/Catalogs0980/galaxies/NGC-IC.csv",
+                             "bytes":  1348208,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Documentation_Bundles_2026-05-21_SANITIZED/SPACE_ENGINE_RESEARCH/_extracted/Catalogs0980/stars/HIPPARCOS.csv",
+                             "bytes":  7880525,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Reports_2026-05-21_REVALIDATION_QUARANTINE/ARCHIVED_REPORTS_REVALIDATION_2026-05-21.csv",
+                             "bytes":  33422,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Reports_2026-05-21_REVALIDATION_QUARANTINE/VRAM_Budget_Audit.csv",
+                             "bytes":  561976,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Reports_2026-05-21_REVALIDATION_QUARANTINE/VRAM_Mesh_Redlines.csv",
+                             "bytes":  87948,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Reports_2026-05-21_REVALIDATION_QUARANTINE/VRAM_RenderTexture_Redlines.csv",
+                             "bytes":  373,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Reports_2026-05-21_REVALIDATION_QUARANTINE/VRAM_RenderTexture_SourceHotspots.csv",
+                             "bytes":  20087,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Reports_2026-05-21_REVALIDATION_QUARANTINE/VRAM_Texture_Redlines.csv",
+                             "bytes":  192613,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/DEPRECATED/Reports_2026-05-21_SANITIZED/ARCHIVED_FILES_2026-05-21.csv",
+                             "bytes":  30685,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/flora_biome_sway_profiles.csv",
+                             "bytes":  204,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv",
+                             "bytes":  152079,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Data/MARKETING_ASSET_METADATA_TEMPLATE.csv",
+                             "bytes":  12676,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Data/PRIORITY_CREATOR_SHORTLIST_FROM_RAW_2026-05-18.csv",
+                             "bytes":  213425,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Data/RAW_LEAD_FETCH_LOG_2026-05-18.csv",
+                             "bytes":  13927,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Data/RAW_PUBLIC_CREATOR_LEADS_2026-05-18.csv",
+                             "bytes":  3862192,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Data/UNIQUE_CREATOR_VERIFICATION_QUEUE_2026-05-18.csv",
+                             "bytes":  3798243,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Press/PRESS_TARGET_VERIFICATION_TRACKER.csv",
+                             "bytes":  16382,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Press/SHOWCASE_SUBMISSION_TRACKER.csv",
+                             "bytes":  3218,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Marketing/Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv",
+                             "bytes":  10609,
+                             "classification":  "marketing_ops_data",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Modding/allowed_opcodes.csv",
+                             "bytes":  549,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Modding/kernel_tuning_profiles.csv",
+                             "bytes":  311,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/BatchImportTextures_SHINOBU_361_import_plan.csv",
+                             "bytes":  178,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_channel_packing_candidates.csv",
+                             "bytes":  9491,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_detail_candidates.csv",
+                             "bytes":  1026,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_detail_map_missing_materials.csv",
+                             "bytes":  5845,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_global_detail_overlay_plan.csv",
+                             "bytes":  1939,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_god_mode_texture_overrides.csv",
+                             "bytes":  1347,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_material_issues.csv",
+                             "bytes":  8916,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_surface_material_migration_queue.csv",
+                             "bytes":  8167,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_surface_unresolved_texture_refs.csv",
+                             "bytes":  1189,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_texture_import_issues.csv",
+                             "bytes":  917,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_texture_memory_hotspots.csv",
+                             "bytes":  5348,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_texture_read_errors.csv",
+                             "bytes":  17,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/MaterialAudit_SHINOBU_361_baseline_unresolved_texture_refs.csv",
+                             "bytes":  1639,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/production_texture_manifest.csv",
+                             "bytes":  2462271,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/TextureGeneratorWorkpack_SHINOBU_361/ALL_175_TARGETS_GENERATOR_JOBS.csv",
+                             "bytes":  209020,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/TextureGeneratorWorkpack_SHINOBU_361/BATCH00_SEEDS_GENERATOR_JOBS.csv",
+                             "bytes":  15182,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/TextureGeneratorWorkpack_SHINOBU_361/BATCH01_BLOCKERS_GENERATOR_JOBS.csv",
+                             "bytes":  21386,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/Reports/TextureProductionQueue_SHINOBU_361.csv",
+                             "bytes":  422184,
+                             "classification":  "documentation_report_or_archive",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/water_extinction_profiles.csv",
+                             "bytes":  291,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "Docs/water_optics_profiles.csv",
+                             "bytes":  584,
+                             "classification":  "stable_doc_source",
+                             "authority":  "not_runtime_truth"
+                         },
+                         {
+                             "path":  "drone_hardware_profiles.csv",
+                             "bytes":  334,
+                             "classification":  "repo_root_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "glitch_profiles.csv",
+                             "bytes":  154,
+                             "classification":  "repo_root_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "pda_interface_profiles.csv",
+                             "bytes":  240,
+                             "classification":  "repo_root_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "sdf_baking_profiles.csv",
+                             "bytes":  145,
+                             "classification":  "repo_root_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         },
+                         {
+                             "path":  "Tools/scanner_exclusion_rules.csv",
+                             "bytes":  33,
+                             "classification":  "tooling_config",
+                             "authority":  "tool_owned"
+                         },
+                         {
+                             "path":  "wreckage_deformation_profiles.csv",
+                             "bytes":  277,
+                             "classification":  "repo_root_csv_runtime_risk",
+                             "authority":  "owner_migration_required"
+                         }
+                     ]
+}

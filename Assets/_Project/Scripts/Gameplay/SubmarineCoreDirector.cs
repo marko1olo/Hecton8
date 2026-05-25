@@ -1,6 +1,7 @@
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton.Localization;
 using Hecton8.Physics;
 using System.Runtime.InteropServices;
@@ -21,7 +22,7 @@ namespace Hecton8.Gameplay
     /// </remarks>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Core Director")]
-    public sealed class SubmarineCoreDirector : MonoBehaviour, ISubmarineRuntimeContext, IFixedTickable
+    public sealed class SubmarineCoreDirector : MonoBehaviour, ISubmarineRuntimeContext, IFixedTickable, IGlobalRegistryHotSwapListener
     {
         public static class SubmarineGridStateBits
         {
@@ -75,6 +76,10 @@ namespace Hecton8.Gameplay
         private const float MinThermalSpeedMultiplier = 0.1f;
         private const float MaxThermalSpeedMultiplier = 1f;
         private const int MaxRegisteredSubmarineRoots = 8;
+        private const SystemID VaultOwnerSystemId = SystemID.VehiclesPhysics;
+        private const BufferID HullIntegritySummaryBufferId = BufferID.SubmarineCoreHullIntegritySummary;
+        private const BufferID PhysicsBindingBufferId = BufferID.SubmarineCorePhysicsBinding;
+        private const BufferID GridStateBufferId = BufferID.SubmarineCoreGridState;
 
         private static readonly int _PressureCompensatorHashId = LocHash.Compute("Comp_PressureCompensator");
         private static readonly int _EngineOverdriveHashId = LocHash.Compute("Comp_EngineOverdriveManifold");
@@ -126,11 +131,12 @@ namespace Hecton8.Gameplay
         private float _thermalSpeedMultiplier = 1f;
 
         // COLD ALLOC: NativeArray<float>[4] â€” submarine root hull summary buffer for registry-facing readback without crawling child systems â€” owner: SubmarineCoreDirector
-        private NativeArray<float> _hullIntegritySummaryNative;
+        private VaultGenerationHandle<float> _hullIntegritySummaryHandle;
         // COLD ALLOC: NativeArray<SubmarinePhysicsBindingState>[1] â€” authoritative rigidbody motion snapshot for submarine consumers â€” owner: SubmarineCoreDirector
-        private NativeArray<SubmarinePhysicsBindingState> _physicsBindingsNative;
+        private VaultGenerationHandle<SubmarinePhysicsBindingState> _physicsBindingsHandle;
         // COLD ALLOC: NativeArray<SubmarineGridState>[1] â€” subsystem readiness flags packed at the submarine root â€” owner: SubmarineCoreDirector
-        private NativeArray<SubmarineGridState> _gridStatesNative;
+        private VaultGenerationHandle<SubmarineGridState> _gridStatesHandle;
+        private IDataVault _dataVault;
 
         /// <inheritdoc />
         public bool IsTransportPlatformActive => isActiveAndEnabled && PlatformTransform != null;
@@ -160,13 +166,16 @@ namespace Hecton8.Gameplay
         public float ThermalSpeedMultiplier => _thermalSpeedMultiplier;
 
         /// <summary>Published hull summary owned by the submarine root.</summary>
-        public NativeArray<float>.ReadOnly HullIntegritySummaryNative => _hullIntegritySummaryNative.AsReadOnly();
+        public NativeArray<float>.ReadOnly HullIntegritySummaryNative =>
+            TryReadHullIntegritySummary(out NativeArray<float>.ReadOnly summary) ? summary : default;
 
         /// <summary>Published rigidbody motion snapshot owned by the submarine root.</summary>
-        public NativeArray<SubmarinePhysicsBindingState>.ReadOnly PhysicsBindingsNative => _physicsBindingsNative.AsReadOnly();
+        public NativeArray<SubmarinePhysicsBindingState>.ReadOnly PhysicsBindingsNative =>
+            TryReadPhysicsBindings(out NativeArray<SubmarinePhysicsBindingState>.ReadOnly bindings) ? bindings : default;
 
         /// <summary>Published subsystem readiness snapshot owned by the submarine root.</summary>
-        public NativeArray<SubmarineGridState>.ReadOnly GridStatesNative => _gridStatesNative.AsReadOnly();
+        public NativeArray<SubmarineGridState>.ReadOnly GridStatesNative =>
+            TryReadGridStates(out NativeArray<SubmarineGridState>.ReadOnly gridStates) ? gridStates : default;
 
         /// <summary>Baseline authored submarine stat asset.</summary>
         public SubmarineProfile Profile => submarineProfile;
@@ -185,6 +194,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>Resolved certified operating depth in meters after upgrade modifiers.</summary>
         public float MaxDepth => ResolveMaxDepth();
+
+        /// <inheritdoc />
+        public float MaxDepthMeters => ResolveMaxDepth();
 
         /// <summary>Resolved structural integrity ceiling after upgrade modifiers.</summary>
         public float BaseIntegrity => ResolveBaseIntegrity();
@@ -219,12 +231,16 @@ namespace Hecton8.Gameplay
             RefreshNativeState();
             TryRegisterRuntimeRoot();
             GlobalRegistry.RegisterSubmarine(this);
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             TryUnregisterRuntimeRoot();
             if (ReferenceEquals(GlobalRegistry.Submarine, this))
                 GlobalRegistry.UnregisterSubmarine(this);
@@ -234,6 +250,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             TryUnregisterRuntimeRoot();
             if (ReferenceEquals(GlobalRegistry.Submarine, this))
                 GlobalRegistry.UnregisterSubmarine(this);
@@ -323,10 +340,7 @@ namespace Hecton8.Gameplay
             EnsureUpgradeSlots();
             CacheReferences();
             ApplyProfileMassToHull();
-            if (Application.isPlaying &&
-                _hullIntegritySummaryNative.IsCreated &&
-                _physicsBindingsNative.IsCreated &&
-                _gridStatesNative.IsCreated)
+            if (Application.isPlaying && HasNativeState())
             {
                 RefreshNativeState();
             }
@@ -416,90 +430,74 @@ namespace Hecton8.Gameplay
             _profileMassApplied = true;
         }
 
-        private void EnsureNativeState()
+        private bool EnsureNativeState()
         {
-            if (!_hullIntegritySummaryNative.IsCreated)
-            {
-                _hullIntegritySummaryNative = new NativeArray<float>(HullSummarySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _hullIntegritySummaryNative,
-                    nameof(SubmarineCoreDirector),
-                    nameof(_hullIntegritySummaryNative),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_physicsBindingsNative.IsCreated)
-            {
-                _physicsBindingsNative = new NativeArray<SubmarinePhysicsBindingState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _physicsBindingsNative,
-                    nameof(SubmarineCoreDirector),
-                    nameof(_physicsBindingsNative),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_gridStatesNative.IsCreated)
-            {
-                _gridStatesNative = new NativeArray<SubmarineGridState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _gridStatesNative,
-                    nameof(SubmarineCoreDirector),
-                    nameof(_gridStatesNative),
-                    NativeAllocationLifetime.Session);
-            }
+            IDataVault vault = CacheDataVaultCold();
+            return vault != null &&
+                   EnsureSubmarineVaultBuffer(ref _hullIntegritySummaryHandle, HullIntegritySummaryBufferId, HullSummarySlotCount) &&
+                   EnsureSubmarineVaultBuffer(ref _physicsBindingsHandle, PhysicsBindingBufferId, 1) &&
+                   EnsureSubmarineVaultBuffer(ref _gridStatesHandle, GridStateBufferId, 1);
         }
 
         private void RefreshNativeState()
         {
-            if (!_hullIntegritySummaryNative.IsCreated ||
-                !_physicsBindingsNative.IsCreated ||
-                !_gridStatesNative.IsCreated)
+            if (!TryAcquireNativeStateWriteBuffers(
+                    out NativeArray<float> hullIntegritySummary,
+                    out NativeArray<SubmarinePhysicsBindingState> physicsBindings,
+                    out NativeArray<SubmarineGridState> gridStates))
             {
                 return;
             }
 
-            Rigidbody body = hullRigidbody;
-            if (body != null)
+            try
             {
-                _physicsBindingsNative[0] = new SubmarinePhysicsBindingState
+                Rigidbody body = hullRigidbody;
+                if (body != null)
                 {
-                    LinearVelocity = body.linearVelocity,
-                    AngularVelocity = body.angularVelocity,
-                    CenterOfMass = body.worldCenterOfMass
-                };
-            }
-            else
-            {
-                _physicsBindingsNative[0] = default;
-            }
-
-            _gridStatesNative[0] = new SubmarineGridState
-            {
-                StatusFlags =
-                    (structuralGrid != null && structuralGrid.IsReady ? SubmarineGridStateBits.StructuralGrid : 0u) |
-                    (fluidDynamics != null && fluidDynamics.isActiveAndEnabled ? SubmarineGridStateBits.FluidDynamics : 0u) |
-                    (atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled ? SubmarineGridStateBits.AtmosphereSystem : 0u) |
-                    (IsTransportPlatformActive ? SubmarineGridStateBits.TransportPlatformActive : 0u)
-            };
-
-            float totalBreachArea = 0f;
-            float maxCompartmentBreachArea = 0f;
-            int compartmentCount = 0;
-            if (structuralGrid != null && structuralGrid.IsReady && fluidDynamics != null)
-            {
-                compartmentCount = fluidDynamics.CompartmentCount;
-                for (int i = 0; i < compartmentCount; i++)
-                {
-                    float breachArea = math.max(0f, structuralGrid.GetCompartmentBreachAreaSquareMeters(i));
-                    totalBreachArea += breachArea;
-                    maxCompartmentBreachArea = math.max(maxCompartmentBreachArea, breachArea);
+                    physicsBindings[0] = new SubmarinePhysicsBindingState
+                    {
+                        LinearVelocity = body.linearVelocity,
+                        AngularVelocity = body.angularVelocity,
+                        CenterOfMass = body.worldCenterOfMass
+                    };
                 }
-            }
+                else
+                {
+                    physicsBindings[0] = default;
+                }
 
-            _hullIntegritySummaryNative[HullSummaryTotalBreachArea] = totalBreachArea;
-            _hullIntegritySummaryNative[HullSummaryMaxCompartmentBreachArea] = maxCompartmentBreachArea;
-            _hullIntegritySummaryNative[HullSummaryCompartmentCount] = compartmentCount;
-            _hullIntegritySummaryNative[HullSummaryReadyFlag] = structuralGrid != null && structuralGrid.IsReady ? 1f : 0f;
+                gridStates[0] = new SubmarineGridState
+                {
+                    StatusFlags =
+                        (structuralGrid != null && structuralGrid.IsReady ? SubmarineGridStateBits.StructuralGrid : 0u) |
+                        (fluidDynamics != null && fluidDynamics.isActiveAndEnabled ? SubmarineGridStateBits.FluidDynamics : 0u) |
+                        (atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled ? SubmarineGridStateBits.AtmosphereSystem : 0u) |
+                        (IsTransportPlatformActive ? SubmarineGridStateBits.TransportPlatformActive : 0u)
+                };
+
+                float totalBreachArea = 0f;
+                float maxCompartmentBreachArea = 0f;
+                int compartmentCount = 0;
+                if (structuralGrid != null && structuralGrid.IsReady && fluidDynamics != null)
+                {
+                    compartmentCount = fluidDynamics.CompartmentCount;
+                    for (int i = 0; i < compartmentCount; i++)
+                    {
+                        float breachArea = math.max(0f, structuralGrid.GetCompartmentBreachAreaSquareMeters(i));
+                        totalBreachArea += breachArea;
+                        maxCompartmentBreachArea = math.max(maxCompartmentBreachArea, breachArea);
+                    }
+                }
+
+                hullIntegritySummary[HullSummaryTotalBreachArea] = totalBreachArea;
+                hullIntegritySummary[HullSummaryMaxCompartmentBreachArea] = maxCompartmentBreachArea;
+                hullIntegritySummary[HullSummaryCompartmentCount] = compartmentCount;
+                hullIntegritySummary[HullSummaryReadyFlag] = structuralGrid != null && structuralGrid.IsReady ? 1f : 0f;
+            }
+            finally
+            {
+                ReleaseNativeStateWriteBuffers();
+            }
         }
 
         private void TryRegister()
@@ -507,8 +505,7 @@ namespace Hecton8.Gameplay
             if (_registeredFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -520,28 +517,210 @@ namespace Hecton8.Gameplay
             _registeredFixedTick = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegister();
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                DisposeNativeState(previousService as IDataVault);
+                _dataVault = currentService as IDataVault;
+                if (isActiveAndEnabled)
+                {
+                    EnsureNativeState();
+                    RefreshNativeState();
+                }
+            }
+        }
+
         private void DisposeNativeState()
         {
-            if (_hullIntegritySummaryNative.IsCreated)
+            DisposeNativeState(_dataVault);
+        }
+
+        private void DisposeNativeState(IDataVault vault)
+        {
+            ReleaseSubmarineVaultHandle(vault, ref _gridStatesHandle);
+            ReleaseSubmarineVaultHandle(vault, ref _physicsBindingsHandle);
+            ReleaseSubmarineVaultHandle(vault, ref _hullIntegritySummaryHandle);
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private bool EnsureSubmarineVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (IsExactVaultHandle(in handle, bufferId) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredLength)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_hullIntegritySummaryNative);
-                _hullIntegritySummaryNative.Dispose();
-                _hullIntegritySummaryNative = default;
+                return true;
             }
 
-            if (_physicsBindingsNative.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_physicsBindingsNative);
-                _physicsBindingsNative.Dispose();
-                _physicsBindingsNative = default;
-            }
+            ReleaseSubmarineVaultHandle(vault, ref handle);
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
 
-            if (_gridStatesNative.IsCreated)
+            return IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
+                   resolved.IsCreated &&
+                   resolved.Length >= requiredLength;
+        }
+
+        private bool HasNativeState()
+        {
+            return TryReadHullIntegritySummary(out _) &&
+                   TryReadPhysicsBindings(out _) &&
+                   TryReadGridStates(out _);
+        }
+
+        private bool TryReadHullIntegritySummary(out NativeArray<float>.ReadOnly summary)
+        {
+            return TryReadSubmarineVaultBuffer(in _hullIntegritySummaryHandle, HullIntegritySummaryBufferId, HullSummarySlotCount, out summary);
+        }
+
+        private bool TryReadPhysicsBindings(out NativeArray<SubmarinePhysicsBindingState>.ReadOnly bindings)
+        {
+            return TryReadSubmarineVaultBuffer(in _physicsBindingsHandle, PhysicsBindingBufferId, 1, out bindings);
+        }
+
+        private bool TryReadGridStates(out NativeArray<SubmarineGridState>.ReadOnly gridStates)
+        {
+            return TryReadSubmarineVaultBuffer(in _gridStatesHandle, GridStateBufferId, 1, out gridStates);
+        }
+
+        private bool TryReadSubmarineVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryAcquireNativeStateWriteBuffers(
+            out NativeArray<float> hullIntegritySummary,
+            out NativeArray<SubmarinePhysicsBindingState> physicsBindings,
+            out NativeArray<SubmarineGridState> gridStates)
+        {
+            hullIntegritySummary = default;
+            physicsBindings = default;
+            gridStates = default;
+            if (!EnsureNativeState())
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            bool hullLocked = false;
+            bool physicsLocked = false;
+            bool gridLocked = false;
+            bool success = false;
+            try
             {
-                NativeMemorySentinel.UnregisterNativeArray(_gridStatesNative);
-                _gridStatesNative.Dispose();
-                _gridStatesNative = default;
+                if (!IsExactVaultHandle(in _hullIntegritySummaryHandle, HullIntegritySummaryBufferId) ||
+                    !vault.TryAcquireWriteLock(in _hullIntegritySummaryHandle, VaultOwnerSystemId, out hullIntegritySummary))
+                {
+                    return false;
+                }
+                hullLocked = true;
+
+                if (!IsExactVaultHandle(in _physicsBindingsHandle, PhysicsBindingBufferId) ||
+                    !vault.TryAcquireWriteLock(in _physicsBindingsHandle, VaultOwnerSystemId, out physicsBindings))
+                {
+                    return false;
+                }
+                physicsLocked = true;
+
+                if (!IsExactVaultHandle(in _gridStatesHandle, GridStateBufferId) ||
+                    !vault.TryAcquireWriteLock(in _gridStatesHandle, VaultOwnerSystemId, out gridStates))
+                {
+                    return false;
+                }
+                gridLocked = true;
+
+                if (!hullIntegritySummary.IsCreated || hullIntegritySummary.Length < HullSummarySlotCount ||
+                    !physicsBindings.IsCreated || physicsBindings.Length < 1 ||
+                    !gridStates.IsCreated || gridStates.Length < 1)
+                {
+                    return false;
+                }
+
+                success = true;
+                return true;
             }
+            finally
+            {
+                if (!success)
+                {
+                    if (gridLocked)
+                        vault.ReleaseWriteLock(in _gridStatesHandle, VaultOwnerSystemId);
+                    if (physicsLocked)
+                        vault.ReleaseWriteLock(in _physicsBindingsHandle, VaultOwnerSystemId);
+                    if (hullLocked)
+                        vault.ReleaseWriteLock(in _hullIntegritySummaryHandle, VaultOwnerSystemId);
+                    hullIntegritySummary = default;
+                    physicsBindings = default;
+                    gridStates = default;
+                }
+            }
+        }
+
+        private void ReleaseNativeStateWriteBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            if (IsExactVaultHandle(in _gridStatesHandle, GridStateBufferId))
+                vault.ReleaseWriteLock(in _gridStatesHandle, VaultOwnerSystemId);
+            if (IsExactVaultHandle(in _physicsBindingsHandle, PhysicsBindingBufferId))
+                vault.ReleaseWriteLock(in _physicsBindingsHandle, VaultOwnerSystemId);
+            if (IsExactVaultHandle(in _hullIntegritySummaryHandle, HullIntegritySummaryBufferId))
+                vault.ReleaseWriteLock(in _hullIntegritySummaryHandle, VaultOwnerSystemId);
+        }
+
+        private static void ReleaseSubmarineVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private static bool IsFinite(Vector3 value)

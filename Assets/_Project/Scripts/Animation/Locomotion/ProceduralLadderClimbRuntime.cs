@@ -16,7 +16,7 @@ namespace Hecton8.Animation.Locomotion
     [DisallowMultipleComponent]
     // Registers before ladder interaction adapters can request climb setup during player interaction bootstrap.
     [DefaultExecutionOrder(-9921)]
-    internal sealed class ProceduralLadderClimbRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable
+    internal sealed class ProceduralLadderClimbRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float DefaultPcSlideSpeedMetersPerSecond = 1.35f;
         private const float StaminaDrainPerMeter = 0.18f;
@@ -61,6 +61,7 @@ namespace Hecton8.Animation.Locomotion
         private bool _solveScheduled;
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
         private bool _active;
         private bool _pendingFinish;
         private bool _pendingSlip;
@@ -71,6 +72,8 @@ namespace Hecton8.Animation.Locomotion
         private Transform _ladderTransform;
         private Transform _entryPoint;
         private Transform _exitPoint;
+        private IPlayerMovementForceSink _cachedMovementForceSink;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private IPlayerMovementForceSink _movementForceSink;
         private IPlayerRuntimeContext _playerContext;
         private float3 _ladderUp;
@@ -205,7 +208,8 @@ namespace Hecton8.Animation.Locomotion
             if (registered == null)
                 GlobalRegistry.RegisterProceduralLadderClimbRuntime(this);
 
-            CacheVaultDependency();
+            CacheColdDependencies();
+            TryRegisterHotSwapListener();
             EnsureVaultBuffers();
             PrepareBlackBoxDumpDirectoryCold();
         }
@@ -215,8 +219,10 @@ namespace Hecton8.Animation.Locomotion
             StopClimb(false, false);
             CompleteOutstandingJobForBarrier();
             UnregisterTickables();
+            TryUnregisterHotSwapListener();
             ReleaseVaultHandles();
             ClearVaultHandles();
+            ClearCachedServices();
             GlobalRegistry.ClearProceduralLadderClimbRuntime(this);
         }
 
@@ -225,8 +231,10 @@ namespace Hecton8.Animation.Locomotion
             StopClimb(false, false);
             CompleteOutstandingJobForBarrier();
             UnregisterTickables();
+            TryUnregisterHotSwapListener();
             ReleaseVaultHandles();
             ClearVaultHandles();
+            ClearCachedServices();
             GlobalRegistry.ClearProceduralLadderClimbRuntime(this);
         }
 
@@ -329,8 +337,8 @@ namespace Hecton8.Animation.Locomotion
             _entryPoint = entryPoint;
             _exitPoint = exitPoint;
             _matchRotation = matchRotation;
-            _movementForceSink = GlobalRegistry.PlayerMovementContracts;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _movementForceSink = _cachedMovementForceSink;
+            _playerContext = _cachedPlayerContext;
             _vrGripRequired = forceVrGripPullMode || UnityEngine.XR.XRSettings.enabled;
             _cameraSlidePresentationActive = !_vrGripRequired;
             _climbDirection = goingUp ? 1f : -1f;
@@ -372,26 +380,54 @@ namespace Hecton8.Animation.Locomotion
             return true;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault, ensureBuffers: true);
+                    break;
+                case GlobalRegistryServiceSlot.PlayerMovementContracts:
+                    _cachedMovementForceSink = currentService as IPlayerMovementForceSink;
+                    if (_active)
+                        _movementForceSink = _cachedMovementForceSink;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    if (_active)
+                        _playerContext = _cachedPlayerContext;
+                    break;
+            }
+        }
+
+        private void CacheColdDependencies()
+        {
+            RebindDataVault(GlobalRegistry.DataVault, ensureBuffers: false);
+            _cachedMovementForceSink = GlobalRegistry.PlayerMovementContracts as IPlayerMovementForceSink;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+        }
+
         private bool CacheVaultDependency()
         {
-            IDataVault current = GlobalRegistry.DataVault;
-            if (current == null)
-            {
-                CompleteOutstandingJobForBarrier();
-                ReleaseVaultHandles();
-                ClearVaultHandles();
-                return false;
-            }
-
-            if (!ReferenceEquals(_dataVault, current))
-            {
-                CompleteOutstandingJobForBarrier();
-                ReleaseVaultHandles();
-                ClearVaultHandles();
-                _dataVault = current;
-            }
-
             return _dataVault != null;
+        }
+
+        private void RebindDataVault(IDataVault current, bool ensureBuffers)
+        {
+            if (ReferenceEquals(_dataVault, current))
+                return;
+
+            CompleteOutstandingJobForBarrier();
+            ReleaseVaultHandles();
+            ClearVaultHandles();
+            _dataVault = current;
+            if (ensureBuffers && _dataVault != null && isActiveAndEnabled)
+            {
+                EnsureVaultBuffers();
+            }
         }
 
         private bool EnsureVaultBuffers()
@@ -470,7 +506,7 @@ namespace Hecton8.Animation.Locomotion
                 return true;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystemId,
@@ -611,6 +647,14 @@ namespace Hecton8.Animation.Locomotion
             _dataVault = null;
         }
 
+        private void ClearCachedServices()
+        {
+            _cachedMovementForceSink = null;
+            _cachedPlayerContext = null;
+            _movementForceSink = null;
+            _playerContext = null;
+        }
+
         private void ReleaseVaultHandles()
         {
             IDataVault vault = _dataVault;
@@ -657,6 +701,23 @@ namespace Hecton8.Animation.Locomotion
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
                 _registeredLateFrame = false;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void ScheduleSolve()
@@ -852,17 +913,6 @@ namespace Hecton8.Animation.Locomotion
 
             uint frame = unchecked((uint)Time.frameCount);
             float oxygenDrainScale = 1f + stress01 * ClimbStressOxygenDrainBonus;
-            PhysiologyStateSignal physiology = new PhysiologyStateSignal
-            {
-                PlayerStress01 = stress01,
-                O2DrainMultiplier = oxygenDrainScale,
-                Recovery01 = 0f,
-                Frame = frame,
-                Cause = PlayerStateSignal.StateClimbing,
-                Flags = flags
-            };
-            GlobalSignals.Publish(in physiology);
-
             PlayerStressSignal stress = new PlayerStressSignal
             {
                 Stress01 = stress01,
@@ -872,7 +922,7 @@ namespace Hecton8.Animation.Locomotion
                 Cause = PlayerStateSignal.StateClimbing,
                 Flags = flags
             };
-            GlobalSignals.Publish(in stress);
+            SignalBus<PlayerStressSignal>.TryPush(in stress);
         }
 
         private bool ShouldDropFromLookDownGripRelease()
@@ -960,7 +1010,7 @@ namespace Hecton8.Animation.Locomotion
                 Channel = HapticRequest.ChannelLightThud,
                 Flags = HapticRequest.FlagLightThud
             };
-            GlobalSignals.Publish(in request);
+            SignalBus<HapticRequest>.TryPush(in request);
         }
 
         private void PublishClimbState(bool slip)
@@ -1011,7 +1061,7 @@ namespace Hecton8.Animation.Locomotion
                 State = state,
                 Flags = flags
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<PlayerStateSignal>.TryPush(in signal);
             _hasPublishedClimbState = true;
             _lastPublishedClimbFrame = frame;
             _lastPublishedClimbState = state;

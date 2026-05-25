@@ -11,6 +11,7 @@ namespace Hecton8.Editor.GeographySanity
     {
         private const string SelfAuditPath = "Docs/Reports/GEOGRAPHY_SANITY_SELF_AUDIT.json";
         private const string AgentLogPath = "Docs/AgentLogs/LOG_SHINOBU_247.md";
+        private static readonly Encoding ReportEncoding = new UTF8Encoding(false);
 
         [MenuItem("Tools/Hecton8/World Sanity Checker/Run Self Audit")]
         public static void RunMenu()
@@ -29,8 +30,8 @@ namespace Hecton8.Editor.GeographySanity
             Directory.CreateDirectory(Path.GetDirectoryName(logPath));
 
             string json = BuildJson();
-            File.WriteAllText(reportPath, json, Encoding.UTF8);
-            File.AppendAllText(logPath, "\n" + BuildXmlBlock() + "\n", Encoding.UTF8);
+            File.WriteAllText(reportPath, json, ReportEncoding);
+            File.AppendAllText(logPath, "\n" + BuildXmlBlock() + "\n", ReportEncoding);
             AssetDatabase.Refresh();
         }
 

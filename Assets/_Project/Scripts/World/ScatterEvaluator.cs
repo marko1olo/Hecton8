@@ -285,8 +285,7 @@ namespace Hecton8.World
         /// </summary>
         /// <remarks>
         /// No managed refs. No GC. No string ops.
-        /// Height sampling uses pre-filled NativeArray (main thread fills via
-        /// Physics.RaycastNonAlloc or MapMagic queries before scheduling).
+        /// Height sampling uses a pre-filled NativeArray from terrain or MapMagic data before scheduling.
         /// </remarks>
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ScatterCandidateCounter64
@@ -380,7 +379,7 @@ namespace Hecton8.World
                         LayerIndex = 0, // Ground layer.
                         Score = distanceFactor * (1.0f + rng.NextFloat(0f, 0.15f)),
                         HeightSource = terrainHeight > -9999f ? 0 : 2,
-                        IsValid = true
+                        IsValid = 1
                     };
                 }
 
@@ -405,7 +404,7 @@ namespace Hecton8.World
                         LayerIndex = 1, // Flora layer.
                         Score = distanceFactor * 0.85f * (1.0f + rng.NextFloat(0f, 0.1f)),
                         HeightSource = terrainHeight > -9999f ? 0 : 2,
-                        IsValid = true
+                        IsValid = 1
                     };
                 }
 
@@ -430,7 +429,7 @@ namespace Hecton8.World
                         LayerIndex = 2, // Debris/Structure layer.
                         Score = distanceFactor * 0.7f,
                         HeightSource = terrainHeight > -9999f ? 0 : 2,
-                        IsValid = true
+                        IsValid = 1
                     };
                 }
 
@@ -454,7 +453,7 @@ namespace Hecton8.World
                         LayerIndex = 3, // Fauna/Resource layer.
                         Score = distanceFactor * 0.6f,
                         HeightSource = terrainHeight > -9999f ? 0 : 2,
-                        IsValid = true
+                        IsValid = 1
                     };
                 }
             }

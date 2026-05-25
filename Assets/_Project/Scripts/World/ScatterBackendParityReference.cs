@@ -2,11 +2,16 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.World
 {
+    internal static class ScatterBackendParityReferenceLayout
+    {
+        public const int ScatterBackendParityReferenceStrideBytes = 32;
+    }
+
     /// <summary>
     /// Classic owner-side shadow parity reference captured when a backend shadow pass is scheduled.
     /// This remains shadow-only and never grants backend ownership of live placements.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterBackendParityReferenceLayout.ScatterBackendParityReferenceStrideBytes)]
     internal readonly struct ScatterBackendParityReference
     {
         public ScatterBackendParityReference(

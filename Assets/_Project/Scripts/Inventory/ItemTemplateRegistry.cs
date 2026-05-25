@@ -6,6 +6,11 @@ using UnityEngine;
 
 namespace Hecton8.Inventory
 {
+    internal static class ItemTemplateRegistryLayout
+    {
+        public const int ItemTemplateStrideBytes = 64;
+    }
+
     /// <summary>
     /// Authored category bitmask for contiguous item-template records.
     /// </summary>
@@ -53,7 +58,7 @@ namespace Hecton8.Inventory
     /// Immutable item-template record used by SOA inventory/runtime systems.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ItemTemplateRegistryLayout.ItemTemplateStrideBytes)]
     public struct ItemTemplate
     {
         [FieldOffset(0), SerializeField] private uint hashID;

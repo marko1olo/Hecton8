@@ -4,6 +4,13 @@ namespace Hecton8.Tools
     using Unity.Mathematics;
     using UnityEngine;
 
+    internal static class ToolUpgradeSystemLayout
+    {
+        public const int ToolStateStrideBytes = 32;
+        public const int ToolRuntimeProfileStrideBytes = 48;
+        public const int ToolRuntimeStatsStrideBytes = 40;
+    }
+
     /// <summary>
     /// Stable upgrade-bit ids compiled into the runtime modular-equipment state.
     /// </summary>
@@ -41,7 +48,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Mutable per-tool runtime state stored in contiguous native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ToolUpgradeSystemLayout.ToolStateStrideBytes)]
     public struct ToolState
     {
         [FieldOffset(0)] public float CurrentBattery;
@@ -58,7 +65,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Cold-path authored profile copied from tool components into the modular runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = ToolUpgradeSystemLayout.ToolRuntimeProfileStrideBytes)]
     public struct ToolRuntimeProfile
     {
         [FieldOffset(0)] public uint ToolId;
@@ -81,7 +88,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Hot-path compiled stats stored beside <see cref="ToolState"/> in native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = ToolUpgradeSystemLayout.ToolRuntimeStatsStrideBytes)]
     public struct ToolRuntimeStats
     {
         [FieldOffset(0)] public float MaxRange;

@@ -1,6 +1,5 @@
 using System;
 using Hecton8.Core;
-using Hecton8.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -48,7 +47,7 @@ namespace Hecton8.UI
         private RebindRow[] _rows = Array.Empty<RebindRow>();
         private bool _built;
         private bool _subscribed;
-        private InputManager _subscribedInput;
+        private INativeInputManagerRuntime _subscribedInput;
         private IInputBindingService _subscribedRebindingService;
         private bool _hotSwapListenerRegistered;
         private int _selectedIndex;
@@ -229,7 +228,7 @@ namespace Hecton8.UI
             if (_subscribed)
                 return;
 
-            InputManager input = ResolveInputManager();
+            INativeInputManagerRuntime input = ResolveInputManager();
             IInputBindingService rebinding = ResolveRebindingService();
             if (input == null || rebinding == null)
                 return;
@@ -255,7 +254,7 @@ namespace Hecton8.UI
             if (!_subscribed)
                 return;
 
-            InputManager input = _subscribedInput;
+            INativeInputManagerRuntime input = _subscribedInput;
             if (input != null)
             {
                 input.OnNavigate -= HandleNavigate;
@@ -367,7 +366,7 @@ namespace Hecton8.UI
             if (rebinding.IsRebinding) return;
 
             RebindRow row = _rows[_selectedIndex];
-            InputManager input = ResolveInputManager();
+            INativeInputManagerRuntime input = ResolveInputManager();
             if (!TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
                 SetStatus(resolutionMessage);
@@ -482,7 +481,7 @@ namespace Hecton8.UI
         /// <summary>
         /// TASK 16: Handles conflict detection during rebinding.
         /// Displays modal window with conflict warning and confirm/cancel options.
-        /// ModalWindow currently requires a managed string payload; status output stays char-buffered.
+        /// ModalWindow consumes the conflict body from the pooled char buffer.
         /// SAFETY: Validates ModalWindow availability before showing dialog.
         /// EXCEPTION-SAFE: Modal buffer length is rebuilt at method start to prevent stale data.
         /// </summary>
@@ -490,7 +489,6 @@ namespace Hecton8.UI
         {
             if (!IsActive) return;
 
-            // ModalWindow currently requires a managed string payload.
             int messageLength = 0;
             messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, "The binding '");
             messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, newBinding);
@@ -499,22 +497,22 @@ namespace Hecton8.UI
             messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, "'.\n\nDo you want to reassign it to '");
             messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, actionName);
             messageLength = AppendToBuffer(_modalMessageBuffer, messageLength, "'?");
-            string message = new string(_modalMessageBuffer, 0, messageLength);
 
             // SAFETY: Check if ModalWindow is available (may not exist in all scenes)
             try
             {
                 Hecton.UI.MainMenu.ModalWindow.Show(
                     StatusConflictTitle,
-                    message,
+                    _modalMessageBuffer,
+                    messageLength,
                     onConfirm,  // User confirms - complete rebind
                     onCancel    // User cancels - revert rebind
                 );
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[PauseControlsPanel] ModalWindow unavailable: {ex.Message}. Auto-canceling conflict.");
+                Debug.LogWarning("[PauseControlsPanel] ModalWindow unavailable. Auto-canceling conflict.");
 #endif
                 // Fallback: auto-cancel if modal unavailable
                 SetStatus("CONFLICT: Cannot show dialog - ModalWindow unavailable", StatusColorConflict, StatusBgConflict);
@@ -586,7 +584,7 @@ namespace Hecton8.UI
             if (_rows.Length == 0)
                 return;
 
-            InputManager input = ResolveInputManager();
+            INativeInputManagerRuntime input = ResolveInputManager();
             if (input == null)
                 return;
 
@@ -632,12 +630,12 @@ namespace Hecton8.UI
             TextMeshProUGUI title = CreateText(self, "Title", labelFont, 16f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(18f, -16f), new Vector2(-18f, 24f));
             title.color = BindingColor;
-            title.SetText("CONTROL MATRIX");
+            TmpTextNoAlloc.Set(title, "CONTROL MATRIX");
 
             TextMeshProUGUI hint = CreateText(self, "Hint", labelFont, 10f, FontStyles.Normal, TextAlignmentOptions.Right);
             Anchor(hint.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(18f, -16f), new Vector2(-18f, 24f));
             hint.color = HintColor;
-            hint.SetText("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+            TmpTextNoAlloc.Set(hint, "SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
 
             RectTransform listRoot = CreateRect(self, "Rows");
             Stretch(listRoot, 18f, 18f, 58f, 66f);
@@ -653,7 +651,7 @@ namespace Hecton8.UI
             {
                 RebindRow row = _rows[i];
 
-                RectTransform rowRoot = CreateRect(listRoot, $"Row_{row.actionName}");
+                RectTransform rowRoot = CreateRect(listRoot, "Row");
                 rowRoot.anchorMin = new Vector2(0f, 1f);
                 rowRoot.anchorMax = new Vector2(1f, 1f);
                 rowRoot.pivot = new Vector2(0.5f, 1f);
@@ -665,31 +663,31 @@ namespace Hecton8.UI
                 rowBg.raycastTarget = false;
                 _rowBackgrounds[i] = rowBg;
 
-                RectTransform accent = CreateRect(rowRoot, $"Accent_{row.actionName}");
+                RectTransform accent = CreateRect(rowRoot, "Accent");
                 Anchor(accent, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(4f, 0f));
                 Image accentImg = EnsureImage(accent.gameObject);
                 accentImg.color = new Color(0.18f, 0.32f, 0.34f, 0.78f);
                 accentImg.raycastTarget = false;
                 _rowAccentBars[i] = accentImg;
 
-                RectTransform selected = CreateRect(rowRoot, $"Selected_{row.actionName}");
+                RectTransform selected = CreateRect(rowRoot, "Selected");
                 Anchor(selected, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(3f, 0f));
                 Image selImg = EnsureImage(selected.gameObject);
                 selImg.color = SelectionColor;
                 selImg.raycastTarget = false;
 
-                TextMeshProUGUI label = CreateText(rowRoot, $"Label_{row.actionName}", labelFont, 11.5f, FontStyles.Bold, TextAlignmentOptions.Left);
+                TextMeshProUGUI label = CreateText(rowRoot, "Label", labelFont, 11.5f, FontStyles.Bold, TextAlignmentOptions.Left);
                 Anchor(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.56f, 1f), new Vector2(14f, 0f), new Vector2(-12f, 0f));
                 label.color = LabelColor;
 
-                RectTransform bindingBox = CreateRect(rowRoot, $"BindingBox_{row.actionName}");
+                RectTransform bindingBox = CreateRect(rowRoot, "BindingBox");
                 Anchor(bindingBox, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-10f, 0f), new Vector2(176f, 22f));
                 Image bindingBg = EnsureImage(bindingBox.gameObject);
                 bindingBg.color = BindingBg;
                 bindingBg.raycastTarget = false;
                 _bindingBackgrounds[i] = bindingBg;
 
-                TextMeshProUGUI binding = CreateText(bindingBox, $"Binding_{row.actionName}", bindingFont, 11f, FontStyles.Bold, TextAlignmentOptions.Center);
+                TextMeshProUGUI binding = CreateText(bindingBox, "Binding", bindingFont, 11f, FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(binding.rectTransform, 0f, 0f, 0f, 0f);
                 binding.color = BindingColor;
 
@@ -718,7 +716,7 @@ namespace Hecton8.UI
             {
                 RebindRow row = _rows[i];
                 if (row.labelText != null)
-                    row.labelText.SetText(row.label);
+                    TmpTextNoAlloc.Set(row.labelText, row.label);
             }
         }
 
@@ -733,21 +731,21 @@ namespace Hecton8.UI
             if (row == null || row.bindingText == null)
                 return;
 
-            InputManager input = ResolveInputManager();
+            INativeInputManagerRuntime input = ResolveInputManager();
             if (!TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
-                row.bindingText.SetText(resolutionMessage);
+                TmpTextNoAlloc.Set(row.bindingText, resolutionMessage);
                 return;
             }
 
-            if (InputManager.TryWriteBindingDisplayStringSafe(action, bindingIndex, _bindingDisplayBuffer, 0, out int charsWritten) &&
+            if (input.TryWriteBindingDisplayString(action, bindingIndex, _bindingDisplayBuffer, 0, out int charsWritten) &&
                 charsWritten > 0)
             {
                 row.bindingText.SetCharArray(_bindingDisplayBuffer, 0, charsWritten);
                 return;
             }
 
-            row.bindingText.SetText("--");
+            TmpTextNoAlloc.Set(row.bindingText, "--");
         }
 
         /// <summary>
@@ -834,10 +832,10 @@ namespace Hecton8.UI
             }
 
             RebindRow row = _rows[_selectedIndex];
-            InputManager input = ResolveInputManager();
+            INativeInputManagerRuntime input = ResolveInputManager();
             if (TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
-                bool hasBindingDisplay = InputManager.TryWriteBindingDisplayStringSafe(
+                bool hasBindingDisplay = input.TryWriteBindingDisplayString(
                     action,
                     bindingIndex,
                     _bindingDisplayBuffer,
@@ -1003,11 +1001,11 @@ namespace Hecton8.UI
             return GlobalRegistry.InputBinding;
         }
 
-        private InputManager ResolveInputManager()
+        private INativeInputManagerRuntime ResolveInputManager()
         {
             return _subscribedInput != null
                 ? _subscribedInput
-                : GlobalRegistry.NativeInputManager;
+                : GlobalRegistry.NativeInputRuntime;
         }
 
         private static RebindRow[] BuildDefaultRows()
@@ -1033,7 +1031,7 @@ namespace Hecton8.UI
         }
 
         private static bool TryResolveRowBinding(
-            InputManager input,
+            INativeInputManagerRuntime input,
             RebindRow row,
             out InputAction action,
             out int bindingIndex,
@@ -1055,14 +1053,14 @@ namespace Hecton8.UI
             action = input.GetAction(row.actionName, row.actionMap);
             if (action == null)
             {
-                resolutionMessage = $"MISSING ACTION: {row.actionMap}/{row.actionName}";
+                resolutionMessage = "MISSING ACTION.";
                 return false;
             }
 
             bindingIndex = ResolveBindingIndex(action, row.bindingIndex);
             if (bindingIndex < 0)
             {
-                resolutionMessage = $"NO REBINDABLE BINDING: {row.label}";
+                resolutionMessage = "NO REBINDABLE BINDING.";
                 return false;
             }
 

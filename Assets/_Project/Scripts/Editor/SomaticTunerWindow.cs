@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -83,9 +84,9 @@ namespace Hecton8.EditorTools
                 int index = PositiveModulo(cursor[0] - 1, ring.Length);
                 SomaticKinematicBlackBoxEntry entry = ring[index];
                 EditorGUILayout.LabelField("Frame", entry.Frame.ToString());
-                EditorGUILayout.LabelField("Velocity", ToVector3(entry.Velocity).ToString("F3"));
-                EditorGUILayout.LabelField("Thrust", ToVector3(entry.RequestedThrust).ToString("F3"));
-                EditorGUILayout.LabelField("Push-Out", ToVector3(entry.SdfPushOut).ToString("F3"));
+                EditorGUILayout.LabelField("Velocity", FormatVector3(ToVector3(entry.Velocity)));
+                EditorGUILayout.LabelField("Thrust", FormatVector3(ToVector3(entry.RequestedThrust)));
+                EditorGUILayout.LabelField("Push-Out", FormatVector3(ToVector3(entry.SdfPushOut)));
             }
 
             DrawComfortTuner(vault);
@@ -331,6 +332,17 @@ namespace Hecton8.EditorTools
         {
             int modulo = value % length;
             return modulo < 0 ? modulo + length : modulo;
+        }
+
+        private static string FormatVector3(Vector3 value)
+        {
+            return "(" +
+                   value.x.ToString("F3", CultureInfo.InvariantCulture) +
+                   ", " +
+                   value.y.ToString("F3", CultureInfo.InvariantCulture) +
+                   ", " +
+                   value.z.ToString("F3", CultureInfo.InvariantCulture) +
+                   ")";
         }
 
         private static Vector3 ToVector3(Unity.Mathematics.float3 value)

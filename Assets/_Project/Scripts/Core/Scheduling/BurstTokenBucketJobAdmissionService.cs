@@ -98,27 +98,27 @@ namespace Hecton8.Core.Scheduling
             }
 
             _dataVault = dataVault;
-            _laneBudgetsMsHandle = dataVault.GetGenerationHandle<float>(
+            _laneBudgetsMsHandle = dataVault.EnsureGenerationHandle<float>(
                 BufferID.JobAdmissionLaneBudgets,
                 LaneCount,
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
-            _baseRefillMsHandle = dataVault.GetGenerationHandle<float>(
+            _baseRefillMsHandle = dataVault.EnsureGenerationHandle<float>(
                 BufferID.JobAdmissionBaseRefill,
                 LaneCount,
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
-            _jobHashesHandle = dataVault.GetGenerationHandle<uint>(
+            _jobHashesHandle = dataVault.EnsureGenerationHandle<uint>(
                 BufferID.JobAdmissionJobHashes,
                 CostSlotCapacity,
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
-            _ewmaCostsMsHandle = dataVault.GetGenerationHandle<float>(
+            _ewmaCostsMsHandle = dataVault.EnsureGenerationHandle<float>(
                 BufferID.JobAdmissionEwmaCosts,
                 CostSlotCapacity,
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
-            _blackboxHandle = dataVault.GetGenerationHandle<JobAdmissionBlackboxEntry>(
+            _blackboxHandle = dataVault.EnsureGenerationHandle<JobAdmissionBlackboxEntry>(
                 BufferID.JobAdmissionBlackBox,
                 BlackboxCapacity,
                 SystemID.JobAdmission,
@@ -385,8 +385,8 @@ namespace Hecton8.Core.Scheduling
         /// <inheritdoc />
         public float GetLaneBudgetMs(JobAdmissionLane lane)
         {
-            NativeArray<float> laneBudgetsMs = ResolveLaneBudgets();
-            if (!_initialized || !laneBudgetsMs.IsCreated || laneBudgetsMs.Length < LaneCount)
+            NativeArray<float>.ReadOnly laneBudgetsMs = ReadLaneBudgets();
+            if (!_initialized || laneBudgetsMs.Length < LaneCount)
                 return 0f;
 
             int laneIndex = ClampLane(lane);
@@ -399,7 +399,7 @@ namespace Hecton8.Core.Scheduling
             if (!_initialized)
                 return DefaultEstimatedCostMs;
 
-            return ResolveEstimatedCostMs(jobHash, ResolveJobHashes(), ResolveEwmaCosts());
+            return ResolveEstimatedCostMsReadOnly(jobHash, ReadJobHashes(), ReadEwmaCosts());
         }
 
         /// <inheritdoc />
@@ -412,6 +412,13 @@ namespace Hecton8.Core.Scheduling
         private NativeArray<float> ResolveLaneBudgets()
         {
             return _dataVault != null && _laneBudgetsMsHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _laneBudgetsMsHandle, out NativeArray<float> buffer)
+                ? buffer
+                : default;
+        }
+
+        private NativeArray<float>.ReadOnly ReadLaneBudgets()
+        {
+            return _dataVault != null && _laneBudgetsMsHandle.BufferID != 0u && _dataVault.TryReadOnlyHandle(in _laneBudgetsMsHandle, out NativeArray<float>.ReadOnly buffer)
                 ? buffer
                 : default;
         }
@@ -430,9 +437,23 @@ namespace Hecton8.Core.Scheduling
                 : default;
         }
 
+        private NativeArray<uint>.ReadOnly ReadJobHashes()
+        {
+            return _dataVault != null && _jobHashesHandle.BufferID != 0u && _dataVault.TryReadOnlyHandle(in _jobHashesHandle, out NativeArray<uint>.ReadOnly buffer)
+                ? buffer
+                : default;
+        }
+
         private NativeArray<float> ResolveEwmaCosts()
         {
             return _dataVault != null && _ewmaCostsMsHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _ewmaCostsMsHandle, out NativeArray<float> buffer)
+                ? buffer
+                : default;
+        }
+
+        private NativeArray<float>.ReadOnly ReadEwmaCosts()
+        {
+            return _dataVault != null && _ewmaCostsMsHandle.BufferID != 0u && _dataVault.TryReadOnlyHandle(in _ewmaCostsMsHandle, out NativeArray<float>.ReadOnly buffer)
                 ? buffer
                 : default;
         }
@@ -550,6 +571,28 @@ namespace Hecton8.Core.Scheduling
                 : DefaultEstimatedCostMs;
         }
 
+        private float ResolveEstimatedCostMsReadOnly(uint jobHash, NativeArray<uint>.ReadOnly jobHashes, NativeArray<float>.ReadOnly ewmaCostsMs)
+        {
+            if (jobHash == 0u)
+                return DefaultEstimatedCostMs;
+
+            if (jobHashes.Length < CostSlotCapacity || ewmaCostsMs.Length < CostSlotCapacity)
+                return DefaultEstimatedCostMs;
+
+            int costSlot = FindCostSlotReadOnly(jobHash, jobHashes);
+            if (costSlot < 0)
+            {
+                return _costSlotCount >= CostSlotCapacity
+                    ? ResolveOverflowEstimatedCostMs()
+                    : DefaultEstimatedCostMs;
+            }
+
+            float cached = ewmaCostsMs[costSlot];
+            return cached > 0f && math.isfinite(cached)
+                ? math.min(cached, AdmissionCostClampMs)
+                : DefaultEstimatedCostMs;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolveOverflowEstimatedCostMs()
         {
@@ -580,6 +623,21 @@ namespace Hecton8.Core.Scheduling
         private int FindCostSlot(uint jobHash, NativeArray<uint> jobHashes)
         {
             if (jobHash == 0u || !jobHashes.IsCreated)
+                return -1;
+
+            int slotCount = math.min(_costSlotCount, jobHashes.Length);
+            for (int i = 0; i < slotCount; i++)
+            {
+                if (jobHashes[i] == jobHash)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private int FindCostSlotReadOnly(uint jobHash, NativeArray<uint>.ReadOnly jobHashes)
+        {
+            if (jobHash == 0u)
                 return -1;
 
             int slotCount = math.min(_costSlotCount, jobHashes.Length);

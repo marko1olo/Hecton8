@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton.Localization
@@ -131,6 +132,165 @@ namespace Hecton.Localization
             return legacyFallback ?? string.Empty;
         }
 
+        /// <summary>
+        /// Resolve text through a cached localization read model, but keep a legacy string as the last fallback.
+        /// </summary>
+        public string ResolveOrFallback(ILocalizationTextReadModel manager, string legacyFallback)
+        {
+            string fallback = !string.IsNullOrWhiteSpace(fallbackText)
+                ? fallbackText
+                : (legacyFallback ?? string.Empty);
+
+            GameLanguage language = manager != null
+                ? (GameLanguage)manager.ActiveLanguageId
+                : GameLanguage.English;
+
+            if (TryResolveInline(language, out string inlineValue) && !string.IsNullOrWhiteSpace(inlineValue))
+                return inlineValue;
+
+            if (manager != null && HasTableKey)
+            {
+                ReadOnlySpan<char> resolved = manager.GetRawSpanOrFallback(LocHash.Compute(tableKey.AsSpan()), ReadOnlySpan<char>.Empty);
+                if (!resolved.IsEmpty)
+                    return !string.IsNullOrWhiteSpace(fallback) ? fallback : tableKey;
+            }
+
+            if (!string.IsNullOrWhiteSpace(fallback))
+                return fallback;
+
+            return HasTableKey ? tableKey : string.Empty;
+        }
+
+        /// <summary>
+        /// Resolves text as a span for caller-owned UI buffers.
+        /// </summary>
+        public ReadOnlySpan<char> ResolveSpanOrFallback(LocalizationManager manager, string legacyFallback)
+        {
+            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            if (TryResolveInlineSpan(language, out ReadOnlySpan<char> inlineValue))
+                return inlineValue;
+
+            if (HasTableKey)
+            {
+                int tableHash = LocHash.Compute(tableKey.AsSpan());
+                if (manager != null && manager.TryGetRawBuffer(tableHash, out char[] buffer, out int length))
+                    return buffer.AsSpan(0, length);
+
+                if (manager != null && manager.TryGet(language, tableKey, out string tableValue) && !string.IsNullOrWhiteSpace(tableValue))
+                    return tableValue.AsSpan();
+            }
+
+            if (!string.IsNullOrWhiteSpace(fallbackText))
+                return fallbackText.AsSpan();
+
+            if (!string.IsNullOrWhiteSpace(legacyFallback))
+                return legacyFallback.AsSpan();
+
+            return HasTableKey ? tableKey.AsSpan() : ReadOnlySpan<char>.Empty;
+        }
+
+        /// <summary>
+        /// Resolves text as a span through the contract read-model for cross-domain callers.
+        /// </summary>
+        public ReadOnlySpan<char> ResolveSpanOrFallback(ILocalizationTextReadModel manager, string legacyFallback)
+        {
+            GameLanguage language = manager != null
+                ? (GameLanguage)manager.ActiveLanguageId
+                : GameLanguage.English;
+            if (TryResolveInlineSpan(language, out ReadOnlySpan<char> inlineValue))
+                return inlineValue;
+
+            if (HasTableKey)
+            {
+                int tableHash = LocHash.Compute(tableKey.AsSpan());
+                if (manager != null)
+                {
+                    ReadOnlySpan<char> tableValue = manager.GetRawSpanOrFallback(tableHash, ReadOnlySpan<char>.Empty);
+                    if (!tableValue.IsEmpty)
+                        return tableValue;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(fallbackText))
+                return fallbackText.AsSpan();
+
+            if (!string.IsNullOrWhiteSpace(legacyFallback))
+                return legacyFallback.AsSpan();
+
+            return HasTableKey ? tableKey.AsSpan() : ReadOnlySpan<char>.Empty;
+        }
+
+        /// <summary>
+        /// Resolves, expands, and copies text into caller-owned memory.
+        /// </summary>
+        public bool TryCopyResolvedOrFallback(LocalizationManager manager, char[] destination, out int length, string legacyFallback)
+        {
+            length = 0;
+            if (destination == null)
+                return false;
+
+            ReadOnlySpan<char> source = ResolveSpanOrFallback(manager, legacyFallback);
+            if (source.Length == 0)
+                return true;
+
+            if (manager != null && manager.TryExpandText(source, destination, out length))
+                return true;
+
+            int copyLength = Math.Min(source.Length, destination.Length);
+            source.Slice(0, copyLength).CopyTo(destination.AsSpan(0, copyLength));
+            length = copyLength;
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves and copies text through the contract read-model into caller-owned memory.
+        /// </summary>
+        public bool TryCopyResolvedOrFallback(ILocalizationTextReadModel manager, char[] destination, out int length, string legacyFallback)
+        {
+            length = 0;
+            if (destination == null)
+                return false;
+
+            ReadOnlySpan<char> source = ResolveSpanOrFallback(manager, legacyFallback);
+            if (source.Length == 0)
+                return true;
+
+            int copyLength = Math.Min(source.Length, destination.Length);
+            source.Slice(0, copyLength).CopyTo(destination.AsSpan(0, copyLength));
+            length = copyLength;
+            return true;
+        }
+
+        /// <summary>
+        /// Checks whether the span-resolved text contains any visible non-whitespace character.
+        /// </summary>
+        public bool HasResolvedOrFallbackText(LocalizationManager manager, string legacyFallback)
+        {
+            ReadOnlySpan<char> value = ResolveSpanOrFallback(manager, legacyFallback);
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks contract-resolved text for visible non-whitespace content.
+        /// </summary>
+        public bool HasResolvedOrFallbackText(ILocalizationTextReadModel manager, string legacyFallback)
+        {
+            ReadOnlySpan<char> value = ResolveSpanOrFallback(manager, legacyFallback);
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
         private bool TryResolveInline(GameLanguage language, out string value)
         {
             if (variants != null)
@@ -146,6 +306,25 @@ namespace Hecton.Localization
             }
 
             value = string.Empty;
+            return false;
+        }
+
+        private bool TryResolveInlineSpan(GameLanguage language, out ReadOnlySpan<char> value)
+        {
+            if (variants != null)
+            {
+                for (int i = 0; i < variants.Length; i++)
+                {
+                    string text = variants[i].Text;
+                    if (variants[i].Language == language && !string.IsNullOrWhiteSpace(text))
+                    {
+                        value = text.AsSpan();
+                        return true;
+                    }
+                }
+            }
+
+            value = ReadOnlySpan<char>.Empty;
             return false;
         }
     }

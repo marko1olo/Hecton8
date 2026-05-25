@@ -124,7 +124,7 @@ namespace Hecton8.EditorTools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[BiomeMatrixBootstrap] 108-biome matrix rebuilt.");
+            Hecton8.Core.H8Debug.Log("[BiomeMatrixBootstrap] 108-biome matrix rebuilt.");
         }
 
         [MenuItem("Hecton/Validation/Validate 108 Biome Matrix", priority = 237)]
@@ -147,7 +147,7 @@ namespace Hecton8.EditorTools
             }
 
             int placeholderCount = 0;
-            HashSet<string> familyIds = new HashSet<string>();
+            HashSet<string> familyIds = new HashSet<string>(32, System.StringComparer.Ordinal);
             for (int i = 0; i < catalog.Profiles.Length; i++)
             {
                 HectonBiomeMatrixProfile profile = catalog.Profiles[i];
@@ -305,7 +305,7 @@ namespace Hecton8.EditorTools
 
             if (errorCount == 0)
             {
-                Debug.Log($"[BiomeMatrixValidation] PASS placeholders={placeholderCount} families={familyIds.Count} warnings={warningCount}");
+                Hecton8.Core.H8Debug.Log($"[BiomeMatrixValidation] PASS placeholders={placeholderCount} families={familyIds.Count} warnings={warningCount}");
                 return;
             }
 
@@ -1125,7 +1125,7 @@ namespace Hecton8.EditorTools
 
             if (_worldFamilyLookup == null)
             {
-                _worldFamilyLookup = new Dictionary<string, WorldPrefabFamilyProfile>(System.StringComparer.OrdinalIgnoreCase);
+            _worldFamilyLookup = new Dictionary<string, WorldPrefabFamilyProfile>(128, System.StringComparer.OrdinalIgnoreCase);
                 string[] guids = AssetDatabase.FindAssets("t:WorldPrefabFamilyProfile", new[] { WorldFamilyProfileFolder });
                 for (int i = 0; i < guids.Length; i++)
                 {

@@ -2,6 +2,7 @@
 using Hecton8.Quest;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor
 {
@@ -68,7 +69,7 @@ namespace Hecton8.Editor
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[QuestGraphRepairUtility] Applied QUEST_STATE_GRAPH_VALIDATOR repairs. Changed assets: " + changed);
+            H8Debug.Log("[QuestGraphRepairUtility] Applied QUEST_STATE_GRAPH_VALIDATOR repairs. Changed assets: " + changed);
         }
 
         private static int ApplyQuestRepair(
@@ -85,7 +86,7 @@ namespace Hecton8.Editor
             QuestData quest = AssetDatabase.LoadAssetAtPath<QuestData>(path);
             if (quest == null)
             {
-                Debug.LogError("[QuestGraphRepairUtility] Missing QuestData asset: " + path);
+                H8Debug.LogError("[QuestGraphRepairUtility] Missing QuestData asset: " + path);
                 return 0;
             }
 

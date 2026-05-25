@@ -127,7 +127,7 @@ namespace Hecton8.Physics.Vehicles
             signal.TargetHash = 0u;
             signal.SourceHash = VehicleDamageConstants.SourceHashMock;
             signal.Frame = Frame;
-            signal.SourceId = 0x152u;
+            signal.SourceId = 0x152;
             signal.TargetId = 0;
             signal.Channel = 0;
             signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
@@ -469,6 +469,7 @@ namespace Hecton8.Physics.Vehicles
         // against the same queue handle in this pass.
         [NoAlias, NativeDisableContainerSafetyRestriction]
         public NativeQueue<VehicleHazardSignal>.ParallelWriter HazardWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> HazardWriterBudget;
         public int CellCount;
         public int SignalCount;
         public uint Frame;
@@ -636,7 +637,7 @@ namespace Hecton8.Physics.Vehicles
             signal.HazardType = hazardType;
             signal.Flags = 1;
             signal.CellIndex = (ushort)math.min(cellIndex, 65535);
-            HazardWriter.Enqueue(signal);
+            SignalBus<VehicleHazardSignal>.TryEnqueueBounded(HazardWriter, HazardWriterBudget, signal);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

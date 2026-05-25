@@ -1,4 +1,4 @@
-# H8DB Index And RLE Spec
+﻿# H8DB Index And RLE Spec
 
 Owner: MACRO_DB_INDEX_OPTIMIZER  
 Date: 2026-05-17

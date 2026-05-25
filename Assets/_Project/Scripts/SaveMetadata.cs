@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 
 namespace Hecton8.SaveSystem
@@ -29,14 +30,16 @@ namespace Hecton8.SaveSystem
         public DateTime GetDateTime() => new DateTime(Timestamp, DateTimeKind.Utc);
         public string slotName => SlotName;
         public string sceneName => SceneName;
-        public string timestamp => GetDateTime().ToLocalTime().ToString("g");
+        public string timestamp => GetDateTime().ToLocalTime().ToString("g", CultureInfo.InvariantCulture);
         public float totalPlayTime => PlayTimeSeconds;
         public string version => GameVersion;
 
         public string GetFormattedPlayTime()
         {
             TimeSpan t = TimeSpan.FromSeconds(PlayTimeSeconds);
-            return $"{(int)t.TotalHours:D2}:{t.Minutes:D2}:{t.Seconds:D2}";
+            return ((int)t.TotalHours).ToString("D2", CultureInfo.InvariantCulture) + ":" +
+                   t.Minutes.ToString("D2", CultureInfo.InvariantCulture) + ":" +
+                   t.Seconds.ToString("D2", CultureInfo.InvariantCulture);
         }
 
         // ═════════════════════════════════════════════════════════

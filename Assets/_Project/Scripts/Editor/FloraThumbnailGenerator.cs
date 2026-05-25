@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Hecton8.World;
 using Unity.Collections;
@@ -19,6 +20,7 @@ namespace Hecton8.EditorTools
             EnsureFolder("Assets/_Project/Art/Sprites", "FloraThumbnails");
 
             string[] templateGuids = AssetDatabase.FindAssets("t:FloraDataTemplate", new[] { TemplateRoot });
+            Array.Sort(templateGuids, StringComparer.Ordinal);
             for (int i = 0; i < templateGuids.Length; i++)
             {
                 string templatePath = AssetDatabase.GUIDToAssetPath(templateGuids[i]);
@@ -32,11 +34,12 @@ namespace Hecton8.EditorTools
 
                 string thumbnailPath = $"{ThumbnailRoot}/{Path.GetFileNameWithoutExtension(templatePath)}_Thumb.png";
                 WritePngBytes(thumbnailPath, thumbnail.EncodeToPNG());
-                Object.DestroyImmediate(thumbnail);
+                UnityEngine.Object.DestroyImmediate(thumbnail);
             }
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             string[] thumbnailGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { ThumbnailRoot });
+            Array.Sort(thumbnailGuids, StringComparer.Ordinal);
             for (int i = 0; i < thumbnailGuids.Length; i++)
                 ConfigureThumbnailImporter(AssetDatabase.GUIDToAssetPath(thumbnailGuids[i]));
 

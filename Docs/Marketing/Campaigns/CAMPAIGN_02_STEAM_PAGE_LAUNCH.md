@@ -1,4 +1,4 @@
-# Campaign 02 - Steam Page Launch
+﻿# Campaign 02 - Steam Page Launch
 
 Status: future / requires Steam page assets
 Public stance: single-player-first scope / proof-first campaign copy

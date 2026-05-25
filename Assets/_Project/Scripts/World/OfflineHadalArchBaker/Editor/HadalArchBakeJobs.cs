@@ -382,7 +382,6 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
         private void PolygonizeCell(int3 cell)
         {
             float4 d0 = default;
-            float4 d1 = default;
             float3 p0 = default;
             float3 p1 = default;
             float3 p2 = default;

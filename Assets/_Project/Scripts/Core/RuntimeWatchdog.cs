@@ -425,7 +425,7 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             BlackBoxHeartbeatThread.Ping();
-            if (GlobalSignals.SimulationPaused)
+            if (SimulationSignalRoute.SimulationPaused)
                 return;
 
             int frame = Time.frameCount;
@@ -645,7 +645,7 @@ namespace Hecton8.Core
             }
 
             _watchdogStateFlags |= WatchdogStateFrameBudgetWarningSent;
-            PerformanceEvents.RaiseSystemDegradation(
+            PerformanceEvents.TryRaiseSystemDegradation(
                 deltaTime * 1000f,
                 ResolveFrameStripThresholdSeconds() * 1000f,
                 Time.frameCount);
@@ -1120,8 +1120,7 @@ namespace Hecton8.Core
             if (_registeredUpdatable || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryRegisterLateFrameTickable()

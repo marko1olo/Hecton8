@@ -9,6 +9,7 @@ Shader "HECTON/UI/Diegetic Terminal"
         _HectonDecryptionNoiseDensity("Decryption Noise Density", Range(0, 2)) = 1
         _HectonTerminalInstancedMode("Instanced Mode", Float) = 0
         _HectonTerminalGlow("Terminal Glow", Range(0, 4)) = 1.35
+        [HideInInspector] _TerminalInputStateCount("Terminal Input State Count", Float) = 0
     }
 
     SubShader
@@ -48,6 +49,7 @@ Shader "HECTON/UI/Diegetic Terminal"
                 float _HectonTerminalInstancedMode;
                 float _HectonTerminalGlow;
                 float _GlobalDecryptionPuzzleCount;
+                float _TerminalInputStateCount;
             CBUFFER_END
 
             struct TerminalPanelInstanceDTO
@@ -68,8 +70,17 @@ Shader "HECTON/UI/Diegetic Terminal"
                 uint Pad0;
             };
 
+            struct TerminalInputStateGPU
+            {
+                float2 ProjectedUV;
+                uint TerminalHashID;
+                uint InputFlags;
+                float4 Reserved0;
+            };
+
             StructuredBuffer<TerminalPanelInstanceDTO> _TerminalPanelInstances;
             StructuredBuffer<GlobalDecryptionPuzzleDTO> _GlobalDecryptionPuzzles;
+            StructuredBuffer<TerminalInputStateGPU> _TerminalInputStates;
 
             struct Attributes
             {
@@ -85,6 +96,7 @@ Shader "HECTON/UI/Diegetic Terminal"
                 float2 uv : TEXCOORD0;
                 nointerpolation float slice : TEXCOORD1;
                 nointerpolation float quality : TEXCOORD2;
+                nointerpolation uint terminalIndex : TEXCOORD3;
             };
 
             Varyings Vert(Attributes input)
@@ -98,6 +110,7 @@ Shader "HECTON/UI/Diegetic Terminal"
                     output.positionCS = TransformWorldToHClip(instancedWorld.xyz);
                     output.slice = instance.SliceFlags.x;
                     output.quality = saturate(max(instance.SliceFlags.z, _HectonDiegeticGlitchQualityWeight));
+                    output.terminalIndex = input.instanceID;
                 }
                 else
                 {
@@ -105,6 +118,7 @@ Shader "HECTON/UI/Diegetic Terminal"
                     output.positionCS = positionInputs.positionCS;
                     output.slice = _TerminalSlice;
                     output.quality = saturate(_HectonDiegeticGlitchQualityWeight);
+                    output.terminalIndex = (uint)round(saturate(_TerminalSlice * (1.0 / 63.0)) * 63.0);
                 }
                 output.uv = input.uv;
                 return output;
@@ -157,6 +171,31 @@ Shader "HECTON/UI/Diegetic Terminal"
                 return baseColor + overlay * (half)oscMask;
             }
 
+            half3 H8ApplyTerminalCursor(half3 baseColor, float2 uv, uint terminalIndex, float quality)
+            {
+                if (terminalIndex >= (uint)max(0.0, _TerminalInputStateCount))
+                    return baseColor;
+
+                TerminalInputStateGPU state = _TerminalInputStates[terminalIndex];
+                uint hover = state.InputFlags & 1u;
+                if (hover == 0u)
+                    return baseColor;
+
+                float2 cursorUv = saturate(state.ProjectedUV);
+                float2 delta = uv - cursorUv;
+                float distanceSq = dot(delta, delta);
+                float radius = lerp(0.0065, 0.0035, quality);
+                float ringRadius = radius * lerp(2.2, 3.4, quality);
+                float core = 1.0 - smoothstep(radius * radius, radius * radius * 2.25, distanceSq);
+                float ringDeltaSq = abs(distanceSq - ringRadius * ringRadius);
+                float ringWidthSq = max(radius * ringRadius, 0.000001);
+                float ring = (1.0 - smoothstep(ringWidthSq * 0.55, ringWidthSq * 1.35, ringDeltaSq)) * smoothstep(0.22, 0.75, quality);
+                float pressed = (state.InputFlags & 2u) != 0u ? 1.0 : 0.0;
+                half3 cursorColor = lerp(half3(0.24h, 1.0h, 0.78h), half3(1.0h, 0.94h, 0.32h), (half)pressed);
+                half mask = (half)saturate(core + ring * lerp(0.45, 0.8, quality));
+                return lerp(baseColor, max(baseColor, cursorColor * (1.15h + (half)quality)), mask);
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
@@ -169,6 +208,8 @@ Shader "HECTON/UI/Diegetic Terminal"
                 float glow = lerp(0.82, _HectonTerminalGlow, quality);
                 half3 color = sampleColor.rgb * _EmissionTint.rgb * scan * vignette * glow;
                 color = H8ApplyDecryptionOverlay(color, uv, input.slice, quality);
+                if (_HectonTerminalInstancedMode >= 0.5)
+                    color = H8ApplyTerminalCursor(color, uv, input.terminalIndex, quality);
                 return half4(color, 1.0h);
             }
             ENDHLSL

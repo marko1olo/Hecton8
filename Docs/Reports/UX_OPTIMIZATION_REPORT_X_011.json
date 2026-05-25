@@ -1,0 +1,187 @@
+﻿{
+    "agent":  "X_011",
+    "role":  "VOCAL_WARNING_AND_SUBTITLE_STREAMLINER",
+    "report":  "UX_OPTIMIZATION_REPORT_X_011",
+    "status":  "PATCHED_STATIC_PASS_COMPILE_PASS_PDA_AUDIOLOG_ARCHIVE_SPAN_SWEEP",
+    "phase0Scope":  "Assets/_Project/Scripts full-tree static archaeology",
+    "filesScanned":  2379,
+    "vwsReferenceFileCount":  25,
+    "subtitleReferenceFileCount":  84,
+    "heapKeywordFileCount":  8,
+    "stringRiskKeywordFileCount":  536,
+    "ownedHotRouteViolationCount":  0,
+    "runtimeAudioUiNarrativeTimingViolationCount":  0,
+    "runtimeAudioUiNarrativeCoroutineTimingViolationCount":  0,
+    "runtimeAudioUiNarrativePlusExceptionMessageCount":  0,
+    "priorityWordImplemented":  true,
+    "subtitleSignal64Bytes":  true,
+    "stringQueueRemoved":  true,
+    "blackBoxDumpRoutePresent":  true,
+    "ownedHotRouteFiles":  [
+                               "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+                               "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                               "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                               "Assets/_Project/Scripts/UI/CharBufferPool.cs",
+                               "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+                               "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+                               "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+                               "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+                               "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                               "Assets/_Project/Scripts/LocalizationManager.cs",
+                               "Assets/_Project/Scripts/LocRegistry.cs"
+                           ],
+    "phase0StaticTargets":  [
+                                "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+                                "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                "Assets/_Project/Scripts/UI/CharBufferPool.cs",
+                                "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+                                "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+                                "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+                                "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+                                "Assets/_Project/Scripts/Audio/Editor/OOP_Voice_Scanner_X_011.cs",
+                                "Assets/_Project/Scripts/Audio/Editor/VocalWarningStormTorture_X_011.cs"
+                            ],
+    "audioThreadRouteMap":  [
+                                {
+                                    "step":  1,
+                                    "owner":  "VocalWarningSystem",
+                                    "route":  "SignalBus\u003cVocalWarningSignal\u003e/VitalWarningSignal/CrushWarningSignal/BrownoutSignal/etc.",
+                                    "sourceEvidence":  [
+                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:836",
+                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:847"
+                                                       ]
+                                },
+                                {
+                                    "step":  2,
+                                    "owner":  "VocalWarningPriorityWordOps",
+                                    "route":  "Resolved warning DTOs coalesce into VocalWarningPriorityState.VwsPriorityWord bits 63..59.",
+                                    "sourceEvidence":  [
+                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:36",
+                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:2061",
+                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:2212"
+                                                       ]
+                                },
+                                {
+                                    "step":  3,
+                                    "owner":  "VocalWarningSystem",
+                                    "route":  "Resolved candidate publishes unmanaged audio and subtitle signals.",
+                                    "sourceEvidence":  [
+                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:919",
+                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:931"
+                                                       ]
+                                },
+                                {
+                                    "step":  4,
+                                    "owner":  "BabelSubtitleSyncRuntime",
+                                    "route":  "SignalBus\u003cSubtitleCueSignal\u003e consumers use token/audio-frame payloads and validate 64-byte signal layout.",
+                                    "sourceEvidence":  [
+                                                           "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:563",
+                                                           "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:578",
+                                                           "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:508"
+                                                       ]
+                                },
+                                {
+                                    "step":  5,
+                                    "owner":  "SubtitleManager",
+                                    "route":  "Subtitle text is copied through CharBufferPool/BufferedSubtitleCue and rendered via TMP.SetCharArray.",
+                                    "sourceEvidence":  [
+                                                           "Assets/_Project/Scripts/UI/SubtitleManager.cs:434",
+                                                           "Assets/_Project/Scripts/UI/SubtitleManager.cs:897",
+                                                           "Assets/_Project/Scripts/UI/SubtitleManager.cs:1585"
+                                                       ]
+                                }
+                            ],
+    "externalHeapFindings":  [
+                                 {
+                                     "path":  "Assets/_Project/Scripts/AI/Pathfinding/VoxelAStarJobs.cs",
+                                     "domainNote":  "AI pathfinding. Outside X_011 VWS/subtitle domain."
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/AI/Pathfinding/VoxelAStarContracts.cs",
+                                     "domainNote":  "AI pathfinding contracts. Outside X_011 VWS/subtitle domain."
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+                                     "domainNote":  "Construction/drone navigation. Outside X_011 VWS/subtitle domain."
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                                     "domainNote":  "Construction/drone fleet. Outside X_011 VWS/subtitle domain."
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+                                     "domainNote":  "Editor harness. Outside X_011 runtime hot route."
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+                                     "domainNote":  "Economy runtime. Outside X_011 VWS/subtitle domain."
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/World/HectonAnomalyEngine.cs",
+                                     "domainNote":  "World/anomaly runtime. Outside X_011 VWS/subtitle domain."
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Audio/Editor/OOP_Voice_Scanner_X_011.cs",
+                                     "domainNote":  "Editor-only scanner pattern strings. Not a runtime heap implementation."
+                                 }
+                             ],
+    "forbiddenHotRouteFindings":  [
+
+                                  ],
+    "hotRouteForbiddenPatterns":  [
+                                      "NativeMinHeap",
+                                      "VocalWarningHeapOps",
+                                      "EditorTryGetHeapEntry",
+                                      "HeapCount",
+                                      "struct SubtitleRequest",
+                                      "_stringQueue",
+                                      "ShowImmediate(string)",
+                                      "CopyStringToRenderBuffer",
+                                      "ResolveDisplayMessage",
+                                      ".text =",
+                                      "new string",
+                                      "string.Create",
+                                      "string.Format"
+                                  ],
+    "tarsReaudit":  {
+                        "promptExtraction":  "Docs/Tasks/CURRENT_BATCH.md AGENT_PROMPT id X_011 found, length 11417, task labels 01..10.",
+                        "dispatcherFramePatch":  "110 earlier runtime Audio/UI/Narrative Time.frameCount tokens replaced with Hecton8.Core.SystemDispatcher.CurrentFrameIndex; a follow-up quest/PDA pass replaced 9 more direct quest narrative/event/marker frame reads.",
+                        "ownedRouteForbiddenScan":  "0 hits in VWS/Babel/SubtitleManager consumer route for Time.frameCount, UnityEngine.Time.frameCount, WaitForSeconds, StartCoroutine, yield return, ToString, string.Format, StringBuilder, .text assignment, SetText, string.Concat, string interpolation, new string, string.Create, + ex.Message, NativeMinHeap, VocalWarningHeapOps, SubtitleRequest, _stringQueue, ShowImmediate(string), CopyStringToRenderBuffer, ResolveDisplayMessage. SystemDispatcher is excluded from this consumer scan because it is the core frame owner and still reads Time.frameCount internally to publish CurrentFrameIndex.",
+                        "broadResidualStringRisk":  {
+                                                        "ToStringHits":  0,
+                                                        "StringBuilderHits":  0,
+                                                        "DirectTextAssignmentHits":  0,
+                                                        "TMPSetTextHits":  0,
+                                                        "StringConcatHits":  0,
+                                                        "InterpolationHits":  0,
+                                                        "NewStringHits":  0,
+                                                        "StringCreateHits":  2,
+                                                        "RegexReplaceHits":  0,
+                                                        "ExceptionMessageHits":  0,
+                                                        "RawMessageTokenFalsePositiveHits":  0,
+                                                        "StringPlusRawHits":  0,
+                                                        "StringPlusRealConcatHits":  0
+                                                    },
+                        "secondSweepPatch":  "Removed debug interpolation/exception-message materialization from SettingsManager, SettingsPanelProfiler, SubnauticaSystemsDebugUI, PDAIntrusionManager, PauseMenuController, PauseControlsPanel, TopographicalSonarSynthesizer, MetaCampaignService, CorporateOrderSystem, and LoreDatabaseManager. Removed BaseIntegrityHUD per-warning percent string materialization and several PDADataLogTab cold string.Concat sites. Third closure removed ModalWindow conflict-message new string allocation, SettingsPanel numeric string.Create caches, UISliderValueDisplay string.Concat template construction, and selected runtime diagnostic interpolation/ToString in AudioLogSystem, HectonNarrativeDirector, UIRuntimeSmokeTester, and ContentLoreBinaryProvider. Fourth residual sweep replaced HudNumericStringCache string cache with char[][] spans and removed safe residual debug/notification/hierarchy/template string construction in runtime audio/UI/text.",
+                        "questPdaSweepPatch":  "QuestGraphEvaluator, QuestEvents, and MissionMarkerSystem direct Time.frameCount telemetry throttles now read SystemDispatcher.CurrentFrameIndex. QuestStateManager audit append warning no longer materializes exception.Message. PDALogbookEntry legacy debug string properties no longer call ReadOnlySpan.ToString/int.ToString; callers must use span/buffer APIs.",
+                        "mainMenuSweepPatch":  "MainMenuController loading percent now formats into char[32] and writes via SetCharArray. Save event error materialization no longer calls FixedString128Bytes.ToString. Explicit MainMenuController string.Concat and interpolation fallback display/dev-log strings were removed. DiegeticHudTextNode span-only SetText method was renamed SetSpan.",
+                        "wristHudLegacyIoPatch":  "WristHologramHudRuntime legacy font discovery, first-file traversal, binary file reads, and CSV parsing are now editor-only. Player runtime keeps the generated font atlas path and does not scan Docs/Archive from EnsureNativeBuffers.",
+                        "bootDeathBuilderPatch":  "HectonOSBootManager and PDADeathMemoryDump no longer use managed StringBuilder assembly. Both write directly into fixed char buffers, format numbers manually, use GetRawSpanOrFallback for localized labels/final line, and render through TMP SetCharArray.",
+                        "questCorporateAudioLogPatch":  "QuestDagCsvOverrideIngestor no longer materializes a full CSV string before span parsing; CorporateOrderSystem.SlowTick no longer copies dictionary keys into growable List\u003cstring\u003e buffers; unused AudioLogSystem.GetDiscoveredHashEnumerator was removed.",
+                        "charBufferRegistryProbePatch":  "CharBufferPool no longer retries GlobalRegistry.DataVault lookup on every Babel span fallback. Prewarm is the explicit cold retry path; hot subtitle span access stays on cached native arena state or preallocated TMP bridge buffers.",
+                        "latestTargetRouteScan":  "Target scans over Bootstrap/Fabricator/Terminal, Interaction/Fabricator prompt-provider files, and patched LocalizationManager/LocalizedInlineIconResolver/UI.InteractionUI/QuestStateManager files report 0 hits for Time.frameCount, WaitForSeconds, coroutine tokens, direct .text assignment, SetText, StringBuilder, ToString, exception.Message, ex.Message, string.Concat, new string, string.Create, string.Format, Regex, MatchEvaluator, Regex.Replace, raw string-plus concat, NativeMinHeap, VocalWarningHeapOps, and legacy subtitle queue tokens.",
+                        "broadResidualNote":  "Runtime scan excludes Editor directories where possible. Timing/coroutine/direct-text/settext/real exception-message/interpolation/new-string/StringBuilder/StringConcat/ToString/RegexReplace tokens are zero in the scanned VWS/subtitle, patched prompt route, and patched localization token-expander route. All found runtime IInteractable owners now implement IInteractableTextProvider, and UI/look-target routes consume spans without needing legacy GetInteractText string fallback for migrated owners. TMP still requires a pooled managed char[] bridge for SetCharArray; direct native span rendering into TMP is not available in the current route. Residual managed-string tokens outside Betty/subtitle/prompt hot rendering include DeployableBeacon cold save/registry ID generation and PDAMarkerRegistry marker save ID generation via string.Create. Expanded full-project residuals remain outside Betty/subtitle in save identity, editor authoring, diagnostics, animation, gameplay, world, VFX, and other non-X_011 owners.",
+                        "bootstrapFabricatorPatch":  "GameBootstrapper no longer uses Awaitable.WaitForSecondsAsync in readiness waits, hardware error text no longer writes UnityEngine.UI.Text.text, and patched bootstrap/fabricator/terminal presentation frame ids now use SystemDispatcher.CurrentFrameIndex.",
+                        "interactionTextProviderPatch":  "IInteractableTextProvider adds a Span\u003cchar\u003e prompt route. Fabricator implements it from a fixed char[96] buffer; both interaction UI paths and PlayerInteraction look-target prompt cache consume spans before falling back to legacy cached strings.",
+                        "interactionProviderExpansionPatch":  "Expanded IInteractableTextProvider across all found runtime IInteractable owners. NarrativeDiscovery prompt assembly now writes into fixed char[128]; item quantity prompts write numeric suffixes manually; UI.InteractionUI, InteractionUI, and PlayerInteraction no longer need the legacy string fallback for migrated prompt display/look-target routes. HarvestableOutcrop, InteractionEvents, and PhysicalSnapSwitch now use SystemDispatcher.CurrentFrameIndex instead of Time.frameCount.",
+                        "localizationTokenExpansionPatch":  "LocalizationManager no longer uses Regex, MatchEvaluator, or Regex.Replace for runtime token expansion. TryExpandText/TryExpandNarrativeText expand button/item/status/key/tech tokens into caller char buffers. UI.InteractionUI consumes that buffer route before TMP SetCharArray. LocalizedInlineIconResolver token matching is span-based and QuestStateManager diagnostic labels are stable constants.",
+                        "mantaConsumableTextPatch":  "MantaScooter localized warning/summary/directive text now stages in FixedCharBuffer and expands battery percent into caller buffers. ConsumableItem no longer caches managed description strings or uses StringBuilder; effect summaries write into Span<char>. Targeted Manta/Consumable scan reports 0 managed string materialization tokens.",
+                        "presentationFrameRecheckPatch":  "EndingSystem, FirstHourDirector, PlayerSwimPresentationController, HectonPlayerCameraRig, HectonScanRenderRegistry, and DataArchaeologyRuntime selected presentation/narrative frame reads now use SystemDispatcher.CurrentFrameIndex.",
+                        "audioLogSubtitleSpanPatch":  "LocalizedTextReference now exposes span/buffer resolve APIs. AudioLogData visible subtitle preview resolves localized text as ReadOnlySpan<char>, expands into the caller buffer, and strips timecode markers through a span overload.",
+                        "pdaAudioLogArchiveSpanPatch":  "AudioLogData title/author/summary/date now have TryWrite* char-buffer APIs. PDADataLogTab consumes them for row/detail/summary display, stores decrypt summary base text in a char buffer, builds decrypt hex overlays from ReadOnlySpan<char>, and removed catalog author/summary string caches. LocalizationManager token chip expansion now consumes span-return item/status chip APIs."
+                    },
+    "profilerStatus":  "PENDING",
+    "runtimeCompileStatus":  "PASS_AFTER_PDA_AUDIOLOG_ARCHIVE_SPAN_SWEEP: guarded dotnet build Assembly-CSharp.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false passed with 0 warnings and 0 errors in 00:03:34.55 after guard attempt 16.",
+    "microsecondsSavedClaimed":  0
+}

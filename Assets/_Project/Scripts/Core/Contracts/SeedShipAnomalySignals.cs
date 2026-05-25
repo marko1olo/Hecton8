@@ -3,7 +3,16 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts.Signals
 {
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal static class SeedShipAnomalySignalLayout
+    {
+        public const int GlitchCommandStrideBytes = 16;
+        public const int MockAupRebaseSignalStrideBytes = 32;
+        public const int RadarJamSignalStrideBytes = 32;
+        public const int CoreHackedSignalStrideBytes = 32;
+        public const int MockHudSignalStrideBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = SeedShipAnomalySignalLayout.GlitchCommandStrideBytes)]
     public struct GlitchCommandDTO
     {
         [FieldOffset(0)] public float Intensity;
@@ -12,7 +21,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(12)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SeedShipAnomalySignalLayout.MockAupRebaseSignalStrideBytes)]
     public partial struct MockAupRebaseSignal : ISignal
     {
         [FieldOffset(0)] public float3 ShiftMeters;
@@ -21,7 +30,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(28)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SeedShipAnomalySignalLayout.RadarJamSignalStrideBytes)]
     public partial struct RadarJamSignal : ISignal
     {
         [FieldOffset(0)] public float Intensity01;
@@ -36,7 +45,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(28)] public uint Reserved2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SeedShipAnomalySignalLayout.CoreHackedSignalStrideBytes)]
     public partial struct CoreHackedSignal : ISignal
     {
         [FieldOffset(0)] public uint Frame;
@@ -50,7 +59,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(24)] public ulong Reserved3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SeedShipAnomalySignalLayout.MockHudSignalStrideBytes)]
     public partial struct MockHudSignal : ISignal
     {
         [FieldOffset(0)] public GlitchCommandDTO Command;

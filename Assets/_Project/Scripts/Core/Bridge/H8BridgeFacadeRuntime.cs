@@ -104,7 +104,7 @@ namespace Hecton8.Core.Bridge
                 BufferId = (ushort)BufferID.BridgeDesignFacadeValues,
                 Flags = extraFlags
             };
-            SignalBus<DataVaultUpdateSignal>.Push(in signal);
+            SignalBus<DataVaultUpdateSignal>.TryPush(in signal);
             GlobalTelemetryBus.PublishModTelemetry(facadeHash, H8BridgeHashes.BridgeHeartbeat, 0f);
         }
 
@@ -130,7 +130,7 @@ namespace Hecton8.Core.Bridge
             entry.Value = value;
 
             int requiredLength = entry.OffsetBytes + sizeof(float);
-            VaultGenerationHandle<byte> bytes = vault.GetGenerationHandle<byte>(
+            VaultGenerationHandle<byte> bytes = vault.EnsureGenerationHandle<byte>(
                 BufferID.BridgeDesignFacadeValues,
                 requiredLength,
                 SystemID.CoreBridge,
@@ -194,7 +194,7 @@ namespace Hecton8.Core.Bridge
                 BufferId = (ushort)BufferID.BridgeDesignFacadeValues,
                 Flags = (ushort)(entry.Flags | extraFlags)
             };
-            SignalBus<DataVaultUpdateSignal>.Push(in signal);
+            SignalBus<DataVaultUpdateSignal>.TryPush(in signal);
             GlobalTelemetryBus.PublishModTelemetry(facadeHash, entry.FieldHash, value);
             return true;
         }
@@ -298,7 +298,7 @@ namespace Hecton8.Core.Bridge
                 HighTierVisualHash = facade.HighTierVisualHash
             };
 
-            VaultGenerationHandle<H8FacadeMacroHeader> headerBuffer = vault.GetGenerationHandle<H8FacadeMacroHeader>(
+            VaultGenerationHandle<H8FacadeMacroHeader> headerBuffer = vault.EnsureGenerationHandle<H8FacadeMacroHeader>(
                 BufferID.BridgeFacadeMacroHeader,
                 1,
                 SystemID.CoreBridge,
@@ -317,11 +317,9 @@ namespace Hecton8.Core.Bridge
             if (macroDatabase == null || !macroDatabase.IsOpen)
                 return;
 
-            H8FacadeMacroHeader* headerPtr = &header;
             macroDatabase.MarkDirty(
                 H8BridgeHashes.FacadeMacroHeaderSectorHash,
-                (IntPtr)headerPtr,
-                UnsafeUtility.SizeOf<H8FacadeMacroHeader>(),
+                in header,
                 MacroDatabasePayloadFlags.Dirty);
         }
 
@@ -360,7 +358,7 @@ namespace Hecton8.Core.Bridge
             float oldValue,
             ushort extraFlags)
         {
-            VaultGenerationHandle<H8FacadeTelemetryEntry> ring = vault.GetGenerationHandle<H8FacadeTelemetryEntry>(
+            VaultGenerationHandle<H8FacadeTelemetryEntry> ring = vault.EnsureGenerationHandle<H8FacadeTelemetryEntry>(
                 BufferID.BridgeDesignFacadeTelemetryRing,
                 BlackBoxFrameCount,
                 SystemID.CoreBridge,
@@ -403,7 +401,7 @@ namespace Hecton8.Core.Bridge
 
             if (!vault.TryGetGenerationHandle<H8FacadeTelemetryEntry>(BufferID.BridgeDesignFacadeTelemetryRing, out VaultGenerationHandle<H8FacadeTelemetryEntry> ring) ||
                 ring.BufferID == 0u ||
-                !vault.TryResolveHandle(in ring, out NativeArray<H8FacadeTelemetryEntry> ringBuffer) ||
+                !vault.TryReadOnlyHandle(in ring, out NativeArray<H8FacadeTelemetryEntry>.ReadOnly ringBuffer) ||
                 !ringBuffer.IsCreated ||
                 ringBuffer.Length == 0)
             {
@@ -455,7 +453,7 @@ namespace Hecton8.Core.Bridge
         }
 
         private static uint ComputeTelemetryDumpHash(
-            NativeArray<H8FacadeTelemetryEntry> ringBuffer,
+            NativeArray<H8FacadeTelemetryEntry>.ReadOnly ringBuffer,
             int startIndex,
             int entryCount,
             int capacity)

@@ -17,6 +17,7 @@ using Hecton8.World;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor
 {
@@ -33,7 +34,7 @@ namespace Hecton8.Editor
             GenerateAudioLogs();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[LoreContentGenerator] All content generated.");
+            H8Debug.Log("[LoreContentGenerator] All content generated.");
         }
 
         [MenuItem("HECTON-8/Generate Lore Content/Suit Upgrades (5)", false, 101)]
@@ -67,7 +68,7 @@ namespace Hecton8.Editor
                 deltaMaxOxygen: 1200f, deltaSafeDepth: 1500f,
                 desc: "Hadalnyy ekzoskelet dlya predelnyh glubin do 5000m. 45 minut O2. Polnaya izolyatsiya.");
 
-            Debug.Log("[LoreContentGenerator] Suit upgrades generated.");
+            H8Debug.Log("[LoreContentGenerator] Suit upgrades generated.");
         }
 
         [MenuItem("HECTON-8/Generate Lore Content/Depth Zones (7)", false, 102)]
@@ -111,7 +112,7 @@ namespace Hecton8.Editor
                 desc: "Peschernaya sistema. Lyubaya glubina. Trebuetsya Tier 3+.",
                 biolum: 0.50f, danger: 0.8f, hasCaves: true);
 
-            Debug.Log("[LoreContentGenerator] Depth zones generated.");
+            H8Debug.Log("[LoreContentGenerator] Depth zones generated.");
         }
 
         [MenuItem("HECTON-8/Generate Lore Content/Quests", false, 103)]
@@ -141,7 +142,7 @@ namespace Hecton8.Editor
                 QuestTriggerType.OnDepthReached, "4500",
                 desc: "Dostignite yadra Atlas-6. Glubina -5000m.");
 
-            Debug.Log("[LoreContentGenerator] Quests generated.");
+            H8Debug.Log("[LoreContentGenerator] Quests generated.");
         }
 
         [MenuItem("HECTON-8/Generate Lore Content/Audio Logs", false, 104)]
@@ -184,7 +185,7 @@ namespace Hecton8.Editor
                 "Sindrom glubiny. Gallyutsinatsii na 500m+. Paranoyya. Pustye ampuly. Kto-to prinimaet slishkom mnogo.",
                 "849 dney nazad");
 
-            Debug.Log("[LoreContentGenerator] Audio logs generated.");
+            H8Debug.Log("[LoreContentGenerator] Audio logs generated.");
         }
 
         // ══════════════════════════════════════════════════════════

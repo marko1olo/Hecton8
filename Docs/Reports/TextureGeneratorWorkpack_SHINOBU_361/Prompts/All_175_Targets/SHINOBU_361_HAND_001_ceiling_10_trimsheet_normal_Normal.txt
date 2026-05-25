@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_001
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_001_ceiling_10_trimsheet_normal_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\ceiling_10_trimsheet_normal_Normal.png
+FINAL_FILENAME: ceiling_10_trimsheet_normal_Normal.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Premium heightfield source for a modular abyssal habitat ceiling trim sheet, designed for a clean BC5 normal map. Make a precise pattern of recessed service channels, thin acoustic baffles, gasketed inspection seams, countersunk fastener wells, cable raceway lips, and shallow pressed ribs. The surface should feel engineered and expensive: satin titanium under off-white ceramic coating, graphite rubber separators, small amber locator strips, and fine salt dust gathered only inside seam grooves. Keep the design bright enough to read, with crisp bevel logic and balanced mid-value forms. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

@@ -8,6 +8,12 @@ using UnityEngine;
 
 namespace Hecton8.Scavenging
 {
+    internal static class HarvestableTemplateLayout
+    {
+        public const int LootRuntimeEntryStrideBytes = 32;
+        public const int RuntimeDescriptorStrideBytes = 32;
+    }
+
     /// <summary>
     /// Authoring template for streamed harvestable organic/material nodes resolved by the indirect-flora entropy runtime.
     /// </summary>
@@ -45,7 +51,7 @@ namespace Hecton8.Scavenging
             public byte weight;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = HarvestableTemplateLayout.LootRuntimeEntryStrideBytes)]
         public struct LootRuntimeEntry
         {
             [FieldOffset(0)] public int ItemHashId;
@@ -60,7 +66,7 @@ namespace Hecton8.Scavenging
             [FieldOffset(24)] private ulong _pad1;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = HarvestableTemplateLayout.RuntimeDescriptorStrideBytes)]
         public struct RuntimeDescriptor
         {
             [FieldOffset(0)] public int StableHashId;

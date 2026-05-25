@@ -100,7 +100,7 @@ namespace Hecton8.Construction
         [SerializeField] private int _debugLastAssignedSupplyUnits;
 
         // COLD ALLOC: Collider[24] - nearby storage discovery buffer - owner: RepairDroneHub
-        private readonly Collider[] _supplyOverlapBuffer = new Collider[SupplyOverlapCapacity];
+        private readonly StorageCrate[] _supplyDiscoveryBuffer = new StorageCrate[SupplyOverlapCapacity];
         // COLD ALLOC: StorageCrate[12] - auto-discovered storage endpoints - owner: RepairDroneHub
         private readonly StorageCrate[] _discoveredSupplyCrates = new StorageCrate[MaxDiscoveredSupplyCrates];
         // COLD ALLOC: int[1] - repair-supply hash bridge for logistics reservations - owner: RepairDroneHub
@@ -151,7 +151,7 @@ namespace Hecton8.Construction
         private AbsoluteUniversePosition ResolveDockAup()
         {
             Vector3 dockPosition = ResolvedDockSocketPosition;
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!float.IsFinite(dockPosition.x) ||
                 !float.IsFinite(dockPosition.y) ||
                 !float.IsFinite(dockPosition.z))
@@ -178,7 +178,7 @@ namespace Hecton8.Construction
             if (!hasPower)
                 RecallActiveDrones();
 
-            DroneFleetManager.NotifyFleetStateChanged();
+            DroneFleetManager.TryNotifyFleetStateChanged();
         }
 
         private void Awake()
@@ -223,7 +223,7 @@ namespace Hecton8.Construction
             RefreshSupplyCrates(true);
             RegisterHubInstance();
             TryRegister();
-            DroneFleetManager.NotifyFleetStateChanged();
+            DroneFleetManager.TryNotifyFleetStateChanged();
         }
 
         public void OnDespawn()
@@ -238,7 +238,7 @@ namespace Hecton8.Construction
             ClearSupplyLookupCache();
             _cachedPlayerInventoryService = null;
             UnregisterHubInstance();
-            DroneFleetManager.NotifyFleetStateChanged();
+            DroneFleetManager.TryNotifyFleetStateChanged();
         }
 
         public void SlowTick()
@@ -265,7 +265,7 @@ namespace Hecton8.Construction
 
             TryDispatchDrone();
             RefreshDiagnostics();
-            DroneFleetManager.NotifyFleetStateChanged();
+            DroneFleetManager.TryNotifyFleetStateChanged();
         }
 
         internal void NotifyHeadlessDroneReturned(int droneId)
@@ -279,7 +279,7 @@ namespace Hecton8.Construction
 
             ClearDroneSlot(slot);
             RefreshDiagnostics();
-            DroneFleetManager.NotifyFleetStateChanged();
+            DroneFleetManager.TryNotifyFleetStateChanged();
         }
 
         private void TryRegister()
@@ -290,8 +290,7 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             CacheRegistryServices();
         }
 
@@ -309,8 +308,23 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
-                _cachedPlayerInventoryService = currentService as IPlayerInventoryService;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registered = false;
+                    }
+                    else if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _cachedPlayerInventoryService = currentService as IPlayerInventoryService;
+                    break;
+            }
         }
 
         private void ResolveRepairSupplyItem()
@@ -366,27 +380,26 @@ namespace Hecton8.Construction
             if (!autoDiscoverNearbyStorage && !forceImmediate)
                 return;
 
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+            int hitCount = BaseLogisticsNetwork.CollectStorageCratesNonAlloc(
                 _cachedTransform.position,
                 supplySearchRadius,
-                _supplyOverlapBuffer,
-                supplySearchMask,
-                QueryTriggerInteraction.Collide);
+                _supplyDiscoveryBuffer);
 
             for (int i = 0; i < hitCount && _discoveredSupplyCount < _discoveredSupplyCrates.Length; i++)
             {
-                Collider candidate = _supplyOverlapBuffer[i];
-                if (candidate == null)
+                StorageCrate crate = _supplyDiscoveryBuffer[i];
+                _supplyDiscoveryBuffer[i] = null;
+                if (crate == null)
                     continue;
 
-                if (!TryResolveSupplyCrate(candidate, out StorageCrate crate) || ContainsSupplyCrate(crate))
+                if (ContainsSupplyCrate(crate))
                     continue;
 
                 _discoveredSupplyCrates[_discoveredSupplyCount++] = crate;
             }
 
-            for (int i = hitCount; i < _supplyOverlapBuffer.Length; i++)
-                _supplyOverlapBuffer[i] = null;
+            for (int i = hitCount; i < _supplyDiscoveryBuffer.Length; i++)
+                _supplyDiscoveryBuffer[i] = null;
         }
 
         private bool TryResolveSupplyCrate(Collider candidate, out StorageCrate crate)
@@ -846,7 +859,10 @@ namespace Hecton8.Construction
                 return dockingAirlock;
 
             if (_cachedDockingAirlock == null)
-                _cachedDockingAirlock = GetComponentInParent<BaseAirlock>();
+            {
+                if (!TryGetComponent(out _cachedDockingAirlock))
+                    _cachedDockingAirlock = GetComponentInParent<BaseAirlock>();
+            }
 
             return _cachedDockingAirlock;
         }

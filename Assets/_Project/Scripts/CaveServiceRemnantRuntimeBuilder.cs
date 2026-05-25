@@ -8,7 +8,8 @@ namespace Hecton8.Caves
     internal static class CaveServiceRemnantRuntimeBuilder
     {
         private const string RemnantRootName = "_ServiceRemnants";
-        private static readonly string[] _RemnantNames = CreateNameCache("Remnant_", 12); // COLD ALLOC: bounded remnant child names.
+        private const int MaxRemnantCount = 12;
+        private static readonly string[] _RemnantNames = CreateNameCache("Remnant_", MaxRemnantCount); // COLD ALLOC: bounded remnant child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -144,7 +145,7 @@ namespace Hecton8.Caves
             ServiceRemnantConfig config,
             float globalIntensity)
         {
-            int maxCount = Mathf.Clamp(config.maxCount, 0, 12);
+            int maxCount = Mathf.Clamp(config.maxCount, 0, MaxRemnantCount);
             if (maxCount <= 0)
                 return 0;
 

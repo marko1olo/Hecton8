@@ -1,0 +1,84 @@
+﻿<SELF_AUDIT agent="SHINOBU_331" domain="OS_TERMINAL_INPUT_PROJECTOR" evidenceClass="STATIC_SOURCE_ONLY_RUNTIME_PENDING">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">rg archaeology found TerminalOsRuntime, DiegeticPanelController, PhysicalPanelButton, PhysicalSnapSwitch, GraphicRaycaster/Canvas/BoxCollider debt. No duplicate terminal manager introduced.</TASK>
+    <TASK id="02" status="PASS">Integrated through TerminalOsRuntime partial owner file `TerminalOsRuntime_TerminalProjection.cs`; no standalone HectonTerminalInputManager.</TASK>
+    <TASK id="03" status="PASS">Adopted existing `TerminalCommandSignal` and `InteractionUiSignal`; no new single-use terminal signal lane.</TASK>
+    <TASK id="04" status="PASS">Terminal authority bypasses Canvas/GraphicRaycaster. Raw HUD/debug Canvas YAML deletion intentionally excluded because it is outside the assigned terminal authority route.</TASK>
+    <TASK id="05" status="PASS">Terminal interaction route bypasses BoxCollider/PhysX and resolves focus with AUP/Normal/Up math.</TASK>
+    <TASK id="06" status="PASS">`GenerateMockGazeVectorsJob` implemented as Burst `IJobParallelFor` for isolated synthetic gaze stress.</TASK>
+    <TASK id="07" status="PASS">`EvaluateTerminalGazeJob` implemented as deterministic Burst `IJobParallelFor` with `[NoAlias]`, raw pointer row writes, non-finite guards, and finite near-parallel denominator cull before division.</TASK>
+    <TASK id="08" status="PASS">UV projection derives Right from `cross(UpVector, ForwardNormal)`, divides by plane width/height, and bezel-culls outside a continuous tolerance band.</TASK>
+    <TASK id="09" status="PASS">`Hecton_DiegeticTerminal.shader` reads `_TerminalInputStates` and draws the Dear Lie cursor in fragment space. Frame Debugger and shader import proof are absent.</TASK>
+    <TASK id="10" status="PASS">Button bounds check emits `TerminalCommandSignal` through `NativeQueue&lt;T&gt;.ParallelWriter`; no UnityEvent path.</TASK>
+    <TASK id="11" status="PASS">Evaluation radius consumes `TerminalInputTuningDTO.LowRadiusMeters`, `UltraRadiusMeters`, and `QualityCurvePower` with `GlobalQualityWeight`; batch size also scales continuously.</TASK>
+    <TASK id="12" status="PASS">Ray and terminal AUPs are converted to `double3`, subtracted in double precision, then downcast to localized float vectors for dot products.</TASK>
+    <TASK id="13" status="PASS">Route card/report mark `TerminalInputStateDTO` as presentation-only and rollback/Merkle excluded.</TASK>
+    <TASK id="14" status="PASS">Vault buffer 71380 uses `NativeArrayOptions.UninitializedMemory`; cold owner initializer overwrites active rows without `MemClear`.</TASK>
+    <TASK id="15" status="PASS">`TerminalInputTelemetryEntry[300]` buffer 71381 records frame history and dumps `Dump_SHINOBU_331.bin` on non-finite, layout, or >0.2 ms budget faults.</TASK>
+    <TASK id="16" status="PASS">`DiegeticTerminalXRayWindow` uses UI Toolkit; tuning now writes `TerminalInputTuningDTO` in Vault buffer 71382 via `UnsafeUtility.AsRef` and mirrors sanitized values to the owner fields.</TASK>
+    <TASK id="17" status="PASS">`terminal_ui_layouts.csv` path uses the existing cold `ReadOnlySpan&lt;byte&gt;` parser and ASCII float parsing; no `float.Parse`/LINQ.</TASK>
+    <TASK id="18" status="PASS">Scene gizmo reads `TerminalInputStateDTO` and draws gaze line, red hit sphere, and existing button UV rectangles. Editor-only, runtime player cost 0 us.</TASK>
+    <TASK id="19" status="PASS">`OOP_Canvas_Scanner` upgraded to Roslyn `CSharpSyntaxTree` object-creation/invocation/assignment pass with token fallback only for parse failures; report section updated.</TASK>
+    <TASK id="20" status="FAIL">Source audit artifacts exist, but compile/Unity import/profiler/GCMonitor/Frame Debugger/player-build proof are absent because prior guarded build timed out and later CPU/compiler guard blocked rerun. Static source state is not runtime readiness.</TASK>
+  </TASK_RECONCILIATION>
+
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="TerminalInputStateDTO" size="64" falseSharing="one DTO row per 64-byte cache line; parallel job writes index-local rows">
+      <FIELD name="TerminalAUP" offset="0" size="24" alignment="8" />
+      <FIELD name="ForwardNormal" offset="24" size="12" alignment="4" />
+      <FIELD name="UpVector" offset="36" size="12" alignment="4" />
+      <FIELD name="ProjectedUV" offset="48" size="8" alignment="4" />
+      <FIELD name="TerminalHashID" offset="56" size="4" alignment="4" />
+      <FIELD name="InputFlags" offset="60" size="4" alignment="4" />
+      <MATH>24 + 12 + 12 + 8 + 4 + 4 = 64 bytes. No Pack=1. No properties. No managed references.</MATH>
+    </DTO>
+    <DTO name="TerminalInputGpuStateDTO" size="32" falseSharing="GPU upload payload only; CPU jobs do not mutate this row type in parallel">
+      <FIELD name="ProjectedUV" offset="0" size="8" alignment="4" />
+      <FIELD name="TerminalHashID" offset="8" size="4" alignment="4" />
+      <FIELD name="InputFlags" offset="12" size="4" alignment="4" />
+      <FIELD name="Reserved0" offset="16" size="16" alignment="4" />
+      <MATH>8 + 4 + 4 + 16 = 32 bytes. This is the `_TerminalInputStates` shader ABI; 64-byte CPU AUP rows are not uploaded verbatim.</MATH>
+    </DTO>
+    <DTO name="TerminalInputTelemetryEntry" size="64">
+      <FIELDS>Frame@0 i32, EvaluatedTerminals@4 i32, SuccessfulProjections@8 i32, SignalsDispatched@12 i32, BurstMicroseconds@16 f32, EvalRadiusMeters@20 f32, GlobalQualityWeight@24 f32, FaultFlags@28 u32, HotPathAllocBytes@32 u32, RollbackExcluded@36 u32, LastHoveredTerminalHash@40 u32, CursorSnappingTolerance@44 f32, RaycastThickness@48 f32, NonFiniteCount@52 i32, _pad0@56 u64.</FIELDS>
+      <MATH>56 bytes payload + 8 bytes explicit pad = 64 bytes.</MATH>
+    </DTO>
+    <DTO name="TerminalInputTuningDTO" size="64">
+      <FIELDS>MaxInteractionDistanceMeters@0 f32, CursorSnappingTolerance@4 f32, RaycastThickness@8 f32, QualityCurvePower@12 f32, LowRadiusMeters@16 f32, UltraRadiusMeters@20 f32, TuningFlags@24 u32, _pad0@28 u32, _pad1@32 u64, _pad2@40 u64, _pad3@48 u64, _pad4@56 u64.</FIELDS>
+      <MATH>32 bytes scalar/tuning payload + 32 bytes explicit padding = 64 bytes.</MATH>
+    </DTO>
+    <DTO name="TerminalInputBlackBoxHeader" size="64">
+      <FIELDS>Magic@0 u32, Version@4 u32, FaultFlags@8 u32, Cursor@12 u32, EntryCount@16 u32, EntryStrideBytes@20 u32, InputStateStrideBytes@24 u32, RollbackExcluded@28 u32, _pad0@32 u64, _pad1@40 u64, _pad2@48 u64, _pad3@56 u64.</FIELDS>
+      <MATH>32 bytes header payload + 32 bytes explicit padding = 64 bytes.</MATH>
+    </DTO>
+  </STRUCT_LAYOUT_VERIFICATION>
+
+  <SCALABILITY_CURVE_EXPLANATION>
+    `EvaluateTerminalGazeJob` consumes continuous `GlobalQualityWeight`: eval radius lerps between Vault tuning `LowRadiusMeters` and `UltraRadiusMeters` after a deterministic linear-to-cubic polynomial blend driven by `QualityCurvePower`, schedule batch size is `math.lerp(1, 32, quality)`, mock gaze micro-sway collapses from 0.0125 rad toward 0.0005 rad, UV edge tolerance lerps from raycast thickness toward cursor snap tolerance, and shader cursor radius/ring detail lerps continuously. Below 0.3, far terminals are skipped by radius culling, finite near-parallel rays are culled before division, cursor presentation remains shader-only, and button tolerance is a small scalar expansion rather than extra physics/raycast samples. No binary low/high hardware switch changes DTO layout, save identity, command authority, or rollback route.
+  </SCALABILITY_CURVE_EXPLANATION>
+
+  <H_PHI_VAULT_STATUS privateNativeArrays="0">
+    <BUFFER id="71380" name="TerminalInputStateDTO" owner="TerminalOsRuntime/SystemID UI owner route" capacity="terminalCount" options="UninitializedMemory" lifecycle="opened in native resource setup, generation handle cleared on shutdown/hot-swap" />
+    <BUFFER id="71381" name="TerminalInputTelemetryEntry" owner="TerminalOsRuntime/SystemID UI owner route" capacity="300" options="ClearMemory" lifecycle="opened in native resource setup, generation handle cleared on shutdown/hot-swap" />
+    <BUFFER id="71382" name="TerminalInputTuningDTO" owner="TerminalOsRuntime/SystemID UI owner route" capacity="1" options="UninitializedMemory" lifecycle="opened in native resource setup, editor writes through UnsafeUtility.AsRef" />
+    <BUFFER id="71383" name="TerminalInputRowHashes" owner="TerminalOsRuntime/SystemID UI owner route" capacity="terminalCount" options="ClearMemory" lifecycle="opened in native resource setup, high bit marks dirty GPU rows, cleared on shutdown/hot-swap" />
+    <NOTE>No persistent private NativeArray/NativeList/NativeHashMap ownership was added. GraphicsBuffer ownership is presentation upload only and double-buffered for `_TerminalInputStates`.</NOTE>
+  </H_PHI_VAULT_STATUS>
+
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <JOB name="GenerateMockGazeVectorsJob" consumes="none" outputs="JobHandle gazeHandle" aliases="GazeRays marked NoAlias" />
+    <JOB name="EvaluateTerminalGazeJob" consumes="gazeHandle, Planes, GazeRays, Buttons" outputs="JobHandle _terminalInteractionHandle" aliases="Planes/GazeRays/Buttons/InputStates/Interactions marked NoAlias; InputStates and Interactions are raw pointer rows from distinct Vault buffers" />
+    <UPLOAD name="_TerminalInputStates" consumes="71380 input states, 71383 row hashes" outputs="double-buffered GraphicsBuffer" aliases="CPU DTO rows and row-hash lane are distinct Vault buffers; upload maps only slim TerminalInputGpuStateDTO rows" />
+    <FINALIZE>Owner currently finalizes from LateFrameTick after polling `IsCompleted`; PRE_SIM dispatcher proof remains a GREEN gate. Teardown force-complete remains shutdown-only.</FINALIZE>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+
+  <COMPILE_GUARD disposition="YELLOW">
+    Runtime source remains in existing `Hecton8.Core` route and did not add a new sibling runtime assembly reference. Existing assembly references include contracts and pre-existing project references; this change did not introduce a new direct sibling gameplay dependency. Compile pass is not claimed.
+  </COMPILE_GUARD>
+
+  <DEAR_LIE_CONFIRMATION>
+    Before: object-oriented terminal UI would be Canvas/GraphicRaycaster/PhysX UI, with managed UI mesh rebuild/raycast cost and per-object cursor movement. After: CPU projection complexity is O(T + B_focused) over flat Vault rows; GPU upload is O(changed terminal rows) after the forced first upload; cursor rendering is O(pixels) in the terminal shader with no CPU geometry updates. Shader source anchor: `Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader`, `_TerminalInputStates`, `H8ApplyTerminalCursor`.
+  </DEAR_LIE_CONFIRMATION>
+
+  <RUNTIME_PROOF_ABSENT>Unity import, Unity Console, Play Mode, profiler/GCMonitor, Burst Inspector, Frame Debugger, shader visual inspection, player build, and Quest/MX350 hardware proof are pending.</RUNTIME_PROOF_ABSENT>
+</SELF_AUDIT>

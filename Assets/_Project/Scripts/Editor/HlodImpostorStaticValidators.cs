@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -16,6 +17,7 @@ namespace Hecton8.Editor
         private const string RenderingReportPath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
         private const string RollbackFenceReportPath = "Docs/Reports/IMPOSTOR_ROLLBACK_FENCE.json";
         private const string ProjectRootMarker = "Assets";
+        private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(64);
 
         [MenuItem("HECTON-8/Rendering/HLOD Impostor/Validate Layouts", false, 2520)]
         public static void ValidateLayoutsMenu()
@@ -247,12 +249,13 @@ namespace Hecton8.Editor
 
         private static bool TryCalculateApproxBounds(GameObject root, out Bounds bounds)
         {
-            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            s_RendererScratch.Clear();
+            root.GetComponentsInChildren(true, s_RendererScratch);
             bounds = default;
             bool hasBounds = false;
-            for (int i = 0; i < renderers.Length; i++)
+            for (int i = 0; i < s_RendererScratch.Count; i++)
             {
-                Renderer renderer = renderers[i];
+                Renderer renderer = s_RendererScratch[i];
                 if (renderer == null)
                     continue;
 

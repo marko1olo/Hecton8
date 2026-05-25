@@ -1,4 +1,4 @@
-# Scatter Runtime Docs
+﻿# Scatter Runtime Docs
 
 Date: 2026-05-18
 Status: PENDING VERIFICATION

@@ -1,0 +1,36 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_DEV_BUILD_CSV_FENCE_SLICE_V1",
+    "agent":  "X_002",
+    "slice":  "J",
+    "status":  "CORE_BUILD_PASS_AFTER_DEV_BUILD_STATIC_CONFIG_CSV_FENCE_SLICE_J",
+    "generatedUtc":  "2026-05-24T06:00:00.6642736Z",
+    "policy":  "Development player static-config CSV/file-ingest lanes must be editor-only; dev diagnostics may remain broad only when not static config.",
+    "filesChangedBySlice":  [
+                                "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+                                "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+                                "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs",
+                                "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+                                "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                                "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationRuntime.cs",
+                                "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentRuntime.cs",
+                                "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                                "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs",
+                                "Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs",
+                                "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs",
+                                "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs"
+                            ],
+    "changeSummary":  [
+                          "Ballistics armor penetration CSV loader/parser and CSV scratch Vault lane are UNITY_EDITOR only; release/dev players keep binary/default LUT path only.",
+                          "Metabolism biological/suit CSV loaders now return false outside UNITY_EDITOR; parser helper cluster is editor-only.",
+                          "Asynchronous telemetry endpoint CSV config loader now returns outside UNITY_EDITOR; parser helpers are editor-only.",
+                          "Terrain chunk streaming profile CSV load returns outside UNITY_EDITOR to match editor-only parser type.",
+                          "Nutrient drift, carrion nutrient drift, radiation mutation, sensory impairment, ocean single-pass, shoreline foam, and predator acoustic SDF CSV cold-ingest guards are editor-only.",
+                          "Haptic synthesis haptic_response_profiles.csv path and CSV scratch Vault lane are UNITY_EDITOR only; player builds no longer reserve that CSV scratch buffer."
+                      ],
+    "remainingNegatedDevelopmentStaticConfigCandidates":  0,
+    "preprocessorBalance":  "PASS_12_FILES_BALANCE_0_MIN_0",
+    "diffCheck":  "PASS_WITH_LF_CRLFWARNINGS_ONLY",
+    "productionPathDirectFileStreamReadByteMatches":  0,
+    "compileStatus":  "PASS_CORE_DOTNET_BUILD_0_WARNINGS_0_ERRORS_58_77S",
+    "runtimeProfilerProof":  "PENDING_UNITY_PLAYER_PROFILER"
+}

@@ -8,6 +8,7 @@ using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
@@ -506,7 +507,7 @@ namespace Hecton8.Editor
                 cmd.SetComputeVectorParam(compute, TileSizeId, new Vector4(tileWidth, tileHeight, 0f, 0f));
                 cmd.SetComputeVectorParam(compute, AtlasGridId, new Vector4(grid.x, grid.y, 0f, 0f));
                 cmd.DispatchCompute(compute, kernel, Mathf.CeilToInt(tileWidth / 8f), Mathf.CeilToInt(tileHeight / 8f), 1);
-                Graphics.ExecuteCommandBuffer(cmd);
+                UnityEngine.Graphics.ExecuteCommandBuffer(cmd);
             }
             finally
             {
@@ -532,7 +533,7 @@ namespace Hecton8.Editor
                 cmd.SetComputeVectorParam(compute, AtlasSizeId, new Vector4(atlasSize, atlasSize, 0f, 0f));
                 cmd.SetComputeIntParam(compute, DilationRadiusId, radius);
                 cmd.DispatchCompute(compute, kernel, Mathf.CeilToInt(atlasSize / 8f), Mathf.CeilToInt(atlasSize / 8f), 1);
-                Graphics.ExecuteCommandBuffer(cmd);
+                UnityEngine.Graphics.ExecuteCommandBuffer(cmd);
             }
             finally
             {
@@ -547,7 +548,7 @@ namespace Hecton8.Editor
             {
                 cmd.SetRenderTarget(target);
                 cmd.ClearRenderTarget(true, true, Color.clear);
-                Graphics.ExecuteCommandBuffer(cmd);
+                UnityEngine.Graphics.ExecuteCommandBuffer(cmd);
             }
             finally
             {
@@ -565,7 +566,7 @@ namespace Hecton8.Editor
             {
                 cmd.SetRenderTarget(target);
                 cmd.ClearRenderTarget(false, true, Color.clear);
-                Graphics.ExecuteCommandBuffer(cmd);
+                UnityEngine.Graphics.ExecuteCommandBuffer(cmd);
             }
             finally
             {

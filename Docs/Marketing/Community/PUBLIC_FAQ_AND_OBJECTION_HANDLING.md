@@ -1,4 +1,4 @@
-# HECTON-8 Public FAQ And Objection Handling
+﻿# HECTON-8 Public FAQ And Objection Handling
 
 Status: public-response draft bank
 Owner lane: SHINOBU_81 / community and press response
@@ -139,6 +139,78 @@ Use only when someone explicitly brings up Subnautica 2. Do not volunteer the co
 | "Will you let players fight back?" | `We are not ready to describe defense systems publicly. The current public focus is survival pressure, tools, routes, and machinery.` | "Unlike SN2", "we have weapons", shooter promise. | Capture threat assets as decision frames, not helpless monster thumbnails. |
 | "Is the base building less clunky?" | `We will show only what the current build proves. Base systems need to read as machinery with clear consequences.` | "Smoother than SN2", "full builder already works." | Require `PLAN-SHOT-002`, `PLAN-SHOT-005`, or `PLAN-CLIP-001` proof before base claims. |
 | "How long is it?" | `We are not selling hours before the build can prove its route loop. First we need a slice that represents the game honestly.` | Hour counts, "more content than...", Early Access superiority. | Push first assets toward route loop clarity, not scenery. |
+
+## 2026-05-23 Imageboard / Chan Objection Matrix
+
+Use only for 4chan, Dvach, or similar anonymous imageboard surfaces. Default route class is `no_link_feedback`. These answers are deliberately short because long defensive replies become fuel.
+
+### Core Imageboard Reply Rule
+
+Reply only when the question produces asset, scope, or source clarity. Do not defend taste. Do not explain the lore. Do not argue about AI, engines, competitors, politics, or the community itself.
+
+Maximum cadence:
+
+- one answer to clarify the post;
+- one answer to correct a false scope read;
+- then stop and extract signal.
+
+### Imageboard-Specific Triggers
+
+| Trigger | Safe reply | Do not say | Internal action |
+|---|---|---|---|
+| "Why are you posting this here?" | `Looking for critique on whether the mechanic/frame reads. No store link, no wishlist ask.` | "Just sharing", "support us", any CTA. | Confirm same-day board/thread rules were checked; if not, stop posting and log the miss. |
+| "Shill / ad / spam." | `Fair concern. This is a critique post; if the board/thread is the wrong place, I will stop.` | Defensive rant, repost, bump, mod-lawyering. | Mark route `REVISE` if multiple users treat it as promo. |
+| "AI slop." | `Judge the media. If the mechanic, material language, or player decision does not read, the asset fails.` | "AI is the future", "we use agents", long toolchain debate. | Audit whether the asset looks generated, over-smoothed, incoherent, or concept-only. |
+| "Unity asset flip." | `Engine/toolchain is not the pitch. The useful critique is whether pressure, machinery, and the player decision read.` | Engine war, plugin list, "not an asset flip" without proof. | Check for generic store-asset silhouettes/materials and weak custom identity. |
+| "Subnautica clone." | `That is the risk being tested. The intended lane is pressure, machinery, salvage, sonar, black water, and route decisions. Which cue still reads too close?` | "It is totally different", "better than Subnautica", SN2 pain points. | Add the named clone cue to asset revision notes. |
+| "Where is gameplay?" | `If the shot does not show what the player does, it is not ready. The target action is [repair/retreat/seal/reroute/salvage/scan].` | Lore explanation, Steam tease, roadmap promise. | Downgrade the asset to mood-only if viewers cannot name the verb. |
+| "Post Steam." | `Not linking it in this thread. This post is for critique only. Public links use approved routes.` | Unapproved store URL, Discord invite, signup link. | Keep destination gate held unless exact CTA gate is allowed. |
+| "Show build / give key." | `No keys or builds through anonymous threads.` | DM/key offer, invite link, private route hint. | Preserve security boundary; route to key/access policy only if official route exists elsewhere. |
+| "This is too dark." | `Useful. Which object or decision disappeared first: instrument, threat, route, tool, or machine state?` | "It is supposed to be dark." | Feed answer into readability and asset QA. |
+| "Crafting/grind trash." | `Valid risk. The intended loop is route pressure and recovery, not collecting trash to unlock trash.` | Promise no grind, attack other survival games. | Mark `SURVIVAL_LOOP` and require a route-risk proof clip before claiming salvage depth. |
+| "Procedural world = empty." | `Procedural scale is not the pitch. The asset has to show authored danger, readable route, and consequence.` | "Infinite world", "huge map", generated-biome brag. | Strip procedural-size copy from public drafts. |
+| "No weapons / helpless sim?" | `We are not selling combat yet. The useful question is whether the player has a readable decision under threat.` | Shooter promise, "you can kill everything", SN2 contrast. | Require an agency-decision asset if threat framing is used. |
+
+### Russian Imageboard Reply Bank
+
+Use on Dvach only when the thread is already RU. Keep tone plain.
+
+| Триггер | Безопасный ответ | Не писать | Внутреннее действие |
+|---|---|---|---|
+| "Реклама / шиллинг." | `Нормальная претензия. Пост без ссылки и без вишлистов; нужен разбор читаемости. Если тред не место для такого, останавливаюсь.` | Спорить, апать тред, давить ссылками. | Если несколько ответов читают пост как рекламу, угол провален. |
+| "ИИ-мусор." | `Смотрите на кадр/гифку. Если механика, материалы или решение игрока не считываются, ассет провален.` | Продавать ИИ, спорить про будущее профессии. | Проверить, не выглядит ли ассет как генеративный концепт вместо билда. |
+| "Клон Сабнатики." | `Это риск, который проверяю. Цель: давление, техника, сонар, черная вода и решения по маршруту. Что в кадре все еще слишком похоже?` | "Мы лучше", "они облажались", атака конкурента. | Записать конкретный визуальный cue в правку ассета. |
+| "Где геймплей?" | `Если по кадру не видно, что делает игрок, кадр не готов. Тут должно считываться: [чинить/отступать/герметизировать/обходить/сканировать/добывать].` | Лор, обещания, "скоро покажем". | Понизить ассет до mood-only. |
+| "Кинь Steam." | `В этот тред ссылку не кидаю. Сейчас нужен разбор кадра/механики, а не трафик.` | Неодобренный URL, Discord, signup. | Держать public CTA gate закрытым. |
+| "Темно, ничего не видно." | `Полезно. Что первым пропало: прибор, угроза, маршрут, инструмент или состояние машины?` | "Так и задумано." | Передать в readability/QA. |
+
+### When To Stop Replying
+
+Stop immediately when:
+
+- the same objection has been answered once;
+- replies become mostly identity/politics/AI-war/engine-war;
+- users request keys, private files, Discord, or personal contact;
+- people are quote-mining the developer instead of discussing the asset;
+- the thread produces no new asset-specific signal.
+
+### Internal Summary After A Chan Thread
+
+Do not summarize "community liked it." Use this:
+
+```text
+Thread result:
+Asset:
+Question asked:
+Useful critique:
+Repeated objection:
+Readable player decision: yes/no
+Clone-risk cue:
+AI-slop cue:
+Engine/tool trust cue:
+Action: keep / revise / kill / monitor only
+Public route still held: yes/no
+```
 
 ## Current HECTON-8 Decision
 

@@ -38,6 +38,27 @@ namespace Hecton8.UI.Editor
             ok &= ValidateOffset<TerminalInteractionDTO>(nameof(TerminalInteractionDTO.Distance), 16);
             ok &= ValidateOffset<TerminalInteractionDTO>(nameof(TerminalInteractionDTO._pad0), 20);
             ok &= ValidateOffset<TerminalInteractionDTO>(nameof(TerminalInteractionDTO._pad11), 31);
+            ok &= ValidateSize<TerminalInputStateDTO>(64);
+            ok &= ValidateOffset<TerminalInputStateDTO>(nameof(TerminalInputStateDTO.TerminalAUP), 0);
+            ok &= ValidateOffset<TerminalInputStateDTO>(nameof(TerminalInputStateDTO.ForwardNormal), 24);
+            ok &= ValidateOffset<TerminalInputStateDTO>(nameof(TerminalInputStateDTO.UpVector), 36);
+            ok &= ValidateOffset<TerminalInputStateDTO>(nameof(TerminalInputStateDTO.ProjectedUV), 48);
+            ok &= ValidateOffset<TerminalInputStateDTO>(nameof(TerminalInputStateDTO.TerminalHashID), 56);
+            ok &= ValidateOffset<TerminalInputStateDTO>(nameof(TerminalInputStateDTO.InputFlags), 60);
+            ok &= ValidateSize<TerminalInputGpuStateDTO>(32);
+            ok &= ValidateOffset<TerminalInputGpuStateDTO>(nameof(TerminalInputGpuStateDTO.ProjectedUV), 0);
+            ok &= ValidateOffset<TerminalInputGpuStateDTO>(nameof(TerminalInputGpuStateDTO.TerminalHashID), 8);
+            ok &= ValidateOffset<TerminalInputGpuStateDTO>(nameof(TerminalInputGpuStateDTO.InputFlags), 12);
+            ok &= ValidateOffset<TerminalInputGpuStateDTO>(nameof(TerminalInputGpuStateDTO.Reserved0), 16);
+            ok &= ValidateSize<TerminalInputTelemetryEntry>(64);
+            ok &= ValidateSize<TerminalInputTuningDTO>(64);
+            ok &= ValidateOffset<TerminalInputTuningDTO>(nameof(TerminalInputTuningDTO.MaxInteractionDistanceMeters), 0);
+            ok &= ValidateOffset<TerminalInputTuningDTO>(nameof(TerminalInputTuningDTO.CursorSnappingTolerance), 4);
+            ok &= ValidateOffset<TerminalInputTuningDTO>(nameof(TerminalInputTuningDTO.RaycastThickness), 8);
+            ok &= ValidateOffset<TerminalInputTuningDTO>(nameof(TerminalInputTuningDTO.QualityCurvePower), 12);
+            ok &= ValidateOffset<TerminalInputTuningDTO>(nameof(TerminalInputTuningDTO.LowRadiusMeters), 16);
+            ok &= ValidateOffset<TerminalInputTuningDTO>(nameof(TerminalInputTuningDTO.UltraRadiusMeters), 20);
+            ok &= ValidateOffset<TerminalInputTuningDTO>(nameof(TerminalInputTuningDTO.TuningFlags), 24);
             ok &= ValidateSize<ButtonAABBDTO>(32);
             ok &= ValidateSize<GazeRayDTO>(80);
             ok &= ValidateSize<TerminalPlaneDTO>(128);
@@ -56,7 +77,7 @@ namespace Hecton8.UI.Editor
             ok &= ValidateSize<DecryptionTelemetryEntry>(64);
 
             if (ok && logSuccess)
-                Debug.Log("[SHINOBU_137/273] Terminal OS DTO layout validated.");
+                Debug.Log("[SHINOBU_137/273/331] Terminal OS DTO layout validated.");
 
             return ok;
         }
@@ -67,7 +88,7 @@ namespace Hecton8.UI.Editor
             if (observed == expected)
                 return true;
 
-            Debug.LogError("[SHINOBU_137/273] DTO size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
+            Debug.LogError("[SHINOBU_137/273/331] DTO size mismatch: " + typeof(T).Name + " expected " + expected + " observed " + observed);
             return false;
         }
 
@@ -78,7 +99,7 @@ namespace Hecton8.UI.Editor
             if (observed == expected)
                 return true;
 
-            Debug.LogError("[SHINOBU_137/273] DTO offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
+            Debug.LogError("[SHINOBU_137/273/331] DTO offset mismatch: " + typeof(T).Name + "." + fieldName + " expected " + expected + " observed " + observed);
             return false;
         }
     }

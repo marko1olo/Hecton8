@@ -66,7 +66,7 @@ namespace Hecton8.Editor
             builder.AppendLine("    public static class LocKeys");
             builder.AppendLine("    {");
 
-            var usedSymbols = new HashSet<string>(StringComparer.Ordinal);
+            var usedSymbols = new HashSet<string>(keys.Count, StringComparer.Ordinal);
             for (int i = 0; i < keys.Count; i++)
             {
                 string key = keys[i];

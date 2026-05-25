@@ -5,7 +5,9 @@
 // ============================================================================
 
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton.Localization;
@@ -19,7 +21,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
-    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable, INotificationEventListener, IInventoryEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, INotificationEventListener, IInventoryEventListener, IGlobalRegistryHotSwapListener
     {
         private enum NotificationSeverity
         {
@@ -33,11 +35,20 @@ namespace Hecton8.UI
         private const int FixedBufferMessageCharCapacity = 512;
         private const string InventoryFullMessagePrefix = "INVENTORY FULL // CANNOT STORE ";
         private const string FallbackInventoryItemName = "ITEM";
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
+        private const BufferID QueueBufferId = BufferID.HudNotificationQueue;
 
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct NotificationRequest
         {
+            [FieldOffset(0)]
             public uint MessageHash;
+            [FieldOffset(4)]
             public byte Severity;
+            [FieldOffset(5)]
+            private byte _pad0;
+            [FieldOffset(6)]
+            private ushort _pad1;
         }
 
         private struct FixedBufferMessageCacheEntry
@@ -78,8 +89,10 @@ namespace Hecton8.UI
         private float _currentAlpha;
         private bool _built;
         private bool _isShowing;
-        private NativeArray<NotificationRequest> _queue;
+        private VaultGenerationHandle<NotificationRequest> _queueHandle;
+        private IDataVault _dataVault;
         private int _queueCount;
+        private int _queueCapacity;
         private uint _currentMessageHash;
         private NotificationSeverity _currentSeverity;
         private uint _lastEnqueuedMessageHash;
@@ -87,9 +100,13 @@ namespace Hecton8.UI
         private float _lastEnqueueTime = -999f;
         private int _fixedBufferMessageCacheCursor;
         private bool _registeredToTickManager;
+        private bool _registeredToLateFrame;
         private bool _registeredHotSwapListener;
         private bool _tickDormant = true;
-        private LocalizationManager _localizationManager;
+        private bool _presentationDirty;
+        private bool _visualStyleDirty;
+        private bool _textDirty;
+        private ILocalizationStressPresentationReadModel _localizationStressPresentation;
         private int _lastStressCorruptionBucket = int.MinValue;
         private static HUDNotification _activeRuntime;
 
@@ -159,13 +176,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             InventoryEvents.Unregister(this);
-
-            if (_queue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_queue);
-                _queue.Dispose();
-                _queue = default;
-            }
+            ReleaseQueue(_dataVault);
         }
 
         public void Tick(float deltaTime)
@@ -200,7 +211,29 @@ namespace Hecton8.UI
             }
 
             if (_isShowing)
+                _textDirty = true;
+
+            _presentationDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_presentationDirty && !_visualStyleDirty && !_textDirty)
+                return;
+
+            _presentationDirty = false;
+
+            if (_visualStyleDirty)
+            {
+                _visualStyleDirty = false;
+                ApplySeverityVisuals(_currentSeverity);
+            }
+
+            if (_isShowing && _textDirty)
+            {
+                _textDirty = false;
                 RefreshStressCorruptionIfNeeded();
+            }
 
             if (_canvasGroup != null)
                 _canvasGroup.alpha = _currentAlpha;
@@ -208,24 +241,38 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredToTickManager)
+                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredToLateFrame)
+                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTickManager)
-                return;
+            if (_registeredToLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredToLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = false;
+            if (_registeredToTickManager)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredToTickManager = false;
+            }
+
+            _presentationDirty = false;
+            _visualStyleDirty = false;
+            _textDirty = false;
         }
 
         private void RefreshColdRegistryReferences()
         {
-            _localizationManager = GlobalRegistry.Localization;
+            _localizationStressPresentation = GlobalRegistry.LocalizationStressPresentation;
+            _dataVault = GlobalRegistry.DataVault;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -236,13 +283,22 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localizationManager = currentService as LocalizationManager;
+                    _localizationStressPresentation = currentService as ILocalizationStressPresentationReadModel;
                     _lastStressCorruptionBucket = int.MinValue;
                     if (_isShowing)
-                        ApplyNotificationText(_currentMessageHash);
+                    {
+                        _textDirty = true;
+                        _presentationDirty = true;
+                    }
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     RegisterToTickManager();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseQueue(previousService as IDataVault ?? _dataVault);
+                    _dataVault = currentService as IDataVault;
+                    _queueCount = 0;
+                    EnsureQueue();
                     break;
             }
         }
@@ -269,6 +325,11 @@ namespace Hecton8.UI
             Enqueue(message, NotificationSeverity.Warning);
         }
 
+        public void ShowWarning(ReadOnlySpan<char> message)
+        {
+            Enqueue(message, NotificationSeverity.Warning);
+        }
+
         /// <summary>
         /// Queues a warning notification from a caller-owned fixed character buffer.
         /// </summary>
@@ -278,6 +339,11 @@ namespace Hecton8.UI
         }
 
         public void ShowCritical(string message)
+        {
+            Enqueue(message, NotificationSeverity.Critical);
+        }
+
+        public void ShowCritical(ReadOnlySpan<char> message)
         {
             Enqueue(message, NotificationSeverity.Critical);
         }
@@ -295,6 +361,11 @@ namespace Hecton8.UI
             Enqueue(message, NotificationSeverity.Info);
         }
 
+        public void ShowInfo(ReadOnlySpan<char> message)
+        {
+            Enqueue(message, NotificationSeverity.Info);
+        }
+
         /// <summary>
         /// Queues an informational notification from a caller-owned fixed character buffer.
         /// </summary>
@@ -305,6 +376,20 @@ namespace Hecton8.UI
 
         private void Enqueue(string message, NotificationSeverity severity)
         {
+            EnsureBuilt();
+
+            uint messageHash = NotificationEvents.RegisterMessage(message);
+            if (messageHash == 0u)
+                return;
+
+            Enqueue(messageHash, severity);
+        }
+
+        private void Enqueue(ReadOnlySpan<char> message, NotificationSeverity severity)
+        {
+            if (message.IsEmpty)
+                return;
+
             EnsureBuilt();
 
             uint messageHash = NotificationEvents.RegisterMessage(message);
@@ -403,6 +488,16 @@ namespace Hecton8.UI
         {
             _currentMessageHash = messageHash;
             _currentSeverity = severity;
+            _visualStyleDirty = true;
+            _textDirty = true;
+            _presentationDirty = true;
+            _lastStressCorruptionBucket = int.MinValue;
+        }
+
+        private void ApplySeverityVisuals(NotificationSeverity severity)
+        {
+            if (_notifBg == null || _notifText == null)
+                return;
 
             switch (severity)
             {
@@ -419,9 +514,6 @@ namespace Hecton8.UI
                     _notifText.color = InfoText;
                     break;
             }
-
-            _lastStressCorruptionBucket = int.MinValue;
-            ApplyNotificationText(messageHash);
         }
 
         public void OnNotificationEvent(in NotificationEventPayload payload)
@@ -453,7 +545,7 @@ namespace Hecton8.UI
 
         private void RefreshStressCorruptionIfNeeded()
         {
-            LocalizationManager manager = _localizationManager;
+            ILocalizationStressPresentationReadModel manager = _localizationStressPresentation;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
                 return;
@@ -489,10 +581,12 @@ namespace Hecton8.UI
             if (TryWriteFixedBufferMessage(messageHash, target, out length))
                 return true;
 
-            if (messageHash == 0u || !NotificationEvents.TryResolveMessage(messageHash, out string message) || string.IsNullOrEmpty(message))
+            if (messageHash == 0u ||
+                !NotificationEvents.TryResolveMessageSpan(messageHash, out ReadOnlySpan<char> message) ||
+                message.Length <= 0)
                 return false;
 
-            return TryWriteDisplaySpan(message.AsSpan(), target, out length);
+            return TryWriteDisplaySpan(message, target, out length);
         }
 
         private bool TryWriteFixedBufferMessage(uint messageHash, char[] target, out int length)
@@ -521,7 +615,7 @@ namespace Hecton8.UI
             if (message.Length <= 0 || target == null || target.Length == 0)
                 return false;
 
-            LocalizationManager manager = _localizationManager;
+            ILocalizationStressPresentationReadModel manager = _localizationStressPresentation;
             if (manager != null)
                 return manager.TryApplyHullStressCorruptionIfNeeded(message, target, out length) && length > 0;
 
@@ -553,12 +647,17 @@ namespace Hecton8.UI
             for (int i = 0; i < value.Length; i++)
             {
                 char c = value[i];
-                scratch[0] = c == '_' ? ' ' : char.ToUpperInvariant(c);
+                scratch[0] = c == '_' ? ' ' : ToAsciiUpperInvariant(c);
                 if (!buffer.Append(scratch))
                     return false;
             }
 
             return true;
+        }
+
+        private static char ToAsciiUpperInvariant(char value)
+        {
+            return value >= 'a' && value <= 'z' ? (char)(value - 32) : value;
         }
 
         private uint RegisterFixedBufferMessage(in FixedCharBuffer messageBuffer)
@@ -616,64 +715,202 @@ namespace Hecton8.UI
 
         private int ResolveQueueCapacity()
         {
-            EnsureQueue();
-            return math.clamp(maxQueuedNotifications, 1, _queue.Length);
+            int backingCapacity = _queueCapacity > 0 ? _queueCapacity : MaxNotificationQueueCapacity;
+            return math.clamp(maxQueuedNotifications, 1, backingCapacity);
         }
 
         private void EnsureQueue()
         {
-            if (_queue.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
                 return;
 
-            int capacity = math.clamp(maxQueuedNotifications, 1, MaxNotificationQueueCapacity);
-            _queue = new NativeArray<NotificationRequest>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<NotificationRequest>[capacity] - fixed HUD notification hash queue - owner: HUDNotification
-            NativeMemorySentinel.RegisterNativeArray(_queue, nameof(HUDNotification), nameof(_queue), NativeAllocationLifetime.Scene);
-            _queueCount = 0;
+            if (IsVaultHandleCreated(in _queueHandle) &&
+                vault.TryReadOnlyHandle(in _queueHandle, out NativeArray<NotificationRequest>.ReadOnly queue) &&
+                queue.IsCreated &&
+                queue.Length >= MaxNotificationQueueCapacity)
+            {
+                _queueCapacity = queue.Length;
+                return;
+            }
+
+            if (IsVaultHandleCreated(in _queueHandle))
+                vault.ReleaseBuffer(in _queueHandle);
+
+            _queueHandle = vault.EnsureGenerationHandle<NotificationRequest>(
+                QueueBufferId,
+                MaxNotificationQueueCapacity,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+
+            _queueCapacity = IsVaultHandleCreated(in _queueHandle) &&
+                vault.TryReadOnlyHandle(in _queueHandle, out queue) &&
+                queue.IsCreated
+                    ? queue.Length
+                    : 0;
+            if (_queueCapacity <= 0)
+                _queueCount = 0;
+            else if (_queueCount > _queueCapacity)
+                _queueCount = _queueCapacity;
         }
 
         private void PushQueueBack(in NotificationRequest request)
         {
-            EnsureQueue();
-            int capacity = ResolveQueueCapacity();
-            if (_queueCount >= capacity)
+            if (!TryAcquireQueueWrite(out NativeArray<NotificationRequest> queue))
                 return;
 
-            _queue[_queueCount] = request;
-            _queueCount++;
+            int capacity = ResolveQueueCapacity();
+            try
+            {
+                if (queue.Length < capacity)
+                    capacity = queue.Length;
+                if (_queueCount >= capacity)
+                    return;
+
+                queue[_queueCount] = request;
+                _queueCount++;
+            }
+            finally
+            {
+                ReleaseQueueWrite();
+            }
         }
 
         private void InsertQueueFront(in NotificationRequest request)
         {
-            EnsureQueue();
+            if (!TryAcquireQueueWrite(out NativeArray<NotificationRequest> queue))
+                return;
+
             int capacity = ResolveQueueCapacity();
-            if (_queueCount >= capacity)
-                _queueCount = capacity - 1;
+            try
+            {
+                if (queue.Length < capacity)
+                    capacity = queue.Length;
+                if (capacity <= 0)
+                {
+                    _queueCount = 0;
+                    return;
+                }
 
-            for (int i = _queueCount; i > 0; i--)
-                _queue[i] = _queue[i - 1];
+                if (_queueCount >= capacity)
+                    _queueCount = capacity - 1;
 
-            _queue[0] = request;
-            _queueCount++;
+                for (int i = _queueCount; i > 0; i--)
+                    queue[i] = queue[i - 1];
+
+                queue[0] = request;
+                _queueCount++;
+            }
+            finally
+            {
+                ReleaseQueueWrite();
+            }
         }
 
         private NotificationRequest PopQueueFront()
         {
-            EnsureQueue();
-            NotificationRequest request = _queueCount > 0 ? _queue[0] : default;
-            RemoveQueueFront();
-            return request;
+            if (!TryAcquireQueueWrite(out NativeArray<NotificationRequest> queue))
+            {
+                _queueCount = 0;
+                return default;
+            }
+
+            try
+            {
+                NotificationRequest request = _queueCount > 0 ? queue[0] : default;
+                RemoveQueueFrontLocked(queue);
+                return request;
+            }
+            finally
+            {
+                ReleaseQueueWrite();
+            }
         }
 
         private void RemoveQueueFront()
         {
-            if (!_queue.IsCreated || _queueCount <= 0)
+            if (!TryAcquireQueueWrite(out NativeArray<NotificationRequest> queue))
+            {
+                _queueCount = 0;
+                return;
+            }
+
+            try
+            {
+                RemoveQueueFrontLocked(queue);
+            }
+            finally
+            {
+                ReleaseQueueWrite();
+            }
+        }
+
+        private void RemoveQueueFrontLocked(NativeArray<NotificationRequest> queue)
+        {
+            if (!queue.IsCreated || _queueCount <= 0)
                 return;
 
-            for (int i = 1; i < _queueCount; i++)
-                _queue[i - 1] = _queue[i];
+            int count = math.min(_queueCount, queue.Length);
+            for (int i = 1; i < count; i++)
+                queue[i - 1] = queue[i];
 
             _queueCount--;
-            _queue[_queueCount] = default;
+            if ((uint)_queueCount < (uint)queue.Length)
+                queue[_queueCount] = default;
+        }
+
+        private bool TryAcquireQueueWrite(out NativeArray<NotificationRequest> queue)
+        {
+            queue = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in _queueHandle))
+            {
+                EnsureQueue();
+                vault = _dataVault;
+            }
+
+            if (vault == null ||
+                !IsVaultHandleCreated(in _queueHandle) ||
+                !vault.TryAcquireWriteLock(in _queueHandle, VaultOwnerSystemId, out queue))
+            {
+                return false;
+            }
+
+            if (queue.IsCreated)
+                return true;
+
+            vault.ReleaseWriteLock(in _queueHandle, VaultOwnerSystemId);
+            return false;
+        }
+
+        private void ReleaseQueueWrite()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _queueHandle))
+                vault.ReleaseWriteLock(in _queueHandle, VaultOwnerSystemId);
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private void ReleaseQueue(IDataVault vault)
+        {
+            if (vault != null && IsVaultHandleCreated(in _queueHandle))
+                vault.ReleaseBuffer(in _queueHandle);
+
+            _queueHandle = default;
+            _queueCapacity = 0;
+            _queueCount = 0;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void EnsureBuilt()

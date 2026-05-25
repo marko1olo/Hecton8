@@ -128,7 +128,7 @@ namespace Hecton8.Core
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct JobDependencyDTO
     {
-        [FieldOffset(0)] public ulong JobHandlePtr;
+        [FieldOffset(0)] public ulong JobHandleBits;
         [FieldOffset(8)] public uint SystemIdHash;
         [FieldOffset(12)] public uint FrameId;
         [FieldOffset(16)] public uint DependencyHash0;
@@ -245,8 +245,8 @@ namespace Hecton8.Core
 
     public struct DispatcherJobContext
     {
-        public NativeArray<MockTimeDilationSignal> MockTimeDilationSignals;
-        public NativeArray<JobDependencyDTO> JobDependencyTelemetry;
+        internal NativeArray<MockTimeDilationSignal> MockTimeDilationSignals;
+        internal NativeArray<JobDependencyDTO> JobDependencyTelemetry;
         public uint Frame;
         public uint ActiveBucket;
     }

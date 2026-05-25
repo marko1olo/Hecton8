@@ -69,12 +69,12 @@ namespace Hecton8.Global.Contracts
     }
 
     /// <summary>
-    /// Raw DataVault slice handle passed across assembly boundaries. Ownership stays with the allocating assembly.
+    /// Opaque DataVault slice descriptor passed across assembly boundaries. Ownership stays with the allocating assembly.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GlobalNativeBufferHandle
     {
-        [FieldOffset(0)] public IntPtr Pointer;
+        [FieldOffset(0)] public ulong DescriptorToken;
         [FieldOffset(8)] public int Length;
         [FieldOffset(12)] public int StrideBytes;
         [FieldOffset(16)] public uint OwnerHash;
@@ -89,7 +89,7 @@ namespace Hecton8.Global.Contracts
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GlobalFunctionPointerHandle
     {
-        [FieldOffset(0)] public IntPtr Pointer;
+        [FieldOffset(0)] public IntPtr FunctionPointer;
         [FieldOffset(8)] public uint FunctionHash;
         [FieldOffset(12)] public uint ContractHash;
         [FieldOffset(16)] public uint Version;

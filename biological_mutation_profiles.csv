@@ -1,0 +1,4 @@
+profile,safe_dose_rad,fatal_dose_rad,max_stamina_penalty,healing_decay_per_second,toxic_blood_threshold
+baseline_scrubber,25,850,0.42,0.12,0.64
+cheap_device_fast_fake,35,950,0.35,0.18,0.72
+ultra_visual_overkill,18,780,0.48,0.08,0.52

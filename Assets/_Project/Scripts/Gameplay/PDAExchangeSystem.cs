@@ -1,5 +1,4 @@
-using System;
-using System.Text;
+﻿using System;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
@@ -153,18 +152,21 @@ namespace Hecton8.Gameplay
         private readonly uint[] _catalogRequiredScanEntryHashes = new uint[BarterDTO.MaxOffers];
         // COLD ALLOC: TransactionSnapshot[8] - fixed recent exchange history ring - owner: PDAExchangeSystem
         private readonly TransactionSnapshot[] _recentTransactions = new TransactionSnapshot[BarterDTO.MaxRecentTransactions];
-        private readonly StringBuilder _sb = new StringBuilder(256);
+        private readonly char[] _saveSummaryBuffer = new char[256]; // COLD ALLOC: char[256] - exchange save summary staging buffer - owner: PDAExchangeSystem
+        private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - exchange notification staging buffer - owner: PDAExchangeSystem
         private int _executionStateCount;
         private int _catalogRuntimeHashCount;
         private int _recentTransactionCount;
         private bool _registered;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
+        private bool _saveRegistered;
         private uint _signalSourceId;
         private PlayerInventory _boundInventory;
-        private ScanLogSystem _boundScanLog;
+        private IScanLogService _boundScanLog;
         private IPlayerRuntimeContext _playerRuntime;
-        private ScanLogSystem _scanLogRuntime;
+        private IScanLogService _scanLogRuntime;
+        private ISaveService _saveService;
         private uint _inventorySignalHash;
         private uint _scanLogSourceId;
 
@@ -182,7 +184,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+            _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             RefreshColdRegistryReferences();
             AutoResolve(true);
             CacheCatalogRuntimeHashes();
@@ -196,7 +198,7 @@ namespace Hecton8.Gameplay
             AutoResolve(true);
             RefreshSignalFilters();
             CacheCatalogRuntimeHashes();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
+            TryRegisterSaveParticipant();
             TryRegister();
         }
 
@@ -207,7 +209,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
+            TryUnregisterSaveParticipant();
             TryUnregister();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
@@ -375,7 +377,7 @@ namespace Hecton8.Gameplay
                 directive.RegisterBarterTransaction();
 
             // Publish the QuestManager barter event; item collection is handled elsewhere.
-            Atlas6Events.RaiseBarterAccepted(_executionStateCount);
+            Atlas6Events.TryRaiseBarterAccepted(_executionStateCount);
 
             return true;
         }
@@ -441,28 +443,6 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        public void AppendBundleSummary(StringBuilder builder, BarterItemAmount[] bundle, string emptyLabel)
-        {
-            if (builder == null)
-                return;
-
-            if (bundle == null || bundle.Length == 0)
-            {
-                builder.Append(emptyLabel);
-                return;
-            }
-
-            for (int i = 0; i < bundle.Length; i++)
-            {
-                if (i > 0)
-                    builder.Append("  |  ");
-
-                int amount = math.max(1, bundle[i].amount);
-                builder.Append(bundle[i].item != null ? bundle[i].item.itemName : "UNKNOWN");
-                builder.Append(" X").Append(amount);
-            }
-        }
-
         public bool TryAppendBundleSummary(Span<char> buffer, ref int cursor, BarterItemAmount[] bundle, ReadOnlySpan<char> emptyLabel)
         {
             if (bundle == null || bundle.Length == 0)
@@ -493,10 +473,11 @@ namespace Hecton8.Gameplay
 
         private string BuildBundleSummaryForSave(BarterItemAmount[] bundle, string emptyLabel)
         {
-            _sb.Length = 0;
-            AppendBundleSummary(_sb, bundle, emptyLabel);
+            int cursor = 0;
+            if (!TryAppendBundleSummary(_saveSummaryBuffer.AsSpan(), ref cursor, bundle, emptyLabel.AsSpan()))
+                cursor = math.min(cursor, _saveSummaryBuffer.Length);
 
-            return _sb.ToString();
+            return new string(_saveSummaryBuffer, 0, cursor);
         }
 
         private static bool TryAppend(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
@@ -607,8 +588,9 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntime = PlayerRuntimeContextService.ActiveRuntimeContext;
-            _scanLogRuntime = GlobalRegistry.ScanLog;
+            _playerRuntime = GlobalRegistry.Player;
+            _scanLogRuntime = GlobalRegistry.ScanLogService;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void AutoResolve(bool resolveHud)
@@ -622,8 +604,6 @@ namespace Hecton8.Gameplay
                     playerContext.PlayerObject.TryGetComponent(out playerInventory);
                 }
             }
-            if (scanLogSystem == null)
-                scanLogSystem = _scanLogRuntime;
             if (resolveHud && hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
         }
@@ -658,21 +638,51 @@ namespace Hecton8.Gameplay
                         AutoResolve(false);
                     break;
                 case GlobalRegistryServiceSlot.ScanLogRuntime:
-                    _scanLogRuntime = currentService as ScanLogSystem;
-                    if (scanLogSystem == null || ReferenceEquals(scanLogSystem, previousService))
-                        scanLogSystem = _scanLogRuntime;
+                    _scanLogRuntime = currentService as IScanLogService;
                     RefreshSignalFilters();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     if (currentService != null)
                         TryRegister();
                     break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    TryRegisterSaveParticipant();
+                    break;
             }
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
         }
 
         public void Tick(float deltaTime)
         {
-            if (playerInventory == null || scanLogSystem == null)
+            if (playerInventory == null || ActiveScanLogService == null)
                 AutoResolve(false);
 
             RefreshSignalFilters();
@@ -701,11 +711,11 @@ namespace Hecton8.Gameplay
                 _inventorySignalHash = currentInventory != null ? unchecked((uint)EntityId.ToULong(currentInventory.GetEntityId())) : 0u;
             }
 
-            ScanLogSystem currentScanLog = scanLogSystem != null ? scanLogSystem : null;
+            IScanLogService currentScanLog = ActiveScanLogService;
             if (!ReferenceEquals(_boundScanLog, currentScanLog))
             {
                 _boundScanLog = currentScanLog;
-                _scanLogSourceId = currentScanLog != null ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(currentScanLog.GetEntityId())) : 0u;
+                _scanLogSourceId = currentScanLog != null ? currentScanLog.SourceId : 0u;
             }
         }
 
@@ -748,12 +758,12 @@ namespace Hecton8.Gameplay
         private void PublishExchangeStateChanged(byte reason, byte flags = 0)
         {
             if (_signalSourceId == 0u)
-                _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+                _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
 
             PdaExchangeStateChangedSignal signal = new PdaExchangeStateChangedSignal
             {
                 SourceId = _signalSourceId,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 OfferCount = OfferCount,
                 RecentTransactionCount = _recentTransactionCount,
                 ExecutionStateCount = _executionStateCount,
@@ -761,7 +771,7 @@ namespace Hecton8.Gameplay
                 Flags = flags
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<PdaExchangeStateChangedSignal>.TryPush(in signal);
         }
 
         private bool IsUnlocked(BarterOfferData offer)
@@ -777,8 +787,11 @@ namespace Hecton8.Gameplay
             if (requiredScanEntryHash == 0u)
                 return true;
 
-            return scanLogSystem != null && scanLogSystem.ContainsEntry(requiredScanEntryHash);
+            IScanLogService scanLog = ActiveScanLogService;
+            return scanLog != null && scanLog.ContainsEntry(requiredScanEntryHash);
         }
+
+        private IScanLogService ActiveScanLogService => scanLogSystem != null ? scanLogSystem : _scanLogRuntime;
 
         private bool HasReachedLimit(BarterOfferData offer)
         {
@@ -1088,14 +1101,16 @@ namespace Hecton8.Gameplay
 
         private void NotifyInfo(string message)
         {
-            if (hudNotification != null)
-                hudNotification.ShowInfo(message);
+            _notificationBuffer.Clear();
+            if (hudNotification != null && _notificationBuffer.Append(message.AsSpan()))
+                hudNotification.ShowInfo(in _notificationBuffer);
         }
 
         private void NotifyWarning(string message)
         {
-            if (hudNotification != null)
-                hudNotification.ShowWarning(message);
+            _notificationBuffer.Clear();
+            if (hudNotification != null && _notificationBuffer.Append(message.AsSpan()))
+                hudNotification.ShowWarning(in _notificationBuffer);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.EditorValidation
 {
@@ -65,7 +66,7 @@ namespace Hecton8.EditorValidation
                 "[BootstrapStaticConstructorAuditor] Static constructor found on ISystem type. " +
                 "Static constructors are forbidden for deterministic boot:\n" +
                 failures;
-            Debug.LogError(message);
+            H8Debug.LogError(message);
             throw new InvalidOperationException(message);
         }
 

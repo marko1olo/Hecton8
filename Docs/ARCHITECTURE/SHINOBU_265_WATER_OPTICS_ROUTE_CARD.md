@@ -1,4 +1,4 @@
-# SHINOBU_265 Water Optics Route Card
+﻿# SHINOBU_265 Water Optics Route Card
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION
@@ -31,12 +31,40 @@ UberNoir solid surfaces and volumetric fog need the same water absorption/scatte
 
 ## Producer And Consumer Phase
 
-- Cold bootstrap: `WaterOpticsRuntime` must be authored or explicitly bootstrapped by the owning scene/bootstrap composition. `WaterOpticsRuntimeOwnerInstaller` provides the manual editor route `Hecton8/Rendering/Water Optics/Install Runtime Owner In Bootstrap Scene`, which attaches the component to the existing `[BOOTSTRAPPER]` root in `Assets/_Project/Scenes/00_BOOTSTRAP.unity` only when deliberately invoked. The runtime caches `IDataVault` from `Awake/OnEnable/Start`, allocates generation handles, cold-acquires the double `_GlobalWaterOptics` constant-buffer pair when supported, registers the pre-simulation owner and visual-sync child dispatcher systems, and listens for `GlobalRegistryServiceSlot.DataVault` replacement to release/rebind fixed Vault handles without hot polling. There is no hidden runtime-load self-spawn or scene-load GameObject creation route.
-- `PRE_SIMULATION`: writes owner tuning row into `ShinobuWaterOpticsTuning` only when tuning/profile/editor state is dirty, then writes the current fallback/mock `WaterOpticsDTO` row directly through `NativeArrayUnsafeUtility` plus `UnsafeUtility.AsRef<T>`. Missing Vault/handle state fails closed and records telemetry; this phase does not call grow-capable buffer acquisition and does not schedule a one-row job.
-- `VISUAL_SYNC`: verifies the already cold-owned `GraphicsBuffer.Target.Constant` pair, maps one buffer, copies one 64-byte DTO through direct `UnsafeUtility.MemCpy`, binds `_GlobalWaterOptics`, and records `TelemetryFlagUploadSkipped` instead of allocating or repairing GPU buffers if the pair is missing/invalid. Invalid numeric state or estimated budget breach requests a black-box dump; the file write is flushed from the owner phase instead of VisualSync.
-- RenderGraph: `HectonWaterOpticsTelemetryFeature` injects a marker-only raster pass after opaques by default, binds active color as `AccessFlags.ReadWrite`, and does not call `WaterOpticsRuntime`, `GlobalRegistry`, or a static owner mutator from `RecordRenderGraph`. The render func only emits `BeginSample`/`EndSample`.
-- Editor/build: `WaterOpticsRendererFeatureInstaller` ensures the feature exists in PC, PC_High, Mobile, and Quest renderer assets through Unity serialized object APIs only on explicit menu action or build preprocessor validation. It also fails validation when no authored `WaterOpticsRuntime` owner is serialized in `_Project` scenes/prefabs, so the explicit-owner requirement cannot silently regress. Current static GUID scan finds no authored owner, and scene/bootstrap placement remains an owner-review blocker. Domain reload no longer mutates renderer assets.
-- Editor/development profile bridge: `Docs/water_optics_profiles.csv` is parsed into Vault profiles under `UNITY_EDITOR` during cold bootstrap or via the Abyssal Optics Tuner reload action. The file path resolves through a project-root guard that accepts either the Unity project current directory or a `Hecton8` child containing `Assets` and `ProjectSettings`. Player runtime text loading from `StreamingAssets` is not part of this route; production profile payloads must come from Data Monolith/Vault when that contract exists.
+- Cold bootstrap: `WaterOpticsRuntime` must be authored or explicitly bootstrapped by the owning scene/bootstrap composition.
+- `WaterOpticsRuntimeOwnerInstaller` provides the manual editor route `Hecton8/Rendering/Water Optics/Install Runtime Owner In Bootstrap Scene`, which attaches the component to the existing `[BOOTSTRAPPER]` root in `Assets/_Project/Scenes/00_BOOTSTRAP.unity` only when deliberately invoked.
+- Runtime caches `IDataVault` from `Awake/OnEnable/Start`.
+- It allocates generation handles and cold-acquires the double `_GlobalWaterOptics` constant-buffer pair when supported.
+- It registers pre-simulation owner and visual-sync child dispatcher systems.
+- `GlobalRegistryServiceSlot.DataVault` replacement releases/rebinds fixed Vault handles without hot polling.
+- There is no hidden runtime-load self-spawn or scene-load GameObject creation route.
+- `PRE_SIMULATION`: writes owner tuning row into `ShinobuWaterOpticsTuning` only when tuning/profile/editor state is dirty.
+- Writes current fallback/mock `WaterOpticsDTO` row through `NativeArrayUnsafeUtility` plus `UnsafeUtility.AsRef<T>`.
+- Missing Vault/handle state fails closed and records telemetry.
+- This phase does not call grow-capable buffer acquisition or schedule a one-row job.
+- `VISUAL_SYNC`:
+  - verifies the already cold-owned `GraphicsBuffer.Target.Constant` pair;
+  - maps one buffer;
+  - copies one 64-byte DTO through direct `UnsafeUtility.MemCpy`;
+  - binds `_GlobalWaterOptics`;
+  - records `TelemetryFlagUploadSkipped` if the pair is missing/invalid;
+  - allocates or repairs no GPU buffers;
+  - requests black-box dump on invalid numeric state or budget breach;
+  - flushes dump file write from owner phase, not VisualSync.
+- RenderGraph: `HectonWaterOpticsTelemetryFeature` injects marker-only raster pass after opaques by default.
+- It binds active color as `AccessFlags.ReadWrite`.
+- It does not call `WaterOpticsRuntime`, `GlobalRegistry`, or static owner mutator from `RecordRenderGraph`.
+- Render func only emits `BeginSample`/`EndSample`.
+- Editor/build: `WaterOpticsRendererFeatureInstaller` ensures the feature exists in PC, PC_High, Mobile, and Quest renderer assets through Unity serialized object APIs only on explicit menu action or build preprocessor validation.
+- It also fails validation when no authored `WaterOpticsRuntime` owner is serialized in `_Project` scenes/prefabs, so the explicit-owner requirement cannot silently regress.
+- Current static GUID scan finds no authored owner, and scene/bootstrap placement remains an owner-review blocker.
+- Domain reload no longer mutates renderer assets.
+- Editor/development profile bridge:
+  - Source: `Docs/water_optics_profiles.csv`.
+  - Scope: `UNITY_EDITOR` cold bootstrap or Abyssal Optics Tuner reload.
+  - Path guard: Unity project root or `Hecton8` child with `Assets` and `ProjectSettings`.
+  - Player runtime: no text loading from `StreamingAssets`.
+  - Production payload route: Data Monolith/Vault contract when present.
 
 ## Buffer IDs
 
@@ -51,7 +79,9 @@ All are owned by `SystemID.Vfx`. They are presentation/proof lanes, not rollback
 
 ## Unity Asset Identity
 
-Deterministic `.meta` files are present for the new WaterOptics runtime/editor folders, runtime/editor asmdefs, new C# source files, `Hecton_VolumetricFog_DearLie.shader`, and the UberNoir warmup variant collection. This prevents local GUID generation drift before Unity import. Unity import proof remains pending.
+Deterministic `.meta` files exist for WaterOptics runtime/editor folders, asmdefs, C# source, `Hecton_VolumetricFog_DearLie.shader`, and UberNoir warmup variant collection.
+
+This prevents local GUID drift before Unity import. Unity import proof remains pending.
 
 ## Layout Proof
 
@@ -64,7 +94,16 @@ No `Pack=1`, no managed fields, no Unity object references.
 
 ## GlobalQualityWeight Behavior
 
-`GlobalQualityWeight` is written into `QualityAndDepthLimits.x`. HLSL continuously blends from one scalar monochrome extinction approximation to spectral RGB extinction correction through `smooth01(saturate((quality - 0.28) * 1.3888889))`; below that admission floor, opaque, volumetric, and legacy UberNoir vertex/fog extinction lanes return mono transmittance before spectral correction ALU. The legacy extinction LUT path is no longer gated by removed math-LOD or platform shader macros; LUT influence is blended by a smooth quality curve that uses water-optics quality only when `_GlobalWaterOptics` is active, otherwise preserving legacy LUT admission and full spectral richness for editor/import previews. The LUT sampler now matches the actual `Data/Visuals/Water_Extinction_Matrix.bin` upload shape: 768x256 RHalf, `x = turbidityIndex * 3 + rgbChannel`, `y = depthIndex`, with `_ExtinctionLUT_TexelSize` dimension guards before sampling. UberNoir light-probe richness and screen refraction now use runtime quality/material gates instead of local binary shader variants, and the stale low-quality UberNoir warmup entry has been removed. DTO layout, BufferID ownership, and rollback/save authority do not change with quality.
+- `GlobalQualityWeight` is written into `QualityAndDepthLimits.x`.
+- HLSL blends monochrome extinction to spectral RGB correction through `smooth01(saturate((quality - 0.28) * 1.3888889))`.
+- Below the admission floor, opaque, volumetric, and legacy UberNoir extinction lanes return mono transmittance.
+- Spectral correction ALU is skipped below the floor.
+- Legacy extinction LUT path is no longer gated by removed math-LOD or platform shader macros.
+- LUT influence uses a smooth quality curve only when `_GlobalWaterOptics` is active.
+- Otherwise it preserves legacy LUT admission and full spectral richness for editor/import previews.
+- The LUT sampler now matches the actual `Data/Visuals/Water_Extinction_Matrix.bin` upload shape: 768x256 RHalf, `x = turbidityIndex * 3 + rgbChannel`, `y = depthIndex`, with `_ExtinctionLUT_TexelSize` dimension guards before sampling.
+- UberNoir light-probe richness and screen refraction now use runtime quality/material gates instead of local binary shader variants, and the stale low-quality UberNoir warmup entry has been removed.
+- DTO layout, BufferID ownership, and rollback/save authority do not change with quality.
 
 ## Accessor Purity
 
@@ -72,7 +111,13 @@ No `Pack=1`, no managed fields, no Unity object references.
 
 ## Failure Route
 
-Invalid values or estimated opaque budget breaches set telemetry fault flags. VisualSync sets a pending dump request, and `PostSimulationTick`/shutdown flushes a 32-byte unmanaged header plus fixed 64-byte telemetry rows to `Docs/AgentLogs/Dump_SHINOBU_265.bin` once per fault, oldest-to-newest from the circular cursor, using the same project-root guard as the CSV bridge. If Vault rows are unavailable, the request stays pending instead of being dropped. Exact runtime GPU timing proof remains pending.
+- Invalid values or estimated opaque budget breaches set telemetry fault flags.
+- VisualSync sets pending dump request.
+- `PostSimulationTick`/shutdown flushes 32-byte unmanaged header plus fixed 64-byte telemetry rows.
+- Dump path: `Docs/AgentLogs/Dump_SHINOBU_265.bin`.
+- Flush order: oldest-to-newest from circular cursor; same project-root guard as CSV bridge.
+- If Vault rows are unavailable, the request stays pending instead of being dropped.
+- Exact runtime GPU timing proof remains pending.
 
 ## Rejected Alternatives
 

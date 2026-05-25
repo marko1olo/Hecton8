@@ -27,7 +27,7 @@ namespace Hecton8.Core
         [FieldOffset(60)] public uint SourceSystemId;
 
         /// <summary>Returns a direct ref to an unmanaged AUP record.</summary>
-        public static unsafe ref AUP_StateDTO ElementAt(void* basePointer, int index)
+        internal static unsafe ref AUP_StateDTO ElementAt(void* basePointer, int index)
         {
             return ref UnsafeUtility.AsRef<AUP_StateDTO>((byte*)basePointer + (index * UnsafeUtility.SizeOf<AUP_StateDTO>()));
         }
@@ -54,15 +54,15 @@ namespace Hecton8.Core
     }
 
     /// <summary>Raw vault views proving a 50,000-entity origin rebase without sibling-domain dependencies.</summary>
-    public struct MockEntityArrays
+    internal struct MockEntityArrays
     {
-        public NativeArray<AUP_StateDTO> States;
-        public NativeArray<float3> Velocities;
-        public NativeArray<float3> HistoricalPoints;
-        public NativeArray<AupOriginShiftTelemetryEntry> TelemetryRing;
-        public NativeArray<AupOriginShiftRuntimeState> RuntimeState;
-        public int ActiveCount;
-        public int HistoricalCount;
+        internal NativeArray<AUP_StateDTO> States;
+        internal NativeArray<float3> Velocities;
+        internal NativeArray<float3> HistoricalPoints;
+        internal NativeArray<AupOriginShiftTelemetryEntry> TelemetryRing;
+        internal NativeArray<AupOriginShiftRuntimeState> RuntimeState;
+        internal int ActiveCount;
+        internal int HistoricalCount;
     }
 
     /// <summary>Editor-facing readback packet for the AUP Universe Tuner.</summary>
@@ -290,7 +290,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>Ensures all unmanaged origin-shift vault buffers exist and are initialized.</summary>
-        public static bool EnsureRuntimeState(IDataVault vault, out MockEntityArrays arrays)
+        internal static bool EnsureRuntimeState(IDataVault vault, out MockEntityArrays arrays)
         {
             arrays = default;
             if (vault == null)
@@ -426,7 +426,7 @@ namespace Hecton8.Core
                     return true;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystemId,
@@ -1193,6 +1193,7 @@ namespace Hecton8.Core
                 : 0;
         }
 
+#if UNITY_EDITOR
         private static bool TryPollCsvOverride(IDataVault vault, NativeArray<AupOriginShiftRuntimeState> runtimeState)
         {
             string path = ResolveCsvPath();
@@ -1335,6 +1336,7 @@ namespace Hecton8.Core
 
             return sign * value;
         }
+#endif
 
         private static void DumpOriginShiftBlackBox(NativeArray<AupOriginShiftTelemetryEntry> telemetryRing)
         {
@@ -1650,11 +1652,11 @@ namespace Hecton8.Core
         {
             [NativeDisableUnsafePtrRestriction]
             [NoAlias]
-            public AUP_StateDTO* States;
+            internal AUP_StateDTO* States;
 
             [NativeDisableUnsafePtrRestriction]
             [NoAlias]
-            public AupPaddedAtomicCounter* NonFiniteCounter;
+            internal AupPaddedAtomicCounter* NonFiniteCounter;
 
             public double3 ShiftDelta;
             public uint NewSectorHash;

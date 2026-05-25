@@ -197,12 +197,16 @@ public static class ModuleStatusEvents
     private static int _referencePendingCount;
     private static int _pendingEventCount;
     private static int _nextFrameEventCount;
+    private static int _droppedEventCount;
+    private static int _droppedReferenceSlotCount;
     private static bool _isDispatching;
 
     /// <summary>
     /// Pending payload count in the native event lane.
     /// </summary>
     public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+    public static int DroppedEventCount => _droppedEventCount;
+    public static int DroppedReferenceSlotCount => _droppedReferenceSlotCount;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()
@@ -227,6 +231,8 @@ public static class ModuleStatusEvents
         _referencePendingCount = 0;
         _pendingEventCount = 0;
         _nextFrameEventCount = 0;
+        _droppedEventCount = 0;
+        _droppedReferenceSlotCount = 0;
         _isDispatching = false;
     }
 
@@ -277,7 +283,10 @@ public static class ModuleStatusEvents
                 return;
 
             if (!_pendingEvents.TryDequeue(out ModuleStatusEventPayload payload))
+            {
+                _pendingEventCount = 0;
                 break;
+            }
 
             if (_pendingEventCount > 0)
                 _pendingEventCount--;
@@ -326,31 +335,46 @@ public static class ModuleStatusEvents
     /// Enqueues a module enter notification. Called from <see cref="BaseModule"/>.
     /// </summary>
     /// <param name="module">Entered module.</param>
+    [System.Obsolete("Use TryNotifyEnter(BaseModule) so bounded enqueue refusal is visible.", true)]
     public static void NotifyEnter(BaseModule module)
     {
-        Enqueue(ModuleStatusEventType.Enter, module);
+        TryNotifyEnter(module);
+    }
+
+    public static bool TryNotifyEnter(BaseModule module)
+    {
+        return Enqueue(ModuleStatusEventType.Enter, module);
     }
 
     /// <summary>
     /// Enqueues a module exit notification. Called from <see cref="BaseModule"/>.
     /// </summary>
     /// <param name="module">Exited module.</param>
+    [System.Obsolete("Use TryNotifyExit(BaseModule) so bounded enqueue refusal is visible.", true)]
     public static void NotifyExit(BaseModule module)
     {
-        Enqueue(ModuleStatusEventType.Exit, module);
+        TryNotifyExit(module);
     }
 
-    private static void Enqueue(ModuleStatusEventType eventType, BaseModule module)
+    public static bool TryNotifyExit(BaseModule module)
+    {
+        return Enqueue(ModuleStatusEventType.Exit, module);
+    }
+
+    private static bool Enqueue(ModuleStatusEventType eventType, BaseModule module)
     {
         if (module == null)
-            return;
+            return false;
 
         if (!TryReserveReferenceSlot(out int referenceSlot))
-            return;
+        {
+            _droppedReferenceSlotCount++;
+            return false;
+        }
 
         _referenceSlots[referenceSlot].Module = module;
 
-        Enqueue(new ModuleStatusEventPayload
+        return Enqueue(new ModuleStatusEventPayload
         {
             ModuleEntityId = EntityId.ToULong(module.GetEntityId()),
             ModuleHashId = ComputeModuleHash(module),
@@ -404,24 +428,26 @@ public static class ModuleStatusEvents
         }
     }
 
-    private static void Enqueue(in ModuleStatusEventPayload payload)
+    private static bool Enqueue(in ModuleStatusEventPayload payload)
     {
         EnsureInitialized();
         if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
         {
+            _droppedEventCount++;
             ReleaseReferenceSlot(payload.ReferenceSlot);
-            return;
+            return false;
         }
 
         if (_isDispatching)
         {
             _nextFrameEvents.Enqueue(payload);
             _nextFrameEventCount++;
-            return;
+            return true;
         }
 
         _pendingEvents.Enqueue(payload);
         _pendingEventCount++;
+        return true;
     }
 
     private static bool TryReserveReferenceSlot(out int referenceSlot)
@@ -498,7 +524,10 @@ public static class ModuleStatusEvents
                 return false;
 
             if (!queue.TryDequeue(out ModuleStatusEventPayload payload))
+            {
+                pendingCount = 0;
                 break;
+            }
 
             if (pendingCount > 0)
                 pendingCount--;

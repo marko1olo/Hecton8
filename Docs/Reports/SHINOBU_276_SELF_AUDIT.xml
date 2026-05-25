@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_276" domain="Exosuit 6DoF Kinematics" date="2026-05-21" proof_class="STATIC_SOURCE_UNITY_COMPILE_PENDING">
+﻿<SELF_AUDIT agent="SHINOBU_276" domain="Exosuit 6DoF Kinematics" date="2026-05-21" proof_class="STATIC_SOURCE_UNITY_COMPILE_PENDING">
   <TASK_RECONCILIATION count="20">
     <TASK id="01" status="PASS_STATIC" note="Exosuit/mech/Rigidbody/joint archaeology performed; no dedicated joint-driven exosuit rig found, existing player controller bridge hijacked." />
     <TASK id="02" status="PASS_STATIC" note="Exosuit grapple/jump/gravity plus generic player motor mutation paths are gated when the DataVault kinematic authority is bound: environment force buffers are consumed without motor writes, queued external velocity is skipped, KCC sweep/wall-scrape feedback is suppressed, wipeout/damping/clamp mutators are skipped, dynamic collision CapsuleCollider writes, heavy-tow Rigidbody center-of-mass writes, wall-kick velocity/force writes, voxel no-clip recovery motor writes, transport carrier motor writes, and ladder snap motor writes are suppressed, and exosuit foot ray probes are disabled." />

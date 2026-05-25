@@ -4,6 +4,11 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.Global.Contracts
 {
+    internal static class FutureSystemSeamSelfAuditLayout
+    {
+        internal const int ReportStrideBytes = 64;
+    }
+
     [System.Flags]
     public enum FutureSeamAuditFlags : uint
     {
@@ -19,7 +24,7 @@ namespace Hecton8.Global.Contracts
     /// <summary>
     /// Fixed self-audit report for dormant future-seam contracts. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = FutureSystemSeamSelfAuditLayout.ReportStrideBytes)]
     public struct FutureSystemSeamAuditReport64
     {
         [FieldOffset(0)] public ulong ContractHash;
@@ -41,7 +46,7 @@ namespace Hecton8.Global.Contracts
     /// </summary>
     public static class FutureSystemSeamSelfAudit
     {
-        public const int ReportSizeBytes = 64;
+        public const int ReportSizeBytes = FutureSystemSeamSelfAuditLayout.ReportStrideBytes;
         public const int RequiredReservationCount = 7;
         public const uint RequiredSurfaceMask = 0x000000FEu;
 

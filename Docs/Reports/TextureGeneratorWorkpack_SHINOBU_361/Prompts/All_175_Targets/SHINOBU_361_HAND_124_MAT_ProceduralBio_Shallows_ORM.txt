@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_124
+ROLE: MASK_ORM
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_124_MAT_ProceduralBio_Shallows_ORM
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_ProceduralBio_Shallows_ORM.png
+FINAL_FILENAME: MAT_ProceduralBio_Shallows_ORM.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Packed ORM RGB source for procedural shallows biology. Red channel should mark AO in coral pad seams, kelp bases, shell-dust pockets, and small membrane folds. Green channel should vary roughness across wet living tissue, chalky shell dust, polished mineral flecks, and soft sediment. Blue channel should stay near zero with only rare mineral inclusions. Keep masks clean, organic, readable, seamless, and aligned to bright shallow-biome material families. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

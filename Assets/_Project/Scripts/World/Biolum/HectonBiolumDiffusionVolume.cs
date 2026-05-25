@@ -12,7 +12,7 @@ namespace Hecton8.Biolum
     /// Publishes a player-centered 3D bioluminescence radiance volume for flora shading.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int DefaultResolution = 64;
         private const float DefaultVolumeWorldSize = 72f;
@@ -129,7 +129,10 @@ namespace Hecton8.Biolum
         private uint _lastPublishedGlowHash;
         private RenderTexture _volumeA;
         private RenderTexture _volumeB;
-        private GraphicsBuffer _pointBuffer;
+        private GraphicsBuffer _pointBufferA;
+        private GraphicsBuffer _pointBufferB;
+        private GraphicsBuffer _activePointBuffer;
+        private int _pointBufferWriteIndex;
         private readonly BiolumPointGpuData[] _pointUpload = new BiolumPointGpuData[MaxTrackedZones]; // COLD ALLOC: BiolumPointGpuData[32] — persistent GPU upload staging for biolum diffusion emitters — owner: HectonBiolumDiffusionVolume
         private readonly Vector4[] _glowPointPositionRangeUpload = new Vector4[MaxGlowShaderPoints]; // COLD ALLOC: Vector4[16] - shader-global glow point positions/ranges - owner: HectonBiolumDiffusionVolume
         private readonly Vector4[] _glowPointColorIntensityUpload = new Vector4[MaxGlowShaderPoints]; // COLD ALLOC: Vector4[16] - shader-global glow point colors/intensities - owner: HectonBiolumDiffusionVolume
@@ -210,13 +213,18 @@ namespace Hecton8.Biolum
         /// </summary>
         public void Tick(float deltaTime)
         {
+        }
+
+        public void LateFrameTick()
+        {
+            float deltaTime = Time.deltaTime;
             if (deltaTime < 0f)
                 return;
 
             float safeDeltaTime = SanitizeDelta(deltaTime);
             ResolveDependencies();
             EnsureResources();
-            if (_playerTransform == null || _biolumManager == null || _volumeA == null || _volumeB == null || _pointBuffer == null)
+            if (_playerTransform == null || _biolumManager == null || _volumeA == null || _volumeB == null || _activePointBuffer == null)
             {
                 Shader.SetGlobalFloat(_GlobalActiveId, 0f);
                 PublishGlowPointGlobals(0, force: true);
@@ -288,7 +296,15 @@ namespace Hecton8.Biolum
             }
 
             if (pointCount > 0 && ShouldUploadPointBuffer(pointCount))
-                GraphicsBufferUploadUtility.UploadArray(_pointBuffer, _pointUpload, pointCount);
+            {
+                GraphicsBuffer pointWriteBuffer = ResolvePointWriteBuffer();
+                if (pointWriteBuffer != null)
+                {
+                    GraphicsBufferUploadUtility.UploadArray(pointWriteBuffer, _pointUpload, pointCount);
+                    _activePointBuffer = pointWriteBuffer;
+                    _pointBufferWriteIndex ^= 1;
+                }
+            }
 
             BindSharedParameters(_diffuseKernel, halfExtents, worldToLocal, volumeParams, cascadeParams, texelSize, pointCount);
             biolumDiffusionCompute.SetTexture(_diffuseKernel, _VolumeInputId, _volumeA);
@@ -366,10 +382,18 @@ namespace Hecton8.Biolum
                 _needsClear = true;
             }
 
-            if (_pointBuffer == null)
+            if (_pointBufferA == null)
             {
-                _pointBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BiolumPointGpuData>(MaxTrackedZones); // COLD ALLOC: GraphicsBuffer[32] — persistent biolum emitter upload buffer for 3D diffusion volume — owner: HectonBiolumDiffusionVolume
+                _pointBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BiolumPointGpuData>(MaxTrackedZones); // COLD ALLOC: GraphicsBuffer[32] A - persistent biolum emitter upload buffer for 3D diffusion volume - owner: HectonBiolumDiffusionVolume
             }
+
+            if (_pointBufferB == null)
+            {
+                _pointBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BiolumPointGpuData>(MaxTrackedZones); // COLD ALLOC: GraphicsBuffer[32] B - persistent biolum emitter upload buffer for 3D diffusion volume - owner: HectonBiolumDiffusionVolume
+            }
+
+            if (_activePointBuffer == null)
+                _activePointBuffer = _pointBufferA;
         }
 
         private RenderTexture CreateVolumeTexture(int resolution, string textureName)
@@ -564,7 +588,16 @@ namespace Hecton8.Biolum
             biolumDiffusionCompute.SetVector(_CascadeParamsId, cascadeParams);
             biolumDiffusionCompute.SetVector(_TexelSizeId, texelSize);
             biolumDiffusionCompute.SetInt(_PointCountId, pointCount);
-            biolumDiffusionCompute.SetBuffer(kernelIndex, _PointBufferId, _pointBuffer);
+            biolumDiffusionCompute.SetBuffer(kernelIndex, _PointBufferId, _activePointBuffer);
+        }
+
+        private GraphicsBuffer ResolvePointWriteBuffer()
+        {
+            GraphicsBuffer writeBuffer = _pointBufferWriteIndex == 0 ? _pointBufferA : _pointBufferB;
+            if (writeBuffer != null)
+                return writeBuffer;
+
+            return ReferenceEquals(_activePointBuffer, _pointBufferA) ? _pointBufferB : _pointBufferA;
         }
 
         private void DispatchVolumeKernel(int kernelIndex, uint threadGroupSizeX, uint threadGroupSizeY, uint threadGroupSizeZ)
@@ -666,8 +699,7 @@ namespace Hecton8.Biolum
             if (_registered || !Application.isPlaying || _dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -675,7 +707,7 @@ namespace Hecton8.Biolum
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -708,11 +740,20 @@ namespace Hecton8.Biolum
         private void ReleaseResources()
         {
             ReleaseVolumeTextures();
-            if (_pointBuffer != null)
+            if (_pointBufferA != null)
             {
-                _pointBuffer.Release();
-                _pointBuffer = null;
+                _pointBufferA.Release();
+                _pointBufferA = null;
             }
+
+            if (_pointBufferB != null)
+            {
+                _pointBufferB.Release();
+                _pointBufferB = null;
+            }
+
+            _activePointBuffer = null;
+            _pointBufferWriteIndex = 0;
 
             _lastUploadedPointCount = -1;
             _lastUploadedPointHash = 0u;

@@ -1,4 +1,4 @@
-# AUP Precision Standards
+﻿# AUP Precision Standards
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION

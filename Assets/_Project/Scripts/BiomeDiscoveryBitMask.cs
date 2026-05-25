@@ -72,8 +72,10 @@ namespace Hecton8.SaveSystem
             if (discoveredBiomeIds == null)
                 return;
 
-            foreach (int biomeId in discoveredBiomeIds)
+            HashSet<int>.Enumerator biomeEnumerator = discoveredBiomeIds.GetEnumerator();
+            while (biomeEnumerator.MoveNext())
             {
+                int biomeId = biomeEnumerator.Current;
                 if (!IsValidBiomeId(biomeId))
                     continue;
 

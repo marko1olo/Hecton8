@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Optimization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Burst;
@@ -23,7 +22,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public class HectonIndirectVegetationRenderer : MonoBehaviour, ITickable, IOriginShiftListener
+    public class HectonIndirectVegetationRenderer : MonoBehaviour, ITickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         /// <summary>Stride of one Matrix4x4 entry expected in the external instance matrix buffer.</summary>
         public const int InstanceMatrixStride = 64;
@@ -354,10 +353,14 @@ namespace Hecton8.World
         private Bounds _explicitBounds;
         private bool _hasBoundsOverride;
         private bool _isRegistered;
+        private bool _isLateFrameRegistered;
         private bool _originShiftRegistered;
+        private bool _hotSwapRegistered;
+        private bool _visualTickRequested;
         private bool _legacyDataDirty = true;
         private int _instanceCount;
         private Camera _cachedCullCamera;
+        private IVramPressureReadModel _vramPressure;
         [SerializeField]
         [Tooltip("Authored depth-only vegetation pass material. Runtime creation is forbidden for the biolum/vegetation pulse route.")]
         private Material _depthOnlyMaterial;
@@ -374,6 +377,7 @@ namespace Hecton8.World
         private bool _hasPreviousMotionCameraPosition;
         private Vector3 _cachedCullCameraPosition;
         private Vector3 _cachedCullCameraForward = Vector3.forward;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private PlayerToolManager _playerToolManager;
         private float _nextToolManagerResolveTime;
         private BatchRendererGroup _batchRendererGroup;
@@ -496,7 +500,7 @@ namespace Hecton8.World
         private int _lastScatterCullTelemetryFrame = -1;
         private int _lastScatterCullTelemetrySampleFrame = -1;
         private int _resolvedDensityDecimationStep = 1;
-        private byte _cachedScalabilityTierProfileByte = ScalabilityTierProfiles.HighRtx;
+        private float _cachedQualityWeight01 = 1f;
         private float _cachedSystemStress01;
         private AsyncGPUReadbackRequest _cullTelemetryReadbackRequest;
         private bool _floraGrowthTelemetryDumped;
@@ -887,8 +891,7 @@ namespace Hecton8.World
                 float spacing = math.max(0.25f, Spacing);
                 float originX = (x - (cellsX - 1) * 0.5f) * spacing + jitterX * spacing * 0.35f;
                 float originZ = (z - (cellsX - 1) * 0.5f) * spacing + jitterZ * spacing * 0.35f;
-                float sin = math.sin(angle);
-                float cos = math.cos(angle);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
 
                 Matrix4x4 matrix = default;
                 matrix.m00 = cos * scale;
@@ -1479,7 +1482,7 @@ namespace Hecton8.World
             _farCullingCadenceDistance = Mathf.Max(0f, _farCullingCadenceDistance);
             _maxDensity01 = Mathf.Clamp(_maxDensity01, 0.05f, 1f);
             _minimumDensityDecimationStep = Mathf.Clamp(_minimumDensityDecimationStep, 1, 4);
-            _cachedScalabilityTierProfileByte = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
+            _cachedQualityWeight01 = ResolveVegetationQualityWeight01(_cachedQualityWeight01);
             _cachedSystemStress01 = 0f;
             _resolvedDensityDecimationStep = ResolveDensityDecimationStep();
             TryAutoAssignAssets();
@@ -1548,16 +1551,21 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CachePlayerContextCold();
+            CacheRuntimeServicesCold();
             TryRegister();
+            TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
         }
 
         private void OnDisable()
         {
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             _hasPreviousMotionCameraPosition = false;
             _previousMotionCamera = null;
+            _vramPressure = null;
             ReleaseBatchRendererGroupResources();
             ReleaseGpuIndirectResources();
         }
@@ -1565,6 +1573,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             ReleaseBatchRendererGroupResources();
             ReleaseGpuIndirectResources();
@@ -1591,6 +1600,35 @@ namespace Hecton8.World
                 Destroy(_generatedImpostorMesh);
                 _generatedImpostorMesh = null;
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null || !isActiveAndEnabled)
+                    return;
+
+                TryUnregister();
+                TryRegister();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.VRAMPressureRuntime)
+            {
+                _vramPressure = currentService as IVramPressureReadModel;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            _playerToolManager = _cachedPlayerContext != null ? _cachedPlayerContext.ToolManager : null;
+            _nextToolManagerResolveTime = 0f;
         }
 
         /// <summary>
@@ -1839,6 +1877,20 @@ namespace Hecton8.World
         /// <param name="deltaTime">Unused current frame delta required by ITickable.</param>
         public void Tick(float deltaTime)
         {
+            _visualTickRequested = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_visualTickRequested)
+                return;
+
+            _visualTickRequested = false;
+            RunVisualTick();
+        }
+
+        private void RunVisualTick()
+        {
             SyncSourceBinding();
             ConsumeScatterRuntimeSignals();
             PollCullTelemetryReadback();
@@ -1876,9 +1928,7 @@ namespace Hecton8.World
 
         private void ConsumeScatterRuntimeSignals()
         {
-            ReadOnlySpan<ScalabilityChangedEvent> scalabilitySignals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
-            for (int signalIndex = 0; signalIndex < scalabilitySignals.Length; signalIndex++)
-                _cachedScalabilityTierProfileByte = ScalabilityTierProfiles.Normalize(scalabilitySignals[signalIndex].CurrentTier);
+            _cachedQualityWeight01 = ResolveVegetationQualityWeight01(_cachedQualityWeight01);
 
             float stress01 = 0f;
             ReadOnlySpan<SystemHealthSignal> healthSignals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
@@ -1904,8 +1954,9 @@ namespace Hecton8.World
             if (maxDensity < 0.999f)
                 step = Mathf.Max(step, Mathf.CeilToInt(1f / maxDensity));
 
-            if (_cachedScalabilityTierProfileByte == ScalabilityTierProfiles.LowMx350)
-                step = Mathf.Max(step, 2);
+            float qualityPressure01 = 1f - math.saturate(_cachedQualityWeight01);
+            int qualityDecimationStep = 1 + (int)math.floor(qualityPressure01 * 2.99f);
+            step = Mathf.Max(step, Mathf.Clamp(qualityDecimationStep, 1, 3));
 
             if (_cachedSystemStress01 >= 0.85f)
                 step = Mathf.Max(step, 3);
@@ -1913,6 +1964,13 @@ namespace Hecton8.World
                 step = Mathf.Max(step, 2);
 
             return Mathf.Clamp(step, 1, 4);
+        }
+
+        private static float ResolveVegetationQualityWeight01(float fallback01)
+        {
+            float fallback = math.saturate(math.select(1f, fallback01, math.isfinite(fallback01)));
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(fallback, qualityWeight, math.isfinite(qualityWeight)));
         }
 
         private static void ResolveCullCameraPose(Transform cullTransform, out Vector3 runtimePosition, out Vector3 forward)
@@ -2394,7 +2452,7 @@ namespace Hecton8.World
             Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
                 ? ResolveImpostorRenderMesh()
                 : null;
-            float brgLodDistanceScalar = VRAMPressureMonitor.BrgLodDistanceScalar;
+            float brgLodDistanceScalar = ResolveBrgLodDistanceScalar();
             float brgNearLodDistance = Mathf.Max(0.01f, _nearLodDistance * brgLodDistanceScalar);
             float brgFarLodDistance = Mathf.Max(brgNearLodDistance, _farLodDistance * brgLodDistanceScalar);
             float brgLodTransitionRange = Mathf.Max(0.01f, _lodTransitionRange * brgLodDistanceScalar);
@@ -2741,6 +2799,7 @@ namespace Hecton8.World
             ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
             _cullTelemetryCountersBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 ScatterCullTelemetryCounterCount,
                 sizeof(uint)); // COLD ALLOC: GraphicsBuffer[4] - GPU cull telemetry counters for SHINOBU_09 scatter diagnostics - owner: HectonIndirectVegetationRenderer
             ResetCullComputeBindingStates();
@@ -3058,7 +3117,10 @@ namespace Hecton8.World
             }
 
             _lastScatterCullTelemetrySampleFrame = frameIndex;
-            _cullTelemetryCountersBuffer.SetData(_cullTelemetryClearPayload, 0, 0, ScatterCullTelemetryCounterCount);
+            GraphicsBufferUploadUtility.UploadArray(
+                _cullTelemetryCountersBuffer,
+                _cullTelemetryClearPayload,
+                ScatterCullTelemetryCounterCount);
             return true;
         }
 
@@ -3994,7 +4056,7 @@ namespace Hecton8.World
                                     _cpuCullingData.IsCreated &&
                                     _cpuCullingMatrices.Length >= _instanceCount &&
                                     _cpuCullingData.Length >= _instanceCount;
-            float brgLodDistanceScalar = VRAMPressureMonitor.BrgLodDistanceScalar;
+            float brgLodDistanceScalar = ResolveBrgLodDistanceScalar();
             float lodTransition = Mathf.Max(_lodTransitionRange * brgLodDistanceScalar, 0.01f);
             float nearLodDistance = Mathf.Max(_nearLodDistance * brgLodDistanceScalar, 0.01f);
             float farLodDistance = Mathf.Max(nearLodDistance, _farLodDistance * brgLodDistanceScalar);
@@ -4623,7 +4685,7 @@ namespace Hecton8.World
             if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = CachePlayerContextCold();
             if (playerContext != null && playerContext.ToolManager != null)
             {
                 _playerToolManager = playerContext.ToolManager;
@@ -4944,15 +5006,62 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            TryRegisterUpdatable();
+            TryRegisterLateFrameTickable();
+        }
+
+        private IPlayerRuntimeContext CachePlayerContextCold()
+        {
+            if (_cachedPlayerContext != null)
+                return _cachedPlayerContext;
+
+            _cachedPlayerContext = GlobalRegistry.Player;
+            return _cachedPlayerContext;
+        }
+
+        private void CacheRuntimeServicesCold()
+        {
+            if (_vramPressure == null)
+                _vramPressure = GlobalRegistry.VRAMPressureReadModel;
+        }
+
+        private float ResolveBrgLodDistanceScalar()
+        {
+            IVramPressureReadModel pressure = _vramPressure;
+            if (pressure == null)
+                return 1f;
+
+            float scalar = pressure.BrgLodDistanceScalar;
+            return math.select(1f, math.max(0.05f, scalar), math.isfinite(scalar));
+        }
+
+        private void TryRegisterUpdatable()
+        {
             if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_isLateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _isLateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
+            if (_isLateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _isLateFrameRegistered = false;
+            }
+
             if (!_isRegistered)
                 return;
 
@@ -4976,6 +5085,23 @@ namespace Hecton8.World
 
             HectonFloatingOrigin.UnregisterListener(this);
             _originShiftRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

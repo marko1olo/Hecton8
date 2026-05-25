@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// CanvasRenderer does not expose MaterialPropertyBlock, so SDF tuning must occur on a dedicated material instance.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class WorldSpaceTMPSharpnessController : MonoBehaviour, ILateFrameTickable
+    public sealed class WorldSpaceTMPSharpnessController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly int FaceDilateId = Shader.PropertyToID("_FaceDilate");
         private static readonly int OutlineSoftnessId = Shader.PropertyToID("_OutlineSoftness");
@@ -53,6 +53,7 @@ namespace Hecton8.UI
         private Material _materialInstance;
         private Material _sourceMaterial;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private float _lastFaceDilate = float.MinValue;
         private float _lastOutlineSoftness = float.MinValue;
         private float _lastWeightNormal = float.MinValue;
@@ -82,9 +83,11 @@ namespace Hecton8.UI
             if (_target == null)
             {
                 UnregisterFromTickManager();
+                TryUnregisterHotSwapListener();
                 return;
             }
 
+            TryRegisterHotSwapListener();
             RegisterToTickManager();
             EnsureMaterialInstance();
             ApplySharpness(force: true);
@@ -95,6 +98,7 @@ namespace Hecton8.UI
             if (_target == null)
                 return;
 
+            TryRegisterHotSwapListener();
             RegisterToTickManager();
             _targetTransform = _target != null ? _target.transform : _targetTransform;
             _cameraTransform = _camera != null ? _camera.transform : _cameraTransform;
@@ -106,6 +110,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             ReleaseMaterialInstance();
             _sharpnessUpdateRemaining = 0f;
         }
@@ -113,6 +118,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             ReleaseMaterialInstance();
         }
 
@@ -381,6 +387,35 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            {
+                UnregisterFromTickManager();
+                RegisterToTickManager();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
 #if UNITY_EDITOR

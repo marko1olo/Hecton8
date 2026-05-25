@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_118
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_118_Mat_Module_Pylon_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Module_Pylon_Albedo.png
+FINAL_FILENAME: Mat_Module_Pylon_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Pylon module albedo for vertical HECTON-8 support structures. Create long satin titanium ribs, warm off-white ceramic clamp panels, graphite cable collars, teal alignment stripes, amber inspection dots, and subtle salt-worn vertical edges. The texture should stretch well on tall supports and read as engineered load-bearing hardware in an abyssal base. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

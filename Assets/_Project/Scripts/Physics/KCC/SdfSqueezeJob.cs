@@ -8,13 +8,18 @@ using Unity.Mathematics;
 
 namespace Hecton8.Physics.KCC
 {
+    internal static class SdfSqueezeJobLayout
+    {
+        public const int ResultStrideBytes = 64;
+    }
+
     public enum SdfSqueezeSampleMode : byte
     {
         Axis6 = 0,
         Tetra4 = 1
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = SdfSqueezeJobLayout.ResultStrideBytes)]
     public struct SdfSqueezeResult
     {
         public const uint FlagActive = 1u << 0;

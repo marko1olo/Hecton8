@@ -28,10 +28,7 @@
         "EntityAUPs"
       ],
       "fields": [
-        "LockstepPlayerKinematicState.LocalPosition",
-        "LockstepPlayerKinematicState.SectorX",
-        "LockstepPlayerKinematicState.SectorY",
-        "LockstepPlayerKinematicState.SectorZ",
+        "LockstepPlayerKinematicState.PositionAup",
         "EntityAUPs"
       ],
       "note": "Distance comparisons use squared AUP/local deltas only."

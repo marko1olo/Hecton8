@@ -1,4 +1,4 @@
-# Crisis And Moderation Playbook
+﻿# Crisis And Moderation Playbook
 
 Status: future community safety / pre-public
 Public stance: single-player-first scope / proof-first public copy
@@ -76,6 +76,10 @@ This gate is for the first screenshot, Steam page, demo, or creator preview beat
 | Press/creator misread | Creator or journalist repeats wrong feature/scope | S1 | Correct privately if possible; public correction only if needed. | Fix presskit, pitch, FAQ, Steam copy route that caused it. | Hold next outreach batch. |
 | Regional wording failure | Native speaker flags bad translation or broken encoding | S2 | Thank, stop localized sends. | Send file through localization QA gate. | Region remains blocked until native-read pass. |
 | Key/access scam | Unknown account requests key/access using creator name | S1 | Do not send key; verify via owner route. | Log in key policy and deny. | Escalate if impersonation repeats. |
+| Imageboard pile-on | 4chan/Dvach thread turns into shill/AI/clone/engine-war loop | S2/S1 if official false claim or link leak happened | Stop replying after one factual clarification; do not repost elsewhere to "balance" sentiment. | Classify asset-specific signal only; revise or kill asset/copy; preserve URL/thread/date if public. | No further public use of the asset until clone/AI/readability cue is corrected. |
+| Anonymous key/access bait | Thread asks for build, key, Discord, private files, or "DM me" | S1 | Refuse access in-thread; no private route through anonymous users. | Check that no key/access/CTA link was exposed; update key/access risk if needed. | Access remains blocked until official recipient/batch gate passes outside the board. |
+| Agent/AI process backlash | Public replies focus on AI agents instead of game proof | S2 | State that build/media quality is the only public proof; stop process debate. | Remove AI/process hook from public copy; audit asset for AI-looking source/capture issue. | Future posts lead with gameplay proof only. |
+| Engine-war derail | Unity/UE/Godot argument replaces asset critique | S3/S2 if repeated across posts | Redirect once to frame/mechanic readability; stop. | Strip engine name from public hook unless the thread is explicitly technical. | Engine no longer appears in player-facing copy for that beat. |
 
 ## First-Hour Moderator Script
 
@@ -92,6 +96,61 @@ Internal action:
 Owner:
 Next check time:
 ```
+
+## Imageboard Incident Script
+
+Use when a 4chan/Dvach thread produces enough noise to require a decision. Do not import anonymous users into CRM, support, playtest, newsletter, or creator systems.
+
+```text
+Timestamp:
+Surface:
+Board/thread:
+Thread status:
+Was HECTON posted by developer? yes/no
+Was a public link posted? yes/no
+Asset/campaign ID:
+Original question:
+Main derail: shill / clone / AI / engine / darkness / no gameplay / key bait / other
+Useful critique count:
+Repeated exact words:
+Decision-read result:
+Severity:
+Reply count by HECTON:
+Stop condition reached:
+Internal action:
+Owner:
+Next check time:
+```
+
+### Imageboard 30-Minute Response
+
+1. Freeze replies after one factual clarification.
+2. Save URL/thread/date and the exact asset shown.
+3. Separate asset critique from insults.
+4. If the thread calls the post shilling, do not repost the same asset on another board that day.
+5. If the thread asks for keys/builds/Discord, do not provide any route.
+6. If AI/process dominates, remove AI/process framing from the next public beat.
+7. If clone-risk dominates, identify the exact cue: palette, diver silhouette, reef, UI, creature pose, base shape, copy wording.
+
+### Imageboard 24-Hour Decision
+
+| Label | Condition | Action |
+|---|---|---|
+| KEEP_INTERNAL_ONLY | Thread was hostile but produced one useful product/asset critique. | Keep the critique, do not publicize the board reaction. |
+| REVISE_ASSET | Repeated comments identify the same readability, clone, AI, or engine-trust problem. | Revise/crop/re-capture before using asset anywhere else. |
+| REVISE_TEMPLATE | The asset was acceptable but the wording made it read like ad/shilling. | Rewrite to no-link critique with one question. |
+| KILL_ROUTE | Board/thread format turns every HECTON post into noise or backlash. | Stop using that surface except passive monitoring. |
+| SECURITY_HOLD | Any key/access/private route request, impersonation, or leaked link appears. | Escalate to key/access/inbox custody owner and preserve evidence. |
+
+### What Not To Do During An Imageboard Pile-On
+
+- Do not ask users to move to Discord.
+- Do not ask for wishlists.
+- Do not post Steam, signup, presskit, or private access links.
+- Do not answer every insult.
+- Do not call the board toxic in public.
+- Do not use the thread as proof that "people are interested."
+- Do not quote slurs or unsafe content in reports; paraphrase product-relevant signal only.
 
 ## Decision Rule
 

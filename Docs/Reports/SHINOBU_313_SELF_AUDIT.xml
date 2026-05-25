@@ -1,0 +1,86 @@
+﻿<SELF_AUDIT agent="SHINOBU_313" domain="PARASITIC_FAUNA_PARTICLE_SWARMS" evidenceClass="STATIC_SOURCE_PENDING_UNITY_IMPORT">
+  <taskMatrix count="20">
+    <task id="01" name="MANDATORY_CODEBASE_GREP_SCAN" result="PASS_STATIC" />
+    <task id="02" name="PARTIAL_CLASS_INTEGRATION_MANDATE" result="PASS_STATIC" note="No existing HectonVFXRuntime was found in scoped scan; isolated VFX parasite runtime used." />
+    <task id="03" name="SIGNALBUS_MATRIX_VERIFICATION" result="PASS_STATIC" />
+    <task id="04" name="CPU_PARTICLE_SYSTEM_INQUISITION" result="PASS_STATIC" />
+    <task id="05" name="MANAGED_TARGET_LIST_PURGE" result="PASS_STATIC" />
+    <task id="06" name="EMERGENCY_MOCK_THERMAL_TARGETS" result="PASS_STATIC" />
+    <task id="07" name="BURST_TARGET_EXTRACTION_KERNEL" result="PASS_STATIC" note="NoAlias fields, score-ranked top 16, sqrt-free guarded rsqrt distance proxy." />
+    <task id="08" name="GPU_COMPUTE_SWARM_ADVECTION" result="PASS_STATIC" />
+    <task id="09" name="THE_DEAR_LIE_HULL_ATTACHMENT" result="PASS_STATIC" />
+    <task id="10" name="ASYNCHRONOUS_INDIRECT_DRAW_DISPATCH" result="PASS_STATIC" />
+    <task id="11" name="CONTINUOUS_SCALABILITY_PARTICLE_BUDGET" result="PASS_STATIC" />
+    <task id="12" name="AUP_PRECISION_GPU_WRAPPING" result="PASS_STATIC" note="Rebase kernel and frame-param binding required for active compute." />
+    <task id="13" name="ROLLBACK_NETCODE_EXCLUSION_FENCE" result="PASS_STATIC" />
+    <task id="14" name="ZERO_INIT_OVERHEAD_BYPASS" result="PASS_STATIC" />
+    <task id="15" name="TELEMETRY_SWARM_RECORDER" result="PASS_STATIC" />
+    <task id="16" name="PARASITE_TUNER_EDITOR_WINDOW" result="PASS_STATIC" />
+    <task id="17" name="CSV_SWARM_PROFILES_INGESTOR" result="PASS_STATIC" />
+    <task id="18" name="LIVE_ATTRACTION_DEBUG_GIZMO" result="PASS_STATIC" />
+    <task id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" result="PASS_STATIC" />
+    <task id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" result="FAIL_PENDING_UNITY_IMPORT_COMPILE_RUNTIME_PROFILER" />
+  </taskMatrix>
+  <structLayouts>
+    <struct name="ParasiteTargetDTO" sizeBytes="32" proof="multipleOf32">
+      <field name="LocalPosition" offset="0" size="12" type="float3" />
+      <field name="ThermalSignature" offset="12" size="4" type="float" />
+      <field name="Velocity" offset="16" size="12" type="float3" />
+      <field name="AttractionRadius" offset="28" size="4" type="float" />
+    </struct>
+    <struct name="ParasiteFrameParamsDTO" sizeBytes="64" proof="oneCacheLine">
+      <field name="Frame0" offset="0" size="16" type="float4" />
+      <field name="Frame1" offset="16" size="16" type="float4" />
+      <field name="Frame2" offset="32" size="16" type="float4" />
+      <field name="Reserved" offset="48" size="16" type="float4" />
+    </struct>
+    <struct name="SwarmTelemetryEntry" sizeBytes="64" proof="oneCacheLine">
+      <field name="Frame" offset="0" size="4" />
+      <field name="TargetCount" offset="4" size="4" />
+      <field name="ParticleBudget" offset="8" size="4" />
+      <field name="EstimatedGpuMicroseconds" offset="12" size="4" />
+      <field name="GlobalQualityWeight" offset="16" size="4" />
+      <field name="MaxThermalSignature" offset="20" size="4" />
+      <field name="StateHash" offset="24" size="4" />
+      <field name="Flags" offset="28" size="4" />
+      <field name="StrongestTargetLocal" offset="32" size="12" />
+      <field name="OverflowCount" offset="44" size="4" />
+      <field name="DumpSequence" offset="48" size="4" />
+      <field name="ActiveProfileHash" offset="52" size="4" />
+      <field name="RebaseFrame" offset="56" size="4" />
+      <field name="_pad0" offset="60" size="4" />
+    </struct>
+  </structLayouts>
+  <vaultBuffers owner="SystemID.Vfx">
+    <buffer id="71980" name="ShinobuParasiteTargets" />
+    <buffer id="71981" name="ShinobuParasiteTargetCandidates" />
+    <buffer id="71982" name="ShinobuParasiteTargetCount" />
+    <buffer id="71983" name="ShinobuParasiteTuning" />
+    <buffer id="71984" name="ShinobuParasiteTelemetryRing" />
+    <buffer id="71985" name="ShinobuParasiteTelemetryCursor" />
+    <buffer id="71986" name="ShinobuParasiteProfiles" />
+    <buffer id="71987" name="ShinobuParasiteCsvScratch" />
+    <buffer id="71989" name="ShinobuParasiteScannerSummary" />
+    <buffer id="71990" name="ShinobuParasiteProfileCount" />
+  </vaultBuffers>
+  <scalability>
+    <curve>GlobalQualityWeight -> smoothstep -> particle budget 5000..configured cap, curl/detail strength, dispatch group count.</curve>
+    <lowTier>Zero-target frames clear indirect args only; missing material, render camera, or required kernel takes no-compute path.</lowTier>
+    <ultraTier>Same DTO and authority route, higher particle density up to allocated GraphicsBuffer.count.</ultraTier>
+  </scalability>
+  <dearLie>
+    <fake>Particles latch to a spherical thermal target shell and blend target velocity instead of testing hull triangles.</fake>
+    <bigO before="O(particles * targets * hullTriangles)" after="O(particles * 16)" />
+  </dearLie>
+  <dependencyGraph>
+    <input>SignalBus&lt;ThermalSourceSignal&gt; frame snapshot, SignalBus&lt;AupShiftSignal&gt; frame snapshot, cached IPlayerRuntimeContext pose snapshot, GlobalDataVault handles cached at boot.</input>
+    <jobs>GenerateMockThermalTargetsJob, ExtractParasiteTargetsJob, SelectTopParasiteTargetsJob, telemetry write in VISUAL_SYNC.</jobs>
+    <aliasing>NoAlias is applied to non-overlapping NativeArray lanes in Burst jobs.</aliasing>
+    <buildGuard>No dotnet build launched: CPU guard sampled 99 percent and generated projects do not include parasite assembly/scripts.</buildGuard>
+  </dependencyGraph>
+  <pendingProof>
+    <item>Unity import and project regeneration for Hecton8.VFX.Parasites runtime/editor asmdefs.</item>
+    <item>Compiler pass that actually includes SHINOBU_313 files.</item>
+    <item>Unity Profiler, GCMonitor, Frame Debugger, and shader import/runtime proof.</item>
+  </pendingProof>
+</SELF_AUDIT>

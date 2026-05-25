@@ -2,6 +2,12 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class PersistencePagingContractLayout
+    {
+        public const int ReadTicketStrideBytes = 32;
+        public const int TelemetrySnapshotStrideBytes = 64;
+    }
+
     public enum H8WorldPageStatus : byte
     {
         None = 0,
@@ -64,7 +70,7 @@ namespace Hecton8.Core.Contracts
             WfcOutpostCellStateFlags.DatapadLooted);
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = PersistencePagingContractLayout.ReadTicketStrideBytes)]
     public struct H8WorldPageReadTicket
     {
         [FieldOffset(0)] public long SectorHash;
@@ -78,7 +84,7 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(28)] public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = PersistencePagingContractLayout.TelemetrySnapshotStrideBytes)]
     public struct H8WorldPagerTelemetrySnapshot
     {
         [FieldOffset(0)] public int PendingDiskWrites;

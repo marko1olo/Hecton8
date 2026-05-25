@@ -1,0 +1,44 @@
+﻿{
+  "schema": "HECTON8_SHINOBU_353_HAPTIC_OOP_SCAN_V1",
+  "report": {
+    "agent": "SHINOBU_353",
+    "domain": "HAPTIC_FEEDBACK_EVENT_TRANSLATOR",
+    "scanner": "OOP_Gamepad_Scanner Roslyn AST haptic hardware scan",
+    "status": "STATIC PASS / BUILD EXTERNAL CONSTRUCTION_HABITAT WALL",
+    "summary": "OOP Hardware API Calls Eradicated",
+    "scannerMode": "ROSLYN_AST_WITH_TOKEN_FALLBACK",
+    "scannerUsesRoslynAst": true,
+    "lastShellProofMode": "PowerShell token re-scan after AST scanner patch; Unity Editor menu invocation writes live astParsedFiles/fallback counters",
+    "rootsRequested": [
+      "Assets/_Project/Scripts/Physics",
+      "Assets/_Project/Scripts/Input",
+      "Assets/_Project/Scripts/Interaction",
+      "Assets/_Project/Scripts/Combat",
+      "Assets/_Project/Scripts/Gameplay"
+    ],
+    "rootsPresent": 4,
+    "missingRoots": [
+      "Assets/_Project/Scripts/Combat"
+    ],
+    "filesScanned": 269,
+    "directHardwareCalls": 0,
+    "collisionCallbacksObserved": 1,
+    "hardwarePatterns": [
+      "Gamepad.current",
+      "SetMotorSpeeds",
+      "OVRInput.SetControllerVibration",
+      "SendHapticImpulse",
+      "SendImpulse (XR/rumbler qualified only)"
+    ],
+    "findings": [
+      {
+        "kind": "collisionCallback",
+        "path": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+        "line": 411,
+        "source": "private void OnCollisionEnter(Collision collision)"
+      }
+    ],
+    "requiredRuntimeRoute": "SignalBus snapshots -> Burst haptic synthesis jobs -> HapticPulseSignal -> InputDispatcher PAL haptic command buffer",
+    "manualProof": "OOP_Gamepad_Scanner now parses C# through Roslyn CSharpSyntaxTree with token fallback only for parser failures and preserves adjacent agent reports when writing the shared UX JSON. A shell token re-scan after the AST patch found zero direct controller haptic hardware calls in the requested producer roots. One legacy collision callback remains in Gameplay, but no haptic hardware call is present there."
+  }
+}

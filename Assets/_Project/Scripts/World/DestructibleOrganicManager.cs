@@ -283,6 +283,7 @@ namespace Hecton8.World
             public readonly float Pitch;
             public readonly float SimulationTimeSeconds;
             public readonly float PhaseOffset01;
+            public readonly bool HasAup;
 
             public SporeAcousticEvent(
                 AbsoluteUniversePosition positionAup,
@@ -292,7 +293,8 @@ namespace Hecton8.World
                 float volume,
                 float pitch,
                 float simulationTimeSeconds,
-                float phaseOffset01)
+                float phaseOffset01,
+                bool hasAup)
             {
                 PositionAup = positionAup;
                 RuntimePosition = runtimePosition;
@@ -302,6 +304,33 @@ namespace Hecton8.World
                 Pitch = pitch;
                 SimulationTimeSeconds = simulationTimeSeconds;
                 PhaseOffset01 = phaseOffset01;
+                HasAup = hasAup;
+            }
+        }
+
+        private readonly struct HarvestAudioEvent
+        {
+            public readonly AbsoluteUniversePosition PositionAup;
+            public readonly Vector3 RuntimePosition;
+            public readonly AudioClip Clip;
+            public readonly float Volume;
+            public readonly float Pitch;
+            public readonly bool HasAup;
+
+            public HarvestAudioEvent(
+                AbsoluteUniversePosition positionAup,
+                Vector3 runtimePosition,
+                AudioClip clip,
+                float volume,
+                float pitch,
+                bool hasAup)
+            {
+                PositionAup = positionAup;
+                RuntimePosition = runtimePosition;
+                Clip = clip;
+                Volume = volume;
+                Pitch = pitch;
+                HasAup = hasAup;
             }
         }
 
@@ -485,6 +514,8 @@ namespace Hecton8.World
         [SerializeField, Min(1)]
         [Tooltip("Maximum active flora instances checked per lane each Tick for mature spore acoustic cadence. This keeps large fields bounded.")]
         private int matureSporeAcousticScanBudgetPerTick = 64;
+        private const int MaxPendingSporeAcousticEvents = 8;
+        private const int MaxPendingHarvestAudioEvents = 8;
 
         [Header("Dear Lie Destruction")]
         [SerializeField]
@@ -617,10 +648,16 @@ namespace Hecton8.World
         private int _underwaterMatureSporeScanCursor;
         private int _surfaceOvergrowthScanCursor;
         private int _underwaterOvergrowthScanCursor;
-        private PlayerInventory _playerInventoryRuntime;
+        private IPlayerInventoryService _playerInventoryService;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private IAudioService _audioService;
-        private SpatialAudioManager _spatialAudioManager;
+        private ISpatialAudioHarvestPlaybackSink _harvestAudioSink;
+        // COLD ALLOC: HarvestAudioEvent[8] - bounded VISUAL_SYNC audio queue for harvest transitions - owner: DestructibleOrganicManager
+        private readonly HarvestAudioEvent[] _pendingHarvestAudioEvents = new HarvestAudioEvent[MaxPendingHarvestAudioEvents];
+        // COLD ALLOC: SporeAcousticEvent[8] - bounded VISUAL_SYNC audio queue for mature spore pulses - owner: DestructibleOrganicManager
+        private readonly SporeAcousticEvent[] _pendingSporeAcousticEvents = new SporeAcousticEvent[MaxPendingSporeAcousticEvents];
+        private int _pendingHarvestAudioEventCount;
+        private int _pendingSporeAcousticEventCount;
         private bool _hotSwapRegistered;
         private bool _organicToolHitServiceRegistered;
         // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
@@ -1008,20 +1045,17 @@ namespace Hecton8.World
 
             if (!_tickRegistered)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+                _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_slowTickRegistered)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+                _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
 
             if (!_lateFrameTickRegistered)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameTickRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
 
             SyncDestroyedFloraFromPersistence();
@@ -1157,7 +1191,7 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.PlayerInventory:
-                    _playerInventoryRuntime = (currentService as IPlayerInventoryService)?.Inventory;
+                    _playerInventoryService = currentService as IPlayerInventoryService;
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _persistentWorldRegistry = currentService as PersistentWorldRegistry;
@@ -1225,16 +1259,16 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _playerInventoryRuntime = GlobalRegistry.PlayerInventoryRuntime;
+            _playerInventoryService = GlobalRegistry.PlayerInventory;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            _dearLieVault = GlobalRegistry.DataVault;
+            CacheAudioService(GlobalRegistry.Audio);
             CacheDearLieFallbackQualityWeightCold();
         }
 
         private bool TryBootstrapDearLieVault(bool clearExisting)
         {
-            IDataVault vault = _dearLieVault ?? GlobalRegistry.DataVault;
-            _dearLieVault = vault;
+            IDataVault vault = _dearLieVault;
             if (vault == null)
             {
                 _dearLieVaultReady = false;
@@ -1324,7 +1358,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.FloraGenomics, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.FloraGenomics, options);
             return handle.BufferID != 0u &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
@@ -1495,22 +1529,22 @@ namespace Hecton8.World
 
         private void CacheDearLieFallbackQualityWeightCold()
         {
-            float tierWeight = math.saturate(GlobalRegistry.ScalabilityTierProfileByte);
-            _dearLieFallbackQualityWeight = math.saturate(math.lerp(0.25f, 1f, SmoothStep01(tierWeight)));
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            _dearLieFallbackQualityWeight = math.saturate(math.isfinite(quality) ? quality : 0.5f);
         }
 
         private void CacheAudioService(IAudioService audioService)
         {
             _audioService = audioService != null && audioService.IsInitialized ? audioService : null;
-            _spatialAudioManager = _audioService as SpatialAudioManager;
+            _harvestAudioSink = _audioService as ISpatialAudioHarvestPlaybackSink;
         }
 
         private void ClearCachedRegistryServices()
         {
-            _playerInventoryRuntime = null;
+            _playerInventoryService = null;
             _persistentWorldRegistry = null;
             _audioService = null;
-            _spatialAudioManager = null;
+            _harvestAudioSink = null;
         }
 
         private void AdvanceOrganicClock(float deltaTime)
@@ -1575,6 +1609,9 @@ namespace Hecton8.World
             {
                 DispatcherJobSwap.EndLateFrameSwapWindow();
             }
+
+            FlushPendingHarvestAudioEvents();
+            FlushPendingSporeAcousticEvents();
 
             if (_yieldScheduled)
                 return;
@@ -2516,7 +2553,8 @@ namespace Hecton8.World
                 uint h = Seed ^ ((uint)index * 747796405u);
                 float angle = Hash01(h) * 6.28318530718f;
                 float radius = math.sqrt(Hash01(h ^ 0x9E3779B9u)) * 7f;
-                double3 offset = new double3(math.cos(angle) * radius, math.lerp(-0.8f, 0.8f, Hash01(h ^ 0x85EBCA6Bu)), math.sin(angle) * radius);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                double3 offset = new double3(cos * radius, math.lerp(-0.8f, 0.8f, Hash01(h ^ 0x85EBCA6Bu)), sin * radius);
                 Events[Offset + index] = new FloraDestructionEventDTO
                 {
                     ImpactAUP = CenterAUP + offset,
@@ -3481,7 +3519,8 @@ namespace Hecton8.World
             if (!_dropBuffer.IsCreated)
                 return true;
 
-            PlayerInventory playerInventory = _playerInventoryRuntime;
+            IPlayerInventoryService playerInventoryService = _playerInventoryService;
+            PlayerInventory playerInventory = playerInventoryService != null ? playerInventoryService.Inventory : null;
             Hecton8.SaveSystem.ItemCatalog itemCatalog = playerInventory != null ? playerInventory.ItemCatalog : null;
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             int remainingBudget = math.min(_dropBuffer.Capacity, MaxOrganicDropRecordsPerFrame);
@@ -4184,7 +4223,7 @@ namespace Hecton8.World
                 Flags = DebrisSpawnSignal.FlagComputeShard,
                 Quantity = 0
             };
-            SignalBus<DebrisSpawnSignal>.Push(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
         }
 
         private void QueueYieldEvent(
@@ -4674,15 +4713,14 @@ namespace Hecton8.World
 
             float volume = ResolveHarvestAudioVolume(nextState);
             float pitch = ResolveHarvestAudioPitch(nextState);
-            SpatialAudioManager spatialAudioManager = _spatialAudioManager;
             if (TryResolveAupFromRuntimeOrigin(instancePosition, out AbsoluteUniversePosition soundAup) &&
-                spatialAudioManager != null)
+                _harvestAudioSink != null)
             {
-                spatialAudioManager.PlayHarvestAtAup(soundAup, clip, volume, pitch);
+                QueueHarvestAudioEvent(new HarvestAudioEvent(soundAup, instancePosition, clip, volume, pitch, true));
                 return;
             }
 
-            _audioService?.PlayAtPoint(clip, instancePosition, volume, pitch);
+            QueueHarvestAudioEvent(new HarvestAudioEvent(default, instancePosition, clip, volume, pitch, false));
         }
 
         private AudioClip ResolveHarvestAudioClip(byte audioMaterialId, HarvestState harvestState)
@@ -4783,12 +4821,22 @@ namespace Hecton8.World
                     volume,
                     pitch,
                     nextAllowedTime,
-                    phaseOffset01);
-                DispatchSporeAcousticEvent(in acousticEvent);
+                    phaseOffset01,
+                    true);
+                QueueSporeAcousticEvent(in acousticEvent);
             }
             else
             {
-                _audioService?.PlayAtPoint(clip, instancePosition, volume, pitch);
+                QueueSporeAcousticEvent(new SporeAcousticEvent(
+                    default,
+                    instancePosition,
+                    clip,
+                    pulseFrequency,
+                    volume,
+                    pitch,
+                    nextAllowedTime,
+                    phaseOffset01,
+                    false));
             }
 
             _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
@@ -4797,11 +4845,12 @@ namespace Hecton8.World
 
         private void DispatchSporeAcousticEvent(in SporeAcousticEvent acousticEvent)
         {
-            SpatialAudioManager spatialAudioManager = _spatialAudioManager;
-            if (spatialAudioManager != null)
+            ISpatialAudioHarvestPlaybackSink harvestAudioSink = _harvestAudioSink;
+            if (harvestAudioSink != null && acousticEvent.HasAup)
             {
-                spatialAudioManager.PlaySporeEmissionAtAup(
-                    acousticEvent.PositionAup,
+                AbsoluteUniversePosition positionAup = acousticEvent.PositionAup;
+                harvestAudioSink.PlaySporeEmissionAtAup(
+                    in positionAup,
                     acousticEvent.Clip,
                     acousticEvent.PulseFrequencyHz,
                     acousticEvent.SimulationTimeSeconds,
@@ -4815,6 +4864,68 @@ namespace Hecton8.World
                 acousticEvent.RuntimePosition,
                 acousticEvent.Volume,
                 acousticEvent.Pitch);
+        }
+
+        private void QueueSporeAcousticEvent(in SporeAcousticEvent acousticEvent)
+        {
+            if (acousticEvent.Clip == null ||
+                _pendingSporeAcousticEventCount >= _pendingSporeAcousticEvents.Length)
+            {
+                return;
+            }
+
+            _pendingSporeAcousticEvents[_pendingSporeAcousticEventCount] = acousticEvent;
+            _pendingSporeAcousticEventCount++;
+        }
+
+        private void QueueHarvestAudioEvent(in HarvestAudioEvent audioEvent)
+        {
+            if (audioEvent.Clip == null ||
+                _pendingHarvestAudioEventCount >= _pendingHarvestAudioEvents.Length)
+            {
+                return;
+            }
+
+            _pendingHarvestAudioEvents[_pendingHarvestAudioEventCount] = audioEvent;
+            _pendingHarvestAudioEventCount++;
+        }
+
+        private void FlushPendingHarvestAudioEvents()
+        {
+            int count = _pendingHarvestAudioEventCount;
+            if (count <= 0)
+                return;
+
+            _pendingHarvestAudioEventCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                HarvestAudioEvent audioEvent = _pendingHarvestAudioEvents[i];
+                _pendingHarvestAudioEvents[i] = default;
+                ISpatialAudioHarvestPlaybackSink harvestAudioSink = _harvestAudioSink;
+                if (harvestAudioSink != null && audioEvent.HasAup)
+                {
+                    AbsoluteUniversePosition positionAup = audioEvent.PositionAup;
+                    harvestAudioSink.PlayHarvestAtAup(in positionAup, audioEvent.Clip, audioEvent.Volume, audioEvent.Pitch);
+                    continue;
+                }
+
+                _audioService?.PlayAtPoint(audioEvent.Clip, audioEvent.RuntimePosition, audioEvent.Volume, audioEvent.Pitch);
+            }
+        }
+
+        private void FlushPendingSporeAcousticEvents()
+        {
+            int count = _pendingSporeAcousticEventCount;
+            if (count <= 0)
+                return;
+
+            _pendingSporeAcousticEventCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                SporeAcousticEvent acousticEvent = _pendingSporeAcousticEvents[i];
+                _pendingSporeAcousticEvents[i] = default;
+                DispatchSporeAcousticEvent(in acousticEvent);
+            }
         }
 
         private static float ResolveSporeShaderPhaseOffset01(Vector3 instancePosition)
@@ -6259,7 +6370,7 @@ namespace Hecton8.World
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 

@@ -92,8 +92,7 @@ namespace Hecton8.Editor.Validation
                 if (!File.Exists(absolutePath))
                     continue;
 
-                string text = File.ReadAllText(absolutePath);
-                if (!ContainsEverythingMask(text))
+                if (!FileContainsEverythingMask(absolutePath))
                     continue;
 
                 poisonedPaths.Add(assetPath);
@@ -219,6 +218,17 @@ namespace Hecton8.Editor.Validation
         {
             return text.IndexOf(EverythingUnsignedBits, StringComparison.Ordinal) >= 0 ||
                    text.IndexOf(EverythingSignedBits, StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool FileContainsEverythingMask(string absolutePath)
+        {
+            foreach (string line in File.ReadLines(absolutePath))
+            {
+                if (ContainsEverythingMask(line))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void AddUniquePath(List<string> paths, string assetPath)

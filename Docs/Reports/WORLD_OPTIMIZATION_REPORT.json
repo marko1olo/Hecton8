@@ -1,4 +1,4 @@
-{
+﻿{
   "agent": "SHINOBU_253",
   "domain": "E3_FLORA_FAUNA_BIOTA",
   "report": "WORLD_OPTIMIZATION_REPORT",
@@ -1063,5 +1063,418 @@
     "runtime_spawning": "DTO injection into GlobalDataVault/PredatorCognitionDomain only",
     "hot_broadcast": "SignalBus<T> or vault snapshot",
     "quality": "continuous GlobalQualityWeight; no binary tier switch"
+  },
+  "shinobu_308_biota_density_map_baker": {
+      "schema":  "hecton8.world_optimization_report.v1",
+      "agent":  "SHINOBU_308",
+      "scanner":  "Runtime_Spawner_Scanner",
+      "runtimeRaycastSpawnersEradicated":  true,
+      "blockerCount":  0,
+      "excludedCount":  57,
+      "scanComplete":  true,
+      "scannerIncomplete":  false,
+      "scannedFiles":  1677,
+      "findings":  [
+                       {
+                           "path":  "Assets/_Project/Scripts/BeaconDeployerTool.cs",
+                           "line":  399,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "return TryQueuePrimaryRaycast(origin, direction, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/BuoyancyObject.cs",
+                           "line":  27,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "//   Performs Physics.Raycast downward every N fixed frames (configurable)."
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/BuoyancyObject.cs",
+                           "line":  473,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "/// RaycastNonAlloc buffer on the instance."
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/BuoyancyObject.cs",
+                           "line":  540,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "int hitCount = UnityEngine.Physics.RaycastNonAlloc("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                           "line":  420,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "FinalizeDeferredDeconstructionRaycast();"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                           "line":  592,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (!TryScheduleDeferredDeconstructionRaycast(in request, module))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                           "line":  864,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "private bool TryScheduleDeferredDeconstructionRaycast(in DeconstructRequestSignal request, BaseModule module)"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                           "line":  923,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "private void FinalizeDeferredDeconstructionRaycast()"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/EnvironmentalAnalyzerTool.cs",
+                           "line":  471,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "return TryQueuePrimaryRaycast(origin, direction, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/FlashlightTool.cs",
+                           "line":  695,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (!TryQueuePrimaryRaycast(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out RaycastHit hit))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+                           "line":  252,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (TryQueuePrimaryRaycast(toolOrigin, toolForward, runtimeRange, targetMask.value, QueryTriggerInteraction.Ignore, out RaycastHit hit))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+                           "line":  954,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "return TryQueuePrimaryRaycast(origin, forward, GetRuntimeMaxRange(range), targetMask.value, QueryTriggerInteraction.Ignore, out hit);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+                           "line":  174,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "/// Pereispolzuetsya vo vseh vyzovah Physics.Raycast"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+                           "line":  187,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "/// Unity perezapisyvaet polya pri kazhdom vyzove Physics.Raycast."
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+                           "line":  721,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "int hitCount = Physics.RaycastNonAlloc("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/HectonSocketHelper.cs",
+                           "line":  106,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "int hitCount = UnityEngine.Physics.RaycastNonAlloc("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/KnifeTool.cs",
+                           "line":  333,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (!TryQueuePrimaryRaycast(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out RaycastHit hit))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/LogicSpannerTool.cs",
+                           "line":  245,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (!TryQueuePrimaryRaycast("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/PerformanceMonitor.cs",
+                           "line":  419,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "/// \u003csummary\u003ePhysics.RaycastAll + Physics.Raycast + Physics.OverlapSphere calls this frame.\u003c/summary\u003e"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/PerformanceMonitor.cs",
+                           "line":  768,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "int totalPhysics = trackPhysicsCalls ? Hecton8.Physics.RaycastBatchHelper.TotalRaycastsProcessed : 0;"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/PerformanceMonitor.cs",
+                           "line":  788,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "Hecton8.Physics.RaycastBatchHelper.TotalRaycastsProcessed = 0;"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                           "line":  1518,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "internal static bool QueueSharedRaycast("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+                           "line":  1523,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "return SystemDispatcher.QueueDispatcherRaycast(receiver, requestId, in command);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/PlayerTool.cs",
+                           "line":  206,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "protected bool TryQueuePrimaryRaycast(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction qti, out RaycastHit hit)"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/PropulsionTool.cs",
+                           "line":  685,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "return TryQueuePrimaryRaycast(origin, forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/QueryCacheContext.cs",
+                           "line":  6,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "//   Avoid redundant Physics.Raycast or Batch queries from the same source"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/RepairTool.cs",
+                           "line":  2153,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "TryQueuePrimaryRaycast(origin, direction, ResolveRuntimeRepairRange(), repairMask.value, QueryTriggerInteraction.Ignore, out hit);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/SalvageSamplerTool.cs",
+                           "line":  485,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "return TryQueuePrimaryRaycast(origin, direction, samplingRange, samplingMask.value, QueryTriggerInteraction.Collide, out hit);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ScannerTool.cs",
+                           "line":  2577,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "QueueScientificOcclusionRaycast(origin, loreTarget, lorePosition, loreHash);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ScannerTool.cs",
+                           "line":  2710,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "private void QueueScientificOcclusionRaycast("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ScannerTool.cs",
+                           "line":  2740,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (!SystemDispatcher.QueueDispatcherRaycast(this, requestId, in command))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/StunPistolTool.cs",
+                           "line":  359,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "return TryQueuePrimaryRaycast("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/VisualOmegaSmokeTester.cs",
+                           "line":  121,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "CheckNotContains(underwaterVisualsSource, \"RaycastNonAlloc\", \"bottom-silt-raycast-purged\");"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                           "line":  4373,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (UnityEngine.Physics.RaycastNonAlloc("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Construction/BaseModuleNavModifier.cs",
+                           "line":  21,
+                           "pattern":  "trigger_spawn_zone",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "[SerializeField] private BoxCollider[] obstacleBoxes = Array.Empty\u003cBoxCollider\u003e();"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+                           "line":  3000,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (SystemDispatcher.QueueDispatcherRaycast(this, XRLookAtSelectionRequestId, in command))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                           "line":  1135,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Gameplay/Floater.cs",
+                           "line":  381,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "int hitCount = UnityEngine.Physics.RaycastNonAlloc(origin, direction, _attachHitBuffer, maxDistance, attachableLayers);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Gameplay/SolarPanel.cs",
+                           "line":  367,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "int hitCount = UnityEngine.Physics.RaycastNonAlloc("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+                           "line":  189,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "bool hasCompletedHit = TryGetCompletedRaycast(requesterId, ResolveSimulationFrameIndex(), out hit);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+                           "line":  191,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "QueuePrimaryRaycast(requesterId, origin, normalizedDirection, range, layerMask, queryTriggerInteraction);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+                           "line":  800,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "private void QueuePrimaryRaycast(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+                           "line":  845,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "private bool TryGetCompletedRaycast(ulong requesterId, int currentFrame, out RaycastHit hit)"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs",
+                           "line":  107,
+                           "pattern":  "trigger_spawn_zone",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "[Tooltip(\"Layer mask containing physical diegetic panel button BoxCollider trigger volumes.\")]"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
+                           "line":  405,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "PerformRaycast();"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
+                           "line":  418,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "private void PerformRaycast()"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
+                           "line":  451,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "QueueInteractionRaycast(in _ray, effectiveReach, resolvedInteractableMask, triggerMode);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
+                           "line":  454,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "private void QueueInteractionRaycast("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
+                           "line":  470,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (SystemDispatcher.QueueDispatcherRaycast(this, requestId, in command))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+                           "line":  986,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (!QueueModRaycast(in command))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+                           "line":  1224,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "private static bool QueueModRaycast(in ModCommand command)"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+                           "line":  1268,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "if (SystemDispatcher.QueueDispatcherRaycast(_raycastReceiver, slot, in raycastCommand))"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                           "line":  534,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "// A Physics.Raycast/MeshCollider path was rejected as CPU-heavy and nondeterministic for the 100km AUP world."
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/UI/DiegeticPDAController.cs",
+                           "line":  744,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "_panelGraphicRaycaster.Raycast(_pointerEventData, _raycastResults);"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/UI/DiegeticPdaFocusDistanceController.cs",
+                           "line":  95,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "int hitCount = UnityEngine.Physics.RaycastNonAlloc("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/UI/InteractionUI.cs",
+                           "line":  249,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "int hitCount = Physics.RaycastNonAlloc("
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/World/ScatterEvaluator.cs",
+                           "line":  289,
+                           "pattern":  "raycast",
+                           "classification":  "EXCLUDED_NON_BIOTA_OR_SAFE",
+                           "context":  "/// Physics.RaycastNonAlloc or MapMagic queries before scheduling)."
+                       }
+                   ],
+      "policy":  "Biota placement authority must come from offline .h8bin density masks, not runtime raycast floor searches or trigger spawn volumes."
   }
 }

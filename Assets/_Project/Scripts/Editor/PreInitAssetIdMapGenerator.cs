@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -48,7 +49,7 @@ namespace Hecton8.EditorValidation
                 copyBody.Append("            records[");
                 copyBody.Append(emittedCount);
                 copyBody.Append("] = new AssetGuidIdRecord(0x");
-                copyBody.Append(record.GuidHash.ToString("X8"));
+                    copyBody.Append(record.GuidHash.ToString("X8", CultureInfo.InvariantCulture));
                 copyBody.Append("u, ");
                 copyBody.Append(record.AssetId);
                 copyBody.AppendLine("u);");

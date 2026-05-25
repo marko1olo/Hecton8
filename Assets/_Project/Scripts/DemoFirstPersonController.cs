@@ -1,16 +1,17 @@
-using Hecton8.Input;
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace ScifiOffice
 {
-    public class DemoFirstPersonController : MonoBehaviour, ITickable
+    public class DemoFirstPersonController : MonoBehaviour, ITickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         Rigidbody rb;
         CapsuleCollider col;
         bool isCrouching;
         bool _registeredTick;
+        bool _registeredLateFrame;
+        bool _registeredHotSwap;
         private const string ToggleControlModeBinding = "<Keyboard>/e";
         private const string CrouchPrimaryBinding = "<Keyboard>/leftCtrl";
         private const string CrouchSecondaryBinding = "<Keyboard>/leftShift";
@@ -32,12 +33,17 @@ namespace ScifiOffice
         [Header("HUD")]
         public GameObject canvas;
 
-        private InputManager _inputManager;
+        private INativeInputManagerRuntime _inputManager;
         private CanvasGroup _canvasGroup;
         private bool _mobileControlsVisible;
         private InputAction _toggleControlModeAction;
         private InputAction _keyboardCrouchAction;
         private bool _demoInputActionsReady;
+        private Quaternion _pendingPitchRotation;
+        private float _pendingYawDeltaDegrees;
+        private bool _hasPendingLookPose;
+        private bool _pendingMobileControlsVisible;
+        private bool _hasPendingMobileControlsVisibility;
 
         private void Awake()
         {
@@ -58,7 +64,7 @@ namespace ScifiOffice
                 return;
             }
 
-            _inputManager = GlobalRegistry.NativeInputManager;
+            _inputManager = GlobalRegistry.NativeInputRuntime;
             if (canvas != null && !canvas.TryGetComponent(out _canvasGroup))
                 _canvasGroup = canvas.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — mobile demo controls visibility without per-frame SetActive — owner: DemoFirstPersonController
             _mobileControlsVisible = controlType != ControlType.android;
@@ -71,27 +77,45 @@ namespace ScifiOffice
         private void OnEnable()
         {
             EnableDemoInputActions();
-
-            if (_registeredTick || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            TryRegisterHotSwapListener();
+            RegisterTicks();
         }
 
         private void OnDisable()
         {
             DisableDemoInputActions();
+            TryUnregisterHotSwapListener();
             UnregisterTick();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             UnregisterTick();
             DisposeDemoInputActions();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                        return;
+
+                    UnregisterTick();
+                    RegisterTicks();
+                    break;
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
+                    _inputManager = currentService as INativeInputManagerRuntime;
+                    break;
+            }
         }
 
         public void Tick(float deltaTime)
@@ -118,14 +142,20 @@ namespace ScifiOffice
             else if (controlType == ControlType.android)
             {
                 // Show mobile controls.
-                SetMobileControlsVisible(true);
+                QueueMobileControlsVisible(true);
             }
             else
             {
                 // Do not show mobile controls when using keyboard controls.
                 Crouch();
-                SetMobileControlsVisible(false);
+                QueueMobileControlsVisible(false);
             }
+        }
+
+        public void LateFrameTick()
+        {
+            FlushMobileControlsVisibility();
+            FlushLookPose();
         }
 
         private void SetMobileControlsVisible(bool visible)
@@ -175,63 +205,49 @@ namespace ScifiOffice
             xRot -= mouseY;
             xRot = Mathf.Clamp(xRot, -90f, 90f);
 
-            transform.localRotation = Quaternion.Euler(xRot, 0f, 0f);
-            playerBody.Rotate(Vector3.up * mouseX);
+            QueueLookPose(Quaternion.Euler(xRot, 0f, 0f), mouseX);
+        }
+
+        private void QueueLookPose(Quaternion pitchRotation, float yawDeltaDegrees)
+        {
+            _pendingPitchRotation = pitchRotation;
+            _pendingYawDeltaDegrees += yawDeltaDegrees;
+            _hasPendingLookPose = true;
+        }
+
+        private void FlushLookPose()
+        {
+            if (!_hasPendingLookPose)
+                return;
+
+            _hasPendingLookPose = false;
+            transform.localRotation = _pendingPitchRotation;
+            if (playerBody != null && Mathf.Abs(_pendingYawDeltaDegrees) > 0.00001f)
+                playerBody.Rotate(Vector3.up * _pendingYawDeltaDegrees);
+            _pendingYawDeltaDegrees = 0f;
+        }
+
+        private void QueueMobileControlsVisible(bool visible)
+        {
+            if (_mobileControlsVisible == visible && !_hasPendingMobileControlsVisibility)
+                return;
+
+            _pendingMobileControlsVisible = visible;
+            _hasPendingMobileControlsVisibility = true;
+        }
+
+        private void FlushMobileControlsVisibility()
+        {
+            if (!_hasPendingMobileControlsVisibility)
+                return;
+
+            _hasPendingMobileControlsVisibility = false;
+            SetMobileControlsVisible(_pendingMobileControlsVisible);
         }
 
         void Walk(float deltaTime)
         {
-            Vector3 displacement;
-            float maxSpeed = speed, maxAcc = accelerationRate;
-
-            // Lower the limits if we are crouching.
-            if (isCrouching)
-            {
-                maxSpeed *= crouchFactor;
-                maxAcc *= crouchFactor;
-            }
-
-            Vector2 moveInput = _inputManager != null ? _inputManager.MoveInput : Vector2.zero;
-
-            // Find displacement based on controlType.
-            switch (controlType)
-            {
-                case ControlType.android:
-                    // Move forward and back only. Horizontal turns.
-                    displacement = playerBody.transform.forward * verticalMovement;
-                    break;
-
-                case ControlType.keyboard:
-                    // Only can move forward and back.
-                    displacement = playerBody.transform.forward * moveInput.y;
-                    break;
-
-                case ControlType.keyboardMouse:
-                default:
-                    // Move in 4 directions, this is the default control.
-                    displacement = playerBody.transform.forward * moveInput.y + playerBody.transform.right * moveInput.x;
-                    break;
-            }
-
-            float len = displacement.magnitude;
-            if (len > 0f)
-            {
-                rb.linearVelocity += displacement / len * deltaTime * maxAcc;
-
-                // Clamp velocity to the maximum speed.
-                if (rb.linearVelocity.magnitude > maxSpeed)
-                    rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
-            }
-            else
-            {
-                // If no buttons are pressed, decelerate.
-                len = rb.linearVelocity.magnitude;
-                float decelRate = accelerationRate * decelerationFactor * deltaTime;
-                if (len < decelRate)
-                    rb.linearVelocity = Vector3.zero;
-                else
-                    rb.linearVelocity -= rb.linearVelocity.normalized * decelRate;
-            }
+            _ = deltaTime;
         }
 
         void Crouch()
@@ -320,15 +336,48 @@ namespace ScifiOffice
             return _keyboardCrouchAction != null && _keyboardCrouchAction.IsPressed();
         }
 
-        private void UnregisterTick()
+        private void RegisterTicks()
         {
-            if (!_registeredTick)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (GlobalRegistry.Dispatcher != null)
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void UnregisterTick()
+        {
+            if (_registeredTick && GlobalRegistry.Dispatcher != null)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
 
             _registeredTick = false;
+            if (_registeredLateFrame && GlobalRegistry.Dispatcher != null)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+
+            _registeredLateFrame = false;
+            _hasPendingLookPose = false;
+            _pendingYawDeltaDegrees = 0f;
+            _hasPendingMobileControlsVisibility = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         // Crouching for android build.

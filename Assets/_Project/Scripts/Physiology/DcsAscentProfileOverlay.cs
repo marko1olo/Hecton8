@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -16,7 +16,7 @@ namespace Hecton8.Physiology
 
         private void OnEnable()
         {
-            _runtime = UnityEngine.Object.FindFirstObjectByType<ShinobuPhysiologyRuntime>();
+            TryResolveRuntime();
         }
 
         private void OnGUI()
@@ -24,7 +24,8 @@ namespace Hecton8.Physiology
             if (!showOverlay)
                 return;
 
-            if (_runtime == null || !_runtime.TryGetVitalsExport(out VitalsExportDTO export))
+            if ((_runtime == null && !TryResolveRuntime()) ||
+                !_runtime.TryGetVitalsExport(out VitalsExportDTO export))
                 return;
 
             GUI.Box(screenRect, DiveComputerTitle);
@@ -76,13 +77,25 @@ namespace Hecton8.Physiology
             Color previous = GUI.color;
             GUI.color = color;
             Matrix4x4 matrix = GUI.matrix;
-            float angle = math.degrees(math.atan2(y1 - y0, x1 - x0));
+            float angle = math.degrees(global::Hecton8.Core.MathLodApproximation.ApproxAtan2Fast(y1 - y0, x1 - x0));
             float2 graphDelta = new float2(x1 - x0, y1 - y0);
             float length = math.sqrt(math.max(math.lengthsq(graphDelta), 0f));
             GUIUtility.RotateAroundPivot(angle, new Vector2(x0, y0));
             GUI.DrawTexture(new Rect(x0, y0, length, 2f), Texture2D.whiteTexture);
             GUI.matrix = matrix;
             GUI.color = previous;
+        }
+
+        private bool TryResolveRuntime()
+        {
+            if (ShinobuPhysiologyRuntime.TryGetActive(out ShinobuPhysiologyRuntime runtime))
+            {
+                _runtime = runtime;
+                return true;
+            }
+
+            _runtime = null;
+            return false;
         }
     }
 }

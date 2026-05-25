@@ -1096,8 +1096,7 @@ public sealed class HectonSurfacePainter : EditorWindow
         if (!go.activeInHierarchy)
             return false;
 
-        MeshRenderer mr = go.GetComponent<MeshRenderer>();
-        if (mr == null || !mr.enabled)
+        if (!go.TryGetComponent(out MeshRenderer mr) || !mr.enabled)
             return false;
 
         Transform sockets = GetSocketsContainer(targetRoot);
@@ -1221,7 +1220,7 @@ public sealed class HectonSurfacePainter : EditorWindow
     private static void CollectMeshTriangles(Mesh mesh, List<int> triangles)
     {
         triangles.Clear();
-        List<int> submeshTriangles = new List<int>();
+        List<int> submeshTriangles = new List<int>((int)global::System.Math.Min(ResolveIndexCount(mesh), int.MaxValue));
         for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
         {
             submeshTriangles.Clear();

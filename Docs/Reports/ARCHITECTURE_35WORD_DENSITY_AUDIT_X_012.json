@@ -1,0 +1,100 @@
+{
+  "schema": "hecton8.architecture_density_audit.x012.v1",
+  "agent": "X_012",
+  "dateLocal": "2026-05-24",
+  "scope": "Docs/ARCHITECTURE/**/*.md and Docs/ARCHITECTURE/**/*.txt",
+  "evidenceClass": [
+    "STATIC_DOC",
+    "STATIC_SOURCE",
+    "STATIC_FILESYSTEM",
+    "OFFLINE_VALIDATOR"
+  ],
+  "rewritePolicy": {
+    "manualRewriteOnly": true,
+    "proseRewriteTooling": "apply_patch",
+    "scriptsUsedFor": [
+      "discovery",
+      "word counts",
+      "source constant checks",
+      "validator execution",
+      "machine-readable proof"
+    ],
+    "bulkRegexRewriteUsed": false
+  },
+  "densityGate": {
+    "targetMaxWordsPerActiveArchitectureBlock": 34,
+    "reportedThresholdWords": 35,
+    "initialOffenderCountAtOrAbove35Words": 319,
+    "finalOffenderCountAtOrAbove35Words": 0,
+    "customAuditFinalCount": 0,
+    "oopScannerStrictUnstructuredParagraphThresholdWords": 34,
+    "oopScannerStrictUnstructuredParagraphCount": 0,
+    "oopScannerStrictUnstructuredSentenceThresholdWords": 34,
+    "oopScannerStrictUnstructuredSentenceCount": 0,
+    "oopScannerStrictStructuredLineThresholdWords": 34,
+    "oopScannerStrictStructuredLineCount": 0,
+    "oopScannerTutorialMarkerHitCount": 0,
+    "oopScannerStrictFileWordThreshold": 2500,
+    "oopScannerStrictFileWordCount": 0,
+    "oopScannerStrictNonContractTextFileCount": 0
+  },
+  "sourceConstants": {
+    "saveCurrentVersion": "0x000B",
+    "saveCurrentVersionSource": "Assets/_Project/Scripts/SaveBinaryStorage.cs:1113",
+    "saveCurrentHeaderSizeBytes": 56,
+    "saveCurrentHeaderSizeSource": "Assets/_Project/Scripts/SaveBinaryStorage.cs:1122",
+    "signalBusRuntimeLaneCapacity": 512,
+    "signalBusRuntimeLaneCapacitySource": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs:39",
+    "promptExampleSignalBusCapacity256IsStale": true,
+    "dataMonolithHeaderSizeBytes": 64,
+    "dataMonolithHeaderSizeSource": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs:30",
+    "dataMonolithPayloadPath": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+    "dataMonolithPayloadExists": true,
+    "dataMonolithPayloadBytes": 1064384
+  },
+  "corpusMetrics": {
+    "inventoryFileCount": 4836,
+    "activeFileCount": 590,
+    "activeWordCount": 538662,
+    "activeArchitectureFileCount": 192,
+    "activeArchitectureWordCount": 165522,
+    "reconstructedActiveWordCountBeforeX012": 1195973,
+    "activeWordReductionPercent": 54.96035445616248,
+    "activeWordReductionPassAtLeast30Percent": true,
+    "activeStaleParameterFileCount": 0,
+    "sourceSyncPass": true,
+    "oopScannerFinalPass": true
+  },
+  "structureValidation": {
+    "command": "python Tools\\VerifyDocStructure.py",
+    "pass": true,
+    "activeDocCount": 590,
+    "rootTextDocCount": 3,
+    "duplicateHeaderFiles": 0,
+    "brokenLinkFiles": 0,
+    "fenceIssueFiles": 0,
+    "staleParameterFiles": 0,
+    "encodingWithoutUtf8Sig": 0
+  },
+  "artifacts": {
+    "inventory": "Docs/Reports/DOCUMENTATION_CORPUS_INVENTORY_X_012.json",
+    "optimizationReport": "Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json",
+    "structureReport": "Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json",
+    "status": "Docs/Tasks/Status_X_012.md",
+    "rationale": "Docs/AgentLogs/Rationale_X_012.md",
+    "log": "Docs/AgentLogs/LOG_X_012.md"
+  },
+  "commands": {
+    "densityAudit": "PowerShell active Docs/ARCHITECTURE paragraph/list/table scan at threshold >=35",
+    "oopScanner": "python Tools\\OOP_Doc_Scanner.py",
+    "sourceConstants": "rg/Select-String against SaveBinaryStorage.cs, SignalBusRuntime.cs, H8DataMonolithTypes.cs plus Get-Item static_data.h8bin"
+  },
+  "runtimeClaims": {
+    "unityImportRun": false,
+    "playModeRun": false,
+    "playerBuildRun": false,
+    "profilerRun": false,
+    "measuredRuntimeMicrosecondsSaved": 0,
+    "reason": "Documentation-only pass; no C# runtime code was edited."
+  }
+}

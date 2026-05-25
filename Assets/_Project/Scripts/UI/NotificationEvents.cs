@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
@@ -32,6 +31,8 @@ namespace Hecton8.UI
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 8;
+        private const int SpanMessageCapacity = 512;
+        private const int SpanMessageCharCapacity = 512;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint NotificationListenerOverflowWarningHash = 0x4E45564Cu; // NEVL
         private const uint NotificationListenerContextHash = 0x4E455652u; // NEVR
@@ -50,6 +51,14 @@ namespace Hecton8.UI
             {
                 Listener = null;
             }
+        }
+
+        private struct SpanMessageSlot
+        {
+            public uint MessageHash;
+            public int Offset;
+            public int Length;
+            public byte IsValid;
         }
 
         private struct NotificationListenerRegistry
@@ -118,10 +127,13 @@ namespace Hecton8.UI
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching notification events - owner: NotificationEvents
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        // COLD ALLOC: Dictionary<uint,string>[64] — notification message registry keyed by stable FNV-1a hash for cold-path UI resolution — owner: NotificationEvents
-        private static readonly Dictionary<uint, string> _messagesByHash = new Dictionary<uint, string>(64);
+        // COLD ALLOC: SpanMessageSlot[512] - notification messages copied from caller-owned char buffers - owner: NotificationEvents
+        private static readonly SpanMessageSlot[] _spanMessagesByHash = new SpanMessageSlot[SpanMessageCapacity];
+        // COLD ALLOC: char[262144] - span notification backing store - owner: NotificationEvents
+        private static readonly char[] _spanMessageCharacters = new char[SpanMessageCapacity * SpanMessageCharCapacity];
         private static NativeQueue<NotificationEventPayload> _pendingEvents;
         private static NativeQueue<NotificationEventPayload> _nextFrameEvents;
+        private static int _spanMessageCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
@@ -170,7 +182,7 @@ namespace Hecton8.UI
             }
 
             _listeners.Clear();
-            _messagesByHash.Clear();
+            ClearSpanMessages();
             ClearDeferredRegisterListeners();
             ClearDeferredUnregisterListeners();
             _pendingEventCount = 0;
@@ -232,7 +244,10 @@ namespace Hecton8.UI
                     return;
 
                 if (!_pendingEvents.TryDequeue(out NotificationEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -271,103 +286,210 @@ namespace Hecton8.UI
                 : unchecked((uint)LocHash.Compute(message));
         }
 
+        public static uint ComputeMessageHash(ReadOnlySpan<char> message)
+        {
+            return IsWhiteSpace(message)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(message));
+        }
+
         public static uint RegisterMessage(string message)
         {
+            return string.IsNullOrWhiteSpace(message)
+                ? 0u
+                : RegisterMessage(message.AsSpan());
+        }
+
+        public static uint RegisterMessage(ReadOnlySpan<char> message)
+        {
             uint messageHash = ComputeMessageHash(message);
-            if (messageHash == 0u)
+            if (messageHash == 0u || message.Length > SpanMessageCharCapacity)
                 return 0u;
 
-            if (!_messagesByHash.ContainsKey(messageHash))
-                _messagesByHash.Add(messageHash, message);
+            if (TryFindSpanMessage(messageHash, out int existingIndex))
+            {
+                SpanMessageSlot existing = _spanMessagesByHash[existingIndex];
+                ReadOnlySpan<char> cached = _spanMessageCharacters.AsSpan(existing.Offset, existing.Length);
+                return message.Length == existing.Length && cached.SequenceEqual(message)
+                    ? messageHash
+                    : 0u;
+            }
+
+            if (_spanMessageCount >= _spanMessagesByHash.Length)
+                return 0u;
+
+            int storedLength = message.Length;
+            int slotIndex = _spanMessageCount++;
+            int offset = slotIndex * SpanMessageCharCapacity;
+            message.Slice(0, storedLength).CopyTo(_spanMessageCharacters.AsSpan(offset, storedLength));
+            _spanMessagesByHash[slotIndex] = new SpanMessageSlot
+            {
+                MessageHash = messageHash,
+                Offset = offset,
+                Length = storedLength,
+                IsValid = 1
+            };
 
             return messageHash;
         }
 
         public static bool TryResolveMessage(uint messageHash, out string message)
         {
-            return _messagesByHash.TryGetValue(messageHash, out message);
+            if (TryFindSpanMessage(messageHash, out _))
+            {
+                message = string.Empty;
+                return true;
+            }
+
+            message = string.Empty;
+            return false;
         }
 
+        public static bool TryResolveMessageSpan(uint messageHash, out ReadOnlySpan<char> message)
+        {
+            if (TryFindSpanMessage(messageHash, out int index))
+            {
+                SpanMessageSlot slot = _spanMessagesByHash[index];
+                message = _spanMessageCharacters.AsSpan(slot.Offset, slot.Length);
+                return true;
+            }
+
+            message = ReadOnlySpan<char>.Empty;
+            return false;
+        }
+
+        [Obsolete("Use TryPushInfo(string) so notification queue refusal stays visible at the producer.", true)]
         public static void PushInfo(string message)
         {
-            Publish(message, NotificationEventSeverity.Info);
+            TryPushInfo(message);
         }
 
+        public static bool TryPushInfo(string message)
+        {
+            return TryPublish(message, NotificationEventSeverity.Info);
+        }
+
+        [Obsolete("Use TryPushInfo(ReadOnlySpan<char>) so notification queue refusal stays visible at the producer.", true)]
+        public static void PushInfo(ReadOnlySpan<char> message)
+        {
+            TryPushInfo(message);
+        }
+
+        public static bool TryPushInfo(ReadOnlySpan<char> message)
+        {
+            return TryPublish(message, NotificationEventSeverity.Info);
+        }
+
+        [Obsolete("Use TryPushWarning(string) so notification queue refusal stays visible at the producer.", true)]
         public static void PushWarning(string message)
         {
-            Publish(message, NotificationEventSeverity.Warning);
+            TryPushWarning(message);
         }
 
+        public static bool TryPushWarning(string message)
+        {
+            return TryPublish(message, NotificationEventSeverity.Warning);
+        }
+
+        [Obsolete("Use TryPushWarning(ReadOnlySpan<char>) so notification queue refusal stays visible at the producer.", true)]
+        public static void PushWarning(ReadOnlySpan<char> message)
+        {
+            TryPushWarning(message);
+        }
+
+        public static bool TryPushWarning(ReadOnlySpan<char> message)
+        {
+            return TryPublish(message, NotificationEventSeverity.Warning);
+        }
+
+        [Obsolete("Use TryPushCritical(string) so notification queue refusal stays visible at the producer.", true)]
         public static void PushCritical(string message)
         {
-            Publish(message, NotificationEventSeverity.Critical);
+            TryPushCritical(message);
         }
 
+        public static bool TryPushCritical(string message)
+        {
+            return TryPublish(message, NotificationEventSeverity.Critical);
+        }
+
+        [Obsolete("Use TryPushCritical(ReadOnlySpan<char>) so notification queue refusal stays visible at the producer.", true)]
+        public static void PushCritical(ReadOnlySpan<char> message)
+        {
+            TryPushCritical(message);
+        }
+
+        public static bool TryPushCritical(ReadOnlySpan<char> message)
+        {
+            return TryPublish(message, NotificationEventSeverity.Critical);
+        }
+
+        [Obsolete("Use TryPushRegisteredInfo(uint) so notification queue refusal stays visible at the producer.", true)]
         internal static void PushRegisteredInfo(uint messageHash)
         {
-            PublishRegistered(messageHash, NotificationEventSeverity.Info);
+            TryPushRegisteredInfo(messageHash);
         }
 
+        internal static bool TryPushRegisteredInfo(uint messageHash)
+        {
+            return TryPublishRegistered(messageHash, NotificationEventSeverity.Info);
+        }
+
+        [Obsolete("Use TryPushRegisteredWarning(uint) so notification queue refusal stays visible at the producer.", true)]
         internal static void PushRegisteredWarning(uint messageHash)
         {
-            PublishRegistered(messageHash, NotificationEventSeverity.Warning);
+            TryPushRegisteredWarning(messageHash);
         }
 
+        internal static bool TryPushRegisteredWarning(uint messageHash)
+        {
+            return TryPublishRegistered(messageHash, NotificationEventSeverity.Warning);
+        }
+
+        [Obsolete("Use TryPushRegisteredCritical(uint) so notification queue refusal stays visible at the producer.", true)]
         internal static void PushRegisteredCritical(uint messageHash)
         {
-            PublishRegistered(messageHash, NotificationEventSeverity.Critical);
+            TryPushRegisteredCritical(messageHash);
         }
 
-        private static void Publish(string message, NotificationEventSeverity severity)
+        internal static bool TryPushRegisteredCritical(uint messageHash)
         {
-            uint messageHash = ComputeMessageHash(message);
-            if (messageHash == 0u)
-                return;
-
-            EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-            {
-                ReportQueueOverflow(severity);
-                return;
-            }
-
-            if (!_messagesByHash.ContainsKey(messageHash))
-                _messagesByHash.Add(messageHash, message);
-
-            NotificationEventPayload payload = new NotificationEventPayload
-            {
-                MessageHash = messageHash,
-                Severity = (ushort)severity,
-                Reserved = 0
-            };
-
-            if (_isDispatching)
-            {
-                _nextFrameEvents.Enqueue(payload);
-                _nextFrameEventCount++;
-                return;
-            }
-
-            _pendingEvents.Enqueue(payload);
-            _pendingEventCount++;
+            return TryPublishRegistered(messageHash, NotificationEventSeverity.Critical);
         }
 
-        private static void PublishRegistered(uint messageHash, NotificationEventSeverity severity)
+        private static bool TryPublish(string message, NotificationEventSeverity severity)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return false;
+
+            return TryPublish(message.AsSpan(), severity);
+        }
+
+        private static bool TryPublish(ReadOnlySpan<char> message, NotificationEventSeverity severity)
+        {
+            uint messageHash = RegisterMessage(message);
+            if (messageHash == 0u)
+                return false;
+
+            return TryPublishRegistered(messageHash, severity);
+        }
+
+        private static bool TryPublishRegistered(uint messageHash, NotificationEventSeverity severity)
         {
             if (messageHash == 0u)
-                return;
+                return false;
 
-            if (!_messagesByHash.ContainsKey(messageHash))
+            if (!IsMessageRegistered(messageHash))
             {
                 ReportRegisteredMessageMiss(messageHash);
-                return;
+                return false;
             }
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportQueueOverflow(severity);
-                return;
+                return false;
             }
 
             NotificationEventPayload payload = new NotificationEventPayload
@@ -381,11 +503,55 @@ namespace Hecton8.UI
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
+        }
+
+        private static bool IsMessageRegistered(uint messageHash)
+        {
+            return messageHash != 0u && TryFindSpanMessage(messageHash, out _);
+        }
+
+        private static bool TryFindSpanMessage(uint messageHash, out int index)
+        {
+            for (int i = 0; i < _spanMessageCount; i++)
+            {
+                SpanMessageSlot slot = _spanMessagesByHash[i];
+                if (slot.IsValid != 0 && slot.MessageHash == messageHash)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = -1;
+            return false;
+        }
+
+        private static void ClearSpanMessages()
+        {
+            for (int i = 0; i < _spanMessageCount; i++)
+                _spanMessagesByHash[i] = default;
+
+            _spanMessageCount = 0;
+        }
+
+        private static bool IsWhiteSpace(ReadOnlySpan<char> value)
+        {
+            if (value.Length == 0)
+                return true;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         private static void EnsureInitialized()
@@ -461,7 +627,10 @@ namespace Hecton8.UI
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -653,7 +822,7 @@ namespace Hecton8.UI
         private static void ReportQueueOverflow(NotificationEventSeverity severity)
         {
             _droppedEventCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastQueueOverflowTelemetryFrame == frame)
                 return;
 
@@ -667,7 +836,7 @@ namespace Hecton8.UI
         private static void ReportRegisteredMessageMiss(uint messageHash)
         {
             _registeredMessageMissCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastRegisteredMessageMissTelemetryFrame == frame)
                 return;
 
@@ -681,7 +850,7 @@ namespace Hecton8.UI
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -695,7 +864,7 @@ namespace Hecton8.UI
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

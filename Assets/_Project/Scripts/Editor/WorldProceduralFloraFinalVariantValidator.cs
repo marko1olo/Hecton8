@@ -262,7 +262,7 @@ namespace Hecton8.EditorTools
             AudioSource[] audioSources = prefabRoot.GetComponentsInChildren<AudioSource>(true);
             LODGroup[] lodGroups = prefabRoot.GetComponentsInChildren<LODGroup>(true);
             Renderer[] budgetRenderers = ResolveBudgetRenderers(renderers, lodGroups);
-            HashSet<Material> inspectedMaterials = new HashSet<Material>();
+            HashSet<Material> inspectedMaterials = new HashSet<Material>(16);
 
             if (renderers.Length == 0)
                 issues.Add($"{prefabPath}: has no Renderer components.");
@@ -571,7 +571,7 @@ namespace Hecton8.EditorTools
                 return allRenderers ?? System.Array.Empty<Renderer>();
 
             List<Renderer> budgetRenderers = new List<Renderer>(8);
-            HashSet<Renderer> seenRenderers = new HashSet<Renderer>();
+            HashSet<Renderer> seenRenderers = new HashSet<Renderer>(8);
 
             for (int groupIndex = 0; groupIndex < lodGroups.Length; groupIndex++)
             {

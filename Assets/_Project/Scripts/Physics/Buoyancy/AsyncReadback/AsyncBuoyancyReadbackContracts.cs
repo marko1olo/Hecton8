@@ -182,21 +182,24 @@ namespace Hecton8.Physics
 
         private static bool ValidateInternal()
         {
+            const int VectorLaneAlignmentBytes = 16;
+            const int CacheLineAlignmentBytes = 64;
+
             return UnsafeUtility.SizeOf<ReadbackRequestDTO>() == AsyncBuoyancyReadbackConstants.ReadbackRequestBytes &&
                    UnsafeUtility.AlignOf<ReadbackRequestDTO>() >= 4 &&
-                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackRequestDTO>(), 16) &&
-                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackResolvedHeightDTO>(), 16) &&
-                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackResultStateDTO>(), 64) &&
-                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackTuningDTO>(), 64) &&
-                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackTelemetryEntry>(), 64) &&
-                   IsMultipleOf(UnsafeUtility.SizeOf<AsyncReadbackCounterDTO>(), 64) &&
+                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackRequestDTO>(), VectorLaneAlignmentBytes) &&
+                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackResolvedHeightDTO>(), VectorLaneAlignmentBytes) &&
+                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackResultStateDTO>(), CacheLineAlignmentBytes) &&
+                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackTuningDTO>(), CacheLineAlignmentBytes) &&
+                   IsMultipleOf(UnsafeUtility.SizeOf<ReadbackTelemetryEntry>(), CacheLineAlignmentBytes) &&
+                   IsMultipleOf(UnsafeUtility.SizeOf<AsyncReadbackCounterDTO>(), CacheLineAlignmentBytes) &&
                    UnsafeUtility.SizeOf<ReadbackResolvedHeightDTO>() == AsyncBuoyancyReadbackConstants.ReadbackResolvedHeightBytes &&
                    UnsafeUtility.SizeOf<ReadbackResultStateDTO>() == AsyncBuoyancyReadbackConstants.ReadbackResultStateBytes &&
                    UnsafeUtility.SizeOf<ReadbackTuningDTO>() == AsyncBuoyancyReadbackConstants.ReadbackTuningBytes &&
                    UnsafeUtility.SizeOf<ReadbackTelemetryEntry>() == AsyncBuoyancyReadbackConstants.ReadbackTelemetryBytes &&
                    UnsafeUtility.SizeOf<VehicleSamplingProfileDTO>() == AsyncBuoyancyReadbackConstants.VehicleSamplingProfileBytes &&
                    UnsafeUtility.SizeOf<AsyncBuoyancyWaveParametersDTO>() == AsyncBuoyancyReadbackConstants.WaveParametersBytes &&
-                   UnsafeUtility.SizeOf<AsyncReadbackCounterDTO>() == 64 &&
+                   UnsafeUtility.SizeOf<AsyncReadbackCounterDTO>() == CacheLineAlignmentBytes &&
                    OffsetOfReadbackRequest(nameof(ReadbackRequestDTO.LocalXZ)) == 0 &&
                    OffsetOfReadbackRequest(nameof(ReadbackRequestDTO.ResultHeight)) == 8 &&
                    OffsetOfReadbackRequest(nameof(ReadbackRequestDTO.EntityHash)) == 12;

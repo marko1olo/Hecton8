@@ -114,6 +114,42 @@ Targets:
 
 `unknown` route or consent values are import quarantine values only. They cannot be counted in weekly reports, agency-proof reads, creator/press reply rates, public CTA performance, support trends, or owned-audience metrics until the source row is corrected to a specific route and provenance.
 
+### Imageboard Feedback
+
+Imageboard rows are separate from normal community feedback until independently confirmed. Default evidence class is anecdotal.
+
+| Field | Type | Notes |
+|---|---|---|
+| imageboard_row_id | text | Stable row id. |
+| date_checked | date | Local date. |
+| surface | enum | 4chan, Dvach, other. |
+| board | text | `/vg/`, `/g/`, `/v/`, `/gd/`, `/ai/`, etc. |
+| thread_id_or_url | text | Public thread/catalog URL. |
+| thread_status | enum | live, archived, 404, unknown. |
+| route_class | enum | Always `no_link_feedback` for HECTON posts; `monitor_only` for passive scans. |
+| post_permission_gate | enum | Required for HECTON-originated posts; passive scans use `NOT_HECTON_POSTED_MONITOR_ONLY`. |
+| asset_id | text | Exact asset shown, or `none_monitoring`. |
+| critique_question | text | Exact question asked; blank only for passive monitoring. |
+| useful_signal_count | int | Asset-specific comments only. |
+| rejected_noise_count | int | Insults, politics, slurs, engine-war with no asset signal. |
+| clone_risk_cue | text | Specific cue named, not "clone vibes." |
+| ai_slop_cue | text | Specific cue named. |
+| engine_trust_cue | text | Specific cue named. |
+| decision_read_named | bool | True only if users named a player action/decision. |
+| access_or_key_bait | bool | True if anyone requested keys/build/private access/DM route. |
+| confidence | enum | anecdotal, directional, recurring, reject. |
+| action | enum | monitor_only, revise_asset, revise_prompt, kill_route, security_hold, no_action. |
+| linked_dashboard_row | text | Optional AB/campaign row if independently confirmed. |
+
+Reporting rules:
+
+- `confidence=anecdotal` cannot move Campaign 01 to `KEEP`.
+- `directional` requires repeated asset-specific cues in the thread or a second independent imageboard thread.
+- `recurring` requires confirmation from non-imageboard source: cold-read, Reddit, Steam, creator, press, or playtest.
+- `access_or_key_bait=true` blocks any private-access reporting and requires risk review.
+- `route_class=monitor_only` cannot be counted as public engagement.
+- Imageboard comments cannot become creator/press/playtester/newsletter/support contacts.
+
 ## 2026-05-19 Proof-Gate Dashboard V0
 
 Use this before Steam telemetry exists. It measures whether the project is allowed to move from G0 prep to G1 screenshot drop, then from G1 to Steam page launch.
@@ -231,6 +267,8 @@ Do not merge cold-read response rows into public engagement metrics. Cold-read a
 | confusion_comments | int | Comments asking what the game/action is. |
 | clone_comments | int | Direct derivative comparison. |
 | multiplayer_scope_comments | int | Assumes, asks for, or reads unsupported multiplayer scope into the asset/copy. |
+| imageboard_signal_row | text | Optional row id from Imageboard Feedback; cannot be sole `ADVANCE` evidence. |
+| imageboard_action | enum | monitor_only, revise_asset, revise_prompt, kill_route, security_hold, no_action. |
 | decision | enum | `ADVANCE`, `HOLD`, `REVISE`, `KILL`. |
 
 Decision rule:
@@ -239,6 +277,7 @@ Decision rule:
 - `REVISE` if interest exists but confusion repeats.
 - `KILL` if lead asset causes clone, AI-looking, or false-feature damage.
 - raw likes do not affect the decision.
+- imageboard signal can force `REVISE`, `KILL`, or `HOLD`, but cannot produce `ADVANCE` by itself.
 
 `unknown` route class blocks `ADVANCE`. If the beat used a public link, `cta_packet_id` must point to a destination whose `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; if the beat came from private access, `access_route_class`, `reply_consent_provenance`, and any required `agency_decision_field_source` must be non-empty before the row is reportable.
 
@@ -292,3 +331,4 @@ Sections:
 - Do not count a gameplay/pressure/route-risk asset as agency proof unless `agency_decision_read`, `agency_decision_read_comments`, or `cold_read_agency_decision` records the decision readers named.
 - Do not count key/access/playtest/demo outreach replies or claims unless `access_route_class`, `reply_consent_provenance`, and `agency_decision_field_source` are present where relevant.
 - Do not count creator, press, curator, support, public CTA, private access, or owned-audience rows whose permission gate/source is blank or whose route/provenance field is `unknown`.
+- Do not count imageboard signal as positive proof unless independently confirmed; use it primarily to revise, kill, or monitor.

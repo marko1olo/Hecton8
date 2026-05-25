@@ -1,0 +1,80 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_PLAYER_CSV_STAGING_FENCE_SLICE_S_V1",
+  "agent": "X_002",
+  "generated": "2026-05-24T12:26:30Z",
+  "status": "PASS_CORE_COMPILE_AND_MONOLITH_CLI",
+  "scope": "Player-compiled CSV scratch/staging memory was removed or fenced behind UNITY_EDITOR where CSV/static-config import paths were already editor-only.",
+  "touchedFiles": [
+    "Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs",
+    "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+    "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+    "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime_VoxelAStar.cs",
+    "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+    "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+    "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+    "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+    "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+    "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+    "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs"
+  ],
+  "removedPlayerByteScratchMinimumBytes": 1122304,
+  "extraRemovedNativeArrays": [
+    "VocalBankPlaybackRuntime CsvMetadata native metadata slots",
+    "BaseAtmosphereLogisticsRuntime gas profile native slots"
+  ],
+  "playerActiveTouchedTokenScan": {
+    "status": "PASS",
+    "releaseSymbolModel": "UNITY_EDITOR=false",
+    "findingCount": 0,
+    "tokens": [
+      "CsvScratch",
+      "CsvMetadata",
+      "CsvBufferBytes",
+      "CsvScratchBytes",
+      "Parse.*Csv",
+      "TryParse.*Csv",
+      "Read.*Csv",
+      "FileStream.*csv",
+      "ReadAllText",
+      "ReadAllBytes",
+      "StreamReader"
+    ],
+    "remainingActiveFileStreamUse": "binary black-box dump writes only; no active static-config CSV/text reads in touched files"
+  },
+  "preprocessorBalance": {
+    "status": "PASS",
+    "minimumDepthNeverNegative": true,
+    "finalDepthAllFiles": 0
+  },
+  "diffCheck": {
+    "status": "PASS",
+    "notes": "git diff --check returned only existing LF-to-CRLF working-copy warnings"
+  },
+  "coreCompile": {
+    "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+    "status": "PASS",
+    "errors": 0,
+    "warnings": 4,
+    "elapsed": "00:00:59.78",
+    "warningClass": "CS2002 duplicate generated source entries"
+  },
+  "monolithCli": {
+    "command": "Tools/DataMonolithBakeCli/bin/Release/net10.0/DataMonolithBakeCli.exe C:\\hades\\Hecton8",
+    "status": "PASS",
+    "exitCode": 0,
+    "blobBytes": 1064384,
+    "playerParserAbsence": "PASS_PLAYER_STATIC_CONFIG_PARSER_ABSENCE",
+    "failClosed": "PASS_FAIL_CLOSED_NO_POISON_PUBLISH",
+    "loadStress": "PASS_NATIVE_READ_ZERO_GC_TARGET_TIME",
+    "nativeReadMicroseconds": 276.300,
+    "nativeResidentLoadEstimateMicroseconds": 878.228,
+    "nativeResidentLoadEstimateAllocatedBytes": 0
+  },
+  "integrity": {
+    "publishedChecksumHex": "0x0D49885F30E5DF35",
+    "badChecksumRejected": true,
+    "badOffsetRejected": true,
+    "corruptPublishCountStayedAt": 1
+  },
+  "unityPlayerProfilerProof": "PENDING; this report is source/CLI/Core compile proof, not an Editor/player profiler capture."
+}

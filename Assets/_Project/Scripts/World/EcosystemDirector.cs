@@ -2,13 +2,11 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
-using Hecton8.AI.Ecology.Migration;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Ecosystem;
-using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
 using Hecton8.UI;
@@ -22,6 +20,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
+using EcosystemSectorDTO = Hecton8.Core.Contracts.EcosystemSectorDTO;
 using MacroSwarm = Hecton8.Core.Contracts.MacroSwarm;
 using MacroSwarmArrival = Hecton8.Core.Contracts.MacroSwarmArrival;
 
@@ -89,7 +88,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4037)]
-    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IFrostTickable, ILateFrameTickable, IEcosystemDirectorService, IServiceHeartbeat, IServiceShutdown
+    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IFrostTickable, ILateFrameTickable, IEcosystemDirectorService, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         internal static EcosystemDirector ActiveRuntimeInstance { get; private set; }
 
@@ -119,6 +118,10 @@ namespace Hecton8.World
         private const int MacroSwarmBlackBoxCapacity = 300;
         private const int MacroSwarmVisualBoidsPerBiomassUnit = 64;
         private const int FaunaMutationBlackBoxCapacity = 300;
+        private const int FaunaGeneticsTelemetryCapacity = 300;
+        private const int FaunaGeneticsProfileCapacity = 64;
+        private const int FaunaGeneticsCsvScratchBytes = 8192;
+        private const int FaunaGeneticsTelemetryBudgetMicroseconds = 500;
         private const int MacroSwarmLowTierCap = 32;
         private const float MacroSwarmMinimumMutationCadenceWeight01 = 0.00390625f;
         private const float MacroSwarmDiffusionQualityStart01 = 0.3f;
@@ -178,13 +181,11 @@ namespace Hecton8.World
         private const float BiomeGradientPredatorSpawnGain = 0.08f;
         private const float BiomeGradientCapacityGain = 0.04f;
         private const int PredatorSpawnValidationHitCapacity = 64;
-        private const int ApexSpawnGateCommandCount = 1;
-        private const int ApexSpawnGateMaxHits = 1;
         private const float ApexSpawnGateCapsuleRadiusMeters = 2.5f;
         private const float ApexSpawnGateCapsuleHalfHeightMeters = 3f;
-        private const float ApexSpawnGateSweepDistanceMeters = 0.25f;
         private const float ApexSpawnGateCacheCellSizeMeters = 10f;
         private const float InvApexSpawnGateCacheCellSizeMeters = 1f / ApexSpawnGateCacheCellSizeMeters;
+        private const float ApexSpawnGateTerrainMarginMeters = 0.1f;
         private const int HibernationPopulationSyncsPerColdSolve = 8;
         private const int ApexTerritoryOverlapCandidateCapacity = 16;
         private const int ApexTerritoryOverlapHitCapacity = 64;
@@ -202,9 +203,13 @@ namespace Hecton8.World
         private const ulong BiomassTelemetryDumpMagic = 0x0038424D53434548UL;
         private const ulong MacroSwarmTelemetryDumpMagic = 0x004D57534F434548UL;
         private const ulong FaunaMutationTelemetryDumpMagic = 0x004D55474F434548UL;
+        private const ulong FaunaGeneticsTelemetryDumpMagic = 0x00474E474F434548UL;
         private const string BiomassTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ECOLOGICAL_BIOMASS_ENGINE.bin";
         private const string MacroSwarmTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ECOSYSTEM_MIGRATION_LINK.bin";
         private const string FaunaMutationTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ECOLOGY_MUTATION_DIRECTOR.bin";
+        private const string FaunaGeneticsTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_306.bin";
+        private const string FaunaGeneticsProfilesCsvPrimaryRelativePath = "Assets/_SourceData/Biota/fauna_genetic_profiles.csv";
+        private const string FaunaGeneticsProfilesCsvFallbackRelativePath = "Data/Precomputed/fauna_genetic_profiles.csv";
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
         private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
         private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
@@ -266,59 +271,63 @@ namespace Hecton8.World
         {
             private IDataVault _vault;
             private VaultGenerationHandle<T> _handle;
-            private NativeArray<T> _array;
 
             public static VaultNativeArray<T> Create(IDataVault vault, VaultGenerationHandle<T> handle)
             {
-                NativeArray<T> array = default;
-                if (vault == null ||
-                    handle.BufferID == 0u ||
-                    !vault.TryResolveHandle(in handle, out array) ||
-                    !array.IsCreated)
+                if (vault == null || handle.BufferID == 0u)
                 {
-                    array = default;
+                    handle = default;
                 }
 
                 return new VaultNativeArray<T>
                 {
                     _vault = vault,
-                    _handle = handle,
-                    _array = array
+                    _handle = handle
                 };
             }
 
-            public bool IsCreated => _array.IsCreated;
+            public bool IsCreated => TryResolve(out _);
 
-            public int Length => _array.IsCreated ? _array.Length : 0;
+            public int Length => TryResolve(out NativeArray<T> array) ? array.Length : 0;
 
             public T this[int index]
             {
                 get
                 {
-                    return _array[index];
+                    NativeArray<T> array = Resolve();
+                    return array[index];
                 }
                 set
                 {
-                    _array[index] = value;
+                    NativeArray<T> array = Resolve();
+                    array[index] = value;
                 }
             }
 
-            private NativeArray<T> GetSubArray(int start, int length)
+            public NativeArray<T> GetSubArray(int start, int length)
             {
-                return _array.IsCreated ? _array.GetSubArray(start, length) : default;
+                return TryResolve(out NativeArray<T> array)
+                    ? array.GetSubArray(start, length)
+                    : default;
             }
 
-            private NativeArray<T> Resolve()
+            public NativeArray<T> Resolve()
             {
-                if (_array.IsCreated)
-                    return _array;
+                return TryResolve(out NativeArray<T> array) ? array : default;
+            }
 
-                return _vault != null &&
-                       _handle.BufferID != 0u &&
-                       _vault.TryResolveHandle(in _handle, out NativeArray<T> array) &&
-                       array.IsCreated
-                    ? array
-                    : default;
+            private bool TryResolve(out NativeArray<T> array)
+            {
+                if (_vault != null &&
+                    _handle.BufferID != 0u &&
+                    _vault.TryResolveHandle(in _handle, out array) &&
+                    array.IsCreated)
+                {
+                    return true;
+                }
+
+                array = default;
+                return false;
             }
 
             public static implicit operator NativeArray<T>(VaultNativeArray<T> view)
@@ -1020,6 +1029,10 @@ namespace Hecton8.World
         private VaultNativeArray<float> _macroSwarmMutationBrine;
         private VaultNativeArray<byte> _macroSwarmMutationResults;
         private VaultNativeArray<FaunaMutationTelemetryEntry> _faunaMutationBlackBox;
+        private VaultNativeArray<GeneticsTelemetryEntry> _faunaGeneticsTelemetry;
+        private VaultNativeArray<FaunaGeneticsTuningDTO> _faunaGeneticsTuning;
+        private VaultNativeArray<FaunaGeneticsProfileDTO> _faunaGeneticsProfiles;
+        private VaultNativeArray<byte> _faunaGeneticsCsvScratch;
         private VaultNativeArray<MacroSwarm> _macroHydrationScratch;
         private VaultNativeArray<MacroSwarm> _macroDehydrationScratch;
         private VaultNativeArray<EcosystemBiomassSaveRun> _saveSnapshotBiomassRuns;
@@ -1029,23 +1042,21 @@ namespace Hecton8.World
         private VaultNativeArray<EcosystemIndexEntry> _sectorIndexEntries;
         private VaultNativeArray<ApexTerritorySample> _apexTerritorySamples;
         private VaultNativeArray<ApexTerritoryOverlapResult> _apexTerritoryOverlapResults;
-        private VaultNativeArray<CapsulecastCommand> _apexSpawnGateCommands;
-        private VaultNativeArray<RaycastHit> _apexSpawnGateHits;
         private VaultNativeArray<float4> _floraPredatorAupUpload;
         private VaultNativeArray<EcosystemSectorSaveRecord> _saveSnapshotSectors;
         private int _saveSnapshotSectorCount;
         private int _saveSnapshotBiomassRunCount;
         private FaunaBrain[] _apexTerritoryBrains;
-        private GraphicsBuffer _floraPredatorAupBuffer;
+        private GraphicsBuffer _floraPredatorAupBufferA;
+        private GraphicsBuffer _floraPredatorAupBufferB;
+        private GraphicsBuffer _activeFloraPredatorAupBuffer;
         private JobHandle _scheduledSolveHandle;
         private JobHandle _scheduledGenomeMutationHandle;
         private JobHandle _macroSwarmTravelHandle;
         private JobHandle _scheduledApexTerritoryOverlapHandle;
-        private JobHandle _apexSpawnGateHandle;
-        private int3 _apexSpawnGatePendingCell;
         private int3 _apexSpawnGateCachedCell;
-        private bool _apexSpawnGateScheduled;
         private bool _apexSpawnGateHasCachedResult;
+        private int _floraPredatorAupUploadIndex;
         private byte _apexSpawnGateCachedBlocked;
         private float _coldTickAccumulator;
         private int _activeSectorCount;
@@ -1064,11 +1075,18 @@ namespace Hecton8.World
         private int _lastMacroSwarmMutationCount;
         private int _scheduledHeadlessMutationCount;
         private int _scheduledMacroSwarmMutationCount;
+        private int _faunaGeneticsTelemetryCursor;
+        private int _lastFaunaGeneticsProfileCount;
+        private int _lastFaunaGenomeCompiledCount;
+        private int _lastFaunaGeneticsDumpFrame = -1;
         private uint _faunaGenomeMutationEpoch;
         private uint _lastMutationFlags;
         private float _lastMutationRadiationRads;
         private float _lastMutationToxicity01;
         private float _lastMutationBrineDepth01;
+        private float _lastFaunaGenomeBurstMicroseconds;
+        private long _faunaGenomeMutationScheduleTimestamp;
+        private long _faunaGeneticsCsvLastWriteTicks;
         private int _activeMacroSwarmCount;
         private int _macroSwarmActiveCap = MacroSwarmLowTierCap;
         private byte _macroSwarmQualityTierProfileByte;
@@ -1082,13 +1100,14 @@ namespace Hecton8.World
         private int _lastSectorResidencySignalDrainFrame;
         private int _scheduledApexTerritoryOverlapCount;
         private IDataVault _dataVault;
-        private VaultGenerationHandle<MacroEcosystemSectorVaultRecord> _macroSectorSnapshotHandle;
+        private VaultGenerationHandle<EcosystemSectorDTO> _macroSectorSnapshotHandle;
         private VaultGenerationHandle<MacroEcosystemSectorIndexRecord> _macroSectorIndexHandle;
         private VaultGenerationHandle<MacroEcosystemTuningVaultRecord> _macroTuningHandle;
         private bool _registeredService;
         private bool _registeredSlowTickable;
         private bool _registeredFrostTickable;
         private bool _registeredLateFrameTickable;
+        private bool _registeredHotSwap;
         private bool _solveScheduled;
         private bool _genomeMutationScheduled;
         private bool _macroSwarmTravelScheduled;
@@ -1107,10 +1126,26 @@ namespace Hecton8.World
         private byte _lastPublishedApexInSector = byte.MaxValue;
         private int _lastPublishedFloraPredatorAupCount = -1;
         private bool _floraPredatorAupGlobalsDirty = true;
+        private bool _floraPredatorAupRefreshDirty;
+        private bool _floraPredatorAupCountDirty;
+        private bool _apexPresenceFakeDirty;
+        private bool _globalOceanPanicDirty;
+        private bool _biolumFlashBangDirty;
+        private bool _biomassOvergrowthDirty;
+        private Vector3 _pendingFloraPredatorAupQueryOrigin;
+        private int _pendingFloraPredatorAupCount;
+        private byte _pendingApexInSector;
+        private float _pendingGlobalOceanPanic01;
+        private Vector4 _pendingBiolumFlashBangAup;
+        private Vector4 _pendingBiolumFlashBangParams;
+        private float _pendingBiomassOvergrowth01;
+        private float _lastPublishedBiomassOvergrowth01 = -1f;
         private int _nextHibernationPopulationSyncIndex;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
         private SargassumMicroFaunaBoids _cachedSargassumMicroFauna;
+        private IAmbientBiotaService _cachedAmbientBiota;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private float _eclipsePredatorMigrationTimer;
         private float _eclipsePredatorMigrationIntensity01;
         private float _eclipsePredatorMigrationAccumulator;
@@ -1144,8 +1179,6 @@ namespace Hecton8.World
             _macroHydrationScratch.IsCreated &&
             _macroDehydrationScratch.IsCreated &&
             _headlessEntities.IsCreated &&
-            _apexSpawnGateCommands.IsCreated &&
-            _apexSpawnGateHits.IsCreated &&
             _sectorIndexEntries.IsCreated;
 
         /// <inheritdoc />
@@ -1202,7 +1235,7 @@ namespace Hecton8.World
                 return;
             }
 
-            VaultGenerationHandle<byte> heatmapHandle = vault.GetGenerationHandle<byte>(
+            VaultGenerationHandle<byte> heatmapHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.EcosystemSectorFoodHeatmapR8,
                 (int)requiredLength,
                 SystemID.AIEcology,
@@ -1228,7 +1261,7 @@ namespace Hecton8.World
             _sectorFoodHeatmapSize = new int2(width, height);
         }
 
-        internal FaunaLogicalLodTier ResolveLogicalLodTier(Vector3 observerPosition, Vector3 faunaPosition)
+        public FaunaLogicalLodTier ResolveLogicalLodTier(Vector3 observerPosition, Vector3 faunaPosition)
         {
             if (!TryResolveAupFromRuntimeOrigin(observerPosition, out AbsoluteUniversePosition observerAup) ||
                 !TryResolveAupFromRuntimeOrigin(faunaPosition, out AbsoluteUniversePosition faunaAup))
@@ -1239,7 +1272,7 @@ namespace Hecton8.World
             return ResolveLogicalLodTier(in observerAup, in faunaAup);
         }
 
-        internal FaunaLogicalLodTier ResolveLogicalLodTier(
+        public FaunaLogicalLodTier ResolveLogicalLodTier(
             in AbsoluteUniversePosition observerAup,
             in AbsoluteUniversePosition faunaAup)
         {
@@ -1287,7 +1320,7 @@ namespace Hecton8.World
             return true;
         }
 
-        internal bool TryResolveSpawnWeightMultiplier(CreatureArchetypeData archetype, Vector3 worldPosition, out float selectionMultiplier)
+        public bool TryResolveSpawnWeightMultiplier(CreatureArchetypeData archetype, Vector3 worldPosition, out float selectionMultiplier)
         {
             selectionMultiplier = 1f;
             if (archetype == null)
@@ -1351,7 +1384,7 @@ namespace Hecton8.World
             return selectionMultiplier > 0f;
         }
 
-        internal bool TryConsumeSpawnCredit(CreatureArchetypeData archetype, bool isLargeThreat, bool isPredator)
+        public bool TryConsumeSpawnCredit(CreatureArchetypeData archetype, bool isLargeThreat, bool isPredator)
         {
             float cost = ResolveSpawnCreditCost(archetype, isLargeThreat, isPredator);
             if (cost <= 0f)
@@ -1365,7 +1398,7 @@ namespace Hecton8.World
             return true;
         }
 
-        internal void RefundSpawnCredit(CreatureArchetypeData archetype, bool isLargeThreat, bool isPredator)
+        public void RefundSpawnCredit(CreatureArchetypeData archetype, bool isLargeThreat, bool isPredator)
         {
             float cost = ResolveSpawnCreditCost(archetype, isLargeThreat, isPredator);
             if (cost <= 0f)
@@ -1489,7 +1522,9 @@ namespace Hecton8.World
                 }
             }
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = ActiveRuntimeInstance != null
+                ? ActiveRuntimeInstance._cachedPlayerContext
+                : null;
             if (playerContext != null)
             {
                 HectonSurvivalSystem survivalSystem = playerContext.SurvivalSystem;
@@ -1515,63 +1550,36 @@ namespace Hecton8.World
 
         private bool PassesApexSpawnVoxelGate(Vector3 worldPosition)
         {
-            if (!_apexSpawnGateCommands.IsCreated || !_apexSpawnGateHits.IsCreated)
-                return false;
-
-            if (_apexSpawnGateScheduled)
-                CompleteApexSpawnGate(forceComplete: false);
-
             int3 gateCell = QuantizeApexSpawnGateCell(worldPosition);
             if (_apexSpawnGateHasCachedResult && math.all(gateCell == _apexSpawnGateCachedCell))
                 return _apexSpawnGateCachedBlocked == 0;
 
-            if (_apexSpawnGateScheduled)
-                return false;
-
-            _apexSpawnGateHits[0] = default;
-
-            Vector3 capsuleOffset = Vector3.up * ApexSpawnGateCapsuleHalfHeightMeters;
-            Vector3 point1 = worldPosition - capsuleOffset;
-            Vector3 point2 = worldPosition + capsuleOffset;
-            int collisionMask = HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask;
-            QueryParameters queryParameters = new QueryParameters(collisionMask, false, QueryTriggerInteraction.Ignore);
-            _apexSpawnGateCommands[0] = new CapsulecastCommand(
-                point1,
-                point2,
-                ApexSpawnGateCapsuleRadiusMeters,
-                Vector3.up,
-                queryParameters,
-                ApexSpawnGateSweepDistanceMeters);
-
-            _apexSpawnGatePendingCell = gateCell;
-            _apexSpawnGateHandle = CapsulecastCommand.ScheduleBatch(
-                _apexSpawnGateCommands,
-                _apexSpawnGateHits,
-                ApexSpawnGateCommandCount,
-                ApexSpawnGateMaxHits,
-                default);
-            _apexSpawnGateScheduled = true;
-            return false;
-        }
-
-        private void CompleteApexSpawnGate(bool forceComplete)
-        {
-            if (!_apexSpawnGateScheduled)
-                return;
-
-            if (!forceComplete && !_apexSpawnGateHandle.IsCompleted)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _apexSpawnGateHandle, forceComplete))
-                return;
-
-            byte blocked = PackBooleanByte(_apexSpawnGateHits[0].collider != null);
-
-            _apexSpawnGateCachedCell = _apexSpawnGatePendingCell;
+            byte blocked = PackBooleanByte(IsApexSpawnTerrainBlocked(worldPosition));
+            _apexSpawnGateCachedCell = gateCell;
             _apexSpawnGateCachedBlocked = blocked;
             _apexSpawnGateHasCachedResult = true;
-            _apexSpawnGateScheduled = false;
-            _apexSpawnGateHandle = default;
+            return blocked == 0;
+        }
+
+        private static bool IsApexSpawnTerrainBlocked(Vector3 worldPosition)
+        {
+            if (!math.isfinite(worldPosition.x) ||
+                !math.isfinite(worldPosition.y) ||
+                !math.isfinite(worldPosition.z))
+            {
+                return true;
+            }
+
+            MapMagicBridge bridge = GlobalRegistry.MapMagic;
+            if (bridge == null ||
+                !bridge.TryGetHeight(worldPosition.x, worldPosition.z, out float terrainHeight) ||
+                !math.isfinite(terrainHeight))
+            {
+                return true;
+            }
+
+            float capsuleBottom = worldPosition.y - ApexSpawnGateCapsuleHalfHeightMeters - ApexSpawnGateCapsuleRadiusMeters;
+            return capsuleBottom <= terrainHeight + ApexSpawnGateTerrainMarginMeters;
         }
 
         private static int3 QuantizeApexSpawnGateCell(Vector3 worldPosition)
@@ -1624,12 +1632,12 @@ namespace Hecton8.World
             return false;
         }
 
-        internal bool IsHerbivoreSpecies(int speciesId)
+        public bool IsHerbivoreSpecies(int speciesId)
         {
             return ContainsSpeciesId(herbivoreSpeciesIds, speciesId);
         }
 
-        internal bool IsCleanerSpecies(int speciesId)
+        public bool IsCleanerSpecies(int speciesId)
         {
             return ContainsSpeciesId(cleanerSpeciesIds, speciesId);
         }
@@ -1640,24 +1648,30 @@ namespace Hecton8.World
                 return false;
 
             int speciesId = hostBrain.SpeciesId;
+            bool isLeviathan = hostBrain.SpeciesProfile != null && hostBrain.SpeciesProfile.isLeviathan;
+            return IsCleanerHostSpecies(speciesId, isLeviathan);
+        }
+
+        public bool IsCleanerHostSpecies(int speciesId, bool isLeviathan)
+        {
             if (cleanerHostSpeciesIds != null && cleanerHostSpeciesIds.Length > 0)
                 return ContainsSpeciesId(cleanerHostSpeciesIds, speciesId);
 
-            return hostBrain.SpeciesProfile != null && hostBrain.SpeciesProfile.isLeviathan;
+            return isLeviathan;
         }
 
-        internal float HerbivoreGrazeHungerThreshold => herbivoreGrazeHungerThreshold;
-        internal float HerbivoreGrazeSearchRadiusMeters => herbivoreGrazeSearchRadiusMeters;
-        internal float HerbivoreConsumeDistanceMeters => herbivoreConsumeDistanceMeters;
-        internal float CleanerHostSearchRadiusMeters => cleanerHostSearchRadiusMeters;
-        internal float CleanerSymbiosisDistanceMeters => cleanerSymbiosisDistanceMeters;
-        internal float CleanerFatigueReliefPerSecond => cleanerFatigueReliefPerSecond;
-        internal float ScavengerHungerThreshold => scavengerHungerThreshold;
-        internal float ScavengerConsumeDistanceMeters => scavengerConsumeDistanceMeters;
-        internal float ScavengerConsumeUnitsPerSecond => scavengerConsumeUnitsPerSecond;
-        internal float BaitFeedingDistanceMeters => baitFeedingDistanceMeters;
+        public float HerbivoreGrazeHungerThreshold => herbivoreGrazeHungerThreshold;
+        public float HerbivoreGrazeSearchRadiusMeters => herbivoreGrazeSearchRadiusMeters;
+        public float HerbivoreConsumeDistanceMeters => herbivoreConsumeDistanceMeters;
+        public float CleanerHostSearchRadiusMeters => cleanerHostSearchRadiusMeters;
+        public float CleanerSymbiosisDistanceMeters => cleanerSymbiosisDistanceMeters;
+        public float CleanerFatigueReliefPerSecond => cleanerFatigueReliefPerSecond;
+        public float ScavengerHungerThreshold => scavengerHungerThreshold;
+        public float ScavengerConsumeDistanceMeters => scavengerConsumeDistanceMeters;
+        public float ScavengerConsumeUnitsPerSecond => scavengerConsumeUnitsPerSecond;
+        public float BaitFeedingDistanceMeters => baitFeedingDistanceMeters;
 
-        internal bool TryResolveHerbivoreGrazeTarget(Vector3 worldPosition, out Vector3 floraPosition, out uint floraInstanceUid)
+        public bool TryResolveHerbivoreGrazeTarget(Vector3 worldPosition, out Vector3 floraPosition, out uint floraInstanceUid)
         {
             floraPosition = default;
             floraInstanceUid = 0u;
@@ -1666,18 +1680,18 @@ namespace Hecton8.World
                    organicManager.TryResolveNearestConsumableFlora(worldPosition, herbivoreGrazeSearchRadiusMeters, out floraPosition, out floraInstanceUid);
         }
 
-        internal bool TryConsumeHerbivoreGrazeTarget(uint floraInstanceUid)
+        public bool TryConsumeHerbivoreGrazeTarget(uint floraInstanceUid)
         {
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             return organicManager != null && organicManager.TryConsumeFlora(floraInstanceUid);
         }
 
-        internal bool TryResolveMigrationTarget(int speciesId, Vector3 origin, out Vector3 target)
+        public bool TryResolveMigrationTarget(int speciesId, Vector3 origin, out Vector3 target)
         {
             return MigrationDirector.TryResolveMigrationTarget(speciesId, origin, out target);
         }
 
-        internal bool TryResolveNearestThermalVentAttractor(
+        public bool TryResolveNearestThermalVentAttractor(
             in AbsoluteUniversePosition queryAup,
             float searchRadiusMeters,
             out Vector3 target,
@@ -1707,7 +1721,7 @@ namespace Hecton8.World
             RegisterCorpseResourceNode(in positionAup, speciesId, capacityUnits, 0u);
         }
 
-        internal void RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits, uint contaminatedItemHash)
+        public void RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits, uint contaminatedItemHash)
         {
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             if (organicManager != null)
@@ -1723,7 +1737,7 @@ namespace Hecton8.World
                    organicManager.TryResolveNearestCorpseResourceNode(worldPosition, scavengerCorpseSearchRadiusMeters, out corpsePosition, out corpseNodeId);
         }
 
-        internal bool TryResolveCorpseScavengeTarget(in AbsoluteUniversePosition queryAup, out Vector3 corpsePosition, out uint corpseNodeId)
+        public bool TryResolveCorpseScavengeTarget(in AbsoluteUniversePosition queryAup, out Vector3 corpsePosition, out uint corpseNodeId)
         {
             corpsePosition = default;
             corpseNodeId = 0u;
@@ -1732,13 +1746,13 @@ namespace Hecton8.World
                    organicManager.TryResolveNearestCorpseResourceNode(in queryAup, scavengerCorpseSearchRadiusMeters, out corpsePosition, out corpseNodeId);
         }
 
-        internal bool TryConsumeCorpseScavengeTarget(uint corpseNodeId, float consumeUnits)
+        public bool TryConsumeCorpseScavengeTarget(uint corpseNodeId, float consumeUnits)
         {
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             return organicManager != null && organicManager.TryConsumeCorpseResourceNode(corpseNodeId, consumeUnits);
         }
 
-        internal bool TryResolveCorpseDiseaseExposure(
+        public bool TryResolveCorpseDiseaseExposure(
             in AbsoluteUniversePosition queryAup,
             float currentTimeSeconds,
             out float severity01,
@@ -1751,7 +1765,7 @@ namespace Hecton8.World
                    organicManager.TryResolveCorpseDiseaseExposure(in queryAup, currentTimeSeconds, out severity01, out sourcePosition);
         }
 
-        internal bool TryResolveNearestOrganicMass(Vector3 worldPosition, out Vector3 organicPosition)
+        public bool TryResolveNearestOrganicMass(Vector3 worldPosition, out Vector3 organicPosition)
         {
             organicPosition = default;
             if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition queryAup))
@@ -1792,7 +1806,7 @@ namespace Hecton8.World
             return found;
         }
 
-        internal bool TryConsumeOrganicMassAtPosition(Vector3 worldPosition, float searchRadius)
+        public bool TryConsumeOrganicMassAtPosition(Vector3 worldPosition, float searchRadius)
         {
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             if (organicManager == null)
@@ -1808,11 +1822,12 @@ namespace Hecton8.World
             return organicManager.TryConsumeCorpseResourceNode(corpseNodeId, scavengerConsumeUnitsPerSecond);
         }
 
-        internal void PublishBiolumFlashBang(in AbsoluteUniversePosition flashAup, float currentTimeSeconds, float radiusMeters = 42f)
+        public void PublishBiolumFlashBang(in AbsoluteUniversePosition flashAup, float currentTimeSeconds, float radiusMeters = 42f)
         {
             Vector3 flashPosition = flashAup.ToRuntimeFloat3();
-            Shader.SetGlobalVector(_BiolumFlashBangAUPId, new Vector4(flashPosition.x, flashPosition.y, flashPosition.z, math.max(0.1f, radiusMeters)));
-            Shader.SetGlobalVector(_BiolumFlashBangParamsId, new Vector4(currentTimeSeconds, 0.1f, 4f, 0f));
+            _pendingBiolumFlashBangAup = new Vector4(flashPosition.x, flashPosition.y, flashPosition.z, math.max(0.1f, radiusMeters));
+            _pendingBiolumFlashBangParams = new Vector4(currentTimeSeconds, 0.1f, 4f, 0f);
+            _biolumFlashBangDirty = true;
         }
 
         internal bool DoesSpeciesRespondToBait(FaunaBrain faunaBrain)
@@ -1821,18 +1836,27 @@ namespace Hecton8.World
                 return false;
 
             int speciesId = faunaBrain.SpeciesId;
-            return faunaBrain.SpeciesProfile.isScavenger ||
-                   IsHerbivoreSpecies(speciesId) ||
-                   (faunaBrain.isAggressive && !faunaBrain.SpeciesProfile.isLeviathan);
+            return DoesSpeciesRespondToBait(
+                speciesId,
+                faunaBrain.SpeciesProfile.isScavenger,
+                faunaBrain.isAggressive,
+                faunaBrain.SpeciesProfile.isLeviathan);
         }
 
-        internal bool IsApexTombstoned(uint uniqueInstanceUid)
+        public bool DoesSpeciesRespondToBait(int speciesId, bool isScavenger, bool isAggressive, bool isLeviathan)
+        {
+            return isScavenger ||
+                   IsHerbivoreSpecies(speciesId) ||
+                   (isAggressive && !isLeviathan);
+        }
+
+        public bool IsApexTombstoned(uint uniqueInstanceUid)
         {
             RefreshRuntimeReferences();
             return _cachedPersistentWorldRegistry != null && _cachedPersistentWorldRegistry.IsTombstoned(uniqueInstanceUid);
         }
 
-        internal void RegisterApexPredatorKill(uint uniqueInstanceUid, Vector3 worldPosition, float hostilityDelta)
+        public void RegisterApexPredatorKill(uint uniqueInstanceUid, Vector3 worldPosition, float hostilityDelta)
         {
             RefreshRuntimeReferences();
             float nowSeconds = ReadDispatcherTimeSeconds();
@@ -2022,10 +2046,12 @@ namespace Hecton8.World
             SanitizeSettings();
             AllocateRuntimeState();
             RefreshMacroSwarmScalabilityCache();
+            CacheColdRegistryReferences();
             TryRegisterService();
             TryRegisterSlowTickable();
             TryRegisterFrostTickable();
             TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
@@ -2051,7 +2077,10 @@ namespace Hecton8.World
             TryUnregisterSlowTickable();
             TryUnregisterFrostTickable();
             TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+            _cachedAmbientBiota = null;
+            _cachedPlayerContext = null;
             DisposeRuntimeState();
         }
 
@@ -2064,10 +2093,12 @@ namespace Hecton8.World
             SanitizeSettings();
             AllocateRuntimeState();
             RefreshMacroSwarmScalabilityCache();
+            CacheColdRegistryReferences();
             TryRegisterService();
             TryRegisterSlowTickable();
             TryRegisterFrostTickable();
             TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
         }
 
         /// <summary>
@@ -2079,6 +2110,7 @@ namespace Hecton8.World
                 return;
 
             RefreshMacroSwarmScalabilityCache();
+            RefreshMacroEcosystemVaultHandlesCold(ResolveDataVault());
             DrainBiomeGradientSignal();
             DecayBiomeHostility();
             UpdateSpawnCreditBudget(DefaultSlowTickIntervalSeconds);
@@ -2141,7 +2173,7 @@ namespace Hecton8.World
             signal.SourceId = _activeWhaleFallAcousticUid;
             signal.Channel = AcousticPingSignal.ChannelLeviathanRoar;
             signal.Flags = AcousticPingSignal.FlagLeviathanRoar;
-            SignalBus<AcousticPingSignal>.Push(in signal);
+            SignalBus<AcousticPingSignal>.TryPush(in signal);
         }
 
         private void DrainBiomeGradientSignal()
@@ -2161,12 +2193,15 @@ namespace Hecton8.World
             CompleteScheduledSimulation(forceComplete: false);
             CompleteScheduledMacroSwarmTravel(forceComplete: false);
             if (IsInitialized)
+            {
                 PushMacroSwarmHeartbeatBlackBox();
+                PushFaunaGeneticsTelemetryFrame();
+            }
             DrainSectorResidencySignalSnapshots();
             DrainBiomassSignalSnapshots();
             PublishScannerEcologyWarningIfNeeded();
             CompleteScheduledApexTerritoryOverlap(forceComplete: false);
-            CompleteApexSpawnGate(forceComplete: false);
+            FlushQueuedEcosystemVisuals();
             FaunaSpatialHashRegistry.RunDeferredCleanupFrame();
         }
 
@@ -2185,8 +2220,7 @@ namespace Hecton8.World
             if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
                 return false;
 
-            int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
-            if (slotIndex < 0)
+            if (!TryResolveSectorSlotReadOnly(sectorCoord, out int slotIndex))
                 return false;
 
             SectorPopulationState state = _sectorFrontStates[slotIndex];
@@ -2225,8 +2259,7 @@ namespace Hecton8.World
             if (!TryQuantizeBiomassMacroCell(worldPosition, out int2 macroCellCoord))
                 return false;
 
-            int slotIndex = ResolveOrCreateBiomassCellSlot(macroCellCoord, seedWithBaseline: true);
-            if (slotIndex < 0)
+            if (!TryResolveBiomassCellSlotReadOnly(macroCellCoord, out int slotIndex))
                 return false;
 
             float capacity = math.max(0.0001f, _biomassCarryingCapacity[slotIndex]);
@@ -2250,31 +2283,39 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(finiteProbe)))
                 return false;
 
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
+                return false;
+
+            double3 absolutePosition = positionAup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(absolutePosition)))
+                return false;
+
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
             if (!TryResolveMacroEcosystemVaultSnapshot(
                     vault,
-                    out NativeArray<MacroEcosystemSectorVaultRecord> sectors,
-                    out NativeArray<MacroEcosystemSectorIndexRecord> entries,
-                    out NativeArray<MacroEcosystemTuningVaultRecord> tuning))
+                    out NativeArray<EcosystemSectorDTO>.ReadOnly sectors,
+                    out NativeArray<MacroEcosystemSectorIndexRecord>.ReadOnly entries,
+                    out NativeArray<MacroEcosystemTuningVaultRecord>.ReadOnly tuning))
                 return false;
 
             MacroEcosystemTuningVaultRecord tune = tuning[0];
             if (!IsMacroEcosystemSnapshotReadable(tune))
                 return false;
 
-            long sectorX = (long)math.floor((double)worldPosition.x / MacroEcosystemVaultContract.SectorSizeMeters);
-            long sectorZ = (long)math.floor((double)worldPosition.z / MacroEcosystemVaultContract.SectorSizeMeters);
+            double invSectorSize = 1.0 / MacroEcosystemVaultContract.SectorSizeMeters;
+            long sectorX = (long)math.floor(absolutePosition.x * invSectorSize);
+            long sectorZ = (long)math.floor(absolutePosition.z * invSectorSize);
             ulong hash = MacroEcosystemVaultContract.ComputeSectorHash(sectorX, 0L, sectorZ);
-            if (!MacroEcosystemVaultContract.TryResolveSectorIndex(entries, hash, out int index) ||
+            if (!TryResolveMacroEcosystemSectorIndex(entries, hash, out int index) ||
                 (uint)index >= (uint)sectors.Length)
             {
                 return false;
             }
 
-            MacroEcosystemSectorVaultRecord sector = sectors[index];
+            EcosystemSectorDTO sector = sectors[index];
             MacroEcosystemTuningVaultRecord postReadTune = tuning[0];
             if (!IsMacroEcosystemSnapshotReadable(postReadTune) ||
                 !MacroEcosystemTuningMatchesForBiomassRead(tune, postReadTune))
@@ -2291,10 +2332,11 @@ namespace Hecton8.World
                 tune.CarryingCapacityPredator,
                 math.isfinite(tune.CarryingCapacityPredator) & tune.CarryingCapacityPredator > 0f));
 
-            preyBiomass01 = math.saturate(sector.PreyBiomass * math.rcp(preyCapacity));
-            predatorBiomass01 = math.saturate(sector.PredatorBiomass * math.rcp(predatorCapacity));
+            float sectorCapacity = math.max(1f, math.select(preyCapacity + predatorCapacity, sector.CarryingCapacity, math.isfinite(sector.CarryingCapacity) & sector.CarryingCapacity > 0f));
+            preyBiomass01 = math.saturate(sector.PreyBiomass * math.rcp(sectorCapacity));
+            predatorBiomass01 = math.saturate(sector.PredatorBiomass * math.rcp(sectorCapacity));
             float defaultCapacity = MacroEcosystemVaultContract.DefaultCarryingCapacityPrey + MacroEcosystemVaultContract.DefaultCarryingCapacityPredator;
-            carryingCapacity01 = math.saturate((preyCapacity + predatorCapacity) * math.rcp(math.max(1f, defaultCapacity)));
+            carryingCapacity01 = math.saturate(sectorCapacity * math.rcp(math.max(1f, defaultCapacity)));
             return true;
         }
 
@@ -2313,11 +2355,41 @@ namespace Hecton8.World
                    before.CarryingCapacityPredator == after.CarryingCapacityPredator;
         }
 
+        private static bool TryResolveMacroEcosystemSectorIndex(
+            NativeArray<MacroEcosystemSectorIndexRecord>.ReadOnly entries,
+            ulong sectorHash,
+            out int sectorIndex)
+        {
+            sectorIndex = -1;
+            if (!entries.IsCreated || entries.Length <= 0 || sectorHash == 0UL)
+                return false;
+
+            int slot = MacroEcosystemVaultContract.ResolveOpenAddressSlot(sectorHash, entries.Length);
+            for (int probe = 0; probe < entries.Length; probe++)
+            {
+                MacroEcosystemSectorIndexRecord entry = entries[slot];
+                if (entry.Occupied == 0u)
+                    return false;
+
+                if (entry.SectorHash == sectorHash)
+                {
+                    sectorIndex = entry.Slot;
+                    return sectorIndex >= 0 && sectorIndex < MacroEcosystemVaultContract.SectorCapacity;
+                }
+
+                slot++;
+                if (slot >= entries.Length)
+                    slot = 0;
+            }
+
+            return false;
+        }
+
         private bool TryResolveMacroEcosystemVaultSnapshot(
             IDataVault vault,
-            out NativeArray<MacroEcosystemSectorVaultRecord> sectors,
-            out NativeArray<MacroEcosystemSectorIndexRecord> entries,
-            out NativeArray<MacroEcosystemTuningVaultRecord> tuning)
+            out NativeArray<EcosystemSectorDTO>.ReadOnly sectors,
+            out NativeArray<MacroEcosystemSectorIndexRecord>.ReadOnly entries,
+            out NativeArray<MacroEcosystemTuningVaultRecord>.ReadOnly tuning)
         {
             sectors = default;
             entries = default;
@@ -2326,11 +2398,7 @@ namespace Hecton8.World
             if (vault == null)
                 return false;
 
-            if (!TryRefreshMacroEcosystemVaultHandle(
-                    vault,
-                    BufferID.ShinobuMacroEcosystemSectorFront,
-                    ref _macroSectorSnapshotHandle) ||
-                !TryReadMacroEcosystemVaultBuffer(
+            if (!TryReadMacroEcosystemVaultBuffer(
                     vault,
                     in _macroSectorSnapshotHandle,
                     BufferID.ShinobuMacroEcosystemSectorFront,
@@ -2340,11 +2408,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!TryRefreshMacroEcosystemVaultHandle(
-                    vault,
-                    BufferID.ShinobuMacroEcosystemIndexEntries,
-                    ref _macroSectorIndexHandle) ||
-                !TryReadMacroEcosystemVaultBuffer(
+            if (!TryReadMacroEcosystemVaultBuffer(
                     vault,
                     in _macroSectorIndexHandle,
                     BufferID.ShinobuMacroEcosystemIndexEntries,
@@ -2354,11 +2418,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!TryRefreshMacroEcosystemVaultHandle(
-                    vault,
-                    BufferID.ShinobuMacroEcosystemTuning,
-                    ref _macroTuningHandle) ||
-                !TryReadMacroEcosystemVaultBuffer(
+            if (!TryReadMacroEcosystemVaultBuffer(
                     vault,
                     in _macroTuningHandle,
                     BufferID.ShinobuMacroEcosystemTuning,
@@ -2371,7 +2431,17 @@ namespace Hecton8.World
             return sectors.IsCreated && entries.IsCreated && tuning.IsCreated && tuning.Length > 0;
         }
 
-        private static bool TryRefreshMacroEcosystemVaultHandle<T>(
+        private void RefreshMacroEcosystemVaultHandlesCold(IDataVault vault)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return;
+
+            RefreshMacroEcosystemVaultHandleCold(vault, BufferID.ShinobuMacroEcosystemSectorFront, ref _macroSectorSnapshotHandle);
+            RefreshMacroEcosystemVaultHandleCold(vault, BufferID.ShinobuMacroEcosystemIndexEntries, ref _macroSectorIndexHandle);
+            RefreshMacroEcosystemVaultHandleCold(vault, BufferID.ShinobuMacroEcosystemTuning, ref _macroTuningHandle);
+        }
+
+        private static bool RefreshMacroEcosystemVaultHandleCold<T>(
             IDataVault vault,
             BufferID bufferId,
             ref VaultGenerationHandle<T> handle) where T : struct
@@ -2384,7 +2454,7 @@ namespace Hecton8.World
             }
 
             if (IsMacroEcosystemVaultHandle(in handle, bufferId) &&
-                vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
                 existing.IsCreated)
             {
                 return true;
@@ -2395,7 +2465,7 @@ namespace Hecton8.World
 
             handle = refreshed;
             return IsMacroEcosystemVaultHandle(in handle, bufferId) &&
-                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
                    buffer.IsCreated;
         }
 
@@ -2404,7 +2474,7 @@ namespace Hecton8.World
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int minimumLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             if (vault == null ||
@@ -2412,7 +2482,7 @@ namespace Hecton8.World
                 minimumLength < 0 ||
                 vault.IsCompactionFenceActive ||
                 !IsMacroEcosystemVaultHandle(in handle, bufferId) ||
-                !vault.TryReadHandle(in handle, out buffer) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < minimumLength)
             {
@@ -2670,7 +2740,7 @@ namespace Hecton8.World
                 StateKind = FaunaStateChangedSignalKinds.Mutated,
                 Flags = FaunaStateChangedSignalFlags.StateActive
             };
-            SignalBus<FaunaStateChangedSignal>.Push(in signal);
+            SignalBus<FaunaStateChangedSignal>.TryPush(in signal);
         }
 
         private void PublishBatchFaunaMutatedSignal(byte resultFlags)
@@ -2700,7 +2770,7 @@ namespace Hecton8.World
                 StateKind = FaunaStateChangedSignalKinds.Mutated,
                 Flags = FaunaStateChangedSignalFlags.StateActive
             };
-            SignalBus<FaunaStateChangedSignal>.Push(in signal);
+            SignalBus<FaunaStateChangedSignal>.TryPush(in signal);
         }
 
         /// <inheritdoc />
@@ -2798,22 +2868,29 @@ namespace Hecton8.World
                 return false;
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null || !vault.TryGetMacroDatabasePayload(sectorHash, out MacroDatabasePayloadHandle handle))
+            if (vault == null || !vault.TryOpenMacroDatabasePayload(sectorHash, out MacroDatabasePayloadHandle handle))
                 return false;
 
             int stride = UnsafeUtility.SizeOf<MacroSwarm>();
-            if (handle.Pointer == IntPtr.Zero || handle.ByteLength < stride)
+            if (handle.ByteLength < stride || !_macroHydrationScratch.IsCreated)
             {
                 PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagInvalid);
                 return false;
             }
 
-            int available = handle.ByteLength / stride;
+            NativeArray<MacroSwarm> scratch = _macroHydrationScratch.Resolve();
+            if (!scratch.IsCreated || scratch.Length <= 0)
+            {
+                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagInvalid);
+                return false;
+            }
+
             int cap = ResolveMacroSwarmActiveCap();
             int invalid = 0;
             int overflow = 0;
-            void* payload = handle.Pointer.ToPointer();
-            for (int i = 0; i < available; i++)
+            int sourceOffset = 0;
+            int scratchBytes = scratch.Length * stride;
+            while (sourceOffset + stride <= handle.ByteLength)
             {
                 if (_activeMacroSwarmCount >= cap)
                 {
@@ -2821,18 +2898,47 @@ namespace Hecton8.World
                     break;
                 }
 
-                MacroSwarm swarm = UnsafeUtility.ReadArrayElement<MacroSwarm>(payload, i);
-                if (!TryNormalizeImportedMacroSwarm(ref swarm, sectorHash))
+                int remainingBytes = handle.ByteLength - sourceOffset;
+                int copyCapacity = remainingBytes < scratchBytes ? remainingBytes : scratchBytes;
+                if (!vault.TryCopyMacroDatabasePayload(
+                        sectorHash,
+                        sourceOffset,
+                        scratch,
+                        copyCapacity,
+                        out int bytesCopied,
+                        out handle) ||
+                    bytesCopied < stride)
                 {
                     invalid++;
-                    continue;
+                    break;
                 }
 
-                if (HasActiveMacroSwarmRoute(swarm.SectorAup, swarm.TargetSectorAup))
-                    continue;
+                int copiedSwarmCount = bytesCopied / stride;
+                for (int i = 0; i < copiedSwarmCount; i++)
+                {
+                    if (_activeMacroSwarmCount >= cap)
+                    {
+                        overflow++;
+                        break;
+                    }
 
-                _macroSwarms[_activeMacroSwarmCount++] = swarm;
-                importedCount++;
+                    MacroSwarm swarm = scratch[i];
+                    if (!TryNormalizeImportedMacroSwarm(ref swarm, sectorHash))
+                    {
+                        invalid++;
+                        continue;
+                    }
+
+                    if (HasActiveMacroSwarmRoute(swarm.SectorAup, swarm.TargetSectorAup))
+                        continue;
+
+                    _macroSwarms[_activeMacroSwarmCount++] = swarm;
+                    importedCount++;
+                }
+
+                sourceOffset += copiedSwarmCount * stride;
+                if (copiedSwarmCount == 0 || _activeMacroSwarmCount >= cap)
+                    break;
             }
 
             int flags = importedCount > 0 ? MacroSwarmBlackBoxFlagDatabaseHydrated : 0;
@@ -3231,6 +3337,16 @@ namespace Hecton8.World
                 _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             if (_cachedSargassumMicroFauna == null)
                 _cachedSargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
+            if (_cachedPlayerContext == null)
+                _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void CacheColdRegistryReferences()
+        {
+            RefreshRuntimeReferences();
+            IAmbientBiotaService ambientBiota = GlobalRegistry.AmbientBiota;
+            if (ambientBiota != null)
+                _cachedAmbientBiota = ambientBiota;
         }
 
         private static bool RequiresThermalEnvelope(CreatureArchetypeData archetype)
@@ -3397,15 +3513,15 @@ namespace Hecton8.World
             switch (tier)
             {
                 case 3:
-                    NotificationEvents.PushCritical("BIOME HOSTILITY: EXTREME. THE ABYSS HATES YOU.");
+                    NotificationEvents.TryPushCritical("BIOME HOSTILITY: EXTREME. THE ABYSS HATES YOU.".AsSpan());
                     break;
 
                 case 2:
-                    NotificationEvents.PushWarning("BIOME HOSTILITY: ELEVATED. PREDATOR PEAK EXTENDED.");
+                    NotificationEvents.TryPushWarning("BIOME HOSTILITY: ELEVATED. PREDATOR PEAK EXTENDED.".AsSpan());
                     break;
 
                 case 1:
-                    NotificationEvents.PushInfo("BIOME HOSTILITY: RISING.");
+                    NotificationEvents.TryPushInfo("BIOME HOSTILITY: RISING.".AsSpan());
                     break;
             }
         }
@@ -3435,73 +3551,81 @@ namespace Hecton8.World
             if (vault == null)
                 return;
 
-            _sectorFrontStates = VaultNativeArray<SectorPopulationState>.Create(vault, vault.GetGenerationHandle<SectorPopulationState>(BufferID.EcosystemSectorFrontStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _sectorBackStates = VaultNativeArray<SectorPopulationState>.Create(vault, vault.GetGenerationHandle<SectorPopulationState>(BufferID.EcosystemSectorBackStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _preyFrontCounts = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemPreyFrontCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _preyBackCounts = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemPreyBackCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _predatorFrontCounts = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemPredatorFrontCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _predatorBackCounts = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemPredatorBackCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _preyBiomassFront = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemPreyBiomassFront, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _preyBiomassBack = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemPreyBiomassBack, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _predatorBiomassFront = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemPredatorBiomassFront, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _predatorBiomassBack = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemPredatorBiomassBack, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassCarryingCapacity = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemBiomassCarryingCapacity, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassSumScratch = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemBiomassSumScratch, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassMacroCellCoords = VaultNativeArray<int2>.Create(vault, vault.GetGenerationHandle<int2>(BufferID.EcosystemBiomassMacroCellCoords, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassCellFlags = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemBiomassCellFlags, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassIndexEntries = VaultNativeArray<EcosystemIndexEntry>.Create(vault, vault.GetGenerationHandle<EcosystemIndexEntry>(BufferID.EcosystemBiomassIndexEntries, ResolveVaultIndexCapacity(maxTrackedBiomassCells), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _pendingBiomassImpacts = VaultNativeArray<BiomassImpactEvent>.Create(vault, vault.GetGenerationHandle<BiomassImpactEvent>(BufferID.EcosystemPendingBiomassImpacts, BiomassImpactQueueCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassBlackBox = VaultNativeArray<BiomassTelemetryEntry>.Create(vault, vault.GetGenerationHandle<BiomassTelemetryEntry>(BufferID.EcosystemBiomassBlackBox, BiomassBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarms = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroSwarms, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmArrivals = VaultNativeArray<MacroSwarmArrival>.Create(vault, vault.GetGenerationHandle<MacroSwarmArrival>(BufferID.EcosystemMacroSwarmArrivals, MacroSwarmArrivalCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmCounters = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemMacroSwarmCounters, 4, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmBlackBox = VaultNativeArray<MacroSwarmTelemetryEntry>.Create(vault, vault.GetGenerationHandle<MacroSwarmTelemetryEntry>(BufferID.EcosystemMacroSwarmBlackBox, MacroSwarmBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmMutationRadiation = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationRadiation, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmMutationToxicity = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationToxicity, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmMutationBrine = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationBrine, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmMutationResults = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemMacroSwarmMutationResults, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _faunaMutationBlackBox = VaultNativeArray<FaunaMutationTelemetryEntry>.Create(vault, vault.GetGenerationHandle<FaunaMutationTelemetryEntry>(BufferID.EcosystemFaunaMutationBlackBox, FaunaMutationBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroHydrationScratch = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroHydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroDehydrationScratch = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroDehydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            RefreshMacroEcosystemVaultHandlesCold(vault);
+
+            _sectorFrontStates = VaultNativeArray<SectorPopulationState>.Create(vault, vault.EnsureGenerationHandle<SectorPopulationState>(BufferID.EcosystemSectorFrontStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _sectorBackStates = VaultNativeArray<SectorPopulationState>.Create(vault, vault.EnsureGenerationHandle<SectorPopulationState>(BufferID.EcosystemSectorBackStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _preyFrontCounts = VaultNativeArray<int>.Create(vault, vault.EnsureGenerationHandle<int>(BufferID.EcosystemPreyFrontCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _preyBackCounts = VaultNativeArray<int>.Create(vault, vault.EnsureGenerationHandle<int>(BufferID.EcosystemPreyBackCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _predatorFrontCounts = VaultNativeArray<int>.Create(vault, vault.EnsureGenerationHandle<int>(BufferID.EcosystemPredatorFrontCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _predatorBackCounts = VaultNativeArray<int>.Create(vault, vault.EnsureGenerationHandle<int>(BufferID.EcosystemPredatorBackCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _preyBiomassFront = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemPreyBiomassFront, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _preyBiomassBack = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemPreyBiomassBack, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _predatorBiomassFront = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemPredatorBiomassFront, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _predatorBiomassBack = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemPredatorBiomassBack, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassCarryingCapacity = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemBiomassCarryingCapacity, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassSumScratch = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemBiomassSumScratch, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassMacroCellCoords = VaultNativeArray<int2>.Create(vault, vault.EnsureGenerationHandle<int2>(BufferID.EcosystemBiomassMacroCellCoords, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassCellFlags = VaultNativeArray<byte>.Create(vault, vault.EnsureGenerationHandle<byte>(BufferID.EcosystemBiomassCellFlags, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassIndexEntries = VaultNativeArray<EcosystemIndexEntry>.Create(vault, vault.EnsureGenerationHandle<EcosystemIndexEntry>(BufferID.EcosystemBiomassIndexEntries, ResolveVaultIndexCapacity(maxTrackedBiomassCells), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _pendingBiomassImpacts = VaultNativeArray<BiomassImpactEvent>.Create(vault, vault.EnsureGenerationHandle<BiomassImpactEvent>(BufferID.EcosystemPendingBiomassImpacts, BiomassImpactQueueCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassBlackBox = VaultNativeArray<BiomassTelemetryEntry>.Create(vault, vault.EnsureGenerationHandle<BiomassTelemetryEntry>(BufferID.EcosystemBiomassBlackBox, BiomassBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarms = VaultNativeArray<MacroSwarm>.Create(vault, vault.EnsureGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroSwarms, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmArrivals = VaultNativeArray<MacroSwarmArrival>.Create(vault, vault.EnsureGenerationHandle<MacroSwarmArrival>(BufferID.EcosystemMacroSwarmArrivals, MacroSwarmArrivalCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmCounters = VaultNativeArray<int>.Create(vault, vault.EnsureGenerationHandle<int>(BufferID.EcosystemMacroSwarmCounters, 4, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmBlackBox = VaultNativeArray<MacroSwarmTelemetryEntry>.Create(vault, vault.EnsureGenerationHandle<MacroSwarmTelemetryEntry>(BufferID.EcosystemMacroSwarmBlackBox, MacroSwarmBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmMutationRadiation = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationRadiation, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmMutationToxicity = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationToxicity, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmMutationBrine = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationBrine, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmMutationResults = VaultNativeArray<byte>.Create(vault, vault.EnsureGenerationHandle<byte>(BufferID.EcosystemMacroSwarmMutationResults, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _faunaMutationBlackBox = VaultNativeArray<FaunaMutationTelemetryEntry>.Create(vault, vault.EnsureGenerationHandle<FaunaMutationTelemetryEntry>(BufferID.EcosystemFaunaMutationBlackBox, FaunaMutationBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _faunaGeneticsTelemetry = VaultNativeArray<GeneticsTelemetryEntry>.Create(vault, vault.EnsureGenerationHandle<GeneticsTelemetryEntry>(BufferID.EcosystemFaunaGeneticsTelemetry, FaunaGeneticsTelemetryCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _faunaGeneticsTuning = VaultNativeArray<FaunaGeneticsTuningDTO>.Create(vault, vault.EnsureGenerationHandle<FaunaGeneticsTuningDTO>(BufferID.EcosystemFaunaGeneticsTuning, 1, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _faunaGeneticsProfiles = VaultNativeArray<FaunaGeneticsProfileDTO>.Create(vault, vault.EnsureGenerationHandle<FaunaGeneticsProfileDTO>(BufferID.EcosystemFaunaGeneticsProfiles, FaunaGeneticsProfileCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _faunaGeneticsCsvScratch = VaultNativeArray<byte>.Create(vault, vault.EnsureGenerationHandle<byte>(BufferID.EcosystemFaunaGeneticsCsvScratch, FaunaGeneticsCsvScratchBytes, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory));
+            _macroHydrationScratch = VaultNativeArray<MacroSwarm>.Create(vault, vault.EnsureGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroHydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroDehydrationScratch = VaultNativeArray<MacroSwarm>.Create(vault, vault.EnsureGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroDehydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
             _headlessEntities = new HeadlessEntitySoA
             {
-                Positions = VaultNativeArray<float3>.Create(vault, vault.GetGenerationHandle<float3>(BufferID.EcosystemHeadlessPositions, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                SpeciesID = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemHeadlessSpeciesId, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                Hunger = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemHeadlessHunger, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                SectorCoord = VaultNativeArray<int2>.Create(vault, vault.GetGenerationHandle<int2>(BufferID.EcosystemHeadlessSectorCoord, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                SectorID = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemHeadlessSectorId, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                FaunaGenomes = VaultNativeArray<ulong>.Create(vault, vault.GetGenerationHandle<ulong>(BufferID.EcosystemHeadlessFaunaGenomes, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationRadiation = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemHeadlessMutationRadiation, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationToxicity = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemHeadlessMutationToxicity, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationBrine = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemHeadlessMutationBrine, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationStableHashes = VaultNativeArray<uint>.Create(vault, vault.GetGenerationHandle<uint>(BufferID.EcosystemHeadlessMutationStableHashes, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationResults = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemHeadlessMutationResults, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory))
+                Positions = VaultNativeArray<float3>.Create(vault, vault.EnsureGenerationHandle<float3>(BufferID.EcosystemHeadlessPositions, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                SpeciesID = VaultNativeArray<byte>.Create(vault, vault.EnsureGenerationHandle<byte>(BufferID.EcosystemHeadlessSpeciesId, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                Hunger = VaultNativeArray<byte>.Create(vault, vault.EnsureGenerationHandle<byte>(BufferID.EcosystemHeadlessHunger, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                SectorCoord = VaultNativeArray<int2>.Create(vault, vault.EnsureGenerationHandle<int2>(BufferID.EcosystemHeadlessSectorCoord, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                SectorID = VaultNativeArray<int>.Create(vault, vault.EnsureGenerationHandle<int>(BufferID.EcosystemHeadlessSectorId, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                FaunaGenomes = VaultNativeArray<ulong>.Create(vault, vault.EnsureGenerationHandle<ulong>(BufferID.EcosystemHeadlessFaunaGenomes, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory)),
+                MutationRadiation = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemHeadlessMutationRadiation, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationToxicity = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemHeadlessMutationToxicity, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationBrine = VaultNativeArray<float>.Create(vault, vault.EnsureGenerationHandle<float>(BufferID.EcosystemHeadlessMutationBrine, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationStableHashes = VaultNativeArray<uint>.Create(vault, vault.EnsureGenerationHandle<uint>(BufferID.EcosystemHeadlessMutationStableHashes, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationResults = VaultNativeArray<byte>.Create(vault, vault.EnsureGenerationHandle<byte>(BufferID.EcosystemHeadlessMutationResults, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory))
             };
-            _sectorIndexEntries = VaultNativeArray<EcosystemIndexEntry>.Create(vault, vault.GetGenerationHandle<EcosystemIndexEntry>(BufferID.EcosystemSectorIndexEntries, ResolveVaultIndexCapacity(maxTrackedSectors), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _apexTerritorySamples = VaultNativeArray<ApexTerritorySample>.Create(vault, vault.GetGenerationHandle<ApexTerritorySample>(BufferID.EcosystemApexTerritorySamples, ApexTerritoryOverlapCandidateCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _apexTerritoryOverlapResults = VaultNativeArray<ApexTerritoryOverlapResult>.Create(vault, vault.GetGenerationHandle<ApexTerritoryOverlapResult>(BufferID.EcosystemApexTerritoryOverlapResults, ApexTerritoryOverlapCandidateCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _apexSpawnGateCommands = VaultNativeArray<CapsulecastCommand>.Create(vault, vault.GetGenerationHandle<CapsulecastCommand>(BufferID.EcosystemApexSpawnGateCommands, ApexSpawnGateCommandCount, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _apexSpawnGateHits = VaultNativeArray<RaycastHit>.Create(vault, vault.GetGenerationHandle<RaycastHit>(BufferID.EcosystemApexSpawnGateHits, ApexSpawnGateMaxHits, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _floraPredatorAupUpload = VaultNativeArray<float4>.Create(vault, vault.GetGenerationHandle<float4>(BufferID.EcosystemFloraPredatorAupUpload, FloraPredatorAupBufferCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _saveSnapshotSectors = VaultNativeArray<EcosystemSectorSaveRecord>.Create(vault, vault.GetGenerationHandle<EcosystemSectorSaveRecord>(
+            InitializeFaunaGeneticsVaultState();
+            _sectorIndexEntries = VaultNativeArray<EcosystemIndexEntry>.Create(vault, vault.EnsureGenerationHandle<EcosystemIndexEntry>(BufferID.EcosystemSectorIndexEntries, ResolveVaultIndexCapacity(maxTrackedSectors), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _apexTerritorySamples = VaultNativeArray<ApexTerritorySample>.Create(vault, vault.EnsureGenerationHandle<ApexTerritorySample>(BufferID.EcosystemApexTerritorySamples, ApexTerritoryOverlapCandidateCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _apexTerritoryOverlapResults = VaultNativeArray<ApexTerritoryOverlapResult>.Create(vault, vault.EnsureGenerationHandle<ApexTerritoryOverlapResult>(BufferID.EcosystemApexTerritoryOverlapResults, ApexTerritoryOverlapCandidateCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _floraPredatorAupUpload = VaultNativeArray<float4>.Create(vault, vault.EnsureGenerationHandle<float4>(BufferID.EcosystemFloraPredatorAupUpload, FloraPredatorAupBufferCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _saveSnapshotSectors = VaultNativeArray<EcosystemSectorSaveRecord>.Create(vault, vault.EnsureGenerationHandle<EcosystemSectorSaveRecord>(
                 BufferID.EcosystemSaveSnapshotSectors,
                 maxTrackedSectors + maxTrackedBiomassCells + (maxTrackedSectors * 2) + (MacroSwarmCapacity * 4),
                 SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory));
-            _saveSnapshotBiomassRuns = VaultNativeArray<EcosystemBiomassSaveRun>.Create(vault, vault.GetGenerationHandle<EcosystemBiomassSaveRun>(
+            _saveSnapshotBiomassRuns = VaultNativeArray<EcosystemBiomassSaveRun>.Create(vault, vault.EnsureGenerationHandle<EcosystemBiomassSaveRun>(
                 BufferID.EcosystemSaveSnapshotBiomassRuns,
                 maxTrackedBiomassCells,
                 SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory));
             // COLD ALLOC: FaunaBrain[16] - managed Apex brain lookup paired with Burst overlap result indices - owner: EcosystemDirector
             _apexTerritoryBrains = new FaunaBrain[ApexTerritoryOverlapCandidateCapacity];
-            _floraPredatorAupBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer - owner: EcosystemDirector
+            _floraPredatorAupBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer A - owner: EcosystemDirector
+            _floraPredatorAupBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer B - owner: EcosystemDirector
+            _activeFloraPredatorAupBuffer = _floraPredatorAupBufferA;
+            _floraPredatorAupUploadIndex = 0;
             _floraPredatorAupGlobalsDirty = true;
-            PublishFloraPredatorAupGlobals(0);
+            PublishFloraPredatorAupGlobalsImmediate(0);
             Shader.SetGlobalColor(_GlobalOceanPanicColorId, new Color(1f, 0.05f, 0.035f, 1f));
             Shader.SetGlobalFloat(_ApexInSectorId, 0f);
             Shader.SetGlobalFloat(_BiomassOvergrowthId, 0f);
-            PublishGlobalOceanPanic(0f);
+            PublishGlobalOceanPanicImmediate(0f);
             _activeSectorCount = 0;
             _activeBiomassCellCount = 0;
             _pendingBiomassImpactCount = 0;
@@ -3510,6 +3634,7 @@ namespace Hecton8.World
             _biomassBlackBoxCursor = 0;
             _macroSwarmBlackBoxCursor = 0;
             _faunaMutationBlackBoxCursor = 0;
+            _faunaGeneticsTelemetryCursor = 0;
             _macroHydrationScratchCount = 0;
             _macroDehydrationScratchCount = 0;
             _totalMutatedEntities = 0;
@@ -3523,6 +3648,10 @@ namespace Hecton8.World
             _lastMutationRadiationRads = 0f;
             _lastMutationToxicity01 = 0f;
             _lastMutationBrineDepth01 = 0f;
+            _lastFaunaGenomeBurstMicroseconds = 0f;
+            _faunaGenomeMutationScheduleTimestamp = 0L;
+            _lastFaunaGenomeCompiledCount = 0;
+            _lastFaunaGeneticsDumpFrame = -1;
             _activeMacroSwarmCount = 0;
             _lastMacroSwarmArrivalCount = 0;
             _lastMacroSwarmsHydrated = 0;
@@ -3538,10 +3667,7 @@ namespace Hecton8.World
             _scheduledGenomeMutationHandle = default;
             _macroSwarmTravelHandle = default;
             _scheduledApexTerritoryOverlapHandle = default;
-            _apexSpawnGateHandle = default;
-            _apexSpawnGatePendingCell = int3.zero;
             _apexSpawnGateCachedCell = int3.zero;
-            _apexSpawnGateScheduled = false;
             _apexSpawnGateHasCachedResult = false;
             _apexSpawnGateCachedBlocked = 0;
             _solveScheduled = false;
@@ -3570,6 +3696,124 @@ namespace Hecton8.World
             _hostilityTier = 0;
         }
 
+        private void InitializeFaunaGeneticsVaultState()
+        {
+            if (_faunaGeneticsTuning.IsCreated && _faunaGeneticsTuning.Length > 0)
+                _faunaGeneticsTuning[0] = FaunaGeneticsTuningDTO.CreateDefault();
+
+            _lastFaunaGeneticsProfileCount = 0;
+            _faunaGeneticsCsvLastWriteTicks = 0L;
+#if UNITY_EDITOR
+            TryReloadFaunaGeneticsProfilesFromCsv();
+#endif
+        }
+
+#if UNITY_EDITOR
+        private bool TryReloadFaunaGeneticsProfilesFromCsv()
+        {
+            if (!_faunaGeneticsProfiles.IsCreated ||
+                !_faunaGeneticsCsvScratch.IsCreated ||
+                !_faunaGeneticsTuning.IsCreated ||
+                _faunaGeneticsTuning.Length <= 0)
+            {
+                return false;
+            }
+
+            string path = ResolveExistingProjectPath(
+                FaunaGeneticsProfilesCsvPrimaryRelativePath,
+                FaunaGeneticsProfilesCsvFallbackRelativePath);
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            FileInfo fileInfo = new FileInfo(path);
+            if (!fileInfo.Exists ||
+                fileInfo.Length <= 0L ||
+                fileInfo.Length > _faunaGeneticsCsvScratch.Length)
+            {
+                return false;
+            }
+
+            long writeTicks = fileInfo.LastWriteTimeUtc.Ticks;
+            if (writeTicks == _faunaGeneticsCsvLastWriteTicks)
+                return false;
+
+            int byteCount = TryReadFileIntoScratch(path, _faunaGeneticsCsvScratch);
+            if (byteCount <= 0)
+                return false;
+
+            FaunaGeneticsTuningDTO tuning = _faunaGeneticsTuning[0].StateHash != 0u
+                ? _faunaGeneticsTuning[0]
+                : FaunaGeneticsTuningDTO.CreateDefault();
+            unsafe
+            {
+                byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<byte>(_faunaGeneticsCsvScratch.Resolve());
+                ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(bytes, byteCount);
+                if (!FaunaGeneticsProfileCsv.TryApplyProfiles(csv, _faunaGeneticsProfiles.Resolve(), ref tuning, out int updatedCount))
+                    return false;
+
+                _faunaGeneticsTuning[0] = tuning;
+                _lastFaunaGeneticsProfileCount = updatedCount;
+                _faunaGeneticsCsvLastWriteTicks = writeTicks;
+            }
+
+            return true;
+        }
+#endif
+
+        private static string ResolveExistingProjectPath(string primaryRelativePath, string fallbackRelativePath)
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string primary = Path.Combine(projectRoot, primaryRelativePath);
+            if (File.Exists(primary))
+                return primary;
+
+            string fallback = Path.Combine(projectRoot, fallbackRelativePath);
+            return File.Exists(fallback) ? fallback : string.Empty;
+        }
+
+        private static unsafe int TryReadFileIntoScratch(string path, VaultNativeArray<byte> scratch)
+        {
+            NativeArray<byte> bytes = scratch.Resolve();
+            if (string.IsNullOrEmpty(path) || !bytes.IsCreated || bytes.Length <= 0)
+                return 0;
+
+            try
+            {
+                using FileStream stream = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    bufferSize: 4096,
+                    options: FileOptions.SequentialScan);
+
+                if (stream.Length <= 0L || stream.Length > bytes.Length)
+                    return 0;
+
+                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr<byte>(bytes);
+                Span<byte> span = new Span<byte>(ptr, (int)stream.Length);
+                int totalRead = 0;
+                while (totalRead < span.Length)
+                {
+                    int read = stream.Read(span.Slice(totalRead));
+                    if (read <= 0)
+                        break;
+
+                    totalRead += read;
+                }
+
+                return totalRead == span.Length ? totalRead : 0;
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return 0;
+            }
+        }
+
         private void DisposeRuntimeState()
         {
             JobHandle disposeDependency = _solveScheduled ? _scheduledSolveHandle : default;
@@ -3579,9 +3823,10 @@ namespace Hecton8.World
                 disposeDependency = JobHandle.CombineDependencies(disposeDependency, _macroSwarmTravelHandle);
             if (_apexTerritoryOverlapScheduled)
                 disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledApexTerritoryOverlapHandle);
-            disposeDependency = JobHandle.CombineDependencies(disposeDependency, _apexSpawnGateHandle);
-
-            ReleaseBuffer(ref _floraPredatorAupBuffer);
+            ReleaseBuffer(ref _floraPredatorAupBufferA);
+            ReleaseBuffer(ref _floraPredatorAupBufferB);
+            _activeFloraPredatorAupBuffer = null;
+            _floraPredatorAupUploadIndex = 0;
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
             Shader.SetGlobalFloat(_BiomassOvergrowthId, 0f);
             _lastPublishedFloraPredatorAupCount = 0;
@@ -3614,6 +3859,10 @@ namespace Hecton8.World
             _macroSwarmMutationBrine = default;
             _macroSwarmMutationResults = default;
             _faunaMutationBlackBox = default;
+            _faunaGeneticsTelemetry = default;
+            _faunaGeneticsTuning = default;
+            _faunaGeneticsProfiles = default;
+            _faunaGeneticsCsvScratch = default;
             _macroHydrationScratch = default;
             _macroDehydrationScratch = default;
             _macroHydrationScratchCount = 0;
@@ -3624,8 +3873,6 @@ namespace Hecton8.World
             _sectorIndexEntries = default;
             _apexTerritorySamples = default;
             _apexTerritoryOverlapResults = default;
-            _apexSpawnGateCommands = default;
-            _apexSpawnGateHits = default;
             _floraPredatorAupUpload = default;
             _saveSnapshotSectors = default;
             _saveSnapshotBiomassRuns = default;
@@ -3644,6 +3891,7 @@ namespace Hecton8.World
             _biomassBlackBoxCursor = 0;
             _macroSwarmBlackBoxCursor = 0;
             _faunaMutationBlackBoxCursor = 0;
+            _faunaGeneticsTelemetryCursor = 0;
             _totalMutatedEntities = 0;
             _lastHeadlessMutationCount = 0;
             _lastMacroSwarmMutationCount = 0;
@@ -3655,6 +3903,12 @@ namespace Hecton8.World
             _lastMutationRadiationRads = 0f;
             _lastMutationToxicity01 = 0f;
             _lastMutationBrineDepth01 = 0f;
+            _lastFaunaGenomeBurstMicroseconds = 0f;
+            _faunaGenomeMutationScheduleTimestamp = 0L;
+            _faunaGeneticsCsvLastWriteTicks = 0L;
+            _lastFaunaGeneticsProfileCount = 0;
+            _lastFaunaGenomeCompiledCount = 0;
+            _lastFaunaGeneticsDumpFrame = -1;
             _activeMacroSwarmCount = 0;
             _lastMacroSwarmArrivalCount = 0;
             _lastMacroSwarmsHydrated = 0;
@@ -3668,10 +3922,7 @@ namespace Hecton8.World
             _scheduledGenomeMutationHandle = default;
             _macroSwarmTravelHandle = default;
             _scheduledApexTerritoryOverlapHandle = default;
-            _apexSpawnGateHandle = default;
-            _apexSpawnGatePendingCell = int3.zero;
             _apexSpawnGateCachedCell = int3.zero;
-            _apexSpawnGateScheduled = false;
             _apexSpawnGateHasCachedResult = false;
             _apexSpawnGateCachedBlocked = 0;
             _solveScheduled = false;
@@ -3720,8 +3971,7 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTickable = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterSlowTickable()
@@ -3741,8 +3991,7 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFrostTickable(this, PriorityLayer.Environment);
-            _registeredFrostTickable = SystemDispatcher.GetFrostLane(PriorityLayer.Environment).Contains(this);
+            _registeredFrostTickable = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFrostTickable()
@@ -3762,8 +4011,7 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrameTickable = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            _registeredLateFrameTickable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -3773,6 +4021,45 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registeredLateFrameTickable = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.AmbientBiotaRuntime:
+                    _cachedAmbientBiota = currentService as IAmbientBiotaService;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    break;
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _cachedPersistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
+                    _cachedSargassumMicroFauna = currentService as SargassumMicroFaunaBoids;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+            }
         }
 
         private void EnsurePlayerSectorRegistered()
@@ -4127,7 +4414,7 @@ namespace Hecton8.World
 
         private bool TryStageActiveBiotaDehydration(in SectorDehydratedSignal signal)
         {
-            IAmbientBiotaService activeBiota = GlobalRegistry.AmbientBiota;
+            IAmbientBiotaService activeBiota = _cachedAmbientBiota;
             if (activeBiota == null ||
                 !activeBiota.IsInitialized ||
                 !activeBiota.TryPackMacroHydratedBiota(
@@ -4212,7 +4499,7 @@ namespace Hecton8.World
             if (!_macroHydrationScratch.IsCreated || _macroHydrationScratchCount <= 0)
                 return false;
 
-            IAmbientBiotaService activeBiota = GlobalRegistry.AmbientBiota;
+            IAmbientBiotaService activeBiota = _cachedAmbientBiota;
             if (activeBiota == null || !activeBiota.IsInitialized)
                 return false;
 
@@ -4361,6 +4648,7 @@ namespace Hecton8.World
             if (!scheduled)
                 return default;
 
+            _faunaGenomeMutationScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             _scheduledGenomeMutationHandle = dependency;
             _genomeMutationScheduled = true;
             return dependency;
@@ -4461,6 +4749,20 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _scheduledGenomeMutationHandle, forceComplete))
                 return;
 
+            if (_faunaGenomeMutationScheduleTimestamp != 0L)
+            {
+                long ticks = System.Diagnostics.Stopwatch.GetTimestamp() - _faunaGenomeMutationScheduleTimestamp;
+                if (ticks < 0L)
+                    ticks = 0L;
+                double seconds = ticks / (double)System.Diagnostics.Stopwatch.Frequency;
+                _lastFaunaGenomeBurstMicroseconds = math.isfinite(seconds) ? (float)(seconds * 1000000d) : 0f;
+                _faunaGenomeMutationScheduleTimestamp = 0L;
+            }
+            else
+            {
+                _lastFaunaGenomeBurstMicroseconds = 0f;
+            }
+
             _genomeMutationScheduled = false;
             int headlessMutated = 0;
             int macroMutated = 0;
@@ -4498,6 +4800,7 @@ namespace Hecton8.World
 
             _lastHeadlessMutationCount = headlessMutated;
             _lastMacroSwarmMutationCount = macroMutated;
+            _lastFaunaGenomeCompiledCount = math.max(0, _scheduledHeadlessMutationCount + _scheduledMacroSwarmMutationCount);
             if (headlessMutated + macroMutated > 0)
             {
                 RecordGenomeMutation((byte)(flags & 0xFFu), maxRadiation, maxToxicity, maxBrine, headlessMutated, macroMutated);
@@ -4752,7 +5055,7 @@ namespace Hecton8.World
                 Flags = 1,
                 QualityTier = _macroSwarmQualityTierProfileByte
             };
-            SignalBus<SwarmDispersedSignal>.Push(in signal);
+            SignalBus<SwarmDispersedSignal>.TryPush(in signal);
         }
 
         private void PushMacroSwarmBlackBox(int flags)
@@ -4888,6 +5191,168 @@ namespace Hecton8.World
             _faunaMutationBlackBoxCursor++;
             if (invalidFlag != 0)
                 DumpFaunaMutationBlackBox();
+        }
+
+        private void PushFaunaGeneticsTelemetryFrame()
+        {
+            if (!_faunaGeneticsTelemetry.IsCreated || _faunaGeneticsTelemetry.Length <= 0)
+                return;
+
+            NativeArray<ulong> headlessGenomes = _headlessEntities.FaunaGenomes;
+            NativeArray<MacroSwarm> macroSwarms = _macroSwarms;
+            int headlessCount = headlessGenomes.IsCreated ? math.min(_activeSectorCount, headlessGenomes.Length) : 0;
+            int macroCount = macroSwarms.IsCreated ? math.min(_activeMacroSwarmCount, macroSwarms.Length) : 0;
+            int activeCount = 0;
+            int invalidCount = 0;
+            int extractionOps = 0;
+            float hueSum = 0f;
+            float sizeSum = 0f;
+            float aggressionSum = 0f;
+            float patternSum = 0f;
+            uint stateHash = 2166136261u;
+            uint patternLo = 0u;
+            uint patternHi = 0u;
+
+            for (int i = 0; i < headlessCount; i++)
+                AccumulateGeneticsTelemetry(headlessGenomes[i], ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
+
+            for (int i = 0; i < macroCount; i++)
+                AccumulateGeneticsTelemetry(macroSwarms[i].Genome, ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
+
+            float invCount = activeCount > 0 ? math.rcp((float)activeCount) : 0f;
+            FaunaGeneticsTuningDTO tuning = _faunaGeneticsTuning.IsCreated && _faunaGeneticsTuning.Length > 0
+                ? _faunaGeneticsTuning[0]
+                : default;
+            int compiledGenomeCount = math.max(_lastFaunaGenomeCompiledCount, activeCount);
+            uint frame = ReadDispatcherFrameId();
+            int index = _faunaGeneticsTelemetryCursor % _faunaGeneticsTelemetry.Length;
+            _faunaGeneticsTelemetry[index] = new GeneticsTelemetryEntry
+            {
+                FrameIndex = frame,
+                StateHash = stateHash == 0u ? 1u : stateHash,
+                CompiledGenomeCount = compiledGenomeCount,
+                ActiveGenomeCount = activeCount,
+                ExtractionOperationCount = extractionOps,
+                InvalidMaskCount = invalidCount,
+                AverageHueShift01 = hueSum * invCount,
+                AverageSize01 = sizeSum * invCount,
+                AverageAggression01 = aggressionSum * invCount,
+                AveragePattern01 = patternSum * invCount,
+                BurstExecutionMicroseconds = _lastFaunaGenomeBurstMicroseconds,
+                TuningStateHash = tuning.StateHash,
+                PatternHistogramLo = patternLo,
+                PatternHistogramHi = patternHi,
+                Flags = (uint)math.select(0, 1, invalidCount > 0)
+            };
+            _faunaGeneticsTelemetryCursor++;
+
+            int frameInt = unchecked((int)frame);
+            bool shouldDump = invalidCount > 0 ||
+                              (compiledGenomeCount > 0 &&
+                               _lastFaunaGenomeBurstMicroseconds > FaunaGeneticsTelemetryBudgetMicroseconds);
+            if (shouldDump && _lastFaunaGeneticsDumpFrame != frameInt)
+            {
+                _lastFaunaGeneticsDumpFrame = frameInt;
+                DumpFaunaGeneticsTelemetry();
+            }
+        }
+
+        private static void AccumulateGeneticsTelemetry(
+            ulong mask,
+            ref int activeCount,
+            ref int invalidCount,
+            ref int extractionOps,
+            ref float hueSum,
+            ref float sizeSum,
+            ref float aggressionSum,
+            ref float patternSum,
+            ref uint stateHash,
+            ref uint patternLo,
+            ref uint patternHi)
+        {
+            if (mask == 0UL)
+            {
+                invalidCount++;
+                return;
+            }
+
+            int size = FaunaGenome64.ExtractSizeByte(mask);
+            int aggression = FaunaGenome64.ExtractAggressionByte(mask);
+            int hue = FaunaGenome64.ExtractHueByte(mask);
+            int pattern = FaunaGenome64.ExtractPatternIndex(mask);
+            activeCount++;
+            extractionOps += 4;
+            hueSum += hue * (1f / 255f);
+            sizeSum += size * (1f / 255f);
+            aggressionSum += aggression * (1f / 255f);
+            patternSum += pattern * (1f / 15f);
+            stateHash = (stateHash ^ (uint)mask) * 16777619u;
+            stateHash = (stateHash ^ (uint)(mask >> 32)) * 16777619u;
+            AddPatternHistogram(pattern, ref patternLo, ref patternHi);
+        }
+
+        private static void AddPatternHistogram(int pattern, ref uint lo, ref uint hi)
+        {
+            pattern &= 15;
+            if (pattern < 8)
+            {
+                int shift = pattern << 2;
+                uint count = ((lo >> shift) & 0x0Fu) + 1u;
+                if (count > 15u)
+                    count = 15u;
+                lo = (lo & ~(0x0Fu << shift)) | (count << shift);
+                return;
+            }
+
+            int hiShift = (pattern - 8) << 2;
+            uint hiCount = ((hi >> hiShift) & 0x0Fu) + 1u;
+            if (hiCount > 15u)
+                hiCount = 15u;
+            hi = (hi & ~(0x0Fu << hiShift)) | (hiCount << hiShift);
+        }
+
+        private unsafe void DumpFaunaGeneticsTelemetry()
+        {
+            if (!_faunaGeneticsTelemetry.IsCreated || _faunaGeneticsTelemetry.Length <= 0)
+                return;
+
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, FaunaGeneticsTelemetryDumpRelativePath);
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    int entrySize = UnsafeUtility.SizeOf<GeneticsTelemetryEntry>();
+                    int entryCapacity = _faunaGeneticsTelemetry.Length;
+                    int entryCount = math.min(math.max(0, _faunaGeneticsTelemetryCursor), entryCapacity);
+                    int oldestIndex = entryCount == entryCapacity ? _faunaGeneticsTelemetryCursor % entryCapacity : 0;
+                    const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
+                    byte* headerPtr = stackalloc byte[headerBytes];
+                    UnsafeUtility.WriteArrayElement<ulong>(headerPtr, 0, FaunaGeneticsTelemetryDumpMagic);
+                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong), 0, entryCount);
+                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + sizeof(int), 0, entrySize);
+                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 2), 0, oldestIndex);
+                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 3), 0, entryCapacity);
+                    stream.Write(new ReadOnlySpan<byte>(headerPtr, headerBytes));
+                    if (entryCount <= 0)
+                        return;
+
+                    byte* dataPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<GeneticsTelemetryEntry>(_faunaGeneticsTelemetry.Resolve());
+                    int firstCount = math.min(entryCount, entryCapacity - oldestIndex);
+                    stream.Write(new ReadOnlySpan<byte>(dataPtr + oldestIndex * entrySize, firstCount * entrySize));
+                    int secondCount = entryCount - firstCount;
+                    if (secondCount > 0)
+                        stream.Write(new ReadOnlySpan<byte>(dataPtr, secondCount * entrySize));
+                }
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)FaunaGenomeSaveHeaderMarker));
+            }
         }
 
         private unsafe void DumpFaunaMutationBlackBox()
@@ -5091,7 +5556,13 @@ namespace Hecton8.World
 
         private void PublishFloraPredatorAupBuffer(Vector3 queryOrigin)
         {
-            if (!_floraPredatorAupUpload.IsCreated || _floraPredatorAupBuffer == null)
+            _pendingFloraPredatorAupQueryOrigin = queryOrigin;
+            _floraPredatorAupRefreshDirty = true;
+        }
+
+        private void PublishFloraPredatorAupBufferImmediate(Vector3 queryOrigin)
+        {
+            if (!_floraPredatorAupUpload.IsCreated || _activeFloraPredatorAupBuffer == null)
                 return;
 
             int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
@@ -5119,7 +5590,16 @@ namespace Hecton8.World
             }
 
             if (uploadCount > 0)
-                GraphicsBufferUploadUtility.UploadNativeArray<float4>(_floraPredatorAupBuffer, _floraPredatorAupUpload.Resolve(), uploadCount);
+            {
+                GraphicsBuffer writeBuffer = ResolveFloraPredatorAupWriteBuffer();
+                if (writeBuffer == null)
+                    return;
+
+                GraphicsBufferUploadUtility.UploadNativeArray<float4>(writeBuffer, _floraPredatorAupUpload.Resolve(), uploadCount);
+                _activeFloraPredatorAupBuffer = writeBuffer;
+                _floraPredatorAupUploadIndex ^= 1;
+                _floraPredatorAupGlobalsDirty = true;
+            }
 
             bool saturated = hitCount >= FloraPredatorAupHitCapacity || uploadCount >= FloraPredatorAupBufferCapacity;
             if (saturated && !_floraPredatorAupSaturationTelemetryIssued)
@@ -5135,16 +5615,35 @@ namespace Hecton8.World
                 _floraPredatorAupSaturationTelemetryIssued = false;
             }
 
-            PublishFloraPredatorAupGlobals(uploadCount);
-            PublishApexPresenceFake(IsApexInSector(queryOrigin));
+            PublishFloraPredatorAupGlobalsImmediate(uploadCount);
+            PublishApexPresenceFakeImmediate(IsApexInSector(queryOrigin));
         }
 
         private void PublishFloraPredatorAupGlobals(int uploadCount)
         {
+            _pendingFloraPredatorAupCount = math.clamp(uploadCount, 0, FloraPredatorAupBufferCapacity);
+            _floraPredatorAupCountDirty = true;
+        }
+
+        private GraphicsBuffer ResolveFloraPredatorAupWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_floraPredatorAupUploadIndex & 1) == 0
+                ? _floraPredatorAupBufferB
+                : _floraPredatorAupBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _floraPredatorAupBufferA != null && _floraPredatorAupBufferA.IsValid()
+                ? _floraPredatorAupBufferA
+                : _floraPredatorAupBufferB;
+        }
+
+        private void PublishFloraPredatorAupGlobalsImmediate(int uploadCount)
+        {
             int safeUploadCount = math.clamp(uploadCount, 0, FloraPredatorAupBufferCapacity);
-            if (_floraPredatorAupGlobalsDirty && _floraPredatorAupBuffer != null)
+            if (_floraPredatorAupGlobalsDirty && _activeFloraPredatorAupBuffer != null)
             {
-                Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
+                Shader.SetGlobalBuffer(_PredatorAUPBufferId, _activeFloraPredatorAupBuffer);
                 Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
                 _floraPredatorAupGlobalsDirty = false;
             }
@@ -5158,6 +5657,12 @@ namespace Hecton8.World
 
         private void PublishGlobalOceanPanic(float panic01)
         {
+            _pendingGlobalOceanPanic01 = math.saturate(panic01);
+            _globalOceanPanicDirty = true;
+        }
+
+        private void PublishGlobalOceanPanicImmediate(float panic01)
+        {
             float resolvedPanic01 = math.saturate(panic01);
             if (math.abs(_lastPublishedGlobalOceanPanic01 - resolvedPanic01) < 0.001f)
                 return;
@@ -5166,7 +5671,36 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_GlobalOceanPanicId, resolvedPanic01);
         }
 
+        private void PublishBiolumFlashBangImmediate(in Vector4 flashAup, in Vector4 flashParams)
+        {
+            Shader.SetGlobalVector(_BiolumFlashBangAUPId, flashAup);
+            Shader.SetGlobalVector(_BiolumFlashBangParamsId, flashParams);
+        }
+
+        private void PublishBiomassOvergrowth(float overgrowth01)
+        {
+            _pendingBiomassOvergrowth01 = math.saturate(overgrowth01);
+            _biomassOvergrowthDirty = true;
+        }
+
+        private void PublishBiomassOvergrowthImmediate(float overgrowth01)
+        {
+            float safeOvergrowth01 = math.saturate(overgrowth01);
+            if (math.abs(_lastPublishedBiomassOvergrowth01 - safeOvergrowth01) < 0.001f)
+                return;
+
+            _lastPublishedBiomassOvergrowth01 = safeOvergrowth01;
+            Shader.SetGlobalFloat(_BiomassOvergrowthId, safeOvergrowth01);
+        }
+
         private void PublishApexPresenceFake(bool apexInSector)
+        {
+            _pendingApexInSector = apexInSector ? (byte)1 : (byte)0;
+            _apexPresenceFakeDirty = true;
+            PublishGlobalOceanPanic(_pendingApexInSector);
+        }
+
+        private void PublishApexPresenceFakeImmediate(bool apexInSector)
         {
             byte flag = apexInSector ? (byte)1 : (byte)0;
             if (_lastPublishedApexInSector != flag)
@@ -5175,7 +5709,46 @@ namespace Hecton8.World
                 Shader.SetGlobalFloat(_ApexInSectorId, flag);
             }
 
-            PublishGlobalOceanPanic(flag);
+            PublishGlobalOceanPanicImmediate(flag);
+        }
+
+        private void FlushQueuedEcosystemVisuals()
+        {
+            if (_biolumFlashBangDirty)
+            {
+                _biolumFlashBangDirty = false;
+                PublishBiolumFlashBangImmediate(in _pendingBiolumFlashBangAup, in _pendingBiolumFlashBangParams);
+            }
+
+            if (_floraPredatorAupRefreshDirty)
+            {
+                _floraPredatorAupRefreshDirty = false;
+                PublishFloraPredatorAupBufferImmediate(_pendingFloraPredatorAupQueryOrigin);
+            }
+
+            if (_floraPredatorAupCountDirty)
+            {
+                _floraPredatorAupCountDirty = false;
+                PublishFloraPredatorAupGlobalsImmediate(_pendingFloraPredatorAupCount);
+            }
+
+            if (_apexPresenceFakeDirty)
+            {
+                _apexPresenceFakeDirty = false;
+                PublishApexPresenceFakeImmediate(_pendingApexInSector != 0);
+            }
+
+            if (_globalOceanPanicDirty)
+            {
+                _globalOceanPanicDirty = false;
+                PublishGlobalOceanPanicImmediate(_pendingGlobalOceanPanic01);
+            }
+
+            if (_biomassOvergrowthDirty)
+            {
+                _biomassOvergrowthDirty = false;
+                PublishBiomassOvergrowthImmediate(_pendingBiomassOvergrowth01);
+            }
         }
 
         private static bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
@@ -5210,7 +5783,9 @@ namespace Hecton8.World
                 }
             }
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = ActiveRuntimeInstance != null
+                ? ActiveRuntimeInstance._cachedPlayerContext
+                : null;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement == null)
                 return false;
@@ -5341,6 +5916,39 @@ namespace Hecton8.World
             _biomassSumScratch[slotIndex] = prey + predator;
             _biomassCellFlags[slotIndex] = predator > 0.0001f ? BiomassCellFlagPredatorSeen : (byte)0;
             return slotIndex;
+        }
+
+        private bool TryResolveSectorSlotReadOnly(int2 sectorCoord, out int slotIndex)
+        {
+            slotIndex = -1;
+            if (!_sectorIndexEntries.IsCreated || !_sectorFrontStates.IsCreated)
+                return false;
+
+            if (!TryFindIndexEntry(_sectorIndexEntries, PackSectorKey(sectorCoord), out slotIndex))
+                return false;
+
+            return (uint)slotIndex < (uint)_activeSectorCount &&
+                   (uint)slotIndex < (uint)_sectorFrontStates.Length;
+        }
+
+        private bool TryResolveBiomassCellSlotReadOnly(int2 macroCellCoord, out int slotIndex)
+        {
+            slotIndex = -1;
+            if (!_biomassIndexEntries.IsCreated ||
+                !_preyBiomassFront.IsCreated ||
+                !_predatorBiomassFront.IsCreated ||
+                !_biomassCarryingCapacity.IsCreated)
+            {
+                return false;
+            }
+
+            if (!TryFindIndexEntry(_biomassIndexEntries, PackBiomassCellKey(macroCellCoord), out slotIndex))
+                return false;
+
+            return (uint)slotIndex < (uint)_activeBiomassCellCount &&
+                   (uint)slotIndex < (uint)_preyBiomassFront.Length &&
+                   (uint)slotIndex < (uint)_predatorBiomassFront.Length &&
+                   (uint)slotIndex < (uint)_biomassCarryingCapacity.Length;
         }
 
         private float ResolveBiomassCarryingCapacity01(int2 macroCellCoord)
@@ -5527,7 +6135,7 @@ namespace Hecton8.World
                 Severity = 3,
                 Flags = 0
             };
-            SignalBus<HUDNotificationSignal>.Push(in notification);
+            SignalBus<HUDNotificationSignal>.TryPush(in notification);
         }
 
         private static bool TryReadLatestScannerToolActiveSignal(
@@ -5592,7 +6200,7 @@ namespace Hecton8.World
             _debugGlobalBiomassSum = globalSum;
             _debugFloraOvergrowth01 = overgrowth01;
             _debugBiomassCellCount = _activeBiomassCellCount;
-            Shader.SetGlobalFloat(_BiomassOvergrowthId, overgrowth01);
+            PublishBiomassOvergrowth(overgrowth01);
             PushBiomassBlackBox(globalSum, preySum, predatorSum, overgrowth01, invalidFlag);
             GlobalTelemetryBus.PublishPerformanceWarning(_BiomassTelemetryHash, _EcosystemDirectorContextHash, globalSum);
             if (invalidFlag != 0)
@@ -5611,7 +6219,7 @@ namespace Hecton8.World
                 Source = 3,
                 Flags = 0
             };
-            SignalBus<ProgressionEventSignal>.Push(in signal);
+            SignalBus<ProgressionEventSignal>.TryPush(in signal);
         }
 
         private void PushBiomassBlackBox(
@@ -5985,7 +6593,7 @@ namespace Hecton8.World
             _debugPreyBiomassSum = 0f;
             _debugPredatorBiomassSum = 0f;
             _debugFloraOvergrowth01 = 0f;
-            Shader.SetGlobalFloat(_BiomassOvergrowthId, 0f);
+            PublishBiomassOvergrowth(0f);
         }
 
         private void ClearMacroSwarmRuntimeState()
@@ -6138,14 +6746,30 @@ namespace Hecton8.World
                 sectorIds[slotIndex] = ResolveSectorId(state.SectorCoord);
             if (mutationStableHashes.IsCreated)
                 mutationStableHashes[slotIndex] = MixSectorBits(state.SectorCoord.x, state.SectorCoord.y);
-            if (faunaGenomes.IsCreated && faunaGenomes[slotIndex] == 0UL)
-            {
-                uint stableHash = MixSectorBits(state.SectorCoord.x, state.SectorCoord.y);
-                faunaGenomes[slotIndex] = FaunaGenome64.BuildGenome(
-                    stableHash,
-                    state.SpeedMultiplier,
-                    state.SpeedMultiplier);
-            }
+            if (faunaGenomes.IsCreated)
+                faunaGenomes[slotIndex] = CompileHeadlessFaunaGenome(slotIndex, in state);
+        }
+
+        private ulong CompileHeadlessFaunaGenome(int slotIndex, in SectorPopulationState state)
+        {
+            uint stableHash = MixSectorBits(state.SectorCoord.x, state.SectorCoord.y);
+            uint speciesHash = (uint)math.select(1, 2, state.PredatorPopulationRounded > state.PreyPopulationRounded);
+            double3 sectorCenterAup = new double3(
+                ((double)state.SectorCoord.x + 0.5d) * SectorEdgeLengthMeters,
+                0d,
+                ((double)state.SectorCoord.y + 0.5d) * SectorEdgeLengthMeters);
+            uint seed = FaunaGenome64.BuildDoubleAupSeed(
+                sectorCenterAup,
+                stableHash,
+                speciesHash,
+                (uint)math.max(0, slotIndex));
+            ulong mask = FaunaGenome64.CompileGeneticMaskFromSeed(seed);
+            if (!_faunaGeneticsTuning.IsCreated || _faunaGeneticsTuning.Length <= 0)
+                return mask;
+
+            FaunaGeneticsTuningDTO tuning = _faunaGeneticsTuning[0];
+            FaunaGeneticsProfileDTO profile = FaunaGenome64.ResolveProfile(_faunaGeneticsProfiles.Resolve(), speciesHash);
+            return FaunaGenome64.ApplyTuningAndProfile(mask, in tuning, in profile);
         }
 
         private static void ResolveBucketTablePopulation(

@@ -1,0 +1,15 @@
+﻿{
+  "agent": "SHINOBU_349",
+  "summary": "OOP Story Triggers Eradicated",
+  "filesScanned": 59,
+  "offenderCount": 3,
+  "storyOffenderCount": 0,
+  "nonStoryOffenderCount": 3,
+  "parserFailureCount": 0,
+  "scannerParserRoute": "Roslyn CSharpSyntaxTree method/invocation/type/member pass; token fallback only on parser failure",
+  "offenders": [
+    { "file": "Assets/_Project/Scripts/Audio/AcousticReverbPresetTrigger.cs", "token": "OnTriggerEnter", "classification": "non-story", "parserRoute": "RoslynSyntax" },
+    { "file": "Assets/_Project/Scripts/Audio/AcousticReverbPresetTrigger.cs", "token": "BoxCollider", "classification": "non-story", "parserRoute": "RoslynSyntax" },
+    { "file": "Assets/_Project/Scripts/Audio/AcousticReverbPresetTrigger.cs", "token": "isTrigger", "classification": "non-story", "parserRoute": "RoslynSyntax" }
+  ]
+}

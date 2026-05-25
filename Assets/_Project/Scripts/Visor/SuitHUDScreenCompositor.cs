@@ -12,7 +12,7 @@ namespace NASAPunk.Visor
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Screen Compositor")]
-    public sealed class SuitHUDScreenCompositor : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
+    public sealed class SuitHUDScreenCompositor : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly List<SuitHUDScreenCompositor> s_activeCompositors = new List<SuitHUDScreenCompositor>(2);
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
@@ -63,6 +63,9 @@ namespace NASAPunk.Visor
             results.Clear();
             for (int i = 0; i < s_activeCompositors.Count; i++)
             {
+                if (results.Count >= results.Capacity)
+                    break;
+
                 SuitHUDScreenCompositor compositor = s_activeCompositors[i];
                 if (compositor != null && compositor.isActiveAndEnabled)
                     results.Add(compositor);
@@ -152,7 +155,7 @@ namespace NASAPunk.Visor
                 TryRegisterRuntimeTick();
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (!_pendingRefresh && !NeedsAutoResolve())
                 return;
@@ -482,7 +485,7 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying || _tickRegistered)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterRuntimeTick()
@@ -490,7 +493,7 @@ namespace NASAPunk.Visor
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
 
             _tickRegistered = false;
         }

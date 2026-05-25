@@ -429,7 +429,7 @@ namespace Hecton8.Inventory
             if (vault == null || requiredLength <= 0)
                 return default;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 owner,
@@ -785,11 +785,13 @@ namespace Hecton8.Inventory
                 return dependency;
 
             NativeQueue<LogisticsTransferSignal>.ParallelWriter writer = default;
+            NativeArray<int> writerBudget = default;
             int emit = 0;
             if (emitTransferSignals)
             {
                 EnsureSignalLane();
                 writer = SignalBus<LogisticsTransferSignal>.ParallelWriter;
+                writerBudget = SignalBus<LogisticsTransferSignal>.ParallelWriterBudget;
                 emit = 1;
             }
 
@@ -799,6 +801,7 @@ namespace Hecton8.Inventory
                 Requests = requests,
                 Results = results,
                 TransferSignalWriter = writer,
+                TransferSignalWriterBudget = writerBudget,
                 RequestCount = requestCount,
                 EmitTransferSignals = emit
             }.Schedule(dependency);
@@ -1150,7 +1153,7 @@ namespace Hecton8.Inventory
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct BuildResourceHashIndexJob : IJobParallelFor
+    public unsafe struct BuildResourceHashIndexJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<InventorySlotDTO> Slots;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> IndexKeys;
@@ -1372,6 +1375,7 @@ namespace Hecton8.Inventory
         // that lane; authoritative item state remains in Slots and is protected by ReservedLock CompareExchange.
         [NativeDisableContainerSafetyRestriction]
         public NativeQueue<LogisticsTransferSignal>.ParallelWriter TransferSignalWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> TransferSignalWriterBudget;
         public int RequestCount;
         public int EmitTransferSignals;
 
@@ -1477,7 +1481,7 @@ namespace Hecton8.Inventory
                     double3 sourceAup = InventoryRoutingNetwork.DecodeAupHash(source.ContainerAUPHash);
                     double3 destinationAup = InventoryRoutingNetwork.DecodeAupHash(destination.ContainerAUPHash);
                     double3 midpointLocalFromSource = (destinationAup - sourceAup) * 0.5d;
-                    TransferSignalWriter.Enqueue(new LogisticsTransferSignal
+                    SignalBus<LogisticsTransferSignal>.TryEnqueueBounded(TransferSignalWriter, TransferSignalWriterBudget, new LogisticsTransferSignal
                     {
                         TransactionId = request.TransactionId,
                         ItemHashID = request.ItemHashID,
@@ -2105,6 +2109,7 @@ namespace Hecton8.Inventory
         }
     }
 
+#if UNITY_EDITOR
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct CsvItemLimitsIngestJob : IJob
     {
@@ -2261,4 +2266,5 @@ namespace Hecton8.Inventory
             return parsed ? value : 0u;
         }
     }
+#endif
 }

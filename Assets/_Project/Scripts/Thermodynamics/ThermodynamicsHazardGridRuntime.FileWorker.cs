@@ -36,8 +36,13 @@ namespace Hecton8.Thermodynamics
 
         private void StartConfigWorkerIfNeeded()
         {
-            if (_configWorkerThread != null || !HasHandle(in _binaryConstantBytes) || !HasHandle(in _csvBytes))
+            if (_configWorkerThread != null || !HasHandle(in _binaryConstantBytes))
                 return;
+
+#if UNITY_EDITOR
+            if (!HasHandle(in _csvBytes))
+                return;
+#endif
 
             _binaryConstantsPath = Path.Combine(UnityEngine.Application.streamingAssetsPath, "thermodynamic_constants.h8bin");
 #if UNITY_EDITOR
@@ -46,7 +51,9 @@ namespace Hecton8.Thermodynamics
             _csvOverridePath = null;
 #endif
             _binaryConstantsWorkerBytes ??= new byte[BinaryConstantsBytes]; // COLD ALLOC: byte[16] - config worker staging, copied into Vault lane on main thread - owner: ThermodynamicsHazardGridRuntime
+#if UNITY_EDITOR
             _csvWorkerBytes ??= new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - CSV worker staging, copied into Vault lane on main thread - owner: ThermodynamicsHazardGridRuntime
+#endif
             Volatile.Write(ref _configWorkerRun, 1);
 
             _configWorkerThread = new Thread(ConfigWorkerLoop)
@@ -129,6 +136,7 @@ namespace Hecton8.Thermodynamics
                 Volatile.Write(ref _binaryRequestState, ConfigWorkerIdle);
             }
 
+#if UNITY_EDITOR
             if (HasHandle(in _constants) && Volatile.Read(ref _csvRequestState) == ConfigWorkerReady)
             {
                 int read = Volatile.Read(ref _csvWorkerReadCount);
@@ -160,6 +168,7 @@ namespace Hecton8.Thermodynamics
 
                 Volatile.Write(ref _csvRequestState, ConfigWorkerIdle);
             }
+#endif
         }
 
         private void ConfigWorkerLoop()
@@ -173,11 +182,13 @@ namespace Hecton8.Thermodynamics
                     RunBinaryConstantsLoad();
                 }
 
+#if UNITY_EDITOR
                 if (Interlocked.CompareExchange(ref _csvRequestState, ConfigWorkerBusy, ConfigWorkerRequested) == ConfigWorkerRequested)
                 {
                     worked = true;
                     RunCsvOverrideLoad();
                 }
+#endif
 
                 if (!worked)
                     Thread.Sleep(ConfigWorkerSleepMs);
@@ -207,6 +218,7 @@ namespace Hecton8.Thermodynamics
             Volatile.Write(ref _binaryRequestState, nextState);
         }
 
+#if UNITY_EDITOR
         private void RunCsvOverrideLoad()
         {
             int nextState = ConfigWorkerIdle;
@@ -229,6 +241,7 @@ namespace Hecton8.Thermodynamics
 
             Volatile.Write(ref _csvRequestState, nextState);
         }
+#endif
 
         private bool TryCopyWorkerBytesToVault(
             in VaultGenerationHandle<byte> handle,
@@ -310,7 +323,7 @@ namespace Hecton8.Thermodynamics
 
         private static int ReadConfigFileMapped(string path, byte* destination, int capacity)
         {
-            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, CsvBufferBytes, FileOptions.SequentialScan);
+            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, ConfigFileStreamBufferBytes, FileOptions.SequentialScan);
             long length = stream.Length;
             if (length <= 0L)
                 return 0;
@@ -336,7 +349,7 @@ namespace Hecton8.Thermodynamics
 
         private static int ReadConfigFileStreamed(string path, byte* destination, int capacity)
         {
-            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, CsvBufferBytes, FileOptions.SequentialScan);
+            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, ConfigFileStreamBufferBytes, FileOptions.SequentialScan);
             int read = 0;
             Span<byte> remaining = new Span<byte>(destination, capacity);
             while (!remaining.IsEmpty)

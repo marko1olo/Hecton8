@@ -28,6 +28,12 @@ namespace Hecton8.World
         [SerializeField] private int _debugBehaviourCount;
         [SerializeField] private int _debugRigidbodyCount;
 
+        private static readonly List<Renderer> _RendererScratch = new List<Renderer>(32);
+        private static readonly List<Collider> _ColliderScratch = new List<Collider>(32);
+        private static readonly List<Rigidbody> _RigidbodyScratch = new List<Rigidbody>(16);
+        private static readonly List<Behaviour> _BehaviourScratch = new List<Behaviour>(32);
+        private static readonly List<Behaviour> _FilteredBehaviourScratch = new List<Behaviour>(32);
+
         private ShadowCastingMode[] _originalShadowModes;
         private bool[] _originalReceiveShadows;
         private bool[] _originalRigidbodyKinematic;
@@ -53,9 +59,21 @@ namespace Hecton8.World
                 return;
             }
 
-            renderers = GetComponentsInChildren<Renderer>(true);
-            colliders = GetComponentsInChildren<Collider>(true);
-            rigidbodies = GetComponentsInChildren<Rigidbody>(true);
+            _RendererScratch.Clear();
+            GetComponentsInChildren<Renderer>(true, _RendererScratch);
+            renderers = _RendererScratch.ToArray();
+            _RendererScratch.Clear();
+
+            _ColliderScratch.Clear();
+            GetComponentsInChildren<Collider>(true, _ColliderScratch);
+            colliders = _ColliderScratch.ToArray();
+            _ColliderScratch.Clear();
+
+            _RigidbodyScratch.Clear();
+            GetComponentsInChildren<Rigidbody>(true, _RigidbodyScratch);
+            rigidbodies = _RigidbodyScratch.ToArray();
+            _RigidbodyScratch.Clear();
+
             behaviours = CollectBehaviours();
             UpdateDiagnostics();
         }
@@ -193,18 +211,22 @@ namespace Hecton8.World
 
         private Behaviour[] CollectBehaviours()
         {
-            Behaviour[] allBehaviours = GetComponentsInChildren<Behaviour>(true);
-            List<Behaviour> filtered = new List<Behaviour>(allBehaviours.Length);
-            for (int i = 0; i < allBehaviours.Length; i++)
+            _BehaviourScratch.Clear();
+            _FilteredBehaviourScratch.Clear();
+            GetComponentsInChildren<Behaviour>(true, _BehaviourScratch);
+            for (int i = 0; i < _BehaviourScratch.Count; i++)
             {
-                Behaviour behaviour = allBehaviours[i];
+                Behaviour behaviour = _BehaviourScratch[i];
                 if (behaviour == null || behaviour == this || behaviour is WorldSliceAnchor || behaviour is WorldFidelityRoot)
                     continue;
 
-                filtered.Add(behaviour);
+                _FilteredBehaviourScratch.Add(behaviour);
             }
 
-            return filtered.ToArray();
+            Behaviour[] result = _FilteredBehaviourScratch.ToArray();
+            _BehaviourScratch.Clear();
+            _FilteredBehaviourScratch.Clear();
+            return result;
         }
 
         private void UpdateDiagnostics()

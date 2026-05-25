@@ -21,6 +21,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Tools;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
@@ -60,7 +61,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Gameplay/Battery Charger")]
-    public sealed class BatteryCharger : MonoBehaviour, IPowerComponent, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class BatteryCharger : MonoBehaviour, IPowerComponent, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -137,10 +138,16 @@ namespace Hecton8.Gameplay
         private const string DefaultInteractText = "Access Charger";
         private const string DefaultSwapBatteryText = "Swap Battery";
         private const uint InvalidInventorySlotStartIndex = 0u;
-        private string _cachedInteractText;
-        private string _cachedSwapBatteryText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedSwapBatteryTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedInteractTextLength;
+        private int _cachedSwapBatteryTextLength;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private IAudioService _cachedAudioService;
         private PlayerToolManager _cachedToolManager;
         private PlayerInventory _cachedPlayerInventory;
+        private bool _hotSwapListenerRegistered;
         // COLD ALLOC: PlayerInventory.CraftReservation[1] - inventory-owner reservation fence for charger insert handoff - owner: BatteryCharger
         private readonly PlayerInventory.CraftReservation[] _inventoryReservationScratch = new PlayerInventory.CraftReservation[1];
 
@@ -183,9 +190,18 @@ namespace Hecton8.Gameplay
             PlayerToolManager toolManager = _cachedToolManager;
             if (toolManager != null && toolManager.CurrentTool != null)
             {
-                return _cachedSwapBatteryText;
+                return DefaultSwapBatteryText;
             }
-            return _cachedInteractText;
+            return DefaultInteractText;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            PlayerToolManager toolManager = _cachedToolManager;
+            ReadOnlySpan<char> source = toolManager != null && toolManager.CurrentTool != null
+                ? _cachedSwapBatteryTextBuffer.AsSpan(0, _cachedSwapBatteryTextLength)
+                : _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength);
+            return InteractableTextCopy.TryCopy(source, destination, out length);
         }
 
         private PlayerToolManager BindToolManagerForInteraction(Transform interactor = null)
@@ -193,11 +209,8 @@ namespace Hecton8.Gameplay
             if (_cachedToolManager != null)
                 return _cachedToolManager;
 
-            if (interactor != null)
-                _cachedToolManager = interactor.GetComponentInParent<PlayerToolManager>();
-
-            if (_cachedToolManager == null)
-                _cachedToolManager = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager : null;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            _cachedToolManager = playerContext != null ? playerContext.ToolManager : null;
 
             return _cachedToolManager;
         }
@@ -207,11 +220,8 @@ namespace Hecton8.Gameplay
             if (_cachedPlayerInventory != null)
                 return _cachedPlayerInventory;
 
-            if (interactor != null)
-                _cachedPlayerInventory = interactor.GetComponentInParent<PlayerInventory>();
-
-            if (_cachedPlayerInventory == null)
-                _cachedPlayerInventory = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory : null;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            _cachedPlayerInventory = playerContext != null ? playerContext.Inventory : null;
 
             return _cachedPlayerInventory;
         }
@@ -493,6 +503,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            InteractableRegistry.RegisterTree(this);
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             RebuildLocalizedTextCache();
@@ -503,13 +516,33 @@ namespace Hecton8.Gameplay
         {
             InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             TryUnregister();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext, forceAssign: true);
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedAudioService = currentService as IAudioService;
+                    break;
+            }
         }
 
         private void TryRegister()
@@ -566,7 +599,8 @@ namespace Hecton8.Gameplay
             slots[slotIndex].currentCharge = currentCharge;
 
             // Play insert sound
-            if (insertSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
+            IAudioService audio = _cachedAudioService;
+            if (insertSound != null && audio != null)
             {
                 audio.PlayAtPoint(insertSound, _cachedTransform.position);
             }
@@ -714,7 +748,7 @@ namespace Hecton8.Gameplay
                 return double3.zero;
             }
 
-            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            Hecton8.World.AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return double3.zero;
 
@@ -817,8 +851,59 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            _cachedInteractText = FetchLocalizedTextCold(LocalizationKeys.INTERACT_ACCESS_CHARGER, DefaultInteractText);
-            _cachedSwapBatteryText = FetchLocalizedTextCold(LocalizationKeys.INTERACT_SWAP_BATTERY, DefaultSwapBatteryText);
+            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
+            _cachedInteractTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_ACCESS_CHARGER, DefaultInteractText, _cachedInteractTextBuffer);
+            _cachedSwapBatteryTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_SWAP_BATTERY, DefaultSwapBatteryText, _cachedSwapBatteryTextBuffer);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            CachePlayerRuntimeContext(GlobalRegistry.Player, forceAssign: true);
+            _cachedAudioService = GlobalRegistry.Audio;
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, bool forceAssign)
+        {
+            _cachedPlayerContext = playerContext;
+            if (playerContext == null)
+            {
+                if (forceAssign)
+                {
+                    _cachedToolManager = null;
+                    _cachedPlayerInventory = null;
+                }
+                return;
+            }
+
+            if (forceAssign || _cachedToolManager == null)
+                _cachedToolManager = playerContext.ToolManager;
+            if (forceAssign || _cachedPlayerInventory == null)
+                _cachedPlayerInventory = playerContext.Inventory;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _cachedPlayerContext = null;
+            _cachedAudioService = null;
+            _cachedToolManager = null;
+            _cachedPlayerInventory = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -835,13 +920,6 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
         }
 
-        private static string FetchLocalizedTextCold(string key, string fallback)
-        {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
-        }
     }
 }
 

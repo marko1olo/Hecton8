@@ -492,12 +492,10 @@ namespace Hecton8.EditorTools
             visual.transform.localRotation = Quaternion.Euler(localEulerAngles);
             visual.transform.localScale = scale;
 
-            Collider visualCollider = visual.GetComponent<Collider>();
-            if (visualCollider != null)
+            if (visual.TryGetComponent(out Collider visualCollider))
                 Object.DestroyImmediate(visualCollider);
 
-            Renderer renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
+            if (visual.TryGetComponent(out Renderer renderer))
             {
                 renderer.sharedMaterial = material;
                 if (IsAmbientFaunaPrimitive(name))
@@ -699,8 +697,7 @@ namespace Hecton8.EditorTools
             if (!child.TryGetComponent(out ParticleSystem particleSystem))
                 particleSystem = child.gameObject.AddComponent<ParticleSystem>();
 
-            ParticleSystemRenderer renderer = child.GetComponent<ParticleSystemRenderer>();
-            if (renderer == null)
+            if (!child.TryGetComponent(out ParticleSystemRenderer renderer))
                 renderer = child.gameObject.AddComponent<ParticleSystemRenderer>();
 
             ParticleSystem.MainModule main = particleSystem.main;
@@ -808,12 +805,10 @@ namespace Hecton8.EditorTools
             child.localRotation = Quaternion.Euler(localEulerAngles);
             child.localScale = localScale;
 
-            Collider collider = child.GetComponent<Collider>();
-            if (collider != null)
+            if (child.TryGetComponent(out Collider collider))
                 Object.DestroyImmediate(collider);
 
-            MeshRenderer sheenRenderer = child.GetComponent<MeshRenderer>();
-            if (sheenRenderer != null)
+            if (child.TryGetComponent(out MeshRenderer sheenRenderer))
             {
                 sheenRenderer.sharedMaterial = ventSheenMaterial;
                 sheenRenderer.shadowCastingMode = ShadowCastingMode.Off;
@@ -904,8 +899,7 @@ namespace Hecton8.EditorTools
             child.localRotation = Quaternion.Euler(localEulerAngles);
             child.localScale = localScale;
 
-            Renderer renderer = child.GetComponent<Renderer>();
-            if (renderer != null)
+            if (child.TryGetComponent(out Renderer renderer))
             {
                 renderer.shadowCastingMode = ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
@@ -924,8 +918,7 @@ namespace Hecton8.EditorTools
             if (prefabRoot == null || lod0 == null)
                 return;
 
-            LODGroup lodGroup = prefabRoot.GetComponent<LODGroup>();
-            if (lodGroup == null)
+            if (!prefabRoot.TryGetComponent(out LODGroup lodGroup))
                 return;
 
             LOD[] lods = lodGroup.GetLODs();
@@ -948,8 +941,7 @@ namespace Hecton8.EditorTools
             if (prefabRoot == null)
                 return;
 
-            LODGroup lodGroup = prefabRoot.GetComponent<LODGroup>();
-            if (lodGroup == null)
+            if (!prefabRoot.TryGetComponent(out LODGroup lodGroup))
                 return;
 
             LOD[] lods = lodGroup.GetLODs();

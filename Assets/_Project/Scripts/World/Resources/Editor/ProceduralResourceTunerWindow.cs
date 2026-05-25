@@ -209,7 +209,7 @@ namespace Hecton8.World.Editor
             if (vault == null)
                 return false;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystemId,

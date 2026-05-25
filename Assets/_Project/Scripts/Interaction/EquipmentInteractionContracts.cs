@@ -4,6 +4,14 @@ using UnityEngine;
 
 namespace Hecton8.Interaction
 {
+    internal static class EquipmentInteractionContractLayout
+    {
+        public const int ModuleRepairSnapshotStrideBytes = 32;
+        public const int WfcDoorLaserCutSnapshotStrideBytes = 16;
+        public const int InteractionPacketStrideBytes = 64;
+        public const int InteractionSignalStrideBytes = 128;
+    }
+
     /// <summary>
     /// Tool runtime state bits captured inside interaction packets.
     /// </summary>
@@ -87,7 +95,7 @@ namespace Hecton8.Interaction
     {
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = EquipmentInteractionContractLayout.ModuleRepairSnapshotStrideBytes)]
     public struct ModuleRepairReadSnapshot
     {
         public const uint FlagFlooded = 1u << 0;
@@ -111,7 +119,7 @@ namespace Hecton8.Interaction
         void ApplyRepair(float amount);
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = EquipmentInteractionContractLayout.WfcDoorLaserCutSnapshotStrideBytes)]
     public struct WfcDoorLaserCutReadSnapshot
     {
         [FieldOffset(0)] public ulong SectorHash;
@@ -145,7 +153,7 @@ namespace Hecton8.Interaction
     /// Immutable tool dispatch payload captured before routing into the interaction queue.
     /// All positions are absolute-universe coordinates.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = EquipmentInteractionContractLayout.InteractionPacketStrideBytes)]
     public struct InteractionPacket
     {
         public InteractionPacket(
@@ -202,7 +210,7 @@ namespace Hecton8.Interaction
     /// Queued interaction event consumed by the authoritative late-frame dispatch owner.
     /// All positions are absolute-universe coordinates.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = EquipmentInteractionContractLayout.InteractionSignalStrideBytes)]
     public struct InteractionSignal
     {
         public const byte HitPointAupDoubleValid = 1;

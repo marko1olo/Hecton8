@@ -1,4 +1,4 @@
-# Campaign 03 - First Demo Outreach
+﻿# Campaign 03 - First Demo Outreach
 
 Status: future / requires stable demo
 Public stance: single-player-first scope / proof-first campaign copy

@@ -51,8 +51,8 @@ namespace Hecton8.Editor.GeographySanity
             int z = index / width;
             float fx = x * math.rcp(width - 1);
             float fz = z * math.rcp(width - 1);
-            float ridge = math.sin((fx * 13.0f) + (Sector.WorldSeed & 255u) * 0.01f) * 18f;
-            float shelf = math.cos((fz * 7.0f) + Sector.SectorX * 0.37f) * 11f;
+            float ridge = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((fx * 13.0f) + (Sector.WorldSeed & 255u) * 0.01f) * 18f;
+            float shelf = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara((fz * 7.0f) + Sector.SectorX * 0.37f) * 11f;
             float bowl = -math.abs((fx - 0.5f) * (fz - 0.5f)) * 80f;
             HeightSamples[index] = -180f + ridge + shelf + bowl;
         }
@@ -171,8 +171,8 @@ namespace Hecton8.Editor.GeographySanity
         {
             float fx = math.saturate(xz.x * math.rcp(math.max(1f, Sector.SectorSizeMeters)));
             float fz = math.saturate(xz.y * math.rcp(math.max(1f, Sector.SectorSizeMeters)));
-            float ridge = math.sin((fx * 13.0f) + (Sector.WorldSeed & 255u) * 0.01f) * 18f;
-            float shelf = math.cos((fz * 7.0f) + Sector.SectorX * 0.37f) * 11f;
+            float ridge = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((fx * 13.0f) + (Sector.WorldSeed & 255u) * 0.01f) * 18f;
+            float shelf = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara((fz * 7.0f) + Sector.SectorX * 0.37f) * 11f;
             float bowl = -math.abs((fx - 0.5f) * (fz - 0.5f)) * 80f;
             return -180f + ridge + shelf + bowl;
         }

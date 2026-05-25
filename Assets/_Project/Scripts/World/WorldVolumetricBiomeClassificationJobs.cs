@@ -8,7 +8,16 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    internal static class WorldVolumetricBiomeClassificationJobsLayout
+    {
+        public const int VolumetricBiomeClassificationInputStrideBytes = 24;
+        public const int VolumetricBiomeClassificationResultStrideBytes = 16;
+        public const int VolumetricBiomeStressAuditResultStrideBytes = 24;
+        public const int VolumetricBiomeStressBlockSummaryStrideBytes = 8;
+        public const int VolumetricBiomeStressSummaryResultStrideBytes = 8;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = WorldVolumetricBiomeClassificationJobsLayout.VolumetricBiomeClassificationInputStrideBytes)]
     public struct VolumetricBiomeClassificationInput
     {
         [FieldOffset(0)]
@@ -29,7 +38,7 @@ namespace Hecton8.World
         private int _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = WorldVolumetricBiomeClassificationJobsLayout.VolumetricBiomeClassificationResultStrideBytes)]
     public struct VolumetricBiomeClassificationResult
     {
         [FieldOffset(0)]
@@ -40,7 +49,7 @@ namespace Hecton8.World
         public WorldProceduralFieldSampler.BiomeInfluenceCell InfluenceCell;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = WorldVolumetricBiomeClassificationJobsLayout.VolumetricBiomeStressAuditResultStrideBytes)]
     public struct VolumetricBiomeStressAuditResult
     {
         [FieldOffset(0)]
@@ -61,7 +70,7 @@ namespace Hecton8.World
         private int _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = WorldVolumetricBiomeClassificationJobsLayout.VolumetricBiomeStressBlockSummaryStrideBytes)]
     public struct VolumetricBiomeStressBlockSummary
     {
         [FieldOffset(0)]
@@ -70,7 +79,7 @@ namespace Hecton8.World
         public uint PackedChecksum;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = WorldVolumetricBiomeClassificationJobsLayout.VolumetricBiomeStressSummaryResultStrideBytes)]
     public struct VolumetricBiomeStressSummaryResult
     {
         [FieldOffset(0)]

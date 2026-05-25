@@ -139,7 +139,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
             List<string> choices = new List<string>(_profileCount); // COLD ALLOC: List<string>[profileCount] - editor dropdown labels - owner: WreckageForgeWindow
             for (int i = 0; i < _profileCount; i++)
-                choices.Add("0x" + _profileCache.Get(i).ProfileHash.ToString("X8"));
+                choices.Add("0x" + _profileCache.Get(i).ProfileHash.ToString("X8", CultureInfo.InvariantCulture));
             _profileDropdown.choices = choices;
             _profileDropdown.index = 0;
             ApplyProfileToSliders(_profileCache.Get(0));

@@ -14,7 +14,9 @@ namespace Hecton8.Editor
 
         private static void TeardownLoadedScatterOwners()
         {
-            Hecton8.World.WorldProceduralScatterDirector[] directors = Resources.FindObjectsOfTypeAll<Hecton8.World.WorldProceduralScatterDirector>();
+            Hecton8.World.WorldProceduralScatterDirector[] directors =
+                UnityEngine.Object.FindObjectsByType<Hecton8.World.WorldProceduralScatterDirector>(
+                    FindObjectsInactive.Include);
             for (int i = 0; i < directors.Length; i++)
             {
                 Hecton8.World.WorldProceduralScatterDirector director = directors[i];
@@ -24,7 +26,9 @@ namespace Hecton8.Editor
                 InvokePrepareForEditorReload(director);
             }
 
-            Hecton8.World.WorldProceduralFieldSampler[] samplers = Resources.FindObjectsOfTypeAll<Hecton8.World.WorldProceduralFieldSampler>();
+            Hecton8.World.WorldProceduralFieldSampler[] samplers =
+                UnityEngine.Object.FindObjectsByType<Hecton8.World.WorldProceduralFieldSampler>(
+                    FindObjectsInactive.Include);
             for (int i = 0; i < samplers.Length; i++)
             {
                 Hecton8.World.WorldProceduralFieldSampler sampler = samplers[i];

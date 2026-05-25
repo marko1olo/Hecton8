@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_235" domain="DEEP_SEA_NOIR_POST_PROCESSOR" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE">
+﻿<SELF_AUDIT agent="SHINOBU_235" domain="DEEP_SEA_NOIR_POST_PROCESSOR" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE">
   <prompt source="Docs/Tasks/CURRENT_BATCH.md" extracted="true" task_count="20" />
   <task_reconciliation>
     <task id="01" name="POST_PROCESS_VOLUME_ERADICATION" result="PASS">Scoped prefab/rendering/visor Volume route removed. Project-wide scene/URP/UI Volume residue remains outside SHINOBU_235 scope and is reported as out-of-domain residue.</task>

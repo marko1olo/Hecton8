@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Hecton8.Core.Memory;
 using Hecton8.World.OfflineHadalTrenchBaker;
 using Unity.Collections;
@@ -164,7 +165,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             if (_statusLabel == null)
                 return;
 
-            _statusLabel.text = "Wrote " + result.H8BinPath + " | faults " + result.FaultCount + " | runs " + result.RleRunCount + " | warnings 0x" + result.WarningFlags.ToString("X8");
+                _statusLabel.text = "Wrote " + result.H8BinPath + " | faults " + result.FaultCount + " | runs " + result.RleRunCount + " | warnings 0x" + result.WarningFlags.ToString("X8", CultureInfo.InvariantCulture);
         }
 
         private void OnBakeFailed(Exception exception)

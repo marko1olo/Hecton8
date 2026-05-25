@@ -107,7 +107,7 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
             float quality = BiomeWeightMapBakeMath.QualityCurve(Config.GlobalQualityWeight);
             float ridge = BiomeWeightMapBakeMath.RidgedNoise2Quality(sampleAup, Config.SectorOriginAUP, Config.Seed ^ 0x9E3779B9u, 0.00042f, quality);
             float detail = BiomeWeightMapBakeMath.FractalNoise2Quality(sampleAup, Config.SectorOriginAUP, Config.Seed ^ 0xC001CAFEu, 0.0017f, quality);
-            float canyonAxis = math.abs(nx + math.sin(nz * 5.3f) * 0.18f);
+            float canyonAxis = math.abs(nx + Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(nz * 5.3f) * 0.18f);
             float canyon = 1f - math.smoothstep(0.035f, 0.18f, canyonAxis);
             float shelf = math.smoothstep(-0.9f, 0.45f, -nz);
             float cliffBand = math.smoothstep(0.35f, 0.62f, math.abs(nx - 0.22f));
@@ -248,7 +248,7 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
             int z = index / width;
             float height01 = ReadFloat(Heights01, index);
             float3 normal = ReadNormal(index);
-            float slopeDegrees = math.degrees(math.acos(math.clamp(normal.y, -1f, 1f)));
+            float slopeDegrees = math.degrees(global::Hecton8.Core.MathLodApproximation.ApproxAcosFast(math.clamp(normal.y, -1f, 1f)));
             double cell = math.max(0.001d, Config.CellSizeMeters);
             double3 pixelAup = Config.SectorOriginAUP + new double3(x * cell, height01 * Config.HeightScaleMeters, z * cell);
             float quality = BiomeWeightMapBakeMath.QualityCurve(Config.GlobalQualityWeight);

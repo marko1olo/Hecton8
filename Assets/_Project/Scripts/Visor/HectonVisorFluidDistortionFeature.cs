@@ -1124,7 +1124,7 @@ namespace Hecton8.Visor
             if (context != null && context.PlayerCamera != null)
                 return context;
 
-            context = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            context = GlobalRegistry.Player;
             _playerContext = context;
             return context;
         }
@@ -1253,7 +1253,7 @@ namespace Hecton8.Visor
                 return true;
             }
 
-            VaultGenerationHandle<VisorRefractionTelemetryEntry> blackBoxHandle = vault.GetGenerationHandle<VisorRefractionTelemetryEntry>(
+            VaultGenerationHandle<VisorRefractionTelemetryEntry> blackBoxHandle = vault.EnsureGenerationHandle<VisorRefractionTelemetryEntry>(
                 BufferID.VisorRefractionBlackBox,
                 BlackBoxFrameCount,
                 SystemID.Vfx);

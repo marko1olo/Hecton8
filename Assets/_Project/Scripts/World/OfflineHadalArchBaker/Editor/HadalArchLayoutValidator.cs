@@ -9,6 +9,12 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
     [InitializeOnLoad]
     public static class HadalArchLayoutValidator
     {
+        private const int SdfShapeStrideBytes = 64;
+        private const int HadalArchVertexStrideBytes = 64;
+        private const int HadalArchBakeConfigStrideBytes = 128;
+        private const int HadalArchTelemetryStrideBytes = 64;
+        private const int RollbackExclusionStrideBytes = 32;
+
         static HadalArchLayoutValidator()
         {
             Validate(logSuccess: false);
@@ -23,7 +29,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
         public static bool Validate(bool logSuccess)
         {
             bool ok = true;
-            ok &= ValidateSize<SdfShapeDTO>(64);
+            ok &= ValidateSize<SdfShapeDTO>(SdfShapeStrideBytes);
             ok &= ValidateOffset<SdfShapeDTO>(nameof(SdfShapeDTO.ShapeType), 0);
             ok &= ValidateOffset<SdfShapeDTO>(nameof(SdfShapeDTO.Operation), 4);
             ok &= ValidateOffset<SdfShapeDTO>(nameof(SdfShapeDTO.Position), 8);
@@ -34,14 +40,14 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
             ok &= ValidateOffset<SdfShapeDTO>(nameof(SdfShapeDTO.MaterialHash), 44);
             ok &= ValidateOffset<SdfShapeDTO>(nameof(SdfShapeDTO._pad0), 48);
             ok &= ValidateOffset<SdfShapeDTO>(nameof(SdfShapeDTO._pad1), 56);
-            ok &= ValidateSize<HadalArchVertexDTO>(64);
+            ok &= ValidateSize<HadalArchVertexDTO>(HadalArchVertexStrideBytes);
             ok &= ValidateOffset<HadalArchVertexDTO>(nameof(HadalArchVertexDTO.Position), 0);
             ok &= ValidateOffset<HadalArchVertexDTO>(nameof(HadalArchVertexDTO.Normal), 12);
             ok &= ValidateOffset<HadalArchVertexDTO>(nameof(HadalArchVertexDTO.Tangent), 24);
             ok &= ValidateOffset<HadalArchVertexDTO>(nameof(HadalArchVertexDTO.Uv0), 40);
             ok &= ValidateOffset<HadalArchVertexDTO>(nameof(HadalArchVertexDTO.PackedColor), 48);
             ok &= ValidateOffset<HadalArchVertexDTO>(nameof(HadalArchVertexDTO.Uv3AupLocal), 52);
-            ok &= ValidateSize<HadalArchBakeConfigDTO>(128);
+            ok &= ValidateSize<HadalArchBakeConfigDTO>(HadalArchBakeConfigStrideBytes);
             ok &= ValidateOffset<HadalArchBakeConfigDTO>(nameof(HadalArchBakeConfigDTO.CenterAup), 0);
             ok &= ValidateOffset<HadalArchBakeConfigDTO>(nameof(HadalArchBakeConfigDTO.VolumeOriginAup), 24);
             ok &= ValidateOffset<HadalArchBakeConfigDTO>(nameof(HadalArchBakeConfigDTO.Resolution), 48);
@@ -59,8 +65,8 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
             ok &= ValidateOffset<HadalArchBakeConfigDTO>(nameof(HadalArchBakeConfigDTO.SurfaceBand), 104);
             ok &= ValidateOffset<HadalArchBakeConfigDTO>(nameof(HadalArchBakeConfigDTO.NoiseSeedJitter), 108);
             ok &= ValidateOffset<HadalArchBakeConfigDTO>(nameof(HadalArchBakeConfigDTO._pad2), 120);
-            ok &= ValidateSize<HadalArchBakeTelemetryEntry>(64);
-            ok &= ValidateSize<HadalStaticGeometryRollbackExclusionDTO>(32);
+            ok &= ValidateSize<HadalArchBakeTelemetryEntry>(HadalArchTelemetryStrideBytes);
+            ok &= ValidateSize<HadalStaticGeometryRollbackExclusionDTO>(RollbackExclusionStrideBytes);
 
             if (ok && logSuccess)
                 Debug.Log("[SHINOBU_215] Hadal arch DTO layouts validated.");

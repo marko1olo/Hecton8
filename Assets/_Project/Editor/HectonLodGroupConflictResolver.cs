@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace Hecton8.Editor
     {
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Fix Rock LODGroup Conflicts";
         private const string LogPrefix = "[HectonLodGroupConflictResolver]";
+        private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(64);
 
         private static readonly string[] s_TargetPrefabPaths =
         {
@@ -46,8 +48,7 @@ namespace Hecton8.Editor
 
                 try
                 {
-                    LODGroup lodGroup = prefabRoot.GetComponent<LODGroup>();
-                    if (lodGroup == null)
+                    if (!prefabRoot.TryGetComponent(out LODGroup lodGroup))
                         continue;
 
                     if (!RepairLodGroup(lodGroup))
@@ -131,10 +132,11 @@ namespace Hecton8.Editor
                 return null;
 
             string expectedName = $"LOD{lodIndex}";
-            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            s_RendererScratch.Clear();
+            root.GetComponentsInChildren(true, s_RendererScratch);
+            for (int rendererIndex = 0; rendererIndex < s_RendererScratch.Count; rendererIndex++)
             {
-                Renderer renderer = renderers[rendererIndex];
+                Renderer renderer = s_RendererScratch[rendererIndex];
                 if (renderer == null || renderer.gameObject.name != expectedName)
                     continue;
 

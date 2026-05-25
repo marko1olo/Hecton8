@@ -1,4 +1,4 @@
-{
+﻿{
   "agent": "SHINOBU_227",
   "scope": "Assets/_Project/Scripts/Equipment;Assets/_Project/Scripts/Gameplay/MantaScooter.cs;Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs;Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
   "files": 3,

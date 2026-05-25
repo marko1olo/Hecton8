@@ -158,6 +158,8 @@ namespace Hecton8.World
             if (!_pendingEvents.IsCreated || !_pendingEvents.TryDequeue(out sporeEvent))
             {
                 sporeEvent = default;
+                if (_pendingEvents.IsCreated)
+                    _pendingEventCount = 0;
                 return false;
             }
 
@@ -237,7 +239,7 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

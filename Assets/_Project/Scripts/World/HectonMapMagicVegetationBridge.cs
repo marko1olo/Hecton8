@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -21,7 +23,7 @@ namespace Hecton8.World
     /// and keeps only the player-near residency ring bound to the indirect renderers.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed partial class HectonMapMagicVegetationBridge : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IMapMagicTerrainTileEventListener
+    public sealed partial class HectonMapMagicVegetationBridge : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IMapMagicTerrainTileEventListener, IAbyssalFlowVolumeReadModel, ITerrainHeightSampleReadModel, IVegetationThreatReadModel, IVegetationThreatPulseSink, IGlobalRegistryHotSwapListener
     {
         [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct PredatorFearNodeSnapshot
@@ -111,6 +113,7 @@ namespace Hecton8.World
         private const int DensityGridCellCount = DensityGridResolution * DensityGridResolution;
         private const float DensityQuerySeedScale = 2f;
         private const int VegetationAudioProbeCount = 5;
+        private const uint KccVelocityVegetationMaxAgeFrames = 12u;
         internal const int DensityTypeMaskGrass = 1 << 0;
         internal const int DensityTypeMaskKelp = 1 << 1;
         internal const int DensityTypeMaskSargassum = 1 << 2;
@@ -158,6 +161,8 @@ namespace Hecton8.World
         private const uint AbyssalPathTelemetryContextHash = 0x41504154u;
         private const uint AbyssalPathOverBudgetHash = 0x46554E4Cu;
         private const uint AbyssalPathNanFaultHash = 0x4E414E46u;
+        private const BufferID AbyssalPathTelemetryBufferId = BufferID.AbyssalPathTelemetryRing;
+        private const SystemID AbyssalPathTelemetryOwner = SystemID.WorldStreaming;
         private const string NativeMemoryOwner = nameof(HectonMapMagicVegetationBridge);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int _ShaderVegetationAudioDensityId = Shader.PropertyToID("_HectonVegetationAudioDensity");
@@ -1574,7 +1579,12 @@ namespace Hecton8.World
         private GraphicsBuffer _surfaceInstanceDataBuffer;
         private GraphicsBuffer _underwaterInstanceBuffer;
         private GraphicsBuffer _underwaterInstanceDataBuffer;
-        private GraphicsBuffer _predatorFearNodeBuffer;
+        private GraphicsBuffer _predatorFearNodeBufferA;
+        private GraphicsBuffer _predatorFearNodeBufferB;
+        private GraphicsBuffer _activePredatorFearNodeBuffer;
+        private int _predatorFearNodeBufferWriteIndex;
+        private int _pendingPredatorFearShaderActiveCount;
+        private bool _pendingPredatorFearShaderUpload;
         private NativeChunkPool _surfaceChunkPool;
         private NativeChunkPool _underwaterChunkPool;
         private PoolBlock[] _surfacePoolFreeBlocks;
@@ -1599,11 +1609,16 @@ namespace Hecton8.World
         private VegetationAcousticType _vegetationAudioAcousticType;
         private float _lastPublishedVegetationAudioDensity = float.NegativeInfinity;
         private VegetationAcousticType _lastPublishedVegetationAudioAcousticType = (VegetationAcousticType)byte.MaxValue;
+        private bool _vegetationAudioHandoffPublishRequested;
+        private bool _vegetationAudioHandoffForcePublish;
+        private float _pendingVegetationAudioDensity;
+        private VegetationAcousticType _pendingVegetationAudioAcousticType;
         private float _nextNativePoolFragmentationLogTime = float.NegativeInfinity;
         private byte _sandMaskThresholdByte;
         private byte _rockMaskThresholdByte;
         private Vector2 _floatingFlowDirectionNormalized;
         private Rigidbody _playerRigidbody;
+        private IWeatherService _weatherService;
         private Vector3 _playerVelocity;
         private Vector3 _lastPlayerPosition;
         private bool _hasLastPlayerPosition;
@@ -1612,10 +1627,15 @@ namespace Hecton8.World
         private float _nextCacheValidationTime = float.NegativeInfinity;
         private int _cacheValidationChunkCursor;
         private bool _isRegistered;
+        private bool _registeredHotSwapListener;
         private bool _eventsSubscribed;
         private bool _originShiftListenerRegistered;
         private bool _activeSetDirty = true;
         private bool _insideLateFrameJobSwap;
+        private bool _deferredTileCacheDisposalRequested;
+        private bool _deferredStartupProgressRequested;
+        private bool _residentTileCacheValidationRequested;
+        private bool _activeBufferRebuildRequested;
 
         public static float GlobalVegetationAudioDensity { get; private set; }
         public static VegetationAcousticType GlobalVegetationAcousticType { get; private set; }
@@ -1809,10 +1829,11 @@ namespace Hecton8.World
         private int _underwaterAggregateCopyRecordCount;
         private int _lastAbyssalPathEndNode = -1;
         private Vector3 _lastAbyssalPathTargetPosition;
-        private NativeArray<AbyssalPathTelemetryEntry> _abyssalPathTelemetry;
         private int _abyssalPathTelemetryCursor;
         private int _abyssalPathTelemetryWrittenCount;
         private uint _abyssalPathTelemetrySequence;
+        private VaultGenerationHandle<AbyssalPathTelemetryEntry> _abyssalPathTelemetryHandle;
+        private IDataVault _abyssalPathTelemetryVault;
         private int _lastAbyssalPathPortalLookAhead;
         private int _lastAbyssalPathMaxSamples;
         private bool _abyssalPathTelemetryDumpedForFault;
@@ -2067,7 +2088,9 @@ namespace Hecton8.World
             EnsureArtificialStructureHashBuffersCapacity(FixedArtificialStructureHashCapacity);
             InitializeLargeFloraVisualSwayState();
             BindRendererSources();
+            CacheWeatherService(GlobalRegistry.Weather);
             ResolveRuntimeDependencies();
+            TryRegisterHotSwapListener();
             TrySubscribeEvents();
             TryRegister();
             QueueDeferredStartupWork();
@@ -2098,6 +2121,7 @@ namespace Hecton8.World
             CompleteAbyssalPathJob(forceComplete: true);
             CompleteHLODCullJob(forceComplete: true);
             CompleteNativePoolDefragIfReady(forceComplete: true);
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnsubscribeEvents();
             DisposeAllChunkBuildJobs();
@@ -2148,6 +2172,7 @@ namespace Hecton8.World
             CompleteAbyssalPathJob(forceComplete: true);
             CompleteHLODCullJob(forceComplete: true);
             CompleteNativePoolDefragIfReady(forceComplete: true);
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnsubscribeEvents();
             DisposeAllChunkBuildJobs();
@@ -2189,7 +2214,7 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
-            TryDisposeDeferredTileCacheReadbacks();
+            QueueDeferredTileCacheDisposal();
             float clampedDt = math.isfinite(dt) ? math.max(0f, dt) : 0f;
             AdvanceVegetationRuntimeClock(clampedDt);
             _predatorFearSimulationTime += clampedDt;
@@ -2205,16 +2230,15 @@ namespace Hecton8.World
             if (_externalThreatPulseHoldTimer > 0f)
                 _externalThreatPulseHoldTimer = math.max(0f, _externalThreatPulseHoldTimer - dt);
 
-            if (TryProgressDeferredStartupWork())
+            if (QueueDeferredStartupProgressIfPending())
                 return;
 
             UpdatePlayerMotionState(dt);
             UpdateNativePoolDefragState(dt);
             UpdateLargeFloraVisualSwayState(clampedDt);
 
-            if (TryValidateResidentTileCaches())
+            if (QueueResidentTileCacheValidation())
             {
-                RefreshResidency();
                 ScheduleHLODVisibilityCullJob();
                 return;
             }
@@ -2228,8 +2252,9 @@ namespace Hecton8.World
 
             if (_activeSetDirty)
             {
-                if (RebuildAndBindActiveBuffers())
-                    _activeSetDirty = false;
+                _activeBufferRebuildRequested = true;
+                ScheduleHLODVisibilityCullJob();
+                return;
             }
 
             TryScheduleNativePoolDefrag();
@@ -2241,9 +2266,9 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            TryDisposeDeferredTileCacheReadbacks();
+            QueueDeferredTileCacheDisposal();
 
-            if (TryProgressDeferredStartupWork())
+            if (QueueDeferredStartupProgressIfPending())
                 return;
 
             ResolveRuntimeDependencies();
@@ -2253,6 +2278,7 @@ namespace Hecton8.World
             EvictDistantTerrainHoles();
             TryScheduleTerrainHoleJobs();
             RebuildHLODRegistrySnapshot();
+            QueueResidentTileCacheValidation();
             if (CanRefreshThreatSpatialSnapshots())
             {
                 RebuildArtificialStructureThreatSnapshot();
@@ -2277,18 +2303,44 @@ namespace Hecton8.World
             _insideLateFrameJobSwap = true;
             try
             {
-                TryDisposeDeferredTileCacheReadbacks();
+                if (_deferredTileCacheDisposalRequested)
+                {
+                    _deferredTileCacheDisposalRequested = false;
+                    TryDisposeDeferredTileCacheReadbacks();
+                }
+
+                if (_deferredStartupProgressRequested)
+                {
+                    _deferredStartupProgressRequested = false;
+                    TryProgressDeferredStartupWork();
+                }
+
+                if (_residentTileCacheValidationRequested)
+                {
+                    _residentTileCacheValidationRequested = false;
+                    if (TryValidateResidentTileCaches())
+                    {
+                        RefreshResidency();
+                        _activeBufferRebuildRequested = true;
+                    }
+                }
+
                 int completedCount = FinalizeCompletedChunkBuilds();
                 if (completedCount > 0)
                     EnforceChunkPoolMemoryGuard();
 
                 bool selectionChanged = completedCount > 0 && SyncSelectedChunksFromDesired();
-                if (completedCount > 0 || selectionChanged || _activeSetDirty)
+                if (completedCount > 0 || selectionChanged || _activeSetDirty || _activeBufferRebuildRequested)
                 {
                     if (RebuildAndBindActiveBuffers())
+                    {
                         _activeSetDirty = false;
+                        _activeBufferRebuildRequested = false;
+                    }
                 }
 
+                FlushVegetationAudioHandoffVisualSync();
+                FlushPredatorFearShaderPayloadVisualSync();
                 CompleteAbyssalPathJob(forceComplete: false);
                 CompleteHLODCullJob(forceComplete: false);
                 CompleteNativePoolDefragIfReady(forceComplete: false);
@@ -2402,17 +2454,6 @@ namespace Hecton8.World
                 }
 
                 HectonPlayerMovement movement = runtimeContext.PlayerMovement;
-                if (movement != null)
-                {
-                    playerAup = movement.PredictedAup;
-                    return true;
-                }
-            }
-
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            if (playerContext != null)
-            {
-                HectonPlayerMovement movement = playerContext.PlayerMovement;
                 if (movement != null)
                 {
                     playerAup = movement.PredictedAup;
@@ -2827,6 +2868,21 @@ namespace Hecton8.World
             return TryBuildHeightSamplePayload(state, out payload);
         }
 
+        public bool TryGetActiveTerrainHeightSamplePayload(out TerrainHeightSamplePayloadDTO payload)
+        {
+            payload = default;
+            if (!TryGetActiveHeightSamplePayload(out TerrainHeightSamplePayload source))
+                return false;
+
+            payload = new TerrainHeightSamplePayloadDTO(
+                source.HeightSamples,
+                source.TerrainPosition,
+                source.TerrainSize,
+                source.HeightmapResolution,
+                source.CacheRevision);
+            return TerrainHeightSamplePayloadDTO.IsValid(in payload);
+        }
+
         /// <summary>
         /// Returns the R16 height payload for the terrain tile containing the requested world-space position.
         /// </summary>
@@ -2840,6 +2896,21 @@ namespace Hecton8.World
             }
 
             return TryBuildHeightSamplePayload(state, out payload);
+        }
+
+        public bool TryGetTerrainHeightSamplePayload(float worldX, float worldZ, out TerrainHeightSamplePayloadDTO payload)
+        {
+            payload = default;
+            if (!TryGetHeightSamplePayload(worldX, worldZ, out TerrainHeightSamplePayload source))
+                return false;
+
+            payload = new TerrainHeightSamplePayloadDTO(
+                source.HeightSamples,
+                source.TerrainPosition,
+                source.TerrainSize,
+                source.HeightmapResolution,
+                source.CacheRevision);
+            return TerrainHeightSamplePayloadDTO.IsValid(in payload);
         }
 
         private static bool TryBuildHeightSamplePayload(TileRuntimeState state, out TerrainHeightSamplePayload payload)
@@ -4388,7 +4459,7 @@ namespace Hecton8.World
                 return;
 
             _nextNativePoolFragmentationLogTime = Time.unscaledTime + 30f;
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 $"[HectonMapMagicVegetationBridge] NativePoolFragmentationPercent={NativePoolFragmentationPercent:0.0} UsedBytes={_chunkPayloadUsedBytes} GuardBytes={ChunkPayloadGuardBytes}",
                 this);
 #endif
@@ -5471,8 +5542,9 @@ namespace Hecton8.World
             {
                 if (!playerTransform.TryGetComponent(out _cachedViewCamera))
                 {
-                    IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-                    _cachedViewCamera = playerContext != null ? playerContext.PlayerCamera : null;
+                    _cachedViewCamera = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
+                        ? runtimeContext.PlayerCamera
+                        : null;
                 }
             }
 
@@ -6267,6 +6339,52 @@ namespace Hecton8.World
             ReleaseDeferredStartupTileSnapshot();
         }
 
+        private void QueueDeferredTileCacheDisposal()
+        {
+            _deferredTileCacheDisposalRequested = true;
+        }
+
+        private bool QueueDeferredStartupProgressIfPending()
+        {
+            bool hasPendingStartupWork = _startupTerrainHoleSyncPending ||
+                                         _startupTileBootstrapPending ||
+                                         _startupResidencyPending;
+            if (!hasPendingStartupWork)
+                return false;
+
+            _deferredStartupProgressRequested = true;
+            return true;
+        }
+
+        private bool QueueResidentTileCacheValidation()
+        {
+            bool dueForValidation = _tileStates.Count > 0 && Time.unscaledTime >= _nextCacheValidationTime;
+            if (!dueForValidation && !HasPendingTileHeightReadbackOrRemoval())
+                return false;
+
+            _residentTileCacheValidationRequested = true;
+            return true;
+        }
+
+        private bool HasPendingTileHeightReadbackOrRemoval()
+        {
+            if (_tileStates.Count <= 0)
+                return false;
+
+            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                TileRuntimeState state = enumerator.Current.Value;
+                if (state == null)
+                    continue;
+
+                if (state.PendingRemoval || state.HeightReadbackPending)
+                    return true;
+            }
+
+            return false;
+        }
+
         private bool TryProgressDeferredStartupWork()
         {
             bool hasPendingStartupWork = _startupTerrainHoleSyncPending ||
@@ -6433,9 +6551,9 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_playerRigidbody != null)
+            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityVegetationMaxAgeFrames, out Vector3 kccVelocity))
             {
-                _playerVelocity = _playerRigidbody.linearVelocity;
+                _playerVelocity = kccVelocity;
                 _lastPlayerPosition = currentPosition;
                 _hasLastPlayerPosition = true;
                 return;
@@ -6470,13 +6588,19 @@ namespace Hecton8.World
                 return;
 
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _isRegistered =
-                GlobalRegistry.Updatables.Contains(this) &&
-                GlobalRegistry.SlowTickables.Contains(this) &&
-                SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            bool slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            bool lateRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _isRegistered = updateRegistered && slowRegistered && lateRegistered;
+            if (!_isRegistered)
+            {
+                if (lateRegistered)
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                if (slowRegistered)
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                if (updateRegistered)
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            }
         }
 
         private void TryUnregister()
@@ -6518,6 +6642,49 @@ namespace Hecton8.World
             {
                 HectonFloatingOrigin.UnregisterListener(this);
                 _originShiftListenerRegistered = false;
+            }
+        }
+
+        private void CacheWeatherService(IWeatherService weatherService)
+        {
+            _weatherService = weatherService;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Weather:
+                    CacheWeatherService(currentService as IWeatherService);
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    if (mapMagicBridge == null || ReferenceEquals(mapMagicBridge, previousService))
+                        mapMagicBridge = currentService as MapMagicBridge;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        TryRegister();
+                    break;
             }
         }
 
@@ -6965,7 +7132,12 @@ namespace Hecton8.World
             ReleaseBuffer(ref _surfaceInstanceDataBuffer);
             ReleaseBuffer(ref _underwaterInstanceBuffer);
             ReleaseBuffer(ref _underwaterInstanceDataBuffer);
-            ReleaseBuffer(ref _predatorFearNodeBuffer);
+            ReleaseBuffer(ref _predatorFearNodeBufferA);
+            ReleaseBuffer(ref _predatorFearNodeBufferB);
+            _activePredatorFearNodeBuffer = null;
+            _predatorFearNodeBufferWriteIndex = 0;
+            _pendingPredatorFearShaderUpload = false;
+            _pendingPredatorFearShaderActiveCount = 0;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

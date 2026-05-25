@@ -2,6 +2,8 @@
     "name": "Hecton8.Narrative.Prologue",
     "rootNamespace": "Hecton8.Narrative.Prologue",
     "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
         "Hecton8.Core.Contracts",
         "Unity.Collections",
         "Unity.Mathematics"

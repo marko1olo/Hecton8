@@ -8,11 +8,15 @@ namespace Hecton8.Physics
 {
     public static class HabitatFluidIncursionConstants
     {
-        public const int MaxCompartments = 256;
-        public const int MaxEdges = 1024;
+        public const int MaxCompartments = 5000;
+        public const int MaxEdges = 20000;
         public const int TelemetryFrameCount = 300;
         public const int MinSolverIterations = 1;
         public const int MaxSolverIterations = 5;
+        public const int MinBfsNodesPerTick = 16;
+        public const int MaxBfsNodesPerTick = 128;
+        public const float CubicMetersPerMilliliter = 0.000001f;
+        public const float MillilitersPerCubicMeter = 1000000f;
         public const float WaterEpsilonM3 = 0.0001f;
         public const float DefaultCompartmentVolumeM3 = 64f;
         public const float DefaultFloorHeightLocal = -1.35f;
@@ -33,6 +37,7 @@ namespace Hecton8.Physics
         public const uint Isolated = 1u << 2;
         public const uint OverflowClamped = 1u << 3;
         public const uint MockBreach = 1u << 4;
+        public const uint SignalOverflow = 1u << 29;
         public const uint NonFinite = 1u << 31;
     }
 
@@ -42,23 +47,20 @@ namespace Hecton8.Physics
         public const byte Ruptured = 1 << 1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct FluidCompartmentDTO
     {
-        [FieldOffset(0)] public uint NodeHash;
-        [FieldOffset(4)] public float MaxVolume;
-        [FieldOffset(8)] public float CurrentWaterVolume;
-        [FieldOffset(12)] public float FloorHeightLocal;
-        [FieldOffset(16)] public uint Flags;
-        [FieldOffset(20)] public float IngressRate;
-        [FieldOffset(24)] public byte _pad0;
-        [FieldOffset(25)] public byte _pad1;
-        [FieldOffset(26)] public byte _pad2;
-        [FieldOffset(27)] public byte _pad3;
-        [FieldOffset(28)] public byte _pad4;
-        [FieldOffset(29)] public byte _pad5;
-        [FieldOffset(30)] public byte _pad6;
-        [FieldOffset(31)] public byte _pad7;
+        [FieldOffset(0)] public double3 LocalCenterOfMass;
+        [FieldOffset(24)] public uint NodeHashID;
+        [FieldOffset(28)] public float CurrentWaterVolume;
+        [FieldOffset(32)] public float MaxWaterVolume;
+        [FieldOffset(36)] public float WaterLevelHeight01;
+        [FieldOffset(40)] public uint Flags;
+        [FieldOffset(44)] private uint _pad0;
+        [FieldOffset(48)] private uint _pad1;
+        [FieldOffset(52)] private uint _pad2;
+        [FieldOffset(56)] private uint _pad3;
+        [FieldOffset(60)] private uint _pad4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -194,6 +196,9 @@ namespace Hecton8.Physics
         {
             ref FluidCompartmentDTO dto = ref ElementRef(basePtr, index);
             dto.CurrentWaterVolume = value;
+            dto.WaterLevelHeight01 = dto.MaxWaterVolume > HabitatFluidIncursionConstants.WaterEpsilonM3
+                ? math.saturate(value * math.rcp(dto.MaxWaterVolume))
+                : 0f;
         }
     }
 
@@ -201,15 +206,27 @@ namespace Hecton8.Physics
     {
         public static bool ValidateFluidCompartmentLayout()
         {
-            return UnsafeUtility.SizeOf<FluidCompartmentDTO>() == 32 &&
-                   UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(nameof(FluidCompartmentDTO.NodeHash))) == 0 &&
-                   UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(nameof(FluidCompartmentDTO.MaxVolume))) == 4 &&
-                   UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(nameof(FluidCompartmentDTO.CurrentWaterVolume))) == 8 &&
-                   UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(nameof(FluidCompartmentDTO.FloorHeightLocal))) == 12 &&
-                   UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(nameof(FluidCompartmentDTO.Flags))) == 16 &&
-                   UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(nameof(FluidCompartmentDTO.IngressRate))) == 20 &&
-                   UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(nameof(FluidCompartmentDTO._pad0))) == 24 &&
-                   UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(nameof(FluidCompartmentDTO._pad7))) == 31;
+            if (UnsafeUtility.SizeOf<FluidCompartmentDTO>() != 64)
+                return false;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return
+                   OffsetOf(nameof(FluidCompartmentDTO.LocalCenterOfMass)) == 0 &&
+                   OffsetOf(nameof(FluidCompartmentDTO.NodeHashID)) == 24 &&
+                   OffsetOf(nameof(FluidCompartmentDTO.CurrentWaterVolume)) == 28 &&
+                   OffsetOf(nameof(FluidCompartmentDTO.MaxWaterVolume)) == 32 &&
+                   OffsetOf(nameof(FluidCompartmentDTO.WaterLevelHeight01)) == 36 &&
+                   OffsetOf(nameof(FluidCompartmentDTO.Flags)) == 40;
+#else
+            return true;
+#endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static int OffsetOf(string fieldName)
+        {
+            return UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(fieldName));
+        }
+#endif
     }
 }

@@ -9,6 +9,14 @@ using Unity.Mathematics;
 
 namespace Hecton8.VFX.Debris
 {
+    internal static class ShinobuDeltaCrusherJobLayout
+    {
+        public const int DebrisParticleDTOStrideBytes = 32;
+        public const int DeltaCrusherMockLaserFireSignalStrideBytes = 64;
+        public const int CarveDebrisTuningDTOStrideBytes = 32;
+        public const int ChunkCarveDispatchDTOStrideBytes = 64;
+    }
+
     public enum MockVoxelChunkState : byte
     {
         Unloaded = 0,
@@ -16,7 +24,7 @@ namespace Hecton8.VFX.Debris
         Ready = 2
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ShinobuDeltaCrusherJobLayout.DebrisParticleDTOStrideBytes)]
     public struct DebrisParticleDTO
     {
         [FieldOffset(0)] public float3 Position;
@@ -25,7 +33,7 @@ namespace Hecton8.VFX.Debris
         [FieldOffset(28)] public uint MaterialHash;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ShinobuDeltaCrusherJobLayout.DeltaCrusherMockLaserFireSignalStrideBytes)]
     public struct DeltaCrusherMockLaserFireSignal : ISignal
     {
         [FieldOffset(0)] public double3 AupPosition;
@@ -41,7 +49,7 @@ namespace Hecton8.VFX.Debris
         [FieldOffset(56)] public ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ShinobuDeltaCrusherJobLayout.CarveDebrisTuningDTOStrideBytes)]
     public struct CarveDebrisTuningDTO
     {
         [FieldOffset(0)] public float3 Gravity;
@@ -52,7 +60,7 @@ namespace Hecton8.VFX.Debris
         [FieldOffset(28)] public uint Version;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ShinobuDeltaCrusherJobLayout.ChunkCarveDispatchDTOStrideBytes)]
     public struct ChunkCarveDispatchDTO
     {
         [FieldOffset(0)] public int3 ChunkCoord;
@@ -117,7 +125,7 @@ namespace Hecton8.VFX.Debris
             float upperT = SmoothQuality01((quality - 0.5f) * 2f);
             float minimumToMiddle = math.lerp(MinimumQualityDebrisCap, middle, lowerT);
             float middleToMaximum = math.lerp(middle, upper, upperT);
-            int continuousCap = (int)math.round(math.lerp(minimumToMiddle, middleToMaximum, math.step(0.5f, quality)));
+            int continuousCap = (int)math.round(math.lerp(minimumToMiddle, middleToMaximum, upperT));
             return math.clamp(continuousCap, MinimumQualityDebrisCap, upper);
         }
 

@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -14,8 +15,11 @@ namespace Hecton8.Quest
     public struct MockQuestSignalPushJob : IJob
     {
         public NativeQueue<MockPlayerPositionSignal>.ParallelWriter PlayerPositionWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> PlayerPositionWriterBudget;
         public NativeQueue<QuestDagMockItemAcquiredSignal>.ParallelWriter ItemAcquiredWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> ItemAcquiredWriterBudget;
         public NativeQueue<MockStoryEventSignal>.ParallelWriter StoryEventWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> StoryEventWriterBudget;
         public uint Frame;
         public uint Seed;
         public ulong Timestamp;
@@ -28,7 +32,7 @@ namespace Hecton8.Quest
             state = Next(state);
             double z = (state & 0xFFFFu) * 0.01d;
 
-            PlayerPositionWriter.Enqueue(new MockPlayerPositionSignal
+            SignalBus<MockPlayerPositionSignal>.TryEnqueueBounded(PlayerPositionWriter, PlayerPositionWriterBudget, new MockPlayerPositionSignal
             {
                 AUP = new double3(x, 0d, z),
                 Frame = Frame,
@@ -38,7 +42,7 @@ namespace Hecton8.Quest
             });
 
             state = Next(state);
-            ItemAcquiredWriter.Enqueue(new QuestDagMockItemAcquiredSignal
+            SignalBus<QuestDagMockItemAcquiredSignal>.TryEnqueueBounded(ItemAcquiredWriter, ItemAcquiredWriterBudget, new QuestDagMockItemAcquiredSignal
             {
                 Timestamp = Timestamp,
                 ItemHash = unchecked(0x49000000u + (state & 31u)),
@@ -50,7 +54,7 @@ namespace Hecton8.Quest
             });
 
             state = Next(state);
-            StoryEventWriter.Enqueue(new MockStoryEventSignal
+            SignalBus<MockStoryEventSignal>.TryEnqueueBounded(StoryEventWriter, StoryEventWriterBudget, new MockStoryEventSignal
             {
                 Timestamp = Timestamp,
                 EventHash = unchecked(0x54000000u + (state & 1023u)),
@@ -84,8 +88,11 @@ namespace Hecton8.Quest
             return new MockQuestSignalPushJob
             {
                 PlayerPositionWriter = SignalBus<MockPlayerPositionSignal>.ParallelWriter,
+                PlayerPositionWriterBudget = SignalBus<MockPlayerPositionSignal>.ParallelWriterBudget,
                 ItemAcquiredWriter = SignalBus<QuestDagMockItemAcquiredSignal>.ParallelWriter,
+                ItemAcquiredWriterBudget = SignalBus<QuestDagMockItemAcquiredSignal>.ParallelWriterBudget,
                 StoryEventWriter = SignalBus<MockStoryEventSignal>.ParallelWriter,
+                StoryEventWriterBudget = SignalBus<MockStoryEventSignal>.ParallelWriterBudget,
                 Frame = frame,
                 Seed = seed,
                 Timestamp = timestamp

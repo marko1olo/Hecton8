@@ -14,7 +14,7 @@ namespace Hecton8.Gameplay
     /// Keeps the dropped scooter physical for a short sink/drift window, then returns it to the pool.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MantaEmergencyWreck : MonoBehaviour, IPoolable, IFixedTickable
+    public sealed class MantaEmergencyWreck : MonoBehaviour, IPoolable, IFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float DehydrationDistanceMeters = 160f;
         private const double DehydrationDistanceSq = DehydrationDistanceMeters * DehydrationDistanceMeters;
@@ -38,7 +38,7 @@ namespace Hecton8.Gameplay
 
         [DisallowMultipleComponent]
         [DefaultExecutionOrder(-4900)]
-        private sealed class ResidencyRuntime : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+        private sealed class ResidencyRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
         {
             private bool _registered;
             private bool _hotSwapListenerRegistered;
@@ -67,15 +67,16 @@ namespace Hecton8.Gameplay
                 TryUnregister();
             }
 
-            public void Tick(float deltaTime)
+            public void LateFrameTick()
             {
                 if (!Application.isPlaying || s_activeDehydratedResidencySlotCount <= 0)
                     return;
 
+                float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
                 if (!TryResolveCurrentPlayerAup(out AbsoluteUniversePosition playerAup))
                     return;
 
-                ObjectPoolManager poolManager = s_cachedObjectPool;
+                IObjectPoolService poolManager = s_cachedObjectPool;
                 if (poolManager == null)
                     return;
 
@@ -132,8 +133,7 @@ namespace Hecton8.Gameplay
                 if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                     return;
 
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registered = GlobalRegistry.Updatables.Contains(this);
+                _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
 
             private void TryUnregister()
@@ -141,7 +141,7 @@ namespace Hecton8.Gameplay
                 if (!_registered)
                     return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registered = false;
             }
 
@@ -151,7 +151,7 @@ namespace Hecton8.Gameplay
                 object currentService)
             {
                 if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
-                    s_cachedObjectPool = currentService as ObjectPoolManager;
+                    s_cachedObjectPool = currentService as IObjectPoolService;
             }
 
             private void TryRegisterHotSwapListener()
@@ -173,7 +173,7 @@ namespace Hecton8.Gameplay
 
             private static void CacheRegistryServicesCold()
             {
-                s_cachedObjectPool = GlobalRegistry.ObjectPool;
+                s_cachedObjectPool = GlobalRegistry.ObjectPoolService;
             }
 
             private bool TryResolvePlayerTransform(float deltaTime, out Transform playerTransform)
@@ -251,14 +251,17 @@ namespace Hecton8.Gameplay
         private static int s_freeResidencySlotCount;
         private static int s_activeDehydratedResidencySlotCount;
         private static ResidencyRuntime s_residencyRuntime;
-        private static ObjectPoolManager s_cachedObjectPool;
+        private static IObjectPoolService s_cachedObjectPool;
 
         private Rigidbody _rigidbody;
         private PickupItem _pickupItem;
         private InteractionHighlighter _interactionHighlighter;
         private bool _registeredFixedTick;
+        private bool _registeredLateFrame;
+        private bool _hotSwapListenerRegistered;
         private bool _emergencyActive;
         private bool _preserveResidencyOnDespawn;
+        private bool _selfDeactivateQueued;
         private float _remainingLifetime;
         private float _collisionDamageCooldownTimer;
         private float _dehydrationCheckTimer;
@@ -321,7 +324,7 @@ namespace Hecton8.Gameplay
             Vector3 launchVelocity = inheritedVelocity * math.lerp(0.94f, 1.08f, clampedSeverity) +
                                      bailoutImpulse * math.lerp(0.12f, 0.28f, clampedSeverity);
             launchVelocity.y -= math.lerp(0.05f, 0.45f, clampedSeverity);
-            _rigidbody.linearVelocity = ResolveSafeVelocity(launchVelocity, linearVelocityCap);
+            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_rigidbody, ResolveSafeVelocity(launchVelocity, linearVelocityCap));
 
             float bailoutImpulseSq = bailoutImpulse.sqrMagnitude;
             Vector3 spinAxis = bailoutImpulseSq > 0.0001f
@@ -343,7 +346,7 @@ namespace Hecton8.Gameplay
                 : Vector3.forward;
             Vector3 angularVelocity = normalizedSpinAxis *
                                       (spinSign * math.lerp(spinVelocityMin, spinVelocityMax, clampedSeverity));
-            _rigidbody.angularVelocity = ResolveSafeVelocity(angularVelocity, angularVelocityCap);
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_rigidbody, ResolveSafeVelocity(angularVelocity, angularVelocityCap));
 
             UpdateResidencyState(markDehydrated: false);
             TryRegisterFixedTick();
@@ -408,7 +411,7 @@ namespace Hecton8.Gameplay
                 ForceMode.VelocityChange);
         }
 
-        private void OnCollisionEnter(Collision collision)
+        private void LegacyPhysXCollisionDamageDisabled(Collision collision)
         {
             if (!_emergencyActive || _collisionDamageCooldownTimer > 0f || collision == null)
                 return;
@@ -437,8 +440,134 @@ namespace Hecton8.Gameplay
             if (damage <= 0f)
                 return;
 
-            faunaBrain.TakeDamage(damage);
+            if (!TryQueueFaunaCollisionDamage(faunaBrain, collision, damage))
+                ApplyFaunaCollisionOwnerFallbackDamage(faunaBrain, collision, damage);
+
             _collisionDamageCooldownTimer = collisionDamageCooldown;
+        }
+
+        private bool TryQueueFaunaCollisionDamage(FaunaBrain faunaBrain, Collision collision, float damage)
+        {
+            if (faunaBrain == null || collision == null || damage <= 0f)
+                return false;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(faunaBrain.gameObject);
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return false;
+
+            Vector3 impactPoint = ResolveCollisionImpactPoint(faunaBrain, collision);
+            if (!IsFiniteVector(impactPoint))
+                impactPoint = faunaBrain.transform != null && IsFiniteVector(faunaBrain.transform.position)
+                    ? faunaBrain.transform.position
+                    : Vector3.zero;
+
+            double3 impactAup3 = double3.zero;
+            if (TryResolveAupFromPlayerObserver(impactPoint, out AbsoluteUniversePosition impactAup) && impactAup.IsFinite())
+            {
+                double3 resolvedAup = impactAup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(resolvedAup)))
+                    impactAup3 = resolvedAup;
+            }
+
+            Vector3 direction = ResolveCollisionImpactDirection(faunaBrain, collision);
+            Vector3 localPoint = faunaBrain.transform.InverseTransformPoint(impactPoint);
+            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
+            if (!math.all(math.isfinite(localPoint3)))
+                localPoint3 = float3.zero;
+
+            float3 direction3 = new float3(direction.x, direction.y, direction.z);
+            CombatDamageRequest signal = new CombatDamageRequest
+            {
+                TargetId = targetId,
+                SourceId = DamageSourceIds.MantaEmergencyWreck,
+                Amount = damage,
+                ImpulseMagnitude = damage,
+                Direction = direction3,
+                PackedMeta = CombatDamageRuntime.PackSignalMeta(
+                    CombatDamageTypes.Impact,
+                    0u,
+                    CombatWeakspotTier.None)
+            };
+
+            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
+            {
+                LocalPoint = localPoint3,
+                ArmorNormal = -direction3,
+                LocalTemperatureCelsius = 20f,
+                StatusDurationSeconds = 0f
+            };
+
+            CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup3);
+            return true;
+        }
+
+        private void ApplyFaunaCollisionOwnerFallbackDamage(FaunaBrain faunaBrain, Collision collision, float damage)
+        {
+            if (faunaBrain == null || damage <= 0f || !math.isfinite(damage))
+                return;
+
+            Vector3 impactPoint = ResolveCollisionImpactPoint(faunaBrain, collision);
+            if (!IsFiniteVector(impactPoint))
+                impactPoint = faunaBrain.transform != null && IsFiniteVector(faunaBrain.transform.position)
+                    ? faunaBrain.transform.position
+                    : Vector3.zero;
+
+            Vector3 localPoint = faunaBrain.transform != null
+                ? faunaBrain.transform.InverseTransformPoint(impactPoint)
+                : Vector3.zero;
+            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
+            if (!math.all(math.isfinite(localPoint3)))
+                localPoint3 = float3.zero;
+
+            DamagePacket packet = new DamagePacket
+            {
+                Channel = DamageChannel.Integrity,
+                PreviousValue = 0f,
+                NextValue = 0f,
+                Magnitude = damage,
+                LocalPoint = localPoint3,
+                DamageType = CombatDamageTypes.Impact,
+                IntegrityDelta = 0,
+                Depth = 0f,
+                SourceId = DamageSourceIds.MantaEmergencyWreck,
+                TraumaLevel = 0
+            };
+            faunaBrain.ReceiveDamage(in packet);
+        }
+
+        private static Vector3 ResolveCollisionImpactPoint(FaunaBrain faunaBrain, Collision collision)
+        {
+            if (collision != null && collision.contactCount > 0)
+                return collision.GetContact(0).point;
+
+            return faunaBrain != null ? faunaBrain.transform.position : Vector3.zero;
+        }
+
+        private Vector3 ResolveCollisionImpactDirection(FaunaBrain faunaBrain, Collision collision)
+        {
+            Vector3 direction = collision != null ? collision.relativeVelocity : Vector3.zero;
+            if (!IsFiniteVector(direction) || direction.sqrMagnitude <= 0.0001f)
+                direction = faunaBrain != null ? faunaBrain.transform.position - transform.position : Vector3.forward;
+
+            return NormalizeOrForward(direction);
+        }
+
+        private static Vector3 NormalizeOrForward(Vector3 direction)
+        {
+            if (!IsFiniteVector(direction))
+                return Vector3.forward;
+
+            float sqrMagnitude = direction.sqrMagnitude;
+            if (sqrMagnitude <= 0.0001f)
+                return Vector3.forward;
+
+            float invMagnitude = math.rsqrt(sqrMagnitude);
+            return direction * invMagnitude;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
         private void CachePassiveReferences()
@@ -489,8 +618,8 @@ namespace Hecton8.Gameplay
             if (_rigidbody == null)
                 return;
 
-            _rigidbody.linearVelocity = Vector3.zero;
-            _rigidbody.angularVelocity = Vector3.zero;
+            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_rigidbody, Vector3.zero, wake: false);
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_rigidbody, Vector3.zero, wake: false);
             _rigidbody.linearDamping = idleLinearDamping;
             _rigidbody.angularDamping = idleAngularDamping;
             _rigidbody.useGravity = false;
@@ -500,13 +629,23 @@ namespace Hecton8.Gameplay
         private void DespawnSelf(bool preserveResidencySlot)
         {
             _preserveResidencyOnDespawn = preserveResidencySlot;
-            ObjectPoolManager poolManager = s_cachedObjectPool;
+            _selfDeactivateQueued = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_selfDeactivateQueued)
+                return;
+
+            _selfDeactivateQueued = false;
+            IObjectPoolService poolManager = s_cachedObjectPool;
             if (poolManager != null)
             {
                 poolManager.Despawn(gameObject);
                 return;
             }
 
+            bool preserveResidencySlot = _preserveResidencyOnDespawn;
             ResetToIdlePickupState(releaseResidencySlot: !preserveResidencySlot);
             _preserveResidencyOnDespawn = false;
             gameObject.SetActive(false);
@@ -519,17 +658,84 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (_registeredFixedTick || _registeredLateFrame)
+                TryRegisterHotSwapListener();
         }
 
         private void TryUnregisterFixedTick()
         {
-            if (!_registeredFixedTick)
+            if (_registeredLateFrame && !_selfDeactivateQueued)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            if (_registeredFixedTick)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registeredFixedTick = false;
+            }
+
+            if (!_registeredFixedTick && !_registeredLateFrame)
+                TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            bool needsFixed = _registeredFixedTick || _emergencyActive;
+            bool needsLate = _registeredLateFrame || _selfDeactivateQueued;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            if (_registeredFixedTick)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registeredFixedTick = false;
+            }
+
+            if (needsFixed)
+            {
+                TryRegisterFixedTick();
+            }
+            else if (needsLate)
+            {
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                if (_registeredLateFrame)
+                    TryRegisterHotSwapListener();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = false;
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void HydrateFromResidency(int slotIndex, in ResidencyState state, Vector3 runtimePosition)
@@ -567,8 +773,8 @@ namespace Hecton8.Gameplay
             _rigidbody.angularDamping = activeAngularDamping;
             _rigidbody.position = runtimePosition;
             _rigidbody.rotation = state.rotation;
-            _rigidbody.linearVelocity = ResolveSafeVelocity(state.linearVelocity, ResolveLinearVelocityCap());
-            _rigidbody.angularVelocity = ResolveSafeVelocity(state.angularVelocity, ResolveAngularVelocityCap());
+            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_rigidbody, ResolveSafeVelocity(state.linearVelocity, ResolveLinearVelocityCap()));
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_rigidbody, ResolveSafeVelocity(state.angularVelocity, ResolveAngularVelocityCap()));
             _rigidbody.WakeUp();
 
             UpdateResidencyState(markDehydrated: false);

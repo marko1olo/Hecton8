@@ -6,6 +6,7 @@ using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Hecton8.Core;
 
 namespace Hecton8.Editor.Build
 {
@@ -65,7 +66,7 @@ namespace Hecton8.Editor.Build
 
             if (blockerCount <= 0)
             {
-                Debug.Log("[PLATFORM] Graphics API matrix validation passed for " + target + ".");
+                H8Debug.Log("[PLATFORM] Graphics API matrix validation passed for " + target + ".");
                 return;
             }
 
@@ -78,7 +79,7 @@ namespace Hecton8.Editor.Build
             if (strictBuild || target == BuildTarget.StandaloneLinux64)
                 throw new BuildFailedException(message);
 
-            Debug.LogWarning(message + "\nDefine " + StrictDefine + " to convert this report into a hard build failure.");
+            H8Debug.LogWarning(message + "\nDefine " + StrictDefine + " to convert this report into a hard build failure.");
         }
 
         private static void ValidateRequiredFirstApi(
@@ -130,7 +131,7 @@ namespace Hecton8.Editor.Build
                 AppendFinding(findings, ref blockerCount, "Android first graphics API is " + apis[0] + ", expected Vulkan for standalone VR.");
 
             if (!Contains(apis, GraphicsDeviceType.OpenGLES3))
-                Debug.LogWarning("[PLATFORM] Android graphics APIs do not include OpenGLES3 fallback. This can be correct for strict Vulkan VR, but needs device proof.");
+                H8Debug.LogWarning("[PLATFORM] Android graphics APIs do not include OpenGLES3 fallback. This can be correct for strict Vulkan VR, but needs device proof.");
         }
 
         private static bool Contains(GraphicsDeviceType[] apis, GraphicsDeviceType expected)

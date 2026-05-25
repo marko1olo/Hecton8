@@ -29,9 +29,9 @@ namespace Hecton8.EditorTools
 
             List<ItemData> toolItems = LoadToolItems(ref errorCount, ref warningCount);
             HashSet<ItemData> itemSet = new HashSet<ItemData>(toolItems);
-            HashSet<string> toolIds = new HashSet<string>(System.StringComparer.Ordinal);
-            HashSet<string> itemIds = new HashSet<string>(System.StringComparer.Ordinal);
-            Dictionary<string, ItemData> itemAliases = new Dictionary<string, ItemData>(System.StringComparer.Ordinal);
+            HashSet<string> toolIds = new HashSet<string>(32, System.StringComparer.Ordinal);
+            HashSet<string> itemIds = new HashSet<string>(toolItems.Count, System.StringComparer.Ordinal);
+            Dictionary<string, ItemData> itemAliases = new Dictionary<string, ItemData>(toolItems.Count * 2, System.StringComparer.Ordinal);
 
             ValidateToolItemIdentities(toolItems, itemIds, itemAliases, ref errorCount, ref warningCount);
 
@@ -365,7 +365,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            HashSet<ItemData> stagedItems = new HashSet<ItemData>();
+            HashSet<ItemData> stagedItems = new HashSet<ItemData>(childCount);
             for (int i = 0; i < childCount; i++)
             {
                 Transform child = stagingTransform.GetChild(i);

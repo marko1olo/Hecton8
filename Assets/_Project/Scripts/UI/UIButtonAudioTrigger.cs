@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using Hecton8.Audio;
+using Hecton8.Core;
 
 namespace Hecton8.UI
 {
@@ -13,7 +14,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]
     [AddComponentMenu("Hecton8/UI/UI Button Audio Trigger")]
-    public sealed class UIButtonAudioTrigger : MonoBehaviour
+    public sealed class UIButtonAudioTrigger : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         // TYPES
@@ -42,8 +43,9 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private Button _button;
-        private Hecton8.Core.IAudioService _audioManager;
+        private IAudioService _audioManager;
         private UnityAction _cachedClickAction;
+        private bool _hotSwapListenerRegistered;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -52,12 +54,14 @@ namespace Hecton8.UI
         private void Awake()
         {
             TryGetComponent(out _button);
-            _audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioManager = GlobalRegistry.Audio;
             _cachedClickAction = OnButtonClicked; // COLD ALLOC: UnityAction[1] — cached UI click audio listener — owner: UIButtonAudioTrigger
         }
 
         private void OnEnable()
         {
+            _audioManager = GlobalRegistry.Audio;
+            TryRegisterHotSwapListener();
             if (_button != null)
                 _button.onClick.AddListener(_cachedClickAction);
         }
@@ -66,6 +70,21 @@ namespace Hecton8.UI
         {
             if (_button != null)
                 _button.onClick.RemoveListener(_cachedClickAction);
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                _audioManager = currentService as IAudioService;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -74,13 +93,27 @@ namespace Hecton8.UI
 
         private void OnButtonClicked()
         {
-            if (_audioManager == null)
-                _audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-
             if (_audioManager == null || clickSound == null)
                 return;
 
             _audioManager.PlayStatic2D(clickSound, volume, _audioManager.InterfaceGroup);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

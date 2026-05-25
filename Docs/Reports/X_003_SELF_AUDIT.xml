@@ -1,0 +1,46 @@
+﻿<SELF_AUDIT agent="SHINOBU_359" domain="H_PHI_ASSEMBLY_COMPLIANCE_GATE" evidenceClass="STATIC_SOURCE">
+  <taskReconciliation total="20">
+    <task id="01" status="PASS">Repository scan performed through existing tool surface and Python file walking.</task>
+    <task id="02" status="PASS">Integrated into Tools/AssemblyDependencyAudit.py, preserving one gate owner.</task>
+    <task id="03" status="PASS">BINARY_SCHEMA_AUDIT_REPORT.json is produced by --binary-schema-audit.</task>
+    <task id="04" status="PASS">C# production parser uses bounded line-window state parsing; no nested regex path added.</task>
+    <task id="05" status="PASS">asmdef/C#/schema readers use mmap and bounded ThreadPoolExecutor lanes.</task>
+    <task id="06" status="PASS">generate_mock_csharp_structs() builds valid and hostile fixtures for --test.</task>
+    <task id="07" status="PASS">parse_csharp_file() mmap path reconstructs struct layout fields and attributes.</task>
+    <task id="08" status="PASS">validate_struct_alignment() enforces Pack=1 ban, offsets, bool fields, and size multiple-of-8.</task>
+    <task id="09" status="PASS">validate_no_properties() reports get/set accessors in unmanaged contract structs.</task>
+    <task id="10" status="PASS">compare_against_binary_schemas() compares C# field offsets against JSON schemas.</task>
+    <task id="11" status="PASS">threading.Timer watchdog exits with os._exit(1) after the configured limit.</task>
+    <task id="12" status="PASS">AUP/world float fields and float casts are statically reported.</task>
+    <task id="13" status="PASS">--test and unittest fixtures cover cycles, boundaries, layout, properties, schemas, AUP, CSV, OOP scan.</task>
+    <task id="14" status="PASS">JSON reports stream through JSONEncoder.iterencode; Python remains an offline allocator, not runtime Tick code.</task>
+    <task id="15" status="PASS">Metric rows append to METRIC_PHI_DATA_TRUTH_AUDIT.json with timing and warning flag.</task>
+    <task id="16" status="FAIL_BLOCKED_BY_DOMAIN_BOUNDARY">C# UI Toolkit window conflicts with the prompt&apos;s Tools-only/no C# modification law.</task>
+    <task id="17" status="PASS_OFFLINE_ONLY">binary_schema_profiles.csv parser uses mmap byte slicing and FNV-1a hashes; Vault writes remain forbidden here.</task>
+    <task id="18" status="FAIL_BLOCKED_BY_DOMAIN_BOUNDARY">Scene gizmo requires C# editor/runtime source mutation, forbidden for this offline gate.</task>
+    <task id="19" status="PASS">OOP_AST_Scanner writes the SHINOBU_359 section of QA_OPTIMIZATION_REPORT.json.</task>
+    <task id="20" status="PASS">This XML self-audit records task reconciliation, compile guard, route, and non-runtime DTO/Vault status.</task>
+  </taskReconciliation>
+  <structLayoutVerification>
+    <primaryRuntimeDto status="NOT_CREATED_OFFLINE_PYTHON_GATE" byteSize="0" fieldCount="0" alignment="not_applicable">
+      No C# DTO, NativeArray, NativeMinHeap, SignalBus payload, or Vault row was introduced by SHINOBU_359. The validator emits JSON report records only.
+    </primaryRuntimeDto>
+    <binaryAudit unmanagedContracts="not_run" arm64Violations="not_run" cs1612Properties="not_run" aupViolations="not_run" elapsedMs="not_run" cacheHit="not_run" cacheHits="not_run" cacheMisses="not_run" performanceRegressionWarning="not_run" />
+  </structLayoutVerification>
+  <scalabilityCurve>
+    Offline static gates do not consume GlobalQualityWeight and do not alter gameplay truth. Scalability is continuous at CI depth: default asmdef DAG is the cheap pre-merge pass; binary schema, CSV profile, and OOP scans are opt-in deeper passes without changing runtime DTO layout, authority routes, or save identity.
+  </scalabilityCurve>
+  <hPhiVaultStatus privateNativeArrays="0" vaultBufferIds="none" globalRegistryHotPolling="0">
+    SHINOBU_359 owns no runtime memory. It reads files through mmap and writes Docs reports. Vault-backed C# editor tuning was rejected because this agent is Tools-only.
+  </hPhiVaultStatus>
+  <pointerAliasingDependencyGraph burstJobs="0" jobHandlesConsumed="none" jobHandlesProduced="none" noAliasFields="not_applicable">
+    No Burst jobs or NativeArrays are introduced. Offline ThreadPoolExecutor lanes are host-tool parallelism, not SystemDispatcher runtime jobs.
+  </pointerAliasingDependencyGraph>
+  <compileGuard coreContractRequired="Hecton8.Core.Contracts" dagAcyclic="True" cycles="0" boundaryViolations="145" unresolvedFirstPartyRefs="0" />
+  <schemaProfiles exists="False" profileCount="0" parseErrors="0" />
+  <oopScanner findingCount="-1" summary="not_run" />
+  <usingBoundaryScanner findingCount="2208" requiredRoute="Hecton8.Core.Contracts" />
+  <dearLie>
+    Manual compile-wall review and Unity import probing are replaced with a static graph proof. Complexity is O(N+E) over asmdefs for cycles and boundary checks, plus optional O(F) mmap scans for C#/QA reports; no scene simulation, GameObject construction, Physics calls, or Unity compile is required.
+  </dearLie>
+</SELF_AUDIT>

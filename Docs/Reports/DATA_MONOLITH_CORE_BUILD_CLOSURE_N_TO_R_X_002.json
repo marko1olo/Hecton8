@@ -1,0 +1,27 @@
+{
+  "agent": "X_002",
+  "status": "CORE_BUILD_PASS_N_TO_R",
+  "generatedUtc": "2026-05-24T08:36:51.1927326Z",
+  "scope": [
+    "Slice N: VisualOmegaSmokeTester development-player source text-read fence.",
+    "Slice O: H8StaticDataArena memory-ingest early failure telemetry parity.",
+    "Slice P: SubtitleManager and LocalizationManager span compile-wall closure.",
+    "Slice Q: WristHologramHudRuntime editor CSV scratch allocation fenced from players.",
+    "Slice R: ThermodynamicsHazardGridRuntime editor CSV worker allocation fenced from players."
+  ],
+  "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+  "buildServerShutdownBeforeBuild": true,
+  "result": "PASS",
+  "errors": 0,
+  "warnings": 5,
+  "elapsed": "00:01:24.55",
+  "warningsDetail": [
+    "CS2002 duplicate source entry: Assets/_Project/Scripts/Input/InputManager.cs",
+    "CS2002 duplicate source entry: Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+    "CS2002 duplicate source entry: Assets/_Project/Scripts/Core/Contracts/Signals/UniversalInputStateSignal.cs",
+    "CS2002 duplicate source entry: Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+    "CS2002 duplicate source entry: Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs"
+  ],
+  "warningAssessment": "Generated Hecton8.Core.csproj duplicate-source warnings are not introduced by slices N/O/P/Q/R and do not indicate Data Monolith parser, checksum, layout, or heap-staging regression.",
+  "claimBoundary": "Core project compile proof only. Unity import, player build, profiler GC capture, and target-device timing proof remain pending."
+}

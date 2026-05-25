@@ -9,7 +9,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9926)]
-    public sealed class OceanKinematicsRuntimeService : MonoBehaviour, IHectonOceanKinematicsService, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class OceanKinematicsRuntimeService : MonoBehaviour, IHectonOceanKinematicsService, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int ProviderCapacity = 4;
 
@@ -19,6 +19,7 @@ namespace Hecton8.Core
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
+        private bool _hotSwapRegistered;
         private int _providerCount;
         private IHectonOceanKinematics _activeProvider;
 
@@ -32,14 +33,7 @@ namespace Hecton8.Core
         public bool IsServiceReady => _isInitialized;
 
         /// <inheritdoc />
-        public IHectonOceanKinematics ActiveProvider
-        {
-            get
-            {
-                RefreshActiveProvider();
-                return _activeProvider;
-            }
-        }
+        public IHectonOceanKinematics ActiveProvider => _activeProvider;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -67,6 +61,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
                 RefreshActiveProvider();
@@ -78,6 +73,7 @@ namespace Hecton8.Core
                 return;
 
             _isInitialized = true;
+            TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterService();
             RefreshActiveProvider();
@@ -118,6 +114,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
                 RefreshActiveProvider();
@@ -127,6 +124,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterUpdatable();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             _activeProvider = null;
         }
@@ -144,6 +142,7 @@ namespace Hecton8.Core
         private void ShutdownServiceState()
         {
             TryUnregisterUpdatable();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             _isInitialized = false;
             System.Array.Clear(_providers, 0, _providerCount);
@@ -151,6 +150,23 @@ namespace Hecton8.Core
             _activeProvider = null;
 
             GlobalRegistry.ClearOceanKinematicsRuntime(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                !_isInitialized ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            TryUnregisterUpdatable();
+            TryRegisterUpdatable();
         }
 
         private void RegisterProviderInternal(IHectonOceanKinematics provider)
@@ -264,8 +280,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterUpdatable()
@@ -275,6 +290,23 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void TryRegisterService()

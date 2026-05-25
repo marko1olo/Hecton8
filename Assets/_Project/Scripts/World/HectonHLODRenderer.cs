@@ -16,14 +16,12 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-89)]
-    public sealed class HectonHLODRenderer : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
+    public sealed class HectonHLODRenderer : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_HLODUnlitFog.shader";
 #endif
         private const int BrgMetadataPlaceholderCount = 1;
-        private const Allocator DataVaultExemptHlodBrgAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptHlodUploadAllocator = Allocator.Persistent;
 
         private static readonly int InstanceMatricesId = Shader.PropertyToID("_HectonHLODInstanceMatrices");
         private static readonly int InstanceFadeId = Shader.PropertyToID("_HectonHLODInstanceFade");
@@ -61,17 +59,21 @@ namespace Hecton8.World
 
         private GraphicsBuffer _matrixBuffer;
         private GraphicsBuffer _fadeBuffer;
-        private NativeArray<Matrix4x4> _uploadedMatrices;
-        private NativeArray<Vector4> _uploadedFade;
+        private Matrix4x4[] _uploadedMatrices;
+        private Vector4[] _uploadedFade;
         private GraphicsBuffer _uploadedMatrixBuffer;
         private GraphicsBuffer _uploadedFadeBuffer;
+        private GraphicsBuffer _uploadedMatrixBufferA;
+        private GraphicsBuffer _uploadedMatrixBufferB;
+        private GraphicsBuffer _uploadedFadeBufferA;
+        private GraphicsBuffer _uploadedFadeBufferB;
+        private int _ownedUploadBufferIndex;
         private Bounds _drawBounds;
         private int _instanceCount;
         private bool _hasBoundsOverride;
         private bool _isRegistered;
         private Vector4 _lastGlobalFloatingOffset = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private BatchRendererGroup _batchRendererGroup;
-        private NativeArray<MetadataValue> _batchMetadata;
         private GraphicsBuffer _batchHandleBuffer;
         private BatchID _batchId;
         private BatchMeshID _batchMeshId;
@@ -81,6 +83,7 @@ namespace Hecton8.World
         private GraphicsBuffer _registeredBatchBuffer;
         private Bounds _registeredDrawBounds;
         private bool _registeredDrawBoundsValid;
+        private bool _hotSwapListenerRegistered;
 
         private void Awake()
         {
@@ -91,6 +94,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterHotSwapListener();
             RegisterTick();
         }
 
@@ -98,16 +102,23 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterTick();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            UnregisterTick();
+            TryUnregisterHotSwapListener();
             ReleaseResources();
         }
 
         /// <inheritdoc />
         public void Tick(float dt)
+        {
+        }
+
+        public void LateFrameTick()
         {
             if (_instanceCount <= 0 || _matrixBuffer == null || _fadeBuffer == null)
                 return;
@@ -147,7 +158,7 @@ namespace Hecton8.World
             }
 
             EnsureOwnedUploadCapacity(instanceCount);
-            if (!_uploadedMatrices.IsCreated || !_uploadedFade.IsCreated || _uploadedMatrixBuffer == null || _uploadedFadeBuffer == null)
+            if (_uploadedMatrices == null || _uploadedFade == null || _uploadedMatrixBuffer == null || _uploadedFadeBuffer == null)
             {
                 ClearBinding();
                 return;
@@ -174,10 +185,7 @@ namespace Hecton8.World
                 }
             }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedMatrixBuffer, _uploadedMatrices, instanceCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedFadeBuffer, _uploadedFade, instanceCount);
-            _matrixBuffer = _uploadedMatrixBuffer;
-            _fadeBuffer = _uploadedFadeBuffer;
+            PublishOwnedUploadBuffers(instanceCount);
             _instanceCount = instanceCount;
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             _hasBoundsOverride = hasCombinedBounds;
@@ -212,8 +220,7 @@ namespace Hecton8.World
             if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterTick()
@@ -221,8 +228,34 @@ namespace Hecton8.World
             if (!_isRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _isRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                RegisterTick();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void EnsureResources()
@@ -235,10 +268,11 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, DataVaultExemptHlodBrgAllocator); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for HLOD renderer - owner: HectonHLODRenderer
-                NativeMemorySentinel.RegisterNativeArray(_batchMetadata, nameof(HectonHLODRenderer), nameof(_batchMetadata), NativeAllocationLifetime.Session);
                 _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for HLOD renderer - owner: HectonHLODRenderer
-                _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
+                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+                {
+                    _batchId = _batchRendererGroup.AddBatch(batchMetadata, _batchHandleBuffer.bufferHandle);
+                }
                 _registeredDrawBoundsValid = false;
                 SetBatchGlobalBoundsIfChanged(ResolveDrawBounds());
             }
@@ -300,48 +334,51 @@ namespace Hecton8.World
         private void EnsureOwnedUploadCapacity(int instanceCount)
         {
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, instanceCount));
-            if (_uploadedMatrices.IsCreated &&
+            if (_uploadedMatrices != null &&
                 _uploadedMatrices.Length >= nextCapacity &&
-                _uploadedFade.IsCreated &&
+                _uploadedFade != null &&
                 _uploadedFade.Length >= nextCapacity &&
-                _uploadedMatrixBuffer != null &&
-                _uploadedMatrixBuffer.count >= nextCapacity &&
-                _uploadedFadeBuffer != null &&
-                _uploadedFadeBuffer.count >= nextCapacity)
+                HasUploadCapacity(_uploadedMatrixBufferA, nextCapacity) &&
+                HasUploadCapacity(_uploadedMatrixBufferB, nextCapacity) &&
+                HasUploadCapacity(_uploadedFadeBufferA, nextCapacity) &&
+                HasUploadCapacity(_uploadedFadeBufferB, nextCapacity))
             {
                 return;
             }
 
-            if (_uploadedMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedMatrices);
-                _uploadedMatrices.Dispose();
-            }
+            _uploadedMatrices = null;
+            _uploadedFade = null;
+            ReleaseUploadBuffer(ref _uploadedMatrixBufferA);
+            ReleaseUploadBuffer(ref _uploadedMatrixBufferB);
+            ReleaseUploadBuffer(ref _uploadedFadeBufferA);
+            ReleaseUploadBuffer(ref _uploadedFadeBufferB);
+            _uploadedMatrixBuffer = null;
+            _uploadedFadeBuffer = null;
+            _registeredBatchBuffer = null;
+            _ownedUploadBufferIndex = 0;
 
-            if (_uploadedFade.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedFade);
-                _uploadedFade.Dispose();
-            }
+            _uploadedMatrices = new Matrix4x4[nextCapacity]; // COLD ALLOC: Matrix4x4[NextPowerOfTwo(requiredCount)] - HLOD CPU upload cache - owner: HectonHLODRenderer
+            _uploadedFade = new Vector4[nextCapacity]; // COLD ALLOC: Vector4[NextPowerOfTwo(requiredCount)] - HLOD fade CPU upload cache - owner: HectonHLODRenderer
+            _uploadedMatrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD matrix buffer A - owner: HectonHLODRenderer
+            _uploadedMatrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD matrix buffer B - owner: HectonHLODRenderer
+            _uploadedFadeBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD fade buffer A - owner: HectonHLODRenderer
+            _uploadedFadeBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD fade buffer B - owner: HectonHLODRenderer
+        }
 
-            if (_uploadedMatrixBuffer != null)
-            {
-                _uploadedMatrixBuffer.Release();
-                _uploadedMatrixBuffer = null;
-            }
+        private void PublishOwnedUploadBuffers(int instanceCount)
+        {
+            GraphicsBuffer matrixWrite = _ownedUploadBufferIndex == 0 ? _uploadedMatrixBufferA : _uploadedMatrixBufferB;
+            GraphicsBuffer fadeWrite = _ownedUploadBufferIndex == 0 ? _uploadedFadeBufferA : _uploadedFadeBufferB;
+            if (matrixWrite == null || fadeWrite == null)
+                return;
 
-            if (_uploadedFadeBuffer != null)
-            {
-                _uploadedFadeBuffer.Release();
-                _uploadedFadeBuffer = null;
-            }
-
-            _uploadedMatrices = new NativeArray<Matrix4x4>(nextCapacity, DataVaultExemptHlodUploadAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - HLOD matrix upload cache - owner: HectonHLODRenderer
-            _uploadedFade = new NativeArray<Vector4>(nextCapacity, DataVaultExemptHlodUploadAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Vector4>[NextPowerOfTwo(requiredCount)] - HLOD fade upload cache - owner: HectonHLODRenderer
-            NativeMemorySentinel.RegisterNativeArray(_uploadedMatrices, nameof(HectonHLODRenderer), nameof(_uploadedMatrices), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_uploadedFade, nameof(HectonHLODRenderer), nameof(_uploadedFade), NativeAllocationLifetime.Session);
-            _uploadedMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD matrix buffer - owner: HectonHLODRenderer
-            _uploadedFadeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD fade buffer - owner: HectonHLODRenderer
+            GraphicsBufferUploadUtility.UploadArray(matrixWrite, _uploadedMatrices, instanceCount);
+            GraphicsBufferUploadUtility.UploadArray(fadeWrite, _uploadedFade, instanceCount);
+            _uploadedMatrixBuffer = matrixWrite;
+            _uploadedFadeBuffer = fadeWrite;
+            _matrixBuffer = matrixWrite;
+            _fadeBuffer = fadeWrite;
+            _ownedUploadBufferIndex ^= 1;
         }
 
         private Material ResolveMaterial()
@@ -384,37 +421,17 @@ namespace Hecton8.World
                 _batchHandleBuffer = null;
             }
 
-            if (_batchMetadata.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_batchMetadata);
-                _batchMetadata.Dispose();
-            }
+            ReleaseUploadBuffer(ref _uploadedMatrixBufferA);
+            ReleaseUploadBuffer(ref _uploadedMatrixBufferB);
+            ReleaseUploadBuffer(ref _uploadedFadeBufferA);
+            ReleaseUploadBuffer(ref _uploadedFadeBufferB);
+            _uploadedMatrixBuffer = null;
+            _uploadedFadeBuffer = null;
+            _registeredBatchBuffer = null;
+            _ownedUploadBufferIndex = 0;
 
-            if (_uploadedMatrixBuffer != null)
-            {
-                _uploadedMatrixBuffer.Release();
-                _uploadedMatrixBuffer = null;
-                _registeredBatchBuffer = null;
-            }
-
-            if (_uploadedFadeBuffer != null)
-            {
-                _uploadedFadeBuffer.Release();
-                _uploadedFadeBuffer = null;
-            }
-
-            if (_uploadedMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedMatrices);
-                _uploadedMatrices.Dispose();
-            }
-
-            if (_uploadedFade.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedFade);
-                _uploadedFade.Dispose();
-            }
-
+            _uploadedMatrices = null;
+            _uploadedFade = null;
         }
 
         private JobHandle OnPerformCulling(
@@ -463,6 +480,20 @@ namespace Hecton8.World
         {
             Vector3 totalOffset = HectonMapMagicVegetationBridge.GlobalTotalUniverseOffset;
             return new Vector4(totalOffset.x, totalOffset.y, totalOffset.z, 0f);
+        }
+
+        private static bool HasUploadCapacity(GraphicsBuffer buffer, int requiredCapacity)
+        {
+            return buffer != null && buffer.IsValid() && buffer.count >= requiredCapacity;
+        }
+
+        private static void ReleaseUploadBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
     }
 }

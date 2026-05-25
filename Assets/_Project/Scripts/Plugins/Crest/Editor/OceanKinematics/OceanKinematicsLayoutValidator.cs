@@ -13,6 +13,12 @@ namespace Hecton8.Physics.Editor
     [InitializeOnLoad]
     public static class OceanKinematicsLayoutValidator
     {
+        private const int MinimumVectorAlignmentBytes = 4;
+        private const int FluidWaterHeightOffset = 0;
+        private const int FluidSurfaceVelocityOffset = 4;
+        private const int GerstnerWaveStateHashOffset = 28;
+        private const int GerstnerWaveFlagsOffset = 32;
+
         static OceanKinematicsLayoutValidator()
         {
             ValidateOrThrow();
@@ -28,12 +34,12 @@ namespace Hecton8.Physics.Editor
             int waveStateHashOffset = (int)Marshal.OffsetOf<GerstnerWaveDTO>(nameof(GerstnerWaveDTO.StateHash));
             int waveFlagsOffset = (int)Marshal.OffsetOf<GerstnerWaveDTO>(nameof(GerstnerWaveDTO.Flags));
             if (resultSize != OceanKinematicsConstants.FluidSampleResultBytes ||
-                resultAlign < 4 ||
-                waterOffset != 0 ||
-                velocityOffset != 4 ||
+                resultAlign < MinimumVectorAlignmentBytes ||
+                waterOffset != FluidWaterHeightOffset ||
+                velocityOffset != FluidSurfaceVelocityOffset ||
                 waveSize != OceanKinematicsConstants.GerstnerWaveBytes ||
-                waveStateHashOffset != 28 ||
-                waveFlagsOffset != 32 ||
+                waveStateHashOffset != GerstnerWaveStateHashOffset ||
+                waveFlagsOffset != GerstnerWaveFlagsOffset ||
                 !OceanKinematicsLayout.Validate())
             {
                 throw new InvalidOperationException(

@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -21,7 +22,9 @@ namespace Hecton8.Atmosphere
         public const int TelemetryEntryStrideBytes = 64;
         public const int ImpactProfileStrideBytes = 32;
         public const int ImpactProfileCapacity = 16;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 16 * 1024;
+#endif
         public const int DumpScratchBytes = 32 + (TelemetryFrameCount * TelemetryEntryStrideBytes);
         public const float DefaultDecayConstant = 0.00185f;
         public const float DefaultTurbidityGain = 1.85f;
@@ -316,14 +319,14 @@ namespace Hecton8.Atmosphere
             float intensity = Sanitize01(intensity01);
             float depth = math.max(0f, math.isfinite(depthMeters) ? depthMeters : 0f);
             float decay = math.max(0.000001f, math.isfinite(decayConstant) ? decayConstant : ShinobuStormPropagationConstants.DefaultDecayConstant);
-            return math.saturate(intensity * math.exp(-depth * decay));
+            return math.saturate(intensity * MathLodApproximation.ApproxExpNegPade33Wide40(depth * decay));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveNoiseOctaveCount(float globalQualityWeight)
         {
             float q = Sanitize01(globalQualityWeight);
-            return 1 + (int)math.step(0.3f, q) + (int)math.step(0.7f, q);
+            return math.clamp(1 + (int)math.round(Smooth01(q) * 2f), 1, 3);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -425,7 +428,7 @@ namespace Hecton8.Atmosphere
         private static float Wave01(float2 xz, float timeSeconds, float frequency, float speed)
         {
             float phase = (xz.x * 12.9898f) + (xz.y * 78.233f) + (timeSeconds * speed);
-            return math.sin(phase * frequency) * 0.5f + 0.5f;
+            return MathLodApproximation.ApproxSinBhaskara(phase * frequency) * 0.5f + 0.5f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -435,6 +438,7 @@ namespace Hecton8.Atmosphere
         }
     }
 
+    #if UNITY_EDITOR
     public static unsafe class StormDepthImpactCsvParser
     {
         public static bool TryParse(
@@ -664,7 +668,7 @@ namespace Hecton8.Atmosphere
 
             double result = (whole + fraction) * sign;
             if (exponent != 0)
-                result *= math.pow(10f, exponent);
+                result *= Pow10Int(exponent);
 
             if (double.IsNaN(result) || double.IsInfinity(result))
                 return false;
@@ -672,7 +676,17 @@ namespace Hecton8.Atmosphere
             value = (float)result;
             return math.isfinite(value);
         }
+
+        private static double Pow10Int(int exponent)
+        {
+            int count = math.min(38, math.abs(exponent));
+            double scale = 1.0d;
+            for (int i = 0; i < count; i++)
+                scale *= 10.0d;
+            return exponent < 0 ? 1.0d / scale : scale;
+        }
     }
+    #endif
 }
 
 #if UNITY_EDITOR

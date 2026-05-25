@@ -5,21 +5,21 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using EcosystemSectorDTO = Hecton8.Core.Contracts.EcosystemSectorDTO;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Ecosystem
 {
     /// <summary>
-    /// SHINOBU_116 data-only macro ecosystem solver. It owns no GameObjects and never calls Unity physics.
+    /// SHINOBU_300 data-only macro ecosystem solver. It owns no GameObjects and never calls Unity physics.
     /// </summary>
-    public unsafe sealed class MacroEcosystemMathematicianRuntime : IFrostTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
+    public unsafe sealed partial class MacroEcosystemMathematicianRuntime : IFrostTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int GridWidth = 100;
         private const int GridHeight = 100;
@@ -32,8 +32,9 @@ namespace Hecton8.Ecosystem
         private const int JobBatchSize = 64;
         private const float SectorSizeMeters = 1000f;
         private const float FrostDeltaSeconds = 5f;
-        private const string CsvFileName = "biome_ecosystem_specs.csv";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_MACRO_ECOSYSTEM.bin";
+        private const string CsvFileName = "macro_ecosystem_coefficients.csv";
+        private const string LegacyCsvFileName = "biome_ecosystem_specs.csv";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_300.bin";
         private const ulong DumpMagic = 0x4D4143524F45434FUL; // MACROECO
         private const uint RouteHash = 0x53483136u; // SH16
 
@@ -88,38 +89,54 @@ namespace Hecton8.Ecosystem
         }
 
         /// <summary>
-        /// Resolves local macro biomass for consumers that hydrate visual boids near the player.
+        /// Legacy same-domain bridge; callers should prefer the double3 AUP overload.
+        /// The float3 value is treated as an already absolute meter coordinate.
         /// </summary>
         public static bool TryGetBiomassAvailability(float3 runtimePosition, out float preyBiomass01, out float predatorBiomass01, out float carryingCapacity01)
+        {
+            return TryGetBiomassAvailability(new double3(runtimePosition), out preyBiomass01, out predatorBiomass01, out carryingCapacity01);
+        }
+
+        /// <summary>
+        /// Resolves local macro biomass from a 64-bit Absolute Universe Position.
+        /// </summary>
+        public static bool TryGetBiomassAvailability(double3 absoluteUniversePosition, out float preyBiomass01, out float predatorBiomass01, out float carryingCapacity01)
         {
             preyBiomass01 = 0f;
             predatorBiomass01 = 0f;
             carryingCapacity01 = 0f;
 
             MacroEcosystemMathematicianRuntime runtime = s_runtime;
-            if (runtime == null || !runtime._initialized || !math.all(math.isfinite(runtimePosition)))
+            if (runtime == null || !runtime._initialized || !math.all(math.isfinite(absoluteUniversePosition)))
                 return false;
 
-            long sectorX = (long)math.floor((double)runtimePosition.x / SectorSizeMeters);
-            long sectorZ = (long)math.floor((double)runtimePosition.z / SectorSizeMeters);
-            return runtime.TryGetSectorBiomass(sectorX, 0L, sectorZ, out preyBiomass01, out predatorBiomass01, out carryingCapacity01);
+            ResolveSectorCoordFromAup(absoluteUniversePosition, out long sectorX, out long sectorY, out long sectorZ);
+            return runtime.TryGetSectorBiomass(sectorX, sectorY, sectorZ, out preyBiomass01, out predatorBiomass01, out carryingCapacity01);
         }
 
         /// <summary>
-        /// Resolves predator and rare-resource spawn weights from temperature, toxicity, and biomass.
+        /// Legacy same-domain bridge; callers should prefer the double3 AUP overload.
+        /// The float3 value is treated as an already absolute meter coordinate.
         /// </summary>
         public static bool TryGetSectorSpawnWeights(float3 runtimePosition, out float predatorWeight01, out float rareResourceWeight01)
+        {
+            return TryGetSectorSpawnWeights(new double3(runtimePosition), out predatorWeight01, out rareResourceWeight01);
+        }
+
+        /// <summary>
+        /// Resolves predator and rare-resource spawn weights from a 64-bit Absolute Universe Position.
+        /// </summary>
+        public static bool TryGetSectorSpawnWeights(double3 absoluteUniversePosition, out float predatorWeight01, out float rareResourceWeight01)
         {
             predatorWeight01 = 0f;
             rareResourceWeight01 = 0f;
 
             MacroEcosystemMathematicianRuntime runtime = s_runtime;
-            if (runtime == null || !runtime._initialized || !math.all(math.isfinite(runtimePosition)))
+            if (runtime == null || !runtime._initialized || !math.all(math.isfinite(absoluteUniversePosition)))
                 return false;
 
-            long sectorX = (long)math.floor((double)runtimePosition.x / SectorSizeMeters);
-            long sectorZ = (long)math.floor((double)runtimePosition.z / SectorSizeMeters);
-            return runtime.TryGetSectorSpawnWeights(sectorX, 0L, sectorZ, out predatorWeight01, out rareResourceWeight01);
+            ResolveSectorCoordFromAup(absoluteUniversePosition, out long sectorX, out long sectorY, out long sectorZ);
+            return runtime.TryGetSectorSpawnWeights(sectorX, sectorY, sectorZ, out predatorWeight01, out rareResourceWeight01);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -182,6 +199,7 @@ namespace Hecton8.Ecosystem
             tuningArray[0] = tuning;
 
             int diffusionSteps = MacroEcosystemMath.ResolveDiffusionSteps(tuning.GlobalQualityWeight);
+            int integrationSubsteps = MacroEcosystemMath.ResolveIntegrationSubsteps(tuning.GlobalQualityWeight);
             float qualityFlowWeight = MacroEcosystemMath.ResolveQualityFlowWeight(tuning.GlobalQualityWeight);
             _lastDiffusionSteps = diffusionSteps;
             int telemetrySlot = _telemetryCursor % telemetry.Length;
@@ -203,6 +221,7 @@ namespace Hecton8.Ecosystem
                 BiomeSpecs = biomeSpecPtr,
                 FaultFlags = faultFlagPtr,
                 Tuning = tuning,
+                IntegrationSubsteps = integrationSubsteps,
                 SectorCount = sectorCount,
                 BiomeSpecCapacity = biomeSpecs.Length
             };
@@ -251,6 +270,7 @@ namespace Hecton8.Ecosystem
             var telemetryJob = new EcosystemTelemetryReductionJob
             {
                 Sectors = frontPtr,
+                Remainders = remainderPtr,
                 Telemetry = telemetry,
                 Counters = counters,
                 FaultFlags = faultFlagPtr,
@@ -258,6 +278,7 @@ namespace Hecton8.Ecosystem
                 TelemetryIndex = telemetrySlot,
                 FrameIndex = _simulationTick++,
                 DiffusionSteps = unchecked((uint)diffusionSteps),
+                IntegrationSubsteps = unchecked((uint)integrationSubsteps),
                 GlobalQualityWeight = tuning.GlobalQualityWeight
             };
             _activeJobHandle = telemetryJob.Schedule(handle);
@@ -444,12 +465,12 @@ namespace Hecton8.Ecosystem
             }
 
             MacroEcosystemTuningDTO t = MacroEcosystemTuningDTO.Sanitize(tuneBefore);
-            float preyCapacity = math.max(1f, t.CarryingCapacityPrey);
-            float predatorCapacity = math.max(1f, t.CarryingCapacityPredator);
-            preyBiomass01 = math.saturate(sector.PreyBiomass * math.rcp(preyCapacity));
-            predatorBiomass01 = math.saturate(sector.PredatorBiomass * math.rcp(predatorCapacity));
+            float fallbackCapacity = math.max(1f, t.CarryingCapacityPrey + t.CarryingCapacityPredator);
+            float sectorCapacity = math.max(1f, math.select(fallbackCapacity, sector.CarryingCapacity, math.isfinite(sector.CarryingCapacity) & sector.CarryingCapacity > 0f));
+            preyBiomass01 = math.saturate(sector.PreyBiomass * math.rcp(sectorCapacity));
+            predatorBiomass01 = math.saturate(sector.PredatorBiomass * math.rcp(sectorCapacity));
             MacroEcosystemTuningDTO fallback = MacroEcosystemTuningDTO.CreateDefault();
-            carryingCapacity01 = math.saturate((preyCapacity + predatorCapacity) * math.rcp(fallback.CarryingCapacityPrey + fallback.CarryingCapacityPredator));
+            carryingCapacity01 = math.saturate(sectorCapacity * math.rcp(fallback.CarryingCapacityPrey + fallback.CarryingCapacityPredator));
             return true;
         }
 
@@ -515,11 +536,12 @@ namespace Hecton8.Ecosystem
             }
 
             MacroEcosystemTuningDTO t = MacroEcosystemTuningDTO.Sanitize(tuneBefore);
-            float predatorMass = sector.PredatorBiomass * math.rcp(math.max(1f, t.CarryingCapacityPredator));
-            float tempSuitability = MacroEcosystemMath.ResolveTemperatureSuitability(sector.LocalTemperature, t.TemperatureOptimum, t.TemperatureHalfRange);
-            float toxin = math.saturate(sector.ToxinLevel);
-            predatorWeight01 = math.saturate(predatorMass * math.lerp(1f, 0.2f, toxin));
-            rareResourceWeight01 = math.saturate((1f - tempSuitability) * 0.55f + toxin * 0.45f);
+            float fallbackCapacity = math.max(1f, t.CarryingCapacityPrey + t.CarryingCapacityPredator);
+            float sectorCapacity = math.max(1f, math.select(fallbackCapacity, sector.CarryingCapacity, math.isfinite(sector.CarryingCapacity) & sector.CarryingCapacity > 0f));
+            float predatorMass = sector.PredatorBiomass * math.rcp(sectorCapacity);
+            float floraStarvation = 1f - math.saturate(sector.FloraBiomass * math.rcp(sectorCapacity));
+            predatorWeight01 = math.saturate(predatorMass);
+            rareResourceWeight01 = math.saturate(floraStarvation * 0.45f + predatorWeight01 * 0.35f);
             return true;
         }
 
@@ -660,9 +682,7 @@ namespace Hecton8.Ecosystem
         private void FinishCompletedScheduledJob()
         {
             long now = Stopwatch.GetTimestamp();
-            float micros = Stopwatch.Frequency > 0
-                ? (float)((now - _scheduleTicks) * 1000000.0 / Stopwatch.Frequency)
-                : 0f;
+            float micros = ResolveElapsedMicroseconds(_scheduleTicks, now);
 
             IDataVault vault = _vault;
             if (vault != null)
@@ -673,6 +693,21 @@ namespace Hecton8.Ecosystem
 
             _jobScheduled = false;
             UnlockJobBuffers();
+        }
+
+        private static float ResolveElapsedMicroseconds(long startTicks, long finishTicks)
+        {
+            if (startTicks <= 0L ||
+                finishTicks < startTicks ||
+                Stopwatch.Frequency <= 0)
+            {
+                return 0f;
+            }
+
+            double elapsed = (finishTicks - startTicks) * 1000000.0d / Stopwatch.Frequency;
+            if (elapsed <= 0.0d)
+                return 0f;
+            return elapsed > float.MaxValue ? float.MaxValue : (float)elapsed;
         }
 
         private void ClearSnapshotWriteInFlight(IDataVault vault)
@@ -692,11 +727,19 @@ namespace Hecton8.Ecosystem
                 return;
 
             MacroEcosystemTelemetryEntry entry = telemetry[_lastTelemetrySlot];
-            entry.SolverMicroseconds = math.max(0f, solverMicros);
+            bool validTiming = math.isfinite(solverMicros) && solverMicros >= 0f;
+            entry.SolverMicroseconds = math.select(0f, solverMicros, validTiming);
             entry.DiffusionSteps = unchecked((uint)_lastDiffusionSteps);
+            entry.TimingMode = MacroEcosystemTelemetryEntry.TimingModeScheduleToFinalize;
+            entry.TimingSourceHash = MacroEcosystemTelemetryEntry.TimingSourceStopwatchDispatcherFence;
+            entry.Flags |= MacroEcosystemTelemetryEntry.FlagTimingScheduleToFinalize;
+            if (!validTiming)
+                entry.Flags |= MacroEcosystemTelemetryEntry.FlagInvalidMath;
+            if (entry.SolverMicroseconds > 2000f)
+                entry.Flags |= MacroEcosystemTelemetryEntry.FlagSolveOverBudget;
             telemetry[_lastTelemetrySlot] = entry;
 
-            bool fault = (entry.Flags & MacroEcosystemTelemetryEntry.FlagInvalidMath) != 0u;
+            bool fault = (entry.Flags & (MacroEcosystemTelemetryEntry.FlagInvalidMath | MacroEcosystemTelemetryEntry.FlagSolveOverBudget)) != 0u;
             if (fault && !_dumpedFault)
             {
                 _dumpedFault = true;
@@ -796,11 +839,20 @@ namespace Hecton8.Ecosystem
             if (File.Exists(first))
                 return first;
 
+            string legacyFirst = Path.Combine(dataPath, "_Project", "Data", LegacyCsvFileName);
+            if (File.Exists(legacyFirst))
+                return legacyFirst;
+
             DirectoryInfo root = Directory.GetParent(dataPath);
             if (root == null)
                 return first;
 
-            return Path.Combine(root.FullName, "Data", CsvFileName);
+            string rootFirst = Path.Combine(root.FullName, "Data", CsvFileName);
+            if (File.Exists(rootFirst))
+                return rootFirst;
+
+            string legacyRoot = Path.Combine(root.FullName, "Data", LegacyCsvFileName);
+            return File.Exists(legacyRoot) ? legacyRoot : rootFirst;
         }
 #endif
 
@@ -808,6 +860,15 @@ namespace Hecton8.Ecosystem
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, weight, math.isfinite(weight)));
+        }
+
+        private static void ResolveSectorCoordFromAup(double3 absoluteUniversePosition, out long sectorX, out long sectorY, out long sectorZ)
+        {
+            const double invSectorSize = 1.0 / SectorSizeMeters;
+            sectorX = (long)math.floor(absoluteUniversePosition.x * invSectorSize);
+            // Macro biomass is a horizontal regional layer; depth effects are presentation/profile scalars, not sector identity.
+            sectorY = 0L;
+            sectorZ = (long)math.floor(absoluteUniversePosition.z * invSectorSize);
         }
 
         private static bool OpenOrAcquireVaultBuffer<T>(
@@ -827,7 +888,7 @@ namespace Hecton8.Ecosystem
                 return false;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AIEcology,
@@ -902,27 +963,6 @@ namespace Hecton8.Ecosystem
         }
     }
 
-    /// <summary>
-    /// Exact ARM64 sector truth record. Keep this at 32 bytes.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct EcosystemSectorDTO
-    {
-        [FieldOffset(0)] public ulong SectorHash;
-        [FieldOffset(8)] public uint PreyBiomass;
-        [FieldOffset(12)] public uint PredatorBiomass;
-        [FieldOffset(16)] public float LocalTemperature;
-        [FieldOffset(20)] public float ToxinLevel;
-        [FieldOffset(24)] public byte _pad0;
-        [FieldOffset(25)] public byte _pad1;
-        [FieldOffset(26)] public byte _pad2;
-        [FieldOffset(27)] public byte _pad3;
-        [FieldOffset(28)] public byte _pad4;
-        [FieldOffset(29)] public byte _pad5;
-        [FieldOffset(30)] public byte _pad6;
-        [FieldOffset(31)] public byte _pad7;
-    }
-
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct EcosystemSectorCoordDTO
     {
@@ -938,8 +978,8 @@ namespace Hecton8.Ecosystem
     {
         [FieldOffset(0)] public float PreyFraction;
         [FieldOffset(4)] public float PredatorFraction;
-        [FieldOffset(8)] public float DiffusionPreyFraction;
-        [FieldOffset(12)] public float DiffusionPredatorFraction;
+        [FieldOffset(8)] public uint LastDiffusionTransfers;
+        [FieldOffset(12)] public uint Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -950,7 +990,7 @@ namespace Hecton8.Ecosystem
         [FieldOffset(12)] public uint Occupied;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct BiomeEcosystemSpecDTO
     {
         [FieldOffset(0)] public uint BiomeHash;
@@ -959,6 +999,16 @@ namespace Hecton8.Ecosystem
         [FieldOffset(12)] public float MigrationResistance;
         [FieldOffset(16)] public float TemperatureOptimum;
         [FieldOffset(20)] public float ToxinPenalty;
+        [FieldOffset(24)] public float BaseBirthRate;
+        [FieldOffset(28)] public float PredationRate;
+        [FieldOffset(32)] public float PredatorConversionRate;
+        [FieldOffset(36)] public float PredatorStarvationRate;
+        [FieldOffset(40)] private uint _pad0;
+        [FieldOffset(44)] private uint _pad1;
+        [FieldOffset(48)] private uint _pad2;
+        [FieldOffset(52)] private uint _pad3;
+        [FieldOffset(56)] private uint _pad4;
+        [FieldOffset(60)] private uint _pad5;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -1034,19 +1084,28 @@ namespace Hecton8.Ecosystem
     {
         public const uint FlagInvalidMath = 1u << 0;
         public const uint FlagPopulationExplosion = 1u << 1;
+        public const uint FlagSolveOverBudget = 1u << 2;
+        public const uint FlagTimingScheduleToFinalize = 1u << 3;
+        public const uint TimingModeUnspecified = 0u;
+        public const uint TimingModeScheduleToFinalize = 1u;
+        public const uint TimingSourceStopwatchDispatcherFence = 0x53574643u; // SWFC
 
         [FieldOffset(0)] public uint FrameIndex;
         [FieldOffset(4)] public uint StateHash;
-        [FieldOffset(8)] public ulong TotalPreyBiomass;
-        [FieldOffset(16)] public ulong TotalPredatorBiomass;
-        [FieldOffset(24)] public uint SterileSectorCount;
-        [FieldOffset(28)] public uint ToxicSectorCount;
-        [FieldOffset(32)] public float SolverMicroseconds;
-        [FieldOffset(36)] public float GlobalQualityWeight;
-        [FieldOffset(40)] public uint DiffusionSteps;
+        [FieldOffset(8)] public float TotalFloraBiomass;
+        [FieldOffset(12)] public float TotalPreyBiomass;
+        [FieldOffset(16)] public float TotalPredatorBiomass;
+        [FieldOffset(20)] public uint DiffusionTransfers;
+        [FieldOffset(24)] public float MaxPredatorDensity;
+        [FieldOffset(28)] public float SolverMicroseconds;
+        [FieldOffset(32)] public float GlobalQualityWeight;
+        [FieldOffset(36)] public uint DiffusionSteps;
+        [FieldOffset(40)] public uint IntegrationSubsteps;
         [FieldOffset(44)] public uint Flags;
-        [FieldOffset(48)] public ulong TotalMass;
-        [FieldOffset(56)] public ulong Reserved;
+        [FieldOffset(48)] public float TotalCarryingCapacity;
+        [FieldOffset(52)] public uint DominantPredatorSectorHash;
+        [FieldOffset(56)] public uint TimingMode;
+        [FieldOffset(60)] public uint TimingSourceHash;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -1088,6 +1147,12 @@ namespace Hecton8.Ecosystem
         public const uint BiomeKelpTrench = 0x64E62B68u;
         public const uint BiomeReactorRuin = 0x213B297Cu;
         public const uint BiomeBrineLake = 0x2F4F2039u;
+        public const uint DominantFlora = 1u << 0;
+        public const uint DominantPrey = 1u << 1;
+        public const uint DominantPredator = 1u << 2;
+        private const int FloraDensityShift = 8;
+        private const int PreyDensityShift = 16;
+        private const int PredatorDensityShift = 24;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ulong ComputeSectorHash(long sectorX, long sectorY, long sectorZ)
@@ -1144,6 +1209,13 @@ namespace Hecton8.Ecosystem
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveIntegrationSubsteps(float globalQualityWeight)
+        {
+            float curve = ResolveQualityCurve(globalQualityWeight);
+            return math.clamp((int)math.lerp(1f, 6.999f, curve), 1, 6);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveQualityFlowWeight(float globalQualityWeight)
         {
             float curve = ResolveQualityCurve(globalQualityWeight);
@@ -1156,7 +1228,7 @@ namespace Hecton8.Ecosystem
             float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
             float thermalBand = math.saturate((q - 0.2f) * math.rcp(0.8f));
             float polynomial = thermalBand * thermalBand * (3f - 2f * thermalBand);
-            return polynomial * math.step(0.0001f, q);
+            return polynomial;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1224,6 +1296,42 @@ namespace Hecton8.Ecosystem
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeBiomass(float value, float capacity)
+        {
+            float safeCapacity = math.max(0.0001f, math.select(1f, capacity, math.isfinite(capacity)));
+            float safeValue = math.select(0f, value, math.isfinite(value));
+            return math.clamp(safeValue, 0f, safeCapacity);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint PackDominantSpeciesMask(float flora, float prey, float predator, float carryingCapacity)
+        {
+            float safeCapacity = math.max(0.0001f, math.select(1f, carryingCapacity, math.isfinite(carryingCapacity)));
+            float flora01 = math.saturate(flora * math.rcp(safeCapacity));
+            float prey01 = math.saturate(prey * math.rcp(safeCapacity));
+            float predator01 = math.saturate(predator * math.rcp(safeCapacity));
+            uint dominant = flora >= prey && flora >= predator
+                ? DominantFlora
+                : prey >= predator ? DominantPrey : DominantPredator;
+            return dominant |
+                   ((uint)math.round(flora01 * 255f) << FloraDensityShift) |
+                   ((uint)math.round(prey01 * 255f) << PreyDensityShift) |
+                   ((uint)math.round(predator01 * 255f) << PredatorDensityShift);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DecodePreyDensity01(uint mask)
+        {
+            return ((mask >> PreyDensityShift) & 0xFFu) * math.rcp(255f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DecodePredatorDensity01(uint mask)
+        {
+            return ((mask >> PredatorDensityShift) & 0xFFu) * math.rcp(255f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong MixLong(ulong hash, long value)
         {
             ulong v = unchecked((ulong)value);
@@ -1256,22 +1364,24 @@ namespace Hecton8.Ecosystem
             if (_verified)
                 return;
 
-            AssertSize<EcosystemSectorDTO>(32);
+            AssertSize<EcosystemSectorDTO>(64);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorHash), 0);
-            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.PreyBiomass), 8);
-            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.PredatorBiomass), 12);
-            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.LocalTemperature), 16);
-            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.ToxinLevel), 20);
-            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO._pad0), 24);
-            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO._pad7), 31);
-            AssertSize<MacroEcosystemSectorVaultRecord>(32);
+            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.FloraBiomass), 8);
+            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.PreyBiomass), 12);
+            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.PredatorBiomass), 16);
+            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.CarryingCapacity), 20);
+            AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.DominantSpeciesMask), 24);
+            AssertOffset<EcosystemSectorDTO>("_pad0", 28);
+            AssertOffset<EcosystemSectorDTO>("_pad8", 60);
+            AssertSize<MacroEcosystemSectorVaultRecord>(64);
             AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.SectorHash), 0);
-            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.PreyBiomass), 8);
-            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.PredatorBiomass), 12);
-            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.LocalTemperature), 16);
-            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.ToxinLevel), 20);
-            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord._pad0), 24);
-            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord._pad7), 31);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.FloraBiomass), 8);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.PreyBiomass), 12);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.PredatorBiomass), 16);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.CarryingCapacity), 20);
+            AssertOffset<MacroEcosystemSectorVaultRecord>(nameof(MacroEcosystemSectorVaultRecord.DominantSpeciesMask), 24);
+            AssertOffset<MacroEcosystemSectorVaultRecord>("_pad0", 28);
+            AssertOffset<MacroEcosystemSectorVaultRecord>("_pad8", 60);
             AssertSize<EcosystemSectorCoordDTO>(32);
             AssertOffset<EcosystemSectorCoordDTO>(nameof(EcosystemSectorCoordDTO.SectorX), 0);
             AssertOffset<EcosystemSectorCoordDTO>(nameof(EcosystemSectorCoordDTO.SectorY), 8);
@@ -1281,8 +1391,8 @@ namespace Hecton8.Ecosystem
             AssertSize<EcosystemSectorRemainderDTO>(16);
             AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.PreyFraction), 0);
             AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.PredatorFraction), 4);
-            AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.DiffusionPreyFraction), 8);
-            AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.DiffusionPredatorFraction), 12);
+            AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.LastDiffusionTransfers), 8);
+            AssertOffset<EcosystemSectorRemainderDTO>(nameof(EcosystemSectorRemainderDTO.Flags), 12);
             AssertSize<EcosystemSectorIndexEntryDTO>(16);
             AssertOffset<EcosystemSectorIndexEntryDTO>(nameof(EcosystemSectorIndexEntryDTO.SectorHash), 0);
             AssertOffset<EcosystemSectorIndexEntryDTO>(nameof(EcosystemSectorIndexEntryDTO.Slot), 8);
@@ -1291,13 +1401,17 @@ namespace Hecton8.Ecosystem
             AssertOffset<MacroEcosystemSectorIndexRecord>(nameof(MacroEcosystemSectorIndexRecord.SectorHash), 0);
             AssertOffset<MacroEcosystemSectorIndexRecord>(nameof(MacroEcosystemSectorIndexRecord.Slot), 8);
             AssertOffset<MacroEcosystemSectorIndexRecord>(nameof(MacroEcosystemSectorIndexRecord.Occupied), 12);
-            AssertSize<BiomeEcosystemSpecDTO>(24);
+            AssertSize<BiomeEcosystemSpecDTO>(64);
             AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.BiomeHash), 0);
             AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.CarryingCapacityPrey), 4);
             AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.CarryingCapacityPredator), 8);
             AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.MigrationResistance), 12);
             AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.TemperatureOptimum), 16);
             AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.ToxinPenalty), 20);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.BaseBirthRate), 24);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.PredationRate), 28);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.PredatorConversionRate), 32);
+            AssertOffset<BiomeEcosystemSpecDTO>(nameof(BiomeEcosystemSpecDTO.PredatorStarvationRate), 36);
             AssertSize<MacroEcosystemTuningDTO>(64);
             AssertOffset<MacroEcosystemTuningDTO>(nameof(MacroEcosystemTuningDTO.BaseBirthRate), 0);
             AssertOffset<MacroEcosystemTuningDTO>(nameof(MacroEcosystemTuningDTO.MigrationRate), 24);
@@ -1314,11 +1428,16 @@ namespace Hecton8.Ecosystem
             AssertOffset<MacroEcosystemTuningVaultRecord>(nameof(MacroEcosystemTuningVaultRecord.Reserved), 60);
             AssertSize<MacroEcosystemTelemetryEntry>(64);
             AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.FrameIndex), 0);
-            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalPreyBiomass), 8);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalFloraBiomass), 8);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalPreyBiomass), 12);
             AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalPredatorBiomass), 16);
-            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.SolverMicroseconds), 32);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.DiffusionTransfers), 20);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.MaxPredatorDensity), 24);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.SolverMicroseconds), 28);
             AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.Flags), 44);
-            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalMass), 48);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TotalCarryingCapacity), 48);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TimingMode), 56);
+            AssertOffset<MacroEcosystemTelemetryEntry>(nameof(MacroEcosystemTelemetryEntry.TimingSourceHash), 60);
             AssertSize<MacroEcosystemCounterDTO>(64);
             AssertOffset<MacroEcosystemCounterDTO>(nameof(MacroEcosystemCounterDTO.Value), 0);
             AssertOffset<MacroEcosystemCounterDTO>(nameof(MacroEcosystemCounterDTO.Flags), 4);
@@ -1462,17 +1581,29 @@ namespace Hecton8.Ecosystem
             ulong hash = MacroEcosystemMath.ComputeSectorHash(sectorX, sectorY, sectorZ);
             uint noise = (uint)(hash ^ (hash >> 32));
             noise = noise * 747796405u + 2891336453u;
-            float temp01 = (noise & 1023u) * math.rcp(1023f);
-            float toxin01 = ((noise >> 10) & 255u) * math.rcp(255f);
-            uint prey = 1800u + ((noise >> 18) & 4095u);
-            uint predator = 80u + ((noise >> 6) & 511u);
+            float n0 = (noise & 1023u) * math.rcp(1023f);
+            float n1 = ((noise >> 10) & 255u) * math.rcp(255f);
+            float n2 = ((noise >> 18) & 4095u) * math.rcp(4095f);
+            float carryingCapacity = math.lerp(18000f, 96000f, n0);
+            float flora = carryingCapacity * math.lerp(0.12f, 1.35f, n1);
+            float prey = carryingCapacity * math.lerp(0.02f, 0.72f, n2);
+            float predator = carryingCapacity * math.lerp(0.001f, 0.18f, 1f - n1);
+            uint instabilityBucket = noise & 3u;
+            flora = math.select(flora, carryingCapacity * 1.9f, instabilityBucket == 0u);
+            prey = math.select(prey, carryingCapacity * 0.04f, instabilityBucket == 1u);
+            predator = math.select(predator, 0f, instabilityBucket == 0u);
+            predator = math.select(predator, carryingCapacity * 0.44f, instabilityBucket == 1u);
+            flora = math.clamp(flora, 0f, carryingCapacity);
+            prey = math.clamp(prey, 0f, carryingCapacity);
+            predator = math.clamp(predator, 0f, carryingCapacity);
             EcosystemSectorDTO sector = new EcosystemSectorDTO
             {
                 SectorHash = hash,
+                FloraBiomass = flora,
                 PreyBiomass = prey,
                 PredatorBiomass = predator,
-                LocalTemperature = math.lerp(-2f, 18f, temp01),
-                ToxinLevel = toxin01 * toxin01 * 0.65f
+                CarryingCapacity = carryingCapacity,
+                DominantSpeciesMask = MacroEcosystemMath.PackDominantSpeciesMask(flora, prey, predator, carryingCapacity)
             };
 
             Front[index] = sector;
@@ -1536,6 +1667,7 @@ namespace Hecton8.Ecosystem
         [NoAlias] [NativeDisableUnsafePtrRestriction] public BiomeEcosystemSpecDTO* BiomeSpecs;
         [NoAlias] [NativeDisableUnsafePtrRestriction] public uint* FaultFlags;
         public MacroEcosystemTuningDTO Tuning;
+        public int IntegrationSubsteps;
         public int SectorCount;
         public int BiomeSpecCapacity;
 
@@ -1544,45 +1676,68 @@ namespace Hecton8.Ecosystem
             if ((uint)index >= (uint)SectorCount)
                 return;
 
-            ref EcosystemSectorDTO src = ref UnsafeUtility.AsRef<EcosystemSectorDTO>(Front + index);
+            ref readonly EcosystemSectorDTO src = ref UnsafeUtility.AsRef<EcosystemSectorDTO>(Front + index);
             ref EcosystemSectorDTO dst = ref UnsafeUtility.AsRef<EcosystemSectorDTO>(Back + index);
             ref EcosystemSectorRemainderDTO rem = ref UnsafeUtility.AsRef<EcosystemSectorRemainderDTO>(Remainders + index);
             EcosystemSectorCoordDTO coord = Coords[index];
             bool hasSpec = MacroEcosystemMath.TryResolveBiomeSpec(BiomeSpecs, BiomeSpecCapacity, coord.BiomeHash, out BiomeEcosystemSpecDTO spec);
-            float preyCapacity = hasSpec ? math.max(1f, spec.CarryingCapacityPrey) : Tuning.CarryingCapacityPrey;
-            float predatorCapacity = hasSpec ? math.max(1f, spec.CarryingCapacityPredator) : Tuning.CarryingCapacityPredator;
-            float temperatureOptimum = hasSpec ? spec.TemperatureOptimum : Tuning.TemperatureOptimum;
+            float preyCapacity = hasSpec ? math.max(1f, spec.CarryingCapacityPrey) : math.max(1f, Tuning.CarryingCapacityPrey);
+            float predatorCapacity = hasSpec ? math.max(1f, spec.CarryingCapacityPredator) : math.max(1f, Tuning.CarryingCapacityPredator);
+            float carryingCapacity = math.max(1f, math.select(preyCapacity + predatorCapacity, src.CarryingCapacity, math.isfinite(src.CarryingCapacity) & src.CarryingCapacity > 0f));
             float toxinPenalty = hasSpec ? math.saturate(spec.ToxinPenalty) : 1f;
 
-            float tempSuitability = MacroEcosystemMath.ResolveTemperatureSuitability(src.LocalTemperature, temperatureOptimum, Tuning.TemperatureHalfRange);
-            float toxin = math.saturate(math.select(1f, src.ToxinLevel, math.isfinite(src.ToxinLevel)));
-            float x = src.PreyBiomass + rem.PreyFraction;
-            float y = src.PredatorBiomass + rem.PredatorFraction;
-            float alpha = Tuning.BaseBirthRate * tempSuitability * (1f - toxin * Tuning.ToxicityBirthSuppression * toxinPenalty);
-            float beta = Tuning.PredationRate;
-            float delta = Tuning.PredatorConversionRate;
-            float gamma = Tuning.PredatorStarvationRate * (1f + toxin * Tuning.ToxicityDeathBoost * math.max(0.25f, toxinPenalty));
-            float interaction = x * y;
-            float dt = math.max(0.001f, Tuning.FrostDeltaSeconds);
-            float preyNext = math.clamp(x + ((alpha * x - beta * interaction) * dt), 0f, preyCapacity);
-            float predatorNext = math.clamp(y + ((delta * interaction - gamma * y) * dt), 0f, predatorCapacity);
+            float flora = MacroEcosystemMath.SanitizeBiomass(src.FloraBiomass, carryingCapacity);
+            float prey = MacroEcosystemMath.SanitizeBiomass(src.PreyBiomass + rem.PreyFraction, carryingCapacity);
+            float predator = MacroEcosystemMath.SanitizeBiomass(src.PredatorBiomass + rem.PredatorFraction, carryingCapacity);
+            int substeps = math.clamp(IntegrationSubsteps, 1, 8);
+            float dt = math.max(0.001f, Tuning.FrostDeltaSeconds) * math.rcp(substeps);
+            float alphaRate = math.select(Tuning.BaseBirthRate, spec.BaseBirthRate, hasSpec & math.isfinite(spec.BaseBirthRate) & spec.BaseBirthRate > 0f);
+            float betaRate = math.select(Tuning.PredationRate, spec.PredationRate, hasSpec & math.isfinite(spec.PredationRate) & spec.PredationRate > 0f);
+            float deltaRate = math.select(Tuning.PredatorConversionRate, spec.PredatorConversionRate, hasSpec & math.isfinite(spec.PredatorConversionRate) & spec.PredatorConversionRate > 0f);
+            float gammaRate = math.select(Tuning.PredatorStarvationRate, spec.PredatorStarvationRate, hasSpec & math.isfinite(spec.PredatorStarvationRate) & spec.PredatorStarvationRate > 0f);
+            float toxicitySuppression = math.saturate(1f - toxinPenalty * Tuning.ToxicityBirthSuppression * 0.25f);
+            float alphaBase = math.max(0.0001f, alphaRate) * toxicitySuppression;
+            float beta = math.max(0.0000000001f, betaRate);
+            float delta = math.max(0.0000000001f, deltaRate);
+            float gamma = math.max(0.0001f, gammaRate) * (1f + toxinPenalty * Tuning.ToxicityDeathBoost * 0.15f);
+            float floraGrowth = math.max(0.0001f, alphaRate * 1.65f) * math.max(0.15f, 1f - toxinPenalty * 0.2f);
 
-            bool valid = math.isfinite(preyNext) & math.isfinite(predatorNext);
+            for (int step = 0; step < substeps; step++)
+            {
+                float safeCapacity = math.max(0.0001f, carryingCapacity);
+                float flora01 = math.saturate(flora * math.rcp(safeCapacity));
+                float safeFlora = math.max(0.0001f, flora);
+                float safePrey = math.max(0.0001f, prey);
+                float safePredator = math.max(0.0001f, predator);
+                float alpha = alphaBase * math.max(0.05f, flora01);
+                float interaction = safePrey * safePredator;
+                float floraNext = flora + ((floraGrowth * safeFlora * (1f - flora01)) - (alpha * safePrey * 0.18f)) * dt;
+                float preyNext = prey + ((alpha * safePrey - beta * interaction) * dt);
+                float predatorNext = predator + ((delta * interaction - gamma * safePredator) * dt);
+                flora = math.clamp(floraNext, 0f, carryingCapacity);
+                prey = math.clamp(preyNext, 0f, math.min(carryingCapacity, preyCapacity));
+                predator = math.clamp(predatorNext, 0f, math.min(carryingCapacity, predatorCapacity));
+            }
+
+            bool valid = math.isfinite(flora) & math.isfinite(prey) & math.isfinite(predator);
             if (!valid)
             {
-                preyNext = math.min((float)src.PreyBiomass, preyCapacity);
-                predatorNext = math.min((float)src.PredatorBiomass, predatorCapacity);
+                flora = math.min(src.FloraBiomass, carryingCapacity);
+                prey = math.min(src.PreyBiomass, preyCapacity);
+                predator = math.min(src.PredatorBiomass, predatorCapacity);
             }
             FaultFlags[index] = valid ? 0u : MacroEcosystemMath.SectorFaultInvalidMath;
 
-            uint preyQuantized = MacroEcosystemMath.QuantizeBiomass(preyNext);
-            uint predatorQuantized = MacroEcosystemMath.QuantizeBiomass(predatorNext);
-            rem.PreyFraction = math.saturate(preyNext - preyQuantized);
-            rem.PredatorFraction = math.saturate(predatorNext - predatorQuantized);
+            rem.PreyFraction = 0f;
+            rem.PredatorFraction = 0f;
+            rem.LastDiffusionTransfers = 0u;
+            rem.Flags = valid ? 0u : MacroEcosystemMath.SectorFaultInvalidMath;
             dst = src;
-            dst.PreyBiomass = preyQuantized;
-            dst.PredatorBiomass = predatorQuantized;
-            dst.ToxinLevel = toxin;
+            dst.FloraBiomass = flora;
+            dst.PreyBiomass = prey;
+            dst.PredatorBiomass = predator;
+            dst.CarryingCapacity = carryingCapacity;
+            dst.DominantSpeciesMask = MacroEcosystemMath.PackDominantSpeciesMask(flora, prey, predator, carryingCapacity);
         }
     }
 
@@ -1615,28 +1770,47 @@ namespace Hecton8.Ecosystem
             int z = index / Width;
             EcosystemSectorDTO center = Source[index];
             EcosystemSectorCoordDTO centerCoord = Coords[index];
+            float floraDelta = 0f;
             float preyDelta = 0f;
             float predatorDelta = 0f;
-            AccumulateNeighbor(x > 0 ? index - 1 : -1, center, centerCoord, ref preyDelta, ref predatorDelta);
-            AccumulateNeighbor(x < Width - 1 ? index + 1 : -1, center, centerCoord, ref preyDelta, ref predatorDelta);
-            AccumulateNeighbor(z > 0 ? index - Width : -1, center, centerCoord, ref preyDelta, ref predatorDelta);
-            AccumulateNeighbor(z < Height - 1 ? index + Width : -1, center, centerCoord, ref preyDelta, ref predatorDelta);
+            uint transferCount = 0u;
+            AccumulateNeighbor(x > 0 ? index - 1 : -1, center, centerCoord, ref floraDelta, ref preyDelta, ref predatorDelta, ref transferCount);
+            AccumulateNeighbor(x < Width - 1 ? index + 1 : -1, center, centerCoord, ref floraDelta, ref preyDelta, ref predatorDelta, ref transferCount);
+            AccumulateNeighbor(z > 0 ? index - Width : -1, center, centerCoord, ref floraDelta, ref preyDelta, ref predatorDelta, ref transferCount);
+            AccumulateNeighbor(z < Height - 1 ? index + Width : -1, center, centerCoord, ref floraDelta, ref preyDelta, ref predatorDelta, ref transferCount);
 
             ref EcosystemSectorRemainderDTO rem = ref UnsafeUtility.AsRef<EcosystemSectorRemainderDTO>(Remainders + index);
-            float preyNext = math.clamp(center.PreyBiomass + preyDelta + rem.DiffusionPreyFraction, 0f, CarryingCapacityPrey);
-            float predatorNext = math.clamp(center.PredatorBiomass + predatorDelta + rem.DiffusionPredatorFraction, 0f, CarryingCapacityPredator);
-            uint preyQuantized = MacroEcosystemMath.QuantizeBiomass(preyNext);
-            uint predatorQuantized = MacroEcosystemMath.QuantizeBiomass(predatorNext);
-            rem.DiffusionPreyFraction = math.saturate(preyNext - preyQuantized);
-            rem.DiffusionPredatorFraction = math.saturate(predatorNext - predatorQuantized);
+            float carrying = math.max(1f, math.select(CarryingCapacityPrey + CarryingCapacityPredator, center.CarryingCapacity, math.isfinite(center.CarryingCapacity) & center.CarryingCapacity > 0f));
+            float floraNext = math.clamp(center.FloraBiomass + floraDelta, 0f, carrying);
+            float preyNext = math.clamp(center.PreyBiomass + preyDelta, 0f, carrying);
+            float predatorNext = math.clamp(center.PredatorBiomass + predatorDelta, 0f, carrying);
+            bool valid = math.isfinite(floraNext) & math.isfinite(preyNext) & math.isfinite(predatorNext);
+            if (!valid)
+            {
+                floraNext = MacroEcosystemMath.SanitizeBiomass(center.FloraBiomass, carrying);
+                preyNext = MacroEcosystemMath.SanitizeBiomass(center.PreyBiomass, carrying);
+                predatorNext = MacroEcosystemMath.SanitizeBiomass(center.PredatorBiomass, carrying);
+            }
+            rem.LastDiffusionTransfers = transferCount;
+            rem.Flags = valid ? 0u : MacroEcosystemMath.SectorFaultInvalidMath;
 
             EcosystemSectorDTO output = center;
-            output.PreyBiomass = preyQuantized;
-            output.PredatorBiomass = predatorQuantized;
+            output.FloraBiomass = floraNext;
+            output.PreyBiomass = preyNext;
+            output.PredatorBiomass = predatorNext;
+            output.CarryingCapacity = carrying;
+            output.DominantSpeciesMask = MacroEcosystemMath.PackDominantSpeciesMask(floraNext, preyNext, predatorNext, carrying);
             Destination[index] = output;
         }
 
-        private void AccumulateNeighbor(int neighborIndex, EcosystemSectorDTO center, EcosystemSectorCoordDTO centerCoord, ref float preyDelta, ref float predatorDelta)
+        private void AccumulateNeighbor(
+            int neighborIndex,
+            EcosystemSectorDTO center,
+            EcosystemSectorCoordDTO centerCoord,
+            ref float floraDelta,
+            ref float preyDelta,
+            ref float predatorDelta,
+            ref uint transferCount)
         {
             if ((uint)neighborIndex >= (uint)SectorCount)
                 return;
@@ -1649,15 +1823,23 @@ namespace Hecton8.Ecosystem
             float invDistance = math.rsqrt(math.max(1f, math.lengthsq(delta)));
             bool hasCenterSpec = MacroEcosystemMath.TryResolveBiomeSpec(BiomeSpecs, BiomeSpecCapacity, centerCoord.BiomeHash, out BiomeEcosystemSpecDTO centerSpec);
             bool hasNeighborSpec = MacroEcosystemMath.TryResolveBiomeSpec(BiomeSpecs, BiomeSpecCapacity, neighborCoord.BiomeHash, out BiomeEcosystemSpecDTO neighborSpec);
-            float centerOptimum = hasCenterSpec ? centerSpec.TemperatureOptimum : TemperatureOptimum;
-            float neighborOptimum = hasNeighborSpec ? neighborSpec.TemperatureOptimum : TemperatureOptimum;
             float resistance = math.saturate(((hasCenterSpec ? centerSpec.MigrationResistance : 0f) + (hasNeighborSpec ? neighborSpec.MigrationResistance : 0f)) * 0.5f);
-            float centerSuit = MacroEcosystemMath.ResolveTemperatureSuitability(center.LocalTemperature, centerOptimum, TemperatureHalfRange);
-            float neighborSuit = MacroEcosystemMath.ResolveTemperatureSuitability(neighbor.LocalTemperature, neighborOptimum, TemperatureHalfRange);
             float qualityFlow = math.clamp(math.select(0.25f, QualityFlowWeight, math.isfinite(QualityFlowWeight)), 0.25f, 1f);
-            float pairWeight = MigrationRate * qualityFlow * (1f - resistance) * math.min(centerSuit, neighborSuit) * math.saturate(invDistance * SectorSizeMeters);
-            preyDelta += (neighbor.PreyBiomass - center.PreyBiomass) * pairWeight;
-            predatorDelta += (neighbor.PredatorBiomass - center.PredatorBiomass) * pairWeight * 0.65f;
+            float pairWeight = MigrationRate * qualityFlow * (1f - resistance) * math.saturate(invDistance * SectorSizeMeters);
+            float centerCapacity = math.max(1f, math.select(CarryingCapacityPrey + CarryingCapacityPredator, center.CarryingCapacity, math.isfinite(center.CarryingCapacity) & center.CarryingCapacity > 0f));
+            float neighborCapacity = math.max(1f, math.select(CarryingCapacityPrey + CarryingCapacityPredator, neighbor.CarryingCapacity, math.isfinite(neighbor.CarryingCapacity) & neighbor.CarryingCapacity > 0f));
+            float centerFlora01 = math.saturate(center.FloraBiomass * math.rcp(centerCapacity));
+            float neighborFlora01 = math.saturate(neighbor.FloraBiomass * math.rcp(neighborCapacity));
+            float centerPrey01 = math.saturate(center.PreyBiomass * math.rcp(centerCapacity));
+            float neighborPrey01 = math.saturate(neighbor.PreyBiomass * math.rcp(neighborCapacity));
+            float centerPred01 = math.saturate(center.PredatorBiomass * math.rcp(centerCapacity));
+            float neighborPred01 = math.saturate(neighbor.PredatorBiomass * math.rcp(neighborCapacity));
+            float averagePrey = (center.PreyBiomass + neighbor.PreyBiomass) * 0.5f;
+            float averagePredator = (center.PredatorBiomass + neighbor.PredatorBiomass) * 0.5f;
+            floraDelta += (neighbor.FloraBiomass - center.FloraBiomass) * pairWeight * 0.08f;
+            preyDelta += ((neighbor.PreyBiomass - center.PreyBiomass) * 0.35f + ((neighborFlora01 - centerFlora01) - (neighborPred01 - centerPred01) * 0.45f) * averagePrey) * pairWeight;
+            predatorDelta += ((neighbor.PredatorBiomass - center.PredatorBiomass) * 0.25f + ((neighborPrey01 - centerPrey01) - (neighborPred01 - centerPred01) * 0.25f) * averagePredator) * pairWeight * 0.65f;
+            transferCount += pairWeight > 0.000001f ? 1u : 0u;
         }
     }
 
@@ -1679,6 +1861,7 @@ namespace Hecton8.Ecosystem
     internal unsafe struct EcosystemTelemetryReductionJob : IJob
     {
         [NoAlias] [NativeDisableUnsafePtrRestriction] public EcosystemSectorDTO* Sectors;
+        [NoAlias] [NativeDisableUnsafePtrRestriction] public EcosystemSectorRemainderDTO* Remainders;
         [NoAlias] [NativeDisableUnsafePtrRestriction] public uint* FaultFlags;
         [NoAlias] public NativeArray<MacroEcosystemTelemetryEntry> Telemetry;
         [NoAlias] public NativeArray<MacroEcosystemCounterDTO> Counters;
@@ -1686,37 +1869,57 @@ namespace Hecton8.Ecosystem
         public int TelemetryIndex;
         public uint FrameIndex;
         public uint DiffusionSteps;
+        public uint IntegrationSubsteps;
         public float GlobalQualityWeight;
 
         public void Execute()
         {
-            ulong prey = 0UL;
-            ulong predator = 0UL;
+            float flora = 0f;
+            float prey = 0f;
+            float predator = 0f;
+            float carrying = 0f;
             uint sterile = 0u;
-            uint toxic = 0u;
+            uint transferCount = 0u;
             uint flags = 0u;
+            uint dominantPredatorSectorHash = 0u;
+            float maxPredatorDensity = 0f;
             uint hash = 2166136261u;
             for (int i = 0; i < SectorCount; i++)
             {
                 EcosystemSectorDTO sector = Sectors[i];
-                prey += sector.PreyBiomass;
-                predator += sector.PredatorBiomass;
-                float toxin = math.saturate(math.select(1f, sector.ToxinLevel, math.isfinite(sector.ToxinLevel)));
-                toxic += toxin > 0.65f ? 1u : 0u;
-                ulong sectorMass = (ulong)sector.PreyBiomass + sector.PredatorBiomass;
-                sterile += sectorMass <= 1UL || toxin > 0.95f ? 1u : 0u;
-                flags |= math.isfinite(sector.LocalTemperature) & math.isfinite(sector.ToxinLevel)
+                EcosystemSectorRemainderDTO rem = Remainders[i];
+                float sectorCapacity = math.max(0.0001f, math.select(1f, sector.CarryingCapacity, math.isfinite(sector.CarryingCapacity)));
+                bool finiteSector = math.isfinite(sector.FloraBiomass) & math.isfinite(sector.PreyBiomass) & math.isfinite(sector.PredatorBiomass) & math.isfinite(sector.CarryingCapacity);
+                float safeFlora = math.select(0f, sector.FloraBiomass, math.isfinite(sector.FloraBiomass));
+                float safePrey = math.select(0f, sector.PreyBiomass, math.isfinite(sector.PreyBiomass));
+                float safePredator = math.select(0f, sector.PredatorBiomass, math.isfinite(sector.PredatorBiomass));
+                flora += safeFlora;
+                prey += safePrey;
+                predator += safePredator;
+                carrying += sectorCapacity;
+                transferCount += rem.LastDiffusionTransfers;
+                float predatorDensity = math.saturate(safePredator * math.rcp(sectorCapacity));
+                bool strongerPredator = predatorDensity > maxPredatorDensity;
+                maxPredatorDensity = math.select(maxPredatorDensity, predatorDensity, strongerPredator);
+                dominantPredatorSectorHash = math.select(dominantPredatorSectorHash, (uint)sector.SectorHash, strongerPredator);
+                float sectorMass = safeFlora + safePrey + safePredator;
+                sterile += sectorMass <= 0.0001f ? 1u : 0u;
+                flags |= finiteSector
                     ? 0u
                     : MacroEcosystemTelemetryEntry.FlagInvalidMath;
                 flags |= (FaultFlags[i] & MacroEcosystemMath.SectorFaultInvalidMath) != 0u
                     ? MacroEcosystemTelemetryEntry.FlagInvalidMath
                     : 0u;
-                flags |= sector.PreyBiomass > 500000u || sector.PredatorBiomass > 250000u
+                flags |= (rem.Flags & MacroEcosystemMath.SectorFaultInvalidMath) != 0u
+                    ? MacroEcosystemTelemetryEntry.FlagInvalidMath
+                    : 0u;
+                flags |= sector.PreyBiomass > sectorCapacity * 4f || sector.PredatorBiomass > sectorCapacity * 2f || sector.FloraBiomass > sectorCapacity * 4f
                     ? MacroEcosystemTelemetryEntry.FlagPopulationExplosion
                     : 0u;
                 hash = MacroEcosystemMath.Mix32(hash, (uint)sector.SectorHash);
-                hash = MacroEcosystemMath.Mix32(hash, sector.PreyBiomass);
-                hash = MacroEcosystemMath.Mix32(hash, sector.PredatorBiomass);
+                hash = MacroEcosystemMath.Mix32(hash, math.asuint(safeFlora));
+                hash = MacroEcosystemMath.Mix32(hash, math.asuint(safePrey));
+                hash = MacroEcosystemMath.Mix32(hash, math.asuint(safePredator));
             }
 
             if ((uint)TelemetryIndex < (uint)Telemetry.Length)
@@ -1725,23 +1928,27 @@ namespace Hecton8.Ecosystem
                 {
                     FrameIndex = FrameIndex,
                     StateHash = hash,
-                    TotalPreyBiomass = prey,
-                    TotalPredatorBiomass = predator,
-                    SterileSectorCount = sterile,
-                    ToxicSectorCount = toxic,
+                    TotalFloraBiomass = math.select(0f, flora, math.isfinite(flora)),
+                    TotalPreyBiomass = math.select(0f, prey, math.isfinite(prey)),
+                    TotalPredatorBiomass = math.select(0f, predator, math.isfinite(predator)),
+                    DiffusionTransfers = transferCount,
+                    MaxPredatorDensity = maxPredatorDensity,
                     SolverMicroseconds = 0f,
                     GlobalQualityWeight = math.saturate(GlobalQualityWeight),
                     DiffusionSteps = DiffusionSteps,
+                    IntegrationSubsteps = IntegrationSubsteps,
                     Flags = flags,
-                    TotalMass = prey + predator,
-                    Reserved = 0UL
+                    TotalCarryingCapacity = math.select(0f, carrying, math.isfinite(carrying)),
+                    DominantPredatorSectorHash = dominantPredatorSectorHash,
+                    TimingMode = MacroEcosystemTelemetryEntry.TimingModeUnspecified,
+                    TimingSourceHash = 0u
                 };
             }
 
             if (Counters.IsCreated)
             {
                 if (Counters.Length > 1) Counters[1] = MacroEcosystemCounterDTO.FromValue(SectorCount);
-                if (Counters.Length > 2) Counters[2] = MacroEcosystemCounterDTO.FromValue(toxic > int.MaxValue ? int.MaxValue : (int)toxic);
+                if (Counters.Length > 2) Counters[2] = MacroEcosystemCounterDTO.FromValue(transferCount > int.MaxValue ? int.MaxValue : (int)transferCount);
                 if (Counters.Length > 3) Counters[3] = MacroEcosystemCounterDTO.FromValue(sterile > int.MaxValue ? int.MaxValue : (int)sterile);
                 if (Counters.Length > 4) Counters[4] = MacroEcosystemCounterDTO.FromValue((int)DiffusionSteps);
                 if (Counters.Length > 5) Counters[5] = MacroEcosystemCounterDTO.FromValue((int)flags);
@@ -1749,6 +1956,7 @@ namespace Hecton8.Ecosystem
         }
     }
 
+    #if UNITY_EDITOR
     internal static class MacroEcosystemCsvParser
     {
         internal static int ParseBiomeSpecs(
@@ -1833,9 +2041,21 @@ namespace Hecton8.Ecosystem
                 CarryingCapacityPredator = math.max(1f, predatorCapacity),
                 MigrationResistance = math.saturate(migrationResistance),
                 TemperatureOptimum = math.select(8f, temperatureOptimum, math.isfinite(temperatureOptimum)),
-                ToxinPenalty = math.saturate(toxinPenalty)
+                ToxinPenalty = math.saturate(toxinPenalty),
+                BaseBirthRate = ReadOptionalPositiveFloat(line, 6),
+                PredationRate = ReadOptionalPositiveFloat(line, 7),
+                PredatorConversionRate = ReadOptionalPositiveFloat(line, 8),
+                PredatorStarvationRate = ReadOptionalPositiveFloat(line, 9)
             };
             return true;
+        }
+
+        private static float ReadOptionalPositiveFloat(ReadOnlySpan<byte> line, int fieldIndex)
+        {
+            ReadOnlySpan<byte> field = ReadField(line, fieldIndex);
+            if (field.Length == 0 || !TryParseFloat(field, out float value))
+                return 0f;
+            return math.isfinite(value) && value > 0f ? value : 0f;
         }
 
         private static ReadOnlySpan<byte> ReadField(ReadOnlySpan<byte> line, int fieldIndex)
@@ -1931,4 +2151,5 @@ namespace Hecton8.Ecosystem
             return true;
         }
     }
+    #endif
 }

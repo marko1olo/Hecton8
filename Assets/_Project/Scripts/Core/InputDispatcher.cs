@@ -1,7 +1,6 @@
-#if UNITY_EDITOR || UNITY_STANDALONE
+﻿#if UNITY_EDITOR || UNITY_STANDALONE
 #define HECTON8_MMF_AVAILABLE
 #endif
-using Hecton8.Input;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using System;
@@ -11,6 +10,7 @@ using System.IO.MemoryMappedFiles;
 #endif
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Interaction;
 using Hecton8.Tools;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -29,7 +29,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed unsafe class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat, IServiceShutdown, IDispatcherRaycastReceiver, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed unsafe partial class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int BufferedActionCapacity = 10;
         private const int DeterministicInputRingCapacity = 512;
@@ -37,9 +37,7 @@ namespace Hecton8.Core
         private const int HapticCommandDtoCapacity = 16;
         private const int XRInputStateCapacity = 2;
         private const int XRControllerActiveBitCount = 5;
-        private const int XRLookAtCommandCapacity = 1;
         private const int XRDeviceRescanIntervalFrames = 30;
-        private const int XRLookAtSelectionRequestId = 8801;
         private const float XRLookAtSelectionDistanceMeters = 12f;
         private const float XRLookAtSelectionDistanceSq = XRLookAtSelectionDistanceMeters * XRLookAtSelectionDistanceMeters;
         private const float XRLookAtReuseOriginDriftMeters = 0.08f;
@@ -75,9 +73,9 @@ namespace Hecton8.Core
         private const uint InputSchemeHashXRTouch = 0x58525443u;
         private const uint DeviceLostSignalSourceHash = 0x494E5044u;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
-        private const uint XRRuntimeFlagLookAtRayCommandEnabled = 1u << 0;
+        private const uint XRRuntimeFlagLookAtProbeActive = 1u << 0;
         private const uint XRRuntimeFlagInputSnapshotActive = 1u << 1;
-        private const uint XRRuntimeFlagsAny = XRRuntimeFlagLookAtRayCommandEnabled | XRRuntimeFlagInputSnapshotActive;
+        private const uint XRRuntimeFlagsAny = XRRuntimeFlagLookAtProbeActive | XRRuntimeFlagInputSnapshotActive;
         private const int StandardInputRingCapacity = DeterministicInputRingCapacity;
         private const int InputBlackBoxCapacity = 300;
         private const int BufferedActionEntrySizeBytes = 16;
@@ -117,10 +115,6 @@ namespace Hecton8.Core
             PlayerInputAction.ToolSlot2 |
             PlayerInputAction.ToolSlot3 |
             PlayerInputAction.ToolSlot4);
-        private static readonly QueryParameters XRLookAtEnabledQueryParameters = new QueryParameters(HectonLayerMasks.DefaultRaycastLayerMask, false, QueryTriggerInteraction.Ignore);
-        private static readonly QueryParameters XRLookAtDisabledQueryParameters = new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore);
-        private static readonly RaycastCommand DisabledXRLookAtRayCommand = new RaycastCommand(Vector3.zero, Vector3.forward, XRLookAtDisabledQueryParameters, 0.01f);
-
         [StructLayout(LayoutKind.Explicit, Size = BufferedActionEntrySizeBytes)]
         private struct BufferedActionEntry
         {
@@ -146,7 +140,7 @@ namespace Hecton8.Core
             private uint _pad4;
         }
 
-        private InputManager _nativeInputManager;
+        private INativeInputManagerRuntime _nativeInputManager;
         private IPlayerRuntimeContext _playerContext;
         private Gamepad _cachedGamepad;
         private XRController _cachedLeftXRController;
@@ -200,7 +194,6 @@ namespace Hecton8.Core
         private VaultGenerationHandle<InputState> _inputReplaySnapshotHandle;
         private VaultGenerationHandle<HapticCommandDTO> _hapticCommandDtoHandle;
         private VaultGenerationHandle<XRInputState> _xrInputStatesHandle;
-        private VaultGenerationHandle<RaycastCommand> _xrLookAtRayCommandsHandle;
         private VaultGenerationHandle<byte> _inputProfileCsvScratchHandle;
         private FileStream _inputReplayStream;
         private FileSystemWatcher _inputProfileCsvWatcher;
@@ -211,12 +204,12 @@ namespace Hecton8.Core
 #endif
         private Thread _inputReplayThread;
         private AutoResetEvent _inputReplaySignal;
-        private RaycastHit _lastXRLookAtHit;
+        private InteractableRegistry.SpatialHit _lastXRLookAtSpatialHit;
         private XRRuntimeAup48 _lastXRLookAtRayOriginAup;
         private Vector3 _lastXRLookAtRayOriginRuntimePosition;
         private Vector3 _lastXRLookAtRayDirection;
         private XRRuntimeAup48 _lastXRLookAtHitPointAup;
-        private int _lastXRLookAtPhysicsQueryFrame = -1;
+        private int _lastXRLookAtProbeFrame = -1;
         private bool _registeredUpdatable;
         private bool _registeredInputService;
         private bool _registeredHotSwapListener;
@@ -335,13 +328,13 @@ namespace Hecton8.Core
         /// </summary>
         public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
 
-        internal InputManager NativeInputManager => _nativeInputManager;
+        internal INativeInputManagerRuntime NativeInputRuntime => _nativeInputManager;
 
         /// <summary>
         /// Binds the bootstrap-owned native input action owner used by this dispatcher.
         /// </summary>
         /// <param name="inputManager">Native input manager validated by the bootstrapper.</param>
-        public void BindNativeInputManager(InputManager inputManager)
+        public void BindNativeInputManager(INativeInputManagerRuntime inputManager)
         {
             if (ReferenceEquals(_nativeInputManager, inputManager))
                 return;
@@ -408,7 +401,9 @@ namespace Hecton8.Core
             EnsureHapticDeviceBinding();
             RefreshXRNativeBufferState();
             EnsureDeterministicInputNativeBuffers();
+#if UNITY_EDITOR
             EnsureInputProfileCsvWatcher();
+#endif
             EnsureInputReplayWriter();
             TryRegisterToDispatcher();
             _isInitialized = true;
@@ -428,7 +423,9 @@ namespace Hecton8.Core
             EnsureHapticDeviceBinding();
             RefreshXRNativeBufferState();
             EnsureDeterministicInputNativeBuffers();
+#if UNITY_EDITOR
             EnsureInputProfileCsvWatcher();
+#endif
         }
 
         private void OnEnable()
@@ -440,7 +437,9 @@ namespace Hecton8.Core
             EnsureHapticDeviceBinding();
             RefreshXRNativeBufferState();
             EnsureDeterministicInputNativeBuffers();
+#if UNITY_EDITOR
             EnsureInputProfileCsvWatcher();
+#endif
             EnsureInputReplayWriter();
 
             if (_isInitialized)
@@ -484,7 +483,9 @@ namespace Hecton8.Core
             _playerContext = null;
             DisposeXRNativeBuffers(default);
             StopInputReplayWriter();
+#if UNITY_EDITOR
             DisposeInputProfileCsvWatcher();
+#endif
             DisposeDeterministicInputNativeBuffers(default);
 
             if (resetInitialization)
@@ -533,7 +534,9 @@ namespace Hecton8.Core
         public void PreSimulationInputTick(float deltaTime)
         {
             EnsureDeterministicInputNativeBuffers();
+#if UNITY_EDITOR
             ApplyPendingInputProfileCsv();
+#endif
             EnsureInputReplayWriter();
 
             float sanitizedDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
@@ -574,7 +577,7 @@ namespace Hecton8.Core
 
         public bool TryGetInputState(uint frame, out InputState state)
         {
-            if (!TryReadInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing))
+            if (!TryReadInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState>.ReadOnly inputStateRing))
             {
                 state = default;
                 return false;
@@ -647,7 +650,7 @@ namespace Hecton8.Core
             signal.InputDelayFrames = (byte)delayFrames;
             signal.AppliedDelayFrames = appliedDelayFrames;
             signal.Flags = resolvedState.Flags;
-            SignalBus<InputStateSignal>.Push(in signal);
+            SignalBus<InputStateSignal>.TryPush(in signal);
             PublishDiscreteInputSignals(resolvedState.ButtonsBitmask, _previousButtonMask);
             _previousButtonMask = resolvedState.ButtonsBitmask;
             WriteDeterministicInputBlackBox(in resolvedState, _currentInputSchemeHash);
@@ -827,7 +830,7 @@ namespace Hecton8.Core
 
         private void EnsureDeterministicInputNativeBuffers()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (UnsafeUtility.SizeOf<InputState>() != InputStateSizeBytes)
                 Debug.LogError("[InputDispatcher] InputState ABI violation; expected 24 bytes with natural ARM64 alignment.");
             if (UnsafeUtility.SizeOf<PlayerInputState>() != PlayerInputStateSizeBytes)
@@ -983,7 +986,7 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.CoreDeterminism,
@@ -1015,14 +1018,13 @@ namespace Hecton8.Core
         private bool TryReadInputBuffer<T>(
             in VaultGenerationHandle<T> handle,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _dataVault;
             if (vault == null ||
                 handle.BufferID == 0u ||
-                !vault.TryReadHandle(in handle, out buffer) ||
-                !buffer.IsCreated ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 buffer.Length < requiredLength)
             {
                 buffer = default;
@@ -1091,8 +1093,8 @@ namespace Hecton8.Core
             ReleaseVaultHandle(vault, ref _inputReplaySnapshotHandle);
             ReleaseVaultHandle(vault, ref _hapticCommandDtoHandle);
             ReleaseVaultHandle(vault, ref _xrInputStatesHandle);
-            ReleaseVaultHandle(vault, ref _xrLookAtRayCommandsHandle);
             ReleaseVaultHandle(vault, ref _inputProfileCsvScratchHandle);
+            ReleaseHapticSynthesisVaultHandles(vault);
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
@@ -1131,6 +1133,7 @@ namespace Hecton8.Core
             Interlocked.Exchange(ref _inputProfileCsvStageFault, 0);
         }
 
+#if UNITY_EDITOR
         private void EnsureInputProfileCsvWatcher()
         {
             if (!Application.isPlaying || _inputProfileCsvWatcher != null)
@@ -1231,33 +1234,40 @@ namespace Hecton8.Core
                     FileOptions.SequentialScan))
                 {
                     Span<byte> line = stackalloc byte[256];
+                    Span<byte> readBuffer = stackalloc byte[512];
                     int length = 0;
                     bool overflow = false;
-                    int next;
-                    while ((next = stream.ReadByte()) >= 0)
+                    while (true)
                     {
-                        byte c = (byte)next;
-                        if (c == (byte)'\n' || c == (byte)'\r')
+                        int read = stream.Read(readBuffer);
+                        if (read <= 0)
+                            break;
+
+                        for (int i = 0; i < read; i++)
                         {
-                            if (!overflow && length > 0)
-                                ParseInputProfileCsvLine(line.Slice(0, length), ref profile);
+                            byte c = readBuffer[i];
+                            if (c == (byte)'\n' || c == (byte)'\r')
+                            {
+                                if (!overflow && length > 0)
+                                    ParseInputProfileCsvLine(line.Slice(0, length), ref profile);
 
-                            length = 0;
-                            overflow = false;
-                            continue;
+                                length = 0;
+                                overflow = false;
+                                continue;
+                            }
+
+                            if (overflow)
+                                continue;
+
+                            if (length >= line.Length)
+                            {
+                                length = 0;
+                                overflow = true;
+                                continue;
+                            }
+
+                            line[length++] = c;
                         }
-
-                        if (overflow)
-                            continue;
-
-                        if (length >= line.Length)
-                        {
-                            length = 0;
-                            overflow = true;
-                            continue;
-                        }
-
-                        line[length++] = c;
                     }
 
                     if (!overflow && length > 0)
@@ -1445,6 +1455,7 @@ namespace Hecton8.Core
             result = (integer + fraction) * sign;
             return math.isfinite(result);
         }
+#endif
 
         private void WriteDeterministicInputBlackBox(in InputState state, uint currentInputSchemeHash)
         {
@@ -1699,21 +1710,13 @@ namespace Hecton8.Core
         /// </summary>
         internal NativeArray<XRInputState>.ReadOnly GetXRInputStatesReadOnly()
         {
-            return TryResolveXRInputStates(out NativeArray<XRInputState> xrInputStates) ? xrInputStates.AsReadOnly() : default;
-        }
-
-        /// <summary>
-        /// Returns the single-command eye/look ray buffer staged for menu and diegetic selection.
-        /// </summary>
-        internal NativeArray<RaycastCommand>.ReadOnly GetXRLookAtRayCommandsReadOnly()
-        {
-            return TryResolveXRLookAtRayCommands(out NativeArray<RaycastCommand> commands) ? commands.AsReadOnly() : default;
+            return TryReadXRInputStates(out NativeArray<XRInputState>.ReadOnly xrInputStates) ? xrInputStates : default;
         }
 
         internal bool TryGetXRInputState(byte controllerIndex, out XRInputState state)
         {
             state = default;
-            if (!TryResolveXRInputStates(out NativeArray<XRInputState> xrInputStates) ||
+            if (!TryReadXRInputStates(out NativeArray<XRInputState>.ReadOnly xrInputStates) ||
                 !HectonXRRuntimeState.IsXRActive ||
                 controllerIndex >= xrInputStates.Length)
             {
@@ -1727,12 +1730,6 @@ namespace Hecton8.Core
         /// <summary>
         /// Returns the latest dispatcher-resolved XR look-at hit for O(1) menu selection.
         /// </summary>
-        internal bool TryGetXRLookAtHit(out RaycastHit hit)
-        {
-            hit = _lastXRLookAtHit;
-            return _lastXRLookAtHitFrame == Time.frameCount;
-        }
-
         /// <summary>
         /// Adds a discrete action token to the fixed 10-frame input buffer.
         /// </summary>
@@ -1794,7 +1791,7 @@ namespace Hecton8.Core
             if (buttonBit == 0u)
                 return false;
 
-            if (!TryReadInputBuffer(in _buttonMaskWindowHandle, ButtonMaskWindowCapacity, out NativeArray<uint> window))
+            if (!TryReadInputBuffer(in _buttonMaskWindowHandle, ButtonMaskWindowCapacity, out NativeArray<uint>.ReadOnly window))
                 return false;
 
             int frameCount = math.clamp(frames, 1, ButtonMaskWindowCapacity);
@@ -1817,7 +1814,7 @@ namespace Hecton8.Core
         public bool TryGetCurrentInputStateDto(out InputStateDTO state)
         {
             state = default;
-            if (!TryReadInputBuffer(in _currentInputDtoHandle, 1, out NativeArray<InputStateDTO> currentInputDto))
+            if (!TryReadInputBuffer(in _currentInputDtoHandle, 1, out NativeArray<InputStateDTO>.ReadOnly currentInputDto))
                 return false;
 
             state = currentInputDto[0];
@@ -1896,7 +1893,7 @@ namespace Hecton8.Core
 
         private void CachePollingActions()
         {
-            InputManager inputManager = _nativeInputManager;
+            INativeInputManagerRuntime inputManager = _nativeInputManager;
             if (inputManager == null)
             {
                 ClearPollingActions();
@@ -2074,7 +2071,7 @@ namespace Hecton8.Core
             signal.Paused = 1;
             signal.Flags = flags;
             signal.RestoreScalar = 1f;
-            GlobalSignals.Publish(in signal);
+            SimulationSignalRoute.TryQueuePause(in signal);
         }
 
         private void ClearCachedXRControllers()
@@ -2230,16 +2227,17 @@ namespace Hecton8.Core
 
         private void TryRegisterToDispatcher()
         {
-            if (_registeredUpdatable)
-                return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            if (!_registeredUpdatable)
+                _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            TryRegisterHapticSynthesisPostSimulation();
         }
 
         private void TryUnregisterFromDispatcher()
         {
+            TryUnregisterHapticSynthesisPostSimulation();
             if (!_registeredUpdatable)
                 return;
 
@@ -2308,7 +2306,7 @@ namespace Hecton8.Core
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
-                BindNativeInputManager(currentService as InputManager);
+                BindNativeInputManager(currentService as INativeInputManagerRuntime);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -2347,6 +2345,12 @@ namespace Hecton8.Core
             _deterministicVaultBuffersReady = false;
             _deterministicVaultBuffersCleared = false;
             _xrVaultBuffersCleared = false;
+
+            if (dataVault != null && Application.isPlaying && _isInitialized)
+            {
+                EnsureDeterministicInputNativeBuffers();
+                TryRegisterHapticSynthesisPostSimulation();
+            }
         }
 
         private void RefreshCachedPlayerRuntimeContext()
@@ -2354,7 +2358,7 @@ namespace Hecton8.Core
             if (_playerContext != null)
                 return;
 
-            _playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private void CaptureState(float deltaTime = 0f)
@@ -2371,7 +2375,7 @@ namespace Hecton8.Core
 
             PlayerInputState state = default;
             uint actionBits = 0u;
-            InputManager inputManager = _nativeInputManager;
+            INativeInputManagerRuntime inputManager = _nativeInputManager;
             if (inputManager != null)
             {
                 if (!_pollActionsCached)
@@ -2404,7 +2408,7 @@ namespace Hecton8.Core
             {
                 RefreshXRInputSnapshot();
                 actionBits |= CaptureXRToolActionBitsAndPublishSignal(currentFrame);
-                StageXRLookAtRayCommand();
+                StageXRLookAtSpatialProbe();
             }
             else
             {
@@ -2445,7 +2449,7 @@ namespace Hecton8.Core
             fallback.HapticDispatchIntervalSeconds = ThermalHapticDispatchIntervalSeconds;
             fallback.HapticThermalAmplitudeScale = DefaultHapticThermalAmplitudeScale;
 
-            if (!TryReadInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO> profiles))
+            if (!TryReadInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO>.ReadOnly profiles))
                 return fallback;
 
             InputProfileDTO profile = profiles[0];
@@ -2473,7 +2477,7 @@ namespace Hecton8.Core
 
         private uint ReadInputBlockMask()
         {
-            if (!TryReadInputBuffer(in _inputBlockMaskHandle, 1, out NativeArray<uint> inputBlockMask))
+            if (!TryReadInputBuffer(in _inputBlockMaskHandle, 1, out NativeArray<uint>.ReadOnly inputBlockMask))
                 return 0u;
 
             return inputBlockMask[0];
@@ -2553,7 +2557,7 @@ namespace Hecton8.Core
             float magnitude = math.sqrt(math.max(magnitudeSq, 0.00000001f));
             float normalized = math.saturate((magnitude - inner) / math.max(outer - inner, 0.0001f));
             float exponent = math.clamp(profile.MoveExponent, 0.25f, 4f);
-            float curved = math.pow(normalized, exponent);
+            float curved = MathLodApproximation.ApproxPow01Curve(normalized, exponent);
             float scale = curved / math.max(magnitude, 0.0001f);
             return rawAxis * scale;
         }
@@ -2579,18 +2583,18 @@ namespace Hecton8.Core
                 return InputSchemeHashXRTouch;
             }
 
-            InputManager inputManager = _nativeInputManager;
+            INativeInputManagerRuntime inputManager = _nativeInputManager;
             if (inputManager != null)
             {
-                switch (inputManager.CurrentDisplayStyle)
+                switch (inputManager.CurrentDisplayStyleCode)
                 {
-                    case InputDisplayStyle.SteamDeck:
+                    case NativeInputDisplayStyle.SteamDeck:
                         return InputSchemeHashSteamDeck;
-                    case InputDisplayStyle.Gamepad:
+                    case NativeInputDisplayStyle.Gamepad:
                         return InputSchemeHashGamepad;
-                    case InputDisplayStyle.XRTouch:
+                    case NativeInputDisplayStyle.XRTouch:
                         return InputSchemeHashXRTouch;
-                    case InputDisplayStyle.KeyboardMouse:
+                    case NativeInputDisplayStyle.KeyboardMouse:
                         return InputSchemeHashKeyboardMouse;
                 }
             }
@@ -2649,9 +2653,8 @@ namespace Hecton8.Core
         private bool HasXRRuntimeStateToClear()
         {
             return _xrInputStatesHandle.BufferID != 0u ||
-                   _xrLookAtRayCommandsHandle.BufferID != 0u ||
                    (_xrRuntimeFlags & XRRuntimeFlagsAny) != 0u ||
-                   _lastXRLookAtPhysicsQueryFrame >= 0 ||
+                   _lastXRLookAtProbeFrame >= 0 ||
                    _lastXRLookAtHitFrame >= 0 ||
                    _cachedLeftXRController != null ||
                    _cachedRightXRController != null ||
@@ -2671,24 +2674,14 @@ namespace Hecton8.Core
                 XRInputStateCapacity,
                 NativeArrayOptions.UninitializedMemory,
                 out _);
-            bool commandsReady = TryResolveOrAcquireInputBuffer(
-                ref _xrLookAtRayCommandsHandle,
-                BufferID.ShinobuInputXRLookAtRayCommands,
-                XRLookAtCommandCapacity,
-                NativeArrayOptions.UninitializedMemory,
-                out _);
-
-            if (!statesReady || !commandsReady)
+            if (!statesReady)
                 return;
 
             if (_xrVaultBuffersCleared)
                 return;
 
             ClearVaultBuffer(ref _xrInputStatesHandle);
-            ClearVaultBuffer(ref _xrLookAtRayCommandsHandle);
             _xrVaultBuffersCleared = true;
-            if (_xrLookAtRayCommandsHandle.BufferID != 0u)
-                DisableXRLookAtRayCommand(forceWrite: true);
         }
 
         private bool TryResolveXRInputStates(out NativeArray<XRInputState> states)
@@ -2696,17 +2689,15 @@ namespace Hecton8.Core
             return TryResolveInputBuffer(in _xrInputStatesHandle, XRInputStateCapacity, out states);
         }
 
-        private bool TryResolveXRLookAtRayCommands(out NativeArray<RaycastCommand> commands)
+        private bool TryReadXRInputStates(out NativeArray<XRInputState>.ReadOnly states)
         {
-            return TryResolveInputBuffer(in _xrLookAtRayCommandsHandle, XRLookAtCommandCapacity, out commands);
+            return TryReadInputBuffer(in _xrInputStatesHandle, XRInputStateCapacity, out states);
         }
 
         private void DisposeXRNativeBuffers(JobHandle dependency)
         {
             ClearVaultBuffer(ref _xrInputStatesHandle);
-            ClearVaultBuffer(ref _xrLookAtRayCommandsHandle);
             ReleaseVaultHandle(_dataVault, ref _xrInputStatesHandle);
-            ReleaseVaultHandle(_dataVault, ref _xrLookAtRayCommandsHandle);
             _xrVaultBuffersCleared = false;
         }
 
@@ -2801,7 +2792,7 @@ namespace Hecton8.Core
             signal.Sequence = ++_toolTriggerSequence;
             signal.DominantController = dominantController;
             signal.Flags = flags;
-            GlobalSignals.Publish(in signal);
+            SignalBus<ToolTriggerSignal>.TryPush(in signal);
 
             _lastPublishedXRToolTriggerStrength = strength;
             _lastPublishedXRSecondaryTriggerStrength = secondaryStrength;
@@ -2940,21 +2931,18 @@ namespace Hecton8.Core
             return (button != null && button.isPressed) || analogValue >= 0.5f;
         }
 
-        private void StageXRLookAtRayCommand()
+        private void StageXRLookAtSpatialProbe()
         {
-            if (!TryResolveXRLookAtRayCommands(out NativeArray<RaycastCommand> commands))
-                return;
-
             if (!HectonXRRuntimeState.IsXRActive)
             {
-                DisableXRLookAtRayCommand();
+                ClearXRLookAtSpatialProbe();
                 return;
             }
 
             Transform viewTransform = ResolveLookAtViewTransform();
             if (viewTransform == null)
             {
-                DisableXRLookAtRayCommand();
+                ClearXRLookAtSpatialProbe();
                 return;
             }
 
@@ -2975,83 +2963,97 @@ namespace Hecton8.Core
             if (!HectonXRRuntimeState.TryResolveCachedHeadAup48(origin, out XRRuntimeAup48 originAup) &&
                 !XRRuntimeAup48.TryFromRuntimePosition(origin, out originAup))
             {
-                DisableXRLookAtRayCommand(forceWrite: true);
+                ClearXRLookAtSpatialProbe(forceWrite: true);
                 return;
             }
 
             if (TryReuseXRLookAtHit(in originAup, in direction3))
+                return;
+
+            if (!originAup.TryToRuntimeFloat3(out float3 probeOrigin3))
             {
-                DisableXRLookAtRayCommand();
+                ClearXRLookAtSpatialProbe(forceWrite: true);
                 return;
             }
 
-            if (!originAup.TryToRuntimeFloat3(out float3 rayOrigin3))
+            Vector3 probeOrigin = new Vector3(probeOrigin3.x, probeOrigin3.y, probeOrigin3.z);
+            InteractableRegistry.EnsureSceneRegistryCold();
+            Ray probe = new Ray(probeOrigin, direction);
+            if (InteractableRegistry.TryRaycastSpatial(
+                    in probe,
+                    XRLookAtSelectionDistanceMeters,
+                    HectonLayerMasks.DefaultRaycastLayerMask,
+                    QueryTriggerInteraction.Ignore,
+                    out InteractableRegistry.SpatialHit spatialHit))
             {
-                DisableXRLookAtRayCommand(forceWrite: true);
-                return;
-            }
-
-            Vector3 rayOrigin = new Vector3(rayOrigin3.x, rayOrigin3.y, rayOrigin3.z);
-            RaycastCommand command = default;
-            command.from = rayOrigin;
-            command.direction = direction;
-            command.distance = XRLookAtSelectionDistanceMeters;
-            command.queryParameters = XRLookAtEnabledQueryParameters;
-            if (SystemDispatcher.QueueDispatcherRaycast(this, XRLookAtSelectionRequestId, in command))
-            {
-                commands[0] = command;
-                _xrRuntimeFlags |= XRRuntimeFlagLookAtRayCommandEnabled;
+                _lastXRLookAtSpatialHit = spatialHit;
+                _lastXRLookAtHitFrame = Time.frameCount;
+                _lastXRLookAtProbeFrame = Time.frameCount;
                 _lastXRLookAtRayOriginAup = originAup;
-                _lastXRLookAtRayOriginRuntimePosition = rayOrigin;
+                _lastXRLookAtRayOriginRuntimePosition = probeOrigin;
                 _lastXRLookAtRayDirection = direction;
+                _xrRuntimeFlags |= XRRuntimeFlagLookAtProbeActive;
+                if (XRRuntimeAup48.TryOffsetLocal(in originAup, spatialHit.Point - probeOrigin, out XRRuntimeAup48 hitPointAup))
+                    _lastXRLookAtHitPointAup = hitPointAup;
+                else
+                    _lastXRLookAtHitPointAup = default;
                 return;
             }
 
-            DisableXRLookAtRayCommand(forceWrite: true);
+            _lastXRLookAtSpatialHit = default;
+            _lastXRLookAtHitFrame = Time.frameCount;
+            _lastXRLookAtProbeFrame = Time.frameCount;
+            _lastXRLookAtRayOriginAup = originAup;
+            _lastXRLookAtRayOriginRuntimePosition = probeOrigin;
+            _lastXRLookAtRayDirection = direction;
+            _lastXRLookAtHitPointAup = default;
+            _xrRuntimeFlags |= XRRuntimeFlagLookAtProbeActive;
         }
 
-        private void DisableXRLookAtRayCommand(bool forceWrite = false)
+        private void ClearXRLookAtSpatialProbe(bool forceWrite = false)
         {
-            if (!forceWrite && (_xrRuntimeFlags & XRRuntimeFlagLookAtRayCommandEnabled) == 0u)
+            if (!forceWrite && (_xrRuntimeFlags & XRRuntimeFlagLookAtProbeActive) == 0u)
                 return;
 
-            if (TryResolveXRLookAtRayCommands(out NativeArray<RaycastCommand> commands))
-                commands[0] = DisabledXRLookAtRayCommand;
-            _xrRuntimeFlags &= ~XRRuntimeFlagLookAtRayCommandEnabled;
+            _lastXRLookAtSpatialHit = default;
+            _lastXRLookAtHitFrame = -1;
+            _lastXRLookAtRayOriginAup = default;
+            _lastXRLookAtRayOriginRuntimePosition = Vector3.zero;
+            _lastXRLookAtRayDirection = Vector3.forward;
+            _lastXRLookAtHitPointAup = default;
+            _lastXRLookAtProbeFrame = -1;
+            _xrRuntimeFlags &= ~XRRuntimeFlagLookAtProbeActive;
         }
 
         private void ClearXRRuntimeFrameStateIfActive()
         {
             if (_xrInputStatesHandle.BufferID == 0u &&
-                _xrLookAtRayCommandsHandle.BufferID == 0u &&
                 (_xrRuntimeFlags & XRRuntimeFlagsAny) == 0u &&
-                _lastXRLookAtPhysicsQueryFrame < 0 &&
+                _lastXRLookAtProbeFrame < 0 &&
                 _lastXRLookAtHitFrame < 0)
             {
                 return;
             }
 
             ClearXRInputSnapshotIfActive(forceWrite: true);
+            ClearXRLookAtSpatialProbe(forceWrite: true);
 
-            if (_xrLookAtRayCommandsHandle.BufferID != 0u)
-                DisableXRLookAtRayCommand(forceWrite: true);
-
-            _lastXRLookAtHit = default;
+            _lastXRLookAtSpatialHit = default;
             _lastXRLookAtHitFrame = -1;
             _lastXRLookAtRayOriginAup = default;
             _lastXRLookAtRayOriginRuntimePosition = Vector3.zero;
             _lastXRLookAtRayDirection = Vector3.forward;
             _lastXRLookAtHitPointAup = default;
-            _lastXRLookAtPhysicsQueryFrame = -1;
+            _lastXRLookAtProbeFrame = -1;
             _xrRuntimeFlags = 0u;
         }
 
         private bool TryReuseXRLookAtHit(in XRRuntimeAup48 originAup, in float3 direction)
         {
-            if (_lastXRLookAtPhysicsQueryFrame < 0)
+            if (_lastXRLookAtProbeFrame < 0)
                 return false;
 
-            if (Time.frameCount - _lastXRLookAtPhysicsQueryFrame > XRLookAtReuseMaxFrames)
+            if (Time.frameCount - _lastXRLookAtProbeFrame > XRLookAtReuseMaxFrames)
                 return false;
 
             if (!XRRuntimeAup48.TryToRelativeFloat3(in originAup, in _lastXRLookAtRayOriginAup, out float3 originDelta))
@@ -3067,7 +3069,7 @@ namespace Hecton8.Core
             if (math.dot(previousDirection, direction) < XRLookAtReuseForwardDot)
                 return false;
 
-            if (_lastXRLookAtHit.collider == null)
+            if (!_lastXRLookAtSpatialHit.HasHit)
             {
                 _lastXRLookAtHitFrame = Time.frameCount;
                 return true;
@@ -3284,32 +3286,13 @@ namespace Hecton8.Core
             signal.Sequence = unchecked(++_playerInputSignalSequence);
             signal.Command = command;
             signal.Flags = 0;
-            SignalBus<PlayerInputSignal>.Push(in signal);
+            SignalBus<PlayerInputSignal>.TryPush(in signal);
         }
 
         private void HandleSprintPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.Sprint;
-        }
-
-        void IDispatcherRaycastReceiver.ConsumeDispatcherRaycastHit(int requestId, in RaycastHit hit)
-        {
-            if (requestId != XRLookAtSelectionRequestId)
-                return;
-
-            _lastXRLookAtHit = hit;
-            _lastXRLookAtHitFrame = Time.frameCount;
-            _lastXRLookAtPhysicsQueryFrame = Time.frameCount;
-            if (hit.collider != null &&
-                XRRuntimeAup48.TryOffsetLocal(in _lastXRLookAtRayOriginAup, hit.point - _lastXRLookAtRayOriginRuntimePosition, out XRRuntimeAup48 hitPointAup))
-            {
-                _lastXRLookAtHitPointAup = hitPointAup;
-            }
-            else
-            {
-                _lastXRLookAtHitPointAup = default;
-            }
         }
 
         private void DrainToolHaptics(float deltaTime)
@@ -3333,7 +3316,10 @@ namespace Hecton8.Core
             bool hasLowPriority = false;
             bool hasHighPriority = false;
 
-            while (GlobalSignals.TryDequeueHapticRequest(out HapticRequest request))
+            if (!IsHapticSynthesisDispatcherRouteRegistered())
+                QueueSynthesizedHapticCommand(safeDeltaTime, in profile, schemeHash);
+
+            while (SignalBus<HapticRequest>.TryConsumeFrame(out HapticRequest request))
             {
                 if (schemeHash == InputSchemeHashKeyboardMouse)
                     continue;
@@ -3498,35 +3484,12 @@ namespace Hecton8.Core
 
         private void RunMockCollisionHapticJob(uint frame)
         {
-            InputProfileDTO profile = ReadInputProfile();
-            if ((profile.Flags & InputProfileFlagEnableMockCollision) == 0u)
-                return;
-
-            uint seed = math.hash(new uint2(InputMockSignalSourceHash, frame));
-            Unity.Mathematics.Random rng = new Unity.Mathematics.Random(seed == 0u ? 0xD1B54A35u : seed);
-            uint roll = rng.NextUInt();
-            if ((roll & 31u) != 0u)
-                return;
-
-            MockCollisionSignal signal = default;
-            signal.Magnitude01 = 0.85f + ((roll & 7u) * 0.015f);
-            signal.Frame = frame;
-            signal.SourceHash = InputMockSignalSourceHash;
-            signal.Flags = 0u;
-            HandleMockCollisionSignal(in signal);
+            // SHINOBU_353 owns mock haptic storms through GenerateMockHapticStormJob.
         }
 
         private void HandleMockCollisionSignal(in MockCollisionSignal signal)
         {
-            float magnitude = ClampFinite01(signal.Magnitude01);
-            if (magnitude <= 0f)
-                return;
-
-            InsertHapticCommandDto(
-                magnitude,
-                magnitude * 0.45f,
-                7.5f,
-                HapticLowMotorMask | HapticHighMotorMask);
+            // Legacy direct command injection disabled; keep the signature for old test harnesses.
         }
 
         private int EvaluateHapticCommandDtos(
@@ -3797,13 +3760,13 @@ namespace Hecton8.Core
             _lastPollingTimeMicroseconds = 0u;
             _bufferedInputsConsumedThisFrame = 0u;
             _lastHapticCommandsActive = 0;
-            _lastXRLookAtHit = default;
+            _lastXRLookAtSpatialHit = default;
             _lastXRLookAtHitFrame = -1;
             _lastXRLookAtRayOriginAup = default;
             _lastXRLookAtRayOriginRuntimePosition = Vector3.zero;
             _lastXRLookAtRayDirection = Vector3.forward;
             _lastXRLookAtHitPointAup = default;
-            _lastXRLookAtPhysicsQueryFrame = -1;
+            _lastXRLookAtProbeFrame = -1;
             _xrRuntimeFlags = 0u;
 
             for (int i = 0; i < BufferedActionCapacity; i++)
@@ -3823,9 +3786,7 @@ namespace Hecton8.Core
             }
 
             ClearXRInputSnapshotIfActive(forceWrite: true);
-
-            if (_xrLookAtRayCommandsHandle.BufferID != 0u)
-                DisableXRLookAtRayCommand(forceWrite: true);
+            ClearXRLookAtSpatialProbe(forceWrite: true);
         }
     }
 

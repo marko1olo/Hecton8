@@ -90,7 +90,7 @@ namespace Hecton8.AI.Perception
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AICognition,

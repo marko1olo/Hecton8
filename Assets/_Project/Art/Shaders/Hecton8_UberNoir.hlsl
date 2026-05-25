@@ -199,6 +199,7 @@ float _H8GlobalQualityWeight;
 float _HectonHandRadiationDose;
 float _HectonHandRadiationMutation01;
 float4 _HectonHandRadiationTint;
+float4 _HectonRadiationMutationParams; // x=mutation severity, y=stamina penalty, z=healing suppression, w=GlobalQualityWeight
 #endif
 float4 _GlobalWakeBuffer[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
 float4 _GlobalWakeVectors[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
@@ -680,24 +681,105 @@ float H8UberNoirValueNoise2(float2 value)
     return lerp(lerp(a, b, smoothValue.x), lerp(c, d, smoothValue.x), smoothValue.y);
 }
 
+float H8UberNoirHash13(float3 value)
+{
+    return frac(sin(dot(value, float3(127.1, 311.7, 74.7))) * 43758.5453123);
+}
+
+float H8UberNoirValueNoise3(float3 value)
+{
+    float3 cell = floor(value);
+    float3 local = frac(value);
+    float3 smoothValue = local * local * (3.0 - 2.0 * local);
+    float c000 = H8UberNoirHash13(cell);
+    float c100 = H8UberNoirHash13(cell + float3(1.0, 0.0, 0.0));
+    float c010 = H8UberNoirHash13(cell + float3(0.0, 1.0, 0.0));
+    float c110 = H8UberNoirHash13(cell + float3(1.0, 1.0, 0.0));
+    float c001 = H8UberNoirHash13(cell + float3(0.0, 0.0, 1.0));
+    float c101 = H8UberNoirHash13(cell + float3(1.0, 0.0, 1.0));
+    float c011 = H8UberNoirHash13(cell + float3(0.0, 1.0, 1.0));
+    float c111 = H8UberNoirHash13(cell + float3(1.0, 1.0, 1.0));
+    float x00 = lerp(c000, c100, smoothValue.x);
+    float x10 = lerp(c010, c110, smoothValue.x);
+    float x01 = lerp(c001, c101, smoothValue.x);
+    float x11 = lerp(c011, c111, smoothValue.x);
+    float y0 = lerp(x00, x10, smoothValue.y);
+    float y1 = lerp(x01, x11, smoothValue.y);
+    return lerp(y0, y1, smoothValue.z);
+}
+
 float3 H8UberNoirApplyHandRadiationMutationOS(float3 positionOS, inout float3 normalOS, float instanceSeed)
 {
     float materialMask = H8UberNoirFeatureScalar(_HectonHandRadiationMask);
-    float mutation01 = H8UberNoirFeatureScalar(_HectonHandRadiationMutation01) * materialMask;
+    float bridgeMutation01 = H8UberNoirFeatureScalar(_HectonRadiationMutationParams.x);
+    float legacyMutation01 = H8UberNoirFeatureScalar(_HectonHandRadiationMutation01);
+    float mutation01 = max(legacyMutation01, bridgeMutation01) * materialMask;
     if (mutation01 <= H8_UBER_NOIR_EPS)
         return positionOS;
 
     float q = H8UberNoirGlobalQualityWeight();
     float3 safePosition = H8UberNoirFinite3(positionOS, float3(0.0, 0.0, 0.0));
     float3 safeNormal = H8UberNoirSafeNormalize(normalOS, float3(0.0, 1.0, 0.0));
-    float2 scarUv = safePosition.xy * lerp(9.0, 31.0, q) + instanceSeed + _Time.yy * lerp(0.08, 0.22, q);
-    float blisterNoise = H8UberNoirValueNoise2(scarUv);
-    float poreNoise = H8UberNoirValueNoise2(scarUv * 2.37 + 13.17);
-    float blister = saturate((blisterNoise - 0.42) * 2.15) * saturate(0.55 + poreNoise);
+    float detailWeight = H8UberNoirSmoothRange01(0.30, 0.58, q) * H8UberNoirHighCostAllowed();
+    float cheapScar = H8UberNoirTriangle01(dot(safePosition.xy, float2(7.7, -5.3)) + instanceSeed);
+    float blister = saturate((cheapScar - lerp(0.31, 0.54, q)) * lerp(1.65, 2.25, q));
+    float poreNoise = cheapScar;
+    [branch]
+    if (detailWeight > H8_UBER_NOIR_EPS)
+    {
+        float3 scarUv = safePosition * lerp(9.0, 31.0, q) + float3(instanceSeed, _Time.y * lerp(0.08, 0.22, q), instanceSeed * 0.37);
+        float blisterNoise = H8UberNoirValueNoise3(scarUv);
+        float richPore = H8UberNoirValueNoise3(scarUv * 2.37 + 13.17);
+        float richBlister = saturate((blisterNoise - 0.42) * 2.15) * saturate(0.55 + richPore);
+        blister = lerp(blister, richBlister, detailWeight);
+        poreNoise = lerp(poreNoise, richPore, detailWeight);
+    }
     float pulse = 0.75 + 0.25 * H8UberNoirTriangle01(_Time.y * lerp(0.35, 1.65, q) + instanceSeed);
     float displacement = blister * mutation01 * pulse * lerp(0.0015, 0.0095, q);
     normalOS = H8UberNoirSafeNormalize(safeNormal + float3((poreNoise - 0.5) * mutation01 * 0.08, blister * mutation01 * 0.06, 0.0), safeNormal);
     return H8UberNoirFinite3(safePosition + safeNormal * displacement, positionOS);
+}
+
+void H8UberNoirApplyRadiationMutationSurface(
+    float3 stablePosition,
+    float2 wearUv,
+    half instanceSeed,
+    float quality,
+    inout H8UberNoirSurface surface)
+{
+    float materialMask = H8UberNoirFeatureScalar(_HectonHandRadiationMask);
+    float legacyMutation01 = H8UberNoirFeatureScalar(_HectonHandRadiationMutation01);
+    float bridgeMutation01 = H8UberNoirFeatureScalar(_HectonRadiationMutationParams.x);
+    float mutation01 = max(legacyMutation01, bridgeMutation01) * materialMask;
+    [branch]
+    if (mutation01 <= H8_UBER_NOIR_EPS)
+        return;
+
+    float staminaPenalty01 = H8UberNoirFeatureScalar(_HectonRadiationMutationParams.y);
+    float healingSuppression01 = H8UberNoirFeatureScalar(_HectonRadiationMutationParams.z);
+    float q = saturate(max(quality, H8UberNoirFeatureScalar(_HectonRadiationMutationParams.w)));
+    float detailWeight = H8UberNoirSmoothRange01(0.30, 0.62, q) * H8UberNoirHighCostAllowed();
+    float cheapScar = H8UberNoirTriangle01(dot(stablePosition.xz, float2(0.97, -1.31)) + instanceSeed);
+    float blister = saturate((cheapScar - lerp(0.38, 0.58, q)) * lerp(1.9, 2.8, q));
+    [branch]
+    if (detailWeight > H8_UBER_NOIR_EPS)
+    {
+        float2 mutationUv = wearUv * lerp(11.0, 33.0, q) + stablePosition.xy * 0.043 + instanceSeed;
+        float3 mutationVolume = float3(mutationUv, stablePosition.y * 0.043 + instanceSeed);
+        float blisterNoise = H8UberNoirValueNoise3(mutationVolume);
+        float poreNoise = H8UberNoirValueNoise3(mutationVolume * 2.11 + 7.31);
+        float richBlister = saturate((blisterNoise * 0.72 + poreNoise * 0.28 - 0.42) * 2.35);
+        blister = lerp(blister, richBlister, detailWeight);
+    }
+
+    half visibleMutation = (half)saturate(mutation01 * (0.45 + blister * 0.55));
+    half3 bruiseTint = lerp((half3)_RustTint.rgb, (half3)_RustPitTint.rgb, saturate((half)(0.35 + healingSuppression01 * 0.65)));
+    half3 bloodTint = max((half3)_BiolumHighColor.rgb * 0.08h + bruiseTint * 0.82h, half3(0.16h, 0.015h, 0.035h));
+    surface.albedo = lerp(surface.albedo, bloodTint, visibleMutation * lerp(0.18h, 0.46h, (half)q));
+    surface.sssMask = saturate(surface.sssMask + visibleMutation * (half)(0.18 + healingSuppression01 * 0.34));
+    surface.smoothness = lerp(surface.smoothness, 0.045h, visibleMutation * (half)(0.16 + staminaPenalty01 * 0.22));
+    surface.roughness = saturate(1.0h - surface.smoothness);
+    surface.emission += bloodTint * visibleMutation * (half)(0.012 + detailWeight * 0.026);
 }
 
 float H8UberNoirMaterialMacroNoise(float3 stablePosition, half instanceSeed, float quality)
@@ -1658,6 +1740,7 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
         surface.normalWS = (half3)H8UberNoirSafeNormalize(
             (float3)surface.normalWS + (float3)input.deformationNormalWS * saturate(input.dentScar),
             (float3)input.normalWS);
+        H8UberNoirApplyRadiationMutationSurface(stablePosition, wearUv, input.instanceSeed, quality, surface);
         return surface;
     }
 
@@ -1719,6 +1802,7 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     surface.normalWS = (half3)H8UberNoirSafeNormalize(
         (float3)surface.normalWS + (float3)input.deformationNormalWS * saturate(input.dentScar * lerp(0.45h, 1.25h, (half)quality)),
         safeNormalWS);
+    H8UberNoirApplyRadiationMutationSurface(stablePosition, wearUv, input.instanceSeed, quality, surface);
     surface.emission += H8UberNoirResolveBiolumEmission(input.positionWS, armSample.a, input.instanceSeed) * lerp(0.35h, 1.0h, surface.powerLevel);
     return surface;
 }

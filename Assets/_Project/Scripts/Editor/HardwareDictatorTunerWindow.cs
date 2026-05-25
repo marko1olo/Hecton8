@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using UnityEditor;
 using UnityEngine;
@@ -129,15 +130,15 @@ namespace Hecton8.Editor
                 return;
             }
 
-            EditorGUILayout.LabelField("GlobalQualityWeight", state.GlobalQualityWeight.ToString("0.000"));
-            EditorGUILayout.LabelField("FractionalTimeSlice", state.FractionalTimeSlice.ToString("0.000"));
-            EditorGUILayout.LabelField("Frame ms", health.FrameTimeMs.ToString("0.00"));
-            EditorGUILayout.LabelField("VRAM pressure", state.VramPressure.ToString("0.000"));
-            EditorGUILayout.LabelField("Thermal index", state.ThermalIndex.ToString("0.000"));
-            EditorGUILayout.LabelField("Target render scale", HomeostasisBrain.TargetRenderScale01.ToString("0.000"));
-            EditorGUILayout.LabelField("Culling multiplier", HomeostasisBrain.CullingMultiplier.ToString("0.000"));
+            EditorGUILayout.LabelField("GlobalQualityWeight", state.GlobalQualityWeight.ToString("0.000", CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("FractionalTimeSlice", state.FractionalTimeSlice.ToString("0.000", CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Frame ms", health.FrameTimeMs.ToString("0.00", CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("VRAM pressure", state.VramPressure.ToString("0.000", CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Thermal index", state.ThermalIndex.ToString("0.000", CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Target render scale", HomeostasisBrain.TargetRenderScale01.ToString("0.000", CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Culling multiplier", HomeostasisBrain.CullingMultiplier.ToString("0.000", CultureInfo.InvariantCulture));
             if (HomeostasisBrain.TryGetMockTerrainSamplerStatus(out MockTerrainSamplerStatus terrain))
-                EditorGUILayout.LabelField("Trilinear skip", terrain.SkippedTrilinearPercent01.ToString("0.000"));
+                EditorGUILayout.LabelField("Trilinear skip", terrain.SkippedTrilinearPercent01.ToString("0.000", CultureInfo.InvariantCulture));
         }
 
         private void DrawOscilloscope()

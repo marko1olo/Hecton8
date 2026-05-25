@@ -1,12 +1,10 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 - HectonNarrativeDirector.cs
 // Stateless narrative tracker for discoveries and depth-tier milestones.
 // ============================================================================
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -18,157 +16,30 @@ using Hecton8.World;
 using UnityEngine;
 using Hecton8.Systems.AI;
 using Hecton8.Interaction;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)]
-    public sealed class HectonNarrativeDirector : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, INarrativePointOfInterestListener, IDirectorAIEventListener, ISpatialTriggerSystem, IOriginShiftListener, IDisposable
+    public sealed partial class HectonNarrativeDirector : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable, INarrativeEventListener, INarrativePointOfInterestListener, IDirectorAIEventListener, ISpatialTriggerSystem, IOriginShiftListener, IGlobalRegistryHotSwapListener, INarrativeDiscoveryReadModel, IDisposable
     {
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
-        private struct NarrativeNode
-        {
-            [FieldOffset(0)]
-            public uint DiscoveryHash;
-            [FieldOffset(4)]
-            public ushort Reserved0;
-            [FieldOffset(6)]
-            public ushort Reserved1;
-            [FieldOffset(8)]
-            private ulong _pad0;
-        }
-
-        [StructLayout(LayoutKind.Explicit, Size = 80)]
-        private struct NarrativeTriggerTelemetryEntry
-        {
-            [FieldOffset(0)]
-            public uint Frame;
-            [FieldOffset(4)]
-            public uint PoiHash;
-            [FieldOffset(8)]
-            public ulong StateMask;
-            [FieldOffset(16)]
-            public long PlayerGridX;
-            [FieldOffset(24)]
-            public long PlayerGridY;
-            [FieldOffset(32)]
-            public long PlayerGridZ;
-            [FieldOffset(40)]
-            public float3 PlayerRuntime;
-            [FieldOffset(52)]
-            public float3 PoiRuntime;
-            [FieldOffset(64)]
-            public byte Flags;
-            [FieldOffset(65)]
-            private byte _pad0;
-            [FieldOffset(66)]
-            private ushort _pad1;
-            [FieldOffset(68)]
-            private uint _pad2;
-            [FieldOffset(72)]
-            private ulong _pad3;
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct NarrativePoiSpatialCheckJob : IJob
-        {
-            [NoAlias, ReadOnly] public NativeArray<float3> PoiAups;
-            [NoAlias, ReadOnly] public NativeArray<float> PoiRadiiSq;
-            [NoAlias, ReadOnly] public NativeArray<uint> PoiHashes;
-            [NoAlias, ReadOnly] public NativeArray<long> PoiGridX;
-            [NoAlias, ReadOnly] public NativeArray<long> PoiGridZ;
-            [NoAlias] public NativeArray<byte> PoiState;
-            [NoAlias, WriteOnly] public NativeArray<int> TriggeredIndices;
-            [NoAlias, WriteOnly] public NativeArray<uint> TriggeredHashes;
-            [NoAlias] public NativeArray<int> TriggeredCount;
-            [NoAlias] public NativeArray<int> FaultCount;
-            public float3 PlayerRuntime;
-            public long PlayerGridX;
-            public long PlayerGridZ;
-            public byte UseDominantAxisPreCull;
-            public int PoiCount;
-
-            public void Execute()
-            {
-                TriggeredCount[0] = 0;
-                FaultCount[0] = 0;
-
-                for (int i = 0; i < PoiCount; i++)
-                {
-                    if (PoiState[i] != 0)
-                        continue;
-
-                    long sectorDx = PoiGridX[i] - PlayerGridX;
-                    long sectorDz = PoiGridZ[i] - PlayerGridZ;
-                    if (sectorDx < -1L || sectorDx > 1L || sectorDz < -1L || sectorDz > 1L)
-                        continue;
-
-                    float radiusSq = PoiRadiiSq[i];
-                    float3 poiRuntime = PoiAups[i];
-                    if (!math.isfinite(radiusSq) || radiusSq <= 0f || !math.all(math.isfinite(poiRuntime)))
-                    {
-                        FaultCount[0] = FaultCount[0] + 1;
-                        continue;
-                    }
-
-                    if (UseDominantAxisPreCull != 0)
-                    {
-                        float3 delta = PlayerRuntime - poiRuntime;
-                        float dominantAxis = math.cmax(math.abs(delta));
-                        if (dominantAxis * dominantAxis >= radiusSq)
-                            continue;
-                    }
-
-                    float3 poiDelta = PlayerRuntime - poiRuntime;
-                    float distanceSq = math.lengthsq(poiDelta);
-                    if (!math.isfinite(distanceSq))
-                    {
-                        FaultCount[0] = FaultCount[0] + 1;
-                        continue;
-                    }
-
-                    if (distanceSq >= radiusSq)
-                        continue;
-
-                    PoiState[i] = 1;
-                    int writeIndex = TriggeredCount[0];
-                    if (writeIndex < TriggeredIndices.Length)
-                    {
-                        TriggeredIndices[writeIndex] = i;
-                        TriggeredHashes[writeIndex] = PoiHashes[i];
-                    }
-
-                    TriggeredCount[0] = writeIndex + 1;
-                }
-            }
-        }
-
         [Header("Settings")]
 #pragma warning disable CS0414 // slowTickRate reserved for future SlowTick throttling
         [SerializeField, UnityEngine.Range(1, 10)] private int slowTickRate = 2;
 #pragma warning restore CS0414
 
         [Header("State")]
-        [SerializeField, Sirenix.OdinInspector.ReadOnly] private List<string> discoveredIds = new List<string>(); // COLD ALLOC: 64 for [N] discoveries (reasonable number of narrative discoveries)
+        [SerializeField, Sirenix.OdinInspector.ReadOnly] private List<string> discoveredIds = new List<string>(SaveData.MaxNarrativeDiscoveries); // COLD ALLOC: bounded save discovery ids - owner: HectonNarrativeDirector
         [SerializeField, Sirenix.OdinInspector.ReadOnly] private int currentDepthTier;
         [SerializeField, Sirenix.OdinInspector.ReadOnly] private ulong narrativeAupTriggeredMask;
 
-        private const float SlowTickDeltaSeconds = 0.5f;
-        private const float VisualOverkillAupScanIntervalSeconds = 0.5f;
-        private const float SurvivalAupScanIntervalSeconds = 1f;
+        private const float VisualOverkillAupScanIntervalSeconds = 0.05f;
+        private const float SurvivalAupScanIntervalSeconds = 0.25f;
         private const int NativePoiCapacity = 64;
-        private const int BlackBoxCapacity = 300;
-        private const int BlackBoxDumpCooldownFrames = 120;
         private const int NarrativeWaypointIdBase = 0x4E545247;
         private const float NarrativeFocusDefaultDurationSeconds = 3.5f;
         private const float NarrativeFocusSubtitleFadeDistanceSq = 1600f;
-        private const byte PoiStateUntriggered = 0;
-        private const byte PoiStateTriggered = 1;
-        private const byte ProgressionSourceNarrativePoi = 1;
         private const byte SaveStateOperationSnapshot = 0;
         private const byte SaveStateOperationTriggered = 1;
         private const string NarrativeWaypointLabel = "Objective";
@@ -182,39 +53,20 @@ namespace Hecton8.Gameplay
         // Runtime-only collection for active POIs in the world.
         // COLD ALLOC: 64 for initial capacity (reasonable number of POIs per scene).
         private readonly List<NarrativeDiscovery> _activePOIs = new List<NarrativeDiscovery>(64);
-        private readonly HashSet<string> _discoveredIdLookup = new HashSet<string>(64, System.StringComparer.Ordinal);
-        private readonly HashSet<uint> _discoveredHashLookup = new HashSet<uint>(64);
-        private NativeHashMap<uint, NarrativeNode> _narrativeNodesByHash;
-        private NativeArray<float3> _poiAups;
-        private NativeArray<float> _poiRadiiSq;
-        private NativeArray<uint> _poiHashes;
-        private NativeArray<uint> _poiQuestHashes;
-        private NativeArray<uint> _poiBiomeHashes;
-        private NativeArray<uint> _poiSoundscapeHashes;
-        private NativeArray<uint> _poiLoreHashes;
-        private NativeArray<long> _poiGridX;
-        private NativeArray<long> _poiGridZ;
-        private NativeArray<byte> _poiState;
-        private NativeArray<byte> _poiTriggerBits;
-        private NativeArray<byte> _poiFlags;
-        private NativeArray<int> _triggeredIndices;
-        private NativeArray<uint> _triggeredHashes;
-        private NativeArray<int> _triggeredCount;
-        private NativeArray<int> _faultCount;
-        private NativeArray<NarrativeTriggerTelemetryEntry> _blackBox;
-        private JobHandle _scanJobHandle;
+        private readonly HashSet<string> _discoveredIdLookup = new HashSet<string>(SaveData.MaxNarrativeDiscoveries, System.StringComparer.Ordinal);
+        private readonly HashSet<uint> _discoveredHashLookup = new HashSet<uint>(SaveData.MaxNarrativeDiscoveries);
 
         private Transform _playerTransform;
         private bool _registeredNarrativeRuntime;
         private bool _registeredSpatialTriggerRuntime;
         private bool _registeredSlowTick;
+        private bool _registeredHotSwapListener;
+        private bool _saveRegistered;
+        private ISaveService _saveService;
         private float _aupScanAccumulator = SurvivalAupScanIntervalSeconds;
         private bool _aupScannerDisabledForCurrentPoiSet;
-        private bool _scanJobScheduled;
         private int _poiCount;
-        private int _blackBoxCursor;
         private int _spatialTriggerTickCount;
-        private int _lastBlackBoxDumpFrame = -BlackBoxDumpCooldownFrames;
         private uint _lastBiomeHash;
         private AbsoluteUniversePosition _lastScheduledPlayerAup;
         private float3 _lastScheduledPlayerRuntime;
@@ -271,7 +123,9 @@ namespace Hecton8.Gameplay
 
             if (data.narrativeDiscoveryIds != null)
             {
-                int count = Mathf.Min(data.narrativeDiscoveryCount, data.narrativeDiscoveryIds.Length);
+                int count = Mathf.Min(
+                    Mathf.Min(data.narrativeDiscoveryCount, data.narrativeDiscoveryIds.Length),
+                    SaveData.MaxNarrativeDiscoveries);
                 for (int i = 0; i < count; i++)
                 {
                     string discoveryId = data.narrativeDiscoveryIds[i];
@@ -285,7 +139,7 @@ namespace Hecton8.Gameplay
             PublishPoiStateSignal(0u, -1, SaveStateOperationSnapshot);
             
             // Re-sync world state from loaded data
-            NarrativeEvents.RaiseDepthTierReached(currentDepthTier);
+            NarrativeEvents.TryRaiseDepthTierReached(currentDepthTier);
         }
 
         private void Awake()
@@ -297,18 +151,16 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _narrativeNodesByHash = new NativeHashMap<uint, NarrativeNode>(128, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,NarrativeNode>[128] - narrative hash lookup for discovery routing - owner: HectonNarrativeDirector
-            NativeMemorySentinel.RegisterNativeHashMap(_narrativeNodesByHash, nameof(HectonNarrativeDirector), nameof(_narrativeNodesByHash), NativeAllocationLifetime.Scene);
-            InitializeSpatialNativeStorage();
+            InitializeAupNarrativePoiVaultStorage();
             RebuildDiscoveryLookup();
         }
 
         private void OnEnable()
         {
             TryRegister();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
+            TryRegisterHotSwapListener();
+            _saveService = GlobalRegistry.Save;
+            TryRegisterSaveParticipant();
 
             NarrativeEvents.Register(this);
             NarrativeEvents.RegisterPointOfInterestListener(this);
@@ -321,9 +173,8 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
 
             NarrativeEvents.Unregister(this);
             NarrativeEvents.UnregisterPointOfInterestListener(this);
@@ -334,16 +185,12 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             DirectorAIEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
 
-            if (_narrativeNodesByHash.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeHashMap(nameof(HectonNarrativeDirector), nameof(_narrativeNodesByHash));
-                _narrativeNodesByHash.Dispose();
-            }
-
-            DisposeSpatialNativeStorage();
+            DisposeAupNarrativePoiVaultStorage();
         }
 
         private void TryRegister()
@@ -360,11 +207,13 @@ namespace Hecton8.Gameplay
                 _registeredSpatialTriggerRuntime = ReferenceEquals(GlobalRegistry.SpatialTriggerSystem, this);
             }
 
+            TryRegisterAupNarrativePoiUpdate();
+            TryRegisterAupNarrativePoiLateFrame();
+
             if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
@@ -386,6 +235,92 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
                 _registeredSlowTick = false;
             }
+
+            TryUnregisterAupNarrativePoiUpdate();
+            TryUnregisterAupNarrativePoiLateFrame();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    TryRegisterSaveParticipant();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null || !isActiveAndEnabled)
+                        return;
+
+                    TryUnregisterAupNarrativePoiUpdate();
+                    TryUnregisterAupNarrativePoiLateFrame();
+                    TryRegisterAupNarrativePoiUpdate();
+                    TryRegisterAupNarrativePoiLateFrame();
+                    if (_registeredSlowTick)
+                    {
+                        GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                        _registeredSlowTick = false;
+                    }
+
+                    TryRegister();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    DisposeAupNarrativePoiVaultStorage();
+                    if (currentService != null)
+                    {
+                        InitializeAupNarrativePoiVaultStorage();
+                        RebuildNativePoiRegistry();
+                    }
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
         }
 
         public NarrativeDiscovery GetNearestUndiscoveredPOI(Vector3 center, float maxDistance)
@@ -429,22 +364,21 @@ namespace Hecton8.Gameplay
             float3 playerRuntime = new float3(playerPosition.x, playerPosition.y, playerPosition.z);
             if (!math.all(math.isfinite(playerRuntime)))
             {
-                DumpBlackBoxToDisk();
+                if (EnsureAupNarrativePoiBuffers(out AupNarrativePoiBuffers buffers))
+                    DumpAupNarrativePoiTelemetry(buffers);
                 GlobalTelemetryBus.PublishPerformanceWarning(_blackBoxFaultWarningHash, _blackBoxFaultContextHash, 1f);
                 return;
             }
 
             if (!TryResolveRuntimeAup(playerPosition, out AbsoluteUniversePosition playerAup))
             {
-                DumpBlackBoxToDisk();
+                if (EnsureAupNarrativePoiBuffers(out AupNarrativePoiBuffers buffers))
+                    DumpAupNarrativePoiTelemetry(buffers);
                 GlobalTelemetryBus.PublishPerformanceWarning(_blackBoxFaultWarningHash, _blackBoxFaultContextHash, 1f);
                 return;
             }
 
-            CompleteSpatialJobIfReady(in playerAup, playerRuntime);
-
-            if (ShouldScanAupNarrativeTriggers() && !_scanJobScheduled)
-                ScheduleSpatialCheck(in playerAup, playerRuntime);
+            CompleteAupNarrativePoiJobIfReady();
 
             float depth = Mathf.Max(0f, (float)-playerAup.ToAbsoluteDouble3().y);
             int newTier = CalculateDepthTier(depth);
@@ -453,115 +387,23 @@ namespace Hecton8.Gameplay
                 return;
 
             currentDepthTier = newTier;
-            NarrativeEvents.RaiseDepthTierReached(currentDepthTier);
+            NarrativeEvents.TryRaiseDepthTierReached(currentDepthTier);
 
             LogDepthTierReached();
         }
 
-        private void InitializeSpatialNativeStorage()
-        {
-            if (_poiAups.IsCreated)
-                return;
-
-            _poiAups = new NativeArray<float3>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[64] - runtime AUP POI positions for Burst spatial checks - owner: HectonNarrativeDirector
-            _poiRadiiSq = new NativeArray<float>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[64] - squared POI radii - owner: HectonNarrativeDirector
-            _poiHashes = new NativeArray<uint>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[64] - POI progression hashes - owner: HectonNarrativeDirector
-            _poiQuestHashes = new NativeArray<uint>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[64] - POI quest hashes - owner: HectonNarrativeDirector
-            _poiBiomeHashes = new NativeArray<uint>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[64] - POI biome hashes - owner: HectonNarrativeDirector
-            _poiSoundscapeHashes = new NativeArray<uint>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[64] - POI soundscape hashes - owner: HectonNarrativeDirector
-            _poiLoreHashes = new NativeArray<uint>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[64] - POI lore hashes - owner: HectonNarrativeDirector
-            _poiGridX = new NativeArray<long>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<long>[64] - POI AUP X sectors - owner: HectonNarrativeDirector
-            _poiGridZ = new NativeArray<long>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<long>[64] - POI AUP Z sectors - owner: HectonNarrativeDirector
-            _poiState = new NativeArray<byte>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[64] - one-shot POI latch state - owner: HectonNarrativeDirector
-            _poiTriggerBits = new NativeArray<byte>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[64] - POI save bit indices - owner: HectonNarrativeDirector
-            _poiFlags = new NativeArray<byte>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[64] - POI dispatch flags - owner: HectonNarrativeDirector
-            _triggeredIndices = new NativeArray<int>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[64] - triggered POI result indices - owner: HectonNarrativeDirector
-            _triggeredHashes = new NativeArray<uint>(NativePoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[64] - triggered POI result hashes - owner: HectonNarrativeDirector
-            _triggeredCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - triggered result counter - owner: HectonNarrativeDirector
-            _faultCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - spatial job fault counter - owner: HectonNarrativeDirector
-            _blackBox = new NativeArray<NarrativeTriggerTelemetryEntry>(BlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<NarrativeTriggerTelemetryEntry>[300] - POI trigger blackbox ring - owner: HectonNarrativeDirector
-
-            RegisterNativeArray(_poiAups, nameof(_poiAups));
-            RegisterNativeArray(_poiRadiiSq, nameof(_poiRadiiSq));
-            RegisterNativeArray(_poiHashes, nameof(_poiHashes));
-            RegisterNativeArray(_poiQuestHashes, nameof(_poiQuestHashes));
-            RegisterNativeArray(_poiBiomeHashes, nameof(_poiBiomeHashes));
-            RegisterNativeArray(_poiSoundscapeHashes, nameof(_poiSoundscapeHashes));
-            RegisterNativeArray(_poiLoreHashes, nameof(_poiLoreHashes));
-            RegisterNativeArray(_poiGridX, nameof(_poiGridX));
-            RegisterNativeArray(_poiGridZ, nameof(_poiGridZ));
-            RegisterNativeArray(_poiState, nameof(_poiState));
-            RegisterNativeArray(_poiTriggerBits, nameof(_poiTriggerBits));
-            RegisterNativeArray(_poiFlags, nameof(_poiFlags));
-            RegisterNativeArray(_triggeredIndices, nameof(_triggeredIndices));
-            RegisterNativeArray(_triggeredHashes, nameof(_triggeredHashes));
-            RegisterNativeArray(_triggeredCount, nameof(_triggeredCount));
-            RegisterNativeArray(_faultCount, nameof(_faultCount));
-            RegisterNativeArray(_blackBox, nameof(_blackBox));
-        }
-
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, nameof(HectonNarrativeDirector), label, NativeAllocationLifetime.Scene);
-        }
-
-        private void DisposeSpatialNativeStorage()
-        {
-            if (_scanJobScheduled)
-            {
-                Hecton8.Core.DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true);
-                _scanJobScheduled = false;
-                HandleSpatialJobCompletionFaults();
-                if (_triggeredCount.IsCreated)
-                    _triggeredCount[0] = 0;
-            }
-
-            DisposeNativeArray(ref _poiAups);
-            DisposeNativeArray(ref _poiRadiiSq);
-            DisposeNativeArray(ref _poiHashes);
-            DisposeNativeArray(ref _poiQuestHashes);
-            DisposeNativeArray(ref _poiBiomeHashes);
-            DisposeNativeArray(ref _poiSoundscapeHashes);
-            DisposeNativeArray(ref _poiLoreHashes);
-            DisposeNativeArray(ref _poiGridX);
-            DisposeNativeArray(ref _poiGridZ);
-            DisposeNativeArray(ref _poiState);
-            DisposeNativeArray(ref _poiTriggerBits);
-            DisposeNativeArray(ref _poiFlags);
-            DisposeNativeArray(ref _triggeredIndices);
-            DisposeNativeArray(ref _triggeredHashes);
-            DisposeNativeArray(ref _triggeredCount);
-            DisposeNativeArray(ref _faultCount);
-            DisposeNativeArray(ref _blackBox);
-            _scanJobScheduled = false;
-            _scanJobHandle = default;
-            _poiCount = 0;
-            _hasLastScheduledPlayerPose = false;
-            Array.Clear(_poiDiscoveryIds, 0, _poiDiscoveryIds.Length);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array)
-            where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
         public void Dispose()
         {
-            DisposeSpatialNativeStorage();
+            DisposeAupNarrativePoiVaultStorage();
         }
 
         private void RebuildNativePoiRegistry()
         {
-            InitializeSpatialNativeStorage();
+            CompleteAupNarrativePoiJob(forceComplete: true);
             _poiCount = 0;
             Array.Clear(_poiDiscoveryIds, 0, _poiDiscoveryIds.Length);
             int validSpatialPoiCount = 0;
+            int discoveryIdCount = 0;
 
             for (int i = 0; i < _activePOIs.Count; i++)
             {
@@ -570,319 +412,117 @@ namespace Hecton8.Gameplay
                     continue;
 
                 validSpatialPoiCount++;
-                if (_poiCount >= NativePoiCapacity)
+                if (discoveryIdCount >= NativePoiCapacity)
                     continue;
 
-                _poiDiscoveryIds[_poiCount] = poi.DiscoveryId;
-                WritePoiSlot(_poiCount, in trigger);
-                _poiCount++;
+                _poiDiscoveryIds[discoveryIdCount] = poi.DiscoveryId;
+                discoveryIdCount++;
             }
 
+            _poiCount = validSpatialPoiCount;
             if (validSpatialPoiCount > NativePoiCapacity)
                 GlobalTelemetryBus.PublishPerformanceWarning(_registryOverflowWarningHash, _blackBoxFaultContextHash, validSpatialPoiCount);
 
+            RebuildAupNarrativePoiVaultRegistry();
             _aupScannerDisabledForCurrentPoiSet = !HasPendingNativePoi();
-        }
-
-        private void WritePoiSlot(int index, in NarrativeSpatialTriggerAuthoring trigger)
-        {
-            AbsoluteUniversePosition aup = trigger.PositionAup;
-            _poiAups[index] = aup.ToRuntimeFloat3();
-            _poiRadiiSq[index] = math.max(0f, trigger.RadiusSq);
-            _poiHashes[index] = trigger.PoiHash;
-            _poiQuestHashes[index] = trigger.QuestHash;
-            _poiBiomeHashes[index] = trigger.BiomeHash;
-            _poiSoundscapeHashes[index] = trigger.SoundscapeHash;
-            _poiLoreHashes[index] = trigger.LoreHash;
-            _poiGridX[index] = aup.GridX;
-            _poiGridZ[index] = aup.GridZ;
-            _poiTriggerBits[index] = (byte)math.clamp(trigger.BitIndex, 0, 63);
-            _poiFlags[index] = (byte)trigger.Flags;
-            _poiState[index] = IsPoiAlreadyTriggered(trigger.PoiHash, trigger.BitIndex)
-                ? PoiStateTriggered
-                : PoiStateUntriggered;
-        }
-
-        private bool IsPoiAlreadyTriggered(uint poiHash, int bitIndex)
-        {
-            ulong triggerBit = 1UL << math.clamp(bitIndex, 0, 63);
-            return (narrativeAupTriggeredMask & triggerBit) != 0UL ||
-                   (poiHash != 0u && _discoveredHashLookup.Contains(poiHash));
         }
 
         private void ApplySavedPoiStateToNativeRegistry()
         {
-            if (!_poiState.IsCreated)
-                return;
-
-            CompleteSpatialJobForStateOverwrite();
-
-            for (int i = 0; i < _poiCount; i++)
-            {
-                int bitIndex = _poiTriggerBits[i];
-                ulong triggerBit = 1UL << bitIndex;
-                uint poiHash = _poiHashes[i];
-                bool triggered = (narrativeAupTriggeredMask & triggerBit) != 0UL ||
-                                 (poiHash != 0u && _discoveredHashLookup.Contains(poiHash));
-
-                _poiState[i] = triggered ? PoiStateTriggered : PoiStateUntriggered;
-                if (triggered)
-                    narrativeAupTriggeredMask |= triggerBit;
-            }
-
+            CompleteAupNarrativePoiJob(forceComplete: true);
+            SyncAupNarrativePoiVaultStateFromMask();
             _aupScannerDisabledForCurrentPoiSet = !HasPendingNativePoi();
         }
 
         private bool HasPendingNativePoi()
         {
-            if (!_poiState.IsCreated || _poiCount <= 0)
-                return false;
-
-            for (int i = 0; i < _poiCount; i++)
-            {
-                if (_poiState[i] == PoiStateUntriggered)
-                    return true;
-            }
-
-            return false;
+            return HasPendingAupNarrativePoi();
         }
 
-        private void ScheduleSpatialCheck(in AbsoluteUniversePosition playerAup, float3 playerRuntime)
+        private void CompleteAupNarrativeJobForRegistryMutation()
         {
-            if (!_poiAups.IsCreated || _poiCount <= 0 || _scanJobScheduled)
-                return;
-
-            _lastScheduledPlayerAup = playerAup;
-            _lastScheduledPlayerRuntime = playerRuntime;
-            _hasLastScheduledPlayerPose = true;
-
-            _scanJobHandle = new NarrativePoiSpatialCheckJob
-            {
-                PoiAups = _poiAups,
-                PoiRadiiSq = _poiRadiiSq,
-                PoiHashes = _poiHashes,
-                PoiGridX = _poiGridX,
-                PoiGridZ = _poiGridZ,
-                PoiState = _poiState,
-                TriggeredIndices = _triggeredIndices,
-                TriggeredHashes = _triggeredHashes,
-                TriggeredCount = _triggeredCount,
-                FaultCount = _faultCount,
-                PlayerRuntime = playerRuntime,
-                PlayerGridX = playerAup.GridX,
-                PlayerGridZ = playerAup.GridZ,
-                UseDominantAxisPreCull = 1,
-                PoiCount = _poiCount
-            }.Schedule();
-            _scanJobScheduled = true;
+            CompleteAupNarrativePoiJob(forceComplete: true);
         }
 
-        private void CompleteSpatialJobIfReady(in AbsoluteUniversePosition playerAup, float3 playerRuntime)
+        private void PublishBiomeSignal(in NarrativePoiDTO dto, in NarrativePoiPresentationDTO presentation, uint poiHash)
         {
-            if (!_scanJobScheduled || !_scanJobHandle.IsCompleted)
-                return;
-
-            Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _scanJobHandle);
-            _scanJobScheduled = false;
-            HandleSpatialJobCompletionFaults();
-            DispatchTriggeredSpatialResults(in playerAup, playerRuntime);
-        }
-
-        private void CompleteSpatialJobForRegistryMutation()
-        {
-            if (!CompleteSpatialJobForDeferredDispatch(out AbsoluteUniversePosition playerAup, out float3 playerRuntime))
-                return;
-
-            DispatchTriggeredSpatialResults(in playerAup, playerRuntime);
-        }
-
-        private void CompleteSpatialJobForStateOverwrite()
-        {
-            if (!_scanJobScheduled)
-                return;
-
-            if (!_scanJobHandle.IsCompleted)
-                return;
-
-            Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _scanJobHandle);
-            _scanJobScheduled = false;
-            HandleSpatialJobCompletionFaults();
-            if (_triggeredCount.IsCreated)
-                _triggeredCount[0] = 0;
-        }
-
-        private bool CompleteSpatialJobForDeferredDispatch(
-            out AbsoluteUniversePosition playerAup,
-            out float3 playerRuntime)
-        {
-            playerAup = _hasLastScheduledPlayerPose
-                ? _lastScheduledPlayerAup
-                : default;
-            playerRuntime = _hasLastScheduledPlayerPose
-                ? _lastScheduledPlayerRuntime
-                : float3.zero;
-
-            if (!_scanJobScheduled)
-                return false;
-
-            if (!_scanJobHandle.IsCompleted)
-                return false;
-
-            Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _scanJobHandle);
-            _scanJobScheduled = false;
-            HandleSpatialJobCompletionFaults();
-            return true;
-        }
-
-        private void HandleSpatialJobCompletionFaults()
-        {
-            if (_faultCount.IsCreated && _faultCount[0] > 0)
-            {
-                DumpBlackBoxToDisk();
-                GlobalTelemetryBus.PublishPerformanceWarning(_blackBoxFaultWarningHash, _blackBoxFaultContextHash, _faultCount[0]);
-            }
-        }
-
-        private void DispatchTriggeredSpatialResults(in AbsoluteUniversePosition playerAup, float3 playerRuntime)
-        {
-            if (!_triggeredCount.IsCreated)
-                return;
-
-            int triggerCount = math.min(_triggeredCount[0], _triggeredIndices.Length);
-            for (int i = 0; i < triggerCount; i++)
-            {
-                int poiIndex = _triggeredIndices[i];
-                if ((uint)poiIndex >= (uint)_poiCount)
-                    continue;
-
-                uint poiHash = _triggeredHashes[i] != 0u ? _triggeredHashes[i] : _poiHashes[poiIndex];
-                DispatchSpatialTrigger(poiIndex, poiHash, in playerAup, playerRuntime);
-            }
-
-            _triggeredCount[0] = 0;
-            _aupScannerDisabledForCurrentPoiSet = !HasPendingNativePoi();
-        }
-
-        private void DispatchSpatialTrigger(int poiIndex, uint poiHash, in AbsoluteUniversePosition playerAup, float3 playerRuntime)
-        {
-            if (poiHash == 0u)
-                return;
-
-            int bitIndex = _poiTriggerBits[poiIndex];
-            narrativeAupTriggeredMask |= 1UL << bitIndex;
-            string discoveryId = _poiDiscoveryIds[poiIndex];
-            if (string.IsNullOrWhiteSpace(discoveryId))
-                NarrativeEvents.RaiseDiscoveryMade(poiHash);
-            else
-                NarrativeEvents.RaiseDiscoveryMade(discoveryId);
-            RecordDiscoveryIdentity(poiHash, discoveryId);
-
-            LoreDatabaseManager loreDatabase = GlobalRegistry.LoreDatabase;
-            uint loreHash = _poiLoreHashes[poiIndex];
-            if (loreDatabase != null && loreHash != 0u)
-                loreDatabase.TryUnlockByHash(loreHash);
-
-            PublishProgressionSignal(poiIndex, poiHash);
-            PublishBiomeSignal(poiIndex, poiHash);
-            PublishSoundscapeSignal(poiIndex, poiHash);
-            PublishNarrativeFocusSignal(poiIndex, poiHash);
-            PublishHudWaypointSignal(poiIndex, poiHash);
-            PublishPoiStateSignal(poiHash, poiIndex, SaveStateOperationTriggered);
-            WriteBlackBoxSample(poiIndex, poiHash, in playerAup, playerRuntime);
-        }
-
-        private void PublishProgressionSignal(int poiIndex, uint poiHash)
-        {
-            ProgressionEventSignal signal = new ProgressionEventSignal
-            {
-                PositionAup = CreateAupFromPoiSlot(poiIndex),
-                PoiHash = poiHash,
-                QuestHash = _poiQuestHashes[poiIndex],
-                Frame = unchecked((uint)Time.frameCount),
-                Source = ProgressionSourceNarrativePoi,
-                Flags = _poiFlags[poiIndex]
-            };
-            GlobalSignals.Publish(in signal);
-        }
-
-        private void PublishBiomeSignal(int poiIndex, uint poiHash)
-        {
-            uint biomeHash = _poiBiomeHashes[poiIndex];
+            uint biomeHash = presentation.BiomeHash;
             if (biomeHash == 0u || biomeHash == _lastBiomeHash)
                 return;
 
             BiomeChangedSignal signal = new BiomeChangedSignal
             {
-                PositionAup = CreateAupFromPoiSlot(poiIndex),
+                PositionAup = CreateAupFromPoiDto(in dto),
                 PreviousBiomeHash = _lastBiomeHash,
                 CurrentBiomeHash = biomeHash,
                 PoiHash = poiHash,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex)
             };
             _lastBiomeHash = biomeHash;
-            GlobalSignals.Publish(in signal);
+            SignalBus<BiomeChangedSignal>.TryPush(in signal);
         }
 
-        private void PublishSoundscapeSignal(int poiIndex, uint poiHash)
+        private void PublishSoundscapeSignal(in NarrativePoiDTO dto, in NarrativePoiPresentationDTO presentation, uint poiHash)
         {
-            uint profileHash = _poiSoundscapeHashes[poiIndex];
+            uint profileHash = presentation.SoundscapeHash;
             if (profileHash == 0u)
                 return;
 
             SoundscapeProfileSignal signal = new SoundscapeProfileSignal
             {
-                PositionAup = CreateAupFromPoiSlot(poiIndex),
+                PositionAup = CreateAupFromPoiDto(in dto),
                 ProfileHash = profileHash,
                 PoiHash = poiHash,
                 Intensity01 = 1f,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex)
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<SoundscapeProfileSignal>.TryPush(in signal);
         }
 
-        private void PublishNarrativeFocusSignal(int poiIndex, uint poiHash)
+        private void PublishNarrativeFocusSignal(in NarrativePoiDTO dto, in NarrativePoiPresentationDTO presentation, uint poiHash)
         {
+            uint subtitleHash = presentation.LoreHash != 0u ? presentation.LoreHash : poiHash;
             NarrativeFocusSignal signal = new NarrativeFocusSignal
             {
-                TargetAup = CreateAupFromPoiSlot(poiIndex),
+                TargetAup = CreateAupFromPoiDto(in dto),
                 FocusHash = poiHash,
-                SubtitleHash = _poiLoreHashes[poiIndex] != 0u ? _poiLoreHashes[poiIndex] : poiHash,
+                SubtitleHash = subtitleHash,
                 Intensity01 = 1f,
                 DurationSeconds = NarrativeFocusDefaultDurationSeconds,
                 SubtitleFadeDistanceSq = NarrativeFocusSubtitleFadeDistanceSq,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 Flags = (byte)(NarrativeFocusSignal.FlagArtifactTarget | NarrativeFocusSignal.FlagWorldSubtitle),
                 BoneTarget = 0
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<NarrativeFocusSignal>.TryPush(in signal);
         }
 
-        private void PublishHudWaypointSignal(int poiIndex, uint poiHash)
+        private void PublishHudWaypointSignal(in NarrativePoiDTO dto, in NarrativePoiPresentationDTO presentation, uint poiHash)
         {
-            byte flags = _poiFlags[poiIndex];
+            byte flags = (byte)(presentation.Flags & 0xFFu);
             if ((flags & (byte)NarrativeSpatialTriggerFlags.HudBreadcrumb) == 0)
                 return;
 
-            uint questHash = _poiQuestHashes[poiIndex];
+            uint questHash = presentation.QuestHash;
             if (!IsQuestActiveForHud(questHash))
                 return;
 
-            AbsoluteUniversePosition poiAup = CreateAupFromPoiSlot(poiIndex);
+            AbsoluteUniversePosition poiAup = CreateAupFromPoiDto(in dto);
             NarrativeHudWaypointSignal signal = new NarrativeHudWaypointSignal
             {
                 PositionAup = poiAup,
                 PoiHash = poiHash,
                 QuestHash = questHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 Priority = 1,
                 Flags = flags
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<NarrativeHudWaypointSignal>.TryPush(in signal);
 
             IARWaypointService waypoints = GlobalRegistry.ARWaypoints;
             if (waypoints != null && waypoints.IsInitialized)
             {
-                float3 runtime = _poiAups[poiIndex];
+                float3 runtime = poiAup.ToRuntimeFloat3();
                 waypoints.SetWaypoint(
                     NarrativeWaypointIdBase ^ unchecked((int)poiHash),
                     new Vector3(runtime.x, runtime.y, runtime.z),
@@ -904,137 +544,35 @@ namespace Hecton8.Gameplay
                    questSystem.IsActive(questId);
         }
 
-        private void PublishPoiStateSignal(uint poiHash, int poiIndex, byte operation)
+        private void PublishPoiStateSignal(uint poiHash, int poiIndex, byte operation, byte flags = 0)
         {
             NarrativePoiStateSignal signal = new NarrativePoiStateSignal
             {
                 StateMask = narrativeAupTriggeredMask,
                 PoiHash = poiHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 PoiIndex = poiIndex >= 0 ? (ushort)poiIndex : (ushort)0,
                 Operation = operation,
-                Flags = poiIndex >= 0 && _poiFlags.IsCreated ? _poiFlags[poiIndex] : (byte)0
+                Flags = flags
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<NarrativePoiStateSignal>.TryPush(in signal);
         }
 
-        private AbsoluteUniversePosition CreateAupFromPoiSlot(int poiIndex)
+        private static AbsoluteUniversePosition CreateAupFromPoiDto(in NarrativePoiDTO dto)
         {
-            float3 runtime = _poiAups[poiIndex];
-            return TryResolveRuntimeAup(new Vector3(runtime.x, runtime.y, runtime.z), out AbsoluteUniversePosition poiAup)
-                ? poiAup
-                : default;
-        }
-
-        private void WriteBlackBoxSample(int poiIndex, uint poiHash, in AbsoluteUniversePosition playerAup, float3 playerRuntime)
-        {
-            if (!_blackBox.IsCreated)
-                return;
-
-            _blackBox[_blackBoxCursor] = new NarrativeTriggerTelemetryEntry
-            {
-                Frame = unchecked((uint)Time.frameCount),
-                PoiHash = poiHash,
-                StateMask = narrativeAupTriggeredMask,
-                PlayerGridX = playerAup.GridX,
-                PlayerGridY = playerAup.GridY,
-                PlayerGridZ = playerAup.GridZ,
-                PlayerRuntime = playerRuntime,
-                PoiRuntime = _poiAups[poiIndex],
-                Flags = _poiFlags[poiIndex]
-            };
-            _blackBoxCursor++;
-            if (_blackBoxCursor >= BlackBoxCapacity)
-                _blackBoxCursor = 0;
-        }
-
-        private void DumpBlackBoxToDisk()
-        {
-            if (!_blackBox.IsCreated)
-                return;
-
-            int frame = Time.frameCount;
-            if (frame - _lastBlackBoxDumpFrame < BlackBoxDumpCooldownFrames)
-                return;
-
-            _lastBlackBoxDumpFrame = frame;
-            try
-            {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-                if (string.IsNullOrEmpty(projectRoot))
-                    return;
-
-                string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_NARRATIVE_TRIGGER_SYS.bin");
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(BlackBoxCapacity);
-                    writer.Write(_blackBoxCursor);
-                    for (int i = 0; i < BlackBoxCapacity; i++)
-                    {
-                        NarrativeTriggerTelemetryEntry entry = _blackBox[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.PoiHash);
-                        writer.Write(entry.StateMask);
-                        writer.Write(entry.PlayerGridX);
-                        writer.Write(entry.PlayerGridY);
-                        writer.Write(entry.PlayerGridZ);
-                        writer.Write(entry.PlayerRuntime.x);
-                        writer.Write(entry.PlayerRuntime.y);
-                        writer.Write(entry.PlayerRuntime.z);
-                        writer.Write(entry.PoiRuntime.x);
-                        writer.Write(entry.PoiRuntime.y);
-                        writer.Write(entry.PoiRuntime.z);
-                        writer.Write(entry.Flags);
-                    }
-                }
-            }
-            catch (IOException)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[Narrative] Failed to dump spatial trigger blackbox.");
-#endif
-            }
+            return AbsoluteUniversePosition.FromAbsolutePosition(dto.PoiAUP);
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!_poiAups.IsCreated || _poiCount <= 0)
-                return;
-
-            bool dispatchCompletedScan = CompleteSpatialJobForDeferredDispatch(
-                out AbsoluteUniversePosition playerAup,
-                out float3 playerRuntime);
-
-            float3 shift = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z);
-            for (int i = 0; i < _poiCount; i++)
-            {
-                float3 shifted = _poiAups[i] - shift;
-                if (!math.all(math.isfinite(shifted)))
-                {
-                    _poiAups[i] = float3.zero;
-                    DumpBlackBoxToDisk();
-                    GlobalTelemetryBus.PublishPerformanceWarning(_blackBoxFaultWarningHash, _blackBoxFaultContextHash, i);
-                    continue;
-                }
-
-                _poiAups[i] = shifted;
-            }
-
-            if (dispatchCompletedScan)
-            {
-                playerRuntime -= shift;
-                DispatchTriggeredSpatialResults(in playerAup, playerRuntime);
-            }
+            CompleteAupNarrativePoiJobIfReady();
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogDepthTierReached()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[Narrative] New depth tier reached.");
+            H8Debug.Log("[Narrative] New depth tier reached.");
 #endif
         }
 
@@ -1065,7 +603,7 @@ namespace Hecton8.Gameplay
             if (poi == null)
                 return;
 
-            CompleteSpatialJobForRegistryMutation();
+            CompleteAupNarrativeJobForRegistryMutation();
 
             if (!_activePOIs.Contains(poi))
             {
@@ -1074,7 +612,6 @@ namespace Hecton8.Gameplay
                 _aupScanAccumulator = ResolveAupScanIntervalSeconds();
             }
 
-            RegisterNarrativeNode(poi.DiscoveryId);
             RebuildNativePoiRegistry();
         }
 
@@ -1083,18 +620,19 @@ namespace Hecton8.Gameplay
             if (poi == null)
                 return;
 
-            CompleteSpatialJobForRegistryMutation();
+            CompleteAupNarrativeJobForRegistryMutation();
             _activePOIs.Remove(poi);
             _aupScannerDisabledForCurrentPoiSet = false;
             RebuildNativePoiRegistry();
         }
 
-        private bool ShouldScanAupNarrativeTriggers()
+        private bool ShouldScanAupNarrativeTriggers(float deltaSeconds)
         {
             if (_aupScannerDisabledForCurrentPoiSet || _poiCount <= 0)
                 return false;
 
-            _aupScanAccumulator += SlowTickDeltaSeconds;
+            float safeDelta = math.select(0f, math.max(0f, deltaSeconds), math.isfinite(deltaSeconds));
+            _aupScanAccumulator = math.min(_aupScanAccumulator + safeDelta, SurvivalAupScanIntervalSeconds);
             float scanInterval = ResolveAupScanIntervalSeconds();
             if (_aupScanAccumulator < scanInterval)
                 return false;
@@ -1108,7 +646,7 @@ namespace Hecton8.Gameplay
             float quality = HomeostasisBrain.GlobalQualityWeight;
             quality = math.saturate(math.select(0f, quality, math.isfinite(quality)));
             float smooth = quality * quality * (3f - 2f * quality);
-            return math.lerp(SurvivalAupScanIntervalSeconds, VisualOverkillAupScanIntervalSeconds, smooth);
+            return math.lerp(VisualOverkillAupScanIntervalSeconds, SurvivalAupScanIntervalSeconds, 1f - smooth);
         }
 
         private int CalculateDepthTier(float depth)
@@ -1145,7 +683,7 @@ namespace Hecton8.Gameplay
                 !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1160,12 +698,6 @@ namespace Hecton8.Gameplay
             if (discoveryHash == 0u)
                 return;
 
-            if (_narrativeNodesByHash.IsCreated && !_narrativeNodesByHash.ContainsKey(discoveryHash))
-            {
-                if (NarrativeEvents.TryResolveDiscoveryId(discoveryHash, out string unresolvedId))
-                    RegisterNarrativeNode(unresolvedId);
-            }
-
             NarrativeEvents.TryResolveDiscoveryId(discoveryHash, out string id);
             RecordDiscoveryIdentity(discoveryHash, id);
         }
@@ -1175,17 +707,36 @@ namespace Hecton8.Gameplay
             if (discoveryHash == 0u)
                 return;
 
+            if (!_discoveredHashLookup.Contains(discoveryHash) &&
+                _discoveredHashLookup.Count >= SaveData.MaxNarrativeDiscoveries)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _registryOverflowWarningHash,
+                    _blackBoxFaultContextHash ^ discoveryHash,
+                    SaveData.MaxNarrativeDiscoveries);
+                return;
+            }
+
             if (_discoveredHashLookup.Add(discoveryHash))
                 MarkNativePoiTriggeredByHash(discoveryHash);
 
-            if (string.IsNullOrWhiteSpace(discoveryId) || !_discoveredIdLookup.Add(discoveryId))
+            if (string.IsNullOrWhiteSpace(discoveryId) || _discoveredIdLookup.Contains(discoveryId))
                 return;
 
-            RegisterNarrativeNode(discoveryId);
+            if (discoveredIds.Count >= SaveData.MaxNarrativeDiscoveries)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _registryOverflowWarningHash,
+                    _blackBoxFaultContextHash ^ discoveryHash,
+                    SaveData.MaxNarrativeDiscoveries);
+                return;
+            }
+
+            _discoveredIdLookup.Add(discoveryId);
             discoveredIds.Add(discoveryId);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Narrative] Discovery Logged: {discoveryId}");
+            H8Debug.Log("[Narrative] Discovery logged.");
 #endif
         }
 
@@ -1193,9 +744,9 @@ namespace Hecton8.Gameplay
         {
             _rareDiscoveryRequested = true;
 
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            IFirstHourReadModel firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHourReadModel;
             if (firstHourDirector != null &&
-                !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstModule))
+                !firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.FirstModule))
             {
                 return;
             }
@@ -1203,12 +754,10 @@ namespace Hecton8.Gameplay
             AtlasSignalSystem atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
             bool rebroadcastedPulse = CanRebroadcastAtlasRareDiscoveryPulse(atlasSignalSystem);
             if (rebroadcastedPulse)
-                AtlasSignalEvents.RaisePulse(atlasSignalSystem.CurrentStrength);
+                AtlasSignalEvents.TryRaisePulse(atlasSignalSystem.CurrentStrength);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Narrative] Rare Discovery requested near {hintPosition}. " +
-                      $"Atlas-6 signal {(rebroadcastedPulse ? "pulse triggered" : "pulse skipped")} (strength: " +
-                      $"{(Hecton8.Core.GlobalRegistry.AtlasSignal != null ? Hecton8.Core.GlobalRegistry.AtlasSignal.CurrentStrength : 0f):F2}).");
+            H8Debug.Log("[Narrative] Rare discovery requested.");
 #endif
         }
 
@@ -1267,8 +816,6 @@ namespace Hecton8.Gameplay
         {
             _discoveredIdLookup.Clear();
             _discoveredHashLookup.Clear();
-            if (_narrativeNodesByHash.IsCreated)
-                _narrativeNodesByHash.Clear();
             if (discoveredIds == null)
                 return;
 
@@ -1279,11 +826,19 @@ namespace Hecton8.Gameplay
                 if (string.IsNullOrWhiteSpace(discoveryId) || !_discoveredIdLookup.Add(discoveryId))
                     continue;
 
+                if (writeIndex >= SaveData.MaxNarrativeDiscoveries)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _registryOverflowWarningHash,
+                        _blackBoxFaultContextHash,
+                        discoveredIds.Count);
+                    break;
+                }
+
                 uint discoveryHash = NarrativeEvents.ComputeDiscoveryHash(discoveryId);
                 if (discoveryHash != 0u)
                 {
                     _discoveredHashLookup.Add(discoveryHash);
-                    RegisterNarrativeNode(discoveryId);
                 }
 
                 if (writeIndex != i)
@@ -1294,42 +849,13 @@ namespace Hecton8.Gameplay
 
             if (writeIndex < discoveredIds.Count)
                 discoveredIds.RemoveRange(writeIndex, discoveredIds.Count - writeIndex);
-        }
 
-        private void RegisterNarrativeNode(string discoveryId)
-        {
-            if (!_narrativeNodesByHash.IsCreated)
-                return;
-
-            uint discoveryHash = NarrativeEvents.ComputeDiscoveryHash(discoveryId);
-            if (discoveryHash == 0u || _narrativeNodesByHash.ContainsKey(discoveryHash))
-                return;
-
-            _narrativeNodesByHash.TryAdd(discoveryHash, new NarrativeNode
-            {
-                DiscoveryHash = discoveryHash,
-                Reserved0 = 0,
-                Reserved1 = 0
-            });
+            SyncAupNarrativePoiVaultStateFromMask();
         }
 
         private void MarkNativePoiTriggeredByHash(uint discoveryHash)
         {
-            if (!_poiHashes.IsCreated || discoveryHash == 0u)
-                return;
-
-            CompleteSpatialJobForRegistryMutation();
-
-            for (int i = 0; i < _poiCount; i++)
-            {
-                if (_poiHashes[i] != discoveryHash || _poiState[i] == PoiStateTriggered)
-                    continue;
-
-                _poiState[i] = PoiStateTriggered;
-                narrativeAupTriggeredMask |= 1UL << _poiTriggerBits[i];
-                PublishPoiStateSignal(discoveryHash, i, SaveStateOperationTriggered);
-                break;
-            }
+            MarkAupNarrativePoiTriggeredByHash(discoveryHash);
         }
     }
 }

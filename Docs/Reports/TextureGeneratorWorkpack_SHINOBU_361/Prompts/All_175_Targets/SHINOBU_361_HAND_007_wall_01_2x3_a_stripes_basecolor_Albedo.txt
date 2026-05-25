@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_007
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_007_wall_01_2x3_a_stripes_basecolor_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\wall_01_2x3_a_stripes_basecolor_Albedo.png
+FINAL_FILENAME: wall_01_2x3_a_stripes_basecolor_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Create a seamless albedo source for a 2x3 meter starter corridor wall section in a premium abyssal habitat. Treat it as layered wall architecture, not a single tile: broad warm off-white pressure skin, one long satin titanium structural rail, graphite rubber pressure gasket lanes, a slim amber route stripe painted onto the surface, one restrained teal service stripe, blank access plate zones, and clear negative space where separate instruments and cable overlays can be mounted later. Avoid repeated square bathroom panels and avoid glowing light bars. The wall should feel safe, bright enough to read, cleanly manufactured, heavy, and pressure-rated for a funded ocean research mission. Add soft hand scuffs near access zones, pale salt dust only in seams, tiny coating chips on hard edges, and mild cleaning swirls. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

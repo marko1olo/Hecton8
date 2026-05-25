@@ -15,6 +15,8 @@ namespace Hecton8.EditorTools
     {
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
         private const string ReportFileName = "PROCEDURAL_GEOLOGY_STATUS_REPORT.md";
+        private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(32);
+        private static readonly List<LODGroup> s_LodGroupScratch = new List<LODGroup>(8);
 
         /// <summary>
         /// Generates a focused geology status report.
@@ -103,11 +105,13 @@ namespace Hecton8.EditorTools
 
                 realFinalCount++;
                 GameObject prefab = variant.prefab;
-                Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-                LODGroup[] lodGroups = prefab.GetComponentsInChildren<LODGroup>(true);
-                rendererCountMax = Mathf.Max(rendererCountMax, renderers != null ? renderers.Length : 0);
-                lodGroupCountMax = Mathf.Max(lodGroupCountMax, lodGroups != null ? lodGroups.Length : 0);
-                if (RequiresLargeFormLod(family) && (lodGroups == null || lodGroups.Length <= 0))
+                s_RendererScratch.Clear();
+                prefab.GetComponentsInChildren(true, s_RendererScratch);
+                s_LodGroupScratch.Clear();
+                prefab.GetComponentsInChildren(true, s_LodGroupScratch);
+                rendererCountMax = Mathf.Max(rendererCountMax, s_RendererScratch.Count);
+                lodGroupCountMax = Mathf.Max(lodGroupCountMax, s_LodGroupScratch.Count);
+                if (RequiresLargeFormLod(family) && s_LodGroupScratch.Count <= 0)
                     missingLodOnLargeRealFinal = true;
             }
 

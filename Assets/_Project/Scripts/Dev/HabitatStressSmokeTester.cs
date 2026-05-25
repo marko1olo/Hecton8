@@ -96,7 +96,7 @@ namespace Hecton8.Debugging
             HabitatStressSmokeReport report = RunHeadless();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             WriteReport(ref report);
-            Debug.Log("[HabitatStressSmokeTester] " + (report.Passed ? "PASS " : "FAIL ") + report.ReportPath);
+            Hecton8.Core.H8Debug.Log("[HabitatStressSmokeTester] " + (report.Passed ? "PASS " : "FAIL ") + report.ReportPath);
 #endif
             return report;
         }
@@ -524,7 +524,7 @@ namespace Hecton8.Debugging
             string path = Path.Combine(OutputFolder, OutputFileName);
             report.ReportPath = path;
             BuildJson(ref report, s_reportBuilder);
-            File.WriteAllText(path, s_reportBuilder.ToString());
+            File.WriteAllText(path, s_reportBuilder.ToString(), new UTF8Encoding(false));
         }
 
         private static void BuildJson(ref HabitatStressSmokeReport report, StringBuilder builder)

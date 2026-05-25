@@ -13,7 +13,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Comparison View")]
-    public sealed class SettingsComparisonView : MonoBehaviour, ILateFrameTickable
+    public sealed class SettingsComparisonView : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -34,6 +34,7 @@ namespace Hecton8.UI
 
         private SettingsManager _settings;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private float _timer;
         private int _pendingGraphicsPreset = -1;
         private int _lastRenderedCurrentGraphicsPreset = -1;
@@ -61,6 +62,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             _settings = GlobalRegistry.Settings;
+            TryRegisterHotSwapListener();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_settings == null)
                 Debug.LogWarning("[SettingsComparisonView] Settings runtime is not registered. Comparison panel disabled.");
@@ -72,11 +74,13 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             Unregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             Unregister();
+            TryUnregisterHotSwapListener();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -273,6 +277,53 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.SettingsRuntime)
+            {
+                _settings = currentService as SettingsManager;
+                _lastRenderedCurrentGraphicsPreset = -1;
+                _lastRenderedPendingGraphicsPreset = -1;
+                RefreshComparison();
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registered = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                Unregister();
+                TryRegister();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
     }
 }

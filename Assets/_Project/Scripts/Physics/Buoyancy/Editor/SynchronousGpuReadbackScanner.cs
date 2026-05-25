@@ -60,10 +60,8 @@ namespace Hecton8.Physics.Editor
             if (!Directory.Exists(root))
                 return;
 
-            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
-                string file = files[i];
                 if (file.EndsWith(nameof(SynchronousGpuReadbackScanner) + ".cs", StringComparison.OrdinalIgnoreCase))
                     continue;
 

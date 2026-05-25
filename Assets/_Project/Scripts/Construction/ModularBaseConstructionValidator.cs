@@ -133,7 +133,7 @@ namespace Hecton8.Construction
                 return -1f;
 
             float ridge = RidgeAmplitudeMeters *
-                          math.sin((localPosition.x + localPosition.z + (Seed & 1023u)) * math.max(RidgeFrequency, 0.0001f));
+                          Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((localPosition.x + localPosition.z + (Seed & 1023u)) * math.max(RidgeFrequency, 0.0001f));
             float terrainDistance = localPosition.y - (PlaneLocalY + ridge);
 
             if (HardBlockRadiusMeters > 0.0001f)
@@ -495,6 +495,7 @@ namespace Hecton8.Construction
             result.ResultHash = HashResult(in request, result.FailureFlags, result.MinSdfDistance, result.ProbeCount);
         }
 
+#if UNITY_EDITOR
         public static bool TryParseModuleBoundsCsv(
             ReadOnlySpan<byte> csv,
             NativeParallelHashMap<uint, StructuralBoundsDTO> boundsByHash)
@@ -550,6 +551,7 @@ namespace Hecton8.Construction
 
             return writtenCount > 0;
         }
+#endif
 
         public static bool TryReadTelemetryRing(
             IDataVault vault,
@@ -670,7 +672,7 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 math.max(1, requiredLength),
                 SystemID.Construction,

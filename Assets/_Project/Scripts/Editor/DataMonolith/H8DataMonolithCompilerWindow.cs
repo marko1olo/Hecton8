@@ -141,7 +141,7 @@ namespace Hecton8.EditorValidation
         private static void WriteTemplate(string fileName, string header)
         {
             string path = Path.Combine(SchemaFolder, fileName);
-            File.WriteAllText(path, header + Environment.NewLine, Encoding.UTF8);
+            File.WriteAllText(path, header + System.Environment.NewLine, Encoding.UTF8);
         }
 
         private static void WriteStructTemplate<T>(string fileName)
@@ -340,8 +340,7 @@ namespace Hecton8.EditorValidation
             {
                 H8DataBlobHeader header = UnsafeUtility.ReadArrayElement<H8DataBlobHeader>(ptr, 0);
                 H8DataBlobDirectory directory = UnsafeUtility.ReadArrayElement<H8DataBlobDirectory>(ptr + H8DataLayoutConstants.HeaderSizeBytes, 0);
-                uint2 hash = xxHash3.Hash64(ptr + H8DataLayoutConstants.HeaderSizeBytes, bytes.Length - H8DataLayoutConstants.HeaderSizeBytes);
-                ulong checksum = ((ulong)hash.y << 32) | hash.x;
+                ulong checksum = H8DataMonolithCompiler.ComputeHash64(bytes, H8DataLayoutConstants.HeaderSizeBytes, bytes.Length - H8DataLayoutConstants.HeaderSizeBytes);
                 _binaryList.Add(new Label("bytes=" + bytes.Length + " sections=" + directory.SectionCount));
                 _binaryList.Add(new Label("magic=0x" + header.Magic.ToString("X8") + " version=" + header.FormatVersion + " headerBytes=" + header.HeaderBytes));
                 _binaryList.Add(new Label("checksum=" + (checksum == header.Checksum64 ? "PASS" : "FAIL") + " 0x" + header.Checksum64.ToString("X16")));

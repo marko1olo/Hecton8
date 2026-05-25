@@ -387,7 +387,7 @@ namespace Hecton8.World
                 FloraDisplacementDTO value = FieldValues[physicalIndex];
                 float safeDeltaTime = math.isfinite(DeltaTime) ? math.clamp(DeltaTime, 0f, 0.2f) : 0f;
                 float safeDecayRate = math.isfinite(DecayRate) ? math.max(0f, DecayRate) : 0f;
-                float decay = math.exp(-safeDeltaTime * safeDecayRate);
+                float decay = MathLodApproximation.ApproxExpNegPade33Wide40(safeDeltaTime * safeDecayRate);
                 float3 force = math.select(float3.zero, value.ForceVector * decay, math.all(math.isfinite(value.ForceVector)));
                 float magnitudeSq = math.lengthsq(force);
                 if (!math.isfinite(magnitudeSq) || magnitudeSq <= 0.0000001f)
@@ -811,11 +811,13 @@ namespace Hecton8.World
         private const int ToxicSporeHazardSourceId = unchecked((int)0x6B13A7F1);
         private const float ToxicSporePoisonMinimumExposure = 0.08f;
         private const float ToxicSporePoisonDurationSeconds = 5f;
+        private const float ToxicSporeToxemiaDeltaScale = 0.15f;
+        private const uint ToxicSporeChemicalHash = 0x54535052u; // TSPR
         private const float MatureToxicSporeEventIntervalSeconds = 10f;
         private const float MatureToxicSporeAgeThreshold01 = 0.999f;
         private const int DefensiveSporeHazardSourceId = unchecked((int)0x52F1063A);
         private const float MinimumAllelopathicToxicity01 = 0.005f;
-        private const float ParasiteSlowTickDeltaSeconds = 0.5f;
+        private const float FloraSlowTickDeltaSeconds = 0.1f;
         private const float MatureParasiteGrowthThreshold = 0.999f;
         private const float DefaultInGameDaySeconds = 3600f;
         private const float DefaultParasiteScaleGrowthDays = 3f;
@@ -1350,10 +1352,13 @@ namespace Hecton8.World
         private Rigidbody _playerRb;
         private HectonPlayerMovement _playerMovement;
         private PlayerToolManager _playerToolManager;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private Rigidbody _submarineHullRigidbody;
-        private HectonFluidEngine _fluidEngine;
+        private IFluidSurfaceCurrentReadModel _fluidReadModel;
         private HectonCelestialEngine _celestialEngine;
+        private IAtmosphereReadModel _atmosphereReadModel;
+        private ConstructionManager _constructionManager;
         private ISaveService _saveService;
         private Transform _activeScooterTransform;
         private Vector3 _lastPlayerPosition;
@@ -1375,14 +1380,50 @@ namespace Hecton8.World
         private bool _isSlowTickRegistered;
         private bool _isLateFrameRegistered;
         private int _lastPublishedInteractionCount;
+        private int _pendingVisualInteractionCount;
         private int _externalInteractionCount;
+        private Vector4 _pendingPropWashPositionRadius;
         private Vector3 _damageReactionPositionWS;
+        private float _pendingPropWashForce;
         private float _damageReactionStrength;
         private float _damageReactionRemainingSeconds;
+        private bool _interactionGlobalsDirty;
+        private bool _environmentGlobalsDirty;
+        private bool _wakeTrailGlobalsDirty;
+        private bool _submarineWashGlobalsDirty;
+        private bool _damageReactionGlobalsDirty;
+        private bool _flowFieldRefreshRequested;
+        private bool _flowFieldGlobalsDirty;
+        private bool _proceduralWakeTickRequested;
+        private bool _proceduralWakeGlobalsDirty;
+        private bool _proceduralWakeForceUpload;
+        private bool _wakeTrailTickRequested;
+        private bool _wakeTrailClearRequested;
+        private bool _wakeTrailResourceRefreshRequested;
+        private bool _floraSwayFieldGlobalsDirty;
+        private bool _floraSwayFieldForceUpload;
+        private bool _parasiteInfectionGlobalsDirty;
+        private bool _playerRuntimePositionDirty;
+        private bool _interactionResetGlobalsDirty;
+        private bool _sedimentBurstVisualRequested;
+        private Vector3 _pendingEnvironmentSamplePositionWS;
+        private Vector3 _pendingSedimentBurstPositionWS;
+        private Vector3 _pendingSedimentBurstVelocityWS;
+        private Vector3 _pendingWakeTrailPlayerPositionWS;
+        private Vector3 _pendingWakeTrailPlayerVelocityWS;
+        private Vector4 _pendingPlayerRuntimePosition;
+        private Vector4 _pendingPlayerFloraInteractionParams;
+        private float _pendingDamageReactionDeltaTime;
+        private float _pendingFlowFieldDeltaTime;
+        private float _pendingProceduralWakeDeltaTime;
+        private float _pendingWakeTrailDeltaTime;
 
         private FloraInteractionPointGpuData[] _interactionPoints;
         private FloraInteractionPointGpuData[] _externalInteractionPoints;
-        private GraphicsBuffer _interactionBuffer;
+        private GraphicsBuffer _interactionBufferA;
+        private GraphicsBuffer _interactionBufferB;
+        private GraphicsBuffer _activeInteractionBuffer;
+        private int _interactionBufferWriteIndex;
         private GraphicsBuffer _flowFieldBuffer;
         private GraphicsBuffer _floraSwayFieldBufferA;
         private GraphicsBuffer _floraSwayFieldBufferB;
@@ -1530,8 +1571,12 @@ namespace Hecton8.World
         private JobHandle _floraSwayFieldBuildHandle;
         private int _surfaceCascadePhaseSeedUploadCount;
         private int _underwaterCascadePhaseSeedUploadCount;
+        private int _surfaceCascadePhaseSeedQueuedUploadCount;
+        private int _underwaterCascadePhaseSeedQueuedUploadCount;
         private bool _surfaceCascadePhaseSeedScheduled;
         private bool _underwaterCascadePhaseSeedScheduled;
+        private bool _surfaceCascadePhaseSeedReleaseQueued;
+        private bool _underwaterCascadePhaseSeedReleaseQueued;
         private bool _floraSwayFieldBuildScheduled;
 
         /// <summary>Last interaction point count pushed into the global flora buffer.</summary>
@@ -1567,7 +1612,8 @@ namespace Hecton8.World
         public long GetVRAMEstimation()
         {
             long totalBytes = 0L;
-            totalBytes += EstimateGraphicsBufferBytes(_interactionBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_interactionBufferA);
+            totalBytes += EstimateGraphicsBufferBytes(_interactionBufferB);
             totalBytes += EstimateGraphicsBufferBytes(_flowFieldBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_floraSwayFieldBufferA);
             totalBytes += EstimateGraphicsBufferBytes(_floraSwayFieldBufferB);
@@ -1671,7 +1717,9 @@ namespace Hecton8.World
             _moduleQueryHits = new SpatialQueryHit[MaxModuleQueryHits];
             // COLD ALLOC: SpatialQueryHit[16] - predator bioform query results for flora bioluminescence stealth - owner: FloraInteractionManager
             _predatorThreatQueryHits = new SpatialQueryHit[MaxPredatorThreatQueryHits];
-            _interactionBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraInteractionPointGpuData>(_maxInteractionPoints); // COLD ALLOC: GraphicsBuffer[_maxInteractionPoints] - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
+            _interactionBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraInteractionPointGpuData>(_maxInteractionPoints); // COLD ALLOC: GraphicsBuffer[_maxInteractionPoints] A - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
+            _interactionBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraInteractionPointGpuData>(_maxInteractionPoints); // COLD ALLOC: GraphicsBuffer[_maxInteractionPoints] B - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
+            _activeInteractionBuffer = _interactionBufferA;
             // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample positions for vegetation flow publishing - owner: FloraInteractionManager
             _oceanFlowSamplePositions = new NativeArray<Vector3>(1, DataVaultExemptOceanFlowSampleAllocator, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
@@ -1689,7 +1737,7 @@ namespace Hecton8.World
             _defensiveSporeBursts = new DefensiveSporeBurstState[MaxDefensiveSporeBursts]; // COLD ALLOC: DefensiveSporeBurstState[6] - bounded active toxicity cloud descriptors - owner: FloraInteractionManager
             RegisterNativeMemorySentinel();
 
-            Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
+            Shader.SetGlobalBuffer(_InteractionBufferId, _activeInteractionBuffer);
             PublishFlowFieldGlobals();
             PublishFloraSwayFieldGlobals(forceUpload: true);
             CreateWakeTrailResources();
@@ -1707,16 +1755,16 @@ namespace Hecton8.World
         {
             s_ActiveRuntimeInstance = this;
 
-            if (_interactionBuffer != null)
-                Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
+            if (_activeInteractionBuffer != null)
+                Shader.SetGlobalBuffer(_InteractionBufferId, _activeInteractionBuffer);
 
             HectonFloatingOrigin.RegisterListener(this);
             GlobalRegistry.RegisterWakeDisplacementService(this);
+            CacheEnvironmentRuntimeServicesCold();
             ResolveProceduralWakeVaultBuffer(clearExisting: false);
             ResolveFloraSwayFieldVaultBuffer(clearExisting: false);
             EnsureFloraSwayFieldGraphicsBuffers();
             RefreshInstanceCullingService();
-            CacheEnvironmentRuntimeServicesCold();
             TryRegisterCullingHotSwapListener();
             RefreshCachedSubmarineContext();
             PublishFlowFieldGlobals();
@@ -1738,10 +1786,13 @@ namespace Hecton8.World
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             CompleteFloraSwayFieldJobForTeardown(uploadAfterComplete: true);
             _instanceCullingService = null;
+            _playerRuntimeContext = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
-            _fluidEngine = null;
+            _fluidReadModel = null;
             _celestialEngine = null;
+            _atmosphereReadModel = null;
+            _constructionManager = null;
             _saveService = null;
             TryUnregister();
             ClearToxicSporeHazard();
@@ -1763,10 +1814,13 @@ namespace Hecton8.World
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             CompleteFloraSwayFieldJobForTeardown(uploadAfterComplete: true);
             _instanceCullingService = null;
+            _playerRuntimeContext = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
-            _fluidEngine = null;
+            _fluidReadModel = null;
             _celestialEngine = null;
+            _atmosphereReadModel = null;
+            _constructionManager = null;
             _saveService = null;
             TryUnregister();
             ClearToxicSporeHazard();
@@ -1809,11 +1863,20 @@ namespace Hecton8.World
             _underwaterReactiveFloraHash?.Dispose();
             _underwaterReactiveFloraHash = null;
 
-            if (_interactionBuffer != null)
+            if (_interactionBufferA != null)
             {
-                _interactionBuffer.Release();
-                _interactionBuffer = null;
+                _interactionBufferA.Release();
+                _interactionBufferA = null;
             }
+
+            if (_interactionBufferB != null)
+            {
+                _interactionBufferB.Release();
+                _interactionBufferB = null;
+            }
+
+            _activeInteractionBuffer = null;
+            _interactionBufferWriteIndex = 0;
 
             ReleaseFlowFieldBuffer();
             ReleaseFloraSwayFieldBuffers();
@@ -1842,14 +1905,13 @@ namespace Hecton8.World
 
             Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
             Vector3 targetPosition = ResolveRuntimePosition(runtimePlayerTransform);
-            PublishEnvironmentGlobals(targetPosition);
-            PublishSubmarineWashGlobals();
-            PublishDamageReactionGlobal(deltaTime);
-            RefreshFlowFieldGlobals(deltaTime);
+            QueueEnvironmentGlobals(targetPosition);
+            QueueSubmarineWashGlobals();
+            QueueDamageReactionGlobal(deltaTime);
+            QueueFlowFieldRefresh(deltaTime);
             if (runtimePlayerTransform == null)
             {
-                ProcessProceduralWakeTick(deltaTime);
-                ClearToxicSporeHazard();
+                QueueProceduralWakeTick(deltaTime);
                 ClearDefensiveSporeHazard();
                 ResetInteractionGlobals();
                 ResetExternalInteractions();
@@ -1857,7 +1919,6 @@ namespace Hecton8.World
             }
 
             ResolvePlayerState(runtimePlayerTransform, targetPosition);
-            UpdateToxicSporeExposure(targetPosition, deltaTime);
             UpdateDefensiveSporeBursts(targetPosition);
             UpdateBioluminescentCascades(targetPosition, deltaTime);
 
@@ -1889,29 +1950,16 @@ namespace Hecton8.World
             interactionCount = AppendScooterInteractionPoint(playerVelocity, interactionCount, deltaTime);
             interactionCount = CollectDynamicInteractionPoints(targetPosition, interactionCount);
             interactionCount = AppendExternalInteractions(interactionCount);
-            UpdateWakeTrail(targetPosition, playerVelocity, deltaTime);
+            QueueWakeTrailTick(targetPosition, playerVelocity, deltaTime);
             PublishPlayerWakeSignal(targetPosition, playerVelocity, velocityMagnitude);
             PublishSubmarineWakeSignal();
-            ProcessProceduralWakeTick(deltaTime);
-            TryEmitSedimentBursts(targetPosition, playerVelocity);
+            QueueProceduralWakeTick(deltaTime);
+            QueueSedimentBurstVisualSync(targetPosition, playerVelocity);
 
-            Shader.SetGlobalVector(
-                _PropWashPosId,
-                new Vector4(_smoothPosition.x, _smoothPosition.y, _smoothPosition.z, _smoothRadius));
-            Shader.SetGlobalFloat(_PropWashForceId, _smoothForce);
-
-            if (_interactionBuffer != null && interactionCount > 0)
-            {
-                GraphicsBufferUploadUtility.UploadArray(_interactionBuffer, _interactionPoints, interactionCount);
-                Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
-                Shader.SetGlobalInt(_InteractionCountId, interactionCount);
-                _lastPublishedInteractionCount = interactionCount;
-                ResetExternalInteractions();
-                return;
-            }
-
-            Shader.SetGlobalInt(_InteractionCountId, 0);
-            _lastPublishedInteractionCount = 0;
+            QueueInteractionVisualSync(
+                new Vector4(_smoothPosition.x, _smoothPosition.y, _smoothPosition.z, _smoothRadius),
+                _smoothForce,
+                _activeInteractionBuffer != null ? interactionCount : 0);
             ResetExternalInteractions();
         }
 
@@ -1929,7 +1977,23 @@ namespace Hecton8.World
             TryFinalizeFloraSwayFieldJobNoWait(uploadAfterComplete: true);
             CompleteCascadePhaseSeedJob(underwater: false, forceComplete: false, uploadAfterComplete: true);
             CompleteCascadePhaseSeedJob(underwater: true, forceComplete: false, uploadAfterComplete: true);
+            FlushQueuedCascadePhaseSeedVisualSync(underwater: false);
+            FlushQueuedCascadePhaseSeedVisualSync(underwater: true);
             TryFinalizeHeadlessParasiteSimulation();
+            FlushQueuedTickVisualWork();
+            FlushWakeTrailResourceRefreshVisualSync();
+            FlushWakeTrailTextureClearVisualSync();
+            FlushWakeTrailTickVisualSync();
+            FlushQueuedVisualGlobals();
+            FlushSubmarineWashGlobals();
+            FlushDamageReactionGlobal();
+            FlushFlowFieldGlobals();
+            FlushProceduralWakeBuffer();
+            FlushFloraSwayFieldGlobals();
+            FlushParasiteInfectionGlobals();
+            FlushPlayerRuntimePosition();
+            FlushInteractionResetGlobals();
+            FlushInteractionVisualSync();
         }
 
         /// <summary>
@@ -1943,7 +2007,12 @@ namespace Hecton8.World
             if (_vegetationBridge == null)
                 _vegetationBridge = ResolveVegetationBridge();
 
-            RefreshModuleParasiteState(ParasiteSlowTickDeltaSeconds);
+            RefreshModuleParasiteState(FloraSlowTickDeltaSeconds);
+            Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
+            if (runtimePlayerTransform != null)
+                UpdateToxicSporeExposure(ResolveRuntimePosition(runtimePlayerTransform), FloraSlowTickDeltaSeconds);
+            else
+                ClearToxicSporeHazard();
 
             if (_destructibleOrganicManager == null)
                 _destructibleOrganicManager = ResolveDestructibleOrganicManager();
@@ -2068,8 +2137,8 @@ namespace Hecton8.World
                 return;
 
             _wakeTrailRuntimeResolution = desiredResolution;
-            ReleaseWakeTrailResources();
-            CreateWakeTrailResources();
+            _wakeTrailResourceRefreshRequested = true;
+            QueueWakeTrailGlobals();
         }
 
         private int ResolveWakeTrailResolutionForQuality(int qualityLevel)
@@ -2121,6 +2190,65 @@ namespace Hecton8.World
         private int CollectDynamicInteractionPoints(Vector3 targetPosition, int interactionCount)
         {
             return interactionCount;
+        }
+
+        private void QueueInteractionVisualSync(Vector4 propWashPositionRadius, float propWashForce, int interactionCount)
+        {
+            _pendingPropWashPositionRadius = propWashPositionRadius;
+            _pendingPropWashForce = propWashForce;
+            _pendingVisualInteractionCount = Mathf.Max(0, interactionCount);
+            _interactionGlobalsDirty = true;
+        }
+
+        private void FlushInteractionVisualSync()
+        {
+            if (!_interactionGlobalsDirty)
+                return;
+
+            Shader.SetGlobalVector(_PropWashPosId, _pendingPropWashPositionRadius);
+            Shader.SetGlobalFloat(_PropWashForceId, _pendingPropWashForce);
+
+            int interactionCount = _interactionPoints != null
+                ? Mathf.Min(_pendingVisualInteractionCount, _interactionPoints.Length)
+                : 0;
+            if (interactionCount > 0)
+            {
+                GraphicsBuffer writeBuffer = ResolveInteractionWriteBuffer();
+                if (writeBuffer == null)
+                {
+                    Shader.SetGlobalInt(_InteractionCountId, 0);
+                    _lastPublishedInteractionCount = 0;
+                    _interactionGlobalsDirty = false;
+                    return;
+                }
+
+                GraphicsBufferUploadUtility.UploadArray(writeBuffer, _interactionPoints, interactionCount);
+                _activeInteractionBuffer = writeBuffer;
+                _interactionBufferWriteIndex ^= 1;
+                Shader.SetGlobalBuffer(_InteractionBufferId, _activeInteractionBuffer);
+                Shader.SetGlobalInt(_InteractionCountId, interactionCount);
+                _lastPublishedInteractionCount = interactionCount;
+            }
+            else
+            {
+                Shader.SetGlobalInt(_InteractionCountId, 0);
+                _lastPublishedInteractionCount = 0;
+            }
+
+            _interactionGlobalsDirty = false;
+        }
+
+        private GraphicsBuffer ResolveInteractionWriteBuffer()
+        {
+            GraphicsBuffer writeBuffer = _interactionBufferWriteIndex == 0
+                ? _interactionBufferA
+                : _interactionBufferB;
+            if (writeBuffer != null)
+                return writeBuffer;
+
+            return ReferenceEquals(_activeInteractionBuffer, _interactionBufferA)
+                ? _interactionBufferB
+                : _interactionBufferA;
         }
 
         private int AppendScooterInteractionPoint(Vector3 playerVelocity, int interactionCount, float deltaTime)
@@ -2210,7 +2338,7 @@ namespace Hecton8.World
             if (runtimePlayerTransform == null)
                 return null;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && playerContext.ToolManager != null)
                 return playerContext.ToolManager;
 
@@ -2361,8 +2489,8 @@ namespace Hecton8.World
             if (surfaceBounds.size.sqrMagnitude <= 0.0001f || !surfaceBounds.Contains(positionWS))
                 return false;
 
-            HectonFluidEngine fluidEngine = _fluidEngine;
-            float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
+            IFluidSurfaceCurrentReadModel fluidReadModel = _fluidReadModel;
+            float waterLevel = fluidReadModel != null ? fluidReadModel.WaterLevel : DefaultVegetationWaterLevel;
             return positionWS.y <= waterLevel - 0.25f;
         }
 
@@ -2442,6 +2570,127 @@ namespace Hecton8.World
             _externalInteractionCount = 0;
         }
 
+        private void QueueEnvironmentGlobals(Vector3 samplePositionWS)
+        {
+            _pendingEnvironmentSamplePositionWS = samplePositionWS;
+            _environmentGlobalsDirty = true;
+        }
+
+        private void QueueWakeTrailGlobals()
+        {
+            _wakeTrailGlobalsDirty = true;
+        }
+
+        private void FlushQueuedVisualGlobals()
+        {
+            if (_environmentGlobalsDirty)
+            {
+                PublishEnvironmentGlobals(_pendingEnvironmentSamplePositionWS);
+                _environmentGlobalsDirty = false;
+            }
+
+            if (_wakeTrailGlobalsDirty)
+            {
+                PublishWakeTrailGlobals();
+                _wakeTrailGlobalsDirty = false;
+            }
+        }
+
+        private void QueueFlowFieldRefresh(float deltaTime)
+        {
+            _pendingFlowFieldDeltaTime += math.max(0f, deltaTime);
+            _flowFieldRefreshRequested = true;
+        }
+
+        private void QueueProceduralWakeTick(float deltaTime)
+        {
+            _pendingProceduralWakeDeltaTime += math.max(0f, deltaTime);
+            _proceduralWakeTickRequested = true;
+        }
+
+        private void QueueWakeTrailTick(Vector3 playerPosition, Vector3 playerVelocity, float deltaTime)
+        {
+            _pendingWakeTrailPlayerPositionWS = playerPosition;
+            _pendingWakeTrailPlayerVelocityWS = playerVelocity;
+            _pendingWakeTrailDeltaTime += math.max(0f, deltaTime);
+            _wakeTrailTickRequested = true;
+        }
+
+        private void QueueWakeTrailTextureClear()
+        {
+            _wakeTrailClearRequested = true;
+            _wakeTrailEnergy = 0f;
+            _pendingWakeTrailScrollUv = Vector2.zero;
+            _queuedWakeTrailStampCount = 0;
+            QueueWakeTrailGlobals();
+        }
+
+        private void QueueSedimentBurstVisualSync(Vector3 playerPosition, Vector3 playerVelocity)
+        {
+            _pendingSedimentBurstPositionWS = playerPosition;
+            _pendingSedimentBurstVelocityWS = playerVelocity;
+            _sedimentBurstVisualRequested = true;
+        }
+
+        private void FlushQueuedTickVisualWork()
+        {
+            if (_flowFieldRefreshRequested)
+            {
+                float deltaTime = _pendingFlowFieldDeltaTime;
+                _pendingFlowFieldDeltaTime = 0f;
+                _flowFieldRefreshRequested = false;
+                RefreshFlowFieldGlobals(deltaTime);
+            }
+
+            if (_proceduralWakeTickRequested)
+            {
+                float deltaTime = _pendingProceduralWakeDeltaTime;
+                _pendingProceduralWakeDeltaTime = 0f;
+                _proceduralWakeTickRequested = false;
+                ProcessProceduralWakeTick(deltaTime);
+            }
+
+            if (_sedimentBurstVisualRequested)
+            {
+                _sedimentBurstVisualRequested = false;
+                TryEmitSedimentBursts(_pendingSedimentBurstPositionWS, _pendingSedimentBurstVelocityWS);
+            }
+        }
+
+        private void FlushWakeTrailResourceRefreshVisualSync()
+        {
+            if (!_wakeTrailResourceRefreshRequested)
+                return;
+
+            _wakeTrailResourceRefreshRequested = false;
+            ReleaseWakeTrailResources();
+            CreateWakeTrailResources();
+        }
+
+        private void FlushWakeTrailTextureClearVisualSync()
+        {
+            if (!_wakeTrailClearRequested)
+                return;
+
+            _wakeTrailClearRequested = false;
+            ClearWakeTrailTextures();
+        }
+
+        private void FlushWakeTrailTickVisualSync()
+        {
+            if (!_wakeTrailTickRequested)
+                return;
+
+            Vector3 playerPosition = _pendingWakeTrailPlayerPositionWS;
+            Vector3 playerVelocity = _pendingWakeTrailPlayerVelocityWS;
+            float deltaTime = _pendingWakeTrailDeltaTime;
+            _pendingWakeTrailPlayerPositionWS = Vector3.zero;
+            _pendingWakeTrailPlayerVelocityWS = Vector3.zero;
+            _pendingWakeTrailDeltaTime = 0f;
+            _wakeTrailTickRequested = false;
+            UpdateWakeTrail(playerPosition, playerVelocity, deltaTime);
+        }
+
         private void PublishEnvironmentGlobals(Vector3 samplePositionWS)
         {
             RefreshToxicSporeTemplateMask(force: false);
@@ -2452,14 +2701,14 @@ namespace Hecton8.World
             float lightFactor = underwaterVisuals != null ? underwaterVisuals.CurrentLightFactor : 1f;
             float turbidity = underwaterVisuals != null ? underwaterVisuals.CurrentTurbidity : 0f;
 
-            HectonFluidEngine fluidEngine = _fluidEngine;
-            float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
-            Vector3 currentVector = ResolveGlobalOceanFlow(samplePositionWS, fluidEngine);
+            IFluidSurfaceCurrentReadModel fluidReadModel = _fluidReadModel;
+            float waterLevel = fluidReadModel != null ? fluidReadModel.WaterLevel : DefaultVegetationWaterLevel;
+            Vector3 currentVector = ResolveGlobalOceanFlow(samplePositionWS, fluidReadModel);
             _lastVegetationCurrentVector = IsFiniteVector3(currentVector) ? currentVector : Vector3.zero;
             float currentStrength = EstimateLength3D(currentVector);
-            float currentNoiseScale = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentNoiseScale : 0f;
-            float currentTimeScale = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentTimeScale : 0f;
-            float currentVerticalFactor = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentVerticalFactor : 0f;
+            float currentNoiseScale = fluidReadModel != null && fluidReadModel.EnablePhantomCurrent ? fluidReadModel.CurrentNoiseScale : 0f;
+            float currentTimeScale = fluidReadModel != null && fluidReadModel.EnablePhantomCurrent ? fluidReadModel.CurrentTimeScale : 0f;
+            float currentVerticalFactor = fluidReadModel != null && fluidReadModel.EnablePhantomCurrent ? fluidReadModel.CurrentVerticalFactor : 0f;
 
             Shader.SetGlobalColor(_VegetationFogColorId, RenderSettings.fogColor);
             Shader.SetGlobalColor(_VegetationAmbientColorId, ResolveAmbientColor());
@@ -2560,8 +2809,17 @@ namespace Hecton8.World
             return math.saturate(1f - wrappedDelta * math.rcp(math.max(0.001f, halfWidthNormalized)));
         }
 
-        private void PublishSubmarineWashGlobals()
+        private void QueueSubmarineWashGlobals()
         {
+            _submarineWashGlobalsDirty = true;
+        }
+
+        private void FlushSubmarineWashGlobals()
+        {
+            if (!_submarineWashGlobalsDirty)
+                return;
+
+            _submarineWashGlobalsDirty = false;
             Rigidbody submarineHull = _submarineHullRigidbody;
             if (submarineHull == null)
             {
@@ -2805,7 +3063,7 @@ namespace Hecton8.World
                 Velocity = new float3(velocity.x, velocity.y, velocity.z),
                 SourceFlags = sourceKind
             };
-            SignalBus<WakeGeneratedSignal>.Push(in signal);
+            SignalBus<WakeGeneratedSignal>.TryPush(in signal);
         }
 
         private void DrainWakeGeneratedSignals()
@@ -2997,6 +3255,19 @@ namespace Hecton8.World
 
         private void PublishProceduralWakeBuffer(bool forceUpload = false)
         {
+            _proceduralWakeForceUpload |= forceUpload;
+            _proceduralWakeGlobalsDirty = true;
+        }
+
+        private void FlushProceduralWakeBuffer()
+        {
+            if (!_proceduralWakeGlobalsDirty)
+                return;
+
+            bool forceUpload = _proceduralWakeForceUpload;
+            _proceduralWakeGlobalsDirty = false;
+            _proceduralWakeForceUpload = false;
+
             if (_proceduralWakeShaderBuffer == null ||
                 _globalWakeShaderBuffer == null ||
                 _globalWakeVectorShaderBuffer == null)
@@ -3282,11 +3553,11 @@ namespace Hecton8.World
             return math.all(math.isfinite(fieldCenter));
         }
 
-        private static bool TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext == null)
                 return false;
 
@@ -3729,6 +4000,7 @@ namespace Hecton8.World
                 rules[3] = BuildFloraStiffnessRule(HashAsciiLiteral("flora.sargassum"), 0.34f, 2.7f);
         }
 
+#if UNITY_EDITOR
         public bool TryReloadFloraStiffnessProfilesCsvForEditor(string path)
         {
             return TryIngestFloraStiffnessProfilesCsv(path);
@@ -3832,6 +4104,7 @@ namespace Hecton8.World
                 NativeArrayOptions.UninitializedMemory,
                 out scratch);
         }
+#endif
 
         private static FloraStiffnessRuleDTO BuildFloraStiffnessRule(uint plantHash, float stiffness, float damping)
         {
@@ -3844,6 +4117,7 @@ namespace Hecton8.World
             };
         }
 
+#if UNITY_EDITOR
         private static uint ParseCsvFnvHash(NativeArray<byte> bytes, int byteCount, ref int cursor)
         {
             uint hash = 2166136261u;
@@ -3958,6 +4232,7 @@ namespace Hecton8.World
             if (cursor < byteCount)
                 cursor++;
         }
+#endif
 
         private static uint HashAsciiLiteral(string value)
         {
@@ -4028,6 +4303,19 @@ namespace Hecton8.World
 
         private void PublishFloraSwayFieldGlobals(bool forceUpload = false)
         {
+            _floraSwayFieldForceUpload |= forceUpload;
+            _floraSwayFieldGlobalsDirty = true;
+        }
+
+        private void FlushFloraSwayFieldGlobals()
+        {
+            if (!_floraSwayFieldGlobalsDirty)
+                return;
+
+            bool forceUpload = _floraSwayFieldForceUpload;
+            _floraSwayFieldGlobalsDirty = false;
+            _floraSwayFieldForceUpload = false;
+
             if (!forceUpload &&
                 _floraSwayFieldGlobalsInitialized &&
                 !_floraSwayFieldActive &&
@@ -4198,10 +4486,7 @@ namespace Hecton8.World
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
             if (!float.IsFinite(weight))
-            {
-                float tierWeight = math.saturate(GlobalRegistry.ScalabilityTierProfileByte);
-                weight = math.lerp(0.25f, 1f, SmoothStep01(tierWeight));
-            }
+                weight = 0.5f;
 
             float stress01 = float.IsFinite(HomeostasisBrain.SystemHealthIndex01)
                 ? math.saturate(HomeostasisBrain.SystemHealthIndex01)
@@ -4296,7 +4581,7 @@ namespace Hecton8.World
                 SourceHash = WakeFluidImpulseSourceHash,
                 Flags = signal.SourceFlags
             };
-            SignalBus<FluidImpulseSignal>.Push(in impulse);
+            SignalBus<FluidImpulseSignal>.TryPush(in impulse);
         }
 
         private void RecordWakeBlackBox(
@@ -4623,7 +4908,7 @@ namespace Hecton8.World
             if (exposure01 < ToxicSporePoisonMinimumExposure)
                 return;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
             if (playerHealth == null)
                 return;
@@ -4635,31 +4920,45 @@ namespace Hecton8.World
             float3 playerPositionWS = _playerTransform != null
                 ? (float3)_playerTransform.position
                 : (float3)playerHealth.transform.position;
-            float3 direction = playerPositionWS - (float3)hazardPositionWS;
-            direction *= math.rsqrt(math.max(0.0001f, math.lengthsq(direction)));
+            CombatDamageRuntime.TryQueueStatusEffect(
+                targetId,
+                CombatStatusBits.Poisoned64,
+                ToxicSporePoisonDurationSeconds * Mathf.Clamp01(exposure01),
+                ToxicSporeHazardSourceId,
+                Mathf.Clamp01(exposure01));
+            PublishToxicSporeToxicityExposure(targetId, playerPositionWS, exposure01);
+        }
 
-            Hecton8.Gameplay.CombatDamageRequest signal = new Hecton8.Gameplay.CombatDamageRequest
+        private void PublishToxicSporeToxicityExposure(int targetId, Vector3 playerPositionWS, float exposure01)
+        {
+            float exposure = math.saturate(exposure01);
+            if (targetId == 0 || exposure <= 0.0001f)
+                return;
+
+            if (!TryResolveToxicSporePlayerAup(playerPositionWS, out AbsoluteUniversePosition playerAup))
+                return;
+
+            ToxicityExposureSignal signal = default;
+            signal.AUP = playerAup.ToAbsoluteDouble3();
+            signal.Exposure01 = exposure;
+            signal.ToxemiaDelta = math.saturate(exposure * ToxicSporeToxemiaDeltaScale);
+            signal.EntityId = unchecked((uint)targetId);
+            signal.ChemicalHash = ToxicSporeChemicalHash;
+            signal.Frame = TimeSliceScheduler.CurrentFrameId;
+            signal.Flags = 1;
+            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
+        }
+
+        private bool TryResolveToxicSporePlayerAup(Vector3 playerPositionWS, out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement != null)
             {
-                TargetId = targetId,
-                SourceId = ToxicSporeHazardSourceId,
-                Amount = 0f,
-                ImpulseMagnitude = 0f,
-                Direction = direction,
-                PackedMeta = CombatDamageRuntime.PackSignalMeta(
-                    CombatDamageTypes.Toxic,
-                    CombatStatusBits.Poisoned,
-                    CombatWeakspotTier.None)
-            };
+                playerAup = _playerMovement.CurrentAup;
+                if (IsFiniteAup(in playerAup))
+                    return true;
+            }
 
-            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
-            {
-                LocalPoint = float3.zero,
-                ArmorNormal = -direction,
-                LocalTemperatureCelsius = 0f,
-                StatusDurationSeconds = ToxicSporePoisonDurationSeconds * Mathf.Clamp01(exposure01)
-            };
-
-            CombatDamageRuntime.TryQueueDamage(in signal, in detail);
+            return TryResolveAupFromRuntimeOrigin(playerPositionWS, out playerAup);
         }
 
         private void TryResolveNearestToxicSporeEmitter(
@@ -5505,11 +5804,24 @@ namespace Hecton8.World
             _damageReactionPositionWS = positionWS;
             _damageReactionStrength = math.saturate(Mathf.Max(0.1f, deliveredDamage) * 0.22f + Mathf.Clamp01(normalizedPower) * 0.78f);
             _damageReactionRemainingSeconds = DamageReactionDurationSeconds;
-            PublishDamageReactionGlobal(0f);
+            QueueDamageReactionGlobal(0f);
         }
 
-        private void PublishDamageReactionGlobal(float deltaTime)
+        private void QueueDamageReactionGlobal(float deltaTime)
         {
+            _pendingDamageReactionDeltaTime += math.max(0f, deltaTime);
+            _damageReactionGlobalsDirty = true;
+        }
+
+        private void FlushDamageReactionGlobal()
+        {
+            if (!_damageReactionGlobalsDirty)
+                return;
+
+            float deltaTime = _pendingDamageReactionDeltaTime;
+            _pendingDamageReactionDeltaTime = 0f;
+            _damageReactionGlobalsDirty = false;
+
             if (_damageReactionRemainingSeconds <= 0f || _damageReactionStrength <= 0f)
             {
                 _damageReactionRemainingSeconds = 0f;
@@ -5657,7 +5969,7 @@ namespace Hecton8.World
 
         private double ResolveParasiteScaleGrowthSecondsDouble()
         {
-            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
+            IAtmosphereReadModel atmosphereManager = _atmosphereReadModel;
             double daySeconds = atmosphereManager != null
                 ? Mathf.Max(1f, atmosphereManager.CycleDuration)
                 : DefaultInGameDaySeconds;
@@ -5717,7 +6029,7 @@ namespace Hecton8.World
             if (!_parasiteNodes.IsCreated || _parasiteNodeCount >= _parasiteNodes.Length)
                 return;
 
-            ConstructionManager constructionManager = GlobalRegistry.ConstructionRuntime;
+            ConstructionManager constructionManager = _constructionManager;
             if (constructionManager == null)
                 return;
 
@@ -5875,6 +6187,15 @@ namespace Hecton8.World
 
         private void PublishParasiteInfectionGlobals()
         {
+            _parasiteInfectionGlobalsDirty = true;
+        }
+
+        private void FlushParasiteInfectionGlobals()
+        {
+            if (!_parasiteInfectionGlobalsDirty)
+                return;
+
+            _parasiteInfectionGlobalsDirty = false;
             Shader.SetGlobalVectorArray(_ParasiteAnchorDataId, _parasiteAnchorData);
             Shader.SetGlobalVectorArray(_ParasiteAnchorParamsId, _parasiteAnchorParams);
             Shader.SetGlobalVector(
@@ -6065,7 +6386,7 @@ namespace Hecton8.World
 
             if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || count <= 0)
             {
-                ReleaseCascadePhaseSeedChannel(underwater);
+                QueueCascadePhaseSeedRelease(underwater);
                 if (underwater)
                     _underwaterReactiveFloraHash = spatialHash;
                 else
@@ -6126,7 +6447,7 @@ namespace Hecton8.World
             else
             {
                 ClearCascadePhaseSeeds(underwater, safeCount);
-                UploadCascadePhaseSeedBuffer(underwater, safeCount);
+                QueueCascadePhaseSeedUpload(underwater, safeCount);
             }
         }
 
@@ -6304,7 +6625,7 @@ namespace Hecton8.World
             if (eventCount <= 0)
             {
                 ClearCascadePhaseSeeds(underwater, count);
-                UploadCascadePhaseSeedBuffer(underwater, count);
+                QueueCascadePhaseSeedUpload(underwater, count);
                 return;
             }
 
@@ -6339,14 +6660,22 @@ namespace Hecton8.World
         private void UploadCascadePhaseSeedBuffer(bool underwater, int count)
         {
             NativeArray<float> phaseSeeds = underwater ? _underwaterCascadePhaseSeeds : _surfaceCascadePhaseSeeds;
-            GraphicsBuffer phaseSeedBuffer = underwater ? _underwaterCascadePhaseSeedBuffer : _surfaceCascadePhaseSeedBuffer;
-            if (!phaseSeeds.IsCreated || phaseSeedBuffer == null || count <= 0)
+            if (!phaseSeeds.IsCreated || count <= 0)
             {
                 ReleaseCascadePhaseSeedChannel(underwater);
                 return;
             }
 
             int safeCount = math.min(count, phaseSeeds.Length);
+            if (underwater)
+                EnsureStructuredFloatBuffer(ref _underwaterCascadePhaseSeedBuffer, safeCount);
+            else
+                EnsureStructuredFloatBuffer(ref _surfaceCascadePhaseSeedBuffer, safeCount);
+
+            GraphicsBuffer phaseSeedBuffer = underwater ? _underwaterCascadePhaseSeedBuffer : _surfaceCascadePhaseSeedBuffer;
+            if (phaseSeedBuffer == null)
+                return;
+
             GraphicsBufferUploadUtility.UploadNativeArray(phaseSeedBuffer, phaseSeeds, safeCount);
             _vegetationBridge.BindReactivePhaseSeedBuffer(underwater, phaseSeedBuffer);
         }
@@ -6358,26 +6687,96 @@ namespace Hecton8.World
 
             if (count <= 0)
             {
-                ReleaseCascadePhaseSeedChannel(underwater);
+                QueueCascadePhaseSeedRelease(underwater);
                 return true;
             }
 
             if (underwater)
             {
                 EnsureFloatNativeArray(ref _underwaterCascadePhaseSeeds, count, nameof(_underwaterCascadePhaseSeeds));
-                EnsureStructuredFloatBuffer(ref _underwaterCascadePhaseSeedBuffer, count);
                 return true;
             }
 
             EnsureFloatNativeArray(ref _surfaceCascadePhaseSeeds, count, nameof(_surfaceCascadePhaseSeeds));
-            EnsureStructuredFloatBuffer(ref _surfaceCascadePhaseSeedBuffer, count);
             return true;
         }
 
-        private void ReleaseCascadePhaseSeedChannel(bool underwater, bool forceComplete = false)
+        private void QueueCascadePhaseSeedUpload(bool underwater, int count)
+        {
+            int safeCount = math.max(0, count);
+            if (safeCount <= 0)
+            {
+                QueueCascadePhaseSeedRelease(underwater);
+                return;
+            }
+
+            if (underwater)
+            {
+                _underwaterCascadePhaseSeedReleaseQueued = false;
+                _underwaterCascadePhaseSeedQueuedUploadCount = math.max(_underwaterCascadePhaseSeedQueuedUploadCount, safeCount);
+                return;
+            }
+
+            _surfaceCascadePhaseSeedReleaseQueued = false;
+            _surfaceCascadePhaseSeedQueuedUploadCount = math.max(_surfaceCascadePhaseSeedQueuedUploadCount, safeCount);
+        }
+
+        private void QueueCascadePhaseSeedRelease(bool underwater)
+        {
+            if (underwater)
+            {
+                _underwaterCascadePhaseSeedReleaseQueued = true;
+                _underwaterCascadePhaseSeedQueuedUploadCount = 0;
+                return;
+            }
+
+            _surfaceCascadePhaseSeedReleaseQueued = true;
+            _surfaceCascadePhaseSeedQueuedUploadCount = 0;
+        }
+
+        private void FlushQueuedCascadePhaseSeedVisualSync(bool underwater)
+        {
+            if (underwater)
+            {
+                if (_underwaterCascadePhaseSeedReleaseQueued)
+                {
+                    if (!ReleaseCascadePhaseSeedChannel(underwater: true))
+                        return;
+
+                    _underwaterCascadePhaseSeedReleaseQueued = false;
+                    return;
+                }
+
+                int uploadCount = _underwaterCascadePhaseSeedQueuedUploadCount;
+                if (uploadCount <= 0 || HasPendingCascadePhaseSeedJob(underwater: true))
+                    return;
+
+                _underwaterCascadePhaseSeedQueuedUploadCount = 0;
+                UploadCascadePhaseSeedBuffer(underwater: true, uploadCount);
+                return;
+            }
+
+            if (_surfaceCascadePhaseSeedReleaseQueued)
+            {
+                if (!ReleaseCascadePhaseSeedChannel(underwater: false))
+                    return;
+
+                _surfaceCascadePhaseSeedReleaseQueued = false;
+                return;
+            }
+
+            int surfaceUploadCount = _surfaceCascadePhaseSeedQueuedUploadCount;
+            if (surfaceUploadCount <= 0 || HasPendingCascadePhaseSeedJob(underwater: false))
+                return;
+
+            _surfaceCascadePhaseSeedQueuedUploadCount = 0;
+            UploadCascadePhaseSeedBuffer(underwater: false, surfaceUploadCount);
+        }
+
+        private bool ReleaseCascadePhaseSeedChannel(bool underwater, bool forceComplete = false)
         {
             if (!CompleteCascadePhaseSeedJob(underwater, forceComplete, uploadAfterComplete: false))
-                return;
+                return false;
 
             if (_vegetationBridge != null)
                 _vegetationBridge.BindReactivePhaseSeedBuffer(underwater, null);
@@ -6386,11 +6785,12 @@ namespace Hecton8.World
             {
                 DisposeNativeArray(ref _underwaterCascadePhaseSeeds);
                 ReleaseGraphicsBuffer(ref _underwaterCascadePhaseSeedBuffer);
-                return;
+                return true;
             }
 
             DisposeNativeArray(ref _surfaceCascadePhaseSeeds);
             ReleaseGraphicsBuffer(ref _surfaceCascadePhaseSeedBuffer);
+            return true;
         }
 
         private bool HasPendingCascadePhaseSeedJob(bool underwater)
@@ -6947,6 +7347,15 @@ namespace Hecton8.World
 
         private void PublishFlowFieldGlobals()
         {
+            _flowFieldGlobalsDirty = true;
+        }
+
+        private void FlushFlowFieldGlobals()
+        {
+            if (!_flowFieldGlobalsDirty)
+                return;
+
+            _flowFieldGlobalsDirty = false;
             if (_flowFieldBuffer != null)
                 Shader.SetGlobalBuffer(_MarineSnowFlowFieldId, _flowFieldBuffer);
 
@@ -6994,23 +7403,32 @@ namespace Hecton8.World
                 ? Mathf.Clamp01(targetForce / _maxInteractionForce)
                 : 0f;
 
-            Shader.SetGlobalVector(
-                _PlayerRuntimePositionId,
-                new Vector4(
-                    playerRuntimePosition.x,
-                    playerRuntimePosition.y,
-                    playerRuntimePosition.z,
-                    Mathf.Max(0.05f, playerBendRadius)));
-            Shader.SetGlobalVector(
-                _PlayerFloraInteractionParamsId,
-                new Vector4(
-                    playerSpeed,
-                    normalizedForce,
-                    _hasActiveScooterWake ? 1f : 0f,
-                    1f));
+            _pendingPlayerRuntimePosition = new Vector4(
+                playerRuntimePosition.x,
+                playerRuntimePosition.y,
+                playerRuntimePosition.z,
+                Mathf.Max(0.05f, playerBendRadius));
+            _pendingPlayerFloraInteractionParams = new Vector4(
+                playerSpeed,
+                normalizedForce,
+                _hasActiveScooterWake ? 1f : 0f,
+                1f);
+            _playerRuntimePositionDirty = true;
         }
 
-        private Vector3 ResolveGlobalOceanFlow(Vector3 samplePositionWS, HectonFluidEngine fluidEngine)
+        private void FlushPlayerRuntimePosition()
+        {
+            if (!_playerRuntimePositionDirty)
+                return;
+
+            _playerRuntimePositionDirty = false;
+            Shader.SetGlobalVector(
+                _PlayerRuntimePositionId,
+                _pendingPlayerRuntimePosition);
+            Shader.SetGlobalVector(_PlayerFloraInteractionParamsId, _pendingPlayerFloraInteractionParams);
+        }
+
+        private Vector3 ResolveGlobalOceanFlow(Vector3 samplePositionWS, IFluidSurfaceCurrentReadModel fluidReadModel)
         {
             IHectonOceanKinematics provider = HectonOceanRegistry.ActiveProvider;
             _oceanKinematicsProvider = provider;
@@ -7026,7 +7444,7 @@ namespace Hecton8.World
                     return _oceanFlowSampleResults[0];
             }
 
-            return fluidEngine != null ? fluidEngine.CurrentVector : Vector3.zero;
+            return fluidReadModel != null ? fluidReadModel.CurrentVector : Vector3.zero;
         }
 
         private void CreateWakeTrailResources()
@@ -7052,7 +7470,7 @@ namespace Hecton8.World
                 Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
 #endif
                 _wakeTrailDisabled = true;
-                PublishWakeTrailGlobals();
+                QueueWakeTrailGlobals();
                 return;
             }
 
@@ -7060,7 +7478,7 @@ namespace Hecton8.World
                 _wakeTrailSimulationKernel = _wakeTrailSimulationCompute.FindKernel("SimulateWakeTrail");
 
             RefreshWakeTrailWorldRect(Vector3.zero, forceClear: true);
-            PublishWakeTrailGlobals();
+            QueueWakeTrailGlobals();
         }
 
         private void ReleaseWakeTrailResources()
@@ -7081,7 +7499,7 @@ namespace Hecton8.World
             _wakeTrailDispatchSerial = 0u;
             _lastWakeTrailDispatchSerial = 0u;
 
-            Shader.SetGlobalFloat(_WakeTrailActiveId, 0f);
+            QueueWakeTrailGlobals();
         }
 
         private void UpdateWakeTrail(Vector3 playerPosition, Vector3 playerVelocity, float deltaTime)
@@ -7097,7 +7515,7 @@ namespace Hecton8.World
             CreateWakeTrailResources();
             if (_wakeTrailRead == null || _wakeTrailWrite == null || _wakeTrailSimulationCompute == null || _wakeTrailStampCommandBuffer == null)
             {
-                PublishWakeTrailGlobals();
+                QueueWakeTrailGlobals();
                 return;
             }
 
@@ -7198,7 +7616,7 @@ namespace Hecton8.World
                 ExecuteWakeTrailSimulation(fade);
 
             _wakeTrailEnergy = Mathf.Max(0f, wrotePass ? Mathf.Max(_wakeTrailEnergy - fade, strongestStamp) : (_wakeTrailEnergy - fade));
-            PublishWakeTrailGlobals();
+            QueueWakeTrailGlobals();
         }
 
         private void RefreshWakeTrailWorldRect(Vector3 anchorPosition, bool forceClear)
@@ -7470,7 +7888,6 @@ namespace Hecton8.World
                 _damageReactionPositionWS += runtimeOffset;
 
             if (_interactionPoints != null &&
-                _interactionBuffer != null &&
                 _lastPublishedInteractionCount > 0)
             {
                 int interactionCount = Mathf.Min(_lastPublishedInteractionCount, _interactionPoints.Length);
@@ -7483,7 +7900,14 @@ namespace Hecton8.World
                     _interactionPoints[i].PositionRadius = positionRadius;
                 }
 
-                GraphicsBufferUploadUtility.UploadArray(_interactionBuffer, _interactionPoints, interactionCount);
+                GraphicsBuffer writeBuffer = ResolveInteractionWriteBuffer();
+                if (writeBuffer != null)
+                {
+                    GraphicsBufferUploadUtility.UploadArray(writeBuffer, _interactionPoints, interactionCount);
+                    _activeInteractionBuffer = writeBuffer;
+                    _interactionBufferWriteIndex ^= 1;
+                    Shader.SetGlobalBuffer(_InteractionBufferId, _activeInteractionBuffer);
+                }
             }
 
             if (_flowFieldResolution > 0 || _flowFieldCellSize > 0f)
@@ -7505,7 +7929,7 @@ namespace Hecton8.World
                 _wakeTrailCenterXZ += new Vector2(runtimeOffset.x, runtimeOffset.z);
                 _wakeTrailWorldRect.x += runtimeOffset.x;
                 _wakeTrailWorldRect.y += runtimeOffset.z;
-                PublishWakeTrailGlobals();
+                QueueWakeTrailGlobals();
             }
 
             if (TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
@@ -7551,34 +7975,16 @@ namespace Hecton8.World
                 }
             }
 
-            PublishEnvironmentGlobals(_playerTransform != null ? _playerTransform.position : _smoothPosition);
+            QueueEnvironmentGlobals(_playerTransform != null ? _playerTransform.position : _smoothPosition);
         }
 
         private void ResetInteractionGlobals()
         {
-            Shader.SetGlobalVector(_PropWashPosId, Vector4.zero);
-            Shader.SetGlobalFloat(_PropWashForceId, 0f);
-            Shader.SetGlobalInt(_InteractionCountId, 0);
-            Shader.SetGlobalVector(_PlayerRuntimePositionId, Vector4.zero);
-            Shader.SetGlobalVector(_PlayerFloraInteractionParamsId, Vector4.zero);
-            Shader.SetGlobalVector(_GlobalOceanFlowId, Vector4.zero);
-            Shader.SetGlobalVector(_VegetationCurrentVectorId, Vector4.zero);
-            Shader.SetGlobalFloat(_VegetationCurrentStrengthId, 0f);
-            Shader.SetGlobalVector(_FloraPredatorThreatParamsId, Vector4.zero);
-            Shader.SetGlobalVector(_FloraPredatorThreatPositionRadiusId, Vector4.zero);
-            Shader.SetGlobalVector(_FloraLifecycleParamsId, new Vector4(0f, 0f, 1f, 0f));
-            Shader.SetGlobalVector(_FloraDamageReactionId, Vector4.zero);
-            Shader.SetGlobalFloat(_SeasonCycleId, 0f);
-            Shader.SetGlobalFloat(_SeasonCycleAliasId, 0f);
-            Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
-            Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
-            Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
-            Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
-            Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
-            Shader.SetGlobalVector(_MarineSnowFlowFieldCenterCellSizeId, Vector4.zero);
-            Shader.SetGlobalInt(_FloraFlowFieldResolutionId, 0);
-            Shader.SetGlobalInt(_CulledFloraVisibleCountId, 0);
-            Shader.SetGlobalVector(_ParasiteGlobalsId, Vector4.zero);
+            _interactionResetGlobalsDirty = true;
+            _interactionGlobalsDirty = false;
+            _playerRuntimePositionDirty = false;
+            _damageReactionGlobalsDirty = false;
+            _pendingDamageReactionDeltaTime = 0f;
             _lastPublishedInteractionCount = 0;
             _lastPublishedPlayerVelocity = Vector3.zero;
             _lastPublishedScooterWakePosition = Vector3.zero;
@@ -7602,11 +8008,42 @@ namespace Hecton8.World
             _moduleParasiteScanTimer = 0f;
             _publishedParasiteAnchorCount = 0;
 
-            if (_interactionBuffer != null)
-                Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
+            QueueWakeTrailTextureClear();
+            QueueWakeTrailGlobals();
+        }
 
-            ClearWakeTrailTextures();
-            PublishWakeTrailGlobals();
+        private void FlushInteractionResetGlobals()
+        {
+            if (!_interactionResetGlobalsDirty)
+                return;
+
+            _interactionResetGlobalsDirty = false;
+            Shader.SetGlobalVector(_PropWashPosId, Vector4.zero);
+            Shader.SetGlobalFloat(_PropWashForceId, 0f);
+            Shader.SetGlobalInt(_InteractionCountId, 0);
+            Shader.SetGlobalVector(_PlayerRuntimePositionId, Vector4.zero);
+            Shader.SetGlobalVector(_PlayerFloraInteractionParamsId, Vector4.zero);
+            Shader.SetGlobalVector(_GlobalOceanFlowId, Vector4.zero);
+            Shader.SetGlobalVector(_VegetationCurrentVectorId, Vector4.zero);
+            Shader.SetGlobalFloat(_VegetationCurrentStrengthId, 0f);
+            Shader.SetGlobalVector(_FloraPredatorThreatParamsId, Vector4.zero);
+            Shader.SetGlobalVector(_FloraPredatorThreatPositionRadiusId, Vector4.zero);
+            Shader.SetGlobalVector(_FloraLifecycleParamsId, new Vector4(0f, 0f, 1f, 0f));
+            Shader.SetGlobalVector(_FloraDamageReactionId, Vector4.zero);
+            Shader.SetGlobalFloat(_SeasonCycleId, 0f);
+            Shader.SetGlobalFloat(_SeasonCycleAliasId, 0f);
+            Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+            Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+            Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
+            Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
+            Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
+            Shader.SetGlobalVector(_MarineSnowFlowFieldCenterCellSizeId, Vector4.zero);
+            Shader.SetGlobalInt(_FloraFlowFieldResolutionId, 0);
+            Shader.SetGlobalInt(_CulledFloraVisibleCountId, 0);
+            Shader.SetGlobalVector(_ParasiteGlobalsId, Vector4.zero);
+
+            if (_activeInteractionBuffer != null)
+                Shader.SetGlobalBuffer(_InteractionBufferId, _activeInteractionBuffer);
         }
 
         private void RefreshCachedSubmarineContext()
@@ -7618,19 +8055,53 @@ namespace Hecton8.World
 
         private void CacheEnvironmentRuntimeServicesCold()
         {
+            BindFloraDataVault(GlobalRegistry.DataVault);
+
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
             if (_submarineRuntimeContext == null)
                 _submarineRuntimeContext = GlobalRegistry.Submarine;
 
-            if (_fluidEngine == null)
-                _fluidEngine = GlobalRegistry.Fluid;
+            if (_fluidReadModel == null)
+                _fluidReadModel = GlobalRegistry.FluidSurfaceCurrent;
 
             if (_celestialEngine == null)
                 _celestialEngine = GlobalRegistry.CelestialEngine;
+
+            if (_atmosphereReadModel == null)
+                _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
+
+            if (_constructionManager == null)
+                _constructionManager = GlobalRegistry.ConstructionRuntime;
 
             if (_saveService == null)
                 _saveService = GlobalRegistry.Save;
 
             RefreshCachedSubmarineContext();
+        }
+
+        private void BindFloraDataVault(IDataVault dataVault)
+        {
+            if (ReferenceEquals(_wakeDataVault, dataVault))
+                return;
+
+            _wakeDataVault = dataVault;
+            ClearFloraVaultHandles();
+        }
+
+        private void ClearFloraVaultHandles()
+        {
+            _proceduralWakePointsHandle = default;
+            _globalWakeBufferHandle = default;
+            _globalWakeVectorBufferHandle = default;
+            _wakeBlackBoxHandle = default;
+            _wakeTrailStampCommandsHandle = default;
+            _floraSwayFieldHandle = default;
+            _floraSwayFieldMetaHandle = default;
+            _floraSwayFieldBlackBoxHandle = default;
+            _floraStiffnessRulesHandle = default;
+            _floraStiffnessCsvScratchHandle = default;
         }
 
         private void RefreshInstanceCullingService()
@@ -7640,12 +8111,12 @@ namespace Hecton8.World
 
         private bool ResolveProceduralWakeVaultBuffer(bool clearExisting)
         {
-            return ResolveProceduralWakeVaultBuffer(GlobalRegistry.DataVault, clearExisting);
+            return ResolveProceduralWakeVaultBuffer(_wakeDataVault, clearExisting);
         }
 
         private bool ResolveProceduralWakeVaultBuffer(IDataVault dataVault, bool clearExisting)
         {
-            _wakeDataVault = dataVault;
+            BindFloraDataVault(dataVault);
             if (dataVault == null)
             {
                 _proceduralWakePointsHandle = default;
@@ -7776,11 +8247,12 @@ namespace Hecton8.World
 
         private bool ResolveFloraSwayFieldVaultBuffer(bool clearExisting)
         {
-            return ResolveFloraSwayFieldVaultBuffer(GlobalRegistry.DataVault, clearExisting);
+            return ResolveFloraSwayFieldVaultBuffer(_wakeDataVault, clearExisting);
         }
 
         private bool ResolveFloraSwayFieldVaultBuffer(IDataVault dataVault, bool clearExisting)
         {
+            BindFloraDataVault(dataVault);
             if (dataVault == null)
             {
                 _floraSwayFieldHandle = default;
@@ -7790,9 +8262,6 @@ namespace Hecton8.World
                 _floraStiffnessCsvScratchHandle = default;
                 return false;
             }
-
-            if (_wakeDataVault == null)
-                _wakeDataVault = dataVault;
 
             NativeArrayOptions options = clearExisting
                 ? NativeArrayOptions.ClearMemory
@@ -7964,7 +8433,7 @@ namespace Hecton8.World
 
             if (!TryResolveFloraVaultBuffer(dataVault, in handle, bufferId, requiredLength, out buffer))
             {
-                handle = dataVault.GetGenerationHandle<T>(
+                handle = dataVault.EnsureGenerationHandle<T>(
                     bufferId,
                     requiredLength,
                     SystemID.Vfx,
@@ -8046,15 +8515,27 @@ namespace Hecton8.World
                     _instanceCullingService = currentService as IInstanceCullingService;
                     PublishCulledFloraGlobals();
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _playerToolManager = _playerTransform != null
+                        ? ResolvePlayerToolManager(_playerTransform)
+                        : null;
+                    break;
                 case GlobalRegistryServiceSlot.Submarine:
                     _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
                     RefreshCachedSubmarineContext();
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
-                    _fluidEngine = currentService as HectonFluidEngine;
+                    _fluidReadModel = currentService as IFluidSurfaceCurrentReadModel;
                     break;
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime:
                     _celestialEngine = currentService as HectonCelestialEngine;
+                    break;
+                case GlobalRegistryServiceSlot.AtmosphereRuntime:
+                    _atmosphereReadModel = currentService as IAtmosphereReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Logistics:
+                    _constructionManager = currentService as ConstructionManager;
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     _saveService = currentService as ISaveService;
@@ -8085,20 +8566,17 @@ namespace Hecton8.World
 
             if (!_isRegistered)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _isRegistered = GlobalRegistry.Updatables.Contains(this);
+                _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_isSlowTickRegistered)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _isSlowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+                _isSlowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
 
             if (!_isLateFrameRegistered)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _isLateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                _isLateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
         }
 
@@ -8214,7 +8692,7 @@ namespace Hecton8.World
             if (!IsFiniteVector3(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 

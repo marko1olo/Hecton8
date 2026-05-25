@@ -3,10 +3,16 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class InertialNavigationContractLayout
+    {
+        public const int CompassStateStrideBytes = 176;
+        public const int SnapshotStrideBytes = 120;
+    }
+
     /// <summary>
     /// Vault-owned compass state. Runtime writers keep this as the single mutable compass authority.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 176)]
+    [StructLayout(LayoutKind.Explicit, Size = InertialNavigationContractLayout.CompassStateStrideBytes)]
     public struct CompassStateDTO
     {
         [FieldOffset(0)] public double3 ActualAUP;
@@ -52,7 +58,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Registry-facing dead-reckoning state exposed to cockpit and UI consumers without concrete navigation runtime coupling.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 120)]
+    [StructLayout(LayoutKind.Explicit, Size = InertialNavigationContractLayout.SnapshotStrideBytes)]
     public struct InertialNavigationSnapshot
     {
         /// <summary>Actual submarine AUP resolved from the authoritative motion read model.</summary>

@@ -55,6 +55,7 @@ using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -125,6 +126,7 @@ namespace Hecton8.Environment
         private const float UnderwaterBiomeFogInfluenceDeep = 0.34f;
         private const float UnderwaterBiomeFogInfluenceDepth = 90f;
         private const float HudFogLuminanceReadbackIntervalSeconds = 0.1f;
+        private const uint KccVelocityUnderwaterVisualMaxAgeFrames = 12u;
         private const float HudFogVolumetricScatterBoost = 0.14f;
         private const float SuitCriticalHealthThreshold01 = 0.2f;
         private const int FlashlightPhotophobiaFieldResolution = 128;
@@ -166,12 +168,19 @@ namespace Hecton8.Environment
             ActiveRuntimeInstance = null;
         }
 
+        [Obsolete("Use TryPublishHudAverageLuminance(float) so inactive visual-owner refusal is visible.", true)]
         internal static void PublishHudAverageLuminance(float luminance01)
         {
+            TryPublishHudAverageLuminance(luminance01);
+        }
+
+        internal static bool TryPublishHudAverageLuminance(float luminance01)
+        {
             if (ActiveRuntimeInstance == null)
-                return;
+                return false;
 
             ActiveRuntimeInstance._hudFogTargetLuminance01 = math.saturate(luminance01);
+            return true;
         }
 
         private float _hudFogTargetLuminance01;
@@ -791,7 +800,8 @@ namespace Hecton8.Environment
         //  RUNTIME STATE
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
-        private Hecton8.Physics.HectonFluidEngine _physicsEngine;
+        private IFluidSurfaceCurrentReadModel _physicsEngine;
+        private IFluidBubbleBurstSink _fluidBubbleBurstSink;
         private bool _physicsEngineCached;
         private bool _physicsEngineLookupAttempted;
 
@@ -801,7 +811,7 @@ namespace Hecton8.Environment
         private IAudioService _audioRuntime;
         private DynamicResolutionScaler _dynamicResolutionRuntime;
         private IWeatherService _weatherRuntime;
-        private HectonSurfaceWeatherDirector _surfaceWeatherRuntime;
+        private ISurfaceWeatherReadModel _surfaceWeatherRuntime;
         private SargassumGlobalDragManager _sargassumDragRuntime;
         private SoundscapeSystem _soundscapeRuntime;
         private MapMagicBridge _mapMagicRuntime;
@@ -890,6 +900,9 @@ namespace Hecton8.Environment
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
         private bool _renderSettingsGuardAcquired;
+        private bool _pendingVisualTickDirty;
+        private bool _pendingOceanMaterialBindingDirty;
+        private float _pendingVisualTickDeltaTime;
         private bool _wasUnderwater;
         private DepthZoneProfile _lastDepthZoneProfile;
         private float _submergeImpulseTimer;
@@ -1702,6 +1715,12 @@ namespace Hecton8.Environment
 
         public void Tick(float deltaTime)
         {
+            _pendingVisualTickDeltaTime += math.max(0f, deltaTime);
+            _pendingVisualTickDirty = true;
+        }
+
+        private void RunUnderwaterVisualTick(float deltaTime)
+        {
             EnsureRuntimeVisualOwners();
             EnsureGameplayCameraStackInitializedOnTick();
             ConsumePlayerExhaleSignals();
@@ -1842,9 +1861,22 @@ namespace Hecton8.Environment
 
         public void LateFrameTick()
         {
+            if (_pendingVisualTickDirty)
+            {
+                float deltaTime = _pendingVisualTickDeltaTime;
+                _pendingVisualTickDeltaTime = 0f;
+                _pendingVisualTickDirty = false;
+                RunUnderwaterVisualTick(deltaTime);
+            }
+
             EnsureGameplayCameraStackEnabled();
             EnsureOceanUnderwaterPassOwnership();
             TryCompleteBiomeFogBlendJob();
+            if (_pendingOceanMaterialBindingDirty)
+            {
+                _pendingOceanMaterialBindingDirty = false;
+                ApplyOceanMaterialBindings();
+            }
         }
 
         /// <summary>
@@ -1883,7 +1915,7 @@ namespace Hecton8.Environment
             InterpolateBiomeParameters(lerpT);
             ScheduleBiomeFogBlendJob(lerpT);
 
-            ApplyOceanMaterialBindings();
+            _pendingOceanMaterialBindingDirty = true;
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -2029,10 +2061,10 @@ namespace Hecton8.Environment
             if (!Application.isPlaying)
                 return;
 
-            _audioRuntime = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioRuntime = GlobalRegistry.Audio;
             _dynamicResolutionRuntime = GlobalRegistry.DynamicResolution;
             _weatherRuntime = GlobalRegistry.Weather;
-            _surfaceWeatherRuntime = GlobalRegistry.SurfaceWeather;
+            _surfaceWeatherRuntime = GlobalRegistry.SurfaceWeatherReadModel;
             _sargassumDragRuntime = GlobalRegistry.SargassumDrag;
             _soundscapeRuntime = GlobalRegistry.Soundscape;
             _mapMagicRuntime = GlobalRegistry.MapMagic;
@@ -2084,7 +2116,7 @@ namespace Hecton8.Environment
                     break;
 
                 case GlobalRegistryServiceSlot.SurfaceWeatherRuntime:
-                    _surfaceWeatherRuntime = currentService as HectonSurfaceWeatherDirector;
+                    _surfaceWeatherRuntime = currentService as ISurfaceWeatherReadModel;
                     break;
 
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
@@ -2123,7 +2155,8 @@ namespace Hecton8.Environment
                     break;
 
                 case GlobalRegistryServiceSlot.FluidRuntime:
-                    _physicsEngine = currentService as Hecton8.Physics.HectonFluidEngine;
+                    _physicsEngine = currentService as IFluidSurfaceCurrentReadModel;
+                    _fluidBubbleBurstSink = currentService as IFluidBubbleBurstSink;
                     _physicsEngineLookupAttempted = true;
                     _physicsEngineCached = _physicsEngine != null;
 #if UNITY_EDITOR
@@ -3744,7 +3777,7 @@ namespace Hecton8.Environment
                 return TryOpenBiomeFogBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GraphicsScalability,
@@ -3846,7 +3879,7 @@ namespace Hecton8.Environment
             if (!math.all(math.isfinite(localRuntime)))
                 return default;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return default;
 
@@ -6049,11 +6082,11 @@ namespace Hecton8.Environment
                 return 1f;
             }
 
-            HectonSurfaceWeatherDirector surfaceWeather = _surfaceWeatherRuntime;
+            ISurfaceWeatherReadModel surfaceWeather = _surfaceWeatherRuntime;
             if (surfaceWeather == null || surfaceWeather.IsSurfaceSuppressed)
                 return 0f;
 
-            return surfaceWeather.CurrentWeatherKind == SurfaceWeatherKind.ElectricalStorm ? 1f : 0f;
+            return surfaceWeather.CurrentWeatherKindCode == SurfaceWeatherKindCodes.ElectricalStorm ? 1f : 0f;
         }
 
         private void DisableUnderwaterSuspendedMotes(bool clearParticles)
@@ -6138,7 +6171,7 @@ namespace Hecton8.Environment
                 _gpuBubbleExhaleImpulse01 = 1f;
                 if (!_physicsEngineLookupAttempted)
                     CachePhysicsEngine();
-                Hecton8.Physics.HectonFluidEngine fluidEngine = _physicsEngine;
+                IFluidBubbleBurstSink fluidEngine = _fluidBubbleBurstSink;
                 Transform bubbleOrigin = playerCamera != null ? playerCamera : transform;
                 if (fluidEngine != null && bubbleOrigin != null)
                     fluidEngine.TryQueueAdvectedBubbleBurst(bubbleOrigin.position, burstCount, 1f);
@@ -6184,14 +6217,8 @@ namespace Hecton8.Environment
 
         private float ResolvePlayerSpeedSquaredMetersPerSecond()
         {
-            if (_playerMovement != null)
-            {
-                Vector3 velocity = _playerMovement.CurrentWorldVelocity;
-                return math.lengthsq(new float3(velocity.x, velocity.y, velocity.z));
-            }
-
-            if (_playerRigidbody != null)
-                return _playerRigidbody.linearVelocity.sqrMagnitude;
+            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityUnderwaterVisualMaxAgeFrames, out float3 velocity))
+                return math.lengthsq(velocity);
 
             return 0f;
         }
@@ -6239,7 +6266,9 @@ namespace Hecton8.Environment
                 _playerRigidbody = runtimeContext.PlayerRigidbody;
             }
 
-            float playerSpeedSq = _playerRigidbody != null ? _playerRigidbody.linearVelocity.sqrMagnitude : 0f;
+            float playerSpeedSq = PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityUnderwaterVisualMaxAgeFrames, out float3 kccVelocity)
+                ? math.lengthsq(kccVelocity)
+                : 0f;
             float distanceFactor = 1f - math.saturate(
                 (_cachedBottomDistance - bottomSiltFullDistance) /
                 math.max(0.01f, bottomSiltActivationDistance - bottomSiltFullDistance));
@@ -7032,6 +7061,8 @@ namespace Hecton8.Environment
         {
             if (!Application.isPlaying)
             {
+                _physicsEngine = null;
+                _fluidBubbleBurstSink = null;
                 _physicsEngineCached = false;
                 _physicsEngineLookupAttempted = false;
 #if UNITY_EDITOR
@@ -7039,7 +7070,8 @@ namespace Hecton8.Environment
 #endif
                 return;
             }
-            _physicsEngine = GlobalRegistry.Fluid;
+            _physicsEngine = GlobalRegistry.FluidSurfaceCurrent;
+            _fluidBubbleBurstSink = GlobalRegistry.FluidBubbleBurstSink;
             _physicsEngineLookupAttempted = true;
             _physicsEngineCached = _physicsEngine != null;
 #if UNITY_EDITOR
@@ -7187,18 +7219,15 @@ namespace Hecton8.Environment
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
             if (!_registeredLateFrameTick)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
         }
 
@@ -7207,8 +7236,7 @@ namespace Hecton8.Environment
             if (!Application.isPlaying || _registeredRenderable)
                 return;
 
-            GlobalRegistry.Renderables.Register(this);
-            _registeredRenderable = GlobalRegistry.Renderables.Contains(this);
+            _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
         }
 
         private void UnregisterRenderDispatcher()

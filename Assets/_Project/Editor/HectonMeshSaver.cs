@@ -24,10 +24,9 @@ public static class HectonMeshSaver
             return;
         }
 
-        MeshFilter meshFilter = selectedObject.GetComponent<MeshFilter>();
-        if (meshFilter == null)
+        if (!selectedObject.TryGetComponent(out MeshFilter meshFilter))
         {
-            if (selectedObject.GetComponent<SkinnedMeshRenderer>() != null)
+            if (selectedObject.TryGetComponent(out SkinnedMeshRenderer _))
             {
                 EditorUtility.DisplayDialog(
                     "Hecton Mesh Saver",
@@ -112,8 +111,7 @@ public static class HectonMeshSaver
         if (selectedObject == null)
             return false;
 
-        MeshFilter meshFilter = selectedObject.GetComponent<MeshFilter>();
-        if (meshFilter == null)
+        if (!selectedObject.TryGetComponent(out MeshFilter meshFilter))
             return false;
 
         return meshFilter.sharedMesh != null;

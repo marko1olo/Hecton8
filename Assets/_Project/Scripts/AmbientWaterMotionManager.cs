@@ -137,8 +137,25 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Player)
-                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _tickRegistered = false;
+                        break;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    break;
+            }
         }
 
         //  REGISTRATION - O(1) dedupe through HashSet

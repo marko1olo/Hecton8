@@ -143,39 +143,51 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>Queues an eclipse phase change.</summary>
-        public static void RaisePhaseChanged(bool active)
+        public static bool TryRaisePhaseChanged(bool active)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
-                return;
+                return false;
 
-            Enqueue(new EclipseGameplayEventPayload
+            return Enqueue(new EclipseGameplayEventPayload
             {
                 EventType = PhaseChangedEventType,
                 BoolValue = active ? (byte)1 : (byte)0
             });
         }
 
+        [Obsolete("Use TryRaisePhaseChanged so bounded queue refusal is visible at the producer.", true)]
+        public static void RaisePhaseChanged(bool active) => TryRaisePhaseChanged(active);
+
         /// <summary>Queues night predator rise pressure.</summary>
-        public static void RaiseNightPredatorsRising(float intensity)
+        public static bool TryRaiseNightPredatorsRising(float intensity)
         {
-            EnqueueValue(NightPredatorsRisingEventType, intensity);
+            return EnqueueValue(NightPredatorsRisingEventType, intensity);
         }
+
+        [Obsolete("Use TryRaiseNightPredatorsRising so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseNightPredatorsRising(float intensity) => TryRaiseNightPredatorsRising(intensity);
 
         /// <summary>Queues eclipse temperature delta.</summary>
-        public static void RaiseTemperatureDelta(float delta)
+        public static bool TryRaiseTemperatureDelta(float delta)
         {
-            EnqueueValue(TemperatureDeltaEventType, delta);
+            return EnqueueValue(TemperatureDeltaEventType, delta);
         }
 
+        [Obsolete("Use TryRaiseTemperatureDelta so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseTemperatureDelta(float delta) => TryRaiseTemperatureDelta(delta);
+
         /// <summary>Queues eclipse bioluminescence multiplier.</summary>
-        public static void RaiseBiolumMultiplierChanged(float multiplier)
+        public static bool TryRaiseBiolumMultiplierChanged(float multiplier)
         {
-            EnqueueValue(BiolumMultiplierEventType, Mathf.Max(0f, multiplier));
+            return EnqueueValue(BiolumMultiplierEventType, Mathf.Max(0f, multiplier));
         }
+
+        [Obsolete("Use TryRaiseBiolumMultiplierChanged so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseBiolumMultiplierChanged(float multiplier) => TryRaiseBiolumMultiplierChanged(multiplier);
 
         /// <summary>
         /// Flushes queued eclipse gameplay events on the main thread.
@@ -193,7 +205,10 @@ namespace Hecton8.Gameplay
                     return;
 
                 if (!_pendingEvents.TryDequeue(out EclipseGameplayEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -216,33 +231,34 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void EnqueueValue(byte eventType, float value)
+        private static bool EnqueueValue(byte eventType, float value)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
-                return;
+                return false;
 
-            Enqueue(new EclipseGameplayEventPayload
+            return Enqueue(new EclipseGameplayEventPayload
             {
                 EventType = eventType,
                 Value = value
             });
         }
 
-        private static void Enqueue(in EclipseGameplayEventPayload payload)
+        private static bool Enqueue(in EclipseGameplayEventPayload payload)
         {
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static void Dispatch(in EclipseGameplayEventPayload payload)
@@ -363,7 +379,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-100)]
-    public sealed class EclipseGameplaySystem : MonoBehaviour, ISlowTickable, ICelestialEventListener
+    public sealed class EclipseGameplaySystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, ICelestialEventListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -404,10 +420,14 @@ namespace Hecton8.Gameplay
         private float _currentTempDrop;
         private bool  _predatorsRisen;
         private bool  _registered;
+        private bool  _registeredLateFrame;
         private bool  _registeredRuntime;
+        private bool _hotSwapRegistered;
         private bool  _reportedMissingEcosystemDirector;
         private float _currentBiolumMultiplier = 1f;
         private float _currentAcousticPitchShiftCents;
+        private float _pendingBiolumMultiplier = 1f;
+        private bool _biolumMultiplierShaderDirty;
 
         private static readonly uint _EclipseGameplayContextHash =
             unchecked((uint)LocHash.Compute("EclipseGameplaySystem"));
@@ -436,6 +456,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegisterRuntime();
+            TryRegisterHotSwapListener();
             TryRegister();
             CelestialEvents.Register(this);
         }
@@ -444,6 +465,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             TryUnregisterRuntime();
+            TryUnregisterHotSwapListener();
             CelestialEvents.Unregister(this);
             ApplyPredatorShallowMigration(0f, 0f);
             _currentBiolumMultiplier = 1f;
@@ -455,6 +477,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             TryUnregisterRuntime();
+            TryUnregisterHotSwapListener();
             CelestialEvents.Unregister(this);
         }
 
@@ -479,7 +502,7 @@ namespace Hecton8.Gameplay
                     if (newDrop > _currentTempDrop)
                     {
                         _currentTempDrop = newDrop;
-                        EclipseGameplayEvents.RaiseTemperatureDelta(-_currentTempDrop);
+                        EclipseGameplayEvents.TryRaiseTemperatureDelta(-_currentTempDrop);
                     }
                 }
 
@@ -487,7 +510,7 @@ namespace Hecton8.Gameplay
                 if (!_predatorsRisen && _eclipseTimer >= predatorRiseDelay)
                 {
                     _predatorsRisen = true;
-                    EclipseGameplayEvents.RaiseNightPredatorsRising(predatorRiseIntensity);
+                    EclipseGameplayEvents.TryRaiseNightPredatorsRising(predatorRiseIntensity);
                     ApplyPredatorShallowMigration(predatorRiseIntensity, predatorRiseHoldSeconds);
 
                     LogNightPredatorsRising();
@@ -503,7 +526,7 @@ namespace Hecton8.Gameplay
                 {
                     _currentTempDrop = Mathf.Max(0f,
                         _currentTempDrop - temperatureRecoveryRate * dt);
-                    EclipseGameplayEvents.RaiseTemperatureDelta(-_currentTempDrop);
+                    EclipseGameplayEvents.TryRaiseTemperatureDelta(-_currentTempDrop);
                 }
             }
         }
@@ -536,8 +559,13 @@ namespace Hecton8.Gameplay
         private static void LogNightPredatorsRising()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[Eclipse] Night predators rising.");
+            H8Debug.Log("[Eclipse] Night predators rising.");
 #endif
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedBiolumMultiplier();
         }
 
         private void HandleEclipseStart()
@@ -546,8 +574,8 @@ namespace Hecton8.Gameplay
             _eclipseTimer  = 0f;
             _predatorsRisen = false;
 
-            EclipseGameplayEvents.RaisePhaseChanged(true);
-            NotificationEvents.PushWarning(ResolveLocalized(
+            EclipseGameplayEvents.TryRaisePhaseChanged(true);
+            NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
                 LocalizationKeys.ECLIPSE_EVENT_STARTED,
                 "GREAT ECLIPSE - TEMPERATURE FALLING. NIGHT PREDATORS ASCENDING."));
 
@@ -562,9 +590,9 @@ namespace Hecton8.Gameplay
         {
             _eclipseActive = false;
 
-            EclipseGameplayEvents.RaisePhaseChanged(false);
+            EclipseGameplayEvents.TryRaisePhaseChanged(false);
             ApplyPredatorShallowMigration(0f, 0f);
-            NotificationEvents.PushInfo(ResolveLocalized(
+            NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
                 LocalizationKeys.ECLIPSE_EVENT_ENDED,
                 "ECLIPSE ENDED - TEMPERATURE RECOVERING."));
 
@@ -641,8 +669,18 @@ namespace Hecton8.Gameplay
                 return;
 
             _currentBiolumMultiplier = clampedMultiplier;
-            Shader.SetGlobalFloat(_ShaderBiolumMultiplier, clampedMultiplier);
-            EclipseGameplayEvents.RaiseBiolumMultiplierChanged(clampedMultiplier);
+            _pendingBiolumMultiplier = clampedMultiplier;
+            _biolumMultiplierShaderDirty = true;
+            EclipseGameplayEvents.TryRaiseBiolumMultiplierChanged(clampedMultiplier);
+        }
+
+        private void FlushQueuedBiolumMultiplier()
+        {
+            if (!_biolumMultiplierShaderDirty)
+                return;
+
+            _biolumMultiplierShaderDirty = false;
+            Shader.SetGlobalFloat(_ShaderBiolumMultiplier, _pendingBiolumMultiplier);
         }
 
         private void PublishEclipseAcousticPitchShift(float shiftCents)
@@ -652,8 +690,8 @@ namespace Hecton8.Gameplay
                 return;
 
             _currentAcousticPitchShiftCents = clampedCents;
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is SpatialAudioManager spatialAudioManager)
-                spatialAudioManager.SetEclipseAcousticPitchShiftCents(clampedCents);
+            if (GlobalRegistry.Audio is ISpatialAudioEnvironmentModulationSink spatialAudio)
+                spatialAudio.SetEclipseAcousticPitchShiftCents(clampedCents);
         }
 
         private static void PublishOnce(ref bool latch, uint warningHash, float scalarValue)
@@ -687,7 +725,7 @@ namespace Hecton8.Gameplay
         private static void LogEclipseStarted()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[Eclipse] Eclipse started — gameplay consequences active.");
+            H8Debug.Log("[Eclipse] Eclipse started — gameplay consequences active.");
 #endif
         }
 
@@ -695,7 +733,7 @@ namespace Hecton8.Gameplay
         private static void LogEclipseEnded()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[Eclipse] Eclipse ended — temperature recovering.");
+            H8Debug.Log("[Eclipse] Eclipse ended — temperature recovering.");
 #endif
         }
 
@@ -706,25 +744,61 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregister();
+            TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
+        {
+            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
     }
 }

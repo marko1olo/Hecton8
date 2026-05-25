@@ -1,4 +1,4 @@
-# HECTON-8 A/B Testing And Creative Experiments
+﻿# HECTON-8 A/B Testing And Creative Experiments
 
 Status: pre-asset experiment plan
 Owner lane: SHINOBU_81 / marketing measurement
@@ -158,6 +158,56 @@ These briefs are the first executable experiments. They are not creative suggest
 | AB-008 | Paid micro-test gate | Best capsule + best short description + Steam URL only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` | Paid traffic is allowed only after organic/cold-read proof, Steam baseline, `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, Steam page gate, and public CTA gate exist. | Small paid audience, 25-150 USD maximum. | Steam page visit/wishlist after Steam page gate, spend gate, and public CTA gate. | Minimum 1000 impressions, 50 clicks, and useful Steam UTM signal. | Stop within 48h if tracked visits produce no useful actions or comments show premise confusion. |
 | AB-009 | Cold-reader agency proof | `PLAN-SHOT-006` vs `PLAN-CLIP-001` vs `PLAN-CLIP-003` | Agency proof only counts if a cold viewer can name the pressure decision without prompt. | 15 cold readers, no project context. | "What decision would the player make next?" | 60%+ name repair, retreat, reroute, scan, operate, abort, or recover. | Hold first-public and creator gameplay sends if viewers name only mood, threat, or scenery. |
 
+### AB-010 - Imageboard Prompt Safety Test
+
+Status: pre-post / no public route / no CTA.
+
+Hypothesis: a 4chan/Dvach post is safer when the prompt asks for one visible failure in a real asset instead of asking for support, taste, lore interest, wishlists, or broad "thoughts".
+
+Asset gate: one candidate from `PLAN-SHOT-003`, `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` with matching QA metadata. `PLAN-SHOT-001` and `PLAN-SHOT-007` are allowed only as identity-risk tests, not agency proof. `PLAN-SHOT-008` is internal only.
+
+Public-route gate: AB-010 does not authorize posting. It only chooses the least-bad prompt candidate for the existing imageboard permission lane in community, QA, campaign, KPI, and asset-library docs. The actual post still requires board rule check, asset route approval, `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, no CTA, no fake discovery, and a recorded stop condition.
+
+Prompt variants:
+
+| Variant | Frame | Use | Kill if |
+|---|---|---|---|
+| A - Decision Read | "Would you know whether to repair, retreat, reroute, scan, operate, or abort from this frame?" | Agency candidates. | Readers answer with mood, lore, or support instead of a visible decision. |
+| B - Identity / Clone Risk | "Does this read as industrial deep-sea survival or generic underwater sci-fi?" | Identity stills and capsule roughs. | It invites franchise argument instead of naming visual cues. |
+| C - Technical / Fake-First | "Where does the visual fake break: instrument, lighting, silhouette, machine state, route cue, or interaction?" | Technical critique surfaces and internal agent review. | It becomes Unity/Godot/AI/process debate. |
+| D - Shill-Smell Rewrite | "Rewrite this so it reads like a critique request, not an ad." | Copy preflight only. | The safest rewrite still needs a link, CTA, hype line, or fake-player voice. |
+
+Required AB-010 response fields:
+
+| Field | Type | Use |
+|---|---|---|
+| `prompt_variant` | A / B / C / D | Keeps copy result tied to exact wording. |
+| `asset_id` | `PLAN-*` | Prevents prompt testing without a real asset. |
+| `surface` | 4chan / Dvach / internal / unknown | Segment risk by culture and language. |
+| `shill_read` | yes / no / unclear | If yes, rewrite or kill. |
+| `likely_derail` | AI / engine / competitor / politics / access-bait / none | Predicts thread failure mode. |
+| `decision_read` | yes / no / unclear | Only yes if a visible player choice is named. |
+| `asset_specific_answer` | yes / no | Useful imageboard critique must name something in the asset. |
+| `needs_context` | yes / no | If yes, the asset is too weak for anonymous boards. |
+| `rewrite_needed` | yes / no | Holds copy until the route owner rewrites. |
+| `stop_condition` | free text | Exact condition for leaving the thread. |
+
+AB-010 advance threshold:
+
+- 8 internal/agent reads minimum before any public route request;
+- 6/8 say `shill_read = no`;
+- 6/8 give asset-specific answers;
+- no more than 2/8 predict AI or engine derail;
+- one concrete stop condition is written before route approval.
+
+AB-010 stop rules:
+
+- Kill the prompt if it asks "do you like this?", "would you buy/wishlist?", "does this look cool?", or "what should I add?".
+- Kill the prompt if it needs project lore to explain the asset.
+- Kill the prompt if it names Subnautica, Unity, AI agents, sales, wishlists, Discord, playtest, keys, or Steam in the opening post.
+- Kill the prompt if it cannot survive as a no-link text plus one direct media asset.
+- Kill the prompt if the most likely answer is about the developer instead of the screenshot/clip.
+
 ## 2026-05-19 Cold-Read Score Sheet V0
 
 Use this for AB-001, AB-002, AB-004, AB-006, AB-007, and AB-009. Do not explain HECTON-8 before the viewer answers. Show the asset for five seconds, hide it, then ask.
@@ -189,6 +239,8 @@ The first pass must be blind. A valid cold reader has not seen the current marke
 | `mode_assumption` | single-player / co-op / multiplayer / unknown | Flags unsupported multiplayer-scope expectation. |
 | `proof_belief` | gameplay / concept / AI-looking / unsure | Flags asset trust. |
 | `readability_issue` | none / too dark / too busy / UI unclear / unknown | Routes scene fixes. |
+| `imageboard_prompt_risk` | none / shill / AI-derail / engine-war / competitor-war / access-bait / unknown | Required for AB-010 and optional for public-post candidates. |
+| `would_answer_asset_question` | yes / no / unclear | Checks whether the prompt invites concrete critique rather than broad opinion. |
 | `click_interest` | 0-4 | 0 no interest, 4 would click/wishlist if Steam exists. |
 | `kill_reason` | free text | One reason they would ignore it. |
 | `verbatim_nouns` | comma text | Words they used: pressure, machinery, salvage, base, black water, Seed Ship, etc. |
@@ -215,6 +267,7 @@ The first pass must be blind. A valid cold reader has not seen the current marke
 | AB-006 clip opening | Majority would keep watching and can name action by second 3. | Hook visible after second 3 but late. | Generic underwater horror or no player action. |
 | AB-007 tags | Readers infer single-player underwater survival/exploration/base only from tags+assets. | One tag creates confusion. | Top tags imply missing feature or mode. |
 | AB-009 agency proof | 60%+ valid blind readers name a player decision and the strongest asset has no AI/concept suspicion. | Viewers see danger but not a clear next decision. | Viewers name only mood, monster, darkness, or scenery. |
+| AB-010 imageboard prompt | 6/8 internal reads show no shill read, asset-specific answers, and no dominant AI/engine derail. | Prompt works but one line smells promotional or needs a narrower asset question. | Any link/CTA/access request, fake-player voice, or developer/process debate dominates. |
 
 Record raw responses. Do not summarize away harsh wording; it is the useful part.
 

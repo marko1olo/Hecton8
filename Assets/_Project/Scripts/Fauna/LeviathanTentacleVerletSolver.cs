@@ -39,6 +39,7 @@ namespace Hecton8.AI
         private const float FlowGridMinSpacing = 0.001f;
         private const float ConstraintIterationHysteresisSeconds = 2.5f;
         private const int AbyssalFlowVectorStrideBytes = 16;
+        private const int TentacleShaderGlobalsBytes = 64;
         private const int MaxSupportedAbyssalFlowAxis = 4096;
         private const float DefaultRestLength = 1.15f;
         private const float DefaultMaxStretchLength = 23f;
@@ -54,13 +55,11 @@ namespace Hecton8.AI
         private static readonly int _MatrixBufferId = Shader.PropertyToID("_H8LeviathanTentacleMatrices");
         private static readonly int _RadiusBufferId = Shader.PropertyToID("_H8LeviathanTentacleRadius");
         private static readonly int _AbyssalFlowFieldId = Shader.PropertyToID("_H8AbyssalFlowField");
-        private static readonly int _AbyssalFlowResolutionId = Shader.PropertyToID("_H8AbyssalFlowResolution");
-        private static readonly int _AbyssalFlowCenterId = Shader.PropertyToID("_H8AbyssalFlowCenter");
-        private static readonly int _AbyssalFlowSpacingId = Shader.PropertyToID("_H8AbyssalFlowSpacing");
-        private static readonly int _AbyssalFlowActiveId = Shader.PropertyToID("_H8AbyssalFlowActive");
-        private static readonly int _BaseRadiusReferenceId = Shader.PropertyToID("_BaseRadiusReference");
-        private static readonly int _TipRadiusReferenceId = Shader.PropertyToID("_TipRadiusReference");
-        private static readonly int _FxTierId = Shader.PropertyToID("_H8LeviathanTentacleFxTier");
+        private static readonly int _TentacleGlobalsId = Shader.PropertyToID("_H8LeviathanTentacleGlobals");
+        private const int TentacleGlobalsRadiusFxFlowOffset = 0;
+        private const int TentacleGlobalsFlowResolutionOffset = 16;
+        private const int TentacleGlobalsFlowCenterOffset = 32;
+        private const int TentacleGlobalsFlowSpacingOffset = 48;
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct LeviathanTentacleTelemetryEntry
@@ -75,6 +74,24 @@ namespace Hecton8.AI
             [FieldOffset(52)] public float MaxStretchFraction;
             [FieldOffset(56)] public float Padding0;
             [FieldOffset(60)] public float Padding1;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = TentacleShaderGlobalsBytes)]
+        private struct LeviathanTentacleShaderGlobalsDTO
+        {
+            [FieldOffset(0)] public float4 RadiusFxFlow;
+            [FieldOffset(16)] public float4 FlowResolution;
+            [FieldOffset(32)] public float4 FlowCenter;
+            [FieldOffset(48)] public float4 FlowSpacing;
+        }
+
+        private static bool ValidateTentacleShaderGlobalsLayout()
+        {
+            return UnsafeUtility.SizeOf<LeviathanTentacleShaderGlobalsDTO>() == TentacleShaderGlobalsBytes &&
+                   TentacleGlobalsRadiusFxFlowOffset == 0 &&
+                   TentacleGlobalsFlowResolutionOffset == 16 &&
+                   TentacleGlobalsFlowCenterOffset == 32 &&
+                   TentacleGlobalsFlowSpacingOffset == 48;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
@@ -507,11 +524,15 @@ namespace Hecton8.AI
         private GraphicsBuffer _matrixGraphicsBufferB;
         private GraphicsBuffer _radiusGraphicsBufferA;
         private GraphicsBuffer _radiusGraphicsBufferB;
+        private GraphicsBuffer _tentacleGlobalsBufferA;
+        private GraphicsBuffer _tentacleGlobalsBufferB;
+        private GraphicsBuffer _activeTentacleGlobalsBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
         private Mesh _argsUploadMesh;
+        private int _tentacleGlobalsUploadBufferIndex;
         private JobHandle _pendingSolverHandle;
         private IDataVault _dataVault;
-        private HectonFluidEngine _fluidRuntime;
+        private IAbyssalFlowGpuReadModel _fluidRuntime;
 
         // COLD ALLOC: Vector3[8] - deterministic missing-socket local anchors - owner: LeviathanTentacleVerletSolver
         private readonly Vector3[] _fallbackRootOffsets = new Vector3[MaxTentacles];
@@ -855,7 +876,7 @@ namespace Hecton8.AI
         private void RefreshColdDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _fluidRuntime = GlobalRegistry.Fluid;
+            _fluidRuntime = GlobalRegistry.AbyssalFlowGpu;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -866,7 +887,7 @@ namespace Hecton8.AI
             if (serviceSlot != GlobalRegistryServiceSlot.FluidRuntime)
                 return;
 
-            _fluidRuntime = currentService as HectonFluidEngine;
+            _fluidRuntime = currentService as IAbyssalFlowGpuReadModel;
         }
 
         private void EnsurePersistentBuffers()
@@ -882,19 +903,19 @@ namespace Hecton8.AI
             if (vault == null)
                 return;
 
-            _positionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentaclePositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _previousPositionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentaclePreviousPositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _radiusHandle = vault.GetGenerationHandle<float>(BufferID.LeviathanTentacleRadius, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _segmentMatricesHandle = vault.GetGenerationHandle<LeviathanBoneDTO>(BufferID.LeviathanTentacleSegmentMatrices, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _stretchFractionsHandle = vault.GetGenerationHandle<float>(BufferID.LeviathanTentacleStretchFractions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _constraintCorrectionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentacleConstraintCorrections, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _constraintCorrectionCountsHandle = vault.GetGenerationHandle<int>(BufferID.LeviathanTentacleConstraintCorrectionCounts, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _rootPositionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentacleRootPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _targetPositionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentacleTargetPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _rootAupsHandle = vault.GetGenerationHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleRootAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _targetAupsHandle = vault.GetGenerationHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleTargetAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _tentacleStatesHandle = vault.GetGenerationHandle<uint>(BufferID.LeviathanTentacleStates, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetGenerationHandle<LeviathanTentacleTelemetryEntry>(BufferID.LeviathanTentacleTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _positionsHandle = vault.EnsureGenerationHandle<float3>(BufferID.LeviathanTentaclePositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _previousPositionsHandle = vault.EnsureGenerationHandle<float3>(BufferID.LeviathanTentaclePreviousPositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _radiusHandle = vault.EnsureGenerationHandle<float>(BufferID.LeviathanTentacleRadius, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _segmentMatricesHandle = vault.EnsureGenerationHandle<LeviathanBoneDTO>(BufferID.LeviathanTentacleSegmentMatrices, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _stretchFractionsHandle = vault.EnsureGenerationHandle<float>(BufferID.LeviathanTentacleStretchFractions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _constraintCorrectionsHandle = vault.EnsureGenerationHandle<float3>(BufferID.LeviathanTentacleConstraintCorrections, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _constraintCorrectionCountsHandle = vault.EnsureGenerationHandle<int>(BufferID.LeviathanTentacleConstraintCorrectionCounts, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _rootPositionsHandle = vault.EnsureGenerationHandle<float3>(BufferID.LeviathanTentacleRootPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _targetPositionsHandle = vault.EnsureGenerationHandle<float3>(BufferID.LeviathanTentacleTargetPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _rootAupsHandle = vault.EnsureGenerationHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleRootAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _targetAupsHandle = vault.EnsureGenerationHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleTargetAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _tentacleStatesHandle = vault.EnsureGenerationHandle<uint>(BufferID.LeviathanTentacleStates, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _telemetryRingHandle = vault.EnsureGenerationHandle<LeviathanTentacleTelemetryEntry>(BufferID.LeviathanTentacleTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
 
             if (!TryResolvePersistentBuffers(out _))
                 ClearVaultHandles();
@@ -1000,7 +1021,8 @@ namespace Hecton8.AI
             for (int i = 0; i < MaxTentacles; i++)
             {
                 float angle = (math.PI * 2f) * (i * math.rcp(MaxTentacles));
-                _fallbackRootOffsets[i] = new Vector3(math.cos(angle) * 0.85f, 0f, math.sin(angle) * 0.85f);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                _fallbackRootOffsets[i] = new Vector3(cos * 0.85f, 0f, sin * 0.85f);
             }
         }
 
@@ -1077,7 +1099,7 @@ namespace Hecton8.AI
             _lastFlowCenter = Vector4.zero;
             _lastFlowSpacing = Vector4.zero;
 
-            HectonFluidEngine fluid = _fluidRuntime;
+            IAbyssalFlowGpuReadModel fluid = _fluidRuntime;
             if (fluid == null)
                 return;
 
@@ -1155,6 +1177,14 @@ namespace Hecton8.AI
 
             Vector3 localPointVector = target.InverseTransformPoint(tipRuntimePosition);
             float3 localPoint = SanitizeFiniteInputFloat3(new float3(localPointVector.x, localPointVector.y, localPointVector.z), float3.zero);
+            AbsoluteUniversePosition impactAupValue = ToAbsoluteUniversePosition(new float3(tipRuntimePosition.x, tipRuntimePosition.y, tipRuntimePosition.z));
+            double3 impactAup = double3.zero;
+            if (impactAupValue.IsFinite())
+            {
+                double3 resolvedAup = impactAupValue.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(resolvedAup)))
+                    impactAup = resolvedAup;
+            }
 
             CombatDamageRequest signal = new CombatDamageRequest
             {
@@ -1177,7 +1207,8 @@ namespace Hecton8.AI
                 StatusDurationSeconds = 1f
             };
 
-            return CombatDamageRuntime.TryQueueDamage(in signal, in detail);
+            CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);
+            return true;
         }
 
         private bool TryResolveHighTierAupGrabContact(in TentacleVaultBuffers buffers, out float3 direction, out Vector3 tipRuntimePosition)
@@ -1236,11 +1267,10 @@ namespace Hecton8.AI
 
             GraphicsBufferUploadUtility.UploadNativeArray(matrixBuffer, buffers.SegmentMatrices, instanceCount);
             GraphicsBufferUploadUtility.UploadNativeArray(radiusBuffer, buffers.Radius, instanceCount);
-            tentacleMaterial.SetBuffer(_MatrixBufferId, matrixBuffer);
-            tentacleMaterial.SetBuffer(_RadiusBufferId, radiusBuffer);
-            BindRadiusReferenceToMaterial();
-            BindFxTierToMaterial();
-            BindFlowBufferToMaterial();
+            Shader.SetGlobalBuffer(_MatrixBufferId, matrixBuffer);
+            Shader.SetGlobalBuffer(_RadiusBufferId, radiusBuffer);
+            if (!PublishTentacleShaderGlobals())
+                return;
             UploadIndirectArgs(instanceCount);
 
             Bounds worldBounds = renderBounds;
@@ -1262,20 +1292,7 @@ namespace Hecton8.AI
             _matrixUploadBufferIndex ^= 1;
         }
 
-        private void BindRadiusReferenceToMaterial()
-        {
-            float safeBaseRadius = SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f);
-            float safeTipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f);
-            tentacleMaterial.SetFloat(_BaseRadiusReferenceId, safeBaseRadius);
-            tentacleMaterial.SetFloat(_TipRadiusReferenceId, safeTipRadius);
-        }
-
-        private void BindFxTierToMaterial()
-        {
-            tentacleMaterial.SetFloat(_FxTierId, SmoothQuality01(_globalQualityWeight));
-        }
-
-        private void BindFlowBufferToMaterial()
+        private bool PublishTentacleShaderGlobals()
         {
             bool hasFlowBuffer = TryPrepareAbyssalFlowPayload(
                 _gpuAbyssalFlowFieldBuffer,
@@ -1285,14 +1302,64 @@ namespace Hecton8.AI
                 out Vector4 safeGridResolution,
                 out Vector4 safeFlowCenter,
                 out Vector4 safeFlowSpacing);
-            tentacleMaterial.SetFloat(_AbyssalFlowActiveId, hasFlowBuffer ? 1f : 0f);
-            if (!hasFlowBuffer)
-                return;
+            if (hasFlowBuffer)
+                Shader.SetGlobalBuffer(_AbyssalFlowFieldId, _gpuAbyssalFlowFieldBuffer);
 
-            tentacleMaterial.SetBuffer(_AbyssalFlowFieldId, _gpuAbyssalFlowFieldBuffer);
-            tentacleMaterial.SetVector(_AbyssalFlowResolutionId, safeGridResolution);
-            tentacleMaterial.SetVector(_AbyssalFlowCenterId, safeFlowCenter);
-            tentacleMaterial.SetVector(_AbyssalFlowSpacingId, safeFlowSpacing);
+            LeviathanTentacleShaderGlobalsDTO globals = new LeviathanTentacleShaderGlobalsDTO
+            {
+                RadiusFxFlow = new float4(
+                    SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f),
+                    SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f),
+                    SmoothQuality01(_globalQualityWeight),
+                    hasFlowBuffer ? 1f : 0f),
+                FlowResolution = new float4(safeGridResolution.x, safeGridResolution.y, safeGridResolution.z, safeGridResolution.w),
+                FlowCenter = new float4(safeFlowCenter.x, safeFlowCenter.y, safeFlowCenter.z, safeFlowCenter.w),
+                FlowSpacing = new float4(safeFlowSpacing.x, safeFlowSpacing.y, safeFlowSpacing.z, safeFlowSpacing.w)
+            };
+
+            return PublishTentacleGlobals(in globals);
+        }
+
+        private bool PublishTentacleGlobals(in LeviathanTentacleShaderGlobalsDTO globals)
+        {
+            if (!ValidateTentacleShaderGlobalsLayout() ||
+                !SystemInfo.supportsSetConstantBuffer ||
+                !EnsureTentacleGlobalsBuffers())
+                return false;
+
+            GraphicsBuffer writeBuffer = _tentacleGlobalsUploadBufferIndex == 0 ? _tentacleGlobalsBufferA : _tentacleGlobalsBufferB;
+            NativeArray<LeviathanTentacleShaderGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<LeviathanTentacleShaderGlobalsDTO>(0, 1);
+            try
+            {
+                mapped[0] = globals;
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<LeviathanTentacleShaderGlobalsDTO>(1);
+            }
+
+            _tentacleGlobalsUploadBufferIndex ^= 1;
+            _activeTentacleGlobalsBuffer = writeBuffer;
+            Shader.SetGlobalConstantBuffer(_TentacleGlobalsId, _activeTentacleGlobalsBuffer, 0, TentacleShaderGlobalsBytes);
+            return true;
+        }
+
+        private bool EnsureTentacleGlobalsBuffers()
+        {
+            if (!HasValidTentacleGlobalsBuffer(_tentacleGlobalsBufferA))
+            {
+                ReleaseGraphicsBuffer(ref _tentacleGlobalsBufferA);
+                _tentacleGlobalsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, TentacleShaderGlobalsBytes); // COLD ALLOC: GraphicsBuffer[64B] - leviathan tentacle globals A - owner: SHINOBU_305
+            }
+
+            if (!HasValidTentacleGlobalsBuffer(_tentacleGlobalsBufferB))
+            {
+                ReleaseGraphicsBuffer(ref _tentacleGlobalsBufferB);
+                _tentacleGlobalsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, TentacleShaderGlobalsBytes); // COLD ALLOC: GraphicsBuffer[64B] - leviathan tentacle globals B - owner: SHINOBU_305
+            }
+
+            return HasValidTentacleGlobalsBuffer(_tentacleGlobalsBufferA) &&
+                   HasValidTentacleGlobalsBuffer(_tentacleGlobalsBufferB);
         }
 
         private void EnsureGraphicsBuffers()
@@ -1361,7 +1428,10 @@ namespace Hecton8.AI
             ReleaseGraphicsBuffer(ref _matrixGraphicsBufferB);
             ReleaseGraphicsBuffer(ref _radiusGraphicsBufferA);
             ReleaseGraphicsBuffer(ref _radiusGraphicsBufferB);
+            ReleaseGraphicsBuffer(ref _tentacleGlobalsBufferA);
+            ReleaseGraphicsBuffer(ref _tentacleGlobalsBufferB);
             ReleaseGraphicsBuffer(ref _indirectArgsBuffer);
+            _activeTentacleGlobalsBuffer = null;
             _gpuAbyssalFlowFieldBuffer = null;
             _argsUploadMesh = null;
             _argsUploadInstanceCount = -1;
@@ -1704,7 +1774,7 @@ namespace Hecton8.AI
 
         private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
         {
-            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return originAup.IsFinite();
         }
 
@@ -1789,6 +1859,11 @@ namespace Hecton8.AI
         {
             return HasValidGraphicsBuffer(buffer, requiredCount) &&
                 buffer.stride == AbyssalFlowVectorStrideBytes;
+        }
+
+        private static bool HasValidTentacleGlobalsBuffer(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid() && buffer.count >= 1 && buffer.stride == TentacleShaderGlobalsBytes;
         }
 
 #if UNITY_EDITOR

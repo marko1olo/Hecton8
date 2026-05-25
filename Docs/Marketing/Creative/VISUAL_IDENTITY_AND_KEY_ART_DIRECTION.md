@@ -1,4 +1,4 @@
-# HECTON-8 Visual Identity And Key Art Direction
+﻿# HECTON-8 Visual Identity And Key Art Direction
 
 Status: creative direction / pre-key-art
 Owner lane: SHINOBU_81 / creative positioning
@@ -31,6 +31,45 @@ HECTON-8 should look like industrial survival equipment losing an argument with 
 - glossy spaceship UI;
 - cozy ocean exploration mood;
 - "Subnautica but darker" composition.
+
+## Imageboard Visual Stress Rules
+
+4chan/Dvach critique is useful only when the asset can survive hostile literal reading. Use these rules before asking for anonymous feedback.
+
+### Likely Attack Points
+
+| Weak cue | Expected read | Fix before public route |
+|---|---|---|
+| Generic diver silhouette | "Subnautica clone" or stock underwater survival. | Add tool, machine relation, route risk, pressure hardware, or remove the diver as the hero. |
+| Blue/purple aquarium water | Bright reef/wonder lane owned by stronger incumbents. | Push black-green water, dirty cyan instruments, silt, corrosion, and amber warning accents. |
+| Smooth AI-looking surfaces | Concept art / AI slop accusation. | Add real material wear: scratches, salt, pipe seams, labels, bolts, dirty glass, compression grime. |
+| Over-fogged composition | Hiding weak asset behind darkness. | Keep one readable affordance: tool, gauge, route, silhouette edge, warning light, or salvage target. |
+| Clean sci-fi corridor | Generic spaceship/base interior. | Add pressure door logic, seals, condensation, wet metal, analog labels, and maintenance surfaces. |
+| Monster face as hero | Passive horror poster, no survival verb. | Put the threat in relation to sonar, floodlight, route, vehicle, or escape path. |
+| Procedural emptiness | "Nice atmosphere, no game." | Add player verb and cost: repair, cut, scan, recover, reroute, seal, or abort. |
+| Store-asset look | Cheap kitbash accusation. | Break symmetry, age surfaces, unify palette, show functional scale, and remove unowned ornament. |
+| Decorative UI | Fake gameplay read. | UI must expose a decision or system state; otherwise hide it. |
+| Perfect cinematic camera | Trailer-only lie suspicion. | Prefer representative gameplay camera or clearly label as internal mood reference. |
+
+### Corrective Cues
+
+- pressure labels, depth numbers, seals, clamps, gauges, pipe valves, dirty portholes;
+- one visible player choice: repair, retreat, reroute, scan, operate, abort, recover;
+- instrument corruption tied to route pull, not abstract glitch art;
+- industrial asymmetry, salt wear, scuffed paint, exposed maintenance surfaces;
+- black-water negative space balanced by one readable affordance;
+- emergency amber/red used as functional signal, not general color wash;
+- machinery scale shown against the player, tool, hatch, or vehicle;
+- no "AI process" or engine identity visible in the asset or caption.
+
+### Imageboard Stress Verdicts
+
+| Verdict | Meaning | Action |
+|---|---|---|
+| `PASS_CRITIQUE_ROUTE` | Asset has one clear critique question and no obvious shill/AI/clone failure. | Send to imageboard preflight; still needs route permission. |
+| `REVISE_VISUAL_CUE` | Asset direction is usable but one cue fails hostile read. | Fix scene, lighting, crop, material, or UI before posting. |
+| `INTERNAL_ONLY` | Useful for team learning but too risky as anonymous public media. | Keep in QA/creative docs only. |
+| `KILL_IMAGEBOARD_ROUTE` | Asset would predictably become a clone/AI/engine/shill thread. | Do not post; replace with stronger player-verb proof. |
 
 ## Palette Direction
 

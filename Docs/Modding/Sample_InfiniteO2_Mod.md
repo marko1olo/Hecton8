@@ -1,4 +1,4 @@
-# Sample Mod Spec - Infinite O2
+﻿# Sample Mod Spec - Infinite O2
 
 Date: 2026-05-19
 Status: ENVELOPE-ONLY SAMPLE_SPEC / NO_RUNTIME_AUTHORITY

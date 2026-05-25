@@ -1,0 +1,21 @@
+﻿{
+  "agent": "SHINOBU_319",
+  "scanner": "OOP_Buff_Scanner.StaticMirror",
+  "summary": "OOP Status Effects Eradicated",
+  "findingCount": 0,
+  "sharedReportKey": "shinobu319StatusEffectsScanner",
+  "selfAudit": "Docs/Reports/SHINOBU_319_SELF_AUDIT.xml",
+  "routeCard": "Docs/ARCHITECTURE/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
+  "route": "StatusEffectRequestDTO -> NativeQueue -> ApplyStatusEffectRequestsJob -> ulong StatusEffectMask -> EvaluateStatusEffectsJob",
+  "vaultBuffers": [71260, 71261, 71262, 71263, 71264, 71267, 71268],
+  "runtimeRouteProof": {
+    "owner": "CombatDamageRuntime status partial",
+    "truthBuffer": "GlobalDataVault 71260 CombatStatusEffectState[MaxTargets] with ulong StatusEffectMask@0",
+    "requestRoute": "NativeQueue<CombatStatusEffectRequest> -> ApplyStatusEffectRequestsJob -> Interlocked CAS OR at 64B row stride",
+    "damageRoute": "EvaluateStatusEffectsJob -> Vault 71268 CombatDamageSignal[MaxTargets] -> owner completion -> SignalBus<CombatDamageSignal>; central combat damage router owns health truth",
+    "visualRoute": "EvaluateStatusEffectsJob -> Vault 71267 CombatStatusEffectVfxRequest exact double3 AUP -> owner completion -> SignalBus<BubbleSpawnSignal>",
+    "telemetry": "Vault 71261 CombatStatusEffectTelemetryEntry[300]; owner completion folds result telemetry after the Burst fence and Dump_SHINOBU_319.bin exports cursor-ordered rows on anomaly or >200us solve"
+  },
+  "forbiddenRuntimePatternsFoundInOwnedPath": 0,
+  "compileProof": "Gated dotnet build failed in unrelated VR somatic/player kinematics files before SHINOBU_319 proof could advance; no SHINOBU_319 file appeared in compiler errors."
+}

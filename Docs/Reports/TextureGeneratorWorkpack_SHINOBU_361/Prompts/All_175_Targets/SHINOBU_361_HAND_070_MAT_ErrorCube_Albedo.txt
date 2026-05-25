@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_070
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_070_MAT_ErrorCube_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_ErrorCube_Albedo.png
+FINAL_FILENAME: MAT_ErrorCube_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Diagnostic error cube albedo for missing or debug geometry in HECTON-8. Make a polished technical warning material with pearl-white diagnostic tiles, coral-red fault bands, amber status pips, graphite borders, and teal calibration marks. It should be unmistakably a debug/error surface while still fitting the project art direction, like a professional engineering overlay rather than a raw placeholder. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

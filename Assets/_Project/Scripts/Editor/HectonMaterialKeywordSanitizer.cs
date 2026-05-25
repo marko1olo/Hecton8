@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
@@ -42,7 +43,7 @@ namespace Hecton8.EditorTools
                         continue;
 
                     List<string> sanitizedKeywords = new List<string>(keywords.Length);
-                    HashSet<string> seenKeywords = new HashSet<string>();
+                    HashSet<string> seenKeywords = new HashSet<string>(StringComparer.Ordinal);
                     int removedForMaterial = 0;
 
                     for (int keywordIndex = 0; keywordIndex < keywords.Length; keywordIndex++)

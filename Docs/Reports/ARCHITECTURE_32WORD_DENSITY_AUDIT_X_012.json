@@ -1,0 +1,62 @@
+{
+  "schema": "hecton8.architecture_density_audit.x012.v1",
+  "agentId": "X_012",
+  "loop": 20,
+  "generatedLocalDate": "2026-05-25",
+  "scope": "Active Docs/ARCHITECTURE markdown/txt files only; archives, deprecated files, agent logs, and task logs excluded.",
+  "manualRewriteOnly": true,
+  "scriptUse": "Discovery, validation, and proof only. Prose edits were manual apply_patch changes.",
+  "thresholdWords": 32,
+  "scannerFailureThresholdWords": 31,
+  "initialOffenderCountAtOrAbove32Words": 30,
+  "finalOffenderCountAtOrAbove32Words": 0,
+  "finalArchitectureMarkerHits": 0,
+  "finalTutorialMarkerHits": 0,
+  "sourceConstants": {
+    "saveCurrentVersion": "0x000B",
+    "saveCurrentHeaderSize": 56,
+    "saveLegacyHeaderSize": 44,
+    "signalBusRegistryLaneCapacity": 512,
+    "dataMonolithHeaderBytes": 64,
+    "dataMonolithDirectoryBytes": 64,
+    "dataMonolithFormatVersion": 1,
+    "dataMonolithSchemaHash": "0x58303032",
+    "dataMonolithPayloadExists": true,
+    "dataMonolithPayloadBytes": 1064384
+  },
+  "oopDocScanner": {
+    "command": "python Tools\\OOP_Doc_Scanner.py",
+    "finalPass": true,
+    "activeFileCount": 591,
+    "activeWordCount": 540136,
+    "activeStaleParameterFiles": 0,
+    "sourceSyncPass": true,
+    "wordReductionPercent": 54.89104336635201,
+    "activeArchitectureFileCount": 192,
+    "activeArchitectureWordCount": 164925,
+    "strictUnstructuredParagraphThresholdWords": 31,
+    "strictUnstructuredParagraphCount": 0,
+    "strictUnstructuredSentenceThresholdWords": 31,
+    "strictUnstructuredSentenceCount": 0,
+    "strictStructuredLineThresholdWords": 31,
+    "strictStructuredLineCount": 0,
+    "strictFileWordThreshold": 2500,
+    "strictFileWordCount": 0
+  },
+  "verifyDocStructure": {
+    "command": "python Tools\\VerifyDocStructure.py",
+    "pass": true,
+    "activeDocCount": 591,
+    "rootTextDocCount": 3,
+    "duplicateHeaderFiles": 0,
+    "brokenLinkFiles": 0,
+    "fenceIssueFiles": 0,
+    "staleParameterFiles": 0,
+    "encodingWithoutUtf8Sig": 0
+  },
+  "compilePolicy": {
+    "csharpRuntimeSourceTouchedByX012": false,
+    "dotnetBuildLaunched": false,
+    "reason": "Documentation/tooling-only cycle; static proof only."
+  }
+}

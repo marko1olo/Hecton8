@@ -152,7 +152,7 @@ namespace Hecton8.Lighting.Editor
             if (_target != null && !forceSceneSearch)
                 return;
 
-            _target = Object.FindFirstObjectByType<InteriorGIProbeVolumeRuntime>(FindObjectsInactive.Include);
+            _target = Object.FindAnyObjectByType<InteriorGIProbeVolumeRuntime>(FindObjectsInactive.Include);
         }
 
         private static void DisableUnityRealtimeGIOnSelection()

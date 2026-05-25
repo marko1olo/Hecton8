@@ -126,92 +126,92 @@ namespace Hecton8.World.ProceduralWreckage
                 return handles.IsCreated();
             }
 
-            handles.Rules = vault.GetGenerationHandle<WreckageRuleDTO>(
+            handles.Rules = vault.EnsureGenerationHandle<WreckageRuleDTO>(
                 ProceduralWreckageVaultBufferIds.Rules,
                 ProceduralWreckageConstants.MaxModuleRules,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Grid = vault.GetGenerationHandle<WreckageGridCellDTO>(
+            handles.Grid = vault.EnsureGenerationHandle<WreckageGridCellDTO>(
                 ProceduralWreckageVaultBufferIds.Grid,
                 ProceduralWreckageConstants.MaxGridCells,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Nodes = vault.GetGenerationHandle<WreckageNodeDTO>(
+            handles.Nodes = vault.EnsureGenerationHandle<WreckageNodeDTO>(
                 ProceduralWreckageVaultBufferIds.Nodes,
                 ProceduralWreckageConstants.MaxWreckNodes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.DebrisNodes = vault.GetGenerationHandle<WreckageNodeDTO>(
+            handles.DebrisNodes = vault.EnsureGenerationHandle<WreckageNodeDTO>(
                 ProceduralWreckageVaultBufferIds.DebrisNodes,
                 ProceduralWreckageConstants.MaxDebrisNodes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.RenderMatrices = vault.GetGenerationHandle<float4x4>(
+            handles.RenderMatrices = vault.EnsureGenerationHandle<float4x4>(
                 ProceduralWreckageVaultBufferIds.RenderMatrices,
                 ProceduralWreckageConstants.MaxRenderMatrices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.IndirectArgs = vault.GetGenerationHandle<WreckageIndirectArgsDTO>(
+            handles.IndirectArgs = vault.EnsureGenerationHandle<WreckageIndirectArgsDTO>(
                 ProceduralWreckageVaultBufferIds.IndirectArgs,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.SectorTriggers = vault.GetGenerationHandle<WreckageSectorTriggerDTO>(
+            handles.SectorTriggers = vault.EnsureGenerationHandle<WreckageSectorTriggerDTO>(
                 ProceduralWreckageVaultBufferIds.SectorTriggers,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.LootRequests = vault.GetGenerationHandle<LootSpawnRequestDTO>(
+            handles.LootRequests = vault.EnsureGenerationHandle<LootSpawnRequestDTO>(
                 ProceduralWreckageVaultBufferIds.LootRequests,
                 ProceduralWreckageConstants.MaxLootRequests,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.CollisionProxies = vault.GetGenerationHandle<WreckageBoxColliderDTO>(
+            handles.CollisionProxies = vault.EnsureGenerationHandle<WreckageBoxColliderDTO>(
                 ProceduralWreckageVaultBufferIds.CollisionProxies,
                 ProceduralWreckageConstants.MaxCollisionProxies,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryRing = vault.GetGenerationHandle<WreckageGenerationTelemetryEntry>(
+            handles.TelemetryRing = vault.EnsureGenerationHandle<WreckageGenerationTelemetryEntry>(
                 ProceduralWreckageVaultBufferIds.TelemetryRing,
                 ProceduralWreckageConstants.TelemetryFrames,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
+            handles.TelemetryCursor = vault.EnsureGenerationHandle<int>(
                 ProceduralWreckageVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.Tuning = vault.GetGenerationHandle<WreckageTuningDTO>(
+            handles.Tuning = vault.EnsureGenerationHandle<WreckageTuningDTO>(
                 ProceduralWreckageVaultBufferIds.Tuning,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetGenerationHandle<byte>(
+            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(
                 ProceduralWreckageVaultBufferIds.CsvScratch,
                 ProceduralWreckageConstants.CsvScratchBytes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Counters = vault.GetGenerationHandle<WreckagePaddedCounterDTO>(
+            handles.Counters = vault.EnsureGenerationHandle<WreckagePaddedCounterDTO>(
                 ProceduralWreckageVaultBufferIds.Counters,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.DebugCells = vault.GetGenerationHandle<WreckageDebugCellDTO>(
+            handles.DebugCells = vault.EnsureGenerationHandle<WreckageDebugCellDTO>(
                 ProceduralWreckageVaultBufferIds.DebugCells,
                 ProceduralWreckageConstants.MaxDebugCells,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.GpuScalars = vault.GetGenerationHandle<WreckageGpuScalarDTO>(
+            handles.GpuScalars = vault.EnsureGenerationHandle<WreckageGpuScalarDTO>(
                 ProceduralWreckageVaultBufferIds.GpuScalars,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.SelfAudit = vault.GetGenerationHandle<WreckageSelfAuditResultDTO>(
+            handles.SelfAudit = vault.EnsureGenerationHandle<WreckageSelfAuditResultDTO>(
                 ProceduralWreckageVaultBufferIds.SelfAudit,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.HzbTiles = vault.GetGenerationHandle<WreckageHzbTileDTO>(
+            handles.HzbTiles = vault.EnsureGenerationHandle<WreckageHzbTileDTO>(
                 ProceduralWreckageVaultBufferIds.HzbTiles,
                 ProceduralWreckageConstants.MaxHzbTiles,
                 SystemID.WorldStreaming,
@@ -469,8 +469,14 @@ namespace Hecton8.World.ProceduralWreckage
 
         public static bool TryLoadAuthoredRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
         {
-            return TryLoadBinaryRules(vault, ref handles, projectRoot) ||
-                   TryLoadCsvRules(vault, ref handles, projectRoot);
+            if (TryLoadBinaryRules(vault, ref handles, projectRoot))
+                return true;
+
+#if UNITY_EDITOR
+            return TryLoadCsvRules(vault, ref handles, projectRoot);
+#else
+            return false;
+#endif
         }
 
         public static bool TryLoadBinaryRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
@@ -486,11 +492,12 @@ namespace Hecton8.World.ProceduralWreckage
                 return false;
 
             ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
-            int length = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
+            NativeArray<byte> ruleScratch = buffers.CsvScratch;
+            int length = ReadFileIntoNativeScratch(path, ruleScratch);
             if (length <= 0)
                 return false;
 
-            int activeRuleCount = TryApplyBinaryRules(buffers.CsvScratch, length, buffers.Rules, out uint version, out bool swappedEndian);
+            int activeRuleCount = TryApplyBinaryRules(ruleScratch, length, buffers.Rules, out uint version, out bool swappedEndian);
             if (activeRuleCount <= 1)
                 return false;
 
@@ -516,6 +523,7 @@ namespace Hecton8.World.ProceduralWreckage
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadCsvRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
         {
             if (!TryResolveViews(vault, ref handles, out ProceduralWreckageVaultBuffers buffers) ||
@@ -576,6 +584,7 @@ namespace Hecton8.World.ProceduralWreckage
             return buffers.Tuning[0].LastRulePayloadWriteTicks != writeTicks &&
                    TryLoadCsvRules(vault, ref handles, projectRoot);
         }
+#endif
 
         public static int TryApplyBinaryRules(
             NativeArray<byte> bytes,
@@ -638,6 +647,7 @@ namespace Hecton8.World.ProceduralWreckage
             return written > 0 ? written + 1 : 0;
         }
 
+#if UNITY_EDITOR
         public static int TryApplyCsvRules(NativeArray<byte> bytes, int length, NativeArray<WreckageRuleDTO> rules)
         {
             if (!bytes.IsCreated || !rules.IsCreated || length <= 0 || rules.Length <= 1)
@@ -711,6 +721,7 @@ namespace Hecton8.World.ProceduralWreckage
 
             return written > 0 ? ruleIndex : 0;
         }
+#endif
 
         public static void GenerateEmergencyMockWreckRules(NativeArray<WreckageRuleDTO> rules)
         {

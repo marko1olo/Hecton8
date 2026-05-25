@@ -75,7 +75,7 @@ namespace Hecton8.UI.Editor
 
         private void FindRuntime()
         {
-            _runtime = FindFirstObjectByType<TerminalOsRuntime>();
+            _runtime = FindAnyObjectByType<TerminalOsRuntime>();
             if (_runtimeField != null)
                 _runtimeField.value = _runtime;
             RefreshStatus();

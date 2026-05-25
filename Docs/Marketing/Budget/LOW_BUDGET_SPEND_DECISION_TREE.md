@@ -1,4 +1,4 @@
-# Low Budget Spend Decision Tree
+﻿# Low Budget Spend Decision Tree
 
 Status: budget guardrail / pre-screenshot
 Assumption: "several thousand USD" total marketing cash

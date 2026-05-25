@@ -19,7 +19,7 @@ namespace Hecton8.Editor
         private static readonly string[] AssetScanRoots = { "Assets/_Project" };
         private static readonly string[] ExhaustiveAssetScanRoots = { "Assets" };
         private static readonly StringBuilder ReportBuilder = new StringBuilder(512);
-        private static readonly HashSet<string> ReportedKeys = new HashSet<string>();
+        private static readonly HashSet<string> ReportedKeys = new HashSet<string>(128);
         private static bool _prefabAssetScanCompleted;
         private static int _remainingPlayModeRescanPasses;
         private static double _nextPlayModeRescanAt;

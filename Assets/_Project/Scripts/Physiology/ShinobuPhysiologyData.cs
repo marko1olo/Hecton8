@@ -10,19 +10,28 @@ namespace Hecton8.Physiology
     /// </summary>
     public static class ShinobuPhysiologyConstants
     {
-        public const int TissueCompartmentCount = 16;
+        public const int TissueCompartmentCount = 3;
+        public const int PhysiologyStrideBytes = 32;
         public const int TissueCompartmentStrideBytes = 16;
+        public const int HaldaneCoefficientStrideBytes = 32;
+        public const int DecompressionStateStrideBytes = 64;
+        public const int StatusEffectStateStrideBytes = 64;
+        public const int DecompressionTelemetryStrideBytes = 64;
+        public const uint DecompressionWarningCadenceFrames = 10u;
+        public const uint GasStatusWarningCadenceFrames = 10u;
         public const int TissueCompartmentBytesPerEntity = TissueCompartmentCount * TissueCompartmentStrideBytes;
         public const int TelemetryFrameCount = 300;
         public const int DefaultEntityCapacity = 64;
         public const int FrameJobBatchSize = 16;
         public const uint SourceHash = PhysiologyStateSignal.SourceShinobuPhysiology;
         public const uint PlayerTargetHash = 0x504C5952u; // PLYR fallback when entity hash is not published.
-        public const uint CombatDamageTypeToxic = 1u << 5;
+        public const uint CombatDamageTypeBarotrauma = 1u << 0;
         public const byte GasToxicitySignalCause = PhysiologyStateSignal.CauseGasToxicity;
         public const BufferID BreathingGasFractionsBuffer = (BufferID)70214;
         public const BufferID GasPhysiologyTuningBuffer = (BufferID)70215;
+        public const BufferID StatusEffectStatesBuffer = (BufferID)70216;
         public const BufferID GasPhysiologyStatesBuffer = (BufferID)70239;
+        public const BufferID DecompressionTelemetryRingBuffer = (BufferID)73343;
         public const float AtmosphericPressureAtSurfaceAtm = 1f;
         public const float OxygenFraction = 0.2095f;
         public const float NitrogenFraction = 0.7902f;
@@ -41,6 +50,20 @@ namespace Hecton8.Physiology
         public const float CarbonDioxideToxicityFullAtm = 0.10f;
         public const float OxygenDeathThreshold = 0.0001f;
         public const float MaxSimulationStepSeconds = 0.25f;
+        public const float TelemetryDumpBudgetMicroseconds = 200f;
+        public const float ThreeTissueRiskCorrection = 1.05f;
+        public const uint DecompressionWarningStatusMask =
+            ShinobuPhysiologyFlags.Bends |
+            ShinobuPhysiologyFlags.FatalBends |
+            ShinobuPhysiologyFlags.HyperbaricOverride |
+            ShinobuPhysiologyFlags.InvalidMath;
+        public const uint GasStatusWarningMask =
+            ShinobuPhysiologyFlags.Hypoxia |
+            ShinobuPhysiologyFlags.Hyperoxia |
+            ShinobuPhysiologyFlags.CarbonDioxideToxicity |
+            ShinobuPhysiologyFlags.CnsOxygenToxicity |
+            ShinobuPhysiologyFlags.FatalGasToxicity |
+            ShinobuPhysiologyFlags.Narcosis;
     }
 
     /// <summary>
@@ -52,6 +75,22 @@ namespace Hecton8.Physiology
         public const uint Concussion = 1u << 1;
         public const uint Burn = 1u << 2;
         public const uint Barotrauma = 1u << 3;
+        public const uint Poison = 1u << 4;
+        public const uint Stun = 1u << 5;
+        public const uint Radiation = 1u << 6;
+        public const uint Suffocation = 1u << 7;
+    }
+
+    /// <summary>
+    /// Numeric mirror of Gameplay.CombatStatusBits for Burst-safe physiology bridging.
+    /// </summary>
+    public static class ShinobuCombatStatusBridgeBits
+    {
+        public const uint Bleeding = 1u << 0;
+        public const uint Irradiated = 1u << 2;
+        public const uint Hypoxia = 1u << 3;
+        public const uint Poisoned = 1u << 4;
+        public const uint Stunned = 1u << 6;
     }
 
     /// <summary>
@@ -88,6 +127,31 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
+    /// Unified 64-bit physiology status authority bits. Combat has its own mask lane;
+    /// this lane exists to stop physiology from growing per-effect managed state.
+    /// </summary>
+    public static class ShinobuStatusEffectBits
+    {
+        public const ulong Bends = 1UL << 0;
+        public const ulong Narcosis = 1UL << 1;
+        public const ulong Hypothermia = 1UL << 2;
+        public const ulong OxygenCritical = 1UL << 3;
+        public const ulong FatalOxygen = 1UL << 4;
+        public const ulong InvalidMath = 1UL << 5;
+        public const ulong HyperbaricOverride = 1UL << 6;
+        public const ulong FatalBends = 1UL << 7;
+        public const ulong Hypoxia = 1UL << 8;
+        public const ulong Hyperoxia = 1UL << 9;
+        public const ulong CarbonDioxideToxicity = 1UL << 10;
+        public const ulong CnsOxygenToxicity = 1UL << 11;
+        public const ulong FatalGasToxicity = 1UL << 12;
+        public const ulong Bleeding = 1UL << 16;
+        public const ulong Poison = 1UL << 17;
+        public const ulong Stun = 1UL << 18;
+        public const ulong Radiation = 1UL << 19;
+    }
+
+    /// <summary>
     /// Runtime math level used by the decompression kernel.
     /// </summary>
     public enum ShinobuMathLod : byte
@@ -110,8 +174,8 @@ namespace Hecton8.Physiology
         [FieldOffset(12)] public uint ActiveTraumaMask;
         [FieldOffset(16)] public float HeartRate;
         [FieldOffset(20)] public float Adrenaline;
-        [FieldOffset(24)] public uint _pad0;
-        [FieldOffset(28)] public uint _pad1;
+        [FieldOffset(24)] public uint ActiveTraumaRefreshMask;
+        [FieldOffset(28)] public uint LastTraumaRefreshFrame;
     }
 
     /// <summary>
@@ -127,7 +191,7 @@ namespace Hecton8.Physiology
         [FieldOffset(16)] public float NarcosisLevel01;
         [FieldOffset(20)] public float StaminaDrainRate;
         [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(28)] public uint LastWarningFrame;
     }
 
     /// <summary>
@@ -171,15 +235,78 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
-    /// Fixed-buffer 16-compartment Haldane decompression state. Size: 80 bytes.
+    /// Three-lane pragmatic decompression state. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
-    public unsafe struct DecompressionStateDTO
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DecompressionStateDTO
     {
-        [FieldOffset(0)] public fixed float TissueTensions[16];
-        [FieldOffset(64)] public float AmbientPressure;
-        [FieldOffset(68)] public float AscentRate;
-        [FieldOffset(72)] public ulong _pad0;
+        [FieldOffset(0)] public ulong StateHash;
+        [FieldOffset(8)] public float FastTissueTensionN2;
+        [FieldOffset(12)] public float FastAllowedAmbientPressure;
+        [FieldOffset(16)] public float MediumTissueTensionN2;
+        [FieldOffset(20)] public float MediumAllowedAmbientPressure;
+        [FieldOffset(24)] public float SlowTissueTensionN2;
+        [FieldOffset(28)] public float SlowAllowedAmbientPressure;
+        [FieldOffset(32)] public float CurrentAmbientPressure;
+        [FieldOffset(36)] public float GradientAdvantage;
+        [FieldOffset(40)] public float Supersaturation01;
+        [FieldOffset(44)] public float AscentRateMetersPerSecond;
+        [FieldOffset(48)] public uint BubbleFlags;
+        [FieldOffset(52)] public uint Frame;
+        [FieldOffset(56)] public uint LastWarningFrame;
+        [FieldOffset(60)] public uint WarningPulseCount;
+
+        public float GetTissueTensionN2(int tissueIndex)
+        {
+            switch (tissueIndex)
+            {
+                case 0: return FastTissueTensionN2;
+                case 1: return MediumTissueTensionN2;
+                default: return SlowTissueTensionN2;
+            }
+        }
+
+        public void SetTissueTensionN2(int tissueIndex, float value)
+        {
+            switch (tissueIndex)
+            {
+                case 0: FastTissueTensionN2 = value; break;
+                case 1: MediumTissueTensionN2 = value; break;
+                default: SlowTissueTensionN2 = value; break;
+            }
+        }
+
+        public void SetAllowedAmbientPressure(int tissueIndex, float value)
+        {
+            switch (tissueIndex)
+            {
+                case 0: FastAllowedAmbientPressure = value; break;
+                case 1: MediumAllowedAmbientPressure = value; break;
+                default: SlowAllowedAmbientPressure = value; break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Unified physiology status state. Size: 64 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct StatusEffectStateDTO
+    {
+        [FieldOffset(0)] public ulong StatusEffectMask;
+        [FieldOffset(8)] public float BleedingSeconds;
+        [FieldOffset(12)] public float BleedingSeverity01;
+        [FieldOffset(16)] public float PoisonSeconds;
+        [FieldOffset(20)] public float PoisonSeverity01;
+        [FieldOffset(24)] public float StunSeconds;
+        [FieldOffset(28)] public float SuffocationSeverity01;
+        [FieldOffset(32)] public float RadiationDose01;
+        [FieldOffset(36)] public float NarcosisSeverity01;
+        [FieldOffset(40)] public float Fatigue01;
+        [FieldOffset(44)] public float OxygenDebt01;
+        [FieldOffset(48)] public uint LastTransitionFrame;
+        [FieldOffset(52)] public uint SanitizedFaultMask;
+        [FieldOffset(56)] public ulong StateHash;
     }
 
     /// <summary>
@@ -198,9 +325,43 @@ namespace Hecton8.Physiology
     {
         public static bool ValidatePhysiologyLayouts()
         {
-            return ValidateTissueCompartmentLayout() &&
+            return ValidateDecompressionLayout() &&
+                   ValidatePhysiologyDtoLayout() &&
+                   ValidateTissueCompartmentLayout() &&
+                   ValidateHaldaneCoefficientLayout() &&
                    ValidateGasPhysiologyStateLayout() &&
                    ValidateTelemetryAndSignalLayouts();
+        }
+
+        public static bool ValidatePhysiologyDtoLayout()
+        {
+            return UnsafeUtility.SizeOf<PhysiologyDTO>() == ShinobuPhysiologyConstants.PhysiologyStrideBytes &&
+                   Marshal.OffsetOf<PhysiologyDTO>(nameof(PhysiologyDTO.BloodOxygen)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<PhysiologyDTO>(nameof(PhysiologyDTO.TissueNitrogen)).ToInt32() == 4 &&
+                   Marshal.OffsetOf<PhysiologyDTO>(nameof(PhysiologyDTO.CoreTemperature)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<PhysiologyDTO>(nameof(PhysiologyDTO.ActiveTraumaMask)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<PhysiologyDTO>(nameof(PhysiologyDTO.HeartRate)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<PhysiologyDTO>(nameof(PhysiologyDTO.Adrenaline)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<PhysiologyDTO>(nameof(PhysiologyDTO.ActiveTraumaRefreshMask)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<PhysiologyDTO>(nameof(PhysiologyDTO.LastTraumaRefreshFrame)).ToInt32() == 28;
+        }
+
+        public static bool ValidateDecompressionLayout()
+        {
+            return UnsafeUtility.SizeOf<DecompressionStateDTO>() == ShinobuPhysiologyConstants.DecompressionStateStrideBytes &&
+                   Marshal.OffsetOf<DecompressionStateDTO>(nameof(DecompressionStateDTO.FastTissueTensionN2)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<DecompressionStateDTO>(nameof(DecompressionStateDTO.MediumTissueTensionN2)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<DecompressionStateDTO>(nameof(DecompressionStateDTO.SlowTissueTensionN2)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<DecompressionStateDTO>(nameof(DecompressionStateDTO.CurrentAmbientPressure)).ToInt32() == 32 &&
+                   Marshal.OffsetOf<DecompressionStateDTO>(nameof(DecompressionStateDTO.BubbleFlags)).ToInt32() == 48 &&
+                   Marshal.OffsetOf<DecompressionStateDTO>(nameof(DecompressionStateDTO.LastWarningFrame)).ToInt32() == 56 &&
+                   UnsafeUtility.SizeOf<StatusEffectStateDTO>() == ShinobuPhysiologyConstants.StatusEffectStateStrideBytes &&
+                   Marshal.OffsetOf<StatusEffectStateDTO>(nameof(StatusEffectStateDTO.StatusEffectMask)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<StatusEffectStateDTO>(nameof(StatusEffectStateDTO.BleedingSeconds)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<StatusEffectStateDTO>(nameof(StatusEffectStateDTO.PoisonSeconds)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<StatusEffectStateDTO>(nameof(StatusEffectStateDTO.StunSeconds)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<StatusEffectStateDTO>(nameof(StatusEffectStateDTO.RadiationDose01)).ToInt32() == 32 &&
+                   Marshal.OffsetOf<StatusEffectStateDTO>(nameof(StatusEffectStateDTO.StateHash)).ToInt32() == 56;
         }
 
         public static bool ValidateTissueCompartmentLayout()
@@ -210,6 +371,19 @@ namespace Hecton8.Physiology
                    Marshal.OffsetOf<TissueCompartmentDTO>(nameof(TissueCompartmentDTO.Halftime)).ToInt32() == 4 &&
                    Marshal.OffsetOf<TissueCompartmentDTO>(nameof(TissueCompartmentDTO.MValue)).ToInt32() == 8 &&
                    Marshal.OffsetOf<TissueCompartmentDTO>(nameof(TissueCompartmentDTO.Flags)).ToInt32() == 12;
+        }
+
+        public static bool ValidateHaldaneCoefficientLayout()
+        {
+            return UnsafeUtility.SizeOf<HaldaneTissueCoefficientDTO>() == ShinobuPhysiologyConstants.HaldaneCoefficientStrideBytes &&
+                   Marshal.OffsetOf<HaldaneTissueCoefficientDTO>(nameof(HaldaneTissueCoefficientDTO.HalfTimeSeconds)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<HaldaneTissueCoefficientDTO>(nameof(HaldaneTissueCoefficientDTO.K)).ToInt32() == 4 &&
+                   Marshal.OffsetOf<HaldaneTissueCoefficientDTO>(nameof(HaldaneTissueCoefficientDTO.BuhlmannA)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<HaldaneTissueCoefficientDTO>(nameof(HaldaneTissueCoefficientDTO.BuhlmannB)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<HaldaneTissueCoefficientDTO>(nameof(HaldaneTissueCoefficientDTO.MValueRatio)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<HaldaneTissueCoefficientDTO>(nameof(HaldaneTissueCoefficientDTO.NitrogenFraction)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<HaldaneTissueCoefficientDTO>(nameof(HaldaneTissueCoefficientDTO.CompartmentHash)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<HaldaneTissueCoefficientDTO>(nameof(HaldaneTissueCoefficientDTO.Flags)).ToInt32() == 28;
         }
 
         public static bool ValidateGasPhysiologyStateLayout()
@@ -222,7 +396,7 @@ namespace Hecton8.Physiology
                    Marshal.OffsetOf<GasPhysiologyStateDTO>(nameof(GasPhysiologyStateDTO.NarcosisLevel01)).ToInt32() == 16 &&
                    Marshal.OffsetOf<GasPhysiologyStateDTO>(nameof(GasPhysiologyStateDTO.StaminaDrainRate)).ToInt32() == 20 &&
                    Marshal.OffsetOf<GasPhysiologyStateDTO>(nameof(GasPhysiologyStateDTO.Flags)).ToInt32() == 24 &&
-                   Marshal.OffsetOf<GasPhysiologyStateDTO>(nameof(GasPhysiologyStateDTO._pad0)).ToInt32() == 28 &&
+                   Marshal.OffsetOf<GasPhysiologyStateDTO>(nameof(GasPhysiologyStateDTO.LastWarningFrame)).ToInt32() == 28 &&
                    UnsafeUtility.SizeOf<BreathingGasFractionsDTO>() == 32 &&
                    Marshal.OffsetOf<BreathingGasFractionsDTO>(nameof(BreathingGasFractionsDTO.OxygenFraction)).ToInt32() == 0 &&
                    Marshal.OffsetOf<BreathingGasFractionsDTO>(nameof(BreathingGasFractionsDTO.NitrogenFraction)).ToInt32() == 4 &&
@@ -253,20 +427,35 @@ namespace Hecton8.Physiology
         {
             return UnsafeUtility.SizeOf<PhysiologyTelemetryEntry>() == 64 &&
                    Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.StateHash)).ToInt32() == 0 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.Frame)).ToInt32() == 8 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.ActiveTraumaMask)).ToInt32() == 12 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.BloodOxygen)).ToInt32() == 16 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.NitrogenLoad)).ToInt32() == 20 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.CoreTemperature)).ToInt32() == 24 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.AmbientPressureAtm)).ToInt32() == 28 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.NarcosisSeverity)).ToInt32() == 32 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.SupersaturationScalar)).ToInt32() == 36 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.HeartRate)).ToInt32() == 40 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.Adrenaline)).ToInt32() == 44 &&
-                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.FatalFlags)).ToInt32() == 48 &&
-                    Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.TissueOverMValueMask)).ToInt32() == 52 &&
-                    Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.DepthMeters)).ToInt32() == 56 &&
-                    Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.ExecutionMicroseconds)).ToInt32() == 60 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.StatusEffectMask)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.Frame)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.FatalFlags)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.BloodOxygen)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.NitrogenLoad)).ToInt32() == 28 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.CoreTemperature)).ToInt32() == 32 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.AmbientPressureAtm)).ToInt32() == 36 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.NarcosisSeverity)).ToInt32() == 40 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.SupersaturationScalar)).ToInt32() == 44 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.HeartRate)).ToInt32() == 48 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.Adrenaline)).ToInt32() == 52 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.TissueOverMValueMask)).ToInt32() == 56 &&
+                   Marshal.OffsetOf<PhysiologyTelemetryEntry>(nameof(PhysiologyTelemetryEntry.ExecutionMicroseconds)).ToInt32() == 60 &&
+                   UnsafeUtility.SizeOf<DecompressionTelemetryEntry>() == ShinobuPhysiologyConstants.DecompressionTelemetryStrideBytes &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.StateHash)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.Frame)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.BubbleFlags)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.DepthMeters)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.AmbientPressureAtm)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.LeadingTissueTensionAtm)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.AllowedAmbientPressureAtm)).ToInt32() == 28 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.MValueGradientAtm)).ToInt32() == 32 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.SupersaturationScalar)).ToInt32() == 36 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.ExecutionMicroseconds)).ToInt32() == 40 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.GlobalQualityWeight)).ToInt32() == 44 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.TissueOverMValueMask)).ToInt32() == 48 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.ActiveCompartments)).ToInt32() == 52 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry.FatalFlags)).ToInt32() == 56 &&
+                   Marshal.OffsetOf<DecompressionTelemetryEntry>(nameof(DecompressionTelemetryEntry._pad0)).ToInt32() == 60 &&
                     UnsafeUtility.SizeOf<PhysiologyStateSignal>() == 64 &&
                     Marshal.OffsetOf<PhysiologyStateSignal>(nameof(PhysiologyStateSignal.PlayerStress01)).ToInt32() == 0 &&
                     Marshal.OffsetOf<PhysiologyStateSignal>(nameof(PhysiologyStateSignal.O2DrainMultiplier)).ToInt32() == 4 &&
@@ -302,7 +491,7 @@ namespace Hecton8.Physiology
                    Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.Frame)).ToInt32() == 8 &&
                    Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.Flags)).ToInt32() == 12 &&
                    Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.SourceHash)).ToInt32() == 16 &&
-                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal._pad0)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal.CombatStatusMask)).ToInt32() == 20 &&
                    Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal._pad1)).ToInt32() == 24 &&
                    Marshal.OffsetOf<MockCombatDamageSignal>(nameof(MockCombatDamageSignal._pad2)).ToInt32() == 28 &&
                    UnsafeUtility.SizeOf<CardiacPulseSignal>() == 32 &&
@@ -321,15 +510,19 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
-    /// One 16-byte coefficient row for Haldane tissue math.
+    /// One 32-byte coefficient row for Haldane/Buhlmann tissue math.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct HaldaneTissueCoefficientDTO
     {
         [FieldOffset(0)] public float HalfTimeSeconds;
         [FieldOffset(4)] public float K;
-        [FieldOffset(8)] public float MValueRatio;
-        [FieldOffset(12)] public float NitrogenFraction;
+        [FieldOffset(8)] public float BuhlmannA;
+        [FieldOffset(12)] public float BuhlmannB;
+        [FieldOffset(16)] public float MValueRatio;
+        [FieldOffset(20)] public float NitrogenFraction;
+        [FieldOffset(24)] public uint CompartmentHash;
+        [FieldOffset(28)] public uint Flags;
     }
 
     /// <summary>
@@ -419,7 +612,7 @@ namespace Hecton8.Physiology
         [FieldOffset(8)] public uint Frame;
         [FieldOffset(12)] public uint Flags;
         [FieldOffset(16)] public uint SourceHash;
-        [FieldOffset(20)] public uint _pad0;
+        [FieldOffset(20)] public uint CombatStatusMask;
         [FieldOffset(24)] public uint _pad1;
         [FieldOffset(28)] public uint _pad2;
     }
@@ -480,8 +673,7 @@ namespace Hecton8.Physiology
         [FieldOffset(44)] public uint TissueOverMValueMask;
         [FieldOffset(48)] public uint LastPulseFrame;
         [FieldOffset(52)] public uint PulseCount;
-        [FieldOffset(56)] public uint _pad0;
-        [FieldOffset(60)] public uint _pad1;
+        [FieldOffset(56)] public ulong StatusEffectMask;
     }
 
     /// <summary>
@@ -503,20 +695,42 @@ namespace Hecton8.Physiology
     public struct PhysiologyTelemetryEntry
     {
         [FieldOffset(0)] public ulong StateHash;
-        [FieldOffset(8)] public uint Frame;
-        [FieldOffset(12)] public uint ActiveTraumaMask;
-        [FieldOffset(16)] public float BloodOxygen;
-        [FieldOffset(20)] public float NitrogenLoad;
-        [FieldOffset(24)] public float CoreTemperature;
-        [FieldOffset(28)] public float AmbientPressureAtm;
-        [FieldOffset(32)] public float NarcosisSeverity;
-        [FieldOffset(36)] public float SupersaturationScalar;
-        [FieldOffset(40)] public float HeartRate;
-        [FieldOffset(44)] public float Adrenaline;
-        [FieldOffset(48)] public uint FatalFlags;
-        [FieldOffset(52)] public uint TissueOverMValueMask;
-        [FieldOffset(56)] public float DepthMeters;
+        [FieldOffset(8)] public ulong StatusEffectMask;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public uint FatalFlags;
+        [FieldOffset(24)] public float BloodOxygen;
+        [FieldOffset(28)] public float NitrogenLoad;
+        [FieldOffset(32)] public float CoreTemperature;
+        [FieldOffset(36)] public float AmbientPressureAtm;
+        [FieldOffset(40)] public float NarcosisSeverity;
+        [FieldOffset(44)] public float SupersaturationScalar;
+        [FieldOffset(48)] public float HeartRate;
+        [FieldOffset(52)] public float Adrenaline;
+        [FieldOffset(56)] public uint TissueOverMValueMask;
         [FieldOffset(60)] public float ExecutionMicroseconds;
+    }
+
+    /// <summary>
+    /// Fixed 300-frame decompression black-box entry. Size: 64 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DecompressionTelemetryEntry
+    {
+        [FieldOffset(0)] public ulong StateHash;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint BubbleFlags;
+        [FieldOffset(16)] public float DepthMeters;
+        [FieldOffset(20)] public float AmbientPressureAtm;
+        [FieldOffset(24)] public float LeadingTissueTensionAtm;
+        [FieldOffset(28)] public float AllowedAmbientPressureAtm;
+        [FieldOffset(32)] public float MValueGradientAtm;
+        [FieldOffset(36)] public float SupersaturationScalar;
+        [FieldOffset(40)] public float ExecutionMicroseconds;
+        [FieldOffset(44)] public float GlobalQualityWeight;
+        [FieldOffset(48)] public uint TissueOverMValueMask;
+        [FieldOffset(52)] public uint ActiveCompartments;
+        [FieldOffset(56)] public uint FatalFlags;
+        [FieldOffset(60)] public uint _pad0;
     }
 
     /// <summary>

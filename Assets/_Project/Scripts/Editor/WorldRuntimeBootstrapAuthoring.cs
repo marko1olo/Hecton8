@@ -89,7 +89,9 @@ namespace Hecton8.EditorTools
                 player = GameObject.Find("Player");
 
             Transform playerTransform = player != null ? player.transform : null;
-            Rigidbody playerBody = player != null ? player.GetComponent<Rigidbody>() : null;
+            Rigidbody playerBody = null;
+            if (player != null)
+                playerBody = player.TryGetComponent(out Rigidbody resolvedPlayerBody) ? resolvedPlayerBody : null;
 
             MapMagicBridge bridge = FindSceneObjectIncludingInactive<MapMagicBridge>();
             MapMagic.Core.MapMagicObject mapMagicObject = FindSceneObjectIncludingInactive<MapMagic.Core.MapMagicObject>();
@@ -3085,8 +3087,7 @@ namespace Hecton8.EditorTools
 
         private static T GetOrAddComponent<T>(GameObject gameObject) where T : Component
         {
-            T component = gameObject.GetComponent<T>();
-            if (component == null)
+            if (!gameObject.TryGetComponent(out T component))
                 component = gameObject.AddComponent<T>();
 
             return component;

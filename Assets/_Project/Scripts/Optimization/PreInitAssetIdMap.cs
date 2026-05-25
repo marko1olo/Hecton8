@@ -5,7 +5,12 @@ using UnityEngine;
 
 namespace Hecton8.Optimization
 {
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal static class PreInitAssetIdMapLayout
+    {
+        public const int AssetGuidIdRecordStrideBytes = 16;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = PreInitAssetIdMapLayout.AssetGuidIdRecordStrideBytes)]
     internal readonly struct AssetGuidIdRecord
     {
         [FieldOffset(0)]

@@ -56,7 +56,9 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            ReleaseStaticNativeState();
+#if UNITY_EDITOR
+            ReleaseEditorHooks();
+#endif
             GlobalRegistry.ClearPrefabRegistryRuntime(null);
             _isShuttingDown = false;
             _isResolvingRuntimeInstance = false;
@@ -82,15 +84,6 @@ namespace Hecton8.Core
         /// <summary>Counter for generating new IDs. Starts at 1 (0 = invalid).</summary>
         private int _nextId = 1;
 
-        /// <summary>
-        /// Read-only native snapshot of registered prefab IDs.
-        /// Managed GameObject references cannot live in NativeHashMap, so the value mirrors the key.
-        /// </summary>
-        private NativeHashMap<int, int> _nativeMap;
-
-        /// <summary>Lock object for thread-safe native map creation.</summary>
-        private readonly object _nativeMapLock = new object();
-
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -115,7 +108,6 @@ namespace Hecton8.Core
             if (GlobalRegistry.PrefabRegistryRuntime == this)
             {
                 _isShuttingDown = true;
-                ReleaseNativeMap();
                 GlobalRegistry.ClearPrefabRegistryRuntime(this);
             }
         }
@@ -125,8 +117,6 @@ namespace Hecton8.Core
             if (GlobalRegistry.PrefabRegistryRuntime != this)
                 return;
 
-            ReleaseNativeMap();
-
             if (!Application.isPlaying)
                 GlobalRegistry.ClearPrefabRegistryRuntime(this);
         }
@@ -135,29 +125,6 @@ namespace Hecton8.Core
         {
             if (GlobalRegistry.PrefabRegistryRuntime == this)
                 _isShuttingDown = true;
-        }
-
-        private void ReleaseNativeMap()
-        {
-            lock (_nativeMapLock)
-            {
-                if (_nativeMap.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeHashMap(nameof(PrefabRegistry), nameof(_nativeMap));
-                    _nativeMap.Dispose();
-                }
-            }
-        }
-
-        private static void ReleaseStaticNativeState()
-        {
-            PrefabRegistry runtime = GlobalRegistry.PrefabRegistryRuntime;
-            if (runtime != null)
-                runtime.ReleaseNativeMap();
-
-#if UNITY_EDITOR
-            ReleaseEditorHooks();
-#endif
         }
 
 #if UNITY_EDITOR
@@ -183,12 +150,12 @@ namespace Hecton8.Core
 
         private static void HandleBeforeAssemblyReload()
         {
-            ReleaseStaticNativeState();
+            ReleaseEditorHooks();
         }
 
         private static void HandleEditorQuitting()
         {
-            ReleaseStaticNativeState();
+            ReleaseEditorHooks();
         }
 #endif
 
@@ -302,25 +269,10 @@ namespace Hecton8.Core
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Warms up the native map for Burst job access.
-        /// Call once after all prefabs are registered (e.g., after scene load).
+        /// Compatibility no-op. Persistent native prefab snapshots were retired because no current owner consumes them.
         /// </summary>
         public void WarmupNativeMap()
         {
-            lock (_nativeMapLock)
-            {
-                if (_nativeMap.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeHashMap(nameof(PrefabRegistry), nameof(_nativeMap));
-                    _nativeMap.Dispose();
-                }
-
-                _nativeMap = new NativeHashMap<int, int>(_idToPrefab.Count, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeHashMap(_nativeMap, nameof(PrefabRegistry), nameof(_nativeMap), NativeAllocationLifetime.Session);
-
-                foreach (var kvp in _idToPrefab)
-                    _nativeMap.TryAdd(kvp.Key, kvp.Key);
-            }
         }
 
         /// <summary>
@@ -329,7 +281,7 @@ namespace Hecton8.Core
         /// </summary>
         public NativeHashMap<int, int>.ReadOnly GetNativeMap()
         {
-            return _nativeMap.IsCreated ? _nativeMap.AsReadOnly() : default;
+            return default;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -346,9 +298,13 @@ namespace Hecton8.Core
         [ContextMenu("Dump Registry")]
         private void DumpRegistry()
         {
-            Debug.Log($"[PrefabRegistry] {_idToPrefab.Count} registered prefabs:");
-            foreach (var kvp in _idToPrefab)
-                Debug.Log($"  {kvp.Key} â†’ {kvp.Value?.name ?? "null"}");
+            Hecton8.Core.H8Debug.Log($"[PrefabRegistry] {_idToPrefab.Count} registered prefabs:");
+            Dictionary<int, GameObject>.Enumerator prefabEnumerator = _idToPrefab.GetEnumerator();
+            while (prefabEnumerator.MoveNext())
+            {
+                KeyValuePair<int, GameObject> kvp = prefabEnumerator.Current;
+                Hecton8.Core.H8Debug.Log($"  {kvp.Key} â†’ {kvp.Value?.name ?? "null"}");
+            }
         }
 
         /// <summary>
@@ -360,7 +316,7 @@ namespace Hecton8.Core
             _idToPrefab.Clear();
             _prefabToId.Clear();
             _nextId = 1;
-            Debug.Log("[PrefabRegistry] Registry cleared.");
+            Hecton8.Core.H8Debug.Log("[PrefabRegistry] Registry cleared.");
         }
 #endif
     }

@@ -27,6 +27,7 @@ CBUFFER_START(HectonVolumetricLightParams)
     float4 _HectonFlashlightDirectionWS;
     float4 _HectonFlashlightColor;
     float4 _HectonFlashlightConeData;
+    float4 _HectonFlashlightFailureState;
     float4 _HectonVolumetricScatteringParams;
     float4 _HectonHudFogPerturbation;
     float4 _HectonVolumetricMarchParams;
@@ -58,6 +59,21 @@ float FastNegativeExp(float x)
 float FastTrianglePulse01(float phase)
 {
     return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+}
+
+float ResolveFlashlightFailureFlicker(float3 samplePositionWS)
+{
+    float battery01 = saturate(_HectonFlashlightFailureState.x);
+    float thermal01 = saturate(_HectonFlashlightFailureState.y);
+    float failure01 = saturate(_HectonFlashlightFailureState.z);
+    float lowBatteryDrop = saturate((0.22 - battery01) * 4.5454545);
+    float3 cell = floor(samplePositionWS * lerp(0.42, 1.85, thermal01)) + floor(_Time.y * lerp(5.0, 29.0, failure01));
+    float3 hash = frac(cell * float3(0.1031, 0.1030, 0.0973));
+    hash += dot(hash, hash.yzx + 33.33);
+    float cellNoise = frac((hash.x + hash.y) * hash.z);
+    float triangle = FastTrianglePulse01(_Time.y * lerp(3.0, 17.0, failure01) + cellNoise * 6.2831853);
+    float dropout = lerp(0.72, 0.22, max(lowBatteryDrop, thermal01 * thermal01));
+    return saturate(lerp(1.0, lerp(dropout, 1.0, triangle * triangle), max(failure01, lowBatteryDrop)));
 }
 
 float3 SafeNormalize3(float3 value)
@@ -232,8 +248,9 @@ float ResolveFlashlightConeMask(float3 samplePositionWS, float3 cameraToSampleDi
     float viewAlignment = saturate(dot(SafeNormalize3(cameraToSampleDirectionWS), lightDirectionWS));
     float backscatter = lerp(0.18, 1.0, viewAlignment * viewAlignment);
     float pressureStripe = 0.94 + 0.06 * (FastTrianglePulse01(dot(samplePositionWS, float3(0.31, 1.73, -0.27)) + _Time.y * 3.1) * 2.0 - 1.0);
-    coneColor = _HectonFlashlightColor.rgb * _HectonFlashlightColor.w * saturate(_HectonFlashlightVolumetricOpacity);
-    return coneMask * rangeMask * backscatter * pressureStripe;
+    float failureFlicker = ResolveFlashlightFailureFlicker(samplePositionWS);
+    coneColor = _HectonFlashlightColor.rgb * _HectonFlashlightColor.w * failureFlicker * saturate(_HectonFlashlightVolumetricOpacity);
+    return coneMask * rangeMask * backscatter * pressureStripe * failureFlicker;
 }
 
 float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirectionWS, float density)

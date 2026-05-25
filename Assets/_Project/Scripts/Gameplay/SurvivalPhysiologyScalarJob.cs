@@ -1,6 +1,7 @@
 // ============================================================================
 // HECTON-8 - SurvivalPhysiologyScalarJob.cs
-// Burst-compatible scalar physiology step. No UnityEngine object access.
+// Burst-compatible scalar survival presentation step. No UnityEngine object access.
+// Decompression and narcosis authority belongs to ShinobuPhysiologyRuntime.
 // ============================================================================
 
 using System.Runtime.InteropServices;
@@ -19,7 +20,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(4)] public float Narcosis01;
         [FieldOffset(8)] public float MovementStaminaDrain;
         [FieldOffset(12)] public uint StatusMask;
-        [FieldOffset(16)] public byte BendsDamageRequested;
+        [FieldOffset(16)] public byte PhysiologyAuthorityReserved;
         [FieldOffset(17)] public byte _pad0;
         [FieldOffset(18)] public ushort _pad1;
         [FieldOffset(20)] public uint _pad2;
@@ -35,7 +36,7 @@ namespace Hecton8.Gameplay
         public float AbsorptionRate;
         public float VerticalSpeed;
         public float SafeAscentRate;
-        public float BendsNitrogenLoadThreshold;
+        public float PhysiologyAuthorityThresholdReserved;
         public float CoreTemperatureCelsius;
         public float FrostTemperatureThresholdCelsius;
         public float Hunger01;
@@ -53,20 +54,21 @@ namespace Hecton8.Gameplay
             if (!Result.IsCreated || Result.Length < 1)
                 return;
 
-            float nitrogenLoad = SomaticSurvivalMath.ResolveNitrogenTissueLoad(
+            _ = AmbientPressure;
+            _ = AbsorptionRate;
+            _ = VerticalSpeed;
+            _ = SafeAscentRate;
+            _ = PhysiologyAuthorityThresholdReserved;
+            _ = NarcosisPressureThreshold;
+            _ = NarcosisPressureFullRange;
+
+            float nitrogenLoad = math.select(
+                1f,
                 CurrentNitrogenLoad,
-                AmbientPressure,
-                DeltaTime,
-                AbsorptionRate);
-            float narcosis01 = SomaticSurvivalMath.ResolvePressureNarcosis01(
-                AmbientPressure,
-                NarcosisPressureThreshold,
-                NarcosisPressureFullRange);
-            bool bends = SomaticSurvivalMath.ShouldApplyBendsDamage(
-                VerticalSpeed,
-                nitrogenLoad,
-                SafeAscentRate,
-                BendsNitrogenLoadThreshold);
+                math.isfinite(CurrentNitrogenLoad) && CurrentNitrogenLoad > 0f);
+            nitrogenLoad = math.max(0f, nitrogenLoad);
+            float narcosis01 = 0f;
+            bool bends = false;
 
             uint statusMask = 0u;
             statusMask |= math.select(0u, SurvivalStatusMasks.Bends, bends);
@@ -86,7 +88,7 @@ namespace Hecton8.Gameplay
             result.Narcosis01 = narcosis01;
             result.MovementStaminaDrain = movementStaminaDrain;
             result.StatusMask = statusMask;
-            result.BendsDamageRequested = (byte)math.select(0, 1, bends);
+            result.PhysiologyAuthorityReserved = 0;
             Result[0] = result;
         }
     }

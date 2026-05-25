@@ -1,4 +1,6 @@
+using System;
 using Hecton.Localization;
+using Hecton8.Core;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -58,6 +60,15 @@ namespace Hecton8.Gameplay
 
         public string DisplayNameOrFallback => localizedDisplayName.ResolveOrFallback(FallbackOrDefault(displayName, "SUIT UPGRADE"));
         public string DescriptionOrFallback => localizedDescription.ResolveOrFallback(description);
+
+        public bool TryWriteDisplayNameOrFallback(ILocalizationTextReadModel manager, char[] destination, out int length)
+        {
+            return localizedDisplayName.TryCopyResolvedOrFallback(
+                manager,
+                destination,
+                out length,
+                FallbackOrDefault(displayName, "SUIT UPGRADE"));
+        }
 
         private static string FallbackOrDefault(string value, string fallback)
         {

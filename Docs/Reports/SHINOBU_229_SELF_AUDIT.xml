@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_229" status="PENDING_GUARDED_COMPILE_AND_PROFILER_PROOF_CPU_GUARD_BLOCKED">
+﻿<SELF_AUDIT agent="SHINOBU_229" status="PENDING_GUARDED_COMPILE_AND_PROFILER_PROOF_CPU_GUARD_BLOCKED">
   <taskReconciliation>
     <task id="01" name="MONOBEHAVIOUR_AUXILIARY_INQUISITION" status="PASS">DeployableFlare, GravTrap, GravityTetherTool, and scanner pulse paths audited; hot auxiliary lifecycle moved out of per-object scripts.</task>
     <task id="02" name="UNITY_LIGHT_AND_JOINT_PURGE" status="PASS">Facades no longer own Light, ParticleSystem, Rigidbody, Collider broadphase, SpringJoint, or local pulse drawer effects.</task>

@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -472,7 +473,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                 "profile,resolution,pass_mask,global_quality_weight,standalone,android\n" +
                 "Hero_Prop,4096,All,1.0,BC7,ASTC_6x6\n" +
                 "Module,4096,Normal|Depth|ColorID|Curvature,0.85,BC7,ASTC_6x6\n" +
-                "Debris,512,Normal|ColorID|Curvature,0.25,BC7,ASTC_6x6\n");
+                "Debris,512,Normal|ColorID|Curvature,0.25,BC7,ASTC_6x6\n", new UTF8Encoding(false));
             if (refreshAssetDatabase)
                 AssetDatabase.Refresh();
         }

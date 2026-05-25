@@ -58,7 +58,7 @@ namespace Hecton8.Editor
             string json = File.ReadAllText(fullPath);
             Dictionary<string, string> table = LocalizationEditorJsonTableParser.ParseFlatJsonTable(json);
             // COLD ALLOC: HashSet<char>[estimated localization glyph set] — unique shipped glyph seed — owner: LocalizationCjkCoverageValidator
-            var characters = new HashSet<char>();
+            var characters = new HashSet<char>(4096);
             Dictionary<string, string>.Enumerator enumerator = table.GetEnumerator();
             while (enumerator.MoveNext())
                 AppendVisibleCharacters(enumerator.Current.Value, characters);

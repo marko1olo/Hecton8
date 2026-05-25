@@ -20,16 +20,16 @@ namespace Hecton8.Economy
             if (runtimeRoot == null)
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one runtime root for economy systems per gameplay scene - owner: EconomyRuntimeInstaller
 
-            if (runtimeRoot.GetComponent<ScrapManager>() == null)
+            if (!runtimeRoot.TryGetComponent<ScrapManager>(out _))
                 runtimeRoot.AddComponent<ScrapManager>();
 
-            if (runtimeRoot.GetComponent<ResourceScarcityDirector>() == null)
+            if (!runtimeRoot.TryGetComponent<ResourceScarcityDirector>(out _))
                 runtimeRoot.AddComponent<ResourceScarcityDirector>();
 
-            if (runtimeRoot.GetComponent<TradeMarauderDirector>() == null)
+            if (!runtimeRoot.TryGetComponent<TradeMarauderDirector>(out _))
                 runtimeRoot.AddComponent<TradeMarauderDirector>();
 
-            if (runtimeRoot.GetComponent<Hecton8.World.EnvironmentalStrainManager>() == null)
+            if (!runtimeRoot.TryGetComponent<Hecton8.World.EnvironmentalStrainManager>(out _))
                 runtimeRoot.AddComponent<Hecton8.World.EnvironmentalStrainManager>();
         }
     }

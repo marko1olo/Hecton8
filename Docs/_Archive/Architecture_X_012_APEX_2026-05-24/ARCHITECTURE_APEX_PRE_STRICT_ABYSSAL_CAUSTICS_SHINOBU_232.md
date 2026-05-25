@@ -1,0 +1,90 @@
+﻿# [ARCHIVE] Pre-Strict Architecture Snapshot
+
+Date: 2026-05-24
+Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
+Original: Docs/ARCHITECTURE/ABYSSAL_CAUSTICS_SHINOBU_232.md
+Rule: historical snapshot only; not active doctrine.
+
+# ABYSSAL CAUSTICS ROUTE CARD - SHINOBU_232
+
+Owner: `SHINOBU_232`
+
+Domain: `ABYSSAL_CAUSTICS_AND_PROJECTION_PASS`
+
+## Authority Boundary
+
+The system owns presentation-only caustic lighting parameters. It does not own sunlight, waves, cave topology, rollback state, or deterministic gameplay facts. External facts are read through cached registry and Vault routes, then collapsed into one 64-byte shader payload.
+
+## Data Routes
+
+- Input: `GlobalRegistry.Weather` cached cold as `IWeatherService`; frame setup reads one zero-allocation `WeatherRuntimeSnapshot` when initialized.
+
+- Input: `BufferID.ShinobuOceanSurfaceSwell` when present.
+
+- Input bridge: `_HectonCaveVoxelSdfTex`, `_HectonCaveVoxelActive`, `_HectonCaveVoxelWorldToLocal`, `_HectonCaveVoxelHalfExtents`, and `_HectonCaveVoxelInvDoubleHalfExtents` are owned and published by `Hecton8.World.HectonCaveVoxelLightingVolume`. This is a documented legacy shader-global bridge until World exposes a RenderGraph `TextureHandle` or Vault-backed texture descriptor route; SHINOBU_232 does not allocate, update, or republish the SDF volume.
+
+- Output: `BufferID.ShinobuCausticsParameters` as two `CausticsParametersDTO` slots: active index 0 and pending index 1. The shader sees one active 64-byte payload; the second slot is a CPU-side commit guard.
+
+- Output: `BufferID.ShinobuCausticsTelemetryRing` as a 300-frame `CausticsTelemetryEntry` ring.
+
+- Output: `BufferID.ShinobuCausticsTelemetryCursor` as one integer cursor.
+
+- Tuning: `BufferID.ShinobuCausticsTuning`.
+
+- CSV profiles: `BufferID.ShinobuCausticsProfiles`.
+
+- CSV scratch: `BufferID.ShinobuCausticsCsvScratch`.
+
+The weather/wave route is a cached Core service interface, not a sibling DTO Vault route. `AbyssalDeferredCausticsRuntime` caches `IWeatherService` during bootstrap/hot-swap, reads `WeatherRuntimeSnapshot` through `GetRuntimeSnapshot()` only when initialized, and collapses weather intensity, wind, state mask, and three `GerstnerWaveComponent` lanes into the caustic input snapshot before the Burst pointer kernel.
+
+Surface swell remains an optional producer lane cached as a non-owning `VaultGenerationHandle<float4>` during cold Vault setup/hot-swap repair through `TryGetGenerationHandle`. The caustics runtime resolves that descriptor read-only per tick and never allocates, grows, polls, or releases producer-owned lanes in the frame path.
+
+Telemetry flags match the current route vocabulary: `FlagWeatherSnapshotBound` records the cached Core weather snapshot, and `FlagWaveInputBound` records any Gerstner/surface-swell wave input folded into the snapshot. The old weather/wave Vault-bound flag names are not current source authority.
+
+Owner output/tuning/telemetry/profile lanes are cold-acquired once and guarded by `_vaultStateReady`. Per-frame `Tick` skips duplicate owner-lane acquire probes while generation descriptors remain valid. Failed required resolves clear the gate and fail closed until bootstrap, DataVault hot-swap, editor tuning, or explicit profile reload repairs the Vault state outside normal frame memory ownership. The frame path now returns immediately when tuning, telemetry, telemetry cursor, or profile lanes fail to resolve, so optional producer lanes cannot drive a partial owner-state parameter kernel.
+
+CSV profile names are cold-parsed with `ReadOnlySpan<byte>`. Known weather names map to canonical `WeatherState` masks so examples like `Calm` and `Hurricane` bind to the Core weather state mask; unknown names still produce FNV-1a keys for future biome/profile routes. Matched profiles feed scale, intensity, max depth, flow speed, chromatic dispersion, and SDF shadow strength into the 64-byte CBuffer. The default editable profile file is `Assets/_Project/Data/Rendering/caustic_lighting_profiles.csv`, exposed through the editor tuner reload button. Cold file load catches `IOException` and `UnauthorizedAccessException` and returns zero bytes, so profile reload fails closed and preserves existing/default Vault profile rows instead of throwing into editor or boot control flow.
+
+## Render Path
+
+`HectonDeferredCausticsFeature` injects a URP RenderGraph full-screen pass. The pass binds private `_HectonDeferredCausticsSource` and `_HectonDeferredCausticsDepth` textures instead of rebinding URP-owned global color/depth names. The active caustics CBuffer is imported with `renderGraph.ImportBuffer` and declared through `builder.UseBuffer(..., AccessFlags.Read)` before `RasterCommandBuffer.SetGlobalConstantBuffer` binds it inside the render function. The shader reconstructs world position from the bound depth buffer, projects procedural Voronoi caustics mathematically, samples the documented World-owned cave SDF bridge for cave attenuation, and composites into camera color. No Unity Projector, light cookie, caustic atlas RenderTexture, or per-object redraw is part of this route.
+
+Legacy `Hecton8.Graphics.Caustics.AnalyticalCausticsService` and `Hecton8.Visor.CausticsProjectorManager` remain only as inert serialized-reference shims. They do not allocate native/GPU buffers, dispatch compute, publish shader globals, query gameplay/physics services, or register an alternate runtime authority. `GameBootstrapper` no longer stores or adopts `analyticalCausticsCompute`; it only attempts `AbyssalDeferredCausticsRuntime`.
+
+The old `Hecton_CausticsGenerator.compute` asset and meta have been deleted after active project scans found no remaining references to GUID `27b7cf5d630bd8d4dbc699ff38f19ac2`. `00_BOOTSTRAP.unity` no longer serializes that compute reference, and the inert shim no longer exposes `AssignComputeShader(ComputeShader)`. `GlobalShaderDispatcher` also no longer publishes `_H8CausticProjectionMatrix` or `_H8CausticRuntime`; those globals have no active shader consumer in the deferred caustics route. Any remaining archive references are historical evidence, not runtime authority.
+
+Material shader fallback branches no longer declare or sample `_HectonCausticsMap`, `_HectonProjectedCaustics*`, `_HectonCausticsRuntimeParams`, `_HectonCausticsSimulationParams*`, or `_UberNoirCaustic*`, and `H8_UBERNOIR_CAUSTICS_TEXTURED` is not part of the caustics path. Old material helper signatures remain as zero-return compatibility stubs only so dependent shaders compile without carrying a second caustics authority. The UberNoir material consolidator no longer enables a caustic keyword, the UberNoir runtime bridge no longer publishes analytical/secondary material caustic feature bits, and Homeostasis uses the neutral `CausticsDetail` bit name for the same quality-shed slot.
+
+The shader uses Unity XR fullscreen stereo macros (`UNITY_VERTEX_INPUT_INSTANCE_ID`, `UNITY_VERTEX_OUTPUT_STEREO`, `UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO`, and `UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX`) before transforming the fullscreen UV through `UnityStereoTransformScreenSpaceTex(input.screenUV)`. The transformed UV is used for `TEXTURE2D_X` source sampling, bound-depth sampling, and `ComputeWorldSpacePosition`, so single-pass instanced stereo does not read the wrong eye while still avoiding a second pass or XR-specific variant family.
+
+Shader warmup is curated through `Assets/_Project/Art/Shaders/Variants/HectonDeferredCaustics.shadervariants` with GUID `232232232ca00147aa7d232232ca0014`. `00_BOOTSTRAP.unity` serializes that SVC through `BootstrapController.shaderVariantCollections`; `BootstrapController.ApplySerializedShaderVariantCollections`, `GameBootstrapper.EnsureRuntimeInstance(GameObject)`, and the no-owner `GameBootstrapper.EnsureRuntimeInstance()` active-instance path transfer it to the runtime bootstrapper before any `BeginBootstrap()` path can start `MemoryPreWarm`. The handoff is skipped after bootstrap starts or completes. `BootstrapController` admits this route only when the scene name exactly equals `00_BOOTSTRAP` with `System.StringComparison.Ordinal`; substring scene matches are rejected. `GameBootstrapper.WarmConfiguredShaderVariantCollectionsAsync` calls `WarmUp()` during `MemoryPreWarm` before scene activation. `HectonDeferredCausticsFeature` no longer declares or serializes a `warmupVariants` field, and `PC_Renderer.asset`, `PC_High_Renderer.asset`, `Mobile_Renderer.asset`, and `Quest_VR_Renderer.asset` carry only the caustic shader/feature reference, not a second SVC warmup route. The Mobile/Quest renderer assets install `HectonDeferredCausticsFeature` immediately after SSDO, with `m_RendererFeatures` and the little-endian `m_RendererFeatureMap` both decoding to 12 matching entries. `URP_Quest_VR.asset` explicitly requires a depth texture because the Quest renderer has this depth-reconstructing feature active.
+
+## Scalability
+
+`GlobalQualityWeight` is consumed as a continuous scalar. Low quality contracts maximum caustic depth, collapses to one monochrome noise layer, and keeps cave shadowing to the first cheap SDF lookup. Middle quality blends the second caustic layer and admits partial sun-ray SDF samples. High and ultra quality add chromatic dispersion, deeper visibility, and the full four-sample SDF confidence path. The shader keeps the same route and changes mathematical budgets/weights, avoiding hardware class booleans.
+
+The fullscreen Voronoi helper keeps squared cell distance and remaps line intensity from that squared metric. It does not call `sqrt` in the per-pixel caustic line path.
+
+The RenderGraph destination texture inherits the active camera color format and only strips depth, MSAA, mips, and auto-mips. This avoids fixed-format conversion risk while preserving the same fullscreen visual fake.
+
+## Memory And Compile Guard
+
+Runtime persistent CPU memory is Vault-owned. The runtime stores generation-handle descriptors and resolves phase-local `NativeArray` views only while writing or uploading. The 64-byte parameter kernels are not submitted to Unity's JobSystem: SHINOBU_232 preserves the XML kernel names as unmanaged pointer carriers and cold-compiles Burst `FunctionPointer` entrypoints during service initialization. If either pointer is unavailable, the runtime fails closed with `FaultBurstKernelUnavailable`, suppresses the pending GPU upload, and attempts a BlackBox dump; it does not execute a direct C# fallback. There is no `IJob`, `job.Run`, scheduled `JobHandle`, or hidden completion fence for a one-DTO update. The kernel carriers and entrypoints use `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]` to match Task 14's extracted rollback-adjacent visual reproducibility requirement. DTO layout is explicit and editor-audited through `UnsafeUtility.GetFieldOffset` in `AbyssalCausticsLayoutAudit`.
+
+Optional weather snapshot, surface swell, profile, and tuning data is sanitized into `CausticsInputSnapshotDTO` before the Burst kernels run. The kernel structs do not retain optional producer `NativeArray` fields; only SHINOBU-owned parameter, telemetry, and telemetry-cursor pointers cross into the write kernel, each marked `[NoAlias]` and `[NativeDisableUnsafePtrRestriction]` with explicit lengths.
+
+The alias proof depends on `Unity.Burst.CompilerServices`; `AbyssalCausticsContracts.cs` imports that namespace explicitly so `[NoAlias]` remains a compile-visible Burst contract after the JobSystem surface was removed. Removing the import or the attributes is a regression against the pointer-kernel proof.
+
+The Burst function-pointer ABI passes a pointer to the stack-local kernel carrier, not the carrier by value. `GenerateMockCausticLightingKernelDelegate` and `CalculateCausticParametersKernelDelegate` accept `GenerateMockCausticLightingJob*` / `CalculateCausticParametersJob*`; runtime dispatch calls `Invoke(&job)`, and the Burst entrypoints null-check before `UnsafeUtility.AsRef<T>(job).Execute()`. This keeps the hot compiled call to one native pointer and avoids copying the large carrier that already contains Vault lane pointers plus the 128-byte input snapshot.
+
+GPU parameter upload is double-buffered through `GraphicsBuffer.Target.Constant`. The runtime records `_activeConstantBufferFrameIndex` when a pending payload becomes active; the RenderGraph pass snapshots the active buffer during pass recording and binds it from the command context.
+
+If `SystemInfo.supportsSetConstantBuffer` is false, `AbyssalDeferredCausticsRuntime` does not create the double CBuffer pair, does not mark the service initialized, does not register update/late-frame/origin-shift hooks, publishes no active CBuffer, and records `FaultConstantBufferUnavailable` for BlackBox proof when telemetry is available. The RenderGraph feature fails closed through `TryGetActiveConstantBuffer`. No projector, cookie, or material-caustic fallback is used for unsupported platforms. Quest now has explicit depth-texture asset support for this pass; runtime CBuffer capability, XR import state, RenderGraph Viewer output, and device frame cost still require Unity/device capture.
+
+Legacy compute-facing `ICausticsService` accessors were removed after source scans found no active consumer of `IsComputeActive`, `CausticsMap`, or `CausticsAup`. The interface is now only the registry identity marker for the caustics service slot; active rendering reads the owner-published `GraphicsBuffer` only through `TryGetActiveConstantBuffer(out GraphicsBuffer, out uint frameIndex)`.
+
+BlackBox telemetry is Vault-owned and seeded to zero once when the ring is acquired. The dump path and directory are resolved and created from lifecycle/cold setup before faults. `DumpBlackBox()` does not call the path resolver; if lifecycle setup failed, fault export fails closed instead of doing directory work in the fault route. Telemetry cursor normalization uses modulo plus negative correction rather than `math.abs`, so `int.MinValue` cannot become a negative ring index. The dump writes entries in cursor order from oldest to newest, records the live cursor in the header, catches `IOException` and `UnauthorizedAccessException`, and sets `FaultDumpIo` instead of throwing from the fault export route. No dump path, directory creation, or telemetry clearing runs in the render frame path.
+
+The RenderGraph pass does not read the lifecycle singleton. The owner publishes only the currently active `GraphicsBuffer` plus frame index after a successful upload; pass recording reads that immutable render snapshot. Editor-only tuning/profile bridges use `s_publishedRuntime`, which is assigned only after `GlobalRegistry.Caustics` ownership is proven. The two 64-byte constant buffers are created during lifecycle/boot ownership setup. `Tick` and `LateFrameTick` return immediately when `_isInitialized` or registry ownership is false; neither callback calls `InitializeService`, resolves dump paths, acquires Vault buffers, creates GPU buffers, or performs cold repair.
+
+Current source placement is the root `Hecton8.Core.asmdef`; no standalone `Hecton8.Rendering.Runtime.asmdef` or caustics asmref exists in the tree. SHINOBU_232 did not add any new sibling runtime assembly reference. Weather and wave facts are read through the cached Core `IWeatherService` snapshot; SHINOBU_232 does not import Atmosphere DTOs, call Atmosphere runtime helpers, or mutate producer lanes. No direct dependency on sibling concrete rendering, physics, celestial, or voxel runtime types is required for execution. Optional external data is accepted through existing Vault IDs and cached global services available at boot.

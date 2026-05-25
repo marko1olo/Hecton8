@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -17,7 +18,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4037)]
-    public sealed class WorldProceduralFieldSampler : MonoBehaviour, IBiomeMatrixEventListener
+    public sealed class WorldProceduralFieldSampler : MonoBehaviour, IBiomeMatrixEventListener, IBiomePhysicsInfluenceReadModel
     {
         private const string SyntheticZoneLabelPrefix = "Synthetic:";
         private const string PatternLabelSedimentResources = "SedimentResources";
@@ -41,13 +42,17 @@ namespace Hecton8.World
         private const string NativeMemoryOwner = nameof(WorldProceduralFieldSampler);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const NativeAllocationLifetime NativeMemoryTempJobLifetime = NativeAllocationLifetime.TempJob;
+        private const SystemID OwnerSystemId = SystemID.WorldProceduralFieldSampler;
         private const int EmptyNativeArrayCapacity = 1;
         private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
         private static readonly uint _biomeInfluenceGridCapacityWarningHash =
             unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler.BiomeInfluenceGridCapacity"));
         private static readonly uint _fieldSamplerTelemetryContextHash =
             unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler"));
-        private GraphicsBuffer _biomeInfluenceGraphicsBuffer;
+        private GraphicsBuffer _biomeInfluenceGraphicsBufferA;
+        private GraphicsBuffer _biomeInfluenceGraphicsBufferB;
+        private GraphicsBuffer _activeBiomeInfluenceGraphicsBuffer;
+        private int _biomeInfluenceGraphicsBufferWriteIndex;
         private int _biomeInfluenceGraphicsBufferCapacity;
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
@@ -610,12 +615,13 @@ namespace Hecton8.World
         private readonly Dictionary<HectonBiomeMatrixProfile, int> _biomeMatrixDataIndexLookup = new Dictionary<HectonBiomeMatrixProfile, int>(160);
         private readonly Dictionary<HectonBiomeFamilyProfile, int> _biomeFamilyDataIndexLookup = new Dictionary<HectonBiomeFamilyProfile, int>(48);
         private readonly Dictionary<Vector2Int, CachedHeightSample> _seafloorHeightCache = new Dictionary<Vector2Int, CachedHeightSample>(1536);
-        private NativeArray<ZoneData> _burstZoneData;
-        private NativeArray<BiomeMatrixData> _burstBiomeMatrixData;
-        private NativeArray<int> _burstBiomeMatrixIdToDataIndex;
-        private NativeArray<BiomeFamilyData> _burstBiomeFamilyData;
-        private NativeArray<CaveEntranceHintData> _burstCaveEntranceHints;
-        private NativeArray<ushort> _noiseLookupTable;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<ZoneData> _burstZoneDataHandle;
+        private VaultGenerationHandle<BiomeMatrixData> _burstBiomeMatrixDataHandle;
+        private VaultGenerationHandle<int> _burstBiomeMatrixIdToDataIndexHandle;
+        private VaultGenerationHandle<BiomeFamilyData> _burstBiomeFamilyDataHandle;
+        private VaultGenerationHandle<CaveEntranceHintData> _burstCaveEntranceHintsHandle;
+        private VaultGenerationHandle<ushort> _noiseLookupTableHandle;
         private int _burstZoneDataCount;
         private int _burstBiomeMatrixDataCount;
         private int _burstBiomeFamilyDataCount;
@@ -629,6 +635,7 @@ namespace Hecton8.World
         private WorldCaveDirector _worldCaveDirector;
         private JobHandle _lastSamplingJobHandle;
         private bool _hasPendingSamplingJob;
+        private bool _samplingJobBuffersLocked;
 
         internal static WorldProceduralFieldSampler ActiveRuntimeInstance => GlobalRegistry.ProceduralFieldSampler;
 
@@ -853,7 +860,7 @@ namespace Hecton8.World
             float dx = (input.EastHeight - input.WestHeight) / (probe * 2f);
             float dz = (input.NorthHeight - input.SouthHeight) / (probe * 2f);
             float gradient = FastLength2D(dx, dz);
-            float slopeDegrees = math.degrees(math.atan(gradient));
+            float slopeDegrees = math.degrees(MathLodApproximation.ApproxAtanFast(gradient));
             float curvature = (input.WestHeight + input.EastHeight + input.NorthHeight + input.SouthHeight - (input.CenterHeight * 4f)) / math.max(0.0001f, probe * probe);
             curvature = math.clamp(curvature / 0.85f, -1f, 1f);
 
@@ -2247,6 +2254,7 @@ namespace Hecton8.World
         {
             _lastSamplingJobHandle = default;
             _hasPendingSamplingJob = false;
+            ReleaseSamplingJobBufferLocks();
         }
 
         public void MarkBurstDataDirty()
@@ -2320,23 +2328,52 @@ namespace Hecton8.World
             int cellCount)
         {
             if (_isDataDirty ||
-                !_burstZoneData.IsCreated ||
-                !_burstBiomeMatrixData.IsCreated ||
-                !_burstBiomeMatrixIdToDataIndex.IsCreated ||
-                !_burstBiomeFamilyData.IsCreated)
+                !TryResolveSamplingData(
+                    out NativeArray<ZoneData> zoneData,
+                    out NativeArray<BiomeMatrixData> biomeMatrixData,
+                    out NativeArray<int> biomeMatrixIdToDataIndex,
+                    out NativeArray<BiomeFamilyData> biomeFamilyData,
+                    out NativeArray<CaveEntranceHintData> caveEntranceHints,
+                    out NativeArray<ushort> noiseLookupTable))
             {
                 PrepareBurstData();
+                if (!TryResolveSamplingData(
+                        out zoneData,
+                        out biomeMatrixData,
+                        out biomeMatrixIdToDataIndex,
+                        out biomeFamilyData,
+                        out caveEntranceHints,
+                        out noiseLookupTable))
+                {
+                    _lastSamplingJobHandle = default;
+                    _hasPendingSamplingJob = false;
+                    return default;
+                }
+            }
+
+            if (cellCount <= 0 ||
+                !TryAcquireSamplingJobBuffers(
+                    out zoneData,
+                    out biomeMatrixData,
+                    out biomeMatrixIdToDataIndex,
+                    out biomeFamilyData,
+                    out caveEntranceHints,
+                    out noiseLookupTable))
+            {
+                _lastSamplingJobHandle = default;
+                _hasPendingSamplingJob = false;
+                return default;
             }
 
             CellSamplingJob job = new CellSamplingJob
             {
                 CellInputs = cellInputs,
-                Zones = _burstZoneData,
-                BiomeMatrices = _burstBiomeMatrixData,
-                BiomeMatrixIdToDataIndex = _burstBiomeMatrixIdToDataIndex,
-                BiomeFamilies = _burstBiomeFamilyData,
-                CaveEntranceHints = _burstCaveEntranceHints,
-                NoiseLookupTable = _noiseLookupTable,
+                Zones = zoneData,
+                BiomeMatrices = biomeMatrixData,
+                BiomeMatrixIdToDataIndex = biomeMatrixIdToDataIndex,
+                BiomeFamilies = biomeFamilyData,
+                CaveEntranceHints = caveEntranceHints,
+                NoiseLookupTable = noiseLookupTable,
                 CellOutputs = cellOutputs,
                 BiomeInfluences = biomeInfluences,
                 SlopeProbeMeters = slopeProbeMeters,
@@ -2369,10 +2406,22 @@ namespace Hecton8.World
                 CrystalGrowthFamilyIndex = ResolveBiomeFamilyDataIndex(crystalGrowthFamily)
             };
 
-            JobHandle handle = job.Schedule(cellCount, math.max(1, math.min(32, cellCount / 8)));
-            _lastSamplingJobHandle = handle;
-            _hasPendingSamplingJob = true;
-            return handle;
+            _samplingJobBuffersLocked = true;
+
+            try
+            {
+                JobHandle handle = job.Schedule(cellCount, math.max(1, math.min(32, cellCount / 8)));
+                _lastSamplingJobHandle = handle;
+                _hasPendingSamplingJob = true;
+                return handle;
+            }
+            catch
+            {
+                _lastSamplingJobHandle = default;
+                _hasPendingSamplingJob = false;
+                ReleaseSamplingJobBufferLocks();
+                throw;
+            }
         }
 
         public bool TryUploadPackedBiomeInfluenceGrid(
@@ -2390,8 +2439,14 @@ namespace Hecton8.World
             if (safeCount <= 0 || !EnsureBiomeInfluenceGraphicsBufferCapacity(safeCount))
                 return false;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_biomeInfluenceGraphicsBuffer, packedCells, safeCount);
-            buffer = _biomeInfluenceGraphicsBuffer;
+            GraphicsBuffer writeBuffer = ResolveBiomeInfluenceWriteBuffer();
+            if (writeBuffer == null)
+                return false;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, packedCells, safeCount);
+            _activeBiomeInfluenceGraphicsBuffer = writeBuffer;
+            _biomeInfluenceGraphicsBufferWriteIndex ^= 1;
+            buffer = _activeBiomeInfluenceGraphicsBuffer;
             bufferCapacity = _biomeInfluenceGraphicsBufferCapacity;
             return buffer != null && buffer.IsValid();
         }
@@ -2401,10 +2456,14 @@ namespace Hecton8.World
             if (requiredCapacity <= 0)
                 return false;
 
-            if (_biomeInfluenceGraphicsBuffer != null &&
-                _biomeInfluenceGraphicsBuffer.IsValid() &&
+            if (_biomeInfluenceGraphicsBufferA != null &&
+                _biomeInfluenceGraphicsBufferA.IsValid() &&
+                _biomeInfluenceGraphicsBufferB != null &&
+                _biomeInfluenceGraphicsBufferB.IsValid() &&
                 _biomeInfluenceGraphicsBufferCapacity >= requiredCapacity)
             {
+                if (_activeBiomeInfluenceGraphicsBuffer == null)
+                    _activeBiomeInfluenceGraphicsBuffer = _biomeInfluenceGraphicsBufferA;
                 return true;
             }
 
@@ -2418,19 +2477,47 @@ namespace Hecton8.World
                     _biomeInfluenceGraphicsBufferCapacity);
             }
 
-            // COLD ALLOC: GraphicsBuffer[_biomeInfluenceGraphicsBufferCapacity] - packed 8-family biome influence grid upload owned by WorldProceduralFieldSampler.
-            _biomeInfluenceGraphicsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(_biomeInfluenceGraphicsBufferCapacity);
-            return _biomeInfluenceGraphicsBuffer != null && _biomeInfluenceGraphicsBuffer.IsValid();
+            // COLD ALLOC: GraphicsBuffer[_biomeInfluenceGraphicsBufferCapacity] A/B - packed 8-family biome influence grid upload owned by WorldProceduralFieldSampler.
+            _biomeInfluenceGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(_biomeInfluenceGraphicsBufferCapacity);
+            _biomeInfluenceGraphicsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(_biomeInfluenceGraphicsBufferCapacity);
+            _activeBiomeInfluenceGraphicsBuffer = _biomeInfluenceGraphicsBufferA;
+            _biomeInfluenceGraphicsBufferWriteIndex = 0;
+            return _biomeInfluenceGraphicsBufferA != null &&
+                   _biomeInfluenceGraphicsBufferA.IsValid() &&
+                   _biomeInfluenceGraphicsBufferB != null &&
+                   _biomeInfluenceGraphicsBufferB.IsValid();
+        }
+
+        private GraphicsBuffer ResolveBiomeInfluenceWriteBuffer()
+        {
+            GraphicsBuffer writeBuffer = _biomeInfluenceGraphicsBufferWriteIndex == 0
+                ? _biomeInfluenceGraphicsBufferA
+                : _biomeInfluenceGraphicsBufferB;
+            if (writeBuffer != null && writeBuffer.IsValid())
+                return writeBuffer;
+
+            GraphicsBuffer fallback = ReferenceEquals(_activeBiomeInfluenceGraphicsBuffer, _biomeInfluenceGraphicsBufferA)
+                ? _biomeInfluenceGraphicsBufferB
+                : _biomeInfluenceGraphicsBufferA;
+            return fallback != null && fallback.IsValid() ? fallback : null;
         }
 
         private void ReleaseBiomeInfluenceGraphicsBuffer()
         {
-            if (_biomeInfluenceGraphicsBuffer != null)
+            if (_biomeInfluenceGraphicsBufferA != null)
             {
-                _biomeInfluenceGraphicsBuffer.Release();
-                _biomeInfluenceGraphicsBuffer = null;
+                _biomeInfluenceGraphicsBufferA.Release();
+                _biomeInfluenceGraphicsBufferA = null;
             }
 
+            if (_biomeInfluenceGraphicsBufferB != null)
+            {
+                _biomeInfluenceGraphicsBufferB.Release();
+                _biomeInfluenceGraphicsBufferB = null;
+            }
+
+            _activeBiomeInfluenceGraphicsBuffer = null;
+            _biomeInfluenceGraphicsBufferWriteIndex = 0;
             _biomeInfluenceGraphicsBufferCapacity = 0;
         }
 
@@ -2591,13 +2678,13 @@ namespace Hecton8.World
 
             int secondaryIndex = ResolveSecondaryBiomeMatrixDataIndex(in output);
             if (secondaryIndex < 0 ||
-                !_burstBiomeMatrixData.IsCreated ||
+                !TryReadVaultBuffer(in _burstBiomeMatrixDataHandle, out NativeArray<BiomeMatrixData>.ReadOnly biomeMatrixData) ||
                 secondaryIndex >= _burstBiomeMatrixDataCount)
             {
                 return null;
             }
 
-            int familyIndex = _burstBiomeMatrixData[secondaryIndex].FamilyDataIndex;
+            int familyIndex = biomeMatrixData[secondaryIndex].FamilyDataIndex;
             return familyIndex >= 0 && familyIndex < _biomeFamilyBakeList.Count
                 ? _biomeFamilyBakeList[familyIndex]
                 : null;
@@ -2693,15 +2780,22 @@ namespace Hecton8.World
         private void EnsureNoiseLookupTable()
         {
             int requiredLength = NoiseLookupResolution * NoiseLookupResolution;
-            if (_noiseLookupTable.IsCreated && _noiseLookupTable.Length == requiredLength)
+            if (TryResolveVaultBuffer(in _noiseLookupTableHandle, out NativeArray<ushort> existing) &&
+                existing.Length == requiredLength)
+            {
                 return;
+            }
 
-            if (_noiseLookupTable.IsCreated)
-                DisposeTrackedNativeArray(ref _noiseLookupTable);
+            if (!TryEnsureVaultBufferCapacity(
+                    ref _noiseLookupTableHandle,
+                    BufferID.WorldProceduralFieldNoiseLookup,
+                    requiredLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<ushort> noiseLookupTable))
+            {
+                return;
+            }
 
-            // COLD ALLOC: NativeArray<ushort>[262144] - persistent tileable noise LUT replacing runtime analytical noise in dense field sampling - owner: WorldProceduralFieldSampler
-            _noiseLookupTable = new NativeArray<ushort>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            RegisterTrackedNativeArray(_noiseLookupTable, nameof(_noiseLookupTable));
             for (int z = 0; z < NoiseLookupResolution; z++)
             {
                 float v = z / (float)NoiseLookupResolution;
@@ -2712,7 +2806,7 @@ namespace Hecton8.World
                     float broad = EvaluateTileableNoise01(u, v, 6.5f);
                     float detail = EvaluateTileableNoise01(math.frac(u + 0.317f), math.frac(v + 0.143f), 13.75f);
                     float combined = math.saturate((broad * 0.65f) + (detail * 0.35f));
-                    _noiseLookupTable[rowOffset + x] = (ushort)math.round(combined * ushort.MaxValue);
+                    noiseLookupTable[rowOffset + x] = (ushort)math.round(combined * ushort.MaxValue);
                 }
             }
         }
@@ -2805,29 +2899,52 @@ namespace Hecton8.World
             if (_worldCaveDirector != null)
                 _worldCaveDirector.CollectEntranceHints(_caveEntranceHintBakeList);
 
-            EnsureNativeArrayCapacity(ref _burstBiomeFamilyData, _biomeFamilyBakeList.Count, nameof(_burstBiomeFamilyData));
+            if (!TryEnsureVaultBufferCapacity(
+                    ref _burstBiomeFamilyDataHandle,
+                    BufferID.WorldProceduralFieldBiomeFamilies,
+                    _biomeFamilyBakeList.Count,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<BiomeFamilyData> biomeFamilyData))
+            {
+                return;
+            }
+
             _burstBiomeFamilyDataCount = _biomeFamilyBakeList.Count;
             for (int i = 0; i < _biomeFamilyBakeList.Count; i++)
             {
                 HectonBiomeFamilyProfile family = _biomeFamilyBakeList[i];
-                _burstBiomeFamilyData[i] = new BiomeFamilyData
+                biomeFamilyData[i] = new BiomeFamilyData
                 {
                     FamilyInstanceId = family != null ? unchecked((int)EntityId.ToULong(family.GetEntityId())) : 0,
                     Flags = TokenizeFamilyFlags(family)
                 };
             }
 
-            EnsureNativeArrayCapacity(ref _burstBiomeMatrixData, _biomeMatrixBakeList.Count, nameof(_burstBiomeMatrixData));
-            EnsureNativeArrayCapacity(ref _burstBiomeMatrixIdToDataIndex, 256, nameof(_burstBiomeMatrixIdToDataIndex));
-            for (int i = 0; i < _burstBiomeMatrixIdToDataIndex.Length; i++)
-                _burstBiomeMatrixIdToDataIndex[i] = -1;
+            if (!TryEnsureVaultBufferCapacity(
+                    ref _burstBiomeMatrixDataHandle,
+                    BufferID.WorldProceduralFieldBiomeMatrices,
+                    _biomeMatrixBakeList.Count,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<BiomeMatrixData> biomeMatrixData) ||
+                !TryEnsureVaultBufferCapacity(
+                    ref _burstBiomeMatrixIdToDataIndexHandle,
+                    BufferID.WorldProceduralFieldBiomeMatrixIndex,
+                    256,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<int> biomeMatrixIdToDataIndex))
+            {
+                return;
+            }
+
+            for (int i = 0; i < biomeMatrixIdToDataIndex.Length; i++)
+                biomeMatrixIdToDataIndex[i] = -1;
 
             _burstBiomeMatrixDataCount = _biomeMatrixBakeList.Count;
             for (int i = 0; i < _biomeMatrixBakeList.Count; i++)
             {
                 HectonBiomeMatrixProfile profile = _biomeMatrixBakeList[i];
                 int matrixIndex = profile != null ? profile.matrixIndex : -1;
-                _burstBiomeMatrixData[i] = new BiomeMatrixData
+                biomeMatrixData[i] = new BiomeMatrixData
                 {
                     MatrixIndex = matrixIndex,
                     FamilyDataIndex = ResolveBiomeFamilyDataIndex(profile != null ? profile.familyProfile : null),
@@ -2847,11 +2964,20 @@ namespace Hecton8.World
                     VolumetricRole = ResolveVolumetricBiomeRole(profile)
                 };
 
-                if (matrixIndex > 0 && matrixIndex < _burstBiomeMatrixIdToDataIndex.Length)
-                    _burstBiomeMatrixIdToDataIndex[matrixIndex] = i;
+                if (matrixIndex > 0 && matrixIndex < biomeMatrixIdToDataIndex.Length)
+                    biomeMatrixIdToDataIndex[matrixIndex] = i;
             }
 
-            EnsureNativeArrayCapacity(ref _burstZoneData, _anchors.Count, nameof(_burstZoneData));
+            if (!TryEnsureVaultBufferCapacity(
+                    ref _burstZoneDataHandle,
+                    BufferID.WorldProceduralFieldZones,
+                    _anchors.Count,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<ZoneData> zoneData))
+            {
+                return;
+            }
+
             _burstZoneDataCount = 0;
             for (int i = 0; i < _anchors.Count; i++)
             {
@@ -2862,7 +2988,7 @@ namespace Hecton8.World
                 int zoneDataIndex = _burstZoneDataCount++;
                 _zoneDataIndexLookup[anchor] = zoneDataIndex;
                 _zoneBakeList.Add(anchor);
-                _burstZoneData[zoneDataIndex] = new ZoneData
+                zoneData[zoneDataIndex] = new ZoneData
                 {
                     PositionXZ = new float2(anchor.transform.position.x, anchor.transform.position.z),
                     ActivationRadius = anchor.ActivationRadius,
@@ -2880,12 +3006,21 @@ namespace Hecton8.World
                 };
             }
 
-            EnsureNativeArrayCapacity(ref _burstCaveEntranceHints, _caveEntranceHintBakeList.Count, nameof(_burstCaveEntranceHints));
+            if (!TryEnsureVaultBufferCapacity(
+                    ref _burstCaveEntranceHintsHandle,
+                    BufferID.WorldProceduralFieldCaveEntranceHints,
+                    _caveEntranceHintBakeList.Count,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<CaveEntranceHintData> caveEntranceHints))
+            {
+                return;
+            }
+
             _burstCaveEntranceHintCount = _caveEntranceHintBakeList.Count;
             for (int i = 0; i < _caveEntranceHintBakeList.Count; i++)
             {
                 WorldCaveDirector.CaveEntranceHint hint = _caveEntranceHintBakeList[i];
-                _burstCaveEntranceHints[i] = new CaveEntranceHintData
+                caveEntranceHints[i] = new CaveEntranceHintData
                 {
                     SurfacePosition = hint.SurfacePosition,
                     InteriorPosition = hint.InteriorPosition,
@@ -3828,7 +3963,7 @@ namespace Hecton8.World
             float dx = (cellHeightContext.EastHeight - cellHeightContext.WestHeight) / (probe * 2f);
             float dz = (cellHeightContext.NorthHeight - cellHeightContext.SouthHeight) / (probe * 2f);
             float gradient = FastLength2D(dx, dz);
-            float slopeDegrees = math.degrees(math.atan(gradient));
+            float slopeDegrees = math.degrees(MathLodApproximation.ApproxAtanFast(gradient));
             float curvature = (cellHeightContext.WestHeight + cellHeightContext.EastHeight + cellHeightContext.NorthHeight + cellHeightContext.SouthHeight - (cellHeightContext.CenterHeight * 4f)) / math.max(0.0001f, probe * probe);
 
             terrainContext = new LocalTerrainContext
@@ -3893,7 +4028,7 @@ namespace Hecton8.World
             float probe = math.max(0.0001f, probeMeters);
             float dx = (eastHeight - westHeight) / (probe * 2f);
             float dz = (northHeight - southHeight) / (probe * 2f);
-            return math.degrees(math.atan(FastLength2D(dx, dz)));
+            return math.degrees(MathLodApproximation.ApproxAtanFast(FastLength2D(dx, dz)));
         }
 
         private static float ResolveSteepGradientContactCheat(
@@ -4026,7 +4161,9 @@ namespace Hecton8.World
         private float EvaluateNoise01(float x, float z, float scale)
         {
             EnsureNoiseLookupTable();
-            return SampleNoiseLookup01(_noiseLookupTable, x, z, scale);
+            return TryResolveVaultBuffer(in _noiseLookupTableHandle, out NativeArray<ushort> noiseLookupTable)
+                ? SampleNoiseLookup01(noiseLookupTable, x, z, scale)
+                : 0f;
         }
 
         private HectonBiomeFamilyProfile ResolveFallbackBiomeFamily(
@@ -4923,33 +5060,174 @@ namespace Hecton8.World
             _biomeFamilyBakeList.Add(family);
         }
 
-        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredCapacity, string label) where T : struct
+        private bool TryEnsureVaultBufferCapacity<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCapacity,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
         {
-            if (requiredCapacity <= 0)
+            buffer = default;
+            int safeCapacity = requiredCapacity > 0
+                ? ResolvePowerOfTwoCapacity(requiredCapacity)
+                : EmptyNativeArrayCapacity;
+
+            if (!TryCacheDataVaultCold())
+                return false;
+
+            if (handle.BufferID == unchecked((uint)(int)bufferId) &&
+                handle.Generation != 0u &&
+                _dataVault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= safeCapacity)
             {
-                if (array.IsCreated && array.Length >= EmptyNativeArrayCapacity)
-                    return;
+                return true;
+            }
 
-                if (array.IsCreated)
-                    DisposeTrackedNativeArray(ref array);
+            handle = _dataVault.EnsureGenerationHandle<T>(
+                bufferId,
+                safeCapacity,
+                OwnerSystemId,
+                options);
 
-                if (!array.IsCreated)
-                {
-                    array = new NativeArray<T>(EmptyNativeArrayCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                    RegisterTrackedNativeArray(array, label);
-                }
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u &&
+                   _dataVault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= safeCapacity;
+        }
 
+        private bool TryCacheDataVaultCold()
+        {
+            if (_dataVault != null)
+                return true;
+
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault != null;
+        }
+
+        private bool TryResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return _dataVault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   _dataVault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            return _dataVault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   _dataVault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private bool TryResolveSamplingData(
+            out NativeArray<ZoneData> zones,
+            out NativeArray<BiomeMatrixData> biomeMatrices,
+            out NativeArray<int> biomeMatrixIdToDataIndex,
+            out NativeArray<BiomeFamilyData> biomeFamilies,
+            out NativeArray<CaveEntranceHintData> caveEntranceHints,
+            out NativeArray<ushort> noiseLookupTable)
+        {
+            zones = default;
+            biomeMatrices = default;
+            biomeMatrixIdToDataIndex = default;
+            biomeFamilies = default;
+            caveEntranceHints = default;
+            noiseLookupTable = default;
+
+            return TryResolveVaultBuffer(in _burstZoneDataHandle, out zones) &&
+                   TryResolveVaultBuffer(in _burstBiomeMatrixDataHandle, out biomeMatrices) &&
+                   TryResolveVaultBuffer(in _burstBiomeMatrixIdToDataIndexHandle, out biomeMatrixIdToDataIndex) &&
+                   TryResolveVaultBuffer(in _burstBiomeFamilyDataHandle, out biomeFamilies) &&
+                   TryResolveVaultBuffer(in _burstCaveEntranceHintsHandle, out caveEntranceHints) &&
+                   TryResolveVaultBuffer(in _noiseLookupTableHandle, out noiseLookupTable);
+        }
+
+        private bool TryAcquireSamplingJobBuffers(
+            out NativeArray<ZoneData> zones,
+            out NativeArray<BiomeMatrixData> biomeMatrices,
+            out NativeArray<int> biomeMatrixIdToDataIndex,
+            out NativeArray<BiomeFamilyData> biomeFamilies,
+            out NativeArray<CaveEntranceHintData> caveEntranceHints,
+            out NativeArray<ushort> noiseLookupTable)
+        {
+            zones = default;
+            biomeMatrices = default;
+            biomeMatrixIdToDataIndex = default;
+            biomeFamilies = default;
+            caveEntranceHints = default;
+            noiseLookupTable = default;
+
+            if (_dataVault == null)
+                return false;
+
+            if (!_dataVault.TryAcquireWriteLock(in _burstZoneDataHandle, OwnerSystemId, out zones))
+                return false;
+
+            if (!_dataVault.TryAcquireWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId, out biomeMatrices))
+            {
+                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
+                return false;
+            }
+
+            if (!_dataVault.TryAcquireWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId, out biomeMatrixIdToDataIndex))
+            {
+                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
+                return false;
+            }
+
+            if (!_dataVault.TryAcquireWriteLock(in _burstBiomeFamilyDataHandle, OwnerSystemId, out biomeFamilies))
+            {
+                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
+                return false;
+            }
+
+            if (!_dataVault.TryAcquireWriteLock(in _burstCaveEntranceHintsHandle, OwnerSystemId, out caveEntranceHints))
+            {
+                _dataVault.ReleaseWriteLock(in _burstBiomeFamilyDataHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
+                return false;
+            }
+
+            if (!_dataVault.TryAcquireWriteLock(in _noiseLookupTableHandle, OwnerSystemId, out noiseLookupTable))
+            {
+                _dataVault.ReleaseWriteLock(in _burstCaveEntranceHintsHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstBiomeFamilyDataHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
+                _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ReleaseSamplingJobBufferLocks()
+        {
+            if (!_samplingJobBuffersLocked || _dataVault == null)
+            {
+                _samplingJobBuffersLocked = false;
                 return;
             }
 
-            if (array.IsCreated && array.Length >= requiredCapacity)
-                return;
-
-            if (array.IsCreated)
-                DisposeTrackedNativeArray(ref array);
-
-            array = new NativeArray<T>(ResolvePowerOfTwoCapacity(requiredCapacity), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            RegisterTrackedNativeArray(array, label);
+            _dataVault.ReleaseWriteLock(in _noiseLookupTableHandle, OwnerSystemId);
+            _dataVault.ReleaseWriteLock(in _burstCaveEntranceHintsHandle, OwnerSystemId);
+            _dataVault.ReleaseWriteLock(in _burstBiomeFamilyDataHandle, OwnerSystemId);
+            _dataVault.ReleaseWriteLock(in _burstBiomeMatrixIdToDataIndexHandle, OwnerSystemId);
+            _dataVault.ReleaseWriteLock(in _burstBiomeMatrixDataHandle, OwnerSystemId);
+            _dataVault.ReleaseWriteLock(in _burstZoneDataHandle, OwnerSystemId);
+            _samplingJobBuffersLocked = false;
         }
 
         private static int ResolvePowerOfTwoCapacity(int requiredCapacity)
@@ -4995,18 +5273,12 @@ namespace Hecton8.World
         {
             CompletePendingSamplingJobForBarrier();
 
-            if (_burstZoneData.IsCreated)
-                DisposeTrackedNativeArray(ref _burstZoneData);
-            if (_burstBiomeMatrixData.IsCreated)
-                DisposeTrackedNativeArray(ref _burstBiomeMatrixData);
-            if (_burstBiomeMatrixIdToDataIndex.IsCreated)
-                DisposeTrackedNativeArray(ref _burstBiomeMatrixIdToDataIndex);
-            if (_burstBiomeFamilyData.IsCreated)
-                DisposeTrackedNativeArray(ref _burstBiomeFamilyData);
-            if (_burstCaveEntranceHints.IsCreated)
-                DisposeTrackedNativeArray(ref _burstCaveEntranceHints);
-            if (_noiseLookupTable.IsCreated)
-                DisposeTrackedNativeArray(ref _noiseLookupTable);
+            ReleaseVaultHandle(ref _burstZoneDataHandle);
+            ReleaseVaultHandle(ref _burstBiomeMatrixDataHandle);
+            ReleaseVaultHandle(ref _burstBiomeMatrixIdToDataIndexHandle);
+            ReleaseVaultHandle(ref _burstBiomeFamilyDataHandle);
+            ReleaseVaultHandle(ref _burstCaveEntranceHintsHandle);
+            ReleaseVaultHandle(ref _noiseLookupTableHandle);
 
             _burstZoneDataCount = 0;
             _burstBiomeMatrixDataCount = 0;
@@ -5014,20 +5286,34 @@ namespace Hecton8.World
             _burstCaveEntranceHintCount = 0;
         }
 
+        private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u && _dataVault != null)
+                _dataVault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
         private void CompletePendingSamplingJobForBarrier()
         {
             if (!_hasPendingSamplingJob)
+            {
+                ReleaseSamplingJobBufferLocks();
                 return;
+            }
 
             DispatcherJobSwap.TryComplete(ref _lastSamplingJobHandle, true);
             _hasPendingSamplingJob = false;
+            ReleaseSamplingJobBufferLocks();
         }
 
         private bool TryGetZoneData(int zoneDataIndex, out ZoneData zoneData)
         {
-            if (_burstZoneData.IsCreated && zoneDataIndex >= 0 && zoneDataIndex < _burstZoneDataCount)
+            if (TryReadVaultBuffer(in _burstZoneDataHandle, out NativeArray<ZoneData>.ReadOnly zoneDataBuffer) &&
+                zoneDataIndex >= 0 &&
+                zoneDataIndex < _burstZoneDataCount)
             {
-                zoneData = _burstZoneData[zoneDataIndex];
+                zoneData = zoneDataBuffer[zoneDataIndex];
                 return true;
             }
 
@@ -5037,9 +5323,11 @@ namespace Hecton8.World
 
         private bool TryGetBiomeMatrixData(int biomeMatrixDataIndex, out BiomeMatrixData biomeData)
         {
-            if (_burstBiomeMatrixData.IsCreated && biomeMatrixDataIndex >= 0 && biomeMatrixDataIndex < _burstBiomeMatrixDataCount)
+            if (TryReadVaultBuffer(in _burstBiomeMatrixDataHandle, out NativeArray<BiomeMatrixData>.ReadOnly biomeMatrixData) &&
+                biomeMatrixDataIndex >= 0 &&
+                biomeMatrixDataIndex < _burstBiomeMatrixDataCount)
             {
-                biomeData = _burstBiomeMatrixData[biomeMatrixDataIndex];
+                biomeData = biomeMatrixData[biomeMatrixDataIndex];
                 return true;
             }
 
@@ -5049,9 +5337,11 @@ namespace Hecton8.World
 
         private bool TryGetBiomeFamilyData(int biomeFamilyDataIndex, out BiomeFamilyData familyData)
         {
-            if (_burstBiomeFamilyData.IsCreated && biomeFamilyDataIndex >= 0 && biomeFamilyDataIndex < _burstBiomeFamilyDataCount)
+            if (TryReadVaultBuffer(in _burstBiomeFamilyDataHandle, out NativeArray<BiomeFamilyData>.ReadOnly biomeFamilyData) &&
+                biomeFamilyDataIndex >= 0 &&
+                biomeFamilyDataIndex < _burstBiomeFamilyDataCount)
             {
-                familyData = _burstBiomeFamilyData[biomeFamilyDataIndex];
+                familyData = biomeFamilyData[biomeFamilyDataIndex];
                 return true;
             }
 

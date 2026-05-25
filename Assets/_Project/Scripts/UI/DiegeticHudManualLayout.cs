@@ -30,17 +30,11 @@ namespace Hecton8.UI
         [SerializeField] private DiegeticHudLayoutAxis axis;
         [SerializeField] private bool collectDirectChildrenOnEnable = true;
         [SerializeField] private bool applyOnEnable = true;
-        [SerializeField] private bool releaseNativeStateOnDisable;
         [SerializeField] private float startOffset = -0.22f;
         [SerializeField] private float itemExtent = 0.045f;
         [SerializeField] private float spacing = 0.012f;
         [SerializeField] private float crossOffset;
         [SerializeField] private float depthOffset = 0.002f;
-
-        private NativeArray<DiegeticHudLayoutInput> _inputs;
-        private NativeArray<float3> _outputs;
-        private bool _inputsRegistered;
-        private bool _outputsRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -65,14 +59,10 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterLayout(this);
-
-            if (releaseNativeStateOnDisable)
-                DisposeNativeState();
         }
 
         private void OnDestroy()
         {
-            DisposeNativeState();
         }
 
         public void SetTargets(Transform[] newTargets)
@@ -86,32 +76,13 @@ namespace Hecton8.UI
             if (count <= 0)
                 return false;
 
-            EnsureNativeCapacity(count);
-            for (int i = 0; i < count; i++)
+            DiegeticHudLayoutSettings settings = new DiegeticHudLayoutSettings
             {
-                _inputs[i] = new DiegeticHudLayoutInput
-                {
-                    Offset = 0f,
-                    CrossOffset = crossOffset,
-                    DepthOffset = depthOffset
-                };
-            }
-
-            DiegeticHudLayoutJob job = new DiegeticHudLayoutJob
-            {
-                Inputs = _inputs,
-                Outputs = _outputs,
-                Settings = new DiegeticHudLayoutSettings
-                {
-                    Axis = (byte)axis,
-                    StartOffset = startOffset,
-                    ItemExtent = math.max(0f, itemExtent),
-                    Spacing = math.max(0f, spacing)
-                }
+                Axis = (byte)axis,
+                StartOffset = startOffset,
+                ItemExtent = math.max(0f, itemExtent),
+                Spacing = math.max(0f, spacing)
             };
-
-            for (int i = 0; i < count; i++)
-                job.Execute(i);
 
             for (int i = 0; i < count; i++)
             {
@@ -119,7 +90,13 @@ namespace Hecton8.UI
                 if (target == null)
                     continue;
 
-                float3 local = _outputs[i];
+                DiegeticHudLayoutInput input = new DiegeticHudLayoutInput
+                {
+                    Offset = 0f,
+                    CrossOffset = crossOffset,
+                    DepthOffset = depthOffset
+                };
+                float3 local = ComputeLayoutPosition(i, in input, in settings);
                 target.localPosition = new Vector3(local.x, local.y, local.z);
             }
 
@@ -129,7 +106,7 @@ namespace Hecton8.UI
         public static void FlushGlobalRescaleRequests()
         {
             bool rebuild = false;
-            while (GlobalSignals.TryDequeueUIRescaleRequest(out UIRescaleRequestSignal _))
+            while (SignalBus<UIRescaleRequestSignal>.TryConsumeFrame(out UIRescaleRequestSignal _))
                 rebuild = true;
 
             if (!rebuild)
@@ -191,51 +168,19 @@ namespace Hecton8.UI
                 targets[i] = transform.GetChild(i);
         }
 
-        private void EnsureNativeCapacity(int count)
+        internal static float3 ComputeLayoutPosition(
+            int index,
+            in DiegeticHudLayoutInput input,
+            in DiegeticHudLayoutSettings settings)
         {
-            if (_inputs.IsCreated && _inputs.Length == count && _outputs.IsCreated && _outputs.Length == count)
-                return;
-
-            DisposeNativeState();
-            _inputs = new NativeArray<DiegeticHudLayoutInput>(
-                count,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<DiegeticHudLayoutInput>[count] - manual HUD layout input lane - owner: DiegeticHudManualLayout
-            _outputs = new NativeArray<float3>(
-                count,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float3>[count] - manual HUD layout output lane - owner: DiegeticHudManualLayout
-            NativeMemorySentinel.RegisterNativeArray(_inputs, nameof(DiegeticHudManualLayout), nameof(_inputs), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_outputs, nameof(DiegeticHudManualLayout), nameof(_outputs), NativeAllocationLifetime.Scene);
-            _inputsRegistered = true;
-            _outputsRegistered = true;
-        }
-
-        private void DisposeNativeState()
-        {
-            if (_inputs.IsCreated)
-            {
-                if (_inputsRegistered)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_inputs);
-                    _inputsRegistered = false;
-                }
-
-                _inputs.Dispose();
-                _inputs = default;
-            }
-
-            if (_outputs.IsCreated)
-            {
-                if (_outputsRegistered)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_outputs);
-                    _outputsRegistered = false;
-                }
-
-                _outputs.Dispose();
-                _outputs = default;
-            }
+            float lane = settings.StartOffset + (index * (settings.ItemExtent + settings.Spacing)) + input.Offset;
+            int axisMask = settings.Axis & 1;
+            float vertical = axisMask;
+            float horizontal = 1f - vertical;
+            return new float3(
+                (lane * horizontal) + (input.CrossOffset * vertical),
+                (input.CrossOffset * horizontal) + (lane * vertical),
+                input.DepthOffset);
         }
     }
 

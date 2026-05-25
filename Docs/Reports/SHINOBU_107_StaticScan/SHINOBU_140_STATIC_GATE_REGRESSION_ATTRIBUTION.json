@@ -1,4 +1,4 @@
-{
+﻿{
   "agent": "SHINOBU_140",
   "baseline": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
   "evidence": "STATIC_SOURCE/PY_TOOL/CI_FALLBACK",

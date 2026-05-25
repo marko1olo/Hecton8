@@ -1,0 +1,5 @@
+species,sizeMin,sizeMax,aggressionMin,aggressionMax,hueRange,patternMask,mutationProbability,biolumFrequency
+1,0.15,0.85,0.05,0.45,1.00,15,0.035,0.80
+2,0.55,1.00,0.50,1.00,0.35,3,0.015,0.45
+peeper,0.10,0.70,0.00,0.30,1.00,15,0.040,0.85
+leviathan,0.75,1.00,0.80,1.00,0.20,1,0.010,0.30

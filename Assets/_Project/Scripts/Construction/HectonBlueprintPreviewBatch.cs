@@ -17,7 +17,7 @@ using UnityEditor;
 namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
-    public sealed class HectonBlueprintPreviewBatch : MonoBehaviour, IRenderable, ILateFrameTickable
+    public sealed class HectonBlueprintPreviewBatch : MonoBehaviour, IRenderable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string HologramShaderPath = "Assets/_Project/Shaders/Hecton_ConstructionDearLieHologram.shader";
         private const float DefaultDearLieWiggleSpeed = 18f;
@@ -44,6 +44,7 @@ namespace Hecton8.Construction
         private JobHandle _pendingBuildHandle;
         private bool _registeredRenderable;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
         private bool _pendingBuildScheduled;
         private bool _pendingBuildDiscard;
         private int _activeCount;
@@ -79,12 +80,14 @@ namespace Hecton8.Construction
                 return;
 
             EnsureBuffersCold();
+            TryRegisterHotSwapListener();
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             if (_registeredRenderable)
             {
                 GlobalRegistry.Renderables.Unregister(this);
@@ -99,6 +102,51 @@ namespace Hecton8.Construction
 
             CompletePendingBuildForTeardown();
             _uploadedCount = 0;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            {
+                if (_registeredLateFrame)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                    _registeredLateFrame = false;
+                }
+
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault && currentService != null && isActiveAndEnabled)
+            {
+                _vault = currentService as IDataVault;
+                _stateHandle = default;
+                _visualHandle = default;
+                _telemetryHandle = default;
+                _argsHandle = default;
+                EnsureBuffersCold();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void OnDestroy()
@@ -275,7 +323,7 @@ namespace Hecton8.Construction
                 _boundVisualBuffer = visualBuffer;
             }
 
-            Graphics.DrawProceduralIndirect(
+            UnityEngine.Graphics.DrawProceduralIndirect(
                 previewMaterial,
                 _drawBounds,
                 MeshTopology.Triangles,
@@ -368,6 +416,7 @@ namespace Hecton8.Construction
                 maxFrameSignals: 8,
                 lowTierFrameSignals: 8,
                 laneHash: ConstructionPreviewSignal.LaneHash);
+            SignalBus<ConstructionPreviewSignal>.EnsureInitialized();
         }
 
         private void ConsumeConstructionPreviewSignals()
@@ -679,22 +728,22 @@ namespace Hecton8.Construction
                 return;
             }
 
-            _stateHandle = vault.GetGenerationHandle<BuilderGhostStateDTO>(
+            _stateHandle = vault.EnsureGenerationHandle<BuilderGhostStateDTO>(
                 ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId,
                 resolvedCapacity,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _visualHandle = vault.GetGenerationHandle<BuilderGhostVisualDTO>(
+            _visualHandle = vault.EnsureGenerationHandle<BuilderGhostVisualDTO>(
                 ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId,
                 resolvedCapacity,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetGenerationHandle<HolographyTelemetryEntry>(
+            _telemetryHandle = vault.EnsureGenerationHandle<HolographyTelemetryEntry>(
                 ShinobuSocketConstructionRuntime.BuilderGhostTelemetryBufferId,
                 ShinobuSocketConstructionRuntime.TelemetryCapacity,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _argsHandle = vault.GetGenerationHandle<BuilderGhostIndirectArgsDTO>(
+            _argsHandle = vault.EnsureGenerationHandle<BuilderGhostIndirectArgsDTO>(
                 ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId,
                 1,
                 SystemID.Construction,

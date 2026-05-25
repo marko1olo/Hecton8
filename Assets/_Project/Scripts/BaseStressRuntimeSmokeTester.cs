@@ -5,6 +5,7 @@
 // through high branch resistance even when total generation exceeds demand.
 // ============================================================================
 
+using System.Globalization;
 using System.Threading;
 using Hecton8.Power;
 using Unity.Mathematics;
@@ -164,10 +165,10 @@ namespace Hecton8.Dev
         {
             Debug.LogError(
                 "[BaseStressSmoke] FAIL Jacobi voltage relaxation did not isolate the high-resistance load. " +
-                "gen=" + summary.TotalGeneration.ToString("0.###") +
-                " demand=" + summary.TotalConsumption.ToString("0.###") +
-                " served=" + summary.ServedDemand.ToString("0.###") +
-                " unserved=" + summary.UnservedDemand.ToString("0.###") +
+                "gen=" + summary.TotalGeneration.ToString("0.###", CultureInfo.InvariantCulture) +
+                " demand=" + summary.TotalConsumption.ToString("0.###", CultureInfo.InvariantCulture) +
+                " served=" + summary.ServedDemand.ToString("0.###", CultureInfo.InvariantCulture) +
+                " unserved=" + summary.UnservedDemand.ToString("0.###", CultureInfo.InvariantCulture) +
                 " nearPowered=" + nearLoadPowered +
                 " farPowered=" + farLoadPowered +
                 " tier=" + summary.BrownoutTier);
@@ -177,12 +178,12 @@ namespace Hecton8.Dev
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVoltageRelaxationPass(LogisticsNetworkGraph.DistributionSummary summary)
         {
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "[BaseStressSmoke] PASS Jacobi voltage relaxation. " +
-                "gen=" + summary.TotalGeneration.ToString("0.###") +
-                " demand=" + summary.TotalConsumption.ToString("0.###") +
-                " served=" + summary.ServedDemand.ToString("0.###") +
-                " unserved=" + summary.UnservedDemand.ToString("0.###") +
+                "gen=" + summary.TotalGeneration.ToString("0.###", CultureInfo.InvariantCulture) +
+                " demand=" + summary.TotalConsumption.ToString("0.###", CultureInfo.InvariantCulture) +
+                " served=" + summary.ServedDemand.ToString("0.###", CultureInfo.InvariantCulture) +
+                " unserved=" + summary.UnservedDemand.ToString("0.###", CultureInfo.InvariantCulture) +
                 " tier=" + summary.BrownoutTier);
         }
     }

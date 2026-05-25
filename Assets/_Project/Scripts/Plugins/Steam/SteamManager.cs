@@ -15,7 +15,7 @@ namespace Hecton8.Plugins.Steam
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30970)]
-    public sealed class SteamManager : MonoBehaviour, IFrostTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class SteamManager : MonoBehaviour, IFrostTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int StateNotStarted = 0;
         private const int StateBooting = 1;
@@ -28,6 +28,7 @@ namespace Hecton8.Plugins.Steam
         private volatile bool _shutdownRequested;
         private int _state;
         private bool _registeredFrostTick;
+        private bool _registeredHotSwap;
 
         public ServiceHeartbeatState HeartbeatState
         {
@@ -57,12 +58,14 @@ namespace Hecton8.Plugins.Steam
         private void OnEnable()
         {
             RegisterFrostTick();
+            TryRegisterHotSwapListener();
             StartBackgroundInit();
         }
 
         private void OnDisable()
         {
             UnregisterFrostTick();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -87,6 +90,7 @@ namespace Hecton8.Plugins.Steam
 
             _shutdownRequested = true;
             UnregisterFrostTick();
+            TryUnregisterHotSwapListener();
 
 #if HECTON8_STEAMWORKS
             if (Volatile.Read(ref _state) == StateReady)
@@ -101,8 +105,7 @@ namespace Hecton8.Plugins.Steam
             if (_registeredFrostTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFrostTickable(this, PriorityLayer.Core);
-            _registeredFrostTick = GlobalRegistry.FrostTickables.Contains(this);
+            _registeredFrostTick = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
         }
 
         private void UnregisterFrostTick()
@@ -112,6 +115,42 @@ namespace Hecton8.Plugins.Steam
 
             GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Core);
             _registeredFrostTick = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                _shutdownRequested ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            bool wasRegistered = _registeredFrostTick;
+            UnregisterFrostTick();
+            if (wasRegistered)
+                RegisterFrostTick();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void StartBackgroundInit()

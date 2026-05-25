@@ -1,0 +1,7 @@
+Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json
+{
+  "hardFailures": [],
+  "physiologyWorstAbsError": 6.080794978657877e-08,
+  "remainingTranscendentalTotal": 0,
+  "scannedCSharpFiles": 2400
+}

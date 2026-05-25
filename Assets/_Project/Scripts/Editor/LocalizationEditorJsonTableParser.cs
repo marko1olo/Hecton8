@@ -17,7 +17,7 @@ namespace Hecton8.Editor
 
         internal static Dictionary<string, string> ParseFlatJsonTable(string json)
         {
-            var result = new Dictionary<string, string>(128);
+            var result = new Dictionary<string, string>(128, StringComparer.Ordinal);
             if (string.IsNullOrWhiteSpace(json))
                 return result;
 

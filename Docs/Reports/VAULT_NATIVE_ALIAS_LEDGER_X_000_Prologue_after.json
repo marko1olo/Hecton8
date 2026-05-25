@@ -1,0 +1,22 @@
+﻿{
+  "schema": "hecton8.vault_native_alias_roslyn_ledger.v1",
+  "agentId": "X_000",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "sourceRoot": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Narrative\\Prologue",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\VAULT_NATIVE_ALIAS_LEDGER_X_000_Prologue_after.json",
+  "auditHashSha256": "254906112e60fba00917c34dafe995f2cc66cd70ff89c10a0df3faa68edf7087",
+  "summary": {
+    "scannedFiles": 1,
+    "parseFailures": 0,
+    "totalNativeFieldDeclarations": 0,
+    "forbiddenPersistentCandidates": 0,
+    "forbiddenMonoBehaviourCandidates": 0,
+    "jobTransientFields": 0,
+    "coreMemoryAllowedFields": 0,
+    "rawPointerFields": 0
+  },
+  "findings": [
+  ],
+  "parseFailures": [
+  ]
+}

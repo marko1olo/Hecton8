@@ -31,8 +31,10 @@ namespace Hecton8.Editor
 
             if (Directory.Exists(scriptsRoot))
             {
-                foreach (string path in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
+                string[] files = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
+                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
                 {
+                    string path = files[fileIndex];
                     filesScanned++;
                     string text = File.ReadAllText(path);
                     if (ContainsForbiddenInputQueue(text))

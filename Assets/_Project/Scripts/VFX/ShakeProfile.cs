@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — ShakeProfile.cs
-// Configuration data for camera shake effects.
+// Legacy authoring data for presentation-only camera impulse severity.
 // ============================================================================
 
 using UnityEngine;
@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Hecton8.VFX
 {
     /// <summary>
-    /// ScriptableObject defining camera shake parameters.
+    /// ScriptableObject defining cold authoring scalars for procedural camera impulses.
     /// </summary>
     [CreateAssetMenu(fileName = "ShakeProfile_", menuName = "HECTON-8/VFX/Shake Profile")]
     public sealed class ShakeProfile : ScriptableObject
@@ -29,8 +29,9 @@ namespace Hecton8.VFX
         public float Duration = 0.5f;
 
         [Header("── Falloff ──────────────────")]
-        [Tooltip("Intensity falloff curve over duration")]
-        public AnimationCurve FalloffCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
+        [Tooltip("Authoring scalar for polynomial falloff. Runtime shake decay is evaluated by the Burst tuning DTO, not Unity curve assets.")]
+        [Range(0.5f, 4f)]
+        public float FalloffExponent = 2f;
 
         [Header("── Axes ──────────────────")]
         [Tooltip("Shake contribution per axis (normalized)")]
@@ -43,6 +44,7 @@ namespace Hecton8.VFX
             MaxDisplacement = Mathf.Clamp(MaxDisplacement, 0f, 1f);
             Frequency = Mathf.Clamp(Frequency, 1f, 30f);
             Duration = Mathf.Clamp(Duration, 0.1f, 3f);
+            FalloffExponent = Mathf.Clamp(FalloffExponent, 0.5f, 4f);
 
             // Validate duration
             if (Duration <= 0f)

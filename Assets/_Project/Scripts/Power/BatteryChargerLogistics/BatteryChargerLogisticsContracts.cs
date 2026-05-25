@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Unity.Burst;
@@ -185,57 +186,57 @@ namespace Hecton8.Power
                 return false;
 
             int safeLinks = math.max(1, linkCapacity);
-            handles.Links = vault.GetGenerationHandle<ChargerLinkDTO>(
+            handles.Links = vault.EnsureGenerationHandle<ChargerLinkDTO>(
                 BatteryChargerLogisticsBufferIds.Links,
                 safeLinks,
                 SystemID.Power,
                 NativeArrayOptions.UninitializedMemory);
-            handles.LinkAup = vault.GetGenerationHandle<double3>(
+            handles.LinkAup = vault.EnsureGenerationHandle<double3>(
                 BatteryChargerLogisticsBufferIds.LinkAup,
                 safeLinks,
                 SystemID.Power,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ExpectedPowerNodeHashes = vault.GetGenerationHandle<uint>(
+            handles.ExpectedPowerNodeHashes = vault.EnsureGenerationHandle<uint>(
                 BatteryChargerLogisticsBufferIds.ExpectedPowerNodeHashes,
                 safeLinks,
                 SystemID.Power,
                 NativeArrayOptions.UninitializedMemory);
-            handles.VisualStates = vault.GetGenerationHandle<ChargerVisualStateDTO>(
+            handles.VisualStates = vault.EnsureGenerationHandle<ChargerVisualStateDTO>(
                 BatteryChargerLogisticsBufferIds.VisualStates,
                 safeLinks,
                 SystemID.Power,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Tuning = vault.GetGenerationHandle<ChargerTuningDTO>(
+            handles.Tuning = vault.EnsureGenerationHandle<ChargerTuningDTO>(
                 BatteryChargerLogisticsBufferIds.Tuning,
                 1,
                 SystemID.Power,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetGenerationHandle<ChargerTelemetryEntry>(
+            handles.TelemetryRing = vault.EnsureGenerationHandle<ChargerTelemetryEntry>(
                 BatteryChargerLogisticsBufferIds.TelemetryRing,
                 BatteryChargerLogisticsConstants.TelemetryCapacity,
                 SystemID.Power,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetGenerationHandle<uint>(
+            handles.TelemetryCursor = vault.EnsureGenerationHandle<uint>(
                 BatteryChargerLogisticsBufferIds.TelemetryCursor,
                 1,
                 SystemID.Power,
                 NativeArrayOptions.ClearMemory);
-            handles.AtomicCounters = vault.GetGenerationHandle<ChargerAtomicCountersDTO>(
+            handles.AtomicCounters = vault.EnsureGenerationHandle<ChargerAtomicCountersDTO>(
                 BatteryChargerLogisticsBufferIds.AtomicCounters,
                 BatteryChargerLogisticsConstants.CounterLaneCount,
                 SystemID.Power,
                 NativeArrayOptions.ClearMemory);
-            handles.Profiles = vault.GetGenerationHandle<ChargerProfileDTO>(
+            handles.Profiles = vault.EnsureGenerationHandle<ChargerProfileDTO>(
                 BatteryChargerLogisticsBufferIds.Profiles,
                 BatteryChargerLogisticsConstants.DefaultProfileCapacity,
                 SystemID.Power,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetGenerationHandle<byte>(
+            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(
                 BatteryChargerLogisticsBufferIds.CsvScratch,
                 BatteryChargerLogisticsConstants.CsvScratchBytes,
                 SystemID.Power,
                 NativeArrayOptions.UninitializedMemory);
-            handles.MockInventorySlots = vault.GetGenerationHandle<InventorySlotDTO>(
+            handles.MockInventorySlots = vault.EnsureGenerationHandle<InventorySlotDTO>(
                 BatteryChargerLogisticsBufferIds.MockInventorySlots,
                 safeLinks,
                 SystemID.Power,
@@ -576,7 +577,7 @@ namespace Hecton8.Power
                 return;
             }
 
-            float curve = math.pow(math.max(0.0001f, 1f - percentage), math.max(0.0001f, SanitizePositive(EfficiencyCurveExponent)));
+            float curve = MathLodApproximation.ApproxPow01Curve(1f - percentage, math.max(0.0001f, SanitizePositive(EfficiencyCurveExponent)));
             float rate = math.min(SanitizePositive(link.ChargeRate), SanitizePositive(GlobalMaxChargeRate));
             rate *= math.max(0f, SanitizePositive(link.EfficiencyScalar)) * curve;
             float request = rate * math.max(0f, SanitizePositive(DeltaSeconds));
@@ -777,6 +778,7 @@ namespace Hecton8.Power
         }
     }
 
+    #if UNITY_EDITOR
     public static class BatteryChargerProfileCsvParser
     {
         public static bool TryParseProfiles(ReadOnlySpan<byte> csvBytes, NativeArray<ChargerProfileDTO> profiles, out int profileCount)
@@ -934,4 +936,5 @@ namespace Hecton8.Power
             return math.isfinite(parsed);
         }
     }
+    #endif
 }

@@ -1,4 +1,4 @@
-# Scalability Matrix
+﻿# Scalability Matrix
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION
@@ -35,7 +35,12 @@ Binary graphics switching is rejected. Hardware labels may select curve endpoint
 
 The source enum `HectonScalabilityTier` is label vocabulary only. It must not own gameplay truth, DTO layout, save identity, or authority route.
 
-Forbidden wording in active contracts: binary hardware branches, two-endpoint cap pairs, hard quality-cutoff syntax, and two-point comparison reports unless the text explicitly describes a legacy projection or a sampled report band over the continuous scalar.
+Forbidden wording in active contracts:
+
+- binary hardware branches;
+- two-endpoint cap pairs;
+- hard quality-cutoff syntax;
+- two-point comparison reports, except legacy projections or sampled bands over continuous scalar.
 
 ## Continuous Scaling Rules
 

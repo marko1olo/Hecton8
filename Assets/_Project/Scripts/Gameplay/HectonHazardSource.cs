@@ -13,8 +13,9 @@ namespace Hecton8.Gameplay
     /// Prikreplyaetsya k prefabam (geyzery, oblomki reaktorov).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonHazardSource : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class HectonHazardSource : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
+        private const float HazardSourceSlowTickDeltaSeconds = 0.1f;
         // ══════════════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
         // ══════════════════════════════════════════════════════════════════
@@ -46,7 +47,7 @@ namespace Hecton8.Gameplay
         private int _instanceID;
         private Transform _tr;
         private float _timer;
-        private bool _isRegisteredInTick;
+        private bool _registeredSlowTick;
         private bool _hotSwapListenerRegistered;
         private bool _registeredRadiationSource;
         private IThermodynamicsService _thermodynamicsService;
@@ -69,32 +70,32 @@ namespace Hecton8.Gameplay
             InternalUpdateRegistry();
 
             if (!_isStatic)
-                TryRegisterToTickManager();
+                TryRegisterToSlowTickManager();
         }
 
         private void OnDisable()
         {
             TryUnregisterAuthority();
             TryUnregisterHotSwapListener();
-            TryUnregisterFromTickManager();
+            TryUnregisterFromSlowTickManager();
         }
 
         private void OnDestroy()
         {
             TryUnregisterAuthority();
             TryUnregisterHotSwapListener();
-            TryUnregisterFromTickManager();
+            TryUnregisterFromSlowTickManager();
         }
 
         // ══════════════════════════════════════════════════════════════════
-        //  ITickable
+        //  ISlowTickable
         // ══════════════════════════════════════════════════════════════════
 
-        public void Tick(float deltaTime)
+        public void SlowTick()
         {
             if (_isStatic) return;
 
-            _timer -= deltaTime;
+            _timer -= HazardSourceSlowTickDeltaSeconds;
             if (_timer <= 0f)
             {
                 _timer = _updateInterval;
@@ -163,23 +164,23 @@ namespace Hecton8.Gameplay
             return _profile != null ? _profile.VisorGlitchBias : 1f;
         }
 
-        private void TryRegisterToTickManager()
+        private void TryRegisterToSlowTickManager()
         {
-            if (_isRegisteredInTick)
+            if (_registeredSlowTick)
                 return;
             if (!Application.isPlaying)
                 return;
 
-            _isRegisteredInTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
-        private void TryUnregisterFromTickManager()
+        private void TryUnregisterFromSlowTickManager()
         {
-            if (!_isRegisteredInTick)
+            if (!_registeredSlowTick)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _isRegisteredInTick = false;
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredSlowTick = false;
         }
 
         private void TryRegisterHotSwapListener()

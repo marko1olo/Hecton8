@@ -233,7 +233,7 @@ namespace Hecton8.Tools.ToolKinematics.Editor
                 return true;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, NativeArrayOptions.ClearMemory);
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, NativeArrayOptions.ClearMemory);
             if (!IsHandleCreated(in acquired) ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||

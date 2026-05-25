@@ -146,7 +146,7 @@ namespace Hecton8.Modding
             _queuedProjectedEventCount = 0;
             _projectionScheduled = false;
             _tickCount = 0;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
 
             HectonEventBus.InstallNativeQueueBindings();
             GlobalRegistry.RegisterModdingBridgeRuntime(this);
@@ -461,6 +461,12 @@ namespace Hecton8.Modding
             return math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 0f;
         }
 
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
+        }
+
         private float3 ResolvePlayerRuntimePosition()
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
@@ -480,7 +486,7 @@ namespace Hecton8.Modding
             if (!math.all(math.isfinite(runtimePosition)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -636,8 +642,9 @@ namespace Hecton8.Modding
             public void Execute()
             {
                 int count = math.min(Limit, Signals.Length);
+                float quality = math.saturate(math.select(1f, QualityWeight01, math.isfinite(QualityWeight01)));
                 ushort sampleFlags = (ushort)(ModEventDto.LowTierSampleFlag *
-                    (int)math.step(QualityWeight01, LowProjectionQualityFlagThreshold01));
+                    (Smooth01((LowProjectionQualityFlagThreshold01 - quality) * math.rcp(math.max(0.0001f, LowProjectionQualityFlagThreshold01))) > 0.999f ? 1 : 0));
                 for (int i = 0; i < count; i++)
                 {
                     CombatDamageSignal signal = Signals[i];
@@ -680,8 +687,9 @@ namespace Hecton8.Modding
             public void Execute()
             {
                 int count = math.min(Limit, Signals.Length);
+                float quality = math.saturate(math.select(1f, QualityWeight01, math.isfinite(QualityWeight01)));
                 ushort sampleFlags = (ushort)(ModEventDto.LowTierSampleFlag *
-                    (int)math.step(QualityWeight01, LowProjectionQualityFlagThreshold01));
+                    (Smooth01((LowProjectionQualityFlagThreshold01 - quality) * math.rcp(math.max(0.0001f, LowProjectionQualityFlagThreshold01))) > 0.999f ? 1 : 0));
                 for (int i = 0; i < count; i++)
                 {
                     WeatherChangedSignal signal = Signals[i];

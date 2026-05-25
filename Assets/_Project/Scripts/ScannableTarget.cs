@@ -211,7 +211,7 @@ namespace Hecton8.Gameplay
         private void CacheRuntimeObjectId()
         {
             GameObject targetObject = gameObject;
-            _runtimeObjectId = targetObject != null ? targetObject.GetInstanceID() : 0;
+            _runtimeObjectId = targetObject != null ? targetObject.GetEntityId().GetHashCode() : 0;
         }
 
         public static void PublishLoreEntitySnapshotsFromOwnerPhase()
@@ -481,12 +481,12 @@ namespace Hecton8.Gameplay
 
             s_loreEntityVault = vault;
             InvalidateLoreEntityVaultViews(resetHandles: false);
-            s_loreEntityAupsHandle = vault.GetGenerationHandle<AbsoluteUniversePosition>(
+            s_loreEntityAupsHandle = vault.EnsureGenerationHandle<AbsoluteUniversePosition>(
                 BufferID.LoreEntityAUPs,
                 MaxLoreEntityCount,
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
-            s_loreEntityHashesHandle = vault.GetGenerationHandle<uint>(
+            s_loreEntityHashesHandle = vault.EnsureGenerationHandle<uint>(
                 BufferID.LoreEntityHashes,
                 MaxLoreEntityCount,
                 SystemID.UI,

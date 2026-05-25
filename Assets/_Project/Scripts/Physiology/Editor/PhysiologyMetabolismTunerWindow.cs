@@ -8,13 +8,17 @@ using UnityEngine.UIElements;
 namespace Hecton8.Physiology.Editor
 {
     /// <summary>
-    /// Editor-only UI Toolkit facade for SHINOBU_145 metabolism tuning. Runtime data remains Vault-owned.
+    /// Editor-only UI Toolkit facade for SHINOBU_320 metabolism tuning. Runtime data remains Vault-owned.
     /// </summary>
     public sealed class PhysiologyMetabolismTunerWindow : EditorWindow
     {
         private Label _runtimeLabel;
         private Label _telemetryLabel;
+        private Label _detailTelemetryLabel;
         private Label _stateLabel;
+        private VisualElement _burnHeatBar;
+        private VisualElement _calorieBurnSegment;
+        private VisualElement _heatLossSegment;
         private Slider _calorieDrainScale;
         private Slider _hydrationDrainScale;
         private Slider _temperatureLossRate;
@@ -41,9 +45,13 @@ namespace Hecton8.Physiology.Editor
 
             _runtimeLabel = new Label("Runtime: unresolved");
             _telemetryLabel = new Label("Telemetry: no completed tick");
+            _detailTelemetryLabel = new Label("Detail: no player row");
             _stateLabel = new Label("State: no row");
             root.Add(_runtimeLabel);
             root.Add(_telemetryLabel);
+            root.Add(_detailTelemetryLabel);
+            _burnHeatBar = CreateStackedBar(out _calorieBurnSegment, out _heatLossSegment);
+            root.Add(_burnHeatBar);
             root.Add(_stateLabel);
 
             _calorieDrainScale = CreateSlider("Calorie Drain Scale", 0f, 8f);
@@ -64,9 +72,11 @@ namespace Hecton8.Physiology.Editor
             root.Add(_entityRow);
 
             Button reloadCsv = new Button(ReloadCsv) { text = "Reload CSV Profiles" };
+            Button reloadSuitCsv = new Button(ReloadSuitCsv) { text = "Reload Suit CSV Profiles" };
             Button generateMock = new Button(GenerateMock) { text = "Generate Mock Ecosystem" };
             Button dumpBlackBox = new Button(DumpBlackBox) { text = "Dump Black Box" };
             root.Add(reloadCsv);
+            root.Add(reloadSuitCsv);
             root.Add(generateMock);
             root.Add(dumpBlackBox);
 
@@ -80,6 +90,24 @@ namespace Hecton8.Physiology.Editor
             Slider slider = new Slider(label, low, high);
             slider.showInputField = true;
             return slider;
+        }
+
+        private static VisualElement CreateStackedBar(out VisualElement calorieSegment, out VisualElement heatSegment)
+        {
+            VisualElement bar = new VisualElement();
+            bar.style.flexDirection = FlexDirection.Row;
+            bar.style.height = 14;
+            bar.style.marginTop = 4;
+            bar.style.marginBottom = 8;
+            bar.style.backgroundColor = new Color(0.08f, 0.08f, 0.08f, 1f);
+
+            calorieSegment = new VisualElement();
+            calorieSegment.style.backgroundColor = new Color(0.92f, 0.54f, 0.12f, 1f);
+            heatSegment = new VisualElement();
+            heatSegment.style.backgroundColor = new Color(0.12f, 0.58f, 0.92f, 1f);
+            bar.Add(calorieSegment);
+            bar.Add(heatSegment);
+            return bar;
         }
 
         private void RegisterSliders()
@@ -101,7 +129,9 @@ namespace Hecton8.Physiology.Editor
                     ? "Runtime: ShinobuMetabolismRuntime not found"
                     : "Runtime: enter Play Mode";
                 _telemetryLabel.text = "Telemetry: unavailable";
+                _detailTelemetryLabel.text = "Detail: unavailable";
                 _stateLabel.text = "State: unavailable";
+                UpdateStackedBar(0f, 0f);
                 return;
             }
 
@@ -120,6 +150,17 @@ namespace Hecton8.Physiology.Editor
                     " | us " + telemetry.ExecutionMicroseconds.ToString("0.00");
             }
 
+            if (_runtime.TryGetLatestDetailTelemetry(out MetabolicDetailTelemetryEntry detail))
+            {
+                float heatLossRate = math.abs(detail.ThermalDeltaCelsiusPerSecond);
+                _detailTelemetryLabel.text =
+                    "Detail | Burn " + detail.ActiveCalorieBurnPerSecond.ToString("0.000") +
+                    " | HeatDelta/s " + detail.ThermalDeltaCelsiusPerSecond.ToString("0.000") +
+                    " | Ambient " + detail.AmbientCelsius.ToString("0.00") +
+                    " | Suit 0x" + detail.SuitProfileHash.ToString("X8");
+                UpdateStackedBar(detail.ActiveCalorieBurnPerSecond, heatLossRate);
+            }
+
             int row = math.max(0, _entityRow.value);
             if (_runtime.TryGetState(row, out MetabolicStateDTO state))
             {
@@ -131,6 +172,14 @@ namespace Hecton8.Physiology.Editor
                     " | Toxicity " + state.Toxicity.ToString("0.000") +
                     " | Flags 0x" + state.Flags.ToString("X8");
             }
+        }
+
+        private void UpdateStackedBar(float calorieBurnRate, float heatLossRate)
+        {
+            float calorie = math.max(0.0001f, math.min(math.abs(calorieBurnRate), 1000f));
+            float heat = math.max(0.0001f, math.min(math.abs(heatLossRate), 1000f));
+            _calorieBurnSegment.style.flexGrow = calorie;
+            _heatLossSegment.style.flexGrow = heat;
         }
 
         private void PushTuningToSliders(MetabolismTuningDTO tuning)
@@ -167,6 +216,14 @@ namespace Hecton8.Physiology.Editor
             Refresh();
         }
 
+        private void ReloadSuitCsv()
+        {
+            if (_runtime == null)
+                _runtime = ResolveRuntime();
+            _runtime?.TryLoadSuitThermalProfilesCsv();
+            Refresh();
+        }
+
         private void GenerateMock()
         {
             if (_runtime == null)
@@ -179,14 +236,14 @@ namespace Hecton8.Physiology.Editor
         {
             if (_runtime == null)
                 _runtime = ResolveRuntime();
-            _runtime?.TryDumpBlackBoxForEditor();
+            _runtime?.DumpBlackBoxForEditor();
             Refresh();
         }
 
         private static ShinobuMetabolismRuntime ResolveRuntime()
         {
             return Application.isPlaying
-                ? Object.FindFirstObjectByType<ShinobuMetabolismRuntime>()
+                ? Object.FindAnyObjectByType<ShinobuMetabolismRuntime>()
                 : null;
         }
     }

@@ -6,6 +6,7 @@ using UnityEngine;
 namespace Hecton8.Power
 {
     [ExecuteAlways]
+    [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Debug/Battery Charger Logistics Gizmo")]
     public sealed class BatteryChargerLogisticsGizmo : MonoBehaviour
     {

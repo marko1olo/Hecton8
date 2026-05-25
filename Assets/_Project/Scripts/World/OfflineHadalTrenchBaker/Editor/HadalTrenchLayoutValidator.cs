@@ -9,6 +9,16 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
     [InitializeOnLoad]
     public static class HadalTrenchLayoutValidator
     {
+        private const int FaultLineStrideBytes = 64;
+        private const int ThermalVentSpawnStrideBytes = 64;
+        private const int BakeConfigStrideBytes = 160;
+        private const int ChunkHeaderStrideBytes = 160;
+        private const int RleRunStrideBytes = 16;
+        private const int AdaptiveBlockStrideBytes = 32;
+        private const int RiftProfileStrideBytes = 128;
+        private const int TelemetryStrideBytes = 64;
+        private const int RollbackExclusionStrideBytes = 32;
+
         static HadalTrenchLayoutValidator()
         {
             Validate(logSuccess: false);
@@ -23,14 +33,14 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         public static bool Validate(bool logSuccess)
         {
             bool ok = true;
-            ok &= ValidateSize<FaultLineParamsDTO>(64);
+            ok &= ValidateSize<FaultLineParamsDTO>(FaultLineStrideBytes);
             ok &= ValidateOffset<FaultLineParamsDTO>(nameof(FaultLineParamsDTO.StartAUP), 0);
             ok &= ValidateOffset<FaultLineParamsDTO>(nameof(FaultLineParamsDTO.EndAUP), 24);
             ok &= ValidateOffset<FaultLineParamsDTO>(nameof(FaultLineParamsDTO.Depth), 48);
             ok &= ValidateOffset<FaultLineParamsDTO>(nameof(FaultLineParamsDTO.Width), 52);
             ok &= ValidateOffset<FaultLineParamsDTO>(nameof(FaultLineParamsDTO.NoiseIntensity), 56);
             ok &= ValidateOffset<FaultLineParamsDTO>(nameof(FaultLineParamsDTO._pad0), 60);
-            ok &= ValidateSize<ThermalVentSpawnDTO>(64);
+            ok &= ValidateSize<ThermalVentSpawnDTO>(ThermalVentSpawnStrideBytes);
             ok &= ValidateOffset<ThermalVentSpawnDTO>(nameof(ThermalVentSpawnDTO.PositionAUP), 0);
             ok &= ValidateOffset<ThermalVentSpawnDTO>(nameof(ThermalVentSpawnDTO.RadiusMeters), 24);
             ok &= ValidateOffset<ThermalVentSpawnDTO>(nameof(ThermalVentSpawnDTO.HeatCelsius), 28);
@@ -40,7 +50,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             ok &= ValidateOffset<ThermalVentSpawnDTO>(nameof(ThermalVentSpawnDTO.Flags), 44);
             ok &= ValidateOffset<ThermalVentSpawnDTO>(nameof(ThermalVentSpawnDTO._pad0), 48);
             ok &= ValidateOffset<ThermalVentSpawnDTO>(nameof(ThermalVentSpawnDTO._pad1), 56);
-            ok &= ValidateSize<HadalTrenchBakeConfigDTO>(160);
+            ok &= ValidateSize<HadalTrenchBakeConfigDTO>(BakeConfigStrideBytes);
             ok &= ValidateOffset<HadalTrenchBakeConfigDTO>(nameof(HadalTrenchBakeConfigDTO.SectorOriginAUP), 0);
             ok &= ValidateOffset<HadalTrenchBakeConfigDTO>(nameof(HadalTrenchBakeConfigDTO.WorldMinAUP), 24);
             ok &= ValidateOffset<HadalTrenchBakeConfigDTO>(nameof(HadalTrenchBakeConfigDTO.WorldMaxAUP), 48);
@@ -61,7 +71,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             ok &= ValidateOffset<HadalTrenchBakeConfigDTO>(nameof(HadalTrenchBakeConfigDTO.Flags), 140);
             ok &= ValidateOffset<HadalTrenchBakeConfigDTO>(nameof(HadalTrenchBakeConfigDTO._pad0), 144);
             ok &= ValidateOffset<HadalTrenchBakeConfigDTO>(nameof(HadalTrenchBakeConfigDTO._pad1), 152);
-            ok &= ValidateSize<HadalTrenchChunkHeaderDTO>(160);
+            ok &= ValidateSize<HadalTrenchChunkHeaderDTO>(ChunkHeaderStrideBytes);
             ok &= ValidateOffset<HadalTrenchChunkHeaderDTO>(nameof(HadalTrenchChunkHeaderDTO.Magic), 0);
             ok &= ValidateOffset<HadalTrenchChunkHeaderDTO>(nameof(HadalTrenchChunkHeaderDTO.Version), 4);
             ok &= ValidateOffset<HadalTrenchChunkHeaderDTO>(nameof(HadalTrenchChunkHeaderDTO.Flags), 8);
@@ -88,14 +98,14 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             ok &= ValidateOffset<HadalTrenchChunkHeaderDTO>(nameof(HadalTrenchChunkHeaderDTO.ChecksumType), 148);
             ok &= ValidateOffset<HadalTrenchChunkHeaderDTO>(nameof(HadalTrenchChunkHeaderDTO.SchemaHash), 152);
             ok &= ValidateOffset<HadalTrenchChunkHeaderDTO>(nameof(HadalTrenchChunkHeaderDTO._pad0), 156);
-            ok &= ValidateSize<HadalTrenchRleRunDTO>(16);
+            ok &= ValidateSize<HadalTrenchRleRunDTO>(RleRunStrideBytes);
             ok &= ValidateOffset<HadalTrenchRleRunDTO>(nameof(HadalTrenchRleRunDTO.StartVoxel), 0);
             ok &= ValidateOffset<HadalTrenchRleRunDTO>(nameof(HadalTrenchRleRunDTO.RunLength), 4);
             ok &= ValidateOffset<HadalTrenchRleRunDTO>(nameof(HadalTrenchRleRunDTO.Density), 8);
             ok &= ValidateOffset<HadalTrenchRleRunDTO>(nameof(HadalTrenchRleRunDTO.MaterialId), 9);
             ok &= ValidateOffset<HadalTrenchRleRunDTO>(nameof(HadalTrenchRleRunDTO.Flags), 10);
             ok &= ValidateOffset<HadalTrenchRleRunDTO>(nameof(HadalTrenchRleRunDTO._pad0), 12);
-            ok &= ValidateSize<HadalTrenchAdaptiveBlockDTO>(32);
+            ok &= ValidateSize<HadalTrenchAdaptiveBlockDTO>(AdaptiveBlockStrideBytes);
             ok &= ValidateOffset<HadalTrenchAdaptiveBlockDTO>(nameof(HadalTrenchAdaptiveBlockDTO.MinVoxel), 0);
             ok &= ValidateOffset<HadalTrenchAdaptiveBlockDTO>(nameof(HadalTrenchAdaptiveBlockDTO.BlockSizeVoxels), 12);
             ok &= ValidateOffset<HadalTrenchAdaptiveBlockDTO>(nameof(HadalTrenchAdaptiveBlockDTO.MinDensity), 13);
@@ -105,7 +115,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             ok &= ValidateOffset<HadalTrenchAdaptiveBlockDTO>(nameof(HadalTrenchAdaptiveBlockDTO.ErrorMeters), 20);
             ok &= ValidateOffset<HadalTrenchAdaptiveBlockDTO>(nameof(HadalTrenchAdaptiveBlockDTO.StateHash), 24);
             ok &= ValidateOffset<HadalTrenchAdaptiveBlockDTO>(nameof(HadalTrenchAdaptiveBlockDTO._pad0), 28);
-            ok &= ValidateSize<TectonicRiftProfileDTO>(128);
+            ok &= ValidateSize<TectonicRiftProfileDTO>(RiftProfileStrideBytes);
             ok &= ValidateOffset<TectonicRiftProfileDTO>(nameof(TectonicRiftProfileDTO.SectorOriginAUP), 0);
             ok &= ValidateOffset<TectonicRiftProfileDTO>(nameof(TectonicRiftProfileDTO.Name), 24);
             ok &= ValidateOffset<TectonicRiftProfileDTO>(nameof(TectonicRiftProfileDTO.Seed), 88);
@@ -117,7 +127,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             ok &= ValidateOffset<TectonicRiftProfileDTO>(nameof(TectonicRiftProfileDTO.GlobalQualityWeight), 112);
             ok &= ValidateOffset<TectonicRiftProfileDTO>(nameof(TectonicRiftProfileDTO._pad0), 116);
             ok &= ValidateOffset<TectonicRiftProfileDTO>(nameof(TectonicRiftProfileDTO._pad1), 120);
-            ok &= ValidateSize<HadalTrenchBakeTelemetryEntry>(64);
+            ok &= ValidateSize<HadalTrenchBakeTelemetryEntry>(TelemetryStrideBytes);
             ok &= ValidateOffset<HadalTrenchBakeTelemetryEntry>(nameof(HadalTrenchBakeTelemetryEntry.SectorOriginAUP), 0);
             ok &= ValidateOffset<HadalTrenchBakeTelemetryEntry>(nameof(HadalTrenchBakeTelemetryEntry.Frame), 24);
             ok &= ValidateOffset<HadalTrenchBakeTelemetryEntry>(nameof(HadalTrenchBakeTelemetryEntry.FaultCount), 28);
@@ -129,7 +139,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             ok &= ValidateOffset<HadalTrenchBakeTelemetryEntry>(nameof(HadalTrenchBakeTelemetryEntry.StateHash), 52);
             ok &= ValidateOffset<HadalTrenchBakeTelemetryEntry>(nameof(HadalTrenchBakeTelemetryEntry.DumpReason), 56);
             ok &= ValidateOffset<HadalTrenchBakeTelemetryEntry>(nameof(HadalTrenchBakeTelemetryEntry.Stage), 60);
-            ok &= ValidateSize<HadalTrenchRollbackExclusionDTO>(32);
+            ok &= ValidateSize<HadalTrenchRollbackExclusionDTO>(RollbackExclusionStrideBytes);
             ok &= ValidateOffset<HadalTrenchRollbackExclusionDTO>(nameof(HadalTrenchRollbackExclusionDTO.StaticVoxelHash), 0);
             ok &= ValidateOffset<HadalTrenchRollbackExclusionDTO>(nameof(HadalTrenchRollbackExclusionDTO.Flags), 4);
             ok &= ValidateOffset<HadalTrenchRollbackExclusionDTO>(nameof(HadalTrenchRollbackExclusionDTO.FileGuidLow), 8);

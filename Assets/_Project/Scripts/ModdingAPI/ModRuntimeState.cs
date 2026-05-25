@@ -4,6 +4,7 @@ using Hecton8.Construction;
 using Hecton8.Crafting;
 using Hecton8.Economy;
 using Hecton8.Ecosystem;
+using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
@@ -565,7 +566,8 @@ namespace Hecton8.Modding
 
         internal static ItemCatalog ResolveActiveCatalog()
         {
-            PlayerInventory playerInventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
+            IPlayerInventoryService inventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
+            PlayerInventory playerInventory = inventoryService != null ? inventoryService.Inventory : null;
             return playerInventory != null ? playerInventory.ItemCatalog : null;
         }
 

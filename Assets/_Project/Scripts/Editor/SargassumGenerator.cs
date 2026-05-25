@@ -249,7 +249,7 @@ namespace Hecton8.EditorTools
             for (int i = 0; i < topRibbonCount; i++)
             {
                 float yaw = (i / (float)topRibbonCount) * Mathf.PI * 2f + rng.Range(-0.18f, 0.18f);
-                Vector3 dir = new Vector3(Mathf.Cos(yaw), rng.Range(0.05f, 0.22f), Mathf.Sin(yaw)).normalized;
+                Vector3 dir = new Vector3(Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(yaw), rng.Range(0.05f, 0.22f), Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(yaw)).normalized;
                 Vector3 origin = new Vector3(rng.Range(-0.18f, 0.18f), rng.Range(0.15f, 0.42f), rng.Range(-0.18f, 0.18f));
                 float length = rng.Range(1.3f, 2.05f);
                 float width = rng.Range(0.16f, 0.24f);
@@ -262,7 +262,7 @@ namespace Hecton8.EditorTools
             for (int i = 0; i < sideRibbonCount; i++)
             {
                 float yaw = (i / (float)sideRibbonCount) * Mathf.PI * 2f + rng.Range(-0.26f, 0.26f);
-                Vector3 dir = new Vector3(Mathf.Cos(yaw), rng.Range(-0.04f, 0.08f), Mathf.Sin(yaw)).normalized;
+                Vector3 dir = new Vector3(Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(yaw), rng.Range(-0.04f, 0.08f), Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(yaw)).normalized;
                 Vector3 origin = new Vector3(rng.Range(-0.42f, 0.42f), rng.Range(0.02f, 0.22f), rng.Range(-0.42f, 0.42f));
                 float length = rng.Range(1.0f, 1.65f);
                 float width = rng.Range(0.12f, 0.18f);
@@ -275,7 +275,7 @@ namespace Hecton8.EditorTools
             for (int i = 0; i < beardRibbonCount; i++)
             {
                 float yaw = (i / (float)beardRibbonCount) * Mathf.PI * 2f + rng.Range(-0.32f, 0.32f);
-                Vector3 origin = new Vector3(Mathf.Cos(yaw) * rng.Range(0.24f, 0.86f), rng.Range(-0.1f, 0.08f), Mathf.Sin(yaw) * rng.Range(0.24f, 0.86f));
+                Vector3 origin = new Vector3(Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(yaw) * rng.Range(0.24f, 0.86f), rng.Range(-0.1f, 0.08f), Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(yaw) * rng.Range(0.24f, 0.86f));
                 Vector3 dir = new Vector3(rng.Range(-0.12f, 0.12f), -1f, rng.Range(-0.12f, 0.12f)).normalized;
                 float length = rng.Range(1.45f, 2.7f);
                 float width = rng.Range(0.03f, 0.07f);
@@ -290,9 +290,9 @@ namespace Hecton8.EditorTools
                 float yaw = rng.Range(0f, Mathf.PI * 2f);
                 float radius = rng.Range(0.18f, 0.96f);
                 Vector3 center = new Vector3(
-                    Mathf.Cos(yaw) * radius,
+                    Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(yaw) * radius,
                     rng.Range(0.08f, 0.6f),
-                    Mathf.Sin(yaw) * radius);
+                    Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(yaw) * radius);
                 center += new Vector3(rng.Range(-0.12f, 0.12f), 0f, rng.Range(-0.12f, 0.12f));
                 float bladderRadius = lodLevel == 0 ? rng.Range(0.04f, 0.1f) : rng.Range(0.03f, 0.06f);
                 BuildOctaSphere(builder, center, bladderRadius, new Color(0.84f, 1f, rng.Value(), 0.96f));
@@ -364,8 +364,8 @@ namespace Hecton8.EditorTools
             for (int segment = 0; segment <= segments; segment++)
             {
                 float t = segment / (float)segments;
-                float sine = Mathf.Sin((t * 1.9f + phase) * Mathf.PI * 2f);
-                float cosine = Mathf.Cos((t * 1.4f + phase * 0.7f) * Mathf.PI * 2f);
+                float sine = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((t * 1.9f + phase) * Mathf.PI * 2f);
+                float cosine = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara((t * 1.4f + phase * 0.7f) * Mathf.PI * 2f);
                 Vector3 curveOffset =
                     lateralAxis * (sine * curlAmplitude * (1f - t * 0.28f)) +
                     secondaryAxis * (cosine * curlAmplitude * 0.42f * (1f - t * 0.18f)) -

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.SaveSystem;
 using Unity.Mathematics;
 using UnityEditor;
@@ -72,8 +73,8 @@ namespace Hecton8.SaveSystem.Editor
                 _metrics.text =
                     "flags=0x" + _lastResult.ErrorFlags.ToString("X8") +
                     " code=" + _lastResult.ErrorCode +
-                    " writeMBs=" + (writeMb / writeSeconds).ToString("F2") +
-                    " readMBs=" + (readMb / readSeconds).ToString("F2") +
+                    " writeMBs=" + (writeMb / writeSeconds).ToString("F2", CultureInfo.InvariantCulture) +
+                    " readMBs=" + (readMb / readSeconds).ToString("F2", CultureInfo.InvariantCulture) +
                     " sector=0x" + _lastResult.FailedSectorHash.ToString("X16");
             }
 

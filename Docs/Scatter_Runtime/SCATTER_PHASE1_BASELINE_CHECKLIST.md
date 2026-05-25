@@ -1,4 +1,4 @@
-# Scatter Phase 1 Baseline Checklist
+﻿# Scatter Phase 1 Baseline Checklist
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Hecton8.World.OfflineHadalArchBaker;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;

@@ -25,12 +25,12 @@ namespace Hecton8.Core.Bridge
                 return true;
             }
 
-            VaultGenerationHandle<H8PrefabMappingEntry> mappingHandle = vault.GetGenerationHandle<H8PrefabMappingEntry>(
+            VaultGenerationHandle<H8PrefabMappingEntry> mappingHandle = vault.EnsureGenerationHandle<H8PrefabMappingEntry>(
                 BufferID.BridgePrefabMapping,
                 count,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<H8PrefabLoreLinkEntry> loreLinksHandle = vault.GetGenerationHandle<H8PrefabLoreLinkEntry>(
+            VaultGenerationHandle<H8PrefabLoreLinkEntry> loreLinksHandle = vault.EnsureGenerationHandle<H8PrefabLoreLinkEntry>(
                 BufferID.BridgePrefabLoreLinks,
                 count,
                 SystemID.CoreBridge,
@@ -86,7 +86,7 @@ namespace Hecton8.Core.Bridge
                     OneDimensionalLutHash = entry.OneDimensionalLutHash,
                     Flags = entry.Flags
                 };
-                SignalBus<PrefabAcousticSignatureSignal>.Push(in acoustic);
+                SignalBus<PrefabAcousticSignatureSignal>.TryPush(in acoustic);
 
                 PrefabLoreLinkSignal lore = new PrefabLoreLinkSignal
                 {
@@ -97,7 +97,7 @@ namespace Hecton8.Core.Bridge
                     HighTierVisualHash = entry.HighTierVisualHash,
                     Flags = entry.Flags
                 };
-                SignalBus<PrefabLoreLinkSignal>.Push(in lore);
+                SignalBus<PrefabLoreLinkSignal>.TryPush(in lore);
             }
 
             Thread.MemoryBarrier();
@@ -162,7 +162,7 @@ namespace Hecton8.Core.Bridge
                 BufferId = (ushort)bufferId,
                 Flags = 0
             };
-            SignalBus<DataVaultUpdateSignal>.Push(in signal);
+            SignalBus<DataVaultUpdateSignal>.TryPush(in signal);
         }
     }
 

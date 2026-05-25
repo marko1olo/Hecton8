@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using System.Text;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using UnityEngine;
 
 namespace Hecton8.Optimization
@@ -26,10 +26,7 @@ namespace Hecton8.Optimization
         private bool _registeredSlowTick;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
-        private RenderTextureLifecycleTracker _cachedRenderTextureLifecycle;
-        
-        // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: VisorRTManager
-        private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
+        private IRenderTextureLifecycleService _cachedRenderTextureLifecycle;
         
         // COLD ALLOC: List<RenderTextureAllocationRecord>[32] — RT query — owner: VisorRTManager
         private readonly List<RenderTextureAllocationRecord> _visorRTs = new List<RenderTextureAllocationRecord>(32);
@@ -82,7 +79,7 @@ namespace Hecton8.Optimization
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
-                _cachedRenderTextureLifecycle = currentService as RenderTextureLifecycleTracker;
+                _cachedRenderTextureLifecycle = currentService as IRenderTextureLifecycleService;
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -101,7 +98,7 @@ namespace Hecton8.Optimization
         
         private void MeasureVisorRTMemory()
         {
-            RenderTextureLifecycleTracker lifecycle = _cachedRenderTextureLifecycle;
+            IRenderTextureLifecycleService lifecycle = _cachedRenderTextureLifecycle;
             if (lifecycle == null)
             {
                 VisorRTMemoryBytes = 0L;
@@ -189,7 +186,7 @@ namespace Hecton8.Optimization
 
         private void CacheRegistryServicesCold()
         {
-            _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycle;
+            _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycleService;
         }
 
         private void TryRegisterHotSwapListener()
@@ -212,12 +209,7 @@ namespace Hecton8.Optimization
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogBudgetViolation()
         {
-            _reportBuilder.Clear();
-            _reportBuilder.Append("[VisorRTManager] BUDGET EXCEEDED: ");
-            _reportBuilder.Append((VisorRTMemoryBytes / (1024f * 1024f)).ToString("0.00")).Append(" MB / ");
-            _reportBuilder.Append((VisorBudgetBytes / (1024f * 1024f)).ToString("0.00")).Append(" MB");
-            
-            Debug.LogWarning(_reportBuilder.ToString(), this);
+            Debug.LogWarning("[VisorRTManager] BUDGET EXCEEDED", this);
         }
 #endif
     }

@@ -89,10 +89,9 @@ namespace Hecton8.World
                     maxFrameSignals: Capacity,
                     lowTierFrameSignals: SurvivalCapacity,
                     laneHash: LaneHash);
+                SignalBus<TerrainChunkGeneratedSignal>.EnsureInitialized();
                 _configured = true;
             }
-
-            SignalBus<TerrainChunkGeneratedSignal>.EnsureInitialized();
         }
 
         private static void DisposeAll()

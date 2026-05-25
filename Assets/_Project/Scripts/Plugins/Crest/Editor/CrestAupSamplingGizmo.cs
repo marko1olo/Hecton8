@@ -41,8 +41,7 @@ namespace Hecton8.Editor
                 return;
 
             CrestOceanRuntimeAdapter[] adapters = Object.FindObjectsByType<CrestOceanRuntimeAdapter>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
             Color previous = Handles.color;
             Handles.color = new Color(0.1f, 0.9f, 0.45f, 0.85f);
             for (int i = 0; i < adapters.Length; i++)
@@ -77,7 +76,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            NativeArray<OceanSampleResultDTO> results;
+            NativeArray<OceanSampleResultDTO> results = default;
             bool hasResults = vault.TryGetGenerationHandle<OceanSampleResultDTO>(
                                   OceanAdapterVaultRoute.ResultBufferID,
                                   out VaultGenerationHandle<OceanSampleResultDTO> resultHandle) &&

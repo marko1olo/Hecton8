@@ -307,7 +307,7 @@ namespace Hecton8.Modding
                 bool success = ModItemRegistry.TryRegister(data, out string error);
                 if (!success)
                 {
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[HectonAPI.Items] Failed to register custom item '{(data != null ? data.name : "null")}': {error}");
                 }
 
@@ -354,7 +354,7 @@ namespace Hecton8.Modding
                 bool success = ModRecipeRegistry.TryRegister(recipe, out string error);
                 if (!success)
                 {
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[HectonAPI.Crafting] Failed to register custom recipe '{(recipe != null ? recipe.name : "null")}': {error}");
                 }
 
@@ -376,7 +376,7 @@ namespace Hecton8.Modding
                 bool success = ModRecycleRegistry.TryRegister(itemId, yield, out string error);
                 if (!success)
                 {
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[HectonAPI.Crafting] Failed to register recycle yield for '{itemId ?? "null"}': {error}");
                 }
 
@@ -425,7 +425,7 @@ namespace Hecton8.Modding
                 bool success = ModBuildableRegistry.TryRegister(data, customCategory, out string error);
                 if (!success)
                 {
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[HectonAPI.Construction] Failed to register custom buildable '{(data != null ? data.name : "null")}': {error}");
                 }
 
@@ -471,7 +471,7 @@ namespace Hecton8.Modding
                 bool success = ModEcosystemRegistry.TryRegister(definition, out string error);
                 if (!success)
                 {
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[HectonAPI.Ecosystem] Failed to register biome mutation for biome '{(definition != null ? definition.BiomeId : 0)}': {error}");
                 }
 
@@ -556,7 +556,7 @@ namespace Hecton8.Modding
                     return;
                 }
 
-                NotificationEvents.PushInfo(message ?? string.Empty);
+                NotificationEvents.TryPushInfo(message ?? string.Empty);
             }
 
             /// <summary>
@@ -571,7 +571,7 @@ namespace Hecton8.Modding
                     return;
                 }
 
-                NotificationEvents.PushWarning(message ?? string.Empty);
+                NotificationEvents.TryPushWarning(message ?? string.Empty);
             }
 
             /// <summary>
@@ -586,7 +586,7 @@ namespace Hecton8.Modding
                     return;
                 }
 
-                NotificationEvents.PushCritical(message ?? string.Empty);
+                NotificationEvents.TryPushCritical(message ?? string.Empty);
             }
 
             /// <summary>

@@ -1,5 +1,7 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using System.Text;
+using Hecton8.Core.Contracts;
 using UnityEditor;
 using UnityEngine;
 
@@ -67,19 +69,19 @@ namespace Hecton8.Optimization.Editor
                 return;
             }
             
-            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
+            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycleService == null)
             {
                 EditorGUILayout.HelpBox("RenderTextureLifecycleTracker not available. Ensure VRAMOptimizationBootstrap is running.", MessageType.Warning);
                 return;
             }
             
-            var tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycle;
+            IRenderTextureLifecycleService tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycleService;
             
             // Summary
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField("Summary", EditorStyles.boldLabel);
             EditorGUILayout.LabelField($"Tracked RenderTextures: {tracker.TrackedRenderTextureCount}");
-            EditorGUILayout.LabelField($"Total Memory: {(tracker.TrackedRenderTextureMemoryBytes / (1024f * 1024f)):F2} MB");
+            EditorGUILayout.LabelField("Total Memory: " + (tracker.TrackedRenderTextureMemoryBytes / (1024f * 1024f)).ToString("F2", CultureInfo.InvariantCulture) + " MB");
             EditorGUILayout.EndVertical();
             
             EditorGUILayout.Space(10f);

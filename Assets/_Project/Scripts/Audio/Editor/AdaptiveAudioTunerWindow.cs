@@ -162,7 +162,8 @@ namespace Hecton8.Audio.Editor
             if (pointCount > 1)
             {
                 Handles.color = new Color(0.2f, 0.95f, 0.82f, 1f);
-                Handles.DrawPolyLine(_graphPoints, pointCount);
+                for (int i = 1; i < pointCount; i++)
+                    Handles.DrawLine(_graphPoints[i - 1], _graphPoints[i]);
             }
 
             Handles.EndGUI();

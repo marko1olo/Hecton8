@@ -6,7 +6,6 @@ using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
-using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.World;
 using Unity.Collections;
@@ -41,6 +40,7 @@ namespace Hecton8.Core
         private const int LiveTelemetryWriteIntervalFrames = 60;
         private const int LiveTelemetryRecordSizeBytes = 32;
         private const float PlayerResolveCooldownSeconds = 1f;
+        private const uint KccVelocityTelemetryMaxAgeFrames = 12u;
         private const float OriginShiftTelemetryIntervalSeconds = 1f;
         private const float SevereFrameTimeSeconds = 0.025f;
         private const float CriticalFrameTimeSeconds = 0.033f;
@@ -288,7 +288,7 @@ namespace Hecton8.Core
         private bool _registeredHotSwap;
         private bool _subscribed;
         private int _fluidRuntimePresent;
-        private int _saveRuntimePresent;
+        private int _saveServicePresent;
         private int _thermodynamicsRuntimePresent;
         private int _lastExportFrame = int.MinValue;
         private int _threadedFaultFlags;
@@ -2176,7 +2176,7 @@ namespace Hecton8.Core
             entry.ErrorFlags = 0u;
             entry.ExportReason = (uint)ExportReason.None;
             entry.AupShiftSequence = shiftEvent.Sequence;
-            entry.AiStatePacked = PackTwoUnitFloats(math.saturate(safeScalar), GlobalSignals.BulletTimeVisualIntensity01);
+            entry.AiStatePacked = PackTwoUnitFloats(math.saturate(safeScalar), SimulationSignalRoute.BulletTimeVisualIntensity01);
             entry.SubsystemHeatPacked = PackFloatToMilliseconds(safeOverhead);
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
@@ -2531,8 +2531,8 @@ namespace Hecton8.Core
 
         private void CacheRegistryPresenceCold()
         {
-            Volatile.Write(ref _fluidRuntimePresent, GlobalRegistry.Fluid != null ? 1 : 0);
-            Volatile.Write(ref _saveRuntimePresent, Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null ? 1 : 0);
+            Volatile.Write(ref _fluidRuntimePresent, GlobalRegistry.FluidSurfaceCurrent != null ? 1 : 0);
+            Volatile.Write(ref _saveServicePresent, GlobalRegistry.Save != null ? 1 : 0);
             Volatile.Write(ref _thermodynamicsRuntimePresent, GlobalRegistry.Thermodynamics != null ? 1 : 0);
         }
 
@@ -2561,10 +2561,10 @@ namespace Hecton8.Core
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.FluidRuntime:
-                    Volatile.Write(ref _fluidRuntimePresent, currentService is HectonFluidEngine ? 1 : 0);
+                    Volatile.Write(ref _fluidRuntimePresent, currentService is IFluidSurfaceCurrentReadModel ? 1 : 0);
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    Volatile.Write(ref _saveRuntimePresent, currentService is SaveManager ? 1 : 0);
+                    Volatile.Write(ref _saveServicePresent, currentService is ISaveService ? 1 : 0);
                     break;
                 case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
                     Volatile.Write(ref _thermodynamicsRuntimePresent, currentService is AbyssalThermalManager ? 1 : 0);
@@ -2654,7 +2654,7 @@ namespace Hecton8.Core
             if (HectonDirectorAI.ActiveRuntimeInstance != null)
                 systemMask |= (uint)SystemBits.AI;
 
-            if (Volatile.Read(ref _saveRuntimePresent) != 0)
+            if (Volatile.Read(ref _saveServicePresent) != 0)
                 systemMask |= (uint)SystemBits.Save;
 
             return systemMask;
@@ -2679,12 +2679,7 @@ namespace Hecton8.Core
 
         private uint SamplePlayerVelocityPacked()
         {
-            if (_playerRigidbody == null)
-                return 0u;
-
-            Vector3 velocity = _playerRigidbody.linearVelocity;
-            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
-            if (!math.all(math.isfinite(velocity3)))
+            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityTelemetryMaxAgeFrames, out float3 velocity3))
                 return 0u;
 
             return PackSignedVectorComponent(velocity3.x) |
@@ -2731,7 +2726,7 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z))))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

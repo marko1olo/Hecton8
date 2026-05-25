@@ -40,10 +40,8 @@ namespace Hecton8.Physics.Buoyancy.Editor
                 return result;
             }
 
-            string[] files = Directory.GetFiles(assetsRoot, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string path in Directory.EnumerateFiles(assetsRoot, "*.cs", SearchOption.AllDirectories))
             {
-                string path = files[i];
                 if (ShouldSkip(path))
                     continue;
 

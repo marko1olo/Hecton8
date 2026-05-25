@@ -1,0 +1,53 @@
+﻿<SELF_AUDIT agent="SHINOBU_300" domain="ECOSYSTEM_MACRO_BALANCER" date="2026-05-22" status="STATIC_PATCH_APPLIED_BUILD_GATED">
+  <taskMatrix count="20">
+    <task id="01" status="PASS_STATIC">Repository scan located macro, world, fauna, and AI ecosystem surfaces; duplicate AI macro surface was rechecked in this pass.</task>
+    <task id="02" status="PASS_STATIC">Existing MacroEcosystemMathematicianRuntime is the owner; SHINOBU_300 audit remains in an isolated partial file.</task>
+    <task id="03" status="PASS_STATIC">No new hot signal was invented; macro truth route is Vault contract rows.</task>
+    <task id="04" status="PASS_STATIC">OOP scanner reports zero macro-authority Instantiate/coroutine hits; legacy AI macro job is now fallback-only when SHINOBU_300 is absent.</task>
+    <task id="05" status="PASS_STATIC">Macro biomass truth is flat NativeArray rows plus Vault index; non-authority EcosystemHealthDirector dictionary remains documented outside macro truth.</task>
+    <task id="06" status="PASS_STATIC">GenerateEmergencyMockEcosystemJob seeds deterministic unstable sector populations for cold/mock proof.</task>
+    <task id="07" status="PASS_STATIC">EcosystemPopulationJob evaluates LV/logistic equations and now accepts per-biome alpha/beta/delta/gamma overrides from Vault biome specs.</task>
+    <task id="08" status="PASS_STATIC">Biomass and capacity clamps guard non-finite values and capacity explosions.</task>
+    <task id="09" status="PASS_STATIC">BiomassDiffusionJob performs adjacent-sector flora/prey/predator diffusion over flat rows.</task>
+    <task id="10" status="PASS_STATIC">Dear Lie output is packed density/dominance scalars, not fish objects.</task>
+    <task id="11" status="PASS_STATIC">GlobalQualityWeight drives continuous substeps, diffusion cadence, and migration flow weight.</task>
+    <task id="12" status="PASS_STATIC">AUP X/Z are floored in double precision; macro Y intentionally collapses to 0 for horizontal regional biomass.</task>
+    <task id="13" status="PASS_STATIC">Primary rollback-facing DTOs are explicit-layout unmanaged rows; jobs use deterministic Burst flags.</task>
+    <task id="14" status="PASS_STATIC">Vault sector/front/back/remainder/index/spec buffers use UninitializedMemory and deterministic fill jobs.</task>
+    <task id="15" status="PARTIAL_STATIC">300-entry telemetry ring and dump route exist; exact Burst-only execution timing remains pending dispatcher/profiler proof.</task>
+    <task id="16" status="PASS_STATIC">UI Toolkit tuner now exposes alpha/beta/gamma/delta sliders, uses UnsafeUtility.AsRef for in-place tuning writes, and draws a stacked area chart.</task>
+    <task id="17" status="PASS_STATIC">CSV bridge now targets macro_ecosystem_coefficients.csv, legacy-falls back to biome_ecosystem_specs.csv, parses spans without float.Parse, and stores capacities plus optional coefficients.</task>
+    <task id="18" status="PASS_STATIC">Heatmap gizmo reads Vault sectors directly and draws biomass-colored wire cubes without debug GameObjects.</task>
+    <task id="19" status="PASS_STATIC_NON_ROSLYN">OOP_Spawner_Scanner writes stable SHINOBU_300 report and upserts the aggregate AI_OPTIMIZATION_REPORT section without clobbering other agents. Parser is structural/lightweight, not Roslyn.</task>
+    <task id="20" status="PARTIAL_STATIC">Self-audit routine validates layout/math; compile, Play Mode, profiler, and GC proofs remain gated.</task>
+  </taskMatrix>
+  <structLayout>
+    <EcosystemSectorDTO size="64" alignment="64B cache line">SectorHash ulong@0 size8; FloraBiomass float@8; PreyBiomass float@12; PredatorBiomass float@16; CarryingCapacity float@20; DominantSpeciesMask uint@24; padding uint@28/32/36/40/44/48/52/56/60 total36.</EcosystemSectorDTO>
+    <BiomeEcosystemSpecDTO size="64" alignment="64B cache line">BiomeHash uint@0; CarryingCapacityPrey float@4; CarryingCapacityPredator float@8; MigrationResistance float@12; TemperatureOptimum float@16; ToxinPenalty float@20; BaseBirthRate alpha@24; PredationRate beta@28; PredatorConversionRate delta@32; PredatorStarvationRate gamma@36; padding uint@40/44/48/52/56/60 total24.</BiomeEcosystemSpecDTO>
+    <MacroEcosystemTuningDTO size="64">Alpha/Beta/Delta/Gamma at offsets 0/4/8/12; capacity/migration/quality/frost/tolerance/toxin fields through offset 60.</MacroEcosystemTuningDTO>
+    <MacroEcosystemTelemetryEntry size="64">Frame@0, StateHash@4, flora/prey/predator totals @8/12/16, transfers@20, maxPredatorDensity@24, solverUs@28, quality@32, steps@36/40, flags@44, capacity@48, predatorHash32@52, reserved@56.</MacroEcosystemTelemetryEntry>
+  </structLayout>
+  <vaultStatus privateNativeCollections="ZERO_CROSS_DOMAIN_OWNERSHIP">
+    <buffer id="70433" name="ShinobuMacroEcosystemSectorFront" type="Hecton8.Core.Contracts.EcosystemSectorDTO" count="10000" />
+    <buffer id="70434" name="ShinobuMacroEcosystemSectorBack" type="Hecton8.Core.Contracts.EcosystemSectorDTO" count="10000" />
+    <buffer id="70435" name="ShinobuMacroEcosystemRemainders" type="EcosystemSectorRemainderDTO" count="10000" />
+    <buffer id="70436" name="ShinobuMacroEcosystemSectorCoords" type="EcosystemSectorCoordDTO" count="10000" />
+    <buffer id="70437" name="ShinobuMacroEcosystemIndexEntries" type="EcosystemSectorIndexEntryDTO" count="32768" />
+    <buffer id="70438" name="ShinobuMacroEcosystemBiomeSpecs" type="BiomeEcosystemSpecDTO" count="256" />
+    <buffer id="70439" name="ShinobuMacroEcosystemTuning" type="MacroEcosystemTuningDTO" count="1" />
+    <buffer id="70440" name="ShinobuMacroEcosystemCounters" type="MacroEcosystemCounterDTO" count="16" />
+    <buffer id="70441" name="ShinobuMacroEcosystemTelemetryRing" type="MacroEcosystemTelemetryEntry" count="300" />
+    <buffer id="70442" name="ShinobuMacroEcosystemCsvScratch" type="byte" count="32768" />
+    <buffer id="70447" name="ShinobuMacroEcosystemFaultFlags" type="uint" count="10000" />
+  </vaultStatus>
+  <scalabilityCurve>Quality 0.10 resolves to 1 LV substep, 1 diffusion pass, ~0.25 flow. Quality 0.50 resolves near 2 LV substeps, 2 diffusion passes, ~0.49 flow. Quality 1.00 resolves to 6 LV substeps, 5 diffusion passes, 1.0 flow. This scales cadence/amplitude/precision only; DTO layout, authority route, and save identity do not branch.</scalabilityCurve>
+  <jobGraph>
+    <job name="EcosystemPopulationJob" input="front, remainders, coords, biome specs, tuning" output="back, remainders, fault flags" burst="Deterministic/Synchronous/Standard" noAlias="true" />
+    <job name="BiomassDiffusionJob" input="source, coords, biome specs" output="destination, remainders" burst="Deterministic/Synchronous/Standard" noAlias="true" />
+    <job name="CopySectorBufferJob" input="back" output="front" burst="Deterministic/Synchronous/Standard" noAlias="true" />
+    <job name="EcosystemTelemetryReductionJob" input="front, remainders, fault flags" output="telemetry ring, counters" burst="Deterministic/Synchronous/Standard" noAlias="true" />
+  </jobGraph>
+  <compileGuard>Runtime domain uses Core/Core.Contracts/Core.Memory contracts only for cross-domain data. No dotnet build was launched in this pass: first gate saw VBCSCompiler active, later gate had no compiler process but CPU sampled at 94.4 percent. Compile and Unity import proof remain pending.</compileGuard>
+  <dearLie before="O(entities) simulated fish reproduction/migration plus GameObject risk" after="O(sectors * neighbors) scalar density field">Macro system computes density and dominance scalars; spawn/render layers create the illusion.</dearLie>
+  <knownResidualRisk>Task 15 exact Burst execution time still needs dispatcher/profiler-backed timing. Task 19 parser is lightweight structural AST, not Roslyn AST, by compile-wall choice.</knownResidualRisk>
+</SELF_AUDIT>

@@ -324,6 +324,26 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 return float2(rotatedX, uv.y);
             }
 
+            float HectonFastAtan2(float y, float x)
+            {
+                float ax = abs(x);
+                float ay = abs(y);
+                float major = max(ax, ay);
+                float minor = min(ax, ay);
+                float ratio = minor / max(major, 0.00000001);
+                float ratioSq = ratio * ratio;
+                float poly = (((-0.0464964749 * ratioSq + 0.15931422) * ratioSq - 0.327622764) * ratioSq + 1.0) * ratio;
+                float angle = lerp(poly, 1.57079633 - poly, step(ax, ay));
+                angle = lerp(angle, 3.14159265 - angle, 1.0 - step(0.0, x));
+                angle = lerp(angle, -angle, 1.0 - step(0.0, y));
+                return angle * step(0.00000001, major);
+            }
+
+            float HectonFastLongitude01(float z, float x)
+            {
+                return HectonFastAtan2(z, x) * 0.15915494309 + 0.5;
+            }
+
             // ─────────────────────────────────────────────────────────
             // RESOLVE SUN DIRECTION — Fallback-safe
             //
@@ -349,7 +369,7 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             float2 ComputeCelestialOcclusionUV(half3 skyRay)
             {
                 float2 uv;
-                uv.x = atan2((float)skyRay.z, (float)skyRay.x) * (0.5 / 3.14159265) + 0.5;
+                uv.x = HectonFastLongitude01((float)skyRay.z, (float)skyRay.x);
                 uv.y = (float)skyRay.y * 0.5 + 0.5;
                 uv *= _CelestialOcclusionTiling.xy;
                 uv.x += _WindDirection.x * _GameTime * _CelestialOcclusionScrollSpeed;

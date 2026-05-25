@@ -276,13 +276,9 @@ Shader "Hidden/Hecton8/VisorAR"
                 float chromaWeight = smoothstep(0.06, 1.0, quality);
                 float chroma = lerp(0.0002, 0.0025, chromaWeight) * (0.25 + stress);
                 half3 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv)).rgb;
-                [branch]
-                if (chromaWeight > 0.0001)
-                {
-                    half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv + float2(chroma, 0.0))).r;
-                    half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv - float2(chroma, 0.0))).b;
-                    source = lerp(source, half3(red, source.g, blue), chromaWeight);
-                }
+                half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv + float2(chroma, 0.0))).r;
+                half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv - float2(chroma, 0.0))).b;
+                source = lerp(source, half3(red, source.g, blue), chromaWeight);
 
                 float3 hudColor = float3(0.42, 0.94, 0.98);
                 float3 warnColor = float3(1.0, 0.33, 0.18);

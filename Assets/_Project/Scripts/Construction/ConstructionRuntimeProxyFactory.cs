@@ -10,6 +10,8 @@ namespace Hecton8.Construction
     {
         private static Material s_finalProxyMaterial;
         private static Mesh s_wireBoxMesh;
+        private static readonly int s_baseColorPropertyId = Shader.PropertyToID("_BaseColor");
+        private static readonly int s_colorPropertyId = Shader.PropertyToID("_Color");
         // COLD ALLOC: Vector3[8] - shared unit wire box vertices for generated module proxies - owner: ConstructionRuntimeProxyFactory
         private static readonly Vector3[] s_wireBoxVertices =
         {
@@ -150,10 +152,10 @@ namespace Hecton8.Construction
                 shader = Shader.Find("Sprites/Default");
 
             Material material = new Material(shader);
-            if (material.HasProperty("_BaseColor"))
-                material.SetColor("_BaseColor", color);
-            else if (material.HasProperty("_Color"))
-                material.SetColor("_Color", color);
+            if (material.HasProperty(s_baseColorPropertyId))
+                material.SetColor(s_baseColorPropertyId, color);
+            else if (material.HasProperty(s_colorPropertyId))
+                material.SetColor(s_colorPropertyId, color);
 
             material.enableInstancing = true;
             return material;

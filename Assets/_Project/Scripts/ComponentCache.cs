@@ -102,7 +102,7 @@ namespace Hecton8.Core
                 }
 
                 // ── Slow path: query component (first time or after removal) ──
-                _cachedComponent = _gameObject.GetComponent<T>();
+                _gameObject.TryGetComponent(out _cachedComponent);
                 _isCached = true;
 
                 return _cachedComponent;

@@ -26,11 +26,11 @@ namespace Hecton8.Gameplay
 
         /// <summary>List of objectives that must be completed.</summary>
         [Header("Objectives")]
-        public List<ObjectiveData> objectives = new List<ObjectiveData>();
+        public List<ObjectiveData> objectives = new List<ObjectiveData>(4);
 
         /// <summary>List of rewards granted upon completion.</summary>
         [Header("Rewards")]
-        public List<RewardData> rewards = new List<RewardData>();
+        public List<RewardData> rewards = new List<RewardData>(4);
 
         /// <summary>Initial state of the mission.</summary>
         [Header("State")]

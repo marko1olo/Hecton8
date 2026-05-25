@@ -27,7 +27,7 @@ public class HectonPrefabTools
             
             // Esli takoy prefab uzhe est — perezapisyvaem
             PrefabUtility.SaveAsPrefabAssetAndConnect(obj, localPath, InteractionMode.UserAction);
-            Debug.Log($"[Hecton] Obekt {obj.name} uspeshno prevraschen v prefab: {localPath}");
+            Debug.Log("[Hecton] Obekt " + obj.name + " uspeshno prevraschen v prefab: " + localPath);
         }
         
         AssetDatabase.SaveAssets();

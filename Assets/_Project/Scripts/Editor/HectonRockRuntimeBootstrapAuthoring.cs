@@ -118,7 +118,7 @@ namespace Hecton8.EditorTools
         {
             int initialCapacity = rockPrefabs != null ? rockPrefabs.Count + 32 : 32; // COLD ALLOC: editor-only bootstrap list for combined rock/flora GPUI registration.
             List<GameObject> prefabs = new List<GameObject>(initialCapacity);
-            HashSet<string> registeredPaths = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> registeredPaths = new HashSet<string>(initialCapacity, StringComparer.Ordinal);
 
             AddUniquePrefabs(prefabs, registeredPaths, rockPrefabs);
             AddUniquePrefabs(prefabs, registeredPaths, floraPrefabs);

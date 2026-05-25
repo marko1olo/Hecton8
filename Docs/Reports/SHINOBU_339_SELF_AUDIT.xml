@@ -1,0 +1,102 @@
+﻿<SELF_AUDIT agent="SHINOBU_339" status="STATIC_SOURCE_RUNTIME_PENDING" date="2026-05-23">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">OOP audio scan covers Habitat, Audio, Vehicles, and Physics/Vehicles; no runtime direct alarm route is accepted.</TASK>
+    <TASK id="02" status="PASS">No managed HULL CRITICAL Canvas route is introduced; warnings travel as AUP signal payloads.</TASK>
+    <TASK id="03" status="PASS">Hot DTOs use raw fields only; no get/set properties in SHINOBU_339 DTO rows.</TASK>
+    <TASK id="04" status="PASS">`GroupedWarningDTO`, `RawWarningDTO`, and `BaseStructuralWarningSignal` layouts are validated by `UnsafeUtility.SizeOf` and cold field-offset guards.</TASK>
+    <TASK id="05" status="PASS">`GenerateMockStressSpikeJob : IJobParallelFor` injects dense synthetic stress into Vault structural rows.</TASK>
+    <TASK id="06" status="PASS">`EvaluateStructuralStressJob : IJobParallelFor` extracts thresholded AUP/stress rows with `[NoAlias]`.</TASK>
+    <TASK id="07" status="PASS">`CoalesceWarningsJob` groups raw rows with a bounded 64-group table and double3 centroid math.</TASK>
+    <TASK id="08" status="PASS">`RouteStructuralWarningsJob` throttles by Vault sector timers, emits highest-stress groups first, and applies continuous producer budget before queue enqueue.</TASK>
+    <TASK id="09" status="PASS">Red alert exits as `BaseStructuralWarningSignal.FlagRedAlert`; Power remains owner of its DTOs.</TASK>
+    <TASK id="10" status="PASS">Cluster radius uses `math.lerp(5,100,1-GlobalQualityWeight)` and route emission budget uses `round(lerp(4,64,smoothstep(GlobalQualityWeight)))`.</TASK>
+    <TASK id="11" status="PASS">Cluster epicenter sums/divides `double3` before downstream acoustic payload conversion.</TASK>
+    <TASK id="12" status="PASS">Signal carries panic scalar and hypoxia-panic candidate flag for physiology owner consumption.</TASK>
+    <TASK id="13" status="PASS">Warning buffers are route-carded as presentation-only and rollback/hash excluded.</TASK>
+    <TASK id="14" status="PASS">Vault buffers use `UninitializedMemory`; hot subset is overwritten; no raw `MemClear` route remains.</TASK>
+    <TASK id="15" status="PASS">300-entry telemetry ring records raw/group/emitted/dropped/stress/radius/fault data and dump route.</TASK>
+    <TASK id="16" status="PASS">UI Toolkit tuner mutates Vault-backed tuning during editor/play inspection.</TASK>
+    <TASK id="17" status="PASS">CSV profile bridge reads into Vault scratch and parses `ReadOnlySpan&lt;byte&gt;` without `float.Parse`.</TASK>
+    <TASK id="18" status="PASS">Scene gizmo draws epicenter spheres plus bounded raw-node membership lines.</TASK>
+    <TASK id="19" status="PASS">`OOP_Audio_Scanner` writes `Docs/Reports/AUDIO_OPTIMIZATION_REPORT.json`.</TASK>
+    <TASK id="20" status="PASS">Static self-audit exists; runtime profiler/GC proof is not claimed.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    <DTO name="GroupedWarningDTO" size="32">
+      <FIELD name="EpicenterAUP" offset="0" size="24" type="double3"/>
+      <FIELD name="HighestStress01" offset="24" size="4" type="float"/>
+      <FIELD name="CriticalFlags" offset="28" size="4" type="uint"/>
+      <PADDING bytes="0"/>
+      <ALIGNMENT proof="32 % 8 == 0 and 32 % 16 == 0"/>
+    </DTO>
+    <DTO name="RawWarningDTO" size="64" false_sharing="cache-line stride">
+      <FIELD name="WarningAUP" offset="0" size="24" type="double3"/>
+      <FIELD name="Stress01" offset="24" size="4" type="float"/>
+      <FIELD name="NodeHash" offset="28" size="4" type="uint"/>
+      <FIELD name="CriticalFlags" offset="32" size="4" type="uint"/>
+      <FIELD name="ClusterIndex" offset="36" size="4" type="int"/>
+      <FIELD name="SourceIndex" offset="40" size="4" type="int"/>
+      <FIELD name="Reserved0" offset="44" size="4" type="uint"/>
+      <FIELD name="_padTail0" offset="48" size="8" type="ulong"/>
+      <FIELD name="_padTail1" offset="56" size="8" type="ulong"/>
+    </DTO>
+    <DTO name="BaseStructuralWarningSignal" size="64">
+      <FIELD name="EpicenterAup" offset="0" size="40" type="AcousticAup"/>
+      <FIELD name="BaseHash" offset="40" size="4" type="uint"/>
+      <FIELD name="Frame" offset="44" size="4" type="uint"/>
+      <FIELD name="HighestStress01" offset="48" size="4" type="float"/>
+      <FIELD name="AudioIntensity01" offset="52" size="4" type="float"/>
+      <FIELD name="PanicScalar01" offset="56" size="4" type="float"/>
+      <FIELD name="CriticalFlags" offset="60" size="4" type="uint"/>
+    </DTO>
+  </STRUCT_LAYOUT>
+  <SCALABILITY>
+    Low quality expands radius toward 100m, collapsing many points into fewer warning groups, then caps producer emits near 4 highest-stress groups with SignalBus survival budget 8. Middle quality keeps wing/room groups and a midrange smooth budget. High/Ultra shrink radius toward 5m and allow up to 64 localized procedural audio/visor signals. Quality changes producer density/cadence only; it does not change DTO identity, BufferIDs, save identity, or authority route.
+  </SCALABILITY>
+  <VAULT_STATUS>
+    <BUFFER id="70498" name="BaseStructuralWarningRawWarnings"/>
+    <BUFFER id="70499" name="BaseStructuralWarningGroups"/>
+    <BUFFER id="70503" name="BaseStructuralWarningTimers"/>
+    <BUFFER id="70504" name="BaseStructuralWarningCounters"/>
+    <BUFFER id="70505" name="BaseStructuralWarningTelemetryRing"/>
+    <BUFFER id="70506" name="BaseStructuralWarningTelemetryCursor"/>
+    <BUFFER id="70507" name="BaseStructuralWarningTuning"/>
+    <BUFFER id="70508" name="BaseStructuralWarningProfiles"/>
+    <BUFFER id="70509" name="BaseStructuralWarningCsvScratch"/>
+    <PRIVATE_NATIVE_ALLOCATIONS hot_path="0"/>
+  </VAULT_STATUS>
+  <DEPENDENCY_GRAPH>
+    <JOB order="1" name="EvaluateStructuralStressJob" input="structural solver handle" output="raw warning rows"/>
+    <JOB order="2" name="CoalesceWarningsJob" input="evaluate handle" output="group rows and counters"/>
+    <JOB order="3" name="RouteStructuralWarningsJob" input="coalesce handle" output="SignalBus BaseStructuralWarningSignal enqueue and timers"/>
+    <JOB order="4" name="WriteStructuralWarningTelemetryJob" input="route handle" output="telemetry ring"/>
+    <NOALIAS status="PASS">All non-overlapping NativeArray fields in Burst jobs carry `[NoAlias]`.</NOALIAS>
+  </DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Habitat Deformation runtime asmdef references Core/Core.Contracts/Core.Memory/Habitat contracts only; no sibling Audio, Power, Construction, Physiology runtime asmdef reference is added.
+    Payload identity and AcousticAup are in HectonSignalLaneContract.cs under Core Contracts. The prior Construction short-name collision was removed by renaming the pylon-only FWNG lane to Hecton8.Construction.FoundationStructuralWarningSignal; SHINOBU_339 still does not import Construction.
+  </COMPILE_GUARD>
+  <VERIFICATION>
+    <STATIC_CHECK status="PASS">Targeted git diff check returned no SHINOBU whitespace errors; only LF/CRLF warnings.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">Unity import metadata exists for new SHINOBU runtime/editor `.cs` files; no missing `.meta` remains in Habitat Deformation Runtime/Editor script folders.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">`BaseStructuralWarningLayout.Validate()` now enforces the RawWarning, GroupedWarning, and signal offset maps used in this audit.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">`AcousticAup` is folded into included `HectonSignalLaneContract.cs`; standalone contract source and `.meta` were removed to avoid stale generated-csproj misses.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">`ShinobuAcousticDspSmokeTester` now reads the active `HectonSignalLaneContract.cs` source for `AcousticAup` and asserts its 40-byte explicit layout plus `Local@24`.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">Global `BaseStructuralWarningSignal` short-name collision removed; Construction pylon lane now uses `FoundationStructuralWarningSignal`.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">OOP audio scanner now includes instance `.Play(` patterns; equivalent source scan reports 0 violation matches and 4 allowlisted music/adaptive central-audio owner matches with file/line evidence.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">`PlayerCriticalProceduralAudioRenderer` no longer contains `.Play(`, `AudioSource.Play`, `PlayClipAtPoint`, `new AudioSource`, `boilingWaterLoop*`, or `boilingWaterPool*`; cutter boil is DSP-owned through `BubbleBoilIntensity` and `RenderBubbleBlock`.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">`RouteStructuralWarningsJob` uses `[NativeDisableContainerSafetyRestriction]` on the producer-only SignalBus writer and self-caps queue writes continuously before enqueue.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">Core `GlobalSignals` bootstrap and Habitat owner config both register `SignalBus&lt;BaseStructuralWarningSignal&gt;` with survival budget 8 and max budget 64.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">Post-compression source audit verified `BaseStructuralWarning*` BufferIDs `70498..70509`, Habitat Deformation asmdef route, active `AcousticAup` source path, no missing `.meta` for new dispatcher/editor files, and valid JSON/XML proof artifacts.</STATIC_CHECK>
+    <STATIC_CHECK status="PASS">Source audit verified the hot solver locks SHINOBU warning Vault buffers through `TryLockBaseStructuralWarningBuffers(ref mask)` before scheduling and releases them through `UnlockBaseStructuralWarningBuffers(mask)`; editor gizmo reads also lock the same buffers.</STATIC_CHECK>
+    <SUB_AGENT_AUDIT status="PASS">Compile-risk auditor confirmed SignalBus writer API, no current namespace ambiguity, and AUP-based audio distance path.</SUB_AGENT_AUDIT>
+    <SUB_AGENT_AUDIT status="RESOLVED_BY_POLISH">Auditor found boiling-water Audio-owner `.Play()` calls in `PlayerCriticalProceduralAudioRenderer`; the legacy AudioSource fallback was removed and the scanner allowlist no longer includes that file.</SUB_AGENT_AUDIT>
+    <BUILD_ATTEMPT status="EXTERNAL_FAIL_GENERATED_CSPROJ_SCOPE">Attempt 1 failed on external Airlock plus SHINOBU payload visibility. Payload visibility was fixed by moving signal/AUP payloads into included HectonSignalLaneContract.cs. Attempt 2 launched only at green gate CPU 34%, dotnet 0, csc 0 and failed on external Narrative, Solar, and Airlock errors; no contract payload errors were emitted inside generated Core csproj scope.</BUILD_ATTEMPT>
+    <BUILD_ATTEMPT status="EXTERNAL_FAIL_GENERATED_CSPROJ_SCOPE">Attempt 3 launched after cutter-boil purge at green gate CPU 22%, dotnet 0, csc 0 and failed only on external Narrative/Solar errors; no PlayerCriticalProceduralAudioRenderer or contract payload errors were emitted inside generated Core csproj scope.</BUILD_ATTEMPT>
+    <BUILD_ATTEMPT status="EXTERNAL_FAIL_GENERATED_CSPROJ_SCOPE">Attempt 4 after editor smoke-test source-path polish was initially blocked by CPU 99%, then launched at green gate CPU 28%, dotnet 0, csc 0. It failed only on external Narrative/Solar errors inside generated Hecton8.Core.csproj scope. That generated project includes HectonSignalLaneContract.cs and PlayerCriticalProceduralAudioRenderer.cs, but not the new Habitat Deformation sources or ShinobuAcousticDspSmokeTester until Unity regenerates/imports them.</BUILD_ATTEMPT>
+    <BUILD_ATTEMPT status="EXTERNAL_FAIL_GENERATED_CSPROJ_SCOPE">Attempt 5 after producer-budget/source-audit polish launched only after gate CPU 47.3, dotnet 0, csc 0. It failed on untracked Construction hatch-lock files aliasing `Hecton8.Habitat.Deformation.IntegrityStateDTO` while generated Hecton8.Core.csproj includes those files but not HabitatDeformationContracts.cs. No SHINOBU_339 Core contract/audio errors were emitted; new Habitat Deformation dispatcher sources remain Unity import/project-regeneration pending.</BUILD_ATTEMPT>
+  </VERIFICATION>
+  <DEAR_LIE>
+    CPU replaces per-module audio emitters and fracture-acoustic simulation with centroid scalar packets. Before: `O(warnings * consumers/audio voices)` plus voice stealing. After: `O(nodes * 64 + groups * timers)` with `groups &lt;= 64` and one procedural audio route per cooled sector.
+  </DEAR_LIE>
+</SELF_AUDIT>

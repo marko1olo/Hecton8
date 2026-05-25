@@ -1,0 +1,128 @@
+﻿# [ARCHIVE] Pre-Line-Split Architecture Snapshot
+
+Date: 2026-05-24
+Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
+Original: Docs/ARCHITECTURE/BIOME_WEIGHT_MAP_BAKER_SHINOBU_243.md
+Rule: historical snapshot only; not active doctrine.
+
+# BIOME WEIGHT MAP BAKER - SHINOBU_243
+
+Date: 2026-05-21
+
+Owner: SHINOBU_243 / BIOME_WEIGHT_MAP_BAKER
+
+Domain: World Generation & Terrain, offline/editor only
+
+Evidence class: STATIC_SOURCE / FILESYSTEM. Unity import, script compile, Burst Inspector, Forge bake execution, BC7 importer inspection, Frame Debugger, profiler, GCMonitor, player-build, and visual proof remain pending.
+
+## Boundary
+
+- Source path: `Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/`.
+
+- Assembly: `Hecton8.World.BiomeWeightMapBaker.Editor`, Editor platform only, unsafe enabled.
+- Source files are also wrapped in `#if UNITY_EDITOR` / `#endif` as a redundant fail-closed player-build fence.
+- Assembly references: Unity Burst, Collections, Jobs, Mathematics. No sibling runtime domain assembly reference is introduced.
+
+- Unity import metadata for the new folders, scripts, asmdef, CSV source folder, and CSV text asset is checked in; GUIDs are not left for local generation.
+
+- Output path: `Assets/_Project/BakedGeometry/Splatmaps/TX_BiomeWeightMap_SHINOBU_243.asset`.
+
+- CSV source path: `Assets/_SourceData/Terrain/terrain_splatmap_profiles.csv`.
+
+- Report path: `Docs/Reports/SPLATMAP_BAKE_REPORT.json`.
+
+- Self-audit path: `Docs/Reports/SPLATMAP_BAKE_SELF_AUDIT_SHINOBU_243.md`.
+- Black-box dump target: `Docs/AgentLogs/Dump_SHINOBU_243.bin`; fault writes stage through `Docs/AgentLogs/Dump_SHINOBU_243.bin.tmp` and fail closed if dump I/O throws.
+
+## Texture Contract
+
+- Format target: linear BC7 Unity texture asset.
+
+- Channels: `R=Rock`, `G=Sand`, `B=ambient silt`, `A=erosion-deposited silt`.
+
+- Runtime route: terrain shader samples one packed mask texture. Runtime slope, height, erosion, macro-biome, and transition-noise selection are not re-solved per fragment by the SHINOBU_243 route.
+
+- Missing mask fallback in `TerrainMaster.shader`: sand-dominant safe material response.
+
+## DTO Layout
+
+- `BiomeBlendRuleDTO=32`: `MinHeight@0`, `MaxHeight@4`, `MinSlope@8`, `MaxSlope@12`, `NoiseFrequency@16`, `BlendSoftness@20`, `ChannelIndex@24`, `_pad0@28`.
+
+- `BiomeSplatmapBakeConfigDTO=128`: `double3 SectorOriginAUP@0`, scalar config fields `24..91`, `_pad0@92`, `ulong` padding `96..127`.
+
+- `BiomeSplatmapBakeTelemetryEntry=64`: one cache-line forensic row for stage, dimensions, hashes, warning flags, AUP origin, timing, and non-finite count.
+
+## Job Graph
+
+Full bake graph:
+
+`GenerateMockHeightmapJob(height, erosion)` + `GenerateMockMacroBiomeJob(macro hashes)` -> `CalculateTerrainNormalsJob` -> `JobHandle.CombineDependencies(normal, macro)` -> `EvaluateBiomeWeightsJob` -> optional `BoxBlurBiomeWeightsJob` -> one Editor readback fence before `Texture2D.SetPixelData`.
+
+Preview graph uses the same route at 256 resolution over a 1km x 1km SceneView-camera-centered AUP patch, including optional blur parity with the full bake, and one Editor readback fence for the UI Toolkit image. The full bake route remains sector-owned and does not derive truth from an Editor camera.
+
+Timing proof uses that same single-fence graph. The bake report records one measured `jobChain` timing and marks stage breakdown as `not_isolated_single_fence`; it does not claim fake mock/normal/weight stage timings without profiler instrumentation. Failure-only cleanup fences complete outstanding scheduled jobs before TempJob disposal if an exception interrupts a bake/preview before the readback fence; they are not a normal hot-path scheduling boundary.
+
+Black-box dump emission is isolated behind `TryDumpBlackBox`; non-finite and catch paths do not let dump I/O exceptions replace the original bake result. The final dump file is updated only after a temp file writer closes.
+
+All mathematical jobs carry `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]` and `[NoAlias]` on independent `NativeArray` lanes.
+
+## AUP Noise Route
+
+Noise samples are generated from `double3` AUP sample positions. The noise helpers subtract `SectorOriginAUP` from each sample in double precision before frequency scaling, then fold `SectorOriginAUP * frequency` into the scaled lattice coordinate. That proves the local-delta precision rule without breaking seam continuity at sector borders. No SHINOBU_243 noise path casts absolute AUP coordinates to `float`.
+
+The math helper exposes no zero-origin `double3` noise overloads. Callers must provide both `sampleAup` and `originAup`; this prevents future editor bake extensions from bypassing the sector-local AUP anchor.
+
+## Quality Route
+
+`GlobalQualityWeight` is continuous and affects only offline authoring detail:
+
+- fractal noise octaves: `1..4`;
+
+- transition noise gain: `0.35..1.0`;
+
+- macro noise frequency: low-to-full range through `math.lerp`;
+
+- blur radius: `0.25..1.0` of requested radius;
+
+- mock terrain detail amplitude: low-to-full range through `math.lerp`.
+
+The Forge facade exposes this value as a continuous UI Toolkit slider for preview and bake. It is not a binary low/high switch.
+
+It does not change texture channel contract, DTO layout, save identity, runtime authority route, or rollback exclusion.
+
+## Authority And Rollback
+
+- SHINOBU_243 claims no runtime owner and no hot global route.
+
+- Vault BufferIDs requested: none. The baker is Editor-only; scratch buffers are local `Allocator.TempJob` buffers disposed in `finally`.
+
+- Generated splatmaps are immutable environment presentation data and are excluded from StateRingBuffer, Merkle hashing, save deltas, and rollback.
+
+- Future runtime terrain streaming ownership belongs to the terrain/streaming consumer domain; SHINOBU_243 owns only the offline bake artifact and proof reports.
+
+## Data Monolith
+
+The BC7 texture asset is not `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`, not an `H8StaticDataArena` section, and does not satisfy Data Monolith readiness.
+
+## Editor Tooling Parser Boundary
+
+- `terrain_splatmap_profiles.csv` ingestion is a cold Editor route that streams bytes through `FileStream.ReadByte` into a stackalloc line buffer and parses `ReadOnlySpan<byte>` cells. It does not hydrate a full-file managed string or full-file managed byte array. Schema v1 requires exact named columns `macro,channel,min_height,max_height,min_slope,max_slope,noise_frequency,blend_softness`, with optional UTF-8 BOM skipped. Missing/mismatched headers, overlong lines, malformed rows, numeric overflow, out-of-range rule slots, unknown channel tokens, non-empty extra columns, and empty data fail closed with numeric validation codes instead of partially hydrating profile content.
+
+- The checked-in source CSV contains three macro rule sets, each with the required four channel lanes (`rock`, `sand`, `silt`, `erosion`) aligned to `DefaultRulesPerMacro=4`; it is authoring seed data, not runtime truth or a save payload.
+
+- The Forge facade shows the CSV source path, output asset path, schema validation/hash state, and primary DTO layout summary in the UI.
+
+- `Terrain_Shader_Scanner` uses one streaming ASCII byte-pattern pass per shader-like file for forbidden runtime terrain splat math. It has no marker-based TerrainMaster whitelist; future forbidden-pattern regressions remain visible. It is a static proof aid, not a shader compiler or runtime route.
+
+- `TerrainMaster.shader` no longer carries the dead `_SlopeSharpness`, `_SedimentSlopeThreshold`, or `_MicroErosionSlopeThreshold` material surface in the SHINOBU_243 route; material selection reads `_TerrainControlRGBA`.
+
+## Verification Pending
+
+Required proof before runtime readiness claims:
+
+- Unity clean import and Console check. First Unity batch import reached script compilation and failed repository compile; SHINOBU_243's two owned `CS0103 Format` defects were patched. Current clean recheck is blocked by CPU guard and other-domain compile errors recorded in `Docs/AgentLogs/UnityCompile_SHINOBU_243_BiomeWeightMapBaker.log`.
+- Burst Inspector validation for the four jobs.
+- Forge bake run producing BC7 asset and JSON report.
+- Importer inspection proving linear mask data.
+- Frame Debugger proof that terrain material selection consumes `_TerrainControlRGBA` and does not execute runtime normal-up splat math.
+- Profiler/GC proof for Editor bake and runtime shader route.

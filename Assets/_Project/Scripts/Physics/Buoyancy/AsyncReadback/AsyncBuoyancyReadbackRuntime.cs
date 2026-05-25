@@ -148,6 +148,8 @@ namespace Hecton8.Physics
         private bool _coldBootCompleted;
         private bool _registeredDispatcher;
         private bool _mockPathThisFrame;
+        private bool _gpuDispatchQueuedForVisualSync;
+        private bool _gpuUnavailableForNextSimulation;
         private bool _dumpRequested;
         private bool _dumpedFault;
         private bool _kernelResolved;
@@ -303,8 +305,10 @@ namespace Hecton8.Physics
             if (EnsureRuntimeReady())
             {
                 EnsureGpuBuffers();
+#if UNITY_EDITOR
                 if (loadVehicleSamplingProfilesOnEnable)
                     LoadVehicleSamplingProfiles();
+#endif
             }
             TryRegisterDispatcherSystems();
         }
@@ -359,13 +363,17 @@ namespace Hecton8.Physics
             if (_queuedRequestCount <= 0 || !math.all(math.isfinite(_cameraAup)))
                 _cameraAup = ResolveCameraAup();
             if (!IsRuntimeReady())
+            {
+                _gpuDispatchQueuedForVisualSync = false;
+                _mockPathThisFrame = false;
                 return;
+            }
 
-            long start = System.Diagnostics.Stopwatch.GetTimestamp();
             PrepareFrameRequests(fixedDelta);
-            ReadbackDispatchStatus dispatchStatus = DispatchGpuReadback();
-            _mockPathThisFrame = dispatchStatus == ReadbackDispatchStatus.Unavailable && _dispatchRequestCount > 0;
-            _lastDispatchMicros = ElapsedMicroseconds(start);
+            _gpuDispatchQueuedForVisualSync = _dispatchRequestCount > 0;
+            _mockPathThisFrame = _dispatchRequestCount > 0 &&
+                                 enableMockWhenGpuUnavailable &&
+                                 (!enableGpuReadback || _gpuUnavailableForNextSimulation);
             UpdateCounterPreSimulation();
             _queuedRequestCount = 0;
         }
@@ -408,10 +416,6 @@ namespace Hecton8.Physics
                     _mockPathThisFrame = false;
                     _completedRequestCount = 0;
                 }
-            }
-            else
-            {
-                ConsumeGpuReadbacksNoWait();
             }
 
             int activeStateCount = math.max(_dispatchRequestCount, _completedRequestCount);
@@ -467,8 +471,28 @@ namespace Hecton8.Physics
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
         {
+            ConsumeGpuReadbacksNoWait();
+            FlushQueuedGpuReadbackDispatch();
             if (_dumpRequested || _lastLatencyFrames > 4)
                 DumpTelemetryOnce();
+        }
+
+        private void FlushQueuedGpuReadbackDispatch()
+        {
+            if (!_gpuDispatchQueuedForVisualSync)
+                return;
+
+            _gpuDispatchQueuedForVisualSync = false;
+            if (!IsRuntimeReady())
+            {
+                _gpuUnavailableForNextSimulation = true;
+                return;
+            }
+
+            long start = System.Diagnostics.Stopwatch.GetTimestamp();
+            ReadbackDispatchStatus dispatchStatus = DispatchGpuReadback();
+            _lastDispatchMicros = ElapsedMicroseconds(start);
+            _gpuUnavailableForNextSimulation = dispatchStatus == ReadbackDispatchStatus.Unavailable;
         }
 
         private ReadbackDispatchStatus DispatchGpuReadback()
@@ -878,6 +902,8 @@ namespace Hecton8.Physics
             _dispatchRequestCount = 0;
             _completedRequestCount = 0;
             _mockPathThisFrame = false;
+            _gpuDispatchQueuedForVisualSync = false;
+            _gpuUnavailableForNextSimulation = false;
         }
 
         private static void DisposeRequestBuffer(ref GraphicsBuffer buffer)
@@ -1120,6 +1146,7 @@ namespace Hecton8.Physics
             _cachedOriginShiftFlags = shiftData.IsSafeTeleport != 0 ? 1u : 0u;
         }
 
+#if UNITY_EDITOR
         private void LoadVehicleSamplingProfiles()
         {
             if (!IsRuntimeReady())
@@ -1150,13 +1177,15 @@ namespace Hecton8.Physics
                 int bytesRead = 0;
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
+                    byte* scratchPtr = (byte*)scratch.GetUnsafePtr();
+                    Span<byte> destination = new Span<byte>(scratchPtr, scratch.Length);
                     while (bytesRead < scratch.Length)
                     {
-                        int value = stream.ReadByte();
-                        if (value < 0)
+                        int read = stream.Read(destination.Slice(bytesRead));
+                        if (read <= 0)
                             break;
 
-                        scratch[bytesRead++] = (byte)value;
+                        bytesRead += read;
                     }
                 }
 
@@ -1385,6 +1414,7 @@ namespace Hecton8.Physics
         {
             return value >= (byte)'a' && value <= (byte)'z' ? (byte)(value - 32) : value;
         }
+#endif
 
         private void DumpTelemetryOnce()
         {
@@ -1543,7 +1573,7 @@ namespace Hecton8.Physics
             if (vault.IsAllocationLocked)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
             return HasHandle(in handle) &&
                    vault.TryReadHandle(in handle, out NativeArray<T> resolved) &&
                    resolved.IsCreated &&
@@ -1701,6 +1731,9 @@ namespace Hecton8.Physics
             if (_editorQualityOverrideActive)
                 return math.saturate(_editorQualityOverride);
 #endif
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(quality) ? quality : 1f);
         }

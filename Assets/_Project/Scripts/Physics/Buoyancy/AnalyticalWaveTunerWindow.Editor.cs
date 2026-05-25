@@ -269,7 +269,7 @@ namespace Hecton8.Physics
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, NativeArrayOptions.ClearMemory);
+                handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, NativeArrayOptions.ClearMemory);
             }
 
             if (vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer) &&

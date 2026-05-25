@@ -156,7 +156,7 @@ namespace Hecton8.SaveSystem
 
             if (data.toolDurabilityMap == null)
             {
-                data.toolDurabilityMap = new Dictionary<string, float>();
+                data.toolDurabilityMap = new Dictionary<string, float>(SaveData.MaxToolDurabilityRecords);
                 changed = true;
                 steps.Add("tool durability map created");
             }
@@ -168,7 +168,7 @@ namespace Hecton8.SaveSystem
 
             if (data.toolBrokenMap == null)
             {
-                data.toolBrokenMap = new Dictionary<string, bool>();
+                data.toolBrokenMap = new Dictionary<string, bool>(SaveData.MaxToolDurabilityRecords);
                 changed = true;
                 steps.Add("tool broken map created");
             }
@@ -180,7 +180,7 @@ namespace Hecton8.SaveSystem
 
             if (data.CustomModData == null)
             {
-                data.CustomModData = new Dictionary<string, string>();
+                data.CustomModData = new Dictionary<string, string>(SaveData.MaxCustomModDataEntries);
                 changed = true;
                 steps.Add("custom mod data created");
             }
@@ -192,7 +192,7 @@ namespace Hecton8.SaveSystem
 
             if (data.suitBrokenUpgradeIds == null)
             {
-                data.suitBrokenUpgradeIds = new List<string>();
+                data.suitBrokenUpgradeIds = new List<string>(SaveData.MaxSuitUpgradeIds);
                 changed = true;
                 steps.Add("suit broken upgrades created");
             }

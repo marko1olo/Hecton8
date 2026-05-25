@@ -1,0 +1,39 @@
+﻿{
+  "agent": "SHINOBU_324",
+  "scanner": "RadiationMutationOopScanner_ROSLYN_AST",
+  "summary": "OOP Visual Mutations Eradicated",
+  "evidenceClass": "STATIC_SOURCE_TARGETED",
+  "scannerUsesRoslynAst": true,
+  "scannerParserRoute": "Roslyn CSharpSyntaxTree pass for C# plus token fallback for HLSL/shader bridge files",
+  "scannedScope": [
+    "Assets/_Project/Scripts/Physiology",
+    "Assets/_Project/Scripts/Player",
+    "Assets/_Project/Scripts/Core/Contracts/HectonDataSovereigntyContract.cs",
+    "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+    "Assets/_Project/Scripts/Rendering/HectonShaderGlobalDataVaultBridge.cs",
+    "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl"
+  ],
+  "forbiddenPatterns": [
+    ".materials",
+    "renderer.material",
+    "Renderer.material",
+    "SkinnedMeshRenderer",
+    "ParticleSystem",
+    "Instantiate(",
+    "new GameObject",
+    "PlayerMutation",
+    "RadiationVisuals",
+    "MutationEffect"
+  ],
+  "findingCount": 0,
+  "playerRuntimeCsvPolling": false,
+  "runtimeResolvedBufferLengthGuard": true,
+  "runtimeColdVaultInitializationOnly": true,
+  "promptTaskExtractorPattern": "^Task\\s+\\d{2}:",
+  "shaderRichNoise": "ValueNoise3",
+  "shaderLowQualityFallback": "triangle_hash_scar",
+  "findings": [],
+  "replacementRoute": "Core.Contracts RadiationStateDTO immutable Vault snapshot read -> MutationStateDTO scalar -> PreSimulation metabolism bridge -> VisualSync HectonShaderGlobalDataVaultBridge slot 22 -> GlobalShaderDispatcher command-buffer sync -> UberNoir quality-gated vertex displacement plus blister/subsurface surface fake; toxic blood uses bounded DebrisSpawnSignal AUP compute-shard route.",
+  "compileStatus": "CORE_BUILD_ATTEMPTED_AFTER_LOOP9_BLOCKED_EXTERNAL_53_NO_SHINOBU_324_FILE_ERRORS",
+  "notes": "Static targeted scan only. The forbidden tokens remain in the editor scanner's pattern list by design and are excluded from runtime scope. C# scanner code now uses Roslyn AST and falls back to token scanning only for shader/HLSL bridge files. Runtime contains no one-row .Run wrapper, hidden Schedule, Complete call, cross-owner radiation write lock, or File.ReadAllBytes CSV staging. SlowTick no longer calls EnsureVaultState and cannot allocate/acquire Vault buffers; it fails closed through HasRuntimeVaultState after cold OnEnable/Start/hot-swap initialization. Runtime CSV filesystem polling is editor-only after cold boot; player builds load profiles during Vault initialization only. Radiation mutation proof jobs now use raw pointer lanes with NativeDisableUnsafePtrRestriction and NoAlias instead of NativeArray fields. UberNoir shader path adds no shader_feature or multi_compile variants, gates high-cost ValueNoise3 admission by continuous GlobalQualityWeight, and sanitizes legacy/bridge mutation scalars before max comparison. Toxic blood uses DebrisSpawnSignal.FlagComputeShard so the GPU debris renderer accepts the AUP payload. GlobalShaderDispatcher now publishes slot 22 when dispatcher VisualSync suppresses direct bridge SetGlobal calls. The metabolism bridge uses the shared ShinobuMetabolismVaultContract.MetabolismStateMutationGuardMask. Prompt task extraction is counted by ^Task\\s+\\d{2}: and returns 20 tasks. Latest guarded Core build failed in external PlayerKinematics/VRSomatic/CombatDamage/KCC contract coverage, with no SHINOBU_324 file errors."
+}

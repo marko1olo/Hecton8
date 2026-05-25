@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -21,7 +21,7 @@ namespace Hecton8.Prologue.Space
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8600)]
-    public sealed class OrbitalRelativityDirector : MonoBehaviour, IOrbitalDirector, IUpdatable, IGlobalRegistryHotSwapListener, IDisposable
+    public sealed class OrbitalRelativityDirector : MonoBehaviour, IOrbitalDirector, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int TelemetryCapacity = 300;
         private const int ControlDrainLimit = 8;
@@ -114,6 +114,11 @@ namespace Hecton8.Prologue.Space
         private bool _domainExitHandled;
         private bool _aborted;
         private bool _velocityZeroForced;
+        private bool _registeredLateFrame;
+        private bool _pendingOrbitalPresentation;
+        private bool _pendingOrbitalShaderClear;
+        private bool _pendingCapsuleAuthorityLock;
+        private bool _pendingRuntimeAuthorityRelease;
         private Quaternion _capsuleLockedRotation = Quaternion.identity;
         private float3 _capsuleLeadingEdgeLocalNormalized = new float3(0f, -1f, 0f);
         private IDataVault _dataVault;
@@ -197,7 +202,7 @@ namespace Hecton8.Prologue.Space
             ApplyPresentation();
             GlobalRegistry.RegisterOrbitalDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.OrbitalDirector, this);
-            GlobalRegistry.TryGet(out _inputService);
+            _inputService = GlobalRegistry.Input;
 
             TryRegisterHotSwapListener();
             TryRegisterUpdateLane();
@@ -224,6 +229,17 @@ namespace Hecton8.Prologue.Space
                 _registeredUpdate = false;
             }
 
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            _pendingOrbitalPresentation = false;
+            _pendingOrbitalShaderClear = false;
+            _pendingCapsuleAuthorityLock = false;
+            _pendingRuntimeAuthorityRelease = false;
+
             TryUnregisterHotSwapListener();
 
             if (_serviceRegistered)
@@ -245,7 +261,7 @@ namespace Hecton8.Prologue.Space
 
         private static AbsoluteUniversePosition ResolveCurrentRuntimeOriginAup()
         {
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return originAup.IsFinite()
                 ? originAup
                 : AbsoluteUniversePosition.FromAbsolutePosition(double3.zero);
@@ -272,7 +288,7 @@ namespace Hecton8.Prologue.Space
 
             _domainExitHandled = false;
 
-            LockCapsuleAuthority();
+            QueueCapsuleAuthorityLock();
 
             float dt = SanitizeDeltaTime(deltaTime);
             if (_aborted || dt <= 0f)
@@ -291,11 +307,38 @@ namespace Hecton8.Prologue.Space
                 return;
             }
 
-            ApplyPresentation();
+            QueueOrbitalPresentation();
             EmitFeedback(dt);
             PublishSnapshot();
             RecordTelemetry();
             _tickCount++;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_pendingCapsuleAuthorityLock)
+            {
+                _pendingCapsuleAuthorityLock = false;
+                LockCapsuleAuthority();
+            }
+
+            if (_pendingOrbitalShaderClear)
+            {
+                _pendingOrbitalShaderClear = false;
+                _pendingOrbitalPresentation = false;
+                ClearShaderGlobals();
+            }
+            else if (_pendingOrbitalPresentation)
+            {
+                _pendingOrbitalPresentation = false;
+                ApplyPresentation();
+            }
+
+            if (_pendingRuntimeAuthorityRelease)
+            {
+                _pendingRuntimeAuthorityRelease = false;
+                ReleaseRuntimeAuthority();
+            }
         }
 
         [ContextMenu("Run Orbital Math Smoke Check")]
@@ -358,10 +401,13 @@ namespace Hecton8.Prologue.Space
 
         private void TryRegisterUpdateLane()
         {
-            if (_registeredUpdate || !_serviceRegistered || _aborted || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if ((_registeredUpdate && _registeredLateFrame) || !_serviceRegistered || _aborted || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredUpdate)
+                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterHotSwapListener()
@@ -416,7 +462,7 @@ namespace Hecton8.Prologue.Space
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<OrbitalTelemetryEntry> acquired = vault.GetGenerationHandle<OrbitalTelemetryEntry>(
+            VaultGenerationHandle<OrbitalTelemetryEntry> acquired = vault.EnsureGenerationHandle<OrbitalTelemetryEntry>(
                 TelemetryRingBufferId,
                 TelemetryCapacity,
                 OwnerSystemId,
@@ -477,7 +523,7 @@ namespace Hecton8.Prologue.Space
             }
 
             int drained = 0;
-            while (consumeInput && drained < ControlDrainLimit && GlobalSignals.TryDequeueControl(out ControlSignal control))
+            while (consumeInput && drained < ControlDrainLimit && SignalBus<ControlSignal>.TryConsumeFrame(out ControlSignal control))
             {
                 thrust = math.max(thrust, math.saturate(control.Move.y));
                 drained++;
@@ -620,7 +666,7 @@ namespace Hecton8.Prologue.Space
             {
                 _cameraJuiceTimer = math.max(0.02f, cameraJuiceIntervalSeconds);
                 float turbulence01 = UniverseSpeed01() * math.saturate(0.25f + _reentryHeat01 * 0.75f);
-                CameraJuiceSignals.PublishImpact(turbulence01, Vector3.zero, Vector3.down);
+                CameraJuiceSignals.TryPublishImpact(turbulence01, Vector3.zero, Vector3.down);
                 StreamingTurbulenceSignal turbulence = default;
                 turbulence.Intensity01 = turbulence01;
                 turbulence.Debt01 = _reentryHeat01;
@@ -628,7 +674,7 @@ namespace Hecton8.Prologue.Space
                 turbulence.Frame = unchecked((uint)Time.frameCount);
                 turbulence.SourceHash = SourceHash;
                 turbulence.Sequence = _sequence;
-                GlobalSignals.Publish(in turbulence);
+                SignalBus<StreamingTurbulenceSignal>.TryPush(in turbulence);
             }
 
             if (reentry && _audioTimer <= 0f)
@@ -665,7 +711,7 @@ namespace Hecton8.Prologue.Space
             if (_cloudWhiteout01 > 0.001f)
                 signal.Flags |= AtmosphericReentrySignal.FlagWhiteoutRequested;
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<AtmosphericReentrySignal>.TryPush(in signal);
         }
 
         private void PublishPlasmaAudio()
@@ -678,7 +724,7 @@ namespace Hecton8.Prologue.Space
             signal.SourceId = PlasmaRoarHash;
             signal.Channel = AcousticPingSignal.ChannelActiveSonar;
             signal.Flags = AcousticPingSignal.FlagActiveSonar;
-            GlobalSignals.Publish(in signal);
+            SignalBus<AcousticPingSignal>.TryPush(in signal);
         }
 
         private void PublishHaptics()
@@ -691,9 +737,9 @@ namespace Hecton8.Prologue.Space
             signal.SourceHash = SourceHash;
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.Channel = HapticRequest.ChannelVehicleCritical;
-            GlobalSignals.Publish(in signal);
+            SignalBus<HapticRequest>.TryPush(in signal);
 
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 intensity,
                 math.saturate(intensity * 1.2f),
                 signal.DurationSeconds,
@@ -712,7 +758,7 @@ namespace Hecton8.Prologue.Space
             signal.WhiteoutHoldSeconds = math.max(0.1f, signalIntervalSeconds * 4f);
             signal.Flags = PrologueCompleteSignal.FlagForceWhiteout;
             signal.Phase = PrologueCompleteSignal.PhaseOceanHandoff;
-            GlobalSignals.Publish(in signal);
+            SignalBus<PrologueCompleteSignal>.TryPush(in signal);
             PublishSplashdownFluidImpulse();
         }
 
@@ -727,7 +773,7 @@ namespace Hecton8.Prologue.Space
             impulse.Frame = unchecked((uint)Time.frameCount);
             impulse.SourceHash = SourceHash;
             impulse.Flags = 2u;
-            GlobalSignals.Publish(in impulse);
+            SignalBus<FluidImpulseSignal>.TryPush(in impulse);
         }
 
         private float3 ResolveSplashdownImpulseDirection()
@@ -752,7 +798,7 @@ namespace Hecton8.Prologue.Space
             signal.Scalar = IsFinite(_distanceMeters) ? (float)math.min(math.abs(_distanceMeters), float.MaxValue) : -1f;
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.Severity = severity;
-            GlobalSignals.Publish(in signal);
+            SignalBus<TelemetryAnomalySignal>.TryPush(in signal);
         }
 
         private void AbortReentry(uint anomalyHash, byte reason)
@@ -772,7 +818,7 @@ namespace Hecton8.Prologue.Space
             _leadingEdgeDot01 = 0f;
             PublishSnapshot();
             if (_domainClaimed || _serviceRegistered)
-                ClearShaderGlobals();
+                QueueShaderGlobalClear();
         }
 
         private void HandleDomainExit()
@@ -787,15 +833,15 @@ namespace Hecton8.Prologue.Space
             if (!_handoffEmitted)
             {
                 AbortReentry(DomainNotSpaceHash, 2);
-                ReleaseRuntimeAuthority();
-                LockCapsuleAuthority();
+                QueueCapsuleAuthorityLock();
+                QueueRuntimeAuthorityRelease();
                 return;
             }
 
-            ClearShaderGlobals();
+            QueueShaderGlobalClear();
             PublishSnapshot();
             RecordTelemetry();
-            ReleaseRuntimeAuthority();
+            QueueRuntimeAuthorityRelease();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -970,8 +1016,36 @@ namespace Hecton8.Prologue.Space
 
             capsuleRigidbody.position = Vector3.zero;
             capsuleRigidbody.rotation = _capsuleLockedRotation;
-            capsuleRigidbody.linearVelocity = Vector3.zero;
-            capsuleRigidbody.angularVelocity = Vector3.zero;
+            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(capsuleRigidbody, Vector3.zero, wake: false);
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(capsuleRigidbody, Vector3.zero, wake: false);
+        }
+
+        private void QueueCapsuleAuthorityLock()
+        {
+            if (Application.isPlaying)
+                TryRegisterUpdateLane();
+            _pendingCapsuleAuthorityLock = true;
+        }
+
+        private void QueueOrbitalPresentation()
+        {
+            if (Application.isPlaying)
+                TryRegisterUpdateLane();
+            _pendingOrbitalPresentation = true;
+        }
+
+        private void QueueShaderGlobalClear()
+        {
+            if (Application.isPlaying)
+                TryRegisterUpdateLane();
+            _pendingOrbitalShaderClear = true;
+        }
+
+        private void QueueRuntimeAuthorityRelease()
+        {
+            if (Application.isPlaying)
+                TryRegisterUpdateLane();
+            _pendingRuntimeAuthorityRelease = true;
         }
 
         private static void SetRendererEnabled(Renderer renderer, bool enabled)

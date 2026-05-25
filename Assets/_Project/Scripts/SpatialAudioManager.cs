@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 â€” SpatialAudioManager.cs
 // Ð’Ñ‹ÑÐ¾ÐºÐ¾Ð¿Ñ€Ð¾Ð¸Ð·Ð²Ð¾Ð´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð°Ñ ÑÐ¸ÑÑ‚ÐµÐ¼Ð° Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
 //
@@ -75,8 +75,10 @@ using UnityEngine;
 using UnityEngine.Audio;
 using CoreAudioEvent = Hecton8.Core.AudioEvent;
 using AcousticAup = Hecton8.Core.Contracts.AcousticAup;
+using AcousticOcclusionJob = Hecton8.Audio.Virtualization.AcousticOcclusionJob;
 using AcousticOcclusionTelemetryEntry = Hecton8.Audio.Virtualization.AcousticTelemetryEntry;
 using AcousticPortalTelemetryEntry = Hecton8.Audio.Propagation.AcousticTelemetryEntry;
+using VirtualVoiceSortJob = Hecton8.Audio.Virtualization.VirtualVoiceSortJob;
 using VirtualVoiceSdfSampler = Hecton8.Audio.Virtualization.MockSDFSampler;
 
 namespace Hecton8.Audio
@@ -152,7 +154,7 @@ namespace Hecton8.Audio
                 return;
 
             Entry entry = s_entries[slot];
-            entry.LastUseFrame = Time.frameCount;
+            entry.LastUseFrame = SystemDispatcher.CurrentFrameIndex;
             entry.Domain = domain;
 
             if (decodeNow && ShouldLoadClip(clip))
@@ -272,9 +274,9 @@ namespace Hecton8.Audio
             s_entries[slot] = new Entry
             {
                 Clip = clip,
-                ClipId = clip.GetInstanceID(),
+                ClipId = clip.GetEntityId().GetHashCode(),
                 Domain = domain,
-                LastUseFrame = Time.frameCount,
+                LastUseFrame = SystemDispatcher.CurrentFrameIndex,
                 EstimatedBytes = 0L,
                 Resident = false
             };
@@ -286,7 +288,7 @@ namespace Hecton8.Audio
             if (clip == null || s_entries == null)
                 return -1;
 
-            int clipId = clip.GetInstanceID();
+            int clipId = clip.GetEntityId().GetHashCode();
             for (int i = 0; i < s_entries.Length; i++)
             {
                 if (s_entries[i].ClipId == clipId && s_entries[i].Clip == clip)
@@ -374,7 +376,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through the core audio registry.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioResidencyService, ISceneTransitionAudioBridge, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioResidencyService, ISpatialAudioImpactEmitterReadModel, ISpatialAudioWorldEmitterReadModel, ISpatialAudioListenerCaveReadModel, ISpatialAudioBinauralEmitterReadModel, IMeteorShowerAudioSink, ISpatialAudioLowPassPlayback, ISpatialAudioEnvironmentModulationSink, ISpatialAudioSfxMixerRouteReadModel, ISpatialAudioNarrativeRadioSink, ISpatialAudioInventoryRunawaySink, ISpatialAudioHarvestPlaybackSink, ISpatialAudioWeatherPlaybackSink, ISceneTransitionAudioBridge, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
     {
         private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
@@ -562,30 +564,6 @@ namespace Hecton8.Audio
         {
             FatalPressureImplosion = 1,
             InventoryRunawayExplosion = 2
-        }
-
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
-        internal struct ActiveEmitterSample
-        {
-            [FieldOffset(0)]
-            public AbsoluteUniversePosition PositionAup;
-            [FieldOffset(48)]
-            public Vector3 Position;
-            [FieldOffset(60)]
-            public float Amplitude;
-        }
-
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
-        internal struct ActiveImpactEmitterSample
-        {
-            [FieldOffset(0)]
-            public AbsoluteUniversePosition PositionAup;
-            [FieldOffset(48)]
-            public float Amplitude;
-            [FieldOffset(52)]
-            private uint _pad0;
-            [FieldOffset(56)]
-            private ulong _pad1;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -901,6 +879,8 @@ namespace Hecton8.Audio
         private int[] _activeWorldIndices;
         private int[] _activeWorldSlots;
         private int _activeWorldCount;
+        private float _pendingSpatialAudioTickDeltaTime;
+        private bool _hasPendingSpatialAudioTick;
         private bool _registeredUpdatable;
         private bool _registeredFastTickable;
         private bool _registeredSlowTickable;
@@ -918,9 +898,12 @@ namespace Hecton8.Audio
         private NativeArray<float> _acousticRadarIntensityBins; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<float> _acousticRadarGrid; // Vault alias; GlobalDataVault owns backing memory.
         private WorldCaveDirector _worldCaveDirector;
-        private ComputeBuffer _acousticRadarGridBuffer;
+        private GraphicsBuffer _acousticRadarGridBufferA;
+        private GraphicsBuffer _acousticRadarGridBufferB;
+        private GraphicsBuffer _activeAcousticRadarGridBuffer;
+        private int _acousticRadarGridUploadIndex;
         private bool _acousticRadarGridDirty;
-        // COLD ALLOC: float[32] - CPU mirror for acoustic radar grid ComputeBuffer uploads - owner: SpatialAudioManager
+        // COLD ALLOC: float[32] - CPU mirror for acoustic radar grid GraphicsBuffer uploads - owner: SpatialAudioManager
         private float[] _acousticRadarGridUploadScratch;
         // COLD ALLOC: Vector3[12] - nearest-emitter radar accumulation positions - owner: SpatialAudioManager
         private Vector3[] _radarNearestEmitterPositions;
@@ -993,7 +976,7 @@ namespace Hecton8.Audio
         private int _lastAudioOutputSampleRate = -1;
         private float _listenerWaterDensityMul;
         private float _radarDecayAccumulator;
-        private HectonPlayerMovement _listenerPlayerMovement;
+        private IPlayerMovementTraumaSink _listenerPlayerMovementTrauma;
         private int _delayedAudioIngressCount;
         private NativeQueue<DelayedAudioEvent> _delayedAudioIngress;
         private NativeList<DelayedAudioEvent> _pendingDelayedAudioEvents;
@@ -1036,7 +1019,6 @@ namespace Hecton8.Audio
         private NativeArray<AcousticSourceDTO> _acousticSelectedSourcePool; // Vault alias; GlobalDataVault owns backing memory.
         private NativeArray<double3> _acousticSelectedPreviousAupPool; // Vault alias; GlobalDataVault owns backing memory.
         private VaultGenerationHandle<byte> _acousticVoxelSdfTexture3DHandle;
-        private NativeArray<byte> _acousticVoxelSdfTexture3D; // External read-only Vault alias; voxel owner owns backing memory.
         private NativeArray<ScalabilityStateDTO> _virtualVoiceScalabilityState; // Vault alias; Homeostasis owns backing memory.
         private NativeArray<RollbackAudioSuppressionDTO> _virtualVoiceRollbackAudioSuppression; // Vault alias; rollback runtime owns backing memory.
         private JobHandle _virtualVoiceSortHandle;
@@ -1103,9 +1085,9 @@ namespace Hecton8.Audio
         private bool _hotSwapRegistered;
         private IPlayerRuntimeContext _cachedPlayerRuntimeContext;
         private IWeatherService _cachedWeatherService;
-        private AcousticZoneController _cachedAcousticZone;
-        private HectonSurfaceWeatherDirector _cachedSurfaceWeatherDirector;
-        private PlayerCriticalProceduralAudioRenderer _cachedPlayerCriticalAudio;
+        private IAcousticZoneReadModel _cachedAcousticZone;
+        private ISurfaceWeatherReadModel _cachedSurfaceWeatherDirector;
+        private IPlayerCriticalAudioSignalSink _cachedPlayerCriticalAudio;
         private ConstructionManager _cachedConstructionManager;
         private float _cachedSpatialAudioQualityWeight01 = 1f;
         private int _spatialAudioPolicyRefreshFrame = SpatialAudioPolicyUninitializedFrame;
@@ -1213,7 +1195,7 @@ namespace Hecton8.Audio
             ClearDelayedAudioEvents();
             ClearAudioEventQueue();
             ClearVirtualVoiceQueues();
-            _listenerPlayerMovement = null;
+            _listenerPlayerMovementTrauma = null;
             _foveatedSimulationDirector = null;
             _cachedPlayerCriticalAudio = null;
             _cachedConstructionManager = null;
@@ -1390,7 +1372,9 @@ namespace Hecton8.Audio
             InitializePool();
             InitializePool2D();
             InitializeTelemetryCaches();
+#if UNITY_EDITOR
             TryLoadAcousticLutFallbackCold();
+#endif
             PrepareGlobalWindHowlSource();
 #if DEVELOPMENT_BUILD
             EnsureAudioRamDebugOverlay();
@@ -1429,12 +1413,21 @@ namespace Hecton8.Audio
             if (_pool == null || _arrivalTimes == null || _haasReleaseTimes == null)
                 return;
 
+            _pendingSpatialAudioTickDeltaTime += math.max(0f, deltaTime);
+            _hasPendingSpatialAudioTick = true;
+        }
+
+        private void RunSpatialAudioTickCore(float deltaTime)
+        {
+            if (_pool == null || _arrivalTimes == null || _haasReleaseTimes == null)
+                return;
+
             float safeDeltaTime = math.max(0f, deltaTime);
             EnsureSpatialAudioPolicyCached();
             AdvanceVirtualVoiceStealFades(safeDeltaTime);
             float blendT = FastDecayBlend(HaasBlendSharpness, safeDeltaTime);
             float now = Time.unscaledTime;
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             bool hasListener = TryResolveListenerFrame(
                 out Transform listener,
                 out Vector3 listenerRuntimePosition,
@@ -1681,7 +1674,7 @@ namespace Hecton8.Audio
                 PhysicalVoiceLimit = tunedPhysicalLimit,
                 VoiceCount = _virtualVoiceSortCount,
                 DroppedVoiceCount = _virtualVoiceDroppedCount,
-                Frame = Time.frameCount,
+                Frame = SystemDispatcher.CurrentFrameIndex,
                 DisableSdfOcclusion = _virtualVoiceTuning.DisableSdfOcclusion != 0 ? 1 : 0,
                 MinimumAudibleEnergy = VirtualVoiceUtility.MinimumAudibleEnergy,
                 GlobalQualityWeight = globalQualityWeight,
@@ -1738,6 +1731,14 @@ namespace Hecton8.Audio
         /// </summary>
         public void LateFrameTick()
         {
+            if (_hasPendingSpatialAudioTick)
+            {
+                float audioDeltaTime = _pendingSpatialAudioTickDeltaTime;
+                _pendingSpatialAudioTickDeltaTime = 0f;
+                _hasPendingSpatialAudioTick = false;
+                RunSpatialAudioTickCore(audioDeltaTime);
+            }
+
             AcousticOcclusionUtility.LateFrameTick();
             ConsumeAcousticImpulseSignals();
             TryFinalizeVirtualVoiceSortNoWait();
@@ -2097,7 +2098,7 @@ namespace Hecton8.Audio
             if (clampedIntensity <= 0.001f)
                 return;
 
-            ProceduralAudioEvents.RaiseAudioPingTriggered(
+            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
                 position,
                 clampedIntensity,
                 1.15f,
@@ -2106,7 +2107,7 @@ namespace Hecton8.Audio
                 ProceduralAudioPingKind.MeteorBoom);
         }
 
-        internal void PlayHarvestAtAup(in AbsoluteUniversePosition positionAup, AudioClip clip, float volume = 1f, float pitch = 1f)
+        public void PlayHarvestAtAup(in AbsoluteUniversePosition positionAup, AudioClip clip, float volume = 1f, float pitch = 1f)
         {
             if (clip == null)
                 return;
@@ -2123,7 +2124,7 @@ namespace Hecton8.Audio
                 ResolvedDefaultWorldMixerGroup);
         }
 
-        internal void PlaySporeEmissionAtAup(
+        public void PlaySporeEmissionAtAup(
             in AbsoluteUniversePosition positionAup,
             AudioClip clip,
             float pulseFrequencyHz,
@@ -2270,7 +2271,7 @@ namespace Hecton8.Audio
             source.pitch = ResolveSourcePitch(index, clampedDopplerRatio);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             UpdateWorldSourceAudioLod(
                 index,
                 source,
@@ -2317,7 +2318,7 @@ namespace Hecton8.Audio
 
         public bool QueuePrologueAudioTransition(in AudioTransitionState state)
         {
-            PlayerCriticalProceduralAudioRenderer playerCriticalAudio = _cachedPlayerCriticalAudio;
+            IPlayerCriticalAudioSignalSink playerCriticalAudio = _cachedPlayerCriticalAudio;
             return playerCriticalAudio != null && playerCriticalAudio.QueuePrologueAudioTransition(in state);
         }
 
@@ -2431,7 +2432,7 @@ namespace Hecton8.Audio
                 }
             }
 
-            ProceduralAudioEvents.RaiseHullStressSignal(in routedSignal);
+            ProceduralAudioEvents.TryRaiseHullStressSignal(in routedSignal);
             return true;
         }
 
@@ -2457,7 +2458,7 @@ namespace Hecton8.Audio
                 amplitude * ImpactEmitterAmplitudeScale,
                 amplitude);
 
-            PlayerCriticalProceduralAudioRenderer renderer = _cachedPlayerCriticalAudio;
+            IPlayerCriticalAudioSignalSink renderer = _cachedPlayerCriticalAudio;
             bool proceduralQueued = renderer != null && renderer.QueueHighSpeedImpactSignal(in signal);
             return radarQueued || proceduralQueued;
         }
@@ -2715,6 +2716,7 @@ namespace Hecton8.Audio
                 _virtualVoiceTuningVault[0] = sanitized;
         }
 
+#if UNITY_EDITOR
         public int ReloadAcousticMaterialRowsFromCsvCold(ReadOnlySpan<byte> csvBytes)
         {
             if (!_acousticMaterialRows.IsCreated || _acousticMaterialRows.Length <= 0)
@@ -2725,6 +2727,7 @@ namespace Hecton8.Audio
                 ? parsed
                 : VirtualVoiceProfileCsvParser.GenerateEmergencyMockAcoustics(_acousticMaterialRows);
         }
+#endif
 
         private void CompleteVirtualVoiceSort()
         {
@@ -2861,7 +2864,6 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            _acousticVoxelSdfTexture3D = resolvedSdf;
             sdfVoxels = resolvedSdf;
             sdfDimensions = resolvedDimensions;
             sdfOrigin = resolvedOrigin;
@@ -2989,7 +2991,7 @@ namespace Hecton8.Audio
             if (!_virtualVoiceSortHandle.IsCompleted)
             {
                 VirtualVoiceStatistics overrunStatistics = _lastVirtualVoiceStatistics;
-                overrunStatistics.Frame = Time.frameCount;
+                overrunStatistics.Frame = SystemDispatcher.CurrentFrameIndex;
                 overrunStatistics.TotalVoices = math.clamp(_virtualVoiceSortCount, 0, MaxVirtualVoiceCapacity);
                 overrunStatistics.DroppedVoices += math.clamp(_virtualVoiceWriteCount, 0, MaxVirtualVoiceCapacity);
                 overrunStatistics.SortTimeMs = math.max(
@@ -3278,7 +3280,7 @@ namespace Hecton8.Audio
             source.pitch = ResolveSourcePitch(sourceIndex, dopplerRatio);
             _audioLodTiers[sourceIndex] = lodTier;
             float now = Time.unscaledTime;
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             UpdateWorldSourceAudioLod(
                 sourceIndex,
                 source,
@@ -3329,7 +3331,7 @@ namespace Hecton8.Audio
                 Channel = AcousticPingSignal.ChannelMetalStress,
                 Flags = 0
             };
-            GlobalSignals.Publish(in ping);
+            SignalBus<AcousticPingSignal>.TryPush(in ping);
         }
 
         private void UpdateVirtualPhysicalVoice(int channel, int sourceIndex, in VirtualVoiceSelection selection)
@@ -3384,7 +3386,7 @@ namespace Hecton8.Audio
                 _smoothedDopplerRatios[sourceIndex] = dopplerRatio;
             source.pitch = ResolveSourcePitch(sourceIndex, dopplerRatio);
             ApplyVirtualSelectionDspPresentation(sourceIndex, source, in selection);
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             CacheActiveWorldRuntimePosition(sourceIndex, runtimePosition, currentFrame);
             CacheActiveWorldAup(sourceIndex, in sourceAup, currentFrame);
             _virtualChannelSourceIndices[channel] = sourceIndex;
@@ -3829,7 +3831,7 @@ namespace Hecton8.Audio
 
         private IFoveatedSimulationDirector ResolveFoveatedSimulationDirector()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             IFoveatedSimulationDirector director = _foveatedSimulationDirector;
             if (director != null && frame < _foveatedDirectorResolveFrame)
                 return director;
@@ -3847,7 +3849,7 @@ namespace Hecton8.Audio
 
         private void EnsureSpatialAudioPolicyCached()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_spatialAudioPolicyRefreshFrame == frame)
                 return;
 
@@ -3856,23 +3858,24 @@ namespace Hecton8.Audio
 
         private void RefreshSpatialAudioPolicyCold()
         {
-            CacheSpatialAudioPolicy(ResolveGlobalSpatialAudioQualityWeight01(), Time.frameCount);
+            CacheSpatialAudioPolicy(ResolveGlobalSpatialAudioQualityWeight01(), SystemDispatcher.CurrentFrameIndex);
         }
 
         private void RefreshCachedAudioRuntimeServicesCold()
         {
-            int nextResolveFrame = Time.frameCount + SpatialAudioRegistryRetryFrames;
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            int nextResolveFrame = SystemDispatcher.CurrentFrameIndex + SpatialAudioRegistryRetryFrames;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             IWeatherService weatherService = GlobalRegistry.Weather;
 
             _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
             _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
-            _cachedAcousticZone = GlobalRegistry.AcousticZone;
-            _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeather;
-            _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio;
+            _cachedAcousticZone = GlobalRegistry.AcousticZoneReadModel;
+            _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeatherReadModel;
+            _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudioSignals;
             _cachedConstructionManager = GlobalRegistry.ConstructionRuntime;
             _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
             _dataVault = GlobalRegistry.DataVault;
+            _listenerPlayerMovementTrauma = GlobalRegistry.PlayerMovementContracts;
             _playerRuntimeContextResolveFrame = nextResolveFrame;
             _weatherServiceResolveFrame = nextResolveFrame;
             _acousticZoneResolveFrame = nextResolveFrame;
@@ -3882,7 +3885,7 @@ namespace Hecton8.Audio
 
         private void CacheReboundAudioRuntimeService(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
-            int nextResolveFrame = Time.frameCount + SpatialAudioRegistryRetryFrames;
+            int nextResolveFrame = SystemDispatcher.CurrentFrameIndex + SpatialAudioRegistryRetryFrames;
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Player:
@@ -3890,21 +3893,24 @@ namespace Hecton8.Audio
                     _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
                     _playerRuntimeContextResolveFrame = nextResolveFrame;
                     break;
+                case GlobalRegistryServiceSlot.PlayerMovementContracts:
+                    _listenerPlayerMovementTrauma = currentService as IPlayerMovementTraumaSink;
+                    break;
                 case GlobalRegistryServiceSlot.Weather:
                     IWeatherService weatherService = currentService as IWeatherService;
                     _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
                     _weatherServiceResolveFrame = nextResolveFrame;
                     break;
                 case GlobalRegistryServiceSlot.AcousticZoneRuntime:
-                    _cachedAcousticZone = currentService as AcousticZoneController;
+                    _cachedAcousticZone = currentService as IAcousticZoneReadModel;
                     _acousticZoneResolveFrame = nextResolveFrame;
                     break;
                 case GlobalRegistryServiceSlot.SurfaceWeatherRuntime:
-                    _cachedSurfaceWeatherDirector = currentService as HectonSurfaceWeatherDirector;
+                    _cachedSurfaceWeatherDirector = currentService as ISurfaceWeatherReadModel;
                     _surfaceWeatherResolveFrame = nextResolveFrame;
                     break;
                 case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
-                    _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
+                    _cachedPlayerCriticalAudio = currentService as IPlayerCriticalAudioSignalSink;
                     break;
                 case GlobalRegistryServiceSlot.Logistics:
                     _cachedConstructionManager = currentService as ConstructionManager;
@@ -3993,7 +3999,7 @@ namespace Hecton8.Audio
 
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             IPlayerRuntimeContext playerContext = _cachedPlayerRuntimeContext;
             if (playerContext != null && playerContext.IsInitialized && frame < _playerRuntimeContextResolveFrame)
                 return playerContext;
@@ -4002,14 +4008,14 @@ namespace Hecton8.Audio
                 return null;
 
             _playerRuntimeContextResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            playerContext = GlobalRegistry.Player;
             _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
             return _cachedPlayerRuntimeContext;
         }
 
         private IWeatherService ResolveWeatherService()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             IWeatherService weatherService = _cachedWeatherService;
             if (weatherService != null && weatherService.IsInitialized && frame < _weatherServiceResolveFrame)
                 return weatherService;
@@ -4023,10 +4029,10 @@ namespace Hecton8.Audio
             return _cachedWeatherService;
         }
 
-        private AcousticZoneController ResolveAcousticZone()
+        private IAcousticZoneReadModel ResolveAcousticZone()
         {
-            int frame = Time.frameCount;
-            AcousticZoneController acousticZone = _cachedAcousticZone;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            IAcousticZoneReadModel acousticZone = _cachedAcousticZone;
             if (acousticZone != null && frame < _acousticZoneResolveFrame)
                 return acousticZone;
 
@@ -4034,14 +4040,14 @@ namespace Hecton8.Audio
                 return null;
 
             _acousticZoneResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            _cachedAcousticZone = GlobalRegistry.AcousticZone;
+            _cachedAcousticZone = GlobalRegistry.AcousticZoneReadModel;
             return _cachedAcousticZone;
         }
 
-        private HectonSurfaceWeatherDirector ResolveSurfaceWeatherDirector()
+        private ISurfaceWeatherReadModel ResolveSurfaceWeatherDirector()
         {
-            int frame = Time.frameCount;
-            HectonSurfaceWeatherDirector surfaceWeather = _cachedSurfaceWeatherDirector;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            ISurfaceWeatherReadModel surfaceWeather = _cachedSurfaceWeatherDirector;
             if (surfaceWeather != null && frame < _surfaceWeatherResolveFrame)
                 return surfaceWeather;
 
@@ -4049,7 +4055,7 @@ namespace Hecton8.Audio
                 return null;
 
             _surfaceWeatherResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeather;
+            _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeatherReadModel;
             return _cachedSurfaceWeatherDirector;
         }
 
@@ -4077,7 +4083,7 @@ namespace Hecton8.Audio
             }
 
             RollbackAudioSuppressionDTO audio = _virtualVoiceRollbackAudioSuppression[0];
-            uint frame = (uint)Time.frameCount;
+            uint frame = (uint)SystemDispatcher.CurrentFrameIndex;
             return audio.IsResimulating != 0u || frame <= audio.UntilFrame;
         }
 
@@ -4268,6 +4274,7 @@ namespace Hecton8.Audio
             return math.isfinite(value) ? value : fallback;
         }
 
+#if UNITY_EDITOR
         private void TryLoadAcousticLutFallbackCold()
         {
             if (_acousticLutFallbackLoaded)
@@ -4302,6 +4309,7 @@ namespace Hecton8.Audio
 #endif
             }
         }
+#endif
 
         private void DispatchQueuedAudioEvent(in CoreAudioEvent audioEvent)
         {
@@ -4417,7 +4425,7 @@ namespace Hecton8.Audio
             source.pitch = ResolveSourcePitch(index, clampedDopplerRatio);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             UpdateWorldSourceAudioLod(
                 index,
                 source,
@@ -4629,7 +4637,7 @@ namespace Hecton8.Audio
             _acousticRadarGrid.IsCreated ? _acousticRadarGrid.AsReadOnly() : default;
 
         /// <summary>GPU upload buffer for the 8x4 acoustic radar energy grid.</summary>
-        public ComputeBuffer AcousticRadarEnergyGridBuffer => _acousticRadarGridBuffer;
+        public GraphicsBuffer AcousticRadarEnergyGridBuffer => _activeAcousticRadarGridBuffer;
 
         /// <summary>Returns the persistent 360-degree acoustic radar ring for HUD/visor consumers.</summary>
         public bool TryGetAcousticRadarPayload(out NativeArray<float>.ReadOnly radialIntensityBins, out int radialResolution)
@@ -4680,12 +4688,12 @@ namespace Hecton8.Audio
             out NativeArray<float>.ReadOnly gridEnergy,
             out int azimuthBins,
             out int elevationBins,
-            out ComputeBuffer gridBuffer)
+            out GraphicsBuffer gridBuffer)
         {
             gridEnergy = _acousticRadarGrid.IsCreated ? _acousticRadarGrid.AsReadOnly() : default;
             azimuthBins = AcousticRadarGridAzimuthBins;
             elevationBins = AcousticRadarGridElevationBins;
-            gridBuffer = _acousticRadarGridBuffer;
+            gridBuffer = _activeAcousticRadarGridBuffer;
             return gridEnergy.IsCreated && gridBuffer != null;
         }
 
@@ -4695,7 +4703,26 @@ namespace Hecton8.Audio
             return telemetry.Valid != 0;
         }
 
-        internal int CopyActiveWorldEmitterSamples(ActiveEmitterSample[] destination)
+        bool ISpatialAudioBinauralEmitterReadModel.TryGetDominantBinauralEmitter(out SpatialAudioBinauralEmitterTelemetry telemetry)
+        {
+            BinauralEmitterTelemetry source = _dominantBinauralEmitter;
+            telemetry = new SpatialAudioBinauralEmitterTelemetry
+            {
+                Position = source.Position,
+                DistanceMeters = source.DistanceMeters,
+                AzimuthRadians = source.AzimuthRadians,
+                RightDot = source.RightDot,
+                ItdSeconds = source.ItdSeconds,
+                ShadowAmount01 = source.ShadowAmount01,
+                ShadowCutoffHertz = source.ShadowCutoffHertz,
+                Energy = source.Energy,
+                WaterDensityMul = source.WaterDensityMul,
+                Valid = source.Valid
+            };
+            return source.Valid != 0;
+        }
+
+        public int CopyActiveWorldEmitterSamples(SpatialAudioActiveEmitterSample[] destination)
         {
             if (destination == null || destination.Length == 0 || _pool == null)
                 return 0;
@@ -4703,7 +4730,7 @@ namespace Hecton8.Audio
             int count = 0;
             int limit = destination.Length;
             float now = Time.unscaledTime;
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             for (int activeSlot = 0; activeSlot < _activeWorldCount && count < limit; activeSlot++)
             {
                 int sourceIndex = _activeWorldIndices[activeSlot];
@@ -4714,7 +4741,7 @@ namespace Hecton8.Audio
                 if (!TryGetCachedActiveWorldRuntimePosition(sourceIndex, out Vector3 sourcePosition))
                     continue;
 
-                destination[count] = new ActiveEmitterSample
+                destination[count] = new SpatialAudioActiveEmitterSample
                 {
                     PositionAup = ResolveActiveWorldAup(sourceIndex, sourcePosition, currentFrame),
                     Position = sourcePosition,
@@ -4730,7 +4757,7 @@ namespace Hecton8.Audio
                 if (!(amplitude > ImpactEmitterMinimumAmplitude))
                     continue;
 
-                destination[count] = new ActiveEmitterSample
+                destination[count] = new SpatialAudioActiveEmitterSample
                 {
                     PositionAup = emitter.PositionAup,
                     Position = emitter.Position,
@@ -4742,7 +4769,7 @@ namespace Hecton8.Audio
             return count;
         }
 
-        internal int CopyActiveImpactEmitterSamples(ActiveImpactEmitterSample[] destination)
+        public int CopyActiveImpactEmitterSamples(SpatialAudioImpactEmitterSample[] destination)
         {
             if (destination == null || destination.Length == 0)
                 return 0;
@@ -4757,7 +4784,7 @@ namespace Hecton8.Audio
                 if (!(amplitude > ImpactEmitterMinimumAmplitude))
                     continue;
 
-                destination[count] = new ActiveImpactEmitterSample
+                destination[count] = new SpatialAudioImpactEmitterSample
                 {
                     PositionAup = emitter.PositionAup,
                     Amplitude = amplitude
@@ -4971,7 +4998,7 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (ShouldEmitEditorThrottledLog(ref _nextWorldPoolFullEditorLogTime, PoolFullEditorLogIntervalSeconds))
             {
-                Debug.Log("[SpatialAudioManager] World pool full. Evicting quietest source.", this);
+                Hecton8.Core.H8Debug.Log("[SpatialAudioManager] World pool full. Evicting quietest source.", this);
             }
 #endif
 
@@ -5001,7 +5028,7 @@ namespace Hecton8.Audio
 
         private bool TryReserveHarvestAudioEvent()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_harvestAudioFrame != frame)
             {
                 _harvestAudioFrame = frame;
@@ -5017,7 +5044,7 @@ namespace Hecton8.Audio
 
         private bool TryReserveWeatherAudioEvent(float volume01)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_weatherAudioFrame != frame)
             {
                 _weatherAudioFrame = frame;
@@ -5090,7 +5117,7 @@ namespace Hecton8.Audio
             source.pitch = ResolveSourcePitch(index, 1f);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             UpdateWorldSourceAudioLod(
                 index,
                 source,
@@ -5123,8 +5150,7 @@ namespace Hecton8.Audio
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterFastTickable()
@@ -5143,8 +5169,7 @@ namespace Hecton8.Audio
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTickable = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterLateFrameTickable()
@@ -5187,7 +5212,7 @@ namespace Hecton8.Audio
 
         private void ConsumeAcousticImpulseSignals()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastAcousticImpulseSignalFrame == frame)
                 return;
 
@@ -5566,7 +5591,8 @@ namespace Hecton8.Audio
 
         private void ApplyDelayedTrauma(in DelayedAudioEvent delayedEvent, in AbsoluteUniversePosition listenerAup)
         {
-            if (_listenerPlayerMovement == null)
+            IPlayerMovementTraumaSink traumaSink = _listenerPlayerMovementTrauma;
+            if (traumaSink == null)
                 return;
 
             float3 listenerOffsetAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in listenerAup, in delayedEvent.Aup);
@@ -5585,7 +5611,7 @@ namespace Hecton8.Audio
                 : Vector3.up;
             float distance01 = math.saturate(distanceSq * math.rcp(traumaRangeSq));
             float trauma01 = 1f - distance01 * distance01;
-            _listenerPlayerMovement.ApplyPhysicalTrauma(
+            traumaSink.ApplyPhysicalTrauma(
                 traumaDirection * (delayedEvent.TraumaImpulse * trauma01),
                 delayedEvent.TraumaWeight * trauma01);
         }
@@ -5836,10 +5862,10 @@ namespace Hecton8.Audio
                 if (TryResolveXrCachedHeadAup(listenerRuntimePosition, out listenerAup))
                     return true;
 
-                HectonPlayerMovement movement = playerContext.PlayerMovement;
-                if (movement != null)
+                if (playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
-                    AbsoluteUniversePosition currentAup = movement.CurrentAup;
+                    AbsoluteUniversePosition currentAup = movementState.PredictedAup;
                     Vector3 rootRuntimePosition = currentAup.ToRuntimeFloat3();
                     if (IsFinite(rootRuntimePosition))
                     {
@@ -5927,7 +5953,7 @@ namespace Hecton8.Audio
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 
@@ -6330,7 +6356,7 @@ namespace Hecton8.Audio
 
         private bool IsListenerInteriorZoneActive()
         {
-            AcousticZoneController acousticZone = ResolveAcousticZone();
+            IAcousticZoneReadModel acousticZone = ResolveAcousticZone();
             return acousticZone != null && acousticZone.IsInterior;
         }
 
@@ -6580,7 +6606,7 @@ namespace Hecton8.Audio
                 result.DelaySeconds,
                 volume01,
                 resolvedSourceId,
-                Time.frameCount,
+                SystemDispatcher.CurrentFrameIndex,
                 Time.unscaledTime,
                 AcousticEchoLocationRuntime.EncodeQualityWeightByte(HomeostasisBrain.GlobalQualityWeight),
                 flags);
@@ -6631,7 +6657,7 @@ namespace Hecton8.Audio
             int cacheKey = ComputeAcousticPortalCacheKey(in acousticSource, in acousticListener, stationaryCacheKey);
             if (TryReadAcousticPortalCache(cacheKey, in acousticSource, in acousticListener, out result))
             {
-                WriteAcousticPortalBlackBox(in result, Time.frameCount);
+                WriteAcousticPortalBlackBox(in result, SystemDispatcher.CurrentFrameIndex);
                 return result.Status == AcousticPathStatus.PathFound && result.UsedPortalPath != 0;
             }
 
@@ -6667,7 +6693,7 @@ namespace Hecton8.Audio
 
             result = _acousticPortalResult[0];
             result.PathfindingMs = (float)((Time.realtimeSinceStartupAsDouble - start) * 1000.0);
-            WriteAcousticPortalBlackBox(in result, Time.frameCount);
+            WriteAcousticPortalBlackBox(in result, SystemDispatcher.CurrentFrameIndex);
             if (result.Status == AcousticPathStatus.PathFound && result.UsedPortalPath != 0)
             {
                 WriteAcousticPortalCache(cacheKey, in acousticSource, in acousticListener, in result);
@@ -7006,7 +7032,7 @@ namespace Hecton8.Audio
             if (_acousticPortalCache == null || _acousticPortalCache.Length == 0)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             int writeIndex = 0;
             int oldestFrame = int.MaxValue;
             for (int i = 0; i < _acousticPortalCache.Length; i++)
@@ -7145,10 +7171,10 @@ namespace Hecton8.Audio
                     }
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[SpatialAudioManager] Failed to dump acoustic portal blackbox: {exception.Message}", this);
+                Debug.LogError("[SpatialAudioManager] Failed to dump acoustic portal blackbox.", this);
 #endif
             }
         }
@@ -7267,7 +7293,7 @@ namespace Hecton8.Audio
                 return true;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.Audio,
@@ -7282,6 +7308,54 @@ namespace Hecton8.Audio
             return true;
         }
 
+        private static int GenerateEmergencyMockAcoustics(NativeArray<AcousticMaterialCoefficientDTO> rows)
+        {
+            if (!rows.IsCreated || rows.Length <= 0)
+                return 0;
+
+            int count = math.min(rows.Length, 3);
+            if (count > 0)
+            {
+                rows[0] = new AcousticMaterialCoefficientDTO
+                {
+                    MaterialHash = 0x3A1B4AB4u,
+                    Absorption01 = 0.32f,
+                    Scatter01 = 0.55f,
+                    Density01 = 0.85f,
+                    LowPassHertz = 2100f,
+                    Flags = 1u
+                };
+            }
+
+            if (count > 1)
+            {
+                rows[1] = new AcousticMaterialCoefficientDTO
+                {
+                    MaterialHash = 0xD756AEDCu,
+                    Absorption01 = 0.18f,
+                    Scatter01 = 0.28f,
+                    Density01 = 1f,
+                    LowPassHertz = 3400f,
+                    Flags = 1u
+                };
+            }
+
+            if (count > 2)
+            {
+                rows[2] = new AcousticMaterialCoefficientDTO
+                {
+                    MaterialHash = 0x02FC484Du,
+                    Absorption01 = 0.62f,
+                    Scatter01 = 0.75f,
+                    Density01 = 0.45f,
+                    LowPassHertz = 1200f,
+                    Flags = 1u
+                };
+            }
+
+            return count;
+        }
+
         private void RefreshVirtualExternalStateAliases()
         {
             IDataVault vault = _dataVault;
@@ -7289,7 +7363,6 @@ namespace Hecton8.Audio
             {
                 _virtualVoiceScalabilityState = default;
                 _virtualVoiceRollbackAudioSuppression = default;
-                _acousticVoxelSdfTexture3D = default;
                 return;
             }
 
@@ -7323,20 +7396,6 @@ namespace Hecton8.Audio
                 _virtualVoiceRollbackAudioSuppression = default;
             }
 
-            if (TryOpenBorrowedAudioVaultBuffer(
-                    vault,
-                    ref _acousticVoxelSdfTexture3DHandle,
-                    BufferID.VoxelSdfTexture3D,
-                    SystemID.WorldStreaming,
-                    AcousticSdfDefaultVoxelCount,
-                    out NativeArray<byte> voxelSdfTexture3D))
-            {
-                _acousticVoxelSdfTexture3D = voxelSdfTexture3D;
-            }
-            else
-            {
-                _acousticVoxelSdfTexture3D = default;
-            }
         }
 
         private static bool TryOpenBorrowedAudioVaultBuffer<T>(
@@ -7444,7 +7503,6 @@ namespace Hecton8.Audio
             _acousticMaterialRows = default;
             _acousticSelectedSourcePool = default;
             _acousticSelectedPreviousAupPool = default;
-            _acousticVoxelSdfTexture3D = default;
             _virtualVoiceScalabilityState = default;
             _virtualVoiceRollbackAudioSuppression = default;
             _acousticPortalNodes = default;
@@ -7477,7 +7535,7 @@ namespace Hecton8.Audio
                 ref _acousticRadarGrid);
 
             if (_acousticRadarGridUploadScratch == null || _acousticRadarGridUploadScratch.Length != AcousticRadarGridCellCount)
-                _acousticRadarGridUploadScratch = new float[AcousticRadarGridCellCount]; // COLD ALLOC: float[32] - CPU mirror for acoustic radar grid ComputeBuffer uploads - owner: SpatialAudioManager
+                _acousticRadarGridUploadScratch = new float[AcousticRadarGridCellCount]; // COLD ALLOC: float[32] - CPU mirror for acoustic radar grid GraphicsBuffer uploads - owner: SpatialAudioManager
 
             if (_radarNearestEmitterPositions == null || _radarNearestEmitterPositions.Length != AcousticRadarNearestEmitterLimit)
                 _radarNearestEmitterPositions = new Vector3[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: Vector3[12] - nearest-emitter radar accumulation positions - owner: SpatialAudioManager
@@ -7494,8 +7552,12 @@ namespace Hecton8.Audio
             if (_radarNearestEmitterRoots == null || _radarNearestEmitterRoots.Length != AcousticRadarNearestEmitterLimit)
                 _radarNearestEmitterRoots = new Transform[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: Transform[12] - nearest-emitter radar accumulation source roots for cached occlusion lookups - owner: SpatialAudioManager
 
-            if (_acousticRadarGridBuffer == null)
-                _acousticRadarGridBuffer = new ComputeBuffer(AcousticRadarGridCellCount, sizeof(float));
+            if (_acousticRadarGridBufferA == null)
+                _acousticRadarGridBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, AcousticRadarGridCellCount, sizeof(float));
+            if (_acousticRadarGridBufferB == null)
+                _acousticRadarGridBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, AcousticRadarGridCellCount, sizeof(float));
+            if (_activeAcousticRadarGridBuffer == null)
+                _activeAcousticRadarGridBuffer = _acousticRadarGridBufferA;
 
             if (!_delayedAudioIngress.IsCreated)
             {
@@ -7605,7 +7667,7 @@ namespace Hecton8.Audio
                     NativeArrayOptions.UninitializedMemory,
                     ref _acousticMaterialRows))
             {
-                VirtualVoiceProfileCsvParser.GenerateEmergencyMockAcoustics(_acousticMaterialRows);
+                GenerateEmergencyMockAcoustics(_acousticMaterialRows);
             }
 
             EnsureVaultBackedArray(
@@ -7812,11 +7874,10 @@ namespace Hecton8.Audio
 
             ClearVaultBackedTelemetryAliases();
 
-            if (_acousticRadarGridBuffer != null)
-            {
-                _acousticRadarGridBuffer.Release();
-                _acousticRadarGridBuffer = null;
-            }
+            ReleaseAcousticRadarGridBuffer(ref _acousticRadarGridBufferA);
+            ReleaseAcousticRadarGridBuffer(ref _acousticRadarGridBufferB);
+            _activeAcousticRadarGridBuffer = null;
+            _acousticRadarGridUploadIndex = 0;
 
             if (_delayedAudioIngress.IsCreated)
             {
@@ -7864,6 +7925,15 @@ namespace Hecton8.Audio
             _virtualVoiceBlackBoxCursor = 0;
             _lastVirtualVoiceStatistics = default;
             _acousticPortalBlackBoxCursor = 0;
+        }
+
+        private static void ReleaseAcousticRadarGridBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
 
         private AudioMixerGroup ResolvedDefaultWorldMixerGroup => _sfxGroup != null ? _sfxGroup : ResolvedBedBusGroup;
@@ -7952,7 +8022,7 @@ namespace Hecton8.Audio
 
         private void EvictCreatureAudioBanksForFrozenTier()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastCreatureFrozenBankEvictFrame == frame)
                 return;
 
@@ -7974,7 +8044,7 @@ namespace Hecton8.Audio
 
         private void UpdateTimeDilationPitchScalar()
         {
-            float scalar = GlobalSignals.TimeDilationScalar;
+            float scalar = SimulationSignalRoute.TimeDilationScalar;
             float saturatedScalar = math.saturate(scalar);
             float easedScalar = saturatedScalar * (2f - saturatedScalar);
             float targetRatio = math.lerp(TimeDilationAudioMinimumPitchRatio, 1f, easedScalar);
@@ -8202,17 +8272,17 @@ namespace Hecton8.Audio
                     target01 = math.max(target01, math.saturate(_globalWindHowlStormFloor));
             }
 
-            HectonSurfaceWeatherDirector surfaceWeather = ResolveSurfaceWeatherDirector();
+            ISurfaceWeatherReadModel surfaceWeather = ResolveSurfaceWeatherDirector();
             if (surfaceWeather != null && !surfaceWeather.IsSurfaceSuppressed)
             {
                 float weatherPressure = math.saturate(
                     surfaceWeather.CurrentPrecipitationIntensity * 0.72f +
                     surfaceWeather.CurrentElectricalActivity * 0.48f);
                 target01 = math.max(target01, weatherPressure);
-                switch (surfaceWeather.CurrentWeatherKind)
+                switch (surfaceWeather.CurrentWeatherKindCode)
                 {
-                    case SurfaceWeatherKind.HeavyRain:
-                    case SurfaceWeatherKind.ElectricalStorm:
+                    case SurfaceWeatherKindCodes.HeavyRain:
+                    case SurfaceWeatherKindCodes.ElectricalStorm:
                         target01 = math.max(target01, math.saturate(_globalWindHowlStormFloor));
                         break;
                 }
@@ -8223,11 +8293,11 @@ namespace Hecton8.Audio
 
         private bool ResolveGlobalWindHowlOccluded()
         {
-            HectonSurfaceWeatherDirector surfaceWeather = ResolveSurfaceWeatherDirector();
+            ISurfaceWeatherReadModel surfaceWeather = ResolveSurfaceWeatherDirector();
             if (surfaceWeather != null && surfaceWeather.IsLocallySheltered)
                 return true;
 
-            AcousticZoneController acousticZone = ResolveAcousticZone();
+            IAcousticZoneReadModel acousticZone = ResolveAcousticZone();
             return acousticZone != null && acousticZone.IsInterior;
         }
 
@@ -8989,17 +9059,29 @@ namespace Hecton8.Audio
 
         private void UploadAcousticRadarGridBuffer()
         {
-            if (!_acousticRadarGrid.IsCreated || _acousticRadarGridBuffer == null || _acousticRadarGridUploadScratch == null)
+            if (!_acousticRadarGrid.IsCreated || _acousticRadarGridUploadScratch == null)
                 return;
 
             if (!_acousticRadarGridDirty)
                 return;
 
+            GraphicsBuffer writeBuffer = _acousticRadarGridUploadIndex == 0
+                ? _acousticRadarGridBufferA
+                : _acousticRadarGridBufferB;
+            if (writeBuffer == null)
+                return;
+
             int count = math.min(_acousticRadarGrid.Length, _acousticRadarGridUploadScratch.Length);
+            count = math.min(count, writeBuffer.count);
+            if (count <= 0)
+                return;
+
             for (int i = 0; i < count; i++)
                 _acousticRadarGridUploadScratch[i] = _acousticRadarGrid[i];
 
-            _acousticRadarGridBuffer.SetData(_acousticRadarGridUploadScratch, 0, 0, count);
+            GraphicsBufferUploadUtility.UploadArray(writeBuffer, _acousticRadarGridUploadScratch, count);
+            _activeAcousticRadarGridBuffer = writeBuffer;
+            _acousticRadarGridUploadIndex ^= 1;
             _acousticRadarGridDirty = false;
         }
 
@@ -9093,8 +9175,10 @@ namespace Hecton8.Audio
         private void UpdateListenerWaterDensityMul(float deltaTime)
         {
             IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
-            _listenerPlayerMovement = playerContext != null ? playerContext.PlayerMovement as HectonPlayerMovement : null;
-            float target = _listenerPlayerMovement != null && _listenerPlayerMovement.IsPlayerSubmerged ? 1f : 0f;
+            bool underwater = playerContext != null &&
+                              playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                              (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u;
+            float target = underwater ? 1f : 0f;
             if (deltaTime <= 0f)
             {
                 _listenerWaterDensityMul = target;
@@ -9463,7 +9547,7 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (ShouldEmitEditorThrottledLog(ref _nextHelmetPoolFullEditorLogTime, PoolFullEditorLogIntervalSeconds))
             {
-                Debug.Log("[SpatialAudioManager] Helmet/UI pool full. Evicting quietest source.", this);
+                Hecton8.Core.H8Debug.Log("[SpatialAudioManager] Helmet/UI pool full. Evicting quietest source.", this);
             }
 #endif
 
@@ -9754,13 +9838,14 @@ namespace Hecton8.Audio
 
     /// <summary>
     /// Caption request wrapper for contextual spatial-audio captions.
-    /// Producers are expected to pass a cached/prelocalized caption string.
+    /// Producers pass stable caption hashes; UI resolves the display string at the presentation edge.
     /// </summary>
     public readonly struct AudioCaptionRequest
     {
-        public AudioCaptionRequest(string captionText, Vector3 worldPosition, float durationSeconds, float intensity)
+        public AudioCaptionRequest(uint captionHashId, Vector3 worldPosition, float durationSeconds, float intensity)
         {
-            CaptionText = captionText;
+            CaptionHashId = captionHashId;
+            CaptionText = AudioCaptionEvents.ResolveCaptionText(captionHashId) ?? string.Empty;
             WorldPosition = worldPosition;
             bool hasWorldAup = TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition worldAup);
             WorldAup = worldAup;
@@ -9769,12 +9854,13 @@ namespace Hecton8.Audio
             Intensity = intensity;
         }
 
-        public AudioCaptionRequest(string captionText, Vector3 worldPosition, in AbsoluteUniversePosition worldAup, float durationSeconds, float intensity)
-            : this(captionText, worldPosition, worldAup, true, durationSeconds, intensity)
+        public AudioCaptionRequest(uint captionHashId, Vector3 worldPosition, in AbsoluteUniversePosition worldAup, float durationSeconds, float intensity)
+            : this(captionHashId, AudioCaptionEvents.ResolveCaptionText(captionHashId) ?? string.Empty, worldPosition, worldAup, true, durationSeconds, intensity)
         {
         }
 
         private AudioCaptionRequest(
+            uint captionHashId,
             string captionText,
             Vector3 worldPosition,
             AbsoluteUniversePosition worldAup,
@@ -9782,6 +9868,7 @@ namespace Hecton8.Audio
             float durationSeconds,
             float intensity)
         {
+            CaptionHashId = captionHashId;
             CaptionText = captionText;
             WorldPosition = worldPosition;
             WorldAup = worldAup;
@@ -9790,7 +9877,10 @@ namespace Hecton8.Audio
             Intensity = intensity;
         }
 
-        /// <summary>Cached/prelocalized caption text shown by the HUD.</summary>
+        /// <summary>Stable caption text/hash id. Zero means invalid/legacy-only.</summary>
+        public uint CaptionHashId { get; }
+
+        /// <summary>Cached presentation text shown by the HUD after hash resolution.</summary>
         public string CaptionText { get; }
 
         /// <summary>World-space origin used to position the caption around the reticle.</summary>
@@ -9827,7 +9917,7 @@ namespace Hecton8.Audio
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!math.all(math.isfinite(new double3(originAup.LocalX, originAup.LocalY, originAup.LocalZ))))
                 return false;
 
@@ -9903,24 +9993,40 @@ namespace Hecton8.Audio
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 32;
-        private const int ReferenceSlotCapacity = 32;
         private const ushort CaptionRequestedEventType = 1;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("AudioCaptionEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("AudioCaptionEvents"));
+        private const string LowPowerCaptionText = "SUBMARINE LOW POWER";
+        private const string LifeSupportCaptionText = "LIFE SUPPORT CRITICAL";
+        private const string MultiFailureCaptionText = "MULTIPLE SYSTEM FAILURES";
+        private const string EmergencyDangerCaptionText = "EMERGENCY LEVEL DANGER";
+        private const string AbandonShipCaptionText = "ABANDON SHIP";
+        private const string HostileDroneCaptionText = "HOSTILE DRONE DETECTED";
+        private const string OxygenLowCaptionText = "OXYGEN LOW";
+        private const string OxygenCriticalCaptionText = "OXYGEN CRITICAL";
+        private const string HullBreachCaptionText = "HULL BREACH";
+        private const string PressureHighCaptionText = "HULL PRESSURE HIGH";
+        private const string ThermalStressCaptionText = "THERMAL STRESS";
+
+        public static readonly uint LowPowerCaptionHash = unchecked((uint)LocHash.Compute(LowPowerCaptionText));
+        public static readonly uint LifeSupportCaptionHash = unchecked((uint)LocHash.Compute(LifeSupportCaptionText));
+        public static readonly uint MultiFailureCaptionHash = unchecked((uint)LocHash.Compute(MultiFailureCaptionText));
+        public static readonly uint EmergencyDangerCaptionHash = unchecked((uint)LocHash.Compute(EmergencyDangerCaptionText));
+        public static readonly uint AbandonShipCaptionHash = unchecked((uint)LocHash.Compute(AbandonShipCaptionText));
+        public static readonly uint HostileDroneCaptionHash = unchecked((uint)LocHash.Compute(HostileDroneCaptionText));
+        public static readonly uint OxygenLowCaptionHash = unchecked((uint)LocHash.Compute(OxygenLowCaptionText));
+        public static readonly uint OxygenCriticalCaptionHash = unchecked((uint)LocHash.Compute(OxygenCriticalCaptionText));
+        public static readonly uint HullBreachCaptionHash = unchecked((uint)LocHash.Compute(HullBreachCaptionText));
+        public static readonly uint PressureHighCaptionHash = unchecked((uint)LocHash.Compute(PressureHighCaptionText));
+        public static readonly uint ThermalStressCaptionHash = unchecked((uint)LocHash.Compute(ThermalStressCaptionText));
 
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[8] - audio caption listeners drained by SystemDispatcher LateUpdate - owner: AudioCaptionEvents
         private static int _listenerCount;
-        // COLD ALLOC: string[32] - managed caption text sidecar for unmanaged audio caption payloads - owner: AudioCaptionEvents
-        private static readonly string[] _captionReferenceSlots = new string[ReferenceSlotCapacity];
-        // COLD ALLOC: bool[32] - caption sidecar occupancy map prevents wrap overwrite before deferred flush - owner: AudioCaptionEvents
-        private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<AudioCaptionPayload> _pendingEvents;
         private static NativeQueue<AudioCaptionPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
-        private static int _referenceWriteIndex;
-        private static int _referencePendingCount;
         private static int _lastOverflowWarningFrame = -1;
         private static bool _isDispatching;
 
@@ -9947,11 +10053,8 @@ namespace Hecton8.Audio
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
             _listenerCount = 0;
-            ClearReferenceSlots();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
-            _referenceWriteIndex = 0;
-            _referencePendingCount = 0;
             _lastOverflowWarningFrame = -1;
             _isDispatching = false;
         }
@@ -10002,13 +10105,15 @@ namespace Hecton8.Audio
                         return;
 
                     if (!_pendingEvents.TryDequeue(out AudioCaptionPayload payload))
+                    {
+                        _pendingEventCount = 0;
                         break;
+                    }
 
                     if (_pendingEventCount > 0)
                         _pendingEventCount--;
 
                     Dispatch(in payload);
-                    ReleaseReferenceSlot(payload.ReferenceSlot);
                 }
             }
             finally
@@ -10024,31 +10129,58 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
-        /// Queues a caption request using a prelocalized text payload.
+        /// Queues a caption request using a stable caption hash.
         /// </summary>
+        public static bool TryRaise(in AudioCaptionRequest request)
+        {
+            if (!CanQueueCaptionHash(request.CaptionHashId))
+                return false;
+
+            return EnqueueCaptionRequest(in request);
+        }
+
+        public static bool TryRaiseHash(uint captionHashId, Vector3 worldPosition, float durationSeconds, float intensity)
+        {
+            if (!CanQueueCaptionHash(captionHashId))
+                return false;
+
+            AudioCaptionRequest request = new AudioCaptionRequest(captionHashId, worldPosition, durationSeconds, intensity);
+            return EnqueueCaptionRequest(in request);
+        }
+
+        public static bool TryRaiseHash(uint captionHashId, Vector3 worldPosition, in AbsoluteUniversePosition worldAup, float durationSeconds, float intensity)
+        {
+            if (!CanQueueCaptionHash(captionHashId))
+                return false;
+
+            AudioCaptionRequest request = new AudioCaptionRequest(captionHashId, worldPosition, in worldAup, durationSeconds, intensity);
+            return EnqueueCaptionRequest(in request);
+        }
+
+        [Obsolete("First-party caption ingress is hash-only. Use TryRaise or TryRaiseHash and handle bounded rejection.", true)]
         public static void Raise(AudioCaptionRequest request)
         {
-            if (!Application.isPlaying || _listenerCount <= 0)
-                return;
+            TryRaise(in request);
+        }
 
-            if (string.IsNullOrWhiteSpace(request.CaptionText))
-                return;
+        private static bool CanQueueCaptionHash(uint captionHashId)
+        {
+            return Application.isPlaying &&
+                   _listenerCount > 0 &&
+                   captionHashId != 0u &&
+                   !string.IsNullOrWhiteSpace(ResolveCaptionText(captionHashId));
+        }
 
-            if (!TryReserveReferenceSlot(out int referenceSlot))
-            {
-                ReportOverflowOncePerFrame();
-                return;
-            }
-
-            _captionReferenceSlots[referenceSlot] = request.CaptionText;
-            Enqueue(new AudioCaptionPayload
+        private static bool EnqueueCaptionRequest(in AudioCaptionRequest request)
+        {
+            return Enqueue(new AudioCaptionPayload
             {
                 WorldPosition = request.WorldPosition,
                 WorldAup = request.WorldAup,
                 DurationSeconds = request.DurationSeconds,
                 Intensity = request.Intensity,
-                CaptionHashId = 0u,
-                ReferenceSlot = referenceSlot,
+                CaptionHashId = request.CaptionHashId,
+                ReferenceSlot = -1,
                 EventType = CaptionRequestedEventType,
                 Reserved = 0,
                 HasWorldAup = request.HasWorldAup ? (byte)1 : (byte)0,
@@ -10101,7 +10233,6 @@ namespace Hecton8.Audio
         {
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
-                ReleaseReferenceSlot(payload.ReferenceSlot);
                 ReportOverflowOncePerFrame();
                 return false;
             }
@@ -10152,33 +10283,30 @@ namespace Hecton8.Audio
 
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
-            ClearReferenceSlots();
-            _referenceWriteIndex = 0;
-            _referencePendingCount = 0;
         }
 
         private static void Dispatch(in AudioCaptionPayload payload)
         {
             if (payload.EventType != CaptionRequestedEventType ||
-                !IsValidReferenceSlot(payload.ReferenceSlot))
+                payload.CaptionHashId == 0u)
             {
                 return;
             }
 
-            string captionText = _captionReferenceSlots[payload.ReferenceSlot];
+            string captionText = ResolveCaptionText(payload.CaptionHashId);
             if (string.IsNullOrWhiteSpace(captionText))
                 return;
 
             AbsoluteUniversePosition worldAup = payload.WorldAup;
             AudioCaptionRequest request = payload.HasWorldAup != 0
                 ? new AudioCaptionRequest(
-                    captionText,
+                    payload.CaptionHashId,
                     payload.WorldPosition,
                     in worldAup,
                     payload.DurationSeconds,
                     payload.Intensity)
                 : new AudioCaptionRequest(
-                    captionText,
+                    payload.CaptionHashId,
                     payload.WorldPosition,
                     payload.DurationSeconds,
                     payload.Intensity);
@@ -10229,6 +10357,34 @@ namespace Hecton8.Audio
             return false;
         }
 
+        public static string ResolveCaptionText(uint captionHashId)
+        {
+            if (captionHashId == LowPowerCaptionHash)
+                return LowPowerCaptionText;
+            if (captionHashId == LifeSupportCaptionHash)
+                return LifeSupportCaptionText;
+            if (captionHashId == MultiFailureCaptionHash)
+                return MultiFailureCaptionText;
+            if (captionHashId == EmergencyDangerCaptionHash)
+                return EmergencyDangerCaptionText;
+            if (captionHashId == AbandonShipCaptionHash)
+                return AbandonShipCaptionText;
+            if (captionHashId == HostileDroneCaptionHash)
+                return HostileDroneCaptionText;
+            if (captionHashId == OxygenLowCaptionHash)
+                return OxygenLowCaptionText;
+            if (captionHashId == OxygenCriticalCaptionHash)
+                return OxygenCriticalCaptionText;
+            if (captionHashId == HullBreachCaptionHash)
+                return HullBreachCaptionText;
+            if (captionHashId == PressureHighCaptionHash)
+                return PressureHighCaptionText;
+            if (captionHashId == ThermalStressCaptionHash)
+                return ThermalStressCaptionText;
+
+            return null;
+        }
+
         private struct ListenerSlot
         {
             public IAudioCaptionEventListener Listener;
@@ -10239,59 +10395,9 @@ namespace Hecton8.Audio
             }
         }
 
-        private static bool TryReserveReferenceSlot(out int referenceSlot)
-        {
-            referenceSlot = -1;
-            if (_referencePendingCount >= ReferenceSlotCapacity)
-                return false;
-
-            for (int probe = 0; probe < ReferenceSlotCapacity; probe++)
-            {
-                int candidateSlot = _referenceWriteIndex;
-                _referenceWriteIndex++;
-                if (_referenceWriteIndex >= ReferenceSlotCapacity)
-                    _referenceWriteIndex = 0;
-
-                if (_referenceSlotOccupied[candidateSlot])
-                    continue;
-
-                referenceSlot = candidateSlot;
-                _referenceSlotOccupied[referenceSlot] = true;
-                _referencePendingCount++;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static void ReleaseReferenceSlot(int referenceSlot)
-        {
-            if (!IsValidReferenceSlot(referenceSlot) || !_referenceSlotOccupied[referenceSlot])
-                return;
-
-            _captionReferenceSlots[referenceSlot] = null;
-            _referenceSlotOccupied[referenceSlot] = false;
-            if (_referencePendingCount > 0)
-                _referencePendingCount--;
-        }
-
-        private static bool IsValidReferenceSlot(int referenceSlot)
-        {
-            return (uint)referenceSlot < ReferenceSlotCapacity;
-        }
-
-        private static void ClearReferenceSlots()
-        {
-            for (int i = 0; i < ReferenceSlotCapacity; i++)
-            {
-                _captionReferenceSlots[i] = null;
-                _referenceSlotOccupied[i] = false;
-            }
-        }
-
         private static void ReportOverflowOncePerFrame()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastOverflowWarningFrame == frame)
                 return;
 

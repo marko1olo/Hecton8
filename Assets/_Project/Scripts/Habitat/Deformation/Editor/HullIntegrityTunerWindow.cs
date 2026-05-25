@@ -34,14 +34,14 @@ namespace Hecton8.Habitat.Deformation.Editor
         {
             EditorApplication.update -= RefreshFromRuntime;
             EditorApplication.update += RefreshFromRuntime;
-            SceneView.duringSceneGui -= OnDrawGizmos;
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
         }
 
         private void OnDisable()
         {
             EditorApplication.update -= RefreshFromRuntime;
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         public void CreateGUI()
@@ -205,7 +205,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             runtime.GenerateMockHullImpacts(200, 4f);
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             HullIntegrityRuntime runtime = HullIntegrityRuntime.ActiveRuntime;
             if (runtime == null)

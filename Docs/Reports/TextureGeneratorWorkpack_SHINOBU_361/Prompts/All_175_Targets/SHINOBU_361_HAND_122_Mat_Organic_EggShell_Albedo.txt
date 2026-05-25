@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_122
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_122_Mat_Organic_EggShell_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Organic_EggShell_Albedo.png
+FINAL_FILENAME: Mat_Organic_EggShell_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Organic eggshell albedo for Hecton fauna materials. Create pearly translucent shell plates, pale cyan mineral speckles, soft coral inner blush along thin seams, opal dust, and tiny amber nutrient pinpoints. The texture should be delicate, premium, and readable, like an alien shell sample under expedition lab analysis. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

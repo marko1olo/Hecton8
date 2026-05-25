@@ -1,23 +1,24 @@
 // ============================================================================
-// HECTON-8 — CorporateOrderSystem.cs
+// HECTON-8 � CorporateOrderSystem.cs
 // Sistema protivorechivyh korporativnyh prikazov.
 //
 // LOR (lor3 Blok A):
 //   Igrok poluchaet protivorechivye prikazy cherez zaderzhku svyazi (8-12 chasov).
-//   Fraktsiya «Etiki» vs «Pragmatiki».
-//   Eto ne dialog — eto narrativ cherez interfeys.
+//   Fraktsiya �Etiki� vs �Pragmatiki�.
+//   Eto ne dialog � eto narrativ cherez interfeys.
 //
 // MEHANIKA:
-//   • Prikazy prihodyat s zaderzhkoy (igrovoe vremya).
-//   • Pri poluchenii konfliktuyuschego prikaza — HUD uvedomlenie.
-//   • Igrok vidit oba prikaza v PDA (Data Log).
-//   • Vybor — cherez deystviya v mire, ne cherez dialog.
+//   � Prikazy prihodyat s zaderzhkoy (igrovoe vremya).
+//   � Pri poluchenii konfliktuyuschego prikaza � HUD uvedomlenie.
+//   � Igrok vidit oba prikaza v PDA (Data Log).
+//   � Vybor � cherez deystviya v mire, ne cherez dialog.
 //
 // ZERO GC:
-//   • ISlowTickable — proverka taymerov.
-//   • Pre-allocated massiv sostoyaniy prikazov.
+//   � ISlowTickable � proverka taymerov.
+//   � Pre-allocated massiv sostoyaniy prikazov.
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
@@ -29,61 +30,58 @@ namespace Hecton8.Narrative
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-75)]
-    public sealed class CorporateOrderSystem : MonoBehaviour, ISaveable, ISlowTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class CorporateOrderSystem : MonoBehaviour, ISaveable, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const string IncomingOrderWarningMessage = "INCOMING CORPORATE ORDER - CHECK PDA LOG";
         private const uint ConflictHashSalt = 0xC0A5_EE11u;
+        private const int OrderCapacity = SaveData.MaxCorporateOrderIds;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Data ─────────────────────────────────────")]
+        [Header("-- Data -------------------------------------")]
         [SerializeField] private DeepReachCorporationData corporationData;
 
-        [Header("── Timing ───────────────────────────────────")]
+        [Header("-- Timing -----------------------------------")]
         [Tooltip("Igrovyh sekund v odnom igrovom chase (dlya zaderzhki prikazov).")]
         [SerializeField] private float gameSecondsPerHour = 120f; // 2 min realnogo vremeni = 1 igrovoy chas
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         // COLD ALLOC: max 16 orders
-        private readonly HashSet<string> _receivedOrders  = new HashSet<string>(16);
-        private readonly HashSet<uint> _activeConflicts = new HashSet<uint>(8);
+        private readonly HashSet<string> _receivedOrders  = new HashSet<string>(OrderCapacity);
+        private readonly HashSet<uint> _activeConflicts = new HashSet<uint>(OrderCapacity);
 
-        // Taymery ozhidaniya prikazov (orderId → remaining seconds)
+        // Taymery ozhidaniya prikazov (orderId ? remaining seconds)
         private readonly Dictionary<string, float> _pendingTimers =
-            new Dictionary<string, float>(16);
+            new Dictionary<string, float>(OrderCapacity);
 
         private bool _runtimeRegistered;
         private bool _registered;
         private bool _saveRegistered;
+        private bool _registeredHotSwapListener;
         private bool _ordersScheduled;
+        private ISaveService _saveService;
 
-        // COLD ALLOC: bufer dlya dostavki prikazov v SlowTick
-        private readonly List<string> _deliveryBuffer = new List<string>(16);
-
-        // COLD ALLOC: bufer klyuchey dlya iteratsii Dictionary bez foreach-allokatsii
-        private readonly List<string> _pendingKeyBuffer = new List<string>(16);
-
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public int SavePriority => 12;
         public int LoadPriority => 12;
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -96,6 +94,8 @@ namespace Hecton8.Narrative
             if (!TryRegisterRuntime())
                 return;
 
+            _saveService = GlobalRegistry.Save;
+            TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterSaveParticipant();
         }
@@ -104,6 +104,7 @@ namespace Hecton8.Narrative
         {
             TryUnregister();
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
         }
 
@@ -111,6 +112,7 @@ namespace Hecton8.Narrative
         {
             TryUnregister();
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
         }
 
@@ -118,12 +120,11 @@ namespace Hecton8.Narrative
         {
             TryUnregister();
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
             _receivedOrders.Clear();
             _activeConflicts.Clear();
             _pendingTimers.Clear();
-            _deliveryBuffer.Clear();
-            _pendingKeyBuffer.Clear();
             _ordersScheduled = false;
         }
 
@@ -141,8 +142,7 @@ namespace Hecton8.Narrative
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -184,16 +184,48 @@ namespace Hecton8.Narrative
             _runtimeRegistered = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            TryUnregisterSaveParticipant();
+            _saveService = currentService as ISaveService;
+            TryRegisterSaveParticipant();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered)
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            ISaveService saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            if (saveService == null)
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
                 return;
 
-            saveService.Register(this);
+            _saveService.Register(this);
             _saveRegistered = true;
         }
 
@@ -202,16 +234,16 @@ namespace Hecton8.Narrative
             if (!_saveRegistered)
                 return;
 
-            ISaveService saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            ISaveService saveService = _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
             _saveRegistered = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISlowTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void SlowTick()
         {
@@ -220,42 +252,38 @@ namespace Hecton8.Narrative
 
             const float dt = 0.5f;
 
-            _deliveryBuffer.Clear();
+            CorporateOrder[] orders = corporationData.orders;
+            if (orders == null || orders.Length == 0)
+                return;
 
-            // Populate key buffer — avoids Dictionary enumerator GC alloc
-            _pendingKeyBuffer.Clear();
-            Dictionary<string, float>.Enumerator pendingTimerEnumerator = _pendingTimers.GetEnumerator();
-            while (pendingTimerEnumerator.MoveNext())
-                _pendingKeyBuffer.Add(pendingTimerEnumerator.Current.Key);
-
-            for (int i = 0; i < _pendingKeyBuffer.Count; i++)
+            for (int i = 0; i < orders.Length; i++)
             {
-                string key = _pendingKeyBuffer[i];
-                float remaining = _pendingTimers[key] - dt;
+                string key = orders[i].orderId;
+                if (string.IsNullOrEmpty(key) || !_pendingTimers.TryGetValue(key, out float remaining))
+                    continue;
+
+                remaining -= dt;
                 if (remaining <= 0f)
-                    _deliveryBuffer.Add(key);
-                else
-                    _pendingTimers[key] = remaining;
-            }
+                {
+                    _pendingTimers.Remove(key);
+                    DeliverOrder(key);
+                    continue;
+                }
 
-            for (int i = 0; i < _deliveryBuffer.Count; i++)
-            {
-                string orderId = _deliveryBuffer[i];
-                _pendingTimers.Remove(orderId);
-                DeliverOrder(orderId);
+                _pendingTimers[key] = remaining;
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public bool HasReceivedOrder(string orderId) => _receivedOrders.Contains(orderId);
         public bool HasActiveConflict(string conflictId) => _activeConflicts.Contains(ComputeStableHash(conflictId));
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void ScheduleAllOrders()
         {
@@ -267,6 +295,7 @@ namespace Hecton8.Narrative
                 CorporateOrder order = corporationData.orders[i];
                 if (string.IsNullOrEmpty(order.orderId)) continue;
                 if (_receivedOrders.Contains(order.orderId)) continue;
+                if (_pendingTimers.Count + _receivedOrders.Count >= OrderCapacity) break;
 
                 float delaySeconds = order.transmissionDelayHours * gameSecondsPerHour;
                 _pendingTimers[order.orderId] = delaySeconds;
@@ -277,41 +306,46 @@ namespace Hecton8.Narrative
         {
             if (corporationData == null) return;
             if (!corporationData.TryGetOrder(orderId, out CorporateOrder order)) return;
+            if (!_receivedOrders.Contains(orderId) && _receivedOrders.Count >= OrderCapacity) return;
 
             _receivedOrders.Add(orderId);
 
             // Use authored order id hash directly; PDA cold data holds the full text.
-            NarrativeEvents.RaiseDiscoveryMade(ComputeStableHash(orderId));
+            NarrativeEvents.TryRaiseDiscoveryMade(ComputeStableHash(orderId));
 
             // Cinematic fake: static HUD warning avoids runtime preview string assembly.
-            NotificationEvents.PushWarning(IncomingOrderWarningMessage);
+            NotificationEvents.TryPushWarning(IncomingOrderWarningMessage.AsSpan());
 
             // Proveryaem konflikt
             if (!string.IsNullOrEmpty(order.conflictsWithOrderId) &&
                 _receivedOrders.Contains(order.conflictsWithOrderId))
             {
                 uint conflictHash = ComputeConflictHash(orderId, order.conflictsWithOrderId);
-                if (conflictHash != 0u && _activeConflicts.Add(conflictHash))
+                if (conflictHash != 0u &&
+                    _activeConflicts.Count < OrderCapacity &&
+                    _activeConflicts.Add(conflictHash))
                 {
-                    NotificationEvents.PushWarning(ResolveLocalized(
+                    NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
                         LocalizationKeys.CORP_ORDER_CONFLICT,
                         "ORDER CONFLICT - CORPORATE FACTIONS ARE DIRECTLY CONTRADICTING EACH OTHER."));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[CorporateOrders] Conflict: {orderId} vs {order.conflictsWithOrderId}");
+                    H8Debug.Log("[CorporateOrders] Conflict.");
 #endif
                 }
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[CorporateOrders] Delivered: {orderId} from {order.sourceFactionId}");
+            H8Debug.Log("[CorporateOrders] Delivered.");
 #endif
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
+            return manager != null
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
         private static uint ComputeStableHash(string value)
@@ -352,9 +386,9 @@ namespace Hecton8.Narrative
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void PopulateSaveData(SaveData data)
         {
@@ -362,13 +396,21 @@ namespace Hecton8.Narrative
 
             data.corporateReceivedOrderIds.Clear();
             foreach (string id in _receivedOrders)
+            {
+                if (data.corporateReceivedOrderIds.Count >= OrderCapacity)
+                    break;
+
                 data.corporateReceivedOrderIds.Add(id);
+            }
 
             // Sohranyaem taymery ozhidaniya
             data.corporatePendingOrderIds.Clear();
             data.corporatePendingOrderTimers.Clear();
             foreach (var kvp in _pendingTimers)
             {
+                if (data.corporatePendingOrderIds.Count >= OrderCapacity)
+                    break;
+
                 data.corporatePendingOrderIds.Add(kvp.Key);
                 data.corporatePendingOrderTimers.Add(kvp.Value);
             }
@@ -384,12 +426,18 @@ namespace Hecton8.Narrative
 
             if (data.corporateReceivedOrderIds != null)
                 foreach (string id in data.corporateReceivedOrderIds)
+                {
+                    if (_receivedOrders.Count >= OrderCapacity)
+                        break;
+
                     if (!string.IsNullOrEmpty(id)) _receivedOrders.Add(id);
+                }
 
             if (data.corporatePendingOrderIds != null && data.corporatePendingOrderTimers != null)
             {
-                int count = Mathf.Min(data.corporatePendingOrderIds.Count,
-                                      data.corporatePendingOrderTimers.Count);
+                int count = Mathf.Min(
+                    Mathf.Min(data.corporatePendingOrderIds.Count, data.corporatePendingOrderTimers.Count),
+                    OrderCapacity);
                 for (int i = 0; i < count; i++)
                 {
                     string id = data.corporatePendingOrderIds[i];
@@ -398,7 +446,7 @@ namespace Hecton8.Narrative
                 }
             }
 
-            // Esli net sohranennyh taymerov — planiruem zanovo
+            // Esli net sohranennyh taymerov � planiruem zanovo
             if (_pendingTimers.Count == 0 && _receivedOrders.Count == 0)
                 ScheduleAllOrders();
         }

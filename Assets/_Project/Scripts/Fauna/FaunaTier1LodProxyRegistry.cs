@@ -6,7 +6,7 @@ using Unity.Collections;
 namespace Hecton8.AI
 {
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = FaunaTier1LodProxyRegistry.EntrySizeBytes)]
     internal struct FaunaTier1LodProxyEntry
     {
         private const int FlagsShift = 0;

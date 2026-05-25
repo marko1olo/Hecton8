@@ -5,6 +5,19 @@ using Unity.Mathematics;
 
 namespace Hecton8.Lighting
 {
+    internal static class DynamicPointLightCullingLayout
+    {
+        public const int LightCullStateStrideBytes = 32;
+        public const int SourceStrideBytes = 96;
+        public const int GpuPayloadStrideBytes = 64;
+        public const int SettingsStrideBytes = 128;
+        public const int ProfileRuleStrideBytes = 32;
+        public const int SourceManifestStrideBytes = 64;
+        public const int TelemetryEntryStrideBytes = 64;
+        public const int RuntimeCountersStrideBytes = 64;
+        public const int SelfAuditStrideBytes = 64;
+    }
+
     /// <summary>
     /// Vault buffer identifiers owned by SHINOBU_151. Local cast constants avoid global enum churn during batch execution.
     /// </summary>
@@ -64,7 +77,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Exact 32-byte culling result record. Offset contract is assigned in CURRENT_BATCH for SHINOBU_151.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.LightCullStateStrideBytes)]
     public struct LightCullStateDTO
     {
         [FieldOffset(0)] public uint LightHash;
@@ -89,7 +102,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Raw source record for mathematical point/spot light evaluation. No Unity Light object is represented here.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.SourceStrideBytes)]
     public struct DynamicPointLightSourceDTO
     {
         [FieldOffset(0)] public double3 AUP;
@@ -112,7 +125,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Shader-facing payload. Packed in float4 lanes for StructuredBuffer access.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.GpuPayloadStrideBytes)]
     public struct DynamicPointLightGpuDTO
     {
         [FieldOffset(0)] public float4 PositionRange;
@@ -127,7 +140,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Runtime culling settings stored in the Vault. Size is 128 bytes for predictable cache and audit output.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.SettingsStrideBytes)]
     public struct DynamicPointLightCullingSettingsDTO
     {
         [FieldOffset(0)] public double3 CameraAup;
@@ -157,7 +170,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Allocation-free profile rule parsed from light_culling_profiles.csv.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.ProfileRuleStrideBytes)]
     public struct DynamicPointLightProfileRuleDTO
     {
         [FieldOffset(0)] public uint ProfileHash;
@@ -172,7 +185,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Vault-resident source-count manifest. Writers update this only after fully writing the source/state window.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.SourceManifestStrideBytes)]
     public struct DynamicPointLightSourceManifestDTO
     {
         [FieldOffset(0)] public int ActiveSourceCount;
@@ -192,7 +205,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Frame aggregate consumed by editor tooling and black-box dump.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.TelemetryEntryStrideBytes)]
     public struct DynamicPointLightCullingTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
@@ -215,7 +228,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Single-element runtime counter block produced by the Burst payload builder.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.RuntimeCountersStrideBytes)]
     public struct DynamicPointLightRuntimeCountersDTO
     {
         [FieldOffset(0)] public int TotalLights;
@@ -239,7 +252,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Static byte-layout audit record written to Vault for tools and final reports.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DynamicPointLightCullingLayout.SelfAuditStrideBytes)]
     public struct DynamicPointLightSelfAuditDTO
     {
         [FieldOffset(0)] public int LightCullStateSize;
@@ -275,9 +288,8 @@ namespace Hecton8.Lighting
         public static int ResolveMaxActiveLights(float globalQualityWeight)
         {
             float quality = Sanitize01(globalQualityWeight, 1f);
-            float liveGate = math.step(0.000001f, quality);
             float curved = quality * quality * (3f - 2f * quality);
-            float budget = math.lerp(0f, curved, liveGate);
+            float budget = curved;
             return math.clamp((int)math.round(math.lerp(MinimumActiveLights, MaximumActiveLights, budget)), MinimumActiveLights, MaximumActiveLights);
         }
 

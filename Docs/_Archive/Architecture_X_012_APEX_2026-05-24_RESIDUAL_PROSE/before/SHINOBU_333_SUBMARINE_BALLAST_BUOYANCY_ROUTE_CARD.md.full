@@ -1,0 +1,100 @@
+﻿# SHINOBU_333 Submarine Ballast Buoyancy Route Card
+
+Date: 2026-05-22
+Owner: `SHINOBU_333 / SUBMARINE_BALLAST_BUOYANCY_SOLVER`
+Domain: Echelon 6 Vehicles & Kinematics / submarine ballast, displacement, and pressure-gated buoyancy
+Status: STATIC SOURCE, FULL BUILD BLOCKED OUTSIDE DOMAIN
+Review Disposition: `YELLOW / STATIC_SOURCE_ONLY`
+Required Promotion Proof: Unity import, green compile, Play Mode solver tick, GC allocation trace, profiler timing, and Data Monolith payload validation.
+
+## Authority
+
+One fact: ballast-tank water volume, compressed-air pressure, displaced hull volume, and the derived vertical buoyancy force.
+One owner: `SubmarineAutoLevelBallastController` owns the current compatibility bridge and Vault lanes until a dedicated vehicle dynamics owner absorbs ballast scheduling.
+One route: `GlobalDataVault` rows -> `EvaluateBallastTanksJob` -> `CalculateBuoyancyForceJob` -> `PhysicsForceRouter.QueueAmbientForce`.
+One proof artifact: `SubmarineBallastTelemetryEntry[300]` plus `Docs/AgentLogs/Dump_SHINOBU_333.bin` on non-finite or >500 us state.
+
+The route does not mutate `Rigidbody.mass`, does not call direct `Rigidbody.AddForce`, does not use water `Physics.OverlapSphere`, and does not poll `GlobalRegistry` inside Burst jobs.
+External route suppression from SHINOBU_332 is read from its owner counter `BufferID.Shinobu332GyroCounters` through a cached read-only Vault handle; SHINOBU_333 does not own, allocate, or release that buffer.
+
+## Force Dispatch Decision
+
+The XML prompt names a `NativeQueue<ForcePacketDTO>.ParallelWriter` for `PhysicsApplySystem`. The current vehicle path already centralizes Unity rigidbody force application through `PhysicsForceRouter`, and `SubmarineAutoLevelBallastController` is already registered in fixed/post-fixed phases. Adding a second unmanaged force queue here would create a second apply owner for the same vertical force before the project exposes a Vehicles-owned `ForcePacketDTO` contract.
+
+Chosen route:
+
+- `EvaluateBallastTanksJob` mutates only `BallastTankDTO` rows and sparse acoustic signals.
+- `CalculateBuoyancyForceJob` writes one `SubmarineBallastForcePacketDTO` row and one telemetry ring row.
+- `PostFixedTick` completes through `DispatcherJobSwap.TryComplete`; only completed valid packets are converted into the existing force-router call.
+
+This preserves the no-direct-physics-mutation boundary while avoiding an invented sibling-domain dependency.
+
+## Buffer IDs
+
+- `71771 Shinobu333BallastTanks` - `BallastTankDTO[4]`, 32-byte tank rows, `UninitializedMemory`, seeded during cold/native-state setup.
+- `71772 Shinobu333BallastCommands` - `BallastTankCommandDTO[4]`, 32-byte command rows, `UninitializedMemory`, overwritten before scheduling.
+- `71773 Shinobu333BallastFluidSamples` - `SubmarineBallastFluidSampleDTO[1]`, 160-byte AUP/depth/density row, `UninitializedMemory`.
+- `71774 Shinobu333BallastForcePackets` - `SubmarineBallastForcePacketDTO[1]`, 128-byte force packet, `UninitializedMemory`.
+- `71775 Shinobu333BallastTelemetryRing` - `SubmarineBallastTelemetryEntry[300]`, 64-byte black-box ring.
+- `71776 Shinobu333BallastProfiles` - `SubmarineBallastProfileDTO[64]`, 64-byte cold CSV profile rows.
+- `71777 Shinobu333BallastTuning` - `SubmarineBallastTuningDTO[1]`, 64-byte editor/cold tuning row.
+- `71778 Shinobu333BallastCsvScratch` - cold CSV byte scratch.
+
+The rejected draft range `71820..71827` collided with SHINOBU_264 async buoyancy readback ownership `71820..71831`.
+
+## Accessor Purity
+
+Cold setup uses `Ensure*Cold`/Vault ensure paths while buffers can still be created. Hot ballast paths use `TryReadBallast*` helpers that only resolve already cached generation handles and fail closed on stale or missing handles; they do not call `TryGetGenerationHandle`, allocate, or grow Vault buffers.
+
+Read-looking APIs in the SHINOBU_333 hot path do not publish signals, search the scene, complete jobs, or mutate global state. Completion remains explicit in `CompleteBallastSolverJob`, not hidden behind a getter.
+`GlobalQualityWeight` and runtime-origin AUP are refreshed in owner/cold callbacks (`Awake`, `OnEnable`, slow tick, scalability/origin events, and DataVault replacement). The fixed ballast sample path reads the cached scalar/AUP only. The hot PID suppression path no longer calls `SubmarineDynamicsRuntime`; it resolves a cached SHINOBU_332 Vault counter handle and fails inactive if the owner buffer is unavailable.
+
+## CSV And Data Monolith
+
+Cold source path: `Data/Physics/vehicle_ballast_profiles.csv`.
+
+Ingestion route: `FileStream` sequential cold read -> Vault scratch `71778` -> `ReadOnlySpan<byte>` -> `SubmarineBallastCsvParser.ParseProfiles` -> Vault profile rows `71776`. The parser uses FNV-1a vehicle hashes and manual float parsing; no `float.Parse`, LINQ, or runtime `ScriptableObject` lookup is used.
+
+Data Monolith state: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is not present in this workspace, so the route card remains yellow. The CSV bridge is a cold fallback/source ingest path, not a claim that H8DM boot validation is green.
+
+## Layout Proof
+
+`BallastTankDTO` is explicit 32 bytes:
+
+- `TankVolumeLiters float` at `0..3`
+- `CurrentWaterLiters float` at `4..7`
+- `CompressedAirPressureATM float` at `8..11`
+- `InputStateFlags uint` at `12..15`
+- `PumpRateLitersPerSecond float` at `16..19`
+- `_pad0 uint` at `20..23`
+- `_pad1 uint` at `24..27`
+- `_pad2 uint` at `28..31`
+
+All fields are 4-byte aligned, total size is `32`, and two rows fit exactly in one 64-byte L1 cache line. The solver writes different tank rows in parallel; no shared atomic counter is colocated with these rows, so no 64-byte counter padding is required.
+
+## Scalability
+
+`GlobalQualityWeight` is consumed as a continuous `0..1` scalar. The owner phase smooths the scalar, maps it through `smoothstep/lerp` to a `1..4` sample budget, and requires a 2.5 second hysteresis hold before the integer budget changes. `CalculateBuoyancyForceJob` consumes `SubmarineBallastFluidSampleDTO.ActiveSampleBudget`: weak devices evaluate the center submerged-ratio only; middle devices hold bow/stern approximations without threshold flicker; high/ultra paths average up to four analytical sample points. Quality changes sample count and presentation richness only. It does not change BufferID identity, save identity, or force ownership.
+
+## Dear Lie
+
+Compressed-air blowdown is not simulated as particles, bubbles, or fluid turbulence. The truth path performs liter integration and two pressure comparisons. The sensory lie is a sparse `MovementAcousticSignal` emitted on a deterministic modulo cadence, with volume scaled by pressure delta and released liters.
+
+CPU complexity before the lie would be `O(tanks * bubbles * audio voices)`. Current gameplay truth is `O(tanks)` and acoustic presentation is bounded sparse signal emission.
+
+## Fault And Blackbox
+
+`SubmarineBallastTelemetryEntry[300]` records frame, flags, hash, net force, buoyant force, ballast gravity, water liters, compressed-air mass, ambient pressure, displaced volume, submerged ratio, timing-proxy microseconds, quality, active sample count, entity hash, and ring cursor. Current `ComputeMicros` is schedule-to-completion owner timing and is explicitly flagged with `ForceFlagTimingProxy`; exact Burst wall-time promotion requires profiler instrumentation. Non-finite force or >500 us timing proxy writes `Docs/AgentLogs/Dump_SHINOBU_333.bin`.
+
+## Verification Boundary
+
+Static scans show zero targeted dynamic `Rigidbody.mass` ballast writes, zero targeted water `Physics.OverlapSphere` hacks, and zero targeted direct `AddForceAtPosition` sites. Full compile remains blocked by sibling-domain errors and one later `csc.exe` exit `-1` without source diagnostics; no SHINOBU_333 source diagnostics appeared after generated-project source inclusion.
+The scanner intentionally counts both `Physics.OverlapSphere` and `Physics.OverlapSphereNonAlloc` as forbidden water-volume broadphase query routes in Vehicles/Physics authority; the non-allocating variant is still an OOP water-query path, not a ballast solver route.
+
+Subagent metadata audit on 2026-05-23 found missing metadata sidecars for the SHINOBU_333 runtime contract, OOP scanner, and CSV source. Stable `.meta` files now exist for all three, with GUID uniqueness verified by source scan. `Data/Physics/vehicle_ballast_profiles.csv` remains a non-Unity external cold source; its sidecar is repository identity hygiene, not a Unity import claim.
+
+Assembly boundary scan on 2026-05-23 found no SHINOBU-owned runtime asmdef under `Assets/_Project/Scripts/Physics/Vehicles`; only `Hecton8.Physics.Vehicles.Editor.asmdef` exists and remains editor-only. SHINOBU_333 did not add or modify runtime asmdef references. The runtime files currently compile through the existing root `Hecton8.Core.asmdef`, so creating a separate vehicle runtime assembly is deferred to an integrator-owned boundary migration rather than forced from this lane.
+
+Independent read-only hot-path audit on 2026-05-23 reported no remaining fixed/post-fixed calls to `SubmarineDynamicsRuntime`, live global quality reads, live runtime-origin AUP reads, `GlobalRegistry`, or scene search in the patched hot path. It also confirmed the SHINOBU_332 gyro suppression route is read-only/non-owning via cached `BufferID.Shinobu332GyroCounters` and found no obvious compile or allocation hazard in the added methods.
+
+Cached-handle hardening on 2026-05-23 removed the last `TryGetGenerationHandle` fallback from `TryReadVaultBuffer`. Generation-handle refresh now remains in cold `Ensure*Cold` or external snapshot acquisition paths; fixed/post-fixed ballast reads fail closed until the owner phase refreshes the handle.

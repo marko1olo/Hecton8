@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -5,7 +6,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Fauna/Fauna Simplified Ragdoll Handoff")]
-    public sealed class FaunaSimplifiedRagdollHandoff : MonoBehaviour
+    public sealed class FaunaSimplifiedRagdollHandoff : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         [SerializeField] private Renderer vatRenderer;
         [SerializeField] private Rigidbody jointRoot;
@@ -16,10 +17,38 @@ namespace Hecton8.AI
         [SerializeField, Range(0f, 8f)] private float deterministicAngularVelocity = 2.4f;
 
         private Vector3 _initialVelocity;
+        private IPhysicsService _physicsService;
         private bool _handoffActive;
+        private bool _hotSwapRegistered;
 
         public bool IsActive => _handoffActive;
         public Vector3 InitialVelocity => _initialVelocity;
+
+        private void OnEnable()
+        {
+            _physicsService = GlobalRegistry.Physics;
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void OnDisable()
+        {
+            if (_hotSwapRegistered)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _hotSwapRegistered = false;
+            }
+
+            _physicsService = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                _physicsService = currentService as IPhysicsService;
+        }
 
         public void BeginHandoff(Renderer fallbackVatRenderer, Vector3 lastVertexVelocity)
         {
@@ -48,8 +77,12 @@ namespace Hecton8.AI
             body.isKinematic = false;
             body.detectCollisions = true;
             body.useGravity = true;
-            body.linearVelocity = initialVelocity;
-            body.angularVelocity = ResolveAngularVelocity(handoffSeed, ordinal);
+            IPhysicsService physicsService = _physicsService;
+            if (physicsService != null)
+            {
+                physicsService.QueueLinearVelocitySet(body, initialVelocity);
+                physicsService.QueueAngularVelocitySet(body, ResolveAngularVelocity(handoffSeed, ordinal));
+            }
             body.WakeUp();
         }
 

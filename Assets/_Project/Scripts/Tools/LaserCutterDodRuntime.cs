@@ -26,8 +26,7 @@ namespace Hecton8.Tools
         private static VaultGenerationHandle<LaserCutRequestDTO> _requestsHandle;
         private static VaultGenerationHandle<LaserCutRequestMetaDTO> _requestMetasHandle;
         private static VaultGenerationHandle<int> _requestCountHandle;
-        private static VaultGenerationHandle<RaycastCommand> _raycastCommandsHandle;
-        private static VaultGenerationHandle<RaycastHit> _raycastHitsHandle;
+        private static VaultGenerationHandle<VoxelSonarSdfRaycastHit> _sdfProbeHitsHandle;
         private static VaultGenerationHandle<LaserCutHitDTO> _hitResultsHandle;
         private static VaultGenerationHandle<LaserCutDeformationStateDTO> _deformationHandle;
         private static VaultGenerationHandle<LaserCutBatteryDrainRequest> _batteryDrainHandle;
@@ -42,9 +41,10 @@ namespace Hecton8.Tools
         private static VaultGenerationHandle<LaserCutterCountersDTO> _countersHandle;
         private static VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
 
-        private static JobHandle _scheduledRaycastHandle;
-        private static bool _scheduledRaycastActive;
-        private static int _scheduledRaycastCount;
+        private static Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _cachedVoxelSdfReadModel;
+        private static JobHandle _scheduledSdfProbeHandle;
+        private static bool _scheduledSdfProbeActive;
+        private static int _scheduledSdfProbeCount;
         private static JobHandle _scheduledEvaluationHandle;
         private static bool _scheduledEvaluationActive;
         private static int _scheduledEvaluationCount;
@@ -54,8 +54,8 @@ namespace Hecton8.Tools
         private static float _cachedGlobalQualityWeight = 1f;
         private static double3 _cachedPresentationOriginAup;
         private static bool _hasCachedPresentationOriginAup;
-        private static double3 _scheduledRaycastPresentationOriginAup;
-        private static bool _hasScheduledRaycastPresentationOriginAup;
+        private static double3 _scheduledSdfProbePresentationOriginAup;
+        private static bool _hasScheduledSdfProbePresentationOriginAup;
         private static double3 _scheduledEvaluationPresentationOriginAup;
         private static bool _hasScheduledEvaluationPresentationOriginAup;
 
@@ -76,9 +76,10 @@ namespace Hecton8.Tools
                 _dataVault = vault;
             }
 
-            bool ready = BindSchedulerBuffers(out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _);
+            bool ready = BindSchedulerBuffers(out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _);
             if (ready)
             {
+                CacheVoxelSdfReadModel(GlobalRegistry.VoxelSonarSdf);
                 CacheScalabilityStateHandle();
                 RefreshCachedGlobalQualityWeight();
                 EnsureTuningSeeded();
@@ -99,11 +100,16 @@ namespace Hecton8.Tools
             _hasCachedPresentationOriginAup = true;
         }
 
+        internal static void CacheVoxelSdfReadModel(IVoxelSonarSdfReadModel readModel)
+        {
+            _cachedVoxelSdfReadModel = readModel;
+        }
+
         public static void ClearPresentationOriginAup()
         {
             _cachedPresentationOriginAup = double3.zero;
             _hasCachedPresentationOriginAup = false;
-            ClearScheduledRaycastPresentationOrigin();
+            ClearScheduledSdfProbePresentationOrigin();
             ClearScheduledEvaluationPresentationOrigin();
         }
 
@@ -122,7 +128,7 @@ namespace Hecton8.Tools
             uint frame)
         {
             if (_dataVault == null ||
-                _scheduledRaycastActive ||
+                _scheduledSdfProbeActive ||
                 _scheduledEvaluationActive ||
                 !BindCoreBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
@@ -190,9 +196,9 @@ namespace Hecton8.Tools
 
         public static bool GenerateMockCutterTriggers(int count, double3 originAup, uint frame, uint seed)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (_dataVault == null ||
-                _scheduledRaycastActive ||
+                _scheduledSdfProbeActive ||
                 _scheduledEvaluationActive ||
                 !BindCoreBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
@@ -246,9 +252,9 @@ namespace Hecton8.Tools
 #endif
         }
 
-        public static bool TryScheduleRaycastBatch(int layerMask, QueryTriggerInteraction queryTriggerInteraction, uint frame)
+        public static bool TryScheduleSdfProbeBatch(int layerMask, QueryTriggerInteraction queryTriggerInteraction, uint frame)
         {
-            if (_scheduledRaycastActive ||
+            if (_scheduledSdfProbeActive ||
                 _scheduledEvaluationActive)
             {
                 return false;
@@ -269,8 +275,7 @@ namespace Hecton8.Tools
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
-                    out NativeArray<RaycastCommand> commands,
-                    out NativeArray<RaycastHit> hits,
+                    out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
                     out NativeArray<LaserCutCooldownDTO> cooldowns,
                     out _,
                     out _,
@@ -284,11 +289,24 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            int scheduledCount = math.clamp(requestCount[0], 0, math.min(math.min(requests.Length, requestMetas.Length), commands.Length));
-            scheduledCount = math.min(scheduledCount, hits.Length);
+            int scheduledCount = math.clamp(requestCount[0], 0, math.min(math.min(requests.Length, requestMetas.Length), sdfHits.Length));
             scheduledCount = math.min(scheduledCount, cooldowns.Length);
             if (scheduledCount <= 0)
                 return false;
+
+            if (!TryReadCutterSdfSnapshot(
+                    presentationOriginAup,
+                    requests,
+                    scheduledCount,
+                    out NativeArray<byte>.ReadOnly encodedSdf,
+                    out int3 gridDimensions,
+                    out float3 volumeOrigin,
+                    out float3 cellSize,
+                    out float sdfRange))
+            {
+                SuppressQueuedRequests(frame);
+                return false;
+            }
 
             LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
             uint cooldownFrames = (uint)math.max(1f, math.isfinite(tuning.CooldownFrames) ? tuning.CooldownFrames : 1f);
@@ -301,48 +319,50 @@ namespace Hecton8.Tools
                 CooldownFrames = cooldownFrames
             };
 
-            BuildCutterRaycastsJob buildJob = new BuildCutterRaycastsJob
+            BuildCutterSdfProbeHitsJob buildJob = new BuildCutterSdfProbeHitsJob
             {
                 Requests = requests,
                 RequestMetas = requestMetas,
-                Commands = commands,
+                SdfHits = sdfHits,
+                EncodedSdf = encodedSdf,
                 PresentationOriginAUP = presentationOriginAup,
+                GridDimensions = gridDimensions,
+                VolumeOrigin = volumeOrigin,
+                CellSize = cellSize,
+                SdfRange = sdfRange,
+                StepMeters = ResolveCutterSdfStepMeters(sdfRange, in cellSize),
+                MaxSteps = ResolveCutterSdfMaxSteps(_cachedGlobalQualityWeight),
                 LayerMask = layerMask,
-                HitTriggers = queryTriggerInteraction == QueryTriggerInteraction.Collide ? (byte)1 : (byte)0
+                VoxelLayerMask = HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask
             };
 
             JobHandle cooldownHandle = cooldownJob.Schedule(scheduledCount, LaserCutterDodConstants.MinCommandsPerJob);
-            JobHandle buildHandle = buildJob.Schedule(scheduledCount, LaserCutterDodConstants.MinCommandsPerJob, cooldownHandle);
-            _scheduledRaycastHandle = RaycastCommand.ScheduleBatch(
-                commands.GetSubArray(0, scheduledCount),
-                hits.GetSubArray(0, scheduledCount),
-                LaserCutterDodConstants.MinCommandsPerJob,
-                buildHandle);
-            H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledRaycastHandle);
-            _scheduledRaycastActive = true;
-            _scheduledRaycastCount = scheduledCount;
-            _scheduledRaycastPresentationOriginAup = presentationOriginAup;
-            _hasScheduledRaycastPresentationOriginAup = true;
+            _scheduledSdfProbeHandle = buildJob.Schedule(scheduledCount, LaserCutterDodConstants.MinCommandsPerJob, cooldownHandle);
+            H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledSdfProbeHandle);
+            _scheduledSdfProbeActive = true;
+            _scheduledSdfProbeCount = scheduledCount;
+            _scheduledSdfProbePresentationOriginAup = presentationOriginAup;
+            _hasScheduledSdfProbePresentationOriginAup = true;
             return true;
         }
 
-        public static bool TryCompleteScheduledRaycastsAndEvaluate(float heat01)
+        public static bool TryCompleteScheduledSdfProbesAndEvaluate(float heat01)
         {
             if (_scheduledEvaluationActive)
                 return TryFinalizeScheduledEvaluation();
 
-            if (!_scheduledRaycastActive)
+            if (!_scheduledSdfProbeActive)
                 return false;
 
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledRaycastHandle))
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledSdfProbeHandle))
                 return false;
 
-            if (!TryReadScheduledRaycastPresentationOrigin(out double3 presentationOriginAup))
+            if (!TryReadScheduledSdfProbePresentationOrigin(out double3 presentationOriginAup))
             {
                 SuppressQueuedRequests(ResolveCurrentFrameId());
-                _scheduledRaycastActive = false;
-                _scheduledRaycastCount = 0;
-                ClearScheduledRaycastPresentationOrigin();
+                _scheduledSdfProbeActive = false;
+                _scheduledSdfProbeCount = 0;
+                ClearScheduledSdfProbePresentationOrigin();
                 return false;
             }
 
@@ -350,8 +370,7 @@ namespace Hecton8.Tools
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
-                    out _,
-                    out NativeArray<RaycastHit> hits,
+                    out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
                     out _,
                     out NativeArray<LaserCutHitDTO> hitResults,
                     out NativeArray<LaserCutDeformationStateDTO> deformations,
@@ -362,29 +381,29 @@ namespace Hecton8.Tools
                     out NativeArray<int> telemetryCursor,
                     allowAcquire: false))
             {
-                _scheduledRaycastActive = false;
-                _scheduledRaycastCount = 0;
-                ClearScheduledRaycastPresentationOrigin();
+                _scheduledSdfProbeActive = false;
+                _scheduledSdfProbeCount = 0;
+                ClearScheduledSdfProbePresentationOrigin();
                 return false;
             }
 
-            int count = math.clamp(_scheduledRaycastCount, 0, math.min(math.min(requests.Length, requestMetas.Length), hits.Length));
+            int count = math.clamp(_scheduledSdfProbeCount, 0, math.min(math.min(requests.Length, requestMetas.Length), sdfHits.Length));
             if (count <= 0)
             {
                 requestCount[0] = 0;
-                _scheduledRaycastActive = false;
-                _scheduledRaycastCount = 0;
-                ClearScheduledRaycastPresentationOrigin();
+                _scheduledSdfProbeActive = false;
+                _scheduledSdfProbeCount = 0;
+                ClearScheduledSdfProbePresentationOrigin();
                 return false;
             }
 
             uint cursorBase = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? (uint)math.max(0, telemetryCursor[0]) : 0u;
             LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
-            EvaluateCutterRaycastHitsJob evaluateJob = new EvaluateCutterRaycastHitsJob
+            EvaluateCutterProbeHitsJob evaluateJob = new EvaluateCutterProbeHitsJob
             {
                 Requests = requests,
                 RequestMetas = requestMetas,
-                RaycastHits = hits,
+                ProbeHits = sdfHits,
                 HitResults = hitResults,
                 DeformationStates = deformations,
                 BatteryDrainRequests = batteryDrains,
@@ -410,9 +429,9 @@ namespace Hecton8.Tools
             _scheduledEvaluationCursorBase = cursorBase;
             _scheduledEvaluationPresentationOriginAup = presentationOriginAup;
             _hasScheduledEvaluationPresentationOriginAup = true;
-            _scheduledRaycastActive = false;
-            _scheduledRaycastCount = 0;
-            ClearScheduledRaycastPresentationOrigin();
+            _scheduledSdfProbeActive = false;
+            _scheduledSdfProbeCount = 0;
+            ClearScheduledSdfProbePresentationOrigin();
             return false;
         }
 
@@ -438,8 +457,7 @@ namespace Hecton8.Tools
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> _,
                     out NativeArray<int> requestCount,
-                    out _,
-                    out NativeArray<RaycastHit> hits,
+                    out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
                     out _,
                     out _,
                     out _,
@@ -457,7 +475,7 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            int count = math.clamp(_scheduledEvaluationCount, 0, math.min(requests.Length, hits.Length));
+            int count = math.clamp(_scheduledEvaluationCount, 0, math.min(requests.Length, sdfHits.Length));
             if (count <= 0)
             {
                 requestCount[0] = 0;
@@ -712,8 +730,7 @@ namespace Hecton8.Tools
             out NativeArray<LaserCutRequestDTO> requests,
             out NativeArray<LaserCutRequestMetaDTO> requestMetas,
             out NativeArray<int> requestCount,
-            out NativeArray<RaycastCommand> commands,
-            out NativeArray<RaycastHit> hits,
+            out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
             out NativeArray<LaserCutCooldownDTO> cooldowns,
             out NativeArray<LaserCutHitDTO> hitResults,
             out NativeArray<LaserCutDeformationStateDTO> deformations,
@@ -724,8 +741,7 @@ namespace Hecton8.Tools
             out NativeArray<int> telemetryCursor,
             bool allowAcquire = true)
         {
-            commands = default;
-            hits = default;
+            sdfHits = default;
             cooldowns = default;
             hitResults = default;
             deformations = default;
@@ -734,8 +750,7 @@ namespace Hecton8.Tools
             impactVfx = default;
             telemetry = default;
             return BindCoreBuffers(out requests, out requestMetas, out requestCount, out telemetryCursor, out _, allowAcquire) &&
-                   BindOrAcquireBuffer(LaserCutterDodConstants.RaycastCommandsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastCommandsHandle, out commands, allowAcquire) &&
-                   BindOrAcquireBuffer(LaserCutterDodConstants.RaycastHitsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastHitsHandle, out hits, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.SdfProbeHitsBuffer, LaserCutterDodConstants.MaxRequests, ref _sdfProbeHitsHandle, out sdfHits, allowAcquire) &&
                    BindOrAcquireBuffer(LaserCutterDodConstants.CooldownBuffer, LaserCutterDodConstants.MaxRequests, ref _cooldownHandle, out cooldowns, allowAcquire) &&
                    BindOrAcquireBuffer(LaserCutterDodConstants.HitResultsBuffer, LaserCutterDodConstants.MaxHitResults, ref _hitResultsHandle, out hitResults, allowAcquire) &&
                    BindOrAcquireBuffer(LaserCutterDodConstants.DeformationBuffer, LaserCutterDodConstants.MaxHitResults, ref _deformationHandle, out deformations, allowAcquire) &&
@@ -801,7 +816,7 @@ namespace Hecton8.Tools
                 handle = default;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GameplayTools,
@@ -1064,6 +1079,66 @@ namespace Hecton8.Tools
             _cachedGlobalQualityWeight = math.saturate(HomeostasisBrain.GlobalQualityWeight);
         }
 
+        private static bool TryReadCutterSdfSnapshot(
+            double3 presentationOriginAup,
+            NativeArray<LaserCutRequestDTO> requests,
+            int requestCount,
+            out NativeArray<byte>.ReadOnly encodedSdf,
+            out int3 gridDimensions,
+            out float3 volumeOrigin,
+            out float3 cellSize,
+            out float sdfRange)
+        {
+            encodedSdf = default;
+            gridDimensions = default;
+            volumeOrigin = default;
+            cellSize = default;
+            sdfRange = 0f;
+
+            if (!requests.IsCreated ||
+                requestCount <= 0 ||
+                !math.all(math.isfinite(presentationOriginAup)))
+            {
+                return false;
+            }
+
+            float3 runtimeOrigin = float3.zero;
+            LaserCutRequestDTO request = requests[0];
+            if (math.all(math.isfinite(request.RayOriginAUP)))
+                runtimeOrigin = AupPrecisionMath.LocalDeltaFloat3(request.RayOriginAUP, presentationOriginAup, float3.zero);
+
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadModel readModel = _cachedVoxelSdfReadModel;
+            return readModel != null &&
+                   readModel.TryReadNearestSonarSdf(
+                       runtimeOrigin,
+                       out encodedSdf,
+                       out gridDimensions,
+                       out volumeOrigin,
+                       out cellSize,
+                       out sdfRange) &&
+                   encodedSdf.IsCreated &&
+                   math.all(gridDimensions > 1) &&
+                   math.all(math.isfinite(volumeOrigin)) &&
+                   math.all(math.isfinite(cellSize)) &&
+                   math.isfinite(sdfRange) &&
+                   sdfRange > 0.0001f;
+        }
+
+        private static float ResolveCutterSdfStepMeters(float sdfRange, in float3 cellSize)
+        {
+            float quality = Smooth01(_cachedGlobalQualityWeight);
+            float3 safeCell = math.max(math.abs(cellSize), new float3(0.0001f));
+            float cellStep = math.cmin(safeCell) * math.lerp(2.0f, 0.55f, quality);
+            float rangeStep = math.max(0.025f, sdfRange * math.lerp(0.24f, 0.08f, quality));
+            return math.max(0.025f, math.min(cellStep, rangeStep));
+        }
+
+        private static int ResolveCutterSdfMaxSteps(float qualityWeight)
+        {
+            float quality = Smooth01(qualityWeight);
+            return math.clamp((int)math.round(math.lerp(24f, 96f, quality)), 16, 128);
+        }
+
         private static bool TryReadPresentationOriginAup(out double3 originAup)
         {
             originAup = _cachedPresentationOriginAup;
@@ -1074,10 +1149,10 @@ namespace Hecton8.Tools
             return false;
         }
 
-        private static bool TryReadScheduledRaycastPresentationOrigin(out double3 originAup)
+        private static bool TryReadScheduledSdfProbePresentationOrigin(out double3 originAup)
         {
-            originAup = _scheduledRaycastPresentationOriginAup;
-            if (_hasScheduledRaycastPresentationOriginAup && math.all(math.isfinite(originAup)))
+            originAup = _scheduledSdfProbePresentationOriginAup;
+            if (_hasScheduledSdfProbePresentationOriginAup && math.all(math.isfinite(originAup)))
                 return true;
 
             originAup = double3.zero;
@@ -1094,10 +1169,10 @@ namespace Hecton8.Tools
             return false;
         }
 
-        private static void ClearScheduledRaycastPresentationOrigin()
+        private static void ClearScheduledSdfProbePresentationOrigin()
         {
-            _scheduledRaycastPresentationOriginAup = double3.zero;
-            _hasScheduledRaycastPresentationOriginAup = false;
+            _scheduledSdfProbePresentationOriginAup = double3.zero;
+            _hasScheduledSdfProbePresentationOriginAup = false;
         }
 
         private static void ClearScheduledEvaluationPresentationOrigin()
@@ -1172,8 +1247,7 @@ namespace Hecton8.Tools
             _requestsHandle = default;
             _requestMetasHandle = default;
             _requestCountHandle = default;
-            _raycastCommandsHandle = default;
-            _raycastHitsHandle = default;
+            _sdfProbeHitsHandle = default;
             _hitResultsHandle = default;
             _deformationHandle = default;
             _batteryDrainHandle = default;
@@ -1187,9 +1261,10 @@ namespace Hecton8.Tools
             _csvScratchHandle = default;
             _countersHandle = default;
             _scalabilityStateHandle = default;
-            _scheduledRaycastHandle = default;
-            _scheduledRaycastActive = false;
-            _scheduledRaycastCount = 0;
+            _cachedVoxelSdfReadModel = null;
+            _scheduledSdfProbeHandle = default;
+            _scheduledSdfProbeActive = false;
+            _scheduledSdfProbeCount = 0;
             _scheduledEvaluationHandle = default;
             _scheduledEvaluationActive = false;
             _scheduledEvaluationCount = 0;
@@ -1197,7 +1272,7 @@ namespace Hecton8.Tools
             _cachedGlobalQualityWeight = 1f;
             _cachedPresentationOriginAup = double3.zero;
             _hasCachedPresentationOriginAup = false;
-            ClearScheduledRaycastPresentationOrigin();
+            ClearScheduledSdfProbePresentationOrigin();
             ClearScheduledEvaluationPresentationOrigin();
         }
 
@@ -1206,10 +1281,10 @@ namespace Hecton8.Tools
             if (vault == null)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);
+            DispatcherJobFence.TryComplete(ref _scheduledSdfProbeHandle, forceComplete: true);
             DispatcherJobFence.TryComplete(ref _scheduledEvaluationHandle, forceComplete: true);
-            _scheduledRaycastActive = false;
-            _scheduledRaycastCount = 0;
+            _scheduledSdfProbeActive = false;
+            _scheduledSdfProbeCount = 0;
             _scheduledEvaluationActive = false;
             _scheduledEvaluationCount = 0;
             _scheduledEvaluationCursorBase = 0u;
@@ -1217,8 +1292,7 @@ namespace Hecton8.Tools
             ReleaseVaultHandle(vault, ref _requestsHandle);
             ReleaseVaultHandle(vault, ref _requestMetasHandle);
             ReleaseVaultHandle(vault, ref _requestCountHandle);
-            ReleaseVaultHandle(vault, ref _raycastCommandsHandle);
-            ReleaseVaultHandle(vault, ref _raycastHitsHandle);
+            ReleaseVaultHandle(vault, ref _sdfProbeHitsHandle);
             ReleaseVaultHandle(vault, ref _hitResultsHandle);
             ReleaseVaultHandle(vault, ref _deformationHandle);
             ReleaseVaultHandle(vault, ref _batteryDrainHandle);

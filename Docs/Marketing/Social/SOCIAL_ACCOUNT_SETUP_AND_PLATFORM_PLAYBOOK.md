@@ -1,4 +1,4 @@
-# HECTON-8 Social Account Setup And Platform Playbook
+﻿# HECTON-8 Social Account Setup And Platform Playbook
 
 Status: pre public social ops
 Owner lane: SHINOBU_81 / social publishing
@@ -323,6 +323,44 @@ Allow requires:
 - `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for any public link, otherwise no-link feedback copy only;
 - no private access link;
 - no unsupported multiplayer, performance, AI, feature-scope, or competitor-attack claim.
+
+### Anonymous Surface Posting Addendum
+
+4chan/Dvach-style surfaces may not have durable official accounts, but they are still public posts. Lack of an account system does not bypass the post gate.
+
+For an anonymous/no-account surface, the post approval record must name:
+
+- surface;
+- board/thread;
+- same-day rule/fit check;
+- asset ID;
+- route class `no_link_feedback`;
+- exact critique question;
+- developer disclosure wording;
+- owner available for the reply window;
+- stop condition.
+
+Blocked on anonymous surfaces:
+
+- fake-player discovery voice;
+- sockpuppet follow-up replies;
+- self-bumps;
+- Steam/Discord/signup/presskit/key/access links;
+- asking users to DM;
+- importing comments into CRM, newsletter, playtester, creator, press, or support systems;
+- using replies as positive KPI without route/provenance and independent confirmation.
+
+Allowed anonymous-surface output:
+
+- asset-specific critique;
+- clone-risk cue;
+- AI-looking cue;
+- engine/tool trust cue;
+- decision-read pass/fail note;
+- template revision;
+- `REVISE`, `KILL`, or `MONITOR_ONLY` campaign note.
+
+An anonymous imageboard post cannot create a public CTA route, creator lead, private access route, or Steam movement.
 
 ### Bio Variants
 

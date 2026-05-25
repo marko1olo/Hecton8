@@ -14,16 +14,20 @@ namespace Hecton8.Physiology.Editor
         private static readonly string[] s_fadeReadoutLut = CreateFadeReadoutLut();
 
         private Label _fadeReadout;
+        private Label _telemetryReadout;
+        private Slider _fadeToBlackDuration;
+        private Slider _respawnDelaySeconds;
+        private Slider _inventoryDropPercentage;
         private Slider _highQualityFadeRate;
         private Slider _lowQualityFadeRate;
         private Slider _penaltyMultiplier;
         private Slider _clearanceMeters;
         private Vector3Field _fallbackAup;
 
-        [MenuItem("Hecton8/Survival/Reconciliation Tuner")]
+        [MenuItem("Hecton8/Survival/Death Respawn Reconciliation Tuner")]
         public static void Open()
         {
-            GetWindow<RespawnReconciliationTunerWindow>("Reconciliation Tuner");
+            GetWindow<RespawnReconciliationTunerWindow>("Death Respawn Tuner");
         }
 
         public void CreateGUI()
@@ -32,6 +36,10 @@ namespace Hecton8.Physiology.Editor
             root.Clear();
 
             _fadeReadout = new Label("DeathFadeIntensity: --");
+            _telemetryReadout = new Label("Telemetry: --");
+            _fadeToBlackDuration = new Slider("FadeToBlackDuration", 0.05f, 4f);
+            _respawnDelaySeconds = new Slider("RespawnDelaySeconds", 0f, 8f);
+            _inventoryDropPercentage = new Slider("InventoryDropPercentage", 0f, 100f);
             _highQualityFadeRate = new Slider("High quality fade rate", 0.0001f, 16f);
             _lowQualityFadeRate = new Slider("Low quality fade rate", 0.0001f, 16f);
             _penaltyMultiplier = new Slider("Penalty multiplier", 0f, 1f);
@@ -40,9 +48,15 @@ namespace Hecton8.Physiology.Editor
 
             Button apply = new Button(ApplyTuning) { text = "Apply Vault Tuning" };
             Button reloadCsv = new Button(() => ShinobuRespawnReconciliationRuntime.TryReloadPenaltyCsvFromEditor()) { text = "Reload Penalty CSV" };
+            Button reloadMedbays = new Button(() => ShinobuRespawnReconciliationRuntime.TryReloadMedicalBayCsvFromEditor()) { text = "Reload Medbay CSV" };
+            Button mockLethal = new Button(() => ShinobuRespawnReconciliationRuntime.TryInjectMockLethalDamageFromEditor()) { text = "Inject Mock Lethal Pressure" };
             Button dump = new Button(() => ShinobuRespawnReconciliationRuntime.TryDumpBlackBoxForEditor()) { text = "Dump Black Box" };
 
             root.Add(_fadeReadout);
+            root.Add(_telemetryReadout);
+            root.Add(_fadeToBlackDuration);
+            root.Add(_respawnDelaySeconds);
+            root.Add(_inventoryDropPercentage);
             root.Add(_highQualityFadeRate);
             root.Add(_lowQualityFadeRate);
             root.Add(_penaltyMultiplier);
@@ -50,6 +64,8 @@ namespace Hecton8.Physiology.Editor
             root.Add(_fallbackAup);
             root.Add(apply);
             root.Add(reloadCsv);
+            root.Add(reloadMedbays);
+            root.Add(mockLethal);
             root.Add(dump);
 
             RefreshFromRuntime();
@@ -66,6 +82,13 @@ namespace Hecton8.Physiology.Editor
 
             int fadeBucket = math.clamp((int)math.round(math.saturate(fade.DeathFadeIntensity) * 1000f), 0, 1000);
             _fadeReadout.text = s_fadeReadoutLut[fadeBucket];
+            if (ShinobuRespawnReconciliationRuntime.TryReadEditorTelemetry(out RespawnTelemetryEntry latest, out int cursor))
+                _telemetryReadout.text = "Telemetry: frame " + latest.Frame + " cursor " + cursor + " flags 0x" + latest.Flags.ToString("X8");
+            else
+                _telemetryReadout.text = "Telemetry: --";
+            _fadeToBlackDuration.SetValueWithoutNotify(1f / math.max(0.0001f, tuning.HighQualityFadeRate));
+            _respawnDelaySeconds.SetValueWithoutNotify(tuning.RespawnInvulnerabilitySeconds);
+            _inventoryDropPercentage.SetValueWithoutNotify(math.saturate(tuning.PenaltyMultiplier) * 100f);
             _highQualityFadeRate.SetValueWithoutNotify(tuning.HighQualityFadeRate);
             _lowQualityFadeRate.SetValueWithoutNotify(tuning.LowQualityFadeRate);
             _penaltyMultiplier.SetValueWithoutNotify(tuning.PenaltyMultiplier);
@@ -82,10 +105,12 @@ namespace Hecton8.Physiology.Editor
                 tuning = default;
 
             Vector3 fallback = _fallbackAup.value;
-            tuning.HighQualityFadeRate = _highQualityFadeRate.value;
+            float duration = math.max(0.05f, _fadeToBlackDuration.value);
+            tuning.HighQualityFadeRate = 1f / duration;
             tuning.LowQualityFadeRate = _lowQualityFadeRate.value;
-            tuning.PenaltyMultiplier = _penaltyMultiplier.value;
+            tuning.PenaltyMultiplier = math.saturate(_inventoryDropPercentage.value * 0.01f);
             tuning.ValidationClearanceMeters = _clearanceMeters.value;
+            tuning.RespawnInvulnerabilitySeconds = _respawnDelaySeconds.value;
             tuning.FallbackLifepodAUP = new double3(fallback.x, fallback.y, fallback.z);
             ShinobuRespawnReconciliationRuntime.TryWriteEditorTuning(in tuning);
         }

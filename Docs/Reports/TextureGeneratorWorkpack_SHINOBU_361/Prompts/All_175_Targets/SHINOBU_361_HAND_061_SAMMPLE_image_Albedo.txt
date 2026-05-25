@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_061
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_061_SAMMPLE_image_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\SAMMPLE_image_Albedo.png
+FINAL_FILENAME: SAMMPLE_image_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Replacement albedo for sample image rock material, treated as a polished Hecton geology calibration tile. Use elegant slate-blue stone, pale opal mineral branching, cream sediment dust, restrained teal crystalline speckles, and soft graphite plate variation. The image should be pleasant enough for real environment use while remaining a reliable texture sample: clear material zones, flat diffuse color, seamless tiling, and no scene composition. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

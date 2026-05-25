@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.Reflection;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -146,7 +147,11 @@ namespace Hecton8.Editor
             {
                 scale = math.saturate(state.CurrentRenderScale01);
                 frameMs = math.max(0f, state.FrameTimeEwmaMs);
-                SetRuntimeLabel($"DRS scale {scale:0.000} | target {state.TargetRenderScale01:0.000} | quality {state.GlobalQualityWeight01:0.000} | frame {frameMs:0.00} ms");
+                SetRuntimeLabel(
+                    "DRS scale " + scale.ToString("0.000", CultureInfo.InvariantCulture) +
+                    " | target " + state.TargetRenderScale01.ToString("0.000", CultureInfo.InvariantCulture) +
+                    " | quality " + state.GlobalQualityWeight01.ToString("0.000", CultureInfo.InvariantCulture) +
+                    " | frame " + frameMs.ToString("0.00", CultureInfo.InvariantCulture) + " ms");
             }
             else if (HectonBilateralDrsUpscalerRuntime.TryReadActiveParameters(out UpscalerParamsDTO parameters))
             {
@@ -154,7 +159,10 @@ namespace Hecton8.Editor
                 float highX = math.max(lowX, parameters.ResolutionParams.z);
                 scale = math.saturate(lowX / highX);
                 frameMs = 0f;
-                SetRuntimeLabel($"DRS scale {scale:0.000} | quality {parameters.FilterParams.w:0.000} | cbuffer active");
+                SetRuntimeLabel(
+                    "DRS scale " + scale.ToString("0.000", CultureInfo.InvariantCulture) +
+                    " | quality " + parameters.FilterParams.w.ToString("0.000", CultureInfo.InvariantCulture) +
+                    " | cbuffer active");
             }
             else
             {

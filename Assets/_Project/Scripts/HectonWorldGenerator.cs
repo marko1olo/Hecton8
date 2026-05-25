@@ -534,10 +534,17 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         public JobHandle Handle;
     }
 
+    private struct DeferredPhysicsBakePresentationRestore
+    {
+        public MeshRenderer Renderer;
+        public Material DefaultMaterial;
+    }
+
     private sealed class DeferredPhysicsBakeTeardownDriver : ILateFrameTickable
     {
         public void LateFrameTick()
         {
+            DrainDeferredPhysicsBakePresentationRestores();
             DrainDeferredPhysicsBakeTeardowns();
         }
     }
@@ -573,12 +580,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     private const float PhysicsBakeProxyMaxHeightMeters = 32f;
     private const int DeferredPhysicsBakeTeardownDrainBudget = 8;
     private const int DeferredPhysicsBakeTeardownCapacity = 2048;
+    private const int DeferredPhysicsBakePresentationRestoreCapacity = 2048;
     private static readonly double _physicsBakeTickToMilliseconds = 1000d / Stopwatch.Frequency;
     private static readonly uint _TerrainPhysicsBakeForceReleaseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Terrain.PhysicsBake.ForceRelease"));
     private static readonly uint _TerrainPhysicsBakeQueueDropWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Terrain.PhysicsBake.QueueDrop"));
     private static readonly uint _TerrainPhysicsBakeContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonWorldGenerator.PhysicsBake"));
     // COLD ALLOC: List<DeferredPhysicsBakeTeardown>[2048] - dispatcher-drained streamed chunk PhysX bake teardown queue - owner: HectonWorldGenerator
     private static readonly List<DeferredPhysicsBakeTeardown> _deferredPhysicsBakeTeardowns = new List<DeferredPhysicsBakeTeardown>(DeferredPhysicsBakeTeardownCapacity);
+    private static readonly List<DeferredPhysicsBakePresentationRestore> _deferredPhysicsBakePresentationRestores = new List<DeferredPhysicsBakePresentationRestore>(DeferredPhysicsBakePresentationRestoreCapacity);
     // COLD ALLOC: DeferredPhysicsBakeTeardownDriver[1] - non-Mono late-frame drain adapter, avoids per-teardown allocation - owner: HectonWorldGenerator
     private static readonly DeferredPhysicsBakeTeardownDriver _deferredPhysicsBakeTeardownDriver = new DeferredPhysicsBakeTeardownDriver();
     private static bool _deferredPhysicsBakeTeardownRegistered;
@@ -731,6 +740,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     readonly List<PendingPhysicsBake> _pendingPhysicsBakes = new List<PendingPhysicsBake>(PendingPhysicsBakeMaxCapacity);
     // COLD ALLOC: List<HectonChunkData>[64] - deferred chunk destruction while PhysX bake jobs finish - owner: HectonWorldGenerator
     readonly List<HectonChunkData> _deferredChunkRetirements = new List<HectonChunkData>(DeferredChunkRetirementMaxCapacity);
+    // COLD ALLOC: List<Renderer>[64] - renderer disable queue flushed in VISUAL_SYNC - owner: HectonWorldGenerator
+    readonly List<Renderer> _pendingRendererDisables = new List<Renderer>(DeferredChunkRetirementMaxCapacity);
     // COLD ALLOC: Dictionary<int2,int>[1024] - reused cave cell to accumulator index map for voxel POI finalization - owner: HectonWorldGenerator
     readonly Dictionary<int2, int> _voxelClusterIndexByCell = new Dictionary<int2, int>(1024);
     // COLD ALLOC: List<VoxelClusterAccumulator>[1024] - reused cave cluster accumulators, replaces per-chunk List/Dictionary allocations - owner: HectonWorldGenerator
@@ -867,6 +878,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             return;
 
         ProcessPendingChunks();
+        FlushPendingRendererDisables();
 
         if (_physicsBakeFinalizeHead < _pendingPhysicsBakes.Count ||
             _physicsBakeScheduleHead < _pendingPhysicsBakes.Count)
@@ -2097,8 +2109,27 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             pending.Collider.sharedMesh = null;
         }
 
-        if (pending.Renderer != null && pending.DefaultMaterial != null)
-            pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+        QueueDeferredPhysicsBakePresentationRestore(pending.Renderer, pending.DefaultMaterial);
+    }
+
+    private static void QueueDeferredPhysicsBakePresentationRestore(MeshRenderer renderer, Material defaultMaterial)
+    {
+        if (renderer == null || defaultMaterial == null)
+            return;
+
+        if (_deferredPhysicsBakePresentationRestores.Count >= DeferredPhysicsBakePresentationRestoreCapacity)
+        {
+            DrainDeferredPhysicsBakePresentationRestores();
+            if (_deferredPhysicsBakePresentationRestores.Count >= DeferredPhysicsBakePresentationRestoreCapacity)
+                return;
+        }
+
+        _deferredPhysicsBakePresentationRestores.Add(new DeferredPhysicsBakePresentationRestore
+        {
+            Renderer = renderer,
+            DefaultMaterial = defaultMaterial
+        });
+        EnsureDeferredPhysicsBakeTeardownRegistered();
     }
 
     private static void EnqueueDeferredPhysicsBakeTeardown(
@@ -2118,9 +2149,6 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
         if (owner != null)
         {
-            if (pending.Renderer != null)
-                pending.Renderer.enabled = false;
-
             if (pending.Collider != null)
             {
                 pending.Collider.enabled = false;
@@ -2169,8 +2197,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
         DisablePendingPhysicsBakeProxy(pending.ProxyCollider);
 
-        if (pending.Renderer != null && pending.DefaultMaterial != null)
-            pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+        QueueDeferredPhysicsBakePresentationRestore(pending.Renderer, pending.DefaultMaterial);
 
         if (mesh != null)
         {
@@ -2209,8 +2236,25 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             drained++;
         }
 
-        if (_deferredPhysicsBakeTeardowns.Count == 0)
+        if (_deferredPhysicsBakeTeardowns.Count == 0 &&
+            _deferredPhysicsBakePresentationRestores.Count == 0)
             UnregisterDeferredPhysicsBakeTeardownDriver();
+    }
+
+    private static void DrainDeferredPhysicsBakePresentationRestores()
+    {
+        int drained = 0;
+        for (int i = _deferredPhysicsBakePresentationRestores.Count - 1;
+             i >= 0 && drained < DeferredPhysicsBakeTeardownDrainBudget;
+             i--)
+        {
+            DeferredPhysicsBakePresentationRestore restore = _deferredPhysicsBakePresentationRestores[i];
+            if (restore.Renderer != null && restore.DefaultMaterial != null)
+                restore.Renderer.sharedMaterial = restore.DefaultMaterial;
+
+            RemoveDeferredPhysicsBakePresentationRestoreAt(i);
+            drained++;
+        }
     }
 
     private static void DrainCompletedDeferredPhysicsBakeTeardownsForCapacity()
@@ -2229,7 +2273,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             drained++;
         }
 
-        if (_deferredPhysicsBakeTeardowns.Count == 0)
+        if (_deferredPhysicsBakeTeardowns.Count == 0 &&
+            _deferredPhysicsBakePresentationRestores.Count == 0)
             UnregisterDeferredPhysicsBakeTeardownDriver();
     }
 
@@ -2243,8 +2288,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
         DisablePendingPhysicsBakeProxy(pending.ProxyCollider);
 
-        if (pending.Renderer != null && pending.DefaultMaterial != null)
-            pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+        QueueDeferredPhysicsBakePresentationRestore(pending.Renderer, pending.DefaultMaterial);
 
         if (pending.Mesh != null)
         {
@@ -2263,6 +2307,15 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             _deferredPhysicsBakeTeardowns[index] = _deferredPhysicsBakeTeardowns[lastIndex];
 
         _deferredPhysicsBakeTeardowns.RemoveAt(lastIndex);
+    }
+
+    private static void RemoveDeferredPhysicsBakePresentationRestoreAt(int index)
+    {
+        int lastIndex = _deferredPhysicsBakePresentationRestores.Count - 1;
+        if (index != lastIndex)
+            _deferredPhysicsBakePresentationRestores[index] = _deferredPhysicsBakePresentationRestores[lastIndex];
+
+        _deferredPhysicsBakePresentationRestores.RemoveAt(lastIndex);
     }
 
     private static void UnregisterDeferredPhysicsBakeTeardownDriver()
@@ -2310,7 +2363,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         }
 
         if (cd.renderer != null)
-            cd.renderer.enabled = false;
+            QueueRendererDisable(cd.renderer);
 
         if (cd.collider != null)
             cd.collider.enabled = false;
@@ -2493,7 +2546,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                     {
                         // Fallback: engine uzhe unichtozhen (smena stseny).
                         // Ruchnaya ochistka kak v v2.0.
-                        var mf = child.GetComponent<MeshFilter>();
+                        child.TryGetComponent(out MeshFilter mf);
                         if (mf != null && mf.sharedMesh != null)
                         {
                             mf.sharedMesh.Clear();
@@ -2524,7 +2577,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         DisablePendingPhysicsBakeProxy(cd.colliderBakeProxy);
 
         if (cd.renderer != null)
-            cd.renderer.enabled = false;
+            QueueRendererDisable(cd.renderer);
 
         if (cd.mesh != null)
         {
@@ -2538,11 +2591,35 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     void ClearPreview()
     {
         if (previewObj == null) return;
-        var mf = previewObj.GetComponent<MeshFilter>();
+        previewObj.TryGetComponent(out MeshFilter mf);
         if (mf != null && mf.sharedMesh != null)
             SafeDestroy(mf.sharedMesh);
         SafeDestroy(previewObj);
         previewObj = null;
+    }
+
+    void QueueRendererDisable(Renderer renderer)
+    {
+        if (renderer == null)
+            return;
+
+        if (!_pendingRendererDisables.Contains(renderer) &&
+            _pendingRendererDisables.Count < DeferredChunkRetirementMaxCapacity)
+        {
+            _pendingRendererDisables.Add(renderer);
+        }
+    }
+
+    void FlushPendingRendererDisables()
+    {
+        for (int i = _pendingRendererDisables.Count - 1; i >= 0; i--)
+        {
+            Renderer renderer = _pendingRendererDisables[i];
+            if (renderer != null)
+                renderer.enabled = false;
+        }
+
+        _pendingRendererDisables.Clear();
     }
 
     void SafeDestroy(Object obj)
@@ -2730,7 +2807,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             mr.receiveShadows    = true;
 
 #if UNITY_EDITOR
-            UnityEngine.Debug.Log($"[Hecton] Preview: {res}×{res} = {vc:N0} verts, " +
+            Hecton8.Core.H8Debug.Log($"[Hecton] Preview: {res}×{res} = {vc:N0} verts, " +
                       $"{tc / 3:N0} tris. Bounds: {mesh.bounds.size}");
 #endif
         }
@@ -2843,8 +2920,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             float a0 = i * step;
             float a1 = (i + 1) * step;
             Gizmos.DrawLine(
-                center + new Vector3(Mathf.Cos(a0) * radius, 0f, Mathf.Sin(a0) * radius),
-                center + new Vector3(Mathf.Cos(a1) * radius, 0f, Mathf.Sin(a1) * radius));
+                center + new Vector3(MathLodApproximation.ApproxCosBhaskara(a0) * radius, 0f, MathLodApproximation.ApproxSinBhaskara(a0) * radius),
+                center + new Vector3(MathLodApproximation.ApproxCosBhaskara(a1) * radius, 0f, MathLodApproximation.ApproxSinBhaskara(a1) * radius));
         }
     }
 #endif
@@ -2905,7 +2982,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         long total = 0;
         for (int i = 0; i < transform.childCount; i++)
         {
-            var mf = transform.GetChild(i).GetComponent<MeshFilter>();
+            transform.GetChild(i).TryGetComponent(out MeshFilter mf);
             if (mf != null && mf.sharedMesh != null)
                 total += mf.sharedMesh.vertexCount;
         }
@@ -2917,7 +2994,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         long total = 0;
         for (int i = 0; i < transform.childCount; i++)
         {
-            var mf = transform.GetChild(i).GetComponent<MeshFilter>();
+            transform.GetChild(i).TryGetComponent(out MeshFilter mf);
             if (mf != null && mf.sharedMesh != null)
             {
                 Mesh mesh = mf.sharedMesh;
@@ -3009,7 +3086,7 @@ public class HectonWorldGeneratorEditor : Editor
                              GUILayout.Height(24)))
         {
             gen.RefreshLUTs();
-            UnityEngine.Debug.Log("[Hecton] LUTs rebaked from current curves.");
+            Hecton8.Core.H8Debug.Log("[Hecton] LUTs rebaked from current curves.");
         }
 
         GUI.backgroundColor = new Color(1f, 0.5f, 0.4f);

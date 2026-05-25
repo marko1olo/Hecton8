@@ -141,8 +141,7 @@ namespace Hecton8.EditorTools
             root.name = System.IO.Path.GetFileNameWithoutExtension(path);
             root.transform.localScale = scale;
 
-            Renderer renderer = root.GetComponent<Renderer>();
-            if (renderer != null)
+            if (root.TryGetComponent(out Renderer renderer))
             {
                 renderer.sharedMaterial = material;
             }
@@ -244,8 +243,7 @@ namespace Hecton8.EditorTools
             root.transform.localPosition = localPosition;
             root.transform.localScale = new Vector3(0.9f, 1.1f, 0.9f);
 
-            Renderer renderer = root.GetComponent<Renderer>();
-            if (renderer != null)
+            if (root.TryGetComponent(out Renderer renderer))
             {
                 renderer.sharedMaterial = material;
             }
@@ -273,8 +271,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            PickupItem pickup = target.GetComponent<PickupItem>();
-            if (pickup == null || pickup.ItemData == null)
+            if (!target.TryGetComponent(out PickupItem pickup) || pickup.ItemData == null)
             {
                 Debug.LogError("[ResourceWorldBootstrap] Pickup has no item data: " + relativePath, target.gameObject);
                 errors++;
@@ -291,8 +288,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            ResourceNode node = target.GetComponent<ResourceNode>();
-            if (node == null)
+            if (!target.TryGetComponent(out ResourceNode node))
             {
                 Debug.LogError("[ResourceWorldBootstrap] Resource node missing ResourceNode component: " + relativePath, target.gameObject);
                 errors++;

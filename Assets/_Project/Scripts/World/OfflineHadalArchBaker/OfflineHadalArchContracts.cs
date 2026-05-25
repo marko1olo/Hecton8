@@ -3,6 +3,15 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.OfflineHadalArchBaker
 {
+    internal static class OfflineHadalArchContractsLayout
+    {
+        public const int SdfShapeDTOStrideBytes = 64;
+        public const int HadalArchVertexDTOStrideBytes = 64;
+        public const int HadalArchBakeConfigDTOStrideBytes = 128;
+        public const int HadalArchBakeTelemetryEntryStrideBytes = 64;
+        public const int HadalStaticGeometryRollbackExclusionDTOStrideBytes = 32;
+    }
+
     /// <summary>
     /// Constants for the Editor-only Hadal SDF arch bake pipeline.
     /// </summary>
@@ -49,7 +58,7 @@ namespace Hecton8.World.OfflineHadalArchBaker
     /// <summary>
     /// ARM64-safe SDF shape record. It has only raw unmanaged fields for Burst pointer traversal.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalArchContractsLayout.SdfShapeDTOStrideBytes)]
     public struct SdfShapeDTO
     {
         [FieldOffset(0)] public uint ShapeType;
@@ -67,7 +76,7 @@ namespace Hecton8.World.OfflineHadalArchBaker
     /// <summary>
     /// Interleaved vertex row written directly into Unity Mesh vertex buffer stream 0.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalArchContractsLayout.HadalArchVertexDTOStrideBytes)]
     public struct HadalArchVertexDTO
     {
         [FieldOffset(0)] public float3 Position;
@@ -81,7 +90,7 @@ namespace Hecton8.World.OfflineHadalArchBaker
     /// <summary>
     /// Bake configuration copied into Burst jobs. Values are continuous; no binary quality switch exists.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalArchContractsLayout.HadalArchBakeConfigDTOStrideBytes)]
     public struct HadalArchBakeConfigDTO
     {
         [FieldOffset(0)] public double3 CenterAup;
@@ -106,7 +115,7 @@ namespace Hecton8.World.OfflineHadalArchBaker
     /// <summary>
     /// Fixed black-box telemetry row for the last 300 offline bake stages.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalArchContractsLayout.HadalArchBakeTelemetryEntryStrideBytes)]
     public struct HadalArchBakeTelemetryEntry
     {
         [FieldOffset(0)] public double3 CenterAup;
@@ -125,7 +134,7 @@ namespace Hecton8.World.OfflineHadalArchBaker
     /// <summary>
     /// Static geometry exclusion row. Generated arches are immutable scenery, not rollback state.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalArchContractsLayout.HadalStaticGeometryRollbackExclusionDTOStrideBytes)]
     public struct HadalStaticGeometryRollbackExclusionDTO
     {
         [FieldOffset(0)] public uint MeshHash;

@@ -1,4 +1,4 @@
-# Save Binary Header
+﻿# Save Binary Header
 Date: 2026-05-14
 Owner: SAVE_HASH_CRYPTOGRAPHER
 Status: PENDING VERIFICATION

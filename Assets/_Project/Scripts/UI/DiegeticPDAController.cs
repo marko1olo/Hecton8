@@ -12,7 +12,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic PDA Controller")]
-    public sealed class DiegeticPDAController : MonoBehaviour, ITickable, IUpdatable, IPanelInteractable, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticPDAController : MonoBehaviour, IUpdatable, ILateFrameTickable, IPanelInteractable, IGlobalRegistryHotSwapListener
     {
         private const string TabletScreenShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader";
         private const float ReferenceResolveRetryIntervalSeconds = 0.5f;
@@ -165,9 +165,9 @@ namespace Hecton8.UI
                 diegeticPanel.ReleasePresentationRenderTexture();
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
-            float safeDeltaTime = math.max(0f, deltaTime);
+            float safeDeltaTime = math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             bool openState = PlayerPDA.IsOpen;
             if (!openState)
             {
@@ -236,7 +236,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -244,7 +244,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
         }
 
@@ -278,7 +278,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -558,7 +558,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

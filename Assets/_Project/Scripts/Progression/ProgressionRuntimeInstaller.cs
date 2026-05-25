@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.Core;
 using Hecton8.UI;
 
 namespace Hecton8.Progression
@@ -20,7 +21,7 @@ namespace Hecton8.Progression
             if (!playerObject.TryGetComponent<PDAContextualAdvisorySystem>(out _))
                 playerObject.AddComponent<PDAContextualAdvisorySystem>();
 
-            if (!playerObject.TryGetComponent<PlayerAchievementRegistry>(out _))
+            if (!playerObject.TryGetComponent<IPlayerAchievementRegistryRuntime>(out _))
                 playerObject.AddComponent<PlayerAchievementRegistry>();
 
             if (!playerObject.TryGetComponent<NarrativeProgressionBridge>(out _))

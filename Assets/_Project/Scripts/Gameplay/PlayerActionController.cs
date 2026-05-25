@@ -21,6 +21,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -31,9 +32,10 @@ namespace Hecton8.Gameplay
     /// Ð£Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð¾Ð¼, Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸ÑÐ¼Ð¸ Ð¸ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸ÐµÐ¼ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable, IPlayerActionInterruptSink, IGlobalRegistryHotSwapListener
     {
         private const float TwoPi = 6.28318530718f;
+        private const uint KccVelocityInterruptMaxAgeFrames = 12u;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SINGLETON
@@ -90,6 +92,7 @@ namespace Hecton8.Gameplay
         private int _lastToolSlotIndex = -1;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private float _cameraBobPhase;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -99,8 +102,9 @@ namespace Hecton8.Gameplay
         private HectonPlayerMovement _playerMovement;
         private PlayerToolManager _toolManager;
         private HectonSurvivalSystem _survivalSystem;
-        private Rigidbody _playerRigidbody;
         private Transform _cachedTransform;
+        private IPlayerInventoryService _playerInventoryService;
+        private IAudioService _audioService;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
@@ -143,7 +147,7 @@ namespace Hecton8.Gameplay
                 {
                     RemoveItemFromInventory(anchorX, anchorY);
                 }
-                ConsumableItem.TryConsume(item);
+                ConsumableItem.TryConsume(item, _audioService);
                 PlayCompletionSound(item);
                 return true;
             }
@@ -206,11 +210,12 @@ namespace Hecton8.Gameplay
             // ÐšÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ ÑÑÑ‹Ð»ÐºÐ¸
             TryGetComponent(out _playerMovement);
             TryGetComponent(out _toolManager);
-            TryGetComponent(out _playerRigidbody);
+            CacheRegistryServicesCold();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwap();
             TryUnregisterService();
 
         }
@@ -223,6 +228,8 @@ namespace Hecton8.Gameplay
 
             TryRegister();
             TryRegisterService();
+            TryRegisterHotSwap();
+            CacheRegistryServicesCold();
         }
 
         private void OnDisable()
@@ -230,8 +237,22 @@ namespace Hecton8.Gameplay
             if (_state == ActionState.InProgress)
                 CancelAction();
 
+            TryUnregisterHotSwap();
             TryUnregister();
             TryUnregisterService();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _playerInventoryService = currentService as IPlayerInventoryService;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+            }
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -311,7 +332,7 @@ namespace Hecton8.Gameplay
                 Flags = item != null ? PlayerActionProgressSignal.FlagHasItem : (byte)0
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<PlayerActionProgressSignal>.TryPush(in signal);
         }
 
         private void PublishActionCompleted(ItemData item, int anchorX, int anchorY)
@@ -330,7 +351,7 @@ namespace Hecton8.Gameplay
                 Flags = flags
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<PlayerActionCompletedSignal>.TryPush(in signal);
         }
 
         private void PublishActionCancelled(ItemData item, float progress01, byte reason)
@@ -345,7 +366,7 @@ namespace Hecton8.Gameplay
                 Flags = item != null ? PlayerActionCancelledSignal.FlagHasItem : (byte)0
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<PlayerActionCancelledSignal>.TryPush(in signal);
         }
 
         private static uint ResolveItemHash(ItemData item)
@@ -386,9 +407,8 @@ namespace Hecton8.Gameplay
         private bool CheckInterrupts()
         {
             // â”€â”€ 1. ÐŸÑ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸Ðµ Ð¿Ð¾ Ð´Ð²Ð¸Ð¶ÐµÐ½Ð¸ÑŽ â”€â”€
-            if (_playerRigidbody != null)
+            if (TryResolveKccVelocity(out Vector3 velocity))
             {
-                Vector3 velocity = _playerRigidbody.linearVelocity;
                 float speedSqr = velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z;
                 float interruptThresholdSqr = movementInterruptThreshold * movementInterruptThreshold;
                 if (speedSqr > interruptThresholdSqr)
@@ -403,6 +423,29 @@ namespace Hecton8.Gameplay
             }
 
             return false;
+        }
+
+        private static bool TryResolveKccVelocity(out Vector3 velocity)
+        {
+            velocity = Vector3.zero;
+            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
+                return false;
+
+            uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
+            if (currentFrame != 0u &&
+                signalFrame != 0u &&
+                (signalFrame > currentFrame || currentFrame - signalFrame > KccVelocityInterruptMaxAgeFrames))
+            {
+                return false;
+            }
+
+            float3 value = signal.Velocity;
+            if (!math.all(math.isfinite(value)))
+                return false;
+
+            velocity = new Vector3(value.x, value.y, value.z);
+            return true;
         }
 
         /// <summary>
@@ -443,7 +486,7 @@ namespace Hecton8.Gameplay
                 {
                     RemoveItemFromInventory(anchorX, anchorY);
                 }
-                ConsumableItem.TryConsume(completedItem);
+                ConsumableItem.TryConsume(completedItem, _audioService);
                 PlayCompletionSound(completedItem);
             }
 
@@ -456,7 +499,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void RemoveItemFromInventory(int anchorX, int anchorY)
         {
-            PlayerInventory inventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
+            IPlayerInventoryService inventoryService = _playerInventoryService;
+            PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : null;
             if (inventory == null) return;
 
             inventory.RemoveOneItem(anchorX, anchorY);
@@ -488,9 +532,10 @@ namespace Hecton8.Gameplay
 
             if (clip == null) return;
 
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null && _cachedTransform != null)
+            IAudioService audioService = _audioService;
+            if (audioService != null && _cachedTransform != null)
             {
-                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayAtPoint(clip, _cachedTransform.position);
+                audioService.PlayAtPoint(clip, _cachedTransform.position);
             }
         }
 
@@ -498,9 +543,10 @@ namespace Hecton8.Gameplay
         {
             if (cancelSound == null) return;
 
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null && _cachedTransform != null)
+            IAudioService audioService = _audioService;
+            if (audioService != null && _cachedTransform != null)
             {
-                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayAtPoint(cancelSound, _cachedTransform.position);
+                audioService.PlayAtPoint(cancelSound, _cachedTransform.position);
             }
         }
 
@@ -550,6 +596,29 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterPlayerActionRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerInventoryService = GlobalRegistry.PlayerInventory;
+            _audioService = GlobalRegistry.Audio;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

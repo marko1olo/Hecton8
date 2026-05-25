@@ -43,7 +43,7 @@ namespace Hecton8.UI
                 TMP_TextRegistry.EnsureRegistered(target);
         }
 
-        public bool SetText(ReadOnlySpan<char> value)
+        public bool SetSpan(ReadOnlySpan<char> value)
         {
             if (!EnsureInitialized() || value.Length > _buffer.Length)
                 return false;

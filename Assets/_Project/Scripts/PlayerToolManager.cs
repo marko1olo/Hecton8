@@ -29,7 +29,6 @@ namespace Hecton8.Gameplay
     using Hecton8.Core;
     using Hecton8.Inventory;
     using Hecton8.Items;
-    using Hecton8.Input;
     using Hecton8.Interaction;
     using Hecton8.Core.Contracts;
     using Hecton8.Core.Contracts.Signals;
@@ -42,7 +41,7 @@ namespace Hecton8.Gameplay
 #endif
 
     [DisallowMultipleComponent]
-    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -127,6 +126,12 @@ namespace Hecton8.Gameplay
         private bool _assignedPoolsWarmed;
         private bool _handlingEquippedToolBreak;
         private bool _registeredToTick;
+        private bool _registeredToLateFrame;
+        private Transform _pendingToolPoseTransform;
+        private PhysicalToolGripOffsets _pendingToolGripOffsets;
+        private bool _pendingToolPoseFlush;
+        private Vector3 _pendingHandAnchorLocalPosition;
+        private bool _hasPendingHandAnchorLocalPosition;
         private ulong _currentInteriorModuleEntityId;
         private bool _isInsideModuleInterior;
         private Rigidbody _currentInteriorCarrierBody;
@@ -137,6 +142,7 @@ namespace Hecton8.Gameplay
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
         private PlayerRuntimeContext _runtimeContext;
+        private IPlayerRuntimeContext _playerRuntimeService;
         private PlayerInventory _boundInventorySignalSource;
         private PlayerTool _externallyDockedTool;
         private PlayerTool _batterySiphonTool;
@@ -148,9 +154,9 @@ namespace Hecton8.Gameplay
         private IInputService _inputService;
         private IPhysicsService _physicsService;
         private IPlayerMovementForceSink _playerMovementForceSink;
-        private ObjectPoolManager _objectPool;
+        private IObjectPoolService _objectPool;
         private PersistentWorldRegistry _persistentWorldRegistry;
-        private ToolDurabilitySystem _toolDurability;
+        private IToolDurabilityService _toolDurability;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private bool _hotSwapListenerRegistered;
 
@@ -162,7 +168,7 @@ namespace Hecton8.Gameplay
         private static readonly int _highCapacityBatteryHashId = LocHash.Compute(HighCapacityBatteryPersistentId);
         internal Transform HandAnchor => handAnchor;
         internal PlayerInventory Inventory => playerInventory;
-        internal IPlayerRuntimeContext PlayerRuntimeContext => Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+        internal IPlayerRuntimeContext PlayerRuntimeContext => _playerRuntimeService;
 
         // ══════════════════════════════════════════════════════════
         //  SWAP STATE MACHINE
@@ -251,23 +257,37 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterToTickManager()
         {
-            if (_registeredToTick || !Application.isPlaying)
+            if ((_registeredToTick && _registeredToLateFrame) || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
+            if (!_registeredToTick)
+            {
+                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            }
+
+            if (!_registeredToLateFrame)
+                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterFromTickManager()
         {
-            if (!_registeredToTick)
+            if (!_registeredToTick && !_registeredToLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            if (_registeredToTick)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            if (_registeredToLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+
             _registeredToTick = false;
+            _registeredToLateFrame = false;
+            _pendingToolPoseFlush = false;
+            _pendingToolPoseTransform = null;
+            _pendingToolGripOffsets = null;
+            _hasPendingHandAnchorLocalPosition = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -377,6 +397,12 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
+
+        public void LateFrameTick()
+        {
+            FlushPendingHandAnchorPose();
+            FlushPendingToolPose();
+        }
 
         /// <summary>
         /// Programmnoe pereklyuchenie na slot po indeksu (0-3).
@@ -673,7 +699,7 @@ namespace Hecton8.Gameplay
                 Flags = ResolveToolLoadoutFlags()
             };
 
-            SignalBus<ToolLoadoutChangedSignal>.Push(in signal);
+            SignalBus<ToolLoadoutChangedSignal>.TryPush(in signal);
         }
 
         private static uint ResolveCurrentToolLoadoutFrame()
@@ -685,7 +711,7 @@ namespace Hecton8.Gameplay
         private uint ResolveToolLoadoutSignalSourceId()
         {
             if (_toolLoadoutSignalSourceId == 0u && gameObject != null)
-                _toolLoadoutSignalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(gameObject.GetEntityId()));
+                _toolLoadoutSignalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(gameObject.GetEntityId()));
 
             return _toolLoadoutSignalSourceId;
         }
@@ -968,7 +994,7 @@ namespace Hecton8.Gameplay
             if (prefab == null || minimumReserve <= 0)
                 return;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -1008,6 +1034,13 @@ namespace Hecton8.Gameplay
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Player:
+                    ClearRuntimeContextOwnedReferences(previousService as IPlayerRuntimeContext);
+                    _playerRuntimeService = currentService as IPlayerRuntimeContext;
+                    RebindRuntimeContextFromPlayerService(_playerRuntimeService);
+                    PublishRuntimeContextState();
+                    break;
+
                 case GlobalRegistryServiceSlot.Input:
                     _inputService = currentService as IInputService;
                     break;
@@ -1025,7 +1058,7 @@ namespace Hecton8.Gameplay
                     break;
 
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     _assignedPoolsWarmed = false;
                     WarmRuntimePoolsIfNeeded();
                     break;
@@ -1038,7 +1071,7 @@ namespace Hecton8.Gameplay
                     break;
 
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
-                    _toolDurability = currentService as ToolDurabilitySystem;
+                    _toolDurability = currentService as IToolDurabilityService;
                     break;
 
                 case GlobalRegistryServiceSlot.Submarine:
@@ -1049,8 +1082,51 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void ClearRuntimeContextOwnedReferences(IPlayerRuntimeContext previousContext)
+        {
+            if (previousContext == null)
+                return;
+
+            if (ReferenceEquals(previousContext.ToolManager, this))
+                _runtimeContext = null;
+            if (ReferenceEquals(playerInventory, previousContext.Inventory))
+                playerInventory = null;
+            if (ReferenceEquals(playerTransportCoordinator, previousContext.PlayerTransportCoordinator))
+                playerTransportCoordinator = null;
+            if (ReferenceEquals(handAnchor, previousContext.HandAnchor))
+                handAnchor = null;
+        }
+
+        private void RebindRuntimeContextFromPlayerService(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null || !ReferenceEquals(playerContext.ToolManager, this))
+                return;
+
+            if (PlayerRuntimeContextService.TryBindPlayerRoot(gameObject, out PlayerRuntimeContext runtimeContext))
+                _runtimeContext = runtimeContext;
+
+            if (playerInventory == null)
+                playerInventory = playerContext.Inventory;
+
+            if (playerTransportCoordinator == null)
+                playerTransportCoordinator = playerContext.PlayerTransportCoordinator;
+
+            if (handAnchor == null)
+            {
+                handAnchor = playerContext.HandAnchor;
+                if (handAnchor != null)
+                {
+                    _anchorRestPosition = handAnchor.localPosition;
+                    _anchorLoweredPosition = _anchorRestPosition + lowerOffset;
+                }
+            }
+        }
+
         private void CacheRegistryServicesCold(bool forceRefresh = false)
         {
+            if (forceRefresh || _playerRuntimeService == null)
+                _playerRuntimeService = GlobalRegistry.Player;
+
             if (forceRefresh || _inputService == null)
                 _inputService = GlobalRegistry.Input;
 
@@ -1062,8 +1138,8 @@ namespace Hecton8.Gameplay
 
             if (forceRefresh || _objectPool == null)
             {
-                ObjectPoolManager previousPool = _objectPool;
-                _objectPool = GlobalRegistry.ObjectPool;
+                IObjectPoolService previousPool = _objectPool;
+                _objectPool = GlobalRegistry.ObjectPoolService;
                 if (!ReferenceEquals(previousPool, _objectPool))
                     _assignedPoolsWarmed = false;
             }
@@ -1072,7 +1148,7 @@ namespace Hecton8.Gameplay
                 _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
 
             if (forceRefresh || _toolDurability == null)
-                _toolDurability = GlobalRegistry.ToolDurability;
+                _toolDurability = GlobalRegistry.ToolDurabilityService;
 
             if (forceRefresh || _submarineRuntimeContext == null)
                 _submarineRuntimeContext = GlobalRegistry.Submarine;
@@ -1314,7 +1390,7 @@ namespace Hecton8.Gameplay
                 {
                     LogToolDebug("RequestSwap abort: slot missing in inventory");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log("[PlayerToolManager] Tool not found in inventory.");
+                    Hecton8.Core.H8Debug.Log("[PlayerToolManager] Tool not found in inventory.");
 #endif
                     return;
                 }
@@ -1374,7 +1450,7 @@ namespace Hecton8.Gameplay
 
                 // Nachinaem iz nizhney pozitsii
                 if (handAnchor != null)
-                    handAnchor.localPosition = _anchorLoweredPosition;
+                    QueueHandAnchorLocalPosition(_anchorLoweredPosition);
             }
             else
             {
@@ -1382,7 +1458,7 @@ namespace Hecton8.Gameplay
                 LogToolDebug("PerformSwap completed with no current tool");
                 _swapState = SwapState.Idle;
                 if (handAnchor != null)
-                    handAnchor.localPosition = _anchorRestPosition;
+                    QueueHandAnchorLocalPosition(_anchorRestPosition);
             }
         }
 
@@ -1421,10 +1497,10 @@ namespace Hecton8.Gameplay
                 // ── LOWERING: rest → lowered ──
                 case SwapState.Lowering:
                 {
-                    handAnchor.localPosition = (Vector3)math.lerp(
+                    QueueHandAnchorLocalPosition((Vector3)math.lerp(
                         (float3)_anchorRestPosition,
                         (float3)_anchorLoweredPosition,
-                        _swapProgress);
+                        _swapProgress));
 
                     if (_swapProgress >= 1f)
                     {
@@ -1437,14 +1513,14 @@ namespace Hecton8.Gameplay
                 // ── RAISING: lowered → rest ──
                 case SwapState.Raising:
                 {
-                    handAnchor.localPosition = (Vector3)math.lerp(
+                    QueueHandAnchorLocalPosition((Vector3)math.lerp(
                         (float3)_anchorLoweredPosition,
                         (float3)_anchorRestPosition,
-                        _swapProgress);
+                        _swapProgress));
 
                     if (_swapProgress >= 1f)
                     {
-                        handAnchor.localPosition = _anchorRestPosition;
+                        QueueHandAnchorLocalPosition(_anchorRestPosition);
                         _swapState = SwapState.Idle;
                     }
 
@@ -1464,11 +1540,11 @@ namespace Hecton8.Gameplay
         {
             LogToolDebug("SpawnNewTool begin");
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[PlayerToolManager] GlobalRegistry.ObjectPool is null!");
+                Debug.LogError("[PlayerToolManager] GlobalRegistry.ObjectPoolService is null!");
 #endif
                 return;
             }
@@ -1490,10 +1566,8 @@ namespace Hecton8.Gameplay
 
             // Privyazyvaem k anchor
             _currentInstance.transform.SetParent(handAnchor, false);
-            _currentInstance.transform.localPosition = Vector3.zero;
-            _currentInstance.transform.localRotation = Quaternion.identity;
-            if (_currentInstance.TryGetComponent(out PhysicalToolGripOffsets gripOffsets))
-                gripOffsets.TryApplyGripOffset(_currentInstance.transform, PhysicalHandSide.Right);
+            _currentInstance.TryGetComponent(out PhysicalToolGripOffsets gripOffsets);
+            QueueToolPoseFlush(_currentInstance.transform, gripOffsets);
 
             // Poluchaem komponent PlayerTool
             if (_currentInstance.TryGetComponent(out PlayerTool tool))
@@ -1512,6 +1586,54 @@ namespace Hecton8.Gameplay
                 _currentTool = null;
                 _currentActiveToolHash = 0u;
             }
+        }
+
+        private void QueueToolPoseFlush(Transform target, PhysicalToolGripOffsets gripOffsets)
+        {
+            if (target == null)
+                return;
+
+            _pendingToolPoseTransform = target;
+            _pendingToolGripOffsets = gripOffsets;
+            _pendingToolPoseFlush = true;
+        }
+
+        private void QueueHandAnchorLocalPosition(Vector3 localPosition)
+        {
+            if (handAnchor == null)
+                return;
+
+            _pendingHandAnchorLocalPosition = localPosition;
+            _hasPendingHandAnchorLocalPosition = true;
+        }
+
+        private void FlushPendingHandAnchorPose()
+        {
+            if (!_hasPendingHandAnchorLocalPosition)
+                return;
+
+            _hasPendingHandAnchorLocalPosition = false;
+            if (handAnchor != null)
+                handAnchor.localPosition = _pendingHandAnchorLocalPosition;
+        }
+
+        private void FlushPendingToolPose()
+        {
+            if (!_pendingToolPoseFlush)
+                return;
+
+            Transform target = _pendingToolPoseTransform;
+            PhysicalToolGripOffsets gripOffsets = _pendingToolGripOffsets;
+            _pendingToolPoseTransform = null;
+            _pendingToolGripOffsets = null;
+            _pendingToolPoseFlush = false;
+            if (target == null)
+                return;
+
+            target.localPosition = Vector3.zero;
+            target.localRotation = Quaternion.identity;
+            if (gripOffsets != null)
+                gripOffsets.TryApplyGripOffset(target, PhysicalHandSide.Right);
         }
 
         /// <summary>
@@ -1538,7 +1660,7 @@ namespace Hecton8.Gameplay
                 // Ottseplyaem ot anchor pered despavnom
                 _currentInstance.transform.SetParent(null, false);
 
-                ObjectPoolManager pool = _objectPool;
+                IObjectPoolService pool = _objectPool;
                 if (pool != null)
                 {
                     pool.Despawn(_currentInstance);
@@ -1788,11 +1910,11 @@ namespace Hecton8.Gameplay
                 }
 
                 ConsumeBrokenToolInventoryEntry(toolHashId);
-                PlayerSignalEvents.RaiseToolDepletedSignal(new ToolDepletedSignal(toolHashId));
+                PlayerSignalEvents.TryRaiseToolDepletedSignal(new ToolDepletedSignal(toolHashId));
 
                 if (playerInventory != null && playerInventory.TryFindFirstAnchorByHash(toolHashId, out _))
                 {
-                    ToolDurabilitySystem durabilitySystem = _toolDurability;
+                    IToolDurabilityService durabilitySystem = _toolDurability;
                     if (durabilitySystem != null)
                         durabilitySystem.ResetDurability(metadata.toolID, metadata.maxDurability);
 
@@ -1898,7 +2020,7 @@ namespace Hecton8.Gameplay
             if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.Metadata == null)
                 return false;
 
-            ToolDurabilitySystem durabilitySystem = _toolDurability;
+            IToolDurabilityService durabilitySystem = _toolDurability;
             return durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID);
         }
 
@@ -1952,7 +2074,7 @@ namespace Hecton8.Gameplay
             _pendingSlotIndex = -1;
             _swapState = SwapState.Idle;
             if (handAnchor != null)
-                handAnchor.localPosition = _anchorRestPosition;
+                QueueHandAnchorLocalPosition(_anchorRestPosition);
 
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
         }
@@ -2111,7 +2233,7 @@ namespace Hecton8.Gameplay
             if (!toolDebugLogging)
                 return;
 
-            Debug.Log(message);
+            Hecton8.Core.H8Debug.Log(message);
 #endif
         }
 

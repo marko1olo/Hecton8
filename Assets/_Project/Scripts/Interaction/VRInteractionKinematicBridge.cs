@@ -21,57 +21,48 @@ namespace Hecton8.Interaction
 
     public static class VRInteractionKinematicBridgeConstants
     {
-        public const int HandCount = 2;
-        public const int LeftHandIndex = 0;
-        public const int RightHandIndex = 1;
-        public const int SocketCapacity = 128;
-        public const int TelemetryFrameCapacity = 300;
-        public const int TelemetryCapacity = TelemetryFrameCapacity * HandCount;
-        public const int DefaultSdfProbeIterationsLow = 2;
-        public const int DefaultSdfProbeIterationsUltra = 8;
-        public const float DefaultHandRadiusMeters = 0.07f;
-        public const float DefaultMaxArmLengthMeters = 0.78f;
-        public const float DefaultVelocitySignalThreshold = 4.5f;
-        public const float DefaultSdfRangeMeters = 2f;
-        public const uint StateFlagValid = 1u << 0;
-        public const uint StateFlagTracked = 1u << 1;
-        public const uint StateFlagSdfResolved = 1u << 2;
-        public const uint StateFlagArmClamped = 1u << 3;
-        public const uint StateFlagSocketSnapped = 1u << 4;
-        public const uint StateFlagVelocitySignal = 1u << 5;
-        public const uint StateFlagNonFinite = 1u << 6;
-        public const uint StateFlagLeftHand = 1u << 7;
-        public const uint StateFlagSdfUnavailable = 1u << 8;
-        public const uint StateFlagNoPhysicsProxy = 1u << 9;
-        public const uint TelemetryFlagBudgetExceeded = 1u << 16;
-        public const uint TelemetryFlagQualityScaled = 1u << 17;
-        public const uint SocketFlagActive = 1u << 0;
-        public const uint TuningFlagInitialized = 1u << 0;
-        public const uint TuningFlagSdfEnabled = 1u << 1;
-        public const uint TuningFlagSocketSnapEnabled = 1u << 2;
-        public const uint TuningFlagVelocitySignalEnabled = 1u << 3;
-        public const uint TuningFlagMockInputEnabled = 1u << 4;
-        public const uint TelemetryMarker = 0x56524B42u; // VRKB
-        public const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_271.bin";
+        public const int HandCount = VRInteractionBridgeContract.HandCount;
+        public const int LeftHandIndex = VRInteractionBridgeContract.LeftHandIndex;
+        public const int RightHandIndex = VRInteractionBridgeContract.RightHandIndex;
+        public const int SocketCapacity = VRInteractionBridgeContract.SocketCapacity;
+        public const int TelemetryFrameCapacity = VRInteractionBridgeContract.TelemetryFrameCapacity;
+        public const int TelemetryCapacity = VRInteractionBridgeContract.TelemetryCapacity;
+        public const int DefaultSdfProbeIterationsLow = VRInteractionBridgeContract.DefaultSdfProbeIterationsLow;
+        public const int DefaultSdfProbeIterationsUltra = VRInteractionBridgeContract.DefaultSdfProbeIterationsUltra;
+        public const float DefaultHandRadiusMeters = VRInteractionBridgeContract.DefaultHandRadiusMeters;
+        public const float DefaultMaxArmLengthMeters = VRInteractionBridgeContract.DefaultMaxArmLengthMeters;
+        public const float DefaultVelocitySignalThreshold = VRInteractionBridgeContract.DefaultVelocitySignalThreshold;
+        public const float DefaultSdfRangeMeters = VRInteractionBridgeContract.DefaultSdfRangeMeters;
+        public const uint StateFlagValid = VRInteractionBridgeContract.StateFlagValid;
+        public const uint StateFlagTracked = VRInteractionBridgeContract.StateFlagTracked;
+        public const uint StateFlagSdfResolved = VRInteractionBridgeContract.StateFlagSdfResolved;
+        public const uint StateFlagArmClamped = VRInteractionBridgeContract.StateFlagArmClamped;
+        public const uint StateFlagSocketSnapped = VRInteractionBridgeContract.StateFlagSocketSnapped;
+        public const uint StateFlagVelocitySignal = VRInteractionBridgeContract.StateFlagVelocitySignal;
+        public const uint StateFlagNonFinite = VRInteractionBridgeContract.StateFlagNonFinite;
+        public const uint StateFlagLeftHand = VRInteractionBridgeContract.StateFlagLeftHand;
+        public const uint StateFlagSdfUnavailable = VRInteractionBridgeContract.StateFlagSdfUnavailable;
+        public const uint StateFlagNoPhysicsProxy = VRInteractionBridgeContract.StateFlagNoPhysicsProxy;
+        public const uint TelemetryFlagBudgetExceeded = VRInteractionBridgeContract.TelemetryFlagBudgetExceeded;
+        public const uint TelemetryFlagQualityScaled = VRInteractionBridgeContract.TelemetryFlagQualityScaled;
+        public const uint SocketFlagActive = VRInteractionBridgeContract.SocketFlagActive;
+        public const uint TuningFlagInitialized = VRInteractionBridgeContract.TuningFlagInitialized;
+        public const uint TuningFlagSdfEnabled = VRInteractionBridgeContract.TuningFlagSdfEnabled;
+        public const uint TuningFlagSocketSnapEnabled = VRInteractionBridgeContract.TuningFlagSocketSnapEnabled;
+        public const uint TuningFlagVelocitySignalEnabled = VRInteractionBridgeContract.TuningFlagVelocitySignalEnabled;
+        public const uint TuningFlagMockInputEnabled = VRInteractionBridgeContract.TuningFlagMockInputEnabled;
+        public const uint TelemetryMarker = VRInteractionBridgeContract.TelemetryMarker;
+        public const string DumpPath = VRInteractionBridgeContract.DumpRelativePath;
 
-        public const BufferID HandStatesBuffer = (BufferID)73680;
-        public const BufferID PreviousHandStatesBuffer = (BufferID)73681;
-        public const BufferID ControllerMatrixInputsBuffer = (BufferID)73682;
-        public const BufferID InteractionSocketsBuffer = (BufferID)73683;
-        public const BufferID TuningBuffer = (BufferID)73684;
-        public const BufferID TelemetryRingBuffer = (BufferID)73685;
-        public const BufferID TelemetryCursorBuffer = (BufferID)73686;
-        public const BufferID ResolvedHandMatricesBuffer = (BufferID)73687;
+        public const BufferID HandStatesBuffer = BufferID.VRInteractionHandStates;
+        public const BufferID PreviousHandStatesBuffer = BufferID.VRInteractionPreviousHandStates;
+        public const BufferID ControllerMatrixInputsBuffer = BufferID.VRInteractionControllerMatrixInputs;
+        public const BufferID InteractionSocketsBuffer = BufferID.VRInteractionSockets;
+        public const BufferID TuningBuffer = BufferID.VRInteractionTuning;
+        public const BufferID TelemetryRingBuffer = BufferID.VRInteractionTelemetryRing;
+        public const BufferID TelemetryCursorBuffer = BufferID.VRInteractionTelemetryCursor;
+        public const BufferID ResolvedHandMatricesBuffer = BufferID.VRInteractionResolvedHandMatrices;
         public const SystemID OwnerSystemId = SystemID.GameplayPlayer;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct VRHandStateDTO
-    {
-        [FieldOffset(0)] public double3 RawControllerAUP;
-        [FieldOffset(24)] public double3 ResolvedHandAUP;
-        [FieldOffset(48)] public float3 Velocity;
-        [FieldOffset(60)] public uint InteractionFlags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -107,24 +98,6 @@ namespace Hecton8.Interaction
         [FieldOffset(104)] private ulong _pad5;
         [FieldOffset(112)] private ulong _pad6;
         [FieldOffset(120)] private ulong _pad7;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
-    public struct VRInteractionTuningDTO
-    {
-        [FieldOffset(0)] public double3 PlayerRootAUP;
-        [FieldOffset(24)] public double3 ShoulderAUP;
-        [FieldOffset(48)] public double3 SdfOriginAUP;
-        [FieldOffset(72)] public float3 SdfCellSize;
-        [FieldOffset(84)] public float SdfRangeMeters;
-        [FieldOffset(88)] public int3 SdfDimensions;
-        [FieldOffset(100)] public float HandRadiusMeters;
-        [FieldOffset(104)] public float MaxArmLengthMeters;
-        [FieldOffset(108)] public float SnapRadiusScale;
-        [FieldOffset(112)] public float VelocitySignalThreshold;
-        [FieldOffset(116)] public float GlobalQualityWeight;
-        [FieldOffset(120)] public uint FrameIndex;
-        [FieldOffset(124)] public uint Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -231,42 +204,42 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            VaultGenerationHandle<VRHandStateDTO> handStates = vault.GetGenerationHandle<VRHandStateDTO>(
+            VaultGenerationHandle<VRHandStateDTO> handStates = vault.EnsureGenerationHandle<VRHandStateDTO>(
                 VRInteractionKinematicBridgeConstants.HandStatesBuffer,
                 VRInteractionKinematicBridgeConstants.HandCount,
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<VRHandStateDTO> previousStates = vault.GetGenerationHandle<VRHandStateDTO>(
+            VaultGenerationHandle<VRHandStateDTO> previousStates = vault.EnsureGenerationHandle<VRHandStateDTO>(
                 VRInteractionKinematicBridgeConstants.PreviousHandStatesBuffer,
                 VRInteractionKinematicBridgeConstants.HandCount,
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<VRControllerMatrixDTO> matrices = vault.GetGenerationHandle<VRControllerMatrixDTO>(
+            VaultGenerationHandle<VRControllerMatrixDTO> matrices = vault.EnsureGenerationHandle<VRControllerMatrixDTO>(
                 VRInteractionKinematicBridgeConstants.ControllerMatrixInputsBuffer,
                 VRInteractionKinematicBridgeConstants.HandCount,
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<VRInteractionSocketDTO> sockets = vault.GetGenerationHandle<VRInteractionSocketDTO>(
+            VaultGenerationHandle<VRInteractionSocketDTO> sockets = vault.EnsureGenerationHandle<VRInteractionSocketDTO>(
                 VRInteractionKinematicBridgeConstants.InteractionSocketsBuffer,
                 VRInteractionKinematicBridgeConstants.SocketCapacity,
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<VRInteractionTuningDTO> tuning = vault.GetGenerationHandle<VRInteractionTuningDTO>(
+            VaultGenerationHandle<VRInteractionTuningDTO> tuning = vault.EnsureGenerationHandle<VRInteractionTuningDTO>(
                 VRInteractionKinematicBridgeConstants.TuningBuffer,
                 1,
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<VRInteractionTelemetryEntry> telemetry = vault.GetGenerationHandle<VRInteractionTelemetryEntry>(
+            VaultGenerationHandle<VRInteractionTelemetryEntry> telemetry = vault.EnsureGenerationHandle<VRInteractionTelemetryEntry>(
                 VRInteractionKinematicBridgeConstants.TelemetryRingBuffer,
                 VRInteractionKinematicBridgeConstants.TelemetryCapacity,
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> cursor = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> cursor = vault.EnsureGenerationHandle<int>(
                 VRInteractionKinematicBridgeConstants.TelemetryCursorBuffer,
                 1,
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<float4x4> matricesOutput = vault.GetGenerationHandle<float4x4>(
+            VaultGenerationHandle<float4x4> matricesOutput = vault.EnsureGenerationHandle<float4x4>(
                 VRInteractionKinematicBridgeConstants.ResolvedHandMatricesBuffer,
                 VRInteractionKinematicBridgeConstants.HandCount,
                 VRInteractionKinematicBridgeConstants.OwnerSystemId,
@@ -402,6 +375,7 @@ namespace Hecton8.Interaction
         }
     }
 
+    #if UNITY_EDITOR
     public static class VRInteractionSocketCsvParser
     {
         public static int ParseSockets(ReadOnlySpan<byte> bytes, NativeArray<VRInteractionSocketDTO> output)
@@ -574,6 +548,7 @@ namespace Hecton8.Interaction
             return math.isfinite(value);
         }
     }
+    #endif
 
     public static class VRInteractionKinematicBridgeMath
     {

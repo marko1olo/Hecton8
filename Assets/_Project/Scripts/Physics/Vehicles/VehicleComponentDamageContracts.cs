@@ -1,5 +1,5 @@
 using System;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
 using System.Reflection;
 #endif
 using System.Runtime.CompilerServices;
@@ -235,7 +235,7 @@ namespace Hecton8.Physics.Vehicles
         }
     }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
     public static class VehicleDamageLayoutValidator
     {
         public static bool ValidateVehicleGridCellLayout(out string error)
@@ -268,6 +268,7 @@ namespace Hecton8.Physics.Vehicles
     }
 #endif
 
+    #if UNITY_EDITOR
     public static class VehicleComponentLayoutCsvParser
     {
         public static int Apply(ReadOnlySpan<byte> csv, NativeArray<VehicleGridCellDTO> cells, int width, int height, int depth)
@@ -515,4 +516,5 @@ namespace Hecton8.Physics.Vehicles
             return hasDigit;
         }
     }
+    #endif
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using Hecton8.Dev;
 using UnityEngine;
@@ -86,7 +87,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Debug.Log("[ScanSmoke] Starting scan runtime smoke pass.");
+            Hecton8.Core.H8Debug.Log("[ScanSmoke] Starting scan runtime smoke pass.");
 
             string originalId = probeTarget.EntryId;
             string originalTitle = probeTarget.EntryTitle;
@@ -148,7 +149,7 @@ namespace Hecton8.Gameplay
 
                 bool archived = scanLogSystem.ContainsEntry(probeHash);
                 int entriesAfter = scanLogSystem.EntryCount;
-                Debug.Log($"[ScanSmoke] COMPLETE archived={archived} entries={entriesBefore}->{entriesAfter}");
+                Hecton8.Core.H8Debug.Log($"[ScanSmoke] COMPLETE archived={archived} entries={entriesBefore}->{entriesAfter}");
             }
             catch (OperationCanceledException)
             {
@@ -185,7 +186,7 @@ namespace Hecton8.Gameplay
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
-            Debug.LogWarning($"[ScanSmoke] TIMEOUT {label} after {timeout:0.00}s");
+            Debug.LogWarning("[ScanSmoke] TIMEOUT " + label + " after " + timeout.ToString("0.00", CultureInfo.InvariantCulture) + "s");
             return false;
         }
 
@@ -215,7 +216,7 @@ namespace Hecton8.Gameplay
         private void LogVerbose(string message)
         {
             if (verboseLogging)
-                Debug.Log($"[ScanSmoke] {message}");
+                Hecton8.Core.H8Debug.Log($"[ScanSmoke] {message}");
         }
 
         private string DescribeRefs()

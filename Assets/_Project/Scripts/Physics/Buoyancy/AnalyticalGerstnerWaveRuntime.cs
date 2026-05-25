@@ -397,6 +397,7 @@ namespace Hecton8.Physics
             }
 
             int profileRows = 0;
+#if UNITY_EDITOR
             if (_loadCsvOnEnable && profiles.IsCreated && csvScratch.IsCreated)
             {
                 string csvPath = ResolveProjectPath(_csvRelativePath);
@@ -404,6 +405,7 @@ namespace Hecton8.Physics
                 if (csvBytes > 0)
                     WaveSpectrumProfileCsvParser.TryApply(new ReadOnlySpan<byte>(csvScratch.GetUnsafeReadOnlyPtr(), csvBytes), profiles, out profileRows);
             }
+#endif
 
             if (profileRows > 0)
                 ApplyProfile(profiles[0], spectrum, tuning);
@@ -487,7 +489,7 @@ namespace Hecton8.Physics
                 return handle;
             }
 
-            return vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
+            return vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
         }
 
         private bool HandlesReady(IDataVault vault)
@@ -741,6 +743,9 @@ namespace Hecton8.Physics
 
         private static float ResolveGlobalQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float weight = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, weight, math.isfinite(weight)));
         }

@@ -62,11 +62,14 @@ namespace Hecton8.UI
         private Material _runtimeMaterial;
         private Camera _viewCamera;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private Color _appliedSonarColor;
         private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
         private bool _hasCurrentSample;
         private bool _hasPreviousSample;
         private bool _visibleToPlayer;
+        private bool _materialPropertiesDirty = true;
+        private bool _runtimeMaterialHasBaseColor;
         private float _sampleAccumulator;
         private float _interpolationAgeSeconds;
         private float _interpolationBlendWeight;
@@ -382,7 +385,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             RefreshQualityPolicy();
         }
 
@@ -429,10 +432,34 @@ namespace Hecton8.UI
                     name = RuntimeMaterialName,
                     hideFlags = HideFlags.DontSave
                 };
+                _runtimeMaterialHasBaseColor = _runtimeMaterial.HasProperty(_BaseColorId);
+                _materialPropertiesDirty = true;
             }
 
-            if (_runtimeMaterial != null && _runtimeMaterial.HasProperty(_BaseColorId))
+            ApplyMaterialPropertiesIfNeeded();
+        }
+
+        private void ApplyMaterialPropertiesIfNeeded()
+        {
+            if (_runtimeMaterial == null)
+                return;
+
+            if (!_materialPropertiesDirty && SameColor(_appliedSonarColor, sonarColor))
+                return;
+
+            if (_runtimeMaterialHasBaseColor)
                 _runtimeMaterial.SetColor(_BaseColorId, sonarColor);
+
+            _appliedSonarColor = sonarColor;
+            _materialPropertiesDirty = false;
+        }
+
+        private static bool SameColor(Color lhs, Color rhs)
+        {
+            return math.abs(lhs.r - rhs.r) <= 0.0001f &&
+                   math.abs(lhs.g - rhs.g) <= 0.0001f &&
+                   math.abs(lhs.b - rhs.b) <= 0.0001f &&
+                   math.abs(lhs.a - rhs.a) <= 0.0001f;
         }
 
         private void TryRegisterTick()
@@ -506,6 +533,7 @@ namespace Hecton8.UI
             displayRadiusMeters = math.max(0.02f, displayRadiusMeters);
             verticalExaggeration = math.clamp(verticalExaggeration, 0.02f, 1.25f);
             maxHeightDeltaMeters = math.max(1f, maxHeightDeltaMeters);
+            _materialPropertiesDirty = true;
         }
 #endif
     }

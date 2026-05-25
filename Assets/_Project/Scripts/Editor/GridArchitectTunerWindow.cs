@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 - GridArchitectTunerWindow.cs
-// UI Toolkit facade for SHINOBU_114 CSR/Jacobi base logistics.
+// UI Toolkit facade for SHINOBU_114 CSR two-pass base logistics.
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -35,7 +35,7 @@ namespace Hecton8.Editor
         private Slider _crushDepth;
         private Slider _baseWireConductance;
         private Slider _sumpPumpDraw;
-        private Slider _jacobiSmoothing;
+        private Slider _deltaSmoothing;
         private VaultGenerationHandle<PowerTelemetryEntry> _powerTelemetryRingHandle;
         private VaultGenerationHandle<PowerGridCounter64> _powerTelemetryCursorHandle;
         private IDataVault _powerTelemetryVault;
@@ -96,7 +96,7 @@ namespace Hecton8.Editor
             _crushDepth = AddSlider(root, "Crush Depth", 0.1f, 10f, OnTuningChanged);
             _baseWireConductance = AddSlider(root, "Base Wire Conductance", 0.125f, 1000f, OnTuningChanged);
             _sumpPumpDraw = AddSlider(root, "Sump Pump Draw", 0f, 750f, OnDrainageTuningChanged);
-            _jacobiSmoothing = AddSlider(root, "Jacobi Smoothing", 0.05f, 1f, OnTuningChanged);
+            _deltaSmoothing = AddSlider(root, "Delta Smoothing", 0.05f, 1f, OnTuningChanged);
 
             Button mockGraph = new Button(() => ShinobuLogisticsRouter.Active?.ForceRebuildMockGraph()) { text = "Mock Graph" };
             Button dumpBlackBox = new Button(() => ShinobuLogisticsRouter.Active?.ForceDumpBlackBox()) { text = "Dump Black Box" };
@@ -142,7 +142,7 @@ namespace Hecton8.Editor
             tuning.OxygenDiffusionRate = _oxygenDiffusion.value;
             tuning.CrushDepthMultiplier = _crushDepth.value;
             tuning.BasePipeResistance = ConductanceToResistance(_baseWireConductance.value);
-            tuning.JacobiSmoothingFactor = _jacobiSmoothing.value;
+            tuning.DeltaSmoothingFactor = _deltaSmoothing.value;
             ShinobuLogisticsRouter.SetTuning(in tuning);
         }
 
@@ -169,7 +169,7 @@ namespace Hecton8.Editor
 
             if (ShinobuLogisticsRouter.TryGetLatestTelemetry(out LogisticsGraphTelemetryEntry entry))
             {
-                _solverLabel.text = "Jacobi: " + entry.JacobiIterations + "  Components: " + entry.ComponentCount + "  Solver us: " + entry.SolverMicros;
+                _solverLabel.text = "Delta: " + entry.DeltaPassCount + "  Components: " + entry.ComponentCount + "  Solver us: " + entry.SolverMicros;
                 PushEfficiencySample(entry.SupplyRatio);
             }
 
@@ -183,7 +183,7 @@ namespace Hecton8.Editor
                 _oxygenDiffusion.SetValueWithoutNotify(tuning.OxygenDiffusionRate);
                 _crushDepth.SetValueWithoutNotify(tuning.CrushDepthMultiplier);
                 _baseWireConductance.SetValueWithoutNotify(ResistanceToConductance(tuning.BasePipeResistance));
-                _jacobiSmoothing.SetValueWithoutNotify(tuning.JacobiSmoothingFactor);
+                _deltaSmoothing.SetValueWithoutNotify(tuning.DeltaSmoothingFactor);
                 _suppressSliderEvents = false;
             }
 

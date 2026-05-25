@@ -24,7 +24,7 @@ namespace Hecton8.World
             return SampleThreatGridAtPosition(position, _ecosystemThreatGridCenter, threatGridCellSize, _ecosystemThreatGridResolution, _nativeMemory.EcosystemThreatGridCurrentNative);
         }
 
-        internal void ApplyExternalThreatPulse(Vector3 position, float radius, float strength, float holdDuration)
+        public void ApplyExternalThreatPulse(Vector3 position, float radius, float strength, float holdDuration)
         {
             if (!IsFinite(position) ||
                 !math.isfinite(radius) ||

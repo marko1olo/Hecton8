@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_022
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_022_MAT_family_coral_massive_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_coral_massive_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_coral_massive_Placeholder_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+High-quality replacement for massive coral placeholder albedo. Make a large-scale reef skin with cream coral armor plates, pale apricot internal color at worn edges, restrained cyan mineral dust, and clean branching vein patterns that break up the surface without clutter. The result should look good close to the camera and from traversal distance: big readable masses first, fine pores second. Keep it premium, alive, clean, and organized. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

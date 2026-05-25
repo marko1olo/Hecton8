@@ -171,14 +171,14 @@ namespace Hecton8.Animation.KineticCharacter
                 return false;
 
             distance = DecodeSdfAt(x, y, z);
-            float gradientGate = math.step(0.24f, quality);
-            if (gradientGate > 0f)
+            float gradientWeight = KineticCharacterMath.SmoothRange01(quality, 0.08f, 1f);
+            if (gradientWeight > 0.0001f)
             {
                 float dx = DecodeSdfAt(x + 1, y, z) - DecodeSdfAt(x - 1, y, z);
                 float dy = DecodeSdfAt(x, y + 1, z) - DecodeSdfAt(x, y - 1, z);
                 float dz = DecodeSdfAt(x, y, z + 1) - DecodeSdfAt(x, y, z - 1);
                 float3 gradientNormal = KineticCharacterMath.NormalizeSafe(new float3(dx, dy, dz), normal);
-                normal = KineticCharacterMath.NormalizeSafe(math.lerp(normal, gradientNormal, KineticCharacterMath.SmoothRange01(quality, 0.24f, 1f)), normal);
+                normal = KineticCharacterMath.NormalizeSafe(math.lerp(normal, gradientNormal, gradientWeight), normal);
             }
 
             return math.isfinite(distance) && math.all(math.isfinite(normal));
@@ -313,7 +313,7 @@ namespace Hecton8.Animation.KineticCharacter
             float3 chest = root + up * (0.92f + rig.SpineLength) + forward * (input.SwimWaveForward * tuning.SpineLeanRadians * 0.12f);
             float3 neck = chest + up * rig.NeckLength + forward * 0.03f;
             float3 head = neck + up * 0.14f + forward * 0.02f;
-            quaternion spineDamage = quaternion.AxisAngle(right, damageAngle);
+            quaternion spineDamage = KineticCharacterMath.FastSmallAngleRotation(right, damageAngle);
             float4x4 rootMatrix = float4x4.TRS(root, rootRotation, KineticCharacterMath.Float3(1f, 1f, 1f));
 
             int invalidCount = 0;
@@ -485,7 +485,7 @@ namespace Hecton8.Animation.KineticCharacter
         private static int ResolveIkIterations(float quality, KineticCharacterTuningDTO tuning)
         {
             float curved = KineticCharacterMath.Smooth01(quality);
-            return math.clamp((int)math.round(math.lerp(tuning.MinimumIkIterations, tuning.UltraIkIterations, curved)), 1, 8);
+            return math.clamp((int)math.round(math.lerp(tuning.MinimumIkIterations, tuning.MaximumIkIterations, curved)), 1, 8);
         }
 
         private static int ResolveActiveBoneCount(float quality, int boneCount, KineticCharacterTuningDTO tuning)
@@ -578,6 +578,169 @@ namespace Hecton8.Animation.KineticCharacter
                 if (errSq <= tolerance * tolerance)
                     break;
             }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct ApplyPlayerHandIkToKineticBonesJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<KineticCharacterRigDTO> Rigs;
+        [ReadOnly, NoAlias] public NativeArray<KineticCharacterFrameInputDTO> Inputs;
+        [ReadOnly, NoAlias] public NativeArray<IkHandStateDTO> PlayerHandIkStates;
+        [NoAlias] public NativeArray<ProceduralBoneDTO> BoneOutputs;
+        [NoAlias] public NativeArray<KineticCharacterFrameStatsDTO> Stats;
+        public double AupSectorSizeMeters;
+
+        public void Execute(int index)
+        {
+            if (!Rigs.IsCreated ||
+                !Inputs.IsCreated ||
+                !PlayerHandIkStates.IsCreated ||
+                !BoneOutputs.IsCreated ||
+                !Stats.IsCreated ||
+                (uint)index >= (uint)Rigs.Length ||
+                (uint)index >= (uint)Inputs.Length ||
+                (uint)index >= (uint)Stats.Length ||
+                index != 0 ||
+                PlayerHandIkStates.Length < PlayerHandIkContract.HandCount)
+            {
+                return;
+            }
+
+            KineticCharacterRigDTO rig = Rigs[index];
+            KineticCharacterFrameInputDTO input = Inputs[index];
+            if ((rig.Flags & KineticCharacterAnimatorConstants.RigFlagVisible) == 0u ||
+                (input.Flags & KineticCharacterAnimatorConstants.InputFlagVisible) == 0u)
+            {
+                return;
+            }
+
+            float3 rootRelative = KineticCharacterMath.AupToObserverRelative(
+                input.RootSectorX,
+                input.RootSectorY,
+                input.RootSectorZ,
+                input.RootLocalPosition,
+                input.CameraSectorX,
+                input.CameraSectorY,
+                input.CameraSectorZ,
+                input.CameraLocalPosition,
+                AupSectorSizeMeters);
+
+            KineticCharacterFrameStatsDTO stats = Stats[index];
+            int invalid = 0;
+            int applied = 0;
+            uint hash = stats.StateHash == 0u ? rig.SkeletonHash : stats.StateHash;
+            applied += ApplyHand(
+                0,
+                rig.BoneStart,
+                rig.LeftShoulderIndex,
+                rig.LeftElbowIndex,
+                rig.LeftHandIndex,
+                rootRelative,
+                -1f,
+                ref invalid,
+                ref hash);
+            applied += ApplyHand(
+                1,
+                rig.BoneStart,
+                rig.RightShoulderIndex,
+                rig.RightElbowIndex,
+                rig.RightHandIndex,
+                rootRelative,
+                1f,
+                ref invalid,
+                ref hash);
+
+            if (applied > 0 || invalid > 0)
+            {
+                if (applied > 0)
+                    stats.Flags |= KineticCharacterAnimatorConstants.TelemetryFlagPlayerKinematicsTargets;
+                stats.ActiveIkTargets = math.max(stats.ActiveIkTargets, applied);
+                stats.StateHash = hash;
+                stats.InvalidMathCount += invalid;
+                if (invalid > 0)
+                    stats.Flags |= KineticCharacterAnimatorConstants.TelemetryFlagInvalid;
+                Stats[index] = stats;
+            }
+        }
+
+        private int ApplyHand(
+            int handIndex,
+            int boneStart,
+            int shoulderIndex,
+            int elbowIndex,
+            int handBoneIndex,
+            float3 rootRelative,
+            float sideSign,
+            ref int invalid,
+            ref uint hash)
+        {
+            if ((uint)handIndex >= (uint)PlayerHandIkStates.Length ||
+                shoulderIndex < 0 ||
+                elbowIndex < 0 ||
+                handBoneIndex < 0)
+            {
+                return 0;
+            }
+
+            IkHandStateDTO hand = PlayerHandIkStates[handIndex];
+            if ((hand.Flags & PlayerHandIkFlags.TargetValid) == 0u ||
+                (hand.Flags & PlayerHandIkFlags.NonFinite) != 0u ||
+                hand.TargetHashID == 0u)
+            {
+                return 0;
+            }
+
+            float3 shoulder = rootRelative + hand.ShoulderPos;
+            float3 elbow = rootRelative + hand.ElbowPos;
+            float3 wrist = rootRelative + hand.WristPos;
+            if (!IsFinite(shoulder) || !IsFinite(elbow) || !IsFinite(wrist))
+            {
+                invalid++;
+                return 0;
+            }
+
+            float3 up = ResolveArmUp(shoulder, elbow, wrist, sideSign);
+            WriteBone(boneStart, shoulderIndex, KineticCharacterMath.BoneMatrix(shoulder, elbow - shoulder, up), ref invalid);
+            WriteBone(boneStart, elbowIndex, KineticCharacterMath.BoneMatrix(elbow, wrist - elbow, up), ref invalid);
+            WriteBone(boneStart, handBoneIndex, KineticCharacterMath.BoneMatrix(wrist, wrist - elbow, up), ref invalid);
+
+            hash = KineticCharacterMath.Hash(hash, hand.TargetHashID);
+            hash = KineticCharacterMath.Hash(hash, hand.Flags);
+            hash = KineticCharacterMath.Hash(hash, math.asuint(hand.WristPos.x));
+            hash = KineticCharacterMath.Hash(hash, math.asuint(hand.WristPos.y));
+            hash = KineticCharacterMath.Hash(hash, math.asuint(hand.WristPos.z));
+            return 1;
+        }
+
+        private void WriteBone(int boneStart, int relativeIndex, float4x4 matrix, ref int invalid)
+        {
+            int absoluteIndex = boneStart + relativeIndex;
+            if ((uint)absoluteIndex >= (uint)BoneOutputs.Length)
+                return;
+
+            if (!KineticCharacterMath.IsFinite(matrix))
+            {
+                matrix = float4x4.identity;
+                invalid++;
+            }
+
+            BoneOutputs[absoluteIndex] = new ProceduralBoneDTO { LocalToWorld = matrix };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ResolveArmUp(float3 shoulder, float3 elbow, float3 wrist, float sideSign)
+        {
+            float3 upper = KineticCharacterMath.NormalizeSafe(elbow - shoulder, KineticCharacterMath.Float3(0f, -1f, 0f));
+            float3 lower = KineticCharacterMath.NormalizeSafe(wrist - elbow, KineticCharacterMath.Float3(0f, 0f, 1f));
+            float3 planeNormal = KineticCharacterMath.NormalizeSafe(math.cross(upper, lower), KineticCharacterMath.Float3(sideSign, 0f, 0f));
+            return KineticCharacterMath.NormalizeSafe(math.cross(planeNormal, lower), KineticCharacterMath.Float3(0f, 1f, 0f));
         }
     }
 

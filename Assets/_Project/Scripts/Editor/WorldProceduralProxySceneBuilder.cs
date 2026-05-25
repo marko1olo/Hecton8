@@ -230,8 +230,7 @@ namespace Hecton8.EditorTools
             else
             {
                 instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                Collider collider = instance.GetComponent<Collider>();
-                if (collider != null)
+                if (instance.TryGetComponent(out Collider collider))
                     UnityEngine.Object.DestroyImmediate(collider);
             }
 
@@ -249,8 +248,7 @@ namespace Hecton8.EditorTools
             float scale = ResolveScaleMultiplier(family, variant, instanceIndex);
             instance.transform.localScale *= scale;
 
-            WorldProceduralProxyInstance metadata = instance.GetComponent<WorldProceduralProxyInstance>();
-            if (metadata == null)
+            if (!instance.TryGetComponent(out WorldProceduralProxyInstance metadata))
                 metadata = instance.AddComponent<WorldProceduralProxyInstance>();
 
             metadata.Configure(

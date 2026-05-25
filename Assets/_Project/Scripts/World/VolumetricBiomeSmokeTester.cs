@@ -124,7 +124,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (logResult)
             {
-                Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     _debugPassed
                         ? "[VolumetricBiomeSmokeTester] PASS stress=256"
                         : "[VolumetricBiomeSmokeTester] FAIL",
@@ -309,7 +309,7 @@ namespace Hecton8.World
         {
             bool passed = RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report);
 
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 $"[VolumetricBiomeSmokeTester] {(passed ? "PASS" : "FAIL")} " +
                 $"shallow={report.ShallowBiomeId} twilight={report.TwilightBiomeId} hadal={report.HadalBiomeId} " +
                 $"flags={report.TwilightFlags} stressSamples={report.StressSampleCount} stressFailures={report.StressFailureCount} " +

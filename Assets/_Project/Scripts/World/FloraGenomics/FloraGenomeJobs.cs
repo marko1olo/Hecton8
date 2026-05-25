@@ -98,6 +98,39 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion FastRotationNoTrig(float3 axis, float radians)
+        {
+            ApproximateSinCosFullNoTrig(math.select(0f, radians, math.isfinite(radians)) * 0.5f, out float sinHalf, out float cosHalf);
+            float3 safeAxis = math.normalizesafe(axis, new float3(1f, 0f, 0f));
+            quaternion result = new quaternion(new float4(safeAxis * sinHalf, cosHalf));
+            float lenSq = math.lengthsq(result.value);
+            return math.isfinite(lenSq) && lenSq > 0.000001f
+                ? new quaternion(result.value * math.rsqrt(lenSq))
+                : quaternion.identity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (6.28318530718f * math.round(radians * 0.15915494309f));
+            float cosSign = 1f;
+            if (x > 1.57079632679f)
+            {
+                x = 3.14159265359f - x;
+                cosSign = -1f;
+            }
+            else if (x < -1.57079632679f)
+            {
+                x = -3.14159265359f - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveScaleVariance(uint plantHash, uint speciesHash, uint worldSeed)
         {
             uint state = plantHash ^ (speciesHash * 747796405u) ^ (worldSeed * 2891336453u);
@@ -731,7 +764,7 @@ namespace Hecton8.World
         {
             float3 forward = math.mul(frame.Rotation, new float3(0f, 1f, 0f));
             float3 side = math.normalizesafe(math.cross(frame.BishopUp, forward), new float3(1f, 0f, 0f));
-            quaternion bend = quaternion.AxisAngle(side, angle);
+            quaternion bend = FloraGenomeLSystemUtility.FastRotationNoTrig(side, angle);
             frame.Rotation = math.normalize(math.mul(bend, frame.Rotation));
             float3 bentForward = math.mul(frame.Rotation, new float3(0f, 1f, 0f));
             frame.BishopUp = math.normalizesafe(math.cross(bentForward, side), frame.BishopUp);

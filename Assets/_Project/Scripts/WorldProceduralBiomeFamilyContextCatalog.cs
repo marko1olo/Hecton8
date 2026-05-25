@@ -59,7 +59,7 @@ namespace Hecton8.World
                 return;
 
             int profileCount = profiles != null ? profiles.Length : 0;
-            _lookup = new Dictionary<string, WorldProceduralBiomeFamilyContextProfile>(profileCount);
+            _lookup = new Dictionary<string, WorldProceduralBiomeFamilyContextProfile>(profileCount, System.StringComparer.Ordinal);
             if (profileCount <= 0)
                 return;
 

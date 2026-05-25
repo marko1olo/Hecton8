@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 - AcousticZoneController.cs
 // Manages acoustic-zone transitions between open water and dry base interiors.
 //
@@ -26,7 +26,7 @@
 //     -> Tick: AcousticZoneController detects edge
 //       -> snapshot.TransitionTo(transitionDuration)
 //       -> SpatialAudioManager.PlayStatic2D(transitionClip)
-//       -> SignalBus<AcousticZoneChangedEvent>.Push(isInterior)
+//       -> SignalBus<AcousticZoneChangedEvent>.TryPush(isInterior)
 //
 // ZERO GC:
 //   - Tick: one bool comparison plus edge detection. Zero allocation.
@@ -41,6 +41,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
@@ -94,17 +95,29 @@ namespace Hecton8.Audio
 
         /// <summary>Queues one acoustic-zone transition.</summary>
         /// <param name="payload">Zone transition payload.</param>
-        public static void Raise(in AcousticZoneChangedEvent payload)
+        public static bool TryRaise(in AcousticZoneChangedEvent payload)
         {
             EnsureInitialized();
-            SignalBus<AcousticZoneChangedEvent>.Push(in payload);
+            return SignalBus<AcousticZoneChangedEvent>.TryPush(in payload);
+        }
+
+        [Obsolete("Acoustic zone producers must use TryRaise so bounded SignalBus rejection is visible.", true)]
+        public static void Raise(in AcousticZoneChangedEvent payload)
+        {
+            TryRaise(in payload);
         }
 
         /// <summary>Queues one habitat-flood acoustic muffle scalar payload.</summary>
-        public static void RaiseFloodMuffle(in HabitatFloodAcousticMuffleSignal payload)
+        public static bool TryRaiseFloodMuffle(in HabitatFloodAcousticMuffleSignal payload)
         {
             EnsureFloodMuffleInitialized();
-            SignalBus<HabitatFloodAcousticMuffleSignal>.Push(in payload);
+            return SignalBus<HabitatFloodAcousticMuffleSignal>.TryPush(in payload);
+        }
+
+        [Obsolete("Flood muffle producers must use TryRaiseFloodMuffle so bounded SignalBus rejection is visible.", true)]
+        public static void RaiseFloodMuffle(in HabitatFloodAcousticMuffleSignal payload)
+        {
+            TryRaiseFloodMuffle(in payload);
         }
 
         /// <summary>Compatibility no-op; SignalBus snapshots are flushed by <see cref="GlobalSignals"/>.</summary>
@@ -114,7 +127,7 @@ namespace Hecton8.Audio
 
         public static void EnsureInitialized()
         {
-            GlobalSignals.InitializeAllQueues();
+            SignalCorridorRuntime.EnsureInitialized();
             SignalBus<AcousticZoneChangedEvent>.EnsureInitialized();
             EnsureFloodMuffleInitialized();
         }
@@ -125,10 +138,10 @@ namespace Hecton8.Audio
                 return;
 
             SignalBus<HabitatFloodAcousticMuffleSignal>.Configure(
-                FloodMuffleSignalCapacity,
-                maxFrameSignals: FloodMuffleSignalCapacity,
-                lowTierFrameSignals: FloodMuffleSignalCapacity,
-                laneHash: FloodMuffleLaneHash);
+                HabitatFloodAcousticMuffleSignal.ExpectedCapacity,
+                maxFrameSignals: HabitatFloodAcousticMuffleSignal.MaxFrameSignals,
+                lowTierFrameSignals: HabitatFloodAcousticMuffleSignal.LowTierFrameSignals,
+                laneHash: HabitatFloodAcousticMuffleSignal.LaneHash);
             SignalBus<HabitatFloodAcousticMuffleSignal>.EnsureInitialized();
             _floodMuffleInitialized = true;
         }
@@ -136,7 +149,7 @@ namespace Hecton8.Audio
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)] // Posle FluidEngine (-5000), do bolshinstva sistem
-    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable, ISoundscapeEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAtmosphereStateEventListener, IToolAcousticCueService
+    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ISoundscapeEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAtmosphereStateEventListener, IToolAcousticCueService, IAcousticZoneReadModel, IAcousticZoneMadnessCueSink, IGlobalRegistryHotSwapListener
     {
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
@@ -331,19 +344,19 @@ namespace Hecton8.Audio
         [Tooltip("Maximum misfire sputter volume when the hull is near catastrophic stress.")]
         [SerializeField, Range(0f, 1f)] private float mantaMisfireVolumeMax = 0.36f;
 
-        [Header("Fatal Pressure Audio")]
-        [Tooltip("Primary 2D white-noise burst used during the fatal crush-depth glitch loop.")]
-        [SerializeField] private AudioClip fatalPressureNoisePrimary;
-        [Tooltip("Alternate 2D white-noise burst so repeated fatal-pressure warnings do not sound identical.")]
-        [SerializeField] private AudioClip fatalPressureNoiseSecondary;
-        [Tooltip("Slowest cadence between fatal-pressure white-noise bursts at sequence start.")]
-        [SerializeField, Min(0.05f)] private float fatalPressureNoiseIntervalMax = 0.38f;
-        [Tooltip("Fastest cadence between fatal-pressure white-noise bursts right before implosion.")]
-        [SerializeField, Min(0.05f)] private float fatalPressureNoiseIntervalMin = 0.08f;
-        [Tooltip("Minimum white-noise burst volume during the fatal-pressure loop.")]
-        [SerializeField, Range(0f, 1f)] private float fatalPressureNoiseVolumeMin = 0.16f;
-        [Tooltip("Maximum white-noise burst volume at the end of the fatal-pressure loop.")]
-        [SerializeField, Range(0f, 1f)] private float fatalPressureNoiseVolumeMax = 0.45f;
+        [Header("Fatal Pressure Procedural Stress")]
+        [Tooltip("Slowest cadence between procedural hull-stress bursts at sequence start.")]
+        [SerializeField, Min(0.05f)] private float fatalPressureStressIntervalMax = 0.38f;
+        [Tooltip("Fastest cadence between procedural hull-stress bursts right before implosion.")]
+        [SerializeField, Min(0.05f)] private float fatalPressureStressIntervalMin = 0.08f;
+        [Tooltip("Minimum stress payload sent into the procedural hull-stress renderer during the fatal-pressure loop.")]
+        [SerializeField, Range(0f, 1f)] private float fatalPressureStressMin = 0.55f;
+        [Tooltip("Maximum stress payload sent into the procedural hull-stress renderer at the end of the fatal-pressure loop.")]
+        [SerializeField, Range(0f, 1f)] private float fatalPressureStressMax = 1f;
+        [Tooltip("Lowest procedural hull-stress pitch scale during the fatal-pressure loop.")]
+        [SerializeField, Range(0.25f, 2f)] private float fatalPressureStressPitchMin = 0.68f;
+        [Tooltip("Highest procedural hull-stress pitch scale during the fatal-pressure loop.")]
+        [SerializeField, Range(0.25f, 2f)] private float fatalPressureStressPitchMax = 1.22f;
 
         [Header("Madness Whisper Audio")]
         [Tooltip("Very low 2D whisper/static cue played once when PDA lore is fully replaced by a madness line.")]
@@ -429,8 +442,8 @@ namespace Hecton8.Audio
 
         [Header("Soundscape Tier Response")]
         // Existing underwater acoustic owner consumes depth-band context directly.
-        [Tooltip("Optional SoundscapeSystem reference. If unassigned, the controller lazily resolves the runtime owner.")]
-        [SerializeField] private SoundscapeSystem soundscapeSystem;
+        [Tooltip("Optional soundscape tier read model. If unassigned, the controller lazily resolves the runtime owner.")]
+        [SerializeField] private MonoBehaviour soundscapeSystem;
 
         [Tooltip("Retry interval for resolving SoundscapeSystem in the cold/runtime path.")]
         [SerializeField] private float soundscapeResolveRetryInterval = 1f;
@@ -612,16 +625,19 @@ namespace Hecton8.Audio
         /// Registration tracking dlya GameTickManager.
         /// </summary>
         private bool _registeredToTickManager;
+        private bool _registeredLateFrame;
         private bool _serviceRegistered;
+        private bool _hotSwapListenerRegistered;
         private IAudioService _cachedAudioService;
-        private SpatialAudioManager _cachedSpatialAudioManager;
+        private ISpatialAudioWorldEmitterReadModel _cachedSpatialAudioEmitterReadModel;
         private int _nextAudioServiceResolveFrame;
         private float _nextPlayerResolveTime;
         private const float PlayerResolveRetryInterval = 1f;
         private const float SurfaceWeatherStateEpsilon = 0.001f;
         private float _nextBiomeMatrixResolveTime;
         private float _nextSoundscapeResolveTime;
-        private HectonAtmosphereManager _atmosphereManager;
+        private ISoundscapeTierReadModel _cachedSoundscapeReadModel;
+        private IAtmosphereReadModel _atmosphereReadModel;
         private HectonPlayerMovement _playerMovement;
         private bool _fallbackUnderwaterState;
         private bool _acousticUnderwaterState;
@@ -675,9 +691,8 @@ namespace Hecton8.Audio
         private float _stormAmbientFlutter;
         private bool _stormStaticUsePrimaryNext = true;
         private float _underwaterVegetationPulseTimer;
-        private float _fatalPressureNoiseTimer;
+        private float _fatalPressureStressTimer;
         private float _nextMadnessWhisperTime;
-        private bool _fatalPressureNoiseUsePrimaryNext = true;
         private bool _snapshotBindingsResolved;
         private bool _warnedMissingInteriorSnapshot;
         private bool _warnedMissingUnderwaterSnapshot;
@@ -711,6 +726,34 @@ namespace Hecton8.Audio
         private bool _hasPendingSnapshotTransition;
         private AcousticZoneState _pendingSnapshotZone;
         private float _pendingSnapshotDuration;
+        private bool _pendingAmbientLoopStateDirty;
+        private AcousticZoneState _pendingAmbientLoopZone;
+        private bool _pendingSourceLevelGraphDirty;
+        private AcousticZoneState _pendingSourceLevelGraphZone;
+        private float _pendingSourceLevelGraphDeltaTime;
+        private bool _pendingAmbientSourceMixerRoutingDirty;
+        private AudioSource _pendingAmbientSourceMixerRoutingSource;
+        private AudioMixerGroup _pendingAmbientSourceMixerRoutingGroup;
+        private bool _pendingTransitionCueDirty;
+        private AudioClip _pendingTransitionCueClip;
+        private float _pendingTransitionCueVolume;
+        private bool _pendingMadnessWhisperCueDirty;
+        private AudioClip _pendingMadnessWhisperCueClip;
+        private float _pendingMadnessWhisperCueVolume;
+        private bool _pendingStormStaticCueDirty;
+        private AudioClip _pendingStormStaticCueClip;
+        private float _pendingStormStaticCueVolume;
+        private bool _pendingVegetationCueDirty;
+        private AudioClip _pendingVegetationCueClip;
+        private float _pendingVegetationCueVolume;
+        private bool _pendingFatalPressureCueDirty;
+        private Vector3 _pendingFatalPressureCuePosition;
+        private float _pendingFatalPressureCueStress01;
+        private float _pendingFatalPressureCuePitch;
+        private bool _pendingSonarPingCueDirty;
+        private float _pendingSonarPingCueVolume;
+        private bool _pendingMantaMisfireCueDirty;
+        private float _pendingMantaMisfireCueVolume;
         private const float AcousticCutoffWriteEpsilonHz = 8f;
         private const float AcousticResonanceWriteEpsilon = 0.01f;
         private const float AcousticDecayWriteEpsilonSeconds = 0.01f;
@@ -728,9 +771,9 @@ namespace Hecton8.Audio
         private readonly AudioMixerSnapshot[] _activeSurfaceBlendSnapshots = new AudioMixerSnapshot[3];
         // COLD ALLOC: float[3] - last applied surface weather snapshot blend weights - owner: AcousticZoneController
         private readonly float[] _activeSurfaceBlendWeights = new float[3];
-        // COLD ALLOC: ActiveEmitterSample[24] - pooled world-emitter acoustic occlusion sample buffer - owner: AcousticZoneController
-        private static readonly SpatialAudioManager.ActiveEmitterSample[] s_emitterOcclusionSamples =
-            new SpatialAudioManager.ActiveEmitterSample[AcousticEmitterSampleCapacity];
+        // COLD ALLOC: SpatialAudioActiveEmitterSample[24] - pooled world-emitter acoustic occlusion sample buffer - owner: AcousticZoneController
+        private static readonly SpatialAudioActiveEmitterSample[] s_emitterOcclusionSamples =
+            new SpatialAudioActiveEmitterSample[AcousticEmitterSampleCapacity];
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -768,8 +811,11 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegister();
+            TryRegisterLateFrameTick();
             AtmosphereEvents.Register(this);
             SoundscapeEvents.Register(this);
             PhysicsEvents.Register(this);
@@ -780,9 +826,8 @@ namespace Hecton8.Audio
             _stormAmbientFlutter = 0f;
             _stormStaticUsePrimaryNext = true;
             _underwaterVegetationPulseTimer = 0f;
-            _fatalPressureNoiseTimer = 0f;
+            _fatalPressureStressTimer = 0f;
             _nextMadnessWhisperTime = 0f;
-            _fatalPressureNoiseUsePrimaryNext = true;
             _acousticImpactImpulse = 0f;
             _acousticSonarImpulse = 0f;
             _resolvedEmitterOcclusionLayerMask = 0;
@@ -838,27 +883,54 @@ namespace Hecton8.Audio
             _stormAmbientFlutterPhase = 0f;
             _stormAmbientFlutter = 0f;
             _underwaterVegetationPulseTimer = 0f;
-            _fatalPressureNoiseTimer = 0f;
+            _fatalPressureStressTimer = 0f;
             _nextMadnessWhisperTime = 0f;
             _acousticImpactImpulse = 0f;
             _acousticSonarImpulse = 0f;
             ResetSourceLevelAcousticFallback();
             TryUnregister();
+            TryUnregisterLateFrameTick();
             TryUnregisterService();
-            ClearCachedAudioServices();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterLateFrameTick();
             TryUnregisterService();
             AtmosphereEvents.Unregister(this);
             SoundscapeEvents.Unregister(this);
             PhysicsEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             ResetSourceLevelAcousticFallback();
-            ClearCachedAudioServices();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
 
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheAudioService(currentService as IAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.SoundscapeRuntime:
+                    if (ReferenceEquals(soundscapeSystem, previousService))
+                        soundscapeSystem = null;
+                    CacheSoundscapeReadModel(currentService as ISoundscapeTierReadModel);
+                    RefreshSoundscapeTierContext(true);
+                    break;
+                case GlobalRegistryServiceSlot.AtmosphereRuntime:
+                    _atmosphereReadModel = currentService as IAtmosphereReadModel;
+                    RefreshAtmosphereZoneCache();
+                    break;
+            }
         }
 
         private void TryRegister()
@@ -869,8 +941,7 @@ namespace Hecton8.Audio
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -880,6 +951,45 @@ namespace Hecton8.Audio
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_pendingSourceLevelGraphDirty)
+            {
+                _pendingSourceLevelGraphDirty = false;
+                UpdateSourceLevelAcousticGraph(_pendingSourceLevelGraphZone, _pendingSourceLevelGraphDeltaTime);
+                _pendingSourceLevelGraphDeltaTime = 0f;
+            }
+
+            if (_pendingAmbientLoopStateDirty)
+            {
+                _pendingAmbientLoopStateDirty = false;
+                FlushAmbientLoopState(_pendingAmbientLoopZone);
+            }
+
+            FlushPendingAmbientSourceMixerRouting();
+            FlushQueuedAcousticCues();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -917,40 +1027,76 @@ namespace Hecton8.Audio
             _serviceRegistered = false;
         }
 
-        private void ClearCachedAudioServices()
+        private void ClearCachedRegistryServices()
         {
             _cachedAudioService = null;
-            _cachedSpatialAudioManager = null;
+            _cachedSpatialAudioEmitterReadModel = null;
+            _cachedSoundscapeReadModel = null;
+            _atmosphereReadModel = null;
             _nextAudioServiceResolveFrame = 0;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            CacheAudioService(GlobalRegistry.Audio);
+            CacheSoundscapeReadModel(GlobalRegistry.SoundscapeTierReadModel);
+            _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = audioService;
+            _cachedSpatialAudioEmitterReadModel = audioService as ISpatialAudioWorldEmitterReadModel;
+            _nextAudioServiceResolveFrame = 0;
+        }
+
+        private void CacheSoundscapeReadModel(ISoundscapeTierReadModel runtime)
+        {
+            _cachedSoundscapeReadModel = runtime;
+            _nextSoundscapeResolveTime = 0f;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private IAudioService ResolveAudioService()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             IAudioService audioService = _cachedAudioService;
-            if (audioService != null && audioService.IsInitialized && frame < _nextAudioServiceResolveFrame)
+            if (audioService != null && audioService.IsInitialized)
                 return audioService;
 
             if (frame < _nextAudioServiceResolveFrame)
                 return null;
 
             _nextAudioServiceResolveFrame = frame + AudioServiceResolveRetryFrames;
-            audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _cachedAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
-            _cachedSpatialAudioManager = _cachedAudioService as SpatialAudioManager;
-            return _cachedAudioService;
+            return null;
         }
 
-        private SpatialAudioManager ResolveSpatialAudioManager()
+        private ISpatialAudioWorldEmitterReadModel ResolveSpatialAudioEmitterReadModel()
         {
             IAudioService audioService = ResolveAudioService();
-            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
-            if (spatialAudioManager != null)
-                return spatialAudioManager;
+            ISpatialAudioWorldEmitterReadModel spatialAudioReadModel = _cachedSpatialAudioEmitterReadModel;
+            if (spatialAudioReadModel != null)
+                return spatialAudioReadModel;
 
-            spatialAudioManager = audioService as SpatialAudioManager;
-            _cachedSpatialAudioManager = spatialAudioManager;
-            return spatialAudioManager;
+            spatialAudioReadModel = audioService as ISpatialAudioWorldEmitterReadModel;
+            _cachedSpatialAudioEmitterReadModel = spatialAudioReadModel;
+            return spatialAudioReadModel;
         }
 
         public void Tick(float deltaTime)
@@ -976,10 +1122,10 @@ namespace Hecton8.Audio
             RefreshBiomeAmbientContext();
             RefreshSoundscapeTierContext(false);
             UpdateStormInterferenceAudio(currentZone, deltaTime);
-            UpdateAmbientLoopMix(currentZone);
+            QueueAmbientLoopState(currentZone);
             UpdateUnderwaterVegetationOverlay(currentZone, deltaTime);
-            UpdateFatalPressureLoopAudio(currentZone, deltaTime);
-            UpdateSourceLevelAcousticGraph(currentZone, deltaTime);
+            UpdateFatalPressureStressAudio(currentZone, deltaTime);
+            QueueSourceLevelAcousticGraph(currentZone, deltaTime);
 
             // First frame: establish initial state without transition.
             if (!_stateInitialized)
@@ -1005,7 +1151,7 @@ namespace Hecton8.Audio
             ApplyZoneTransition(currentZone);
 
             // Notify external systems.
-            AcousticZoneEvents.Raise(new AcousticZoneChangedEvent(currentZone == AcousticZoneState.Interior));
+            AcousticZoneEvents.TryRaise(new AcousticZoneChangedEvent(currentZone == AcousticZoneState.Interior));
 
             UpdateDiagnostics(currentZone);
         }
@@ -1117,19 +1263,15 @@ namespace Hecton8.Audio
         /// </summary>
         private void PlayTransitionSound(AudioClip clip)
         {
-            if (clip == null) return;
-
-            IAudioService sam = ResolveAudioService();
-            if (sam == null)
+            if (clip == null)
                 return;
 
-            sam.PlayStatic2D(clip, transitionVolume);
+            QueueTransitionCue(clip, transitionVolume);
         }
 
-        internal void PlayMadnessWhisperCue()
+        public void PlayMadnessWhisperCue()
         {
-            IAudioService sam = ResolveAudioService();
-            if (Time.unscaledTime < _nextMadnessWhisperTime || sam == null)
+            if (Time.unscaledTime < _nextMadnessWhisperTime)
                 return;
 
             AudioClip clip = stormStaticPrimary;
@@ -1137,15 +1279,9 @@ namespace Hecton8.Audio
                 clip = stormStaticSecondary;
 
             if (clip == null)
-                clip = fatalPressureNoisePrimary;
-
-            if (clip == null)
-                clip = fatalPressureNoiseSecondary;
-
-            if (clip == null)
                 return;
 
-            sam.PlayStatic2D(clip, madnessWhisperVolume, sam.InterfaceGroup);
+            QueueMadnessWhisperCue(clip, madnessWhisperVolume);
             _nextMadnessWhisperTime = Time.unscaledTime + math.max(0.1f, madnessWhisperCooldown);
         }
 
@@ -1209,8 +1345,6 @@ namespace Hecton8.Audio
             {
                 playerTransform.TryGetComponent(out playerBuoyancy);
                 playerTransform.TryGetComponent(out _playerMovement);
-                ResolvePlayerAmbientSource(playerTransform);
-                ResolvePlayerListenerFilters(playerTransform);
             }
 
             UpdatePlayerFoundDiagnostic();
@@ -1245,7 +1379,7 @@ namespace Hecton8.Audio
 
             ApplyZoneTransition(forcedZone);
 
-            AcousticZoneEvents.Raise(new AcousticZoneChangedEvent(isInterior));
+            AcousticZoneEvents.TryRaise(new AcousticZoneChangedEvent(isInterior));
             UpdateDiagnostics(forcedZone);
         }
 
@@ -1273,8 +1407,7 @@ namespace Hecton8.Audio
             if (buoyancy != null)
             {
                 buoyancy.TryGetComponent(out _playerMovement);
-                ResolvePlayerAmbientSource(buoyancy.transform);
-                ResolvePlayerListenerFilters(buoyancy.transform);
+                TryRegisterLateFrameTick();
             }
             _stateInitialized = false; // Pereinitsializatsiya pri sleduyuschem Tick
             UpdatePlayerFoundDiagnostic();
@@ -1318,7 +1451,7 @@ namespace Hecton8.Audio
         private void LogDiagnostic(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(message, this);
+            Hecton8.Core.H8Debug.Log(message, this);
 #endif
         }
 
@@ -1340,10 +1473,10 @@ namespace Hecton8.Audio
             if (_hasCachedExteriorZone)
                 return _cachedExteriorZone;
 
-            HectonAtmosphereManager atmosphere = ResolveAtmosphereManager();
+            IAtmosphereReadModel atmosphere = ResolveAtmosphereReadModel();
             if (atmosphere != null)
             {
-                AcousticZoneState zone = atmosphere.CurrentState == EnvironmentState.UNDERWATER
+                AcousticZoneState zone = atmosphere.IsUnderwaterState
                     ? AcousticZoneState.Underwater
                     : AcousticZoneState.Surface;
                 _cachedExteriorZone = zone;
@@ -1431,8 +1564,8 @@ namespace Hecton8.Audio
             if (movement != null)
                 return movement.CurrentDepth;
 
-            HectonAtmosphereManager atmosphere = ResolveAtmosphereManager();
-            if (atmosphere != null && atmosphere.CurrentState == EnvironmentState.UNDERWATER)
+            IAtmosphereReadModel atmosphere = ResolveAtmosphereReadModel();
+            if (atmosphere != null && atmosphere.IsUnderwaterState)
                 return acousticEnterUnderwaterDepth;
 
             return 0f;
@@ -1464,28 +1597,55 @@ namespace Hecton8.Audio
             _nextBiomeMatrixResolveTime = currentTime + biomeMatrixResolveRetryInterval;
         }
 
-        private void ResolveSoundscapeSystem(bool force)
+        private ISoundscapeTierReadModel ResolveSoundscapeReadModel(bool force)
         {
-            if (soundscapeSystem != null)
-                return;
+            if (soundscapeSystem is ISoundscapeTierReadModel explicitReadModel)
+                return explicitReadModel;
+
+            if (_cachedSoundscapeReadModel != null)
+                return _cachedSoundscapeReadModel;
 
             float currentTime = Time.unscaledTime;
             if (!force && currentTime < _nextSoundscapeResolveTime)
-                return;
+                return null;
 
-            soundscapeSystem = GlobalRegistry.Soundscape;
             _nextSoundscapeResolveTime = currentTime + soundscapeResolveRetryInterval;
+            CacheSoundscapeReadModel(GlobalRegistry.SoundscapeTierReadModel);
+            return _cachedSoundscapeReadModel;
         }
 
         private void RefreshSoundscapeTierContext(bool force)
         {
-            ResolveSoundscapeSystem(force);
+            ISoundscapeTierReadModel soundscapeReadModel = ResolveSoundscapeReadModel(force);
 
-            SoundscapeTier tier = soundscapeSystem != null
-                ? soundscapeSystem.CurrentTier
+            SoundscapeTier tier = soundscapeReadModel != null
+                ? ResolveSoundscapeTierFromCode(soundscapeReadModel.CurrentTierCode)
                 : SoundscapeTier.Shallow;
 
             ApplySoundscapeTierContext(tier);
+        }
+
+        private static SoundscapeTier ResolveSoundscapeTierFromCode(byte tierCode)
+        {
+            switch (tierCode)
+            {
+                case 0:
+                    return SoundscapeTier.Surface;
+                case 1:
+                    return SoundscapeTier.Shallow;
+                case 2:
+                    return SoundscapeTier.Twilight;
+                case 3:
+                    return SoundscapeTier.Darkness;
+                case 4:
+                    return SoundscapeTier.Abyss;
+                case 5:
+                    return SoundscapeTier.DeepAbyss;
+                case 6:
+                    return SoundscapeTier.Thermal;
+                default:
+                    return SoundscapeTier.Shallow;
+            }
         }
 
         private void ApplySoundscapeTierContext(SoundscapeTier tier)
@@ -1613,24 +1773,21 @@ namespace Hecton8.Audio
             }
         }
 
-        private HectonAtmosphereManager ResolveAtmosphereManager()
+        private IAtmosphereReadModel ResolveAtmosphereReadModel()
         {
-            if (_atmosphereManager == null)
-                _atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
-
-            return _atmosphereManager;
+            return _atmosphereReadModel;
         }
 
         private void RefreshAtmosphereZoneCache()
         {
-            HectonAtmosphereManager atmosphere = ResolveAtmosphereManager();
+            IAtmosphereReadModel atmosphere = ResolveAtmosphereReadModel();
             if (atmosphere == null)
             {
                 _hasCachedExteriorZone = false;
                 return;
             }
 
-            HandleAtmosphereStateChanged(atmosphere.CurrentState);
+            HandleAtmosphereStateChanged(atmosphere.IsUnderwaterState ? EnvironmentState.UNDERWATER : EnvironmentState.SURFACE_DAY);
         }
 
         private HectonPlayerMovement ResolvePlayerMovement()
@@ -1695,27 +1852,39 @@ namespace Hecton8.Audio
             return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
 
-        private AudioSource ResolvePlayerAmbientSource()
+        private AudioSource ResolvePlayerAmbientSource(bool allowPresentationState = false)
         {
             if ((object)playerUnderwaterAmbientSource != null && playerUnderwaterAmbientSource != null)
             {
-                EnsureAmbientSourceMixerRouting(playerUnderwaterAmbientSource);
-                CacheAmbientSourceDefaults(playerUnderwaterAmbientSource);
+                if (allowPresentationState)
+                {
+                    EnsureAmbientSourceMixerRouting(playerUnderwaterAmbientSource);
+                    CacheAmbientSourceDefaults(playerUnderwaterAmbientSource);
+                }
+
                 return playerUnderwaterAmbientSource;
             }
 
             playerUnderwaterAmbientSource = null;
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                ResolvePlayerAmbientSource(playerTransform);
+                ResolvePlayerAmbientSource(playerTransform, allowPresentationState);
 
             return playerUnderwaterAmbientSource;
         }
 
-        private void ResolvePlayerAmbientSource(Transform playerTransform)
+        private void ResolvePlayerAmbientSource(Transform playerTransform, bool allowPresentationState = false)
         {
             if ((object)playerUnderwaterAmbientSource != null && playerUnderwaterAmbientSource != null)
+            {
+                if (allowPresentationState)
+                {
+                    EnsureAmbientSourceMixerRouting(playerUnderwaterAmbientSource);
+                    CacheAmbientSourceDefaults(playerUnderwaterAmbientSource);
+                }
+
                 return;
+            }
 
             if (playerTransform == null || _playerAudioSources == null)
                 return;
@@ -1746,8 +1915,12 @@ namespace Hecton8.Audio
                     continue;
 
                 playerUnderwaterAmbientSource = candidate;
-                EnsureAmbientSourceMixerRouting(candidate);
-                CacheAmbientSourceDefaults(candidate);
+                if (allowPresentationState)
+                {
+                    EnsureAmbientSourceMixerRouting(candidate);
+                    CacheAmbientSourceDefaults(candidate);
+                }
+
                 return;
             }
 
@@ -1777,7 +1950,7 @@ namespace Hecton8.Audio
             if (playerUnderwaterAmbientMixerGroup != null)
             {
                 if (ambientSource.outputAudioMixerGroup != playerUnderwaterAmbientMixerGroup)
-                    ambientSource.outputAudioMixerGroup = playerUnderwaterAmbientMixerGroup;
+                    QueueAmbientSourceMixerRouting(ambientSource, playerUnderwaterAmbientMixerGroup);
                 return;
             }
 
@@ -1786,8 +1959,31 @@ namespace Hecton8.Audio
                 audioService != null &&
                 audioService.AmbientGroup != null)
             {
-                ambientSource.outputAudioMixerGroup = audioService.AmbientGroup;
+                QueueAmbientSourceMixerRouting(ambientSource, audioService.AmbientGroup);
             }
+        }
+
+        private void QueueAmbientSourceMixerRouting(AudioSource ambientSource, AudioMixerGroup mixerGroup)
+        {
+            if (ambientSource == null || mixerGroup == null)
+                return;
+
+            _pendingAmbientSourceMixerRoutingSource = ambientSource;
+            _pendingAmbientSourceMixerRoutingGroup = mixerGroup;
+            _pendingAmbientSourceMixerRoutingDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushPendingAmbientSourceMixerRouting()
+        {
+            if (!_pendingAmbientSourceMixerRoutingDirty)
+                return;
+
+            _pendingAmbientSourceMixerRoutingDirty = false;
+            AudioSource ambientSource = _pendingAmbientSourceMixerRoutingSource;
+            AudioMixerGroup mixerGroup = _pendingAmbientSourceMixerRoutingGroup;
+            if (ambientSource != null && mixerGroup != null && ambientSource.outputAudioMixerGroup != mixerGroup)
+                ambientSource.outputAudioMixerGroup = mixerGroup;
         }
 
         private AudioListener ResolvePlayerListenerFilters()
@@ -1935,7 +2131,7 @@ namespace Hecton8.Audio
 
         private void UpdateAmbientLoopMix(AcousticZoneState zone)
         {
-            AudioSource ambientSource = ResolvePlayerAmbientSource();
+            AudioSource ambientSource = ResolvePlayerAmbientSource(allowPresentationState: true);
             if (ambientSource == null)
                 return;
 
@@ -1963,6 +2159,13 @@ namespace Hecton8.Audio
 
             if (math.abs(ambientSource.pitch - targetPitch) > 0.01f)
                 ambientSource.pitch = targetPitch;
+        }
+
+        private void QueueAmbientLoopState(AcousticZoneState zone)
+        {
+            _pendingAmbientLoopZone = zone;
+            _pendingAmbientLoopStateDirty = true;
+            TryRegisterLateFrameTick();
         }
 
         private void UpdateStormInterferenceAudio(AcousticZoneState zone, float deltaTime)
@@ -2002,7 +2205,7 @@ namespace Hecton8.Audio
             if (_stormInterferencePulseTimer > 0f)
                 return;
 
-            PlayStormInterferencePulse(stormInterference, zone);
+            QueueStormInterferencePulse(stormInterference, zone);
             _stormInterferencePulseTimer = math.lerp(
                 math.max(0.1f, stormStaticIntervalMax),
                 math.max(0.1f, stormStaticIntervalMin),
@@ -2034,59 +2237,47 @@ namespace Hecton8.Audio
             AudioClip clip = acousticType == HectonMapMagicVegetationBridge.VegetationAcousticType.SargassumBubbles
                 ? underwaterSargassumBubblesClip
                 : underwaterGrassRustleClip;
-            IAudioService sam = ResolveAudioService();
-            if (clip == null || sam == null)
+            if (clip == null)
                 return;
 
             float densityT = math.saturate(
                 (density - underwaterVegetationDensityThreshold) /
                 math.max(0.0001f, 1f - underwaterVegetationDensityThreshold));
             float volume = math.lerp(underwaterVegetationVolumeMin, underwaterVegetationVolumeMax, densityT);
-            sam.PlayStatic2D(clip, volume, sam.AmbientGroup);
+            QueueVegetationCue(clip, volume);
             _underwaterVegetationPulseTimer = math.lerp(
                 math.max(0.1f, underwaterVegetationIntervalMax),
                 math.max(0.1f, underwaterVegetationIntervalMin),
                 densityT);
         }
 
-        private void UpdateFatalPressureLoopAudio(AcousticZoneState zone, float deltaTime)
+        private void UpdateFatalPressureStressAudio(AcousticZoneState zone, float deltaTime)
         {
             HectonPlayerMovement movement = ResolvePlayerMovement();
             float intensity = movement != null ? math.saturate(movement.CurrentFatalPressureSequence01) : 0f;
             if (zone != AcousticZoneState.Underwater || intensity <= 0.001f)
             {
-                _fatalPressureNoiseTimer = 0f;
+                _fatalPressureStressTimer = 0f;
                 return;
             }
 
-            _fatalPressureNoiseTimer -= deltaTime;
-            if (_fatalPressureNoiseTimer > 0f)
+            _fatalPressureStressTimer -= deltaTime;
+            if (_fatalPressureStressTimer > 0f)
                 return;
 
-            AudioClip clip = null;
-            if (fatalPressureNoisePrimary != null && fatalPressureNoiseSecondary != null)
-            {
-                clip = _fatalPressureNoiseUsePrimaryNext ? fatalPressureNoisePrimary : fatalPressureNoiseSecondary;
-                _fatalPressureNoiseUsePrimaryNext = !_fatalPressureNoiseUsePrimaryNext;
-            }
-            else if (fatalPressureNoisePrimary != null)
-            {
-                clip = fatalPressureNoisePrimary;
-            }
-            else if (fatalPressureNoiseSecondary != null)
-            {
-                clip = fatalPressureNoiseSecondary;
-            }
-
-            IAudioService sam = ResolveAudioService();
-            if (clip == null || sam == null)
+            if (!TryResolvePlayerAupRuntimePosition(out Vector3 sourcePosition, out _))
                 return;
 
-            float volume = math.lerp(fatalPressureNoiseVolumeMin, fatalPressureNoiseVolumeMax, intensity);
-            sam.PlayStatic2D(clip, volume, sam.InterfaceGroup);
-            _fatalPressureNoiseTimer = math.lerp(
-                math.max(0.05f, fatalPressureNoiseIntervalMax),
-                math.max(0.05f, fatalPressureNoiseIntervalMin),
+            float stressLow = math.saturate(fatalPressureStressMin);
+            float stressHigh = math.max(stressLow, math.saturate(fatalPressureStressMax));
+            float pitchLow = math.max(0.25f, fatalPressureStressPitchMin);
+            float pitchHigh = math.max(pitchLow, fatalPressureStressPitchMax);
+            float stress01 = math.lerp(stressLow, stressHigh, intensity);
+            float pitch = math.lerp(pitchLow, pitchHigh, intensity);
+            QueueFatalPressureStressCue(sourcePosition, stress01, pitch);
+            _fatalPressureStressTimer = math.lerp(
+                math.max(0.05f, fatalPressureStressIntervalMax),
+                math.max(0.05f, fatalPressureStressIntervalMin),
                 intensity);
         }
 
@@ -2100,12 +2291,11 @@ namespace Hecton8.Audio
             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
                 return;
 
-            IAudioService sam = ResolveAudioService();
-            if (sonarPingClip == null || sam == null)
+            if (sonarPingClip == null)
                 return;
 
             float volume = math.lerp(sonarPingVolumeMin, sonarPingVolumeMax, clampedIntensity);
-            sam.PlayStatic2D(sonarPingClip, volume, sam.InterfaceGroup);
+            QueueSonarPingCue(volume);
         }
 
         void ISonarPingEventListener.OnSonarPingSent(float intensity)
@@ -2141,12 +2331,11 @@ namespace Hecton8.Audio
 
         internal void PlayMantaMisfire(float intensity)
         {
-            IAudioService sam = ResolveAudioService();
-            if (mantaMisfireClip == null || sam == null)
+            if (mantaMisfireClip == null)
                 return;
 
             float volume = math.lerp(mantaMisfireVolumeMin, mantaMisfireVolumeMax, math.saturate(intensity));
-            sam.PlayStatic2D(mantaMisfireClip, volume, sam.InterfaceGroup);
+            QueueMantaMisfireCue(volume);
         }
 
         void IToolAcousticCueService.PlayMantaMisfire(float intensity01)
@@ -2154,7 +2343,7 @@ namespace Hecton8.Audio
             PlayMantaMisfire(intensity01);
         }
 
-        private void PlayStormInterferencePulse(float stormInterference, AcousticZoneState zone)
+        private void QueueStormInterferencePulse(float stormInterference, AcousticZoneState zone)
         {
             AudioClip clip = null;
             if (stormStaticPrimary != null && stormStaticSecondary != null)
@@ -2171,15 +2360,130 @@ namespace Hecton8.Audio
                 clip = stormStaticSecondary;
             }
 
-            IAudioService sam = ResolveAudioService();
-            if (clip == null || sam == null)
+            if (clip == null)
                 return;
 
             float volume = math.lerp(stormStaticVolumeMin, stormStaticVolumeMax, stormInterference);
             if (zone == AcousticZoneState.Underwater)
                 volume *= stormStaticUnderwaterVolumeScale;
 
-            sam.PlayStatic2D(clip, volume, sam.InterfaceGroup);
+            _pendingStormStaticCueClip = clip;
+            _pendingStormStaticCueVolume = volume;
+            _pendingStormStaticCueDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void QueueTransitionCue(AudioClip clip, float volume)
+        {
+            _pendingTransitionCueClip = clip;
+            _pendingTransitionCueVolume = volume;
+            _pendingTransitionCueDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void QueueMadnessWhisperCue(AudioClip clip, float volume)
+        {
+            _pendingMadnessWhisperCueClip = clip;
+            _pendingMadnessWhisperCueVolume = volume;
+            _pendingMadnessWhisperCueDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void QueueVegetationCue(AudioClip clip, float volume)
+        {
+            _pendingVegetationCueClip = clip;
+            _pendingVegetationCueVolume = volume;
+            _pendingVegetationCueDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void QueueFatalPressureStressCue(Vector3 sourcePosition, float stress01, float pitch)
+        {
+            _pendingFatalPressureCuePosition = sourcePosition;
+            _pendingFatalPressureCueStress01 = stress01;
+            _pendingFatalPressureCuePitch = pitch;
+            _pendingFatalPressureCueDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void QueueMantaMisfireCue(float volume)
+        {
+            _pendingMantaMisfireCueVolume = volume;
+            _pendingMantaMisfireCueDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void QueueSonarPingCue(float volume)
+        {
+            _pendingSonarPingCueVolume = volume;
+            _pendingSonarPingCueDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushQueuedAcousticCues()
+        {
+            IAudioService audioService = null;
+            if (_pendingTransitionCueDirty)
+            {
+                _pendingTransitionCueDirty = false;
+                audioService = ResolveAudioService();
+                if (audioService != null && _pendingTransitionCueClip != null)
+                    audioService.PlayStatic2D(_pendingTransitionCueClip, _pendingTransitionCueVolume);
+            }
+
+            if (_pendingMadnessWhisperCueDirty)
+            {
+                _pendingMadnessWhisperCueDirty = false;
+                if (audioService == null)
+                    audioService = ResolveAudioService();
+                if (audioService != null && _pendingMadnessWhisperCueClip != null)
+                    audioService.PlayStatic2D(_pendingMadnessWhisperCueClip, _pendingMadnessWhisperCueVolume, audioService.InterfaceGroup);
+            }
+
+            if (_pendingStormStaticCueDirty)
+            {
+                _pendingStormStaticCueDirty = false;
+                if (audioService == null)
+                    audioService = ResolveAudioService();
+                if (audioService != null && _pendingStormStaticCueClip != null)
+                    audioService.PlayStatic2D(_pendingStormStaticCueClip, _pendingStormStaticCueVolume, audioService.InterfaceGroup);
+            }
+
+            if (_pendingVegetationCueDirty)
+            {
+                _pendingVegetationCueDirty = false;
+                if (audioService == null)
+                    audioService = ResolveAudioService();
+                if (audioService != null && _pendingVegetationCueClip != null)
+                    audioService.PlayStatic2D(_pendingVegetationCueClip, _pendingVegetationCueVolume, audioService.AmbientGroup);
+            }
+
+            if (_pendingMantaMisfireCueDirty)
+            {
+                _pendingMantaMisfireCueDirty = false;
+                if (audioService == null)
+                    audioService = ResolveAudioService();
+                if (audioService != null && mantaMisfireClip != null)
+                    audioService.PlayStatic2D(mantaMisfireClip, _pendingMantaMisfireCueVolume, audioService.InterfaceGroup);
+            }
+
+            if (_pendingSonarPingCueDirty)
+            {
+                _pendingSonarPingCueDirty = false;
+                if (audioService == null)
+                    audioService = ResolveAudioService();
+                if (audioService != null && sonarPingClip != null)
+                    audioService.PlayStatic2D(sonarPingClip, _pendingSonarPingCueVolume, audioService.InterfaceGroup);
+            }
+
+            if (_pendingFatalPressureCueDirty)
+            {
+                _pendingFatalPressureCueDirty = false;
+                ProceduralAudioEvents.TryRaiseStructuralStressTriggered(
+                    _pendingFatalPressureCuePosition,
+                    _pendingFatalPressureCueStress01,
+                    _pendingFatalPressureCuePitch);
+            }
         }
 
         private static float FastSineRadians(float radians)
@@ -2257,7 +2561,12 @@ namespace Hecton8.Audio
 
         private void ApplyAmbientLoopState(AcousticZoneState zone)
         {
-            AudioSource ambientSource = ResolvePlayerAmbientSource();
+            QueueAmbientLoopState(zone);
+        }
+
+        private void FlushAmbientLoopState(AcousticZoneState zone)
+        {
+            AudioSource ambientSource = ResolvePlayerAmbientSource(allowPresentationState: true);
             if (ambientSource == null)
             {
                 ApplySourceLevelAcousticFallback(zone);
@@ -2292,6 +2601,14 @@ namespace Hecton8.Audio
         private void ApplySourceLevelAcousticFallback(AcousticZoneState zone)
         {
             UpdateSourceLevelAcousticGraph(zone, 0f);
+        }
+
+        private void QueueSourceLevelAcousticGraph(AcousticZoneState zone, float deltaTime)
+        {
+            _pendingSourceLevelGraphZone = zone;
+            _pendingSourceLevelGraphDeltaTime = math.max(0f, deltaTime);
+            _pendingSourceLevelGraphDirty = true;
+            TryRegisterLateFrameTick();
         }
 
         private void UpdateSourceLevelAcousticGraph(AcousticZoneState zone, float deltaTime)
@@ -2381,8 +2698,8 @@ namespace Hecton8.Audio
             if ((object)listener == null || listener == null)
                 return;
 
-            SpatialAudioManager spatialAudioManager = ResolveSpatialAudioManager();
-            if (spatialAudioManager == null)
+            ISpatialAudioWorldEmitterReadModel spatialAudioReadModel = ResolveSpatialAudioEmitterReadModel();
+            if (spatialAudioReadModel == null)
                 return;
 
             if (_resolvedEmitterOcclusionLayerMask == 0)
@@ -2391,7 +2708,7 @@ namespace Hecton8.Audio
             if (_resolvedEmitterOcclusionLayerMask == 0)
                 return;
 
-            int emitterCount = spatialAudioManager.CopyActiveWorldEmitterSamples(s_emitterOcclusionSamples);
+            int emitterCount = spatialAudioReadModel.CopyActiveWorldEmitterSamples(s_emitterOcclusionSamples);
             if (emitterCount <= 0)
                 return;
 
@@ -2408,7 +2725,7 @@ namespace Hecton8.Audio
 
             for (int i = 0; i < emitterCount; i++)
             {
-                SpatialAudioManager.ActiveEmitterSample sample = s_emitterOcclusionSamples[i];
+                SpatialAudioActiveEmitterSample sample = s_emitterOcclusionSamples[i];
                 if (!(sample.Amplitude > 0.0001f))
                     continue;
 
@@ -3002,12 +3319,7 @@ namespace Hecton8.Audio
 
         private string BuildSnapshotCoverageSummary()
         {
-            return string.Concat(
-                underwaterSnapshot != null ? "UW " : "uw- ",
-                baseInteriorSnapshot != null ? "INT " : "int- ",
-                surfaceSnapshot != null ? "SURF " : "surf- ",
-                surfaceRainSnapshot != null ? "RAIN " : "rain- ",
-                surfaceStormSnapshot != null ? "STORM" : "storm-");
+            return HasAnyResolvedSnapshotCoverage() ? "Snapshot: Partial/Ready" : "Snapshot: None";
         }
 
         private string BuildMixerCoverageSummary()
@@ -3015,11 +3327,7 @@ namespace Hecton8.Audio
             if (masterMixer == null)
                 return "Mixer: None";
 
-            return string.Concat(
-                "Mixer snapshots=", ResolveSmallCountLabel(_validatedMixerSnapshotCount),
-                " named=", _validatedMixerHasNamedCoverage ? "yes" : "no",
-                " fx=", _validatedMixerHasEffectGraph ? "yes" : "no",
-                " acousticParams=", _acousticMixerBindingsValid ? "yes" : "no");
+            return _acousticMixerBindingsValid ? "Mixer: Valid" : "Mixer: Incomplete";
         }
 
         private static string ResolveSmallCountLabel(int value)

@@ -46,6 +46,12 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Is this segment currently available?")]
         public bool isAvailable = true;
+
+        [System.NonSerialized] public bool pendingRendererEnabled;
+        [System.NonSerialized] public bool rendererEnabledDirty;
+        [System.NonSerialized] public bool cutParticlesDirty;
+        [System.NonSerialized] public bool cutAudioDirty;
+        [System.NonSerialized] public Vector3 pendingCutPosition;
     }
 
     /// <summary>
@@ -53,7 +59,7 @@ namespace Hecton8.Gameplay
     /// Implements ICuttable for knife/laser cutter integration.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HarvestablePlant : MonoBehaviour, ICuttable, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class HarvestablePlant : MonoBehaviour, ICuttable, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float OneOver127 = 1f / 127f;
 
@@ -131,12 +137,13 @@ namespace Hecton8.Gameplay
         private Transform _transform;
         private float[] _regrowTimers;
         private bool _isRegistered;
+        private bool _lateFrameRegistered;
         private bool _tickDormant;
         private bool _hotSwapListenerRegistered;
         private bool _poolMissingLogged;
         private uint _lootScatterSeed;
         private IAudioService _audioService;
-        private ObjectPoolManager _objectPool;
+        private IObjectPoolService _objectPool;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -181,6 +188,7 @@ namespace Hecton8.Gameplay
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            RegisterLateFrame();
 
             // Register for tick if any segments are regrowing
             CheckRegistration();
@@ -190,12 +198,14 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
+            UnregisterLateFrame();
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
+            UnregisterLateFrame();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -236,6 +246,11 @@ namespace Hecton8.Gameplay
             {
                 _tickDormant = true;
             }
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedSegmentPresentation();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -294,25 +309,11 @@ namespace Hecton8.Gameplay
             PlantSegment segment = segments[index];
             segment.isAvailable = false;
 
-            // Disable mesh
-            if (segment.meshRenderer != null)
-            {
-                segment.meshRenderer.enabled = false;
-            }
-
-            // Play cut particles
-            if (segment.cutParticles != null)
-            {
-                segment.cutParticles.transform.position = hitPoint;
-                segment.cutParticles.Play();
-            }
-
-            // Play cut sound
-            IAudioService audio = _audioService;
-            if (cutSound != null && audio != null)
-            {
-                audio.PlayAtPoint(cutSound, hitPoint, cutVolume);
-            }
+            segment.pendingRendererEnabled = false;
+            segment.rendererEnabledDirty = true;
+            segment.pendingCutPosition = hitPoint;
+            segment.cutParticlesDirty = segment.cutParticles != null;
+            segment.cutAudioDirty = cutSound != null;
 
             // Spawn loot
             SpawnLoot(segment, index, hitPoint);
@@ -333,7 +334,7 @@ namespace Hecton8.Gameplay
 
             ResolveDeterministicLootPose(segment, segmentIndex, hitPoint, out Vector3 spawnPos, out Quaternion spawnRotation);
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
             {
                 if (!_poolMissingLogged)
@@ -400,7 +401,7 @@ namespace Hecton8.Gameplay
                 !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -455,7 +456,8 @@ namespace Hecton8.Gameplay
             // Enable mesh
             if (segment.meshRenderer != null)
             {
-                segment.meshRenderer.enabled = true;
+                segment.pendingRendererEnabled = true;
+                segment.rendererEnabledDirty = true;
             }
 
             // Fire event
@@ -526,6 +528,14 @@ namespace Hecton8.Gameplay
             _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
+        private void RegisterLateFrame()
+        {
+            if (_lateFrameRegistered) return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
         private void UnregisterFromTick()
         {
             if (!_isRegistered) return;
@@ -533,6 +543,56 @@ namespace Hecton8.Gameplay
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = false;
             _tickDormant = false;
+        }
+
+        private void UnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered) return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
+        }
+
+        private void FlushQueuedSegmentPresentation()
+        {
+            if (segments == null)
+                return;
+
+            for (int i = 0; i < segments.Length; i++)
+            {
+                PlantSegment segment = segments[i];
+                if (segment == null || !segment.rendererEnabledDirty)
+                    continue;
+
+                segment.rendererEnabledDirty = false;
+                if (segment.meshRenderer != null)
+                    segment.meshRenderer.enabled = segment.pendingRendererEnabled;
+            }
+
+            IAudioService audio = _audioService;
+            for (int i = 0; i < segments.Length; i++)
+            {
+                PlantSegment segment = segments[i];
+                if (segment == null)
+                    continue;
+
+                if (segment.cutParticlesDirty)
+                {
+                    segment.cutParticlesDirty = false;
+                    if (segment.cutParticles != null)
+                    {
+                        segment.cutParticles.transform.position = segment.pendingCutPosition;
+                        segment.cutParticles.Play();
+                    }
+                }
+
+                if (segment.cutAudioDirty)
+                {
+                    segment.cutAudioDirty = false;
+                    if (cutSound != null && audio != null)
+                        audio.PlayAtPoint(cutSound, segment.pendingCutPosition, cutVolume);
+                }
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -554,8 +614,8 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _objectPool = GlobalRegistry.ObjectPool;
+            _audioService = GlobalRegistry.Audio;
+            _objectPool = GlobalRegistry.ObjectPoolService;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -569,7 +629,7 @@ namespace Hecton8.Gameplay
                     _audioService = currentService as IAudioService;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     break;
             }
         }

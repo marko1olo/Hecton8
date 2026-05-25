@@ -190,7 +190,7 @@ namespace Hecton8.Dev
                 _debugLastPhase = "Complete";
                 _debugRestoredRecordCount = restoredRecordCount;
                 _debugIndexedSubBlockPass = true;
-                Debug.Log($"[SaveSmoke] Indexed sub-block fallback PASS slot={currentSlot} sector=0x{sectorHash:X16} records={restoredRecordCount}");
+                Hecton8.Core.H8Debug.Log($"[SaveSmoke] Indexed sub-block fallback PASS slot={currentSlot} sector=0x{sectorHash:X16} records={restoredRecordCount}");
             }
             catch (OperationCanceledException)
             {
@@ -271,7 +271,7 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (saveManager == null)
-                saveManager = GlobalRegistry.SaveRuntime;
+                saveManager = GlobalRegistry.Save as SaveManager;
         }
     }
 }

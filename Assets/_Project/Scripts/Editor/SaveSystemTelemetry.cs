@@ -3,6 +3,7 @@ namespace Hecton8.Editor
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using Hecton8.SaveSystem;
     using UnityEditor;
@@ -76,7 +77,7 @@ namespace Hecton8.Editor
             {
                 float usedRatio = Mathf.Clamp01((float)_usedFileBytes / _totalFileBytes);
                 Rect usageRect = GUILayoutUtility.GetRect(18f, 18f);
-                EditorGUI.ProgressBar(usageRect, usedRatio, $"Used {usedRatio * 100f:0.0}%");
+                EditorGUI.ProgressBar(usageRect, usedRatio, "Used " + (usedRatio * 100f).ToString("0.0", CultureInfo.InvariantCulture) + "%");
             }
             if (!string.IsNullOrEmpty(_fragmentationAscii))
                 EditorGUILayout.SelectableLabel(_fragmentationAscii, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
@@ -226,9 +227,9 @@ namespace Hecton8.Editor
         private static string FormatBytes(long bytes)
         {
             if (bytes >= 1024L * 1024L)
-                return $"{bytes / (1024f * 1024f):0.00} MB";
+                return (bytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture) + " MB";
             if (bytes >= 1024L)
-                return $"{bytes / 1024f:0.0} KB";
+                return (bytes / 1024f).ToString("0.0", CultureInfo.InvariantCulture) + " KB";
             return $"{bytes} B";
         }
 

@@ -8,6 +8,19 @@ using Unity.Mathematics;
 
 namespace Hecton8.Quest
 {
+    internal static class QuestDagRuntimeLayout
+    {
+        public const int NodeStrideBytes = 32;
+        public const int TriggerVolumeStrideBytes = 64;
+        public const int NodeRuntimeStrideBytes = 64;
+        public const int TelemetryEntryStrideBytes = 64;
+        public const int StateChangedSignalStrideBytes = 32;
+        public const int MockStoryEventSignalStrideBytes = 32;
+        public const int MockPlayerPositionSignalStrideBytes = 64;
+        public const int MockItemAcquiredSignalStrideBytes = 32;
+        public const int LoadStatsStrideBytes = 64;
+    }
+
     /// <summary>
     /// Fixed binary quest node consumed by the Burst DAG resolver.
     /// </summary>
@@ -15,7 +28,7 @@ namespace Hecton8.Quest
     /// Layout: 0 uint node, 4 uint state/lore hash, 8 ulong prerequisite,
     /// 16 ulong completion, 24/28 explicit uint padding. Total 32 bytes.
     /// </remarks>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.NodeStrideBytes)]
     public struct QuestNodeDTO
     {
         [FieldOffset(0)]
@@ -43,7 +56,7 @@ namespace Hecton8.Quest
     /// <remarks>
     /// Layout: 0 double3 AUP, 24 float radius, 28 uint node hash, 32/36 padding, 40/48/56 tail padding. Total 64 bytes.
     /// </remarks>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.TriggerVolumeStrideBytes)]
     public struct TriggerVolumeDTO
     {
         [FieldOffset(0)]
@@ -74,7 +87,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Parallel metadata for <see cref="QuestNodeDTO"/>. Kept outside the 32-byte OSHINO node payload.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.NodeRuntimeStrideBytes)]
     public struct QuestNodeRuntimeDTO
     {
         [FieldOffset(0)]
@@ -120,7 +133,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Fixed black-box sample for the last 300 resolver frames.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.TelemetryEntryStrideBytes)]
     public struct QuestDagTelemetryEntry
     {
         [FieldOffset(0)]
@@ -166,7 +179,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Typed unmanaged state-change signal emitted after old/new mask XOR.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.StateChangedSignalStrideBytes)]
     public partial struct StateChangedSignal : ISignal
     {
         [FieldOffset(0)] public ulong FlippedMask;
@@ -181,7 +194,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Local mock story event for resolver tests when upstream narrative buses are absent.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.MockStoryEventSignalStrideBytes)]
     public partial struct MockStoryEventSignal : ISignal
     {
         [FieldOffset(0)] public ulong Timestamp;
@@ -196,7 +209,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Local mock player position signal used by blind DAG tests. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.MockPlayerPositionSignalStrideBytes)]
     public partial struct MockPlayerPositionSignal : ISignal
     {
         [FieldOffset(0)] public double3 AUP;
@@ -212,7 +225,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Local mock inventory signal used by blind DAG tests.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.MockItemAcquiredSignalStrideBytes)]
     public partial struct QuestDagMockItemAcquiredSignal : ISignal
     {
         [FieldOffset(0)] public ulong Timestamp;
@@ -227,7 +240,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Cold binary-load result for OSHINO narrative archaeology.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestDagRuntimeLayout.LoadStatsStrideBytes)]
     public struct QuestDagLoadStats
     {
         [FieldOffset(0)]

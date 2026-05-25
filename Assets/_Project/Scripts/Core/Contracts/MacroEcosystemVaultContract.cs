@@ -5,7 +5,7 @@ using Unity.Collections;
 namespace Hecton8.Core.Contracts
 {
     /// <summary>
-    /// Contract-only ABI for the SHINOBU_116 macro ecosystem Vault snapshot.
+    /// Contract-only ABI for the SHINOBU_300 macro ecosystem Vault snapshot.
     /// </summary>
     public static class MacroEcosystemVaultContract
     {
@@ -83,22 +83,50 @@ namespace Hecton8.Core.Contracts
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    /// <summary>
+    /// Canonical macro biomass sector record. Producer and consumers must use this exact type so DataVault TypeHash validation passes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct EcosystemSectorDTO
+    {
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public float FloraBiomass;
+        [FieldOffset(12)] public float PreyBiomass;
+        [FieldOffset(16)] public float PredatorBiomass;
+        [FieldOffset(20)] public float CarryingCapacity;
+        [FieldOffset(24)] public uint DominantSpeciesMask;
+        [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(32)] private uint _pad1;
+        [FieldOffset(36)] private uint _pad2;
+        [FieldOffset(40)] private uint _pad3;
+        [FieldOffset(44)] private uint _pad4;
+        [FieldOffset(48)] private uint _pad5;
+        [FieldOffset(52)] private uint _pad6;
+        [FieldOffset(56)] private uint _pad7;
+        [FieldOffset(60)] private uint _pad8;
+    }
+
+    /// <summary>
+    /// Legacy contract mirror retained for cold ABI scanners; do not use as the hot Vault generic type.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MacroEcosystemSectorVaultRecord
     {
         [FieldOffset(0)] public ulong SectorHash;
-        [FieldOffset(8)] public uint PreyBiomass;
-        [FieldOffset(12)] public uint PredatorBiomass;
-        [FieldOffset(16)] public float LocalTemperature;
-        [FieldOffset(20)] public float ToxinLevel;
-        [FieldOffset(24)] public byte _pad0;
-        [FieldOffset(25)] public byte _pad1;
-        [FieldOffset(26)] public byte _pad2;
-        [FieldOffset(27)] public byte _pad3;
-        [FieldOffset(28)] public byte _pad4;
-        [FieldOffset(29)] public byte _pad5;
-        [FieldOffset(30)] public byte _pad6;
-        [FieldOffset(31)] public byte _pad7;
+        [FieldOffset(8)] public float FloraBiomass;
+        [FieldOffset(12)] public float PreyBiomass;
+        [FieldOffset(16)] public float PredatorBiomass;
+        [FieldOffset(20)] public float CarryingCapacity;
+        [FieldOffset(24)] public uint DominantSpeciesMask;
+        [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(32)] private uint _pad1;
+        [FieldOffset(36)] private uint _pad2;
+        [FieldOffset(40)] private uint _pad3;
+        [FieldOffset(44)] private uint _pad4;
+        [FieldOffset(48)] private uint _pad5;
+        [FieldOffset(52)] private uint _pad6;
+        [FieldOffset(56)] private uint _pad7;
+        [FieldOffset(60)] private uint _pad8;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]

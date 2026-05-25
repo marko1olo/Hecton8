@@ -1,0 +1,188 @@
+﻿{
+  "agent": "SHINOBU_361",
+  "assetRoot": "Assets/_Project",
+  "category_counts": {
+    "COCKPIT_SURFACES": 3,
+    "DECAL_SHEETS": 12,
+    "FLORA_EPIDERMIS": 1658,
+    "GEOLOGY_TRIPLANAR": 556,
+    "HABITAT_INTERIORS": 2300
+  },
+  "evidenceClass": "STATIC_SOURCE",
+  "forbidden_format_textures": [
+    {
+      "extension": ".png",
+      "guid": "50eac08ff8e5f6a4c85c40536c5dae72",
+      "height": 2048,
+      "import_issues": "NORMAL_SRGB_ON;NORMAL_NOT_TEXTURETYPE_NORMAL",
+      "is_stub": false,
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png",
+      "stub_reasons": "",
+      "width": 4096
+    },
+    {
+      "extension": ".png",
+      "guid": "47f700169455d8342bf37d101712e3ac",
+      "height": 2048,
+      "import_issues": "NORMAL_SRGB_ON;NORMAL_NOT_TEXTURETYPE_NORMAL",
+      "is_stub": false,
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png",
+      "stub_reasons": "",
+      "width": 4096
+    },
+    {
+      "extension": ".png",
+      "guid": "24b48fd635367b243a6d70e16b5c5c8c",
+      "height": 2048,
+      "import_issues": "DATA_TEXTURE_SRGB_ON",
+      "is_stub": false,
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/Aegir_storms.png",
+      "stub_reasons": "",
+      "width": 4096
+    },
+    {
+      "extension": ".png",
+      "guid": "c9af1407bf9a3a242b35be6e9067e5c5",
+      "height": 720,
+      "import_issues": "DATA_TEXTURE_SRGB_ON",
+      "is_stub": false,
+      "path": "Assets/_Project/Art/Skyboxes/panorama_shtorm.png",
+      "stub_reasons": "",
+      "width": 1472
+    },
+    {
+      "extension": ".png",
+      "guid": "d9d11072e85a2b54cacd11eaad6614a8",
+      "height": 2048,
+      "import_issues": "DATA_TEXTURE_SRGB_ON",
+      "is_stub": false,
+      "path": "Assets/_Project/Art/TEXTURES/Aegir_storms.png",
+      "stub_reasons": "",
+      "width": 4096
+    },
+    {
+      "extension": ".png",
+      "guid": "66fff60ba9b88384f992b071a91c0e5d",
+      "height": 1024,
+      "import_issues": "NORMAL_SRGB_ON;NORMAL_NOT_TEXTURETYPE_NORMAL",
+      "is_stub": false,
+      "path": "Assets/_Project/Art/TEXTURES/Detali/soft_plume_noise_-_kakoy_to_seryy_nu_norm.png",
+      "stub_reasons": "",
+      "width": 1024
+    },
+    {
+      "extension": ".png",
+      "guid": "e3911b6d25a15da4c820858e540fbd5f",
+      "height": 1024,
+      "import_issues": "DATA_TEXTURE_SRGB_ON",
+      "is_stub": false,
+      "path": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/TX_ProceduralBio_Shallows_ORMAtlas.png",
+      "stub_reasons": "",
+      "width": 1024
+    }
+  ],
+  "manifest": "Docs/Reports/production_texture_manifest.csv",
+  "manifest_rle_summary": {
+    "estimated_rle_index_bytes": 31072,
+    "rle_run_count": 971,
+    "runtime_loading_note": "Editor/debug CSV only; runtime parser not introduced.",
+    "source_csv_bytes": 2462271
+  },
+  "normal_generation_policy": "Use Tools/MaterialAudit.py after texture import as compatibility audit. Generate BC5 normals from controlled luminance only for fine detail; dedicated normal generation is required for rivets, grates, deep cracks, and panel bevels.",
+  "orm_packing_policy": "Prompt convention: _ORM Red equals AO, Green equals Roughness, Blue equals Metallic. Use BC7 linear with mipmaps. Do not ship separate AO, roughness, and metallic texture samplers unless an existing shader ABI forces legacy compatibility.",
+  "priority_counts": {
+    "BLOCKER": 162,
+    "LOW": 177,
+    "MEDIUM": 4190
+  },
+  "priority_policy": {
+    "BLOCKER": "Immediate cockpit, starting habitat/prologue, terminal, airlock, visor, or HUD-facing rows.",
+    "LOW": "Distant background, skybox, planet, star, panorama, and non-immediate decal/background rows.",
+    "MEDIUM": "Terrain, vegetation, broad habitat/world surfaces, and normal first-party production surfaces."
+  },
+  "projectRoot": "C:/hades/Hecton8",
+  "prompt_syntax_audit": {
+    "banned_pattern_failures": [],
+    "prompt_count": 413,
+    "required_phrase_failures": [],
+    "status": "PASS"
+  },
+  "quality_scaling": {
+    "High": "2048 hero surfaces, richer normal detail, wet/spec masks for flora and cockpit inspection surfaces.",
+    "Low": "512 to 1024 maps, aggressive streaming mip bias, baked AO only, no extra detail samplers.",
+    "Middle": "1024 broad surfaces, 2048 only for triplanar or near-field blockers, packed ORM.",
+    "Ultra": "Longer mip residency and optional presentation-only emissive/spec masks, still capped to project max size and still packed."
+  },
+  "reference_state_counts": {
+    "DECLARED_SHADER_DEFAULT": 135,
+    "DECLARED_SLOT": 20,
+    "EMPTY_OPTIONAL_SLOT": 1826,
+    "EMPTY_REQUIRED_SLOT": 266,
+    "IMPORT_ISSUE": 4,
+    "MISSING_EMBEDDED_TEXTURE": 119,
+    "MISSING_GUID": 24,
+    "RESOLVED_MATERIAL_REF": 2019,
+    "RESOLVED_NON_TEXTURE_GUID": 4,
+    "RESOLVED_TEXTURE": 112
+  },
+  "schema": "hecton8.texture_audit_and_bake_director.v1",
+  "stub_textures": [],
+  "summary": {
+    "audited_slots": 4529,
+    "deficiency_slots": 413,
+    "estimated_missing_texture_vram_mib": 783.529,
+    "forbidden_format_texture_count": 0,
+    "import_issue_texture_count": 7,
+    "missing_embedded_texture_count": 119,
+    "prompt_count": 413,
+    "status": "PENDING_VERIFICATION",
+    "stub_texture_count": 0,
+    "target_file_counts": {
+      ".fbx": 16,
+      ".mat": 182,
+      ".prefab": 623,
+      ".shader": 148,
+      ".shadergraph": 3
+    },
+    "target_files_scanned": 972,
+    "texture_assets_scanned": 137,
+    "texture_budget_mib": 900.0,
+    "texture_budget_status": "PASS",
+    "unique_target_texture_count": 175
+  },
+  "unique_texture_queue_summary": {
+    "action_counts": {
+      "GENERATE_REPLACEMENT_PBR": 171,
+      "REBAKE_SOURCE_TO_PNG_AND_FIX_IMPORT": 4
+    },
+    "category_counts": {
+      "FLORA_EPIDERMIS": 26,
+      "GEOLOGY_TRIPLANAR": 23,
+      "HABITAT_INTERIORS": 126
+    },
+    "duplicate_slot_references_collapsed": 238,
+    "priority_counts": {
+      "BLOCKER": 15,
+      "LOW": 6,
+      "MEDIUM": 154
+    },
+    "queue_csv": "Docs/Reports/TextureProductionQueue_SHINOBU_361.csv",
+    "queue_json": "Docs/Reports/TextureProductionQueue_SHINOBU_361.json",
+    "queue_readable": "Docs/Reports/TextureProductionQueue_SHINOBU_361_READABLE.md",
+    "resolution_counts": {
+      "1024": 149,
+      "2048": 20,
+      "512": 6
+    },
+    "texture_role_counts": {
+      "ALBEDO": 153,
+      "AO": 3,
+      "EMISSIVE": 1,
+      "NORMAL": 12,
+      "ORM": 1,
+      "ROUGHNESS": 1,
+      "TEXTURE": 4
+    },
+    "unique_target_textures": 175
+  }
+}

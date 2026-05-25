@@ -132,7 +132,12 @@ namespace Hecton8.UI
                     return;
 
                 for (int i = 0; i < value.Length; i++)
-                    Append(char.ToUpperInvariant(value[i]));
+                    Append(ToAsciiUpperInvariant(value[i]));
+            }
+
+            private static char ToAsciiUpperInvariant(char value)
+            {
+                return value >= 'a' && value <= 'z' ? (char)(value - 32) : value;
             }
 
             public void AppendInt(int value)
@@ -419,7 +424,9 @@ namespace Hecton8.UI
             float livePressure = _survivalSystem != null ? _survivalSystem.Pressure : 0f;
             float liveIntegrity = _survivalSystem != null ? _survivalSystem.Integrity : 0f;
             float integrityNormalized = _survivalSystem != null ? _survivalSystem.IntegrityNormalized : 0f;
-            ReadOnlySpan<char> zoneName = (currentZone != null ? currentZone.DisplayNameOrFallback : DefaultUnknownZone).AsSpan();
+            ReadOnlySpan<char> zoneName = currentZone != null
+                ? currentZone.ResolveDisplayNameSpan(manager)
+                : DefaultUnknownZone.AsSpan();
             ReadOnlySpan<char> bootVector = ResolveBootVector(reason).AsSpan();
             bool hasStats = stats != null;
             bool hasZone = currentZone != null;
@@ -607,8 +614,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -641,7 +647,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _localization = LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.Localization;
             _depthZoneDirector = GlobalRegistry.DepthZone;
         }
 

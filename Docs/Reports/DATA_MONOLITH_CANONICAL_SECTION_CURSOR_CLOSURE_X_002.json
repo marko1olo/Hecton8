@@ -1,0 +1,56 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_CANONICAL_SECTION_CURSOR_CLOSURE_V1",
+  "agent": "X_002",
+  "generatedLocal": "2026-05-24T22:43:00+04:00",
+  "status": "PASS_CANONICAL_SECTION_CURSOR_OVERLAP_REJECTED",
+  "problem": "Checksum-valid section tables could previously reuse an earlier aligned in-range payload offset if the validator only checked range, alignment, and record size.",
+  "fix": "Require every non-empty section offset to match the canonical 64-byte-aligned cursor after the previous section payload in compiler, runtime arena, CLI probes, editor fuzzer, and Unity GlobalDataVault probe.",
+  "filesChangedForThisFix": [
+    "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs",
+    "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+    "Tools/DataMonolithBakeCli/DataMonolithLoadStressProbe.cs",
+    "Tools/DataMonolithBakeCli/DataMonolithFailClosedProbe.cs",
+    "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCorruptionFuzzer.cs",
+    "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithGlobalDataVaultStressProbe.cs"
+  ],
+  "coreBuild": {
+    "restore": "PASS",
+    "buildCommand": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+    "status": "PASS",
+    "warnings": 0,
+    "errors": 0,
+    "elapsed": "00:00:29.81"
+  },
+  "cli": {
+    "bakeExitCode": 0,
+    "fuzzerStatus": "PASS",
+    "fuzzerPassCount": 13,
+    "fuzzerFailCount": 0,
+    "overlapFuzzerError": "Creatures section offset is not canonical: got=576 expected=896",
+    "failClosedStatus": "PASS_FAIL_CLOSED_NO_POISON_PUBLISH",
+    "failClosedOverlapFailureCode": 8,
+    "failClosedFinalPublishCount": 1,
+    "failClosedValidationMeanMicroseconds": 217.661,
+    "failClosedValidationAllocatedBytes": 0,
+    "nativeResidentLoadEstimateMicroseconds": 516.306,
+    "nativeResidentLoadEstimateAllocatedBytes": 0
+  },
+  "unityBatch": {
+    "command": "Unity.exe -batchmode -nographics -projectPath C:/hades/Hecton8 -executeMethod Hecton8.EditorValidation.H8DataMonolithGlobalDataVaultStressProbe.RunBatch -quit",
+    "status": "PASS_UNITY_GLOBAL_DATA_VAULT_FAIL_CLOSED_ZERO_GC_RESIDENT",
+    "fileLoadStatus": "Loaded",
+    "fileLoadManagedAllocatedBytes": 0,
+    "coldCorruptCaseCount": 7,
+    "coldCorruptPassCount": 7,
+    "overlapCase": "bad_section_overlap -> InvalidSectionTable",
+    "editorResidentMeanMicroseconds": 3430.910,
+    "editorResidentManagedAllocatedBytes": 0
+  },
+  "evidence": [
+    "Docs/Reports/DATA_MONOLITH_CORRUPTION_FUZZER_X_002.json",
+    "Docs/Reports/DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_X_002.json",
+    "Docs/Reports/DATA_MONOLITH_LOAD_STRESS_X_002.json",
+    "Docs/Reports/DATA_MONOLITH_UNITY_GLOBAL_DATA_VAULT_STRESS_X_002.json"
+  ],
+  "remainingBoundary": "Standalone IL2CPP player profiler capture was not produced in this loop. Release CLI proves sub-millisecond native resident load estimate with zero managed allocation; Unity batch proves GlobalDataVault integration and fail-closed behavior in the Editor."
+}

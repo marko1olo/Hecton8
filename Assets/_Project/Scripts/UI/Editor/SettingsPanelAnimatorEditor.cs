@@ -138,8 +138,7 @@ namespace Hecton8.UI.Editor
 
         private CanvasGroup GetOrAddCanvasGroup(GameObject go)
         {
-            CanvasGroup group = go.GetComponent<CanvasGroup>();
-            if (group == null)
+            if (!go.TryGetComponent(out CanvasGroup group))
             {
                 group = Undo.AddComponent<CanvasGroup>(go);
             }

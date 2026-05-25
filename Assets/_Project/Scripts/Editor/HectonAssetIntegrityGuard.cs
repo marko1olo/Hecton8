@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor.Validation
 {
@@ -31,7 +32,7 @@ namespace Hecton8.Editor.Validation
                     return;
 
                 string message = BuildImportBlockMessage(s_poisonedPaths);
-                Debug.LogError(message);
+                H8Debug.LogError(message);
                 throw new InvalidOperationException(message);
             }
             finally

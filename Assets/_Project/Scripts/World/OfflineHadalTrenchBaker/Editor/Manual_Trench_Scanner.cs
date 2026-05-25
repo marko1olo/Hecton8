@@ -74,10 +74,9 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             if (!Directory.Exists(root))
                 return;
 
-            string[] files = Directory.GetFiles(root, "*.*", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string discoveredFile in Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories))
             {
-                string path = files[i].Replace('\\', '/');
+                string path = discoveredFile.Replace('\\', '/');
                 if (!IsForbiddenAsset(path, strictEnvironmentScope))
                     continue;
 

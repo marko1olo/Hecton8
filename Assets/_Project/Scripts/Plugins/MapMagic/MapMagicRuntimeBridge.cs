@@ -17,7 +17,7 @@
 //
 //   [FIX] DetectAndPublishBiome: esli TryGetBiomeIndex vozvraschaet false,
 //     biom fiksiruetsya na 0. Esli _lastBiomeID == -1 (pervyy vyzov),
-//     MapMagicBiomeEvents.RaiseBiomeChanged(0) vyzyvaetsya prinuditelno, chtoby podpischiki
+//     MapMagicBiomeEvents.TryRaiseBiomeChanged(0) vyzyvaetsya prinuditelno, chtoby podpischiki
 //     (UnderwaterVisuals, AtmosphereManager) poluchili nachalnoe znachenie.
 //     Bez etogo pri otsutstvii biomov podpischiki NIKOGDA ne poluchayut
 //     sobytie → UnderwaterVisuals ne initsializiruet profil → kresh/artefakty.
@@ -53,7 +53,7 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class MapMagicRuntimeBridge : MapMagicBridge
+    public sealed class MapMagicRuntimeBridge : MapMagicBridge, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float SceneBindingRefreshInterval = 1f;
         private const int MainTerrainBaseMapResolutionBudget = 512;
@@ -171,7 +171,11 @@ namespace Hecton8.Core
         /// Registration tracking flag for GameTickManager.
         /// </summary>
         private bool _registeredToTickManager;
+        private bool _registeredToLateFrameTickManager;
         private bool _registeredMapMagicRuntime;
+        private bool _hotSwapRegistered;
+        private bool _pendingPlanetaryCanvasShaderGlobals;
+        private bool _pendingRuntimeMapMagicGenerationFence;
 
         /// <summary>
         /// v3.1: Flag indicating biome detection has been attempted at least once.
@@ -283,14 +287,17 @@ namespace Hecton8.Core
         private void OnEnable()
         {
             TrySubscribeTerrainTileEvents();
+            TryRegisterHotSwapListener();
             TryRegisterMapMagicRuntime();
             TryRegisterToTickManager();
+            TryRegisterToLateFrameTickManager();
         }
 
         private void Start()
         {
             TryRegisterMapMagicRuntime();
             TryRegisterToTickManager();
+            TryRegisterToLateFrameTickManager();
 
             // ── Initial biome detection ──
             // v3.1: Guaranteed to publish at least biome 0.
@@ -300,14 +307,18 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterFromTickManager();
+            TryUnregisterFromLateFrameTickManager();
             TryUnregisterMapMagicRuntime();
+            TryUnregisterHotSwapListener();
             TryUnsubscribeTerrainTileEvents();
         }
 
         private void OnDestroy()
         {
             TryUnregisterFromTickManager();
+            TryUnregisterFromLateFrameTickManager();
             TryUnregisterMapMagicRuntime();
+            TryUnregisterHotSwapListener();
             TryUnsubscribeTerrainTileEvents();
             ReleaseDistantTerrainShadowMask();
         }
@@ -351,8 +362,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFromTickManager()
@@ -362,6 +372,57 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
+        }
+
+        private void TryRegisterToLateFrameTickManager()
+        {
+            if (_registeredToLateFrameTickManager || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredToLateFrameTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterFromLateFrameTickManager()
+        {
+            if (!_registeredToLateFrameTickManager)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredToLateFrameTickManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterFromTickManager();
+            TryUnregisterFromLateFrameTickManager();
+            TryRegisterToTickManager();
+            TryRegisterToLateFrameTickManager();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -377,7 +438,28 @@ namespace Hecton8.Core
             RefreshSceneBindingsIfNeeded(force: false);
             RefreshTerrainTileCache(force: false);
             DetectAndPublishBiome();
-            PublishPlanetaryCanvasShaderGlobals();
+            QueuePlanetaryCanvasShaderGlobals();
+        }
+
+        public void LateFrameTick()
+        {
+            if (_pendingRuntimeMapMagicGenerationFence)
+            {
+                _pendingRuntimeMapMagicGenerationFence = false;
+                FenceRuntimeMapMagicGenerationImmediate();
+            }
+
+            if (_pendingPlanetaryCanvasShaderGlobals)
+            {
+                _pendingPlanetaryCanvasShaderGlobals = false;
+                PublishPlanetaryCanvasShaderGlobals();
+            }
+        }
+
+        private void QueuePlanetaryCanvasShaderGlobals()
+        {
+            _pendingPlanetaryCanvasShaderGlobals = true;
+            TryRegisterToLateFrameTickManager();
         }
 
         private void PublishPlanetaryCanvasShaderGlobals()
@@ -429,7 +511,7 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(runtimeMeters)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -687,7 +769,7 @@ namespace Hecton8.Core
                 _initialBiomePublished = true;
                 _lastBiomeID = biomeID;
 
-                MapMagicBiomeEvents.RaiseBiomeChanged(biomeID);
+                MapMagicBiomeEvents.TryRaiseBiomeChanged(biomeID);
 
                 UpdateBiomeDiagnostics(biomeID);
                 return;
@@ -699,7 +781,7 @@ namespace Hecton8.Core
 
             _lastBiomeID = biomeID;
 
-            MapMagicBiomeEvents.RaiseBiomeChanged(biomeID);
+            MapMagicBiomeEvents.TryRaiseBiomeChanged(biomeID);
 
             UpdateBiomeDiagnostics(biomeID);
         }
@@ -2438,6 +2520,15 @@ namespace Hecton8.Core
             if (!Application.isPlaying || mapMagicObject == null)
                 return;
 
+            _pendingRuntimeMapMagicGenerationFence = true;
+            TryRegisterToLateFrameTickManager();
+        }
+
+        private void FenceRuntimeMapMagicGenerationImmediate()
+        {
+            if (!Application.isPlaying || mapMagicObject == null)
+                return;
+
             mapMagicObject.enabled = false;
             _runtimeTerrainResolutionRepairPending = false;
         }
@@ -2872,13 +2963,13 @@ namespace Hecton8.Core
         private void HandleTerrainTileApplied(TerrainTile tile, TileData tileData, StopToken stop)
         {
             if (TryCreateTerrainTileSnapshot(tile, out MapMagicTerrainTileSnapshot snapshot))
-                MapMagicTerrainTileEvents.RaiseTileApplied(in snapshot);
+                MapMagicTerrainTileEvents.TryRaiseTileApplied(in snapshot);
         }
 
         private void HandleTerrainTileMoved(TerrainTile tile)
         {
             if (TryCreateTerrainTileSnapshot(tile, out MapMagicTerrainTileSnapshot snapshot))
-                MapMagicTerrainTileEvents.RaiseTileMoved(in snapshot);
+                MapMagicTerrainTileEvents.TryRaiseTileMoved(in snapshot);
         }
 
         private void TrySubscribeTerrainTileEvents()

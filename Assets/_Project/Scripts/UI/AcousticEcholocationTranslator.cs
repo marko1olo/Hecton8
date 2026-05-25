@@ -217,8 +217,8 @@ namespace Hecton8.UI
         private TextMeshProUGUI _headerLabel;
         private TextMeshProUGUI _classificationLabel;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private LocalizationManager _cachedLocalization;
-        private HectonAtmosphereManager _cachedAtmosphere;
+        private ILocalizationStressPresentationReadModel _cachedLocalization;
+        private IAtmosphereReadModel _cachedAtmosphere;
         private bool _headerDirty = true;
         private bool _plainClassificationDirty = true;
         private bool _storageCapacityBarkActive;
@@ -386,19 +386,31 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
-                _cachedLocalization = currentService as LocalizationManager;
+                _cachedLocalization = currentService as ILocalizationStressPresentationReadModel;
                 RefreshLocalizedCache();
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
             {
-                _cachedAtmosphere = currentService as HectonAtmosphereManager;
+                _cachedAtmosphere = currentService as IAtmosphereReadModel;
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                RegisterToTickManager();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _tickRegistered = false;
+                    return;
+                }
+
+                if (isActiveAndEnabled)
+                {
+                    UnregisterFromTickManager();
+                    RegisterToTickManager();
+                }
+            }
         }
 
 
@@ -671,7 +683,7 @@ namespace Hecton8.UI
                 ? ResolveLocalizedSpan(LeviathanClassKeyHash, DefaultLeviathanClass.AsSpan())
                 : ResolveLocalizedSpan(WreckageClassKeyHash, DefaultWreckageClass.AsSpan());
 
-            LocalizationManager localization = _cachedLocalization;
+            ILocalizationStressPresentationReadModel localization = _cachedLocalization;
             bool useStressMutation = ShouldUseStressMutation(localization);
             if (useStressMutation)
             {
@@ -710,7 +722,7 @@ namespace Hecton8.UI
             }
         }
 
-        private void ApplyStressMutatedClassification(LocalizationManager localization, ReadOnlySpan<char> classText, int distanceMeters)
+        private void ApplyStressMutatedClassification(ILocalizationStressPresentationReadModel localization, ReadOnlySpan<char> classText, int distanceMeters)
         {
             if (localization.TryApplyHullStressCorruptionIfNeeded(
                     ResolveLocalizedSpan(ContactHeaderKeyHash, DefaultContactHeader.AsSpan()),
@@ -734,7 +746,7 @@ namespace Hecton8.UI
             }
         }
 
-        private static bool ShouldUseStressMutation(LocalizationManager localization)
+        private static bool ShouldUseStressMutation(ILocalizationStressPresentationReadModel localization)
         {
             return localization != null &&
                    (localization.GetHullStressCorruptionIntensity() > 0f ||
@@ -743,11 +755,11 @@ namespace Hecton8.UI
 
         private bool ShouldRenderVisualSoundWave()
         {
-            LocalizationManager localization = _cachedLocalization;
+            ILocalizationStressPresentationReadModel localization = _cachedLocalization;
             if (ShouldUseStressMutation(localization))
                 return true;
 
-            HectonAtmosphereManager atmosphere = _cachedAtmosphere;
+            IAtmosphereReadModel atmosphere = _cachedAtmosphere;
             if (atmosphere == null)
                 return false;
 
@@ -958,9 +970,9 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
-            _cachedAtmosphere = GlobalRegistry.Atmosphere;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedLocalization = GlobalRegistry.LocalizationStressPresentation;
+            _cachedAtmosphere = GlobalRegistry.AtmosphereReadModel;
         }
 
         private void RegisterToTickManager()
@@ -1021,7 +1033,7 @@ namespace Hecton8.UI
 
         private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
         {
-            LocalizationManager manager = _cachedLocalization;
+            ILocalizationStressPresentationReadModel manager = _cachedLocalization;
             return manager != null ? manager.GetRawSpanOrFallback(keyHash, fallback) : fallback;
         }
 
@@ -1314,7 +1326,7 @@ namespace Hecton8.UI
         {
             uint hash = 2166136261u;
             hash = (hash ^ HectonFloatingOrigin.LastShiftEvent.Sequence) * 16777619u;
-            hash = (hash ^ unchecked((uint)Time.frameCount)) * 16777619u;
+            hash = (hash ^ unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex)) * 16777619u;
             return hash ^ 0xA8F1D3C5u;
         }
 
@@ -1583,8 +1595,20 @@ namespace Hecton8.UI
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
             {
-                if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                    RegisterToTickManager();
+                if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                {
+                    if (currentService == null)
+                    {
+                        _tickRegistered = false;
+                        return;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        UnregisterFromTickManager();
+                        RegisterToTickManager();
+                    }
+                }
                 return;
             }
 
@@ -1997,7 +2021,7 @@ namespace Hecton8.UI
             if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -2101,7 +2125,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void RegisterToTickManager()

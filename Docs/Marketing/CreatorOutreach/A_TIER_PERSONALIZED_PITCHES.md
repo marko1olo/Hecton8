@@ -1,4 +1,4 @@
-# A-Tier Personalized Pitch Drafts
+﻿# A-Tier Personalized Pitch Drafts
 
 Status: draft copy / verify current channel fit and official contact route before sending
 Public stance: single-player-first scope / proof-first creator copy / no fake performance claim

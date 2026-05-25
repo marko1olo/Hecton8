@@ -119,7 +119,7 @@ namespace Hecton8.Editor
             ref StringBuilder report)
         {
             StructLayoutAttribute layout = type.StructLayoutAttribute;
-            if (layout != null && layout.Pack != 0)
+            if (HasExplicitStructLayoutPack(type))
                 Append(ref report, type, packMessage);
 
             if (layout == null || layout.Value != LayoutKind.Explicit)
@@ -130,12 +130,29 @@ namespace Hecton8.Editor
                 Append(ref report, type, "UnsafeUtility.SizeOf<T>() must be a multiple of 8 bytes.");
 
             if (requireSignalQueueStride && size > 0 && !IsAllowedSignalPayloadSize(size))
-                Append(ref report, type, "Signal payload size must be 16, 32, 64, 128, or 192 bytes.");
+                Append(ref report, type, "Signal payload size must be positive, 8-byte aligned, and at most 192 bytes.");
+        }
+
+        private static bool HasExplicitStructLayoutPack(Type type)
+        {
+            foreach (CustomAttributeData attribute in CustomAttributeData.GetCustomAttributes(type))
+            {
+                if (attribute.AttributeType != typeof(StructLayoutAttribute))
+                    continue;
+
+                foreach (CustomAttributeNamedArgument argument in attribute.NamedArguments)
+                {
+                    if (string.Equals(argument.MemberName, nameof(StructLayoutAttribute.Pack), StringComparison.Ordinal))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool IsAllowedSignalPayloadSize(int size)
         {
-            return size == 16 || size == 32 || size == 64 || size == 128 || size == 192;
+            return size > 0 && size <= 192 && (size & 7) == 0;
         }
 
         private static bool IsExplicitNativeQueuePayload(Type type)

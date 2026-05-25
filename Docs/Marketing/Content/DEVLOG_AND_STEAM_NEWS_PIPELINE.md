@@ -1,4 +1,4 @@
-# Devlog And Steam News Pipeline
+﻿# Devlog And Steam News Pipeline
 
 Status: content pipeline / pre-public
 Public stance: single-player-first scope / proof-first public copy

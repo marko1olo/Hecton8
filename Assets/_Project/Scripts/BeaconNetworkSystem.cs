@@ -13,7 +13,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Beacon Network System")]
-    public sealed class BeaconNetworkSystem : MonoBehaviour, ISaveable
+    public sealed class BeaconNetworkSystem : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
     {
         public readonly struct BeaconSnapshot
         {
@@ -57,19 +57,25 @@ namespace Hecton8.Gameplay
         private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32); // COLD ALLOC: List<BeaconRuntime>[32] - active beacon runtime registry - owner: BeaconNetworkSystem
         private int _nextSequence = 1;
         private bool _serviceRegistered;
+        private bool _hotSwapListenerRegistered;
+        private IObjectPoolService _cachedObjectPool;
+        private ILocalizationTextReadModel _cachedLocalization;
+        private ISaveService _cachedSaveService;
+        private static BeaconNetworkSystem s_activeRuntime;
 
-        public static BeaconNetworkSystem Instance => GlobalRegistry.BeaconNetwork;
+        public static BeaconNetworkSystem Instance => s_activeRuntime;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_activeRuntime = null;
         }
 
         private static AbsoluteUniversePosition ResolveAupFromRuntimeOrigin(Vector3 runtimePosition)
         {
             return TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aup)
                 ? aup
-                : GlobalSignals.CurrentRuntimeOriginAup();
+                : RuntimeOriginRoute.CurrentRuntimeOriginAup();
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
@@ -82,7 +88,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             aup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -97,24 +103,63 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            BeaconNetworkSystem registered = GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem registered = s_activeRuntime;
             if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
+
+            s_activeRuntime = this;
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterService();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
+            _cachedSaveService?.Register(this);
         }
 
         private void OnDisable()
         {
+            _cachedSaveService?.Unregister(this);
             TryUnregisterService();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
+            TryUnregisterHotSwapListener();
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _cachedObjectPool = currentService as IObjectPoolService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as ILocalizationTextReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    if (Application.isPlaying && previousService is ISaveService previousSave)
+                        previousSave.Unregister(this);
+
+                    _cachedSaveService = currentService as ISaveService;
+
+                    if (Application.isPlaying && _cachedSaveService != null && isActiveAndEnabled)
+                        _cachedSaveService.Register(this);
+                    break;
+                case GlobalRegistryServiceSlot.BeaconNetworkRuntime:
+                    if (currentService is BeaconNetworkSystem currentBeaconNetwork)
+                        s_activeRuntime = currentBeaconNetwork;
+                    else if (ReferenceEquals(previousService, this) && ReferenceEquals(s_activeRuntime, this))
+                        s_activeRuntime = null;
+                    break;
+            }
         }
 
         private void TryRegisterService()
@@ -124,6 +169,8 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterBeaconNetworkRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.BeaconNetwork, this);
+            if (_serviceRegistered)
+                s_activeRuntime = this;
         }
 
         private void TryUnregisterService()
@@ -134,20 +181,22 @@ namespace Hecton8.Gameplay
             if (ReferenceEquals(GlobalRegistry.BeaconNetwork, this))
                 GlobalRegistry.UnregisterBeaconNetworkRuntime(this);
 
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
             _serviceRegistered = false;
         }
 
         public static BeaconNetworkSystem GetOrCreate()
         {
-            BeaconNetworkSystem registered = GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem registered = s_activeRuntime;
             if (registered != null)
                 return registered;
 
             if (TryResolvePlayerOwnedInstance(out BeaconNetworkSystem existing))
             {
-                if (Application.isPlaying && !ReferenceEquals(GlobalRegistry.BeaconNetwork, existing))
-                    GlobalRegistry.RegisterBeaconNetworkRuntime(existing);
-
+                if (Application.isPlaying)
+                    existing.TryRegisterService();
+                s_activeRuntime = existing;
                 return existing;
             }
 
@@ -190,7 +239,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryRetractNearest(Vector3 origin, out BeaconRuntime beacon, out float distance)
         {
-            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem runtime = s_activeRuntime;
             if (runtime == null)
             {
                 beacon = null;
@@ -210,7 +259,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryRetractNearest(in AbsoluteUniversePosition originAup, out BeaconRuntime beacon, out float distance)
         {
-            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem runtime = s_activeRuntime;
             if (runtime == null)
             {
                 beacon = null;
@@ -223,7 +272,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryGetNearest(Vector3 origin, out BeaconSnapshot snapshot, out float distance)
         {
-            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem runtime = s_activeRuntime;
             if (runtime == null)
             {
                 snapshot = default;
@@ -243,7 +292,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryGetNearest(in AbsoluteUniversePosition originAup, out BeaconSnapshot snapshot, out float distance)
         {
-            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem runtime = s_activeRuntime;
             if (runtime == null)
             {
                 snapshot = default;
@@ -393,7 +442,7 @@ namespace Hecton8.Gameplay
 
         internal static void NotifyRuntimeDestroyed(BeaconRuntime beacon)
         {
-            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem runtime = s_activeRuntime;
             if (beacon == null || runtime == null)
                 return;
 
@@ -456,7 +505,7 @@ namespace Hecton8.Gameplay
         private static void LogBeaconDeployed()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[BeaconNetwork] Beacon deployed.");
+            H8Debug.Log("[BeaconNetwork] Beacon deployed.");
 #endif
         }
 
@@ -573,7 +622,7 @@ namespace Hecton8.Gameplay
             float lightRange,
             Vector3 fallbackScale)
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _cachedObjectPool;
             if (worldBeaconPrefab != null && pool != null)
             {
                 GameObject instance = pool.Spawn(worldBeaconPrefab, position, rotation);
@@ -582,6 +631,7 @@ namespace Hecton8.Gameplay
                     instance.TryGetComponent(out BeaconRuntime pooled);
                     if (pooled == null)
                         pooled = instance.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] - prefab missing runtime component fallback - owner: BeaconNetworkSystem
+                    pooled.SetPooledOwner(pool);
                     return pooled;
                 }
             }
@@ -625,6 +675,7 @@ namespace Hecton8.Gameplay
 
             BeaconRuntime runtime = beaconRoot.AddComponent<BeaconRuntime>(); // COLD ALLOC: BeaconRuntime[1] - fallback beacon runtime when prefab/pool is unavailable - owner: BeaconNetworkSystem
             runtime.SetOwnedFallbackMaterial(fallbackMaterial);
+            runtime.SetPooledOwner(null);
             return runtime;
         }
 
@@ -701,12 +752,36 @@ namespace Hecton8.Gameplay
             return label;
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextReadModel manager = _cachedLocalization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetOrFallback(key, fallback)
                 : fallback;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
+            _cachedSaveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         // ZERO-GC STRING CACHING

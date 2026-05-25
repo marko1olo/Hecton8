@@ -1,4 +1,4 @@
-# opcode,priority,max_per_frame,flags,range,max_duration,intensity_scale
+﻿# opcode,priority,max_per_frame,flags,range,max_duration,intensity_scale
 # Hex opcode hashes are used instead of names so tuning policy is independent of casing or FNV token drift.
 # SurvivalOverride
 0x85C0241F,1.0,64,0,1,5,1

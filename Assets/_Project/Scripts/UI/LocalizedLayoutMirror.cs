@@ -14,8 +14,9 @@ namespace Hecton8.UI
     public sealed class LocalizedLayoutMirror : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private static bool s_isRebuildingLayout;
-        private static LocalizationManager s_cachedLocalization;
+        private static ILocalizationTextReadModel s_cachedLocalization;
         private static bool s_localizationColdResolved;
+        private const int MaxMirroredIconRoots = 32;
 
         [Header("References")]
         [Tooltip("Target layout group to mirror. Defaults to the component on the same GameObject.")]
@@ -59,8 +60,8 @@ namespace Hecton8.UI
         private bool _applyMirroringPending = true;
         private bool _registeredForTick;
         private bool _hotSwapRegistered;
-        private readonly List<RectTransform> _resolvedIconRoots = new List<RectTransform>(8); // COLD ALLOC: List[8] — cached mirrored icon roots — owner: LocalizedLayoutMirror
-        private readonly List<Vector3> _baseIconScales = new List<Vector3>(8); // COLD ALLOC: List[8] — cached icon base scales — owner: LocalizedLayoutMirror
+        private readonly List<RectTransform> _resolvedIconRoots = new List<RectTransform>(MaxMirroredIconRoots); // COLD ALLOC: List[32] - cached mirrored icon roots - owner: LocalizedLayoutMirror
+        private readonly List<Vector3> _baseIconScales = new List<Vector3>(MaxMirroredIconRoots); // COLD ALLOC: List[32] - cached icon base scales - owner: LocalizedLayoutMirror
 
         private void Awake()
         {
@@ -119,14 +120,23 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
-                s_cachedLocalization = currentService as LocalizationManager;
+                s_cachedLocalization = currentService as ILocalizationTextReadModel;
                 s_localizationColdResolved = true;
                 QueueApplyMirroring();
                 return;
             }
 
+            if (currentService == null)
+            {
+                _registeredForTick = false;
+                return;
+            }
+
             if (isActiveAndEnabled)
+            {
+                TryUnregisterFromTick();
                 TryRegisterForTick();
+            }
         }
 
         /// <inheritdoc />
@@ -219,15 +229,15 @@ namespace Hecton8.UI
             if (s_localizationColdResolved && s_cachedLocalization != null)
                 return;
 
-            s_cachedLocalization = LocalizationManager.ActiveRuntimeInstance;
+            s_cachedLocalization = GlobalRegistry.LocalizationText;
             s_localizationColdResolved = s_cachedLocalization != null;
         }
 
         private static GameLanguage ResolveCurrentLanguage()
         {
             CacheLocalizationCold();
-            LocalizationManager manager = s_cachedLocalization;
-            return manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            ILocalizationTextReadModel manager = s_cachedLocalization;
+            return manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
         }
 
         private void TryRegisterHotSwapListener()
@@ -384,6 +394,12 @@ namespace Hecton8.UI
             {
                 if (_resolvedIconRoots[i] == rect)
                     return;
+            }
+
+            if (_resolvedIconRoots.Count >= _resolvedIconRoots.Capacity ||
+                _baseIconScales.Count >= _baseIconScales.Capacity)
+            {
+                return;
             }
 
             _resolvedIconRoots.Add(rect);

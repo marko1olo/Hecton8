@@ -264,7 +264,7 @@ namespace Hecton8.Physics
     /// Burst analytical Gerstner wave evaluator for AUP ocean kinematics.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct EvaluateAnalyticalWavesJob : IJobParallelForBatch
+    public unsafe struct EvaluateCrestAnalyticalWavesJob : IJobParallelForBatch
     {
         [ReadOnly, NoAlias] public NativeArray<OceanKinematicsSampleRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<GerstnerWaveDTO> Waves;

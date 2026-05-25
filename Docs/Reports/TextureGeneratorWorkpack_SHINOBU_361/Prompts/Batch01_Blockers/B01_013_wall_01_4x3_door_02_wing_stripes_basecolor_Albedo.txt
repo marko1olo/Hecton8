@@ -1,0 +1,10 @@
+﻿JOB_ID: B01_013
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch01_Blockers\B01_013_wall_01_4x3_door_02_wing_stripes_basecolor_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\wall_01_4x3_door_02_wing_stripes_basecolor_Albedo.png
+FINAL_FILENAME: wall_01_4x3_door_02_wing_stripes_basecolor_Albedo.png
+REFERENCES: `LOOKDEV_APPROVED_REF_SEED_001.png` approved door/wall anchor if available
+
+PROMPT:
+Create a seamless albedo source for a premium abyssal habitat door-wing stripe section. Build layered pressure-door hardware: warm off-white composite door skin, graphite gasket borders, satin titanium reinforcement strips, one thin amber route stripe, one muted teal maintenance stripe, blank mounting zones, and quiet access cover geometry. It should feel like a real pressure-rated door surface that later receives handles, tools, sensors, and cable attachments, not a repeated decorative wall tile. The door wing must feel strong, clean, operational, and maintained. Add light hand-wear around access zones, subtle salt halos at gasket edges, tiny paint abrasion on stripe corners, and no warning text. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

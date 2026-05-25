@@ -19,6 +19,10 @@ namespace Hecton8.UI
         public const int TerminalStateStrideBytes = 48;
         public const int ScreenCommandStrideBytes = 16;
         public const int TerminalInteractionStrideBytes = 32;
+        public const int TerminalInputStateStrideBytes = 64;
+        public const int TerminalInputGpuStateStrideBytes = 32;
+        public const int TerminalInputTelemetryStrideBytes = 64;
+        public const int TerminalInputTuningStrideBytes = 64;
         public const int TerminalPlaneStrideBytes = 128;
         public const int GazeRayStrideBytes = 80;
         public const int ButtonAabbStrideBytes = 32;
@@ -145,6 +149,43 @@ namespace Hecton8.UI
         [FieldOffset(64)] public uint Frame;
         [FieldOffset(68)] public float2 ScrollDelta;
         [FieldOffset(76)] public uint _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.TerminalInputStateStrideBytes)]
+    public struct TerminalInputStateDTO
+    {
+        [FieldOffset(0)] public double3 TerminalAUP;
+        [FieldOffset(24)] public float3 ForwardNormal;
+        [FieldOffset(36)] public float3 UpVector;
+        [FieldOffset(48)] public float2 ProjectedUV;
+        [FieldOffset(56)] public uint TerminalHashID;
+        [FieldOffset(60)] public uint InputFlags;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.TerminalInputGpuStateStrideBytes)]
+    public struct TerminalInputGpuStateDTO
+    {
+        [FieldOffset(0)] public float2 ProjectedUV;
+        [FieldOffset(8)] public uint TerminalHashID;
+        [FieldOffset(12)] public uint InputFlags;
+        [FieldOffset(16)] public float4 Reserved0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.TerminalInputTuningStrideBytes)]
+    public struct TerminalInputTuningDTO
+    {
+        [FieldOffset(0)] public float MaxInteractionDistanceMeters;
+        [FieldOffset(4)] public float CursorSnappingTolerance;
+        [FieldOffset(8)] public float RaycastThickness;
+        [FieldOffset(12)] public float QualityCurvePower;
+        [FieldOffset(16)] public float LowRadiusMeters;
+        [FieldOffset(20)] public float UltraRadiusMeters;
+        [FieldOffset(24)] public uint TuningFlags;
+        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(32)] public ulong _pad1;
+        [FieldOffset(40)] public ulong _pad2;
+        [FieldOffset(48)] public ulong _pad3;
+        [FieldOffset(56)] public ulong _pad4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 8)]
@@ -291,6 +332,26 @@ namespace Hecton8.UI
         [FieldOffset(60)] public float GlobalQualityWeight;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.TerminalInputTelemetryStrideBytes)]
+    public struct TerminalInputTelemetryEntry
+    {
+        [FieldOffset(0)] public int Frame;
+        [FieldOffset(4)] public int EvaluatedTerminals;
+        [FieldOffset(8)] public int SuccessfulProjections;
+        [FieldOffset(12)] public int SignalsDispatched;
+        [FieldOffset(16)] public float BurstMicroseconds;
+        [FieldOffset(20)] public float EvalRadiusMeters;
+        [FieldOffset(24)] public float GlobalQualityWeight;
+        [FieldOffset(28)] public uint FaultFlags;
+        [FieldOffset(32)] public uint HotPathAllocBytes;
+        [FieldOffset(36)] public uint RollbackExcluded;
+        [FieldOffset(40)] public uint LastHoveredTerminalHash;
+        [FieldOffset(44)] public float CursorSnappingTolerance;
+        [FieldOffset(48)] public float RaycastThickness;
+        [FieldOffset(52)] public int NonFiniteCount;
+        [FieldOffset(56)] public ulong _pad0;
+    }
+
     public static class TerminalOsHash
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -406,6 +467,8 @@ namespace Hecton8.UI
         public static bool ValidateLayoutAndRayPlaneMath()
         {
             if (UnsafeUtility.SizeOf<TerminalInteractionDTO>() != TerminalOsConstants.TerminalInteractionStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalInputStateDTO>() != TerminalOsConstants.TerminalInputStateStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalInputGpuStateDTO>() != TerminalOsConstants.TerminalInputGpuStateStrideBytes ||
                 UnsafeUtility.SizeOf<TerminalPlaneDTO>() != TerminalOsConstants.TerminalPlaneStrideBytes ||
                 UnsafeUtility.SizeOf<GazeRayDTO>() != TerminalOsConstants.GazeRayStrideBytes ||
                 UnsafeUtility.SizeOf<ButtonAABBDTO>() != TerminalOsConstants.ButtonAabbStrideBytes ||
@@ -414,6 +477,8 @@ namespace Hecton8.UI
                 UnsafeUtility.SizeOf<DecryptionKnobInputDTO>() != TerminalOsConstants.DecryptionKnobInputStrideBytes ||
                 UnsafeUtility.SizeOf<TerminalUnlockedSignal>() != 32 ||
                 UnsafeUtility.SizeOf<DecryptionTelemetryEntry>() != TerminalOsConstants.DecryptionTelemetryStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalInputTelemetryEntry>() != TerminalOsConstants.TerminalInputTelemetryStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalInputTuningDTO>() != TerminalOsConstants.TerminalInputTuningStrideBytes ||
                 UnsafeUtility.SizeOf<TerminalTelemetryEntry>() != 64)
             {
                 return false;
@@ -440,9 +505,8 @@ namespace Hecton8.UI
                 AbsoluteUniversePosition.DeltaMetersClamped(in plane.CenterAup, in gaze.OriginAup),
                 float3.zero);
             float denom = math.dot(gaze.Direction, plane.Normal);
-            float safeDenom = math.abs(denom) < 0.00001f
-                ? (denom < 0f ? -0.00001f : 0.00001f)
-                : denom;
+            float safeDenomMagnitude = math.max(math.abs(denom), 0.0001f);
+            float safeDenom = math.select(-safeDenomMagnitude, safeDenomMagnitude, denom >= 0f);
             float distance = math.dot(centerFromOrigin, plane.Normal) / safeDenom;
             float3 local = gaze.Direction * distance - centerFromOrigin;
             float2 uv = new float2(
@@ -459,6 +523,9 @@ namespace Hecton8.UI
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct UpdateTerminalTextJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: States is a TerminalOS-owned Vault buffer pointer resolved immediately before scheduling by the owner phase. The job does not retain the pointer after execution.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: Each parallel worker writes only `States[index]`; signal inputs are read-only NativeArrays from distinct Vault lanes and are marked NoAlias.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: Completion is owned by TerminalOsRuntime through dispatcher fence finalization before upload/readback paths inspect the mutated rows.
         [NativeDisableUnsafePtrRestriction] [NoAlias] public TerminalStateDTO* States;
         [ReadOnly] [NoAlias] public NativeArray<MockPowerStateSignal> PowerSignals;
         [ReadOnly] [NoAlias] public NativeArray<MockDamageScalarSignal> DamageSignals;
@@ -527,7 +594,7 @@ namespace Hecton8.UI
         public int ClickCount;
         public int ButtonCount;
         public NativeQueue<TerminalCommandSignal>.ParallelWriter Commands;
-
+        [NativeDisableParallelForRestriction] public NativeArray<int> CommandsBudget;
         public void Execute(int index)
         {
             if (index < 0 || index >= ClickCount)
@@ -551,7 +618,7 @@ namespace Hecton8.UI
                 if (!inside)
                     continue;
 
-                Commands.Enqueue(new TerminalCommandSignal
+                SignalBus<TerminalCommandSignal>.TryEnqueueBounded(Commands, CommandsBudget, new TerminalCommandSignal
                 {
                     TerminalHash = click.TerminalHash,
                     CommandHash = button.CommandHash,
@@ -578,8 +645,8 @@ namespace Hecton8.UI
             if (!GazeRays.IsCreated || GazeRays.Length == 0)
                 return;
 
-            float phase = (Frame & 1023u) * 0.006135923f;
-            float sway = math.sin(phase) * math.max(0f, MicroSwayRadians);
+            float phase = (Frame & 1023u) * (1f / 1024f);
+            float sway = TriangleWave(phase) * math.max(0f, MicroSwayRadians);
             float3 forward = math.normalizesafe(FallbackForward, new float3(0f, 0f, 1f));
             float3 side = math.normalizesafe(math.cross(new float3(0f, 1f, 0f), forward), new float3(1f, 0f, 0f));
             float3 direction = math.normalizesafe(forward + side * sway, forward);
@@ -591,6 +658,51 @@ namespace Hecton8.UI
                 Frame = Frame,
                 ScrollDelta = ScrollDelta
             };
+        }
+
+        private static float TriangleWave(float phase)
+        {
+            return math.abs(math.frac(phase) * 2f - 1f) * 2f - 1f;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockGazeVectorsJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<GazeRayDTO> GazeRays;
+        public AbsoluteUniversePosition FallbackOriginAup;
+        public float3 FallbackForward;
+        public float2 ScrollDelta;
+        public uint InteractionFlags;
+        public uint Frame;
+        public float MicroSwayRadians;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)GazeRays.Length)
+                return;
+
+            float framePhase = ((Frame + (uint)(index * 37)) & 2047u) * (1f / 2048f);
+            float swayScale = math.max(0f, MicroSwayRadians);
+            float swayX = TriangleWave(framePhase) * swayScale;
+            float swayY = TriangleWave(framePhase * 1.6180339f + 0.37f) * swayScale * 0.5f;
+            float3 forward = math.normalizesafe(FallbackForward, new float3(0f, 0f, 1f));
+            float3 side = math.normalizesafe(math.cross(new float3(0f, 1f, 0f), forward), new float3(1f, 0f, 0f));
+            float3 up = math.normalizesafe(math.cross(forward, side), new float3(0f, 1f, 0f));
+            float3 direction = math.normalizesafe(forward + side * swayX + up * swayY, forward);
+            GazeRays[index] = new GazeRayDTO
+            {
+                OriginAup = FallbackOriginAup,
+                Direction = direction,
+                InteractionFlags = InteractionFlags,
+                Frame = Frame,
+                ScrollDelta = ScrollDelta
+            };
+        }
+
+        private static float TriangleWave(float phase)
+        {
+            return math.abs(math.frac(phase) * 2f - 1f) * 2f - 1f;
         }
     }
 
@@ -686,6 +798,11 @@ namespace Hecton8.UI
 
             TerminalPlaneDTO plane = Planes[index];
             GazeRayDTO gaze = GazeRays[0];
+            bool rawFinite =
+                math.all(math.isfinite(plane.Normal)) &&
+                math.all(math.isfinite(plane.Right)) &&
+                math.all(math.isfinite(plane.Up)) &&
+                math.all(math.isfinite(gaze.Direction));
             float3 normal = math.normalizesafe(plane.Normal, new float3(0f, 0f, -1f));
             float3 right = math.normalizesafe(plane.Right, new float3(1f, 0f, 0f));
             float3 up = math.normalizesafe(plane.Up, new float3(0f, 1f, 0f));
@@ -700,7 +817,8 @@ namespace Hecton8.UI
             current.Distance = float.MaxValue;
             current.InteractionFlags &= TerminalOsConstants.InteractionFlagCandidate;
 
-            if (!math.all(math.isfinite(centerFromOrigin)) ||
+            if (!rawFinite ||
+                !math.all(math.isfinite(centerFromOrigin)) ||
                 !math.all(math.isfinite(normal)) ||
                 !math.all(math.isfinite(direction)) ||
                 math.abs(denom) < 0.00001f)
@@ -741,6 +859,249 @@ namespace Hecton8.UI
                                                                  TerminalOsConstants.InteractionFlagRelease |
                                                                  TerminalOsConstants.InteractionFlagScroll));
             Interactions[index] = current;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct EvaluateTerminalGazeJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<TerminalPlaneDTO> Planes;
+        [ReadOnly, NoAlias] public NativeArray<GazeRayDTO> GazeRays;
+        [ReadOnly, NoAlias] public NativeArray<ButtonAABBDTO> Buttons;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: InputStates points to the Vault-owned SHINOBU_331 terminal projection buffer opened by the TerminalOS owner phase immediately before this owner-scheduled evaluation job is scheduled. The pointer is never retained beyond the copied job value, and each parallel worker writes only row index `index`.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: The raw pointer route is intentional because the CPU projection DTO carries 64-byte AUP/local-basis state and the task requires UnsafeUtility.AsRef mutation. Shader upload is a later owner-finalized 32-byte TerminalInputGpuStateDTO compaction, not a direct copy of this CPU row.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: Interactions uses a distinct Vault buffer ID from InputStates, Planes, GazeRays, Buttons, and the upload row-hash lane. TerminalOS owns scheduling and completion, so shader upload and editor readouts occur only after the returned JobHandle is finalized by the owner.
+        [NativeDisableUnsafePtrRestriction, NoAlias] public TerminalInputStateDTO* InputStates;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public TerminalInteractionDTO* Interactions;
+        public int TerminalCount;
+        public int ButtonCount;
+        public float GlobalQualityWeight;
+        public float MaxDistanceMeters;
+        public float ViewConeCos;
+        public float CursorSnappingTolerance;
+        public float RaycastThickness;
+        public float QualityCurvePower;
+        public float LowRadiusMeters;
+        public float UltraRadiusMeters;
+        public uint Frame;
+        public NativeQueue<TerminalCommandSignal>.ParallelWriter Commands;
+        [NativeDisableParallelForRestriction] public NativeArray<int> CommandsBudget;
+        public NativeQueue<InteractionUiSignal>.ParallelWriter UiSignals;
+        [NativeDisableParallelForRestriction] public NativeArray<int> UiSignalsBudget;
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)TerminalCount ||
+                InputStates == null ||
+                Interactions == null ||
+                !GazeRays.IsCreated ||
+                GazeRays.Length == 0)
+            {
+                return;
+            }
+
+            TerminalPlaneDTO plane = Planes[index];
+            GazeRayDTO gaze = GazeRays[0];
+            ref TerminalInputStateDTO inputState = ref UnsafeUtility.AsRef<TerminalInputStateDTO>(InputStates + index);
+            ref TerminalInteractionDTO interaction = ref UnsafeUtility.AsRef<TerminalInteractionDTO>(Interactions + index);
+            inputState = default;
+            inputState.TerminalAUP = ToAbsoluteDouble3(in plane.CenterAup);
+            inputState.ForwardNormal = SanitizeDirection(plane.Normal, new float3(0f, 0f, -1f));
+            inputState.UpVector = SanitizeDirection(plane.Up, new float3(0f, 1f, 0f));
+            inputState.ProjectedUV = default;
+            inputState.TerminalHashID = plane.TerminalHash;
+            inputState.InputFlags = TerminalOsConstants.InteractionFlagInactive;
+
+            interaction = default;
+            interaction.TerminalHash = plane.TerminalHash;
+            interaction.Distance = float.MaxValue;
+
+            if ((plane.Flags & TerminalOsConstants.PlaneFlagActive) == 0u ||
+                (plane.Flags & TerminalOsConstants.PlaneFlagPowered) == 0u ||
+                (plane.Flags & TerminalOsConstants.PlaneFlagSubmerged) != 0u)
+            {
+                interaction.InteractionFlags = TerminalOsConstants.InteractionFlagInactive;
+                return;
+            }
+
+            double3 terminalAup = inputState.TerminalAUP;
+            double3 rayAup = ToAbsoluteDouble3(in gaze.OriginAup);
+            double3 centerFromOriginDouble = terminalAup - rayAup;
+            float3 centerFromOrigin = new float3(
+                (float)centerFromOriginDouble.x,
+                (float)centerFromOriginDouble.y,
+                (float)centerFromOriginDouble.z);
+            bool rawFinite =
+                math.all(math.isfinite(plane.Normal)) &&
+                math.all(math.isfinite(plane.Up)) &&
+                math.all(math.isfinite(plane.Right)) &&
+                math.all(math.isfinite(gaze.Direction)) &&
+                math.all(math.isfinite(centerFromOriginDouble));
+            float3 direction = SanitizeDirection(gaze.Direction, new float3(0f, 0f, 1f));
+            float3 normal = inputState.ForwardNormal;
+            float3 up = inputState.UpVector;
+
+            if (!rawFinite ||
+                !math.all(math.isfinite(centerFromOrigin)) ||
+                !math.all(math.isfinite(direction)) ||
+                !math.all(math.isfinite(normal)) ||
+                !math.all(math.isfinite(up)))
+            {
+                inputState.InputFlags = TerminalOsConstants.InteractionFlagNonFinite;
+                interaction.InteractionFlags = TerminalOsConstants.InteractionFlagNonFinite;
+                return;
+            }
+
+            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+            float curvePower = math.clamp(math.isfinite(QualityCurvePower) ? QualityCurvePower : 1f, 0.25f, 4f);
+            float curveBlend = math.saturate((curvePower - 0.25f) * (1f / 3.75f));
+            float shapedQuality = math.lerp(quality, quality * quality * quality, curveBlend);
+            float lowRadius = math.max(0.5f, math.isfinite(LowRadiusMeters) ? LowRadiusMeters : 5f);
+            float ultraRadius = math.max(lowRadius, math.isfinite(UltraRadiusMeters) ? UltraRadiusMeters : 25f);
+            float qualityRadius = math.lerp(lowRadius, ultraRadius, shapedQuality);
+            float configuredRadius = math.isfinite(MaxDistanceMeters) ? math.max(0.5f, MaxDistanceMeters) : qualityRadius;
+            float evalRadius = math.min(qualityRadius, configuredRadius);
+            float distanceSq = math.lengthsq(centerFromOrigin);
+            if (!math.isfinite(distanceSq) || distanceSq > evalRadius * evalRadius)
+            {
+                inputState.InputFlags = TerminalOsConstants.InteractionFlagCulled;
+                interaction.InteractionFlags = TerminalOsConstants.InteractionFlagCulled;
+                return;
+            }
+
+            float3 toTerminal = math.normalizesafe(centerFromOrigin, direction);
+            if (math.dot(direction, toTerminal) < math.clamp(ViewConeCos, -0.5f, 0.95f))
+            {
+                inputState.InputFlags = TerminalOsConstants.InteractionFlagCulled;
+                interaction.InteractionFlags = TerminalOsConstants.InteractionFlagCulled;
+                return;
+            }
+
+            float denom = math.dot(direction, normal);
+            if (!math.isfinite(denom))
+            {
+                inputState.InputFlags = TerminalOsConstants.InteractionFlagNonFinite;
+                interaction.InteractionFlags = TerminalOsConstants.InteractionFlagNonFinite;
+                return;
+            }
+
+            if (math.abs(denom) < 0.01f)
+            {
+                inputState.InputFlags = TerminalOsConstants.InteractionFlagCulled;
+                interaction.InteractionFlags = TerminalOsConstants.InteractionFlagCulled;
+                return;
+            }
+
+            float distance = math.dot(centerFromOrigin, normal) / denom;
+            if (!math.isfinite(distance) || distance < 0f || distance > evalRadius)
+            {
+                inputState.InputFlags = TerminalOsConstants.InteractionFlagCulled;
+                interaction.InteractionFlags = TerminalOsConstants.InteractionFlagCulled;
+                interaction.Distance = math.isfinite(distance) ? distance : float.MaxValue;
+                return;
+            }
+
+            float3 right = math.normalizesafe(math.cross(up, normal), SanitizeDirection(plane.Right, new float3(1f, 0f, 0f)));
+            float3 local = direction * distance - centerFromOrigin;
+            float width = math.max(0.001f, plane.Width);
+            float height = math.max(0.001f, plane.Height);
+            float2 uv = new float2(
+                math.dot(local, right) / width + 0.5f,
+                math.dot(local, up) / height + 0.5f);
+
+            float edgeTolerance = math.saturate(math.lerp(
+                math.max(0f, RaycastThickness),
+                math.max(0f, CursorSnappingTolerance),
+                quality));
+            if (!math.all(math.isfinite(uv)) ||
+                uv.x < -edgeTolerance ||
+                uv.y < -edgeTolerance ||
+                uv.x > 1f + edgeTolerance ||
+                uv.y > 1f + edgeTolerance)
+            {
+                inputState.InputFlags = TerminalOsConstants.InteractionFlagCulled;
+                interaction.InteractionFlags = TerminalOsConstants.InteractionFlagCulled;
+                interaction.Distance = distance;
+                return;
+            }
+
+            uint liveFlags = TerminalOsConstants.InteractionFlagHover |
+                             (gaze.InteractionFlags & (TerminalOsConstants.InteractionFlagPress |
+                                                       TerminalOsConstants.InteractionFlagHold |
+                                                       TerminalOsConstants.InteractionFlagRelease |
+                                                       TerminalOsConstants.InteractionFlagScroll));
+            inputState.ProjectedUV = math.saturate(uv);
+            inputState.InputFlags = liveFlags;
+            interaction.LocalHitUV = inputState.ProjectedUV;
+            interaction.Distance = distance;
+            interaction.InteractionFlags = liveFlags;
+
+            DispatchButtonSignals(index, in plane, in interaction);
+        }
+
+        private void DispatchButtonSignals(int terminalIndex, in TerminalPlaneDTO plane, in TerminalInteractionDTO interaction)
+        {
+            float2 uv = interaction.LocalHitUV;
+            bool clicked = (interaction.InteractionFlags & TerminalOsConstants.InteractionFlagPress) != 0u;
+            int safeButtonCount = math.max(0, ButtonCount);
+            int firstButton = (int)math.min(plane.LayoutFirstButton, (uint)safeButtonCount);
+            int availableButtons = math.max(0, safeButtonCount - firstButton);
+            int localButtonCount = (int)math.min(plane.LayoutButtonCount, (uint)availableButtons);
+            int buttonEnd = firstButton + localButtonCount;
+            for (int i = firstButton; i < buttonEnd; i++)
+            {
+                ButtonAABBDTO button = Buttons[i];
+                if (button.TerminalHash != interaction.TerminalHash ||
+                    (button.Flags & TerminalOsConstants.ButtonFlagEnabled) == 0u)
+                {
+                    continue;
+                }
+
+                float4 rect = button.RectUv;
+                float snapTolerance = math.saturate(math.max(0f, CursorSnappingTolerance));
+                bool inside = uv.x >= rect.x - snapTolerance &&
+                              uv.y >= rect.y - snapTolerance &&
+                              uv.x <= rect.z + snapTolerance &&
+                              uv.y <= rect.w + snapTolerance;
+                if (!inside)
+                    continue;
+
+                SignalBus<InteractionUiSignal>.TryEnqueueBounded(UiSignals, UiSignalsBudget, new InteractionUiSignal
+                {
+                    TargetAup = plane.CenterAup,
+                    TargetHash = interaction.TerminalHash,
+                    ToolHash = button.CommandHash,
+                    State = TerminalOsConstants.InteractionUiStateShow,
+                    Flags = TerminalOsConstants.InteractionUiFlagTerminal
+                });
+
+                if (clicked)
+                {
+                    SignalBus<TerminalCommandSignal>.TryEnqueueBounded(Commands, CommandsBudget, new TerminalCommandSignal
+                    {
+                        TerminalHash = interaction.TerminalHash,
+                        CommandHash = button.CommandHash,
+                        LocalUv = uv
+                    });
+                }
+
+                return;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 SanitizeDirection(float3 value, float3 fallback)
+        {
+            return math.normalizesafe(math.all(math.isfinite(value)) ? value : fallback, fallback);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition aup)
+        {
+            double cell = AbsoluteUniversePosition.CellSizeMeters;
+            return new double3(
+                (aup.GridX * cell) + aup.LocalX,
+                (aup.GridY * cell) + aup.LocalY,
+                (aup.GridZ * cell) + aup.LocalZ);
         }
     }
 
@@ -846,7 +1207,7 @@ namespace Hecton8.UI
         public uint Frame;
         public uint StepFrames;
         public NativeQueue<TerminalUnlockedSignal>.ParallelWriter UnlockedSignals;
-
+        [NativeDisableParallelForRestriction] public NativeArray<int> UnlockedSignalsBudget;
         public void Execute()
         {
             if (Puzzles == null)
@@ -955,7 +1316,7 @@ namespace Hecton8.UI
             uint terminalHash = terminal.TerminalHash != 0u ? terminal.TerminalHash : puzzle.PuzzleID;
             uint nodeHash = terminal.NodeHash != 0u ? terminal.NodeHash : terminalHash;
             puzzle.Flags |= TerminalOsConstants.DecryptionFlagSolved;
-            UnlockedSignals.Enqueue(new TerminalUnlockedSignal
+            SignalBus<TerminalUnlockedSignal>.TryEnqueueBounded(UnlockedSignals, UnlockedSignalsBudget, new TerminalUnlockedSignal
             {
                 PuzzleID = puzzle.PuzzleID,
                 NodeHash = nodeHash,
@@ -1005,8 +1366,9 @@ namespace Hecton8.UI
         public int ButtonCount;
         public uint Frame;
         public NativeQueue<TerminalCommandSignal>.ParallelWriter Commands;
+        [NativeDisableParallelForRestriction] public NativeArray<int> CommandsBudget;
         public NativeQueue<InteractionUiSignal>.ParallelWriter UiSignals;
-
+        [NativeDisableParallelForRestriction] public NativeArray<int> UiSignalsBudget;
         public void Execute(int index)
         {
             if ((uint)index >= (uint)TerminalCount)
@@ -1041,7 +1403,7 @@ namespace Hecton8.UI
                 if (!inside)
                     continue;
 
-                UiSignals.Enqueue(new InteractionUiSignal
+                SignalBus<InteractionUiSignal>.TryEnqueueBounded(UiSignals, UiSignalsBudget, new InteractionUiSignal
                 {
                     TargetAup = plane.CenterAup,
                     TargetHash = interaction.TerminalHash,
@@ -1052,7 +1414,7 @@ namespace Hecton8.UI
 
                 if (clicked)
                 {
-                    Commands.Enqueue(new TerminalCommandSignal
+                    SignalBus<TerminalCommandSignal>.TryEnqueueBounded(Commands, CommandsBudget, new TerminalCommandSignal
                     {
                         TerminalHash = interaction.TerminalHash,
                         CommandHash = button.CommandHash,

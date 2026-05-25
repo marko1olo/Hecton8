@@ -66,7 +66,7 @@ namespace Hecton8.World
 
             float safeCellSize = math.max(0.001f, CellSizeMeters);
             float safeHeightScale = math.max(0.001f, HeightScaleMeters);
-            float talusNormalized = math.tan(math.radians(math.clamp(TalusAngleDegrees, 1f, 89f))) *
+            float talusNormalized = global::Hecton8.Core.MathLodApproximation.ApproxTanClamped(math.radians(math.clamp(TalusAngleDegrees, 1f, 89f)), 4096f) *
                                     safeCellSize /
                                     safeHeightScale;
             float transferScale = math.saturate(Strength) * 0.25f;

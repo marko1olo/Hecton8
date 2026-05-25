@@ -19,7 +19,7 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
-            _station = GetComponent<MaintenanceStationModule>();
+            TryGetComponent(out _station);
         }
 
         public bool TryAcceptTool(PlayerInventory inventory, PlayerTool tool)

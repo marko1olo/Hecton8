@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 — DirectorMissionBridge.cs
 // Most mezhdu HectonDirectorAI i MissionManager.
 //
@@ -35,12 +35,14 @@ namespace Hecton8.Gameplay
         [SerializeField] private FirstHourMilestone minimumMilestone = FirstHourMilestone.FirstCraft;
 
         private int _lastMissionIndex;
+        private uint _rareDiscoveryHash;
         private bool _hotSwapRegistered;
         private MissionManager _missionManager;
         private FirstHourDirector _firstHourDirector;
 
         private void OnEnable()
         {
+            RefreshRareDiscoveryHash();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             DirectorAIEvents.Register(this);
@@ -61,6 +63,8 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            RefreshRareDiscoveryHash();
+
             if (directorMissionIds == null || directorMissionIds.Length <= 0)
                 return;
 
@@ -127,7 +131,7 @@ namespace Hecton8.Gameplay
                 _lastMissionIndex = (idx + 1) % directorMissionIds.Length;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[DirectorBridge] Mission triggered: {missionId} near {position}");
+                H8Debug.Log($"[DirectorBridge] Mission triggered: {missionId} near {position}");
 #endif
                 return;
             }
@@ -138,8 +142,13 @@ namespace Hecton8.Gameplay
             if (!CanServeDirectorContent())
                 return;
 
-            if (!string.IsNullOrEmpty(rareDiscoveryId))
-                NarrativeEvents.RaiseDiscoveryMade(rareDiscoveryId);
+            if (_rareDiscoveryHash != 0u)
+                NarrativeEvents.TryRaiseDiscoveryMade(_rareDiscoveryHash);
+        }
+
+        private void RefreshRareDiscoveryHash()
+        {
+            _rareDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(rareDiscoveryId);
         }
 
         void IDirectorAIEventListener.OnDirectorSpawnHordeRequested(Vector3 position)

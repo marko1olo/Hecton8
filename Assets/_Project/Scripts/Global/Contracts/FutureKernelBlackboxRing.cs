@@ -4,10 +4,15 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.Global.Contracts
 {
+    internal static class FutureKernelBlackboxLayout
+    {
+        internal const int RingStateStrideBytes = 64;
+    }
+
     /// <summary>
     /// Fixed state header for a caller-owned 300-entry future-kernel blackbox ring. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = FutureKernelBlackboxLayout.RingStateStrideBytes)]
     public struct FutureKernelBlackboxRingState64
     {
         [FieldOffset(0)] public ulong WriteCount;
@@ -29,7 +34,7 @@ namespace Hecton8.Global.Contracts
     /// </summary>
     public static class FutureKernelBlackboxRing
     {
-        public const int StateSizeBytes = 64;
+        public const int StateSizeBytes = FutureKernelBlackboxLayout.RingStateStrideBytes;
         public const uint StateInitializedFlag = 1u << 0;
         public const uint CapacityFaultFlag = 1u << 1;
         public const uint CursorSanitizedFlag = 1u << 2;

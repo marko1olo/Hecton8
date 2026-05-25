@@ -6,7 +6,6 @@ using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton.Localization;
-using Hecton8.Input;
 using TMPro;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -42,7 +41,7 @@ namespace Hecton8.UI
         private const string RightFooterStandbyNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  PDA STANDBY";
         private const string IntrusionFooterNumericTemplate = "O2 {N0:0}%  |  PWR {N1:0}%  |  REBOOT {N2}%";
         private const int NumericTemplateWriteAttemptLimit = 8;
-        private const int CharCapacityGrowthWatchdogLimit = 31;
+        private const int ChromeTextBufferCapacity = 512;
         private const int LegacyGlitchReadabilityPrefixChars = 5;
         private const int VaultPressureWarningStaleFrames = 300;
         private const byte DataVaultMemoryPressureFlag = 2;
@@ -60,7 +59,6 @@ namespace Hecton8.UI
         private static readonly int ShaderColorId = Shader.PropertyToID("_Color");
         private static readonly int FaceColorId = Shader.PropertyToID("_FaceColor");
         private static readonly char[] s_emptyBuffer = new char[1];
-        [ThreadStatic] private static char[] s_numericTemplateConversionBuffer;
 
         [Header("References")]
         [SerializeField] private PlayerPDA playerPDA;
@@ -104,22 +102,32 @@ namespace Hecton8.UI
         private uint _lastInventorySignalRevision;
         private uint _toolLoadoutSignalSourceId;
         private uint _lastToolLoadoutSignalSequence;
-        private string _localizedTitle = TitleTextValue;
-        private string _localizedTabInventory = ActiveTabInventory;
-        private string _localizedTabLoadout = ActiveTabLoadout;
-        private string _localizedTabConstruction = ActiveTabConstruction;
-        private string _localizedTabBarter = ActiveTabBarter;
-        private string _localizedTabDataLog = ActiveTabDataLog;
-        private string _localizedTabSpectrum = ActiveTabSpectrum;
-        private string _localizedTabDiagnostics = ActiveTabDiagnostics;
-        private string _localizedTabUnknown = ActiveTabUnknown;
-        private string _localizedLeftFooterFormat = LeftFooterFormat;
-        private string _localizedRightFooterOnlineFormat = RightFooterOnlineFormat;
-        private string _localizedRightFooterStandbyFormat = RightFooterStandbyFormat;
-        private string _localizedLeftFooterNumericTemplate = LeftFooterNumericTemplate;
-        private string _localizedRightFooterOnlineNumericTemplate = RightFooterOnlineNumericTemplate;
-        private string _localizedRightFooterStandbyNumericTemplate = RightFooterStandbyNumericTemplate;
-        private string _localizedIntrusionFooterNumericTemplate = IntrusionFooterNumericTemplate;
+        private readonly char[] _localizedTitleBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedTabInventoryBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedTabLoadoutBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedTabConstructionBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedTabBarterBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedTabDataLogBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedTabSpectrumBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedTabDiagnosticsBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedTabUnknownBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedLeftFooterNumericTemplateBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedRightFooterOnlineNumericTemplateBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedRightFooterStandbyNumericTemplateBuffer = new char[ChromeTextBufferCapacity];
+        private readonly char[] _localizedIntrusionFooterNumericTemplateBuffer = new char[ChromeTextBufferCapacity];
+        private int _localizedTitleLength;
+        private int _localizedTabInventoryLength;
+        private int _localizedTabLoadoutLength;
+        private int _localizedTabConstructionLength;
+        private int _localizedTabBarterLength;
+        private int _localizedTabDataLogLength;
+        private int _localizedTabSpectrumLength;
+        private int _localizedTabDiagnosticsLength;
+        private int _localizedTabUnknownLength;
+        private int _localizedLeftFooterNumericTemplateLength;
+        private int _localizedRightFooterOnlineNumericTemplateLength;
+        private int _localizedRightFooterStandbyNumericTemplateLength;
+        private int _localizedIntrusionFooterNumericTemplateLength;
         private bool _registeredToTickManager;
         private int _lastStressCorruptionBucket = int.MinValue;
         private PDAIntrusionManager _intrusionManager;
@@ -133,22 +141,27 @@ namespace Hecton8.UI
         private int _lastRebootProgressPercent = -1;
         private bool _vaultPressureWarningActive;
         private int _cachedRebootBindingLength;
-        private InputDisplayStyle _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
-        private string _localizedMechModeTag = MechModeTag;
-        private string _localizedIntrusionHintPrefix = "REBOOT // HOLD ";
-        private string _localizedIntrusionHintSuffix = " FOR 3.0S";
+        private byte _cachedRebootBindingStyleCode = byte.MaxValue;
+        private readonly char[] _localizedMechModeTagBuffer = new char[ChromeTextBufferCapacity];
+        private int _localizedMechModeTagLength;
+        // COLD ALLOC: char[64] - cached PDA intrusion hint prefix - owner: PDAShellChrome
+        private readonly char[] _localizedIntrusionHintPrefixBuffer = new char[64];
+        // COLD ALLOC: char[48] - cached PDA intrusion hint suffix - owner: PDAShellChrome
+        private readonly char[] _localizedIntrusionHintSuffixBuffer = new char[48];
+        private int _localizedIntrusionHintPrefixLength;
+        private int _localizedIntrusionHintSuffixLength;
         // COLD ALLOC: char[160] - PDA title staging buffer - owner: PDAShellChrome
-        private char[] _titleBuffer = new char[160];
+        private char[] _titleBuffer = new char[ChromeTextBufferCapacity];
         // COLD ALLOC: char[128] - PDA tab staging buffer - owner: PDAShellChrome
-        private char[] _tabBuffer = new char[128];
+        private char[] _tabBuffer = new char[ChromeTextBufferCapacity];
         // COLD ALLOC: char[160] - PDA left footer staging buffer - owner: PDAShellChrome
-        private char[] _leftFooterBuffer = new char[160];
+        private char[] _leftFooterBuffer = new char[ChromeTextBufferCapacity];
         // COLD ALLOC: char[128] - PDA right footer staging buffer - owner: PDAShellChrome
-        private char[] _rightFooterBuffer = new char[128];
+        private char[] _rightFooterBuffer = new char[ChromeTextBufferCapacity];
         // COLD ALLOC: char[160] — PDA caller-owned glitch scratch buffer — owner: PDAShellChrome
-        private char[] _glitchScratchBuffer = new char[160];
+        private char[] _glitchScratchBuffer = new char[ChromeTextBufferCapacity];
         // COLD ALLOC: char[64] - PDA context tag staging buffer - owner: PDAShellChrome
-        private char[] _contextTagBuffer = new char[64];
+        private char[] _contextTagBuffer = new char[ChromeTextBufferCapacity];
         // COLD ALLOC: char[96] - intrusion status hint buffer - owner: PDAShellChrome
         private readonly char[] _intrusionHintBuffer = new char[96];
         // COLD ALLOC: char[48] - cached PDA reboot binding label - owner: PDAShellChrome
@@ -161,7 +174,8 @@ namespace Hecton8.UI
         private int _appliedRightFooterVersion = int.MinValue;
         private IDataVault _glitchVault;
         private LocalizationManager _localization;
-        private InputManager _nativeInputManager;
+        private INativeInputManagerRuntime _nativeInputManager;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private VaultGenerationHandle<byte> _glitchTableHandle;
         private bool _glitchTableHandleReady;
         private bool _hotSwapRegistered;
@@ -212,7 +226,7 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerPDA == null && playerContext != null)
                 playerPDA = playerContext.PlayerPDA;
             if (playerInventory == null && playerContext != null)
@@ -320,9 +334,23 @@ namespace Hecton8.UI
             if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime ||
                 serviceSlot == GlobalRegistryServiceSlot.Input)
             {
-                _nativeInputManager = GlobalRegistry.NativeInputManager;
+                if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+                    _nativeInputManager = currentService as INativeInputManagerRuntime;
+
                 _cachedRebootBindingLength = 0;
-                _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
+                _cachedRebootBindingStyleCode = byte.MaxValue;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                playerPDA = null;
+                playerInventory = null;
+                toolManager = null;
+                _playerMovement = null;
+                _intrusionManager = null;
+                RefreshBindings();
                 return;
             }
 
@@ -423,8 +451,9 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
-            _nativeInputManager = GlobalRegistry.NativeInputManager;
+            _localization = GlobalRegistry.Localization;
+            _nativeInputManager = GlobalRegistry.NativeInputRuntime;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void Unsubscribe()
@@ -542,12 +571,12 @@ namespace Hecton8.UI
                     continue;
 
                 _vaultPressureWarningActive = true;
-                _vaultPressureWarningFrame = Time.frameCount;
+                _vaultPressureWarningFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 _lastVaultPressureBucket = (int)math.round(math.saturate(signal.UsageRatio) * 20f);
             }
 
             if (_vaultPressureWarningActive &&
-                Time.frameCount - _vaultPressureWarningFrame > VaultPressureWarningStaleFrames)
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex - _vaultPressureWarningFrame > VaultPressureWarningStaleFrames)
             {
                 _vaultPressureWarningActive = false;
                 _lastVaultPressureBucket = 0;
@@ -633,7 +662,7 @@ namespace Hecton8.UI
         private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
         {
             return manager != null && manager.gameObject != null
-                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
                 : 0u;
         }
 
@@ -753,7 +782,7 @@ namespace Hecton8.UI
             _lastMechModeActive = false;
             _lastRebootProgressPercent = -1;
             _cachedRebootBindingLength = 0;
-            _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
+            _cachedRebootBindingStyleCode = byte.MaxValue;
             InvalidateAppliedLabelVersions();
             RefreshChrome();
         }
@@ -776,7 +805,7 @@ namespace Hecton8.UI
 
             if (_titleText != null)
             {
-                ReadOnlySpan<char> titleSpan = _localizedTitle.AsSpan();
+                ReadOnlySpan<char> titleSpan = _localizedTitleBuffer.AsSpan(0, _localizedTitleLength);
                 CopyTextToBuffer(titleSpan, ref _titleBuffer, out int titleLength);
                 ApplyTextBuffer(
                     _titleText,
@@ -790,7 +819,7 @@ namespace Hecton8.UI
                     ref _appliedTitleVersion);
             }
 
-            string tabName = GetActiveTabLabel();
+            ReadOnlySpan<char> tabName = GetActiveTabLabelSpan();
             int cargoCells = playerInventory != null && playerInventory.Grid != null
                 ? CountUsedCells(playerInventory.Grid)
                 : 0;
@@ -817,8 +846,7 @@ namespace Hecton8.UI
             if (_tabText != null &&
                 (_lastActiveTab != activeTabIndex || _lastIntrusionActive != intrusionActive || _appliedTabVersion == int.MinValue))
             {
-                string tabSource = intrusionActive ? IntrusionTabOverride : tabName;
-                ReadOnlySpan<char> tabSpan = tabSource.AsSpan();
+                ReadOnlySpan<char> tabSpan = intrusionActive ? IntrusionTabOverride.AsSpan() : tabName;
                 CopyTextToBuffer(tabSpan, ref _tabBuffer, out int tabLength);
                 ApplyTextBuffer(
                     _tabText,
@@ -843,7 +871,7 @@ namespace Hecton8.UI
             {
                 int safeAssignedTools = math.max(assignedTools, 1);
                 TryWriteNumericTemplate(
-                    _localizedLeftFooterNumericTemplate.AsSpan(),
+                    _localizedLeftFooterNumericTemplateBuffer.AsSpan(0, _localizedLeftFooterNumericTemplateLength),
                     ref _leftFooterBuffer,
                     LocNumericArg.Int(cargoCells),
                     LocNumericArg.Int(cargoTotal),
@@ -882,7 +910,7 @@ namespace Hecton8.UI
                 if (intrusionActive)
                 {
                     TryWriteNumericTemplate(
-                        _localizedIntrusionFooterNumericTemplate.AsSpan(),
+                        _localizedIntrusionFooterNumericTemplateBuffer.AsSpan(0, _localizedIntrusionFooterNumericTemplateLength),
                         ref _rightFooterBuffer,
                         LocNumericArg.Int(oxygenPercent),
                         LocNumericArg.Int(energyPercent),
@@ -904,7 +932,7 @@ namespace Hecton8.UI
                 else if (pdaOpen)
                 {
                     TryWriteNumericTemplate(
-                        _localizedRightFooterOnlineNumericTemplate.AsSpan(),
+                        _localizedRightFooterOnlineNumericTemplateBuffer.AsSpan(0, _localizedRightFooterOnlineNumericTemplateLength),
                         ref _rightFooterBuffer,
                         LocNumericArg.Int(oxygenPercent),
                         LocNumericArg.Int(energyPercent),
@@ -925,7 +953,7 @@ namespace Hecton8.UI
                 else
                 {
                     TryWriteNumericTemplate(
-                        _localizedRightFooterStandbyNumericTemplate.AsSpan(),
+                        _localizedRightFooterStandbyNumericTemplateBuffer.AsSpan(0, _localizedRightFooterStandbyNumericTemplateLength),
                         ref _rightFooterBuffer,
                         LocNumericArg.Int(oxygenPercent),
                         LocNumericArg.Int(energyPercent),
@@ -986,7 +1014,7 @@ namespace Hecton8.UI
                 }
                 else if (mechModeActive)
                 {
-                    ReadOnlySpan<char> contextSpan = _localizedMechModeTag.AsSpan();
+                    ReadOnlySpan<char> contextSpan = _localizedMechModeTagBuffer.AsSpan(0, _localizedMechModeTagLength);
                     CopyTextToBuffer(contextSpan, ref _contextTagBuffer, out int contextLength);
                     ApplyTextBuffer(
                         _contextTagText,
@@ -1020,120 +1048,142 @@ namespace Hecton8.UI
                 _chromeCanvasGroup.alpha = pdaOpen ? 1f : 0f;
         }
 
-        private string GetActiveTabLabel()
+        private ReadOnlySpan<char> GetActiveTabLabelSpan()
         {
             if (playerPDA == null)
-                return _localizedTabUnknown;
+                return _localizedTabUnknownBuffer.AsSpan(0, _localizedTabUnknownLength);
 
             switch (playerPDA.ActiveTab)
             {
-                case 0: return _localizedTabInventory;
-                case 1: return _localizedTabLoadout;
-                case 2: return _localizedTabConstruction;
-                case 3: return _localizedTabBarter;
-                case 4: return _localizedTabDataLog;
-                case 5: return _localizedTabSpectrum;
-                case 7: return _localizedTabDiagnostics;
-                default: return _localizedTabUnknown;
+                case 0: return _localizedTabInventoryBuffer.AsSpan(0, _localizedTabInventoryLength);
+                case 1: return _localizedTabLoadoutBuffer.AsSpan(0, _localizedTabLoadoutLength);
+                case 2: return _localizedTabConstructionBuffer.AsSpan(0, _localizedTabConstructionLength);
+                case 3: return _localizedTabBarterBuffer.AsSpan(0, _localizedTabBarterLength);
+                case 4: return _localizedTabDataLogBuffer.AsSpan(0, _localizedTabDataLogLength);
+                case 5: return _localizedTabSpectrumBuffer.AsSpan(0, _localizedTabSpectrumLength);
+                case 7: return _localizedTabDiagnosticsBuffer.AsSpan(0, _localizedTabDiagnosticsLength);
+                default: return _localizedTabUnknownBuffer.AsSpan(0, _localizedTabUnknownLength);
             }
         }
 
         private void RefreshLocalizedTextCache()
         {
-            _localizedTitle = ResolveLocalized(LocalizationKeys.PDA_SHELL_TITLE, TitleTextValue);
-            _localizedTabInventory = ResolveLocalized(LocalizationKeys.PDA_TAB_INVENTORY, ActiveTabInventory);
-            _localizedTabLoadout = ResolveLocalized(LocalizationKeys.PDA_TAB_LOADOUT, ActiveTabLoadout);
-            _localizedTabConstruction = ResolveLocalized(LocalizationKeys.PDA_TAB_CONSTRUCTION, ActiveTabConstruction);
-            _localizedTabBarter = ResolveLocalized(LocalizationKeys.PDA_TAB_BARTER, ActiveTabBarter);
-            _localizedTabDataLog = ResolveLocalized(LocalizationKeys.PDA_TAB_DATA_LOG, ActiveTabDataLog);
-            _localizedTabSpectrum = ResolveLocalized(LocalizationKeys.PDA_TAB_SPECTRUM, ActiveTabSpectrum);
-            _localizedTabDiagnostics = ResolveLocalized(LocalizationKeys.PDA_TAB_DIAGNOSTICS, ActiveTabDiagnostics);
-            _localizedTabUnknown = ResolveLocalized(LocalizationKeys.PDA_TAB_UNKNOWN, ActiveTabUnknown);
-            _localizedLeftFooterFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_LEFT, LeftFooterFormat);
-            _localizedRightFooterOnlineFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_RIGHT_ONLINE, RightFooterOnlineFormat);
-            _localizedRightFooterStandbyFormat = ResolveLocalized(LocalizationKeys.PDA_FOOTER_RIGHT_STANDBY, RightFooterStandbyFormat);
-            _localizedMechModeTag = ResolveLocalized(LocalizationKeys.PDA_MECH_MODE_ACTIVE, MechModeTag);
-            _localizedLeftFooterNumericTemplate = ConvertToNumericTemplate(_localizedLeftFooterFormat, LeftFooterNumericTemplate);
-            _localizedRightFooterOnlineNumericTemplate = ConvertToNumericTemplate(_localizedRightFooterOnlineFormat, RightFooterOnlineNumericTemplate);
-            _localizedRightFooterStandbyNumericTemplate = ConvertToNumericTemplate(_localizedRightFooterStandbyFormat, RightFooterStandbyNumericTemplate);
-            _localizedIntrusionFooterNumericTemplate = IntrusionFooterNumericTemplate;
-            SplitSinglePlaceholderTemplate(IntrusionHintFormat, out _localizedIntrusionHintPrefix, out _localizedIntrusionHintSuffix);
+            _localizedTitleLength = CopyLocalizedSpan(LocalizationKeys.PDA_SHELL_TITLE, TitleTextValue.AsSpan(), _localizedTitleBuffer);
+            _localizedTabInventoryLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_INVENTORY, ActiveTabInventory.AsSpan(), _localizedTabInventoryBuffer);
+            _localizedTabLoadoutLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_LOADOUT, ActiveTabLoadout.AsSpan(), _localizedTabLoadoutBuffer);
+            _localizedTabConstructionLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_CONSTRUCTION, ActiveTabConstruction.AsSpan(), _localizedTabConstructionBuffer);
+            _localizedTabBarterLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_BARTER, ActiveTabBarter.AsSpan(), _localizedTabBarterBuffer);
+            _localizedTabDataLogLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_DATA_LOG, ActiveTabDataLog.AsSpan(), _localizedTabDataLogBuffer);
+            _localizedTabSpectrumLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_SPECTRUM, ActiveTabSpectrum.AsSpan(), _localizedTabSpectrumBuffer);
+            _localizedTabDiagnosticsLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_DIAGNOSTICS, ActiveTabDiagnostics.AsSpan(), _localizedTabDiagnosticsBuffer);
+            _localizedTabUnknownLength = CopyLocalizedSpan(LocalizationKeys.PDA_TAB_UNKNOWN, ActiveTabUnknown.AsSpan(), _localizedTabUnknownBuffer);
+            _localizedMechModeTagLength = CopyLocalizedSpan(LocalizationKeys.PDA_MECH_MODE_ACTIVE, MechModeTag.AsSpan(), _localizedMechModeTagBuffer);
+            ReadOnlySpan<char> leftFooterFormat = ResolveLocalizedSpan(LocalizationKeys.PDA_FOOTER_LEFT, LeftFooterFormat.AsSpan());
+            ReadOnlySpan<char> rightFooterOnlineFormat = ResolveLocalizedSpan(LocalizationKeys.PDA_FOOTER_RIGHT_ONLINE, RightFooterOnlineFormat.AsSpan());
+            ReadOnlySpan<char> rightFooterStandbyFormat = ResolveLocalizedSpan(LocalizationKeys.PDA_FOOTER_RIGHT_STANDBY, RightFooterStandbyFormat.AsSpan());
+            _localizedLeftFooterNumericTemplateLength = CopyNumericTemplate(leftFooterFormat, LeftFooterNumericTemplate.AsSpan(), _localizedLeftFooterNumericTemplateBuffer);
+            _localizedRightFooterOnlineNumericTemplateLength = CopyNumericTemplate(rightFooterOnlineFormat, RightFooterOnlineNumericTemplate.AsSpan(), _localizedRightFooterOnlineNumericTemplateBuffer);
+            _localizedRightFooterStandbyNumericTemplateLength = CopyNumericTemplate(rightFooterStandbyFormat, RightFooterStandbyNumericTemplate.AsSpan(), _localizedRightFooterStandbyNumericTemplateBuffer);
+            _localizedIntrusionFooterNumericTemplateLength = CopySpanToFixedBuffer(IntrusionFooterNumericTemplate.AsSpan(), _localizedIntrusionFooterNumericTemplateBuffer);
+            CacheSinglePlaceholderTemplate(IntrusionHintFormat.AsSpan());
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, ReadOnlySpan<char> fallback)
         {
             LocalizationManager manager = _localization;
             if (manager == null)
                 return fallback;
 
-            return manager.GetOrFallback(manager.CurrentLanguage, key, fallback);
+            return manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback);
         }
 
-        private static string ConvertToNumericTemplate(string template, string fallback)
+        private int CopyLocalizedSpan(string key, ReadOnlySpan<char> fallback, char[] destination)
         {
-            string source = string.IsNullOrEmpty(template) ? fallback : template;
-            if (string.IsNullOrEmpty(source))
-                return fallback;
+            return CopySpanToFixedBuffer(ResolveLocalizedSpan(key, fallback), destination);
+        }
 
-            int numericPlaceholderCount = 0;
+        private static int CopyNumericTemplate(ReadOnlySpan<char> template, ReadOnlySpan<char> fallback, char[] destination)
+        {
+            ReadOnlySpan<char> source = template.IsEmpty ? fallback : template;
+            if (source.IsEmpty)
+                source = fallback;
+
             for (int i = 0; i < source.Length - 1; i++)
             {
                 if (source[i] == '{' && source[i + 1] >= '0' && source[i + 1] <= '9')
                 {
-                    numericPlaceholderCount++;
+                    source = fallback;
+                    break;
                 }
             }
 
-            if (numericPlaceholderCount <= 0)
-                return source;
-
-            EnsureCharCapacity(ref s_numericTemplateConversionBuffer, source.Length + numericPlaceholderCount);
-            char[] buffer = s_numericTemplateConversionBuffer;
-            int cursor = 0;
-            for (int i = 0; i < source.Length; i++)
-            {
-                char current = source[i];
-                if (current == '{' &&
-                    i + 1 < source.Length &&
-                    source[i + 1] >= '0' &&
-                    source[i + 1] <= '9')
-                {
-                    buffer[cursor++] = '{';
-                    buffer[cursor++] = 'N';
-                    buffer[cursor++] = source[i + 1];
-                    i++;
-                    continue;
-                }
-
-                buffer[cursor++] = current;
-            }
-
-            return new string(buffer, 0, cursor);
+            return CopySpanToFixedBuffer(source, destination);
         }
 
-        private static void SplitSinglePlaceholderTemplate(string template, out string prefix, out string suffix)
+        private void CacheSinglePlaceholderTemplate(ReadOnlySpan<char> template)
         {
-            string source = string.IsNullOrEmpty(template) ? IntrusionHintFormat : template;
-            int placeholderIndex = source.IndexOf("{0", System.StringComparison.Ordinal);
+            ReadOnlySpan<char> source = template.IsEmpty ? IntrusionHintFormat.AsSpan() : template;
+            int placeholderIndex = IndexOfPlaceholderStart(source);
             if (placeholderIndex < 0)
             {
-                prefix = source;
-                suffix = string.Empty;
+                CopySpanToFixedBuffer(source, _localizedIntrusionHintPrefixBuffer, out _localizedIntrusionHintPrefixLength);
+                _localizedIntrusionHintSuffixLength = 0;
                 return;
             }
 
-            int closeIndex = source.IndexOf('}', placeholderIndex);
+            int closeIndex = IndexOfClosingBrace(source, placeholderIndex);
             if (closeIndex < 0)
             {
-                prefix = source;
-                suffix = string.Empty;
+                CopySpanToFixedBuffer(source, _localizedIntrusionHintPrefixBuffer, out _localizedIntrusionHintPrefixLength);
+                _localizedIntrusionHintSuffixLength = 0;
                 return;
             }
 
-            prefix = source.Substring(0, placeholderIndex);
-            suffix = closeIndex + 1 < source.Length
-                ? source.Substring(closeIndex + 1)
-                : string.Empty;
+            CopySpanToFixedBuffer(source.Slice(0, placeholderIndex), _localizedIntrusionHintPrefixBuffer, out _localizedIntrusionHintPrefixLength);
+            ReadOnlySpan<char> suffix = closeIndex + 1 < source.Length
+                ? source.Slice(closeIndex + 1)
+                : ReadOnlySpan<char>.Empty;
+            CopySpanToFixedBuffer(suffix, _localizedIntrusionHintSuffixBuffer, out _localizedIntrusionHintSuffixLength);
+        }
+
+        private static int IndexOfPlaceholderStart(ReadOnlySpan<char> source)
+        {
+            for (int i = 0; i < source.Length - 1; i++)
+            {
+                if (source[i] == '{' && source[i + 1] == '0')
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int IndexOfClosingBrace(ReadOnlySpan<char> source, int startIndex)
+        {
+            for (int i = math.max(0, startIndex); i < source.Length; i++)
+            {
+                if (source[i] == '}')
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static void CopySpanToFixedBuffer(ReadOnlySpan<char> source, char[] destination, out int length)
+        {
+            if (destination == null || destination.Length == 0 || source.IsEmpty)
+            {
+                length = 0;
+                return;
+            }
+
+            length = math.min(source.Length, destination.Length);
+            source.Slice(0, length).CopyTo(destination.AsSpan(0, length));
+        }
+
+        private static int CopySpanToFixedBuffer(ReadOnlySpan<char> source, char[] destination)
+        {
+            CopySpanToFixedBuffer(source, destination, out int length);
+            return length;
         }
 
         private void SetIntrusionHintText(
@@ -1147,13 +1197,18 @@ namespace Hecton8.UI
             if (label == null)
                 return;
 
-            ReadOnlySpan<char> resolvedBinding = binding.IsEmpty ? "SUBMIT".AsSpan() : binding;
-            int index = 0;
-            index = CopyLiteralToBuffer(_intrusionHintBuffer, index, _localizedIntrusionHintPrefix);
-            index = CopySpanToBuffer(_intrusionHintBuffer, index, resolvedBinding);
-            index = CopyLiteralToBuffer(_intrusionHintBuffer, index, _localizedIntrusionHintSuffix);
+            if (_localizedIntrusionHintPrefixLength == 0 && _localizedIntrusionHintSuffixLength == 0)
+                CacheSinglePlaceholderTemplate(IntrusionHintFormat.AsSpan());
 
-            int version = unchecked((((ComputeTextVersion(_localizedIntrusionHintPrefix.AsSpan(), 239, stressBucket) * 397) ^ ComputeTextVersion(_localizedIntrusionHintSuffix.AsSpan(), 241, stressBucket)) * 397) ^ ComputeTextVersion(resolvedBinding, 243, stressBucket));
+            ReadOnlySpan<char> resolvedBinding = binding.IsEmpty ? "SUBMIT".AsSpan() : binding;
+            ReadOnlySpan<char> prefix = _localizedIntrusionHintPrefixBuffer.AsSpan(0, _localizedIntrusionHintPrefixLength);
+            ReadOnlySpan<char> suffix = _localizedIntrusionHintSuffixBuffer.AsSpan(0, _localizedIntrusionHintSuffixLength);
+            int index = 0;
+            index = CopySpanToBuffer(_intrusionHintBuffer, index, prefix);
+            index = CopySpanToBuffer(_intrusionHintBuffer, index, resolvedBinding);
+            index = CopySpanToBuffer(_intrusionHintBuffer, index, suffix);
+
+            int version = unchecked((((ComputeTextVersion(prefix, 239, stressBucket) * 397) ^ ComputeTextVersion(suffix, 241, stressBucket)) * 397) ^ ComputeTextVersion(resolvedBinding, 243, stressBucket));
             ApplyTextBuffer(
                 label,
                 _intrusionHintBuffer,
@@ -1175,16 +1230,6 @@ namespace Hecton8.UI
             label.SetCharArray(buffer, 0, safeLength);
         }
 
-        private static int CopyLiteralToBuffer(char[] buffer, int startIndex, string value)
-        {
-            if (buffer == null || string.IsNullOrEmpty(value) || startIndex >= buffer.Length)
-                return startIndex;
-
-            int copyLength = math.min(value.Length, buffer.Length - startIndex);
-            value.AsSpan(0, copyLength).CopyTo(buffer.AsSpan(startIndex, copyLength));
-            return startIndex + copyLength;
-        }
-
         private static int CopySpanToBuffer(char[] buffer, int startIndex, ReadOnlySpan<char> value)
         {
             if (buffer == null || value.IsEmpty || startIndex >= buffer.Length)
@@ -1198,32 +1243,20 @@ namespace Hecton8.UI
         private static void CopyTextToBuffer(ReadOnlySpan<char> source, ref char[] buffer, out int length)
         {
             EnsureCharCapacity(ref buffer, source.Length);
-            source.CopyTo(buffer);
-            length = source.Length;
+            if (buffer == null || buffer.Length == 0 || source.IsEmpty)
+            {
+                length = 0;
+                return;
+            }
+
+            length = math.min(source.Length, buffer.Length);
+            source.Slice(0, length).CopyTo(buffer);
         }
 
         private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
         {
             if (buffer != null && buffer.Length >= requiredLength)
                 return;
-
-            int capacity = buffer == null ? 32 : buffer.Length;
-            int growthWatchdog = CharCapacityGrowthWatchdogLimit;
-            while (capacity < requiredLength && growthWatchdog-- > 0)
-            {
-                if (capacity > (int.MaxValue >> 1))
-                {
-                    capacity = requiredLength;
-                    break;
-                }
-
-                capacity <<= 1;
-            }
-
-            if (capacity < requiredLength)
-                capacity = requiredLength;
-
-            buffer = new char[capacity]; // COLD ALLOC: char[capacity] - expanded PDA text staging buffer - owner: PDAShellChrome
         }
 
         private static int ComputeTextVersion(ReadOnlySpan<char> source, int salt, int stressBucket)
@@ -1323,6 +1356,12 @@ namespace Hecton8.UI
             out int length)
         {
             EnsureCharCapacity(ref buffer, template.Length + 24);
+            if (buffer == null || buffer.Length == 0)
+            {
+                length = 0;
+                return;
+            }
+
             for (int attempt = 0; attempt < NumericTemplateWriteAttemptLimit; attempt++)
             {
                 if (LocNumericBuffer.TryWrite(template, buffer.AsSpan(), value0, value1, out length))
@@ -1344,6 +1383,12 @@ namespace Hecton8.UI
             out int length)
         {
             EnsureCharCapacity(ref buffer, template.Length + 24);
+            if (buffer == null || buffer.Length == 0)
+            {
+                length = 0;
+                return;
+            }
+
             for (int attempt = 0; attempt < NumericTemplateWriteAttemptLimit; attempt++)
             {
                 if (LocNumericBuffer.TryWrite(template, buffer.AsSpan(), value0, value1, value2, out length))
@@ -1367,6 +1412,12 @@ namespace Hecton8.UI
             out int length)
         {
             EnsureCharCapacity(ref buffer, template.Length + 32);
+            if (buffer == null || buffer.Length == 0)
+            {
+                length = 0;
+                return;
+            }
+
             for (int attempt = 0; attempt < NumericTemplateWriteAttemptLimit; attempt++)
             {
                 if (LocNumericBuffer.TryWrite(template, buffer.AsSpan(), value0, value1, value2, value3, value4, out length))
@@ -1381,12 +1432,7 @@ namespace Hecton8.UI
 
         private static bool TryExpandNumericTemplateBuffer(ref char[] buffer)
         {
-            int currentLength = buffer != null ? buffer.Length : 0;
-            if (currentLength <= 0 || currentLength > (int.MaxValue >> 1))
-                return false;
-
-            EnsureCharCapacity(ref buffer, currentLength << 1);
-            return buffer != null && buffer.Length > currentLength;
+            return false;
         }
 
         private void InvalidateAppliedLabelVersions()
@@ -1401,16 +1447,16 @@ namespace Hecton8.UI
 
         private ReadOnlySpan<char> ResolveRebootBinding()
         {
-            InputManager inputManager = _nativeInputManager;
-            InputDisplayStyle displayStyle = inputManager != null
-                ? inputManager.CurrentDisplayStyle
-                : InputDisplayStyle.KeyboardMouse;
+            INativeInputManagerRuntime inputManager = _nativeInputManager;
+            byte displayStyleCode = inputManager != null
+                ? inputManager.CurrentDisplayStyleCode
+                : NativeInputDisplayStyle.KeyboardMouse;
 
-            if (_cachedRebootBindingLength > 0 && _cachedRebootBindingStyle == displayStyle)
+            if (_cachedRebootBindingLength > 0 && _cachedRebootBindingStyleCode == displayStyleCode)
                 return new ReadOnlySpan<char>(_rebootBindingBuffer, 0, _cachedRebootBindingLength);
 
             _cachedRebootBindingLength = 0;
-            _cachedRebootBindingStyle = displayStyle;
+            _cachedRebootBindingStyleCode = displayStyleCode;
             if (inputManager != null &&
                 inputManager.TryWriteBindingDisplayString(
                     "Submit",
@@ -1628,7 +1674,7 @@ namespace Hecton8.UI
                 return;
 
             material = new Material(source); // COLD ALLOC: Material[1] — UI chrome palette instance — owner: PDAShellChrome
-            material.name = source.name + "_PDAShellChrome";
+            material.name = "PDAShellChromeMaterial";
             graphic.material = material;
         }
 
@@ -1642,7 +1688,7 @@ namespace Hecton8.UI
                 return;
 
             material = new Material(source); // COLD ALLOC: Material[1] — TMP chrome palette instance — owner: PDAShellChrome
-            material.name = source.name + "_PDAShellChrome";
+            material.name = "PDAShellChromeTextMaterial";
             text.fontSharedMaterial = material;
         }
 

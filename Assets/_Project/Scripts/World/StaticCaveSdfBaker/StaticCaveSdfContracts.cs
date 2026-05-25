@@ -3,6 +3,17 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.StaticCaveSdfBaker
 {
+    internal static class StaticCaveSdfContractsLayout
+    {
+        public const int TriangleDTOStrideBytes = 48;
+        public const int BvhNodeDTOStrideBytes = 64;
+        public const int BvhBuildRangeDTOStrideBytes = 32;
+        public const int StaticCaveSdfBakeConfigDTOStrideBytes = 96;
+        public const int StaticCaveSdfProfileDTOStrideBytes = 48;
+        public const int StaticCaveSdfTelemetryEntryStrideBytes = 64;
+        public const int StaticCaveSdfRollbackExclusionDTOStrideBytes = 32;
+    }
+
     /// <summary>
     /// Constants for immutable static cave SDF volume bake artifacts.
     /// </summary>
@@ -29,7 +40,7 @@ namespace Hecton8.World.StaticCaveSdfBaker
     /// <summary>
     /// ARM64-stable triangle stream consumed by Burst SDF jobs.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = StaticCaveSdfContractsLayout.TriangleDTOStrideBytes)]
     public struct TriangleDTO
     {
         [FieldOffset(0)] public float3 V0;
@@ -41,7 +52,7 @@ namespace Hecton8.World.StaticCaveSdfBaker
     /// <summary>
     /// Flat BVH node. Leaves use TriangleCount > 0; internal nodes use Left/Right.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = StaticCaveSdfContractsLayout.BvhNodeDTOStrideBytes)]
     public struct BvhNodeDTO
     {
         [FieldOffset(0)] public float3 BoundsMin;
@@ -59,7 +70,7 @@ namespace Hecton8.World.StaticCaveSdfBaker
     /// <summary>
     /// Temporary BVH construction stack range. Raw fields only; no properties.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = StaticCaveSdfContractsLayout.BvhBuildRangeDTOStrideBytes)]
     public struct BvhBuildRangeDTO
     {
         [FieldOffset(0)] public int Start;
@@ -74,7 +85,7 @@ namespace Hecton8.World.StaticCaveSdfBaker
     /// <summary>
     /// Bake configuration copied into Burst jobs. Output quality is continuous; no binary tier switch exists.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = StaticCaveSdfContractsLayout.StaticCaveSdfBakeConfigDTOStrideBytes)]
     public struct StaticCaveSdfBakeConfigDTO
     {
         [FieldOffset(0)] public double3 AnchorAup;
@@ -94,7 +105,7 @@ namespace Hecton8.World.StaticCaveSdfBaker
     /// <summary>
     /// CSV profile row for static cave SDF baking.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = StaticCaveSdfContractsLayout.StaticCaveSdfProfileDTOStrideBytes)]
     public struct StaticCaveSdfProfileDTO
     {
         [FieldOffset(0)] public uint ProfileHash;
@@ -111,7 +122,7 @@ namespace Hecton8.World.StaticCaveSdfBaker
     /// <summary>
     /// Fixed-size offline black-box telemetry row for the last 300 bake stages.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = StaticCaveSdfContractsLayout.StaticCaveSdfTelemetryEntryStrideBytes)]
     public struct StaticCaveSdfTelemetryEntry
     {
         [FieldOffset(0)] public double3 AnchorAup;
@@ -130,7 +141,7 @@ namespace Hecton8.World.StaticCaveSdfBaker
     /// <summary>
     /// Immutable SDF data is excluded from rollback hashing; only entity positions are network truth.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = StaticCaveSdfContractsLayout.StaticCaveSdfRollbackExclusionDTOStrideBytes)]
     public struct StaticCaveSdfRollbackExclusionDTO
     {
         [FieldOffset(0)] public uint AssetHash;

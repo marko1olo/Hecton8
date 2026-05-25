@@ -225,15 +225,21 @@ namespace Hecton8.Bootstrap
         /// <summary>
         /// Enqueues the bootstrap-complete event.
         /// </summary>
+        [Obsolete("Use TryNotifyBootstrapComplete() so bounded queue rejection stays visible at the producer.", true)]
         public static void NotifyBootstrapComplete()
+        {
+            TryNotifyBootstrapComplete();
+        }
+
+        public static bool TryNotifyBootstrapComplete()
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+                return false;
 
             BootstrapEventPayload payload = new BootstrapEventPayload
             {
-                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Frame = unchecked((uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex)),
                 EventType = (ushort)BootstrapEventType.Complete,
                 StatusBits = 0
             };
@@ -242,11 +248,12 @@ namespace Hecton8.Bootstrap
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         /// <summary>
@@ -271,7 +278,10 @@ namespace Hecton8.Bootstrap
                     return;
 
                 if (!_pendingEvents.TryDequeue(out BootstrapEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     return;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -373,7 +383,10 @@ namespace Hecton8.Bootstrap
             while (scanBudget-- > 0 && !queue.IsEmpty())
             {
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -551,7 +564,7 @@ namespace Hecton8.Bootstrap
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -565,7 +578,7 @@ namespace Hecton8.Bootstrap
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

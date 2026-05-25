@@ -143,27 +143,27 @@ namespace Hecton8
                 displayName = name,
                 depthRange = depth,
                 geologyRole = GeologyRole.CreateDefault(),
-                terrainPatterns = new List<string>(),
+                terrainPatterns = new List<string>(4),
                 caveDensity = 0.5f,
-                floraRoles = new List<FloraRole>(),
+                floraRoles = new List<FloraRole>(4),
                 vegetationDensity = 0.5f,
                 microfaunaFlavor = MicrofaunaFlavor.CreateDefault(),
                 microfaunaDensity = 0.5f,
-                passiveFauna = new List<PassiveFaunaEntry>(),
+                passiveFauna = new List<PassiveFaunaEntry>(4),
                 passiveFaunaDensity = 0.5f,
-                predators = new List<PredatorEntry>(),
+                predators = new List<PredatorEntry>(2),
                 predatorPressure = 0.5f,
-                ruinTypes = new List<RuinType>(),
+                ruinTypes = new List<RuinType>(2),
                 ruinDensity = 0.5f,
                 ruinCondition = 0.5f,
-                caveFeatures = new List<CaveFeature>(),
+                caveFeatures = new List<CaveFeature>(4),
                 caveDifficulty = 0.5f,
-                primaryResources = new List<ResourceEntry>(),
-                rareResources = new List<ResourceEntry>(),
+                primaryResources = new List<ResourceEntry>(6),
+                rareResources = new List<ResourceEntry>(3),
                 resourceDensity = 0.5f,
-                memoryMotifs = new List<string>(),
-                silhouettePatterns = new List<string>(),
-                returnReasons = new List<ReturnReason>(),
+                memoryMotifs = new List<string>(4),
+                silhouettePatterns = new List<string>(4),
+                returnReasons = new List<ReturnReason>(4),
                 progressionRole = ProgressionRole.CreateDefault()
             };
         }
@@ -194,7 +194,7 @@ namespace Hecton8
             return new GeologyRole
             {
                 primaryMaterial = "Sediment",
-                secondaryFeatures = new List<string>(),
+                secondaryFeatures = new List<string>(4),
                 roughness = 0.5f,
                 scale = 1f
             };
@@ -381,8 +381,8 @@ namespace Hecton8
             return new ProgressionRole
             {
                 stage = "Early",
-                unlockRequirements = new List<string>(),
-                completionRewards = new List<string>()
+                unlockRequirements = new List<string>(4),
+                completionRewards = new List<string>(4)
             };
         }
     }

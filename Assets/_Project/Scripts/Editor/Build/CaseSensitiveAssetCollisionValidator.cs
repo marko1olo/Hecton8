@@ -33,7 +33,7 @@ namespace Hecton8.Editor.Build
         private static void ValidateOrThrow()
         {
             string[] assetPaths = AssetDatabase.GetAllAssetPaths();
-            Dictionary<string, string> canonicalByLowerPath = new Dictionary<string, string>(assetPaths.Length, StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> canonicalByPath = new Dictionary<string, string>(assetPaths.Length, StringComparer.OrdinalIgnoreCase);
             StringBuilder report = null;
             int violationCount = 0;
 
@@ -44,10 +44,9 @@ namespace Hecton8.Editor.Build
                     continue;
 
                 string normalized = path.Replace('\\', '/');
-                string lower = normalized.ToLowerInvariant();
-                if (!canonicalByLowerPath.TryGetValue(lower, out string existing))
+                if (!canonicalByPath.TryGetValue(normalized, out string existing))
                 {
-                    canonicalByLowerPath.Add(lower, normalized);
+                    canonicalByPath.Add(normalized, normalized);
                     continue;
                 }
 

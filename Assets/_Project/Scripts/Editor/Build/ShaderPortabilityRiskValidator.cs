@@ -55,10 +55,8 @@ namespace Hecton8.Editor.Build
                 if (!Directory.Exists(root))
                     continue;
 
-                string[] files = Directory.GetFiles(root, "*.*", SearchOption.AllDirectories);
-                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                foreach (string file in Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories))
                 {
-                    string file = files[fileIndex];
                     string extension = Path.GetExtension(file);
                     if (!IsShaderSourceExtension(extension) || IsArchivedPath(file))
                         continue;

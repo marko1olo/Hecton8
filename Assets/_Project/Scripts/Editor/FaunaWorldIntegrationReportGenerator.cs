@@ -42,16 +42,16 @@ namespace Hecton8.AI.Editor
                     datasetByBiomeIndex[dataset.biomeIndex] = dataset;
             }
 
-            var biomesWithoutPassive = new List<string>();
-            var biomesWithoutThreat = new List<string>();
-            var biomesWithLargeThreatZone = new List<string>();
-            var biomesWithLeviathan = new List<string>();
-            var heavyHunterMacroZones = new List<string>();
-            var reserveBiomesWithLeviathan = new List<string>();
-            var surfaceBiomesWithLeviathan = new List<string>();
-            var skewWarnings = new List<string>();
-            var reefBiomeSummaries = new List<string>();
-            var reefBiomeWarnings = new List<string>();
+            var biomesWithoutPassive = new List<string>(16);
+            var biomesWithoutThreat = new List<string>(16);
+            var biomesWithLargeThreatZone = new List<string>(16);
+            var biomesWithLeviathan = new List<string>(16);
+            var heavyHunterMacroZones = new List<string>(16);
+            var reserveBiomesWithLeviathan = new List<string>(8);
+            var surfaceBiomesWithLeviathan = new List<string>(8);
+            var skewWarnings = new List<string>(16);
+            var reefBiomeSummaries = new List<string>(16);
+            var reefBiomeWarnings = new List<string>(16);
 
             if (catalog != null && catalog.Profiles != null)
             {

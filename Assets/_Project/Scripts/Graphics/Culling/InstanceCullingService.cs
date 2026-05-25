@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -34,6 +35,9 @@ namespace Hecton8.Graphics.Culling
         private const uint TelemetryAupShiftFlag = 1u << 2;
         private const uint TelemetryDispatchFlag = 1u << 3;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_HLOD_INSTANCE_CULLING.bin";
+        private const SystemID VaultOwnerSystemId = SystemID.GraphicsScalability;
+        private const BufferID IndirectArgsReadbackBufferId = BufferID.InstanceCullingIndirectArgsReadback;
+        private const BufferID TelemetryRingBufferId = BufferID.InstanceCullingTelemetryRing;
 
         private static readonly int _AllInstancesId = Shader.PropertyToID("_HectonAllInstances");
         private static readonly int _VisibleInstancesId = Shader.PropertyToID("_HectonVisibleInstances");
@@ -76,8 +80,9 @@ namespace Hecton8.Graphics.Culling
         private ComputeShader _activeComputeShader;
         private GraphicsBuffer _visibleInstancesBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
-        private NativeArray<uint> _indirectArgsReadback;
-        private NativeArray<InstanceCullingTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<uint> _indirectArgsReadbackHandle;
+        private VaultGenerationHandle<InstanceCullingTelemetryEntry> _telemetryRingHandle;
+        private IDataVault _dataVault;
         private Action<AsyncGPUReadbackRequest> _cachedReadbackCallback;
         private InstanceCullingCameraPositionSignal _cameraPosition;
         private InstanceCullingCameraFrustumSignal _cameraFrustum;
@@ -102,6 +107,7 @@ namespace Hecton8.Graphics.Culling
         private float _lastCullDistance;
         private float _lastVramUsedMb;
         private uint _lastFlags;
+        private bool _readbackWriteLockHeld;
         private bool _voxelSdfEnabled;
         private bool _dumpedInvalidState;
 
@@ -287,13 +293,14 @@ namespace Hecton8.Graphics.Culling
         /// <inheritdoc />
         public bool TryConsumeTelemetry(out InstanceCullingTelemetry telemetry)
         {
-            if (_telemetryQueuedCount <= 0 || !_telemetryRing.IsCreated)
+            if (_telemetryQueuedCount <= 0 ||
+                !TryReadTelemetryRing(out NativeArray<InstanceCullingTelemetryEntry>.ReadOnly telemetryRing))
             {
                 telemetry = default;
                 return false;
             }
 
-            InstanceCullingTelemetryEntry entry = _telemetryRing[_telemetryReadIndex];
+            InstanceCullingTelemetryEntry entry = telemetryRing[_telemetryReadIndex];
             _telemetryReadIndex++;
             if (_telemetryReadIndex >= TelemetryCapacity)
                 _telemetryReadIndex = 0;
@@ -315,23 +322,13 @@ namespace Hecton8.Graphics.Culling
         /// <inheritdoc />
         public void ReleaseResources()
         {
+            CompletePendingReadbackBeforeRelease();
             _readbackPending = 0;
             ReleaseBuffer(ref _visibleInstancesBuffer);
             ReleaseBuffer(ref _indirectArgsBuffer);
 
-            if (_indirectArgsReadback.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_indirectArgsReadback);
-                _indirectArgsReadback.Dispose();
-                _indirectArgsReadback = default;
-            }
-
-            if (_telemetryRing.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
-                _telemetryRing.Dispose();
-                _telemetryRing = default;
-            }
+            ReleaseVaultHandle(_dataVault, ref _indirectArgsReadbackHandle);
+            ReleaseVaultHandle(_dataVault, ref _telemetryRingHandle);
 
             _telemetryWriteIndex = 0;
             _telemetryReadIndex = 0;
@@ -415,16 +412,26 @@ namespace Hecton8.Graphics.Culling
             if (_indirectArgsBuffer == null)
                 _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, IndirectArgsCount, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[5] - indirect args written by CopyCount - owner: InstanceCullingService
 
-            if (!_indirectArgsReadback.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return;
+
+            if (!IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId))
             {
-                _indirectArgsReadback = new NativeArray<uint>(IndirectArgsCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[5] - delayed indirect args telemetry readback - owner: InstanceCullingService
-                NativeMemorySentinel.RegisterNativeArray(_indirectArgsReadback, nameof(InstanceCullingService), nameof(_indirectArgsReadback), NativeAllocationLifetime.Scene);
+                _indirectArgsReadbackHandle = vault.EnsureGenerationHandle<uint>(
+                    IndirectArgsReadbackBufferId,
+                    IndirectArgsCount,
+                    VaultOwnerSystemId,
+                    NativeArrayOptions.ClearMemory);
             }
 
-            if (!_telemetryRing.IsCreated)
+            if (!IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId))
             {
-                _telemetryRing = new NativeArray<InstanceCullingTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<InstanceCullingTelemetryEntry>[300] - culling black-box ring - owner: InstanceCullingService
-                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(InstanceCullingService), nameof(_telemetryRing), NativeAllocationLifetime.Scene);
+                _telemetryRingHandle = vault.EnsureGenerationHandle<InstanceCullingTelemetryEntry>(
+                    TelemetryRingBufferId,
+                    TelemetryCapacity,
+                    VaultOwnerSystemId,
+                    NativeArrayOptions.ClearMemory);
             }
         }
 
@@ -452,41 +459,62 @@ namespace Hecton8.Graphics.Culling
 
         private void TryRequestTelemetryReadback()
         {
-            if (!_enableTelemetryReadback || _readbackPending != 0 || !_indirectArgsReadback.IsCreated)
+            if (!_enableTelemetryReadback || _readbackPending != 0 || !IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId))
                 return;
 
             int frame = Time.frameCount;
             if (frame % TelemetryReadbackStride != 0)
                 return;
 
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _indirectArgsReadbackHandle, VaultOwnerSystemId, out NativeArray<uint> indirectArgsReadback))
+                return;
+
+            if (!indirectArgsReadback.IsCreated || indirectArgsReadback.Length < IndirectArgsCount)
+            {
+                vault.ReleaseWriteLock(in _indirectArgsReadbackHandle, VaultOwnerSystemId);
+                return;
+            }
+
+            _readbackWriteLockHeld = true;
             _readbackPending = 1;
-            AsyncGPUReadback.RequestIntoNativeArray(ref _indirectArgsReadback, _indirectArgsBuffer, _cachedReadbackCallback);
+            AsyncGPUReadback.RequestIntoNativeArray(ref indirectArgsReadback, _indirectArgsBuffer, _cachedReadbackCallback);
         }
 
         private void OnIndirectArgsReadback(AsyncGPUReadbackRequest request)
         {
             _readbackPending = 0;
-            if (request.hasError || !_indirectArgsReadback.IsCreated || _indirectArgsReadback.Length < 2)
+            try
             {
-                WriteInvalidTelemetry();
-                return;
-            }
+                if (request.hasError ||
+                    !TryReadIndirectArgsReadback(out NativeArray<uint>.ReadOnly indirectArgsReadback) ||
+                    indirectArgsReadback.Length < 2)
+                {
+                    WriteInvalidTelemetry();
+                    return;
+                }
 
-            int visible = math.max(0, unchecked((int)_indirectArgsReadback[1]));
-            int culled = math.max(0, _lastSourceInstanceCount - visible);
-            _lastVisibleInstanceCount = visible;
-            _lastCulledInstanceCount = culled;
-            uint flags = _lastFlags;
-            if (visible > OverloadVisibleThreshold)
-                flags |= TelemetryOverloadFlag;
-            WriteTelemetry(
-                unchecked((uint)Time.frameCount),
-                _lastSourceInstanceCount,
-                visible,
-                culled,
-                flags,
-                _lastCullDistance,
-                _lastVramUsedMb);
+                int visible = math.max(0, unchecked((int)indirectArgsReadback[1]));
+                int culled = math.max(0, _lastSourceInstanceCount - visible);
+                _lastVisibleInstanceCount = visible;
+                _lastCulledInstanceCount = culled;
+                uint flags = _lastFlags;
+                if (visible > OverloadVisibleThreshold)
+                    flags |= TelemetryOverloadFlag;
+                WriteTelemetry(
+                    unchecked((uint)Time.frameCount),
+                    _lastSourceInstanceCount,
+                    visible,
+                    culled,
+                    flags,
+                    _lastCullDistance,
+                    _lastVramUsedMb);
+            }
+            finally
+            {
+                ReleaseReadbackWriteLock();
+            }
         }
 
         private void WriteInvalidTelemetry()
@@ -513,46 +541,62 @@ namespace Hecton8.Graphics.Culling
             float cullDistanceMeters,
             float vramUsedMb)
         {
-            if (!_telemetryRing.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId) ||
+                !vault.TryAcquireWriteLock(in _telemetryRingHandle, VaultOwnerSystemId, out NativeArray<InstanceCullingTelemetryEntry> telemetryRing))
                 return;
 
-            uint stateHash = 2166136261u;
-            stateHash = MixHash(stateHash, (uint)math.max(0, sourceInstances));
-            stateHash = MixHash(stateHash, (uint)math.max(0, visibleInstances));
-            stateHash = MixHash(stateHash, (uint)math.max(0, culledInstances));
-            stateHash = MixHash(stateHash, _lastShiftFrameId);
-            stateHash = MixHash(stateHash, flags);
-
-            _telemetryRing[_telemetryWriteIndex] = new InstanceCullingTelemetryEntry
+            if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
             {
-                Frame = frame,
-                SourceInstances = math.max(0, sourceInstances),
-                VisibleInstances = math.max(0, visibleInstances),
-                CulledInstances = math.max(0, culledInstances),
-                Flags = flags,
-                CullDistanceMeters = math.isfinite(cullDistanceMeters) ? cullDistanceMeters : 0f,
-                VramUsedMb = math.isfinite(vramUsedMb) ? vramUsedMb : 0f,
-                StateHash = stateHash,
-                ShiftFrameId = _lastShiftFrameId,
-                Padding0 = 0u,
-                Padding1 = 0ul,
-                Padding2 = 0ul,
-                Padding3 = 0ul
-            };
-            _lastTelemetryFrame = frame;
-            _telemetryWriteIndex++;
-            if (_telemetryWriteIndex >= TelemetryCapacity)
-                _telemetryWriteIndex = 0;
-
-            if (_telemetryQueuedCount < TelemetryCapacity)
-            {
-                _telemetryQueuedCount++;
+                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+                return;
             }
-            else
+
+            try
             {
-                _telemetryReadIndex++;
-                if (_telemetryReadIndex >= TelemetryCapacity)
-                    _telemetryReadIndex = 0;
+                uint stateHash = 2166136261u;
+                stateHash = MixHash(stateHash, (uint)math.max(0, sourceInstances));
+                stateHash = MixHash(stateHash, (uint)math.max(0, visibleInstances));
+                stateHash = MixHash(stateHash, (uint)math.max(0, culledInstances));
+                stateHash = MixHash(stateHash, _lastShiftFrameId);
+                stateHash = MixHash(stateHash, flags);
+
+                telemetryRing[_telemetryWriteIndex] = new InstanceCullingTelemetryEntry
+                {
+                    Frame = frame,
+                    SourceInstances = math.max(0, sourceInstances),
+                    VisibleInstances = math.max(0, visibleInstances),
+                    CulledInstances = math.max(0, culledInstances),
+                    Flags = flags,
+                    CullDistanceMeters = math.isfinite(cullDistanceMeters) ? cullDistanceMeters : 0f,
+                    VramUsedMb = math.isfinite(vramUsedMb) ? vramUsedMb : 0f,
+                    StateHash = stateHash,
+                    ShiftFrameId = _lastShiftFrameId,
+                    Padding0 = 0u,
+                    Padding1 = 0ul,
+                    Padding2 = 0ul,
+                    Padding3 = 0ul
+                };
+                _lastTelemetryFrame = frame;
+                _telemetryWriteIndex++;
+                if (_telemetryWriteIndex >= TelemetryCapacity)
+                    _telemetryWriteIndex = 0;
+
+                if (_telemetryQueuedCount < TelemetryCapacity)
+                {
+                    _telemetryQueuedCount++;
+                }
+                else
+                {
+                    _telemetryReadIndex++;
+                    if (_telemetryReadIndex >= TelemetryCapacity)
+                        _telemetryReadIndex = 0;
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
             }
 
             if ((flags & TelemetryInvalidStateFlag) != 0u && !_dumpedInvalidState)
@@ -568,7 +612,8 @@ namespace Hecton8.Graphics.Culling
 
         private void DumpBlackBox()
         {
-            if (_dumpedInvalidState || !_telemetryRing.IsCreated)
+            if (_dumpedInvalidState ||
+                !TryReadTelemetryRing(out NativeArray<InstanceCullingTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             _dumpedInvalidState = true;
@@ -585,7 +630,7 @@ namespace Hecton8.Graphics.Culling
                 writer.Write(_lastTelemetryFrame);
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    InstanceCullingTelemetryEntry entry = _telemetryRing[i];
+                    InstanceCullingTelemetryEntry entry = telemetryRing[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.SourceInstances);
                     writer.Write(entry.VisibleInstances);
@@ -597,6 +642,71 @@ namespace Hecton8.Graphics.Culling
                     writer.Write(entry.ShiftFrameId);
                 }
             }
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private bool TryReadIndirectArgsReadback(out NativeArray<uint>.ReadOnly readback)
+        {
+            readback = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId) &&
+                   vault.TryReadOnlyHandle(in _indirectArgsReadbackHandle, out readback) &&
+                   readback.Length >= IndirectArgsCount;
+        }
+
+        private bool TryReadTelemetryRing(out NativeArray<InstanceCullingTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            telemetryRing = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId) &&
+                   vault.TryReadOnlyHandle(in _telemetryRingHandle, out telemetryRing) &&
+                   telemetryRing.Length >= TelemetryCapacity;
+        }
+
+        private void CompletePendingReadbackBeforeRelease()
+        {
+            if (_readbackPending == 0)
+            {
+                ReleaseReadbackWriteLock();
+                return;
+            }
+
+            // BLOCKING_SYNC_POINT: teardown/configuration must not release a vault buffer while AsyncGPUReadback owns it.
+            AsyncGPUReadback.WaitAllRequests();
+            _readbackPending = 0;
+            ReleaseReadbackWriteLock();
+        }
+
+        private void ReleaseReadbackWriteLock()
+        {
+            if (!_readbackWriteLockHeld)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId))
+                vault.ReleaseWriteLock(in _indirectArgsReadbackHandle, VaultOwnerSystemId);
+
+            _readbackWriteLockHeld = false;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

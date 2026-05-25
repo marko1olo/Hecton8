@@ -52,15 +52,15 @@ namespace Hecton8.EditorTools
             ResolvePaths();
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
-            SceneView.duringSceneGui -= OnDrawGizmos;
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
             _nextRefreshTime = 0d;
         }
 
         private void OnDisable()
         {
             EditorApplication.update -= Tick;
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         public void CreateGUI()
@@ -364,7 +364,7 @@ namespace Hecton8.EditorTools
                 ")");
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             if (_frameCount <= 0)
                 return;

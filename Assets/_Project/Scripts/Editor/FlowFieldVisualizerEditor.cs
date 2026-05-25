@@ -7,6 +7,7 @@
 // ============================================================================
 
 #if UNITY_EDITOR
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 using Hecton8.Physics;
@@ -47,7 +48,13 @@ public sealed class FlowFieldVisualizerEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Info", EditorStyles.miniBoldLabel);
         EditorGUILayout.LabelField($"Grid Points: {visualizer.GridResolution.x * visualizer.GridResolution.y}", EditorStyles.miniLabel);
-        EditorGUILayout.LabelField($"Area: {visualizer.AreaSize.x:F1} x {visualizer.AreaSize.y:F1} meters", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField(
+            "Area: " +
+            visualizer.AreaSize.x.ToString("F1", CultureInfo.InvariantCulture) +
+            " x " +
+            visualizer.AreaSize.y.ToString("F1", CultureInfo.InvariantCulture) +
+            " meters",
+            EditorStyles.miniLabel);
     }
 }
 

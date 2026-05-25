@@ -326,7 +326,7 @@ namespace Hecton.Editor
                 // Overwrite: copy data into existing asset to preserve references
                 EditorUtility.CopySerialized(mesh, existing);
                 AssetDatabase.SaveAssets();
-                Debug.Log($"[HectonSphereGenerator] Overwrote existing asset: {assetPath}");
+                Debug.Log("[HectonSphereGenerator] Overwrote existing asset: " + assetPath);
             }
             else
             {

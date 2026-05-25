@@ -41,15 +41,15 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
                 .Append("\" compressionMode=\"").Append(result.CompressionMode)
                 .Append("\" uncompressedDensityBytes=\"").Append(result.UncompressedDensityBytes)
                 .Append("\" compressedDensityBytes=\"").Append(result.CompressedDensityBytes)
-                .Append("\" payloadHash=\"0x").Append(result.PayloadHash.ToString("X16"))
+                .Append("\" payloadHash=\"0x").Append(result.PayloadHash.ToString("X16", CultureInfo.InvariantCulture))
                 .Append("\" excavatedCubicMeters=\"").Append(result.ExcavatedCubicMeters.ToString("0.###", CultureInfo.InvariantCulture))
                 .Append("\" nonFiniteDensityCount=\"").Append(nonFiniteDensityCount)
-                .Append("\" payloadValidationFlags=\"0x").Append(result.PayloadValidationFlags.ToString("X8"))
+                .Append("\" payloadValidationFlags=\"0x").Append(result.PayloadValidationFlags.ToString("X8", CultureInfo.InvariantCulture))
                 .Append("\" outputFileBytes=\"").Append(result.OutputFileBytes)
-                .Append("\" warningFlags=\"0x").Append(result.WarningFlags.ToString("X8"))
+                .Append("\" warningFlags=\"0x").Append(result.WarningFlags.ToString("X8", CultureInfo.InvariantCulture))
                 .Append("\" />\n");
             builder.Append("</SELF_AUDIT>\n");
-            File.WriteAllText(AuditPath, builder.ToString());
+            File.WriteAllText(AuditPath, builder.ToString(), new UTF8Encoding(false));
             AssetDatabase.Refresh();
         }
 
@@ -148,15 +148,15 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
                 .Append("\" compressionMode=\"").Append(result.CompressionMode)
                 .Append("\" uncompressedDensityBytes=\"").Append(result.UncompressedDensityBytes)
                 .Append("\" compressedDensityBytes=\"").Append(result.CompressedDensityBytes)
-                .Append("\" payloadHash=\"0x").Append(result.PayloadHash.ToString("X16")).Append("\" />\n");
+                .Append("\" payloadHash=\"0x").Append(result.PayloadHash.ToString("X16", CultureInfo.InvariantCulture)).Append("\" />\n");
             builder.Append("    <SectionPadding alignmentBytes=\"8\" densityToVent=\"explicit zero padding\" ventToAdaptive=\"explicit zero padding\" hashExcludesPadding=\"true\" />\n");
             builder.Append("    <AdaptiveBlocks rowBytes=\"").Append(UnsafeUtility.SizeOf<HadalTrenchAdaptiveBlockDTO>())
                 .Append("\" blockSizeField=\"BlockSizeVoxels\" blockSizeVoxels=\"").Append(result.AdaptiveBlockSizeVoxels)
                 .Append("\" qualityCurve=\"round(lerp(16,4,GlobalQualityWeight)) clamped 4..16\" />\n");
             builder.Append("    <Header bytes=\"").Append(HadalTrenchBakeConstants.HeaderBytes)
-                .Append("\" magic=\"0x").Append(HadalTrenchBakeConstants.H8BinMagic.ToString("X8"))
-                .Append("\" endianMarker=\"0x").Append(HadalTrenchBakeConstants.PayloadEndianMarker.ToString("X8"))
-                .Append("\" schemaHash=\"0x").Append(HadalTrenchBakeConstants.PayloadSchemaHash.ToString("X8"))
+                .Append("\" magic=\"0x").Append(HadalTrenchBakeConstants.H8BinMagic.ToString("X8", CultureInfo.InvariantCulture))
+                .Append("\" endianMarker=\"0x").Append(HadalTrenchBakeConstants.PayloadEndianMarker.ToString("X8", CultureInfo.InvariantCulture))
+                .Append("\" schemaHash=\"0x").Append(HadalTrenchBakeConstants.PayloadSchemaHash.ToString("X8", CultureInfo.InvariantCulture))
                 .Append("\" rollbackExcluded=\"true\" streamingRoute=\"Assets/StreamingAssets/Hecton8/HadalTrenches/hadal_trench_sector_0000.h8bin\" tempRoute=\".tmp\" invalidRoute=\".tmp.invalid\" dataMonolithStatus=\"OUTSIDE_DATAMONOLITH_SUBTREE_PENDING_BOOT_CONSUMER\" />\n");
             builder.Append("    <CsvBridge maxProfiles=\"256\" insertion=\"AddNoResize after explicit capacity fence\" diagnostics=\"1-based schema columns after name token\" />\n");
             builder.Append("    <AUP sectorX=\"").Append(config.SectorOriginAUP.x.ToString("0.###", CultureInfo.InvariantCulture))
@@ -187,7 +187,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
 
         private static void AppendTask(StringBuilder builder, int index, string name, string status, string evidence)
         {
-            builder.Append("    <Task id=\"").Append(index.ToString("00")).Append("\" name=\"").Append(name).Append("\" status=\"").Append(status).Append("\">");
+            builder.Append("    <Task id=\"").Append(index.ToString("00", CultureInfo.InvariantCulture)).Append("\" name=\"").Append(name).Append("\" status=\"").Append(status).Append("\">");
             builder.Append(EscapeXml(evidence));
             builder.Append("</Task>\n");
         }

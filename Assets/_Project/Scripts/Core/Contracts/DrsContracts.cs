@@ -4,10 +4,26 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class DrsContractLayout
+    {
+        public const int RuntimeSnapshotStrideBytes = 24;
+        public const int ResolutionScaleStateStrideBytes = 64;
+        public const int NoirPostProcessStrideBytes = 64;
+        public const int NoirPostProcessInputStrideBytes = 64;
+        public const int NoirPostProcessTuningStrideBytes = 64;
+        public const int NoirTelemetryEntryStrideBytes = 64;
+        public const int NoirColorProfileStrideBytes = 64;
+        public const int DrsStateStrideBytes = 16;
+        public const int MockQualityWeightSignalStrideBytes = 16;
+        public const int UberNoirReconstructionConstantsStrideBytes = 48;
+        public const int MockReconstructionInputSignalStrideBytes = 32;
+        public const int ReconstructionTelemetryEntryStrideBytes = 64;
+    }
+
     /// <summary>
     /// Last committed dynamic-resolution runtime state, stored without managed payloads.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.RuntimeSnapshotStrideBytes)]
     public struct DynamicResolutionRuntimeSnapshot
     {
         [FieldOffset(0)]
@@ -33,7 +49,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// DataVault-backed STP render-scale state. One element is owned by the graphics scalability adapter.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.ResolutionScaleStateStrideBytes)]
     public struct ResolutionScaleState
     {
         [FieldOffset(0)]
@@ -120,7 +136,7 @@ namespace Hecton8.Core.Contracts
     /// ColorGrading: contrast, saturation, temperature, depth tint.
     /// QualityAndLimits: quality, stress, toxicity, A/B split.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.NoirPostProcessStrideBytes)]
     public struct NoirPostProcessDTO
     {
         public const int SizeBytes = 64;
@@ -138,7 +154,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Raw presentation-only post input. Never participates in rollback or gameplay state hashes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.NoirPostProcessInputStrideBytes)]
     public struct NoirPostProcessInputDTO
     {
         [FieldOffset(0)]
@@ -178,7 +194,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Cold editor/CSV tuning lane for the single-pass Noir shader.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.NoirPostProcessTuningStrideBytes)]
     public struct NoirPostProcessTuningDTO
     {
         [FieldOffset(0)]
@@ -194,7 +210,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Fixed-size presentation black-box entry. One 64-byte line per rendered frame sample.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.NoirTelemetryEntryStrideBytes)]
     public struct NoirTelemetryEntry
     {
         [FieldOffset(0)]
@@ -234,7 +250,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// CSV-loaded color profile row keyed by deterministic token hash.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.NoirColorProfileStrideBytes)]
     public struct NoirColorProfileDTO
     {
         [FieldOffset(0)]
@@ -262,7 +278,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// SIMD-aligned dynamic-resolution hot state. Size: 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.DrsStateStrideBytes)]
     public struct DrsStateDTO
     {
         [FieldOffset(0)]
@@ -278,7 +294,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Mock quality-weight payload for blind SHI/Scalability Dictator integration tests. Size: 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.MockQualityWeightSignalStrideBytes)]
     public partial struct MockQualityWeightSignal : ISignal
     {
         [FieldOffset(0)]
@@ -294,7 +310,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// GPU constant-buffer payload for Uber Noir reconstruction. Three float4 lanes, 48 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.UberNoirReconstructionConstantsStrideBytes)]
     public struct UberNoirReconstructionConstantsDTO
     {
         public const int SizeBytes = 48;
@@ -310,7 +326,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Blind reconstruction proof input. Allows CI/editor paths to force severe scale drops and jitter.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.MockReconstructionInputSignalStrideBytes)]
     public struct MockReconstructionInputSignal : ISignal
     {
         [FieldOffset(0)]
@@ -334,7 +350,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// 64-byte reconstruction black-box entry. One cache line per frame sample.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DrsContractLayout.ReconstructionTelemetryEntryStrideBytes)]
     public struct ReconstructionTelemetryEntry
     {
         [FieldOffset(0)]

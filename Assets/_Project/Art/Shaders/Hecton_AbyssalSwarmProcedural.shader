@@ -41,8 +41,16 @@ Shader "Hecton8/AbyssalSwarmProcedural"
                 float4 C3;
             };
 
+            struct BoidCustomDataDTO
+            {
+                uint GeneticLow;
+                uint GeneticHigh;
+                float PanicOrSkip;
+                float QualityWeight;
+            };
+
             StructuredBuffer<BoidMatrixDTO> _H8ShinobuBoidMatrices;
-            StructuredBuffer<float4> _H8ShinobuBoidCustomData;
+            StructuredBuffer<BoidCustomDataDTO> _H8ShinobuBoidCustomData;
             StructuredBuffer<uint> _H8ShinobuBoidVisibleIndices;
             int _H8ShinobuBoidActiveCount;
             int _H8ShinobuBoidUseVisibleIndices;
@@ -77,6 +85,17 @@ Shader "Hecton8/AbyssalSwarmProcedural"
                        matrixDto.C3;
             }
 
+            float MaskByte01(uint value)
+            {
+                return (float)(value & 255u) * 0.00392156863;
+            }
+
+            float3 GeneticHuePalette(float hue01)
+            {
+                float3 rgb = saturate(abs(frac(hue01 + float3(0.0, 0.6666667, 0.3333333)) * 6.0 - 3.0) - 1.0);
+                return lerp(float3(0.18, 0.62, 0.74), rgb, 0.68);
+            }
+
             Varyings Vert(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID)
             {
                 Varyings output;
@@ -87,17 +106,31 @@ Shader "Hecton8/AbyssalSwarmProcedural"
                 uint safeInstance = min(sourceInstance, max((uint)_H8ShinobuBoidActiveCount, 1u) - 1u);
                 float alive = step((float)safeInstance + 0.5, (float)_H8ShinobuBoidActiveCount);
                 BoidMatrixDTO matrixDto = _H8ShinobuBoidMatrices[safeInstance];
-                float4 custom = _H8ShinobuBoidCustomData[safeInstance];
-                float quality = saturate(custom.w);
-                float speciesPhase = frac(custom.x * 0.173);
-                float bodyScale = max(_SilhouetteScale, 0.001) * lerp(0.72, 1.18, quality);
+                BoidCustomDataDTO custom = _H8ShinobuBoidCustomData[safeInstance];
+                uint geneticLow = custom.GeneticLow;
+                uint geneticHigh = custom.GeneticHigh;
+                float quality = saturate(custom.QualityWeight);
+                float smoothQuality = quality * quality * (3.0 - 2.0 * quality);
+                float size01 = MaskByte01(geneticLow);
+                float aggression01 = MaskByte01(geneticLow >> 16);
+                float hue01 = MaskByte01(geneticLow >> 24);
+                uint packedByte4 = geneticHigh & 255u;
+                uint patternIndex = packedByte4 & 15u;
+                uint biolumByte = (packedByte4 >> 4) | ((geneticHigh & 3840u) >> 4);
+                float pattern01 = (float)patternIndex * 0.0666666667;
+                float biolum01 = (float)biolumByte * 0.00392156863;
+                float bodyScale = max(_SilhouetteScale, 0.001) * lerp(0.72, 1.18, smoothQuality) * lerp(0.8, 1.2, size01);
                 float3 localPosition = ResolveLocalVertex(vertexID) * bodyScale;
                 float4 worldPosition = TransformColumnMajor(matrixDto, localPosition);
                 output.PositionCS = mul(UNITY_MATRIX_VP, worldPosition);
-                float shimmer = lerp(0.65, 1.15, speciesPhase);
+                float shimmer = lerp(0.76, 1.22, frac(pattern01 + biolum01 * 0.37));
                 float4 color = lerp(_BaseColor, _BellyColor, saturate(localPosition.y * 7.0 + 0.45));
+                float3 geneticTint = GeneticHuePalette(hue01);
+                float panicWarmth = saturate(custom.PanicOrSkip) * aggression01;
+                color.rgb = lerp(color.rgb, color.rgb * geneticTint, smoothstep(0.08, 0.78, smoothQuality) * 0.42);
+                color.rgb = lerp(color.rgb, color.rgb * float3(1.18, 0.84, 0.62), panicWarmth * 0.22);
                 color.rgb *= shimmer;
-                color.a *= alive * lerp(0.46, 0.86, quality);
+                color.a *= alive * lerp(0.46, 0.86, smoothQuality);
                 output.Color = color;
                 return output;
             }

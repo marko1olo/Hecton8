@@ -21,8 +21,7 @@ namespace Hecton8.AI
         [FieldOffset(0)] public int IsActive;
         [FieldOffset(4)] public int LegStartIndex;
         [FieldOffset(8)] public int LegCount;
-        [FieldOffset(12)] public int GroundLayerMask;
-        [FieldOffset(16)] public int RaycastBudgetMode;
+        [FieldOffset(16)] public int SurfaceProbeBudgetMode;
         [FieldOffset(20)] public int FrameIndex;
         [FieldOffset(24)] public int Health;
         [FieldOffset(28)] public int CorpseState;
@@ -33,8 +32,8 @@ namespace Hecton8.AI
         [FieldOffset(48)] public float StrideLengthSq;
         [FieldOffset(52)] public float StepDuration;
         [FieldOffset(56)] public float StepHeight;
-        [FieldOffset(60)] public float RaycastHeight;
-        [FieldOffset(64)] public float RaycastDistance;
+        [FieldOffset(60)] public float GroundProbeHeight;
+        [FieldOffset(64)] public float GroundProbeDistance;
         [FieldOffset(68)] public float ContactOffset;
         [FieldOffset(72)] public float VelocityLeadSeconds;
         [FieldOffset(76)] public float Scale;
@@ -108,58 +107,9 @@ namespace Hecton8.AI
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct ProceduralCrabGroundRaycastBuildJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<ProceduralCrabLegEntityState> Entities;
-        [NoAlias] public NativeArray<RaycastCommand> Commands;
-        [NoAlias] public NativeArray<int> RaycastLegMask;
-
-        public void Execute(int index)
-        {
-            int entityIndex = index / ProceduralCrabLegIKRuntime.MaxLegsPerEntity;
-            int localLegIndex = index - (entityIndex * ProceduralCrabLegIKRuntime.MaxLegsPerEntity);
-            ProceduralCrabLegEntityState entity = Entities[entityIndex];
-
-            if ((entity.StateFlags & ProceduralCrabLegIKRuntime.EntityFlagActive) == 0 ||
-                (entity.StateFlags & ProceduralCrabLegIKRuntime.EntityFlagCorpse) != 0 ||
-                entity.Health <= 0 ||
-                localLegIndex >= entity.LegCount)
-            {
-                WriteDisabledCommand(index);
-                return;
-            }
-
-            float safeScale = math.max(0.0001f, entity.Scale);
-            float3 homeLocal = ProceduralCrabLegIKRuntime.ResolveLegHomeLocal(localLegIndex, entity.LegCount) * safeScale;
-            float3 ledHome = entity.RootPosition + math.rotate(entity.RootRotation, homeLocal) + (entity.Velocity * math.max(0f, entity.VelocityLeadSeconds));
-            float3 origin = new float3(ledHome.x, entity.RootPosition.y + math.max(0.01f, entity.RaycastHeight), ledHome.z);
-            QueryParameters query = new QueryParameters(entity.GroundLayerMask, false, QueryTriggerInteraction.Ignore, false);
-
-            Commands[index] = new RaycastCommand(
-                ContextualPhysicalIkMath.ToUnityVector3(origin),
-                Vector3.down,
-                query,
-                math.max(0.01f, entity.RaycastDistance));
-            RaycastLegMask[index] = 1;
-        }
-
-        private void WriteDisabledCommand(int commandIndex)
-        {
-            Commands[commandIndex] = new RaycastCommand(
-                Vector3.zero,
-                Vector3.down,
-                new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore, false),
-                0.0f);
-            RaycastLegMask[commandIndex] = 0;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct ProceduralCrabGroundTargetResolveJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ProceduralCrabLegEntityState> Entities;
-        [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;
-        [ReadOnly, NoAlias] public NativeArray<int> RaycastLegMask;
         [NoAlias] public NativeArray<float3> TargetFootPositions;
         [NoAlias] public NativeArray<ProceduralCrabLegStepState> StepStates;
 
@@ -169,32 +119,28 @@ namespace Hecton8.AI
             int localLegIndex = index - (entityIndex * ProceduralCrabLegIKRuntime.MaxLegsPerEntity);
             ProceduralCrabLegEntityState entity = Entities[entityIndex];
             if ((entity.StateFlags & ProceduralCrabLegIKRuntime.EntityFlagActive) == 0 ||
-                localLegIndex >= entity.LegCount ||
-                RaycastLegMask[index] == 0)
+                (entity.StateFlags & ProceduralCrabLegIKRuntime.EntityFlagCorpse) != 0 ||
+                entity.Health <= 0 ||
+                localLegIndex >= entity.LegCount)
                 return;
 
-            RaycastHit hit = Hits[index];
             int legIndex = entity.LegStartIndex + localLegIndex;
-            ProceduralCrabLegStepState state = StepStates[legIndex];
-            if (!HasHit(in hit))
-            {
-                state.IsGrounded = 0;
-                StepStates[legIndex] = state;
-                return;
-            }
-
-            float3 normal = ContextualPhysicalIkMath.SafeNormalize(ContextualPhysicalIkMath.ToFloat3(hit.normal), new float3(0f, 1f, 0f));
+            float safeScale = math.max(0.0001f, entity.Scale);
+            float3 homeLocal = ProceduralCrabLegIKRuntime.ResolveLegHomeLocal(localLegIndex, entity.LegCount) * safeScale;
+            float3 ledHome = entity.RootPosition + math.rotate(entity.RootRotation, homeLocal) + (entity.Velocity * math.max(0f, entity.VelocityLeadSeconds));
+            float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(math.rotate(entity.RootRotation, new float3(0f, 1f, 0f)), new float3(0f, 1f, 0f));
             float3 rawAvoidance = entity.SpatialHashAvoidanceOffset * math.saturate(entity.SpatialHashAvoidanceStrength);
             float3 avoidance = ClampVectorLength(rawAvoidance, math.max(0f, entity.SpatialHashAvoidanceMaxOffset));
-            TargetFootPositions[legIndex] = ContextualPhysicalIkMath.ToFloat3(hit.point) + (normal * math.max(0f, entity.ContactOffset)) + avoidance;
+            float maxVerticalDelta = math.max(0.01f, entity.GroundProbeHeight + entity.GroundProbeDistance);
+            float3 previousTarget = TargetFootPositions[legIndex];
+            float3 target = ledHome + (rootUp * math.max(0f, entity.ContactOffset)) + avoidance;
+            if (math.all(math.isfinite(previousTarget)))
+                target.y = math.clamp(target.y, previousTarget.y - maxVerticalDelta, previousTarget.y + maxVerticalDelta);
 
+            ProceduralCrabLegStepState state = StepStates[legIndex];
+            TargetFootPositions[legIndex] = target;
             state.IsGrounded = 1;
             StepStates[legIndex] = state;
-        }
-
-        private static bool HasHit(in RaycastHit hit)
-        {
-            return hit.distance > 0.0f || math.lengthsq(ContextualPhysicalIkMath.ToFloat3(hit.normal)) > 0.0001f;
         }
 
         private static float3 ClampVectorLength(float3 value, float maxLength)
@@ -318,7 +264,9 @@ namespace Hecton8.AI
                 float3 current = FootPositions[legIndex];
                 float3 target = TargetFootPositions[legIndex];
                 float3 planarDelta = new float3(target.x - current.x, 0f, target.z - current.z);
-                if (math.lengthsq(planarDelta) <= strideLengthSq)
+                float verticalDelta = math.abs(target.y - current.y);
+                float verticalStepThreshold = math.max(0.025f, stepHeight * 0.5f);
+                if (math.lengthsq(planarDelta) <= strideLengthSq && verticalDelta <= verticalStepThreshold)
                     continue;
 
                 state.IsStepping = 1;
@@ -562,12 +510,12 @@ namespace Hecton8.AI
     {
         internal const int MinLegsPerEntity = 4;
         internal const int MaxLegsPerEntity = 6;
-        internal const int RaycastBudgetHighAllLegs = 1;
+        internal const int SurfaceProbeBudgetAllLegs = 1;
         internal const int EntityFlagActive = 1 << 0;
         internal const int EntityFlagCorpse = 1 << 1;
 
         private const int DefaultMaxEntities = 128;
-        private const int MinCommandsPerJob = 32;
+        private const int MinLegsPerJob = 32;
         private const int TelemetryCapacity = 300;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_BEHAVIOR.bin";
         private static readonly int BodyPoseBufferId = Shader.PropertyToID("_H8CrabBodyPoseBuffer");
@@ -581,14 +529,11 @@ namespace Hecton8.AI
         [SerializeField] private int _defaultLegCount = MaxLegsPerEntity;
 
         [Header("Grounding")]
-        [Tooltip("Layer mask for asynchronous ground raycasts.")]
-        [SerializeField] private LayerMask _groundLayerMask = ~0;
+        [Tooltip("Meters above the body root allowed for analytic surface probe vertical relaxation.")]
+        [SerializeField] private float _groundProbeHeight = 1.2f;
 
-        [Tooltip("Meters above the body root where ground probes start.")]
-        [SerializeField] private float _raycastHeight = 1.2f;
-
-        [Tooltip("Meters below the probe origin allowed for ground acquisition.")]
-        [SerializeField] private float _raycastDistance = 3.0f;
+        [Tooltip("Meters below the probe origin allowed for analytic surface target relaxation.")]
+        [SerializeField] private float _groundProbeDistance = 3.0f;
 
         [Tooltip("Meters added along the hit normal to avoid foot z-fighting.")]
         [SerializeField] private float _contactOffset = 0.025f;
@@ -648,18 +593,20 @@ namespace Hecton8.AI
         private VaultGenerationHandle<float3> _footPositionsHandle;
         private VaultGenerationHandle<float3> _targetFootPositionsHandle;
         private VaultGenerationHandle<ProceduralCrabLegStepState> _stepStatesHandle;
-        private VaultGenerationHandle<RaycastCommand> _raycastCommandsHandle;
-        private VaultGenerationHandle<RaycastHit> _raycastHitsHandle;
-        private VaultGenerationHandle<int> _raycastLegMaskHandle;
         private VaultGenerationHandle<ProceduralCrabBodyPose> _bodyPosesHandle;
         private VaultGenerationHandle<ProceduralCrabSolvedJointMatrices> _solvedJointMatricesHandle;
         private VaultGenerationHandle<ProceduralCrabIkTelemetryEntry> _telemetryRingHandle;
 
-        private GraphicsBuffer _bodyPoseGraphicsBuffer;
-        private GraphicsBuffer _jointMatrixGraphicsBuffer;
+        private GraphicsBuffer _bodyPoseGraphicsBufferA;
+        private GraphicsBuffer _bodyPoseGraphicsBufferB;
+        private GraphicsBuffer _activeBodyPoseGraphicsBuffer;
+        private GraphicsBuffer _jointMatrixGraphicsBufferA;
+        private GraphicsBuffer _jointMatrixGraphicsBufferB;
+        private GraphicsBuffer _activeJointMatrixGraphicsBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
         private Mesh _argsUploadMesh;
         private int _argsUploadInstanceCount = -1;
+        private int _graphicsUploadBufferIndex;
 
         private JobHandle _pendingHandle;
         private bool _pipelineScheduled;
@@ -691,9 +638,6 @@ namespace Hecton8.AI
             public NativeArray<float3> FootPositions;
             public NativeArray<float3> TargetFootPositions;
             public NativeArray<ProceduralCrabLegStepState> StepStates;
-            public NativeArray<RaycastCommand> RaycastCommands;
-            public NativeArray<RaycastHit> RaycastHits;
-            public NativeArray<int> RaycastLegMask;
             public NativeArray<ProceduralCrabBodyPose> BodyPoses;
             public NativeArray<ProceduralCrabSolvedJointMatrices> SolvedJointMatrices;
             public NativeArray<ProceduralCrabIkTelemetryEntry> TelemetryRing;
@@ -893,16 +837,13 @@ namespace Hecton8.AI
             if (vault == null)
                 return;
 
-            _entitiesHandle = vault.GetGenerationHandle<ProceduralCrabLegEntityState>(BufferID.ProceduralCrabLegEntities, entityCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _footPositionsHandle = vault.GetGenerationHandle<float3>(BufferID.ProceduralCrabLegFootPositions, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _targetFootPositionsHandle = vault.GetGenerationHandle<float3>(BufferID.ProceduralCrabLegTargetFootPositions, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _stepStatesHandle = vault.GetGenerationHandle<ProceduralCrabLegStepState>(BufferID.ProceduralCrabLegStepStates, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _raycastCommandsHandle = vault.GetGenerationHandle<RaycastCommand>(BufferID.ProceduralCrabLegRaycastCommands, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _raycastHitsHandle = vault.GetGenerationHandle<RaycastHit>(BufferID.ProceduralCrabLegRaycastHits, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _raycastLegMaskHandle = vault.GetGenerationHandle<int>(BufferID.ProceduralCrabLegRaycastLegMask, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _bodyPosesHandle = vault.GetGenerationHandle<ProceduralCrabBodyPose>(BufferID.ProceduralCrabBodyPoses, entityCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _solvedJointMatricesHandle = vault.GetGenerationHandle<ProceduralCrabSolvedJointMatrices>(BufferID.ProceduralCrabSolvedJointMatrices, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            _telemetryRingHandle = vault.GetGenerationHandle<ProceduralCrabIkTelemetryEntry>(BufferID.ProceduralCrabIkTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _entitiesHandle = vault.EnsureGenerationHandle<ProceduralCrabLegEntityState>(BufferID.ProceduralCrabLegEntities, entityCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _footPositionsHandle = vault.EnsureGenerationHandle<float3>(BufferID.ProceduralCrabLegFootPositions, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _targetFootPositionsHandle = vault.EnsureGenerationHandle<float3>(BufferID.ProceduralCrabLegTargetFootPositions, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _stepStatesHandle = vault.EnsureGenerationHandle<ProceduralCrabLegStepState>(BufferID.ProceduralCrabLegStepStates, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _bodyPosesHandle = vault.EnsureGenerationHandle<ProceduralCrabBodyPose>(BufferID.ProceduralCrabBodyPoses, entityCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _solvedJointMatricesHandle = vault.EnsureGenerationHandle<ProceduralCrabSolvedJointMatrices>(BufferID.ProceduralCrabSolvedJointMatrices, legCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
+            _telemetryRingHandle = vault.EnsureGenerationHandle<ProceduralCrabIkTelemetryEntry>(BufferID.ProceduralCrabIkTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
 
             if (!TryResolvePersistentBuffers(out _))
                 ClearVaultHandles();
@@ -927,9 +868,6 @@ namespace Hecton8.AI
             _footPositionsHandle = default;
             _targetFootPositionsHandle = default;
             _stepStatesHandle = default;
-            _raycastCommandsHandle = default;
-            _raycastHitsHandle = default;
-            _raycastLegMaskHandle = default;
             _bodyPosesHandle = default;
             _solvedJointMatricesHandle = default;
             _telemetryRingHandle = default;
@@ -951,9 +889,6 @@ namespace Hecton8.AI
                 !TryResolveVaultBuffer(vault, in _footPositionsHandle, BufferID.ProceduralCrabLegFootPositions, out buffers.FootPositions) ||
                 !TryResolveVaultBuffer(vault, in _targetFootPositionsHandle, BufferID.ProceduralCrabLegTargetFootPositions, out buffers.TargetFootPositions) ||
                 !TryResolveVaultBuffer(vault, in _stepStatesHandle, BufferID.ProceduralCrabLegStepStates, out buffers.StepStates) ||
-                !TryResolveVaultBuffer(vault, in _raycastCommandsHandle, BufferID.ProceduralCrabLegRaycastCommands, out buffers.RaycastCommands) ||
-                !TryResolveVaultBuffer(vault, in _raycastHitsHandle, BufferID.ProceduralCrabLegRaycastHits, out buffers.RaycastHits) ||
-                !TryResolveVaultBuffer(vault, in _raycastLegMaskHandle, BufferID.ProceduralCrabLegRaycastLegMask, out buffers.RaycastLegMask) ||
                 !TryResolveVaultBuffer(vault, in _bodyPosesHandle, BufferID.ProceduralCrabBodyPoses, out buffers.BodyPoses) ||
                 !TryResolveVaultBuffer(vault, in _solvedJointMatricesHandle, BufferID.ProceduralCrabSolvedJointMatrices, out buffers.SolvedJointMatrices) ||
                 !TryResolveVaultBuffer(vault, in _telemetryRingHandle, BufferID.ProceduralCrabIkTelemetryRing, out buffers.TelemetryRing))
@@ -968,9 +903,6 @@ namespace Hecton8.AI
                 buffers.FootPositions.IsCreated &&
                 buffers.TargetFootPositions.IsCreated &&
                 buffers.StepStates.IsCreated &&
-                buffers.RaycastCommands.IsCreated &&
-                buffers.RaycastHits.IsCreated &&
-                buffers.RaycastLegMask.IsCreated &&
                 buffers.BodyPoses.IsCreated &&
                 buffers.SolvedJointMatrices.IsCreated &&
                 buffers.TelemetryRing.IsCreated &&
@@ -978,9 +910,6 @@ namespace Hecton8.AI
                 buffers.FootPositions.Length >= legCapacity &&
                 buffers.TargetFootPositions.Length >= legCapacity &&
                 buffers.StepStates.Length >= legCapacity &&
-                buffers.RaycastCommands.Length >= legCapacity &&
-                buffers.RaycastHits.Length >= legCapacity &&
-                buffers.RaycastLegMask.Length >= legCapacity &&
                 buffers.BodyPoses.Length >= entityCapacity &&
                 buffers.SolvedJointMatrices.Length >= legCapacity &&
                 buffers.TelemetryRing.Length >= TelemetryCapacity;
@@ -1083,7 +1012,7 @@ namespace Hecton8.AI
         private int CaptureFrameState(float deltaTime, CrabLegVaultBuffers buffers)
         {
             int activeCount = 0;
-            const int raycastBudgetMode = RaycastBudgetHighAllLegs;
+            const int surfaceProbeBudgetMode = SurfaceProbeBudgetAllLegs;
 
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             int frameIndex = _frameIndex++;
@@ -1095,7 +1024,7 @@ namespace Hecton8.AI
                 ProceduralCrabLegEntityState entity = buffers.Entities[slotIndex];
                 entity.DeltaTime = safeDeltaTime;
                 entity.FrameIndex = frameIndex;
-                entity.RaycastBudgetMode = raycastBudgetMode;
+                entity.SurfaceProbeBudgetMode = surfaceProbeBudgetMode;
                 buffers.Entities[slotIndex] = entity;
                 activeCount++;
             }
@@ -1106,25 +1035,13 @@ namespace Hecton8.AI
 
         private void ScheduleGroundAndStepPipeline(in CrabLegVaultBuffers buffers)
         {
-            ProceduralCrabGroundRaycastBuildJob buildJob = new ProceduralCrabGroundRaycastBuildJob
-            {
-                Entities = buffers.Entities,
-                Commands = buffers.RaycastCommands,
-                RaycastLegMask = buffers.RaycastLegMask
-            };
-
-            JobHandle buildHandle = buildJob.Schedule(LegCapacity, MinCommandsPerJob);
-            JobHandle raycastHandle = RaycastCommand.ScheduleBatch(buffers.RaycastCommands, buffers.RaycastHits, MinCommandsPerJob, buildHandle);
-
             ProceduralCrabGroundTargetResolveJob targetJob = new ProceduralCrabGroundTargetResolveJob
             {
                 Entities = buffers.Entities,
-                Hits = buffers.RaycastHits,
-                RaycastLegMask = buffers.RaycastLegMask,
                 TargetFootPositions = buffers.TargetFootPositions,
                 StepStates = buffers.StepStates
             };
-            JobHandle targetHandle = targetJob.Schedule(LegCapacity, MinCommandsPerJob, raycastHandle);
+            JobHandle targetHandle = targetJob.Schedule(LegCapacity, MinLegsPerJob);
 
             ProceduralCrabStepSchedulerJob stepJob = new ProceduralCrabStepSchedulerJob
             {
@@ -1154,7 +1071,7 @@ namespace Hecton8.AI
                 JointVisualScale = math.max(0.0001f, _jointVisualScale)
             };
 
-            _pendingHandle = ikJob.Schedule(LegCapacity, MinCommandsPerJob, bodyHandle);
+            _pendingHandle = ikJob.Schedule(LegCapacity, MinLegsPerJob, bodyHandle);
             _pipelineScheduled = true;
         }
 
@@ -1167,13 +1084,22 @@ namespace Hecton8.AI
                 return;
 
             EnsureGraphicsBuffers();
-            if (_bodyPoseGraphicsBuffer == null || _jointMatrixGraphicsBuffer == null || _indirectArgsBuffer == null)
+            if (_bodyPoseGraphicsBufferA == null ||
+                _bodyPoseGraphicsBufferB == null ||
+                _jointMatrixGraphicsBufferA == null ||
+                _jointMatrixGraphicsBufferB == null ||
+                _indirectArgsBuffer == null)
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_bodyPoseGraphicsBuffer, buffers.BodyPoses, EntityCapacity);
-            GraphicsBufferUploadUtility.UploadNativeArray(_jointMatrixGraphicsBuffer, buffers.SolvedJointMatrices, LegCapacity);
-            _crabBodyMaterial.SetBuffer(BodyPoseBufferId, _bodyPoseGraphicsBuffer);
-            _crabBodyMaterial.SetBuffer(LegJointBufferId, _jointMatrixGraphicsBuffer);
+            GraphicsBuffer bodyWriteBuffer = _graphicsUploadBufferIndex == 0 ? _bodyPoseGraphicsBufferA : _bodyPoseGraphicsBufferB;
+            GraphicsBuffer jointWriteBuffer = _graphicsUploadBufferIndex == 0 ? _jointMatrixGraphicsBufferA : _jointMatrixGraphicsBufferB;
+            GraphicsBufferUploadUtility.UploadNativeArray(bodyWriteBuffer, buffers.BodyPoses, EntityCapacity);
+            GraphicsBufferUploadUtility.UploadNativeArray(jointWriteBuffer, buffers.SolvedJointMatrices, LegCapacity);
+            _activeBodyPoseGraphicsBuffer = bodyWriteBuffer;
+            _activeJointMatrixGraphicsBuffer = jointWriteBuffer;
+            _graphicsUploadBufferIndex ^= 1;
+            _crabBodyMaterial.SetBuffer(BodyPoseBufferId, _activeBodyPoseGraphicsBuffer);
+            _crabBodyMaterial.SetBuffer(LegJointBufferId, _activeJointMatrixGraphicsBuffer);
             UploadIndirectArgs(EntityCapacity);
 
             RenderParams renderParams = new RenderParams(_crabBodyMaterial)
@@ -1189,11 +1115,22 @@ namespace Hecton8.AI
 
         private void EnsureGraphicsBuffers()
         {
-            if (_bodyPoseGraphicsBuffer == null)
-                _bodyPoseGraphicsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ProceduralCrabBodyPose>(EntityCapacity); // COLD ALLOC: GraphicsBuffer[body poses] - indirect crab body S.O.A. upload - owner: ProceduralCrabLegIKRuntime
+            if (_bodyPoseGraphicsBufferA == null)
+                _bodyPoseGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ProceduralCrabBodyPose>(EntityCapacity); // COLD ALLOC: GraphicsBuffer[body poses A] - indirect crab body S.O.A. upload - owner: ProceduralCrabLegIKRuntime
 
-            if (_jointMatrixGraphicsBuffer == null)
-                _jointMatrixGraphicsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ProceduralCrabSolvedJointMatrices>(LegCapacity); // COLD ALLOC: GraphicsBuffer[joint matrices] - indirect crab leg S.O.A. upload - owner: ProceduralCrabLegIKRuntime
+            if (_bodyPoseGraphicsBufferB == null)
+                _bodyPoseGraphicsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ProceduralCrabBodyPose>(EntityCapacity); // COLD ALLOC: GraphicsBuffer[body poses B] - indirect crab body S.O.A. upload - owner: ProceduralCrabLegIKRuntime
+
+            if (_jointMatrixGraphicsBufferA == null)
+                _jointMatrixGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ProceduralCrabSolvedJointMatrices>(LegCapacity); // COLD ALLOC: GraphicsBuffer[joint matrices A] - indirect crab leg S.O.A. upload - owner: ProceduralCrabLegIKRuntime
+
+            if (_jointMatrixGraphicsBufferB == null)
+                _jointMatrixGraphicsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ProceduralCrabSolvedJointMatrices>(LegCapacity); // COLD ALLOC: GraphicsBuffer[joint matrices B] - indirect crab leg S.O.A. upload - owner: ProceduralCrabLegIKRuntime
+
+            if (_activeBodyPoseGraphicsBuffer == null)
+                _activeBodyPoseGraphicsBuffer = _bodyPoseGraphicsBufferA;
+            if (_activeJointMatrixGraphicsBuffer == null)
+                _activeJointMatrixGraphicsBuffer = _jointMatrixGraphicsBufferA;
 
             if (_indirectArgsBuffer == null)
             {
@@ -1230,9 +1167,14 @@ namespace Hecton8.AI
 
         private void ReleaseGraphicsBuffers()
         {
-            ReleaseGraphicsBuffer(ref _bodyPoseGraphicsBuffer);
-            ReleaseGraphicsBuffer(ref _jointMatrixGraphicsBuffer);
+            ReleaseGraphicsBuffer(ref _bodyPoseGraphicsBufferA);
+            ReleaseGraphicsBuffer(ref _bodyPoseGraphicsBufferB);
+            ReleaseGraphicsBuffer(ref _jointMatrixGraphicsBufferA);
+            ReleaseGraphicsBuffer(ref _jointMatrixGraphicsBufferB);
             ReleaseGraphicsBuffer(ref _indirectArgsBuffer);
+            _activeBodyPoseGraphicsBuffer = null;
+            _activeJointMatrixGraphicsBuffer = null;
+            _graphicsUploadBufferIndex = 0;
             _argsUploadMesh = null;
             _argsUploadInstanceCount = -1;
         }
@@ -1357,16 +1299,15 @@ namespace Hecton8.AI
                 StateFlags = EntityFlagActive,
                 LegStartIndex = slotIndex * MaxLegsPerEntity,
                 LegCount = safeLegCount,
-                GroundLayerMask = _groundLayerMask.value,
-                RaycastBudgetMode = RaycastBudgetHighAllLegs,
+                SurfaceProbeBudgetMode = SurfaceProbeBudgetAllLegs,
                 Health = 1,
                 LeftStepCursor = 0,
                 RightStepCursor = 1,
                 StrideLengthSq = safeStride * safeStride,
                 StepDuration = ClampFiniteMin(_stepDuration, 0.01f, 0.14f),
                 StepHeight = ClampFiniteMin(_stepHeight, 0f, 0.16f),
-                RaycastHeight = ClampFiniteMin(_raycastHeight, 0.01f, 1.2f),
-                RaycastDistance = ClampFiniteMin(_raycastDistance, 0.01f, 3.0f),
+                GroundProbeHeight = ClampFiniteMin(_groundProbeHeight, 0.01f, 1.2f),
+                GroundProbeDistance = ClampFiniteMin(_groundProbeDistance, 0.01f, 3.0f),
                 ContactOffset = ClampFiniteMin(_contactOffset, 0f, 0.025f),
                 VelocityLeadSeconds = ClampFiniteMin(_velocityLeadSeconds, 0f, 0.08f),
                 Scale = safeScale,

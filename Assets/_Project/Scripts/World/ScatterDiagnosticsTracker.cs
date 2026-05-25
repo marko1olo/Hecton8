@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.Diagnostics;
+using System.Globalization;
 using Hecton8.Dev;
 using UnityEngine;
 
@@ -73,19 +74,39 @@ namespace Hecton8.World
                 return;
 
             string report =
-                $"[WorldScatterProfiler] rebuild={snapshot.TotalMs:0.00}ms sample={snapshot.SamplingMs:0.00}ms input={snapshot.SamplingInputMs:0.00}ms wait={snapshot.SamplingWaitMs:0.00}ms post={snapshot.SamplingPostMs:0.00}ms rescue={snapshot.RescueMs:0.00}ms " +
-                $"restore={snapshot.RestoreMs:0.00}ms reconcile={snapshot.ReconcileMs:0.00}ms cleanup={snapshot.ReconcileCleanupMs:0.00}ms " +
-                $"spawn={snapshot.ReconcileSpawnMs:0.00}ms fauna={snapshot.ReconcileFaunaMs:0.00}ms diag={snapshot.DiagnosticsMs:0.00}ms " +
-                $"removed={snapshot.RemovedCount} rebuilt={snapshot.RebuiltCount} created={snapshot.CreatedCount} reused={snapshot.ReusedCount} " +
-                $"cells={snapshot.EvaluatedCells} desired={snapshot.DesiredCount} active={snapshot.ActiveCount} floraGpuiActive={snapshot.FloraGpuiActiveCount} " +
-                $"floraGpuiPrototypes={snapshot.FloraGpuiPrototypeCount} floraGpuiReady={snapshot.FloraGpuiReady} " +
-                $"zone={snapshot.Zone} biome={snapshot.Biome} pattern={snapshot.Pattern} topFamily={snapshot.TopFamily} reason={snapshot.Reason}";
+                "[WorldScatterProfiler] rebuild=" + snapshot.TotalMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms sample=" + snapshot.SamplingMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms input=" + snapshot.SamplingInputMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms wait=" + snapshot.SamplingWaitMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms post=" + snapshot.SamplingPostMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms rescue=" + snapshot.RescueMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms restore=" + snapshot.RestoreMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms reconcile=" + snapshot.ReconcileMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms cleanup=" + snapshot.ReconcileCleanupMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms spawn=" + snapshot.ReconcileSpawnMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms fauna=" + snapshot.ReconcileFaunaMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms diag=" + snapshot.DiagnosticsMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                "ms removed=" + snapshot.RemovedCount +
+                " rebuilt=" + snapshot.RebuiltCount +
+                " created=" + snapshot.CreatedCount +
+                " reused=" + snapshot.ReusedCount +
+                " cells=" + snapshot.EvaluatedCells +
+                " desired=" + snapshot.DesiredCount +
+                " active=" + snapshot.ActiveCount +
+                " floraGpuiActive=" + snapshot.FloraGpuiActiveCount +
+                " floraGpuiPrototypes=" + snapshot.FloraGpuiPrototypeCount +
+                " floraGpuiReady=" + snapshot.FloraGpuiReady +
+                " zone=" + snapshot.Zone +
+                " biome=" + snapshot.Biome +
+                " pattern=" + snapshot.Pattern +
+                " topFamily=" + snapshot.TopFamily +
+                " reason=" + snapshot.Reason;
 
             if (traceActive)
                 RuntimeDiagnosticsTrace.WriteEvent("scatter", report);
 
             if (ShouldEmitRuntimeReportLog(shouldLog))
-                UnityEngine.Debug.Log(report, context);
+                Hecton8.Core.H8Debug.Log(report, context);
         }
 
         private static bool ShouldEmitRuntimeReportLog(bool shouldLog)

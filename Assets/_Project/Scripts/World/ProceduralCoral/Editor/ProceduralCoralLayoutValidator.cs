@@ -8,6 +8,22 @@ namespace Hecton8.World.ProceduralCoral.Editor
     [InitializeOnLoad]
     public static class ProceduralCoralLayoutValidator
     {
+        private const int BranchStrideBytes = 128;
+        private const int LSystemRuleStrideBytes = 64;
+        private const int SectorTriggerStrideBytes = 64;
+        private const int SectorSaveStrideBytes = 16;
+        private const int TuningStrideBytes = 64;
+        private const int TurtleStateStrideBytes = 64;
+        private const int SpatialCellStrideBytes = 32;
+        private const int CapsuleColliderStrideBytes = 64;
+        private const int SyncPulseStrideBytes = 32;
+        private const int TelemetryStrideBytes = 64;
+        private const int DebugSegmentStrideBytes = 64;
+        private const int PaddedCounterStrideBytes = 64;
+        private const int GpuSwayStrideBytes = 64;
+        private const int SelfAuditStrideBytes = 64;
+        private const int HzbTileStrideBytes = 16;
+
         static ProceduralCoralLayoutValidator()
         {
             ValidateLayouts(logSuccess: false);
@@ -22,7 +38,7 @@ namespace Hecton8.World.ProceduralCoral.Editor
         public static bool ValidateLayouts(bool logSuccess)
         {
             bool ok = true;
-            ok &= ValidateSize<CoralBranchDTO>(128);
+            ok &= ValidateSize<CoralBranchDTO>(BranchStrideBytes);
             ok &= ValidateOffset<CoralBranchDTO>(nameof(CoralBranchDTO.LocalMatrix), 0);
             ok &= ValidateOffset<CoralBranchDTO>(nameof(CoralBranchDTO.PrefabHash), 64);
             ok &= ValidateOffset<CoralBranchDTO>(nameof(CoralBranchDTO.GenerationDepth), 68);
@@ -33,7 +49,7 @@ namespace Hecton8.World.ProceduralCoral.Editor
             ok &= ValidateOffset<CoralBranchDTO>(nameof(CoralBranchDTO.ParentIndex), 108);
             ok &= ValidateOffset<CoralBranchDTO>(nameof(CoralBranchDTO.StableId), 112);
             ok &= ValidateOffset<CoralBranchDTO>(nameof(CoralBranchDTO.SectorHash), 116);
-            ok &= ValidateSize<CoralLSystemRuleDTO>(64);
+            ok &= ValidateSize<CoralLSystemRuleDTO>(LSystemRuleStrideBytes);
             ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.SourceOpcode), 0);
             ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.ReplacementCount), 36);
             ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.BranchAngleRadians), 40);
@@ -42,20 +58,20 @@ namespace Hecton8.World.ProceduralCoral.Editor
             ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.PrefabHash), 52);
             ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.Flags), 56);
             ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.WeightHash), 60);
-            ok &= ValidateSize<CoralSectorTriggerDTO>(64);
-            ok &= ValidateSize<CoralSectorSaveDTO>(16);
-            ok &= ValidateSize<CoralTuningDTO>(64);
-            ok &= ValidateSize<CoralTurtleStateDTO>(64);
-            ok &= ValidateSize<CoralSpatialCellDTO>(32);
-            ok &= ValidateSize<CapsuleColliderDTO>(64);
-            ok &= ValidateSize<SyncPulseDTO>(32);
-            ok &= ValidateSize<CoralGenerationTelemetryEntry>(64);
+            ok &= ValidateSize<CoralSectorTriggerDTO>(SectorTriggerStrideBytes);
+            ok &= ValidateSize<CoralSectorSaveDTO>(SectorSaveStrideBytes);
+            ok &= ValidateSize<CoralTuningDTO>(TuningStrideBytes);
+            ok &= ValidateSize<CoralTurtleStateDTO>(TurtleStateStrideBytes);
+            ok &= ValidateSize<CoralSpatialCellDTO>(SpatialCellStrideBytes);
+            ok &= ValidateSize<CapsuleColliderDTO>(CapsuleColliderStrideBytes);
+            ok &= ValidateSize<SyncPulseDTO>(SyncPulseStrideBytes);
+            ok &= ValidateSize<CoralGenerationTelemetryEntry>(TelemetryStrideBytes);
             ok &= ValidateOffset<CoralGenerationTelemetryEntry>(nameof(CoralGenerationTelemetryEntry.RootAUP), 0);
             ok &= ValidateOffset<CoralGenerationTelemetryEntry>(nameof(CoralGenerationTelemetryEntry.BurstComputeUs), 40);
             ok &= ValidateOffset<CoralGenerationTelemetryEntry>(nameof(CoralGenerationTelemetryEntry.FaultFlags), 52);
             ok &= ValidateOffset<CoralGenerationTelemetryEntry>(nameof(CoralGenerationTelemetryEntry.MatrixCount), 60);
-            ok &= ValidateSize<CoralDebugSegmentDTO>(64);
-            ok &= ValidateSize<CoralPaddedCounterDTO>(64);
+            ok &= ValidateSize<CoralDebugSegmentDTO>(DebugSegmentStrideBytes);
+            ok &= ValidateSize<CoralPaddedCounterDTO>(PaddedCounterStrideBytes);
             ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.BranchCount), 0);
             ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.FaultFlags), 24);
             ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.CollisionProxyCount), 12);
@@ -63,19 +79,19 @@ namespace Hecton8.World.ProceduralCoral.Editor
             ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.SyncPulseCount), 20);
             ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.SpatialCellCount), 56);
             ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.EffectiveQualityWeight), 60);
-            ok &= ValidateSize<CoralGpuSwayDTO>(64);
+            ok &= ValidateSize<CoralGpuSwayDTO>(GpuSwayStrideBytes);
             ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.FlowAndAmplitude), 0);
             ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.BoundsAndDensity), 16);
             ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.FaultAndFrame), 32);
             ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.SectorHash), 48);
             ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.StateHash), 52);
-            ok &= ValidateSize<CoralSelfAuditResultDTO>(64);
+            ok &= ValidateSize<CoralSelfAuditResultDTO>(SelfAuditStrideBytes);
             ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.Frame), 0);
             ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.SectorHash), 4);
             ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.Flags), 8);
             ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.MaxOverlapDepth), 32);
             ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.BranchUtilization), 36);
-            ok &= ValidateSize<CoralHzbTileDTO>(16);
+            ok &= ValidateSize<CoralHzbTileDTO>(HzbTileStrideBytes);
 
             if (ok && logSuccess)
                 Debug.Log("[SHINOBU_139] Procedural coral DTO layout validated.");

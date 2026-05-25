@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -13,10 +14,12 @@ namespace Hecton8.Visor
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6920)]
-    public sealed class InternalFloodWaterlineRuntime : MonoBehaviour, IFastTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class InternalFloodWaterlineRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 40;
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
+        private const BufferID TelemetryBufferId = BufferID.InternalFloodWaterlineTelemetryRing;
         private const uint DumpMagic = 0x4946574Cu; // IFWL
         private const int DumpVersion = 1;
         private const float FloodVisibleThreshold01 = 0.001f;
@@ -72,7 +75,9 @@ namespace Hecton8.Visor
         [SerializeField, Range(0f, 1f)] private float tintStrength = 0.58f;
         [SerializeField, Range(0.001f, 0.1f)] private float edgeSoftness = 0.018f;
 
-        private NativeArray<WaterlineTelemetryEntry> _telemetry;
+        private VaultGenerationHandle<WaterlineTelemetryEntry> _telemetryHandle;
+        private IDataVault _dataVault;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private IHabitatGraphService _habitatGraph;
         private IGasDynamicsSolver _gasDynamics;
         private AbsoluteUniversePosition _lastCameraAup;
@@ -98,14 +103,18 @@ namespace Hecton8.Visor
         private bool _cameraSubmerged;
         private bool _hasPreviousSubmergedState;
         private bool _registeredFastTick;
+        private bool _registeredLateFrameTick;
         private bool _registeredOriginShift;
+        private bool _hotSwapListenerRegistered;
         private bool _isInitialized;
         private bool _blackBoxDumped;
         private bool _shaderGlobalsDirty = true;
+        private bool _pendingInactiveShaderGlobals = true;
+        private float _pendingShaderFill01;
         private bool _lastCameraAupValid;
         private int _tickCount;
 
-        public bool IsInitialized => _isInitialized && _telemetry.IsCreated;
+        public bool IsInitialized => _isInitialized && IsVaultHandleCreated(in _telemetryHandle);
         public ServiceHeartbeatState HeartbeatState => IsInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => IsInitialized;
         int IServiceHeartbeat.TickCount => _tickCount;
@@ -133,6 +142,7 @@ namespace Hecton8.Visor
             RefreshQualityPolicy();
             _isInitialized = true;
             ActiveRuntimeInstance = this;
+            TryRegisterHotSwapListener();
             RegisterRuntime();
             PublishInactiveGlobals();
         }
@@ -146,6 +156,7 @@ namespace Hecton8.Visor
         {
             ActiveRuntimeInstance = this;
             _shaderGlobalsDirty = true;
+            TryRegisterHotSwapListener();
             if (_isInitialized)
                 RegisterRuntime();
         }
@@ -153,6 +164,7 @@ namespace Hecton8.Visor
         private void OnDisable()
         {
             UnregisterRuntime();
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
@@ -236,8 +248,19 @@ namespace Hecton8.Visor
             _hasPreviousSubmergedState = true;
 
             _hasWaterline = true;
-            PublishShaderGlobals(snapshot.Fill01);
+            QueueShaderGlobals(snapshot.Fill01);
             WriteTelemetry(in snapshot, cameraRuntimePosition.y, 0);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_shaderGlobalsDirty)
+                return;
+
+            if (_pendingInactiveShaderGlobals)
+                PublishInactiveGlobals();
+            else
+                PublishShaderGlobals(_pendingShaderFill01);
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -251,13 +274,19 @@ namespace Hecton8.Visor
             if (math.isfinite(_targetWaterlineY))
                 _targetWaterlineY -= shiftY;
 
-            PublishShaderGlobals(_hasWaterline ? _currentFill01 : 0f);
+            QueueShaderGlobals(_hasWaterline ? _currentFill01 : 0f);
         }
 
         private void RegisterRuntime()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredFastTick)
                 _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredLateFrameTick)
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
             if (!_registeredOriginShift)
             {
@@ -274,6 +303,12 @@ namespace Hecton8.Visor
                 _registeredFastTick = false;
             }
 
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+
             if (_registeredOriginShift)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
@@ -284,17 +319,17 @@ namespace Hecton8.Visor
         private void Shutdown()
         {
             UnregisterRuntime();
+            TryUnregisterHotSwapListener();
             _isInitialized = false;
+            _playerRuntimeContext = null;
             _habitatGraph = null;
             _gasDynamics = null;
             _hasPendingGasSubmergedFraction = false;
             _pendingGasRoomId = -1;
-            if (_telemetry.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetry);
-                _telemetry.Dispose();
-            }
-            _telemetry = default;
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _telemetryHandle))
+                vault.ReleaseBuffer(in _telemetryHandle);
+            _telemetryHandle = default;
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
             PublishInactiveGlobals();
@@ -302,18 +337,46 @@ namespace Hecton8.Visor
 
         private void EnsureNativeTelemetry()
         {
-            if (_telemetry.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
                 return;
 
-            _telemetry = new NativeArray<WaterlineTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WaterlineTelemetryEntry>[300] - fixed internal flood blackbox ring - owner: InternalFloodWaterlineRuntime
-            NativeMemorySentinel.RegisterNativeArray(_telemetry, nameof(InternalFloodWaterlineRuntime), nameof(_telemetry), NativeAllocationLifetime.Scene);
+            if (IsVaultHandleCreated(in _telemetryHandle) &&
+                vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<WaterlineTelemetryEntry>.ReadOnly telemetry) &&
+                telemetry.IsCreated &&
+                telemetry.Length >= TelemetryCapacity)
+            {
+                return;
+            }
+
+            if (IsVaultHandleCreated(in _telemetryHandle))
+                vault.ReleaseBuffer(in _telemetryHandle);
+
+            _telemetryHandle = vault.EnsureGenerationHandle<WaterlineTelemetryEntry>(
+                TelemetryBufferId,
+                TelemetryCapacity,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
         }
 
-        private static bool TryResolveRuntimeContext(
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private bool TryResolveRuntimeContext(
             out IPlayerRuntimeContext runtimeContext,
             out PlayerRuntimePoseSnapshot poseSnapshot)
         {
-            runtimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            runtimeContext = _playerRuntimeContext;
             poseSnapshot = default;
             return runtimeContext != null &&
                    runtimeContext.IsInitialized &&
@@ -362,7 +425,7 @@ namespace Hecton8.Visor
                 Flags = 1,
                 Quantity = 6
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
         }
 
         private void ConsumeExternalDropletSignals()
@@ -387,7 +450,7 @@ namespace Hecton8.Visor
                 _lastCameraAup = signal.PositionAup;
                 _lastCameraAupValid = IsFiniteAup(in _lastCameraAup);
                 _dropletSecondsRemaining = math.max(_dropletSecondsRemaining, duration * intensity01);
-                PublishShaderGlobals(_hasWaterline ? _currentFill01 : 0f);
+                QueueShaderGlobals(_hasWaterline ? _currentFill01 : 0f);
             }
         }
 
@@ -425,9 +488,79 @@ namespace Hecton8.Visor
             if (!force && _tickCount < _nextDependencyRefreshTick)
                 return;
 
-            _habitatGraph = GlobalRegistry.HabitatGraph;
-            _gasDynamics = GlobalRegistry.GasDynamics;
+            if (force || _playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (force || _habitatGraph == null)
+                _habitatGraph = GlobalRegistry.HabitatGraph;
+
+            if (force || _gasDynamics == null)
+                _gasDynamics = GlobalRegistry.GasDynamics;
+
             _nextDependencyRefreshTick = _tickCount + DependencyRefreshTickInterval;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && isActiveAndEnabled && _isInitialized)
+                        RegisterRuntime();
+                    return;
+
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    return;
+
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    return;
+
+                case GlobalRegistryServiceSlot.Logistics:
+                    if (currentService is IHabitatGraphService || previousService is IHabitatGraphService)
+                        _habitatGraph = currentService as IHabitatGraphService;
+                    return;
+
+                case GlobalRegistryServiceSlot.GasDynamicsRuntime:
+                    _gasDynamics = currentService as IGasDynamicsSolver;
+                    return;
+            }
+        }
+
+        private void RebindDataVault(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            IDataVault currentVault = _dataVault;
+            if (currentVault != null && IsVaultHandleCreated(in _telemetryHandle))
+                currentVault.ReleaseBuffer(in _telemetryHandle);
+
+            _telemetryHandle = default;
+            _dataVault = nextVault;
+            if (_isInitialized)
+                EnsureNativeTelemetry();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void RefreshQualityPolicy()
@@ -461,7 +594,21 @@ namespace Hecton8.Visor
                 Channel = 0,
                 Flags = 0
             };
-            GlobalSignals.Publish(in ping);
+            SignalBus<AcousticPingSignal>.TryPush(in ping);
+        }
+
+        private void QueueShaderGlobals(float fill01)
+        {
+            _pendingShaderFill01 = math.isfinite(fill01) ? math.saturate(fill01) : 0f;
+            _pendingInactiveShaderGlobals = false;
+            _shaderGlobalsDirty = true;
+        }
+
+        private void QueueInactiveGlobals()
+        {
+            _pendingShaderFill01 = 0f;
+            _pendingInactiveShaderGlobals = true;
+            _shaderGlobalsDirty = true;
         }
 
         private void PublishShaderGlobals(float fill01)
@@ -478,6 +625,7 @@ namespace Hecton8.Visor
             SetGlobalVectorIfChanged(InternalWaterlineRuntimeId, runtime, ref _lastPublishedRuntime);
             SetGlobalVectorIfChanged(InternalWaterlineDistortionId, distortion, ref _lastPublishedDistortion);
             _shaderGlobalsDirty = false;
+            _pendingInactiveShaderGlobals = false;
         }
 
         private void PublishInactiveGlobals()
@@ -487,6 +635,7 @@ namespace Hecton8.Visor
             SetGlobalVectorIfChanged(InternalWaterlineRuntimeId, Vector4.zero, ref _lastPublishedRuntime);
             SetGlobalVectorIfChanged(InternalWaterlineDistortionId, new Vector4(0f, math.saturate(tintStrength), math.max(0.001f, edgeSoftness), 1f), ref _lastPublishedDistortion);
             _shaderGlobalsDirty = false;
+            _pendingInactiveShaderGlobals = true;
         }
 
         private void ClearWaterlineState()
@@ -512,9 +661,9 @@ namespace Hecton8.Visor
             _currentWaterlineY = InternalWaterlineInvalidY;
             _targetWaterlineY = InternalWaterlineInvalidY;
             if (hasDroplets)
-                PublishShaderGlobals(0f);
+                QueueShaderGlobals(0f);
             else
-                PublishInactiveGlobals();
+                QueueInactiveGlobals();
         }
 
         private void SetGlobalFloatIfChanged(int shaderId, float value, ref float cachedValue)
@@ -558,7 +707,8 @@ namespace Hecton8.Visor
 
         private void WriteTelemetry(in HabitatRoomWaterlineSnapshot snapshot, float cameraY, byte flags)
         {
-            if (!_telemetry.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in _telemetryHandle))
                 return;
 
             float droplets01 = math.saturate(_dropletSecondsRemaining * math.rcp(DropletDurationSeconds));
@@ -586,16 +736,38 @@ namespace Hecton8.Visor
                 StateHash = ResolveTelemetryHash(snapshot.RoomId, snapshot.Fill01, _currentWaterlineY, cameraY, droplets01, qualityByte)
             };
 
-            _telemetry[_telemetryCursor] = entry;
-            _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+            if (!vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwnerSystemId, out NativeArray<WaterlineTelemetryEntry> telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length < TelemetryCapacity)
+            {
+                return;
+            }
+
+            try
+            {
+                telemetry[_telemetryCursor] = entry;
+                _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryHandle, VaultOwnerSystemId);
+            }
+
             if ((flags & 1) != 0)
                 DumpBlackBoxOnce();
         }
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !_telemetry.IsCreated)
+            IDataVault vault = _dataVault;
+            if (_blackBoxDumped ||
+                vault == null ||
+                !IsVaultHandleCreated(in _telemetryHandle) ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<WaterlineTelemetryEntry>.ReadOnly telemetry) ||
+                !telemetry.IsCreated)
+            {
                 return;
+            }
 
             _blackBoxDumped = true;
             try
@@ -610,9 +782,9 @@ namespace Hecton8.Visor
                     writer.Write(TelemetryCapacity);
                     writer.Write(_telemetryCursor);
                     writer.Write(_tickCount);
-                    for (int i = 0; i < _telemetry.Length; i++)
+                    for (int i = 0; i < telemetry.Length; i++)
                     {
-                        WaterlineTelemetryEntry entry = _telemetry[i];
+                        WaterlineTelemetryEntry entry = telemetry[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.Sequence);
                         writer.Write(entry.RoomId);
@@ -656,7 +828,7 @@ namespace Hecton8.Visor
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 

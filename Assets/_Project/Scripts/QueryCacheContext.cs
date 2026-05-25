@@ -3,7 +3,7 @@
 // Per-frame physics query result caching and deduplication.
 //
 // PURPOSE:
-//   Avoid redundant Physics.Raycast or Batch queries from the same source 
+//   Avoid redundant scene-probe or batch queries from the same source
 //   (Camera looking at interactions, tools, and UI) within a single frame.
 //
 // ZERO GC GUARANTEE:
@@ -15,6 +15,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -76,7 +77,7 @@ namespace Hecton8.Physics
 
         public void InvalidateIfStale()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastUpdateFrame == frame)
                 return;
 
@@ -132,12 +133,12 @@ namespace Hecton8.Physics
                 return;
             }
 
-            _cache[key] = new CachedQueryResult { result = result, frameIndex = Time.frameCount };
+            _cache[key] = new CachedQueryResult { result = result, frameIndex = SystemDispatcher.CurrentFrameIndex };
         }
 
         private bool TryGetFixed(ulong key, out QueryResult result)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             int index = HashFixedSlot(key);
             for (int probe = 0; probe < FixedCacheCapacity; probe++)
             {
@@ -175,7 +176,7 @@ namespace Hecton8.Physics
 
         private void SetFixed(ulong key, QueryResult result)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             int initialIndex = HashFixedSlot(key);
             int index = initialIndex;
             for (int probe = 0; probe < FixedCacheCapacity; probe++)

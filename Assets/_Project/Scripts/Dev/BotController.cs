@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Physics;
@@ -42,6 +43,7 @@ namespace Hecton8.Dev
 
         // COLD ALLOC: WaitCallback[1] — background CSV flush entry point — owner: BotController
         private static readonly WaitCallback _csvFlushCallback = ExecuteCsvFlush;
+        private static readonly Encoding CsvEncoding = new UTF8Encoding(false);
 
         [StructLayout(LayoutKind.Explicit, Size = ExpeditionSampleStrideBytes)]
         private struct ExpeditionSample
@@ -200,7 +202,9 @@ namespace Hecton8.Dev
 
             ResolveDriveCommand();
             _lodSystem = LODSystemManager.Instance;
-            _startPosition = _playerBody.position;
+            if (!TryResolvePlayerRuntimePosition(out _startPosition))
+                return;
+
             _targetDistanceMetersSq = ResolveTargetDistanceMetersSq();
             _elapsedSeconds = 0f;
             _sampleTimer = 0f;
@@ -282,7 +286,13 @@ namespace Hecton8.Dev
             if (!TryAdvanceEmergencyTick())
                 return;
 
-            float traveledSq = DistanceSq(_startPosition, _playerBody.position);
+            if (!TryResolvePlayerRuntimePosition(out Vector3 currentPosition))
+            {
+                StopExpedition();
+                return;
+            }
+
+            float traveledSq = DistanceSq(_startPosition, currentPosition);
             if (traveledSq >= _targetDistanceMetersSq || _elapsedSeconds >= MaxRuntimeSeconds)
                 StopExpedition();
         }
@@ -346,7 +356,9 @@ namespace Hecton8.Dev
             if (_playerBody == null || _sampleCount >= MaxExpeditionSamples)
                 return;
 
-            Vector3 position = _playerBody.position;
+            if (!TryResolvePlayerRuntimePosition(out Vector3 position))
+                return;
+
             ref ExpeditionSample sample = ref _samples[_sampleCount];
             sample.ElapsedSeconds = _elapsedSeconds;
             sample.EstimatedDistanceMeters = DominantAxisDistance(position, _startPosition);
@@ -492,7 +504,7 @@ namespace Hecton8.Dev
                     CsvPath = Path.Combine(directory, CsvFileName);
 
                 char[] numberBuffer = _csvNumberBuffer;
-                using (StreamWriter writer = new StreamWriter(CsvPath, append: false))
+                using (StreamWriter writer = new StreamWriter(CsvPath, append: false, CsvEncoding))
                 {
                     writer.WriteLine(CsvHeader);
                     int sampleCount = _sampleCount;
@@ -550,6 +562,30 @@ namespace Hecton8.Dev
         {
             Vector3 delta = a - b;
             return delta.sqrMagnitude;
+        }
+
+        private bool TryResolvePlayerRuntimePosition(out Vector3 position)
+        {
+            position = default;
+            IPlayerRuntimeContext player = _playerRuntime;
+            if (player != null &&
+                player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) &&
+                math.all(math.isfinite(pose.RuntimePosition)))
+            {
+                position = new Vector3(pose.RuntimePosition.x, pose.RuntimePosition.y, pose.RuntimePosition.z);
+                return true;
+            }
+
+            Transform playerTransform = player != null ? player.PlayerTransform : _cachedTransform;
+            if (playerTransform == null)
+                return false;
+
+            Vector3 transformPosition = playerTransform.position;
+            if (!float.IsFinite(transformPosition.x) || !float.IsFinite(transformPosition.y) || !float.IsFinite(transformPosition.z))
+                return false;
+
+            position = transformPosition;
+            return true;
         }
 
         private float ResolveTargetDistanceMetersSq()

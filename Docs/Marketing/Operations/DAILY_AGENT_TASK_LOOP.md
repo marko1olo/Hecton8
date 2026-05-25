@@ -1,4 +1,4 @@
-# HECTON-8 Daily Agent Marketing Task Loop
+﻿# HECTON-8 Daily Agent Marketing Task Loop
 
 Status: executable agent workflow
 Owner lane: SHINOBU_81 / agent operations
@@ -19,6 +19,7 @@ Agents are useful only if they turn public noise into verified rows, better copy
 | Asset Critic | 10 screenshots/clips scored. |
 | Source Auditor | 5 source claims rechecked. |
 | KPI Clerk | Dashboard rows updated with route-specific class, permission gate/source, `consent_provenance` / `reply_consent_provenance`, and agency-decision fields where feedback, forms, links, support routes, or cold reads are involved. |
+| Imageboard Scout | 3 public imageboard threads/catalogs checked or one post-candidate preflight filled; output must be monitor-only signal, a revised prompt, a risk update, or an asset QA decision. |
 
 One agent can hold multiple roles, but one output must exist per role before claiming the day was useful.
 
@@ -63,6 +64,7 @@ Pick exactly one lane for the day:
 | SOURCE_RECHECK | Platform rules, routes, or deadlines can change. | Source ledger addendum and affected doc correction. |
 | RISK_CLOSE | A risk has no prevention/response owner. | Risk register update plus one backlog action. |
 | CAMPAIGN_DECISION | Campaign 01/02/03 is being prepared. | `KEEP`, `REVISE`, or `KILL` decision fields filled. |
+| IMAGEBOARD_SCOUT | 4chan/Dvach work is requested or one asset is being considered for anonymous critique. | Imageboard preflight card, monitoring row, risk/action decision, or prompt revision; no CTA and no private route. |
 
 If a proposed task cannot produce one of these outputs, reject it.
 
@@ -123,6 +125,10 @@ Does any private demo/key/playtest/preview/Curator Connect route infer permissio
 If yes, hold; private access requires recipient/batch-specific `ALLOW_PRIVATE_ACCESS_VERIFIED`.
 Does any public post infer permission from draft existence, account existence, asset QA score, or no-link route class instead of `public_post_permission_gate`?
 If yes, hold; public posting requires post-specific `ALLOW_PUBLIC_POST_VERIFIED`.
+Does any 4chan/Dvach/imageboard action infer permission from anonymity, no-account posting, board habit, or no-link route class instead of a post-specific approval record?
+If yes, hold; anonymous public posts still require surface/thread, same-day rule/fit check, asset ID, critique question, developer disclosure, route class, and stop condition.
+Does any imageboard monitoring row become positive KPI, campaign `KEEP`, creator lead, contact consent, AI-agent adoption percentage, or market proof?
+If yes, hold; imageboard signal is anecdotal by default and can revise/kill/monitor unless independently confirmed.
 Does any signup/list/newsletter work infer permission from form existence, provider existence, public CTA, or imported contacts instead of `owned_audience_permission_gate`?
 If yes, hold; owned audience use requires mode-specific `ALLOW_OWNED_AUDIENCE_VERIFIED`.
 Does any Discord/server/invite/community-hub work infer permission from server draft, channel template, moderator willingness, community interest, public CTA, or post draft instead of `discord_open_permission_gate`?
@@ -228,6 +234,39 @@ Output goes to:
 
 - `Community/REDDIT_COMMUNITY_RULES_TRACKER.md`
 
+## Imageboard Scout Loop
+
+Use for 4chan, Dvach, and similar anonymous surfaces. This loop is monitor-first. A post-candidate is allowed only when a real asset exists and the preflight card is complete.
+
+Passive monitoring steps:
+
+1. Record surface, board, URL, and thread/catalog status.
+2. Record search terms.
+3. Classify the thread as game-dev, player sentiment, technical engine/dev, AI/workflow, or unusable.
+4. Extract only product-relevant paraphrased signal: clone cue, AI-slop cue, engine/tool trust cue, readability cue, craft-grind fatigue, player-decision language.
+5. Mark confidence: reject, anecdotal, directional, or recurring.
+6. Do not import handles, tripcodes, anonymous posts, or personal data into CRM/contact systems.
+
+Post-candidate steps:
+
+1. Fill the Imageboard Preflight Card in `QA/MARKETING_ASSET_QA_CHECKLIST.md`.
+2. Confirm same-day board/thread fit.
+3. Confirm route class `no_link_feedback`.
+4. Confirm no CTA, key/access, Discord, Steam, signup, presskit, AI/process hook, or competitor-pain hook.
+5. Confirm the exact critique question names a visible player decision or readability issue.
+6. Confirm developer disclosure wording.
+7. Confirm owner and stop condition.
+8. After thread reaction, fill the imageboard feedback row in `KPI/MARKETING_DASHBOARD_SPEC.md` and route to `KEEP_INTERNAL_ONLY`, `REVISE_ASSET`, `REVISE_PROMPT`, `KILL_IMAGEBOARD_ROUTE`, or `SECURITY_HOLD`.
+
+Forbidden:
+
+- fake discovery posts;
+- sockpuppets;
+- self-bumps;
+- reposting the same asset to another board after shill accusations;
+- counting anonymous comments as contact consent;
+- using imageboard heat as public proof of demand.
+
 ## Sentiment Mining Loop
 
 Track current player language around:
@@ -280,6 +319,7 @@ Recheck:
 - FTC endorsement guidance;
 - YouTube/TikTok disclosure rules;
 - subreddit rules before posting;
+- imageboard board/thread rules before any no-link critique post;
 - public creator page before contact.
 
 If a source changed, update:
@@ -301,6 +341,7 @@ Communities checked:
 Assets scored:
 Source claims rechecked:
 Signals found:
+Imageboard rows:
 Route/consent gaps:
 Blocked items:
 Next recommended action:
@@ -431,18 +472,22 @@ Expected: `BACKTICK_PATH_AUDIT_OK`.
 
 ### Rationale Order Audit
 
-Run this after updating `Docs/AgentLogs/Rationale_SHINOBU_81.md`. Expected result format: `RATIONALE_ORDER_OK last=<decision_id> count=<count>`.
+Run this after updating the SHINOBU_81 rationale file. If that file is absent and was not edited in the current change, do not create a placeholder; report the not-applicable result from the guard below.
 
 ```powershell
 $path = 'C:\hades\Hecton8\Docs\AgentLogs\Rationale_SHINOBU_81.md'
-$ids = [regex]::Matches((Get-Content -LiteralPath $path -Raw), '^## Decision (\d+)', 'Multiline') | ForEach-Object { [int]$_.Groups[1].Value }
-$gaps = @()
-for ($i = 1; $i -lt $ids.Count; $i++) {
-  if ($ids[$i] -ne ($ids[$i - 1] + 1)) { $gaps += "$($ids[$i - 1])->$($ids[$i])" }
+if (-not (Test-Path -LiteralPath $path)) {
+  'RATIONALE_ORDER_AUDIT_NOT_APPLICABLE path_absent'
+} else {
+  $ids = [regex]::Matches((Get-Content -LiteralPath $path -Raw), '^## Decision (\d+)', 'Multiline') | ForEach-Object { [int]$_.Groups[1].Value }
+  $gaps = @()
+  for ($i = 1; $i -lt $ids.Count; $i++) {
+    if ($ids[$i] -ne ($ids[$i - 1] + 1)) { $gaps += "$($ids[$i - 1])->$($ids[$i])" }
+  }
+  if ($gaps.Count) { "RATIONALE_ORDER_FAIL gaps=$($gaps -join ',')" }
+  elseif ($ids.Count -eq 0) { 'RATIONALE_ORDER_FAIL no decisions found' }
+  else { "RATIONALE_ORDER_OK last=$($ids[-1]) count=$($ids.Count)" }
 }
-if ($gaps.Count) { "RATIONALE_ORDER_FAIL gaps=$($gaps -join ',')" }
-elseif ($ids.Count -eq 0) { 'RATIONALE_ORDER_FAIL no decisions found' }
-else { "RATIONALE_ORDER_OK last=$($ids[-1]) count=$($ids.Count)" }
 ```
 
 ## Quality Bar

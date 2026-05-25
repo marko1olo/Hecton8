@@ -1,0 +1,4 @@
+species,emissionRate,attractionRadius,noiseMultiplier,maxSpeed,thermalBias
+abyssal_leech,22,3.2,1.05,14,1.0
+barnacle_spore,14,2.4,0.72,9,1.35
+thermal_mite,32,1.8,1.65,18,1.2

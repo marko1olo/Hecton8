@@ -8,7 +8,13 @@ using Unity.Mathematics;
 
 namespace Hecton8.AI
 {
-[StructLayout(LayoutKind.Explicit, Size = 32)]
+    internal static class FaunaTentacleConstrainedIkLayout
+    {
+        public const int ChainStrideBytes = 32;
+        public const int JointPoseStrideBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = FaunaTentacleConstrainedIkLayout.ChainStrideBytes)]
     internal struct FaunaTentacleConstrainedIkChain
     {
         public const uint TipAnchoredMask = 1u << 0;
@@ -23,7 +29,7 @@ namespace Hecton8.AI
         [FieldOffset(28)] public uint Reserved;
     }
 
-[StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = FaunaTentacleConstrainedIkLayout.JointPoseStrideBytes)]
     internal struct FaunaTentacleJointPose
     {
         [FieldOffset(0)] public float3 Position;

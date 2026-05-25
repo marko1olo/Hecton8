@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Hecton8.Core;
@@ -19,6 +20,7 @@ namespace Hecton8.Dev
         private const string NativeMemoryOwner = nameof(SavePersistenceOmegaSmokeTester);
         private const string BoundsProbeLabel = "omegaBoundsProbes";
         private const string BoundsProbeResultsLabel = "omegaBoundsProbeResults";
+        private static readonly Dictionary<string, string> s_projectFileCache = new Dictionary<string, string>(8);
 
         [MenuItem("Hecton8/Dev/Run Save Persistence Omega Smoke")]
         private static void RunMenuSmokeTest()
@@ -35,6 +37,8 @@ namespace Hecton8.Dev
 
         private static bool RunSmokeAndWriteArtifact()
         {
+            s_projectFileCache.Clear();
+
             bool subtractionBoundsValidPass = SaveIndexedSectorBoundsMath.IsIndexedSectorBlockWithinFileBounds(
                 128L,
                 32,
@@ -78,7 +82,7 @@ namespace Hecton8.Dev
                 indexedBoundsDecompositionAuditPass);
 
             if (pass)
-                Debug.Log("[SavePersistenceOmegaSmokeTester] PASS artifact=CodexArtifacts/save-persistence-omega-smoke.json");
+                Hecton8.Core.H8Debug.Log("[SavePersistenceOmegaSmokeTester] PASS artifact=CodexArtifacts/save-persistence-omega-smoke.json");
             else
                 Debug.LogError("[SavePersistenceOmegaSmokeTester] FAIL artifact=CodexArtifacts/save-persistence-omega-smoke.json");
 
@@ -295,8 +299,13 @@ namespace Hecton8.Dev
 
         private static string ReadProjectFile(string projectRelativePath)
         {
+            if (s_projectFileCache.TryGetValue(projectRelativePath, out string cached))
+                return cached;
+
             string absolutePath = Path.Combine(Directory.GetCurrentDirectory(), projectRelativePath);
-            return File.Exists(absolutePath) ? File.ReadAllText(absolutePath) : string.Empty;
+            string text = File.Exists(absolutePath) ? File.ReadAllText(absolutePath) : string.Empty;
+            s_projectFileCache[projectRelativePath] = text;
+            return text;
         }
 
         private static bool ContainsAll(string source, params string[] needles)

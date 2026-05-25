@@ -62,7 +62,7 @@ namespace Hecton8.Editor
             _pendingStackTrace = null;
 
             NativeAllocationTrackerRuntimeBridge.ReportLeak($"{ErrorPrefix} TempJob leak detected. Agent shame active.\n{condition}");
-            Debug.LogError($"{ErrorPrefix} TempJob allocation exceeded 4-frame lifetime.\n{condition}\n{stackTrace}");
+            H8Debug.LogError($"{ErrorPrefix} TempJob allocation exceeded 4-frame lifetime.\n{condition}\n{stackTrace}");
             EditorApplication.isPaused = true;
         }
     }

@@ -6,7 +6,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4100)]
-    public sealed class WorldSliceDirector : MonoBehaviour, ISlowTickable
+    public sealed class WorldSliceDirector : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         internal static WorldSliceDirector ActiveRuntimeInstance { get; private set; }
 
@@ -34,6 +34,8 @@ namespace Hecton8.World
 
         private readonly List<WorldSliceAnchor> _anchors = new List<WorldSliceAnchor>(32);
         private bool _registeredToTickManager;
+        private bool _registeredHotSwapListener;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private float _profileNearDistanceScale = 1f;
         private float _profileMidDistanceScale = 1f;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
@@ -41,6 +43,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+            CachePlayerContextCold();
             ResolvePlayer();
             RefreshChunkProfileScales();
             RefreshAnchors();
@@ -49,6 +52,8 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CachePlayerContextCold();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -61,11 +66,13 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
 
             if (ActiveRuntimeInstance == this)
@@ -77,8 +84,7 @@ namespace Hecton8.World
             if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -86,7 +92,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -169,6 +175,13 @@ namespace Hecton8.World
             if (playerTransform != null)
                 return;
 
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null && playerContext.PlayerTransform != null)
+            {
+                playerTransform = playerContext.PlayerTransform;
+                return;
+            }
+
             float now = Time.realtimeSinceStartup;
             if (now < _nextAutoResolveAttemptTime)
                 return;
@@ -205,11 +218,11 @@ namespace Hecton8.World
             _debugProfileMidScale = _profileMidDistanceScale;
         }
 
-        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext == null)
                 return false;
 
@@ -225,6 +238,60 @@ namespace Hecton8.World
 
             playerAup = playerMovement.CurrentAup;
             return playerAup.IsFinite();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredToTickManager = false;
+                        break;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+                    if (previousContext != null && ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+                        playerTransform = null;
+
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    if (_cachedPlayerContext != null && _cachedPlayerContext.PlayerTransform != null)
+                        playerTransform = _cachedPlayerContext.PlayerTransform;
+                    break;
+            }
+        }
+
+        private void CachePlayerContextCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
     }
 }

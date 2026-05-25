@@ -156,7 +156,7 @@ namespace Hecton8.Editor
         {
             string[] clipGuids = AssetDatabase.FindAssets("t:AudioClip", new[] { ProjectSfxRoot });
             List<string> paths = new List<string>(clipGuids.Length);
-            HashSet<string> uniquePaths = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> uniquePaths = new HashSet<string>(clipGuids.Length, StringComparer.Ordinal);
 
             for (int i = 0; i < clipGuids.Length; i++)
             {
@@ -175,7 +175,7 @@ namespace Hecton8.Editor
         {
             string[] clipGuids = AssetDatabase.FindAssets("t:AudioClip", new[] { ProjectAudioRoot });
             List<string> paths = new List<string>(clipGuids.Length);
-            HashSet<string> uniquePaths = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> uniquePaths = new HashSet<string>(clipGuids.Length, StringComparer.Ordinal);
 
             for (int i = 0; i < clipGuids.Length; i++)
             {

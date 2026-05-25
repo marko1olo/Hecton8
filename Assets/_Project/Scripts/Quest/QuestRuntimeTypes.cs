@@ -4,6 +4,16 @@ using Unity.Mathematics;
 
 namespace Hecton8.Quest
 {
+    internal static class QuestRuntimeLayout
+    {
+        public const int SignalPayloadStrideBytes = 64;
+        public const int BitAddressStrideBytes = 16;
+        public const int PrerequisiteDescriptorStrideBytes = 16;
+        public const int NodeDescriptorStrideBytes = 128;
+        public const int RevertDescriptorStrideBytes = 32;
+        public const int SaveHeaderStrideBytes = 64;
+    }
+
     internal enum QuestSignalKind : byte
     {
         None = 0,
@@ -51,7 +61,7 @@ namespace Hecton8.Quest
         AbyssalPhase = 1u << 1
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestRuntimeLayout.SignalPayloadStrideBytes)]
     internal struct QuestSignalPayload
     {
         [FieldOffset(0)]
@@ -88,7 +98,7 @@ namespace Hecton8.Quest
         private ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestRuntimeLayout.BitAddressStrideBytes)]
     internal struct QuestBitAddress
     {
         [FieldOffset(0)]
@@ -104,7 +114,7 @@ namespace Hecton8.Quest
         private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestRuntimeLayout.PrerequisiteDescriptorStrideBytes)]
     internal struct QuestPrerequisiteDescriptor
     {
         [FieldOffset(0)]
@@ -117,7 +127,7 @@ namespace Hecton8.Quest
         private ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestRuntimeLayout.NodeDescriptorStrideBytes)]
     internal struct QuestNodeDescriptor
     {
         [FieldOffset(0)]
@@ -228,7 +238,7 @@ namespace Hecton8.Quest
         public readonly QuestTransitionType TransitionType;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestRuntimeLayout.RevertDescriptorStrideBytes)]
     internal struct QuestRevertDescriptor
     {
         [FieldOffset(0)]
@@ -256,7 +266,7 @@ namespace Hecton8.Quest
         private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = QuestRuntimeLayout.SaveHeaderStrideBytes)]
     public unsafe struct QuestSaveHeader
     {
         public const uint HeaderMagic = 0x48514753u;

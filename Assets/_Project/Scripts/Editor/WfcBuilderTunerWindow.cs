@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using System.IO;
 using Hecton8.Construction;
 using Hecton8.Core;
@@ -68,7 +69,7 @@ namespace Hecton8.EditorTools
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Last Grid", $"{request.GridPos.x}, {request.GridPos.y}, {request.GridPos.z}");
                 EditorGUILayout.LabelField("Last Flags", ((ConstructionValidationFlags)result.FailureFlags).ToString());
-                EditorGUILayout.LabelField("Min SDF", result.MinSdfDistance.ToString("F3"));
+                EditorGUILayout.LabelField("Min SDF", result.MinSdfDistance.ToString("F3", CultureInfo.InvariantCulture));
                 EditorGUILayout.LabelField("Probes", result.ProbeCount.ToString());
             }
         }

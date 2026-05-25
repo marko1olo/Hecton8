@@ -371,8 +371,18 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                 if (string.IsNullOrEmpty(path) || !File.Exists(path))
                     continue;
 
-                string contents = File.ReadAllText(path);
-                if (contents.IndexOf(needle, System.StringComparison.Ordinal) >= 0)
+                if (FileContains(path, needle))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool FileContains(string path, string needle)
+        {
+            foreach (string line in File.ReadLines(path))
+            {
+                if (line.IndexOf(needle, System.StringComparison.Ordinal) >= 0)
                     return true;
             }
 

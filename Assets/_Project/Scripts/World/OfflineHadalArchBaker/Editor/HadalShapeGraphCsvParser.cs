@@ -171,13 +171,30 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
 
             double parsed = (integer + (fraction / divisor)) * sign;
             if (exponent != 0)
-                parsed *= Math.Pow(10d, exponent);
+                parsed = ScaleByFloatPow10(parsed, exponent);
 
             if (parsed > float.MaxValue || parsed < -float.MaxValue)
                 return false;
 
             value = (float)parsed;
             return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static double ScaleByFloatPow10(double value, int exponent)
+        {
+            if (value == 0d || exponent == 0)
+                return value;
+            if (exponent > 38)
+                return value > 0d ? double.PositiveInfinity : double.NegativeInfinity;
+            if (exponent < -46)
+                return 0d;
+
+            int count = exponent < 0 ? -exponent : exponent;
+            double scale = 1d;
+            for (int i = 0; i < count; i++)
+                scale *= 10d;
+
+            return exponent < 0 ? value / scale : value * scale;
         }
 
         private static uint ResolveShapeType(ReadOnlySpan<char> value)

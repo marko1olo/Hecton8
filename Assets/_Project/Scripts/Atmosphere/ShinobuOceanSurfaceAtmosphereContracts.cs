@@ -226,7 +226,7 @@ namespace Hecton8.Atmosphere
                 float phaseOffset = (i + 1) * 0.754877666f;
                 float phase = WrapPhaseRadians((float)(wrappedMeters * waveNumber) + phaseOffset + (WaveLaneSpeed(lane) * time));
 
-                math.sincos(phase, out float sine, out float cosine);
+                Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(phase, out float sine, out float cosine);
 
                 float weightedAmplitude = amplitude * contribution;
                 height += weightedAmplitude * sine;
@@ -263,7 +263,7 @@ namespace Hecton8.Atmosphere
         {
             float q = SanitizeQualityWeight(globalQualityWeight);
             float qualityFoam = math.saturate((q - 0.28f) * (1f / 0.72f));
-            qualityFoam *= math.step(0.28f, q);
+            qualityFoam = qualityFoam * qualityFoam * (3f - (2f * qualityFoam));
             float pinched = math.saturate((foamThreshold - jacobianDeterminant) * 4f);
             return pinched * qualityFoam;
         }
@@ -285,7 +285,7 @@ namespace Hecton8.Atmosphere
             dto.RingParams = new float4(math.lerp(4f, 9f, q), math.lerp(1.85f, 1.38f, q), math.lerp(512f, 4096f, q), 0f);
             dto.GlobalQualityWeight = q;
             dto.HorizonMeters = math.lerp(900f, 5200f, q);
-            dto.Flags = (uint)math.step(0.28f, q);
+            dto.Flags = 1u;
             return dto;
         }
 
@@ -408,7 +408,7 @@ namespace Hecton8.Atmosphere
         public static float4 CreateWaveLaneFromDirection(float2 direction, float steepness, float wavelength, float phaseSpeed)
         {
             float2 safeDirection = Normalize2OrDefault(direction, new float2(1f, 0f));
-            return CreateWaveLane(math.atan2(safeDirection.y, safeDirection.x), steepness, wavelength, phaseSpeed);
+            return CreateWaveLane(global::Hecton8.Core.MathLodApproximation.ApproxAtan2Fast(safeDirection.y, safeDirection.x), steepness, wavelength, phaseSpeed);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -492,7 +492,7 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float2 WaveLaneDirection(float4 lane)
         {
-            math.sincos(math.isfinite(lane.x) ? lane.x : 0f, out float sine, out float cosine);
+            Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(math.isfinite(lane.x) ? lane.x : 0f, out float sine, out float cosine);
             return new float2(cosine, sine);
         }
 
@@ -616,7 +616,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             float t = math.saturate((SimulationFrame & 1023u) * (1f / 1023f));
-            float pulse = 0.5f + (0.5f * math.sin(TimeSeconds * 0.071f));
+            float pulse = 0.5f + (0.5f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(TimeSeconds * 0.071f));
             WeatherStateDTO state = default;
             state.WindDirectionSpeedStorm = new float4(0.78f, 0.62f, math.lerp(9f, 28f, t), math.saturate(math.lerp(0.35f, 1f, pulse)));
             state.SurfaceScalars = new float4(SeaLevel, 1f, math.lerp(0.78f, 0.46f, state.WindDirectionSpeedStorm.w), math.saturate(state.WindDirectionSpeedStorm.w * 0.65f));
@@ -691,13 +691,14 @@ namespace Hecton8.Atmosphere
 
             float baseWavelength = math.lerp(18f, 48f, math.saturate(windSpeed * (1f / 32f)));
             float stormScale = math.lerp(0.65f, 1.85f, storm);
-            float directionAngle = math.atan2(windDirection.y, windDirection.x);
+            float directionAngle = global::Hecton8.Core.MathLodApproximation.ApproxAtan2Fast(windDirection.y, windDirection.x);
             float maxAmplitude = 0f;
             int laneLimit = math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
+            float wavelengthScale = 1f;
             for (int i = 0; i < laneLimit; i++)
             {
                 float octave01 = laneLimit <= 1 ? 0f : i * math.rcp(laneLimit - 1f);
-                float wavelength = baseWavelength * math.pow(1.58f, i) * stormScale;
+                float wavelength = baseWavelength * wavelengthScale * stormScale;
                 float spread = ((i & 1) == 0 ? -1f : 1f) * math.lerp(0.08f, 0.72f, octave01);
                 float tunedSteepness = math.lerp(0.08f, 0.92f, choppiness);
                 float steepness = math.saturate(tunedSteepness * math.lerp(0.72f, 1.18f, storm) * math.lerp(1.05f, 0.42f, octave01));
@@ -711,6 +712,7 @@ namespace Hecton8.Atmosphere
                 wave.GlobalWindAndStorm = new float4(windDirection.x, windDirection.y, windSpeed, storm);
                 waves[waveIndex] = HectonOceanSurfaceMath.SanitizeWave(wave);
                 maxAmplitude = math.max(maxAmplitude, HectonOceanSurfaceMath.WaveLaneAmplitude(lane));
+                wavelengthScale *= 1.58f;
             }
 
             state.MaxWaveAmplitude = maxAmplitude;
@@ -740,6 +742,7 @@ namespace Hecton8.Atmosphere
         }
     }
 
+#if UNITY_EDITOR
     public static class OceanWeatherCsvParser
     {
         private const byte Comma = (byte)',';
@@ -1378,10 +1381,19 @@ namespace Hecton8.Atmosphere
                 return false;
 
             if (exponent != 0)
-                parsed *= math.pow(10f, exponent);
+                parsed *= Pow10Int(exponent);
 
             value = (float)(parsed * sign);
             return math.isfinite(value);
+        }
+
+        private static double Pow10Int(int exponent)
+        {
+            int count = math.min(38, math.abs(exponent));
+            double scale = 1.0d;
+            for (int i = 0; i < count; i++)
+                scale *= 10.0d;
+            return exponent < 0 ? 1.0d / scale : scale;
         }
 
         private static bool TryParseFloat(ReadOnlySpan<byte> bytes, int start, int end, out float value)
@@ -1469,12 +1481,13 @@ namespace Hecton8.Atmosphere
                 return false;
 
             if (exponent != 0)
-                parsed *= math.pow(10f, exponent);
+                parsed *= Pow10Int(exponent);
 
             value = (float)(parsed * sign);
             return math.isfinite(value);
         }
     }
+#endif
 }
 
 namespace Hecton8.Core.Contracts.Signals

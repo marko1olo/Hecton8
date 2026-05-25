@@ -6,11 +6,17 @@ using Unity.Mathematics;
 
 namespace Hecton8.Construction
 {
+    internal static class ConstructionSignalLayout
+    {
+        public const int PreviewStrideBytes = 128;
+        public const int FloraExclusionStrideBytes = 128;
+    }
+
     /// <summary>
     /// Builder-to-preview unmanaged packet. Render owners may consume this without touching PlayerBuilder.
     /// Size: 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ConstructionSignalLayout.PreviewStrideBytes)]
     public struct ConstructionPreviewSignal : ISignal
     {
         public const uint LaneHash = 0x43505256u; // CPRV
@@ -41,7 +47,7 @@ namespace Hecton8.Construction
     /// Construction-owned vegetation exclusion AABB packet. Flora owners may consume it as a typed lane.
     /// Size: 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ConstructionSignalLayout.FloraExclusionStrideBytes)]
     public struct FloraExclusionSignal : ISignal
     {
         public const uint LaneHash = 0x46455843u; // FEXC

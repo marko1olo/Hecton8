@@ -34,7 +34,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-104)]
-    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISargassumMassiveDisplacementReceiver, IOriginShiftListener, ISaveable, IGlobalRegistryHotSwapListener
+    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISargassumMassiveDisplacementReceiver, ISargassumDragReadModel, IOriginShiftListener, ISaveable, IGlobalRegistryHotSwapListener
     {
         private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_SargassumGlobalDriftOffset");
         private static readonly int _SinkTextureId = Shader.PropertyToID("_SargassumBuoyancySinkRT");
@@ -776,7 +776,9 @@ namespace Hecton8.World
         private ScavengerHostState[] _scavengerHosts;
         private ExternalScavengerSiteState[] _externalScavengerSites;
         private NativeArray<Matrix4x4> _scavengerMatricesNative;
-        private GraphicsBuffer _scavengerMatrixBuffer;
+        private GraphicsBuffer _scavengerMatrixBufferA;
+        private GraphicsBuffer _scavengerMatrixBufferB;
+        private GraphicsBuffer _activeScavengerMatrixBuffer;
         private BatchRendererGroup _scavengerBatchRendererGroup;
         private NativeArray<MetadataValue> _scavengerBatchMetadata;
         private GraphicsBuffer _scavengerBatchHandleBuffer;
@@ -798,6 +800,7 @@ namespace Hecton8.World
         private int _activeScavengerHostCount;
         private int _activeExternalScavengerSiteCount;
         private int _scavengerInstanceCapacity;
+        private int _scavengerMatrixUploadIndex;
         private NestedAttachmentPrototype[] _activeNestingPrototypes;
         private NestedAttachmentPrototype[] _fallbackNestingPrototypes;
         private Mesh _fallbackAttachmentMesh;
@@ -816,6 +819,7 @@ namespace Hecton8.World
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwap;
         private bool _saveRegistered;
+        private ISaveService _saveService;
         private int _editorValidateDepth;
         private int _cachedRenderLayer;
         private bool _hasFieldData;
@@ -836,6 +840,15 @@ namespace Hecton8.World
         private Texture _publishedSinkTexture;
         private float _publishedMaxSinkDepth;
         private bool _shaderGlobalsPublished;
+        private Vector3 _pendingGlobalDriftOffset;
+        private Vector4 _pendingSinkWorldRect;
+        private Texture _pendingSinkTexture;
+        private float _pendingMaxSinkDepth;
+        private float _pendingNestedRenderDeltaTime;
+        private bool _shaderGlobalsDirty;
+        private bool _dynamicTexturesUploadDirty;
+        private bool _nestedRenderRequested;
+        private bool _nestedAttachmentRebuildRequested;
 
         /// <summary>
         /// Active registry-owned instance.
@@ -920,16 +933,27 @@ namespace Hecton8.World
         /// <summary>
         /// Broadcasts an active entanglement-strain cue to interested runtime systems.
         /// </summary>
+        [Obsolete("Use TryRaiseEntanglementStrain and handle bounded event-lane refusal explicitly.", true)]
         public static void RaiseEntanglementStrain(EntanglementStrainSignal signal)
         {
+            TryRaiseEntanglementStrain(signal);
+        }
+
+        /// <summary>
+        /// Attempts to broadcast an active entanglement-strain cue to interested runtime systems.
+        /// </summary>
+        /// <param name="signal">Entanglement strain payload.</param>
+        /// <returns>True when the event was accepted or no listeners are registered; false when the fixed event lane is full.</returns>
+        public static bool TryRaiseEntanglementStrain(EntanglementStrainSignal signal)
+        {
             if (_listenerCount <= 0)
-                return;
+                return true;
 
             EnsureEventQueues();
             if (_pendingEntanglementStrainCount + _nextFrameEntanglementStrainCount >= EntanglementStrainEventCapacity)
             {
                 ReportEntanglementStrainOverflow();
-                return;
+                return false;
             }
 
             if (_isDispatchingEvents)
@@ -942,22 +966,35 @@ namespace Hecton8.World
                 _pendingEntanglementStrain.Enqueue(signal);
                 _pendingEntanglementStrainCount++;
             }
+
+            return true;
         }
 
         /// <summary>
         /// Broadcasts a canopy-clearing massive displacement cue to interested runtime systems.
         /// </summary>
         /// <param name="signal">Displacement payload.</param>
+        [Obsolete("Use TryRaiseMassiveDisplacement and handle bounded event-lane refusal explicitly.", true)]
         public static void RaiseMassiveDisplacement(MassiveDisplacementSignal signal)
         {
+            TryRaiseMassiveDisplacement(signal);
+        }
+
+        /// <summary>
+        /// Attempts to broadcast a canopy-clearing massive displacement cue to interested runtime systems.
+        /// </summary>
+        /// <param name="signal">Displacement payload.</param>
+        /// <returns>True when the event was accepted or no listeners are registered; false when the fixed event lane is full.</returns>
+        public static bool TryRaiseMassiveDisplacement(MassiveDisplacementSignal signal)
+        {
             if (_listenerCount <= 0)
-                return;
+                return true;
 
             EnsureEventQueues();
             if (_pendingMassiveDisplacementCount + _nextFrameMassiveDisplacementCount >= MassiveDisplacementEventCapacity)
             {
                 ReportMassiveDisplacementOverflow();
-                return;
+                return false;
             }
 
             if (_isDispatchingEvents)
@@ -970,6 +1007,8 @@ namespace Hecton8.World
                 _pendingMassiveDisplacement.Enqueue(signal);
                 _pendingMassiveDisplacementCount++;
             }
+
+            return true;
         }
 
         /// <summary>
@@ -1084,7 +1123,10 @@ namespace Hecton8.World
                     return false;
 
                 if (!_pendingEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
+                {
+                    _pendingEntanglementStrainCount = 0;
                     return true;
+                }
 
                 if (_pendingEntanglementStrainCount > 0)
                     _pendingEntanglementStrainCount--;
@@ -1120,7 +1162,10 @@ namespace Hecton8.World
                     return false;
 
                 if (!_pendingMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
+                {
+                    _pendingMassiveDisplacementCount = 0;
                     return true;
+                }
 
                 if (_pendingMassiveDisplacementCount > 0)
                     _pendingMassiveDisplacementCount--;
@@ -1539,7 +1584,7 @@ namespace Hecton8.World
                 ReleaseScavengerResources();
             }
 
-            PublishEmptyShaderGlobals();
+            PublishShaderGlobalsImmediate(Vector3.zero, Vector4.zero, Texture2D.blackTexture, 0f);
         }
 
         private void OnDestroy()
@@ -1554,7 +1599,7 @@ namespace Hecton8.World
             ReleaseScavengerResources();
             ReleaseDensityBuildStorage();
             ReleaseDebrisPetrificationStorage();
-            PublishEmptyShaderGlobals();
+            PublishShaderGlobalsImmediate(Vector3.zero, Vector4.zero, Texture2D.blackTexture, 0f);
         }
 
         /// <summary>
@@ -1568,8 +1613,8 @@ namespace Hecton8.World
             RebuildDensityField();
             EvaluateBuoyancyCollapseZones();
             RefreshDynamicTextures(incrementRevision: true);
-            RebuildNestedAttachments();
-            PublishShaderGlobals();
+            _nestedAttachmentRebuildRequested = true;
+            QueueShaderGlobals();
         }
 
         /// <summary>
@@ -1578,6 +1623,19 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteDensityFieldBuildIfReady();
+            ApplyDynamicTexturesIfDirty();
+            FlushShaderGlobals();
+            if (_nestedAttachmentRebuildRequested)
+            {
+                RebuildNestedAttachments();
+                _nestedAttachmentRebuildRequested = false;
+            }
+            if (_nestedRenderRequested)
+            {
+                UpdateScavengerHosts(_pendingNestedRenderDeltaTime);
+                RenderNestedAttachmentsAndScavengers(_pendingNestedRenderDeltaTime);
+                _nestedRenderRequested = false;
+            }
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1598,11 +1656,15 @@ namespace Hecton8.World
             if (texturesChanged)
             {
                 RefreshDynamicTextures(incrementRevision: false);
-                PublishShaderGlobals();
+                QueueShaderGlobals();
             }
 
-            UpdateScavengerHosts(dt);
+            _pendingNestedRenderDeltaTime = dt;
+            _nestedRenderRequested = true;
+        }
 
+        private void RenderNestedAttachmentsAndScavengers(float dt)
+        {
             if (!_hasFieldData || _activeNestedPrototypeCount <= 0 || _nestedMatricesByPrototype == null || _nestedMatrixCounts == null || _activeNestingPrototypes == null)
             {
                 DrawScavengers();
@@ -1731,7 +1793,7 @@ namespace Hecton8.World
             if (cutManager != null)
                 cutManager.RegisterExternalCut(position, clampedRadius, massiveDisplacementCutStrength, Vector3.up, 1.15f);
 
-            RaiseMassiveDisplacement(new MassiveDisplacementSignal
+            TryRaiseMassiveDisplacement(new MassiveDisplacementSignal
             {
                 PositionWS = position,
                 RadiusWS = clampedRadius,
@@ -2444,7 +2506,7 @@ namespace Hecton8.World
             if (accumulatedCutAreaWS < catastrophicAreaThreshold)
                 return;
 
-            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
+            IObjectPoolService poolManager = GlobalRegistry.ObjectPoolService;
             if (poolManager == null)
                 return;
 
@@ -2497,7 +2559,6 @@ namespace Hecton8.World
                 }
                 else
                 {
-                    chunkInstance.transform.localScale = chunkInstance.transform.localScale * uniformScale;
                     if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
                     {
                         chunkRigidbody.detectCollisions = true;
@@ -2525,7 +2586,7 @@ namespace Hecton8.World
                 return;
             }
 
-            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
+            IObjectPoolService poolManager = GlobalRegistry.ObjectPoolService;
             if (poolManager == null)
                 return;
 
@@ -2641,15 +2702,38 @@ namespace Hecton8.World
 
         private void PublishShaderGlobals()
         {
-            PublishShaderGlobals(_globalDriftOffset, _densityFieldWorldRect, _sinkFieldTexture != null ? _sinkFieldTexture : Texture2D.blackTexture, _debugMaxSinkDepth);
+            QueueShaderGlobals(_globalDriftOffset, _densityFieldWorldRect, _sinkFieldTexture != null ? _sinkFieldTexture : Texture2D.blackTexture, _debugMaxSinkDepth);
         }
 
         private void PublishEmptyShaderGlobals()
         {
-            PublishShaderGlobals(Vector3.zero, Vector4.zero, Texture2D.blackTexture, 0f);
+            QueueShaderGlobals(Vector3.zero, Vector4.zero, Texture2D.blackTexture, 0f);
         }
 
-        private void PublishShaderGlobals(Vector3 driftOffset, Vector4 sinkWorldRect, Texture sinkTexture, float maxSinkDepth)
+        private void QueueShaderGlobals()
+        {
+            QueueShaderGlobals(_globalDriftOffset, _densityFieldWorldRect, _sinkFieldTexture != null ? _sinkFieldTexture : Texture2D.blackTexture, _debugMaxSinkDepth);
+        }
+
+        private void QueueShaderGlobals(Vector3 driftOffset, Vector4 sinkWorldRect, Texture sinkTexture, float maxSinkDepth)
+        {
+            _pendingGlobalDriftOffset = driftOffset;
+            _pendingSinkWorldRect = sinkWorldRect;
+            _pendingSinkTexture = sinkTexture != null ? sinkTexture : Texture2D.blackTexture;
+            _pendingMaxSinkDepth = maxSinkDepth;
+            _shaderGlobalsDirty = true;
+        }
+
+        private void FlushShaderGlobals()
+        {
+            if (!_shaderGlobalsDirty)
+                return;
+
+            PublishShaderGlobalsImmediate(_pendingGlobalDriftOffset, _pendingSinkWorldRect, _pendingSinkTexture, _pendingMaxSinkDepth);
+            _shaderGlobalsDirty = false;
+        }
+
+        private void PublishShaderGlobalsImmediate(Vector3 driftOffset, Vector4 sinkWorldRect, Texture sinkTexture, float maxSinkDepth)
         {
             Vector4 driftVector = new Vector4(driftOffset.x, driftOffset.y, driftOffset.z, 0f);
             Texture resolvedSinkTexture = sinkTexture != null ? sinkTexture : Texture2D.blackTexture;
@@ -3103,7 +3187,7 @@ namespace Hecton8.World
                 !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -3190,8 +3274,19 @@ namespace Hecton8.World
                 }
             }
 
-            if (_scavengerMatrixBuffer == null)
-                _scavengerMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(Mathf.Max(1, _scavengerInstanceCapacity)); // COLD ALLOC: GraphicsBuffer[instanceCapacity] - scavenger BRG matrices - owner: SargassumGlobalDragManager
+            if (_scavengerMatrixBufferA == null || _scavengerMatrixBufferA.count < Mathf.Max(1, _scavengerInstanceCapacity) ||
+                _scavengerMatrixBufferB == null || _scavengerMatrixBufferB.count < Mathf.Max(1, _scavengerInstanceCapacity))
+            {
+                ReleaseGraphicsBuffer(ref _scavengerMatrixBufferA);
+                ReleaseGraphicsBuffer(ref _scavengerMatrixBufferB);
+                int capacity = Mathf.Max(1, _scavengerInstanceCapacity);
+                _scavengerMatrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(capacity); // COLD ALLOC: GraphicsBuffer[instanceCapacity] - scavenger BRG matrices A - owner: SargassumGlobalDragManager
+                _scavengerMatrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(capacity); // COLD ALLOC: GraphicsBuffer[instanceCapacity] - scavenger BRG matrices B - owner: SargassumGlobalDragManager
+                _activeScavengerMatrixBuffer = _scavengerMatrixBufferA;
+                _scavengerMatrixUploadIndex = 0;
+                _registeredScavengerBatchBuffer = null;
+                _boundScavengerMatrixBuffer = null;
+            }
 
             if (_scavengerBatchRendererGroup == null)
             {
@@ -3210,14 +3305,13 @@ namespace Hecton8.World
 
         private void ReleaseScavengerBuffers()
         {
-            if (_scavengerMatrixBuffer != null)
-            {
-                _scavengerMatrixBuffer.Release();
-                _scavengerMatrixBuffer = null;
-                _registeredScavengerBatchBuffer = null;
-                _boundScavengerMatrixBuffer = null;
-                _boundScavengerMatrixMaterial = null;
-            }
+            ReleaseGraphicsBuffer(ref _scavengerMatrixBufferA);
+            ReleaseGraphicsBuffer(ref _scavengerMatrixBufferB);
+            _activeScavengerMatrixBuffer = null;
+            _registeredScavengerBatchBuffer = null;
+            _boundScavengerMatrixBuffer = null;
+            _boundScavengerMatrixMaterial = null;
+            _scavengerMatrixUploadIndex = 0;
 
             if (_scavengerMatricesNative.IsCreated)
             {
@@ -3281,6 +3375,15 @@ namespace Hecton8.World
             }
 
             ReleaseScavengerBrgMaterial();
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
 
         private void ClearScavengerHosts()
@@ -3449,15 +3552,36 @@ namespace Hecton8.World
 
         private void UploadScavengerInstances(int instanceCount)
         {
-            if (_scavengerMatrixBuffer == null || !_scavengerMatricesNative.IsCreated)
+            if (!_scavengerMatricesNative.IsCreated)
                 return;
             if (instanceCount > 0)
-                GraphicsBufferUploadUtility.UploadNativeArray(_scavengerMatrixBuffer, _scavengerMatricesNative, instanceCount);
+            {
+                GraphicsBuffer writeBuffer = ResolveScavengerMatrixWriteBuffer();
+                if (writeBuffer == null)
+                    return;
+
+                GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _scavengerMatricesNative, instanceCount);
+                _activeScavengerMatrixBuffer = writeBuffer;
+                _scavengerMatrixUploadIndex ^= 1;
+            }
+        }
+
+        private GraphicsBuffer ResolveScavengerMatrixWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_scavengerMatrixUploadIndex & 1) == 0
+                ? _scavengerMatrixBufferB
+                : _scavengerMatrixBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _scavengerMatrixBufferA != null && _scavengerMatrixBufferA.IsValid()
+                ? _scavengerMatrixBufferA
+                : _scavengerMatrixBufferB;
         }
 
         private void DrawScavengers()
         {
-            if (_debugScavengerInstanceCount <= 0 || _scavengerMatrixBuffer == null || _scavengerBatchRendererGroup == null)
+            if (_debugScavengerInstanceCount <= 0 || _activeScavengerMatrixBuffer == null || _scavengerBatchRendererGroup == null)
                 return;
 
             Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
@@ -3466,15 +3590,15 @@ namespace Hecton8.World
                 return;
 
             if (!ReferenceEquals(_boundScavengerMatrixMaterial, activeMaterial) ||
-                !ReferenceEquals(_boundScavengerMatrixBuffer, _scavengerMatrixBuffer))
+                !ReferenceEquals(_boundScavengerMatrixBuffer, _activeScavengerMatrixBuffer))
             {
-                activeMaterial.SetBuffer(_ScavengerMatricesId, _scavengerMatrixBuffer);
+                activeMaterial.SetBuffer(_ScavengerMatricesId, _activeScavengerMatrixBuffer);
                 _boundScavengerMatrixMaterial = activeMaterial;
-                _boundScavengerMatrixBuffer = _scavengerMatrixBuffer;
+                _boundScavengerMatrixBuffer = _activeScavengerMatrixBuffer;
             }
 
             SyncScavengerBatchRegistration(activeMesh, activeMaterial);
-            SyncScavengerBatchBuffer(_scavengerMatrixBuffer);
+            SyncScavengerBatchBuffer(_activeScavengerMatrixBuffer);
             if (!_scavengerDrawBoundsRegistered ||
                 _registeredScavengerDrawBounds.center != _scavengerDrawBounds.center ||
                 _registeredScavengerDrawBounds.size != _scavengerDrawBounds.size)
@@ -3853,15 +3977,7 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (Application.isPlaying && !_saveRegistered)
-            {
-                SaveManager saveRuntime = Hecton8.Core.GlobalRegistry.SaveRuntime;
-                if (saveRuntime != null)
-                {
-                    saveRuntime.Register(this);
-                    _saveRegistered = true;
-                }
-            }
+            TryRegisterSaveOwner();
 
             if (!Application.isPlaying)
                 return;
@@ -3930,11 +4046,8 @@ namespace Hecton8.World
                 _registeredLateFrameTick = false;
             }
 
-            if (_saveRegistered)
-            {
-                Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
-                _saveRegistered = false;
-            }
+            TryUnregisterSaveOwner();
+            _saveService = null;
 
             if (_registeredHotSwap)
             {
@@ -3948,13 +4061,50 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.SargassumCutRuntime)
-                _cutManager = currentService as SargassumCutManager;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.SargassumCutRuntime:
+                    _cutManager = currentService as SargassumCutManager;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    if (_saveRegistered && previousService is ISaveService previousSave)
+                        previousSave.Unregister(this);
+
+                    _saveRegistered = false;
+                    _saveService = currentService as ISaveService;
+
+                    if (Application.isPlaying && isActiveAndEnabled)
+                        TryRegisterSaveOwner();
+                    break;
+            }
         }
 
         private void RefreshColdRegistryDependencies()
         {
             _cutManager = GlobalRegistry.SargassumCut;
+            _saveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterSaveOwner()
+        {
+            if (!Application.isPlaying || _saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveOwner()
+        {
+            if (!_saveRegistered)
+                return;
+
+            _saveService?.Unregister(this);
+            _saveRegistered = false;
         }
 
         private static float ExtractUniformScale(Matrix4x4 matrix)
@@ -4408,7 +4558,7 @@ namespace Hecton8.World
 
             Array.Clear(_densityTextureRaw, 0, _densityTextureRaw.Length);
             _densityFieldTexture.LoadRawTextureData(_densityTextureRaw);
-            _densityFieldTexture.Apply(false, false);
+            _dynamicTexturesUploadDirty = true;
         }
 
         private void ClearSinkTexture()
@@ -4418,7 +4568,7 @@ namespace Hecton8.World
 
             Array.Clear(_sinkTextureRaw, 0, _sinkTextureRaw.Length);
             _sinkFieldTexture.LoadRawTextureData(_sinkTextureRaw);
-            _sinkFieldTexture.Apply(false, false);
+            _dynamicTexturesUploadDirty = true;
         }
 
         private void RefreshDynamicTextures(bool incrementRevision)
@@ -4483,10 +4633,23 @@ namespace Hecton8.World
             }
 
             _densityFieldTexture.LoadRawTextureData(_densityTextureRaw);
-            _densityFieldTexture.Apply(false, false);
             _sinkFieldTexture.LoadRawTextureData(_sinkTextureRaw);
-            _sinkFieldTexture.Apply(false, false);
+            _dynamicTexturesUploadDirty = true;
             _debugMaxSinkDepth = maxSinkDepthWS;
+        }
+
+        private void ApplyDynamicTexturesIfDirty()
+        {
+            if (!_dynamicTexturesUploadDirty)
+                return;
+
+            if (_densityFieldTexture != null)
+                _densityFieldTexture.Apply(false, false);
+
+            if (_sinkFieldTexture != null)
+                _sinkFieldTexture.Apply(false, false);
+
+            _dynamicTexturesUploadDirty = false;
         }
 
         private float SampleDensity01NoDrift(Vector3 sampledPositionWS, float radius)
@@ -4605,8 +4768,12 @@ namespace Hecton8.World
             if (body == null)
                 return;
 
-            body.linearVelocity = HectonPlayerMotor.SafeVelocity(linearVelocity, body.linearVelocity);
-            body.angularVelocity = HectonPlayerMotor.SafeVelocity(angularVelocity, body.angularVelocity);
+            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(
+                body,
+                HectonPlayerMotor.SafeVelocity(linearVelocity, body.linearVelocity));
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(
+                body,
+                HectonPlayerMotor.SafeVelocity(angularVelocity, body.angularVelocity));
         }
 
         private void ScheduleDebrisPetrification(Rigidbody body)
@@ -4683,7 +4850,10 @@ namespace Hecton8.World
             while (scanBudget-- > 0 && _debrisPetrificationTimerCount > 0 && !_debrisPetrificationTimers.IsEmpty())
             {
                 if (!_debrisPetrificationTimers.TryDequeue(out DebrisTimer timer))
+                {
+                    _debrisPetrificationTimerCount = 0;
                     return;
+                }
 
                 _debrisPetrificationTimerCount--;
                 timer.RemainingSeconds -= DebrisPetrificationSlowTickSeconds;
@@ -4708,8 +4878,8 @@ namespace Hecton8.World
             if (body == null)
                 return;
 
-            body.linearVelocity = Vector3.zero;
-            body.angularVelocity = Vector3.zero;
+            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
             body.isKinematic = true;
             body.detectCollisions = false;
             body.Sleep();

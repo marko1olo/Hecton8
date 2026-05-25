@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\hades\\Hecton8\\Docs\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj": {}
+    "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Documentation_Bundles_2026-05-21_SANITIZED\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj": {}
   },
   "projects": {
-    "C:\\hades\\Hecton8\\Docs\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj": {
+    "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Documentation_Bundles_2026-05-21_SANITIZED\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\hades\\Hecton8\\Docs\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj",
+        "projectUniqueName": "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Documentation_Bundles_2026-05-21_SANITIZED\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj",
         "projectName": "HectonSandboxAbyssalShelfStandaloneSmoke",
-        "projectPath": "C:\\hades\\Hecton8\\Docs\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj",
+        "projectPath": "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Documentation_Bundles_2026-05-21_SANITIZED\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\HectonSandboxAbyssalShelfStandaloneSmoke.csproj",
         "packagesPath": "C:\\Users\\danat\\.nuget\\packages\\",
-        "outputPath": "C:\\hades\\Hecton8\\Docs\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\obj\\",
+        "outputPath": "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Documentation_Bundles_2026-05-21_SANITIZED\\SPACE_ENGINE_RESEARCH\\HectonSandboxAbyssalShelfStandaloneSmoke\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\danat\\AppData\\Roaming\\NuGet\\NuGet.Config"

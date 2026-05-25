@@ -10,7 +10,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-118)]
-    public sealed class FloraBrain : MonoBehaviour, ITickable
+    public sealed class FloraBrain : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
     {
         [Header("Runtime Wiring")]
         [SerializeField]
@@ -30,6 +30,7 @@ namespace Hecton8.World
         private HectonSurvivalSystem _survivalSystem;
         private float _nextPlayerResolveTime;
         private bool _tickRegistered;
+        private bool _hotSwapListenerRegistered;
 
         private void Awake()
         {
@@ -39,24 +40,14 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ResolveOrganicManager();
-
-            if (_tickRegistered || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            TryRegisterHotSwapListener();
+            TryRegisterTick();
         }
 
         private void OnDisable()
         {
-            if (!_tickRegistered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = false;
+            TryUnregisterTick();
+            TryUnregisterHotSwapListener();
         }
 
         /// <summary>
@@ -89,6 +80,49 @@ namespace Hecton8.World
                 return;
 
             TryGetComponent(out destructibleOrganicManager);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegisterTick();
+        }
+
+        private void TryRegisterTick()
+        {
+            if (_tickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterTick()
+        {
+            if (!_tickRegistered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _tickRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private bool TryResolvePlayerRuntime()

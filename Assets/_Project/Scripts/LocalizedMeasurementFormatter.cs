@@ -1,3 +1,6 @@
+using Hecton8.Core;
+using System;
+
 namespace Hecton.Localization
 {
     /// <summary>
@@ -72,8 +75,17 @@ namespace Hecton.Localization
         /// </summary>
         public static string ResolveDistanceUnitLabel(GameLanguage language)
         {
-            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
+            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
             return ResolveDistanceUnitLabel(language, manager);
+        }
+
+        /// <summary>
+        /// Resolve a localized distance unit label through a cached localization read model.
+        /// </summary>
+        public static string ResolveDistanceUnitLabel(GameLanguage language, ILocalizationTextReadModel manager)
+        {
+            string fallback = GetDistanceUnitFallback(language);
+            return fallback;
         }
 
         /// <summary>
@@ -81,11 +93,18 @@ namespace Hecton.Localization
         /// </summary>
         public static string ResolveDistanceUnitLabel(GameLanguage language, LocalizationManager manager)
         {
+            string fallback = GetDistanceUnitFallback(language);
+            return fallback;
+        }
+
+        public static ReadOnlySpan<char> ResolveDistanceUnitLabelSpan(GameLanguage language, ILocalizationTextReadModel manager)
+        {
             string key = GetDistanceUnitKey(language);
             string fallback = GetDistanceUnitFallback(language);
+            ReadOnlySpan<char> fallbackSpan = fallback.AsSpan();
             return manager != null
-                ? manager.GetOrFallback(language, key, fallback)
-                : fallback;
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallbackSpan)
+                : fallbackSpan;
         }
 
         /// <summary>
@@ -93,8 +112,17 @@ namespace Hecton.Localization
         /// </summary>
         public static string ResolveTemperatureUnitLabel(GameLanguage language)
         {
-            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
+            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
             return ResolveTemperatureUnitLabel(language, manager);
+        }
+
+        /// <summary>
+        /// Resolve a localized temperature unit label through a cached localization read model.
+        /// </summary>
+        public static string ResolveTemperatureUnitLabel(GameLanguage language, ILocalizationTextReadModel manager)
+        {
+            string fallback = GetTemperatureUnitFallback(language);
+            return fallback;
         }
 
         /// <summary>
@@ -102,11 +130,18 @@ namespace Hecton.Localization
         /// </summary>
         public static string ResolveTemperatureUnitLabel(GameLanguage language, LocalizationManager manager)
         {
+            string fallback = GetTemperatureUnitFallback(language);
+            return fallback;
+        }
+
+        public static ReadOnlySpan<char> ResolveTemperatureUnitLabelSpan(GameLanguage language, ILocalizationTextReadModel manager)
+        {
             string key = GetTemperatureUnitKey(language);
             string fallback = GetTemperatureUnitFallback(language);
+            ReadOnlySpan<char> fallbackSpan = fallback.AsSpan();
             return manager != null
-                ? manager.GetOrFallback(language, key, fallback)
-                : fallback;
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallbackSpan)
+                : fallbackSpan;
         }
 
         private static bool UsesImperialUnits(GameLanguage language)

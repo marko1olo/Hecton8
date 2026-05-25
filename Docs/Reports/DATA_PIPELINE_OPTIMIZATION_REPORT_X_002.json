@@ -1,0 +1,125 @@
+﻿{
+  "schema": "HECTON8_DATA_PIPELINE_OPTIMIZATION_REPORT_V1",
+  "agent": "X_002",
+  "scanner": "OOP_StaticData_Scanner",
+  "status": "CORE_MONOLITH_BAKED_CORRUPTION_STRESS_PASS_NATIVE_READ_ZERO_GC_TARGET_PASS_RELEASE_BUILD_GATE_ADDED_CROSS_DOMAIN_MIGRATION_PENDING",
+  "evidenceClass": "STATIC_SOURCE_SUBAGENT_RG_CLI_BAKE_HEADER_PROOF_CLI_CORRUPTION_FUZZER_CLI_RESIDENT_LOAD_STRESS_SOURCE_INVENTORY_RELEASE_BUILD_GATE_SOURCE",
+  "policy": "Production static data parsing must migrate to static_data.h8bin or explicit editor-only bake paths.",
+  "toolingAdded": [
+    "Assets/_Project/Scripts/Editor/DataMonolith/OOP_StaticData_Scanner.cs",
+    "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithBatchAudit.cs",
+    "Docs/Reports/DATA_MONOLITH_SOURCE_INVENTORY_X_002.json",
+    "Docs/Reports/DATA_MONOLITH_BINARY_LAYOUT_X_002.json",
+    "Docs/Reports/DATA_MONOLITH_LOCAL_PARSER_ISOLATION_X_002.json",
+    "Docs/Reports/DATA_MONOLITH_LOAD_STRESS_X_002.json",
+    "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs",
+    "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_X_002.json"
+  ],
+  "sourceInventorySummary": {
+    "csvAll": 215,
+    "csvDataOrAssetOrRoot": 125,
+    "monolithBakedActiveTables": 18,
+    "monolithSchemaTemplates": 22,
+    "balanceAllowedExternal": 2,
+    "streamingAssetsCsvRuntimeRisk": 3,
+    "repoRootCsvRuntimeRisk": 8,
+    "crossDomainAuthoringSource": 70,
+    "docsArchiveReportCsv": 68
+  },
+  "blocker": {
+    "kind": "compile_wall",
+    "command": "dotnet build Hecton8.Core.csproj --no-restore",
+    "firstObserved": "2026-05-23",
+    "errors": 59,
+    "primaryFile": "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
+    "domainOwnedByX002": false
+  },
+  "staticFindings": [
+    {
+      "kind": "runtimeBlobPresent",
+      "path": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+      "scope": "production",
+      "bytes": 1064384,
+      "header": {
+        "magic": "0x4D443848",
+        "version": 1,
+        "headerBytes": 64,
+        "checksum64": "0x0D49885F30E5DF35",
+        "directoryOffset": 64,
+        "directoryBytes": 64,
+        "sectionTableOffset": 128,
+        "dataStartOffset": 576,
+        "sectionCount": 26,
+        "sectionAlignmentBytes": 64,
+        "recordAlignmentBytes": 16,
+        "flags": 1,
+        "schemaHash": "0x58303032"
+      },
+      "action": "Keep Unity editor bake as canonical path when unrelated compile wall clears; CLI fallback already materialized the current blob."
+    },
+    {
+      "kind": "canonicalAuthoringRoots",
+      "paths": [
+        "Assets/_SourceData/DataMonolith",
+        "Data/Balance"
+      ],
+      "scope": "editor_bake"
+    },
+    {
+      "kind": "residentLoadStress",
+      "path": "Docs/Reports/DATA_MONOLITH_LOAD_STRESS_X_002.json",
+      "scope": "native_file_read_plus_resident_pointer_validation_cli",
+      "status": "PASS_NATIVE_READ_ZERO_GC_TARGET_TIME",
+      "nativeReadMicroseconds": 194.9,
+      "residentValidationMeanMicroseconds": 523.373,
+      "nativeResidentLoadEstimateMicroseconds": 718.273,
+      "nativeResidentLoadEstimateAllocatedBytes": 0,
+      "targetLoadMicroseconds": 1000.0,
+      "targetLoadMet": true,
+      "managedFileReadAllocatedBytes": 1064664,
+      "action": "Runtime source now attempts Windows native read before MMF/FileStream fallback; still require Unity player profiler proof before final readiness."
+    },
+    {
+      "kind": "releaseBuildGate",
+      "path": "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_X_002.json",
+      "source": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs",
+      "scope": "editor_prebuild_non_development_player",
+      "status": "FAIL_RELEASE_PARSER_GATE_BLOCKED",
+      "blockingFindingCount": 722,
+      "action": "Non-development player builds now fail with BuildFailedException while release-active production parser routes remain. This is a hard gate, not a claim that global parser migration is complete."
+    },
+    {
+      "kind": "runtimeWholeFileReadRisk",
+      "examples": [
+        "PredatorCognitionDomain.cs",
+        "QuestDagDataLoading.cs",
+        "CombatDamageRuntime_StatusEffects.cs",
+        "HectonCombatRuntime_ArmorPenetration.cs",
+        "HectonLightingRuntime_DayNightRelay.cs",
+        "GlobalProfileManager.cs",
+        "WristHologramHudRuntime.cs"
+      ],
+      "scope": "production",
+      "action": "Owner migration required; X_002 did not edit outside Data Monolith domain."
+    },
+    {
+      "kind": "rootProfileCsvRisk",
+      "examples": [
+        "biological_metabolism_profiles.csv",
+        "biological_mutation_profiles.csv",
+        "buhlmann_zh16_profiles.csv",
+        "drone_hardware_profiles.csv",
+        "glitch_profiles.csv",
+        "pda_interface_profiles.csv",
+        "sdf_baking_profiles.csv",
+        "wreckage_deformation_profiles.csv"
+      ],
+      "scope": "production_or_development_fallback",
+      "action": "Route cards required before migration."
+    }
+  ],
+  "roslynExecution": {
+    "completed": false,
+    "reason": "Unrelated AudioLog compile wall prevents Unity batch scanner execution in this pass. The scanner source exists and writes this report when Unity compile is healthy."
+  }
+}

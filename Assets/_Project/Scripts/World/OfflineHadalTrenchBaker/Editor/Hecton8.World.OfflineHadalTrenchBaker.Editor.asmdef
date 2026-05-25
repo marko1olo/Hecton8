@@ -2,6 +2,7 @@
     "name": "Hecton8.World.OfflineHadalTrenchBaker.Editor",
     "rootNamespace": "Hecton8.World.OfflineHadalTrenchBaker.Editor",
     "references": [
+        "Hecton8.Core",
         "Hecton8.Core.Memory",
         "Hecton8.World.OfflineHadalTrenchBaker",
         "Unity.Burst",

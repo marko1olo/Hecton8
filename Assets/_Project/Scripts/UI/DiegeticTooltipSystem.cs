@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
+using Hecton8.Core.Memory;
 using Hecton8.UI.Diegetic.Contracts;
 using Hecton8.World;
 using TMPro;
@@ -21,7 +21,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Tooltip System")]
-    public sealed class DiegeticTooltipSystem : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class DiegeticTooltipSystem : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener
     {
         private const int MaxGlyphCount = 96;
         private const int MaxIconCount = 1;
@@ -31,6 +31,8 @@ namespace Hecton8.UI
         private const int AsciiCacheSize = 128;
         private const int UvTableCapacity = 128;
         private const int BlackBoxCapacity = 300;
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
+        private const BufferID BlackBoxBufferId = BufferID.DiegeticTooltipBlackBox;
         private const int TooltipGlyphInstanceStride = 96;
         private const int UvRectStride = 16;
         private const int IndirectArgsStride = IndirectArgsCount * 4;
@@ -154,18 +156,19 @@ namespace Hecton8.UI
         private MaterialPropertyBlock _iconPropertyBlock;
         private Texture _boundTextTexture;
         private Texture _boundIconTexture;
-        private ComputeBuffer _boundTextInstanceBuffer;
-        private ComputeBuffer _boundIconInstanceBuffer;
-        private ComputeBuffer _boundTextUvBuffer;
-        private ComputeBuffer _boundIconUvBuffer;
+        private GraphicsBuffer _boundTextInstanceBuffer;
+        private GraphicsBuffer _boundIconInstanceBuffer;
+        private GraphicsBuffer _boundTextUvBuffer;
+        private GraphicsBuffer _boundIconUvBuffer;
         private Mesh _runtimeQuadMesh;
-        private ComputeBuffer _textInstanceBuffer;
-        private ComputeBuffer _iconInstanceBuffer;
-        private ComputeBuffer _textArgsBuffer;
-        private ComputeBuffer _iconArgsBuffer;
-        private ComputeBuffer _fontUvBuffer;
-        private ComputeBuffer _spriteUvBuffer;
-        private NativeArray<TooltipBlackBoxEntry> _blackBox;
+        private GraphicsBuffer _textInstanceBuffer;
+        private GraphicsBuffer _iconInstanceBuffer;
+        private GraphicsBuffer _textArgsBuffer;
+        private GraphicsBuffer _iconArgsBuffer;
+        private GraphicsBuffer _fontUvBuffer;
+        private GraphicsBuffer _spriteUvBuffer;
+        private VaultGenerationHandle<TooltipBlackBoxEntry> _blackBoxHandle;
+        private IDataVault _dataVault;
         private TMP_FontAsset _cachedAsciiFont;
         private Texture _runtimeFontAtlasTexture;
         private Texture _runtimeSpriteAtlasTexture;
@@ -204,7 +207,6 @@ namespace Hecton8.UI
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
         private bool _hotSwapListenerRegistered;
-        private bool _scalabilityListenerRegistered;
         private bool _fontUvTableDirty;
         private bool _spriteUvTableDirty;
         private bool _resourceObjectsReady;
@@ -219,6 +221,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            RefreshScalabilityPolicy();
             ConsumeLookTargetSignals();
             ConsumeAupShiftSignals();
 
@@ -348,7 +351,6 @@ namespace Hecton8.UI
             EnsureBlackBox();
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             CacheRegistryServicesCold();
             RefreshScalabilityPolicy();
             RefreshInputDeterminismService();
@@ -359,7 +361,6 @@ namespace Hecton8.UI
         {
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             CacheRegistryServicesCold();
             RefreshScalabilityPolicy();
             RefreshInputDeterminismService();
@@ -370,7 +371,6 @@ namespace Hecton8.UI
         {
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             ClearTooltipState();
             _promptLength = 0;
             CacheRenderCamera(null, fromInteraction: false);
@@ -381,13 +381,7 @@ namespace Hecton8.UI
         {
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             ReleaseResources();
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshScalabilityPolicy();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -395,6 +389,14 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _dataVault = currentService as IDataVault;
+                if (_dataVault != null)
+                    EnsureBlackBox();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
@@ -857,36 +859,60 @@ namespace Hecton8.UI
 
             if (_textInstanceBuffer == null)
             {
-                _textInstanceBuffer = new ComputeBuffer(MaxGlyphCount, TooltipGlyphInstanceStride, ComputeBufferType.Structured);
+                _textInstanceBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    MaxGlyphCount,
+                    TooltipGlyphInstanceStride);
             }
 
             if (_iconInstanceBuffer == null)
             {
-                _iconInstanceBuffer = new ComputeBuffer(MaxIconCount, TooltipGlyphInstanceStride, ComputeBufferType.Structured);
+                _iconInstanceBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    MaxIconCount,
+                    TooltipGlyphInstanceStride);
             }
 
             if (_textArgsBuffer == null)
             {
-                _textArgsBuffer = new ComputeBuffer(1, IndirectArgsStride, ComputeBufferType.IndirectArguments);
+                _textArgsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    IndirectArgsStride);
                 _boundTextArgsCount = -1;
                 argsDirty = true;
             }
 
             if (_iconArgsBuffer == null)
             {
-                _iconArgsBuffer = new ComputeBuffer(1, IndirectArgsStride, ComputeBufferType.IndirectArguments);
+                _iconArgsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    IndirectArgsStride);
                 _boundIconArgsCount = -1;
                 argsDirty = true;
             }
 
             if (_fontUvBuffer == null)
             {
-                _fontUvBuffer = new ComputeBuffer(UvTableCapacity, UvRectStride, ComputeBufferType.Structured);
+                _fontUvBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    UvTableCapacity,
+                    UvRectStride);
             }
 
             if (_spriteUvBuffer == null)
             {
-                _spriteUvBuffer = new ComputeBuffer(UvTableCapacity, UvRectStride, ComputeBufferType.Structured);
+                _spriteUvBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    UvTableCapacity,
+                    UvRectStride);
             }
 
             if (argsDirty)
@@ -949,18 +975,18 @@ namespace Hecton8.UI
         {
             if (_fontUvTableDirty && _fontUvBuffer != null)
             {
-                _fontUvBuffer.SetData(_fontUvTable);
+                GraphicsBufferUploadUtility.UploadArray(_fontUvBuffer, _fontUvTable, UvTableCapacity);
                 _fontUvTableDirty = false;
             }
 
             if (_spriteUvTableDirty && _spriteUvBuffer != null)
             {
-                _spriteUvBuffer.SetData(_spriteUvTable);
+                GraphicsBufferUploadUtility.UploadArray(_spriteUvBuffer, _spriteUvTable, UvTableCapacity);
                 _spriteUvTableDirty = false;
             }
         }
 
-        private void RefreshIndirectArgs(ComputeBuffer argsBuffer)
+        private void RefreshIndirectArgs(GraphicsBuffer argsBuffer)
         {
             if (_runtimeQuadMesh == null || argsBuffer == null)
                 return;
@@ -970,7 +996,7 @@ namespace Hecton8.UI
             _indirectArgs[2] = _runtimeQuadMesh.GetIndexStart(0);
             _indirectArgs[3] = _runtimeQuadMesh.GetBaseVertex(0);
             _indirectArgs[4] = 0u;
-            argsBuffer.SetData(_indirectArgs);
+            GraphicsBufferUploadUtility.UploadArray(argsBuffer, _indirectArgs, _indirectArgs.Length);
         }
 
         private void DrawBatch(
@@ -984,14 +1010,14 @@ namespace Hecton8.UI
             Vector2[] localScales,
             int[] glyphIndices,
             Material material,
-            ComputeBuffer instanceBuffer,
-            ComputeBuffer argsBuffer,
-            ComputeBuffer uvBuffer,
+            GraphicsBuffer instanceBuffer,
+            GraphicsBuffer argsBuffer,
+            GraphicsBuffer uvBuffer,
             Texture mainTexture,
             MaterialPropertyBlock propertyBlock,
             ref Texture boundTexture,
-            ref ComputeBuffer boundInstanceBuffer,
-            ref ComputeBuffer boundUvBuffer,
+            ref GraphicsBuffer boundInstanceBuffer,
+            ref GraphicsBuffer boundUvBuffer,
             ref float boundGradientScale,
             ref float boundFaceDilate,
             ref float boundDitherEnabled,
@@ -1017,11 +1043,11 @@ namespace Hecton8.UI
                 };
             }
 
-            instanceBuffer.SetData(_instancePayloads, 0, 0, count);
+            GraphicsBufferUploadUtility.UploadArray(instanceBuffer, _instancePayloads, count);
             if (boundArgsCount != count)
             {
                 _indirectArgs[1] = (uint)count;
-                argsBuffer.SetData(_indirectArgs);
+                GraphicsBufferUploadUtility.UploadArray(argsBuffer, _indirectArgs, _indirectArgs.Length);
                 boundArgsCount = count;
             }
 
@@ -1057,12 +1083,12 @@ namespace Hecton8.UI
         private void BindPropertyBlockIfDirty(
             MaterialPropertyBlock propertyBlock,
             Texture mainTexture,
-            ComputeBuffer instanceBuffer,
-            ComputeBuffer uvBuffer,
+            GraphicsBuffer instanceBuffer,
+            GraphicsBuffer uvBuffer,
             float ditherEnabled,
             ref Texture boundTexture,
-            ref ComputeBuffer boundInstanceBuffer,
-            ref ComputeBuffer boundUvBuffer,
+            ref GraphicsBuffer boundInstanceBuffer,
+            ref GraphicsBuffer boundUvBuffer,
             ref float boundGradientScale,
             ref float boundFaceDilate,
             ref float boundDitherEnabled)
@@ -1230,7 +1256,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private float ResolveQualityFadeDurationSeconds()
@@ -1261,7 +1287,8 @@ namespace Hecton8.UI
 
         private void RefreshScalabilityPolicy()
         {
-            _qualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            _qualityWeight01 = math.saturate(math.select(_qualityWeight01, qualityWeight, math.isfinite(qualityWeight)));
         }
 
         private void TryRegisterRuntime()
@@ -1305,39 +1332,47 @@ namespace Hecton8.UI
             _hotSwapListenerRegistered = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityListenerRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityListenerRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityListenerRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityListenerRegistered = false;
-        }
-
         private void EnsureBlackBox()
         {
-            if (_blackBox.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
                 return;
 
-            _blackBox = new NativeArray<TooltipBlackBoxEntry>(
+            if (IsVaultHandleCreated(in _blackBoxHandle) &&
+                vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<TooltipBlackBoxEntry>.ReadOnly blackBox) &&
+                blackBox.IsCreated &&
+                blackBox.Length >= BlackBoxCapacity)
+            {
+                return;
+            }
+
+            if (IsVaultHandleCreated(in _blackBoxHandle))
+                vault.ReleaseBuffer(in _blackBoxHandle);
+
+            _blackBoxHandle = vault.EnsureGenerationHandle<TooltipBlackBoxEntry>(
+                BlackBoxBufferId,
                 BlackBoxCapacity,
-                Allocator.Persistent,
+                VaultOwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(DiegeticTooltipSystem), nameof(_blackBox), NativeAllocationLifetime.Scene);
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void RecordBlackBox(Vector3 anchor, Vector4 tint, byte tierFlags)
         {
-            if (!_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in _blackBoxHandle))
                 return;
 
             float3 anchorPayload = default;
@@ -1346,29 +1381,50 @@ namespace Hecton8.UI
             anchorPayload.z = anchor.z;
 
             _blackBoxDumped = false;
-            _blackBox[_blackBoxCursor] = new TooltipBlackBoxEntry
+            if (!vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out NativeArray<TooltipBlackBoxEntry> blackBox) ||
+                !blackBox.IsCreated ||
+                blackBox.Length < BlackBoxCapacity)
             {
-                Frame = unchecked((uint)Time.frameCount),
-                TargetHash = _activeTargetHash,
-                Anchor = anchorPayload,
-                Alpha = tint.w,
-                SchemeHash = _activeSchemeHash,
-                GlyphCount = (ushort)math.min(ushort.MaxValue, _textGlyphCount + _iconCount),
-                Flags = (byte)(_diagnosticActive ? 1 : 0),
-                TierFlags = tierFlags
-            };
-            _blackBoxCursor++;
-            if (_blackBoxCursor >= BlackBoxCapacity)
-                _blackBoxCursor = 0;
+                return;
+            }
 
-            if (_blackBoxWrittenCount < BlackBoxCapacity)
-                _blackBoxWrittenCount++;
+            try
+            {
+                blackBox[_blackBoxCursor] = new TooltipBlackBoxEntry
+                {
+                    Frame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                    TargetHash = _activeTargetHash,
+                    Anchor = anchorPayload,
+                    Alpha = tint.w,
+                    SchemeHash = _activeSchemeHash,
+                    GlyphCount = (ushort)math.min(ushort.MaxValue, _textGlyphCount + _iconCount),
+                    Flags = (byte)(_diagnosticActive ? 1 : 0),
+                    TierFlags = tierFlags
+                };
+                _blackBoxCursor++;
+                if (_blackBoxCursor >= BlackBoxCapacity)
+                    _blackBoxCursor = 0;
+
+                if (_blackBoxWrittenCount < BlackBoxCapacity)
+                    _blackBoxWrittenCount++;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+            }
         }
 
         private void DumpBlackBox()
         {
-            if (_blackBoxDumped || !_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (_blackBoxDumped ||
+                vault == null ||
+                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<TooltipBlackBoxEntry>.ReadOnly blackBox) ||
+                !blackBox.IsCreated)
+            {
                 return;
+            }
 
             _blackBoxDumped = true;
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -1378,17 +1434,17 @@ namespace Hecton8.UI
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 writer.Write(_blackBoxCursor);
-                writer.Write(_blackBox.Length);
+                writer.Write(blackBox.Length);
                 writer.Write(_blackBoxWrittenCount);
 
-                int firstIndex = _blackBoxWrittenCount >= _blackBox.Length ? _blackBoxCursor : 0;
+                int firstIndex = _blackBoxWrittenCount >= blackBox.Length ? _blackBoxCursor : 0;
                 for (int i = 0; i < _blackBoxWrittenCount; i++)
                 {
                     int entryIndex = firstIndex + i;
-                    if (entryIndex >= _blackBox.Length)
-                        entryIndex -= _blackBox.Length;
+                    if (entryIndex >= blackBox.Length)
+                        entryIndex -= blackBox.Length;
 
-                    TooltipBlackBoxEntry entry = _blackBox[entryIndex];
+                    TooltipBlackBoxEntry entry = blackBox[entryIndex];
                     writer.Write(entry.Frame);
                     writer.Write(entry.TargetHash);
                     writer.Write(entry.Anchor.x);
@@ -1469,12 +1525,12 @@ namespace Hecton8.UI
                 _spriteUvBuffer = null;
             }
 
-            if (_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _blackBoxHandle))
             {
-                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                _blackBox.Dispose();
+                vault.ReleaseBuffer(in _blackBoxHandle);
             }
-            _blackBox = default;
+            _blackBoxHandle = default;
 
             _blackBoxCursor = 0;
             _blackBoxWrittenCount = 0;

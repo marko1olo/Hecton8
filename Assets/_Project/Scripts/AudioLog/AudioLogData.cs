@@ -1,3 +1,4 @@
+using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using UnityEngine;
@@ -112,10 +113,12 @@ namespace Hecton8.Narrative
         }
 
         public bool HasAudioClip => ResolvedAudioClip != null;
-        public bool HasSubtitleText => !string.IsNullOrWhiteSpace(SubtitleOrFallback);
+        public bool HasSubtitleText => localizedSubtitleText.HasResolvedOrFallbackText(GlobalRegistry.LocalizationText, subtitleText);
         public bool HasPlaybackPayload => HasAudioClip || HasSubtitleText;
         public bool IsTextOnlyPlayback => !HasAudioClip && HasSubtitleText;
-        public bool HasArchiveSummary => !string.IsNullOrWhiteSpace(ArchiveSummaryOrFallback);
+        public bool HasArchiveSummary => localizedArchiveSummary.HasResolvedOrFallbackText(
+            GlobalRegistry.LocalizationText,
+            FallbackOrDefault(archiveSummary, "Entry unavailable."));
         public bool HasVisibleContent => HasPlaybackPayload || HasArchiveSummary;
         public string SafeLogId => string.IsNullOrWhiteSpace(logId) ? "audio_log" : logId;
         public ushort ProxyMeshIndex => proxyMeshIndex;
@@ -130,6 +133,42 @@ namespace Hecton8.Narrative
         public string VisibleSubtitleOrFallback => StripTimecodedSubtitleMarkup(SubtitleOrFallback);
         public string ArchiveSummaryOrFallback => localizedArchiveSummary.ResolveOrFallback(FallbackOrDefault(archiveSummary, "Entry unavailable."));
         public string RecordDateOrFallback => localizedRecordDate.ResolveOrFallback(FallbackOrDefault(recordDate, "DATE UNKNOWN"));
+
+        public bool TryWriteDisplayTitleOrFallback(char[] destination, out int length)
+        {
+            return localizedDisplayTitle.TryCopyResolvedOrFallback(
+                GlobalRegistry.LocalizationText,
+                destination,
+                out length,
+                FallbackOrDefault(displayTitle, SafeLogId));
+        }
+
+        public bool TryWriteAuthorOrFallback(char[] destination, out int length)
+        {
+            return localizedAuthor.TryCopyResolvedOrFallback(
+                GlobalRegistry.LocalizationText,
+                destination,
+                out length,
+                FallbackOrDefault(author, "UNKNOWN"));
+        }
+
+        public bool TryWriteArchiveSummaryOrFallback(char[] destination, out int length)
+        {
+            return localizedArchiveSummary.TryCopyResolvedOrFallback(
+                GlobalRegistry.LocalizationText,
+                destination,
+                out length,
+                FallbackOrDefault(archiveSummary, "Entry unavailable."));
+        }
+
+        public bool TryWriteRecordDateOrFallback(char[] destination, out int length)
+        {
+            return localizedRecordDate.TryCopyResolvedOrFallback(
+                GlobalRegistry.LocalizationText,
+                destination,
+                out length,
+                FallbackOrDefault(recordDate, "DATE UNKNOWN"));
+        }
 
         public bool TryResolveEncryptedFragmentMask(uint fragmentHash, out uint fragmentBitMask)
         {
@@ -154,15 +193,52 @@ namespace Hecton8.Narrative
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
 
+        public bool TryWriteVisibleSubtitleOrFallback(char[] destination, out int length)
+        {
+            LocalizationManager localization = LocalizationManager.ActiveRuntimeInstance;
+            ReadOnlySpan<char> subtitle = localizedSubtitleText.ResolveSpanOrFallback(localization, subtitleText);
+            if (localization != null && localization.TryExpandText(subtitle, destination, out int expandedLength))
+                return TryStripTimecodedSubtitleMarkup(destination.AsSpan(0, expandedLength), destination, out length);
+
+            return TryStripTimecodedSubtitleMarkup(
+                subtitle,
+                destination,
+                out length);
+        }
+
         public static string StripTimecodedSubtitleMarkup(string subtitle)
         {
             if (string.IsNullOrEmpty(subtitle) || subtitle.IndexOf('[', System.StringComparison.Ordinal) < 0)
                 return subtitle ?? string.Empty;
 
-            System.Text.StringBuilder builder = StringBuilderPool.Get();
-            bool removedAny = false;
+            return subtitle;
+        }
 
-            for (int i = 0; i < subtitle.Length; i++)
+        public static bool TryStripTimecodedSubtitleMarkup(
+            string subtitle,
+            char[] destination,
+            out int length)
+        {
+            return TryStripTimecodedSubtitleMarkup(
+                string.IsNullOrEmpty(subtitle) ? ReadOnlySpan<char>.Empty : subtitle.AsSpan(),
+                destination,
+                out length);
+        }
+
+        public static bool TryStripTimecodedSubtitleMarkup(
+            ReadOnlySpan<char> subtitle,
+            char[] destination,
+            out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            if (subtitle.Length == 0)
+                return true;
+
+            bool removedAny = false;
+            for (int i = 0; i < subtitle.Length && length < destination.Length; i++)
             {
                 char current = subtitle[i];
                 if (current == '[' && TrySkipTimeMarker(subtitle, ref i))
@@ -171,15 +247,31 @@ namespace Hecton8.Narrative
                     continue;
                 }
 
-                builder.Append(current);
+                destination[length++] = current;
             }
 
-            string stripped = removedAny ? builder.ToString().Trim() : subtitle;
-            StringBuilderPool.Return(builder);
-            return stripped;
+            if (!removedAny)
+                length = System.Math.Min(subtitle.Length, destination.Length);
+
+            while (length > 0 && char.IsWhiteSpace(destination[length - 1]))
+                length--;
+
+            int leadingWhitespace = 0;
+            while (leadingWhitespace < length && char.IsWhiteSpace(destination[leadingWhitespace]))
+                leadingWhitespace++;
+
+            if (leadingWhitespace > 0)
+            {
+                int trimmedLength = length - leadingWhitespace;
+                for (int i = 0; i < trimmedLength; i++)
+                    destination[i] = destination[i + leadingWhitespace];
+                length = trimmedLength;
+            }
+
+            return true;
         }
 
-        private static bool TrySkipTimeMarker(string text, ref int index)
+        private static bool TrySkipTimeMarker(ReadOnlySpan<char> text, ref int index)
         {
             int markerStart = index;
             int current = markerStart + 1;

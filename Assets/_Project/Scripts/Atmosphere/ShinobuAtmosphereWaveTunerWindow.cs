@@ -38,14 +38,14 @@ namespace Hecton8.Atmosphere.Editor
 
         private void OnEnable()
         {
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
             RefreshFromVault();
             PushValuesToControls();
         }
 
         private void OnDisable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         public void CreateGUI()
@@ -216,7 +216,7 @@ namespace Hecton8.Atmosphere.Editor
             return latest;
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             if (!_drawGizmo ||
                 !ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(

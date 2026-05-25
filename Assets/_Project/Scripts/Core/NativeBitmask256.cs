@@ -4,7 +4,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    internal static class NativeBitmaskLayout
+    {
+        internal const int Bitmask256StrideBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = NativeBitmaskLayout.Bitmask256StrideBytes)]
     public struct NativeBitmask256
     {
         [FieldOffset(0)]

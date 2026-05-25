@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_169
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_169_Mat_ToolTrial_Scan_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_ToolTrial_Scan_Albedo.png
+FINAL_FILENAME: Mat_ToolTrial_Scan_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Scan tool trial albedo for prototype detection surfaces. Create pearl ceramic scan plates, pale cyan sensor glass strips, teal sweep-line markings, amber data pips, graphite hand-contact pads, and satin titanium lens rails. The texture should feel scientific, readable, and polished for testing scan mechanics and final first-person tool styling. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

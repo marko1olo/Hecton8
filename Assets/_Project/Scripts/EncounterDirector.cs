@@ -318,6 +318,10 @@ namespace Hecton8.Systems.AI
         private int _headlessFreeSearchCursor;
         private int _lastPublishedPredatorAupCount = -1;
         private bool _predatorAupWriteToA = true;
+        private bool _predatorAupFullUploadPending;
+        private bool _predatorAupPlayerUploadPending;
+        private bool _predatorAupClearPending;
+        private float3 _pendingPredatorAupPlayerPosition;
         private readonly int _candidateCount;
         private IMetaCampaignService _metaCampaignService;
         private int _pendingPhaseOverride = -1;
@@ -422,7 +426,7 @@ namespace Hecton8.Systems.AI
             _predatorAupWriteToA = true;
             _nextHeadlessEntitySequence = 0;
             _headlessFreeSearchCursor = 0;
-            PublishPredatorAupBuffer();
+            QueuePredatorAupFullUpload();
         }
 
         internal void SetMetaCampaignService(IMetaCampaignService service)
@@ -467,7 +471,7 @@ namespace Hecton8.Systems.AI
             if (_jobScheduled)
             {
                 RecordBlackBox(BuildTelemetryState(in frameContext));
-                PublishPlayerPredatorAupSlot(frameContext.PlayerPosition);
+                QueuePlayerPredatorAupSlot(frameContext.PlayerPosition);
                 _coldTickAccumulator += frameContext.DeltaTime;
                 return;
             }
@@ -485,7 +489,7 @@ namespace Hecton8.Systems.AI
             }
 
             RecordBlackBox(BuildTelemetryState(in frameContext));
-            PublishPlayerPredatorAupSlot(frameContext.PlayerPosition);
+            QueuePlayerPredatorAupSlot(frameContext.PlayerPosition);
 
             _coldTickAccumulator += frameContext.DeltaTime;
             if (_jobScheduled || _coldTickAccumulator < ColdTickIntervalSeconds)
@@ -689,8 +693,35 @@ namespace Hecton8.Systems.AI
             _lastPublishedPredatorAupCount = 0;
             _predatorAupPublishedBuffer = null;
             _predatorAupGlobalsDirty = true;
+            _predatorAupFullUploadPending = false;
+            _predatorAupPlayerUploadPending = false;
+            _predatorAupClearPending = true;
             ClearPredatorAupSourceIds();
-            Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+        }
+
+        internal void FlushPredatorAupVisualSync()
+        {
+            if (_predatorAupClearPending)
+            {
+                Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+                _predatorAupClearPending = false;
+                if (!_predatorAupFullUploadPending && !_predatorAupPlayerUploadPending)
+                    return;
+            }
+
+            if (_predatorAupFullUploadPending)
+            {
+                FlushPredatorAupFullUpload();
+                _predatorAupFullUploadPending = false;
+                _predatorAupPlayerUploadPending = false;
+                return;
+            }
+
+            if (_predatorAupPlayerUploadPending)
+            {
+                FlushPlayerPredatorAupSlot(_pendingPredatorAupPlayerPosition);
+                _predatorAupPlayerUploadPending = false;
+            }
         }
 
         internal void HandleEntityDeathSignal(in EntityDeathSignal signal)
@@ -702,7 +733,7 @@ namespace Hecton8.Systems.AI
             if (TryReleaseHeadlessEntity(entityId, refundHalfCost: true, decrementActiveCount: true, out bool releasedPredator))
             {
                 if (releasedPredator)
-                    PublishPredatorAupBuffer();
+                    QueuePredatorAupFullUpload();
                 return;
             }
 
@@ -718,7 +749,7 @@ namespace Hecton8.Systems.AI
             bool trackedPredator = WritesPredatorAup(_trackedThreatClasses[trackedSlot]);
             ClearTrackedSlot(trackedSlot);
             if (trackedPredator)
-                PublishPredatorAupBuffer();
+                QueuePredatorAupFullUpload();
         }
 
         private void RefreshTrackedEnemies(float3 playerPosition)
@@ -741,7 +772,7 @@ namespace Hecton8.Systems.AI
                     bool releasedPredator = WritesPredatorAup(_trackedThreatClasses[i]);
                     ClearTrackedSlot(i);
                     if (releasedPredator)
-                        PublishPredatorAupBuffer();
+                        QueuePredatorAupFullUpload();
                     continue;
                 }
 
@@ -875,7 +906,7 @@ namespace Hecton8.Systems.AI
             }
 
             if (predatorAupDirty)
-                PublishPredatorAupBuffer();
+                QueuePredatorAupFullUpload();
         }
 
         private int ApplySpawnRequests(EncounterJobOutput output, HectonDirectorAI bridge, ref bool predatorAupDirty)
@@ -1195,7 +1226,7 @@ namespace Hecton8.Systems.AI
             if (!math.all(math.isfinite(local)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1370,13 +1401,28 @@ namespace Hecton8.Systems.AI
             }
         }
 
-        private void PublishPredatorAupBuffer()
+        private void QueuePredatorAupFullUpload()
         {
-            float3 playerPosition = _frontState.IsCreated ? _frontState[0].PlayerPosition.xyz : float3.zero;
-            PublishPredatorAupBuffer(playerPosition);
+            _predatorAupFullUploadPending = true;
+            _predatorAupPlayerUploadPending = false;
+            _predatorAupClearPending = false;
         }
 
-        private void PublishPredatorAupBuffer(float3 playerPosition)
+        private void QueuePlayerPredatorAupSlot(float3 playerPosition)
+        {
+            _pendingPredatorAupPlayerPosition = playerPosition;
+            if (!_predatorAupFullUploadPending)
+                _predatorAupPlayerUploadPending = true;
+            _predatorAupClearPending = false;
+        }
+
+        private void FlushPredatorAupFullUpload()
+        {
+            float3 playerPosition = _frontState.IsCreated ? _frontState[0].PlayerPosition.xyz : float3.zero;
+            FlushPredatorAupFullUpload(playerPosition);
+        }
+
+        private void FlushPredatorAupFullUpload(float3 playerPosition)
         {
             if (!_predatorAupUpload.IsCreated)
                 return;
@@ -1436,7 +1482,7 @@ namespace Hecton8.Systems.AI
             Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);
         }
 
-        private void PublishPlayerPredatorAupSlot(float3 playerPosition)
+        private void FlushPlayerPredatorAupSlot(float3 playerPosition)
         {
             if (!_predatorAupUpload.IsCreated)
                 return;
@@ -1658,7 +1704,7 @@ namespace Hecton8.Systems.AI
             _trackedThreatClasses[slot] = threatClass;
             _trackedTokenCosts[slot] = ResolveTokenCost(threatClass, _threatAuthoring);
             if (WritesPredatorAup(threatClass))
-                PublishPredatorAupBuffer();
+                QueuePredatorAupFullUpload();
         }
 
         private bool UntrackEntity(int entityId)
@@ -1988,8 +2034,10 @@ namespace Hecton8.Systems.AI
             _predatorAupWriteToA = true;
             _lastPublishedPredatorAupCount = 0;
             _predatorAupGlobalsDirty = true;
+            _predatorAupFullUploadPending = false;
+            _predatorAupPlayerUploadPending = false;
+            _predatorAupClearPending = true;
             ClearPredatorAupSourceIds();
-            Shader.SetGlobalInt(_PredatorAUPCountId, 0);
         }
     }
 
@@ -2818,13 +2866,15 @@ namespace Hecton8.Systems.AI
             switch (phase)
             {
                 case EncounterPhase.BuildUp:
-                    return math.pow(math.sin(1.57079637f * normalizedTime), 1.5f);
+                    float buildSine = math.saturate(MathLodApproximation.ApproxSinBhaskara(1.57079637f * normalizedTime));
+                    return buildSine * math.sqrt(buildSine);
                 case EncounterPhase.Peak:
-                    return 1f - 0.1f * math.sin(6.28318531f * normalizedTime);
+                    return 1f - 0.1f * MathLodApproximation.ApproxSinBhaskara(6.28318531f * normalizedTime);
                 case EncounterPhase.Decay:
-                    return math.pow(math.max(0f, math.cos(1.57079637f * normalizedTime)), 0.7f);
+                    float decayCos = math.saturate(MathLodApproximation.ApproxCosBhaskara(1.57079637f * normalizedTime));
+                    return math.saturate(decayCos * (1.55f - 0.55f * decayCos));
                 default:
-                    return 0.05f + 0.05f * math.sin(3.14159265f * normalizedTime);
+                    return 0.05f + 0.05f * MathLodApproximation.ApproxSinBhaskara(3.14159265f * normalizedTime);
             }
         }
 

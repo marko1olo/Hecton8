@@ -6,6 +6,16 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class ScatterSimulationContractLayout
+    {
+        public const int ScatterSimulationLayerQuotaStrideBytes = 16;
+        public const int ScatterSimulationQuotaStateStrideBytes = 64;
+        public const int ScatterSimulationCellStateStrideBytes = 32;
+        public const int ScatterSimulationParitySnapshotStrideBytes = 64;
+        public const int ScatterSimulationConfigStrideBytes = 128;
+        public const int ScatterSimulationCandidateStrideBytes = 64;
+    }
+
     public enum ScatterSimulationBackendKind
     {
         ClassicJobs = 0,
@@ -49,7 +59,7 @@ namespace Hecton8.World
         Retained = 2
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterSimulationContractLayout.ScatterSimulationLayerQuotaStrideBytes)]
     public struct ScatterSimulationLayerQuota
     {
         [FieldOffset(0)]
@@ -65,7 +75,7 @@ namespace Hecton8.World
         private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterSimulationContractLayout.ScatterSimulationQuotaStateStrideBytes)]
     public struct ScatterSimulationQuotaState
     {
         [FieldOffset(0)]
@@ -81,7 +91,7 @@ namespace Hecton8.World
         public ScatterSimulationLayerQuota Spawn;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterSimulationContractLayout.ScatterSimulationCellStateStrideBytes)]
     public struct ScatterSimulationCellState
     {
         [FieldOffset(0)]
@@ -115,7 +125,7 @@ namespace Hecton8.World
         private byte _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterSimulationContractLayout.ScatterSimulationParitySnapshotStrideBytes)]
     public struct ScatterSimulationParitySnapshot
     {
         [FieldOffset(0)]
@@ -165,7 +175,7 @@ namespace Hecton8.World
     /// Immutable config for one scatter simulation pass.
     /// Shared by classic Jobs and future DOTS backends.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterSimulationContractLayout.ScatterSimulationConfigStrideBytes)]
     public struct ScatterSimulationConfig
     {
         [FieldOffset(0)]
@@ -228,7 +238,7 @@ namespace Hecton8.World
     /// Blittable scatter candidate contract shared by classic Jobs and future DOTS backends.
     /// Managed refs are resolved later by the owner-driven main-thread apply path.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterSimulationContractLayout.ScatterSimulationCandidateStrideBytes)]
     public struct ScatterSimulationCandidate
     {
         [FieldOffset(0)]

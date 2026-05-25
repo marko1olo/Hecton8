@@ -3,7 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Hecton8.Physics;
+using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -16,6 +17,9 @@ namespace Hecton8.Power
     {
         public const int DefaultNodeCount = 5000;
         public const int DefaultFrameCount = 1000;
+        public const int MinimumSolverIterationCount = 2;
+        public const int MaximumSolverIterationCount = 50;
+        public const int DefaultSolverIterationCount = MaximumSolverIterationCount;
         public const int DefaultEdgeCapacity = 20000;
         public const int DefaultBatchSize = 64;
         public const int TelemetryFrameCount = 300;
@@ -28,9 +32,62 @@ namespace Hecton8.Power
         public const int FailureFlagManagedAllocation = 1 << 5;
         public const int FailureFlagLayout = 1 << 6;
         public const int FailureFlagCapacity = 1 << 7;
+        public const int FailureFlagRemainderDrift = 1 << 8;
+        public const int FailureFlagRollbackDesync = 1 << 9;
+        public const int FailureFlagEarlyConverged = 1 << 10;
+        public const int FailureFlagInfiniteDivergence = FailureFlagDivergence;
+        public const int FailureFlagNanVoltageDetected = FailureFlagMathCorruption;
+        public const int FuzzPowerNodeDtoSizeBytes = 32;
+        public const uint NodeFlagActive = 1u << 0;
+        public const uint NodeFlagSource = 1u << 1;
+        public const uint NodeFlagBattery = 1u << 2;
+        public const uint NodeFlagBrownout = 1u << 3;
+        public const uint NodeFlagOffline = 1u << 4;
+        public const uint NodeFlagDamaged = 1u << 5;
+        public const uint DumpMagic0 = 0x464A3848u;
+        public const uint DumpMagic1 = 0x44363533u;
+        public const uint DumpVersion = 1u;
+        public const float BrownoutThreshold01 = 0.15f;
+        public const float MinimumConductance = 0.000001f;
         public const float DefaultResidualTolerance = 0.025f;
         public const float DefaultEnergyEpsilon = 0.5f;
-        public const float DefaultPerformanceLimitMicroseconds = 200f;
+        public const float DefaultPerformanceLimitMicroseconds = 500000f;
+        public const float MaxVoltageThreshold = 16f;
+        public const float MaximumConductance = 4096f;
+        public const float MaximumEdgeCurrentAbs = MaximumConductance;
+        public const float MaximumNetCurrentAbs = 1048576f;
+        public const float RemainderDriftEpsilon = 0.001f;
+        public const float OmegaMin = 0.55f;
+        public const float OmegaMax = 0.92f;
+        public const uint ProfileFlagInjectRawFaults = 1u << 0;
+        public const uint ProfileFlagInjectCorruptNodeDto = 1u << 1;
+        public const uint ProfileFlagForensicFaults =
+            ProfileFlagInjectRawFaults |
+            ProfileFlagInjectCorruptNodeDto;
+    }
+
+    public static class PowerJacobiStressFuzzerBufferIds
+    {
+        public const BufferID Nodes = (BufferID)35610;
+        public const BufferID NodeAup = (BufferID)35611;
+        public const BufferID CsrOffsets = (BufferID)35612;
+        public const BufferID CsrDestinations = (BufferID)35613;
+        public const BufferID CsrConductance = (BufferID)35614;
+        public const BufferID CsrFlow = (BufferID)35615;
+        public const BufferID PotentialFront = (BufferID)35616;
+        public const BufferID PotentialBack = (BufferID)35617;
+        public const BufferID DemandRate = (BufferID)35618;
+        public const BufferID BatteryRemainder = (BufferID)35619;
+        public const BufferID Result = (BufferID)35620;
+        public const BufferID StressTelemetry = (BufferID)35621;
+        public const BufferID GraphCounts = (BufferID)35622;
+        public const BufferID CsvScratch = (BufferID)35623;
+        public const BufferID VoltageHistory = (BufferID)35624;
+        public const BufferID RollbackFront = (BufferID)35625;
+        public const BufferID RollbackBack = (BufferID)35626;
+        public const BufferID FuzzState = (BufferID)35627;
+        public const BufferID FuzzTelemetry = (BufferID)35628;
+        public const BufferID TopologyProfile = (BufferID)35629;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -44,6 +101,74 @@ namespace Hecton8.Power
         [FieldOffset(20)] public float IslandRatio01;
         [FieldOffset(24)] public uint Flags;
         [FieldOffset(28)] public uint Reserved0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct JacobiFuzzPowerNodeDTO
+    {
+        [FieldOffset(0)] public uint NodeHash;
+        [FieldOffset(4)] public float Potential;
+        [FieldOffset(8)] public float MaxCapacity;
+        [FieldOffset(12)] public float CurrentStorage;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] public float InternalResistance;
+        [FieldOffset(24)] public uint Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct JacobiFuzzStateDTO
+    {
+        [FieldOffset(0)] public float HighestResidualRecorded;
+        [FieldOffset(4)] public uint FinalIterationCount;
+        [FieldOffset(8)] public uint MismatchFlags;
+        [FieldOffset(12)] private uint _pad0;
+        [FieldOffset(16)] private uint _pad1;
+        [FieldOffset(20)] private uint _pad2;
+        [FieldOffset(24)] private uint _pad3;
+        [FieldOffset(28)] private uint _pad4;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct JacobiFuzzTelemetryEntry
+    {
+        [FieldOffset(0)] public uint IterationIndex;
+        [FieldOffset(4)] public uint StateHash;
+        [FieldOffset(8)] public uint MismatchFlags;
+        [FieldOffset(12)] public uint MitigationCount;
+        [FieldOffset(16)] public float HighestResidual;
+        [FieldOffset(20)] public float PreviousResidual;
+        [FieldOffset(24)] public float ActiveOmega;
+        [FieldOffset(28)] public float SolverMicroseconds;
+        [FieldOffset(32)] public float TotalEnergy;
+        [FieldOffset(36)] public float RemainderDrift;
+        [FieldOffset(40)] public int FirstBadNodeIndex;
+        [FieldOffset(44)] public uint FirstBadNodeHash;
+        [FieldOffset(48)] public int FailingArrayOffset;
+        [FieldOffset(52)] public uint RollbackHash;
+        [FieldOffset(56)] public uint BrownoutNodeId;
+        [FieldOffset(60)] public uint Reserved0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct PowerJacobiStressDumpHeader
+    {
+        [FieldOffset(0)] public uint Magic0;
+        [FieldOffset(4)] public uint Magic1;
+        [FieldOffset(8)] public uint Version;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public uint FrameTelemetryCount;
+        [FieldOffset(20)] public uint FuzzTelemetryCount;
+        [FieldOffset(24)] public uint FrameTelemetryStride;
+        [FieldOffset(28)] public uint FuzzTelemetryStride;
+        [FieldOffset(32)] public uint ResultStride;
+        [FieldOffset(36)] public uint StateStride;
+        [FieldOffset(40)] public uint BufferIdMin;
+        [FieldOffset(44)] public uint BufferIdMax;
+        [FieldOffset(48)] public uint Reserved0;
+        [FieldOffset(52)] public uint Reserved1;
+        [FieldOffset(56)] public uint Reserved2;
+        [FieldOffset(60)] public uint Reserved3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -112,31 +237,91 @@ namespace Hecton8.Power
         [FieldOffset(60)] public uint Reserved0;
     }
 
+    public static class PowerJacobiStressAupMath
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ToBaseLocalFloat3(double3 nodeAup, double3 baseOriginAup)
+        {
+            double3 localDelta = nodeAup - baseOriginAup;
+            return new float3((float)localDelta.x, (float)localDelta.y, (float)localDelta.z);
+        }
+    }
+
 #if UNITY_EDITOR
     public static class PowerJacobiStressFuzzerState
     {
+        // COLD ALLOC: float[300] - editor-only residual line graph samples - owner: PowerJacobiStressFuzzerState
+        public static readonly float[] ResidualSamples = new float[PowerJacobiStressFuzzerConstants.TelemetryFrameCount];
+        // COLD ALLOC: float[300] - editor-only omega line graph samples - owner: PowerJacobiStressFuzzerState
+        public static readonly float[] OmegaSamples = new float[PowerJacobiStressFuzzerConstants.TelemetryFrameCount];
         public static PowerJacobiStressFuzzerResult LastResult;
         public static double3 LastFailureAup;
         public static uint LastFailureNodeHash;
+        public static float3 LastFailureDirection;
         public static bool HasFailure;
+
+        public static void CopyTelemetry(NativeArray<JacobiFuzzTelemetryEntry> telemetry)
+        {
+            int limit = math.min(PowerJacobiStressFuzzerConstants.TelemetryFrameCount, telemetry.IsCreated ? telemetry.Length : 0);
+            for (int i = 0; i < limit; i++)
+            {
+                JacobiFuzzTelemetryEntry entry = telemetry[i];
+                ResidualSamples[i] = entry.HighestResidual;
+                OmegaSamples[i] = entry.ActiveOmega;
+            }
+
+            for (int i = limit; i < PowerJacobiStressFuzzerConstants.TelemetryFrameCount; i++)
+            {
+                ResidualSamples[i] = 0f;
+                OmegaSamples[i] = 0f;
+            }
+        }
     }
 #endif
 
     public static unsafe class PowerJacobiStressFuzzer
     {
         private const string CsvFailurePath = "Docs/Reports/HEADLESS_JACOBI_FAILURES.csv";
-        private const string SuccessReportPath = "Docs/Reports/QA_OPTIMIZATION_REPORT.json";
-        private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_255.bin";
-        private const string ProfileCsvPath = "Assets/_Project/Data/fuzzer_topology_profiles.csv";
+        private const string SuccessReportPath = "Docs/Reports/QA_OPTIMIZATION_REPORT_SHINOBU_356.json";
+        private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_356.bin";
+        private const string ProfileCsvPath = "Assets/_Project/Data/jacobi_fuzz_profiles.csv";
+        private const string LegacyProfileCsvPath = "Assets/_Project/Data/fuzzer_topology_profiles.csv";
 
         public static bool RunDefault(out PowerJacobiStressFuzzerResult result)
         {
             PowerJacobiStressTopologyProfile profile = CreateDefaultProfile();
-            TryLoadTopologyProfile(ProfileCsvPath, out profile);
+#if UNITY_EDITOR
+            if (!TryLoadTopologyProfile(ProfileCsvPath, out profile))
+                TryLoadTopologyProfile(LegacyProfileCsvPath, out profile);
+#endif
             PowerJacobiStressRunConfig config = CreateDefaultConfig(profile);
             return Run(in config, in profile, CsvFailurePath, SuccessReportPath, DumpPath, out result);
         }
 
+        public static bool TryScheduleDefault(out ScheduledRun run, out PowerJacobiStressFuzzerResult immediateResult)
+        {
+            PowerJacobiStressTopologyProfile profile = CreateDefaultProfile();
+#if UNITY_EDITOR
+            if (!TryLoadTopologyProfile(ProfileCsvPath, out profile))
+                TryLoadTopologyProfile(LegacyProfileCsvPath, out profile);
+#endif
+            PowerJacobiStressRunConfig config = CreateDefaultConfig(profile);
+            return TrySchedule(in config, in profile, CsvFailurePath, SuccessReportPath, DumpPath, out run, out immediateResult);
+        }
+
+        public static bool TrySchedule(
+            in PowerJacobiStressRunConfig config,
+            in PowerJacobiStressTopologyProfile profile,
+            string csvFailurePath,
+            string successReportPath,
+            string dumpPath,
+            out ScheduledRun run,
+            out PowerJacobiStressFuzzerResult immediateResult)
+        {
+            return ScheduledRun.TryCreate(in config, in profile, csvFailurePath, successReportPath, dumpPath, out run, out immediateResult);
+        }
+
+#if UNITY_EDITOR
         public static bool TryLoadTopologyProfile(string path, out PowerJacobiStressTopologyProfile profile)
         {
             profile = CreateDefaultProfile();
@@ -168,6 +353,7 @@ namespace Hecton8.Power
                     scratch.Dispose();
             }
         }
+#endif
 
         public static bool Run(
             in PowerJacobiStressRunConfig config,
@@ -191,9 +377,7 @@ namespace Hecton8.Power
             int nodeCount = math.clamp(config.NodeCount, 1, math.max(1, PowerJacobiStressFuzzerConstants.DefaultNodeCount * 2));
             int edgeCapacity = math.max(nodeCount + 1, config.EdgeCapacity);
             int frameCount = math.max(1, config.FrameCount);
-            int iterationCount = config.IterationCount > 0
-                ? math.clamp(config.IterationCount, 1, 8)
-                : ResolveQualityIterationCount(globalQualityWeight);
+            int iterationCount = ResolveIterationCount(config.IterationCount, globalQualityWeight);
             PowerJacobiStressRunConfig safeConfig = config;
             safeConfig.NodeCount = nodeCount;
             safeConfig.EdgeCapacity = edgeCapacity;
@@ -204,7 +388,7 @@ namespace Hecton8.Power
             safeConfig.EnergyEpsilon = SanitizePositiveOrDefault(config.EnergyEpsilon, PowerJacobiStressFuzzerConstants.DefaultEnergyEpsilon);
             safeConfig.PerformanceLimitMicroseconds = SanitizePositiveOrDefault(config.PerformanceLimitMicroseconds, PowerJacobiStressFuzzerConstants.DefaultPerformanceLimitMicroseconds);
 
-            NativeArray<PowerNodeDTO> nodes = default;
+            NativeArray<JacobiFuzzPowerNodeDTO> nodes = default;
             NativeArray<double3> nodeAup = default;
             NativeArray<int> offsets = default;
             NativeArray<int> destinations = default;
@@ -218,106 +402,99 @@ namespace Hecton8.Power
             NativeArray<PowerJacobiStressFrameTelemetry> telemetry = default;
             NativeArray<int> graphCounts = default;
             NativeArray<byte> csvScratch = default;
+            NativeArray<float> voltageHistory = default;
+            NativeArray<float> rollbackFront = default;
+            NativeArray<float> rollbackBack = default;
+            NativeArray<JacobiFuzzStateDTO> fuzzState = default;
+            NativeArray<JacobiFuzzTelemetryEntry> fuzzTelemetry = default;
+            NativeArray<PowerJacobiStressTopologyProfile> profileBuffer = default;
+            GlobalDataVault ownedVault = null;
 
             try
             {
-                nodes = new NativeArray<PowerNodeDTO>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                nodeAup = new NativeArray<double3>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                offsets = new NativeArray<int>(nodeCount + 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                destinations = new NativeArray<int>(edgeCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                conductance = new NativeArray<float>(edgeCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeFlow = new NativeArray<float>(edgeCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                potentialFront = new NativeArray<float>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                potentialBack = new NativeArray<float>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                demandRate = new NativeArray<float>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                batteryRemainder = new NativeArray<float>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                resultBuffer = new NativeArray<PowerJacobiStressFuzzerResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                telemetry = new NativeArray<PowerJacobiStressFrameTelemetry>(PowerJacobiStressFuzzerConstants.TelemetryFrameCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                graphCounts = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                csvScratch = new NativeArray<byte>(PowerJacobiStressFuzzerConstants.CsvScratchBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                long requiredVaultBytes = EstimateVaultBytes(nodeCount, edgeCapacity, iterationCount);
+                long arenaBytes = Math.Max(requiredVaultBytes * 2L, requiredVaultBytes + (8L * 1024L * 1024L));
+                ownedVault = CreateIsolatedFuzzerVault(32, arenaBytes);
+                IDataVault vault = ownedVault;
+                bool buffersReady =
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.Nodes, nodeCount, NativeArrayOptions.UninitializedMemory, out nodes) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.NodeAup, nodeCount, NativeArrayOptions.UninitializedMemory, out nodeAup) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsrOffsets, nodeCount + 1, NativeArrayOptions.UninitializedMemory, out offsets) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsrDestinations, edgeCapacity, NativeArrayOptions.UninitializedMemory, out destinations) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsrConductance, edgeCapacity, NativeArrayOptions.UninitializedMemory, out conductance) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsrFlow, edgeCapacity, NativeArrayOptions.UninitializedMemory, out edgeFlow) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.PotentialFront, nodeCount, NativeArrayOptions.UninitializedMemory, out potentialFront) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.PotentialBack, nodeCount, NativeArrayOptions.UninitializedMemory, out potentialBack) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.DemandRate, nodeCount, NativeArrayOptions.UninitializedMemory, out demandRate) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.BatteryRemainder, nodeCount, NativeArrayOptions.UninitializedMemory, out batteryRemainder) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.Result, 1, NativeArrayOptions.UninitializedMemory, out resultBuffer) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.StressTelemetry, PowerJacobiStressFuzzerConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out telemetry) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.GraphCounts, 2, NativeArrayOptions.UninitializedMemory, out graphCounts) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsvScratch, PowerJacobiStressFuzzerConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out csvScratch) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.VoltageHistory, nodeCount * iterationCount, NativeArrayOptions.UninitializedMemory, out voltageHistory) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.RollbackFront, nodeCount, NativeArrayOptions.UninitializedMemory, out rollbackFront) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.RollbackBack, nodeCount, NativeArrayOptions.UninitializedMemory, out rollbackBack) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.FuzzState, 1, NativeArrayOptions.UninitializedMemory, out fuzzState) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.FuzzTelemetry, PowerJacobiStressFuzzerConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out fuzzTelemetry) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.TopologyProfile, 1, NativeArrayOptions.UninitializedMemory, out profileBuffer);
 
-                WarmBurst(nodes, nodeAup, offsets, destinations, conductance, edgeFlow, potentialFront, potentialBack, demandRate, batteryRemainder, resultBuffer, telemetry, graphCounts, in safeConfig, in profile);
+                if (!buffersReady)
+                {
+                    result.FailureFlags = PowerJacobiStressFuzzerConstants.FailureFlagCapacity;
+                    result.NodeCount = nodeCount;
+                    result.EdgeCount = edgeCapacity;
+                    result.FrameCount = frameCount;
+                    return false;
+                }
+
+                profileBuffer[0] = profile;
+                PowerJacobiStressTopologyProfile activeProfile = profileBuffer[0];
+
+                WarmBurst(nodes, nodeAup, offsets, destinations, conductance, edgeFlow, potentialFront, potentialBack, demandRate, batteryRemainder, resultBuffer, telemetry, graphCounts, in safeConfig, in activeProfile);
 
                 long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
                 long loopTicksStart = Stopwatch.GetTimestamp();
-                long solverTicks = 0L;
-
-                NativeArray<float> front = potentialFront;
-                NativeArray<float> back = potentialBack;
-                for (int frame = 0; frame < frameCount; frame++)
+                long solverStart = Stopwatch.GetTimestamp();
+                JobHandle solverHandle = new EvaluateHeadlessJacobiFuzzJob
                 {
-                    JobHandle preSimulationHandle = new InjectRandomPotentialsJob
-                    {
-                        NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
-                        PotentialFront = front,
-                        PotentialBack = back,
-                        DemandRate = demandRate,
-                        BatteryMilliRemainder = batteryRemainder,
-                        NodeCount = nodeCount,
-                        FrameIndex = frame
-                    }.Schedule();
-                    preSimulationHandle.Complete();
+                    NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
+                    NodeAup = nodeAup,
+                    NodeEdgeOffsets = offsets,
+                    EdgeDestinations = destinations,
+                    EdgeConductance = conductance,
+                    EdgeCurrentFlow = edgeFlow,
+                    PotentialFront = potentialFront,
+                    PotentialBack = potentialBack,
+                    DemandRate = demandRate,
+                    BatteryMilliRemainder = batteryRemainder,
+                    VoltageHistory = voltageHistory,
+                    RollbackFront = rollbackFront,
+                    RollbackBack = rollbackBack,
+                    Result = resultBuffer,
+                    State = fuzzState,
+                    StressTelemetry = telemetry,
+                    FuzzTelemetry = fuzzTelemetry,
+                    GraphCounts = graphCounts,
+                    Config = safeConfig,
+                    EdgeCount = graphCounts[1]
+                }.Schedule();
+                solverHandle.Complete();
+                long solverTicks = Stopwatch.GetTimestamp() - solverStart;
+                float solverMicroseconds = TicksToMicroseconds(solverTicks, 1);
 
-                    JobHandle solverHandle = default;
-                    long solverStart = Stopwatch.GetTimestamp();
-                    for (int iteration = 0; iteration < iterationCount; iteration++)
-                    {
-                        solverHandle = new PowerVoltageSolverJob
-                        {
-                            NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
-                            NodeEdgeOffsets = offsets,
-                            EdgeDestinations = destinations,
-                            EdgeConductance = conductance,
-                            FrontPotential = front,
-                            DemandRate = demandRate,
-                            BackPotential = back,
-                            NodeCount = nodeCount,
-                            GlobalQualityWeight = globalQualityWeight,
-                            SmoothingFactor = PowerSolverConvergenceMath.ResolveSolverOmega(globalQualityWeight)
-                        }.Schedule(nodeCount, PowerJacobiStressFuzzerConstants.DefaultBatchSize, solverHandle);
-
-                        NativeArray<float> swap = front;
-                        front = back;
-                        back = swap;
-                    }
-
-                    solverHandle.Complete();
-                    solverTicks += Stopwatch.GetTimestamp() - solverStart;
-
-                    JobHandle simulationHandle = new IntegrateBatteryChargeJob
-                    {
-                        NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
-                        NodeEdgeOffsets = offsets,
-                        EdgeDestinations = destinations,
-                        EdgeConductance = conductance,
-                        EdgeCurrentFlow = edgeFlow,
-                        BatteryMilliRemainder = batteryRemainder,
-                        NodeCount = nodeCount,
-                        DeltaTimeSeconds = 1f / 60f
-                    }.Schedule(nodeCount, PowerJacobiStressFuzzerConstants.DefaultBatchSize);
-                    simulationHandle.Complete();
-
-                    float solverMicroseconds = TicksToMicroseconds(solverTicks, frame + 1);
-                    JobHandle postSimulationHandle = new ValidateSolverConvergenceJob
-                    {
-                        NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
-                        NodeAup = nodeAup,
-                        LatestPotential = front,
-                        PreviousPotential = back,
-                        Result = resultBuffer,
-                        Telemetry = telemetry,
-                        NodeCount = nodeCount,
-                        EdgeCount = graphCounts[1],
-                        FrameIndex = frame,
-                        IterationCount = iterationCount,
-                        ResidualTolerance = safeConfig.ResidualTolerance,
-                        EnergyEpsilon = safeConfig.EnergyEpsilon,
-                        AverageSolverMicroseconds = solverMicroseconds,
-                        PerformanceLimitMicroseconds = safeConfig.PerformanceLimitMicroseconds,
-                        ExplicitGenerationDrainPresent = safeConfig.ExplicitGenerationDrainPresent
-                    }.Schedule();
-                    postSimulationHandle.Complete();
-                }
+                JobHandle conservationHandle = new VerifyPowerConservationJob
+                {
+                    NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
+                    DemandRate = demandRate,
+                    Result = resultBuffer,
+                    State = fuzzState,
+                    FuzzTelemetry = fuzzTelemetry,
+                    NodeCount = nodeCount,
+                    EnergyEpsilon = safeConfig.EnergyEpsilon,
+                    ExplicitGenerationDrainPresent = safeConfig.ExplicitGenerationDrainPresent,
+                    AverageSolverMicroseconds = solverMicroseconds
+                }.Schedule();
+                conservationHandle.Complete();
 
                 long loopTicks = Stopwatch.GetTimestamp() - loopTicksStart;
                 long allocatedAfter = GC.GetAllocatedBytesForCurrentThread();
@@ -325,18 +502,24 @@ namespace Hecton8.Power
                 result.ManagedBytesDelta = allocatedAfter - allocatedBefore;
                 result.SolverTicks = solverTicks;
                 result.LoopTicks = loopTicks;
-                result.AverageSolverMicroseconds = TicksToMicroseconds(solverTicks, frameCount);
+                result.AverageSolverMicroseconds = solverMicroseconds;
                 if (result.ManagedBytesDelta != 0L)
                     result.FailureFlags |= PowerJacobiStressFuzzerConstants.FailureFlagManagedAllocation;
                 if (result.AverageSolverMicroseconds > safeConfig.PerformanceLimitMicroseconds)
                     result.FailureFlags |= PowerJacobiStressFuzzerConstants.FailureFlagPerformance;
                 resultBuffer[0] = result;
+                StampFuzzTelemetrySolverMicroseconds(fuzzTelemetry, solverMicroseconds, result.FailureFlags);
 
                 if (result.FailureFlags != 0u)
                 {
                     PowerJacobiStressCsvExporter.WriteFailureCsv(csvFailurePath, nodes, nodeAup, offsets, destinations, conductance, graphCounts[1], csvScratch);
-                    if ((result.FailureFlags & PowerJacobiStressFuzzerConstants.FailureFlagMathCorruption) != 0u)
-                        PowerJacobiStressBinaryDump.WriteDump(dumpPath, telemetry, csvScratch);
+                    if ((result.FailureFlags &
+                         (PowerJacobiStressFuzzerConstants.FailureFlagMathCorruption |
+                          PowerJacobiStressFuzzerConstants.FailureFlagInfiniteDivergence |
+                          PowerJacobiStressFuzzerConstants.FailureFlagRollbackDesync)) != 0u)
+                    {
+                        PowerJacobiStressBinaryDump.WriteDump(dumpPath, telemetry, fuzzTelemetry, result.FailureFlags);
+                    }
                 }
                 else
                 {
@@ -347,26 +530,341 @@ namespace Hecton8.Power
                 PowerJacobiStressFuzzerState.LastResult = result;
                 PowerJacobiStressFuzzerState.LastFailureAup = result.FirstFailureAup;
                 PowerJacobiStressFuzzerState.LastFailureNodeHash = result.FirstFailureNodeHash;
+                PowerJacobiStressFuzzerState.LastFailureDirection = result.FirstFailureNodeIndex >= 0 && result.FirstFailureNodeIndex + 1 < nodeAup.Length
+                    ? PowerJacobiStressAupMath.ToBaseLocalFloat3(nodeAup[result.FirstFailureNodeIndex + 1], nodeAup[result.FirstFailureNodeIndex])
+                    : new float3(0f, 1f, 0f);
                 PowerJacobiStressFuzzerState.HasFailure = result.FailureFlags != 0u && result.FirstFailureNodeHash != 0u;
+                PowerJacobiStressFuzzerState.CopyTelemetry(fuzzTelemetry);
 #endif
                 return result.FailureFlags == 0u;
             }
             finally
             {
-                if (csvScratch.IsCreated) csvScratch.Dispose();
-                if (graphCounts.IsCreated) graphCounts.Dispose();
-                if (telemetry.IsCreated) telemetry.Dispose();
-                if (resultBuffer.IsCreated) resultBuffer.Dispose();
-                if (batteryRemainder.IsCreated) batteryRemainder.Dispose();
-                if (demandRate.IsCreated) demandRate.Dispose();
-                if (potentialBack.IsCreated) potentialBack.Dispose();
-                if (potentialFront.IsCreated) potentialFront.Dispose();
-                if (edgeFlow.IsCreated) edgeFlow.Dispose();
-                if (conductance.IsCreated) conductance.Dispose();
-                if (destinations.IsCreated) destinations.Dispose();
-                if (offsets.IsCreated) offsets.Dispose();
-                if (nodeAup.IsCreated) nodeAup.Dispose();
-                if (nodes.IsCreated) nodes.Dispose();
+                if (ownedVault != null)
+                    ownedVault.Dispose();
+            }
+        }
+
+        // COLD EDITOR/CI WRAPPER: stores Vault-resolved views only while a scheduled offline fuzzer chain is pending.
+        public sealed class ScheduledRun : IDisposable
+        {
+            private NativeArray<JacobiFuzzPowerNodeDTO> _nodes;
+            private NativeArray<double3> _nodeAup;
+            private NativeArray<int> _offsets;
+            private NativeArray<int> _destinations;
+            private NativeArray<float> _conductance;
+            private NativeArray<float> _edgeFlow;
+            private NativeArray<float> _potentialFront;
+            private NativeArray<float> _potentialBack;
+            private NativeArray<float> _demandRate;
+            private NativeArray<float> _batteryRemainder;
+            private NativeArray<PowerJacobiStressFuzzerResult> _resultBuffer;
+            private NativeArray<PowerJacobiStressFrameTelemetry> _telemetry;
+            private NativeArray<int> _graphCounts;
+            private NativeArray<byte> _csvScratch;
+            private NativeArray<float> _voltageHistory;
+            private NativeArray<float> _rollbackFront;
+            private NativeArray<float> _rollbackBack;
+            private NativeArray<JacobiFuzzStateDTO> _fuzzState;
+            private NativeArray<JacobiFuzzTelemetryEntry> _fuzzTelemetry;
+            private NativeArray<PowerJacobiStressTopologyProfile> _profileBuffer;
+            private GlobalDataVault _ownedVault;
+            private JobHandle _finalHandle;
+            private PowerJacobiStressRunConfig _safeConfig;
+            private string _csvFailurePath;
+            private string _successReportPath;
+            private string _dumpPath;
+            private long _solverTicksStart;
+            private long _loopTicksStart;
+            private int _nodeCount;
+            private int _edgeCapacity;
+            private bool _scheduled;
+            private bool _completed;
+            private bool _disposed;
+            private PowerJacobiStressFuzzerResult _completedResult;
+
+            public bool IsScheduled()
+            {
+                return _scheduled && !_disposed;
+            }
+
+            public bool IsCompleted()
+            {
+                return _scheduled && !_disposed && _finalHandle.IsCompleted;
+            }
+
+            public float ReadProgress01()
+            {
+                if (_completed)
+                    return 1f;
+                return IsCompleted() ? 0.98f : 0.35f;
+            }
+
+            internal static bool TryCreate(
+                in PowerJacobiStressRunConfig config,
+                in PowerJacobiStressTopologyProfile profile,
+                string csvFailurePath,
+                string successReportPath,
+                string dumpPath,
+                out ScheduledRun run,
+                out PowerJacobiStressFuzzerResult immediateResult)
+            {
+                run = null;
+                immediateResult = default;
+                if (!ValidateRequiredLayouts())
+                {
+                    immediateResult.FailureFlags = PowerJacobiStressFuzzerConstants.FailureFlagLayout;
+                    immediateResult.NodeCount = config.NodeCount;
+                    immediateResult.EdgeCount = config.EdgeCapacity;
+                    immediateResult.FrameCount = config.FrameCount;
+                    return false;
+                }
+
+                ScheduledRun candidate = new ScheduledRun();
+                candidate._csvFailurePath = csvFailurePath;
+                candidate._successReportPath = successReportPath;
+                candidate._dumpPath = dumpPath;
+                if (!candidate.TryAllocateAndSchedule(in config, in profile, out immediateResult))
+                {
+                    candidate.Dispose();
+                    return false;
+                }
+
+                run = candidate;
+                return true;
+            }
+
+            public bool TryComplete(out PowerJacobiStressFuzzerResult result)
+            {
+                result = default;
+                if (!IsCompleted())
+                    return false;
+
+                Complete(out result);
+                return true;
+            }
+
+            public void Complete(out PowerJacobiStressFuzzerResult result)
+            {
+                if (_completed)
+                {
+                    result = _completedResult;
+                    return;
+                }
+
+                if (!_scheduled || _disposed)
+                {
+                    result = default;
+                    return;
+                }
+
+                long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+                _finalHandle.Complete();
+                long solverTicks = Stopwatch.GetTimestamp() - _solverTicksStart;
+                long loopTicks = Stopwatch.GetTimestamp() - _loopTicksStart;
+                long allocatedAfter = GC.GetAllocatedBytesForCurrentThread();
+                // Scheduled editor runs cannot sample inside an already-running Burst job;
+                // this records background-chain wall time, while sync CI Run() records isolated solver Complete() time.
+                float solverMicroseconds = TicksToMicroseconds(solverTicks, 1);
+                result = _resultBuffer[0];
+                int actualEdgeCount = _graphCounts.IsCreated && _graphCounts.Length > 1 ? _graphCounts[1] : _edgeCapacity;
+                result.EdgeCount = math.max(0, actualEdgeCount);
+                result.ManagedBytesDelta = allocatedAfter - allocatedBefore;
+                result.SolverTicks = solverTicks;
+                result.LoopTicks = loopTicks;
+                result.AverageSolverMicroseconds = solverMicroseconds;
+                if (result.ManagedBytesDelta != 0L)
+                    result.FailureFlags |= PowerJacobiStressFuzzerConstants.FailureFlagManagedAllocation;
+                _resultBuffer[0] = result;
+                StampFuzzTelemetrySolverMicroseconds(_fuzzTelemetry, solverMicroseconds, result.FailureFlags);
+
+                WriteColdArtifacts(in result);
+#if UNITY_EDITOR
+                PowerJacobiStressFuzzerState.LastResult = result;
+                PowerJacobiStressFuzzerState.LastFailureAup = result.FirstFailureAup;
+                PowerJacobiStressFuzzerState.LastFailureNodeHash = result.FirstFailureNodeHash;
+                PowerJacobiStressFuzzerState.LastFailureDirection = result.FirstFailureNodeIndex >= 0 && result.FirstFailureNodeIndex + 1 < _nodeAup.Length
+                    ? PowerJacobiStressAupMath.ToBaseLocalFloat3(_nodeAup[result.FirstFailureNodeIndex + 1], _nodeAup[result.FirstFailureNodeIndex])
+                    : new float3(0f, 1f, 0f);
+                PowerJacobiStressFuzzerState.HasFailure = result.FailureFlags != 0u && result.FirstFailureNodeHash != 0u;
+                PowerJacobiStressFuzzerState.CopyTelemetry(_fuzzTelemetry);
+#endif
+                _completedResult = result;
+                _completed = true;
+                DisposeVaultOnly();
+            }
+
+            public void Dispose()
+            {
+                if (_disposed)
+                    return;
+
+                if (_scheduled && !_completed)
+                    _finalHandle.Complete();
+                DisposeVaultOnly();
+            }
+
+            private bool TryAllocateAndSchedule(in PowerJacobiStressRunConfig config, in PowerJacobiStressTopologyProfile profile, out PowerJacobiStressFuzzerResult immediateResult)
+            {
+                immediateResult = default;
+                float globalQualityWeight = SanitizeQuality(config.GlobalQualityWeight);
+                _nodeCount = math.clamp(config.NodeCount, 1, math.max(1, PowerJacobiStressFuzzerConstants.DefaultNodeCount * 2));
+                _edgeCapacity = math.max(_nodeCount + 1, config.EdgeCapacity);
+                int frameCount = math.max(1, config.FrameCount);
+                int iterationCount = ResolveIterationCount(config.IterationCount, globalQualityWeight);
+                _safeConfig = config;
+                _safeConfig.NodeCount = _nodeCount;
+                _safeConfig.EdgeCapacity = _edgeCapacity;
+                _safeConfig.FrameCount = frameCount;
+                _safeConfig.IterationCount = iterationCount;
+                _safeConfig.GlobalQualityWeight = globalQualityWeight;
+                _safeConfig.ResidualTolerance = SanitizePositiveOrDefault(config.ResidualTolerance, PowerJacobiStressFuzzerConstants.DefaultResidualTolerance);
+                _safeConfig.EnergyEpsilon = SanitizePositiveOrDefault(config.EnergyEpsilon, PowerJacobiStressFuzzerConstants.DefaultEnergyEpsilon);
+                _safeConfig.PerformanceLimitMicroseconds = SanitizePositiveOrDefault(config.PerformanceLimitMicroseconds, PowerJacobiStressFuzzerConstants.DefaultPerformanceLimitMicroseconds);
+
+                long requiredVaultBytes = EstimateVaultBytes(_nodeCount, _edgeCapacity, iterationCount);
+                long arenaBytes = Math.Max(requiredVaultBytes * 2L, requiredVaultBytes + (8L * 1024L * 1024L));
+                _ownedVault = CreateIsolatedFuzzerVault(32, arenaBytes);
+                IDataVault vault = _ownedVault;
+                bool buffersReady =
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.Nodes, _nodeCount, NativeArrayOptions.UninitializedMemory, out _nodes) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.NodeAup, _nodeCount, NativeArrayOptions.UninitializedMemory, out _nodeAup) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsrOffsets, _nodeCount + 1, NativeArrayOptions.UninitializedMemory, out _offsets) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsrDestinations, _edgeCapacity, NativeArrayOptions.UninitializedMemory, out _destinations) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsrConductance, _edgeCapacity, NativeArrayOptions.UninitializedMemory, out _conductance) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsrFlow, _edgeCapacity, NativeArrayOptions.UninitializedMemory, out _edgeFlow) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.PotentialFront, _nodeCount, NativeArrayOptions.UninitializedMemory, out _potentialFront) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.PotentialBack, _nodeCount, NativeArrayOptions.UninitializedMemory, out _potentialBack) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.DemandRate, _nodeCount, NativeArrayOptions.UninitializedMemory, out _demandRate) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.BatteryRemainder, _nodeCount, NativeArrayOptions.UninitializedMemory, out _batteryRemainder) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.Result, 1, NativeArrayOptions.UninitializedMemory, out _resultBuffer) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.StressTelemetry, PowerJacobiStressFuzzerConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _telemetry) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.GraphCounts, 2, NativeArrayOptions.UninitializedMemory, out _graphCounts) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.CsvScratch, PowerJacobiStressFuzzerConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out _csvScratch) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.VoltageHistory, _nodeCount * iterationCount, NativeArrayOptions.UninitializedMemory, out _voltageHistory) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.RollbackFront, _nodeCount, NativeArrayOptions.UninitializedMemory, out _rollbackFront) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.RollbackBack, _nodeCount, NativeArrayOptions.UninitializedMemory, out _rollbackBack) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.FuzzState, 1, NativeArrayOptions.UninitializedMemory, out _fuzzState) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.FuzzTelemetry, PowerJacobiStressFuzzerConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _fuzzTelemetry) &&
+                    TryResolveFuzzerVaultBuffer(vault, PowerJacobiStressFuzzerBufferIds.TopologyProfile, 1, NativeArrayOptions.UninitializedMemory, out _profileBuffer);
+                if (!buffersReady)
+                {
+                    immediateResult.FailureFlags = PowerJacobiStressFuzzerConstants.FailureFlagCapacity;
+                    immediateResult.NodeCount = _nodeCount;
+                    immediateResult.EdgeCount = _edgeCapacity;
+                    immediateResult.FrameCount = frameCount;
+                    return false;
+                }
+
+                _profileBuffer[0] = profile;
+                _loopTicksStart = Stopwatch.GetTimestamp();
+                _solverTicksStart = _loopTicksStart;
+                // UNINITIALIZED PROOF: dependency order fully writes graph/scalars/result before EvaluateHeadlessJacobiFuzzJob reads them.
+                JobHandle generateHandle = new GenerateHostileCsrGraphJob
+                {
+                    Nodes = _nodes,
+                    NodeAup = _nodeAup,
+                    NodeEdgeOffsets = _offsets,
+                    EdgeDestinations = _destinations,
+                    EdgeConductance = _conductance,
+                    EdgeCurrentFlow = _edgeFlow,
+                    Counts = _graphCounts,
+                    Profile = _profileBuffer[0],
+                    BaseOriginAup = _safeConfig.BaseOriginAup,
+                    NodeCount = _safeConfig.NodeCount,
+                    EdgeCapacity = _safeConfig.EdgeCapacity
+                }.Schedule();
+                JobHandle injectHandle = new InjectRandomPotentialsJob
+                {
+                    NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
+                    PotentialFront = _potentialFront,
+                    PotentialBack = _potentialBack,
+                    DemandRate = _demandRate,
+                    BatteryMilliRemainder = _batteryRemainder,
+                    NodeCount = _safeConfig.NodeCount,
+                    FrameIndex = 0,
+                    ProfileFlags = _profileBuffer[0].Flags
+                }.Schedule(generateHandle);
+                JobHandle initHandle = new InitializeFuzzerResultJob
+                {
+                    NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_nodes),
+                    LatestPotential = _potentialFront,
+                    Result = _resultBuffer,
+                    Telemetry = _telemetry,
+                    NodeCount = _safeConfig.NodeCount,
+                    EdgeCount = _safeConfig.EdgeCapacity,
+                    GraphCounts = _graphCounts,
+                    ExplicitGenerationDrainPresent = _safeConfig.ExplicitGenerationDrainPresent
+                }.Schedule(injectHandle);
+                JobHandle solverHandle = new EvaluateHeadlessJacobiFuzzJob
+                {
+                    NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(_nodes),
+                    NodeAup = _nodeAup,
+                    NodeEdgeOffsets = _offsets,
+                    EdgeDestinations = _destinations,
+                    EdgeConductance = _conductance,
+                    EdgeCurrentFlow = _edgeFlow,
+                    PotentialFront = _potentialFront,
+                    PotentialBack = _potentialBack,
+                    DemandRate = _demandRate,
+                    BatteryMilliRemainder = _batteryRemainder,
+                    VoltageHistory = _voltageHistory,
+                    RollbackFront = _rollbackFront,
+                    RollbackBack = _rollbackBack,
+                    Result = _resultBuffer,
+                    State = _fuzzState,
+                    StressTelemetry = _telemetry,
+                    FuzzTelemetry = _fuzzTelemetry,
+                    GraphCounts = _graphCounts,
+                    Config = _safeConfig,
+                    EdgeCount = _safeConfig.EdgeCapacity
+                }.Schedule(initHandle);
+                _finalHandle = new VerifyPowerConservationJob
+                {
+                    NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_nodes),
+                    DemandRate = _demandRate,
+                    Result = _resultBuffer,
+                    State = _fuzzState,
+                    FuzzTelemetry = _fuzzTelemetry,
+                    NodeCount = _nodeCount,
+                    EnergyEpsilon = _safeConfig.EnergyEpsilon,
+                    ExplicitGenerationDrainPresent = _safeConfig.ExplicitGenerationDrainPresent,
+                    AverageSolverMicroseconds = 0f
+                }.Schedule(solverHandle);
+                JobHandle.ScheduleBatchedJobs();
+                _scheduled = true;
+                return true;
+            }
+
+            private void WriteColdArtifacts(in PowerJacobiStressFuzzerResult result)
+            {
+                if (result.FailureFlags != 0u)
+                {
+                    PowerJacobiStressCsvExporter.WriteFailureCsv(_csvFailurePath, _nodes, _nodeAup, _offsets, _destinations, _conductance, result.EdgeCount, _csvScratch);
+                    if ((result.FailureFlags &
+                         (PowerJacobiStressFuzzerConstants.FailureFlagMathCorruption |
+                          PowerJacobiStressFuzzerConstants.FailureFlagInfiniteDivergence |
+                          PowerJacobiStressFuzzerConstants.FailureFlagRollbackDesync)) != 0u)
+                    {
+                        PowerJacobiStressBinaryDump.WriteDump(_dumpPath, _telemetry, _fuzzTelemetry, result.FailureFlags);
+                    }
+                }
+                else
+                {
+                    PowerJacobiStressReportWriter.WriteSuccessReport(_successReportPath, in result, _csvScratch);
+                }
+            }
+
+            private void DisposeVaultOnly()
+            {
+                if (_disposed)
+                    return;
+
+                if (_ownedVault != null)
+                    _ownedVault.Dispose();
+                _ownedVault = null;
+                _disposed = true;
+                _scheduled = false;
             }
         }
 
@@ -379,7 +877,7 @@ namespace Hecton8.Power
             profile.LoopRatio01 = 0.78f;
             profile.StarRatio01 = 0.20f;
             profile.IslandRatio01 = 0.15f;
-            profile.Flags = 1u;
+            profile.Flags = 0u;
             return profile;
         }
 
@@ -390,7 +888,7 @@ namespace Hecton8.Power
             config.EdgeCapacity = profile.EdgeCapacity > 0 ? profile.EdgeCapacity : PowerJacobiStressFuzzerConstants.DefaultEdgeCapacity;
             config.FrameCount = PowerJacobiStressFuzzerConstants.DefaultFrameCount;
             config.GlobalQualityWeight = 1f;
-            config.IterationCount = ResolveQualityIterationCount(config.GlobalQualityWeight);
+            config.IterationCount = 0;
             config.ResidualTolerance = PowerJacobiStressFuzzerConstants.DefaultResidualTolerance;
             config.EnergyEpsilon = PowerJacobiStressFuzzerConstants.DefaultEnergyEpsilon;
             config.PerformanceLimitMicroseconds = PowerJacobiStressFuzzerConstants.DefaultPerformanceLimitMicroseconds;
@@ -401,26 +899,70 @@ namespace Hecton8.Power
 
         public static bool ValidateRequiredLayouts()
         {
-            return UnsafeUtility.SizeOf<PowerNodeDTO>() == PowerGridJacobiConstants.PowerNodeDtoSizeBytes &&
-                   UnsafeUtility.SizeOf<FluidCompartmentDTO>() == 32 &&
-                   FluidCompartmentLayoutValidator.ValidateFluidCompartmentLayout() &&
+            return UnsafeUtility.SizeOf<JacobiFuzzPowerNodeDTO>() == PowerJacobiStressFuzzerConstants.FuzzPowerNodeDtoSizeBytes &&
+                   UnsafeUtility.AlignOf<JacobiFuzzPowerNodeDTO>() == 4 &&
                    UnsafeUtility.SizeOf<PowerJacobiStressTopologyProfile>() == 32 &&
+                   UnsafeUtility.SizeOf<JacobiFuzzStateDTO>() == 32 &&
+                   UnsafeUtility.AlignOf<JacobiFuzzStateDTO>() == 4 &&
+                   UnsafeUtility.SizeOf<JacobiFuzzTelemetryEntry>() == 64 &&
+                   UnsafeUtility.SizeOf<PowerJacobiStressDumpHeader>() == 64 &&
                    UnsafeUtility.SizeOf<PowerJacobiStressFrameTelemetry>() == 64 &&
                    UnsafeUtility.SizeOf<PowerJacobiStressFuzzerResult>() == 128 &&
-                   UnsafeUtility.SizeOf<PowerJacobiStressRunConfig>() == 64;
+                   UnsafeUtility.SizeOf<PowerJacobiStressRunConfig>() == 64 &&
+                   (UnsafeUtility.SizeOf<PowerJacobiStressFuzzerResult>() & 7) == 0 &&
+                   (UnsafeUtility.SizeOf<PowerJacobiStressRunConfig>() & 7) == 0 &&
+                   ValidateRequiredOffsets();
         }
 
-        public static int ResolveQualityIterationCount(float globalQualityWeight)
+        private static unsafe bool ValidateRequiredOffsets()
         {
-            float q = SanitizeQuality(globalQualityWeight);
-            float curve = math.smoothstep(0f, 1f, q);
-            return math.clamp((int)math.round(math.lerp(1f, 8f, curve)), 1, 8);
+            PowerJacobiStressFuzzerResult result = default;
+            PowerJacobiStressRunConfig config = default;
+            PowerJacobiStressDumpHeader dumpHeader = default;
+
+            return ByteOffset(ref result, ref result.ManagedBytesDelta) == 64 &&
+                   ByteOffset(ref result, ref result.FirstFailureAup) == 88 &&
+                   ByteOffset(ref result, ref result.ExplicitGenerationDrainPresent) == 112 &&
+                   ByteOffset(ref config, ref config.BaseOriginAup) == 32 &&
+                   ByteOffset(ref dumpHeader, ref dumpHeader.Flags) == 12 &&
+                   ByteOffset(ref dumpHeader, ref dumpHeader.BufferIdMin) == 40;
+        }
+
+        private static unsafe int ByteOffset<TStruct, TField>(ref TStruct owner, ref TField field)
+            where TStruct : struct
+            where TField : struct
+        {
+            return (int)((byte*)UnsafeUtility.AddressOf(ref field) - (byte*)UnsafeUtility.AddressOf(ref owner));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SanitizeQuality(float globalQualityWeight)
         {
-            return math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            return MathLodApproximation.SaturateFinite(globalQualityWeight, 1f);
+        }
+
+        private static int ResolveIterationCount(int requestedIterationCount, float globalQualityWeight)
+        {
+            if (requestedIterationCount > 0)
+            {
+                return math.clamp(
+                    requestedIterationCount,
+                    PowerJacobiStressFuzzerConstants.MinimumSolverIterationCount,
+                    PowerJacobiStressFuzzerConstants.MaximumSolverIterationCount);
+            }
+
+            return math.clamp(
+                (int)MathLodRuntimeConfig.ResolveActiveIterationBudget(globalQualityWeight),
+                PowerJacobiStressFuzzerConstants.MinimumSolverIterationCount,
+                PowerJacobiStressFuzzerConstants.MaximumSolverIterationCount);
+        }
+
+        private static GlobalDataVault CreateIsolatedFuzzerVault(int capacity, long arenaBytes)
+        {
+            // COLD QA VAULT: avoid GlobalDataVault.Create because it publishes into TryGetLatestCreated.
+            GlobalDataVault vault = new GlobalDataVault();
+            vault.Initialize(capacity, arenaBytes);
+            return vault;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -430,7 +972,7 @@ namespace Hecton8.Power
         }
 
         private static void WarmBurst(
-            NativeArray<PowerNodeDTO> nodes,
+            NativeArray<JacobiFuzzPowerNodeDTO> nodes,
             NativeArray<double3> nodeAup,
             NativeArray<int> offsets,
             NativeArray<int> destinations,
@@ -448,35 +990,9 @@ namespace Hecton8.Power
         {
             InitializeScenario(nodes, nodeAup, offsets, destinations, conductance, edgeFlow, potentialFront, potentialBack, demandRate, batteryRemainder, resultBuffer, telemetry, graphCounts, in config, in profile);
 
-            new PowerVoltageSolverJob
-            {
-                NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
-                NodeEdgeOffsets = offsets,
-                EdgeDestinations = destinations,
-                EdgeConductance = conductance,
-                FrontPotential = potentialFront,
-                DemandRate = demandRate,
-                BackPotential = potentialBack,
-                NodeCount = config.NodeCount,
-                GlobalQualityWeight = config.GlobalQualityWeight,
-                SmoothingFactor = PowerSolverConvergenceMath.ResolveSolverOmega(config.GlobalQualityWeight)
-            }.Schedule(config.NodeCount, PowerJacobiStressFuzzerConstants.DefaultBatchSize).Complete();
-
-            new IntegrateBatteryChargeJob
-            {
-                NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
-                NodeEdgeOffsets = offsets,
-                EdgeDestinations = destinations,
-                EdgeConductance = conductance,
-                EdgeCurrentFlow = edgeFlow,
-                BatteryMilliRemainder = batteryRemainder,
-                NodeCount = config.NodeCount,
-                DeltaTimeSeconds = 1f / 60f
-            }.Schedule(config.NodeCount, PowerJacobiStressFuzzerConstants.DefaultBatchSize).Complete();
-
             new ValidateSolverConvergenceJob
             {
-                NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
+                NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
                 NodeAup = nodeAup,
                 LatestPotential = potentialBack,
                 PreviousPotential = potentialFront,
@@ -497,7 +1013,7 @@ namespace Hecton8.Power
         }
 
         private static void InitializeScenario(
-            NativeArray<PowerNodeDTO> nodes,
+            NativeArray<JacobiFuzzPowerNodeDTO> nodes,
             NativeArray<double3> nodeAup,
             NativeArray<int> offsets,
             NativeArray<int> destinations,
@@ -513,6 +1029,7 @@ namespace Hecton8.Power
             in PowerJacobiStressRunConfig config,
             in PowerJacobiStressTopologyProfile profile)
         {
+            // UNINITIALIZED PROOF: these three jobs fully write graph, scalar, result, and telemetry buffers before the solver reads them.
             new GenerateHostileCsrGraphJob
             {
                 Nodes = nodes,
@@ -530,23 +1047,25 @@ namespace Hecton8.Power
 
             new InjectRandomPotentialsJob
             {
-                NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
+                NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
                 PotentialFront = potentialFront,
                 PotentialBack = potentialBack,
                 DemandRate = demandRate,
                 BatteryMilliRemainder = batteryRemainder,
                 NodeCount = config.NodeCount,
-                FrameIndex = 0
+                FrameIndex = 0,
+                ProfileFlags = profile.Flags
             }.Schedule().Complete();
 
             new InitializeFuzzerResultJob
             {
-                NodesPtr = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
+                NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
                 LatestPotential = potentialFront,
                 Result = resultBuffer,
                 Telemetry = telemetry,
                 NodeCount = config.NodeCount,
                 EdgeCount = graphCounts[1],
+                GraphCounts = graphCounts,
                 ExplicitGenerationDrainPresent = config.ExplicitGenerationDrainPresent
             }.Schedule().Complete();
         }
@@ -556,12 +1075,70 @@ namespace Hecton8.Power
             double us = (double)ticks * 1000000.0 / Stopwatch.Frequency;
             return (float)(us / math.max(1, divisor));
         }
+
+        private static void StampFuzzTelemetrySolverMicroseconds(
+            NativeArray<JacobiFuzzTelemetryEntry> fuzzTelemetry,
+            float solverMicroseconds,
+            uint failureFlags)
+        {
+            if (!fuzzTelemetry.IsCreated)
+                return;
+
+            for (int i = 0; i < fuzzTelemetry.Length; i++)
+            {
+                JacobiFuzzTelemetryEntry entry = fuzzTelemetry[i];
+                entry.SolverMicroseconds = solverMicroseconds;
+                entry.MismatchFlags = failureFlags;
+                fuzzTelemetry[i] = entry;
+            }
+        }
+
+        private static long EstimateVaultBytes(int nodeCount, int edgeCapacity, int iterationCount)
+        {
+            long nodesBytes = (long)nodeCount * UnsafeUtility.SizeOf<JacobiFuzzPowerNodeDTO>();
+            long aupBytes = (long)nodeCount * UnsafeUtility.SizeOf<double3>();
+            long offsetsBytes = (long)(nodeCount + 1) * UnsafeUtility.SizeOf<int>();
+            long edgeBytes = (long)edgeCapacity * (UnsafeUtility.SizeOf<int>() + (2L * UnsafeUtility.SizeOf<float>()));
+            long scalarNodeBytes = (long)nodeCount * 6L * UnsafeUtility.SizeOf<float>();
+            long historyBytes = (long)nodeCount * math.max(1, iterationCount) * UnsafeUtility.SizeOf<float>();
+            long telemetryBytes =
+                UnsafeUtility.SizeOf<PowerJacobiStressFuzzerResult>() +
+                UnsafeUtility.SizeOf<JacobiFuzzStateDTO>() +
+                UnsafeUtility.SizeOf<PowerJacobiStressTopologyProfile>() +
+                (long)PowerJacobiStressFuzzerConstants.TelemetryFrameCount *
+                (UnsafeUtility.SizeOf<PowerJacobiStressFrameTelemetry>() + UnsafeUtility.SizeOf<JacobiFuzzTelemetryEntry>()) +
+                PowerJacobiStressFuzzerConstants.CsvScratchBytes +
+                (2L * UnsafeUtility.SizeOf<int>());
+            return nodesBytes + aupBytes + offsetsBytes + edgeBytes + scalarNodeBytes + historyBytes + telemetryBytes;
+        }
+
+        private static bool TryResolveFuzzerVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.Power,
+                options);
+            return handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateHostileCsrGraphJob : IJob
     {
-        [NoAlias] public NativeArray<PowerNodeDTO> Nodes;
+        [NoAlias] public NativeArray<JacobiFuzzPowerNodeDTO> Nodes;
         [NoAlias] public NativeArray<double3> NodeAup;
         [NoAlias] public NativeArray<int> NodeEdgeOffsets;
         [NoAlias] public NativeArray<int> EdgeDestinations;
@@ -585,14 +1162,14 @@ namespace Hecton8.Power
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                PowerNodeDTO node = default;
+                JacobiFuzzPowerNodeDTO node = default;
                 node.NodeHash = HashNode(nodeIndex);
                 node.Potential = 0f;
                 node.MaxCapacity = (nodeIndex % 257) == 0 ? 250000f : 1000f + ((nodeIndex & 31) * 37f);
                 node.CurrentStorage = (nodeIndex % 41) == 0 ? 128f : 0f;
-                node.Flags = PowerGridJacobiConstants.NodeFlagActive |
-                             ((nodeIndex % 257) == 0 ? PowerGridJacobiConstants.NodeFlagSource : 0u) |
-                             ((nodeIndex % 41) == 0 ? PowerGridJacobiConstants.NodeFlagBattery : 0u);
+                node.Flags = PowerJacobiStressFuzzerConstants.NodeFlagActive |
+                             ((nodeIndex % 257) == 0 ? PowerJacobiStressFuzzerConstants.NodeFlagSource : 0u) |
+                             ((nodeIndex % 41) == 0 ? PowerJacobiStressFuzzerConstants.NodeFlagBattery : 0u);
                 node.InternalResistance = 0.05f + ((nodeIndex & 15) * 0.015625f);
                 Nodes[nodeIndex] = node;
                 NodeAup[nodeIndex] = ResolveParadoxAup(nodeIndex);
@@ -689,19 +1266,25 @@ namespace Hecton8.Power
 
         private float ResolveConductance(int source, int destination, int localEdge)
         {
-            double3 sourceAup = NodeAup[source];
-            double3 destinationAup = NodeAup[destination];
-            double3 delta = destinationAup - sourceAup;
-            float distSq = (float)math.min(1000000.0, math.lengthsq(delta));
+            float3 sourceLocal = PowerJacobiStressAupMath.ToBaseLocalFloat3(NodeAup[source], BaseOriginAup);
+            float3 destinationLocal = PowerJacobiStressAupMath.ToBaseLocalFloat3(NodeAup[destination], BaseOriginAup);
+            float3 delta = destinationLocal - sourceLocal;
+            float distSq = math.min(1000000f, math.lengthsq(delta));
             float distance = distSq <= 0.0001f ? 0f : distSq * math.rsqrt(math.max(distSq, 0.0001f));
             float baseResistance = 0.0001f + ((source + destination + localEdge) & 31) * 0.00037f;
-            float paradoxBoost = source == destination ? 64f : 1f;
-            float conductance = paradoxBoost * math.rcp(math.max(0.0001f, baseResistance + distance * 0.00001f));
             if ((source & 511) == 7 && localEdge == 0)
-                return float.NaN;
+                baseResistance = float.PositiveInfinity;
             if ((source & 1023) == 33 && localEdge == 1)
-                return float.PositiveInfinity;
-            return math.min(10000f, conductance);
+                baseResistance = float.MaxValue;
+            float resistance = baseResistance + distance * 0.00001f;
+            if (!math.isfinite(resistance) || resistance >= float.MaxValue * 0.25f)
+                return 0f;
+
+            float paradoxBoost = source == destination ? 64f : 1f;
+            float conductance = paradoxBoost * math.rcp(math.max(0.0001f, resistance));
+            if ((source & 511) == 7 && localEdge == 0)
+                return 0f;
+            return math.min(PowerJacobiStressFuzzerConstants.MaximumConductance, conductance);
         }
 
         private double3 ResolveParadoxAup(int nodeIndex)
@@ -735,16 +1318,17 @@ namespace Hecton8.Power
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct InjectRandomPotentialsJob : IJob
     {
-        [NoAlias, NativeDisableUnsafePtrRestriction] public PowerNodeDTO* NodesPtr;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public JacobiFuzzPowerNodeDTO* NodesPtr;
         [NoAlias] public NativeArray<float> PotentialFront;
         [NoAlias] public NativeArray<float> PotentialBack;
         [NoAlias] public NativeArray<float> DemandRate;
         [NoAlias] public NativeArray<float> BatteryMilliRemainder;
         public int NodeCount;
         public int FrameIndex;
+        public uint ProfileFlags;
 
         public void Execute()
         {
@@ -754,16 +1338,18 @@ namespace Hecton8.Power
             int nodeLimit = math.min(NodeCount, math.min(PotentialFront.Length, math.min(PotentialBack.Length, DemandRate.Length)));
             for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
             {
-                ref PowerNodeDTO node = ref UnsafeUtility.AsRef<PowerNodeDTO>(NodesPtr + nodeIndex);
+                ref JacobiFuzzPowerNodeDTO node = ref UnsafeUtility.AsRef<JacobiFuzzPowerNodeDTO>(NodesPtr + nodeIndex);
                 float stablePotential = ResolveStablePotential(nodeIndex);
-                float demand = ResolveDemand(nodeIndex);
+                bool injectRawFaults = (ProfileFlags & PowerJacobiStressFuzzerConstants.ProfileFlagInjectRawFaults) != 0u;
+                bool injectCorruptDtos = (ProfileFlags & PowerJacobiStressFuzzerConstants.ProfileFlagInjectCorruptNodeDto) != 0u;
+                float demand = injectRawFaults ? ResolveHostileDemand(nodeIndex) : ResolveStableDemand(nodeIndex);
 
                 if (FrameIndex == 0)
                 {
-                    float injectedPotential = ResolveHostilePotential(nodeIndex, stablePotential);
-                    if ((nodeIndex & 1023) == 19)
+                    float injectedPotential = injectRawFaults ? ResolveHostilePotential(nodeIndex, stablePotential) : stablePotential;
+                    if (injectCorruptDtos && (nodeIndex & 1023) == 19)
                         node.InternalResistance = float.NaN;
-                    if ((nodeIndex & 2047) == 91)
+                    if (injectCorruptDtos && (nodeIndex & 2047) == 91)
                         node.MaxCapacity = float.MaxValue;
 
                     PotentialFront[nodeIndex] = injectedPotential;
@@ -804,13 +1390,18 @@ namespace Hecton8.Power
             return stablePotential;
         }
 
-        private static float ResolveDemand(int nodeIndex)
+        private static float ResolveStableDemand(int nodeIndex)
         {
-            if ((nodeIndex & 255) == 5)
-                return float.MaxValue;
             if ((nodeIndex & 127) == 9)
                 return 1f;
             return ((nodeIndex * 13) & 255) * (1f / 255f);
+        }
+
+        private static float ResolveHostileDemand(int nodeIndex)
+        {
+            if ((nodeIndex & 255) == 5)
+                return float.MaxValue;
+            return ResolveStableDemand(nodeIndex);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -820,13 +1411,14 @@ namespace Hecton8.Power
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct InitializeFuzzerResultJob : IJob
     {
-        [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public PowerNodeDTO* NodesPtr;
+        [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public JacobiFuzzPowerNodeDTO* NodesPtr;
         [ReadOnly, NoAlias] public NativeArray<float> LatestPotential;
         [NoAlias] public NativeArray<PowerJacobiStressFuzzerResult> Result;
         [NoAlias] public NativeArray<PowerJacobiStressFrameTelemetry> Telemetry;
+        [ReadOnly, NoAlias] public NativeArray<int> GraphCounts;
         public int NodeCount;
         public int EdgeCount;
         public uint ExplicitGenerationDrainPresent;
@@ -841,7 +1433,7 @@ namespace Hecton8.Power
             uint hash = 2166136261u;
             for (int i = 0; i < nodeLimit; i++)
             {
-                ref PowerNodeDTO node = ref UnsafeUtility.AsRef<PowerNodeDTO>(NodesPtr + i);
+                ref JacobiFuzzPowerNodeDTO node = ref UnsafeUtility.AsRef<JacobiFuzzPowerNodeDTO>(NodesPtr + i);
                 float potential = Sanitize01(LatestPotential[i]);
                 energy += potential + SanitizePositive(node.CurrentStorage);
                 hash = Mix(hash, node.NodeHash);
@@ -851,7 +1443,7 @@ namespace Hecton8.Power
             PowerJacobiStressFuzzerResult result = default;
             result.FinalStateHash = hash;
             result.NodeCount = nodeLimit;
-            result.EdgeCount = math.max(0, EdgeCount);
+            result.EdgeCount = ResolveActualEdgeCount();
             result.InitialEnergy = energy;
             result.FinalEnergy = energy;
             result.FirstFailureFrame = -1;
@@ -883,12 +1475,649 @@ namespace Hecton8.Power
         {
             return (hash ^ value) * 16777619u;
         }
+
+        private int ResolveActualEdgeCount()
+        {
+            if (GraphCounts.IsCreated && GraphCounts.Length > 1)
+                return math.max(0, GraphCounts[1]);
+            return math.max(0, EdgeCount);
+        }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct EvaluateHeadlessJacobiFuzzJob : IJob
+    {
+        [NoAlias, NativeDisableUnsafePtrRestriction] public JacobiFuzzPowerNodeDTO* NodesPtr;
+        [ReadOnly, NoAlias] public NativeArray<double3> NodeAup;
+        [ReadOnly, NoAlias] public NativeArray<int> NodeEdgeOffsets;
+        [ReadOnly, NoAlias] public NativeArray<int> EdgeDestinations;
+        [ReadOnly, NoAlias] public NativeArray<float> EdgeConductance;
+        [NoAlias] public NativeArray<float> EdgeCurrentFlow;
+        [NoAlias] public NativeArray<float> PotentialFront;
+        [NoAlias] public NativeArray<float> PotentialBack;
+        [ReadOnly, NoAlias] public NativeArray<float> DemandRate;
+        [NoAlias] public NativeArray<float> BatteryMilliRemainder;
+        [NoAlias] public NativeArray<float> VoltageHistory;
+        [NoAlias] public NativeArray<float> RollbackFront;
+        [NoAlias] public NativeArray<float> RollbackBack;
+        [NoAlias] public NativeArray<PowerJacobiStressFuzzerResult> Result;
+        [NoAlias] public NativeArray<JacobiFuzzStateDTO> State;
+        [NoAlias] public NativeArray<PowerJacobiStressFrameTelemetry> StressTelemetry;
+        [NoAlias] public NativeArray<JacobiFuzzTelemetryEntry> FuzzTelemetry;
+        [ReadOnly, NoAlias] public NativeArray<int> GraphCounts;
+        public PowerJacobiStressRunConfig Config;
+        public int EdgeCount;
+
+        public void Execute()
+        {
+            if (NodesPtr == null ||
+                !Result.IsCreated ||
+                Result.Length <= 0 ||
+                !PotentialFront.IsCreated ||
+                !PotentialBack.IsCreated)
+            {
+                return;
+            }
+
+            int nodeLimit = math.min(Config.NodeCount, math.min(PotentialFront.Length, PotentialBack.Length));
+            if (nodeLimit <= 0)
+                return;
+
+            int iterationLimit = math.clamp(
+                Config.IterationCount <= 0 ? PowerJacobiStressFuzzerConstants.DefaultSolverIterationCount : Config.IterationCount,
+                PowerJacobiStressFuzzerConstants.MinimumSolverIterationCount,
+                PowerJacobiStressFuzzerConstants.MaximumSolverIterationCount);
+            int rollbackStart = math.min(64, math.max(0, iterationLimit - 31));
+            int rollbackEnd = math.min(iterationLimit - 1, rollbackStart + 29);
+            float tolerance = math.max(0.000001f, Config.ResidualTolerance);
+            NativeArray<float> readBuffer = PotentialFront;
+            NativeArray<float> writeBuffer = PotentialBack;
+            bool readIsFront = true;
+            uint failureFlags = 0u;
+            uint stateHash = 2166136261u;
+            uint rollbackHash = 2166136261u;
+            uint mitigationCount = 0u;
+            int firstBadNode = -1;
+            uint firstBadHash = 0u;
+            double3 firstBadAup = default;
+            int failingArrayOffset = -1;
+            float previousResidual = float.MaxValue;
+            float highestResidual = 0f;
+            float finalResidual = 0f;
+            float finalEnergy = 0f;
+            int finalIterationCount = iterationLimit;
+            int convergenceRun = 0;
+            bool replayCompared = false;
+            bool rollbackSnapshotValid = false;
+
+            InitializeTelemetryRings();
+            EdgeCount = ResolveActualEdgeCount();
+
+            for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
+            {
+                ref JacobiFuzzPowerNodeDTO node = ref UnsafeUtility.AsRef<JacobiFuzzPowerNodeDTO>(NodesPtr + nodeIndex);
+                float rawPotential = readBuffer[nodeIndex];
+                if (!math.isfinite(rawPotential) ||
+                    rawPotential > PowerJacobiStressFuzzerConstants.MaxVoltageThreshold ||
+                    rawPotential < -PowerJacobiStressFuzzerConstants.MaxVoltageThreshold)
+                {
+                    failureFlags |= !math.isfinite(rawPotential)
+                        ? (uint)PowerJacobiStressFuzzerConstants.FailureFlagNanVoltageDetected
+                        : (uint)PowerJacobiStressFuzzerConstants.FailureFlagInfiniteDivergence;
+                    CaptureFirstBad(nodeIndex, ref firstBadNode, ref firstBadHash, ref firstBadAup, ref failingArrayOffset);
+                }
+
+                if (DemandRate.IsCreated && (uint)nodeIndex < (uint)DemandRate.Length)
+                {
+                    float rawDemand = DemandRate[nodeIndex];
+                    if (!math.isfinite(rawDemand) || rawDemand > PowerJacobiStressFuzzerConstants.MaxVoltageThreshold || rawDemand < 0f)
+                    {
+                        failureFlags |= !math.isfinite(rawDemand)
+                            ? (uint)PowerJacobiStressFuzzerConstants.FailureFlagMathCorruption
+                            : (uint)PowerJacobiStressFuzzerConstants.FailureFlagInfiniteDivergence;
+                        CaptureFirstBad(nodeIndex, ref firstBadNode, ref firstBadHash, ref firstBadAup, ref failingArrayOffset);
+                    }
+                }
+
+                float safe = Sanitize01(rawPotential);
+                readBuffer[nodeIndex] = safe;
+                writeBuffer[nodeIndex] = safe;
+                node.Potential = safe;
+                if ((uint)nodeIndex < (uint)BatteryMilliRemainder.Length)
+                    BatteryMilliRemainder[nodeIndex] = 0f;
+            }
+
+            for (int iteration = 0; iteration < iterationLimit; iteration++)
+            {
+                if (iteration == rollbackStart)
+                {
+                    CopyPotential(readBuffer, RollbackFront, nodeLimit);
+                    rollbackSnapshotValid = true;
+                }
+
+                float omega = ResolveOmega(iteration, iterationLimit);
+                if (iteration > rollbackEnd &&
+                    previousResidual < float.MaxValue &&
+                    finalResidual > math.max(previousResidual * 1.08f, previousResidual + tolerance * 0.25f))
+                {
+                    omega = math.max(PowerJacobiStressFuzzerConstants.OmegaMin, omega * 0.72f);
+                    mitigationCount++;
+                }
+
+                float residual = 0f;
+                float energy = 0f;
+                float potentialSum = 0f;
+                float minPotential = nodeLimit > 0 ? 1f : 0f;
+                float maxPotential = 0f;
+                stateHash = 2166136261u;
+
+                for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
+                {
+                    float solvedPotential = SolveNodePotential(nodeIndex, iteration, rollbackStart, omega, readBuffer);
+                    float previous = Sanitize01(readBuffer[nodeIndex]);
+                    if (!math.isfinite(solvedPotential) ||
+                        solvedPotential > PowerJacobiStressFuzzerConstants.MaxVoltageThreshold ||
+                        solvedPotential < -PowerJacobiStressFuzzerConstants.MaxVoltageThreshold)
+                    {
+                        failureFlags |= !math.isfinite(solvedPotential)
+                            ? (uint)PowerJacobiStressFuzzerConstants.FailureFlagNanVoltageDetected
+                            : (uint)PowerJacobiStressFuzzerConstants.FailureFlagInfiniteDivergence;
+                        CaptureFirstBad(nodeIndex, ref firstBadNode, ref firstBadHash, ref firstBadAup, ref failingArrayOffset);
+                    }
+
+                    solvedPotential = Sanitize01(solvedPotential);
+                    writeBuffer[nodeIndex] = solvedPotential;
+                    ref JacobiFuzzPowerNodeDTO node = ref UnsafeUtility.AsRef<JacobiFuzzPowerNodeDTO>(NodesPtr + nodeIndex);
+                    bool corruptNodeDto = !math.isfinite(node.InternalResistance) ||
+                                          !math.isfinite(node.MaxCapacity) ||
+                                          !math.isfinite(node.CurrentStorage) ||
+                                          node.MaxCapacity > 1000000f ||
+                                          node.InternalResistance < 0f;
+                    if (corruptNodeDto)
+                    {
+                        failureFlags |= (uint)PowerJacobiStressFuzzerConstants.FailureFlagMathCorruption;
+                        CaptureFirstBad(nodeIndex, ref firstBadNode, ref firstBadHash, ref firstBadAup, ref failingArrayOffset);
+                    }
+
+                    node.Potential = solvedPotential;
+                    if (solvedPotential < PowerJacobiStressFuzzerConstants.BrownoutThreshold01)
+                        node.Flags |= PowerJacobiStressFuzzerConstants.NodeFlagBrownout;
+                    else
+                        node.Flags &= ~PowerJacobiStressFuzzerConstants.NodeFlagBrownout;
+
+                    residual = math.max(residual, math.abs(solvedPotential - previous));
+                    energy += solvedPotential + SanitizePositive(node.CurrentStorage);
+                    potentialSum += solvedPotential;
+                    minPotential = math.min(minPotential, solvedPotential);
+                    maxPotential = math.max(maxPotential, solvedPotential);
+                    stateHash = Mix(Mix(stateHash, node.NodeHash), math.asuint(solvedPotential));
+
+                    int historyOffset = (iteration * nodeLimit) + nodeIndex;
+                    if ((uint)historyOffset < (uint)VoltageHistory.Length)
+                        VoltageHistory[historyOffset] = solvedPotential;
+                }
+
+                NativeArray<float> swap = readBuffer;
+                readBuffer = writeBuffer;
+                writeBuffer = swap;
+                readIsFront = !readIsFront;
+                previousResidual = finalResidual;
+                finalResidual = residual;
+                highestResidual = math.max(highestResidual, residual);
+                finalEnergy = energy;
+
+                if (iteration == rollbackEnd)
+                {
+                    rollbackHash = ReplayRollbackAndCompare(
+                        rollbackStart,
+                        rollbackEnd,
+                        readBuffer,
+                        nodeLimit,
+                        ref failureFlags,
+                        ref firstBadNode,
+                        ref firstBadHash,
+                        ref firstBadAup,
+                        ref failingArrayOffset);
+                    replayCompared = true;
+                }
+
+                if (residual <= tolerance && iteration >= rollbackEnd)
+                    convergenceRun++;
+                else
+                    convergenceRun = 0;
+
+                WriteTelemetry(
+                    iteration,
+                    nodeLimit,
+                    residual,
+                    previousResidual,
+                    energy,
+                    potentialSum,
+                    minPotential,
+                    maxPotential,
+                    omega,
+                    failureFlags,
+                    stateHash,
+                    mitigationCount,
+                    firstBadNode,
+                    firstBadHash,
+                    failingArrayOffset,
+                    rollbackHash);
+
+                if ((failureFlags &
+                     ((uint)PowerJacobiStressFuzzerConstants.FailureFlagMathCorruption |
+                      (uint)PowerJacobiStressFuzzerConstants.FailureFlagInfiniteDivergence |
+                      (uint)PowerJacobiStressFuzzerConstants.FailureFlagRollbackDesync)) != 0u)
+                {
+                    finalIterationCount = iteration + 1;
+                    FillRemainingHistory(iteration + 1, iterationLimit, nodeLimit, readBuffer);
+                    break;
+                }
+
+                if (convergenceRun >= 4)
+                {
+                    finalIterationCount = iteration + 1;
+                    failureFlags |= (uint)PowerJacobiStressFuzzerConstants.FailureFlagEarlyConverged;
+                    FillRemainingHistory(iteration + 1, iterationLimit, nodeLimit, readBuffer);
+                    break;
+                }
+            }
+
+            if (!replayCompared && rollbackSnapshotValid && iterationLimit > 1)
+            {
+                rollbackHash = ReplayRollbackAndCompare(
+                    rollbackStart,
+                    math.min(rollbackEnd, iterationLimit - 1),
+                    readBuffer,
+                    nodeLimit,
+                    ref failureFlags,
+                    ref firstBadNode,
+                    ref firstBadHash,
+                    ref firstBadAup,
+                    ref failingArrayOffset);
+            }
+
+            if (!readIsFront)
+                CopyPotential(readBuffer, PotentialFront, nodeLimit);
+
+            WriteFinalEdgeFlows(readBuffer, nodeLimit);
+
+            PowerJacobiStressFuzzerResult result = Result[0];
+            uint reportedFailureFlags = failureFlags & ~(uint)PowerJacobiStressFuzzerConstants.FailureFlagEarlyConverged;
+            if (result.FailureFlags == 0u && reportedFailureFlags != 0u)
+            {
+                result.FirstFailureFrame = finalIterationCount;
+                result.FirstFailureNodeIndex = firstBadNode;
+                result.FirstFailureNodeHash = firstBadHash;
+                result.FirstFailureAup = firstBadAup;
+            }
+
+            result.FailureFlags |= reportedFailureFlags;
+            result.FinalStateHash = stateHash;
+            result.NodeCount = nodeLimit;
+            result.EdgeCount = ResolveActualEdgeCount();
+            result.FrameCount = finalIterationCount;
+            result.IterationCount = finalIterationCount;
+            result.FinalResidual = finalResidual;
+            result.MaxResidual = highestResidual;
+            result.FinalEnergy = finalEnergy;
+            result.EnergyDeltaAbs = math.abs(finalEnergy - result.InitialEnergy);
+            result.OscillationCount = mitigationCount;
+            Result[0] = result;
+
+            if (State.IsCreated && State.Length > 0)
+            {
+                JacobiFuzzStateDTO state = default;
+                state.HighestResidualRecorded = highestResidual;
+                state.FinalIterationCount = (uint)finalIterationCount;
+                state.MismatchFlags = result.FailureFlags;
+                State[0] = state;
+            }
+        }
+
+        private float SolveNodePotential(int nodeIndex, int iteration, int rollbackStart, float omega, NativeArray<float> readBuffer)
+        {
+            ref JacobiFuzzPowerNodeDTO node = ref UnsafeUtility.AsRef<JacobiFuzzPowerNodeDTO>(NodesPtr + nodeIndex);
+            uint flags = node.Flags;
+            if ((flags & (PowerJacobiStressFuzzerConstants.NodeFlagOffline | PowerJacobiStressFuzzerConstants.NodeFlagDamaged)) != 0u)
+                return 0f;
+
+            int edgeReadLimit = math.min(EdgeDestinations.Length, EdgeConductance.Length);
+            int edgeStart = math.clamp(NodeEdgeOffsets[nodeIndex], 0, edgeReadLimit);
+            int edgeEnd = math.clamp(NodeEdgeOffsets[nodeIndex + 1], edgeStart, edgeReadLimit);
+            float weightedPotential = 0f;
+            float conductanceSum = 0f;
+            for (int edgeCursor = edgeStart; edgeCursor < edgeEnd; edgeCursor++)
+            {
+                int destination = EdgeDestinations[edgeCursor];
+                if ((uint)destination >= (uint)Config.NodeCount || (uint)destination >= (uint)readBuffer.Length)
+                    continue;
+
+                float conductance = math.clamp(
+                    math.isfinite(EdgeConductance[edgeCursor]) ? EdgeConductance[edgeCursor] : 0f,
+                    0f,
+                    PowerJacobiStressFuzzerConstants.MaximumConductance);
+                if (conductance <= PowerJacobiStressFuzzerConstants.MinimumConductance)
+                    continue;
+
+                weightedPotential += conductance * Sanitize01(readBuffer[destination]);
+                conductanceSum += conductance;
+            }
+
+            float generatorRate = (flags & PowerJacobiStressFuzzerConstants.NodeFlagSource) != 0u ? 1f : 0f;
+            float demand = DemandRate.IsCreated && (uint)nodeIndex < (uint)DemandRate.Length
+                ? DemandRate[nodeIndex]
+                : 0f;
+            demand = ResolveRollbackDemand(nodeIndex, iteration, rollbackStart, demand);
+            float targetPotential = (weightedPotential + generatorRate - demand) * math.rcp(math.max(conductanceSum + 1f, 1f));
+            float currentPotential = Sanitize01(readBuffer[nodeIndex]);
+            return currentPotential + (targetPotential - currentPotential) * omega;
+        }
+
+        private int ResolveActualEdgeCount()
+        {
+            if (GraphCounts.IsCreated && GraphCounts.Length > 1)
+                return math.max(0, math.min(GraphCounts[1], math.min(EdgeDestinations.Length, EdgeConductance.Length)));
+            return math.max(0, math.min(EdgeCount, math.min(EdgeDestinations.Length, EdgeConductance.Length)));
+        }
+
+        private uint ReplayRollbackAndCompare(
+            int startIteration,
+            int endIteration,
+            NativeArray<float> target,
+            int nodeLimit,
+            ref uint failureFlags,
+            ref int firstBadNode,
+            ref uint firstBadHash,
+            ref double3 firstBadAup,
+            ref int failingArrayOffset)
+        {
+            CopyPotential(RollbackFront, RollbackBack, nodeLimit);
+            NativeArray<float> replayRead = RollbackFront;
+            NativeArray<float> replayWrite = RollbackBack;
+            for (int iteration = startIteration; iteration <= endIteration; iteration++)
+            {
+                float omega = ResolveOmega(iteration, math.max(1, Config.IterationCount));
+                for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
+                    replayWrite[nodeIndex] = Sanitize01(SolveNodePotential(nodeIndex, iteration, startIteration, omega, replayRead));
+
+                NativeArray<float> swap = replayRead;
+                replayRead = replayWrite;
+                replayWrite = swap;
+            }
+
+            uint hash = 2166136261u;
+            for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
+            {
+                uint replayBits = math.asuint(Sanitize01(replayRead[nodeIndex]));
+                uint targetBits = math.asuint(Sanitize01(target[nodeIndex]));
+                hash = Mix(Mix(hash, replayBits), targetBits);
+                if (replayBits != targetBits)
+                {
+                    failureFlags |= (uint)PowerJacobiStressFuzzerConstants.FailureFlagRollbackDesync;
+                    CaptureFirstBad(nodeIndex, ref firstBadNode, ref firstBadHash, ref firstBadAup, ref failingArrayOffset);
+                    break;
+                }
+            }
+
+            return hash;
+        }
+
+        private void WriteFinalEdgeFlows(NativeArray<float> latestPotential, int nodeLimit)
+        {
+            int edgeReadLimit = math.min(EdgeDestinations.Length, math.min(EdgeConductance.Length, EdgeCurrentFlow.Length));
+            for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
+            {
+                int edgeStart = math.clamp(NodeEdgeOffsets[nodeIndex], 0, edgeReadLimit);
+                int edgeEnd = math.clamp(NodeEdgeOffsets[nodeIndex + 1], edgeStart, edgeReadLimit);
+                float sourcePotential = Sanitize01(latestPotential[nodeIndex]);
+                for (int edgeCursor = edgeStart; edgeCursor < edgeEnd; edgeCursor++)
+                {
+                    int destination = EdgeDestinations[edgeCursor];
+                    float destinationPotential = (uint)destination < (uint)nodeLimit ? Sanitize01(latestPotential[destination]) : 0f;
+                    float conductance = math.clamp(
+                        math.isfinite(EdgeConductance[edgeCursor]) ? EdgeConductance[edgeCursor] : 0f,
+                        0f,
+                        PowerJacobiStressFuzzerConstants.MaximumConductance);
+                    EdgeCurrentFlow[edgeCursor] = math.clamp(
+                        (sourcePotential - destinationPotential) * conductance,
+                        -PowerJacobiStressFuzzerConstants.MaximumEdgeCurrentAbs,
+                        PowerJacobiStressFuzzerConstants.MaximumEdgeCurrentAbs);
+                }
+            }
+        }
+
+        private void FillRemainingHistory(int startIteration, int iterationLimit, int nodeLimit, NativeArray<float> latestPotential)
+        {
+            for (int iteration = startIteration; iteration < iterationLimit; iteration++)
+            {
+                int historyBase = iteration * nodeLimit;
+                for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
+                {
+                    int historyOffset = historyBase + nodeIndex;
+                    if ((uint)historyOffset < (uint)VoltageHistory.Length)
+                        VoltageHistory[historyOffset] = latestPotential[nodeIndex];
+                }
+            }
+        }
+
+        private void WriteTelemetry(
+            int iteration,
+            int nodeLimit,
+            float residual,
+            float previousResidual,
+            float energy,
+            float potentialSum,
+            float minPotential,
+            float maxPotential,
+            float omega,
+            uint failureFlags,
+            uint stateHash,
+            uint mitigationCount,
+            int firstBadNode,
+            uint firstBadHash,
+            int failingArrayOffset,
+            uint rollbackHash)
+        {
+            if (StressTelemetry.IsCreated && StressTelemetry.Length > 0)
+            {
+                int index = iteration % StressTelemetry.Length;
+                PowerJacobiStressFrameTelemetry entry = default;
+                entry.FrameIndex = (uint)iteration;
+                entry.StateHash = stateHash;
+                entry.FailureFlags = failureFlags;
+                entry.NodeCount = nodeLimit;
+                entry.EdgeCount = math.max(0, EdgeCount);
+                entry.IterationCount = iteration + 1;
+                entry.Residual = residual;
+                entry.PreviousResidual = previousResidual == float.MaxValue ? residual : previousResidual;
+                entry.TotalEnergy = energy;
+                entry.AveragePotential = nodeLimit > 0 ? potentialSum * math.rcp(nodeLimit) : 0f;
+                entry.MinPotential = minPotential;
+                entry.MaxPotential = maxPotential;
+                entry.FirstBadNodeHash = firstBadHash;
+                entry.FirstBadNodeIndex = firstBadNode;
+                entry.SolverMicroseconds = 0f;
+                StressTelemetry[index] = entry;
+            }
+
+            if (FuzzTelemetry.IsCreated && FuzzTelemetry.Length > 0)
+            {
+                int index = iteration % FuzzTelemetry.Length;
+                JacobiFuzzTelemetryEntry entry = default;
+                entry.IterationIndex = (uint)iteration;
+                entry.StateHash = stateHash;
+                entry.MismatchFlags = failureFlags;
+                entry.MitigationCount = mitigationCount;
+                entry.HighestResidual = residual;
+                entry.PreviousResidual = previousResidual == float.MaxValue ? residual : previousResidual;
+                entry.ActiveOmega = omega;
+                entry.SolverMicroseconds = 0f;
+                entry.TotalEnergy = energy;
+                entry.RemainderDrift = 0f;
+                entry.FirstBadNodeIndex = firstBadNode;
+                entry.FirstBadNodeHash = firstBadHash;
+                entry.FailingArrayOffset = failingArrayOffset;
+                entry.RollbackHash = rollbackHash;
+                entry.BrownoutNodeId = firstBadHash;
+                FuzzTelemetry[index] = entry;
+            }
+        }
+
+        private void InitializeTelemetryRings()
+        {
+            if (StressTelemetry.IsCreated)
+            {
+                for (int i = 0; i < StressTelemetry.Length; i++)
+                {
+                    PowerJacobiStressFrameTelemetry entry = default;
+                    entry.FirstBadNodeIndex = -1;
+                    StressTelemetry[i] = entry;
+                }
+            }
+
+            if (FuzzTelemetry.IsCreated)
+            {
+                for (int i = 0; i < FuzzTelemetry.Length; i++)
+                {
+                    JacobiFuzzTelemetryEntry entry = default;
+                    entry.FirstBadNodeIndex = -1;
+                    entry.FailingArrayOffset = -1;
+                    FuzzTelemetry[i] = entry;
+                }
+            }
+        }
+
+        private void CaptureFirstBad(
+            int nodeIndex,
+            ref int firstBadNode,
+            ref uint firstBadHash,
+            ref double3 firstBadAup,
+            ref int failingArrayOffset)
+        {
+            if (firstBadNode >= 0)
+                return;
+
+            firstBadNode = nodeIndex;
+            ref JacobiFuzzPowerNodeDTO node = ref UnsafeUtility.AsRef<JacobiFuzzPowerNodeDTO>(NodesPtr + nodeIndex);
+            firstBadHash = node.NodeHash;
+            firstBadAup = (uint)nodeIndex < (uint)NodeAup.Length ? NodeAup[nodeIndex] : default;
+            failingArrayOffset = nodeIndex;
+        }
+
+        private static void CopyPotential(NativeArray<float> source, NativeArray<float> destination, int nodeLimit)
+        {
+            int limit = math.min(nodeLimit, math.min(source.IsCreated ? source.Length : 0, destination.IsCreated ? destination.Length : 0));
+            for (int i = 0; i < limit; i++)
+                destination[i] = source[i];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveOmega(int iteration, int iterationLimit)
+        {
+            float denominator = math.max(1f, iterationLimit - 1f);
+            float phase = math.frac(iteration * 0.03125f);
+            float triangle = 1f - math.abs((phase * 2f) - 1f);
+            float ramp = math.saturate(iteration * math.rcp(denominator));
+            float profile = math.saturate((triangle * 0.72f) + (ramp * 0.28f));
+            return math.lerp(PowerJacobiStressFuzzerConstants.OmegaMin, PowerJacobiStressFuzzerConstants.OmegaMax, profile);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveRollbackDemand(int nodeIndex, int iteration, int rollbackStart, float baseDemand)
+        {
+            float demand = math.saturate(math.max(0f, math.isfinite(baseDemand) ? baseDemand : 0f));
+            if (iteration >= rollbackStart && ((nodeIndex + 17) & 255) == 0)
+                demand = math.saturate(demand + 0.125f);
+            return demand;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Sanitize01(float value)
+        {
+            return math.saturate(math.isfinite(value) ? value : 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizePositive(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Mix(uint hash, uint value)
+        {
+            return (hash ^ value) * 16777619u;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct VerifyPowerConservationJob : IJob
+    {
+        [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public JacobiFuzzPowerNodeDTO* NodesPtr;
+        [ReadOnly, NoAlias] public NativeArray<float> DemandRate;
+        [NoAlias] public NativeArray<PowerJacobiStressFuzzerResult> Result;
+        [NoAlias] public NativeArray<JacobiFuzzStateDTO> State;
+        [NoAlias] public NativeArray<JacobiFuzzTelemetryEntry> FuzzTelemetry;
+        public int NodeCount;
+        public float EnergyEpsilon;
+        public uint ExplicitGenerationDrainPresent;
+        public float AverageSolverMicroseconds;
+
+        public void Execute()
+        {
+            if (NodesPtr == null || !Result.IsCreated || Result.Length <= 0)
+                return;
+
+            int nodeLimit = math.min(NodeCount, DemandRate.IsCreated ? DemandRate.Length : NodeCount);
+            float generatedWatts = 0f;
+            float consumedWatts = 0f;
+            for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
+            {
+                ref JacobiFuzzPowerNodeDTO node = ref UnsafeUtility.AsRef<JacobiFuzzPowerNodeDTO>(NodesPtr + nodeIndex);
+                float potential = math.saturate(math.isfinite(node.Potential) ? node.Potential : 0f);
+                float capacity = math.min(1000000f, math.max(0f, math.isfinite(node.MaxCapacity) ? node.MaxCapacity : 0f));
+                if ((node.Flags & PowerJacobiStressFuzzerConstants.NodeFlagSource) != 0u)
+                    generatedWatts += capacity * potential;
+                if ((uint)nodeIndex < (uint)DemandRate.Length)
+                    consumedWatts += math.saturate(math.max(0f, math.isfinite(DemandRate[nodeIndex]) ? DemandRate[nodeIndex] : 0f));
+            }
+
+            PowerJacobiStressFuzzerResult result = Result[0];
+            float drift = math.abs((result.FinalEnergy - result.InitialEnergy) * 0.001f);
+            float wattDrift = math.abs(generatedWatts - consumedWatts) * 0.001f;
+            drift = math.max(drift, wattDrift);
+            result.EnergyDeltaAbs = math.max(result.EnergyDeltaAbs, drift);
+            result.AverageSolverMicroseconds = AverageSolverMicroseconds;
+            if (ExplicitGenerationDrainPresent == 0u && drift > math.max(PowerJacobiStressFuzzerConstants.RemainderDriftEpsilon, EnergyEpsilon))
+                result.FailureFlags |= (uint)PowerJacobiStressFuzzerConstants.FailureFlagRemainderDrift;
+            Result[0] = result;
+
+            if (FuzzTelemetry.IsCreated)
+            {
+                for (int i = 0; i < FuzzTelemetry.Length; i++)
+                {
+                    JacobiFuzzTelemetryEntry entry = FuzzTelemetry[i];
+                    entry.SolverMicroseconds = AverageSolverMicroseconds;
+                    entry.RemainderDrift = drift;
+                    entry.MismatchFlags = result.FailureFlags;
+                    FuzzTelemetry[i] = entry;
+                }
+            }
+
+            if (State.IsCreated && State.Length > 0)
+            {
+                JacobiFuzzStateDTO state = State[0];
+                state.MismatchFlags = result.FailureFlags;
+                State[0] = state;
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct ValidateSolverConvergenceJob : IJob
     {
-        [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public PowerNodeDTO* NodesPtr;
+        [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public JacobiFuzzPowerNodeDTO* NodesPtr;
         [ReadOnly, NoAlias] public NativeArray<double3> NodeAup;
         [ReadOnly, NoAlias] public NativeArray<float> LatestPotential;
         [ReadOnly, NoAlias] public NativeArray<float> PreviousPotential;
@@ -925,7 +2154,7 @@ namespace Hecton8.Power
 
             for (int i = 0; i < nodeLimit; i++)
             {
-                ref PowerNodeDTO node = ref UnsafeUtility.AsRef<PowerNodeDTO>(NodesPtr + i);
+                ref JacobiFuzzPowerNodeDTO node = ref UnsafeUtility.AsRef<JacobiFuzzPowerNodeDTO>(NodesPtr + i);
                 float potential = LatestPotential[i];
                 float previousPotential = PreviousPotential[i];
                 bool nonFinite = math.isnan(potential) || !math.isfinite(potential) || !math.isfinite(previousPotential) || !math.isfinite(node.Potential);
@@ -1036,6 +2265,7 @@ namespace Hecton8.Power
         }
     }
 
+    #if UNITY_EDITOR
     public static class PowerJacobiStressTopologyProfileParser
     {
         public static bool TryParse(ReadOnlySpan<byte> csvBytes, out PowerJacobiStressTopologyProfile profile)
@@ -1080,7 +2310,8 @@ namespace Hecton8.Power
             profile.LoopRatio01 = math.saturate(ParseFloat(NextField(ref line), 0.78f));
             profile.StarRatio01 = math.saturate(ParseFloat(NextField(ref line), 0.20f));
             profile.IslandRatio01 = math.saturate(ParseFloat(NextField(ref line), 0.15f));
-            profile.Flags = 1u;
+            ReadOnlySpan<byte> flagsField = NextField(ref line);
+            profile.Flags = (uint)math.max(0, ParseInt(flagsField, 0));
             return profile.ProfileHash != 0u;
         }
 
@@ -1202,12 +2433,13 @@ namespace Hecton8.Power
             return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
         }
     }
+    #endif
 
     public static unsafe class PowerJacobiStressCsvExporter
     {
         public static void WriteFailureCsv(
             string path,
-            NativeArray<PowerNodeDTO> nodes,
+            NativeArray<JacobiFuzzPowerNodeDTO> nodes,
             NativeArray<double3> nodeAup,
             NativeArray<int> offsets,
             NativeArray<int> destinations,
@@ -1255,7 +2487,7 @@ namespace Hecton8.Power
         private static void AppendNodePrefix(
             NativeArray<byte> scratch,
             ref int cursor,
-            NativeArray<PowerNodeDTO> nodes,
+            NativeArray<JacobiFuzzPowerNodeDTO> nodes,
             NativeArray<double3> nodeAup,
             int nodeIndex,
             int edgeStart,
@@ -1418,20 +2650,38 @@ namespace Hecton8.Power
 
     public static unsafe class PowerJacobiStressBinaryDump
     {
-        public static void WriteDump(string path, NativeArray<PowerJacobiStressFrameTelemetry> telemetry, NativeArray<byte> scratch)
+        public static void WriteDump(
+            string path,
+            NativeArray<PowerJacobiStressFrameTelemetry> telemetry,
+            NativeArray<JacobiFuzzTelemetryEntry> fuzzTelemetry,
+            uint failureFlags)
         {
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || !scratch.IsCreated || scratch.Length < 16)
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || !fuzzTelemetry.IsCreated || fuzzTelemetry.Length <= 0)
                 return;
 
             PowerJacobiStressCsvExporter.EnsureDirectory(path);
             using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            int cursor = 0;
-            PowerJacobiStressCsvExporter.AppendAscii(scratch, ref cursor, "H8JACOBI");
-            PowerJacobiStressCsvExporter.AppendInt(scratch, ref cursor, telemetry.Length);
-            PowerJacobiStressCsvExporter.Flush(stream, scratch, ref cursor);
+            PowerJacobiStressDumpHeader header = default;
+            header.Magic0 = PowerJacobiStressFuzzerConstants.DumpMagic0;
+            header.Magic1 = PowerJacobiStressFuzzerConstants.DumpMagic1;
+            header.Version = PowerJacobiStressFuzzerConstants.DumpVersion;
+            header.Flags = failureFlags;
+            header.FrameTelemetryCount = (uint)telemetry.Length;
+            header.FuzzTelemetryCount = (uint)fuzzTelemetry.Length;
+            header.FrameTelemetryStride = (uint)UnsafeUtility.SizeOf<PowerJacobiStressFrameTelemetry>();
+            header.FuzzTelemetryStride = (uint)UnsafeUtility.SizeOf<JacobiFuzzTelemetryEntry>();
+            header.ResultStride = (uint)UnsafeUtility.SizeOf<PowerJacobiStressFuzzerResult>();
+            header.StateStride = (uint)UnsafeUtility.SizeOf<JacobiFuzzStateDTO>();
+            header.BufferIdMin = (uint)PowerJacobiStressFuzzerBufferIds.Nodes;
+            header.BufferIdMax = (uint)PowerJacobiStressFuzzerBufferIds.TopologyProfile;
+            byte* headerPtr = (byte*)&header;
+            stream.Write(new ReadOnlySpan<byte>(headerPtr, UnsafeUtility.SizeOf<PowerJacobiStressDumpHeader>()));
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
             int bytes = telemetry.Length * UnsafeUtility.SizeOf<PowerJacobiStressFrameTelemetry>();
             stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
+            byte* fuzzPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(fuzzTelemetry);
+            int fuzzBytes = fuzzTelemetry.Length * UnsafeUtility.SizeOf<JacobiFuzzTelemetryEntry>();
+            stream.Write(new ReadOnlySpan<byte>(fuzzPtr, fuzzBytes));
         }
     }
 

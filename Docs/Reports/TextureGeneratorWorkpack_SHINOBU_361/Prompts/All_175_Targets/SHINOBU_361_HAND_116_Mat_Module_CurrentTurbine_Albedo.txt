@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_116
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_116_Mat_Module_CurrentTurbine_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Module_CurrentTurbine_Albedo.png
+FINAL_FILENAME: Mat_Module_CurrentTurbine_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Current turbine module albedo for underwater power infrastructure. Create satin titanium blade housings, off-white ceramic nacelle panels, graphite rubber seals, teal flow-direction paint, amber service dots, and pale mineral streaks shaped by water movement. The texture should feel hydrodynamic, precise, and premium, with forms that support rotating machinery without needing extra geometry detail. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

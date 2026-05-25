@@ -35,7 +35,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Data Log Tab")]
-    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener, IPDAEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IAudioLogEventListener, IPDAEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
         // COLD ALLOC: char[11] - playback timer template characters - owner: PDADataLogTab
@@ -123,11 +123,14 @@ namespace Hecton8.UI
         // List rows â€” pre-allocated
         // COLD ALLOC: List<LogRow>[32] - pre-allocated audio-log row cache - owner: PDADataLogTab
         private readonly List<LogRow> _rows = new List<LogRow>(32);
-        private readonly string[] _localizedCategoryLabels = new string[5]; // COLD ALLOC: string[5] — localized category labels — owner: PDADataLogTab
+        private const int MaxDynamicTextBufferChars = 4096;
+        private const int CategoryLabelCapacity = 32;
+        private static readonly char[] SharedOversizedTextBuffer = new char[MaxDynamicTextBufferChars]; // COLD ALLOC: char[4096] - no-GC fallback for unusually long PDA data-log strings - owner: PDADataLogTab
         // COLD ALLOC: uint[allLogs.Length] — precomputed lore hashes for direct packed-word archive reads — owner: PDADataLogTab
         private uint[] _catalogLoreHashes = Array.Empty<uint>();
         // COLD ALLOC: int[allLogs.Length] — precomputed lore record indices for direct packed-word archive reads — owner: PDADataLogTab
         private int[] _catalogLoreRecordIndices = Array.Empty<int>();
+        private int[] _catalogLoreSurfaceHashes = Array.Empty<int>();
         // COLD ALLOC: char[128] — uppercase title staging buffer for allocation-free TMP updates — owner: PDADataLogTab
         private char[] _detailTitleBuffer = new char[128];
         // COLD ALLOC: char[256] — general PDA archive text staging buffer — owner: PDADataLogTab
@@ -141,6 +144,7 @@ namespace Hecton8.UI
         private int _selectedIndex = -1;
         private bool _built;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _pdaEventsRegistered;
         private bool _catalogTabRegistered;
         private bool _hotSwapListenerRegistered;
@@ -149,8 +153,12 @@ namespace Hecton8.UI
 
         // Playback timer display
         private float _playbackRemaining;
+        private float _pendingVisualDeltaTime;
+        private bool _playbackTimerDirty;
+        private bool _visualLateFrameDirty;
         private int _prevTimerSeconds = -1;
-        private string _prevSubtitleText;
+        private char[] _prevSubtitleBuffer = new char[2048];
+        private int _prevSubtitleLength;
         private int _lastStressCorruptionBucket = int.MinValue;
         private float _detailReadTimer;
         private float _hiddenRecordFlashTimer;
@@ -163,7 +171,8 @@ namespace Hecton8.UI
         private bool _catalogLoreBindingsDirty = true;
         private string _activeDetailLogId = string.Empty;
         private string _pendingSummaryDecryptLogId = string.Empty;
-        private string _resolvedSummaryBaseText = string.Empty;
+        private char[] _resolvedSummaryBaseBuffer = new char[2048];
+        private int _resolvedSummaryBaseLength;
         // COLD ALLOC: char[4096] — PDA archive hex-decrypt overlay staging buffer — owner: PDADataLogTab
         private char[] _resolvedSummaryHexBuffer = new char[4096];
         private int _resolvedSummaryHexLength;
@@ -176,6 +185,14 @@ namespace Hecton8.UI
         private const float HiddenRecordDelaySeconds = 5f;
         private const float HiddenRecordBlinkSeconds = 0.18f;
         private const float SummaryDecryptDuration = 3f;
+        private const int LoreSurfaceSubtitle = 0;
+        private const int LoreSurfaceRowTitle = 1;
+        private const int LoreSurfaceDetailTitle = 2;
+        private const int LoreSurfaceDetailAuthor = 3;
+        private const int LoreSurfaceDetailDate = 4;
+        private const int LoreSurfaceDetailSummary = 5;
+        private const int LoreSurfaceSummaryHidden = 6;
+        private const int LoreSurfaceCount = 7;
         private const string PlayAudioLabel = "PLAY AUDIO";
         private const string OpenTextLogLabel = "OPEN LOG";
         private const string StopAudioLabel = "STOP";
@@ -187,24 +204,40 @@ namespace Hecton8.UI
         private const string SummaryHiddenSurfaceId = "detail.summary.hidden";
         private const string HexDigits = "0123456789ABCDEF";
 
-        private string _localizedArchiveTitle = "DATA ARCHIVE - HECTON-8 COLONY";
-        private string _localizedCountFormat = "{0}/{1} LOGS";
-        private string _localizedCategoryUnknown = "UNKNOWN";
-        private string _localizedEncryptedLabel = "??? ENCRYPTED ???";
-        private string _localizedEncryptedSummary = "Entry encrypted. Discovery required before archive access.";
-        private string _localizedUnknownAuthor = "UNKNOWN";
-        private string _localizedUnknownDate = "DATE UNKNOWN";
-        private string _localizedAuthorPrefix = "AUTHOR: ";
-        private string _localizedDatePrefix = "DATE: ";
-        private string _localizedPlayAudioLabel = PlayAudioLabel;
-        private string _localizedOpenTextLabel = OpenTextLogLabel;
-        private string _localizedStopAudioLabel = StopAudioLabel;
-        private string _localizedCloseTextLabel = CloseTextLogLabel;
-        private string _localizedLockedLabel = LockedLogLabel;
-        private string _localizedNoPayloadLabel = NoPayloadLabel;
-        private string _localizedTextOnlySummaryPrefix = TextOnlySummaryPrefix;
-        private string _localizedArchiveOnlySummaryPrefix = ArchiveOnlySummaryPrefix;
-        private string _localizedEmptyStateText = "ARCHIVE EMPTY\nAssign AudioLogData assets in allLogs.";
+        private readonly char[] _localizedArchiveTitleBuffer = new char[256];
+        private readonly char[] _localizedEncryptedLabelBuffer = new char[128];
+        private readonly char[] _localizedEncryptedSummaryBuffer = new char[256];
+        private readonly char[] _localizedUnknownAuthorLineBuffer = new char[96];
+        private readonly char[] _localizedUnknownDateLineBuffer = new char[96];
+        private readonly char[] _localizedPlayAudioLabelBuffer = new char[96];
+        private readonly char[] _localizedOpenTextLabelBuffer = new char[96];
+        private readonly char[] _localizedStopAudioLabelBuffer = new char[96];
+        private readonly char[] _localizedCloseTextLabelBuffer = new char[96];
+        private readonly char[] _localizedLockedLabelBuffer = new char[128];
+        private readonly char[] _localizedNoPayloadLabelBuffer = new char[96];
+        private readonly char[] _localizedEmptyStateTextBuffer = new char[256];
+        private int _localizedArchiveTitleLength;
+        private int _localizedEncryptedLabelLength;
+        private int _localizedEncryptedSummaryLength;
+        private int _localizedUnknownAuthorLineLength;
+        private int _localizedUnknownDateLineLength;
+        private int _localizedPlayAudioLabelLength;
+        private int _localizedOpenTextLabelLength;
+        private int _localizedStopAudioLabelLength;
+        private int _localizedCloseTextLabelLength;
+        private int _localizedLockedLabelLength;
+        private int _localizedNoPayloadLabelLength;
+        private int _localizedEmptyStateTextLength;
+        private readonly char[] _categoryPersonalBuffer = new char[CategoryLabelCapacity];
+        private readonly char[] _categoryTechnicalBuffer = new char[CategoryLabelCapacity];
+        private readonly char[] _categoryEmergencyBuffer = new char[CategoryLabelCapacity];
+        private readonly char[] _categoryAtlas6Buffer = new char[CategoryLabelCapacity];
+        private readonly char[] _categoryUnknownBuffer = new char[CategoryLabelCapacity];
+        private int _categoryPersonalLength;
+        private int _categoryTechnicalLength;
+        private int _categoryEmergencyLength;
+        private int _categoryAtlas6Length;
+        private int _categoryUnknownLength;
 
         private int CatalogCount => allLogs != null ? allLogs.Length : 0;
 
@@ -376,16 +409,39 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             if (_dirty)
-            {
-                RefreshList();
-                _dirty = false;
-            }
+                _visualLateFrameDirty = true;
 
             // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ñ‚Ð°Ð¹Ð¼ÐµÑ€ Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ
             if (_playbackRemaining > 0f)
             {
                 _playbackRemaining -= deltaTime;
                 if (_playbackRemaining < 0f) _playbackRemaining = 0f;
+                _playbackTimerDirty = true;
+                _visualLateFrameDirty = true;
+            }
+
+            _pendingVisualDeltaTime += math.max(0f, deltaTime);
+            _visualLateFrameDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_visualLateFrameDirty && !_dirty)
+                return;
+
+            float deltaTime = _pendingVisualDeltaTime;
+            _pendingVisualDeltaTime = 0f;
+            _visualLateFrameDirty = false;
+
+            if (_dirty)
+            {
+                RefreshList();
+                _dirty = false;
+            }
+
+            if (_playbackTimerDirty)
+            {
+                _playbackTimerDirty = false;
                 UpdatePlaybackTimer();
             }
 
@@ -507,9 +563,15 @@ namespace Hecton8.UI
             _playbackRemaining = durationSeconds > 0f ? durationSeconds : (data != null ? data.Duration : 0f);
             if (_subtitleLabel != null && data != null)
             {
-                string visibleSubtitle = data.VisibleSubtitleOrFallback;
-                ApplyDynamicText(_subtitleLabel, ResolveLogStressReactiveText(data, "subtitle", visibleSubtitle), ref _summaryTextBuffer);
-                _prevSubtitleText = visibleSubtitle;
+                if (data.TryWriteVisibleSubtitleOrFallback(_prevSubtitleBuffer, out _prevSubtitleLength))
+                    ApplyLogStressReactiveText(
+                        _subtitleLabel,
+                        data,
+                        "subtitle",
+                        new ReadOnlySpan<char>(_prevSubtitleBuffer, 0, _prevSubtitleLength),
+                        ref _summaryTextBuffer);
+                else
+                    ApplyDynamicText(_subtitleLabel, Array.Empty<char>(), 0);
             }
 
             UpdateMadnessFxState(data, _subtitleMadnessFx);
@@ -524,8 +586,8 @@ namespace Hecton8.UI
             RefreshPlayButton();
             if (_subtitleLabel != null)
             {
-                ApplyDynamicText(_subtitleLabel, string.Empty, ref _summaryTextBuffer);
-                _prevSubtitleText = string.Empty;
+                ApplyDynamicText(_subtitleLabel, Array.Empty<char>(), 0);
+                _prevSubtitleLength = 0;
             }
 
             if (_subtitleMadnessFx != null)
@@ -561,19 +623,28 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -583,8 +654,19 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                if (currentService == null)
+                {
+                    _registered = false;
+                    _registeredLateFrame = false;
+                    return;
+                }
+
                 if (isActiveAndEnabled)
+                {
+                    TryUnregister();
                     TryRegister();
+                }
+
                 return;
             }
 
@@ -636,10 +718,10 @@ namespace Hecton8.UI
 
         private static void CacheRegistryServicesCold()
         {
-            s_cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            s_cachedLocalization = GlobalRegistry.Localization;
             s_cachedLoreDatabase = GlobalRegistry.LoreDatabase;
             s_cachedAudioLogs = GlobalRegistry.AudioLogs;
-            s_cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            s_cachedPlayerContext = GlobalRegistry.Player;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -678,7 +760,10 @@ namespace Hecton8.UI
                 new Vector2(-8, 0), new Vector2(-12, 0));
 
             _headerTitleLabel = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            ApplyDynamicText(_headerTitleLabel, _localizedArchiveTitle, ref _dynamicTextBuffer);
+            ApplyStressReactiveText(
+                _headerTitleLabel,
+                _localizedArchiveTitleBuffer.AsSpan(0, _localizedArchiveTitleLength),
+                ref _dynamicTextBuffer);
             _headerTitleLabel.fontStyle = FontStyles.Bold;
             Anchor(_headerTitleLabel.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
                 new Vector2(12, 0), new Vector2(0, 0));
@@ -713,7 +798,7 @@ namespace Hecton8.UI
                 AudioLogData log = GetLog(i);
                 if (log == null) continue;
 
-                RectTransform rowRoot = CreateRect($"Row_{i}", _listPanel);
+                RectTransform rowRoot = CreateRect("Row", _listPanel);
                 Anchor(rowRoot, new Vector2(0, 1), new Vector2(1, 1),
                     new Vector2(0, -y - rowH), new Vector2(0, -y));
 
@@ -728,7 +813,10 @@ namespace Hecton8.UI
                 TextMeshProUGUI titleLabel = CreateText("Title", rowRoot, 10f, colorText, TextAlignmentOptions.MidlineLeft);
                 Anchor(titleLabel.rectTransform, new Vector2(0.08f, 0), new Vector2(0.75f, 1),
                     new Vector2(4, 0), new Vector2(0, 0));
-                ApplyDynamicText(titleLabel, log.DisplayTitleOrFallback, ref _dynamicTextBuffer);
+                if (log.TryWriteDisplayTitleOrFallback(_dynamicTextBuffer, out int rowTitleLength))
+                    ApplyDynamicText(titleLabel, _dynamicTextBuffer, rowTitleLength);
+                else
+                    ApplyDynamicText(titleLabel, Array.Empty<char>(), 0);
 
                 TextMeshProUGUI catLabel = CreateText("Cat", rowRoot, 8f, colorDim, TextAlignmentOptions.MidlineRight);
                 Anchor(catLabel.rectTransform, new Vector2(0.75f, 0), new Vector2(1, 1),
@@ -766,7 +854,10 @@ namespace Hecton8.UI
 
             _emptyStateLabel = CreateText("EmptyStateLabel", emptyState, 10f, colorDim, TextAlignmentOptions.Center);
             _emptyStateLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
-            ApplyDynamicText(_emptyStateLabel, _localizedEmptyStateText, ref _summaryTextBuffer);
+            ApplyStressReactiveText(
+                _emptyStateLabel,
+                _localizedEmptyStateTextBuffer.AsSpan(0, _localizedEmptyStateTextLength),
+                ref _summaryTextBuffer);
             Stretch(_emptyStateLabel.rectTransform, 16, 16, 16, 16);
         }
 
@@ -837,7 +928,7 @@ namespace Hecton8.UI
 
             _playButtonLabel = CreateText("PlayLabel", playBtn, 11f, colorBackground, TextAlignmentOptions.Midline);
             _playButtonLabel.fontStyle = FontStyles.Bold;
-            ApplyDynamicText(_playButtonLabel, _localizedPlayAudioLabel, ref _dynamicTextBuffer);
+            ApplyDynamicText(_playButtonLabel, _localizedPlayAudioLabelBuffer, _localizedPlayAudioLabelLength);
             Stretch(_playButtonLabel.rectTransform);
 
             PlayButtonHandler pbh = playBtn.gameObject.AddComponent<PlayButtonHandler>();
@@ -867,7 +958,10 @@ namespace Hecton8.UI
                 if (shouldShowEmptyState && TryResolveEventSourcedLogText(out char[] eventBuffer, out int eventLength))
                     ApplyDynamicText(_emptyStateLabel, eventBuffer, eventLength);
                 else
-                    ApplyDynamicText(_emptyStateLabel, ResolveStressReactiveText(_localizedEmptyStateText), ref _summaryTextBuffer);
+                    ApplyStressReactiveText(
+                        _emptyStateLabel,
+                        _localizedEmptyStateTextBuffer.AsSpan(0, _localizedEmptyStateTextLength),
+                        ref _summaryTextBuffer);
             }
 
             if (logCount == 0)
@@ -887,22 +981,36 @@ namespace Hecton8.UI
                 if (row.TitleLabel != null) row.TitleLabel.color = textColor;
                 if (row.IndexLabel != null) row.IndexLabel.color = colorDim;
                 if (row.CategoryLabel != null)
-                    ApplyDynamicText(
-                        row.CategoryLabel,
-                        log != null
-                            ? ResolveStressReactiveText(GetCachedCategoryLabel(log.category))
-                            : ResolveStressReactiveText(_localizedCategoryUnknown),
-                        ref _dynamicTextBuffer);
+                    ApplyCategoryLabelText(row.CategoryLabel, log, ref _dynamicTextBuffer);
                 if (row.CategoryLabel != null) row.CategoryLabel.color = isDiscovered ? colorDim : new Color(colorDim.r, colorDim.g, colorDim.b, 0.3f);
 
                 // Replace title with ??? for undiscovered
                 if (row.TitleLabel != null)
-                    ApplyDynamicText(
-                        row.TitleLabel,
-                        isDiscovered
-                            ? ResolveLogStressReactiveText(log, "row.title", log.DisplayTitleOrFallback)
-                            : ResolveStressReactiveText(_localizedEncryptedLabel),
-                        ref _summaryTextBuffer);
+                {
+                    if (isDiscovered)
+                    {
+                        if (log != null && log.TryWriteDisplayTitleOrFallback(_dynamicTextBuffer, out int rowTitleLength))
+                        {
+                            ApplyLogStressReactiveText(
+                                row.TitleLabel,
+                                log,
+                                "row.title",
+                                new ReadOnlySpan<char>(_dynamicTextBuffer, 0, rowTitleLength),
+                                ref _summaryTextBuffer);
+                        }
+                        else
+                        {
+                            ApplyDynamicText(row.TitleLabel, Array.Empty<char>(), 0);
+                        }
+                    }
+                    else
+                    {
+                        ApplyDynamicText(
+                            row.TitleLabel,
+                            _localizedEncryptedLabelBuffer.AsSpan(0, _localizedEncryptedLabelLength),
+                            ref _summaryTextBuffer);
+                    }
+                }
             }
 
             RefreshRowHighlights();
@@ -925,34 +1033,91 @@ namespace Hecton8.UI
 
             if (_titleLabel != null)
             {
-                string titleText = isDiscovered
-                    ? ResolveLogStressReactiveText(log, "detail.title", log.DisplayTitleOrFallback)
-                    : ResolveStressReactiveText(_localizedEncryptedLabel);
-                SetUppercaseLabelText(_titleLabel, titleText, ref _detailTitleBuffer);
+                if (isDiscovered)
+                {
+                    int rawTitleLength = log.TryWriteDisplayTitleOrFallback(_dynamicTextBuffer, out int writtenTitleLength)
+                        ? writtenTitleLength
+                        : 0;
+                    int titleLength = ResolveLogStressReactiveTextToBuffer(
+                        log,
+                        "detail.title",
+                        new ReadOnlySpan<char>(_dynamicTextBuffer, 0, rawTitleLength),
+                        ref _summaryTextBuffer);
+                    SetUppercaseLabelText(
+                        _titleLabel,
+                        new ReadOnlySpan<char>(_summaryTextBuffer, 0, titleLength),
+                        ref _detailTitleBuffer);
+                }
+                else
+                {
+                    SetUppercaseLabelText(
+                        _titleLabel,
+                        _localizedEncryptedLabelBuffer.AsSpan(0, _localizedEncryptedLabelLength),
+                        ref _detailTitleBuffer);
+                }
             }
 
             if (_authorLabel != null)
-                ApplyDynamicText(
-                    _authorLabel,
-                    isDiscovered
-                        ? ResolveLogStressReactiveText(log, "detail.author", string.Concat(_localizedAuthorPrefix, log.AuthorOrFallback))
-                        : ResolveStressReactiveText(string.Concat(_localizedAuthorPrefix, _localizedUnknownAuthor)),
-                    ref _dynamicTextBuffer);
+            {
+                if (isDiscovered)
+                {
+                    int authorLength = log.TryWriteAuthorOrFallback(_dynamicTextBuffer, out int writtenAuthorLength)
+                        ? writtenAuthorLength
+                        : 0;
+                    ApplyLogStressReactiveText(
+                        _authorLabel,
+                        log,
+                        "detail.author",
+                        new ReadOnlySpan<char>(_dynamicTextBuffer, 0, authorLength),
+                        ref _summaryTextBuffer);
+                }
+                else
+                    ApplyStressReactiveText(
+                        _authorLabel,
+                        _localizedUnknownAuthorLineBuffer.AsSpan(0, _localizedUnknownAuthorLineLength),
+                        ref _dynamicTextBuffer);
+            }
 
             if (_dateLabel != null)
-                ApplyDynamicText(
-                    _dateLabel,
-                    isDiscovered
-                        ? ResolveLogStressReactiveText(log, "detail.date", log.RecordDateOrFallback)
-                        : ResolveStressReactiveText(string.Concat(_localizedDatePrefix, _localizedUnknownDate)),
-                    ref _dynamicTextBuffer);
+            {
+                if (isDiscovered)
+                {
+                    int dateLength = log.TryWriteRecordDateOrFallback(_dynamicTextBuffer, out int writtenDateLength)
+                        ? writtenDateLength
+                        : 0;
+                    ApplyLogStressReactiveText(
+                        _dateLabel,
+                        log,
+                        "detail.date",
+                        new ReadOnlySpan<char>(_dynamicTextBuffer, 0, dateLength),
+                        ref _summaryTextBuffer);
+                }
+                else
+                    ApplyStressReactiveText(
+                        _dateLabel,
+                        _localizedUnknownDateLineBuffer.AsSpan(0, _localizedUnknownDateLineLength),
+                        ref _dynamicTextBuffer);
+            }
 
             if (_summaryLabel != null)
             {
-                string summaryText = isDiscovered
-                    ? ResolveLogStressReactiveText(log, "detail.summary", GetCachedSummaryText(log))
-                    : ResolveStressReactiveText(_localizedEncryptedSummary);
-                ApplySummaryNarrativePresentation(log, isDiscovered, summaryText);
+                if (isDiscovered)
+                {
+                    int summaryLength = log.TryWriteArchiveSummaryOrFallback(_summaryTextBuffer, out int writtenSummaryLength)
+                        ? writtenSummaryLength
+                        : 0;
+                    ApplySummaryNarrativePresentation(
+                        log,
+                        true,
+                        new ReadOnlySpan<char>(_summaryTextBuffer, 0, summaryLength));
+                }
+                else
+                {
+                    ApplySummaryNarrativePresentation(
+                        log,
+                        false,
+                        _localizedEncryptedSummaryBuffer.AsSpan(0, _localizedEncryptedSummaryLength));
+                }
             }
 
             if (_summaryMadnessFx != null)
@@ -1095,6 +1260,10 @@ namespace Hecton8.UI
             if (_catalogLoreRecordIndices.Length != logCount)
                 _catalogLoreRecordIndices = new int[logCount]; // COLD ALLOC: int[allLogs.Length] — lore record index cache aligned to PDA archive catalog — owner: PDADataLogTab
 
+            int surfaceKeyCount = logCount * LoreSurfaceCount;
+            if (_catalogLoreSurfaceHashes.Length != surfaceKeyCount)
+                _catalogLoreSurfaceHashes = new int[surfaceKeyCount]; // COLD ALLOC: int[allLogs.Length * lore surfaces] - PDA corruption surface token hashes - owner: PDADataLogTab
+
             LoreDatabaseManager database = s_cachedLoreDatabase;
             for (int i = 0; i < logCount; i++)
             {
@@ -1103,6 +1272,7 @@ namespace Hecton8.UI
                 {
                     _catalogLoreHashes[i] = 0u;
                     _catalogLoreRecordIndices[i] = -1;
+                    WriteLoreSurfaceHashes(i, string.Empty);
                     continue;
                 }
 
@@ -1111,15 +1281,44 @@ namespace Hecton8.UI
                 _catalogLoreRecordIndices[i] = database != null && database.TryGetRecordIndex(loreHash, out int recordIndex)
                     ? recordIndex
                     : -1;
+                WriteLoreSurfaceHashes(i, log.SafeLogId);
             }
 
             _catalogLoreBindingsDirty = false;
         }
 
+        private void WriteLoreSurfaceHashes(int logIndex, string logId)
+        {
+            int baseIndex = logIndex * LoreSurfaceCount;
+            if ((uint)(baseIndex + LoreSurfaceSummaryHidden) >= (uint)_catalogLoreSurfaceHashes.Length)
+                return;
+
+            if (string.IsNullOrEmpty(logId))
+            {
+                for (int i = 0; i < LoreSurfaceCount; i++)
+                    _catalogLoreSurfaceHashes[baseIndex + i] = 0;
+                return;
+            }
+
+            ReadOnlySpan<char> id = logId.AsSpan();
+            _catalogLoreSurfaceHashes[baseIndex + LoreSurfaceSubtitle] = BuildLoreSurfaceHash(id, "subtitle".AsSpan());
+            _catalogLoreSurfaceHashes[baseIndex + LoreSurfaceRowTitle] = BuildLoreSurfaceHash(id, "row.title".AsSpan());
+            _catalogLoreSurfaceHashes[baseIndex + LoreSurfaceDetailTitle] = BuildLoreSurfaceHash(id, "detail.title".AsSpan());
+            _catalogLoreSurfaceHashes[baseIndex + LoreSurfaceDetailAuthor] = BuildLoreSurfaceHash(id, "detail.author".AsSpan());
+            _catalogLoreSurfaceHashes[baseIndex + LoreSurfaceDetailDate] = BuildLoreSurfaceHash(id, "detail.date".AsSpan());
+            _catalogLoreSurfaceHashes[baseIndex + LoreSurfaceDetailSummary] = BuildLoreSurfaceHash(id, "detail.summary".AsSpan());
+            _catalogLoreSurfaceHashes[baseIndex + LoreSurfaceSummaryHidden] = BuildLoreSurfaceHash(id, SummaryHiddenSurfaceId.AsSpan());
+        }
+
         private void EnsureLoreBindingCache()
         {
-            if (_catalogLoreBindingsDirty || _catalogLoreHashes.Length != CatalogCount || _catalogLoreRecordIndices.Length != CatalogCount)
+            if (_catalogLoreBindingsDirty ||
+                _catalogLoreHashes.Length != CatalogCount ||
+                _catalogLoreRecordIndices.Length != CatalogCount ||
+                _catalogLoreSurfaceHashes.Length != CatalogCount * LoreSurfaceCount)
+            {
                 RebuildLoreBindingCache();
+            }
         }
 
         private uint ResolveCatalogLoreHash(int logIndex)
@@ -1182,39 +1381,6 @@ namespace Hecton8.UI
             return false;
         }
 
-        private static string GetSummaryText(AudioLogData log)
-        {
-            if (log == null)
-                return string.Empty;
-
-            if (log.IsTextOnlyPlayback)
-                return TextOnlySummaryPrefix + log.ArchiveSummaryOrFallback;
-
-            if (!log.HasPlaybackPayload && log.HasArchiveSummary)
-                return ArchiveOnlySummaryPrefix + log.ArchiveSummaryOrFallback;
-
-            return log.ArchiveSummaryOrFallback;
-        }
-
-        private static string ResolvePlayButtonLabel(AudioLogSystem system, AudioLogData selectedLog, bool isDiscovered)
-        {
-            if (system != null && system.IsPlaying)
-            {
-                AudioLogData playingLog = system.CurrentLog;
-                return playingLog != null && playingLog.IsTextOnlyPlayback
-                    ? CloseTextLogLabel
-                    : StopAudioLabel;
-            }
-
-            if (!isDiscovered)
-                return LockedLogLabel;
-
-            if (selectedLog == null || !selectedLog.HasPlaybackPayload)
-                return NoPayloadLabel;
-
-            return selectedLog.HasAudioClip ? PlayAudioLabel : OpenTextLogLabel;
-        }
-
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  UI HELPERS
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1242,85 +1408,155 @@ namespace Hecton8.UI
 
         private void RebuildLocalizationCache()
         {
-            _localizedArchiveTitle = ResolveLocalized(LocalizationKeys.AUDIOLOG_ARCHIVE_TITLE, "DATA ARCHIVE - HECTON-8 COLONY");
-            _localizedCountFormat = ResolveLocalized(LocalizationKeys.AUDIOLOG_COUNT, "{0}/{1} LOGS");
-            _localizedCategoryLabels[(int)AudioLogCategory.Personal] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_PERSONAL, "PERSONAL");
-            _localizedCategoryLabels[(int)AudioLogCategory.Technical] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_TECHNICAL, "TECHNICAL");
-            _localizedCategoryLabels[(int)AudioLogCategory.Emergency] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_EMERGENCY, "EMERGENCY");
-            _localizedCategoryLabels[(int)AudioLogCategory.Atlas6] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_ATLAS6, "ATLAS6");
-            _localizedCategoryLabels[(int)AudioLogCategory.Unknown] = ResolveLocalized(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN, "UNKNOWN");
-            _localizedCategoryUnknown = _localizedCategoryLabels[(int)AudioLogCategory.Unknown];
-            _localizedEncryptedLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED, "??? ENCRYPTED ???");
-            _localizedEncryptedSummary = ResolveLocalized(LocalizationKeys.AUDIOLOG_ENCRYPTED_SUMMARY, "Entry encrypted. Discovery required before archive access.");
-            _localizedUnknownAuthor = ResolveLocalized(LocalizationKeys.AUDIOLOG_UNKNOWN_AUTHOR, "UNKNOWN");
-            _localizedUnknownDate = ResolveLocalized(LocalizationKeys.AUDIOLOG_UNKNOWN_DATE, "DATE UNKNOWN");
-            _localizedAuthorPrefix = string.Concat(ResolveLocalized(LocalizationKeys.INTERACT_AUTHOR, "AUTHOR"), ": ");
-            _localizedDatePrefix = string.Concat(ResolveLocalized(LocalizationKeys.INTERACT_DATE, "DATE"), ": ");
-            _localizedPlayAudioLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_PLAY, PlayAudioLabel);
-            _localizedOpenTextLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_OPEN_TEXT, OpenTextLogLabel);
-            _localizedStopAudioLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_STOP, StopAudioLabel);
-            _localizedCloseTextLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_CLOSE_TEXT, CloseTextLogLabel);
-            _localizedLockedLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_LOCKED, LockedLogLabel);
-            _localizedNoPayloadLabel = ResolveLocalized(LocalizationKeys.AUDIOLOG_NO_PAYLOAD, NoPayloadLabel);
-            _localizedTextOnlySummaryPrefix = ResolveLocalized(LocalizationKeys.AUDIOLOG_TEXT_ONLY_PREFIX, TextOnlySummaryPrefix);
-            _localizedArchiveOnlySummaryPrefix = ResolveLocalized(LocalizationKeys.AUDIOLOG_ARCHIVE_ONLY_PREFIX, ArchiveOnlySummaryPrefix);
-            _localizedEmptyStateText = string.Concat(
-                ResolveLocalized(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE, "ARCHIVE EMPTY"),
-                "\n",
-                ResolveLocalized(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE_HINT, "Assign AudioLogData assets in allLogs."));
+            _localizedArchiveTitleLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_ARCHIVE_TITLE, "DATA ARCHIVE - HECTON-8 COLONY".AsSpan(), _localizedArchiveTitleBuffer);
+            _categoryPersonalLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_PERSONAL, "PERSONAL".AsSpan(), _categoryPersonalBuffer);
+            _categoryTechnicalLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_TECHNICAL, "TECHNICAL".AsSpan(), _categoryTechnicalBuffer);
+            _categoryEmergencyLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_EMERGENCY, "EMERGENCY".AsSpan(), _categoryEmergencyBuffer);
+            _categoryAtlas6Length = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_ATLAS6, "ATLAS6".AsSpan(), _categoryAtlas6Buffer);
+            _categoryUnknownLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CATEGORY_UNKNOWN, "UNKNOWN".AsSpan(), _categoryUnknownBuffer);
+            _localizedEncryptedLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_ENCRYPTED, "??? ENCRYPTED ???".AsSpan(), _localizedEncryptedLabelBuffer);
+            _localizedEncryptedSummaryLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_ENCRYPTED_SUMMARY, "Entry encrypted. Discovery required before archive access.".AsSpan(), _localizedEncryptedSummaryBuffer);
+            _localizedUnknownAuthorLineLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_UNKNOWN_AUTHOR, "UNKNOWN".AsSpan(), _localizedUnknownAuthorLineBuffer);
+            _localizedUnknownDateLineLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_UNKNOWN_DATE, "DATE UNKNOWN".AsSpan(), _localizedUnknownDateLineBuffer);
+            _localizedPlayAudioLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_PLAY, PlayAudioLabel.AsSpan(), _localizedPlayAudioLabelBuffer);
+            _localizedOpenTextLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_OPEN_TEXT, OpenTextLogLabel.AsSpan(), _localizedOpenTextLabelBuffer);
+            _localizedStopAudioLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_STOP, StopAudioLabel.AsSpan(), _localizedStopAudioLabelBuffer);
+            _localizedCloseTextLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_CLOSE_TEXT, CloseTextLogLabel.AsSpan(), _localizedCloseTextLabelBuffer);
+            _localizedLockedLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_LOCKED, LockedLogLabel.AsSpan(), _localizedLockedLabelBuffer);
+            _localizedNoPayloadLabelLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_NO_PAYLOAD, NoPayloadLabel.AsSpan(), _localizedNoPayloadLabelBuffer);
+            _localizedEmptyStateTextLength = CopyLocalizedSpan(LocalizationKeys.AUDIOLOG_EMPTY_ARCHIVE, "ARCHIVE EMPTY".AsSpan(), _localizedEmptyStateTextBuffer);
+            _catalogLoreBindingsDirty = true;
         }
 
         private void ApplyLocalizedStaticText()
         {
             if (_headerTitleLabel != null)
-                ApplyDynamicText(_headerTitleLabel, ResolveStressReactiveText(_localizedArchiveTitle), ref _dynamicTextBuffer);
+                ApplyStressReactiveText(
+                    _headerTitleLabel,
+                    _localizedArchiveTitleBuffer.AsSpan(0, _localizedArchiveTitleLength),
+                    ref _dynamicTextBuffer);
 
             if (_emptyStateLabel != null)
-                ApplyDynamicText(_emptyStateLabel, ResolveStressReactiveText(_localizedEmptyStateText), ref _summaryTextBuffer);
+                ApplyStressReactiveText(
+                    _emptyStateLabel,
+                    _localizedEmptyStateTextBuffer.AsSpan(0, _localizedEmptyStateTextLength),
+                    ref _summaryTextBuffer);
         }
 
-        private string GetCachedSummaryText(AudioLogData log)
+        private int ResolveCachedLoreSurfaceHash(AudioLogData log, string surfaceId)
         {
-            if (log == null)
-                return string.Empty;
+            EnsureLoreBindingCache();
+            int logIndex = ResolveCatalogIndex(log);
+            int surfaceIndex = ResolveLoreSurfaceIndex(surfaceId);
+            if (logIndex >= 0 && surfaceIndex >= 0)
+            {
+                int keyIndex = logIndex * LoreSurfaceCount + surfaceIndex;
+                if ((uint)keyIndex < (uint)_catalogLoreSurfaceHashes.Length)
+                    return _catalogLoreSurfaceHashes[keyIndex];
+            }
 
-            if (log.IsTextOnlyPlayback)
-                return string.Concat(_localizedTextOnlySummaryPrefix, log.ArchiveSummaryOrFallback);
-
-            if (!log.HasPlaybackPayload && log.HasArchiveSummary)
-                return string.Concat(_localizedArchiveOnlySummaryPrefix, log.ArchiveSummaryOrFallback);
-
-            return log.ArchiveSummaryOrFallback;
+            return BuildLoreSurfaceHash(ReadOnlySpan<char>.Empty, string.IsNullOrEmpty(surfaceId) ? ReadOnlySpan<char>.Empty : surfaceId.AsSpan());
         }
 
-        private string GetCachedPlayButtonLabel(AudioLogSystem system, AudioLogData selectedLog, bool isDiscovered)
+        private static int BuildLoreSurfaceHash(ReadOnlySpan<char> logId, ReadOnlySpan<char> surfaceId)
+        {
+            return logId.Length > 0
+                ? LocalizationManager.ComputeMadnessSourceTokenHash(logId, ".".AsSpan(), surfaceId)
+                : LocalizationManager.ComputeMadnessSourceTokenHash(surfaceId);
+        }
+
+        private int ResolveCatalogIndex(AudioLogData log)
+        {
+            if (log == null || allLogs == null)
+                return -1;
+
+            for (int i = 0; i < allLogs.Length; i++)
+            {
+                if (ReferenceEquals(allLogs[i], log))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int ResolveLoreSurfaceIndex(string surfaceId)
+        {
+            switch (surfaceId)
+            {
+                case "subtitle":
+                    return LoreSurfaceSubtitle;
+                case "row.title":
+                    return LoreSurfaceRowTitle;
+                case "detail.title":
+                    return LoreSurfaceDetailTitle;
+                case "detail.author":
+                    return LoreSurfaceDetailAuthor;
+                case "detail.date":
+                    return LoreSurfaceDetailDate;
+                case "detail.summary":
+                    return LoreSurfaceDetailSummary;
+                case SummaryHiddenSurfaceId:
+                    return LoreSurfaceSummaryHidden;
+                default:
+                    return -1;
+            }
+        }
+
+        private ReadOnlySpan<char> GetCachedPlayButtonLabel(AudioLogSystem system, AudioLogData selectedLog, bool isDiscovered)
         {
             if (system != null && system.IsPlaying)
             {
                 AudioLogData playingLog = system.CurrentLog;
                 return playingLog != null && playingLog.IsTextOnlyPlayback
-                    ? _localizedCloseTextLabel
-                    : _localizedStopAudioLabel;
+                    ? _localizedCloseTextLabelBuffer.AsSpan(0, _localizedCloseTextLabelLength)
+                    : _localizedStopAudioLabelBuffer.AsSpan(0, _localizedStopAudioLabelLength);
             }
 
             if (!isDiscovered)
-                return _localizedLockedLabel;
+                return _localizedLockedLabelBuffer.AsSpan(0, _localizedLockedLabelLength);
 
             if (selectedLog == null || !selectedLog.HasPlaybackPayload)
-                return _localizedNoPayloadLabel;
+                return _localizedNoPayloadLabelBuffer.AsSpan(0, _localizedNoPayloadLabelLength);
 
             return selectedLog.HasAudioClip
-                ? _localizedPlayAudioLabel
-                : _localizedOpenTextLabel;
+                ? _localizedPlayAudioLabelBuffer.AsSpan(0, _localizedPlayAudioLabelLength)
+                : _localizedOpenTextLabelBuffer.AsSpan(0, _localizedOpenTextLabelLength);
         }
 
-        private string GetCachedCategoryLabel(AudioLogCategory category)
+        private ReadOnlySpan<char> GetCachedCategoryLabel(AudioLogCategory category)
         {
-            int categoryIndex = (int)category;
-            if ((uint)categoryIndex < (uint)_localizedCategoryLabels.Length)
-                return _localizedCategoryLabels[categoryIndex];
+            switch (category)
+            {
+                case AudioLogCategory.Personal:
+                    return _categoryPersonalBuffer.AsSpan(0, _categoryPersonalLength);
+                case AudioLogCategory.Technical:
+                    return _categoryTechnicalBuffer.AsSpan(0, _categoryTechnicalLength);
+                case AudioLogCategory.Emergency:
+                    return _categoryEmergencyBuffer.AsSpan(0, _categoryEmergencyLength);
+                case AudioLogCategory.Atlas6:
+                    return _categoryAtlas6Buffer.AsSpan(0, _categoryAtlas6Length);
+                default:
+                    return _categoryUnknownBuffer.AsSpan(0, _categoryUnknownLength);
+            }
+        }
 
-            return _localizedCategoryUnknown;
+        private void ApplyCategoryLabelText(TMP_Text label, AudioLogData log, ref char[] buffer)
+        {
+            ReadOnlySpan<char> categoryText = log != null
+                ? GetCachedCategoryLabel(log.category)
+                : GetCachedCategoryLabel(AudioLogCategory.Unknown);
+            int length = ResolveStressReactiveSpanToBuffer(categoryText, ref buffer);
+            ApplyDynamicText(label, buffer, length);
+        }
+
+        private int ResolveStressReactiveSpanToBuffer(ReadOnlySpan<char> text, ref char[] buffer)
+        {
+            EnsureCharCapacity(ref buffer, math.max(1, text.Length));
+            LocalizationManager manager = s_cachedLocalization;
+            if (manager != null && manager.TryApplyHullStressCorruptionIfNeeded(text, buffer, out int length))
+                return length;
+
+            return CopySpanToBuffer(text, buffer);
         }
 
         private void RefreshStressReactiveDetailIfNeeded()
@@ -1344,8 +1580,19 @@ namespace Hecton8.UI
             {
                 AudioLogSystem system = s_cachedAudioLogs;
                 AudioLogData subtitleLog = system != null && system.IsPlaying ? system.CurrentLog : GetSelectedLog();
-                string displaySubtitle = ResolveLogStressReactiveText(subtitleLog, "subtitle", _prevSubtitleText);
-                ApplyDynamicText(_subtitleLabel, displaySubtitle, ref _summaryTextBuffer);
+                if (_prevSubtitleLength > 0)
+                {
+                    ApplyLogStressReactiveText(
+                        _subtitleLabel,
+                        subtitleLog,
+                        "subtitle",
+                        new ReadOnlySpan<char>(_prevSubtitleBuffer, 0, _prevSubtitleLength),
+                        ref _summaryTextBuffer);
+                }
+                else
+                {
+                    ApplyDynamicText(_subtitleLabel, Array.Empty<char>(), 0);
+                }
 
                 UpdateMadnessFxState(subtitleLog, _subtitleMadnessFx);
             }
@@ -1364,38 +1611,84 @@ namespace Hecton8.UI
                 manager.IsMadnessWhisperVisualActive());
         }
 
-        private static string ResolveStressReactiveText(string text)
+        private void ApplyStressReactiveText(TMP_Text label, ReadOnlySpan<char> text, ref char[] buffer)
         {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
+            if (label == null)
+                return;
 
-            LocalizationManager manager = s_cachedLocalization;
-            return manager != null
-                ? manager.ApplyHullStressCorruptionIfNeeded(text)
-                : text;
+            int length = ResolveStressReactiveSpanToBuffer(text, ref buffer);
+            ApplyDynamicText(label, buffer, length);
         }
 
-        private static string ResolveLogStressReactiveText(AudioLogData log, string surfaceId, string text)
+        private void ApplyLogStressReactiveText(
+            TMP_Text label,
+            AudioLogData log,
+            string surfaceId,
+            ReadOnlySpan<char> text,
+            ref char[] buffer)
         {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
+            if (label == null)
+                return;
+
+            int length = ResolveLogStressReactiveTextToBuffer(log, surfaceId, text, ref buffer);
+            ApplyDynamicText(label, buffer, length);
+        }
+
+        private int ResolveLogStressReactiveTextToBuffer(
+            AudioLogData log,
+            string surfaceId,
+            ReadOnlySpan<char> text,
+            ref char[] buffer)
+        {
+            EnsureCharCapacity(ref buffer, Mathf.Max(256, text.Length));
+            if (!TryResolveLogStressReactiveText(log, surfaceId, text, buffer, out int length))
+                length = CopySpanToBuffer(text, buffer);
+
+            return length;
+        }
+
+        private bool TryResolveLogStressReactiveText(
+            AudioLogData log,
+            string surfaceId,
+            ReadOnlySpan<char> text,
+            char[] destination,
+            out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            if (text.Length == 0)
+                return true;
 
             LocalizationManager manager = s_cachedLocalization;
             if (manager == null)
-                return text;
+            {
+                length = CopySpanToBuffer(text, destination);
+                return true;
+            }
 
             if (log == null || string.IsNullOrWhiteSpace(log.logId))
-                return manager.ApplyHullStressCorruptionIfNeeded(text);
+                return manager.TryApplyHullStressCorruptionIfNeeded(text, destination, out length);
 
-            return manager.ApplyPdaLoreCorruptionIfNeeded(string.Concat(log.logId, ".", surfaceId), text);
+            return manager.TryApplyPdaLoreCorruptionIfNeeded(
+                ResolveCachedLoreSurfaceHash(log, surfaceId),
+                text,
+                destination,
+                out length);
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static int CopyLocalizedSpan(string key, ReadOnlySpan<char> fallback, char[] destination)
         {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
             LocalizationManager manager = s_cachedLocalization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+            ReadOnlySpan<char> source = manager != null && !string.IsNullOrEmpty(key)
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
                 : fallback;
+
+            return CopySpanToBuffer(source, destination);
         }
 
         private void TickDetailNarrativeFx(float deltaTime)
@@ -1430,7 +1723,7 @@ namespace Hecton8.UI
                 TriggerHiddenRecordFlash(log);
         }
 
-        private void ApplySummaryNarrativePresentation(AudioLogData log, bool isDiscovered, string summaryText)
+        private void ApplySummaryNarrativePresentation(AudioLogData log, bool isDiscovered, ReadOnlySpan<char> summaryText)
         {
             if (_summaryLabel == null)
                 return;
@@ -1452,12 +1745,12 @@ namespace Hecton8.UI
                 _activeDetailLogId = log.logId;
             }
 
-            _resolvedSummaryBaseText = summaryText ?? string.Empty;
+            _resolvedSummaryBaseLength = CopySpanToBuffer(summaryText, ref _resolvedSummaryBaseBuffer);
 
             if (_summaryDecryptActive)
             {
-                ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
-                _summaryVisibleCharacterTarget = _resolvedSummaryBaseText.Length;
+                ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseBuffer, _resolvedSummaryBaseLength);
+                _summaryVisibleCharacterTarget = _resolvedSummaryBaseLength;
                 UpdateSummaryDecryptPresentation();
                 return;
             }
@@ -1466,7 +1759,7 @@ namespace Hecton8.UI
                 return;
 
             _summaryLabel.maxVisibleCharacters = int.MaxValue;
-            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
+            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseBuffer, _resolvedSummaryBaseLength);
 
             if (_summaryDecryptOverlayLabel != null)
                 SetElementVisible(_summaryDecryptOverlayLabel, false);
@@ -1484,10 +1777,13 @@ namespace Hecton8.UI
             _summaryDecryptTimer = 0f;
             _hiddenRecordFlashActive = false;
             _hiddenRecordFlashConsumed = true;
-            BuildHexCipherText(_resolvedSummaryBaseText, ref _resolvedSummaryHexBuffer, out _resolvedSummaryHexLength);
+            BuildHexCipherText(
+                new ReadOnlySpan<char>(_resolvedSummaryBaseBuffer, 0, _resolvedSummaryBaseLength),
+                ref _resolvedSummaryHexBuffer,
+                out _resolvedSummaryHexLength);
 
-            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
-            _summaryVisibleCharacterTarget = _resolvedSummaryBaseText.Length;
+            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseBuffer, _resolvedSummaryBaseLength);
+            _summaryVisibleCharacterTarget = _resolvedSummaryBaseLength;
 
             ApplyDynamicText(_summaryDecryptOverlayLabel, _resolvedSummaryHexBuffer, _resolvedSummaryHexLength);
             _summaryDecryptOverlayLabel.maxVisibleCharacters = int.MaxValue;
@@ -1531,7 +1827,7 @@ namespace Hecton8.UI
                 SetElementVisible(_summaryDecryptOverlayLabel, false);
             }
 
-            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
+            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseBuffer, _resolvedSummaryBaseLength);
 
             _detailReadTimer = 0f;
             if (_summaryMadnessFx != null)
@@ -1545,8 +1841,13 @@ namespace Hecton8.UI
                 return;
 
             int cycle = Mathf.Max(1, Mathf.FloorToInt(Time.unscaledTime));
-            if (!manager.TryResolveMadnessWhisperPreview(string.Concat(log.logId, ".", SummaryHiddenSurfaceId), cycle, out string hiddenText) ||
-                string.IsNullOrEmpty(hiddenText))
+            EnsureCharCapacity(ref _summaryTextBuffer, 256);
+            if (!manager.TryResolveMadnessWhisperPreview(
+                    ResolveCachedLoreSurfaceHash(log, SummaryHiddenSurfaceId),
+                    cycle,
+                    _summaryTextBuffer,
+                    out int hiddenLength) ||
+                hiddenLength <= 0)
             {
                 _hiddenRecordFlashConsumed = true;
                 return;
@@ -1556,7 +1857,7 @@ namespace Hecton8.UI
             _hiddenRecordFlashConsumed = true;
             _hiddenRecordFlashTimer = HiddenRecordBlinkSeconds;
             _summaryLabel.maxVisibleCharacters = int.MaxValue;
-            ApplyDynamicText(_summaryLabel, hiddenText, ref _summaryTextBuffer);
+            ApplyDynamicText(_summaryLabel, _summaryTextBuffer, hiddenLength);
             if (_summaryMadnessFx != null)
                 _summaryMadnessFx.SetEffectActive(true);
         }
@@ -1566,7 +1867,7 @@ namespace Hecton8.UI
             _hiddenRecordFlashActive = false;
             _hiddenRecordFlashTimer = 0f;
             _summaryLabel.maxVisibleCharacters = int.MaxValue;
-            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
+            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseBuffer, _resolvedSummaryBaseLength);
             if (_summaryMadnessFx != null)
                 UpdateMadnessFxState(log, _summaryMadnessFx);
         }
@@ -1582,7 +1883,7 @@ namespace Hecton8.UI
             _summaryVisibleCharacterTarget = int.MaxValue;
             _summaryHexVisibleCharacterTarget = int.MaxValue;
             _activeDetailLogId = string.Empty;
-            _resolvedSummaryBaseText = string.Empty;
+            _resolvedSummaryBaseLength = 0;
             _resolvedSummaryHexLength = 0;
 
             if (clearPendingDecryption)
@@ -1620,9 +1921,9 @@ namespace Hecton8.UI
             return state.Type == StructureType.MegaWreck;
         }
 
-        private static void BuildHexCipherText(string sourceText, ref char[] buffer, out int length)
+        private static void BuildHexCipherText(ReadOnlySpan<char> sourceText, ref char[] buffer, out int length)
         {
-            if (string.IsNullOrEmpty(sourceText))
+            if (sourceText.Length == 0)
             {
                 EnsureCharCapacity(ref buffer, 1);
                 length = 0;
@@ -1630,27 +1931,37 @@ namespace Hecton8.UI
             }
 
             EnsureCharCapacity(ref buffer, sourceText.Length * 3);
+            int maxCursor = buffer != null ? buffer.Length : 0;
             int cursor = 0;
-            for (int i = 0; i < sourceText.Length; i++)
+            for (int i = 0; i < sourceText.Length && cursor < maxCursor; i++)
             {
                 char current = sourceText[i];
                 if (current == '\n' || current == '\r')
                 {
+                    if (cursor >= maxCursor)
+                        break;
+
                     buffer[cursor++] = current;
                     continue;
                 }
 
                 if (char.IsWhiteSpace(current))
                 {
+                    if (cursor >= maxCursor)
+                        break;
+
                     buffer[cursor++] = ' ';
                     continue;
                 }
+
+                if (cursor + 2 > maxCursor)
+                    break;
 
                 int value = current & 0xFF;
                 buffer[cursor++] = HexDigits[(value >> 4) & 0x0F];
                 buffer[cursor++] = HexDigits[value & 0x0F];
 
-                if (i + 1 < sourceText.Length && !char.IsWhiteSpace(sourceText[i + 1]))
+                if (i + 1 < sourceText.Length && !char.IsWhiteSpace(sourceText[i + 1]) && cursor < maxCursor)
                     buffer[cursor++] = ' ';
             }
             length = cursor;
@@ -1711,13 +2022,27 @@ namespace Hecton8.UI
             if (label == null)
                 return;
 
+            WriteUppercaseToBuffer(string.IsNullOrEmpty(source) ? ReadOnlySpan<char>.Empty : source.AsSpan(), ref buffer, out int length);
+            label.SetCharArray(buffer, 0, length);
+        }
+
+        private static void SetUppercaseLabelText(TMP_Text label, ReadOnlySpan<char> source, ref char[] buffer)
+        {
+            if (label == null)
+                return;
+
             WriteUppercaseToBuffer(source, ref buffer, out int length);
             label.SetCharArray(buffer, 0, length);
         }
 
         private static void WriteUppercaseToBuffer(string source, ref char[] buffer, out int length)
         {
-            if (string.IsNullOrEmpty(source))
+            WriteUppercaseToBuffer(string.IsNullOrEmpty(source) ? ReadOnlySpan<char>.Empty : source.AsSpan(), ref buffer, out length);
+        }
+
+        private static void WriteUppercaseToBuffer(ReadOnlySpan<char> source, ref char[] buffer, out int length)
+        {
+            if (source.Length == 0)
             {
                 EnsureCharCapacity(ref buffer, 1);
                 length = 0;
@@ -1747,11 +2072,7 @@ namespace Hecton8.UI
             if (buffer != null && buffer.Length >= requiredLength)
                 return;
 
-            int capacity = buffer == null ? 32 : buffer.Length;
-            while (capacity < requiredLength)
-                capacity <<= 1;
-
-            buffer = new char[capacity]; // COLD ALLOC: char[capacity] — expanded PDA text staging buffer — owner: PDADataLogTab
+            buffer = SharedOversizedTextBuffer;
         }
 
         private static void ApplyDynamicText(TMP_Text label, string value, ref char[] buffer)
@@ -1766,8 +2087,30 @@ namespace Hecton8.UI
             }
 
             EnsureCharCapacity(ref buffer, value.Length);
-            value.AsSpan().CopyTo(buffer.AsSpan());
-            label.SetCharArray(buffer, 0, value.Length);
+            int length = math.min(value.Length, buffer != null ? buffer.Length : 0);
+            if (length <= 0)
+            {
+                label.SetCharArray(System.Array.Empty<char>(), 0, 0);
+                return;
+            }
+
+            value.AsSpan(0, length).CopyTo(buffer.AsSpan());
+            label.SetCharArray(buffer, 0, length);
+        }
+
+        private static void ApplyDynamicText(TMP_Text label, ReadOnlySpan<char> value, ref char[] buffer)
+        {
+            if (label == null)
+                return;
+
+            if (value.Length == 0)
+            {
+                label.SetCharArray(System.Array.Empty<char>(), 0, 0);
+                return;
+            }
+
+            int length = CopySpanToBuffer(value, ref buffer);
+            label.SetCharArray(buffer, 0, length);
         }
 
         private static void ApplyDynamicText(TMP_Text label, char[] valueBuffer, int valueLength)
@@ -1783,6 +2126,30 @@ namespace Hecton8.UI
 
             int safeLength = Mathf.Clamp(valueLength, 0, valueBuffer.Length);
             label.SetCharArray(valueBuffer, 0, safeLength);
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> source, char[] destination)
+        {
+            if (destination == null || destination.Length == 0 || source.Length == 0)
+                return 0;
+
+            int length = source.Length <= destination.Length ? source.Length : destination.Length;
+            for (int i = 0; i < length; i++)
+                destination[i] = source[i];
+
+            return length;
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> source, ref char[] destination)
+        {
+            if (source.Length == 0)
+            {
+                EnsureCharCapacity(ref destination, 1);
+                return 0;
+            }
+
+            EnsureCharCapacity(ref destination, source.Length);
+            return CopySpanToBuffer(source, destination);
         }
 
         private static void ApplyTwoDigitText(TMP_Text label, int value, ref char[] buffer)

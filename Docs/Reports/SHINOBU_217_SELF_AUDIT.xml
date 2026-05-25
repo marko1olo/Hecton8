@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_217" domain="HabitatVehicles.GridSnappingGhostPreview" status="PENDING_COMPILE_CORE_MEMORY_ASMDEF" evidenceClass="STATIC_SOURCE" runtimeVerification="PENDING">
+﻿<SELF_AUDIT agent="SHINOBU_217" domain="HabitatVehicles.GridSnappingGhostPreview" status="PENDING_COMPILE_CORE_MEMORY_ASMDEF" evidenceClass="STATIC_SOURCE" runtimeVerification="PENDING">
   <byte_layouts evidence="full_offsets_for_primary_rows; size_only_for_secondary_rows">
     <SocketStateDTO size="64" LocalOffset="0" NormalDirection="24" AllowedConnectionBitmask="36" ParentModuleHash="40" ConnectionStatus="44" PaddingBytes="16" />
     <GhostPreviewDTO size="96" />

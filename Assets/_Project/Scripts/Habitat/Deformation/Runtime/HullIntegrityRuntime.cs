@@ -31,6 +31,7 @@ namespace Hecton8.Habitat.Deformation
         private const float DefaultSubmarineSip = 120000f;
         private const int TelemetryNanFlag = 1;
         private const int DeformationCapacityDumpFlag = 1 << 5;
+        private const uint TelemetrySignalDropFlag = 1u << 1;
         private const uint BreachSignalHash = 0x48384252u; // H8BR
         private const uint AcousticSignalHash = 0x48384143u; // H8AC
         private const uint DumpMagic = 0x48384E54u; // H8NT
@@ -705,7 +706,6 @@ namespace Hecton8.Habitat.Deformation
 
         private bool TryInitialize()
         {
-            _dataVault = _dataVault ?? GlobalRegistry.DataVault;
             if (_dataVault == null)
                 return false;
 
@@ -718,102 +718,102 @@ namespace Hecton8.Habitat.Deformation
             _cachedHealthState = HealthStateNominal;
             ResetPendingDentQuality();
 
-            _dentsHandle = _dataVault.GetGenerationHandle<HullDentDTO>(
+            _dentsHandle = _dataVault.EnsureGenerationHandle<HullDentDTO>(
                 BufferID.HullIntegrityDents,
                 HullIntegrityConstants.MaxDentCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _dentUploadScratchHandle = _dataVault.GetGenerationHandle<HullDentDTO>(
+            _dentUploadScratchHandle = _dataVault.EnsureGenerationHandle<HullDentDTO>(
                 BufferID.HullIntegrityDentUploadScratch,
                 HullIntegrityConstants.MaxDentCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _modulesHandle = _dataVault.GetGenerationHandle<BaseModuleStateDTO>(
+            _modulesHandle = _dataVault.EnsureGenerationHandle<BaseModuleStateDTO>(
                 BufferID.HullIntegrityBaseModules,
                 HullIntegrityConstants.MaxMockModuleCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _ledgerHandle = _dataVault.GetGenerationHandle<BaseIntegrityLedgerDTO>(
+            _ledgerHandle = _dataVault.EnsureGenerationHandle<BaseIntegrityLedgerDTO>(
                 BufferID.HullIntegrityLedger,
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _dataVault.GetGenerationHandle<HullIntegrityTelemetryEntry>(
+            _telemetryHandle = _dataVault.EnsureGenerationHandle<HullIntegrityTelemetryEntry>(
                 BufferID.HullIntegrityTelemetryRing,
                 HullIntegrityConstants.TelemetryFrameCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = _dataVault.GetGenerationHandle<int>(
+            _telemetryCursorHandle = _dataVault.EnsureGenerationHandle<int>(
                 BufferID.HullIntegrityTelemetryCursor,
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _mockDepthHandle = _dataVault.GetGenerationHandle<MockDepthSignal>(
+            _mockDepthHandle = _dataVault.EnsureGenerationHandle<MockDepthSignal>(
                 BufferID.HullIntegrityMockDepth,
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _countersHandle = _dataVault.GetGenerationHandle<int>(
+            _countersHandle = _dataVault.EnsureGenerationHandle<int>(
                 BufferID.HullIntegrityCounters,
                 HullIntegrityConstants.CounterCount,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = _dataVault.GetGenerationHandle<HullIntegrityTuningDTO>(
+            _tuningHandle = _dataVault.EnsureGenerationHandle<HullIntegrityTuningDTO>(
                 BufferID.HullIntegrityTuning,
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _damageSignalsHandle = _dataVault.GetGenerationHandle<MockCombatDamageSignal>(
+            _damageSignalsHandle = _dataVault.EnsureGenerationHandle<MockCombatDamageSignal>(
                 BufferID.HullIntegrityDamageSignals,
                 HullIntegrityConstants.MaxDamageSignals,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _deformationStatesHandle = _dataVault.GetGenerationHandle<DeformationStateDTO>(
+            _deformationStatesHandle = _dataVault.EnsureGenerationHandle<DeformationStateDTO>(
                 DeformationStatesBufferId,
                 HullIntegrityConstants.MaxDentCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _mockImpactsHandle = _dataVault.GetGenerationHandle<HullImpactDTO>(
+            _mockImpactsHandle = _dataVault.EnsureGenerationHandle<HullImpactDTO>(
                 HullImpactScratchBufferId,
                 HullIntegrityConstants.MaxMockHullImpactCount,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _pendingVisualImpactsHandle = _dataVault.GetGenerationHandle<HullImpactDTO>(
+            _pendingVisualImpactsHandle = _dataVault.EnsureGenerationHandle<HullImpactDTO>(
                 PendingVisualImpactsBufferId,
                 HullIntegrityConstants.MaxMockHullImpactCount,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _deformationTelemetryHandle = _dataVault.GetGenerationHandle<DeformationTelemetryEntry>(
+            _deformationTelemetryHandle = _dataVault.EnsureGenerationHandle<DeformationTelemetryEntry>(
                 DeformationTelemetryBufferId,
                 HullIntegrityConstants.TelemetryFrameCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _deformationTelemetryCursorHandle = _dataVault.GetGenerationHandle<int>(
+            _deformationTelemetryCursorHandle = _dataVault.EnsureGenerationHandle<int>(
                 DeformationTelemetryCursorBufferId,
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _breachJetsHandle = _dataVault.GetGenerationHandle<BreachJetDTO>(
+            _breachJetsHandle = _dataVault.EnsureGenerationHandle<BreachJetDTO>(
                 BreachJetsBufferId,
                 HullIntegrityConstants.MaxBreachJets,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _breachJetArgsHandle = _dataVault.GetGenerationHandle<BreachJetIndirectArgsDTO>(
+            _breachJetArgsHandle = _dataVault.EnsureGenerationHandle<BreachJetIndirectArgsDTO>(
                 BreachJetArgsBufferId,
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _materialStrengthsHandle = _dataVault.GetGenerationHandle<HullMaterialStrengthDTO>(
+            _materialStrengthsHandle = _dataVault.EnsureGenerationHandle<HullMaterialStrengthDTO>(
                 HullMaterialStrengthBufferId,
                 32,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _materialStrengthCsvScratchHandle = _dataVault.GetGenerationHandle<byte>(
+            _materialStrengthCsvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(
                 HullMaterialStrengthCsvScratchBufferId,
                 16 * 1024,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _externalPressure01Handle = _dataVault.GetGenerationHandle<float>(
+            _externalPressure01Handle = _dataVault.EnsureGenerationHandle<float>(
                 ExternalPressure01BufferId,
                 1,
                 SystemID.HullIntegrity,
@@ -1210,7 +1210,8 @@ namespace Hecton8.Habitat.Deformation
                         Channel = AcousticPingSignal.ChannelMetalStress,
                         Flags = AcousticPingSignal.FlagActiveSonar
                     };
-                    SignalBus<AcousticPingSignal>.Push(in acoustic);
+                    if (!SignalBus<AcousticPingSignal>.TryPush(in acoustic))
+                        IncrementSignalDropCounter(counters);
                 }
             }
 
@@ -1236,7 +1237,8 @@ namespace Hecton8.Habitat.Deformation
                     FlowRate01 = math.saturate(ratio),
                     Flags = 1
                 };
-                SignalBus<FluidIncursionSignal>.Push(in flood);
+                if (!SignalBus<FluidIncursionSignal>.TryPush(in flood))
+                    IncrementSignalDropCounter(counters);
             }
 
             BaseModuleCompromisedSignal compromised = new BaseModuleCompromisedSignal
@@ -1255,8 +1257,18 @@ namespace Hecton8.Habitat.Deformation
                 QualityTier = _cachedQualityProfileByte
             };
 
-            SignalBus<BaseModuleCompromisedSignal>.Push(in compromised);
+            if (!SignalBus<BaseModuleCompromisedSignal>.TryPush(in compromised))
+                IncrementSignalDropCounter(counters);
             counters[HullIntegrityConstants.CounterBreachPending] = 0;
+        }
+
+        private static void IncrementSignalDropCounter(NativeArray<int> counters)
+        {
+            if (!counters.IsCreated || counters.Length <= HullIntegrityConstants.CounterSignalDropCount)
+                return;
+
+            int dropped = math.max(0, counters[HullIntegrityConstants.CounterSignalDropCount]);
+            counters[HullIntegrityConstants.CounterSignalDropCount] = dropped < 0x3FFFFFFF ? dropped + 1 : dropped;
         }
 
         private void RecordTelemetry(
@@ -1279,6 +1291,12 @@ namespace Hecton8.Habitat.Deformation
                 math.all(math.isfinite(_lastDentPosition)) &&
                 math.isfinite(_lastDentDepth);
             uint flags = finite ? 0u : 1u;
+            if (counters.IsCreated &&
+                counters.Length > HullIntegrityConstants.CounterSignalDropCount &&
+                counters[HullIntegrityConstants.CounterSignalDropCount] > 0)
+            {
+                flags |= TelemetrySignalDropFlag;
+            }
             int activeDents = counters.Length > HullIntegrityConstants.CounterActiveDentCount
                 ? counters[HullIntegrityConstants.CounterActiveDentCount]
                 : 0;
@@ -1521,15 +1539,15 @@ namespace Hecton8.Habitat.Deformation
                 math.max(1f, submarineHullExtents.y + 4f),
                 math.max(1f, submarineHullExtents.z + 4f));
 
-            breachJetMaterial.SetBuffer(_BreachJetBufferId, jetReadBuffer);
-            breachJetMaterial.SetVector(_BreachJetParamsId, new Vector4(jetCount, HullIntegrityConstants.MaxBreachJets, _cachedGlobalQualityWeight, 0f));
-            breachJetMaterial.SetFloat(_UseLeakParticleBufferId, 1f);
-            breachJetMaterial.SetFloat(_LeakPlumeParticleSizeId, 0.22f);
-            breachJetMaterial.SetMatrix(_SubmarineLocalToWorldId, localToWorld);
-            breachJetMaterial.SetVector(_CameraRightWSId, cameraRight);
-            breachJetMaterial.SetVector(_CameraUpWSId, cameraUp);
+            Shader.SetGlobalBuffer(_BreachJetBufferId, jetReadBuffer);
+            Shader.SetGlobalVector(_BreachJetParamsId, new Vector4(jetCount, HullIntegrityConstants.MaxBreachJets, _cachedGlobalQualityWeight, 0f));
+            Shader.SetGlobalFloat(_UseLeakParticleBufferId, 1f);
+            Shader.SetGlobalFloat(_LeakPlumeParticleSizeId, 0.22f);
+            Shader.SetGlobalMatrix(_SubmarineLocalToWorldId, localToWorld);
+            Shader.SetGlobalVector(_CameraRightWSId, cameraRight);
+            Shader.SetGlobalVector(_CameraUpWSId, cameraUp);
 
-            Graphics.DrawProceduralIndirect(
+            UnityEngine.Graphics.DrawProceduralIndirect(
                 breachJetMaterial,
                 new Bounds(center, extents * 2f),
                 MeshTopology.Triangles,
@@ -1837,6 +1855,9 @@ namespace Hecton8.Habitat.Deformation
 
         private static float ResolveGlobalQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float weight = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, weight, math.isfinite(weight)));
         }
@@ -1900,7 +1921,7 @@ namespace Hecton8.Habitat.Deformation
 
         private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
         {
-            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return AbsoluteUniversePosition.IsFinite(in originAup);
         }
 
@@ -1974,7 +1995,8 @@ namespace Hecton8.Habitat.Deformation
                 Channel = 0,
                 DamageType = source.DamageType
             };
-            SignalBus<HullDeformedSignal>.Push(in signal);
+            if (!SignalBus<HullDeformedSignal>.TryPush(in signal))
+                IncrementSignalDropCounter(counters);
         }
 
         private void EnsureGpuBuffers()

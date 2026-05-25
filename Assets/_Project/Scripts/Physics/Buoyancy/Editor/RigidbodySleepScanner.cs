@@ -3,8 +3,8 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Physics;
-using Hecton8.Physics.KCC;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -91,14 +91,11 @@ namespace Hecton8.Physics.Editor
             }
 
             int kinematicStateBytes = UnsafeUtility.SizeOf<KinematicStateDTO>();
-            int kinematicFlagsOffset = HydrodynamicKccLayoutValidator.KinematicStateFlagsOffset;
-            int kinematicSleepConfigBytes = UnsafeUtility.SizeOf<KinematicSleepSdfConfigDTO>();
-            int kinematicSleepConfigFlagsOffset = Marshal.OffsetOf(
-                typeof(KinematicSleepSdfConfigDTO),
-                nameof(KinematicSleepSdfConfigDTO.Flags)).ToInt32();
-            bool layoutValid = HydrodynamicKccLayoutValidator.ValidateRuntimeLayout(out _) &&
-                               kinematicStateBytes == 64 &&
+            int kinematicFlagsOffset = Marshal.OffsetOf(typeof(KinematicStateDTO), nameof(KinematicStateDTO.Flags)).ToInt32();
+            bool sleepConfigTypeResolved = TryResolveKinematicSleepConfigLayout(out int kinematicSleepConfigBytes, out int kinematicSleepConfigFlagsOffset);
+            bool layoutValid = kinematicStateBytes == 64 &&
                                kinematicFlagsOffset == 52 &&
+                               sleepConfigTypeResolved &&
                                kinematicSleepConfigBytes == 64 &&
                                kinematicSleepConfigFlagsOffset == 56;
             string status = findingCount == 0 && layoutValid
@@ -191,6 +188,29 @@ namespace Hecton8.Physics.Editor
             }
 
             return false;
+        }
+
+        private static bool TryResolveKinematicSleepConfigLayout(out int sizeBytes, out int flagsOffset)
+        {
+            sizeBytes = 0;
+            flagsOffset = -1;
+            Type configType = Type.GetType("Hecton8.Physics.KCC.KinematicSleepSdfConfigDTO, Assembly-CSharp", throwOnError: false);
+            if (configType == null)
+            {
+                foreach (System.Reflection.Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    configType = assembly.GetType("Hecton8.Physics.KCC.KinematicSleepSdfConfigDTO", throwOnError: false);
+                    if (configType != null)
+                        break;
+                }
+            }
+
+            if (configType == null)
+                return false;
+
+            sizeBytes = Marshal.SizeOf(configType);
+            flagsOffset = Marshal.OffsetOf(configType, "Flags").ToInt32();
+            return true;
         }
 
         private static void ScanSyntaxTree(
@@ -684,9 +704,9 @@ namespace Hecton8.Physics.Editor
     {
         static KinematicStateLayoutEditorValidator()
         {
-            if (!HydrodynamicKccLayoutValidator.ValidateRuntimeLayout(out _) ||
-                UnsafeUtility.SizeOf<KinematicStateDTO>() != 64 ||
-                HydrodynamicKccLayoutValidator.KinematicStateFlagsOffset != 52)
+            int flagsOffset = Marshal.OffsetOf(typeof(KinematicStateDTO), nameof(KinematicStateDTO.Flags)).ToInt32();
+            if (UnsafeUtility.SizeOf<KinematicStateDTO>() != 64 ||
+                flagsOffset != 52)
             {
                 Debug.LogError("SHINOBU_249 layout rejection: KinematicStateDTO must be 64 bytes with Flags at offset 52.");
             }

@@ -1,4 +1,4 @@
-# Flooded Terrestrial Geography
+﻿# Flooded Terrestrial Geography
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION
@@ -51,4 +51,4 @@ Visible land is mostly mountain-crest volcanic islands. Most former lowland, riv
 
 ## Non-Claims
 
-This document is geography doctrine. It is not proof that every generator, biome profile, terrain asset, or streaming scene implements it.
+Scope: geography doctrine. Generator, biome profile, terrain asset, and streaming-scene implementation proof absent.

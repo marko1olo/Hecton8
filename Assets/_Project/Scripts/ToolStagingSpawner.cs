@@ -129,7 +129,7 @@ namespace Hecton8.Dev
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 if (prefab == null)
                 {
-                    Debug.LogWarning($"[ToolStagingSpawner] Missing world prefab at '{path}'.", this);
+                    Hecton8.Core.H8Debug.LogWarning($"[ToolStagingSpawner] Missing world prefab at '{path}'.", this);
                     continue;
                 }
 

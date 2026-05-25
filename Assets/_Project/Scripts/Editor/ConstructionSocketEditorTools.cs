@@ -349,8 +349,12 @@ namespace Hecton8.Editor
                 string root = ScanRoots[rootIndex];
                 if (Directory.Exists(root))
                 {
-                    foreach (string file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+                    string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
+                    for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                    {
+                        string file = files[fileIndex];
                         ScanFile(file, rows, ref report);
+                    }
                 }
                 else if (File.Exists(root))
                 {

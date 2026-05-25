@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_104
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_104_MAT_family_service_scar_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_service_scar_Albedo.png
+FINAL_FILENAME: MAT_family_service_scar_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Service scar family albedo for repaired HECTON-8 surfaces and old maintenance marks. Create warm off-white pressure coating, satin titanium patch plates, teal inspection paint, amber sealant dots, graphite gasket scars, and pale salt dust gathered along repair edges. The surface should feel maintained and useful, showing history without looking neglected. Make the repaired areas attractive, precise, and readable. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

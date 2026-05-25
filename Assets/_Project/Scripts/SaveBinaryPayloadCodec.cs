@@ -1595,7 +1595,7 @@ namespace Hecton8.SaveSystem
                     ? uint.MaxValue
                     : (uint)utcNowSeconds;
 
-            float tempFactor = (float)Math.Exp((ambientTemperature - BiologicalReferenceTemperatureCelsius) * 0.05f);
+            float tempFactor = MathLodApproximation.ApproxExpSignedPade33Wide40((ambientTemperature - BiologicalReferenceTemperatureCelsius) * 0.05f);
             for (int i = 0; i < safeCount; i++)
             {
                 if ((value.itemStateFlags[i] & BiologicalItemStateMask) == 0)
@@ -2736,7 +2736,7 @@ namespace Hecton8.SaveSystem
             if (!math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z))))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

@@ -85,7 +85,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4030)]
-    public sealed class WorldGenerativeGeologySeamExecutionDirector : MonoBehaviour, ISlowTickable
+    public sealed class WorldGenerativeGeologySeamExecutionDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string SeamRootName = "__GEOLOGY_SEAM";
         private const string GapDitherName = "__SEAM_DITHER";
@@ -128,6 +128,8 @@ namespace Hecton8.World
         private readonly Dictionary<long, WorldGenerativeGeologySeamRuntime> _runtimeCacheByKey = new Dictionary<long, WorldGenerativeGeologySeamRuntime>(128);
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>(RuntimeKeySelectionCapacity);
         private bool _registeredToTickManager;
+        private bool _registeredToLateFrame;
+        private bool _pendingReconcileVisualSync;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private bool _loggedMissingGapDitherMaterial;
 
@@ -145,6 +147,9 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ResolveReferences();
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegisterToTickManager();
         }
 
@@ -157,11 +162,13 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregisterFromTickManager();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
         private void OnDestroy()
         {
             TryUnregisterFromTickManager();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             ReleaseGapDitherMaterial();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -170,6 +177,15 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
+            _pendingReconcileVisualSync = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingReconcileVisualSync)
+                return;
+
+            _pendingReconcileVisualSync = false;
             ReconcileExecutedSeams();
         }
 
@@ -185,22 +201,55 @@ namespace Hecton8.World
 
         private void TryRegisterToTickManager()
         {
-            if (_registeredToTickManager)
+            if (_registeredToTickManager && _registeredToLateFrame)
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+
+            if (!_registeredToTickManager)
+            {
+                _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            }
+
+            if (!_registeredToLateFrame)
+                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFromTickManager()
         {
-            if (!_registeredToTickManager)
+            if (!_registeredToTickManager && !_registeredToLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_registeredToTickManager)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_registeredToLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
+            _registeredToLateFrame = false;
+            _pendingReconcileVisualSync = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registeredToTickManager = false;
+                _registeredToLateFrame = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregisterFromTickManager();
+                TryRegisterToTickManager();
+            }
         }
 
         public void CopyVoxelRequestsTo(List<WorldGenerativeGeologyVoxelBlendRequest> destination)
@@ -408,7 +457,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -433,9 +482,9 @@ namespace Hecton8.World
                 return;
             }
 
-            ParticleSystem system = existing != null
-                ? existing.GetComponent<ParticleSystem>()
-                : null;
+            ParticleSystem system = null;
+            if (existing != null)
+                existing.TryGetComponent(out system);
             if (system == null)
                 system = CreateGapDitherSystem(root);
 
@@ -478,7 +527,7 @@ namespace Hecton8.World
             vfxRoot.transform.SetParent(root, false);
 
             ParticleSystem system = vfxRoot.AddComponent<ParticleSystem>();
-            ParticleSystemRenderer renderer = vfxRoot.GetComponent<ParticleSystemRenderer>();
+            vfxRoot.TryGetComponent(out ParticleSystemRenderer renderer);
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;

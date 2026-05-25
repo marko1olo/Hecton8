@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 - PlayerInventory.cs
 // Native SOA-backed inventory owner. Managed ItemData resolution is seam-only.
 // ============================================================================
@@ -20,7 +20,6 @@ namespace Hecton8.Inventory
     using Hecton8.Inventory.Corrosion;
     using Hecton8.Inventory.Corrosion.Contracts;
     using Hecton8.Items;
-    using Hecton8.Modding;
     using Hecton8.Physics;
     using Hecton8.SaveSystem;
     using Hecton8.World;
@@ -33,7 +32,7 @@ namespace Hecton8.Inventory
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener
+    public sealed partial class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener, IMappedInventoryWriteCommitSink
     {
         private const ushort CraftingLockedMask = ItemRuntimeStateFlags.CraftingLocked;
         private const ushort RadioactiveItemStateMask = ItemRuntimeStateFlags.Radioactive;
@@ -53,12 +52,17 @@ namespace Hecton8.Inventory
         private const float ThermalRunawayPerSecond = 0.65f;
         private const float ThermalRunawayCooldownPerSecond = 0.2f;
         private const float ThermalRunawayDamage = 50f;
+        private const float ThermalRunawayBurnDurationSeconds = 6f;
+        private const float ThermalRunawayRadiationDurationSeconds = 10f;
+        private const float ThermalRunawayRadiationDoseScale = 0.08f;
+        private const byte ThermalRunawayRadiationDoseKind = 7;
         private const float ThermalRunawayAudioVolume = 0.72f;
         private const float PressureCrushDepthMeters = 2000f;
         private const float PressureCrushDurabilityPerSecond = 0.08f;
         private const float RadioactiveHalfLifeBaseSeconds = 1800f;
         private const float Ln2 = 0.6931471805599453f;
         private const float KineticDamageThresholdG = 50f;
+        private const float PlayerEquivalentMassKg = 80f;
         private const float InventoryLoadMinimumMovementMultiplier = 0.5f;
         private const float VolumeM3ToLiters = 1000f;
         private const float HeavyBulkTransferAudioThresholdKg = 50f;
@@ -569,6 +573,8 @@ namespace Hecton8.Inventory
         private JobHandle _massVolumeJobHandle;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
+        private float _pendingEquipmentRustShaderScalar;
+        private bool _hasPendingEquipmentRustShaderScalar;
         private bool _massVolumeJobScheduled;
         private bool _massCacheDirty = true;
         private int _massVolumeJobInventoryVersion;
@@ -607,8 +613,10 @@ namespace Hecton8.Inventory
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IAudioService _cachedAudioService;
+        private ISaveService _cachedSaveService;
         private IDataVault _cachedDataVault;
         private bool _hotSwapListenerRegistered;
+        private bool _saveRegistered;
 
         public float TotalWeight { get; private set; }
         public float TotalMassKg => _currentWeightKg;
@@ -726,13 +734,14 @@ namespace Hecton8.Inventory
             _sortBuffer = new ItemPlacement[columns * rows];
             TryGetComponent(out _traumaDispatcher);
             CacheRegistryServicesCold();
+            InitializeSoaQueryEngine(columns * rows);
         }
 
         private void OnEnable()
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            GlobalRegistry.Save?.Register(this);
+            TryRegisterSaveParticipant();
             TryRegisterSlowTick();
             TryRegisterLateFrameTick();
             PhysicsEvents.Register(this);
@@ -742,7 +751,7 @@ namespace Hecton8.Inventory
         private void OnDisable()
         {
             PhysicsEvents.Unregister(this);
-            GlobalRegistry.Save?.Unregister(this);
+            TryUnregisterSaveParticipant();
             TryUnregisterSlowTick();
             TryUnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
@@ -751,6 +760,7 @@ namespace Hecton8.Inventory
 
         private void OnDestroy()
         {
+            TryUnregisterSaveParticipant();
             TryUnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
             CompleteInventoryMassRecomputeJob(forceComplete: true);
@@ -810,6 +820,7 @@ namespace Hecton8.Inventory
             DisposeNativeArray(ref _defragUnitVolumeM3);
             DisposeNativeArray(ref _defragUnitRadiationSv);
             DisposeNativeArray(ref _defragResult);
+            DisposeSoaQueryEngine();
 
         }
 
@@ -831,8 +842,15 @@ namespace Hecton8.Inventory
                 case GlobalRegistryServiceSlot.Audio:
                     _cachedAudioService = currentService as IAudioService;
                     break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _cachedSaveService = currentService as ISaveService;
+                    TryRegisterSaveParticipant();
+                    break;
                 case GlobalRegistryServiceSlot.DataVault:
                     _cachedDataVault = currentService as IDataVault;
+                    TryBindSoaQueryVault(_cachedDataVault, columns * rows);
+                    PublishSoaQueryVaultSnapshotOwnerPhase();
                     break;
             }
         }
@@ -857,15 +875,43 @@ namespace Hecton8.Inventory
         private void CacheRegistryServicesCold()
         {
             _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (!ReferenceEquals(_cachedPlayerContext, playerContext))
             {
                 _cachedPlayerContext = playerContext;
                 _playerImpactBodyId = 0ul;
             }
 
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedSaveService = GlobalRegistry.Save;
             _cachedDataVault = GlobalRegistry.DataVault;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (_cachedSaveService == null)
+                _cachedSaveService = GlobalRegistry.Save;
+
+            if (_cachedSaveService == null)
+                return;
+
+            _cachedSaveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _cachedSaveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
         }
 
         private void RegisterNativeMemorySentinel()
@@ -1080,28 +1126,16 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            InventoryPhysicalDropRequestPayload payload = new InventoryPhysicalDropRequestPayload
-            {
-                RuntimePosition = runtimePosition,
-                InitialImpulse = initialImpulse,
-                GeneticsMask = geneticsMask,
-                ItemHashId = unchecked((uint)itemHashId),
-                Quantity = 1,
-                QualityMilli = qualityMilli,
-                Reserved = 0
-            };
-            HectonEventBus.Publish(in payload);
-
             bool hasInteractorPosition = interactor != null;
             ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(interactor.GetEntityId()) : 0ul;
             Vector3 interactorPosition = hasInteractorPosition ? interactor.position : Vector3.zero;
-            InteractionEvents.RaiseItemLost(droppedItem, 1, interactor);
-            HectonEventBus.Publish(new ItemDiscardedEvent(
+            InteractionEvents.TryRaiseItemLost(droppedItem, 1, interactor);
+            ItemLifecycleSignalRoute.TryPublishDiscarded(
                 droppedItem,
                 1,
                 interactorEntityId,
                 interactorPosition,
-                hasInteractorPosition));
+                hasInteractorPosition);
 
             droppedHashId = itemHashId;
             return true;
@@ -1365,6 +1399,16 @@ namespace Hecton8.Inventory
             return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, out _);
         }
 
+        public bool TryAddItemWithState(int itemHashId, uint geneticsMask, ushort qualityMilli, ushort itemStateFlags, int quantity = 1)
+        {
+            return TryAddItemWithState(itemHashId, (ulong)geneticsMask, qualityMilli, itemStateFlags, quantity);
+        }
+
+        public bool TryAddItemWithState(int itemHashId, ulong geneticsMask, ushort qualityMilli, ushort itemStateFlags, int quantity = 1)
+        {
+            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, itemStateFlags, out _);
+        }
+
         public void SlowTick()
         {
             using (_slowTickProfilerMarker.Auto())
@@ -1387,7 +1431,9 @@ namespace Hecton8.Inventory
         {
             DrainScavengingLootOracleSignals();
             ConsumeInventoryCommandSignals();
+            FlushEquipmentRustShaderScalar();
             CompleteInventoryMassRecomputeJob(forceComplete: false);
+            WriteSoaQueryTelemetryOwnerPhase();
         }
 
         public bool TryCopyAvailableItemCountsNonAlloc(
@@ -2087,7 +2133,7 @@ namespace Hecton8.Inventory
         public void RequestSortInventory()
         {
             int frame = Mathf.Max(0, Time.frameCount);
-            SignalBus<InventoryCommandSignal>.Push(new InventoryCommandSignal
+            SignalBus<InventoryCommandSignal>.TryPush(new InventoryCommandSignal
             {
                 InventoryHash = ResolveInventorySignalHash(),
                 Frame = unchecked((uint)frame),
@@ -2185,7 +2231,10 @@ namespace Hecton8.Inventory
         private bool TryApplyRespawnDropPenalty(in InventoryCommandSignal command)
         {
             if (_grid == null || !_stackCounts.IsCreated)
+            {
+                PublishRespawnDropPenaltyResult(in command, 0);
                 return false;
+            }
 
             int sourceCells = math.min(_grid.TotalCells, _stackCounts.Length);
             int dropBudget = ResolveRespawnDropBudget(command.Flags);
@@ -2195,12 +2244,19 @@ namespace Hecton8.Inventory
                 !hasRuleTable &&
                 (command.PayloadFlags & InventoryCommandSignalPayloadFlags.FallbackWhenRuleTableMissing) == 0)
             {
+                PublishRespawnDropPenaltyResult(in command, 0);
                 return false;
             }
 
-            Transform playerTransform = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerTransform : null;
-            Vector3 dropPosition = playerTransform != null ? playerTransform.position : transform.position;
+            bool hasDeathAup = TryResolveRespawnDeathAup(in command, out double3 deathAup);
+            if (!hasDeathAup)
+            {
+                PublishRespawnDropPenaltyResult(in command, 0);
+                return false;
+            }
+
             bool dropped = false;
+            int droppedCount = 0;
 
             for (int anchorIndex = 0; anchorIndex < sourceCells && dropBudget > 0; anchorIndex++)
             {
@@ -2229,14 +2285,100 @@ namespace Hecton8.Inventory
 
                 int anchorX = anchorIndex % _grid.Columns;
                 int anchorY = anchorIndex / _grid.Columns;
-                if (!TryDropOneItemToWorldSignal(anchorX, anchorY, dropPosition, Vector3.zero, null, out _))
+                float3 localOffset = ResolveRespawnLootScatterOffset(anchorIndex);
+                bool didDrop = TryDropOneItemToDeathLootCacheSignal(anchorX, anchorY, deathAup, localOffset, in command, out _);
+
+                if (!didDrop)
                     continue;
 
                 dropBudget--;
                 dropped = true;
+                droppedCount++;
             }
 
+            PublishRespawnDropPenaltyResult(in command, droppedCount);
             return dropped;
+        }
+
+        private bool TryResolveRespawnDeathAup(in InventoryCommandSignal command, out double3 deathAup)
+        {
+            deathAup = default;
+            if (command.Sequence == 0u)
+                return false;
+
+            if ((command.PayloadFlags & InventoryCommandSignalPayloadFlags.RespawnDeathAupSideband) != 0 &&
+                TryResolveRespawnDeathAupSideband(in command, out deathAup))
+            {
+                return true;
+            }
+
+            ReadOnlySpan<PlayerRespawnSignal> signals = SignalBus<PlayerRespawnSignal>.GetFrameSnapshot();
+            uint inventoryHash = ResolveInventorySignalHash();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerRespawnSignal signal = signals[i];
+                if (signal.Sequence != command.Sequence ||
+                    (signal.PlayerHash != 0u && signal.PlayerHash != inventoryHash) ||
+                    (signal.Flags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u ||
+                    !math.all(math.isfinite(signal.DeathAUP)))
+                {
+                    continue;
+                }
+
+                deathAup = signal.DeathAUP;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryResolveRespawnDeathAupSideband(in InventoryCommandSignal command, out double3 deathAup)
+        {
+            deathAup = default;
+            ReadOnlySpan<InventoryRespawnDeathAupSignal> signals = SignalBus<InventoryRespawnDeathAupSignal>.GetFrameSnapshot();
+            uint inventoryHash = ResolveInventorySignalHash();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                InventoryRespawnDeathAupSignal signal = signals[i];
+                if (signal.Sequence != command.Sequence ||
+                    (signal.InventoryHash != 0u && signal.InventoryHash != inventoryHash) ||
+                    (signal.Flags & 0x80000000u) != 0u ||
+                    !math.all(math.isfinite(signal.DeathAUP)))
+                {
+                    continue;
+                }
+
+                deathAup = signal.DeathAUP;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static float3 ResolveRespawnLootScatterOffset(int anchorIndex)
+        {
+            float angle = ((anchorIndex & 7) * 0.78539816339f) + 0.39269908169f;
+            float radius = 0.35f + ((anchorIndex & 3) * 0.08f);
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+            float3 offset = default;
+            offset.x = cos * radius;
+            offset.y = 0.15f;
+            offset.z = sin * radius;
+            return offset;
+        }
+
+        private static void PublishRespawnDropPenaltyResult(in InventoryCommandSignal command, int droppedCount)
+        {
+            if (command.Sequence == 0u)
+                return;
+
+            InventoryRespawnPenaltyResultSignal result = default;
+            result.InventoryHash = command.InventoryHash;
+            result.Frame = command.Frame;
+            result.Sequence = command.Sequence;
+            result.DroppedCount = (uint)math.clamp(droppedCount, 0, 255);
+            result.Flags = droppedCount > 0 ? 1u : 0u;
+            SignalBus<InventoryRespawnPenaltyResultSignal>.TryPush(in result);
         }
 
         private static int ResolveRespawnDropBudget(byte encodedMultiplier)
@@ -2419,6 +2561,7 @@ namespace Hecton8.Inventory
             }
 
             RefreshInventorySoAMirrorsAndMask();
+            PublishSoaQueryVaultSnapshotOwnerPhase();
             return true;
         }
 
@@ -2482,7 +2625,7 @@ namespace Hecton8.Inventory
 
         private void PublishInventorySortAcousticSignal()
         {
-            GlobalSignals.Publish(new ToolAcousticSignal
+            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
             {
                 ToolHash = _InventorySortToolHash,
                 TargetHash = _InventoryUiClickHash,
@@ -2645,7 +2788,7 @@ namespace Hecton8.Inventory
                 movedStackCount += count;
                 transferWeightKg += math.max(0f, _anchorUnitMassKg[sourceIndex]) * count;
                 transferVolumeLiters += math.max(0f, _anchorUnitVolumeM3[sourceIndex]) * VolumeM3ToLiters * count;
-                GlobalSignals.Publish(new DebrisSpawnSignal
+                SignalBus<DebrisSpawnSignal>.TryPush(new DebrisSpawnSignal
                 {
                     PositionAup = dropAup,
                     SpeciesHash = hash,
@@ -2700,6 +2843,7 @@ namespace Hecton8.Inventory
         {
             CompleteInventoryMassRecomputeJob(forceComplete: true);
             RefreshInventorySoAMirrorsAndMask();
+            PublishSoaQueryVaultSnapshotOwnerPhase();
             MarkMassCacheDirty();
             RefreshDerivedMassAndSurvivalLoad();
         }
@@ -3345,6 +3489,7 @@ namespace Hecton8.Inventory
             }
 
             RefreshInventorySoAMirrorsAndMask();
+            PublishSoaQueryVaultSnapshotOwnerPhase();
             return true;
         }
 
@@ -3371,7 +3516,7 @@ namespace Hecton8.Inventory
             if (!IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -3387,7 +3532,7 @@ namespace Hecton8.Inventory
                 return;
 
             float inverseTransferWeight = math.rcp(math.max(HeavyBulkTransferAudioThresholdKg, transferWeightKg));
-            GlobalSignals.Publish(new ToolAcousticSignal
+            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
             {
                 ToolHash = _InventoryBulkTransferToolHash,
                 TargetHash = _HeavyThudTargetHash,
@@ -3601,6 +3746,43 @@ namespace Hecton8.Inventory
 
         private bool TryAddItemWithStateInternal(int itemHashId, int quantity, ulong geneticsMask, ushort qualityMilli, out int addedQuantity)
         {
+            return TryAddItemWithStateInternal(
+                itemHashId,
+                quantity,
+                geneticsMask,
+                qualityMilli,
+                0,
+                hasExplicitStateFlags: false,
+                out addedQuantity);
+        }
+
+        private bool TryAddItemWithStateInternal(
+            int itemHashId,
+            int quantity,
+            ulong geneticsMask,
+            ushort qualityMilli,
+            ushort itemStateFlags,
+            out int addedQuantity)
+        {
+            return TryAddItemWithStateInternal(
+                itemHashId,
+                quantity,
+                geneticsMask,
+                qualityMilli,
+                itemStateFlags,
+                hasExplicitStateFlags: true,
+                out addedQuantity);
+        }
+
+        private bool TryAddItemWithStateInternal(
+            int itemHashId,
+            int quantity,
+            ulong geneticsMask,
+            ushort qualityMilli,
+            ushort itemStateFlags,
+            bool hasExplicitStateFlags,
+            out int addedQuantity)
+        {
             addedQuantity = 0;
             if (_grid == null ||
                 itemHashId == 0 ||
@@ -3613,12 +3795,13 @@ namespace Hecton8.Inventory
 
             uint timestampNow = ResolveCurrentUnixTimestamp();
             ushort resolvedQualityMilli = NormalizeQualityMilli(qualityMilli);
+            ushort resolvedStateFlags = hasExplicitStateFlags ? itemStateFlags : runtimeDescriptor.StateFlags;
             byte compressedGenetics = CompressItemGenetics(geneticsMask);
 
             int requestedQuantity = quantity;
             if (!TryResolveCapacityLimitedQuantity(in runtimeDescriptor, requestedQuantity, out quantity))
             {
-                InventoryEvents.NotifyInventoryFull(itemHashId);
+                InventoryEvents.TryNotifyInventoryFull(itemHashId);
                 return false;
             }
 
@@ -3629,7 +3812,7 @@ namespace Hecton8.Inventory
                 int stackedQuantity = TryStackQuantityWithState(
                     descriptor.HashId,
                     descriptor.MaxStack,
-                    runtimeDescriptor.StateFlags,
+                    resolvedStateFlags,
                     timestampNow,
                     compressedGenetics,
                     resolvedQualityMilli,
@@ -3652,12 +3835,12 @@ namespace Hecton8.Inventory
                 {
                     int anchorIndex = AnchorIndex(placedX, placedY);
                     _stackCounts[anchorIndex] = (ushort)quantityForSlot;
-                    _itemStateFlags[anchorIndex] = runtimeDescriptor.StateFlags;
+                    _itemStateFlags[anchorIndex] = resolvedStateFlags;
                     _itemGenetics[anchorIndex] = compressedGenetics;
                     _qualityMilli[anchorIndex] = resolvedQualityMilli;
                     if (_itemDurability.IsCreated && (uint)anchorIndex < (uint)_itemDurability.Length)
                         _itemDurability[anchorIndex] = math.saturate(resolvedQualityMilli * 0.001f);
-                    _lastUpdateUnixSeconds[anchorIndex] = (runtimeDescriptor.StateFlags & BiologicalItemStateMask) != 0 ? timestampNow : 0u;
+                    _lastUpdateUnixSeconds[anchorIndex] = (resolvedStateFlags & BiologicalItemStateMask) != 0 ? timestampNow : 0u;
                     SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
                     TotalWeight += descriptor.Weight * quantityForSlot;
                     addedQuantity += quantityForSlot;
@@ -3676,7 +3859,7 @@ namespace Hecton8.Inventory
             }
 
             if (!allAdded)
-                InventoryEvents.NotifyInventoryFull(itemHashId);
+                InventoryEvents.TryNotifyInventoryFull(itemHashId);
 
             return allAdded;
         }
@@ -4108,6 +4291,9 @@ namespace Hecton8.Inventory
             if (_grid == null || itemHashId == 0 || !_stackCounts.IsCreated)
                 return 0;
 
+            if (TryCountQuantityByHashSoa(itemHashId, availableOnly, out int soaTotal))
+                return soaTotal;
+
             int total = 0;
             for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
             {
@@ -4217,6 +4403,7 @@ namespace Hecton8.Inventory
         private void NotifyInventoryChanged(bool markDirty = true, bool massDirty = true)
         {
             RefreshInventorySoAMirrorsAndMask();
+            PublishSoaQueryVaultSnapshotOwnerPhase();
 
             if (markDirty)
             {
@@ -4233,8 +4420,8 @@ namespace Hecton8.Inventory
             _durabilitySnapshotDirty = true;
             PublishEncumbranceChanged();
             InventoryVersion++;
-            InventoryEvents.NotifyInventoryChanged();
-            SignalBus<InventoryChangedSignal>.Push(new InventoryChangedSignal
+            InventoryEvents.TryNotifyInventoryChanged();
+            SignalBus<InventoryChangedSignal>.TryPush(new InventoryChangedSignal
             {
                 InventoryHash = ResolveInventorySignalHash(),
                 Revision = unchecked((uint)InventoryVersion),
@@ -4323,7 +4510,7 @@ namespace Hecton8.Inventory
         {
             float carryCapacityKg = ResolveCarryCapacityKilograms();
             UIStateStore.WriteInventoryLoadState(TotalMassKg, carryCapacityKg, CachedInventoryLoad01, Time.unscaledTime);
-            InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
+            InventoryEvents.TryNotifyEncumbranceChanged(new EncumbranceChangedEvent(
                 this,
                 TotalMassKg,
                 carryCapacityKg,
@@ -4349,8 +4536,7 @@ namespace Hecton8.Inventory
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterSlowTick()
@@ -4369,8 +4555,7 @@ namespace Hecton8.Inventory
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterLateFrameTick()
@@ -4405,7 +4590,8 @@ namespace Hecton8.Inventory
             for (int i = 0; i < signals.Length; i++)
             {
                 ItemAcquiredSignal signal = signals[i];
-                if (signal.SourceKind != ItemAcquiredSignalSourceKinds.ScavengingLootOracle ||
+                if ((signal.SourceKind != ItemAcquiredSignalSourceKinds.ScavengingLootOracle &&
+                     signal.SourceKind != ItemAcquiredSignalSourceKinds.DroneMining) ||
                     signal.ItemHash == 0u ||
                     signal.Quantity == 0)
                 {
@@ -4431,6 +4617,7 @@ namespace Hecton8.Inventory
             {
                 ItemAcquiredSignal signal = signals[i];
                 if (signal.SourceKind == ItemAcquiredSignalSourceKinds.ScavengingLootOracle ||
+                    signal.SourceKind == ItemAcquiredSignalSourceKinds.DroneMining ||
                     signal.ItemHash != _TitaniumScrapHashId ||
                     signal.Frame <= _lastRepairTitaniumFrame)
                     continue;
@@ -4582,7 +4769,7 @@ namespace Hecton8.Inventory
                 if (itemHash == 0u)
                     continue;
 
-                GlobalSignals.Publish(new ToolAcousticSignal
+                SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
                 {
                     ToolHash = _EquipmentCorrosionToolHash,
                     TargetHash = itemHash,
@@ -4599,7 +4786,7 @@ namespace Hecton8.Inventory
 
         private void PublishItemDurabilityChanged(uint itemHash, float durability01, byte reason, ushort slotIndex)
         {
-            GlobalSignals.Publish(new ItemDurabilityChangedSignal
+            SignalBus<ItemDurabilityChangedSignal>.TryPush(new ItemDurabilityChangedSignal
             {
                 InventoryHash = ResolveInventorySignalHash(),
                 ItemHash = itemHash,
@@ -4621,7 +4808,7 @@ namespace Hecton8.Inventory
                     return;
 
                 _equipmentFailingHudLatched = 1;
-                GlobalSignals.Publish(new HUDNotificationSignal
+                SignalBus<HUDNotificationSignal>.TryPush(new HUDNotificationSignal
                 {
                     MessageHash = _EquipmentFailingMessageHash,
                     ContextHash = _EquipmentFailingContextHash,
@@ -4639,7 +4826,17 @@ namespace Hecton8.Inventory
 
         private void UpdateEquipmentRustShaderScalar()
         {
-            Shader.SetGlobalFloat(_HectonEquipmentRust01Id, math.saturate(1f - _averageEquipmentDurability01));
+            _pendingEquipmentRustShaderScalar = math.saturate(1f - _averageEquipmentDurability01);
+            _hasPendingEquipmentRustShaderScalar = true;
+        }
+
+        private void FlushEquipmentRustShaderScalar()
+        {
+            if (!_hasPendingEquipmentRustShaderScalar)
+                return;
+
+            _hasPendingEquipmentRustShaderScalar = false;
+            Shader.SetGlobalFloat(_HectonEquipmentRust01Id, _pendingEquipmentRustShaderScalar);
         }
 
         private float ResolveAverageEquipmentDurability()
@@ -5220,8 +5417,9 @@ namespace Hecton8.Inventory
         private void DispatchInventoryThermalRunaway(int destroyedPairCount)
         {
             float damage = ThermalRunawayDamage * math.max(1, destroyedPairCount);
-            if (survival != null)
-                survival.TakeDamage(damage);
+            int targetId = ResolveInventoryPlayerCombatTargetId();
+            QueueInventoryThermalRunawayStatus(targetId, damage);
+            PublishInventoryThermalRunawayRadiationDose(damage);
 
             global::Hecton8.Gameplay.HabitatDamageSignal signal = new global::Hecton8.Gameplay.HabitatDamageSignal
             {
@@ -5240,8 +5438,76 @@ namespace Hecton8.Inventory
                 dispatcher.OnTraumaThresholdCrossed(TraumaLevel.Critical);
             }
 
-            if (_cachedAudioService is SpatialAudioManager spatialAudio)
-                spatialAudio.QueueInventoryRunawayExplosion(transform.position, ThermalRunawayAudioVolume);
+            if (_cachedAudioService is ISpatialAudioInventoryRunawaySink inventoryAudio)
+                inventoryAudio.QueueInventoryRunawayExplosion(transform.position, ThermalRunawayAudioVolume);
+        }
+
+        private int ResolveInventoryPlayerCombatTargetId()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
+            if (playerHealth != null)
+                return CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+
+            return survival != null ? CombatDamageRuntime.ResolveTargetId(survival.gameObject) : 0;
+        }
+
+        private void QueueInventoryThermalRunawayStatus(int targetId, float damage)
+        {
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return;
+
+            float severity01 = math.saturate(FiniteNonNegativeOrZero(damage) * 0.02f);
+            if (severity01 <= 0.0001f)
+                return;
+
+            CombatDamageRuntime.TryQueueStatusEffect(
+                targetId,
+                CombatStatusBits.Burning64,
+                ThermalRunawayBurnDurationSeconds * math.max(0.25f, severity01),
+                DamageSourceIds.InventoryRadiation,
+                severity01);
+            CombatDamageRuntime.TryQueueStatusEffect(
+                targetId,
+                CombatStatusBits.Irradiated64,
+                ThermalRunawayRadiationDurationSeconds * math.max(0.25f, severity01),
+                DamageSourceIds.InventoryRadiation,
+                severity01);
+        }
+
+        private void PublishInventoryThermalRunawayRadiationDose(float damage)
+        {
+            float severity01 = math.saturate(FiniteNonNegativeOrZero(damage) * 0.02f);
+            if (severity01 <= 0.0001f || !TryResolveInventoryPlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
+
+            RadiationDoseSignal signal = default;
+            signal.PositionAup = playerAup;
+            signal.Dose = FiniteNonNegativeOrZero(damage) * ThermalRunawayRadiationDoseScale;
+            signal.Intensity01 = severity01;
+            signal.SourceId = DamageSourceIds.InventoryRadiation;
+            signal.DoseKind = ThermalRunawayRadiationDoseKind;
+            signal.Flags = 1;
+            SignalBus<RadiationDoseSignal>.TryPush(in signal);
+        }
+
+        private bool TryResolveInventoryPlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (movement != null)
+            {
+                playerAup = movement.CurrentAup;
+                if (playerAup.IsFinite())
+                    return true;
+            }
+
+            return TryResolveAupFromRuntimeOrigin(transform.position, out playerAup);
+        }
+
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
         }
 
         private void ApplyInventoryDepthPressureCrush()
@@ -5479,10 +5745,7 @@ namespace Hecton8.Inventory
 
         private float EstimateImpactAccelerationInG(PhysicsImpactSignal impactSignal)
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
-            float playerMass = playerBody != null ? Mathf.Max(0.1f, playerBody.mass) : 80f;
-            return math.max(0f, impactSignal.Force * math.rcp(playerMass * HectonPhysicsContract.GravityMetersPerSecondSquaredConst));
+            return math.max(0f, impactSignal.Force * math.rcp(PlayerEquivalentMassKg * HectonPhysicsContract.GravityMetersPerSecondSquaredConst));
         }
 
         private void ApplyKineticInventoryDamage()

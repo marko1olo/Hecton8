@@ -33,6 +33,7 @@
 // ============================================================================
 
 using System;
+using System.Globalization;
 using UnityEngine;
 
 namespace Hecton8.BuildTools
@@ -124,7 +125,11 @@ namespace Hecton8.BuildTools
 
             string markdown = $"## {Version} — {timestamp}" + "\n";
             markdown += $"- **Status:** {blocker}\n";
-            markdown += $"- **FPS:** Mean={FpsMean:F1}, Worst={FpsWorst:F1}\n";
+            markdown += "- **FPS:** Mean=" +
+                        FpsMean.ToString("F1", CultureInfo.InvariantCulture) +
+                        ", Worst=" +
+                        FpsWorst.ToString("F1", CultureInfo.InvariantCulture) +
+                        "\n";
             markdown += $"- **Main Irritant:** {MainIrritant}\n";
             markdown += $"- **Visual Flaw:** {MainVisualFlaw}\n";
             markdown += $"- **UX Flaw:** {MainUXFlaw}\n";
@@ -138,7 +143,12 @@ namespace Hecton8.BuildTools
 
         public override string ToString()
         {
-            return $"[{Version}] FPS={FpsMean:F1}/{FpsWorst:F1} | Irritant: {MainIrritant} | Blocker={IsBlocker}";
+            return "[" + Version + "] FPS=" +
+                   FpsMean.ToString("F1", CultureInfo.InvariantCulture) +
+                   "/" +
+                   FpsWorst.ToString("F1", CultureInfo.InvariantCulture) +
+                   " | Irritant: " + MainIrritant +
+                   " | Blocker=" + IsBlocker;
         }
 
         private static string NormalizeText(string value, string fallback = "")
@@ -151,7 +161,7 @@ namespace Hecton8.BuildTools
             if (timestamp <= 0)
                 return "uninitialized";
 
-            return DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime.ToString("yyyy-MM-dd HH:mm");
+            return DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
         }
     }
 
@@ -170,7 +180,7 @@ namespace Hecton8.BuildTools
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _entries.Add(entry);
-            Debug.Log($"[BuildPlaytestLog] Recorded: {entry}");
+            Hecton8.Core.H8Debug.Log($"[BuildPlaytestLog] Recorded: {entry}");
 #endif
         }
 
@@ -191,7 +201,7 @@ namespace Hecton8.BuildTools
                 return "# Build Playtest Log\n\nNo entries yet.\n";
 
             string markdown = "# Build Playtest Log\n\n";
-            markdown += $"Generated: {System.DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC\n\n";
+            markdown += "Generated: " + System.DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) + " UTC\n\n";
 
             for (int i = _entries.Count - 1; i >= 0; i--)
             {

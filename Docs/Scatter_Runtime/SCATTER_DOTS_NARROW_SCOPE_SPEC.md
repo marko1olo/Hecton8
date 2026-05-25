@@ -1,4 +1,4 @@
-# Scatter DOTS Narrow Scope Spec
+﻿# Scatter DOTS Narrow Scope Spec
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION

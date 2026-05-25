@@ -1,0 +1,76 @@
+﻿{
+    "schema":  "hecton8.architecture_45word_density_audit.x012.v1",
+    "generatedUtc":  "2026-05-24T16:12:59.2926991Z",
+    "evidenceClass":  "STATIC_DOC / STATIC_SOURCE",
+    "manualRewritePolicy":  "Scripts located and validated offenders only; prose rewrites were manual apply_patch edits.",
+    "thresholdWords":  45,
+    "before":  {
+                   "paragraphsGe45":  63,
+                   "structuredLinesGe45":  66,
+                   "markerHits":  0,
+                   "maxParagraphWords":  49,
+                   "maxStructuredLineWords":  49
+               },
+    "after":  {
+                  "paragraphsGe45":  0,
+                  "structuredLinesGe45":  0,
+                  "markerHits":  0,
+                  "maxParagraphWords":  null,
+                  "maxStructuredLineWords":  null
+              },
+    "sourceConstants":  {
+                            "saveCurrentVersion":  "0x000B",
+                            "saveCurrentHeaderSize":  "56",
+                            "saveLegacyHeaderSize":  "44",
+                            "alignedSectionHeaderVersion":  "0x000B",
+                            "signalBusRegistryLaneCapacity":  "512",
+                            "signalBusDefaultExpectedCapacity":  "64",
+                            "signalBusDefaultMaxFrameSignals":  null,
+                            "dataMonolithHeaderBytes":  "64",
+                            "dataMonolithDirectoryBytes":  "64",
+                            "dataMonolithFormatVersion":  "1",
+                            "dataMonolithSchemaHash":  "0x58303032",
+                            "dataMonolithPayloadExists":  true,
+                            "dataMonolithPayloadBytes":  1064384
+                        },
+    "reduction":  {
+                      "method":  "current active words plus X_012 archived report/root words minus concise replacement anchor words",
+                      "activeWordCountAfter":  538740,
+                      "reconstructedActiveWordCountBefore":  1196107,
+                      "retiredActiveWords":  657367,
+                      "reductionRatio":  0.5495887909693697,
+                      "reductionPercent":  54.958879096936975,
+                      "reductionPass":  true,
+                      "archivedRootFiles":  2,
+                      "archivedReportFiles":  160,
+                      "archivedArchitectureFiles":  2,
+                      "archivedArchitectureDiffFiles":  2,
+                      "currentRootAnchorWords":  664,
+                      "currentBinaryPayloadLedgerWords":  154,
+                      "currentActualityLedgerWords":  785,
+                      "currentArchitectureReplacementWords":  939,
+                      "architectureRetiredWords":  118082
+                  },
+    "architecture":  {
+                         "activeArchitectureFileCount":  192,
+                         "activeArchitectureWordCount":  168531,
+                         "scannerPass":  true
+                     },
+    "structure":  {
+                      "pass":  true,
+                      "activeDocCount":  587,
+                      "rootTextDocCount":  3,
+                      "brokenLinkFiles":  0,
+                      "staleParameterFiles":  0,
+                      "encodingWithoutUtf8Sig":  0
+                  },
+    "toolReports":  {
+                        "optimization":  "Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json",
+                        "structure":  "Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json"
+                    },
+    "notes":  [
+                  "SignalBus runtime lane capacity is 512 in C#; prompt example 256 is stale.",
+                  "No C# source was edited by X_012 in this loop.",
+                  "No dotnet build was launched for documentation-only edits."
+              ]
+}

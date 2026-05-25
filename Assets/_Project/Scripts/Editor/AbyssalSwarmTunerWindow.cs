@@ -21,17 +21,29 @@ namespace Hecton8.Editor
         private const int CounterSkipped = 5;
         private const int CounterInvalidMath = 6;
         private const int CounterDebugCellCount = 8;
+        private const int FlockingCounterNeighborSamples = 0;
+        private const int FlockingCounterEvaluatedBoids = 1;
+        private const int FlockingCounterPanicBoids = 2;
+        private const int FlockingCounterActiveThreats = 3;
         private const uint EntityFlagHydrated = 1u << 2;
         private const int TelemetryGraphHeight = 46;
         private const int MaxVectorFieldSamples = 75;
         private const int MaxBoidVectorSamples = 128;
+        private const int MaxThreatSphereSamples = 32;
         private const int CsvMaxBytes = 8192;
         private const string TuningCsvPrimary = "Data/Precomputed/ecosystem_balance.csv";
         private const string TuningCsvFallback = "ecosystem_balance.csv";
-        private const string SpeciesCsvPrimary = "Data/Precomputed/swarm_species_profiles.csv";
-        private const string SpeciesCsvFallback = "swarm_species_profiles.csv";
+        private const string SpeciesCsvPrimary = "Data/Precomputed/fauna_swarm_profiles.csv";
+        private const string SpeciesCsvFallback = "fauna_swarm_profiles.csv";
 
         private IMGUIContainer _imguiContainer;
+        private Slider _separationSlider;
+        private Slider _alignmentSlider;
+        private Slider _cohesionSlider;
+        private Slider _evasionRadiusSlider;
+        private FlockingTelemetryGraphElement _flockingGraph;
+        private Label _uiStatus;
+        private bool _suppressUiCallbacks;
 
         [MenuItem("HECTON-8/Abyssal Swarm Tuner")]
         public static void OpenAbyssal()
@@ -39,27 +51,121 @@ namespace Hecton8.Editor
             GetWindow<AbyssalSwarmTunerWindow>("Abyssal Swarm Tuner");
         }
 
+        [MenuItem("HECTON-8/Swarm Kinematics Tuner")]
+        public static void OpenSwarmKinematics()
+        {
+            GetWindow<AbyssalSwarmTunerWindow>("Swarm Kinematics Tuner");
+        }
+
         private void OnEnable()
         {
             SceneView.duringSceneGui += DrawHashGridSceneView;
+            EditorApplication.update += OnEditorUpdate;
         }
 
-        private void CreateGUI()
+        public void CreateGUI()
         {
             rootVisualElement.Clear();
+            rootVisualElement.style.paddingLeft = 8f;
+            rootVisualElement.style.paddingRight = 8f;
+            rootVisualElement.style.paddingTop = 8f;
+            rootVisualElement.style.paddingBottom = 8f;
+
+            Label title = new Label("Swarm Kinematics Tuner");
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            title.style.marginBottom = 6f;
+            rootVisualElement.Add(title);
+
+            _flockingGraph = new FlockingTelemetryGraphElement();
+            _uiStatus = new Label("Telemetry");
+            _uiStatus.style.whiteSpace = WhiteSpace.Normal;
+            _uiStatus.style.marginBottom = 6f;
+            rootVisualElement.Add(_flockingGraph);
+            rootVisualElement.Add(_uiStatus);
+
+            _separationSlider = CreateTuningSlider("Separation Weight", 0.05f, 8f);
+            _alignmentSlider = CreateTuningSlider("Alignment Weight", 0.01f, 4f);
+            _cohesionSlider = CreateTuningSlider("Cohesion Weight", 0.01f, 4f);
+            _evasionRadiusSlider = CreateTuningSlider("Evasion Radius", 4f, 160f);
+            rootVisualElement.Add(_separationSlider);
+            rootVisualElement.Add(_alignmentSlider);
+            rootVisualElement.Add(_cohesionSlider);
+            rootVisualElement.Add(_evasionRadiusSlider);
+
+            Foldout diagnostics = new Foldout
+            {
+                text = "CSV, layout, counters, and legacy diagnostics",
+                value = false
+            };
+            diagnostics.style.marginTop = 8f;
             _imguiContainer = new IMGUIContainer(DrawWindowIMGUI);
-            rootVisualElement.Add(_imguiContainer);
+            diagnostics.Add(_imguiContainer);
+            rootVisualElement.Add(diagnostics);
+            RefreshUiToolkit();
         }
 
         private void OnDisable()
         {
             SceneView.duringSceneGui -= DrawHashGridSceneView;
+            EditorApplication.update -= OnEditorUpdate;
         }
 
-        private void OnGUI()
+        private Slider CreateTuningSlider(string label, float min, float max)
         {
-            if (_imguiContainer == null)
-                DrawWindowIMGUI();
+            Slider slider = new Slider(label, min, max)
+            {
+                showInputField = true
+            };
+            slider.RegisterValueChangedCallback(OnTuningSliderChanged);
+            return slider;
+        }
+
+        private void OnEditorUpdate()
+        {
+            RefreshUiToolkit();
+            _flockingGraph?.MarkDirtyRepaint();
+        }
+
+        private void RefreshUiToolkit()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            ShinobuEcosystemTuning tuning = default;
+            bool ready = Application.isPlaying && vault != null && TryReadFirst(vault, BufferID.ShinobuEcosystemTuning, out tuning);
+            _suppressUiCallbacks = true;
+            if (_separationSlider != null) _separationSlider.SetValueWithoutNotify(ready ? tuning.SeparationWeight : 0f);
+            if (_alignmentSlider != null) _alignmentSlider.SetValueWithoutNotify(ready ? tuning.AlignmentWeight : 0f);
+            if (_cohesionSlider != null) _cohesionSlider.SetValueWithoutNotify(ready ? tuning.CohesionWeight : 0f);
+            if (_evasionRadiusSlider != null) _evasionRadiusSlider.SetValueWithoutNotify(ready ? tuning.EvasionRadiusMeters : 0f);
+            _suppressUiCallbacks = false;
+
+            _uiStatus?.SetEnabled(ready);
+        }
+
+        private void OnTuningSliderChanged(ChangeEvent<float> evt)
+        {
+            if (_suppressUiCallbacks || !Application.isPlaying)
+                return;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || !TryReadFirst(vault, BufferID.ShinobuEcosystemTuning, out ShinobuEcosystemTuning tuning))
+                return;
+
+            if (ReferenceEquals(evt.target, _separationSlider))
+                tuning.SeparationWeight = evt.newValue;
+            else if (ReferenceEquals(evt.target, _alignmentSlider))
+                tuning.AlignmentWeight = evt.newValue;
+            else if (ReferenceEquals(evt.target, _cohesionSlider))
+                tuning.CohesionWeight = evt.newValue;
+            else if (ReferenceEquals(evt.target, _evasionRadiusSlider))
+                tuning.EvasionRadiusMeters = evt.newValue;
+            else
+                return;
+
+            if (TryWriteFirst(vault, BufferID.ShinobuEcosystemTuning, ShinobuEcosystemTuning.Sanitize(tuning)))
+            {
+                _flockingGraph?.MarkDirtyRepaint();
+                SceneView.RepaintAll();
+            }
         }
 
         private void DrawWindowIMGUI()
@@ -84,7 +190,8 @@ namespace Hecton8.Editor
             next.SeparationWeight = EditorGUILayout.Slider("Separation Weight", next.SeparationWeight, 0.05f, 8f);
             next.AlignmentWeight = EditorGUILayout.Slider("Alignment Weight", next.AlignmentWeight, 0.01f, 4f);
             next.CohesionWeight = EditorGUILayout.Slider("Cohesion Weight", next.CohesionWeight, 0.01f, 4f);
-            next.PredatorAvoidanceWeight = EditorGUILayout.Slider("Predator Avoidance", next.PredatorAvoidanceWeight, 0.1f, 24f);
+            next.PredatorAvoidanceWeight = EditorGUILayout.Slider("Evasion Weight", next.PredatorAvoidanceWeight, 0.1f, 24f);
+            next.EvasionRadiusMeters = EditorGUILayout.Slider("Evasion Radius", next.EvasionRadiusMeters, 4f, 160f);
             next.HerbivoreBirthRate = EditorGUILayout.Slider("Herbivore Birth Rate", next.HerbivoreBirthRate, 0.001f, 0.5f);
             next.CarnivoreBirthRate = EditorGUILayout.Slider("Carnivore Birth Rate", next.CarnivoreBirthRate, 0.001f, 0.25f);
             next.FloraGrowthRate = EditorGUILayout.Slider("Flora Growth Rate", next.FloraGrowthRate, 0.001f, 1f);
@@ -118,6 +225,7 @@ namespace Hecton8.Editor
             EditorGUILayout.Space(8f);
             DrawCounters(vault);
             DrawTelemetry(vault);
+            DrawFlockingTelemetry(vault);
         }
 
         private void DrawAuthoringBridge(IDataVault vault)
@@ -197,7 +305,7 @@ namespace Hecton8.Editor
             int tuningSize = UnsafeUtility.SizeOf<ShinobuEcosystemTuning>();
             int speciesSize = UnsafeUtility.SizeOf<SwarmSpeciesProfileDTO>();
 
-            EditorGUILayout.LabelField("BoidStateDTO", "32B expected: AUP@0 SpeciesID@24 PackIndex@26 Speed@28; observed " + boidStateSize.ToString() + "B");
+            EditorGUILayout.LabelField("BoidStateDTO", "32B expected: LocalPosition@0 Velocity@12 FlockHashID@24 PanicScalar@28; observed " + boidStateSize.ToString() + "B");
             EditorGUILayout.LabelField("GPU DTOs", "BoidTarget=" + targetSize.ToString() + "B Matrix=" + matrixSize.ToString() + "B Args=" + argsSize.ToString() + "B");
             EditorGUILayout.LabelField("Tuning DTOs", "Tuning=" + tuningSize.ToString() + "B SpeciesProfile=" + speciesSize.ToString() + "B");
 
@@ -337,9 +445,181 @@ namespace Hecton8.Editor
             }
         }
 
+        private static void DrawFlockingTelemetry(IDataVault vault)
+        {
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuFlockingTelemetryRing, out NativeArray<FlockingTelemetryEntry> ring) ||
+                ring.Length <= 0)
+            {
+                return;
+            }
+
+            FlockingTelemetryEntry latest = default;
+            float maxMicros = 1f;
+            float maxNeighbors = 1f;
+            int sampleCount = math.min(ring.Length, 300);
+            for (int i = 0; i < sampleCount; i++)
+            {
+                FlockingTelemetryEntry entry = ring[i];
+                if (entry.Frame >= latest.Frame)
+                    latest = entry;
+                maxMicros = math.max(maxMicros, entry.BurstExecutionMicroseconds);
+                maxNeighbors = math.max(maxNeighbors, entry.AverageNeighbors);
+            }
+
+            EditorGUILayout.LabelField("Flocking us", latest.BurstExecutionMicroseconds.ToString("0.0"));
+            EditorGUILayout.LabelField("Avg Neighbors", latest.AverageNeighbors.ToString("0.00"));
+            EditorGUILayout.LabelField("Threats / Panic", latest.ActiveThreatCount.ToString() + " / " + latest.PanicBoidCount.ToString());
+            EditorGUILayout.LabelField("Eval / Samples", ReadFlockingCounter(vault, FlockingCounterEvaluatedBoids).ToString() + " / " + ReadFlockingCounter(vault, FlockingCounterNeighborSamples).ToString());
+            EditorGUILayout.LabelField("Signal / Panic Counters", ReadFlockingCounter(vault, FlockingCounterActiveThreats).ToString() + " / " + ReadFlockingCounter(vault, FlockingCounterPanicBoids).ToString());
+
+            Rect rect = GUILayoutUtility.GetRect(1f, TelemetryGraphHeight);
+            EditorGUI.DrawRect(rect, new Color(0.04f, 0.05f, 0.06f, 1f));
+            float width = math.max(1f, rect.width);
+            for (int i = 0; i < sampleCount; i++)
+            {
+                FlockingTelemetryEntry entry = ring[i];
+                float x = rect.x + (i / (float)sampleCount) * width;
+                float h = math.saturate(entry.BurstExecutionMicroseconds / maxMicros) * rect.height;
+                Rect bar = new Rect(x, rect.yMax - h, math.max(1f, width / sampleCount), h);
+                Color color = (entry.Flags & ShinobuEcosystemBalancer.TelemetryFlagSolveOverBudget) != 0u
+                    ? new Color(1f, 0.18f, 0.08f, 0.95f)
+                    : new Color(0.35f, 0.86f, 0.56f, 0.9f);
+                EditorGUI.DrawRect(bar, color);
+
+                float neighborH = math.saturate(entry.AverageNeighbors / maxNeighbors) * rect.height;
+                Rect neighbor = new Rect(x, rect.yMax - neighborH, math.max(1f, width / sampleCount), 1f);
+                EditorGUI.DrawRect(neighbor, new Color(0.82f, 0.86f, 0.32f, 0.95f));
+            }
+        }
+
+        private static int ReadCounter(IDataVault vault, int index)
+        {
+            if (vault == null ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuEcosystemCounters, out NativeArray<int> counters))
+            {
+                return 0;
+            }
+
+            return ReadCounter(counters, index);
+        }
+
         private static int ReadCounter(Unity.Collections.NativeArray<int> counters, int index)
         {
             return (uint)index < (uint)counters.Length ? counters[index] : 0;
+        }
+
+        private static int ReadFlockingCounter(IDataVault vault, int index)
+        {
+            if (vault == null ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuFlockingCounters64, out NativeArray<FlockingCounter64> counters) ||
+                (uint)index >= (uint)counters.Length)
+            {
+                return 0;
+            }
+
+            return counters[index].Value;
+        }
+
+        private static FlockingTelemetryEntry ReadLatestFlockingTelemetry(IDataVault vault)
+        {
+            if (vault == null ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuFlockingTelemetryRing, out NativeArray<FlockingTelemetryEntry> ring) ||
+                ring.Length <= 0)
+            {
+                return default;
+            }
+
+            FlockingTelemetryEntry latest = default;
+            int count = math.min(ring.Length, 300);
+            for (int i = 0; i < count; i++)
+            {
+                FlockingTelemetryEntry entry = ring[i];
+                if (entry.Frame >= latest.Frame)
+                    latest = entry;
+            }
+
+            return latest;
+        }
+
+        private sealed class FlockingTelemetryGraphElement : VisualElement
+        {
+            private const float GraphHeightPixels = 112f;
+            private const float ColumnPixels = 3f;
+
+            public FlockingTelemetryGraphElement()
+            {
+                style.height = GraphHeightPixels;
+                style.marginBottom = 8f;
+                generateVisualContent += Draw;
+            }
+
+            private void Draw(MeshGenerationContext context)
+            {
+                Rect rect = contentRect;
+                if (rect.width <= 1f || rect.height <= 1f)
+                    return;
+
+                Painter2D painter = context.painter2D;
+                DrawRect(painter, rect, new Color(0.018f, 0.024f, 0.03f, 0.96f));
+                IDataVault vault = GlobalRegistry.DataVault;
+                if (vault == null ||
+                    !TryReadExistingVaultView(vault, BufferID.ShinobuFlockingTelemetryRing, out NativeArray<FlockingTelemetryEntry> ring) ||
+                    ring.Length <= 0)
+                {
+                    return;
+                }
+
+                int columns = math.min(math.min(ring.Length, 300), math.max(1, (int)math.floor(rect.width / ColumnPixels)));
+                float maxMicros = 1f;
+                float maxNeighbors = 1f;
+                for (int i = 0; i < columns; i++)
+                {
+                    FlockingTelemetryEntry entry = ring[i];
+                    maxMicros = math.max(maxMicros, entry.BurstExecutionMicroseconds);
+                    maxNeighbors = math.max(maxNeighbors, entry.AverageNeighbors);
+                }
+
+                float columnWidth = math.max(1f, rect.width / columns);
+                for (int i = 0; i < columns; i++)
+                {
+                    FlockingTelemetryEntry entry = ring[i];
+                    float x = rect.xMin + i * columnWidth;
+                    float solve01 = math.saturate(entry.BurstExecutionMicroseconds / maxMicros);
+                    float height = math.max(1f, solve01 * rect.height);
+                    Color solveColor = (entry.Flags & ShinobuEcosystemBalancer.TelemetryFlagSolveOverBudget) != 0u
+                        ? new Color(1f, 0.16f, 0.06f, 0.95f)
+                        : new Color(0.16f, 0.74f, 0.92f, 0.85f);
+                    DrawRect(painter, new Rect(x, rect.yMax - height, math.max(1f, columnWidth - 1f), height), solveColor);
+
+                    float neighborY = rect.yMax - math.saturate(entry.AverageNeighbors / maxNeighbors) * rect.height;
+                    painter.lineWidth = 1f;
+                    painter.strokeColor = new Color(0.84f, 0.9f, 0.28f, 0.95f);
+                    painter.BeginPath();
+                    painter.MoveTo(new Vector2(x, neighborY));
+                    painter.LineTo(new Vector2(x + math.max(1f, columnWidth - 1f), neighborY));
+                    painter.Stroke();
+                }
+
+                float budgetY = rect.yMax - math.saturate(2000f / maxMicros) * rect.height;
+                painter.lineWidth = 1f;
+                painter.strokeColor = new Color(1f, 0.55f, 0.16f, 0.95f);
+                painter.BeginPath();
+                painter.MoveTo(new Vector2(rect.xMin, budgetY));
+                painter.LineTo(new Vector2(rect.xMax, budgetY));
+                painter.Stroke();
+            }
+
+            private static void DrawRect(Painter2D painter, Rect rect, Color color)
+            {
+                painter.fillColor = color;
+                painter.BeginPath();
+                painter.MoveTo(new Vector2(rect.xMin, rect.yMin));
+                painter.LineTo(new Vector2(rect.xMax, rect.yMin));
+                painter.LineTo(new Vector2(rect.xMax, rect.yMax));
+                painter.LineTo(new Vector2(rect.xMin, rect.yMax));
+                painter.ClosePath();
+                painter.Fill();
+            }
         }
 
         private static void DrawHashGridSceneView(SceneView sceneView)
@@ -388,6 +668,8 @@ namespace Hecton8.Editor
         {
             Camera camera = sceneView.camera;
             Vector3 origin = camera != null ? camera.transform.position : Vector3.zero;
+            DrawFlockingThreatSpheres(vault);
+
             Handles.color = new Color(0.1f, 0.82f, 0.96f, 0.82f);
             int drawn = 0;
             for (int x = -2; x <= 2 && drawn < MaxVectorFieldSamples; x++)
@@ -435,6 +717,29 @@ namespace Hecton8.Editor
             }
         }
 
+        private static void DrawFlockingThreatSpheres(IDataVault vault)
+        {
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuFlockingThreats, out NativeArray<FlockingThreatDTO> threats) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuFlockingThreatCount, out NativeArray<int> threatCount) ||
+                threatCount.Length <= 0)
+            {
+                return;
+            }
+
+            int count = math.clamp(threatCount[0], 0, math.min(threats.Length, MaxThreatSphereSamples));
+            Handles.color = new Color(1f, 0.08f, 0.02f, 0.72f);
+            for (int i = 0; i < count; i++)
+            {
+                FlockingThreatDTO threat = threats[i];
+                if (!math.all(math.isfinite(threat.LocalPosition)))
+                    continue;
+
+                Vector3 center = new Vector3(threat.LocalPosition.x, threat.LocalPosition.y, threat.LocalPosition.z);
+                float radius = math.clamp(threat.RadiusMeters * 0.08f, 0.4f, 8f);
+                Handles.SphereHandleCap(0, center, Quaternion.identity, radius, EventType.Repaint);
+            }
+        }
+
         private static bool TryReadFirst<T>(IDataVault vault, BufferID bufferId, out T value)
             where T : struct
         {
@@ -446,7 +751,7 @@ namespace Hecton8.Editor
             return true;
         }
 
-        private static bool TryWriteFirst<T>(IDataVault vault, BufferID bufferId, in T value)
+        private static unsafe bool TryWriteFirst<T>(IDataVault vault, BufferID bufferId, in T value)
             where T : struct
         {
             if (vault == null ||
@@ -461,7 +766,9 @@ namespace Hecton8.Editor
                 if (!buffer.IsCreated || buffer.Length <= 0)
                     return false;
 
-                buffer[0] = value;
+                void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+                ref T slot = ref UnsafeUtility.AsRef<T>(ptr);
+                slot = value;
                 return true;
             }
             finally

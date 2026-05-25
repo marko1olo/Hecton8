@@ -41,7 +41,7 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -83,7 +83,7 @@ namespace Hecton8.World
         private bool TryResolveObserverAbsolutePosition(out Vector3 absolutePosition)
         {
             absolutePosition = default;
-            var player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = _cachedPlayerContext;
             var movement = player != null ? player.PlayerMovement : null;
             if (movement != null)
             {

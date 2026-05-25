@@ -26,7 +26,9 @@ namespace Hecton8.Core
         private int _arenaIndex;
         private int _slabIndex;
         private int _frameSequence;
+#pragma warning disable CS0414
         private int _pad0;
+#pragma warning restore CS0414
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         internal AtomicSafetyHandle m_Safety;
@@ -76,14 +78,14 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void* GetUnsafePtr()
+        internal void* GetUnsafePtr()
         {
             CheckWrite();
             return _buffer;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void* GetUnsafeReadOnlyPtr()
+        internal void* GetUnsafeReadOnlyPtr()
         {
             CheckRead();
             return _buffer;
@@ -99,6 +101,19 @@ namespace Hecton8.Core
             NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, m_Safety);
 #endif
             return array;
+        }
+
+        public NativeArray<T>.ReadOnly AsReadOnlyNativeArray()
+        {
+            if (_buffer == null || m_Length <= 0)
+                return default;
+
+            CheckRead();
+            NativeArray<T> array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(_buffer, m_Length, Allocator.None);
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, m_Safety);
+#endif
+            return array.AsReadOnly();
         }
 
         public void Clear()

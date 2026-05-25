@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_058
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_058_Rock_4_t_rock_4_normal_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\Rock_4_t_rock_4_normal_Normal.png
+FINAL_FILENAME: Rock_4_t_rock_4_normal_Normal.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Dedicated heightfield source for Rock 4 normal map. Create a clean angular basalt relief pattern with plate steps, rounded fracture lips, shallow opal seam grooves, pressure-polished ridges, and fine mineral pores. This is a normal-source image: strong height logic, controlled contrast, and no light direction baked into the forms. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

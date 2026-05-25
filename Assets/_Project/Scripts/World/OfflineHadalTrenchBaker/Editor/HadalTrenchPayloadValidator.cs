@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using Hecton8.World.OfflineHadalTrenchBaker;
 using Unity.Collections.LowLevel.Unsafe;
@@ -43,9 +44,9 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         {
             bool ok = ValidateFile(DefaultPath, out HadalTrenchPayloadValidationResult result);
             if (ok)
-                Debug.Log("[SHINOBU_241] Hadal trench payload validated. bytes=" + result.FileBytes + " hash=0x" + result.PayloadHash.ToString("X16"));
+                Debug.Log("[SHINOBU_241] Hadal trench payload validated. bytes=" + result.FileBytes + " hash=0x" + result.PayloadHash.ToString("X16", CultureInfo.InvariantCulture));
             else
-                Debug.LogError("[SHINOBU_241] Hadal trench payload validation failed. flags=0x" + result.Flags.ToString("X8"));
+                Debug.LogError("[SHINOBU_241] Hadal trench payload validation failed. flags=0x" + result.Flags.ToString("X8", CultureInfo.InvariantCulture));
         }
 
         public static bool ValidateFile(string path, out HadalTrenchPayloadValidationResult result)

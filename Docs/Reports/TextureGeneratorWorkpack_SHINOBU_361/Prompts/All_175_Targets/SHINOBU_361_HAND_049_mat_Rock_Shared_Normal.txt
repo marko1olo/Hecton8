@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_049
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_049_mat_Rock_Shared_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\mat_Rock_Shared_Normal.png
+FINAL_FILENAME: mat_Rock_Shared_Normal.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Heightfield source for the shared Hecton rock BC5 normal map. Create layered basalt relief with wide stone plates, gentle pressure-polished ridges, shallow opal vein grooves, tiny sediment pits, and rounded mineral crust edges. The source should be clean, balanced, and physically useful for many rock meshes, with no lighting baked into the image. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

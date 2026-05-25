@@ -1,0 +1,10 @@
+﻿JOB_ID: B01_002
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch01_Blockers\B01_002_Mat_Visor_Glass_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Visor_Glass_Albedo.png
+FINAL_FILENAME: Mat_Visor_Glass_Albedo.png
+REFERENCES: `LOOKDEV_APPROVED_REF_SEED_005.png` Optional approved habitat material swatch anchor
+
+PROMPT:
+Create a seamless albedo source for premium pressure-rated visor glass used in HECTON-8 expedition helmets. Show a clean smoky-clear transparent polymer with a faint sea-green optical coating, subtle laminated layers, graphite gasket contact haze, delicate anti-fog wipe arcs, tiny hairline micro-scratches, soft pressure stress curves, and a few pale salt freckles near sealed edges. The material should feel wearable, expensive, aerospace-grade, and maintained. Keep the diffuse restrained and elegant; shine will come from shader reflection and roughness, not painted highlights. Do not create cracked horror glass or mirrored chrome. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

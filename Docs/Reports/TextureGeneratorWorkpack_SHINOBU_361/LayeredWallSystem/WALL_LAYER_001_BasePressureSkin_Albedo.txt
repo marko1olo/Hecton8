@@ -1,0 +1,11 @@
+﻿JOB_ID: WALL_LAYER_001
+ROLE: ALBEDO_BASE_LAYER
+CATEGORY: HABITAT_INTERIORS_LAYERED_WALL
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\LayeredWallSystem\WALL_LAYER_001_BasePressureSkin
+FINAL_TARGET_PATH: LOOKDEV_LAYER_SOURCE
+FINAL_FILENAME: LOOKDEV_WALL_LAYER_001_BasePressureSkin_Albedo.png
+REFERENCES: project planet/cloud mood image; rejected REF_SEED_001 only as negative example for what not to repeat
+
+PROMPT:
+Create a seamless albedo source for the base pressure skin of a HECTON-8 abyssal habitat wall. This is the first layer only: broad warm off-white composite pressure surface, subtle molded ceramic pores, long quiet manufacturing seams, soft curved pressure corners, very shallow titanium edge strips, graphite rubber seam shadows only at structural joins, and pale mineral dust caught in lower seam corners. Do not make square bathroom tiles. Do not fill the whole image with repeated panels. The wall should read as a continuous habitable pressure shell that can later receive cables, instruments, rails, decals, and service modules on top. Keep large calm fields, believable subsea industrial weight, clean NASA Punk manufacturing, and restrained salt wear. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.
+

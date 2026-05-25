@@ -40,13 +40,13 @@ namespace Hecton8.Editor.Build
             if (!Directory.Exists(AssetRoot))
                 return true;
 
-            string[] metas = Directory.GetFiles(AssetRoot, "*.meta", SearchOption.AllDirectories);
-            Array.Sort(metas, StringComparer.Ordinal);
-            Dictionary<string, string> firstPathByGuid = new Dictionary<string, string>(metas.Length, StringComparer.Ordinal);
+            List<string> metas = new List<string>(Directory.EnumerateFiles(AssetRoot, "*.meta", SearchOption.AllDirectories));
+            metas.Sort(StringComparer.Ordinal);
+            Dictionary<string, string> firstPathByGuid = new Dictionary<string, string>(metas.Count, StringComparer.Ordinal);
             StringBuilder builder = null;
             int duplicateCount = 0;
 
-            for (int i = 0; i < metas.Length; i++)
+            for (int i = 0; i < metas.Count; i++)
             {
                 string metaPath = metas[i];
                 if (!TryReadGuid(metaPath, out string guid))

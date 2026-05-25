@@ -1,7 +1,7 @@
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -15,7 +15,7 @@ namespace Hecton8.Meta
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6400)]
     [AddComponentMenu("Hecton8/Meta/Dynamic Difficulty Director")]
-    public sealed class DynamicDifficultyDirector : MonoBehaviour, ISlowTickable
+    public sealed class DynamicDifficultyDirector : MonoBehaviour, ISlowTickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float StruggleWindowSeconds = 1800f;
         private const float AdvisoryWindowSeconds = 900f;
@@ -28,12 +28,10 @@ namespace Hecton8.Meta
         private readonly float[] _achievementTimestamps = new float[RecentEventBufferCapacity]; // COLD ALLOC: float[16] - recent achievement telemetry window - owner: DynamicDifficultyDirector
         private HectonSurvivalSystem _survivalSystem;
         private HectonDiscoveryManager _discoveryManager;
-        private HectonEventSubscription _achievementUnlockedSubscription;
-        private HectonEventSubscription _advisoryIssuedSubscription;
-        private HectonEventSubscription _gameLoadedSubscription;
-        private HectonEventSubscription _playerDiedSubscription;
         private bool _registeredToTick;
+        private bool _registeredToUpdate;
         private bool _registeredService;
+        private bool _registeredHotSwapListener;
         private int _deathCount;
         private int _deathWriteIndex;
         private int _advisoryCount;
@@ -42,6 +40,11 @@ namespace Hecton8.Meta
         private int _achievementWriteIndex;
         private int _biomesSinceDamage;
         private float _lastIntegritySample = -1f;
+        private uint _survivalSignalSourceId;
+        private int _lastSurvivalDeathSignalSequence;
+        private uint _lastProgressionMetaSequence;
+        private uint _lastSessionLifecycleSequence;
+        private ISaveService _saveService;
 
         /// <summary>
         /// Current live difficulty modifiers.
@@ -68,31 +71,46 @@ namespace Hecton8.Meta
         private void OnEnable()
         {
             TryRegisterService();
+            TryRegisterHotSwapListener();
+            ResolveOwnersCold();
             TryRegisterWithTickManager();
-            SubscribeToEventBus();
+            TryRegisterWithUpdateDispatcher();
             RebindOwnerSubscriptions();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
+            ResolveOwnersCold();
             TryRegisterWithTickManager();
+            TryRegisterWithUpdateDispatcher();
             RebindOwnerSubscriptions();
         }
 
         private void OnDisable()
         {
             UnbindOwnerSubscriptions();
-            UnsubscribeFromEventBus();
+            UnregisterFromUpdateDispatcher();
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             UnbindOwnerSubscriptions();
-            UnsubscribeFromEventBus();
+            UnregisterFromUpdateDispatcher();
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+        }
+
+        /// <inheritdoc />
+        public void Tick(float deltaTime)
+        {
+            ProcessSessionLifecycleSignals();
+            ConsumeSurvivalDeathSignal();
+            ProcessProgressionMetaSignals();
         }
 
         /// <inheritdoc />
@@ -105,58 +123,56 @@ namespace Hecton8.Meta
             EvaluateModifiers();
         }
 
-        private void HandleAchievementUnlocked(AchievementUnlockedEvent achievementUnlockedEvent)
+        private void ProcessProgressionMetaSignals()
         {
-            RegisterRecentEvent(_achievementTimestamps, ref _achievementCount, ref _achievementWriteIndex, ResolveTelemetryTimeSeconds());
+            global::System.ReadOnlySpan<ProgressionMetaSignal> signals = SignalBus<ProgressionMetaSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ProgressionMetaSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastProgressionMetaSequence))
+                    continue;
+
+                _lastProgressionMetaSequence = signal.Sequence;
+                switch (signal.Kind)
+                {
+                    case ProgressionMetaSignal.KindAchievementUnlocked:
+                        RegisterRecentEvent(_achievementTimestamps, ref _achievementCount, ref _achievementWriteIndex, ResolveTelemetryTimeSeconds());
+                        break;
+                    case ProgressionMetaSignal.KindAdvisoryIssued:
+                        RegisterRecentEvent(_advisoryTimestamps, ref _advisoryCount, ref _advisoryWriteIndex, ResolveTelemetryTimeSeconds());
+                        break;
+                    case ProgressionMetaSignal.KindBiomeDiscovered:
+                        _biomesSinceDamage++;
+                        break;
+                }
+            }
         }
 
-        private void HandleAdvisoryIssued(PlayerAdvisoryIssuedEvent advisoryIssuedEvent)
+        private void ProcessSessionLifecycleSignals()
         {
-            RegisterRecentEvent(_advisoryTimestamps, ref _advisoryCount, ref _advisoryWriteIndex, ResolveTelemetryTimeSeconds());
+            global::System.ReadOnlySpan<SessionLifecycleSignal> signals = SignalBus<SessionLifecycleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                SessionLifecycleSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastSessionLifecycleSequence))
+                    continue;
+
+                _lastSessionLifecycleSequence = signal.Sequence;
+                if (signal.Kind == SessionLifecycleSignal.KindGameLoaded)
+                    HandleGameLoaded();
+            }
         }
 
-        private void HandleBiomeDiscovered(int biomeId)
-        {
-            _biomesSinceDamage++;
-        }
-
-        private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
+        private void HandleGameLoaded()
         {
             RebindOwnerSubscriptions();
             ResetTelemetryWindows();
         }
 
-        private void HandlePlayerDied(PlayerDiedEvent playerDiedEvent)
+        private void HandlePlayerDeath()
         {
             RegisterRecentEvent(_deathTimestamps, ref _deathCount, ref _deathWriteIndex, ResolveTelemetryTimeSeconds());
             _biomesSinceDamage = 0;
-        }
-
-        private void SubscribeToEventBus()
-        {
-            if (_achievementUnlockedSubscription == null)
-                _achievementUnlockedSubscription = HectonEventBus.Subscribe<AchievementUnlockedEvent>(HandleAchievementUnlocked, "meta.difficulty");
-
-            if (_advisoryIssuedSubscription == null)
-                _advisoryIssuedSubscription = HectonEventBus.Subscribe<PlayerAdvisoryIssuedEvent>(HandleAdvisoryIssued, "meta.difficulty");
-
-            if (_gameLoadedSubscription == null)
-                _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "meta.difficulty");
-
-            if (_playerDiedSubscription == null)
-                _playerDiedSubscription = HectonEventBus.Subscribe<PlayerDiedEvent>(HandlePlayerDied, "meta.difficulty");
-        }
-
-        private void UnsubscribeFromEventBus()
-        {
-            _achievementUnlockedSubscription?.Dispose();
-            _achievementUnlockedSubscription = null;
-            _advisoryIssuedSubscription?.Dispose();
-            _advisoryIssuedSubscription = null;
-            _gameLoadedSubscription?.Dispose();
-            _gameLoadedSubscription = null;
-            _playerDiedSubscription?.Dispose();
-            _playerDiedSubscription = null;
         }
 
         private void RebindOwnerSubscriptions()
@@ -166,29 +182,19 @@ namespace Hecton8.Meta
 
             if (_survivalSystem != null)
                 _lastIntegritySample = _survivalSystem.Integrity;
+
+            RefreshSurvivalSignalBinding();
         }
 
         private void UnbindOwnerSubscriptions()
         {
-            if (_discoveryManager != null)
-                _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
-
             _discoveryManager = null;
+            _survivalSignalSourceId = 0u;
+            _lastSurvivalDeathSignalSequence = 0;
         }
 
         private bool ResolveOwnersHot()
         {
-            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
-            if (!ReferenceEquals(_discoveryManager, discoveryManager))
-            {
-                if (_discoveryManager != null)
-                    _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
-
-                _discoveryManager = discoveryManager;
-                if (_discoveryManager != null)
-                    _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
-            }
-
             return _survivalSystem != null || _discoveryManager != null;
         }
 
@@ -198,7 +204,55 @@ namespace Hecton8.Meta
             if (_survivalSystem == null && playerObject != null)
                 playerObject.TryGetComponent(out _survivalSystem);
 
+            if (_discoveryManager == null)
+                _discoveryManager = GlobalRegistry.Discovery;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            RefreshSurvivalSignalBinding();
             return ResolveOwnersHot();
+        }
+
+        private void RefreshSurvivalSignalBinding()
+        {
+            uint sourceId = ResolveSurvivalSignalSourceId(_survivalSystem);
+            if (_survivalSignalSourceId == sourceId)
+                return;
+
+            _survivalSignalSourceId = sourceId;
+            _lastSurvivalDeathSignalSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)
+                ? sequence
+                : 0;
+        }
+
+        private void ConsumeSurvivalDeathSignal()
+        {
+            uint sourceId = _survivalSignalSourceId;
+            if (sourceId == 0u)
+                return;
+
+            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
+                return;
+
+            if (sequence == _lastSurvivalDeathSignalSequence)
+                return;
+
+            _lastSurvivalDeathSignalSequence = sequence;
+            if (signal.SourceId != sourceId ||
+                (signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)
+            {
+                return;
+            }
+
+            HandlePlayerDeath();
+        }
+
+        private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
+        {
+            return system != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                : 0u;
         }
 
         private void SampleIntegrityDrop()
@@ -295,6 +349,11 @@ namespace Hecton8.Meta
             CurrentModifiers = DifficultyModifierData.Default;
         }
 
+        private static bool IsNewerSequence(uint candidate, uint lastProcessed)
+        {
+            return candidate != 0u && (lastProcessed == 0u || unchecked((int)(candidate - lastProcessed)) > 0);
+        }
+
         private static void RegisterRecentEvent(float[] buffer, ref int count, ref int writeIndex, float timestampSeconds)
         {
             if (buffer == null || buffer.Length == 0)
@@ -322,13 +381,46 @@ namespace Hecton8.Meta
             return recentCount;
         }
 
-        private static float ResolveTelemetryTimeSeconds()
+        private float ResolveTelemetryTimeSeconds()
         {
-            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            if (saveManager != null)
-                return math.max(0f, saveManager.CurrentPlayTimeSeconds);
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                return math.max(0f, saveService.CurrentPlayTimeSeconds);
 
             return math.max(0f, Time.realtimeSinceStartup);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DiscoveryRuntime:
+                    _discoveryManager = currentService as HectonDiscoveryManager;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _saveService = currentService as ISaveService;
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void TryRegisterService()
@@ -354,8 +446,7 @@ namespace Hecton8.Meta
             if (_registeredToTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void UnregisterFromTickManager()
@@ -366,6 +457,23 @@ namespace Hecton8.Meta
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
 
             _registeredToTick = false;
+        }
+
+        private void TryRegisterWithUpdateDispatcher()
+        {
+            if (_registeredToUpdate || !Application.isPlaying)
+                return;
+
+            _registeredToUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void UnregisterFromUpdateDispatcher()
+        {
+            if (!_registeredToUpdate)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredToUpdate = false;
         }
     }
 }

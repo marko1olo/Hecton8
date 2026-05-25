@@ -1,6 +1,7 @@
 using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor
 {
@@ -11,7 +12,7 @@ namespace Hecton8.Editor
             bool passed = WorldGenRegistrySmokeTester.RunHeadlessSmokeTest(
                 out WorldGenRegistrySmokeTester.WorldGenRegistrySmokeReport report);
 
-            Debug.Log(
+            H8Debug.Log(
                 "[WorldGenRegistrySmokeTestRunner] " +
                 "{\"tester\":\"WorldGenRegistrySmokeTester\"," +
                 "\"status\":\"" + (passed ? "PASS" : "FAIL") + "\"," +

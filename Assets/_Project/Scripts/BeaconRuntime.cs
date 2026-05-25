@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.Gameplay
 {
-    public sealed class BeaconRuntime : MonoBehaviour, ITickable, IUpdatable
+    public sealed class BeaconRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float FlickerBase = 0.8f;
         private const float FlickerAmplitude = 0.15f;
@@ -34,8 +34,12 @@ namespace Hecton8.Gameplay
         private AbsoluteUniversePosition _cachedAup;
         private float _baseIntensity;
         private float _flickerTime;
-        private bool _registeredToTickManager;
+        private bool _registeredLateFrame;
         private bool _isFallbackRuntime;
+        private bool _hotSwapListenerRegistered;
+        private IObjectPoolService _cachedObjectPool;
+        private IObjectPoolService _pooledOwner;
+        private ILocalizationTextReadModel _cachedLocalization;
 
         public string BeaconId { get; private set; }
         public string Label { get; private set; }
@@ -56,7 +60,9 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CacheTransform();
-            RegisterToTickManager();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            RegisterToLateFrame();
         }
 
         private void OnDisable()
@@ -64,7 +70,8 @@ namespace Hecton8.Gameplay
             if (_light != null)
                 _light.intensity = _baseIntensity;
 
-            UnregisterFromTickManager();
+            UnregisterFromLateFrame();
+            TryUnregisterHotSwapListener();
         }
 
         public void Configure(string beaconId, string label, GameObject sourcePrefab, Color color, float range)
@@ -113,20 +120,21 @@ namespace Hecton8.Gameplay
                 !float.IsFinite(runtimePosition.y) ||
                 !float.IsFinite(runtimePosition.z))
             {
-                return GlobalSignals.CurrentRuntimeOriginAup();
+                return RuntimeOriginRoute.CurrentRuntimeOriginAup();
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (_light == null)
                 return;
 
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _flickerTime = math.frac(_flickerTime + (math.max(0f, deltaTime) * FlickerCyclesPerSecond));
             float triangle = 1f - math.abs((_flickerTime * 2f) - 1f);
             float signedTriangle = (triangle * 2f) - 1f;
@@ -135,14 +143,15 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
-            UnregisterFromTickManager();
+            UnregisterFromLateFrame();
+            TryUnregisterHotSwapListener();
             ReleaseOwnedFallbackMaterial();
             BeaconNetworkSystem.NotifyRuntimeDestroyed(this);
         }
 
         public void DespawnSelf()
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _pooledOwner != null ? _pooledOwner : _cachedObjectPool;
             if (_sourcePrefab != null && pool != null)
             {
                 pool.Despawn(gameObject);
@@ -152,21 +161,37 @@ namespace Hecton8.Gameplay
             Destroy(gameObject);
         }
 
-        private void RegisterToTickManager()
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            if (_registeredToTickManager || _light == null || !Application.isPlaying)
-                return;
-
-            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _cachedObjectPool = currentService as IObjectPoolService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as ILocalizationTextReadModel;
+                    break;
+            }
         }
 
-        private void UnregisterFromTickManager()
+        private void RegisterToLateFrame()
         {
-            if (!_registeredToTickManager)
+            if (_registeredLateFrame || _light == null || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = false;
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void UnregisterFromLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         /// <summary>
@@ -195,6 +220,11 @@ namespace Hecton8.Gameplay
         {
             _ownedFallbackMaterial = material;
             _isFallbackRuntime = true;
+        }
+
+        internal void SetPooledOwner(IObjectPoolService pool)
+        {
+            _pooledOwner = pool;
         }
 
         private static void ApplyFallbackBeaconColor(Material material, Color color)
@@ -280,12 +310,35 @@ namespace Hecton8.Gameplay
         //  ZERO-GC STRING CACHING
         // ----------------------------------------------------------
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextReadModel manager = _cachedLocalization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetOrFallback(key, fallback)
                 : fallback;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] - upper-case label cache slots - owner: BeaconRuntime

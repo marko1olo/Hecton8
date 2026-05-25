@@ -288,7 +288,10 @@ namespace Hecton8.Gameplay
                     return;
 
                 if (!_pendingEvents.TryDequeue(out ScanEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -481,9 +484,15 @@ namespace Hecton8.Gameplay
                 math.max(1, _listenerExceptionCount));
         }
 
+        [Obsolete("Use TryRaiseScanTriggered(float3,float) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseScanTriggered(float3 center, float radius)
         {
-            Enqueue(new ScanEventPayload
+            TryRaiseScanTriggered(center, radius);
+        }
+
+        public static bool TryRaiseScanTriggered(float3 center, float radius)
+        {
+            return Enqueue(new ScanEventPayload
             {
                 Position = center,
                 Radius = radius,
@@ -497,7 +506,13 @@ namespace Hecton8.Gameplay
             });
         }
 
+        [Obsolete("Use TryRaiseWreckSignalPing(float3,float) so overflow/drop semantics stay visible at the producer.", true)]
         public static bool RaiseWreckSignalPing(float3 center, float radius)
+        {
+            return TryRaiseWreckSignalPing(center, radius);
+        }
+
+        public static bool TryRaiseWreckSignalPing(float3 center, float radius)
         {
             double now = UnityEngine.Time.unscaledTimeAsDouble;
             if (now < _nextWreckSignalTime)
@@ -521,9 +536,15 @@ namespace Hecton8.Gameplay
             return queued;
         }
 
+        [Obsolete("Use TryRaiseNodeFound(float3) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseNodeFound(float3 worldPos)
         {
-            Enqueue(new ScanEventPayload
+            TryRaiseNodeFound(worldPos);
+        }
+
+        public static bool TryRaiseNodeFound(float3 worldPos)
+        {
+            return Enqueue(new ScanEventPayload
             {
                 Position = worldPos,
                 Radius = 0f,
@@ -537,6 +558,7 @@ namespace Hecton8.Gameplay
             });
         }
 
+        [Obsolete("Use TryRaiseEntryDiscovered(uint,uint,uint,uint,ScanEntryKind). String ingress is not allowed on first-party event lanes.", true)]
         public static void RaiseEntryDiscovered(
             string entryId,
             string title,
@@ -544,16 +566,26 @@ namespace Hecton8.Gameplay
             string summary,
             ScanEntryKind kind = ScanEntryKind.Unknown)
         {
+            TryRaiseEntryDiscoveredFromString(entryId, title, category, summary, kind);
+        }
+
+        private static bool TryRaiseEntryDiscoveredFromString(
+            string entryId,
+            string title,
+            string category,
+            string summary,
+            ScanEntryKind kind)
+        {
             uint entryHash = ComputeEntryHash(entryId);
             if (entryHash == 0u)
-                return;
+                return false;
 
             uint titleHash = string.IsNullOrWhiteSpace(title) ? 0u : unchecked((uint)LocHash.Compute(title));
             uint categoryHash = string.IsNullOrWhiteSpace(category) ? 0u : unchecked((uint)LocHash.Compute(category));
             uint summaryHash = string.IsNullOrWhiteSpace(summary) ? 0u : unchecked((uint)LocHash.Compute(summary));
 
-            if (!RaiseEntryDiscovered(entryHash, titleHash, categoryHash, summaryHash, kind))
-                return;
+            if (!TryRaiseEntryDiscovered(entryHash, titleHash, categoryHash, summaryHash, kind))
+                return false;
 
             StoreEntryMetadata(new ScanEntryMetadata(
                 entryId,
@@ -565,9 +597,22 @@ namespace Hecton8.Gameplay
                 titleHash,
                 categoryHash,
                 summaryHash));
+
+            return true;
         }
 
+        [Obsolete("Use TryRaiseEntryDiscovered(uint,uint,uint,uint,ScanEntryKind) so overflow/drop semantics stay visible at the producer.", true)]
         public static bool RaiseEntryDiscovered(
+            uint entryHash,
+            uint titleHash,
+            uint categoryHash,
+            uint summaryHash,
+            ScanEntryKind kind = ScanEntryKind.Unknown)
+        {
+            return TryRaiseEntryDiscovered(entryHash, titleHash, categoryHash, summaryHash, kind);
+        }
+
+        public static bool TryRaiseEntryDiscovered(
             uint entryHash,
             uint titleHash,
             uint categoryHash,
@@ -591,12 +636,18 @@ namespace Hecton8.Gameplay
             });
         }
 
+        [Obsolete("Use TryRaiseFaunaFeedingObserved(uint,float3) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
         {
-            if (entryHash == 0u)
-                return;
+            TryRaiseFaunaFeedingObserved(entryHash, worldPos);
+        }
 
-            Enqueue(new ScanEventPayload
+        public static bool TryRaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
+        {
+            if (entryHash == 0u)
+                return false;
+
+            return Enqueue(new ScanEventPayload
             {
                 Position = worldPos,
                 Radius = 0f,
@@ -610,12 +661,18 @@ namespace Hecton8.Gameplay
             });
         }
 
+        [Obsolete("Use TryRaiseFaunaMatingObserved(uint,float3) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseFaunaMatingObserved(uint entryHash, float3 worldPos)
         {
-            if (entryHash == 0u)
-                return;
+            TryRaiseFaunaMatingObserved(entryHash, worldPos);
+        }
 
-            Enqueue(new ScanEventPayload
+        public static bool TryRaiseFaunaMatingObserved(uint entryHash, float3 worldPos)
+        {
+            if (entryHash == 0u)
+                return false;
+
+            return Enqueue(new ScanEventPayload
             {
                 Position = worldPos,
                 Radius = 0f,
@@ -762,7 +819,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -788,7 +848,10 @@ namespace Hecton8.Gameplay
             while (promoteBudget-- > 0 && !_nextFrameEvents.IsEmpty())
             {
                 if (!_nextFrameEvents.TryDequeue(out ScanEventPayload payload))
+                {
+                    _nextFrameEventCount = 0;
                     break;
+                }
 
                 _pendingEvents.Enqueue(payload);
                 _pendingEventCount++;

@@ -657,7 +657,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _material.SetFloat(ScatterId, scalar.BiomeExtinction01);
             _material.SetFloat(FrameTimeId, _lastDeterministicTimeSeconds);
 
-            Graphics.DrawProceduralIndirect(
+            UnityEngine.Graphics.DrawProceduralIndirect(
                 _material,
                 _drawBounds,
                 MeshTopology.Triangles,
@@ -678,15 +678,15 @@ namespace Hecton8.VFX.PlasmaBeam
             if (_vaultInitialized && _defaultsInitialized)
                 return true;
 
-            _statesHandle = vault.GetGenerationHandle<BeamStateDTO>(BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _verticesHandle = vault.GetGenerationHandle<BeamVertexDTO>(BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _trigHandle = vault.GetGenerationHandle<BeamTrigLutEntry>(BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _scalarsHandle = vault.GetGenerationHandle<PlasmaBeamRuntimeScalarsDTO>(BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _argsHandle = vault.GetGenerationHandle<PlasmaBeamIndirectArgsDTO>(BufferID.ShinobuPlasmaBeamIndirectArgs, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetGenerationHandle<PlasmaBeamTelemetryEntry>(BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _mockSignalsHandle = vault.GetGenerationHandle<MockLaserFireSignal>(BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _acousticTapsHandle = vault.GetGenerationHandle<PlasmaBeamAcousticEchoTap>(BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _statesHandle = vault.EnsureGenerationHandle<BeamStateDTO>(BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _verticesHandle = vault.EnsureGenerationHandle<BeamVertexDTO>(BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _trigHandle = vault.EnsureGenerationHandle<BeamTrigLutEntry>(BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _scalarsHandle = vault.EnsureGenerationHandle<PlasmaBeamRuntimeScalarsDTO>(BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _argsHandle = vault.EnsureGenerationHandle<PlasmaBeamIndirectArgsDTO>(BufferID.ShinobuPlasmaBeamIndirectArgs, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _telemetryHandle = vault.EnsureGenerationHandle<PlasmaBeamTelemetryEntry>(BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _mockSignalsHandle = vault.EnsureGenerationHandle<MockLaserFireSignal>(BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _acousticTapsHandle = vault.EnsureGenerationHandle<PlasmaBeamAcousticEchoTap>(BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
 
             _vaultInitialized =
                 TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> _) &&
@@ -769,7 +769,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 for (int i = 0; i < MaxRadialSegments; i++)
                 {
                     float angle = (i % math.max(1, radial)) * (math.PI * 2.0f / math.max(1, radial));
-                    math.sincos(angle, out float sinValue, out float cosValue);
+                    MathLodApproximation.ApproxSinCosBhaskara(angle, out float sinValue, out float cosValue);
                     trig[radial * MaxRadialSegments + i] = new BeamTrigLutEntry
                     {
                         Cos = cosValue,
@@ -1511,10 +1511,9 @@ namespace Hecton8.VFX.PlasmaBeam
             float baseRadius = math.max(0.001f, state.Radius) * math.lerp(0.18f, 1.0f, heatScalar);
             float finalRing = segment == lengthSegments ? 1.0f : 0.0f;
             float flare = math.lerp(1.0f, 1.5f, finalRing);
-            float noiseGate = math.step(0.30f, quality);
-            float noiseWeight = noiseGate * SmoothStep01(math.saturate((quality - 0.30f) * 1.4285715f));
+            float noiseWeight = SmoothStep01(math.saturate((quality - 0.30f) * 1.4285715f));
             float offset = 0.0f;
-            if (noiseGate > 0.0f)
+            if (noiseWeight > 0.0001f)
             {
                 float seed = (state.NoiseSeed & 1023u) * (1.0f / 1023.0f);
                 float phase = lengthRatio * math.max(0.01f, state.NoiseFrequency) + state.TimeSeconds * 2.1f + seed * 19.0f;
@@ -1554,8 +1553,7 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private static float ResolveLengthQualityCurve(float quality)
         {
-            float active = math.step(0.30f, quality);
-            return active * SmoothStep01(math.saturate((quality - 0.30f) * 1.4285715f));
+            return SmoothStep01(math.saturate((quality - 0.30f) * 1.4285715f));
         }
     }
 
@@ -1677,8 +1675,7 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private static float ResolveLengthQualityCurve(float quality)
         {
-            float active = math.step(0.30f, quality);
-            return active * SmoothStep01(math.saturate((quality - 0.30f) * 1.4285715f));
+            return SmoothStep01(math.saturate((quality - 0.30f) * 1.4285715f));
         }
     }
 }

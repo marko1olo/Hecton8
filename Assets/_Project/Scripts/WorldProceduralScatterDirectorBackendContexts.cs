@@ -3,9 +3,14 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class WorldProceduralScatterDirectorBackendContextsLayout
+    {
+        public const int ScatterBackendShadowScheduleContextStrideBytes = 80;
+    }
+
     public sealed partial class WorldProceduralScatterDirector
     {
-        [StructLayout(LayoutKind.Explicit, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = WorldProceduralScatterDirectorBackendContextsLayout.ScatterBackendShadowScheduleContextStrideBytes)]
         private readonly struct ScatterBackendShadowScheduleContext
         {
             public ScatterBackendShadowScheduleContext(

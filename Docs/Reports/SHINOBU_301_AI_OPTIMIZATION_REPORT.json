@@ -1,0 +1,53 @@
+﻿{
+  "scanner": "OOP_Query_Scanner",
+  "agent": "SHINOBU_301",
+  "domain": "SPATIAL_HASH_GRID_SOLVER",
+  "status": "OOP Proximity Queries Eradicated - STATIC SCAN, RUNTIME PENDING",
+  "tokens": [
+    "Physics.OverlapSphere",
+    "Physics.OverlapBox",
+    "Physics.SphereCast",
+    "Collider.ClosestPoint"
+  ],
+  "scope": "Assets/_Project/Scripts/AI and Interaction namespaces, excluding Editor tooling and NonAlloc suffix false positives",
+  "runtimeScan": {
+    "command": "rg -n --glob '!**/Editor/**' \"Physics\\.OverlapSphere\\b|Physics\\.OverlapBox\\b|Physics\\.SphereCast\\b|Collider\\.ClosestPoint\\b\" Assets/_Project/Scripts/AI Assets/_Project/Scripts/Interaction",
+    "findings": 0,
+    "status": "PASS"
+  },
+  "newHotPath": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+  "newRuntimeRoute": "ShinobuEcosystemBalancer -> GlobalDataVault spatial grid buffers -> Burst SpatialHashQuery",
+  "dtoLayout": "SpatialGridEntryDTO=16 bytes: EntityHashID/EntityRowIndex@0 CellHash@4 LocalCellOffset/CellFingerprint@8",
+  "rangeLayout": "SpatialGridBucketRangeDTO=32 bytes: CellHash@0 CellFingerprintX@4 CellFingerprintY@8 StartIndex@12 Count@16 Flags@20 Pad0@24 Pad1@28",
+  "entityIdentity": "EntityHashID is an ABI alias for the Vault row-local entity handle; stable seeds remain in AmbientEntityAupDTO.",
+  "cellCollisionGuard": "CellHash is a 32-bit range key; CellFingerprint is a 64-bit secondary key verified before candidate budget is consumed.",
+  "sortKey": "8-pass radix sort over CellFingerprint uint2 so exact-cell ranges are contiguous before range-table insertion.",
+  "structuralProbePolicy": "range-table insertion/lookup use fixed structural probe count; GlobalQualityWeight only limits visited cells/results.",
+  "dearLie": "MaxResults and neighbor sample caps bound dense-school queries; center cell is scanned first and outer cells are visited by squared-distance shells.",
+  "globalQualityWeightContinuous": true,
+  "blackBoxTelemetryFrames": 300,
+  "queryCountSource": "FlockingCounterSpatialGridQueries",
+  "queryCountPatchCadence": "patched every telemetry frame; binary fault dump is gated separately",
+  "invalidInputTelemetry": "SpatialGridTelemetryEntry.InvalidInputCount@56 plus TelemetryFlagInvalidInput; dump triggers on overflow or invalid input.",
+  "telemetryTiming": "UNAVAILABLE_SENTINEL_MINUS_ONE",
+  "centerCellFirst": true,
+  "outerCellOrder": "SQUARED_DISTANCE_SHELLS",
+  "aupQuantization": "DOUBLE_SCALED_SYMMETRIC_INTEGER_DEADBAND_BEFORE_FLOOR",
+  "aupDistanceCheck": "DOUBLE_SUBTRACT_THEN_LOCAL_FLOAT3_LENGTHSQ",
+  "editorWriteLock": "TryAcquireWriteLock/ReleaseWriteLock on ShinobuSpatialGridTuning",
+  "editorReadFence": "CoreDiagnostics TryLockBuffer read set around X-Ray Vault views",
+  "compileWallImportTrim": "Removed unused using Hecton8.Ecosystem from ShinobuEcosystemBalancer.cs",
+  "scannerProof": {
+    "status": "BUILD_NOT_RUN_FROM_EDITOR_SCANNER",
+    "reason": "OOP_Query_Scanner is a static editor proof artifact and does not launch dotnet or Unity builds."
+  },
+  "projectCompileProof": {
+    "status": "BUILD_GUARDED",
+    "reason": "Latest guard sample was CPU 100 percent with active dotnet PIDs 992/3056; project rule forbids launching rebuild while CPU is above 50 percent or dotnet/csc is running."
+  },
+  "compileProof": {
+    "status": "BUILD_GUARDED",
+    "reason": "Latest guard sample was CPU 100 percent with active dotnet PIDs 992/3056; project rule forbids launching rebuild while CPU is above 50 percent or dotnet/csc is running."
+  },
+  "verdict": "PENDING_VERIFICATION_WITH_TASK15_TIMING_PARTIAL"
+}

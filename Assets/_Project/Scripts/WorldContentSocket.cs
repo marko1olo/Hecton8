@@ -132,7 +132,10 @@ namespace Hecton8.World
         public WorldZoneAnchor GetZoneAnchor()
         {
             if (_cachedZoneAnchor == null)
-                _cachedZoneAnchor = GetComponentInParent<WorldZoneAnchor>();
+            {
+                if (!TryGetComponent(out _cachedZoneAnchor))
+                    _cachedZoneAnchor = GetComponentInParent<WorldZoneAnchor>();
+            }
 
             return _cachedZoneAnchor;
         }

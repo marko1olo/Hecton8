@@ -12,7 +12,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Barter Tab")]
-    public sealed class PDABarterTab : MonoBehaviour, IPDAEventListener, IUpdatable
+    public sealed class PDABarterTab : MonoBehaviour, IPDAEventListener, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -68,6 +68,10 @@ namespace Hecton8.UI
         private PDAExchangeSystem.OfferSnapshot[] _snapshotBuffer;
         private PDAExchangeSystem.TransactionSnapshot[] _transactionBuffer;
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _hotSwapRegistered;
+        private bool _refreshAllPending;
+        private bool _refreshImmediatePending;
         private PDAExchangeSystem _boundExchangeSystem;
         private uint _exchangeSourceId;
 
@@ -92,6 +96,7 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
+            TryRegisterHotSwapListener();
             TryRegister();
             RefreshAll(true);
         }
@@ -105,12 +110,14 @@ namespace Hecton8.UI
         {
             Unsubscribe();
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             PDAEvents.AssertUnregistered(this, nameof(PDABarterTab));
         }
 
@@ -120,7 +127,7 @@ namespace Hecton8.UI
                 exchangeSystem = GlobalRegistry.PDAExchange;
             if (playerPDA == null)
             {
-                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
                 if (playerContext != null)
                     playerPDA = playerContext.PlayerPDA;
 
@@ -174,12 +181,23 @@ namespace Hecton8.UI
 
             exchangeSystem = current;
             _boundExchangeSystem = current;
-            _exchangeSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(current.GetEntityId()));
+            _exchangeSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(current.GetEntityId()));
         }
 
         public void Tick(float deltaTime)
         {
             ProcessExchangeSignals();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_refreshAllPending)
+                return;
+
+            bool immediate = _refreshImmediatePending;
+            _refreshAllPending = false;
+            _refreshImmediatePending = false;
+            RefreshAll(immediate);
         }
 
         private void ProcessExchangeSignals()
@@ -201,29 +219,70 @@ namespace Hecton8.UI
                 if (signals[i].SourceId != sourceId)
                     continue;
 
-                RefreshAll(true);
+                QueueRefreshAll(true);
                 break;
             }
         }
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
+
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
+
+            _refreshAllPending = false;
+            _refreshImmediatePending = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            TryUnregister();
+            TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void OnPDAEvent(in PDAEventPayload payload)
@@ -365,6 +424,12 @@ namespace Hecton8.UI
 
             RefreshSummary();
             RefreshCards();
+        }
+
+        private void QueueRefreshAll(bool immediate)
+        {
+            _refreshAllPending = true;
+            _refreshImmediatePending |= immediate;
         }
 
         private void RefreshSummary()

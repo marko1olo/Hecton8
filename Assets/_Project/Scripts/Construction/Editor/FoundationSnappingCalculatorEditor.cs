@@ -243,10 +243,8 @@ namespace Hecton8.Construction.Editor
                 return 0;
 
             int count = 0;
-            string[] files = Directory.GetFiles(directory, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
             {
-                string file = files[i];
                 if (file.IndexOf(filenameContains, StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
 

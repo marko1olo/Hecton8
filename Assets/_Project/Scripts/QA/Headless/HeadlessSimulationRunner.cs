@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -9,7 +9,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -18,7 +17,7 @@ namespace Hecton8.QA.Headless
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string RunnerName = "HEADLESS_SIMULATION_RUNNER";
         private const string RuntimeRootName = "[HeadlessSimulationRunner]";
@@ -53,19 +52,28 @@ namespace Hecton8.QA.Headless
         private const uint TimeoutHash = 0x4838544Fu;
         private const uint AupShiftHash = 0x48384155u;
         private const uint CsvWriteHash = 0x48384353u;
+        private const uint DataVaultUnavailableHash = 0x48384456u;
         private const uint EvidenceBlackboxWriteFailed = 1u << 0;
         private const uint EvidenceResultWriteFailed = 1u << 1;
         private const uint EvidenceCsvWriteFailed = 1u << 2;
+        private const SystemID OwnerSystemId = SystemID.QAHeadless;
+        private const BufferID GhostStateBufferId = BufferID.HeadlessSimulationGhostState;
+        private const BufferID GhostNextStateBufferId = BufferID.HeadlessSimulationGhostNextState;
+        private const BufferID BlackboxBufferId = BufferID.HeadlessSimulationBlackBox;
+        private const BufferID MemoryWindowBytesBufferId = BufferID.HeadlessSimulationMemoryWindowBytes;
+        private const BufferID MemoryWindowH8BytesBufferId = BufferID.HeadlessSimulationMemoryWindowH8Bytes;
+        private const BufferID MemoryWindowAllocationCountsBufferId = BufferID.HeadlessSimulationMemoryWindowAllocationCounts;
 
         private static HeadlessSimulationRunner _instance;
 
-        private NativeArray<GhostState> _ghostState;
-        private NativeArray<GhostState> _ghostNextState;
-        private NativeArray<HeadlessTelemetryEntry> _blackbox;
-        private NativeArray<long> _memoryWindowBytes;
-        private NativeArray<long> _memoryWindowH8Bytes;
-        private NativeArray<int> _memoryWindowAllocationCounts;
+        private VaultGenerationHandle<GhostState> _ghostStateHandle;
+        private VaultGenerationHandle<GhostState> _ghostNextStateHandle;
+        private VaultGenerationHandle<HeadlessTelemetryEntry> _blackboxHandle;
+        private VaultGenerationHandle<long> _memoryWindowBytesHandle;
+        private VaultGenerationHandle<long> _memoryWindowH8BytesHandle;
+        private VaultGenerationHandle<int> _memoryWindowAllocationCountsHandle;
         private JobHandle _ghostJobHandle;
+        private IDataVault _dataVault;
         private HeadlessCsvWriter _csvWriter;
         private string _resultPath;
         private string _blackboxPath;
@@ -103,8 +111,12 @@ namespace Hecton8.QA.Headless
         private bool _registeredFrost;
         private bool _registeredCold;
         private bool _registeredLate;
+        private bool _registeredHotSwap;
         private bool _originListenerRegistered;
         private bool _ghostJobPending;
+        private bool _ghostJobBuffersLocked;
+        private bool _ghostStateInitialized;
+        private bool _memoryWindowBuffersLocked;
         private bool _ecologyReady;
         private bool _finished;
         private bool _runtimePolicyCaptured;
@@ -160,33 +172,19 @@ namespace Hecton8.QA.Headless
         {
             if (_ghostJobPending)
             {
-                DisposeNativeArray(ref _ghostState, _ghostJobHandle);
-                DisposeNativeArray(ref _ghostNextState, _ghostJobHandle);
+                DispatcherJobFence.TryComplete(ref _ghostJobHandle, forceComplete: true);
                 _ghostJobPending = false;
             }
-            else
-            {
-                DisposeNativeArray(ref _ghostState);
-                DisposeNativeArray(ref _ghostNextState);
-            }
 
-            if (_registeredFast)
-                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Core);
-            if (_registeredFrost)
-                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Core);
-            if (_registeredCold)
-                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
-            if (_registeredLate)
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            ReleaseGhostJobBufferLocks();
+            TryUnregisterHotSwapListener();
+            UnregisterRuntimeLanes();
             if (_originListenerRegistered)
                 HectonFloatingOrigin.UnregisterListener(this);
             Application.logMessageReceived -= HandleLogMessage;
             RestoreRuntimePolicy();
 
-            DisposeNativeArray(ref _blackbox);
-            DisposeNativeArray(ref _memoryWindowBytes);
-            DisposeNativeArray(ref _memoryWindowH8Bytes);
-            DisposeNativeArray(ref _memoryWindowAllocationCounts);
+            ReleaseVaultBuffers();
             _csvWriter?.Dispose();
             _csvWriter = null;
             if (_instance == this)
@@ -211,16 +209,31 @@ namespace Hecton8.QA.Headless
 
             if (!_ghostJobPending)
             {
+                if (!TryAcquireGhostJobBuffers(out NativeArray<GhostState> ghostState, out NativeArray<GhostState> ghostNextState))
+                {
+                    FailAndQuit(1, DataVaultUnavailableHash, "[GHOST_BUFFER_UNAVAILABLE]");
+                    return;
+                }
+
                 GhostAupJob job = new GhostAupJob
                 {
-                    Current = _ghostState,
-                    Next = _ghostNextState,
+                    Current = ghostState,
+                    Next = ghostNextState,
                     DeltaSeconds = safeDelta,
                     SimulatedSeconds = _ghostSeconds,
                     SpeedMetersPerSecond = GhostSpeedMetersPerSecond
                 };
-                _ghostJobHandle = job.Schedule();
-                _ghostJobPending = true;
+
+                try
+                {
+                    _ghostJobHandle = job.Schedule();
+                    _ghostJobPending = true;
+                }
+                catch
+                {
+                    ReleaseGhostJobBufferLocks();
+                    throw;
+                }
             }
 
             RecordBlackbox(0u);
@@ -235,16 +248,30 @@ namespace Hecton8.QA.Headless
                 return;
 
             _ghostJobPending = false;
-            GhostState previous = _ghostState[0];
-            GhostState next = _ghostNextState[0];
-            _ghostState[0] = next;
-            HandleSyntheticAupShift(in previous, in next);
-            if (!math.all(math.isfinite(next.AbsoluteMeters)) ||
-                !math.isfinite(next.RuntimeMeters.x) ||
-                !math.isfinite(next.RuntimeMeters.y) ||
-                !math.isfinite(next.RuntimeMeters.z))
+            try
             {
-                FailAndQuit(1, NaNHash, "[NAN_DETECTED]");
+                if (!TryReadLockedGhostState(out NativeArray<GhostState> ghostState) ||
+                    !TryReadGhostNextState(out NativeArray<GhostState>.ReadOnly ghostNextState))
+                {
+                    FailAndQuit(1, DataVaultUnavailableHash, "[GHOST_BUFFER_READ_FAILED]");
+                    return;
+                }
+
+                GhostState previous = ghostState[0];
+                GhostState next = ghostNextState[0];
+                ghostState[0] = next;
+                HandleSyntheticAupShift(in previous, in next);
+                if (!math.all(math.isfinite(next.AbsoluteMeters)) ||
+                    !math.isfinite(next.RuntimeMeters.x) ||
+                    !math.isfinite(next.RuntimeMeters.y) ||
+                    !math.isfinite(next.RuntimeMeters.z))
+                {
+                    FailAndQuit(1, NaNHash, "[NAN_DETECTED]");
+                }
+            }
+            finally
+            {
+                ReleaseGhostJobBufferLocks();
             }
         }
 
@@ -315,16 +342,108 @@ namespace Hecton8.QA.Headless
             }
 
             ForceHeadlessRuntimePolicy();
+            CacheDataVaultCold();
+            if (!EnsureVaultBuffersCold() || !TryInitializeGhostState())
+            {
+                FailAndQuit(1, DataVaultUnavailableHash, "[DATAVAULT_UNAVAILABLE]");
+                return;
+            }
+
+            RegisterRuntimeLanes();
+            TryRegisterHotSwapListener();
+            HectonFloatingOrigin.RegisterListener(this);
+            _originListenerRegistered = true;
+            GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+            if (!_started)
+                FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
+        }
+
+        private void RegisterRuntimeLanes()
+        {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (_registeredFast || _registeredFrost || _registeredCold || _registeredLate)
+                UnregisterRuntimeLanes();
+
             _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Core);
             _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
             _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Core);
             _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
-            HectonFloatingOrigin.RegisterListener(this);
-            _originListenerRegistered = true;
-            GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
             _started = _registeredFast && _registeredFrost && _registeredCold && _registeredLate;
             if (!_started)
-                FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
+                UnregisterRuntimeLanes();
+        }
+
+        private void UnregisterRuntimeLanes()
+        {
+            if (_registeredFast)
+            {
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Core);
+                _registeredFast = false;
+            }
+
+            if (_registeredFrost)
+            {
+                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Core);
+                _registeredFrost = false;
+            }
+
+            if (_registeredCold)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
+                _registeredCold = false;
+            }
+
+            if (_registeredLate)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLate = false;
+            }
+
+            _started = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (_started || _finished)
+                    return;
+
+                _dataVault = currentService as IDataVault;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                _finished ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            RegisterRuntimeLanes();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void InitializeColdState()
@@ -339,29 +458,10 @@ namespace Hecton8.QA.Headless
             EnsureParentDirectory(_resultPath);
             EnsureParentDirectory(_blackboxPath);
             EnsureParentDirectory(csvPath);
-            // COLD ALLOC: NativeArray<GhostState>[1] - front ghost AUP state for the headless math-only player - owner: HeadlessSimulationRunner
-            _ghostState = new NativeArray<GhostState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<GhostState>[1] - back ghost AUP state written by GhostAupJob - owner: HeadlessSimulationRunner
-            _ghostNextState = new NativeArray<GhostState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<HeadlessTelemetryEntry>[300] - fixed blackbox ring for crash/postmortem state - owner: HeadlessSimulationRunner
-            _blackbox = new NativeArray<HeadlessTelemetryEntry>(BlackboxFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<long>[10] - daily native-byte growth window for leak detection - owner: HeadlessSimulationRunner
-            _memoryWindowBytes = new NativeArray<long>(MemoryWindowDays, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<long>[10] - daily H8 byte growth window for leak detection - owner: HeadlessSimulationRunner
-            _memoryWindowH8Bytes = new NativeArray<long>(MemoryWindowDays, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[10] - daily H8 allocation-count growth window for leak detection - owner: HeadlessSimulationRunner
-            _memoryWindowAllocationCounts = new NativeArray<int>(MemoryWindowDays, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeArray(_ghostState, nameof(_ghostState));
-            RegisterNativeArray(_ghostNextState, nameof(_ghostNextState));
-            RegisterNativeArray(_blackbox, nameof(_blackbox));
-            RegisterNativeArray(_memoryWindowBytes, nameof(_memoryWindowBytes));
-            RegisterNativeArray(_memoryWindowH8Bytes, nameof(_memoryWindowH8Bytes));
-            RegisterNativeArray(_memoryWindowAllocationCounts, nameof(_memoryWindowAllocationCounts));
+            EnsureVaultBuffersCold();
+            TryInitializeGhostState();
             _csvWriter = new HeadlessCsvWriter(csvPath);
             _csvWriter.WriteHeader();
-            GhostState initial = default;
-            initial.Aup = AbsoluteUniversePosition.FromAbsolutePosition(double3.zero);
-            _ghostState[0] = initial;
             Application.logMessageReceived += HandleLogMessage;
         }
 
@@ -384,7 +484,7 @@ namespace Hecton8.QA.Headless
             Debug.unityLogger.filterLogType = LogType.Warning;
             GlobalRegistry.RegisterScalabilityTierOverride(1);
             GlobalRegistry.RegisterMathPrecisionLevel(MathPrecisionLevel.High);
-            DistanceMath.PushShaderMathLod(MathLodMode.High);
+            DistanceMath.PushShaderMathLod(1f);
         }
 
         private void RestoreRuntimePolicy()
@@ -409,7 +509,7 @@ namespace Hecton8.QA.Headless
         private void DrainSignals()
         {
             int drained = 0;
-            while (drained < MaxSignalsDrainedPerFrame && GlobalSignals.TryDequeueProgressionEvent(out ProgressionEventSignal progression))
+            while (drained < MaxSignalsDrainedPerFrame && SignalBus<ProgressionEventSignal>.TryConsumeFrame(out ProgressionEventSignal progression))
             {
                 _progressionSignalCount++;
                 _lastProgressionHash = progression.PoiHash != 0u ? progression.PoiHash : progression.QuestHash;
@@ -417,7 +517,7 @@ namespace Hecton8.QA.Headless
             }
 
             drained = 0;
-            while (drained < MaxSignalsDrainedPerFrame && GlobalSignals.TryDequeueCrashTelemetry(out CrashTelemetrySignal crash))
+            while (drained < MaxSignalsDrainedPerFrame && SignalBus<CrashTelemetrySignal>.TryConsumeFrame(out CrashTelemetrySignal crash))
             {
                 _crashSignalCount++;
                 _lastCrashReasonHash = crash.ReasonHash;
@@ -489,18 +589,33 @@ namespace Hecton8.QA.Headless
 
         private bool DetectTenDayMemoryGrowth(long nativeBytes, long h8Bytes, int h8Allocations)
         {
-            int slot = _memoryWindowCursor % MemoryWindowDays;
-            _memoryWindowBytes[slot] = nativeBytes;
-            _memoryWindowH8Bytes[slot] = h8Bytes;
-            _memoryWindowAllocationCounts[slot] = h8Allocations;
-            _memoryWindowCursor++;
-            _memoryWindowCount = math.min(_memoryWindowCount + 1, MemoryWindowDays);
-            if (_memoryWindowCount < MemoryWindowDays)
-                return false;
+            if (!TryAcquireMemoryWindowBuffers(
+                    out NativeArray<long> nativeSamples,
+                    out NativeArray<long> h8Samples,
+                    out NativeArray<int> allocationSamples))
+            {
+                return true;
+            }
 
-            return HasStrictMemoryGrowth(_memoryWindowBytes) ||
-                   HasStrictMemoryGrowth(_memoryWindowH8Bytes) ||
-                   HasStrictAllocationGrowth();
+            int slot = _memoryWindowCursor % MemoryWindowDays;
+            try
+            {
+                nativeSamples[slot] = nativeBytes;
+                h8Samples[slot] = h8Bytes;
+                allocationSamples[slot] = h8Allocations;
+                _memoryWindowCursor++;
+                _memoryWindowCount = math.min(_memoryWindowCount + 1, MemoryWindowDays);
+                if (_memoryWindowCount < MemoryWindowDays)
+                    return false;
+
+                return HasStrictMemoryGrowth(nativeSamples) ||
+                       HasStrictMemoryGrowth(h8Samples) ||
+                       HasStrictAllocationGrowth(allocationSamples);
+            }
+            finally
+            {
+                ReleaseMemoryWindowBuffers();
+            }
         }
 
         private bool HasStrictMemoryGrowth(NativeArray<long> samples)
@@ -519,13 +634,13 @@ namespace Hecton8.QA.Headless
             return true;
         }
 
-        private bool HasStrictAllocationGrowth()
+        private bool HasStrictAllocationGrowth(NativeArray<int> allocationSamples)
         {
-            int previousCount = _memoryWindowAllocationCounts[_memoryWindowCursor % MemoryWindowDays];
+            int previousCount = allocationSamples[_memoryWindowCursor % MemoryWindowDays];
             for (int i = 1; i < MemoryWindowDays; i++)
             {
                 int index = (_memoryWindowCursor + i) % MemoryWindowDays;
-                int currentCount = _memoryWindowAllocationCounts[index];
+                int currentCount = allocationSamples[index];
                 if (currentCount <= previousCount)
                     return false;
 
@@ -586,21 +701,21 @@ namespace Hecton8.QA.Headless
             _lastSyntheticShiftSequence++;
             float3 shiftMeters = new float3(delta.x, delta.y, delta.z) * AupCellSizeMeters;
             uint sequence = _lastSyntheticShiftSequence == 0u ? 1u : _lastSyntheticShiftSequence;
-            GlobalSignals.Publish(new AupPreShiftSignal
+            AupSignalRoute.TryQueuePreShift(new AupPreShiftSignal
             {
                 ShiftMeters = shiftMeters,
                 ShiftFrameId = sequence,
                 SectorDelta = delta,
                 Flags = 1u
             });
-            GlobalSignals.Publish(new RebaseSignal
+            SignalBus<RebaseSignal>.TryPush(new RebaseSignal
             {
                 ShiftMeters = shiftMeters,
                 ShiftFrameId = sequence,
                 GridDelta = delta,
                 Flags = 1u
             });
-            GlobalSignals.Publish(new AupShiftSignal
+            AupSignalRoute.TryQueueShift(new AupShiftSignal
             {
                 ShiftMeters = shiftMeters,
                 ShiftFrameId = sequence,
@@ -637,7 +752,7 @@ namespace Hecton8.QA.Headless
 
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
         {
-            GlobalSignals.Publish(new CrashTelemetrySignal
+            SignalBus<CrashTelemetrySignal>.TryPush(new CrashTelemetrySignal
             {
                 SystemHash = RunnerHash,
                 ReasonHash = reasonHash,
@@ -652,26 +767,34 @@ namespace Hecton8.QA.Headless
 
         private void RecordBlackbox(uint flags)
         {
-            if (!_blackbox.IsCreated || !_ghostState.IsCreated)
+            if (!TryReadGhostState(out NativeArray<GhostState>.ReadOnly ghostState) ||
+                !TryAcquireBlackboxWriteBuffer(out NativeArray<HeadlessTelemetryEntry> blackbox))
                 return;
 
-            GhostState state = _ghostState[0];
-            int index = _blackboxCursor % _blackbox.Length;
-            _blackbox[index] = new HeadlessTelemetryEntry
+            try
             {
-                Frame = unchecked((uint)Time.frameCount),
-                Day = _completedDays,
-                StateHash = MixStateHash(in state),
-                GridX = state.Aup.GridX,
-                GridY = state.Aup.GridY,
-                GridZ = state.Aup.GridZ,
-                Local = new float3(state.Aup.LocalX, state.Aup.LocalY, state.Aup.LocalZ),
-                PreyBiomass = _lastPreyBiomass,
-                PredatorBiomass = _lastPredatorBiomass,
-                NativeBytesMb = GlobalRegistry.NativeTrackedBytes * NativeBytesToMegabytes,
-                Flags = flags
-            };
-            _blackboxCursor++;
+                GhostState state = ghostState[0];
+                int index = _blackboxCursor % blackbox.Length;
+                blackbox[index] = new HeadlessTelemetryEntry
+                {
+                    Frame = unchecked((uint)Time.frameCount),
+                    Day = _completedDays,
+                    StateHash = MixStateHash(in state),
+                    GridX = state.Aup.GridX,
+                    GridY = state.Aup.GridY,
+                    GridZ = state.Aup.GridZ,
+                    Local = new float3(state.Aup.LocalX, state.Aup.LocalY, state.Aup.LocalZ),
+                    PreyBiomass = _lastPreyBiomass,
+                    PredatorBiomass = _lastPredatorBiomass,
+                    NativeBytesMb = GlobalRegistry.NativeTrackedBytes * NativeBytesToMegabytes,
+                    Flags = flags
+                };
+                _blackboxCursor++;
+            }
+            finally
+            {
+                ReleaseBlackboxWriteBuffer();
+            }
         }
 
         private void TryDumpBlackbox()
@@ -688,7 +811,7 @@ namespace Hecton8.QA.Headless
 
         private void DumpBlackbox()
         {
-            if (!_blackbox.IsCreated || string.IsNullOrEmpty(_blackboxPath))
+            if (!TryReadBlackbox(out NativeArray<HeadlessTelemetryEntry>.ReadOnly blackbox) || string.IsNullOrEmpty(_blackboxPath))
                 return;
 
             EnsureParentDirectory(_blackboxPath);
@@ -696,15 +819,15 @@ namespace Hecton8.QA.Headless
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 writer.Write(0x48385142u);
-                int validCount = math.min(_blackboxCursor, _blackbox.Length);
-                int start = _blackboxCursor >= _blackbox.Length ? _blackboxCursor % _blackbox.Length : 0;
+                int validCount = math.min(_blackboxCursor, blackbox.Length);
+                int start = _blackboxCursor >= blackbox.Length ? _blackboxCursor % blackbox.Length : 0;
                 writer.Write(validCount);
                 writer.Write(BlackboxEntrySizeBytes);
                 writer.Write(_blackboxCursor);
                 for (int i = 0; i < validCount; i++)
                 {
-                    int index = (start + i) % _blackbox.Length;
-                    HeadlessTelemetryEntry entry = _blackbox[index];
+                    int index = (start + i) % blackbox.Length;
+                    HeadlessTelemetryEntry entry = blackbox[index];
                     writer.Write(entry.Frame);
                     writer.Write(entry.Day);
                     writer.Write(entry.StateHash);
@@ -794,6 +917,338 @@ namespace Hecton8.QA.Headless
                 _logSpamCount++;
         }
 
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private bool EnsureVaultBuffersCold()
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return false;
+
+            return EnsureVaultBuffer(vault, ref _ghostStateHandle, GhostStateBufferId, 1, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(vault, ref _ghostNextStateHandle, GhostNextStateBufferId, 1, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(vault, ref _blackboxHandle, BlackboxBufferId, BlackboxFrameCapacity, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(vault, ref _memoryWindowBytesHandle, MemoryWindowBytesBufferId, MemoryWindowDays, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(vault, ref _memoryWindowH8BytesHandle, MemoryWindowH8BytesBufferId, MemoryWindowDays, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultBuffer(vault, ref _memoryWindowAllocationCountsHandle, MemoryWindowAllocationCountsBufferId, MemoryWindowDays, NativeArrayOptions.ClearMemory);
+        }
+
+        private bool EnsureVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (IsExactVaultHandle(in handle, bufferId) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystemId,
+                options);
+
+            return IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out existing) &&
+                   existing.IsCreated &&
+                   existing.Length >= requiredLength;
+        }
+
+        private bool TryInitializeGhostState()
+        {
+            if (_ghostStateInitialized)
+                return true;
+
+            if (!EnsureVaultBuffer(CacheDataVaultCold(), ref _ghostStateHandle, GhostStateBufferId, 1, NativeArrayOptions.ClearMemory))
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _ghostStateHandle, OwnerSystemId, out NativeArray<GhostState> ghostState))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!ghostState.IsCreated || ghostState.Length <= 0)
+                    return false;
+
+                GhostState initial = default;
+                initial.Aup = AbsoluteUniversePosition.FromAbsolutePosition(double3.zero);
+                initial.AbsoluteMeters = double3.zero;
+                initial.RuntimeMeters = float3.zero;
+                ghostState[0] = initial;
+                _ghostStateInitialized = true;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _ghostStateHandle, OwnerSystemId);
+            }
+        }
+
+        private bool TryAcquireGhostJobBuffers(out NativeArray<GhostState> current, out NativeArray<GhostState> next)
+        {
+            current = default;
+            next = default;
+            if (_ghostJobBuffersLocked || !EnsureVaultBuffersCold() || !TryInitializeGhostState())
+                return false;
+
+            IDataVault vault = _dataVault;
+            bool currentLocked = false;
+            bool nextLocked = false;
+            bool success = false;
+            try
+            {
+                if (vault == null ||
+                    !IsExactVaultHandle(in _ghostStateHandle, GhostStateBufferId) ||
+                    !vault.TryAcquireWriteLock(in _ghostStateHandle, OwnerSystemId, out current))
+                {
+                    return false;
+                }
+
+                currentLocked = true;
+                if (!IsExactVaultHandle(in _ghostNextStateHandle, GhostNextStateBufferId) ||
+                    !vault.TryAcquireWriteLock(in _ghostNextStateHandle, OwnerSystemId, out next))
+                {
+                    return false;
+                }
+
+                nextLocked = true;
+                if (!current.IsCreated || current.Length <= 0 || !next.IsCreated || next.Length <= 0)
+                    return false;
+
+                _ghostJobBuffersLocked = true;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success && vault != null)
+                {
+                    if (nextLocked)
+                        vault.ReleaseWriteLock(in _ghostNextStateHandle, OwnerSystemId);
+                    if (currentLocked)
+                        vault.ReleaseWriteLock(in _ghostStateHandle, OwnerSystemId);
+                }
+            }
+        }
+
+        private void ReleaseGhostJobBufferLocks()
+        {
+            if (!_ghostJobBuffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                if (IsExactVaultHandle(in _ghostNextStateHandle, GhostNextStateBufferId))
+                    vault.ReleaseWriteLock(in _ghostNextStateHandle, OwnerSystemId);
+                if (IsExactVaultHandle(in _ghostStateHandle, GhostStateBufferId))
+                    vault.ReleaseWriteLock(in _ghostStateHandle, OwnerSystemId);
+            }
+
+            _ghostJobBuffersLocked = false;
+        }
+
+        private bool TryReadLockedGhostState(out NativeArray<GhostState> ghostState)
+        {
+            ghostState = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _ghostStateHandle, GhostStateBufferId) &&
+                   vault.TryReadHandle(in _ghostStateHandle, out ghostState) &&
+                   ghostState.IsCreated &&
+                   ghostState.Length > 0;
+        }
+
+        private bool TryReadGhostState(out NativeArray<GhostState>.ReadOnly ghostState)
+        {
+            ghostState = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _ghostStateHandle, GhostStateBufferId) &&
+                   vault.TryReadOnlyHandle(in _ghostStateHandle, out ghostState) &&
+                   ghostState.IsCreated &&
+                   ghostState.Length > 0;
+        }
+
+        private bool TryReadGhostNextState(out NativeArray<GhostState>.ReadOnly ghostState)
+        {
+            ghostState = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _ghostNextStateHandle, GhostNextStateBufferId) &&
+                   vault.TryReadOnlyHandle(in _ghostNextStateHandle, out ghostState) &&
+                   ghostState.IsCreated &&
+                   ghostState.Length > 0;
+        }
+
+        private bool TryAcquireBlackboxWriteBuffer(out NativeArray<HeadlessTelemetryEntry> blackbox)
+        {
+            blackbox = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !EnsureVaultBuffer(vault, ref _blackboxHandle, BlackboxBufferId, BlackboxFrameCapacity, NativeArrayOptions.ClearMemory) ||
+                !vault.TryAcquireWriteLock(in _blackboxHandle, OwnerSystemId, out blackbox))
+            {
+                return false;
+            }
+
+            if (blackbox.IsCreated && blackbox.Length >= BlackboxFrameCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in _blackboxHandle, OwnerSystemId);
+            blackbox = default;
+            return false;
+        }
+
+        private void ReleaseBlackboxWriteBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in _blackboxHandle, BlackboxBufferId))
+                vault.ReleaseWriteLock(in _blackboxHandle, OwnerSystemId);
+        }
+
+        private bool TryReadBlackbox(out NativeArray<HeadlessTelemetryEntry>.ReadOnly blackbox)
+        {
+            blackbox = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _blackboxHandle, BlackboxBufferId) &&
+                   vault.TryReadOnlyHandle(in _blackboxHandle, out blackbox) &&
+                   blackbox.IsCreated &&
+                   blackbox.Length >= BlackboxFrameCapacity;
+        }
+
+        private bool TryAcquireMemoryWindowBuffers(
+            out NativeArray<long> nativeSamples,
+            out NativeArray<long> h8Samples,
+            out NativeArray<int> allocationSamples)
+        {
+            nativeSamples = default;
+            h8Samples = default;
+            allocationSamples = default;
+            if (_memoryWindowBuffersLocked || !EnsureVaultBuffersCold())
+                return false;
+
+            IDataVault vault = _dataVault;
+            bool nativeLocked = false;
+            bool h8Locked = false;
+            bool allocationLocked = false;
+            bool success = false;
+            try
+            {
+                if (vault == null ||
+                    !IsExactVaultHandle(in _memoryWindowBytesHandle, MemoryWindowBytesBufferId) ||
+                    !vault.TryAcquireWriteLock(in _memoryWindowBytesHandle, OwnerSystemId, out nativeSamples))
+                {
+                    return false;
+                }
+
+                nativeLocked = true;
+                if (!IsExactVaultHandle(in _memoryWindowH8BytesHandle, MemoryWindowH8BytesBufferId) ||
+                    !vault.TryAcquireWriteLock(in _memoryWindowH8BytesHandle, OwnerSystemId, out h8Samples))
+                {
+                    return false;
+                }
+
+                h8Locked = true;
+                if (!IsExactVaultHandle(in _memoryWindowAllocationCountsHandle, MemoryWindowAllocationCountsBufferId) ||
+                    !vault.TryAcquireWriteLock(in _memoryWindowAllocationCountsHandle, OwnerSystemId, out allocationSamples))
+                {
+                    return false;
+                }
+
+                allocationLocked = true;
+                if (!nativeSamples.IsCreated || nativeSamples.Length < MemoryWindowDays ||
+                    !h8Samples.IsCreated || h8Samples.Length < MemoryWindowDays ||
+                    !allocationSamples.IsCreated || allocationSamples.Length < MemoryWindowDays)
+                {
+                    return false;
+                }
+
+                _memoryWindowBuffersLocked = true;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success && vault != null)
+                {
+                    if (allocationLocked)
+                        vault.ReleaseWriteLock(in _memoryWindowAllocationCountsHandle, OwnerSystemId);
+                    if (h8Locked)
+                        vault.ReleaseWriteLock(in _memoryWindowH8BytesHandle, OwnerSystemId);
+                    if (nativeLocked)
+                        vault.ReleaseWriteLock(in _memoryWindowBytesHandle, OwnerSystemId);
+                }
+            }
+        }
+
+        private void ReleaseMemoryWindowBuffers()
+        {
+            if (!_memoryWindowBuffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                if (IsExactVaultHandle(in _memoryWindowAllocationCountsHandle, MemoryWindowAllocationCountsBufferId))
+                    vault.ReleaseWriteLock(in _memoryWindowAllocationCountsHandle, OwnerSystemId);
+                if (IsExactVaultHandle(in _memoryWindowH8BytesHandle, MemoryWindowH8BytesBufferId))
+                    vault.ReleaseWriteLock(in _memoryWindowH8BytesHandle, OwnerSystemId);
+                if (IsExactVaultHandle(in _memoryWindowBytesHandle, MemoryWindowBytesBufferId))
+                    vault.ReleaseWriteLock(in _memoryWindowBytesHandle, OwnerSystemId);
+            }
+
+            _memoryWindowBuffersLocked = false;
+        }
+
+        private void ReleaseVaultBuffers()
+        {
+            ReleaseGhostJobBufferLocks();
+            ReleaseVaultBuffer(ref _memoryWindowAllocationCountsHandle);
+            ReleaseVaultBuffer(ref _memoryWindowH8BytesHandle);
+            ReleaseVaultBuffer(ref _memoryWindowBytesHandle);
+            ReleaseVaultBuffer(ref _blackboxHandle);
+            ReleaseVaultBuffer(ref _ghostNextStateHandle);
+            ReleaseVaultBuffer(ref _ghostStateHandle);
+            _ghostStateInitialized = false;
+        }
+
+        private void ReleaseVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
+        }
+
         private static bool ShouldRunStatic()
         {
             if (HasCommandLineArg(CommandLineArg) || HasCommandLineArg(LegacyCommandLineArg))
@@ -823,7 +1278,7 @@ namespace Hecton8.QA.Headless
             for (int i = 0; i < args.Length - 1; i++)
             {
                 if (string.Equals(args[i], name, StringComparison.OrdinalIgnoreCase) &&
-                    int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+                    TryParseCommandLineInt(args[i + 1], out int value))
                     return value;
             }
 
@@ -835,11 +1290,92 @@ namespace Hecton8.QA.Headless
             for (int i = 0; i < args.Length - 1; i++)
             {
                 if (string.Equals(args[i], name, StringComparison.OrdinalIgnoreCase) &&
-                    float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
+                    TryParseCommandLineFloat(args[i + 1], out float value))
                     return value;
             }
 
             return fallback;
+        }
+
+        private static bool TryParseCommandLineInt(string text, out int value)
+        {
+            value = 0;
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+            int index = 0;
+            int sign = 1;
+            if (text[0] == '-')
+            {
+                sign = -1;
+                index = 1;
+            }
+            else if (text[0] == '+')
+            {
+                index = 1;
+            }
+
+            int result = 0;
+            bool any = false;
+            for (; index < text.Length; index++)
+            {
+                char c = text[index];
+                if (c < '0' || c > '9')
+                    return false;
+                result = (result * 10) + (c - '0');
+                any = true;
+            }
+
+            value = result * sign;
+            return any;
+        }
+
+        private static bool TryParseCommandLineFloat(string text, out float value)
+        {
+            value = 0f;
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+            int index = 0;
+            float sign = 1f;
+            if (text[0] == '-')
+            {
+                sign = -1f;
+                index = 1;
+            }
+            else if (text[0] == '+')
+            {
+                index = 1;
+            }
+
+            float integer = 0f;
+            bool any = false;
+            while (index < text.Length && text[index] >= '0' && text[index] <= '9')
+            {
+                integer = (integer * 10f) + (text[index] - '0');
+                index++;
+                any = true;
+            }
+
+            float fraction = 0f;
+            float divisor = 1f;
+            if (index < text.Length && text[index] == '.')
+            {
+                index++;
+                while (index < text.Length && text[index] >= '0' && text[index] <= '9')
+                {
+                    fraction = (fraction * 10f) + (text[index] - '0');
+                    divisor *= 10f;
+                    index++;
+                    any = true;
+                }
+            }
+
+            if (index != text.Length || !any)
+                return false;
+
+            value = sign * (integer + fraction / divisor);
+            return math.isfinite(value);
         }
 
         private static string ResolveProjectPath(string relativePath)
@@ -932,31 +1468,6 @@ namespace Hecton8.QA.Headless
                 writer.Write('0');
         }
 
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, RunnerName, label, NativeAllocationLifetime.Session);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
-            array = default;
-        }
-
         [StructLayout(LayoutKind.Explicit, Size = 88)]
         private struct GhostState
         {
@@ -1000,11 +1511,11 @@ namespace Hecton8.QA.Headless
                 GhostState state = Current[0];
                 double3 position = state.Aup.ToAbsoluteDouble3();
                 float t = (float)(SimulatedSeconds * 0.001);
-                float3 noiseProbe = new float3(t, t * 0.73f + 17.1f, t * 1.37f + 31.7f);
+                uint baseSeed = math.asuint(t) ^ 0x9E3779B9u;
                 float3 direction = new float3(
-                    noise.cnoise(noiseProbe),
-                    noise.cnoise(noiseProbe + new float3(19.1f, 3.7f, 11.2f)) * 0.12f,
-                    noise.cnoise(noiseProbe + new float3(5.3f, 29.4f, 41.9f)));
+                    HashSignedUnit(baseSeed ^ 0xA2F12B91u),
+                    HashSignedUnit(baseSeed ^ 0x3D20ADEAu) * 0.12f,
+                    HashSignedUnit(baseSeed ^ 0x7F4A7C15u));
                 float lengthSq = math.lengthsq(direction);
                 direction = lengthSq > 0.0001f ? direction * math.rsqrt(lengthSq) : new float3(1f, 0f, 0f);
                 position += (double3)(direction * (SpeedMetersPerSecond * math.max(0f, DeltaSeconds)));
@@ -1012,6 +1523,14 @@ namespace Hecton8.QA.Headless
                 state.Aup = AbsoluteUniversePosition.FromAbsolutePosition(position);
                 state.RuntimeMeters = new float3(state.Aup.LocalX, state.Aup.LocalY, state.Aup.LocalZ);
                 Next[0] = state;
+            }
+
+            private static float HashSignedUnit(uint seed)
+            {
+                uint h = seed * 747796405u + 2891336453u;
+                h = ((h >> (int)((h >> 28) + 4u)) ^ h) * 277803737u;
+                h = (h >> 22) ^ h;
+                return ((h & 0x00FFFFFFu) * (1f / 8388607.5f)) - 1f;
             }
         }
 

@@ -90,7 +90,7 @@ namespace Hecton8.Core
         {
             if (prefabId <= 0)
             {
-                Debug.LogError("[RuntimeInstanceId] Create: invalid prefabId (must be > 0)");
+                Hecton8.Core.H8Debug.LogError("[RuntimeInstanceId] Create: invalid prefabId (must be > 0)");
                 return Invalid;
             }
 
@@ -107,14 +107,14 @@ namespace Hecton8.Core
         {
             if (prefab == null)
             {
-                Debug.LogError("[RuntimeInstanceId] Create: prefab is null");
+                Hecton8.Core.H8Debug.LogError("[RuntimeInstanceId] Create: prefab is null");
                 return Invalid;
             }
 
             PrefabRegistry registry = PrefabRegistry.ActiveRuntimeInstance;
             if (registry == null)
             {
-                Debug.LogError("[RuntimeInstanceId] Create: PrefabRegistry not initialized");
+                Hecton8.Core.H8Debug.LogError("[RuntimeInstanceId] Create: PrefabRegistry not initialized");
                 return Invalid;
             }
 

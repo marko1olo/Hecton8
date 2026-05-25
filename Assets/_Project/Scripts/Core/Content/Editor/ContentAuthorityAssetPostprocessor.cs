@@ -61,8 +61,7 @@ namespace Hecton8.Core.Content.Editor
             if (renderers == null || renderers.Length == 0)
                 return;
 
-            LODGroup lodGroup = root.GetComponent<LODGroup>();
-            if (lodGroup == null)
+            if (!root.TryGetComponent(out LODGroup lodGroup))
                 lodGroup = root.AddComponent<LODGroup>();
 
             Renderer[] lod0 = CopyRenderers(renderers);

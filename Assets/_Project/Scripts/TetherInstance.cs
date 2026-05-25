@@ -30,6 +30,8 @@ namespace Hecton8.Physics
         private const int MaxSegments = MaxSupportedBendPoints + 1;
         private const int MaxAnchors = MaxSegments + 1;
         private const int BendRecheckCooldownFrames = 3;
+        private const uint KccVelocityTetherMaxAgeFrames = 12u;
+        private const float PlayerAnchorEquivalentMassKg = 80f;
         private const float MinDistance = 0.0001f;
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const float TowCableOverDampingMinimum = 1.2f;
@@ -1466,7 +1468,7 @@ namespace Hecton8.Physics
                 return TryOpenDataVaultCableBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.Physics,
@@ -1652,7 +1654,7 @@ namespace Hecton8.Physics
             }
 
             float invDt = math.rcp(math.max(fixedDeltaTime, 0.0001f));
-            float playerMass = _playerRigidbody != null ? math.max(_playerRigidbody.mass, 0.0001f) : 1f;
+            float playerMass = ResolvePlayerAnchorMassKg();
             float payloadMass = _payloadBody != null ? math.max(_payloadBody.mass, 0.0001f) : 1f;
             float internalNodeMass = math.max(_reducedMass, 0.0001f);
             for (int i = 0; i < DataVaultCablePointCount; i++)
@@ -2209,7 +2211,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = (byte)(peakTension >= snapThreshold * ReactiveVfxThreshold01 ? 3 : 1)
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<ImpactSignal>.TryPush(in signal);
             _lastTensionCreakFrame = frame;
         }
 
@@ -2246,7 +2248,7 @@ namespace Hecton8.Physics
                 Flags = (byte)(reactiveVfx01 > 0f ? 1 : 0),
                 Reserved = 0
             };
-            TetherSignals.PublishTension(in signal);
+            TetherSignals.TryPublishTension(in signal);
         }
 
         private void PublishSnapImpactSignal(Vector3 snapPosition, float peakTension, float snapSeverity)
@@ -2271,7 +2273,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = 2
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<ImpactSignal>.TryPush(in signal);
         }
 
         private void ApplyVerletEndpointForces(Vector3 anchorPosition, Vector3 payloadPosition, float peakTension)
@@ -2285,7 +2287,7 @@ namespace Hecton8.Physics
                 return;
 
             Vector3 direction = separation * math.rsqrt(math.max(distanceSq, MinVectorMagnitudeSq));
-            float rawPlayerMass = _playerRigidbody != null ? _playerRigidbody.mass : 1f;
+            float rawPlayerMass = ResolvePlayerAnchorMassKg();
             float rawPayloadMass = _payloadBody != null ? _payloadBody.mass : 1f;
             float playerMass = math.isfinite(rawPlayerMass) ? math.max(rawPlayerMass, 0.0001f) : 1f;
             float payloadMass = math.isfinite(rawPayloadMass) ? math.max(rawPayloadMass, 0.0001f) : 1f;
@@ -2297,7 +2299,7 @@ namespace Hecton8.Physics
                 return;
 
             Vector3 payloadForce = -direction * scaledForce;
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return;
 
@@ -2311,7 +2313,7 @@ namespace Hecton8.Physics
             float3 payloadForce3 = new float3(payloadForce.x, payloadForce.y, payloadForce.z);
             uint frameIndex = unchecked((uint)_currentSimulationFrameIndex);
             TetherForcePacketDTO anchorPacket = default;
-            if (!_playerRigidbody.isKinematic)
+            if (ShouldFlushPlayerAnchorForceToRigidbody())
             {
                 Vector3 reaction = -payloadForce;
                 anchorPacket = new TetherForcePacketDTO
@@ -2447,7 +2449,7 @@ namespace Hecton8.Physics
 
         private void RecalculateDampingCoefficient()
         {
-            float playerMass = _playerRigidbody != null ? math.max(_playerRigidbody.mass, 0.0001f) : 1f;
+            float playerMass = ResolvePlayerAnchorMassKg();
             float payloadMass = _payloadBody == null || _payloadBody.isKinematic || _kinematicAnchorCompensationEnabled
                 ? float.PositiveInfinity
                 : math.max(_payloadBody.mass, 0.0001f);
@@ -2586,7 +2588,9 @@ namespace Hecton8.Physics
                 else if (angularSpeedSq > maxPayloadAngularSpeedSq)
                     angularVelocity *= maxPayloadAngularSpeed * math.rsqrt(math.max(angularSpeedSq, MinVectorMagnitudeSq));
 
-                _payloadBody.angularVelocity = IsFinite(angularVelocity) ? angularVelocity : Vector3.zero;
+                PhysicsForceRouter.QueueAngularVelocitySet(
+                    _payloadBody,
+                    IsFinite(angularVelocity) ? angularVelocity : Vector3.zero);
             }
         }
 
@@ -2924,7 +2928,9 @@ namespace Hecton8.Physics
             Vector3 safeAnchorPosition = IsFinite(anchorPosition) ? anchorPosition : Vector3.zero;
             Vector3 safePayloadPosition = IsFinite(payloadPosition) ? payloadPosition : safeAnchorPosition;
             _anchorPositions[0] = safeAnchorPosition;
-            _anchorVelocities[0] = _playerRigidbody != null && IsFinite(_playerRigidbody.linearVelocity) ? _playerRigidbody.linearVelocity : Vector3.zero;
+            _anchorVelocities[0] = PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityTetherMaxAgeFrames, out Vector3 kccVelocity)
+                ? kccVelocity
+                : Vector3.zero;
             int anchorCount = 1;
 
             for (int i = 0; i < _bendPointCount; i++)
@@ -3087,7 +3093,7 @@ namespace Hecton8.Physics
             if (!TryResolveAupFromRuntimeOrigin(snapPosition, out AbsoluteUniversePosition snapAup))
                 return;
 
-            TetherSignals.PublishSnap(new TetherSnappedSignal
+            TetherSignals.TryPublishSnap(new TetherSnappedSignal
             {
                 SnapAup = snapAup,
                 TetherId = unchecked((uint)EntityId.ToULong(GetEntityId())),
@@ -3392,7 +3398,7 @@ namespace Hecton8.Physics
                 Sequence = 0u,
                 Flags = (byte)(VehicleCommandSignalFlags.ManualThrottle | VehicleCommandSignalFlags.TowLoadLimit)
             };
-            if (VehicleCommandSignalBus.Publish(in signal))
+            if (VehicleCommandSignalBus.TryPublish(in signal))
                 _lastTowLoadLimitCommandFrame = frame;
         }
 
@@ -3498,7 +3504,7 @@ namespace Hecton8.Physics
 
             Vector3 anchorVelocity = _bendPointCount > 0
                 ? Vector3.zero
-                : _playerRigidbody.GetPointVelocity(anchorPositionWS);
+                : ResolvePlayerAnchorVelocity();
             Vector3 payloadVelocity = _payloadBody.GetPointVelocity(payloadPositionWS);
             Vector3 targetPayloadPosition = constraintAnchorPosition + directionAwayFromAnchor * targetDistance;
             float safeReducedMass = math.max(_reducedMass, 0.0001f);
@@ -3537,8 +3543,7 @@ namespace Hecton8.Physics
         {
             if (_tetherClass != TetherClass.TowCable ||
                 _bendPointCount > 0 ||
-                _playerRigidbody == null ||
-                _playerRigidbody.isKinematic ||
+                _playerMotor == null ||
                 payloadForce.sqrMagnitude <= MinVectorMagnitudeSq)
             {
                 return;
@@ -3548,16 +3553,30 @@ namespace Hecton8.Physics
             if (reactionForce.sqrMagnitude <= MinVectorMagnitudeSq || !IsFinite(reactionForce))
                 return;
 
-            float playerMass = _playerRigidbody != null ? math.max(_playerRigidbody.mass, 0.0001f) : 1f;
+            float playerMass = ResolvePlayerAnchorMassKg();
             Vector3 reactionAcceleration = ClampVector(reactionForce * math.rcp(playerMass), _maxCableAcceleration);
             if (reactionAcceleration.sqrMagnitude <= MinVectorMagnitudeSq || !IsFinite(reactionAcceleration))
                 return;
 
-            PhysicsForceRouter.QueueForceAtPosition(
-                _playerRigidbody,
-                reactionAcceleration,
-                anchorPositionWS,
-                ForceMode.Acceleration);
+            _playerMotor.ApplyAcceleration(reactionAcceleration);
+        }
+
+        private static float ResolvePlayerAnchorMassKg()
+        {
+            return PlayerAnchorEquivalentMassKg;
+        }
+
+        private static Vector3 ResolvePlayerAnchorVelocity()
+        {
+            return PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityTetherMaxAgeFrames, out Vector3 velocity)
+                ? velocity
+                : Vector3.zero;
+        }
+
+        private bool ShouldFlushPlayerAnchorForceToRigidbody()
+        {
+            return _playerRigidbody != null &&
+                   (_playerMotor == null || !_playerMotor.HydrodynamicKccOwnsCollisionAuthority);
         }
 
         private void RefreshPrimaryConstraintDrive()
@@ -3762,7 +3781,7 @@ namespace Hecton8.Physics
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 

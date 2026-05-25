@@ -1,6 +1,7 @@
 using System;
 using Unity.Collections;
 
+#if UNITY_EDITOR
 namespace Hecton8.Environment.Fluids
 {
     public static class OceanPerformanceProfileCsv
@@ -190,3 +191,4 @@ namespace Hecton8.Environment.Fluids
         }
     }
 }
+#endif

@@ -1,4 +1,4 @@
-# HECTON-8 Marketing Asset Library, Naming, And Version Control
+﻿# HECTON-8 Marketing Asset Library, Naming, And Version Control
 
 Status: asset ops policy
 Owner lane: SHINOBU_81 / marketing operations
@@ -212,6 +212,20 @@ Capture handoff hold/reject codes:
 - `VIEWER_DECISION_MISSING`;
 - `HANDOFF_NEXT_ACTIONS_UNCAPPED`.
 
+Imageboard route hold/reject codes:
+
+- `BOARD_RULE_UNCHECKED`;
+- `IMAGEBOARD_SHILL_RISK`;
+- `NO_NARROW_CRITIQUE_QUESTION`;
+- `ANON_ACCESS_BAIT_RISK`;
+- `AI_SLOP_READ`;
+- `ENGINE_WAR_DERAIL_RISK`;
+- `COMPETITOR_BAIT_COPY`;
+- `CHAN_DECISION_READ_MISSING`;
+- `REPOST_SPAM_RISK`.
+
+These codes do not necessarily kill the source capture. They may kill only the imageboard route or prompt. If the same cue appears in cold-read, Reddit, Steam, creator, or playtest feedback, escalate through `Feedback/PLAYER_FEEDBACK_TAXONOMY_AND_TRIAGE.md`.
+
 ## Asset Review Ritual
 
 Before each campaign:
@@ -223,6 +237,19 @@ Before each campaign:
 5. Assign campaign/UTM.
 6. Move approved export to correct folder.
 7. Archive rejected versions.
+
+## Imageboard Route Review Ritual
+
+Before any 4chan/Dvach no-link critique post:
+
+1. Select one asset and one surface only.
+2. Confirm the asset has a real build/source path and does not live in Raw unless the post explicitly asks for raw WIP critique.
+3. Score Imageboard Readiness in `QA/MARKETING_ASSET_QA_CHECKLIST.md`.
+4. Fill the Imageboard Preflight Card.
+5. Assign one route code: `POST_CANDIDATE`, `REVISE_ASSET`, `REVISE_PROMPT`, `KILL_IMAGEBOARD_ROUTE`, or `SECURITY_HOLD`.
+6. After the thread, update the KPI imageboard row and any rejection code.
+
+Do not duplicate a capture solely to chase an imageboard argument. Revise only when the critique names a specific cue.
 
 ## Current HECTON-8 Decision
 

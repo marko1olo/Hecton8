@@ -1,0 +1,43 @@
+﻿{
+  "agent": "SHINOBU_330",
+  "allowedNotes": [
+    {
+      "file": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "line": 2433,
+      "pattern": "dry_restore_rigidbody_write",
+      "reason": "Dry restore path, not flood mass/COM/inertia authority."
+    },
+    {
+      "file": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "line": 2434,
+      "pattern": "dry_restore_rigidbody_write",
+      "reason": "Dry restore path, not flood mass/COM/inertia authority."
+    },
+    {
+      "file": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "line": 2435,
+      "pattern": "dry_restore_rigidbody_write",
+      "reason": "Dry restore path, not flood mass/COM/inertia authority."
+    }
+  ],
+  "dearLieProof": "Interior water is shader/global-buffer scalar waterline presentation; no water plane GameObject or dry-zone BuoyancyObject trigger authority is accepted.",
+  "findingCount": 0,
+  "findings": [],
+  "legacyWaterAuthorityEradicated": true,
+  "runtimeRouteProof": "SignalBus<FluidIncursionSignal> -> Vault FluidCompartmentDTO[64B] -> Burst CSR BFS -> SubmarineFloodStateSignal/PhysicsEventPayload -> AddedMassProfileDTO consumer",
+  "scanScope": [
+    "Assets/_Project/Scripts/Habitat",
+    "Assets/_Project/Scripts/Vehicles",
+    "Assets/_Project/Scripts/Physics/HabitatFluidIncursionContracts.cs",
+    "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+    "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+    "Assets/_Project/Scripts/BaseModule.cs",
+    "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+    "Assets/_Project/Scripts/BuoyancyObject.cs",
+    "Assets/_Project/Scripts/SubmarineFluidDynamics.cs"
+  ],
+  "scannedFileCount": 19,
+  "scanner": "OOP_Water_Trigger_Scanner",
+  "status": "STATIC_SOURCE",
+  "summary": "Fluid trigger water authority scan"
+}

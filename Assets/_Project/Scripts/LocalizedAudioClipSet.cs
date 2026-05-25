@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton.Localization
@@ -50,8 +51,17 @@ namespace Hecton.Localization
         /// </summary>
         public AudioClip Resolve()
         {
-            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
+            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
             return Resolve(manager);
+        }
+
+        /// <summary>
+        /// Resolve the clip through a cached localization read model.
+        /// </summary>
+        public AudioClip Resolve(ILocalizationTextReadModel manager)
+        {
+            GameLanguage language = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
+            return Resolve(language);
         }
 
         /// <summary>

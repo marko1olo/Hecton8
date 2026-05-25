@@ -1461,7 +1461,7 @@ namespace Hecton8.World
             if (!IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 
@@ -1584,12 +1584,9 @@ namespace Hecton8.World
 
         private static void TryScheduleFarUnload()
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement == null)
+            if (!TryResolveActivePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
-            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
             if (!IsFiniteAup(in playerAup))
                 return;
 
@@ -1966,12 +1963,9 @@ namespace Hecton8.World
 
         private static void BuildAcousticDensityMap(int currentFrame)
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement == null)
+            if (!TryResolveActivePlayerAup(out AbsoluteUniversePosition listenerAup))
                 return;
 
-            AbsoluteUniversePosition listenerAup = playerMovement.CurrentAup;
             if (!IsFiniteAup(in listenerAup))
                 return;
 
@@ -1996,6 +1990,30 @@ namespace Hecton8.World
                     (uint)SpatialTransientEventType.AcousticImpulse);
                 _lastAcousticDensityFrame = currentFrame;
             }
+        }
+
+        private static bool TryResolveActivePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
+            {
+                HectonPlayerMovement playerMovement = runtimeContext.PlayerMovement;
+                if (playerMovement != null)
+                {
+                    playerAup = playerMovement.CurrentAup;
+                    return true;
+                }
+
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    playerAup = movementState.PredictedAup;
+                    return true;
+                }
+            }
+
+            playerAup = default;
+            return false;
         }
 
         private static void TrackTransientSignal(

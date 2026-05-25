@@ -1,5 +1,90 @@
 using System.Runtime.InteropServices;
+using Unity.Mathematics;
 using UnityEngine.Scripting;
+
+namespace Hecton8.Core.Contracts
+{
+    /// <summary>
+    /// Acoustic-space absolute universe position used by audio propagation and voice virtualization. Size: 40 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    public struct AcousticAup
+    {
+        public const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
+
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public float3 Local;
+        [FieldOffset(36)] private uint _pad0;
+
+        public AcousticAup(long gridX, long gridY, long gridZ, float3 local)
+        {
+            GridX = gridX;
+            GridY = gridY;
+            GridZ = gridZ;
+            Local = local;
+            _pad0 = 0u;
+        }
+
+        public static float3 RelativeFloat3(in AcousticAup position, in AcousticAup origin)
+        {
+            const double maxFloatSafe = HectonPhysicsContract.AupMaxFloatSafeMeters;
+            double cellSize = CellSizeMeters;
+            double x = ((position.GridX - origin.GridX) * cellSize) + (double)position.Local.x - origin.Local.x;
+            double y = ((position.GridY - origin.GridY) * cellSize) + (double)position.Local.y - origin.Local.y;
+            double z = ((position.GridZ - origin.GridZ) * cellSize) + (double)position.Local.z - origin.Local.z;
+            return new float3(
+                (float)math.clamp(x, -maxFloatSafe, maxFloatSafe),
+                (float)math.clamp(y, -maxFloatSafe, maxFloatSafe),
+                (float)math.clamp(z, -maxFloatSafe, maxFloatSafe));
+        }
+
+        public static float DistanceMeters(in AcousticAup a, in AcousticAup b)
+        {
+            double cellSize = CellSizeMeters;
+            double x = ((a.GridX - b.GridX) * cellSize) + (double)a.Local.x - b.Local.x;
+            double y = ((a.GridY - b.GridY) * cellSize) + (double)a.Local.y - b.Local.y;
+            double z = ((a.GridZ - b.GridZ) * cellSize) + (double)a.Local.z - b.Local.z;
+            double distanceSq = x * x + y * y + z * z;
+            if (distanceSq <= 0.0 || !math.isfinite(distanceSq))
+                return 0f;
+
+            return (float)math.min(HectonPhysicsContract.AupMaxDistanceReturnMeters, math.sqrt(distanceSq));
+        }
+
+        public static bool IsFinite(in AcousticAup aup)
+        {
+            return math.all(math.isfinite(aup.Local));
+        }
+    }
+
+    /// <summary>
+    /// DSP echo tap payload produced by acoustic systems and consumed by sensory systems. Size: 144 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
+    public struct AcousticEchoTap
+    {
+        [FieldOffset(0)] public AcousticAup SourceAup;
+        [FieldOffset(40)] public AcousticAup ListenerAup;
+        [FieldOffset(80)] public float3 Position;
+        [FieldOffset(92)] public float Magnitude;
+        [FieldOffset(96)] public float Volume01;
+        [FieldOffset(100)] public float DelaySeconds;
+        [FieldOffset(104)] public float LowPassCutoffHz;
+        [FieldOffset(108)] public float Rt60Seconds;
+        [FieldOffset(112)] public uint SoundHash;
+        [FieldOffset(116)] public uint SourceId;
+        [FieldOffset(120)] public uint ClipHash;
+        [FieldOffset(124)] public byte Flags;
+        [FieldOffset(125)] public byte QualityTier;
+        [FieldOffset(126)] private ushort _reserved0;
+        [FieldOffset(128)] private uint _reserved1;
+        [FieldOffset(132)] private uint _reserved2;
+        [FieldOffset(136)] private uint _reserved3;
+        [FieldOffset(140)] private uint _reserved4;
+    }
+}
 
 namespace Hecton8.Core.Contracts.Signals
 {
@@ -56,6 +141,25 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(25)] private byte _pad0;
         [FieldOffset(26)] private ushort _pad1;
         [FieldOffset(28)] private uint _pad2;
+    }
+
+    /// <summary>Clustered habitat structural warning lane for localized audio, visor, panic, and power-light cues. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct BaseStructuralWarningSignal : ISignal
+    {
+        public const uint LaneHash = 0x42535744u; // BSWD
+        public const uint FlagRedAlert = 1u << 0;
+        public const uint FlagNonFinite = 1u << 1;
+        public const uint FlagThrottled = 1u << 2;
+        public const uint FlagHypoxiaPanicCandidate = 1u << 3;
+
+        [FieldOffset(0)] public Hecton8.Core.Contracts.AcousticAup EpicenterAup;
+        [FieldOffset(40)] public uint BaseHash;
+        [FieldOffset(44)] public uint Frame;
+        [FieldOffset(48)] public float HighestStress01;
+        [FieldOffset(52)] public float AudioIntensity01;
+        [FieldOffset(56)] public float PanicScalar01;
+        [FieldOffset(60)] public uint CriticalFlags;
     }
 
     /// <summary>
@@ -341,6 +445,11 @@ namespace Hecton8.Core.Contracts
         public const byte DynamicMusicScalarSignal = 128;
         public const byte PlayerRespawnSignal = 129;
         public const byte SystemKillSwitchBitsSignal = 130;
+        public const byte BaseStructuralWarningSignal = 131;
+        public const byte ItemLifecycleSignal = 132;
+        public const byte ProgressionMetaSignal = 133;
+        public const byte SessionLifecycleSignal = 134;
+        public const uint BaseStructuralWarningSignalStableHash = 0x42535744u;
         public const uint PlayerRespawnSignalStableHash = 0x5253504Eu;
         public const uint ScalabilityChangedEventStableHash = 0x53434C54u;
         public const uint SystemKillSwitchBitsSignalStableHash = 0x4B534257u;

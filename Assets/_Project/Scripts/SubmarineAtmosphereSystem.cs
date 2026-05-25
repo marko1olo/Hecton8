@@ -220,7 +220,10 @@ namespace Hecton8.Atmosphere
                     return;
 
                 if (!_pendingEvents.TryDequeue(out HighPressureEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -244,12 +247,18 @@ namespace Hecton8.Atmosphere
         }
 
         /// <summary>Emits a high-pressure warning payload.</summary>
+        [System.Obsolete("Use TryNotify(in HighPressureEvent) so bounded queue rejection stays visible at the producer.", true)]
         public static void Notify(in HighPressureEvent pressureEvent)
         {
-            if (_listenerCount <= 0)
-                return;
+            TryNotify(in pressureEvent);
+        }
 
-            Enqueue(new HighPressureEventPayload
+        public static bool TryNotify(in HighPressureEvent pressureEvent)
+        {
+            if (_listenerCount <= 0)
+                return false;
+
+            return Enqueue(new HighPressureEventPayload
             {
                 RuntimePosition = pressureEvent.RuntimePosition,
                 PressureAKPa = pressureEvent.PressureAKPa,
@@ -540,7 +549,10 @@ namespace Hecton8.Atmosphere
                     return;
 
                 if (!_pendingEvents.TryDequeue(out FatalPressureImplosionEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -563,12 +575,18 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        [System.Obsolete("Use TryNotify(in FatalPressureImplosionEvent) so bounded queue rejection stays visible at the producer.", true)]
         public static void Notify(in FatalPressureImplosionEvent implosionEvent)
         {
-            if (_listenerCount <= 0)
-                return;
+            TryNotify(in implosionEvent);
+        }
 
-            Enqueue(new FatalPressureImplosionEventPayload
+        public static bool TryNotify(in FatalPressureImplosionEvent implosionEvent)
+        {
+            if (_listenerCount <= 0)
+                return false;
+
+            return Enqueue(new FatalPressureImplosionEventPayload
             {
                 RuntimePosition = implosionEvent.RuntimePosition,
                 TemperatureCelsius = implosionEvent.TemperatureCelsius,
@@ -730,7 +748,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineFluidDynamics))]
     [AddComponentMenu("Hecton/Atmosphere/Submarine Atmosphere System")]
-    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IPostFixedTickable, IInteractionSignalConsumer, IGlobalRegistryHotSwapListener
+    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IInteractionSignalConsumer, IGlobalRegistryHotSwapListener
     {
         private const int RoomCapacity = 8;
         private const int DoorCapacity = 7;
@@ -1499,6 +1517,7 @@ namespace Hecton8.Atmosphere
         private IPlayerSensoryService _playerSensoryService;
         private IAudioService _audioService;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private bool _topologySeeded;
         private bool _thermalEmittersSeeded;
@@ -1543,8 +1562,8 @@ namespace Hecton8.Atmosphere
         private NativeArray<int2> _doorPairs;
         private NativeArray<byte> _doorSealed;
         private NativeArray<byte> _doorSealedPrevious;
-        // COLD ALLOC: Collider[32] - one-shot non-alloc bulkhead blowout overlap buffer - owner: SubmarineAtmosphereSystem
-        private readonly Collider[] _pressureImpulseOverlapBuffer = new Collider[PressureImpulseOverlapCapacity];
+        // COLD ALLOC: SpatialQueryHit[32] - registered bulkhead blowout contact scratch - owner: SubmarineAtmosphereSystem
+        private readonly SpatialQueryHit[] _pressureImpulseContacts = new SpatialQueryHit[PressureImpulseOverlapCapacity];
         // COLD ALLOC: Rigidbody[32] - unique-body scratch for pressure blowout dispatch - owner: SubmarineAtmosphereSystem
         private readonly Rigidbody[] _pressureImpulseBodyBuffer = new Rigidbody[PressureImpulseOverlapCapacity];
         // COLD ALLOC: float[32] - precomputed pressure blowout falloff per unique body - owner: SubmarineAtmosphereSystem
@@ -1589,6 +1608,7 @@ namespace Hecton8.Atmosphere
         private int _fabricatorHeatEmitterCount;
         private int _drillHeatEmitterCount;
         private int _reactorHeatEmitterCount;
+        private int _droppedSignalCount;
         private float _atmosphereStepAccumulator;
         private float _lowOxygenAudioCooldownRemaining;
         private float _pressureScreechCooldownRemaining;
@@ -1600,8 +1620,29 @@ namespace Hecton8.Atmosphere
         private bool _smokeOverlayRuntimeDirty = true;
         private Vector4 _lastSmokeOverlayParams;
         private Vector4 _lastSmokeOverlayCenter = AtmosphereSootDefaultCenter;
+        private bool _pendingLowOxygenAudioLog;
+        private bool _pendingToxicRoomVisorPulse;
+        private bool _pendingPressureScreech;
+        private bool _pendingRoomOxygenHudDirty;
+        private bool _pendingRoomOxygenHudHasValue;
+        private bool _pendingSmokeOverlayRuntimeDirty;
+        private bool _pendingSmokeOverlayActive;
+        private float _pendingToxicRoomVisorDanger01;
+        private float _pendingRoomOxygenHud01;
+        private AudioClip _pendingPressureScreechClip;
+        private Vector3 _pendingPressureScreechPosition;
+        private float _pendingPressureScreechVolume;
+        private float _pendingPressureScreechPitch;
+        private Vector4 _pendingSmokeOverlayParams;
+        private Vector4 _pendingSmokeOverlayCenter;
+        private uint _pendingOverheatApplyMask;
+        private uint _pendingOverheatResetMask;
+        private readonly float[] _pendingOverheatVoltages = new float[RoomCapacity];
 
         public int RoomCount => fluidDynamics != null ? math.clamp(fluidDynamics.CompartmentCount, 0, RoomCapacity) : 0;
+
+        /// <summary>Signals refused by bounded pressure/event lanes since this runtime was enabled.</summary>
+        public int DroppedSignalCount => _droppedSignalCount;
 
         internal uint RuntimeRoomStatusMask => _runtimeRoomStatusMask;
 
@@ -2278,6 +2319,7 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
+            _droppedSignalCount = 0;
             CacheReferencesCold();
             EnsureNativeState();
             if (_roomVolumes.IsCreated)
@@ -2373,6 +2415,11 @@ namespace Hecton8.Atmosphere
         public void PostFixedTick(float fixedDeltaTime)
         {
             ConsumeCompletedJob(fixedDeltaTime);
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedAtmospherePresentation();
         }
 
         private void ApplyAbyssalBlackoutFreeze(float fixedDeltaTime)
@@ -2697,9 +2744,9 @@ namespace Hecton8.Atmosphere
             {
                 float roomOxygen01 = oxygenValue / tankCapacity;
                 if (math.isfinite(roomOxygen01))
-                    UIStateStore.WriteValue(UIValueSlotId.RoomOxygen01, math.saturate(roomOxygen01), Time.unscaledTime);
+                    QueueOccupiedRoomOxygenHud(true, math.saturate(roomOxygen01));
                 else
-                    UIStateStore.ClearValue(UIValueSlotId.RoomOxygen01);
+                    QueueOccupiedRoomOxygenHud(false, 0f);
             }
 
             Vector3 worldCenter = default;
@@ -2718,14 +2765,14 @@ namespace Hecton8.Atmosphere
             }
 
             if (pressureStatus)
-                TryPlayPressureScreech(roomIndex, hasBounds ? worldCenter : ResolveSubmarineFallbackRuntimePosition());
+                QueuePressureScreech(roomIndex, hasBounds ? worldCenter : ResolveSubmarineFallbackRuntimePosition());
 
             float roomTemperature = _temperatureFront.IsCreated ? GetRoomTemperatureCelsius(roomIndex) : FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
             if (_temperatureFront.IsCreated &&
                 (roomTemperature > FiniteOr(overheatBrownoutTemperatureCelsius, DefaultOverheatBrownoutTemperatureCelsius) ||
                  (_overheatVisualActiveMask & roomBit) != 0u))
             {
-                ApplyOverheatVoltageFake(roomIndex, ResolveModuleForRoom(roomIndex));
+                QueueOverheatVoltageFake(roomIndex, ResolveModuleForRoom(roomIndex));
             }
         }
 
@@ -2848,11 +2895,11 @@ namespace Hecton8.Atmosphere
 
         private void CacheReferencesCold()
         {
-            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
             _powerGridService = GlobalRegistry.PowerGrid;
             _audioLogs = GlobalRegistry.AudioLogs;
             _playerSensoryService = GlobalRegistry.PlayerSensory;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
             CacheReferencesFromCache();
         }
@@ -2964,8 +3011,8 @@ namespace Hecton8.Atmosphere
                 if (toxicRoom && playerOccupied)
                 {
                     if (lowOxygen)
-                        TryPlayLowOxygenGaspingAudioLog();
-                    TryPulseToxicRoomVisor(toxicityDanger01);
+                        QueueLowOxygenGaspingAudioLog();
+                    QueueToxicRoomVisorPulse(toxicityDanger01);
                 }
 
                 BaseModule roomModule = ResolveModuleForRoom(roomIndex);
@@ -3002,31 +3049,32 @@ namespace Hecton8.Atmosphere
                 }
 
                 if (pressureStatus)
-                    TryPlayPressureScreech(roomIndex, hasBounds ? worldCenter : ResolveRoomRuntimePosition(roomIndex));
+                    QueuePressureScreech(roomIndex, hasBounds ? worldCenter : ResolveRoomRuntimePosition(roomIndex));
 
-                ApplyOverheatVoltageFake(roomIndex, roomModule);
+                QueueOverheatVoltageFake(roomIndex, roomModule);
             }
 
-            PublishOccupiedRoomOxygenHud(hasOccupiedRoomOxygen, occupiedRoomOxygen01);
+            QueueOccupiedRoomOxygenHud(hasOccupiedRoomOxygen, occupiedRoomOxygen01);
             _runtimeRoomStatusMask = runtimeStatusMask;
-            PublishSmokeOverlayRuntimeState(smokeOverlayActive, in smokeOverlayParams, in smokeOverlayCenter);
+            QueueSmokeOverlayRuntimeState(smokeOverlayActive, in smokeOverlayParams, in smokeOverlayCenter);
         }
 
-        private static void PublishOccupiedRoomOxygenHud(bool hasOccupiedRoomOxygen, float oxygen01)
+        private void QueueOccupiedRoomOxygenHud(bool hasOccupiedRoomOxygen, float oxygen01)
         {
-            if (!hasOccupiedRoomOxygen)
+            _pendingRoomOxygenHudDirty = true;
+            _pendingRoomOxygenHudHasValue = hasOccupiedRoomOxygen && math.isfinite(oxygen01);
+            _pendingRoomOxygenHud01 = _pendingRoomOxygenHudHasValue ? math.saturate(oxygen01) : 0f;
+        }
+
+        private void PublishQueuedOccupiedRoomOxygenHud()
+        {
+            if (!_pendingRoomOxygenHudHasValue)
             {
                 UIStateStore.ClearValue(UIValueSlotId.RoomOxygen01);
                 return;
             }
 
-            if (!math.isfinite(oxygen01))
-            {
-                UIStateStore.ClearValue(UIValueSlotId.RoomOxygen01);
-                return;
-            }
-
-            UIStateStore.WriteValue(UIValueSlotId.RoomOxygen01, math.saturate(oxygen01), Time.unscaledTime);
+            UIStateStore.WriteValue(UIValueSlotId.RoomOxygen01, _pendingRoomOxygenHud01, Time.unscaledTime);
         }
 
         private void ClearAtmosphereFakes()
@@ -3043,8 +3091,8 @@ namespace Hecton8.Atmosphere
             _lowOxygenAudioCooldownRemaining = 0f;
             _pressureScreechCooldownRemaining = 0f;
             _toxicRoomVisorPulseCooldownRemaining = 0f;
-            UIStateStore.ClearValue(UIValueSlotId.RoomOxygen01);
-            PublishSmokeOverlayRuntimeState(false, default, default);
+            QueueOccupiedRoomOxygenHud(false, 0f);
+            QueueSmokeOverlayRuntimeState(false, default, default);
             ClearRoomModuleCache();
             ClearBrownoutRoomModuleCache();
         }
@@ -3117,7 +3165,7 @@ namespace Hecton8.Atmosphere
             _fireSmokeHazardActiveMask &= ~roomBit;
         }
 
-        private void TryPlayLowOxygenGaspingAudioLog()
+        private void QueueLowOxygenGaspingAudioLog()
         {
             if (_lowOxygenAudioCooldownRemaining > 0f)
                 return;
@@ -3135,39 +3183,22 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            audioLogs.PlayLog(lowOxygenGaspingAudioLog);
+            _pendingLowOxygenAudioLog = true;
             _lowOxygenAudioCooldownRemaining = FiniteNonNegativeOrZero(lowOxygenAudioCooldownSeconds);
         }
 
-        private void TryPulseToxicRoomVisor(float oxygenDanger01)
+        private void QueueToxicRoomVisorPulse(float oxygenDanger01)
         {
             if (_toxicRoomVisorPulseCooldownRemaining > 0f)
                 return;
 
-            IPlayerSensoryService sensoryService = _playerSensoryService;
-            VisorHUDController visorController = sensoryService != null ? sensoryService.VisorController : null;
-            if (visorController == null)
-            {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                visorController = playerContext != null ? playerContext.VisorController : null;
-            }
-
-            if (visorController == null)
-            {
-                _toxicRoomVisorPulseCooldownRemaining = FiniteNonNegativeOrZero(toxicRoomVisorPulseCooldownSeconds);
-                return;
-            }
-
             float intensity = math.saturate(oxygenDanger01);
-            visorController.GlitchPulse(DefaultToxicRoomVisorGlitchDurationSeconds + (intensity * 0.08f));
-            visorController.TriggerEnvironmentalDistortion(
-                math.saturate(0.24f + (intensity * 0.48f)),
-                DefaultToxicRoomVisorDistortionHoldSeconds,
-                DefaultToxicRoomVisorDistortionRecovery);
+            _pendingToxicRoomVisorDanger01 = math.max(_pendingToxicRoomVisorDanger01, intensity);
+            _pendingToxicRoomVisorPulse = true;
             _toxicRoomVisorPulseCooldownRemaining = FiniteNonNegativeOrZero(toxicRoomVisorPulseCooldownSeconds);
         }
 
-        private void TryPlayPressureScreech(int roomIndex, Vector3 worldCenter)
+        private void QueuePressureScreech(int roomIndex, Vector3 worldCenter)
         {
             if (_pressureScreechCooldownRemaining > 0f)
                 return;
@@ -3175,13 +3206,6 @@ namespace Hecton8.Atmosphere
             AudioClip[] clips = pressureScreechClips;
             int clipCount = clips != null ? clips.Length : 0;
             if (clipCount <= 0)
-            {
-                _pressureScreechCooldownRemaining = FiniteNonNegativeOrZero(pressureScreechCooldownSeconds);
-                return;
-            }
-
-            IAudioService audioService = _audioService;
-            if (audioService == null)
             {
                 _pressureScreechCooldownRemaining = FiniteNonNegativeOrZero(pressureScreechCooldownSeconds);
                 return;
@@ -3215,7 +3239,11 @@ namespace Hecton8.Atmosphere
             float minPitch = math.min(FiniteOr(pressureScreechPitchMin, DefaultPressureScreechPitchMin), FiniteOr(pressureScreechPitchMax, DefaultPressureScreechPitchMax));
             float maxPitch = math.max(FiniteOr(pressureScreechPitchMin, DefaultPressureScreechPitchMin), FiniteOr(pressureScreechPitchMax, DefaultPressureScreechPitchMax));
             float pitchT = (NextPressureScreechRandom() & 0x00FFFFFFu) * (1f / 16777215f);
-            audioService.PlayAtPoint(clip, worldCenter, resolvedVolume, math.lerp(minPitch, maxPitch, pitchT));
+            _pendingPressureScreechClip = clip;
+            _pendingPressureScreechPosition = worldCenter;
+            _pendingPressureScreechVolume = resolvedVolume;
+            _pendingPressureScreechPitch = math.lerp(minPitch, maxPitch, pitchT);
+            _pendingPressureScreech = true;
             _pressureScreechCooldownRemaining = FiniteNonNegativeOrZero(pressureScreechCooldownSeconds);
         }
 
@@ -3274,6 +3302,14 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
+        private void QueueSmokeOverlayRuntimeState(bool active, in Vector4 smokeOverlayParams, in Vector4 smokeOverlayCenter)
+        {
+            _pendingSmokeOverlayRuntimeDirty = true;
+            _pendingSmokeOverlayActive = active;
+            _pendingSmokeOverlayParams = smokeOverlayParams;
+            _pendingSmokeOverlayCenter = smokeOverlayCenter;
+        }
+
         private void PublishSmokeOverlayRuntimeState(bool active, in Vector4 smokeOverlayParams, in Vector4 smokeOverlayCenter)
         {
             if (!active)
@@ -3302,6 +3338,116 @@ namespace Hecton8.Atmosphere
             _lastSmokeOverlayCenter = smokeOverlayCenter;
             _smokeOverlayRuntimeActive = true;
             _smokeOverlayRuntimeDirty = false;
+        }
+
+        private void FlushQueuedAtmospherePresentation()
+        {
+            if (_pendingRoomOxygenHudDirty)
+            {
+                _pendingRoomOxygenHudDirty = false;
+                PublishQueuedOccupiedRoomOxygenHud();
+            }
+
+            if (_pendingSmokeOverlayRuntimeDirty)
+            {
+                _pendingSmokeOverlayRuntimeDirty = false;
+                PublishSmokeOverlayRuntimeState(
+                    _pendingSmokeOverlayActive,
+                    in _pendingSmokeOverlayParams,
+                    in _pendingSmokeOverlayCenter);
+            }
+
+            FlushQueuedOverheatVisuals();
+            FlushQueuedAtmosphereAudio();
+            FlushQueuedAtmosphereVisorPulse();
+        }
+
+        private void FlushQueuedOverheatVisuals()
+        {
+            uint applyMask = _pendingOverheatApplyMask;
+            _pendingOverheatApplyMask = 0u;
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+            {
+                uint roomBit = 1u << roomIndex;
+                if ((applyMask & roomBit) == 0u)
+                    continue;
+
+                BaseModule module = _atmosphereRoomModules[roomIndex];
+                if (module == null)
+                    continue;
+
+                module.SetAmbientPowerVisualState(true, math.saturate(_pendingOverheatVoltages[roomIndex]));
+                _overheatVisualActiveMask |= roomBit;
+            }
+
+            uint resetMask = _pendingOverheatResetMask;
+            _pendingOverheatResetMask = 0u;
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+            {
+                uint roomBit = 1u << roomIndex;
+                if ((resetMask & roomBit) == 0u || (_overheatVisualActiveMask & roomBit) == 0u)
+                    continue;
+
+                BaseModule module = _atmosphereRoomModules[roomIndex];
+                if (module != null)
+                {
+                    bool powerBrownout = module.CachedPowerSupplyRatio < math.saturate(FiniteOr(brownoutOxygenSupplyRatioThreshold, DefaultBrownoutOxygenSupplyRatioThreshold));
+                    module.SetAmbientPowerVisualState(powerBrownout, powerBrownout ? module.CachedPowerSupplyRatio : 1f);
+                }
+
+                _overheatVisualActiveMask &= ~roomBit;
+            }
+        }
+
+        private void FlushQueuedAtmosphereAudio()
+        {
+            if (_pendingLowOxygenAudioLog)
+            {
+                _pendingLowOxygenAudioLog = false;
+                AudioLogSystem audioLogs = _audioLogs;
+                if (audioLogs != null && lowOxygenGaspingAudioLog != null)
+                    audioLogs.PlayLog(lowOxygenGaspingAudioLog);
+            }
+
+            if (!_pendingPressureScreech)
+                return;
+
+            _pendingPressureScreech = false;
+            IAudioService audioService = _audioService;
+            if (audioService != null && _pendingPressureScreechClip != null)
+            {
+                audioService.PlayAtPoint(
+                    _pendingPressureScreechClip,
+                    _pendingPressureScreechPosition,
+                    _pendingPressureScreechVolume,
+                    _pendingPressureScreechPitch);
+            }
+        }
+
+        private void FlushQueuedAtmosphereVisorPulse()
+        {
+            if (!_pendingToxicRoomVisorPulse)
+                return;
+
+            _pendingToxicRoomVisorPulse = false;
+            float intensity = math.saturate(_pendingToxicRoomVisorDanger01);
+            _pendingToxicRoomVisorDanger01 = 0f;
+            IPlayerSensoryService sensoryService = _playerSensoryService;
+            VisorHUDController visorController = sensoryService != null ? sensoryService.VisorController : null;
+            if (visorController == null)
+            {
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                visorController = playerContext != null ? playerContext.VisorController : null;
+            }
+
+            if (visorController == null)
+                return;
+
+            visorController.GlitchPulse(DefaultToxicRoomVisorGlitchDurationSeconds + (intensity * 0.08f));
+            visorController.TriggerEnvironmentalDistortion(
+                math.saturate(0.24f + (intensity * 0.48f)),
+                DefaultToxicRoomVisorDistortionHoldSeconds,
+                DefaultToxicRoomVisorDistortionRecovery);
         }
 
         private uint NextPressureScreechRandom()
@@ -3346,7 +3492,7 @@ namespace Hecton8.Atmosphere
             return value > 0f && math.isfinite(value);
         }
 
-        private void ApplyOverheatVoltageFake(int roomIndex, BaseModule roomModule)
+        private void QueueOverheatVoltageFake(int roomIndex, BaseModule roomModule)
         {
             if (roomIndex < 0 || roomIndex >= RoomCapacity || !_temperatureFront.IsCreated)
                 return;
@@ -3362,8 +3508,11 @@ namespace Hecton8.Atmosphere
 
             float heat01 = math.saturate((temperature - threshold) / math.max(1f, maximumTemperature - threshold));
             float voltage = math.lerp(1f, math.saturate(FiniteOr(overheatMinimumVoltage, DefaultOverheatMinimumVoltage)), math.saturate(heat01));
-            roomModule.SetAmbientPowerVisualState(true, voltage);
-            _overheatVisualActiveMask |= 1u << roomIndex;
+            _atmosphereRoomModules[roomIndex] = roomModule;
+            _pendingOverheatVoltages[roomIndex] = voltage;
+            uint roomBit = 1u << roomIndex;
+            _pendingOverheatApplyMask |= roomBit;
+            _pendingOverheatResetMask &= ~roomBit;
         }
 
         private void ResetOverheatVisual(int roomIndex)
@@ -3372,17 +3521,11 @@ namespace Hecton8.Atmosphere
                 return;
 
             uint roomBit = 1u << roomIndex;
-            if ((_overheatVisualActiveMask & roomBit) == 0u)
+            if (((_overheatVisualActiveMask | _pendingOverheatApplyMask) & roomBit) == 0u)
                 return;
 
-            BaseModule module = _atmosphereRoomModules[roomIndex];
-            if (module != null)
-            {
-                bool powerBrownout = module.CachedPowerSupplyRatio < math.saturate(FiniteOr(brownoutOxygenSupplyRatioThreshold, DefaultBrownoutOxygenSupplyRatioThreshold));
-                module.SetAmbientPowerVisualState(powerBrownout, powerBrownout ? module.CachedPowerSupplyRatio : 1f);
-            }
-
-            _overheatVisualActiveMask &= ~roomBit;
+            _pendingOverheatApplyMask &= ~roomBit;
+            _pendingOverheatResetMask |= roomBit;
         }
 
         private BaseModule ResolveModuleForRoom(int roomIndex)
@@ -3429,15 +3572,19 @@ namespace Hecton8.Atmosphere
 
             bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
-            if (!fixedRegistered || !postFixedRegistered)
+            bool lateRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!fixedRegistered || !postFixedRegistered || !lateRegistered)
             {
                 if (fixedRegistered)
                     GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
                 if (postFixedRegistered)
                     GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                if (lateRegistered)
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 return;
             }
 
+            _lateFrameRegistered = lateRegistered;
             _registered = true;
         }
 
@@ -3448,6 +3595,11 @@ namespace Hecton8.Atmosphere
 
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
             _registered = false;
         }
 
@@ -3886,7 +4038,8 @@ namespace Hecton8.Atmosphere
             if (emitter == null)
                 return -1;
 
-            BaseModule hostModule = emitter.GetComponentInParent<BaseModule>();
+            if (!emitter.TryGetComponent(out BaseModule hostModule))
+                hostModule = emitter.GetComponentInParent<BaseModule>();
             if (hostModule != null)
             {
                 int roomCount = math.min(RoomCount, RoomCapacity);
@@ -4084,7 +4237,7 @@ namespace Hecton8.Atmosphere
             if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -4237,7 +4390,8 @@ namespace Hecton8.Atmosphere
                     pressureA,
                     pressureB,
                     ResolveDoorRuntimePosition(pair.x, pair.y));
-                HighPressureEvents.Notify(in pressureEvent);
+                if (!HighPressureEvents.TryNotify(in pressureEvent))
+                    IncrementDroppedSignalCount();
                 EmitPressureBlowout(doorIndex, pair.x, pair.y, pressureA, pressureB, pressureEvent.RuntimePosition);
             }
         }
@@ -4290,8 +4444,15 @@ namespace Hecton8.Atmosphere
                 direction * forceMagnitudeNewtons,
                 direction * impulseMagnitude,
                 math.max(0.25f, FiniteOr(pressureImpulseRadiusMeters, DefaultPressureImpulseRadiusMeters)));
-            PhysicsEventBus.NotifyPressureImpulse(in pressureImpulseEvent);
+            if (!PhysicsEventBus.TryNotifyPressureImpulse(in pressureImpulseEvent))
+                IncrementDroppedSignalCount();
             ApplyPressureBlowoutImpulse(in pressureImpulseEvent);
+        }
+
+        private void IncrementDroppedSignalCount()
+        {
+            if (_droppedSignalCount < 0x3FFFFFFF)
+                _droppedSignalCount++;
         }
 
         private Vector3 ResolveDoorFlowDirection(int roomA, int roomB, float pressureA, float pressureB)
@@ -4309,12 +4470,18 @@ namespace Hecton8.Atmosphere
         private void ApplyPressureBlowoutImpulse(in PressureImpulseEvent pressureImpulseEvent)
         {
             float radius = math.max(0.25f, FiniteOr(pressureImpulseEvent.InfluenceRadiusMeters, DefaultPressureImpulseRadiusMeters));
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+            const SpatialTargetKind kindMask =
+                SpatialTargetKind.Resource |
+                SpatialTargetKind.Bioform |
+                SpatialTargetKind.Pickup |
+                SpatialTargetKind.Scannable |
+                SpatialTargetKind.Module;
+
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 pressureImpulseEvent.RuntimePosition,
                 radius,
-                _pressureImpulseOverlapBuffer,
-                pressureImpulseLayers,
-                QueryTriggerInteraction.Ignore);
+                kindMask,
+                _pressureImpulseContacts);
             if (hitCount <= 0)
                 return;
 
@@ -4323,12 +4490,12 @@ namespace Hecton8.Atmosphere
             int uniqueBodyCount = 0;
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
-                Collider collider = _pressureImpulseOverlapBuffer[hitIndex];
-                _pressureImpulseOverlapBuffer[hitIndex] = null;
-                if (collider == null)
+                SpatialQueryHit hit = _pressureImpulseContacts[hitIndex];
+                _pressureImpulseContacts[hitIndex] = default;
+                if (!LayerMatchesMask(hit.Layer, pressureImpulseLayers))
                     continue;
 
-                Rigidbody body = collider.attachedRigidbody;
+                Rigidbody body = hit.Rigidbody;
                 if (body == null || body.isKinematic || body == _submarineBody)
                     continue;
 
@@ -4381,6 +4548,11 @@ namespace Hecton8.Atmosphere
                 Vector3 impulse = direction * (impulseMagnitude * falloff);
                 PhysicsForceRouter.QueueForce(body, impulse, ForceMode.Impulse);
             }
+        }
+
+        private static bool LayerMatchesMask(int layer, LayerMask mask)
+        {
+            return layer >= 0 && layer < 32 && (mask.value & (1 << layer)) != 0;
         }
 
         private static Vector3 ResolveFakeBlastDirection(Vector3 centerDirection, float upwardBias)
@@ -4599,6 +4771,7 @@ namespace Hecton8.Atmosphere
         {
             ClearBoilingFloodHazards();
             ClearAtmosphereFakes();
+            FlushQueuedAtmospherePresentation();
             UnregisterNativeState();
             JobHandle dependency = _atmosphereJobRunning ? _atmosphereJobHandle : default;
             _atmosphereJobRunning = false;
@@ -4971,9 +5144,138 @@ namespace Hecton8.Atmosphere
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
                 SpatialQueryHit hit = _boilingFaunaContacts[hitIndex];
-                if (hit.Owner is FaunaBrain faunaBrain)
-                    faunaBrain.TakeDamage(damageAmount);
+                if (hit.Owner is FaunaBrain faunaBrain &&
+                    !TryQueueBoilingFaunaDamage(faunaBrain, in hit, worldCenter, damageAmount))
+                {
+                    ApplyBoilingFaunaOwnerFallbackDamage(faunaBrain, in hit, worldCenter, damageAmount);
+                }
             }
+        }
+
+        private bool TryQueueBoilingFaunaDamage(
+            FaunaBrain faunaBrain,
+            in SpatialQueryHit hit,
+            Vector3 hazardCenter,
+            float damageAmount)
+        {
+            if (faunaBrain == null || !(damageAmount > 0f) || !math.isfinite(damageAmount))
+                return false;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(faunaBrain.gameObject);
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return false;
+
+            Transform faunaTransform = faunaBrain.transform;
+            Vector3 impactPoint = ResolveFinitePoint(hit.Position, faunaTransform != null ? faunaTransform.position : hazardCenter);
+            float3 direction = ResolveBoilingDamageDirection(hazardCenter, impactPoint);
+            CombatDamageRequest signal = new CombatDamageRequest
+            {
+                TargetId = targetId,
+                SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,
+                Amount = damageAmount,
+                ImpulseMagnitude = 0f,
+                Direction = direction,
+                PackedMeta = CombatDamageRuntime.PackSignalMeta(
+                    CombatDamageTypes.Thermal,
+                    CombatStatusBits.Burning,
+                    CombatWeakspotTier.None)
+            };
+
+            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
+            {
+                LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),
+                ArmorNormal = -direction,
+                LocalTemperatureCelsius = 100f,
+                StatusDurationSeconds = 0.5f
+            };
+
+            TryResolveImpactAup(in hit, impactPoint, out double3 impactAup);
+            CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);
+            return true;
+        }
+
+        private void ApplyBoilingFaunaOwnerFallbackDamage(
+            FaunaBrain faunaBrain,
+            in SpatialQueryHit hit,
+            Vector3 hazardCenter,
+            float damageAmount)
+        {
+            if (faunaBrain == null || !(damageAmount > 0f) || !math.isfinite(damageAmount))
+                return;
+
+            Transform faunaTransform = faunaBrain.transform;
+            Vector3 impactPoint = ResolveFinitePoint(hit.Position, faunaTransform != null ? faunaTransform.position : hazardCenter);
+            DamagePacket packet = new DamagePacket
+            {
+                Channel = DamageChannel.Integrity,
+                PreviousValue = 0f,
+                NextValue = 0f,
+                Magnitude = damageAmount,
+                LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),
+                DamageType = CombatDamageTypes.Thermal,
+                IntegrityDelta = 0,
+                Depth = 0f,
+                SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,
+                TraumaLevel = 0
+            };
+            faunaBrain.ReceiveDamage(in packet);
+        }
+
+        private static Vector3 ResolveFinitePoint(Vector3 candidate, Vector3 fallback)
+        {
+            if (math.isfinite(candidate.x) && math.isfinite(candidate.y) && math.isfinite(candidate.z))
+                return candidate;
+
+            return math.isfinite(fallback.x) && math.isfinite(fallback.y) && math.isfinite(fallback.z)
+                ? fallback
+                : Vector3.zero;
+        }
+
+        private static float3 ResolveBoilingDamageDirection(Vector3 hazardCenter, Vector3 impactPoint)
+        {
+            Vector3 offset = impactPoint - hazardCenter;
+            float3 direction = new float3(offset.x, offset.y, offset.z);
+            return math.normalizesafe(direction, new float3(0f, 1f, 0f));
+        }
+
+        private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)
+        {
+            if (targetTransform == null ||
+                !math.isfinite(impactPoint.x) ||
+                !math.isfinite(impactPoint.y) ||
+                !math.isfinite(impactPoint.z))
+            {
+                return float3.zero;
+            }
+
+            Vector3 localPoint = targetTransform.InverseTransformPoint(impactPoint);
+            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
+            return math.all(math.isfinite(localPoint3)) ? localPoint3 : float3.zero;
+        }
+
+        private static bool TryResolveImpactAup(in SpatialQueryHit hit, Vector3 impactPoint, out double3 impactAup)
+        {
+            impactAup = double3.zero;
+            AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
+            if (hit.HasAbsolutePosition && AbsoluteUniversePosition.IsFinite(in hitAup))
+            {
+                double3 resolvedHitAup = hitAup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(resolvedHitAup)))
+                {
+                    impactAup = resolvedHitAup;
+                    return true;
+                }
+            }
+
+            if (!TryResolveAupFromRuntimeOrigin(impactPoint, out AbsoluteUniversePosition pointAup))
+                return false;
+
+            double3 resolvedPointAup = pointAup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(resolvedPointAup)))
+                return false;
+
+            impactAup = resolvedPointAup;
+            return true;
         }
 
         private int ResolveNearestRoomIndex(Vector3 worldPosition)

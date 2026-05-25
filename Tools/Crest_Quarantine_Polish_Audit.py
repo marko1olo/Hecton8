@@ -160,6 +160,38 @@ def main() -> int:
         not active_waveharmonic_lscache and len(archived_waveharmonic_lscache) >= 7,
         "Root C# Dev Kit lscache files for quarantined WaveHarmonic Crest projects are archived outside active MSBuild/IDE visibility.",
     )
+    active_stale_root_lscache = []
+    for path in sorted(ROOT.glob("*.csproj.lscache")):
+        text = path.read_text(encoding="utf-8-sig", errors="replace")
+        if (
+            "WaveHarmonic.Crest" in text
+            or "Packages/com.waveharmonic.crest" in text
+            or "Packages\\com.waveharmonic.crest" in text
+            or "CrestMigration" in text
+        ):
+            active_stale_root_lscache.append(path.name)
+    archived_stale_root_lscache = sorted(
+        path.name
+        for path in (ROOT / "Docs/Archive/Crest_Version_Quarantine/GeneratedProject").glob("*.csproj.lscache")
+        if path.name.startswith("WaveHarmonic.Crest") or path.name in {
+            "Assembly-CSharp.csproj.lscache",
+            "Assembly-CSharp-Editor.csproj.lscache",
+            "Assembly-CSharp-Editor-firstpass.csproj.lscache",
+            "Assembly-CSharp-firstpass.csproj.lscache",
+            "Hecton8.Core.csproj.lscache",
+            "Hecton8.Editor.csproj.lscache",
+            "Unity.RenderPipelines.Core.Editor.csproj.lscache",
+            "Unity.RenderPipelines.Universal.Editor.csproj.lscache",
+            "Unity.RenderPipelines.Universal.Runtime.csproj.lscache",
+            "Unity.ShaderGraph.Editor.csproj.lscache",
+        }
+    )
+    add_check(
+        checks,
+        "stale_broad_csharp_devkit_lscache_no_waveharmonic_crest",
+        not active_stale_root_lscache and len(archived_stale_root_lscache) >= 17,
+        "Root broad C# Dev Kit lscache files with stale WaveHarmonic Crest routes are archived outside active MSBuild/IDE visibility.",
+    )
     generated_project_text = "\n".join(
         path.read_text(encoding="utf-8-sig", errors="replace")
         for path in sorted(ROOT.glob("*.csproj"))
@@ -174,6 +206,13 @@ def main() -> int:
         and "Packages\\com.waveharmonic.crest" not in generated_project_text
         and "Packages/com.waveharmonic.crest" not in generated_project_text,
         "Root first-party/generated projects no longer carry direct Crest or archived WaveHarmonic project/package routes.",
+    )
+    add_check(
+        checks,
+        "generated_first_party_projects_do_not_compile_bridge_sources",
+        'Compile Include="Assets\\_Project\\Scripts\\Plugins\\Crest\\' not in generated_project_text
+        and 'Compile Include="Assets/_Project/Scripts/Plugins/Crest/' not in generated_project_text,
+        "Root first-party/generated projects do not compile Hecton8.Crest.Bridge source files through broad assemblies.",
     )
     directory_build_targets = read_text("Directory.Build.targets")
     add_check(
@@ -652,6 +691,20 @@ def main() -> int:
         and "generated_project_crest_route" in dependency_scanner_source
         and "active_waveharmonic_generated_project_file" in dependency_scanner_source,
         "Dependency scanner hard-fails active generated project and MSBuild routes into Crest/WaveHarmonic outside the donor/helper boundary.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_broad_stale_lscache_crest_routes",
+        "generated_project_stale_lscache_crest_route" in dependency_scanner_source
+        and "CrestMigration" in dependency_scanner_source,
+        "Dependency scanner hard-fails broad root C# Dev Kit lscache files that retain stale Crest/WaveHarmonic routes.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_bridge_source_in_broad_project",
+        "generated_project_bridge_source_in_broad_project" in dependency_scanner_source
+        and "GENERATED_PROJECT_BRIDGE_SOURCE_RE" in dependency_scanner_source,
+        "Dependency scanner hard-fails broad generated projects that compile Hecton8.Crest.Bridge source files.",
     )
     add_check(
         checks,

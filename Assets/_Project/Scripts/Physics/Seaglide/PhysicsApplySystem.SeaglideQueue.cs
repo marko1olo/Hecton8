@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -32,7 +33,7 @@ namespace Hecton8.Physics
         }
 
         internal static void DrainSeaglideForcePackets(
-            PhysicsApplySystem system,
+            IPhysicsService system,
             GlobalPhysicsStateManager bodyResolver,
             NativeArray<SeaglideForcePacketDTO> packets,
             NativeArray<SeaglideCounterDTO> counters,
@@ -81,9 +82,7 @@ namespace Hecton8.Physics
                         body,
                         force,
                         ForceMode.Force,
-                        ForcePacketPriority.Critical,
-                        wake: true,
-                        extraFlags: ForcePacketFlags.None))
+                        wake: true))
                 {
                     accepted++;
                 }

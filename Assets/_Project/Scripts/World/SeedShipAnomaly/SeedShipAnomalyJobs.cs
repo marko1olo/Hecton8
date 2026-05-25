@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
@@ -64,6 +65,7 @@ namespace Hecton8.World.SeedShipAnomaly
         [ReadOnly, NoAlias] public NativeArray<MockAupRebaseSignal> RebaseSignals;
         [WriteOnly, NoAlias] public NativeArray<AnomalyTelemetryEntry> Telemetry;
         public NativeQueue<RadarJamSignal>.ParallelWriter RadarJamWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> RadarJamWriterBudget;
         public double3 PlayerAUP;
         public float DeltaSeconds;
         public float TimeSeconds;
@@ -131,7 +133,7 @@ namespace Hecton8.World.SeedShipAnomaly
 
             field.CorruptionLevel = math.saturate(corruption);
             float pulse = TimeSeconds * tuning.PulseFrequency;
-            float sine01 = 0.5f + 0.5f * math.sin(pulse);
+            float sine01 = 0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara(pulse);
             float gravityY = SeedShipAnomalyMath.ResolveGravityY(field.CorruptionLevel, pulse, tuning.GravityInversionStrength);
             float shaderCorruption = math.saturate(field.CorruptionLevel * tuning.GlitchIntensity);
             float universeNoise = math.saturate(shaderCorruption * tuning.ShaderNoiseStrength * (0.35f + 0.65f * sine01));
@@ -194,7 +196,7 @@ namespace Hecton8.World.SeedShipAnomaly
 
             if (EmitRadarSignal != 0 && radar01 > 0.01f && sine01 > 0.965f)
             {
-                RadarJamWriter.Enqueue(new RadarJamSignal
+                SignalBus<RadarJamSignal>.TryEnqueueBounded(RadarJamWriter, RadarJamWriterBudget, new RadarJamSignal
                 {
                     Intensity01 = radar01,
                     Frequency = tuning.PulseFrequency,

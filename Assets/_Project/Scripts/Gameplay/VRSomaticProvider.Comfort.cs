@@ -168,7 +168,9 @@ namespace Hecton8.Gameplay
         private float _somaticImpactShock01;
         private float _somaticComfortPresence01;
         private Vector4 _lastPublishedSomaticComfortState = Vector4.positiveInfinity;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private Vector4 _pendingSomaticComfortState;
+        private bool _somaticComfortShaderStateDirty;
+#if UNITY_EDITOR
         private static bool s_somaticComfortLayoutsValidated;
 #endif
 
@@ -206,13 +208,14 @@ namespace Hecton8.Gameplay
                 Frame = frame
             };
             JobHandle sampleHandle = job.Schedule(samples.Length, 32);
+            JobHandle jitterHandle = ScheduleMockKinematicJitter(frame, quality, sampleHandle);
             InjectMockSicknessDerivativeJob injectJob = new InjectMockSicknessDerivativeJob
             {
                 Samples = samples,
                 Frame = frame,
                 Derivatives = (SomaticDerivativeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(derivatives)
             };
-            JobHandle injectHandle = injectJob.Schedule(sampleHandle);
+            JobHandle injectHandle = injectJob.Schedule(jitterHandle);
 
             EvaluateFovTunnelingJob fovJob = new EvaluateFovTunnelingJob
             {
@@ -235,20 +238,22 @@ namespace Hecton8.Gameplay
             CalculateHorizonLockJob horizonJob = new CalculateHorizonLockJob
             {
                 CurrentRotation = math.mul(
-                    quaternion.RotateY(math.sin(mockPhase * 1.73f) * 1.35f),
-                    quaternion.RotateZ(math.sin(mockPhase * 4.7f) * 0.72f)),
+                    quaternion.RotateY(MathLodApproximation.ApproxSinBhaskara(mockPhase * 1.73f) * 1.35f),
+                    quaternion.RotateZ(MathLodApproximation.ApproxSinBhaskara(mockPhase * 4.7f) * 0.72f)),
                 DeltaTime = HectonXRRuntimeState.FrameIntervalSeconds,
                 GlobalQualityWeight01 = quality,
                 State = (SomaticComfortStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(write),
                 Derivatives = (SomaticDerivativeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(derivatives),
                 Profile = (VrComfortProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profiles)
             };
-            _somaticComfortHandle = horizonJob.Schedule(fovHandle);
+            JobHandle legacyHorizonHandle = horizonJob.Schedule(fovHandle);
+            _somaticComfortHandle = SchedulePreparedHorizonLockEvaluation(HectonXRRuntimeState.FrameIntervalSeconds, quality, legacyHorizonHandle);
             _somaticScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             _somaticComfortJobScheduled = true;
             TryRegisterLateFrame();
         }
 
+#if UNITY_EDITOR
         public static int ParseComfortProfilesCsv(ReadOnlySpan<byte> csv, NativeArray<VrComfortProfileDTO> profiles)
         {
             return ParseComfortProfilesCsv(csv, profiles, default(NativeArray<VrComfortProfileLookupSlotDTO>));
@@ -293,13 +298,14 @@ namespace Hecton8.Gameplay
 
             return count;
         }
+#endif
 
         private unsafe void EnsureSomaticComfortBuffers(IDataVault vault)
         {
             if (vault == null)
                 return;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             ValidateSomaticComfortLayouts();
 #endif
 
@@ -335,6 +341,31 @@ namespace Hecton8.Gameplay
                     BufferID.ShinobuVRSomaticProfileLookup,
                     SomaticComfortProfileLookupCapacity,
                     NativeArrayOptions.UninitializedMemory);
+                _somaticKccStateMirror = VaultNativeArray<VRSomaticKinematicStateMirrorDTO>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticKccStateMirror,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
+                _somaticRawRotation = VaultNativeArray<quaternion>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticRawRotation,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
+                _somaticHorizonWrite = VaultNativeArray<VRSomaticComfortDTO>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticHorizonWrite,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
+                _somaticHorizonRead = VaultNativeArray<VRSomaticComfortDTO>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticHorizonRead,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
+                _somaticHorizonTelemetry = VaultNativeArray<SomaticTelemetryEntry>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticHorizonTelemetry,
+                    BlackBoxFrameCapacity,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticComfortTelemetry = VaultNativeArray<ComfortTelemetryEntry>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticComfortTelemetry,
@@ -351,6 +382,46 @@ namespace Hecton8.Gameplay
                     SomaticCsvScratchBytes,
                     NativeArrayOptions.UninitializedMemory);
             }
+            if (!_somaticKccStateMirror.IsCreated)
+            {
+                _somaticKccStateMirror = VaultNativeArray<VRSomaticKinematicStateMirrorDTO>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticKccStateMirror,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+            if (!_somaticRawRotation.IsCreated)
+            {
+                _somaticRawRotation = VaultNativeArray<quaternion>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticRawRotation,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+            if (!_somaticHorizonWrite.IsCreated)
+            {
+                _somaticHorizonWrite = VaultNativeArray<VRSomaticComfortDTO>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticHorizonWrite,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+            if (!_somaticHorizonRead.IsCreated)
+            {
+                _somaticHorizonRead = VaultNativeArray<VRSomaticComfortDTO>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticHorizonRead,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+            if (!_somaticHorizonTelemetry.IsCreated)
+            {
+                _somaticHorizonTelemetry = VaultNativeArray<SomaticTelemetryEntry>.Create(
+                    vault,
+                    BufferID.ShinobuVRSomaticHorizonTelemetry,
+                    BlackBoxFrameCapacity,
+                    NativeArrayOptions.UninitializedMemory);
+            }
 
             if (_somaticComfortBuffersSeeded ||
                 !_somaticComfortWrite.IsCreated ||
@@ -359,6 +430,11 @@ namespace Hecton8.Gameplay
                 !_somaticHistory.IsCreated ||
                 !_somaticProfiles.IsCreated ||
                 !_somaticProfileLookup.IsCreated ||
+                !_somaticKccStateMirror.IsCreated ||
+                !_somaticRawRotation.IsCreated ||
+                !_somaticHorizonWrite.IsCreated ||
+                !_somaticHorizonRead.IsCreated ||
+                !_somaticHorizonTelemetry.IsCreated ||
                 !_somaticComfortTelemetry.IsCreated ||
                 !_somaticMockSicknessSamples.IsCreated ||
                 !_somaticCsvScratch.IsCreated)
@@ -372,6 +448,11 @@ namespace Hecton8.Gameplay
             NativeArray<SomaticKinematicHistoryDTO> history = _somaticHistory.AsNativeArray();
             NativeArray<VrComfortProfileDTO> profiles = _somaticProfiles.AsNativeArray();
             NativeArray<VrComfortProfileLookupSlotDTO> lookup = _somaticProfileLookup.AsNativeArray();
+            NativeArray<VRSomaticKinematicStateMirrorDTO> kccMirror = _somaticKccStateMirror.AsNativeArray();
+            NativeArray<quaternion> rawRotations = _somaticRawRotation.AsNativeArray();
+            NativeArray<VRSomaticComfortDTO> horizonWrite = _somaticHorizonWrite.AsNativeArray();
+            NativeArray<VRSomaticComfortDTO> horizonRead = _somaticHorizonRead.AsNativeArray();
+            NativeArray<SomaticTelemetryEntry> horizonTelemetry = _somaticHorizonTelemetry.AsNativeArray();
             NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.AsNativeArray();
             NativeArray<SomaticMockSicknessSampleDTO> mock = _somaticMockSicknessSamples.AsNativeArray();
 
@@ -383,16 +464,26 @@ namespace Hecton8.Gameplay
                 History = (SomaticKinematicHistoryDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(history),
                 Profiles = (VrComfortProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profiles),
                 ProfileLookup = (VrComfortProfileLookupSlotDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(lookup),
+                KinematicStates = (VRSomaticKinematicStateMirrorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(kccMirror),
+                RawRotations = (quaternion*)NativeArrayUnsafeUtility.GetUnsafePtr(rawRotations),
+                HorizonWrite = (VRSomaticComfortDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(horizonWrite),
+                HorizonRead = (VRSomaticComfortDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(horizonRead),
                 ProfileCount = profiles.Length,
                 LookupCount = lookup.Length
             };
             JobHandle seedHandle = seedJob.Schedule();
 
+            ClearHorizonTelemetryJob clearHorizonTelemetryJob = new ClearHorizonTelemetryJob
+            {
+                Telemetry = horizonTelemetry
+            };
+            JobHandle horizonTelemetryHandle = clearHorizonTelemetryJob.Schedule(horizonTelemetry.Length, 32, seedHandle);
+
             ClearComfortTelemetryJob clearTelemetryJob = new ClearComfortTelemetryJob
             {
                 Telemetry = telemetry
             };
-            JobHandle telemetryHandle = clearTelemetryJob.Schedule(telemetry.Length, 32, seedHandle);
+            JobHandle telemetryHandle = clearTelemetryJob.Schedule(telemetry.Length, 32, horizonTelemetryHandle);
 
             GenerateMockSicknessDataJob mockJob = new GenerateMockSicknessDataJob
             {
@@ -406,7 +497,7 @@ namespace Hecton8.Gameplay
             TryRegisterLateFrame();
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private static void ValidateSomaticComfortLayouts()
         {
             if (s_somaticComfortLayoutsValidated)
@@ -446,6 +537,7 @@ namespace Hecton8.Gameplay
                 throw new InvalidOperationException("ComfortTelemetryEntry ABI drift.");
             }
 
+            ValidateHorizonLockLayouts();
             s_somaticComfortLayoutsValidated = true;
         }
 
@@ -463,6 +555,7 @@ namespace Hecton8.Gameplay
             _somaticComfortTelemetry.Release();
             _somaticMockSicknessSamples.Release();
             _somaticCsvScratch.Release();
+            ResetHorizonLockBuffers();
             _somaticComfortWrite = default;
             _somaticComfortRead = default;
             _somaticDerivatives = default;
@@ -499,16 +592,16 @@ namespace Hecton8.Gameplay
         {
             TryPublishCompletedSomaticComfortNoBlock();
 
-            IDataVault vault = ResolveDataVault();
-            if (vault == null)
-                return;
-
-            EnsureSomaticComfortBuffers(vault);
             if (!_somaticComfortBuffersSeeded ||
                 !_somaticComfortWrite.IsCreated ||
                 !_somaticDerivatives.IsCreated ||
                 !_somaticHistory.IsCreated ||
-                !_somaticProfiles.IsCreated)
+                !_somaticProfiles.IsCreated ||
+                !_somaticKccStateMirror.IsCreated ||
+                !_somaticRawRotation.IsCreated ||
+                !_somaticHorizonWrite.IsCreated ||
+                !_somaticHorizonRead.IsCreated ||
+                !_somaticHorizonTelemetry.IsCreated)
             {
                 return;
             }
@@ -526,7 +619,7 @@ namespace Hecton8.Gameplay
                 TryResolveKccPlanarDirection(in kccSignal, out float2 kccDirection))
             {
                 sourceAup = kccSignal.BodyAup;
-                sourceRotation = quaternion.RotateY(math.atan2(kccDirection.x, kccDirection.y));
+                sourceRotation = quaternion.RotateY(MathLodApproximation.ApproxAtan2Fast(kccDirection.x, kccDirection.y));
             }
 
             NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.AsNativeArray();
@@ -594,7 +687,8 @@ namespace Hecton8.Gameplay
                 Derivatives = (SomaticDerivativeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(derivatives),
                 Profile = (VrComfortProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profiles)
             };
-            _somaticComfortHandle = horizonJob.Schedule(fovHandle);
+            JobHandle legacyHorizonHandle = horizonJob.Schedule(fovHandle);
+            _somaticComfortHandle = ScheduleHorizonLockKernel(in sourceAup, sourceRotation, safeDeltaTime, quality, legacyHorizonHandle);
             _somaticScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             _somaticComfortJobScheduled = true;
             TryRegisterLateFrame();
@@ -704,6 +798,11 @@ namespace Hecton8.Gameplay
             SomaticComfortStateDTO state = read[0];
             _somaticFovTunnelingIntensity01 = Sanitize01(state.FovTunnelingIntensity, 0f);
             _somaticHorizonLockBlend01 = Sanitize01(state.HorizonLockBlend, 0f);
+            if (TryPublishHorizonLockStateFromWrite(out VRSomaticComfortDTO horizonState))
+            {
+                _somaticFovTunnelingIntensity01 = math.max(_somaticFovTunnelingIntensity01, Sanitize01(horizonState.FovTunnelScalar, 0f));
+                _somaticHorizonLockBlend01 = math.max(_somaticHorizonLockBlend01, Sanitize01(horizonState.PitchDampening, 0f));
+            }
             _somaticFoveatedScaleMultiplier = math.max(1f, math.isfinite(state.FoveatedScaleMultiplier) ? state.FoveatedScaleMultiplier : 1f);
             RecordSomaticComfortTelemetry(in state);
             PublishComfortVignette(_somaticFovTunnelingIntensity01);
@@ -781,53 +880,56 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void DumpComfortTelemetryOnce()
+        private unsafe void DumpComfortTelemetryOnce()
         {
-            if (_somaticComfortTelemetryDumped || !_somaticComfortTelemetry.IsCreated)
+            if (_somaticComfortTelemetryDumped)
                 return;
 
-            _somaticComfortTelemetryDumped = true;
             try
             {
-                NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.AsNativeArray();
-                if (!telemetry.IsCreated || telemetry.Length == 0)
+                NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.IsCreated
+                    ? _somaticComfortTelemetry.AsNativeArray()
+                    : default;
+                NativeArray<SomaticTelemetryEntry> horizonTelemetry = _somaticHorizonTelemetry.IsCreated
+                    ? _somaticHorizonTelemetry.AsNativeArray()
+                    : default;
+                bool hasComfort = telemetry.IsCreated && telemetry.Length > 0;
+                bool hasHorizon = horizonTelemetry.IsCreated && horizonTelemetry.Length > 0;
+                if (!hasComfort && !hasHorizon)
                     return;
 
+                _somaticComfortTelemetryDumped = true;
                 string path = System.IO.Path.GetFullPath(System.IO.Path.Combine(
                     Application.dataPath,
                     "..",
                     "Docs",
                     "AgentLogs",
-                    "Dump_VR_SURGEON.bin"));
+                    "Dump_SHINOBU_326.bin"));
                 using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
-                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
                 {
-                    int count = math.min(_somaticTelemetryCursor, telemetry.Length);
-                    int start = _somaticTelemetryCursor - count;
-                    writer.Write(SomaticComfortTelemetryHash);
-                    writer.Write(2u);
-                    writer.Write(telemetry.Length);
-                    writer.Write(count);
-                    for (int i = 0; i < count; i++)
+                    Span<byte> header = stackalloc byte[40];
+                    WriteUInt32LittleEndian(header, 0, SomaticHorizonTelemetryHash);
+                    WriteUInt32LittleEndian(header, 4, 3u);
+                    WriteUInt32LittleEndian(header, 8, hasComfort ? (uint)telemetry.Length : 0u);
+                    WriteUInt32LittleEndian(header, 12, (uint)UnsafeUtility.SizeOf<ComfortTelemetryEntry>());
+                    WriteUInt32LittleEndian(header, 16, hasHorizon ? (uint)horizonTelemetry.Length : 0u);
+                    WriteUInt32LittleEndian(header, 20, (uint)UnsafeUtility.SizeOf<SomaticTelemetryEntry>());
+                    WriteUInt32LittleEndian(header, 24, unchecked((uint)_somaticTelemetryCursor));
+                    WriteUInt32LittleEndian(header, 28, unchecked((uint)_somaticHorizonTelemetryCursor));
+                    WriteUInt32LittleEndian(header, 32, SomaticComfortTelemetryHash);
+                    WriteUInt32LittleEndian(header, 36, SomaticHorizonTelemetryHash);
+                    stream.Write(header);
+
+                    if (hasComfort)
                     {
-                        ComfortTelemetryEntry entry = telemetry[PositiveModuloSomatic(start + i, telemetry.Length)];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.PeakAngularVelocityRadS);
-                        writer.Write(entry.PeakAngularAccelerationRadS2);
-                        writer.Write(entry.PeakLinearAccelerationMps2);
-                        writer.Write(entry.FovTunnelingIntensity);
-                        writer.Write(entry.HorizonLockBlend);
-                        writer.Write(entry.FoveatedScaleMultiplier);
-                        writer.Write(entry.BurstExecutionMicroseconds);
-                        writer.Write(entry.ImpactShock01);
-                        writer.Write(entry.GlobalQualityWeight01);
-                        writer.Write(entry.VramPressure01);
-                        writer.Write(entry.ThermalPressure01);
-                        writer.Write(entry.SystemPressure01);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.AupHash);
+                        void* comfortPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                        stream.Write(new ReadOnlySpan<byte>(comfortPtr, telemetry.Length * UnsafeUtility.SizeOf<ComfortTelemetryEntry>()));
+                    }
+
+                    if (hasHorizon)
+                    {
+                        void* horizonPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(horizonTelemetry);
+                        stream.Write(new ReadOnlySpan<byte>(horizonPtr, horizonTelemetry.Length * UnsafeUtility.SizeOf<SomaticTelemetryEntry>()));
                     }
                 }
             }
@@ -835,6 +937,14 @@ namespace Hecton8.Gameplay
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(ComfortDumpFaultHash, SomaticComfortTelemetryHash, exception.HResult);
             }
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private static uint ResolveSomaticComfortStateHash(in SomaticComfortStateDTO state, in SomaticDerivativeDTO derivative, uint flags)
@@ -866,6 +976,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
+            DrawHorizonLockVectorsGizmo();
             if (!_somaticComfortTelemetry.IsCreated)
                 return;
 
@@ -921,8 +1032,22 @@ namespace Hecton8.Gameplay
             if (Approximately(in state, in _lastPublishedSomaticComfortState))
                 return;
 
-            Shader.SetGlobalVector(VrSomaticComfortStateId, state);
-            _lastPublishedSomaticComfortState = state;
+            _pendingSomaticComfortState = state;
+            _somaticComfortShaderStateDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void FlushQueuedSomaticComfortShaderState()
+        {
+            if (!_somaticComfortShaderStateDirty)
+                return;
+
+            _somaticComfortShaderStateDirty = false;
+            if (Approximately(in _pendingSomaticComfortState, in _lastPublishedSomaticComfortState))
+                return;
+
+            Shader.SetGlobalVector(VrSomaticComfortStateId, _pendingSomaticComfortState);
+            _lastPublishedSomaticComfortState = _pendingSomaticComfortState;
         }
 
         private static bool TryParseComfortProfileRow(ReadOnlySpan<byte> row, out VrComfortProfileDTO profile)
@@ -1144,6 +1269,10 @@ namespace Hecton8.Gameplay
             [NativeDisableUnsafePtrRestriction, NoAlias] public unsafe SomaticKinematicHistoryDTO* History;
             [NativeDisableUnsafePtrRestriction, NoAlias] public unsafe VrComfortProfileDTO* Profiles;
             [NativeDisableUnsafePtrRestriction, NoAlias] public unsafe VrComfortProfileLookupSlotDTO* ProfileLookup;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public unsafe VRSomaticKinematicStateMirrorDTO* KinematicStates;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public unsafe quaternion* RawRotations;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public unsafe VRSomaticComfortDTO* HorizonWrite;
+            [NativeDisableUnsafePtrRestriction, NoAlias] public unsafe VRSomaticComfortDTO* HorizonRead;
             public int ProfileCount;
             public int LookupCount;
 
@@ -1161,6 +1290,17 @@ namespace Hecton8.Gameplay
                 UnsafeUtility.AsRef<SomaticComfortStateDTO>(ReadState) = clear;
                 UnsafeUtility.AsRef<SomaticDerivativeDTO>(Derivatives) = default;
                 UnsafeUtility.AsRef<SomaticKinematicHistoryDTO>(History) = default;
+                UnsafeUtility.AsRef<VRSomaticKinematicStateMirrorDTO>(KinematicStates) = default;
+                UnsafeUtility.AsRef<quaternion>(RawRotations) = quaternion.identity;
+                VRSomaticComfortDTO horizonClear = new VRSomaticComfortDTO
+                {
+                    StabilizedRotation = quaternion.identity,
+                    FovTunnelScalar = 0f,
+                    PitchDampening = 0f,
+                    ComfortFlags = SomaticComfortFlagHorizonInitialized
+                };
+                UnsafeUtility.AsRef<VRSomaticComfortDTO>(HorizonWrite) = horizonClear;
+                UnsafeUtility.AsRef<VRSomaticComfortDTO>(HorizonRead) = horizonClear;
                 for (int i = 0; i < LookupCount; i++)
                     ProfileLookup[i] = default;
 
@@ -1371,7 +1511,7 @@ namespace Hecton8.Gameplay
                 {
                     float vectorLength = math.sqrt(vectorSq);
                     axis = delta.xyz * math.rcp(math.max(vectorLength, 0.0001f));
-                    angle = 2f * math.atan2(vectorLength, math.max(math.abs(delta.w), 0.0001f));
+                    angle = 2f * MathLodApproximation.ApproxAtan2Fast(vectorLength, math.max(math.abs(delta.w), 0.0001f));
                 }
 
                 if (angle > math.PI)
@@ -1458,12 +1598,11 @@ namespace Hecton8.Gameplay
 
                 float currentTunnel = SanitizeJob01(state.FovTunnelingIntensity, 0f);
                 float sharpness = target > currentTunnel ? profile.EwmaSharpness : profile.ReleaseSharpness;
-                float blend = 1f - math.exp(-math.max(0.01f, sharpness) * math.max(DeltaTime, MinimumDeltaTime));
+                float blend = 1f - MathLodApproximation.ApproxExpNegPade33Wide40(math.max(0.01f, sharpness) * math.max(DeltaTime, MinimumDeltaTime));
                 state.FovTunnelingIntensity = SanitizeJob01(math.lerp(currentTunnel, target, SanitizeJob01(blend, 0f)), currentTunnel);
 
                 float pressure = math.max(math.max(SanitizeJob01(VramPressure01, 0f), SanitizeJob01(ThermalPressure01, 0f)), SanitizeJob01(SystemPressure01, 0f));
-                float lowQualityWindow = 1f - math.step(0.3f, quality);
-                float lowQualityCurve = lowQualityWindow * SmoothJob01((0.3f - quality) * 3.3333333f);
+                float lowQualityCurve = SmoothJob01((0.3f - quality) * 3.3333333f);
                 float pressureGain = math.lerp(0.9f, 1.45f, 1f - qualityCurve) + (lowQualityCurve * 0.25f);
                 state.FoveatedScaleMultiplier = math.max(1f, 1f + profile.FoveatedBaseline + (pressure * pressureGain));
                 uint flags = state.ActiveComfortFlags;
@@ -1510,7 +1649,8 @@ namespace Hecton8.Gameplay
                 float quality = SanitizeJob01(GlobalQualityWeight01, 1f);
                 float target = math.saturate(math.max(SmoothJob01(upError), accelerationAssist) * SanitizeJob01(profile.UserComfortWeight01, 1f) * math.lerp(1.12f, 0.88f, quality));
                 float currentBlend = SanitizeJob01(state.HorizonLockBlend, 0f);
-                float blend = 1f - math.exp(-math.max(0.01f, profile.HorizonLockSpeed) * math.max(DeltaTime, MinimumDeltaTime));
+                float springOmega = math.max(0.01f, profile.HorizonLockSpeed) * math.lerp(4.75f, 2.35f, quality);
+                float blend = ResolveCriticalDampedSpringBlend(springOmega, DeltaTime, quality);
                 state.HorizonLockBlend = SanitizeJob01(math.lerp(currentBlend, target, SanitizeJob01(blend, 0f)), currentBlend);
                 state.ReservedParameters = correction.value;
                 if (state.HorizonLockBlend > 0.001f)
@@ -1535,12 +1675,12 @@ namespace Hecton8.Gameplay
                 float signedPulse = (triangle * 2f) - 1f;
                 float amplitude = math.lerp(0.65f, 1.35f, SmoothJob01(q));
                 float yaw = signedPulse * 1.35f * amplitude;
-                float roll = math.sin(t * 4.7f) * 0.72f * amplitude;
+                float roll = MathLodApproximation.ApproxSinBhaskara(t * 4.7f) * 0.72f * amplitude;
                 Samples[index] = new SomaticMockSicknessSampleDTO
                 {
-                    LinearAcceleration = new float3(math.sin(t * 3.1f), signedPulse * 1.8f, math.cos(t * 2.3f)) * 9.5f * amplitude,
-                    AngularVelocity = new float3(roll, yaw, math.sin(t * 5.2f) * 0.42f) * 6f,
-                    AngularAcceleration = new float3(math.cos(t * 3.4f), signedPulse, math.sin(t * 6.1f)) * 85f * amplitude,
+                    LinearAcceleration = new float3(MathLodApproximation.ApproxSinBhaskara(t * 3.1f), signedPulse * 1.8f, MathLodApproximation.ApproxCosBhaskara(t * 2.3f)) * 9.5f * amplitude,
+                    AngularVelocity = new float3(roll, yaw, MathLodApproximation.ApproxSinBhaskara(t * 5.2f) * 0.42f) * 6f,
+                    AngularAcceleration = new float3(MathLodApproximation.ApproxCosBhaskara(t * 3.4f), signedPulse, MathLodApproximation.ApproxSinBhaskara(t * 6.1f)) * 85f * amplitude,
                     Rotation = math.mul(quaternion.RotateY(yaw), quaternion.RotateZ(roll)),
                     Frame = Frame + (uint)index,
                     Flags = SomaticComfortFlagMockData,

@@ -26,12 +26,12 @@ namespace Hecton8.Animation.Fauna
         public const float DefaultJawOpenMeters = 0.8f;
         public const float MinLengthSq = 0.000001f;
         public const uint RuntimeFlagStrikeActive = 1u << 0;
-        public const uint RuntimeFlagHighTier = 1u << 2;
-        public const uint RuntimeFlagUltraTier = 1u << 3;
+        public const uint RuntimeFlagMaximumQuality = 1u << 2;
+        public const uint RuntimeFlagVisualOverkill = 1u << 3;
         public const uint ResultFlagSolved = 1u << 0;
         public const uint ResultFlagContact = 1u << 1;
         public const uint ResultFlagMiss = 1u << 2;
-        public const uint ResultFlagHighTierWrap = 1u << 4;
+        public const uint ResultFlagQualityWrap = 1u << 4;
         public const uint ResultFlagAudioJawSnap = 1u << 5;
         public const uint ResultFlagFeedback = 1u << 6;
         public const uint ResultFlagVisualOverkill = 1u << 7;
@@ -153,8 +153,8 @@ namespace Hecton8.Animation.Fauna
             JawIkTarget target = JawIkTargets[targetIndex];
             float systemStress = math.saturate(math.select(0f, SystemStress01, math.isfinite(SystemStress01)));
             bool strikeActive = (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagStrikeActive) != 0u && target.TargetHash != 0u;
-            bool highTier = (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagHighTier) != 0u ||
-                            (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagUltraTier) != 0u;
+            bool maximumQuality = (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagMaximumQuality) != 0u ||
+                                  (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagVisualOverkill) != 0u;
 
             float3 forward = NormalizeSafe(PredatorForward, new float3(0f, 0f, 1f));
             float3 up = NormalizeSafe(PredatorUp, new float3(0f, 1f, 0f));
@@ -225,9 +225,9 @@ namespace Hecton8.Animation.Fauna
             float3 wrap1 = smoothedTip;
             SolveMandibles(rootWorld, smoothedTip, aimWorld, up, right, jawReach, jawOpen, bodyRadius, segmentLength, blend, previous, out upperWorld, out lowerWorld);
 
-            if (highTier && strikeActive)
+            if (maximumQuality && strikeActive)
             {
-                resultFlags |= ProceduralBiteIkConstants.ResultFlagHighTierWrap;
+                resultFlags |= ProceduralBiteIkConstants.ResultFlagQualityWrap;
                 resultFlags |= ProceduralBiteIkConstants.ResultFlagVisualOverkill;
                 ResolveWrapAnchors(targetLocalCenter, extents, target.CylinderRadiusMeters, targetRightLocal, targetUpLocal, targetForwardLocal, right, up, forward, out wrap0, out wrap1);
                 WriteTentacleBones(rootWorld, wrap0, wrap1, aimWorld, up, bodyRadius, segmentLength);
@@ -349,8 +349,8 @@ namespace Hecton8.Animation.Fauna
             float lowerLength = math.max(0.05f, jawReach * 0.55f);
             float invDenominator = math.rcp(math.max(0.0001f, 2f * upperLength * math.max(distance, 0.0001f)));
             float acosInput = math.clamp((upperLength * upperLength + distance * distance - lowerLength * lowerLength) * invDenominator, -1f, 1f);
-            float bendAngle = math.acos(acosInput);
-            float hingeOffset = math.sin(bendAngle) * jawOpen;
+            float sinSq = math.max(0f, 1f - (acosInput * acosInput));
+            float hingeOffset = sinSq * math.rsqrt(math.max(sinSq, ProceduralBiteIkConstants.MinLengthSq)) * jawOpen;
             float3 mid = rootWorld + aimWorld * (distance * 0.48f);
             upperWorld = SanitizeFinite(mid + up * hingeOffset + right * (jawOpen * 0.15f), rootWorld);
             lowerWorld = SanitizeFinite(mid - up * hingeOffset - right * (jawOpen * 0.15f), rootWorld);

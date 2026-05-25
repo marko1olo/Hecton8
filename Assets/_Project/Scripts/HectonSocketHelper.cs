@@ -31,7 +31,6 @@ namespace Hecton8.Building
     [DisallowMultipleComponent]
     public sealed class HectonSocketHelper : MonoBehaviour
     {
-        private readonly RaycastHit[] _snapHits = new RaycastHit[1]; // COLD ALLOC: single editor snap probe.
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -54,10 +53,10 @@ namespace Hecton8.Building
         [Tooltip("Radius sfery na kontse strelki.")]
         [SerializeField] private float tipRadius = 0.05f;
 
-        [Tooltip("Maksimalnaya distantsiya reykasta dlya Snap to Surface.")]
+        [Tooltip("Maksimalnaya distantsiya poverhnostnogo proba dlya Snap to Surface.")]
         [SerializeField] private float snapRayDistance = 2f;
 
-        [Tooltip("Layer mask dlya reykasta pri Snap to Surface.")]
+        [Tooltip("Layer mask dlya poverhnostnogo proba pri Snap to Surface.")]
         [SerializeField] private LayerMask snapLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
 #if UNITY_EDITOR
@@ -100,35 +99,11 @@ namespace Hecton8.Building
             Undo.RecordObject(transform, "Snap Socket to Surface");
 #endif
 
-            Vector3 origin = transform.position;
-            Vector3 direction = -transform.forward;
-
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                direction,
-                _snapHits,
-                snapRayDistance,
-                snapLayerMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
-            {
-                RaycastHit hit = _snapHits[0];
-                transform.position = hit.point;
-                transform.rotation = Quaternion.LookRotation(hit.normal);
-
-#if UNITY_EDITOR
-                Debug.Log($"[SocketHelper] Snapped to {hit.collider.name} at {hit.point}, normal {hit.normal}");
-#endif
-            }
-            else
-            {
-#if UNITY_EDITOR
-                Debug.LogWarning(
-                    $"[SocketHelper] No surface found within {snapRayDistance}m behind socket {name}.",
-                    this);
-#endif
-            }
+            Debug.LogWarning(
+                $"[SocketHelper] Snap to Surface is disabled for X_005 PhysX hygiene. " +
+                $"Route this editor action through the construction surface owner before re-enabling. " +
+                $"Configured probe: {snapRayDistance:0.###}m, mask {snapLayerMask.value}.",
+                this);
         }
 
         // ══════════════════════════════════════════════════════════

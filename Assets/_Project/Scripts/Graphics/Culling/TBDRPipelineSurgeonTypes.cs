@@ -327,7 +327,7 @@ namespace Hecton8.Graphics.Culling
 
     internal static class TBDRVaultDescriptorRoutes
     {
-        private static bool OpenOrAcquire<T>(
+        internal static bool OpenOrAcquire<T>(
             IDataVault dataVault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -344,7 +344,7 @@ namespace Hecton8.Graphics.Culling
                 return false;
             }
 
-            handle = dataVault.GetGenerationHandle<T>(
+            handle = dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GraphicsScalability,
@@ -484,7 +484,7 @@ namespace Hecton8.Graphics.Culling
                 return false;
             }
 
-            handle = dataVault.GetGenerationHandle<T>(
+            handle = dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GraphicsScalability,
@@ -1119,7 +1119,7 @@ namespace Hecton8.Graphics.Culling
                 return false;
             }
 
-            handle = dataVault.GetGenerationHandle<T>(
+            handle = dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GraphicsScalability,
@@ -1268,6 +1268,7 @@ namespace Hecton8.Graphics.Culling
         }
     }
 
+#if UNITY_EDITOR
     public sealed class TBDRGpuBudgetCsvIngestor
     {
         private const int BufferCapacity = 4096;
@@ -1481,6 +1482,7 @@ namespace Hecton8.Graphics.Culling
             }
         }
     }
+#endif
 
     public sealed class TBDRPipelineTelemetryRecorder : IDisposable
     {

@@ -105,6 +105,23 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _registeredToTickManager = false;
+                    return;
+                }
+
+                if (isActiveAndEnabled)
+                {
+                    TryUnregister();
+                    TryRegister();
+                }
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
                 return;
 

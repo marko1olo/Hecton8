@@ -4,6 +4,11 @@ using Hecton8.Core;
 
 namespace Hecton8.Audio
 {
+    internal static class NativeAudioKernelBridgeLayout
+    {
+        public const int RingBufferDescriptorStrideBytes = 56;
+    }
+
     [Flags]
     internal enum NativeAudioKernelBridgeStatus
     {
@@ -19,7 +24,7 @@ namespace Hecton8.Audio
         PluginUnavailable = 1 << 30
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = NativeAudioKernelBridgeLayout.RingBufferDescriptorStrideBytes)]
     internal struct NativeAudioKernelRingBufferDescriptor
     {
         public const uint DescriptorMagicValue = 0x484B3031u;

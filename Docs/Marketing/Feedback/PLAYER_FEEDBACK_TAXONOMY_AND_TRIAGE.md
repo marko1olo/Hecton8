@@ -1,4 +1,4 @@
-# Player Feedback Taxonomy And Triage
+﻿# Player Feedback Taxonomy And Triage
 
 Status: feedback operating model / pre-public
 Public stance: single-player-first scope / proof-first public copy
@@ -23,6 +23,10 @@ Convert comments, creator coverage, demo notes, Discord posts, and Steam forum t
 | `NARRATIVE_HOOK` | Seed Ship, lore, motivation, mystery. | Narrative |
 | `SCOPE_CONFUSION` | Co-op, multiplayer, roadmap, Early Access. | Marketing / product |
 | `COMMUNITY_SAFETY` | Abuse, spam, scams, moderation. | Community |
+| `IMAGEBOARD_SIGNAL` | Anonymous 4chan/Dvach feedback; anecdotal by default. | Community / marketing |
+| `AI_SLOP_RISK` | Asset/copy/process reads as generated, lazy, or agent-made instead of authored/proven. | Marketing / art direction |
+| `ENGINE_TRUST` | Unity/UE/Godot/toolchain argument hides asset critique or weakens trust. | Marketing / engineering comms |
+| `CRAFT_GRIND_FATIGUE` | Survival/crafting loop reads like resource treadmill instead of route pressure. | Design / marketing |
 
 ## Severity
 
@@ -49,6 +53,7 @@ Every feedback row must state where the feedback came from and whether it was in
 | Creator/press reply | Outreach and asset-fit learning. | Treating as newsletter or playtest consent. |
 | Support/bug report | Repro, support, known-issues update. | Using support email for marketing or creator outreach. |
 | Discord/community post | Community signal under server rules. | Moving private server content into public copy without permission. |
+| 4chan/Dvach/imageboard thread | Anonymous public critique and language mining only. | Treating anonymous users as contacts, consent, creator leads, playtesters, or market percentages. |
 
 ## Repeat Pattern Rule
 
@@ -67,6 +72,58 @@ One comment is not a mandate. Three independent comments on the same issue are a
 | "Will it run well?" | Trust/performance concern. | Do not answer with claims; promise measured proof later. |
 | "Base looks clean" | NASA-punk grime/material direction weak. | Add wear, labels, seals, utility, salt, damage. |
 | "Monster game?" | Threat framing overpowered survival systems. | Rebalance copy toward pressure/machinery/salvage. |
+| "AI slop" / "нейромусор" | Asset looks generated, concept-only, over-smoothed, incoherent, or process pitch overpowered build proof. | Mark `AI_SLOP_RISK`; audit source/capture labels; lead next beat with gameplay proof only. |
+| "Asset flip" / "Unity trash" | Toolchain/store-asset suspicion or engine-war reflex. | Mark `ENGINE_TRUST`; remove engine as player-facing hook; prove custom material language and gameplay decision. |
+| "Shill / ad / реклама" | Post format or placement violated community expectation. | Mark `COMMUNITY_SAFETY`; stop replying, revise route/template, do not repost same asset that day. |
+| "Crafting trash to craft trash" | Survival loop reads as generic grind. | Mark `CRAFT_GRIND_FATIGUE`; require salvage route decision, pressure cost, or recovery loop proof before public copy. |
+| "Procedural = empty" | Generated scale is being interpreted as low authorship. | Remove procedural-scale hook; show authored route density, landmarks, danger, and consequence. |
+| "No readable choice" | Viewer sees mood/threat but cannot name decision. | Mark `AGENCY_DECISION_READ`; hold first-public expansion until repair/retreat/reroute/scan/operate/recover decision is visible. |
+
+## Imageboard Feedback Triage
+
+Default classification for 4chan/Dvach signal is `Anecdotal`. Upgrade to `Directional` only when the same issue appears across independent threads or platforms. Upgrade to `Recurring` only when imageboard signal matches Reddit, Steam review/forum, creator, cold-reader, or playtest feedback.
+
+### What To Keep
+
+- exact board/thread/date;
+- asset shown;
+- question asked;
+- repeated product-relevant wording;
+- clone-risk cue;
+- AI-slop cue;
+- engine/tool trust cue;
+- whether a player decision was named;
+- one actionable asset/product/copy change.
+
+### What To Drop
+
+- insults with no asset reference;
+- identity/politics fights;
+- slurs and unsafe content;
+- personal data or handles;
+- requests for keys/access/private routes;
+- unsupported claims about market size or AI adoption.
+
+### Imageboard Triage Table
+
+| Date | Surface | Thread | Asset | Prompt | Signal | Class | Severity | Decision read | Action |
+|---|---|---|---|---|---|---|---|---|---|
+
+### Signal Upgrade Rules
+
+| Starting signal | Upgrade only if | Action |
+|---|---|---|
+| One hostile imageboard comment | Never by itself. | Track as `P3` or reject. |
+| Three independent imageboard comments in one thread | They identify the same asset-specific cue. | Treat as `P2/P1` depending on asset importance. |
+| Same cue appears on imageboard + Reddit/cold-read | Independent source confirms. | Treat as `P1`; revise before next public beat. |
+| Same cue appears in creator/press/demo feedback | High-trust source confirms. | Treat as `P0/P1`; hold affected route. |
+
+### Imageboard Severity Overrides
+
+- `P0`: a public false claim, private access leak, key/security issue, or official CTA leak occurred.
+- `P1`: repeated clone/AI/readability issue affects first screenshot pack, Steam page, creator pitch, or demo route.
+- `P2`: useful critique affects an asset not yet scheduled.
+- `P3`: taste, insults, engine-war, or one-off noise.
 
 ## Creator Feedback Intake
 

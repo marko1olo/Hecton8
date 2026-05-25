@@ -21,7 +21,7 @@ namespace Hecton8.World
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(FieldTargetDescriptor))]
     [AddComponentMenu("Hecton8/World/Emergency Service Relay")]
-    public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable, IGlobalRegistryHotSwapListener
+    public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable, IInteractableTextProvider, IGlobalRegistryHotSwapListener
     {
         [Serializable]
         public struct RewardEntry
@@ -52,12 +52,16 @@ namespace Hecton8.World
         private const string RewardGrantedFallback = "RELAY CACHE DISPENSED.";
         private const string RewardInventoryFullFallback = "RELAY FOUND SUPPLIES, BUT INVENTORY IS FULL. FREE SPACE AND COME BACK.";
         private const string RewardEmptyFallback = "RELAY CACHE DISPENSED";
+        private const string DefaultOpenInteractText = "OPEN RELAY EMERGENCY SERVICE RELAY";
+        private const string DefaultReviewInteractText = "REVIEW RELAY EMERGENCY SERVICE RELAY";
 
-        // COLD ALLOC: EmergencyServiceRelay[16] — active authored relay registry — owner: EmergencyServiceRelay
+        // COLD ALLOC: EmergencyServiceRelay[16] � active authored relay registry � owner: EmergencyServiceRelay
         private static readonly List<EmergencyServiceRelay> s_ActiveRelays = new List<EmergencyServiceRelay>(16);
         private static int s_RegistryVersion;
+        private readonly char[] _cachedInteractTextBuffer = new char[128];
+        private int _cachedInteractTextLength;
 
-        [Header("── Identity ───────────────────────────────")]
+        [Header("-- Identity -------------------------------")]
         [Tooltip("Unique discovery ID used for persistence and relay-chain state.")]
         [SerializeField] private string relayId = "relay_intro_01";
 
@@ -70,7 +74,7 @@ namespace Hecton8.World
         [Tooltip("Readable relay label shown in handoff messages.")]
         [SerializeField] private string relayLabel = DefaultLabel;
 
-        [Header("── Route Handoff ──────────────────────────")]
+        [Header("-- Route Handoff --------------------------")]
         [Tooltip("Explicit next relay in the chain. If absent, the director falls back to relayOrder.")]
         [SerializeField] private EmergencyServiceRelay nextRelay;
 
@@ -83,7 +87,7 @@ namespace Hecton8.World
         [Tooltip("Whether this relay should count as a real lore-route contact for first-hour pacing.")]
         [SerializeField] private bool countsAsLoreRouteContact = true;
 
-        [Header("── Lore + Cache ───────────────────────────")]
+        [Header("-- Lore + Cache ---------------------------")]
         [Tooltip("Primary lore beat delivered on first access.")]
         [SerializeField, TextArea(2, 5)] private string loreMessage = DefaultLoreMessage;
 
@@ -93,14 +97,14 @@ namespace Hecton8.World
         [Tooltip("Small cached reward bundle granted on first access.")]
         [SerializeField] private RewardEntry[] rewards = Array.Empty<RewardEntry>();
 
-        [Header("── Scanner Semantics ──────────────────────")]
+        [Header("-- Scanner Semantics ----------------------")]
         [Tooltip("Semantic role exposed to scanners and other field-read systems.")]
         [SerializeField] private FieldTargetRole fieldRole = FieldTargetRole.RouteRelay;
 
         [Tooltip("Operator note surfaced through field-read tools.")]
         [SerializeField, TextArea(2, 4)] private string fieldOperatorNote = DefaultDescriptorNote;
 
-        [Header("── Interaction ────────────────────────────")]
+        [Header("-- Interaction ----------------------------")]
         [Tooltip("Verb shown before the relay has been opened.")]
         [SerializeField] private string interactVerb = DefaultInteractVerb;
 
@@ -113,15 +117,14 @@ namespace Hecton8.World
         private FieldTargetDescriptor _descriptor;
         private InteractionHighlighter _highlighter;
         private Transform _cachedTransform;
-        private string _cachedInteractText = DefaultInteractVerb + " " + DefaultLabel;
         private uint _relayHash;
         private uint _chainHash;
         private AbsoluteUniversePosition _cachedRelayAup;
         private bool _hasCachedRelayAup;
-        private HectonNarrativeDirector _cachedNarrativeDirector;
-        private AudioLogSystem _cachedAudioLogSystem;
+        private INarrativeDiscoveryReadModel _cachedNarrativeDiscovery;
+        private IAudioLogRuntime _cachedAudioLogSystem;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private LocalizationManager _cachedLocalization;
+        private ILocalizationTextReadModel _cachedLocalization;
         private bool _registeredHotSwapListener;
 
         /// <summary>Unique discovery ID for this relay.</summary>
@@ -163,8 +166,11 @@ namespace Hecton8.World
         /// <summary>Ordering inside the authored relay chain.</summary>
         public int RelayOrder => relayOrder;
 
-        /// <summary>Readable label shown in route-handoff copy.</summary>
-        public string RelayLabel => FallbackOrLocalized(relayLabel, LocalizationKeys.RELAY_LABEL_DEFAULT, DefaultLabel);
+        /// <summary>Readable label span shown in route-handoff copy.</summary>
+        public ReadOnlySpan<char> ResolveRelayLabelSpan()
+        {
+            return FallbackOrLocalizedSpan(relayLabel, LocalizationKeys.RELAY_LABEL_DEFAULT, DefaultLabel);
+        }
 
         /// <summary>Explicit next relay, when authored.</summary>
         public EmergencyServiceRelay NextRelay => nextRelay;
@@ -178,8 +184,8 @@ namespace Hecton8.World
             get
             {
                 EnsureCachedRuntimeIdentity();
-                HectonNarrativeDirector narrativeDirector = _cachedNarrativeDirector;
-                return narrativeDirector != null && _relayHash != 0u && narrativeDirector.HasDiscovery(_relayHash);
+                INarrativeDiscoveryReadModel narrativeDiscovery = _cachedNarrativeDiscovery;
+                return narrativeDiscovery != null && _relayHash != 0u && narrativeDiscovery.HasDiscovery(_relayHash);
             }
         }
 
@@ -206,6 +212,7 @@ namespace Hecton8.World
             RefreshCachedRuntimeIdentity();
             TryResolveComponents();
             ApplyDescriptorSemantics();
+            InteractableRegistry.RegisterTree(this);
             RebuildInteractText();
 
             if (!s_ActiveRelays.Contains(this))
@@ -218,6 +225,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
 
             if (s_ActiveRelays.Remove(this))
@@ -231,6 +239,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
 
             if (s_ActiveRelays.Remove(this))
@@ -266,50 +275,52 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void Interact(Transform interactor)
         {
-            InteractionEvents.RaiseInteractionStarted(this, interactor);
+            InteractionEvents.TryRaiseInteractionStarted(this, interactor);
             EnsureCachedRuntimeIdentity();
 
             bool firstActivation = !IsDiscovered;
             if (firstActivation && _relayHash != 0u)
-                NarrativeEvents.RaiseDiscoveryMade(_relayHash);
+                NarrativeEvents.TryRaiseDiscoveryMade(_relayHash);
 
-            string resolvedLoreMessage = FallbackOrLocalized(loreMessage, LocalizationKeys.RELAY_LORE_DEFAULT, DefaultLoreMessage);
-            if (!string.IsNullOrWhiteSpace(resolvedLoreMessage))
-                NotificationEvents.PushInfo(resolvedLoreMessage);
+            ReadOnlySpan<char> resolvedLoreMessage = FallbackOrLocalizedSpan(loreMessage, LocalizationKeys.RELAY_LORE_DEFAULT, DefaultLoreMessage);
+            if (!IsWhiteSpace(resolvedLoreMessage))
+                NotificationEvents.TryPushInfo(resolvedLoreMessage);
 
-            AudioLogSystem audioLogSystem = _cachedAudioLogSystem;
+            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
             if (linkedAudioLog != null && audioLogSystem != null)
-                audioLogSystem.PlayLog(linkedAudioLog);
+                audioLogSystem.TryPlayAudioLog(linkedAudioLog.logId);
 
             TryGrantRewards(interactor);
-            EmergencyServiceRelayEvents.RaiseRelayActivated(this, firstActivation);
+            EmergencyServiceRelayEvents.TryRaiseRelayActivated(this, firstActivation);
             RebuildInteractText();
         }
 
         /// <inheritdoc />
         public string GetInteractText()
         {
-            return _cachedInteractText;
+            return IsDiscovered ? DefaultReviewInteractText : DefaultOpenInteractText;
         }
 
-        /// <summary>Builds the first guidance line used before the player has opened any relay in the chain.</summary>
-        public string BuildInitialRouteMessage()
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
         {
-            return FallbackOrLocalized(initialRouteMessage, LocalizationKeys.RELAY_ROUTE_INITIAL, DefaultInitialRouteMessage);
+            return InteractableTextCopy.TryCopy(_cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength), destination, out length);
         }
 
-        /// <summary>Builds the reminder line used while the player is still following the relay chain.</summary>
-        public string BuildBreadcrumbMessage()
+        public ReadOnlySpan<char> BuildInitialRouteMessageSpan()
         {
-            return FallbackOrLocalized(breadcrumbMessage, LocalizationKeys.RELAY_ROUTE_BREADCRUMB, DefaultBreadcrumbMessage);
+            return FallbackOrLocalizedSpan(initialRouteMessage, LocalizationKeys.RELAY_ROUTE_INITIAL, DefaultInitialRouteMessage);
         }
 
-        /// <summary>Builds the relay handoff that points to the next authored breadcrumb.</summary>
-        public string BuildDownloadedRouteMessage(EmergencyServiceRelay resolvedNextRelay)
+        public ReadOnlySpan<char> BuildBreadcrumbMessageSpan()
+        {
+            return FallbackOrLocalizedSpan(breadcrumbMessage, LocalizationKeys.RELAY_ROUTE_BREADCRUMB, DefaultBreadcrumbMessage);
+        }
+
+        public ReadOnlySpan<char> BuildDownloadedRouteMessageSpan(EmergencyServiceRelay resolvedNextRelay)
         {
             if (resolvedNextRelay == null)
             {
-                return ResolveLocalized(
+                return ResolveLocalizedSpan(
                     LocalizationKeys.RELAY_ROUTE_TERMINUS,
                     "SERVICE RELAY: local route ends here. LOOK FOR THE BIGGER TRACE, THE RUINS, AND AN INTACT MODULE.");
             }
@@ -318,8 +329,8 @@ namespace Hecton8.World
             AbsoluteUniversePosition nextAup = resolvedNextRelay.RelayAup;
             bool deeper = ResolveVerticalDeltaMeters(in currentAup, in nextAup) < 0d;
             return deeper
-                ? DownloadedBelowFallback
-                : DownloadedFartherFallback;
+                ? DownloadedBelowFallback.AsSpan()
+                : DownloadedFartherFallback.AsSpan();
         }
 
         private void EnsureCachedRuntimeIdentity()
@@ -370,7 +381,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             relayAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -399,17 +410,17 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.NarrativeDirectorRuntime:
-                    _cachedNarrativeDirector = currentService as HectonNarrativeDirector;
+                    _cachedNarrativeDiscovery = currentService as INarrativeDiscoveryReadModel;
                     RebuildInteractText();
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _cachedAudioLogSystem = currentService as AudioLogSystem;
+                    _cachedAudioLogSystem = currentService as IAudioLogRuntime;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _cachedLocalization = currentService as LocalizationManager;
+                    _cachedLocalization = currentService as ILocalizationTextReadModel;
                     ApplyDescriptorSemantics();
                     RebuildInteractText();
                     break;
@@ -418,10 +429,10 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _cachedNarrativeDirector = GlobalRegistry.NarrativeDirector;
-            _cachedAudioLogSystem = GlobalRegistry.AudioLogs;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _cachedNarrativeDiscovery = GlobalRegistry.NarrativeDiscoveryReadModel;
+            _cachedAudioLogSystem = GlobalRegistry.AudioLogRuntime;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedLocalization = GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterHotSwapListener()
@@ -455,16 +466,22 @@ namespace Hecton8.World
             if (_descriptor == null)
                 return;
 
-            string descriptorNote = FallbackOrLocalized(fieldOperatorNote, LocalizationKeys.RELAY_DESCRIPTOR_NOTE, DefaultDescriptorNote);
+            string descriptorNote = string.IsNullOrWhiteSpace(fieldOperatorNote)
+                ? DefaultDescriptorNote
+                : fieldOperatorNote;
             _descriptor.Configure(fieldRole, descriptorNote);
         }
 
         private void RebuildInteractText()
         {
-            string verb = IsDiscovered
-                ? FallbackOrLocalized(reviewVerb, LocalizationKeys.RELAY_INTERACT_REVIEW, DefaultReviewVerb)
-                : FallbackOrLocalized(interactVerb, LocalizationKeys.RELAY_INTERACT_OPEN, DefaultInteractVerb);
-            _cachedInteractText = verb + " " + RelayLabel;
+            ReadOnlySpan<char> verb = IsDiscovered
+                ? FallbackOrLocalizedSpan(reviewVerb, LocalizationKeys.RELAY_INTERACT_REVIEW, DefaultReviewVerb)
+                : FallbackOrLocalizedSpan(interactVerb, LocalizationKeys.RELAY_INTERACT_OPEN, DefaultInteractVerb);
+            ReadOnlySpan<char> label = FallbackOrLocalizedSpan(relayLabel, LocalizationKeys.RELAY_LABEL_DEFAULT, DefaultLabel);
+            _cachedInteractTextLength = 0;
+            AppendSpan(_cachedInteractTextBuffer, ref _cachedInteractTextLength, verb);
+            AppendChar(_cachedInteractTextBuffer, ref _cachedInteractTextLength, ' ');
+            AppendSpan(_cachedInteractTextBuffer, ref _cachedInteractTextLength, label);
         }
 
         private void TryGrantRewards(Transform interactor)
@@ -492,16 +509,16 @@ namespace Hecton8.World
             }
 
             if (grantedAny)
-                NotificationEvents.PushInfo(BuildRewardGrantedMessage());
+                NotificationEvents.TryPushInfo(BuildRewardGrantedMessageSpan());
 
             if (inventoryFull)
-                NotificationEvents.PushWarning(
-                    ResolveLocalized(
+                NotificationEvents.TryPushWarning(
+                    ResolveLocalizedSpan(
                         LocalizationKeys.RELAY_REWARD_INVENTORY_FULL,
                         RewardInventoryFullFallback));
         }
 
-        private string BuildRewardGrantedMessage()
+        private ReadOnlySpan<char> BuildRewardGrantedMessageSpan()
         {
             for (int i = 0; i < rewards.Length; i++)
             {
@@ -510,10 +527,10 @@ namespace Hecton8.World
                 if (item == null || quantity <= 0)
                     continue;
 
-                return RewardGrantedFallback;
+                return RewardGrantedFallback.AsSpan();
             }
 
-            return ResolveLocalized(LocalizationKeys.RELAY_REWARD_EMPTY, RewardEmptyFallback);
+            return ResolveLocalizedSpan(LocalizationKeys.RELAY_REWARD_EMPTY, RewardEmptyFallback);
         }
 
         private bool TryResolveInventory(Transform interactor, out PlayerInventory inventory)
@@ -522,7 +539,7 @@ namespace Hecton8.World
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
 
             if (interactor != null)
-                inventory = interactor.GetComponent<PlayerInventory>();
+                interactor.TryGetComponent(out inventory);
 
             if (inventory != null)
                 return true;
@@ -536,23 +553,53 @@ namespace Hecton8.World
             if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return false;
 
-            inventory = playerTransform.GetComponent<PlayerInventory>();
+            playerTransform.TryGetComponent(out inventory);
             return inventory != null;
         }
 
-        private string FallbackOrLocalized(string value, string key, string fallback)
+        private ReadOnlySpan<char> FallbackOrLocalizedSpan(string value, string key, string fallback)
         {
             return string.IsNullOrWhiteSpace(value)
-                ? ResolveLocalized(key, fallback)
-                : value;
+                ? ResolveLocalizedSpan(key, fallback)
+                : value.AsSpan();
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = _cachedLocalization;
+            ILocalizationTextReadModel manager = _cachedLocalization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
+        }
+
+        private static void AppendSpan(char[] destination, ref int length, ReadOnlySpan<char> source)
+        {
+            int available = destination.Length - length;
+            if (available <= 0)
+                return;
+
+            int copyLength = math.min(source.Length, available);
+            source.Slice(0, copyLength).CopyTo(destination.AsSpan(length, copyLength));
+            length += copyLength;
+        }
+
+        private static void AppendChar(char[] destination, ref int length, char value)
+        {
+            if (length >= destination.Length)
+                return;
+
+            destination[length++] = value;
+        }
+
+        private static bool IsWhiteSpace(ReadOnlySpan<char> value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                    return false;
+            }
+
+            return true;
         }
 
 #if UNITY_EDITOR

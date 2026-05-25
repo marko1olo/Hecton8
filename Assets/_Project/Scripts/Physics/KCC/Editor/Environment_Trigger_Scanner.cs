@@ -57,8 +57,10 @@ namespace Hecton8.Physics.KCC.Editor
             int parserFailures = 0;
             if (Directory.Exists(scriptRoot))
             {
-                foreach (string path in Directory.EnumerateFiles(scriptRoot, "*.cs", SearchOption.AllDirectories))
+                string[] files = Directory.GetFiles(scriptRoot, "*.cs", SearchOption.AllDirectories);
+                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
                 {
+                    string path = files[fileIndex];
                     if (Path.GetFileName(path).Equals(nameof(Environment_Trigger_Scanner) + ".cs", StringComparison.Ordinal))
                         continue;
 

@@ -1,7 +1,9 @@
 {
     "name": "Hecton8.Bootstrap.Contracts",
     "rootNamespace": "Hecton8.Core",
-    "references": [],
+    "references": [
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

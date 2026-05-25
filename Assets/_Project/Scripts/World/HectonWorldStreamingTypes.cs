@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class HectonWorldStreamingTypesLayout
+    {
+        public const int TerrainHoleStreamingRecordStrideBytes = 32;
+        public const int HLODDataStrideBytes = 48;
+    }
+
     /// <summary>
     /// Identifies the runtime owner that authored a terrain-hole mask.
     /// </summary>
@@ -49,7 +55,7 @@ namespace Hecton8.World
     /// Immutable terrain-hole snapshot record published to streaming consumers.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonWorldStreamingTypesLayout.TerrainHoleStreamingRecordStrideBytes)]
     public struct TerrainHoleStreamingRecord
     {
         [FieldOffset(0)]
@@ -88,7 +94,7 @@ namespace Hecton8.World
     /// Immutable HLOD registry payload for distant large-structure rendering.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonWorldStreamingTypesLayout.HLODDataStrideBytes)]
     public struct HLODData
     {
         [FieldOffset(0)]

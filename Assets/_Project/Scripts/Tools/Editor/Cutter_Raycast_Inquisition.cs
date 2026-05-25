@@ -75,8 +75,10 @@ namespace Hecton8.Tools.Editor
             int mockForceCompleteSites = 0;
             int mockForceCompleteFenceHits = 0;
 
-            foreach (string file in Directory.EnumerateFiles(sourceRoot, "*.cs", SearchOption.AllDirectories))
+            string[] sourceFiles = Directory.GetFiles(sourceRoot, "*.cs", SearchOption.AllDirectories);
+            for (int fileIndex = 0; fileIndex < sourceFiles.Length; fileIndex++)
             {
+                string file = sourceFiles[fileIndex];
                 string normalized = file.Replace('\\', '/');
                 if (normalized.EndsWith("/Tools/Editor/Cutter_Raycast_Inquisition.cs", StringComparison.Ordinal))
                     continue;

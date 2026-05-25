@@ -862,7 +862,7 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
             builder.AppendLine("  <DearLie before=\"O(fragments*biome_math)\" after=\"O(fragments*texture_sample)\" />");
             builder.Append("  <BC7>").Append(result.Bc7Compressed ? "true" : "false").AppendLine("</BC7>");
             builder.AppendLine("</SELF_AUDIT>");
-            File.WriteAllText(AuditPath, builder.ToString(), new UTF8Encoding(false));
+            File.WriteAllText(AuditPath, builder.ToString(), Encoding.UTF8);
         }
 
         private static void AppendTask(StringBuilder builder, int index, string name, bool passed, string evidence)

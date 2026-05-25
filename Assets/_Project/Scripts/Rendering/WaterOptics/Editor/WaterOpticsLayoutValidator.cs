@@ -109,8 +109,13 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             if (!File.Exists(path))
                 return false;
 
-            string text = File.ReadAllText(path);
-            return text.Contains(token);
+            foreach (string line in File.ReadLines(path))
+            {
+                if (line.Contains(token))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

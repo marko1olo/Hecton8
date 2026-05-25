@@ -682,7 +682,10 @@ namespace Hecton8.Editor.OfflineGeometry
             float angle = shapeIndex * 2.3999631f;
             float lane = ((shapeIndex * 37) & 31) * math.rcp(31f);
             float radius = math.lerp(RoomRadius * 0.25f, RoomRadius, lane);
-            float3 center = new float3(math.cos(angle) * radius, ((shapeIndex % 17) - 8) * 0.11f, math.sin(angle) * radius);
+            float3 center = new float3(
+                Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angle) * radius,
+                ((shapeIndex % 17) - 8) * 0.11f,
+                Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle) * radius);
             float3 size = new float3(0.08f + (shapeIndex % 5) * 0.025f, 0.05f + (shapeIndex % 7) * 0.018f, math.lerp(0.15f, 0.75f, q));
             WriteBox(baseVertex, center, size);
         }

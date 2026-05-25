@@ -1,4 +1,4 @@
-# SHINOBU_262 Single-Pass Ocean RenderGraph Route
+﻿# SHINOBU_262 Single-Pass Ocean RenderGraph Route
 
 Owner: `SHINOBU_262 / CREST_CAMERA_GUILLOTINE_EXECUTIONER`
 
@@ -28,11 +28,15 @@ Evidence class: STATIC_SOURCE until Unity import, Console compile, Frame Debugge
 
 ## Dear Lie
 
-Depth is derived from the primary camera depth texture in screen space instead of rendering terrain from a top-down ocean camera. Foam uses Gerstner Jacobian/shoreline scalars and wake texture sampling in the ocean shader. Vehicle wakes are accumulated from `PropwashEventDTO` data into one RenderGraph-owned compute texture, not by rendering particles or geometry through a hidden camera.
+- Depth is derived from the primary camera depth texture in screen space instead of rendering terrain from a top-down ocean camera.
+- Foam uses Gerstner Jacobian/shoreline scalars and wake texture sampling in the ocean shader.
+- Vehicle wakes are accumulated from `PropwashEventDTO` data into one RenderGraph-owned compute texture, not by rendering particles or geometry through a hidden camera.
 
 ## Scalability
 
-`GlobalQualityWeight` is continuous. It resolves wake texture size from 256 to 1024 in 16-pixel quanta, scales foam intensity, and scales wake strength. It does not change DTO layout, gameplay truth ownership, save identity, or rollback authority.
+`GlobalQualityWeight` is continuous.
+
+It resolves wake texture size `256..1024` in 16-pixel quanta, scales foam intensity, and scales wake strength. It does not change DTO layout, truth ownership, save identity, or rollback authority.
 
 ## Rollback Boundary
 
@@ -40,4 +44,6 @@ All SHINOBU_262 buffers are presentation-only. They are excluded from `StateRing
 
 ## Verification Status
 
-Static source proofs exist for layout guard, editor tuner, camera proliferation scanner, CSV parser, edit tests, `Hecton8.Rendering.OceanSinglePass.asmdef` isolation, renderer-feature installer/build guard, and Unity `.meta` identity. Compile/runtime/profiler proof is pending Unity project regeneration/import and the guarded build step.
+Static source proofs exist for layout guard, editor tuner, camera scanner, CSV parser, edit tests, asmdef isolation, renderer-feature installer/build guard, and `.meta` identity.
+
+Compile/runtime/profiler proof remains pending Unity project regeneration/import and guarded build.

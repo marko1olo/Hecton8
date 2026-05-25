@@ -61,7 +61,7 @@ namespace Hecton8.Modding
                 bool hasContent = _mods.Count > 0 || _settings.Count > 0;
                 emptyStateLabel.gameObject.SetActive(!hasContent);
                 if (!hasContent)
-                    emptyStateLabel.SetText("No mods loaded.");
+                    Hecton8.UI.TmpTextNoAlloc.Set(emptyStateLabel, "No mods loaded.");
             }
         }
 

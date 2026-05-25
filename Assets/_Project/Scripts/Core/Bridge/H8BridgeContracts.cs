@@ -7,6 +7,18 @@ using Hecton8.Core.Memory.Layout;
 
 namespace Hecton8.Core.Bridge
 {
+    internal static class H8BridgeContractLayout
+    {
+        public const int PrefabMappingEntryStrideBytes = 64;
+        public const int PrefabLoreLinkEntryStrideBytes = 32;
+        public const int DesignValueEntryStrideBytes = 32;
+        public const int FacadeTelemetryEntryStrideBytes = 64;
+        public const int FacadeTelemetryDumpHeaderStrideBytes = 32;
+        public const int InputFacadeBindingEntryStrideBytes = 32;
+        public const int FacadeMacroHeaderStrideBytes = 64;
+        public const int FloatUInt32UnionStrideBytes = 4;
+    }
+
     [Flags]
     public enum H8PrefabMappingFlags : ushort
     {
@@ -31,7 +43,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = H8BridgeContractLayout.PrefabMappingEntryStrideBytes)]
     public struct H8PrefabMappingEntry
     {
         [FieldOffset(0)] public uint HashID;
@@ -51,7 +63,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = H8BridgeContractLayout.PrefabLoreLinkEntryStrideBytes)]
     public struct H8PrefabLoreLinkEntry
     {
         [FieldOffset(0)] public uint PrefabHash;
@@ -66,7 +78,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = H8BridgeContractLayout.DesignValueEntryStrideBytes)]
     public struct H8DesignValueEntry
     {
         [FieldOffset(0)] public uint FieldHash;
@@ -81,7 +93,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = H8BridgeContractLayout.FacadeTelemetryEntryStrideBytes)]
     public struct H8FacadeTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
@@ -101,7 +113,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = H8BridgeContractLayout.FacadeTelemetryDumpHeaderStrideBytes)]
     public struct H8FacadeTelemetryDumpHeader
     {
         [FieldOffset(0)] public uint Magic;
@@ -115,7 +127,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = H8BridgeContractLayout.InputFacadeBindingEntryStrideBytes)]
     public struct H8InputFacadeBindingEntry
     {
         [FieldOffset(0)] public uint ActionNameHash;
@@ -131,7 +143,7 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = H8BridgeContractLayout.FacadeMacroHeaderStrideBytes)]
     public struct H8FacadeMacroHeader
     {
         [FieldOffset(0)] public uint Magic;
@@ -232,7 +244,7 @@ namespace Hecton8.Core.Bridge
             return hash;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = H8BridgeContractLayout.FloatUInt32UnionStrideBytes)]
         private struct FloatUInt32Union
         {
             [FieldOffset(0)] public float FloatValue;

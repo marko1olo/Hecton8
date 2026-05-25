@@ -306,7 +306,7 @@ namespace Hecton8.Audio.Synthesis.Editor
                 return synth;
 
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindAnyObjectByType<DynamicMusicGranularSynthesizer>();
+            return UnityEngine.Object.FindAnyObjectByType<DynamicMusicGranularSynthesizer>(FindObjectsInactive.Include);
 #else
             return UnityEngine.Object.FindObjectOfType<DynamicMusicGranularSynthesizer>();
 #endif

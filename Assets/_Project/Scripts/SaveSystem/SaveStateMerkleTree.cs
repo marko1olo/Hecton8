@@ -286,8 +286,7 @@ namespace Hecton8.SaveSystem
             float quality = SmoothUnit(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             float stress = SmoothUnit(math.isfinite(systemStress01) ? systemStress01 : 0f);
             float retention = math.saturate(quality * (1f - (stress * 0.5f)));
-            float survivalBand = 1f - math.step(0.3f, quality);
-            float survivalPull = survivalBand * SmoothUnit((0.3f - quality) * 3.3333333f);
+            float survivalPull = SmoothUnit((0.3f - quality) * 3.3333333f);
             float cosmeticFloor = math.lerp(0.03125f, 0.00390625f, survivalPull);
             float cosmeticScale = math.max(cosmeticFloor, retention * retention * math.lerp(0.5f, 1f, quality));
             float subBlockScale = math.lerp(math.lerp(0.25f, 0.125f, survivalPull), 1f, quality);
@@ -474,7 +473,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.SavePersistence,
@@ -2779,6 +2778,7 @@ namespace Hecton8.SaveSystem
         }
     }
 
+    #if UNITY_EDITOR
     internal static unsafe class SaveMerkleCsvOverrideParser
     {
         private const uint SubBlockSizeHash = 0x77168845u;
@@ -2977,4 +2977,5 @@ namespace Hecton8.SaveSystem
             return any;
         }
     }
+    #endif
 }

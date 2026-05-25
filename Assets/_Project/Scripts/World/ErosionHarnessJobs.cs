@@ -39,9 +39,29 @@ namespace Hecton8.World
             float2 uv = new float2(x, z) * (1f / safeResolution);
             float n = FractalValueNoise(uv * 7.5f, PrimarySeed);
             float ridge = 1f - math.abs(FractalValueNoise(uv * 3.25f + new float2(19.3f, -7.1f), RidgeSeed) * 2f - 1f);
-            float h = math.saturate(math.smoothstep(0.2f, 0.95f, n) * 0.72f + math.pow(ridge, 3.2f) * 0.28f);
+            float ridge2 = ridge * ridge;
+            float ridge32 = ridge2 * ridge * FifthRoot01(ridge);
+            float h = math.saturate(math.smoothstep(0.2f, 0.95f, n) * 0.72f + ridge32 * 0.28f);
             Before[index] = h;
             Height[index] = h;
+        }
+
+        private static float FifthRoot01(float value)
+        {
+            float target = math.saturate(value);
+            float low = 0f;
+            float high = 1f;
+            for (int i = 0; i < 16; i++)
+            {
+                float mid = (low + high) * 0.5f;
+                float mid2 = mid * mid;
+                float mid5 = mid2 * mid2 * mid;
+                bool raiseLow = mid5 < target;
+                low = math.select(low, mid, raiseLow);
+                high = math.select(mid, high, raiseLow);
+            }
+
+            return (low + high) * 0.5f;
         }
 
         private static float FractalValueNoise(float2 sample, uint seed)

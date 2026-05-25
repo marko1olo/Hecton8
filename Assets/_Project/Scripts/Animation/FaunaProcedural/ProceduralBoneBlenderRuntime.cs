@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -25,12 +26,12 @@ namespace Hecton8.Animation.FaunaProcedural
         private const int LockCursor = 1 << 8;
         private const int LockTuning = 1 << 9;
         private const int LockMockSignals = 1 << 10;
+        private const int ProceduralBoneShaderGlobalsBytes = 32;
 
         private static readonly int ProceduralBoneMatricesId = Shader.PropertyToID("_H8ProceduralBoneMatrices");
-        private static readonly int ProceduralBoneMatrixCountId = Shader.PropertyToID("_H8ProceduralBoneMatrixCount");
-        private static readonly int ProceduralBoneActiveSkeletonsId = Shader.PropertyToID("_H8ProceduralBoneActiveSkeletons");
-        private static readonly int ProceduralBoneQualityId = Shader.PropertyToID("_H8ProceduralBoneQuality");
-        private static readonly int ProceduralBoneGpuSkinningId = Shader.PropertyToID("_H8ProceduralBoneGpuSkinning");
+        private static readonly int ProceduralBoneGlobalsId = Shader.PropertyToID("_H8ProceduralBoneGlobals");
+        private const int ProceduralBoneGlobalsScalars0Offset = 0;
+        private const int ProceduralBoneGlobalsScalars1Offset = 16;
 
         [SerializeField, Range(1, ProceduralBoneBlenderConstants.DefaultSkeletonCapacity)]
         private int _skeletonCapacity = ProceduralBoneBlenderConstants.DefaultSkeletonCapacity;
@@ -38,8 +39,6 @@ namespace Hecton8.Animation.FaunaProcedural
         [SerializeField, Range(ProceduralBoneBlenderConstants.EmergencyMockBoneCount, ProceduralBoneBlenderConstants.DefaultBoneCapacity)]
         private int _boneCapacity = ProceduralBoneBlenderConstants.DefaultBoneCapacity;
 
-        [SerializeField] private Material _gpuSkinningMaterial;
-        [SerializeField] private bool _publishGlobalBuffer = true;
         [SerializeField] private bool _seedEmergencyMockRig = true;
 
         private IDataVault _dataVault;
@@ -57,6 +56,9 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private GraphicsBuffer _matrixBufferA;
         private GraphicsBuffer _matrixBufferB;
+        private GraphicsBuffer _shaderGlobalsBufferA;
+        private GraphicsBuffer _shaderGlobalsBufferB;
+        private GraphicsBuffer _activeShaderGlobalsBuffer;
         private JobHandle _pendingHandle;
         private float _simulationTime;
         private float _accumulatedDelta;
@@ -65,6 +67,7 @@ namespace Hecton8.Animation.FaunaProcedural
         private uint _latestMatrixStateHash;
         private uint _uploadedMatrixStateHash;
         private int _gpuUploadBufferIndex;
+        private int _shaderGlobalsUploadBufferIndex;
         private int _activeMatrixUploadCount;
         private int _activeSkeletonCount;
         private int _uploadedMatrixCount;
@@ -83,6 +86,20 @@ namespace Hecton8.Animation.FaunaProcedural
         private bool _dumpedFault;
 
         private static ProceduralBoneBlenderRuntime _activeRuntimeInstance;
+
+        [StructLayout(LayoutKind.Explicit, Size = ProceduralBoneShaderGlobalsBytes)]
+        private struct ProceduralBoneShaderGlobalsDTO
+        {
+            [FieldOffset(0)] public float4 Scalars0;
+            [FieldOffset(16)] public float4 Scalars1;
+        }
+
+        private static bool ValidateProceduralBoneShaderGlobalsLayout()
+        {
+            return UnsafeUtility.SizeOf<ProceduralBoneShaderGlobalsDTO>() == ProceduralBoneShaderGlobalsBytes &&
+                   ProceduralBoneGlobalsScalars0Offset == 0 &&
+                   ProceduralBoneGlobalsScalars1Offset == 16;
+        }
 
         public static bool TryGetActiveRuntimeInstance(out ProceduralBoneBlenderRuntime runtime)
         {
@@ -171,6 +188,7 @@ namespace Hecton8.Animation.FaunaProcedural
             return matrixCount > 0;
         }
 
+#if UNITY_EDITOR
         public bool TryApplyCsvProfile(string csvText)
         {
             if (string.IsNullOrEmpty(csvText) || !TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> tuning))
@@ -196,6 +214,7 @@ namespace Hecton8.Animation.FaunaProcedural
             rigs[0] = rig;
             return result;
         }
+#endif
 
         private void Awake()
         {
@@ -650,7 +669,7 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return false;
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AnimationFauna,
@@ -907,7 +926,7 @@ namespace Hecton8.Animation.FaunaProcedural
             }
 
             int count = math.min(math.min(_activeMatrixUploadCount, matrices.Length), _boneCapacity);
-            if (count <= 0 || (_gpuSkinningMaterial == null && !_publishGlobalBuffer))
+            if (count <= 0)
             {
                 ClearGpuSkinningBinding();
                 return true;
@@ -922,7 +941,11 @@ namespace Hecton8.Animation.FaunaProcedural
             }
 
             ProceduralBoneGraphicsBufferUpload.UploadNativeArray(writeBuffer, matrices, count);
-            PublishGpuSkinningBinding(writeBuffer, count);
+            if (!PublishGpuSkinningBinding(writeBuffer, count))
+            {
+                ClearGpuSkinningBinding();
+                return false;
+            }
 
             _gpuUploadBufferIndex ^= 1;
             _gpuBufferDataValid = true;
@@ -940,38 +963,74 @@ namespace Hecton8.Animation.FaunaProcedural
             GraphicsBuffer buffer = _gpuUploadBufferIndex == 0 ? _matrixBufferB : _matrixBufferA;
             if (!_gpuBufferDataValid ||
                 count <= 0 ||
-                (_gpuSkinningMaterial == null && !_publishGlobalBuffer) ||
                 !HasValidGraphicsBuffer(buffer, count))
             {
                 return false;
             }
 
-            PublishGpuSkinningBinding(buffer, count);
+            if (!PublishGpuSkinningBinding(buffer, count))
+                return false;
+
             _uploadedSkeletonCount = _activeSkeletonCount;
             _uploadedQuality = _lastQuality;
             return true;
         }
 
-        private void PublishGpuSkinningBinding(GraphicsBuffer buffer, int count)
+        private bool PublishGpuSkinningBinding(GraphicsBuffer buffer, int count)
         {
-            if (_gpuSkinningMaterial != null)
+            ProceduralBoneShaderGlobalsDTO globals = new ProceduralBoneShaderGlobalsDTO
             {
-                _gpuSkinningMaterial.SetBuffer(ProceduralBoneMatricesId, buffer);
-                _gpuSkinningMaterial.SetFloat(ProceduralBoneMatrixCountId, count);
-                _gpuSkinningMaterial.SetFloat(ProceduralBoneActiveSkeletonsId, _activeSkeletonCount);
-                _gpuSkinningMaterial.SetFloat(ProceduralBoneQualityId, _lastQuality);
-                _gpuSkinningMaterial.SetFloat(ProceduralBoneGpuSkinningId, 1f);
+                Scalars0 = new float4(count, _activeSkeletonCount, _lastQuality, 1f),
+                Scalars1 = float4.zero
+            };
+            if (!PublishProceduralBoneGlobals(in globals))
+                return false;
+
+            Shader.SetGlobalBuffer(ProceduralBoneMatricesId, buffer);
+            _globalGpuSkinningPublished = true;
+            return true;
+        }
+
+        private bool PublishProceduralBoneGlobals(in ProceduralBoneShaderGlobalsDTO globals)
+        {
+            if (!ValidateProceduralBoneShaderGlobalsLayout() ||
+                !SystemInfo.supportsSetConstantBuffer ||
+                !EnsureShaderGlobalsBuffers())
+                return false;
+
+            GraphicsBuffer writeBuffer = _shaderGlobalsUploadBufferIndex == 0 ? _shaderGlobalsBufferA : _shaderGlobalsBufferB;
+            NativeArray<ProceduralBoneShaderGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<ProceduralBoneShaderGlobalsDTO>(0, 1);
+            try
+            {
+                mapped[0] = globals;
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<ProceduralBoneShaderGlobalsDTO>(1);
             }
 
-            if (_publishGlobalBuffer)
+            _shaderGlobalsUploadBufferIndex ^= 1;
+            _activeShaderGlobalsBuffer = writeBuffer;
+            Shader.SetGlobalConstantBuffer(ProceduralBoneGlobalsId, _activeShaderGlobalsBuffer, 0, ProceduralBoneShaderGlobalsBytes);
+            return true;
+        }
+
+        private bool EnsureShaderGlobalsBuffers()
+        {
+            if (!HasValidShaderGlobalsBuffer(_shaderGlobalsBufferA))
             {
-                Shader.SetGlobalBuffer(ProceduralBoneMatricesId, buffer);
-                Shader.SetGlobalFloat(ProceduralBoneMatrixCountId, count);
-                Shader.SetGlobalFloat(ProceduralBoneActiveSkeletonsId, _activeSkeletonCount);
-                Shader.SetGlobalFloat(ProceduralBoneQualityId, _lastQuality);
-                Shader.SetGlobalFloat(ProceduralBoneGpuSkinningId, 1f);
-                _globalGpuSkinningPublished = true;
+                ReleaseGraphicsBuffer(ref _shaderGlobalsBufferA);
+                _shaderGlobalsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, ProceduralBoneShaderGlobalsBytes); // COLD ALLOC: GraphicsBuffer[32B] - procedural bone globals A - owner: SHINOBU_305
             }
+
+            if (!HasValidShaderGlobalsBuffer(_shaderGlobalsBufferB))
+            {
+                ReleaseGraphicsBuffer(ref _shaderGlobalsBufferB);
+                _shaderGlobalsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, ProceduralBoneShaderGlobalsBytes); // COLD ALLOC: GraphicsBuffer[32B] - procedural bone globals B - owner: SHINOBU_305
+            }
+
+            return HasValidShaderGlobalsBuffer(_shaderGlobalsBufferA) &&
+                   HasValidShaderGlobalsBuffer(_shaderGlobalsBufferB);
         }
 
         private void EnsureGraphicsBuffers()
@@ -1001,20 +1060,14 @@ namespace Hecton8.Animation.FaunaProcedural
             _uploadedMatrixCount = 0;
             _uploadedSkeletonCount = 0;
             _uploadedQuality = -1f;
-            if (_gpuSkinningMaterial != null)
+            if (_globalGpuSkinningPublished || _activeShaderGlobalsBuffer != null)
             {
-                _gpuSkinningMaterial.SetFloat(ProceduralBoneMatrixCountId, 0f);
-                _gpuSkinningMaterial.SetFloat(ProceduralBoneActiveSkeletonsId, 0f);
-                _gpuSkinningMaterial.SetFloat(ProceduralBoneQualityId, 0f);
-                _gpuSkinningMaterial.SetFloat(ProceduralBoneGpuSkinningId, 0f);
-            }
-
-            if (_publishGlobalBuffer || _globalGpuSkinningPublished)
-            {
-                Shader.SetGlobalFloat(ProceduralBoneMatrixCountId, 0f);
-                Shader.SetGlobalFloat(ProceduralBoneActiveSkeletonsId, 0f);
-                Shader.SetGlobalFloat(ProceduralBoneQualityId, 0f);
-                Shader.SetGlobalFloat(ProceduralBoneGpuSkinningId, 0f);
+                ProceduralBoneShaderGlobalsDTO disabled = new ProceduralBoneShaderGlobalsDTO
+                {
+                    Scalars0 = float4.zero,
+                    Scalars1 = float4.zero
+                };
+                PublishProceduralBoneGlobals(in disabled);
                 _globalGpuSkinningPublished = false;
             }
         }
@@ -1023,6 +1076,9 @@ namespace Hecton8.Animation.FaunaProcedural
         {
             ReleaseGraphicsBuffer(ref _matrixBufferA);
             ReleaseGraphicsBuffer(ref _matrixBufferB);
+            ReleaseGraphicsBuffer(ref _shaderGlobalsBufferA);
+            ReleaseGraphicsBuffer(ref _shaderGlobalsBufferB);
+            _activeShaderGlobalsBuffer = null;
             _gpuBufferDataValid = false;
         }
 
@@ -1107,6 +1163,11 @@ namespace Hecton8.Animation.FaunaProcedural
         private static bool HasValidGraphicsBuffer(GraphicsBuffer buffer, int requiredCount)
         {
             return buffer != null && buffer.IsValid() && buffer.count >= requiredCount && buffer.stride == UnsafeUtility.SizeOf<float4x4>();
+        }
+
+        private static bool HasValidShaderGlobalsBuffer(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid() && buffer.count >= 1 && buffer.stride == ProceduralBoneShaderGlobalsBytes;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)

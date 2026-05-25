@@ -4,6 +4,22 @@ using Unity.Mathematics;
 
 namespace Hecton8.AI.Cognition
 {
+    internal static class ApexBrainContractLayout
+    {
+        public const int StateStrideBytes = 64;
+        public const int MockPlayerAupStrideBytes = 128;
+        public const int AcousticEchoTapStrideBytes = 64;
+        public const int MockWorldSamplerStrideBytes = 64;
+        public const int TuningStrideBytes = 128;
+        public const int EmergencyStatsStrideBytes = 64;
+        public const int InfluenceNodeStrideBytes = 64;
+        public const int OutputStrideBytes = 192;
+        public const int TelemetryEntryStrideBytes = 128;
+        public const int ProximitySignalStrideBytes = 64;
+        public const int MockCombatDamageSignalStrideBytes = 64;
+        public const int PanicSignalStrideBytes = 64;
+    }
+
     /// <summary>
     /// Constants for SHINOBU_61 predictive apex aggression.
     /// </summary>
@@ -150,7 +166,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Cache-line apex predator truth. Size: 64 bytes without packed runtime layout.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.StateStrideBytes)]
     public struct ApexStateDTO
     {
         [FieldOffset(0)] public double3 AUP;
@@ -166,7 +182,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Blind target kinematics packet used when Player Kinematics is absent. Size: 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.MockPlayerAupStrideBytes)]
     public partial struct MockPlayerAUP
     {
         [FieldOffset(0)] public double3 AUP;
@@ -190,7 +206,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Decoupled acoustic tap consumed by the apex cortex without referencing the audio runtime. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.AcousticEchoTapStrideBytes)]
     public partial struct ApexBrainAcousticEchoTap : ISignal
     {
         [FieldOffset(0)] public double3 AUP;
@@ -207,7 +223,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Analytic SDF lie for caves and canyon cover. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.MockWorldSamplerStrideBytes)]
     public struct MockWorldSampler
     {
         [FieldOffset(0)] public float3 OriginLocal;
@@ -229,7 +245,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Human-authored apex tuning row. Size: 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.TuningStrideBytes)]
     public struct ApexBrainTuning
     {
         [FieldOffset(0)] public float AggressionMultiplier;
@@ -267,7 +283,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Emergency 16-byte aligned fallback stats when legacy .h8bin curves are absent. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.EmergencyStatsStrideBytes)]
     public struct ApexEmergencyStats
     {
         [FieldOffset(0)] public float4 AggressionBuildSeconds;
@@ -279,7 +295,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Ambush node scratch record. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.InfluenceNodeStrideBytes)]
     public struct ApexInfluenceNode
     {
         [FieldOffset(0)] public float3 LocalPosition;
@@ -298,7 +314,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Apex brain output consumed by movement, animation, and presentation bridges. Size: 192 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 192)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.OutputStrideBytes)]
     public struct ApexBrainOutputDTO
     {
         [FieldOffset(0)] public float3 DesiredVelocity;
@@ -335,7 +351,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// 300-frame black-box row for SHINOBU_61. Size: 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.TelemetryEntryStrideBytes)]
     public struct ApexTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
@@ -366,7 +382,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Proximity pressure signal for audio/HUD consumers. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.ProximitySignalStrideBytes)]
     public partial struct ApexProximitySignal : ISignal
     {
         [FieldOffset(0)] public double3 SourceAup;
@@ -385,7 +401,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Direct mathematical base-hit signal for WFC/base systems. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.MockCombatDamageSignalStrideBytes)]
     public partial struct MockCombatDamageSignal : ISignal
     {
         [FieldOffset(0)] public double3 TargetAup;
@@ -403,7 +419,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Fauna panic broadcast emitted before apex arrival. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.PanicSignalStrideBytes)]
     public partial struct ApexPanicSignal : ISignal
     {
         [FieldOffset(0)] public double3 SourceAup;

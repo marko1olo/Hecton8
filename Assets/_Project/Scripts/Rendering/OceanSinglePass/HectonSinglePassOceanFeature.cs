@@ -386,7 +386,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 return (float)(ticks * (1000000.0 / Stopwatch.Frequency));
             }
 
-            private struct DepthPassData
+            private sealed class DepthPassData
             {
                 internal TextureHandle Depth;
                 internal Material Material;
@@ -396,7 +396,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 internal Vector4 ShorelineFoamRuntime;
             }
 
-            private struct WakePassData
+            private sealed class WakePassData
             {
                 internal ComputeShader Compute;
                 internal int ClearKernel;
@@ -415,7 +415,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 internal int DispatchZ;
             }
 
-            private struct ClearPassData
+            private sealed class ClearPassData
             {
             }
         }

@@ -84,7 +84,7 @@ namespace Hecton8.Editor
         private static bool ValidateJobDependency()
         {
             return ValidateSizeAndAlign<JobDependencyDTO>(JobDependencySizeBytes) &&
-                   OffsetOf<JobDependencyDTO>(nameof(JobDependencyDTO.JobHandlePtr)) == 0 &&
+                   OffsetOf<JobDependencyDTO>(nameof(JobDependencyDTO.JobHandleBits)) == 0 &&
                    OffsetOf<JobDependencyDTO>(nameof(JobDependencyDTO.SystemIdHash)) == 8 &&
                    OffsetOf<JobDependencyDTO>(nameof(JobDependencyDTO.FrameId)) == 12 &&
                    OffsetOf<JobDependencyDTO>(nameof(JobDependencyDTO.DependencyHash0)) == 16 &&

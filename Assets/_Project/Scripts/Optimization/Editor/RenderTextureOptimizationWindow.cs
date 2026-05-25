@@ -103,8 +103,8 @@ namespace Hecton8.Optimization.Editor
             
             // Summary
             long totalSavings = 0L;
-            foreach (var rec in _formatRecommendations)
-                totalSavings += rec.MemorySavingsBytes;
+            for (int i = 0; i < _formatRecommendations.Count; i++)
+                totalSavings += _formatRecommendations[i].MemorySavingsBytes;
             
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField($"Total Recommendations: {_formatRecommendations.Count}");
@@ -114,8 +114,9 @@ namespace Hecton8.Optimization.Editor
             EditorGUILayout.Space(10f);
             
             // Recommendations list
-            foreach (var rec in _formatRecommendations)
+            for (int i = 0; i < _formatRecommendations.Count; i++)
             {
+                FormatOptimizationRecommendation rec = _formatRecommendations[i];
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 
                 EditorGUILayout.LabelField($"RT: {rec.RenderTexture.name}", EditorStyles.boldLabel);
@@ -185,8 +186,8 @@ namespace Hecton8.Optimization.Editor
             
             // Summary
             long totalSavings = 0L;
-            foreach (var rec in _resolutionRecommendations)
-                totalSavings += rec.MemorySavingsBytes;
+            for (int i = 0; i < _resolutionRecommendations.Count; i++)
+                totalSavings += _resolutionRecommendations[i].MemorySavingsBytes;
             
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField($"Total Recommendations: {_resolutionRecommendations.Count}");
@@ -196,8 +197,9 @@ namespace Hecton8.Optimization.Editor
             EditorGUILayout.Space(10f);
             
             // Recommendations list
-            foreach (var rec in _resolutionRecommendations)
+            for (int i = 0; i < _resolutionRecommendations.Count; i++)
             {
+                ResolutionOptimizationRecommendation rec = _resolutionRecommendations[i];
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 
                 EditorGUILayout.LabelField($"RT: {rec.RenderTexture.name}", EditorStyles.boldLabel);

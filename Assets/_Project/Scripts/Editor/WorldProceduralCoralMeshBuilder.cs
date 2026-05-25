@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -443,9 +444,9 @@ namespace Hecton8.EditorTools
             {
                 float t = ridgeCount <= 1 ? 0.5f : ridgeIndex / (float)(ridgeCount - 1);
                 float lateral = Mathf.Lerp(-0.62f, 0.62f, t) * scale.x;
-                float zWave = Mathf.Sin((t + 0.17f) * Mathf.PI * 2f) * scale.z * 0.12f;
+                float zWave = MathLodApproximation.ApproxSinBhaskara((t + 0.17f) * Mathf.PI * 2f) * scale.z * 0.12f;
                 float crestHeight = scale.y * Mathf.Lerp(0.44f, 0.7f, 1f - Mathf.Abs((t * 2f) - 1f));
-                float meander = Mathf.Sin((ridgeIndex + 1) * 1.37f) * scale.x * 0.08f;
+                float meander = MathLodApproximation.ApproxSinBhaskara((ridgeIndex + 1) * 1.37f) * scale.x * 0.08f;
 
                 Vector3 start = new Vector3(lateral, scale.y * 0.28f, -scale.z * 0.24f + zWave * 0.5f);
                 Vector3 end = new Vector3(lateral * 0.82f + meander, scale.y * 0.46f, scale.z * 0.28f + zWave);
@@ -1155,9 +1156,9 @@ namespace Hecton8.EditorTools
                 {
                     float u = radialIndex / (float)radialSegments;
                     float angle = u * TwoPi;
-                    float rib = 1f + Mathf.Sin(angle * 3f + t * 6f) * ribAmplitude;
+                    float rib = 1f + MathLodApproximation.ApproxSinBhaskara(angle * 3f + t * 6f) * ribAmplitude;
                     float actualRadius = radius * rib;
-                    Vector3 radial = (normalAxis * Mathf.Cos(angle) + binormal * Mathf.Sin(angle)).normalized;
+                    Vector3 radial = (normalAxis * MathLodApproximation.ApproxCosBhaskara(angle) + binormal * MathLodApproximation.ApproxSinBhaskara(angle)).normalized;
                     Vector3 vertex = center + radial * actualRadius;
                     Vector4 tangent4 = new Vector4(binormal.x, binormal.y, binormal.z, 1f);
                     buffers.AddVertex(vertex, radial, tangent4, new Vector2(u, t), color);
@@ -1187,16 +1188,16 @@ namespace Hecton8.EditorTools
             {
                 float u = i / (float)radialSegments;
                 float angle = u * TwoPi;
-                float wave = Mathf.Sin(angle * 3f) * wobble + Mathf.Cos(angle * 5f) * wobble * 0.45f;
-                float edgeDrop = Mathf.Sin(angle * 2f + 0.6f) * thickness * 0.22f;
-                Vector3 radial = right * (Mathf.Cos(angle) * (radiusX + wave)) + forward * (Mathf.Sin(angle) * (radiusZ + wave * 0.76f));
+                float wave = MathLodApproximation.ApproxSinBhaskara(angle * 3f) * wobble + MathLodApproximation.ApproxCosBhaskara(angle * 5f) * wobble * 0.45f;
+                float edgeDrop = MathLodApproximation.ApproxSinBhaskara(angle * 2f + 0.6f) * thickness * 0.22f;
+                Vector3 radial = right * (MathLodApproximation.ApproxCosBhaskara(angle) * (radiusX + wave)) + forward * (MathLodApproximation.ApproxSinBhaskara(angle) * (radiusZ + wave * 0.76f));
                 Vector3 topVertex = center + radial + up * (thickness * 0.5f + edgeDrop);
                 Vector3 bottomVertex = center + radial - up * (thickness * 0.5f - edgeDrop * 0.35f);
                 Vector3 rimNormal = (radial.normalized + up * 0.18f).normalized;
                 Vector4 tangent = new Vector4(right.x, right.y, right.z, 1f);
 
-                buffers.AddVertex(topVertex, up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);
-                buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);
+                buffers.AddVertex(topVertex, up, tangent, new Vector2((MathLodApproximation.ApproxCosBhaskara(angle) + 1f) * 0.5f, (MathLodApproximation.ApproxSinBhaskara(angle) + 1f) * 0.5f), color);
+                buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((MathLodApproximation.ApproxCosBhaskara(angle) + 1f) * 0.5f, (MathLodApproximation.ApproxSinBhaskara(angle) + 1f) * 0.5f), color);
                 buffers.AddVertex(topVertex, rimNormal, tangent, new Vector2(u, 1f), color);
                 buffers.AddVertex(bottomVertex, rimNormal, tangent, new Vector2(u, 0f), color);
             }
@@ -1228,15 +1229,15 @@ namespace Hecton8.EditorTools
             {
                 float u = i / (float)radialSegments;
                 float angle = Mathf.Lerp(startAngle, endAngle, u);
-                float wave = Mathf.Sin(angle * 3f) * wobble + Mathf.Cos(angle * 5f) * wobble * 0.45f;
-                float edgeDrop = Mathf.Sin(angle * 2f + 0.6f) * thickness * 0.22f;
-                Vector3 radial = right * (Mathf.Cos(angle) * (radiusX + wave)) + forward * (Mathf.Sin(angle) * (radiusZ + wave * 0.76f));
+                float wave = MathLodApproximation.ApproxSinBhaskara(angle * 3f) * wobble + MathLodApproximation.ApproxCosBhaskara(angle * 5f) * wobble * 0.45f;
+                float edgeDrop = MathLodApproximation.ApproxSinBhaskara(angle * 2f + 0.6f) * thickness * 0.22f;
+                Vector3 radial = right * (MathLodApproximation.ApproxCosBhaskara(angle) * (radiusX + wave)) + forward * (MathLodApproximation.ApproxSinBhaskara(angle) * (radiusZ + wave * 0.76f));
                 Vector3 topVertex = center + radial + up * (thickness * 0.5f + edgeDrop);
                 Vector3 bottomVertex = center + radial - up * (thickness * 0.5f - edgeDrop * 0.35f);
                 Vector3 rimNormal = (radial.normalized + up * 0.18f).normalized;
 
-                buffers.AddVertex(topVertex, up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);
-                buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);
+                buffers.AddVertex(topVertex, up, tangent, new Vector2((MathLodApproximation.ApproxCosBhaskara(angle) + 1f) * 0.5f, (MathLodApproximation.ApproxSinBhaskara(angle) + 1f) * 0.5f), color);
+                buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((MathLodApproximation.ApproxCosBhaskara(angle) + 1f) * 0.5f, (MathLodApproximation.ApproxSinBhaskara(angle) + 1f) * 0.5f), color);
                 buffers.AddVertex(topVertex, rimNormal, tangent, new Vector2(u, 1f), color);
                 buffers.AddVertex(bottomVertex, rimNormal, tangent, new Vector2(u, 0f), color);
             }
@@ -1280,22 +1281,22 @@ namespace Hecton8.EditorTools
             {
                 float v = lat / (float)latSegments;
                 float phi = Mathf.Lerp(-Mathf.PI * 0.5f, Mathf.PI * 0.5f, v);
-                float cosPhi = Mathf.Cos(phi);
-                float sinPhi = Mathf.Sin(phi);
+                float cosPhi = MathLodApproximation.ApproxCosBhaskara(phi);
+                float sinPhi = MathLodApproximation.ApproxSinBhaskara(phi);
                 float flatten = sinPhi < 0f ? Mathf.Lerp(1f, bottomFlattening, -sinPhi) : 1f;
 
                 for (int lon = 0; lon <= lonSegments; lon++)
                 {
                     float u = lon / (float)lonSegments;
                     float theta = u * TwoPi;
-                    Vector3 dir = new Vector3(Mathf.Cos(theta) * cosPhi, sinPhi, Mathf.Sin(theta) * cosPhi).normalized;
-                    float warp = Mathf.Sin(theta * frequencyA) * warpAmplitude
-                        + Mathf.Cos((phi + 1.2f) * frequencyB) * warpAmplitude * 0.58f
-                        + Mathf.Sin((theta + phi) * (frequencyA * 0.42f + 1.3f)) * warpAmplitude * 0.34f;
+                    Vector3 dir = new Vector3(MathLodApproximation.ApproxCosBhaskara(theta) * cosPhi, sinPhi, MathLodApproximation.ApproxSinBhaskara(theta) * cosPhi).normalized;
+                    float warp = MathLodApproximation.ApproxSinBhaskara(theta * frequencyA) * warpAmplitude
+                        + MathLodApproximation.ApproxCosBhaskara((phi + 1.2f) * frequencyB) * warpAmplitude * 0.58f
+                        + MathLodApproximation.ApproxSinBhaskara((theta + phi) * (frequencyA * 0.42f + 1.3f)) * warpAmplitude * 0.34f;
                     float radiusScale = 1f + warp;
                     Vector3 vertex = center + Vector3.Scale(new Vector3(dir.x, dir.y * flatten, dir.z), radii * radiusScale);
                     Vector3 normal = (new Vector3(dir.x, dir.y / Mathf.Max(bottomFlattening, 0.2f), dir.z)).normalized;
-                    Vector3 tangentDir = new Vector3(-Mathf.Sin(theta), 0f, Mathf.Cos(theta)).normalized;
+                    Vector3 tangentDir = new Vector3(-MathLodApproximation.ApproxSinBhaskara(theta), 0f, MathLodApproximation.ApproxCosBhaskara(theta)).normalized;
                     buffers.AddVertex(vertex, normal, new Vector4(tangentDir.x, tangentDir.y, tangentDir.z, 1f), new Vector2(u, v), color);
                 }
             }

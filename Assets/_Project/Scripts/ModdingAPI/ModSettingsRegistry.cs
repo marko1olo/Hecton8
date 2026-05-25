@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Hecton8.Input;
 using UnityEngine;
 
@@ -300,7 +301,7 @@ namespace Hecton8.Modding
 
         private static string BuildStorageKey(uint compoundHash)
         {
-            return "Hecton_ModSetting_" + compoundHash.ToString("X8");
+            return "Hecton_ModSetting_" + compoundHash.ToString("X8", CultureInfo.InvariantCulture);
         }
 
         private static void InvokeToggleCallback(string modId, uint modHash, Action<bool> callback, bool value)

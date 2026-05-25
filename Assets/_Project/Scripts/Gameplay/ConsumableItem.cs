@@ -20,10 +20,10 @@
 
 namespace Hecton8.Gameplay
 {
-    using System.Collections.Generic;
-    using System.Text;
+    using System;
     using Hecton8.Audio;
     using Hecton8.Bootstrap;
+    using Hecton8.Core;
     using Hecton8.Items;
     using UnityEngine;
 
@@ -33,10 +33,6 @@ namespace Hecton8.Gameplay
     /// </summary>
     public static class ConsumableItem
     {
-        // COLD ALLOC: Dictionary[32] — cached consumable tooltip strings — owner: ConsumableItem
-        private static readonly Dictionary<ItemData, string> s_effectDescriptionCache = new Dictionary<ItemData, string>(32);
-        // COLD ALLOC: StringBuilder[64] — one-shot consumable tooltip assembly — owner: ConsumableItem
-        private static readonly StringBuilder s_effectDescriptionBuilder = new StringBuilder(64);
         private static HectonSurvivalSystem s_cachedSurvivalSystem;
 
         /// <summary>
@@ -48,14 +44,19 @@ namespace Hecton8.Gameplay
         /// <returns>True if the item was consumed successfully.</returns>
         public static bool TryConsume(ItemData item, HectonSurvivalSystem survivalSystem)
         {
+            return TryConsume(item, survivalSystem, null);
+        }
+
+        public static bool TryConsume(ItemData item, HectonSurvivalSystem survivalSystem, IAudioService audioService)
+        {
             if (item == null || !item.isConsumable)
                 return false;
 
             if (survivalSystem != null)
                 ApplyEffects(item, survivalSystem);
 
-            if (item.useSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null)
-                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayStatic2D(item.useSound, 1f);
+            if (item.useSound != null && audioService != null)
+                audioService.PlayStatic2D(item.useSound, 1f);
 
             return true;
         }
@@ -69,6 +70,11 @@ namespace Hecton8.Gameplay
         public static bool TryConsume(ItemData item)
         {
             return TryConsume(item, ResolveSurvivalSystem());
+        }
+
+        public static bool TryConsume(ItemData item, IAudioService audioService)
+        {
+            return TryConsume(item, ResolveSurvivalSystem(), audioService);
         }
 
         /// <summary>
@@ -106,29 +112,36 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Gets a description of what this consumable does.
-        /// Used for tooltips and HUD.
+        /// Legacy bridge. UI/HUD code must use TryWriteEffectDescription.
         /// </summary>
+        [Obsolete("Use TryWriteEffectDescription(ItemData, Span<char>, out int) to avoid managed strings.")]
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public static string GetEffectDescription(ItemData item)
         {
-            if (item == null || !item.isConsumable)
-                return string.Empty;
+            return string.Empty;
+        }
 
-            if (s_effectDescriptionCache.TryGetValue(item, out string cachedDescription))
-                return cachedDescription;
+        /// <summary>
+        /// Writes a consumable effect summary into caller-owned memory.
+        /// </summary>
+        public static bool TryWriteEffectDescription(ItemData item, Span<char> destination, out int length)
+        {
+            length = 0;
+            if (item == null || !item.isConsumable || destination.Length == 0)
+                return false;
 
-            StringBuilder builder = s_effectDescriptionBuilder;
-            builder.Clear();
+            if (!TryAppendEffectSegment(destination, ref length, Mathf.RoundToInt(item.oxygenRestore), "O2"))
+                return false;
+            if (!TryAppendEffectSegment(destination, ref length, Mathf.RoundToInt(item.energyRestore), "Energy"))
+                return false;
+            if (!TryAppendEffectSegment(destination, ref length, Mathf.RoundToInt(item.integrityRestore), "Integrity"))
+                return false;
+            if (!TryAppendEffectSegment(destination, ref length, Mathf.RoundToInt(item.hungerRestore), "Food"))
+                return false;
+            if (!TryAppendEffectSegment(destination, ref length, Mathf.RoundToInt(item.thirstRestore), "Water"))
+                return false;
 
-            AppendEffectSegment(builder, Mathf.RoundToInt(item.oxygenRestore), "O2");
-            AppendEffectSegment(builder, Mathf.RoundToInt(item.energyRestore), "Energy");
-            AppendEffectSegment(builder, Mathf.RoundToInt(item.integrityRestore), "Integrity");
-            AppendEffectSegment(builder, Mathf.RoundToInt(item.hungerRestore), "Food");
-            AppendEffectSegment(builder, Mathf.RoundToInt(item.thirstRestore), "Water");
-
-            cachedDescription = builder.ToString();
-            s_effectDescriptionCache[item] = cachedDescription;
-            return cachedDescription;
+            return true;
         }
 
         /// <summary>
@@ -178,19 +191,41 @@ namespace Hecton8.Gameplay
             if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 return null;
 
-            s_cachedSurvivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+            playerTransform.TryGetComponent(out s_cachedSurvivalSystem);
             return s_cachedSurvivalSystem;
         }
 
-        private static void AppendEffectSegment(StringBuilder builder, int value, string label)
+        private static bool TryAppendEffectSegment(Span<char> destination, ref int length, int value, ReadOnlySpan<char> label)
         {
             if (value <= 0)
-                return;
+                return true;
 
-            if (builder.Length > 0)
-                builder.Append("  ");
+            if (length > 0 && !TryAppend(destination, ref length, "  "))
+                return false;
 
-            builder.Append('+').Append(value).Append(' ').Append(label);
+            if (length >= destination.Length)
+                return false;
+
+            destination[length++] = '+';
+            if (!value.TryFormat(destination.Slice(length), out int written))
+                return false;
+
+            length += written;
+            if (length >= destination.Length)
+                return false;
+
+            destination[length++] = ' ';
+            return TryAppend(destination, ref length, label);
+        }
+
+        private static bool TryAppend(Span<char> destination, ref int length, ReadOnlySpan<char> text)
+        {
+            if (length < 0 || length + text.Length > destination.Length)
+                return false;
+
+            text.CopyTo(destination.Slice(length));
+            length += text.Length;
+            return true;
         }
     }
 }

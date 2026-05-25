@@ -1036,25 +1036,41 @@ namespace Hecton8.World
             _vegetationAudioAcousticType = acousticType;
             GlobalVegetationAudioDensity = _vegetationAudioDensity;
             GlobalVegetationAcousticType = acousticType;
+            _pendingVegetationAudioDensity = _vegetationAudioDensity;
+            _pendingVegetationAudioAcousticType = acousticType;
+            _vegetationAudioHandoffForcePublish |= force;
+            _vegetationAudioHandoffPublishRequested = true;
+        }
 
-            Shader.SetGlobalFloat(_ShaderVegetationAudioDensityId, _vegetationAudioDensity);
+        private void FlushVegetationAudioHandoffVisualSync()
+        {
+            if (!_vegetationAudioHandoffPublishRequested)
+                return;
+
+            _vegetationAudioHandoffPublishRequested = false;
+            bool force = _vegetationAudioHandoffForcePublish;
+            _vegetationAudioHandoffForcePublish = false;
+            float density = _pendingVegetationAudioDensity;
+            VegetationAcousticType acousticType = _pendingVegetationAudioAcousticType;
+
+            Shader.SetGlobalFloat(_ShaderVegetationAudioDensityId, density);
             Shader.SetGlobalFloat(_ShaderVegetationAudioAcousticTypeId, (float)acousticType);
 
             if (!force &&
-                Mathf.Abs(_lastPublishedVegetationAudioDensity - _vegetationAudioDensity) <= 0.01f &&
+                Mathf.Abs(_lastPublishedVegetationAudioDensity - density) <= 0.01f &&
                 _lastPublishedVegetationAudioAcousticType == acousticType)
             {
                 return;
             }
 
-            _lastPublishedVegetationAudioDensity = _vegetationAudioDensity;
+            _lastPublishedVegetationAudioDensity = density;
             _lastPublishedVegetationAudioAcousticType = acousticType;
 
             if (vegetationAudioMixer == null)
                 return;
 
             if (!string.IsNullOrEmpty(vegetationDensityMixerParameter))
-                vegetationAudioMixer.SetFloat(vegetationDensityMixerParameter, _vegetationAudioDensity);
+                vegetationAudioMixer.SetFloat(vegetationDensityMixerParameter, density);
 
             if (!string.IsNullOrEmpty(vegetationAcousticTypeMixerParameter))
                 vegetationAudioMixer.SetFloat(vegetationAcousticTypeMixerParameter, (float)acousticType);
@@ -1063,6 +1079,7 @@ namespace Hecton8.World
         private void ClearVegetationAudioHandoff()
         {
             PublishVegetationAudioHandoff(0f, VegetationAcousticType.Silence, force: true);
+            FlushVegetationAudioHandoffVisualSync();
         }
     }
 }

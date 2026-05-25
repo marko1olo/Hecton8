@@ -8,7 +8,7 @@ namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/VR Leak Patch Weld Target")]
-    public sealed class VRLeakPatchWeldTarget : MonoBehaviour, IInteractionSignalConsumer, IPhysicsAcousticImpulseEventListener, IUpdatable
+    public sealed class VRLeakPatchWeldTarget : MonoBehaviour, IInteractionSignalConsumer, IPhysicsAcousticImpulseEventListener, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float DefaultInteractionStepSeconds = 0.02f;
         private const float MaximumPatchContactRadiusMeters = 3f;
@@ -64,12 +64,16 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             RefreshCachedTransforms();
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegisterPhysicsEventBus();
         }
 
         private void OnDisable()
         {
             TryUnregisterPhysicsEventBus();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             ClearPatchContactImmediate();
             ClearAcousticGuide();
             _patchHoldSeconds = 0f;
@@ -272,6 +276,15 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredPatchHoldDecayTick = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                RefreshPatchHoldDecayRegistration();
         }
 
         private void ClearAcousticGuide()

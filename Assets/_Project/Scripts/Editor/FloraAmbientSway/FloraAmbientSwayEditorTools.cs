@@ -201,7 +201,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 {
                     float t = i / 63f;
                     float x = Mathf.Lerp(rect.xMin, rect.xMax, t);
-                    float wave = Mathf.Sin(_time + t * Mathf.Max(0.001f, _frequency) * 6.28318f);
+                    float wave = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(_time + t * Mathf.Max(0.001f, _frequency) * 6.28318f);
                     float y = midY - wave * height * Mathf.Clamp01(_amplitude);
                     if (i == 0)
                         painter.MoveTo(new Vector2(x, y));
@@ -216,7 +216,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 {
                     float t = i / 31f;
                     float x = Mathf.Lerp(rect.xMin, rect.xMax, t);
-                    float flowWave = _flow.x * Mathf.Sin(t * 6.28318f) + _flow.z * Mathf.Cos(t * 6.28318f);
+                    float flowWave = _flow.x * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(t * 6.28318f) + _flow.z * Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(t * 6.28318f);
                     float y = midY - flowWave * rect.height * 0.22f * gain;
                     if (i == 0)
                         painter.MoveTo(new Vector2(x, y));
@@ -394,7 +394,7 @@ namespace Hecton8.Editor.FloraAmbientSway
 
             string prefix = root.Substring(0, close).TrimEnd();
             bool hasExistingProperties = prefix.Length > 1 && prefix[prefix.Length - 1] != '{';
-            string merged = prefix + (hasExistingProperties ? "," : string.Empty) + Environment.NewLine + sectionJson + Environment.NewLine + "}";
+            string merged = prefix + (hasExistingProperties ? "," : string.Empty) + System.Environment.NewLine + sectionJson + System.Environment.NewLine + "}";
             WriteReportFileAtomically(path, merged);
         }
 

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_090
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_090_MAT_family_pocket_hazard_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_pocket_hazard_Albedo.png
+FINAL_FILENAME: MAT_family_pocket_hazard_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Hazard pocket family albedo for dangerous micro-areas in the HECTON-8 world. Use clean coral-red mineral warning bands, amber sulfur crystals, graphite basalt chips, pale salt crust, and teal pressure-fluid stains arranged as a readable environmental caution pattern. It should signal risk through color and material identity while still looking like a beautiful natural-technical pocket. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

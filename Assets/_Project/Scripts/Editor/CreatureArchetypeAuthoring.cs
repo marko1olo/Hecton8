@@ -13,6 +13,7 @@ namespace Hecton8.AI.Editor
         private const string HunterFolder = RootFolder + "/Hunters";
         private const string LeviathanFolder = RootFolder + "/Leviathans";
         private const string RosterDocPath = "C:/hades/Hecton8/AI_CREATURE_ROSTER_ENTERPRISE.md";
+        private static readonly Encoding RosterEncoding = new UTF8Encoding(false);
 
         [MenuItem("Hecton/Authoring/Build AI Creature Archetypes", priority = 182)]
         public static void BuildCreatureArchetypes()
@@ -728,7 +729,7 @@ namespace Hecton8.AI.Editor
             AppendSection(sb, "Hischniki", definitions, CreatureRoleType.Hunter);
             AppendSection(sb, "Leviafany", definitions, CreatureRoleType.Leviathan);
 
-            File.WriteAllText(RosterDocPath, sb.ToString(), Encoding.UTF8);
+            File.WriteAllText(RosterDocPath, sb.ToString(), RosterEncoding);
         }
 
         private static void AppendSection(StringBuilder sb, string title, ArchetypeDefinition[] definitions, CreatureRoleType role)

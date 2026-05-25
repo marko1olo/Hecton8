@@ -21,16 +21,16 @@ namespace Hecton8.Modding
         public void Bind(ModRuntimeInfo info)
         {
             if (nameLabel != null)
-                nameLabel.SetText(string.IsNullOrWhiteSpace(info.Metadata.Name) ? info.Metadata.Id : info.Metadata.Name);
+                Hecton8.UI.TmpTextNoAlloc.Set(nameLabel, string.IsNullOrWhiteSpace(info.Metadata.Name) ? info.Metadata.Id : info.Metadata.Name);
 
             if (versionLabel != null)
-                versionLabel.SetText(string.IsNullOrWhiteSpace(info.Metadata.Version) ? "0.0.0" : info.Metadata.Version);
+                Hecton8.UI.TmpTextNoAlloc.Set(versionLabel, string.IsNullOrWhiteSpace(info.Metadata.Version) ? "0.0.0" : info.Metadata.Version);
 
             if (statusLabel != null)
-                statusLabel.SetText(info.Status == ModLoadStatus.Active ? "Active" : "Disabled");
+                Hecton8.UI.TmpTextNoAlloc.Set(statusLabel, info.Status == ModLoadStatus.Active ? "Active" : "Disabled");
 
             if (reasonLabel != null)
-                reasonLabel.SetText(string.IsNullOrWhiteSpace(info.StatusMessage) ? string.Empty : info.StatusMessage);
+                Hecton8.UI.TmpTextNoAlloc.Set(reasonLabel, string.IsNullOrWhiteSpace(info.StatusMessage) ? string.Empty : info.StatusMessage);
         }
     }
 }

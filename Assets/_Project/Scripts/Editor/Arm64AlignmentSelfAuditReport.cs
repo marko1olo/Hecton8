@@ -25,7 +25,7 @@ namespace Hecton8.Editor
         private static readonly string[] CriticalTypeNames =
         {
             typeof(AlignmentTelemetryEntry).FullName,
-            "Hecton8.Physics.KCC.KinematicStateDTO",
+            "Hecton8.Core.Contracts.Physics.KinematicStateDTO",
             typeof(CombatDamageSignal).FullName
         };
 

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_016
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_016_MAT_family_coral_branching_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_coral_branching_Albedo.png
+FINAL_FILENAME: MAT_family_coral_branching_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Elegant branching abyssal coral epidermis albedo for HECTON-8 reef props. Build a clean organic surface made of slender ivory branches, translucent rose-violet growth tips, pale teal mineral freckles, and soft amber bioluminescent pinpoints tucked into branch forks. The texture should feel alien but beautiful, like a living specimen catalogued by a NASA ocean lab. Keep the diffuse readable, premium, calm, clean, and organized, with deliberate biological patterning instead of random organic clutter. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

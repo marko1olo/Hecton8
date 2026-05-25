@@ -1,4 +1,4 @@
-# Biolum Implementation Guide
+﻿# Biolum Implementation Guide
 
 Date: 2026-05-17
 Status: RHYTHMS COMPOSED

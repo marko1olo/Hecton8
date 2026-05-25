@@ -1,4 +1,4 @@
-# Codex Token Usage Ledger
+﻿# Codex Token Usage Ledger
 
 Date: 2026-05-23 16:11 Europe/Samara
 Status: CURRENT STATIC LOCAL TELEMETRY SNAPSHOT

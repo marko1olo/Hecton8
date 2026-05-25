@@ -71,7 +71,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             material.SetFloat(CurvatureScaleId, SelectCurvatureScale(_globalQualityWeight));
             material.SetFloat(CurvatureEdgeGainId, SelectCurvatureEdgeGain(_globalQualityWeight));
             if (material.SetPass(0))
-                Graphics.DrawMeshNow(mesh, matrix);
+                UnityEngine.Graphics.DrawMeshNow(mesh, matrix);
 
             Handles.color = new Color(0.18f, 0.92f, 1.0f, 0.88f);
             Handles.Label(labelPosition, "AI Control Preview: " + _pass);

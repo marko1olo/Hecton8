@@ -302,7 +302,7 @@ namespace Hecton8.EditorTools
             json.Append("  \"finding_count\": ").Append(reportedFindingCount).AppendLine(",");
             json.Append("  \"broad_static_finding_count\": ").Append(findingCount).AppendLine(",");
             json.AppendLine("  \"finding_list_policy\": \"deterministic alphabetical scan, editor folder ignored, comments and string literals masked, first three generic trigger/physics findings emitted\",");
-            json.AppendLine("  \"accepted_runtime_route\": \"RadiationHazardGrid -> DataVault RadiationStateDTO -> CalculateRadiationExposureJob -> HectonPlayerHealth/CombatDamageSignal\",");
+            json.AppendLine("  \"accepted_runtime_route\": \"RadiationHazardGrid -> DataVault RadiationStateDTO -> CalculateRadiationExposureJob -> HectonPlayerHealth/CombatStatusBits.Irradiated64\",");
             json.AppendLine("  \"finding_scope_note\": \"Broad static scanner includes generic hazard/toxicity/reactor files; SHINOBU_274 runtime authority is the DataVault/Burst route, not these legacy generic collider users.\",");
             json.AppendLine("  \"dispatcher_route\": \"SystemDispatcher Simulation schedules CalculateRadiationExposureJob; PostSimulation consumes completed Vault state; VisualSync uploads shader globals.\",");
             json.AppendLine("  \"vault_buffers\": \"72740 states, 72741 sources, 72742 source count, 72743 telemetry, 72744 telemetry cursor, 72745 profiles, 72746 csv scratch, 72747 tuning, 72748 damage signal, 72749 grid read, 72750 grid write, 72751 grid source\",");

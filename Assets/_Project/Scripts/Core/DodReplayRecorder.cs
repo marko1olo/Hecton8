@@ -315,7 +315,7 @@ namespace Hecton8.Core
     /// Development-build deterministic replay recorder for DOD native buffers.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed unsafe class DodReplayRecorder : MonoBehaviour, ILateFrameTickable
+    public sealed unsafe class DodReplayRecorder : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int SnapshotIntervalFrames = 10;
         private const int MaxSnapshotSources = 1024;
@@ -404,6 +404,7 @@ namespace Hecton8.Core
         private uint _pendingErrorCode;
         private int _sourceHashCount;
         private int _registeredLateFrame;
+        private int _registeredHotSwap;
         private int _initialized;
         private int _writerShouldStop;
         private int _writeInProgress;
@@ -764,6 +765,7 @@ namespace Hecton8.Core
             _activeRecorder = this;
             Initialize();
             RegisterInputHook();
+            TryRegisterHotSwapListener();
             TryRegisterLateFrameTickable();
         }
 
@@ -775,6 +777,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             UnregisterInputHook();
+            TryUnregisterHotSwapListener();
             if (_registeredLateFrame != 0)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
@@ -957,6 +960,40 @@ namespace Hecton8.Core
 
             InputSystem.onEvent -= _inputEventDelegate;
             _inputHooked = 0;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            if (_registeredLateFrame != 0)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrame = 0;
+            }
+
+            TryRegisterLateFrameTickable();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap != 0 || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this) ? 1 : 0;
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (_registeredHotSwap == 0)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = 0;
         }
 
         private void TryRegisterLateFrameTickable()
@@ -1326,7 +1363,7 @@ namespace Hecton8.Core
                 for (int i = 0; i < sourceCount; i++)
                 {
                     NativeAllocationSnapshotSource source = _sources[i];
-                    if (source.Pointer == 0ul || source.Bytes <= 0L)
+                    if (source.SourcePointerValue == 0ul || source.Bytes <= 0L)
                         continue;
 
                     totalSourceBytes += source.Bytes;
@@ -1407,7 +1444,7 @@ namespace Hecton8.Core
             ref long droppedBytes,
             ref uint snapshotFlags)
         {
-            byte* sourcePtr = (byte*)source.Pointer;
+            byte* sourcePtr = (byte*)source.SourcePointerValue;
             ulong currentHash = ComputeFnv64(sourcePtr, source.Bytes);
             int hashIndex = FindOrCreateHashIndex(source.OwnerHash, source.LabelHash, source.Bytes);
             ulong previousHash = hashIndex >= 0 ? _sourceHashes[hashIndex].Hash : 0ul;

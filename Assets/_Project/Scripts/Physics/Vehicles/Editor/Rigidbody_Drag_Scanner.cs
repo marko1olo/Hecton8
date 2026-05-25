@@ -191,13 +191,12 @@ namespace Hecton8.Physics.Vehicles.Editor
                 return 0;
 
             int count = 0;
-            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
                 string text;
                 try
                 {
-                    text = File.ReadAllText(files[i]);
+                    text = File.ReadAllText(file);
                 }
                 catch (IOException)
                 {

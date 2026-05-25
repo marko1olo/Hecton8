@@ -1,4 +1,4 @@
-# Campaign 01 - First Screenshot Drop
+﻿# Campaign 01 - First Screenshot Drop
 
 Status: future / depends on real in-game screenshots
 Public stance: single-player-first scope / proof-first campaign copy
@@ -164,6 +164,51 @@ This checklist ties Campaign 01 to the current asset, experiment, UTM, social, F
 | Creator wave | `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` | Wave A remains held unless contact route and asset gate are verified. |
 | Public post custody | `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` | Official handles are owner-controlled before posting from them; `account_registration_permission_gate` and `public_post_permission_gate` must both be allow values for the exact post. |
 
+### Optional Imageboard Critique Lane
+
+This lane is optional. It exists to stress-test one asset with a harsh anonymous audience. It is not a launch beat, not a wishlist beat, and not a substitute for blind cold-read or asset QA.
+
+Use only if all are true:
+
+- one asset already passed normal QA and the Imageboard Readiness Scorecard in `QA/MARKETING_ASSET_QA_CHECKLIST.md`;
+- the exact surface/thread passed same-day rule/fit check;
+- `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` for this specific no-link critique post or an equivalent campaign approval record names the anonymous surface/thread;
+- route class is `no_link_feedback`;
+- no public CTA, private access, key, Discord, signup, presskit, or Steam link is present;
+- the prompt asks one narrow decision-read or readability question;
+- the imageboard signal is treated as anecdotal unless independently confirmed.
+
+Recommended uses:
+
+| Asset | Question | Why use imageboard |
+|---|---|---|
+| `PLAN-SHOT-001` identity still | Does this read as industrial deep-sea survival or generic underwater sci-fi? | Tests clone/identity risk fast. |
+| `PLAN-SHOT-003` salvage/player verb | Does this look like a route decision or decorative loot? | Tests whether gameplay reads from a still. |
+| `PLAN-SHOT-006` threat/scale | Would you know whether to retreat, scan, reroute, or continue? | Tests agency under threat. |
+| `PLAN-CLIP-001` pressure leak | Does the decision read before caption? | Tests failure fairness and route pressure. |
+| `PLAN-CLIP-003` salvage failure | Does the escalation feel caused by the player route? | Tests whether the loop is systems-driven, not scripted. |
+
+Do not use:
+
+- `PLAN-SHOT-007` Seed Ship anomaly alone as agency proof;
+- capsule/key art;
+- text-only lore;
+- concept art;
+- low-spec proof frames;
+- any asset whose first defense would be "it makes sense with context."
+
+#### Imageboard Lane 24-Hour Decision
+
+| Result | Condition | Campaign action |
+|---|---|---|
+| `KEEP_INTERNAL_ONLY` | Thread is hostile but names one fixable cue. | Use as private revision signal only. |
+| `REVISE_ASSET` | Repeated comments identify same clone, darkness, AI-looking, no-verb, or no-decision cue. | Hold asset from Campaign 01 public sequence until revised. |
+| `REVISE_PROMPT` | Users mainly object to shilling/ad tone, not asset. | Rewrite post template; do not repost same asset that day. |
+| `KILL_IMAGEBOARD_ROUTE` | Surface consistently turns HECTON posts into non-actionable flame. | Stop posting there; monitor only. |
+| `SECURITY_HOLD` | Key/access/private route request or leaked link appears. | Escalate to key/access route owner; do not continue campaign wave with that route. |
+
+Imageboard signal cannot produce `KEEP` for Campaign 01 by itself. It can only create `REVISE`, `KILL`, `HOLD`, or supporting notes for an already stronger cold-read result.
+
 ### 72-Hour Sequence
 
 | Window | Action | Asset | Measurement | Stop/revise trigger |
@@ -174,6 +219,8 @@ This checklist ties Campaign 01 to the current asset, experiment, UTM, social, F
 | T+24h | Second post only if first did not fail | Alternate screenshot or clip | AB-001/AB-003 comparison | Hold if first post exposed clarity failure. |
 | T+48h | Wave A creator micro-feedback, max 10 | Best asset pack with creator utility 3/4+ | Reply quality, exact CRM row, exact contact route | Stop if contact routes are not verified, assets mismatch creator, or utility score is below 3/4. |
 | T+72h | Campaign note | All signals plus first-capture handoff packet | Keep/revise/kill decision with agency-decision field | Do not move to Steam page launch without a clear winner, one stored viewer-named decision, `capture_verdict = KEEP_TESTING` or stronger campaign `KEEP`, and metadata rows updated from facts rather than wishes. |
+
+Optional imageboard lane may run only between T-24h and T+24h, after blind cold-read has not already failed the asset. If blind cold-read fails, do not take the asset to imageboards to "save" it.
 
 ### Campaign Result Must End In One Decision
 

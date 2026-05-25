@@ -1,4 +1,4 @@
-# SHINOBU_46 adaptive stem defaults. Parser reads key,value ASCII without managed string materialization.
+﻿# SHINOBU_46 adaptive stem defaults. Parser reads key,value ASCII without managed string materialization.
 attack_seconds,0.1
 release_seconds,15.0
 crossfade_seconds,2.0

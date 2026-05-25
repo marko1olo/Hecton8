@@ -102,8 +102,8 @@ namespace Hecton8.Core.Hardware
         public byte CurrentSeverity => _severity;
         public byte BatteryPercent => _batteryPercent;
         public uint Sequence => _sequence;
-        public NativeArray<byte>.ReadOnly ThermalSeverity => TryResolveThermalSeverity(out NativeArray<byte> severity)
-            ? severity.AsReadOnly()
+        public NativeArray<byte>.ReadOnly ThermalSeverity => TryReadThermalSeverity(out NativeArray<byte>.ReadOnly severity)
+            ? severity
             : default;
 
         [StructLayout(LayoutKind.Explicit, Size = 24)]
@@ -551,7 +551,7 @@ namespace Hecton8.Core.Hardware
                     Severity = _severity,
                     Flags = (byte)(critical ? 1 : 0)
                 };
-                SignalBus<HUDNotificationSignal>.Push(in warning);
+                SignalBus<HUDNotificationSignal>.TryPush(in warning);
             }
 
             bool transientLowTierOverride = throttling || hapticMute;
@@ -615,7 +615,7 @@ namespace Hecton8.Core.Hardware
                     BatteryPercent = _batteryPercent,
                     ActionMask = _lastActionMask
                 };
-                SignalBus<ThermalStateChangedSignal>.Push(in thermalSignal);
+                SignalBus<ThermalStateChangedSignal>.TryPush(in thermalSignal);
             }
 
             BatteryLevelSignal batterySignal = new BatteryLevelSignal
@@ -628,7 +628,7 @@ namespace Hecton8.Core.Hardware
                 Flags = (byte)(_hapticMuteApplied ? 1 : 0),
                 ActionMask = _lastActionMask
             };
-            SignalBus<BatteryLevelSignal>.Push(in batterySignal);
+            SignalBus<BatteryLevelSignal>.TryPush(in batterySignal);
         }
 
         private void PublishTelemetryCold()
@@ -795,7 +795,7 @@ namespace Hecton8.Core.Hardware
                 return false;
             }
 
-            _thermalSeverityHandle = vault.GetGenerationHandle<byte>(
+            _thermalSeverityHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.HardwareThermalSeverity,
                 1,
                 SystemID.HardwareHomeostasis,
@@ -808,6 +808,17 @@ namespace Hecton8.Core.Hardware
             }
 
             return severity.IsCreated && severity.Length >= 1;
+        }
+
+        private bool TryReadThermalSeverity(out NativeArray<byte>.ReadOnly severity)
+        {
+            severity = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || _thermalSeverityHandle.BufferID == 0u)
+                return false;
+
+            return vault.TryReadOnlyHandle(in _thermalSeverityHandle, out severity) &&
+                   severity.Length >= 1;
         }
 
         private bool TryResolveThermalBlackBox(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
@@ -831,7 +842,7 @@ namespace Hecton8.Core.Hardware
                 return false;
             }
 
-            _blackBoxHandle = vault.GetGenerationHandle<HardwareThermalTelemetryEntry>(
+            _blackBoxHandle = vault.EnsureGenerationHandle<HardwareThermalTelemetryEntry>(
                 BufferID.HardwareThermalBlackBox,
                 BlackBoxFrameCount,
                 SystemID.HardwareHomeostasis,

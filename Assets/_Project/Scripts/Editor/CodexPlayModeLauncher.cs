@@ -426,8 +426,7 @@ namespace Hecton8.Editor
                 if (selected != null)
                     selectedGameObject = selected.name;
 
-                InputSystemUIInputModule inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
-                if (inputModule != null)
+                if (eventSystem.TryGetComponent(out InputSystemUIInputModule inputModule))
                 {
                     inputModulePresent = true;
                     inputModuleEnabled = inputModule.enabled;

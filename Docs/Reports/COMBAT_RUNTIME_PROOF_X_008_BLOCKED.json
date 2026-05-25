@@ -1,0 +1,62 @@
+{
+  "agentId": "X_008",
+  "domain": "ECHELON 5 COMBAT & SURVIVAL PHYSIOLOGY",
+  "status": "BLOCKED_UNITY_LICENSE",
+  "date": "2026-05-24",
+  "runtimeProofJsonCreated": false,
+  "runtimeProofJsonPath": "Docs/Reports/COMBAT_RUNTIME_PROOF_X_008.json",
+  "method": "Hecton8.Gameplay.ArmorPenetrationBatchProofRunner.Run",
+  "methodReached": false,
+  "headlessRunnerAdded": true,
+  "staticProof": {
+    "fullAssemblyBuildPass": true,
+    "fullAssemblyBuildErrors": 0,
+    "existingWarnings": [
+      "CS2002 duplicate source entries in Hecton8.Core.csproj",
+      "MSB9008 missing Hecton8.Input.csproj references"
+    ],
+    "scannerPass": true,
+    "combatForbiddenTrigCount": 0,
+    "combatAngleApiCount": 0,
+    "projectAcosAsinInventoryCount": 0,
+    "projectRuntimeAngleApiCountAfterLoop45": 0,
+    "remainingRuntimeAngleApiOwnerBlockersAfterLoop45": [],
+    "sourceBranchlessnessVerdict": "PASS",
+    "armorProfileDtoDeclaredSizeBytes": 64,
+    "armorProfileDtoStrideBytes": 64,
+    "armorGridFirstByteOffset": 16,
+    "armorGridLastByteOffset": 63,
+    "casHundredPelletVerdict": "PASS_STATIC_SOURCE"
+  },
+  "attempts": [
+    {
+      "name": "sandboxedUnityBatch",
+      "logPath": "Docs/AgentLogs/Unity_X_008_ArmorRuntimeProof.log",
+      "unityEditorVersion": "6000.4.1f1",
+      "result": "FAILED_BEFORE_EXECUTE_METHOD",
+      "observedReturnCodeInLog": 1,
+      "failure": "Package Manager IPC connection failed after readonly database errors.",
+      "evidence": [
+        "attempt to write a readonly database",
+        "Could not connect to IPC stream \"Upm-34988\" after 30.0 seconds",
+        "Application will terminate with return code 1"
+      ]
+    },
+    {
+      "name": "escalatedUnityBatch",
+      "logPath": "Docs/AgentLogs/Unity_X_008_ArmorRuntimeProof_escalated.log",
+      "unityEditorVersion": "6000.4.1f1",
+      "result": "FAILED_BEFORE_EXECUTE_METHOD",
+      "observedReturnCodeInLog": 198,
+      "failure": "No valid Unity Editor license found; headless entitlement missing.",
+      "evidence": [
+        "Access token is unavailable",
+        "Found 0 entitlement groups and 0 free entitlements matching requested entitlement ids",
+        "'com.unity.editor.headless' was not found",
+        "No valid Unity Editor license found. Please activate your license.",
+        "Application will terminate with return code 198"
+      ]
+    }
+  ],
+  "verdict": "Runtime/profiler/Burst execution proof remains blocked by Unity licensing before the proof runner can execute. This is not a pass and not a combat runtime failure."
+}

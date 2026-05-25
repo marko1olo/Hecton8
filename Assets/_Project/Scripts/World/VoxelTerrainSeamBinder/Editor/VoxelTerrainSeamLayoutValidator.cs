@@ -13,6 +13,17 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     [InitializeOnLoad]
     public static class VoxelTerrainSeamLayoutValidator
     {
+        private const int MinimumStructAlignmentBytes = 8;
+        private const int SeamBindVertexStrideBytes = 32;
+        private const int BoundaryVertexStrideBytes = 64;
+        private const int SnapResultStrideBytes = 64;
+        private const int BindingProfileStrideBytes = 64;
+        private const int BindCounterStrideBytes = 64;
+        private const int TelemetryStrideBytes = 64;
+        private const int RollbackFenceStrideBytes = 32;
+        private const int SubMeshIndexRangeStrideBytes = 16;
+        private const int SeamEdgeStrideBytes = 24;
+
         static VoxelTerrainSeamLayoutValidator()
         {
             if (!Validate(logSuccess: false))
@@ -28,26 +39,26 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
         public static bool Validate(bool logSuccess)
         {
             bool ok = true;
-            ok &= ValidateSize<SeamBindVertex32>(32);
+            ok &= ValidateSize<SeamBindVertex32>(SeamBindVertexStrideBytes);
             ok &= ValidateOffset<SeamBindVertex32>(nameof(SeamBindVertex32.Position), 0);
             ok &= ValidateOffset<SeamBindVertex32>(nameof(SeamBindVertex32.Normal), 12);
             ok &= ValidateOffset<SeamBindVertex32>(nameof(SeamBindVertex32.PackedColor), 24);
             ok &= ValidateOffset<SeamBindVertex32>(nameof(SeamBindVertex32.PackedUv0), 28);
-            ok &= ValidateSize<SeamBoundaryVertex64>(64);
+            ok &= ValidateSize<SeamBoundaryVertex64>(BoundaryVertexStrideBytes);
             ok &= ValidateOffset<SeamBoundaryVertex64>(nameof(SeamBoundaryVertex64.Aup), 0);
             ok &= ValidateOffset<SeamBoundaryVertex64>(nameof(SeamBoundaryVertex64.LocalPosition), 24);
             ok &= ValidateOffset<SeamBoundaryVertex64>(nameof(SeamBoundaryVertex64.Normal), 36);
             ok &= ValidateOffset<SeamBoundaryVertex64>(nameof(SeamBoundaryVertex64.VertexIndex), 48);
-            ok &= ValidateSize<SeamSnapResult64>(64);
+            ok &= ValidateSize<SeamSnapResult64>(SnapResultStrideBytes);
             ok &= ValidateOffset<SeamSnapResult64>(nameof(SeamSnapResult64.OriginalLocalPosition), 0);
             ok &= ValidateOffset<SeamSnapResult64>(nameof(SeamSnapResult64.VoxelVertexIndex), 12);
             ok &= ValidateOffset<SeamSnapResult64>(nameof(SeamSnapResult64.SnappedLocalPosition), 16);
             ok &= ValidateOffset<SeamSnapResult64>(nameof(SeamSnapResult64.DistanceMeters), 28);
             ok &= ValidateOffset<SeamSnapResult64>(nameof(SeamSnapResult64.BlendedNormal), 32);
-            ok &= ValidateSize<SeamBindingProfileDTO>(64);
-            ok &= ValidateSize<SeamBindCounters64>(64);
-            ok &= ValidateSize<SeamBindTelemetryEntry>(64);
-            ok &= ValidateSize<SeamMeshRollbackFenceDTO>(32);
+            ok &= ValidateSize<SeamBindingProfileDTO>(BindingProfileStrideBytes);
+            ok &= ValidateSize<SeamBindCounters64>(BindCounterStrideBytes);
+            ok &= ValidateSize<SeamBindTelemetryEntry>(TelemetryStrideBytes);
+            ok &= ValidateSize<SeamMeshRollbackFenceDTO>(RollbackFenceStrideBytes);
             ok &= ValidateOffset<SeamMeshRollbackFenceDTO>(nameof(SeamMeshRollbackFenceDTO.TerrainMeshHash), 0);
             ok &= ValidateOffset<SeamMeshRollbackFenceDTO>(nameof(SeamMeshRollbackFenceDTO.VoxelMeshHash), 4);
             ok &= ValidateOffset<SeamMeshRollbackFenceDTO>(nameof(SeamMeshRollbackFenceDTO.StitchedMeshHash), 8);
@@ -56,8 +67,8 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
             ok &= ValidateOffset<SeamMeshRollbackFenceDTO>(nameof(SeamMeshRollbackFenceDTO.Version), 20);
             ok &= ValidateOffset<SeamMeshRollbackFenceDTO>(nameof(SeamMeshRollbackFenceDTO.EndianMarker), 24);
             ok &= ValidateOffset<SeamMeshRollbackFenceDTO>(nameof(SeamMeshRollbackFenceDTO.Reserved), 28);
-            ok &= ValidateSize<SeamSubMeshIndexRangeDTO>(16);
-            ok &= ValidateSize<SeamEdgeDTO>(24);
+            ok &= ValidateSize<SeamSubMeshIndexRangeDTO>(SubMeshIndexRangeStrideBytes);
+            ok &= ValidateSize<SeamEdgeDTO>(SeamEdgeStrideBytes);
             ok &= ValidateVertexStride();
 
             if (ok && logSuccess)
@@ -110,7 +121,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
         private static bool ValidateSize<T>(int expected) where T : struct
         {
             int observed = UnsafeUtility.SizeOf<T>();
-            if (observed == expected && (observed & 7) == 0)
+            if (observed == expected && (observed & (MinimumStructAlignmentBytes - 1)) == 0)
                 return true;
 
             LogSizeMismatch(typeof(T).Name, expected, observed);

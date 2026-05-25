@@ -10,7 +10,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit Advisory Controller")]
-    public sealed class SuitAdvisoryController : MonoBehaviour, IBaseIntegrityEventListener, ILateFrameTickable
+    public sealed class SuitAdvisoryController : MonoBehaviour, IBaseIntegrityEventListener, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         [Header("References")]
         [SerializeField] private HectonSurvivalSystem survival;
@@ -50,8 +50,10 @@ namespace Hecton8.UI
         private bool _fractureWarned;
         private bool _deathTriggered;
         private bool _registeredForSurvivalSignals;
+        private bool _hotSwapListenerRegistered;
         private uint _survivalSignalSourceId;
         private uint _lastSurvivalSignalSequence;
+        private IAudioService _cachedAudioService;
         private FixedCharBuffer _advisoryMessageBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - suit advisory notification staging buffer - owner: SuitAdvisoryController
 
         private const string MsgOxygenWarning = "OXYGEN RESERVES LOW";
@@ -77,11 +79,14 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            _cachedAudioService = GlobalRegistry.Audio;
             ResolveReferences();
         }
 
         private void OnEnable()
         {
+            _cachedAudioService = GlobalRegistry.Audio;
+            TryRegisterHotSwapListener();
             ResolveReferences();
             RefreshSurvivalSignalBinding();
             Subscribe();
@@ -93,13 +98,24 @@ namespace Hecton8.UI
         {
             Unsubscribe();
             UnregisterSurvivalSignalPump();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
             UnregisterSurvivalSignalPump();
+            TryUnregisterHotSwapListener();
             BaseIntegrityEvents.AssertUnregistered(this, nameof(SuitAdvisoryController));
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                _cachedAudioService = currentService as IAudioService;
         }
 
         private void ResolveReferences()
@@ -211,7 +227,7 @@ namespace Hecton8.UI
         private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
         {
             return system != null
-                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
                 : 0u;
         }
 
@@ -258,12 +274,12 @@ namespace Hecton8.UI
             if (!_oxygenCritical && normalized <= oxygenCriticalThreshold)
             {
                 _oxygenCritical = true;
-                NotifyCritical(MsgOxygenCritical);
+                NotifyCritical(MsgOxygenCritical.AsSpan());
             }
             else if (!_oxygenWarned && normalized <= oxygenWarningThreshold)
             {
                 _oxygenWarned = true;
-                NotifyWarning(MsgOxygenWarning);
+                NotifyWarning(MsgOxygenWarning.AsSpan());
             }
 
             if (normalized > oxygenWarningThreshold + resetHysteresis)
@@ -286,7 +302,7 @@ namespace Hecton8.UI
             if (!_energyWarned && normalized <= energyWarningThreshold)
             {
                 _energyWarned = true;
-                NotifyWarning(MsgEnergyWarning);
+                NotifyWarning(MsgEnergyWarning.AsSpan());
             }
 
             if (normalized > energyWarningThreshold + resetHysteresis)
@@ -303,12 +319,12 @@ namespace Hecton8.UI
             if (!_integrityCritical && normalized <= integrityCriticalThreshold)
             {
                 _integrityCritical = true;
-                NotifyCritical(MsgIntegrityCritical);
+                NotifyCritical(MsgIntegrityCritical.AsSpan());
             }
             else if (!_integrityWarned && normalized <= integrityWarningThreshold)
             {
                 _integrityWarned = true;
-                NotifyWarning(MsgIntegrityWarning);
+                NotifyWarning(MsgIntegrityWarning.AsSpan());
             }
 
             if (normalized > integrityWarningThreshold + resetHysteresis)
@@ -431,7 +447,7 @@ namespace Hecton8.UI
 
         private void HandleModuleBreached()
         {
-            NotifyCritical(MsgBaseBreach);
+            NotifyCritical(MsgBaseBreach.AsSpan());
         }
 
         private void HandleModuleEmergency(BaseModuleFailureMode failureMode, float integrity)
@@ -455,9 +471,11 @@ namespace Hecton8.UI
             NotifyWarning(in _advisoryMessageBuffer);
         }
 
-        private void NotifyWarning(string message)
+        private void NotifyWarning(ReadOnlySpan<char> message)
         {
-            hudNotification?.ShowWarning(message);
+            _advisoryMessageBuffer.Clear();
+            if (_advisoryMessageBuffer.Append(message))
+                hudNotification?.ShowWarning(in _advisoryMessageBuffer);
             PlayUiClip(warningClip);
         }
 
@@ -470,9 +488,11 @@ namespace Hecton8.UI
             PlayUiClip(warningClip);
         }
 
-        private void NotifyCritical(string message)
+        private void NotifyCritical(ReadOnlySpan<char> message)
         {
-            hudNotification?.ShowCritical(message);
+            _advisoryMessageBuffer.Clear();
+            if (_advisoryMessageBuffer.Append(message))
+                hudNotification?.ShowCritical(in _advisoryMessageBuffer);
             PlayUiClip(criticalClip != null ? criticalClip : warningClip);
         }
 
@@ -483,11 +503,6 @@ namespace Hecton8.UI
 
             hudNotification?.ShowCritical(in messageBuffer);
             PlayUiClip(criticalClip != null ? criticalClip : warningClip);
-        }
-
-        private void NotifyInfo(string message)
-        {
-            hudNotification?.ShowInfo(message);
         }
 
         private void NotifyInfo(in FixedCharBuffer messageBuffer)
@@ -503,34 +518,51 @@ namespace Hecton8.UI
             if (clip == null)
                 return;
 
-            Hecton8.Core.IAudioService audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            IAudioService audio = _cachedAudioService;
             if (audio != null)
                 audio.PlayStatic2D(clip, uiVolume);
         }
 
-        private string ResolveDeathMessage()
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private ReadOnlySpan<char> ResolveDeathMessage()
         {
             if (survival == null)
-                return MsgDeath;
+                return MsgDeath.AsSpan();
 
             switch (survival.LastDeathCause)
             {
                 case SurvivalDeathCause.OxygenDepletion:
-                    return MsgDeathOxygen;
+                    return MsgDeathOxygen.AsSpan();
                 case SurvivalDeathCause.PressureCollapse:
-                    return MsgDeathPressure;
+                    return MsgDeathPressure.AsSpan();
                 case SurvivalDeathCause.ThermalFailure:
-                    return MsgDeathThermal;
+                    return MsgDeathThermal.AsSpan();
                 case SurvivalDeathCause.RadiationExposure:
-                    return MsgDeathRadiation;
+                    return MsgDeathRadiation.AsSpan();
                 case SurvivalDeathCause.Starvation:
-                    return MsgDeathStarvation;
+                    return MsgDeathStarvation.AsSpan();
                 case SurvivalDeathCause.Dehydration:
-                    return MsgDeathDehydration;
+                    return MsgDeathDehydration.AsSpan();
                 case SurvivalDeathCause.IntegrityFailure:
-                    return MsgDeathIntegrity;
+                    return MsgDeathIntegrity.AsSpan();
                 default:
-                    return MsgDeath;
+                    return MsgDeath.AsSpan();
             }
         }
 
@@ -782,7 +814,11 @@ namespace Hecton8.UI
             Span<char> scratch = stackalloc char[1];
             for (int i = 0; i < value.Length; i++)
             {
-                scratch[0] = value[i] == '_' ? ' ' : char.ToUpperInvariant(value[i]);
+                char c = value[i] == '_' ? ' ' : value[i];
+                if (c >= 'a' && c <= 'z')
+                    c = (char)(c - 32);
+
+                scratch[0] = c;
                 if (!buffer.Append(scratch))
                     return false;
             }

@@ -17,6 +17,7 @@ namespace Hecton8.EditorTools
         private const float Lod0Threshold = 0.6f;
         private const float Lod1Threshold = 0.15f;
         private const float Lod2Threshold = 0.04f;
+        private static readonly List<MeshFilter> s_MeshFilterScratch = new List<MeshFilter>(64);
 
         [MenuItem("Hecton/Authoring/Generate Procedural Flora Baked Starters", priority = 178)]
         public static void Generate()
@@ -332,13 +333,14 @@ namespace Hecton8.EditorTools
 
         private static List<SourceMeshPart> CollectSourceMeshParts(GameObject sourceRoot)
         {
-            MeshFilter[] meshFilters = sourceRoot.GetComponentsInChildren<MeshFilter>(true);
-            List<SourceMeshPart> parts = new List<SourceMeshPart>(meshFilters.Length);
+            s_MeshFilterScratch.Clear();
+            sourceRoot.GetComponentsInChildren(true, s_MeshFilterScratch);
+            List<SourceMeshPart> parts = new List<SourceMeshPart>(s_MeshFilterScratch.Count);
             Matrix4x4 sourceRootWorldToLocal = sourceRoot.transform.worldToLocalMatrix;
 
-            for (int i = 0; i < meshFilters.Length; i++)
+            for (int i = 0; i < s_MeshFilterScratch.Count; i++)
             {
-                MeshFilter meshFilter = meshFilters[i];
+                MeshFilter meshFilter = s_MeshFilterScratch[i];
                 if (meshFilter == null || meshFilter.sharedMesh == null)
                     continue;
 

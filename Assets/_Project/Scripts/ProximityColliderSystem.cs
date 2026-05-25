@@ -30,6 +30,7 @@
 
 using Hecton8.Core;
 using Hecton8.Bootstrap;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -84,10 +85,17 @@ namespace Hecton8.Core
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
 
-        // ── Job I/O (persistent allocations) ──
-        private NativeArray<float3> _positions;      // pozitsii vseh tochek
-        private NativeArray<byte>   _jobResults;     // rezultat Job: 0=far, 1=near
-        private ObjectPoolManager _objectPool;
+        private const SystemID VaultOwnerSystemId = SystemID.Physics;
+        private const BufferID PositionsBufferId = BufferID.ProximityColliderPositions;
+        private const BufferID JobResultsBufferId = BufferID.ProximityColliderJobResults;
+        private const BufferID PrevStatusBufferId = BufferID.ProximityColliderPrevStatus;
+
+        // ── Job I/O (DataVault descriptors only; native views stay phase-local) ──
+        private VaultGenerationHandle<float3> _positionsHandle;
+        private VaultGenerationHandle<byte> _jobResultsHandle;
+        private VaultGenerationHandle<byte> _prevStatusHandle;
+        private IDataVault _dataVault;
+        private IObjectPoolService _objectPool;
 
         // ── Main-thread cached arrays (zero GC) ──
         private GameObject[] _activeColliders;       // null = net kollaydera
@@ -100,6 +108,7 @@ namespace Hecton8.Core
         private bool      _registeredToDispatcher;
         private bool      _registeredLateFrame;
         private bool      _hotSwapRegistered;
+        private bool      _jobBuffersLocked;
         private int       _jobPendingFrameCount;
 
         // ── Cached squared radii (avoid sqrt in Job) ──
@@ -197,23 +206,33 @@ namespace Hecton8.Core
 
             _pointCount = count;
 
-            // ── Allokatsiya NativeArrays (Persistent — zhivut do Dispose) ──
-            _positions  = new NativeArray<float3>(_pointCount, Allocator.Persistent,
-                                                   NativeArrayOptions.UninitializedMemory);
-            _jobResults = new NativeArray<byte>(_pointCount, Allocator.Persistent,
-                                                 NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[pointCount] - persistent previous proximity state mirror for async distance jobs - owner: ProximityColliderSystem
-            _prevStatusNative = new NativeArray<byte>(_pointCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            RegisterNativeBuffers();
+            if (!EnsureProximityVaultBuffers(_pointCount))
+            {
+                ClearRuntimeData();
+                return;
+            }
 
             // ── Kopiruem pozitsii v NativeArray<float3> ──
-            for (int i = 0; i < _pointCount; i++)
+            if (!TryAcquirePositionWriteBuffer(out NativeArray<float3> positions))
             {
-                _positions[i] = new float3(
-                    worldPositions[i].x,
-                    worldPositions[i].y,
-                    worldPositions[i].z
-                );
+                ClearRuntimeData();
+                return;
+            }
+
+            try
+            {
+                for (int i = 0; i < _pointCount; i++)
+                {
+                    positions[i] = new float3(
+                        worldPositions[i].x,
+                        worldPositions[i].y,
+                        worldPositions[i].z
+                    );
+                }
+            }
+            finally
+            {
+                ReleasePositionWriteBuffer();
             }
 
             // ── Managed arrays (one-time allocation) ──
@@ -230,7 +249,7 @@ namespace Hecton8.Core
             _debugTotalPoints = _pointCount;
 #endif
 
-            Debug.Log($"[ProximityColliderSystem] Initialized with {_pointCount} points. " +
+            Hecton8.Core.H8Debug.Log($"[ProximityColliderSystem] Initialized with {_pointCount} points. " +
                       $"Activate: {activateRadius}m, Deactivate: {deactivateRadius}m");
         }
 
@@ -257,16 +276,27 @@ namespace Hecton8.Core
 
             _pointCount = worldPositions.Length;
 
-            _positions  = new NativeArray<float3>(_pointCount, Allocator.Persistent,
-                                                   NativeArrayOptions.UninitializedMemory);
-            _jobResults = new NativeArray<byte>(_pointCount, Allocator.Persistent,
-                                                 NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[pointCount] - persistent previous proximity state mirror for async distance jobs - owner: ProximityColliderSystem
-            _prevStatusNative = new NativeArray<byte>(_pointCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            RegisterNativeBuffers();
+            if (!EnsureProximityVaultBuffers(_pointCount))
+            {
+                ClearRuntimeData();
+                return;
+            }
 
             // ── NativeArray.CopyFrom — bulk memcpy, zero GC ──
-            _positions.CopyFrom(worldPositions);
+            if (!TryAcquirePositionWriteBuffer(out NativeArray<float3> positions))
+            {
+                ClearRuntimeData();
+                return;
+            }
+
+            try
+            {
+                positions.CopyFrom(worldPositions);
+            }
+            finally
+            {
+                ReleasePositionWriteBuffer();
+            }
 
             _activeColliders = new GameObject[_pointCount];
             _prevStatus      = new byte[_pointCount];
@@ -320,7 +350,8 @@ namespace Hecton8.Core
 #endif
             // ── Avto-resolve igroka cherez bootstrap, esli ssylka ne zadana ──
             TryResolvePlayerTransform();
-            CacheObjectPool(GlobalRegistry.ObjectPool);
+            CacheDataVaultCold();
+            CacheObjectPool(GlobalRegistry.ObjectPoolService);
             TryRegisterHotSwapListener();
 
             // ── Validatsiya ──
@@ -363,6 +394,7 @@ namespace Hecton8.Core
                 _registeredLateFrame = false;
             }
 
+            CancelScheduledJobForTeardown();
             TryUnregisterHotSwapListener();
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
@@ -377,7 +409,10 @@ namespace Hecton8.Core
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    CacheObjectPool(currentService as ObjectPoolManager);
+                    CacheObjectPool(currentService as IObjectPoolService);
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryRegisterDispatcherRoutes();
@@ -385,7 +420,7 @@ namespace Hecton8.Core
             }
         }
 
-        private void CacheObjectPool(ObjectPoolManager objectPool)
+        private void CacheObjectPool(IObjectPoolService objectPool)
         {
             _objectPool = objectPool;
         }
@@ -422,9 +457,9 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             // ── Zavershaem Job i vozvraschaem vse kollaydery v pul ──
-            JobHandle teardownDependency = CancelScheduledJobForTeardown();
+            CancelScheduledJobForTeardown();
             DespawnAllColliders();
-            Cleanup(teardownDependency);
+            Cleanup();
             TryUnregisterHotSwapListener();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -534,7 +569,14 @@ namespace Hecton8.Core
             _jobScheduled = false;
             _jobPendingFrameCount = 0;
 
-            ProcessJobResults();
+            try
+            {
+                ProcessJobResults();
+            }
+            finally
+            {
+                ReleaseJobBufferLocks();
+            }
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -547,18 +589,15 @@ namespace Hecton8.Core
         //  PRIVATE — JOB SCHEDULING
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Kopiruet prevStatus v NativeArray i planiruet Burst Job.
-        /// Persistent buffer avoids TempJob lifetime warnings when a distance job spans multiple frames.
-        /// </summary>
-        private NativeArray<byte> _prevStatusNative;
-
         private void ScheduleDistanceJob()
         {
-            if (!_prevStatusNative.IsCreated || _prevStatusNative.Length != _pointCount)
+            if (!TryAcquireJobBuffers(
+                    out NativeArray<float3> positions,
+                    out NativeArray<byte> prevStatus,
+                    out NativeArray<byte> results))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[ProximityColliderSystem] Native previous-status buffer is invalid. Clearing runtime data.");
+                Debug.LogError("[ProximityColliderSystem] Proximity DataVault buffers are invalid. Clearing runtime data.");
 #endif
                 ClearRuntimeData();
                 return;
@@ -566,7 +605,7 @@ namespace Hecton8.Core
 
             // ── Kopiruem managed → native (memcpy, zero GC) ──
             // NativeArray<byte>.CopyFrom(byte[]) — spetsializirovannyy fast path.
-            _prevStatusNative.CopyFrom(_prevStatus);
+            prevStatus.CopyFrom(_prevStatus);
 
             // ── Sozdaem i planiruem Job ──
             var job = new DistanceCalcJob
@@ -577,9 +616,9 @@ namespace Hecton8.Core
                     playerTransform.position.z),
                 activateRadiusSq   = _activateRadiusSq,
                 deactivateRadiusSq = _deactivateRadiusSq,
-                positions          = _positions,
-                prevStatus         = _prevStatusNative,
-                results            = _jobResults
+                positions          = positions,
+                prevStatus         = prevStatus,
+                results            = results
             };
 
             // ── innerloopBatchCount = 256 ──
@@ -606,8 +645,13 @@ namespace Hecton8.Core
         /// </summary>
         private void ProcessJobResults()
         {
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null) return;
+            if (!TryReadJobResults(out NativeArray<byte>.ReadOnly jobResults) ||
+                !TryReadPositions(out NativeArray<float3>.ReadOnly positions))
+            {
+                return;
+            }
 
             int operationsThisTick = 0;
 
@@ -617,7 +661,7 @@ namespace Hecton8.Core
 
             for (int i = 0; i < _pointCount; i++)
             {
-                byte newStatus = _jobResults[i];
+                byte newStatus = jobResults[i];
                 byte oldStatus = _prevStatus[i];
 
 #if UNITY_EDITOR
@@ -644,7 +688,7 @@ namespace Hecton8.Core
                         continue;
                     }
 
-                    float3 pos = _positions[i];
+                    float3 pos = positions[i];
                     GameObject colliderObj = pool.Spawn(
                         colliderPrefab,
                         new Vector3(pos.x, pos.y, pos.z),
@@ -688,18 +732,19 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Detaches the active job handle for teardown without blocking the main thread.
+        /// Completes the active distance job in explicit teardown scope and releases DataVault writer fences.
         /// </summary>
-        private JobHandle CancelScheduledJobForTeardown()
+        private void CancelScheduledJobForTeardown()
         {
-            if (!_jobScheduled)
-                return default;
+            if (_jobScheduled)
+            {
+                DispatcherJobSwap.TryComplete(ref _jobHandle, forceComplete: true);
+                _jobHandle = default;
+                _jobScheduled = false;
+                _jobPendingFrameCount = 0;
+            }
 
-            JobHandle dependency = _jobHandle;
-            _jobHandle = default;
-            _jobScheduled = false;
-            _jobPendingFrameCount = 0;
-            return dependency;
+            ReleaseJobBufferLocks();
         }
 
         /// <summary>
@@ -712,7 +757,7 @@ namespace Hecton8.Core
         /// </remarks>
         private void PrepareForReinitialize()
         {
-            JobHandle teardownDependency = CancelScheduledJobForTeardown();
+            CancelScheduledJobForTeardown();
             if (_registeredToDispatcher)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -726,7 +771,7 @@ namespace Hecton8.Core
             }
 
             DespawnAllColliders();
-            Cleanup(teardownDependency);
+            Cleanup();
 #if UNITY_EDITOR
             _debugTotalPoints = 0;
             _debugActiveColliders = 0;
@@ -742,7 +787,7 @@ namespace Hecton8.Core
         {
             if (_activeColliders == null) return;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
 
             for (int i = 0; i < _activeColliders.Length; i++)
             {
@@ -760,32 +805,11 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Releases NativeArrays with deferred disposal and clears managed ownership.
+        /// Releases DataVault buffers and clears managed ownership.
         /// </summary>
-        private void Cleanup(JobHandle dependency)
+        private void Cleanup()
         {
-            JobHandle disposeDependency = dependency;
-
-            if (_positions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_positions);
-                disposeDependency = _positions.Dispose(disposeDependency);
-                _positions = default;
-            }
-
-            if (_jobResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_jobResults);
-                disposeDependency = _jobResults.Dispose(disposeDependency);
-                _jobResults = default;
-            }
-
-            if (_prevStatusNative.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_prevStatusNative);
-                disposeDependency = _prevStatusNative.Dispose(disposeDependency);
-                _prevStatusNative = default;
-            }
+            ReleaseProximityBuffers();
 
             _activeColliders = null;
             _prevStatus      = null;
@@ -793,11 +817,243 @@ namespace Hecton8.Core
             _pointCount      = 0;
         }
 
-        private void RegisterNativeBuffers()
+        private IDataVault CacheDataVaultCold()
         {
-            NativeMemorySentinel.RegisterNativeArray(_positions, nameof(ProximityColliderSystem), nameof(_positions), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_jobResults, nameof(ProximityColliderSystem), nameof(_jobResults), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_prevStatusNative, nameof(ProximityColliderSystem), nameof(_prevStatusNative), NativeAllocationLifetime.Scene);
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private void RebindDataVault(IDataVault dataVault)
+        {
+            if (ReferenceEquals(_dataVault, dataVault))
+                return;
+
+            CancelScheduledJobForTeardown();
+            DespawnAllColliders();
+            ReleaseProximityBuffers(_dataVault);
+            _dataVault = dataVault;
+            _activeColliders = null;
+            _prevStatus = null;
+            _initialized = false;
+            _pointCount = 0;
+#if UNITY_EDITOR
+            _debugTotalPoints = 0;
+            _debugActiveColliders = 0;
+            _debugJobFrameDelay = 0;
+#endif
+        }
+
+        private bool EnsureProximityVaultBuffers(int requiredCount)
+        {
+            if (requiredCount <= 0)
+                return false;
+
+            return EnsureProximityVaultBuffer(ref _positionsHandle, PositionsBufferId, requiredCount, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureProximityVaultBuffer(ref _jobResultsHandle, JobResultsBufferId, requiredCount, NativeArrayOptions.ClearMemory) &&
+                   EnsureProximityVaultBuffer(ref _prevStatusHandle, PrevStatusBufferId, requiredCount, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private bool EnsureProximityVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCount,
+            NativeArrayOptions options) where T : struct
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null || requiredCount <= 0)
+                return false;
+
+            if (IsExactVaultHandle(in handle, bufferId) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredCount)
+            {
+                return true;
+            }
+
+            ReleaseProximityVaultHandle(vault, ref handle, bufferId);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredCount, VaultOwnerSystemId, options);
+            return IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
+                   resolved.IsCreated &&
+                   resolved.Length >= requiredCount;
+        }
+
+        private bool TryAcquirePositionWriteBuffer(out NativeArray<float3> positions)
+        {
+            positions = default;
+            if (_jobBuffersLocked || !EnsureProximityVaultBuffers(_pointCount))
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in _positionsHandle, PositionsBufferId) ||
+                !vault.TryAcquireWriteLock(in _positionsHandle, VaultOwnerSystemId, out positions))
+            {
+                return false;
+            }
+
+            if (positions.IsCreated && positions.Length >= _pointCount)
+                return true;
+
+            vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
+            positions = default;
+            return false;
+        }
+
+        private void ReleasePositionWriteBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in _positionsHandle, PositionsBufferId))
+                vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryAcquireJobBuffers(
+            out NativeArray<float3> positions,
+            out NativeArray<byte> prevStatus,
+            out NativeArray<byte> results)
+        {
+            positions = default;
+            prevStatus = default;
+            results = default;
+            if (_jobBuffersLocked || !EnsureProximityVaultBuffers(_pointCount))
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            bool positionsLocked = false;
+            bool prevLocked = false;
+            bool resultsLocked = false;
+            bool success = false;
+            try
+            {
+                if (!IsExactVaultHandle(in _positionsHandle, PositionsBufferId) ||
+                    !vault.TryAcquireWriteLock(in _positionsHandle, VaultOwnerSystemId, out positions))
+                {
+                    return false;
+                }
+                positionsLocked = true;
+
+                if (!IsExactVaultHandle(in _prevStatusHandle, PrevStatusBufferId) ||
+                    !vault.TryAcquireWriteLock(in _prevStatusHandle, VaultOwnerSystemId, out prevStatus))
+                {
+                    return false;
+                }
+                prevLocked = true;
+
+                if (!IsExactVaultHandle(in _jobResultsHandle, JobResultsBufferId) ||
+                    !vault.TryAcquireWriteLock(in _jobResultsHandle, VaultOwnerSystemId, out results))
+                {
+                    return false;
+                }
+                resultsLocked = true;
+
+                if (!positions.IsCreated || positions.Length < _pointCount ||
+                    !prevStatus.IsCreated || prevStatus.Length < _pointCount ||
+                    !results.IsCreated || results.Length < _pointCount)
+                {
+                    return false;
+                }
+
+                _jobBuffersLocked = true;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    if (resultsLocked)
+                        vault.ReleaseWriteLock(in _jobResultsHandle, VaultOwnerSystemId);
+                    if (prevLocked)
+                        vault.ReleaseWriteLock(in _prevStatusHandle, VaultOwnerSystemId);
+                    if (positionsLocked)
+                        vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
+                    positions = default;
+                    prevStatus = default;
+                    results = default;
+                }
+            }
+        }
+
+        private bool TryReadPositions(out NativeArray<float3>.ReadOnly positions)
+        {
+            return TryReadProximityVaultBuffer(in _positionsHandle, PositionsBufferId, _pointCount, out positions);
+        }
+
+        private bool TryReadJobResults(out NativeArray<byte>.ReadOnly results)
+        {
+            return TryReadProximityVaultBuffer(in _jobResultsHandle, JobResultsBufferId, _pointCount, out results);
+        }
+
+        private bool TryReadProximityVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCount,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredCount > 0 &&
+                   IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredCount;
+        }
+
+        private void ReleaseJobBufferLocks()
+        {
+            if (!_jobBuffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                if (IsExactVaultHandle(in _jobResultsHandle, JobResultsBufferId))
+                    vault.ReleaseWriteLock(in _jobResultsHandle, VaultOwnerSystemId);
+                if (IsExactVaultHandle(in _prevStatusHandle, PrevStatusBufferId))
+                    vault.ReleaseWriteLock(in _prevStatusHandle, VaultOwnerSystemId);
+                if (IsExactVaultHandle(in _positionsHandle, PositionsBufferId))
+                    vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
+            }
+
+            _jobBuffersLocked = false;
+        }
+
+        private void ReleaseProximityBuffers()
+        {
+            ReleaseProximityBuffers(_dataVault);
+        }
+
+        private void ReleaseProximityBuffers(IDataVault vault)
+        {
+            ReleaseJobBufferLocks();
+            ReleaseProximityVaultHandle(vault, ref _positionsHandle, PositionsBufferId);
+            ReleaseProximityVaultHandle(vault, ref _jobResultsHandle, JobResultsBufferId);
+            ReleaseProximityVaultHandle(vault, ref _prevStatusHandle, PrevStatusBufferId);
+        }
+
+        private static void ReleaseProximityVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsExactVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+            handle = default;
+        }
+
+        private static bool IsExactVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -814,9 +1070,18 @@ namespace Hecton8.Core
             if (index < 0 || index >= _pointCount) return;
             if (_jobScheduled) return;
 
-            // ── Bezopasno: NativeArray write mezhdu Jobs ──
             // Job completion is owned by LateFrameTick; writes are skipped while a job reads this buffer.
-            _positions[index] = new float3(newPosition.x, newPosition.y, newPosition.z);
+            if (!TryAcquirePositionWriteBuffer(out NativeArray<float3> positions))
+                return;
+
+            try
+            {
+                positions[index] = new float3(newPosition.x, newPosition.y, newPosition.z);
+            }
+            finally
+            {
+                ReleasePositionWriteBuffer();
+            }
         }
 
         /// <summary>

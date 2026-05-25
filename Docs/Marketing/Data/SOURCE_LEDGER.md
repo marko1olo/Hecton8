@@ -1,4 +1,4 @@
-# Marketing Source Ledger
+﻿# Marketing Source Ledger
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
@@ -572,7 +572,7 @@ SHINOBU_81 daily loop V6 currentness propagation addendum on 2026-05-21: `Operat
 
 SHINOBU_81 residual SN2/co-op leakage cleanup addendum on 2026-05-21: `KPI/MARKETING_DASHBOARD_SPEC.md` no longer allows current-week freshness for SN2-derived pain proof; first-pack SN2 buckets require same-day source/date. `CreatorOutreach/SEGMENT_PITCH_MATRIX.md` now rejects co-op teasers, unsupported multiplayer scope, competitor-pain hooks, performance claims, EULA commentary, and "we fixed their problem" copy from SN2 audience-fit rows. `CreatorOutreach/RAW_LEAD_EXPANSION_QUEUE.md` now treats SN2/Subnautica seeds as audience-fit only and blocks raw expansion from SN2 pain/co-op/EULA/performance discourse until first HECTON assets prove a live CRM coverage gap. `README.md` and `PREP_DIRECTIONS_NOW.md` now expose the same SN2 audience/identity-only boundary in first-read entrypoints. `Data/MARKETING_BACKLOG_INDEX.md` rows 5, 58, 61, 91, 113, 127, and 128 are now historical/superseded or active-gate-only for SN2 currentness; rows 230-231 track the cleanup. No lead expansion, creator send, public copy, account/browser action, runtime, or build action occurred.
 
-SHINOBU_81 validation-command hardening addendum on 2026-05-21: `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change Validation Cut is now V1 and contains exact runnable PowerShell for the Marketing Backtick Path Audit and `Docs/AgentLogs/Rationale_SHINOBU_81.md` rationale-order audit. Row 232 in `Data/MARKETING_BACKLOG_INDEX.md` tracks the change. No new files, browser/account action, public route, outreach, runtime, or build action occurred.
+SHINOBU_81 validation-command hardening addendum on 2026-05-21: `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change Validation Cut is now V1 and contains exact runnable PowerShell for the Marketing Backtick Path Audit and the SHINOBU_81 rationale-order audit path. Row 232 in `Data/MARKETING_BACKLOG_INDEX.md` tracks the change. No new files, browser/account action, public route, outreach, runtime, or build action occurred.
 
 SHINOBU_81 AgentOps validation V1 propagation addendum on 2026-05-21: `AgentOps/AGENT_MARKETING_WORKFLOWS.md` now points future agents to `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change Validation Cut V1 and explicitly names Backtick Path Audit plus rationale-order audit for entry, backlog, source-ledger, campaign, presskit, operation, status, or rationale changes. Row 233 in `Data/MARKETING_BACKLOG_INDEX.md` tracks the propagation. No new files, browser/account action, public route, outreach, runtime, or build action occurred.
 

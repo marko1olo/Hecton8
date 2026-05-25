@@ -11,7 +11,7 @@ namespace Hecton8.Dev
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Dev/Celestial Time-Lapse Debugger")]
-    public sealed class CelestialTimeLapseDebugger : MonoBehaviour, ISlowTickable
+    public sealed class CelestialTimeLapseDebugger : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         [Header("Time-Lapse")]
         [SerializeField] private bool enableTimeLapse;
@@ -24,6 +24,8 @@ namespace Hecton8.Dev
 #pragma warning restore CS0414
 
         private bool _registered;
+        private bool _hotSwapRegistered;
+        private HectonCelestialEngine _celestialEngine;
 
         public bool IsApplied => _debugApplied;
         public float DebugTimeScale => debugTimeScale;
@@ -31,6 +33,8 @@ namespace Hecton8.Dev
 
         private void OnEnable()
         {
+            CacheCelestialEngineCold();
+            TryRegisterHotSwapListener();
             TryRegister();
             ApplyResolvedTimeSettings();
         }
@@ -38,13 +42,17 @@ namespace Hecton8.Dev
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ClearResolvedTimeSettings();
+            _celestialEngine = null;
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ClearResolvedTimeSettings();
+            _celestialEngine = null;
         }
 
         [ContextMenu("Enable 1000x Celestial Time-Lapse")]
@@ -66,8 +74,7 @@ namespace Hecton8.Dev
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
@@ -77,6 +84,33 @@ namespace Hecton8.Dev
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    TryUnregister();
+                    TryRegister();
+                }
+
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.CelestialEngineRuntime || !isActiveAndEnabled)
+                return;
+
+            HectonCelestialEngine previousEngine = previousService as HectonCelestialEngine;
+            if (previousEngine != null && !ReferenceEquals(previousEngine, currentService))
+                previousEngine.SetDebugCelestialTimeScale(1f);
+
+            _celestialEngine = currentService as HectonCelestialEngine;
+            ApplyResolvedTimeSettings();
         }
 
         public void SlowTick()
@@ -104,11 +138,33 @@ namespace Hecton8.Dev
             _debugCelestialTimeScale = 1f;
         }
 
-        private static void ApplyCelestialTimeScale(float scale)
+        private void ApplyCelestialTimeScale(float scale)
         {
-            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
+            HectonCelestialEngine celestialEngine = _celestialEngine;
             if (celestialEngine != null)
                 celestialEngine.SetDebugCelestialTimeScale(Mathf.Max(1f, scale));
+        }
+
+        private void CacheCelestialEngineCold()
+        {
+            _celestialEngine = GlobalRegistry.CelestialEngine;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

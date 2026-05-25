@@ -231,6 +231,7 @@ namespace Hecton.Localization
         private static int _deferredLanguageUnregisterCount;
         private static int _deferredCorruptionRegisterCount;
         private static int _deferredCorruptionUnregisterCount;
+        private static int _droppedEventCount;
         private static int _droppedListenerRegistrationCount;
         private static int _listenerExceptionCount;
         private static int _lastListenerOverflowTelemetryFrame = -1;
@@ -242,6 +243,8 @@ namespace Hecton.Localization
         /// Pending payload count in the localization event lane.
         /// </summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        public static int DroppedEventCount => _droppedEventCount;
 
         /// <summary>
         /// Listener mutations dropped because fixed deferred buffers were saturated.
@@ -282,6 +285,7 @@ namespace Hecton.Localization
             _deferredLanguageUnregisterCount = 0;
             _deferredCorruptionRegisterCount = 0;
             _deferredCorruptionUnregisterCount = 0;
+            _droppedEventCount = 0;
             _droppedListenerRegistrationCount = 0;
             _listenerExceptionCount = 0;
             _lastListenerOverflowTelemetryFrame = -1;
@@ -368,9 +372,15 @@ namespace Hecton.Localization
         /// Enqueues a deferred language-change event.
         /// </summary>
         /// <param name="language">Resolved active language.</param>
+        [Obsolete("Use TryPublishLanguageChanged(GameLanguage) so bounded enqueue refusal is visible.", true)]
         public static void PublishLanguageChanged(GameLanguage language)
         {
-            Enqueue(LocalizationEventType.LanguageChanged, language, ushort.MaxValue, 0);
+            TryPublishLanguageChanged(language);
+        }
+
+        public static bool TryPublishLanguageChanged(GameLanguage language)
+        {
+            return Enqueue(LocalizationEventType.LanguageChanged, language, ushort.MaxValue, 0);
         }
 
         /// <summary>
@@ -378,12 +388,18 @@ namespace Hecton.Localization
         /// </summary>
         /// <param name="language">Resolved active language.</param>
         /// <param name="visualBucket">Current visual corruption bucket, or a negative value when unknown.</param>
+        [Obsolete("Use TryPublishCorruptionVisualStateChanged(GameLanguage,int) so bounded enqueue refusal is visible.", true)]
         public static void PublishCorruptionVisualStateChanged(GameLanguage language, int visualBucket)
+        {
+            TryPublishCorruptionVisualStateChanged(language, visualBucket);
+        }
+
+        public static bool TryPublishCorruptionVisualStateChanged(GameLanguage language, int visualBucket)
         {
             ushort bucket = visualBucket < 0
                 ? ushort.MaxValue
                 : (ushort)Mathf.Min(ushort.MaxValue - 1, visualBucket);
-            Enqueue(LocalizationEventType.CorruptionVisualStateChanged, language, bucket, 0);
+            return Enqueue(LocalizationEventType.CorruptionVisualStateChanged, language, bucket, 0);
         }
 
         /// <summary>
@@ -408,7 +424,10 @@ namespace Hecton.Localization
                     return;
 
                 if (!_pendingEvents.TryDequeue(out LocalizationEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -455,22 +474,23 @@ namespace Hecton.Localization
             }
         }
 
-        private static void Enqueue(LocalizationEventType eventType, GameLanguage language, ushort visualBucket, ushort statusBits)
+        private static bool Enqueue(LocalizationEventType eventType, GameLanguage language, ushort visualBucket, ushort statusBits)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
+                _droppedEventCount++;
                 if (!_overflowWarningQueued)
                 {
                     _overflowWarningQueued = true;
                     GlobalTelemetryBus.PublishPerformanceWarning(_OverflowWarningHash, (uint)eventType, PendingCount);
                 }
-                return;
+                return false;
             }
 
             LocalizationEventPayload payload = new LocalizationEventPayload
             {
-                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Frame = unchecked((uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex)),
                 EventType = (ushort)eventType,
                 Language = (ushort)language,
                 VisualBucket = visualBucket,
@@ -481,11 +501,12 @@ namespace Hecton.Localization
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static void Dispatch(in LocalizationEventPayload payload)
@@ -780,7 +801,7 @@ namespace Hecton.Localization
         private static void ReportListenerOverflow(uint contextHash)
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -794,7 +815,7 @@ namespace Hecton.Localization
         private static void ReportListenerException(uint contextHash)
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -857,7 +878,10 @@ namespace Hecton.Localization
             while (scanBudget-- > 0 && !queue.IsEmpty())
             {
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;

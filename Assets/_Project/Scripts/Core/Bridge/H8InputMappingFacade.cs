@@ -83,7 +83,7 @@ namespace Hecton8.Core.Bridge
                 return true;
             }
 
-            VaultGenerationHandle<H8InputFacadeBindingEntry> handle = vault.GetGenerationHandle<H8InputFacadeBindingEntry>(
+            VaultGenerationHandle<H8InputFacadeBindingEntry> handle = vault.EnsureGenerationHandle<H8InputFacadeBindingEntry>(
                 BufferID.BridgeInputFacadeBindings,
                 count,
                 SystemID.CoreBridge,
@@ -158,7 +158,7 @@ namespace Hecton8.Core.Bridge
                 BufferId = (ushort)BufferID.BridgeInputFacadeBindings,
                 Flags = 0
             };
-            SignalBus<DataVaultUpdateSignal>.Push(in signal);
+            SignalBus<DataVaultUpdateSignal>.TryPush(in signal);
         }
 
         private void Reset()

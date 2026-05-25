@@ -41,7 +41,7 @@ namespace Hecton8.Editor
             {
                 GameObject target = selected[i];
                 if (target == null ||
-                    target.GetComponent<Light>() == null ||
+                    !target.TryGetComponent(out Light _) ||
                     target.GetComponent(sourceType) != null)
                 {
                     continue;
@@ -64,7 +64,7 @@ namespace Hecton8.Editor
             {
                 GameObject target = selected[i];
                 if (target != null &&
-                    target.GetComponent<Light>() != null &&
+                    target.TryGetComponent(out Light _) &&
                     target.GetComponent(sourceType) == null)
                 {
                     return true;

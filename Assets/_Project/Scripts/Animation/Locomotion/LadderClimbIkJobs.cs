@@ -251,8 +251,9 @@ namespace Hecton8.Animation.Locomotion
             float numerator = (upperArm * upperArm) + (clampedDistance * clampedDistance) - (lowerArm * lowerArm);
             float denominator = math.max(0.0001f, 2f * upperArm * clampedDistance);
             float acosInput = math.clamp(numerator * math.rcp(denominator), -1f, 1f);
-            float shoulderAngle = math.acos(acosInput);
-            float3 upperDirection = (handDirection * math.cos(shoulderAngle)) + (bendDirection * math.sin(shoulderAngle));
+            float sinSq = math.max(0f, 1f - (acosInput * acosInput));
+            float shoulderSin = SafeSqrt(sinSq);
+            float3 upperDirection = (handDirection * acosInput) + (bendDirection * shoulderSin);
             upperDirection = NormalizeSafe(upperDirection, handDirection);
             return shoulder + upperDirection * upperArm;
         }

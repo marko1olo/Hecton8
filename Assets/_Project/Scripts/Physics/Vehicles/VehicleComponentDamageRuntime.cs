@@ -14,7 +14,7 @@ namespace Hecton8.Physics.Vehicles
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Vehicle Component Damage Router")]
-    public unsafe sealed class VehicleComponentDamageRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable
+    public unsafe sealed class VehicleComponentDamageRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int MinimumQualityHazardSignals = 8;
         private const int MaxGridWidth = 32;
@@ -74,6 +74,7 @@ namespace Hecton8.Physics.Vehicles
         private bool _registeredPostFixed;
         private bool _registeredLate;
         private bool _registeredSlow;
+        private bool _registeredHotSwapListener;
         private bool _dumpWritten;
         private bool _csvLoaded;
         private int _cellCount;
@@ -89,7 +90,7 @@ namespace Hecton8.Physics.Vehicles
 
         private void OnEnable()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!VehicleDamageLayoutValidator.ValidateVehicleGridCellLayout(out string layoutError))
                 Debug.LogError(layoutError, this);
 #endif
@@ -103,10 +104,8 @@ namespace Hecton8.Physics.Vehicles
             EnsureVaultBuffers(forceReinitialize: false);
             TryRefreshRootPoseSnapshot(transform, allowPresentationFallback: true);
 
-            _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            TryRegisterHotSwapListener();
+            TryRegisterRuntimeLanes();
         }
 
         private void OnDisable()
@@ -118,19 +117,38 @@ namespace Hecton8.Physics.Vehicles
             UnlockDamageBuffers();
             DumpBlackBoxIfFaulted();
 
-            if (_registeredFixed)
-                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
-            if (_registeredPostFixed)
-                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
-            if (_registeredLate)
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            if (_registeredSlow)
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntimeLanes();
+        }
 
-            _registeredFixed = false;
-            _registeredPostFixed = false;
-            _registeredLate = false;
-            _registeredSlow = false;
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null || !isActiveAndEnabled)
+                    return;
+
+                TryUnregisterRuntimeLanes();
+                TryRegisterRuntimeLanes();
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (_damagePending)
+                DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: true);
+
+            _damagePending = false;
+            UnlockDamageBuffers();
+            _dataVault = currentService as IDataVault;
+            ClearVaultHandles();
+            _buffersReady = false;
+            if (isActiveAndEnabled && _dataVault != null)
+                EnsureVaultBuffers(forceReinitialize: false);
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -247,6 +265,7 @@ namespace Hecton8.Physics.Vehicles
                 Telemetry = telemetry,
                 TelemetryCursor = telemetryCursor,
                 HazardWriter = SignalBus<VehicleHazardSignal>.ParallelWriter,
+                HazardWriterBudget = SignalBus<VehicleHazardSignal>.ParallelWriterBudget,
                 CellCount = _cellCount,
                 SignalCount = totalSignalCount,
                 Frame = frame,
@@ -298,7 +317,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_damagePending && !_buffersLocked)
                 EnsureVaultBuffers(forceReinitialize: false);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!_damagePending && !_buffersLocked)
                 TryLoadCsvLayout();
 #endif
@@ -312,6 +331,72 @@ namespace Hecton8.Physics.Vehicles
             _dataVault = GlobalRegistry.DataVault;
 
             return _dataVault != null;
+        }
+
+        private void TryRegisterRuntimeLanes()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredFixed)
+                _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+            if (!_registeredPostFixed)
+                _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+            if (!_registeredLate)
+                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!_registeredSlow)
+                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterRuntimeLanes()
+        {
+            if (_registeredFixed)
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            if (_registeredPostFixed)
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+            if (_registeredLate)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (_registeredSlow)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+
+            _registeredFixed = false;
+            _registeredPostFixed = false;
+            _registeredLate = false;
+            _registeredSlow = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void ClearVaultHandles()
+        {
+            _gridWriteHandle = default;
+            _gridReadHandle = default;
+            _signalHandle = default;
+            _mockSignalHandle = default;
+            _stateWriteHandle = default;
+            _stateReadHandle = default;
+            _tuningHandle = default;
+            _telemetryHandle = default;
+            _telemetryCursorHandle = default;
+            _csvScratchHandle = default;
+            _kinematicConfigHandle = default;
+            _cellCount = 0;
+            _csvLoaded = false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -366,16 +451,16 @@ namespace Hecton8.Physics.Vehicles
             int cellCount = width * height * depth;
             bool reinitialize = forceReinitialize || cellCount != _cellCount;
 
-            _gridWriteHandle = _dataVault.GetGenerationHandle<VehicleGridCellDTO>(VehicleDamageConstants.GridWriteBuffer, cellCount, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
-            _gridReadHandle = _dataVault.GetGenerationHandle<VehicleGridCellDTO>(VehicleDamageConstants.GridReadBuffer, cellCount, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
-            _signalHandle = _dataVault.GetGenerationHandle<VehicleDamageSignalDTO>(VehicleDamageConstants.SignalBuffer, VehicleDamageConstants.MaxDamageSignals, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
-            _mockSignalHandle = _dataVault.GetGenerationHandle<VehicleDamageSignalDTO>(VehicleDamageConstants.MockSignalBuffer, VehicleDamageConstants.MaxMockDamageSignals, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
-            _stateWriteHandle = _dataVault.GetGenerationHandle<VehicleDamageStateDTO>(VehicleDamageConstants.StateWriteBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _stateReadHandle = _dataVault.GetGenerationHandle<VehicleDamageStateDTO>(VehicleDamageConstants.StateReadBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _tuningHandle = _dataVault.GetGenerationHandle<VehicleDamageTuningDTO>(VehicleDamageConstants.TuningBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _dataVault.GetGenerationHandle<VehicleDamageTelemetryEntry>(VehicleDamageConstants.TelemetryRingBuffer, VehicleDamageConstants.TelemetryCapacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _telemetryCursorHandle = _dataVault.GetGenerationHandle<uint>(VehicleDamageConstants.TelemetryCursorBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _dataVault.GetGenerationHandle<byte>(VehicleDamageConstants.CsvScratchBuffer, VehicleDamageConstants.CsvScratchBytes, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _gridWriteHandle = _dataVault.EnsureGenerationHandle<VehicleGridCellDTO>(VehicleDamageConstants.GridWriteBuffer, cellCount, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _gridReadHandle = _dataVault.EnsureGenerationHandle<VehicleGridCellDTO>(VehicleDamageConstants.GridReadBuffer, cellCount, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _signalHandle = _dataVault.EnsureGenerationHandle<VehicleDamageSignalDTO>(VehicleDamageConstants.SignalBuffer, VehicleDamageConstants.MaxDamageSignals, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _mockSignalHandle = _dataVault.EnsureGenerationHandle<VehicleDamageSignalDTO>(VehicleDamageConstants.MockSignalBuffer, VehicleDamageConstants.MaxMockDamageSignals, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _stateWriteHandle = _dataVault.EnsureGenerationHandle<VehicleDamageStateDTO>(VehicleDamageConstants.StateWriteBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _stateReadHandle = _dataVault.EnsureGenerationHandle<VehicleDamageStateDTO>(VehicleDamageConstants.StateReadBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _tuningHandle = _dataVault.EnsureGenerationHandle<VehicleDamageTuningDTO>(VehicleDamageConstants.TuningBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = _dataVault.EnsureGenerationHandle<VehicleDamageTelemetryEntry>(VehicleDamageConstants.TelemetryRingBuffer, VehicleDamageConstants.TelemetryCapacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _telemetryCursorHandle = _dataVault.EnsureGenerationHandle<uint>(VehicleDamageConstants.TelemetryCursorBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(VehicleDamageConstants.CsvScratchBuffer, VehicleDamageConstants.CsvScratchBytes, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
 
             if (!IsHandleValid(in _gridWriteHandle) || !IsHandleValid(in _gridReadHandle) || !IsHandleValid(in _signalHandle) ||
                 !IsHandleValid(in _mockSignalHandle) || !IsHandleValid(in _stateWriteHandle) || !IsHandleValid(in _stateReadHandle) ||
@@ -596,13 +681,16 @@ namespace Hecton8.Physics.Vehicles
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolveQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 
         private uint ResolveVehicleHash()
         {
-            uint fallback = unchecked((uint)GetInstanceID());
+            uint fallback = Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             return math.select(fallback, acceptedTargetHash, acceptedTargetHash != 0u);
         }
 
@@ -695,7 +783,7 @@ namespace Hecton8.Physics.Vehicles
             _buffersLocked = false;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private bool TryLoadCsvLayout()
         {
             if (!_buffersReady || _dataVault == null || !File.Exists(_csvPath))
@@ -869,7 +957,7 @@ namespace Hecton8.Physics.Vehicles
                 return true;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Vector3 position = root.position;
             Quaternion rotation = root.rotation;
             rootAup = new double3(position.x, position.y, position.z);
@@ -919,7 +1007,7 @@ namespace Hecton8.Physics.Vehicles
                 }
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!allowPresentationFallback)
                 return false;
 

@@ -1,15 +1,13 @@
 using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
-using Hecton8.Physics.CCD;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
@@ -17,7 +15,7 @@ using Unity.Collections.LowLevel.Unsafe;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Kinematic vehicle motor with deferred capsule sweep consumption for mountable transports.
+    /// Kinematic vehicle motor for mountable transports. Collision sweep authority is external to this shell.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Motor")]
@@ -35,24 +33,9 @@ namespace Hecton8.Gameplay
             [FieldOffset(104)] private ulong _pad1;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = ScheduledSweepStateSizeBytes)]
-        private struct ScheduledSweepState
-        {
-            [FieldOffset(0)] public float3 StartPosition;
-            [FieldOffset(12)] public float3 Direction;
-            [FieldOffset(24)] public float Distance;
-            [FieldOffset(28)] public float SkinWidth;
-            [FieldOffset(32)] public int SelfColliderInstanceId;
-            [FieldOffset(36)] private uint _pad0;
-            [FieldOffset(40)] private ulong _pad1;
-        }
-
         private const float MinVectorMagnitudeSq = 0.000001f;
-        private const int ScheduledSweepCommandCount = 1;
-        private const int ScheduledSweepMaxHits = 8;
         private const int MaxRegisteredMotors = 32;
         private const int SubmarineStateSizeBytes = 112;
-        private const int ScheduledSweepStateSizeBytes = 48;
         private const int SubmarineStateAupOffset = 0;
         private const int SubmarineStateRuntimeRotationOffset = 48;
         private const int SubmarineStateRuntimePositionOffset = 64;
@@ -86,10 +69,7 @@ namespace Hecton8.Gameplay
         private const SystemID VaultOwnerSystem = SystemID.VehiclesPhysics;
 
         private static readonly VehicleMotor[] _registeredMotors = new VehicleMotor[MaxRegisteredMotors];
-        private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
-        private static readonly ProfilerMarker _consumeProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Consume");
         private static readonly ProfilerMarker _driveProfilerMarker = new ProfilerMarker("H8.VehicleMotor.Drive");
-        private static readonly uint _kinematicCcdSourceHash = unchecked((uint)Hecton.Localization.LocHash.Compute("KINEMATIC_CCD_VEHICLE"));
 
         [Header("-- Cinematic Hull Feel -------------")]
         [Tooltip("Legacy scalar folded into cinematic velocity bleed. Kept for serialized preset compatibility.")]
@@ -123,14 +103,6 @@ namespace Hecton8.Gameplay
         private float _brineViscosityVerticalHalfExtentMeters = 0.5f;
         private IDataVault _dataVault;
         private VaultGenerationHandle<SubmarineState> _submarineStateHandle;
-        private VaultGenerationHandle<CapsulecastCommand> _scheduledSweepCommandsHandle;
-        private VaultGenerationHandle<RaycastHit> _scheduledSweepResultsHandle;
-        private JobHandle _scheduledSweepHandle;
-        private ScheduledSweepState _scheduledSweepState;
-        private bool _scheduledSweepPending;
-        private bool _scheduledSweepReady;
-        private bool _scheduledSweepDiscardAfterCompletion;
-        private bool _scheduledSweepBuffersLocked;
         private bool _safeTeleportCollisionModeCaptured;
         private Vector3 _linearVelocity;
         private Vector3 _localAngularVelocityDegrees;
@@ -161,6 +133,7 @@ namespace Hecton8.Gameplay
         private Vector3 _lastBlockingImpactPoint;
         private Vector3 _lastBlockingImpactNormal = Vector3.up;
         private float _wakeSiltDecalCooldown;
+        private AbyssalFluidDecalManager _fluidDecals;
 
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
@@ -181,9 +154,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        /// <summary>True while a deferred capsule sweep is waiting for consumption.</summary>
-        public bool HasPendingSweep => _scheduledSweepPending || _scheduledSweepReady;
-
+        /// <summary>Collision sweep authority is external in the current vehicle shell.</summary>
         /// <summary>Returns true when both rigidbody and capsule are available for kinematic sweep driving.</summary>
         public bool IsDriveReady => _body != null && _capsule != null;
 
@@ -230,7 +201,8 @@ namespace Hecton8.Gameplay
             _capsule = capsule;
             CacheBrineViscosityQueryShape();
             RegisterMotor();
-            ResolveDataVault();
+            CacheDataVaultCold();
+            CacheVisualServicesCold();
             EnsureSubmarineState();
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
@@ -243,7 +215,8 @@ namespace Hecton8.Gameplay
         {
             CacheBrineViscosityQueryShape();
             RegisterMotor();
-            ResolveDataVault();
+            CacheDataVaultCold();
+            CacheVisualServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
             if (headlessVisualRoot != null)
@@ -258,8 +231,9 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             UnregisterMotor();
-            DisposeScheduledSweepState();
             DisposeSubmarineState();
+            _dataVault = null;
+            _fluidDecals = null;
         }
 
         private void OnDestroy()
@@ -270,8 +244,9 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             UnregisterMotor();
-            DisposeScheduledSweepState();
             DisposeSubmarineState();
+            _dataVault = null;
+            _fluidDecals = null;
         }
 
         /// <summary>Clears all accumulated transport motion state.</summary>
@@ -313,8 +288,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_body.isKinematic)
                 {
-                    _body.linearVelocity = Vector3.zero;
-                    _body.angularVelocity = Vector3.zero;
+                    PhysicsForceRouter.QueueAngularVelocitySet(_body, Vector3.zero, wake: false);
                 }
 
                 WriteSubmarineState(_body.position, _body.rotation);
@@ -461,13 +435,10 @@ namespace Hecton8.Gameplay
             if (_postFixedTickDormant)
                 return;
 
-            if (_scheduledSweepPending)
-                TryFinalizeScheduledSweep();
-
             if (_safeTeleportCollisionGuardActive)
                 CompleteSafeTeleportCollisionGuard();
 
-            if (!_safeTeleportCollisionGuardActive && !_scheduledSweepPending)
+            if (!_safeTeleportCollisionGuardActive)
             {
                 _postFixedTickDormant = _registeredPostFixedTick;
                 return;
@@ -487,16 +458,6 @@ namespace Hecton8.Gameplay
 
             if (_isEntangled)
                 _entanglementAnchorPosition -= shiftOffset;
-
-            if (_scheduledSweepReady)
-            {
-                _scheduledSweepReady = false;
-                _scheduledSweepState = default;
-                ClearBlockingImpactCache();
-            }
-
-            if (_scheduledSweepPending)
-                _scheduledSweepDiscardAfterCompletion = true;
 
             if (_lastBlockingImpactPoint.sqrMagnitude > MinVectorMagnitudeSq)
                 _lastBlockingImpactPoint -= shiftOffset;
@@ -652,198 +613,6 @@ namespace Hecton8.Gameplay
                 _linearVelocity = HectonPlayerMotor.SafeVelocity(candidateVelocity);
                 TryEmitCinematicWakeSiltDecal(targetRotation, safeDeltaTime);
                 WriteSubmarineState(body.position + (_linearVelocity * safeDeltaTime), targetRotation);
-            }
-        }
-
-        /// <summary>Schedules a deferred capsule sweep for the current kinematic velocity.</summary>
-        public bool ScheduleCapsuleSweepBatch(int layerMask, float skinWidth, int selfColliderInstanceId, float fixedDeltaTime)
-        {
-            Rigidbody body = _body;
-            CapsuleCollider capsule = _capsule;
-            if (body == null ||
-                capsule == null ||
-                layerMask == 0 ||
-                _scheduledSweepPending ||
-                _scheduledSweepReady ||
-                !float.IsFinite(fixedDeltaTime) ||
-                fixedDeltaTime <= 0f)
-                return false;
-
-            Vector3 displacement = _linearVelocity * fixedDeltaTime;
-            if (!KinematicCcdMath.ShouldSchedule(new float3(_linearVelocity.x, _linearVelocity.y, _linearVelocity.z)))
-                return false;
-
-            float displacementSqr = displacement.sqrMagnitude;
-            if (!float.IsFinite(displacementSqr) || displacementSqr <= MinVectorMagnitudeSq)
-                return false;
-
-            if (!TryResolveScheduledSweepBuffers(
-                    out NativeArray<CapsulecastCommand> scheduledSweepCommands,
-                    out NativeArray<RaycastHit> scheduledSweepResults))
-            {
-                return false;
-            }
-
-            ResolveCapsulePoints(body, capsule, out Vector3 capsulePoint1, out Vector3 capsulePoint2, out float capsuleRadius);
-            float inverseDistance = math.rsqrt(displacementSqr);
-            float distance = displacementSqr * inverseDistance;
-            if (!float.IsFinite(distance) || distance <= 0f)
-            {
-                UnlockScheduledSweepBuffers();
-                return false;
-            }
-
-            float safeSkinWidth = float.IsFinite(skinWidth) ? math.max(0f, skinWidth) : 0f;
-            Vector3 direction = displacement * inverseDistance;
-
-            _scheduledSweepState = new ScheduledSweepState
-            {
-                StartPosition = ToFloat3(body.position),
-                Direction = ToFloat3(direction),
-                Distance = distance,
-                SkinWidth = safeSkinWidth,
-                SelfColliderInstanceId = selfColliderInstanceId
-            };
-
-            scheduledSweepCommands[0] = new CapsulecastCommand(
-                capsulePoint1,
-                capsulePoint2,
-                math.max(0.01f, capsuleRadius),
-                direction,
-                new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore),
-                distance + safeSkinWidth);
-            for (int i = 0; i < ScheduledSweepMaxHits; i++)
-                scheduledSweepResults[i] = default;
-
-            using (_scheduleProfilerMarker.Auto())
-            {
-                _scheduledSweepHandle = CapsulecastCommand.ScheduleBatch(
-                    scheduledSweepCommands,
-                    scheduledSweepResults,
-                    ScheduledSweepCommandCount,
-                    ScheduledSweepMaxHits,
-                    default);
-                H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _scheduledSweepHandle);
-                _scheduledSweepPending = true;
-                _scheduledSweepReady = false;
-                TryRegisterPostFixedTickable();
-            }
-
-            return true;
-        }
-
-        /// <summary>Consumes a completed sweep, applying depenetration and slide projection when needed.</summary>
-        public bool TryConsumeScheduledCapsuleSweep(out bool wasBlocked, out RaycastHit blockingHit, out Vector3 resolvedPosition)
-        {
-            wasBlocked = false;
-            blockingHit = default;
-            Rigidbody body = _body;
-            resolvedPosition = body != null ? body.position : Vector3.zero;
-            if (!_scheduledSweepReady)
-                return false;
-            if (!TryResolveScheduledSweepResults(out NativeArray<RaycastHit> sweepResults))
-            {
-                _scheduledSweepReady = false;
-                _scheduledSweepState = default;
-                return false;
-            }
-
-            using (_consumeProfilerMarker.Auto())
-            {
-                _scheduledSweepReady = false;
-
-                float nearestDistance = float.MaxValue;
-                int nearestIndex = -1;
-                float maxHitDistance = _scheduledSweepState.Distance + _scheduledSweepState.SkinWidth + MinVectorMagnitudeSq;
-                for (int i = 0; i < ScheduledSweepMaxHits; i++)
-                {
-                    RaycastHit hit = sweepResults[i];
-                    int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
-                    if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
-                        continue;
-
-                    float hitDistance = hit.distance;
-                    if (!float.IsFinite(hitDistance) || hitDistance < 0f || hitDistance > maxHitDistance)
-                        continue;
-
-                    if (hitDistance < nearestDistance)
-                    {
-                        nearestDistance = hitDistance;
-                        nearestIndex = i;
-                    }
-                }
-
-                if (nearestIndex < 0)
-                {
-                    ClearBlockingImpactCache();
-                    resolvedPosition = ToVector3(_scheduledSweepState.StartPosition + (_scheduledSweepState.Direction * _scheduledSweepState.Distance));
-                    MovePosition(resolvedPosition);
-                    _scheduledSweepState = default;
-                    return true;
-                }
-
-                wasBlocked = true;
-                blockingHit = sweepResults[nearestIndex];
-                Vector3 safeNormal = ResolveSafeNormal(blockingHit.normal, Vector3.up);
-                bool lowTierStop = false;
-                bool cornerHalt = !lowTierStop &&
-                                  HasScheduledSweepCornerHit(sweepResults, nearestIndex, safeNormal, blockingHit.distance);
-                float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
-                    blockingHit.distance,
-                    _scheduledSweepState.Distance,
-                    _scheduledSweepState.SkinWidth);
-                Vector3 sweepDirection = ToVector3(_scheduledSweepState.Direction);
-                Vector3 resolvedDisplacement = sweepDirection * safeDistance;
-                Vector3 projectedDisplacement = ProjectOnUnitPlane(
-                    sweepDirection * _scheduledSweepState.Distance,
-                    safeNormal);
-                if (!lowTierStop && !cornerHalt)
-                {
-                    float remainingDistance = math.max(0f, _scheduledSweepState.Distance - safeDistance);
-                    float projectedDisplacementSq = projectedDisplacement.sqrMagnitude;
-                    if (math.isfinite(projectedDisplacementSq) &&
-                        projectedDisplacementSq > MinVectorMagnitudeSq &&
-                        remainingDistance > 0f)
-                    {
-                        resolvedDisplacement += projectedDisplacement *
-                            (remainingDistance * math.rsqrt(projectedDisplacementSq));
-                    }
-                }
-
-                resolvedPosition = ToVector3(_scheduledSweepState.StartPosition) + resolvedDisplacement;
-                MovePosition(resolvedPosition);
-                CacheGroundContact(safeNormal);
-                Vector3 previousVelocity = _linearVelocity;
-                Vector3 projectedVelocity = ProjectOnUnitPlane(previousVelocity, safeNormal);
-                if (IsSlopeTooSteep(safeNormal))
-                    projectedVelocity = ProjectOnUnitPlane(projectedVelocity, Vector3.up);
-                if (lowTierStop || cornerHalt)
-                    projectedVelocity = Vector3.zero;
-
-                Vector3 rejectedVelocity = previousVelocity - projectedVelocity;
-                float rejectedVelocitySq = rejectedVelocity.sqrMagnitude;
-                _lastBlockingImpactSpeedMetersPerSecond = math.isfinite(rejectedVelocitySq) && rejectedVelocitySq > MinVectorMagnitudeSq
-                    ? rejectedVelocitySq * math.rsqrt(rejectedVelocitySq)
-                    : 0f;
-                _lastBlockingImpactPoint = blockingHit.point;
-                _lastBlockingImpactNormal = safeNormal;
-                float lostKineticEnergy = KinematicCcdMath.LostKineticEnergy(
-                    body != null ? body.mass : 1f,
-                    previousVelocity.sqrMagnitude,
-                    projectedVelocity.sqrMagnitude);
-                EmitKinematicCcdConsequences(
-                    in blockingHit,
-                    safeNormal,
-                    _lastBlockingImpactSpeedMetersPerSecond,
-                    lostKineticEnergy,
-                    lowTierStop,
-                    cornerHalt);
-                _linearVelocity = projectedVelocity;
-                _linearVelocity = HectonPlayerMotor.SafeVelocity(_linearVelocity);
-                if (body != null)
-                    WriteSubmarineState(resolvedPosition, body.rotation);
-                _scheduledSweepState = default;
-                return true;
             }
         }
 
@@ -1034,7 +803,6 @@ namespace Hecton8.Gameplay
 
             velocity.y = math.lerp(velocity.y, 0f, math.saturate(dampenerStrength01));
             _linearVelocity = HectonPlayerMotor.SafeVelocity(velocity);
-            body.linearVelocity = _linearVelocity;
             WriteSubmarineState(body.position, body.rotation);
         }
 
@@ -1094,7 +862,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(runtime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -1318,7 +1086,7 @@ namespace Hecton8.Gameplay
                 PositionAup = wakeAup,
                 SourceFlags = VehicleWakeSourceFlag
             };
-            SignalBus<WakeGeneratedSignal>.Push(in signal);
+            SignalBus<WakeGeneratedSignal>.TryPush(in signal);
         }
 
         private void TryEmitWakeSiltDecal(Vector3 emitterPosition, Vector3 wakeVelocity, float speedMetersPerSecond)
@@ -1331,7 +1099,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(emitter)) || !math.all(math.isfinite(velocity)))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _fluidDecals;
             if (fluidDecals == null)
                 return;
 
@@ -1472,11 +1240,16 @@ namespace Hecton8.Gameplay
                 IDataVault currentVault = currentService as IDataVault;
                 if (!ReferenceEquals(_dataVault, currentVault))
                 {
-                    DisposeScheduledSweepState();
                     DisposeSubmarineState();
                     _dataVault = currentVault;
                 }
 
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime)
+            {
+                _fluidDecals = currentService as AbyssalFluidDecalManager;
                 return;
             }
 
@@ -1485,7 +1258,7 @@ namespace Hecton8.Gameplay
 
             if (headlessVisualRoot != null)
                 TryRegisterLateFrameTickable();
-            if (_safeTeleportCollisionGuardActive || _scheduledSweepPending)
+            if (_safeTeleportCollisionGuardActive)
                 TryRegisterPostFixedTickable();
         }
 
@@ -1501,8 +1274,7 @@ namespace Hecton8.Gameplay
             }
 
             _body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-            _body.linearVelocity = Vector3.zero;
-            _body.angularVelocity = Vector3.zero;
+            PhysicsForceRouter.QueueAngularVelocitySet(_body, Vector3.zero, wake: false);
             _body.PublishTransform();
             _safeTeleportCollisionGuardActive = true;
             TryRegisterPostFixedTickable();
@@ -1598,7 +1370,7 @@ namespace Hecton8.Gameplay
             }
 
             VerifySubmarineStateLayout();
-            _submarineStateHandle = _dataVault.GetGenerationHandle<SubmarineState>(
+            _submarineStateHandle = _dataVault.EnsureGenerationHandle<SubmarineState>(
                 BufferID.VehicleMotorSubmarineStates,
                 MaxRegisteredMotors,
                 VaultOwnerSystem,
@@ -1699,7 +1471,7 @@ namespace Hecton8.Gameplay
             if (TryResolveVehicleVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            handle = _dataVault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            handle = _dataVault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
             return TryResolveVehicleVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
         }
 
@@ -1756,18 +1528,26 @@ namespace Hecton8.Gameplay
 
         private bool ResolveDataVault()
         {
-            IDataVault currentVault = GlobalRegistry.DataVault;
-            if (_dataVault != null && ReferenceEquals(_dataVault, currentVault))
-                return true;
+            return _dataVault != null;
+        }
 
-            if (_dataVault != null && !ReferenceEquals(_dataVault, currentVault))
+        private void CacheDataVaultCold()
+        {
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            if (_dataVault != null)
             {
-                DisposeScheduledSweepState();
                 DisposeSubmarineState();
             }
 
             _dataVault = currentVault;
-            return _dataVault != null;
+        }
+
+        private void CacheVisualServicesCold()
+        {
+            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1775,7 +1555,6 @@ namespace Hecton8.Gameplay
         private static void VerifySubmarineStateLayout()
         {
             if (UnsafeUtility.SizeOf<SubmarineState>() != SubmarineStateSizeBytes ||
-                UnsafeUtility.SizeOf<ScheduledSweepState>() != ScheduledSweepStateSizeBytes ||
                 SubmarineStateAupOffset != 0 ||
                 SubmarineStateRuntimeRotationOffset != 48 ||
                 SubmarineStateRuntimePositionOffset != 64 ||
@@ -1805,7 +1584,8 @@ namespace Hecton8.Gameplay
             uint hash = Hash32((uint)stateIndex ^ 0x564D4F54u);
             float angle = (hash & 1023u) * (TwoPi / 1023f);
             float radius = 2f + (((hash >> 10) & 255u) * (6f / 255f));
-            float3 local = new float3(math.cos(angle) * radius, -2f - stateIndex, math.sin(angle) * radius);
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+            float3 local = new float3(cos * radius, -2f - stateIndex, sin * radius);
             SubmarineState state = default;
             state.Aup = new AbsoluteUniversePositionBlit128
             {
@@ -1830,303 +1610,6 @@ namespace Hecton8.Gameplay
             value *= 3266489917u;
             value ^= value >> 16;
             return value;
-        }
-
-        private static void ResolveCapsulePoints(Rigidbody body, CapsuleCollider capsule, out Vector3 point1, out Vector3 point2, out float radius)
-        {
-            Transform transform = body.transform;
-            Vector3 lossyScale = transform.lossyScale;
-            Vector3 center = transform.TransformPoint(capsule.center);
-            Vector3 axis = transform.up;
-            float maxScale = math.max(math.abs(lossyScale.x), math.abs(lossyScale.z));
-            radius = math.max(0.01f, capsule.radius * maxScale);
-            float scaledHeight = math.max(capsule.height * math.abs(lossyScale.y), radius * 2f);
-            float hemisphereOffset = math.max(0f, (scaledHeight * 0.5f) - radius);
-            point1 = center + (axis * hemisphereOffset);
-            point2 = center - (axis * hemisphereOffset);
-        }
-
-        private static int GetHitColliderInstanceId(in RaycastHit hit)
-        {
-            return unchecked((int)EntityId.ToULong(hit.colliderEntityId));
-        }
-
-        private static byte ResolveHighSpeedImpactTargetMaterialId(in RaycastHit hit, byte fallbackMaterialId)
-        {
-            Collider hitCollider = hit.collider;
-            if (hitCollider == null)
-                return fallbackMaterialId;
-
-            if (hitCollider.TryGetComponent(out IPhysicsImpactMaterialProvider directProvider))
-                return directProvider.ImpactAudioMaterialId;
-
-            IPhysicsImpactMaterialProvider parentProvider = hitCollider.GetComponentInParent<IPhysicsImpactMaterialProvider>();
-            return parentProvider != null ? parentProvider.ImpactAudioMaterialId : fallbackMaterialId;
-        }
-
-        private bool HasScheduledSweepCornerHit(
-            NativeArray<RaycastHit> sweepResults,
-            int nearestIndex,
-            Vector3 primaryNormal,
-            float nearestDistance)
-        {
-            float distanceWindow = math.max(_scheduledSweepState.SkinWidth + 0.05f, 0.1f);
-            for (int i = 0; i < ScheduledSweepMaxHits; i++)
-            {
-                if (i == nearestIndex)
-                    continue;
-
-                RaycastHit hit = sweepResults[i];
-                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
-                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
-                    continue;
-
-                if (!math.isfinite(hit.distance) || hit.distance < 0f)
-                    continue;
-
-                if (math.abs(hit.distance - nearestDistance) > distanceWindow)
-                    continue;
-
-                if (KinematicCcdMath.IsCornerNormal((float3)primaryNormal, (float3)hit.normal))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private void EmitKinematicCcdConsequences(
-            in RaycastHit hit,
-            Vector3 safeNormal,
-            float blockedSpeed,
-            float lostKineticEnergy,
-            bool lowTierStop,
-            bool cornerHalt)
-        {
-            if (blockedSpeed <= 0.0001f)
-                return;
-
-            Vector3 point = HectonPlayerMotor.SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
-            if (!TryResolveAupFromRuntimeOrigin(point, out AbsoluteUniversePosition pointAup))
-                return;
-
-            ulong bodyId = _body != null ? EntityId.ToULong(_body.GetEntityId()) : 0UL;
-            uint targetHash = unchecked((uint)GetHitColliderInstanceId(in hit));
-            byte targetMaterialId = ResolveHighSpeedImpactTargetMaterialId(in hit, HighSpeedImpactSignal.MaterialMetal);
-            byte sourceMaterialId = HighSpeedImpactSignal.MaterialMetal;
-            byte flags = 0;
-            if (cornerHalt)
-                flags |= HighSpeedImpactSignal.FlagCornerHalt;
-            if (lowTierStop)
-                flags |= HighSpeedImpactSignal.FlagLowTierStop;
-
-            HighSpeedImpactSignal highSpeedImpact = default;
-            highSpeedImpact.PointAup = pointAup;
-            highSpeedImpact.Normal = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
-            highSpeedImpact.LostKineticEnergy = lostKineticEnergy;
-            highSpeedImpact.ImpactSpeed = blockedSpeed;
-            highSpeedImpact.SourceHash = _kinematicCcdSourceHash;
-            highSpeedImpact.TargetHash = targetHash;
-            highSpeedImpact.Frame = unchecked((uint)Time.frameCount);
-            highSpeedImpact.SourceKind = HighSpeedImpactSignal.SourceVehicle;
-            highSpeedImpact.Flags = flags;
-            highSpeedImpact.PrimaryMaterialId = targetMaterialId;
-            highSpeedImpact.SecondaryMaterialId = sourceMaterialId;
-            highSpeedImpact.EffectiveMass = _body != null ? math.max(0f, _body.mass) : 0f;
-            highSpeedImpact.MaterialHash = HighSpeedImpactSignal.ComposeMaterialHash(targetHash, targetMaterialId, sourceMaterialId);
-            GlobalSignals.Publish(in highSpeedImpact);
-
-            ImpactSignal impact = default;
-            impact.PointAup = pointAup;
-            impact.Velocity = blockedSpeed;
-            impact.Intensity = math.saturate(blockedSpeed * 0.06f + lostKineticEnergy * 0.000025f);
-            impact.PrimaryBodyId = unchecked((uint)bodyId);
-            impact.WeightClass = 2;
-            impact.Flags = flags;
-            GlobalSignals.Publish(in impact);
-            CameraJuiceSignals.PublishImpact(in impact, new float3(safeNormal.x, safeNormal.y, safeNormal.z));
-
-            DebrisSpawnSignal debris = default;
-            debris.PositionAup = pointAup;
-            debris.SourceEntityId = unchecked((uint)bodyId);
-            debris.Intensity01 = impact.Intensity;
-            debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
-            debris.Flags = (byte)(flags | DebrisSpawnSignal.FlagComputeShard);
-            SignalBus<DebrisSpawnSignal>.Push(in debris);
-
-            HapticRequest haptic = default;
-            haptic.Intensity01 = math.saturate(lostKineticEnergy * 0.00008f);
-            haptic.DurationSeconds = math.lerp(0.05f, 0.2f, haptic.Intensity01);
-            haptic.Frequency01 = math.saturate(blockedSpeed * 0.04f);
-            haptic.SourceHash = _kinematicCcdSourceHash;
-            haptic.Frame = unchecked((uint)Time.frameCount);
-            haptic.Channel = HapticRequest.ChannelCollision;
-            haptic.Flags = flags;
-            GlobalSignals.Publish(in haptic);
-
-            if (lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
-            {
-                Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
-                damage.ImpactAup = pointAup.ToAbsoluteDouble3();
-                damage.Direction = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
-                damage.Magnitude = math.min(500f, lostKineticEnergy * 0.005f);
-                damage.DamageType = (uint)DamageTypeMask.Impact;
-                damage.TargetHash = targetHash;
-                damage.SourceHash = _kinematicCcdSourceHash;
-                damage.Frame = unchecked((uint)Time.frameCount);
-                damage.SourceId = bodyId > ushort.MaxValue ? ushort.MaxValue : (ushort)bodyId;
-                damage.TargetId = targetHash > ushort.MaxValue ? ushort.MaxValue : (ushort)targetHash;
-                damage.Channel = 0;
-                damage.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
-                damage.IntegrityDelta = 1;
-                GlobalSignals.Publish(in damage);
-            }
-
-            GlobalPhysicsStateManager.ReportKinematicCcdIntervention();
-        }
-
-        private bool EnsureScheduledSweepState()
-        {
-            return EnsureVehicleVaultBuffer(
-                       ref _scheduledSweepCommandsHandle,
-                       BufferID.VehicleMotorSweepCommands,
-                       MaxRegisteredMotors,
-                       NativeArrayOptions.ClearMemory,
-                       out _) &&
-                   EnsureVehicleVaultBuffer(
-                       ref _scheduledSweepResultsHandle,
-                       BufferID.VehicleMotorSweepResults,
-                       MaxRegisteredMotors * ScheduledSweepMaxHits,
-                       NativeArrayOptions.ClearMemory,
-                       out _);
-        }
-
-        private bool TryResolveScheduledSweepBuffers(
-            out NativeArray<CapsulecastCommand> scheduledSweepCommands,
-            out NativeArray<RaycastHit> scheduledSweepResults)
-        {
-            scheduledSweepCommands = default;
-            scheduledSweepResults = default;
-            if (!EnsureScheduledSweepState() || _dataVault == null)
-                return false;
-            if (!LockScheduledSweepBuffers())
-                return false;
-
-            int commandIndex = ResolveMotorVaultIndex();
-            int resultStart = commandIndex * ScheduledSweepMaxHits;
-            TryResolveVehicleVaultBuffer(
-                ref _scheduledSweepCommandsHandle,
-                BufferID.VehicleMotorSweepCommands,
-                MaxRegisteredMotors,
-                out NativeArray<CapsulecastCommand> commandBuffer);
-            TryResolveVehicleVaultBuffer(
-                ref _scheduledSweepResultsHandle,
-                BufferID.VehicleMotorSweepResults,
-                MaxRegisteredMotors * ScheduledSweepMaxHits,
-                out NativeArray<RaycastHit> resultBuffer);
-            if (!commandBuffer.IsCreated ||
-                !resultBuffer.IsCreated ||
-                (uint)commandIndex >= (uint)commandBuffer.Length ||
-                resultStart < 0 ||
-                resultStart + ScheduledSweepMaxHits > resultBuffer.Length)
-            {
-                UnlockScheduledSweepBuffers();
-                return false;
-            }
-
-            scheduledSweepCommands = commandBuffer.GetSubArray(commandIndex, ScheduledSweepCommandCount);
-            scheduledSweepResults = resultBuffer.GetSubArray(resultStart, ScheduledSweepMaxHits);
-            if (scheduledSweepCommands.IsCreated && scheduledSweepResults.IsCreated)
-                return true;
-
-            UnlockScheduledSweepBuffers();
-            return false;
-        }
-
-        private bool TryResolveScheduledSweepResults(out NativeArray<RaycastHit> scheduledSweepResults)
-        {
-            scheduledSweepResults = default;
-            if (!EnsureScheduledSweepState() || _dataVault == null)
-                return false;
-
-            int commandIndex = ResolveMotorVaultIndex();
-            int resultStart = commandIndex * ScheduledSweepMaxHits;
-            TryResolveVehicleVaultBuffer(
-                ref _scheduledSweepResultsHandle,
-                BufferID.VehicleMotorSweepResults,
-                MaxRegisteredMotors * ScheduledSweepMaxHits,
-                out NativeArray<RaycastHit> resultBuffer);
-            if (!resultBuffer.IsCreated || resultStart < 0 || resultStart + ScheduledSweepMaxHits > resultBuffer.Length)
-                return false;
-
-            scheduledSweepResults = resultBuffer.GetSubArray(resultStart, ScheduledSweepMaxHits);
-            return scheduledSweepResults.IsCreated;
-        }
-
-        private bool LockScheduledSweepBuffers()
-        {
-            if (_scheduledSweepBuffersLocked)
-                return true;
-            if (_dataVault == null)
-                return false;
-
-            if (!_dataVault.TryLockBuffer(BufferID.VehicleMotorSweepCommands, VaultOwnerSystem))
-                return false;
-            if (!_dataVault.TryLockBuffer(BufferID.VehicleMotorSweepResults, VaultOwnerSystem))
-            {
-                _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepCommands, VaultOwnerSystem);
-                return false;
-            }
-
-            _scheduledSweepBuffersLocked = true;
-            return true;
-        }
-
-        private void UnlockScheduledSweepBuffers()
-        {
-            if (!_scheduledSweepBuffersLocked || _dataVault == null)
-                return;
-
-            _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepResults, VaultOwnerSystem);
-            _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepCommands, VaultOwnerSystem);
-            _scheduledSweepBuffersLocked = false;
-        }
-
-        private void TryFinalizeScheduledSweep()
-        {
-            if (!_scheduledSweepPending)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _scheduledSweepHandle, forceComplete: false))
-                return;
-
-            _scheduledSweepPending = false;
-            _scheduledSweepHandle = default;
-            UnlockScheduledSweepBuffers();
-            if (_scheduledSweepDiscardAfterCompletion)
-            {
-                _scheduledSweepDiscardAfterCompletion = false;
-                _scheduledSweepReady = false;
-                _scheduledSweepState = default;
-                return;
-            }
-
-            _scheduledSweepReady = true;
-        }
-
-        private void DisposeScheduledSweepState()
-        {
-            if (_scheduledSweepPending)
-            {
-                DispatcherJobSwap.TryComplete(ref _scheduledSweepHandle, forceComplete: true);
-            }
-
-            UnlockScheduledSweepBuffers();
-            _scheduledSweepCommandsHandle = default;
-            _scheduledSweepResultsHandle = default;
-            _scheduledSweepHandle = default;
-            _scheduledSweepPending = false;
-            _scheduledSweepReady = false;
-            _scheduledSweepDiscardAfterCompletion = false;
         }
 
         private static float3 ToFloat3(Vector3 value)

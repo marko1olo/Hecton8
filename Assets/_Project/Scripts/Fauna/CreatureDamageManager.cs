@@ -8,7 +8,7 @@ namespace Hecton8.AI
     /// Publishes bounded leviathan wound data into shared shader globals without cloning materials.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CreatureDamageManager : MonoBehaviour, ITickable
+    public sealed class CreatureDamageManager : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxWounds = 8;
 
@@ -29,15 +29,16 @@ namespace Hecton8.AI
 
         // COLD ALLOC: Vector4[8] - shared leviathan wound upload cache bound into shader globals - owner: CreatureDamageManager
         private readonly Vector4[] _woundUpload = new Vector4[MaxWounds];
-        // COLD ALLOC: List<SkinnedMeshRenderer>[8] - wound-owner skeletal renderer bounds discovery scratch - owner: CreatureDamageManager
-        private readonly System.Collections.Generic.List<SkinnedMeshRenderer> _rendererScratch = new System.Collections.Generic.List<SkinnedMeshRenderer>(8);
+        // COLD ALLOC: List<Renderer>[8] - wound-owner renderer bounds discovery scratch - owner: CreatureDamageManager
+        private readonly System.Collections.Generic.List<Renderer> _rendererScratch = new System.Collections.Generic.List<Renderer>(8);
 
         private static CreatureDamageManager s_activeOwner;
 
         private Transform _cachedTransform;
         private FaunaBrain _faunaBrain;
         private Bounds _localBounds = new Bounds(Vector3.zero, Vector3.one * 4f);
-        private bool _registeredTick;
+        private bool _registeredLateFrame;
+        private bool _hotSwapRegistered;
         private bool _tickSleeping;
         private int _woundCount;
         private int _nextWoundIndex;
@@ -57,25 +58,46 @@ namespace Hecton8.AI
 
             TryGetComponent(out _faunaBrain);
             RefreshBounds();
+            TryRegisterHotSwapListener();
             if (Application.isPlaying && _woundCount > 0 && IsLeviathanPresentationOwner())
             {
                 s_activeOwner = this;
                 _woundsDirty = true;
                 _tickSleeping = false;
                 PublishShaderGlobals();
-                TryRegisterTick();
+                TryRegisterLateFrame();
             }
         }
 
         private void OnDisable()
         {
-            TryUnregisterTick();
+            TryUnregisterLateFrame();
+            TryUnregisterHotSwapListener();
 
             if (ReferenceEquals(s_activeOwner, this))
             {
                 s_activeOwner = null;
                 ClearShaderGlobals();
             }
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterLateFrame();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterLateFrame();
+            if (_woundCount > 0 && !_tickSleeping && ReferenceEquals(s_activeOwner, this))
+                TryRegisterLateFrame();
         }
 
         /// <summary>
@@ -118,11 +140,10 @@ namespace Hecton8.AI
             _woundsDirty = true;
             s_activeOwner = this;
             _tickSleeping = false;
-            PublishShaderGlobals();
-            TryRegisterTick();
+            TryRegisterLateFrame();
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (_tickSleeping)
                 return;
@@ -143,22 +164,39 @@ namespace Hecton8.AI
                    _faunaBrain.SpeciesProfile.isLeviathan;
         }
 
-        private void TryRegisterTick()
+        private void TryRegisterLateFrame()
         {
-            if (_registeredTick || !Application.isPlaying)
+            if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
-        private void TryUnregisterTick()
+        private void TryUnregisterLateFrame()
         {
-            if (!_registeredTick)
+            if (!_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = false;
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
             _tickSleeping = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void RefreshBounds()
@@ -170,7 +208,7 @@ namespace Hecton8.AI
             Bounds combinedBounds = default;
             for (int i = 0; i < _rendererScratch.Count; i++)
             {
-                SkinnedMeshRenderer renderer = _rendererScratch[i];
+                Renderer renderer = _rendererScratch[i];
                 if (renderer == null)
                     continue;
 

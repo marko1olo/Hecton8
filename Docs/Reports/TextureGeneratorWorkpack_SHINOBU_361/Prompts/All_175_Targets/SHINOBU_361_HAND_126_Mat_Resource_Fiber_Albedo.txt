@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_126
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_126_Mat_Resource_Fiber_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Resource_Fiber_Albedo.png
+FINAL_FILENAME: Mat_Resource_Fiber_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Fiber resource albedo for collectible Hecton biological material. Create bundled satin jade fibers, pearl-white strand highlights, pale teal membrane threads, tiny amber nutrient nodes, and soft coral-pink growth seams. The resource should look useful, flexible, clean, and valuable, readable on pickup meshes and resource deposits. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

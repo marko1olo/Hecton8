@@ -41,7 +41,7 @@ namespace Hecton8.World.Biomes
                 sdfRuntime.enabled = true;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 "[BiomeBoundarySdfRuntimeBootstrap] Spawned biome transition runtime host because the active scene had none. " +
                 "Owner='" + runtimeOwner.name + "'. This is a fail-safe, not a substitute for authored setup.");
 #endif

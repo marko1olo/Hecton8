@@ -1,5 +1,6 @@
 using System;
 using Hecton.Localization;
+using Hecton8.Core;
 using TMPro;
 using UnityEngine;
 
@@ -38,8 +39,17 @@ namespace Hecton8.UI
         /// </summary>
         public static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred)
         {
-            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
+            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
             return ResolveReadableFont(preferred, manager);
+        }
+
+        /// <summary>
+        /// Resolve a readable text font through a cached localization read model.
+        /// </summary>
+        public static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred, ILocalizationTextReadModel manager)
+        {
+            GameLanguage language = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
+            return ResolveReadableFontForLanguage(preferred, language);
         }
 
         /// <summary>

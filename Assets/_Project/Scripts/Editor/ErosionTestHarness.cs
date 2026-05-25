@@ -26,6 +26,7 @@ namespace Hecton8.Editor
         private const string SedimentLabel = "sediment";
         private const string WearLabel = "wear";
         private const string HeightDeltaQueueLabel = "heightDeltas";
+        private const string HeightDeltaBudgetLabel = "heightDeltaBudget";
         private const string MetricsLabel = "metrics";
         private const string ShelfRawLabel = "shelfRaw";
         private const string ShelfQuantizedLabel = "shelfQuantized";
@@ -73,6 +74,7 @@ namespace Hecton8.Editor
             NativeArray<float> sediment = default;
             NativeArray<float> wear = default;
             NativeQueue<HydraulicErosionHeightDelta> heightDeltas = default;
+            NativeArray<int> heightDeltaBudget = default;
             NativeArray<ErosionSmokeMetrics> metrics = default;
             JobHandle handle = default;
             bool handleScheduled = false;
@@ -88,6 +90,7 @@ namespace Hecton8.Editor
                     MaxErosionOperationsPerSlice,
                     ResolveCurrentErosionOperations(PixelCount, SedimentaryFlatIterations, ThermalSlumpIterations, RunCanyonWallPass));
                 heightDeltas = new NativeQueue<HydraulicErosionHeightDelta>(Allocator.TempJob); // COLD ALLOC: NativeQueue<HydraulicErosionHeightDelta>[tracked cap 8388608 entries, ~128 MiB payload upper-bound] - sliced editor erosion deltas; harness mirrors MapMagic queue budget for proof artifacts - owner: ErosionTestHarness
+                heightDeltaBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 metrics = new NativeArray<ErosionSmokeMetrics>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 RegisterTempJobBuffers(
                     before,
@@ -96,6 +99,7 @@ namespace Hecton8.Editor
                     sediment,
                     wear,
                     heightDeltas,
+                    heightDeltaBudget,
                     metrics,
                     ResolveHeightDeltaQueueCapacity(dropletsPerSlice, ErosionMaxLifetime));
 
@@ -149,6 +153,7 @@ namespace Hecton8.Editor
                     dropletsPerSlice,
                     1,
                     heightDeltas,
+                    heightDeltaBudget,
                     ResolveHeightDeltaApplyBudget(dropletsPerSlice, ErosionMaxLifetime),
                     handle);
                 NativeArray<float> current = heightA;
@@ -236,7 +241,7 @@ namespace Hecton8.Editor
                 WriteMacroShelfPreviewArtifacts(folder);
 
                 AssetDatabase.Refresh();
-                Debug.Log("[ErosionTestHarness] Wrote erosion PNG artifacts to " + folder);
+                H8Debug.Log("[ErosionTestHarness] Wrote erosion PNG artifacts to " + folder);
             }
             finally
             {
@@ -249,6 +254,7 @@ namespace Hecton8.Editor
                 DisposeTracked(ref sediment);
                 DisposeTracked(ref wear);
                 DisposeTrackedQueue(ref heightDeltas);
+                DisposeTracked(ref heightDeltaBudget);
                 DisposeTracked(ref metrics);
             }
         }
@@ -404,6 +410,7 @@ namespace Hecton8.Editor
             NativeArray<float> sediment,
             NativeArray<float> wear,
             NativeQueue<HydraulicErosionHeightDelta> heightDeltas,
+            NativeArray<int> heightDeltaBudget,
             NativeArray<ErosionSmokeMetrics> metrics,
             int heightDeltaQueueCapacity)
         {
@@ -413,6 +420,7 @@ namespace Hecton8.Editor
             NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeQueue(heightDeltas, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(heightDeltaBudget, NativeMemoryOwner, HeightDeltaBudgetLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(metrics, NativeMemoryOwner, MetricsLabel, NativeAllocationLifetime.TempJob);
         }
 

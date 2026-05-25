@@ -42,7 +42,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (logResult)
             {
-                Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     _debugPassed
                         ? "[BiomeTransitionSmokeTester] PASS"
                         : "[BiomeTransitionSmokeTester] FAIL",

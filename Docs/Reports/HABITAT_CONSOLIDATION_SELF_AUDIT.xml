@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_211" role="OFFLINE_INTERIOR_CLUTTER_FORGE" evidence="STATIC_SOURCE_PENDING_UNITY_IMPORT">
+﻿<SELF_AUDIT agent="SHINOBU_211" role="OFFLINE_INTERIOR_CLUTTER_FORGE" evidence="STATIC_SOURCE_PENDING_UNITY_IMPORT">
   <TaskReconciliation>
     <Task id="01" name="REALTIME_HIERARCHY_BLOAT_INQUISITION" status="PASS" evidence="STATIC_SOURCE_ONLY">Hierarchy_Bloat_Scanner emits JSON for active/enabled visible renderer truth and filters interactive roots.</Task>
     <Task id="02" name="MULTIPLE_MATERIAL_PURGE" status="PASS" evidence="STATIC_SOURCE_ONLY">One generated atlas material per baked room/LOD renderer; all triangle submeshes are preserved even when source material slots are missing.</Task>

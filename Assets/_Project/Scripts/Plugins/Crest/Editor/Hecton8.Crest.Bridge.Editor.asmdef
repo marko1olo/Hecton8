@@ -9,6 +9,7 @@
         "Hecton8.Rendering.BilateralDrs",
         "Hecton8.Graphics.Scalability",
         "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Environment.Fluids",
         "Hecton8.Environment.Fluids.Contracts",
         "Hecton8.Dev.SpaceEngine098",
         "UnityEngine.TestRunner",

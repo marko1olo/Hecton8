@@ -14,12 +14,13 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9921)]
-    public sealed class PlayerSensoryManager : MonoBehaviour, IPlayerSensoryService, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class PlayerSensoryManager : MonoBehaviour, IPlayerSensoryService, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static PlayerSensoryManager s_activeRuntime;
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
+        private bool _registeredHotSwap;
         private bool _syncInProgress;
         private GameObject _playerObject;
         private Transform _playerTransform;
@@ -51,61 +52,37 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public Camera PlayerCamera
         {
-            get
-            {
-                SyncSensoryContext();
-                return _playerCamera;
-            }
+            get { return _playerCamera; }
         }
 
         /// <inheritdoc />
         public PlayerFlashlight Flashlight
         {
-            get
-            {
-                SyncSensoryContext();
-                return _flashlight;
-            }
+            get { return _flashlight; }
         }
 
         /// <inheritdoc />
         public PlayerThrusterAudio ThrusterAudio
         {
-            get
-            {
-                SyncSensoryContext();
-                return _thrusterAudio;
-            }
+            get { return _thrusterAudio; }
         }
 
         /// <inheritdoc />
         public HectonUnderwaterVisuals UnderwaterVisuals
         {
-            get
-            {
-                SyncSensoryContext();
-                return _underwaterVisuals;
-            }
+            get { return _underwaterVisuals; }
         }
 
         /// <inheritdoc />
         public VisorHUDController VisorController
         {
-            get
-            {
-                SyncSensoryContext();
-                return _visorController;
-            }
+            get { return _visorController; }
         }
 
         /// <inheritdoc />
         public HUDNotification HudNotification
         {
-            get
-            {
-                SyncSensoryContext();
-                return _hudNotification;
-            }
+            get { return _hudNotification; }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -140,6 +117,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
                 SyncSensoryContext();
@@ -151,6 +129,7 @@ namespace Hecton8.Core
                 return;
 
             _isInitialized = true;
+            TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterService();
             SyncSensoryContext();
@@ -171,6 +150,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
                 SyncSensoryContext();
@@ -180,6 +160,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterUpdatable();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
@@ -193,9 +174,33 @@ namespace Hecton8.Core
             ShutdownServiceState();
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null)
+                {
+                    TryUnregisterUpdatable();
+                    TryRegisterUpdatable();
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                SyncSensoryContext();
+        }
+
         private void ShutdownServiceState()
         {
             TryUnregisterUpdatable();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             _isInitialized = false;
             _syncInProgress = false;
@@ -310,8 +315,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterUpdatable()
@@ -321,6 +325,23 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void TryRegisterService()

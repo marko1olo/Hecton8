@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -11,7 +12,7 @@ namespace Hecton8.Physiology
     /// SlowTick-only player psycho-metrics authority. It owns one stress scalar and publishes consequences by signal.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerStressMetricsRuntime : MonoBehaviour, ISlowTickable, IModuleStatusEventListener
+    public sealed class PlayerStressMetricsRuntime : MonoBehaviour, ISlowTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
     {
         private const float StressSubstepDeltaSeconds = 0.1f;
         private const int StressSubstepsPerSlowTick = 5;
@@ -23,6 +24,8 @@ namespace Hecton8.Physiology
         private const float ApexThreatRadiusMeters = 50f;
         private const float AcousticStressImpulseScale = 0.08f;
         private const float DamageStressImpulseScale = 0.18f;
+        private const float DamageStressRadiusMeters = 8f;
+        private const float PlayerStateStressRadiusMeters = 5f;
         private const float SqueezeStressImpulseScale = 1.0f;
         private const float SqueezeStressPerSecond = 0.1f;
         private const float SqueezeStressPerSlowTick = SqueezeStressPerSecond * StressSubstepDeltaSeconds * StressSubstepsPerSlowTick;
@@ -77,6 +80,7 @@ namespace Hecton8.Physiology
         private bool _registeredSlowTick;
         private bool _registeredModuleStatus;
         private bool _insidePoweredBase;
+        private bool _hotSwapRegistered;
 
         public float PlayerStress01 => _state.PlayerStress01;
 
@@ -113,6 +117,7 @@ namespace Hecton8.Physiology
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -135,8 +140,27 @@ namespace Hecton8.Physiology
                 _registeredModuleStatus = false;
             }
 
+            TryUnregisterHotSwapListener();
+
             if (ReferenceEquals(_runtimeInstance, this))
                 _runtimeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlowTick = false;
+            }
+
+            TryRegister();
         }
 
         public void SlowTick()
@@ -198,49 +222,84 @@ namespace Hecton8.Physiology
             }
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         private void ConsumeLatestInputSignals(in PlayerPose pose)
         {
-            if (GlobalSignals.TryGetLatestAcousticPingSignal(out AcousticPingSignal acousticSignal, out int acousticSequence) &&
-                acousticSequence != _lastAcousticSequence)
+            int acousticSequence = SignalBus<AcousticPingSignal>.SnapshotGeneration;
+            if (acousticSequence != _lastAcousticSequence)
             {
                 _lastAcousticSequence = acousticSequence;
-                _state.AcousticImpulse01 = math.max(_state.AcousticImpulse01, ResolveAcousticStress(in acousticSignal, in pose));
+                ReadOnlySpan<AcousticPingSignal> acousticSignals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
+                for (int i = 0; i < acousticSignals.Length; i++)
+                {
+                    AcousticPingSignal acousticSignal = acousticSignals[i];
+                    _state.AcousticImpulse01 = math.max(
+                        _state.AcousticImpulse01,
+                        ResolveAcousticStress(in acousticSignal, in pose));
+                }
             }
 
-            if (GlobalSignals.TryGetLatestDamageSignal(out CombatDamageSignal damageSignal, out int damageSequence) &&
-                damageSequence != _lastDamageSequence)
+            int damageSequence = SignalBus<CombatDamageSignal>.SnapshotGeneration;
+            if (damageSequence != _lastDamageSequence)
             {
                 _lastDamageSequence = damageSequence;
-                float magnitude = SanitizeUnit(damageSignal.Magnitude * 0.01f);
-                float integrityDelta = SanitizeUnit(damageSignal.IntegrityDelta * InvByteMax);
-                _state.DamageImpulse01 = math.max(_state.DamageImpulse01, SanitizeUnit(magnitude + integrityDelta));
+                ReadOnlySpan<CombatDamageSignal> damageSignals = SignalBus<CombatDamageSignal>.GetFrameSnapshot();
+                for (int i = 0; i < damageSignals.Length; i++)
+                {
+                    CombatDamageSignal damageSignal = damageSignals[i];
+                    if (!IsCombatDamageNearPlayer(in damageSignal, in pose))
+                        continue;
+
+                    float magnitude = SanitizeUnit(damageSignal.Magnitude * 0.01f);
+                    float integrityDelta = SanitizeUnit(damageSignal.IntegrityDelta * InvByteMax);
+                    _state.DamageImpulse01 = math.max(_state.DamageImpulse01, SanitizeUnit(magnitude + integrityDelta));
+                }
             }
 
-            if (GlobalSignals.TryGetLatestLightLevelSignal(out LightLevelSignal lightSignal, out int lightSequence) &&
-                lightSequence != _lastLightSequence)
+            int lightSequence = SignalBus<LightLevelSignal>.SnapshotGeneration;
+            if (lightSequence != _lastLightSequence)
             {
                 _lastLightSequence = lightSequence;
-                if ((lightSignal.Flags & LightLevelSignalFlags.ValidSample) != 0 &&
-                    lightSignal.SampleKind == LightLevelSignalSampleKinds.CaveVoxelSdf)
-                {
-                    _state.LightLevel01 = SanitizeUnit(lightSignal.LightLevel01, NeutralLightLevel01);
-                }
-                else
-                {
-                    _state.LightLevel01 = NeutralLightLevel01;
-                }
+                _state.LightLevel01 = TryResolveLightLevelFromSnapshot(out float lightLevel01)
+                    ? lightLevel01
+                    : NeutralLightLevel01;
             }
 
-            if (GlobalSignals.TryGetLatestPlayerStateSignal(out PlayerStateSignal playerStateSignal, out int playerStateSequence) &&
-                playerStateSequence != _lastPlayerStateSequence)
+            int playerStateSequence = SignalBus<PlayerStateSignal>.SnapshotGeneration;
+            if (playerStateSequence != _lastPlayerStateSequence)
             {
                 _lastPlayerStateSequence = playerStateSequence;
-                if (playerStateSignal.State == PlayerStateSignal.StateSqueezing &&
-                    (playerStateSignal.Flags & PlayerStateSignal.FlagSqueezing) != 0)
+                ReadOnlySpan<PlayerStateSignal> playerStateSignals = SignalBus<PlayerStateSignal>.GetFrameSnapshot();
+                for (int i = 0; i < playerStateSignals.Length; i++)
                 {
+                    PlayerStateSignal playerStateSignal = playerStateSignals[i];
+                    if (playerStateSignal.State != PlayerStateSignal.StateSqueezing ||
+                        (playerStateSignal.Flags & PlayerStateSignal.FlagSqueezing) == 0 ||
+                        !IsPlayerStateNearPlayer(in playerStateSignal, in pose))
+                    {
+                        continue;
+                    }
+
+                    float intensity01 = SanitizeUnit(playerStateSignal.Intensity01, 1f);
                     _state.SqueezeImpulse01 = math.max(
                         _state.SqueezeImpulse01,
-                        SqueezeStressPerSlowTick);
+                        SqueezeStressPerSlowTick * math.max(0.25f, intensity01));
                 }
             }
         }
@@ -383,18 +442,7 @@ namespace Hecton8.Physiology
                 Cause = cause,
                 Flags = flags
             };
-            GlobalSignals.Publish(in stressSignal);
-
-            PhysiologyStateSignal physiologySignal = new PhysiologyStateSignal
-            {
-                PlayerStress01 = _state.PlayerStress01,
-                O2DrainMultiplier = _state.O2DrainMultiplier,
-                Recovery01 = _state.Recovery01,
-                Frame = frame,
-                Cause = cause,
-                Flags = flags
-            };
-            GlobalSignals.Publish(in physiologySignal);
+            SignalBus<PlayerStressSignal>.TryPush(in stressSignal);
         }
 
         private void EmitPanicAttack()
@@ -408,7 +456,7 @@ namespace Hecton8.Physiology
                 Severity = byte.MaxValue,
                 Flags = FlagPanicAttack
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<TraumaSignal>.TryPush(in signal);
         }
 
         private void TryEmitHallucination(in PlayerPose pose)
@@ -457,7 +505,7 @@ namespace Hecton8.Physiology
                 DebrisKind = GhostlyFishDebrisKind,
                 Flags = FlagHallucination
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
         }
 
         private void WritePeakTelemetryIfNeeded()
@@ -487,6 +535,69 @@ namespace Hecton8.Physiology
             double invRadiusSq = math.rcp(radiusSq);
             float proximity01 = math.saturate(1f - (float)(distanceSq * invRadiusSq));
             return math.saturate(signal.Intensity01 * proximity01);
+        }
+
+        private static bool IsCombatDamageNearPlayer(in CombatDamageSignal signal, in PlayerPose pose)
+        {
+            if (!math.all(math.isfinite(signal.ImpactAup)))
+                return false;
+
+            double3 playerAup = pose.Aup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(playerAup)))
+                return false;
+
+            double3 delta = signal.ImpactAup - playerAup;
+            double distanceSq = math.lengthsq(delta);
+            double radius = DamageStressRadiusMeters;
+            return math.isfinite(distanceSq) && distanceSq <= radius * radius;
+        }
+
+        private static bool IsPlayerStateNearPlayer(in PlayerStateSignal signal, in PlayerPose pose)
+        {
+            if (!IsFiniteAup(in signal.PositionAup))
+                return false;
+
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in signal.PositionAup, in pose.Aup);
+            double radius = PlayerStateStressRadiusMeters;
+            return math.isfinite(distanceSq) && distanceSq <= radius * radius;
+        }
+
+        private static bool TryResolveLightLevelFromSnapshot(out float lightLevel01)
+        {
+            lightLevel01 = NeutralLightLevel01;
+            uint currentFrame = TimeSliceScheduler.CurrentFrameId;
+            uint bestFrameDelta = uint.MaxValue;
+            bool found = false;
+
+            ReadOnlySpan<LightLevelSignal> lightSignals = SignalBus<LightLevelSignal>.GetFrameSnapshot();
+            for (int i = 0; i < lightSignals.Length; i++)
+            {
+                LightLevelSignal lightSignal = lightSignals[i];
+                if ((lightSignal.Flags & LightLevelSignalFlags.ValidSample) == 0 ||
+                    lightSignal.SampleKind != LightLevelSignalSampleKinds.CaveVoxelSdf ||
+                    !IsFreshLightLevelSignal(in lightSignal, currentFrame, out uint frameDelta))
+                {
+                    continue;
+                }
+
+                if (found && frameDelta >= bestFrameDelta)
+                    continue;
+
+                lightLevel01 = SanitizeUnit(lightSignal.LightLevel01, NeutralLightLevel01);
+                bestFrameDelta = frameDelta;
+                found = true;
+            }
+
+            return found;
+        }
+
+        private static bool IsFreshLightLevelSignal(
+            in LightLevelSignal signal,
+            uint currentFrame,
+            out uint frameDelta)
+        {
+            frameDelta = unchecked(currentFrame - signal.Frame);
+            return signal.Frame != 0u && frameDelta <= 12u;
         }
 
         private bool TryPublishableStateOrRecover()
@@ -546,7 +657,7 @@ namespace Hecton8.Physiology
         private bool TryResolvePlayerPose(out PlayerPose pose)
         {
             pose = default;
-            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
             if (player == null || !player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 return false;
 
@@ -557,7 +668,7 @@ namespace Hecton8.Physiology
             AbsoluteUniversePosition aup = snapshot.Aup;
             if (!IsFiniteAup(in aup))
             {
-                AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+                AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
                 if (!IsFiniteAup(in originAup))
                     return false;
 

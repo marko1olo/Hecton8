@@ -1,4 +1,4 @@
-# One-Page Site And Presskit Plan
+﻿# One-Page Site And Presskit Plan
 
 Status: future website/presskit shell
  Public stance: single-player-first scope / proof-first public copy

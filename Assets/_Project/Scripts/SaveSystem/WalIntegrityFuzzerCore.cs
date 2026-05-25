@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -105,7 +105,7 @@ namespace Hecton8.SaveSystem
         [FieldOffset(56)] public ulong _pad1;
     }
 
-    internal static unsafe class WalIntegrityFuzzerCore
+    internal static unsafe partial class WalIntegrityFuzzerCore
     {
         internal const uint DataCorruptionFailure = 1u << 0;
         internal const uint AsyncStallFailure = 1u << 1;

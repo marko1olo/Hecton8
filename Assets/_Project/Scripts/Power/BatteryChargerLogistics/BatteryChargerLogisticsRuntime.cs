@@ -28,6 +28,8 @@ namespace Hecton8.Power
         private const double AcousticHumMaxAupExtentMeters = 100000.0d;
         private const float SimulationTickDeltaSeconds = 1f / 60f;
         private const float AuthoritativeQualityWeight = 1f;
+        private const float MinimumCadenceHz = 5f;
+        private const float MaximumCadenceHz = 60f;
 
         private static readonly int s_ChargerStatusBufferId = Shader.PropertyToID("_H8BatteryChargerStatusBuffer");
         private static readonly int s_ChargerStatusParamsId = Shader.PropertyToID("_H8BatteryChargerStatusParams");
@@ -486,6 +488,7 @@ namespace Hecton8.Power
             }
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadProfilesFromCsvBytes(ReadOnlySpan<byte> csv)
         {
             BatteryChargerLogisticsRuntime runtime = EnsureActiveRuntime();
@@ -513,6 +516,7 @@ namespace Hecton8.Power
                 vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Profiles, SystemID.Power);
             }
         }
+#endif
 
 #if UNITY_EDITOR
         public static bool TryGetTelemetryReadOnly(out NativeArray<ChargerTelemetryEntry>.ReadOnly telemetry, out int cursor)
@@ -578,7 +582,11 @@ namespace Hecton8.Power
             _shutdown = false;
             TryRegisterHotSwapListener();
             ApplyDataVaultRebind(GlobalRegistry.DataVault);
-            SignalBus<AcousticPingSignal>.Configure(64, maxFrameSignals: 64, lowTierFrameSignals: 8, laneHash: BatteryChargerLogisticsConstants.HumSourceHash);
+            SignalBus<AcousticPingSignal>.Configure(
+                AcousticPingSignal.ExpectedCapacity,
+                maxFrameSignals: AcousticPingSignal.MaxFrameSignals,
+                lowTierFrameSignals: AcousticPingSignal.LowTierFrameSignals,
+                laneHash: AcousticPingSignal.LaneHash);
             SignalBus<AcousticPingSignal>.EnsureInitialized();
             GlobalRegistry.RegisterBatteryChargerLogisticsRuntime(this);
             RegisterDispatcherPhases();
@@ -790,7 +798,8 @@ namespace Hecton8.Power
 
             float dt = ResolveSimulationTickDelta(in timing);
             _authorityAccumulator += dt;
-            float q = AuthoritativeQualityWeight;
+            if (!SampleQualityWeightUnderTuningLock(vault, out float q))
+                q = ResolvePendingQualityWeight();
             _lastQualityWeight = q;
             _lastCadenceHz = ResolveCadenceHz(q);
             float period = 1f / math.max(1f, _lastCadenceHz);
@@ -1085,7 +1094,7 @@ namespace Hecton8.Power
 
         private static bool AllowEmergencyMockNetwork()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             return true;
 #else
             return false;
@@ -1681,9 +1690,44 @@ namespace Hecton8.Power
             dto.EfficiencyCurveExponent = efficiencyExponent;
             dto.QualityOverride = qualityOverride;
             dto.Flags = qualityOverride >= 0f ? 1u : 0u;
-            dto.GlobalQualityWeight = AuthoritativeQualityWeight;
+            dto.GlobalQualityWeight = ResolvePendingQualityWeight();
             dto.BatteryCapacity = BatteryChargerLogisticsConstants.DefaultBatteryCapacity01;
             dto.CadenceHz = ResolveCadenceHzStatic(dto.GlobalQualityWeight);
+        }
+
+        private bool SampleQualityWeightUnderTuningLock(IDataVault vault, out float q)
+        {
+            q = ResolvePendingQualityWeight();
+            if (vault == null || !vault.TryLockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power))
+                return false;
+
+            try
+            {
+                if (!Resolve(in _handles.Tuning, out NativeArray<ChargerTuningDTO> tuning) ||
+                    tuning.Length == 0)
+                {
+                    return false;
+                }
+
+                q = MathLodApproximation.SaturateFinite(tuning[0].GlobalQualityWeight, q);
+                return true;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BatteryChargerLogisticsBufferIds.Tuning, SystemID.Power);
+            }
+        }
+
+        private static float ResolvePendingQualityWeight()
+        {
+            float qualityOverride = SanitizeQualityOverride(s_pendingQualityOverride);
+            if (qualityOverride >= 0f)
+                return math.saturate(qualityOverride);
+
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AuthoritativeQualityWeight);
+
+            return AuthoritativeQualityWeight;
         }
 
         private static float SanitizeNonNegative(float value)
@@ -1718,7 +1762,9 @@ namespace Hecton8.Power
 
         private static float ResolveCadenceHzStatic(float quality)
         {
-            return 60f;
+            float q = MathLodApproximation.SaturateFinite(quality, AuthoritativeQualityWeight);
+            float curve = MathLodApproximation.SmoothStep01(q);
+            return math.lerp(MinimumCadenceHz, MaximumCadenceHz, curve);
         }
 
         private bool EnsureGraphicsBuffers()

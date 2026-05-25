@@ -2,11 +2,16 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.World
 {
+    internal static class ScatterBackendShadowCompletionLayout
+    {
+        public const int ScatterBackendShadowCompletionStrideBytes = 128;
+    }
+
     /// <summary>
     /// Typed shadow-pass completion payload from the scatter backend host.
     /// Keeps parity bookkeeping out of the director partial.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ScatterBackendShadowCompletionLayout.ScatterBackendShadowCompletionStrideBytes)]
     internal readonly struct ScatterBackendShadowCompletion
     {
         public const byte ParityStatusMatch = 0;

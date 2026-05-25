@@ -9,11 +9,12 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9925)]
-    public sealed class EnvironmentRuntimeContextService : MonoBehaviour, IEnvironmentRuntimeContext, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class EnvironmentRuntimeContextService : MonoBehaviour, IEnvironmentRuntimeContext, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredContext;
+        private bool _hotSwapRegistered;
         private ConstructionManager _constructionManager;
         private ModuleCatalog _moduleCatalog;
         private HazardZoneManager _hazardZoneManager;
@@ -28,34 +29,13 @@ namespace Hecton8.Core
         public bool IsServiceReady => _isInitialized;
 
         /// <inheritdoc />
-        public ConstructionManager ConstructionManager
-        {
-            get
-            {
-                SyncEnvironmentContext();
-                return _constructionManager;
-            }
-        }
+        public ConstructionManager ConstructionManager => _constructionManager;
 
         /// <inheritdoc />
-        public ModuleCatalog ModuleCatalog
-        {
-            get
-            {
-                SyncEnvironmentContext();
-                return _moduleCatalog;
-            }
-        }
+        public ModuleCatalog ModuleCatalog => _moduleCatalog;
 
         /// <inheritdoc />
-        public HazardZoneManager HazardZones
-        {
-            get
-            {
-                SyncEnvironmentContext();
-                return EnsureHazardZoneManager();
-            }
-        }
+        public HazardZoneManager HazardZones => _hazardZoneManager;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -84,6 +64,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterContext();
                 SyncEnvironmentContextCold();
@@ -96,6 +77,7 @@ namespace Hecton8.Core
                 return;
 
             _isInitialized = true;
+            TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterContext();
             SyncEnvironmentContextCold();
@@ -117,6 +99,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterContext();
                 SyncEnvironmentContextCold();
@@ -126,6 +109,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterUpdatable();
+            TryUnregisterHotSwapListener();
             TryUnregisterContext();
         }
 
@@ -142,6 +126,7 @@ namespace Hecton8.Core
         private void ShutdownServiceState()
         {
             TryUnregisterUpdatable();
+            TryUnregisterHotSwapListener();
             TryUnregisterContext();
             _isInitialized = false;
             _constructionManager = null;
@@ -149,6 +134,32 @@ namespace Hecton8.Core
             _hazardZoneManager = null;
 
             GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (_isInitialized && currentService != null && isActiveAndEnabled)
+                    {
+                        TryUnregisterUpdatable();
+                        TryRegisterUpdatable();
+                    }
+                    break;
+
+                case GlobalRegistryServiceSlot.Logistics:
+                    _constructionManager = currentService as ConstructionManager;
+                    _moduleCatalog = _constructionManager != null ? _constructionManager.Catalog : null;
+                    break;
+
+                case GlobalRegistryServiceSlot.HazardZoneRuntime:
+                    _hazardZoneManager = currentService as HazardZoneManager;
+                    break;
+            }
         }
 
         internal HazardZoneManager EnsureHazardZoneManager()
@@ -210,8 +221,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterUpdatable()
@@ -221,6 +231,23 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void TryRegisterContext()

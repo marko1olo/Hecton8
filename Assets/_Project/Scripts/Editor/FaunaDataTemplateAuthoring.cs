@@ -1,3 +1,4 @@
+using System;
 using Hecton.Localization;
 using UnityEditor;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace Hecton8.AI.Editor
             CreatureProxyPrefabAuthoring.EnsureProxyAssets();
 
             string[] archetypeGuids = AssetDatabase.FindAssets("t:CreatureArchetypeData", new[] { ArchetypeRoot });
+            Array.Sort(archetypeGuids, StringComparer.Ordinal);
             int authoredCount = 0;
 
             for (int i = 0; i < archetypeGuids.Length; i++)
@@ -324,7 +326,7 @@ namespace Hecton8.AI.Editor
             serializedObject.FindProperty(propertyName).stringValue = value ?? string.Empty;
         }
 
-        private static void SetObjectReference(SerializedObject serializedObject, string propertyName, Object value)
+        private static void SetObjectReference(SerializedObject serializedObject, string propertyName, UnityEngine.Object value)
         {
             serializedObject.FindProperty(propertyName).objectReferenceValue = value;
         }

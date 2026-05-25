@@ -5,10 +5,16 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class CoreContractLayout
+    {
+        public const int AssemblyMarkerStrideBytes = 1;
+        public const int HardwareThermalSnapshotStrideBytes = 24;
+    }
+
     /// <summary>
     /// Assembly marker for isolated core contract-only packages.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = CoreContractLayout.AssemblyMarkerStrideBytes)]
     public readonly struct CoreContractsAssemblyMarker
     {
     }
@@ -27,7 +33,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Cached hardware thermal/battery snapshot. Values are written on FrostTick, never per-frame polled.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = CoreContractLayout.HardwareThermalSnapshotStrideBytes)]
     public struct HardwareThermalSnapshot
     {
         [FieldOffset(0)]
@@ -124,7 +130,12 @@ namespace Hecton8.Core.Contracts
 
 namespace Hecton8.Inventory
 {
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    internal static class InventoryContractLayout
+    {
+        public const int SlotStrideBytes = 32;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = InventoryContractLayout.SlotStrideBytes)]
     public struct InventorySlotDTO
     {
         [FieldOffset(0)]

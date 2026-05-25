@@ -585,8 +585,9 @@ namespace Hecton8.Gameplay
             float speed = math.isfinite(speedSq) ? math.sqrt(math.max(0f, speedSq)) : 0f;
             int steps = math.max(1, (int)math.ceil(speed * math.rcp(math.max(0.05f, radius))));
             steps = math.min(steps, math.max(1, tuning.MaxCcdSteps));
-            if (Input.LowTier != 0 || Context.ThermalThrottle != 0)
-                steps = 1;
+            float quality01 = math.saturate(1f - math.saturate(Context.SystemStress01));
+            float stepScale = math.lerp(0.25f, 1f, SmoothQuality01(quality01));
+            steps = math.max(1, (int)math.ceil(steps * stepScale));
 
             float stepDt = dt * math.rcp(steps);
             for (int i = 0; i < steps; i++)
@@ -611,6 +612,13 @@ namespace Hecton8.Gameplay
 
                 local = candidate;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SmoothQuality01(float value)
+        {
+            float t = math.saturate(math.select(1f, value, math.isfinite(value)));
+            return t * t * (3f - 2f * t);
         }
 
         private byte ResolveImpactHand()
@@ -823,7 +831,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Somatic Kinematics Runtime")]
-    public sealed class SomaticKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class SomaticKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         public const int BlackBoxCapacity = 300;
         public const int DragLutCapacity = 16;
@@ -860,7 +868,7 @@ namespace Hecton8.Gameplay
         private SomaticKinematicsFrameInput _frameInput;
         private SomaticKinematicsFrameContext _frameContext;
         private MockWorldSampler _mockWorldSampler;
-        private HectonQualityTier _cachedTier = HectonQualityTier.Unknown;
+        private float _cachedGlobalQualityWeight01 = 1f;
         private float _slowExertionAccumulator;
         private float _slowAgainstCurrentAccumulator;
         private uint _sourceId;
@@ -877,7 +885,6 @@ namespace Hecton8.Gameplay
         private bool _registeredSlow;
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
-        private bool _registeredScalability;
         private bool _jobPending;
         private bool _buffersLocked;
         private bool _dumpWritten;
@@ -887,9 +894,9 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            _sourceId = unchecked((uint)GetInstanceID());
+            _sourceId = Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             EnsureSignalLanesReady();
-            _cachedTier = GlobalRegistry.ScalabilityTier;
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01(_cachedGlobalQualityWeight01);
             RebindServices();
             ResolveColdPaths();
             EnsureNativeState(true);
@@ -989,7 +996,9 @@ namespace Hecton8.Gameplay
             if (!EnsureNativeState(true))
                 return;
 
+#if UNITY_EDITOR
             TryApplyCsvOverrides();
+#endif
             PublishExertionSignal();
         }
 
@@ -1033,11 +1042,6 @@ namespace Hecton8.Gameplay
             }
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedTier = payload.CurrentQualityTier;
-        }
-
         private void PublishOriginShiftFence(in PlayerKinematicState state, in OriginShiftEventData shiftData)
         {
             SyncFenceSignal fence = default;
@@ -1050,7 +1054,7 @@ namespace Hecton8.Gameplay
             fence.SourceId = _sourceId;
             fence.Sequence = shiftData.Sequence;
             fence.Flags = shiftData.IsSafeTeleport != 0 ? (byte)1 : (byte)0;
-            SignalBus<SyncFenceSignal>.Push(in fence);
+            SignalBus<SyncFenceSignal>.TryPush(in fence);
         }
 
         internal static void EnsureOnPlayerRoot(GameObject playerRoot)
@@ -1079,11 +1083,6 @@ namespace Hecton8.Gameplay
             {
                 GlobalRegistry.RegisterHotSwapListener(this);
                 _registeredHotSwap = true;
-            }
-            if (!_registeredScalability)
-            {
-                ScalabilityEvents.Register(this);
-                _registeredScalability = true;
             }
         }
 
@@ -1114,11 +1113,6 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
-            if (_registeredScalability)
-            {
-                ScalabilityEvents.Unregister(this);
-                _registeredScalability = false;
-            }
         }
 
         private static void EnsureSignalLanesReady()
@@ -1131,6 +1125,7 @@ namespace Hecton8.Gameplay
                 maxFrameSignals: ShinobuExertionSignalCapacity,
                 lowTierFrameSignals: 8,
                 laneHash: ShinobuExertionSignalLaneHash);
+            SignalBus<ShinobuPlayerExertionSignal>.EnsureInitialized();
             s_signalLanesConfigured = true;
         }
 
@@ -1305,6 +1300,7 @@ namespace Hecton8.Gameplay
                    TryResolveSomaticVaultBuffer(ref _blackBoxCursorHandle, BufferID.ShinobuSomaticBlackBoxCursor, 1, out cursor);
         }
 
+#if UNITY_EDITOR
         private bool ResolveCsvScratch(out NativeArray<byte> scratch)
         {
             scratch = default;
@@ -1314,6 +1310,7 @@ namespace Hecton8.Gameplay
 
             return TryResolveSomaticVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuSomaticCsvScratch, CsvScratchCapacity, out scratch);
         }
+#endif
 
         private bool AreSomaticVaultBuffersReady(IDataVault vault)
         {
@@ -1343,7 +1340,7 @@ namespace Hecton8.Gameplay
             if (TryResolveSomaticVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
             return TryResolveSomaticVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
         }
 
@@ -1488,8 +1485,10 @@ namespace Hecton8.Gameplay
             double3 sector = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             float3 flow = ResolveAbyssalFlow(headLocal);
 
-            HectonQualityTier tier = _cachedTier;
-            byte lowTier = tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 ? (byte)1 : (byte)0;
+            float qualityWeight01 = ResolveGlobalQualityWeight01(_cachedGlobalQualityWeight01);
+            _cachedGlobalQualityWeight01 = qualityWeight01;
+            float qualityPressure01 = 1f - SmoothQuality01(qualityWeight01);
+            byte lowTier = qualityPressure01 >= 0.66f ? (byte)1 : (byte)0;
             _frameInput.HeadLocalPosition = headLocal;
             _frameInput.DeltaTime = math.isfinite(fixedDeltaTime) ? math.clamp(fixedDeltaTime, 0.001f, 0.05f) : 0.0166667f;
             _frameInput.HeadForward = headForward;
@@ -1505,7 +1504,7 @@ namespace Hecton8.Gameplay
             _frameInput.LowTier = lowTier;
             _frameContext.SectorOriginAup = sector;
             _frameContext.AbyssalCurrent = flow;
-            _frameContext.SystemStress01 = lowTier != 0 ? 0.75f : 0.1f;
+            _frameContext.SystemStress01 = math.lerp(0.1f, 0.75f, qualityPressure01);
             _frameContext.ThermalThrottle = lowTier;
 
             if (ResolveStateBuffer(out NativeArray<PlayerKinematicState> stateBuffer))
@@ -1520,6 +1519,18 @@ namespace Hecton8.Gameplay
                     state.Flags &= ~StateFlagSeaglide;
                 stateBuffer[0] = state;
             }
+        }
+
+        private static float ResolveGlobalQualityWeight01(float fallback)
+        {
+            float value = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(fallback, value, math.isfinite(value)));
+        }
+
+        private static float SmoothQuality01(float value)
+        {
+            float t = math.saturate(math.select(1f, value, math.isfinite(value)));
+            return t * t * (3f - 2f * t);
         }
 
         private float3 ResolveAbyssalFlow(float3 localPosition)
@@ -1575,7 +1586,7 @@ namespace Hecton8.Gameplay
             velocitySignal.SourceId = _sourceId;
             velocitySignal.Sequence = NextSequence(ref _kccVelocitySequence);
             velocitySignal.Flags = flags;
-            SignalBus<KccVelocitySignal>.Push(in velocitySignal);
+            SignalBus<KccVelocitySignal>.TryPush(in velocitySignal);
 
             if ((scratch.Flags & SignalFlagAcoustic) != 0u)
             {
@@ -1587,7 +1598,7 @@ namespace Hecton8.Gameplay
                 movement.LocomotionMode = state.PlayerRadius > 0.01f ? (byte)1 : (byte)0;
                 movement.SurfaceMode = state.SurfaceSubmersion01 <= 0.001f ? (byte)1 : (byte)0;
                 movement.Flags = state.LastPushOutMeters > 0.001f ? (byte)1 : (byte)0;
-                GlobalSignals.Publish(in movement);
+                SignalBus<MovementAcousticSignal>.TryPush(in movement);
             }
 
             if ((scratch.Flags & SignalFlagHaptic) != 0u)
@@ -1600,7 +1611,7 @@ namespace Hecton8.Gameplay
                 canonicalHaptic.Frame = state.Frame;
                 canonicalHaptic.Channel = HapticRequest.ChannelCollision;
                 canonicalHaptic.Flags = HapticRequest.FlagLightThud;
-                GlobalSignals.Publish(in canonicalHaptic);
+                SignalBus<HapticRequest>.TryPush(in canonicalHaptic);
             }
 
             if ((scratch.Flags & SignalFlagFault) != 0u)
@@ -1621,7 +1632,7 @@ namespace Hecton8.Gameplay
             exertion.StrokeMagnitude = math.isfinite(_slowExertionAccumulator) ? math.max(0f, _slowExertionAccumulator) : 0f;
             exertion.AgainstCurrent01 = math.isfinite(_slowAgainstCurrentAccumulator) ? math.saturate(_slowAgainstCurrentAccumulator) : 0f;
             exertion.Stamina01 = state.PlayerRadius > 0.01f ? math.saturate(state.Stamina01) : 1.0f;
-            SignalBus<ShinobuPlayerExertionSignal>.Push(in exertion);
+            SignalBus<ShinobuPlayerExertionSignal>.TryPush(in exertion);
             _slowExertionAccumulator = 0f;
             _slowAgainstCurrentAccumulator = 0f;
         }
@@ -1732,6 +1743,7 @@ namespace Hecton8.Gameplay
             }
         }
 
+#if UNITY_EDITOR
         private unsafe void TryApplyCsvOverrides()
         {
             if (_jobPending || string.IsNullOrEmpty(_csvOverridePath))
@@ -1909,6 +1921,7 @@ namespace Hecton8.Gameplay
             value = sign * (integer + (fraction * math.rcp(math.max(1f, scale))));
             return math.isfinite(value);
         }
+#endif
 
         private unsafe void DumpBlackBoxOnce()
         {
@@ -1944,9 +1957,17 @@ namespace Hecton8.Gameplay
 
         private void RebindServices()
         {
-            BindDataVault(GlobalRegistry.DataVault, null);
+            CacheDataVaultCold();
             _weatherService = GlobalRegistry.Weather;
             _somaticProvider = GlobalRegistry.VRSomatic;
+        }
+
+        private void CacheDataVaultCold()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            BindDataVault(GlobalRegistry.DataVault, null);
         }
 
         private void BindDataVault(IDataVault currentVault, IDataVault previousVault)

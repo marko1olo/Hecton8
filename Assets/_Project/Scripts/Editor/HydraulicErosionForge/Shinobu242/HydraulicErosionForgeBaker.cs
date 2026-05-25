@@ -15,7 +15,7 @@ using Debug = UnityEngine.Debug;
 
 namespace Hecton8.Editor.HydraulicErosionForge
 {
-    internal static unsafe class HydraulicErosionForgeBaker
+    internal static class HydraulicErosionForgeBaker
     {
         private const string NativeMemoryOwner = "SHINOBU_242_HydraulicErosionForge";
         private const string HeightsLabel = "Heights";
@@ -286,7 +286,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
                 progress?.Invoke(0.68f);
 
                 if (metrics.NaNSectors > 0)
-                    TryDumpBlackBox(telemetry, telemetryCursor.IsCreated ? telemetryCursor[0] : 0, HydraulicErosionForgeConstants.DumpReasonNaN);
+                    unsafe
+                    {
+                        TryDumpBlackBox(telemetry, telemetryCursor.IsCreated ? telemetryCursor[0] : 0, HydraulicErosionForgeConstants.DumpReasonNaN);
+                    }
 
                 JobHandle sanitizeHandle = new SanitizeFloatPayloadJob { Payload = heights }.Schedule(count, 128);
                 sanitizeHandle = new SanitizeFloatPayloadJob { Payload = silt }.Schedule(count, 128, sanitizeHandle);
@@ -331,7 +334,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
             catch
             {
                 if (telemetry.IsCreated)
-                    TryDumpBlackBox(telemetry, telemetryCursor.IsCreated ? telemetryCursor[0] : 0, HydraulicErosionForgeConstants.DumpReasonException);
+                    unsafe
+                    {
+                        TryDumpBlackBox(telemetry, telemetryCursor.IsCreated ? telemetryCursor[0] : 0, HydraulicErosionForgeConstants.DumpReasonException);
+                    }
                 throw;
             }
             finally
@@ -420,7 +426,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
             try
             {
                 await Awaitable.BackgroundThreadAsync();
-                WritePayloadBlocking(tempPath, payload, header);
+                unsafe
+                {
+                    WritePayloadBlocking(tempPath, payload, header);
+                }
                 await Awaitable.MainThreadAsync();
                 ReplacePayloadFile(tempPath, relativePath, true);
             }
@@ -437,7 +446,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
             }
         }
 
-        private static void WritePayloadBlocking(string tempPath, NativeArray<float> payload, in ErosionHeightmapFileHeaderDTO header)
+        private static unsafe void WritePayloadBlocking(string tempPath, NativeArray<float> payload, in ErosionHeightmapFileHeaderDTO header)
         {
             using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 131072, FileOptions.Asynchronous | FileOptions.WriteThrough))
             {
@@ -498,7 +507,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
             };
         }
 
-        private static void WriteStruct<T>(FileStream stream, in T value) where T : unmanaged
+        private static unsafe void WriteStruct<T>(FileStream stream, in T value) where T : unmanaged
         {
             int size = UnsafeUtility.SizeOf<T>();
             byte* buffer = stackalloc byte[size];
@@ -506,7 +515,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
             stream.Write(new ReadOnlySpan<byte>(buffer, size));
         }
 
-        private static void TryDumpBlackBox(NativeArray<ErosionBakeTelemetryEntry> telemetry, int cursor, uint reason)
+        private static unsafe void TryDumpBlackBox(NativeArray<ErosionBakeTelemetryEntry> telemetry, int cursor, uint reason)
         {
             try
             {
@@ -664,12 +673,19 @@ namespace Hecton8.Editor.HydraulicErosionForge
             EnsureFileFolder(relativePath);
             string tempPath = relativePath + ".tmp";
             DeleteIfExists(tempPath);
-            ErosionSeamTransferFileHeaderDTO header = BuildSeamHeader(scratch, safeOffset, safeCount, settings, directionX, directionZ, metrics);
+            ErosionSeamTransferFileHeaderDTO header;
+            unsafe
+            {
+                header = BuildSeamHeader(scratch, safeOffset, safeCount, settings, directionX, directionZ, metrics);
+            }
             Exception failure = null;
             try
             {
                 await Awaitable.BackgroundThreadAsync();
-                WriteSeamPayloadBlocking(tempPath, scratch, safeOffset, safeCount, header);
+                unsafe
+                {
+                    WriteSeamPayloadBlocking(tempPath, scratch, safeOffset, safeCount, header);
+                }
                 await Awaitable.MainThreadAsync();
                 ReplacePayloadFile(tempPath, relativePath, true);
             }
@@ -686,7 +702,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
             }
         }
 
-        private static ErosionSeamTransferFileHeaderDTO BuildSeamHeader(
+        private static unsafe ErosionSeamTransferFileHeaderDTO BuildSeamHeader(
             NativeArray<ErosionDropletDTO> payload,
             int offset,
             int count,
@@ -733,7 +749,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
             };
         }
 
-        private static void WriteSeamPayloadBlocking(
+        private static unsafe void WriteSeamPayloadBlocking(
             string tempPath,
             NativeArray<ErosionDropletDTO> payload,
             int offset,

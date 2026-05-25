@@ -84,7 +84,7 @@ namespace Hecton8.World
 
             using (_backendScheduleProfilerMarker.Auto())
             {
-                return _simulationBackend.TrySchedule(config, heightSamples, cellStates);
+                return TryScheduleKnownBackend(_simulationBackend, config, heightSamples, cellStates);
             }
         }
 
@@ -153,6 +153,24 @@ namespace Hecton8.World
 #endif
                     return new ScatterClassicSimulationBackend();
             }
+        }
+
+        private static bool TryScheduleKnownBackend(
+            IScatterSimulationBackend backend,
+            ScatterSimulationConfig config,
+            NativeArray<float>.ReadOnly heightSamples,
+            NativeArray<ScatterSimulationCellState>.ReadOnly cellStates)
+        {
+            if (backend is ScatterClassicSimulationBackend classicBackend)
+                return classicBackend.TrySchedule(config, heightSamples, cellStates);
+
+            if (backend != null)
+                backend.ForceComplete();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning("[WorldScatter] Unknown backend provider cannot be scheduled through stale contract compatibility route.");
+#endif
+            return false;
         }
     }
 }

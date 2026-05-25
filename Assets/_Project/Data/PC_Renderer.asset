@@ -39,6 +39,22 @@ MonoBehaviour:
   settings:
     shader: {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
     injectionPoint: 450
+--- !u!114 &348348348000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a0774dfd543412fac683ba616c7a07e, type: 3}
+  m_Name: WristPdaScreenProjectorFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.Rendering.WristPdaScreenProjectorFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 0d75901ecc6a479385541da8be342394, type: 3}
+    injectionPoint: 550
 --- !u!114 &-4638680478887311186
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -160,9 +176,10 @@ MonoBehaviour:
   - {fileID: 420815551001000001}
   - {fileID: 2064814590936465776}
   - {fileID: 7586088337229526198}
+  - {fileID: 348348348000001}
   - {fileID: -2791795738792434917}
   - {fileID: 149000149002}
-  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1aad5815c36b99ec35bb6a44aeba4fa5b8019ab1c736d30000ae086265ae18a0bfd761f2c4e6c86b610f30c1b7e5074be8a147240bf27f224c0494e07670691c2141f85f998309d70570c1cf3beeb1a71cb6b44c5f263347691be3d32f918c41d90ad819b122000000
+  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1aad5815c36b99ec35bb6a44aeba4fa5b8019ab1c736d30000ae086265ae18a0bfd761f2c4e6c86b610f30c1b7e5074be8a147240bf27f224c0494e07670691c2141f85f998309d70570c1cf3beeb1a71cb6b44c5f2633476901678a2bd23c01001be3d32f918c41d90ad819b122000000
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -396,11 +413,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e26e06fe59eb56b4eae04f2fd7fdae2a, type: 3}
-  m_Name: HectonVisorWoundFeature
+  m_Name: HectonVisorTraumaFeature
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.DeferredDecalPass
   m_Active: 1
   settings:
-    deferredDecalShader: {fileID: 4800000, guid: 0a2df57d7a4e4d44a95b1b4c4bfb2750, type: 3}
+    deferredDecalShader: {fileID: 4800000, guid: 8f60cfb6a5b944c481b829bb0a2d2b40, type: 3}
     decalAtlas: {fileID: 0}
     maxDecals: 128
     baseFadeTimeSeconds: 6.25

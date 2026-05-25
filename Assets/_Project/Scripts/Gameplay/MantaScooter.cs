@@ -1,17 +1,17 @@
-// ============================================================================
-// HECTON-8 — MantaScooter.cs
+﻿// ============================================================================
+// HECTON-8 â€” MantaScooter.cs
 // Handheld propulsion vehicle (Seaglide equivalent).
 //
 // ARCHITECTURE:
-//   • PlayerTool-derived for inventory/tool slot integration
-//   • IBatteryTool for BatteryCharger compatibility
-//   • ITickable for active propulsion logic
-//   • Zero GC: cached refs and pre-allocated arrays
+//   â€¢ PlayerTool-derived for inventory/tool slot integration
+//   â€¢ IBatteryTool for BatteryCharger compatibility
+//   â€¢ ITickable for active propulsion logic
+//   â€¢ Zero GC: cached refs and pre-allocated arrays
 //
 // FEATURES:
-//   • Increases swim speed while active and has battery
-//   • Requests propulsion draw only while moving; central equipment solver drains battery
-//   • HUD display showing depth and battery %
+//   â€¢ Increases swim speed while active and has battery
+//   â€¢ Requests propulsion draw only while moving; central equipment solver drains battery
+//   â€¢ HUD display showing depth and battery %
 // ============================================================================
 
 namespace Hecton8.Gameplay
@@ -20,7 +20,6 @@ namespace Hecton8.Gameplay
     using Hecton8.Core;
     using Hecton8.Core.Contracts;
     using Hecton8.Core.Contracts.Signals;
-    using Hecton8.Input;
     using Hecton8.Items;
     using Hecton8.Physics;
     using Hecton8.Tools;
@@ -49,11 +48,11 @@ namespace Hecton8.Gameplay
         private const float HeadlightSignalMinIntensity = 0.0001f;
         private const uint HeadlightSignalSourceSalt = 0x4D484C54u;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        [Header("── Propulsion ────────────────────────────────")]
+        [Header("â”€â”€ Propulsion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Swim speed multiplier when scooter is active.")]
         [SerializeField, Range(1.5f, 4f)] private float speedMultiplier = 2.2f;
 
@@ -94,14 +93,14 @@ namespace Hecton8.Gameplay
         [Tooltip("Minimum duration of a forced EMP misfire lockout injected by abyssal hazards.")]
         [SerializeField, Range(0.1f, 6f)] private float empMisfireMinimumDuration = 1.5f;
 
-        [Header("── Visuals ────────────────────────────────────")]
+        [Header("â”€â”€ Visuals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Mesh to hide when battery is removed.")]
         [SerializeField] private GameObject batteryMesh;
 
         [Tooltip("Optional pooled world-body prefab used when a handheld Manta catastrophically bails out at speed. Falls back to ToolData.worldPrefab when unset.")]
         [SerializeField] private GameObject bailoutWreckPrefab;
 
-        [Header("── Headlights ────────────────────────────────")]
+        [Header("â”€â”€ Headlights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional primary spotlight used for scooter volumetric shafts and abyssal lens failure.")]
         [SerializeField] private Light primaryHeadlight;
 
@@ -123,7 +122,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Temporal frequency of the headlight lens-glitch noise.")]
         [SerializeField, Range(0.1f, 20f)] private float headlightGlitchFrequency = 4.8f;
 
-        [Header("── HUD Display ────────────────────────────────")]
+        [Header("â”€â”€ HUD Display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Canvas group for the HUD display.")]
         [SerializeField] private CanvasGroup hudCanvasGroup;
 
@@ -136,21 +135,21 @@ namespace Hecton8.Gameplay
         private char[] _batteryHudBuffer;
         private FixedCharBuffer _toolWarningBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - manta warning HUD staging buffer - owner: MantaScooter
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  IBatteryTool STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private ItemData _batteryItem;
         private float _currentCharge;
         private bool _hasBattery;
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  RUNTIME STATE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private VehicleUpgradeModule _vehicleUpgradeModule;
         private IInputService _cachedInputService;
-        private ObjectPoolManager _cachedObjectPool;
+        private IObjectPoolService _cachedObjectPool;
         private IToolAcousticCueService _cachedToolAcousticCues;
         private IBabelLocalization _cachedBabelLocalization;
         private Transform _cachedTransform;
@@ -159,6 +158,8 @@ namespace Hecton8.Gameplay
         private bool _seaglideMovementStateCacheValid;
         private bool _hasLastSeaglideMovementSnapshotAup;
         private bool _headlightPresentationDirty;
+        private bool _headlightClearGlobalsDirty;
+        private bool _hudPresentationDirty;
         private bool _registeredLateFrame;
         private bool _isActive;
         private bool _isMoving;
@@ -170,37 +171,27 @@ namespace Hecton8.Gameplay
         private bool _lastHudVisible;
         private int _lastDepthTenths = int.MinValue;
         private int _lastBatteryPercent = int.MinValue;
-        private bool _summaryStateInitialized;
-        private bool _lastSummaryHasBattery;
-        private bool _lastSummaryActive;
-        private int _lastSummaryBatteryPercent = int.MinValue;
-        private string _cachedOperationalSummary = "MANTA // NO BATTERY";
-        private string _cachedOperationalDirective = "Insert a battery to activate propulsion.";
-        private bool _directiveStateInitialized;
-        private bool _lastDirectiveHasBattery;
-        private bool _lastDirectiveActive;
-        private bool _lastDirectiveBatteryLow;
+        private FixedCharBuffer _localizedNoBatteryWarningBuffer = new FixedCharBuffer(96);
+        private FixedCharBuffer _localizedBatteryDepletedWarningBuffer = new FixedCharBuffer(96);
+        private FixedCharBuffer _localizedSummaryNoBatteryBuffer = new FixedCharBuffer(96);
+        private FixedCharBuffer _localizedSummaryActiveFormatBuffer = new FixedCharBuffer(96);
+        private FixedCharBuffer _localizedSummaryStandbyFormatBuffer = new FixedCharBuffer(96);
+        private FixedCharBuffer _localizedDirectiveInsertBatteryBuffer = new FixedCharBuffer(160);
+        private FixedCharBuffer _localizedDirectiveSwapRechargeBuffer = new FixedCharBuffer(160);
+        private FixedCharBuffer _localizedDirectiveHoldForwardBuffer = new FixedCharBuffer(160);
+        private FixedCharBuffer _localizedDirectiveHoldPrimaryBuffer = new FixedCharBuffer(160);
+        private FixedCharBuffer _localizedTransportBrokenWarningBuffer = new FixedCharBuffer(96);
+        private FixedCharBuffer _legacyMantaSummaryBuffer = new FixedCharBuffer(128);
+        private FixedCharBuffer _legacyMantaDirectiveBuffer = new FixedCharBuffer(160);
         private byte _powerIndicatorVisualState = byte.MaxValue;
         private uint _headlightPayloadHash = uint.MaxValue;
         private int _lastPublishedHeadlightPayloadCount = -1;
         private uint _headlightSignalDropCount;
         private ushort _lastHeadlightSignalDropSlot;
         private byte _lastHeadlightSignalDropOperation;
-        private string _localizedNoBatteryWarning = "MANTA - NO BATTERY";
-        private string _localizedBatteryDepletedWarning = "MANTA - BATTERY DEPLETED";
-        private string _localizedSummaryNoBattery = "MANTA // NO BATTERY";
-        private string _localizedSummaryActiveFormat = "MANTA // ACTIVE // BAT {0}%";
-        private string _localizedSummaryStandbyFormat = "MANTA // STANDBY // BAT {0}%";
-        private string[] _localizedSummaryActiveCache;
-        private string[] _localizedSummaryStandbyCache;
         private double3 _lastSeaglideAup;
         private double3 _lastSeaglideMovementSnapshotAup;
         private PlayerMovementRuntimeState _cachedSeaglideMovementState;
-        private string _localizedDirectiveInsertBattery = "Insert a battery to activate propulsion.";
-        private string _localizedDirectiveSwapRecharge = "Battery depleted. Swap or recharge.";
-        private string _localizedDirectiveHoldForward = "Hold forward to propel. Release to coast.";
-        private string _localizedDirectiveHoldPrimary = "Hold primary to activate propulsion while swimming.";
-        private string _localizedTransportBrokenWarning = "MANTA - DRIVE FAILURE";
         [SerializeField] private string _debugActivationState = ActivationStateIdle;
 
         private const string ActivationStateIdle = "Idle";
@@ -257,9 +248,9 @@ namespace Hecton8.Gameplay
         private static readonly int _ScooterVelocityWsId = Shader.PropertyToID("_HectonScooterVelocityWS");
         private static readonly int _ScooterBrakeCloudId = Shader.PropertyToID("_HectonScooterBrakeCloud");
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  IBatteryTool IMPLEMENTATION
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>True if the tool currently has a battery installed.</summary>
         public bool HasBattery => _hasBattery;
@@ -367,23 +358,23 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
             _cachedTransform = transform;
             CacheVehicleUpgradeModuleCold();
-            _headlightSlots = new Light[MaxHeadlights]; // COLD ALLOC: Light[2] â€” scooter headlight cache for volumetric shafts â€” owner: MantaScooter
-            _headlightPositionsWs = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight world-position payloads â€” owner: MantaScooter
-            _headlightDirectionsWs = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight direction payloads â€” owner: MantaScooter
-            _headlightColors = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight spectral payloads â€” owner: MantaScooter
-            _headlightConeData = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight cone payloads â€” owner: MantaScooter
-            _headlightBaseColors = new Color[MaxHeadlights]; // COLD ALLOC: Color[2] â€” authored headlight colors for recovery after hull-stress glitches â€” owner: MantaScooter
-            _headlightBaseSpotAngles = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight cone cache for recovery after hull-stress glitches â€” owner: MantaScooter
-            _headlightBaseIntensities = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight intensity cache for recovery after hull-stress glitches â€” owner: MantaScooter
-            _headlightBaseRanges = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight range cache for shaft falloff publishing â€” owner: MantaScooter
+            _headlightSlots = new Light[MaxHeadlights]; // COLD ALLOC: Light[2] Ã¢â‚¬â€ scooter headlight cache for volumetric shafts Ã¢â‚¬â€ owner: MantaScooter
+            _headlightPositionsWs = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] Ã¢â‚¬â€ scooter headlight world-position payloads Ã¢â‚¬â€ owner: MantaScooter
+            _headlightDirectionsWs = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] Ã¢â‚¬â€ scooter headlight direction payloads Ã¢â‚¬â€ owner: MantaScooter
+            _headlightColors = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] Ã¢â‚¬â€ scooter headlight spectral payloads Ã¢â‚¬â€ owner: MantaScooter
+            _headlightConeData = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] Ã¢â‚¬â€ scooter headlight cone payloads Ã¢â‚¬â€ owner: MantaScooter
+            _headlightBaseColors = new Color[MaxHeadlights]; // COLD ALLOC: Color[2] Ã¢â‚¬â€ authored headlight colors for recovery after hull-stress glitches Ã¢â‚¬â€ owner: MantaScooter
+            _headlightBaseSpotAngles = new float[MaxHeadlights]; // COLD ALLOC: float[2] Ã¢â‚¬â€ authored headlight cone cache for recovery after hull-stress glitches Ã¢â‚¬â€ owner: MantaScooter
+            _headlightBaseIntensities = new float[MaxHeadlights]; // COLD ALLOC: float[2] Ã¢â‚¬â€ authored headlight intensity cache for recovery after hull-stress glitches Ã¢â‚¬â€ owner: MantaScooter
+            _headlightBaseRanges = new float[MaxHeadlights]; // COLD ALLOC: float[2] Ã¢â‚¬â€ authored headlight range cache for shaft falloff publishing Ã¢â‚¬â€ owner: MantaScooter
             _depthHudBuffer = new char[16]; // COLD ALLOC: char[16] - scooter depth HUD buffer - owner: MantaScooter
             _batteryHudBuffer = new char[8]; // COLD ALLOC: char[8] - scooter battery HUD buffer - owner: MantaScooter
             RefreshMantaLocalizationCache();
@@ -391,7 +382,7 @@ namespace Hecton8.Gameplay
             EnsureTransportLifecycleInitialized();
             CacheHeadlightDefaults();
             RegisterHeadlightShadowBudget();
-            ClearHeadlightGlobals();
+            ClearHeadlightGlobalsImmediate();
 
         }
 
@@ -403,17 +394,20 @@ namespace Hecton8.Gameplay
             RefreshMantaLocalizationCache();
             RegisterHeadlightShadowBudget();
             ConfigureMantaSignalLanesCold();
+            EnsureTransportLifecycleInitialized();
+            PlayerTransportLifecycleRegistry.Register(this, this);
         }
 
         private void OnDisable()
         {
+            PlayerTransportLifecycleRegistry.Unregister(this, this);
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
             UnregisterFromLateFrame();
             UnregisterHeadlightShadowBudget();
             RestoreHeadlightDefaults();
-            ClearHeadlightGlobals();
+            ClearHeadlightGlobalsImmediate();
         }
 
         public override void OnSpawn()
@@ -428,20 +422,22 @@ namespace Hecton8.Gameplay
             _empMisfireTimer = 0f;
             BindTransportPresetToFeelContract();
             EnsureTransportLifecycleInitialized();
+            PlayerTransportLifecycleRegistry.Register(this, this);
             ResetHudStateCache();
             CacheHeadlightDefaults();
             RegisterHeadlightShadowBudget();
-            ClearHeadlightGlobals();
+            ClearHeadlightGlobalsImmediate();
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
         }
 
         public override void OnDespawn()
         {
+            PlayerTransportLifecycleRegistry.Unregister(this, this);
             SyncMantaChargeMirrorFromCentral();
             DeactivateScooter();
             RestoreHeadlightDefaults();
-            ClearHeadlightGlobals();
+            ClearHeadlightGlobalsImmediate();
             UnregisterHeadlightShadowBudget();
             UnregisterFromTick();
             UnregisterFromLateFrame();
@@ -467,7 +463,7 @@ namespace Hecton8.Gameplay
             SyncMantaChargeMirrorFromCentral();
             DeactivateScooter();
             RestoreHeadlightDefaults();
-            ClearHeadlightGlobals();
+            ClearHeadlightGlobalsImmediate();
             UnregisterFromTick();
             UnregisterFromLateFrame();
             _debugActivationState = ActivationStateUnequipped;
@@ -475,9 +471,9 @@ namespace Hecton8.Gameplay
             base.OnUnequip();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  TOOL ACTIONS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public override void UsePrimary(float deltaTime)
         {
@@ -495,7 +491,7 @@ namespace Hecton8.Gameplay
                     DeactivateScooter();
 
                 _debugActivationState = ActivationStateBroken;
-                PublishToolWarning(_localizedTransportBrokenWarning);
+                PublishToolWarning(_localizedTransportBrokenWarningBuffer.AsSpan());
                 return;
             }
 
@@ -506,7 +502,7 @@ namespace Hecton8.Gameplay
                     DeactivateScooter();
 
                 _debugActivationState = ActivationStateNoBattery;
-                PublishToolWarning(_localizedNoBatteryWarning);
+                PublishToolWarning(_localizedNoBatteryWarningBuffer.AsSpan());
                 return;
             }
 
@@ -517,7 +513,7 @@ namespace Hecton8.Gameplay
                     DeactivateScooter();
 
                 _debugActivationState = ActivationStateBatteryTooLow;
-                PublishToolWarning(_localizedNoBatteryWarning);
+                PublishToolWarning(_localizedNoBatteryWarningBuffer.AsSpan());
                 return;
             }
 
@@ -555,13 +551,13 @@ namespace Hecton8.Gameplay
                 TrySubmitHydrodynamicRequest(deltaTime, driveThrottleOutput, currentCharge);
                 MarkScooterActiveForCentralSolver(true, driveThrottleOutput);
                 UpdatePowerIndicator();
-                UpdateHUD();
+                QueueHudPresentation();
 
                 if (BatteryCharge <= 0f)
                 {
                     DeactivateScooter();
                     _debugActivationState = ActivationStateBatteryDepleted;
-                    PublishToolWarning(_localizedBatteryDepletedWarning);
+                    PublishToolWarning(_localizedBatteryDepletedWarningBuffer.AsSpan());
                 }
             }
             else
@@ -606,9 +602,9 @@ namespace Hecton8.Gameplay
             // Called by PlayerToolManager - we use ITickable for HUD updates
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  ITickable
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void Tick(float deltaTime)
         {
@@ -640,83 +636,74 @@ namespace Hecton8.Gameplay
                 TickDriveRelease(deltaTime);
             }
 
-            UpdateHUD();
+            QueueHudPresentation();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         public void LateFrameTick()
         {
-            if (!_headlightPresentationDirty)
-                return;
+            if (_headlightClearGlobalsDirty)
+            {
+                _headlightClearGlobalsDirty = false;
+                ClearHeadlightGlobalsImmediate();
+            }
 
-            float deltaTime = math.clamp(_headlightPresentationDeltaTime, 0.0001f, 0.2f);
-            _headlightPresentationDirty = false;
-            _headlightPresentationDeltaTime = 0f;
-            UpdateHeadlightState(deltaTime);
+            if (_headlightPresentationDirty)
+            {
+                float deltaTime = math.clamp(_headlightPresentationDeltaTime, 0.0001f, 0.2f);
+                _headlightPresentationDirty = false;
+                _headlightPresentationDeltaTime = 0f;
+                UpdateHeadlightState(deltaTime);
+            }
+
+            if (_hudPresentationDirty)
+            {
+                _hudPresentationDirty = false;
+                UpdateHUD();
+            }
         }
 
         public override string BuildLegacyOperationalSummaryString()
         {
-            int batteryPercent = RoundToIntPositive(BatteryCharge * 100f);
-            if (!_summaryStateInitialized ||
-                _lastSummaryHasBattery != _hasBattery ||
-                _lastSummaryActive != _isActive ||
-                _lastSummaryBatteryPercent != batteryPercent)
-            {
-                _cachedOperationalSummary = !_hasBattery
-                    ? _localizedSummaryNoBattery
-                    : _isActive
-                        ? ResolveSummaryVariant(_localizedSummaryActiveCache, _localizedSummaryActiveFormat, batteryPercent)
-                        : ResolveSummaryVariant(_localizedSummaryStandbyCache, _localizedSummaryStandbyFormat, batteryPercent);
-
-                _lastSummaryHasBattery = _hasBattery;
-                _lastSummaryActive = _isActive;
-                _lastSummaryBatteryPercent = batteryPercent;
-                _summaryStateInitialized = true;
-            }
-
-            return _cachedOperationalSummary;
+            _legacyMantaSummaryBuffer.Clear();
+            WriteOperationalSummary(ref _legacyMantaSummaryBuffer);
+            return _hasBattery
+                ? (_isActive ? "MANTA // ACTIVE" : "MANTA // STANDBY")
+                : "MANTA // NO BATTERY";
         }
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
         {
             if (!_hasBattery)
             {
-                AppendText(ref buffer, _localizedSummaryNoBattery);
+                AppendText(ref buffer, _localizedSummaryNoBatteryBuffer.AsSpan());
                 return;
             }
 
-            AppendText(ref buffer, _isActive ? "MANTA // ACTIVE // BAT " : "MANTA // STANDBY // BAT ");
-            buffer.AppendInt(math.clamp((int)math.round(BatteryCharge * 100f), 0, 100));
-            AppendText(ref buffer, "%");
+            int batteryPercent = math.clamp((int)math.round(BatteryCharge * 100f), 0, 100);
+            AppendPercentTemplate(
+                ref buffer,
+                _isActive ? _localizedSummaryActiveFormatBuffer.AsSpan() : _localizedSummaryStandbyFormatBuffer.AsSpan(),
+                batteryPercent);
         }
 
         public override string BuildLegacyOperationalDirectiveString()
         {
-            bool batteryLow = _hasBattery && BatteryCharge < minChargeToActivate;
-            if (!_directiveStateInitialized ||
-                _lastDirectiveHasBattery != _hasBattery ||
-                _lastDirectiveActive != _isActive ||
-                _lastDirectiveBatteryLow != batteryLow)
-            {
-                _cachedOperationalDirective = !_hasBattery
-                    ? _localizedDirectiveInsertBattery
-                    : batteryLow
-                        ? _localizedDirectiveSwapRecharge
-                        : _isActive
-                            ? _localizedDirectiveHoldForward
-                            : _localizedDirectiveHoldPrimary;
+            _legacyMantaDirectiveBuffer.Clear();
+            WriteOperationalDirective(ref _legacyMantaDirectiveBuffer);
+            if (!_hasBattery)
+                return "Insert a battery to activate propulsion.";
 
-                _lastDirectiveHasBattery = _hasBattery;
-                _lastDirectiveActive = _isActive;
-                _lastDirectiveBatteryLow = batteryLow;
-                _directiveStateInitialized = true;
-            }
+            bool batteryLow = BatteryCharge < minChargeToActivate;
+            if (batteryLow)
+                return "Battery depleted. Swap or recharge.";
 
-            return _cachedOperationalDirective;
+            return _isActive
+                ? "Hold forward to propel. Release to coast."
+                : "Hold primary to activate propulsion while swimming.";
         }
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
@@ -725,17 +712,17 @@ namespace Hecton8.Gameplay
             AppendText(
                 ref buffer,
                 !_hasBattery
-                    ? _localizedDirectiveInsertBattery
+                    ? _localizedDirectiveInsertBatteryBuffer.AsSpan()
                     : batteryLow
-                        ? _localizedDirectiveSwapRecharge
+                        ? _localizedDirectiveSwapRechargeBuffer.AsSpan()
                         : _isActive
-                            ? _localizedDirectiveHoldForward
-                            : _localizedDirectiveHoldPrimary);
+                            ? _localizedDirectiveHoldForwardBuffer.AsSpan()
+                            : _localizedDirectiveHoldPrimaryBuffer.AsSpan());
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — ACTIVATION
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PRIVATE â€” ACTIVATION
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ActivateScooter()
         {
@@ -1066,7 +1053,7 @@ namespace Hecton8.Gameplay
             if (wreckPrefab == null)
                 return false;
 
-            ObjectPoolManager poolManager = _cachedObjectPool;
+            IObjectPoolService poolManager = _cachedObjectPool;
             if (poolManager == null)
                 return false;
 
@@ -1099,7 +1086,7 @@ namespace Hecton8.Gameplay
             _currentCharge = math.saturate(BatteryCharge + normalizedChargeDelta * ResolveStationChargeRateScale());
             SetRuntimeBatteryNormalized(_currentCharge);
             UpdatePowerIndicator();
-            UpdateHUD();
+            QueueHudPresentation();
         }
 
         /// <summary>
@@ -1181,9 +1168,9 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — VISUALS
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PRIVATE â€” VISUALS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ClearDamageReceivers()
         {
@@ -1686,7 +1673,7 @@ namespace Hecton8.Gameplay
             _empMisfireTimer = 0f;
             DeactivateScooter();
             _debugActivationState = ActivationStateBroken;
-            PublishToolWarning(_localizedTransportBrokenWarning);
+            PublishToolWarning(_localizedTransportBrokenWarningBuffer.AsSpan());
         }
 
         private void UpdatePowerIndicator()
@@ -2027,6 +2014,13 @@ namespace Hecton8.Gameplay
 
         private void ClearHeadlightGlobals()
         {
+            _headlightClearGlobalsDirty = true;
+            RegisterToLateFrame();
+        }
+
+        private void ClearHeadlightGlobalsImmediate()
+        {
+            _headlightClearGlobalsDirty = false;
             if (_headlightPositionsWs == null ||
                 _headlightDirectionsWs == null ||
                 _headlightColors == null ||
@@ -2220,10 +2214,10 @@ namespace Hecton8.Gameplay
                 laneHash: ComputeStableSignalLaneHash(nameof(SeaglidePropulsionRequestSignal)));
             SignalBus<SeaglidePropulsionRequestSignal>.EnsureInitialized();
             SignalBus<SubmarineLightsChangedSignal>.Configure(
-                64,
-                maxFrameSignals: 64,
-                lowTierFrameSignals: 16,
-                laneHash: ComputeStableSignalLaneHash(nameof(SubmarineLightsChangedSignal)));
+                SubmarineLightsChangedSignal.ExpectedCapacity,
+                maxFrameSignals: SubmarineLightsChangedSignal.MaxFrameSignals,
+                lowTierFrameSignals: SubmarineLightsChangedSignal.LowTierFrameSignals,
+                laneHash: SubmarineLightsChangedSignal.LaneHash);
             SignalBus<SubmarineLightsChangedSignal>.EnsureInitialized();
         }
 
@@ -2366,9 +2360,9 @@ namespace Hecton8.Gameplay
             return digitCount;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — REFERENCES
-        // ══════════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  PRIVATE â€” REFERENCES
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private bool TryResolveDepthTenths(out int depthTenths)
         {
@@ -2407,16 +2401,6 @@ namespace Hecton8.Gameplay
             _lastHudVisible = false;
             _lastDepthTenths = int.MinValue;
             _lastBatteryPercent = int.MinValue;
-            _summaryStateInitialized = false;
-            _lastSummaryHasBattery = false;
-            _lastSummaryActive = false;
-            _lastSummaryBatteryPercent = int.MinValue;
-            _cachedOperationalSummary = _localizedSummaryNoBattery;
-            _directiveStateInitialized = false;
-            _lastDirectiveHasBattery = false;
-            _lastDirectiveActive = false;
-            _lastDirectiveBatteryLow = false;
-            _cachedOperationalDirective = _localizedDirectiveInsertBattery;
             if (!_isActive)
                 _debugActivationState = ActivationStateIdle;
         }
@@ -2449,6 +2433,11 @@ namespace Hecton8.Gameplay
             _headlightPresentationDirty = true;
         }
 
+        private void QueueHudPresentation()
+        {
+            _hudPresentationDirty = true;
+        }
+
         private void RegisterToLateFrame()
         {
             if (_registeredLateFrame)
@@ -2466,7 +2455,9 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _registeredLateFrame = false;
+            _headlightClearGlobalsDirty = false;
             _headlightPresentationDirty = false;
+            _hudPresentationDirty = false;
             _headlightPresentationDeltaTime = 0f;
         }
 
@@ -2494,7 +2485,7 @@ namespace Hecton8.Gameplay
         private void RefreshCachedRegistryServices()
         {
             _cachedInputService = GlobalRegistry.Input;
-            _cachedObjectPool = GlobalRegistry.ObjectPool;
+            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedToolAcousticCues = GlobalRegistry.ToolAcousticCues;
             _cachedBabelLocalization = GlobalRegistry.BabelLocalization;
         }
@@ -2529,112 +2520,77 @@ namespace Hecton8.Gameplay
 
         private void RefreshMantaLocalizationCache()
         {
-            _localizedNoBatteryWarning = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_HUD_NO_BATTERY, "MANTA - NO BATTERY");
-            _localizedBatteryDepletedWarning = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_HUD_BATTERY_DEPLETED, "MANTA - BATTERY DEPLETED");
-            _localizedSummaryNoBattery = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_SUMMARY_NO_BATTERY, "MANTA // NO BATTERY");
-            _localizedSummaryActiveFormat = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_SUMMARY_ACTIVE, "MANTA // ACTIVE // BAT {0}%");
-            _localizedSummaryStandbyFormat = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_SUMMARY_STANDBY, "MANTA // STANDBY // BAT {0}%");
-            EnsureSummaryCache(ref _localizedSummaryActiveCache, _localizedSummaryActiveFormat);
-            EnsureSummaryCache(ref _localizedSummaryStandbyCache, _localizedSummaryStandbyFormat);
-            _localizedDirectiveInsertBattery = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_DIRECTIVE_INSERT_BATTERY, "Insert a battery to activate propulsion.");
-            _localizedDirectiveSwapRecharge = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_DIRECTIVE_SWAP_OR_RECHARGE, "Battery depleted. Swap or recharge.");
-            _localizedDirectiveHoldForward = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_DIRECTIVE_HOLD_FORWARD, "Hold forward to propel. Release to coast.");
-            _localizedDirectiveHoldPrimary = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_DIRECTIVE_HOLD_PRIMARY, "Hold primary to activate propulsion while swimming.");
-            _localizedTransportBrokenWarning = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_HUD_BATTERY_DEPLETED, "MANTA - DRIVE FAILURE");
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_HUD_NO_BATTERY, "MANTA - NO BATTERY", ref _localizedNoBatteryWarningBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_HUD_BATTERY_DEPLETED, "MANTA - BATTERY DEPLETED", ref _localizedBatteryDepletedWarningBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_SUMMARY_NO_BATTERY, "MANTA // NO BATTERY", ref _localizedSummaryNoBatteryBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_SUMMARY_ACTIVE, "MANTA // ACTIVE // BAT {0}%", ref _localizedSummaryActiveFormatBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_SUMMARY_STANDBY, "MANTA // STANDBY // BAT {0}%", ref _localizedSummaryStandbyFormatBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_DIRECTIVE_INSERT_BATTERY, "Insert a battery to activate propulsion.", ref _localizedDirectiveInsertBatteryBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_DIRECTIVE_SWAP_OR_RECHARGE, "Battery depleted. Swap or recharge.", ref _localizedDirectiveSwapRechargeBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_DIRECTIVE_HOLD_FORWARD, "Hold forward to propel. Release to coast.", ref _localizedDirectiveHoldForwardBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_DIRECTIVE_HOLD_PRIMARY, "Hold primary to activate propulsion while swimming.", ref _localizedDirectiveHoldPrimaryBuffer);
+            CopyMantaLocalizedLabel(H8ToolLocHashes.MANTA_HUD_BATTERY_DEPLETED, "MANTA - DRIVE FAILURE", ref _localizedTransportBrokenWarningBuffer);
         }
 
-        private static string ResolveSummaryVariant(string[] cache, string fallbackFormat, int batteryPercent)
+        private void CopyMantaLocalizedLabel(uint keyHash, ReadOnlySpan<char> fallback, ref FixedCharBuffer destination)
         {
-            int clampedPercent = math.clamp(batteryPercent, 0, 100);
-            if (cache == null || cache.Length <= clampedPercent)
-                return fallbackFormat;
-
-            string cachedVariant = cache[clampedPercent];
-            if (string.IsNullOrEmpty(cachedVariant))
-                return fallbackFormat;
-
-            return cachedVariant;
-        }
-
-        private static void EnsureSummaryCache(ref string[] cache, string format)
-        {
-            if (cache == null || cache.Length != 101)
-                cache = new string[101]; // COLD ALLOC: string[101] - localized battery summary lookup table - owner: MantaScooter
-
-            for (int percent = 0; percent <= 100; percent++)
-                cache[percent] = CreatePercentSummary(format, percent);
-        }
-
-        private static string CreatePercentSummary(string format, int percent)
-        {
-            if (string.IsNullOrEmpty(format))
-                return string.Empty;
-
-            int tokenIndex = format.IndexOf("{0}", System.StringComparison.Ordinal);
-            if (tokenIndex < 0)
-                return format;
-
-            int clampedPercent = math.clamp(percent, 0, 100);
-            int digitCount = CountUnsignedDigits(clampedPercent);
-            return string.Create(format.Length - 3 + digitCount, (format, clampedPercent, tokenIndex), (buffer, state) =>
-            {
-                state.format.AsSpan(0, state.tokenIndex).CopyTo(buffer);
-                int cursor = state.tokenIndex;
-                cursor += WriteUnsignedInt(buffer, cursor, state.clampedPercent);
-                state.format.AsSpan(state.tokenIndex + 3).CopyTo(buffer.Slice(cursor));
-            });
-        }
-
-        private static int CountUnsignedDigits(int value)
-        {
-            int digits = 1;
-            int remaining = math.max(0, value);
-            while (remaining >= 10)
-            {
-                remaining /= 10;
-                digits++;
-            }
-
-            return digits;
-        }
-
-        private static int WriteUnsignedInt(System.Span<char> buffer, int startIndex, int value)
-        {
-            if (value <= 0)
-            {
-                buffer[startIndex] = '0';
-                return 1;
-            }
-
-            int digitCount = CountUnsignedDigits(value);
-            int writeIndex = startIndex + digitCount - 1;
-            int currentValue = value;
-            while (currentValue > 0)
-            {
-                buffer[writeIndex--] = (char)('0' + (currentValue % 10));
-                currentValue /= 10;
-            }
-
-            return digitCount;
-        }
-
-        private string ResolveMantaLocalizedLabel(uint keyHash, string fallback)
-        {
+            destination.Clear();
             IBabelLocalization localization = _cachedBabelLocalization;
-            return localization != null &&
-                   localization.TryGetLocalizedBuffer(keyHash, out char[] buffer, out int length) &&
-                   buffer != null &&
-                   length > 0
-                ? new string(buffer, 0, length)
-                : (fallback ?? string.Empty);
+            if (localization != null &&
+                localization.TryGetLocalizedBuffer(keyHash, out char[] buffer, out int length) &&
+                buffer != null &&
+                length > 0 &&
+                destination.Append(buffer.AsSpan(0, length)))
+            {
+                return;
+            }
+
+            destination.Append(fallback);
         }
 
-        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        private static bool AppendPercentTemplate(ref FixedCharBuffer buffer, ReadOnlySpan<char> template, int percent)
         {
-            return string.IsNullOrEmpty(value) || buffer.Append(value);
+            int tokenIndex = IndexOfToken(template);
+            if (tokenIndex < 0)
+            {
+                if (!buffer.Append(template))
+                    return false;
+
+                if (!buffer.Append(" "))
+                    return false;
+
+                if (!buffer.AppendInt(math.clamp(percent, 0, 100)))
+                    return false;
+
+                return buffer.Append("%");
+            }
+
+            if (!buffer.Append(template.Slice(0, tokenIndex)))
+                return false;
+
+            if (!buffer.AppendInt(math.clamp(percent, 0, 100)))
+                return false;
+
+            return buffer.Append(template.Slice(tokenIndex + 3));
         }
 
-        private void PublishToolWarning(string message)
+        private static int IndexOfToken(ReadOnlySpan<char> template)
+        {
+            for (int i = 0; i <= template.Length - 3; i++)
+            {
+                if (template[i] == '{' && template[i + 1] == '0' && template[i + 2] == '}')
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, ReadOnlySpan<char> value)
+        {
+            return value.Length == 0 || buffer.Append(value);
+        }
+
+        private void PublishToolWarning(ReadOnlySpan<char> message)
         {
             _toolWarningBuffer.Clear();
             if (AppendText(ref _toolWarningBuffer, message))

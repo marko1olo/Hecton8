@@ -153,26 +153,29 @@ namespace Hecton8.Gameplay
                 _listeners.Unregister(listener);
         }
 
-        public static void Raise(in SuitMeshUpdateSignal signal)
+        public static bool TryRaise(in SuitMeshUpdateSignal signal)
         {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingSignalCount + _nextFrameSignalCount >= PendingCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
                 _nextFrameSignals.Enqueue(signal);
                 _nextFrameSignalCount++;
+                return true;
             }
-            else
-            {
-                _pendingSignals.Enqueue(signal);
-                _pendingSignalCount++;
-            }
+
+            _pendingSignals.Enqueue(signal);
+            _pendingSignalCount++;
+            return true;
         }
+
+        [System.Obsolete("Use TryRaise so bounded queue refusal is visible at the producer.", true)]
+        public static void Raise(in SuitMeshUpdateSignal signal) => TryRaise(in signal);
 
         public static void FlushPending()
         {
@@ -256,7 +259,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!_pendingSignals.TryDequeue(out SuitMeshUpdateSignal signal))
+                {
+                    _pendingSignalCount = 0;
                     return true;
+                }
 
                 _pendingSignalCount--;
                 scanBudget--;
@@ -287,7 +293,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!_pendingSignals.TryDequeue(out _))
+                {
+                    _pendingSignalCount = 0;
                     return true;
+                }
 
                 _pendingSignalCount--;
                 scanBudget--;

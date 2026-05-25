@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_069
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_069_Mat_DroneProxy_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_DroneProxy_Albedo.png
+FINAL_FILENAME: Mat_DroneProxy_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Drone proxy albedo for a HECTON-8 utility drone placeholder. Create a compact premium equipment skin with warm off-white ceramic armor panels, satin titanium service rails, graphite rubber sensor gaskets, teal navigation accents, amber locator windows, and subtle salt-polished edges. It should read as friendly research hardware, clean and useful, with small panel details that survive low-poly proxy geometry. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

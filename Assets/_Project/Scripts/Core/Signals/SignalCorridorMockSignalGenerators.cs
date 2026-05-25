@@ -36,7 +36,7 @@ namespace Hecton8.Core.Contracts.Signals
                 float3 offset = ResolveDeterministicOffset(ref state, 1.0f);
                 float3 runtimePoint = runtimeOrigin + offset;
                 AcousticPingSignal signal = default;
-                if (!global::Hecton8.Core.GlobalSignals.TryRuntimePositionToAup(runtimePoint, ref signal.PositionAup))
+                if (!global::Hecton8.Core.RuntimeOriginRoute.TryRuntimePositionToAup(runtimePoint, ref signal.PositionAup))
                     continue;
 
                 signal.RadiusMeters = safeRadius;

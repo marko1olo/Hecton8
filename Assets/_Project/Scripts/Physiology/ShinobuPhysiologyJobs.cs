@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
@@ -11,23 +12,26 @@ namespace Hecton8.Physiology
     public static class ShinobuPhysiologyJobMath
     {
         private const float Epsilon = 0.0001f;
+        private const float BleedingHoldSeconds = 6f;
+        private const float StunHoldSeconds = 0.75f;
+        private const uint RadiationHoldSlowTicks = 40u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SanitizeFinite(float value, float fallback)
         {
-            return math.isfinite(value) ? value : fallback;
+            return math.select(fallback, value, math.isfinite(value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SanitizeUnit(float value)
         {
-            return math.isfinite(value) ? math.saturate(value) : 0f;
+            return math.saturate(math.select(0f, value, math.isfinite(value)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SafePositive(float value, float fallback)
         {
-            return math.isfinite(value) && value > Epsilon ? value : fallback;
+            return math.select(fallback, value, math.isfinite(value) & (value > Epsilon));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -38,12 +42,12 @@ namespace Hecton8.Physiology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int CountFirstFourBits(uint mask)
+        public static int CountFirstEightBits(uint mask)
         {
-            uint four = mask & 0x0Fu;
-            four = four - ((four >> 1) & 0x55555555u);
-            four = (four & 0x33333333u) + ((four >> 2) & 0x33333333u);
-            return (int)(four & 0x0Fu);
+            uint eight = mask & 0xFFu;
+            eight = eight - ((eight >> 1) & 0x55u);
+            eight = (eight & 0x33u) + ((eight >> 2) & 0x33u);
+            return (int)((eight + (eight >> 4)) & 0x0Fu);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -54,9 +58,218 @@ namespace Hecton8.Physiology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ResolveTraumaMaskFromCombatStatus(uint combatStatusMask)
+        {
+            uint traumaMask = 0u;
+            traumaMask |= (combatStatusMask & ShinobuCombatStatusBridgeBits.Bleeding) != 0u ? ShinobuTraumaBits.Laceration : 0u;
+            traumaMask |= (combatStatusMask & ShinobuCombatStatusBridgeBits.Poisoned) != 0u ? ShinobuTraumaBits.Poison : 0u;
+            traumaMask |= (combatStatusMask & ShinobuCombatStatusBridgeBits.Stunned) != 0u ? ShinobuTraumaBits.Stun : 0u;
+            traumaMask |= (combatStatusMask & ShinobuCombatStatusBridgeBits.Irradiated) != 0u ? ShinobuTraumaBits.Radiation : 0u;
+            traumaMask |= (combatStatusMask & ShinobuCombatStatusBridgeBits.Hypoxia) != 0u ? ShinobuTraumaBits.Suffocation : 0u;
+            return traumaMask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong BuildStatusEffectMask(uint flags, uint traumaMask, uint combatStatusMask)
+        {
+            ulong mask = 0UL;
+            uint mergedTraumaMask = traumaMask | ResolveTraumaMaskFromCombatStatus(combatStatusMask);
+            mask |= (flags & ShinobuPhysiologyFlags.Bends) != 0u ? ShinobuStatusEffectBits.Bends : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.Narcosis) != 0u ? ShinobuStatusEffectBits.Narcosis : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.Hypothermia) != 0u ? ShinobuStatusEffectBits.Hypothermia : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.OxygenCritical) != 0u ? ShinobuStatusEffectBits.OxygenCritical : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.FatalOxygen) != 0u ? ShinobuStatusEffectBits.FatalOxygen : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.InvalidMath) != 0u ? ShinobuStatusEffectBits.InvalidMath : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.HyperbaricOverride) != 0u ? ShinobuStatusEffectBits.HyperbaricOverride : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.FatalBends) != 0u ? ShinobuStatusEffectBits.FatalBends : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.Hypoxia) != 0u ? ShinobuStatusEffectBits.Hypoxia : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.Hyperoxia) != 0u ? ShinobuStatusEffectBits.Hyperoxia : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.CarbonDioxideToxicity) != 0u ? ShinobuStatusEffectBits.CarbonDioxideToxicity : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.CnsOxygenToxicity) != 0u ? ShinobuStatusEffectBits.CnsOxygenToxicity : 0UL;
+            mask |= (flags & ShinobuPhysiologyFlags.FatalGasToxicity) != 0u ? ShinobuStatusEffectBits.FatalGasToxicity : 0UL;
+            mask |= (mergedTraumaMask & ShinobuTraumaBits.Laceration) != 0u ? ShinobuStatusEffectBits.Bleeding : 0UL;
+            mask |= (mergedTraumaMask & ShinobuTraumaBits.Poison) != 0u ? ShinobuStatusEffectBits.Poison : 0UL;
+            mask |= (mergedTraumaMask & ShinobuTraumaBits.Stun) != 0u ? ShinobuStatusEffectBits.Stun : 0UL;
+            mask |= (mergedTraumaMask & ShinobuTraumaBits.Radiation) != 0u ? ShinobuStatusEffectBits.Radiation : 0UL;
+            mask |= (mergedTraumaMask & ShinobuTraumaBits.Suffocation) != 0u ? ShinobuStatusEffectBits.Hypoxia : 0UL;
+            return mask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ClearExpiredTransientTraumaMask(
+            uint traumaMask,
+            uint refreshMask,
+            StatusEffectStateDTO previous,
+            uint lastTraumaRefreshFrame,
+            uint frame)
+        {
+            ulong previousStatusMask = previous.StatusEffectMask;
+            uint mask = traumaMask;
+            uint radiationRefreshFrame = lastTraumaRefreshFrame != 0u
+                ? lastTraumaRefreshFrame
+                : previous.LastTransitionFrame;
+            bool bleedingExpired =
+                (refreshMask & ShinobuTraumaBits.Laceration) == 0u &&
+                (previousStatusMask & ShinobuStatusEffectBits.Bleeding) != 0UL &&
+                SanitizeFinite(previous.BleedingSeconds, 0f) >= BleedingHoldSeconds;
+            bool stunExpired =
+                (refreshMask & ShinobuTraumaBits.Stun) == 0u &&
+                (previousStatusMask & ShinobuStatusEffectBits.Stun) != 0UL &&
+                SanitizeFinite(previous.StunSeconds, 0f) >= StunHoldSeconds;
+            bool radiationExpired =
+                (refreshMask & ShinobuTraumaBits.Radiation) == 0u &&
+                (previousStatusMask & ShinobuStatusEffectBits.Radiation) != 0UL &&
+                HasElapsedSlowTicks(radiationRefreshFrame, frame, RadiationHoldSlowTicks);
+
+            mask &= math.select(0xFFFFFFFFu, ~ShinobuTraumaBits.Laceration, bleedingExpired);
+            mask &= math.select(0xFFFFFFFFu, ~ShinobuTraumaBits.Stun, stunExpired);
+            mask &= math.select(0xFFFFFFFFu, ~ShinobuTraumaBits.Radiation, radiationExpired);
+            return mask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasElapsedSlowTicks(uint startFrame, uint currentFrame, uint threshold)
+        {
+            if (startFrame == 0u)
+                return false;
+
+            uint elapsed = currentFrame >= startFrame
+                ? currentFrame - startFrame
+                : uint.MaxValue - startFrame + currentFrame + 1u;
+            return elapsed >= threshold;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float UpdateStatusSeconds(float previousSeconds, float deltaSeconds, ulong mask, ulong bit)
+        {
+            float previous = math.max(0f, SanitizeFinite(previousSeconds, 0f));
+            float next = math.min(previous + math.max(0f, deltaSeconds), 65535f);
+            return math.select(0f, next, (mask & bit) != 0UL);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static StatusEffectStateDTO BuildStatusEffectState(
+            StatusEffectStateDTO previous,
+            ulong statusMask,
+            uint frame,
+            float deltaSeconds,
+            uint traumaMask,
+            float toxemia01,
+            float narcosis01,
+            float fatigueMultiplier,
+            float bloodOxygen01)
+        {
+            uint faultMask = 0u;
+            faultMask |= math.select(1u, 0u, math.isfinite(previous.BleedingSeconds));
+            faultMask |= math.select(2u, 0u, math.isfinite(previous.PoisonSeconds));
+            faultMask |= math.select(4u, 0u, math.isfinite(previous.StunSeconds));
+            faultMask |= math.select(8u, 0u, math.isfinite(previous.RadiationDose01));
+
+            StatusEffectStateDTO next = default;
+            next.StatusEffectMask = statusMask;
+            next.BleedingSeconds = UpdateStatusSeconds(previous.BleedingSeconds, deltaSeconds, statusMask, ShinobuStatusEffectBits.Bleeding);
+            next.PoisonSeconds = UpdateStatusSeconds(previous.PoisonSeconds, deltaSeconds, statusMask, ShinobuStatusEffectBits.Poison);
+            next.StunSeconds = UpdateStatusSeconds(previous.StunSeconds, deltaSeconds, statusMask, ShinobuStatusEffectBits.Stun);
+            next.BleedingSeverity01 = math.select(0f, math.saturate(0.25f + CountFirstEightBits(traumaMask & ShinobuTraumaBits.Laceration) * 0.25f), (statusMask & ShinobuStatusEffectBits.Bleeding) != 0UL);
+            next.PoisonSeverity01 = math.select(0f, math.saturate(SanitizeUnit(toxemia01)), (statusMask & ShinobuStatusEffectBits.Poison) != 0UL);
+            next.SuffocationSeverity01 = math.select(0f, math.saturate(1f - SanitizeUnit(bloodOxygen01)), (statusMask & ShinobuStatusEffectBits.Hypoxia) != 0UL);
+            next.NarcosisSeverity01 = math.select(0f, SanitizeUnit(narcosis01), (statusMask & ShinobuStatusEffectBits.Narcosis) != 0UL);
+            next.Fatigue01 = math.saturate((SanitizeFinite(fatigueMultiplier, 1f) - 1f) * 0.5f);
+            next.OxygenDebt01 = math.saturate(1f - SanitizeUnit(bloodOxygen01));
+            float radiationDose = math.max(0f, SanitizeFinite(previous.RadiationDose01, 0f));
+            float radiationActive = math.select(0f, 1f, (statusMask & ShinobuStatusEffectBits.Radiation) != 0UL);
+            next.RadiationDose01 = math.saturate(math.select(math.max(0f, radiationDose - deltaSeconds * 0.05f), math.max(radiationDose, radiationActive), radiationActive > 0f));
+            next.LastTransitionFrame = previous.StatusEffectMask == statusMask ? previous.LastTransitionFrame : frame;
+            next.SanitizedFaultMask = previous.SanitizedFaultMask | faultMask;
+
+            ulong hash = 1469598103934665603UL;
+            hash = MixStateHash(hash, (uint)statusMask);
+            hash = MixStateHash(hash, (uint)(statusMask >> 32));
+            hash = MixStateHash(hash, math.asuint(next.BleedingSeconds));
+            hash = MixStateHash(hash, math.asuint(next.PoisonSeconds));
+            hash = MixStateHash(hash, math.asuint(next.StunSeconds));
+            hash = MixStateHash(hash, math.asuint(next.RadiationDose01));
+            hash = MixStateHash(hash, frame);
+            next.StateHash = hash;
+            return next;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveActiveCompartmentCount(float globalQualityWeight)
         {
             return ShinobuPhysiologyConstants.TissueCompartmentCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 ApproxExpNegPade33Reduced(float4 value)
+        {
+            return MathLodApproximation.ApproxExpNegPade33Reduced(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproxExpNegPade33Reduced(float value)
+        {
+            return MathLodApproximation.ApproxExpNegPade33Reduced(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproxExpPositivePade33Reduced(float value)
+        {
+            return MathLodApproximation.ApproxExpPositivePade33Reduced(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float OneMinusApproxExpNegPade33Reduced(float value)
+        {
+            return MathLodApproximation.OneMinusApproxExpNegPade33Reduced(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveEmergencyHalfTimeSeconds(int index)
+        {
+            switch (index)
+            {
+                case 0: return 5f * 60f;
+                case 1: return 38.3f * 60f;
+                default: return 187f * 60f;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveEmergencyBuhlmannA(int index)
+        {
+            switch (index)
+            {
+                case 0: return 1.2599f;
+                case 1: return 0.5933f;
+                default: return 0.3497f;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveEmergencyBuhlmannB(int index)
+        {
+            switch (index)
+            {
+                case 0: return 0.5050f;
+                case 1: return 0.8434f;
+                default: return 0.9319f;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveEmergencyMValueRatio(int index)
+        {
+            return math.max(1.08f, 1.58f - index * 0.028f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveBuhlmannAllowedAmbientPressure(float tensionAtm, float a, float b)
+        {
+            float safeTension = math.max(0f, SanitizeFinite(tensionAtm, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm));
+            float safeA = math.max(0f, SanitizeFinite(a, 0.5f));
+            float safeB = math.clamp(SanitizeFinite(b, 0.8f), 0.1f, 2f);
+            return math.max(0.1f, (safeTension - safeA) * safeB);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -259,48 +472,22 @@ namespace Hecton8.Physiology
                 : default;
             float halfTime = ShinobuPhysiologyJobMath.SafePositive(
                 coefficient.HalfTimeSeconds,
-                ResolveEmergencyHalfTimeSeconds(tissueIndex));
+                ShinobuPhysiologyJobMath.ResolveEmergencyHalfTimeSeconds(tissueIndex));
+            float buhlmannB = math.clamp(
+                ShinobuPhysiologyJobMath.SanitizeFinite(coefficient.BuhlmannB, ShinobuPhysiologyJobMath.ResolveEmergencyBuhlmannB(tissueIndex)),
+                0.1f,
+                2f);
             float mValue = math.max(1.01f, ShinobuPhysiologyJobMath.SanitizeFinite(
                 coefficient.MValueRatio,
-                ResolveEmergencyMValueRatio(tissueIndex)));
+                ShinobuPhysiologyJobMath.ResolveEmergencyMValueRatio(tissueIndex)));
 
             TissueCompartments[index] = new TissueCompartmentDTO
             {
                 NitrogenTension = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm,
                 Halftime = halfTime,
-                MValue = mValue,
+                MValue = buhlmannB > 0f ? buhlmannB : mValue,
                 Flags = 0u
             };
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveEmergencyHalfTimeSeconds(int index)
-        {
-            switch (index)
-            {
-                case 0: return 5f * 60f;
-                case 1: return 8f * 60f;
-                case 2: return 12.5f * 60f;
-                case 3: return 18.5f * 60f;
-                case 4: return 27f * 60f;
-                case 5: return 38.3f * 60f;
-                case 6: return 54.3f * 60f;
-                case 7: return 77f * 60f;
-                case 8: return 109f * 60f;
-                case 9: return 146f * 60f;
-                case 10: return 187f * 60f;
-                case 11: return 239f * 60f;
-                case 12: return 305f * 60f;
-                case 13: return 390f * 60f;
-                case 14: return 498f * 60f;
-                default: return 635f * 60f;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveEmergencyMValueRatio(int index)
-        {
-            return math.max(1.08f, 1.58f - index * 0.028f);
         }
     }
 
@@ -308,7 +495,7 @@ namespace Hecton8.Physiology
     /// Deterministic crash-dive profile generator: descent, bottom dwell, emergency ascent.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct MockDiveProfileJob : IJobParallelFor
+    public struct GenerateMockDiveProfileJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<DiveProfileSampleDTO> Samples;
         public float SampleStepSeconds;
@@ -528,10 +715,17 @@ namespace Hecton8.Physiology
                 MockCombatDamageSignal damage = CombatSignals[index];
                 if ((damage.Flags & 1u) != 0u)
                 {
-                    int traumaType = math.clamp(damage.TraumaType, 0, 3);
-                    vital.ActiveTraumaMask |= 1u << traumaType;
+                    int traumaType = math.clamp(damage.TraumaType, 0, 7);
+                    uint appliedTraumaMask = 1u << traumaType;
+                    appliedTraumaMask |= ShinobuPhysiologyJobMath.ResolveTraumaMaskFromCombatStatus(damage.CombatStatusMask);
+                    vital.ActiveTraumaMask |= appliedTraumaMask;
+                    vital.ActiveTraumaRefreshMask |= appliedTraumaMask;
+                    vital.LastTraumaRefreshFrame = damage.Frame != 0u ? damage.Frame : vital.LastTraumaRefreshFrame;
                     float severity = ShinobuPhysiologyJobMath.SanitizeUnit(damage.Severity01);
+                    if ((appliedTraumaMask & ShinobuTraumaBits.Poison) != 0u)
+                        scalar.Toxemia = math.max(scalar.Toxemia, severity);
                     vital.HeartRate = math.max(vital.HeartRate, 70f + severity * 45f);
+                    scalar.StatusEffectMask = ShinobuPhysiologyJobMath.BuildStatusEffectMask(scalar.StatusFlags, vital.ActiveTraumaMask, damage.CombatStatusMask);
                     damage.Flags = 0u;
                     CombatSignals[index] = damage;
                 }
@@ -544,6 +738,7 @@ namespace Hecton8.Physiology
                 {
                     vital.Adrenaline = math.max(vital.Adrenaline, ShinobuPhysiologyJobMath.SanitizeUnit(predator.Aggro01));
                     scalar.StatusFlags |= ShinobuPhysiologyFlags.AdrenalineSeen;
+                    scalar.StatusEffectMask = ShinobuPhysiologyJobMath.BuildStatusEffectMask(scalar.StatusFlags, vital.ActiveTraumaMask, 0u);
                     predator.Flags = 0u;
                     PredatorSignals[index] = predator;
                 }
@@ -558,6 +753,11 @@ namespace Hecton8.Physiology
                         scalar.Toxemia = ShinobuPhysiologyJobMath.SanitizeUnit(toxemia.Absolute01);
                     else
                         scalar.Toxemia = math.saturate(scalar.Toxemia + ShinobuPhysiologyJobMath.SanitizeFinite(toxemia.Delta01, 0f));
+
+                    if (scalar.Toxemia > 0.0001f)
+                        vital.ActiveTraumaMask |= ShinobuTraumaBits.Poison;
+                    else
+                        vital.ActiveTraumaMask &= ~ShinobuTraumaBits.Poison;
 
                     toxemia.Flags = 0u;
                     ToxemiaSignals[index] = toxemia;
@@ -592,6 +792,7 @@ namespace Hecton8.Physiology
                 220f);
             vital.Adrenaline = ShinobuPhysiologyJobMath.SanitizeUnit(vital.Adrenaline);
             scalar.Toxemia = ShinobuPhysiologyJobMath.SanitizeUnit(scalar.Toxemia);
+            scalar.StatusEffectMask = ShinobuPhysiologyJobMath.BuildStatusEffectMask(scalar.StatusFlags, vital.ActiveTraumaMask, 0u);
 
             Vitals[index] = vital;
             Scalars[index] = scalar;
@@ -599,7 +800,7 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
-    /// Haldanean blood-gas tension integrator. All 16 tissue compartments are authority state.
+    /// Pragmatic three-lane blood-gas tension integrator.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct IntegrateBloodGasTensionsJob : IJobParallelFor
@@ -607,19 +808,27 @@ namespace Hecton8.Physiology
         [NoAlias] public NativeArray<PhysiologyDTO> Vitals;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1: Execute(index) owns exactly one entity tissue slice:
         // [index * TissueCompartmentCount, index * TissueCompartmentCount + TissueCompartmentCount).
-        // SAFETY_JUSTIFICATION_PARAGRAPH_2: No worker writes outside its derived slice, and the bounds guard
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: Rejected direct indexed NativeArray writes because CS1612 copies
+        // block in-place mutation of the 3-row slice; unsafe refs keep the Burst loop contiguous.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: No worker writes outside its derived slice, and the bounds guard
         // proves the entire slice is inside the Vault array before unsafe ref mutation begins.
-        // SAFETY_JUSTIFICATION_PARAGRAPH_3: ShinobuPhysiologyRuntime locks this Vault lane before scheduling
+        // SAFETY_JUSTIFICATION_PARAGRAPH_4: ShinobuPhysiologyRuntime locks this Vault lane before scheduling
         // the job and releases it only after the dispatcher-owned completion fence has run.
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<TissueCompartmentDTO> TissueCompartments;
         [NoAlias] public NativeArray<DecompressionStateDTO> DecompressionStates;
+        [ReadOnly, NoAlias] public NativeArray<HaldaneTissueCoefficientDTO> TissueCoefficients;
         [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
         [ReadOnly, NoAlias] public NativeArray<GasPhysiologyStateDTO> GasStates;
         [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
         [WriteOnly, NoAlias] public NativeQueue<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> PhysiologyWriterBudget;
+        [WriteOnly, NoAlias] public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> DamageWriterBudget;
         public PhysiologyTuningDTO Tuning;
         public float DeltaSeconds;
         public float GlobalQualityWeight;
+        public uint Frame;
+        public uint PlayerTargetHash;
         public int Count;
         public byte EmitPhysiologySignal;
 
@@ -654,65 +863,66 @@ namespace Hecton8.Physiology
             ambientNitrogenPressure = math.max(0f, ambientNitrogenPressure);
             float tissueEquilibriumPressure = ambientNitrogenPressure;
             float nitrogenScale = math.max(0.001f, tuning.NitrogenUptakeRate * tuning.HaldaneTimeScale);
-            int activeCompartments = ShinobuPhysiologyJobMath.ResolveActiveCompartmentCount(GlobalQualityWeight);
+            int activeCompartments = ShinobuPhysiologyConstants.TissueCompartmentCount;
             float maxTissue = 0f;
             float risk = 0f;
+            float minGradient = 128f;
             uint overMask = 0u;
             uint invalidMath = 0u;
 
             DecompressionStateDTO state = DecompressionStates[index];
-            state.AmbientPressure = ambient;
-            state.AscentRate = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(env.AscentRateMetersPerSecond, 0f));
+            uint previousWarningStatus = Scalars[index].StatusFlags &
+                                         ShinobuPhysiologyConstants.DecompressionWarningStatusMask;
+            uint previousWarningFrame = state.LastWarningFrame;
+            float previousAmbient = state.CurrentAmbientPressure > 0f
+                ? ShinobuPhysiologyJobMath.SanitizeFinite(state.CurrentAmbientPressure, ambient)
+                : ambient;
+            float ascentRate = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(env.AscentRateMetersPerSecond, 0f));
+            state.CurrentAmbientPressure = ambient;
 
-            float* stateTissues = state.TissueTensions;
-            // The full 16-row entity slice is bounds-checked above; the runtime locks this Vault lane before scheduling.
+            float gasNitrogenFraction = math.saturate(ambientNitrogenPressure * math.rcp(math.max(0.0001f, ambient)));
+            float inspiredStart = math.max(0f, previousAmbient * gasNitrogenFraction);
+            float inspiredEnd = ambientNitrogenPressure;
+            float schreinerRate = (inspiredEnd - inspiredStart) * math.rcp(dt);
+
+            // The full 3-row entity slice is bounds-checked above; the runtime locks this Vault lane before scheduling.
             void* tissueBasePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(TissueCompartments);
             int tissueStride = UnsafeUtility.SizeOf<TissueCompartmentDTO>();
             for (int tissueIndex = 0; tissueIndex < ShinobuPhysiologyConstants.TissueCompartmentCount; tissueIndex++)
             {
-                bool evaluateTissue = tissueIndex < activeCompartments - 1 ||
-                                      tissueIndex == ShinobuPhysiologyConstants.TissueCompartmentCount - 1;
-                ref TissueCompartmentDTO tissue = ref UnsafeUtility.AsRef<TissueCompartmentDTO>(
-                    (byte*)tissueBasePtr + ((compartmentBase + tissueIndex) * tissueStride));
-                float halfTime = ShinobuPhysiologyJobMath.SafePositive(tissue.Halftime, 300f);
-                if (!math.isfinite(tissue.NitrogenTension) || !math.isfinite(tissue.Halftime) || !math.isfinite(tissue.MValue))
+                ref TissueCompartmentDTO tissue = ref UnsafeUtility.AsRef<TissueCompartmentDTO>((byte*)tissueBasePtr + ((compartmentBase + tissueIndex) * tissueStride));
+                HaldaneTissueCoefficientDTO coefficient = ResolveCoefficient(tissueIndex);
+                float halfTime = ResolveHalfTime(tissue, coefficient, tissueIndex);
+                float k = ResolveK(coefficient, halfTime);
+                if (!math.isfinite(tissue.NitrogenTension) || !math.isfinite(halfTime))
                     invalidMath = ShinobuPhysiologyFlags.InvalidMath;
+
                 float oldTension = ShinobuPhysiologyJobMath.SanitizeFinite(tissue.NitrogenTension, tissueEquilibriumPressure);
-                float next = oldTension;
-                if (evaluateTissue)
+                float effectiveK = math.max(k * nitrogenScale, 0.0001f);
+                float inverseK = math.rcp(effectiveK);
+                float decay = ShinobuPhysiologyJobMath.ApproxExpNegPade33Reduced(effectiveK * dt);
+                float next = inspiredStart + schreinerRate * (dt - inverseK) - (inspiredStart - oldTension - schreinerRate * inverseK) * decay;
+                if (!math.isfinite(next))
                 {
-                    float k = 0.69314718056f * math.rcp(halfTime);
-                    next = tissueEquilibriumPressure + (oldTension - tissueEquilibriumPressure) * math.exp(-k * dt * nitrogenScale);
-                    if (!math.isfinite(next))
-                    {
-                        next = tissueEquilibriumPressure;
-                        invalidMath = ShinobuPhysiologyFlags.InvalidMath;
-                    }
+                    invalidMath = ShinobuPhysiologyFlags.InvalidMath;
+                    next = tissueEquilibriumPressure;
                 }
 
-                tissue.NitrogenTension = next;
-                tissue.Halftime = halfTime;
-                tissue.Flags = evaluateTissue ? 1u : 0u;
-                stateTissues[tissueIndex] = next;
-
-                float mValue = math.max(0.1f, ambient * math.max(1.01f, ShinobuPhysiologyJobMath.SanitizeFinite(tissue.MValue, 1.35f)));
-                float excess = next - mValue;
-                if (excess > 0f)
-                {
-                    overMask |= 1u << tissueIndex;
-                    float compartmentRisk = excess * tuning.BendsRiskScale * math.rcp(math.max(0.0001f, mValue));
-                    risk = math.max(risk, compartmentRisk);
-                }
-
-                maxTissue = math.max(maxTissue, next);
+                ApplyLaneResult(tissueIndex, next, ambient, tuning.BendsRiskScale, coefficient, ref tissue, ref state, true, ref maxTissue, ref risk, ref minGradient, ref overMask);
             }
 
+            state.GradientAdvantage = minGradient;
+            state.BubbleFlags = overMask;
+            float correctedRisk = math.saturate(risk * ShinobuPhysiologyConstants.ThreeTissueRiskCorrection);
+            state.Supersaturation01 = correctedRisk;
+            state.AscentRateMetersPerSecond = ascentRate;
+            state.Frame = Frame;
             PhysiologyDTO vital = Vitals[index];
             PhysiologyScalarsDTO scalar = Scalars[index];
             float nitrogenNarcosis = GasStates.IsCreated && (uint)index < (uint)GasStates.Length && gas.NarcosisLevel01 > 0f
                 ? ShinobuPhysiologyJobMath.SanitizeUnit(gas.NarcosisLevel01)
                 : ShinobuPhysiologyJobMath.ResolveNitrogenNarcosis01(ambientNitrogenPressure, tuning);
-            float supersaturation = math.saturate(risk);
+            float supersaturation = correctedRisk;
             scalar.NarcosisSeverity = nitrogenNarcosis;
             scalar.BendsRisk = supersaturation;
             scalar.TissueOverMValueMask = overMask;
@@ -722,35 +932,145 @@ namespace Hecton8.Physiology
             scalar.StatusFlags |= supersaturation >= 0.98f ? ShinobuPhysiologyFlags.FatalBends : 0u;
             scalar.StatusFlags |= (env.Flags & MockPressureSignal.HyperbaricTreatmentFlag) != 0u ? ShinobuPhysiologyFlags.HyperbaricOverride : 0u;
             scalar.StatusFlags |= invalidMath;
+            scalar.StatusEffectMask = ShinobuPhysiologyJobMath.BuildStatusEffectMask(scalar.StatusFlags, vital.ActiveTraumaMask, 0u);
             vital.TissueNitrogen = maxTissue;
 
-            Vitals[index] = vital;
-            Scalars[index] = scalar;
-            DecompressionStates[index] = state;
+            uint currentWarningStatus = scalar.StatusFlags &
+                                        ShinobuPhysiologyConstants.DecompressionWarningStatusMask;
+            uint signalFrame = Frame != 0u ? Frame : env.Frame;
+            uint warningFrameDelta = signalFrame >= previousWarningFrame
+                ? signalFrame - previousWarningFrame
+                : ShinobuPhysiologyConstants.DecompressionWarningCadenceFrames;
+            bool warningStateChanged = currentWarningStatus != previousWarningStatus;
+            bool warningCadenceElapsed = previousWarningFrame == 0u ||
+                                         warningFrameDelta >= ShinobuPhysiologyConstants.DecompressionWarningCadenceFrames;
+            bool shouldEmitWarningSignal = warningStateChanged ||
+                                           (currentWarningStatus != 0u && warningCadenceElapsed);
 
-            if (EmitPhysiologySignal != 0 && index == 0)
+            Vitals[index] = vital;
+
+            if (EmitPhysiologySignal != 0 && index == 0 && shouldEmitWarningSignal)
             {
+                state.LastWarningFrame = signalFrame;
+                state.WarningPulseCount++;
+                float decompressionStress01 = math.saturate(math.max(
+                    supersaturation,
+                    (currentWarningStatus & (ShinobuPhysiologyFlags.FatalBends | ShinobuPhysiologyFlags.InvalidMath)) != 0u ? 1f : 0f));
                 PhysiologyStateSignal signal = default;
-                signal.PlayerStress01 = math.saturate(math.max(supersaturation, nitrogenNarcosis));
+                signal.PlayerStress01 = decompressionStress01;
                 signal.O2DrainMultiplier = math.max(1f, ambient);
-                signal.Recovery01 = 1f - supersaturation;
-                signal.Frame = env.Frame;
+                signal.Recovery01 = 1f - decompressionStress01;
+                signal.Frame = signalFrame;
                 signal.Cause = PhysiologyStateSignal.CauseDecompression;
-                signal.Flags = (byte)math.select(0, 1, supersaturation > 0f);
+                signal.Flags = (byte)math.select(0, 1, decompressionStress01 > 0f);
                 signal.Supersaturation01 = supersaturation;
                 signal.Narcosis01 = nitrogenNarcosis;
                 signal.AmbientPressureAtm = ambient;
                 signal.NitrogenLoadAtm = maxTissue;
-                signal.AscentRateMetersPerSecond = state.AscentRate;
+                signal.AscentRateMetersPerSecond = ascentRate;
                 signal.TissueOverMValueMask = overMask;
                 signal.SourceHash = ShinobuPhysiologyConstants.SourceHash;
                 signal.EntityIndex = index;
                 signal.ActiveCompartments = (byte)activeCompartments;
-                signal.FatalSeverity = (byte)math.round(supersaturation * 255f);
+                signal.FatalSeverity = (byte)math.round(decompressionStress01 * 255f);
                 signal.StatusFlags = scalar.StatusFlags;
-                PhysiologyWriter.Enqueue(signal);
+                SignalBus<PhysiologyStateSignal>.TryEnqueueBounded(PhysiologyWriter, PhysiologyWriterBudget, signal);
             }
+
+            uint targetHash = PlayerTargetHash != 0u ? PlayerTargetHash : ShinobuPhysiologyConstants.PlayerTargetHash;
+            if (EmitPhysiologySignal != 0 && index == 0 && supersaturation > 0f && targetHash != 0u)
+            {
+                CombatDamageSignal damage = default;
+                damage.ImpactAup = double3.zero;
+                damage.Direction = new float3(0f, 1f, 0f);
+                damage.Magnitude = supersaturation * dt * math.max(0.1f, tuning.BendsRiskScale) * 12f;
+                damage.DamageType = ShinobuPhysiologyConstants.CombatDamageTypeBarotrauma;
+                damage.TargetHash = targetHash;
+                damage.SourceHash = ShinobuPhysiologyConstants.SourceHash;
+                damage.Frame = signalFrame;
+                damage.SourceId = unchecked((ushort)ShinobuPhysiologyConstants.SourceHash);
+                damage.TargetId = 0;
+                damage.Channel = 0;
+                damage.Flags = CombatDamageSignal.DirectRuntimeFlag;
+                SignalBus<CombatDamageSignal>.TryEnqueueBounded(DamageWriter, DamageWriterBudget, damage);
+            }
+
+            Scalars[index] = scalar;
+            DecompressionStates[index] = state;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private HaldaneTissueCoefficientDTO ResolveCoefficient(int tissueIndex)
+        {
+            return TissueCoefficients.IsCreated && (uint)tissueIndex < (uint)TissueCoefficients.Length
+                ? TissueCoefficients[tissueIndex]
+                : default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveHalfTime(TissueCompartmentDTO tissue, HaldaneTissueCoefficientDTO coefficient, int tissueIndex)
+        {
+            float fallback = ShinobuPhysiologyJobMath.SafePositive(tissue.Halftime, ShinobuPhysiologyJobMath.ResolveEmergencyHalfTimeSeconds(tissueIndex));
+            return ShinobuPhysiologyJobMath.SafePositive(coefficient.HalfTimeSeconds, fallback);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveK(HaldaneTissueCoefficientDTO coefficient, float halfTime)
+        {
+            float fallbackK = 0.69314718056f * math.rcp(math.max(1f, halfTime));
+            return ShinobuPhysiologyJobMath.SafePositive(coefficient.K, fallbackK);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveBuhlmannA(HaldaneTissueCoefficientDTO coefficient, int tissueIndex)
+        {
+            return math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(coefficient.BuhlmannA, ShinobuPhysiologyJobMath.ResolveEmergencyBuhlmannA(tissueIndex)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveBuhlmannB(HaldaneTissueCoefficientDTO coefficient, int tissueIndex)
+        {
+            return math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(coefficient.BuhlmannB, ShinobuPhysiologyJobMath.ResolveEmergencyBuhlmannB(tissueIndex)), 0.1f, 2f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ApplyLaneResult(
+            int tissueIndex,
+            float next,
+            float ambient,
+            float bendsRiskScale,
+            HaldaneTissueCoefficientDTO coefficient,
+            ref TissueCompartmentDTO tissue,
+            ref DecompressionStateDTO state,
+            bool evaluated,
+            ref float maxTissue,
+            ref float risk,
+            ref float minGradient,
+            ref uint overMask)
+        {
+            float halfTime = ResolveHalfTime(tissue, coefficient, tissueIndex);
+            float a = ResolveBuhlmannA(coefficient, tissueIndex);
+            float b = ResolveBuhlmannB(coefficient, tissueIndex);
+            tissue.NitrogenTension = next;
+            tissue.Halftime = halfTime;
+            tissue.MValue = b;
+            tissue.Flags = (tissue.Flags & ShinobuPhysiologyFlags.CsvOverride) | (evaluated ? 1u : 0u);
+
+            float allowedPressure = ShinobuPhysiologyJobMath.ResolveBuhlmannAllowedAmbientPressure(next, a, b);
+            state.SetTissueTensionN2(tissueIndex, next);
+            state.SetAllowedAmbientPressure(tissueIndex, allowedPressure);
+            float gradient = ambient - allowedPressure;
+            minGradient = math.min(minGradient, gradient);
+            if (gradient < 0f)
+            {
+                overMask |= 1u << tissueIndex;
+                float compartmentRisk = -gradient * bendsRiskScale * math.rcp(math.max(0.0001f, ambient));
+                risk = math.max(risk, compartmentRisk);
+            }
+
+            maxTissue = math.max(maxTissue, next);
+        }
+
     }
 
     /// <summary>
@@ -763,12 +1083,11 @@ namespace Hecton8.Physiology
         [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
         [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
         [WriteOnly, NoAlias] public NativeQueue<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
-        [WriteOnly, NoAlias] public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> PhysiologyWriterBudget;
         public GasPhysiologyTuningDTO GasTuning;
         public float DeltaSeconds;
         public float GlobalQualityWeight;
         public uint Frame;
-        public uint PlayerTargetHash;
         public int Count;
         public byte EmitSignals;
 
@@ -785,6 +1104,10 @@ namespace Hecton8.Physiology
             float dt = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(DeltaSeconds, 0.016f), 0.0001f, ShinobuPhysiologyConstants.MaxSimulationStepSeconds);
             GasPhysiologyStateDTO gas = GasStates[index];
             PhysiologyScalarsDTO scalar = Scalars[index];
+            MockEnvironmentVitalsSignal env = Environment.IsCreated && Environment.Length > 0 ? Environment[0] : default;
+            uint signalFrame = Frame != 0u ? Frame : env.Frame;
+            uint previousGasStatus = gas.Flags & ShinobuPhysiologyConstants.GasStatusWarningMask;
+            uint previousWarningFrame = gas.LastWarningFrame;
 
             float ppO2 = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.OxygenPartialPressure, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm));
             float ppN2 = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.NitrogenPartialPressure, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm));
@@ -792,7 +1115,8 @@ namespace Hecton8.Physiology
 
             float oxygenOverSafe = math.max(0f, ppO2 - gasTuning.CnsToxicityStartAtm);
             float oxygenExtreme = math.max(0f, ppO2 - gasTuning.CnsToxicityExtremeAtm);
-            float cnsAccumulation = oxygenOverSafe * gasTuning.CnsAccumulationRate + (math.exp(math.min(4f, oxygenExtreme)) - 1f) * gasTuning.CnsExtremeRate;
+            float cnsAccumulation = oxygenOverSafe * gasTuning.CnsAccumulationRate +
+                (ShinobuPhysiologyJobMath.ApproxExpPositivePade33Reduced(oxygenExtreme) - 1f) * gasTuning.CnsExtremeRate;
             float cnsRecovery = ppO2 < gasTuning.CnsToxicityStartAtm
                 ? (gasTuning.CnsRecoveryPerSecond + (gasTuning.CnsToxicityStartAtm - ppO2) * gasTuning.CnsRecoveryPressureScale)
                 : 0f;
@@ -832,18 +1156,33 @@ namespace Hecton8.Physiology
             scalar.Toxemia = math.max(ShinobuPhysiologyJobMath.SanitizeUnit(scalar.Toxemia), math.max(co2Toxicity01, gas.CnsToxicity01));
             scalar.FatigueMultiplier = math.max(ShinobuPhysiologyJobMath.SanitizeFinite(scalar.FatigueMultiplier, 1f), gas.StaminaDrainRate);
             scalar.StatusFlags = status | gasFlags;
+            scalar.StatusEffectMask = ShinobuPhysiologyJobMath.BuildStatusEffectMask(scalar.StatusFlags, 0u, 0u);
+
+            uint currentGasStatus = gasFlags & ShinobuPhysiologyConstants.GasStatusWarningMask;
+            uint warningFrameDelta = signalFrame >= previousWarningFrame
+                ? signalFrame - previousWarningFrame
+                : ShinobuPhysiologyConstants.GasStatusWarningCadenceFrames;
+            bool warningStateChanged = currentGasStatus != previousGasStatus;
+            bool warningCadenceElapsed = previousWarningFrame == 0u ||
+                                         warningFrameDelta >= ShinobuPhysiologyConstants.GasStatusWarningCadenceFrames;
+            bool shouldEmitGasSignal = warningStateChanged ||
+                                       (currentGasStatus != 0u && warningCadenceElapsed);
+
+            if (EmitSignals != 0 && index == 0 && shouldEmitGasSignal)
+            {
+                gas.LastWarningFrame = signalFrame;
+            }
 
             GasStates[index] = gas;
             Scalars[index] = scalar;
 
-            if (EmitSignals != 0 && index == 0)
+            if (EmitSignals != 0 && index == 0 && shouldEmitGasSignal)
             {
-                MockEnvironmentVitalsSignal env = Environment.IsCreated && Environment.Length > 0 ? Environment[0] : default;
                 PhysiologyStateSignal signal = default;
                 signal.PlayerStress01 = gasStress01;
                 signal.O2DrainMultiplier = gas.StaminaDrainRate;
                 signal.Recovery01 = 1f - gasStress01;
-                signal.Frame = Frame;
+                signal.Frame = signalFrame;
                 signal.Cause = ShinobuPhysiologyConstants.GasToxicitySignalCause;
                 signal.Flags = (byte)math.select(0, 1, gasStress01 > 0f);
                 signal.GasCnsSeverity = (byte)math.round(math.saturate(gas.CnsToxicity01) * 255f);
@@ -859,27 +1198,11 @@ namespace Hecton8.Physiology
                 signal.ActiveCompartments = (byte)ShinobuPhysiologyJobMath.ResolveActiveCompartmentCount(GlobalQualityWeight);
                 signal.FatalSeverity = (byte)math.round(gasStress01 * 255f);
                 signal.StatusFlags = scalar.StatusFlags;
-                PhysiologyWriter.Enqueue(signal);
-
-                float damageMagnitude = math.max(0f, math.max(gasStress01, anoxia01) - gasTuning.ToxicDamageStart01) * dt * gasTuning.ToxicDamagePerSecond;
-                uint targetHash = PlayerTargetHash != 0u ? PlayerTargetHash : ShinobuPhysiologyConstants.PlayerTargetHash;
-                if (damageMagnitude > 0f && targetHash != 0u)
-                {
-                    CombatDamageSignal damage = default;
-                    damage.ImpactAup = double3.zero;
-                    damage.Direction = new float3(0f, 1f, 0f);
-                    damage.Magnitude = damageMagnitude;
-                    damage.DamageType = ShinobuPhysiologyConstants.CombatDamageTypeToxic;
-                    damage.TargetHash = targetHash;
-                    damage.SourceHash = ShinobuPhysiologyConstants.SourceHash;
-                    damage.Frame = Frame;
-                    damage.SourceId = unchecked((ushort)ShinobuPhysiologyConstants.SourceHash);
-                    damage.TargetId = 0;
-                    damage.Channel = 0;
-                    damage.Flags = CombatDamageSignal.DirectRuntimeFlag;
-                    DamageWriter.Enqueue(damage);
-                }
+                SignalBus<PhysiologyStateSignal>.TryEnqueueBounded(PhysiologyWriter, PhysiologyWriterBudget, signal);
             }
+
+            // Gas toxicity injury is carried by scalar.Toxemia/status flags into StatusEffectStateDTO.
+            // Direct toxic CombatDamageSignal is intentionally not emitted from this job.
         }
     }
 
@@ -887,21 +1210,27 @@ namespace Hecton8.Physiology
     /// Metabolic oxygen, temperature, toxemia, adrenaline, pulse, export, and black-box writer.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct OxygenConsumptionJob : IJobParallelFor
+    public unsafe struct OxygenConsumptionJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<PhysiologyDTO> Vitals;
         [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
+        [NoAlias] public NativeArray<StatusEffectStateDTO> StatusEffects;
         [NoAlias] public NativeArray<CardiacPulseStateDTO> PulseStates;
         [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
         [ReadOnly, NoAlias] public NativeArray<GasPhysiologyStateDTO> GasStates;
         [NoAlias] public NativeArray<VitalsExportDTO> VitalsExport;
         [NoAlias] public NativeArray<PhysiologyTelemetryEntry> Telemetry;
+        [ReadOnly, NoAlias] public NativeArray<DecompressionStateDTO> DecompressionStates;
+        [NoAlias] public NativeArray<DecompressionTelemetryEntry> DecompressionTelemetry;
         [WriteOnly, NoAlias] public NativeQueue<CardiacPulseSignal>.ParallelWriter CardiacPulseWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> CardiacPulseWriterBudget;
         public PhysiologyTuningDTO Tuning;
         public GasPhysiologyTuningDTO GasTuning;
         public float DeltaSeconds;
+        public float GlobalQualityWeight;
         public uint Frame;
         public int TelemetryCursor;
+        public int DecompressionTelemetryCursor;
         public int Count;
         public byte EmitPulseSignals;
 
@@ -910,6 +1239,7 @@ namespace Hecton8.Physiology
             if ((uint)index >= (uint)Count ||
                 (uint)index >= (uint)Vitals.Length ||
                 (uint)index >= (uint)Scalars.Length ||
+                (uint)index >= (uint)StatusEffects.Length ||
                 (uint)index >= (uint)PulseStates.Length ||
                 (uint)index >= (uint)VitalsExport.Length)
             {
@@ -931,7 +1261,7 @@ namespace Hecton8.Physiology
                 : default;
             uint status = scalar.StatusFlags;
 
-            int traumaCount = ShinobuPhysiologyJobMath.CountFirstFourBits(vital.ActiveTraumaMask);
+            int traumaCount = ShinobuPhysiologyJobMath.CountFirstEightBits(vital.ActiveTraumaMask);
             float traumaSeverity = traumaCount;
             float adrenaline = ShinobuPhysiologyJobMath.SanitizeUnit(vital.Adrenaline);
             if (adrenaline > 0f)
@@ -954,7 +1284,7 @@ namespace Hecton8.Physiology
             float ambientTemperature = ShinobuPhysiologyJobMath.SanitizeFinite(env.AmbientTemperatureCelsius, 4f);
             bool insulated = (env.InventoryMask & ShinobuInventoryBits.ThermalSuitUpgrade) != 0u;
             float insulation = insulated ? tuning.ThermalSuitInsulation01 : 0f;
-            float cooling = 1f - math.exp(-tuning.HypothermiaCoolingRate * dt);
+            float cooling = ShinobuPhysiologyJobMath.OneMinusApproxExpNegPade33Reduced(tuning.HypothermiaCoolingRate * dt);
             vital.CoreTemperature += (ambientTemperature - vital.CoreTemperature) * cooling * (1f - insulation);
             vital.CoreTemperature = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(vital.CoreTemperature, 37f), 20f, 43f);
             scalar.HypothermiaShiver = math.saturate((35f - vital.CoreTemperature) * math.rcp(3f));
@@ -1000,7 +1330,7 @@ namespace Hecton8.Physiology
                 math.max(1f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.StaminaDrainRate, 1f));
 
             scalar.OxygenDrainPerSecond = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(o2Drain, tuning.BaseO2DrainPerSecond));
-            float saturationBlend = 1f - math.exp(-dt * 0.6f);
+            float saturationBlend = ShinobuPhysiologyJobMath.OneMinusApproxExpNegPade33Reduced(dt * 0.6f);
             vital.BloodOxygen = math.lerp(vital.BloodOxygen, oxygenAvailability01, saturationBlend);
             float hypoxicDrainScale = 0.2f + hypoxia01 + carbonDioxideToxicity01 * 0.5f;
             vital.BloodOxygen = math.max(tuning.MinOxygen01, vital.BloodOxygen - scalar.OxygenDrainPerSecond * hypoxicDrainScale * dt);
@@ -1035,7 +1365,7 @@ namespace Hecton8.Physiology
                         signal.PulseCount = pulse.PulseCount;
                         signal.Flags = (byte)((adrenaline > 0.25f ? CardiacPulseSignal.FlagAdrenaline : 0) |
                                               (vital.BloodOxygen <= 0.18f ? CardiacPulseSignal.FlagOxygenCritical : 0));
-                        CardiacPulseWriter.Enqueue(signal);
+                        SignalBus<CardiacPulseSignal>.TryEnqueueBounded(CardiacPulseWriter, CardiacPulseWriterBudget, signal);
                     }
                 }
             }
@@ -1073,7 +1403,38 @@ namespace Hecton8.Physiology
                 status |= ShinobuPhysiologyFlags.InvalidMath;
             }
 
+            StatusEffectStateDTO previousStatusEffectState = StatusEffects[index];
+            uint activeTraumaMask = ShinobuPhysiologyJobMath.ClearExpiredTransientTraumaMask(
+                vital.ActiveTraumaMask,
+                vital.ActiveTraumaRefreshMask,
+                previousStatusEffectState,
+                vital.LastTraumaRefreshFrame,
+                Frame);
+            activeTraumaMask = scalar.Toxemia > 0.0001f
+                ? activeTraumaMask | ShinobuTraumaBits.Poison
+                : activeTraumaMask & ~ShinobuTraumaBits.Poison;
+            activeTraumaMask = previousStatusEffectState.StunSeconds >= 2f
+                ? activeTraumaMask & ~ShinobuTraumaBits.Stun
+                : activeTraumaMask;
+            activeTraumaMask = (status & ShinobuPhysiologyFlags.Hypoxia) != 0u
+                ? activeTraumaMask
+                : activeTraumaMask & ~ShinobuTraumaBits.Suffocation;
+            vital.ActiveTraumaMask = activeTraumaMask;
+            vital.ActiveTraumaRefreshMask = 0u;
+
             scalar.StatusFlags = status;
+            scalar.StatusEffectMask = ShinobuPhysiologyJobMath.BuildStatusEffectMask(status, activeTraumaMask, 0u);
+            StatusEffectStateDTO statusEffectState = ShinobuPhysiologyJobMath.BuildStatusEffectState(
+                previousStatusEffectState,
+                scalar.StatusEffectMask,
+                Frame,
+                dt,
+                activeTraumaMask,
+                scalar.Toxemia,
+                scalar.NarcosisSeverity,
+                scalar.FatigueMultiplier,
+                vital.BloodOxygen);
+            StatusEffects[index] = statusEffectState;
             Vitals[index] = vital;
             Scalars[index] = scalar;
             PulseStates[index] = pulse;
@@ -1096,14 +1457,16 @@ namespace Hecton8.Physiology
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(gas.OxygenPartialPressure));
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(gas.NitrogenPartialPressure));
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(gas.CarbonDioxidePartialPressure));
-                hash = ShinobuPhysiologyJobMath.MixStateHash(hash, vital.ActiveTraumaMask);
+                hash = ShinobuPhysiologyJobMath.MixStateHash(hash, (uint)statusEffectState.StatusEffectMask);
+                hash = ShinobuPhysiologyJobMath.MixStateHash(hash, (uint)(statusEffectState.StatusEffectMask >> 32));
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, status);
 
                 Telemetry[telemetryIndex] = new PhysiologyTelemetryEntry
                 {
                     StateHash = hash,
+                    StatusEffectMask = statusEffectState.StatusEffectMask,
                     Frame = Frame,
-                    ActiveTraumaMask = vital.ActiveTraumaMask,
+                    FatalFlags = fatalFlags,
                     BloodOxygen = vital.BloodOxygen,
                     NitrogenLoad = vital.TissueNitrogen,
                     CoreTemperature = vital.CoreTemperature,
@@ -1112,11 +1475,53 @@ namespace Hecton8.Physiology
                     SupersaturationScalar = scalar.BendsRisk,
                     HeartRate = vital.HeartRate,
                     Adrenaline = vital.Adrenaline,
-                    FatalFlags = fatalFlags,
                     TissueOverMValueMask = scalar.TissueOverMValueMask,
-                    DepthMeters = math.max(0f, env.DepthMeters),
                     ExecutionMicroseconds = 0f
                 };
+
+                if (DecompressionTelemetry.IsCreated && DecompressionTelemetry.Length > 0 &&
+                    DecompressionStates.IsCreated && DecompressionStates.Length > 0)
+                {
+                    int decompressionIndex = DecompressionTelemetryCursor % DecompressionTelemetry.Length;
+                    DecompressionStateDTO decompression = DecompressionStates[0];
+                    float leadingTissue = 0f;
+                    for (int tissueIndex = 0; tissueIndex < ShinobuPhysiologyConstants.TissueCompartmentCount; tissueIndex++)
+                        leadingTissue = math.max(leadingTissue, math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(decompression.GetTissueTensionN2(tissueIndex), 0f)));
+
+                    float ambient = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(decompression.CurrentAmbientPressure, env.AmbientPressureAtm));
+                    float gradient = ShinobuPhysiologyJobMath.SanitizeFinite(decompression.GradientAdvantage, 0f);
+                    float allowedAmbient = math.max(0f, ambient - gradient);
+                    uint dcsFatalFlags = fatalFlags;
+                    if (!math.isfinite(leadingTissue) ||
+                        !math.isfinite(ambient) ||
+                        !math.isfinite(gradient) ||
+                        !math.isfinite(allowedAmbient))
+                    {
+                        dcsFatalFlags |= ShinobuPhysiologyFlags.InvalidMath;
+                    }
+
+                    ulong decompressionHash = hash;
+                    decompressionHash = ShinobuPhysiologyJobMath.MixStateHash(decompressionHash, math.asuint(leadingTissue));
+                    decompressionHash = ShinobuPhysiologyJobMath.MixStateHash(decompressionHash, math.asuint(gradient));
+                    decompressionHash = ShinobuPhysiologyJobMath.MixStateHash(decompressionHash, decompression.BubbleFlags);
+                    DecompressionTelemetry[decompressionIndex] = new DecompressionTelemetryEntry
+                    {
+                        StateHash = decompressionHash,
+                        Frame = Frame,
+                        BubbleFlags = decompression.BubbleFlags,
+                        DepthMeters = math.max(0f, env.DepthMeters),
+                        AmbientPressureAtm = ambient,
+                        LeadingTissueTensionAtm = leadingTissue,
+                        AllowedAmbientPressureAtm = allowedAmbient,
+                        MValueGradientAtm = gradient,
+                        SupersaturationScalar = scalar.BendsRisk,
+                        ExecutionMicroseconds = 0f,
+                        GlobalQualityWeight = math.saturate(ShinobuPhysiologyJobMath.SanitizeFinite(GlobalQualityWeight, 1f)),
+                        TissueOverMValueMask = scalar.TissueOverMValueMask,
+                        ActiveCompartments = (uint)ShinobuPhysiologyJobMath.ResolveActiveCompartmentCount(GlobalQualityWeight),
+                        FatalFlags = dcsFatalFlags
+                    };
+                }
             }
         }
     }

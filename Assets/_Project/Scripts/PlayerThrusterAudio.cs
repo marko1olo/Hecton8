@@ -12,7 +12,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioSource))]
-    public sealed class PlayerThrusterAudio : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class PlayerThrusterAudio : MonoBehaviour, ITickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         [Header("References")]
         [SerializeField] private HectonPlayerMovement playerMovement;
@@ -103,10 +103,14 @@ namespace Hecton8.Audio
         private float _proceduralNoiseLowPass;
         private uint _proceduralNoiseState = 0xA341316Cu;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private bool _transportCoordinatorLookupAttempted;
         private PlayerTransportFeelContract _transportFeelContractCurrent;
-        private SpatialAudioManager _cachedSpatialAudioManager;
+        private ISpatialAudioSfxMixerRouteReadModel _cachedSpatialAudioSfxRoute;
+        private float _pendingUnityVolume;
+        private float _pendingUnityPitch;
+        private bool _unityOutputDirty;
 
         private void Awake()
         {
@@ -140,6 +144,8 @@ namespace Hecton8.Audio
 
             _currentVolume = 0f;
             _currentPitch = idlePitch;
+            _pendingUnityVolume = 0f;
+            _pendingUnityPitch = idlePitch;
             _modeBlend = 0f;
         }
 
@@ -177,6 +183,7 @@ namespace Hecton8.Audio
         {
             TryUnregisterHotSwapListener();
             TryUnregister();
+            TryUnregisterLateFrame();
 
             if (_audioSource != null && _audioSource.isPlaying)
                 _audioSource.Stop();
@@ -186,6 +193,7 @@ namespace Hecton8.Audio
         {
             TryUnregisterHotSwapListener();
             TryUnregister();
+            TryUnregisterLateFrame();
             if (_proceduralThrusterClip != null)
             {
                 Destroy(_proceduralThrusterClip);
@@ -218,13 +226,7 @@ namespace Hecton8.Audio
 
         public void Tick(float deltaTime)
         {
-            if (playerMovement == null || _playerRb == null || _audioSource == null)
-                return;
-
-            if (_proceduralThrusterClip == null)
-                EnsureProceduralThrusterClip();
-
-            if (_proceduralThrusterClip == null)
+            if (playerMovement == null || _playerRb == null)
                 return;
 
             float dt = deltaTime;
@@ -308,8 +310,37 @@ namespace Hecton8.Audio
             _currentVolume = math.lerp(_currentVolume, targetVolume, volumeT);
             _currentPitch = math.lerp(_currentPitch, targetPitch, pitchT);
 
-            _audioSource.volume = _currentVolume;
-            _audioSource.pitch = _currentPitch;
+            QueueUnityOutput(_currentVolume, _currentPitch);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_unityOutputDirty)
+            {
+                TryUnregisterLateFrame();
+                return;
+            }
+
+            _unityOutputDirty = false;
+            if (_proceduralThrusterClip == null)
+                EnsureProceduralThrusterClip();
+
+            AudioSource source = _audioSource;
+            if (source != null)
+            {
+                source.volume = _pendingUnityVolume;
+                source.pitch = _pendingUnityPitch;
+            }
+
+            TryUnregisterLateFrame();
+        }
+
+        private void QueueUnityOutput(float volume, float pitch)
+        {
+            _pendingUnityVolume = math.saturate(math.isfinite(volume) ? volume : 0f);
+            _pendingUnityPitch = math.clamp(math.isfinite(pitch) ? pitch : idlePitch, 0.1f, 3f);
+            _unityOutputDirty = true;
+            TryRegisterLateFrame();
         }
 
         private void EnsureProceduralThrusterClip()
@@ -349,8 +380,8 @@ namespace Hecton8.Audio
                 float white = ((noiseState >> 8) & 0xFFFF) * 0.000030518044f - 1f;
                 noiseLowPass = math.lerp(noiseLowPass, white, 0.08f);
 
-                float motor = math.sin(phase * ProceduralTwoPi) * 0.52f;
-                float whine = math.sin(whinePhase * ProceduralTwoPi) * 0.18f;
+                float motor = MathLodApproximation.ApproxSinBhaskara(phase * ProceduralTwoPi) * 0.52f;
+                float whine = MathLodApproximation.ApproxSinBhaskara(whinePhase * ProceduralTwoPi) * 0.18f;
                 data[i] = (motor + whine + noiseLowPass * 0.24f) * gain;
 
                 phase += baseStep;
@@ -494,12 +525,12 @@ namespace Hecton8.Audio
 
         private void RefreshRuntimeAudioServicesCold()
         {
-            CacheSpatialAudioManager(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheSpatialAudioManager(GlobalRegistry.Audio);
         }
 
         private void CacheSpatialAudioManager(IAudioService audioService)
         {
-            _cachedSpatialAudioManager = audioService as SpatialAudioManager;
+            _cachedSpatialAudioSfxRoute = audioService as ISpatialAudioSfxMixerRouteReadModel;
         }
 
         private void TryAssignMixerRoute(bool force = false)
@@ -507,9 +538,9 @@ namespace Hecton8.Audio
             if (_audioSource == null || (!force && _audioSource.outputAudioMixerGroup != null))
                 return;
 
-            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
-            if (spatialAudioManager != null)
-                _audioSource.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
+            ISpatialAudioSfxMixerRouteReadModel spatialAudioRoute = _cachedSpatialAudioSfxRoute;
+            if (spatialAudioRoute != null)
+                _audioSource.outputAudioMixerGroup = spatialAudioRoute.SfxGroup;
         }
 
         private void TryRegisterHotSwapListener()
@@ -537,8 +568,7 @@ namespace Hecton8.Audio
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -549,6 +579,23 @@ namespace Hecton8.Audio
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
 
             _registered = false;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
         }
     }
 }

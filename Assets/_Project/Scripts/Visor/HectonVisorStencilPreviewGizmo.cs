@@ -25,7 +25,9 @@ namespace Hecton8.Visor
 
         private void OnDrawGizmos()
         {
-            Camera camera = targetCamera != null ? targetCamera : GetComponent<Camera>();
+            Camera camera = targetCamera;
+            if (camera == null)
+                TryGetComponent(out camera);
             if (camera == null)
                 return;
 

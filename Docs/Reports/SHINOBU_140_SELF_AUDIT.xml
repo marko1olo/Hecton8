@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_140" domain="Echelon 9 / Global Architecture Integration" taskCount="20" status="PENDING_VERIFICATION">
+﻿<SELF_AUDIT agent="SHINOBU_140" domain="Echelon 9 / Global Architecture Integration" taskCount="20" status="PENDING_VERIFICATION">
   <Hygiene liveCurrentBatchContainsAgent="false" archiveFallback="Docs/Archive/Batch010" activeStatusFilesRemovedByCleanup="false" stableReportPath="Docs/Reports/SHINOBU_140_SELF_AUDIT.xml" totalCritical="352" totalWarnings="24" scannerCount="14" regressionCritical="0" ownerMap="Docs/Reports/SHINOBU_140_STATIC_GATE_OWNER_MAP.json" regressionAttribution="Docs/Reports/SHINOBU_140_STATIC_GATE_REGRESSION_ATTRIBUTION.json" scannerSelfTests="Docs/Reports/SHINOBU_140_SCANNER_SELF_TESTS.json" />
   <TaskReconciliation>
     <Task id="01" name="HOT_REGISTRY_POLLING_ERADICATION" result="PASS_ANALYZER_RED_DEBT" criticalDebt="0" proof="Hot_Registry_Polling and Hot_Helper_Registry_Polling scanners" />

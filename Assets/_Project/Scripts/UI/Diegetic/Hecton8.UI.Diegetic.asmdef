@@ -3,8 +3,6 @@
     "rootNamespace": "Hecton8.UI.Diegetic",
     "references": [
         "Hecton8.UI.Diegetic.Contracts",
-        "Hecton8.Core",
-        "Hecton8.Core.Contracts",
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Mathematics",

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
@@ -94,11 +95,11 @@ namespace Hecton8.Editor.Build
                 return;
 
             string normalizedThirdPartyPath = NormalizeDirectoryPath(thirdPartyPath);
-            string[] directories = Directory.GetDirectories(thirdPartyPath, "*", SearchOption.AllDirectories);
-            Array.Sort(directories, (left, right) => right.Length.CompareTo(left.Length));
+            List<string> directories = new List<string>(Directory.EnumerateDirectories(thirdPartyPath, "*", SearchOption.AllDirectories));
+            directories.Sort((left, right) => right.Length.CompareTo(left.Length));
 
             int removedCount = 0;
-            for (int i = 0; i < directories.Length; i++)
+            for (int i = 0; i < directories.Count; i++)
             {
                 string candidate = directories[i];
                 if (!IsUnderDirectory(candidate, normalizedThirdPartyPath))

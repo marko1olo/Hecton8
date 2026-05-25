@@ -14,7 +14,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4027)]
-    public sealed class HectonVoxelStreamingBridge : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class HectonVoxelStreamingBridge : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private sealed class PendingRequestState : IDisposable
         {
@@ -73,11 +73,17 @@ namespace Hecton8.World
         private readonly Dictionary<long, ChunkFadeState> _chunkFadeStates = new Dictionary<long, ChunkFadeState>(16);
         private readonly List<CaveEntranceRequest> _launchQueue = new List<CaveEntranceRequest>(16);
         private readonly List<long> _keyScratch = new List<long>(16);
+        private readonly List<long> _pendingDespawnKeys = new List<long>(16);
+        private readonly List<long> _pendingChunkFadeKeys = new List<long>(16);
+        private readonly List<GameObject> _pendingChunkFadeVolumes = new List<GameObject>(16);
         private static readonly int ChunkDissolveFadeId = Shader.PropertyToID("_ChunkDissolveFade");
         private const uint ChunkFadeRendererMissingWarningHash = 0xD0B2923Bu;
         private const uint ChunkFadeMaterialMissingWarningHash = 0xBBEEF2CDu;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
+        private bool _hotSwapListenerRegistered;
+        private float _chunkFadeDeltaAccumulator;
         private CancellationTokenSource _lifetimeCancellation;
 
         private void Awake()
@@ -96,20 +102,26 @@ namespace Hecton8.World
         {
             ResolveReferences();
             EnsureLifetimeCancellation();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             CancelAllPendingRequests();
             CancelLifetimeCancellation();
             _launchQueue.Clear();
+            _pendingChunkFadeKeys.Clear();
+            _pendingChunkFadeVolumes.Clear();
+            _pendingDespawnKeys.Clear();
             _desiredRequests.Clear();
             DespawnAllVolumes();
         }
@@ -117,9 +129,13 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             CancelAllPendingRequests();
             CancelLifetimeCancellation();
             _launchQueue.Clear();
+            _pendingChunkFadeKeys.Clear();
+            _pendingChunkFadeVolumes.Clear();
+            _pendingDespawnKeys.Clear();
             _desiredRequests.Clear();
             DespawnAllVolumes();
         }
@@ -130,7 +146,7 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             ResolveReferences();
-            TickChunkFade(dt);
+            _chunkFadeDeltaAccumulator += Mathf.Max(0f, dt);
 
             if (voxelEngine == null || _launchQueue.Count <= 0 || _activeVolumes.Count >= maxRuntimeVolumes)
                 return;
@@ -149,6 +165,18 @@ namespace Hecton8.World
 
             if (launchCount > 0)
                 _launchQueue.RemoveRange(0, launchCount);
+        }
+
+        public void LateFrameTick()
+        {
+            FlushPendingDespawns();
+            FlushPendingChunkFadeRegistrations();
+            if (_chunkFadeDeltaAccumulator > 0f)
+            {
+                float dt = _chunkFadeDeltaAccumulator;
+                _chunkFadeDeltaAccumulator = 0f;
+                TickChunkFade(dt);
+            }
         }
 
         /// <summary>
@@ -308,13 +336,41 @@ namespace Hecton8.World
                 if (!_activeVolumes.TryGetValue(key, out GameObject volume))
                     continue;
 
-                ClearChunkFadeState(key, clearRenderer: true);
+                QueueVolumeDespawn(key);
+            }
+        }
 
+        private void QueueVolumeDespawn(long key)
+        {
+            if (_pendingDespawnKeys.Count >= _pendingDespawnKeys.Capacity)
+            {
+                FlushPendingDespawns();
+                if (_pendingDespawnKeys.Count >= _pendingDespawnKeys.Capacity)
+                    return;
+            }
+
+            _pendingDespawnKeys.Add(key);
+        }
+
+        private void FlushPendingDespawns()
+        {
+            if (_pendingDespawnKeys.Count <= 0)
+                return;
+
+            for (int i = 0; i < _pendingDespawnKeys.Count; i++)
+            {
+                long key = _pendingDespawnKeys[i];
+                if (!_activeVolumes.TryGetValue(key, out GameObject volume))
+                    continue;
+
+                ClearChunkFadeState(key, clearRenderer: true);
                 if (voxelEngine != null && volume != null)
                     voxelEngine.DespawnVolume(volume);
 
                 _activeVolumes.Remove(key);
             }
+
+            _pendingDespawnKeys.Clear();
         }
 
         private void RebuildLaunchQueue()
@@ -369,6 +425,27 @@ namespace Hecton8.World
         }
 
         private void RegisterChunkFade(long key, GameObject volume)
+        {
+            if (volume == null || chunkFadeInDuration <= 0.0001f)
+                return;
+
+            _pendingChunkFadeKeys.Add(key);
+            _pendingChunkFadeVolumes.Add(volume);
+        }
+
+        private void FlushPendingChunkFadeRegistrations()
+        {
+            int count = Mathf.Min(_pendingChunkFadeKeys.Count, _pendingChunkFadeVolumes.Count);
+            for (int i = 0; i < count; i++)
+                RegisterChunkFadeImmediate(_pendingChunkFadeKeys[i], _pendingChunkFadeVolumes[i]);
+
+            if (_pendingChunkFadeKeys.Count > 0)
+                _pendingChunkFadeKeys.Clear();
+            if (_pendingChunkFadeVolumes.Count > 0)
+                _pendingChunkFadeVolumes.Clear();
+        }
+
+        private void RegisterChunkFadeImmediate(long key, GameObject volume)
         {
             if (volume == null || chunkFadeInDuration <= 0.0001f)
                 return;
@@ -484,8 +561,9 @@ namespace Hecton8.World
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            if (playerContext != null && playerContext.PlayerMovement != null)
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext playerContext) &&
+                playerContext != null &&
+                playerContext.PlayerMovement != null)
             {
                 playerAup = playerContext.PlayerMovement.CurrentAup;
                 if (AbsoluteUniversePosition.IsFinite(in playerAup))
@@ -502,7 +580,7 @@ namespace Hecton8.World
             if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -519,15 +597,16 @@ namespace Hecton8.World
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -544,6 +623,38 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private PendingRequestState CreatePendingRequestState()

@@ -88,7 +88,7 @@ namespace Hecton8.Editor
         {
             string[] modelGuids = AssetDatabase.FindAssets("t:Model", searchRoots);
             List<string> paths = new List<string>(modelGuids.Length);
-            HashSet<string> uniquePaths = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> uniquePaths = new HashSet<string>(modelGuids.Length, StringComparer.Ordinal);
 
             for (int i = 0; i < modelGuids.Length; i++)
             {

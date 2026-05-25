@@ -42,6 +42,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Core;
@@ -589,11 +590,11 @@ namespace Hecton8.Power
             // ── Informatsiya o seti ──
             if (_grid != null)
             {
-                string info = $"Grid #{_grid.Id}\n" +
-                              $"Nodes: {_grid.NodeCount}\n" +
-                              $"Gen: {_grid.TotalGeneration:F0}W\n" +
-                              $"Con: {_grid.TotalConsumption:F0}W\n" +
-                              $"Bal: {_grid.Balance:F0}W";
+                string info = "Grid #" + _grid.Id + "\n" +
+                              "Nodes: " + _grid.NodeCount + "\n" +
+                              "Gen: " + _grid.TotalGeneration.ToString("F0", CultureInfo.InvariantCulture) + "W\n" +
+                              "Con: " + _grid.TotalConsumption.ToString("F0", CultureInfo.InvariantCulture) + "W\n" +
+                              "Bal: " + _grid.Balance.ToString("F0", CultureInfo.InvariantCulture) + "W";
 
                 UnityEditor.Handles.Label(
                     transform.position + Vector3.up * 2f,

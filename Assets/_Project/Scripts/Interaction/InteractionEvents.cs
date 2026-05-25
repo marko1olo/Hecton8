@@ -285,7 +285,10 @@ namespace Hecton8.Interaction
                     return;
 
                 if (!_pendingEvents.TryDequeue(out InteractionEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 int count = _listeners.Count;
                 _isDispatching = true;
@@ -364,16 +367,22 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Enqueues a world item collection event.
         /// </summary>
+        [Obsolete("Use TryRaiseItemCollected(ItemData,int,Transform) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseItemCollected(ItemData item, int quantity, Transform interactor)
         {
+            TryRaiseItemCollected(item, quantity, interactor);
+        }
+
+        public static bool TryRaiseItemCollected(ItemData item, int quantity, Transform interactor)
+        {
             if (!TryReserveReferenceSlot(InteractionEventType.ItemCollected, out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Item = item;
             _referenceSlots[referenceSlot].Target = null;
             _referenceSlots[referenceSlot].Interactor = interactor;
 
-            Enqueue(new InteractionEventPayload
+            return Enqueue(new InteractionEventPayload
             {
                 ItemHashId = ComputeItemHash(item),
                 TargetHashId = 0u,
@@ -388,16 +397,22 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Enqueues a lost/discarded item event for quest deadlock recovery and other native listeners.
         /// </summary>
+        [Obsolete("Use TryRaiseItemLost(ItemData,int,Transform) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseItemLost(ItemData item, int quantity, Transform interactor)
         {
+            TryRaiseItemLost(item, quantity, interactor);
+        }
+
+        public static bool TryRaiseItemLost(ItemData item, int quantity, Transform interactor)
+        {
             if (!TryReserveReferenceSlot(InteractionEventType.ItemLost, out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Item = item;
             _referenceSlots[referenceSlot].Target = null;
             _referenceSlots[referenceSlot].Interactor = interactor;
 
-            Enqueue(new InteractionEventPayload
+            return Enqueue(new InteractionEventPayload
             {
                 ItemHashId = ComputeItemHash(item),
                 TargetHashId = 0u,
@@ -412,16 +427,22 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Enqueues an interaction-started event.
         /// </summary>
+        [Obsolete("Use TryRaiseInteractionStarted(IInteractable,Transform) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseInteractionStarted(IInteractable target, Transform interactor)
         {
+            TryRaiseInteractionStarted(target, interactor);
+        }
+
+        public static bool TryRaiseInteractionStarted(IInteractable target, Transform interactor)
+        {
             if (!TryReserveReferenceSlot(InteractionEventType.InteractionStarted, out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Item = null;
             _referenceSlots[referenceSlot].Target = target;
             _referenceSlots[referenceSlot].Interactor = interactor;
 
-            Enqueue(new InteractionEventPayload
+            return Enqueue(new InteractionEventPayload
             {
                 ItemHashId = 0u,
                 TargetHashId = ComputeInteractableHash(target),
@@ -436,20 +457,26 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Enqueues a hover-target change event.
         /// </summary>
+        [Obsolete("Use TryRaiseHoverChanged(IInteractable) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseHoverChanged(IInteractable target)
+        {
+            TryRaiseHoverChanged(target);
+        }
+
+        public static bool TryRaiseHoverChanged(IInteractable target)
         {
             int referenceSlot = -1;
             if (target != null)
             {
                 if (!TryReserveReferenceSlot(InteractionEventType.HoverChanged, out referenceSlot))
-                    return;
+                    return false;
 
                 _referenceSlots[referenceSlot].Item = null;
                 _referenceSlots[referenceSlot].Target = target;
                 _referenceSlots[referenceSlot].Interactor = null;
             }
 
-            Enqueue(new InteractionEventPayload
+            return Enqueue(new InteractionEventPayload
             {
                 ItemHashId = 0u,
                 TargetHashId = ComputeInteractableHash(target),
@@ -603,7 +630,10 @@ namespace Hecton8.Interaction
                     return false;
 
                 if (!queue.TryDequeue(out InteractionEventPayload payload))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -783,7 +813,7 @@ namespace Hecton8.Interaction
         private static void ReportQueueOverflow(ushort eventType)
         {
             _droppedEventCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastQueueOverflowTelemetryFrame == frame)
                 return;
 
@@ -797,7 +827,7 @@ namespace Hecton8.Interaction
         private static void ReportReferenceSlotExhausted(ushort eventType)
         {
             _droppedReferenceSlotCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastReferenceSlotTelemetryFrame == frame)
                 return;
 
@@ -811,7 +841,7 @@ namespace Hecton8.Interaction
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -825,7 +855,7 @@ namespace Hecton8.Interaction
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

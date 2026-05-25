@@ -39,9 +39,7 @@ namespace Hecton8.UI
             CreateMarker(parent);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
-                "[RelayHUDRuntimeBootstrap] Spawned RelayRouteMarker at runtime because the active HUD had none. " +
-                "This is a fail-safe, not a substitute for authored HUD setup.");
+            Debug.LogWarning("[RelayHUDRuntimeBootstrap] Spawned RelayRouteMarker at runtime because the active HUD had none. This is a fail-safe, not a substitute for authored HUD setup.");
 #endif
         }
 
@@ -161,8 +159,8 @@ namespace Hecton8.UI
             TMP_Text labelText = CreateText(markerRoot.transform, "Label", new Vector2(200f, 28f), new Vector2(16f, 12f), 20f, new Color(0.72f, 0.92f, 1f, 0.96f));
             TMP_Text distanceText = CreateText(markerRoot.transform, "Distance", new Vector2(160f, 24f), new Vector2(16f, -14f), 16f, new Color(0.52f, 0.82f, 0.96f, 0.9f));
 
-            labelText.SetText("EMERGENCY SERVICE RELAY");
-            distanceText.SetText("0M");
+            TmpTextNoAlloc.Set(labelText, "EMERGENCY SERVICE RELAY");
+            TmpTextNoAlloc.Set(distanceText, "0M");
 
             markerRoot.TryGetComponent(out RelayHUDElement marker);
             marker.ConfigureRuntimeBindings(markerIcon, distanceText, labelText);

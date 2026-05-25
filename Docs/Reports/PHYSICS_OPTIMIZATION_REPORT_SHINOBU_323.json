@@ -1,0 +1,45 @@
+﻿{
+  "agent": "SHINOBU_323",
+  "scanner": "OOP_Depth_Scanner.StaticMirror",
+  "summary": "OOP Depth Triggers Eradicated",
+  "status": "STATIC_SOURCE_BLOCKED_BY_EXTERNAL_COMPILE_DEPENDENCY",
+  "routeCard": "Docs/ARCHITECTURE/SHINOBU_323_SUIT_INTEGRITY_DEPTH_CRUSH_ROUTE_CARD.md",
+  "selfAudit": "Docs/Reports/SHINOBU_323_SELF_AUDIT.xml",
+  "forbiddenRuntimePatternsFoundInOwnedPath": 0,
+  "legacyPressureMutationDisabled": "HectonSurvivalSystem.ApplyPressureDamage no longer mutates integrity; pressure collapse authority is ShinobuSuitIntegrityRuntime -> SuitIntegrityDTO -> CombatDamageSignal.",
+  "runtimeRouteProof": {
+    "owner": "ShinobuSuitIntegrityRuntime",
+    "truthBuffer": "GlobalDataVault 72510 SuitIntegrityDTO[entityCapacity] under SystemID.GameplayPlayer",
+    "profileBuffer": "GlobalDataVault 72511 SuitPressureProfileDTO[16] sourced from defaults and suit_pressure_profiles.csv",
+    "pressureRoute": "borrowed BufferID.PlayerKinematicState LockstepPlayerKinematicState[1] read via IDataVault.TryReadHandle -> double3 sea-level subtraction -> AppliedPressureATM = 1 + depthM * 0.1; cached PlayerRuntimePoseSnapshot.Aup is cold/bootstrap fallback only",
+    "timingRoute": "cached ITickDispatcher.TimeSnapshot.Time delta advances SlowTick accumulation; SimulationPaused returns 0; no Time.deltaTime or hot GlobalRegistry polling",
+    "borrowedInputBuffers": "BufferID.PlayerKinematicState LockstepPlayerKinematicState[1] and 70238 MetabolicStateDTO[1] are read-only borrowed through cached or late-bound existing generation handles; SHINOBU_323 never allocates, locks, mutates, or releases these foreign-owner facts.",
+    "targetHashRoute": "separate candidate caches resolve MetabolicStateDTO.EntityHashID first, then LockstepPlayerKinematicState.StableId, then cold player service hash, then deterministic fallback; cold fallback cannot block a later metabolic override.",
+    "kinematicNamingNote": "Prompt wording says KinematicStateDTO; current player-owned Vault fact is LockstepPlayerKinematicState in Core. Physics/KCC KinematicStateDTO is not read to avoid sibling coupling and wrong authority ownership.",
+    "fallbackRoute": "invalid player snapshot uses emergency mock AUP profile when enabled, otherwise sea-level AUP override to prevent stale-position false implosion",
+    "readAccessorRoute": "TryGetIntegrity/TryGetVisual/TryGetLatestTelemetry/TryGetTuning resolve via IDataVault.TryReadHandle and return copied DTOs",
+    "releaseRoute": "OnDisable/DataVault hot-swap release generation handles through IDataVault.ReleaseBuffer before clearing cached descriptors",
+    "signalWriterGate": "SlowTick requires CombatDamageSignal and MovementAcousticSignal native storage before opening ParallelWriter, preventing cold SignalBus initialization from simulation",
+    "damageRoute": "CalculateStructuralYieldJob enqueues unmanaged CombatDamageSignal with 9999f magnitude and Pressure|MicroFracture BarotraumaImplosion mask",
+    "acousticRoute": "CalculateStructuralYieldJob enqueues MovementAcousticSignal with AcousticSourceMetalGroan",
+    "visualRoute": "LateFrameTick publishes HectonShaderGlobalDataVaultBridge.PublishSuitCrushDearLie slot 21",
+    "volatileFaultFlags": "NonFinitePressure is raised for non-finite player/sea-level AUP inputs before pressure conversion, then cleared from current-frame masks on recovered samples; Imploded remains sticky.",
+    "telemetry": "GlobalDataVault 72513 SuitIntegrityTelemetryEntry[300] plus 72517 dump scratch; Docs/AgentLogs/Dump_SHINOBU_323.bin on non-finite, implosion, or budget fault"
+  },
+  "depthScanFindings": [
+  ],
+  "ignoredDepthScanFindings": [
+    { "file": "Assets/_Project/Scripts/Physiology/Editor/OOP_Bends_Scanner.cs", "pattern": "DepthDamage", "decision": "editor/scanner literal ignored, not runtime authority" }
+  ],
+  "hardcodedDepthDamage": {
+    "legacySurvivalPressureDamage": "disabled",
+    "BaseModuleHullCrush": "out of assigned player suit physiology domain; submarine module structural domain remains separate",
+    "SubmarineFluidDynamicsCrushBuoyancy": "out of assigned player suit physiology domain; vehicle physics domain remains separate"
+  },
+  "microsecondsSavedEstimate": {
+    "removedPhysXOverlapOrTriggerDepthRouteUs": 8.0,
+    "removedLegacyPerTickIntegrityMutationUs": 0.4,
+    "newBurstKernelPlayerRowTargetUs": 1.0
+  },
+  "compileProof": "BLOCKED_BY_EXTERNAL_GAMEPLAY_COMPILE_ERRORS: gated dotnet build reached unrelated Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs missing VRSomaticKinematicStateMirrorDTO/VRSomaticComfortDTO and Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime_HandIK.cs missing PlayerHandIkConfigFlags before SHINOBU_323 proof."
+}

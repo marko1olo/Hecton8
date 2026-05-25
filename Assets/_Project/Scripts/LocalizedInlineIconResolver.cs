@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Items;
 using UnityEngine;
 
@@ -24,30 +25,66 @@ namespace Hecton.Localization
         /// </summary>
         public static bool TryResolveItemChip(string token, out string markup)
         {
-            switch (NormalizeToken(token))
+            return TryResolveItemChip(string.IsNullOrWhiteSpace(token) ? ReadOnlySpan<char>.Empty : token.AsSpan(), out markup);
+        }
+
+        public static bool TryResolveItemChip(ReadOnlySpan<char> token, out string markup)
+        {
+            if (TokenEquals(token, "titanium") || TokenEquals(token, "titanium_scrap"))
             {
-                case "titanium":
-                case "titanium_scrap":
-                    markup = TitaniumChip;
-                    return true;
+                markup = TitaniumChip;
+                return true;
+            }
 
-                case "copper":
-                case "copper_ore":
-                    markup = CopperChip;
-                    return true;
+            if (TokenEquals(token, "copper") || TokenEquals(token, "copper_ore"))
+            {
+                markup = CopperChip;
+                return true;
+            }
 
-                case "battery":
-                case "battery_cell":
-                    markup = BatteryChip;
-                    return true;
+            if (TokenEquals(token, "battery") || TokenEquals(token, "battery_cell"))
+            {
+                markup = BatteryChip;
+                return true;
+            }
 
-                case "item":
-                case "pickup":
-                    markup = GenericItemChip;
-                    return true;
+            if (TokenEquals(token, "item") || TokenEquals(token, "pickup"))
+            {
+                markup = GenericItemChip;
+                return true;
             }
 
             markup = string.Empty;
+            return false;
+        }
+
+        public static bool TryResolveItemChipSpan(ReadOnlySpan<char> token, out ReadOnlySpan<char> markup)
+        {
+            if (TokenEquals(token, "titanium") || TokenEquals(token, "titanium_scrap"))
+            {
+                markup = TitaniumChip.AsSpan();
+                return true;
+            }
+
+            if (TokenEquals(token, "copper") || TokenEquals(token, "copper_ore"))
+            {
+                markup = CopperChip.AsSpan();
+                return true;
+            }
+
+            if (TokenEquals(token, "battery") || TokenEquals(token, "battery_cell"))
+            {
+                markup = BatteryChip.AsSpan();
+                return true;
+            }
+
+            if (TokenEquals(token, "item") || TokenEquals(token, "pickup"))
+            {
+                markup = GenericItemChip.AsSpan();
+                return true;
+            }
+
+            markup = ReadOnlySpan<char>.Empty;
             return false;
         }
 
@@ -56,35 +93,78 @@ namespace Hecton.Localization
         /// </summary>
         public static bool TryResolveStatusChip(string token, out string markup)
         {
-            switch (NormalizeToken(token))
+            return TryResolveStatusChip(string.IsNullOrWhiteSpace(token) ? ReadOnlySpan<char>.Empty : token.AsSpan(), out markup);
+        }
+
+        public static bool TryResolveStatusChip(ReadOnlySpan<char> token, out string markup)
+        {
+            if (TokenEquals(token, "o2") || TokenEquals(token, "oxygen"))
             {
-                case "o2":
-                case "oxygen":
-                    markup = OxygenChip;
-                    return true;
+                markup = OxygenChip;
+                return true;
+            }
 
-                case "depth":
-                    markup = DepthChip;
-                    return true;
+            if (TokenEquals(token, "depth"))
+            {
+                markup = DepthChip;
+                return true;
+            }
 
-                case "pwr":
-                case "power":
-                case "battery":
-                    markup = PowerChip;
-                    return true;
+            if (TokenEquals(token, "pwr") || TokenEquals(token, "power") || TokenEquals(token, "battery"))
+            {
+                markup = PowerChip;
+                return true;
+            }
 
-                case "hull":
-                case "integrity":
-                    markup = HullChip;
-                    return true;
+            if (TokenEquals(token, "hull") || TokenEquals(token, "integrity"))
+            {
+                markup = HullChip;
+                return true;
+            }
 
-                case "temp":
-                case "temperature":
-                    markup = TemperatureChip;
-                    return true;
+            if (TokenEquals(token, "temp") || TokenEquals(token, "temperature"))
+            {
+                markup = TemperatureChip;
+                return true;
             }
 
             markup = string.Empty;
+            return false;
+        }
+
+        public static bool TryResolveStatusChipSpan(ReadOnlySpan<char> token, out ReadOnlySpan<char> markup)
+        {
+            if (TokenEquals(token, "o2") || TokenEquals(token, "oxygen"))
+            {
+                markup = OxygenChip.AsSpan();
+                return true;
+            }
+
+            if (TokenEquals(token, "depth"))
+            {
+                markup = DepthChip.AsSpan();
+                return true;
+            }
+
+            if (TokenEquals(token, "pwr") || TokenEquals(token, "power") || TokenEquals(token, "battery"))
+            {
+                markup = PowerChip.AsSpan();
+                return true;
+            }
+
+            if (TokenEquals(token, "hull") || TokenEquals(token, "integrity"))
+            {
+                markup = HullChip.AsSpan();
+                return true;
+            }
+
+            if (TokenEquals(token, "temp") || TokenEquals(token, "temperature"))
+            {
+                markup = TemperatureChip.AsSpan();
+                return true;
+            }
+
+            markup = ReadOnlySpan<char>.Empty;
             return false;
         }
 
@@ -109,6 +189,24 @@ namespace Hecton.Localization
             return false;
         }
 
+        public static bool TryResolveItemChipSpan(ItemData item, out ReadOnlySpan<char> markup)
+        {
+            if (item != null)
+            {
+                if (TryResolveItemToken(item, out string token) && TryResolveItemChipSpan(token.AsSpan(), out markup))
+                    return true;
+
+                if (item.icon != null)
+                {
+                    markup = GenericItemChip.AsSpan();
+                    return true;
+                }
+            }
+
+            markup = ReadOnlySpan<char>.Empty;
+            return false;
+        }
+
         /// <summary>
         /// Build a combined inline chip + localized item name string.
         /// </summary>
@@ -118,10 +216,25 @@ namespace Hecton.Localization
                 ? item.itemName
                 : (fallbackName ?? string.Empty);
 
-            if (TryResolveItemChip(item, out string markup))
-                return string.Concat(markup, " ", resolvedName);
-
             return resolvedName;
+        }
+
+        public static bool TryBuildItemDisplay(ItemData item, ReadOnlySpan<char> fallbackName, char[] destination, out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            if (TryResolveItemChipSpan(item, out ReadOnlySpan<char> markup) && !TryAppend(markup, destination, ref length))
+                return false;
+
+            if (length > 0 && !TryAppend(" ".AsSpan(), destination, ref length))
+                return false;
+
+            ReadOnlySpan<char> resolvedName = item != null && !string.IsNullOrWhiteSpace(item.itemName)
+                ? item.itemName.AsSpan()
+                : fallbackName;
+            return TryAppend(resolvedName, destination, ref length);
         }
 
         /// <summary>
@@ -141,27 +254,29 @@ namespace Hecton.Localization
         /// </summary>
         public static bool TryResolveItemAccent(string token, out Color color)
         {
-            switch (NormalizeToken(token))
+            ReadOnlySpan<char> tokenSpan = string.IsNullOrWhiteSpace(token) ? ReadOnlySpan<char>.Empty : token.AsSpan();
+            if (TokenEquals(tokenSpan, "titanium") || TokenEquals(tokenSpan, "titanium_scrap"))
             {
-                case "titanium":
-                case "titanium_scrap":
-                    color = new Color(0.62f, 0.84f, 1f, 1f);
-                    return true;
+                color = new Color(0.62f, 0.84f, 1f, 1f);
+                return true;
+            }
 
-                case "copper":
-                case "copper_ore":
-                    color = new Color(1f, 0.69f, 0.35f, 1f);
-                    return true;
+            if (TokenEquals(tokenSpan, "copper") || TokenEquals(tokenSpan, "copper_ore"))
+            {
+                color = new Color(1f, 0.69f, 0.35f, 1f);
+                return true;
+            }
 
-                case "battery":
-                case "battery_cell":
-                    color = new Color(0.71f, 1f, 0.52f, 1f);
-                    return true;
+            if (TokenEquals(tokenSpan, "battery") || TokenEquals(tokenSpan, "battery_cell"))
+            {
+                color = new Color(0.71f, 1f, 0.52f, 1f);
+                return true;
+            }
 
-                case "item":
-                case "pickup":
-                    color = new Color(0.55f, 0.85f, 1f, 1f);
-                    return true;
+            if (TokenEquals(tokenSpan, "item") || TokenEquals(tokenSpan, "pickup"))
+            {
+                color = new Color(0.55f, 0.85f, 1f, 1f);
+                return true;
             }
 
             color = Color.white;
@@ -193,11 +308,39 @@ namespace Hecton.Localization
             return false;
         }
 
-        private static string NormalizeToken(string token)
+        private static bool TryAppend(ReadOnlySpan<char> value, char[] destination, ref int length)
         {
-            return string.IsNullOrWhiteSpace(token)
-                ? string.Empty
-                : token.Trim().ToLowerInvariant();
+            if (value.Length == 0)
+                return true;
+
+            if (length < 0 || destination.Length - length < value.Length)
+                return false;
+
+            value.CopyTo(destination.AsSpan(length));
+            length += value.Length;
+            return true;
+        }
+
+        private static bool TokenEquals(ReadOnlySpan<char> token, string expected)
+        {
+            int start = 0;
+            int end = token.Length - 1;
+            while (start <= end && char.IsWhiteSpace(token[start]))
+                start++;
+            while (end >= start && char.IsWhiteSpace(token[end]))
+                end--;
+
+            int length = end - start + 1;
+            if (length != expected.Length)
+                return false;
+
+            for (int i = 0; i < length; i++)
+            {
+                if (char.ToLowerInvariant(token[start + i]) != expected[i])
+                    return false;
+            }
+
+            return true;
         }
     }
 }

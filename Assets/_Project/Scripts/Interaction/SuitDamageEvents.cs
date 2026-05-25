@@ -5,10 +5,15 @@ namespace Hecton8.Interaction
     using Unity.Mathematics;
     using UnityEngine;
 
+    internal static class SuitDamageEventLayout
+    {
+        internal const int EventStrideBytes = 80;
+    }
+
     /// <summary>
     /// Physical suit-contact damage emitted by somatic hand collision.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = SuitDamageEventLayout.EventStrideBytes)]
     public readonly struct SuitDamageEvent
     {
         [FieldOffset(0)]

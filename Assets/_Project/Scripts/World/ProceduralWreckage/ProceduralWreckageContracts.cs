@@ -4,6 +4,24 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.ProceduralWreckage
 {
+    internal static class ProceduralWreckageContractsLayout
+    {
+        public const int WreckageRuleDTOStrideBytes = 64;
+        public const int WreckageGridCellDTOStrideBytes = 16;
+        public const int WreckageNodeDTOStrideBytes = 128;
+        public const int WreckageSectorTriggerDTOStrideBytes = 64;
+        public const int WreckageTuningDTOStrideBytes = 64;
+        public const int LootSpawnRequestDTOStrideBytes = 64;
+        public const int WreckageBoxColliderDTOStrideBytes = 64;
+        public const int WreckageGenerationTelemetryEntryStrideBytes = 64;
+        public const int WreckageDebugCellDTOStrideBytes = 64;
+        public const int WreckageIndirectArgsDTOStrideBytes = 16;
+        public const int WreckagePaddedCounterDTOStrideBytes = 64;
+        public const int WreckageGpuScalarDTOStrideBytes = 64;
+        public const int WreckageSelfAuditResultDTOStrideBytes = 64;
+        public const int WreckageHzbTileDTOStrideBytes = 16;
+    }
+
     public static class ProceduralWreckageConstants
     {
         public const int GridResolutionX = 16;
@@ -87,7 +105,7 @@ namespace Hecton8.World.ProceduralWreckage
         public const uint EssentialSilhouette = 1u << 4;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageRuleDTOStrideBytes)]
     public struct WreckageRuleDTO
     {
         [FieldOffset(0)]
@@ -126,7 +144,7 @@ namespace Hecton8.World.ProceduralWreckage
         public ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageGridCellDTOStrideBytes)]
     public struct WreckageGridCellDTO
     {
         [FieldOffset(0)]
@@ -143,7 +161,7 @@ namespace Hecton8.World.ProceduralWreckage
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageNodeDTOStrideBytes)]
     public struct WreckageNodeDTO
     {
         [FieldOffset(0)]
@@ -168,7 +186,7 @@ namespace Hecton8.World.ProceduralWreckage
         public uint StableId;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageSectorTriggerDTOStrideBytes)]
     public struct WreckageSectorTriggerDTO
     {
         [FieldOffset(0)]
@@ -191,7 +209,7 @@ namespace Hecton8.World.ProceduralWreckage
         public uint BacktrackLimit;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageTuningDTOStrideBytes)]
     public struct WreckageTuningDTO
     {
         [FieldOffset(0)]
@@ -226,7 +244,7 @@ namespace Hecton8.World.ProceduralWreckage
         public uint SeedSalt;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.LootSpawnRequestDTOStrideBytes)]
     public struct LootSpawnRequestDTO
     {
         [FieldOffset(0)]
@@ -249,7 +267,7 @@ namespace Hecton8.World.ProceduralWreckage
         public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageBoxColliderDTOStrideBytes)]
     public struct WreckageBoxColliderDTO
     {
         [FieldOffset(0)]
@@ -266,7 +284,7 @@ namespace Hecton8.World.ProceduralWreckage
         public uint SectorHash;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageGenerationTelemetryEntryStrideBytes)]
     public struct WreckageGenerationTelemetryEntry
     {
         [FieldOffset(0)]
@@ -293,7 +311,7 @@ namespace Hecton8.World.ProceduralWreckage
         public uint DebrisCount;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageDebugCellDTOStrideBytes)]
     public struct WreckageDebugCellDTO
     {
         [FieldOffset(0)]
@@ -316,7 +334,7 @@ namespace Hecton8.World.ProceduralWreckage
         public ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageIndirectArgsDTOStrideBytes)]
     public struct WreckageIndirectArgsDTO
     {
         [FieldOffset(0)]
@@ -329,7 +347,7 @@ namespace Hecton8.World.ProceduralWreckage
         public uint StartInstance;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckagePaddedCounterDTOStrideBytes)]
     public struct WreckagePaddedCounterDTO
     {
         [FieldOffset(0)]
@@ -362,7 +380,7 @@ namespace Hecton8.World.ProceduralWreckage
         public ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageGpuScalarDTOStrideBytes)]
     public struct WreckageGpuScalarDTO
     {
         [FieldOffset(0)]
@@ -381,7 +399,7 @@ namespace Hecton8.World.ProceduralWreckage
         public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageSelfAuditResultDTOStrideBytes)]
     public struct WreckageSelfAuditResultDTO
     {
         [FieldOffset(0)]
@@ -412,7 +430,7 @@ namespace Hecton8.World.ProceduralWreckage
         public ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ProceduralWreckageContractsLayout.WreckageHzbTileDTOStrideBytes)]
     public struct WreckageHzbTileDTO
     {
         [FieldOffset(0)]

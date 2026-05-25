@@ -4,10 +4,15 @@ using UnityEngine;
 
 namespace Hecton8.Core
 {
+    internal static class OriginShiftEventLayout
+    {
+        public const int EventDataStrideBytes = 112;
+    }
+
     /// <summary>
     /// Immutable payload describing a committed floating-origin shift.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 112)]
+    [StructLayout(LayoutKind.Explicit, Size = OriginShiftEventLayout.EventDataStrideBytes)]
     public readonly struct OriginShiftEventData
     {
         /// <summary>

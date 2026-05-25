@@ -48,10 +48,9 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
             if (!Directory.Exists(directory))
                 return;
 
-            string[] shaderFiles = Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
-            for (int i = 0; i < shaderFiles.Length; i++)
+            foreach (string shaderFile in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories))
             {
-                string path = shaderFiles[i].Replace('\\', '/');
+                string path = shaderFile.Replace('\\', '/');
                 if (!IsShaderLike(path))
                     continue;
 

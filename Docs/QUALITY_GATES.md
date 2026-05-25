@@ -1,6 +1,6 @@
-# QUALITY_GATES.md
+﻿ï»¿# QUALITY_GATES.md
 ## SECONDARY LAYER: QUALITY CONTROL
-Date: 2026-05-18
+Date: 2026-05-24
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -15,7 +15,7 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Verification: PENDING VERIFICATION
 Apply only after production result exists.
@@ -28,7 +28,7 @@ Performance tooling: SYSTEMS_CONTRACTS.md source x-ray. `BenchmarkRunner.cs` is 
 - This stable file is the acceptance-gate authority. Dated reports are evidence/counter snapshots only.
 - This is a gate/checklist contract, not evidence that any asset passed.
 - Do not fill or cite this document as proof without a real prefab/material/scatter profile and fresh validation output.
-- Current authority spine starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, fresh artifacts, then DOC_GLOBAL R50 -> R49 -> R48 -> R47 -> R46 -> R45 -> R44 -> R43 -> R42 -> R41 -> R40 -> R39 -> R38 -> R37 -> R36 -> R35 -> R34 -> R33 -> R32 -> R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
+- Current authority spine starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, fresh artifacts, then DOC_GLOBAL R51 -> R50 -> R49 -> R48 -> R47 -> R46 -> R45 -> R44 -> R43 -> R42 -> R41 -> R40 -> R39 -> R38 -> R37 -> R36 -> R35 -> R34 -> R33 -> R32 -> R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
 - May 11 report text claimed historical Core dependency build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. This is not current artifact-backed proof in the workspace.
 - Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, scene/prefab gameplay, player build, import, frame-time, memory, and visual quality proof remain absent.
 - Historical unlinked DOC_AUDIT root-project CLI text reported a clean external root-project CLI compile surface under single-project no-restore checks at capture time, but Quality Gates remain `PENDING VERIFICATION` because current Unity import/Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene/prefab, and visual proof are still absent.
@@ -54,6 +54,14 @@ Performance tooling: SYSTEMS_CONTRACTS.md source x-ray. `BenchmarkRunner.cs` is 
 Known historical blocker:
 
 - `Hecton8.Editor.csproj` previously failed before C# with `NETSDK1004` because `Temp/obj/Hecton8.Editor/project.assets.json` was missing. That is not a C# diagnostic.
+
+Current local CLI slice:
+
+- 2026-05-24 `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log` is the latest dirty-workspace `Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false` artifact recorded by EXTERNAL_CODEX. It has 0 `: warning ` and 0 `: error ` text matches. Treat as CLI_COMPILE only. Do not mark Unity import, Console, Play Mode, profiler, GCMonitor, player build, save/load, visual, or platform gates as passed from this log.
+- 2026-05-24 `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup147_gi_despawn.log` is the latest CLI compile attempt. It fails before C# diagnostics with `NETSDK1004` missing `Temp/obj/Hecton8.Editor/project.assets.json` and `MSB3491` Temp/obj access denied. This is ENV_BUILD_WALL, not source compile proof.
+- 2026-05-24 EXTERNAL_CODEX loops55-150 remove warning causes, runtime registry fallbacks, SaveRuntime tails, owner-cache leaks, dispatcher/save/DataVault rebind gaps, interaction scene scan, Atlas read-model/DataVault read tails, duplicate generated source inputs, slow/updatable/fixed/late-frame register/probe tails, non-`this` static-driver/renderable residues, info-only release log callsites, HectonVoxelVolume sonar DataVault polls, Environment/Ocean/PlayerSensory context getter mutation, cadence/context/core/bootstrap/QA/world/narrative/visor/voxel Dispatcher/DataVault/service/player rebind losses, and one duplicate include target tail.
+- Loop59 build attempt `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup59_runtime_binary_tail.log` exited `1` with a `0` byte log and no `: error ` / `: warning ` text. This is not a C# diagnostic artifact and is not compile proof.
+- Generated-project caveat: the ignored local `Hecton8.Core.csproj` was patched during verification. Durable proof requires Unity/project regeneration preserving local asmdef references and a fresh build artifact after regeneration.
 
 2026-05-16 DataVault sovereignty gate:
 
@@ -194,14 +202,16 @@ Rules:
 | runtime compute dispatch sizing proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-runtime-compute-dispatch-without-threadgroup-query` | Yes before claiming mobile/TBDR compute dispatch portability |
 | shader warmup proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-shader-warmup --fail-on-missing-bootstrap-shader-warmup` | Yes for gameplay shader-stutter readiness |
 | Addressables content proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-addressables` | Yes for streaming/content readiness |
-| Data Monolith payload proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-data-monolith` | Yes for static-data runtime readiness |
+| Data Monolith payload proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-data-monolith` plus Unity import/player boot validation | Yes for static-data runtime readiness |
 | player/build artifact proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-build-artifact` | Yes for any platform readiness claim |
 
 Current HFI R20 static platform map: required XR packages exist in manifest and
 lock; Android ARM64-only and IL2CPP are serialized with target SDK `35`;
 Android/Quest scaffold flag is `true`. Blocking gaps remain:
 `xrProviderSerializedProof=false`, Addressables files `0`, Data Monolith
-missing, build artifacts/logs `0`, PICO package candidates `0`.
+missing at that capture time, build artifacts/logs `0`, PICO package candidates `0`.
+
+X_012 2026-05-23 correction: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` now exists in this workspace and source defines a 64-byte H8DM header. That does not satisfy Unity import/player boot/profiler/platform proof.
 
 Current HFI R48 static platform map: schema
 `hecton8.platform_portability_proof_audit.v10`; Android sustained-performance

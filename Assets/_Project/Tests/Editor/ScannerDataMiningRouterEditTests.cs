@@ -228,7 +228,8 @@ namespace Hecton8.Tests.Editor
             {
                 const uint targetHash = 0xCAFEu;
                 Assert.IsTrue(ScannerDataMiningRouter.InsertLoreIndex(loreIndex, targetHash, 130u));
-                progress[0] = new ScanProgressDTO
+                NativeArray<ScanProgressDTO> writableProgress = progress;
+                writableProgress[0] = new ScanProgressDTO
                 {
                     TargetHashID = targetHash,
                     CurrentProgress01 = 0.99f,

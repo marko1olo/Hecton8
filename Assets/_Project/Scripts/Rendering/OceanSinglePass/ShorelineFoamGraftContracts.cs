@@ -355,6 +355,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         }
     }
 
+    #if UNITY_EDITOR
     public static class ShorelineFoamProfileCsvParser
     {
         private const uint FnvOffset = 2166136261u;
@@ -540,7 +541,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             return value == (byte)' ' || value == (byte)'\t' || value == (byte)'\r' || value == (byte)'\n';
         }
 
-        private readonly ref struct FieldSlice
+        private readonly struct FieldSlice
         {
             private readonly int _start;
             private readonly int _end;
@@ -557,6 +558,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             }
         }
     }
+    #endif
 
     public static unsafe class ShorelineFoamGraftRuntime
     {
@@ -567,7 +569,9 @@ namespace Hecton8.Rendering.OceanSinglePass
         private static VaultGenerationHandle<ShorelineFoamTelemetryEntry> s_telemetryHandle;
         private static VaultGenerationHandle<int> s_telemetryCursorHandle;
         private static VaultGenerationHandle<ShorelineFoamProfileDTO> s_profileHandle;
+#if UNITY_EDITOR
         private static VaultGenerationHandle<byte> s_csvScratchHandle;
+#endif
         private static GraphicsBuffer s_bufferA;
         private static GraphicsBuffer s_bufferB;
         private static GraphicsBuffer s_activeBuffer;
@@ -746,6 +750,10 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private static void LoadProfilesCsvIfNeeded(IDataVault vault, string projectRootPath, NativeArray<ShorelineFoamProfileDTO> profiles)
         {
+#if !UNITY_EDITOR
+            s_csvLoaded = true;
+            return;
+#else
             if (s_csvLoaded || string.IsNullOrEmpty(projectRootPath))
                 return;
 
@@ -763,8 +771,10 @@ namespace Hecton8.Rendering.OceanSinglePass
 
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
             ShorelineFoamProfileCsvParser.ParseProfiles(new ReadOnlySpan<byte>(ptr, byteCount), profiles);
+#endif
         }
 
+#if UNITY_EDITOR
         private static int LoadFileBytes(string absolutePath, NativeArray<byte> scratch)
         {
             if (!scratch.IsCreated || scratch.Length <= 0)
@@ -785,6 +795,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
             return total;
         }
+#endif
 
         private static ShorelineFoamProfileDTO ResolveProfile(NativeArray<ShorelineFoamProfileDTO> profiles)
         {
@@ -930,7 +941,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (IsHandleValid(in handle))
                 vault.ReleaseBuffer(in handle);
 
-            handle = vault.GetGenerationHandle<T>(bufferId, length, OwnerSystemId, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, length, OwnerSystemId, options);
             return IsHandleValid(in handle) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&

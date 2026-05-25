@@ -23,9 +23,8 @@ namespace Hecton8.Construction
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Vehicle Docking Module")]
-    public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IFixedTickable, IUpdatable, IPowerComponent, IPoolable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IFixedTickable, IUpdatable, ILateFrameTickable, IPowerComponent, IPoolable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
-        private const int TransportLookupCacheCapacity = 16;
         private const float MaxDockingFixedDeltaSeconds = 0.05f;
         private const float DockingAcquireDistanceSqMeters = 2f;
         private const float DockingAcquireAlignmentDot = 0.8f;
@@ -147,15 +146,9 @@ namespace Hecton8.Construction
         private readonly List<StorageCrate> _connectedCargoCrates = new List<StorageCrate>(4);
         // COLD ALLOC: List<StorageCrate>[4] - component query buffer for docked transport cargo discovery - owner: VehicleDockingModule
         private readonly List<StorageCrate> _cargoDiscoveryBuffer = new List<StorageCrate>(4);
-        // COLD ALLOC: ulong[16] - trigger collider id cache for transport lifecycle owner discovery - owner: VehicleDockingModule
-        private readonly ulong[] _transportLookupColliderIds = new ulong[TransportLookupCacheCapacity];
-        // COLD ALLOC: IPlayerTransportLifecycleOwner[16] - resolved transport owner cache for trigger contacts - owner: VehicleDockingModule
-        private readonly IPlayerTransportLifecycleOwner[] _transportLookupOwners = new IPlayerTransportLifecycleOwner[TransportLookupCacheCapacity];
-        // COLD ALLOC: MonoBehaviour[16] - resolved transport owner component cache for trigger contacts - owner: VehicleDockingModule
-        private readonly MonoBehaviour[] _transportLookupBehaviours = new MonoBehaviour[TransportLookupCacheCapacity];
-
         private Transform _cachedTransform;
         private Collider _triggerCollider;
+        private CachedTriggerVolume _triggerVolume;
         private PowerNode _powerNode;
         private BaseModule _owningModule;
         private bool _registered;
@@ -169,7 +162,7 @@ namespace Hecton8.Construction
         private Rigidbody _dockedBody;
         private VehicleMotor _dockedVehicleMotor;
         private SubmarineFluidDynamics _dockedFluidDynamics;
-        private HectonFluidEngine _fluidRuntime;
+        private IAbyssalFlowGpuReadModel _fluidRuntime;
         private bool _cachedBodyWasKinematic;
         private bool _cachedBodyUseGravity;
         private RigidbodyConstraints _cachedBodyConstraints;
@@ -187,7 +180,7 @@ namespace Hecton8.Construction
         private float _attachedDroneMassKg;
         private uint _dockingSplineOwnerHash;
         private uint _dockingSplineRequestId;
-        private MountablePlayerTransport _mountedTransportLockOwner;
+        private ITransportDockControlLock _mountedTransportLockOwner;
         private Vector3 _lastDockingSplineTargetPosition;
         private Quaternion _lastDockingSplineRotation = Quaternion.identity;
         private Vector3 _lastDockingCommandVelocity;
@@ -196,14 +189,17 @@ namespace Hecton8.Construction
         private float _lastSplineDeviationError;
         private bool _dockingCompletionSignalPublished;
         private ulong _lastRejectedDockColliderId;
-        private int _transportLookupCount;
-        private int _transportLookupWriteCursor;
         private bool _hasDockedRelativeAup;
         private IDataVault _dataVault;
         private VaultGenerationHandle<DockTelemetryEntry> _dockTelemetryHandle;
         private VaultGenerationHandle<int> _dockTelemetryCursorHandle;
         private int _lastDockTelemetryDumpFrame = -DockTelemetryDumpCooldownFrames;
         private bool _hotSwapRegistered;
+        private bool _registeredLateFrame;
+        private Transform _pendingDockedTransform;
+        private Vector3 _pendingDockedTransformPosition;
+        private Quaternion _pendingDockedTransformRotation = Quaternion.identity;
+        private bool _pendingDockedTransformPoseDirty;
 
         /// <summary>Continuous draw while charge is actually transferred to a docked transport.</summary>
         public float PowerRating => _activelyCharging ? -chargingPowerDraw : 0f;
@@ -244,6 +240,7 @@ namespace Hecton8.Construction
             _cachedTransform = transform;
             _triggerCollider = GetComponent<Collider>();
             _triggerCollider.isTrigger = true;
+            _triggerVolume = CachedTriggerVolume.FromCollider(_triggerCollider, 3f);
             _powerNode = GetComponent<PowerNode>();
             _owningModule = GetComponentInParent<BaseModule>();
             _dockingSplineOwnerHash = ResolveDockingSplineOwnerHash();
@@ -261,7 +258,6 @@ namespace Hecton8.Construction
             CacheDockTelemetryVaultCold();
             EnsureDockTelemetry();
             TryRegisterHotSwapListener();
-            ClearTransportLookupCache();
             CacheDockingAutopilotService();
             CacheFluidRuntime();
             HectonFloatingOrigin.RegisterListener(this);
@@ -272,7 +268,6 @@ namespace Hecton8.Construction
         {
             HectonFloatingOrigin.UnregisterListener(this);
             ReleaseDockedTransport();
-            ClearTransportLookupCache();
             TryUnregister();
             TryUnregisterHotSwapListener();
             DisposeDockTelemetry();
@@ -282,7 +277,6 @@ namespace Hecton8.Construction
         {
             HectonFloatingOrigin.UnregisterListener(this);
             ReleaseDockedTransport();
-            ClearTransportLookupCache();
             TryUnregister();
             TryUnregisterHotSwapListener();
             DisposeDockTelemetry();
@@ -300,7 +294,6 @@ namespace Hecton8.Construction
             _hasDockedRelativeAup = false;
             ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
-            ClearTransportLookupCache();
             CacheDockTelemetryVaultCold();
             EnsureDockTelemetry();
             TryRegisterHotSwapListener();
@@ -324,7 +317,6 @@ namespace Hecton8.Construction
             _hasDockedRelativeAup = false;
             ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
-            ClearTransportLookupCache();
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryUnregister();
@@ -335,6 +327,7 @@ namespace Hecton8.Construction
         public void Tick(float deltaTime)
         {
             RecordDockTelemetry();
+            RefreshDockingCandidatesFromRegistry();
 
             if (_dockedTransport == null || _dockedBehaviour == null || !_isDocked)
             {
@@ -365,6 +358,11 @@ namespace Hecton8.Construction
             RecordDockTelemetry();
         }
 
+        public void LateFrameTick()
+        {
+            FlushQueuedDockedTransformPose();
+        }
+
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
@@ -379,6 +377,20 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DockingAutopilotRuntime)
+            {
+                RebindDockingAutopilotService(
+                    previousService as IDockingAutopilotService,
+                    currentService as IDockingAutopilotService);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+            {
+                _fluidRuntime = currentService as IAbyssalFlowGpuReadModel;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -388,43 +400,6 @@ namespace Hecton8.Construction
             ClearDockTelemetryDescriptor();
             _dataVault = currentService as IDataVault;
             EnsureDockTelemetry();
-        }
-
-        private void OnTriggerEnter(Collider other)
-        {
-            if (other == null)
-                return;
-
-            _lastRejectedDockColliderId = 0UL;
-            TryDockFromCollider(other);
-        }
-
-        private void OnTriggerStay(Collider other)
-        {
-            if (other == null || _dockedTransport != null)
-                return;
-
-            TryDockFromCollider(other);
-        }
-
-        private void OnTriggerExit(Collider other)
-        {
-            if (other == null || _dockedBehaviour == null)
-                return;
-
-            ulong colliderId = ResolveColliderRuntimeId(other);
-            if (colliderId != 0UL && colliderId == _lastRejectedDockColliderId)
-                _lastRejectedDockColliderId = 0UL;
-
-            MonoBehaviour ownerBehaviour;
-            IPlayerTransportLifecycleOwner owner;
-            if (!TryResolveTransportLifecycleOwner(other, out owner, out ownerBehaviour))
-                return;
-
-            if (!ReferenceEquals(ownerBehaviour, _dockedBehaviour) && !ReferenceEquals(owner, _dockedTransport))
-                return;
-
-            ReleaseDockedTransport(true);
         }
 
         private void TryRegister()
@@ -449,6 +424,7 @@ namespace Hecton8.Construction
             }
 
             _registered = true;
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -458,6 +434,11 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
             _registered = false;
         }
 
@@ -478,21 +459,35 @@ namespace Hecton8.Construction
             _hotSwapRegistered = false;
         }
 
-        private bool TryDockFromCollider(Collider other)
+        private void RefreshDockingCandidatesFromRegistry()
         {
-            if (_dockedTransport != null)
+            if (_dockedTransport != null || _dockingInProgress)
+                return;
+
+            for (int i = 0; i < PlayerTransportLifecycleRegistry.SlotCapacity; i++)
+            {
+                if (!PlayerTransportLifecycleRegistry.TryGetAt(i, out IPlayerTransportLifecycleOwner owner, out MonoBehaviour ownerBehaviour))
+                    continue;
+
+                if (!IsTransportInsideDockVolume(ownerBehaviour))
+                    continue;
+
+                if (PassesDockingAcquisitionGate(ownerBehaviour))
+                {
+                    _lastRejectedDockColliderId = 0UL;
+                    DockTransport(owner, ownerBehaviour);
+                    return;
+                }
+            }
+        }
+
+        private bool IsTransportInsideDockVolume(MonoBehaviour transportBehaviour)
+        {
+            if (transportBehaviour == null)
                 return false;
 
-            MonoBehaviour ownerBehaviour;
-            IPlayerTransportLifecycleOwner owner;
-            if (!TryResolveTransportLifecycleOwner(other, out owner, out ownerBehaviour))
-                return false;
-
-            if (!PassesDockingAcquisitionGate(ownerBehaviour))
-                return false;
-
-            DockTransport(owner, ownerBehaviour);
-            return true;
+            return TryResolveCandidatePose(transportBehaviour, out Vector3 candidatePosition, out _) &&
+                   _triggerVolume.Contains(_cachedTransform, candidatePosition);
         }
 
         private bool PassesDockingAcquisitionGate(MonoBehaviour transportBehaviour)
@@ -578,8 +573,8 @@ namespace Hecton8.Construction
                     ? ResolveDockForward() * ResolveSafeUndockEjectSpeed()
                     : Vector3.zero;
 
-                _dockedBody.linearVelocity = Vector3.zero;
-                _dockedBody.angularVelocity = Vector3.zero;
+                PhysicsForceRouter.QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
+                PhysicsForceRouter.QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
                 _dockedBody.isKinematic = _cachedBodyWasKinematic;
                 _dockedBody.useGravity = _cachedBodyUseGravity;
                 _dockedBody.constraints = _cachedBodyConstraints;
@@ -629,8 +624,8 @@ namespace Hecton8.Construction
             _cachedBodyInterpolation = _dockedBody.interpolation;
             _dockingStartPosition = _dockedBody.position;
             _dockingStartRotation = _dockedBody.rotation;
-            _dockedBody.linearVelocity = Vector3.zero;
-            _dockedBody.angularVelocity = Vector3.zero;
+            PhysicsForceRouter.QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
+            PhysicsForceRouter.QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
             _dockedBody.isKinematic = true;
             _dockedBody.useGravity = false;
             _dockedBody.interpolation = RigidbodyInterpolation.Interpolate;
@@ -756,7 +751,7 @@ namespace Hecton8.Construction
                 return true;
             }
 
-            _dockedTransform.SetPositionAndRotation(anchor.position, anchor.rotation);
+            QueueDockedTransformPose(_dockedTransform, anchor.position, anchor.rotation);
             return true;
         }
 
@@ -830,14 +825,14 @@ namespace Hecton8.Construction
 
             if (_dockedBody != null)
             {
-                _dockedBody.linearVelocity = commandVelocity;
-                _dockedBody.angularVelocity = commandAngularVelocity;
+                PhysicsForceRouter.QueueLinearVelocitySet(_dockedBody, commandVelocity);
+                PhysicsForceRouter.QueueAngularVelocitySet(_dockedBody, commandAngularVelocity);
                 _dockedBody.MovePosition(evaluatedPosition);
                 _dockedBody.MoveRotation(evaluatedRotation);
             }
             else if (_dockedTransform != null)
             {
-                _dockedTransform.SetPositionAndRotation(evaluatedPosition, evaluatedRotation);
+                QueueDockedTransformPose(_dockedTransform, evaluatedPosition, evaluatedRotation);
             }
 
             _lastDockingSplineRotation = evaluatedRotation;
@@ -860,8 +855,8 @@ namespace Hecton8.Construction
 
             if (_dockedBody != null)
             {
-                _dockedBody.linearVelocity = Vector3.zero;
-                _dockedBody.angularVelocity = Vector3.zero;
+                PhysicsForceRouter.QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
+                PhysicsForceRouter.QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
                 _dockedBody.isKinematic = true;
                 _dockedBody.useGravity = false;
                 GlobalPhysicsStateManager.RegisterDockConnection(this, _dockedBody);
@@ -946,6 +941,27 @@ namespace Hecton8.Construction
             _hasDockedRelativeAup = true;
         }
 
+        private void QueueDockedTransformPose(Transform target, Vector3 position, Quaternion rotation)
+        {
+            if (target == null)
+                return;
+
+            _pendingDockedTransform = target;
+            _pendingDockedTransformPosition = position;
+            _pendingDockedTransformRotation = rotation;
+            _pendingDockedTransformPoseDirty = true;
+        }
+
+        private void FlushQueuedDockedTransformPose()
+        {
+            if (!_pendingDockedTransformPoseDirty)
+                return;
+
+            _pendingDockedTransformPoseDirty = false;
+            if (_pendingDockedTransform != null)
+                _pendingDockedTransform.SetPositionAndRotation(_pendingDockedTransformPosition, _pendingDockedTransformRotation);
+        }
+
         private AbsoluteUniversePosition ResolveHabitatReferenceAup(
             in AbsoluteUniversePosition dockWorldAup,
             Vector3 dockRuntimePosition)
@@ -990,8 +1006,8 @@ namespace Hecton8.Construction
             if (body == null || body.isKinematic || !IsFiniteVector(ejectVelocity))
                 return;
 
-            body.linearVelocity = ejectVelocity;
-            body.angularVelocity = Vector3.zero;
+            PhysicsForceRouter.QueueLinearVelocitySet(body, ejectVelocity);
+            PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero);
         }
 
         private void AbortDockingForInvalidPose()
@@ -1061,12 +1077,12 @@ namespace Hecton8.Construction
                 return;
             }
 
-            VaultGenerationHandle<DockTelemetryEntry> acquiredRing = vault.GetGenerationHandle<DockTelemetryEntry>(
+            VaultGenerationHandle<DockTelemetryEntry> acquiredRing = vault.EnsureGenerationHandle<DockTelemetryEntry>(
                 BufferID.VehicleDockingTelemetryRing,
                 DockTelemetryCapacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> acquiredCursor = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> acquiredCursor = vault.EnsureGenerationHandle<int>(
                 BufferID.VehicleDockingTelemetryCursor,
                 1,
                 SystemID.VehiclesPhysics,
@@ -1374,12 +1390,38 @@ namespace Hecton8.Construction
 
         private void CacheDockingAutopilotService()
         {
-            _dockingAutopilotService = GlobalRegistry.TryGet(out IDockingAutopilotService service) ? service : null;
+            _dockingAutopilotService = GlobalRegistry.DockingAutopilot;
         }
 
         private void CacheFluidRuntime()
         {
-            _fluidRuntime = GlobalRegistry.Fluid;
+            _fluidRuntime = GlobalRegistry.AbyssalFlowGpu;
+        }
+
+        private void RebindDockingAutopilotService(
+            IDockingAutopilotService previousService,
+            IDockingAutopilotService currentService)
+        {
+            IDockingAutopilotService releaseService = previousService ?? _dockingAutopilotService;
+            int activeSlot = _activeDockingSplineSlot;
+            if (activeSlot >= 0 && releaseService != null)
+                releaseService.TryReleaseSplineSlot(activeSlot, _dockingSplineOwnerHash);
+
+            _dockingAutopilotService = currentService;
+            _activeDockingSplineSlot = -1;
+
+            if (!_dockingInProgress ||
+                _activeDockingSpline.OwnerHash == 0u ||
+                _dockingAutopilotService == null)
+            {
+                return;
+            }
+
+            if (_dockingAutopilotService.TryAcquireSplineSlot(_dockingSplineOwnerHash, out int splineSlot) &&
+                _dockingAutopilotService.TryWriteActiveSpline(splineSlot, in _activeDockingSpline))
+            {
+                _activeDockingSplineSlot = splineSlot;
+            }
         }
 
         private bool TryEvaluateDockingSplinePose(
@@ -1444,7 +1486,7 @@ namespace Hecton8.Construction
 
         private Vector3 ResolveDockingFlowVelocity(Vector3 samplePosition)
         {
-            HectonFluidEngine fluid = _fluidRuntime;
+            IAbyssalFlowGpuReadModel fluid = _fluidRuntime;
             if (fluid == null ||
                 !IsFiniteVector(samplePosition) ||
                 !fluid.TrySampleModAbyssalFlow(samplePosition, out float3 flowVelocity) ||
@@ -1492,7 +1534,7 @@ namespace Hecton8.Construction
                 Velocity = velocity,
                 SourceFlags = DockingWakeSourceVehicleFlag
             };
-            GlobalSignals.Publish(in wakeSignal);
+            SignalBus<WakeGeneratedSignal>.TryPush(in wakeSignal);
 
             float speed = FastMagnitudeFromSq(speedSq);
             FluidImpulseSignal impulseSignal = new FluidImpulseSignal
@@ -1505,7 +1547,7 @@ namespace Hecton8.Construction
                 SourceHash = DockingWakeSourceHash,
                 Flags = DockingWakeSourceVehicleFlag
             };
-            GlobalSignals.Publish(in impulseSignal);
+            SignalBus<FluidImpulseSignal>.TryPush(in impulseSignal);
         }
 
         private void TryPublishDockingCompleteSignal(float progress01, Vector3 dockPosition, Vector3 dockForward)
@@ -1534,7 +1576,7 @@ namespace Hecton8.Construction
                 Reserved2 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingCompleteSignal>.Push(in signal);
+            SignalBus<DockingCompleteSignal>.TryPush(in signal);
             _dockingCompletionSignalPublished = true;
         }
 
@@ -1567,7 +1609,7 @@ namespace Hecton8.Construction
                 Reserved1 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingFailedSignal>.Push(in signal);
+            SignalBus<DockingFailedSignal>.TryPush(in signal);
         }
 
         private void ReleaseActiveDockingSpline(DockingSplineRuntimeState finalState)
@@ -1587,14 +1629,14 @@ namespace Hecton8.Construction
 
         private uint ResolveDockingSplineOwnerHash()
         {
-            int instanceId = GetInstanceID();
+            int instanceId = GetEntityId().GetHashCode();
             uint hash = unchecked((uint)instanceId);
             return hash != 0u ? hash : 1u;
         }
 
         private int ResolveDockingHubGridId()
         {
-            return _owningModule != null ? _owningModule.GetInstanceID() : GetInstanceID();
+            return _owningModule != null ? _owningModule.GetEntityId().GetHashCode() : GetEntityId().GetHashCode();
         }
 
         private void ResetDockingRuntimeCaches()
@@ -1686,7 +1728,7 @@ namespace Hecton8.Construction
 
         private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
         {
-            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return IsFiniteAup(in originAup);
         }
 
@@ -1782,7 +1824,7 @@ namespace Hecton8.Construction
                 return;
 
             if (!transportBehaviour.TryGetComponent(out _mountedTransportLockOwner))
-                _mountedTransportLockOwner = transportBehaviour.GetComponentInParent<MountablePlayerTransport>();
+                _mountedTransportLockOwner = transportBehaviour.GetComponentInParent<ITransportDockControlLock>();
 
             if (_mountedTransportLockOwner != null)
                 _mountedTransportLockOwner.BeginDockControlLock();
@@ -1835,101 +1877,5 @@ namespace Hecton8.Construction
             _cargoDiscoveryBuffer.Clear();
         }
 
-        private bool TryResolveTransportLifecycleOwner(
-            Collider other,
-            out IPlayerTransportLifecycleOwner lifecycleOwner,
-            out MonoBehaviour lifecycleBehaviour)
-        {
-            lifecycleOwner = null;
-            lifecycleBehaviour = null;
-            if (other == null)
-                return false;
-
-            ulong colliderId = ResolveColliderRuntimeId(other);
-            if (colliderId != 0UL)
-            {
-                for (int i = 0; i < _transportLookupCount; i++)
-                {
-                    if (_transportLookupColliderIds[i] != colliderId)
-                        continue;
-
-                    lifecycleOwner = _transportLookupOwners[i];
-                    lifecycleBehaviour = _transportLookupBehaviours[i];
-                    if (lifecycleOwner != null && lifecycleBehaviour != null)
-                        return lifecycleBehaviour.gameObject.activeInHierarchy;
-
-                    _transportLookupColliderIds[i] = 0UL;
-                    break;
-                }
-            }
-
-            lifecycleOwner = other.GetComponentInParent<IPlayerTransportLifecycleOwner>();
-            lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
-            if (lifecycleOwner != null && lifecycleBehaviour != null)
-            {
-                CacheTransportLifecycleOwner(colliderId, lifecycleOwner, lifecycleBehaviour);
-                return true;
-            }
-
-            PlayerTransportCoordinator transportCoordinator = other.GetComponentInParent<PlayerTransportCoordinator>();
-            if (transportCoordinator != null && transportCoordinator.TryResolveTransportLifecycleOwner(out lifecycleOwner))
-            {
-                lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
-                if (lifecycleBehaviour != null)
-                {
-                    CacheTransportLifecycleOwner(colliderId, lifecycleOwner, lifecycleBehaviour);
-                    return true;
-                }
-            }
-
-            lifecycleOwner = null;
-            lifecycleBehaviour = null;
-            return false;
-        }
-
-        private void CacheTransportLifecycleOwner(
-            ulong colliderId,
-            IPlayerTransportLifecycleOwner lifecycleOwner,
-            MonoBehaviour lifecycleBehaviour)
-        {
-            if (colliderId == 0UL || lifecycleOwner == null || lifecycleBehaviour == null)
-                return;
-
-            int slot;
-            if (_transportLookupCount < _transportLookupColliderIds.Length)
-            {
-                slot = _transportLookupCount;
-                _transportLookupCount++;
-            }
-            else
-            {
-                slot = _transportLookupWriteCursor;
-            }
-
-            _transportLookupColliderIds[slot] = colliderId;
-            _transportLookupOwners[slot] = lifecycleOwner;
-            _transportLookupBehaviours[slot] = lifecycleBehaviour;
-            _transportLookupWriteCursor = (_transportLookupWriteCursor + 1) % _transportLookupColliderIds.Length;
-        }
-
-        private void ClearTransportLookupCache()
-        {
-            for (int i = 0; i < _transportLookupCount; i++)
-            {
-                _transportLookupColliderIds[i] = 0UL;
-                _transportLookupOwners[i] = null;
-                _transportLookupBehaviours[i] = null;
-            }
-
-            _transportLookupCount = 0;
-            _transportLookupWriteCursor = 0;
-        }
-
-        private static ulong ResolveColliderRuntimeId(Collider collider)
-        {
-            return collider != null
-                ? EntityId.ToULong(collider.GetEntityId())
-                : 0UL;
-        }
     }
 }

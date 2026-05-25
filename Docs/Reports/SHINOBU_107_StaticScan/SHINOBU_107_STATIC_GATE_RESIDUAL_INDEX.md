@@ -1,4 +1,4 @@
-# SHINOBU_107 Static Gate Residual Index
+﻿# SHINOBU_107 Static Gate Residual Index
 
 Source summary: `Docs/Reports/SHINOBU_107_StaticScan/SHINOBU_140_STATIC_GATE_SUMMARY.json`
 

@@ -58,6 +58,10 @@ GENERATED_PROJECT_DONOR_FILES = {
     "Crest.csproj",
     "Crest.Helpers.Editor.csproj",
 }
+GENERATED_PROJECT_BRIDGE_FILES = {
+    "Hecton8.Crest.Bridge.csproj",
+    "Hecton8.Crest.Bridge.Editor.csproj",
+}
 CREST_DONOR_OPTIONAL_REFERENCE_PACKAGES = {
     "Unity.RenderPipelines.HighDefinition.Runtime": "com.unity.render-pipelines.high-definition",
     "Unity.Postprocessing.Runtime": "com.unity.postprocessing",
@@ -98,6 +102,9 @@ GENERATED_PROJECT_HARD_ROUTE_RE = re.compile(
     r'<Project\s+Path="WaveHarmonic\.Crest[^"]*\.csproj"\s*/>|'
     r'<Reference\s+Include="(?:Crest|WaveHarmonic\.Crest[^"]*)"|'
     r'<(?:Compile|None|Content)\s+Include="Packages[\\/]+com\.waveharmonic\.crest[^"]*"\s*/>)'
+)
+GENERATED_PROJECT_BRIDGE_SOURCE_RE = re.compile(
+    r'<Compile\s+Include="Assets[\\/]+_Project[\\/]+Scripts[\\/]+Plugins[\\/]+Crest[\\/]+[^"]+\.cs"\s*/>'
 )
 RG_ACTIVE_PATTERNS = (
     rf"WaveHarmonic\.Crest::|WaveHarmonic\.Crest|382a5d8b1147b4e78a31353c022b8e15|03aa24b56404b45a190a2cfc0c7cc100|{QUARANTINED_ASSET_GUID_RE}|Crest5KinematicsAdapter|com\.waveharmonic\.crest|Crest::Crest\.UnderwaterRenderer|^\s*-\s+Crest\s*$",
@@ -701,6 +708,22 @@ def scan_generated_project_crest_routes() -> tuple[list[dict], list[dict], list[
             continue
 
         for line_number, line in enumerate(lines, start=1):
+            if path.name.endswith(".csproj.lscache") and (
+                "WaveHarmonic.Crest" in line
+                or "Packages/com.waveharmonic.crest" in line
+                or "Packages\\com.waveharmonic.crest" in line
+                or "CrestMigration" in line
+            ):
+                breaches.append(
+                    {
+                        "kind": "generated_project_stale_lscache_crest_route",
+                        "path": str(relative),
+                        "line": line_number,
+                        "text": line.strip(),
+                    }
+                )
+                continue
+
             if "DefineConstants" in line:
                 symbols = [symbol for symbol in CREST_SCRIPTING_DEFINE_SYMBOLS if symbol in line]
                 if symbols:
@@ -721,6 +744,21 @@ def scan_generated_project_crest_routes() -> tuple[list[dict], list[dict], list[
                 prune_rule_hits.append(
                     {
                         "kind": "generated_project_waveharmonic_prune_rule",
+                        "path": str(relative),
+                        "line": line_number,
+                        "text": line.strip(),
+                    }
+                )
+                continue
+
+            if (
+                path.name not in GENERATED_PROJECT_BRIDGE_FILES
+                and path.name not in GENERATED_PROJECT_DONOR_FILES
+                and GENERATED_PROJECT_BRIDGE_SOURCE_RE.search(line)
+            ):
+                breaches.append(
+                    {
+                        "kind": "generated_project_bridge_source_in_broad_project",
                         "path": str(relative),
                         "line": line_number,
                         "text": line.strip(),

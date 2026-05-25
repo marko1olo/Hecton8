@@ -4,6 +4,7 @@
 // UI Toolkit tuner and static layout guard for SHINOBU_221.
 // ============================================================================
 
+using System.Globalization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
@@ -142,7 +143,13 @@ namespace Hecton8.Atmosphere.Editor
 
             if (BaseAtmosphereLogisticsRuntime.TryGetLatestTelemetry(out AtmosphereTelemetryEntry entry))
             {
-                _status.text = $"Nodes {entry.NodeCount}  Edges {entry.EdgeCount}  Iter {entry.JacobiIterations}  O2 {entry.AverageOxygen01:0.000}  CO2max {entry.MaxCarbonDioxide01:0.000}  Toxin {entry.MaxToxin01:0.000}";
+                _status.text =
+                    "Nodes " + entry.NodeCount +
+                    "  Edges " + entry.EdgeCount +
+                    "  Iter " + entry.JacobiIterations +
+                    "  O2 " + entry.AverageOxygen01.ToString("0.000", CultureInfo.InvariantCulture) +
+                    "  CO2max " + entry.MaxCarbonDioxide01.ToString("0.000", CultureInfo.InvariantCulture) +
+                    "  Toxin " + entry.MaxToxin01.ToString("0.000", CultureInfo.InvariantCulture);
             }
             else
             {

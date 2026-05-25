@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
@@ -13,30 +14,29 @@ namespace Hecton8.Physiology
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateMockRespawnPointsJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<MedicalBayRespawnPointDTO> MedicalBays;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<MedicalBayDTO> MedicalBays;
         public double3 FallbackLifepodAUP;
-        public float ValidationClearanceMeters;
 
         public void Execute(int index)
         {
             if ((uint)index >= (uint)MedicalBays.Length)
                 return;
 
-            float clearance = math.max(ValidationClearanceMeters, 1.5f);
             float ring = 9f + ((index & 3) * 2.25f);
             float angle = ((index & 7) * 0.78539816339f) + 0.39269908169f;
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float angleSin, out float angleCos);
             double3 offset = default;
-            offset.x = math.cos(angle) * ring;
+            offset.x = angleCos * ring;
             offset.y = 1.5f + ((index & 1) * 0.5f);
-            offset.z = math.sin(angle) * ring;
-            double3 terrainOffset = default;
-            terrainOffset.y = clearance + 0.25f;
-            MedicalBayRespawnPointDTO bay = default;
+            offset.z = angleSin * ring;
+            MedicalBayDTO bay = default;
             bay.BayAUP = SanitizeAup(FallbackLifepodAUP + offset, FallbackLifepodAUP);
-            bay.NearestTerrainAUP = bay.BayAUP - terrainOffset;
-            bay.MedicalBayHashID = Hash(index, 0x4D454442u);
-            bay.ClearanceMeters = clearance;
-            bay.Flags = ShinobuRespawnFlags.MockMedicalBay;
+            bay.AssociatedBaseHash = Hash(index, 0x4D454442u);
+            bay.Flags = ShinobuRespawnFlags.MockMedicalBay |
+                        ShinobuRespawnFlags.MedicalBayActive |
+                        ShinobuRespawnFlags.MedicalBayPowered;
+            bay.Flags |= ((uint)(MedicalBays.Length - index - 1) << ShinobuRespawnConstants.MedicalBayPriorityShift) &
+                         ShinobuRespawnConstants.MedicalBayPriorityMask;
             MedicalBays[index] = bay;
         }
 
@@ -65,11 +65,256 @@ namespace Hecton8.Physiology
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockLethalDamageJob : IJob
+    {
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<MedicalBayDTO> MedicalBays;
+        [WriteOnly, NoAlias] public NativeQueue<PlayerRespawnSignal>.ParallelWriter RespawnSignals;
+        [NativeDisableParallelForRestriction] public NativeArray<int> RespawnSignalsBudget;
+        public double3 DeathAUP;
+        public double3 FallbackLifepodAUP;
+        public uint Frame;
+        public uint Sequence;
+        public uint PlayerHash;
+        public uint DamageHash;
+        public float Intensity01;
+
+        public void Execute()
+        {
+            double3 fallback = SanitizeAup(FallbackLifepodAUP, DefaultFallbackAup());
+            for (int i = 0; i < MedicalBays.Length; i++)
+            {
+                MedicalBayDTO bay = CreateMockBay(i, fallback);
+                uint priority = (uint)(MedicalBays.Length - i - 1);
+                bay.Flags |= (priority << ShinobuRespawnConstants.MedicalBayPriorityShift) &
+                             ShinobuRespawnConstants.MedicalBayPriorityMask;
+                MedicalBays[i] = bay;
+            }
+
+            uint sequence = Sequence != 0u ? Sequence : Hash((int)Frame, 0x4C455448u);
+            uint playerHash = PlayerHash != 0u ? PlayerHash : 0x504C5952u;
+            double3 death = SanitizeAup(DeathAUP, fallback);
+
+            PlayerRespawnSignal respawn = default;
+            respawn.DeathAUP = death;
+            respawn.RespawnAUP = death;
+            respawn.PlayerHash = playerHash;
+            respawn.DamageHash = DamageHash != 0u ? DamageHash : 0x50524553u;
+            respawn.Frame = Frame;
+            respawn.Sequence = sequence;
+            respawn.Flags = PlayerRespawnSignalFlags.Requested | PlayerRespawnSignalFlags.SuspendCollision;
+            respawn.Phase = PlayerRespawnSignalPhase.Request;
+            respawn.SuspendCollisionFrames = 1;
+            SignalBus<PlayerRespawnSignal>.TryEnqueueBounded(RespawnSignals, RespawnSignalsBudget, respawn);
+        }
+
+        private static MedicalBayDTO CreateMockBay(int index, double3 fallback)
+        {
+            float ring = 9f + ((index & 3) * 2.25f);
+            float angle = ((index & 7) * 0.78539816339f) + 0.39269908169f;
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float angleSin, out float angleCos);
+            double3 offset = default;
+            offset.x = angleCos * ring;
+            offset.y = 1.5f + ((index & 1) * 0.5f);
+            offset.z = angleSin * ring;
+            MedicalBayDTO bay = default;
+            bay.BayAUP = SanitizeAup(fallback + offset, fallback);
+            bay.AssociatedBaseHash = Hash(index, 0x4D454442u);
+            bay.Flags = ShinobuRespawnFlags.MockMedicalBay |
+                        ShinobuRespawnFlags.MedicalBayActive |
+                        ShinobuRespawnFlags.MedicalBayPowered;
+            return bay;
+        }
+
+        private static double3 SanitizeAup(double3 value, double3 fallback)
+        {
+            return math.all(math.isfinite(value)) ? value : (math.all(math.isfinite(fallback)) ? fallback : DefaultFallbackAup());
+        }
+
+        private static double3 DefaultFallbackAup()
+        {
+            double3 fallback = default;
+            fallback.y = -18d;
+            return fallback;
+        }
+
+        private static uint Hash(int index, uint salt)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ (uint)index) * 16777619u;
+                hash = (hash ^ salt) * 16777619u;
+                return hash == 0u ? salt : hash;
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct FindNearestMedicalBayJob : IJob
+    {
+        [NativeDisableUnsafePtrRestriction, NoAlias] public RespawnStateDTO* RespawnState;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public RespawnRequestDTO* RespawnRequest;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public MedicalBayDTO* MedicalBays;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public RespawnTuningDTO* Tuning;
+        public int MedicalBayCount;
+
+        public void Execute()
+        {
+            if (RespawnState == null || RespawnRequest == null || MedicalBays == null || Tuning == null)
+                return;
+
+            RespawnRequestDTO request = *RespawnRequest;
+            if ((request.Flags & ShinobuRespawnFlags.PendingRequest) == 0u)
+                return;
+
+            RespawnTuningDTO tuning = SanitizeTuning(*Tuning);
+            double3 fallback = SanitizeAup(tuning.FallbackLifepodAUP, DefaultFallbackAup());
+            double3 deathAup = SanitizeAup(request.DeathAUP, fallback);
+            double3 target = fallback;
+            uint medicalBayHash = 0u;
+            uint rejectedCandidateFlags = 0u;
+            uint selectedCandidateFlags = 0u;
+            uint bestPriority = 0u;
+            double bestSq = double.MaxValue;
+            double radius = math.max((double)tuning.MedicalBaySearchRadiusMeters, 0.0001d);
+            double maxSearchSq = radius * radius;
+            int count = math.max(0, MedicalBayCount);
+
+            for (int i = 0; i < count; i++)
+            {
+                MedicalBayDTO bay = MedicalBays[i];
+                if (!ValidateMedicalBay(in bay))
+                {
+                    rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
+                    continue;
+                }
+
+                double3 delta = bay.BayAUP - deathAup;
+                if (!math.all(math.isfinite(delta)))
+                {
+                    rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
+                    continue;
+                }
+
+                float distanceSq = math.lengthsq(AupDeltaToFloat3(delta));
+                if (!math.isfinite(distanceSq) || (double)distanceSq > maxSearchSq)
+                {
+                    rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
+                    continue;
+                }
+
+                uint priority = ExtractPriority(bay.Flags);
+                if (!ShouldSelect(distanceSq, priority, bestSq, bestPriority))
+                    continue;
+
+                bestSq = distanceSq;
+                bestPriority = priority;
+                target = bay.BayAUP;
+                medicalBayHash = bay.AssociatedBaseHash;
+                selectedCandidateFlags = bay.Flags & ShinobuRespawnFlags.MockMedicalBay;
+            }
+
+            uint flags = ShinobuRespawnFlags.RespawnActive |
+                         ShinobuRespawnFlags.PendingRequest |
+                         ShinobuRespawnFlags.DeathSequenceBlackoutPrimed;
+            if (!math.all(math.isfinite(target)) || medicalBayHash == 0u)
+            {
+                target = fallback;
+                flags |= rejectedCandidateFlags | ShinobuRespawnFlags.FallbackLifepod;
+            }
+            else
+            {
+                flags |= selectedCandidateFlags;
+            }
+
+            RespawnStateDTO state = default;
+            state.TargetAUP = target;
+            state.MedicalBayHashID = medicalBayHash;
+            state.Flags = flags;
+            *RespawnState = state;
+
+            request.MedicalBayHashID = medicalBayHash;
+            request.Flags |= flags & (ShinobuRespawnFlags.MockMedicalBay |
+                                      ShinobuRespawnFlags.FallbackLifepod |
+                                      ShinobuRespawnFlags.InvalidTargetAup |
+                                      ShinobuRespawnFlags.DeathSequenceBlackoutPrimed);
+            *RespawnRequest = request;
+        }
+
+        private static bool ShouldSelect(float distanceSq, uint priority, double bestSq, uint bestPriority)
+        {
+            double distance = distanceSq;
+            if (distance < bestSq)
+                return true;
+
+            return math.abs(distance - bestSq) <= 0.0001d && priority > bestPriority;
+        }
+
+        private static uint ExtractPriority(uint flags)
+        {
+            return (flags & ShinobuRespawnConstants.MedicalBayPriorityMask) >> ShinobuRespawnConstants.MedicalBayPriorityShift;
+        }
+
+        private static bool ValidateMedicalBay(in MedicalBayDTO bay)
+        {
+            if (bay.AssociatedBaseHash == 0u || !math.all(math.isfinite(bay.BayAUP)))
+                return false;
+
+            const uint requiredFlags = ShinobuRespawnFlags.MedicalBayActive | ShinobuRespawnFlags.MedicalBayPowered;
+            return (bay.Flags & requiredFlags) == requiredFlags;
+        }
+
+        private static RespawnTuningDTO SanitizeTuning(RespawnTuningDTO tuning)
+        {
+            tuning.FallbackLifepodAUP = SanitizeAup(tuning.FallbackLifepodAUP, DefaultFallbackAup());
+            tuning.HighQualityFadeRate = math.clamp(FiniteOr(tuning.HighQualityFadeRate, 0.5f), 0.0001f, 16f);
+            tuning.LowQualityFadeRate = math.clamp(FiniteOr(tuning.LowQualityFadeRate, 2f), 0.0001f, 16f);
+            tuning.PenaltyMultiplier = math.saturate(FiniteOr(tuning.PenaltyMultiplier, 1f));
+            tuning.ValidationClearanceMeters = math.clamp(FiniteOr(tuning.ValidationClearanceMeters, 1.5f), 0.25f, 16f);
+            tuning.RespawnInvulnerabilitySeconds = math.clamp(FiniteOr(tuning.RespawnInvulnerabilitySeconds, 1.5f), 0f, 60f);
+            tuning.MedicalBaySearchRadiusMeters = math.clamp(FiniteOr(tuning.MedicalBaySearchRadiusMeters, 5000f), 1f, 50000f);
+            return tuning;
+        }
+
+        private static double3 SanitizeAup(double3 value, double3 fallback)
+        {
+            if (math.all(math.isfinite(value)))
+                return value;
+            return math.all(math.isfinite(fallback)) ? fallback : DefaultFallbackAup();
+        }
+
+        private static double3 DefaultFallbackAup()
+        {
+            double3 fallback = default;
+            fallback.y = -18d;
+            return fallback;
+        }
+
+        private static float FiniteOr(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private static float3 AupDeltaToFloat3(double3 delta)
+        {
+            if (!math.all(math.isfinite(delta)))
+                return float3.zero;
+
+            double clamp = math.max(HectonPhysicsContract.AupMaxDistanceReturnMeters, 0.0001d);
+            float3 result = default;
+            result.x = (float)math.clamp(delta.x, -clamp, clamp);
+            result.y = (float)math.clamp(delta.y, -clamp, clamp);
+            result.z = (float)math.clamp(delta.z, -clamp, clamp);
+            return result;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct ResetPlayerPhysiologyJob : IJob
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public RespawnStateDTO* RespawnState;
         [NativeDisableUnsafePtrRestriction, NoAlias] public RespawnRequestDTO* RespawnRequest;
-        [NativeDisableUnsafePtrRestriction, NoAlias] public MedicalBayRespawnPointDTO* MedicalBays;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public MedicalBayDTO* MedicalBays;
         [NativeDisableUnsafePtrRestriction, NoAlias] public RespawnFadeDTO* RespawnFade;
         [NativeDisableUnsafePtrRestriction, NoAlias] public RespawnTelemetryEntry* TelemetryRing;
         [NativeDisableUnsafePtrRestriction, NoAlias] public RespawnTelemetryCursor64* TelemetryCursor;
@@ -81,8 +326,12 @@ namespace Hecton8.Physiology
         [NativeDisableUnsafePtrRestriction, NoAlias] public TissueCompartmentDTO* Tissues;
         [NativeDisableUnsafePtrRestriction, NoAlias] public PhysiologyScalarsDTO* Scalars;
         [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicStateDTO* Metabolism;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public GasPhysiologyStateDTO* GasState;
         [NativeDisableUnsafePtrRestriction, NoAlias] public LockstepPlayerKinematicState* PlayerKinematic;
         [WriteOnly, NoAlias] public NativeQueue<InventoryCommandSignal>.ParallelWriter InventoryCommands;
+        [NativeDisableParallelForRestriction] public NativeArray<int> InventoryCommandsBudget;
+        [WriteOnly, NoAlias] public NativeQueue<InventoryRespawnDeathAupSignal>.ParallelWriter InventoryDeathAupSignals;
+        [NativeDisableParallelForRestriction] public NativeArray<int> InventoryDeathAupSignalsBudget;
         public int MedicalBayCount;
         public int TissueCount;
         public int PenaltyCapacity;
@@ -106,7 +355,13 @@ namespace Hecton8.Physiology
             uint stagedRouteFlags = stagedState.Flags & (ShinobuRespawnFlags.MockMedicalBay |
                                                          ShinobuRespawnFlags.FallbackLifepod |
                                                          ShinobuRespawnFlags.InvalidTargetAup);
-            uint flags = ShinobuRespawnFlags.RespawnActive | ShinobuRespawnFlags.Committed;
+            uint flags = ShinobuRespawnFlags.RespawnActive |
+                         ShinobuRespawnFlags.Committed |
+                         (request.Flags & (ShinobuRespawnFlags.NanDetected | ShinobuRespawnFlags.InvalidTargetAup));
+            bool requestDeathFinite = math.all(math.isfinite(request.DeathAUP));
+            double3 deathAup = SanitizeAup(request.DeathAUP, fallback);
+            if (!requestDeathFinite)
+                flags |= ShinobuRespawnFlags.NanDetected | ShinobuRespawnFlags.InvalidTargetAup;
             uint medicalBayHash = stagedState.MedicalBayHashID;
             double3 target = stagedState.TargetAUP;
             bool stagedFallback = (stagedState.Flags & ShinobuRespawnFlags.FallbackLifepod) != 0u;
@@ -120,6 +375,7 @@ namespace Hecton8.Physiology
                 medicalBayHash = 0u;
                 uint rejectedCandidateFlags = 0u;
                 uint selectedCandidateFlags = 0u;
+                uint bestPriority = 0u;
                 double bestSq = double.MaxValue;
                 double radius = math.max((double)tuning.MedicalBaySearchRadiusMeters, 0.0001d);
                 double maxSearchSq = radius * radius;
@@ -127,21 +383,21 @@ namespace Hecton8.Physiology
 
                 for (int i = 0; i < count; i++)
                 {
-                    MedicalBayRespawnPointDTO bay = MedicalBays[i];
+                    MedicalBayDTO bay = MedicalBays[i];
                     if (!math.all(math.isfinite(bay.BayAUP)))
                     {
                         rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
                     }
 
-                    double3 delta = bay.BayAUP - request.DeathAUP;
+                    double3 delta = bay.BayAUP - deathAup;
                     if (!math.all(math.isfinite(delta)))
                     {
                         rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
                     }
 
-                    double distanceSq = math.lengthsq(delta);
+                    float distanceSq = math.lengthsq(AupDeltaToFloat3(delta));
                     if (!math.isfinite(distanceSq))
                     {
                         rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
@@ -154,18 +410,20 @@ namespace Hecton8.Physiology
                         continue;
                     }
 
-                    if (distanceSq >= bestSq)
-                        continue;
-
-                    if (!ValidateMedicalBay(in bay, tuning.ValidationClearanceMeters))
+                    if (!ValidateMedicalBay(in bay))
                     {
                         rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
                     }
 
+                    uint priority = ExtractPriority(bay.Flags);
+                    if (!ShouldSelect(distanceSq, priority, bestSq, bestPriority))
+                        continue;
+
                     bestSq = distanceSq;
+                    bestPriority = priority;
                     target = bay.BayAUP;
-                    medicalBayHash = bay.MedicalBayHashID;
+                    medicalBayHash = bay.AssociatedBaseHash;
                     selectedCandidateFlags = bay.Flags & ShinobuRespawnFlags.MockMedicalBay;
                 }
 
@@ -186,9 +444,9 @@ namespace Hecton8.Physiology
 
             WritePhysiology(request.PlayerHash);
             WriteKinematic(target);
-            flags |= EmitInventoryPenalty(request);
+            flags |= EmitInventoryPenalty(request, deathAup);
             WriteFade(quality, tuning, flags);
-            WriteTelemetry(request.DeathAUP, target, request.DamageHash, flags);
+            WriteTelemetry(deathAup, target, request.DamageHash, flags);
 
             RespawnStateDTO committedState = default;
             committedState.TargetAUP = target;
@@ -210,6 +468,8 @@ namespace Hecton8.Physiology
                 vitals.TissueNitrogen = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm;
                 vitals.CoreTemperature = 37f;
                 vitals.ActiveTraumaMask = 0u;
+                vitals.ActiveTraumaRefreshMask = 0u;
+                vitals.LastTraumaRefreshFrame = 0u;
                 vitals.HeartRate = 72f;
                 vitals.Adrenaline = 0f;
                 *Vitals = vitals;
@@ -219,9 +479,10 @@ namespace Hecton8.Physiology
             {
                 DecompressionStateDTO state = default;
                 for (int i = 0; i < ShinobuPhysiologyConstants.TissueCompartmentCount; i++)
-                    state.TissueTensions[i] = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm;
-                state.AmbientPressure = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm;
-                state.AscentRate = 0f;
+                    state.SetTissueTensionN2(i, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm);
+                state.CurrentAmbientPressure = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm;
+                state.GradientAdvantage = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm;
+                state.BubbleFlags = 0u;
                 *Decompression = state;
             }
 
@@ -245,6 +506,7 @@ namespace Hecton8.Physiology
                 scalars.FatigueMultiplier = 1f;
                 scalars.OxygenDrainPerSecond = 0f;
                 scalars.StatusFlags = 0u;
+                scalars.StatusEffectMask = 0UL;
                 *Scalars = scalars;
             }
 
@@ -258,6 +520,19 @@ namespace Hecton8.Physiology
                 metabolism.EntityHashID = playerHash;
                 metabolism.Flags = 0u;
                 *Metabolism = metabolism;
+            }
+
+            if (GasState != null)
+            {
+                GasPhysiologyStateDTO gas = default;
+                gas.OxygenPartialPressure = ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm;
+                gas.NitrogenPartialPressure = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm;
+                gas.CarbonDioxidePartialPressure = 0f;
+                gas.CnsToxicity01 = 0f;
+                gas.NarcosisLevel01 = 0f;
+                gas.StaminaDrainRate = 0f;
+                gas.Flags = 0u;
+                *GasState = gas;
             }
         }
 
@@ -325,7 +600,7 @@ namespace Hecton8.Physiology
             *TelemetryCursor = cursor;
         }
 
-        private uint EmitInventoryPenalty(RespawnRequestDTO request)
+        private uint EmitInventoryPenalty(RespawnRequestDTO request, double3 deathAup)
         {
             int count = PenaltyRuleCount != null ? math.min(math.max(0, *PenaltyRuleCount), PenaltyCapacity) : 0;
             RespawnTuningDTO tuning = SanitizeTuning(*Tuning);
@@ -359,25 +634,47 @@ namespace Hecton8.Physiology
             else
             {
                 command.PayloadFlags = InventoryCommandSignalPayloadFlags.FallbackWhenRuleTableMissing;
+                command.Payload3 = ShinobuRespawnConstants.SourceHash;
             }
 
-            InventoryCommands.Enqueue(command);
+            command.PayloadFlags |= InventoryCommandSignalPayloadFlags.RespawnDeathAupSideband;
+            SignalBus<InventoryCommandSignal>.TryEnqueueBounded(InventoryCommands, InventoryCommandsBudget, command);
+
+            InventoryRespawnDeathAupSignal sideband = default;
+            sideband.DeathAUP = deathAup;
+            sideband.InventoryHash = request.PlayerHash;
+            sideband.Frame = Frame;
+            sideband.Sequence = request.Sequence;
+            sideband.Flags = 1u;
+            sideband.SourceHash = ShinobuRespawnConstants.SourceHash;
+            SignalBus<InventoryRespawnDeathAupSignal>.TryEnqueueBounded(InventoryDeathAupSignals, InventoryDeathAupSignalsBudget, sideband);
             return ShinobuRespawnFlags.PenaltyApplied;
         }
 
-        private static bool ValidateMedicalBay(in MedicalBayRespawnPointDTO bay, float clearanceMeters)
+        private static bool ShouldSelect(float distanceSq, uint priority, double bestSq, uint bestPriority)
         {
-            if (bay.MedicalBayHashID == 0u)
+            double distance = distanceSq;
+            if (distance < bestSq)
+                return true;
+
+            return math.abs(distance - bestSq) <= 0.0001d && priority > bestPriority;
+        }
+
+        private static uint ExtractPriority(uint flags)
+        {
+            return (flags & ShinobuRespawnConstants.MedicalBayPriorityMask) >> ShinobuRespawnConstants.MedicalBayPriorityShift;
+        }
+
+        private static bool ValidateMedicalBay(in MedicalBayDTO bay)
+        {
+            if (bay.AssociatedBaseHash == 0u)
                 return false;
 
-            double3 delta = bay.BayAUP - bay.NearestTerrainAUP;
-            if (!math.all(math.isfinite(delta)))
+            if (!math.all(math.isfinite(bay.BayAUP)))
                 return false;
 
-            float3 local = AupDeltaToFloat3(delta);
-            float distanceSq = math.lengthsq(local);
-            float clearance = math.max(math.max(clearanceMeters, bay.ClearanceMeters), 0.25f);
-            return math.isfinite(distanceSq) && distanceSq >= clearance * clearance;
+            const uint requiredFlags = ShinobuRespawnFlags.MedicalBayActive | ShinobuRespawnFlags.MedicalBayPowered;
+            return (bay.Flags & requiredFlags) == requiredFlags;
         }
 
         private static RespawnTuningDTO SanitizeTuning(RespawnTuningDTO tuning)
@@ -443,7 +740,7 @@ namespace Hecton8.Physiology
 
         private static double SafeAupClampMeters()
         {
-            return math.max(HectonPhysicsContract.AupSectorSizeMetersDouble, 0.0001d);
+            return math.max(HectonPhysicsContract.AupMaxDistanceReturnMeters, 0.0001d);
         }
 
         private static float3 ResolveForward(float3 forward)

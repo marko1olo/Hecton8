@@ -35,7 +35,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4035)]
-    public sealed class WorldCaveDirector : MonoBehaviour, ISlowTickable
+    public sealed class WorldCaveDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         internal readonly struct CaveEntranceHint
         {
@@ -119,6 +119,22 @@ namespace Hecton8.World
             }
         }
 
+        private readonly struct PendingCaveVisualSync
+        {
+            public PendingCaveVisualSync(long caveKey, CavePreset preset, Vector3 position, uint seed)
+            {
+                CaveKey = caveKey;
+                Preset = preset;
+                Position = position;
+                Seed = seed;
+            }
+
+            public readonly long CaveKey;
+            public readonly CavePreset Preset;
+            public readonly Vector3 Position;
+            public readonly uint Seed;
+        }
+
         private struct CachedBiomeRuntimeContext
         {
             public HectonBiomeFamilyProfile Family;
@@ -151,6 +167,7 @@ namespace Hecton8.World
         [SerializeField] private bool _debugReady;
 
         private bool _registeredToTickManager;
+        private bool _registeredLateFrame;
         private readonly HashSet<long> _activeCaveKeys = new HashSet<long>(ActiveCaveKeyCapacity);
         private readonly Dictionary<long, CaveInstance> _caveInstances = new Dictionary<long, CaveInstance>(32);
         private readonly Dictionary<long, PendingCaveSpawnState> _pendingCaveSpawns = new Dictionary<long, PendingCaveSpawnState>(16);
@@ -158,6 +175,7 @@ namespace Hecton8.World
         private readonly List<Vector3> _candidateBuffer = new List<Vector3>(8); // COLD ALLOC: buffered cave candidates, capped by maxCavesPerBiome.
         private readonly List<long> _staleCaveKeyBuffer = new List<long>(16); // COLD ALLOC: stale cave cleanup buffer, capped by active cave count around player.
         private readonly List<long> _pendingCaveKeyBuffer = new List<long>(16); // COLD ALLOC: buffered pending cave keys for deterministic cancel/cleanup without mutating dictionaries during enumeration.
+        private readonly List<PendingCaveVisualSync> _pendingCaveVisualSyncs = new List<PendingCaveVisualSync>(16); // COLD ALLOC: visual-sync cave dressing queue.
         private CachedBiomeRuntimeContext _cachedBiomeRuntimeContext;
         private float _lastEvaluationTime = float.NegativeInfinity;
         private CancellationTokenSource _lifetimeCancellation;
@@ -225,6 +243,9 @@ namespace Hecton8.World
         private void OnEnable()
         {
             EnsureLifetimeCancellation();
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
         }
 
@@ -238,6 +259,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
 
             CancelLifetimeCancellation();
             CancelAllPendingSpawns();
@@ -246,9 +268,32 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registeredToTickManager = false;
+                _registeredLateFrame = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregister();
+                TryRegister();
+            }
         }
 
         private void TryRegister()
@@ -256,23 +301,36 @@ namespace Hecton8.World
             if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registeredToTickManager)
-                return;
+            if (_registeredToTickManager)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToTickManager = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            _pendingCaveVisualSyncs.Clear();
         }
 
         public void SlowTick()
         {
             RefreshCaveLifecycleState();
             EvaluateCaveSpawns();
+        }
+
+        public void LateFrameTick()
+        {
+            FlushPendingCaveVisualSyncs();
         }
 
         private void EvaluateCaveSpawns()
@@ -366,7 +424,8 @@ namespace Hecton8.World
                 float angle = rng.NextFloat(0f, 2f * Mathf.PI);
                 float distance = rng.NextFloat(minDistance, searchRadius);
 
-                Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                Vector3 offset = new Vector3(cos * distance, 0f, sin * distance);
                 Vector3 candidatePos = routeAnchor + offset;
 
                 // Sample terrain height
@@ -464,9 +523,7 @@ namespace Hecton8.World
 
                 _caveInstances[caveKey] = instance;
                 _activeCaveKeys.Add(caveKey);
-                SpawnEntranceVisualCues(instance, preset, position, seed);
-                ApplyEntranceQualityPass(instance, preset);
-                InitializeCaveDressingLayer(instance, preset);
+                QueueCaveVisualSync(caveKey, preset, position, seed);
                 LogCaveGenerated(position);
             }
             catch (OperationCanceledException)
@@ -938,6 +995,37 @@ namespace Hecton8.World
             colorOverLifetime.color = ResolveEntranceMarkerGradient(instance.preset.spawnContext, lightColor);
         }
 
+        private void QueueCaveVisualSync(long caveKey, CavePreset preset, Vector3 position, uint seed)
+        {
+            _pendingCaveVisualSyncs.Add(new PendingCaveVisualSync(caveKey, preset, position, seed));
+            if (Application.isPlaying && !_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void FlushPendingCaveVisualSyncs()
+        {
+            int count = _pendingCaveVisualSyncs.Count;
+            if (count == 0)
+                return;
+
+            for (int i = 0; i < count; i++)
+            {
+                PendingCaveVisualSync pending = _pendingCaveVisualSyncs[i];
+                if (!_caveInstances.TryGetValue(pending.CaveKey, out CaveInstance instance) ||
+                    instance.isActive == 0 ||
+                    instance.volume == null)
+                {
+                    continue;
+                }
+
+                SpawnEntranceVisualCues(instance, pending.Preset, pending.Position, pending.Seed);
+                ApplyEntranceQualityPass(instance, pending.Preset);
+                InitializeCaveDressingLayer(instance, pending.Preset);
+            }
+
+            _pendingCaveVisualSyncs.Clear();
+        }
+
         private void ApplyEntranceQualityPass(CaveInstance instance, CavePreset preset)
         {
             // Entrance quality improvements:
@@ -1183,8 +1271,13 @@ namespace Hecton8.World
 
         private static float Hash01(int index, int salt)
         {
-            float hash = Mathf.Sin((index * 15.271f) + (salt * 61.713f)) * 43758.5453f;
-            return hash - Mathf.Floor(hash);
+            uint hash = unchecked((uint)index * 0x9E3779B9u) ^ unchecked((uint)salt * 0x85EBCA6Bu);
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
         private void SpawnSedimentShelves(GameObject parent, CaveInstance instance, CaveDressingConfig dressingConfig)
@@ -1585,7 +1678,7 @@ namespace Hecton8.World
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogCaveGenerated(Vector3 position)
         {
-            Debug.Log("[WorldCaveDirector] Cave generated.");
+            Hecton8.Core.H8Debug.Log("[WorldCaveDirector] Cave generated.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

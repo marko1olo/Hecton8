@@ -21,7 +21,7 @@ namespace Hecton8.Atmosphere
         public const ushort BubbleVfxRequested = 1 << 6;
         public const ushort HelioxMix = 1 << 7;
         public const ushort Hypercapnia = 1 << 8;
-        public const ushort BendsDamageRequested = 1 << 9;
+        public const ushort PhysiologyAuthorityReserved = 1 << 9;
         public const ushort VisualBlurRequested = 1 << 10;
         public const ushort SmokeParticlesRequested = 1 << 11;
     }
@@ -65,7 +65,7 @@ namespace Hecton8.Atmosphere
         [FieldOffset(4)]
         public float VisualBlur01;
         [FieldOffset(8)]
-        public float NitrogenTissueLoading;
+        public float PhysiologyAuthorityReservedLoad;
         [FieldOffset(12)]
         public float StaminaRecoveryMultiplier;
         [FieldOffset(16)]
@@ -83,9 +83,8 @@ namespace Hecton8.Atmosphere
         public const float LowColdTickSeconds = 1f;
         public const float AirlockEqualizationSeconds = 5f;
         public const float HypercapniaCarbonDioxideFraction = 0.05f;
-        public const float BendsDepthMeters = 100f;
-        public const float BendsAscentMetersPerSecond = 10f;
-        public const float BendsHealthDamage = 8f;
+        public const float RapidAscentVisualDepthMeters = 100f;
+        public const float RapidAscentVisualMetersPerSecond = 10f;
         public const float NarcosisDepthMeters = 150f;
 
         private const float DefaultMaxPressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
@@ -99,7 +98,15 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveColdTickIntervalSeconds()
         {
-            return HighTickSeconds;
+            return ResolveColdTickIntervalSeconds(1f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveColdTickIntervalSeconds(float globalQualityWeight01)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight01) ? globalQualityWeight01 : 1f);
+            float curve = Smooth01(quality);
+            return math.lerp(LowColdTickSeconds, HighTickSeconds, curve);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -304,28 +311,26 @@ namespace Hecton8.Atmosphere
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ShouldApplyImmediateBends(float originDepthMeters, float ascentMetersPerSecond)
+        public static bool ShouldRequestRapidAscentBlur(float originDepthMeters, float ascentMetersPerSecond)
         {
             return math.isfinite(originDepthMeters) &&
                    math.isfinite(ascentMetersPerSecond) &&
-                   originDepthMeters > BendsDepthMeters &&
-                   ascentMetersPerSecond > BendsAscentMetersPerSecond;
+                   originDepthMeters > RapidAscentVisualDepthMeters &&
+                   ascentMetersPerSecond > RapidAscentVisualMetersPerSecond;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ResolveNitrogenTissueLoading(
+        public static float ResolveReservedPhysiologyLoad(
             float currentLoading,
             float depthMeters,
             float deltaTime,
             ushort breathingFlags)
         {
-            float current = FiniteNonNegative(currentLoading);
-            if (BypassesNitrogenNarcosis(breathingFlags))
-                return math.max(0f, current - FiniteNonNegative(deltaTime) * 0.25f);
-
-            float target = math.max(0f, FiniteNonNegative(depthMeters) - 10f) * 0.01f;
-            float alpha = math.saturate(FiniteNonNegative(deltaTime) * 0.05f);
-            return current + (target - current) * alpha;
+            _ = currentLoading;
+            _ = depthMeters;
+            _ = deltaTime;
+            _ = breathingFlags;
+            return 0f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -341,10 +346,10 @@ namespace Hecton8.Atmosphere
             float carbonDioxideFraction,
             float deltaTime)
         {
-            AtmospherePhysiologyHazard hazard;
+            AtmospherePhysiologyHazard hazard = default;
             hazard.HealthDamage = 0f;
             hazard.VisualBlur01 = 0f;
-            hazard.NitrogenTissueLoading = ResolveNitrogenTissueLoading(
+            hazard.PhysiologyAuthorityReservedLoad = ResolveReservedPhysiologyLoad(
                 nitrogenTissueLoading,
                 currentDepthMeters,
                 deltaTime,
@@ -358,11 +363,10 @@ namespace Hecton8.Atmosphere
                 BypassesNitrogenNarcosis(breathingFlags));
             hazard.Flags = 0;
 
-            if (ShouldApplyImmediateBends(originDepthMeters, ascentMetersPerSecond))
+            if (ShouldRequestRapidAscentBlur(originDepthMeters, ascentMetersPerSecond))
             {
-                hazard.HealthDamage = BendsHealthDamage;
                 hazard.VisualBlur01 = 1f;
-                hazard.Flags = (ushort)(hazard.Flags | BaseAtmosphereFlags.BendsDamageRequested | BaseAtmosphereFlags.VisualBlurRequested);
+                hazard.Flags = (ushort)(hazard.Flags | BaseAtmosphereFlags.VisualBlurRequested);
             }
 
             if (carbonDioxideFraction > HypercapniaCarbonDioxideFraction)

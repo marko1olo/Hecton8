@@ -240,15 +240,14 @@ namespace Hecton8.Editor.AITextureControlMaps
             if (!Directory.Exists(absoluteRoot))
                 return false;
 
-            string[] files = Directory.GetFiles(absoluteRoot, "*.*", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(absoluteRoot, "*.*", SearchOption.AllDirectories))
             {
-                string extension = Path.GetExtension(files[i]);
+                string extension = Path.GetExtension(file);
                 if (!string.Equals(extension, ".cs", StringComparison.OrdinalIgnoreCase) &&
                     !string.Equals(extension, ".shader", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                if (FileContainsAny(files[i], tokens))
+                if (FileContainsAny(file, tokens))
                     return true;
             }
 
@@ -277,15 +276,14 @@ namespace Hecton8.Editor.AITextureControlMaps
             if (!Directory.Exists(absoluteRoot))
                 return false;
 
-            string[] files = Directory.GetFiles(absoluteRoot, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(absoluteRoot, "*.cs", SearchOption.AllDirectories))
             {
-                string name = Path.GetFileName(files[i]);
+                string name = Path.GetFileName(file);
                 if (string.Equals(name, excludedFileA, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(name, excludedFileB, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                if (FileContainsAny(files[i], tokens))
+                if (FileContainsAny(file, tokens))
                     return true;
             }
 

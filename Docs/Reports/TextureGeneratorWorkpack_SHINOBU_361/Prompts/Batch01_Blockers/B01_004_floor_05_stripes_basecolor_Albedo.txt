@@ -1,0 +1,10 @@
+﻿JOB_ID: B01_004
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch01_Blockers\B01_004_floor_05_stripes_basecolor_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\floor_05_stripes_basecolor_Albedo.png
+FINAL_FILENAME: floor_05_stripes_basecolor_Albedo.png
+REFERENCES: `LOOKDEV_APPROVED_REF_SEED_001.png` `LOOKDEV_APPROVED_REF_SEED_002.png` Optional approved habitat floor anchor after it exists
+
+PROMPT:
+Create a seamless albedo source for the first HECTON-8 prologue route floor. Make a confident modular floor panel with warm off-white composite pressure plates, satin graphite anti-slip insets, thin amber route stripes, restrained teal maintenance ticks, satin titanium edge rails, rubber isolation seams, and shallow drainage lines. The floor should look safe, premium, readable, and used with care, like a well-funded ocean research base. Add curated boot polish, soft scuffs in walking lanes, tiny edge chips, pale salt halos in seams, and subtle rubber sheen. Keep large shapes broad enough for gameplay navigation and close-up quality high enough for first-person inspection. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

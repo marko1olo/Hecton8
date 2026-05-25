@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Building;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -28,7 +29,7 @@ namespace Hecton8.Construction
 
         [Header("All buildable modules in the project")]
         [Tooltip("Peretaschi syuda vse BuildableData assety")]
-        [SerializeField] private List<BuildableData> allModules = new List<BuildableData>();
+        [SerializeField] private List<BuildableData> allModules = new List<BuildableData>(64);
 
         // ══════════════════════════════════════════════════════════
         //  LOOKUP — O(1) poisk
@@ -147,16 +148,24 @@ namespace Hecton8.Construction
         {
             get
             {
-                int viewableCount = 0;
-                int count = Count;
-                for (int i = 0; i < count; i++)
-                {
-                    if (IsModuleBlueprintViewable(GetAt(i)))
-                        viewableCount++;
-                }
-
-                return viewableCount;
+                return GetViewableCount(GlobalRegistry.QuestSystem);
             }
+        }
+
+        /// <summary>
+        /// Counts modules visible through an already-cached quest owner.
+        /// </summary>
+        public int GetViewableCount(IQuestSystem questSystem)
+        {
+            int viewableCount = 0;
+            int count = Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (IsModuleBlueprintViewable(GetAt(i), questSystem))
+                    viewableCount++;
+            }
+
+            return viewableCount;
         }
 
         /// <summary>
@@ -275,6 +284,14 @@ namespace Hecton8.Construction
         /// </summary>
         public BuildableData GetViewableAt(int index)
         {
+            return GetViewableAt(index, GlobalRegistry.QuestSystem);
+        }
+
+        /// <summary>
+        /// Returns the buildable at a viewable-only catalog index using an already-cached quest owner.
+        /// </summary>
+        public BuildableData GetViewableAt(int index, IQuestSystem questSystem)
+        {
             if (index < 0)
                 return null;
 
@@ -283,7 +300,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < count; i++)
             {
                 BuildableData data = GetAt(i);
-                if (!IsModuleBlueprintViewable(data))
+                if (!IsModuleBlueprintViewable(data, questSystem))
                     continue;
 
                 if (viewableIndex == index)
@@ -327,6 +344,14 @@ namespace Hecton8.Construction
         /// </summary>
         public int IndexOfViewable(BuildableData data)
         {
+            return IndexOfViewable(data, GlobalRegistry.QuestSystem);
+        }
+
+        /// <summary>
+        /// Returns the viewable-only index using an already-cached quest owner.
+        /// </summary>
+        public int IndexOfViewable(BuildableData data, IQuestSystem questSystem)
+        {
             if (data == null)
                 return -1;
 
@@ -335,7 +360,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < count; i++)
             {
                 BuildableData candidate = GetAt(i);
-                if (!IsModuleBlueprintViewable(candidate))
+                if (!IsModuleBlueprintViewable(candidate, questSystem))
                     continue;
 
                 if (ReferenceEquals(candidate, data))
@@ -387,9 +412,9 @@ namespace Hecton8.Construction
             }
         }
 
-        private static bool IsModuleBlueprintViewable(BuildableData data)
+        private static bool IsModuleBlueprintViewable(BuildableData data, IQuestSystem questSystem)
         {
-            return data != null && data.IsBlueprintViewable();
+            return data != null && data.IsBlueprintViewable(questSystem);
         }
 
         private void AddLookupAlias(string id, BuildableData data)

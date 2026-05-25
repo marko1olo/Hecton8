@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -675,9 +676,15 @@ namespace Hecton8.Networking
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong HashExactBytes(void* ptr, int byteLength)
+        public static ulong HashExactBytes(ReadOnlySpan<byte> bytes)
         {
-            return MemorySentinelMath.ComputeXXHash3Full64(ptr, byteLength);
+            return MemorySentinelMath.ComputeXXHash3Full64(bytes);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ulong HashExactBytes(void* ptr, int byteLength)
+        {
+            return MemorySentinelMath.ComputeXXHash3Full64(new ReadOnlySpan<byte>(ptr, byteLength));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -770,10 +777,10 @@ namespace Hecton8.Networking
         }
     }
 
-    public static unsafe class RollbackNetcodeBufferAccess
+    internal static unsafe class RollbackNetcodeBufferAccess
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref FrameSnapshotDTO FrameSnapshotAt(NativeArray<FrameSnapshotDTO> snapshots, int index)
+        internal static ref FrameSnapshotDTO FrameSnapshotAt(NativeArray<FrameSnapshotDTO> snapshots, int index)
         {
             void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(snapshots);
             return ref UnsafeUtility.AsRef<FrameSnapshotDTO>((byte*)ptr + index * UnsafeUtility.SizeOf<FrameSnapshotDTO>());
@@ -1287,19 +1294,19 @@ namespace Hecton8.Networking
         [NoAlias] public NativeArray<RollbackInputJournalSlot64> InputJournalRing;
         [NoAlias] public NativeArray<RollbackRuntimeStateDTO> RuntimeState;
         // SAFETY_JUSTIFICATION_SHINOBU_278: The rollback signal writer is not sourced from the Vault and is not a view over
-        // PredictedJournal, RemoteInputRing, TargetAups, InputJournalRing, or RuntimeState. The runtime owner opens the
-        // SignalBus queue during cold buffer acquisition, verifies that the native queue is created, then stores only the
-        // NativeQueue parallel writer descriptor for later scheduling.
+        // PredictedJournal, RemoteInputRing, TargetAups, InputJournalRing, or RuntimeState. The runtime owner initializes
+        // the SignalBus queue during cold buffer acquisition, then opens a method-local writer only for the schedule call.
         //
         // The only operation performed through this writer is Enqueue of a 32-byte RollbackRequiredSignal after a mismatch
         // has already been resolved from non-overlapping Vault arrays. RollbackSignalsEnabled gates the enqueue so a default
         // writer is never used if cold initialization failed or the runtime was disabled and re-enabled.
         //
         // NativeDisableContainerSafetyRestriction is limited to this field because Unity's safety system cannot express
-        // the external SignalBus ownership relationship for a cached ParallelWriter. It does not relax safety on Vault
+        // the external SignalBus ownership relationship for a method-local ParallelWriter. It does not relax safety on Vault
         // arrays; all data inputs remain explicit NativeArray fields with NoAlias annotations.
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction]
         public NativeQueue<RollbackRequiredSignal>.ParallelWriter RollbackSignals;
+        [NativeDisableParallelForRestriction] public NativeArray<int> RollbackSignalsBudget;
         public uint CurrentFrame;
         public uint PreviousFrame;
         public int MaxRollbackFrames;
@@ -1427,7 +1434,7 @@ namespace Hecton8.Networking
                 signal.FirstMismatchBufferId = (uint)RollbackNetcodeVault.InputJournalRing;
                 signal.FirstMismatchByteOffset = (uint)((bestFrame % (uint)InputJournalRing.Length) * UnsafeUtility.SizeOf<RollbackInputJournalSlot64>());
                 if (RollbackSignalsEnabled != 0u)
-                    RollbackSignals.Enqueue(signal);
+                    SignalBus<RollbackRequiredSignal>.TryEnqueueBounded(RollbackSignals, RollbackSignalsBudget, signal);
             }
 
             RuntimeState[0] = state;
@@ -1448,7 +1455,7 @@ namespace Hecton8.Networking
             float missingTicks = frame == 0u
                 ? 1f
                 : math.max(1f, RollbackNetcodeMath.ResolveRollbackFrameCount(previousFrame, frame));
-            float decay = math.exp(-math.max(0.001f, ExtrapolationDecay) * missingTicks);
+            float decay = MathLodApproximation.ApproxExpNegPade33Wide40(math.max(0.001f, ExtrapolationDecay) * missingTicks);
             seed.TickNumber = frame;
             seed.LocalMoveVector *= decay;
             seed.LookDelta *= decay;
@@ -1490,7 +1497,7 @@ namespace Hecton8.Networking
                 (previous.Flags & RemoteInputFlags.Valid) != 0u
                 ? previous.Input
                 : PredictedJournal[(int)(TargetFrame % (uint)PredictedJournal.Length)];
-            float decay = math.exp(-math.max(0.001f, ExponentialDecay));
+            float decay = MathLodApproximation.ApproxExpNegPade33Wide40(math.max(0.001f, ExponentialDecay));
             seed.TickNumber = TargetFrame;
             seed.LocalMoveVector *= decay;
             seed.LookDelta *= decay;
@@ -1740,8 +1747,8 @@ namespace Hecton8.Networking
         public int TelemetryWriteIndex;
         public uint ModQuarantineMask;
         // SAFETY_JUSTIFICATION_SHINOBU_278: This pipeline job does not write rollback signals directly; it forwards the
-        // cached SignalBus parallel writer into EvaluateInputMismatchJob inside the same synchronous pipeline execution.
-        // The writer is acquired during cold runtime setup and has no memory alias with the Vault-owned prediction,
+        // method-local SignalBus parallel writer into EvaluateInputMismatchJob inside the same synchronous pipeline execution.
+        // The writer is acquired immediately before scheduling and has no memory alias with the Vault-owned prediction,
         // authoritative packet, telemetry, or snapshot arrays carried by this job.
         //
         // RollbackSignalsEnabled is forwarded with the writer, preserving the same enqueue guard used by the nested
@@ -1749,10 +1756,11 @@ namespace Hecton8.Networking
         // journal data but skips signal enqueue rather than touching an uncreated native queue.
         //
         // NativeDisableContainerSafetyRestriction is intentionally scoped to the writer descriptor because Unity cannot
-        // prove the cold SignalBus lifetime through a cached ParallelWriter value. The surrounding NativeArray fields retain
+        // prove the cold SignalBus lifetime through a method-local ParallelWriter value. The surrounding NativeArray fields retain
         // normal safety metadata plus NoAlias proof for Burst vectorization and static review.
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction]
         public NativeQueue<RollbackRequiredSignal>.ParallelWriter RollbackSignals;
+        [NativeDisableParallelForRestriction] public NativeArray<int> RollbackSignalsBudget;
         public uint RollbackSignalsEnabled;
 
         public void Execute()

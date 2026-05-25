@@ -2,6 +2,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Data;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -18,7 +19,7 @@ namespace Hecton8.World
     /// Generates and renders seabed scatter entirely on the GPU from the active MapMagic height payload.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GPUScatterDirector : MonoBehaviour, IUpdatable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class GPUScatterDirector : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int ThreadGroupSize = 64;
         private const int FrustumPlaneCount = 6;
@@ -30,13 +31,13 @@ namespace Hecton8.World
         private const int BiomeHeatmapPixelCount = BiomeHeatmapResolution * BiomeHeatmapResolution;
         private const int ScatterTelemetryCapacity = 300;
         private const float SargassumDensityEncodeScale = 64f;
-        private const string NativeMemoryOwner = nameof(GPUScatterDirector);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const string ScatterBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_WORLD_BIOME_BLENDING.bin";
         private const uint ScatterTelemetryHashSeed = 2166136261u;
         private const uint ScatterTelemetryMissingDependencyFlag = 1u << 0;
         private const uint ScatterTelemetryInvalidStateFlag = 1u << 1;
         private const uint ScatterTelemetryOriginShiftFlag = 1u << 2;
+        private const SystemID VaultOwnerSystemId = SystemID.GraphicsScalability;
+        private const BufferID ScatterTelemetryRingBufferId = BufferID.GpuScatterTelemetryRing;
         private const float ScatterMinimumNormalY = 0.70710678f;
         private const float MicroScatterLowCullMeters = 15f;
         private const float MicroScatterMidCullMeters = 22f;
@@ -282,7 +283,6 @@ namespace Hecton8.World
 
         private bool _registered;
         private bool _registeredHotSwapListener;
-        private bool _registeredScalabilityListener;
         private int _clearDensityKernel = -1;
         private int _generateKernel = -1;
         private int _compactKernel = -1;
@@ -293,12 +293,14 @@ namespace Hecton8.World
         private GraphicsBuffer _scatterDensityBuffer;
         private GraphicsBuffer _scatterBoundsLutBuffer;
         private GraphicsBuffer _argsBuffer;
-        private GraphicsBuffer _modInstanceMatrixBuffer;
-        private NativeArray<float4x4> _modInstanceMatrices;
+        private GraphicsBuffer _modInstanceMatrixBufferA;
+        private GraphicsBuffer _modInstanceMatrixBufferB;
+        private float4x4[] _modInstanceMatrices;
         private readonly Plane[] _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - reusable frustum plane cache for GPU scatter dispatch - owner: GPUScatterDirector
         private readonly Vector4[] _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - reusable GPU frustum plane upload payload for GPU scatter dispatch - owner: GPUScatterDirector
         private int _modInstanceCount;
         private int _lastUploadedModInstanceCount = -1;
+        private int _modInstanceUploadBufferIndex;
         private int _lastRequestedGrid = -1;
         private int _lastClampedCapacity = -1;
         private int _lastResolvedCapacity = -1;
@@ -320,7 +322,7 @@ namespace Hecton8.World
         private bool _hasUploadedScatterBounds;
         private Vector4 _lastUploadedScatterBounds;
         private Texture2D _biomeHeatmapTexture;
-        private NativeArray<byte> _biomeHeatmapUpload;
+        private byte[] _biomeHeatmapUpload;
         private int _biomeHeatmapBlobBytes = -1;
         private ulong _biomeHeatmapBlobChecksum;
         private bool _biomeHeatmapUploaded;
@@ -329,7 +331,8 @@ namespace Hecton8.World
         private Color _lastCurrentBiomeColor;
         private int _lastCurrentBiomePixel = -1;
         private uint _lastCurrentBiomeHash;
-        private NativeArray<ScatterTelemetryEntry> _scatterTelemetryRing;
+        private VaultGenerationHandle<ScatterTelemetryEntry> _scatterTelemetryRingHandle;
+        private IDataVault _dataVault;
         private int _scatterTelemetryCursor;
         private bool _scatterTelemetryDumped;
         private double2 _scatterAupGenerationOffsetXZDouble;
@@ -338,7 +341,6 @@ namespace Hecton8.World
         private int _lastResolvedScatterBudget = -1;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ITickDispatcher _dispatcher;
-        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private float _cachedGlobalQualityWeight01 = 1f;
 
         /// <summary>
@@ -373,7 +375,6 @@ namespace Hecton8.World
 #endif
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             ResolveDependencies();
             EnsureScatterTelemetryResources();
             EnsureResources();
@@ -391,7 +392,6 @@ namespace Hecton8.World
 #endif
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             ResolveDependencies();
             EnsureScatterTelemetryResources();
             EnsureResources();
@@ -407,7 +407,6 @@ namespace Hecton8.World
                 _activeInstance = null;
 
             TryUnregister();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             ReleaseResources();
@@ -421,7 +420,6 @@ namespace Hecton8.World
                 _activeInstance = null;
 
             TryUnregister();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             ReleaseResources();
@@ -443,14 +441,12 @@ namespace Hecton8.World
                     _dispatcher = currentService as ITickDispatcher;
                     TryRegister();
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseScatterTelemetryResources();
+                    _dataVault = currentService as IDataVault;
+                    EnsureScatterTelemetryResources();
+                    break;
             }
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedQualityTier = payload.CurrentQualityTier;
-            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
-            _lastResolvedScatterBudget = -1;
         }
 
         /// <summary>
@@ -458,6 +454,11 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float deltaTime)
         {
+        }
+
+        public void LateFrameTick()
+        {
+            float deltaTime = Time.deltaTime;
             if (deltaTime < 0f)
                 return;
 
@@ -465,7 +466,7 @@ namespace Hecton8.World
                 ResolveDependencies();
 
             EnsureResources();
-            if (!_modInstanceMatrices.IsCreated || _modInstanceMatrixBuffer == null)
+            if (_modInstanceMatrices == null || _modInstanceMatrixBufferA == null || _modInstanceMatrixBufferB == null)
                 EnsureModInstanceResources();
 
             FlushModInstanceLayer();
@@ -721,20 +722,19 @@ namespace Hecton8.World
 
         private void EnsureModInstanceResources()
         {
-            if (!_modInstanceMatrices.IsCreated)
-            {
-                _modInstanceMatrices = new NativeArray<float4x4>(MaxModInstancesPerFrame, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4x4>[1024] - mod instancing matrix upload staging - owner: GPUScatterDirector
-                NativeMemorySentinel.RegisterNativeArray(_modInstanceMatrices, NativeMemoryOwner, nameof(_modInstanceMatrices), NativeMemoryLifetime);
-            }
+            if (_modInstanceMatrices == null)
+                _modInstanceMatrices = new float4x4[MaxModInstancesPerFrame]; // COLD ALLOC: float4x4[1024] - mod instancing CPU upload staging - owner: GPUScatterDirector
 
-            if (_modInstanceMatrixBuffer == null)
-                _modInstanceMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] - reserved mod instancing matrix layer - owner: GPUScatterDirector
+            if (_modInstanceMatrixBufferA == null)
+                _modInstanceMatrixBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] - reserved mod instancing matrix layer A - owner: GPUScatterDirector
+            if (_modInstanceMatrixBufferB == null)
+                _modInstanceMatrixBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] - reserved mod instancing matrix layer B - owner: GPUScatterDirector
         }
 
         private bool TrySubmitModInstanceMatrix(in float4x4 matrix)
         {
             EnsureModInstanceResources();
-            if (!_modInstanceMatrices.IsCreated || _modInstanceCount >= MaxModInstancesPerFrame)
+            if (_modInstanceMatrices == null || _modInstanceCount >= MaxModInstancesPerFrame)
                 return false;
 
             _modInstanceMatrices[_modInstanceCount] = matrix;
@@ -744,15 +744,15 @@ namespace Hecton8.World
 
         private void FlushModInstanceLayer()
         {
-            if (_modInstanceMatrixBuffer == null || !_modInstanceMatrices.IsCreated)
+            GraphicsBuffer writeBuffer = _modInstanceUploadBufferIndex == 0 ? _modInstanceMatrixBufferA : _modInstanceMatrixBufferB;
+            if (writeBuffer == null || _modInstanceMatrices == null)
                 return;
 
             if (_modInstanceCount > 0)
             {
-                NativeArray<float4x4> gpuWrite = _modInstanceMatrixBuffer.LockBufferForWrite<float4x4>(0, _modInstanceCount);
-                NativeArray<float4x4>.Copy(_modInstanceMatrices, 0, gpuWrite, 0, _modInstanceCount);
-                _modInstanceMatrixBuffer.UnlockBufferAfterWrite<float4x4>(_modInstanceCount);
-                Shader.SetGlobalBuffer(_ModInstanceMatricesId, _modInstanceMatrixBuffer);
+                GraphicsBufferUploadUtility.UploadArray(writeBuffer, _modInstanceMatrices, _modInstanceCount);
+                Shader.SetGlobalBuffer(_ModInstanceMatricesId, writeBuffer);
+                _modInstanceUploadBufferIndex ^= 1;
             }
 
             if (_lastUploadedModInstanceCount != _modInstanceCount)
@@ -1012,10 +1012,9 @@ namespace Hecton8.World
 
         private void EnsureBiomeHeatmapResources()
         {
-            if (!_biomeHeatmapUpload.IsCreated)
+            if (_biomeHeatmapUpload == null || _biomeHeatmapUpload.Length < BiomeHeatmapPixelCount)
             {
-                _biomeHeatmapUpload = new NativeArray<byte>(BiomeHeatmapPixelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[256x256] - Data Monolith biome heatmap upload staging - owner: GPUScatterDirector
-                NativeMemorySentinel.RegisterNativeArray(_biomeHeatmapUpload, NativeMemoryOwner, nameof(_biomeHeatmapUpload), NativeMemoryLifetime);
+                _biomeHeatmapUpload = new byte[BiomeHeatmapPixelCount]; // COLD ALLOC: byte[256x256] - Data Monolith biome heatmap upload staging - owner: GPUScatterDirector
                 _biomeHeatmapBlobBytes = -1;
                 _biomeHeatmapBlobChecksum = 0UL;
             }
@@ -1254,14 +1253,19 @@ namespace Hecton8.World
 
         private void EnsureScatterTelemetryResources()
         {
-            if (_scatterTelemetryRing.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
                 return;
 
-            _scatterTelemetryRing = new NativeArray<ScatterTelemetryEntry>(
+            if (IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId))
+                return;
+
+            ReleaseVaultHandle(vault, ref _scatterTelemetryRingHandle);
+            _scatterTelemetryRingHandle = vault.EnsureGenerationHandle<ScatterTelemetryEntry>(
+                ScatterTelemetryRingBufferId,
                 ScatterTelemetryCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ScatterTelemetryEntry>[300] - black-box ring for GPU terrain scatter state - owner: GPUScatterDirector
-            NativeMemorySentinel.RegisterNativeArray(_scatterTelemetryRing, NativeMemoryOwner, nameof(_scatterTelemetryRing), NativeMemoryLifetime);
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: DataVault ScatterTelemetryEntry[300] - black-box ring for GPU terrain scatter state - owner: GPUScatterDirector
             _scatterTelemetryCursor = 0;
             _scatterTelemetryDumped = false;
         }
@@ -1276,7 +1280,8 @@ namespace Hecton8.World
             uint visibleCount,
             uint flags)
         {
-            if (!_scatterTelemetryRing.IsCreated)
+            EnsureScatterTelemetryResources();
+            if (!TryAcquireScatterTelemetryRingWrite(out NativeArray<ScatterTelemetryEntry> telemetryRing))
                 return;
 
             float3 center3 = (float3)center;
@@ -1298,27 +1303,38 @@ namespace Hecton8.World
             stateHash = MixTelemetryHash(stateHash, unchecked((uint)_lastOriginShiftSequence));
             stateHash = MixTelemetryHash(stateHash, checksumLo);
 
-            _scatterTelemetryRing[_scatterTelemetryCursor] = new ScatterTelemetryEntry
+            bool shouldDump = false;
+            try
             {
-                Frame = unchecked((uint)Time.frameCount),
-                Flags = resolvedFlags,
-                Center = center3,
-                AupOffsetXZ = (float2)_scatterStableCellBaseXZ,
-                RadiusMeters = radiusMeters,
-                CellSizeMeters = cellSizeMeters,
-                GridResolution = gridResolution,
-                CandidateCount = candidateCount,
-                BiomeHash = biomeHash,
-                VisibleCount = visibleCount,
-                StateHash = stateHash,
-                OriginShiftSequence = _lastOriginShiftSequence,
-                BlobChecksumLo = checksumLo
-            };
-            _scatterTelemetryCursor++;
-            if (_scatterTelemetryCursor >= ScatterTelemetryCapacity)
-                _scatterTelemetryCursor = 0;
+                int safeCursor = math.clamp(_scatterTelemetryCursor, 0, telemetryRing.Length - 1);
+                telemetryRing[safeCursor] = new ScatterTelemetryEntry
+                {
+                    Frame = unchecked((uint)Time.frameCount),
+                    Flags = resolvedFlags,
+                    Center = center3,
+                    AupOffsetXZ = (float2)_scatterStableCellBaseXZ,
+                    RadiusMeters = radiusMeters,
+                    CellSizeMeters = cellSizeMeters,
+                    GridResolution = gridResolution,
+                    CandidateCount = candidateCount,
+                    BiomeHash = biomeHash,
+                    VisibleCount = visibleCount,
+                    StateHash = stateHash,
+                    OriginShiftSequence = _lastOriginShiftSequence,
+                    BlobChecksumLo = checksumLo
+                };
+                _scatterTelemetryCursor = safeCursor + 1;
+                if (_scatterTelemetryCursor >= ScatterTelemetryCapacity || _scatterTelemetryCursor >= telemetryRing.Length)
+                    _scatterTelemetryCursor = 0;
 
-            if ((resolvedFlags & ScatterTelemetryInvalidStateFlag) != 0u)
+                shouldDump = (resolvedFlags & ScatterTelemetryInvalidStateFlag) != 0u;
+            }
+            finally
+            {
+                ReleaseScatterTelemetryRingWrite();
+            }
+
+            if (shouldDump)
                 DumpScatterBlackBox();
         }
 
@@ -1331,7 +1347,7 @@ namespace Hecton8.World
 
         private void DumpScatterBlackBox()
         {
-            if (_scatterTelemetryDumped || !_scatterTelemetryRing.IsCreated)
+            if (_scatterTelemetryDumped || !TryReadScatterTelemetryRing(out NativeArray<ScatterTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             _scatterTelemetryDumped = true;
@@ -1347,7 +1363,7 @@ namespace Hecton8.World
                 writer.Write(_scatterTelemetryCursor);
                 for (int i = 0; i < ScatterTelemetryCapacity; i++)
                 {
-                    ScatterTelemetryEntry entry = _scatterTelemetryRing[i];
+                    ScatterTelemetryEntry entry = telemetryRing[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.Flags);
                     writer.Write(entry.Center.x);
@@ -1370,12 +1386,7 @@ namespace Hecton8.World
 
         private void ReleaseScatterTelemetryResources()
         {
-            if (!_scatterTelemetryRing.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_scatterTelemetryRing);
-            _scatterTelemetryRing.Dispose();
-            _scatterTelemetryRing = default;
+            ReleaseVaultHandle(_dataVault, ref _scatterTelemetryRingHandle);
             _scatterTelemetryCursor = 0;
             _scatterTelemetryDumped = false;
         }
@@ -1491,20 +1502,76 @@ namespace Hecton8.World
             if (_registered || !Application.isPlaying || _dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void CacheRegistryServicesCold()
         {
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContext = GlobalRegistry.Player;
 
             if (_dispatcher == null)
                 _dispatcher = GlobalRegistry.Dispatcher;
 
-            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
             _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private bool TryAcquireScatterTelemetryRingWrite(out NativeArray<ScatterTelemetryEntry> telemetryRing)
+        {
+            telemetryRing = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId) ||
+                !vault.TryAcquireWriteLock(in _scatterTelemetryRingHandle, VaultOwnerSystemId, out telemetryRing))
+            {
+                return false;
+            }
+
+            if (telemetryRing.Length >= ScatterTelemetryCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in _scatterTelemetryRingHandle, VaultOwnerSystemId);
+            telemetryRing = default;
+            return false;
+        }
+
+        private void ReleaseScatterTelemetryRingWrite()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId))
+                vault.ReleaseWriteLock(in _scatterTelemetryRingHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryReadScatterTelemetryRing(out NativeArray<ScatterTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            telemetryRing = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId) &&
+                   vault.TryReadOnlyHandle(in _scatterTelemetryRingHandle, out telemetryRing) &&
+                   telemetryRing.Length >= ScatterTelemetryCapacity;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1524,24 +1591,6 @@ namespace Hecton8.World
             _registeredHotSwapListener = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
-        }
-
         private void TryRegisterOriginShiftListener()
         {
             if (_originShiftListenerRegistered || !Application.isPlaying)
@@ -1556,7 +1605,7 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -1577,19 +1626,16 @@ namespace Hecton8.World
             ReleaseBuffer(ref _scatterDensityBuffer);
             ReleaseBuffer(ref _scatterBoundsLutBuffer);
             ReleaseBuffer(ref _argsBuffer);
-            ReleaseBuffer(ref _modInstanceMatrixBuffer);
+            ReleaseBuffer(ref _modInstanceMatrixBufferA);
+            ReleaseBuffer(ref _modInstanceMatrixBufferB);
             ReleaseDepthPyramidTexture();
             ReleaseBiomeHeatmapResources();
             ReleaseScatterTelemetryResources();
-            if (_modInstanceMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_modInstanceMatrices);
-                _modInstanceMatrices.Dispose();
-                _modInstanceMatrices = default;
-            }
+            _modInstanceMatrices = null;
 
             _modInstanceCount = 0;
             _lastUploadedModInstanceCount = -1;
+            _modInstanceUploadBufferIndex = 0;
             _lastRequestedGrid = -1;
             _lastClampedCapacity = -1;
             _lastResolvedCapacity = -1;
@@ -1642,12 +1688,7 @@ namespace Hecton8.World
                 _biomeHeatmapTexture = null;
             }
 
-            if (_biomeHeatmapUpload.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_biomeHeatmapUpload);
-                _biomeHeatmapUpload.Dispose();
-                _biomeHeatmapUpload = default;
-            }
+            _biomeHeatmapUpload = null;
 
             _biomeHeatmapBlobBytes = -1;
             _biomeHeatmapBlobChecksum = 0UL;

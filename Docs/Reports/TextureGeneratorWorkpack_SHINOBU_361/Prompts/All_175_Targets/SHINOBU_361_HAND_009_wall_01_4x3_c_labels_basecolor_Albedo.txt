@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_009
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_009_wall_01_4x3_c_labels_basecolor_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\wall_01_4x3_c_labels_basecolor_Albedo.png
+FINAL_FILENAME: wall_01_4x3_c_labels_basecolor_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Create a seamless albedo source for a premium 4x3 meter habitat wall section with blank technical label zones. Build a layered wall: broad off-white pressure skin, graphite service band as an added layer, satin titanium mounting rail, blank recessed label plates, removable access hatches, small amber locator blocks, and teal maintenance tabs. The label areas must be empty physical plaques with no readable marks. Avoid a repeated grid of bathroom tiles; this should read as one engineered wall segment that can accept separate cable and instrument attachments. The panel must feel calm, expensive, heavy, and maintained for an underwater research base. Add tasteful edge wear, faint cleaning swirls, pale salt freckles in lower seams, and subtle discoloration around access plates. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

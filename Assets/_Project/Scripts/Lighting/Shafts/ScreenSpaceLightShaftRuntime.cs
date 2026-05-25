@@ -191,8 +191,8 @@ namespace Hecton8.Lighting.Shafts
             RefreshQualityPolicy();
             TryRegisterHotSwapListener();
             CacheDataVaultCold(GlobalRegistry.DataVault);
-            CachePlayerCold(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
-            GlobalSignals.InitializeAllQueues();
+            CachePlayerCold(GlobalRegistry.Player);
+            SignalCorridorRuntime.EnsureInitialized();
             EnsureBuffers();
             ResolveRenderCamera();
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -297,7 +297,7 @@ namespace Hecton8.Lighting.Shafts
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.Vfx,
@@ -493,7 +493,7 @@ namespace Hecton8.Lighting.Shafts
 
         private void UpdateSignalCoupling()
         {
-            if (GlobalSignals.TryGetLatestLightLevelSignal(out LightLevelSignal lightLevel, out int sequence) &&
+            if (SignalBus<LightLevelSignal>.TryGetLatest(out LightLevelSignal lightLevel, out int sequence) &&
                 sequence != _lastLightLevelSequence &&
                 (lightLevel.Flags & LightLevelSignalFlags.ValidSample) != 0)
             {
@@ -705,7 +705,7 @@ namespace Hecton8.Lighting.Shafts
                     Frame = unchecked((uint)frame),
                     Flags = 1
                 };
-                SignalBus<VisualFlareSignal>.Push(in signal);
+                SignalBus<VisualFlareSignal>.TryPush(in signal);
             }
         }
 

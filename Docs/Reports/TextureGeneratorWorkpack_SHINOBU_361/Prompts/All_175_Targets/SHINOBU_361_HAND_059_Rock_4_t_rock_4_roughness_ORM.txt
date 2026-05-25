@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_059
+ROLE: MASK_ORM
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_059_Rock_4_t_rock_4_roughness_ORM
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\Rock_4_t_rock_4_roughness_ORM.png
+FINAL_FILENAME: Rock_4_t_rock_4_roughness_ORM.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Packed ORM RGB source for Rock 4. Red channel should define AO in angular basalt gaps, seam grooves, and pore clusters. Green channel should define roughness with smooth pressure-polished ridges, medium slate plates, and high-roughness mineral dust. Blue channel should stay nearly empty with only rare crystalline flecks. Keep the mask clean, legible, tileable, and matched to the Rock 4 basecolor and normal family. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

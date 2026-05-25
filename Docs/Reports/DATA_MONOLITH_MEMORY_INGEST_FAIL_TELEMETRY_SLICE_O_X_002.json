@@ -1,0 +1,39 @@
+{
+  "agent": "X_002",
+  "slice": "O",
+  "status": "PATCHED_MEMORY_INGEST_EARLY_FAILURE_TELEMETRY_CORE_COMPILE_PASS",
+  "generatedUtc": "2026-05-24T07:24:00Z",
+  "changedFiles": [
+    "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs"
+  ],
+  "fixes": [
+    "TryInitializeFromMemory now records failure telemetry and requests a dump for source null/FileTooSmall rejection.",
+    "TryInitializeFromMemory now records failure telemetry and requests a dump for FileTooLarge rejection.",
+    "TryInitializeFromMemory now records failure telemetry and requests a dump for arena allocation/read-view failure before returning false."
+  ],
+  "failClosedScope": [
+    "Invalid memory-ingest blobs still return false and do not publish loaded state.",
+    "Existing loaded data is not overwritten by early invalid memory input.",
+    "File-path boot validation already recorded telemetry for these classes; this slice closes the memory-ingest parity gap."
+  ],
+  "staticProof": {
+    "earlyFailureTelemetryCallsAdded": 4,
+    "preprocessorChanged": false,
+    "schemaChanged": false,
+    "runtimeParserAdded": false,
+    "managedAllocationAdded": false
+  },
+  "diffCheck": "PASS_WARNINGS_ONLY_LF_CRLF",
+  "compileStatus": "CORE_BUILD_PASS_WITH_DUPLICATE_SOURCE_WARNINGS",
+  "coreBuildProof": {
+    "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+    "buildServerShutdownBeforeBuild": true,
+    "result": "PASS",
+    "errors": 0,
+    "warnings": 5,
+    "warningClass": "CS2002 duplicate source entries in generated Hecton8.Core.csproj; not introduced by this slice.",
+    "elapsed": "00:01:24.55",
+    "generatedUtc": "2026-05-24T08:36:51.1927326Z"
+  },
+  "claimBoundary": "Source-level fail-closed telemetry parity proof only; Unity player profiler and crash-dump execution proof still pending."
+}

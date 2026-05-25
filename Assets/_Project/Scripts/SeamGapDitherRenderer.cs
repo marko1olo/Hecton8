@@ -3,7 +3,6 @@ using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -23,12 +22,8 @@ namespace Hecton8.World
         private static readonly int _MaxCameraDistanceId = Shader.PropertyToID("_MaxCameraDistance");
         private static readonly int _BaseTintId = Shader.PropertyToID("_BaseTint");
         private const string LegacyGapDitherName = "__SEAM_DITHER";
-        private const int MaxSeamRaycastCommands = 256;
         private const int MaxMotesPerChunk = 256;
-        private const float MinimumProbeDistance = 0.05f;
-        private const float MinimumSeamGapMeters = 0.01f;
         private const float CurrentFadeInvSpeedSq = 0.16f;
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         // COLD ALLOC: Vector3[4] - immutable seam dither quad vertex template - owner: SeamGapDitherRenderer
         private static readonly Vector3[] _quadVertices =
         {
@@ -66,12 +61,6 @@ namespace Hecton8.World
         [SerializeField, Min(0.5f)] private float maxCameraDistance = 15f;
         [SerializeField, Min(0.5f)] private float segmentLengthBias = 2.5f;
 
-        [Header("Raycast Seam Probes")]
-        [SerializeField] private LayerMask seamProbeMask = HectonLayerMasks.SeamProbeLayerMask;
-        [SerializeField, Min(0.1f)] private float seamProbeHalfHeight = 1.25f;
-        [SerializeField, Min(1)] private int maxRaycastMotes = 128;
-        [SerializeField, Min(1)] private int raycastProbeStride = 2;
-
         [Header("Flora Root Gap Motes")]
         [Tooltip("When enabled, the indirect dither pass also emits capped bioluminescent motes around underwater macro-flora root contacts.")]
         [SerializeField] private bool includeFloraRootMotes = true;
@@ -106,26 +95,25 @@ namespace Hecton8.World
         private readonly List<WorldGenerativeGeologySeamRuntime> _legacyRuntimeScratch = new List<WorldGenerativeGeologySeamRuntime>(128);
         // COLD ALLOC: IndirectDrawIndexedArgs[1] - indirect draw argument upload cache for seam dither - owner: SeamGapDitherRenderer
         private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _argsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
-        // COLD ALLOC: float[256] - expected seam heights paired with raycast commands for gap-threshold filtering - owner: SeamGapDitherRenderer
-        private readonly float[] _seamRaycastExpectedHeights = new float[MaxSeamRaycastCommands];
-
         private Matrix4x4[] _matrixUpload;
         private Vector4[] _colorUpload;
-        private GraphicsBuffer _matrixBuffer;
-        private GraphicsBuffer _colorBuffer;
-        private GraphicsBuffer _argsBuffer;
+        private GraphicsBuffer _matrixBufferA;
+        private GraphicsBuffer _matrixBufferB;
+        private GraphicsBuffer _activeMatrixBuffer;
+        private GraphicsBuffer _colorBufferA;
+        private GraphicsBuffer _colorBufferB;
+        private GraphicsBuffer _activeColorBuffer;
+        private GraphicsBuffer _argsBufferA;
+        private GraphicsBuffer _argsBufferB;
+        private GraphicsBuffer _activeArgsBuffer;
         private Mesh _quadMesh;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private NativeArray<RaycastCommand> _seamRaycastCommands;
-        private NativeArray<RaycastHit> _seamRaycastHits;
-        private JobHandle _seamRaycastHandle;
-        private int _scheduledSeamRaycastCount;
-        private int _completedSeamRaycastCount;
-        private uint _seamRaycastShiftSequence;
         private bool _registeredToDispatcher;
         private bool _registeredLateFrame;
-        private bool _seamRaycastScheduled;
+        private int _pendingVisualInstanceCount;
+        private bool _pendingVisualDrawDirty;
         private bool _hotSwapRegistered;
+        private int _visualUploadBufferIndex;
         private float _nextLegacyVfxDisableTime = float.NegativeInfinity;
         private bool _loggedMissingSeamDitherMaterial;
 
@@ -168,7 +156,6 @@ namespace Hecton8.World
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
-            DisposeRaycastBuffers();
             ReleaseBuffers();
             ReleaseRuntimeMaterial();
             ReleaseQuadMesh();
@@ -176,36 +163,70 @@ namespace Hecton8.World
 
         public void Tick(float deltaTime)
         {
+        }
+
+        private void RunSeamDitherVisualSync()
+        {
             ResolveReferencesFromCache();
             DisableLegacyGapDitherIfNeeded();
             if (!EnsureRenderingResources())
             {
                 _debugReady = false;
                 _debugRenderedInstances = 0;
+                _pendingVisualDrawDirty = false;
+                _pendingVisualInstanceCount = 0;
                 return;
             }
 
             int instanceCount = BuildInstances();
-            ScheduleSeamRaycastBatch();
             _debugRenderedInstances = instanceCount;
             _debugSourceSeams = _stateScratch.Count;
             _debugReady = instanceCount > 0;
             if (instanceCount <= 0)
+            {
+                _pendingVisualDrawDirty = false;
+                _pendingVisualInstanceCount = 0;
+                return;
+            }
+
+            _pendingVisualInstanceCount = instanceCount;
+            _pendingVisualDrawDirty = true;
+        }
+
+        private void FlushQueuedSeamDitherVisuals()
+        {
+            if (!_pendingVisualDrawDirty)
                 return;
 
-            GraphicsBufferUploadUtility.UploadArray(_matrixBuffer, _matrixUpload, instanceCount);
-            GraphicsBufferUploadUtility.UploadArray(_colorBuffer, _colorUpload, instanceCount);
+            int instanceCount = _pendingVisualInstanceCount;
+            _pendingVisualDrawDirty = false;
+            _pendingVisualInstanceCount = 0;
+            if (instanceCount <= 0 || !EnsureRenderingResources())
+                return;
+
+            GraphicsBuffer matrixWriteBuffer = ResolveMatrixWriteBuffer();
+            GraphicsBuffer colorWriteBuffer = ResolveColorWriteBuffer();
+            GraphicsBuffer argsWriteBuffer = ResolveArgsWriteBuffer();
+            if (matrixWriteBuffer == null || colorWriteBuffer == null || argsWriteBuffer == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadArray(matrixWriteBuffer, _matrixUpload, instanceCount);
+            GraphicsBufferUploadUtility.UploadArray(colorWriteBuffer, _colorUpload, instanceCount);
 
             _argsUpload[0].indexCountPerInstance = _quadMesh != null ? _quadMesh.GetIndexCount(0) : 0u;
             _argsUpload[0].instanceCount = (uint)instanceCount;
             _argsUpload[0].startIndex = _quadMesh != null ? _quadMesh.GetIndexStart(0) : 0u;
             _argsUpload[0].baseVertexIndex = _quadMesh != null ? _quadMesh.GetBaseVertex(0) : 0u;
             _argsUpload[0].startInstance = 0u;
-            _argsBuffer.SetData(_argsUpload);
+            GraphicsBufferUploadUtility.UploadArray(argsWriteBuffer, _argsUpload, 1);
+            _activeMatrixBuffer = matrixWriteBuffer;
+            _activeColorBuffer = colorWriteBuffer;
+            _activeArgsBuffer = argsWriteBuffer;
+            _visualUploadBufferIndex ^= 1;
 
             Material drawMaterial = ResolveMaterial();
-            drawMaterial.SetBuffer(_MatrixBufferId, _matrixBuffer);
-            drawMaterial.SetBuffer(_ColorBufferId, _colorBuffer);
+            drawMaterial.SetBuffer(_MatrixBufferId, _activeMatrixBuffer);
+            drawMaterial.SetBuffer(_ColorBufferId, _activeColorBuffer);
             drawMaterial.SetVector(_CameraPositionId, ResolveCameraRuntimePosition(targetCamera));
             drawMaterial.SetFloat(_MaxCameraDistanceId, Mathf.Max(0.5f, maxCameraDistance));
 
@@ -214,7 +235,7 @@ namespace Hecton8.World
                 0,
                 drawMaterial,
                 _debugDrawBounds,
-                _argsBuffer,
+                _activeArgsBuffer,
                 0,
                 null,
                 ShadowCastingMode.Off,
@@ -232,7 +253,8 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
-            CompleteSeamRaycastBatchIfReady();
+            RunSeamDitherVisualSync();
+            FlushQueuedSeamDitherVisuals();
         }
 
         private void ResolveReferencesCold()
@@ -240,7 +262,7 @@ namespace Hecton8.World
             if (seamRegistry == null)
                 seamRegistry = SeamRegistry.ActiveRuntimeInstance;
 
-            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -356,8 +378,11 @@ namespace Hecton8.World
             EnsureCpuCapacity();
             EnsureQuadMesh();
             EnsureBuffers();
-            EnsureRaycastBuffers();
-            return _quadMesh != null && ResolveMaterial() != null && _matrixBuffer != null && _colorBuffer != null && _argsBuffer != null;
+            return _quadMesh != null &&
+                   ResolveMaterial() != null &&
+                   _activeMatrixBuffer != null &&
+                   _activeColorBuffer != null &&
+                   _activeArgsBuffer != null;
         }
 
         private void EnsureCpuCapacity()
@@ -395,22 +420,60 @@ namespace Hecton8.World
         private void EnsureBuffers()
         {
             int requiredCapacity = _matrixUpload != null ? _matrixUpload.Length : Mathf.Clamp(maxInstances, 8, MaxMotesPerChunk);
-            if (_matrixBuffer == null || _matrixBuffer.count != requiredCapacity)
+            if (_matrixBufferA == null || _matrixBufferA.count != requiredCapacity ||
+                _matrixBufferB == null || _matrixBufferB.count != requiredCapacity)
             {
-                ReleaseBuffer(ref _matrixBuffer);
-                _matrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither matrix upload buffer - owner: SeamGapDitherRenderer
+                ReleaseBuffer(ref _matrixBufferA);
+                ReleaseBuffer(ref _matrixBufferB);
+                _matrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither matrix upload buffer A - owner: SeamGapDitherRenderer
+                _matrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither matrix upload buffer B - owner: SeamGapDitherRenderer
+                _activeMatrixBuffer = _matrixBufferA;
+                _visualUploadBufferIndex = 0;
             }
 
-            if (_colorBuffer == null || _colorBuffer.count != requiredCapacity)
+            if (_colorBufferA == null || _colorBufferA.count != requiredCapacity ||
+                _colorBufferB == null || _colorBufferB.count != requiredCapacity)
             {
-                ReleaseBuffer(ref _colorBuffer);
-                _colorBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither tint upload buffer - owner: SeamGapDitherRenderer
+                ReleaseBuffer(ref _colorBufferA);
+                ReleaseBuffer(ref _colorBufferB);
+                _colorBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither tint upload buffer A - owner: SeamGapDitherRenderer
+                _colorBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither tint upload buffer B - owner: SeamGapDitherRenderer
+                _activeColorBuffer = _colorBufferA;
+                _visualUploadBufferIndex = 0;
             }
 
-            if (_argsBuffer == null)
+            if (_argsBufferA == null || _argsBufferB == null)
             {
-                _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - seam dither indirect indexed draw arguments - owner: SeamGapDitherRenderer
+                ReleaseBuffer(ref _argsBufferA);
+                ReleaseBuffer(ref _argsBufferB);
+                _argsBufferA = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - seam dither indirect indexed draw arguments A - owner: SeamGapDitherRenderer
+                _argsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - seam dither indirect indexed draw arguments B - owner: SeamGapDitherRenderer
+                _activeArgsBuffer = _argsBufferA;
+                _visualUploadBufferIndex = 0;
             }
+        }
+
+        private GraphicsBuffer ResolveMatrixWriteBuffer()
+        {
+            return (_visualUploadBufferIndex & 1) == 0 ? _matrixBufferB : _matrixBufferA;
+        }
+
+        private GraphicsBuffer ResolveColorWriteBuffer()
+        {
+            return (_visualUploadBufferIndex & 1) == 0 ? _colorBufferB : _colorBufferA;
+        }
+
+        private GraphicsBuffer ResolveArgsWriteBuffer()
+        {
+            return (_visualUploadBufferIndex & 1) == 0 ? _argsBufferB : _argsBufferA;
         }
 
         private Material ResolveMaterial()
@@ -524,16 +587,6 @@ namespace Hecton8.World
                 }
             }
 
-            instanceCount = AppendRaycastHitInstances(
-                instanceCount,
-                maxCount,
-                cameraPosition,
-                billboardRotation,
-                maxDistanceSq,
-                ref boundsMin,
-                ref boundsMax,
-                ref hasBounds);
-
             instanceCount = AppendFloraRootInstances(
                 instanceCount,
                 maxCount,
@@ -617,7 +670,7 @@ namespace Hecton8.World
                     float angle = angle01 * Mathf.PI * 2f;
                     Vector3 runtimePoint =
                         root +
-                        ((right * Mathf.Cos(angle)) + (forward * Mathf.Sin(angle))) * baseRadius +
+                        ((right * MathLodApproximation.ApproxCosBhaskara(angle)) + (forward * MathLodApproximation.ApproxSinBhaskara(angle))) * baseRadius +
                         (Vector3.up * surfaceLift);
                     if ((runtimePoint - cameraPosition).sqrMagnitude > maxDistanceSq)
                         continue;
@@ -632,202 +685,6 @@ namespace Hecton8.World
             }
 
             return instanceCount;
-        }
-
-        private int AppendRaycastHitInstances(
-            int instanceCount,
-            int maxCount,
-            Vector3 cameraPosition,
-            Quaternion billboardRotation,
-            float maxDistanceSq,
-            ref Vector3 boundsMin,
-            ref Vector3 boundsMax,
-            ref bool hasBounds)
-        {
-            if (!_seamRaycastHits.IsCreated || _completedSeamRaycastCount <= 0)
-                return instanceCount;
-
-            int appendedCount = 0;
-            int hitLimit = Mathf.Min(_completedSeamRaycastCount, _seamRaycastHits.Length);
-            int appendLimit = Mathf.Min(Mathf.Max(0, maxRaycastMotes), maxCount - instanceCount);
-            for (int i = 0; i < hitLimit && appendedCount < appendLimit; i++)
-            {
-                RaycastHit hit = _seamRaycastHits[i];
-                if (hit.collider == null)
-                    continue;
-
-                if (Mathf.Abs(hit.point.y - _seamRaycastExpectedHeights[i]) <= MinimumSeamGapMeters)
-                    continue;
-
-                Vector3 runtimePoint = hit.point + hit.normal * 0.025f;
-                if ((runtimePoint - cameraPosition).sqrMagnitude > maxDistanceSq)
-                    continue;
-
-                float scale = Mathf.Max(0.01f, moteSize * 0.85f);
-                Color color = defaultBiomeTemplate != null
-                    ? defaultBiomeTemplate.SeamDitherDustColor
-                    : new Color(0.28f, 0.92f, 1f, 0.7f);
-                if (color.a <= 0.01f)
-                    continue;
-
-                _matrixUpload[instanceCount] = Matrix4x4.TRS(runtimePoint, billboardRotation, Vector3.one * scale);
-                _colorUpload[instanceCount] = (Vector4)color;
-                IncludeInstanceBounds(runtimePoint, scale, ref boundsMin, ref boundsMax, ref hasBounds);
-                instanceCount++;
-                appendedCount++;
-            }
-
-            return instanceCount;
-        }
-
-        private void ScheduleSeamRaycastBatch()
-        {
-            if (_seamRaycastScheduled ||
-                HectonFloatingOrigin.IsShiftInProgress ||
-                !_seamRaycastCommands.IsCreated ||
-                !_seamRaycastHits.IsCreated ||
-                _stateScratch.Count <= 0)
-            {
-                return;
-            }
-
-            int layerMask = seamProbeMask.value != 0 ? seamProbeMask.value : HectonLayerMasks.SeamProbeLayerMask;
-            QueryParameters queryParameters = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
-            float halfHeight = Mathf.Max(MinimumProbeDistance, seamProbeHalfHeight);
-            float probeDistance = Mathf.Max(MinimumProbeDistance, halfHeight * 2f);
-            int commandCount = 0;
-            int stride = Mathf.Max(1, raycastProbeStride);
-            int maxCommandCount = Mathf.Min(_seamRaycastCommands.Length, Mathf.Max(1, maxRaycastMotes));
-
-            for (int seamIndex = 0; seamIndex < _stateScratch.Count && commandCount < maxCommandCount; seamIndex++)
-            {
-                ProceduralGeologySeamStateDTO state = _stateScratch[seamIndex];
-                Vector3 surfaceAbsolute = new Vector3(
-                    state.absolutePositionX,
-                    state.absoluteSeamHeight,
-                    state.absolutePositionZ);
-                Vector3 centerAbsolute = new Vector3(
-                    state.absoluteVoxelCenterX,
-                    state.absoluteSeamHeight,
-                    state.absoluteVoxelCenterZ);
-
-                Vector3 segment = centerAbsolute - surfaceAbsolute;
-                segment.y = 0f;
-                float segmentLength = ApproximateVectorMagnitude(segment);
-                int probeCount = Mathf.Clamp(
-                    Mathf.CeilToInt(Mathf.Max(state.seamBlendRadius, segmentLength + segmentLengthBias) / Mathf.Max(0.1f, instanceSpacing)),
-                    1,
-                    Mathf.Max(1, maxInstancesPerSeam));
-
-                for (int pointIndex = 0; pointIndex < probeCount && commandCount < maxCommandCount; pointIndex += stride)
-                {
-                    float t = probeCount <= 1 ? 0.5f : pointIndex / (float)(probeCount - 1);
-                    Vector3 absolutePoint = surfaceAbsolute + ((centerAbsolute - surfaceAbsolute) * t);
-                    Vector3 runtimePoint = HectonFloatingOrigin.ToRuntimePosition(absolutePoint);
-                    Vector3 origin = runtimePoint + Vector3.up * halfHeight;
-                    _seamRaycastCommands[commandCount] = new RaycastCommand(
-                        origin,
-                        Vector3.down,
-                        queryParameters,
-                        probeDistance);
-                    _seamRaycastExpectedHeights[commandCount] = runtimePoint.y;
-                    commandCount++;
-                }
-            }
-
-            RaycastCommand invalidCommand = CreateInvalidRaycastCommand();
-            for (int i = commandCount; i < _seamRaycastCommands.Length; i++)
-            {
-                _seamRaycastCommands[i] = invalidCommand;
-                _seamRaycastExpectedHeights[i] = 0f;
-            }
-
-            if (commandCount <= 0)
-                return;
-
-            _scheduledSeamRaycastCount = commandCount;
-            _seamRaycastShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-            _seamRaycastHandle = RaycastCommand.ScheduleBatch(_seamRaycastCommands, _seamRaycastHits, 16, default);
-            _seamRaycastScheduled = true;
-        }
-
-        private void CompleteSeamRaycastBatchIfReady()
-        {
-            if (!_seamRaycastScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _seamRaycastHandle, false))
-                return;
-
-            if (HectonFloatingOrigin.IsShiftInProgress ||
-                _seamRaycastShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
-            {
-                _completedSeamRaycastCount = 0;
-                _scheduledSeamRaycastCount = 0;
-                _seamRaycastScheduled = false;
-                _seamRaycastHandle = default;
-                _seamRaycastShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-                return;
-            }
-
-            _completedSeamRaycastCount = _scheduledSeamRaycastCount;
-            _scheduledSeamRaycastCount = 0;
-            _seamRaycastScheduled = false;
-        }
-
-        private void EnsureRaycastBuffers()
-        {
-            if (!_seamRaycastCommands.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<RaycastCommand>[256] - seam intersection ray batch commands - owner: SeamGapDitherRenderer
-                _seamRaycastCommands = new NativeArray<RaycastCommand>(MaxSeamRaycastCommands, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _seamRaycastCommands,
-                    nameof(SeamGapDitherRenderer),
-                    nameof(_seamRaycastCommands),
-                    NativeMemoryLifetime);
-            }
-
-            if (!_seamRaycastHits.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<RaycastHit>[256] - seam intersection ray batch results - owner: SeamGapDitherRenderer
-                _seamRaycastHits = new NativeArray<RaycastHit>(MaxSeamRaycastCommands, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _seamRaycastHits,
-                    nameof(SeamGapDitherRenderer),
-                    nameof(_seamRaycastHits),
-                    NativeMemoryLifetime);
-            }
-        }
-
-        private void DisposeRaycastBuffers()
-        {
-            JobHandle dependency = _seamRaycastScheduled ? _seamRaycastHandle : default;
-            if (_seamRaycastCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_seamRaycastCommands);
-                dependency = _seamRaycastCommands.Dispose(dependency);
-                _seamRaycastCommands = default;
-            }
-
-            if (_seamRaycastHits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_seamRaycastHits);
-                dependency = _seamRaycastHits.Dispose(dependency);
-                _seamRaycastHits = default;
-            }
-
-            _seamRaycastHandle = dependency;
-            _seamRaycastScheduled = false;
-            _scheduledSeamRaycastCount = 0;
-            _completedSeamRaycastCount = 0;
-            _seamRaycastShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-        }
-
-        private static RaycastCommand CreateInvalidRaycastCommand()
-        {
-            QueryParameters queryParameters = new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore);
-            return new RaycastCommand(Vector3.zero, Vector3.up, queryParameters, MinimumProbeDistance);
         }
 
         private static void IncludeInstanceBounds(
@@ -936,9 +793,16 @@ namespace Hecton8.World
 
         private void ReleaseBuffers()
         {
-            ReleaseBuffer(ref _matrixBuffer);
-            ReleaseBuffer(ref _colorBuffer);
-            ReleaseBuffer(ref _argsBuffer);
+            ReleaseBuffer(ref _matrixBufferA);
+            ReleaseBuffer(ref _matrixBufferB);
+            ReleaseBuffer(ref _colorBufferA);
+            ReleaseBuffer(ref _colorBufferB);
+            ReleaseBuffer(ref _argsBufferA);
+            ReleaseBuffer(ref _argsBufferB);
+            _activeMatrixBuffer = null;
+            _activeColorBuffer = null;
+            _activeArgsBuffer = null;
+            _visualUploadBufferIndex = 0;
         }
 
         private void ReleaseRuntimeMaterial()

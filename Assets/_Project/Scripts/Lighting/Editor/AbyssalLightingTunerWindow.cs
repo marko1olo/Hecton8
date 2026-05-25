@@ -102,7 +102,7 @@ namespace Hecton8.Lighting.Editor
         private InteriorGIProbeVolumeRuntime ResolveTarget()
         {
             if (_target == null)
-                _target = Object.FindFirstObjectByType<InteriorGIProbeVolumeRuntime>(FindObjectsInactive.Include);
+                _target = Object.FindAnyObjectByType<InteriorGIProbeVolumeRuntime>(FindObjectsInactive.Include);
 
             return _target;
         }

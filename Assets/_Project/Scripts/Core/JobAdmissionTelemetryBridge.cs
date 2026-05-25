@@ -27,7 +27,7 @@ namespace Hecton8.Core
                 Flags = StarvedFlag
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<CpuStarvationSignal>.TryPush(in signal);
             CrashTelemetryBuffer.ReportJobAdmissionState(
                 signal.Lane,
                 signal.JobHash,
@@ -73,7 +73,7 @@ namespace Hecton8.Core
                 Flags = NonFiniteFlag
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<CpuStarvationSignal>.TryPush(in signal);
             CrashTelemetryBuffer.ReportJobAdmissionNonFinite(signal.Lane, signal.JobHash, value);
         }
     }

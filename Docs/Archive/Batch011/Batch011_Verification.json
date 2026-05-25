@@ -1,0 +1,93 @@
+{
+    "batch":  "Batch011",
+    "generatedAtUtc":  "2026-05-22T08:26:14.6849886Z",
+    "movedCount":  473,
+    "baseMoveCount":  456,
+    "lateMoveCount":  17,
+    "lateMoveManifests":  [
+                              {
+                                  "Name":  "Batch011_LateMoveManifest_001.json",
+                                  "Length":  4334
+                              },
+                              {
+                                  "Name":  "Batch011_LateMoveManifest_002.json",
+                                  "Length":  3047
+                              }
+                          ],
+    "stableAfterTwoSecondWindow":  false,
+    "tasksRemainingExceptCurrentBatch":  [
+                                             {
+                                                 "Name":  "Status_SHINOBU_260.md",
+                                                 "Length":  55873,
+                                                 "LastWriteTimeUtc":  "\/Date(1779408202263)\/"
+                                             }
+                                         ],
+    "agentLogsRemaining":  [
+                               {
+                                   "Name":  "LOG_SHINOBU_260.md",
+                                   "Length":  87126,
+                                   "LastWriteTimeUtc":  "\/Date(1779408202263)\/"
+                               },
+                               {
+                                   "Name":  "Rationale_SHINOBU_260.md",
+                                   "Length":  46829,
+                                   "LastWriteTimeUtc":  "\/Date(1779408202263)\/"
+                               }
+                           ],
+    "summaryInputCounts":  {
+                               "tasksMdTxt":  109,
+                               "logMdTxt":  132,
+                               "rationaleMdTxt":  105
+                           },
+    "summaryChunks":  [
+                          {
+                              "name":  "TASKS_001.md",
+                              "bytes":  3476449
+                          },
+                          {
+                              "name":  "TASKS_002.md",
+                              "bytes":  2782063
+                          },
+                          {
+                              "name":  "LOG_001.md",
+                              "bytes":  3490509
+                          },
+                          {
+                              "name":  "LOG_002.md",
+                              "bytes":  3483389
+                          },
+                          {
+                              "name":  "LOG_003.md",
+                              "bytes":  3046874
+                          },
+                          {
+                              "name":  "RATIONALE_001.md",
+                              "bytes":  3357738
+                          },
+                          {
+                              "name":  "RATIONALE_002.md",
+                              "bytes":  3490105
+                          },
+                          {
+                              "name":  "RATIONALE_003.md",
+                              "bytes":  1288769
+                          }
+                      ],
+    "oversizedSummaryChunks":  [
+
+                               ],
+    "largeOriginalFilesMovedIntact":  [
+                                          {
+                                              "FullName":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch011\\AgentLogs\\Build_SHINOBU_271_core_diag_compileitems.log",
+                                              "Length":  145575692
+                                          }
+                                      ],
+    "strictSummaryRegeneratedAtLocal":  "2026-05-22 12:30:49",
+    "strictSummaryPolicy":  "all normalized critical md/txt lines retained; no per-file cap; chunk cap 3500000 bytes; active new files not touched",
+    "technicalSummaryRegeneratedAtLocal":  "2026-05-22 12:37:54",
+    "technicalSummaryPolicy":  "all critical + broad technical md/txt signal lines retained; active new files not touched",
+    "handoffSummaryRegeneratedAtLocal":  "2026-05-22 12:42:03",
+    "handoffSummaryPolicy":  "critical + technical + assignment/checklist/analysis preamble md/txt signal retained; active new files not touched",
+    "nearLosslessSummaryRegeneratedAtLocal":  "2026-05-22 12:45:58",
+    "nearLosslessSummaryPolicy":  "every normalized unique non-empty md/txt line retained; only formatting/articles/duplicates removed; active new files and НЕ ТРОГАТЬ.txt untouched"
+}

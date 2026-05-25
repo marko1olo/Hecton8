@@ -659,7 +659,7 @@ namespace Hecton8.Core.Diagnostics
     }
 
     [DisallowMultipleComponent]
-    public sealed class AsynchronousTelemetryExporter : MonoBehaviour, IDispatcherSystem
+    public sealed class AsynchronousTelemetryExporter : MonoBehaviour, IDispatcherSystem, IGlobalRegistryHotSwapListener
     {
         private const uint SystemHash = 0xA160160u;
         private const int DefaultEventRingCapacity = 16384;
@@ -738,17 +738,18 @@ namespace Hecton8.Core.Diagnostics
         private float _sessionTimestampAccumulator;
         private bool _hasLastKnownPlayerAup;
         private bool _dispatcherRegistered;
+        private bool _hotSwapListenerRegistered;
         private bool _storageReady;
 
         private Thread _workerThread;
         private AutoResetEvent _flushSignal;
-        private volatile int _shutdownRequested;
-        private volatile int _pendingBatchState;
-        private volatile int _pendingBatchIndex = -1;
-        private volatile int _pendingBatchCount;
-        private volatile int _pendingDumpState;
-        private volatile int _pendingDumpBytes;
-        private volatile int _acceptingIngress;
+        private int _shutdownRequested;
+        private int _pendingBatchState;
+        private int _pendingBatchIndex = -1;
+        private int _pendingBatchCount;
+        private int _pendingDumpState;
+        private int _pendingDumpBytes;
+        private int _acceptingIngress;
         private int _mainThreadId;
         private int _handoffWriteIndex;
         private int _workerAccumCount;
@@ -923,6 +924,7 @@ namespace Hecton8.Core.Diagnostics
             _mainThreadId = Thread.CurrentThread.ManagedThreadId;
             Volatile.Write(ref _acceptingIngress, 0);
             _dataVault = GlobalRegistry.DataVault;
+            TryRegisterHotSwapListener();
             _fallbackDirectory = ResolveFallbackDirectory();
             _dumpPath = Path.Combine(_fallbackDirectory, "Dump_SHINOBU_160.bin");
 
@@ -949,6 +951,7 @@ namespace Hecton8.Core.Diagnostics
             }
 
             Volatile.Write(ref _acceptingIngress, 0);
+            TryUnregisterHotSwapListener();
             if (!StopWorker())
             {
                 _storageReady = false;
@@ -961,8 +964,20 @@ namespace Hecton8.Core.Diagnostics
         private void OnDestroy()
         {
             Volatile.Write(ref _acceptingIngress, 0);
+            TryUnregisterHotSwapListener();
             if (StopWorker())
                 TeardownStoppedWorkerState();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            RebindDataVault(currentService as IDataVault);
         }
 
         private void TeardownStoppedWorkerState()
@@ -1068,92 +1083,92 @@ namespace Hecton8.Core.Diagnostics
 
         private bool TryAcquireVaultStorage()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
             _dataVault = vault;
-            _eventRingHandle = vault.GetGenerationHandle<AnalyticEventDTO>(
+            _eventRingHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.EventRing,
                 _eventRingCapacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _stagingHandle = vault.GetGenerationHandle<AnalyticEventDTO>(
+            _stagingHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.Staging,
                 _stagingCapacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _routineIngressHandle = vault.GetGenerationHandle<AnalyticEventDTO>(
+            _routineIngressHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.RoutineIngress,
                 _ingressExpectedCapacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _criticalIngressHandle = vault.GetGenerationHandle<AnalyticEventDTO>(
+            _criticalIngressHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.CriticalIngress,
                 math.max(64, _ingressExpectedCapacity >> 4),
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _ingressCursorHandle = vault.GetGenerationHandle<AnalyticsIngressCursorDTO>(
+            _ingressCursorHandle = vault.EnsureGenerationHandle<AnalyticsIngressCursorDTO>(
                 AnalyticsVaultBufferIds.IngressCursor,
                 1,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            _countersHandle = vault.GetGenerationHandle<AnalyticsCountersDTO>(
+            _countersHandle = vault.EnsureGenerationHandle<AnalyticsCountersDTO>(
                 AnalyticsVaultBufferIds.Counters,
                 1,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetGenerationHandle<AnalyticsExporterTelemetryEntry>(
+            _telemetryHandle = vault.EnsureGenerationHandle<AnalyticsExporterTelemetryEntry>(
                 AnalyticsVaultBufferIds.TelemetryRing,
                 DefaultTelemetryCapacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            _telemetryCursorHandle = vault.GetGenerationHandle<int>(
+            _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(
                 AnalyticsVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            _tuningHandle = vault.GetGenerationHandle<AnalyticsTuningDTO>(
+            _tuningHandle = vault.EnsureGenerationHandle<AnalyticsTuningDTO>(
                 AnalyticsVaultBufferIds.Tuning,
                 1,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 AnalyticsVaultBufferIds.CsvScratch,
                 DefaultCsvScratchBytes,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _compressedScratchHandle = vault.GetGenerationHandle<byte>(
+            _compressedScratchHandle = vault.EnsureGenerationHandle<byte>(
                 AnalyticsVaultBufferIds.CompressedScratch,
                 DefaultCompressedScratchBytes,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _heatmapDebugHandle = vault.GetGenerationHandle<AnalyticEventDTO>(
+            _heatmapDebugHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.HeatmapDebug,
                 512,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _handoffAHandle = vault.GetGenerationHandle<AnalyticEventDTO>(
+            _handoffAHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.HandoffA,
                 MaxHandoffEvents,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _handoffBHandle = vault.GetGenerationHandle<AnalyticEventDTO>(
+            _handoffBHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.HandoffB,
                 MaxHandoffEvents,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _workerAccumHandle = vault.GetGenerationHandle<AnalyticEventDTO>(
+            _workerAccumHandle = vault.EnsureGenerationHandle<AnalyticEventDTO>(
                 AnalyticsVaultBufferIds.WorkerAccum,
                 MaxHandoffEvents,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _rawBatchScratchHandle = vault.GetGenerationHandle<byte>(
+            _rawBatchScratchHandle = vault.EnsureGenerationHandle<byte>(
                 AnalyticsVaultBufferIds.RawBatchScratch,
                 MaxRawBatchBytes,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            _dumpSnapshotHandle = vault.GetGenerationHandle<byte>(
+            _dumpSnapshotHandle = vault.EnsureGenerationHandle<byte>(
                 AnalyticsVaultBufferIds.DumpSnapshot,
                 DumpSnapshotBytes,
                 SystemID.CoreDiagnostics,
@@ -1191,6 +1206,50 @@ namespace Hecton8.Core.Diagnostics
                 ReleaseVaultHandles();
 
             return ready;
+        }
+
+        private void RebindDataVault(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            Volatile.Write(ref _acceptingIngress, 0);
+            if (!StopWorker())
+            {
+                _storageReady = false;
+                return;
+            }
+
+            ResetHotPathCounters();
+            _storageReady = false;
+            ReleaseVaultHandles();
+            _dataVault = nextVault;
+            if (_dataVault == null || !isActiveAndEnabled)
+                return;
+
+            _storageReady = TryAcquireVaultStorage();
+            if (!_storageReady)
+                return;
+
+            Volatile.Write(ref _acceptingIngress, 1);
+            StartWorker();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private bool InitializeIngressCursor()
@@ -2556,6 +2615,9 @@ namespace Hecton8.Core.Diagnostics
 
         private void LoadEndpointConfigurationCold()
         {
+#if !UNITY_EDITOR
+            return;
+#else
             if (!TryResolveCsvScratch(out NativeArray<byte> scratch))
                 return;
 
@@ -2574,8 +2636,10 @@ namespace Hecton8.Core.Diagnostics
             }
 
             ParseEndpointCsv(AsReadOnlySpan(scratch, math.min(bytesRead, scratch.Length)));
+#endif
         }
 
+#if UNITY_EDITOR
         private void ParseEndpointCsv(ReadOnlySpan<byte> csv)
         {
             int start = 0;
@@ -2602,7 +2666,9 @@ namespace Hecton8.Core.Diagnostics
                 tuning[0] = _cachedTuning;
             ApplyWorkerTuningSnapshot(in _cachedTuning);
         }
+#endif
 
+#if UNITY_EDITOR
         private void ApplyEndpointConfig(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
         {
             if (EqualsAscii(key, "endpoint"))
@@ -2626,6 +2692,7 @@ namespace Hecton8.Core.Diagnostics
             else if (EqualsAscii(key, "heatmap_seconds") && TryParsePositiveFloat(value, out float seconds))
                 _cachedTuning.HeatmapSampleSeconds = seconds;
         }
+#endif
 
         private bool TryResolveProcessingBuffers(
             out NativeArray<AnalyticEventDTO> eventRing,
@@ -2728,6 +2795,7 @@ namespace Hecton8.Core.Diagnostics
                 : 0L;
         }
 
+#if UNITY_EDITOR
         private static int IndexOf(ReadOnlySpan<byte> bytes, byte target)
         {
             for (int i = 0; i < bytes.Length; i++)
@@ -2807,6 +2875,7 @@ namespace Hecton8.Core.Diagnostics
             }
             return consumed;
         }
+#endif
 
         private static uint HashAupSector(in double3 aup)
         {

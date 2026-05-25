@@ -118,6 +118,7 @@ namespace Hecton8.World
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _renderUploadDirty;
+        private bool _pendingIndirectArgsGpuDirty;
         private float _lastAppliedDormantOreVisualWeight = -1f;
         private bool _depletionLoaded;
         private bool _discardSpawnJobOutput;
@@ -126,6 +127,7 @@ namespace Hecton8.World
         private bool _pendingDataVaultRebind;
         private bool _distributionRulesLoaded;
         private int _lockedVaultBufferMask;
+        private GeologyIndirectArgsDTO _pendingIndirectArgsGpu;
         private int _oreCapacity;
         private int _depletionWordCount;
         private int _renderInstanceCount;
@@ -235,14 +237,14 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!TryReadExistingBuffer(in _orePositionsHandle, _oreCapacity, out NativeArray<float3> writableOrePositions))
+            if (!TryReadExistingBuffer(in _orePositionsHandle, _oreCapacity, out NativeArray<float3>.ReadOnly orePositionsView))
             {
                 orePositions = default;
                 scanCount = 0;
                 return false;
             }
 
-            orePositions = writableOrePositions.AsReadOnly();
+            orePositions = orePositionsView;
             scanCount = _renderInstanceCount;
             return _renderInstanceCount > 0 && _activeOreCount > 0;
         }
@@ -256,14 +258,14 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!TryReadExistingBuffer(in _oreTypesHandle, _oreCapacity, out NativeArray<int> writableOreTypes))
+            if (!TryReadExistingBuffer(in _oreTypesHandle, _oreCapacity, out NativeArray<int>.ReadOnly oreTypesView))
             {
                 oreTypes = default;
                 scanCount = 0;
                 return false;
             }
 
-            oreTypes = writableOreTypes.AsReadOnly();
+            oreTypes = oreTypesView;
             scanCount = _renderInstanceCount;
             return _renderInstanceCount > 0 && _activeOreCount > 0;
         }
@@ -574,6 +576,7 @@ namespace Hecton8.World
             if (_renderUploadDirty)
                 UploadRenderMatrices();
 
+            FlushPendingIndirectArgsGpu();
             RenderDormantOres();
             RefreshCachedPlayerRuntimeReference();
             WriteTelemetrySample(0u);
@@ -599,6 +602,8 @@ namespace Hecton8.World
             ReleaseBuffer(ref _matrixBufferB);
             ReleaseBuffer(ref _argsBuffer);
             _activeMatrixBuffer = null;
+            _pendingIndirectArgsGpu = default;
+            _pendingIndirectArgsGpuDirty = false;
             _pendingRuntimeShift = default;
             _lastPlayerRuntimePosition = default;
             _hasPendingRuntimeShift = false;
@@ -636,7 +641,7 @@ namespace Hecton8.World
         private void CacheRuntimeServices()
         {
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             RefreshCachedPlayerRuntimeReference();
 
@@ -693,107 +698,107 @@ namespace Hecton8.World
             _oreCapacity = Mathf.Clamp(maxOreCapacity, MinimumOreCapacity, MaximumOreCapacity);
             _depletionWordCount = Mathf.Max(1, (_oreCapacity + 63) >> 6);
 
-            _resourceNodesHandle = vault.GetGenerationHandle<ResourceNodeDTO>(
+            _resourceNodesHandle = vault.EnsureGenerationHandle<ResourceNodeDTO>(
                 ProceduralGeologyVaultBufferIds.ResourceNodes,
                 _oreCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _orePositionsHandle = vault.GetGenerationHandle<float3>(
+            _orePositionsHandle = vault.EnsureGenerationHandle<float3>(
                 ProceduralGeologyVaultBufferIds.OrePositions,
                 _oreCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _oreTypesHandle = vault.GetGenerationHandle<int>(
+            _oreTypesHandle = vault.EnsureGenerationHandle<int>(
                 ProceduralGeologyVaultBufferIds.OreTypes,
                 _oreCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _depletionMasksHandle = vault.GetGenerationHandle<ulong>(
+            _depletionMasksHandle = vault.EnsureGenerationHandle<ulong>(
                 ProceduralGeologyVaultBufferIds.DepletionMasks,
                 _depletionWordCount,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _oreMatricesHandle = vault.GetGenerationHandle<float4x4>(
+            _oreMatricesHandle = vault.EnsureGenerationHandle<float4x4>(
                 ProceduralGeologyVaultBufferIds.ResourceMatrices,
                 _oreCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _biomeHeatmapHandle = vault.GetGenerationHandle<byte>(
+            _biomeHeatmapHandle = vault.EnsureGenerationHandle<byte>(
                 ProceduralGeologyVaultBufferIds.BiomeHeatmap,
                 BiomeHeatmapResolution * BiomeHeatmapResolution,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _spawnCountsHandle = vault.GetGenerationHandle<int>(
+            _spawnCountsHandle = vault.EnsureGenerationHandle<int>(
                 ProceduralGeologyVaultBufferIds.SpawnCounts,
                 SpawnCounterCount,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _telemetryRingHandle = vault.GetGenerationHandle<GeologyGenerationTelemetryEntry>(
+            _telemetryRingHandle = vault.EnsureGenerationHandle<GeologyGenerationTelemetryEntry>(
                 ProceduralGeologyVaultBufferIds.TelemetryRing,
                 ProceduralGeologyConstants.TelemetryFrames,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _mockTerrainSdfHandle = vault.GetGenerationHandle<GeologyTerrainSampleDTO>(
+            _mockTerrainSdfHandle = vault.EnsureGenerationHandle<GeologyTerrainSampleDTO>(
                 ProceduralGeologyVaultBufferIds.MockTerrainSdf,
                 ProceduralGeologyConstants.MockTerrainResolution * ProceduralGeologyConstants.MockTerrainResolution,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _distributionRulesHandle = vault.GetGenerationHandle<GeologyDistributionRuleDTO>(
+            _distributionRulesHandle = vault.EnsureGenerationHandle<GeologyDistributionRuleDTO>(
                 ProceduralGeologyVaultBufferIds.DistributionRules,
                 ProceduralGeologyConstants.DistributionRuleCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetGenerationHandle<GeologyTuningDTO>(
+            _tuningHandle = vault.EnsureGenerationHandle<GeologyTuningDTO>(
                 ProceduralGeologyVaultBufferIds.Tuning,
                 ProceduralGeologyConstants.TuningCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 ProceduralGeologyVaultBufferIds.CsvScratch,
                 ProceduralGeologyConstants.CsvScratchBytes,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _selfAuditHandle = vault.GetGenerationHandle<GeologySelfAuditResultDTO>(
+            _selfAuditHandle = vault.EnsureGenerationHandle<GeologySelfAuditResultDTO>(
                 ProceduralGeologyVaultBufferIds.SelfAudit,
                 ProceduralGeologyConstants.SelfAuditCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _candidateSlotsHandle = vault.GetGenerationHandle<int>(
+            _candidateSlotsHandle = vault.EnsureGenerationHandle<int>(
                 ProceduralGeologyVaultBufferIds.CandidateSlots,
                 _oreCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _depletionCacheKeysHandle = vault.GetGenerationHandle<ulong>(
+            _depletionCacheKeysHandle = vault.EnsureGenerationHandle<ulong>(
                 ProceduralGeologyVaultBufferIds.DepletionCacheKeys,
                 DepletionCacheCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _depletionCacheMasksHandle = vault.GetGenerationHandle<ulong>(
+            _depletionCacheMasksHandle = vault.EnsureGenerationHandle<ulong>(
                 ProceduralGeologyVaultBufferIds.DepletionCacheMasks,
                 DepletionCacheCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _depletionCacheCountHandle = vault.GetGenerationHandle<int>(
+            _depletionCacheCountHandle = vault.EnsureGenerationHandle<int>(
                 ProceduralGeologyVaultBufferIds.DepletionCacheCount,
                 DepletionCacheCountLength,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _sectorHashGridHandle = vault.GetGenerationHandle<long>(
+            _sectorHashGridHandle = vault.EnsureGenerationHandle<long>(
                 ProceduralGeologyVaultBufferIds.SectorHashGrid,
                 SectorHashGridCount,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _indirectArgsHandle = vault.GetGenerationHandle<GeologyIndirectArgsDTO>(
+            _indirectArgsHandle = vault.EnsureGenerationHandle<GeologyIndirectArgsDTO>(
                 ProceduralGeologyVaultBufferIds.IndirectArgs,
                 IndirectArgsCount,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _hzbTilesHandle = vault.GetGenerationHandle<GeologyHzbTileDTO>(
+            _hzbTilesHandle = vault.EnsureGenerationHandle<GeologyHzbTileDTO>(
                 ProceduralGeologyVaultBufferIds.HzbTiles,
                 ProceduralGeologyConstants.HzbTileCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _hzbMetaHandle = vault.GetGenerationHandle<GeologyHzbMetaDTO>(
+            _hzbMetaHandle = vault.EnsureGenerationHandle<GeologyHzbMetaDTO>(
                 ProceduralGeologyVaultBufferIds.HzbMeta,
                 ProceduralGeologyConstants.HzbMetaCapacity,
                 OwnerSystemId,
@@ -867,7 +872,7 @@ namespace Hecton8.World
             ReleaseVaultViews();
             if (currentVault == null)
             {
-                WriteIndirectArgsGpu(0u);
+                QueueIndirectArgsGpu(0u);
                 return true;
             }
 
@@ -1038,7 +1043,7 @@ namespace Hecton8.World
 
             if (!IsVaultHandleCreated(in handle))
             {
-                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+                handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             }
 
             if (vault.TryResolveHandle(in handle, out view) &&
@@ -1048,7 +1053,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return vault.TryResolveHandle(in handle, out view) &&
                    view.IsCreated &&
                    view.Length >= requiredLength;
@@ -1072,14 +1077,14 @@ namespace Hecton8.World
         private bool TryReadExistingBuffer<T>(
             in VaultGenerationHandle<T> handle,
             int requiredLength,
-            out NativeArray<T> view) where T : struct
+            out NativeArray<T>.ReadOnly view) where T : struct
         {
             view = default;
             IDataVault vault = _dataVault;
             return vault != null &&
                    requiredLength > 0 &&
                    IsVaultHandleCreated(in handle) &&
-                   vault.TryReadHandle(in handle, out view) &&
+                   vault.TryReadOnlyHandle(in handle, out view) &&
                    view.IsCreated &&
                    view.Length >= requiredLength;
         }
@@ -1201,15 +1206,18 @@ namespace Hecton8.World
                 return;
 
             _distributionRuleCount = WriteDefaultDistributionRules(views.DistributionRules);
+#if UNITY_EDITOR
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string csvPath = Path.Combine(projectRoot, "Docs", "resource_distribution_rules.csv");
             int parsed = TryLoadDistributionRulesFromCsv(csvPath, views);
             if (parsed > 0)
                 _distributionRuleCount = parsed;
+#endif
 
             _distributionRulesLoaded = true;
         }
 
+#if UNITY_EDITOR
         private unsafe int TryLoadDistributionRulesFromCsv(string csvPath, ProceduralGeologyVaultViews views)
         {
             IDataVault vault = _dataVault;
@@ -1242,7 +1250,9 @@ namespace Hecton8.World
                 vault.ReleaseWriteLock(in _csvScratchHandle, OwnerSystemId);
             }
         }
+#endif
 
+#if UNITY_EDITOR
         private static unsafe int LoadCsvFileIntoScratch(string csvPath, NativeArray<byte> scratch)
         {
             if (!scratch.IsCreated || scratch.Length <= 0)
@@ -1266,6 +1276,7 @@ namespace Hecton8.World
 
             return total;
         }
+#endif
 
         private static int WriteDefaultDistributionRules(NativeArray<GeologyDistributionRuleDTO> rules)
         {
@@ -1577,7 +1588,7 @@ namespace Hecton8.World
                 return false;
 
             if (!IsVaultHandleCreated(in handle))
-                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+                handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
 
             if (vault.TryAcquireWriteLock(in handle, OwnerSystemId, out lockedView) &&
                 IsVaultHandleCreated(in handle) &&
@@ -1590,7 +1601,7 @@ namespace Hecton8.World
             if (lockedView.IsCreated)
                 vault.ReleaseWriteLock(in handle, OwnerSystemId);
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             if (vault.TryAcquireWriteLock(in handle, OwnerSystemId, out lockedView) &&
                 lockedView.IsCreated &&
                 lockedView.Length >= requiredLength)
@@ -2099,7 +2110,7 @@ namespace Hecton8.World
             bool rewriteIndirectArgs = !_pendingDataVaultRebind;
             ClearPresentationState(false, rewriteIndirectArgs);
             if (!rewriteIndirectArgs)
-                WriteIndirectArgsGpu(0u);
+                QueueIndirectArgsGpu(0u);
         }
 
         private void ClearPresentationState(bool forgetLoadedSector)
@@ -2112,7 +2123,7 @@ namespace Hecton8.World
             bool rewriteIndirectArgs = !_spawnJobScheduled && !_pendingDataVaultRebind;
             ClearPresentationState(true, rewriteIndirectArgs);
             if (!rewriteIndirectArgs)
-                WriteIndirectArgsGpu(0u);
+                QueueIndirectArgsGpu(0u);
         }
 
         private void ClearPresentationState(bool forgetLoadedSector, bool rewriteIndirectArgs)
@@ -2279,7 +2290,7 @@ namespace Hecton8.World
             acquiredSignal.SourceKind = 2;
             acquiredSignal.Flags = 0;
             acquiredSignal.Frame = frame;
-            GlobalSignals.Push(in acquiredSignal);
+            SignalBus<ItemAcquiredSignal>.TryPush(in acquiredSignal);
 
             ResourceDepletionDeltaSignal depletionSignal = default;
             depletionSignal.SectorHash = _currentSectorHash;
@@ -2289,7 +2300,7 @@ namespace Hecton8.World
             depletionSignal.WordIndex = (ushort)wordIndex;
             depletionSignal.Operation = 1;
             depletionSignal.Flags = 0;
-            GlobalSignals.Push(in depletionSignal);
+            SignalBus<ResourceDepletionDeltaSignal>.TryPush(in depletionSignal);
 
             ClearRenderedSlot(views, deterministicSlot, oreIndex);
             _depletedCullCount = math.max(0, _depletedCullCount + 1);
@@ -2649,7 +2660,7 @@ namespace Hecton8.World
                 if (indirectArgs.Length > 0)
                     indirectArgs[0] = args;
 
-                WriteIndirectArgsGpu(in args);
+                QueueIndirectArgsGpu(in args);
             }
             finally
             {
@@ -2658,25 +2669,32 @@ namespace Hecton8.World
             }
         }
 
-        private void WriteIndirectArgsGpu(uint instanceCount)
+        private void QueueIndirectArgsGpu(uint instanceCount)
         {
             GeologyIndirectArgsDTO args = default;
             args.VertexCountPerInstance = OreProceduralVertexCount;
             args.InstanceCount = instanceCount;
             args.StartVertex = 0u;
             args.StartInstance = 0u;
-            WriteIndirectArgsGpu(in args);
+            QueueIndirectArgsGpu(in args);
         }
 
-        private void WriteIndirectArgsGpu(in GeologyIndirectArgsDTO args)
+        private void QueueIndirectArgsGpu(in GeologyIndirectArgsDTO args)
         {
-            if (_argsBuffer == null)
+            _pendingIndirectArgsGpu = args;
+            _pendingIndirectArgsGpuDirty = true;
+        }
+
+        private void FlushPendingIndirectArgsGpu()
+        {
+            if (!_pendingIndirectArgsGpuDirty || _argsBuffer == null)
                 return;
 
             NativeArray<GeologyIndirectArgsDTO> argsWrite =
                 _argsBuffer.LockBufferForWrite<GeologyIndirectArgsDTO>(0, 1);
-            argsWrite[0] = args;
+            argsWrite[0] = _pendingIndirectArgsGpu;
             _argsBuffer.UnlockBufferAfterWrite<GeologyIndirectArgsDTO>(1);
+            _pendingIndirectArgsGpuDirty = false;
         }
 
         private Bounds ResolveDrawBounds(ProceduralGeologyVaultViews views)
@@ -3620,7 +3638,8 @@ namespace Hecton8.World
                 float radius = ClusterSpreadRadius * (0.35f + 0.65f * Next01(ref state));
                 float3 tangent = BuildTangent(normal, (uint)clusterIndex);
                 float3 bitangent = SafeNormalize(math.cross(normal, tangent), new float3(0f, 0f, 1f));
-                return ((math.cos(angle) * tangent) + (math.sin(angle) * bitangent)) * radius + (normal * 0.04f);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                return ((cos * tangent) + (sin * bitangent)) * radius + (normal * 0.04f);
             }
 
             private static float4x4 BuildAlignedMatrix(float3 position, float3 normal, float scale, uint spin)
@@ -3644,7 +3663,8 @@ namespace Hecton8.World
                 float angle = (spin & 1023u) * (6.28318530718f / 1024f);
                 float3 bitangent = SafeNormalize(math.cross(normal, tangent), new float3(0f, 0f, 1f));
 
-                return SafeNormalize((tangent * math.cos(angle)) + (bitangent * math.sin(angle)), tangent);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                return SafeNormalize((tangent * cos) + (bitangent * sin), tangent);
             }
 
             private static float3 SafeNormalize(float3 value, float3 fallback)

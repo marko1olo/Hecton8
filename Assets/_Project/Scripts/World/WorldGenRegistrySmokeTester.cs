@@ -83,7 +83,7 @@ namespace Hecton8.World
         {
             RunHeadlessSmokeTest(out WorldGenRegistrySmokeReport report);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 report.Passed != 0
                     ? "[WorldGenRegistrySmokeTester] PASS"
                     : "[WorldGenRegistrySmokeTester] FAIL",
@@ -239,7 +239,7 @@ namespace Hecton8.World
         public static void RunBatchmode()
         {
             bool passed = RunHeadlessSmokeTest(out WorldGenRegistrySmokeReport report);
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "[WorldGenRegistrySmokeTester] " +
                 "{\"tester\":\"WorldGenRegistrySmokeTester\"," +
                 "\"status\":\"" + (passed ? "PASS" : "FAIL") + "\"," +

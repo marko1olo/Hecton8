@@ -15,6 +15,9 @@ namespace Hecton8.AI.Editor
         private const string HeavyHunterProxyPath = PrefabFolder + "/HeavyHunterProxy.prefab";
         private const string LeviathanProxyPath = PrefabFolder + "/LeviathanProxy.prefab";
         private const string DroneProxyPath = PrefabFolder + "/DroneProxy.prefab";
+        private static readonly int s_baseColorPropertyId = Shader.PropertyToID("_BaseColor");
+        private static readonly int s_colorPropertyId = Shader.PropertyToID("_Color");
+        private static readonly int s_emissionColorPropertyId = Shader.PropertyToID("_EmissionColor");
 
         [MenuItem("Hecton/Authoring/Build AI Creature Proxies", priority = 181)]
         public static void BuildCreatureProxies()
@@ -196,12 +199,12 @@ namespace Hecton8.AI.Editor
                 AssetDatabase.CreateAsset(material, assetPath);
             }
 
-            if (material.HasProperty("_BaseColor"))
-                material.SetColor("_BaseColor", color);
-            if (material.HasProperty("_Color"))
-                material.color = color;
-            if (material.HasProperty("_EmissionColor"))
-                material.SetColor("_EmissionColor", color * 0.08f);
+            if (material.HasProperty(s_baseColorPropertyId))
+                material.SetColor(s_baseColorPropertyId, color);
+            if (material.HasProperty(s_colorPropertyId))
+                material.SetColor(s_colorPropertyId, color);
+            if (material.HasProperty(s_emissionColorPropertyId))
+                material.SetColor(s_emissionColorPropertyId, color * 0.08f);
 
             EditorUtility.SetDirty(material);
             return material;

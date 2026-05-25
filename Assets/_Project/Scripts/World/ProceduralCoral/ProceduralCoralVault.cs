@@ -134,102 +134,102 @@ namespace Hecton8.World.ProceduralCoral
                 return handles.IsCreated();
             }
 
-            handles.Rules = vault.GetGenerationHandle<CoralLSystemRuleDTO>(
+            handles.Rules = vault.EnsureGenerationHandle<CoralLSystemRuleDTO>(
                 ProceduralCoralVaultBufferIds.Rules,
                 ProceduralCoralConstants.MaxRules,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.InstructionScratchA = vault.GetGenerationHandle<uint>(
+            handles.InstructionScratchA = vault.EnsureGenerationHandle<uint>(
                 ProceduralCoralVaultBufferIds.InstructionScratchA,
                 ProceduralCoralConstants.MaxInstructions,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.InstructionScratchB = vault.GetGenerationHandle<uint>(
+            handles.InstructionScratchB = vault.EnsureGenerationHandle<uint>(
                 ProceduralCoralVaultBufferIds.InstructionScratchB,
                 ProceduralCoralConstants.MaxInstructions,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Branches = vault.GetGenerationHandle<CoralBranchDTO>(
+            handles.Branches = vault.EnsureGenerationHandle<CoralBranchDTO>(
                 ProceduralCoralVaultBufferIds.Branches,
                 ProceduralCoralConstants.MaxBranches,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TurtleStack = vault.GetGenerationHandle<CoralTurtleStateDTO>(
+            handles.TurtleStack = vault.EnsureGenerationHandle<CoralTurtleStateDTO>(
                 ProceduralCoralVaultBufferIds.TurtleStack,
                 ProceduralCoralConstants.MaxTurtleStack,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.SpatialCells = vault.GetGenerationHandle<CoralSpatialCellDTO>(
+            handles.SpatialCells = vault.EnsureGenerationHandle<CoralSpatialCellDTO>(
                 ProceduralCoralVaultBufferIds.SpatialCells,
                 ProceduralCoralConstants.MaxSpatialCells,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.RenderMatrices = vault.GetGenerationHandle<float4x4>(
+            handles.RenderMatrices = vault.EnsureGenerationHandle<float4x4>(
                 ProceduralCoralVaultBufferIds.RenderMatrices,
                 ProceduralCoralConstants.MaxRenderMatrices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.IndirectArgs = vault.GetGenerationHandle<CoralIndirectArgsDTO>(
+            handles.IndirectArgs = vault.EnsureGenerationHandle<CoralIndirectArgsDTO>(
                 ProceduralCoralVaultBufferIds.IndirectArgs,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.SectorTriggers = vault.GetGenerationHandle<CoralSectorTriggerDTO>(
+            handles.SectorTriggers = vault.EnsureGenerationHandle<CoralSectorTriggerDTO>(
                 ProceduralCoralVaultBufferIds.SectorTriggers,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CollisionProxies = vault.GetGenerationHandle<CapsuleColliderDTO>(
+            handles.CollisionProxies = vault.EnsureGenerationHandle<CapsuleColliderDTO>(
                 ProceduralCoralVaultBufferIds.CollisionProxies,
                 ProceduralCoralConstants.MaxCollisionProxies,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.SyncPulses = vault.GetGenerationHandle<SyncPulseDTO>(
+            handles.SyncPulses = vault.EnsureGenerationHandle<SyncPulseDTO>(
                 ProceduralCoralVaultBufferIds.SyncPulses,
                 ProceduralCoralConstants.MaxSyncPulses,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryRing = vault.GetGenerationHandle<CoralGenerationTelemetryEntry>(
+            handles.TelemetryRing = vault.EnsureGenerationHandle<CoralGenerationTelemetryEntry>(
                 ProceduralCoralVaultBufferIds.TelemetryRing,
                 ProceduralCoralConstants.TelemetryFrames,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
+            handles.TelemetryCursor = vault.EnsureGenerationHandle<int>(
                 ProceduralCoralVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.Tuning = vault.GetGenerationHandle<CoralTuningDTO>(
+            handles.Tuning = vault.EnsureGenerationHandle<CoralTuningDTO>(
                 ProceduralCoralVaultBufferIds.Tuning,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetGenerationHandle<byte>(
+            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(
                 ProceduralCoralVaultBufferIds.CsvScratch,
                 ProceduralCoralConstants.CsvScratchBytes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Counters = vault.GetGenerationHandle<CoralPaddedCounterDTO>(
+            handles.Counters = vault.EnsureGenerationHandle<CoralPaddedCounterDTO>(
                 ProceduralCoralVaultBufferIds.Counters,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.DebugSegments = vault.GetGenerationHandle<CoralDebugSegmentDTO>(
+            handles.DebugSegments = vault.EnsureGenerationHandle<CoralDebugSegmentDTO>(
                 ProceduralCoralVaultBufferIds.DebugSegments,
                 ProceduralCoralConstants.MaxDebugSegments,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.GpuSway = vault.GetGenerationHandle<CoralGpuSwayDTO>(
+            handles.GpuSway = vault.EnsureGenerationHandle<CoralGpuSwayDTO>(
                 ProceduralCoralVaultBufferIds.GpuSway,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.SelfAudit = vault.GetGenerationHandle<CoralSelfAuditResultDTO>(
+            handles.SelfAudit = vault.EnsureGenerationHandle<CoralSelfAuditResultDTO>(
                 ProceduralCoralVaultBufferIds.SelfAudit,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.HzbTiles = vault.GetGenerationHandle<CoralHzbTileDTO>(
+            handles.HzbTiles = vault.EnsureGenerationHandle<CoralHzbTileDTO>(
                 ProceduralCoralVaultBufferIds.HzbTiles,
                 ProceduralCoralConstants.MaxHzbTiles,
                 SystemID.WorldStreaming,
@@ -478,9 +478,9 @@ namespace Hecton8.World.ProceduralCoral
             try
             {
                 string[] candidates = Directory.GetFiles(projectRoot, BinaryRulesFileName, SearchOption.AllDirectories);
-                for (int i = 0; i < candidates.Length; i++)
+                if (candidates.Length > 0)
                 {
-                    path = candidates[i];
+                    path = candidates[0];
                     return true;
                 }
             }
@@ -506,8 +506,9 @@ namespace Hecton8.World.ProceduralCoral
                 return false;
             }
 
-            int bytesRead = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
-            int loaded = ParseBinaryRules(buffers.CsvScratch, bytesRead, buffers.Rules);
+            NativeArray<byte> ruleScratch = buffers.CsvScratch;
+            int bytesRead = ReadFileIntoNativeScratch(path, ruleScratch);
+            int loaded = ParseBinaryRules(ruleScratch, bytesRead, buffers.Rules);
             if (loaded <= 0)
                 return false;
 
@@ -522,6 +523,7 @@ namespace Hecton8.World.ProceduralCoral
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadCsvRules(IDataVault vault, ref ProceduralCoralVaultHandles handles, string projectRoot)
         {
             if (!TryResolveViews(vault, ref handles, out ProceduralCoralVaultBuffers buffers) ||
@@ -537,7 +539,7 @@ namespace Hecton8.World.ProceduralCoral
 
             int bytesRead = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
             uint payloadHash = HashBytes(buffers.CsvScratch, bytesRead);
-            return TryCommitCsvRules(in buffers, bytesRead, payloadHash);
+            return TryCommitCsvRules(buffers, bytesRead, payloadHash);
         }
 
         public static bool TryPollCsvRules(IDataVault vault, ref ProceduralCoralVaultHandles handles, string projectRoot)
@@ -560,10 +562,10 @@ namespace Hecton8.World.ProceduralCoral
             if (payloadHash == buffers.Tuning[0].LastRulePayloadHash)
                 return false;
 
-            return TryCommitCsvRules(in buffers, bytesRead, payloadHash);
+            return TryCommitCsvRules(buffers, bytesRead, payloadHash);
         }
 
-        private static bool TryCommitCsvRules(in ProceduralCoralVaultBuffers buffers, int bytesRead, uint payloadHash)
+        private static bool TryCommitCsvRules(ProceduralCoralVaultBuffers buffers, int bytesRead, uint payloadHash)
         {
             if (!buffers.Rules.IsCreated || !buffers.CsvScratch.IsCreated)
                 return false;
@@ -590,6 +592,7 @@ namespace Hecton8.World.ProceduralCoral
 
             return true;
         }
+#endif
 
         public static void GenerateEmergencyMockCoralRules(NativeArray<CoralLSystemRuleDTO> rules)
         {
@@ -1012,6 +1015,7 @@ namespace Hecton8.World.ProceduralCoral
             return math.isfinite(rule.BranchAngleRadians) && math.isfinite(rule.LengthScale) && math.isfinite(rule.RadiusScale);
         }
 
+#if UNITY_EDITOR
         private static int ParseCsvRules(NativeArray<byte> bytes, int length, NativeArray<CoralLSystemRuleDTO> rules)
         {
             if (!bytes.IsCreated || !rules.IsCreated || length <= 0)
@@ -1084,6 +1088,7 @@ namespace Hecton8.World.ProceduralCoral
 
             return CommitParsedRules(parsedRules, written, rules);
         }
+#endif
 
         private static void ClearRuleScratch(CoralLSystemRuleDTO* rules, int length)
         {

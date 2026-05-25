@@ -142,6 +142,9 @@ namespace Hecton8.Optimization
 
         private static float ResolveQualityCurve()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return math.smoothstep(0.15f, 0.85f, MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f));
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.smoothstep(0.15f, 0.85f, math.saturate(math.select(1f, quality, math.isfinite(quality))));
         }

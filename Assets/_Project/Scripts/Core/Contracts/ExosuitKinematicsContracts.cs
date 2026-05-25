@@ -3,6 +3,11 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class ExosuitKinematicsContractLayout
+    {
+        public const int FrameInputStrideBytes = 32;
+    }
+
     public static class ExosuitInputActions
     {
         public const uint Grab = 1u << 0;
@@ -14,7 +19,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// 32-byte unmanaged exosuit frame intent written by player/input authority and consumed by the kinematic owner.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = ExosuitKinematicsContractLayout.FrameInputStrideBytes)]
     public struct ExosuitFrameInputDTO
     {
         [FieldOffset(0)] public float2 MoveAxis;

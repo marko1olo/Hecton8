@@ -7,10 +7,15 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    internal static class HectonAnomalyBrineJobsLayout
+    {
+        public const int AnomalyBrinePoolBoundsStrideBytes = 32;
+    }
+
     /// <summary>
     /// Spawn-ready brine pool bounds resolved from a basin mask.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonAnomalyBrineJobsLayout.AnomalyBrinePoolBoundsStrideBytes)]
     public struct AnomalyBrinePoolBounds
     {
         /// <summary>One-based basin identifier.</summary>

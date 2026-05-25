@@ -148,7 +148,7 @@ namespace Hecton8.Quest
                         vault,
                         ref _handles,
                         node.NodeHash,
-                        unchecked((uint)Time.frameCount));
+                        unchecked((uint)SystemDispatcher.CurrentFrameIndex));
                 }
             }
 

@@ -15,9 +15,9 @@ namespace Hecton8.AI.Editor
         {
             string[] guids = AssetDatabase.FindAssets("t:FaunaBiomeData");
             string[] archetypeGuids = AssetDatabase.FindAssets("t:CreatureArchetypeData");
-            var roleCounts = new Dictionary<CreatureRoleType, int>();
-            var locomotionCounts = new Dictionary<CreatureLocomotionType, int>();
-            var missing = new List<string>();
+            var roleCounts = new Dictionary<CreatureRoleType, int>(16);
+            var locomotionCounts = new Dictionary<CreatureLocomotionType, int>(8);
+            var missing = new List<string>(16);
 
             int datasetCount = 0;
             int totalEntries = 0;

@@ -2,6 +2,7 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor
 {
@@ -82,7 +83,7 @@ namespace Hecton8.Editor
 
             if (gen0Delta > 1)
             {
-                Debug.LogError("[GCSentinel] GEN0 GC spike detected.");
+                H8Debug.LogError("[GCSentinel] GEN0 GC spike detected.");
             }
 
             s_lastGen0CollectionCount = currentGen0Collections;

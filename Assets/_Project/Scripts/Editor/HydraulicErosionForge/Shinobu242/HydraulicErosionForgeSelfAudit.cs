@@ -46,11 +46,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
             if (!Directory.Exists(HydraulicErosionForgeConstants.OutputFolder))
                 return true;
 
-            string[] files = Directory.GetFiles(HydraulicErosionForgeConstants.OutputFolder, "*.h8bin", SearchOption.TopDirectoryOnly);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(HydraulicErosionForgeConstants.OutputFolder, "*.h8bin", SearchOption.TopDirectoryOnly))
             {
                 filesChecked++;
-                if (!ValidatePayload(files[i], out reason))
+                if (!ValidatePayload(file, out reason))
                     payloadFailures++;
             }
 
@@ -168,11 +167,10 @@ namespace Hecton8.Editor.HydraulicErosionForge
             if (!Directory.Exists(HydraulicErosionForgeConstants.OutputFolder))
                 return true;
 
-            string[] files = Directory.GetFiles(HydraulicErosionForgeConstants.OutputFolder, "*.h8seam", SearchOption.TopDirectoryOnly);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(HydraulicErosionForgeConstants.OutputFolder, "*.h8seam", SearchOption.TopDirectoryOnly))
             {
                 filesChecked++;
-                if (!ValidateSeam(files[i], out reason))
+                if (!ValidateSeam(file, out reason))
                     payloadFailures++;
             }
 

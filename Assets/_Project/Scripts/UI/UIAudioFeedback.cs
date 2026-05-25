@@ -299,7 +299,7 @@ namespace Hecton8.UI
 
         private void BindAudioAndRegisterControls()
         {
-            _audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioManager = GlobalRegistry.Audio;
 
             if (_controlsRegistered)
                 return;
@@ -601,7 +601,7 @@ namespace Hecton8.UI
                 if (now >= _nextDebugLogTime)
                 {
                     _nextDebugLogTime = now + 1f;
-                    Debug.Log("[UIAudioFeedback] Playback event.", this);
+                    Hecton8.Core.H8Debug.Log("[UIAudioFeedback] Playback event.", this);
                 }
             }
 #endif

@@ -3,11 +3,10 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.SaveSystem;
 using Hecton8.World;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -47,6 +46,15 @@ namespace Hecton8.Narrative.Campaign
         private uint _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    internal struct MetaCampaignVariableSlot
+    {
+        [FieldOffset(0)]
+        public uint VariableHash;
+        [FieldOffset(4)]
+        public int Value;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct MetaCampaignEvaluationResult
     {
@@ -77,87 +85,12 @@ namespace Hecton8.Narrative.Campaign
         private ulong _pad0;
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct MetaCampaignRuleEvaluationJob : IJob
-    {
-        public ProgressionEventSignal Signal;
-        [NoAlias, ReadOnly]
-        public NativeArray<MetaCampaignRule> Rules;
-        [ReadOnly]
-        public NativeParallelHashMap<uint, int> Variables;
-        [NoAlias]
-        public NativeArray<MetaCampaignEvaluationResult> Output;
-
-        public void Execute()
-        {
-            MetaCampaignEvaluationResult result = default;
-            for (int i = 0; i < Rules.Length; i++)
-            {
-                MetaCampaignRule rule = Rules[i];
-                if (!Matches(rule, Signal))
-                    continue;
-
-                if (Variables.TryGetValue(rule.VariableHash, out int existing) && existing == rule.Value)
-                    continue;
-
-                TryAppendChange(ref result, rule.VariableHash, rule.Value, rule.SideEffectFlags);
-            }
-
-            Output[0] = result;
-        }
-
-        private static bool Matches(in MetaCampaignRule rule, in ProgressionEventSignal signal)
-        {
-            if (rule.TriggerHash == 0u || rule.VariableHash == 0u)
-                return false;
-
-            switch (rule.MatchMode)
-            {
-                case MetaCampaignService.RuleMatchPoi:
-                    return signal.PoiHash == rule.TriggerHash;
-                case MetaCampaignService.RuleMatchQuest:
-                    return signal.QuestHash == rule.TriggerHash;
-                default:
-                    return signal.PoiHash == rule.TriggerHash || signal.QuestHash == rule.TriggerHash;
-            }
-        }
-
-        private static void TryAppendChange(
-            ref MetaCampaignEvaluationResult result,
-            uint variableHash,
-            int value,
-            byte sideEffectFlags)
-        {
-            for (int i = 0; i < result.Changes.Length; i++)
-            {
-                MetaCampaignVariableChange existing = result.Changes[i];
-                if (existing.VariableHash != variableHash)
-                    continue;
-
-                existing.Value = value;
-                existing.SideEffectFlags |= sideEffectFlags;
-                result.Changes[i] = existing;
-                return;
-            }
-
-            if (result.Changes.Length >= result.Changes.Capacity)
-                return;
-
-            result.Changes.Add(new MetaCampaignVariableChange
-            {
-                VariableHash = variableHash,
-                Value = value,
-                SideEffectFlags = sideEffectFlags
-            });
-        }
-    }
-
     /// <summary>
     /// Registry-bound global campaign DAG. It consumes progression signals and publishes state deltas without scene singletons.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Narrative/Meta Campaign Service")]
-    public sealed class MetaCampaignService : MonoBehaviour, IMetaCampaignService, IUpdatable, ILateFrameTickable, ISaveable, IServiceHeartbeat, IServiceShutdown
+    public sealed class MetaCampaignService : MonoBehaviour, IMetaCampaignService, IUpdatable, ILateFrameTickable, ISaveable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         public const uint ToxicityLevelHash = 0x903D9D8Eu;
         public const uint LeviathanAwakenedHash = 0x2B00DC54u;
@@ -170,7 +103,6 @@ namespace Hecton8.Narrative.Campaign
         internal const byte RuleMatchPoi = 1;
         internal const byte RuleMatchQuest = 2;
 
-        private const string NativeMemoryOwner = nameof(MetaCampaignService);
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_META_CAMPAIGN_DIRECTOR.bin";
         private const int GlobalVariableCapacity = MetaCampaignDTO.MaxGlobalVariables;
         private const int RuleCapacity = 5;
@@ -180,20 +112,22 @@ namespace Hecton8.Narrative.Campaign
         private const uint AgentHash = 0x18E7D58Cu;
         private const uint ServiceHash = 0xAA625239u;
         private const uint StageHashMultiplier = 0x9E3779B9u;
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
+        private const SystemID VaultOwnerSystemId = SystemID.MetaCampaign;
+        private const BufferID VariablesBufferId = BufferID.MetaCampaignVariables;
+        private const BufferID RulesBufferId = BufferID.MetaCampaignRules;
+        private const BufferID BlackBoxBufferId = BufferID.MetaCampaignBlackBox;
         private static readonly int _HectonOceanToxicityId = Shader.PropertyToID("_HectonOceanToxicity");
 
-        private NativeParallelHashMap<uint, int> _globalVariables;
-        private NativeParallelHashMap<uint, int> _queryVariables;
-        private NativeArray<MetaCampaignRule> _rules;
-        private NativeArray<MetaCampaignEvaluationResult> _evaluationOutput;
-        private NativeArray<MetaCampaignBlackBoxEntry> _blackBox;
-        private JobHandle _evaluationHandle;
+        private VaultGenerationHandle<MetaCampaignVariableSlot> _variablesHandle;
+        private VaultGenerationHandle<MetaCampaignRule> _rulesHandle;
+        private VaultGenerationHandle<MetaCampaignBlackBoxEntry> _blackBoxHandle;
+        private IDataVault _dataVault;
+        private MetaCampaignEvaluationResult _pendingEvaluationResult;
         private bool _evaluationPending;
         private bool _serviceRegistered;
         private bool _serviceReady;
-        private bool _saveRuntimeRegistered;
+        private bool _saveServiceRegistered;
+        private bool _registeredHotSwapListener;
         private bool _updatableRegistered;
         private bool _lateFrameRegistered;
         private bool _shutdown;
@@ -206,13 +140,13 @@ namespace Hecton8.Narrative.Campaign
         private byte _leviathanAwakened;
         private int _blackBoxCursor;
         private ushort _sequence;
+        private ISaveService _saveService;
 
         public bool IsInitialized =>
-            _globalVariables.IsCreated &&
-            _queryVariables.IsCreated &&
-            _rules.IsCreated &&
-            _evaluationOutput.IsCreated &&
-            _blackBox.IsCreated;
+            _dataVault != null &&
+            IsExactVaultHandle(in _variablesHandle, VariablesBufferId) &&
+            IsExactVaultHandle(in _rulesHandle, RulesBufferId) &&
+            IsExactVaultHandle(in _blackBoxHandle, BlackBoxBufferId);
 
         public uint CurrentCampaignStageHash => _currentStageHash;
 
@@ -251,15 +185,22 @@ namespace Hecton8.Narrative.Campaign
             if (!_serviceRegistered)
                 return;
 
-            TryRegisterSaveRuntime();
-            PublishCachedVisualState(GlobalWorldStateSignal.ChangeKindLoad, (uint)Time.frameCount);
+            _saveService = GlobalRegistry.Save;
+            TryRegisterHotSwapListener();
+            TryRegisterSaveService();
+            PublishCachedVisualState(GlobalWorldStateSignal.ChangeKindLoad, (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
         }
 
         private void Start()
         {
             TryRegisterService();
             if (_serviceRegistered)
-                TryRegisterSaveRuntime();
+            {
+                if (_saveService == null)
+                    _saveService = GlobalRegistry.Save;
+                TryRegisterHotSwapListener();
+                TryRegisterSaveService();
+            }
         }
 
         private void OnDisable()
@@ -286,24 +227,22 @@ namespace Hecton8.Narrative.Campaign
             if (_evaluationPending)
                 return;
 
-            if (!GlobalSignals.TryDequeueProgressionEvent(out ProgressionEventSignal signal))
+            if (!SignalBus<ProgressionEventSignal>.TryConsumeFrame(out ProgressionEventSignal signal))
                 return;
 
-            _evaluationOutput[0] = default;
-            MetaCampaignRuleEvaluationJob job = new MetaCampaignRuleEvaluationJob
+            if (!TryReadRules(out NativeArray<MetaCampaignRule>.ReadOnly rules) ||
+                !TryReadVariables(out NativeArray<MetaCampaignVariableSlot>.ReadOnly variables))
             {
-                Signal = signal,
-                Rules = _rules,
-                Variables = _globalVariables,
-                Output = _evaluationOutput
-            };
-            _evaluationHandle = job.Schedule();
-            _evaluationPending = true;
+                return;
+            }
+
+            _pendingEvaluationResult = EvaluateRules(in signal, rules, variables);
+            _evaluationPending = _pendingEvaluationResult.Changes.Length > 0;
         }
 
         public void LateFrameTick()
         {
-            if (!_evaluationPending || !_evaluationHandle.IsCompleted)
+            if (!_evaluationPending)
                 return;
 
             CompletePendingEvaluation();
@@ -315,7 +254,7 @@ namespace Hecton8.Narrative.Campaign
             if (!IsInitialized || variableHash == 0u)
                 return false;
 
-            return _queryVariables.TryGetValue(variableHash, out value);
+            return TryFindVariableValue(variableHash, out value);
         }
 
         public bool TryForceSetGlobalVariable(uint variableHash, int value, byte reason)
@@ -324,7 +263,7 @@ namespace Hecton8.Narrative.Campaign
                 return false;
 
             CompletePendingEvaluation();
-            if (_queryVariables.TryGetValue(variableHash, out int existing) && existing == value)
+            if (TryFindVariableValue(variableHash, out int existing) && existing == value)
                 return true;
 
             ApplyGlobalVariableChange(
@@ -332,7 +271,7 @@ namespace Hecton8.Narrative.Campaign
                 value,
                 reason != 0 ? reason : GlobalWorldStateSignal.ChangeKindDevConsole,
                 ResolveSideEffectFlags(variableHash),
-                (uint)Time.frameCount);
+                (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
             return true;
         }
 
@@ -350,21 +289,21 @@ namespace Hecton8.Narrative.Campaign
             dto.flags = _leviathanAwakened;
             dto.variableCount = 0;
 
-            NativeKeyValueArrays<uint, int> pairs = _globalVariables.GetKeyValueArrays(Allocator.Temp);
-            try
+            if (TryReadVariables(out NativeArray<MetaCampaignVariableSlot>.ReadOnly variables))
             {
-                int count = math.min(pairs.Length, MetaCampaignDTO.MaxGlobalVariables);
-                for (int i = 0; i < count; i++)
+                int count = 0;
+                for (int i = 0; i < variables.Length && count < MetaCampaignDTO.MaxGlobalVariables; i++)
                 {
-                    dto.variableHashes[i] = pairs.Keys[i];
-                    dto.variableValues[i] = pairs.Values[i];
+                    MetaCampaignVariableSlot slot = variables[i];
+                    if (slot.VariableHash == 0u)
+                        continue;
+
+                    dto.variableHashes[count] = slot.VariableHash;
+                    dto.variableValues[count] = slot.Value;
+                    count++;
                 }
 
                 dto.variableCount = count;
-            }
-            finally
-            {
-                pairs.Dispose();
             }
 
             SortMetaCampaignVariables(ref dto);
@@ -403,7 +342,7 @@ namespace Hecton8.Narrative.Campaign
             PublishCampaignStateSnapshot(
                 GlobalWorldStateSignal.ChangeKindLoad,
                 (byte)(GlobalWorldStateSignal.FlagVisualRefresh | GlobalWorldStateSignal.FlagCartographyRefresh),
-                (uint)Time.frameCount);
+                (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
         }
 
         private void AllocateRuntimeState()
@@ -411,49 +350,51 @@ namespace Hecton8.Narrative.Campaign
             if (IsInitialized)
                 return;
 
-            if (!_globalVariables.IsCreated)
-            {
-                _globalVariables = new NativeParallelHashMap<uint, int>(GlobalVariableCapacity, DataVaultExemptOwnerIndexAllocator);
-                NativeMemorySentinel.RegisterNativeParallelHashMap(_globalVariables, NativeMemoryOwner, nameof(_globalVariables), NativeMemoryLifetime);
-            }
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return;
 
-            if (!_queryVariables.IsCreated)
-            {
-                _queryVariables = new NativeParallelHashMap<uint, int>(GlobalVariableCapacity, DataVaultExemptOwnerIndexAllocator);
-                NativeMemorySentinel.RegisterNativeParallelHashMap(_queryVariables, NativeMemoryOwner, nameof(_queryVariables), NativeMemoryLifetime);
-            }
+            bool variablesReady = EnsureVaultBuffer(
+                ref _variablesHandle,
+                VariablesBufferId,
+                GlobalVariableCapacity,
+                NativeArrayOptions.ClearMemory);
+            bool rulesReady = EnsureVaultBuffer(
+                ref _rulesHandle,
+                RulesBufferId,
+                RuleCapacity,
+                NativeArrayOptions.ClearMemory);
+            bool blackBoxReady = EnsureVaultBuffer(
+                ref _blackBoxHandle,
+                BlackBoxBufferId,
+                BlackBoxCapacity,
+                NativeArrayOptions.ClearMemory);
 
-            if (!_rules.IsCreated)
-            {
-                _rules = new NativeArray<MetaCampaignRule>(RuleCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_rules, NativeMemoryOwner, nameof(_rules), NativeMemoryLifetime);
+            if (variablesReady && rulesReady && blackBoxReady)
                 BuildRules();
-            }
-
-            if (!_evaluationOutput.IsCreated)
-            {
-                _evaluationOutput = new NativeArray<MetaCampaignEvaluationResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_evaluationOutput, NativeMemoryOwner, nameof(_evaluationOutput), NativeMemoryLifetime);
-            }
-
-            if (!_blackBox.IsCreated)
-            {
-                _blackBox = new NativeArray<MetaCampaignBlackBoxEntry>(BlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_blackBox, NativeMemoryOwner, nameof(_blackBox), NativeMemoryLifetime);
-            }
         }
 
         private void BuildRules()
         {
+            if (!TryAcquireRulesWrite(out NativeArray<MetaCampaignRule> rules))
+                return;
+
             byte fullShiftFlags = (byte)(GlobalWorldStateSignal.FlagVisualRefresh |
                                          GlobalWorldStateSignal.FlagAudioBroadcast |
                                          GlobalWorldStateSignal.FlagCartographyRefresh);
 
-            _rules[0] = CreateRule(BaseDeltaDestroyedHash, BaseDeltaDestroyedHash, 1, fullShiftFlags);
-            _rules[1] = CreateRule(BaseDeltaDestroyedHash, ToxicityLevelHash, 2, fullShiftFlags);
-            _rules[2] = CreateRule(BaseDeltaDestroyedHash, CampaignStageHash, 1, fullShiftFlags);
-            _rules[3] = CreateRule(LeviathanAwakenedHash, LeviathanAwakenedHash, 1, GlobalWorldStateSignal.FlagAudioBroadcast);
-            _rules[4] = CreateRule(LeviathanAwakenedHash, CampaignStageHash, 2, fullShiftFlags);
+            try
+            {
+                rules[0] = CreateRule(BaseDeltaDestroyedHash, BaseDeltaDestroyedHash, 1, fullShiftFlags);
+                rules[1] = CreateRule(BaseDeltaDestroyedHash, ToxicityLevelHash, 2, fullShiftFlags);
+                rules[2] = CreateRule(BaseDeltaDestroyedHash, CampaignStageHash, 1, fullShiftFlags);
+                rules[3] = CreateRule(LeviathanAwakenedHash, LeviathanAwakenedHash, 1, GlobalWorldStateSignal.FlagAudioBroadcast);
+                rules[4] = CreateRule(LeviathanAwakenedHash, CampaignStageHash, 2, fullShiftFlags);
+            }
+            finally
+            {
+                ReleaseRulesWrite();
+            }
         }
 
         private static MetaCampaignRule CreateRule(uint triggerHash, uint variableHash, int value, byte sideEffectFlags)
@@ -495,17 +436,73 @@ namespace Hecton8.Narrative.Campaign
             _serviceReady = _updatableRegistered && _lateFrameRegistered;
         }
 
-        private void TryRegisterSaveRuntime()
+        private void TryRegisterSaveService()
         {
-            if (_saveRuntimeRegistered)
+            if (_saveServiceRegistered || _shutdown || !_serviceRegistered)
                 return;
 
-            SaveManager saveRuntime = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            if (saveRuntime == null)
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
                 return;
 
-            saveRuntime.Register(this);
-            _saveRuntimeRegistered = true;
+            _saveService.Register(this);
+            _saveServiceRegistered = true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _evaluationPending = false;
+                _pendingEvaluationResult = default;
+                ReleaseRuntimeState(previousService as IDataVault ?? _dataVault);
+                _dataVault = currentService as IDataVault;
+
+                if (!_shutdown && isActiveAndEnabled)
+                {
+                    AllocateRuntimeState();
+                    EnsureDefaultVariables();
+                    RefreshCachedStateFromVariables();
+                }
+
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            if (_saveServiceRegistered)
+            {
+                ISaveService previousSave = _saveService ?? previousService as ISaveService;
+                if (previousSave != null)
+                    previousSave.Unregister(this);
+                _saveServiceRegistered = false;
+            }
+
+            _saveService = currentService as ISaveService;
+            TryRegisterSaveService();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void ShutdownServiceState()
@@ -513,13 +510,15 @@ namespace Hecton8.Narrative.Campaign
             if (_shutdown)
                 return;
 
-            if (_saveRuntimeRegistered)
+            if (_saveServiceRegistered)
             {
-                SaveManager saveRuntime = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-                if (saveRuntime != null)
-                    saveRuntime.Unregister(this);
-                _saveRuntimeRegistered = false;
+                ISaveService saveService = _saveService;
+                if (saveService != null)
+                    saveService.Unregister(this);
+                _saveServiceRegistered = false;
             }
+
+            TryUnregisterHotSwapListener();
 
             if (_updatableRegistered)
             {
@@ -540,41 +539,10 @@ namespace Hecton8.Narrative.Campaign
             }
 
             _serviceReady = false;
-            DisposeRuntimeState(_evaluationPending ? _evaluationHandle : default);
+            ReleaseRuntimeState(_dataVault);
             _evaluationPending = false;
-            _evaluationHandle = default;
+            _pendingEvaluationResult = default;
             _shutdown = true;
-        }
-
-        private void DisposeRuntimeState(JobHandle dependency)
-        {
-            if (_globalVariables.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, nameof(_globalVariables));
-                _globalVariables.Dispose(dependency);
-                _globalVariables = default;
-            }
-
-            if (_queryVariables.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, nameof(_queryVariables));
-                _queryVariables.Dispose(dependency);
-                _queryVariables = default;
-            }
-
-            DisposeNativeArray(ref _rules, dependency);
-            DisposeNativeArray(ref _evaluationOutput, dependency);
-            DisposeNativeArray(ref _blackBox, dependency);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
-            array = default;
         }
 
         private void CompletePendingEvaluation()
@@ -582,11 +550,9 @@ namespace Hecton8.Narrative.Campaign
             if (!_evaluationPending)
                 return;
 
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _evaluationHandle))
-                return;
-
             _evaluationPending = false;
-            MetaCampaignEvaluationResult result = _evaluationOutput.IsCreated ? _evaluationOutput[0] : default;
+            MetaCampaignEvaluationResult result = _pendingEvaluationResult;
+            _pendingEvaluationResult = default;
             int changeCount = result.Changes.Length;
             if (changeCount <= 0)
                 return;
@@ -598,7 +564,7 @@ namespace Hecton8.Narrative.Campaign
             }
 
             RefreshCachedStateFromVariables();
-            uint frame = (uint)Time.frameCount;
+            uint frame = (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             byte aggregateSideEffectFlags = 0;
             uint broadcastVariableHash = 0u;
             for (int i = 0; i < changeCount; i++)
@@ -640,7 +606,7 @@ namespace Hecton8.Narrative.Campaign
             PublishCampaignStateSnapshot(
                 changeKind,
                 (byte)(GlobalWorldStateSignal.FlagVisualRefresh | GlobalWorldStateSignal.FlagCartographyRefresh),
-                (uint)Time.frameCount);
+                (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
         }
 
         private void EnsureDefaultVariables()
@@ -673,7 +639,7 @@ namespace Hecton8.Narrative.Campaign
         {
             sideEffectFlags |= GlobalWorldStateSignal.FlagAupIndependent;
             _sequence++;
-            GlobalSignals.Publish(new GlobalWorldStateSignal
+            SignalBus<GlobalWorldStateSignal>.TryPush(new GlobalWorldStateSignal
             {
                 PositionAup = default,
                 VariableHash = variableHash,
@@ -724,7 +690,7 @@ namespace Hecton8.Narrative.Campaign
         private void PublishCampaignBroadcast(uint variableHash)
         {
             float severity01 = math.max(0.1f, _toxicity01);
-            GlobalSignals.Publish(new VocalWarningSignal
+            SignalBus<VocalWarningSignal>.TryPush(new VocalWarningSignal
             {
                 WarningHash = VocalWarningHashes.Radiation,
                 SourceId = variableHash != 0u ? variableHash : VwsToxicityBroadcastHash,
@@ -739,7 +705,7 @@ namespace Hecton8.Narrative.Campaign
         {
             sideEffectFlags |= GlobalWorldStateSignal.FlagAupIndependent;
             _sequence++;
-            GlobalSignals.Publish(new GlobalWorldStateSignal
+            SignalBus<GlobalWorldStateSignal>.TryPush(new GlobalWorldStateSignal
             {
                 PositionAup = default,
                 VariableHash = CampaignStageHash,
@@ -756,7 +722,7 @@ namespace Hecton8.Narrative.Campaign
 
         private void PublishCartographyState(uint frame)
         {
-            GlobalSignals.Publish(new NarrativePoiStateSignal
+            SignalBus<NarrativePoiStateSignal>.TryPush(new NarrativePoiStateSignal
             {
                 StateMask = ((ulong)_currentStageHash << 32) | (uint)math.clamp(_currentStage, 0, int.MaxValue),
                 PoiHash = CartographyCorruptionPoiHash,
@@ -779,7 +745,7 @@ namespace Hecton8.Narrative.Campaign
 
         private int ResolveVariable(uint variableHash, int fallback)
         {
-            return _globalVariables.TryGetValue(variableHash, out int value) ? value : fallback;
+            return TryFindVariableValue(variableHash, out int value) ? value : fallback;
         }
 
         private void UpsertGlobalVariable(uint variableHash, int value)
@@ -787,17 +753,45 @@ namespace Hecton8.Narrative.Campaign
             if (variableHash == 0u || !IsInitialized)
                 return;
 
-            if (!_globalVariables.TryAdd(variableHash, value))
-                _globalVariables[variableHash] = value;
+            if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables))
+                return;
 
-            if (!_queryVariables.TryAdd(variableHash, value))
-                _queryVariables[variableHash] = value;
+            try
+            {
+                int firstEmptyIndex = -1;
+                for (int i = 0; i < variables.Length; i++)
+                {
+                    MetaCampaignVariableSlot slot = variables[i];
+                    if (slot.VariableHash == variableHash)
+                    {
+                        slot.Value = value;
+                        variables[i] = slot;
+                        return;
+                    }
+
+                    if (slot.VariableHash == 0u && firstEmptyIndex < 0)
+                        firstEmptyIndex = i;
+                }
+
+                if (firstEmptyIndex >= 0)
+                {
+                    variables[firstEmptyIndex] = new MetaCampaignVariableSlot
+                    {
+                        VariableHash = variableHash,
+                        Value = value
+                    };
+                }
+            }
+            finally
+            {
+                ReleaseVariablesWrite();
+            }
         }
 
         private void EnsureGlobalVariable(uint variableHash, int fallback)
         {
             int value = fallback;
-            if (_globalVariables.TryGetValue(variableHash, out int existing))
+            if (TryFindVariableValue(variableHash, out int existing))
                 value = existing;
 
             UpsertGlobalVariable(variableHash, value);
@@ -805,10 +799,18 @@ namespace Hecton8.Narrative.Campaign
 
         private void ClearGlobalVariables()
         {
-            if (_globalVariables.IsCreated)
-                _globalVariables.Clear();
-            if (_queryVariables.IsCreated)
-                _queryVariables.Clear();
+            if (!TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables))
+                return;
+
+            try
+            {
+                for (int i = 0; i < variables.Length; i++)
+                    variables[i] = default;
+            }
+            finally
+            {
+                ReleaseVariablesWrite();
+            }
         }
 
         private static byte ResolveSideEffectFlags(uint variableHash)
@@ -866,35 +868,317 @@ namespace Hecton8.Narrative.Campaign
             }
         }
 
-        private void WriteBlackBox(uint frame, uint variableHash, int value, byte changeKind, byte flags)
+        private static MetaCampaignEvaluationResult EvaluateRules(
+            in ProgressionEventSignal signal,
+            NativeArray<MetaCampaignRule>.ReadOnly rules,
+            NativeArray<MetaCampaignVariableSlot>.ReadOnly variables)
         {
-            if (!_blackBox.IsCreated)
+            MetaCampaignEvaluationResult result = default;
+            for (int i = 0; i < rules.Length; i++)
+            {
+                MetaCampaignRule rule = rules[i];
+                if (!MatchesRule(in rule, in signal))
+                    continue;
+
+                if (TryFindVariableValue(variables, rule.VariableHash, out int existing) && existing == rule.Value)
+                    continue;
+
+                TryAppendChange(ref result, rule.VariableHash, rule.Value, rule.SideEffectFlags);
+            }
+
+            return result;
+        }
+
+        private static bool MatchesRule(in MetaCampaignRule rule, in ProgressionEventSignal signal)
+        {
+            if (rule.TriggerHash == 0u || rule.VariableHash == 0u)
+                return false;
+
+            switch (rule.MatchMode)
+            {
+                case RuleMatchPoi:
+                    return signal.PoiHash == rule.TriggerHash;
+                case RuleMatchQuest:
+                    return signal.QuestHash == rule.TriggerHash;
+                default:
+                    return signal.PoiHash == rule.TriggerHash || signal.QuestHash == rule.TriggerHash;
+            }
+        }
+
+        private static void TryAppendChange(
+            ref MetaCampaignEvaluationResult result,
+            uint variableHash,
+            int value,
+            byte sideEffectFlags)
+        {
+            for (int i = 0; i < result.Changes.Length; i++)
+            {
+                MetaCampaignVariableChange existing = result.Changes[i];
+                if (existing.VariableHash != variableHash)
+                    continue;
+
+                existing.Value = value;
+                existing.SideEffectFlags |= sideEffectFlags;
+                result.Changes[i] = existing;
+                return;
+            }
+
+            if (result.Changes.Length >= result.Changes.Capacity)
                 return;
 
+            result.Changes.Add(new MetaCampaignVariableChange
+            {
+                VariableHash = variableHash,
+                Value = value,
+                SideEffectFlags = sideEffectFlags
+            });
+        }
+
+        private bool TryFindVariableValue(uint variableHash, out int value)
+        {
+            value = 0;
+            if (variableHash == 0u ||
+                !TryReadVariables(out NativeArray<MetaCampaignVariableSlot>.ReadOnly variables))
+            {
+                return false;
+            }
+
+            return TryFindVariableValue(variables, variableHash, out value);
+        }
+
+        private static bool TryFindVariableValue(
+            NativeArray<MetaCampaignVariableSlot>.ReadOnly variables,
+            uint variableHash,
+            out int value)
+        {
+            value = 0;
+            if (variableHash == 0u || !variables.IsCreated)
+                return false;
+
+            for (int i = 0; i < variables.Length; i++)
+            {
+                MetaCampaignVariableSlot slot = variables[i];
+                if (slot.VariableHash != variableHash)
+                    continue;
+
+                value = slot.Value;
+                return true;
+            }
+
+            return false;
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private bool EnsureVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCapacity,
+            NativeArrayOptions options) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (IsExactVaultHandle(in handle, bufferId) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredCapacity)
+            {
+                return true;
+            }
+
+            if (handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredCapacity,
+                VaultOwnerSystemId,
+                options);
+
+            return IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
+                   resolved.IsCreated &&
+                   resolved.Length >= requiredCapacity;
+        }
+
+        private bool TryReadVariables(out NativeArray<MetaCampaignVariableSlot>.ReadOnly variables)
+        {
+            variables = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _variablesHandle, VariablesBufferId) &&
+                   vault.TryReadOnlyHandle(in _variablesHandle, out variables) &&
+                   variables.IsCreated &&
+                   variables.Length >= GlobalVariableCapacity;
+        }
+
+        private bool TryReadRules(out NativeArray<MetaCampaignRule>.ReadOnly rules)
+        {
+            rules = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _rulesHandle, RulesBufferId) &&
+                   vault.TryReadOnlyHandle(in _rulesHandle, out rules) &&
+                   rules.IsCreated &&
+                   rules.Length >= RuleCapacity;
+        }
+
+        private bool TryAcquireVariablesWrite(out NativeArray<MetaCampaignVariableSlot> variables)
+        {
+            variables = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in _variablesHandle, VariablesBufferId) ||
+                !vault.TryAcquireWriteLock(in _variablesHandle, VaultOwnerSystemId, out variables))
+            {
+                return false;
+            }
+
+            if (variables.IsCreated && variables.Length >= GlobalVariableCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in _variablesHandle, VaultOwnerSystemId);
+            variables = default;
+            return false;
+        }
+
+        private void ReleaseVariablesWrite()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in _variablesHandle, VariablesBufferId))
+                vault.ReleaseWriteLock(in _variablesHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryAcquireRulesWrite(out NativeArray<MetaCampaignRule> rules)
+        {
+            rules = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in _rulesHandle, RulesBufferId) ||
+                !vault.TryAcquireWriteLock(in _rulesHandle, VaultOwnerSystemId, out rules))
+            {
+                return false;
+            }
+
+            if (rules.IsCreated && rules.Length >= RuleCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in _rulesHandle, VaultOwnerSystemId);
+            rules = default;
+            return false;
+        }
+
+        private void ReleaseRulesWrite()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in _rulesHandle, RulesBufferId))
+                vault.ReleaseWriteLock(in _rulesHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryAcquireBlackBoxWrite(out NativeArray<MetaCampaignBlackBoxEntry> blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in _blackBoxHandle, BlackBoxBufferId) ||
+                !vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out blackBox))
+            {
+                return false;
+            }
+
+            if (blackBox.IsCreated && blackBox.Length >= BlackBoxCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+            blackBox = default;
+            return false;
+        }
+
+        private void ReleaseBlackBoxWrite()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in _blackBoxHandle, BlackBoxBufferId))
+                vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryReadBlackBox(out NativeArray<MetaCampaignBlackBoxEntry>.ReadOnly blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in _blackBoxHandle, BlackBoxBufferId) &&
+                   vault.TryReadOnlyHandle(in _blackBoxHandle, out blackBox) &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxCapacity;
+        }
+
+        private void ReleaseRuntimeState(IDataVault vault)
+        {
+            ReleaseVaultBuffer(vault, ref _variablesHandle);
+            ReleaseVaultBuffer(vault, ref _rulesHandle);
+            ReleaseVaultBuffer(vault, ref _blackBoxHandle);
+
+            if (ReferenceEquals(_dataVault, vault))
+                _dataVault = null;
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+        }
+
+        private void WriteBlackBox(uint frame, uint variableHash, int value, byte changeKind, byte flags)
+        {
             if (!math.isfinite(_toxicity01))
             {
                 DumpBlackBox();
                 return;
             }
 
-            int slot = _blackBoxCursor % BlackBoxCapacity;
-            _blackBoxCursor = (_blackBoxCursor + 1) % BlackBoxCapacity;
-            _blackBox[slot] = new MetaCampaignBlackBoxEntry
+            if (!TryAcquireBlackBoxWrite(out NativeArray<MetaCampaignBlackBoxEntry> blackBox))
+                return;
+
+            try
             {
-                Frame = frame,
-                StageHash = _currentStageHash,
-                VariableHash = variableHash,
-                Value = value,
-                Toxicity01 = _toxicity01,
-                ChangeKind = changeKind,
-                Flags = flags,
-                Sequence = _sequence
-            };
+                int slot = _blackBoxCursor % BlackBoxCapacity;
+                _blackBoxCursor = (_blackBoxCursor + 1) % BlackBoxCapacity;
+                blackBox[slot] = new MetaCampaignBlackBoxEntry
+                {
+                    Frame = frame,
+                    StageHash = _currentStageHash,
+                    VariableHash = variableHash,
+                    Value = value,
+                    Toxicity01 = _toxicity01,
+                    ChangeKind = changeKind,
+                    Flags = flags,
+                    Sequence = _sequence
+                };
+            }
+            finally
+            {
+                ReleaseBlackBoxWrite();
+            }
         }
 
         private void DumpBlackBox()
         {
-            if (!_blackBox.IsCreated)
+            if (!TryReadBlackBox(out NativeArray<MetaCampaignBlackBoxEntry>.ReadOnly blackBox))
                 return;
 
             try
@@ -911,10 +1195,10 @@ namespace Hecton8.Narrative.Campaign
                     writer.Write(0x4D43424Cu);
                     writer.Write(ServiceHash);
                     writer.Write(_blackBoxCursor);
-                    writer.Write(_blackBox.Length);
-                    for (int i = 0; i < _blackBox.Length; i++)
+                    writer.Write(blackBox.Length);
+                    for (int i = 0; i < blackBox.Length; i++)
                     {
-                        MetaCampaignBlackBoxEntry entry = _blackBox[i];
+                        MetaCampaignBlackBoxEntry entry = blackBox[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.StageHash);
                         writer.Write(entry.VariableHash);
@@ -926,10 +1210,10 @@ namespace Hecton8.Narrative.Campaign
                     }
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("MetaCampaignService blackbox dump failed: " + exception.Message);
+                Debug.LogError("MetaCampaignService blackbox dump failed.");
 #endif
             }
         }

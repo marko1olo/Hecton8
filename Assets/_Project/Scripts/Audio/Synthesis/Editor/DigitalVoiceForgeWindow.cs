@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Hecton8.Core;
@@ -188,11 +189,11 @@ namespace Hecton8.Audio.Synthesis.Editor
                     "Phrase ",
                     state.PhraseHashID.ToString("X8"),
                     " | speed ",
-                    state.PlaybackSpeed.ToString("0.00"),
+                    state.PlaybackSpeed.ToString("0.00", CultureInfo.InvariantCulture),
                     " | volume ",
-                    state.VolumeScalar.ToString("0.00"),
+                    state.VolumeScalar.ToString("0.00", CultureInfo.InvariantCulture),
                     " | q ",
-                    codec.QualityWeight01.ToString("0.00"));
+                    codec.QualityWeight01.ToString("0.00", CultureInfo.InvariantCulture));
             }
             else
             {

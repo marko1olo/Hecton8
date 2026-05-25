@@ -37,7 +37,7 @@ namespace Hecton8.World
             if (target != null)
                 return true;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Transform registryPlayer = playerContext != null ? playerContext.PlayerTransform : null;
             if (registryPlayer != null)
             {
@@ -105,7 +105,7 @@ namespace Hecton8.World
             if (!TryResolveSceneObject(ref transform, relativePath) || transform == null)
                 return false;
 
-            target = transform.GetComponent<T>();
+            transform.TryGetComponent(out target);
             return target != null;
         }
 

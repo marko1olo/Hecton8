@@ -7,8 +7,13 @@ using Unity.Mathematics;
 
 namespace Hecton8.SaveSystem
 {
+    internal static class SaveMasterHashV10Layout
+    {
+        public const int SaveMasterHashV10ResultStrideBytes = 32;
+    }
+
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveMasterHashV10Layout.SaveMasterHashV10ResultStrideBytes)]
     internal readonly struct SaveMasterHashV10Result
     {
         [FieldOffset(0)] public readonly ulong PlainLo;

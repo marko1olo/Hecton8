@@ -84,7 +84,7 @@ namespace Hecton8.Dev
             bool pass = tester.TryRunImmediately();
             string json = tester.BuildJsonStatus();
             File.WriteAllText("Library/VoxelDeformationSmokeTester.json", json);
-            Debug.Log(json);
+            Hecton8.Core.H8Debug.Log(json);
             UnityEngine.Object.DestroyImmediate(root);
             EditorApplication.Exit(pass ? 0 : 1);
         }
@@ -435,20 +435,45 @@ namespace Hecton8.Dev
                     math.abs(observedFirst.RadiusMeters - 2.5f) < 0.0001f &&
                     math.abs(observedSecond.RadiusMeters - 4f) < 0.0001f;
 
-                bool lodBudgetValid =
-                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Unknown) == 1 &&
-                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Low) == 1 &&
-                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Mx350) == 1 &&
-                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Mid) == 2 &&
-                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.High) == 4 &&
-                    VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(HectonQualityTier.Ultra) == 4;
+                int minimumDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0f);
+                int weakDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.24f);
+                int middleDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.5f);
+                int highDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.78f);
+                int visualOverkillDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(1f);
+                bool continuousBudgetValid =
+                    minimumDrainBudget == 1 &&
+                    weakDrainBudget >= minimumDrainBudget &&
+                    middleDrainBudget >= weakDrainBudget &&
+                    highDrainBudget >= middleDrainBudget &&
+                    visualOverkillDrainBudget == 4;
+
+                VoxelCarveEvent overflowCompatible = first;
+                VoxelCarveEvent newestCompatible = first;
+                newestCompatible.AbsoluteHitPoint = new float3(19f, -23f, 37f);
+                newestCompatible.AbsoluteSegmentEnd = new float3(20f, -23f, 37f);
+                newestCompatible.AbsoluteHitPointDouble = new double3(19d, -23d, 37d);
+                newestCompatible.AbsoluteSegmentEndDouble = new double3(20d, -23d, 37d);
+                newestCompatible.RadiusMeters = 3.5f;
+                newestCompatible.BlendStrengthMeters = 1.25f;
+                newestCompatible.SourceFlags = 5;
+                VoxelCarveEvent coalesced = VoxelDeltaProcessor.DebugResolveOverflowQueuedCarveEvent(
+                    in overflowCompatible,
+                    in newestCompatible);
+                bool overflowCoalescingValid =
+                    coalesced.VolumeInstanceId == first.VolumeInstanceId &&
+                    coalesced.Shape == (byte)VoxelCarveShapeType.Capsule &&
+                    math.abs(coalesced.AbsoluteHitPointDouble.x - 11d) < 0.0000001d &&
+                    math.abs(coalesced.AbsoluteSegmentEndDouble.x - 20d) < 0.0000001d &&
+                    math.abs(coalesced.RadiusMeters - 3.5f) < 0.0001f &&
+                    coalesced.SourceFlags == (byte)(first.SourceFlags | newestCompatible.SourceFlags);
 
                 return Require(
                     packetBytes > 0 &&
                     packetBytes <= 128 &&
                     queuePreservedPayload &&
-                    lodBudgetValid,
-                    "Native carve queue packet or Math LOD budget failed.");
+                    continuousBudgetValid &&
+                    overflowCoalescingValid,
+                    "Native carve queue packet or continuous quality budget failed.");
             }
             finally
             {
@@ -568,7 +593,7 @@ namespace Hecton8.Dev
             string eventsSource = ReadProjectFile("Assets/_Project/Scripts/VoxelChunkModifiedEvents.cs");
             bool sourceContract =
                 delta.IndexOf("PublishVoxelChunkModifiedEvent(volume, voxelSize)", System.StringComparison.Ordinal) >= 0 &&
-                delta.IndexOf("VoxelChunkModifiedEvents.Publish(in modifiedEvent)", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("VoxelChunkModifiedEvents.TryPublish(in modifiedEvent)", System.StringComparison.Ordinal) >= 0 &&
                 eventsSource.IndexOf("public static bool TryPublish", System.StringComparison.Ordinal) >= 0 &&
                 eventsSource.IndexOf("DebugRejectedCount", System.StringComparison.Ordinal) >= 0 &&
                 eventsSource.IndexOf("DebugDroppedCount", System.StringComparison.Ordinal) >= 0 &&
@@ -599,15 +624,17 @@ namespace Hecton8.Dev
             string shader = ReadProjectFile("Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader");
             return RequireContains(delta, "NativeQueue<VoxelCarveEvent> _queuedCarveEvents", "Missing bounded NativeQueue carve ingress.") &&
                    RequireContains(delta, "public bool TryQueueCarveEvent(HectonVoxelVolume volume, in VoxelCarveEvent carveEvent)", "Missing public carve event enqueue contract.") &&
-                   RequireContains(delta, "private static int ResolveQueuedCarveDrainBudget()", "Missing Math LOD carve drain resolver.") &&
-                   RequireContains(delta, "case HectonQualityTier.High:", "High tier carve drain case missing.") &&
-                   RequireContains(delta, "return 4;", "High/Ultra carve drain budget is not four per frame.") &&
+                   RequireContains(delta, "private static int ResolveQueuedCarveDrainBudget(float qualityWeight01)", "Missing continuous carve drain resolver.") &&
+                   RequireContains(delta, "ResolveQueuedCarveDrainBudgetPerFrame(ResolveGlobalQualityWeight01())", "Runtime carve drain does not consume GlobalQualityWeight.") &&
+                   RequireContains(delta, "math.lerp(", "Continuous carve drain interpolation missing.") &&
+                   RequireNotContains(delta, "ResolveQualityWeightFromTier", "Carve drain must not map hardware tiers to quality weight.") &&
+                   RequireNotContains(delta, "DebugResolveQueuedCarveDrainBudget(HectonQualityTier", "Carve debug proof must not require tier inputs.") &&
                    RequireContains(delta, "private unsafe struct CarveSdfJob : IJobParallelFor", "Missing Burst-scheduled parallel carve job.") &&
                    RequireContains(delta, "AxisWeightedLengthApprox", "Axis-weighted carve distance approximation missing.") &&
                    RequireContains(delta, "WriteDirtySparseRleNativeSnapshotChunk", "Dirty sparse RLE snapshot writer missing.") &&
                    RequireContains(delta, "WriteCompactedSparseRleNativeSnapshotChunk", "Compacted sparse RLE snapshot writer missing.") &&
                    RequireContains(delta, "VoxelDynamicNavGridRuntime.QueueLocalizedSdfPatch", "Localized nav-grid patch emission missing.") &&
-                   RequireContains(delta, "VoxelChunkModifiedEvents.Publish(in modifiedEvent)", "Voxel chunk modified event publish missing.") &&
+                   RequireContains(delta, "VoxelChunkModifiedEvents.TryPublish(in modifiedEvent)", "Voxel chunk modified event publish missing.") &&
                    RequireContains(chunkEvents, "public struct VoxelChunkModifiedEvent", "Voxel chunk modified event payload missing.") &&
                    RequireContains(chunkEvents, "public static bool TryPublish", "Voxel chunk modified event validated publish path missing.") &&
                    RequireContains(chunkEvents, "DebugDroppedCount", "Voxel chunk modified overflow telemetry missing.") &&
@@ -670,7 +697,7 @@ namespace Hecton8.Dev
         private void Log(string message)
         {
             if (verboseLogging)
-                Debug.Log(message, this);
+                Hecton8.Core.H8Debug.Log(message, this);
         }
     }
 }

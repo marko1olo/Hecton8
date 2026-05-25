@@ -8,13 +8,18 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.Biomes
 {
+    internal static class BiomeBoundarySdfJobLayout
+    {
+        public const int BiomeWeightEntryStrideBytes = 16;
+    }
+
     public static class BiomeBoundarySdfJobs
     {
         private const float MinCellSizeMeters = 0.5f;
         private const float MinBlendWidthMeters = 0.01f;
         private const float ExactCenterDistanceSq = 0.0001f;
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = BiomeBoundarySdfJobLayout.BiomeWeightEntryStrideBytes)]
         private struct BiomeWeightEntry
         {
             [FieldOffset(0)]

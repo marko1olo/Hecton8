@@ -17,6 +17,15 @@ static const float HECTON_PI = 3.14159265359;
 static const float HECTON_INV_PI = 0.31830988618;
 static const float3 HECTON_NOIR_FLOOR = float3(0.0015, 0.0023, 0.0031);
 
+float HectonFastAsinUnit(float y)
+{
+    float x = clamp(y, -1.0, 1.0);
+    float ax = abs(x);
+    float root = sqrt(max(0.0, 1.0 - ax));
+    float approx = 1.5707288 + ax * (-0.2121144 + ax * (0.0742610 - 0.0187293 * ax));
+    return (1.5707963 - root * approx) * sign(x);
+}
+
 uint HectonHash(uint state)
 {
     state ^= 2747636419u;
@@ -96,7 +105,7 @@ float3 HectonCubeFaceToDirection(uint face, float2 uv)
 float3 HectonSampleDustLane(float3 direction)
 {
     float bandHalfWidth = max(_HectonStarDistribution.x, 0.001);
-    float bandDistance = abs(asin(clamp(direction.y, -1.0, 1.0)));
+    float bandDistance = abs(HectonFastAsinUnit(direction.y));
     float lane = exp(-bandDistance * bandDistance / max(bandHalfWidth * bandHalfWidth, 0.00001));
     float turbulence = HectonDustFbm(direction);
     float laneBreakup = smoothstep(0.24, 0.88, turbulence);
@@ -151,7 +160,7 @@ float3 HectonDirectionFromBand(uint starId, uint seed)
 float HectonEquatorialDensityBelt(float3 direction)
 {
     float bandHalfWidth = max(_HectonStarDistribution.x, 0.001);
-    float latitude = abs(asin(clamp(direction.y, -1.0, 1.0)));
+    float latitude = abs(HectonFastAsinUnit(direction.y));
     float normalizedLatitude = latitude / bandHalfWidth;
     float belt = exp(-normalizedLatitude * normalizedLatitude);
     float core = pow(saturate(1.0 - normalizedLatitude), max(_HectonStarDistribution.z, 0.001));

@@ -9,6 +9,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 {
     internal static class OfflineWreckageAtomicFile
     {
+        private static readonly Encoding TextEncoding = new UTF8Encoding(false);
         private static readonly int s_processId = ResolveProcessId();
         private static int s_tempOrdinal;
 
@@ -71,7 +72,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             try
             {
                 using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                using (StreamWriter writer = new StreamWriter(stream, new UTF8Encoding(false)))
+                using (StreamWriter writer = new StreamWriter(stream, TextEncoding))
                 {
                     writer.Write(text);
                 }

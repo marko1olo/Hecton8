@@ -29,6 +29,7 @@ using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -51,7 +52,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class StorageCrate : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener, IStorageReservationCommitTarget
+    public sealed class StorageCrate : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IStorageReservationCommitTarget, IGlobalRegistryHotSwapListener
     {
         private const string DefaultOpenText = "Open Crate";
         private const string DefaultAccessText = "Access Crate";
@@ -151,6 +152,9 @@ namespace Hecton8.Gameplay
         private Transform _transform;
         private Collider _collider;
         private CrateState _state;
+        private bool _hotSwapRegistered;
+        private IAudioService _audioService;
+        private ILocalizationTextReadModel _localizationManager;
         private PowerNode _logisticsPowerNode;
         private int[] _reservedSlotIds;
         private int[] _containedItemHashIds;
@@ -168,9 +172,13 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Pre-cached interaction text to avoid runtime allocations.
         /// </summary>
-        private string _cachedOpenText;
-        private string _cachedAccessText;
-        private string _cachedLockedText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedOpenTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedAccessTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedLockedTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedOpenTextLength;
+        private int _cachedAccessTextLength;
+        private int _cachedLockedTextLength;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -206,6 +214,7 @@ namespace Hecton8.Gameplay
                 animator = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Animator>(transform);
             }
 
+            CacheRegistryServicesCold();
             RebuildLocalizedTextCache();
 
             // Set initial state
@@ -215,7 +224,10 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
+            TryRegisterHotSwap();
+            CacheRegistryServicesCold();
             RebuildLocalizedTextCache();
             BaseLogisticsNetwork.RegisterStorage(this, _logisticsPowerNode);
             // Reset to initial state if needed
@@ -228,13 +240,55 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             InteractableRegistry.InvalidateTree(this);
+            TryUnregisterHotSwap();
             LocalizationEvents.UnregisterLanguageListener(this);
             BaseLogisticsNetwork.UnregisterStorage(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as ILocalizationTextReadModel;
+                    RebuildLocalizedTextCache();
+                    break;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
         //  IInteractable
         // ══════════════════════════════════════════════════════════
+
+        private void CacheRegistryServicesCold()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _localizationManager = GlobalRegistry.LocalizationText;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+            {
+                return;
+            }
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_hotSwapRegistered)
+            {
+                return;
+            }
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
 
         void IInteractable.OnHoverStart()
         {
@@ -266,20 +320,55 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
+            return ResolveInteractTextLegacy();
+        }
+
+        private string ResolveInteractTextLegacy()
+        {
             switch (_state)
             {
                 case CrateState.Closed:
-                    return canBeOpened ? _cachedOpenText : _cachedLockedText;
+                    return canBeOpened ? ResolveLegacyConfigured(openText, DefaultOpenText) : ResolveLegacyConfigured(lockedText, DefaultLockedText);
 
                 case CrateState.Open:
-                    return _cachedAccessText;
+                    return ResolveLegacyConfigured(accessText, DefaultAccessText);
 
                 case CrateState.Locked:
-                    return _cachedLockedText;
+                    return ResolveLegacyConfigured(lockedText, DefaultLockedText);
 
                 default:
                     return null;
             }
+        }
+
+        private ReadOnlySpan<char> ResolveInteractTextSpan()
+        {
+            switch (_state)
+            {
+                case CrateState.Closed:
+                    return canBeOpened
+                        ? _cachedOpenTextBuffer.AsSpan(0, _cachedOpenTextLength)
+                        : _cachedLockedTextBuffer.AsSpan(0, _cachedLockedTextLength);
+                case CrateState.Open:
+                    return _cachedAccessTextBuffer.AsSpan(0, _cachedAccessTextLength);
+                case CrateState.Locked:
+                    return _cachedLockedTextBuffer.AsSpan(0, _cachedLockedTextLength);
+                default:
+                    return ReadOnlySpan<char>.Empty;
+            }
+        }
+
+        private static string ResolveLegacyConfigured(string configuredValue, string legacyDefault)
+        {
+            return !string.IsNullOrWhiteSpace(configuredValue) &&
+                   !string.Equals(configuredValue, legacyDefault, StringComparison.Ordinal)
+                ? configuredValue
+                : legacyDefault;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(ResolveInteractTextSpan(), destination, out length);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -297,7 +386,8 @@ namespace Hecton8.Gameplay
             _state = CrateState.Opening;
 
             // Play open sound
-            if (openSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
+            IAudioService audio = _audioService;
+            if (openSound != null && audio != null)
             {
                 audio.PlayAtPoint(openSound, _transform.position, crateVolume);
             }
@@ -325,7 +415,8 @@ namespace Hecton8.Gameplay
             _state = CrateState.Closed;
 
             // Play close sound
-            if (closeSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
+            IAudioService audio = _audioService;
+            if (closeSound != null && audio != null)
             {
                 audio.PlayAtPoint(closeSound, _transform.position, crateVolume);
             }
@@ -364,20 +455,9 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            _cachedOpenText = ResolveConfiguredText(openText, DefaultOpenText, LocalizationKeys.INTERACT_OPEN_CRATE);
-            _cachedAccessText = ResolveConfiguredText(accessText, DefaultAccessText, LocalizationKeys.INTERACT_ACCESS_CRATE);
-            _cachedLockedText = ResolveConfiguredText(lockedText, DefaultLockedText, LocalizationKeys.INTERACT_LOCKED);
-        }
-
-        private static string ResolveConfiguredText(string configuredValue, string legacyDefault, string key)
-        {
-            if (!string.IsNullOrWhiteSpace(configuredValue) &&
-                !string.Equals(configuredValue, legacyDefault, System.StringComparison.Ordinal))
-            {
-                return configuredValue;
-            }
-
-            return ResolveLocalized(key, legacyDefault);
+            _cachedOpenTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(openText, DefaultOpenText, LocalizationKeys.INTERACT_OPEN_CRATE, _localizationManager, _cachedOpenTextBuffer);
+            _cachedAccessTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(accessText, DefaultAccessText, LocalizationKeys.INTERACT_ACCESS_CRATE, _localizationManager, _cachedAccessTextBuffer);
+            _cachedLockedTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(lockedText, DefaultLockedText, LocalizationKeys.INTERACT_LOCKED, _localizationManager, _cachedLockedTextBuffer);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -392,14 +472,6 @@ namespace Hecton8.Gameplay
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
-        }
-
-        private static string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
         }
 
         /// <summary>
@@ -429,7 +501,7 @@ namespace Hecton8.Gameplay
             if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[StorageCrate] Player inventory full. Cannot take {item.itemName}.");
+                H8Debug.Log($"[StorageCrate] Player inventory full. Cannot take {item.itemName}.");
 #endif
                 return false;
             }

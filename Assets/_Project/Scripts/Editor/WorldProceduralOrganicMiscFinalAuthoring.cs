@@ -195,12 +195,10 @@ namespace Hecton8.EditorTools
             visual.transform.localRotation = Quaternion.Euler(localEulerAngles);
             visual.transform.localScale = scale;
 
-            Collider visualCollider = visual.GetComponent<Collider>();
-            if (visualCollider != null)
+            if (visual.TryGetComponent(out Collider visualCollider))
                 Object.DestroyImmediate(visualCollider);
 
-            Renderer renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
+            if (visual.TryGetComponent(out Renderer renderer))
                 renderer.sharedMaterial = material;
 
             return renderer;

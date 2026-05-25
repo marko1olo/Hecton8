@@ -15,8 +15,8 @@ namespace Hecton8.EditorTools
         {
             Dictionary<string, VariantSpec[]> specsByFamily = BuildFirstWaveSpecs();
             string[] familyGuids = AssetDatabase.FindAssets("t:WorldPrefabFamilyProfile", new[] { ProceduralFamilyFolder });
-            HashSet<string> touchedFamilies = new HashSet<string>(StringComparer.Ordinal);
-            HashSet<string> discoveredFamilies = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> touchedFamilies = new HashSet<string>(familyGuids.Length, StringComparer.Ordinal);
+            HashSet<string> discoveredFamilies = new HashSet<string>(familyGuids.Length, StringComparer.Ordinal);
             int linkedVariants = 0;
             int missingPrefabs = 0;
 
@@ -132,7 +132,7 @@ namespace Hecton8.EditorTools
 
         private static Dictionary<string, VariantSpec[]> BuildFirstWaveSpecs()
         {
-            return new Dictionary<string, VariantSpec[]>(StringComparer.Ordinal)
+            return new Dictionary<string, VariantSpec[]>(16, StringComparer.Ordinal)
             {
                 ["family.rock.small_floor"] = Combine(
                     new[]

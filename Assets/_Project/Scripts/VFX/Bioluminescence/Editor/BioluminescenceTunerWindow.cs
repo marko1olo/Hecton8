@@ -316,7 +316,7 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             for (int i = 0; i < _pulseBoxes.Length; i++)
             {
                 float4 row = ResolvePulseRow(in pulseState, i);
-                float wave = 0.5f + 0.5f * math.sin(row.x);
+                float wave = 0.5f + 0.5f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(row.x);
                 float alpha = math.saturate(wave * row.z);
                 Color color = ResolvePulseColor(i, alpha);
                 _pulseBoxes[i].style.backgroundColor = color;

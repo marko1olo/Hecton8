@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -205,11 +206,12 @@ namespace Hecton8.Construction
 
         private static void ConfigureSignalLane()
         {
-            SignalBus<BaseStructuralWarningSignal>.Configure(
+            SignalBus<FoundationStructuralWarningSignal>.Configure(
                 expectedCapacity: 8,
                 maxFrameSignals: 32,
                 lowTierFrameSignals: 32,
-                laneHash: BaseStructuralWarningSignal.LaneHash);
+                laneHash: FoundationStructuralWarningSignal.LaneHash);
+            SignalBus<FoundationStructuralWarningSignal>.EnsureInitialized();
         }
 
         private bool TrySchedulePylonBuild()
@@ -618,7 +620,7 @@ namespace Hecton8.Construction
             }
 
             ApplyMaterialStateIfNeeded();
-            Graphics.DrawProceduralIndirect(
+            UnityEngine.Graphics.DrawProceduralIndirect(
                 pylonMaterial,
                 _drawBounds,
                 MeshTopology.Triangles,
@@ -716,18 +718,12 @@ namespace Hecton8.Construction
                 return;
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext == null)
-            {
-                CachePlayerContextCold();
-                playerContext = _cachedPlayerContext;
-            }
-
             targetCamera = playerContext != null ? playerContext.PlayerCamera : null;
         }
 
         private void CachePlayerContextCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -829,7 +825,7 @@ namespace Hecton8.Construction
 
         private void PublishStructuralWarning(double3 firstAup, in FoundationPylonFrameCounters counters, FoundationTuningDTO tuning)
         {
-            BaseStructuralWarningSignal signal;
+            FoundationStructuralWarningSignal signal;
             signal.ModuleAup = firstAup;
             signal.ModuleHash = 0u;
             signal.WarningFlags = counters.Flags & WarningMask;
@@ -839,7 +835,7 @@ namespace Hecton8.Construction
             signal.ResultHash = counters.ResultHash;
             signal._pad0 = 0ul;
             signal._pad1 = 0ul;
-            SignalBus<BaseStructuralWarningSignal>.TryPush(in signal);
+            SignalBus<FoundationStructuralWarningSignal>.TryPush(in signal);
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)

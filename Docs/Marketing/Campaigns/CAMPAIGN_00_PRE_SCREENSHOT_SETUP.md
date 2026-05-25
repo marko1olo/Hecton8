@@ -1,4 +1,4 @@
-# Campaign 00 - Pre-Screenshot Setup
+﻿# Campaign 00 - Pre-Screenshot Setup
 
 Status: active now / no public hype push
 Window: before first real gameplay screenshots

@@ -72,16 +72,6 @@ namespace Hecton8.AI
             return TryApplyFoveatedFrozenPredatorWrap(cameraPosition, cameraForward, distanceMeters);
         }
 
-        int IFoveatedSimulationTarget.BuildDeferredRaycastCommands(RaycastCommand[] commands)
-        {
-            return _sensorSuite.BuildDeferredRaycastCommands(commands);
-        }
-
-        void IFoveatedSimulationTarget.ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit)
-        {
-            _sensorSuite.ConsumeDeferredRaycastHit(commandIndex, hit);
-        }
-
         private void ResolveFoveatedBindings()
         {
             _foveatedVisualTransform = _renderer != null && _renderer.transform != transform
@@ -130,8 +120,8 @@ namespace Hecton8.AI
             ApplyAupPresentationPosition(in candidateAup);
             if (_rb != null)
             {
-                _rb.linearVelocity = preservedVelocity;
-                _rb.angularVelocity = preservedAngularVelocity;
+                TryQueueLinearVelocitySet(_rb, preservedVelocity);
+                TryQueueAngularVelocitySet(_rb, preservedAngularVelocity);
             }
 
             ForceDirectorHuntTarget(cameraPosition, DirectorHuntTargetDurationSeconds);

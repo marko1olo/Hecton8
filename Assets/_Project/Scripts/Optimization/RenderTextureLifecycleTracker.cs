@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 
 namespace Hecton8.Optimization
 {
@@ -11,7 +12,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7999)]
-    public sealed class RenderTextureLifecycleTracker : MonoBehaviour, ISlowTickable
+    public sealed class RenderTextureLifecycleTracker : MonoBehaviour, IRenderTextureLifecycleService, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
         
@@ -19,7 +20,10 @@ namespace Hecton8.Optimization
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
         
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
         private bool _registeredService;
+        private bool _hotSwapRegistered;
+        private bool _leakCheckPending;
         
         // COLD ALLOC: Dictionary<EntityId, RenderTextureAllocationRecord>[256] — RT tracking — owner: RenderTextureLifecycleTracker
         private readonly Dictionary<EntityId, RenderTextureAllocationRecord> _allocations = new Dictionary<EntityId, RenderTextureAllocationRecord>(256);
@@ -76,19 +80,41 @@ namespace Hecton8.Optimization
         private void OnEnable()
         {
             if (TryRegisterService())
+            {
+                TryRegisterHotSwapListener();
                 TryRegister();
+            }
         }
         
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
         
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                !_registeredService ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            TryUnregister();
+            TryRegister();
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -98,6 +124,15 @@ namespace Hecton8.Optimization
         /// </summary>
         public void SlowTick()
         {
+            _leakCheckPending = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_leakCheckPending)
+                return;
+
+            _leakCheckPending = false;
             CheckForLeaks();
         }
         
@@ -132,7 +167,12 @@ namespace Hecton8.Optimization
             if (_allocations.ContainsKey(instanceID))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[LifecycleTracker] Duplicate registration for RT {rt.name} (ID: {instanceID}). Updating existing record.");
+                Debug.LogWarning(
+                    "[LifecycleTracker] Duplicate registration for RT " +
+                    rt.name +
+                    " (ID: " +
+                    instanceID +
+                    "). Updating existing record.");
 #endif
                 // Update existing record
                 var existing = _allocations[instanceID];
@@ -294,6 +334,7 @@ namespace Hecton8.Optimization
                 return;
 
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -317,11 +358,19 @@ namespace Hecton8.Optimization
 
         private void TryUnregister()
         {
-            if (!_registeredSlowTick)
-                return;
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _registeredSlowTick = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrame = false;
+            }
+
+            _leakCheckPending = false;
         }
 
         private void TryUnregisterService()
@@ -331,6 +380,23 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterRenderTextureLifecycleRuntime(this);
             _registeredService = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void CheckForLeaks()
@@ -344,7 +410,19 @@ namespace Hecton8.Optimization
                 for (int i = 0; i < _leakQueryResults.Count; i++)
                 {
                     RenderTextureAllocationRecord leak = _leakQueryResults[i];
-                    Debug.LogError($"[LifecycleTracker] RT LEAK DETECTED: {leak.RenderTexture.name} ({leak.Width}x{leak.Height} {leak.Format}) - Owner destroyed but RT not disposed. Allocation time: {leak.AllocationTime:F2}s\n{leak.AllocationStackTrace}");
+                    Debug.LogError(
+                        "[LifecycleTracker] RT LEAK DETECTED: " +
+                        leak.RenderTexture.name +
+                        " (" +
+                        leak.Width +
+                        "x" +
+                        leak.Height +
+                        " " +
+                        leak.Format +
+                        ") - Owner destroyed but RT not disposed. Allocation time: " +
+                        leak.AllocationTime.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) +
+                        "s\n" +
+                        leak.AllocationStackTrace);
                 }
 #endif
             }
@@ -430,13 +508,16 @@ namespace Hecton8.Optimization
                 return RenderTextureOwnerCategory.Other;
 
             string ownerTypeName = owner.GetType().Name;
-            if (ownerTypeName.Contains("Visor") || ownerTypeName.Contains("HUD"))
+            if (ownerTypeName.Contains("Visor", System.StringComparison.Ordinal) ||
+                ownerTypeName.Contains("HUD", System.StringComparison.Ordinal))
                 return RenderTextureOwnerCategory.Visor;
-            if (ownerTypeName.Contains("Camera"))
+            if (ownerTypeName.Contains("Camera", System.StringComparison.Ordinal))
                 return RenderTextureOwnerCategory.Camera;
-            if (ownerTypeName.Contains("PostFX") || ownerTypeName.Contains("Volume"))
+            if (ownerTypeName.Contains("PostFX", System.StringComparison.Ordinal) ||
+                ownerTypeName.Contains("Volume", System.StringComparison.Ordinal))
                 return RenderTextureOwnerCategory.PostFX;
-            if (ownerTypeName.Contains("UI") || ownerTypeName.Contains("Canvas"))
+            if (ownerTypeName.Contains("UI", System.StringComparison.Ordinal) ||
+                ownerTypeName.Contains("Canvas", System.StringComparison.Ordinal))
                 return RenderTextureOwnerCategory.UI;
 
             return RenderTextureOwnerCategory.Other;

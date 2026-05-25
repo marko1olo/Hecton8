@@ -8,6 +8,7 @@
 using Hecton8.Atmosphere;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Power;
 using Hecton8.World;
 using System.Collections.Generic;
@@ -106,12 +107,19 @@ namespace Hecton8.Gameplay
         public const ushort InventoryRadiation = 7;
         public const ushort FaunaBite = 8;
         public const ushort FaunaLeviathanBite = 9;
+        public const ushort PlayerToolImpact = 10;
+        public const ushort SurvivalBlade = 11;
+        public const ushort Harpoon = 12;
+        public const ushort StunPistol = 13;
+        public const ushort SalvageSampler = 14;
+        public const ushort MantaEmergencyWreck = 15;
+        public const ushort SubmarineAtmosphereBoiling = 16;
     }
 
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BaseModule))]
     [DefaultExecutionOrder(-5600)] // Core-lane registration resolves rupture state before environment-lane power balance.
-    public sealed class HabitatIntegrityManager : MonoBehaviour, IUpdatable, ISlowTickable, Hecton8.Core.IDamageReceiver, IDamageSignalReceiver, IDamageSignalEmitter, IToolEffectListener
+    public sealed class HabitatIntegrityManager : MonoBehaviour, ISlowTickable, Hecton8.Core.IDamageReceiver, IDamageSignalReceiver, IDamageSignalEmitter, IToolEffectListener, IGlobalRegistryHotSwapListener
     {
         private const float HabitatStepInterval = 0.1f;
         private const float DefaultSlowTickInterval = 0.1f;
@@ -165,6 +173,7 @@ namespace Hecton8.Gameplay
         private PowerNode _powerNode;
         private Transform _cachedTransform;
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _breachActive;
         private bool _shortCircuitActive;
         private bool _toxicityHazardRegistered;
@@ -172,7 +181,6 @@ namespace Hecton8.Gameplay
         private float _floodLevel;
         private float _pressureDelta;
         private float _stepAccumulator;
-        private float _slowTickAccumulator;
         private float _moduleAmbientTemperatureCelsius = DefaultDryAmbientTemperatureCelsius;
         private float _fullyFloodedDurationSeconds;
         private float3 _breachLocalPoint;
@@ -183,6 +191,9 @@ namespace Hecton8.Gameplay
         private int _combatDamageTargetId;
         private bool _combatDamageRegistered;
         private bool _combatDamageSyncDirty;
+        private AbyssalFluidDecalManager _fluidDecals;
+        private IAtmosphereReadModel _atmosphereRuntime;
+        private ITerrainProvider _terrainProvider;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -226,6 +237,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             ResolveReferences();
+            CacheRegistryServicesCold();
             _combatDamageTargetId = CombatDamageRuntime.ResolveTargetId(gameObject);
             _toxicityHazardId = unchecked((int)(EntityId.ToULong(GetEntityId()) ^ (uint)ToxicHazardIdSalt));
             _moduleAmbientTemperatureCelsius = ResolveDryAmbientTemperatureCelsius();
@@ -241,10 +253,11 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveReferences();
+            CacheRegistryServicesCold();
             ToolEffectEvents.Register(this);
             TryRegister();
+            TryRegisterHotSwapListener();
             TryRegisterCombatDamageTarget();
-            _slowTickAccumulator = 0f;
             _stepAccumulator = 0f;
             SyncOxygenContribution();
             UpdateDiagnostics();
@@ -257,8 +270,9 @@ namespace Hecton8.Gameplay
             ClearToxicityHazard();
             RemoveOxygenContribution();
             TryUnregisterCombatDamageTarget();
+            TryUnregisterHotSwapListener();
             TryUnregister();
-            _slowTickAccumulator = 0f;
+            ClearCachedRegistryServices();
             _stepAccumulator = 0f;
             _damageReceivers.Clear();
             UpdateDiagnostics();
@@ -271,35 +285,20 @@ namespace Hecton8.Gameplay
             ClearToxicityHazard();
             RemoveOxygenContribution();
             TryUnregisterCombatDamageTarget();
+            TryUnregisterHotSwapListener();
             TryUnregister();
-            _slowTickAccumulator = 0f;
+            ClearCachedRegistryServices();
             _stepAccumulator = 0f;
             _damageReceivers.Clear();
         }
 
-        public void Tick(float deltaTime)
-        {
-            if (deltaTime <= 0f)
-                return;
-
-            TryRegisterCombatDamageTarget();
-            TryFlushCombatDamageSync();
-            _slowTickAccumulator += deltaTime;
-            if (_slowTickAccumulator < DefaultSlowTickInterval)
-                return;
-
-            _slowTickAccumulator -= DefaultSlowTickInterval;
-            if (_slowTickAccumulator > DefaultSlowTickInterval)
-                _slowTickAccumulator = DefaultSlowTickInterval;
-
-            SlowTick();
-        }
-
         /// <summary>
-        /// Advances pressure-flood state on 10Hz substeps inside the dispatcher-driven slow cadence.
+        /// Advances pressure-flood state on the dispatcher-owned 10Hz slow cadence.
         /// </summary>
         public void SlowTick()
         {
+            TryRegisterCombatDamageTarget();
+            TryFlushCombatDamageSync();
             ResolveReferences();
             if (_baseModule == null)
                 return;
@@ -406,6 +405,7 @@ namespace Hecton8.Gameplay
             _pressureDelta = Mathf.Max(ResolvePressureDelta(depth), pressureDelta);
             _debugDepthMeters = depth;
 
+            PublishFluidIncursionSignal(localPoint, depth, _pressureDelta);
             EmitBreachVfx(localPoint, depth, _pressureDelta);
             SyncOxygenContribution();
             UpdateDiagnostics();
@@ -432,7 +432,6 @@ namespace Hecton8.Gameplay
                     if (_baseModule != null && packet.Magnitude > 0f && packet.NextValue < packet.PreviousValue)
                     {
                         _baseModule.ApplyDamage(packet.Magnitude);
-                        MarkCombatDamageSyncDirty();
                     }
                     else
                     {
@@ -548,16 +547,10 @@ namespace Hecton8.Gameplay
             if (dt <= 0f)
                 return;
 
-            float zoneIntegrity = ResolveZoneIntegrity();
-            float floodRate = _breachActive
-                ? _pressureDelta * 0.04f * (1f - zoneIntegrity)
-                : 0f;
-            float drainRate = _baseModule.HasPower
-                ? Mathf.Max(0f, pumpPowerNormalized) * 0.015f
-                : 0f;
-
             float previousFloodLevel = _floodLevel;
-            _floodLevel = Mathf.Clamp01(_floodLevel + floodRate - drainRate);
+            _floodLevel = _baseModule != null ? Mathf.Clamp01(_baseModule.FloodLevel01) : 0f;
+            if (_breachActive)
+                PublishFluidIncursionSignal(_breachLocalPoint, ResolveDepthMeters(), _pressureDelta);
 
             float previousPowerChannel = previousFloodLevel > FloodedReserveCutoff
                 ? Mathf.Clamp01(1f - Mathf.InverseLerp(FloodedReserveCutoff, 1f, previousFloodLevel))
@@ -576,10 +569,6 @@ namespace Hecton8.Gameplay
                 DispatchPowerChanged(previousPowerChannel, nextPowerChannel, powerSignal);
             }
 
-            float positiveFloodDelta = _floodLevel - previousFloodLevel;
-            if (positiveFloodDelta > 0f)
-                _baseModule.ApplyFloodExposure(positiveFloodDelta, floodCo2Amplifier);
-
             bool shortCircuitActive = _floodLevel > FloodedReserveCutoff;
             SetNodeCompromise(shortCircuitActive);
 
@@ -592,12 +581,47 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void PublishFluidIncursionSignal(float3 localPoint, float depthMeters, float pressureDelta)
+        {
+            if (_cachedTransform == null || _baseModule == null)
+                return;
+
+            Vector3 local = new Vector3(localPoint.x, localPoint.y, localPoint.z);
+            Vector3 runtime = _cachedTransform.TransformPoint(local);
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup) ||
+                !float.IsFinite(runtime.x) ||
+                !float.IsFinite(runtime.y) ||
+                !float.IsFinite(runtime.z))
+            {
+                return;
+            }
+
+            AbsoluteUniversePosition leakAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtime.x, runtime.y, runtime.z));
+            if (!AbsoluteUniversePosition.IsFinite(in leakAup))
+                return;
+
+            float flow01 = math.saturate(math.max(0f, pressureDelta) * 0.01f);
+            uint compartmentId = unchecked((uint)EntityId.ToULong(_baseModule.GetEntityId()));
+            FluidIncursionSignal signal = new FluidIncursionSignal
+            {
+                LeakAup = leakAup,
+                CompartmentId = compartmentId,
+                FloodLevel01 = math.saturate(depthMeters * 0.001f),
+                FlowRate01 = flow01,
+                Flags = 1
+            };
+            SignalBus<FluidIncursionSignal>.TryPush(in signal);
+        }
+
         private void EmitBreachVfx(float3 localPoint, float depth, float pressureDelta)
         {
             Vector3 breachPoint = new Vector3(localPoint.x, localPoint.y, localPoint.z);
             _baseModule.EmitHullBreachJet(breachPoint, pressureDelta);
 
-            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _fluidDecals;
             if (!emitFluidDecals || fluidDecals == null || depth < HighPressureJetDepthMeters)
                 return;
 
@@ -619,6 +643,20 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out _powerNode);
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            _atmosphereRuntime = GlobalRegistry.AtmosphereReadModel;
+            _terrainProvider = GlobalRegistry.Terrain;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _fluidDecals = null;
+            _atmosphereRuntime = null;
+            _terrainProvider = null;
+        }
+
         private void TryRegister()
         {
             if (_registered)
@@ -627,8 +665,43 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
+                    _fluidDecals = currentService as AbyssalFluidDecalManager;
+                    break;
+                case GlobalRegistryServiceSlot.AtmosphereRuntime:
+                    _atmosphereRuntime = currentService as IAtmosphereReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _terrainProvider = currentService as ITerrainProvider;
+                    break;
+            }
         }
 
         private void TryUnregister()
@@ -636,7 +709,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
         }
 
@@ -825,8 +898,12 @@ namespace Hecton8.Gameplay
 
         public void OnToolEffectApplied(in ToolEffectSignal signal)
         {
-            if (signal.EffectType != EffectType.Weld || _baseModule == null || !ReferenceEquals(signal.ModuleTarget, _baseModule))
+            if (signal.EffectType != EffectType.Weld ||
+                _baseModule == null ||
+                signal.ModuleTargetInstanceId != _baseModule.GetInstanceID())
+            {
                 return;
+            }
 
             float restoreAmount = signal.Magnitude * WeldCapRestoreScale;
             if (restoreAmount <= 0f)
@@ -874,7 +951,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveDryAmbientTemperatureCelsius()
         {
-            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
+            IAtmosphereReadModel atmosphereManager = _atmosphereRuntime;
             return atmosphereManager != null
                 ? atmosphereManager.CurrentTemperature
                 : DefaultDryAmbientTemperatureCelsius;
@@ -896,11 +973,11 @@ namespace Hecton8.Gameplay
         private float ResolveDepthMeters()
         {
             float seaLevelY = 0f;
-            ITerrainProvider terrainProvider = GlobalRegistry.Terrain;
+            ITerrainProvider terrainProvider = _terrainProvider;
             if (terrainProvider != null)
                 seaLevelY = terrainProvider.WaterSurfaceLevel;
-            else if (Hecton8.Core.GlobalRegistry.Atmosphere != null)
-                seaLevelY = Hecton8.Core.GlobalRegistry.Atmosphere.SeaLevelY;
+            else if (_atmosphereRuntime != null)
+                seaLevelY = _atmosphereRuntime.SeaLevelY;
 
             Transform hostTransform = _cachedTransform != null ? _cachedTransform : transform;
             if (!TryResolveAupFromRuntimeOrigin(hostTransform.position, out AbsoluteUniversePosition moduleAup))
@@ -922,7 +999,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

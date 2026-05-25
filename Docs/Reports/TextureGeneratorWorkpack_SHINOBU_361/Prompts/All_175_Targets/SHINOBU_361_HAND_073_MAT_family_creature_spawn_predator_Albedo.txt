@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_073
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_073_MAT_family_creature_spawn_predator_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_creature_spawn_predator_Albedo.png
+FINAL_FILENAME: MAT_family_creature_spawn_predator_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Predator creature spawn family albedo for Hecton danger zones, expressed with elegant warning biology. Use deep teal armored scale traces, pearl abrasion edges, controlled coral-red pressure markings, amber sensory-node dots, and graphite-blue mineral silt. The surface should feel alert and predatory while preserving beauty and readability. Make the danger signal clear through pattern rhythm, disciplined color contrast, and clean territorial markings. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

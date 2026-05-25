@@ -7,12 +7,20 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class HectonOctahedralImpostorTypesLayout
+    {
+        public const int OctahedralImpostorInstanceStrideBytes = 32;
+        public const int ImpostorConfigDTOStrideBytes = 16;
+        public const int HlodImpostorCaptureAngleRecordStrideBytes = 160;
+        public const int HlodImpostorMockPointStrideBytes = 32;
+    }
+
     /// <summary>
     /// GPU payload for one far-field octahedral impostor instance.
     /// Centers are authored in universe space; the shader applies the current AUP render offset.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonOctahedralImpostorTypesLayout.OctahedralImpostorInstanceStrideBytes)]
     public struct OctahedralImpostorInstance
     {
         [FieldOffset(0)]
@@ -76,7 +84,7 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonOctahedralImpostorTypesLayout.ImpostorConfigDTOStrideBytes)]
     public struct ImpostorConfigDTO
     {
         [FieldOffset(0)]
@@ -102,7 +110,7 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 160)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonOctahedralImpostorTypesLayout.HlodImpostorCaptureAngleRecordStrideBytes)]
     public struct HlodImpostorCaptureAngleRecord
     {
         [FieldOffset(0)]
@@ -124,7 +132,7 @@ namespace Hecton8.World
         public float4x4 ProjectionMatrix;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonOctahedralImpostorTypesLayout.HlodImpostorMockPointStrideBytes)]
     public struct HlodImpostorMockPoint
     {
         [FieldOffset(0)]

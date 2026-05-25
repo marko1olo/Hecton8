@@ -23,15 +23,13 @@ namespace Hecton8.EditorTools
 
                 try
                 {
-                    BaseModule baseModule = prefabRoot.GetComponent<BaseModule>();
-                    if (baseModule == null)
+                    if (!prefabRoot.TryGetComponent(out BaseModule baseModule))
                         continue;
 
                     bool dirty = RemoveMeshColliders(prefabRoot);
                     dirty |= EnsurePrimitiveColliderCoverage(prefabRoot, out BoxCollider[] boxes, out CapsuleCollider[] capsules);
 
-                    BaseModuleNavModifier navModifier = prefabRoot.GetComponent<BaseModuleNavModifier>();
-                    if (navModifier == null)
+                    if (!prefabRoot.TryGetComponent(out BaseModuleNavModifier navModifier))
                     {
                         navModifier = prefabRoot.AddComponent<BaseModuleNavModifier>();
                         dirty = true;
@@ -82,8 +80,7 @@ namespace Hecton8.EditorTools
             CollectPrimitiveColliders(prefabRoot, boxList, capsuleList);
             if (boxList.Count == 0 && capsuleList.Count == 0 && TryBuildFallbackBounds(prefabRoot, out Bounds bounds))
             {
-                BoxCollider fallback = prefabRoot.GetComponent<BoxCollider>();
-                if (fallback == null)
+                if (!prefabRoot.TryGetComponent(out BoxCollider fallback))
                     fallback = prefabRoot.AddComponent<BoxCollider>();
 
                 fallback.isTrigger = false;

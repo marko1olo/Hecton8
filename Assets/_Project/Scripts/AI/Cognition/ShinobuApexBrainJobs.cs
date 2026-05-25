@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -117,14 +118,15 @@ namespace Hecton8.AI.Cognition
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Invariant: only ApexBrainVault.AttachSignalWriters/TryScheduleWithSignalWriters set
-        // EnableSignalQueueWrites=1, and those methods receive externally owned queue writers from the Core
-        // SignalBus boundary. When the flag is 0, this field is never read or enqueued.
+        // EnableSignalQueueWrites=1, and those methods receive externally owned queue writers plus lane-owned
+        // budget arrays from the Core SignalBus boundary. When the flag is 0, this field is never read or enqueued.
         [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<ApexProximitySignal>.ParallelWriter ProximitySignalWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> ProximitySignalWriterBudget;
 
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // This optional writer is default-initialized on schedules that only write DataVault combat signal rows.
         // The safety system cannot prove the EnableSignalQueueWrites guard, so it may reject the no-writer path
-        // even though CombatDamageSignalWriter.Enqueue is unreachable there.
+        // even though the combat queue write path is unreachable there.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
         // A direct Hecton8.Core SignalBus reference was rejected because it widened the runtime compile wall and
@@ -133,13 +135,14 @@ namespace Hecton8.AI.Cognition
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Invariant: when EnableSignalQueueWrites=1, the owning Core/SignalBus bridge has already provided a valid
-        // ParallelWriter and owns queue lifetime beyond the returned JobHandle. When the flag is 0, this writer is
-        // inert and only the DataVault MockCombatDamageSignal row is written.
+        // ParallelWriter plus lane-owned budget and owns lifetime beyond the returned JobHandle. When the flag is 0,
+        // this writer is inert and only the DataVault MockCombatDamageSignal row is written.
         [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<MockCombatDamageSignal>.ParallelWriter CombatDamageSignalWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> CombatDamageSignalWriterBudget;
 
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // This optional writer follows the same gated pattern as the proximity and combat lanes. Unity Jobs cannot
-        // infer that PanicSignalWriter.Enqueue is guarded by EnableSignalQueueWrites and by panic intensity, so the
+        // infer that the panic queue write path is guarded by EnableSignalQueueWrites and by panic intensity, so the
         // attribute suppresses a schedule-time false positive for default writer structs.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
@@ -149,9 +152,10 @@ namespace Hecton8.AI.Cognition
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Invariant: the queue writer is used only inside WriteSignals after the vault panic row is populated, and
-        // only when EnableSignalQueueWrites!=0. The caller owns the NativeQueue and must chain the returned
-        // JobHandle before draining or disposing it.
+        // only when EnableSignalQueueWrites!=0. The caller owns the NativeQueue and budget and must chain the
+        // returned JobHandle before draining or disposing it.
         [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<ApexPanicSignal>.ParallelWriter PanicSignalWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> PanicSignalWriterBudget;
         public int TargetCount;
         public int AcousticTapCount;
         public uint Frame;
@@ -671,7 +675,7 @@ namespace Hecton8.AI.Cognition
                 };
                 ProximitySignals[index] = proximity;
                 if (EnableSignalQueueWrites != 0 && proximity.Aggression01 > ApexBrainConstants.Epsilon)
-                    ProximitySignalWriter.Enqueue(proximity);
+                    TryEnqueueBounded(ProximitySignalWriter, ProximitySignalWriterBudget, proximity);
             }
 
             bool strike = phase == ApexBrainPhase.Strike;
@@ -690,7 +694,7 @@ namespace Hecton8.AI.Cognition
                 };
                 CombatDamageSignals[index] = damage;
                 if (EnableSignalQueueWrites != 0 && damage.Magnitude > ApexBrainConstants.Epsilon)
-                    CombatDamageSignalWriter.Enqueue(damage);
+                    TryEnqueueBounded(CombatDamageSignalWriter, CombatDamageSignalWriterBudget, damage);
             }
 
             if (PanicSignals.IsCreated && (uint)index < (uint)PanicSignals.Length)
@@ -708,8 +712,33 @@ namespace Hecton8.AI.Cognition
                 };
                 PanicSignals[index] = panic;
                 if (EnableSignalQueueWrites != 0 && panic.Intensity01 > ApexBrainConstants.Epsilon)
-                    PanicSignalWriter.Enqueue(panic);
+                    TryEnqueueBounded(PanicSignalWriter, PanicSignalWriterBudget, panic);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe bool TryEnqueueBounded<TSignal>(
+            NativeQueue<TSignal>.ParallelWriter writer,
+            NativeArray<int> writerBudget,
+            TSignal signal)
+            where TSignal : unmanaged
+        {
+            const int remainingIndex = 0;
+            const int droppedIndex = 1;
+            const int budgetLength = 2;
+            if (!writerBudget.IsCreated || writerBudget.Length < budgetLength)
+                return false;
+
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
+            int remainingAfterClaim = Interlocked.Decrement(ref budget[remainingIndex]);
+            if (remainingAfterClaim < 0)
+            {
+                Interlocked.Increment(ref budget[droppedIndex]);
+                return false;
+            }
+
+            writer.Enqueue(signal);
+            return true;
         }
 
         private void WriteTelemetry(

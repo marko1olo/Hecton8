@@ -130,8 +130,13 @@ namespace Hecton8.QA.Editor
 
         private static int ResolveExitCode(string resultPath)
         {
-            string result = File.ReadAllText(resultPath);
-            return result.IndexOf("\"exitCode\":0", StringComparison.Ordinal) >= 0 ? 0 : 1;
+            foreach (string line in File.ReadLines(resultPath))
+            {
+                if (line.IndexOf("\"exitCode\":0", StringComparison.Ordinal) >= 0)
+                    return 0;
+            }
+
+            return 1;
         }
 
         private static string ResolveProjectPath(string relativePath)

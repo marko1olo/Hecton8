@@ -152,8 +152,7 @@ namespace Hecton8.Core.Memory.Editor
             _lastFaultMetaGeneration = 0u;
             _waterfallCount = 0;
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            if (!TryResolveEditorVault(out GlobalDataVault vault))
                 return;
 
             _allocatedBytes = vault.AllocatedBytes;
@@ -170,15 +169,15 @@ namespace Hecton8.Core.Memory.Editor
 
             for (int age = MaxWaterfallSamples - 1; age >= 0; age--)
             {
-                if (!vault.TryGetVaultTelemetrySnapshot(age, out VaultTelemetrySnapshot telemetry))
+                if (!vault.TryGetVaultTelemetrySnapshot(age, out VaultTelemetrySnapshot ageTelemetry))
                     continue;
 
                 int sample = _waterfallCount++;
-                _waterfallPressure[sample] = telemetry.ArenaBytes > 0L
-                    ? math.saturate((float)((double)telemetry.AllocatedBytes / telemetry.ArenaBytes))
+                _waterfallPressure[sample] = ageTelemetry.ArenaBytes > 0L
+                    ? math.saturate((float)((double)ageTelemetry.AllocatedBytes / ageTelemetry.ArenaBytes))
                     : 0f;
-                _waterfallFaults[sample] = telemetry.GenerationMismatchCount;
-                _waterfallFlags[sample] = telemetry.LastDefragFlags;
+                _waterfallFaults[sample] = ageTelemetry.GenerationMismatchCount;
+                _waterfallFlags[sample] = ageTelemetry.LastDefragFlags;
             }
 
             int count = math.min(vault.MemoryBlockSnapshotCount, MaxVisibleBlocks);
@@ -225,8 +224,7 @@ namespace Hecton8.Core.Memory.Editor
 
         private void ForceDefragNextPreSimulation()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            if (!TryResolveEditorVault(out GlobalDataVault vault))
             {
                 _overrideStatus = "No active vault.";
                 ApplySnapshotToUi();
@@ -240,8 +238,7 @@ namespace Hecton8.Core.Memory.Editor
 
         private void ReloadCsvOverride()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            if (!TryResolveEditorVault(out GlobalDataVault vault))
             {
                 _overrideStatus = "No active vault.";
                 ApplySnapshotToUi();
@@ -262,6 +259,11 @@ namespace Hecton8.Core.Memory.Editor
                 : "CSV missing or rejected.";
             RefreshSnapshot();
             ApplySnapshotToUi();
+        }
+
+        private static bool TryResolveEditorVault(out GlobalDataVault vault)
+        {
+            return GlobalDataVault.TryGetLatestCreated(out vault);
         }
 
         private static int ResolveQualityStride(float globalQualityWeight)
@@ -317,7 +319,7 @@ namespace Hecton8.Core.Memory.Editor
                     bar.style.width = new Length(math.max(0.5f, fraction * 100f), LengthUnit.Percent);
                     bar.style.backgroundColor = block.LockCount != 0
                         ? _lockedColor
-                        : block.State == GlobalDataVault.BlockStateOccupied
+                        : block.State == (byte)H8BlockState.Occupied
                             ? _activeColor
                             : _freeColor;
                 }

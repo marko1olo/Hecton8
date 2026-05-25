@@ -529,6 +529,7 @@ namespace Hecton8.VFX
         }
     }
 
+    #if UNITY_EDITOR
     public static class PropwashGpuProfileCsvParser
     {
         private const uint FnvOffset = 2166136261u;
@@ -843,6 +844,7 @@ namespace Hecton8.VFX
                 value == (byte)'\n';
         }
     }
+    #endif
 
     public static unsafe class PropwashTelemetryDump
     {

@@ -12,14 +12,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
         /// <summary>Ensures the isolated diagnostics lane exists before first use.</summary>
         public static void EnsureInitialized()
         {
-            global::Hecton8.Core.GlobalSignals.EnsureDebugSignalLaneInitialized();
+            global::Hecton8.Core.SignalCorridorRuntime.EnsureDebugSignalLaneInitialized();
         }
 
         /// <summary>Publishes one diagnostic visual payload.</summary>
         public static void Push(in DebugSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DebugSignal>.Push(in signal);
+            SignalBus<DebugSignal>.TryPush(in signal);
         }
 
     }

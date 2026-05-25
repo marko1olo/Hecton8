@@ -30,10 +30,8 @@ namespace Hecton8.World.Editor
 
             if (Directory.Exists(worldRoot))
             {
-                string[] files = Directory.GetFiles(worldRoot, "*.cs", SearchOption.AllDirectories);
-                for (int i = 0; i < files.Length; i++)
+                foreach (string file in Directory.EnumerateFiles(worldRoot, "*.cs", SearchOption.AllDirectories))
                 {
-                    string file = files[i];
                     string normalized = NormalizePath(file);
                     if (normalized.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0)
                         continue;

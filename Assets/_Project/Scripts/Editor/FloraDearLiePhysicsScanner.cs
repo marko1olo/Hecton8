@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -8,6 +9,8 @@ namespace Hecton8.Editor
     internal static class FloraDearLiePhysicsScanner
     {
         private const string ReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_268.json";
+        private static readonly List<Collider> s_ColliderScratch = new List<Collider>(32);
+        private static readonly List<Rigidbody> s_RigidbodyScratch = new List<Rigidbody>(8);
 
         private static readonly string[] CandidateRoots =
         {
@@ -56,8 +59,13 @@ namespace Hecton8.Editor
                     if (prefab == null)
                         continue;
 
-                    int prefabColliders = prefab.GetComponentsInChildren<Collider>(true).Length;
-                    int prefabRigidbodies = prefab.GetComponentsInChildren<Rigidbody>(true).Length;
+                    s_ColliderScratch.Clear();
+                    prefab.GetComponentsInChildren(true, s_ColliderScratch);
+                    int prefabColliders = s_ColliderScratch.Count;
+
+                    s_RigidbodyScratch.Clear();
+                    prefab.GetComponentsInChildren(true, s_RigidbodyScratch);
+                    int prefabRigidbodies = s_RigidbodyScratch.Count;
                     if (prefabColliders == 0 && prefabRigidbodies == 0)
                         continue;
 

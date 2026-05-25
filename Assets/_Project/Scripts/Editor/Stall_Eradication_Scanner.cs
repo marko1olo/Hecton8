@@ -19,10 +19,9 @@ namespace Hecton8.Editor
             ScanResult result = default;
             StringBuilder offenders = new StringBuilder(8192);
             StringBuilder runtimeRuns = new StringBuilder(8192);
-            string[] files = Directory.GetFiles(ScriptsRoot, "*.cs", SearchOption.AllDirectories);
-            for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+            foreach (string file in Directory.EnumerateFiles(ScriptsRoot, "*.cs", SearchOption.AllDirectories))
             {
-                string path = files[fileIndex].Replace('\\', '/');
+                string path = file.Replace('\\', '/');
                 string[] lines = File.ReadAllLines(path);
                 bool editorFile = path.Contains("/Editor/") ||
                                   path.EndsWith("SmokeTester.cs", StringComparison.Ordinal) ||

@@ -18,11 +18,10 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/AR Waypoint Overlay")]
-    public sealed class ARWaypointOverlay : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IARWaypointService, IGlobalRegistryHotSwapListener
+    public sealed class ARWaypointOverlay : MonoBehaviour, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IARWaypointService, IGlobalRegistryHotSwapListener
     {
-        private const int MaxAnchorWaypoints = 7;
-        private const int MaxExternalWaypoints = 8;
-        private const int MaxWaypoints = 1 + MaxAnchorWaypoints + MaxExternalWaypoints;
+        private const int MaxExternalWaypoints = 16;
+        private const int MaxWaypoints = MaxExternalWaypoints;
         private const int MaximumLabelCharacters = 48;
         private const float ScreenMargin = 54f;
         private const float HiddenAlpha = 0f;
@@ -44,8 +43,6 @@ namespace Hecton8.UI
         private const int WaypointPerformanceWarningCooldownFrames = 90;
         private const int WaypointSolveTelemetryCadenceFrames = 16;
         private const string RootName = "ARWaypointOverlay";
-        private const string DefaultRelayLabel = "SERVICE RELAY";
-        private const string DefaultAnchorLabel = "ABYSSAL ANCHOR";
         private const string DefaultExternalLabel = "WAYPOINT";
         private const int EdgeRotationUp = 0;
         private const int EdgeRotationRight = 1;
@@ -59,7 +56,6 @@ namespace Hecton8.UI
         private static readonly uint _WaypointSolveBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HUD_AR_WAYPOINT_SOLVE_OVER_BUDGET"));
         private static readonly uint _WaypointSolveBudgetContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ARWaypointOverlay.Solve"));
         private static readonly Color RelayColor = new Color(0.64f, 0.94f, 0.98f, 0.96f);
-        private static readonly Color AnchorColor = new Color(0.98f, 0.74f, 0.22f, 0.96f);
         private static readonly Color OccludedColor = new Color(0.94f, 0.94f, 0.94f, 0.62f);
         private static ARWaypointOverlay s_activeRuntimeInstance;
         private static IARWaypointService s_cachedWaypointService;
@@ -114,6 +110,7 @@ namespace Hecton8.UI
             public Color Color;
             public bool Active;
             public bool UseTransform;
+            public bool HasPositionAup;
         }
 
         private struct RuntimeWaypoint
@@ -215,13 +212,11 @@ namespace Hecton8.UI
         private int _renderedSlotCount;
         private int _nextWaypointPerformanceWarningFrame;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private EmergencyServiceRelayDirector _cachedEmergencyRelay;
         private Canvas _targetCanvas;
         private RectTransform _targetCanvasRect;
         private RectTransform _root;
         private Camera _viewCamera;
         private Transform _playerTransform;
-        private HectonMapMagicVegetationBridge _vegetationBridge;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -241,12 +236,8 @@ namespace Hecton8.UI
             s_stencilRenderGraphActive = active;
             if (active && s_activeRuntimeInstance != null)
             {
-                s_activeRuntimeInstance.ClearStencilCrossDomainProviders();
+                s_activeRuntimeInstance.CaptureExternalWaypointAupsCold();
                 s_activeRuntimeInstance.HideRenderedSlots();
-            }
-            else if (!active && s_activeRuntimeInstance != null)
-            {
-                s_activeRuntimeInstance.CacheLegacyWaypointProvidersCold();
             }
         }
 
@@ -333,8 +324,6 @@ namespace Hecton8.UI
         {
             s_activeRuntimeInstance = this;
             CacheRegistryServicesCold();
-            if (!s_stencilRenderGraphActive)
-                CacheLegacyWaypointProvidersCold();
             TryRegisterHotSwapListener();
             TryRegisterWaypointService();
             ResolveOwners(allowHierarchySearch: true);
@@ -349,8 +338,6 @@ namespace Hecton8.UI
 
         private void Start()
         {
-            if (!s_stencilRenderGraphActive)
-                CacheLegacyWaypointProvidersCold();
             ResolveOwners(allowHierarchySearch: true);
             if (!s_stencilRenderGraphActive)
                 EnsureUiBuilt(allowCreate: true);
@@ -384,7 +371,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             bool sampleSolveCost = ShouldSampleWaypointSolveCost();
             long solveStartTimestamp = sampleSolveCost ? Stopwatch.GetTimestamp() : 0L;
@@ -426,8 +413,6 @@ namespace Hecton8.UI
             _viewCamera = null;
             _uiBuilt = false;
             _root = null;
-            if (!s_stencilRenderGraphActive)
-                CacheLegacyWaypointProvidersCold();
             ResolveOwners(allowHierarchySearch: true);
             if (!s_stencilRenderGraphActive)
                 EnsureUiBuilt(allowCreate: true);
@@ -454,9 +439,6 @@ namespace Hecton8.UI
         {
             if (s_stencilRenderGraphActive)
             {
-                if (allowHierarchySearch)
-                    ClearStencilCrossDomainProviders();
-
                 IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 if (_viewCamera == null && playerContext != null)
                     _viewCamera = playerContext.PlayerCamera;
@@ -464,9 +446,6 @@ namespace Hecton8.UI
                     _playerTransform = playerContext.PlayerTransform;
                 return;
             }
-
-            if (allowHierarchySearch)
-                CacheLegacyWaypointProvidersCold();
 
             if (allowHierarchySearch || _targetCanvas == null || _viewCamera == null)
             {
@@ -531,22 +510,6 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.EmergencyRelayRuntime)
-            {
-                _cachedEmergencyRelay = s_stencilRenderGraphActive
-                    ? null
-                    : currentService as EmergencyServiceRelayDirector;
-                return;
-            }
-
-            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
-            {
-                _vegetationBridge = s_stencilRenderGraphActive
-                    ? null
-                    : currentService as HectonMapMagicVegetationBridge;
-                return;
-            }
-
             if (serviceSlot == GlobalRegistryServiceSlot.ARWaypointRuntime)
                 s_cachedWaypointService = currentService as IARWaypointService;
         }
@@ -570,38 +533,9 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             if (_cachedPlayerContext != null && _playerTransform == null)
                 _playerTransform = _cachedPlayerContext.PlayerTransform;
-        }
-
-        private void CacheLegacyWaypointProvidersCold()
-        {
-            if (s_stencilRenderGraphActive)
-            {
-                ClearStencilCrossDomainProviders();
-                return;
-            }
-
-            _cachedEmergencyRelay = GlobalRegistry.EmergencyRelay;
-            TryResolveVegetationBridgeCold();
-        }
-
-        private void ClearStencilCrossDomainProviders()
-        {
-            _cachedEmergencyRelay = null;
-            _vegetationBridge = null;
-        }
-
-        private void TryResolveVegetationBridgeCold()
-        {
-            if (s_stencilRenderGraphActive)
-                return;
-
-            if (_vegetationBridge != null)
-                return;
-
-            _vegetationBridge = GlobalRegistry.MapMagicVegetation;
         }
 
         private bool TryResolveCameraAup(out AbsoluteUniversePosition cameraAup)
@@ -697,42 +631,6 @@ namespace Hecton8.UI
         {
             int count = 0;
 
-            if (!s_stencilRenderGraphActive)
-            {
-                EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelay;
-                EmergencyServiceRelay relayTarget = relayDirector != null ? relayDirector.GetActiveRouteTarget() : null;
-                if (relayTarget != null && relayTarget.isActiveAndEnabled && count < _runtimeWaypoints.Length)
-                {
-                    RuntimeWaypoint waypoint = _runtimeWaypoints[count];
-                    waypoint.PositionAup = relayTarget.RelayAup;
-                    waypoint.Label = DefaultRelayLabel;
-                    waypoint.Color = RelayColor;
-                    waypoint.Active = true;
-                    waypoint.Occluded = count < _waypointCount && _runtimeWaypoints[count].Occluded;
-                    _runtimeWaypoints[count] = waypoint;
-                    count++;
-                }
-
-                if (_vegetationBridge != null &&
-                    _vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition>.ReadOnly anchorAups, out int anchorAupCount) &&
-                    anchorAups.Length > 0 &&
-                    anchorAupCount > 0)
-                {
-                    int visibleAnchors = math.min(MaxAnchorWaypoints, math.min(anchorAupCount, anchorAups.Length));
-                    for (int i = 0; i < visibleAnchors && count < _runtimeWaypoints.Length; i++)
-                    {
-                        RuntimeWaypoint waypoint = _runtimeWaypoints[count];
-                        waypoint.PositionAup = anchorAups[i];
-                        waypoint.Label = DefaultAnchorLabel;
-                        waypoint.Color = AnchorColor;
-                        waypoint.Active = true;
-                        waypoint.Occluded = count < _waypointCount && _runtimeWaypoints[count].Occluded;
-                        _runtimeWaypoints[count] = waypoint;
-                        count++;
-                    }
-                }
-            }
-
             for (int i = 0; i < _externalWaypoints.Length && count < _runtimeWaypoints.Length; i++)
             {
                 ExternalWaypoint externalWaypoint = _externalWaypoints[i];
@@ -745,15 +643,34 @@ namespace Hecton8.UI
                     if (externalWaypoint.Target == null)
                     {
                         externalWaypoint.Active = false;
+                        externalWaypoint.HasPositionAup = false;
                         _externalWaypoints[i] = externalWaypoint;
                         continue;
                     }
 
-                    hasWaypointAup = TryResolvePresentationWaypointAup(externalWaypoint.Target, out externalWaypoint.PositionAup);
+                    if (s_stencilRenderGraphActive)
+                    {
+                        hasWaypointAup = externalWaypoint.HasPositionAup &&
+                                         externalWaypoint.PositionAup.IsFinite();
+                    }
+                    else
+                    {
+                        hasWaypointAup = TryResolvePresentationWaypointAup(externalWaypoint.Target, out externalWaypoint.PositionAup);
+                        externalWaypoint.HasPositionAup = hasWaypointAup;
+                    }
                 }
                 else
                 {
-                    hasWaypointAup = TryResolvePresentationWaypointAup(externalWaypoint.PresentationPosition, out externalWaypoint.PositionAup);
+                    if (s_stencilRenderGraphActive)
+                    {
+                        hasWaypointAup = externalWaypoint.HasPositionAup &&
+                                         externalWaypoint.PositionAup.IsFinite();
+                    }
+                    else
+                    {
+                        hasWaypointAup = TryResolvePresentationWaypointAup(externalWaypoint.PresentationPosition, out externalWaypoint.PositionAup);
+                        externalWaypoint.HasPositionAup = hasWaypointAup;
+                    }
                 }
 
                 _externalWaypoints[i] = externalWaypoint;
@@ -958,7 +875,7 @@ namespace Hecton8.UI
         private static bool ShouldSampleWaypointSolveCost()
         {
             return WaypointSolveTelemetryCadenceFrames <= 1 ||
-                   (Time.frameCount & (WaypointSolveTelemetryCadenceFrames - 1)) == 0;
+                   (Hecton8.Core.SystemDispatcher.CurrentFrameIndex & (WaypointSolveTelemetryCadenceFrames - 1)) == 0;
         }
 
         private void PublishWaypointSolveWarningIfNeeded(bool hasSample, long startTimestamp)
@@ -969,14 +886,14 @@ namespace Hecton8.UI
             long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
             double elapsedMilliseconds = elapsedTicks * 1000.0d / Stopwatch.Frequency;
             if (elapsedMilliseconds <= WaypointSolveBudgetWarningMilliseconds ||
-                Time.frameCount < _nextWaypointPerformanceWarningFrame)
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex < _nextWaypointPerformanceWarningFrame)
                 return;
 
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _WaypointSolveBudgetWarningHash,
                 _WaypointSolveBudgetContextHash,
                 (float)elapsedMilliseconds);
-            _nextWaypointPerformanceWarningFrame = Time.frameCount + WaypointPerformanceWarningCooldownFrames;
+            _nextWaypointPerformanceWarningFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + WaypointPerformanceWarningCooldownFrames;
         }
 
         private bool TryProjectWaypointOntoHudPlane(
@@ -1139,15 +1056,78 @@ namespace Hecton8.UI
                 return;
 
             ExternalWaypoint externalWaypoint = _externalWaypoints[freeIndex];
+            AbsoluteUniversePosition cachedAup = externalWaypoint.PositionAup;
+            bool canReuseTransformAup =
+                useTransform &&
+                externalWaypoint.Active &&
+                externalWaypoint.UseTransform &&
+                ReferenceEquals(externalWaypoint.Target, target);
+            bool canReusePositionAup =
+                !useTransform &&
+                externalWaypoint.Active &&
+                !externalWaypoint.UseTransform &&
+                externalWaypoint.PresentationPosition == worldPosition;
+            bool hasCachedAup =
+                (canReuseTransformAup || canReusePositionAup) &&
+                externalWaypoint.HasPositionAup &&
+                cachedAup.IsFinite();
             externalWaypoint.Id = id;
             externalWaypoint.Target = target;
-            externalWaypoint.PositionAup = default;
+            externalWaypoint.PositionAup = hasCachedAup ? cachedAup : default;
             externalWaypoint.PresentationPosition = worldPosition;
             externalWaypoint.Label = label;
             externalWaypoint.Color = color;
             externalWaypoint.Active = true;
             externalWaypoint.UseTransform = useTransform;
+            externalWaypoint.HasPositionAup = hasCachedAup;
+            if (TryCaptureExternalWaypointAup(ref externalWaypoint))
+                externalWaypoint.HasPositionAup = true;
             _externalWaypoints[freeIndex] = externalWaypoint;
+        }
+
+        private void CaptureExternalWaypointAupsCold()
+        {
+            for (int i = 0; i < _externalWaypoints.Length; i++)
+            {
+                ExternalWaypoint externalWaypoint = _externalWaypoints[i];
+                if (!externalWaypoint.Active)
+                    continue;
+
+                if (externalWaypoint.UseTransform && externalWaypoint.Target == null)
+                {
+                    externalWaypoint.Active = false;
+                    externalWaypoint.HasPositionAup = false;
+                    _externalWaypoints[i] = externalWaypoint;
+                    continue;
+                }
+
+                externalWaypoint.HasPositionAup = TryCaptureExternalWaypointAup(ref externalWaypoint);
+                _externalWaypoints[i] = externalWaypoint;
+            }
+        }
+
+        private bool TryCaptureExternalWaypointAup(ref ExternalWaypoint externalWaypoint)
+        {
+            if (externalWaypoint.UseTransform)
+            {
+                Transform target = externalWaypoint.Target;
+                if (target == null)
+                    return false;
+
+                if (!TryResolvePresentationWaypointAup(target, out AbsoluteUniversePosition capturedAup))
+                    return false;
+
+                externalWaypoint.PositionAup = capturedAup;
+                externalWaypoint.HasPositionAup = true;
+                return true;
+            }
+
+            if (!TryResolvePresentationWaypointAup(externalWaypoint.PresentationPosition, out AbsoluteUniversePosition positionAup))
+                return false;
+
+            externalWaypoint.PositionAup = positionAup;
+            externalWaypoint.HasPositionAup = true;
+            return true;
         }
 
         private void ClearExternalWaypointInternal(int id)
@@ -1157,6 +1137,7 @@ namespace Hecton8.UI
                 if (_externalWaypoints[i].Active && _externalWaypoints[i].Id == id)
                 {
                     _externalWaypoints[i].Active = false;
+                    _externalWaypoints[i].HasPositionAup = false;
                     break;
                 }
             }
@@ -1205,8 +1186,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void RegisterToSlowTickManager()
@@ -1217,8 +1197,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1226,7 +1205,7 @@ namespace Hecton8.UI
             if (!_registeredTick)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredTick = false;
         }
 

@@ -77,6 +77,9 @@ namespace Hecton8.Quest
         private HectonPlayerMovement _playerMovement;
         private Material _runtimeMarkerMaterial;
         private Mesh _runtimeMarkerMesh;
+        private Color _appliedMarkerColor;
+        private float _appliedFlickerFrequency;
+        private float _appliedFlickerIntensity;
         private int _visibleMarkerCount;
         private int _markerCacheCount;
         private int _activeQuestCount;
@@ -89,6 +92,7 @@ namespace Hecton8.Quest
         private bool _registeredRenderable;
         private bool _hotSwapRegistered;
         private bool _markerCacheDirty = true;
+        private bool _markerMaterialDirty = true;
         private bool _hasMarkerRebuildPlayerAup;
         private float _cachedMarkerScaleMeters = -1f;
         private AbsoluteUniversePosition _lastMarkerRebuildPlayerAup;
@@ -223,9 +227,7 @@ namespace Hecton8.Quest
                 return;
             }
 
-            _runtimeMarkerMaterial.SetColor(BaseColorId, markerColor);
-            _runtimeMarkerMaterial.SetFloat(FlickerFrequencyId, flickerFrequency);
-            _runtimeMarkerMaterial.SetFloat(FlickerIntensityId, flickerIntensity);
+            ApplyMarkerMaterialIfNeeded();
 
             UnityEngine.Graphics.DrawMeshInstanced(
                 _runtimeMarkerMesh,
@@ -277,7 +279,7 @@ namespace Hecton8.Quest
 
         private void ResolvePlayerContextCold()
         {
-            CachePlayerContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerContext(GlobalRegistry.Player);
             ResolvePlayerContext();
         }
 
@@ -375,6 +377,37 @@ namespace Hecton8.Quest
                 enableInstancing = true,
                 hideFlags = HideFlags.DontSave
             };
+            _markerMaterialDirty = true;
+        }
+
+        private void ApplyMarkerMaterialIfNeeded()
+        {
+            if (_runtimeMarkerMaterial == null)
+                return;
+
+            if (!_markerMaterialDirty &&
+                SameColor(_appliedMarkerColor, markerColor) &&
+                math.abs(_appliedFlickerFrequency - flickerFrequency) <= 0.0001f &&
+                math.abs(_appliedFlickerIntensity - flickerIntensity) <= 0.0001f)
+            {
+                return;
+            }
+
+            _runtimeMarkerMaterial.SetColor(BaseColorId, markerColor);
+            _runtimeMarkerMaterial.SetFloat(FlickerFrequencyId, flickerFrequency);
+            _runtimeMarkerMaterial.SetFloat(FlickerIntensityId, flickerIntensity);
+            _appliedMarkerColor = markerColor;
+            _appliedFlickerFrequency = flickerFrequency;
+            _appliedFlickerIntensity = flickerIntensity;
+            _markerMaterialDirty = false;
+        }
+
+        private static bool SameColor(Color lhs, Color rhs)
+        {
+            return math.abs(lhs.r - rhs.r) <= 0.0001f &&
+                   math.abs(lhs.g - rhs.g) <= 0.0001f &&
+                   math.abs(lhs.b - rhs.b) <= 0.0001f &&
+                   math.abs(lhs.a - rhs.a) <= 0.0001f;
         }
 
         private void RebuildMarkerCache(in AbsoluteUniversePosition playerAup)
@@ -595,7 +628,7 @@ namespace Hecton8.Quest
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -608,7 +641,7 @@ namespace Hecton8.Quest
         private void ReportActiveMarkerOverflow(uint questHash)
         {
             _droppedActiveMarkerCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastActiveMarkerOverflowTelemetryFrame == frame)
                 return;
 
@@ -622,7 +655,7 @@ namespace Hecton8.Quest
         private void ReportMarkerCacheOverflow(uint questHash)
         {
             _droppedMarkerCacheCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastMarkerCacheOverflowTelemetryFrame == frame)
                 return;
 

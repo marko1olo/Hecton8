@@ -318,6 +318,7 @@ namespace Hecton8.World
         }
     }
 
+    #if UNITY_EDITOR
     public static class ProceduralGeologyCsv
     {
         public static int ParseDistributionRules(ReadOnlySpan<byte> csvBytes, NativeArray<GeologyDistributionRuleDTO> rules)
@@ -546,6 +547,7 @@ namespace Hecton8.World
             return math.isfinite(parsed);
         }
     }
+    #endif
 
 #pragma warning restore 0169
 }

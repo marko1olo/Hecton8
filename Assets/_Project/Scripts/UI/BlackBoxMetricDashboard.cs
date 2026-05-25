@@ -1,7 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using Hecton8.Core;
-using Hecton8.Input;
 using TMPro;
 using UnityEngine;
 
@@ -33,7 +32,7 @@ namespace Hecton8.UI
         private int _nextRefreshFrame;
         private int _accumulatedFrames;
         private float _accumulatedSeconds;
-        private InputManager _inputManager;
+        private INativeInputManagerRuntime _inputManager;
 
         private void Awake()
         {
@@ -83,7 +82,7 @@ namespace Hecton8.UI
             _accumulatedFrames++;
             _accumulatedSeconds += deltaTime > 0f ? deltaTime : 0f;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextRefreshFrame)
                 return;
 
@@ -144,7 +143,7 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return;
 
-            TrySubscribeInput(currentService as InputManager);
+            TrySubscribeInput(currentService as INativeInputManagerRuntime);
         }
 
         private void TryRegister()
@@ -177,10 +176,10 @@ namespace Hecton8.UI
             if (_inputManager != null)
                 return;
 
-            TrySubscribeInput(GlobalRegistry.NativeInputManager);
+            TrySubscribeInput(GlobalRegistry.NativeInputRuntime);
         }
 
-        private void TrySubscribeInput(InputManager inputManager)
+        private void TrySubscribeInput(INativeInputManagerRuntime inputManager)
         {
             if (_inputManager != null || inputManager == null)
                 return;

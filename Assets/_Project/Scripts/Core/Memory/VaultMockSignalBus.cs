@@ -11,8 +11,8 @@ namespace Hecton8.Core.Memory
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VaultMemoryAddressShiftSignal
     {
-        [FieldOffset(0)] public long OldPointer;
-        [FieldOffset(8)] public long NewPointer;
+        [FieldOffset(0)] public long OldOffsetBytes;
+        [FieldOffset(8)] public long NewOffsetBytes;
         [FieldOffset(16)] public int BufferId;
         [FieldOffset(20)] public int ByteLength;
         [FieldOffset(24)] public uint Version;

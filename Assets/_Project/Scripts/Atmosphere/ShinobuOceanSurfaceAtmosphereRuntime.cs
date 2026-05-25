@@ -7,6 +7,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Physics;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -17,11 +18,15 @@ using UnityEngine.Rendering;
 namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
-    public sealed unsafe class ShinobuOceanSurfaceAtmosphereRuntime : MonoBehaviour, IHectonOceanKinematics, IUpdatable, ISlowTickable, ILateFrameTickable
+    public sealed unsafe class ShinobuOceanSurfaceAtmosphereRuntime : MonoBehaviour, IHectonOceanKinematics, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+#if UNITY_EDITOR
         private const int CsvScratchBytes = 16 * 1024;
+#endif
         private const int DumpScratchBytes = 32 + (OceanSurfaceAtmosphereConstants.TelemetryFrameCount * 64);
+#if UNITY_EDITOR
         private const int LegacyWaveRecordBytes = 20;
+#endif
         private const float DefaultFoamThreshold = 0.72f;
         private const float SimulationTickDeltaSeconds = 1f / 60f;
         private const float MinWaveEvaluationHz = 5f;
@@ -59,8 +64,10 @@ namespace Hecton8.Atmosphere
         [SerializeField] private Transform cameraTransform;
         [Tooltip("Registers this runtime as the active ocean kinematics provider through the Core OceanKinematicsRuntimeService.")]
         [SerializeField] private bool registerAsOceanAuthority = true;
+#if UNITY_EDITOR
         [Tooltip("Editor-only source-data hydration for weather_profiles.csv; player runtime must use baked binary/default rows.")]
         [SerializeField] private bool loadWeatherProfilesCsv = true;
+#endif
         [Tooltip("Forces narrative storm surge without waiting for the quest/global-state signal.")]
         [SerializeField] private bool forceStormSurge;
         [Tooltip("Fallback sea level used before the WeatherStateDTO is hydrated.")]
@@ -78,7 +85,9 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<AtmosphereDTO> _atmosphereHandle;
         private VaultGenerationHandle<WeatherStateDTO> _weatherHandle;
         private VaultGenerationHandle<OceanSurfaceTelemetryEntry> _telemetryHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<byte> _dumpScratchHandle;
         private VaultGenerationHandle<OceanSurfaceLodDTO> _lodHandle;
         private VaultGenerationHandle<float4> _readbackQueryHandle;
@@ -109,10 +118,14 @@ namespace Hecton8.Atmosphere
         private bool _registeredSlow;
         private bool _registeredLate;
         private bool _registeredOcean;
+        private bool _registeredHotSwap;
         private bool _initializedWeather;
+#if UNITY_EDITOR
         private bool _loadedCsv;
+#endif
         private bool _lastCameraAboveSurface;
         private bool _hasCameraState;
+        private bool _cameraTransformResolvedFromPlayer;
         private bool _waveSamplerKernelResolved;
         private int _telemetryCursor;
         private int _lastUploadedWaveCount = -1;
@@ -146,6 +159,9 @@ namespace Hecton8.Atmosphere
         private bool _telemetryDumpRequested;
         private bool _waveParameterJobScheduled;
         private bool _waveParameterPayloadDirty = true;
+        private bool _shaderGlobalsDirty;
+        private bool _waveHeightReadbackDispatchRequested;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         public int Priority => providerPriority;
 
@@ -159,6 +175,9 @@ namespace Hecton8.Atmosphere
         {
             _readbackDispatchEnabled = true;
             ConfigureSignalLanes();
+            TryRegisterHotSwapListener();
+            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CacheDataVaultCold(GlobalRegistry.DataVault);
             ResolveCameraTransformCold();
             EnsureVaultBuffersCold();
             if (!_initializedWeather)
@@ -213,6 +232,9 @@ namespace Hecton8.Atmosphere
                     _registeredLate = false;
                 }
             }
+
+            TryUnregisterHotSwapListener();
+            ClearRuntimePlayerContext();
         }
 
 #if UNITY_EDITOR
@@ -242,14 +264,13 @@ namespace Hecton8.Atmosphere
             _globalQualityWeight = ResolveGlobalQualityWeight();
             _timeSeconds = ResolveWaveEvaluationTime(_rawSimulationTimeSeconds, _globalQualityWeight);
 
-            ConsumeWaveHeightReadbacks();
             if (!TryCompleteWaveParameterKernel())
                 return;
 
             EvaluateCameraWaterline();
             RecordTelemetry();
-            PublishShaderGlobals();
-            DispatchWaveHeightReadback();
+            _shaderGlobalsDirty = true;
+            _waveHeightReadbackDispatchRequested = true;
             ScheduleWaveParameterKernel();
         }
 
@@ -259,16 +280,16 @@ namespace Hecton8.Atmosphere
                 return;
 
             ResolveCameraTransformCold();
-            EnsureWaveGraphicsBuffers();
-            EnsureWaveReadbackGraphicsBuffers();
             if (!TryCompleteWaveParameterKernel())
                 return;
 
+#if UNITY_EDITOR
             if (loadWeatherProfilesCsv && !_loadedCsv)
                 _loadedCsv = TryLoadWeatherProfilesCsv();
+#endif
 
             ApplyStormSurgeIfNarrativeRequiresIt();
-            PublishShaderGlobals();
+            _shaderGlobalsDirty = true;
         }
 
         public void LateFrameTick()
@@ -288,10 +309,27 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
+            ConsumeWaveHeightReadbacks();
+            EnsureWaveGraphicsBuffers();
+            EnsureWaveReadbackGraphicsBuffers();
+            UploadWaveBufferToGpu(false);
+
             if (_lastWaveComputeNs > OceanSurfaceAtmosphereConstants.TelemetryDumpBudgetNs)
                 _telemetryDumpRequested = true;
             if (_telemetryDumpRequested && TryDumpTelemetryToDiskThrottled())
                 _telemetryDumpRequested = false;
+
+            if (_shaderGlobalsDirty)
+            {
+                PublishShaderGlobals();
+                _shaderGlobalsDirty = false;
+            }
+
+            if (_waveHeightReadbackDispatchRequested)
+            {
+                DispatchWaveHeightReadback();
+                _waveHeightReadbackDispatchRequested = false;
+            }
         }
 
         public bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)
@@ -331,10 +369,10 @@ namespace Hecton8.Atmosphere
             if ((state.Flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamScale) != 0u)
                 weather.SurfaceScalars.y = math.max(0.01f, state.FoamScale);
             if ((state.Flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamStrength) != 0u)
-                weather.SurfaceScalars.z = math.saturate(state.FoamStrength);
+            weather.SurfaceScalars.z = math.saturate(state.FoamStrength);
             weatherArray[0] = weather;
             RefreshCachedSurfaceSnapshot();
-            PublishShaderGlobals();
+            _shaderGlobalsDirty = true;
             return true;
         }
 
@@ -349,7 +387,7 @@ namespace Hecton8.Atmosphere
             AtmosphereDTO dto = atmosphereArray[0];
             dto.ScatteringParams.x = math.max(0f, primaryLight.intensity);
             atmosphereArray[0] = dto;
-            PublishShaderGlobals();
+            _shaderGlobalsDirty = true;
             return true;
         }
 
@@ -702,7 +740,7 @@ namespace Hecton8.Atmosphere
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetGenerationHandle<T>(
+                handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     required,
                     SystemID.HabitatAtmosphere,
@@ -736,36 +774,38 @@ namespace Hecton8.Atmosphere
                 return true;
 
             IDataVault vault = _vault;
-            if (vault == null && !TryResolveRegisteredVault(out vault))
+            if (vault == null)
                 return false;
 
             _vault = vault;
             if (!IsHandleValid(in _waveHandle))
-                _waveHandle = vault.GetGenerationHandle<WaveParametersDTO>(BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _waveHandle = vault.EnsureGenerationHandle<WaveParametersDTO>(BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _atmosphereHandle))
-                _atmosphereHandle = vault.GetGenerationHandle<AtmosphereDTO>(BufferID.ShinobuOceanAtmosphere, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _atmosphereHandle = vault.EnsureGenerationHandle<AtmosphereDTO>(BufferID.ShinobuOceanAtmosphere, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _weatherHandle))
-                _weatherHandle = vault.GetGenerationHandle<WeatherStateDTO>(BufferID.ShinobuOceanWeatherState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _weatherHandle = vault.EnsureGenerationHandle<WeatherStateDTO>(BufferID.ShinobuOceanWeatherState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _telemetryHandle))
-                _telemetryHandle = vault.GetGenerationHandle<OceanSurfaceTelemetryEntry>(BufferID.ShinobuOceanTelemetryRing, OceanSurfaceAtmosphereConstants.TelemetryFrameCount, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _telemetryHandle = vault.EnsureGenerationHandle<OceanSurfaceTelemetryEntry>(BufferID.ShinobuOceanTelemetryRing, OceanSurfaceAtmosphereConstants.TelemetryFrameCount, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+#if UNITY_EDITOR
             if (!IsHandleValid(in _csvScratchHandle))
-                _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuOceanCsvScratch, CsvScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuOceanCsvScratch, CsvScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+#endif
             if (!IsHandleValid(in _dumpScratchHandle))
-                _dumpScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuOceanDumpScratch, DumpScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _dumpScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuOceanDumpScratch, DumpScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _lodHandle))
-                _lodHandle = vault.GetGenerationHandle<OceanSurfaceLodDTO>(BufferID.ShinobuOceanLodState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _lodHandle = vault.EnsureGenerationHandle<OceanSurfaceLodDTO>(BufferID.ShinobuOceanLodState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _readbackQueryHandle))
-                _readbackQueryHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _readbackQueryHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _readbackResultHandle))
-                _readbackResultHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackResults, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _readbackResultHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackResults, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _readbackCompletedQueryHandle))
-                _readbackCompletedQueryHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackCompletedQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _readbackCompletedQueryHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackCompletedQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _readbackRingQueryHandle))
-                _readbackRingQueryHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackRingQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity * OceanSurfaceAtmosphereConstants.WaveReadbackRingSize, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _readbackRingQueryHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackRingQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity * OceanSurfaceAtmosphereConstants.WaveReadbackRingSize, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _beaufortProfileHandle))
-                _beaufortProfileHandle = vault.GetGenerationHandle<BeaufortProfileDTO>(BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _beaufortProfileHandle = vault.EnsureGenerationHandle<BeaufortProfileDTO>(BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!IsHandleValid(in _surfaceSwellHandle))
-                _surfaceSwellHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanSurfaceSwell, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+                _surfaceSwellHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuOceanSurfaceSwell, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
 
             _vaultBuffersReady = ResolveWaveBuffer(out _) && ResolveWeatherArray(out _) && ResolveAtmosphereArray(out _);
             return _vaultBuffersReady;
@@ -774,6 +814,7 @@ namespace Hecton8.Atmosphere
         private void LoadLegacyWeatherOrGenerateEmergency()
         {
             bool loaded = false;
+#if UNITY_EDITOR
             try
             {
                 loaded =
@@ -790,6 +831,7 @@ namespace Hecton8.Atmosphere
             {
                 loaded = false;
             }
+#endif
 
             if (!loaded)
                 GenerateEmergencyMockWeather();
@@ -802,6 +844,9 @@ namespace Hecton8.Atmosphere
 
         private bool TryLoadLegacyWeatherFile(string relativePath)
         {
+#if !UNITY_EDITOR
+            return false;
+#else
             string root = ResolveProjectRoot();
             if (string.IsNullOrEmpty(root))
                 return false;
@@ -845,6 +890,7 @@ namespace Hecton8.Atmosphere
             EnsureWeatherDefaultsFromWaves();
             _waveParameterPayloadDirty = true;
             return true;
+#endif
         }
 
         private void GenerateEmergencyMockWeather()
@@ -946,7 +992,6 @@ namespace Hecton8.Atmosphere
                 {
                     _waveParameterPayloadDirty = true;
                     RefreshCachedSurfaceSnapshot();
-                    UploadWaveBufferToGpu(false);
                 }
                 return changed;
             }
@@ -961,6 +1006,7 @@ namespace Hecton8.Atmosphere
 #endif
         }
 
+#if UNITY_EDITOR
         private bool TryLoadBeaufortProfilesCsv(string root, NativeArray<byte> scratch)
         {
             if (string.IsNullOrEmpty(root) ||
@@ -992,7 +1038,9 @@ namespace Hecton8.Atmosphere
                 return false;
             }
         }
+#endif
 
+#if UNITY_EDITOR
         private int ReadStreamToScratch(FileStream stream, NativeArray<byte> scratch, int maxBytes)
         {
             if (!scratch.IsCreated || maxBytes <= 0)
@@ -1033,6 +1081,7 @@ namespace Hecton8.Atmosphere
                    ((value & 0x00FF0000u) >> 8) |
                    ((value & 0xFF000000u) >> 24);
         }
+#endif
 
         private void ScheduleWaveParameterKernel()
         {
@@ -1538,7 +1587,7 @@ namespace Hecton8.Atmosphere
                 signal.Frame = _simulationFrameCounter;
                 signal.IsAboveSurface = aboveSurface ? (byte)1 : (byte)0;
                 signal.Flags = math.all(math.isfinite(normal)) ? (byte)1 : (byte)2;
-                SignalBus<WaterlineBreachSignal>.Push(in signal);
+                SignalBus<WaterlineBreachSignal>.TryPush(in signal);
                 _lastCameraAboveSurface = aboveSurface;
                 _hasCameraState = true;
             }
@@ -1583,7 +1632,6 @@ namespace Hecton8.Atmosphere
             dto.PlanetParams.z = math.max(dto.PlanetParams.z, 1.4f);
             atmosphere[0] = dto;
             RefreshCachedSurfaceSnapshot();
-            UploadWaveBufferToGpu(false);
         }
 
         private bool HasSeedShipNarrativeSignal()
@@ -1739,6 +1787,7 @@ namespace Hecton8.Atmosphere
             if (_lastPublishedShaderStateHash == shaderStateHash)
             {
                 UploadWaveBufferToGpu(false);
+                BindWaveBufferShaderGlobal();
                 return;
             }
 
@@ -1761,11 +1810,12 @@ namespace Hecton8.Atmosphere
             Shader.SetGlobalVector(H8GlobalFlowId, flowVector);
 
             UploadWaveBufferToGpu(false);
+            BindWaveBufferShaderGlobal();
         }
 
-        private static double3 ResolveCameraAupDouble()
+        private double3 ResolveCameraAupDouble()
         {
-            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = _playerRuntimeContext;
             if (player != null)
             {
                 if (player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
@@ -1783,7 +1833,7 @@ namespace Hecton8.Atmosphere
                 }
             }
 
-            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            Hecton8.World.AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return originAup.IsFinite() ? originAup.ToAbsoluteDouble3() : double3.zero;
         }
 
@@ -1794,7 +1844,7 @@ namespace Hecton8.Atmosphere
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            Hecton8.World.AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1827,12 +1877,17 @@ namespace Hecton8.Atmosphere
 
             GraphicsBuffer target = _waveGraphicsBufferWriteIndex == 0 ? _waveGraphicsBufferA : _waveGraphicsBufferB;
             GraphicsBufferUploadUtility.UploadNativeArray(target, waves, count);
-            Shader.SetGlobalBuffer(OceanWaveBufferId, target);
             _activeWaveGraphicsBuffer = target;
             _waveGraphicsBufferWriteIndex ^= 1;
             _lastUploadedWaveCount = count;
             _lastUploadedWaveHash = waveHash;
             _waveParameterPayloadDirty = false;
+        }
+
+        private void BindWaveBufferShaderGlobal()
+        {
+            if (_activeWaveGraphicsBuffer != null)
+                Shader.SetGlobalBuffer(OceanWaveBufferId, _activeWaveGraphicsBuffer);
         }
 
         private bool EnsureWaveGraphicsBuffers()
@@ -1948,6 +2003,7 @@ namespace Hecton8.Atmosphere
                    telemetry.Length > 0;
         }
 
+#if UNITY_EDITOR
         private bool ResolveCsvScratch(out NativeArray<byte> scratch)
         {
             scratch = default;
@@ -1957,6 +2013,7 @@ namespace Hecton8.Atmosphere
                    scratch.IsCreated &&
                    scratch.Length > 0;
         }
+#endif
 
         private bool ResolveLodArray(out NativeArray<OceanSurfaceLodDTO> lod)
         {
@@ -2090,13 +2147,108 @@ namespace Hecton8.Atmosphere
 
         private void ResolveCameraTransformCold()
         {
-            if (cameraTransform != null)
+            if (cameraTransform != null && !_cameraTransformResolvedFromPlayer)
                 return;
 
-            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = _playerRuntimeContext;
             Camera camera = player != null ? player.PlayerCamera : null;
             if (camera != null)
+            {
                 cameraTransform = camera.transform;
+                _cameraTransformResolvedFromPlayer = true;
+            }
+            else if (_cameraTransformResolvedFromPlayer)
+            {
+                cameraTransform = null;
+                _cameraTransformResolvedFromPlayer = false;
+            }
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
+        }
+
+        private void ClearRuntimePlayerContext()
+        {
+            _playerRuntimeContext = null;
+            if (_cameraTransformResolvedFromPlayer)
+            {
+                cameraTransform = null;
+                _cameraTransformResolvedFromPlayer = false;
+            }
+        }
+
+        private void CacheDataVaultCold(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            _vault = vault;
+            _vaultBuffersReady = false;
+            _waveHandle = default;
+            _atmosphereHandle = default;
+            _weatherHandle = default;
+            _telemetryHandle = default;
+#if UNITY_EDITOR
+            _csvScratchHandle = default;
+#endif
+            _dumpScratchHandle = default;
+            _lodHandle = default;
+            _readbackQueryHandle = default;
+            _readbackResultHandle = default;
+            _readbackCompletedQueryHandle = default;
+            _readbackRingQueryHandle = default;
+            _beaufortProfileHandle = default;
+            _surfaceSwellHandle = default;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    ResolveCameraTransformCold();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    CompleteWaveParameterKernelForShutdown();
+                    CacheDataVaultCold(currentService as IDataVault);
+                    EnsureVaultBuffersCold();
+                    RefreshCachedSurfaceSnapshot();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                    {
+                        if (!_registeredUpdate)
+                            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+                        if (!_registeredSlow)
+                            _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+                        if (!_registeredLate)
+                            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                    }
+                    break;
+            }
         }
 
         private static Vector4 ToVector4(float4 value)

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_011
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_011_wall_01_4x3_c_trimsheet_normal_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\wall_01_4x3_c_trimsheet_normal_Normal.png
+FINAL_FILENAME: wall_01_4x3_c_trimsheet_normal_Normal.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Create a normal-map height source for a large 4x3 meter habitat wall trim sheet. Build layered pressure-wall relief: broad base-wall bevels, recessed horizontal service troughs, graphite gasket channels, long mounting rail grooves, low-profile handhold recesses, thin satin titanium frame steps, access cover screw wells, and pass-through collar outlines. Do not make a square panel grid. Leave smooth plate fields between details so the surface feels premium and architectural, with room for separate wall instruments and cable trays. Avoid clutter, jagged scratches, crushed panels, or distressed ruin language. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

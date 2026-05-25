@@ -17,7 +17,9 @@ namespace Hecton8.Animation.KineticCharacter
         public const int IkTargetCount = 4;
         public const int TelemetryCapacity = 300;
         public const int TuningCapacity = 1;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 8192;
+#endif
         public const int ProceduralBoneBytes = 64;
         public const int ProceduralIkTargetBytes = 32;
         public const int RigBytes = 192;
@@ -72,7 +74,9 @@ namespace Hecton8.Animation.KineticCharacter
         public const BufferID TelemetryRing = (BufferID)13671368;
         public const BufferID TelemetryCursor = (BufferID)13671369;
         public const BufferID Tuning = (BufferID)13671370;
+#if UNITY_EDITOR
         public const BufferID CsvScratch = (BufferID)13671371;
+#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = KineticCharacterAnimatorConstants.ProceduralBoneBytes)]
@@ -189,7 +193,7 @@ namespace Hecton8.Animation.KineticCharacter
         [FieldOffset(16)] public float IkToleranceMeters;
         [FieldOffset(20)] public float GlobalQualityWeight;
         [FieldOffset(24)] public int MinimumIkIterations;
-        [FieldOffset(28)] public int UltraIkIterations;
+        [FieldOffset(28)] public int MaximumIkIterations;
         [FieldOffset(32)] public float ArmReachScale;
         [FieldOffset(36)] public float LegReachScale;
         [FieldOffset(40)] public float WallBraceDistanceMeters;
@@ -222,7 +226,7 @@ namespace Hecton8.Animation.KineticCharacter
             value.IkToleranceMeters = 0.008f;
             value.GlobalQualityWeight = 1f;
             value.MinimumIkIterations = 1;
-            value.UltraIkIterations = 6;
+            value.MaximumIkIterations = 6;
             value.ArmReachScale = 1f;
             value.LegReachScale = 1f;
             value.WallBraceDistanceMeters = 0.72f;
@@ -304,7 +308,7 @@ namespace Hecton8.Animation.KineticCharacter
             tuning.IkToleranceMeters = math.clamp(PositiveFinite(tuning.IkToleranceMeters, 0.008f), 0.0005f, 0.08f);
             tuning.GlobalQualityWeight = UnitFinite(tuning.GlobalQualityWeight, 1f);
             tuning.MinimumIkIterations = math.clamp(tuning.MinimumIkIterations <= 0 ? 1 : tuning.MinimumIkIterations, 1, 6);
-            tuning.UltraIkIterations = math.clamp(tuning.UltraIkIterations <= 0 ? 6 : tuning.UltraIkIterations, tuning.MinimumIkIterations, 8);
+            tuning.MaximumIkIterations = math.clamp(tuning.MaximumIkIterations <= 0 ? 6 : tuning.MaximumIkIterations, tuning.MinimumIkIterations, 8);
             tuning.ArmReachScale = math.clamp(PositiveFinite(tuning.ArmReachScale, 1f), 0.5f, 1.5f);
             tuning.LegReachScale = math.clamp(PositiveFinite(tuning.LegReachScale, 1f), 0.5f, 1.5f);
             tuning.WallBraceDistanceMeters = math.clamp(PositiveFinite(tuning.WallBraceDistanceMeters, 0.72f), 0.05f, 2f);
@@ -401,6 +405,17 @@ namespace Hecton8.Animation.KineticCharacter
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion FastSmallAngleRotation(float3 axis, float radians)
+        {
+            float safeRadians = math.select(0f, radians, math.isfinite(radians));
+            float half = safeRadians * 0.5f;
+            float3 safeAxis = NormalizeSafe(axis, Float3(0f, 0f, 1f));
+            quaternion rotation = default;
+            rotation.value = new float4(safeAxis * half, math.max(0f, 1f - (half * half * 0.5f)));
+            return SanitizeRotation(rotation);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsFinite(float4x4 matrix)
         {
             return math.all(math.isfinite(matrix.c0)) &&
@@ -452,6 +467,7 @@ namespace Hecton8.Animation.KineticCharacter
         }
     }
 
+#if UNITY_EDITOR
     public static class KineticCharacterRigCsvParser
     {
         private const uint HashLocomotionFrequencyHz = 0x708E81BCu;
@@ -461,7 +477,8 @@ namespace Hecton8.Animation.KineticCharacter
         private const uint HashIkToleranceMeters = 0x321B9586u;
         private const uint HashGlobalQualityWeight = 0xC74CE627u;
         private const uint HashMinimumIkIterations = 0xB9166753u;
-        private const uint HashUltraIkIterations = 0xCAC6A4B5u;
+        private const uint HashMaximumIkIterations = 0x1E2FDF49u;
+        private const uint HashLegacyMaximumIkIterations = 0xCAC6A4B5u;
         private const uint HashWallBraceDistanceMeters = 0xDEEC8EC1u;
         private const uint HashToolAlignmentWeight = 0xC2C4D9F0u;
         private const uint HashDamageFlinchRadians = 0xBA8F2E44u;
@@ -558,8 +575,9 @@ namespace Hecton8.Animation.KineticCharacter
                 case HashMinimumIkIterations:
                     tuning.MinimumIkIterations = (int)math.round(value);
                     return true;
-                case HashUltraIkIterations:
-                    tuning.UltraIkIterations = (int)math.round(value);
+                case HashMaximumIkIterations:
+                case HashLegacyMaximumIkIterations:
+                    tuning.MaximumIkIterations = (int)math.round(value);
                     return true;
                 case HashWallBraceDistanceMeters:
                     tuning.WallBraceDistanceMeters = value;
@@ -829,6 +847,8 @@ namespace Hecton8.Animation.KineticCharacter
             return c == (byte)' ' || c == (byte)'\t';
         }
     }
+
+#endif
 
     public static class KineticCharacterBlackBox
     {

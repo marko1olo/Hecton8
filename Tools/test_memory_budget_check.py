@@ -39,7 +39,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             ("Assets/ScifiFacility/Textures/Text_01.psd", (1024, 1024, "PSD_4CH")),
             ("Assets/Bakery/ftUnitySpotTexture.bmp", (128, 128, "RGB")),
             ("Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/PolyLineTex.tif", (1, 8, "TIFF")),
-            ("Packages/com.waveharmonic.crest/Shared/Textures/Skybox.hdr", (2048, 1024, "HDR")),
+            ("Assets/ScifiFacility/Textures/sky_hdr.hdr", (2048, 1024, "HDR")),
             ("Assets/_Project/Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr", (768, 128, "EXR")),
             ("Data/Visuals/Biolum_Waveforms.gif", (960, 720, "GIF")),
         ]

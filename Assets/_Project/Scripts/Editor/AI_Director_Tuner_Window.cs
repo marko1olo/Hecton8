@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.AI;
 using Unity.Mathematics;
 using UnityEditor;
@@ -99,7 +100,7 @@ namespace Hecton8.EditorTools
                 _status.text = "Frame " + entry.Frame +
                                " | candidates " + entry.CandidateCount +
                                " | owned " + entry.OwnedSlotCount +
-                               " | us " + entry.ChainMicroseconds.ToString("0.0");
+                               " | us " + entry.ChainMicroseconds.ToString("0.0", CultureInfo.InvariantCulture);
             }
             else
             {

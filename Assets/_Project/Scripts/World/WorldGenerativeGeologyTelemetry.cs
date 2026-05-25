@@ -23,81 +23,122 @@ namespace Hecton8.World
         private const uint TerrainSeamTelemetryContextHash = 0x54534D43u;
         private const float BuildDataTelemetryThresholdMs = 4f;
 
+        [System.Obsolete("Use TryPublishVoxelQueuePressureIfNeeded(int,ref int) so telemetry suppression is visible.", true)]
         internal static void PublishVoxelQueuePressureIfNeeded(int queuedLaunchCount, ref int nextTelemetryFrame)
         {
+            TryPublishVoxelQueuePressureIfNeeded(queuedLaunchCount, ref nextTelemetryFrame);
+        }
+
+        internal static bool TryPublishVoxelQueuePressureIfNeeded(int queuedLaunchCount, ref int nextTelemetryFrame)
+        {
             if (!Application.isPlaying || queuedLaunchCount < QueuedLaunchTelemetryThreshold)
-                return;
+                return false;
 
             int frame = Time.frameCount;
             if (frame < nextTelemetryFrame)
-                return;
+                return false;
 
             nextTelemetryFrame = frame + VoxelQueueTelemetryFrameInterval;
             GlobalTelemetryBus.PublishPerformanceWarning(
                 QueuePressureWarningHash,
                 VoxelBridgeTelemetryContextHash,
                 queuedLaunchCount);
+            return true;
         }
 
+        [System.Obsolete("Use TryPublishVoxelBuildDataBudgetIfNeeded(float) so telemetry suppression is visible.", true)]
         internal static void PublishVoxelBuildDataBudgetIfNeeded(float buildDataMs)
         {
+            TryPublishVoxelBuildDataBudgetIfNeeded(buildDataMs);
+        }
+
+        internal static bool TryPublishVoxelBuildDataBudgetIfNeeded(float buildDataMs)
+        {
             if (!Application.isPlaying || buildDataMs < BuildDataTelemetryThresholdMs)
-                return;
+                return false;
 
             GlobalTelemetryBus.PublishPerformanceWarning(
                 BuildDataBudgetWarningHash,
                 VoxelBridgeTelemetryContextHash,
                 buildDataMs);
+            return true;
         }
 
+        [System.Obsolete("Use TryPublishVoxelFaultIfNeeded(uint,float,ref int) so telemetry suppression is visible.", true)]
         internal static void PublishVoxelFaultIfNeeded(uint warningHash, float scalarValue, ref int nextTelemetryFrame)
         {
+            TryPublishVoxelFaultIfNeeded(warningHash, scalarValue, ref nextTelemetryFrame);
+        }
+
+        internal static bool TryPublishVoxelFaultIfNeeded(uint warningHash, float scalarValue, ref int nextTelemetryFrame)
+        {
             if (!Application.isPlaying)
-                return;
+                return false;
 
             int frame = Time.frameCount;
             if (frame < nextTelemetryFrame)
-                return;
+                return false;
 
             nextTelemetryFrame = frame + VoxelFaultTelemetryFrameInterval;
             GlobalTelemetryBus.PublishPerformanceWarning(
                 warningHash,
                 VoxelBridgeTelemetryContextHash,
                 scalarValue);
+            return true;
         }
 
+        [System.Obsolete("Use TryPublishTerrainPatchBridgeWarningIfNeeded(int,int,ref int) so telemetry suppression is visible.", true)]
         internal static void PublishTerrainPatchBridgeWarningIfNeeded(
             int patchSampleCount,
             int patchSampleBudget,
             ref int nextTelemetryFrame)
         {
+            TryPublishTerrainPatchBridgeWarningIfNeeded(patchSampleCount, patchSampleBudget, ref nextTelemetryFrame);
+        }
+
+        internal static bool TryPublishTerrainPatchBridgeWarningIfNeeded(
+            int patchSampleCount,
+            int patchSampleBudget,
+            ref int nextTelemetryFrame)
+        {
             if (!Application.isPlaying || patchSampleCount <= patchSampleBudget)
-                return;
+                return false;
 
             int frame = Time.frameCount;
             if (frame < nextTelemetryFrame)
-                return;
+                return false;
 
             nextTelemetryFrame = frame + TerrainPatchTelemetryFrameInterval;
             GlobalTelemetryBus.PublishPerformanceWarning(
                 TerrainPatchBridgeWarningHash,
                 TerrainSeamTelemetryContextHash,
                 patchSampleCount);
+            return true;
         }
 
+        [System.Obsolete("Use TryPublishTerrainSeamsBlended(int,int,bool) so telemetry suppression is visible.", true)]
         internal static void PublishTerrainSeamsBlended(
             int patchSampleCount,
             int planCount,
             bool lowTierVisualOnly)
         {
+            TryPublishTerrainSeamsBlended(patchSampleCount, planCount, lowTierVisualOnly);
+        }
+
+        internal static bool TryPublishTerrainSeamsBlended(
+            int patchSampleCount,
+            int planCount,
+            bool lowTierVisualOnly)
+        {
             if (!Application.isPlaying)
-                return;
+                return false;
 
             float packed = patchSampleCount + planCount * 0.001f + (lowTierVisualOnly ? 0.0005f : 0f);
             GlobalTelemetryBus.PublishPerformanceWarning(
                 TerrainSeamsBlendedHash,
                 TerrainSeamTelemetryContextHash,
                 packed);
+            return true;
         }
     }
 }

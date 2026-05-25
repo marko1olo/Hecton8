@@ -11,7 +11,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CurrentVolume))]
     [AddComponentMenu("Hecton/Physics/Thermal Updraft Volume")]
-    public sealed class ThermalUpdraftVolume : MonoBehaviour, ISlowTickable
+    public sealed class ThermalUpdraftVolume : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         [Header("Flow")]
         [Tooltip("Upward force stamped into the backing CurrentVolume.")]
@@ -42,19 +42,33 @@ namespace Hecton8.Physics
         {
             ApplyPreset();
             UpdateHazardRegistration();
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegisterToTick();
         }
 
         private void OnDisable()
         {
             TryUnregisterFromTick();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             HectonHazardManager.Unregister(_hazardSourceId);
         }
 
         private void OnDestroy()
         {
             TryUnregisterFromTick();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             HectonHazardManager.Unregister(_hazardSourceId);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegisterToTick();
         }
 
         public void SlowTick()
@@ -104,8 +118,7 @@ namespace Hecton8.Physics
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFromTick()

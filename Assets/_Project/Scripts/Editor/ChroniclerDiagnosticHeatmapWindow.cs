@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -347,7 +348,7 @@ namespace Hecton8.Editor
                 return;
 
             float quality = ResolveGlobalQualityWeight01();
-            _summaryLabel.text = "CHRONICLER CORE TELEMETRY | Q " + quality.ToString("0.000");
+            _summaryLabel.text = "CHRONICLER CORE TELEMETRY | Q " + quality.ToString("0.000", CultureInfo.InvariantCulture);
             ApplyMemoryUi();
             ApplySignalUi();
             ApplyDispatcherUi();
@@ -369,7 +370,7 @@ namespace Hecton8.Editor
             _memoryLabel.text =
                 "alloc " + FormatBytes(vault.AllocatedBytes) +
                 " / " + FormatBytes(vault.ArenaBytes) +
-                " | fragmentation " + (math.saturate(vault.HeapFragmentationRatio) * 100f).ToString("0.0") + "%" +
+                " | fragmentation " + (math.saturate(vault.HeapFragmentationRatio) * 100f).ToString("0.0", CultureInfo.InvariantCulture) + "%" +
                 " | mutation 0x" + vault.ActiveMutationGuardMask.ToString("X16");
             _memoryStrip.SetSamples(_memoryPressure, _memoryFaults, StripSampleCapacity);
         }
@@ -412,9 +413,9 @@ namespace Hecton8.Editor
                     "frame " + state.CurrentFrame +
                     " | systems " + state.SortedSystemCount +
                     " | pending jobs " + state.PendingSimulationJobCount +
-                    " | sim/fixed/AUP " + fence.SimulationWaitMs.ToString("0.00") +
-                    "/" + fence.FixedWaitMs.ToString("0.00") +
-                    "/" + fence.AupHardFenceMs.ToString("0.00") + " ms" +
+                    " | sim/fixed/AUP " + fence.SimulationWaitMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                    "/" + fence.FixedWaitMs.ToString("0.00", CultureInfo.InvariantCulture) +
+                    "/" + fence.AupHardFenceMs.ToString("0.00", CultureInfo.InvariantCulture) + " ms" +
                     " | P/A/N handles 0x" + fence.PhysicsHandleBits.ToString("X4") +
                     "/0x" + fence.AudioHandleBits.ToString("X4") +
                     "/0x" + fence.NetcodeHandleBits.ToString("X4");
@@ -499,7 +500,7 @@ namespace Hecton8.Editor
                 label.style.display = DisplayStyle.Flex;
                 label.text =
                     "event 0x" + entry.EventHash.ToString("X8") +
-                    " | scalar " + entry.ScalarValue.ToString("0.000") +
+                    " | scalar " + entry.ScalarValue.ToString("0.000", CultureInfo.InvariantCulture) +
                     " | entity " + entry.EntityId;
             }
         }
@@ -536,11 +537,11 @@ namespace Hecton8.Editor
         private static string FormatBytes(long bytes)
         {
             if (bytes >= 1024L * 1024L * 1024L)
-                return (bytes / (1024f * 1024f * 1024f)).ToString("0.00") + " GiB";
+                return (bytes / (1024f * 1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture) + " GiB";
             if (bytes >= 1024L * 1024L)
-                return (bytes / (1024f * 1024f)).ToString("0.0") + " MiB";
+                return (bytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture) + " MiB";
             if (bytes >= 1024L)
-                return (bytes / 1024f).ToString("0.0") + " KiB";
+                return (bytes / 1024f).ToString("0.0", CultureInfo.InvariantCulture) + " KiB";
             return bytes + " B";
         }
 

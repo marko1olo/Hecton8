@@ -3,7 +3,6 @@
     "rootNamespace": "Hecton8.Cartography.Editor",
     "references": [
         "Hecton8.Core",
-        "Hecton8.Cartography",
         "Unity.Mathematics"
     ],
     "includePlatforms": [
@@ -11,8 +10,13 @@
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],

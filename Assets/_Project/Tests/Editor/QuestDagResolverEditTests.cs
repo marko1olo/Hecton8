@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
@@ -199,7 +200,7 @@ namespace Hecton8.Tests.Editor
                 buffers.TelemetryRing[1] = new QuestDagTelemetryEntry { Frame = 11u, StateHash = 0x11u };
                 buffers.TelemetryCursor[0] = 1;
 
-                string path = Path.Combine(Path.GetTempPath(), "QuestDagDumpTest_" + Guid.NewGuid().ToString("N") + ".bin");
+                string path = Path.Combine(Path.GetTempPath(), "QuestDagDumpTest_" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture) + ".bin");
                 try
                 {
                     QuestDagTelemetryDump.Write(path, buffers.TelemetryRing, buffers.TelemetryCursor[0]);

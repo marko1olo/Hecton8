@@ -95,9 +95,13 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(handleSonarPingSent, "Raycast", "Sonar ghost echo generation has no raycast call", builder, ref failureCount);
                 AssertContains(renderSonarBlock, "tap.LeftPanDeltaGain", "Sonar ghost echo stereo panning uses precomputed hash pan gains", builder, ref failureCount);
 
-                AssertContains(renderer, "HullGroanLoopPitchMinimum = 0.8f", "Hull stress loop minimum pitch is 0.8", builder, ref failureCount);
-                AssertContains(renderer, "HullGroanLoopPitchMaximum = 1.2f", "Hull stress loop maximum pitch is 1.2", builder, ref failureCount);
-                AssertContains(renderer, "UpdateHullGroanLoop(true, math.saturate", "Hull continuous groan is driven by authored 2D loop", builder, ref failureCount);
+                AssertContains(renderer, "RenderStructuralGranularVoices(", "Hull stress is rendered through structural granular voices", builder, ref failureCount);
+                AssertContains(renderer, "PlayerCriticalMetallicGrainBank.Generate", "Metal stress grain bank is deterministic procedural PCM", builder, ref failureCount);
+                AssertNotContains(renderer, "AudioClip", "Critical renderer has no managed AudioClip fields", builder, ref failureCount);
+                AssertNotContains(renderer, "PlayAtPoint(", "Critical renderer has no managed PlayAtPoint fallback", builder, ref failureCount);
+                AssertNotContains(renderer, "metalStressGrainClip", "Renderer has no managed metal-stress AudioClip source", builder, ref failureCount);
+                AssertNotContains(renderer, "TryLoadMetalStressGrainClip", "Renderer has no managed AudioClip.GetData metal-stress importer", builder, ref failureCount);
+                AssertNotContains(renderer, "UpdateHullGroanLoop", "Renderer has no residual authored hull-groan loop hook", builder, ref failureCount);
                 AssertNotContains(renderHullStressBlock, "CarrierAPhase", "Hull DSP block has no FM carrier A chain", builder, ref failureCount);
                 AssertNotContains(renderHullStressBlock, "ModulatorAPhase", "Hull DSP block has no FM modulator A chain", builder, ref failureCount);
                 AssertNotContains(renderHullStressBlock, "lowCarrierFm", "Hull DSP block has no low-carrier FM branch", builder, ref failureCount);

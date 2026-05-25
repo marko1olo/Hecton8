@@ -192,7 +192,9 @@ namespace Hecton8.Crafting
         public const int TelemetryFrameCount = 300;
         public const int MockFabricationJobCount = 50;
         public const int TimingLookupCapacity = 256;
+#if UNITY_EDITOR
         public const int CsvScratchByteCapacity = 65536;
+#endif
         public const uint SystemHash = 0x53483142u; // SH1B
 
         private const SystemID OwnerSystemId = SystemID.Construction;
@@ -221,7 +223,9 @@ namespace Hecton8.Crafting
         private VaultGenerationHandle<FabricationTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<FabricationTuningDTO> _tuningHandle;
         private VaultGenerationHandle<FabricationTimingDTO> _timingHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityHandle;
 
         private GraphicsBuffer _gpuPayloadBufferA;
@@ -657,6 +661,7 @@ namespace Hecton8.Crafting
             }
         }
 
+#if UNITY_EDITOR
         public static unsafe bool TryIngestFabricationTimingsCsv(string absolutePath, out int parsedRows)
         {
             parsedRows = 0;
@@ -715,6 +720,7 @@ namespace Hecton8.Crafting
                 vault.ReleaseWriteLock(in runtime._csvScratchHandle, OwnerSystemId);
             }
         }
+#endif
 
         private FabricationAssemblerRuntime()
         {
@@ -889,7 +895,9 @@ namespace Hecton8.Crafting
             ReleaseOwnedHandle(vault, ref _telemetryHandle);
             ReleaseOwnedHandle(vault, ref _tuningHandle);
             ReleaseOwnedHandle(vault, ref _timingHandle);
+#if UNITY_EDITOR
             ReleaseOwnedHandle(vault, ref _csvScratchHandle);
+#endif
             _scalabilityHandle = default;
             _vaultInitialized = false;
         }
@@ -933,13 +941,15 @@ namespace Hecton8.Crafting
             if (vault == null)
                 return false;
 
-            _jobsHandle = vault.GetGenerationHandle<FabricationJobDTO>(BufferID.ShinobuFabricationJobs, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _runtimeHandle = vault.GetGenerationHandle<FabricationRuntimeDTO>(BufferID.ShinobuFabricationRuntime, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _gpuPayloadHandle = vault.GetGenerationHandle<FabricationGpuPayloadDTO>(BufferID.ShinobuFabricationGpuPayload, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetGenerationHandle<FabricationTelemetryEntry>(BufferID.ShinobuFabricationTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetGenerationHandle<FabricationTuningDTO>(BufferID.ShinobuFabricationTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _timingHandle = vault.GetGenerationHandle<FabricationTimingDTO>(BufferID.ShinobuFabricationTimingLookup, TimingLookupCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuFabricationCsvScratch, CsvScratchByteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _jobsHandle = vault.EnsureGenerationHandle<FabricationJobDTO>(BufferID.ShinobuFabricationJobs, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _runtimeHandle = vault.EnsureGenerationHandle<FabricationRuntimeDTO>(BufferID.ShinobuFabricationRuntime, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _gpuPayloadHandle = vault.EnsureGenerationHandle<FabricationGpuPayloadDTO>(BufferID.ShinobuFabricationGpuPayload, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _telemetryHandle = vault.EnsureGenerationHandle<FabricationTelemetryEntry>(BufferID.ShinobuFabricationTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = vault.EnsureGenerationHandle<FabricationTuningDTO>(BufferID.ShinobuFabricationTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _timingHandle = vault.EnsureGenerationHandle<FabricationTimingDTO>(BufferID.ShinobuFabricationTimingLookup, TimingLookupCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+#if UNITY_EDITOR
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuFabricationCsvScratch, CsvScratchByteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+#endif
             if (vault.TryGetGenerationHandle(BufferID.ShinobuScalabilityState, out VaultGenerationHandle<ScalabilityStateDTO> scalability))
                 _scalabilityHandle = scalability;
 
@@ -948,11 +958,15 @@ namespace Hecton8.Crafting
                 !TryOpenArray(in _gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> payloads) ||
                 !TryOpenArray(in _telemetryHandle, TelemetryFrameCount, out NativeArray<FabricationTelemetryEntry> telemetry) ||
                 !TryOpenArray(in _tuningHandle, 1, out NativeArray<FabricationTuningDTO> tuning) ||
-                !TryOpenArray(in _timingHandle, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> timings) ||
-                !TryOpenArray(in _csvScratchHandle, CsvScratchByteCapacity, out _))
+                !TryOpenArray(in _timingHandle, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> timings))
             {
                 return false;
             }
+
+#if UNITY_EDITOR
+            if (!TryOpenArray(in _csvScratchHandle, CsvScratchByteCapacity, out _))
+                return false;
+#endif
 
             // COLD SYNC JOB: first-use Vault sanitation before dispatcher systems can read fabrication slots.
             ClearFabricationJobsJob clearJob = new ClearFabricationJobsJob
@@ -1024,8 +1038,11 @@ namespace Hecton8.Crafting
                 Frame = context.Frame,
                 GlobalQualityWeight = _lastQualityWeight,
                 FabricationCompletedSignalWriter = SignalBus<FabricationCompletedSignal>.ParallelWriter,
+                FabricationCompletedSignalWriterBudget = SignalBus<FabricationCompletedSignal>.ParallelWriterBudget,
                 FabricationTickSignalWriter = SignalBus<FabricationTickSignal>.ParallelWriter,
-                DeconstructResultWriter = GlobalSignals.DeconstructResultSignalWriter
+                FabricationTickSignalWriterBudget = SignalBus<FabricationTickSignal>.ParallelWriterBudget,
+                DeconstructResultWriter = SignalBus<DeconstructResultSignal>.ParallelWriter,
+                DeconstructResultWriterBudget = SignalBus<DeconstructResultSignal>.ParallelWriterBudget
             }.Schedule(progressHandle);
 
             H8Memory.RegisterActiveJob(OwnerSystemId, signalHandle);
@@ -1176,7 +1193,7 @@ namespace Hecton8.Crafting
             SignalBus<FabricationCompletedSignal>.EnsureInitialized();
             SignalBus<FabricationTickSignal>.Configure(128, maxFrameSignals: 128, lowTierFrameSignals: 24, laneHash: FabricationTickLaneHash);
             SignalBus<FabricationTickSignal>.EnsureInitialized();
-            GlobalSignals.InitializeAllQueues();
+            SignalCorridorRuntime.EnsureInitialized();
         }
 
         private void DumpTelemetry(IDataVault vault, NativeArray<FabricationTelemetryEntry> telemetry, uint reasonFlags)
@@ -1307,6 +1324,7 @@ namespace Hecton8.Crafting
             };
         }
 
+#if UNITY_EDITOR
         private static bool ParseTimingCsv(
             NativeArray<byte> bytes,
             int length,
@@ -1438,6 +1456,7 @@ namespace Hecton8.Crafting
                     break;
             }
         }
+#endif
 
         private static FabricationGpuPayloadDTO CreateGpuPayload(
             float minY,
@@ -1512,18 +1531,16 @@ namespace Hecton8.Crafting
         private static int ResolveVisualUploadCount(int activeCount, float quality)
         {
             float q = math.saturate(math.isfinite(quality) ? quality : 1f);
-            float activeQualityGate = math.step(0.0001f, q);
             float curved = q * q * (3f - (2f * q));
-            int budget = (int)math.round(math.lerp(1f, math.lerp(16f, MaxFabricationJobs, curved), activeQualityGate));
+            int budget = (int)math.round(math.lerp(1f, MaxFabricationJobs, curved));
             return math.clamp(math.max(1, activeCount), 1, math.max(1, budget));
         }
 
         private static int ResolveVisualUploadStride(float quality)
         {
             float q = math.saturate(math.isfinite(quality) ? quality : 1f);
-            float activeQualityGate = math.step(0.0001f, q);
             float curved = q * q * (3f - (2f * q));
-            float stride = math.lerp(60f, math.lerp(12f, 1f, curved), activeQualityGate);
+            float stride = math.lerp(60f, 1f, curved);
             return math.clamp((int)math.round(stride), 1, 60);
         }
 
@@ -1846,6 +1863,7 @@ namespace Hecton8.Crafting
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The job is scheduled once from the dispatcher SIMULATION phase and its returned handle is registered through H8Memory before any lane drain can consume the writer output.
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationCompletedSignal>.ParallelWriter FabricationCompletedSignalWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> FabricationCompletedSignalWriterBudget;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // Tick signal writes are producer-only and do not read queue state; Unity's container safety cannot see the dispatcher-owned consumer phase.
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
@@ -1853,6 +1871,7 @@ namespace Hecton8.Crafting
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Signal consumption is phase-separated after the combined simulation handle; this field has no second producer in EmitFabricationSignalsJob.
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationTickSignal>.ParallelWriter FabricationTickSignalWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> FabricationTickSignalWriterBudget;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // Deconstruct results are emitted through the legacy GlobalSignals bridge; the safety restriction is limited to write-only enqueue.
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
@@ -1860,6 +1879,7 @@ namespace Hecton8.Crafting
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The returned signalHandle chains after progressHandle and is registered with H8Memory; the late-frame bridge drains only after dispatcher fence resolution.
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<DeconstructResultSignal>.ParallelWriter DeconstructResultWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> DeconstructResultWriterBudget;
         public uint Frame;
         public float GlobalQualityWeight;
 
@@ -1915,7 +1935,7 @@ namespace Hecton8.Crafting
 
             if (deconstruct)
             {
-                DeconstructResultWriter.Enqueue(new DeconstructResultSignal
+                SignalBus<DeconstructResultSignal>.TryEnqueueBounded(DeconstructResultWriter, DeconstructResultWriterBudget, new DeconstructResultSignal
                 {
                     TargetAup = FabricationAssemblerRuntime.ToAbsoluteUniversePosition(job.TargetAUP),
                     TargetEntityId = job.TargetPrefabHash,
@@ -1928,7 +1948,7 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            FabricationCompletedSignalWriter.Enqueue(new FabricationCompletedSignal
+            SignalBus<FabricationCompletedSignal>.TryEnqueueBounded(FabricationCompletedSignalWriter, FabricationCompletedSignalWriterBudget, new FabricationCompletedSignal
             {
                 TargetAUP = job.TargetAUP,
                 TargetPrefabHash = job.TargetPrefabHash,
@@ -1953,7 +1973,7 @@ namespace Hecton8.Crafting
             if (!math.all(math.isfinite(job.TargetAUP)))
                 return;
 
-            FabricationTickSignalWriter.Enqueue(new FabricationTickSignal
+            SignalBus<FabricationTickSignal>.TryEnqueueBounded(FabricationTickSignalWriter, FabricationTickSignalWriterBudget, new FabricationTickSignal
             {
                 TargetAUP = job.TargetAUP,
                 Progress01 = progress01,

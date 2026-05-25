@@ -1,4 +1,4 @@
-# Economy Matrix v1
+﻿# Economy Matrix v1
 
 Date: 2026-05-14
 Status: ECONOMY BALANCED by `Tools/EconomyValidator.py`; literal 30 kW energy pacing and runtime Unity proof remain PENDING VERIFICATION.

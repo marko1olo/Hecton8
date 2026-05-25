@@ -29,7 +29,8 @@ namespace Hecton8.Power.Generators
         IPoolable,
         ISaveable,
         IRtgDecayOutputReader,
-        IRadioisotopeThermalReprocessable
+        IRadioisotopeThermalReprocessable,
+        IGlobalRegistryHotSwapListener
     {
         private const int MaxRtgs = 128;
         private const int TelemetryCapacity = 300;
@@ -98,6 +99,8 @@ namespace Hecton8.Power.Generators
         private bool _registeredCold;
         private bool _registeredLate;
         private bool _registeredSave;
+        private bool _registeredHotSwapListener;
+        private ISaveService _saveService;
 
         public int SavePriority => 53;
         public int LoadPriority => 53;
@@ -117,6 +120,8 @@ namespace Hecton8.Power.Generators
 
         public void OnSpawn()
         {
+            CacheThermodynamicsServiceCold();
+            TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegisterSaveParticipant();
         }
@@ -125,6 +130,7 @@ namespace Hecton8.Power.Generators
         {
             TryUnregisterRuntime();
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
         }
 
         public void ColdTick()
@@ -316,12 +322,16 @@ namespace Hecton8.Power.Generators
 
         private void Start()
         {
+            CacheThermodynamicsServiceCold();
+            TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegisterSaveParticipant();
         }
 
         private void OnEnable()
         {
+            CacheThermodynamicsServiceCold();
+            TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegisterSaveParticipant();
         }
@@ -330,12 +340,14 @@ namespace Hecton8.Power.Generators
         {
             TryUnregisterRuntime();
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregisterRuntime();
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnValidate()
@@ -491,7 +503,7 @@ namespace Hecton8.Power.Generators
             }
             else
             {
-                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.ClearMemory);
+                handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.ClearMemory);
             }
 
             return vault.TryResolveHandle(in handle, out buffer) &&
@@ -858,9 +870,6 @@ namespace Hecton8.Power.Generators
             if (heatDelta <= 0f)
                 return;
 
-            if (s_thermodynamics == null || !s_thermodynamics.IsInitialized)
-                GlobalRegistry.TryGet(out s_thermodynamics);
-
             bool injected = s_thermodynamics != null &&
                             s_thermodynamics.TryInjectTransientHeatSource(
                                 position,
@@ -880,7 +889,7 @@ namespace Hecton8.Power.Generators
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.SourceId = (ushort)math.min(_sourceId, ushort.MaxValue);
             signal.Flags = TemperatureChangedSignal.FlagSubmarineAmbient;
-            GlobalSignals.Publish(in signal);
+            SignalBus<TemperatureChangedSignal>.TryPush(in signal);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
@@ -893,7 +902,7 @@ namespace Hecton8.Power.Generators
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -915,7 +924,7 @@ namespace Hecton8.Power.Generators
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.Severity = 2;
             signal.Flags = 0;
-            GlobalSignals.Publish(in signal);
+            SignalBus<HUDNotificationSignal>.TryPush(in signal);
         }
 
         private void MarkPowerGridDirty()
@@ -926,14 +935,16 @@ namespace Hecton8.Power.Generators
 
         private void TryRegisterSaveParticipant()
         {
-            if (_registeredSave || !Application.isPlaying)
+            if (_registeredSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            ISaveService save = GlobalRegistry.Save;
-            if (save == null)
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
                 return;
 
-            save.Register(this);
+            _saveService.Register(this);
             _registeredSave = true;
         }
 
@@ -942,9 +953,53 @@ namespace Hecton8.Power.Generators
             if (!_registeredSave)
                 return;
 
-            ISaveService save = GlobalRegistry.Save;
-            save?.Unregister(this);
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
             _registeredSave = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
+            {
+                s_thermodynamics = currentService as IThermodynamicsService;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            TryUnregisterSaveParticipant();
+            _saveService = currentService as ISaveService;
+            TryRegisterSaveParticipant();
+        }
+
+        private static void CacheThermodynamicsServiceCold()
+        {
+            if (s_thermodynamics == null || !s_thermodynamics.IsInitialized)
+                s_thermodynamics = GlobalRegistry.ThermodynamicsService;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private static void RefreshLeader()

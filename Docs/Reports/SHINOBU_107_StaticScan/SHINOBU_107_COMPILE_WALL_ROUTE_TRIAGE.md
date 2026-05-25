@@ -1,4 +1,4 @@
-# SHINOBU_107 Compile Wall Route Triage
+﻿# SHINOBU_107 Compile Wall Route Triage
 
 Source report: `Docs/Reports/SHINOBU_107_StaticScan/SHINOBU_140_Compile_Wall.json`
 

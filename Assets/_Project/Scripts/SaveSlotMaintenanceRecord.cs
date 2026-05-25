@@ -70,7 +70,7 @@ namespace Hecton8.SaveSystem
             if (!SaveSidecarStorage.SaveMaintenanceRecord(this, out string error))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to save diag for '{SlotName}': {error}");
+                Hecton8.Core.H8Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to save diag for '{SlotName}': {error}");
 #endif
             }
         }
@@ -92,7 +92,7 @@ namespace Hecton8.SaveSystem
             catch (Exception ex)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to load diag for '{safeSlotName}': {ex.Message}");
+                Hecton8.Core.H8Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to load diag for '{safeSlotName}': {ex.Message}");
 #endif
                 return null;
             }
@@ -117,7 +117,7 @@ namespace Hecton8.SaveSystem
         private static SaveSlotMaintenanceRecord HandleLoadFailure(string slotName, string error)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to load diag for '{slotName}': {error}");
+            Hecton8.Core.H8Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to load diag for '{slotName}': {error}");
 #endif
             return null;
         }

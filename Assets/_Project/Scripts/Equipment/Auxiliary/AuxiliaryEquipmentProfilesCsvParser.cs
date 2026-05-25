@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -295,3 +296,4 @@ namespace Hecton8.Equipment.Auxiliary
         }
     }
 }
+#endif

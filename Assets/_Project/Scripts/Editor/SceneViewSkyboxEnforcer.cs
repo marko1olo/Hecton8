@@ -265,8 +265,10 @@ public static class SceneViewSkyboxEnforcer
             return false;
         }
 
-        sourceFilter = sphere.GetComponent<MeshFilter>();
-        sourceRenderer = sphere.GetComponent<MeshRenderer>();
+        sphere.TryGetComponent(out MeshFilter resolvedSourceFilter);
+        sphere.TryGetComponent(out MeshRenderer resolvedSourceRenderer);
+        sourceFilter = resolvedSourceFilter;
+        sourceRenderer = resolvedSourceRenderer;
         bool hasValidSource = sourceFilter != null && sourceRenderer != null && sourceRenderer.sharedMaterial != null;
         CacheResolvedSource(hasValidSource ? sourceFilter : null, hasValidSource ? sourceRenderer : null, now);
         return hasValidSource;
@@ -294,10 +296,13 @@ public static class SceneViewSkyboxEnforcer
         _previewObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         _previewObject.name = PreviewName;
         _previewObject.hideFlags = HideFlags.HideAndDontSave;
-        Object.DestroyImmediate(_previewObject.GetComponent<Collider>());
+        if (_previewObject.TryGetComponent(out Collider previewCollider))
+            Object.DestroyImmediate(previewCollider);
 
-        _previewFilter = _previewObject.GetComponent<MeshFilter>();
-        _previewRenderer = _previewObject.GetComponent<MeshRenderer>();
+        _previewObject.TryGetComponent(out MeshFilter previewFilter);
+        _previewObject.TryGetComponent(out MeshRenderer previewRenderer);
+        _previewFilter = previewFilter;
+        _previewRenderer = previewRenderer;
         _previewRenderer.hideFlags = HideFlags.HideAndDontSave;
         _previewFilter.hideFlags = HideFlags.HideAndDontSave;
     }

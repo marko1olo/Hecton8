@@ -9,8 +9,23 @@ using Unity.Mathematics;
 
 namespace Hecton8.SaveSystem
 {
+    internal static class SaveDeltaCompressionLayout
+    {
+        public const int SaveVoxelDeltaRun5StrideBytes = 8;
+        public const int SaveVoxelDeltaRun8StrideBytes = 8;
+        public const int PackedEntityState32StrideBytes = 8;
+        public const int PackedSuitUpgradeState64StrideBytes = 8;
+        public const int QuantizedLocalHalf3StrideBytes = 8;
+        public const int QuantizedAupSectorHalf3StrideBytes = 24;
+        public const int SaveAupLocalOffset32StrideBytes = 32;
+        public const int MockStatePayloadStrideBytes = 32;
+        public const int StrictSaveFileHeader64StrideBytes = 64;
+        public const int SaveChunkHeader32StrideBytes = 32;
+        public const int SectorPayloadDTOStrideBytes = 264;
+    }
+
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.SaveVoxelDeltaRun5StrideBytes)]
     internal readonly struct SaveVoxelDeltaRun5
     {
         [FieldOffset(0)] public readonly ushort StartIndex;
@@ -30,7 +45,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.SaveVoxelDeltaRun8StrideBytes)]
     internal readonly struct SaveVoxelDeltaRun8
     {
         [FieldOffset(0)] public readonly ushort StartIndex;
@@ -52,7 +67,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.PackedEntityState32StrideBytes)]
     internal readonly struct PackedEntityState32
     {
         [FieldOffset(0)] public readonly uint Value;
@@ -66,7 +81,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.PackedSuitUpgradeState64StrideBytes)]
     internal readonly struct PackedSuitUpgradeState64
     {
         [FieldOffset(0)] public readonly ulong Value;
@@ -78,7 +93,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.QuantizedLocalHalf3StrideBytes)]
     internal readonly struct QuantizedLocalHalf3
     {
         [FieldOffset(0)] public readonly ushort X;
@@ -104,7 +119,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.QuantizedAupSectorHalf3StrideBytes)]
     internal readonly struct QuantizedAupSectorHalf3
     {
         [FieldOffset(0)] public readonly int SectorX;
@@ -124,7 +139,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.SaveAupLocalOffset32StrideBytes)]
     internal readonly struct SaveAupLocalOffset32
     {
         [FieldOffset(0)] public readonly uint SectorKey;
@@ -150,14 +165,14 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.MockStatePayloadStrideBytes)]
     internal struct MockStatePayload
     {
         [FieldOffset(0)] public SaveAupLocalOffset32 LocalAup;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.StrictSaveFileHeader64StrideBytes)]
     internal struct StrictSaveFileHeader64
     {
         [FieldOffset(0)] public ulong Magic;
@@ -173,7 +188,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.SaveChunkHeader32StrideBytes)]
     internal struct SaveChunkHeader32
     {
         [FieldOffset(0)] public ulong ChunkKey;
@@ -185,7 +200,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 264)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveDeltaCompressionLayout.SectorPayloadDTOStrideBytes)]
     internal unsafe struct SectorPayloadDTO
     {
         public const int FixedPayloadBytes = 256;

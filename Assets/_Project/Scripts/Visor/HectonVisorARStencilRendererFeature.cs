@@ -198,7 +198,7 @@ namespace Hecton8.Visor
             if (!ValidateLayouts())
                 throw new InvalidOperationException("VISOR_AR_STENCIL DTO layout validation failed.");
 
-            Debug.Log("VISOR_AR_STENCIL DTO layouts valid: Hud=64, Source=80, Target=64, Digits=64, Telemetry=64, Profile=64.");
+            Hecton8.Core.H8Debug.Log("VISOR_AR_STENCIL DTO layouts valid: Hud=64, Source=80, Target=64, Digits=64, Telemetry=64, Profile=64.");
         }
 #endif
     }
@@ -619,9 +619,11 @@ namespace Hecton8.Visor
             EnsureFallbackMaskMeshCold();
             TryRegisterHotSwapListener();
             TryRegisterRenderWatchdog();
-            CacheColdServices(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext, GlobalRegistry.DataVault);
+            CacheColdServices(GlobalRegistry.Player, GlobalRegistry.DataVault);
             TryEnsureVaultBuffers();
+#if UNITY_EDITOR
             LoadCsvProfilesCold();
+#endif
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -764,7 +766,9 @@ namespace Hecton8.Visor
 
                 _dataVault = currentService as IDataVault;
                 TryEnsureVaultBuffers();
+#if UNITY_EDITOR
                 LoadCsvProfilesCold();
+#endif
             }
         }
 
@@ -837,7 +841,7 @@ namespace Hecton8.Visor
                     ToFloat3(renderCamera.transform.right),
                     ToFloat3(renderCamera.transform.up),
                     ToFloat3(renderCamera.transform.forward),
-                    math.tan(math.radians(math.max(1f, renderCamera.fieldOfView)) * 0.5f),
+                    global::Hecton8.Core.MathLodApproximation.ApproxTanClamped(math.radians(math.max(1f, renderCamera.fieldOfView)) * 0.5f, 4096f),
                     math.max(0.01f, renderCamera.aspect),
                     math.max(ProjectionDepthEpsilon, renderCamera.nearClipPlane),
                     math.max(renderCamera.farClipPlane, renderCamera.nearClipPlane + 1f),
@@ -883,19 +887,19 @@ namespace Hecton8.Visor
                 return false;
 
             if (!IsHandleCreated(in _hudParamsHandle))
-                _hudParamsHandle = vault.GetGenerationHandle<VisorHudParamsDTO>(VisorARStencilContracts.HudParamsBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
+                _hudParamsHandle = vault.EnsureGenerationHandle<VisorHudParamsDTO>(VisorARStencilContracts.HudParamsBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
             if (!IsHandleCreated(in _targetSourceHandle))
-                _targetSourceHandle = vault.GetGenerationHandle<ARWaypointOverlay.StencilTargetSourceDTO>(VisorARStencilContracts.TargetSourceBufferId, VisorARStencilContracts.MaxTargets, SystemID.UI, NativeArrayOptions.ClearMemory);
+                _targetSourceHandle = vault.EnsureGenerationHandle<ARWaypointOverlay.StencilTargetSourceDTO>(VisorARStencilContracts.TargetSourceBufferId, VisorARStencilContracts.MaxTargets, SystemID.UI, NativeArrayOptions.ClearMemory);
             if (!IsHandleCreated(in _projectedTargetHandle))
-                _projectedTargetHandle = vault.GetGenerationHandle<VisorArTargetDTO>(VisorARStencilContracts.ProjectedTargetBufferId, VisorARStencilContracts.MaxTargets, SystemID.UI, NativeArrayOptions.ClearMemory);
+                _projectedTargetHandle = vault.EnsureGenerationHandle<VisorArTargetDTO>(VisorARStencilContracts.ProjectedTargetBufferId, VisorARStencilContracts.MaxTargets, SystemID.UI, NativeArrayOptions.ClearMemory);
             if (!IsHandleCreated(in _digitParamsHandle))
-                _digitParamsHandle = vault.GetGenerationHandle<VisorHudDigitParamsDTO>(VisorARStencilContracts.DigitParamsBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
+                _digitParamsHandle = vault.EnsureGenerationHandle<VisorHudDigitParamsDTO>(VisorARStencilContracts.DigitParamsBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
             if (!IsHandleCreated(in _telemetryHandle))
-                _telemetryHandle = vault.GetGenerationHandle<VisorTelemetryEntry>(VisorARStencilContracts.TelemetryRingBufferId, VisorARStencilContracts.TelemetryFrameCount, SystemID.UI, NativeArrayOptions.ClearMemory);
+                _telemetryHandle = vault.EnsureGenerationHandle<VisorTelemetryEntry>(VisorARStencilContracts.TelemetryRingBufferId, VisorARStencilContracts.TelemetryFrameCount, SystemID.UI, NativeArrayOptions.ClearMemory);
             if (!IsHandleCreated(in _profileHandle))
-                _profileHandle = vault.GetGenerationHandle<VisorHudProfileDTO>(VisorARStencilContracts.ProfileBufferId, VisorARStencilContracts.ProfileCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+                _profileHandle = vault.EnsureGenerationHandle<VisorHudProfileDTO>(VisorARStencilContracts.ProfileBufferId, VisorARStencilContracts.ProfileCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
             if (!IsHandleCreated(in _csvScratchHandle))
-                _csvScratchHandle = vault.GetGenerationHandle<byte>(VisorARStencilContracts.CsvScratchBufferId, VisorARStencilContracts.CsvScratchBytes, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+                _csvScratchHandle = vault.EnsureGenerationHandle<byte>(VisorARStencilContracts.CsvScratchBufferId, VisorARStencilContracts.CsvScratchBytes, SystemID.UI, NativeArrayOptions.UninitializedMemory);
 
             _telemetryDescriptorGeneration = _telemetryHandle.Generation;
             return IsHandleCreated(in _hudParamsHandle) &&
@@ -916,6 +920,7 @@ namespace Hecton8.Visor
                    IsHandleCreated(in _telemetryHandle);
         }
 
+#if UNITY_EDITOR
         private void LoadCsvProfilesCold()
         {
 #if UNITY_EDITOR
@@ -988,6 +993,7 @@ namespace Hecton8.Visor
 
             return count;
         }
+#endif
 
         private static uint ParseHash(NativeArray<byte> bytes, int length, ref int cursor)
         {
@@ -1507,10 +1513,10 @@ namespace Hecton8.Visor
         private static VisorHudParamsDTO GenerateMockHudData(float timeSeconds, in VisorHudParamsDTO input)
         {
             VisorHudParamsDTO value = input;
-            float oxygen = math.saturate(0.5f + math.sin(timeSeconds * 3.7f) * 0.49f);
-            float co2 = math.saturate(0.5f + math.sin(timeSeconds * 2.1f + 1.7f) * 0.48f);
-            float toxicity = math.saturate(0.5f + math.sin(timeSeconds * 5.3f + 0.4f) * 0.5f);
-            float temperature = math.saturate(0.5f + math.sin(timeSeconds * 1.4f + 2.8f) * 0.5f);
+            float oxygen = math.saturate(0.01f + Triangle01(timeSeconds * 0.588f) * 0.98f);
+            float co2 = math.saturate(0.02f + Triangle01(timeSeconds * 0.334f + 0.27f) * 0.96f);
+            float toxicity = Triangle01(timeSeconds * 0.843f + 0.13f);
+            float temperature = Triangle01(timeSeconds * 0.223f + 0.44f);
             float stress = math.saturate(math.max(1f - oxygen, co2) + toxicity * 0.35f);
             value.VitalStats = new float4(oxygen, co2, toxicity, temperature);
             value.VisorGlitchParams.x = stress;
@@ -1559,6 +1565,11 @@ namespace Hecton8.Visor
         private static float Step01(float value, float threshold)
         {
             return value <= threshold ? 1f : 0f;
+        }
+
+        private static float Triangle01(float phase)
+        {
+            return math.abs(math.frac(phase) * 2f - 1f);
         }
     }
 }

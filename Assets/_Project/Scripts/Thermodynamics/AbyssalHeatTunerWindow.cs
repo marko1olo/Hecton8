@@ -10,8 +10,13 @@ namespace Hecton8.Thermodynamics
         private Slider _ambientSlider;
         private Slider _conductivitySlider;
         private Slider _convectionSlider;
+        private Slider _fissionSlider;
+        private Slider _turbineSlider;
+        private Slider _meltdownSlider;
+        private Slider _boilOffSlider;
         private Label _statusLabel;
         private Label _telemetryLabel;
+        private Label _reactorTelemetryLabel;
         private HeatGraphElement _graph;
         private bool _suppress;
 
@@ -50,6 +55,9 @@ namespace Hecton8.Thermodynamics
             _telemetryLabel = new Label("MaxTemp 0.0 C | Sources 0 | Jacobi 0 | Solver 0us");
             rootVisualElement.Add(_telemetryLabel);
 
+            _reactorTelemetryLabel = new Label("Reactor 0.0 MW | Core 0.0 C | Carnot 0.00 | Boil 0.0 L");
+            rootVisualElement.Add(_reactorTelemetryLabel);
+
             _graph = new HeatGraphElement();
             _graph.style.height = 96f;
             _graph.style.marginTop = 8f;
@@ -62,6 +70,15 @@ namespace Hecton8.Thermodynamics
             rootVisualElement.Add(_ambientSlider);
             rootVisualElement.Add(_conductivitySlider);
             rootVisualElement.Add(_convectionSlider);
+
+            _fissionSlider = CreateSlider("Fission Heat MW", 1f, 120f, OnFissionChanged);
+            _turbineSlider = CreateSlider("Turbine Draw MW", 1f, 90f, OnTurbineChanged);
+            _meltdownSlider = CreateSlider("Meltdown Core C", 1200f, 3200f, OnMeltdownChanged);
+            _boilOffSlider = CreateSlider("Max Boil L/s", 0f, 10000f, OnBoilOffChanged);
+            rootVisualElement.Add(_fissionSlider);
+            rootVisualElement.Add(_turbineSlider);
+            rootVisualElement.Add(_meltdownSlider);
+            rootVisualElement.Add(_boilOffSlider);
 
             Button dumpButton = new Button(RefreshFromRuntime) { text = "Refresh Vault Readback" };
             rootVisualElement.Add(dumpButton);
@@ -105,6 +122,22 @@ namespace Hecton8.Thermodynamics
                     $"MaxTemp {latest.MaxTemperatureCelsius:0.0} C | Sources {latest.ActiveSourceCount} | Jacobi {latest.JacobiIterations} | Solver {latest.SolverMicroseconds:0}us";
             }
 
+            if (runtime.TryReadNuclearReactorTuning(out NuclearReactorThermalTuningDTO reactorTuning))
+            {
+                _suppress = true;
+                _fissionSlider.SetValueWithoutNotify(reactorTuning.BaseFissionHeatJoulesPerSecond * 0.000001f);
+                _turbineSlider.SetValueWithoutNotify(reactorTuning.TurbineThermalDrawWatts * 0.000001f);
+                _meltdownSlider.SetValueWithoutNotify(reactorTuning.MeltdownCoreTempCelsius);
+                _boilOffSlider.SetValueWithoutNotify(reactorTuning.MaxBoilOffLitersPerSecond);
+                _suppress = false;
+            }
+
+            if (runtime.TryReadNuclearReactorTelemetry(0, out NuclearReactorTelemetryEntry reactorTelemetry))
+            {
+                _reactorTelemetryLabel.text =
+                    $"Reactor {reactorTelemetry.TotalGeneratedWatts * 0.000001f:0.0} MW | Core {reactorTelemetry.MaxCoreTempCelsius:0.0} C | Carnot {reactorTelemetry.AverageCarnotEfficiency01:0.00} | Boil {reactorTelemetry.TotalBoiledLiters:0.0} L";
+            }
+
             _graph.Refresh(runtime);
         }
 
@@ -126,6 +159,30 @@ namespace Hecton8.Thermodynamics
                 MutateTuning(null, null, evt.newValue);
         }
 
+        private void OnFissionChanged(ChangeEvent<float> evt)
+        {
+            if (!_suppress)
+                MutateReactorTuning(evt.newValue * 1000000f, null, null, null);
+        }
+
+        private void OnTurbineChanged(ChangeEvent<float> evt)
+        {
+            if (!_suppress)
+                MutateReactorTuning(null, evt.newValue * 1000000f, null, null);
+        }
+
+        private void OnMeltdownChanged(ChangeEvent<float> evt)
+        {
+            if (!_suppress)
+                MutateReactorTuning(null, null, evt.newValue, null);
+        }
+
+        private void OnBoilOffChanged(ChangeEvent<float> evt)
+        {
+            if (!_suppress)
+                MutateReactorTuning(null, null, null, evt.newValue);
+        }
+
         private static void MutateTuning(float? ambient, float? conductivity, float? convection)
         {
             AbyssalThermodynamicsSolver runtime = AbyssalThermodynamicsSolver.ActiveRuntimeInstance;
@@ -140,6 +197,24 @@ namespace Hecton8.Thermodynamics
                 tuning.ConvectionSpeed = convection.Value;
 
             runtime.TryWriteTuning(tuning);
+        }
+
+        private static void MutateReactorTuning(float? fissionHeatWatts, float? turbineDrawWatts, float? meltdownCelsius, float? maxBoilLitersPerSecond)
+        {
+            AbyssalThermodynamicsSolver runtime = AbyssalThermodynamicsSolver.ActiveRuntimeInstance;
+            if (runtime == null || !runtime.TryReadNuclearReactorTuning(out NuclearReactorThermalTuningDTO tuning))
+                return;
+
+            if (fissionHeatWatts.HasValue)
+                tuning.BaseFissionHeatJoulesPerSecond = fissionHeatWatts.Value;
+            if (turbineDrawWatts.HasValue)
+                tuning.TurbineThermalDrawWatts = turbineDrawWatts.Value;
+            if (meltdownCelsius.HasValue)
+                tuning.MeltdownCoreTempCelsius = meltdownCelsius.Value;
+            if (maxBoilLitersPerSecond.HasValue)
+                tuning.MaxBoilOffLitersPerSecond = maxBoilLitersPerSecond.Value;
+
+            runtime.TryWriteNuclearReactorTuning(tuning);
         }
 
         private sealed class HeatGraphElement : VisualElement

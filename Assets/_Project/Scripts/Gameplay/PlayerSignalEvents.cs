@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using System;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using UnityEngine;
@@ -330,14 +331,14 @@ namespace Hecton8.Gameplay
         /// Queues one trauma HUD signal.
         /// </summary>
         /// <param name="signal">Signal payload.</param>
-        public static void RaiseTraumaHudSignal(in TraumaHudSignal signal)
+        public static bool TryRaiseTraumaHudSignal(in TraumaHudSignal signal)
         {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingTraumaHudSignalCount + _nextFrameTraumaHudSignalCount >= PendingTraumaHudCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -349,20 +350,28 @@ namespace Hecton8.Gameplay
                 _pendingTraumaHudSignals.Enqueue(signal);
                 _pendingTraumaHudSignalCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Player signal producers must use TryRaiseTraumaHudSignal and handle bounded enqueue failure.", true)]
+        public static void RaiseTraumaHudSignal(in TraumaHudSignal signal)
+        {
+            TryRaiseTraumaHudSignal(in signal);
         }
 
         /// <summary>
         /// Queues one interaction stress signal.
         /// </summary>
         /// <param name="signal">Signal payload.</param>
-        public static void RaiseInteractionSignal(in PlayerInteractionStressSignal signal)
+        public static bool TryRaiseInteractionSignal(in PlayerInteractionStressSignal signal)
         {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingInteractionSignalCount + _nextFrameInteractionSignalCount >= PendingInteractionSignalCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -374,20 +383,28 @@ namespace Hecton8.Gameplay
                 _pendingInteractionSignals.Enqueue(signal);
                 _pendingInteractionSignalCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Player signal producers must use TryRaiseInteractionSignal and handle bounded enqueue failure.", true)]
+        public static void RaiseInteractionSignal(in PlayerInteractionStressSignal signal)
+        {
+            TryRaiseInteractionSignal(in signal);
         }
 
         /// <summary>
         /// Queues one tool depletion signal.
         /// </summary>
         /// <param name="signal">Signal payload.</param>
-        public static void RaiseToolDepletedSignal(in ToolDepletedSignal signal)
+        public static bool TryRaiseToolDepletedSignal(in ToolDepletedSignal signal)
         {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingToolDepletedSignalCount + _nextFrameToolDepletedSignalCount >= PendingToolDepletedCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -399,6 +416,14 @@ namespace Hecton8.Gameplay
                 _pendingToolDepletedSignals.Enqueue(signal);
                 _pendingToolDepletedSignalCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Player signal producers must use TryRaiseToolDepletedSignal and handle bounded enqueue failure.", true)]
+        public static void RaiseToolDepletedSignal(in ToolDepletedSignal signal)
+        {
+            TryRaiseToolDepletedSignal(in signal);
         }
 
         private static void EnsureInitialized()
@@ -497,7 +522,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!_pendingTraumaHudSignals.TryDequeue(out TraumaHudSignal signal))
+                {
+                    _pendingTraumaHudSignalCount = 0;
                     return true;
+                }
 
                 _pendingTraumaHudSignalCount--;
                 scanBudget--;
@@ -530,7 +558,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!_pendingInteractionSignals.TryDequeue(out PlayerInteractionStressSignal signal))
+                {
+                    _pendingInteractionSignalCount = 0;
                     return true;
+                }
 
                 _pendingInteractionSignalCount--;
                 scanBudget--;
@@ -563,7 +594,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!_pendingToolDepletedSignals.TryDequeue(out ToolDepletedSignal signal))
+                {
+                    _pendingToolDepletedSignalCount = 0;
                     return true;
+                }
 
                 _pendingToolDepletedSignalCount--;
                 scanBudget--;
@@ -595,7 +629,10 @@ namespace Hecton8.Gameplay
                         return false;
 
                     if (!_pendingTraumaHudSignals.TryDequeue(out _))
+                    {
+                        _pendingTraumaHudSignalCount = 0;
                         return true;
+                    }
 
                     _pendingTraumaHudSignalCount--;
                     scanBudget--;
@@ -614,7 +651,10 @@ namespace Hecton8.Gameplay
                         return false;
 
                     if (!_pendingInteractionSignals.TryDequeue(out _))
+                    {
+                        _pendingInteractionSignalCount = 0;
                         return true;
+                    }
 
                     _pendingInteractionSignalCount--;
                     scanBudget--;
@@ -633,7 +673,10 @@ namespace Hecton8.Gameplay
                         return false;
 
                     if (!_pendingToolDepletedSignals.TryDequeue(out _))
+                    {
+                        _pendingToolDepletedSignalCount = 0;
                         return true;
+                    }
 
                     _pendingToolDepletedSignalCount--;
                     scanBudget--;

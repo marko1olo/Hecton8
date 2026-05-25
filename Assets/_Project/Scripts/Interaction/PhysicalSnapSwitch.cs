@@ -12,7 +12,7 @@ namespace Hecton8.Interaction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/Interaction/Physical Snap Switch")]
-    public sealed class PhysicalSnapSwitch : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener
+    public sealed class PhysicalSnapSwitch : MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener
     {
         private const uint PhysicalSwitchToolId = 0x53574954u;
         private const float RadiansPerDegree = 0.0174532924f;
@@ -78,12 +78,15 @@ namespace Hecton8.Interaction
         private float _resolvedSignalRangeDegrees = 56f;
         private bool _isOn;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _tickDormant;
         private bool _receiverRegistered;
         private int _lastSampleFrame = -1;
         private Collider _registeredActivationVolume;
         private IAudioService _audioService;
+        private float _pendingVisualAngle;
+        private bool _hasPendingVisualAngle;
 
         public bool IsOn => _isOn;
         public Collider ActivationCollider => activationVolume;
@@ -99,7 +102,7 @@ namespace Hecton8.Interaction
             if (activationVolume == null || interactionSignals == null || !interactionSignals.IsInitialized || !IsFiniteVector(handPosition))
                 return false;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : currentFrame;
             if (resolvedSampleFrame > currentFrame || resolvedSampleFrame < _lastSampleFrame)
                 return false;
@@ -187,7 +190,7 @@ namespace Hecton8.Interaction
             if (math.abs(_targetAngle - _currentAngle) < 0.001f)
             {
                 _currentAngle = _targetAngle;
-                ApplyAngle(_currentAngle);
+                QueueAngle(_currentAngle);
                 if (_snapCooldownRemaining <= 0f)
                     _tickDormant = true;
                 return;
@@ -195,7 +198,16 @@ namespace Hecton8.Interaction
 
             float alpha = FastDecayBlend(_resolvedSnapSpeed, safeDeltaTime);
             _currentAngle = math.lerp(_currentAngle, _targetAngle, alpha);
-            ApplyAngle(_currentAngle);
+            QueueAngle(_currentAngle);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_hasPendingVisualAngle)
+                return;
+
+            _hasPendingVisualAngle = false;
+            ApplyAngle(_pendingVisualAngle);
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)
@@ -267,6 +279,7 @@ namespace Hecton8.Interaction
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
             if (_registered)
                 _tickDormant = false;
         }
@@ -283,12 +296,19 @@ namespace Hecton8.Interaction
         {
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
+
+            _hasPendingVisualAngle = false;
             _tickDormant = false;
         }
 
         private void RefreshColdRegistryReferences()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -349,6 +369,12 @@ namespace Hecton8.Interaction
                 ? math.saturate((angleDegrees - offAngle) * math.rcp(span))
                 : (_isOn ? 1f : 0f);
             leverTransform.localRotation = ApproximateNlerpNoSqrt(_offLocalRotation, _onLocalRotation, blend);
+        }
+
+        private void QueueAngle(float angleDegrees)
+        {
+            _pendingVisualAngle = angleDegrees;
+            _hasPendingVisualAngle = true;
         }
 
         private void CacheSnapRotations()
@@ -522,7 +548,7 @@ namespace Hecton8.Interaction
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -538,7 +564,7 @@ namespace Hecton8.Interaction
 
         private void EnqueueClickHaptic(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)
         {
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 0.16f,
                 0.42f,
                 0.045f,

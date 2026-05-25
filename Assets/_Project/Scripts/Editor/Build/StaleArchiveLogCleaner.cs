@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
@@ -53,10 +54,9 @@ namespace Hecton8.Editor.Build
                 if (!Directory.Exists(absoluteRoot))
                     continue;
 
-                string[] files = Directory.GetFiles(absoluteRoot, "*.*", SearchOption.AllDirectories);
-                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                List<string> files = new List<string>(Directory.EnumerateFiles(absoluteRoot, "*.*", SearchOption.AllDirectories));
+                foreach (string file in files)
                 {
-                    string file = files[fileIndex];
                     if (!IsSupportedExtension(file) || !IsUnderRoot(file, absoluteRoot))
                         continue;
 

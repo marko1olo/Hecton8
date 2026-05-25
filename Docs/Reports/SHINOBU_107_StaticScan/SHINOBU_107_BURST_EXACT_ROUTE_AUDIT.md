@@ -1,4 +1,4 @@
-# SHINOBU_107 Burst Exact Route Audit
+﻿# SHINOBU_107 Burst Exact Route Audit
 
 Date: 2026-05-21
 Evidence: STATIC_SOURCE / SHINOBU_140 scanner output / source-window audit

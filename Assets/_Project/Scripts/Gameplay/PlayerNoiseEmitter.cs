@@ -1,5 +1,7 @@
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -16,10 +18,10 @@ namespace Hecton8.Gameplay
         private const float PrimaryToolNoisePulse = 1f;
         private const float SecondaryToolNoisePulse = 0.75f;
         private const float ReferenceRefreshInterval = 0.5f;
+        private const uint KccVelocityNoiseMaxAgeFrames = 12u;
 
         private Transform _cachedTransform;
         private HectonPlayerMovement _playerMovement;
-        private Rigidbody _playerRigidbody;
         private PlayerFlashlight _playerFlashlight;
         private PlayerToolManager _playerToolManager;
         private PlayerTransportCoordinator _playerTransportCoordinator;
@@ -92,7 +94,6 @@ namespace Hecton8.Gameplay
         {
             if (_playerToolManager == null ||
                 _playerMovement == null ||
-                _playerRigidbody == null ||
                 _playerFlashlight == null ||
                 _playerTransportCoordinator == null)
             {
@@ -134,7 +135,7 @@ namespace Hecton8.Gameplay
                     return;
             }
 
-            float movementSpeedSqr = _playerRigidbody != null ? _playerRigidbody.linearVelocity.sqrMagnitude : 0f;
+            float movementSpeedSqr = TryResolveKccVelocity(out Vector3 kccVelocity) ? kccVelocity.sqrMagnitude : 0f;
             bool flashlightOn = _playerFlashlight != null && _playerFlashlight.IsOn;
             float transportBoost01 = ResolveTransportBoost01();
             float transportSignature = ResolveTransportFaunaSignature();
@@ -152,6 +153,29 @@ namespace Hecton8.Gameplay
         private Vector3 ResolveCachedRuntimePosition()
         {
             return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+        }
+
+        private static bool TryResolveKccVelocity(out Vector3 velocity)
+        {
+            velocity = Vector3.zero;
+            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
+                return false;
+
+            uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
+            if (currentFrame != 0u &&
+                signalFrame != 0u &&
+                (signalFrame > currentFrame || currentFrame - signalFrame > KccVelocityNoiseMaxAgeFrames))
+            {
+                return false;
+            }
+
+            float3 value = signal.Velocity;
+            if (!math.all(math.isfinite(value)))
+                return false;
+
+            velocity = new Vector3(value.x, value.y, value.z);
+            return true;
         }
 
         private void TryRegister()
@@ -177,9 +201,6 @@ namespace Hecton8.Gameplay
 
             if (_playerMovement == null)
                 _cachedTransform.TryGetComponent(out _playerMovement);
-
-            if (_playerRigidbody == null)
-                _cachedTransform.TryGetComponent(out _playerRigidbody);
 
             if (_playerFlashlight == null)
                 _cachedTransform.TryGetComponent(out _playerFlashlight);
@@ -226,7 +247,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -258,7 +279,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

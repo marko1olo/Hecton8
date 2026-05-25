@@ -13,6 +13,8 @@ namespace Hecton8.AI.Editor
         private const string BiomeCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
         private const string RootFolder = "Assets/_Project/Data/AI/FaunaBiomes";
         private const string WorldChunkStreamingProfilePath = "Assets/_Project/Data/World/Streaming/WorldChunkStreamingProfile.asset";
+        private static readonly List<GameObject> s_sceneRoots = new List<GameObject>(16);
+        private static readonly List<FaunaDirector> s_faunaDirectorScratch = new List<FaunaDirector>(4);
 
         [MenuItem("Hecton/Authoring/Build Fauna Biome Datasets", priority = 183)]
         public static void BuildFaunaBiomeDatasets()
@@ -628,7 +630,7 @@ namespace Hecton8.AI.Editor
             if (!activeScene.IsValid() || !activeScene.isLoaded)
                 return;
 
-            FaunaDirector director = Object.FindAnyObjectByType<FaunaDirector>(FindObjectsInactive.Include);
+            FaunaDirector director = FindFaunaDirector(activeScene);
             if (director == null)
                 return;
 
@@ -646,6 +648,36 @@ namespace Hecton8.AI.Editor
             director.SetChunkStreamingProfile(chunkProfile);
             EditorUtility.SetDirty(director);
             EditorSceneManager.MarkSceneDirty(activeScene);
+        }
+
+        private static FaunaDirector FindFaunaDirector(Scene scene)
+        {
+            s_sceneRoots.Clear();
+            s_faunaDirectorScratch.Clear();
+            if (s_sceneRoots.Capacity < scene.rootCount)
+                s_sceneRoots.Capacity = scene.rootCount;
+
+            scene.GetRootGameObjects(s_sceneRoots);
+
+            for (int i = 0; i < s_sceneRoots.Count; i++)
+            {
+                GameObject root = s_sceneRoots[i];
+                if (root == null)
+                    continue;
+
+                root.GetComponentsInChildren<FaunaDirector>(true, s_faunaDirectorScratch);
+                if (s_faunaDirectorScratch.Count <= 0)
+                    continue;
+
+                FaunaDirector director = s_faunaDirectorScratch[0];
+                s_sceneRoots.Clear();
+                s_faunaDirectorScratch.Clear();
+                return director;
+            }
+
+            s_sceneRoots.Clear();
+            s_faunaDirectorScratch.Clear();
+            return null;
         }
 
         private static List<CreatureArchetypeData> LoadArchetypes()

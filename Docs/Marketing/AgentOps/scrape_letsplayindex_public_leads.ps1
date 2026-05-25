@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$OutputDir = "C:\hades\Hecton8\Docs\Marketing\Data",
     [int]$MaxTopPage = 300,
     [switch]$ForceRefresh

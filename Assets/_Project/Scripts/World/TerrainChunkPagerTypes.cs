@@ -56,6 +56,19 @@ namespace Hecton8.World
         public const uint NetcodeExcluded = 1u << 7;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct TerrainChunkSectorCoordDTO
+    {
+        [FieldOffset(0)] public long X;
+        [FieldOffset(8)] public long Z;
+
+        public TerrainChunkSectorCoordDTO(long x, long z)
+        {
+            X = x;
+            Z = z;
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ChunkMetadataDTO
     {
@@ -404,7 +417,6 @@ namespace Hecton8.World
                 return;
 
             ChunkMetadataDTO* metadata = (ChunkMetadataDTO*)MetadataPtr;
-            long2* coords = (long2*)SectorCoordPtr;
             int loadCount = 0;
             int staleCount = 0;
             int ringRadius = TerrainChunkPagerMath.ResolveDiscreteRingRadius(Tuning.EffectiveRingRadius);
@@ -419,9 +431,9 @@ namespace Hecton8.World
                 if (meta.SectorHash == 0UL)
                     continue;
 
-                long2 coord = coords[slot];
-                double dx = ((double)coord.x - (double)cameraSectorX) * sectorSize;
-                double dz = ((double)coord.y - (double)cameraSectorZ) * sectorSize;
+                TerrainChunkSectorCoordDTO coord = UnsafeUtility.ReadArrayElement<TerrainChunkSectorCoordDTO>(SectorCoordPtr, slot);
+                double dx = ((double)coord.X - (double)cameraSectorX) * sectorSize;
+                double dz = ((double)coord.Z - (double)cameraSectorZ) * sectorSize;
                 double distSqD = (dx * dx) + (dz * dz);
                 meta.DistanceSq = distSqD >= float.MaxValue || !math.isfinite(distSqD) ? float.MaxValue : (float)distSqD;
                 bool active = (meta.StateFlags & TerrainChunkStateFlags.Active) != 0u;
@@ -521,7 +533,6 @@ namespace Hecton8.World
                 return;
 
             ChunkMetadataDTO* metadata = (ChunkMetadataDTO*)MetadataPtr;
-            long2* coords = (long2*)SectorCoordPtr;
             double cullMeters = (double)math.max(1f, CullRadiusSectors) * math.max(1f, SectorSizeMeters);
             double cullSq = cullMeters * cullMeters;
             int freeCount = 0;
@@ -536,14 +547,14 @@ namespace Hecton8.World
                     continue;
                 }
 
-                long2 coord = coords[i];
-                double dx = ((double)coord.x - (double)CameraSectorX) * SectorSizeMeters;
-                double dz = ((double)coord.y - (double)CameraSectorZ) * SectorSizeMeters;
+                TerrainChunkSectorCoordDTO coord = UnsafeUtility.ReadArrayElement<TerrainChunkSectorCoordDTO>(SectorCoordPtr, i);
+                double dx = ((double)coord.X - (double)CameraSectorX) * SectorSizeMeters;
+                double dz = ((double)coord.Z - (double)CameraSectorZ) * SectorSizeMeters;
                 if ((dx * dx) + (dz * dz) <= cullSq)
                     continue;
 
                 meta = default;
-                coords[i] = default;
+                UnsafeUtility.WriteArrayElement(SectorCoordPtr, i, default(TerrainChunkSectorCoordDTO));
                 if (freeCount < FreedSlots.Length)
                     FreedSlots[freeCount++] = i;
             }
@@ -689,6 +700,7 @@ namespace Hecton8.World
         }
     }
 
+    #if UNITY_EDITOR
     public static class TerrainChunkStreamingProfileCsvParser
     {
         public static bool TryParse(ReadOnlySpan<byte> csv, ref TerrainChunkPagerTuningDTO tuning, NativeArray<StreamingHardwareProfileDTO> profiles, out int profileCount)
@@ -922,4 +934,5 @@ namespace Hecton8.World
             return c == (byte)' ' || c == (byte)'\t' || c == (byte)'\r';
         }
     }
+    #endif
 }

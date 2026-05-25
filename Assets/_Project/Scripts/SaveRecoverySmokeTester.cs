@@ -178,7 +178,7 @@ namespace Hecton8.Dev
                 _debugLastPhase = "Complete";
                 _debugCriticalRecoveryPromoted = true;
                 _debugRecoveryPass = true;
-                Debug.Log($"[SaveRecoverySmoke] PASS scenarios={_debugScenarioPassCount} slot={currentSlot}");
+                Hecton8.Core.H8Debug.Log($"[SaveRecoverySmoke] PASS scenarios={_debugScenarioPassCount} slot={currentSlot}");
             }
             catch (OperationCanceledException)
             {
@@ -282,7 +282,7 @@ namespace Hecton8.Dev
             }
 
             _debugScenarioPassCount++;
-            Debug.Log($"[SaveRecoverySmoke] PASS mode={corruptionMode} slot={slotName} sector=0x{sectorHash:X16}");
+            Hecton8.Core.H8Debug.Log($"[SaveRecoverySmoke] PASS mode={corruptionMode} slot={slotName} sector=0x{sectorHash:X16}");
             return true;
         }
 
@@ -355,15 +355,15 @@ namespace Hecton8.Dev
                         return false;
                     }
 
-                    int firstByte = fileStream.ReadByte();
-                    if (firstByte < 0)
+                    Span<byte> firstByteBytes = stackalloc byte[1];
+                    if (fileStream.Read(firstByteBytes) != firstByteBytes.Length)
                     {
                         error = "Header corruption target could not read the magic prefix.";
                         return false;
                     }
 
                     fileStream.Position = 0L;
-                    fileStream.WriteByte((byte)(firstByte ^ 0x5A));
+                    fileStream.WriteByte((byte)(firstByteBytes[0] ^ 0x5A));
                     fileStream.Flush(true);
                     return true;
                 }
@@ -500,7 +500,7 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (saveManager == null)
-                saveManager = GlobalRegistry.SaveRuntime;
+                saveManager = GlobalRegistry.Save as SaveManager;
         }
     }
 }

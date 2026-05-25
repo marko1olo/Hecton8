@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,7 +12,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7998)]
-    public sealed class RenderTexturePool : MonoBehaviour, IGlobalRegistryHotSwapListener
+    public sealed class RenderTexturePool : MonoBehaviour, IRenderTexturePoolService, IGlobalRegistryHotSwapListener
     {
         private const string PooledRenderTextureName = "Pooled_RT";
         private const int DynamicBucketCapacity = 4;
@@ -52,7 +53,7 @@ namespace Hecton8.Optimization
         private int _lastScreenHeight;
         private bool _registeredService;
         private bool _hotSwapRegistered;
-        private RenderTextureLifecycleTracker _lifecycleTracker;
+        private IRenderTextureLifecycleService _lifecycleTracker;
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextStatsLogTime;
@@ -152,7 +153,7 @@ namespace Hecton8.Optimization
                         return rt;
                     }
 
-                    RenderTextureLifecycleTracker staleLifecycle = _lifecycleTracker;
+                    IRenderTextureLifecycleService staleLifecycle = _lifecycleTracker;
                     if (staleLifecycle != null)
                         staleLifecycle.RegisterDisposal(rt);
 
@@ -165,7 +166,7 @@ namespace Hecton8.Optimization
             RenderTexture newRT = new RenderTexture(safeWidth, safeHeight, safeDepthBits, format);
             newRT.name = PooledRenderTextureName;
             
-            RenderTextureLifecycleTracker lifecycle = _lifecycleTracker;
+            IRenderTextureLifecycleService lifecycle = _lifecycleTracker;
             if (lifecycle != null)
             {
                 lifecycle.RegisterAllocation(newRT, owner);
@@ -205,7 +206,7 @@ namespace Hecton8.Optimization
             if (queue.Count >= 16)
             {
                 // Pool full - release immediately
-                RenderTextureLifecycleTracker lifecycle = _lifecycleTracker;
+                IRenderTextureLifecycleService lifecycle = _lifecycleTracker;
                 if (lifecycle != null)
                     lifecycle.RegisterDisposal(rt);
 
@@ -350,12 +351,12 @@ namespace Hecton8.Optimization
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
-                _lifecycleTracker = currentService as RenderTextureLifecycleTracker;
+                _lifecycleTracker = currentService as IRenderTextureLifecycleService;
         }
 
         private void CacheRegistryServicesCold()
         {
-            _lifecycleTracker = GlobalRegistry.RenderTextureLifecycle;
+            _lifecycleTracker = GlobalRegistry.RenderTextureLifecycleService;
         }
 
         private void TryRegisterHotSwapListener()
@@ -386,7 +387,7 @@ namespace Hecton8.Optimization
                     RenderTexture rt = queue.Dequeue();
                     if (rt != null)
                     {
-                        RenderTextureLifecycleTracker lifecycle = _lifecycleTracker;
+                        IRenderTextureLifecycleService lifecycle = _lifecycleTracker;
                         if (lifecycle != null)
                             lifecycle.RegisterDisposal(rt);
 

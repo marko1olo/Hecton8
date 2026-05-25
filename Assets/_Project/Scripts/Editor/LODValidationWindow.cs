@@ -215,10 +215,8 @@ namespace Hecton8.Editor
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
             if (prefab == null) return;
 
-            LODGroup lodGroup = prefab.GetComponent<LODGroup>();
-
             // Check if LOD group exists
-            if (lodGroup == null)
+            if (!prefab.TryGetComponent(out LODGroup lodGroup))
             {
                 // Check if object is large enough to require LOD
                 Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>();
@@ -304,8 +302,7 @@ namespace Hecton8.Editor
             {
                 if (renderers[i] == null) continue;
 
-                MeshFilter meshFilter = renderers[i].GetComponent<MeshFilter>();
-                if (meshFilter == null || meshFilter.sharedMesh == null) continue;
+                if (!renderers[i].TryGetComponent(out MeshFilter meshFilter) || meshFilter.sharedMesh == null) continue;
 
                 Mesh mesh = meshFilter.sharedMesh;
                 for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)

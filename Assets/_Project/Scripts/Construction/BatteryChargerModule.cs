@@ -13,7 +13,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Battery Charger Module")]
-    public sealed class BatteryChargerModule : MonoBehaviour, IPowerComponent, IInteractable, IPoolable
+    public sealed class BatteryChargerModule : MonoBehaviour, IPowerComponent, IInteractable, IInteractableTextProvider, IPoolable, IGlobalRegistryHotSwapListener
     {
         private const string EmptyPrompt = "Dock Tool";
         private const string ReadyPrompt = "Retrieve Tool";
@@ -37,6 +37,8 @@ namespace Hecton8.Construction
         private Quaternion _originalLocalRotation;
         private Vector3 _originalLocalScale;
         private PlayerToolManager _owningToolManager;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapListenerRegistered;
         private bool _registered;
         private bool _hasPower = true;
 
@@ -58,24 +60,35 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             TryRegister();
             RefreshDiagnostics();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryRestoreToolPose();
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryRestoreToolPose();
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
         }
 
         public void OnSpawn()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             _hasPower = true;
             _slottedTool = null;
             _slottedToolTransform = null;
@@ -88,7 +101,18 @@ namespace Hecton8.Construction
             TryRestoreToolPose();
             _hasPower = true;
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             RefreshDiagnostics();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
         }
 
         public void OnPowerStatusChanged(bool hasPower)
@@ -123,6 +147,11 @@ namespace Hecton8.Construction
                 return EmptyPrompt;
 
             return ReadyPrompt;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(_slottedTool == null ? EmptyPrompt : ReadyPrompt, destination, out length);
         }
 
         public bool TryDockTool(PlayerTool tool)
@@ -176,17 +205,37 @@ namespace Hecton8.Construction
             _owningToolManager = null;
         }
 
-        private static PlayerToolManager BindToolManagerForInteraction(Transform interactor)
+        private PlayerToolManager BindToolManagerForInteraction(Transform interactor)
         {
-            if (interactor != null)
-            {
-                PlayerToolManager toolManager = interactor.GetComponentInParent<PlayerToolManager>();
-                if (toolManager != null)
-                    return toolManager;
-            }
-
-            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = _cachedPlayerContext;
             return player != null ? player.ToolManager : null;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _cachedPlayerContext = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void TryRegister()

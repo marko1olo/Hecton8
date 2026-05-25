@@ -27,7 +27,7 @@ namespace Hecton8.VFX
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Volume))]
-    public sealed class LandingImpactVFX : MonoBehaviour, ITickable, IUpdatable
+    public sealed class LandingImpactVFX : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -159,6 +159,7 @@ namespace Hecton8.VFX
         private bool _hasChromatic;
         private bool _hasVignette;
         private bool _registeredToTickManager;
+        private bool _hotSwapRegistered;
         private float _waterTransitionIntensity;
         private float _waterTransitionHoldTimer;
         private float _waterTransitionChromaticScale;
@@ -178,7 +179,7 @@ namespace Hecton8.VFX
 
         private void Awake()
         {
-            _volume = GetComponent<Volume>();
+            TryGetComponent(out _volume);
 
             if (_volume.profile == null)
             {
@@ -222,7 +223,7 @@ namespace Hecton8.VFX
 
             if (playerMovement != null)
             {
-                _playerRb = playerMovement.GetComponent<Rigidbody>();
+                playerMovement.TryGetComponent(out _playerRb);
             }
 
             _currentIntensity = 0f;
@@ -233,6 +234,7 @@ namespace Hecton8.VFX
         private void OnDisable()
         {
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
 
             // Reset post-processing to base values
             if (_hasChromatic)
@@ -251,6 +253,19 @@ namespace Hecton8.VFX
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            RegisterToTickManager();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            UnregisterFromTickManager();
             RegisterToTickManager();
         }
 
@@ -413,8 +428,7 @@ namespace Hecton8.VFX
             if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void UnregisterFromTickManager()
@@ -424,6 +438,23 @@ namespace Hecton8.VFX
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void UpdateLandingEffect(float deltaTime)

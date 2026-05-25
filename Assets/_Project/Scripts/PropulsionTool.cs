@@ -160,14 +160,14 @@ namespace Hecton8.Gameplay
         private bool _secondaryInvokedThisTick;
         private bool _primaryHeldLastTick;
         private bool _secondaryHeldLastTick;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private FixedCharBuffer _assessmentHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — propulsion assessment HUD staging buffer — owner: PropulsionTool
         private FixedCharBuffer _operationLogBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - propulsion operation log staging buffer - owner: PropulsionTool
 
         public override void OnSpawn()
         {
             base.OnSpawn();
-            RefreshLocalization(LocalizationManager.ActiveRuntimeInstance);
+            RefreshLocalization(GlobalRegistry.LocalizationText);
             _feedbackCooldownRemaining = 0f;
             ForceReleaseWithoutFeedback();
         }
@@ -175,7 +175,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
-            RefreshLocalization(LocalizationManager.ActiveRuntimeInstance);
+            RefreshLocalization(GlobalRegistry.LocalizationText);
             InvalidateAssessmentCache();
         }
 
@@ -241,7 +241,7 @@ namespace Hecton8.Gameplay
             ref object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
-                RefreshLocalization(currentService as LocalizationManager);
+                RefreshLocalization(currentService as ILocalizationTextReadModel);
         }
 
         protected override void OnToolRegistryServiceReplaced(
@@ -250,10 +250,10 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
-                RefreshLocalization(currentService as LocalizationManager);
+                RefreshLocalization(currentService as ILocalizationTextReadModel);
         }
 
-        private void RefreshLocalization(LocalizationManager localization)
+        private void RefreshLocalization(ILocalizationTextReadModel localization)
         {
             if (ReferenceEquals(_localization, localization))
                 return;
@@ -1169,9 +1169,9 @@ namespace Hecton8.Gameplay
 
         private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetOrFallback(key, fallback)
                 : fallback;
         }
     }

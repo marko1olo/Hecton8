@@ -2,12 +2,17 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class ScannerFaunaScientificContactLayout
+    {
+        internal const int ContactStrideBytes = 8;
+    }
+
     public interface IScannerFaunaScientificContact
     {
         bool TryReadScannerFaunaScientificContact(out ScannerFaunaScientificContact contact);
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = ScannerFaunaScientificContactLayout.ContactStrideBytes)]
     public struct ScannerFaunaScientificContact
     {
         public const byte FlagContact = 1 << 0;

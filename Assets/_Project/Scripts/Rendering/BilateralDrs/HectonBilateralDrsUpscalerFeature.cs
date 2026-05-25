@@ -788,9 +788,7 @@ namespace Hecton8.Rendering
 
             private static bool IsFinite(float value)
             {
-                return value == value &&
-                       value >= -float.MaxValue &&
-                       value <= float.MaxValue;
+                return float.IsFinite(value);
             }
 
             private static GraphicsFormat ResolveColorFormat(GraphicsFormat sourceFormat)

@@ -136,7 +136,7 @@ namespace Hecton8.Core.Contracts
     public struct MacroDatabasePayloadHandle
     {
         [FieldOffset(0)] public ulong SectorHash;
-        [FieldOffset(8)] public IntPtr Pointer;
+        [FieldOffset(8)] public ulong PayloadToken;
         [FieldOffset(16)] public long FileOffset;
         [FieldOffset(24)] public int ByteLength;
         [FieldOffset(28)] public uint Version;
@@ -242,13 +242,32 @@ namespace Hecton8.Core.Contracts
 
         bool TryStoreMacroDatabasePayload(
             ulong sectorHash,
-            IntPtr source,
+            NativeArray<byte> source,
             int byteLength,
             long fileOffset,
             byte flags,
             out MacroDatabasePayloadHandle handle);
 
-        bool TryGetMacroDatabasePayload(ulong sectorHash, out MacroDatabasePayloadHandle handle);
+        /// <summary>Opens cached payload metadata and refreshes cache residency; this is not a pure read accessor.</summary>
+        bool TryOpenMacroDatabasePayload(ulong sectorHash, out MacroDatabasePayloadHandle handle);
+
+        /// <summary>Copies cached payload bytes into caller-owned native memory and refreshes cache residency.</summary>
+        bool TryCopyMacroDatabasePayload(
+            ulong sectorHash,
+            int sourceOffsetBytes,
+            NativeArray<byte> destination,
+            int destinationCapacityBytes,
+            out int bytesCopied,
+            out MacroDatabasePayloadHandle handle);
+
+        bool TryCopyMacroDatabasePayload<T>(
+            ulong sectorHash,
+            int sourceOffsetBytes,
+            NativeArray<T> destination,
+            int destinationCapacityBytes,
+            out int bytesCopied,
+            out MacroDatabasePayloadHandle handle)
+            where T : struct;
 
         bool TryRemoveMacroDatabasePayload(ulong sectorHash, out MacroDatabasePayloadHandle removed);
 
@@ -276,8 +295,19 @@ namespace Hecton8.Core.Contracts
         int BuildSectorHashWindow(in MacroDatabaseAup playerAup, MacroDatabaseTier tier, NativeArray<ulong> destination);
         int HydrateRadius(in MacroDatabaseAup playerAup, MacroDatabaseTier tier);
         Awaitable<int> HydrateRadiusAsync(MacroDatabaseAup playerAup, MacroDatabaseTier tier, CancellationToken cancellationToken = default);
-        bool TryGetPayload(ulong sectorHash, out MacroDatabasePayloadHandle handle);
-        bool MarkDirty(ulong sectorHash, IntPtr payload, int byteLength, byte flags);
+        /// <summary>Ensures the payload is hydrated into the native cache and returns metadata only.</summary>
+        bool EnsurePayload(ulong sectorHash, out MacroDatabasePayloadHandle handle);
+
+        /// <summary>Copies hydrated payload bytes into caller-owned native memory; no cache address escapes.</summary>
+        bool TryCopyPayload(
+            ulong sectorHash,
+            int sourceOffsetBytes,
+            NativeArray<byte> destination,
+            int destinationCapacityBytes,
+            out int bytesCopied,
+            out MacroDatabasePayloadHandle handle);
+        bool MarkDirty(ulong sectorHash, NativeArray<byte> payload, int byteLength, byte flags);
+        bool MarkDirty<T>(ulong sectorHash, in T payload, byte flags) where T : unmanaged;
         int EvictDistant(in MacroDatabaseAup playerAup, MacroDatabaseTier tier, NativeArray<ulong> evictionScratch);
         bool TryAppendDirtyPayload(ulong sectorHash);
         bool TryRepackOffline(string destinationPath);

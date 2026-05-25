@@ -7,5 +7,6 @@ namespace Hecton8.Core.Contracts.Signals
     {
         public const byte ScavengingLootOracle = 13;
         public const byte HarvestableOutcrop = 14;
+        public const byte DroneMining = 15;
     }
 }

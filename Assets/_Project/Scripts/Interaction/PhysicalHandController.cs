@@ -14,9 +14,7 @@ namespace Hecton8.Interaction
     using Hecton8.Physics;
     using Hecton8.Tools;
     using Hecton8.World;
-    using Unity.Burst;
     using Unity.Collections;
-    using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -115,9 +113,6 @@ namespace Hecton8.Interaction
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string InvalidMotionResetMessage = "[PhysicalHandController] NaN/Inf detected. Motion reset.";
 #endif
-        private const string NativeMemoryOwner = nameof(PhysicalHandController);
-        private const NativeAllocationLifetime FingerNativeMemoryLifetime = NativeAllocationLifetime.Session;
-
         private static readonly float3 DefaultThumbKnuckleOffset = new float3(-0.028f, -0.012f, 0.018f);
         private static readonly float3 DefaultIndexKnuckleOffset = new float3(-0.015f, -0.004f, 0.034f);
         private static readonly float3 DefaultMiddleKnuckleOffset = new float3(0f, -0.002f, 0.04f);
@@ -235,14 +230,9 @@ namespace Hecton8.Interaction
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private bool _suitOverlapSaturationLogged;
 #endif
-        private JobHandle _fingerPoseHandle;
-        private JobHandle _fingerPoseDisposeHandle;
-
-        private NativeArray<SpherecastCommand> _fingerCommands;
-        private NativeArray<RaycastHit> _fingerHits;
-        private NativeArray<FingerPoseData> _fingerPoses;
-        private NativeArray<FingerRayDefinition> _fingerRayDefinitions;
-        private NativeArray<FingerRayRuntime> _fingerRayRuntime;
+        private FingerPoseData[] _fingerPoses;
+        private FingerRayDefinition[] _fingerRayDefinitions;
+        private FingerRayRuntime[] _fingerRayRuntime;
         private Collider[] _suitOverlapResults;
         private Quaternion[] _baseFingerLocalRotations;
         private string _cachedGrabbedBodyName;
@@ -553,8 +543,8 @@ namespace Hecton8.Interaction
                 if (reason == PhysicalHandGrabEndReason.GripBroken)
                 {
                     Vector3 clampedVelocity = ClampPerAxis(_activeBody.linearVelocity, 8f);
-                    _activeBody.linearVelocity = IsFinite(clampedVelocity) ? clampedVelocity : Vector3.zero;
-                    _activeBody.angularVelocity = Vector3.zero;
+                    QueueBodyVelocityTarget(_activeBody, IsFinite(clampedVelocity) ? clampedVelocity : Vector3.zero);
+                    PhysicsForceRouter.QueueAngularVelocitySet(_activeBody, Vector3.zero, wake: false);
                 }
             }
 
@@ -986,138 +976,11 @@ namespace Hecton8.Interaction
             if (_suitHandCollider != null)
             {
                 _suitHandCollider.radius = radius;
-                _suitHandCollider.enabled = true;
+                _suitHandCollider.enabled = false;
             }
 
-            int hitCount = global::UnityEngine.Physics.OverlapSphereNonAlloc(
-                controllerPosition,
-                radius,
-                _suitOverlapResults,
-                suitCollisionMask.value,
-                QueryTriggerInteraction.Ignore);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (hitCount >= _suitOverlapResults.Length && !_suitOverlapSaturationLogged)
-            {
-                _suitOverlapSaturationLogged = true;
-                Debug.LogWarning(
-                    "[PhysicalHandController] Suit collision shell overlap buffer saturated. " +
-                    "Increase SuitOverlapCapacity or narrow suitCollisionMask.", this);
-            }
-#endif
-
-            float maxPenetration = 0f;
-            Vector3 contactPoint = controllerPosition;
-            Vector3 contactNormal = Vector3.up;
-            float3 wallRecoilOffset = float3.zero;
-            int sourceColliderInstanceId = 0;
-            for (int i = 0; i < hitCount; i++)
-            {
-                Collider hit = _suitOverlapResults[i];
-                _suitOverlapResults[i] = null;
-                if (hit == null ||
-                    !hit.enabled ||
-                    ReferenceEquals(hit, _suitHandCollider) ||
-                    (_activeBody != null && ReferenceEquals(hit.attachedRigidbody, _activeBody)))
-                {
-                    continue;
-                }
-
-                Bounds hitBounds = hit.bounds;
-                if (!IsFinite(hitBounds.center) || !IsFinite(hitBounds.extents))
-                    continue;
-
-                float3 deltaFromCenter = (float3)(controllerPosition - hitBounds.center);
-                float3 axisPenetration = (float3)hitBounds.extents + new float3(radius) - math.abs(deltaFromCenter);
-                float penetration = math.cmin(axisPenetration);
-                if (!math.isfinite(penetration) || penetration <= 0f)
-                    continue;
-
-                float3 normalAxis = ResolveDominantAxisNormal(deltaFromCenter, axisPenetration);
-                Vector3 normal = (Vector3)normalAxis;
-                Vector3 contact = controllerPosition - (Vector3)(normalAxis * radius);
-
-                if (penetration <= maxPenetration)
-                    continue;
-
-                maxPenetration = penetration;
-                contactPoint = contact;
-                contactNormal = normal;
-                wallRecoilOffset = normalAxis * math.min(HandWallRecoilMaxOffset, penetration * HandWallRecoilScale);
-                sourceColliderInstanceId = unchecked((int)EntityId.ToULong(hit.GetEntityId()));
-            }
-
-            _suitContactActive = maxPenetration > 0f;
-            if (!_suitContactActive)
-                return;
-
-            ApplyWallRecoilOffset((Vector3)wallRecoilOffset);
-
-            float crushThreshold = ResolveSuitCrushPenetrationThreshold();
-            float pressure01 = math.saturate(maxPenetration / crushThreshold);
-            if (!math.isfinite(pressure01))
-                return;
-
-            float hapticScale = ResolveSuitCollisionHapticScale(pressure01);
-            if (routeHandCollisionHaptics && _handContactHapticCooldownTimer <= 0f)
-            {
-                byte motorMask = ResolveHandMotorMask(handSide);
-                float lowIntensity = hapticScale;
-                float highIntensity = hapticScale;
-                if (motorMask == LeftMotorMask)
-                    highIntensity = hapticScale * 0.45f;
-                else if (motorMask == RightMotorMask)
-                    lowIntensity = hapticScale * 0.45f;
-
-                ToolHapticsRuntime.EnqueueCommand(
-                    lowIntensity,
-                    highIntensity,
-                    0.08f,
-                    7.5f,
-                    HandContactHapticPriority,
-                    motorMask,
-                    CriticalHapticBlendMode);
-                PhysicsEventBus.NotifyAcousticImpulse(new AcousticImpulseEvent(
-                    contactPoint,
-                    contactNormal,
-                    math.lerp(4f, 28f, pressure01),
-                    math.saturate(0.12f + pressure01 * 0.38f),
-                    math.lerp(1.35f, 2.1f, pressure01),
-                    math.lerp(0.2f, 0.6f, pressure01),
-                    sourceColliderInstanceId,
-                    0,
-                    AcousticImpulseFlags.PlayerCollision));
-                _handContactHapticCooldownTimer = HandContactHapticCooldownSeconds;
-            }
-
-            uint frame = _handFixedFrameIndex;
-            if (pressure01 < 1f ||
-                frame == _lastSuitDamageFrame ||
-                _handDamageHapticCooldownTimer > 0f)
-            {
-                return;
-            }
-
-            _lastSuitDamageFrame = frame;
-            _handDamageHapticCooldownTimer = HandDamageHapticCooldownSeconds;
-            AbsoluteUniversePosition contactAup = ResolveSuitContactAup(contactPoint, controllerPosition);
-            SuitDamageEvent damageEvent = new SuitDamageEvent(
-                handSide,
-                contactAup,
-                contactNormal,
-                pressure01,
-                sourceColliderInstanceId,
-                frame);
-            SuitDamageEvents.Publish(in damageEvent);
-            PhysicsEventBus.NotifyAcousticImpulse(new AcousticImpulseEvent(
-                contactPoint,
-                contactNormal,
-                math.lerp(35f, 180f, pressure01),
-                math.saturate(0.35f + pressure01 * 0.65f),
-                0.75f,
-                0.85f,
-                sourceColliderInstanceId,
-                0,
-                AcousticImpulseFlags.PlayerCollision | AcousticImpulseFlags.Critical));
+            ClearSuitOverlapResults();
+            _suitContactActive = false;
         }
 
         private void CacheKinematicBridgeCold(bool force = false)
@@ -1545,28 +1408,12 @@ namespace Hecton8.Interaction
 
         private void AllocatePersistentBuffersCold()
         {
-            DispatcherJobSwap.TryFinalizeCompleted(ref _fingerPoseDisposeHandle);
-            if (!_fingerPoseDisposeHandle.IsCompleted)
+            if (HasFingerPoseBuffers())
                 return;
 
-            if (_fingerCommands.IsCreated)
-                return;
-
-            // COLD ALLOC: NativeArray<SpherecastCommand>[5] - persistent finger spherecast commands - owner: PhysicalHandController
-            _fingerCommands = new NativeArray<SpherecastCommand>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_fingerCommands, NativeMemoryOwner, nameof(_fingerCommands), FingerNativeMemoryLifetime);
-            // COLD ALLOC: NativeArray<RaycastHit>[5] - persistent finger spherecast results - owner: PhysicalHandController
-            _fingerHits = new NativeArray<RaycastHit>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_fingerHits, NativeMemoryOwner, nameof(_fingerHits), FingerNativeMemoryLifetime);
-            // COLD ALLOC: NativeArray<FingerPoseData>[5] - persistent finger pose results - owner: PhysicalHandController
-            _fingerPoses = new NativeArray<FingerPoseData>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_fingerPoses, NativeMemoryOwner, nameof(_fingerPoses), FingerNativeMemoryLifetime);
-            // COLD ALLOC: NativeArray<FingerRayDefinition>[5] - persistent local finger ray definitions - owner: PhysicalHandController
-            _fingerRayDefinitions = new NativeArray<FingerRayDefinition>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_fingerRayDefinitions, NativeMemoryOwner, nameof(_fingerRayDefinitions), FingerNativeMemoryLifetime);
-            // COLD ALLOC: NativeArray<FingerRayRuntime>[5] - persistent world-space finger ray runtime data - owner: PhysicalHandController
-            _fingerRayRuntime = new NativeArray<FingerRayRuntime>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_fingerRayRuntime, NativeMemoryOwner, nameof(_fingerRayRuntime), FingerNativeMemoryLifetime);
+            _fingerPoses = new FingerPoseData[FingerCount]; // COLD ALLOC: FingerPoseData[5] - finger pose value results - owner: PhysicalHandController
+            _fingerRayDefinitions = new FingerRayDefinition[FingerCount]; // COLD ALLOC: FingerRayDefinition[5] - local finger ray definitions - owner: PhysicalHandController
+            _fingerRayRuntime = new FingerRayRuntime[FingerCount]; // COLD ALLOC: FingerRayRuntime[5] - world-space finger ray runtime values - owner: PhysicalHandController
 
             _fingerRayDefinitions[0] = new FingerRayDefinition
             {
@@ -1597,46 +1444,20 @@ namespace Hecton8.Interaction
 
         private bool HasFingerPoseBuffers()
         {
-            return _fingerCommands.IsCreated &&
-                   _fingerHits.IsCreated &&
-                   _fingerPoses.IsCreated &&
-                   _fingerRayDefinitions.IsCreated &&
-                   _fingerRayRuntime.IsCreated;
+            return _fingerPoses != null &&
+                   _fingerPoses.Length >= FingerCount &&
+                   _fingerRayDefinitions != null &&
+                   _fingerRayDefinitions.Length >= FingerCount &&
+                   _fingerRayRuntime != null &&
+                   _fingerRayRuntime.Length >= FingerCount;
         }
 
         private void DisposePersistentBuffers()
         {
-            DispatcherJobSwap.TryFinalizeCompleted(ref _fingerPoseDisposeHandle);
-            bool hasPendingDispose = !_fingerPoseDisposeHandle.IsCompleted;
-            JobHandle disposeHandle = hasPendingDispose
-                ? JobHandle.CombineDependencies(_fingerPoseDisposeHandle, _fingerPoseHandle)
-                : _fingerPoseHandle;
-            bool scheduledDispose = false;
-
-            DisposeNativeArray(ref _fingerCommands, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _fingerHits, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _fingerPoses, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _fingerRayDefinitions, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _fingerRayRuntime, ref disposeHandle, ref scheduledDispose);
-
+            _fingerPoses = null;
+            _fingerRayDefinitions = null;
+            _fingerRayRuntime = null;
             _fingerPoseScheduled = false;
-            _fingerPoseHandle = default;
-            if (!scheduledDispose)
-                return;
-
-            _fingerPoseDisposeHandle = disposeHandle;
-            JobHandle.ScheduleBatchedJobs();
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle disposeHandle, ref bool scheduledDispose) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            disposeHandle = array.Dispose(disposeHandle);
-            array = default;
-            scheduledDispose = true;
         }
 
         private void ResolveFingerSegments()
@@ -1741,9 +1562,6 @@ namespace Hecton8.Interaction
             if (!_fingerPoseScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _fingerPoseHandle, forceComplete: false))
-                return;
-
             _fingerPoseScheduled = false;
             if (IsGrabbing)
                 ApplyFingerPose(dt);
@@ -1767,7 +1585,7 @@ namespace Hecton8.Interaction
 
         private void ApplyFingerPose(float dt)
         {
-            if (fingerSegments == null || _baseFingerLocalRotations == null)
+            if (fingerSegments == null || _baseFingerLocalRotations == null || _fingerPoses == null)
                 return;
 
             float blendT = math.saturate(dt * FingerInterpolationSpeed);
@@ -2112,43 +1930,56 @@ namespace Hecton8.Interaction
             if (_runtimeGripPoint == null || _activeBody == null)
                 return;
 
-            if (fingerCollisionMask.value == 0)
-                return;
-
             if (!HasFingerPoseBuffers())
                 return;
 
-            QueryParameters queryParameters = new QueryParameters(
-                fingerCollisionMask.value,
-                false,
-                QueryTriggerInteraction.Ignore,
-                false);
-
-            BuildFingerSpherecastCommandsJob buildJob = new BuildFingerSpherecastCommandsJob
-            {
-                HandPosition = _runtimeGripPoint.position,
-                HandRotation = _runtimeGripPoint.rotation,
-                TargetPosition = _activeBody.worldCenterOfMass,
-                CastRadius = FingerCastRadius,
-                CastLength = FingerCastLength,
-                QueryParameters = queryParameters,
-                RayDefinitions = _fingerRayDefinitions,
-                Commands = _fingerCommands,
-                RayRuntime = _fingerRayRuntime
-            };
-
-            ProcessFingerHitsJob processJob = new ProcessFingerHitsJob
-            {
-                CastLength = FingerCastLength,
-                Hits = _fingerHits,
-                RayRuntime = _fingerRayRuntime,
-                Output = _fingerPoses
-            };
-
-            JobHandle buildHandle = buildJob.Schedule(FingerCount, 1);
-            JobHandle castHandle = SpherecastCommand.ScheduleBatch(_fingerCommands, _fingerHits, 1, buildHandle);
-            _fingerPoseHandle = processJob.Schedule(FingerCount, 1, castHandle);
+            SolveFingerPoseValues(
+                _runtimeGripPoint.position,
+                _runtimeGripPoint.rotation,
+                _activeBody.worldCenterOfMass,
+                FingerCastLength);
             _fingerPoseScheduled = true;
+        }
+
+        private void SolveFingerPoseValues(Vector3 handPosition, Quaternion handRotation, Vector3 targetPosition, float castLength)
+        {
+            float3 handPosition3 = (float3)handPosition;
+            quaternion handRotationQ = ToMathematicsQuaternion(handRotation);
+            float3 targetPosition3 = (float3)targetPosition;
+            float safeCastLength = math.isfinite(castLength)
+                ? math.max(castLength, MinimumDeltaTime)
+                : MinimumDeltaTime;
+
+            for (int index = 0; index < FingerCount; index++)
+            {
+                FingerRayDefinition definition = _fingerRayDefinitions[index];
+                float3 localKnuckleOffset = math.all(math.isfinite(definition.LocalKnuckleOffset))
+                    ? definition.LocalKnuckleOffset
+                    : float3.zero;
+                float3 localFingerDirection = NormalizeVectorApproxNoSqrt(definition.LocalFingerDirection, new float3(0f, 0f, 1f));
+                float3 origin = handPosition3 + math.rotate(handRotationQ, localKnuckleOffset);
+                if (!math.all(math.isfinite(origin)))
+                    origin = handPosition3;
+
+                float3 fallbackDirection = math.rotate(handRotationQ, localFingerDirection);
+                fallbackDirection = NormalizeVectorApproxNoSqrt(fallbackDirection, new float3(0f, 0f, 1f));
+                float3 direction = NormalizeVectorApproxNoSqrt(targetPosition3 - origin, fallbackDirection);
+                if (!math.all(math.isfinite(direction)))
+                    direction = fallbackDirection;
+
+                _fingerRayRuntime[index] = new FingerRayRuntime
+                {
+                    Origin = origin,
+                    Direction = direction
+                };
+
+                _fingerPoses[index] = new FingerPoseData
+                {
+                    BendAngle = 1f,
+                    TipPosition = origin + direction * safeCastLength,
+                    TipNormal = -direction
+                };
+            }
         }
 
         private void BreakGrip(PhysicalHandGrabEndReason reason)
@@ -2632,8 +2463,8 @@ namespace Hecton8.Interaction
         {
             if (body != null)
             {
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
+                QueueBodyVelocityTarget(body, Vector3.zero);
+                PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
             }
 
             _virtualHandVelocity = Vector3.zero;
@@ -2645,98 +2476,15 @@ namespace Hecton8.Interaction
 #endif
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildFingerSpherecastCommandsJob : IJobParallelFor
+        private static void QueueBodyVelocityTarget(Rigidbody body, Vector3 targetVelocity)
         {
-            public float3 HandPosition;
-            public quaternion HandRotation;
-            public float3 TargetPosition;
-            public float CastRadius;
-            public float CastLength;
-            public QueryParameters QueryParameters;
+            if (body == null || body.isKinematic)
+                return;
 
-            [ReadOnly, NoAlias] public NativeArray<FingerRayDefinition> RayDefinitions;
-
-            [WriteOnly, NoAlias] public NativeArray<SpherecastCommand> Commands;
-            [WriteOnly, NoAlias] public NativeArray<FingerRayRuntime> RayRuntime;
-
-            public void Execute(int index)
-            {
-                FingerRayDefinition definition = RayDefinitions[index];
-                float3 localKnuckleOffset = math.all(math.isfinite(definition.LocalKnuckleOffset))
-                    ? definition.LocalKnuckleOffset
-                    : float3.zero;
-                float3 localFingerDirection = NormalizeVectorApproxNoSqrt(definition.LocalFingerDirection, new float3(0f, 0f, 1f));
-                float3 origin = HandPosition + math.rotate(HandRotation, localKnuckleOffset);
-                if (!math.all(math.isfinite(origin)))
-                    origin = HandPosition;
-
-                float3 fallbackDirection = math.rotate(HandRotation, localFingerDirection);
-                fallbackDirection = NormalizeVectorApproxNoSqrt(fallbackDirection, new float3(0f, 0f, 1f));
-                float3 targetDirection = NormalizeVectorApproxNoSqrt(TargetPosition - origin, fallbackDirection);
-                if (!math.all(math.isfinite(targetDirection)))
-                    targetDirection = fallbackDirection;
-
-                RayRuntime[index] = new FingerRayRuntime
-                {
-                    Origin = origin,
-                    Direction = targetDirection
-                };
-                Commands[index] = new SpherecastCommand(origin, CastRadius, targetDirection, QueryParameters, CastLength);
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct ProcessFingerHitsJob : IJobParallelFor
-        {
-            public float CastLength;
-
-            [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;
-            [ReadOnly, NoAlias] public NativeArray<FingerRayRuntime> RayRuntime;
-
-            [WriteOnly, NoAlias] public NativeArray<FingerPoseData> Output;
-
-            public void Execute(int index)
-            {
-                RaycastHit hit = Hits[index];
-                FingerRayRuntime rayRuntime = RayRuntime[index];
-                float3 origin = math.all(math.isfinite(rayRuntime.Origin))
-                    ? rayRuntime.Origin
-                    : float3.zero;
-                float3 direction = NormalizeVectorApproxNoSqrt(rayRuntime.Direction, new float3(0f, 0f, 1f));
-                float safeCastLength = math.isfinite(CastLength)
-                    ? math.max(CastLength, MinimumDeltaTime)
-                    : MinimumDeltaTime;
-                float3 hitPoint = hit.point;
-                bool hasHit =
-                    math.isfinite(hit.distance) &&
-                    hit.distance > 0f &&
-                    hit.distance <= safeCastLength &&
-                    math.all(math.isfinite(hitPoint));
-
-                FingerPoseData pose = default;
-                if (hasHit)
-                {
-                    float bend = 1f - math.saturate(hit.distance / safeCastLength);
-                    float3 normal = hit.normal;
-                    if (math.lengthsq(normal) < 0.000001f)
-                        normal = -direction;
-                    else
-                        normal = NormalizeVectorApproxNoSqrt(normal, -direction);
-
-                    pose.BendAngle = bend;
-                    pose.TipPosition = hitPoint;
-                    pose.TipNormal = normal;
-                }
-                else
-                {
-                    pose.BendAngle = 1f;
-                    pose.TipPosition = origin + direction * safeCastLength;
-                    pose.TipNormal = -direction;
-                }
-
-                Output[index] = pose;
-            }
+            Vector3 currentVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero;
+            Vector3 safeTargetVelocity = IsFinite(targetVelocity) ? targetVelocity : Vector3.zero;
+            if ((safeTargetVelocity - currentVelocity).sqrMagnitude > 0.0000001f)
+                PhysicsForceRouter.QueueLinearVelocitySet(body, safeTargetVelocity);
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]

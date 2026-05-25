@@ -3,6 +3,7 @@ using Hecton8.Building;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
+using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -17,11 +18,14 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9930)]
-    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IPlayerSurvivalEnvironmentReadModel, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IPlayerSurvivalEnvironmentReadModel, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private const uint KccVelocityRuntimeContextMaxAgeFrames = 12u;
+
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredContext;
+        private bool _registeredHotSwap;
         private bool _syncInProgress;
         private bool _dynamicContextReferencesEnabled;
         private IPlayerInventoryService _playerInventoryService;
@@ -155,6 +159,15 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public PlayerTransportCoordinator PlayerTransportCoordinator
+        {
+            get
+            {
+                return _playerTransportCoordinator;
+            }
+        }
+
+        /// <inheritdoc />
+        public IPlayerTransportLifecycleResolver PlayerTransportLifecycleResolver
         {
             get
             {
@@ -390,6 +403,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterContext();
                 if (syncImmediately)
@@ -402,6 +416,7 @@ namespace Hecton8.Core
                 return;
 
             _isInitialized = true;
+            TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterContext();
             if (syncImmediately)
@@ -423,6 +438,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterContext();
                 SyncPlayerContext();
@@ -432,6 +448,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterUpdatable();
+            TryUnregisterHotSwapListener();
             TryUnregisterContext();
         }
 
@@ -445,9 +462,43 @@ namespace Hecton8.Core
             ShutdownServiceState();
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null)
+                {
+                    TryUnregisterUpdatable();
+                    TryRegisterUpdatable();
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+            {
+                _playerInventoryService = currentService as IPlayerInventoryService;
+                SyncPlayerContext();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerSensory)
+            {
+                _playerSensoryService = currentService as IPlayerSensoryService;
+                SyncPlayerContext();
+            }
+        }
+
         private void ShutdownServiceState()
         {
             TryUnregisterUpdatable();
+            TryUnregisterHotSwapListener();
             TryUnregisterContext();
             _isInitialized = false;
             _syncInProgress = false;
@@ -616,7 +667,9 @@ namespace Hecton8.Core
             if (!_runtimeContext.IsBound || _playerTransform == null)
                 return;
 
-            float3 velocity = SafeFiniteVector(_playerRigidbody != null ? (float3)_playerRigidbody.linearVelocity : float3.zero);
+            float3 velocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityRuntimeContextMaxAgeFrames, out float3 kccVelocity)
+                ? SafeFiniteVector(kccVelocity)
+                : float3.zero;
             float3 forward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));
             Transform playerCameraTransform = ResolvePlayerCameraTransform();
             float3 cameraForward = SafeDirection(playerCameraTransform != null ? (float3)playerCameraTransform.forward : forward, forward);
@@ -676,7 +729,7 @@ namespace Hecton8.Core
                 movementState.WorldPosition = fallbackPlayerPosition;
                 movementState.PredictedWorldPosition = movementState.WorldPosition + (velocity * 0.1f);
                 var predictedAup = movementState.PredictedAup;
-                if (GlobalSignals.TryRuntimePositionToAup(movementState.PredictedWorldPosition, ref predictedAup))
+                if (RuntimeOriginRoute.TryRuntimePositionToAup(movementState.PredictedWorldPosition, ref predictedAup))
                     movementState.PredictedAup = predictedAup;
             }
 
@@ -789,79 +842,39 @@ namespace Hecton8.Core
             IPlayerInventoryService playerInventoryService = _playerInventoryService;
             if (playerInventoryService != null)
             {
-                if (playerInventoryService is PlayerInventoryManager playerInventoryManager)
-                {
-                    if (_toolManager == null)
-                        _toolManager = playerInventoryManager.CachedToolManager;
+                if (_toolManager == null)
+                    _toolManager = playerInventoryService.ToolManager;
 
-                    if (_inventory == null)
-                        _inventory = playerInventoryManager.CachedInventory;
+                if (_inventory == null)
+                    _inventory = playerInventoryService.Inventory;
 
-                    if (_playerBuilder == null)
-                        _playerBuilder = playerInventoryManager.CachedPlayerBuilder;
+                if (_playerBuilder == null)
+                    _playerBuilder = playerInventoryService.PlayerBuilder;
 
-                    if (_handAnchor == null)
-                        _handAnchor = playerInventoryManager.CachedHandAnchor;
-                }
-                else
-                {
-                    if (_toolManager == null)
-                        _toolManager = playerInventoryService.ToolManager;
-
-                    if (_inventory == null)
-                        _inventory = playerInventoryService.Inventory;
-
-                    if (_playerBuilder == null)
-                        _playerBuilder = playerInventoryService.PlayerBuilder;
-
-                    if (_handAnchor == null)
-                        _handAnchor = playerInventoryService.HandAnchor;
-                }
+                if (_handAnchor == null)
+                    _handAnchor = playerInventoryService.HandAnchor;
             }
 
             IPlayerSensoryService playerSensoryService = _playerSensoryService;
             if (playerSensoryService != null)
             {
-                if (playerSensoryService is PlayerSensoryManager playerSensoryManager)
-                {
-                    if (_playerCamera == null)
-                        AssignPlayerCamera(playerSensoryManager.CachedPlayerCamera);
+                if (_playerCamera == null)
+                    AssignPlayerCamera(playerSensoryService.PlayerCamera);
 
-                    if (_flashlight == null)
-                        _flashlight = playerSensoryManager.CachedFlashlight;
+                if (_flashlight == null)
+                    _flashlight = playerSensoryService.Flashlight;
 
-                    if (_thrusterAudio == null)
-                        _thrusterAudio = playerSensoryManager.CachedThrusterAudio;
+                if (_thrusterAudio == null)
+                    _thrusterAudio = playerSensoryService.ThrusterAudio;
 
-                    if (_underwaterVisuals == null)
-                        _underwaterVisuals = playerSensoryManager.CachedUnderwaterVisuals;
+                if (_underwaterVisuals == null)
+                    _underwaterVisuals = playerSensoryService.UnderwaterVisuals;
 
-                    if (_visorController == null)
-                        _visorController = playerSensoryManager.CachedVisorController;
+                if (_visorController == null)
+                    _visorController = playerSensoryService.VisorController;
 
-                    if (_hudNotification == null)
-                        _hudNotification = playerSensoryManager.CachedHudNotification;
-                }
-                else
-                {
-                    if (_playerCamera == null)
-                        AssignPlayerCamera(playerSensoryService.PlayerCamera);
-
-                    if (_flashlight == null)
-                        _flashlight = playerSensoryService.Flashlight;
-
-                    if (_thrusterAudio == null)
-                        _thrusterAudio = playerSensoryService.ThrusterAudio;
-
-                    if (_underwaterVisuals == null)
-                        _underwaterVisuals = playerSensoryService.UnderwaterVisuals;
-
-                    if (_visorController == null)
-                        _visorController = playerSensoryService.VisorController;
-
-                    if (_hudNotification == null)
-                        _hudNotification = playerSensoryService.HudNotification;
-                }
+                if (_hudNotification == null)
+                    _hudNotification = playerSensoryService.HudNotification;
             }
 
             if (_toolManager != null)
@@ -870,7 +883,6 @@ namespace Hecton8.Core
                     _inventory = _toolManager.Inventory;
 
                 _handAnchor = _toolManager.HandAnchor;
-                _playerBuilder = _toolManager.CurrentTool as PlayerBuilder;
             }
 
             if (_playerMovement != null)
@@ -939,8 +951,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterUpdatable()
@@ -950,6 +961,23 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void TryRegisterContext()

@@ -23,6 +23,7 @@
 #if UNITY_EDITOR
 
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 using Hecton8.World;
@@ -146,8 +147,8 @@ namespace Hecton8.Editor
             EditorGUILayout.LabelField("LOD System", EditorStyles.boldLabel);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            DrawStatRow("Registered LOD Groups", _registeredLODGroupCount.ToString());
-            DrawStatRow("LOD System CPU Time", $"{_lodSystemCPUTime:F3} ms");
+            DrawStatRow("Registered LOD Groups", _registeredLODGroupCount.ToString(CultureInfo.InvariantCulture));
+            DrawStatRow("LOD System CPU Time", _lodSystemCPUTime.ToString("F3", CultureInfo.InvariantCulture) + " ms");
 
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10f);
@@ -159,8 +160,8 @@ namespace Hecton8.Editor
             EditorGUILayout.LabelField("Culling System", EditorStyles.boldLabel);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            DrawStatRow("Frustum Culled", _frustumCulledCount.ToString());
-            DrawStatRow("Distance Culled", _distanceCulledCount.ToString());
+            DrawStatRow("Frustum Culled", _frustumCulledCount.ToString(CultureInfo.InvariantCulture));
+            DrawStatRow("Distance Culled", _distanceCulledCount.ToString(CultureInfo.InvariantCulture));
 
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10f);
@@ -172,7 +173,7 @@ namespace Hecton8.Editor
             EditorGUILayout.LabelField("Impostor System", EditorStyles.boldLabel);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            DrawStatRow("Active Impostors", _activeImpostorCount.ToString());
+            DrawStatRow("Active Impostors", _activeImpostorCount.ToString(CultureInfo.InvariantCulture));
 
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10f);
@@ -184,7 +185,7 @@ namespace Hecton8.Editor
             EditorGUILayout.LabelField("Dynamic Resolution", EditorStyles.boldLabel);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            DrawStatRow("Current Render Scale", $"{_currentRenderScale:F3}");
+            DrawStatRow("Current Render Scale", _currentRenderScale.ToString("F3", CultureInfo.InvariantCulture));
 
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10f);
@@ -307,7 +308,10 @@ namespace Hecton8.Editor
             }
 
             // Draw labels
-            GUI.Label(new Rect(graphRect.x + 5f, graphRect.y + 5f, 100f, 20f), $"Max: {maxValue:F2} ms", EditorStyles.miniLabel);
+            GUI.Label(
+                new Rect(graphRect.x + 5f, graphRect.y + 5f, 100f, 20f),
+                "Max: " + maxValue.ToString("F2", CultureInfo.InvariantCulture) + " ms",
+                EditorStyles.miniLabel);
             GUI.Label(new Rect(graphRect.x + 5f, graphRect.yMax - 20f, 100f, 20f), "0 ms", EditorStyles.miniLabel);
         }
 

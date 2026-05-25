@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class CelestialCataclysmSystem : MonoBehaviour, ISlowTickable, IRandomEventListener
+    public sealed class CelestialCataclysmSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, IRandomEventListener, IGlobalRegistryHotSwapListener
     {
         private const ushort SolarFlareSourceId = 0xA811;
         private const int MaxMeteorFogShadowCount = 4;
@@ -39,12 +39,19 @@ namespace Hecton8.Gameplay
         private static readonly List<VisorHUDController> s_visorControllers = new List<VisorHUDController>(4);
 
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
         private bool _reportedMissingFloraDirector;
         private bool _reportedMissingEmpVisorController;
+        private bool _meteorFogShadowsDirty;
+        private bool _solarEmpGlitchDirty;
+        private float _pendingMeteorFogShadowIntensity01;
+        private float _pendingSolarEmpGlitchIntensity01;
         private float _meteorFogShadowRemainingSeconds;
         private float _solarEmpGlitchRemainingSeconds;
         private float _solarEmpGlitchDurationSeconds;
         private float _solarEmpGlitchIntensity01;
+        private HectonCelestialEngine _celestialEngine;
 
         private static readonly int _MeteorFogShadowPositionsId = Shader.PropertyToID("_MeteorFogShadowPositions");
         private static readonly int _MeteorFogShadowParamsId = Shader.PropertyToID("_MeteorFogShadowParams");
@@ -55,25 +62,57 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            _celestialEngine = GlobalRegistry.CelestialEngine;
+            TryRegisterHotSwapListener();
             TryRegister();
             RandomEventEvents.Register(this);
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
             RandomEventEvents.Unregister(this);
             _meteorFogShadowRemainingSeconds = 0f;
             _solarEmpGlitchRemainingSeconds = 0f;
-            PublishMeteorFogShadows(0f);
-            PublishSolarEmpGlitchGlobals(0f);
+            PublishMeteorFogShadowsImmediate(0f);
+            PublishSolarEmpGlitchGlobalsImmediate(0f);
             s_visorControllers.Clear();
+            TryUnregisterLateFrame();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
             RandomEventEvents.Unregister(this);
+            TryUnregisterLateFrame();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                        return;
+
+                    TryUnregister();
+                    TryUnregisterLateFrame();
+                    TryRegister();
+                    if (_meteorFogShadowsDirty || _solarEmpGlitchDirty)
+                        TryRegisterLateFrame();
+                    break;
+                case GlobalRegistryServiceSlot.CelestialEngineRuntime:
+                    _celestialEngine = currentService as HectonCelestialEngine;
+                    break;
+            }
         }
 
         /// <summary>
@@ -84,6 +123,13 @@ namespace Hecton8.Gameplay
             ApplyLunarResonanceIfActive();
             AdvanceMeteorFogShadows(0.5f);
             AdvanceSolarEmpGlitch(0.5f);
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedCataclysmVisuals();
+            if (!_meteorFogShadowsDirty && !_solarEmpGlitchDirty)
+                TryUnregisterLateFrame();
         }
 
         /// <summary>
@@ -133,8 +179,7 @@ namespace Hecton8.Gameplay
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -146,10 +191,44 @@ namespace Hecton8.Gameplay
             _registered = false;
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void PublishSolarEmpFlare(float intensity)
         {
             Vector3 origin = ResolvePlayerPosition();
-            PhysicsEventBus.NotifyElectromagneticPulse(new ElectromagneticPulseEvent(
+            PhysicsEventBus.TryNotifyElectromagneticPulse(new ElectromagneticPulseEvent(
                 origin,
                 Mathf.Max(1f, solarEmpRadiusMeters),
                 Mathf.Max(0.1f, solarEmpDurationSeconds),
@@ -161,7 +240,7 @@ namespace Hecton8.Gameplay
 
         private void ApplyLunarResonanceIfActive()
         {
-            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
+            HectonCelestialEngine celestialEngine = _celestialEngine;
             if (celestialEngine == null || !celestialEngine.IsLunarResonanceActive)
                 return;
 
@@ -187,6 +266,13 @@ namespace Hecton8.Gameplay
         }
 
         private void PublishMeteorFogShadows(float intensity01)
+        {
+            _pendingMeteorFogShadowIntensity01 = math.saturate(intensity01);
+            _meteorFogShadowsDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void PublishMeteorFogShadowsImmediate(float intensity01)
         {
             Vector3 playerPosition = ResolvePlayerPosition();
             float eventAge = Mathf.Max(0f, meteorFogShadowDurationSeconds - _meteorFogShadowRemainingSeconds);
@@ -264,6 +350,13 @@ namespace Hecton8.Gameplay
 
         private void PublishSolarEmpGlitchGlobals(float intensity01)
         {
+            _pendingSolarEmpGlitchIntensity01 = Mathf.Clamp01(intensity01);
+            _solarEmpGlitchDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void PublishSolarEmpGlitchGlobalsImmediate(float intensity01)
+        {
             Shader.SetGlobalVector(
                 _SolarEmpGlitchParamsId,
                 new Vector4(
@@ -271,6 +364,21 @@ namespace Hecton8.Gameplay
                     Mathf.Max(0f, _solarEmpGlitchRemainingSeconds),
                     Time.unscaledTime,
                     Mathf.Clamp01(solarEmpClaritySuppression01)));
+        }
+
+        private void FlushQueuedCataclysmVisuals()
+        {
+            if (_meteorFogShadowsDirty)
+            {
+                _meteorFogShadowsDirty = false;
+                PublishMeteorFogShadowsImmediate(_pendingMeteorFogShadowIntensity01);
+            }
+
+            if (_solarEmpGlitchDirty)
+            {
+                _solarEmpGlitchDirty = false;
+                PublishSolarEmpGlitchGlobalsImmediate(_pendingSolarEmpGlitchIntensity01);
+            }
         }
 
         private static void PublishPerformanceWarning(uint warningHash, float scalarValue)

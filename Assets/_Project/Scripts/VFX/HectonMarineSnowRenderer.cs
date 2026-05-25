@@ -3,11 +3,11 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core;
 using Hecton8.Optimization;
-using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.VFX.Wakes;
 using Hecton8.World;
@@ -27,6 +27,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     public sealed class HectonMarineSnowRenderer : MonoBehaviour,
         ITickable,
+        ILateFrameTickable,
         IUpdatable,
         IOriginShiftListener,
         IVehicleCommandSignalListener,
@@ -597,6 +598,9 @@ namespace Hecton8.Environment
         private float _resolvedGlobalQualityWeight = -1f;
         private ulong _resolvedKillSwitchMask = ulong.MaxValue;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
+        private bool _pendingVisualTickDirty;
+        private float _pendingVisualTickDeltaTime;
         private bool _buffersReady;
         private bool _staticBindingsDirty = true;
         private bool _underwaterActive;
@@ -624,10 +628,10 @@ namespace Hecton8.Environment
         private int _fogDensityHeight;
         private int _fogDensityClearGroupsX;
         private int _fogDensityClearGroupsY;
-        private HectonFluidEngine _fluidEngine;
+        private IAbyssalFlowGpuReadModel _abyssalFlowGpuReadModel;
         private IWeatherService _weatherService;
         private DynamicResolutionScaler _dynamicResolutionScaler;
-        private VRAMMonitor _vramMonitor;
+        private IVramBudgetReadModel _vramMonitor;
         private ITickDispatcher _tickDispatcher;
         private int _nextFluidRebindFrame;
         private int _nextDataVaultRebindFrame;
@@ -772,7 +776,7 @@ namespace Hecton8.Environment
         [SerializeField] private float _debugQualityPressure01 = 1f;
         [SerializeField] private float _debugAdaptiveRenderScale = 1f;
         [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
-        [SerializeField] private VRAMMonitor.VRAMPressureState _debugAdaptiveVramPressureState;
+        [SerializeField] private byte _debugAdaptiveVramPressureState;
         [SerializeField] private float _debugBiolumeSurgeBlend;
         [SerializeField] private int _debugHomeostasisPressureLevel;
         [SerializeField] private uint _debugHomeostasisKillSwitchMaskLow32;
@@ -807,6 +811,7 @@ namespace Hecton8.Environment
             HectonFloatingOrigin.RegisterListener(this);
             EnsureCsvProfileBackgroundReader();
             TryRegisterTick();
+            TryRegisterLateFrame();
         }
 
         private void OnValidate()
@@ -828,10 +833,15 @@ namespace Hecton8.Environment
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
             ReleaseBuffers();
             ClearNativeStateLease();
-            _fluidEngine = null;
+            _abyssalFlowGpuReadModel = null;
             _weatherService = null;
             _dynamicResolutionScaler = null;
             _vramMonitor = null;
@@ -964,11 +974,11 @@ namespace Hecton8.Environment
         private void RefreshCachedRegistryServices()
         {
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
-            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.FluidRuntime, GlobalRegistry.Fluid);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.FluidRuntime, GlobalRegistry.AbyssalFlowGpu);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Weather, GlobalRegistry.Weather);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DynamicResolutionRuntime, GlobalRegistry.DynamicResolution);
-            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.VRAMMonitorRuntime, GlobalRegistry.VRAMMonitor);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.VRAMMonitorRuntime, GlobalRegistry.VRAMBudgetReadModel);
             _resolvedGlobalQualityWeight = -1f;
         }
 
@@ -985,16 +995,24 @@ namespace Hecton8.Environment
                             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                             _registeredTick = false;
                         }
+                        if (_registeredLateFrame)
+                        {
+                            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                            _registeredLateFrame = false;
+                        }
 
                         _tickDispatcher = tickDispatcher;
                     }
 
                     _dispatcherReady = tickDispatcher != null;
                     if (_dispatcherReady)
+                    {
                         TryRegisterTick();
+                        TryRegisterLateFrame();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
-                    _fluidEngine = currentService as HectonFluidEngine;
+                    _abyssalFlowGpuReadModel = currentService as IAbyssalFlowGpuReadModel;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     BindDataVault(currentService as IDataVault, null);
@@ -1006,7 +1024,7 @@ namespace Hecton8.Environment
                     _dynamicResolutionScaler = currentService as DynamicResolutionScaler;
                     break;
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
-                    _vramMonitor = currentService as VRAMMonitor;
+                    _vramMonitor = currentService as IVramBudgetReadModel;
                     break;
             }
         }
@@ -1073,6 +1091,24 @@ namespace Hecton8.Environment
         }
 
         public void Tick(float dt)
+        {
+            _pendingVisualTickDeltaTime += math.max(0f, dt);
+            _pendingVisualTickDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingVisualTickDirty)
+                return;
+
+            float dt = _pendingVisualTickDeltaTime;
+            _pendingVisualTickDeltaTime = 0f;
+            _pendingVisualTickDirty = false;
+            RunMarineSnowVisualTick(dt);
+        }
+
+        private void RunMarineSnowVisualTick(float dt)
         {
             if (!enabled || marineSnowCompute == null || marineSnowMaterial == null)
                 return;
@@ -1495,7 +1531,7 @@ namespace Hecton8.Environment
                 return false;
 
             ReleaseOwnedVaultHandle(vault, ref handle, bufferId);
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
             if (TryResolveVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
@@ -1670,7 +1706,7 @@ namespace Hecton8.Environment
                 SourceHash = VehicleWakeSourceHash,
                 Flags = result.Flags
             };
-            SignalBus<FluidImpulseSignal>.Push(in signal);
+            SignalBus<FluidImpulseSignal>.TryPush(in signal);
             _vehicleWakePublishCooldown = VehicleWakePublishCooldownSeconds;
         }
 
@@ -2437,8 +2473,17 @@ namespace Hecton8.Environment
             if (!Application.isPlaying || !_dispatcherReady)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame)
+                return;
+            if (!Application.isPlaying || !_dispatcherReady)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void EnsureBuffers()
@@ -2521,8 +2566,8 @@ namespace Hecton8.Environment
             _propwashEventBuffer = _propwashEventBufferA;
             _propwashEventUploadWriteIndex = 1;
             ClearMockWakeGpuBuffers();
-            _maelstromBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(HectonFluidEngine.MaxActiveMaelstromCount); // COLD ALLOC: GraphicsBuffer[2] - compact maelstrom particle swirl buffer A - owner: HectonMarineSnowRenderer
-            _maelstromBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(HectonFluidEngine.MaxActiveMaelstromCount); // COLD ALLOC: GraphicsBuffer[2] - compact maelstrom particle swirl buffer B for CPU/GPU flip - owner: HectonMarineSnowRenderer
+            _maelstromBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FluidAnalyticalContractConstants.MaxActiveMaelstromCount); // COLD ALLOC: GraphicsBuffer[2] - compact maelstrom particle swirl buffer A - owner: HectonMarineSnowRenderer
+            _maelstromBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FluidAnalyticalContractConstants.MaxActiveMaelstromCount); // COLD ALLOC: GraphicsBuffer[2] - compact maelstrom particle swirl buffer B for CPU/GPU flip - owner: HectonMarineSnowRenderer
             _allocatedParticleCapacity = clampedParticleCount;
             _debugAllocatedParticleCapacity = clampedParticleCount;
             _frameParity = 0;
@@ -2582,7 +2627,7 @@ namespace Hecton8.Environment
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingMainKernel()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
 #endif
         }
@@ -2590,7 +2635,7 @@ namespace Hecton8.Environment
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingInitializeKernel()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
 #endif
         }
@@ -2598,7 +2643,7 @@ namespace Hecton8.Environment
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingVisibleKernel()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
 #endif
         }
@@ -2606,7 +2651,7 @@ namespace Hecton8.Environment
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingAuxiliaryKernels()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
 #endif
         }
@@ -2614,7 +2659,7 @@ namespace Hecton8.Environment
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingPropwashKernels()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("HectonMarineSnowRenderer: propwash compute kernels not found. Disabling compute marine snow.");
 #endif
         }
@@ -3170,9 +3215,9 @@ namespace Hecton8.Environment
             Vector4 textureParams = Vector4.zero;
             float textureActive = 0f;
 
-            HectonFluidEngine fluidEngine = _fluidEngine;
-            if (fluidEngine != null &&
-                fluidEngine.TryGetGpuAbyssalFlowFieldBuffer(
+            IAbyssalFlowGpuReadModel abyssalFlow = _abyssalFlowGpuReadModel;
+            if (abyssalFlow != null &&
+                abyssalFlow.TryGetGpuAbyssalFlowFieldBuffer(
                     out GraphicsBuffer publishedFlowFieldBuffer,
                     out Vector4 publishedGridResolution,
                     out Vector4 publishedFlowCenter,
@@ -3184,8 +3229,8 @@ namespace Hecton8.Environment
                 flowSpacing = publishedFlowSpacing;
             }
 
-            if (fluidEngine != null &&
-                fluidEngine.TryGetGpuAbyssalFlowFieldTexture(
+            if (abyssalFlow != null &&
+                abyssalFlow.TryGetGpuAbyssalFlowFieldTexture(
                     out Texture publishedFlowFieldTexture,
                     out Vector4 publishedTextureResolution,
                     out Vector4 publishedTextureCenter,
@@ -3229,9 +3274,9 @@ namespace Hecton8.Environment
             float wakeQualityPressure01 = ResolveDynamicWakeQualityPressure01(_resolvedScalabilityParams.x);
             Vector4 wakeDtoParams = _debugMockWakeCount > 0 ? new Vector4(MockWakeCapacity, wakeQualityPressure01, _debugMockWakeCount, math.max(0f, ResolveFlowParams().w)) : Vector4.zero;
 
-            HectonFluidEngine fluidEngine = _fluidEngine;
-            if (fluidEngine != null &&
-                fluidEngine.TryGetDynamicWakeGpuPayload(
+            IAbyssalFlowGpuReadModel abyssalFlow = _abyssalFlowGpuReadModel;
+            if (abyssalFlow != null &&
+                abyssalFlow.TryGetDynamicWakeGpuPayload(
                     out GraphicsBuffer publishedWakeBuffer,
                     out GraphicsBuffer publishedWakeVectorBuffer,
                     out Vector4 publishedWakeParams))
@@ -3279,16 +3324,16 @@ namespace Hecton8.Environment
             GraphicsBuffer maelstromBuffer = _emptyAbyssalFlowBuffer;
             Vector4 maelstromParams = Vector4.zero;
 
-            HectonFluidEngine fluidEngine = _fluidEngine;
-            if (fluidEngine != null &&
+            IAbyssalFlowGpuReadModel abyssalFlow = _abyssalFlowGpuReadModel;
+            if (abyssalFlow != null &&
                 _maelstromBufferA != null &&
                 _maelstromBufferB != null &&
-                fluidEngine.TryGetActiveMaelstroms(
+                abyssalFlow.TryGetActiveMaelstroms(
                     out NativeArray<float4>.ReadOnly maelstroms,
                     out int maelstromCount,
                     out Vector4 publishedMeta))
             {
-                int uploadCount = math.clamp(maelstromCount, 0, HectonFluidEngine.MaxActiveMaelstromCount);
+                int uploadCount = math.clamp(maelstromCount, 0, abyssalFlow.MaxActiveMaelstromCapacity);
                 if (uploadCount > 0)
                 {
                     bool hasBoundMaelstromBuffer = false;
@@ -3296,7 +3341,7 @@ namespace Hecton8.Environment
                     if (uploadHash != _boundMaelstromUploadHash || uploadCount != _boundMaelstromUploadCount)
                     {
                         GraphicsBuffer writeBuffer = ResolveMaelstromWriteBuffer();
-                        if (fluidEngine.TryUploadActiveMaelstroms(writeBuffer, uploadCount))
+                        if (abyssalFlow.TryUploadActiveMaelstroms(writeBuffer, uploadCount))
                         {
                             _boundMaelstromUploadHash = uploadHash;
                             _boundMaelstromUploadCount = uploadCount;
@@ -4433,17 +4478,17 @@ namespace Hecton8.Environment
             budgetScale *= math.clamp(renderScale, 0.45f, 1f);
             _debugAdaptiveRenderScale = renderScale;
 
-            VRAMMonitor vramMonitor = _vramMonitor;
-            VRAMMonitor.VRAMPressureState pressureState = vramMonitor != null
-                ? vramMonitor.PressureState
-                : VRAMMonitor.VRAMPressureState.Stable;
+            IVramBudgetReadModel vramMonitor = _vramMonitor;
+            byte pressureState = vramMonitor != null
+                ? vramMonitor.PressureStateCode
+                : VramPressureStateCodes.Stable;
 
             switch (pressureState)
             {
-                case VRAMMonitor.VRAMPressureState.Critical:
+                case VramPressureStateCodes.Critical:
                     budgetScale *= 0.45f;
                     break;
-                case VRAMMonitor.VRAMPressureState.Warning:
+                case VramPressureStateCodes.Warning:
                     budgetScale *= 0.7f;
                     break;
             }

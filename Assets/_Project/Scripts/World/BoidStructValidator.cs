@@ -64,7 +64,7 @@ namespace Hecton8.World
 
             if (logSummary)
             {
-                Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     $"{LogPrefix} BoidData layout validated. size={unsafeSize}, marshalSize={marshalSize}, " +
                     $"alignment={alignment}, positionOffset={positionOffset}, velocityOffset={velocityOffset}, " +
                     $"panicOffset={panicOffset}, stateFlagsOffset={stateFlagsOffset}.");

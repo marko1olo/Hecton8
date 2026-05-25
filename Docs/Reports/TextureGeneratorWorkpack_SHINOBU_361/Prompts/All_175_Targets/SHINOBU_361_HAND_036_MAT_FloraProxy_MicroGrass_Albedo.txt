@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_036
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_036_MAT_FloraProxy_MicroGrass_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_FloraProxy_MicroGrass_Albedo.png
+FINAL_FILENAME: MAT_FloraProxy_MicroGrass_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Micrograss proxy albedo for small abyssal seabed flora. Make fine but readable clusters of soft jade blades, pale turquoise tips, tiny pearl sediment grains, and restrained amber seed sparks. The texture should feel delicate and alive, like engineered biodiversity reclaiming a research site, while staying clean enough for alpha cards or simple patches. Keep clusters organized, luminous, and separated by soft natural gaps. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

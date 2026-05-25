@@ -91,14 +91,17 @@ namespace Hecton8.Core
         private const int ThermalAnomalyCapacity = HectonShaderGlobalDataVaultBridge.ThermalPackedSlotCount;
         private const int TelemetrySlotStart = HectonShaderGlobalDataVaultBridge.TelemetrySlotStart;
         private const int TelemetryCapacity = HectonShaderGlobalDataVaultBridge.TelemetrySlotCount;
-        private const int CsvScratchBytes = 4096;
         private const double ShaderTimeModuloSeconds = 3600.0;
         private static readonly double s_stopwatchTicksToMicroseconds = 1000000.0 / Stopwatch.Frequency;
         private const float DispatchBudgetMicroseconds = 100f;
         private const uint DumpMagic = 0x43424652u; // CBFR
         private const string DumpFileName = "Dump_CBUFFER_DISPATCH.bin";
         private const string DumpH8DumpFileName = "Dump_CBUFFER_DISPATCH.h8dump";
+        private const uint PhysiologyVisualHoldFrames = 24u;
+#if UNITY_EDITOR
+        private const int CsvScratchBytes = 4096;
         private const string CsvOverrideFileName = "shader_globals_override.csv";
+#endif
 
         private static readonly int _FogColorId = Shader.PropertyToID("_H8FogColor");
         private static readonly int _FogDensityId = Shader.PropertyToID("_H8FogDensity");
@@ -134,6 +137,10 @@ namespace Hecton8.Core
         private static readonly int _HectonPowerBrownoutParamsId = Shader.PropertyToID("_HectonPowerBrownoutParams");
         private static readonly int _HectonRespawnDearLieParamsId = Shader.PropertyToID("_HectonRespawnDearLieParams");
         private static readonly int _HectonDeathFadeIntensityId = Shader.PropertyToID("_HectonDeathFadeIntensity");
+        private static readonly int _HectonSuitCrushDearLieParamsId = Shader.PropertyToID("_HectonSuitCrushDearLieParams");
+        private static readonly int _HectonSuitCrushBucklingId = Shader.PropertyToID("_HectonSuitCrushBuckling");
+        private static readonly int _HectonRadiationMutationParamsId = Shader.PropertyToID("_HectonRadiationMutationParams");
+        private static readonly int _HectonHandRadiationMutation01Id = Shader.PropertyToID("_HectonHandRadiationMutation01");
         private static readonly int _HectonDcsPhysiologyParamsId = Shader.PropertyToID("_HectonDcsPhysiologyParams");
         private static readonly int _HectonGasToxicityParamsId = Shader.PropertyToID("_HectonGasToxicityParams");
         private static readonly int _HectonSupersaturationScalarId = Shader.PropertyToID("_HectonSupersaturationScalar");
@@ -144,15 +151,23 @@ namespace Hecton8.Core
         private static CommandBuffer s_commandBuffer;
         private static IDataVault s_cachedVault;
         private static VaultGenerationHandle<float4> s_shaderSlotsHandle;
+        private static uint s_lastDecompressionVisualSignalFrame;
+        private static uint s_lastGasToxicityVisualSignalFrame;
+#if UNITY_EDITOR
         private static string s_csvPath;
         private static byte[] s_csvScratch;
         private static long s_csvLastWriteTicks;
+#endif
         private static bool s_manualOverrideActive;
+#if UNITY_EDITOR
         private static bool s_csvOverrideActive;
+#endif
         private static float4 s_manualFogColorDensity;
         private static float4 s_manualCausticFlow;
+#if UNITY_EDITOR
         private static float4 s_csvFogColorDensity;
         private static float4 s_csvCausticFlow;
+#endif
 
         private GraphicsBuffer _thermalAnomalyBuffer;
         private GraphicsBuffer _emptyFloat4Buffer;
@@ -184,15 +199,23 @@ namespace Hecton8.Core
 
             s_cachedVault = null;
             s_shaderSlotsHandle = default;
+            s_lastDecompressionVisualSignalFrame = 0u;
+            s_lastGasToxicityVisualSignalFrame = 0u;
+#if UNITY_EDITOR
             s_csvPath = null;
             s_csvScratch = null;
             s_csvLastWriteTicks = 0L;
+#endif
             s_manualOverrideActive = false;
+#if UNITY_EDITOR
             s_csvOverrideActive = false;
+#endif
             s_manualFogColorDensity = default;
             s_manualCausticFlow = default;
+#if UNITY_EDITOR
             s_csvFogColorDensity = default;
             s_csvCausticFlow = default;
+#endif
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -221,7 +244,9 @@ namespace Hecton8.Core
             if (EnsureShaderGlobalSlotsRuntime(out IDataVault vault))
                 RunBinaryGraveyardProbeCold(vault);
             EnsureGpuBuffers();
+#if UNITY_EDITOR
             TryLoadCsvOverridesCold();
+#endif
         }
 
         private void OnEnable()
@@ -331,6 +356,8 @@ namespace Hecton8.Core
             Vector4 uberNoirRuntime;
             Vector4 powerBrownout;
             Vector4 respawnDearLie;
+            Vector4 suitCrushDearLie;
+            Vector4 radiationMutation;
             Vector4 physiologyDecompression;
             Vector4 physiologyGasToxicity;
             float uberNoirFeatureMask;
@@ -368,6 +395,8 @@ namespace Hecton8.Core
                     ToVector4(slots[HectonShaderGlobalDataVaultBridge.PowerBrownoutSlot]),
                     globalQualityWeight01);
                 respawnDearLie = ToVector4(slots[HectonShaderGlobalDataVaultBridge.RespawnDearLieSlot]);
+                suitCrushDearLie = ToVector4(slots[HectonShaderGlobalDataVaultBridge.SuitCrushDearLieSlot]);
+                radiationMutation = ToVector4(slots[HectonShaderGlobalDataVaultBridge.RadiationMutationSlot]);
                 ResolvePhysiologyVisualPayloads(
                     slots,
                     globalQualityWeight01,
@@ -400,6 +429,8 @@ namespace Hecton8.Core
                 uberNoirRuntime,
                 powerBrownout,
                 respawnDearLie,
+                suitCrushDearLie,
+                radiationMutation,
                 physiologyDecompression,
                 physiologyGasToxicity,
                 uberNoirFeatureMask,
@@ -547,6 +578,7 @@ namespace Hecton8.Core
             if (ReferenceEquals(vault, s_cachedVault) &&
                 TryResolveShaderSlotsHandle(vault, in s_shaderSlotsHandle, out _))
             {
+                HectonShaderGlobalDataVaultBridge.BindPreparedShaderGlobalSlots(vault);
                 return true;
             }
 
@@ -555,13 +587,14 @@ namespace Hecton8.Core
             {
                 s_shaderSlotsHandle = existing;
                 s_cachedVault = vault;
+                HectonShaderGlobalDataVaultBridge.BindPreparedShaderGlobalSlots(vault);
                 return true;
             }
 
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<float4> allocated = vault.GetGenerationHandle<float4>(
+            VaultGenerationHandle<float4> allocated = vault.EnsureGenerationHandle<float4>(
                 BufferID.ShaderGlobalState,
                 RequiredShaderGlobalSlots,
                 SystemID.GraphicsScalability,
@@ -571,6 +604,7 @@ namespace Hecton8.Core
 
             s_shaderSlotsHandle = allocated;
             s_cachedVault = vault;
+            HectonShaderGlobalDataVaultBridge.BindPreparedShaderGlobalSlots(vault);
             return true;
         }
 
@@ -716,11 +750,20 @@ namespace Hecton8.Core
                 LowTierWeight01 = math.saturate(lowTierWeight01),
                 GeneratedEmergencyGlobals = _generatedEmergencyGlobals ? 1 : 0,
                 ManualOverrideActive = s_manualOverrideActive ? 1 : 0,
+#if UNITY_EDITOR
                 CsvOverrideActive = s_csvOverrideActive ? 1 : 0,
+#else
+                CsvOverrideActive = 0,
+#endif
                 ManualFogColorDensity = s_manualFogColorDensity,
                 ManualCausticFlow = s_manualCausticFlow,
+#if UNITY_EDITOR
                 CsvFogColorDensity = s_csvFogColorDensity,
                 CsvCausticFlow = s_csvCausticFlow
+#else
+                CsvFogColorDensity = default,
+                CsvCausticFlow = default
+#endif
             };
             // Tiny shader-slot kernel runs inline to avoid a same-frame schedule/readback loop.
             kernel.ExecuteInline();
@@ -739,6 +782,8 @@ namespace Hecton8.Core
                    HectonShaderGlobalDataVaultBridge.ValidateSharedSlotMap() &&
                    HectonShaderGlobalDataVaultBridge.PowerBrownoutSlot < TelemetrySlotStart &&
                    HectonShaderGlobalDataVaultBridge.RespawnDearLieSlot < TelemetrySlotStart &&
+                   HectonShaderGlobalDataVaultBridge.SuitCrushDearLieSlot < TelemetrySlotStart &&
+                   HectonShaderGlobalDataVaultBridge.RadiationMutationSlot < TelemetrySlotStart &&
                    TelemetrySlotStart + TelemetryCapacity <= RequiredShaderGlobalSlots;
         }
 
@@ -835,9 +880,9 @@ namespace Hecton8.Core
                 return 0;
 
             slots[ThermalPackedSlotStart] = new float4(
-                math.sin(shaderTime * 0.31f) * 12f,
+                MathLodApproximation.ApproxSinBhaskara(shaderTime * 0.31f) * 12f,
                 -6f,
-                math.cos(shaderTime * 0.27f) * 12f,
+                MathLodApproximation.ApproxCosBhaskara(shaderTime * 0.27f) * 12f,
                 0.22f);
             for (int i = 1; i < ThermalAnomalyCapacity; i++)
                 slots[ThermalPackedSlotStart + i] = default;
@@ -895,6 +940,8 @@ namespace Hecton8.Core
             Vector4 uberNoirRuntime,
             Vector4 powerBrownout,
             Vector4 respawnDearLie,
+            Vector4 suitCrushDearLie,
+            Vector4 radiationMutation,
             Vector4 physiologyDecompression,
             Vector4 physiologyGasToxicity,
             float uberNoirFeatureMask,
@@ -937,6 +984,10 @@ namespace Hecton8.Core
             cmd.SetGlobalVector(_HectonPowerBrownoutParamsId, powerBrownout);
             cmd.SetGlobalVector(_HectonRespawnDearLieParamsId, respawnDearLie);
             cmd.SetGlobalFloat(_HectonDeathFadeIntensityId, math.saturate(respawnDearLie.x));
+            cmd.SetGlobalVector(_HectonSuitCrushDearLieParamsId, suitCrushDearLie);
+            cmd.SetGlobalFloat(_HectonSuitCrushBucklingId, math.saturate(suitCrushDearLie.x));
+            cmd.SetGlobalVector(_HectonRadiationMutationParamsId, radiationMutation);
+            cmd.SetGlobalFloat(_HectonHandRadiationMutation01Id, math.saturate(radiationMutation.x));
             cmd.SetGlobalVector(_HectonDcsPhysiologyParamsId, physiologyDecompression);
             cmd.SetGlobalFloat(_HectonSupersaturationScalarId, math.saturate(physiologyDecompression.x));
             cmd.SetGlobalFloat(_HectonNarcosisScalarId, math.saturate(physiologyDecompression.y));
@@ -1037,7 +1088,7 @@ namespace Hecton8.Core
             }
 
             float pulse = exposure > 0.001f
-                ? exposure * (0.55f + (0.45f * math.sin(shaderTime * 6.2831853f * 0.72f)))
+                ? exposure * (0.55f + (0.45f * MathLodApproximation.ApproxSinBhaskara(shaderTime * 6.2831853f * 0.72f)))
                 : 0f;
             return new Vector4(math.saturate(pulse), exposure, shaderTime, 0f);
         }
@@ -1184,6 +1235,7 @@ namespace Hecton8.Core
             }
         }
 
+#if UNITY_EDITOR
         private void TryLoadCsvOverridesCold()
         {
             if (string.IsNullOrEmpty(s_csvPath))
@@ -1318,11 +1370,22 @@ namespace Hecton8.Core
                 }
 
                 if (exponentAny)
-                    result *= Math.Pow(10d, exponent * exponentSign);
+                    result *= Pow10Int(exponent * exponentSign);
             }
 
             value = math.isfinite((float)result) ? (float)result : 0f;
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double Pow10Int(int exponent)
+        {
+            int clamped = math.clamp(exponent, -38, 38);
+            double scale = 1d;
+            int magnitude = math.abs(clamped);
+            for (int i = 0; i < magnitude; i++)
+                scale *= 10d;
+            return clamped < 0 ? 1d / scale : scale;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1336,6 +1399,7 @@ namespace Hecton8.Core
         {
             return value >= (byte)'0' && value <= (byte)'9';
         }
+#endif
 
         private static string BuildProjectRootPathCold()
         {
@@ -1375,6 +1439,7 @@ namespace Hecton8.Core
             float quality = math.saturate(math.isfinite(globalQualityWeight01) ? globalQualityWeight01 : 1f);
             float4 decompressionPayload = slots[HectonShaderGlobalDataVaultBridge.PhysiologyDecompressionSlot];
             float4 gasPayload = slots[HectonShaderGlobalDataVaultBridge.PhysiologyGasToxicitySlot];
+            uint currentFrame = (uint)math.max(0, SystemDispatcher.CurrentFrameIndex);
 
             SanitizePhysiologyVisualPayloads(ref decompressionPayload, ref gasPayload, quality);
 
@@ -1384,12 +1449,20 @@ namespace Hecton8.Core
                 for (int i = 0; i < signals.Length; i++)
                 {
                     PhysiologyStateSignal signal = signals[i];
-                    ApplyPhysiologyVisualSignal(in signal, quality, ref decompressionPayload, ref gasPayload);
+                    byte appliedCause = ApplyPhysiologyVisualSignal(
+                        in signal,
+                        quality,
+                        currentFrame,
+                        ref decompressionPayload,
+                        ref gasPayload);
+                    if (appliedCause == PhysiologyStateSignal.CauseDecompression)
+                        s_lastDecompressionVisualSignalFrame = signal.Frame;
+                    else if (appliedCause == PhysiologyStateSignal.CauseGasToxicity)
+                        s_lastGasToxicityVisualSignalFrame = signal.Frame;
                 }
             }
 
-            if (GlobalSignals.TryGetLatestPhysiologyStateSignal(out PhysiologyStateSignal latest, out int sequence) && sequence > 0)
-                ApplyPhysiologyVisualSignal(in latest, quality, ref decompressionPayload, ref gasPayload);
+            ClearExpiredPhysiologyVisuals(currentFrame, ref decompressionPayload, ref gasPayload);
 
             decompressionPayload.w = quality;
             gasPayload.w = quality;
@@ -1400,18 +1473,24 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void ApplyPhysiologyVisualSignal(
+        private static byte ApplyPhysiologyVisualSignal(
             in PhysiologyStateSignal signal,
             float quality,
+            uint currentFrame,
             ref float4 decompressionPayload,
             ref float4 gasPayload)
         {
-            if (signal.Cause == PhysiologyStateSignal.CauseDecompression)
+            if (!IsFreshPhysiologyVisualSignal(in signal, currentFrame))
+                return 0;
+
+            if (signal.SourceHash == PhysiologyStateSignal.SourceShinobuPhysiology &&
+                signal.Cause == PhysiologyStateSignal.CauseDecompression)
             {
                 decompressionPayload.x = math.saturate(signal.Supersaturation01);
                 decompressionPayload.y = math.saturate(signal.Narcosis01);
                 decompressionPayload.z = math.max(0f, math.isfinite(signal.AmbientPressureAtm) ? signal.AmbientPressureAtm : 0f);
                 decompressionPayload.w = quality;
+                return PhysiologyStateSignal.CauseDecompression;
             }
             else if (signal.SourceHash == PhysiologyStateSignal.SourceShinobuPhysiology &&
                      signal.Cause == PhysiologyStateSignal.CauseGasToxicity)
@@ -1420,7 +1499,53 @@ namespace Hecton8.Core
                 gasPayload.y = signal.GasCnsSeverity * (1f / 255f);
                 gasPayload.z = signal.GasCarbonDioxideSeverity * (1f / 255f);
                 gasPayload.w = quality;
+                return PhysiologyStateSignal.CauseGasToxicity;
             }
+
+            return 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFreshPhysiologyVisualSignal(in PhysiologyStateSignal signal, uint currentFrame)
+        {
+            if (signal.SourceHash != PhysiologyStateSignal.SourceShinobuPhysiology)
+                return false;
+
+            uint signalFrame = signal.Frame;
+            if (currentFrame < signalFrame)
+                return false;
+
+            return (currentFrame - signalFrame) <= PhysiologyVisualHoldFrames;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ClearExpiredPhysiologyVisuals(
+            uint currentFrame,
+            ref float4 decompressionPayload,
+            ref float4 gasPayload)
+        {
+            if (IsPhysiologyVisualExpired(s_lastDecompressionVisualSignalFrame, currentFrame))
+            {
+                decompressionPayload.x = 0f;
+                decompressionPayload.y = 0f;
+                decompressionPayload.z = 0f;
+            }
+
+            if (IsPhysiologyVisualExpired(s_lastGasToxicityVisualSignalFrame, currentFrame))
+            {
+                gasPayload.x = 0f;
+                gasPayload.y = 0f;
+                gasPayload.z = 0f;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsPhysiologyVisualExpired(uint lastSignalFrame, uint currentFrame)
+        {
+            if (currentFrame < lastSignalFrame)
+                return true;
+
+            return (currentFrame - lastSignalFrame) > PhysiologyVisualHoldFrames;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1519,10 +1644,10 @@ namespace Hecton8.Core
 
             public void ExecuteInline()
             {
-                float storm = 0.5f + (0.5f * math.sin((ShaderTime * 0.071f) + SectorPhase));
+                float storm = 0.5f + (0.5f * MathLodApproximation.ApproxSinBhaskara((ShaderTime * 0.071f) + SectorPhase));
                 float turbidity = math.saturate(0.28f + (storm * 0.44f));
-                float heat = 0.5f + (0.5f * math.sin((ShaderTime * 0.119f) + 1.7f + SectorPhase));
-                float biome = 0.5f - (0.5f * math.cos(math.fmod(ShaderTime, 5f) * 1.2566371f));
+                float heat = 0.5f + (0.5f * MathLodApproximation.ApproxSinBhaskara((ShaderTime * 0.119f) + 1.7f + SectorPhase));
+                float biome = 0.5f - (0.5f * MathLodApproximation.ApproxCosBhaskara(math.fmod(ShaderTime, 5f) * 1.2566371f));
 
                 float4 fogA = new float4(0.012f, 0.045f, 0.066f, 0.018f + (0.018f * turbidity));
                 float4 fogB = new float4(0.052f, 0.018f, 0.035f, 0.028f + (0.012f * heat));
@@ -1530,9 +1655,9 @@ namespace Hecton8.Core
                 float4 fogColorDensity = math.lerp(fogA, fogB, smoothBiome);
                 float causticSpeed = 0.16f + (0.24f * (1f - storm));
                 float3 flowVector = new float3(
-                    math.sin((ShaderTime * 0.037f) + SectorPhase),
-                    0.04f * math.sin(ShaderTime * 0.021f),
-                    math.cos((ShaderTime * 0.041f) + SectorPhase));
+                    MathLodApproximation.ApproxSinBhaskara((ShaderTime * 0.037f) + SectorPhase),
+                    0.04f * MathLodApproximation.ApproxSinBhaskara(ShaderTime * 0.021f),
+                    MathLodApproximation.ApproxCosBhaskara((ShaderTime * 0.041f) + SectorPhase));
                 float flowLengthSq = math.lengthsq(flowVector);
                 flowVector = math.isfinite(flowLengthSq) && flowLengthSq > 0.0001f
                     ? flowVector * math.rsqrt(math.max(flowLengthSq, 0.0001f))

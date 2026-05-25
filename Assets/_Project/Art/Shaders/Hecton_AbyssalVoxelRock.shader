@@ -650,6 +650,18 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return SAMPLE_TEXTURE3D_LOD(_HectonDamageVolumeTex, sampler_HectonDamageVolumeTex, uvw, 0).r;
         }
 
+        half ResolveDearLieCarveMask(half globalCutMask, half damageVolumeMask)
+        {
+            return saturate(max(globalCutMask, damageVolumeMask));
+        }
+
+        void ApplyDearLieCarveClip(half carveMask, float2 positionCS)
+        {
+            half clipStrength = saturate((carveMask - 0.45h) * 1.8181818h);
+            half coverage = saturate(1.0h - clipStrength);
+            clip(coverage - ResolveDitherNoise(positionCS) * 0.125h);
+        }
+
         half ResolveSkirtCoverageMask(half vertexAlpha)
         {
             half bandMeters = max((half)_TerrainSeamBandMeters, 0.01h);
@@ -922,13 +934,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half vertexCaveAo = lerp(vertexCaveAoRaw, vertexCaveAoBurnSafe, vertexBurnMask);
                 half noisyBakedAo = ResolveDepthNoiseCavityAo(samplePositionWS, input.bakedAmbientOcclusion);
                 half3 dominantNormalWS = SampleCinematicTwoAxisNormal(samplePositionWS, baseNormalWS);
+                half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
+                half damageVolumeMask = globalCutMask >= 0.999h ? 0.0h : EvaluateDamageVolumeMask(input.positionWS);
+                half cutMask = ResolveDearLieCarveMask(globalCutMask, damageVolumeMask);
+                ApplyDearLieCarveClip(cutMask, input.positionCS.xy);
 
                 half4 baseSample = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
                 half4 packedMask = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Mask_Map, sampler_Mask_Map), samplePositionWS, baseNormalWS);
                 HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
-                half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
-                half damageVolumeMask = globalCutMask >= 0.999h ? 0.0h : EvaluateDamageVolumeMask(input.positionWS);
-                half cutMask = max(globalCutMask, damageVolumeMask);
                 half freshCutMask = saturate(max(max(input.freshCutBlend, vertexBurnMask), cutMask));
                 half scarMask = FastVoxelPower01(saturate(max(cutMask, vertexBurnMask)), max(_CutScarSharpness, 0.5h));
                 half recentHeatMask = 0.0h;
@@ -1033,7 +1046,9 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 ApplyChunkDissolveFade(input.positionCS);
                 half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
                 half damageVolumeMask = globalCutMask >= 0.999h ? 0.0h : EvaluateDamageVolumeMask(input.positionWS);
-                half scarMask = FastVoxelPower01(saturate(max(globalCutMask, damageVolumeMask)), max(_CutScarSharpness, 0.5h));
+                half cutMask = ResolveDearLieCarveMask(globalCutMask, damageVolumeMask);
+                ApplyDearLieCarveClip(cutMask, input.positionCS.xy);
+                half scarMask = FastVoxelPower01(cutMask, max(_CutScarSharpness, 0.5h));
                 ResolveShadowCoverage(input.skirtAlpha, input.positionCS.xy, scarMask, input.positionWS);
                 return 0.0h;
             }
@@ -1070,6 +1085,9 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 HectonCoreLitClipXRNearWallDither(input.xrNearClipFade, input.positionCS);
                 LODFadeCrossFade(input.positionCS);
                 ApplyChunkDissolveFade(input.positionCS);
+                half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
+                half damageVolumeMask = globalCutMask >= 0.999h ? 0.0h : EvaluateDamageVolumeMask(input.positionWS);
+                ApplyDearLieCarveClip(ResolveDearLieCarveMask(globalCutMask, damageVolumeMask), input.positionCS.xy);
                 ResolveSkirtCoverage(input.skirtAlpha, input.positionCS.xy);
                 return 0.0h;
             }

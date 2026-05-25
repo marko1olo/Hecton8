@@ -12,6 +12,9 @@ namespace Hecton8.EditorTools
     public static class WorldProceduralPatternBalanceReport
     {
         private const string ReportFileName = "PROCEDURAL_WATER_PATTERN_REPORT.md";
+        private static readonly List<GameObject> s_sceneRoots = new List<GameObject>(8);
+        private static readonly List<WorldProceduralFieldSampler> s_fieldSamplers = new List<WorldProceduralFieldSampler>(2);
+        private static readonly List<WorldProceduralScatterDirector> s_scatterDirectors = new List<WorldProceduralScatterDirector>(2);
 
         [MenuItem("Hecton/Validation/Generate Procedural Water Pattern Report", priority = 237)]
         public static void GenerateReport()
@@ -23,8 +26,8 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            WorldProceduralFieldSampler sampler = UnityEngine.Object.FindAnyObjectByType<WorldProceduralFieldSampler>(FindObjectsInactive.Include);
-            WorldProceduralScatterDirector scatterDirector = UnityEngine.Object.FindAnyObjectByType<WorldProceduralScatterDirector>(FindObjectsInactive.Include);
+            WorldProceduralFieldSampler sampler = FindInScene(activeScene, s_fieldSamplers);
+            WorldProceduralScatterDirector scatterDirector = FindInScene(activeScene, s_scatterDirectors);
             if (sampler == null || scatterDirector == null)
             {
                 Debug.LogError("[WorldProceduralPatternBalanceReport] Required procedural managers were not found in scene.");
@@ -77,6 +80,36 @@ namespace Hecton8.EditorTools
             AssetDatabase.Refresh();
 
             Debug.Log($"[WorldProceduralPatternBalanceReport] Wrote report to {reportPath}");
+        }
+
+        private static T FindInScene<T>(Scene scene, List<T> scratch) where T : Component
+        {
+            scratch.Clear();
+            s_sceneRoots.Clear();
+            if (s_sceneRoots.Capacity < scene.rootCount)
+                s_sceneRoots.Capacity = scene.rootCount;
+
+            scene.GetRootGameObjects(s_sceneRoots);
+
+            for (int i = 0; i < s_sceneRoots.Count; i++)
+            {
+                GameObject root = s_sceneRoots[i];
+                if (root == null)
+                    continue;
+
+                root.GetComponentsInChildren<T>(true, scratch);
+                if (scratch.Count <= 0)
+                    continue;
+
+                T result = scratch[0];
+                scratch.Clear();
+                s_sceneRoots.Clear();
+                return result;
+            }
+
+            scratch.Clear();
+            s_sceneRoots.Clear();
+            return null;
         }
 
         private static PatternSnapshot CaptureSnapshot(

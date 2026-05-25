@@ -4,9 +4,13 @@
     "references": [
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
+        "Hecton8.Core.Scheduling",
         "Hecton8.Core.Memory",
+        "Hecton8.Physics.Cable132",
+        "Hecton8.Rendering.TexturePacker.Editor",
         "Hecton8.Rendering.BilateralDrs",
         "Hecton8.Graphics.Scalability",
+        "Hecton8.Graphics.Materials",
         "Hecton8.Bootstrap.Contracts",
         "Hecton8.Plugins",
         "Hecton8.Dev.SpaceEngine098",

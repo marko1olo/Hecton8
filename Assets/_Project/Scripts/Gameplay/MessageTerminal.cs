@@ -23,6 +23,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Interaction;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -69,7 +70,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
     [AddComponentMenu("Hecton/Gameplay/Message Terminal")]
-    public sealed class MessageTerminal : MonoBehaviour, IInteractable, ITickable, IUpdatable, ILocalizationLanguageChangedListener
+    public sealed class MessageTerminal : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const uint WfcOutpostDatapadSourceHash = 0x57464354u; // WFCT
         private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
@@ -130,6 +131,12 @@ namespace Hecton8.Gameplay
         private float _blinkTimer;
         private bool _blinkOn;
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _hotSwapRegistered;
+        private IAudioService _audioService;
+        private ILocalizationTextReadModel _localizationManager;
+        private bool _statusLightDirty;
+        private Color _pendingStatusLightColor;
         private int _emissionPropertyId;
 
         // Track read messages (for persistence)
@@ -150,9 +157,13 @@ namespace Hecton8.Gameplay
         private const string DefaultReadText = "Read Messages";
         private const string DefaultNewMessageText = "New Message";
         private const string DefaultPlayingText = "Playing...";
-        private string _cachedReadText;
-        private string _cachedNewMessageText;
-        private string _cachedPlayingText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedReadTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedNewMessageTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedPlayingTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedReadTextLength;
+        private int _cachedNewMessageTextLength;
+        private int _cachedPlayingTextLength;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -210,6 +221,7 @@ namespace Hecton8.Gameplay
             if (statusLightRenderer == null)
                 statusLightRenderer = GetComponent<Renderer>();
 
+            CacheRegistryServicesCold();
             CaptureInitialReadStates();
 
             // Initialize read messages tracking
@@ -223,6 +235,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             RebuildLocalizedTextCache();
@@ -232,14 +247,18 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ClearWfcOutpostPersistence();
         }
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void TryRegister()
@@ -249,17 +268,24 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -270,6 +296,50 @@ namespace Hecton8.Gameplay
         /// ITickable implementation. Handles playback and blinking.
         /// Zero GC: no allocations, uses cached values.
         /// </summary>
+        private void CacheRegistryServicesCold()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _localizationManager = GlobalRegistry.LocalizationText;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as ILocalizationTextReadModel;
+                    RebuildLocalizedTextCache();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        TryRegister();
+                    break;
+            }
+        }
+
         public void Tick(float deltaTime)
         {
             switch (_state)
@@ -297,6 +367,16 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
+        public void LateFrameTick()
+        {
+            FlushStatusLight();
+        }
+
+        void ILateFrameTickable.LateFrameTick()
+        {
+            LateFrameTick();
+        }
+
         //  IInteractable
         // ══════════════════════════════════════════════════════════
 
@@ -323,9 +403,9 @@ namespace Hecton8.Gameplay
         public void Interact(Transform interactor)
         {
             // Play access sound
-            if (accessSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
+            if (accessSound != null && _audioService != null)
             {
-                audio.PlayStatic2D(accessSound, 0.7f);
+                _audioService.PlayStatic2D(accessSound, 0.7f);
             }
 
             if (_state == TerminalState.NewMessage && _pendingMessageIndex >= 0)
@@ -347,17 +427,42 @@ namespace Hecton8.Gameplay
         /// </summary>
         public string GetInteractText()
         {
+            return ResolveInteractTextLegacy();
+        }
+
+        private string ResolveInteractTextLegacy()
+        {
             switch (_state)
             {
                 case TerminalState.Idle:
-                    return _cachedReadText;
+                    return DefaultReadText;
                 case TerminalState.NewMessage:
-                    return _cachedNewMessageText;
+                    return DefaultNewMessageText;
                 case TerminalState.Playing:
-                    return _cachedPlayingText;
+                    return DefaultPlayingText;
                 default:
                     return string.Empty;
             }
+        }
+
+        private ReadOnlySpan<char> ResolveInteractTextSpan()
+        {
+            switch (_state)
+            {
+                case TerminalState.Idle:
+                    return _cachedReadTextBuffer.AsSpan(0, _cachedReadTextLength);
+                case TerminalState.NewMessage:
+                    return _cachedNewMessageTextBuffer.AsSpan(0, _cachedNewMessageTextLength);
+                case TerminalState.Playing:
+                    return _cachedPlayingTextBuffer.AsSpan(0, _cachedPlayingTextLength);
+                default:
+                    return ReadOnlySpan<char>.Empty;
+            }
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(ResolveInteractTextSpan(), destination, out length);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -399,9 +504,9 @@ namespace Hecton8.Gameplay
                 UpdateState();
 
                 // Play new message alert
-                if (newMessageAlertSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
+                if (newMessageAlertSound != null && _audioService != null)
                 {
-                    audio.PlayStatic2D(newMessageAlertSound, 0.8f);
+                    _audioService.PlayStatic2D(newMessageAlertSound, 0.8f);
                 }
 
                 OnNewMessageReceived?.Invoke(message.messageId);
@@ -439,7 +544,9 @@ namespace Hecton8.Gameplay
             UpdateState();
 
             if (!wasRead)
-                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDatapadLootedFlag), (uint)Time.frameCount);
+                SetWfcOutpostFlags(
+                    (byte)(_wfcOutpostFlags | WfcDatapadLootedFlag),
+                    unchecked((uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex)));
         }
 
         /// <summary>
@@ -619,7 +726,7 @@ namespace Hecton8.Gameplay
                 SourceHash = WfcOutpostDatapadSourceHash,
                 Flags = 0
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<WfcOutpostStateChangedSignal>.TryPush(in signal);
         }
 
         private void UpdatePendingMessage()
@@ -739,9 +846,6 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void UpdateStatusLight()
         {
-            if (statusLightRenderer == null)
-                return;
-
             Color lightColor;
 
             switch (_state)
@@ -763,8 +867,21 @@ namespace Hecton8.Gameplay
                     break;
             }
 
+            _pendingStatusLightColor = lightColor;
+            _statusLightDirty = true;
+        }
+
+        private void FlushStatusLight()
+        {
+            if (!_statusLightDirty)
+                return;
+
+            _statusLightDirty = false;
+            if (statusLightRenderer == null)
+                return;
+
             statusLightRenderer.GetPropertyBlock(_mpb);
-            _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, lightColor);
+            _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, _pendingStatusLightColor);
             statusLightRenderer.SetPropertyBlock(_mpb);
         }
 
@@ -800,9 +917,9 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            _cachedReadText = ResolveLocalized(LocalizationKeys.INTERACT_READ_MESSAGES, DefaultReadText);
-            _cachedNewMessageText = ResolveLocalized(LocalizationKeys.INTERACT_NEW_MESSAGE, DefaultNewMessageText);
-            _cachedPlayingText = ResolveLocalized(LocalizationKeys.INTERACT_PLAYING, DefaultPlayingText);
+            _cachedReadTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationManager, LocalizationKeys.INTERACT_READ_MESSAGES, DefaultReadText, _cachedReadTextBuffer);
+            _cachedNewMessageTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationManager, LocalizationKeys.INTERACT_NEW_MESSAGE, DefaultNewMessageText, _cachedNewMessageTextBuffer);
+            _cachedPlayingTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationManager, LocalizationKeys.INTERACT_PLAYING, DefaultPlayingText, _cachedPlayingTextBuffer);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -819,13 +936,6 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
         }
 
-        private static string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
-        }
     }
 }
 

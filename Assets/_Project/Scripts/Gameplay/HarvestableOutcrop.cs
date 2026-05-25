@@ -1,13 +1,13 @@
-using Hecton.Localization;
+﻿using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.World;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using InteractionSignalPayload = Hecton8.Interaction.InteractionSignal;
@@ -19,7 +19,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class HarvestableOutcrop : MonoBehaviour, ICuttable, IInteractable, IInteractionSignalConsumer, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class HarvestableOutcrop : MonoBehaviour, ICuttable, IInteractable, IInteractableTextProvider, IInteractionSignalConsumer, ILocalizationLanguageChangedListener, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string DefaultInteractText = "Break Rock";
         private const float MinimumToolPower = 0.05f;
@@ -98,15 +98,29 @@ namespace Hecton8.Gameplay
         private Renderer[] _cachedRenderers;
         private Collider[] _cachedColliders;
         private ItemData[] _resolvedLootItems;
-        private string _cachedInteractText = DefaultInteractText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedInteractTextLength;
         private float _currentHealth;
         private bool _isBroken;
-        private PlayerInventory _playerInventoryRuntime;
+        private IPlayerInventoryService _playerInventoryService;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private IAudioService _audioService;
-        private ObjectPoolManager _objectPool;
-        private LocalizationManager _localizationManager;
+        private IObjectPoolService _objectPool;
+        private ILocalizationTextReadModel _localizationManager;
         private bool _hotSwapListenerRegistered;
+        private bool _lateFrameRegistered;
+        private bool _pendingHitAudio;
+        private bool _pendingBreakAudio;
+        private bool _pendingHitParticle;
+        private bool _pendingBreakParticle;
+        private bool _pendingRendererStateDirty;
+        private bool _pendingRendererEnabled;
+        private bool _pendingDisableComponent;
+        private bool _pendingDebrisSignal;
+        private Vector3 _pendingHitPosition;
+        private Vector3 _pendingBreakPosition;
+        private DebrisSpawnSignal _pendingDebris;
 
         /// <summary>
         /// Current health remaining before collapse.
@@ -140,6 +154,7 @@ namespace Hecton8.Gameplay
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             ResetState();
@@ -147,7 +162,9 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
+            StopLateFrameTicking();
             LocalizationEvents.UnregisterLanguageListener(this);
         }
 
@@ -189,7 +206,15 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         string IInteractable.GetInteractText()
         {
-            return allowDirectInteract ? _cachedInteractText : null;
+            return allowDirectInteract ? ResolveLegacyConfigured(interactText, DefaultInteractText) : null;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            ReadOnlySpan<char> source = allowDirectInteract
+                ? _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength)
+                : ReadOnlySpan<char>.Empty;
+            return InteractableTextCopy.TryCopy(source, destination, out length);
         }
 
         /// <summary>
@@ -229,10 +254,12 @@ namespace Hecton8.Gameplay
                 return;
 
             _isBroken = true;
-            PlayBreakEffects();
-            DisableIntactState();
+            QueueBreakEffects();
+            QueueIntactRendererState(false);
+            DisableIntactColliders();
             DispatchDebris(hitPoint, hitNormal, toolPower);
             DispatchYield(toolPower, hitPoint);
+            QueueComponentDisable();
         }
 
         private void DispatchDebris(Vector3 hitPoint, Vector3 hitNormal, float toolPower)
@@ -241,7 +268,7 @@ namespace Hecton8.Gameplay
                 normalizedHitNormal = ResolveFallbackNormal(hitPoint);
 
             float power01 = math.saturate(math.max(MinimumToolPower, toolPower));
-            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)(Time.frameCount + 1);
+            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)(SystemDispatcher.CurrentFrameIndex + 1);
             if (!TryResolveAupFromRuntimeOrigin(hitPoint + normalizedHitNormal * 0.04f, out AbsoluteUniversePosition positionAup))
                 return;
 
@@ -255,7 +282,9 @@ namespace Hecton8.Gameplay
                 Flags = DebrisSpawnSignal.FlagComputeShard,
                 Quantity = (ushort)math.clamp(8 + (int)(power01 * 48f), 8, 64)
             };
-            SignalBus<DebrisSpawnSignal>.Push(in signal);
+            _pendingDebris = signal;
+            _pendingDebrisSignal = true;
+            StartLateFrameTicking();
         }
 
         private void DispatchYield(float toolPower, Vector3 dropPoint)
@@ -273,7 +302,8 @@ namespace Hecton8.Gameplay
             if (quantity <= 0)
                 return;
 
-            PlayerInventory playerInventory = _playerInventoryRuntime;
+            IPlayerInventoryService playerInventoryService = _playerInventoryService;
+            PlayerInventory playerInventory = playerInventoryService != null ? playerInventoryService.Inventory : null;
             int rejectedQuantity = quantity;
             if (playerInventory != null)
             {
@@ -282,18 +312,17 @@ namespace Hecton8.Gameplay
                 PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(itemHashId, quantity, inventoryTransform);
                 if (result.AnyAdded)
                 {
-                    InteractionEvents.RaiseItemCollected(item, result.AddedQuantity, inventoryTransform);
+                    InteractionEvents.TryRaiseItemCollected(item, result.AddedQuantity, inventoryTransform);
                     bool hasInteractorPosition = inventoryTransform != null;
                     ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(inventoryTransform.GetEntityId()) : 0ul;
                     Vector3 interactorPosition = hasInteractorPosition ? inventoryTransform.position : Vector3.zero;
                     PublishItemAcquiredSignal(itemHashId, result.AddedQuantity, hasInteractorPosition ? interactorPosition : dropPoint);
-                    HectonEventBus.Publish(new ItemCollectedEvent(
+                    ItemLifecycleSignalRoute.TryPublishCollected(
                         item,
-                        itemHashId,
                         result.AddedQuantity,
                         interactorEntityId,
                         interactorPosition,
-                        hasInteractorPosition));
+                        hasInteractorPosition);
                 }
 
                 if (result.IsSuccess)
@@ -319,56 +348,137 @@ namespace Hecton8.Gameplay
 
         private void DisableIntactState()
         {
+            QueueIntactRendererState(false);
+            DisableIntactColliders();
+            QueueComponentDisable();
+        }
+
+        private void DisableIntactColliders()
+        {
+            if (_cachedColliders == null)
+                return;
+
+            for (int i = 0; i < _cachedColliders.Length; i++)
+            {
+                Collider collider = _cachedColliders[i];
+                if (collider != null)
+                    collider.enabled = false;
+            }
+        }
+
+        private void QueueIntactRendererState(bool enabledState)
+        {
+            _pendingRendererEnabled = enabledState;
+            _pendingRendererStateDirty = true;
+            StartLateFrameTicking();
+        }
+
+        private void ApplyIntactRendererState(bool enabledState)
+        {
             if (_cachedRenderers != null)
             {
                 for (int i = 0; i < _cachedRenderers.Length; i++)
                 {
                     Renderer renderer = _cachedRenderers[i];
                     if (renderer != null)
-                        renderer.enabled = false;
+                        renderer.enabled = enabledState;
                 }
             }
-
-            if (_cachedColliders != null)
-            {
-                for (int i = 0; i < _cachedColliders.Length; i++)
-                {
-                    Collider collider = _cachedColliders[i];
-                    if (collider != null)
-                        collider.enabled = false;
-                }
-            }
-
-            enabled = false;
         }
 
         private void PlayHitEffects(Vector3 hitPoint)
         {
-            IAudioService audio = _audioService;
-            if (hitSound != null && audio != null)
-                audio.PlayAtPoint(hitSound, hitPoint, hitVolume);
-
-            if (hitParticlePrefab != null)
-            {
-                ObjectPoolManager pool = _objectPool;
-                if (pool != null)
-                    pool.Spawn(hitParticlePrefab, hitPoint, Quaternion.identity);
-            }
+            _pendingHitPosition = hitPoint;
+            _pendingHitAudio = hitSound != null;
+            _pendingHitParticle = hitParticlePrefab != null;
+            StartLateFrameTicking();
         }
 
-        private void PlayBreakEffects()
+        private void QueueBreakEffects()
         {
             Vector3 position = _cachedTransform.position;
-            IAudioService audio = _audioService;
-            if (breakSound != null && audio != null)
-                audio.PlayAtPoint(breakSound, position, breakVolume);
+            _pendingBreakPosition = position;
+            _pendingBreakAudio = breakSound != null;
+            _pendingBreakParticle = breakParticlePrefab != null;
+            StartLateFrameTicking();
+        }
 
-            if (breakParticlePrefab != null)
+        public void LateFrameTick()
+        {
+            if (_pendingRendererStateDirty)
             {
-                ObjectPoolManager pool = _objectPool;
-                if (pool != null)
-                    pool.Spawn(breakParticlePrefab, position, Quaternion.identity);
+                _pendingRendererStateDirty = false;
+                ApplyIntactRendererState(_pendingRendererEnabled);
             }
+
+            IAudioService audio = _audioService;
+            IObjectPoolService pool = _objectPool;
+
+            if (_pendingHitAudio)
+            {
+                _pendingHitAudio = false;
+                if (hitSound != null && audio != null)
+                    audio.PlayAtPoint(hitSound, _pendingHitPosition, hitVolume);
+            }
+
+            if (_pendingHitParticle)
+            {
+                _pendingHitParticle = false;
+                if (hitParticlePrefab != null && pool != null)
+                    pool.Spawn(hitParticlePrefab, _pendingHitPosition, Quaternion.identity);
+            }
+
+            if (_pendingBreakAudio)
+            {
+                _pendingBreakAudio = false;
+                if (breakSound != null && audio != null)
+                    audio.PlayAtPoint(breakSound, _pendingBreakPosition, breakVolume);
+            }
+
+            if (_pendingBreakParticle)
+            {
+                _pendingBreakParticle = false;
+                if (breakParticlePrefab != null && pool != null)
+                    pool.Spawn(breakParticlePrefab, _pendingBreakPosition, Quaternion.identity);
+            }
+
+            if (_pendingDebrisSignal)
+            {
+                _pendingDebrisSignal = false;
+                SignalBus<DebrisSpawnSignal>.TryPush(in _pendingDebris);
+                _pendingDebris = default;
+            }
+
+            if (_pendingDisableComponent)
+            {
+                _pendingDisableComponent = false;
+                enabled = false;
+            }
+
+            StopLateFrameTicking();
+        }
+
+        private void QueueComponentDisable()
+        {
+            _pendingDisableComponent = true;
+            StartLateFrameTicking();
+        }
+
+        private void StartLateFrameTicking()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void StopLateFrameTicking()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
         }
 
         private void ResetState()
@@ -465,14 +575,20 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            if (!string.IsNullOrWhiteSpace(interactText) &&
-                !string.Equals(interactText, DefaultInteractText, System.StringComparison.Ordinal))
-            {
-                _cachedInteractText = interactText;
-                return;
-            }
+            _cachedInteractTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(
+                interactText,
+                DefaultInteractText,
+                LocalizationKeys.INTERACT_BREAK_ROCK,
+                _localizationManager,
+                _cachedInteractTextBuffer);
+        }
 
-            _cachedInteractText = ResolveLocalized(LocalizationKeys.INTERACT_BREAK_ROCK, DefaultInteractText);
+        private static string ResolveLegacyConfigured(string configuredText, string defaultText)
+        {
+            return !string.IsNullOrWhiteSpace(configuredText) &&
+                   !string.Equals(configuredText, defaultText, StringComparison.Ordinal)
+                ? configuredText
+                : defaultText;
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -497,7 +613,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.PlayerInventory:
-                    _playerInventoryRuntime = currentService as PlayerInventory;
+                    _playerInventoryService = currentService as IPlayerInventoryService;
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _persistentWorldRegistry = currentService as PersistentWorldRegistry;
@@ -506,10 +622,10 @@ namespace Hecton8.Gameplay
                     _audioService = currentService as IAudioService;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localizationManager = currentService as LocalizationManager ?? GlobalRegistry.Localization;
+                    _localizationManager = currentService as ILocalizationTextReadModel;
                     RebuildLocalizedTextCache();
                     break;
             }
@@ -534,11 +650,11 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _playerInventoryRuntime = GlobalRegistry.PlayerInventoryRuntime;
+            _playerInventoryService = GlobalRegistry.PlayerInventory;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _objectPool = GlobalRegistry.ObjectPool;
-            _localizationManager = GlobalRegistry.Localization;
+            _audioService = GlobalRegistry.Audio;
+            _objectPool = GlobalRegistry.ObjectPoolService;
+            _localizationManager = GlobalRegistry.LocalizationText;
         }
 
         private static void PublishItemAcquiredSignal(int itemHashId, int quantity, Vector3 runtimePosition)
@@ -557,9 +673,9 @@ namespace Hecton8.Gameplay
                 Quantity = (ushort)math.min(quantity, (int)ushort.MaxValue),
                 SourceKind = ItemAcquiredSignalSourceKinds.HarvestableOutcrop,
                 Flags = 0,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex)
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
@@ -572,7 +688,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -580,16 +696,6 @@ namespace Hecton8.Gameplay
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return aup.IsFinite();
-        }
-
-        private string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = _localizationManager;
-            if (manager == null)
-                return fallback;
-
-            string localized = manager.Get(key);
-            return string.IsNullOrWhiteSpace(localized) ? fallback : localized;
         }
 
         private Vector3 ResolveFallbackNormal(Vector3 hitPoint)

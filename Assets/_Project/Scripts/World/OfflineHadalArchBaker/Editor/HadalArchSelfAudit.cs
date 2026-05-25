@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -44,10 +45,10 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
                 .Append("\" lod0Triangles=\"").Append(result.Lod0Triangles)
                 .Append("\" lod1Triangles=\"").Append(result.Lod1Triangles)
                 .Append("\" lod2Triangles=\"").Append(result.Lod2Triangles)
-                .Append("\" warningFlags=\"0x").Append(result.WarningFlags.ToString("X8"))
+                .Append("\" warningFlags=\"0x").Append(result.WarningFlags.ToString("X8", CultureInfo.InvariantCulture))
                 .Append("\" />\n");
             builder.Append("</SELF_AUDIT>\n");
-            File.WriteAllText(AuditPath, builder.ToString());
+            File.WriteAllText(AuditPath, builder.ToString(), new UTF8Encoding(false));
             AssetDatabase.Refresh();
         }
 
@@ -157,7 +158,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
 
         private static void AppendTask(StringBuilder builder, int index, string name, string status, string evidence)
         {
-            builder.Append("    <Task id=\"").Append(index.ToString("00")).Append("\" name=\"").Append(name).Append("\" status=\"").Append(status).Append("\">");
+            builder.Append("    <Task id=\"").Append(index.ToString("00", CultureInfo.InvariantCulture)).Append("\" name=\"").Append(name).Append("\" status=\"").Append(status).Append("\">");
             AppendEscaped(builder, evidence);
             builder.Append("</Task>\n");
         }

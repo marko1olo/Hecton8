@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace Hecton8.Modding
 {
+    internal static class ModRegistryEventLayout
+    {
+        public const int PayloadStrideBytes = 16;
+    }
+
     /// <summary>
     /// Mod registry event discriminator for <see cref="ModRegistryEventPayload"/>.
     /// </summary>
@@ -19,7 +24,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Deferred unmanaged payload for mod registry invalidation events.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = ModRegistryEventLayout.PayloadStrideBytes)]
     public struct ModRegistryEventPayload
     {
         [FieldOffset(0)]

@@ -12,7 +12,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineCoreDirector))]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Station Keeping Controller")]
-    public sealed class SubmarineStationKeepingController : MonoBehaviour, IFixedTickable
+    public sealed class SubmarineStationKeepingController : MonoBehaviour, IFixedTickable, IGlobalRegistryHotSwapListener
     {
         private const float PositionHoldEpsilonMetersSq = 0.000001f;
         private const float RotationHoldDotThreshold = 0.9999995f;
@@ -31,6 +31,7 @@ namespace Hecton8.Gameplay
         private SubmarineCoreDirector _submarineCore;
         private Rigidbody _hullRigidbody;
         private bool _registeredFixedTick;
+        private bool _hotSwapRegistered;
         private bool _stationKeepingEnabled;
         private Quaternion _targetRotation = Quaternion.identity;
         private double3 _targetAbsolutePosition;
@@ -47,6 +48,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CacheReferences();
+            TryRegisterHotSwapListener();
             TryRegister();
             if (armOnEnable)
                 ArmAtCurrentPose();
@@ -55,6 +57,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             _stationKeepingEnabled = false;
             _stationKeepingSpeedMetersPerSecond = 0f;
         }
@@ -62,6 +65,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         /// <inheritdoc />
@@ -85,8 +89,8 @@ namespace Hecton8.Gameplay
             {
                 if (!_hullRigidbody.isKinematic)
                 {
-                    _hullRigidbody.linearVelocity = Vector3.zero;
-                    _hullRigidbody.angularVelocity = Vector3.zero;
+                    Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_hullRigidbody, Vector3.zero, wake: false);
+                    Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_hullRigidbody, Vector3.zero, wake: false);
                 }
 
                 _stationKeepingSpeedMetersPerSecond = 0f;
@@ -123,8 +127,8 @@ namespace Hecton8.Gameplay
 
             if (!_hullRigidbody.isKinematic)
             {
-                _hullRigidbody.linearVelocity = impliedLinearVelocity;
-                _hullRigidbody.angularVelocity = impliedAngularVelocity;
+                Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_hullRigidbody, impliedLinearVelocity);
+                Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_hullRigidbody, impliedAngularVelocity);
             }
 
             _hullRigidbody.MovePosition(nextRuntimePosition);
@@ -258,8 +262,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -269,6 +272,35 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registeredFixedTick = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregister();
+            TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -287,7 +319,7 @@ namespace Hecton8.Gameplay
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 

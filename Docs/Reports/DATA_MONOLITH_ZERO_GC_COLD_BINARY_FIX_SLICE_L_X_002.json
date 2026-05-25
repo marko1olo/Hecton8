@@ -1,0 +1,17 @@
+﻿{
+    "agent":  "X_002",
+    "slice":  "L",
+    "status":  "CORE_BUILD_PASS_AFTER_COLD_BINARY_BRIDGE_HEAP_ALLOCATION_FIX",
+    "generatedUtc":  "2026-05-24T06:35:30.9400825Z",
+    "changedFiles":  [
+                         "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs"
+                     ],
+    "fixes":  [
+                  "Replaced 4096-byte managed byte[] cold rig binary read buffer with stackalloc Span\u003cbyte\u003e before copying into existing Vault scratch."
+              ],
+    "heapAllocationRemovedBytes":  4096,
+    "preprocessorBalance":  "PASS_1_FILE_BALANCE_0_MIN_0",
+    "diffCheck":  "PASS_WARNINGS_ONLY_LF_CRLF",
+    "compileStatus":  "PASS_CORE_DOTNET_BUILD_0_WARNINGS_0_ERRORS_58_77S",
+    "claimBoundary":  "Static/source zero-GC improvement only; no Unity player profiler capture."
+}

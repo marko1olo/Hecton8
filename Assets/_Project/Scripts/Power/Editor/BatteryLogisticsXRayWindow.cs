@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Power;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -109,7 +110,10 @@ namespace Hecton8.Power.Editor
                 return;
             }
 
-            _stateLabel.text = $"links: {activeCount} | q: {quality:0.000} | cadence: {cadenceHz:0.0} Hz | fence: {lastFenceElapsedUs:0.0} us";
+            _stateLabel.text = "links: " + activeCount +
+                " | q: " + quality.ToString("0.000", CultureInfo.InvariantCulture) +
+                " | cadence: " + cadenceHz.ToString("0.0", CultureInfo.InvariantCulture) +
+                " Hz | fence: " + lastFenceElapsedUs.ToString("0.0", CultureInfo.InvariantCulture) + " us";
             if (!BatteryChargerLogisticsRuntime.TryGetTelemetryReadOnly(out NativeArray<ChargerTelemetryEntry>.ReadOnly telemetry, out int cursor) ||
                 telemetry.Length == 0)
             {
@@ -120,7 +124,11 @@ namespace Hecton8.Power.Editor
 
             int latest = cursor <= 0 ? 0 : (cursor - 1) % telemetry.Length;
             ChargerTelemetryEntry entry = telemetry[latest];
-            _telemetryLabel.text = $"draw: {entry.TotalEnergyDrawn:0.000} | atomic failures: {entry.AtomicLockFailures} | skipped: {entry.SkippedCadenceFrames} | full: {entry.FullLinks} | unpowered: {entry.UnpoweredLinks}";
+            _telemetryLabel.text = "draw: " + entry.TotalEnergyDrawn.ToString("0.000", CultureInfo.InvariantCulture) +
+                " | atomic failures: " + entry.AtomicLockFailures +
+                " | skipped: " + entry.SkippedCadenceFrames +
+                " | full: " + entry.FullLinks +
+                " | unpowered: " + entry.UnpoweredLinks;
             DrawHistogram(telemetry, cursor);
         }
 

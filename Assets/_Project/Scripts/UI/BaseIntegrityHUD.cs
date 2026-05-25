@@ -262,7 +262,7 @@ namespace Hecton8.UI
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogError($"[BaseIntegrityEvents] {ownerName} was destroyed while still registered as an IBaseIntegrityEventListener.");
+            UnityEngine.Debug.LogError("[BaseIntegrityEvents] Listener destroyed while still registered.");
 #endif
         }
 
@@ -270,29 +270,42 @@ namespace Hecton8.UI
         /// Queues an integrity warning payload.
         /// </summary>
         /// <param name="integrity">Normalized integrity value.</param>
-        public static void RaiseIntegrityWarning(float integrity)
+        public static bool TryRaiseIntegrityWarning(float integrity)
             => Enqueue(BaseIntegrityEventType.IntegrityWarning, BaseModuleFailureMode.None, integrity);
+
+        [Obsolete("Use TryRaiseIntegrityWarning so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseIntegrityWarning(float integrity) => TryRaiseIntegrityWarning(integrity);
 
         /// <summary>
         /// Queues a module breached payload.
         /// </summary>
-        public static void RaiseBreached()
+        public static bool TryRaiseBreached()
             => Enqueue(BaseIntegrityEventType.Breached, BaseModuleFailureMode.None, 0f);
+
+        [Obsolete("Use TryRaiseBreached so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseBreached() => TryRaiseBreached();
 
         /// <summary>
         /// Queues a base emergency payload.
         /// </summary>
         /// <param name="failureMode">Module failure mode.</param>
         /// <param name="integrity">Normalized integrity value.</param>
-        public static void RaiseEmergency(BaseModuleFailureMode failureMode, float integrity)
+        public static bool TryRaiseEmergency(BaseModuleFailureMode failureMode, float integrity)
             => Enqueue(BaseIntegrityEventType.Emergency, failureMode, integrity);
+
+        [Obsolete("Use TryRaiseEmergency so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseEmergency(BaseModuleFailureMode failureMode, float integrity)
+            => TryRaiseEmergency(failureMode, integrity);
 
         /// <summary>
         /// Queues an air-quality warning payload.
         /// </summary>
         /// <param name="airQualityNormalized">Normalized breathable reserve.</param>
-        public static void RaiseAirQualityWarning(float airQualityNormalized)
+        public static bool TryRaiseAirQualityWarning(float airQualityNormalized)
             => Enqueue(BaseIntegrityEventType.AirQualityWarning, BaseModuleFailureMode.None, airQualityNormalized);
+
+        [Obsolete("Use TryRaiseAirQualityWarning so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseAirQualityWarning(float airQualityNormalized) => TryRaiseAirQualityWarning(airQualityNormalized);
 
         /// <summary>
         /// Flushes queued base integrity events through registered listeners.
@@ -313,7 +326,10 @@ namespace Hecton8.UI
                     return;
 
                 if (!_pendingEvents.TryDequeue(out BaseIntegrityEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -345,11 +361,11 @@ namespace Hecton8.UI
             }
         }
 
-        private static void Enqueue(BaseIntegrityEventType eventType, BaseModuleFailureMode failureMode, float value)
+        private static bool Enqueue(BaseIntegrityEventType eventType, BaseModuleFailureMode failureMode, float value)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+                return false;
 
             BaseIntegrityEventPayload payload = new BaseIntegrityEventPayload
             {
@@ -363,11 +379,12 @@ namespace Hecton8.UI
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static void EnsureInitialized()
@@ -441,7 +458,10 @@ namespace Hecton8.UI
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -622,7 +642,7 @@ namespace Hecton8.UI
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -636,7 +656,7 @@ namespace Hecton8.UI
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -666,7 +686,7 @@ namespace Hecton8.UI
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private LocalizationManager _cachedLocalization;
+        private ILocalizationTextReadModel _cachedLocalization;
         private bool _registered;
         private bool _hotSwapListenerRegistered;
         private float _lastWarningIntegrity = 1f;
@@ -808,7 +828,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             moduleAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -834,10 +854,10 @@ namespace Hecton8.UI
                 uint messageHash = GetPercentNotificationHash(
                     _dangerNotificationHashes,
                     ref _dangerFormatHash,
-                    ResolveLocalized(LocalizationKeys.BASE_INTEGRITY_DANGER, "BASE CRITICAL: {0}% - BREACH IMMINENT!"),
+                    ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_DANGER, "BASE CRITICAL: {0}% - BREACH IMMINENT!"),
                     integrityPercent);
-                NotificationEvents.PushRegisteredWarning(messageHash);
-                BaseIntegrityEvents.RaiseIntegrityWarning(integrity);
+                NotificationEvents.TryPushRegisteredWarning(messageHash);
+                BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity);
                 return;
             }
 
@@ -847,10 +867,10 @@ namespace Hecton8.UI
                 uint messageHash = GetPercentNotificationHash(
                     _criticalNotificationHashes,
                     ref _criticalFormatHash,
-                    ResolveLocalized(LocalizationKeys.BASE_INTEGRITY_CRITICAL, "HECTON-OS: MODULE INTEGRITY {0}% - REPAIRS REQUIRED."),
+                    ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_CRITICAL, "HECTON-OS: MODULE INTEGRITY {0}% - REPAIRS REQUIRED."),
                     integrityPercent);
-                NotificationEvents.PushRegisteredWarning(messageHash);
-                BaseIntegrityEvents.RaiseIntegrityWarning(integrity);
+                NotificationEvents.TryPushRegisteredWarning(messageHash);
+                BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity);
                 return;
             }
 
@@ -860,9 +880,9 @@ namespace Hecton8.UI
                 uint messageHash = GetPercentNotificationHash(
                     _warningNotificationHashes,
                     ref _warningFormatHash,
-                    ResolveLocalized(LocalizationKeys.BASE_INTEGRITY_WARNING, "BASE MODULE: INTEGRITY {0}%."),
+                    ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_WARNING, "BASE MODULE: INTEGRITY {0}%."),
                     integrityPercent);
-                NotificationEvents.PushRegisteredInfo(messageHash);
+                NotificationEvents.TryPushRegisteredInfo(messageHash);
             }
         }
 
@@ -874,7 +894,7 @@ namespace Hecton8.UI
             if (module.IsBreached && !ReferenceEquals(_lastBreachedModule, module))
             {
                 _lastBreachedModule = module;
-                BaseIntegrityEvents.RaiseBreached();
+                BaseIntegrityEvents.TryRaiseBreached();
             }
 
             BaseModuleFailureMode failureMode = module.CurrentFailureMode;
@@ -893,7 +913,7 @@ namespace Hecton8.UI
             _lastEmergencyModule = module;
             _lastEmergencyMode = failureMode;
             _nextEmergencyTime = Time.time + EmergencyCooldown;
-            BaseIntegrityEvents.RaiseEmergency(failureMode, integrity);
+            BaseIntegrityEvents.TryRaiseEmergency(failureMode, integrity);
         }
 
         private void PublishAirQualityState(BaseModule module)
@@ -916,16 +936,16 @@ namespace Hecton8.UI
 
             _lastAirQuality = airQuality;
             _nextAirWarningTime = Time.time + AirWarningCooldown;
-            BaseIntegrityEvents.RaiseAirQualityWarning(airQuality);
+            BaseIntegrityEvents.TryRaiseAirQualityWarning(airQuality);
 
             if (airQuality <= airCriticalThreshold)
             {
                 uint messageHash = GetPercentNotificationHash(
                     _airCriticalNotificationHashes,
                     ref _airCriticalFormatHash,
-                    "BASE AIR QUALITY CRITICAL: {0}%",
+                    "BASE AIR QUALITY CRITICAL: {0}%".AsSpan(),
                     NormalizedPercent(airQuality));
-                NotificationEvents.PushRegisteredWarning(messageHash);
+                NotificationEvents.TryPushRegisteredWarning(messageHash);
             }
         }
 
@@ -994,7 +1014,7 @@ namespace Hecton8.UI
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
-                _cachedLocalization = currentService as LocalizationManager;
+                _cachedLocalization = currentService as ILocalizationTextReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1016,8 +1036,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedLocalization = GlobalRegistry.LocalizationText;
         }
 
         private void ApplyCachedPlayerContext(bool forceAssign)
@@ -1049,8 +1069,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -1062,9 +1081,9 @@ namespace Hecton8.UI
             _registered = false;
         }
 
-        private uint GetPercentNotificationHash(uint[] cache, ref uint cachedFormatHash, string format, int percent)
+        private uint GetPercentNotificationHash(uint[] cache, ref uint cachedFormatHash, ReadOnlySpan<char> format, int percent)
         {
-            if (cache == null || cache.Length != PercentMessageCacheSize || string.IsNullOrEmpty(format))
+            if (cache == null || cache.Length != PercentMessageCacheSize || format.IsEmpty)
                 return 0u;
 
             uint currentFormatHash = NotificationEvents.ComputeMessageHash(format);
@@ -1079,10 +1098,63 @@ namespace Hecton8.UI
             if (messageHash != 0u)
                 return messageHash;
 
-            string message = ComposePercentMessage(format, clampedPercent);
-            messageHash = NotificationEvents.RegisterMessage(message);
+            if (!TryWritePercentMessage(format, clampedPercent, _percentMessageBuffer, out int length))
+                return 0u;
+
+            messageHash = NotificationEvents.RegisterMessage(_percentMessageBuffer.AsSpan(0, length));
             cache[clampedPercent] = messageHash;
             return messageHash;
+        }
+
+        private static bool TryWritePercentMessage(
+            ReadOnlySpan<char> format,
+            int percent,
+            char[] buffer,
+            out int length)
+        {
+            length = 0;
+            if (buffer == null || buffer.Length <= 0)
+                return false;
+
+            int placeholder = IndexOfPercentPlaceholder(format);
+            if (placeholder < 0)
+            {
+                length = math.min(format.Length, buffer.Length);
+                format.Slice(0, length).CopyTo(buffer.AsSpan(0, length));
+                return length > 0;
+            }
+
+            if (placeholder > buffer.Length)
+                return false;
+
+            format.Slice(0, placeholder).CopyTo(buffer.AsSpan(0, placeholder));
+            length = placeholder;
+
+            if (!percent.TryFormat(buffer.AsSpan(length), out int percentLength))
+                return false;
+
+            length += percentLength;
+            int suffixStart = placeholder + 3;
+            ReadOnlySpan<char> suffix = suffixStart < format.Length
+                ? format.Slice(suffixStart)
+                : ReadOnlySpan<char>.Empty;
+            if (length + suffix.Length > buffer.Length)
+                return false;
+
+            suffix.CopyTo(buffer.AsSpan(length, suffix.Length));
+            length += suffix.Length;
+            return length > 0;
+        }
+
+        private static int IndexOfPercentPlaceholder(ReadOnlySpan<char> format)
+        {
+            for (int i = 0; i <= format.Length - 3; i++)
+            {
+                if (format[i] == '{' && format[i + 1] == '0' && format[i + 2] == '}')
+                    return i;
+            }
+
+            return -1;
         }
 
         private static int NormalizedPercent(float value)
@@ -1090,44 +1162,12 @@ namespace Hecton8.UI
             return math.clamp((int)math.round(value * 100f), 0, PercentMessageCacheSize - 1);
         }
 
-        private string ComposePercentMessage(string format, int percent)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            int placeholderIndex = format.IndexOf("{0}", StringComparison.Ordinal);
-            if (placeholderIndex < 0)
-                return format;
-
-            string percentText = HudNumericStringCache.IntStrings[percent];
-            int suffixStart = placeholderIndex + 3;
-            int suffixLength = format.Length - suffixStart;
-            int totalLength = placeholderIndex + percentText.Length + suffixLength;
-            if (totalLength <= 0)
-                return format;
-
-            PercentMessageState state = new PercentMessageState(format, percentText, placeholderIndex, suffixStart);
-            if (totalLength > _percentMessageBuffer.Length)
-                return string.Create(totalLength, state, WritePercentMessage);
-
-            WritePercentMessage(_percentMessageBuffer.AsSpan(0, totalLength), state);
-            return new string(_percentMessageBuffer, 0, totalLength);
-        }
-
-        private static void WritePercentMessage(Span<char> destination, PercentMessageState state)
-        {
-            int writeIndex = 0;
-            for (int i = 0; i < state.PlaceholderIndex; i++)
-                destination[writeIndex++] = state.Format[i];
-
-            for (int i = 0; i < state.PercentText.Length; i++)
-                destination[writeIndex++] = state.PercentText[i];
-
-            for (int i = state.SuffixStart; i < state.Format.Length; i++)
-                destination[writeIndex++] = state.Format[i];
-        }
-
-        private string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = _cachedLocalization;
-            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
+            ILocalizationTextReadModel manager = _cachedLocalization;
+            return manager != null
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
     }
 }

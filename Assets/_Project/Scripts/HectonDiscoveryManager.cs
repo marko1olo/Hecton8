@@ -24,7 +24,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Hecton Discovery Manager")]
-    public sealed class HectonDiscoveryManager : MonoBehaviour, ISaveable, IScanEventListener
+    public sealed class HectonDiscoveryManager : MonoBehaviour, ISaveable, IScanEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MinBiomeId = BiomeDiscoveryBitMask.MinBiomeId;
         private const int MaxBiomeId = BiomeDiscoveryBitMask.MaxBiomeId;
@@ -33,30 +33,34 @@ namespace Hecton8.Gameplay
         private const byte FaunaBestiaryDietThreshold = 5;
         private const byte FaunaBestiaryVulnerabilityThreshold = 10;
         private const int DiscoveredBiomeCapacity = MaxBiomeId - MinBiomeId + 1;
+        private const string MissingBiomeFallbackName = "BIOME UNKNOWN";
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR - REFERENCES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── References ──────────────────────────────")]
+        [Header("-- References ------------------------------")]
         [Tooltip("Reestr vseh 108 biomov dlya imenovaniya i PDA-predstavleniya.")]
         [SerializeField] private HectonBiomeRegistry _registry;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         // COLD ALLOC: HashSet<int>[DiscoveredBiomeCapacity] - discovered biome ids keyed by biome registry id - owner: HectonDiscoveryManager
         private readonly HashSet<int> _discoveredBiomeIds = new HashSet<int>(DiscoveredBiomeCapacity);
-        // COLD ALLOC: Dictionary<uint,byte>[64] — runtime fauna bestiary observation counters keyed by scan entry hash — owner: HectonDiscoveryManager
+        // COLD ALLOC: Dictionary<uint,byte>[64] � runtime fauna bestiary observation counters keyed by scan entry hash � owner: HectonDiscoveryManager
         private readonly Dictionary<uint, byte> _faunaInteractionCounts = new Dictionary<uint, byte>(64);
+        private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(160); // COLD ALLOC: char[160] - biome discovery notification staging buffer - owner: HectonDiscoveryManager
         private bool _registeredWithSaveManager;
         private bool _registeredWithScanEvents;
         private bool _serviceRegistered;
+        private bool _registeredHotSwapListener;
+        private ISaveService _saveService;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Posledniy korrektno podtverzhdennyy ID otkrytogo bioma.
@@ -74,28 +78,29 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public int LoadPriority => 20;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  EVENTS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Vyzyvaetsya odin raz pri pervom otkrytii novogo bioma.
         /// </summary>
-        public event Action<int> OnBiomeDiscovered;
-
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void OnEnable()
         {
             TryRegisterService();
+            _saveService = GlobalRegistry.Save;
+            TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
             TryRegisterWithScanEvents();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
             TryRegisterWithScanEvents();
         }
@@ -104,13 +109,14 @@ namespace Hecton8.Gameplay
         {
             UnregisterFromSaveManager();
             UnregisterFromScanEvents();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
 
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Pomechaet biom kak otkrytyy, esli igrok zashel v nego vpervye.
@@ -126,13 +132,11 @@ namespace Hecton8.Gameplay
 
             LastDiscoveredId = biomeId;
 
-            string biomeName = GetBiomeName(biomeId);
-            LogBiomeDiscovered(biomeName, biomeId, this);
-
-            OnBiomeDiscovered?.Invoke(biomeId);
-            NotificationEvents.PushInfo(FormatSingleArgument(
-                ResolveLocalized(LocalizationKeys.DISCOVERY_NEW_BIOME, "NEW BIOME DISCOVERED: {0}"),
-                biomeName));
+            ProgressionMetaSignalRoute.TryPublishBiomeDiscovered(biomeId);
+            PushBiomeDiscoveredNotification(biomeId);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogBiomeDiscovered(GetBiomeName(biomeId), biomeId, this);
+#endif
         }
 
         /// <summary>
@@ -155,10 +159,10 @@ namespace Hecton8.Gameplay
             {
                 HectonBiomeRegistry.BiomeEntry entry = _registry.GetBiome(id);
                 if (!string.IsNullOrEmpty(entry.name))
-                    return entry.name.ToUpperInvariant();
+                    return entry.name;
             }
 
-            return CreateBiomeFallbackName(id);
+            return MissingBiomeFallbackName;
         }
 
         /// <summary>
@@ -185,9 +189,9 @@ namespace Hecton8.Gameplay
             TryRecordFaunaObservation(payload.EntryHash);
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <inheritdoc />
         public void PopulateSaveData(SaveData data)
@@ -219,8 +223,10 @@ namespace Hecton8.Gameplay
             }
             else if (data.discoveredBiomeIds != null)
             {
-                foreach (int biomeId in data.discoveredBiomeIds)
+                HashSet<int>.Enumerator biomeEnumerator = data.discoveredBiomeIds.GetEnumerator();
+                while (biomeEnumerator.MoveNext())
                 {
+                    int biomeId = biomeEnumerator.Current;
                     if (IsValidBiomeId(biomeId))
                         _discoveredBiomeIds.Add(biomeId);
                 }
@@ -236,102 +242,89 @@ namespace Hecton8.Gameplay
             LastDiscoveredId = ResolveFallbackLastDiscoveredId();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE METHODS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private static bool IsValidBiomeId(int biomeId)
         {
             return biomeId >= MinBiomeId && biomeId <= MaxBiomeId;
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
-        private static string FormatSingleArgument(string template, string argument)
+        private void PushBiomeDiscoveredNotification(int biomeId)
         {
-            if (string.IsNullOrEmpty(template))
-                return argument ?? string.Empty;
+            _notificationBuffer.Clear();
+            ReadOnlySpan<char> template = ResolveLocalizedSpan(LocalizationKeys.DISCOVERY_NEW_BIOME, "NEW BIOME DISCOVERED: {0}");
 
-            argument ??= string.Empty;
-            int tokenIndex = template.IndexOf("{0}", StringComparison.Ordinal);
+            if (!AppendTemplateSingleArgument(ref _notificationBuffer, template, ResolveBiomeNameSpan(biomeId)))
+                return;
+
+            NotificationEvents.TryPushInfo(_notificationBuffer.AsSpan());
+        }
+
+        private ReadOnlySpan<char> ResolveBiomeNameSpan(int biomeId)
+        {
+            if (!IsValidBiomeId(biomeId) || _registry == null)
+                return MissingBiomeFallbackName.AsSpan();
+
+            HectonBiomeRegistry.BiomeEntry entry = _registry.GetBiome(biomeId);
+            return string.IsNullOrWhiteSpace(entry.name)
+                ? MissingBiomeFallbackName.AsSpan()
+                : entry.name.AsSpan();
+        }
+
+        private static bool AppendTemplateSingleArgument(ref FixedCharBuffer buffer, ReadOnlySpan<char> template, ReadOnlySpan<char> argument)
+        {
+            if (template.Length <= 0)
+                return buffer.Append(argument);
+
+            int tokenIndex = IndexOfToken0(template);
             if (tokenIndex < 0)
             {
-                return string.Create(
-                    template.Length + 1 + argument.Length,
-                    (template, argument),
-                    static (buffer, state) =>
-                    {
-                        state.template.AsSpan().CopyTo(buffer);
-                        buffer[state.template.Length] = ' ';
-                        state.argument.AsSpan().CopyTo(buffer.Slice(state.template.Length + 1));
-                    });
+                return buffer.Append(template) &&
+                       buffer.Append(" ".AsSpan()) &&
+                       buffer.Append(argument);
             }
 
-            int suffixStart = tokenIndex + 3;
-            return string.Create(
-                template.Length - 3 + argument.Length,
-                (template, argument, tokenIndex, suffixStart),
-                static (buffer, state) =>
-                {
-                    state.template.AsSpan(0, state.tokenIndex).CopyTo(buffer);
-                    state.argument.AsSpan().CopyTo(buffer.Slice(state.tokenIndex));
-                    state.template.AsSpan(state.suffixStart).CopyTo(buffer.Slice(state.tokenIndex + state.argument.Length));
-                });
+            return buffer.Append(template.Slice(0, tokenIndex)) &&
+                   AppendUpper(ref buffer, argument) &&
+                   buffer.Append(template.Slice(tokenIndex + 3));
         }
 
-        private static string CreateBiomeFallbackName(int biomeId)
+        private static bool AppendUpper(ref FixedCharBuffer buffer, ReadOnlySpan<char> value)
         {
-            const string prefix = "BIOME ";
-            int digitCount = CountSignedDecimalChars(biomeId);
-            return string.Create(
-                prefix.Length + digitCount,
-                (prefix, biomeId, digitCount),
-                static (buffer, state) =>
-                {
-                    state.prefix.AsSpan().CopyTo(buffer);
-                    WriteSignedDecimal(state.biomeId, buffer.Slice(state.prefix.Length, state.digitCount));
-                });
-        }
-
-        private static int CountSignedDecimalChars(int value)
-        {
-            long safeValue = value;
-            int digits = safeValue < 0 ? 2 : 1;
-            if (safeValue < 0)
-                safeValue = -safeValue;
-
-            while (safeValue >= 10)
+            Span<char> single = stackalloc char[1];
+            for (int i = 0; i < value.Length; i++)
             {
-                safeValue /= 10;
-                digits++;
+                char c = value[i];
+                if (c >= 'a' && c <= 'z')
+                    c = (char)(c - 32);
+
+                single[0] = c;
+                if (!buffer.Append(single))
+                    return false;
             }
 
-            return digits;
+            return true;
         }
 
-        private static void WriteSignedDecimal(int value, Span<char> destination)
+        private static int IndexOfToken0(ReadOnlySpan<char> text)
         {
-            long safeValue = value;
-            bool negative = safeValue < 0;
-            if (negative)
-                safeValue = -safeValue;
-
-            int cursor = destination.Length;
-            do
+            for (int i = 0; i <= text.Length - 3; i++)
             {
-                destination[--cursor] = (char)('0' + (int)(safeValue % 10));
-                safeValue /= 10;
+                if (text[i] == '{' && text[i + 1] == '0' && text[i + 2] == '}')
+                    return i;
             }
-            while (safeValue > 0 && cursor > 0);
 
-            if (negative && cursor > 0)
-                destination[--cursor] = '-';
+            return -1;
         }
 
         private int ResolveFallbackLastDiscoveredId()
@@ -348,48 +341,22 @@ namespace Hecton8.Gameplay
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogBiomeDiscovered(string biomeName, int biomeId, UnityEngine.Object context)
         {
-            UnityEngine.Debug.Log(CreateBiomeDiscoveredLogMessage(biomeName, biomeId), context);
-        }
-
-        private static string CreateBiomeDiscoveredLogMessage(string biomeName, int biomeId)
-        {
-            const string prefix = "[Discovery] New biome discovered: ";
-            const string idPrefix = " (ID ";
-            const string suffix = ").";
-            biomeName ??= string.Empty;
-            int digitCount = CountSignedDecimalChars(biomeId);
-            return string.Create(
-                prefix.Length + biomeName.Length + idPrefix.Length + digitCount + suffix.Length,
-                (biomeName, biomeId, digitCount),
-                static (buffer, state) =>
-                {
-                    const string localPrefix = "[Discovery] New biome discovered: ";
-                    const string localIdPrefix = " (ID ";
-                    const string localSuffix = ").";
-                    int cursor = 0;
-                    localPrefix.AsSpan().CopyTo(buffer);
-                    cursor += localPrefix.Length;
-                    state.biomeName.AsSpan().CopyTo(buffer.Slice(cursor));
-                    cursor += state.biomeName.Length;
-                    localIdPrefix.AsSpan().CopyTo(buffer.Slice(cursor));
-                    cursor += localIdPrefix.Length;
-                    WriteSignedDecimal(state.biomeId, buffer.Slice(cursor, state.digitCount));
-                    cursor += state.digitCount;
-                    localSuffix.AsSpan().CopyTo(buffer.Slice(cursor));
-                });
+            Hecton8.Core.H8Debug.Log("[Discovery] New biome discovered.", context);
         }
 
 
         private void TryRegisterWithSaveManager()
         {
-            if (_registeredWithSaveManager)
+            if (_registeredWithSaveManager || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            if (saveManager == null)
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
                 return;
 
-            saveManager.Register(this);
+            _saveService.Register(this);
             _registeredWithSaveManager = true;
         }
 
@@ -425,11 +392,41 @@ namespace Hecton8.Gameplay
             if (!_registeredWithSaveManager)
                 return;
 
-            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            if (saveManager != null)
-                saveManager.Unregister(this);
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
 
             _registeredWithSaveManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            UnregisterFromSaveManager();
+            _saveService = currentService as ISaveService;
+            TryRegisterWithSaveManager();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void UnregisterFromScanEvents()

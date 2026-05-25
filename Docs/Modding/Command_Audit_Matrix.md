@@ -1,4 +1,4 @@
-# HECTON-8 Mod Command Audit Matrix
+﻿# HECTON-8 Mod Command Audit Matrix
 
 Date: 2026-05-19
 Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION

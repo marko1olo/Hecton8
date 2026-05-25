@@ -26,6 +26,7 @@ namespace Hecton8.Dev
         private static bool _startupLogged;
         private static readonly Dictionary<string, string> _lastMessageByChannel = new Dictionary<string, string>(8);
         private static readonly Dictionary<string, int> _suppressedDuplicateCountByChannel = new Dictionary<string, int>(8);
+        private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
 
         /// <summary>
         /// Gets the absolute path of the current diagnostics file.
@@ -75,8 +76,11 @@ namespace Hecton8.Dev
                     return;
 
                 string safeLabel = string.IsNullOrWhiteSpace(sessionLabel) ? "runtime" : sessionLabel.Trim();
-                foreach (char invalidChar in Path.GetInvalidFileNameChars())
+                for (int i = 0; i < _invalidFileNameChars.Length; i++)
+                {
+                    char invalidChar = _invalidFileNameChars[i];
                     safeLabel = safeLabel.Replace(invalidChar, '_');
+                }
 
                 string directory = HectonPersistentPathPolicy.CombineDirectory("Diagnostics");
                 Directory.CreateDirectory(directory);

@@ -1,8 +1,8 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Optimization;
 using Hecton8.Tools;
 using TMPro;
 using Unity.Mathematics;
@@ -14,7 +14,7 @@ namespace Hecton8.UI.Tools
     /// Drives a held-tool diegetic status screen from the native tool-state signal lane.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
@@ -84,8 +84,8 @@ namespace Hecton8.UI.Tools
         private readonly char[] _scannerTitleCache = new char[TextBufferCapacity];
 
         private RenderTexture _renderTexture;
-        private RenderTexturePool _cachedRenderTexturePool;
-        private RenderTexturePool _renderTextureOwnerPool;
+        private IRenderTexturePoolService _cachedRenderTexturePool;
+        private IRenderTexturePoolService _renderTextureOwnerPool;
         private Texture _boundScreenTexture;
         private RenderTextureFormat _renderTextureFormat = RenderTextureFormat.ARGB32;
         private bool _registered;
@@ -137,7 +137,18 @@ namespace Hecton8.UI.Tools
         private float _appliedToolTypeHue01 = -1f;
         private int _toolUiMask;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
+        private bool _pendingPresentationCommit;
+        private bool _pendingEnsureRenderTexture;
+        private bool _pendingReleaseRenderTexture;
+        private bool _pendingApplyScreenTexture;
+        private bool _pendingUseRenderTexture;
+        private bool _pendingFallbackActive;
+        private bool _pendingRenderThisFrame;
+        private bool _pendingPresentationDecision;
+        private float _pendingPresentationDecisionDeltaTime;
+        private bool _pendingStateRefresh;
 
         /// <summary>
         /// Last runtime tool hash accepted by this display.
@@ -160,6 +171,7 @@ namespace Hecton8.UI.Tools
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
             ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
             ApplyCameraRenderState(renderThisFrame: false);
         }
@@ -169,12 +181,14 @@ namespace Hecton8.UI.Tools
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
         }
 
         private void OnDisable()
         {
             TryUnregisterUpdatable();
             TryUnregisterSlowTickable();
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
             ApplyCameraRenderState(renderThisFrame: false);
             ReleaseRenderTexture();
@@ -194,13 +208,14 @@ namespace Hecton8.UI.Tools
             {
                 TryRegisterUpdatable();
                 TryRegisterSlowTickable();
+                TryRegisterLateFrameTickable();
                 return;
             }
 
             if (serviceSlot != GlobalRegistryServiceSlot.RenderTexturePoolRuntime)
                 return;
 
-            RenderTexturePool newPool = currentService as RenderTexturePool;
+            IRenderTexturePoolService newPool = currentService as IRenderTexturePoolService;
             if (_renderTexture != null &&
                 _renderTextureOwnerPool != null &&
                 !ReferenceEquals(_renderTextureOwnerPool, newPool))
@@ -231,54 +246,133 @@ namespace Hecton8.UI.Tools
             ReadLatestToolStateSignal();
 
             if (_stateDirty)
-                RefreshTextAndShaderState();
+            {
+                _pendingStateRefresh = true;
+                _renderRequested = true;
+            }
 
+            QueuePresentationDecision(safeDeltaTime);
+        }
+
+        private void QueuePresentationDecision(float safeDeltaTime)
+        {
+            _pendingPresentationDecisionDeltaTime = safeDeltaTime;
+            _pendingPresentationDecision = true;
+        }
+
+        private void ResolvePresentationDecision()
+        {
+            _pendingPresentationDecision = false;
+            float safeDeltaTime = _pendingPresentationDecisionDeltaTime;
             bool shouldRender = ShouldRenderToolScreen();
             if (_fallbackActive)
             {
                 _notRenderableSeconds = 0f;
-                ApplyCameraRenderState(renderThisFrame: false);
-                ReleaseRenderTexture();
-                ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
+                QueuePresentationCommit(
+                    ensureRenderTexture: false,
+                    releaseRenderTexture: true,
+                    applyScreenTexture: true,
+                    useRenderTexture: false,
+                    fallbackActive: true,
+                    renderThisFrame: false);
                 return;
             }
 
             if (shouldRender)
             {
                 _notRenderableSeconds = 0f;
-                EnsureRenderTexture();
-                if (_renderTexture == null)
-                {
-                    ApplyCameraRenderState(renderThisFrame: false);
-                    ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
-                    return;
-                }
-
-                ApplyScreenTexture(_renderTexture, fallbackActive: false);
-                ApplyCameraRenderState(_renderRequested);
+                QueuePresentationCommit(
+                    ensureRenderTexture: true,
+                    releaseRenderTexture: false,
+                    applyScreenTexture: true,
+                    useRenderTexture: true,
+                    fallbackActive: false,
+                    renderThisFrame: _renderRequested);
                 return;
             }
 
-            ApplyCameraRenderState(renderThisFrame: false);
+            QueuePresentationCommit(
+                ensureRenderTexture: false,
+                releaseRenderTexture: false,
+                applyScreenTexture: false,
+                useRenderTexture: false,
+                fallbackActive: false,
+                renderThisFrame: false);
             if (!IsEquipped() || !IsVisible())
             {
                 _notRenderableSeconds = 0f;
-                ReleaseRenderTexture();
-                ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
+                QueuePresentationCommit(
+                    ensureRenderTexture: false,
+                    releaseRenderTexture: true,
+                    applyScreenTexture: true,
+                    useRenderTexture: false,
+                    fallbackActive: true,
+                    renderThisFrame: false);
                 return;
             }
 
             _notRenderableSeconds = math.min(InvisibleReleaseSeconds, _notRenderableSeconds + safeDeltaTime);
             if (_notRenderableSeconds >= InvisibleReleaseSeconds)
             {
-                ReleaseRenderTexture();
-                ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
+                QueuePresentationCommit(
+                    ensureRenderTexture: false,
+                    releaseRenderTexture: true,
+                    applyScreenTexture: true,
+                    useRenderTexture: false,
+                    fallbackActive: true,
+                    renderThisFrame: false);
             }
         }
 
         public void SlowTick()
         {
             QueueQualityCandidate(HomeostasisBrain.GlobalQualityWeight);
+        }
+
+        public void LateFrameTick()
+        {
+            if (_pendingPresentationDecision)
+                ResolvePresentationDecision();
+
+            if (!_pendingPresentationCommit && !_pendingStateRefresh && !_stateDirty)
+                return;
+
+            bool hasPresentationCommit = _pendingPresentationCommit;
+            if (_pendingStateRefresh || _stateDirty)
+            {
+                _pendingStateRefresh = false;
+                RefreshTextAndShaderState();
+            }
+
+            if (!hasPresentationCommit)
+                return;
+
+            bool ensureRenderTexture = _pendingEnsureRenderTexture;
+            bool releaseRenderTexture = _pendingReleaseRenderTexture;
+            bool applyScreenTexture = _pendingApplyScreenTexture;
+            bool useRenderTexture = _pendingUseRenderTexture;
+            bool fallbackActive = _pendingFallbackActive;
+            bool renderThisFrame = _pendingRenderThisFrame;
+
+            _pendingPresentationCommit = false;
+            _pendingEnsureRenderTexture = false;
+            _pendingReleaseRenderTexture = false;
+            _pendingApplyScreenTexture = false;
+            _pendingUseRenderTexture = false;
+            _pendingFallbackActive = false;
+            _pendingRenderThisFrame = false;
+
+            if (releaseRenderTexture)
+                ReleaseRenderTexture();
+
+            if (ensureRenderTexture)
+                EnsureRenderTexture();
+
+            bool hasRenderTexture = useRenderTexture && _renderTexture != null;
+            if (applyScreenTexture)
+                ApplyScreenTexture(hasRenderTexture ? _renderTexture : _fallbackEmissiveTexture, fallbackActive || !hasRenderTexture);
+
+            ApplyCameraRenderState(renderThisFrame && hasRenderTexture);
         }
 
         /// <summary>
@@ -309,7 +403,7 @@ namespace Hecton8.UI.Tools
         {
             ReadLatestScannerSignal();
 
-            if (!GlobalSignals.TryGetLatestToolStateChangedSignal(out ToolStateChangedSignal signal, out int sequence) ||
+            if (!SignalBus<ToolStateChangedSignal>.TryGetLatest(out ToolStateChangedSignal signal, out int sequence) ||
                 sequence == _lastSignalSequence)
             {
                 return;
@@ -336,7 +430,7 @@ namespace Hecton8.UI.Tools
 
         private void ReadLatestScannerSignal()
         {
-            if (!GlobalSignals.TryGetLatestScannerToolActiveSignal(out ScannerToolActiveSignal signal, out int sequence) ||
+            if (!ScannerSignalRoute.TryGetLatestActive(out ScannerToolActiveSignal signal, out int sequence) ||
                 sequence == _lastScannerSignalSequence)
             {
                 return;
@@ -557,7 +651,7 @@ namespace Hecton8.UI.Tools
             if (_poolUnavailableFallback && _poolRetrySeconds > 0f)
                 return;
 
-            RenderTexturePool pool = ResolveRenderTexturePool();
+            IRenderTexturePoolService pool = ResolveRenderTexturePool();
             if (pool == null)
             {
                 _poolUnavailableFallback = true;
@@ -606,7 +700,7 @@ namespace Hecton8.UI.Tools
 
             RenderTexture released = _renderTexture;
             _renderTexture = null;
-            RenderTexturePool ownerPool = _renderTextureOwnerPool;
+            IRenderTexturePoolService ownerPool = _renderTextureOwnerPool;
             _renderTextureOwnerPool = null;
 
             if (ownerPool != null)
@@ -624,12 +718,12 @@ namespace Hecton8.UI.Tools
             Destroy(rt);
         }
 
-        private RenderTexturePool ResolveRenderTexturePool()
+        private IRenderTexturePoolService ResolveRenderTexturePool()
         {
             if (_cachedRenderTexturePool != null)
                 return _cachedRenderTexturePool;
 
-            _cachedRenderTexturePool = GlobalRegistry.RenderTexturePool;
+            _cachedRenderTexturePool = GlobalRegistry.RenderTexturePoolService;
             return _cachedRenderTexturePool;
         }
 
@@ -708,6 +802,23 @@ namespace Hecton8.UI.Tools
 
             if (enableCamera)
                 _renderRequested = false;
+        }
+
+        private void QueuePresentationCommit(
+            bool ensureRenderTexture,
+            bool releaseRenderTexture,
+            bool applyScreenTexture,
+            bool useRenderTexture,
+            bool fallbackActive,
+            bool renderThisFrame)
+        {
+            _pendingPresentationCommit = true;
+            _pendingEnsureRenderTexture |= ensureRenderTexture;
+            _pendingReleaseRenderTexture |= releaseRenderTexture;
+            _pendingApplyScreenTexture |= applyScreenTexture;
+            _pendingUseRenderTexture = useRenderTexture;
+            _pendingFallbackActive = fallbackActive;
+            _pendingRenderThisFrame = renderThisFrame;
         }
 
         private bool ShouldRenderToolScreen()
@@ -870,6 +981,14 @@ namespace Hecton8.UI.Tools
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
         private void TryUnregisterSlowTickable()
         {
             if (!_registeredSlowTick)
@@ -877,6 +996,22 @@ namespace Hecton8.UI.Tools
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
             _registeredSlowTick = false;
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = false;
+            _pendingPresentationCommit = false;
+            _pendingEnsureRenderTexture = false;
+            _pendingReleaseRenderTexture = false;
+            _pendingApplyScreenTexture = false;
+            _pendingUseRenderTexture = false;
+            _pendingFallbackActive = false;
+            _pendingRenderThisFrame = false;
         }
 
         private void TryRegisterHotSwapListener()

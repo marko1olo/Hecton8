@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_060
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_060_SAMMPLE_1_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\SAMMPLE_1_Albedo.png
+FINAL_FILENAME: SAMMPLE_1_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Replacement albedo for sample rock texture 1, upgraded into a beautiful Hecton mineral test surface. Create a balanced swatch of blue-gray basalt, pearl sediment veils, pale cyan mineral veins, soft lavender pressure stains, and small cream fracture edges. It should work as a clean production sample for material tuning: attractive, neutral, tileable, and readable under any level lighting. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

@@ -14,15 +14,22 @@ namespace Hecton8.Physiology
         public const int CsvScratchBytes = 32768;
         public const int RespawnStateSizeBytes = 32;
         public const int RespawnRequestSizeBytes = 64;
-        public const int MedicalBayRespawnPointSizeBytes = 64;
+        public const int MedicalBaySizeBytes = 32;
         public const int RespawnFadeSizeBytes = 32;
         public const int RespawnTuningSizeBytes = 64;
         public const int RespawnPenaltyRuleSizeBytes = 16;
         public const int InventoryCommandSignalSizeBytes = 32;
+        public const int InventoryRespawnDeathAupSignalSizeBytes = 64;
+        public const int InventoryDeathLootCacheSignalSizeBytes = 128;
+        public const int InventoryRespawnPenaltyResultSignalSizeBytes = 32;
         public const int PlayerRespawnSignalSizeBytes = 128;
         public const int RespawnTelemetryEntrySizeBytes = 64;
         public const int RespawnTelemetryCursorSizeBytes = 64;
-        public const uint SourceHash = 0x53313535u; // S155
+        public const int TelemetryDroppedItemShift = 16;
+        public const uint TelemetryDroppedItemMask = 0x00FF0000u;
+        public const int MedicalBayPriorityShift = 16;
+        public const uint MedicalBayPriorityMask = 0x00FF0000u;
+        public const uint SourceHash = 0x53333239u; // S329
 
         public const BufferID RespawnStateBuffer = (BufferID)71604;
         public const BufferID MedicalBayRespawnPointsBuffer = (BufferID)71605;
@@ -46,6 +53,9 @@ namespace Hecton8.Physiology
         public const uint InvalidTargetAup = 1u << 5;
         public const uint Committed = 1u << 6;
         public const uint ManualTuning = 1u << 7;
+        public const uint MedicalBayActive = 1u << 8;
+        public const uint MedicalBayPowered = 1u << 9;
+        public const uint DeathSequenceBlackoutPrimed = 1u << 10;
         public const uint NanDetected = 1u << 31;
     }
 
@@ -71,15 +81,12 @@ namespace Hecton8.Physiology
         [FieldOffset(56)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct MedicalBayRespawnPointDTO
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct MedicalBayDTO
     {
         [FieldOffset(0)] public double3 BayAUP;
-        [FieldOffset(24)] public double3 NearestTerrainAUP;
-        [FieldOffset(48)] public uint MedicalBayHashID;
-        [FieldOffset(52)] public float ClearanceMeters;
-        [FieldOffset(56)] public uint Flags;
-        [FieldOffset(60)] public uint _pad0;
+        [FieldOffset(24)] public uint AssociatedBaseHash;
+        [FieldOffset(28)] public uint Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -146,6 +153,9 @@ namespace Hecton8.Physiology
                    ValidateRespawnTuningLayout() &&
                    ValidatePenaltyRuleLayout() &&
                    ValidateInventoryCommandSignalLayout() &&
+                   ValidateInventoryRespawnDeathAupSignalLayout() &&
+                   ValidateInventoryDeathLootCacheSignalLayout() &&
+                   ValidateInventoryRespawnPenaltyResultSignalLayout() &&
                    ValidatePlayerRespawnSignalLayout() &&
                    ValidatePlayerRespawnSignalPhase() &&
                    ValidatePlayerRespawnSignalFlags() &&
@@ -177,13 +187,10 @@ namespace Hecton8.Physiology
 
         private static bool ValidateMedicalBayLayout()
         {
-            return UnsafeUtility.SizeOf<MedicalBayRespawnPointDTO>() == ShinobuRespawnConstants.MedicalBayRespawnPointSizeBytes &&
-                   OffsetOf<MedicalBayRespawnPointDTO>(nameof(MedicalBayRespawnPointDTO.BayAUP)) == 0 &&
-                   OffsetOf<MedicalBayRespawnPointDTO>(nameof(MedicalBayRespawnPointDTO.NearestTerrainAUP)) == 24 &&
-                   OffsetOf<MedicalBayRespawnPointDTO>(nameof(MedicalBayRespawnPointDTO.MedicalBayHashID)) == 48 &&
-                   OffsetOf<MedicalBayRespawnPointDTO>(nameof(MedicalBayRespawnPointDTO.ClearanceMeters)) == 52 &&
-                   OffsetOf<MedicalBayRespawnPointDTO>(nameof(MedicalBayRespawnPointDTO.Flags)) == 56 &&
-                   OffsetOf<MedicalBayRespawnPointDTO>(nameof(MedicalBayRespawnPointDTO._pad0)) == 60;
+            return UnsafeUtility.SizeOf<MedicalBayDTO>() == ShinobuRespawnConstants.MedicalBaySizeBytes &&
+                   OffsetOf<MedicalBayDTO>(nameof(MedicalBayDTO.BayAUP)) == 0 &&
+                   OffsetOf<MedicalBayDTO>(nameof(MedicalBayDTO.AssociatedBaseHash)) == 24 &&
+                   OffsetOf<MedicalBayDTO>(nameof(MedicalBayDTO.Flags)) == 28;
         }
 
         private static bool ValidateRespawnFadeLayout()
@@ -238,6 +245,42 @@ namespace Hecton8.Physiology
                    OffsetOf<InventoryCommandSignal>(nameof(InventoryCommandSignal.Payload1)) == 20 &&
                    OffsetOf<InventoryCommandSignal>(nameof(InventoryCommandSignal.Payload2)) == 24 &&
                    OffsetOf<InventoryCommandSignal>(nameof(InventoryCommandSignal.Payload3)) == 28;
+        }
+
+        private static bool ValidateInventoryRespawnPenaltyResultSignalLayout()
+        {
+            return UnsafeUtility.SizeOf<InventoryRespawnPenaltyResultSignal>() == ShinobuRespawnConstants.InventoryRespawnPenaltyResultSignalSizeBytes &&
+                   OffsetOf<InventoryRespawnPenaltyResultSignal>(nameof(InventoryRespawnPenaltyResultSignal.InventoryHash)) == 0 &&
+                   OffsetOf<InventoryRespawnPenaltyResultSignal>(nameof(InventoryRespawnPenaltyResultSignal.Frame)) == 4 &&
+                   OffsetOf<InventoryRespawnPenaltyResultSignal>(nameof(InventoryRespawnPenaltyResultSignal.Sequence)) == 8 &&
+                   OffsetOf<InventoryRespawnPenaltyResultSignal>(nameof(InventoryRespawnPenaltyResultSignal.DroppedCount)) == 12 &&
+                   OffsetOf<InventoryRespawnPenaltyResultSignal>(nameof(InventoryRespawnPenaltyResultSignal.Flags)) == 16;
+        }
+
+        private static bool ValidateInventoryRespawnDeathAupSignalLayout()
+        {
+            return UnsafeUtility.SizeOf<InventoryRespawnDeathAupSignal>() == ShinobuRespawnConstants.InventoryRespawnDeathAupSignalSizeBytes &&
+                   OffsetOf<InventoryRespawnDeathAupSignal>(nameof(InventoryRespawnDeathAupSignal.DeathAUP)) == 0 &&
+                   OffsetOf<InventoryRespawnDeathAupSignal>(nameof(InventoryRespawnDeathAupSignal.InventoryHash)) == 24 &&
+                   OffsetOf<InventoryRespawnDeathAupSignal>(nameof(InventoryRespawnDeathAupSignal.Frame)) == 28 &&
+                   OffsetOf<InventoryRespawnDeathAupSignal>(nameof(InventoryRespawnDeathAupSignal.Sequence)) == 32 &&
+                   OffsetOf<InventoryRespawnDeathAupSignal>(nameof(InventoryRespawnDeathAupSignal.Flags)) == 36 &&
+                   OffsetOf<InventoryRespawnDeathAupSignal>(nameof(InventoryRespawnDeathAupSignal.SourceHash)) == 40;
+        }
+
+        private static bool ValidateInventoryDeathLootCacheSignalLayout()
+        {
+            return UnsafeUtility.SizeOf<InventoryDeathLootCacheSignal>() == ShinobuRespawnConstants.InventoryDeathLootCacheSignalSizeBytes &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.PositionAup)) == 0 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.GeneticsMask)) == 48 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.InventoryHash)) == 56 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.ItemHash)) == 60 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.Sequence)) == 64 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.Frame)) == 68 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.Quantity)) == 72 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.QualityMilli)) == 74 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.Flags)) == 76 &&
+                   OffsetOf<InventoryDeathLootCacheSignal>(nameof(InventoryDeathLootCacheSignal.StateFlags)) == 80;
         }
 
         private static bool ValidatePlayerRespawnSignalLayout()

@@ -14,22 +14,22 @@ using UnityEditor;
 namespace Hecton8.Visor
 {
     /// <summary>
-    /// Fullscreen visor wound composite that projects bounded cracks, blood, burns, and torn glass without spawning decal GameObjects.
+    /// Fullscreen visor trauma composite that projects bounded cracks, blood, burns, and torn glass without spawning decal GameObjects.
     /// </summary>
     public sealed class DeferredDecalPass : ScriptableRendererFeature, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        private const string DeferredDecalShaderPath = "Assets/_Project/Art/Shaders/Hecton_VisorWounds.shader";
+        private const string DeferredDecalShaderPath = "Assets/_Project/Art/Shaders/Hecton_VisorTrauma.shader";
 
         [Serializable]
         private sealed class FeatureSettings
         {
-            [Tooltip("Fullscreen visor wound shader. Must reconstruct world position from depth and project the global visor wound buffer.")]
+            [Tooltip("Fullscreen visor trauma shader. Must reconstruct world position from depth and project the global visor trauma buffer.")]
             public Shader deferredDecalShader = null;
 
-            [Tooltip("Texture2DArray atlas sampled by the visor wound pass. Null uses procedural crack/blood fallback.")]
+            [Tooltip("Texture2DArray atlas sampled by the visor trauma pass. Null uses procedural crack/blood fallback.")]
             public Texture2DArray decalAtlas = null;
 
-            [Tooltip("Maximum number of active visor wounds uploaded to the fullscreen buffer.")]
+            [Tooltip("Maximum number of active visor traumas uploaded to the fullscreen buffer.")]
             [Range(DynamicDecalVaultRuntime.LowCapacity, DynamicDecalVaultRuntime.MaxCapacity)] public int maxDecals = DynamicDecalVaultRuntime.MaxCapacity;
 
             [Tooltip("Base fade time consumed by the Vault-backed decay job.")]
@@ -38,7 +38,7 @@ namespace Hecton8.Visor
             [Tooltip("Texture array slice count. DecalTypeHash stores type bits 0..3 and atlas slice bits 4..7.")]
             [Range(1, 16)] public int atlasSlices = DynamicDecalVaultRuntime.AtlasSliceCount;
 
-            [Tooltip("Global additive tint for projected visor wounds.")]
+            [Tooltip("Global additive tint for projected visor traumas.")]
             public Color decalTint = new Color(0.72f, 0.44f, 0.32f, 1f);
 
             [Tooltip("Global additive intensity applied to the sampled decal atlas.")]
@@ -47,7 +47,7 @@ namespace Hecton8.Visor
 
         private sealed class DeferredDecalCompositePass : ScriptableRenderPass, IDisposable
         {
-            private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Visor Wounds");
+            private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Visor Trauma");
 
             private FeatureSettings _settings;
             private Material _material;
@@ -70,7 +70,6 @@ namespace Hecton8.Visor
                 public TextureHandle Depth;
                 public BufferHandle DecalBuffer;
                 public Material Material;
-                public Texture2DArray DecalAtlas;
                 public Vector4 DecalAtlasParams;
                 public Vector4 DecalRefractionParams;
                 public Vector4 DecalTint;
@@ -188,6 +187,8 @@ namespace Hecton8.Visor
                 if (readableBuffer == null || readableCount <= 0)
                     return;
                 DynamicDecalFrameStats stats = _hasLastFrameStats ? _lastFrameStats : default;
+                if (_settings.decalAtlas != null)
+                    _material.SetTexture(ShaderConstants.DecalAtlasId, _settings.decalAtlas);
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 TextureHandle depthTexture = resourceData.cameraDepthTexture;
@@ -196,7 +197,7 @@ namespace Hecton8.Visor
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
                 TextureDesc compositeDesc = new TextureDesc(sourceDesc);
-                compositeDesc.name = "_HectonVisorWoundComposite";
+                compositeDesc.name = "_HectonVisorTraumaComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;
                 compositeDesc.msaaSamples = MSAASamples.None;
@@ -205,7 +206,7 @@ namespace Hecton8.Visor
                 BufferHandle decalBufferHandle = renderGraph.ImportBuffer(readableBuffer);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
-                           "Hecton Visor Wound Composite",
+                           "Hecton Visor Trauma Composite",
                            out PassData passData,
                            _profilingSampler))
                 {
@@ -213,7 +214,6 @@ namespace Hecton8.Visor
                     passData.Depth = depthTexture;
                     passData.DecalBuffer = decalBufferHandle;
                     passData.Material = _material;
-                    passData.DecalAtlas = _settings.decalAtlas;
                     passData.DecalCount = readableCount;
                     passData.DecalAtlasParams = new Vector4(
                         Mathf.Max(1, _settings.atlasSlices),
@@ -241,8 +241,6 @@ namespace Hecton8.Visor
 
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
-                        if (data.DecalAtlas != null)
-                            context.cmd.SetGlobalTexture(ShaderConstants.DecalAtlasId, data.DecalAtlas);
                         context.cmd.SetGlobalBuffer(ShaderConstants.DecalBufferId, decalBuffer);
                         context.cmd.SetGlobalInt(ShaderConstants.DecalCountId, data.DecalCount);
                         context.cmd.SetGlobalVector(ShaderConstants.DecalAtlasParamsId, data.DecalAtlasParams);
@@ -272,20 +270,20 @@ namespace Hecton8.Visor
                     return;
 
                 long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-                NativeArray<VisorDecalDTO> mapped = target.LockBufferForWrite<VisorDecalDTO>(0, uploadCount);
+                NativeArray<TraumaDecalDTO> mapped = target.LockBufferForWrite<TraumaDecalDTO>(0, uploadCount);
                 try
                 {
                     unsafe
                     {
                         DynamicDecalVaultRuntime.CopyDecalsToMappedUploadBuffer(
                             stats.UploadBuffer,
-                            (VisorDecalDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
+                            (TraumaDecalDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
                             uploadCount);
                     }
                 }
                 finally
                 {
-                    target.UnlockBufferAfterWrite<VisorDecalDTO>(uploadCount);
+                    target.UnlockBufferAfterWrite<TraumaDecalDTO>(uploadCount);
                 }
 
                 float uploadUs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - startTicks) *
@@ -318,8 +316,8 @@ namespace Hecton8.Visor
                 _stagedBufferIndex = 0;
                 _stagedCount = 0;
                 _hasStagedBuffer = false;
-                _decalBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<VisorDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor wound capacity A] - screen-space wound double-buffer upload - owner: SHINOBU_275
-                _decalBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<VisorDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor wound capacity B] - screen-space wound double-buffer upload - owner: SHINOBU_275
+                _decalBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity A] - screen-space wound double-buffer upload - owner: SHINOBU_325
+                _decalBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<TraumaDecalDTO>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[visor trauma capacity B] - screen-space wound double-buffer upload - owner: SHINOBU_325
             }
 
             private void PromoteStagedUpload()
@@ -371,13 +369,13 @@ namespace Hecton8.Visor
         {
             internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
-            internal static readonly int DecalBufferId = Shader.PropertyToID("_GlobalVisorWounds");
-            internal static readonly int DecalCountId = Shader.PropertyToID("_GlobalVisorWoundCount");
-            internal static readonly int DecalAtlasId = Shader.PropertyToID("_GlobalVisorWoundAtlas");
-            internal static readonly int DecalAtlasParamsId = Shader.PropertyToID("_GlobalVisorWoundParams");
-            internal static readonly int DecalRefractionParamsId = Shader.PropertyToID("_GlobalVisorWoundRefractionParams");
-            internal static readonly int DecalTintId = Shader.PropertyToID("_GlobalVisorWoundTint");
-            internal static readonly int DecalCameraPositionId = Shader.PropertyToID("_GlobalVisorWoundCameraWS");
+            internal static readonly int DecalBufferId = Shader.PropertyToID("_GlobalVisorTrauma");
+            internal static readonly int DecalCountId = Shader.PropertyToID("_GlobalVisorTraumaCount");
+            internal static readonly int DecalAtlasId = Shader.PropertyToID("_GlobalVisorTraumaAtlas");
+            internal static readonly int DecalAtlasParamsId = Shader.PropertyToID("_GlobalVisorTraumaParams");
+            internal static readonly int DecalRefractionParamsId = Shader.PropertyToID("_GlobalVisorTraumaRefractionParams");
+            internal static readonly int DecalTintId = Shader.PropertyToID("_GlobalVisorTraumaTint");
+            internal static readonly int DecalCameraPositionId = Shader.PropertyToID("_GlobalVisorTraumaCameraWS");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();

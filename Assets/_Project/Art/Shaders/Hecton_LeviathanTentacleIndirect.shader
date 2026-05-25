@@ -65,10 +65,19 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
         StructuredBuffer<float4x4> _H8LeviathanTentacleMatrices;
         StructuredBuffer<float> _H8LeviathanTentacleRadius;
         StructuredBuffer<float4> _H8AbyssalFlowField;
-        float4 _H8AbyssalFlowResolution;
-        float4 _H8AbyssalFlowCenter;
-        float4 _H8AbyssalFlowSpacing;
-        float _H8AbyssalFlowActive;
+
+        CBUFFER_START(_H8LeviathanTentacleGlobals)
+            float4 _H8LeviathanTentacleRadiusFxFlow;
+            float4 _H8AbyssalFlowResolution;
+            float4 _H8AbyssalFlowCenter;
+            float4 _H8AbyssalFlowSpacing;
+        CBUFFER_END
+
+        #define _BaseRadiusReference _H8LeviathanTentacleRadiusFxFlow.x
+        #define _TipRadiusReference _H8LeviathanTentacleRadiusFxFlow.y
+        #define _H8LeviathanTentacleFxTier _H8LeviathanTentacleRadiusFxFlow.z
+        #define _H8AbyssalFlowActive _H8LeviathanTentacleRadiusFxFlow.w
+
         float4x4 _GlobalBiolumDearLieGroups;
         float4 _GlobalBiolumParams;
         float4 _GlobalBiolumClock;
@@ -88,12 +97,9 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
             float _EmissionStrength;
             float _SuctionGlowGain;
             float _FlowSheenStrength;
-            float _BaseRadiusReference;
-            float _TipRadiusReference;
             float _SssDistortion;
             float _SssPower;
             float _SssScale;
-            float _H8LeviathanTentacleFxTier;
             float _DepthBias;
             float _Cutoff;
         CBUFFER_END

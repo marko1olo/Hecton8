@@ -14,6 +14,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using EcosystemSectorDTO = Hecton8.Core.Contracts.EcosystemSectorDTO;
 
 namespace Hecton8.AI
 {
@@ -321,8 +322,10 @@ namespace Hecton8.AI
         private const uint DumpReasonNanHash = 0x534E414Eu; // SNAN
         private const uint DumpReasonLootMissingHash = 0x534C4F54u; // SLOT
         private const uint SourceHash = 0x53323533u; // S253
-        private const string RulesCsvName = "director_spawn_rules.csv";
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_253.bin";
+#if UNITY_EDITOR
+        private const string RulesCsvName = "director_spawn_rules.csv";
+#endif
 
         private const BufferID RulesBufferId = BufferID.ShinobuStressDirectorRules;
         private const BufferID RuleLinksBufferId = BufferID.ShinobuStressDirectorRuleLinks;
@@ -332,11 +335,13 @@ namespace Hecton8.AI
         private const BufferID TuningBufferId = BufferID.ShinobuStressDirectorTuning;
         private const BufferID TelemetryBufferId = BufferID.ShinobuStressDirectorTelemetry;
         private const BufferID CountersBufferId = BufferID.ShinobuStressDirectorCounters;
-        private const BufferID CsvScratchBufferId = BufferID.ShinobuStressDirectorCsvScratch;
         private const BufferID FrustumPlanesBufferId = BufferID.ShinobuStressDirectorFrustumPlanes;
         private const BufferID OwnedSlotsBufferId = BufferID.ShinobuStressDirectorOwnedSlots;
         private const BufferID InventoryTicketsBufferId = BufferID.ShinobuStressDirectorInventoryTickets;
         private const BufferID SpawnDebugBufferId = BufferID.ShinobuStressDirectorSpawnDebug;
+#if UNITY_EDITOR
+        private const BufferID CsvScratchBufferId = BufferID.ShinobuStressDirectorCsvScratch;
+#endif
         private const BufferID MesofaunaStateDTOsBufferId = BufferID.ShinobuMesofaunaStates;
         private const BufferID MesofaunaMockPreyTargetsBufferId = BufferID.ShinobuMesofaunaMockPreyTargets;
         private const BufferID MesofaunaVisualSyncBufferId = BufferID.ShinobuMesofaunaVisualSync;
@@ -366,18 +371,20 @@ namespace Hecton8.AI
         private VaultGenerationHandle<DirectorTuningDTO> _tuningHandle;
         private VaultGenerationHandle<DirectorTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _countersHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<float4> _frustumPlanesHandle;
         private VaultGenerationHandle<DirectorOwnedSlotDTO> _ownedSlotsHandle;
         private VaultGenerationHandle<InventoryPreloadTicketDTO> _inventoryTicketsHandle;
         private VaultGenerationHandle<DirectorSpawnDebugDTO> _spawnDebugHandle;
+#if UNITY_EDITOR
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<MesofaunaStateDTO> _mesofaunaStatesHandle;
         private VaultGenerationHandle<MesofaunaTargetDTO> _mesofaunaTargetsHandle;
         private VaultGenerationHandle<MesofaunaVisualSyncDTO> _mesofaunaVisualHandle;
         private VaultGenerationHandle<CognitionInput> _cognitionInputsHandle;
         private VaultGenerationHandle<WeatherStateDTO> _weatherStateHandle;
         private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
-        private VaultGenerationHandle<MacroEcosystemSectorVaultRecord> _macroSectorSnapshotHandle;
+        private VaultGenerationHandle<EcosystemSectorDTO> _macroSectorSnapshotHandle;
         private VaultGenerationHandle<MacroEcosystemSectorIndexRecord> _macroSectorIndexHandle;
         private VaultGenerationHandle<MacroEcosystemTuningVaultRecord> _macroTuningHandle;
         private IEcosystemDirectorService _ecosystemDirector;
@@ -392,8 +399,6 @@ namespace Hecton8.AI
         private long _scheduleTicks;
         private int _lastAppliedFrame = -1;
         private int _monolithReady;
-        private int _monolithFileProbeAttempted;
-        private int _monolithFileProbeReady;
         private int _dumpFaultPending;
         private double3 _cachedFloatingOriginOffset;
         private uint _cachedFloatingOriginSequence;
@@ -471,6 +476,7 @@ namespace Hecton8.AI
             }
         }
 
+#if UNITY_EDITOR
         public static bool TryReloadRulesCold()
         {
             if (!TryGetExistingInstanceVault(out StressDrivenSpawnDirector director, out IDataVault vault) ||
@@ -501,6 +507,7 @@ namespace Hecton8.AI
                 UnlockReloadBuffers(vault, locked);
             }
         }
+#endif
 
         public static bool TryGetLatestTelemetry(out DirectorTelemetryEntry entry)
         {
@@ -634,7 +641,9 @@ namespace Hecton8.AI
                 return;
 
             RefreshColdInputs(vault);
+#if UNITY_EDITOR
             TryLoadRulesCsvCold(vault, forceReload: false, locksHeld: false);
+#endif
             if (!TryResolve(vault, in _rulesHandle, out NativeArray<SpawnRuleDTO> rules) ||
                 !TryResolve(vault, in _ruleLinksHandle, out NativeArray<SpawnRuleLinkDTO> links) ||
                 !TryResolve(vault, in _candidatesHandle, out NativeArray<DirectorCandidateDTO> candidates) ||
@@ -857,7 +866,9 @@ namespace Hecton8.AI
             _tuningHandle = EnsureHandle(vault, _tuningHandle, TuningBufferId, 1, SystemID.AIEcology);
             _telemetryHandle = EnsureHandle(vault, _telemetryHandle, TelemetryBufferId, TelemetryCapacity, SystemID.AIEcology);
             _countersHandle = EnsureHandle(vault, _countersHandle, CountersBufferId, CounterCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
             _csvScratchHandle = EnsureHandle(vault, _csvScratchHandle, CsvScratchBufferId, CsvScratchBytes, SystemID.AIEcology);
+#endif
             _frustumPlanesHandle = EnsureHandle(vault, _frustumPlanesHandle, FrustumPlanesBufferId, 6, SystemID.AIEcology);
             _ownedSlotsHandle = EnsureHandle(vault, _ownedSlotsHandle, OwnedSlotsBufferId, OwnedSlotCapacity, SystemID.AIEcology);
             _inventoryTicketsHandle = EnsureHandle(vault, _inventoryTicketsHandle, InventoryTicketsBufferId, RuleCapacity, SystemID.AIEcology);
@@ -978,7 +989,7 @@ namespace Hecton8.AI
             if (handle.BufferID != 0u && vault.TryResolveHandle(in handle, out NativeArray<T> existing) && existing.IsCreated && existing.Length >= length)
                 return handle;
 
-            return vault.GetGenerationHandle<T>(bufferId, length, owner, options);
+            return vault.EnsureGenerationHandle<T>(bufferId, length, owner, options);
         }
 
         private bool TryResolve<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> array) where T : struct
@@ -1202,7 +1213,7 @@ namespace Hecton8.AI
             if (!TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemSectorFront, ref _macroSectorSnapshotHandle) ||
                 !TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemIndexEntries, ref _macroSectorIndexHandle) ||
                 !TryRefreshBorrowedHandle(vault, BufferID.ShinobuMacroEcosystemTuning, ref _macroTuningHandle) ||
-                !TryRead(vault, in _macroSectorSnapshotHandle, out NativeArray<MacroEcosystemSectorVaultRecord> sectors) ||
+                !TryRead(vault, in _macroSectorSnapshotHandle, out NativeArray<EcosystemSectorDTO> sectors) ||
                 !TryRead(vault, in _macroSectorIndexHandle, out NativeArray<MacroEcosystemSectorIndexRecord> entries) ||
                 !TryRead(vault, in _macroTuningHandle, out NativeArray<MacroEcosystemTuningVaultRecord> tuning) ||
                 tuning.Length <= 0)
@@ -1221,7 +1232,7 @@ namespace Hecton8.AI
                 return false;
             }
 
-            MacroEcosystemSectorVaultRecord sector = sectors[index];
+            EcosystemSectorDTO sector = sectors[index];
             MacroEcosystemTuningVaultRecord postRead = tuning[0];
             if (sector.SectorHash != sectorHash ||
                 postRead.Flags != tune.Flags ||
@@ -1241,11 +1252,10 @@ namespace Hecton8.AI
                 math.isfinite(tune.CarryingCapacityPredator) & tune.CarryingCapacityPredator > 0f));
             float defaultCapacity = MacroEcosystemVaultContract.DefaultCarryingCapacityPrey + MacroEcosystemVaultContract.DefaultCarryingCapacityPredator;
 
-            input.PreyBiomass01 = math.saturate(sector.PreyBiomass * math.rcp(preyCapacity));
-            input.PredatorBiomass01 = math.saturate(sector.PredatorBiomass * math.rcp(predatorCapacity));
-            input.CarryingCapacity01 = math.saturate((preyCapacity + predatorCapacity) * math.rcp(math.max(1f, defaultCapacity)));
-            input.LocalTemperature = math.select(input.LocalTemperature, sector.LocalTemperature, math.isfinite(sector.LocalTemperature));
-            input.ToxinLevel01 = math.saturate(math.select(input.ToxinLevel01, sector.ToxinLevel, math.isfinite(sector.ToxinLevel)));
+            float sectorCapacity = math.max(1f, math.select(preyCapacity + predatorCapacity, sector.CarryingCapacity, math.isfinite(sector.CarryingCapacity) & sector.CarryingCapacity > 0f));
+            input.PreyBiomass01 = math.saturate(sector.PreyBiomass * math.rcp(sectorCapacity));
+            input.PredatorBiomass01 = math.saturate(sector.PredatorBiomass * math.rcp(sectorCapacity));
+            input.CarryingCapacity01 = math.saturate(sectorCapacity * math.rcp(math.max(1f, defaultCapacity)));
             input.MacroEcosystemStateHash = tune.StateHash;
             input.MacroEcosystemFlags = 1u;
             input.SectorHash = (uint)(sectorHash ^ (sectorHash >> 32));
@@ -1325,6 +1335,7 @@ namespace Hecton8.AI
             return true;
         }
 
+#if UNITY_EDITOR
         private static int TryLockReloadBuffers(IDataVault vault)
         {
             int locked = 0;
@@ -1342,6 +1353,7 @@ namespace Hecton8.AI
             if (locked >= 2) vault.TryUnlockBuffer(RuleLinksBufferId, SystemID.AIEcology);
             if (locked >= 1) vault.TryUnlockBuffer(RulesBufferId, SystemID.AIEcology);
         }
+#endif
 
         private void UnlockJobBuffers(IDataVault vault, int locked)
         {
@@ -1766,7 +1778,9 @@ namespace Hecton8.AI
             _tuningHandle = default;
             _telemetryHandle = default;
             _countersHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _frustumPlanesHandle = default;
             _ownedSlotsHandle = default;
             _inventoryTicketsHandle = default;
@@ -1782,6 +1796,7 @@ namespace Hecton8.AI
             _macroTuningHandle = default;
         }
 
+#if UNITY_EDITOR
         private bool TryLoadRulesCsvCold(IDataVault vault, bool forceReload, bool locksHeld)
         {
             if (!TryResolve(vault, in _countersHandle, out NativeArray<int> counters))
@@ -1834,6 +1849,7 @@ namespace Hecton8.AI
             if (byteCount <= 0)
                 return false;
 
+#if UNITY_EDITOR
             void* pointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
             int parsed = ParseSpawnRulesCsv(new ReadOnlySpan<byte>(pointer, byteCount), rules, links);
             if (parsed <= 0)
@@ -1843,8 +1859,12 @@ namespace Hecton8.AI
             counters[CounterCsvLoadAttempted] = 1;
             counters[CounterCsvLoaded] = 1;
             return true;
+#else
+            return false;
+#endif
         }
 
+#if UNITY_EDITOR
         public static int ParseSpawnRulesCsv(ReadOnlySpan<byte> csv, NativeArray<SpawnRuleDTO> rules, NativeArray<SpawnRuleLinkDTO> links)
         {
             if (!rules.IsCreated || !links.IsCreated || csv.Length <= 0)
@@ -2126,6 +2146,7 @@ namespace Hecton8.AI
             value = (float)(result * sign);
             return hasDigit && math.isfinite(value);
         }
+#endif
 
         private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> token)
         {
@@ -2222,7 +2243,6 @@ namespace Hecton8.AI
 
         private static string ResolveRulesPathCold()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
             string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
             string path = Path.Combine(projectRoot, "Assets", "_SourceData", "Fauna", RulesCsvName);
@@ -2235,10 +2255,8 @@ namespace Hecton8.AI
 
             path = Path.Combine(projectRoot, "Data", "Balance", RulesCsvName);
             return File.Exists(path) ? path : null;
-#else
-            return null;
-#endif
         }
+#endif
 
         private bool ResolveDataMonolithReadyCold()
         {
@@ -2247,12 +2265,9 @@ namespace Hecton8.AI
                 lootRecords.Length > 0 &&
                 lootRecords[0].TableHash != 0u)
             {
-                _monolithFileProbeReady = 1;
                 return true;
             }
 
-            _monolithFileProbeAttempted = 1;
-            _monolithFileProbeReady = 0;
             return false;
         }
 
@@ -2777,9 +2792,10 @@ namespace Hecton8.AI
                 float angle = ((seed & 4095u) * 0.0015339808f) + probe * 2.39996323f;
                 float vertical = math.lerp(-0.28f, 0.22f, math.frac(t * 5.0f + (seed & 127u) * 0.0078125f));
                 float rearBias = math.lerp(0.55f, 0.92f, math.saturate(input.TensionIndex + fogHide * 0.35f));
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out _, out float angleCos);
                 float3 direction = ResolveDirection(
                     (-forward * rearBias) +
-                    (right * math.cos(angle) * (1f - rearBias)) +
+                    (right * angleCos * (1f - rearBias)) +
                     (up * vertical),
                     -forward);
                 float3 offset = direction * radius;

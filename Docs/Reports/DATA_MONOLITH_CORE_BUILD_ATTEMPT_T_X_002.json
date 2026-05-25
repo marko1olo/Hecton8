@@ -1,0 +1,39 @@
+{
+  "agent": "X_002",
+  "slice": "T",
+  "status": "CORE_BUILD_FAILED_STALE_CURRENT_SOURCE_MISMATCH_PENDING_RETRY",
+  "generatedUtc": "2026-05-24T09:02:00Z",
+  "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal",
+  "buildGate": {
+    "opened": true,
+    "cpuAtLaunchPercent": 49,
+    "compilerProcessesAtLaunch": 0
+  },
+  "result": {
+    "exitCode": 1,
+    "warnings": 4,
+    "errors": 6,
+    "elapsedSeconds": 86.17
+  },
+  "errors": [
+    "FaunaBrain.cs: PhysicsDeterminismSignals missing",
+    "FaunaBrain.cs: SanitizeFiniteInputFloat3 missing",
+    "HectonPlayerMotor.cs: currentVelocity/targetVelocity local shadowing",
+    "SubmarineAtmosphereSystem.cs: CS8156 by-ref expression"
+  ],
+  "currentSourceInspection": {
+    "physicsDeterminismSignalsFileIncludedInCoreCsproj": true,
+    "faunaBrainImportsHecton8Physics": true,
+    "faunaBrainDefinesSanitizeFiniteInputFloat3BeforeUse": true,
+    "hectonPlayerMotorUsesRenamedKccVelocityLocals": true,
+    "submarineAtmosphereCopiesHitAbsolutePositionToLocalBeforeByRefValidation": true,
+    "assessment": "The reported errors do not match the current source snapshot; retry is required after concurrent edits settle."
+  },
+  "warningsObserved": [
+    "CS2002 duplicate source warning for InputManager.cs",
+    "CS2002 duplicate source warning for UserOptionsPersistence.cs",
+    "CS2002 duplicate source warning for AcousticPortalPropagation.cs",
+    "CS2002 duplicate source warning for AudioVirtualizationJobs.cs"
+  ],
+  "claimBoundary": "No compile pass claimed. No additional source patch was applied because inspected current files already contain the fixes implied by the compiler diagnostics."
+}

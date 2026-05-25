@@ -11,6 +11,8 @@ namespace Hecton8.EditorTools
     /// </summary>
     internal static class HectonEditorMeshUtility
     {
+        private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(64);
+
         internal static int CountTriangles(Mesh mesh)
         {
             if (mesh == null)
@@ -149,10 +151,11 @@ namespace Hecton8.EditorTools
             if (root == null)
                 return combined;
 
-            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
+            s_RendererScratch.Clear();
+            root.GetComponentsInChildren(true, s_RendererScratch);
+            for (int i = 0; i < s_RendererScratch.Count; i++)
             {
-                Renderer renderer = renderers[i];
+                Renderer renderer = s_RendererScratch[i];
                 if (renderer == null)
                     continue;
 

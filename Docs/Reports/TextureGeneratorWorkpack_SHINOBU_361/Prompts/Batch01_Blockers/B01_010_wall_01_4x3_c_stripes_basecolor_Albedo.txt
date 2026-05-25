@@ -1,0 +1,10 @@
+﻿JOB_ID: B01_010
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch01_Blockers\B01_010_wall_01_4x3_c_stripes_basecolor_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\wall_01_4x3_c_stripes_basecolor_Albedo.png
+FINAL_FILENAME: wall_01_4x3_c_stripes_basecolor_Albedo.png
+REFERENCES: `LOOKDEV_APPROVED_REF_SEED_001.png` `LOOKDEV_APPROVED_REF_SEED_003.png` approved wall anchor if available
+
+PROMPT:
+Create a seamless albedo source for a wide 4x3 meter HECTON-8 corridor wall stripe section. Compose it as layered subsea wall construction: broad off-white pressure skin, one graphite lower service band sitting over the base, long satin titanium structural separators, a thin amber route stripe painted as opaque material, and a muted teal system stripe tied to service access zones. Preserve large calm wall fields and leave believable space for later cable trays, tools, gauges, and wall-mounted instruments. Avoid repeated square tile logic, bathroom-panel repetition, glowing light bars, and noisy signage. The wall should guide the player through a bright underwater research corridor while feeling heavy, industrial, clean, and premium. Add careful scuffs, rubbed corners, pale salt in lower seams, clean manufactured edges, and slight hand-polish near access zones. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

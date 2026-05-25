@@ -68,7 +68,7 @@ namespace Hecton8.UI
         /// <summary>
         /// Applies prefetched UTF-8 byte slices to the pending queue without changing queue order.
         /// </summary>
-        public void ApplyPrefetchSlices(NativeArray<int2> slices, int count)
+        public void ApplyPrefetchSlices(NativeArray<int2>.ReadOnly slices, int count)
         {
             if (!slices.IsCreated || count <= 0 || _count <= 0)
                 return;

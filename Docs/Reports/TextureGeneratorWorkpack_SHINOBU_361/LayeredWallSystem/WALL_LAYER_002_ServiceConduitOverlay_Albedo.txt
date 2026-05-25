@@ -1,0 +1,11 @@
+﻿JOB_ID: WALL_LAYER_002
+ROLE: ALBEDO_OVERLAY_LAYER
+CATEGORY: HABITAT_INTERIORS_LAYERED_WALL
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\LayeredWallSystem\WALL_LAYER_002_ServiceConduitOverlay
+FINAL_TARGET_PATH: LOOKDEV_LAYER_SOURCE
+FINAL_FILENAME: LOOKDEV_WALL_LAYER_002_ServiceConduitOverlay_Albedo.png
+REFERENCES: approved WALL_LAYER_001 if available; real subsea cable tray / lab utility hardware mood if available
+
+PROMPT:
+Create a seamless albedo source for a service conduit overlay layer that can sit on top of a simpler HECTON-8 habitat wall. Design long pressure-rated cable raceways, graphite rubber conduit lips, satin titanium clamp brackets, gasketed pass-through collars, removable utility hatch strips, and a few blank sensor plates. Do not make a complete wall tile. Do not create repeated square panels. This layer should look like functional hardware installed over the base wall: horizontal and vertical service runs, layered depth, practical maintenance logic, and clear empty negative spaces between hardware. Use warm off-white composite covers, satin titanium hardware, graphite rubber seals, restrained teal and amber opaque paint tabs, pale salt only in deep joints, and no glowing light bars. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.
+

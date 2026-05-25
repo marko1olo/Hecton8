@@ -15,7 +15,7 @@ namespace NASAPunk.Visor
     // Editor preview must keep the shared HUD RenderTexture current outside Play Mode.
     [ExecuteAlways]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Presentation Controller")]
-    public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable
+    public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float AutoResolveRetryInterval = 1f;
         private const float DegreesToHalfRadians = 0.00872664626f;
@@ -75,6 +75,8 @@ namespace NASAPunk.Visor
         private bool _pendingApply = true;
         private float _nextAutoResolveAt;
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
+        private bool _hotSwapListenerRegistered;
         private Transform _cachedHudCanvasTransform;
         private Transform _cachedHudRtCompositorTransform;
         private bool _fallbackToOverlayActive;
@@ -116,17 +118,22 @@ namespace NASAPunk.Visor
             AutoResolveReferences(true);
             ApplyPresentation(force: true);
             _pendingApply = false;
+            TryRegisterHotSwapListener();
             EvaluateTickRegistration();
         }
 
         private void Start()
         {
+            if (Application.isPlaying)
+                TryRegisterHotSwapListener();
+
             EvaluateTickRegistration();
         }
 
         private void OnDisable()
         {
             UnregisterTick();
+            TryUnregisterHotSwapListener();
 #if UNITY_EDITOR
             UnregisterEditorTick();
 #endif
@@ -249,6 +256,11 @@ namespace NASAPunk.Visor
 #endif
 
         public void Tick(float deltaTime)
+        {
+            _pendingApply = true;
+        }
+
+        public void LateFrameTick()
         {
             AutoResolveReferences();
             ApplyPresentation(force: _pendingApply, allowProjectionSourceCreation: false);
@@ -893,7 +905,7 @@ namespace NASAPunk.Visor
         private static float ExactPrimaryHudTanPositive(float radians)
         {
             float x = Mathf.Clamp(radians, PrimaryHudTanMinRadians, PrimaryHudTanMaxRadians);
-            return (float)Math.Tan(x);
+            return MathLodApproximation.ApproxTanClamped(x, 4096f);
         }
 
         private static string ResolvePresentationModeLabel(PresentationMode mode)
@@ -1129,22 +1141,57 @@ namespace NASAPunk.Visor
 
         private void RegisterTick()
         {
-            if (_tickRegistered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUnscaledFastTickable(this, PriorityLayer.UI);
+            if (!_tickRegistered)
+                _tickRegistered = GlobalRegistry.TryRegisterUnscaledFastTickable(this, PriorityLayer.UI);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
         {
-            if (!_tickRegistered)
+            if (_tickRegistered)
+            {
+                GlobalRegistry.UnregisterUnscaledFastTickable(this, PriorityLayer.UI);
+                _tickRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                EvaluateTickRegistration();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterUnscaledFastTickable(this, PriorityLayer.UI);
-            _tickRegistered = false;
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private static SuitHUDScreenCompositor FindCompositor(

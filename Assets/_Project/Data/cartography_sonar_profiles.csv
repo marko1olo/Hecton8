@@ -1,0 +1,7 @@
+# upgrade_hash,ping_radius_m,discovery_resolution_m,surface_thickness_m,visual_glow
+seaglide,50,10,2.0,1.0
+mk1_field_scanner,90,10,2.0,1.0
+mk2_directional_sonar,145,10,1.6,1.35
+mk3_deep_cartographer,210,10,1.1,2.25
+cyclops,500,10,0.65,4.0
+abyssal_overkill_array,500,10,0.65,4.0

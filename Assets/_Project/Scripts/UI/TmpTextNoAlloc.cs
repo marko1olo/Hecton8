@@ -1,0 +1,69 @@
+using System;
+using TMPro;
+using Unity.Mathematics;
+
+namespace Hecton8.UI
+{
+    /// <summary>
+    /// TMP_Text sink for caller-owned spans. Uses the project CharBufferPool and never materializes a managed string.
+    /// </summary>
+    public static class TmpTextNoAlloc
+    {
+        private static readonly char[] Empty = Array.Empty<char>();
+
+        public static void Set(TMP_Text target, string value)
+        {
+            Set(target, string.IsNullOrEmpty(value) ? ReadOnlySpan<char>.Empty : value.AsSpan());
+        }
+
+        public static void Set(TMP_Text target, ReadOnlySpan<char> value)
+        {
+            if (target == null)
+                return;
+
+            if (value.Length <= 0)
+            {
+                target.SetCharArray(Empty, 0, 0);
+                return;
+            }
+
+            if (value.Length <= CharBufferPool.SlotCapacity &&
+                CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+            {
+                int length = Copy(value, lease.Buffer);
+                target.SetCharArray(lease.Buffer, 0, length);
+                CharBufferPool.Release(in lease);
+                return;
+            }
+
+            if (value.Length <= CharBufferPool.RequiredBabelTextCapacity &&
+                CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease babelLease))
+            {
+                int length = Copy(value, babelLease.TmpBuffer);
+                target.SetCharArray(babelLease.TmpBuffer, 0, length);
+                CharBufferPool.Release(in babelLease);
+                return;
+            }
+
+            if (CharBufferPool.TryAcquireEncyclopedia(out CharBufferPool.EncyclopediaLease pageLease))
+            {
+                int length = Copy(value, pageLease.Buffer);
+                target.SetCharArray(pageLease.Buffer, 0, length);
+                CharBufferPool.Release(in pageLease);
+                return;
+            }
+
+            target.SetCharArray(Empty, 0, 0);
+        }
+
+        private static int Copy(ReadOnlySpan<char> source, char[] destination)
+        {
+            if (destination == null || destination.Length == 0 || source.Length <= 0)
+                return 0;
+
+            int length = math.min(source.Length, destination.Length);
+            source.Slice(0, length).CopyTo(destination.AsSpan(0, length));
+            return length;
+        }
+    }
+}

@@ -251,7 +251,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()

@@ -62,6 +62,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
@@ -204,43 +205,77 @@ namespace Hecton8.Celestial
         }
 
         /// <summary>Queues an eclipse-start signal.</summary>
+        public static bool TryRaiseEclipseStarted()
+        {
+            return Enqueue(EclipseStartedEventType);
+        }
+
+        [Obsolete("Celestial event producers must use TryRaiseEclipseStarted and handle bounded enqueue failure.", true)]
         public static void RaiseEclipseStarted()
         {
-            Enqueue(EclipseStartedEventType);
+            TryRaiseEclipseStarted();
         }
 
         /// <summary>Queues an eclipse-end signal.</summary>
+        public static bool TryRaiseEclipseEnded()
+        {
+            return Enqueue(EclipseEndedEventType);
+        }
+
+        [Obsolete("Celestial event producers must use TryRaiseEclipseEnded and handle bounded enqueue failure.", true)]
         public static void RaiseEclipseEnded()
         {
-            Enqueue(EclipseEndedEventType);
+            TryRaiseEclipseEnded();
         }
 
         /// <summary>Queues or coalesces a sun-angle signal.</summary>
-        public static void RaiseSunAngleChanged(float angleDegrees)
+        public static bool TryRaiseSunAngleChanged(float angleDegrees)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             _latestSunAngleDegrees = angleDegrees;
             if (_sunAngleQueued)
-                return;
+                return true;
 
             if (Enqueue(SunAngleChangedEventType))
+            {
                 _sunAngleQueued = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        [Obsolete("Celestial event producers must use TryRaiseSunAngleChanged and handle bounded enqueue failure.", true)]
+        public static void RaiseSunAngleChanged(float angleDegrees)
+        {
+            TryRaiseSunAngleChanged(angleDegrees);
         }
 
         /// <summary>Queues or coalesces a planet-phase signal.</summary>
-        public static void RaisePlanetPhaseChanged(float phase)
+        public static bool TryRaisePlanetPhaseChanged(float phase)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             _latestPlanetPhase = phase;
             if (_planetPhaseQueued)
-                return;
+                return true;
 
             if (Enqueue(PlanetPhaseChangedEventType))
+            {
                 _planetPhaseQueued = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        [Obsolete("Celestial event producers must use TryRaisePlanetPhaseChanged and handle bounded enqueue failure.", true)]
+        public static void RaisePlanetPhaseChanged(float phase)
+        {
+            TryRaisePlanetPhaseChanged(phase);
         }
 
         /// <summary>
@@ -259,7 +294,10 @@ namespace Hecton8.Celestial
                     return;
 
                 if (!_pendingEvents.TryDequeue(out CelestialEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -469,7 +507,7 @@ namespace Hecton8.Celestial
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
-    public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IWeatherEventListener
+    public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IWeatherEventListener, IGlobalRegistryHotSwapListener, ICelestialSkyDirectionReadModel
     {
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
         private const float SurfaceCloudShadowCookieEpsilon = 0.0001f;
@@ -569,12 +607,13 @@ namespace Hecton8.Celestial
             }
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct CinematicOrbitState
         {
-            public float3 RegistryOffset;
-            public float3 Direction;
-            public float Phase01;
-            public float Fullness01;
+            [FieldOffset(0)] public float3 RegistryOffset;
+            [FieldOffset(12)] public float3 Direction;
+            [FieldOffset(24)] public float Phase01;
+            [FieldOffset(28)] public float Fullness01;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 192)]
@@ -610,7 +649,7 @@ namespace Hecton8.Celestial
             [FieldOffset(56)] private ulong _pad2;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct CelestialOrbitMathJob : IJob
         {
             public double AbsoluteUniverseTime;
@@ -633,7 +672,7 @@ namespace Hecton8.Celestial
             public float ResonanceBiolumMultiplier;
             public uint Sequence;
 
-            [WriteOnly] public NativeArray<CelestialOrbitJobOutput> Output;
+            [NoAlias, WriteOnly] public NativeArray<CelestialOrbitJobOutput> Output;
 
             public void Execute()
             {
@@ -830,7 +869,7 @@ namespace Hecton8.Celestial
         [SerializeField] private float sunStartAngle;
 
         [Header("Cinematic Orbit Fakes")]
-        [SerializeField] private bool enableAnalyticalOrbitSolver = true;
+        [SerializeField] private bool enableAnalyticalOrbitSolver = false;
         [SerializeField] private bool driveObserverBodiesFromAnalyticalOrbits = true;
         [SerializeField] private CinematicOrbitDefinition gasGiantOrbit = CinematicOrbitDefinition.GasGiantDefault();
         [SerializeField] private CinematicOrbitDefinition moon0Orbit = CinematicOrbitDefinition.Moon0Default();
@@ -962,6 +1001,7 @@ namespace Hecton8.Celestial
         private float _baseFlareScale;
         private bool _baseFlareValuesCaptured;
         private UniversalAdditionalLightData _sunAdditionalLightData;
+        private bool _sunAdditionalLightDataCached;
         private Texture _cachedSunCookie;
         private Vector2 _cachedSunCookieSize = Vector2.one;
         private Vector2 _cachedSunCookieOffset;
@@ -974,6 +1014,23 @@ namespace Hecton8.Celestial
 
         private float3 _resolvedSunDirection;
         private CelestialRuntimeSnapshot _celestialRuntimeSnapshot;
+        private IDataVault _celestialTruthVault;
+        private VaultGenerationHandle<CelestialStateDTO> _celestialTruthStateRead;
+        private VaultGenerationHandle<EnvironmentStateDTO> _celestialTruthEnvironmentRead;
+        private VaultGenerationHandle<CelestialBlackBoxEntry> _celestialBlackBoxHandle;
+        private VaultGenerationHandle<float4> _dayAtmosphereGradientSamplesHandle;
+        private VaultGenerationHandle<float4> _sunsetAtmosphereGradientSamplesHandle;
+        private VaultGenerationHandle<float4> _nightAtmosphereGradientSamplesHandle;
+        private VaultGenerationHandle<CelestialOrbitJobOutput> _orbitJobOutputHandle;
+        private BiomeMatrixDirector _cachedBiomeMatrix;
+        private IHectonOceanKinematicsService _cachedOceanKinematicsService;
+        private IWeatherService _cachedWeatherService;
+        private IGIRelaySystem _cachedGIRelay;
+        private HectonUnderwaterVisuals _cachedUnderwaterVisuals;
+        private RandomEventSystem _cachedRandomEvents;
+        private DynamicResolutionScaler _cachedDynamicResolution;
+        private global::HectonWorldGenerator _cachedWorldSeedGenerator;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private uint _celestialRuntimeSequence;
         private float _penumbraFactor;
         private Color _resolvedSkyZenith;
@@ -1094,12 +1151,12 @@ namespace Hecton8.Celestial
         private const int AtmosphereGradientSampleCount = 8;
         private const int CelestialBlackBoxFrameCount = 300;
         private const float AbyssalCelestialCullY = -200f;
-        private const float LowTierLockedSunPitchDegrees = 45f;
         private const float LightningFlashDecayLerpPerLateFrame = 0.42f;
         private const float ShaderScalarEpsilon = 0.0001f;
         private const float LightningFlashEpsilon = ShaderScalarEpsilon;
         private const float EclipseBiolumMultiplier = 1.65f;
-        private const uint CelestialBlackBoxFlagLowTierLocked = 1u << 24;
+        private const uint Shinobu345CelestialEventFlagValid = 1u << 0;
+        private const uint Shinobu345CelestialEventFlagEclipseActive = 1u << 1;
         private const uint CelestialBlackBoxFlagAbyssalCulled = 1u << 25;
         private const uint CelestialBlackBoxFlagStorm = 1u << 26;
         private const string CelestialBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_CELESTIAL_MECHANICS.bin";
@@ -1123,25 +1180,28 @@ namespace Hecton8.Celestial
         private uint _lastPublishedCelestialFlags = uint.MaxValue;
         private float _lastPublishedCelestialEclipseOcclusion = -1f;
         private float _lastPublishedCelestialRadiationStorm = -1f;
-        private NativeArray<CelestialOrbitJobOutput> _orbitJobOutput;
         private JobHandle _orbitJobHandle;
         private bool _orbitJobScheduled;
+        private bool _orbitOutputVaultLocked;
         private bool _orbitJobPrimed;
         private bool _registeredLateFrameTick;
-        private NativeArray<CelestialBlackBoxEntry> _celestialBlackBox;
+        private bool _registeredHotSwapListener;
         private int _celestialBlackBoxCursor;
         private int _celestialBlackBoxCount;
         private bool _celestialBlackBoxDumped;
-        private NativeArray<float4> _dayAtmosphereGradientSamples;
-        private NativeArray<float4> _sunsetAtmosphereGradientSamples;
-        private NativeArray<float4> _nightAtmosphereGradientSamples;
         private bool _atmosphereGradientSamplesDirty = true;
-        private bool _lowTierSunLockApplied;
         private bool _ambientProbeEclipseActive;
         private float _stormCloudDensity01;
         private float _lastUploadedStormCloudDensity01 = -1f;
         private float _lightningFlash01;
         private float _lastUploadedLightningFlash01 = -1f;
+        private bool _pendingCelestialVisualSyncDirty;
+        private float _pendingCelestialVisualSunElevation;
+        private float _pendingCelestialVisualDeltaTime;
+        private bool _pendingStormCloudDensityShaderDirty;
+        private bool _pendingLightningFlashShaderDirty;
+        private bool _pendingCelestialRuntimeSnapshotShaderDirty;
+        private CelestialRuntimeSnapshot _pendingCelestialRuntimeSnapshotShader;
 
         // ─────────────────────────────────────────────
         // SHADER PROPERTY IDs
@@ -1185,6 +1245,12 @@ namespace Hecton8.Celestial
         private static readonly int _ID_HectonCelestialRuntimeFlags = Shader.PropertyToID("_HectonCelestialRuntimeFlags");
         private static readonly int _ID_HectonCelestialRadiationStorm = Shader.PropertyToID("_HectonCelestialRadiationStorm");
         private static readonly int _ID_HectonCelestialBiolumMultiplier = Shader.PropertyToID("_HectonCelestialBiolumMultiplier");
+        private static readonly int _ID_HectonCelestialSunDirection = Shader.PropertyToID("_HectonCelestialSunDirection");
+        private static readonly int _ID_HectonCelestialMoonDirection = Shader.PropertyToID("_HectonCelestialMoonDirection");
+        private static readonly int _ID_HectonCelestialEclipseShadowScalar01 = Shader.PropertyToID("_HectonCelestialEclipseShadowScalar01");
+        private static readonly int _ID_HectonCelestialPlanetShineDirection = Shader.PropertyToID("_HectonCelestialPlanetShineDirection");
+        private static readonly int _ID_HectonCelestialPlanetShineIntensity = Shader.PropertyToID("_HectonCelestialPlanetShineIntensity");
+        private static readonly int _ID_HectonCelestialPlanetShineColor = Shader.PropertyToID("_HectonCelestialPlanetShineColor");
         private static readonly int _ID_HectonAtmosphereColor = Shader.PropertyToID("_HectonAtmosphereColor");
         private static readonly int _ID_HectonStormCloudDensity = Shader.PropertyToID("_HectonStormCloudDensity");
         private static readonly int _ID_HectonLightningFlash = Shader.PropertyToID("_HectonLightningFlash");
@@ -1342,7 +1408,7 @@ namespace Hecton8.Celestial
             CacheCelestialOrbitReciprocals();
             ForceMandatedSkyMaterialReference();
             EnsureCelestialAtmosphereLutReady(publishOnRebuild: false);
-            ResolveFirmamentBakeCompute();
+            EnsureFirmamentBakeCompute();
         }
 
         private void OnEnable()
@@ -1357,13 +1423,15 @@ namespace Hecton8.Celestial
             {
                 GlobalTelemetryBus.Initialize();
                 GlobalRegistry.RegisterCelestialEngineRuntime(this);
+                RefreshColdRuntimeDependencies();
+                TryRegisterHotSwapListener();
             }
 
             ForceMandatedSkyMaterialReference();
             ValidateReferences();
             EnsureAegirRingShadowCookieReady();
             EnsureCelestialAtmosphereLutReady();
-            ResolveFirmamentBakeCompute();
+            EnsureFirmamentBakeCompute();
             InitializeMaterialPropertyBlocks();
             InitializePlanetShineLight();
             CacheCelestialTextureDefaults();
@@ -1378,7 +1446,10 @@ namespace Hecton8.Celestial
             _baseSunColorCaptured = false;
             _baseFlareValuesCaptured = false;
             _eclipseRadiusCalculated = false;
+            _sunAdditionalLightDataCached = false;
+            _sunAdditionalLightData = null;
             _sunDiscRendererCached = false;
+            _cachedSunDiscRenderer = null;
             _sunDirectionResolvedFromMatrix = false;
 
             _rotationAccumulator = 0.0;
@@ -1390,7 +1461,6 @@ namespace Hecton8.Celestial
             _nextCelestialSnapshotFrame = 0;
             _lastSunDirectionGlobalUploadMinute = int.MinValue;
             _orbitJobPrimed = false;
-            _lowTierSunLockApplied = false;
             _ambientProbeEclipseActive = false;
             _stormCloudDensity01 = 0f;
             _lastUploadedStormCloudDensity01 = -1f;
@@ -1414,6 +1484,8 @@ namespace Hecton8.Celestial
             }
 
             CaptureBaseFlareValues();
+            CacheSunAdditionalLightDataCold();
+            CacheSunDiscRendererCold();
             SyncCrestPrimaryLight();
 
             ApplySkyboxMaterialOwnership(forceAssignment: true);
@@ -1421,14 +1493,15 @@ namespace Hecton8.Celestial
 
             if (Application.isPlaying)
             {
-                EnsureCelestialRuntimeBuffers();
-                EnsureAtmosphereGradientSamples();
+                RefreshColdRuntimeDependencies();
+                TryResolveCelestialRuntimeBuffers();
+                RefreshAtmosphereGradientSamplesIfDirty();
                 _stormCloudDensity01 = 0f;
                 _lastUploadedStormCloudDensity01 = -1f;
-                UploadStormCloudDensityShaderGlobal(0f, forceUpload: true);
+                QueueStormCloudDensityShaderGlobal(0f, forceUpload: true);
                 _lightningFlash01 = 0f;
                 _lastUploadedLightningFlash01 = -1f;
-                UploadLightningFlashShaderGlobal(0f, forceUpload: true);
+                QueueLightningFlashShaderGlobal(0f, forceUpload: true);
 
                 BiomeMatrixEvents.Unregister(this);
                 BiomeMatrixEvents.Register(this);
@@ -1438,7 +1511,7 @@ namespace Hecton8.Celestial
                 TryRegisterLateFrameTickable();
                 InitializeFirmamentBakeAtStartup();
 
-                BiomeMatrixDirector director = GlobalRegistry.BiomeMatrix;
+                BiomeMatrixDirector director = _cachedBiomeMatrix;
                 if (director != null)
                 {
                     _currentDepthMeters = Mathf.Max(0f, director.CurrentDepthMeters);
@@ -1461,6 +1534,7 @@ namespace Hecton8.Celestial
 
         private void Start()
         {
+            RefreshColdRuntimeDependencies();
             TryRegisterToTickManager();
             TryRegisterLateFrameTickable();
             InitializeFirmamentBakeAtStartup();
@@ -1492,6 +1566,7 @@ namespace Hecton8.Celestial
             TryUnregisterFromTickManager();
             TryUnregisterLateFrameTickable();
             DisposeCelestialRuntimeBuffers(forceCompleteOrbitJob: true);
+            ClearCelestialTruthReadCache();
             ClearCelestialRuntimeSnapshot();
 
 #if UNITY_EDITOR
@@ -1531,8 +1606,165 @@ namespace Hecton8.Celestial
             ReleaseRuntimeAegirRingShadowCookie();
             TryUnregisterFromTickManager();
             TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
             DisposeCelestialRuntimeBuffers(forceCompleteOrbitJob: true);
+            ClearCelestialTruthReadCache();
             ClearCelestialRuntimeSnapshot();
+        }
+
+        private void RefreshColdRuntimeDependencies()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            CacheCelestialTruthVault(GlobalRegistry.DataVault);
+            _cachedBiomeMatrix = GlobalRegistry.BiomeMatrix;
+            _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
+            _cachedWeatherService = GlobalRegistry.Weather;
+            _cachedGIRelay = GlobalRegistry.GIRelay;
+            _cachedUnderwaterVisuals = GlobalRegistry.UnderwaterVisuals;
+            _cachedRandomEvents = GlobalRegistry.RandomEvents;
+            _cachedDynamicResolution = GlobalRegistry.DynamicResolution;
+            _cachedWorldSeedGenerator = GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+
+        }
+
+        private void CacheCelestialTruthVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_celestialTruthVault, vault) &&
+                IsCelestialVaultHandle(in _celestialBlackBoxHandle, BufferID.Shinobu345CelestialPresentationBlackBox))
+                return;
+
+            _celestialTruthVault = vault;
+            _celestialTruthStateRead = default;
+            _celestialTruthEnvironmentRead = default;
+            _celestialBlackBoxHandle = default;
+            _dayAtmosphereGradientSamplesHandle = default;
+            _sunsetAtmosphereGradientSamplesHandle = default;
+            _nightAtmosphereGradientSamplesHandle = default;
+            _orbitJobOutputHandle = default;
+
+            if (vault == null)
+                return;
+
+            if (vault.TryGetGenerationHandle<CelestialStateDTO>(
+                    BufferID.Shinobu345CelestialStateRead,
+                    out VaultGenerationHandle<CelestialStateDTO> celestialStateRead))
+            {
+                _celestialTruthStateRead = celestialStateRead;
+            }
+
+            if (vault.TryGetGenerationHandle<EnvironmentStateDTO>(
+                    BufferID.Shinobu345EnvironmentState,
+                    out VaultGenerationHandle<EnvironmentStateDTO> environmentRead))
+            {
+                _celestialTruthEnvironmentRead = environmentRead;
+            }
+
+            EnsureColdCelestialPresentationVaultHandles(vault);
+        }
+
+        private void EnsureColdCelestialPresentationVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            bool blackBoxHandleChanged = EnsureColdCelestialPresentationHandle(
+                vault,
+                BufferID.Shinobu345CelestialPresentationBlackBox,
+                CelestialBlackBoxFrameCount,
+                NativeArrayOptions.ClearMemory,
+                ref _celestialBlackBoxHandle);
+            if (blackBoxHandleChanged)
+            {
+                if (vault.TryResolveHandle(
+                        in _celestialBlackBoxHandle,
+                        out NativeArray<CelestialBlackBoxEntry> blackBox) &&
+                    blackBox.IsCreated)
+                {
+                    ResetCelestialBlackBoxState(blackBox);
+                }
+                else
+                {
+                    ResetCelestialBlackBoxState(default);
+                }
+            }
+
+            bool gradientsChanged = EnsureColdCelestialPresentationHandle(
+                vault,
+                BufferID.Shinobu345CelestialGradientDay,
+                AtmosphereGradientSampleCount,
+                NativeArrayOptions.UninitializedMemory,
+                ref _dayAtmosphereGradientSamplesHandle);
+            gradientsChanged |= EnsureColdCelestialPresentationHandle(
+                vault,
+                BufferID.Shinobu345CelestialGradientSunset,
+                AtmosphereGradientSampleCount,
+                NativeArrayOptions.UninitializedMemory,
+                ref _sunsetAtmosphereGradientSamplesHandle);
+            gradientsChanged |= EnsureColdCelestialPresentationHandle(
+                vault,
+                BufferID.Shinobu345CelestialGradientNight,
+                AtmosphereGradientSampleCount,
+                NativeArrayOptions.UninitializedMemory,
+                ref _nightAtmosphereGradientSamplesHandle);
+            if (gradientsChanged)
+            {
+                _atmosphereGradientSamplesDirty = true;
+                RefreshAtmosphereGradientSamplesIfDirty();
+            }
+
+            if (enableAnalyticalOrbitSolver)
+            {
+                EnsureColdCelestialPresentationHandle(
+                    vault,
+                    BufferID.Shinobu345CelestialLegacyOrbitOutput,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    ref _orbitJobOutputHandle);
+            }
+        }
+
+        private static bool EnsureColdCelestialPresentationHandle<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (IsCelestialVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredLength)
+                return false;
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.HabitatAtmosphere,
+                options);
+            return IsCelestialVaultHandle(in handle, bufferId);
+        }
+
+        private void ClearCelestialTruthReadCache()
+        {
+            _celestialTruthVault = null;
+            _celestialTruthStateRead = default;
+            _celestialTruthEnvironmentRead = default;
+            _cachedBiomeMatrix = null;
+            _cachedOceanKinematicsService = null;
+            _cachedWeatherService = null;
+            _cachedGIRelay = null;
+            _cachedUnderwaterVisuals = null;
+            _cachedRandomEvents = null;
+            _cachedDynamicResolution = null;
+            _cachedWorldSeedGenerator = null;
+            _cachedPlayerContext = null;
         }
 
         private void TryRegisterToTickManager()
@@ -1575,11 +1807,87 @@ namespace Hecton8.Celestial
             _registeredLateFrameTick = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    CacheCelestialTruthVault(currentService as IDataVault);
+                    MarkAtmosphereGradientSamplesDirty();
+                    break;
+                case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
+                    _cachedBiomeMatrix = currentService as BiomeMatrixDirector;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    break;
+                case GlobalRegistryServiceSlot.Weather:
+                    _cachedWeatherService = currentService as IWeatherService;
+                    break;
+                case GlobalRegistryServiceSlot.GIRelayRuntime:
+                    _cachedGIRelay = currentService as IGIRelaySystem;
+                    break;
+                case GlobalRegistryServiceSlot.UnderwaterVisualsRuntime:
+                    _cachedUnderwaterVisuals = currentService as HectonUnderwaterVisuals;
+                    break;
+                case GlobalRegistryServiceSlot.RandomEventRuntime:
+                    _cachedRandomEvents = currentService as RandomEventSystem;
+                    break;
+                case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
+                    _cachedDynamicResolution = currentService as DynamicResolutionScaler;
+                    break;
+                case GlobalRegistryServiceSlot.WorldSeedProvider:
+                    _cachedWorldSeedGenerator = currentService as global::HectonWorldGenerator;
+                    _firmamentStartupBakeAttempted = false;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredToTickManager = false;
+                        _registeredLateFrameTick = false;
+                        break;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregisterFromTickManager();
+                        TryUnregisterLateFrameTickable();
+                        TryRegisterToTickManager();
+                        TryRegisterLateFrameTickable();
+                    }
+                    break;
+            }
+        }
+
         public void LateFrameTick()
         {
             TryCompleteOrbitMathJob(forceComplete: false);
-            if (_lightningFlash01 > 0f)
-                UpdateLightningFlashShaderGlobal(forceUpload: false);
+            FlushCelestialVisualSync();
+            FlushCelestialRuntimeSnapshotShaderGlobals();
+            FlushPendingCelestialScalarShaderGlobals();
         }
 
         public void OnWeatherEvent(in WeatherEventPayload payload)
@@ -1588,7 +1896,7 @@ namespace Hecton8.Celestial
             {
                 float strikeIntensity01 = math.saturate(payload.WeatherIntensity);
                 _lightningFlash01 = math.max(_lightningFlash01, strikeIntensity01);
-                UploadLightningFlashShaderGlobal(_lightningFlash01, forceUpload: false);
+                QueueLightningFlashShaderGlobal(_lightningFlash01, forceUpload: false);
                 return;
             }
 
@@ -1601,7 +1909,7 @@ namespace Hecton8.Celestial
                     stormDensity = math.max(stormDensity, math.saturate(_surfaceWeatherCloudDensityThreshold));
 
                 _stormCloudDensity01 = stormDensity;
-                UploadStormCloudDensityShaderGlobal(stormDensity, forceUpload: false);
+                QueueStormCloudDensityShaderGlobal(stormDensity, forceUpload: false);
             }
         }
 
@@ -1712,7 +2020,7 @@ namespace Hecton8.Celestial
                     CelestialBlackBoxFlagAbyssalCulled,
                     abyssDepthMeters);
                 _lightningFlash01 = 0f;
-                UploadLightningFlashShaderGlobal(0f, forceUpload: false);
+                QueueLightningFlashShaderGlobal(0f, forceUpload: false);
                 return;
             }
 
@@ -1774,9 +2082,10 @@ namespace Hecton8.Celestial
             if (!Application.isPlaying)
                 return false;
 
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
                 if (math.isfinite(movementState.DepthMeters))
                 {
                     depthMeters = math.max(0f, movementState.DepthMeters);
@@ -1791,7 +2100,7 @@ namespace Hecton8.Celestial
                     return true;
                 }
 
-                HectonPlayerMovement playerMovement = runtimeContext.PlayerMovement;
+                HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
                 if (playerMovement != null)
                 {
                     float3 currentRuntime = playerMovement.CurrentAup.ToRuntimeFloat3();
@@ -1803,7 +2112,7 @@ namespace Hecton8.Celestial
                 }
             }
 
-            BiomeMatrixDirector biomeMatrix = GlobalRegistry.BiomeMatrix;
+            BiomeMatrixDirector biomeMatrix = _cachedBiomeMatrix;
             if (biomeMatrix == null)
                 return false;
 
@@ -1830,21 +2139,71 @@ namespace Hecton8.Celestial
 
             _cachedAegirRadius = ComputeAegirWorldRadius();
 
-            UpdateSunPosition(celestialDeltaTime);
-            ResolveSunDirection();
-            SyncCrestPrimaryLight();
-            ApplySurfaceCloudShadowCookie(celestialDeltaTime);
-            UpdateSunVisualPosition();
-            UpdateAnalyticalCelestialState();
+            bool usingPublishedCelestialSnapshot = TryApplyPublishedCelestialSnapshot(out float sunElevation, out float publishedEclipseOcclusion01);
+            if (usingPublishedCelestialSnapshot)
+            {
+                double period = math.max(1d, (double)orbitalPeriod);
+                double turns = _celestialRuntimeSnapshot.AbsoluteUniverseTime / period;
+                _rotationAccumulator = turns - math.floor(turns);
+                _rotationTimer = (float)_rotationAccumulator;
+                _rotationPhase = _rotationTimer;
+            }
 
-            float sunElevation = CalculateSunElevation();
+            if (!usingPublishedCelestialSnapshot)
+            {
+                UpdateSunPosition(celestialDeltaTime);
+                EnsureSunDirectionCache();
+            }
+            if (!usingPublishedCelestialSnapshot)
+                UpdateAnalyticalCelestialState();
+
+            if (!usingPublishedCelestialSnapshot)
+                sunElevation = CalculateSunElevation();
             _currentSunAngle = sunElevation;
 
             CalculateEclipseBacklight();
-            DetectEclipse();
+            if (usingPublishedCelestialSnapshot)
+            {
+                _penumbraFactor = math.saturate(publishedEclipseOcclusion01);
+                ApplyEclipseStateBranchless(publishedEclipseOcclusion01 > 0.001f, publishedEclipseOcclusion01 > 0.0001f);
+            }
+            else
+            {
+                DetectEclipse();
+            }
             DetectLunarResonance();
             UpdateSunOcclusion(celestialDeltaTime);
 
+            QueueCelestialVisualSync(sunElevation, celestialDeltaTime);
+            PublishCelestialRuntimeSnapshot(!usingPublishedCelestialSnapshot);
+            WriteCelestialBlackBoxTelemetry(ResolveTimeOfDay01(), _smoothedOcclusionFactor, ResolveCelestialBlackBoxRuntimeFlags(), _currentDepthMeters);
+
+            if (Application.isPlaying)
+                CelestialEvents.TryRaiseSunAngleChanged(_currentSunAngle);
+        }
+
+        private void QueueCelestialVisualSync(float sunElevation, float deltaTime)
+        {
+            _pendingCelestialVisualSunElevation = sunElevation;
+            if (math.isfinite(deltaTime) && deltaTime > 0f)
+                _pendingCelestialVisualDeltaTime += deltaTime;
+            _pendingCelestialVisualSyncDirty = true;
+            TryRegisterLateFrameTickable();
+        }
+
+        private void FlushCelestialVisualSync()
+        {
+            if (!_pendingCelestialVisualSyncDirty)
+                return;
+
+            float sunElevation = _pendingCelestialVisualSunElevation;
+            float visualDeltaTime = math.max(0f, _pendingCelestialVisualDeltaTime);
+            _pendingCelestialVisualSyncDirty = false;
+            _pendingCelestialVisualDeltaTime = 0f;
+
+            SyncCrestPrimaryLight();
+            ApplySurfaceCloudShadowCookie(visualDeltaTime);
+            UpdateSunVisualPosition();
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
             _resolvedStarMapSeed = ResolveStarMapSeed();
@@ -1852,23 +2211,13 @@ namespace Hecton8.Celestial
             UpdateDynamicCelestialAtmosphere(sunElevation, forceRebuild: false, publishOnRebuild: false);
             UpdateGlobalShaderData();
             PushSkyToRenderSettings();
-
             UpdateSkyMaterial();
-
             UpdateAegirMaterial();
             UpdateMoonMaterialOverrides();
             UpdatePlanetShine();
             UpdateMoonPhaseShadowVisibility();
             UpdateDeepTextureResidencyState();
-
-            // v5.1: ApplySunOcclusion is the LAST intensity writer.
-            // It MULTIPLIES whatever UnderwaterVisuals wrote.
             ApplySunOcclusion();
-            PublishCelestialRuntimeSnapshot();
-            WriteCelestialBlackBoxTelemetry(ResolveTimeOfDay01(), _smoothedOcclusionFactor, ResolveCelestialBlackBoxRuntimeFlags(), _currentDepthMeters);
-
-            if (Application.isPlaying)
-                CelestialEvents.RaiseSunAngleChanged(_currentSunAngle);
         }
 
         /// <summary>
@@ -1961,7 +2310,7 @@ namespace Hecton8.Celestial
             if (!ReferenceEquals(RenderSettings.sun, sunLight))
                 RenderSettings.sun = sunLight;
 
-            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            IHectonOceanKinematicsService oceanKinematicsService = _cachedOceanKinematicsService;
             if (oceanKinematicsService == null)
                 return;
 
@@ -1977,7 +2326,7 @@ namespace Hecton8.Celestial
             if (sunLight == null || sunLight.type != LightType.Directional)
                 return;
 
-            if (!TryResolveSunAdditionalLightData(out UniversalAdditionalLightData lightData))
+            if (!TryGetCachedSunAdditionalLightData(out UniversalAdditionalLightData lightData))
                 return;
 
             Texture2D selectedCookie = ResolveDirectionalShadowCookie(
@@ -2113,10 +2462,20 @@ namespace Hecton8.Celestial
             _runtimeAegirRingShadowCookie = null;
         }
 
-        private bool TryResolveSunAdditionalLightData(out UniversalAdditionalLightData lightData)
+        private void CacheSunAdditionalLightDataCold()
+        {
+            _sunAdditionalLightData = null;
+            _sunAdditionalLightDataCached = true;
+            if (sunLight == null)
+                return;
+
+            sunLight.TryGetComponent(out _sunAdditionalLightData);
+        }
+
+        private bool TryGetCachedSunAdditionalLightData(out UniversalAdditionalLightData lightData)
         {
             lightData = null;
-            if (sunLight == null)
+            if (!_sunAdditionalLightDataCached || sunLight == null)
                 return false;
 
             if (_sunAdditionalLightData != null && _sunAdditionalLightData.transform == sunLight.transform)
@@ -2125,11 +2484,7 @@ namespace Hecton8.Celestial
                 return true;
             }
 
-            if (!sunLight.TryGetComponent(out _sunAdditionalLightData))
-                return false;
-
-            lightData = _sunAdditionalLightData;
-            return true;
+            return false;
         }
 
         private void CaptureSunCookieDefaults(UniversalAdditionalLightData lightData)
@@ -2148,7 +2503,7 @@ namespace Hecton8.Celestial
         private Vector2 ResolveSurfaceCloudShadowScrollDirection()
         {
             Vector2 wind = new Vector2(_surfaceWeatherWindDirection.x, _surfaceWeatherWindDirection.y);
-            IWeatherService weatherService = GlobalRegistry.Weather;
+            IWeatherService weatherService = _cachedWeatherService;
             if (weatherService != null && weatherService.IsInitialized)
             {
                 Vector3 globalWind = weatherService.GlobalWindVector;
@@ -2442,39 +2797,77 @@ namespace Hecton8.Celestial
             float sunsetWeight,
             float nightWeight)
         {
-            EnsureAtmosphereGradientSamples();
-            float4 color =
-                SampleAtmosphereGradient(_dayAtmosphereGradientSamples, t) * dayWeight +
-                SampleAtmosphereGradient(_sunsetAtmosphereGradientSamples, t) * sunsetWeight +
-                SampleAtmosphereGradient(_nightAtmosphereGradientSamples, t) * nightWeight;
+            RefreshAtmosphereGradientSamplesIfDirty();
+
+            float4 color;
+            if (TryResolveAtmosphereGradientSamples(
+                    out NativeArray<float4> daySamples,
+                    out NativeArray<float4> sunsetSamples,
+                    out NativeArray<float4> nightSamples))
+            {
+                color =
+                    SampleAtmosphereGradient(daySamples, t) * dayWeight +
+                    SampleAtmosphereGradient(sunsetSamples, t) * sunsetWeight +
+                    SampleAtmosphereGradient(nightSamples, t) * nightWeight;
+            }
+            else
+            {
+                color =
+                    EvaluateGradientPacked(dayAtmosphere, t) * dayWeight +
+                    EvaluateGradientPacked(sunsetAtmosphere, t) * sunsetWeight +
+                    EvaluateGradientPacked(nightAtmosphere, t) * nightWeight;
+            }
 
             return new Color(color.x, color.y, color.z, 1f);
         }
 
-        private void EnsureAtmosphereGradientSamples()
+        private bool TryResolveAtmosphereGradientSamples(
+            out NativeArray<float4> daySamples,
+            out NativeArray<float4> sunsetSamples,
+            out NativeArray<float4> nightSamples)
         {
-            EnsureAtmosphereGradientSampleBuffer(ref _dayAtmosphereGradientSamples, nameof(_dayAtmosphereGradientSamples));
-            EnsureAtmosphereGradientSampleBuffer(ref _sunsetAtmosphereGradientSamples, nameof(_sunsetAtmosphereGradientSamples));
-            EnsureAtmosphereGradientSampleBuffer(ref _nightAtmosphereGradientSamples, nameof(_nightAtmosphereGradientSamples));
+            daySamples = default;
+            sunsetSamples = default;
+            nightSamples = default;
 
+            return TryResolveExistingCelestialPresentationBuffer(
+                    BufferID.Shinobu345CelestialGradientDay,
+                    AtmosphereGradientSampleCount,
+                    ref _dayAtmosphereGradientSamplesHandle,
+                    out daySamples) &&
+                TryResolveExistingCelestialPresentationBuffer(
+                    BufferID.Shinobu345CelestialGradientSunset,
+                    AtmosphereGradientSampleCount,
+                    ref _sunsetAtmosphereGradientSamplesHandle,
+                    out sunsetSamples) &&
+                TryResolveExistingCelestialPresentationBuffer(
+                    BufferID.Shinobu345CelestialGradientNight,
+                    AtmosphereGradientSampleCount,
+                    ref _nightAtmosphereGradientSamplesHandle,
+                    out nightSamples);
+        }
+
+        private void RefreshAtmosphereGradientSamplesIfDirty()
+        {
             if (!_atmosphereGradientSamplesDirty)
                 return;
 
-            RebuildAtmosphereGradientSamples();
+            if (!TryResolveAtmosphereGradientSamples(
+                    out NativeArray<float4> daySamples,
+                    out NativeArray<float4> sunsetSamples,
+                    out NativeArray<float4> nightSamples))
+            {
+                return;
+            }
+
+            RebuildAtmosphereGradientSamples(daySamples, sunsetSamples, nightSamples);
             _atmosphereGradientSamplesDirty = false;
         }
 
-        private void EnsureAtmosphereGradientSampleBuffer(ref NativeArray<float4> buffer, string label)
-        {
-            if (buffer.IsCreated)
-                return;
-
-            buffer = new NativeArray<float4>(AtmosphereGradientSampleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[8] - packed atmosphere Gradient samples for manual lerp - owner: HectonCelestialEngine
-            NativeMemorySentinel.RegisterNativeArray(buffer, nameof(HectonCelestialEngine), label, NativeAllocationLifetime.Scene);
-            _atmosphereGradientSamplesDirty = true;
-        }
-
-        private void RebuildAtmosphereGradientSamples()
+        private void RebuildAtmosphereGradientSamples(
+            NativeArray<float4> daySamples,
+            NativeArray<float4> sunsetSamples,
+            NativeArray<float4> nightSamples)
         {
             float denominator = AtmosphereGradientSampleCount > 1
                 ? math.rcp(AtmosphereGradientSampleCount - 1f)
@@ -2483,9 +2876,9 @@ namespace Hecton8.Celestial
             for (int i = 0; i < AtmosphereGradientSampleCount; i++)
             {
                 float t = i * denominator;
-                _dayAtmosphereGradientSamples[i] = EvaluateGradientPacked(dayAtmosphere, t);
-                _sunsetAtmosphereGradientSamples[i] = EvaluateGradientPacked(sunsetAtmosphere, t);
-                _nightAtmosphereGradientSamples[i] = EvaluateGradientPacked(nightAtmosphere, t);
+                daySamples[i] = EvaluateGradientPacked(dayAtmosphere, t);
+                sunsetSamples[i] = EvaluateGradientPacked(sunsetAtmosphere, t);
+                nightSamples[i] = EvaluateGradientPacked(nightAtmosphere, t);
             }
         }
 
@@ -2565,6 +2958,26 @@ namespace Hecton8.Celestial
             int index = (int)math.floor(scaled);
             int next = math.min(index + 1, samples.Length - 1);
             return math.lerp(samples[index], samples[next], scaled - index);
+        }
+
+        private float4 SampleSunsetAtmosphereGradient(float t)
+        {
+            return TryResolveAtmosphereGradientSamples(
+                    out _,
+                    out NativeArray<float4> sunsetSamples,
+                    out _)
+                ? SampleAtmosphereGradient(sunsetSamples, t)
+                : EvaluateGradientPacked(sunsetAtmosphere, t);
+        }
+
+        private float4 SampleNightAtmosphereGradient(float t)
+        {
+            return TryResolveAtmosphereGradientSamples(
+                    out _,
+                    out _,
+                    out NativeArray<float4> nightSamples)
+                ? SampleAtmosphereGradient(nightSamples, t)
+                : EvaluateGradientPacked(nightAtmosphere, t);
         }
 
         private static float4 ToFloat4(Color color)
@@ -2649,7 +3062,13 @@ namespace Hecton8.Celestial
         private float EvaluateAtmosphereBlend01(float t)
         {
             float clamped = Mathf.Clamp01(t);
-            return Mathf.Pow(clamped, Mathf.Max(0.01f, atmosphereBlendPower));
+            float power = Mathf.Clamp(atmosphereBlendPower, 0.35f, 4f);
+            float x2 = clamped * clamped;
+            float x4 = x2 * x2;
+            float sqrt = clamped * math.rsqrt(math.max(clamped, 0.000001f));
+            float lowPower = math.lerp(sqrt, clamped, math.saturate((power - 0.35f) * (1f / 0.65f)));
+            float highPower = math.lerp(x2, x4, math.saturate((power - 2f) * 0.5f));
+            return math.saturate(math.select(math.lerp(clamped, highPower, math.saturate((power - 1f) * (1f / 3f))), lowPower, power < 1f));
         }
 
         private Color EvaluateSkySourceGradientColor(float t)
@@ -2728,11 +3147,11 @@ namespace Hecton8.Celestial
         private float GetCurrentSunElevationForAtmosphere()
         {
             float3 sunDirection = _resolvedSunDirection;
-            if (math.lengthsq(sunDirection) <= 0.0001f && sunLight != null)
-                sunDirection = -(float3)sunLight.transform.forward;
+            if (math.lengthsq(sunDirection) <= 0.0001f)
+                sunDirection = new float3(0f, 1f, 0f);
 
             float sinElevation = math.dot(NormalizeVisualRsqrt(sunDirection, new float3(0f, 1f, 0f)), new float3(0f, 1f, 0f));
-            return math.degrees(math.asin(math.clamp(sinElevation, -1f, 1f)));
+            return FastAsinDegrees(sinElevation);
         }
 
         private static bool HasMeaningfulColorShift(Color a, Color b)
@@ -2856,24 +3275,33 @@ namespace Hecton8.Celestial
             _lastAtmosphereBakeSkyNadir = default;
         }
 
-        private void EnsureCelestialRuntimeBuffers()
+        private void TryResolveCelestialRuntimeBuffers()
         {
-            if (!_orbitJobOutput.IsCreated)
-            {
-                _orbitJobOutput = new NativeArray<CelestialOrbitJobOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CelestialOrbitJobOutput>[1] - deferred Burst celestial orbit output - owner: HectonCelestialEngine
-                NativeMemorySentinel.RegisterNativeArray(_orbitJobOutput, nameof(HectonCelestialEngine), nameof(_orbitJobOutput), NativeAllocationLifetime.Scene);
-            }
+            if (enableAnalyticalOrbitSolver)
+                TryResolveOrbitJobOutput(out _);
 
-            EnsureCelestialBlackBoxBuffer();
+            TryResolveCelestialBlackBoxBuffer(out _);
         }
 
-        private void EnsureCelestialBlackBoxBuffer()
+        private bool TryResolveCelestialBlackBoxBuffer(out NativeArray<CelestialBlackBoxEntry> blackBox)
         {
-            if (_celestialBlackBox.IsCreated)
-                return;
+            blackBox = default;
+            return TryResolveExistingCelestialPresentationBuffer(
+                BufferID.Shinobu345CelestialPresentationBlackBox,
+                CelestialBlackBoxFrameCount,
+                ref _celestialBlackBoxHandle,
+                out blackBox);
+        }
 
-            _celestialBlackBox = new NativeArray<CelestialBlackBoxEntry>(CelestialBlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CelestialBlackBoxEntry>[300] - fixed celestial blackbox ring - owner: HectonCelestialEngine
-            NativeMemorySentinel.RegisterNativeArray(_celestialBlackBox, nameof(HectonCelestialEngine), nameof(_celestialBlackBox), NativeAllocationLifetime.Scene);
+        private void ResetCelestialBlackBoxState(NativeArray<CelestialBlackBoxEntry> blackBox)
+        {
+            if (blackBox.IsCreated)
+            {
+                int count = math.min(blackBox.Length, CelestialBlackBoxFrameCount);
+                for (int i = 0; i < count; i++)
+                    blackBox[i] = default;
+            }
+
             _celestialBlackBoxCursor = 0;
             _celestialBlackBoxCount = 0;
             _celestialBlackBoxDumped = false;
@@ -2887,47 +3315,30 @@ namespace Hecton8.Celestial
                 _orbitJobScheduled = false;
             }
 
-            if (_orbitJobOutput.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_orbitJobOutput);
-                _orbitJobOutput.Dispose();
-                _orbitJobOutput = default;
-            }
+            ReleaseOrbitOutputVaultLock();
+            ReleaseCelestialPresentationBuffer(ref _orbitJobOutputHandle);
+            ReleaseCelestialPresentationBuffer(ref _celestialBlackBoxHandle);
+            ReleaseCelestialPresentationBuffer(ref _dayAtmosphereGradientSamplesHandle);
+            ReleaseCelestialPresentationBuffer(ref _sunsetAtmosphereGradientSamplesHandle);
+            ReleaseCelestialPresentationBuffer(ref _nightAtmosphereGradientSamplesHandle);
 
-            if (_celestialBlackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_celestialBlackBox);
-                _celestialBlackBox.Dispose();
-                _celestialBlackBox = default;
-            }
-
-            DisposeAtmosphereGradientSamples();
             _orbitJobPrimed = false;
-            _celestialBlackBoxCursor = 0;
-            _celestialBlackBoxCount = 0;
+            ResetCelestialBlackBoxState(default);
         }
 
         private void MarkAtmosphereGradientSamplesDirty()
         {
             _atmosphereGradientSamplesDirty = true;
+            if (Application.isPlaying && _celestialTruthVault != null)
+                RefreshAtmosphereGradientSamplesIfDirty();
         }
 
         private void DisposeAtmosphereGradientSamples()
         {
-            DisposeAtmosphereGradientSampleBuffer(ref _dayAtmosphereGradientSamples);
-            DisposeAtmosphereGradientSampleBuffer(ref _sunsetAtmosphereGradientSamples);
-            DisposeAtmosphereGradientSampleBuffer(ref _nightAtmosphereGradientSamples);
+            ReleaseCelestialPresentationBuffer(ref _dayAtmosphereGradientSamplesHandle);
+            ReleaseCelestialPresentationBuffer(ref _sunsetAtmosphereGradientSamplesHandle);
+            ReleaseCelestialPresentationBuffer(ref _nightAtmosphereGradientSamplesHandle);
             _atmosphereGradientSamplesDirty = true;
-        }
-
-        private static void DisposeAtmosphereGradientSampleBuffer(ref NativeArray<float4> buffer)
-        {
-            if (!buffer.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(buffer);
-            buffer.Dispose();
-            buffer = default;
         }
 
         private void InitializeFirmamentBakeAtStartup()
@@ -2953,8 +3364,8 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            ResolveFirmamentBakeCompute();
-            if (firmamentBakeCompute == null || !TryResolveFirmamentKernels())
+            EnsureFirmamentBakeCompute();
+            if (firmamentBakeCompute == null || !EnsureFirmamentKernels())
             {
                 PublishFirmamentBakeGlobals();
                 return;
@@ -3071,7 +3482,7 @@ namespace Hecton8.Celestial
             return resolved;
         }
 
-        private void ResolveFirmamentBakeCompute()
+        private void EnsureFirmamentBakeCompute()
         {
 #if UNITY_EDITOR
             if (firmamentBakeCompute == null)
@@ -3079,7 +3490,7 @@ namespace Hecton8.Celestial
 #endif
         }
 
-        private bool TryResolveFirmamentKernels()
+        private bool EnsureFirmamentKernels()
         {
             if (firmamentBakeCompute == null)
                 return false;
@@ -3519,7 +3930,7 @@ namespace Hecton8.Celestial
             if (Mathf.Abs(RenderSettings.fogDensity - readableFogDensity) >= 0.0001f)
                 RenderSettings.fogDensity = readableFogDensity;
 
-            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            IGIRelaySystem giRelay = _cachedGIRelay;
             bool giRelayAmbientAuthority = giRelay != null && giRelay.IsAmbientProbeAuthorityActive;
             if (!giRelayAmbientAuthority)
             {
@@ -3551,7 +3962,7 @@ namespace Hecton8.Celestial
             if (sunLight == null)
                 return;
 
-            HectonUnderwaterVisuals underwaterVisuals = GlobalRegistry.UnderwaterVisuals;
+            HectonUnderwaterVisuals underwaterVisuals = _cachedUnderwaterVisuals;
             bool allowSurfaceDirectionalLight =
                 underwaterVisuals == null ||
                 !underwaterVisuals.IsUnderwater;
@@ -3573,7 +3984,7 @@ namespace Hecton8.Celestial
             Color eclipseTint = new Color(0.025f, 0.045f, 0.070f, 1f);
             Color atmosphereColor = Color.Lerp(state.FogColor, eclipseTint, eclipse01 * 0.45f);
             atmosphereColor.a = 1f;
-            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            IGIRelaySystem giRelay = _cachedGIRelay;
             if (giRelay == null || !giRelay.IsAmbientProbeAuthorityActive)
                 Shader.SetGlobalColor(_ID_HectonAtmosphereColor, atmosphereColor);
 
@@ -3582,7 +3993,7 @@ namespace Hecton8.Celestial
 
         private void PushAmbientProbeForEclipse(in AtmosphericLightingState state, float eclipse01)
         {
-            IGIRelaySystem giRelay = GlobalRegistry.GIRelay;
+            IGIRelaySystem giRelay = _cachedGIRelay;
             if (giRelay != null && giRelay.IsAmbientProbeAuthorityActive)
             {
                 _ambientProbeEclipseActive = false;
@@ -3815,6 +4226,7 @@ namespace Hecton8.Celestial
             _planetShineLight.type = LightType.Directional;
             _planetShineLight.color = planetShineColor;
             _planetShineLight.intensity = 0f;
+            _planetShineLight.enabled = false;
             _planetShineLight.shadows = LightShadows.None;
             _planetShineLight.renderMode = LightRenderMode.Auto;
             _planetShineLight.cullingMask = HectonLayerMasks.AllDefinedProjectLayersMask & ~HectonLayerMasks.CelestialLayerMask;
@@ -3922,7 +4334,7 @@ namespace Hecton8.Celestial
                 float distance = math.max(
                     ResolveAupDistanceMeters(playerTransform, aegirTransform),
                     0.01f);
-                return math.degrees(math.atan2(radius, distance));
+                return math.degrees(MathLodApproximation.ApproxAtan2Fast(radius, distance));
             }
 
             return math.max(_eclipseAngularRadius, 0.01f);
@@ -3932,76 +4344,267 @@ namespace Hecton8.Celestial
         // SUN DIRECTION RESOLUTION
         // ─────────────────────────────────────────────
 
-        private void ResolveSunDirection()
+        private void EnsureSunDirectionCache()
         {
             if (_sunDirectionResolvedFromMatrix)
                 return;
 
-            if (sunLight != null)
-                _resolvedSunDirection = -(float3)sunLight.transform.forward;
+            _resolvedSunDirection = NormalizeVisualRsqrt(_resolvedSunDirection, new float3(0f, 1f, 0f));
+            _resolvedSunForward = new Vector3(-_resolvedSunDirection.x, -_resolvedSunDirection.y, -_resolvedSunDirection.z);
+            _sunDirectionResolvedFromMatrix = true;
         }
 
         // ─────────────────────────────────────────────
         // SUN ORBITAL LOGIC
         // ─────────────────────────────────────────────
 
+        private bool TryApplyPublishedCelestialSnapshot(out float sunElevation, out float eclipseOcclusion01)
+        {
+            sunElevation = 0f;
+            eclipseOcclusion01 = 0f;
+
+            if (!TryReadCelestialTruthSnapshot(out CelestialRuntimeSnapshot snapshot))
+                return false;
+
+            if ((snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) == 0u ||
+                !math.all(math.isfinite(snapshot.SunDirection)))
+            {
+                return false;
+            }
+
+            float3 sunDirection = NormalizeVisualRsqrt(snapshot.SunDirection, new float3(0f, 1f, 0f));
+            _celestialRuntimeSnapshot = snapshot;
+            _celestialRuntimeSequence = snapshot.Sequence;
+            _resolvedSunDirection = sunDirection;
+            _resolvedSunForward = new Vector3(-sunDirection.x, -sunDirection.y, -sunDirection.z);
+            _sunDirectionResolvedFromMatrix = true;
+            eclipseOcclusion01 = math.saturate(snapshot.EclipseOcclusion01);
+            sunElevation = CalculateSunElevation();
+            return true;
+        }
+
+        private bool TryReadCelestialTruthSnapshot(out CelestialRuntimeSnapshot snapshot)
+        {
+            snapshot = default;
+            IDataVault vault = _celestialTruthVault;
+            if (vault == null ||
+                !IsCelestialVaultHandle(in _celestialTruthStateRead, BufferID.Shinobu345CelestialStateRead) ||
+                !vault.TryReadOnlyHandle(in _celestialTruthStateRead, out NativeArray<CelestialStateDTO>.ReadOnly celestialStates) ||
+                !celestialStates.IsCreated ||
+                celestialStates.Length <= 0)
+            {
+                return false;
+            }
+
+            CelestialStateDTO celestialState = celestialStates[0];
+            float3 sunDirection = NormalizeVisualRsqrt(
+                new float3(
+                    (float)celestialState.SunDirection.x,
+                    (float)celestialState.SunDirection.y,
+                    (float)celestialState.SunDirection.z),
+                new float3(0f, 1f, 0f));
+            float3 moonDirection = NormalizeVisualRsqrt(
+                new float3(
+                    (float)celestialState.MoonDirection.x,
+                    (float)celestialState.MoonDirection.y,
+                    (float)celestialState.MoonDirection.z),
+                new float3(0f, -1f, 0f));
+
+            if (!math.all(math.isfinite(sunDirection)) ||
+                !math.all(math.isfinite(moonDirection)) ||
+                !math.isfinite(celestialState.EclipseShadowScalar01) ||
+                !math.isfinite(celestialState.TimeOfDay01))
+            {
+                return false;
+            }
+
+            bool hasEnvironmentState = TryReadCelestialEnvironmentState(vault, out EnvironmentStateDTO environmentState);
+            CelestialRuntimeSnapshot next = _celestialRuntimeSnapshot;
+            if ((next.Flags & (uint)CelestialRuntimeFlags.Valid) == 0u)
+                next = default;
+
+            next.AbsoluteUniverseTime = hasEnvironmentState && math.isfinite(environmentState.CurrentSimulationTime)
+                ? environmentState.CurrentSimulationTime
+                : next.AbsoluteUniverseTime;
+            if (!math.isfinite(next.AbsoluteUniverseTime) || next.AbsoluteUniverseTime < 0d)
+                next.AbsoluteUniverseTime = 0d;
+
+            next.SunDirection = sunDirection;
+            next.Moon0Direction = moonDirection;
+            next.Moon1Direction = moonDirection;
+            next.EclipseOcclusion01 = math.saturate(celestialState.EclipseShadowScalar01);
+            next.RadiationStorm01 = ResolveRadiationStorm01();
+            next.GlobalBiolumMultiplier = math.max(1f, math.lerp(1f, EclipseBiolumMultiplier, SmoothStep01(next.EclipseOcclusion01)));
+
+            float tideHigh01 = math.isfinite(next.TideHigh01) ? math.saturate(next.TideHigh01) : 0.5f;
+            uint environmentFlags = 0u;
+            if (hasEnvironmentState)
+            {
+                float3 tidePull = NormalizeVisualRsqrt(
+                    new float3(
+                        (float)environmentState.TideVector.x,
+                        (float)environmentState.TideVector.y,
+                        (float)environmentState.TideVector.z),
+                    new float3(0f, 1f, 0f));
+                next.TidePullVector = tidePull;
+                next.TideHeightMeters = math.isfinite(environmentState.GlobalTideLevel) ? environmentState.GlobalTideLevel : 0f;
+                float tideAmplitude = math.max(0.0001f, celestialTideAmplitudeMeters * 2f);
+                tideHigh01 = math.saturate((next.TideHeightMeters / tideAmplitude) + 0.5f);
+                next.TideHigh01 = tideHigh01;
+                environmentFlags = environmentState.ActiveEventFlags;
+                if (environmentState.Sequence != 0u)
+                    next.Sequence = environmentState.Sequence;
+            }
+
+            uint flags = (uint)CelestialRuntimeFlags.Valid;
+            if (next.EclipseOcclusion01 > 0.001f ||
+                (environmentFlags & Shinobu345CelestialEventFlagEclipseActive) != 0u)
+            {
+                flags |= (uint)CelestialRuntimeFlags.EclipseActive;
+            }
+
+            if (tideHigh01 >= highTideThreshold01)
+                flags |= (uint)CelestialRuntimeFlags.HighTide;
+            if (math.max(next.Moon0Phase01, next.Moon1Phase01) >= fullMoonBloomThreshold01)
+                flags |= (uint)CelestialRuntimeFlags.FullMoonBloom;
+            if (next.RadiationStorm01 > 0.001f)
+                flags |= (uint)CelestialRuntimeFlags.SolarRadiationStorm;
+            if ((environmentFlags & Shinobu345CelestialEventFlagValid) == 0u && hasEnvironmentState)
+                flags &= ~(uint)CelestialRuntimeFlags.Valid;
+
+            next.Flags = flags;
+            snapshot = next;
+            return (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
+        }
+
+        private bool TryReadCelestialEnvironmentState(IDataVault vault, out EnvironmentStateDTO environmentState)
+        {
+            environmentState = default;
+            if (vault == null ||
+                !IsCelestialVaultHandle(in _celestialTruthEnvironmentRead, BufferID.Shinobu345EnvironmentState) ||
+                !vault.TryReadOnlyHandle(in _celestialTruthEnvironmentRead, out NativeArray<EnvironmentStateDTO>.ReadOnly environmentStates) ||
+                !environmentStates.IsCreated ||
+                environmentStates.Length <= 0)
+            {
+                return false;
+            }
+
+            EnvironmentStateDTO candidate = environmentStates[0];
+            if (!math.isfinite(candidate.CurrentSimulationTime) ||
+                !math.isfinite(candidate.GlobalTideLevel) ||
+                !math.all(math.isfinite(candidate.TideVector)))
+            {
+                return false;
+            }
+
+            environmentState = candidate;
+            return true;
+        }
+
+        private static bool IsCelestialVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.HabitatAtmosphere &&
+                   handle.Generation != 0u;
+        }
+
+        private bool TryResolveExistingCelestialPresentationBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _celestialTruthVault;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            return IsCelestialVaultHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryResolveOrbitJobOutput(out NativeArray<CelestialOrbitJobOutput> output)
+        {
+            return TryResolveExistingCelestialPresentationBuffer(
+                BufferID.Shinobu345CelestialLegacyOrbitOutput,
+                1,
+                ref _orbitJobOutputHandle,
+                out output);
+        }
+
+        private bool TryLockOrbitOutputVaultBuffer()
+        {
+            if (_orbitOutputVaultLocked)
+                return true;
+
+            IDataVault vault = _celestialTruthVault;
+            if (vault == null)
+                return false;
+
+            _orbitOutputVaultLocked = vault.TryLockBuffer(
+                BufferID.Shinobu345CelestialLegacyOrbitOutput,
+                SystemID.HabitatAtmosphere);
+            return _orbitOutputVaultLocked;
+        }
+
+        private void ReleaseOrbitOutputVaultLock()
+        {
+            if (!_orbitOutputVaultLocked)
+                return;
+
+            IDataVault vault = _celestialTruthVault;
+            if (vault != null)
+            {
+                vault.TryUnlockBuffer(
+                    BufferID.Shinobu345CelestialLegacyOrbitOutput,
+                    SystemID.HabitatAtmosphere);
+            }
+
+            _orbitOutputVaultLocked = false;
+        }
+
+        private void ReleaseCelestialPresentationBuffer<T>(ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            IDataVault vault = _celestialTruthVault;
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                handle.SystemID == (uint)SystemID.HabitatAtmosphere &&
+                handle.Generation != 0u)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
+        }
+
         private void UpdateSunPosition(float dt)
         {
-            if (sunLight == null)
-            {
-                _sunDirectionResolvedFromMatrix = false;
-                return;
-            }
-
-            if (IsLowTierLockedSunMode())
-            {
-                ApplyLowTierLockedSunDirection();
-                return;
-            }
-
-            _lowTierSunLockApplied = false;
-
             if (_atmosphereManager != null)
             {
                 _accumulatedOrbitalAngle = _atmosphereManager.SunAngle;
-                _sunDirectionResolvedFromMatrix = false;
+                ApplyMathematicalSunDirection(_accumulatedOrbitalAngle);
                 return;
             }
 
             UpdateInternalOrbit(dt);
+            ApplyMathematicalSunDirection(_accumulatedOrbitalAngle);
+        }
 
+        private void ApplyMathematicalSunDirection(float angleDegrees)
+        {
             float3 axis = ResolveDominantAxisDirection((float3)sunOrbitAxis, new float3(1f, 0f, 0f));
-            _sunOrbitRotationMatrix = BuildAxisAngleRotationMatrix(axis, math.radians(_accumulatedOrbitalAngle));
+            _sunOrbitRotationMatrix = BuildAxisAngleRotationMatrix(axis, math.radians(angleDegrees));
             float3 resolvedSunForward = math.mul(_sunOrbitRotationMatrix, new float4(0f, 0f, 1f, 0f)).xyz;
             if (math.lengthsq(resolvedSunForward) <= 0.0001f)
                 _resolvedSunForward = Vector3.forward;
             else
                 _resolvedSunForward = new Vector3(resolvedSunForward.x, resolvedSunForward.y, resolvedSunForward.z);
 
-            sunLight.transform.forward = _resolvedSunForward;
-            _resolvedSunDirection = new float3(-_resolvedSunForward.x, -_resolvedSunForward.y, -_resolvedSunForward.z);
-            _sunDirectionResolvedFromMatrix = true;
-        }
-
-        private bool IsLowTierLockedSunMode()
-        {
-            if (!Application.isPlaying)
-                return false;
-
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   tier == HectonQualityTier.Unknown;
-        }
-
-        private void ApplyLowTierLockedSunDirection()
-        {
-            Quaternion lockedRotation = Quaternion.Euler(LowTierLockedSunPitchDegrees, 0f, 0f);
-            if (!_lowTierSunLockApplied || Quaternion.Angle(sunLight.transform.rotation, lockedRotation) > 0.01f)
-                sunLight.transform.rotation = lockedRotation;
-
-            _lowTierSunLockApplied = true;
-            _resolvedSunForward = sunLight.transform.forward;
             _resolvedSunDirection = new float3(-_resolvedSunForward.x, -_resolvedSunForward.y, -_resolvedSunForward.z);
             _sunDirectionResolvedFromMatrix = true;
         }
@@ -4065,9 +4668,8 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            bool highTier = tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
-            int interval = highTier ? CelestialSnapshotFrameIntervalHigh : CelestialSnapshotFrameIntervalLow;
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 0f);
+            int interval = math.max(1, (int)math.round(math.lerp(CelestialSnapshotFrameIntervalLow, CelestialSnapshotFrameIntervalHigh, quality)));
             _nextCelestialSnapshotFrame = Time.frameCount + interval;
         }
 
@@ -4115,22 +4717,35 @@ namespace Hecton8.Celestial
             if (_orbitJobScheduled)
                 return;
 
-            if (IsLowTierLockedSunMode())
-            {
-                _nextCelestialSnapshotFrame = 0;
-                BuildFallbackCelestialRuntimeSnapshot();
-                return;
-            }
-
             ScheduleNextCelestialSnapshotFrame();
 
             double universeTime = ResolveSynchronizedUniverseTimeSeconds();
             uint seed = ResolveDeterministicStarSeed();
-            CelestialOrbitMathJob job = BuildCelestialOrbitMathJob(universeTime, seed);
-            if (!Application.isPlaying || !_orbitJobPrimed)
+            bool scheduleAsync = Application.isPlaying && _orbitJobPrimed;
+            if (!TryResolveOrbitJobOutput(out NativeArray<CelestialOrbitJobOutput> orbitOutput))
+            {
+                BuildFallbackCelestialRuntimeSnapshot();
+                return;
+            }
+
+            if (scheduleAsync)
+            {
+                if (!TryLockOrbitOutputVaultBuffer())
+                    return;
+
+                if (!TryResolveOrbitJobOutput(out orbitOutput))
+                {
+                    ReleaseOrbitOutputVaultLock();
+                    BuildFallbackCelestialRuntimeSnapshot();
+                    return;
+                }
+            }
+
+            CelestialOrbitMathJob job = BuildCelestialOrbitMathJob(universeTime, seed, orbitOutput);
+            if (!scheduleAsync)
             {
                 job.Execute(); // COLD SYNC JOB: primes deterministic state before the first deferred SlowTick schedule.
-                CommitOrbitMathOutput(_orbitJobOutput[0]);
+                CommitOrbitMathOutput(orbitOutput[0]);
                 return;
             }
 
@@ -4138,9 +4753,12 @@ namespace Hecton8.Celestial
             _orbitJobScheduled = true;
         }
 
-        private CelestialOrbitMathJob BuildCelestialOrbitMathJob(double universeTime, uint seed)
+        private CelestialOrbitMathJob BuildCelestialOrbitMathJob(
+            double universeTime,
+            uint seed,
+            NativeArray<CelestialOrbitJobOutput> orbitOutput)
         {
-            EnsureCelestialRuntimeBuffers();
+            TryResolveCelestialRuntimeBuffers();
             return new CelestialOrbitMathJob
             {
                 AbsoluteUniverseTime = universeTime,
@@ -4162,7 +4780,7 @@ namespace Hecton8.Celestial
                 RadiationStorm01 = ResolveRadiationStorm01(),
                 ResonanceBiolumMultiplier = _lunarResonanceMultiplier,
                 Sequence = _celestialRuntimeSequence + 1u,
-                Output = _orbitJobOutput
+                Output = orbitOutput
             };
         }
 
@@ -4175,7 +4793,11 @@ namespace Hecton8.Celestial
                 return;
 
             _orbitJobScheduled = false;
-            CommitOrbitMathOutput(_orbitJobOutput[0]);
+            if (TryResolveOrbitJobOutput(out NativeArray<CelestialOrbitJobOutput> orbitOutput))
+                CommitOrbitMathOutput(orbitOutput[0]);
+            else
+                DumpCelestialBlackBox();
+            ReleaseOrbitOutputVaultLock();
         }
 
         private void TryCompleteOrbitMathJob(bool forceComplete)
@@ -4187,7 +4809,11 @@ namespace Hecton8.Celestial
                 return;
 
             _orbitJobScheduled = false;
-            CommitOrbitMathOutput(_orbitJobOutput[0]);
+            if (TryResolveOrbitJobOutput(out NativeArray<CelestialOrbitJobOutput> orbitOutput))
+                CommitOrbitMathOutput(orbitOutput[0]);
+            else
+                DumpCelestialBlackBox();
+            ReleaseOrbitOutputVaultLock();
         }
 
         private void CommitOrbitMathOutput(in CelestialOrbitJobOutput output)
@@ -4277,7 +4903,7 @@ namespace Hecton8.Celestial
             }
         }
 
-        private void PublishCelestialRuntimeSnapshot()
+        private void PublishCelestialRuntimeSnapshot(bool publishGlobalSnapshot)
         {
             CelestialRuntimeSnapshot snapshot = _celestialRuntimeSnapshot;
             if ((snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) == 0u)
@@ -4309,12 +4935,28 @@ namespace Hecton8.Celestial
             _lastPublishedCelestialFlags = snapshot.Flags;
             _lastPublishedCelestialEclipseOcclusion = snapshot.EclipseOcclusion01;
             _lastPublishedCelestialRadiationStorm = snapshot.RadiationStorm01;
-            if (Application.isPlaying)
+            if (Application.isPlaying && publishGlobalSnapshot)
             {
                 GlobalRegistry.PublishCelestialRuntimeSnapshot(in snapshot);
                 PublishGlobalTimeSyncSignal(in snapshot);
             }
 
+            QueueCelestialRuntimeSnapshotShaderGlobals(in snapshot);
+        }
+
+        private void QueueCelestialRuntimeSnapshotShaderGlobals(in CelestialRuntimeSnapshot snapshot)
+        {
+            _pendingCelestialRuntimeSnapshotShader = snapshot;
+            _pendingCelestialRuntimeSnapshotShaderDirty = true;
+        }
+
+        private void FlushCelestialRuntimeSnapshotShaderGlobals()
+        {
+            if (!_pendingCelestialRuntimeSnapshotShaderDirty)
+                return;
+
+            _pendingCelestialRuntimeSnapshotShaderDirty = false;
+            CelestialRuntimeSnapshot snapshot = _pendingCelestialRuntimeSnapshotShader;
             Shader.SetGlobalVector(
                 _ID_HectonCelestialTidePull,
                 new Vector4(snapshot.TidePullVector.x, snapshot.TidePullVector.y, snapshot.TidePullVector.z, snapshot.TideHigh01));
@@ -4346,7 +4988,7 @@ namespace Hecton8.Celestial
                 Sequence = snapshot.Sequence,
                 Flags = (byte)((snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u ? 1 : 0)
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<GlobalTimeSyncSignal>.TryPush(in signal);
         }
 
         private void ClearCelestialRuntimeSnapshot()
@@ -4358,6 +5000,8 @@ namespace Hecton8.Celestial
             _lastPublishedCelestialFlags = uint.MaxValue;
             _lastPublishedCelestialEclipseOcclusion = -1f;
             _lastPublishedCelestialRadiationStorm = -1f;
+            _pendingCelestialRuntimeSnapshotShaderDirty = false;
+            _pendingCelestialRuntimeSnapshotShader = default;
             CelestialRuntimeSnapshot emptySnapshot = default;
             GlobalRegistry.PublishCelestialRuntimeSnapshot(in emptySnapshot);
             Shader.SetGlobalVector(_ID_HectonCelestialTidePull, Vector4.zero);
@@ -4398,7 +5042,7 @@ namespace Hecton8.Celestial
 
         private float ResolveRadiationStorm01()
         {
-            RandomEventSystem randomEvents = GlobalRegistry.RandomEvents;
+            RandomEventSystem randomEvents = _cachedRandomEvents;
             return randomEvents != null && randomEvents.IsEventActive(RandomEventType.SolarFlare)
                 ? 1f
                 : 0f;
@@ -4641,6 +5285,17 @@ namespace Hecton8.Celestial
             return value * math.rsqrt(lengthSq);
         }
 
+        private static float FastAsinDegrees(float value)
+        {
+            float x = math.clamp(value, -1f, 1f);
+            float ax = math.abs(x);
+            float oneMinus = math.max(0f, 1f - ax);
+            float root = oneMinus * math.rsqrt(math.max(oneMinus, 0.000001f));
+            float acosRadians = (((-0.0187293f * ax + 0.0742610f) * ax - 0.2121144f) * ax + 1.5707288f) * root;
+            float asinRadians = 1.57079632679f - acosRadians;
+            return math.select(asinRadians, -asinRadians, x < 0f) * 57.2957795131f;
+        }
+
         private static float FastSinRadians(float radians)
         {
             float phase = radians * 0.15915494309f;
@@ -4686,57 +5341,14 @@ namespace Hecton8.Celestial
 
         private void UpdateSunVisualPosition()
         {
-            if (_atmosphereManager != null)
-            {
-                if (sunVisualTransform != null && sunVisualTransform.gameObject.activeSelf)
-                    sunVisualTransform.gameObject.SetActive(false);
-                return;
-            }
-
-            if (sunVisualTransform == null || sunLight == null) return;
-
-            Vector3 towardSun = -sunLight.transform.forward;
-            bool hasObserver = TryResolvePlayerRuntimePosition(out Vector3 observerPos);
-
-            sunVisualTransform.position = observerPos + towardSun * sunDistance;
-
-            if (hasObserver)
-                OrientSunVisualTowardObserver(observerPos);
-        }
-
-        private void OrientSunVisualTowardObserver(Vector3 observerPos)
-        {
-            Vector3 toObserver = observerPos - sunVisualTransform.position;
-            float distanceSqr = toObserver.sqrMagnitude;
-            if (distanceSqr <= 0.0001f)
-                return;
-
-            Vector3 forward = toObserver * math.rsqrt(distanceSqr);
-            Vector3 referenceUp = Mathf.Abs(Vector3.Dot(forward, Vector3.up)) > 0.98f
-                ? Vector3.right
-                : Vector3.up;
-
-            Vector3 right = Vector3.Cross(referenceUp, forward);
-            float rightSqr = right.sqrMagnitude;
-            if (rightSqr <= 0.0001f)
-            {
-                referenceUp = Vector3.forward;
-                right = Vector3.Cross(referenceUp, forward);
-                rightSqr = right.sqrMagnitude;
-                if (rightSqr <= 0.0001f)
-                    return;
-            }
-
-            right *= math.rsqrt(rightSqr);
-            Vector3 stableUp = Vector3.Cross(forward, right);
-            sunVisualTransform.rotation = Quaternion.LookRotation(forward, stableUp);
+            HideSunVisualDisc();
         }
 
         private float CalculateSunElevation()
         {
             float3 toSun = _resolvedSunDirection;
             float sinElevation = math.dot(toSun, new float3(0, 1, 0));
-            return math.degrees(math.asin(math.clamp(sinElevation, -1f, 1f)));
+            return FastAsinDegrees(sinElevation);
         }
 
         private void HandleDepthTierChanged(int depthTier, float depthMeters)
@@ -4757,7 +5369,7 @@ namespace Hecton8.Celestial
         private void UpdateDeepTextureResidencyState()
         {
             float depthMeters = Mathf.Max(0f, _currentDepthMeters);
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _cachedDynamicResolution;
             _currentAdaptiveRenderScale = scaler != null
                 ? Mathf.Clamp01(scaler.CurrentRenderScale)
                 : 1f;
@@ -4907,7 +5519,7 @@ namespace Hecton8.Celestial
         private float ResolveStarMapSeed()
         {
             int seed = Mathf.RoundToInt(starMapSeed);
-            global::HectonWorldGenerator generator = GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
+            global::HectonWorldGenerator generator = _cachedWorldSeedGenerator;
             if (generator == null)
                 return seed & 0x00FFFFFF;
 
@@ -4993,8 +5605,7 @@ namespace Hecton8.Celestial
 
         private Color ResolveScriptSunsetCloudColor()
         {
-            EnsureAtmosphereGradientSamples();
-            float4 sunsetSample = SampleAtmosphereGradient(_sunsetAtmosphereGradientSamples, 0f);
+            float4 sunsetSample = SampleSunsetAtmosphereGradient(0f);
             Color sunsetAtmosphereColor = new Color(sunsetSample.x, sunsetSample.y, sunsetSample.z, 1f);
             Color sunsetCloudColor = MultiplyRgb(_sunsetProfile.horizonColor, sunsetAtmosphereColor);
             sunsetCloudColor.a = 1f;
@@ -5003,8 +5614,7 @@ namespace Hecton8.Celestial
 
         private Color ResolveScriptNightCloudColor()
         {
-            EnsureAtmosphereGradientSamples();
-            float4 nightSample = SampleAtmosphereGradient(_nightAtmosphereGradientSamples, 0f);
+            float4 nightSample = SampleNightAtmosphereGradient(0f);
             Color nightAtmosphereColor = new Color(nightSample.x, nightSample.y, nightSample.z, 1f);
             Color nightCloudColor = MultiplyRgb(_nightProfile.horizonColor, nightAtmosphereColor);
             nightCloudColor.a = 1f;
@@ -5013,8 +5623,7 @@ namespace Hecton8.Celestial
 
         private Color ResolveScriptSunsetHorizonColor()
         {
-            EnsureAtmosphereGradientSamples();
-            float4 sunsetSample = SampleAtmosphereGradient(_sunsetAtmosphereGradientSamples, 0f);
+            float4 sunsetSample = SampleSunsetAtmosphereGradient(0f);
             Color sunsetAtmosphereColor = new Color(sunsetSample.x, sunsetSample.y, sunsetSample.z, 1f);
             Color sunsetHorizonColor = MultiplyRgb(_sunsetProfile.horizonColor, sunsetAtmosphereColor);
             sunsetHorizonColor.a = 1f;
@@ -5389,14 +5998,17 @@ namespace Hecton8.Celestial
             }
         }
 
+        private void CacheSunDiscRendererCold()
+        {
+            _cachedSunDiscRenderer = null;
+            _sunDiscRendererCached = true;
+            if (sunVisualTransform != null)
+                sunVisualTransform.TryGetComponent(out _cachedSunDiscRenderer);
+        }
+
         private Renderer GetCachedSunDiscRenderer()
         {
-            if (!_sunDiscRendererCached && sunVisualTransform != null)
-            {
-                sunVisualTransform.TryGetComponent(out _cachedSunDiscRenderer);
-                _sunDiscRendererCached = true;
-            }
-            return _cachedSunDiscRenderer;
+            return _sunDiscRendererCached ? _cachedSunDiscRenderer : null;
         }
 
         private void HideSunVisualDisc()
@@ -5475,6 +6087,17 @@ namespace Hecton8.Celestial
                     new Vector4(fromSun.x, fromSun.y, fromSun.z, 0f));
             }
 
+            float3 moonDirection = math.all(math.isfinite(_celestialRuntimeSnapshot.Moon0Direction))
+                ? NormalizeVisualRsqrt(_celestialRuntimeSnapshot.Moon0Direction, new float3(0f, -1f, 0f))
+                : new float3(0f, -1f, 0f);
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialSunDirection,
+                new Vector4(_resolvedSunDirection.x, _resolvedSunDirection.y, _resolvedSunDirection.z, 0f));
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialMoonDirection,
+                new Vector4(moonDirection.x, moonDirection.y, moonDirection.z, 0f));
+            Shader.SetGlobalFloat(_ID_HectonCelestialEclipseShadowScalar01, math.saturate(_smoothedOcclusionFactor));
+
             Vector4 aegirDirection = Vector4.zero;
             if (TryResolveAegirSkyDirection(out float3 toAegir))
                 aegirDirection = new Vector4(toAegir.x, toAegir.y, toAegir.z, 0f);
@@ -5501,6 +6124,46 @@ namespace Hecton8.Celestial
             UploadLightningFlashShaderGlobal(_lightningFlash01, forceUpload: false);
             PublishOceanCelestialProjectionGlobals(aegirDirection);
             PublishCelestialAtmosphereLut(pushRenderSettings: false);
+        }
+
+        private void QueueStormCloudDensityShaderGlobal(float stormCloudDensity01, bool forceUpload)
+        {
+            _stormCloudDensity01 = math.isfinite(stormCloudDensity01)
+                ? math.saturate(stormCloudDensity01)
+                : 0f;
+            if (forceUpload)
+                _lastUploadedStormCloudDensity01 = -1f;
+
+            _pendingStormCloudDensityShaderDirty = true;
+            TryRegisterLateFrameTickable();
+        }
+
+        private void QueueLightningFlashShaderGlobal(float lightningFlash01, bool forceUpload)
+        {
+            _lightningFlash01 = math.isfinite(lightningFlash01)
+                ? math.saturate(lightningFlash01)
+                : 0f;
+            if (forceUpload)
+                _lastUploadedLightningFlash01 = -1f;
+
+            _pendingLightningFlashShaderDirty = true;
+            TryRegisterLateFrameTickable();
+        }
+
+        private void FlushPendingCelestialScalarShaderGlobals()
+        {
+            if (_pendingStormCloudDensityShaderDirty)
+            {
+                _pendingStormCloudDensityShaderDirty = false;
+                UploadStormCloudDensityShaderGlobal(_stormCloudDensity01, forceUpload: false);
+            }
+
+            bool forceLightningUpload = _pendingLightningFlashShaderDirty;
+            if (forceLightningUpload || _lightningFlash01 > LightningFlashEpsilon)
+            {
+                _pendingLightningFlashShaderDirty = false;
+                UpdateLightningFlashShaderGlobal(forceLightningUpload);
+            }
         }
 
         private void UploadStormCloudDensityShaderGlobal(float stormCloudDensity01, bool forceUpload)
@@ -5548,7 +6211,7 @@ namespace Hecton8.Celestial
         private float ResolveStormCloudDensity01()
         {
             float density = 0f;
-            IWeatherService weather = GlobalRegistry.Weather;
+            IWeatherService weather = _cachedWeatherService;
             if (weather != null && (weather.CurrentWeatherState & WeatherState.Storm) != 0)
                 density = math.saturate(weather.WeatherIntensity);
 
@@ -5664,7 +6327,7 @@ namespace Hecton8.Celestial
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext == null)
                 return false;
 
@@ -5686,7 +6349,7 @@ namespace Hecton8.Celestial
         {
             runtimePosition = Vector3.zero;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext == null)
                 return false;
 
@@ -5816,7 +6479,7 @@ namespace Hecton8.Celestial
 
             aegirRenderer.SetPropertyBlock(_aegirMPB);
 
-            CelestialEvents.RaisePlanetPhaseChanged(_currentPhase);
+            CelestialEvents.TryRaisePlanetPhaseChanged(_currentPhase);
         }
 
         // ─────────────────────────────────────────────
@@ -5869,10 +6532,14 @@ namespace Hecton8.Celestial
             float eclipseDim = 1f - _currentBacklitFactor;
             float intensity = phaseFactor * eclipseDim * planetShineMaxIntensity;
 
-            _planetShineLight.transform.rotation = Quaternion.LookRotation(
-                (Vector3)(-aegirToPlayer));
-            _planetShineLight.intensity = intensity;
-            _planetShineLight.color = planetShineColor;
+            if (_planetShineLight.enabled)
+                _planetShineLight.enabled = false;
+
+            Shader.SetGlobalVector(
+                _ID_HectonCelestialPlanetShineDirection,
+                new Vector4(-aegirToPlayer.x, -aegirToPlayer.y, -aegirToPlayer.z, 0f));
+            Shader.SetGlobalFloat(_ID_HectonCelestialPlanetShineIntensity, intensity);
+            Shader.SetGlobalColor(_ID_HectonCelestialPlanetShineColor, planetShineColor);
         }
 
         private void UpdateMoonPhaseShadowVisibility()
@@ -5931,11 +6598,11 @@ namespace Hecton8.Celestial
 
             if (!wasActive && isActive)
             {
-                CelestialEvents.RaiseEclipseStarted();
+                CelestialEvents.TryRaiseEclipseStarted();
             }
             else if (wasActive && !isActive)
             {
-                CelestialEvents.RaiseEclipseEnded();
+                CelestialEvents.TryRaiseEclipseEnded();
             }
         }
 
@@ -6096,9 +6763,6 @@ namespace Hecton8.Celestial
         private uint ResolveCelestialBlackBoxRuntimeFlags()
         {
             uint flags = _celestialRuntimeSnapshot.Flags;
-            if (IsLowTierLockedSunMode())
-                flags |= CelestialBlackBoxFlagLowTierLocked;
-
             if (_stormCloudDensity01 > 0.001f)
                 flags |= CelestialBlackBoxFlagStorm;
 
@@ -6110,7 +6774,8 @@ namespace Hecton8.Celestial
             if (!Application.isPlaying)
                 return;
 
-            EnsureCelestialBlackBoxBuffer();
+            if (!TryResolveCelestialBlackBoxBuffer(out NativeArray<CelestialBlackBoxEntry> blackBox))
+                return;
 
             float lightningFlash01 = math.max(_lightningFlash01, math.max(0f, _lastUploadedLightningFlash01));
             float aegirY = (_celestialRuntimeSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
@@ -6131,7 +6796,7 @@ namespace Hecton8.Celestial
                 DepthMeters = math.max(0f, depthMeters)
             };
 
-            _celestialBlackBox[_celestialBlackBoxCursor] = entry;
+            blackBox[_celestialBlackBoxCursor] = entry;
             _celestialBlackBoxCursor = (_celestialBlackBoxCursor + 1) % CelestialBlackBoxFrameCount;
             _celestialBlackBoxCount = math.min(_celestialBlackBoxCount + 1, CelestialBlackBoxFrameCount);
 
@@ -6152,8 +6817,11 @@ namespace Hecton8.Celestial
 
         private void DumpCelestialBlackBox()
         {
-            if (_celestialBlackBoxDumped || !_celestialBlackBox.IsCreated)
+            if (_celestialBlackBoxDumped ||
+                !TryResolveCelestialBlackBoxBuffer(out NativeArray<CelestialBlackBoxEntry> blackBox))
+            {
                 return;
+            }
 
             _celestialBlackBoxDumped = true;
             try
@@ -6181,7 +6849,7 @@ namespace Hecton8.Celestial
 
                     for (int i = 0; i < _celestialBlackBoxCount; i++)
                     {
-                        CelestialBlackBoxEntry entry = _celestialBlackBox[(start + i) % CelestialBlackBoxFrameCount];
+                        CelestialBlackBoxEntry entry = blackBox[(start + i) % CelestialBlackBoxFrameCount];
                         writer.Write(entry.FrameIndex);
                         writer.Write(entry.Sequence);
                         writer.Write(entry.Flags);

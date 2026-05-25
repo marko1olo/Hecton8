@@ -1,0 +1,68 @@
+﻿# [ARCHIVE] Pre-Strict Architecture Snapshot
+
+Date: 2026-05-24
+Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
+Original: Docs/ARCHITECTURE/SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md
+Rule: historical snapshot only; not active doctrine.
+
+# SHINOBU_348 Screen-Space PDA Projector Route Card
+
+Owner: `SHINOBU_348`
+Domain: Echelon 8 Presentation & UX, wrist-mounted PDA projection
+
+## Route
+
+`WristHologramHudRuntime` cold owner setup acquires Vault handles and graphics buffers. Its visual-sync phase writes `PdaProjectionInputDTO[1]` through already-owned handles -> `CompilePdaMatricesJob` writes camera-relative `PdaStateDTO[1]` after double AUP subtraction -> direct mapped `UnsafeUtility.MemCpy` into double-buffered `GraphicsBuffer` rows -> `WristPdaScreenProjectorFeature` RenderGraph pass -> `Hecton_PdaScreen.shader` fullscreen view-space ray-plane projection.
+
+The graphics route is cold-gated by `SystemInfo.supportsSetConstantBuffer` and `SystemInfo.graphicsShaderLevel >= 45`, matching the shader's `#pragma target 4.5` and `StructuredBuffer<PdaStateDTO>` ABI. Unsupported mobile/GLES-era targets release PDA graphics buffers and fail closed; there is no World-Space Canvas or material fallback route.
+
+The shader reconstructs a camera ray per pixel, intersects the uploaded PDA plane, resolves atlas UVs, samples `_CameraDepthTexture` for soft scene occlusion, and applies continuous glass refraction from `GlobalQualityWeight`. Quality below `0.20` uses one direct atlas sample; `0.20..0.36` fades in refraction, and `0.52..0.88` fades in chromatic taps through uniform math LOD. There is no wrist World-Space Canvas route in this projector.
+
+## Vault Buffers
+
+- `348730` `PdaStateDTO[1]`, explicit 80-byte GPU state, uninitialized.
+- `348731` `PdaProjectionInputDTO[1]`, explicit 112-byte AUP/orientation input, uninitialized.
+- `348732` `PdaProjectionTelemetryEntry[300]`, explicit 64-byte black-box ring, uninitialized and overwritten by owner.
+- `348733` `int[1]`, telemetry cursor.
+- `348734` `PdaProjectionTuningDTO[1]`, explicit 64-byte art tuning row.
+- `348735` `PdaInterfaceProfileDTO[64]`, explicit 32-byte atlas UV profiles.
+- `348736` `byte[16384]`, cold CSV scratch mirror for `pda_interface_profiles.csv`.
+
+On direct-file platforms, the CSV ingestor reads packaged `Assets/StreamingAssets/Hecton8/PDA/pda_interface_profiles.csv` directly into the `348736` Vault scratch row through `FileStream.Read(Span<byte>)`, then parses `ReadOnlySpan<byte>` over the unmanaged scratch. URI-backed StreamingAssets targets, including Android/Quest APK paths, do not attempt `FileStream` or `UnityWebRequest` staging in gameplay; they fail closed to the owner-seeded deterministic default row until a DataMonolith/binary import route is baked and boot-validated. Repo-root `pda_interface_profiles.csv` remains an editor/development fallback only. The committed packaged source contains one `default` atlas rect plus the canonical `inventory`, `loadout`, `construction`, `barter`, `data_log`, `spectrum`, `atlas_signal`, and `diagnostics` rows, giving CI and art tuning a physical direct-file cold-boot input instead of a code-only parser. It maps `tab_#`, `pda_tab_#`, and canonical PDA tab names through the same `ResolvePdaTabHash(int)` path as `PDAEventPayload.CurrentTab`; unknown authored names retain FNV fallback. It does not borrow the legacy managed HUD CSV byte array and does not claim `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` readiness. If no direct-file packaged/editor CSV exists, the owner-seeded default row remains deterministic and rows `1..63` are explicitly zeroed before any lookup scans them.
+
+The shader does not reconstruct absolute world rays. Pixel rays come from `UNITY_MATRIX_I_P` in view space; the camera-relative PDA basis is rotated through `UNITY_MATRIX_V`, and depth occlusion compares scene `LinearEyeDepth` against `-hit.z`.
+
+## Rollback Exclusion
+
+These buffers are presentation-only. `PdaStateDTO` contains sub-millimeter wrist screen pose, boot progress, and visual flags. It must not enter `StateRingBuffer`, Merkle hashing, save identity, rollback truth, or gameplay authority. The authoritative routes remain inventory/PDA gameplay state and existing PDA event lanes.
+
+## Black Box
+
+The projector records the last 300 frames in `PdaProjectionTelemetryEntry`. Non-finite matrix input or matrix compilation cost above `100 us` dumps the ring to `Docs/AgentLogs/Dump_SHINOBU_348.bin` in Editor and to `Application.persistentDataPath/Hecton8/AgentLogs/Dump_SHINOBU_348.bin` in player builds. Dump header version `2` is an explicit 64-byte row with valid-count and start-index fields; the fault writer clears the ring at cold seed and writes valid telemetry rows oldest-to-newest instead of raw uninitialized capacity.
+
+## Read/Write Discipline
+
+Mutation routes use generation-checked `TryResolveHandle` only inside the owner write phase. Public/editor read routes use `TryReadOnlyHandle` through `TryReadOnlyPdaProjectionVaultBuffer`, so `TryGetActivePdaProjectionTuning`, `TryGetActivePdaProjectionTelemetry`, and gizmo reads cannot expose mutable Vault rows, create buffers, or grow buffers. Fault dumps still use the legacy `TryReadHandle` validation path only to obtain a raw read pointer for binary export; dump execution is a fault path, not a public accessor.
+
+The selected-object SceneView gizmo treats `PdaStateDTO.LocalToWorld` as camera-relative presentation truth, then adds the resolved render camera position only to the gizmo matrix translation. It does not mutate the Vault DTO, upload an absolute-world debug row, or change the shader's camera-relative route.
+
+Vault generation and graphics buffer creation are not called from `PdaProjectorLateFrameTick`; hot visual sync checks ready flags and fails closed if cold setup has not completed. Late-frame telemetry cost patching uses the telemetry ring and cursor arrays already opened by that owner phase; it does not perform a second Vault resolve after matrix compilation.
+
+Mock wrist projection and forced PDA visibility serialize false by default. The mock generator remains available for Task 06 emergency/editor work, but mock input is compiled out for non-development player builds so a production PDA does not stay visible or pay the fullscreen pass while closed.
+
+The `TrySetActivePdaProjectionTuning` bridge is compiled only in the Editor. Player builds retain pure read accessors and the render resource query, but cannot mutate the Vault tuning row through the designer tuner API.
+
+## Shader Warmup
+
+`Assets/_Project/Art/Shaders/Variants/Hecton_PdaScreen_Warmup.shadervariants` contains the no-keyword PDA shader variant for `Hidden/Hecton8/Hecton_PdaScreen`. `Assets/_Project/Scenes/00_BOOTSTRAP.unity` serializes that collection through `BootstrapController.shaderVariantCollections`, so `GameBootstrapper.WarmConfiguredShaderVariantCollectionsAsync` calls `WarmUp()` during boot prewarm before gameplay activation. The renderer feature still uses the serialized shader asset path and does not call `Shader.Find` or allocate a fallback material.
+
+## Renderer Activation
+
+`WristPdaScreenProjectorFeature` is serialized active in every currently referenced URP renderer asset:
+
+- `Assets/_Project/Data/PC_Renderer.asset` local fileID `348348348000001`.
+- `Assets/_Project/Data/PC_High_Renderer.asset` local fileID `348348348000002`.
+- `Assets/_Project/Data/Mobile_Renderer.asset` local fileID `348348348000003`.
+- `Assets/_Project/Data/Quest_VR_Renderer.asset` local fileID `348348348000004`.
+
+Each asset inserts the projector before `HectonVisorUberPostFeature`, so the PDA projection participates in the existing visor/post stack instead of drawing after it. `m_RendererFeatureMap` was regenerated as little-endian signed 64-bit local fileIDs and statically verified to match each `m_RendererFeatures` list.

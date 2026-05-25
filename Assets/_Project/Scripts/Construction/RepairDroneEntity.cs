@@ -191,7 +191,10 @@ namespace Hecton8.Construction
                     return;
 
                 if (!_pendingEvents.TryDequeue(out RepairDroneTorchAcousticPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;

@@ -245,9 +245,8 @@ namespace Hecton8.Graphics.Materials.Editor
                 return 0;
 
             int count = 0;
-            string[] files = Directory.GetFiles(directory, searchPattern, SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
-                count += Count(File.ReadAllText(files[i]), token);
+            foreach (string file in Directory.EnumerateFiles(directory, searchPattern, SearchOption.AllDirectories))
+                count += Count(File.ReadAllText(file), token);
             return count;
         }
 
@@ -257,15 +256,14 @@ namespace Hecton8.Graphics.Materials.Editor
             if (!Directory.Exists(directory))
                 return string.Empty;
 
-            string[] files = Directory.GetFiles(directory, searchPattern, SearchOption.AllDirectories);
             string editorSegment = Path.DirectorySeparatorChar + "Editor" + Path.DirectorySeparatorChar;
-            StringBuilder builder = new StringBuilder(files.Length * 256);
-            for (int i = 0; i < files.Length; i++)
+            StringBuilder builder = new StringBuilder(4096);
+            foreach (string file in Directory.EnumerateFiles(directory, searchPattern, SearchOption.AllDirectories))
             {
-                if (files[i].IndexOf(editorSegment, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (file.IndexOf(editorSegment, StringComparison.OrdinalIgnoreCase) >= 0)
                     continue;
 
-                builder.AppendLine(File.ReadAllText(files[i]));
+                builder.AppendLine(File.ReadAllText(file));
             }
 
             return builder.ToString();
@@ -278,14 +276,13 @@ namespace Hecton8.Graphics.Materials.Editor
                 return 0;
 
             int count = 0;
-            string[] files = Directory.GetFiles(directory, searchPattern, SearchOption.AllDirectories);
             string editorSegment = Path.DirectorySeparatorChar + "Editor" + Path.DirectorySeparatorChar;
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(directory, searchPattern, SearchOption.AllDirectories))
             {
-                if (files[i].IndexOf(editorSegment, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (file.IndexOf(editorSegment, StringComparison.OrdinalIgnoreCase) >= 0)
                     continue;
 
-                count += Count(File.ReadAllText(files[i]), token);
+                count += Count(File.ReadAllText(file), token);
             }
 
             return count;

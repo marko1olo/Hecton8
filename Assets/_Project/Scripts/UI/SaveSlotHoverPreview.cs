@@ -17,7 +17,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Save Slot Hover Preview")]
-    public sealed class SaveSlotHoverPreview : MonoBehaviour, ILateFrameTickable, IPointerEnterHandler, IPointerExitHandler, ILocalizationLanguageChangedListener
+    public sealed class SaveSlotHoverPreview : MonoBehaviour, ILateFrameTickable, IPointerEnterHandler, IPointerExitHandler, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -57,6 +57,9 @@ namespace Hecton8.UI
         private RectTransform _previewPanelRect;
         private Canvas _rootCanvas;
         private Camera _uiCamera;
+        private ILocalizationTextReadModel _cachedLocalization;
+        private SaveManager _cachedSaveManager;
+        private bool _hotSwapListenerRegistered;
         // COLD ALLOC: char[256] - save hover title staging for TMP SetCharArray - owner: SaveSlotHoverPreview
         private readonly char[] _previewTitleBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         // COLD ALLOC: char[256] - save hover preview metadata staging for TMP SetCharArray - owner: SaveSlotHoverPreview
@@ -102,6 +105,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
             LocalizationEvents.RegisterLanguageListener(this);
             HideImmediate();
@@ -109,6 +114,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             Unregister();
             LocalizationEvents.UnregisterLanguageListener(this);
             HideImmediate();
@@ -116,6 +122,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             Unregister();
             LocalizationEvents.UnregisterLanguageListener(this);
         }
@@ -261,32 +268,32 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            ILocalizationTextReadModel localization = _cachedLocalization;
+            SaveManager saveManager = _cachedSaveManager;
             if (saveManager == null || !saveManager.TryGetSaveSlotInfo(_currentSlotId, out SaveSlotInfo slotInfo) || slotInfo == null)
             {
                 ApplyPreviewTexts(
-                    string.Empty,
-                    ResolveLocalized(localization, LocalizationKeys.SLOT_NO_DATA, "NO DATA"),
-                    string.Empty,
+                    ReadOnlySpan<char>.Empty,
+                    ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_NO_DATA, "NO DATA"),
+                    ReadOnlySpan<char>.Empty,
                     Color.white);
                 ApplySlotTitle(localization, _currentSlotId);
                 return;
             }
 
             SaveMetadata metadata = slotInfo.Metadata;
-            string scene = ResolveSceneLabel(localization, metadata != null ? metadata.SceneName : string.Empty);
+            ReadOnlySpan<char> scene = ResolveSceneLabel(localization, metadata != null ? metadata.SceneName : string.Empty);
             int detailsLength = BuildPreviewDetails(metadata, scene, _previewDetailsBuffer);
-            string status = ResolveStatusLabel(localization, slotInfo.IntegrityState, slotInfo.GetStatusLabel());
+            ReadOnlySpan<char> status = ResolveStatusLabel(localization, slotInfo.IntegrityState, slotInfo.GetStatusLabel());
             Color statusColor = ResolveStatusColor(slotInfo.IntegrityState);
 
-            ApplyPreviewTexts(string.Empty, string.Empty, status, statusColor);
+            ApplyPreviewTexts(ReadOnlySpan<char>.Empty, ReadOnlySpan<char>.Empty, status, statusColor);
             ApplySlotTitle(localization, _currentSlotId);
             if (previewDetailsText != null)
                 previewDetailsText.SetCharArray(_previewDetailsBuffer, 0, detailsLength);
         }
 
-        private void ApplyPreviewTexts(string title, string details, string status, Color statusColor)
+        private void ApplyPreviewTexts(ReadOnlySpan<char> title, ReadOnlySpan<char> details, ReadOnlySpan<char> status, Color statusColor)
         {
             ApplyPreviewText(previewTitleText, title, _previewTitleBuffer);
             ApplyPreviewText(previewDetailsText, details, _previewDetailsBuffer);
@@ -298,16 +305,16 @@ namespace Hecton8.UI
             }
         }
 
-        private static void ApplyPreviewText(TMP_Text text, string value, char[] buffer)
+        private static void ApplyPreviewText(TMP_Text text, ReadOnlySpan<char> value, char[] buffer)
         {
             if (text == null || buffer == null)
                 return;
 
-            int length = AppendString(buffer, 0, value);
+            int length = AppendSpan(buffer, 0, value);
             text.SetCharArray(buffer, 0, length);
         }
 
-        private void ApplySlotTitle(LocalizationManager localization, string slotId)
+        private void ApplySlotTitle(ILocalizationTextReadModel localization, string slotId)
         {
             if (previewTitleText == null)
                 return;
@@ -318,7 +325,7 @@ namespace Hecton8.UI
 
         private void ClearPreviewMetadata()
         {
-            ApplyPreviewTexts(string.Empty, string.Empty, string.Empty, Color.white);
+            ApplyPreviewTexts(ReadOnlySpan<char>.Empty, ReadOnlySpan<char>.Empty, ReadOnlySpan<char>.Empty, Color.white);
         }
 
         private void AutoWirePreviewTextReferences()
@@ -419,48 +426,48 @@ namespace Hecton8.UI
                 TextWrappingModes.Normal);
         }
 
-        private static int BuildSlotTitle(LocalizationManager localization, string slotId, char[] buffer)
+        private static int BuildSlotTitle(ILocalizationTextReadModel localization, string slotId, char[] buffer)
         {
             if (buffer == null || buffer.Length == 0)
                 return 0;
 
-            string prefix = ResolveLocalized(localization, LocalizationKeys.SLOT_PREFIX, "SLOT");
-            int cursor = AppendString(buffer, 0, prefix);
+            ReadOnlySpan<char> prefix = ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_PREFIX, "SLOT");
+            int cursor = AppendSpan(buffer, 0, prefix);
             cursor = AppendChar(buffer, cursor, ' ');
             return AppendSlotNumber(buffer, cursor, slotId);
         }
 
-        private static string ResolveSceneLabel(LocalizationManager localization, string sceneName)
+        private static ReadOnlySpan<char> ResolveSceneLabel(ILocalizationTextReadModel localization, string sceneName)
         {
             if (string.IsNullOrEmpty(sceneName))
-                return string.Empty;
+                return ReadOnlySpan<char>.Empty;
 
             if (string.Equals(sceneName, "02_HECTON_WORLD", System.StringComparison.Ordinal))
-                return ResolveLocalized(localization, LocalizationKeys.SLOT_SCENE_WORLD, "WORLD");
+                return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_SCENE_WORLD, "WORLD");
 
-            return sceneName;
+            return sceneName.AsSpan();
         }
 
-        private static string ResolveStatusLabel(LocalizationManager localization, SaveSlotIntegrityState integrityState, string fallbackStatus)
+        private static ReadOnlySpan<char> ResolveStatusLabel(ILocalizationTextReadModel localization, SaveSlotIntegrityState integrityState, string fallbackStatus)
         {
             switch (integrityState)
             {
                 case SaveSlotIntegrityState.Healthy:
-                    return string.Empty;
+                    return ReadOnlySpan<char>.Empty;
                 case SaveSlotIntegrityState.HealthyWithBackup:
-                    return ResolveLocalized(localization, LocalizationKeys.SLOT_STATUS_BACKUP, "BACKUP");
+                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_BACKUP, "BACKUP");
                 case SaveSlotIntegrityState.BackupOnly:
-                    return ResolveLocalized(localization, LocalizationKeys.SLOT_STATUS_BACKUP_ONLY, "BACKUP ONLY");
+                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_BACKUP_ONLY, "BACKUP ONLY");
                 case SaveSlotIntegrityState.MissingMetadata:
-                    return ResolveLocalized(localization, LocalizationKeys.SLOT_STATUS_NO_META, "NO META");
+                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_NO_META, "NO META");
                 case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
-                    return ResolveLocalized(localization, LocalizationKeys.SLOT_STATUS_META_RESTORED, "META RESTORED");
+                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_META_RESTORED, "META RESTORED");
                 case SaveSlotIntegrityState.MetadataSynthesized:
-                    return ResolveLocalized(localization, LocalizationKeys.SLOT_STATUS_META_SYNTH, "META SYNTH");
+                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_META_SYNTH, "META SYNTH");
                 case SaveSlotIntegrityState.CorruptedMetadata:
-                    return ResolveLocalized(localization, LocalizationKeys.SLOT_STATUS_CORRUPT, "CORRUPT");
+                    return ResolveLocalizedSpan(localization, LocalizationKeys.SLOT_STATUS_CORRUPT, "CORRUPT");
                 default:
-                    return string.IsNullOrEmpty(fallbackStatus) ? string.Empty : fallbackStatus;
+                    return string.IsNullOrEmpty(fallbackStatus) ? ReadOnlySpan<char>.Empty : fallbackStatus.AsSpan();
             }
         }
 
@@ -481,7 +488,7 @@ namespace Hecton8.UI
             }
         }
 
-        private static int BuildPreviewDetails(SaveMetadata metadata, string scene, char[] buffer)
+        private static int BuildPreviewDetails(SaveMetadata metadata, ReadOnlySpan<char> scene, char[] buffer)
         {
             if (buffer == null || buffer.Length == 0)
                 return 0;
@@ -510,10 +517,10 @@ namespace Hecton8.UI
                 ? AppendPlaytime(buffer, cursor, metadata.PlayTimeSeconds)
                 : AppendChars(buffer, cursor, ZeroPlaytimeChars, ZeroPlaytimeChars.Length);
 
-            if (!string.IsNullOrEmpty(scene))
+            if (!scene.IsEmpty)
             {
                 cursor = AppendChar(buffer, cursor, '\n');
-                cursor = AppendString(buffer, cursor, scene);
+                cursor = AppendSpan(buffer, cursor, scene);
             }
 
             return cursor;
@@ -535,6 +542,14 @@ namespace Hecton8.UI
         private static int AppendString(char[] buffer, int cursor, string value)
         {
             if (string.IsNullOrEmpty(value))
+                return cursor;
+
+            return AppendSpan(buffer, cursor, value.AsSpan());
+        }
+
+        private static int AppendSpan(char[] buffer, int cursor, ReadOnlySpan<char> value)
+        {
+            if (value.IsEmpty)
                 return cursor;
 
             int limit = Mathf.Min(value.Length, buffer.Length - cursor);
@@ -601,11 +616,11 @@ namespace Hecton8.UI
             return AppendString(buffer, cursor, slotId);
         }
 
-        private static string ResolveLocalized(LocalizationManager localization, string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(ILocalizationTextReadModel localization, string key, string fallback)
         {
             return localization != null
-                ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
-                : fallback;
+                ? localization.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
         private void TryRegister()
@@ -617,6 +632,55 @@ namespace Hecton8.UI
                 return;
 
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as ILocalizationTextReadModel;
+                    if (!string.IsNullOrEmpty(_currentSlotId) &&
+                        (_state == State.Visible || _state == State.FadingIn))
+                    {
+                        PopulatePreviewMetadata();
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _cachedSaveManager = currentService as SaveManager;
+                    if (!string.IsNullOrEmpty(_currentSlotId) &&
+                        (_state == State.Visible || _state == State.FadingIn))
+                    {
+                        PopulatePreviewMetadata();
+                    }
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
+            _cachedSaveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void Unregister()

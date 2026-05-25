@@ -43,7 +43,7 @@ namespace Hecton8.Core
             {
                 if (!_indexErrorLogged)
                 {
-                    UnityEngine.Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         $"[RegistryBucket<{typeof(T).Name}>] Index {index} outside live count {_count}.");
                     _indexErrorLogged = true;
                 }
@@ -85,7 +85,7 @@ namespace Hecton8.Core
             {
                 if (!_nullRegistrationLogged)
                 {
-                    UnityEngine.Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         $"[RegistryBucket<{typeof(T).Name}>] Null registration is forbidden.");
                     _nullRegistrationLogged = true;
                 }
@@ -96,7 +96,7 @@ namespace Hecton8.Core
             {
                 if (!_capacityErrorLogged)
                 {
-                    UnityEngine.Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         $"[GlobalRegistry] RegistryBucket<{typeof(T).Name}> capacity ({_capacity}) exceeded.");
                     _capacityErrorLogged = true;
                 }
@@ -130,7 +130,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_unregisterMissLogged)
             {
-                UnityEngine.Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[GlobalRegistry] Unregister called for non-registered {typeof(T).Name}.");
                 _unregisterMissLogged = true;
             }
@@ -213,7 +213,7 @@ namespace Hecton8.Core
 
                 if (!_destroyedEntryLogged)
                 {
-                    UnityEngine.Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         $"[RegistryBucket<{typeof(T).Name}>] Destroyed object remained registered in {bucketName} at index {i}.");
                     _destroyedEntryLogged = true;
                 }

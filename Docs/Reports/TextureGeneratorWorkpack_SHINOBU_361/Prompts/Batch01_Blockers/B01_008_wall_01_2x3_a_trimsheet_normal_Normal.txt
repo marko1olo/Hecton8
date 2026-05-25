@@ -1,0 +1,10 @@
+﻿JOB_ID: B01_008
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch01_Blockers\B01_008_wall_01_2x3_a_trimsheet_normal_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\wall_01_2x3_a_trimsheet_normal_Normal.png
+FINAL_FILENAME: wall_01_2x3_a_trimsheet_normal_Normal.png
+REFERENCES: `LOOKDEV_APPROVED_REF_SEED_003.png` approved wall anchor if available
+
+PROMPT:
+Create a heightfield source for a 2x3 modular habitat wall trim sheet that supports layered wall construction. Design shallow pressed geometry with long structural ribs, gasket grooves, recessed fastener wells, narrow cable conduit covers, mounting rail channels, pass-through collars, and small inspection hatch outlines. Avoid a repeated grid of rectangular bathroom panels; the normal map must read as pressure-wall base plus service overlay logic. Keep smooth open plate fields between details so lighting can breathe and separate instruments can be added later. Use deliberate manufacturing rhythm and avoid random scratched clutter. This is a normal-map source for a maintained pressure habitat, not a ruined wall. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

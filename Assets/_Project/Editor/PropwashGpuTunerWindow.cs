@@ -75,8 +75,7 @@ namespace Hecton8.EditorTools
             EditorPrefs.SetFloat(CurlKey, _curlSlider.value);
             EditorPrefs.SetFloat(QualityKey, _qualitySlider.value);
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            if (!TryResolveEditorVault(out IDataVault vault))
             {
                 SetStatus("Play Mode GlobalDataVault required for live tuning.");
                 return;
@@ -122,11 +121,10 @@ namespace Hecton8.EditorTools
 
         private void RefreshTelemetryBinding()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
             if (_waterfall == null)
                 return;
 
-            if (vault != null &&
+            if (TryResolveEditorVault(out IDataVault vault) &&
                 !vault.IsCompactionFenceActive &&
                 TryReadPropwashVaultBuffer(
                     vault,
@@ -143,6 +141,16 @@ namespace Hecton8.EditorTools
             }
 
             _waterfall.MarkDirtyRepaint();
+        }
+
+        private static bool TryResolveEditorVault(out IDataVault vault)
+        {
+            vault = null;
+            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+                return false;
+
+            vault = latest;
+            return true;
         }
 
         private void SetStatus(string value)
@@ -174,7 +182,7 @@ namespace Hecton8.EditorTools
                 !existing.IsCreated ||
                 existing.Length < requiredLength)
             {
-                handle = vault.GetGenerationHandle<T>(
+                handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     requiredLength,
                     OwnerSystem,

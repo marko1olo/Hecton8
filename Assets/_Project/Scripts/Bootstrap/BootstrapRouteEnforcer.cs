@@ -36,7 +36,7 @@ namespace Hecton8.Bootstrap
 
             _bootstrapRecoveryTriggered = true;
 
-            Debug.LogError(
+            Hecton8.Core.H8Debug.LogError(
                 $"[{ownerName}] Scene '{currentSceneName}' entered without an active bootstrap. " +
                 $"Reloading {BootstrapSceneName} to restore the required route.");
 

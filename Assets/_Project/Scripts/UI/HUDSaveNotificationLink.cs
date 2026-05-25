@@ -3,7 +3,6 @@ using UnityEngine;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
-using Unity.Collections;
 
 namespace Hecton8.UI
 {
@@ -11,6 +10,7 @@ namespace Hecton8.UI
     /// Bridges the SaveSystem events to the HUD Notification UI.
     /// Ensures Zero-GC and clean separation of concerns.
     /// </summary>
+    [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Save Notification Link")]
     public sealed class HUDSaveNotificationLink :
         MonoBehaviour,
@@ -27,7 +27,7 @@ namespace Hecton8.UI
         [SerializeField] private HUDNotification notificationSystem;
 
         private FixedCharBuffer _messageBuffer = new FixedCharBuffer(MessageCharCapacity); // COLD ALLOC: char[160] - save notification HUD staging buffer - owner: HUDSaveNotificationLink
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private bool _hotSwapRegistered;
         
         private void OnEnable()
@@ -35,7 +35,7 @@ namespace Hecton8.UI
             if (notificationSystem == null)
                 TryGetComponent(out notificationSystem);
 
-            _localization = LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.LocalizationText;
             TryRegisterHotSwapListener();
             SaveEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);
@@ -101,7 +101,7 @@ namespace Hecton8.UI
             else
                 return false;
 
-            AppendSlotLabel(ref _messageBuffer, in payload.SlotName);
+            AppendSlotLabel(ref _messageBuffer, payload.SlotHash);
             return _messageBuffer.Length > 0;
         }
 
@@ -118,7 +118,7 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
                 return;
 
-            _localization = currentService as LocalizationManager;
+            _localization = currentService as ILocalizationTextReadModel;
             ClearMessageCache();
         }
 
@@ -139,37 +139,28 @@ namespace Hecton8.UI
             _hotSwapRegistered = false;
         }
 
-        private void AppendSlotLabel(ref FixedCharBuffer buffer, in FixedString64Bytes slotName)
+        private void AppendSlotLabel(ref FixedCharBuffer buffer, uint slotHash)
         {
-            if (slotName.Length <= 0)
+            if (slotHash == 0u)
                 return;
 
             AppendLiteral(ref buffer, " [".AsSpan());
             AppendLocalized(ref buffer, SlotPrefixKeyHash, "SLOT".AsSpan());
             AppendChar(ref buffer, ' ');
-            AppendSlotNumber(ref buffer, in slotName);
+            AppendSlotNumber(ref buffer, slotHash);
             AppendChar(ref buffer, ']');
         }
 
-        private static void AppendSlotNumber(ref FixedCharBuffer buffer, in FixedString64Bytes slotName)
+        private static void AppendSlotNumber(ref FixedCharBuffer buffer, uint slotHash)
         {
-            int startIndex = 0;
-            for (int index = slotName.Length - 1; index >= 0; index--)
-            {
-                if (slotName[index] == (byte)'_')
-                {
-                    startIndex = index + 1;
-                    break;
-                }
-            }
-
-            for (int index = startIndex; index < slotName.Length; index++)
-                AppendAsciiByte(ref buffer, slotName[index]);
+            string slotNumber = SaveEvents.ResolveSlotNumber(slotHash);
+            for (int index = 0; index < slotNumber.Length; index++)
+                AppendChar(ref buffer, slotNumber[index]);
         }
 
         private void AppendLocalized(ref FixedCharBuffer buffer, int keyHash, ReadOnlySpan<char> fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             ReadOnlySpan<char> text = manager != null ? manager.GetRawSpanOrFallback(keyHash, fallback) : fallback;
             buffer.Append(text);
         }
@@ -177,11 +168,6 @@ namespace Hecton8.UI
         private static void AppendLiteral(ref FixedCharBuffer buffer, ReadOnlySpan<char> text)
         {
             buffer.Append(text);
-        }
-
-        private static void AppendAsciiByte(ref FixedCharBuffer buffer, byte value)
-        {
-            AppendChar(ref buffer, value >= 32 && value < 127 ? (char)value : '?');
         }
 
         private static void AppendChar(ref FixedCharBuffer buffer, char value)

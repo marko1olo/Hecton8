@@ -1,11 +1,17 @@
-# VISOR AR Stencil Renderer
+﻿# VISOR AR Stencil Renderer
 
 Owner: SHINOBU_270
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 
 ## Authority Boundary
 
-`HectonVisorARStencilRendererFeature` is a visual-only URP RenderGraph renderer. It owns no gameplay truth. It reads immutable UI scalar snapshots, cached player pose, and the latest `ARWaypointOverlay` target AUP snapshot, then writes visual DTOs into UI-owned DataVault buffers. It does not poll legacy `GlobalSignals` during RenderGraph preparation; if the cached player AUP snapshot is unavailable, AR target rows are cleared and telemetry records the missing-AUP flag while HUD vitals continue rendering.
+- `HectonVisorARStencilRendererFeature` is a visual-only URP RenderGraph renderer.
+- It owns no gameplay truth.
+- It reads immutable UI scalar snapshots, cached player pose, and the latest `ARWaypointOverlay` target AUP snapshot, then writes visual DTOs into UI-owned DataVault buffers.
+- RenderGraph preparation does not poll legacy `GlobalSignals`.
+- If cached player AUP snapshot is unavailable, AR target rows are cleared.
+- Telemetry records missing-AUP flag.
+- HUD vitals continue rendering.
 
 The following buffers are excluded from rollback/Merkle `StateRingBuffer` hashing:
 
@@ -19,21 +25,86 @@ The following buffers are excluded from rollback/Merkle `StateRingBuffer` hashin
 
 Rollback must not serialize, hash, or reconcile these buffers. They are "Dear Lie" presentation state only.
 
-CSV profile hydration is editor/source-data only: `Assets/_SourceData/Visor/visor_hud_profiles.csv` may be parsed through the existing native scratch lane during editor cold setup. Player/runtime builds must not load human-readable visor profile data from `StreamingAssets`; production profile truth must arrive through a baked DataMonolith or domain `.h8bin` route.
+CSV profile hydration is editor/source-data only.
 
-`HectonVisorARStencilRendererFeature` owns the reference lifecycle for these visual descriptors. It releases all seven generation handles through `IDataVault.ReleaseBuffer(in handle)` on renderer disposal, DataVault service replacement, and cold service rebind before tombstoning local descriptors. It must not use `ReleaseOwnerBuffers(SystemID.UI)` because UI owns neighboring presentation lanes outside SHINOBU_270.
+`Assets/_SourceData/Visor/visor_hud_profiles.csv` may be parsed through existing native scratch lane during editor cold setup.
+
+Player/runtime builds must not load human-readable visor profiles from `StreamingAssets`; production truth must arrive through baked DataMonolith or domain `.h8bin`.
+
+`HectonVisorARStencilRendererFeature` owns visual-descriptor lifecycle.
+
+- It releases all seven generation handles through `IDataVault.ReleaseBuffer(in handle)`.
+- Release points: renderer disposal, DataVault replacement, cold rebind.
+- Local descriptors are tombstoned after release.
+- It must not use `ReleaseOwnerBuffers(SystemID.UI)`.
+- UI owns neighboring lanes outside SHINOBU_270.
 
 ## Render Route
 
-1. `SuitHUDPresentationController` defaults to `StencilRenderGraph`, but runtime Canvas suppression is owned by `HectonVisorARStencilRendererFeature`, not by the presentation controller.
-2. Canvas projection-source and screen overlay paths are suppressed only after the RenderGraph feature validates Game/Base camera scope, strict cached player-camera ownership (`IPlayerRuntimeContext.PlayerCamera` reference equality), DataVault handles, mask mesh, frame upload, and the AR resolve `RecordRenderGraph` path actually creates the resolve pass and assigns `resourceData.cameraColor`. `AddRenderPasses` records only a pending frame token; `MarkStencilResolveRecorded` enables suppression after the graph record proof, and an `endCameraRendering` watchdog clears suppression on any authorized player-camera frame that reaches the end event without a same-frame resolve record. If renderer preparation fails, the feature is absent, or `RecordRenderGraph` aborts on backbuffer/invalid target resources, the suppression flag remains/reverts false so legacy HUD can fail open instead of leaving the player blind. `SuitHUDV4CanvasOverlay` scene-load binding exits while the renderer-owned stencil flag is active, so it cannot auto-add a HUD Canvas binding during a proven runtime stencil presentation.
-3. `ARWaypointOverlay` remains the waypoint service and AUP collector. In stencil mode it stops creating/mutating Canvas slots, clears `EmergencyServiceRelayDirector` and `HectonMapMagicVegetationBridge` concrete provider caches, and copies only externally registered waypoint snapshots until an owner-published relay/anchor snapshot route exists. Legacy Canvas mode may still consume those concrete providers; stencil mode must not read them from Tick, SlowTick, or RenderGraph preparation. Vegetation bridge lookup is cold/bootstrap or registry hot-swap only for the legacy Canvas route, not stencil-mode polling.
-4. Stencil pass draws the helmet-glass mask with `Hecton8/Visor/StencilMask`. The mask shader is ColorMask 0, Cull Off, ZWrite Off, and writes only the reserved stencil lane while using the depth attachment for test/ordering, so the generated fallback mesh cannot self-cull or dirty camera color/depth. The reserved SHINOBU_270 lane is stencil bit 0, hard-coded in shader state as `Ref 1` and `WriteMask 1`; runtime code does not mutate stencil material properties.
-5. Fullscreen pass `Hidden/Hecton8/VisorAR` first copies the camera color to the resolve target, then draws AR digits, scanlines, fog, and compacted brackets only where stencil equals the reserved visor lane. The AR shader uses hard-coded `Ref 1` and `ReadMask 1`. HUD params, digit params, and the compacted 16-row target buffer are uploaded through double-buffered `GraphicsBuffer.LockBufferForWrite` plus `UnsafeUtility.MemCpy`; unused target rows are cleared with `UnsafeUtility.MemClear`. The shader loops only over the uploaded active target count, and low-quality chroma uses a `smoothstep` admission weight so survival-tier devices do not pay two dead aberration texture taps while the visible effect still ramps continuously as quality rises.
-6. Non-finite projection faults dump a fixed 32-byte little-endian header followed by raw `VisorTelemetryEntry` rows to `Docs/AgentLogs/Dump_SHINOBU_270.bin`; over-budget frames remain telemetry flags and do not perform render-side disk I/O.
-7. `HUDCanvasInquisition` is an editor-only proof facade. It upserts SHINOBU_270 evidence under `shinobu_270_visor_ar_stencil` in the shared `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` instead of overwriting neighboring agents' report objects, and its generated section includes generated-project evidence, fail-open resolve proof, fixed stencil bit proof, Vault IDs, and compile-gate status so a future menu run cannot erase the forensic fields. It also marks `generatedProjectStale=true` until generated `Hecton8.Core.csproj` includes both `HectonVisorARStencilRendererFeature.cs` and `HectonVisorStencilPreviewGizmo.cs`, preventing stale external `dotnet build` proof from being treated as SHINOBU_270 source coverage.
-8. `HectonVisorStencilPreviewGizmo` is editor-fenced, uses a fixed three-row `stackalloc` span for target preview, and derives camera AUP from `HectonFloatingOrigin.CurrentTotalOffsetDouble` plus local camera position in double precision; it does not allocate a Temp `NativeArray` and does not use the legacy runtime-position bridge.
-9. `Assets/_Project/Art/Shaders/Variants/Hecton_VisorAR_Stencil.shadervariants` is the cold shader warmup artifact for `Hidden/Hecton8/VisorAR` and `Hecton8/Visor/StencilMask`. `Assets/_Project/Scenes/00_BOOTSTRAP.unity` serializes this collection through `BootstrapController.shaderVariantCollections`, and `GameBootstrapper.WarmConfiguredShaderVariantCollectionsAsync` is configured to warm it during the presentation/bootstrap prewarm phase before gameplay scene activation. The renderer feature does not call `ShaderVariantCollection.WarmUp()`. Actual Unity import/player first-use stutter proof remains pending.
+- 1. `SuitHUDPresentationController` defaults to `StencilRenderGraph`, but runtime Canvas suppression is owned by `HectonVisorARStencilRendererFeature`, not by the presentation controller.
+- 2.
+- Canvas projection-source and screen overlay paths suppress only after all gates pass.
+- Gates: Game/Base camera scope, cached player-camera ownership, DataVault handles, mask mesh, frame upload.
+- AR resolve gate: `RecordRenderGraph` creates the resolve pass and assigns `resourceData.cameraColor`.
+- `AddRenderPasses` records only a pending frame token.
+- `MarkStencilResolveRecorded` enables suppression after graph record proof.
+- `endCameraRendering` watchdog clears suppression when an authorized player-camera frame reaches end event without same-frame resolve.
+- If renderer preparation fails, suppression flag remains/reverts false.
+- Same fallback if feature is absent.
+- Same fallback if `RecordRenderGraph` aborts on backbuffer/invalid target resources.
+- Legacy HUD can fail open instead of leaving player blind.
+- `SuitHUDV4CanvasOverlay` scene-load binding exits while the renderer-owned stencil flag is active, so it cannot auto-add a HUD Canvas binding during a proven runtime stencil presentation.
+- 3.
+- `ARWaypointOverlay` remains the waypoint service and AUP collector.
+- It no longer carries `EmergencyServiceRelayDirector` or `HectonMapMagicVegetationBridge` fields, hot-swap casts, `GlobalRegistry` provider reads, or relay/anchor collection.
+- Until Emergency/Vegetation owners publish a contract-backed relay/anchor snapshot, stencil waypoints consume only externally registered cached AUP rows.
+- External `Transform` and stored presentation-position waypoints are visual-only in stencil mode.
+- Capture to AUP occurs only at waypoint registration, stencil transition, or legacy external-waypoint cadence.
+- Active stencil `Tick`/`SlowTick` reads cached AUP validity only; no `target.position` or camera `Transform.position` reads.
+- The renderer subtracts camera AUP again before float projection.
+- This path is not gameplay authority and must not be used for rollback or save truth.
+- 4. Stencil waypoint occlusion:
+  - bounded Dear Lie, not physics/HZB truth;
+  - `SlowTick` marks at most `16` active waypoint rows;
+  - tests use camera-relative cone and distance in AUP-local float space;
+  - shader dims/brackets rows through `ShapeParams.y`;
+  - complexity: `O(n)` for `n <= 16`;
+  - rejected: PhysX raycasts, MeshColliders, scene renderers, synchronous GPU HZB readback.
+- 5. Stencil mask pass:
+  - shader: `Hecton8/Visor/StencilMask`;
+  - state: ColorMask `0`, Cull Off, ZWrite Off;
+  - writes only reserved stencil lane;
+  - uses depth attachment for test/ordering;
+  - fallback mesh cannot self-cull or dirty camera color/depth;
+  - SHINOBU_270 lane: stencil bit `0`, `Ref 1`, `WriteMask 1`;
+  - runtime code does not mutate stencil material properties.
+- 6.
+- Fullscreen pass `Hidden/Hecton8/VisorAR` first copies the camera color to the resolve target, then draws AR digits, scanlines, fog, and compacted brackets only where stencil equals the reserved visor lane.
+- The AR shader uses hard-coded `Ref 1` and `ReadMask 1`.
+- HUD params, digit params, and the compacted 16-row target buffer are uploaded through double-buffered `GraphicsBuffer.LockBufferForWrite` plus `UnsafeUtility.MemCpy`; unused target rows are cleared with `UnsafeUtility.MemClear`.
+- The shader loops only over the uploaded active target count.
+- Chroma uses a branchless `smoothstep` admission weight: survival-tier quality collapses chroma contribution toward neutral, middle/high quality ramps continuously, and no binary quality branch selects a separate shader path.
+- 7. Non-finite projection faults dump a fixed 32-byte little-endian header followed by raw `VisorTelemetryEntry` rows to `Docs/AgentLogs/Dump_SHINOBU_270.bin`; over-budget frames remain telemetry flags and do not perform render-side disk I/O.
+- 8.
+- `HUDCanvasInquisition` is an editor-only proof facade.
+- It upserts SHINOBU_270 evidence under `shinobu_270_visor_ar_stencil`.
+- Shared report: `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`.
+- It does not overwrite neighboring report objects.
+- It removes stale legacy root-level SHINOBU_270 fields.
+- Generated section includes generated-project evidence, fail-open proof, fixed stencil bit proof, waypoint fake proof, Vault IDs, and compile-gate status.
+- It also marks `generatedProjectStale=true` until generated `Hecton8.Core.csproj` includes both `HectonVisorARStencilRendererFeature.cs` and `HectonVisorStencilPreviewGizmo.cs`, preventing stale external `dotnet build` proof from being treated as SHINOBU_270 source coverage.
+- 9. `HectonVisorStencilPreviewGizmo` is editor-fenced and uses fixed three-row `stackalloc` span for target preview.
+- Camera AUP derives from `HectonFloatingOrigin.CurrentTotalOffsetDouble` plus local camera position in double precision.
+- It does not allocate Temp `NativeArray` or use legacy runtime-position bridge.
+- 10. Shader warmup:
+  - artifact: `Assets/_Project/Art/Shaders/Variants/Hecton_VisorAR_Stencil.shadervariants`;
+  - shaders: `Hidden/Hecton8/VisorAR`, `Hecton8/Visor/StencilMask`;
+  - bootstrap scene: `Assets/_Project/Scenes/00_BOOTSTRAP.unity`;
+  - serialized field: `BootstrapController.shaderVariantCollections`;
+  - warm path: `GameBootstrapper.WarmConfiguredShaderVariantCollectionsAsync`;
+  - phase: presentation/bootstrap prewarm before gameplay scene activation;
+  - renderer feature does not call `ShaderVariantCollection.WarmUp()`;
+  - Unity import/player first-use stutter proof remains pending.
 
 ## Layout Contract
 
@@ -44,4 +115,8 @@ CSV profile hydration is editor/source-data only: `Assets/_SourceData/Visor/viso
 - offset 32: `float4 VisorGlitchParams`
 - offset 48: `float4 QualityAndTime`
 
-`VisorARStencilContracts.ValidateLayouts()` is the editor/runtime proof gate. Runtime checks enforce the final byte size of every SHINOBU_270 DTO used by the route; editor checks additionally verify field offsets for `VisorHudParamsDTO`, `VisorArTargetDTO`, `VisorHudDigitParamsDTO`, `VisorTelemetryEntry`, `VisorHudProfileDTO`, and `ARWaypointOverlay.StencilTargetSourceDTO` through `UnsafeUtility.GetFieldOffset`.
+- `VisorARStencilContracts.ValidateLayouts()` is the editor/runtime proof gate.
+- Runtime checks enforce final byte size for every SHINOBU_270 route DTO.
+- Editor checks verify field offsets through `UnsafeUtility.GetFieldOffset`.
+- Offset DTOs: `VisorHudParamsDTO`, `VisorArTargetDTO`, `VisorHudDigitParamsDTO`, `VisorTelemetryEntry`, `VisorHudProfileDTO`.
+- Extra offset DTO: `ARWaypointOverlay.StencilTargetSourceDTO`.

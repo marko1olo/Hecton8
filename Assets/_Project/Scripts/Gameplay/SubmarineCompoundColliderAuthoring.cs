@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Physics;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -11,7 +12,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Compound Collider Authoring")]
-    public sealed class SubmarineCompoundColliderAuthoring : MonoBehaviour, ISlowTickable, IPhysicsColliderLodHysteresisSink
+    public sealed class SubmarineCompoundColliderAuthoring : MonoBehaviour, ISlowTickable, IPhysicsColliderLodHysteresisSink, IGlobalRegistryHotSwapListener
     {
         private const int ColliderLodOverlapCapacity = 32;
 
@@ -97,7 +98,9 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0.1f)] private float simplifiedColliderRadius = 4.5f;
 
         private Transform _cachedTransform;
+        private GameTickManager _tickManager;
         private bool _registeredSlowTick;
+        private bool _hotSwapRegistered;
         private bool _usingSimplifiedCollider;
         private bool _ownsSimplifiedCollider;
         private bool _distanceColliderLodGateOpen;
@@ -106,7 +109,7 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: List<Collider>[32] - generated compound collider cache for runtime collider LOD toggles - owner: SubmarineCompoundColliderAuthoring
         private readonly List<Collider> _compoundColliderCache = new List<Collider>(32);
         // COLD ALLOC: Collider[32] - nonalloc collider LOD threat probe results - owner: SubmarineCompoundColliderAuthoring
-        private readonly Collider[] _colliderLodOverlapBuffer = new Collider[ColliderLodOverlapCapacity];
+        private readonly SpatialQueryHit[] _colliderLodThreatHits = new SpatialQueryHit[ColliderLodOverlapCapacity];
 
         /// <summary>Name used for the generated collider root beneath this submarine.</summary>
         public string GeneratedRootName => string.IsNullOrWhiteSpace(generatedRootName) ? "__CompoundColliders" : generatedRootName;
@@ -131,8 +134,10 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             _cachedTransform = transform;
+            CacheTickManagerCold();
             EnsureSimplifiedCollider();
             RebuildRuntimeColliderCache();
+            TryRegisterHotSwapListener();
             _distanceColliderLodGateOpen = false;
             TryRegisterSlowTickable();
         }
@@ -141,12 +146,37 @@ namespace Hecton8.Gameplay
         {
             _distanceColliderLodGateOpen = false;
             TryUnregisterSlowTickable();
+            TryUnregisterHotSwapListener();
             ApplyColliderLodState(false);
         }
 
         private void OnDestroy()
         {
             TryUnregisterSlowTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null)
+                {
+                    TryUnregisterSlowTickable();
+                    TryRegisterSlowTickable();
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.TickManager)
+                _tickManager = currentService as GameTickManager;
         }
 
         public void SlowTick()
@@ -163,31 +193,38 @@ namespace Hecton8.Gameplay
             }
 
             int mask = colliderLodThreatMask.value != 0 ? colliderLodThreatMask.value : HectonLayerMasks.DefaultRaycastLayerMask;
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+            const SpatialTargetKind kindMask =
+                SpatialTargetKind.Resource |
+                SpatialTargetKind.Bioform |
+                SpatialTargetKind.Signal |
+                SpatialTargetKind.Pickup |
+                SpatialTargetKind.Scannable |
+                SpatialTargetKind.Module;
+
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 _cachedTransform.position,
                 Mathf.Max(1f, colliderLodProbeRadius),
-                _colliderLodOverlapBuffer,
-                mask,
-                QueryTriggerInteraction.Ignore);
+                kindMask,
+                _colliderLodThreatHits);
 
             bool hasExternalThreat = false;
             for (int i = 0; i < hitCount; i++)
             {
-                Collider hitCollider = _colliderLodOverlapBuffer[i];
-                _colliderLodOverlapBuffer[i] = null;
-                if (hitCollider == null)
+                SpatialQueryHit hit = _colliderLodThreatHits[i];
+                _colliderLodThreatHits[i] = default;
+                if (!LayerMatchesMask(hit.Layer, mask))
                     continue;
 
-                Transform hitTransform = hitCollider.transform;
+                Transform hitTransform = hit.Transform;
+                if (hitTransform == null)
+                    continue;
+
                 if (hitTransform == _cachedTransform || hitTransform.IsChildOf(_cachedTransform))
                     continue;
 
                 hasExternalThreat = true;
                 break;
             }
-
-            for (int i = hitCount; i < _colliderLodOverlapBuffer.Length; i++)
-                _colliderLodOverlapBuffer[i] = null;
 
             if (hasExternalThreat)
             {
@@ -221,8 +258,7 @@ namespace Hecton8.Gameplay
             if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterSlowTickable()
@@ -232,6 +268,28 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredSlowTick = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private static bool LayerMatchesMask(int layer, int mask)
+        {
+            return layer >= 0 && layer < 32 && (mask & (1 << layer)) != 0;
         }
 
         private void EnsureSimplifiedCollider()
@@ -287,12 +345,17 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static float ResolveSlowTickIntervalSeconds()
+        private float ResolveSlowTickIntervalSeconds()
         {
-            GameTickManager tickManager = GlobalRegistry.TickManager;
+            GameTickManager tickManager = _tickManager;
             return tickManager != null
                 ? Mathf.Max(0.01f, tickManager.SlowTickIntervalSeconds)
                 : 0.5f;
+        }
+
+        private void CacheTickManagerCold()
+        {
+            _tickManager = GlobalRegistry.TickManager;
         }
 
 #if UNITY_EDITOR

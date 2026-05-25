@@ -81,21 +81,7 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton8/Audit/Quick VRAM Check")]
         public static void QuickVRAMCheck()
         {
-            long texBytes = 0;
-            long rtBytes = 0;
-
-            var textures = Resources.FindObjectsOfTypeAll<Texture>();
-            for (int i = 0; i < textures.Length; i++)
-            {
-                if (textures[i] is RenderTexture rt)
-                {
-                    rtBytes += CalculateRTMemory(rt);
-                }
-                else
-                {
-                    texBytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(textures[i]);
-                }
-            }
+            AccumulateTextureMemory(out long texBytes, out long rtBytes);
 
             float texMB = texBytes / (1024f * 1024f);
             float rtMB = rtBytes / (1024f * 1024f);
@@ -297,17 +283,7 @@ namespace Hecton8.EditorTools
         {
             sb.AppendLine("── SUMMARY ─────────────────────────────────────────────");
 
-            long texBytes = 0;
-            long rtBytes = 0;
-
-            var textures = Resources.FindObjectsOfTypeAll<Texture>();
-            for (int i = 0; i < textures.Length; i++)
-            {
-                if (textures[i] is RenderTexture rt)
-                    rtBytes += CalculateRTMemory(rt);
-                else
-                    texBytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(textures[i]);
-            }
+            AccumulateTextureMemory(out long texBytes, out long rtBytes);
 
             float texMB = texBytes / (1024f * 1024f);
             float rtMB = rtBytes / (1024f * 1024f);
@@ -330,6 +306,28 @@ namespace Hecton8.EditorTools
         // ══════════════════════════════════════════════════════════
         //  HELPERS
         // ══════════════════════════════════════════════════════════
+
+        private static void AccumulateTextureMemory(out long texBytes, out long rtBytes)
+        {
+            texBytes = 0;
+            rtBytes = 0;
+
+            var textures = Resources.FindObjectsOfTypeAll<Texture>();
+            for (int i = 0; i < textures.Length; i++)
+            {
+                Texture texture = textures[i];
+                if (texture == null)
+                    continue;
+
+                if (texture is RenderTexture rt)
+                {
+                    rtBytes += CalculateRTMemory(rt);
+                    continue;
+                }
+
+                texBytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(texture);
+            }
+        }
 
         private static long CalculateRTMemory(RenderTexture rt)
         {

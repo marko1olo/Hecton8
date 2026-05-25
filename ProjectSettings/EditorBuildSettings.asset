@@ -20,3 +20,4 @@ EditorBuildSettings:
     com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 2137f6f54af46d845b78616070ec2d50, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 817f8d3e6046c474e8b1fd38cca33d8a, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 3f1a06542f0878947a6b0e0bbec9c860, type: 2}

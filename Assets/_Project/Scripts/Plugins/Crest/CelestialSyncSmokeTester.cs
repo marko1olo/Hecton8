@@ -30,7 +30,6 @@ namespace Hecton8.Dev
         [SerializeField] private HectonCrestOceanDepthCacheBootstrap depthCacheBootstrap;
         [SerializeField] private EcosystemDirector ecosystemDirector;
         [SerializeField] private HectonBiolumController biolumController;
-        [SerializeField] private SpatialAudioManager spatialAudioManager;
         [SerializeField] private RandomEventSystem randomEventSystem;
 
         [Header("Execution")]
@@ -48,6 +47,8 @@ namespace Hecton8.Dev
         [SerializeField] private float _debugEclipsePitchRatio;
         [SerializeField] private float _debugMeteorFlash;
 #pragma warning restore CS0414
+
+        private ISpatialAudioEnvironmentModulationSink _spatialAudioModulation;
 
         private void Awake()
         {
@@ -128,8 +129,8 @@ namespace Hecton8.Dev
             if (biolumController == null)
                 biolumController = GlobalRegistry.BiolumController;
 
-            if (spatialAudioManager == null)
-                spatialAudioManager = SpatialAudioManager.ActiveRuntimeInstance;
+            if (_spatialAudioModulation == null)
+                _spatialAudioModulation = GlobalRegistry.Audio as ISpatialAudioEnvironmentModulationSink;
 
             if (randomEventSystem == null)
                 randomEventSystem = GlobalRegistry.RandomEvents;
@@ -147,8 +148,8 @@ namespace Hecton8.Dev
                 return Fail("Missing EcosystemDirector.");
             if (biolumController == null)
                 return Fail("Missing HectonBiolumController.");
-            if (spatialAudioManager == null)
-                return Fail("Missing SpatialAudioManager.");
+            if (_spatialAudioModulation == null)
+                return Fail("Missing spatial audio modulation sink.");
             if (randomEventSystem == null)
                 return Fail("Missing RandomEventSystem.");
 
@@ -208,13 +209,13 @@ namespace Hecton8.Dev
 
         private bool ValidateAudioPitchScalar()
         {
-            float previousCents = spatialAudioManager.EclipseAcousticPitchShiftCents;
-            spatialAudioManager.SetEclipseAcousticPitchShiftCents(-150f);
+            float previousCents = _spatialAudioModulation.EclipseAcousticPitchShiftCents;
+            _spatialAudioModulation.SetEclipseAcousticPitchShiftCents(-150f);
 
-            _debugEclipsePitchRatio = spatialAudioManager.EclipseAcousticPitchRatio;
+            _debugEclipsePitchRatio = _spatialAudioModulation.EclipseAcousticPitchRatio;
             bool valid = Mathf.Abs(_debugEclipsePitchRatio - EclipseMinus150CentsPitchRatio) <= PitchRatioTolerance;
 
-            spatialAudioManager.SetEclipseAcousticPitchShiftCents(previousCents);
+            _spatialAudioModulation.SetEclipseAcousticPitchShiftCents(previousCents);
 
             if (!valid)
                 return Fail("Eclipse acoustic pitch ratio mismatch.");
@@ -266,7 +267,7 @@ namespace Hecton8.Dev
         private void LogVerbose(string message)
         {
             if (verboseLogging)
-                Debug.Log(message, this);
+                Hecton8.Core.H8Debug.Log(message, this);
         }
     }
 }

@@ -142,7 +142,7 @@ namespace Hecton8.Visor
             if (!math.all(math.isfinite(runtime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -573,14 +573,14 @@ namespace Hecton8.Visor
 
         /// <summary>Queues a spectrum mode change.</summary>
         /// <param name="mode">New spectrum mode.</param>
-        public static void RaiseModeChanged(SpectrumMode mode)
+        public static bool TryRaiseModeChanged(SpectrumMode mode)
         {
             if (_modeListenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingModeChangedCount + _nextFrameModeChangedCount >= PendingModeChangedCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -592,19 +592,27 @@ namespace Hecton8.Visor
                 _pendingModeChanged.Enqueue(mode);
                 _pendingModeChangedCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Spectrum producers must use TryRaiseModeChanged and handle bounded enqueue failure.", true)]
+        public static void RaiseModeChanged(SpectrumMode mode)
+        {
+            TryRaiseModeChanged(mode);
         }
 
         /// <summary>Queues a sonar pulse radius broadcast.</summary>
         /// <param name="radius">Pulse radius in authored meters.</param>
-        public static void RaiseSonarPulse(float radius)
+        public static bool TryRaiseSonarPulse(float radius)
         {
             LastSonarPulseRadiusMeters = math.max(0f, radius);
             if (_sonarPulseListenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingSonarPulseCount + _nextFrameSonarPulseCount >= PendingSonarPulseCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -616,18 +624,26 @@ namespace Hecton8.Visor
                 _pendingSonarPulses.Enqueue(LastSonarPulseRadiusMeters);
                 _pendingSonarPulseCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Spectrum producers must use TryRaiseSonarPulse and handle bounded enqueue failure.", true)]
+        public static void RaiseSonarPulse(float radius)
+        {
+            TryRaiseSonarPulse(radius);
         }
 
         /// <summary>Queues an active sonar ping broadcast.</summary>
         /// <param name="intensity">Normalized ping intensity.</param>
-        public static void RaiseSonarPingSent(float intensity)
+        public static bool TryRaiseSonarPingSent(float intensity)
         {
             if (_sonarPingListenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingSonarPingCount + _nextFrameSonarPingCount >= PendingSonarPingCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -639,18 +655,26 @@ namespace Hecton8.Visor
                 _pendingSonarPings.Enqueue(intensity);
                 _pendingSonarPingCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Spectrum producers must use TryRaiseSonarPingSent and handle bounded enqueue failure.", true)]
+        public static void RaiseSonarPingSent(float intensity)
+        {
+            TryRaiseSonarPingSent(intensity);
         }
 
         /// <summary>Queues an updated spatial sonar snapshot.</summary>
         /// <param name="snapshot">Snapshot payload.</param>
-        public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot)
+        public static bool TryRaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot)
         {
             if (_sonarSnapshotListenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingSonarSnapshotCount + _nextFrameSonarSnapshotCount >= PendingSonarSnapshotCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -662,18 +686,26 @@ namespace Hecton8.Visor
                 _pendingSonarSnapshots.Enqueue(snapshot);
                 _pendingSonarSnapshotCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Spectrum producers must use TryRaiseSonarSnapshotUpdated and handle bounded enqueue failure.", true)]
+        public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot)
+        {
+            TryRaiseSonarSnapshotUpdated(snapshot);
         }
 
         /// <summary>Queues one acoustic echo return.</summary>
         /// <param name="echoEvent">Echo payload.</param>
-        public static void RaiseAcousticEchoReturned(AcousticEchoEvent echoEvent)
+        public static bool TryRaiseAcousticEchoReturned(AcousticEchoEvent echoEvent)
         {
             if (_acousticEchoListenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingAcousticEchoCount + _nextFrameAcousticEchoCount >= PendingAcousticEchoCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -685,17 +717,25 @@ namespace Hecton8.Visor
                 _pendingAcousticEchoes.Enqueue(echoEvent);
                 _pendingAcousticEchoCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Spectrum producers must use TryRaiseAcousticEchoReturned and handle bounded enqueue failure.", true)]
+        public static void RaiseAcousticEchoReturned(AcousticEchoEvent echoEvent)
+        {
+            TryRaiseAcousticEchoReturned(echoEvent);
         }
 
         /// <summary>Queues one visual-only DSP-timed ping return.</summary>
-        public static void RaisePingReturnSignal(in PingReturnSignal signal)
+        public static bool TryRaisePingReturnSignal(in PingReturnSignal signal)
         {
             if (_pingReturnSignalListenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingPingReturnSignalCount + _nextFramePingReturnSignalCount >= PendingPingReturnSignalCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
@@ -707,6 +747,14 @@ namespace Hecton8.Visor
                 _pendingPingReturnSignals.Enqueue(signal);
                 _pendingPingReturnSignalCount++;
             }
+
+            return true;
+        }
+
+        [Obsolete("Spectrum producers must use TryRaisePingReturnSignal and handle bounded enqueue failure.", true)]
+        public static void RaisePingReturnSignal(in PingReturnSignal signal)
+        {
+            TryRaisePingReturnSignal(in signal);
         }
 
         private static void EnsureInitialized()
@@ -877,7 +925,10 @@ namespace Hecton8.Visor
                     return false;
 
                 if (!_pendingModeChanged.TryDequeue(out SpectrumMode mode))
+                {
+                    _pendingModeChangedCount = 0;
                     return true;
+                }
 
                 if (_pendingModeChangedCount > 0)
                     _pendingModeChangedCount--;
@@ -918,7 +969,10 @@ namespace Hecton8.Visor
                     return false;
 
                 if (!_pendingSonarPulses.TryDequeue(out float radius))
+                {
+                    _pendingSonarPulseCount = 0;
                     return true;
+                }
 
                 if (_pendingSonarPulseCount > 0)
                     _pendingSonarPulseCount--;
@@ -959,7 +1013,10 @@ namespace Hecton8.Visor
                     return false;
 
                 if (!_pendingSonarPings.TryDequeue(out float intensity))
+                {
+                    _pendingSonarPingCount = 0;
                     return true;
+                }
 
                 if (_pendingSonarPingCount > 0)
                     _pendingSonarPingCount--;
@@ -1000,7 +1057,10 @@ namespace Hecton8.Visor
                     return false;
 
                 if (!_pendingSonarSnapshots.TryDequeue(out SpatialSonarSnapshot snapshot))
+                {
+                    _pendingSonarSnapshotCount = 0;
                     return true;
+                }
 
                 if (_pendingSonarSnapshotCount > 0)
                     _pendingSonarSnapshotCount--;
@@ -1041,7 +1101,10 @@ namespace Hecton8.Visor
                     return false;
 
                 if (!_pendingAcousticEchoes.TryDequeue(out AcousticEchoEvent echoEvent))
+                {
+                    _pendingAcousticEchoCount = 0;
                     return true;
+                }
 
                 if (_pendingAcousticEchoCount > 0)
                     _pendingAcousticEchoCount--;
@@ -1081,7 +1144,10 @@ namespace Hecton8.Visor
                     return false;
 
                 if (!_pendingPingReturnSignals.TryDequeue(out PingReturnSignal signal))
+                {
+                    _pendingPingReturnSignalCount = 0;
                     return true;
+                }
 
                 if (_pendingPingReturnSignalCount > 0)
                     _pendingPingReturnSignalCount--;
@@ -1494,7 +1560,7 @@ namespace Hecton8.Visor
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-95)]
-    public sealed class SpectrumSystem : MonoBehaviour, ITickable, IAcousticPingEventListener, IAcousticEchoEventListener, IPingReturnSignalListener, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
+    public sealed class SpectrumSystem : MonoBehaviour, ITickable, ILateFrameTickable, IAcousticPingEventListener, IAcousticEchoEventListener, IPingReturnSignalListener, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
     {
         private const int PassiveRadarAzimuthSectorCount = 8;
         private const int PassiveRadarElevationSectorCount = 4;
@@ -1652,6 +1718,9 @@ namespace Hecton8.Visor
         private SpectrumMode _currentMode = SpectrumMode.Normal;
         private float _sonarTimer;
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _pendingVisualTickDirty;
+        private float _pendingVisualTickDeltaTime;
         private bool _serviceRegistered;
         private bool _acousticPingSubscribed;
         private bool _hasSonarSnapshot;
@@ -1676,7 +1745,7 @@ namespace Hecton8.Visor
         private float _leviathanScreamRadarDistortion01;
         private IDataVault _dataVault;
         private IAudioService _audioService;
-        private SpatialAudioManager _spatialAudioManager;
+        private ISpatialAudioWorldEmitterReadModel _spatialAudioEmitterReadModel;
         private VaultGenerationHandle<uint> _aupDiscoveryGridHandle;
         private VaultGenerationHandle<ActiveSonarGeoTelemetryEntry> _activeSonarGeoTelemetryRingHandle;
         private int _aupDiscoveryGridWidthRuntime;
@@ -1776,8 +1845,8 @@ namespace Hecton8.Visor
         private readonly float[] _passiveRadarPeakHistory = new float[PassiveRadarAutoGainHistoryLength];
         // COLD ALLOC: Vector4[8] — passive hydrophone shader row payload — owner: SpectrumSystem
         private static readonly Vector4[] s_passiveRadarRows = new Vector4[PassiveRadarAzimuthSectorCount];
-        // COLD ALLOC: ActiveEmitterSample[32] — active world emitter buffer for passive hydrophone scan — owner: SpectrumSystem
-        private static readonly SpatialAudioManager.ActiveEmitterSample[] s_passiveRadarEmitterBuffer = new SpatialAudioManager.ActiveEmitterSample[32];
+        // COLD ALLOC: SpatialAudioActiveEmitterSample[32] — active world emitter buffer for passive hydrophone scan — owner: SpectrumSystem
+        private static readonly SpatialAudioActiveEmitterSample[] s_passiveRadarEmitterBuffer = new SpatialAudioActiveEmitterSample[32];
         // COLD ALLOC: AbsoluteUniversePosition[8] — nearest emitter AUP shortlist, one conversion during selection instead of projection — owner: SpectrumSystem
         private static readonly AbsoluteUniversePosition[] s_passiveRadarNearestAups = new AbsoluteUniversePosition[PassiveRadarSourceBudget];
         // COLD ALLOC: float[8] — nearest emitter amplitude shortlist for passive hydrophone scan — owner: SpectrumSystem
@@ -1839,9 +1908,10 @@ namespace Hecton8.Visor
 
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registered = GlobalRegistry.Updatables.Contains(this);
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             }
+
+            TryRegisterLateFrameTick();
 
             ResolveSurvivalSystem();
 
@@ -1870,6 +1940,7 @@ namespace Hecton8.Visor
 
                 _registered = false;
             }
+            TryUnregisterLateFrameTick();
 
             // Sbrasyvaem v Normal pri otklyuchenii
             Shader.SetGlobalInt(_ShaderSpectrumMode, 0);
@@ -1893,6 +1964,7 @@ namespace Hecton8.Visor
 
                 _registered = false;
             }
+            TryUnregisterLateFrameTick();
 
             SonarGridOverlay.ClearGlobals();
             ClearAcousticMappingGlobals();
@@ -1926,6 +1998,23 @@ namespace Hecton8.Visor
 
             GlobalRegistry.UnregisterSpectrumRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1970,19 +2059,19 @@ namespace Hecton8.Visor
         private void CacheRegistryServicesCold()
         {
             _dataVault = GlobalRegistry.DataVault;
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
         }
 
         private void CacheAudioService(IAudioService audioService)
         {
             _audioService = audioService != null && audioService.IsInitialized ? audioService : null;
-            _spatialAudioManager = _audioService as SpatialAudioManager;
+            _spatialAudioEmitterReadModel = _audioService as ISpatialAudioWorldEmitterReadModel;
         }
 
         private void ClearCachedRegistryServices()
         {
             _audioService = null;
-            _spatialAudioManager = null;
+            _spatialAudioEmitterReadModel = null;
         }
 
         private static float ResolveUnityShaderTimeSeconds()
@@ -1995,6 +2084,24 @@ namespace Hecton8.Visor
         // ══════════════════════════════════════════════════════════
 
         public void Tick(float deltaTime)
+        {
+            _pendingVisualTickDeltaTime += math.max(0f, deltaTime);
+            _pendingVisualTickDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingVisualTickDirty)
+                return;
+
+            float deltaTime = _pendingVisualTickDeltaTime;
+            _pendingVisualTickDeltaTime = 0f;
+            _pendingVisualTickDirty = false;
+            RunSpectrumVisualTick(deltaTime);
+        }
+
+        private void RunSpectrumVisualTick(float deltaTime)
         {
             if (IsEmpSensorBlindActive())
             {
@@ -2048,14 +2155,14 @@ namespace Hecton8.Visor
                 ClearSonarSnapshot();
 
             ApplyShaderMode();
-            SpectrumEvents.RaiseModeChanged(mode);
+            SpectrumEvents.TryRaiseModeChanged(mode);
 
             // Glitch pulse na vizore
             VisorHUDController.CopyActiveControllersTo(s_glitchControllers);
             for (int i = 0; i < s_glitchControllers.Count; i++)
                 s_glitchControllers[i]?.GlitchPulse(0.2f);
 
-            NotificationEvents.PushInfo(ResolveLocalizedModeNotification(mode));
+            NotificationEvents.TryPushInfo(ResolveLocalizedModeNotification(mode));
         }
 
         /// <summary>Tsiklicheskoe pereklyuchenie rezhimov.</summary>
@@ -2121,12 +2228,12 @@ namespace Hecton8.Visor
             float abyssalAnchorResponse01 = isActivePing ? math.saturate(pulseIntensity * abyssalDistortion * abyssalReturnScalar) : 0f;
             InitializeActiveSonarWavefront(pulseRadius, pulseTime, effectiveWaveSpeed, revealDurationSeconds, waveBandWidth);
             PublishScreenSpaceSonarPulse(playerPosition, pulseRadius, pulseTime, pulseIntensity, effectiveWaveSpeed, waveBandWidth, revealDurationSeconds);
-            SpectrumEvents.RaiseSonarPulse(pulseRadius);
+            SpectrumEvents.TryRaiseSonarPulse(pulseRadius);
             if (isActivePing)
             {
                 _activeLidarPersistence = math.max(_activeLidarPersistence, pulseIntensity);
                 PublishLidarPersistence(_activeLidarPersistence);
-                SpectrumEvents.RaiseSonarPingSent(pulseIntensity);
+                SpectrumEvents.TryRaiseSonarPingSent(pulseIntensity);
                 AcousticPingSignal activeSonarSignal = new AcousticPingSignal
                 {
                     PositionAup = playerAup,
@@ -2136,11 +2243,11 @@ namespace Hecton8.Visor
                     Channel = AcousticPingSignal.ChannelActiveSonar,
                     Flags = AcousticPingSignal.FlagActiveSonar
                 };
-                GlobalSignals.Publish(in activeSonarSignal);
+                SignalBus<AcousticPingSignal>.TryPush(in activeSonarSignal);
                 SubmitActiveSonarGeoPing(in activeSonarSignal, pulseTime, 0f);
-                if (GlobalSignals.TryGetLatestAcousticPingSignal(out _, out int activeSonarSequence))
+                if (SignalBus<AcousticPingSignal>.TryGetLatest(out _, out int activeSonarSequence))
                     _lastConsumedActiveSonarAcousticSequence = activeSonarSequence;
-                PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
+                PhysicsEventBus.TryNotifyAcousticPing(new AcousticPingEvent(
                     playerPosition,
                     pulseRadius,
                     pulseIntensity,
@@ -2168,7 +2275,7 @@ namespace Hecton8.Visor
                     0f,
                     0f,
                     math.saturate(sonarNoiseSignature01));
-                SpectrumEvents.RaiseSonarSnapshotUpdated(_lastSonarSnapshot);
+                SpectrumEvents.TryRaiseSonarSnapshotUpdated(_lastSonarSnapshot);
             }
 
             return true;
@@ -2357,7 +2464,7 @@ namespace Hecton8.Visor
                 0,
                 0,
                 AcousticImpulseFlags.None);
-            PhysicsEventBus.NotifyLargeAcousticImpulse(in impulseEvent);
+            PhysicsEventBus.TryNotifyLargeAcousticImpulse(in impulseEvent);
         }
 
         private void ApplyAcousticMappingStaticGlobals()
@@ -2491,7 +2598,7 @@ namespace Hecton8.Visor
             if (TryResolveAupDiscoveryGrid(out _))
                 return;
 
-            IDataVault vault = ResolveDataVaultCold();
+            IDataVault vault = CacheDataVaultCold();
             if (vault == null)
                 return;
 
@@ -2499,7 +2606,7 @@ namespace Hecton8.Visor
             _aupDiscoveryGridHeightRuntime = math.max(8, aupDiscoveryGridHeight);
             _aupDiscoveryCellSizeRuntime = math.max(1f, aupDiscoveryCellSizeMeters);
             int cellCount = _aupDiscoveryGridWidthRuntime * _aupDiscoveryGridHeightRuntime;
-            _aupDiscoveryGridHandle = vault.GetGenerationHandle<uint>(
+            _aupDiscoveryGridHandle = vault.EnsureGenerationHandle<uint>(
                 AupDiscoveryGridBufferId,
                 cellCount,
                 SpectrumVaultOwner,
@@ -2577,7 +2684,7 @@ namespace Hecton8.Visor
             MarkAupDiscoveryCellByCoord(discoveryGrid, originCellX - diagonalCellDelta, originCellZ - diagonalCellDelta, strength01);
         }
 
-        private IDataVault ResolveDataVaultCold()
+        private IDataVault CacheDataVaultCold()
         {
             if (_dataVault != null)
                 return _dataVault;
@@ -2797,7 +2904,7 @@ namespace Hecton8.Visor
             _activeSonarEchoExpireTime = 0f;
             ClearAcousticMappingGlobals();
             ClearPassiveRadarState();
-            SpectrumEvents.RaiseSonarSnapshotUpdated(default);
+            SpectrumEvents.TryRaiseSonarSnapshotUpdated(default);
         }
 
         private static bool IsEmpSensorBlindActive()
@@ -2823,7 +2930,7 @@ namespace Hecton8.Visor
 
         private void ConsumeLatestActiveSonarAcousticPing(float now)
         {
-            if (!GlobalSignals.TryGetLatestAcousticPingSignal(out AcousticPingSignal signal, out int sequence) ||
+            if (!SignalBus<AcousticPingSignal>.TryGetLatest(out AcousticPingSignal signal, out int sequence) ||
                 sequence == _lastConsumedActiveSonarAcousticSequence)
             {
                 return;
@@ -2978,8 +3085,15 @@ namespace Hecton8.Visor
             _activeSonarGeoGlobalsDirty = true;
         }
 
+        private static float ResolveActiveSonarGeoQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(quality) ? math.saturate(quality) : 0.5f;
+        }
+
         private void PublishActiveSonarGeoGlobals(bool force)
         {
+            float quality = ResolveActiveSonarGeoQualityWeight();
             float primaryRadius = _activeSonarGeoPingCount > 0 ? math.max(0f, _activeSonarGeoCentersRadius[0].w) : 0f;
             Vector4 primaryCenter = _activeSonarGeoPingCount > 0
                 ? new Vector4(
@@ -2991,7 +3105,7 @@ namespace Hecton8.Visor
             Vector4 state = new Vector4(
                 _activeSonarGeoPingCount,
                 ActiveSonarGeoMaxRangeMeters,
-                GlobalRegistry.ScalabilityTierProfileByte == 0 ? 0f : 2f,
+                math.lerp(0f, 2f, quality),
                 ActiveSonarGeoSpeedMetersPerSecond);
 
             if (force || _activeSonarGeoGlobalsDirty)
@@ -3058,11 +3172,11 @@ namespace Hecton8.Visor
             if (!Application.isPlaying || TryResolveActiveSonarGeoTelemetryRing(out _))
                 return;
 
-            IDataVault vault = ResolveDataVaultCold();
+            IDataVault vault = CacheDataVaultCold();
             if (vault == null)
                 return;
 
-            _activeSonarGeoTelemetryRingHandle = vault.GetGenerationHandle<ActiveSonarGeoTelemetryEntry>(
+            _activeSonarGeoTelemetryRingHandle = vault.EnsureGenerationHandle<ActiveSonarGeoTelemetryEntry>(
                 ActiveSonarGeoTelemetryRingBufferId,
                 ActiveSonarGeoTelemetryCapacity,
                 SpectrumVaultOwner,
@@ -3091,11 +3205,11 @@ namespace Hecton8.Visor
             Vector4 primary = _activeSonarGeoPingCount > 0 ? _activeSonarGeoCentersRadius[0] : Vector4.zero;
             telemetryRing[index] = new ActiveSonarGeoTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 ActiveRingCount = _activeSonarGeoPingCount,
                 PrimaryRadius = primary.w,
                 PrimaryCenter = new float3(primary.x, primary.y, primary.z),
-                Flags = (uint)(GlobalRegistry.ScalabilityTierProfileByte == 0 ? 1 : 0)
+                Flags = ResolveActiveSonarGeoQualityWeight() <= 0.15f ? 1u : 0u
             };
         }
 
@@ -3251,7 +3365,7 @@ namespace Hecton8.Visor
                 _passiveRadarGrid[i] = decayedEnergy > PassiveRadarEnergyEpsilon ? decayedEnergy : 0f;
             }
 
-            SpatialAudioManager audioManager = _spatialAudioManager;
+            ISpatialAudioWorldEmitterReadModel audioManager = _spatialAudioEmitterReadModel;
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition listenerAup) ||
                 audioManager == null)
             {
@@ -3290,7 +3404,7 @@ namespace Hecton8.Visor
             double maxDistanceSqr = (double)PassiveRadarMaxSourceDistanceMeters * PassiveRadarMaxSourceDistanceMeters;
             for (int emitterIndex = 0; emitterIndex < safeEmitterCount; emitterIndex++)
             {
-                SpatialAudioManager.ActiveEmitterSample sample = s_passiveRadarEmitterBuffer[emitterIndex];
+                SpatialAudioActiveEmitterSample sample = s_passiveRadarEmitterBuffer[emitterIndex];
                 AbsoluteUniversePosition sampleAup = sample.PositionAup;
                 double distanceSqr = AbsoluteUniversePosition.DistanceSq(in sampleAup, in listenerAup);
                 if (distanceSqr > maxDistanceSqr)
@@ -3490,40 +3604,27 @@ namespace Hecton8.Visor
             audioManager.PlayStatic2D(abyssalAnchorReturnClip, volume, audioManager.InterfaceGroup);
         }
 
-        private static string ResolveLocalizedModeName(SpectrumMode mode)
+        private static ReadOnlySpan<char> ResolveLocalizedModeNotification(SpectrumMode mode)
         {
             switch (mode)
             {
                 case SpectrumMode.Thermal:
-                    return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_THERMAL, "THERMAL");
+                    return ResolveLocalizedSpan(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE_THERMAL, "SPECTRUM: THERMAL");
                 case SpectrumMode.Sonar:
-                    return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_SONAR, "SONAR");
+                    return ResolveLocalizedSpan(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE_SONAR, "SPECTRUM: SONAR");
                 case SpectrumMode.Echolocation:
-                    return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_ECHOLOCATION, "ECHOLOCATION");
+                    return ResolveLocalizedSpan(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE_ECHOLOCATION, "SPECTRUM: ECHOLOCATION");
                 default:
-                    return ResolveLocalized(LocalizationKeys.SPECTRUM_MODE_NORMAL, "NORMAL");
+                    return ResolveLocalizedSpan(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE_NORMAL, "SPECTRUM: NORMAL");
             }
         }
 
-        private static string ResolveLocalizedModeNotification(SpectrumMode mode)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            switch (mode)
-            {
-                case SpectrumMode.Thermal:
-                    return ResolveLocalized(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE_THERMAL, "SPECTRUM: THERMAL");
-                case SpectrumMode.Sonar:
-                    return ResolveLocalized(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE_SONAR, "SPECTRUM: SONAR");
-                case SpectrumMode.Echolocation:
-                    return ResolveLocalized(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE_ECHOLOCATION, "SPECTRUM: ECHOLOCATION");
-                default:
-                    return ResolveLocalized(LocalizationKeys.SPECTRUM_NOTIFICATION_MODE_NORMAL, "SPECTRUM: NORMAL");
-            }
-        }
-
-        private static string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
-            return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
+            ILocalizationTextReadModel localization = Hecton8.Core.GlobalRegistry.LocalizationText;
+            return localization != null
+                ? localization.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
     }

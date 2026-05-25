@@ -1,4 +1,4 @@
-# Abandoned Outpost Failure Modes
+﻿# Abandoned Outpost Failure Modes
 
 Date: 2026-05-17
 Status: PENDING VERIFICATION

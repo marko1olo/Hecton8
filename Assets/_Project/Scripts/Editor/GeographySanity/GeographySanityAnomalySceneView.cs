@@ -61,7 +61,7 @@ namespace Hecton8.Editor.GeographySanity
             Vector3 pivot = sceneView.pivot;
             Handles.matrix = Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one);
             Color previousColor = Handles.color;
-            float pulse = 1f + Mathf.Sin((float)EditorApplication.timeSinceStartup * 3.0f) * 0.15f;
+            float pulse = 1f + Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((float)EditorApplication.timeSinceStartup * 3.0f) * 0.15f;
             float radius = 3.0f * pulse;
             for (int i = 0; i < _recordCount; i++)
             {

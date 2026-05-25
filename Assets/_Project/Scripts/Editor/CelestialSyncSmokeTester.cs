@@ -46,7 +46,7 @@ namespace Hecton8.Editor
                 if (dot <= bestDot)
                     continue;
 
-                float separationDegrees = math.degrees(math.acos(math.clamp(dot, -1f, 1f)));
+                float separationDegrees = math.degrees(MathLodApproximation.ApproxAcosFast(math.clamp(dot, -1f, 1f)));
                 bestDot = dot;
                 bestOverlap = HectonCelestialEngine.EvaluatePenumbraOverlapForSmoke(0.27f, 1.1f, separationDegrees);
                 bestStep = step;
@@ -102,7 +102,8 @@ namespace Hecton8.Editor
 
         private static float3 ResolveUnitCircleDirection(float radians)
         {
-            return math.normalize(new float3(math.cos(radians), math.sin(radians), 0f));
+            MathLodApproximation.ApproxSinCosBhaskara(radians, out float sin, out float cos);
+            return math.normalize(new float3(cos, sin, 0f));
         }
     }
 }

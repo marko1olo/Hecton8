@@ -76,7 +76,7 @@ namespace Hecton8.EditorTools
             if (EditorGUI.EndChangeCheck())
                 ShorelineFoamGraftRuntime.TrySetEditorProfile(_intensity, _falloffMeters, _decayRate, _normalPerturbation);
 
-            if (ShorelineFoamGraftRuntime.TryReadTelemetry(out NativeArray<ShorelineFoamTelemetryEntry> telemetry, out int cursor) &&
+            if (ShorelineFoamGraftRuntime.TryReadTelemetry(out NativeArray<ShorelineFoamTelemetryEntry>.ReadOnly telemetry, out int cursor) &&
                 telemetry.IsCreated &&
                 telemetry.Length > 0)
             {

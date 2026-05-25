@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_051
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_051_mat_Rock2_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\mat_Rock2_Albedo.png
+FINAL_FILENAME: mat_Rock2_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Second shared Hecton rock albedo variant for biome contrast. Use cooler graphite-blue basalt, milky quartz-like veins, muted cyan mineral halos, pale silt patches, and gentle lavender pressure mottling. The material should pair with the main rock set while giving level art a clear alternate stone family. Keep the look premium, natural, readable, and calm. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

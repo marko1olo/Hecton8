@@ -69,7 +69,7 @@ namespace Hecton8.Biolum
     /// - Zero allocations in Tick()
     /// </summary>
     [DisallowMultipleComponent, RequireComponent(typeof(Transform))]
-    public abstract class HectonBiolumZone : MonoBehaviour, ITickable, IUpdatable
+    public abstract class HectonBiolumZone : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxTrackedActiveZones = 512;
         private const float AupRefreshDistanceSqr = 0.0004f;
@@ -102,6 +102,9 @@ namespace Hecton8.Biolum
         protected Light[] _activeLights;
         protected int _activeLightCount = 0;
         protected bool _isRegistered = false;
+        private bool _lateFrameRegistered;
+        private bool _biolumVisualDirty;
+        private bool _hotSwapListenerRegistered;
         protected int _lastUpdateFrame = -1;
         private AbsoluteUniversePosition _cachedZoneAup;
         private Vector3 _cachedZoneRuntimePosition;
@@ -142,12 +145,8 @@ namespace Hecton8.Biolum
         protected virtual void OnEnable()
         {
             RegisterActiveZone(this);
-
-            if (!_isRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _isRegistered = GlobalRegistry.Updatables.Contains(this);
-            }
+            TryRegisterHotSwapListener();
+            EnsureTickRegistration();
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             if (manager != null)
                 manager.RegisterZone(this);
@@ -160,9 +159,15 @@ namespace Hecton8.Biolum
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _isRegistered = false;
             }
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             if (manager != null)
                 manager.UnregisterZone(this);
+            TryUnregisterHotSwapListener();
             UnregisterActiveZone(this);
             CleanupLights();
         }
@@ -219,10 +224,19 @@ namespace Hecton8.Biolum
 #endif
             if (skippedLod) return;
 
+            _biolumVisualDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_biolumVisualDirty)
+                return;
+
+            _biolumVisualDirty = false;
             EvaluateBiolumState();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugEvaluateInvocations++;
-            _debugLastUpdatedFrame = frame;
+            _debugLastUpdatedFrame = _lastUpdateFrame;
 #endif
         }
 
@@ -303,7 +317,7 @@ namespace Hecton8.Biolum
         /// </summary>
         public void EnsureTickRegistration()
         {
-            if (_isRegistered || !Application.isPlaying)
+            if (!Application.isPlaying)
             {
                 return;
             }
@@ -313,8 +327,10 @@ namespace Hecton8.Biolum
                 return;
             }
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            if (!_isRegistered)
+                _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -325,6 +341,32 @@ namespace Hecton8.Biolum
         /// Get or create light from pre-allocated pool.
         /// Reuses GameObject to avoid allocations.
         /// </summary>
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                EnsureTickRegistration();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
         protected Light GetOrCreateLight(Vector3 pos, Color color, float range, float intensity)
         {
             if (_activeLightCount >= _maxLights) return null;
@@ -347,7 +389,7 @@ namespace Hecton8.Biolum
             _activeLightCount++;
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugLogSpawn) Debug.Log("[Biolum] light spawned", this);
+            if (_debugLogSpawn) H8Debug.Log("[Biolum] light spawned");
             #endif
 
             return light;
@@ -552,7 +594,7 @@ namespace Hecton8.Biolum
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             AbsoluteUniversePosition cameraAup = manager != null
                 ? manager.GetCameraAup()
-                : GlobalSignals.CurrentRuntimeOriginAup();
+                : RuntimeOriginRoute.CurrentRuntimeOriginAup();
             AbsoluteUniversePosition zoneAup = GetZoneAup();
             if (!AbsoluteUniversePosition.IsFinite(in cameraAup) || !AbsoluteUniversePosition.IsFinite(in zoneAup))
                 return false;
@@ -581,7 +623,7 @@ namespace Hecton8.Biolum
             if (!MathGuard.IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 

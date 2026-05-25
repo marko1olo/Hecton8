@@ -197,7 +197,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             builder.Append("  \"compressionMode\": ").Append(result.CompressionMode).Append(",\n");
             builder.Append("  \"uncompressedDensityBytes\": ").Append(result.UncompressedDensityBytes).Append(",\n");
             builder.Append("  \"compressedDensityBytes\": ").Append(result.CompressedDensityBytes).Append(",\n");
-            builder.Append("  \"payloadHash\": \"0x").Append(result.PayloadHash.ToString("X16")).Append("\",\n");
+            builder.Append("  \"payloadHash\": \"0x").Append(result.PayloadHash.ToString("X16", CultureInfo.InvariantCulture)).Append("\",\n");
             builder.Append("  \"maxDepthMeters\": ").Append(result.MaxDepthMeters.ToString("0.###", CultureInfo.InvariantCulture)).Append(",\n");
             builder.Append("  \"excavatedCubicMeters\": ").Append(result.ExcavatedCubicMeters.ToString("0.###", CultureInfo.InvariantCulture)).Append(",\n");
             builder.Append("  \"timingsMs\": { \"carving\": ").Append(result.CarvingMilliseconds.ToString("0.###", CultureInfo.InvariantCulture));
@@ -216,7 +216,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             builder.Append("  \"validationState\": \"PENDING_COMPILE_PUBLISHED_BAKE_REQUIRED_FOR_RUNTIME_PROOF\",\n");
             builder.Append("  \"warningFlags\": ").Append(result.WarningFlags).Append("\n");
             builder.Append("}\n");
-            File.WriteAllText(ReportPath, builder.ToString());
+            File.WriteAllText(ReportPath, builder.ToString(), new UTF8Encoding(false));
         }
 
         private static HadalTrenchBakeTelemetryEntry BuildTelemetry(

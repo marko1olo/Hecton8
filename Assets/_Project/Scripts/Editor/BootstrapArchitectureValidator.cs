@@ -62,15 +62,17 @@ namespace Hecton8.Editor
 
             // ── Check for required managers ──
             report += "REQUIRED MANAGERS:\n";
-            foreach (string managerName in REQUIRED_MANAGERS)
+            for (int managerIndex = 0; managerIndex < REQUIRED_MANAGERS.Length; managerIndex++)
             {
+                string managerName = REQUIRED_MANAGERS[managerIndex];
                 bool found = FindObjectInScene(bootstrapScene, managerName) != null;
                 report += $"  {(found ? "✓" : "✗")} {managerName}\n";
             }
 
             report += "\nOBJECTS IN ROOT:\n";
-            foreach (GameObject root in rootObjects)
+            for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
             {
+                GameObject root = rootObjects[rootIndex];
                 // Check for forbidden patterns
                 bool isForbidden = IsForbiddenObject(root.name);
                 report += $"  {(isForbidden ? "⚠️" : "  ")} {root.name}\n";
@@ -84,8 +86,9 @@ namespace Hecton8.Editor
 
             report += "\nFORBIDDEN OBJECTS:\n";
             bool foundForbidden = false;
-            foreach (GameObject root in rootObjects)
+            for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
             {
+                GameObject root = rootObjects[rootIndex];
                 if (HasForbiddenChildren(root.transform))
                 {
                     report += $"  ⚠️ {root.name} contains forbidden children!\n";
@@ -121,8 +124,10 @@ namespace Hecton8.Editor
 
         private static GameObject FindObjectInScene(Scene scene, string name)
         {
-            foreach (GameObject root in scene.GetRootGameObjects())
+            GameObject[] rootObjects = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
             {
+                GameObject root = rootObjects[rootIndex];
                 if (root.name == name)
                     return root;
 
@@ -135,8 +140,9 @@ namespace Hecton8.Editor
 
         private static bool IsForbiddenObject(string name)
         {
-            foreach (string pattern in FORBIDDEN_PATTERNS)
+            for (int patternIndex = 0; patternIndex < FORBIDDEN_PATTERNS.Length; patternIndex++)
             {
+                string pattern = FORBIDDEN_PATTERNS[patternIndex];
                 if (name.Contains(pattern))
                     return true;
             }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Hecton8.Core.Content;
@@ -621,8 +622,14 @@ namespace Hecton8.Core.Content.Editor
                 "sector_0123456789ABCDEF.h8page",
                 "macro database sector file");
 
-            if (ContentSaveSlotTopology.MaxSavePathChars != ContentSaveSlotTopology.MacroDatabaseSectorFileChars)
+            if (!IsSaveTopologyMaxPathOwnerCurrent())
                 Fail("Save topology max path length no longer matches the macro database sector path.");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool IsSaveTopologyMaxPathOwnerCurrent()
+        {
+            return ContentSaveSlotTopology.MaxSavePathChars == ContentSaveSlotTopology.MacroDatabaseSectorFileChars;
         }
 
         private static void ValidateTopologyLengthConstant(int actual, string expectedPath, string label)

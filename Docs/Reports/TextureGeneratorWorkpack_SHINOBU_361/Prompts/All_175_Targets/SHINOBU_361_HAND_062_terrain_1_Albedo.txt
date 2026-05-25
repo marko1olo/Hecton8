@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_062
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_062_terrain_1_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\terrain_1_Albedo.png
+FINAL_FILENAME: terrain_1_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Terrain 1 albedo for Hecton seabed traversal. Create a readable natural floor of compact blue basalt grains, pale silt fans, soft teal mineral dust, pearl shell-like fragments, and gentle lavender pressure staining. The material should guide movement with calm values and polished sci-fi beauty, suitable for wide terrain without obvious repetition. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

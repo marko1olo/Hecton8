@@ -1,0 +1,11 @@
+﻿overlay_role,source_status,target_surfaces,toaster_rule,god_mode_rule,expected_detail_gain_percent
+fine_cockpit_scratches,MISSING_AUTHORING,"Cockpit glass, painted metal, polished hand-contact panels",Disabled except inspection props.,BC4/BC5 1024 overlay at 8x-16x tiling.,20
+panel_dust_grit,MISSING_AUTHORING,"Habitat panels, wall seams, low-traffic module floors",Use baked albedo dirt only.,BC4 1024 mask blended into roughness and albedo breakup.,20
+carbon_fiber_weave,MISSING_AUTHORING,"Tool grips, suit hardpoints, high-end cockpit inserts",Normal overlay disabled.,BC5 1024 tangent-aligned weave normal.,25
+worn_rubber,MISSING_AUTHORING,"Gaskets, grips, boot contact zones, black utility trim",Use scalar roughness only.,BC4 1024 pitted roughness detail plus low-strength normal.,20
+brushed_steel_streaks,MISSING_AUTHORING,"Cockpit frames, rails, latches, exposed machined metal",Use anisotropic fake without detail sample.,BC4 1024 directional streak mask for anisotropic fake.,25
+oxidized_aluminum_pitting,MISSING_AUTHORING,"Exterior module shells, old brackets, pressure fittings",Baked AO/roughness only.,BC4 1024 pitting mask into roughness and edge darkening.,20
+salt_deposit_speckle,MISSING_AUTHORING,"Wet glass edges, flooded doors, submarine exterior seams",Use static decal or base-map stain.,BC4 1024 speckle mask blended by wetness depth.,20
+grease_hand_smudges,MISSING_AUTHORING,"Switch panels, handles, lockers, tool drawers",Use low-frequency decal only.,BC4 1024 roughness-darkening overlay in interaction zones.,20
+edge_chipped_paint,MISSING_AUTHORING,"Painted industrial panels, doors, crates, railings",Vertex color or baked mask only.,BC4 1024 edge wear mask multiplied by curvature/AO author data.,20
+condensation_micro_droplets,MISSING_AUTHORING,"Cold glass, wet acrylic, instrument covers, exterior windows",Disabled; rely on fake clearcoat.,BC5 1024 tiny droplet normal at 0.05-0.12 strength.,25

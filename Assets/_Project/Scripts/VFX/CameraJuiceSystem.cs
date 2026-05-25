@@ -26,6 +26,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.VFX
 {
@@ -34,24 +35,24 @@ namespace Hecton8.VFX
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, ICombatDamageEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed partial class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         // ═══ CACHED REFERENCES ═══
         [StructLayout(LayoutKind.Explicit, Size = CameraJuiceTelemetryEntrySizeBytes)]
         private struct CameraJuiceTelemetryEntry
         {
-            [FieldOffset(0)] public int Frame;
+            [FieldOffset(0)] public uint Frame;
             [FieldOffset(4)] public uint Flags;
-            [FieldOffset(8)] public float Trauma;
-            [FieldOffset(12)] public float FovKick;
+            [FieldOffset(8)] public float TraumaScalar;
+            [FieldOffset(12)] public float MaxTranslationalOffsetMagnitude;
             [FieldOffset(16)] public float3 Offset;
             [FieldOffset(28)] public float3 RotationDegrees;
-            [FieldOffset(40)] public float RollDegrees;
-            [FieldOffset(44)] public float DirectionalBiasTimer;
-            [FieldOffset(48)] public float AdaptiveShakeScale;
-            [FieldOffset(52)] public float Reserved0;
-            [FieldOffset(56)] public float Reserved1;
-            [FieldOffset(60)] public float Reserved2;
+            [FieldOffset(40)] public int IncomingSignalCount;
+            [FieldOffset(44)] public float BurstExecutionMicroseconds;
+            [FieldOffset(48)] public float GlobalQualityWeight01;
+            [FieldOffset(52)] public float DirectionalImpulseMagnitude;
+            [FieldOffset(56)] public uint StateHash;
+            [FieldOffset(60)] public uint Sequence;
         }
 
         private Camera _mainCamera;
@@ -63,18 +64,19 @@ namespace Hecton8.VFX
         private Rigidbody _playerRigidbody;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private Rigidbody _submarineHullRigidbody;
-        private SubmarineStructuralGrid _submarineStructuralGrid;
         private DynamicResolutionScaler _dynamicResolutionScaler;
-        private VRAMMonitor _vramMonitor;
+        private IVramBudgetReadModel _vramMonitor;
         private ITickDispatcher _dispatcher;
         private Vector3 _cameraLocalRestPosition;
         private ParticleSystem _speedLineParticles;
         private ParticleSystemRenderer _speedLineRenderer;
         private Transform _speedLineRoot;
         private float _speedLineIntensity;
+        private float _pendingSpeedLineDeltaTime;
         private float _cachedSpeedLineEmissionRate = -1f;
         private float _cachedSpeedLineVelocityZ = float.MinValue;
         private float _cachedSpeedLineStretch = -1f;
+        private bool _speedLineVisualDirty;
 
         [Header("References")]
         [SerializeField, Tooltip("Optional explicit camera reference. Falls back to local hierarchy lookup.")]
@@ -115,60 +117,33 @@ namespace Hecton8.VFX
         private const float DEFAULT_SHAKE_CLIP_SAFE_DISPLACEMENT = 0.05f;
         private const float PROCEDURAL_TRAUMA_DECAY_RATE = 1.65f;
         private const float PROCEDURAL_SHAKE_FREQUENCY = 18f;
-        private const float PROCEDURAL_MIN_QUALITY_SAMPLE_INTERVAL = 0.033333334f;
         private const float PROCEDURAL_TRANSLATION_AMPLITUDE_METERS = 0.07f;
         private const float PROCEDURAL_ROTATION_AMPLITUDE_DEGREES = 2.4f;
         private const float PROCEDURAL_ROLL_AMPLITUDE_DEGREES = 5.5f;
         private const float PROCEDURAL_DIRECTIONAL_BIAS_SECONDS = 0.06f;
-        private const float PROCEDURAL_ROLL_SPRING = 44f;
-        private const float PROCEDURAL_ROLL_DAMPING = 10f;
         private const float PROCEDURAL_HIT_STOP_THRESHOLD = 0.8f;
         private const int PROCEDURAL_MAX_IMPACTS_PER_FRAME = 32;
         private const int CAMERA_JUICE_TELEMETRY_CAPACITY = 300;
         private const int CameraJuiceTelemetryEntrySizeBytes = 64;
+        private const int CameraJuiceTelemetryDumpHeaderSizeBytes = 32;
+        private const uint CameraJuiceTelemetryDumpMagic = 0x354A4353u; // SCJ5
+        private const uint CameraJuiceTelemetryDumpVersion = 4u;
         private const uint CAMERA_JUICE_HIT_STOP_REASON_HASH = 0xC45A1CEu;
-        private const float PROCEDURAL_NOISE_SEED_X = 11.137f;
-        private const float PROCEDURAL_NOISE_SEED_Y = 23.719f;
-        private const float PROCEDURAL_NOISE_SEED_Z = 37.031f;
-        private const float PROCEDURAL_NOISE_SEED_PITCH = 43.661f;
-        private const float PROCEDURAL_NOISE_SEED_YAW = 59.173f;
-        private const float PROCEDURAL_NOISE_SEED_ROLL = 71.411f;
-        private const float SEISMIC_CAMERA_DECAY_RATE = 3.4f;
-        private const float SEISMIC_CAMERA_FREQUENCY = 21f;
-        private const float SEISMIC_TRANSLATION_AMPLITUDE_METERS = 0.035f;
-        private const float SEISMIC_ROTATION_AMPLITUDE_DEGREES = 0.85f;
-        private float _shakeNoiseTime;
+        private const uint KccVelocityCameraJuiceMaxAgeFrames = 12u;
         private float _trauma;
-        private float _proceduralShakeTime;
-        private float _proceduralSampleTimer;
-        private float _proceduralNoiseSampleInterval;
-        private float3 _proceduralSampleTranslationFrom;
-        private float3 _proceduralSampleTranslationTo;
-        private float3 _proceduralSampleRotationFrom;
-        private float3 _proceduralSampleRotationTo;
-        private bool _proceduralSampleNoisePrimed;
         private float3 _proceduralShakeTranslation;
         private float3 _proceduralShakeRotationDegrees;
-        private float3 _directionalBiasLocal;
-        private float _directionalBiasTimer;
-        private float _proceduralRollDegrees;
-        private float _proceduralRollVelocity;
-        private bool _shakeRotationApplied;
-        private Quaternion _lastShakeLocalRotation = Quaternion.identity;
-        private Quaternion _lastShakeCompositeLocalRotation = Quaternion.identity;
         private IDataVault _dataVault;
         private VaultGenerationHandle<CameraJuiceTelemetryEntry> _cameraJuiceTelemetryHandle;
         private bool _ownsCameraJuiceTelemetryBuffer;
-        private int _cameraJuiceTelemetryCursor;
+        private uint _cameraJuiceTelemetryCursor;
         private bool _cameraJuiceTelemetryDumped;
+        private bool _cameraJuiceTelemetryDumpRequested;
+#pragma warning disable CS0414
         private bool _cameraJuiceTelemetryReady;
+#pragma warning restore CS0414
         private float _submarineImpactShakeSign = 1f;
         private int _lastSeismicSignalSequence;
-        private float _seismicJitterIntensity;
-        private float _seismicJitterTime;
-        private float3 _seismicDirectionLocal;
-        private float3 _seismicShakeOffset;
-        private float3 _seismicShakeRotationDegrees;
 
         // ═══ FOV STATE ═══
         public enum FOVState { Idle, SprintKick, DamageRecoil }
@@ -191,7 +166,6 @@ namespace Hecton8.VFX
 
         // ═══ POST-PROCESSING STATE ═══
         private Vignette _healthVignette;
-        private ChromaticAberration _o2ChromaticAberration;
         private DepthOfField _interactionDoF;
         private bool _postProcessingEnabled = true;
         private bool _healthO2EffectsEnabled = true;
@@ -248,9 +222,6 @@ namespace Hecton8.VFX
         [SerializeField, Tooltip("Enable motion blur post-processing effect")]
         private bool _motionBlurEnabled = false;
 
-        [SerializeField, Tooltip("Enable chromatic aberration post-processing effect")]
-        private bool _chromaticAberrationEnabled = true;
-
         [SerializeField, Tooltip("Enable depth-of-field post-processing effect")]
         private bool _depthOfFieldEnabled = true;
 
@@ -268,9 +239,6 @@ namespace Hecton8.VFX
 
         [SerializeField, Range(0.1f, 1f), Tooltip("Smoothing duration for center-eye focus-distance convergence between near-field UI focus and far-field ocean focus.")]
         private float _focusTransitionDuration = 0.2f;
-
-        [SerializeField, Range(0f, 0.8f), Tooltip("Additional chromatic-aberration intensity injected by active submarine structural fatigue.")]
-        private float _structuralFatigueChromaticAberrationMax = 0.26f;
 
         [Header("Adaptive Budget Response")]
         [SerializeField, Tooltip("Allow camera juice to degrade under render-scale and VRAM pressure instead of paying full effect cost on weak hardware.")]
@@ -342,16 +310,6 @@ namespace Hecton8.VFX
         }
 
         /// <summary>
-        /// Enable chromatic aberration post-processing effect.
-        /// Applied immediately without scene reload.
-        /// </summary>
-        public bool ChromaticAberrationEnabled
-        {
-            get => _chromaticAberrationEnabled;
-            set => _chromaticAberrationEnabled = value;
-        }
-
-        /// <summary>
         /// Enable depth-of-field post-processing effect.
         /// Applied immediately without scene reload.
         /// </summary>
@@ -366,7 +324,7 @@ namespace Hecton8.VFX
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
-        private float _nextDependencyResolveTime;
+        private int _dependencyResolveSlowTickCountdown;
 
         // ═══ EFFECT ENABLE FLAGS ═══
         private bool _shakeEnabled = true;
@@ -378,7 +336,7 @@ namespace Hecton8.VFX
         private float _adaptivePostFxScale = 1f;
         private float _adaptiveRenderScale = 1f;
         private int _adaptiveMaxActiveShakes = MAX_ACTIVE_SHAKES;
-        private VRAMMonitor.VRAMPressureState _adaptiveVRAMPressureState = VRAMMonitor.VRAMPressureState.Stable;
+        private byte _adaptiveVRAMPressureState = VramPressureStateCodes.Stable;
         private bool _adaptiveDisableInteractionDoF;
 
         // ═══ SHADER PROPERTY IDS ═══
@@ -386,7 +344,7 @@ namespace Hecton8.VFX
 
         // ═══ DEBUG ═══
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static float _nextLogTime;
+        private static float _frameBudgetLogCooldownSeconds;
         private const string DebugPressureStable = "Stable";
         private const string DebugPressureWarning = "Warning";
         private const string DebugPressureCritical = "Critical";
@@ -433,10 +391,6 @@ namespace Hecton8.VFX
                 {
                     LogVignetteMissing();
                 }
-                if (_urpVolume.profile.TryGet(out _o2ChromaticAberration) == false)
-                {
-                    LogChromaticAberrationMissing();
-                }
                 if (_urpVolume.profile.TryGet(out _interactionDoF) == false)
                 {
                     LogDepthOfFieldMissing();
@@ -446,6 +400,7 @@ namespace Hecton8.VFX
             TryResolveGameplayDependencies();
             SyncDependencyFlags();
             EnsureCameraJuiceTelemetry();
+            EnsureProceduralCameraJuiceBuffers();
             EnsureCameraSpeedLineParticles();
 
         }
@@ -462,11 +417,11 @@ namespace Hecton8.VFX
 
             TryResolveGameplayDependencies();
             SyncDependencySubscriptions();
+            EnsureProceduralCameraJuiceBuffers();
             EnsureCameraSpeedLineParticles();
 
             InteractionEvents.Register(this);
             PhysicsEvents.Register(this);
-            CombatDamageRuntime.Register(this);
         }
 
         private void OnDisable()
@@ -480,7 +435,6 @@ namespace Hecton8.VFX
 
             InteractionEvents.Unregister(this);
             PhysicsEvents.Unregister(this);
-            CombatDamageRuntime.Unregister(this);
 
             _fovBlendActive = false;
             _inputReclaimFovActive = false;
@@ -495,23 +449,18 @@ namespace Hecton8.VFX
             _trauma = 0f;
             _proceduralShakeTranslation = float3.zero;
             _proceduralShakeRotationDegrees = float3.zero;
-            _directionalBiasLocal = float3.zero;
-            _directionalBiasTimer = 0f;
-            _proceduralRollDegrees = 0f;
-            _proceduralRollVelocity = 0f;
             _playerRuntimeContext = null;
             _playerRigidbody = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
-            _submarineStructuralGrid = null;
             _dynamicResolutionScaler = null;
             _vramMonitor = null;
             _dispatcher = null;
             StopCameraSpeedLineParticles();
+            ReleaseProceduralCameraJuiceBuffers();
 
             if (_cameraTransform != null)
             {
-                RemoveLastShakeRotation();
                 _cameraTransform.localPosition = _cameraLocalRestPosition;
             }
 
@@ -625,10 +574,10 @@ namespace Hecton8.VFX
         private void RefreshCachedRegistryServices()
         {
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
-            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Submarine, GlobalRegistry.Submarine);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DynamicResolutionRuntime, GlobalRegistry.DynamicResolution);
-            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.VRAMMonitorRuntime, GlobalRegistry.VRAMMonitor);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.VRAMMonitorRuntime, GlobalRegistry.VRAMBudgetReadModel);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
         }
 
@@ -660,7 +609,7 @@ namespace Hecton8.VFX
                     _dynamicResolutionScaler = currentService as DynamicResolutionScaler;
                     break;
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
-                    _vramMonitor = currentService as VRAMMonitor;
+                    _vramMonitor = currentService as IVramBudgetReadModel;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     BindDataVault(currentService as IDataVault);
@@ -690,7 +639,6 @@ namespace Hecton8.VFX
         {
             _submarineRuntimeContext = submarineRuntimeContext;
             _submarineHullRigidbody = submarineRuntimeContext != null ? submarineRuntimeContext.HullRigidbody : null;
-            _submarineStructuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
         }
 
         private void BindDataVault(IDataVault vault)
@@ -699,8 +647,12 @@ namespace Hecton8.VFX
                 return;
 
             ReleaseCameraJuiceTelemetryBuffer(_dataVault);
+            ReleaseProceduralCameraJuiceBuffers();
             _dataVault = vault;
             _cameraJuiceTelemetryCursor = 0;
+            RefreshCameraJuiceColdVaultHandles();
+            EnsureCameraJuiceTelemetry();
+            EnsureProceduralCameraJuiceBuffers();
         }
 
         private void OnDestroy()
@@ -710,8 +662,8 @@ namespace Hecton8.VFX
             TryUnregisterHotSwapListener();
             InteractionEvents.Unregister(this);
             PhysicsEvents.Unregister(this);
-            CombatDamageRuntime.Unregister(this);
 
+            ReleaseProceduralCameraJuiceBuffers();
             ReleaseCameraJuiceTelemetry();
 
         }
@@ -724,7 +676,7 @@ namespace Hecton8.VFX
         public void Tick(float dt)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            float startTime = Time.realtimeSinceStartup;
+            long startTicks = Stopwatch.GetTimestamp();
 #endif
             ConsumePlayerSprintSignals();
 
@@ -736,13 +688,15 @@ namespace Hecton8.VFX
             catch (Exception)
             {
                 LogShakeCalculationFailed();
+                FailClosedProceduralCameraJuiceFault();
                 _shakeEnabled = false;
             }
 
             try
             {
                 UpdateFOV(dt);
-                UpdateCameraSpeedLines(dt);
+                _pendingSpeedLineDeltaTime += math.max(0f, math.isfinite(dt) ? dt : 0f);
+                _speedLineVisualDirty = true;
             }
             catch (Exception)
             {
@@ -772,10 +726,12 @@ namespace Hecton8.VFX
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            float frameTime = (Time.realtimeSinceStartup - startTime) * 1000f;
-            if (frameTime > 1.0f && Time.time >= _nextLogTime)
+            float safeDt = math.isfinite(dt) ? math.max(0f, dt) : 0f;
+            _frameBudgetLogCooldownSeconds = math.max(0f, _frameBudgetLogCooldownSeconds - safeDt);
+            float frameTime = (float)((Stopwatch.GetTimestamp() - startTicks) * 1000.0 / Stopwatch.Frequency);
+            if (frameTime > 1.0f && _frameBudgetLogCooldownSeconds <= 0f)
             {
-                _nextLogTime = Time.time + 5f;
+                _frameBudgetLogCooldownSeconds = 5f;
                 LogFrameBudgetExceeded();
             }
 #endif
@@ -783,9 +739,17 @@ namespace Hecton8.VFX
 
         public void LateFrameTick()
         {
+            if (_speedLineVisualDirty)
+            {
+                _speedLineVisualDirty = false;
+                float speedLineDeltaTime = _pendingSpeedLineDeltaTime;
+                _pendingSpeedLineDeltaTime = 0f;
+                UpdateCameraSpeedLines(speedLineDeltaTime);
+            }
+
+            PublishProceduralCameraJuiceProjection();
             ApplyPostAupShakeOffset();
             RecordCameraJuiceTelemetry();
-            DecayProceduralTrauma(SystemDispatcher.CurrentFrameDeltaTime);
         }
 
         // ═══ ISLOWTICKABLE ═══
@@ -795,11 +759,15 @@ namespace Hecton8.VFX
         /// </summary>
         public void SlowTick()
         {
-            if (Time.time >= _nextDependencyResolveTime)
+            if (_dependencyResolveSlowTickCountdown <= 0)
             {
-                _nextDependencyResolveTime = Time.time + 2f;
+                _dependencyResolveSlowTickCountdown = 4;
                 TryResolveGameplayDependencies();
                 SyncDependencySubscriptions();
+            }
+            else
+            {
+                _dependencyResolveSlowTickCountdown--;
             }
 
             if (!_healthO2EffectsEnabled || !_postProcessingEnabled) return;
@@ -814,15 +782,6 @@ namespace Hecton8.VFX
                 _healthO2EffectsEnabled = false;
             }
 
-            try
-            {
-                UpdateO2PostProcessing();
-            }
-            catch (Exception)
-            {
-                LogO2PostProcessingFailed();
-                _healthO2EffectsEnabled = false;
-            }
         }
 
         // ═══ ISAVEABLE ═══
@@ -856,14 +815,6 @@ namespace Hecton8.VFX
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning("[CameraJuiceSystem] Vignette override not found in Volume profile.");
-#endif
-        }
-
-        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void LogChromaticAberrationMissing()
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CameraJuiceSystem] ChromaticAberration override not found in Volume profile.");
 #endif
         }
 
@@ -955,14 +906,6 @@ namespace Hecton8.VFX
 #endif
         }
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void LogO2PostProcessingFailed()
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] O2 post-processing failed.");
-#endif
-        }
-
         public int SavePriority => 75;
         public int LoadPriority => 75;
 
@@ -976,7 +919,6 @@ namespace Hecton8.VFX
             // public float cameraJuiceShakeIntensity = 1.0f;
             // public float cameraJuiceFOVIntensity = 1.0f;
             // public bool cameraJuiceMotionBlur = false;
-            // public bool cameraJuiceChromaticAberration = true;
             // public bool cameraJuiceDepthOfField = true;
         }
 
@@ -1153,7 +1095,7 @@ namespace Hecton8.VFX
         // ═══ READ-ONLY PROPERTIES ═══
 
         public int ActiveShakeCount =>
-            _trauma > 0.001f || _directionalBiasTimer > 0f || math.abs(_proceduralRollDegrees) > 0.001f ? 1 : 0;
+            _trauma > 0.001f || _cameraJuiceLastTraumaScalar > 0.001f ? 1 : 0;
         public float CurrentFOVOffset => _currentFOVOffset;
         public FOVState CurrentFOVState => _fovState;
         public bool IsPostProcessingEnabled => _postProcessingEnabled;
@@ -1221,22 +1163,13 @@ namespace Hecton8.VFX
             AddProceduralTrauma(severity, ResolvePhysicsImpactDirection(in impactSignal));
         }
 
-        void ICombatDamageEventListener.OnCombatDamageResolved(in CombatDamageResult result)
-        {
-            if (!_shakeEnabled)
-                return;
-
-            float severity = ResolveCombatDamageSeverity(in result);
-            if (severity <= 0f)
-                return;
-
-            AddProceduralTrauma(severity, result.Direction);
-        }
-
         private void UpdateShake(float dt)
         {
             if (!_shakeEnabled)
+            {
+                ClearProceduralCameraJuiceProjection();
                 return;
+            }
 
             float effectiveShakeScale = _shakeIntensityMultiplier * _adaptiveShakeScale;
             if (effectiveShakeScale <= 0f)
@@ -1244,28 +1177,11 @@ namespace Hecton8.VFX
                 _shakeOffset = Vector3.zero;
                 _proceduralShakeTranslation = float3.zero;
                 _proceduralShakeRotationDegrees = float3.zero;
-                _seismicJitterIntensity = 0f;
-                _seismicShakeOffset = float3.zero;
-                _seismicShakeRotationDegrees = float3.zero;
+                ClearProceduralCameraJuiceProjection();
                 return;
             }
 
-            DrainCameraImpactSignals();
-            UpdateProceduralTraumaShake(dt, effectiveShakeScale);
-            UpdateSeismicCameraJitter(dt, effectiveShakeScale);
-            _shakeNoiseTime += math.max(0f, dt);
-        }
-
-        private void DrainCameraImpactSignals()
-        {
-            int processed = 0;
-            while (processed < PROCEDURAL_MAX_IMPACTS_PER_FRAME &&
-                   CameraJuiceSignals.TryDequeueImpact(out CameraJuiceImpactSignal signal))
-            {
-                float severity = math.saturate(math.max(signal.Severity, signal.Impact.Intensity));
-                AddProceduralTrauma(severity, signal.Direction);
-                processed++;
-            }
+            RunProceduralCameraJuice(dt, effectiveShakeScale);
         }
 
         private void AddProceduralTrauma(float severity01, float3 worldDirection)
@@ -1275,167 +1191,16 @@ namespace Hecton8.VFX
                 return;
 
             _trauma = math.saturate(_trauma + ResolveTraumaAddition(severity));
-
-            float3 localDirection = ResolveLocalShakeDirection(worldDirection);
-            if (math.lengthsq(localDirection) > 0.000001f)
-            {
-                _directionalBiasLocal = localDirection * severity;
-                _directionalBiasTimer = PROCEDURAL_DIRECTIONAL_BIAS_SECONDS;
-                _proceduralRollVelocity += -localDirection.x * severity * PROCEDURAL_ROLL_AMPLITUDE_DEGREES;
-            }
+            QueueProceduralCameraJuiceManualImpulse(severity, worldDirection);
 
             if (severity > PROCEDURAL_HIT_STOP_THRESHOLD)
                 RequestProceduralHitStop();
-        }
-
-        private void UpdateProceduralTraumaShake(float dt, float effectiveShakeScale)
-        {
-            float safeDt = math.max(0f, dt);
-            _proceduralShakeTime += safeDt * PROCEDURAL_SHAKE_FREQUENCY;
-
-            float trauma = math.saturate(_trauma);
-            float intensity = trauma * trauma * math.max(0f, effectiveShakeScale);
-            bool xrActive = HectonXRRuntimeState.IsXRActive;
-            if (xrActive)
-            {
-                _directionalBiasTimer = 0f;
-                _proceduralRollDegrees = 0f;
-                _proceduralRollVelocity = 0f;
-                _proceduralShakeTranslation = float3.zero;
-                _proceduralShakeRotationDegrees = float3.zero;
-                _shakeOffset = Vector3.zero;
-                return;
-            }
-
-            float3 noiseTranslation;
-            float3 noiseRotation;
-            ResolveProceduralNoise(safeDt, out noiseTranslation, out noiseRotation);
-
-            float translationAmplitude = intensity * PROCEDURAL_TRANSLATION_AMPLITUDE_METERS;
-            float rotationAmplitude = intensity * PROCEDURAL_ROTATION_AMPLITUDE_DEGREES;
-
-            float3 translation = noiseTranslation * translationAmplitude;
-            float3 rotation = noiseRotation * rotationAmplitude;
-
-            float biasT = 0f;
-            if (_directionalBiasTimer > 0f)
-            {
-                biasT = math.saturate(_directionalBiasTimer / PROCEDURAL_DIRECTIONAL_BIAS_SECONDS);
-                _directionalBiasTimer = math.max(0f, _directionalBiasTimer - safeDt);
-            }
-
-            if (biasT > 0f)
-                translation += _directionalBiasLocal * (PROCEDURAL_TRANSLATION_AMPLITUDE_METERS * biasT);
-
-            float targetRoll = biasT > 0f
-                ? -_directionalBiasLocal.x * PROCEDURAL_ROLL_AMPLITUDE_DEGREES * intensity
-                : 0f;
-            float rollAcceleration = ((targetRoll - _proceduralRollDegrees) * PROCEDURAL_ROLL_SPRING) -
-                                     (_proceduralRollVelocity * PROCEDURAL_ROLL_DAMPING);
-            _proceduralRollVelocity += rollAcceleration * safeDt;
-            _proceduralRollDegrees += _proceduralRollVelocity * safeDt;
-            rotation.z += _proceduralRollDegrees;
-
-            bool invalidShakeMath = false;
-            if (!math.all(math.isfinite(translation)))
-            {
-                invalidShakeMath = true;
-                translation = float3.zero;
-            }
-            if (!math.all(math.isfinite(rotation)))
-            {
-                invalidShakeMath = true;
-                rotation = float3.zero;
-            }
-            if (!math.isfinite(_proceduralRollDegrees) || !math.isfinite(_proceduralRollVelocity))
-            {
-                invalidShakeMath = true;
-                _proceduralRollDegrees = 0f;
-                _proceduralRollVelocity = 0f;
-            }
-            if (invalidShakeMath)
-                DumpCameraJuiceTelemetry();
-
-            _proceduralShakeTranslation = translation;
-            _proceduralShakeRotationDegrees = rotation;
-            _shakeOffset = new Vector3(translation.x, translation.y, translation.z);
-        }
-
-        private void DecayProceduralTrauma(float dt)
-        {
-            float safeDt = math.max(0f, dt);
-            _trauma = math.max(0f, _trauma - (PROCEDURAL_TRAUMA_DECAY_RATE * safeDt));
-
-            if (_trauma <= 0.0001f &&
-                _directionalBiasTimer <= 0f &&
-                math.abs(_proceduralRollDegrees) <= 0.001f &&
-                math.abs(_proceduralRollVelocity) <= 0.001f)
-            {
-                _trauma = 0f;
-                _proceduralShakeTranslation = float3.zero;
-                _proceduralShakeRotationDegrees = float3.zero;
-                _shakeOffset = Vector3.zero;
-            }
-        }
-
-        private void ResolveProceduralNoise(float dt, out float3 translation, out float3 rotation)
-        {
-            float sampleInterval = ResolveProceduralNoiseSampleInterval();
-            if (sampleInterval <= 0.0001f)
-            {
-                _proceduralSampleNoisePrimed = false;
-                EvaluateProceduralNoise(_proceduralShakeTime, out translation, out rotation);
-                return;
-            }
-
-            if (!_proceduralSampleNoisePrimed || math.abs(sampleInterval - _proceduralNoiseSampleInterval) > 0.002f)
-            {
-                EvaluateProceduralNoise(_proceduralShakeTime, out _proceduralSampleTranslationTo, out _proceduralSampleRotationTo);
-                _proceduralSampleTranslationFrom = _proceduralSampleTranslationTo;
-                _proceduralSampleRotationFrom = _proceduralSampleRotationTo;
-                _proceduralSampleTimer = 0f;
-                _proceduralNoiseSampleInterval = sampleInterval;
-                _proceduralSampleNoisePrimed = true;
-            }
-
-            _proceduralSampleTimer += math.max(0f, dt);
-            if (_proceduralSampleTimer >= sampleInterval)
-            {
-                _proceduralSampleTimer = math.fmod(_proceduralSampleTimer, math.max(sampleInterval, 0.0001f));
-                _proceduralSampleTranslationFrom = _proceduralSampleTranslationTo;
-                _proceduralSampleRotationFrom = _proceduralSampleRotationTo;
-                EvaluateProceduralNoise(_proceduralShakeTime, out _proceduralSampleTranslationTo, out _proceduralSampleRotationTo);
-            }
-
-            float t = EvaluateSmoothStep01(_proceduralSampleTimer / math.max(sampleInterval, 0.0001f));
-            translation = math.lerp(_proceduralSampleTranslationFrom, _proceduralSampleTranslationTo, t);
-            rotation = math.lerp(_proceduralSampleRotationFrom, _proceduralSampleRotationTo, t);
-        }
-
-        private static float ResolveProceduralNoiseSampleInterval()
-        {
-            float quality = ResolveCameraJuiceQualityWeight01();
-            float exactNoiseWeight = EvaluateSmoothStep01(quality);
-            return PROCEDURAL_MIN_QUALITY_SAMPLE_INTERVAL * (1f - exactNoiseWeight);
         }
 
         private static float ResolveCameraJuiceQualityWeight01()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(quality) ? quality : 1f);
-        }
-
-        private static void EvaluateProceduralNoise(float time, out float3 translation, out float3 rotation)
-        {
-            translation = new float3(
-                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_X)),
-                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_Y)),
-                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_Z)));
-
-            rotation = new float3(
-                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_PITCH)),
-                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_YAW)),
-                noise.cnoise(new float2(time, PROCEDURAL_NOISE_SEED_ROLL)));
         }
 
         private float3 ResolveLocalShakeDirection(float3 worldDirection)
@@ -1463,15 +1228,13 @@ namespace Hecton8.VFX
                 impactSignal.Normal.x,
                 impactSignal.Normal.y,
                 impactSignal.Normal.z);
-            if (math.lengthsq(direction) > 0.000001f && math.all(math.isfinite(direction)))
-                return direction;
-
-            if (_cameraTransform == null)
+            if (!math.all(math.isfinite(direction)))
                 return float3.zero;
 
-            Vector3 cameraPosition = _cameraTransform.position;
-            Vector3 fromImpact = cameraPosition - impactSignal.Point;
-            return new float3(fromImpact.x, fromImpact.y, fromImpact.z);
+            if (math.lengthsq(direction) > 0.000001f)
+                return direction;
+
+            return float3.zero;
         }
 
         private static float ResolvePhysicsImpactSeverity(in PhysicsImpactSignal impactSignal)
@@ -1485,16 +1248,6 @@ namespace Hecton8.VFX
             return math.saturate(intensity + (massVelocity01 * 0.35f) + weightBonus);
         }
 
-        private static float ResolveCombatDamageSeverity(in CombatDamageResult result)
-        {
-            float healthSeverity = 0f;
-            if (math.isfinite(result.AppliedDamage) && math.isfinite(result.MaxHealth) && result.MaxHealth > 0.0001f)
-                healthSeverity = math.saturate(result.AppliedDamage / result.MaxHealth);
-
-            float traumaSeverity = math.saturate(result.TraumaLevel * 0.25f);
-            return math.saturate(math.max(healthSeverity, traumaSeverity));
-        }
-
         private static float ResolveTraumaAddition(float severity)
         {
             float safeSeverity = math.saturate(severity);
@@ -1506,62 +1259,6 @@ namespace Hecton8.VFX
             ITickDispatcher dispatcher = _dispatcher;
             if (dispatcher != null)
                 dispatcher.RequestCoreTickDilation(0.05f, 3, CAMERA_JUICE_HIT_STOP_REASON_HASH);
-        }
-
-        private void UpdateSeismicCameraJitter(float dt, float effectiveShakeScale)
-        {
-            float safeDt = math.max(0f, dt);
-            ReadOnlySpan<SeismicSignal> seismicSignals = SignalBus<SeismicSignal>.GetFrameSnapshot();
-            for (int i = 0; i < seismicSignals.Length; i++)
-            {
-                SeismicSignal signal = seismicSignals[i];
-                int sequence = signal.Sequence;
-                if (sequence == _lastSeismicSignalSequence)
-                    continue;
-
-                _lastSeismicSignalSequence = sequence;
-                float signalIntensity = math.saturate(signal.CameraJitter01 * math.max(0f, effectiveShakeScale));
-                if (signalIntensity > _seismicJitterIntensity)
-                    _seismicJitterIntensity = signalIntensity;
-
-                float3 localDirection = ResolveLocalShakeDirection(signal.Direction);
-                if (math.lengthsq(localDirection) > 0.000001f)
-                    _seismicDirectionLocal = localDirection;
-            }
-
-            if (HectonXRRuntimeState.IsXRActive)
-            {
-                _seismicJitterIntensity = 0f;
-                _seismicShakeOffset = float3.zero;
-                _seismicShakeRotationDegrees = float3.zero;
-                return;
-            }
-
-            _seismicJitterIntensity = math.max(0f, _seismicJitterIntensity - SEISMIC_CAMERA_DECAY_RATE * safeDt);
-            _seismicJitterTime += safeDt * SEISMIC_CAMERA_FREQUENCY;
-            if (_seismicJitterIntensity <= 0.0001f)
-            {
-                _seismicJitterIntensity = 0f;
-                _seismicShakeOffset = float3.zero;
-                _seismicShakeRotationDegrees = float3.zero;
-                return;
-            }
-
-            float pulseA = ResolveTrianglePulseSigned(_seismicJitterTime + 0.17f);
-            float pulseB = ResolveTrianglePulseSigned(_seismicJitterTime * 1.37f + 0.53f);
-            float pulseC = ResolveTrianglePulseSigned(_seismicJitterTime * 0.73f + 0.91f);
-            float3 direction = math.lengthsq(_seismicDirectionLocal) > 0.000001f
-                ? _seismicDirectionLocal
-                : new float3(1f, 0f, 0f);
-
-            _seismicShakeOffset = new float3(
-                (direction.x * pulseA + pulseC * 0.21f) * SEISMIC_TRANSLATION_AMPLITUDE_METERS,
-                pulseB * SEISMIC_TRANSLATION_AMPLITUDE_METERS * 0.35f,
-                (direction.z * pulseC + pulseA * 0.13f) * SEISMIC_TRANSLATION_AMPLITUDE_METERS) * _seismicJitterIntensity;
-            _seismicShakeRotationDegrees = new float3(
-                pulseB * SEISMIC_ROTATION_AMPLITUDE_DEGREES * 0.35f,
-                pulseA * SEISMIC_ROTATION_AMPLITUDE_DEGREES,
-                -direction.x * pulseC * SEISMIC_ROTATION_AMPLITUDE_DEGREES * 0.25f) * _seismicJitterIntensity;
         }
 
         private bool EnsureCameraJuiceTelemetry()
@@ -1613,11 +1310,11 @@ namespace Hecton8.VFX
                 return false;
             }
 
-            VaultGenerationHandle<CameraJuiceTelemetryEntry> acquiredHandle = vault.GetGenerationHandle<CameraJuiceTelemetryEntry>(
+            VaultGenerationHandle<CameraJuiceTelemetryEntry> acquiredHandle = vault.EnsureGenerationHandle<CameraJuiceTelemetryEntry>(
                 BufferID.CameraJuiceTelemetryRing,
                 CAMERA_JUICE_TELEMETRY_CAPACITY,
                 SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.UninitializedMemory);
             bool ownsAcquiredHandle = true;
 
             if (!IsVaultHandleCreated(in acquiredHandle) ||
@@ -1635,22 +1332,36 @@ namespace Hecton8.VFX
             _cameraJuiceTelemetryHandle = acquiredHandle;
             _ownsCameraJuiceTelemetryBuffer = ownsAcquiredHandle;
             _cameraJuiceTelemetryReady = true;
+            InitializeCameraJuiceTelemetryRing(existingTelemetry);
             return true;
         }
 
-        private bool TryResolveCameraJuiceTelemetry(out NativeArray<CameraJuiceTelemetryEntry> telemetry)
+        private bool OpenCameraJuiceTelemetryForWrite(out NativeArray<CameraJuiceTelemetryEntry> telemetry)
         {
             telemetry = default;
-            if (!EnsureCameraJuiceTelemetry())
-                return false;
-
             IDataVault vault = _dataVault;
             if (vault == null ||
+                !IsVaultHandleCreated(in _cameraJuiceTelemetryHandle) ||
                 !vault.TryResolveHandle(in _cameraJuiceTelemetryHandle, out telemetry) ||
                 !telemetry.IsCreated ||
                 telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
-                ClearCameraJuiceTelemetryDescriptor();
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool OpenCameraJuiceTelemetryReadOnly(out NativeArray<CameraJuiceTelemetryEntry>.ReadOnly telemetry)
+        {
+            telemetry = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _cameraJuiceTelemetryHandle) ||
+                !vault.TryReadOnlyHandle(in _cameraJuiceTelemetryHandle, out telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
+            {
                 return false;
             }
 
@@ -1681,6 +1392,7 @@ namespace Hecton8.VFX
             _cameraJuiceTelemetryHandle = default;
             _ownsCameraJuiceTelemetryBuffer = false;
             _cameraJuiceTelemetryReady = false;
+            _cameraJuiceTelemetryDumpRequested = false;
         }
 
         private static bool IsVaultHandleCreated(in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle)
@@ -1690,70 +1402,100 @@ namespace Hecton8.VFX
 
         private static bool ValidateCameraJuiceTelemetryLayout()
         {
-            return UnsafeUtility.SizeOf<CameraJuiceTelemetryEntry>() == CameraJuiceTelemetryEntrySizeBytes;
+            return UnsafeUtility.SizeOf<CameraJuiceTelemetryEntry>() == CameraJuiceTelemetryEntrySizeBytes &&
+                   UnsafeUtility.SizeOf<CameraJuiceTelemetryDumpHeader>() == CameraJuiceTelemetryDumpHeaderSizeBytes;
         }
 
         private void RecordCameraJuiceTelemetry()
         {
-            if (!TryResolveCameraJuiceTelemetry(out var telemetry))
+            if (!OpenCameraJuiceTelemetryForWrite(out var telemetry))
                 return;
 
-            int index = _cameraJuiceTelemetryCursor % CAMERA_JUICE_TELEMETRY_CAPACITY;
+            int index = (int)(_cameraJuiceTelemetryCursor % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
             telemetry[index] = new CameraJuiceTelemetryEntry
             {
-                Frame = Time.frameCount,
-                Flags = HectonXRRuntimeState.IsXRActive ? 1u : 0u,
-                Trauma = _trauma,
-                FovKick = 0f,
+                Frame = _cameraJuiceTelemetryCursor,
+                Flags = ResolveCameraJuiceTelemetryFlags(),
+                TraumaScalar = _cameraJuiceLastTraumaScalar,
+                MaxTranslationalOffsetMagnitude = _cameraJuiceLastMaxTranslationMagnitude,
                 Offset = _proceduralShakeTranslation,
                 RotationDegrees = _proceduralShakeRotationDegrees,
-                RollDegrees = _proceduralRollDegrees,
-                DirectionalBiasTimer = _directionalBiasTimer,
-                AdaptiveShakeScale = _adaptiveShakeScale
+                IncomingSignalCount = _cameraJuiceLastIncomingSignalCount,
+                BurstExecutionMicroseconds = _cameraJuiceLastBurstExecutionMicros,
+                GlobalQualityWeight01 = _cameraJuiceLastQualityWeight,
+                DirectionalImpulseMagnitude = _cameraJuiceLastDirectionalImpulseMagnitude,
+                StateHash = _cameraJuiceLastStateHash,
+                Sequence = _cameraJuiceTelemetryCursor
             };
             _cameraJuiceTelemetryCursor++;
+            if (_cameraJuiceTelemetryDumpRequested)
+            {
+                _cameraJuiceTelemetryDumpRequested = false;
+                DumpCameraJuiceTelemetry();
+            }
         }
 
-        private void DumpCameraJuiceTelemetry()
+        [StructLayout(LayoutKind.Explicit, Size = CameraJuiceTelemetryDumpHeaderSizeBytes)]
+        private struct CameraJuiceTelemetryDumpHeader
         {
-            if (_cameraJuiceTelemetryDumped || !TryResolveCameraJuiceTelemetry(out var telemetry))
+            [FieldOffset(0)] public uint Magic;
+            [FieldOffset(4)] public uint Version;
+            [FieldOffset(8)] public int EntrySizeBytes;
+            [FieldOffset(12)] public int Capacity;
+            [FieldOffset(16)] public uint Cursor;
+            [FieldOffset(20)] public int Count;
+            [FieldOffset(24)] public int StartIndex;
+            [FieldOffset(28)] public uint Reserved0;
+        }
+
+        private unsafe void DumpCameraJuiceTelemetry()
+        {
+            if (_cameraJuiceTelemetryDumped || !OpenCameraJuiceTelemetryReadOnly(out var telemetry))
                 return;
 
-            _cameraJuiceTelemetryDumped = true;
             string dumpPath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
                 "..",
                 "Docs",
                 "AgentLogs",
-                "Dump_CAMERA_JUICE_SYSTEM.bin"));
+                "Dump_SHINOBU_354.bin"));
 
             try
             {
+                string dumpDirectory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(dumpDirectory))
+                    Directory.CreateDirectory(dumpDirectory);
+
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    int count = math.min(_cameraJuiceTelemetryCursor, CAMERA_JUICE_TELEMETRY_CAPACITY);
-                    int start = _cameraJuiceTelemetryCursor - count;
-                    writer.Write(CAMERA_JUICE_TELEMETRY_CAPACITY);
-                    writer.Write(count);
-                    for (int i = 0; i < count; i++)
+                    int count = (int)math.min(_cameraJuiceTelemetryCursor, (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
+                    uint start = _cameraJuiceTelemetryCursor - (uint)count;
+                    int startIndex = count > 0 ? (int)(start % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY) : 0;
+                    CameraJuiceTelemetryDumpHeader header = new CameraJuiceTelemetryDumpHeader
                     {
-                        CameraJuiceTelemetryEntry entry = telemetry[(start + i) % CAMERA_JUICE_TELEMETRY_CAPACITY];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Trauma);
-                        writer.Write(entry.FovKick);
-                        writer.Write(entry.Offset.x);
-                        writer.Write(entry.Offset.y);
-                        writer.Write(entry.Offset.z);
-                        writer.Write(entry.RotationDegrees.x);
-                        writer.Write(entry.RotationDegrees.y);
-                        writer.Write(entry.RotationDegrees.z);
-                        writer.Write(entry.RollDegrees);
-                        writer.Write(entry.DirectionalBiasTimer);
-                        writer.Write(entry.AdaptiveShakeScale);
+                        Magic = CameraJuiceTelemetryDumpMagic,
+                        Version = CameraJuiceTelemetryDumpVersion,
+                        EntrySizeBytes = CameraJuiceTelemetryEntrySizeBytes,
+                        Capacity = CAMERA_JUICE_TELEMETRY_CAPACITY,
+                        Cursor = _cameraJuiceTelemetryCursor,
+                        Count = count,
+                        StartIndex = startIndex
+                    };
+
+                    stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<CameraJuiceTelemetryDumpHeader>()));
+                    if (count > 0)
+                    {
+                        byte* telemetryPtr = (byte*)telemetry.GetUnsafeReadOnlyPtr();
+                        int stride = CameraJuiceTelemetryEntrySizeBytes;
+                        int firstCount = math.min(count, CAMERA_JUICE_TELEMETRY_CAPACITY - startIndex);
+                        int secondCount = count - firstCount;
+                        stream.Write(new ReadOnlySpan<byte>(telemetryPtr + (startIndex * stride), firstCount * stride));
+                        if (secondCount > 0)
+                            stream.Write(new ReadOnlySpan<byte>(telemetryPtr, secondCount * stride));
                     }
                 }
+
+                _cameraJuiceTelemetryDumped = true;
             }
             catch (IOException)
             {
@@ -1765,50 +1507,19 @@ namespace Hecton8.VFX
 
         private void ApplyPostAupShakeOffset()
         {
-            if (_cameraTransform == null)
+            if (_mainCamera == null)
                 return;
 
-            RemoveLastShakeRotation();
             if (HectonXRRuntimeState.IsXRActive)
             {
                 _shakeOffset = Vector3.zero;
                 _proceduralShakeTranslation = float3.zero;
                 _proceduralShakeRotationDegrees = float3.zero;
-                _seismicShakeOffset = float3.zero;
-                _seismicShakeRotationDegrees = float3.zero;
+                ApplyCameraJuiceProjectionToCamera();
                 return;
             }
 
-            Vector3 combinedOffset = _shakeOffset + new Vector3(
-                _seismicShakeOffset.x,
-                _seismicShakeOffset.y,
-                _seismicShakeOffset.z);
-            _cameraTransform.localPosition = _cameraLocalRestPosition + ResolveClipSafeShakeOffset(combinedOffset);
-
-            float3 combinedRotationDegrees = _proceduralShakeRotationDegrees + _seismicShakeRotationDegrees;
-            if (math.lengthsq(combinedRotationDegrees) <= 0.000001f)
-                return;
-
-            Quaternion shakeRotation = Quaternion.Euler(
-                combinedRotationDegrees.x,
-                combinedRotationDegrees.y,
-                combinedRotationDegrees.z);
-            _cameraTransform.localRotation = _cameraTransform.localRotation * shakeRotation;
-            _lastShakeLocalRotation = shakeRotation;
-            _lastShakeCompositeLocalRotation = _cameraTransform.localRotation;
-            _shakeRotationApplied = true;
-        }
-
-        private void RemoveLastShakeRotation()
-        {
-            if (!_shakeRotationApplied || _cameraTransform == null)
-                return;
-
-            if (math.abs(Quaternion.Dot(_cameraTransform.localRotation, _lastShakeCompositeLocalRotation)) > 0.9995f)
-                _cameraTransform.localRotation = _cameraTransform.localRotation * Quaternion.Inverse(_lastShakeLocalRotation);
-            _lastShakeLocalRotation = Quaternion.identity;
-            _lastShakeCompositeLocalRotation = Quaternion.identity;
-            _shakeRotationApplied = false;
+            ApplyCameraJuiceProjectionToCamera();
         }
 
         private Vector3 ResolveClipSafeShakeOffset(Vector3 offset)
@@ -1938,9 +1649,8 @@ namespace Hecton8.VFX
         private float ResolveCurrentCameraSpeed()
         {
             float speed = 0f;
-            Rigidbody playerBody = _playerRigidbody;
-            if (playerBody != null)
-                speed = math.max(speed, ApproximateVectorMagnitude(playerBody.linearVelocity));
+            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityCameraJuiceMaxAgeFrames, out Vector3 kccVelocity))
+                speed = math.max(speed, ApproximateVectorMagnitude(kccVelocity));
 
             Rigidbody submarineBody = _submarineHullRigidbody;
             if (submarineBody != null)
@@ -2049,13 +1759,6 @@ namespace Hecton8.VFX
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveTrianglePulseSigned(float phase)
-        {
-            float wrapped = phase - math.floor(phase);
-            return (1f - math.abs(wrapped * 2f - 1f)) * 2f - 1f;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolvePadeApproach01(float sharpness, float dt)
         {
             float x = math.min(math.max(0f, sharpness) * math.max(0f, dt), 8f);
@@ -2073,11 +1776,13 @@ namespace Hecton8.VFX
             if (_mainCamera.orthographic)
                 return;
 
-            _mainCamera.projectionMatrix = Matrix4x4.Perspective(
+            Matrix4x4 projection = Matrix4x4.Perspective(
                 targetFOV,
                 _mainCamera.aspect,
                 _mainCamera.nearClipPlane,
                 _mainCamera.farClipPlane);
+            ApplyCameraJuiceProjectionOffset(ref projection);
+            _mainCamera.projectionMatrix = projection;
         }
 
         private void UpdateBiomeBlend(float dt)
@@ -2243,7 +1948,7 @@ namespace Hecton8.VFX
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -2351,8 +2056,6 @@ namespace Hecton8.VFX
         {
             _playerRigidbody = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerRigidbody : null;
             _submarineHullRigidbody = _submarineRuntimeContext != null ? _submarineRuntimeContext.HullRigidbody : null;
-            _submarineStructuralGrid = _submarineRuntimeContext != null ? _submarineRuntimeContext.StructuralGrid : null;
-
             Transform playerRoot = null;
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
                 currentPlayerTransform != null)
@@ -2395,6 +2098,7 @@ namespace Hecton8.VFX
             }
 
             SyncDependencyFlags();
+            RefreshCameraJuiceColdVaultHandles();
         }
 
         private void SyncDependencyFlags()
@@ -2433,51 +2137,11 @@ namespace Hecton8.VFX
             }
         }
 
-        private void UpdateO2PostProcessing()
-        {
-            if (_o2ChromaticAberration == null) return;
-            if (!_chromaticAberrationEnabled)
-            {
-                _o2ChromaticAberration.intensity.value = 0f;
-                _o2ChromaticAberration.active = false;
-                return;
-            }
-
-            float o2Normalized = _survivalSystem != null ? _survivalSystem.OxygenNormalized : 1f;
-            float oxygenIntensity = 0f;
-            if (o2Normalized < 0.2f)
-                oxygenIntensity = math.lerp(0f, 0.8f, (0.2f - o2Normalized) / 0.2f);
-
-            float structuralFatigueIntensity = ResolveStructuralFatigueChromaticContribution();
-            float intensity = math.max(oxygenIntensity, structuralFatigueIntensity) * _adaptivePostFxScale;
-
-            if (intensity > 0.001f)
-            {
-                // Direct Volume override assignment (not renderer-based, no MaterialPropertyBlock needed)
-                _o2ChromaticAberration.intensity.value = intensity;
-                _o2ChromaticAberration.active = intensity > 0.001f;
-            }
-            else
-            {
-                _o2ChromaticAberration.intensity.value = 0f;
-                _o2ChromaticAberration.active = false;
-            }
-        }
-
-        private float ResolveStructuralFatigueChromaticContribution()
-        {
-            SubmarineStructuralGrid structuralGrid = _submarineStructuralGrid;
-            if (structuralGrid == null || !structuralGrid.isActiveAndEnabled || !structuralGrid.IsReady)
-                return 0f;
-
-            return math.saturate(structuralGrid.FatiguePeakNormalized) * math.saturate(_structuralFatigueChromaticAberrationMax);
-        }
-
         private void RefreshAdaptiveBudgetResponse()
         {
             if (!_enableAdaptiveBudgetResponse || !Application.isPlaying)
             {
-                ApplyAdaptiveBudgetResponse(1f, 1f, VRAMMonitor.VRAMPressureState.Stable);
+                ApplyAdaptiveBudgetResponse(1f, 1f, VramPressureStateCodes.Stable);
                 return;
             }
 
@@ -2492,10 +2156,10 @@ namespace Hecton8.VFX
                 (renderScale - _adaptiveBudgetFloorRenderScale) /
                 math.max(0.0001f, 1f - _adaptiveBudgetFloorRenderScale));
 
-            VRAMMonitor vramMonitor = _vramMonitor;
-            VRAMMonitor.VRAMPressureState pressureState = vramMonitor != null
-                ? vramMonitor.PressureState
-                : VRAMMonitor.VRAMPressureState.Stable;
+            IVramBudgetReadModel vramMonitor = _vramMonitor;
+            byte pressureState = vramMonitor != null
+                ? vramMonitor.PressureStateCode
+                : VramPressureStateCodes.Stable;
 
             ApplyAdaptiveBudgetResponse(renderScale, normalized, pressureState);
         }
@@ -2503,7 +2167,7 @@ namespace Hecton8.VFX
         private void ApplyAdaptiveBudgetResponse(
             float renderScale,
             float normalized,
-            VRAMMonitor.VRAMPressureState pressureState)
+            byte pressureState)
         {
             _adaptiveRenderScale = renderScale;
             _adaptiveBudgetNormalized = normalized;
@@ -2518,13 +2182,13 @@ namespace Hecton8.VFX
 
             switch (pressureState)
             {
-                case VRAMMonitor.VRAMPressureState.Critical:
+                case VramPressureStateCodes.Critical:
                     _adaptiveShakeScale *= _adaptiveVRAMCriticalShakeScale;
                     _adaptivePostFxScale *= _adaptiveVRAMCriticalPostFxScale;
                     _adaptiveMaxActiveShakes = math.clamp(_adaptiveCriticalMaxActiveShakes, 1, MAX_ACTIVE_SHAKES);
                     break;
 
-                case VRAMMonitor.VRAMPressureState.Warning:
+                case VramPressureStateCodes.Warning:
                     _adaptiveShakeScale *= _adaptiveVRAMWarningShakeScale;
                     _adaptivePostFxScale *= _adaptiveVRAMWarningPostFxScale;
                     _adaptiveMaxActiveShakes = math.clamp(_adaptiveWarningMaxActiveShakes, 1, MAX_ACTIVE_SHAKES);
@@ -2547,14 +2211,14 @@ namespace Hecton8.VFX
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static string ResolveDebugPressureLabel(VRAMMonitor.VRAMPressureState pressureState)
+        private static string ResolveDebugPressureLabel(byte pressureState)
         {
             switch (pressureState)
             {
-                case VRAMMonitor.VRAMPressureState.Critical:
+                case VramPressureStateCodes.Critical:
                     return DebugPressureCritical;
 
-                case VRAMMonitor.VRAMPressureState.Warning:
+                case VramPressureStateCodes.Warning:
                     return DebugPressureWarning;
 
                 default:
@@ -2598,7 +2262,7 @@ namespace Hecton8.VFX
                 Gizmos.color = Color.yellow;
                 float currentFOV = _mainCamera.fieldOfView;
                 float coneDistance = 5f;
-                float coneRadius = math.tan(math.radians(currentFOV * 0.5f)) * coneDistance;
+                float coneRadius = MathLodApproximation.ApproxTanClamped(math.radians(currentFOV * 0.5f), 4096f) * coneDistance;
 
                 Vector3 forward = _cameraTransform.forward * coneDistance;
                 Vector3 right = _cameraTransform.right * coneRadius;

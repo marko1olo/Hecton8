@@ -16,7 +16,7 @@ namespace Hecton8.Modding
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7900)]
-    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, IGameBootstrapperEventListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, IGameBootstrapperEventListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const string SaveKey = "hecton.internal.mod_world_spawns";
 
@@ -34,6 +34,8 @@ namespace Hecton8.Modding
         private bool _serviceShuttingDown;
         private bool _serviceShutdownComplete;
         private bool _bootstrapListenerRegistered;
+        private bool _hotSwapRegistered;
+        private ISaveService _saveService;
 
         /// <summary>
         /// Save order for mod world payloads.
@@ -93,6 +95,7 @@ namespace Hecton8.Modding
 
             SaveEvents.Unregister(this);
             UnregisterFromSaveManager();
+            TryUnregisterHotSwapListener();
             if (_serviceRegistered && !_serviceShuttingDown)
             {
                 if (ReferenceEquals(GlobalRegistry.ModWorldPersistence, this))
@@ -116,6 +119,8 @@ namespace Hecton8.Modding
                 GlobalRegistry.RegisterModWorldPersistenceRuntime(this);
 
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ModWorldPersistence, this);
+            TryRegisterHotSwapListener();
+            RefreshColdRegistryDependencies();
             TryRegisterWithSaveManager();
         }
 
@@ -134,6 +139,7 @@ namespace Hecton8.Modding
 
             SaveEvents.Unregister(this);
             UnregisterFromSaveManager();
+            TryUnregisterHotSwapListener();
             _records.Clear();
             _recordIndexByHash.Clear();
             _liveEntitiesByHash.Clear();
@@ -147,6 +153,24 @@ namespace Hecton8.Modding
             }
 
             _serviceShutdownComplete = true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            if (_saveRegistered && previousService is ISaveService previousSave)
+                previousSave.Unregister(this);
+
+            _saveRegistered = false;
+            _saveService = currentService as ISaveService;
+
+            if (Application.isPlaying && isActiveAndEnabled && !_serviceShuttingDown)
+                TryRegisterWithSaveManager();
         }
 
         /// <summary>
@@ -166,11 +190,11 @@ namespace Hecton8.Modding
                 return null;
             }
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
             if (pool == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[ModWorldPersistenceManager] GlobalRegistry.ObjectPool is unavailable. Persistent mod spawn was rejected.");
+                Debug.LogWarning("[ModWorldPersistenceManager] GlobalRegistry.ObjectPoolService is unavailable. Persistent mod spawn was rejected.");
 #endif
                 return null;
             }
@@ -224,7 +248,7 @@ namespace Hecton8.Modding
             RemoveRecord(marker.SpawnId);
             _liveEntitiesByHash.Remove(marker.SpawnHash);
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
             if (pool != null)
                 pool.Despawn(instance);
             else
@@ -358,7 +382,7 @@ namespace Hecton8.Modding
                     continue;
                 }
 
-                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                IObjectPoolService pool = GlobalRegistry.ObjectPoolService;
                 if (pool == null)
                     continue;
 
@@ -506,7 +530,7 @@ namespace Hecton8.Modding
             if (!MathGuard.IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -518,20 +542,46 @@ namespace Hecton8.Modding
 
         private void TryRegisterWithSaveManager()
         {
-            if (_saveRegistered || Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance == null)
+            if (_saveRegistered)
                 return;
 
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
+            ISaveService saveService = _saveService;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
             _saveRegistered = true;
         }
 
         private void UnregisterFromSaveManager()
         {
-            if (!_saveRegistered || Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance == null)
+            if (!_saveRegistered)
                 return;
 
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
+            _saveService?.Unregister(this);
             _saveRegistered = false;
+        }
+
+        private void RefreshColdRegistryDependencies()
+        {
+            _saveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         [Serializable]

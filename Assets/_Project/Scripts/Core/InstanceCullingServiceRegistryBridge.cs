@@ -9,7 +9,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-87)]
-    public sealed class InstanceCullingServiceRegistryBridge : MonoBehaviour, ITickable
+    public sealed class InstanceCullingServiceRegistryBridge : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
     {
         private const int OverloadVisibleThreshold = 50000;
         private const uint SourceHash = 0xC0111A90u;
@@ -21,12 +21,14 @@ namespace Hecton8.Core
         private IInstanceCullingService _service;
         private bool _serviceRegistered;
         private bool _tickRegistered;
+        private bool _hotSwapRegistered;
         private uint _lastOverloadFrame = uint.MaxValue;
 
         private void OnEnable()
         {
             ResolveService();
             TryRegisterService();
+            TryRegisterHotSwapListener();
             TryRegisterTick();
         }
 
@@ -38,6 +40,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             _service = null;
         }
@@ -45,8 +48,21 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             _service = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterTick();
+            TryRegisterTick();
         }
 
         public void Tick(float deltaTime)
@@ -72,7 +88,7 @@ namespace Hecton8.Core
                     Flags = telemetry.Flags,
                     SourceHash = SourceHash
                 };
-                SignalBus<CullingOverloadSignal>.Push(in signal);
+                SignalBus<CullingOverloadSignal>.TryPush(in signal);
             }
         }
 
@@ -118,6 +134,23 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

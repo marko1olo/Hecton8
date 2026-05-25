@@ -48,7 +48,7 @@ namespace Hecton.Localization
         [SerializeField] private LocalizedSpriteVariant[] variants;
 
         private Sprite _appliedSprite;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private bool _hotSwapRegistered;
 
         private void Awake()
@@ -114,8 +114,8 @@ namespace Hecton.Localization
 
         private Sprite ResolveSpriteForCurrentLanguage()
         {
-            LocalizationManager manager = _localization;
-            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            ILocalizationTextReadModel manager = _localization;
+            GameLanguage language = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
 
             if (variants != null)
             {
@@ -146,13 +146,13 @@ namespace Hecton.Localization
             if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
                 return;
 
-            _localization = currentService as LocalizationManager;
+            _localization = currentService as ILocalizationTextReadModel;
             ApplyCurrentSprite();
         }
 
         private void CacheRegistryServicesCold()
         {
-            _localization = LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterHotSwapListener()

@@ -1,4 +1,6 @@
+using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
@@ -23,11 +25,12 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Unmanaged player-expression payload carried by the native event queue.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct PlayerExpressionEventPayload
     {
-        public int ReferenceSlot;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public int ReferenceSlot;
+        [FieldOffset(4)] public ushort EventType;
+        [FieldOffset(6)] public ushort Reserved;
     }
 
     /// <summary>
@@ -145,12 +148,16 @@ namespace Hecton8.Gameplay
         private static int _referencePendingCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _droppedEventCount;
+        private static int _droppedReferenceSlotCount;
         private static bool _isDispatching;
 
         /// <summary>
         /// Number of queued player-expression events awaiting LateUpdate dispatch.
         /// </summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DroppedReferenceSlotCount => _droppedReferenceSlotCount;
 
         /// <summary>
         /// Registers a listener for deferred player-expression events.
@@ -199,7 +206,10 @@ namespace Hecton8.Gameplay
                     return;
 
                 if (!_pendingEvents.TryDequeue(out PlayerExpressionEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -247,16 +257,25 @@ namespace Hecton8.Gameplay
             return profile != null;
         }
 
+        [Obsolete("Use TryRaiseProfileChanged(PlayerExpressionProfile) so bounded enqueue refusal is visible.", true)]
         internal static void RaiseProfileChanged(PlayerExpressionProfile profile)
         {
+            TryRaiseProfileChanged(profile);
+        }
+
+        internal static bool TryRaiseProfileChanged(PlayerExpressionProfile profile)
+        {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             if (!TryReserveReferenceSlot(out int referenceSlot))
-                return;
+            {
+                _droppedReferenceSlotCount++;
+                return false;
+            }
 
             _referenceSlots[referenceSlot].Profile = profile;
-            Enqueue(new PlayerExpressionEventPayload
+            return Enqueue(new PlayerExpressionEventPayload
             {
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)PlayerExpressionEventType.ProfileChanged,
@@ -287,6 +306,8 @@ namespace Hecton8.Gameplay
             _referencePendingCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _droppedEventCount = 0;
+            _droppedReferenceSlotCount = 0;
             _isDispatching = false;
         }
 
@@ -331,24 +352,26 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void Enqueue(in PlayerExpressionEventPayload payload)
+        private static bool Enqueue(in PlayerExpressionEventPayload payload)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
+                _droppedEventCount++;
                 ReleaseReferenceSlot(payload.ReferenceSlot);
-                return;
+                return false;
             }
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static bool TryReserveReferenceSlot(out int referenceSlot)
@@ -425,7 +448,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!queue.TryDequeue(out PlayerExpressionEventPayload payload))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -469,7 +495,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-105)]
     [AddComponentMenu("Hecton8/Gameplay/Player Expression Manager")]
-    public sealed class PlayerExpressionManager : MonoBehaviour, ISaveable
+    public sealed class PlayerExpressionManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener, IPlayerExpressionReadModel
     {
         private const string ProfileFolder = "Assets/_Project/Data/Customization/PlayerExpression";
         private const string DefaultIdentityName = "STANDARD";
@@ -513,6 +539,11 @@ namespace Hecton8.Gameplay
         private bool _runtimeBindingsReady;
         private bool _pendingRecommendedSuitApply;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
+        private bool _saveRegistered;
+        private ISaveService _saveService;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(160); // COLD ALLOC: char[160] - identity HUD notification staging buffer - owner: PlayerExpressionManager
 
         /// <summary>Registry-owned instance for the active scene/runtime.</summary>
         public static PlayerExpressionManager Instance => GlobalRegistry.PlayerExpression;
@@ -566,11 +597,12 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
             AutoResolveReferences();
             TryRegisterService();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
+            TryRegisterHotSwapListener();
+            RefreshColdRegistryDependencies();
+            TryRegisterSaveOwner();
         }
 
         private void Start()
@@ -583,15 +615,17 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            TryUnregisterSaveOwner();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
+            _playerRuntimeContext = null;
         }
 
         private void OnDestroy()
         {
             bool wasRegisteredOwner = ReferenceEquals(GlobalRegistry.PlayerExpression, this);
+            TryUnregisterSaveOwner();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
 
             if (wasRegisteredOwner)
@@ -783,6 +817,17 @@ namespace Hecton8.Gameplay
             return authoredProfiles[index];
         }
 
+        public bool TryGetNextProfileDisplayName(out string displayName)
+        {
+            displayName = null;
+            PlayerExpressionProfile profile = GetProfile(GetNextProfileIndex());
+            if (profile == null)
+                return false;
+
+            displayName = profile.DisplayName;
+            return !string.IsNullOrWhiteSpace(displayName);
+        }
+
         /// <summary>Cycles to the next authored profile.</summary>
         public bool CycleNextProfile(bool applyRecommendedLoadout = false)
         {
@@ -806,7 +851,7 @@ namespace Hecton8.Gameplay
             if (!applied)
                 return false;
 
-            NotifyInfo($"IDENTITY KIT APPLIED - {ToUpperFast(_activeProfile.RecommendedLoadout.presetName)}");
+            NotifyInfo("IDENTITY KIT APPLIED - ".AsSpan(), _activeProfile.RecommendedLoadout.presetName);
             return true;
         }
 
@@ -822,7 +867,7 @@ namespace Hecton8.Gameplay
 
             string suitName = GetActiveRecommendedSuitName();
             if (!string.IsNullOrWhiteSpace(suitName))
-                NotifyInfo($"SUIT SHELL APPLIED - {ToUpperFast(suitName)}");
+                NotifyInfo("SUIT SHELL APPLIED - ".AsSpan(), suitName);
 
             return true;
         }
@@ -848,22 +893,90 @@ namespace Hecton8.Gameplay
 
         private void AutoResolveReferences()
         {
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                if (toolManager == null)
-                    toolManager = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (toolManager == null && playerContext != null)
+                toolManager = playerContext.ToolManager;
 
-                if (playerMovement == null)
-                {
-                    playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
-                    if (playerMovement == null)
-                        playerMovement = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerMovement != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerMovement : playerTransform.GetComponent<HectonPlayerMovement>());
-                }
-            }
+            if (playerMovement == null && playerContext != null)
+                playerMovement = playerContext.PlayerMovement;
 
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void RefreshColdRegistryDependencies()
+        {
+            _saveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterSaveOwner()
+        {
+            if (_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveOwner()
+        {
+            if (!_saveRegistered)
+                return;
+
+            _saveService?.Unregister(this);
+            _saveRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    AutoResolveReferences();
+                    ApplyPendingRuntimeBindings();
+                    SyncDiagnostics();
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    if (_saveRegistered && previousService is ISaveService previousSave)
+                        previousSave.Unregister(this);
+
+                    _saveRegistered = false;
+                    _saveService = currentService as ISaveService;
+
+                    if (Application.isPlaying && isActiveAndEnabled)
+                        TryRegisterSaveOwner();
+                    break;
+            }
         }
 
         private int ResolveInitialProfileIndex()
@@ -944,10 +1057,10 @@ namespace Hecton8.Gameplay
                 _pendingRecommendedSuitApply = profile.RecommendedSuit != null;
 
             SyncDiagnostics();
-            PlayerExpressionEvents.RaiseProfileChanged(profile);
+            PlayerExpressionEvents.TryRaiseProfileChanged(profile);
 
             if (userFacingNotification)
-                NotifyInfo($"SUIT IDENTITY ACTIVE - {ToUpperFast(profile.DisplayName)}");
+                NotifyInfo("SUIT IDENTITY ACTIVE - ".AsSpan(), profile.DisplayName);
 
             LogProfileApplied(profile.ProfileId, profile.DisplayName);
             return true;
@@ -1003,20 +1116,39 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void NotifyInfo(string message)
+        private void NotifyInfo(ReadOnlySpan<char> prefix, string value)
         {
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
 
-            if (hudNotification != null)
-                hudNotification.ShowInfo(message);
+            _notificationBuffer.Clear();
+            if (hudNotification != null &&
+                _notificationBuffer.Append(prefix) &&
+                AppendUpperOrDefault(ref _notificationBuffer, value))
+            {
+                hudNotification.ShowInfo(in _notificationBuffer);
+            }
         }
 
-        private static string ToUpperFast(string value)
+        private static bool AppendUpperOrDefault(ref FixedCharBuffer buffer, string value)
         {
-            return string.IsNullOrWhiteSpace(value)
-                ? DefaultIdentityName
-                : value.ToUpperInvariant();
+            ReadOnlySpan<char> source = string.IsNullOrWhiteSpace(value)
+                ? DefaultIdentityName.AsSpan()
+                : value.AsSpan();
+
+            Span<char> single = stackalloc char[1];
+            for (int i = 0; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (c >= 'a' && c <= 'z')
+                    c = (char)(c - 32);
+
+                single[0] = c;
+                if (!buffer.Append(single))
+                    return false;
+            }
+
+            return true;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -1026,7 +1158,7 @@ namespace Hecton8.Gameplay
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.Log($"[PlayerExpression] Active profile: {profileId} ({displayName})", this);
+            H8Debug.Log($"[PlayerExpression] Active profile: {profileId} ({displayName})");
 #endif
         }
 
@@ -1037,7 +1169,7 @@ namespace Hecton8.Gameplay
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.Log($"[PlayerExpression] Suit applied: {profileId} -> {suitName}", this);
+            H8Debug.Log($"[PlayerExpression] Suit applied: {profileId} -> {suitName}");
 #endif
         }
     }

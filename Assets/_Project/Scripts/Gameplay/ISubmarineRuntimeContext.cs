@@ -67,6 +67,9 @@ namespace Hecton8.Gameplay
         /// <summary>Thermodynamics-owned thrust/top-speed scalar. One is neutral.</summary>
         float ThermalSpeedMultiplier { get; }
 
+        /// <summary>Resolved certified operating depth in meters after upgrades.</summary>
+        float MaxDepthMeters { get; }
+
         /// <summary>Applies a bounded thermodynamics slowdown without coupling thermodynamics to a concrete submarine class.</summary>
         void SetThermalSpeedMultiplier(float multiplier);
     }

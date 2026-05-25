@@ -13,7 +13,7 @@ using UnityEngine;
 namespace Hecton8.Habitat.Deformation
 {
     [DisallowMultipleComponent]
-    public sealed unsafe class StructuralIntegrityCalculatorRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable
+    public sealed unsafe partial class StructuralIntegrityCalculatorRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
 #if UNITY_EDITOR
         , IColdTickable
 #endif
@@ -83,6 +83,7 @@ namespace Hecton8.Habitat.Deformation
         private int _registeredUpdate;
         private int _registeredLate;
         private int _registeredCold;
+        private int _registeredHotSwap;
         private int _jobScheduled;
         private int _solverLockMask;
         private int _activeNodeCount;
@@ -103,6 +104,8 @@ namespace Hecton8.Habitat.Deformation
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             if (TryInitialize())
             {
                 s_activeRuntime = this;
@@ -118,6 +121,7 @@ namespace Hecton8.Habitat.Deformation
         {
             CompleteScheduled(true, true);
             TryUnregisterTickables();
+            TryUnregisterHotSwapListener();
             ReleaseGpuBuffers();
             ReleaseVaultHandles();
             if (s_activeRuntime == this)
@@ -134,7 +138,8 @@ namespace Hecton8.Habitat.Deformation
             int readMask = 0;
             if (!TryLockSolverBuffer(BufferID.StructuralIntegrityStates, SolverLockStates, ref readMask) ||
                 !TryLockSolverBuffer(BufferID.StructuralIntegrityNodeAups, SolverLockNodeAups, ref readMask) ||
-                !TryLockSolverBuffer(BufferID.StructuralIntegrityTuning, SolverLockTuning, ref readMask))
+                !TryLockSolverBuffer(BufferID.StructuralIntegrityTuning, SolverLockTuning, ref readMask) ||
+                !TryLockBaseStructuralWarningBuffers(ref readMask))
             {
                 UnlockSolverBuffers(readMask);
                 return;
@@ -172,6 +177,8 @@ namespace Hecton8.Habitat.Deformation
                     Gizmos.color = color;
                     Gizmos.DrawWireCube(position, Vector3.one * size);
                 }
+
+                DrawBaseStructuralWarningGizmos(tuning.SeaLevelAup);
             }
             finally
             {
@@ -389,7 +396,6 @@ namespace Hecton8.Habitat.Deformation
 
         private bool TryInitialize()
         {
-            _dataVault = _dataVault ?? GlobalRegistry.DataVault;
             if (_dataVault == null)
                 return false;
 
@@ -400,56 +406,57 @@ namespace Hecton8.Habitat.Deformation
             _titaniumHash = HashLowerAsciiLiteral("titanium");
             _plasteelHash = HashLowerAsciiLiteral("plasteel");
 
-            _statesHandle = _dataVault.GetGenerationHandle<IntegrityStateDTO>(
+            _statesHandle = _dataVault.EnsureGenerationHandle<IntegrityStateDTO>(
                 BufferID.StructuralIntegrityStates,
                 StructuralIntegrityConstants.MaxNodeCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _nodeAupsHandle = _dataVault.GetGenerationHandle<double3>(
+            _nodeAupsHandle = _dataVault.EnsureGenerationHandle<double3>(
                 BufferID.StructuralIntegrityNodeAups,
                 StructuralIntegrityConstants.MaxNodeCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _csrOffsetsHandle = _dataVault.GetGenerationHandle<int>(
+            _csrOffsetsHandle = _dataVault.EnsureGenerationHandle<int>(
                 BufferID.StructuralIntegrityCsrOffsets,
                 StructuralIntegrityConstants.MaxNodeCapacity + 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _csrDestinationsHandle = _dataVault.GetGenerationHandle<int>(
+            _csrDestinationsHandle = _dataVault.EnsureGenerationHandle<int>(
                 BufferID.StructuralIntegrityCsrDestinations,
                 StructuralIntegrityConstants.MaxEdgeCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _edgeFlagsHandle = _dataVault.GetGenerationHandle<byte>(
+            _edgeFlagsHandle = _dataVault.EnsureGenerationHandle<byte>(
                 BufferID.StructuralIntegrityEdgeFlags,
                 StructuralIntegrityConstants.MaxEdgeCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _dataVault.GetGenerationHandle<StructuralTelemetryEntry>(
+            _telemetryHandle = _dataVault.EnsureGenerationHandle<StructuralTelemetryEntry>(
                 BufferID.StructuralIntegrityTelemetryRing,
                 StructuralIntegrityConstants.TelemetryFrameCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = _dataVault.GetGenerationHandle<int>(
+            _telemetryCursorHandle = _dataVault.EnsureGenerationHandle<int>(
                 BufferID.StructuralIntegrityTelemetryCursor,
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = _dataVault.GetGenerationHandle<StructuralTuningDTO>(
+            _tuningHandle = _dataVault.EnsureGenerationHandle<StructuralTuningDTO>(
                 BufferID.StructuralIntegrityTuning,
                 1,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _materialsHandle = _dataVault.GetGenerationHandle<StructuralMaterialStrengthEntry>(
+            _materialsHandle = _dataVault.EnsureGenerationHandle<StructuralMaterialStrengthEntry>(
                 BufferID.StructuralIntegrityMaterialStrengths,
                 StructuralIntegrityConstants.MaterialStrengthCapacity,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = _dataVault.GetGenerationHandle<byte>(
+            _csvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(
                 BufferID.StructuralIntegrityCsvScratch,
                 StructuralIntegrityConstants.CsvScratchBytes,
                 SystemID.HullIntegrity,
                 NativeArrayOptions.UninitializedMemory);
+            EnsureBaseStructuralWarningHandles();
 
             if (!HasRequiredVaultBuffers())
             {
@@ -458,12 +465,28 @@ namespace Hecton8.Habitat.Deformation
 
             SignalBus<BaseIntegrityEventPayload>.Configure(64, 256, 32, StructuralIntegrityConstants.SignalLaneHash);
             SignalBus<BaseIntegrityEventPayload>.EnsureInitialized();
-            SignalBus<FluidIncursionSignal>.Configure(64, 128, 16, StructuralIntegrityConstants.FluidIncursionSignalLaneHash);
+            SignalBus<FluidIncursionSignal>.Configure(
+                FluidIncursionSignal.ExpectedCapacity,
+                FluidIncursionSignal.MaxFrameSignals,
+                FluidIncursionSignal.LowTierFrameSignals,
+                FluidIncursionSignal.LaneHash);
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
-            SignalBus<BaseModuleCompromisedSignal>.Configure(64, 64, 16, StructuralIntegrityConstants.BaseModuleCompromisedSignalLaneHash);
+            SignalBus<BaseModuleCompromisedSignal>.Configure(
+                BaseModuleCompromisedSignal.ExpectedCapacity,
+                BaseModuleCompromisedSignal.MaxFrameSignals,
+                BaseModuleCompromisedSignal.LowTierFrameSignals,
+                BaseModuleCompromisedSignal.LaneHash);
             SignalBus<BaseModuleCompromisedSignal>.EnsureInitialized();
+            SignalBus<BaseStructuralWarningSignal>.Configure(
+                BaseStructuralWarningConstants.SignalCapacity,
+                BaseStructuralWarningConstants.MaxFrameSignals,
+                BaseStructuralWarningConstants.LowTierFrameSignals,
+                BaseStructuralWarningConstants.SignalLaneHash);
+            SignalBus<BaseStructuralWarningSignal>.EnsureInitialized();
 
             if (!ClearBootBuffers())
+                return FailInitialize();
+            if (!ClearBaseStructuralWarningBootBuffers())
                 return FailInitialize();
             if (!WriteDefaultMaterials())
                 return FailInitialize();
@@ -472,6 +495,8 @@ namespace Hecton8.Habitat.Deformation
 #endif
             _activeNodeCount = math.clamp(mockNodeCount, 1, StructuralIntegrityConstants.MaxNodeCapacity);
             if (!WriteDefaultTuning())
+                return FailInitialize();
+            if (!WriteDefaultBaseStructuralWarningTuning())
                 return FailInitialize();
             if (generateMockGraphOnEnable)
             {
@@ -482,6 +507,48 @@ namespace Hecton8.Habitat.Deformation
             EnsureGpuBuffers();
             _initialized = 1;
             return true;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            RebindDataVault(currentService as IDataVault);
+        }
+
+        private void RebindDataVault(IDataVault dataVault)
+        {
+            if (ReferenceEquals(_dataVault, dataVault))
+                return;
+
+            CompleteScheduled(true, true);
+            ReleaseGpuBuffers();
+            ReleaseVaultHandles();
+            _initialized = 0;
+            _dataVault = dataVault;
+
+            if (!isActiveAndEnabled || dataVault == null)
+                return;
+
+            if (TryInitialize())
+            {
+                s_activeRuntime = this;
+                TryRegisterTickables();
+            }
+            else if (s_activeRuntime == this)
+            {
+                s_activeRuntime = null;
+            }
         }
 
         private bool FailInitialize()
@@ -513,7 +580,8 @@ namespace Hecton8.Habitat.Deformation
                    TryResolveVaultBuffer(in _materialsHandle, out NativeArray<StructuralMaterialStrengthEntry> materials) &&
                    materials.Length >= StructuralIntegrityConstants.MaterialStrengthCapacity &&
                    TryResolveVaultBuffer(in _csvScratchHandle, out NativeArray<byte> csvScratch) &&
-                   csvScratch.Length >= StructuralIntegrityConstants.CsvScratchBytes;
+                   csvScratch.Length >= StructuralIntegrityConstants.CsvScratchBytes &&
+                   HasRequiredBaseStructuralWarningBuffers();
         }
 
         private NativeArray<T> ResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle)
@@ -562,6 +630,7 @@ namespace Hecton8.Habitat.Deformation
                 ReleaseVaultHandle(vault, ref _tuningHandle);
                 ReleaseVaultHandle(vault, ref _materialsHandle);
                 ReleaseVaultHandle(vault, ref _csvScratchHandle);
+                ReleaseBaseStructuralWarningVaultHandles(vault);
             }
 
             _statesHandle = default;
@@ -574,6 +643,7 @@ namespace Hecton8.Habitat.Deformation
             _tuningHandle = default;
             _materialsHandle = default;
             _csvScratchHandle = default;
+            ClearBaseStructuralWarningHandleState();
             _dataVault = null;
         }
 
@@ -829,11 +899,23 @@ namespace Hecton8.Habitat.Deformation
                 NodeAups = aups,
                 Tuning = tuning,
                 IntegrityEvents = SignalBus<BaseIntegrityEventPayload>.ParallelWriter,
+                IntegrityEventsBudget = SignalBus<BaseIntegrityEventPayload>.ParallelWriterBudget,
                 FluidEvents = SignalBus<FluidIncursionSignal>.ParallelWriter,
+                FluidEventsBudget = SignalBus<FluidIncursionSignal>.ParallelWriterBudget,
                 CompromisedEvents = SignalBus<BaseModuleCompromisedSignal>.ParallelWriter,
+                CompromisedEventsBudget = SignalBus<BaseModuleCompromisedSignal>.ParallelWriterBudget,
                 ActiveNodeCount = safeCount,
                 Frame = _frame
             }.Schedule(handle);
+
+            handle = ScheduleBaseStructuralWarningDispatcher(
+                states,
+                aups,
+                tuning,
+                safeCount,
+                quality,
+                framesBetweenUpdates,
+                handle);
 
             handle = new StructuralEdgeSeverJob
             {
@@ -901,6 +983,7 @@ namespace Hecton8.Habitat.Deformation
             if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTelemetryCursor, SolverLockTelemetryCursor, ref mask)) { UnlockSolverBuffers(mask); return false; }
             if (!TryLockSolverBuffer(BufferID.StructuralIntegrityTuning, SolverLockTuning, ref mask)) { UnlockSolverBuffers(mask); return false; }
             if (includeSdf && !TryLockSolverBuffer(BufferID.VoxelSdfTexture3D, SolverLockSdf, ref mask)) { UnlockSolverBuffers(mask); return false; }
+            if (!TryLockBaseStructuralWarningBuffers(ref mask)) { UnlockSolverBuffers(mask); return false; }
 
             _solverLockMask = mask;
             return true;
@@ -939,6 +1022,7 @@ namespace Hecton8.Habitat.Deformation
                 return;
 
             if ((mask & SolverLockSdf) != 0) _dataVault.TryUnlockBuffer(BufferID.VoxelSdfTexture3D, SystemID.HullIntegrity);
+            UnlockBaseStructuralWarningBuffers(mask);
             if ((mask & SolverLockTuning) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, SystemID.HullIntegrity);
             if ((mask & SolverLockTelemetryCursor) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTelemetryCursor, SystemID.HullIntegrity);
             if ((mask & SolverLockTelemetry) != 0) _dataVault.TryUnlockBuffer(BufferID.StructuralIntegrityTelemetryRing, SystemID.HullIntegrity);
@@ -993,6 +1077,8 @@ namespace Hecton8.Habitat.Deformation
                 DumpTelemetry(SurgeonDumpRelativePath, in entry);
                 _lastDumpedFrame = entry.Frame;
             }
+
+            AfterBaseStructuralWarningComplete();
         }
 
         private void UploadStatesToGpu(NativeArray<IntegrityStateDTO> states, uint stateHash, bool canUseStateHash)
@@ -1108,6 +1194,15 @@ namespace Hecton8.Habitat.Deformation
 #endif
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap != 0 || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.TryRegisterHotSwapListener(this))
+                _registeredHotSwap = 1;
+        }
+
         private void TryUnregisterTickables()
         {
             if (_registeredUpdate != 0)
@@ -1129,6 +1224,15 @@ namespace Hecton8.Habitat.Deformation
                 _registeredCold = 0;
             }
 #endif
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (_registeredHotSwap == 0)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = 0;
         }
 
         private bool WriteDefaultMaterials()
@@ -1548,6 +1652,9 @@ namespace Hecton8.Habitat.Deformation
 
         private static float ResolveVisualQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(quality) ? quality : 1f);
         }

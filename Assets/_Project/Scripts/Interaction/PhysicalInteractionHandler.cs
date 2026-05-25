@@ -8,6 +8,7 @@ namespace Hecton8.Interaction
     using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Items;
+    using Hecton8.Physics;
     using Hecton8.World;
     using Unity.Mathematics;
     using UnityEngine;
@@ -173,6 +174,11 @@ namespace Hecton8.Interaction
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
         private bool _dispatcherAvailable;
+        private Transform _pendingPocketVisualTransform;
+        private Vector3 _pendingPocketVisualPosition;
+        private Vector3 _pendingPocketVisualScale;
+        private bool _pendingPocketVisualPositionDirty;
+        private bool _pendingPocketVisualScaleDirty;
         private float _stateTimer;
         private Vector3 _pullSmoothDampVelocity;
         private const int MaxPanelButtonOverlaps = 8;
@@ -240,7 +246,7 @@ namespace Hecton8.Interaction
 
             if (interactionAnchor == null)
             {
-                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
                 _playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 if (_playerCamera == null)
                     TryGetComponent(out _playerCamera);
@@ -507,11 +513,17 @@ namespace Hecton8.Interaction
         /// </summary>
         public void LateFrameTick()
         {
+            FlushPocketPickupVisualPose();
+
             if (_physicalHandController != null)
             {
                 _physicalHandController.LateFrameTick();
                 if (!_physicalHandController.RequiresLateFrameTick)
                     RefreshTickRegistration();
+            }
+            else if (_state == InteractionState.Idle)
+            {
+                RefreshTickRegistration();
             }
         }
 
@@ -540,19 +552,16 @@ namespace Hecton8.Interaction
             _physicalHandController.TryGetInteractionProbeCollider(out handSourceCollider);
 
             float probeRadius = ResolvePanelButtonProbeRadius();
-            int hitCount = Physics.OverlapSphereNonAlloc(
+            int hitCount = PhysicalHandReceiverRegistry.QuerySphere(
                 handPosition,
                 probeRadius,
-                _panelButtonOverlaps,
                 _resolvedPanelButtonLayerMask,
-                QueryTriggerInteraction.Collide);
+                _panelButtonOverlaps);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (hitCount >= _panelButtonOverlaps.Length && !_panelButtonOverlapSaturationLogged)
             {
                 _panelButtonOverlapSaturationLogged = true;
-                Debug.LogWarning(
-                    "[PhysicalInteractionHandler] Physical panel overlap buffer saturated. " +
-                    "Increase MaxPanelButtonOverlaps or narrow panelButtonMask.", this);
+                Debug.LogWarning("[PhysicalInteractionHandler] Physical panel overlap buffer saturated.", this);
             }
 #endif
             if (hitCount <= 0)
@@ -690,8 +699,6 @@ namespace Hecton8.Interaction
                 _activeBodyDetectCollisions = _activeBody.detectCollisions;
                 _activeBodyLinearVelocity = IsFiniteVector(_activeBody.linearVelocity) ? _activeBody.linearVelocity : Vector3.zero;
                 _activeBodyAngularVelocity = IsFiniteVector(_activeBody.angularVelocity) ? _activeBody.angularVelocity : Vector3.zero;
-                _activeBody.linearVelocity = Vector3.zero;
-                _activeBody.angularVelocity = Vector3.zero;
                 _activeBody.isKinematic = true;
                 _activeBody.detectCollisions = false;
             }
@@ -813,7 +820,7 @@ namespace Hecton8.Interaction
 
             float duration = ClampFiniteRange(pickupDuration, 0.05f, 1f, 0.22f);
             float progress = math.saturate(_stateTimer / duration);
-            _activeTargetTransform.localScale = (Vector3)math.lerp((float3)_activeOriginalLocalScale, (float3)_activeTargetLocalScale, progress);
+            QueuePocketPickupVisualScale(_activeTargetTransform, (Vector3)math.lerp((float3)_activeOriginalLocalScale, (float3)_activeTargetLocalScale, progress));
 
             if (_activeBody == null && interactionAnchor != null)
             {
@@ -842,7 +849,7 @@ namespace Hecton8.Interaction
                 if (!IsFiniteVector(nextPosition))
                     return;
 
-                _activeTargetTransform.position = nextPosition;
+                QueuePocketPickupVisualPosition(_activeTargetTransform, nextPosition);
             }
 
             if (progress >= 1f)
@@ -876,7 +883,43 @@ namespace Hecton8.Interaction
             if (!IsFiniteVector(nextPosition))
                 return;
 
-            _activeTargetTransform.position = nextPosition;
+            _activeBody.MovePosition(nextPosition);
+        }
+
+        private void QueuePocketPickupVisualPosition(Transform target, Vector3 position)
+        {
+            if (target == null || !IsFiniteVector(position))
+                return;
+
+            _pendingPocketVisualTransform = target;
+            _pendingPocketVisualPosition = position;
+            _pendingPocketVisualPositionDirty = true;
+        }
+
+        private void QueuePocketPickupVisualScale(Transform target, Vector3 localScale)
+        {
+            if (target == null || !IsFiniteVector(localScale))
+                return;
+
+            _pendingPocketVisualTransform = target;
+            _pendingPocketVisualScale = localScale;
+            _pendingPocketVisualScaleDirty = true;
+        }
+
+        private void FlushPocketPickupVisualPose()
+        {
+            Transform target = _pendingPocketVisualTransform;
+            if (target != null)
+            {
+                if (_pendingPocketVisualPositionDirty)
+                    target.position = _pendingPocketVisualPosition;
+                if (_pendingPocketVisualScaleDirty)
+                    target.localScale = _pendingPocketVisualScale;
+            }
+
+            _pendingPocketVisualTransform = null;
+            _pendingPocketVisualPositionDirty = false;
+            _pendingPocketVisualScaleDirty = false;
         }
 
         private void TickHeavyCarry(float deltaTime)
@@ -975,7 +1018,7 @@ namespace Hecton8.Interaction
         private void RestorePocketPickupState(bool restoreMotion = true)
         {
             if (_activeTargetTransform != null)
-                _activeTargetTransform.localScale = _activeOriginalLocalScale;
+                QueuePocketPickupVisualScale(_activeTargetTransform, _activeOriginalLocalScale);
 
             if (_activeCollider != null)
                 _activeCollider.enabled = _activeColliderWasEnabled;
@@ -986,8 +1029,11 @@ namespace Hecton8.Interaction
                 _activeBody.detectCollisions = _activeBodyDetectCollisions;
                 if (restoreMotion && !_activeBodyWasKinematic)
                 {
-                    _activeBody.linearVelocity = IsFiniteVector(_activeBodyLinearVelocity) ? _activeBodyLinearVelocity : Vector3.zero;
-                    _activeBody.angularVelocity = IsFiniteVector(_activeBodyAngularVelocity) ? _activeBodyAngularVelocity : Vector3.zero;
+                    Vector3 restoredLinearVelocity = IsFiniteVector(_activeBodyLinearVelocity) ? _activeBodyLinearVelocity : Vector3.zero;
+                    Vector3 currentLinearVelocity = IsFiniteVector(_activeBody.linearVelocity) ? _activeBody.linearVelocity : Vector3.zero;
+                    Vector3 deltaVelocity = restoredLinearVelocity - currentLinearVelocity;
+                    if (IsFiniteVector(deltaVelocity) && deltaVelocity.sqrMagnitude > 0.000001f)
+                        PhysicsForceRouter.QueueForce(_activeBody, deltaVelocity, ForceMode.VelocityChange);
                 }
             }
         }
@@ -1146,7 +1192,7 @@ namespace Hecton8.Interaction
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1207,7 +1253,11 @@ namespace Hecton8.Interaction
                 handControllerNeedsFixedTick ||
                 _state == InteractionState.PullingPocketItem ||
                 _state == InteractionState.DraggingHeavyObject;
-            bool needsLateFrameTick = _physicalHandController != null && _physicalHandController.RequiresLateFrameTick;
+            bool needsLateFrameTick =
+                _pendingPocketVisualPositionDirty ||
+                _pendingPocketVisualScaleDirty ||
+                _state == InteractionState.PullingPocketItem ||
+                (_physicalHandController != null && _physicalHandController.RequiresLateFrameTick);
 
             if (needsTick && !_registeredTick)
             {

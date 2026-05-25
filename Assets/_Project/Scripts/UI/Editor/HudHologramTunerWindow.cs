@@ -55,8 +55,11 @@ namespace Hecton8.UI.Editor
             if (changed && Application.isPlaying)
                 ApplyToRuntime();
 
-            if (_target == null && Selection.activeGameObject != null)
-                _target = Selection.activeGameObject.GetComponent<WristHologramHudRuntime>();
+            if (_target == null && Selection.activeGameObject != null &&
+                Selection.activeGameObject.TryGetComponent(out WristHologramHudRuntime selectedTarget))
+            {
+                _target = selectedTarget;
+            }
         }
 
         private void ApplyToRuntime()

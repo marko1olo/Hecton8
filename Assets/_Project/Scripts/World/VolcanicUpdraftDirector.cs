@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Hecton8.AI.Cognition;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.AI.Cognition;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
@@ -281,14 +281,14 @@ namespace Hecton8.World
         internal static float ResolveDebrisLiftWeight(float qualityWeight)
         {
             float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
-            return math.step(0.3f, q) * SmoothStep(0.3f, 1f, q);
+            return SmoothStep(0f, 1f, q);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float ResolveTurbulenceGate(float qualityWeight)
         {
             float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
-            return math.step(0.3f, q) * SmoothStep(0.3f, 1f, q);
+            return SmoothStep(0f, 1f, q);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -310,7 +310,7 @@ namespace Hecton8.World
             if (active01 <= 0.0001f)
                 return false;
 
-            float turbulenceGate = ResolveTurbulenceGate(AuthoritativeQualityWeight);
+            float turbulenceGate = ResolveTurbulenceGate(settings.GlobalQualityWeight);
             float3 strictUp = new float3(0f, 1f, 0f);
             float3 up = strictUp;
             if (turbulenceGate > 0.0001f)
@@ -612,7 +612,7 @@ namespace Hecton8.World
 
             if ((uint)index < (uint)MockDebrisCount && (uint)index < (uint)MockDebris.Length)
             {
-                float debrisLiftWeight = VolcanicUpdraftVault.ResolveDebrisLiftWeight(VolcanicUpdraftVault.AuthoritativeQualityWeight);
+                float debrisLiftWeight = VolcanicUpdraftVault.ResolveDebrisLiftWeight(Settings.GlobalQualityWeight);
                 MockDebrisParticleDTO debris = MockDebris[index];
                 float3 deltaVelocity = float3.zero;
                 float peak = 0f;
@@ -901,7 +901,7 @@ namespace Hecton8.World
 
             uint flags = Settings.Flags;
             flags |= nan != 0 ? VolcanicUpdraftVault.TelemetryFlagNaN : 0u;
-            flags |= VolcanicUpdraftVault.ResolveDebrisLiftWeight(VolcanicUpdraftVault.AuthoritativeQualityWeight) <= 0.0001f
+            flags |= VolcanicUpdraftVault.ResolveDebrisLiftWeight(Settings.GlobalQualityWeight) <= 0.0001f
                 ? VolcanicUpdraftVault.TelemetryFlagDebrisCulled
                 : 0u;
 
@@ -1169,7 +1169,9 @@ namespace Hecton8.World
                 EnsureVaultBuffers();
 
             RefreshExternalHandles();
+#if UNITY_EDITOR
             TryApplyCsvOverrides();
+#endif
         }
 
         public void LateFrameTick()
@@ -1355,18 +1357,18 @@ namespace Hecton8.World
             if (!ResolveDataVault())
                 return false;
 
-            _ventHandle = _dataVault.GetGenerationHandle<VentStateDTO>(VolcanicUpdraftVault.VentsBuffer, math.clamp(maxVentCount, 1, VolcanicUpdraftVault.MaxVents), OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _settingsHandle = _dataVault.GetGenerationHandle<VolcanicUpdraftSettingsDTO>(VolcanicUpdraftVault.SettingsBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _dataVault.GetGenerationHandle<VolcanicUpdraftTelemetryEntry>(VolcanicUpdraftVault.TelemetryBuffer, VolcanicUpdraftVault.TelemetryFrames, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockSubmarineHandle = _dataVault.GetGenerationHandle<MockSubmarineArray>(VolcanicUpdraftVault.MockSubmarinesBuffer, VolcanicUpdraftVault.MockSubmarineCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockLeviathanHandle = _dataVault.GetGenerationHandle<MockLeviathanVelocityDTO>(VolcanicUpdraftVault.MockLeviathansBuffer, VolcanicUpdraftVault.MockLeviathanCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockDebrisHandle = _dataVault.GetGenerationHandle<MockDebrisParticleDTO>(VolcanicUpdraftVault.MockDebrisBuffer, VolcanicUpdraftVault.MockDebrisCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _floatSignalHandle = _dataVault.GetGenerationHandle<VolcanicFloatStateSignal>(VolcanicUpdraftVault.FloatSignalsBuffer, AlphaLeviathanStalkConstants.MaxLeviathanSlots, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _dynamicWakeHandle = _dataVault.GetGenerationHandle<VfxDynamicWakeDTO>(VolcanicUpdraftVault.DynamicWakesBuffer, VolcanicUpdraftVault.DynamicWakeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockFlowFieldHandle = _dataVault.GetGenerationHandle<VfxMockFlowField>(VolcanicUpdraftVault.MockFlowFieldBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _dataVault.GetGenerationHandle<byte>(VolcanicUpdraftVault.CsvScratchBuffer, VolcanicUpdraftVault.CsvScratchBytes, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _counterHandle = _dataVault.GetGenerationHandle<VolcanicUpdraftFrameCounter>(VolcanicUpdraftVault.FrameCountersBuffer, VolcanicUpdraftVault.CounterCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _playerHeatHandle = _dataVault.GetGenerationHandle<VolcanicPlayerHeatSignalDTO>(VolcanicUpdraftVault.PlayerHeatBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _ventHandle = _dataVault.EnsureGenerationHandle<VentStateDTO>(VolcanicUpdraftVault.VentsBuffer, math.clamp(maxVentCount, 1, VolcanicUpdraftVault.MaxVents), OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _settingsHandle = _dataVault.EnsureGenerationHandle<VolcanicUpdraftSettingsDTO>(VolcanicUpdraftVault.SettingsBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = _dataVault.EnsureGenerationHandle<VolcanicUpdraftTelemetryEntry>(VolcanicUpdraftVault.TelemetryBuffer, VolcanicUpdraftVault.TelemetryFrames, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _mockSubmarineHandle = _dataVault.EnsureGenerationHandle<MockSubmarineArray>(VolcanicUpdraftVault.MockSubmarinesBuffer, VolcanicUpdraftVault.MockSubmarineCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _mockLeviathanHandle = _dataVault.EnsureGenerationHandle<MockLeviathanVelocityDTO>(VolcanicUpdraftVault.MockLeviathansBuffer, VolcanicUpdraftVault.MockLeviathanCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _mockDebrisHandle = _dataVault.EnsureGenerationHandle<MockDebrisParticleDTO>(VolcanicUpdraftVault.MockDebrisBuffer, VolcanicUpdraftVault.MockDebrisCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _floatSignalHandle = _dataVault.EnsureGenerationHandle<VolcanicFloatStateSignal>(VolcanicUpdraftVault.FloatSignalsBuffer, AlphaLeviathanStalkConstants.MaxLeviathanSlots, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _dynamicWakeHandle = _dataVault.EnsureGenerationHandle<VfxDynamicWakeDTO>(VolcanicUpdraftVault.DynamicWakesBuffer, VolcanicUpdraftVault.DynamicWakeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _mockFlowFieldHandle = _dataVault.EnsureGenerationHandle<VfxMockFlowField>(VolcanicUpdraftVault.MockFlowFieldBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(VolcanicUpdraftVault.CsvScratchBuffer, VolcanicUpdraftVault.CsvScratchBytes, OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _counterHandle = _dataVault.EnsureGenerationHandle<VolcanicUpdraftFrameCounter>(VolcanicUpdraftVault.FrameCountersBuffer, VolcanicUpdraftVault.CounterCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _playerHeatHandle = _dataVault.EnsureGenerationHandle<VolcanicPlayerHeatSignalDTO>(VolcanicUpdraftVault.PlayerHeatBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
 
             if (!TryResolveVaultBuffer(in _ventHandle, VolcanicUpdraftVault.VentsBuffer, 1, out NativeArray<VentStateDTO> vents) ||
                 !TryResolveVaultBuffer(in _settingsHandle, VolcanicUpdraftVault.SettingsBuffer, 1, out NativeArray<VolcanicUpdraftSettingsDTO> settings) ||
@@ -1588,8 +1590,14 @@ namespace Hecton8.World
 
         private float ResolveGlobalQualityWeight()
         {
-            float quality = forceEditorQualityWeight ? editorQualityWeight : HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(quality) ? quality : 1f);
+            if (forceEditorQualityWeight)
+                return MathLodApproximation.SaturateFinite(editorQualityWeight, VolcanicUpdraftVault.AuthoritativeQualityWeight);
+
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, VolcanicUpdraftVault.AuthoritativeQualityWeight);
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return MathLodApproximation.SaturateFinite(quality, VolcanicUpdraftVault.AuthoritativeQualityWeight);
         }
 
         private bool TryLoadLegacyVentBinary(NativeArray<VentStateDTO> vents, VolcanicUpdraftSettingsDTO settings)
@@ -1613,7 +1621,7 @@ namespace Hecton8.World
                     return false;
 
                 int count = math.min(vents.Length, (int)(stream.Length / 64L));
-                byte[] record = new byte[64];
+                Span<byte> record = stackalloc byte[64];
                 for (int i = 0; i < count; i++)
                 {
                     if (!TryReadExact(stream, record))
@@ -1655,12 +1663,12 @@ namespace Hecton8.World
             }
         }
 
-        private static bool TryReadExact(FileStream stream, byte[] destination)
+        private static bool TryReadExact(FileStream stream, Span<byte> destination)
         {
             int offset = 0;
             while (offset < destination.Length)
             {
-                int read = stream.Read(destination, offset, destination.Length - offset);
+                int read = stream.Read(destination.Slice(offset));
                 if (read <= 0)
                     return false;
                 offset += read;
@@ -1669,7 +1677,7 @@ namespace Hecton8.World
             return true;
         }
 
-        private static float ReadFloatLittleEndian(byte[] bytes, int offset)
+        private static float ReadFloatLittleEndian(ReadOnlySpan<byte> bytes, int offset)
         {
             uint value = bytes[offset] |
                          ((uint)bytes[offset + 1] << 8) |
@@ -1678,7 +1686,7 @@ namespace Hecton8.World
             return math.asfloat(value);
         }
 
-        private static double ReadDoubleLittleEndian(byte[] bytes, int offset)
+        private static double ReadDoubleLittleEndian(ReadOnlySpan<byte> bytes, int offset)
         {
             ulong value = bytes[offset] |
                           ((ulong)bytes[offset + 1] << 8) |
@@ -1779,7 +1787,7 @@ namespace Hecton8.World
                     continue;
 
                 AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(vent.AUP);
-                GlobalSignals.Publish(new FluidImpulseSignal
+                SignalBus<FluidImpulseSignal>.TryPush(new FluidImpulseSignal
                 {
                     PositionAup = aup,
                     Vector = math.normalizesafe(vent.UpVector, new float3(0f, 1f, 0f)) * vent.ThrustPower,
@@ -1790,7 +1798,7 @@ namespace Hecton8.World
                     Flags = 1u
                 });
 
-                GlobalSignals.Publish(new AcousticPingSignal
+                SignalBus<AcousticPingSignal>.TryPush(new AcousticPingSignal
                 {
                     PositionAup = aup,
                     RadiusMeters = settings.AcousticRadius,
@@ -1804,7 +1812,7 @@ namespace Hecton8.World
                 ushort quantity = (ushort)math.round(math.saturate(intensity * debrisWeight * settings.DebrisCommandIntensity) * 50f);
                 if (quantity > 0)
                 {
-                    GlobalSignals.Publish(new DebrisSpawnSignal
+                    SignalBus<DebrisSpawnSignal>.TryPush(new DebrisSpawnSignal
                     {
                         PositionAup = aup,
                         SpeciesHash = VolcanicUpdraftVault.SourceHash,
@@ -1824,7 +1832,7 @@ namespace Hecton8.World
 
             if (entry.ActiveEruptions > 0)
             {
-                GlobalSignals.Publish(new SeismicSignal
+                SignalBus<SeismicSignal>.TryPush(new SeismicSignal
                 {
                     Direction = new float3(0f, 1f, 0f),
                     Intensity01 = math.saturate(entry.ActiveEruptions / 4f),
@@ -1842,21 +1850,11 @@ namespace Hecton8.World
                 VolcanicPlayerHeatSignalDTO heat = playerHeat[0];
                 if (heat.Intensity01 > 0f)
                 {
-                    GlobalSignals.Publish(new PlayerStressSignal
+                    SignalBus<PlayerStressSignal>.TryPush(new PlayerStressSignal
                     {
                         Stress01 = heat.Blindness01,
                         OxygenDrainScale = 1f + heat.Heat01,
                         AggressionScale = heat.Blindness01,
-                        Frame = heat.Frame,
-                        Cause = 7,
-                        Flags = 1
-                    });
-
-                    GlobalSignals.Publish(new PhysiologyStateSignal
-                    {
-                        PlayerStress01 = heat.Blindness01,
-                        O2DrainMultiplier = 1f + heat.Heat01,
-                        Recovery01 = 0f,
                         Frame = heat.Frame,
                         Cause = 7,
                         Flags = 1
@@ -1874,7 +1872,7 @@ namespace Hecton8.World
                         continue;
 
                     AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(signal.AUP);
-                    GlobalSignals.Publish(new FaunaStateChangedSignal
+                    SignalBus<FaunaStateChangedSignal>.TryPush(new FaunaStateChangedSignal
                     {
                         PositionAup = aup,
                         SpeciesHash = VolcanicUpdraftVault.SourceHash,
@@ -1888,6 +1886,7 @@ namespace Hecton8.World
             }
         }
 
+#if UNITY_EDITOR
         private void TryApplyCsvOverrides()
         {
             if (!_buffersReady || _fixedPipelineScheduled || !ResolveDataVault())
@@ -1930,12 +1929,18 @@ namespace Hecton8.World
                 using FileStream stream = File.OpenRead(path);
                 int max = math.min(scratch.Length, VolcanicUpdraftVault.CsvScratchBytes);
                 int length = 0;
-                while (length < max)
+                unsafe
                 {
-                    int b = stream.ReadByte();
-                    if (b < 0)
-                        break;
-                    scratch[length++] = (byte)b;
+                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                    Span<byte> destination = new Span<byte>(ptr, max);
+                    while (length < max)
+                    {
+                        int read = stream.Read(destination.Slice(length));
+                        if (read <= 0)
+                            break;
+
+                        length += read;
+                    }
                 }
 
                 return length;
@@ -1952,7 +1957,7 @@ namespace Hecton8.World
 
         private static string ResolveCsvPathCold()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
             string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
             string path = Path.Combine(projectRoot, "Assets", "_SourceData", "World", CsvFileName);
@@ -2093,6 +2098,7 @@ namespace Hecton8.World
 
             return value * sign;
         }
+#endif
 
         private void DumpBlackBoxIfFaulted()
         {

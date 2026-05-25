@@ -16,7 +16,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9940)]
-    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int SceneActivationWatchdogInitialFrames = 1200;
         private const int SceneActivationWatchdogRepeatFrames = 300;
@@ -98,6 +98,7 @@ namespace Hecton8.Core
         private bool _registeredSceneService;
         private bool _registeredSceneCallbacks;
         private bool _registeredUpdatable;
+        private bool _registeredHotSwapListener;
         private bool _sceneLoadInFlight;
         private string _pendingSceneName;
         private AsyncOperation _pendingSceneLoadOperation;
@@ -201,6 +202,7 @@ namespace Hecton8.Core
             GlobalRegistry.RegisterSceneRuntime(this);
             H8Memory.Initialize();
             _dataVault = GlobalRegistry.DataVault;
+            TryRegisterHotSwapListener();
 
             if (_isInitialized)
             {
@@ -344,6 +346,7 @@ namespace Hecton8.Core
         private void OnEnable()
         {
             TryRegisterUpdatable();
+            TryRegisterHotSwapListener();
             if (_isInitialized)
             {
                 TryRegisterSceneService();
@@ -353,6 +356,7 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
             TryUnregisterSceneCallbacks();
             TryUnregisterSceneService();
@@ -373,6 +377,7 @@ namespace Hecton8.Core
             if (_memoryLifecycleTransitionActive)
                 CancelMemoryLifecycleTransition();
 
+            TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
             TryUnregisterSceneCallbacks();
             TryUnregisterSceneService();
@@ -497,7 +502,7 @@ namespace Hecton8.Core
             signal.Paused = paused ? (byte)1 : (byte)0;
             signal.Flags = flags;
             signal.RestoreScalar = 1f;
-            GlobalSignals.Publish(in signal);
+            SignalBus<SystemPauseSignal>.TryPush(in signal);
         }
 
         private bool ReleaseSceneOwnedVaultBuffers()
@@ -769,7 +774,7 @@ namespace Hecton8.Core
 
         private static void BeginWorldDroneCrossfade()
         {
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is ISceneTransitionAudioBridge spatialAudio)
+            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
             {
                 spatialAudio.BeginWorldDroneTransition(
                     WorldDroneLoadDb,
@@ -780,7 +785,7 @@ namespace Hecton8.Core
 
         private static void UpdateWorldDroneCrossfade(float normalized)
         {
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is ISceneTransitionAudioBridge spatialAudio)
+            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
                 spatialAudio.SetWorldDroneTransitionProgress(normalized);
         }
 
@@ -873,7 +878,7 @@ namespace Hecton8.Core
             AppendServiceHandle(buffer, ref cursor, _TerminalBootTickLabelBytes, GlobalRegistry.TickManager, 1u, _terminalBootSeed, (uint)frame);
             AppendServiceHandle(buffer, ref cursor, _TerminalBootSceneLabelBytes, GlobalRegistry.Scene, 2u, _terminalBootSeed, (uint)frame);
             AppendServiceHandle(buffer, ref cursor, _TerminalBootPhysicsLabelBytes, GlobalRegistry.Physics, 3u, _terminalBootSeed, (uint)frame);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, 4u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, GlobalRegistry.Audio, 4u, _terminalBootSeed, (uint)frame);
 
             _terminalBootText.SetCharArray(_terminalBootBuffer, 0, cursor);
         }
@@ -1099,20 +1104,14 @@ namespace Hecton8.Core
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void RestoreCoreTickAfterRuntimeStateClear()
         {
             if (!_isInitialized || !Application.isPlaying || !isActiveAndEnabled)
                 return;
-
-            if (GlobalRegistry.Updatables.Contains(this))
-            {
-                _registeredUpdatable = true;
-                return;
-            }
 
             _registeredUpdatable = false;
             TryRegisterUpdatable();
@@ -1125,6 +1124,43 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null || !_isInitialized || !isActiveAndEnabled)
+                        return;
+
+                    TryUnregisterUpdatable();
+                    TryRegisterUpdatable();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    _dataVault = currentService as IDataVault;
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void TryRegisterSceneService()

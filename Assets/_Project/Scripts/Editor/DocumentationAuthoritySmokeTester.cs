@@ -130,15 +130,17 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            string[] txtFiles = Directory.GetFiles(projectRoot, "*.txt", SearchOption.TopDirectoryOnly);
-            string[] logFiles = Directory.GetFiles(projectRoot, "*.log", SearchOption.TopDirectoryOnly);
-            result.RootLooseTextLogCount = txtFiles.Length + logFiles.Length;
+            foreach (string txtFile in Directory.EnumerateFiles(projectRoot, "*.txt", SearchOption.TopDirectoryOnly))
+            {
+                result.RootLooseTextLogCount++;
+                AddFailure(result, "Root loose text file: " + Path.GetFileName(txtFile));
+            }
 
-            for (int i = 0; i < txtFiles.Length; i++)
-                AddFailure(result, "Root loose text file: " + Path.GetFileName(txtFiles[i]));
-
-            for (int i = 0; i < logFiles.Length; i++)
-                AddFailure(result, "Root loose log file: " + Path.GetFileName(logFiles[i]));
+            foreach (string logFile in Directory.EnumerateFiles(projectRoot, "*.log", SearchOption.TopDirectoryOnly))
+            {
+                result.RootLooseTextLogCount++;
+                AddFailure(result, "Root loose log file: " + Path.GetFileName(logFile));
+            }
         }
 
         private static void CountRelocatedRootLogs(string projectRoot, DocumentationAuthorityAuditResult result)
@@ -147,11 +149,10 @@ namespace Hecton8.EditorTools
             if (!Directory.Exists(archiveRootPath))
                 return;
 
-            string[] bundlePaths = Directory.GetDirectories(archiveRootPath, "Root_Logs_*", SearchOption.TopDirectoryOnly);
-            for (int i = 0; i < bundlePaths.Length; i++)
+            foreach (string bundlePath in Directory.EnumerateDirectories(archiveRootPath, "Root_Logs_*", SearchOption.TopDirectoryOnly))
             {
-                string[] archiveLogs = Directory.GetFiles(bundlePaths[i], "*.log", SearchOption.TopDirectoryOnly);
-                result.RelocatedRootLogCount += archiveLogs.Length;
+                foreach (string archiveLog in Directory.EnumerateFiles(bundlePath, "*.log", SearchOption.TopDirectoryOnly))
+                    result.RelocatedRootLogCount++;
             }
         }
 
@@ -164,10 +165,10 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            string[] markdownFiles = Directory.GetFiles(docsRoot, "*.md", SearchOption.AllDirectories);
-            Array.Sort(markdownFiles, StringComparer.OrdinalIgnoreCase);
+            List<string> markdownFiles = new List<string>(Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories));
+            markdownFiles.Sort(StringComparer.OrdinalIgnoreCase);
 
-            for (int i = 0; i < markdownFiles.Length; i++)
+            for (int i = 0; i < markdownFiles.Count; i++)
             {
                 string relativePath = DocumentationAuthorityPathPolicy.NormalizeRelativePath(projectRoot, markdownFiles[i]);
                 result.TotalMarkdownCount++;

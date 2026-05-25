@@ -118,7 +118,7 @@ namespace Hecton8.Editor.GeographySanity
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsFinite(float value)
         {
-            return value == value && value > -3.402823e38f && value < 3.402823e38f;
+            return math.isfinite(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -130,7 +130,7 @@ namespace Hecton8.Editor.GeographySanity
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsFinite(double value)
         {
-            return value == value && value > -1.7976931348623157e308 && value < 1.7976931348623157e308;
+            return math.isfinite(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

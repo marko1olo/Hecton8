@@ -133,7 +133,7 @@ namespace Hecton8.EditorTools
                     continue;
                 }
 
-                HashSet<Material> inspectedMaterials = new HashSet<Material>();
+                HashSet<Material> inspectedMaterials = new HashSet<Material>(renderers.Length * 2);
                 for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
                 {
                     Renderer renderer = renderers[rendererIndex];

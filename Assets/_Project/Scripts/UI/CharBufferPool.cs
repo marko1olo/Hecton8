@@ -37,6 +37,7 @@ namespace Hecton8.UI
         private static IDataVault s_babelArenaVault;
         private static VaultGenerationHandle<char> s_babelArenaHandle;
         private static bool s_babelArenaVaultBacked;
+        private static bool s_babelArenaProbeCompleted;
         private static int s_activeLeaseCount;
 
         internal static int AvailableSlotCount => SlotCount - s_activeLeaseCount;
@@ -99,9 +100,9 @@ namespace Hecton8.UI
         private static void ResetStaticState()
         {
             ReleaseBabelArenaHandle();
+            s_babelArenaProbeCompleted = false;
             ResetFreeMasks();
             ResetEncyclopediaFreeMask();
-            EnsureBabelArena();
             s_activeLeaseCount = 0;
             LocRegistry.ReportBufferPoolLeasesActive(0);
             Prewarm();
@@ -109,6 +110,7 @@ namespace Hecton8.UI
 
         public static void Prewarm()
         {
+            EnsureBabelArena(forceProbe: true);
             bool hasNativeArena = TryResolveBabelArena(out NativeArray<char> babelArena);
             for (int slotIndex = 0; slotIndex < SlotCount; slotIndex++)
             {
@@ -381,7 +383,7 @@ namespace Hecton8.UI
             return count;
         }
 
-        private static bool EnsureBabelArena()
+        private static bool EnsureBabelArena(bool forceProbe = false)
         {
             if (s_babelArenaVaultBacked)
             {
@@ -391,6 +393,10 @@ namespace Hecton8.UI
                 ClearBabelArenaHandle();
             }
 
+            if (s_babelArenaProbeCompleted && !forceProbe)
+                return false;
+
+            s_babelArenaProbeCompleted = true;
             if (TryResolveBabelVault(out IDataVault resolvedVault))
                 return TryAcquireVaultBabelArena(resolvedVault);
 
@@ -435,7 +441,7 @@ namespace Hecton8.UI
             if (vault == null)
                 return false;
 
-            VaultGenerationHandle<char> acquired = vault.GetGenerationHandle<char>(
+            VaultGenerationHandle<char> acquired = vault.EnsureGenerationHandle<char>(
                 BabelArenaBufferId,
                 BabelArenaLength,
                 SystemID.UI,

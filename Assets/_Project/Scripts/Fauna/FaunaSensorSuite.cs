@@ -1,10 +1,8 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Environment.Fluids;
 using UnityEngine;
 using Unity.Jobs;
 using UnityEngine.Serialization;
-using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Mathematics;
 using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
@@ -340,7 +338,10 @@ namespace Hecton8.AI
             UpdatePreyDetection();
             UpdateThreatDetection();
             UpdateScavengeTarget();
-            if (IsStuck) UpdatePOISearch();
+            if (IsStuck)
+            {
+                UpdatePOISearch();
+            }
         }
 
         private void CachePerceptionSnapshot(in FaunaPerceptionSnapshot perceptionSnapshot)
@@ -825,11 +826,11 @@ namespace Hecton8.AI
                 for (int i = 0; i < count; i++)
                 {
                     SpatialQueryHit hit = _preySpatialBuffer[i];
-                    if (!(hit.Owner is FaunaBrain preyBrain) ||
-                        preyBrain == _ownerBrain ||
-                        preyBrain.IsDead ||
-                        preyBrain.SpeciesId == _ownerBrain.SpeciesId ||
-                        !preyBrain.IsValidPreyFor(_ownerBrain))
+                    if (!(hit.Owner is IFaunaSpatialContact preyContact) ||
+                        ReferenceEquals(preyContact, _ownerBrain) ||
+                        preyContact.IsDead ||
+                        preyContact.SpeciesId == _ownerBrain.SpeciesId ||
+                        !preyContact.IsValidPreyFor(_ownerBrain))
                     {
                         continue;
                     }
@@ -894,7 +895,7 @@ namespace Hecton8.AI
                 if ((layerMaskValue & (1 << hit.Layer)) == 0)
                     continue;
 
-                if (!(hit.Owner is DeployableFlare))
+                if (!(hit.Owner is IFaunaDistractorSignalSource))
                     continue;
 
                 if (hit.DistanceSqr >= bestDistanceSqr)
@@ -920,8 +921,8 @@ namespace Hecton8.AI
             for (int i = 0; i < count; i++)
             {
                 SpatialQueryHit hit = _distractorSpatialBuffer[i];
-                if (!(hit.Owner is Hecton8.Interaction.PickupItem pickupItem) ||
-                    !pickupItem.IsFaunaBait ||
+                if (!(hit.Owner is IFaunaBaitSource baitSource) ||
+                    !baitSource.IsFaunaBait ||
                     hit.DistanceSqr >= bestDistanceSqr)
                 {
                     continue;
@@ -953,7 +954,7 @@ namespace Hecton8.AI
             for (int i = 0; i < count; i++)
             {
                 SpatialQueryHit hit = _distractorSpatialBuffer[i];
-                HectonSurvivalSystem survival = hit.Owner as HectonSurvivalSystem;
+                IPlayerBleedingReadModel survival = hit.Owner as IPlayerBleedingReadModel;
                 if (survival == null || !survival.IsBleeding)
                     continue;
 
@@ -975,12 +976,6 @@ namespace Hecton8.AI
             _foveatedTickIntervalSeconds = tickIntervalSeconds > 0f ? tickIntervalSeconds : DefaultFoveatedTickIntervalSeconds;
             _foveatedImportanceScore = importanceScore;
             _foveatedInsideFrustum = insideFrustum;
-        }
-
-        internal int BuildDeferredRaycastCommands(RaycastCommand[] commands)
-        {
-            ClearDeferredObstacleHits();
-            return 0;
         }
 
         internal void ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit)

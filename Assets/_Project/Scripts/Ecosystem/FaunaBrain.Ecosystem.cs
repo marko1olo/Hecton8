@@ -40,7 +40,6 @@ namespace Hecton8.AI
         private float _genomeMutationAccumulator;
         private uint _genomeMutationRollIndex;
         private IEcosystemDirectorService _cachedEcosystemDirectorService;
-        private EcosystemDirector _cachedEcosystemDirectorConcrete;
         private bool _hasGeneticTraits;
         private bool _isInfected;
         private bool _isDiseased;
@@ -176,7 +175,7 @@ namespace Hecton8.AI
 
         private void RefreshCorpseDiseaseState()
         {
-            EcosystemDirector ecosystemDirector = ResolveCachedEcosystemDirectorConcrete();
+            IEcosystemDirectorService ecosystemDirector = ResolveCachedEcosystemDirectorService();
             if (ecosystemDirector == null)
             {
                 if (_isDiseased)
@@ -212,27 +211,16 @@ namespace Hecton8.AI
         private void BindCachedEcosystemDirectorReference(IEcosystemDirectorService ecosystemDirector)
         {
             _cachedEcosystemDirectorService = ecosystemDirector;
-            _cachedEcosystemDirectorConcrete = ecosystemDirector as EcosystemDirector;
         }
 
         private void ClearCachedEcosystemDirectorReference()
         {
             _cachedEcosystemDirectorService = null;
-            _cachedEcosystemDirectorConcrete = null;
         }
 
         private IEcosystemDirectorService ResolveCachedEcosystemDirectorService()
         {
             IEcosystemDirectorService ecosystemDirector = _cachedEcosystemDirectorService;
-            if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
-                return ecosystemDirector;
-
-            return null;
-        }
-
-        private EcosystemDirector ResolveCachedEcosystemDirectorConcrete()
-        {
-            EcosystemDirector ecosystemDirector = _cachedEcosystemDirectorConcrete;
             if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
                 return ecosystemDirector;
 
@@ -273,7 +261,7 @@ namespace Hecton8.AI
             _steeringEngine.turnSpeed = Mathf.Max(0.1f, _baseTurnSpeed * moveMultiplier);
             _steeringEngine.swimForce = Mathf.Max(_steeringEngine.moveSpeed, _baseBurstSpeed * moveMultiplier);
 
-            ApplyInfectionVisuals();
+            QueueEcosystemInfectionVisualFlush();
         }
 
         private float ResolveCurrentAttackDamage()
@@ -321,8 +309,17 @@ namespace Hecton8.AI
             }
         }
 
-        private void ApplyInfectionVisuals()
+        private void QueueEcosystemInfectionVisualFlush()
         {
+            _pendingInfectionVisualsDirty = true;
+        }
+
+        private void FlushEcosystemInfectionVisuals()
+        {
+            if (!_pendingInfectionVisualsDirty)
+                return;
+
+            _pendingInfectionVisualsDirty = false;
             int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
             if (runtimeMaterialCount <= 0)
                 return;
@@ -350,19 +347,19 @@ namespace Hecton8.AI
                 if ((propertyMask & FaunaPresentationColorMask) != 0)
                 {
                     Color color = _isInfected ? infectedColor : ResolveOriginalMaterialColor(originalMaterial, _ColorId, Color.white);
-                    runtimeMaterial.SetColor(_ColorId, color);
+                    runtimeMaterial.SetVector(_ColorId, ColorToVector(color));
                 }
 
                 if ((propertyMask & FaunaPresentationBaseColorMask) != 0)
                 {
                     Color color = _isInfected ? infectedColor : ResolveOriginalMaterialColor(originalMaterial, _BaseColorId, Color.white);
-                    runtimeMaterial.SetColor(_BaseColorId, color);
+                    runtimeMaterial.SetVector(_BaseColorId, ColorToVector(color));
                 }
 
                 if ((propertyMask & FaunaPresentationEmissionColorMask) != 0)
                 {
                     Color color = _isInfected ? infectedEmission : ResolveOriginalMaterialColor(originalMaterial, _EmissionColorId, Color.black);
-                    runtimeMaterial.SetColor(_EmissionColorId, color);
+                    runtimeMaterial.SetVector(_EmissionColorId, ColorToVector(color));
                 }
             }
         }
@@ -407,8 +404,8 @@ namespace Hecton8.AI
             if (!ShouldEmitPredatorThreatPulse(_stateMachine.currentState))
                 return;
 
-            Hecton8.World.HectonMapMagicVegetationBridge bridge = Hecton8.World.HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (bridge == null)
+            IVegetationThreatPulseSink threatPulseSink = _vegetationThreatPulseSink;
+            if (threatPulseSink == null)
                 return;
 
             float aggressionScale = Mathf.Clamp(_runtimeAggressionScale, 0.85f, 2f);
@@ -425,7 +422,7 @@ namespace Hecton8.AI
             if (_isInfected)
                 threatStrength *= Mathf.Lerp(1f, 1.12f, _infectionSeverity);
 
-            bridge.ApplyExternalThreatPulse(
+            threatPulseSink.ApplyExternalThreatPulse(
                 transform.position,
                 threatRadius,
                 Mathf.Clamp01(threatStrength),

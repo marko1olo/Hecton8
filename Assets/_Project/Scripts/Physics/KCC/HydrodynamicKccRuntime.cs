@@ -1,8 +1,10 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -17,21 +19,6 @@ using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;
 
 namespace Hecton8.Physics.KCC
 {
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct KinematicStateDTO
-    {
-        [FieldOffset(0)] public double3 AUP_Position;
-        [FieldOffset(24)] public float3 Velocity;
-        [FieldOffset(36)] public float3 AngularVelocity;
-        [FieldOffset(48)] public float Mass;
-        [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] public float DragCoefficient;
-        [FieldOffset(60)] public byte RestingFrameCount;
-        [FieldOffset(61)] public byte DeepSleepTickCount;
-        [FieldOffset(62)] public byte SleepMaterialIndex;
-        [FieldOffset(63)] public byte _pad0;
-    }
-
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct HydrodynamicKccInputDTO
     {
@@ -111,7 +98,8 @@ namespace Hecton8.Physics.KCC
         [FieldOffset(12)] public float Distance;
         [FieldOffset(16)] public float3 Normal;
         [FieldOffset(28)] public uint Flags;
-        [FieldOffset(32)] public ulong _pad0;
+        [FieldOffset(32)] public float PenetrationDepth;
+        [FieldOffset(36)] public uint SampleIndex;
         [FieldOffset(40)] public ulong _pad1;
         [FieldOffset(48)] public ulong _pad2;
         [FieldOffset(56)] public ulong _pad3;
@@ -266,6 +254,8 @@ namespace Hecton8.Physics.KCC
         public const int EnvironmentProfileCurrentOffset = 4;
         public const int EnvironmentProfileFrictionOffset = 8;
         public const int EnvironmentProfileExhaustionOffset = 12;
+        public const int CollisionHitPenetrationOffset = 32;
+        public const int CollisionHitSampleOffset = 36;
 
         public static bool ValidateRuntimeLayout(out HydrodynamicKccLayoutReport report)
         {
@@ -302,6 +292,8 @@ namespace Hecton8.Physics.KCC
                    report.DebugSize == 64 &&
                    report.FaultFlagSize == 64 &&
                    report.CollisionHitSize == 64 &&
+                   OffsetOf<HydrodynamicKccCollisionHitDTO>(nameof(HydrodynamicKccCollisionHitDTO.PenetrationDepth)) == CollisionHitPenetrationOffset &&
+                   OffsetOf<HydrodynamicKccCollisionHitDTO>(nameof(HydrodynamicKccCollisionHitDTO.SampleIndex)) == CollisionHitSampleOffset &&
                    report.InputSize == 64 &&
                    UnsafeUtility.SizeOf<KccEnvironmentProfileDTO>() == EnvironmentProfileSize &&
                    UnsafeUtility.AlignOf<KccEnvironmentProfileDTO>() > 0 &&
@@ -339,6 +331,11 @@ namespace Hecton8.Physics.KCC
         public const uint FlagSdfFriction = 1u << 10;
         public const uint FlagEnvironmentMock = 1u << 11;
         public const uint FlagTrilinearFlowSample = 1u << 12;
+        public const uint FlagExternalAcceleration = 1u << 13;
+        public const uint FlagExternalVelocityChange = 1u << 14;
+        public const uint FlagExternalVelocityTarget = 1u << 15;
+        public const uint FlagExternalPositionTarget = 1u << 16;
+        public const uint FlagSignalDrop = 1u << 17;
         public const uint InputFlagMask = 0x0000FFFFu;
         public const int InputGenerationShift = 16;
         public const float MinDenominator = 0.0001f;
@@ -350,6 +347,9 @@ namespace Hecton8.Physics.KCC
         public const uint SourceHash = 0x53484B43u;
         public const uint WakeSourcePlayer = 1u;
         public const uint HitFlagValid = 1u;
+        public const uint HitFlagSdfSpeculative = 1u << 1;
+        public const uint HitFlagPenetrating = 1u << 2;
+        public const float DuplicateContactPlaneDotThreshold = 0.9995f;
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
         private const float HalfPi = 1.57079632679f;
@@ -437,7 +437,27 @@ namespace Hecton8.Physics.KCC
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveIterationCount(float globalQualityWeight)
         {
-            return 8;
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            return math.clamp((int)math.round(math.lerp(3f, 8f, quality)), 3, 8);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveSpeculativeSampleCount(
+            float globalQualityWeight,
+            float castDistance,
+            float capsuleRadius,
+            float skinWidth,
+            int maxStride)
+        {
+            int stride = math.clamp(maxStride, 1, 8);
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            int qualitySteps = math.clamp((int)math.round(math.lerp(3f, (float)stride, quality)), 1, stride);
+            float safeCastDistance = math.max(0f, math.isfinite(castDistance) ? castDistance : 0f);
+            float radius = math.max(0.05f, math.isfinite(capsuleRadius) ? capsuleRadius : 0.35f);
+            float skin = math.max(0.001f, math.isfinite(skinWidth) ? skinWidth : 0.02f);
+            float conservativeSpan = math.max(0.15f, (radius + skin) * 0.75f);
+            int speedSteps = math.clamp((int)math.ceil(safeCastDistance * math.rcp(conservativeSpan)), 1, stride);
+            return math.clamp(math.max(qualitySteps, speedSteps), 1, stride);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -645,6 +665,7 @@ namespace Hecton8.Physics.KCC
         // Invariant: the queue writer is provided only by the KCC input owner, and consumers drain it after the
         // scheduled JobHandle completes. This job never reads from the queue and has no alias with state arrays.
         [NoAlias] public NativeQueue<HydrodynamicKccInputDTO>.ParallelWriter InputWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> InputWriterBudget;
         public double3 AnchorAup;
         public HydrodynamicKccTuningDTO Tuning;
         public uint SimulationFrame;
@@ -653,7 +674,33 @@ namespace Hecton8.Physics.KCC
 
         public void Execute(int index)
         {
-            InputWriter.Enqueue(GenerateMockMovementInputJob.BuildInput(index, AnchorAup, Tuning, SimulationFrame, SectorHash, SimulationTickDelta));
+            TryEnqueueBounded(
+                InputWriter,
+                InputWriterBudget,
+                GenerateMockMovementInputJob.BuildInput(index, AnchorAup, Tuning, SimulationFrame, SectorHash, SimulationTickDelta));
+        }
+
+        private static unsafe bool TryEnqueueBounded(
+            NativeQueue<HydrodynamicKccInputDTO>.ParallelWriter writer,
+            NativeArray<int> writerBudget,
+            HydrodynamicKccInputDTO input)
+        {
+            const int remainingIndex = 0;
+            const int droppedIndex = 1;
+            const int budgetLength = 2;
+            if (!writerBudget.IsCreated || writerBudget.Length < budgetLength)
+                return false;
+
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
+            int remainingAfterClaim = Interlocked.Decrement(ref budget[remainingIndex]);
+            if (remainingAfterClaim < 0)
+            {
+                Interlocked.Increment(ref budget[droppedIndex]);
+                return false;
+            }
+
+            writer.Enqueue(input);
+            return true;
         }
     }
 
@@ -694,6 +741,7 @@ namespace Hecton8.Physics.KCC
         /// <summary>Schedules deterministic movement input packets into a caller-owned native queue.</summary>
         public static JobHandle GenerateMockMovementInput(
             NativeQueue<HydrodynamicKccInputDTO>.ParallelWriter inputWriter,
+            NativeArray<int> inputWriterBudget,
             int count,
             double3 anchorAup,
             HydrodynamicKccTuningDTO tuning,
@@ -709,6 +757,7 @@ namespace Hecton8.Physics.KCC
             return new GenerateMockMovementInputQueueJob
             {
                 InputWriter = inputWriter,
+                InputWriterBudget = inputWriterBudget,
                 AnchorAup = anchorAup,
                 Tuning = tuning,
                 SimulationFrame = simulationFrame,
@@ -886,7 +935,12 @@ namespace Hecton8.Physics.KCC
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<HydrodynamicKccFaultFlagDTO> FaultFlags;
         public HydrodynamicKccTuningDTO Tuning;
         public double3 SectorOriginAup;
+        public float3 ExternalAcceleration;
+        public float3 ExternalVelocityChange;
+        public float3 ExternalVelocityTarget;
+        public double3 ExternalPositionTargetAup;
         public uint SimulationFrame;
+        public uint ExternalControlFlags;
         public float SimulationTickDelta;
 
         public void Execute(int index)
@@ -910,7 +964,46 @@ namespace Hecton8.Physics.KCC
             KccEnvironmentProfileDTO environmentProfile = ResolveEnvironmentProfile();
             KccEnvironmentGridDTO environmentGrid = ResolveEnvironmentGrid();
 
+            uint externalFlags = 0u;
+            uint controlFlags = index == 0 ? ExternalControlFlags : 0u;
+            if ((controlFlags & HydrodynamicKccMath.FlagExternalPositionTarget) != 0u)
+            {
+                double3 externalPositionTarget = HydrodynamicKccMath.Sanitize(ExternalPositionTargetAup, state.AUP_Position);
+                state.AUP_Position = HydrodynamicKccMath.QuantizeMillimeter(externalPositionTarget);
+                externalFlags |= HydrodynamicKccMath.FlagExternalPositionTarget;
+            }
+
             float3 velocity = HydrodynamicKccMath.Sanitize(state.Velocity, float3.zero);
+            float3 lateExternalVelocityChange = float3.zero;
+            float3 lateExternalVelocityTarget = velocity;
+            bool hasLateVelocityChange = false;
+            bool hasLateVelocityTarget = false;
+            if (index == 0)
+            {
+                float3 externalAcceleration = HydrodynamicKccMath.Sanitize(ExternalAcceleration, float3.zero);
+                float3 externalVelocityChange = HydrodynamicKccMath.Sanitize(ExternalVelocityChange, float3.zero);
+                float3 externalVelocityTarget = HydrodynamicKccMath.Sanitize(ExternalVelocityTarget, velocity);
+                if ((controlFlags & HydrodynamicKccMath.FlagExternalAcceleration) != 0u)
+                {
+                    velocity += externalAcceleration * dt;
+                    externalFlags |= HydrodynamicKccMath.FlagExternalAcceleration;
+                }
+
+                if ((controlFlags & HydrodynamicKccMath.FlagExternalVelocityChange) != 0u)
+                {
+                    lateExternalVelocityChange = externalVelocityChange;
+                    hasLateVelocityChange = true;
+                    externalFlags |= HydrodynamicKccMath.FlagExternalVelocityChange;
+                }
+
+                if ((controlFlags & HydrodynamicKccMath.FlagExternalVelocityTarget) != 0u)
+                {
+                    lateExternalVelocityTarget = externalVelocityTarget;
+                    hasLateVelocityTarget = true;
+                    externalFlags |= HydrodynamicKccMath.FlagExternalVelocityTarget;
+                }
+            }
+
             float3 moveAxis = HydrodynamicKccMath.Sanitize(input.MoveAxis, float3.zero);
             float moveLenSq = math.lengthsq(moveAxis);
             float3 moveDir = moveLenSq > 1f ? moveAxis * math.rsqrt(math.max(moveLenSq, 0.000001f)) : moveAxis;
@@ -991,6 +1084,11 @@ namespace Hecton8.Physics.KCC
             if (speedSq > maxSpeed * maxSpeed)
                 velocity *= maxSpeed * math.rsqrt(math.max(speedSq, 0.000001f));
 
+            if (hasLateVelocityChange)
+                velocity = HydrodynamicKccMath.Sanitize(velocity + lateExternalVelocityChange, velocity);
+            if (hasLateVelocityTarget)
+                velocity = lateExternalVelocityTarget;
+
             bool invalid = !HydrodynamicKccMath.IsFinite(state.AUP_Position) || !HydrodynamicKccMath.IsFinite(velocity);
             if (invalid)
             {
@@ -1004,6 +1102,7 @@ namespace Hecton8.Physics.KCC
             float turbulence = math.saturate(normalizedSpeed * normalizedSpeed) * math.lerp(0.18f, 1f, visualQuality);
             float wakeRadius = math.lerp(1.2f, 3.6f, math.saturate(turbulence * math.lerp(0.72f, 1.18f, visualQuality)));
             uint flags = HydrodynamicKccMath.ExtractInputFlags(input.Flags) |
+                         externalFlags |
                          HydrodynamicKccMath.FlagEnvironmentalForces |
                           math.select(0u, HydrodynamicKccMath.FlagFaultNaN, invalid) |
                           math.select(0u, HydrodynamicKccMath.FlagMetabolicPenalty, exhaustionPenalty > 0.0001f) |
@@ -1082,16 +1181,25 @@ namespace Hecton8.Physics.KCC
                 return 0f;
 
             MetabolicStateDTO metabolism = MetabolismStates[index];
-            float calories01 = math.saturate(math.isfinite(metabolism.Calories) ? metabolism.Calories : 1f);
-            float hydration01 = math.saturate(math.isfinite(metabolism.Hydration) ? metabolism.Hydration : 1f);
+            float calories01 = NormalizeMetabolicReservoir01(metabolism.Calories);
+            float hydration01 = NormalizeMetabolicReservoir01(metabolism.Hydration);
             float toxicity01 = math.saturate((math.isfinite(metabolism.Toxicity) ? metabolism.Toxicity : 0f) * 0.125f);
             float starvation = 1f - calories01;
             float dehydration = 1f - hydration01;
+            float fatigueScalar = math.asfloat(metabolism._pad0);
+            fatigueScalar = math.saturate(math.isfinite(fatigueScalar) ? fatigueScalar : 0f);
+            float fatigue = math.max(fatigueScalar, math.select(0f, 0.35f, (metabolism.Flags & ShinobuMetabolismVaultContract.FlagFatigue) != 0u));
             starvation = math.max(starvation, math.select(0f, 0.75f, (metabolism.Flags & ShinobuMetabolismVaultContract.FlagStarving) != 0u));
             dehydration = math.max(dehydration, math.select(0f, 0.55f, (metabolism.Flags & ShinobuMetabolismVaultContract.FlagDehydrated) != 0u));
             toxicity01 = math.max(toxicity01, math.select(0f, 0.35f, (metabolism.Flags & ShinobuMetabolismVaultContract.FlagToxic) != 0u));
-            float raw = math.max(math.max(starvation, dehydration), toxicity01);
+            float raw = math.max(math.max(starvation, dehydration), math.max(toxicity01, fatigue));
             return math.saturate(raw * math.max(0f, profile.ExhaustionPenaltyMax));
+        }
+
+        private static float NormalizeMetabolicReservoir01(float value)
+        {
+            float finite = math.max(0f, math.isfinite(value) ? value : 1f);
+            return finite > 1f ? math.saturate(finite * 0.01f) : math.saturate(finite);
         }
 
         private float3 SampleFlow(double3 aup, KccEnvironmentGridDTO grid, float quality, out uint sampleMode)
@@ -1328,77 +1436,256 @@ namespace Hecton8.Physics.KCC
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct BuildCapsuleCastCommandsJob : IJobParallelFor
+    public struct BuildSdfCollisionHitsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<KinematicStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<float3> ProposedVelocities;
-        [WriteOnly, NoAlias] public NativeArray<CapsulecastCommand> Commands;
+        [ReadOnly, NoAlias] public NativeArray<KccEnvironmentGridDTO> EnvironmentGrids;
+        [ReadOnly, NoAlias] public NativeArray<float> SdfDistances;
+        [WriteOnly, NoAlias] public NativeArray<HydrodynamicKccCollisionHitDTO> Hits;
         public HydrodynamicKccTuningDTO Tuning;
         public double3 SectorOriginAup;
-        public QueryParameters QueryParameters;
         public float SimulationTickDelta;
+        public int MaxHitsPerEntity;
 
         public void Execute(int index)
         {
-            KinematicStateDTO state = States[index];
-            float dt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(SimulationTickDelta) ? SimulationTickDelta : 0.016666667f);
-            float3 velocity = HydrodynamicKccMath.Sanitize(ProposedVelocities[index], float3.zero);
-            float3 delta = velocity * dt;
-            float castDistance = HydrodynamicKccMath.LengthSafe(delta);
-            float3 direction = HydrodynamicKccMath.NormalizeSafe(delta, new float3(0f, 0f, 1f));
-            float radius = math.max(0.05f, math.isfinite(Tuning.CapsuleRadius) ? Tuning.CapsuleRadius : 0.35f);
-            float skin = math.max(0.001f, math.isfinite(Tuning.SkinWidth) ? Tuning.SkinWidth : 0.02f);
-            float halfHeight = math.max(radius, (math.max(radius * 2f, Tuning.CapsuleHeight) * 0.5f) - radius);
-            float3 center = HydrodynamicKccMath.ResolveLocalFloat3(state.AUP_Position, SectorOriginAup);
-            float3 point1 = center - new float3(0f, halfHeight, 0f);
-            float3 point2 = center + new float3(0f, halfHeight, 0f);
-            Vector3 commandPoint1 = new Vector3(point1.x, point1.y, point1.z);
-            Vector3 commandPoint2 = new Vector3(point2.x, point2.y, point2.z);
-            Vector3 commandDirection = new Vector3(direction.x, direction.y, direction.z);
+            int stride = math.clamp(MaxHitsPerEntity, 1, 8);
+            int hitBase = index * stride;
+            for (int i = 0; i < stride; i++)
+            {
+                int clearIndex = hitBase + i;
+                if (Hits.IsCreated && clearIndex < Hits.Length)
+                    Hits[clearIndex] = default;
+            }
 
-            Commands[index] = new CapsulecastCommand(
-                commandPoint1,
-                commandPoint2,
-                radius,
-                commandDirection,
-                QueryParameters,
-                castDistance + skin);
-        }
-    }
+            if (!States.IsCreated ||
+                !ProposedVelocities.IsCreated ||
+                !Hits.IsCreated ||
+                (uint)index >= (uint)States.Length ||
+                (uint)index >= (uint)ProposedVelocities.Length ||
+                hitBase >= Hits.Length ||
+                !SdfDistances.IsCreated ||
+                SdfDistances.Length == 0)
+            {
+                return;
+            }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct ExtractCapsuleCastHitsJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<RaycastHit> RawHits;
-        [WriteOnly, NoAlias] public NativeArray<HydrodynamicKccCollisionHitDTO> Hits;
-        public int MaxHitsPerCommand;
-
-        public void Execute(int index)
-        {
-            if (index >= Hits.Length)
+            KccEnvironmentGridDTO grid = ResolveEnvironmentGrid();
+            int3 dimensions = ResolveSampleDimensions(grid.Dimensions, SdfDistances.Length);
+            if (dimensions.x <= 0 || dimensions.y <= 0 || dimensions.z <= 0)
                 return;
 
-            RaycastHit hit = index < RawHits.Length ? RawHits[index] : default;
-            Vector3 point = hit.point;
-            Vector3 normalVector = hit.normal;
-            float3 point3 = new float3(point.x, point.y, point.z);
-            float3 normal = HydrodynamicKccMath.NormalizeSafe(
-                new float3(normalVector.x, normalVector.y, normalVector.z),
-                float3.zero);
-            float distance = math.max(0f, math.isfinite(hit.distance) ? hit.distance : 0f);
-            bool valid = MaxHitsPerCommand > 0 &&
-                         math.isfinite(distance) &&
-                         HydrodynamicKccMath.IsFinite(point3) &&
-                         HydrodynamicKccMath.IsFinite(normal) &&
-                         math.lengthsq(normal) > 0.0001f;
+            KinematicStateDTO state = States[index];
+            float dt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(SimulationTickDelta) ? SimulationTickDelta : 0.016666667f);
+            float quality = math.saturate(math.isfinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
+            float3 velocity = HydrodynamicKccMath.Sanitize(ProposedVelocities[index], float3.zero);
+            float3 delta = velocity * dt;
+            double3 deltaAup = new double3(delta.x, delta.y, delta.z);
+            float castDistance = HydrodynamicKccMath.LengthSafe(delta);
+            float radius = math.max(0.05f, math.isfinite(Tuning.CapsuleRadius) ? Tuning.CapsuleRadius : 0.35f);
+            float skin = math.max(0.001f, math.isfinite(Tuning.SkinWidth) ? Tuning.SkinWidth : 0.02f);
+            float height = math.max(radius * 2f, math.isfinite(Tuning.CapsuleHeight) ? Tuning.CapsuleHeight : 1.8f);
+            float halfSegment = math.max(0f, (height * 0.5f) - radius);
+            int sampleSteps = HydrodynamicKccMath.ResolveSpeculativeSampleCount(
+                Tuning.GlobalQualityWeight,
+                castDistance,
+                radius,
+                skin,
+                stride);
+            int writeCount = 0;
 
-            Hits[index] = new HydrodynamicKccCollisionHitDTO
+            for (int step = 0; step < sampleSteps && writeCount < stride; step++)
             {
-                Point = valid ? point3 : float3.zero,
-                Distance = valid ? distance : 0f,
-                Normal = valid ? normal : float3.zero,
-                Flags = math.select(0u, HydrodynamicKccMath.HitFlagValid, valid)
-            };
+                float t = castDistance > HydrodynamicKccMath.MinDenominator
+                    ? ((float)(step + 1) * math.rcp(math.max(1f, sampleSteps)))
+                    : 0f;
+                double3 centerAup = state.AUP_Position + deltaAup * (double)t;
+
+                for (int probe = 0; probe < 3 && writeCount < stride; probe++)
+                {
+                    float yOffset = probe == 0 ? -halfSegment : (probe == 1 ? 0f : halfSegment);
+                    double3 probeAup = centerAup + new double3(0d, (double)yOffset, 0d);
+                    if (!TrySampleSdf(probeAup, grid, dimensions, quality, out float sdfDistance))
+                        continue;
+
+                    float penetration = (radius + skin) - sdfDistance;
+                    if (penetration <= 0f)
+                        continue;
+
+                    if (!TrySampleSdfNormal(probeAup, grid, dimensions, out float3 normal))
+                        normal = new float3(0f, 1f, 0f);
+
+                    float3 safeNormal = HydrodynamicKccMath.NormalizeSafe(normal, new float3(0f, 1f, 0f));
+                    float3 probeLocal = HydrodynamicKccMath.ResolveLocalFloat3(probeAup, SectorOriginAup);
+                    float3 surfacePoint = probeLocal - safeNormal * sdfDistance;
+                    float hitDistance = math.max(0f, castDistance * t - penetration);
+                    uint flags = HydrodynamicKccMath.HitFlagValid |
+                                 HydrodynamicKccMath.HitFlagSdfSpeculative |
+                                 math.select(0u, HydrodynamicKccMath.HitFlagPenetrating, penetration > skin);
+                    Hits[hitBase + writeCount] = new HydrodynamicKccCollisionHitDTO
+                    {
+                        Point = HydrodynamicKccMath.Sanitize(surfacePoint, float3.zero),
+                        Distance = math.isfinite(hitDistance) ? hitDistance : 0f,
+                        Normal = safeNormal,
+                        Flags = flags,
+                        PenetrationDepth = math.max(0f, math.isfinite(penetration) ? penetration : 0f),
+                        SampleIndex = (uint)(step * 3 + probe)
+                    };
+                    writeCount++;
+                }
+            }
+        }
+
+        private KccEnvironmentGridDTO ResolveEnvironmentGrid()
+        {
+            KccEnvironmentGridDTO grid = EnvironmentGrids.IsCreated && EnvironmentGrids.Length > 0
+                ? EnvironmentGrids[0]
+                : default;
+
+            if (!HydrodynamicKccMath.IsFinite(grid.GridOriginAup))
+                grid.GridOriginAup = SectorOriginAup;
+            grid.Dimensions = new int3(
+                math.max(1, grid.Dimensions.x),
+                math.max(1, grid.Dimensions.y),
+                math.max(1, grid.Dimensions.z));
+            grid.CellSizeMeters = math.max(0.25f, math.isfinite(grid.CellSizeMeters) ? grid.CellSizeMeters : 2f);
+            grid.SdfSurfaceMeters = math.isfinite(grid.SdfSurfaceMeters) ? grid.SdfSurfaceMeters : 0f;
+            grid.SdfFrictionBandMeters = math.max(0.05f, math.isfinite(grid.SdfFrictionBandMeters) ? grid.SdfFrictionBandMeters : 0.65f);
+            return grid;
+        }
+
+        private bool TrySampleSdf(double3 aup, KccEnvironmentGridDTO grid, int3 dimensions, float quality, out float distance)
+        {
+            distance = grid.SdfFrictionBandMeters * 2f;
+            if (!SdfDistances.IsCreated || SdfDistances.Length == 0)
+                return false;
+
+            float3 cell = ResolveGridCell(aup, grid, dimensions);
+            int3 nearestCoord = new int3(
+                (int)math.round(cell.x),
+                (int)math.round(cell.y),
+                (int)math.round(cell.z));
+            float nearest = SampleSdfAt(ClampCell(nearestCoord, dimensions), dimensions);
+            int3 baseCoord = new int3(
+                (int)math.floor(cell.x),
+                (int)math.floor(cell.y),
+                (int)math.floor(cell.z));
+            float3 frac = math.saturate(cell - new float3(baseCoord.x, baseCoord.y, baseCoord.z));
+            baseCoord = ClampCell(baseCoord, dimensions);
+            int3 nextCoord = ClampCell(baseCoord + new int3(1, 1, 1), dimensions);
+
+            float c000 = SampleSdfAt(new int3(baseCoord.x, baseCoord.y, baseCoord.z), dimensions);
+            float c100 = SampleSdfAt(new int3(nextCoord.x, baseCoord.y, baseCoord.z), dimensions);
+            float c010 = SampleSdfAt(new int3(baseCoord.x, nextCoord.y, baseCoord.z), dimensions);
+            float c110 = SampleSdfAt(new int3(nextCoord.x, nextCoord.y, baseCoord.z), dimensions);
+            float c001 = SampleSdfAt(new int3(baseCoord.x, baseCoord.y, nextCoord.z), dimensions);
+            float c101 = SampleSdfAt(new int3(nextCoord.x, baseCoord.y, nextCoord.z), dimensions);
+            float c011 = SampleSdfAt(new int3(baseCoord.x, nextCoord.y, nextCoord.z), dimensions);
+            float c111 = SampleSdfAt(new int3(nextCoord.x, nextCoord.y, nextCoord.z), dimensions);
+            float c00 = math.lerp(c000, c100, frac.x);
+            float c10 = math.lerp(c010, c110, frac.x);
+            float c01 = math.lerp(c001, c101, frac.x);
+            float c11 = math.lerp(c011, c111, frac.x);
+            float c0 = math.lerp(c00, c10, frac.y);
+            float c1 = math.lerp(c01, c11, frac.y);
+            float trilinear = math.lerp(c0, c1, frac.z);
+            float blend = math.saturate(quality);
+            blend = blend * blend * (3f - 2f * blend);
+            distance = math.lerp(nearest, trilinear, blend) - grid.SdfSurfaceMeters;
+            return math.isfinite(distance);
+        }
+
+        private bool TrySampleSdfNormal(double3 aup, KccEnvironmentGridDTO grid, int3 dimensions, out float3 normal)
+        {
+            normal = new float3(0f, 1f, 0f);
+            if (!SdfDistances.IsCreated || SdfDistances.Length == 0)
+                return false;
+
+            float3 cell = ResolveGridCell(aup, grid, dimensions);
+            int3 center = ClampCell(new int3(
+                (int)math.round(cell.x),
+                (int)math.round(cell.y),
+                (int)math.round(cell.z)), dimensions);
+
+            float dx = SampleSdfAt(ClampCell(center + new int3(1, 0, 0), dimensions), dimensions) -
+                       SampleSdfAt(ClampCell(center - new int3(1, 0, 0), dimensions), dimensions);
+            float dy = SampleSdfAt(ClampCell(center + new int3(0, 1, 0), dimensions), dimensions) -
+                       SampleSdfAt(ClampCell(center - new int3(0, 1, 0), dimensions), dimensions);
+            float dz = SampleSdfAt(ClampCell(center + new int3(0, 0, 1), dimensions), dimensions) -
+                       SampleSdfAt(ClampCell(center - new int3(0, 0, 1), dimensions), dimensions);
+            float invCellSpan = math.rcp(math.max(HydrodynamicKccMath.MinDenominator, grid.CellSizeMeters * 2f));
+            normal = HydrodynamicKccMath.NormalizeSafe(new float3(dx, dy, dz) * invCellSpan, new float3(0f, 1f, 0f));
+            return HydrodynamicKccMath.IsFinite(normal) && math.lengthsq(normal) > 0.0001f;
+        }
+
+        private static float3 ResolveGridCell(double3 aup, KccEnvironmentGridDTO grid, int3 dimensions)
+        {
+            double3 delta = HydrodynamicKccMath.Sanitize(aup - grid.GridOriginAup, double3.zero);
+            float invCell = math.rcp(math.max(0.25f, grid.CellSizeMeters));
+            float3 cell = new float3((float)delta.x, (float)delta.y, (float)delta.z) * invCell;
+            float3 maxCell = new float3(dimensions.x - 1, dimensions.y - 1, dimensions.z - 1);
+            return math.clamp(HydrodynamicKccMath.Sanitize(cell, float3.zero), float3.zero, maxCell);
+        }
+
+        private float SampleSdfAt(int3 coord, int3 dimensions)
+        {
+            int sampleIndex = FlattenCell(coord, dimensions);
+            float value = sampleIndex >= 0 && sampleIndex < SdfDistances.Length
+                ? SdfDistances[sampleIndex]
+                : 2f;
+            return math.isfinite(value) ? value : 2f;
+        }
+
+        private static int FlattenCell(int3 coord, int3 dimensions)
+        {
+            int x = math.clamp(coord.x, 0, math.max(0, dimensions.x - 1));
+            int y = math.clamp(coord.y, 0, math.max(0, dimensions.y - 1));
+            int z = math.clamp(coord.z, 0, math.max(0, dimensions.z - 1));
+            return x + z * math.max(1, dimensions.x) + y * math.max(1, dimensions.x) * math.max(1, dimensions.z);
+        }
+
+        private static int3 ClampCell(int3 coord, int3 dimensions)
+        {
+            return new int3(
+                math.clamp(coord.x, 0, math.max(0, dimensions.x - 1)),
+                math.clamp(coord.y, 0, math.max(0, dimensions.y - 1)),
+                math.clamp(coord.z, 0, math.max(0, dimensions.z - 1)));
+        }
+
+        private static int3 ResolveSampleDimensions(int3 requested, int length)
+        {
+            int3 dimensions = new int3(math.max(1, requested.x), math.max(1, requested.y), math.max(1, requested.z));
+            int requestedLength = dimensions.x * dimensions.y * dimensions.z;
+            if (requestedLength > 0 && requestedLength <= length)
+                return dimensions;
+
+            int side = IntegerCubeRootFloor(length);
+            return new int3(side, side, math.max(1, length / math.max(1, side * side)));
+        }
+
+        private static int IntegerCubeRootFloor(int length)
+        {
+            int safeLength = math.max(1, length);
+            int low = 1;
+            int high = math.min(1290, safeLength);
+            int result = 1;
+            while (low <= high)
+            {
+                int mid = low + ((high - low) >> 1);
+                long cube = (long)mid * mid * mid;
+                if (cube <= safeLength)
+                {
+                    result = mid;
+                    low = mid + 1;
+                }
+                else
+                {
+                    high = mid - 1;
+                }
+            }
+
+            return math.max(1, result);
         }
     }
 
@@ -1444,7 +1731,7 @@ namespace Hecton8.Physics.KCC
 
             if (CollisionBypass == 0 && CollisionHits.IsCreated && MaxHitsPerCommand > 0)
             {
-                int stride = math.max(1, MaxHitsPerCommand);
+                int stride = math.clamp(MaxHitsPerCommand, 1, 8);
                 int hitBase = index * stride;
                 float3 selectedNormal = float3.zero;
                 for (int i = 0; i < stride; i++)
@@ -1603,17 +1890,20 @@ namespace Hecton8.Physics.KCC
             float castDistance = HydrodynamicKccMath.LengthSafe(displacement);
             float3 direction = HydrodynamicKccMath.NormalizeSafe(displacement, new float3(0f, 0f, 1f));
             float skin = math.max(0.001f, math.isfinite(Tuning.SkinWidth) ? Tuning.SkinWidth : 0.02f);
-            int iterations = HydrodynamicKccMath.ResolveIterationCount(Tuning.GlobalQualityWeight);
             bool collisionBypassed = CollisionBypass != 0;
             uint flags = math.select(0u, HydrodynamicKccMath.FlagRespawnCollisionBypass, collisionBypassed);
-            int scheduledHitStride = math.max(1, MaxHitsPerCommand);
-            int executedIterations = math.clamp(iterations, 1, scheduledHitStride);
+            int scheduledHitStride = math.clamp(MaxHitsPerCommand, 1, 8);
+            bool hasCollisionHitLane = CollisionHits.IsCreated;
+            int executedIterations = collisionBypassed || !hasCollisionHitLane ? 0 : scheduledHitStride;
             int hitBase = index * scheduledHitStride;
             bool hasHit = false;
             float nearestDistance = castDistance + skin;
+            float maxPenetration = 0f;
             float3 nearestNormal = float3.zero;
+            float3* contactNormals = stackalloc float3[8];
+            int contactCount = 0;
 
-            if (!collisionBypassed)
+            if (!collisionBypassed && hasCollisionHitLane)
             {
                 for (int i = 0; i < executedIterations; i++)
                 {
@@ -1630,17 +1920,41 @@ namespace Hecton8.Physics.KCC
                     if (!validHit)
                         continue;
 
+                    float3 contactNormal = HydrodynamicKccMath.NormalizeSafe(hit.Normal, new float3(0f, 1f, 0f));
                     hasHit = true;
                     flags |= HydrodynamicKccMath.FlagCollision;
                     if (hit.Distance <= nearestDistance)
                     {
                         nearestDistance = hit.Distance;
-                        nearestNormal = hit.Normal;
+                        nearestNormal = contactNormal;
                     }
 
-                    float intoNormal = math.dot(velocity, hit.Normal);
-                    float contactWeight = 1f - math.step(0f, intoNormal);
-                    velocity -= hit.Normal * intoNormal * contactWeight;
+                    maxPenetration = math.max(maxPenetration, math.max(0f, math.isfinite(hit.PenetrationDepth) ? hit.PenetrationDepth : 0f));
+
+                    if (contactCount < 8 && !HasDuplicateContactPlane(contactNormals, contactCount, contactNormal))
+                    {
+                        contactNormals[contactCount] = contactNormal;
+                        contactCount++;
+                    }
+                }
+
+                int projectionPasses = math.min(executedIterations, 8);
+                for (int pass = 0; pass < projectionPasses; pass++)
+                {
+                    bool changed = false;
+                    for (int contactIndex = 0; contactIndex < contactCount; contactIndex++)
+                    {
+                        float3 normal = contactNormals[contactIndex];
+                        float intoNormal = math.dot(velocity, normal);
+                        if (intoNormal >= 0f)
+                            continue;
+
+                        velocity -= normal * intoNormal;
+                        changed = true;
+                    }
+
+                    if (!changed)
+                        break;
                 }
             }
 
@@ -1649,7 +1963,9 @@ namespace Hecton8.Physics.KCC
                 float allowedDistance = math.max(0f, nearestDistance - skin);
                 float consumedFraction = math.saturate(allowedDistance * math.rcp(math.max(castDistance, HydrodynamicKccMath.MinDenominator)));
                 float remainingDt = dt * (1f - consumedFraction);
-                displacement = direction * allowedDistance + velocity * remainingDt;
+                float depenetrationCap = math.min(math.max(0.05f, Tuning.CapsuleRadius), maxPenetration + skin);
+                float3 depenetration = nearestNormal * math.max(0f, depenetrationCap);
+                displacement = direction * allowedDistance + velocity * remainingDt + depenetration;
             }
             else
             {
@@ -1689,6 +2005,19 @@ namespace Hecton8.Physics.KCC
             _ = executedIterations;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasDuplicateContactPlane(float3* contactNormals, int contactCount, float3 candidate)
+        {
+            for (int i = 0; i < contactCount; i++)
+            {
+                float alignment = math.dot(contactNormals[i], candidate);
+                if (alignment >= HydrodynamicKccMath.DuplicateContactPlaneDotThreshold)
+                    return true;
+            }
+
+            return false;
+        }
+
         private void WriteFault(int index, uint faultMask)
         {
             if (!FaultFlags.IsCreated || index >= FaultFlags.Length)
@@ -1716,7 +2045,7 @@ namespace Hecton8.Physics.KCC
 
         public void Execute()
         {
-            if (!TelemetryRing.IsCreated || TelemetryRing.Length == 0)
+            if (!TelemetryRing.IsCreated || TelemetryRing.Length == 0 || !States.IsCreated || States.Length == 0)
                 return;
 
             int count = math.clamp(EntityCount, 0, States.Length);
@@ -1731,6 +2060,7 @@ namespace Hecton8.Physics.KCC
             uint hash = 2166136261u;
             float quality = math.saturate(math.isfinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
             float maxConfiguredSpeed = math.max(0.1f, math.isfinite(Tuning.MaxSpeed) ? Tuning.MaxSpeed : 6f);
+            uint executedIterations = (uint)math.max(0, ExecutedIterations);
 
             for (int i = 0; i < count; i++)
             {
@@ -1749,7 +2079,7 @@ namespace Hecton8.Physics.KCC
                 uint entityHash = HydrodynamicKccMath.HashState(state.AUP_Position, velocity, SimulationFrame, entityFlags);
                 hash ^= entityHash + 0x9E3779B9u + (hash << 6) + (hash >> 2);
                 computeUs += HydrodynamicKccMath.EstimateIntegrationMicroseconds(quality, speed) +
-                             HydrodynamicKccMath.EstimateResolutionMicroseconds(quality, (uint)math.max(1, ExecutedIterations), (entityFlags & HydrodynamicKccMath.FlagCollision) != 0u, speed);
+                             HydrodynamicKccMath.EstimateResolutionMicroseconds(quality, executedIterations, (entityFlags & HydrodynamicKccMath.FlagCollision) != 0u, speed);
             }
 
             averageVelocity *= math.rcp(math.max(1f, count));
@@ -1766,7 +2096,7 @@ namespace Hecton8.Physics.KCC
                 Frame = SimulationFrame,
                 StateHash = hash,
                 Flags = flags,
-                Iterations = (uint)math.max(1, ExecutedIterations)
+                Iterations = executedIterations
             };
 
             if (TelemetryCursor.IsCreated && TelemetryCursor.Length > 0)
@@ -1933,7 +2263,7 @@ namespace Hecton8.Physics.KCC
         // Invariant: WakePackets is read-only, WakeWriter only enqueues, and downstream wake consumers drain the
         // SignalBus queue after the returned JobHandle completes.
         [NoAlias] public NativeQueue<WakeGeneratedSignal>.ParallelWriter WakeWriter;
-
+        [NativeDisableParallelForRestriction] public NativeArray<int> WakeWriterBudget;
         public void Execute(int index)
         {
             HydrodynamicWakePacketDTO packet = WakePackets[index];
@@ -1949,10 +2279,11 @@ namespace Hecton8.Physics.KCC
                 Velocity = direction * magnitude,
                 SourceFlags = HydrodynamicKccMath.PackWakeSourceFlags(HydrodynamicKccMath.WakeSourcePlayer, magnitude, radius)
             };
-            WakeWriter.Enqueue(signal);
+            SignalBus<WakeGeneratedSignal>.TryEnqueueBounded(WakeWriter, WakeWriterBudget, signal);
         }
     }
 
+#if UNITY_EDITOR
     public static class HydrodynamicFluidProfileCsvParser
     {
         private const byte Comma = (byte)',';
@@ -2349,10 +2680,11 @@ namespace Hecton8.Physics.KCC
             return hash == 0u ? 1u : hash;
         }
     }
+#endif
 
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CapsuleCollider))]
-    public sealed class HydrodynamicKccRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed partial class HydrodynamicKccRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int DefaultCapacity = 1;
         private const int TelemetryCapacity = 300;
@@ -2363,12 +2695,15 @@ namespace Hecton8.Physics.KCC
         private const int EnvironmentGridAxisY = 8;
         private const int EnvironmentGridAxisZ = 16;
         private const int EnvironmentGridCellCount = EnvironmentGridAxisX * EnvironmentGridAxisY * EnvironmentGridAxisZ;
+        private const uint MetabolismFatigueFlag = 1u << 9;
+        private const ulong MetabolismStateMutationGuardMask = 1UL << 48;
         private const string DumpFileName = "Dump_SHINOBU_113.bin";
         private const string AssignmentDumpFileName = "Dump_SHINOBU_250.bin";
         private const string LegacyAssignmentDumpFileName = "Dump_KINEMATICS_SURGEON.bin";
+        private const string AgentDumpFileName = "Dump_X_005.bin";
+        private const string PromptDumpFileName = "Dump_SHINOBU_322_KCC.bin";
 
         [SerializeField] private int _entityCapacity = DefaultCapacity;
-        [SerializeField] private LayerMask _collisionMask = ~0;
         [SerializeField] private float _waterSurfaceY;
         [SerializeField] private bool _applyVisualToTransform = true;
         [SerializeField] private bool _runMockInput = true;
@@ -2381,8 +2716,6 @@ namespace Hecton8.Physics.KCC
         private VaultGenerationHandle<KinematicStateDTO> _statesHandle;
         private VaultGenerationHandle<HydrodynamicKccInputDTO> _inputsHandle;
         private VaultGenerationHandle<float3> _proposedVelocitiesHandle;
-        private VaultGenerationHandle<CapsulecastCommand> _collisionCommandsHandle;
-        private VaultGenerationHandle<RaycastHit> _collisionHitsHandle;
         private VaultGenerationHandle<double3> _previousAupHandle;
         private VaultGenerationHandle<HydrodynamicKccVisualOutputDTO> _visualOutputsHandle;
         private VaultGenerationHandle<KinematicTelemetryEntry> _telemetryRingHandle;
@@ -2412,17 +2745,17 @@ namespace Hecton8.Physics.KCC
         private JobHandle _integrationHandle;
         private JobHandle _commandHandle;
         private JobHandle _collisionHandle;
-        private JobHandle _hitExtractHandle;
+        private JobHandle _sdfCollisionHandle;
         private JobHandle _postSimulationHandle;
         private JobHandle _externalInputHandle;
         private bool _registeredFixedTick;
         private bool _registeredPostFixedTick;
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwap;
-        private bool _registeredScalability;
         private bool _collisionScheduled;
         private bool _postScheduled;
         private bool _externalInputArmed;
+        private bool _metabolismStateReadGuardHeld;
         private int _dumpedFaultMask;
         private int _rollbackVisualBypassFrames;
         private int _respawnCollisionBypassFrames;
@@ -2430,13 +2763,22 @@ namespace Hecton8.Physics.KCC
         private int _resolvedBufferCapacity;
         private int _scheduledEntityCount;
         private int _scheduledMaxHitsPerCommand;
+        private int _droppedSignalCount;
         private uint _simulationFrame;
         private float _globalQualityWeight = 1f;
+        private float3 _queuedExternalAcceleration;
+        private float3 _queuedExternalVelocityChange;
+        private float3 _queuedExternalVelocityTarget;
+        private double3 _queuedExternalPositionTargetAup;
+        private uint _queuedExternalControlFlags;
         private float3 _lastGizmoCurrent;
         private float3 _lastGizmoPredicted;
         private float3 _lastGizmoNormal;
         private float3 _lastGizmoFlow;
         private float3 _lastGizmoSlopeSlide;
+
+        public bool IsAuthorityRouteActive => Application.isPlaying && isActiveAndEnabled && _dataVault != null;
+        public int DroppedSignalCount => _droppedSignalCount;
 
 #if UNITY_EDITOR
         private static HydrodynamicKccRuntime EditorActiveRuntime;
@@ -2548,6 +2890,7 @@ namespace Hecton8.Physics.KCC
 
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
+            _droppedSignalCount = 0;
             _globalQualityWeight = ResolveGlobalQualityWeight();
 #if UNITY_EDITOR
             EditorActiveRuntime = this;
@@ -2558,7 +2901,6 @@ namespace Hecton8.Physics.KCC
             TryRegisterPostFixedTick();
             TryRegisterLateFrameTick();
             TryRegisterHotSwap();
-            TryRegisterScalability();
         }
 
         private void OnDisable()
@@ -2570,7 +2912,6 @@ namespace Hecton8.Physics.KCC
             if (EditorActiveRuntime == this)
                 EditorActiveRuntime = null;
 #endif
-            TryUnregisterScalability();
             TryUnregisterHotSwap();
             TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
@@ -2584,13 +2925,12 @@ namespace Hecton8.Physics.KCC
 
             bool collisionBypass = ConsumeRespawnCollisionSuspendSignals();
             int capacity = math.min(_entityCapacity, _resolvedBufferCapacity);
-            int maxHits = HydrodynamicKccMath.ResolveIterationCount(_globalQualityWeight);
+            int maxHits = MaxCollisionHitsPerCommand;
             int rawHitCapacity = capacity * maxHits;
             if (!TryOpenVaultBuffer(_dataVault, ref _statesHandle, BufferID.ShinobuHydroKccStates, SystemID.Physics, capacity, out NativeArray<KinematicStateDTO> states) ||
                 !TryOpenVaultBuffer(_dataVault, ref _inputsHandle, BufferID.ShinobuHydroKccInputs, SystemID.Physics, capacity, out NativeArray<HydrodynamicKccInputDTO> inputs) ||
                 !TryOpenVaultBuffer(_dataVault, ref _proposedVelocitiesHandle, BufferID.ShinobuHydroKccProposedVelocities, SystemID.Physics, capacity, out NativeArray<float3> proposed) ||
-                !TryOpenVaultBuffer(_dataVault, ref _collisionCommandsHandle, BufferID.ShinobuHydroKccCollisionCommands, SystemID.Physics, capacity, out NativeArray<CapsulecastCommand> commands) ||
-                !TryOpenVaultBuffer(_dataVault, ref _collisionHitsHandle, BufferID.ShinobuHydroKccCollisionHits, SystemID.Physics, rawHitCapacity, out NativeArray<RaycastHit> hits) ||
+                !TryOpenVaultBuffer(_dataVault, ref _resolvedHitsHandle, BufferID.ShinobuHydroKccResolvedHits, SystemID.Physics, rawHitCapacity, out NativeArray<HydrodynamicKccCollisionHitDTO> resolvedHits) ||
                 !TryOpenVaultBuffer(_dataVault, ref _faultFlagsHandle, BufferID.ShinobuHydroKccFaultFlags, SystemID.Physics, capacity, out NativeArray<HydrodynamicKccFaultFlagDTO> faults) ||
                 !TryOpenVaultBuffer(_dataVault, ref _wakePacketsHandle, BufferID.ShinobuHydroKccWakePackets, SystemID.Physics, capacity, out NativeArray<HydrodynamicWakePacketDTO> wakePackets) ||
                 !TryOpenVaultBuffer(_dataVault, ref _tuningHandle, BufferID.ShinobuHydroKccTuning, SystemID.Physics, 1, out NativeArray<HydrodynamicKccTuningDTO> tuningBuffer) ||
@@ -2613,8 +2953,7 @@ namespace Hecton8.Physics.KCC
             if (capacity <= 0 ||
                 inputs.Length < capacity ||
                 proposed.Length < capacity ||
-                commands.Length < capacity ||
-                hits.Length < rawHitCapacity ||
+                resolvedHits.Length < rawHitCapacity ||
                 !faults.IsCreated ||
                 faults.Length < capacity ||
                 !wakePackets.IsCreated ||
@@ -2634,6 +2973,7 @@ namespace Hecton8.Physics.KCC
                 !environmentDebug.IsCreated ||
                 environmentDebug.Length < capacity)
             {
+                ReleaseMetabolismStateReadGuard();
                 _scheduledEntityCount = 0;
                 _scheduledMaxHitsPerCommand = 0;
                 return;
@@ -2643,6 +2983,16 @@ namespace Hecton8.Physics.KCC
             _scheduledEntityCount = capacity;
             SeedInitialStateIfNeeded(states, tuning, sectorOrigin, capacity);
             _simulationFrame++;
+            float3 externalAcceleration = _queuedExternalAcceleration;
+            float3 externalVelocityChange = _queuedExternalVelocityChange;
+            float3 externalVelocityTarget = _queuedExternalVelocityTarget;
+            double3 externalPositionTargetAup = _queuedExternalPositionTargetAup;
+            uint externalControlFlags = _queuedExternalControlFlags;
+            _queuedExternalAcceleration = float3.zero;
+            _queuedExternalVelocityChange = float3.zero;
+            _queuedExternalVelocityTarget = float3.zero;
+            _queuedExternalPositionTargetAup = double3.zero;
+            _queuedExternalControlFlags = 0u;
             JobHandle clearFaultsHandle = faults.IsCreated
                 ? new ClearKccFaultFlagsJob { FaultFlags = faults }.Schedule(capacity, 32)
                 : default;
@@ -2712,7 +3062,12 @@ namespace Hecton8.Physics.KCC
                 FaultFlags = faults,
                 Tuning = tuning,
                 SectorOriginAup = sectorOrigin,
+                ExternalAcceleration = externalAcceleration,
+                ExternalVelocityChange = externalVelocityChange,
+                ExternalVelocityTarget = externalVelocityTarget,
+                ExternalPositionTargetAup = externalPositionTargetAup,
                 SimulationFrame = _simulationFrame,
+                ExternalControlFlags = externalControlFlags,
                 SimulationTickDelta = fixedDeltaTime
             }.Schedule(capacity, 32, JobHandle.CombineDependencies(_inputHandle, _environmentMockHandle));
 
@@ -2725,20 +3080,19 @@ namespace Hecton8.Physics.KCC
                 return;
             }
 
-            _commandHandle = new BuildCapsuleCastCommandsJob
+            _commandHandle = _integrationHandle;
+            _collisionHandle = new BuildSdfCollisionHitsJob
             {
                 States = states,
                 ProposedVelocities = proposed,
-                Commands = commands,
+                EnvironmentGrids = environmentGrid,
+                SdfDistances = environmentSdf,
+                Hits = resolvedHits,
                 Tuning = tuning,
                 SectorOriginAup = sectorOrigin,
-                QueryParameters = new QueryParameters(_collisionMask.value, false, QueryTriggerInteraction.Ignore),
-                SimulationTickDelta = fixedDeltaTime
+                SimulationTickDelta = fixedDeltaTime,
+                MaxHitsPerEntity = maxHits
             }.Schedule(capacity, 32, _integrationHandle);
-
-            NativeArray<CapsulecastCommand> activeCommands = commands.GetSubArray(0, capacity);
-            NativeArray<RaycastHit> activeHits = hits.GetSubArray(0, capacity * maxHits);
-            _collisionHandle = CapsulecastCommand.ScheduleBatch(activeCommands, activeHits, 1, maxHits, _commandHandle);
             _collisionScheduled = true;
         }
 
@@ -2757,13 +3111,11 @@ namespace Hecton8.Physics.KCC
             bool collisionBypass = _respawnCollisionBypassFrames > 0 || _scheduledMaxHitsPerCommand <= 0;
             int maxHits = collisionBypass ? 1 : math.clamp(_scheduledMaxHitsPerCommand, 1, MaxCollisionHitsPerCommand);
             int bypassVisualSync = _rollbackVisualBypassFrames > 0 ? 1 : 0;
-            int rawHitCount = collisionBypass ? 0 : capacity * maxHits;
-            int hitOpenLength = collisionBypass ? 1 : rawHitCount;
+            int hitOpenLength = collisionBypass ? 1 : capacity * maxHits;
             int rollbackByteCapacity = capacity * UnsafeUtility.SizeOf<KinematicStateDTO>();
             if (capacity <= 0 ||
                 !TryOpenVaultBuffer(_dataVault, ref _statesHandle, BufferID.ShinobuHydroKccStates, SystemID.Physics, capacity, out NativeArray<KinematicStateDTO> states) ||
                 !TryOpenVaultBuffer(_dataVault, ref _proposedVelocitiesHandle, BufferID.ShinobuHydroKccProposedVelocities, SystemID.Physics, capacity, out NativeArray<float3> proposed) ||
-                !TryOpenVaultBuffer(_dataVault, ref _collisionHitsHandle, BufferID.ShinobuHydroKccCollisionHits, SystemID.Physics, hitOpenLength, out NativeArray<RaycastHit> hits) ||
                 !TryOpenVaultBuffer(_dataVault, ref _resolvedHitsHandle, BufferID.ShinobuHydroKccResolvedHits, SystemID.Physics, hitOpenLength, out NativeArray<HydrodynamicKccCollisionHitDTO> resolvedHits) ||
                 !TryOpenVaultBuffer(_dataVault, ref _previousAupHandle, BufferID.ShinobuHydroKccPreviousAup, SystemID.Physics, capacity, out NativeArray<double3> previous) ||
                 !TryOpenVaultBuffer(_dataVault, ref _visualOutputsHandle, BufferID.ShinobuHydroKccVisualOutputs, SystemID.Physics, capacity, out NativeArray<HydrodynamicKccVisualOutputDTO> visual) ||
@@ -2785,24 +3137,10 @@ namespace Hecton8.Physics.KCC
 
             HydrodynamicKccTuningDTO tuning = UpdateTuningSnapshot(tuningBuffer);
             double3 sectorOrigin = ResolveSectorOriginAup();
-            int executedIterations = collisionBypass ? 0 : math.clamp(HydrodynamicKccMath.ResolveIterationCount(tuning.GlobalQualityWeight), 1, maxHits);
+            int executedIterations = collisionBypass ? 0 : math.clamp(maxHits, 1, MaxCollisionHitsPerCommand);
 
-            JobHandle resolutionDependency;
-            if (collisionBypass)
-            {
-                _hitExtractHandle = _collisionHandle;
-                resolutionDependency = _collisionHandle;
-            }
-            else
-            {
-                _hitExtractHandle = new ExtractCapsuleCastHitsJob
-                {
-                    RawHits = hits,
-                    Hits = resolvedHits,
-                    MaxHitsPerCommand = maxHits
-                }.Schedule(rawHitCount, 32, _collisionHandle);
-                resolutionDependency = _hitExtractHandle;
-            }
+            _sdfCollisionHandle = _collisionHandle;
+            JobHandle resolutionDependency = _sdfCollisionHandle;
 
             JobHandle slopeHandle = new EvaluateSlopeFrictionJob
             {
@@ -2843,7 +3181,7 @@ namespace Hecton8.Physics.KCC
                 Tuning = tuning,
                 SimulationFrame = _simulationFrame,
                 VisualDeltaTime = fixedDeltaTime,
-                BypassVisualSync = bypassVisualSync
+                BypassVisualSync = (byte)bypassVisualSync
             }.Schedule(capacity, 32, resolutionHandle);
 
             JobHandle telemetryHandle = new KinematicTelemetryAggregateJob
@@ -2880,7 +3218,8 @@ namespace Hecton8.Physics.KCC
             JobHandle wakeHandle = new EmitWakeSignalsJob
             {
                 WakePackets = wakePackets,
-                WakeWriter = SignalBus<WakeGeneratedSignal>.ParallelWriter
+                WakeWriter = SignalBus<WakeGeneratedSignal>.ParallelWriter,
+                WakeWriterBudget = SignalBus<WakeGeneratedSignal>.ParallelWriterBudget
             }.Schedule(capacity, 32, resolutionHandle);
 
             JobHandle telemetryCombinedHandle = JobHandle.CombineDependencies(telemetryHandle, environmentTelemetryHandle);
@@ -2934,6 +3273,7 @@ namespace Hecton8.Physics.KCC
                     return false;
                 }
 
+                ReleaseMetabolismStateReadGuard();
                 _postScheduled = false;
                 _collisionScheduled = false;
                 _scheduledEntityCount = 0;
@@ -2955,6 +3295,58 @@ namespace Hecton8.Physics.KCC
             return true;
         }
 
+        public bool TryQueueExternalAcceleration(Vector3 acceleration)
+        {
+            if (!IsAuthorityRouteActive || !MathGuard.TryAcceptFinite(acceleration, out Vector3 acceptedAcceleration))
+                return false;
+
+            _queuedExternalAcceleration = HydrodynamicKccMath.Sanitize(
+                _queuedExternalAcceleration + new float3(acceptedAcceleration.x, acceptedAcceleration.y, acceptedAcceleration.z),
+                float3.zero);
+            _queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalAcceleration;
+            return true;
+        }
+
+        public bool TryQueueExternalVelocityChange(Vector3 velocityChange)
+        {
+            if (!IsAuthorityRouteActive || !MathGuard.TryAcceptFinite(velocityChange, out Vector3 acceptedVelocityChange))
+                return false;
+
+            _queuedExternalVelocityChange = HydrodynamicKccMath.Sanitize(
+                _queuedExternalVelocityChange + new float3(acceptedVelocityChange.x, acceptedVelocityChange.y, acceptedVelocityChange.z),
+                float3.zero);
+            _queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalVelocityChange;
+            return true;
+        }
+
+        public bool TryQueueExternalVelocityTarget(Vector3 velocityTarget)
+        {
+            if (!IsAuthorityRouteActive || !MathGuard.TryAcceptFinite(velocityTarget, out Vector3 acceptedVelocityTarget))
+                return false;
+
+            _queuedExternalVelocityTarget = new float3(acceptedVelocityTarget.x, acceptedVelocityTarget.y, acceptedVelocityTarget.z);
+            _queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalVelocityTarget;
+            return true;
+        }
+
+        public bool TryQueueExternalPositionTarget(Vector3 runtimePosition)
+        {
+            if (!IsAuthorityRouteActive || !MathGuard.TryAcceptFinite(runtimePosition, out Vector3 acceptedRuntimePosition))
+                return false;
+
+            AbsoluteUniversePosition aup = default;
+            if (!RuntimeOriginRoute.TryRuntimePositionToAup(acceptedRuntimePosition, ref aup))
+                return false;
+
+            double3 absolute = aup.ToAbsoluteDouble3();
+            if (!HydrodynamicKccMath.IsFinite(absolute))
+                return false;
+
+            _queuedExternalPositionTargetAup = absolute;
+            _queuedExternalControlFlags |= HydrodynamicKccMath.FlagExternalPositionTarget;
+            return true;
+        }
+
         public uint ResolveNextInputFrame()
         {
             return _simulationFrame + 1u;
@@ -2973,14 +3365,17 @@ namespace Hecton8.Physics.KCC
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _postSimulationHandle))
                 return;
 
+            ReleaseMetabolismStateReadGuard();
             _postScheduled = false;
             if (!EnsureVaultBuffers())
                 return;
 
+            int entityCapacity = math.max(DefaultCapacity, _entityCapacity);
             if (!TryOpenVaultBuffer(_dataVault, ref _visualOutputsHandle, BufferID.ShinobuHydroKccVisualOutputs, SystemID.Physics, 1, out NativeArray<HydrodynamicKccVisualOutputDTO> visual) ||
+                !TryOpenVaultBuffer(_dataVault, ref _statesHandle, BufferID.ShinobuHydroKccStates, SystemID.Physics, 1, out NativeArray<KinematicStateDTO> states) ||
                 !TryOpenVaultBuffer(_dataVault, ref _debugOutputsHandle, BufferID.ShinobuHydroKccDebugOutputs, SystemID.Physics, 1, out NativeArray<HydrodynamicKccDebugOutputDTO> debugOutputs) ||
                 !TryOpenVaultBuffer(_dataVault, ref _environmentDebugHandle, BufferID.ShinobuKccEnvironmentDebug, SystemID.Physics, 1, out NativeArray<KccEnvironmentDebugOutputDTO> environmentDebugOutputs) ||
-                !TryOpenVaultBuffer(_dataVault, ref _faultFlagsHandle, BufferID.ShinobuHydroKccFaultFlags, SystemID.Physics, 1, out NativeArray<HydrodynamicKccFaultFlagDTO> faults) ||
+                !TryOpenVaultBuffer(_dataVault, ref _faultFlagsHandle, BufferID.ShinobuHydroKccFaultFlags, SystemID.Physics, entityCapacity, out NativeArray<HydrodynamicKccFaultFlagDTO> faults) ||
                 !TryOpenVaultBuffer(_dataVault, ref _telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KinematicTelemetryEntry> telemetry) ||
                 !TryOpenVaultBuffer(_dataVault, ref _environmentTelemetryRingHandle, BufferID.ShinobuKccEnvironmentTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KccEnvironmentTelemetryEntry> environmentTelemetry))
             {
@@ -2993,11 +3388,16 @@ namespace Hecton8.Physics.KCC
                 DumpTelemetry(telemetry, environmentTelemetry);
                 _dumpedFaultMask = faultMask;
             }
+            else if (faultMask == 0)
+            {
+                _dumpedFaultMask = 0;
+            }
 
             if (!visual.IsCreated || visual.Length == 0)
                 return;
 
             HydrodynamicKccVisualOutputDTO output = visual[0];
+            PublishKccVelocitySnapshot(states);
             if (debugOutputs.IsCreated && debugOutputs.Length > 0)
             {
                 HydrodynamicKccDebugOutputDTO debug = debugOutputs[0];
@@ -3030,6 +3430,55 @@ namespace Hecton8.Physics.KCC
             _cachedTransform.localPosition = local;
         }
 
+        private void PublishKccVelocitySnapshot(NativeArray<KinematicStateDTO> states)
+        {
+            if (!states.IsCreated || states.Length == 0)
+                return;
+
+            KinematicStateDTO state = states[0];
+            if (!HydrodynamicKccMath.IsFinite(state.AUP_Position) || !HydrodynamicKccMath.IsFinite(state.Velocity))
+                return;
+
+            AbsoluteUniversePosition bodyAup = HydrodynamicKccMath.ToAup48(state.AUP_Position);
+            byte flags = _globalQualityWeight <= 0.25f ? KccVelocitySignal.FlagLowTier : (byte)0;
+            bool accepted = PhysicsDeterminismSignals.TryPublishKccVelocity(
+                in bodyAup,
+                HydrodynamicKccMath.Sanitize(state.Velocity, float3.zero),
+                _simulationFrame,
+                HydrodynamicKccMath.SourceHash,
+                flags);
+            if (!accepted)
+                IncrementDroppedSignalCount();
+        }
+
+        private void IncrementDroppedSignalCount()
+        {
+            if (_droppedSignalCount < 0x3FFFFFFF)
+                _droppedSignalCount++;
+
+            PatchLatestTelemetryFlag(HydrodynamicKccMath.FlagSignalDrop);
+        }
+
+        private void PatchLatestTelemetryFlag(uint flag)
+        {
+            if (flag == 0u ||
+                _dataVault == null ||
+                !TryOpenVaultBuffer(_dataVault, ref _telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KinematicTelemetryEntry> telemetry) ||
+                !TryOpenVaultBuffer(_dataVault, ref _telemetryCursorHandle, BufferID.ShinobuHydroKccTelemetryCursor, SystemID.Physics, 1, out NativeArray<int> cursor) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0 ||
+                !cursor.IsCreated ||
+                cursor.Length <= 0)
+            {
+                return;
+            }
+
+            int index = math.clamp(cursor[0], 0, telemetry.Length - 1);
+            KinematicTelemetryEntry entry = telemetry[index];
+            entry.Flags |= flag;
+            telemetry[index] = entry;
+        }
+
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
@@ -3045,18 +3494,7 @@ namespace Hecton8.Physics.KCC
             }
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _globalQualityWeight = ResolveGlobalQualityWeight();
-            if (_dataVault == null ||
-                !TryOpenVaultBuffer(_dataVault, ref _tuningHandle, BufferID.ShinobuHydroKccTuning, SystemID.Physics, 1, out NativeArray<HydrodynamicKccTuningDTO> tuningBuffer))
-                return;
-
-            HydrodynamicKccTuningDTO tuning = tuningBuffer[0];
-            tuning.GlobalQualityWeight = _globalQualityWeight;
-            tuningBuffer[0] = SanitizeTuning(tuning);
-        }
-
+#if UNITY_EDITOR
         /// <summary>Parses designer fluid-profile CSV bytes into Vault-backed profile and bucket buffers.</summary>
         public bool TryIngestFluidProfiles(ReadOnlySpan<byte> csvBytes)
         {
@@ -3132,6 +3570,7 @@ namespace Hecton8.Physics.KCC
             activeProfile[0] = SanitizeEnvironmentProfile(profiles[0]);
             return true;
         }
+#endif
 
         /// <summary>Applies a cold-ingested locomotion environment profile by FNV-1a hash bucket.</summary>
         public bool TryApplyEnvironmentProfile(uint profileHash)
@@ -3180,27 +3619,28 @@ namespace Hecton8.Physics.KCC
         private bool OpenPublishedMetabolismStateView(int requiredLength, out NativeArray<MetabolicStateDTO> states)
         {
             states = default;
-            if (_dataVault == null || requiredLength <= 0)
+            if (_dataVault == null || requiredLength <= 0 || _metabolismStateReadGuardHeld)
                 return false;
 
-            BufferID bufferId = (BufferID)ShinobuMetabolismVaultContract.MetabolismStatesBufferId;
-            uint lockBit = 1u << (ShinobuMetabolismVaultContract.MetabolismStatesBufferId & 31);
-            if ((_dataVault.ActiveBurstLockMask & lockBit) != 0u)
+            BufferID bufferId = BufferID.ShinobuMetabolismStates;
+            if (!_dataVault.TryAcquireMutationGuard(MetabolismStateMutationGuardMask))
                 return false;
 
+            _metabolismStateReadGuardHeld = true;
             if (!IsVaultHandle(in _metabolismStatesHandle, bufferId, SystemID.GameplayPlayer))
             {
                 if (!_dataVault.TryGetGenerationHandle(bufferId, out _metabolismStatesHandle) ||
                     !IsVaultHandle(in _metabolismStatesHandle, bufferId, SystemID.GameplayPlayer))
                 {
                     _metabolismStatesHandle = default;
+                    ReleaseMetabolismStateReadGuard();
                     return false;
                 }
             }
 
-            if (!TryOpenVaultBuffer(
+            if (!TryReadVaultBuffer(
                     _dataVault,
-                    ref _metabolismStatesHandle,
+                    in _metabolismStatesHandle,
                     bufferId,
                     SystemID.GameplayPlayer,
                     requiredLength,
@@ -3208,10 +3648,22 @@ namespace Hecton8.Physics.KCC
             {
                 states = default;
                 _metabolismStatesHandle = default;
+                ReleaseMetabolismStateReadGuard();
                 return false;
             }
 
             return true;
+        }
+
+        private void ReleaseMetabolismStateReadGuard()
+        {
+            if (!_metabolismStateReadGuardHeld)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(MetabolismStateMutationGuardMask);
+            _metabolismStateReadGuardHeld = false;
         }
 
         private bool OpenOrAcquirePhysicsVaultBuffer<T>(
@@ -3242,7 +3694,7 @@ namespace Hecton8.Physics.KCC
                 return TryOpenVaultBuffer(vault, ref handle, bufferId, SystemID.Physics, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.Physics,
@@ -3273,6 +3725,23 @@ namespace Hecton8.Physics.KCC
             return true;
         }
 
+        private static bool TryReadVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID systemId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsVaultHandle(in handle, bufferId, systemId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
         private static bool IsVaultHandle<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -3297,8 +3766,6 @@ namespace Hecton8.Physics.KCC
             if (!OpenOrAcquirePhysicsVaultBuffer(ref _statesHandle, BufferID.ShinobuHydroKccStates, _entityCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
                 !OpenOrAcquirePhysicsVaultBuffer(ref _inputsHandle, BufferID.ShinobuHydroKccInputs, _entityCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
                 !OpenOrAcquirePhysicsVaultBuffer(ref _proposedVelocitiesHandle, BufferID.ShinobuHydroKccProposedVelocities, _entityCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
-                !OpenOrAcquirePhysicsVaultBuffer(ref _collisionCommandsHandle, BufferID.ShinobuHydroKccCollisionCommands, _entityCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
-                !OpenOrAcquirePhysicsVaultBuffer(ref _collisionHitsHandle, BufferID.ShinobuHydroKccCollisionHits, hitCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
                 !OpenOrAcquirePhysicsVaultBuffer(ref _previousAupHandle, BufferID.ShinobuHydroKccPreviousAup, _entityCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
                 !OpenOrAcquirePhysicsVaultBuffer(ref _visualOutputsHandle, BufferID.ShinobuHydroKccVisualOutputs, _entityCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
                 !OpenOrAcquirePhysicsVaultBuffer(ref _telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, TelemetryCapacity, NativeArrayOptions.ClearMemory, out _) ||
@@ -3346,8 +3813,6 @@ namespace Hecton8.Physics.KCC
             _statesHandle = default;
             _inputsHandle = default;
             _proposedVelocitiesHandle = default;
-            _collisionCommandsHandle = default;
-            _collisionHitsHandle = default;
             _previousAupHandle = default;
             _visualOutputsHandle = default;
             _telemetryRingHandle = default;
@@ -3421,7 +3886,7 @@ namespace Hecton8.Physics.KCC
         private bool TryAbortScheduledBatchNoWait()
         {
             if (!_postSimulationHandle.IsCompleted ||
-                !_hitExtractHandle.IsCompleted ||
+                !_sdfCollisionHandle.IsCompleted ||
                 !_collisionHandle.IsCompleted ||
                 !_commandHandle.IsCompleted ||
                 !_integrationHandle.IsCompleted ||
@@ -3433,7 +3898,7 @@ namespace Hecton8.Physics.KCC
             }
 
             DispatcherJobFence.TryFinalizeCompleted(ref _postSimulationHandle);
-            DispatcherJobFence.TryFinalizeCompleted(ref _hitExtractHandle);
+            DispatcherJobFence.TryFinalizeCompleted(ref _sdfCollisionHandle);
             DispatcherJobFence.TryFinalizeCompleted(ref _collisionHandle);
             DispatcherJobFence.TryFinalizeCompleted(ref _commandHandle);
             DispatcherJobFence.TryFinalizeCompleted(ref _integrationHandle);
@@ -3447,7 +3912,7 @@ namespace Hecton8.Physics.KCC
         private void AbortScheduledBatchForTeardown()
         {
             DispatcherJobFence.TryComplete(ref _postSimulationHandle, true);
-            DispatcherJobFence.TryComplete(ref _hitExtractHandle, true);
+            DispatcherJobFence.TryComplete(ref _sdfCollisionHandle, true);
             DispatcherJobFence.TryComplete(ref _collisionHandle, true);
             DispatcherJobFence.TryComplete(ref _commandHandle, true);
             DispatcherJobFence.TryComplete(ref _integrationHandle, true);
@@ -3459,6 +3924,7 @@ namespace Hecton8.Physics.KCC
 
         private void ClearScheduledBatchState()
         {
+            ReleaseMetabolismStateReadGuard();
             _collisionScheduled = false;
             _postScheduled = false;
             _scheduledEntityCount = 0;
@@ -3476,8 +3942,6 @@ namespace Hecton8.Physics.KCC
                    TryOpenVaultBuffer(_dataVault, ref _statesHandle, BufferID.ShinobuHydroKccStates, SystemID.Physics, entityCapacity, out _) &&
                    TryOpenVaultBuffer(_dataVault, ref _inputsHandle, BufferID.ShinobuHydroKccInputs, SystemID.Physics, entityCapacity, out _) &&
                    TryOpenVaultBuffer(_dataVault, ref _proposedVelocitiesHandle, BufferID.ShinobuHydroKccProposedVelocities, SystemID.Physics, entityCapacity, out _) &&
-                   TryOpenVaultBuffer(_dataVault, ref _collisionCommandsHandle, BufferID.ShinobuHydroKccCollisionCommands, SystemID.Physics, entityCapacity, out _) &&
-                   TryOpenVaultBuffer(_dataVault, ref _collisionHitsHandle, BufferID.ShinobuHydroKccCollisionHits, SystemID.Physics, hitCapacity, out _) &&
                    TryOpenVaultBuffer(_dataVault, ref _resolvedHitsHandle, BufferID.ShinobuHydroKccResolvedHits, SystemID.Physics, hitCapacity, out _) &&
                    TryOpenVaultBuffer(_dataVault, ref _previousAupHandle, BufferID.ShinobuHydroKccPreviousAup, SystemID.Physics, entityCapacity, out _) &&
                    TryOpenVaultBuffer(_dataVault, ref _visualOutputsHandle, BufferID.ShinobuHydroKccVisualOutputs, SystemID.Physics, entityCapacity, out _) &&
@@ -3687,6 +4151,9 @@ namespace Hecton8.Physics.KCC
 
         private float ResolveGlobalQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float value = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(value) ? value : 1f);
         }
@@ -3710,6 +4177,8 @@ namespace Hecton8.Physics.KCC
                     void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
                     WriteTelemetryDump(Path.Combine(directory, DumpFileName), source, bytes);
                     WriteTelemetryDump(Path.Combine(directory, LegacyAssignmentDumpFileName), source, bytes);
+                    WriteTelemetryDump(Path.Combine(directory, AgentDumpFileName), source, bytes);
+                    WriteTelemetryDump(Path.Combine(directory, PromptDumpFileName), source, bytes);
                 }
 
                 if (environmentTelemetry.IsCreated && environmentTelemetry.Length > 0)
@@ -3884,24 +4353,6 @@ namespace Hecton8.Physics.KCC
 
             GlobalRegistry.UnregisterHotSwapListener(this);
             _registeredHotSwap = false;
-        }
-
-        private void TryRegisterScalability()
-        {
-            if (_registeredScalability || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalability = true;
-        }
-
-        private void TryUnregisterScalability()
-        {
-            if (!_registeredScalability)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalability = false;
         }
 
         private void DrainPendingJobsForTeardown()

@@ -394,8 +394,8 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         private static float3 RotateAroundAxis(float3 p, float3 axis, float angle)
         {
-            float s = math.sin(angle);
-            float c = math.cos(angle);
+            float s = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle);
+            float c = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angle);
             return (p * c) + (math.cross(axis, p) * s) + (axis * math.dot(axis, p) * (1f - c));
         }
     }
@@ -439,8 +439,8 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         private static float3 RotateAroundAxis(float3 p, float3 axis, float angle)
         {
-            float s = math.sin(angle);
-            float c = math.cos(angle);
+            float s = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle);
+            float c = Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angle);
             return (p * c) + (math.cross(axis, p) * s) + (axis * math.dot(axis, p) * (1f - c));
         }
     }
@@ -702,7 +702,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
             float denom = math.max(la * lb, 0.0000001f);
             float d = math.dot(a, b) * math.rsqrt(denom);
-            return math.isfinite(d) ? math.acos(math.clamp(d, -1f, 1f)) : 0f;
+            return math.isfinite(d) ? global::Hecton8.Core.MathLodApproximation.ApproxAcosFast(math.clamp(d, -1f, 1f)) : 0f;
         }
     }
 

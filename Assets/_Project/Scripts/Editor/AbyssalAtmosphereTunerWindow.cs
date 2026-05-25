@@ -476,7 +476,7 @@ namespace Hecton8.EditorTools
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetGenerationHandle<T>(
+                handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     required,
                     owner,

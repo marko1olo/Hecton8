@@ -1776,6 +1776,21 @@ namespace Hecton8.Editor
     {
         private const string LinkXmlPath = "Assets/_Project/Scripts/Global/Generated/link.xml";
         private const string VaultOffsetsPath = "Assets/_Project/Scripts/Global/Contracts/Generated/VaultOffsets.g.cs";
+        private const int SourceScanBufferBytes = 8192;
+        private const int TypeSourceLineBytes = 2048;
+        private const int TypeIdentifierChars = 256;
+        private const string NamespaceToken = "namespace ";
+        private const string PublicToken = "public ";
+        private const string ReadonlyToken = "readonly ";
+        private const string StaticToken = "static ";
+        private const string InterfaceToken = "interface ";
+        private const string StructToken = "struct ";
+        private const string EnumToken = "enum ";
+        private const string DelegateToken = "delegate ";
+        private const string ClassToken = "class ";
+        private static readonly byte[] SourceScanScratch = new byte[SourceScanBufferBytes];
+        private static readonly byte[] TypeLineScratch = new byte[TypeSourceLineBytes];
+        private static readonly char[] IdentifierScratch = new char[TypeIdentifierChars];
 
         [MenuItem("Tools/Hecton-8/Compile Wall/Generate Link And Offsets")]
         public static void GenerateAll()
@@ -2110,7 +2125,7 @@ namespace Hecton8.Editor
             writer.WriteLine("        public const int GlobalSignalPayload_PayloadBytes = 6;");
             writer.WriteLine("        public const int GlobalSignalPayload_PayloadStart = 16;");
             writer.WriteLine("        public const int GlobalNativeBufferHandle_Size = 32;");
-            writer.WriteLine("        public const int GlobalNativeBufferHandle_Pointer = 0;");
+            writer.WriteLine("        public const int GlobalNativeBufferHandle_DescriptorToken = 0;");
             writer.WriteLine("        public const int GlobalNativeBufferHandle_Generation = 20;");
             writer.WriteLine("        public const int NativeMemoryAliasContract_Size = 64;");
             writer.WriteLine("        public const int AssemblyRoutingOverride_Size = 64;");

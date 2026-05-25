@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Lighting;
@@ -175,38 +176,58 @@ namespace Hecton8.Tests.Editor
         public void RuntimeSourceAvoidsUnityLightObjectSubmission()
         {
             string root = Path.Combine(Application.dataPath, "_Project/Scripts/Lighting/DynamicPointLightCulling");
-            string director = File.ReadAllText(Path.Combine(root, "DynamicPointLightCullingDirector.cs"));
-            string jobs = File.ReadAllText(Path.Combine(root, "DynamicPointLightCullingJobs.cs"));
-            Assert.That(director, Does.Not.Contain("Light.enabled"));
-            Assert.That(director, Does.Not.Contain("new Light"));
-            Assert.That(jobs, Does.Not.Contain("math.sqrt"));
-            Assert.That(jobs, Does.Not.Contain("math.length("));
-            Assert.That(jobs, Does.Not.Contain("Vector3.Distance"));
-            Assert.That(jobs, Does.Contain("UnsafeUtility.AsRef"));
-            Assert.That(jobs, Does.Contain("NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr"));
-            Assert.That(jobs, Does.Contain("NativeArrayUnsafeUtility.GetUnsafePtr"));
-            Assert.That(director, Does.Not.Contain("GeometryUtility.CalculateFrustumPlanes"));
-            Assert.That(director, Does.Not.Contain("Plane[]"));
-            Assert.That(director, Does.Not.Contain("InjectDynamicLightJob"));
-            Assert.That(director, Does.Contain("GraphicsBuffer.UsageFlags.LockBufferForWrite"));
-            Assert.That(director, Does.Contain("NativeArrayOptions.UninitializedMemory"));
-            Assert.That(director, Does.Contain("TryGetProbeBounceReadback"));
-            Assert.That(director, Does.Contain("SdfSampleCount = _mockSdfSeeded"));
-            Assert.That(director, Does.Contain("NativeArrayOptions.ClearMemory"));
-            Assert.That(director, Does.Contain("EnsureGpuBuffers(gpuCapacity)"));
-            Assert.That(director, Does.Contain("TryCommitExternalSourceCount"));
-            Assert.That(director, Does.Contain("SourceManifest"));
-            Assert.That(File.ReadAllText(Path.Combine(root, "DynamicPointLightCullingContracts.cs")), Does.Contain("math.step"));
+            string directorPath = Path.Combine(root, "DynamicPointLightCullingDirector.cs");
+            string jobsPath = Path.Combine(root, "DynamicPointLightCullingJobs.cs");
+            AssertFileDoesNotContain(directorPath, "Light.enabled");
+            AssertFileDoesNotContain(directorPath, "new Light");
+            AssertFileDoesNotContain(jobsPath, "math.sqrt");
+            AssertFileDoesNotContain(jobsPath, "math.length(");
+            AssertFileDoesNotContain(jobsPath, "Vector3.Distance");
+            AssertFileContains(jobsPath, "UnsafeUtility.AsRef");
+            AssertFileContains(jobsPath, "NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr");
+            AssertFileContains(jobsPath, "NativeArrayUnsafeUtility.GetUnsafePtr");
+            AssertFileDoesNotContain(directorPath, "GeometryUtility.CalculateFrustumPlanes");
+            AssertFileDoesNotContain(directorPath, "Plane[]");
+            AssertFileDoesNotContain(directorPath, "InjectDynamicLightJob");
+            AssertFileContains(directorPath, "GraphicsBuffer.UsageFlags.LockBufferForWrite");
+            AssertFileContains(directorPath, "NativeArrayOptions.UninitializedMemory");
+            AssertFileContains(directorPath, "TryGetProbeBounceReadback");
+            AssertFileContains(directorPath, "SdfSampleCount = _mockSdfSeeded");
+            AssertFileContains(directorPath, "NativeArrayOptions.ClearMemory");
+            AssertFileContains(directorPath, "EnsureGpuBuffers(gpuCapacity)");
+            AssertFileContains(directorPath, "TryCommitExternalSourceCount");
+            AssertFileContains(directorPath, "SourceManifest");
+            AssertFileContains(Path.Combine(root, "DynamicPointLightCullingContracts.cs"), "math.step");
         }
 
         [Test]
         public void RollbackMerkleSourceDoesNotHashDynamicLightPresentationBuffers()
         {
             string path = Path.Combine(Application.dataPath, "_Project/Scripts/Networking/RollbackNetcodeContracts.cs");
-            string source = File.ReadAllText(path);
-            Assert.That(source, Does.Not.Contain("DynamicPointLight"));
-            Assert.That(source, Does.Not.Contain("LightCullStateDTO"));
-            Assert.That(source, Does.Not.Contain("GpuPayloadFront"));
+            AssertFileDoesNotContain(path, "DynamicPointLight");
+            AssertFileDoesNotContain(path, "LightCullStateDTO");
+            AssertFileDoesNotContain(path, "GpuPayloadFront");
+        }
+
+        private static void AssertFileContains(string path, string token)
+        {
+            Assert.IsTrue(FileContains(path, token), path + " missing token: " + token);
+        }
+
+        private static void AssertFileDoesNotContain(string path, string token)
+        {
+            Assert.IsFalse(FileContains(path, token), path + " contains forbidden token: " + token);
+        }
+
+        private static bool FileContains(string path, string token)
+        {
+            foreach (string line in File.ReadLines(path))
+            {
+                if (line.IndexOf(token, StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private static uint BuildFnv(string text)

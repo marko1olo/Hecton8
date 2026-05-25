@@ -14,7 +14,7 @@ using UnityEngine;
 namespace Hecton8.Visor
 {
     [DisallowMultipleComponent]
-    public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const int CsvBufferBytes = 4096;
@@ -23,7 +23,9 @@ namespace Hecton8.Visor
         private const float MinimumDeltaTime = 0.0001f;
         private const float BreachPublishCooldownSeconds = 0.35f;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_VISOR_SURGEON.bin";
+#if UNITY_EDITOR
         private const string CsvRelativePath = "visor_properties.csv";
+#endif
         private const uint DumpMagic = 0x56534C44u;
         private const uint DumpVersion = 1u;
         private const uint VisorBreachLaneHash = 0x56534252u;
@@ -89,7 +91,9 @@ namespace Hecton8.Visor
         private bool _hasGpuGlobals;
         private bool _hasUploadedGpuGlobals;
         private bool _blackBoxDumped;
+#pragma warning disable CS0414
         private bool _mockDataActive;
+#pragma warning restore CS0414
         private bool _binaryProbePerformed;
         private bool _forceImmediateSimulation;
         private bool _hasPendingPhysiology;
@@ -175,7 +179,6 @@ namespace Hecton8.Visor
             CacheRegistryServicesCold();
             EnsureNativeState();
             TryRegisterHotSwapListener();
-            GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
@@ -184,7 +187,6 @@ namespace Hecton8.Visor
             CompleteScheduledWorkForTeardown();
             UploadGpuGlobals();
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             TryUnregisterHotSwapListener();
             ClearGpuGlobals();
             ReleaseGpuBuffer();
@@ -192,7 +194,7 @@ namespace Hecton8.Visor
             ReleaseNativeState(_vault, clearVault: true);
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceVisorSimulation(float deltaTime)
         {
             if (!_nativeReady)
             {
@@ -225,6 +227,7 @@ namespace Hecton8.Visor
 
         public void LateFrameTick()
         {
+            AdvanceVisorSimulation(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             TryFinalizeScheduledWorkNoWait();
             UploadGpuGlobals();
         }
@@ -408,6 +411,7 @@ namespace Hecton8.Visor
             _forceImmediateSimulation = true;
         }
 
+#if UNITY_EDITOR
         public bool TryReloadCsvOverrides()
         {
             EnsureNativeState();
@@ -432,6 +436,7 @@ namespace Hecton8.Visor
                 return false;
             }
         }
+#endif
 
         private void EnsureNativeState()
         {
@@ -456,7 +461,9 @@ namespace Hecton8.Visor
                 _nativeReady = true;
                 PrewarmSignalLanes();
                 GenerateEmergencyMockVisorData();
+#if UNITY_EDITOR
                 TryReloadCsvOverrides();
+#endif
                 ProbeColdBinaryPayloads();
                 EnsureGpuBuffer();
                 ClearGpuGlobals();
@@ -505,14 +512,10 @@ namespace Hecton8.Visor
         private void CacheRegistryServicesCold()
         {
             if (_vault == null)
-            {
                 _vault = GlobalRegistry.DataVault;
-                if (_vault == null && GlobalRegistry.TryGet(out IDataVault vault))
-                    _vault = vault;
-            }
 
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -535,7 +538,7 @@ namespace Hecton8.Visor
         private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID id, int length) where T : struct
         {
             IDataVault vault = EnsureVault();
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(id, length, OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(id, length, OwnerSystem, NativeArrayOptions.UninitializedMemory);
             if (!TryResolveVaultArray(vault, in handle, id, length, out _))
                 throw new InvalidOperationException("DiegeticVisorLensRuntime failed to acquire Vault descriptor.");
 
@@ -1155,19 +1158,26 @@ namespace Hecton8.Visor
                     cappedLength = buffer.Length;
 
                 int length = (int)cappedLength;
-                for (int i = 0; i < length; i++)
+                unsafe
                 {
-                    int value = stream.ReadByte();
-                    if (value < 0)
-                        return i;
+                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
+                    Span<byte> destination = new Span<byte>(ptr, length);
+                    int total = 0;
+                    while (total < length)
+                    {
+                        int read = stream.Read(destination.Slice(total));
+                        if (read <= 0)
+                            return total;
 
-                    buffer[i] = (byte)value;
+                        total += read;
+                    }
                 }
 
                 return length;
             }
         }
 
+#if UNITY_EDITOR
         private static void ParseVisorCsv(NativeArray<byte> bytes, int length, ref VisorLensTuningDTO tuning)
         {
             int cursor = 0;
@@ -1287,6 +1297,7 @@ namespace Hecton8.Visor
                     break;
             }
         }
+#endif
 
         private static void PrewarmSignalLanes()
         {
@@ -1354,6 +1365,7 @@ namespace Hecton8.Visor
                    ((value & 0xFF000000u) >> 24);
         }
 
+#if UNITY_EDITOR
         private static uint HashLowerAscii(string text)
         {
             uint hash = 2166136261u;
@@ -1368,6 +1380,7 @@ namespace Hecton8.Visor
 
             return hash;
         }
+#endif
 
         private static float ResolveQualityWeight()
         {
@@ -1477,7 +1490,7 @@ namespace Hecton8.Visor
                 float fogAdd = (tuning.FogRate * coldDrive + breathDrive + heartDrive + coreDrive + math.max(0f, anomalyNoise) * tuning.AnomalyNoiseGain * 0.08f) * dt;
                 state.CondensationLevel = math.saturate(state.CondensationLevel + fogAdd);
                 float clearingRate = tuning.ClearingRate * math.lerp(1.4f, 0.72f, quality) * (1f + environment.WipeCommand01 * 2.5f);
-                state.CondensationLevel = math.saturate(state.CondensationLevel * math.exp(-clearingRate * dt));
+                state.CondensationLevel = math.saturate(state.CondensationLevel * MathLodApproximation.ApproxExpNegPade33Wide40(clearingRate * dt));
 
                 float dropletSpike = math.max(environment.SurfaceEmergence01, environment.WaterlineBreach01);
                 state.WaterDropletIntensity = math.saturate(math.max(state.WaterDropletIntensity, dropletSpike));
@@ -1518,7 +1531,7 @@ namespace Hecton8.Visor
                     RespirationRate = physiology.RespirationRate,
                     HeartRate = physiology.HeartRate,
                     CoreTemperatureC = physiology.CoreTemperatureC,
-                    BreathSpike01 = physiology.BreathSpike01 * math.exp(-3.2f * dt),
+                    BreathSpike01 = physiology.BreathSpike01 * MathLodApproximation.ApproxExpNegPade33Wide40(3.2f * dt),
                     Frame = Frame,
                     Flags = physiology.Flags,
                     _pad0 = 0f,

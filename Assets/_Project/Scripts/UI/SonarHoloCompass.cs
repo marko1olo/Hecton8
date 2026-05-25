@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Visor;
@@ -72,7 +71,7 @@ namespace Hecton8.UI
         private Canvas _targetCanvas;
         private Camera _viewCamera;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private SpatialAudioManager _cachedAudioManager;
+        private ISpatialAudioImpactEmitterReadModel _cachedAudioManager;
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
         private RectTransform[] _dotRects;
@@ -86,9 +85,9 @@ namespace Hecton8.UI
         private int _pendingProjectionCount;
         private bool _dotsHidden = true;
 
-        // COLD ALLOC: ActiveImpactEmitterSample[16] - impact-emitter copy buffer with cached AUP for acoustic radar projection - owner: SonarHoloCompass
-        private readonly SpatialAudioManager.ActiveImpactEmitterSample[] _impactEmitterSamples =
-            new SpatialAudioManager.ActiveImpactEmitterSample[MaxDots];
+        // COLD ALLOC: SpatialAudioImpactEmitterSample[16] - impact-emitter copy buffer with cached AUP for acoustic radar projection - owner: SonarHoloCompass
+        private readonly SpatialAudioImpactEmitterSample[] _impactEmitterSamples =
+            new SpatialAudioImpactEmitterSample[MaxDots];
         // COLD ALLOC: AcousticRadarBlipInput[16] - impact radar input scratch for deterministic projection - owner: SonarHoloCompass
         private AcousticRadarBlipInput[] _projectionInputs;
         // COLD ALLOC: AcousticRadarBlipOutput[16] - impact radar output scratch for deterministic projection - owner: SonarHoloCompass
@@ -157,7 +156,7 @@ namespace Hecton8.UI
             if (_projectionScheduled)
                 return;
 
-            SpatialAudioManager audioManager = _cachedAudioManager;
+            ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
             if (audioManager == null)
             {
                 HideDots();
@@ -361,7 +360,7 @@ namespace Hecton8.UI
 
             for (int i = 0; i < safeCount; i++)
             {
-                SpatialAudioManager.ActiveImpactEmitterSample sample = _impactEmitterSamples[i];
+                SpatialAudioImpactEmitterSample sample = _impactEmitterSamples[i];
                 float3 listenerRelativePosition = AbsoluteUniversePosition.ToCameraRelativeFloat3(
                     in sample.PositionAup,
                     in listenerAup);
@@ -446,10 +445,11 @@ namespace Hecton8.UI
             }
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (movement != null)
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState cachedMovementState) &&
+                (cachedMovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                viewAup = movement.CurrentAup;
+                viewAup = cachedMovementState.PredictedAup;
                 return true;
             }
 
@@ -679,10 +679,18 @@ namespace Hecton8.UI
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
-                _cachedAudioManager = currentService as SpatialAudioManager;
+                _cachedAudioManager = currentService as ISpatialAudioImpactEmitterReadModel;
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
             {
+                if (currentService == null)
+                {
+                    _registeredToTick = false;
+                    _registeredLateFrame = false;
+                    return;
+                }
+
+                UnregisterFromTickManager();
                 RegisterToTickManager();
             }
         }
@@ -706,8 +714,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as SpatialAudioManager;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedAudioManager = GlobalRegistry.Audio as ISpatialAudioImpactEmitterReadModel;
         }
 
         private static Canvas ResolveTargetCanvas(bool allowComponentFallback)

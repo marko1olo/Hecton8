@@ -107,7 +107,7 @@ namespace Hecton8.Graphics.Culling.Editor
 
         private void FindRuntime()
         {
-            _runtime = FindAnyObjectByType<AbyssalShadowCullingRuntime>();
+            _runtime = FindAnyObjectByType<AbyssalShadowCullingRuntime>(FindObjectsInactive.Include);
             _runtimeField.value = _runtime;
             _statusLabel.text = _runtime != null ? "Status: runtime selected" : "Status: runtime missing";
             PullSnapshot();

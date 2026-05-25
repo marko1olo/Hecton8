@@ -95,7 +95,7 @@ namespace Hecton8.EditorTools
             bool supportsAdditionalLightShadows = false;
             bool supportsSoftShadows = false;
             bool supportsMixedLighting = false;
-            HashSet<string> usedMaterialKeywords = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> usedMaterialKeywords = new HashSet<string>(128, StringComparer.Ordinal);
             int materialAssetCount = CollectWorldSceneMaterialKeywords(usedMaterialKeywords, out string materialEvidence);
             bool stripMx350LightVariants = ShouldStripMx350LightVariants();
             bool stripQuestAndroidTBDRVariants = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android;
@@ -200,8 +200,8 @@ namespace Hecton8.EditorTools
                 return 0;
             }
 
-            HashSet<string> materialPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             string[] dependencies = AssetDatabase.GetDependencies(worldScenePath, true);
+            HashSet<string> materialPaths = new HashSet<string>(dependencies.Length, StringComparer.OrdinalIgnoreCase);
             for (int dependencyIndex = 0; dependencyIndex < dependencies.Length; dependencyIndex++)
             {
                 string dependencyPath = dependencies[dependencyIndex];
@@ -476,7 +476,7 @@ namespace Hecton8.EditorTools
                 StripMathLodHigh = stripMathLodHigh;
                 StripQuestAndroidTBDRVariants = stripQuestAndroidTBDRVariants;
                 MaterialAssetCount = materialAssetCount;
-                UsedMaterialKeywords = usedMaterialKeywords ?? new HashSet<string>(StringComparer.Ordinal);
+                UsedMaterialKeywords = usedMaterialKeywords ?? new HashSet<string>(0, StringComparer.Ordinal);
                 Evidence = evidence ?? string.Empty;
             }
 

@@ -5,8 +5,14 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.Core.Content
 {
+    internal static class ObjectBatchLayout
+    {
+        public const int InstanceStrideBytes = 80;
+        public const int ChunkStrideBytes = 40;
+    }
+
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = ObjectBatchLayout.InstanceStrideBytes)]
     public struct ObjectBatchInstance
     {
         [FieldOffset(0)] public Matrix4x4 LocalToWorld;
@@ -17,7 +23,7 @@ namespace Hecton8.Core.Content
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = ObjectBatchLayout.ChunkStrideBytes)]
     public struct ObjectBatchChunk
     {
         [FieldOffset(0)] public Bounds Bounds;

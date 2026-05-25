@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_249" role="BUOYANCY_SLEEP_STATE_INTEGRATOR" task_count="20" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE_STATIC_DOC_UNITY_ATTEMPT_EXTERNAL_BLOCKERS_EDITOR_ASMDEF_ISOLATED">
+﻿<SELF_AUDIT agent="SHINOBU_249" role="BUOYANCY_SLEEP_STATE_INTEGRATOR" task_count="20" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE_STATIC_DOC_UNITY_ATTEMPT_EXTERNAL_BLOCKERS_EDITOR_ASMDEF_ISOLATED">
   <VERIFICATION_BOUNDARY unity_import="BLOCKED_EXTERNAL_COMPILE_ERRORS" console_compile="BLOCKED_EXTERNAL_COMPILE_ERRORS" burst_inspector="PENDING" play_mode_50000_rows="PENDING" profiler_gcmonitor="PENDING" fault_dump_repro="PENDING" cpu_gate="OPEN_AT_LAUNCH_CPU_12_75_PERCENT" editor_asmdef="ADDED_PENDING_UNITY_REIMPORT" />
   <UNITY_IMPORT_ATTEMPT log="Docs/AgentLogs/UnityCompile_SHINOBU_249.log" bee_log="Library/Bee/tundra.log.json" shinobu_sources_in_h8core_rsp="TRUE" h8core_csc_result="NOT_REACHED_DUE_UPSTREAM_FAILURES" shinobu_error_hits="0" process_cleanup="OWNED_UNITY_BEE_STOPPED_AFTER_NO_LOG_PROGRESS">
     <BLOCKER path="Assets/_Project/Scripts/World/Contracts/TerrainChunkGeneratedSignal.cs" error="missing Hecton8.Core and ISignal" />

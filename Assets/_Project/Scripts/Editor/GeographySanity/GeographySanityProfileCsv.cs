@@ -223,9 +223,7 @@ namespace Hecton8.Editor.GeographySanity
             value = sign * (integer + fraction * math.rcp(scale));
             return any &&
                    i == bytes.Length &&
-                   value == value &&
-                   value > -3.402823e38f &&
-                   value < 3.402823e38f;
+                   math.isfinite(value);
         }
 
         private static bool TryParseUInt(ReadOnlySpan<byte> bytes, out uint value)

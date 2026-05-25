@@ -1,4 +1,4 @@
-# SHINOBU_277 Crest Shoreline Foam Graft
+﻿# SHINOBU_277 Crest Shoreline Foam Graft
 
 Owner: `SHINOBU_277 / CREST_SHORELINE_FOAM_GRAFTER`
 
@@ -22,7 +22,15 @@ Evidence class: STATIC_SOURCE only. Unity import, shader import, RenderGraph Vie
 
 ## Dear Lie
 
-Shoreline foam is a screen-space visual fake. The shader reconstructs scene position from the primary camera depth buffer, converts localized water surface Y back through the camera-local origin lane, and compares depth height against water height. No CPU particles, `DecalProjector`, auxiliary orthographic camera, or `Camera.Render` path is introduced.
+Shoreline foam is a screen-space visual fake.
+
+Shader route:
+
+- reconstruct scene position from primary camera depth;
+- convert localized water surface Y through camera-local origin lane;
+- compare depth height against water height.
+
+No CPU particles, `DecalProjector`, auxiliary camera, or `Camera.Render`.
 
 ## Scalability
 

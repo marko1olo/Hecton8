@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using UnityEditor;
@@ -11,6 +12,7 @@ namespace Hecton8.EditorTools
     {
         private const string DataFolder = "Assets/_Project/Data/Barter";
         private const string CatalogPath = DataFolder + "/BarterOfferCatalog_Starter.asset";
+        private static readonly List<GameObject> RootScratch = new List<GameObject>(32);
 
         [MenuItem("Hecton/Authoring/Rebuild Starter Barter Relay", priority = 216)]
         public static void RebuildStarterBarterRelay()
@@ -84,7 +86,7 @@ namespace Hecton8.EditorTools
             if (activeScene.IsValid() && activeScene.isLoaded)
                 EditorSceneManager.MarkSceneDirty(activeScene);
 
-            Debug.Log("[BarterBootstrapAuthoring] Starter barter relay rebuilt.");
+            Hecton8.Core.H8Debug.Log("[BarterBootstrapAuthoring] Starter barter relay rebuilt.");
         }
 
         private static void AssignCatalogToScene(BarterOfferCatalog catalog)
@@ -92,7 +94,7 @@ namespace Hecton8.EditorTools
             PDAExchangeSystem exchange = Object.FindAnyObjectByType<PDAExchangeSystem>(FindObjectsInactive.Include);
             if (exchange == null)
             {
-                GameObject player = GameObject.Find("Player");
+                GameObject player = FindLoadedSceneGameObject("Player");
                 if (player == null)
                     return;
 
@@ -103,6 +105,53 @@ namespace Hecton8.EditorTools
             so.FindProperty("offerCatalog").objectReferenceValue = catalog;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(exchange);
+        }
+
+        private static GameObject FindLoadedSceneGameObject(string objectName)
+        {
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                RootScratch.Clear();
+                scene.GetRootGameObjects(RootScratch);
+                for (int rootIndex = 0; rootIndex < RootScratch.Count; rootIndex++)
+                {
+                    GameObject root = RootScratch[rootIndex];
+                    if (root == null)
+                        continue;
+
+                    Transform match = FindDeepChild(root.transform, objectName);
+                    if (match != null)
+                    {
+                        RootScratch.Clear();
+                        return match.gameObject;
+                    }
+                }
+            }
+
+            RootScratch.Clear();
+            return null;
+        }
+
+        private static Transform FindDeepChild(Transform root, string childName)
+        {
+            if (root == null)
+                return null;
+
+            if (root.name == childName)
+                return root;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindDeepChild(root.GetChild(i), childName);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
         }
 
         private static BarterOfferData CreateOrUpdateOffer(

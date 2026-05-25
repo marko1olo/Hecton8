@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Visor;
@@ -163,8 +164,8 @@ namespace Hecton8.Editor
             if (GlobalRegistry.ResolutionScaler != null &&
                 GlobalRegistry.ResolutionScaler.TryGetScaleState(out ResolutionScaleState state))
             {
-                _scaleLabel.text = $"Effective Render Scale: {state.CurrentRenderScale01:0.000}";
-                _qualityLabel.text = $"Global Quality Weight: {state.GlobalQualityWeight01:0.000}";
+                _scaleLabel.text = "Effective Render Scale: " + state.CurrentRenderScale01.ToString("0.000", CultureInfo.InvariantCulture);
+                _qualityLabel.text = "Global Quality Weight: " + state.GlobalQualityWeight01.ToString("0.000", CultureInfo.InvariantCulture);
             }
             else
             {
@@ -175,7 +176,10 @@ namespace Hecton8.Editor
             if (HectonVisorUberPostFeature.TryFetchEditorReconstructionConstants(out UberNoirReconstructionConstantsDTO constants))
             {
                 _constantsLabel.text =
-                    $"CBuffer: scale {constants.RenderScaleParams.x:0.000}, sharp {constants.RenderScaleParams.w:0.000}, radius {constants.TemporalParams.w:0.000}, grain {constants.OverkillParams.x:0.000}";
+                    "CBuffer: scale " + constants.RenderScaleParams.x.ToString("0.000", CultureInfo.InvariantCulture) +
+                    ", sharp " + constants.RenderScaleParams.w.ToString("0.000", CultureInfo.InvariantCulture) +
+                    ", radius " + constants.TemporalParams.w.ToString("0.000", CultureInfo.InvariantCulture) +
+                    ", grain " + constants.OverkillParams.x.ToString("0.000", CultureInfo.InvariantCulture);
             }
             else
             {

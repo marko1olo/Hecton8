@@ -6,6 +6,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
+using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -18,7 +19,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
-    public unsafe sealed partial class ToxicOutgassingChemistryRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener
+    public unsafe sealed partial class ToxicOutgassingChemistryRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         public const int HighResolution = 32;
         public const int LowResolution = 16;
@@ -27,15 +28,17 @@ namespace Hecton8.Atmosphere
         public const int MaxEntityCount = 128;
         public const int MaxSignalsPerFrame = 64;
         public const int TelemetryCapacity = 300;
+#if UNITY_EDITOR
         public const int CsvBufferBytes = 4096;
+#endif
         public const int BinaryProbeBytes = 64;
         public const float DefaultCellSizeMeters = 10f;
 
         public const uint PoisonGasHash = 0x504F4953u;
         public const uint AcidChemicalHash = 0x41434944u;
         public const uint PurifierKelpHash = 0x504B454Cu;
-        public const uint ToxicDamageTypeBit = 1u << 5;
-        public const uint AcidDamageTypeBit = 1u << 8;
+        public const uint ToxicStatusTypeBit = 1u << 5;
+        public const uint AcidStatusTypeBit = 1u << 8;
 
         private const ushort RuntimeSourceId = 65;
         private const byte RuntimeChannel = 65;
@@ -43,15 +46,19 @@ namespace Hecton8.Atmosphere
         private const byte SignalFlagsTrilinear = 2;
         private const byte SignalFlagsCorrosion = 4;
         private const byte TelemetryFlagMockChemistry = 1;
+        private const float ToxicCorrosionStatusDurationSeconds = 2.0f;
         private const byte TelemetryFlagFallbackRadial = 2;
         private const byte TelemetryFlagNaN = 128;
-        private const float AuthoritativeQualityWeight = 1f;
+        private const float DefaultQualityWeight = 1f;
         private const float NaNEpsilon = 0.0001f;
+        private const float SlowTickDeltaSeconds = 0.1f;
         private const float RebaseHalfCellBias = 0.5f;
         private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
         private const uint ToxicityBiolumLaneHash = 0x54424C4Du; // TBLM
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_TOXIC_SURGEON.bin";
+#if UNITY_EDITOR
         private const string CsvRelativePath = "Data/Tuning/chemical_properties.csv";
+#endif
         private const string LegacyBinaryRelativePath = "Data/Precomputed/gas_toxicity_tables.h8bin";
         private const string DaltonBinaryRelativePath = "Data/Precomputed/dalton_gas_toxicity.bin";
 
@@ -66,13 +73,15 @@ namespace Hecton8.Atmosphere
         private static readonly BufferID EntityCorrosionTimerBufferId = (BufferID)70808;
         private static readonly BufferID EntityExposureAccumulatorBufferId = (BufferID)70809;
         private static readonly BufferID ExposureSignalBufferId = (BufferID)70810;
-        private static readonly BufferID CombatSignalBufferId = (BufferID)70811;
+        private static readonly BufferID StatusSignalBufferId = (BufferID)70811;
         private static readonly BufferID BiolumSignalBufferId = (BufferID)70812;
         private static readonly BufferID SignalCounterBufferId = (BufferID)70813;
         private static readonly BufferID TelemetryRingBufferId = (BufferID)70814;
         private static readonly BufferID TelemetryScratchBufferId = (BufferID)70815;
         private static readonly BufferID ConstantsBufferId = (BufferID)70816;
+#if UNITY_EDITOR
         private static readonly BufferID CsvByteBufferId = (BufferID)70817;
+#endif
         private static readonly BufferID BinaryProbeByteBufferId = (BufferID)70818;
         private static readonly BufferID NanFlagBufferId = (BufferID)70819;
         private static readonly BufferID DensityMirrorBufferId = (BufferID)70820;
@@ -92,13 +101,15 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<float> _entityCorrosionTimers;
         private VaultGenerationHandle<float> _entityExposureAccumulators;
         private VaultGenerationHandle<ToxicityExposureSignal> _exposureSignals;
-        private VaultGenerationHandle<ToxicityCombatDamageSignal> _combatSignals;
+        private VaultGenerationHandle<ToxicityStatusSignal> _statusSignals;
         private VaultGenerationHandle<ToxicBioluminescenceSignal> _biolumSignals;
         private VaultGenerationHandle<int> _signalCounters;
         private VaultGenerationHandle<ToxicityGridTelemetryEntry> _telemetryRing;
         private VaultGenerationHandle<ToxicityGridTelemetryEntry> _telemetryScratch;
         private VaultGenerationHandle<ToxicOutgassingConstants> _constants;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvBytes;
+#endif
         private VaultGenerationHandle<byte> _binaryProbeBytes;
         private VaultGenerationHandle<int> _nanFlags;
         private VaultGenerationHandle<ToxicOutgassingGridHeaderDTO> _gridHeader;
@@ -126,7 +137,7 @@ namespace Hecton8.Atmosphere
         private bool _hasPendingRebase;
         private bool _nativeReady;
         private bool _mockChemistry;
-        private bool _binaryProbePerformed;
+        private bool _hotSwapRegistered;
 
         public static ToxicOutgassingChemistryRuntime Instance;
 
@@ -182,12 +193,11 @@ namespace Hecton8.Atmosphere
         private void OnEnable()
         {
             Instance = this;
+            TryRegisterHotSwapListener();
             EnsureNativeState();
-            GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             HectonFloatingOrigin.RegisterListener(this);
-            ScalabilityEvents.Register(this);
         }
 
         private void OnDisable()
@@ -196,27 +206,56 @@ namespace Hecton8.Atmosphere
             {
                 CompleteScheduledWorkForTeardown();
             }
-            ScalabilityEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            TryUnregisterHotSwapListener();
             if (Instance == this)
             {
                 Instance = null;
             }
         }
 
-        public void Tick(float deltaTime)
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (ReferenceEquals(_vault, currentService))
+                return;
+
+            if (_hasScheduledWork)
+                CompleteScheduledWorkForTeardown();
+
+            ClearNativeHandleDescriptors();
+            _vault = currentService as IDataVault;
+            _nativeReady = false;
+
+            if (isActiveAndEnabled && _vault != null)
+                EnsureNativeState();
+        }
+
+        public void SlowTick()
         {
             if (!_nativeReady)
             {
                 EnsureNativeState();
             }
 
-            float safeDelta = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
-            _simulationAccumulator += safeDelta;
-            _corrosionAccumulator += safeDelta;
+            _simulationAccumulator += SlowTickDeltaSeconds;
+            _corrosionAccumulator += SlowTickDeltaSeconds;
 
             TryFinalizeScheduledWorkNoWait();
             if (_hasScheduledWork)
@@ -245,11 +284,6 @@ namespace Hecton8.Atmosphere
             ScheduleSimulation(simulationDelta, qualityWeight);
         }
 
-        public void SlowTick()
-        {
-            // Intentionally empty. Toxicity file probing and CSV parsing are boot/editor paths only.
-        }
-
         public void LateFrameTick()
         {
             if (_hasScheduledWork && _scheduledHandle.IsCompleted)
@@ -274,11 +308,6 @@ namespace Hecton8.Atmosphere
             _pendingRebaseCells += new int3((int)math.round(cells.x), (int)math.round(cells.y), (int)math.round(cells.z));
             _gridOriginAup += new double3(shift.x, shift.y, shift.z);
             _hasPendingRebase = math.any(_pendingRebaseCells != int3.zero);
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _lastQualityWeight = AuthoritativeQualityWeight;
         }
 
         public bool TryUpsertSource(uint sourceId, double3 aup, float emissionRate, float density, uint chemicalHash)
@@ -521,12 +550,13 @@ namespace Hecton8.Atmosphere
                 ChemistryFlags = 1u,
                 _pad0 = 0u
             };
-            constants.GlobalQualityWeight = AuthoritativeQualityWeight;
+            constants.GlobalQualityWeight = ResolveRuntimeQualityWeight01();
             constants.SimulationTickDelta = ResolveTickInterval(constants.GlobalQualityWeight);
             TryWriteConstants(in constants);
             _mockChemistry = true;
         }
 
+#if UNITY_EDITOR
         public bool TryReloadCsvOverrides()
         {
             EnsureNativeState();
@@ -559,6 +589,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
         }
+#endif
 
         private void EnsureNativeState()
         {
@@ -580,13 +611,15 @@ namespace Hecton8.Atmosphere
             _entityCorrosionTimers = AcquireBuffer<float>(EntityCorrosionTimerBufferId, MaxEntityCount);
             _entityExposureAccumulators = AcquireBuffer<float>(EntityExposureAccumulatorBufferId, MaxEntityCount);
             _exposureSignals = AcquireBuffer<ToxicityExposureSignal>(ExposureSignalBufferId, MaxSignalsPerFrame);
-            _combatSignals = AcquireBuffer<ToxicityCombatDamageSignal>(CombatSignalBufferId, MaxSignalsPerFrame);
+            _statusSignals = AcquireBuffer<ToxicityStatusSignal>(StatusSignalBufferId, MaxSignalsPerFrame);
             _biolumSignals = AcquireBuffer<ToxicBioluminescenceSignal>(BiolumSignalBufferId, MaxSignalsPerFrame);
             _signalCounters = AcquireBuffer<int>(SignalCounterBufferId, 4);
             _telemetryRing = AcquireBuffer<ToxicityGridTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity);
             _telemetryScratch = AcquireBuffer<ToxicityGridTelemetryEntry>(TelemetryScratchBufferId, 1);
             _constants = AcquireBuffer<ToxicOutgassingConstants>(ConstantsBufferId, 1);
+#if UNITY_EDITOR
             _csvBytes = AcquireBuffer<byte>(CsvByteBufferId, CsvBufferBytes);
+#endif
             _binaryProbeBytes = AcquireBuffer<byte>(BinaryProbeByteBufferId, BinaryProbeBytes);
             _nanFlags = AcquireBuffer<int>(NanFlagBufferId, MaxCellCount);
             _gridHeader = AcquireBuffer<ToxicOutgassingGridHeaderDTO>(GridHeaderBufferId, 1);
@@ -600,15 +633,17 @@ namespace Hecton8.Atmosphere
             }
 
             ClearAllNativeBuffersWithMemClear();
-            _activeResolution = ResolveResolution(AuthoritativeQualityWeight);
+            _activeResolution = ResolveResolution(ResolveRuntimeQualityWeight01());
             _activeCellCount = _activeResolution * _activeResolution * _activeResolution;
             _cellSizeMeters = DefaultCellSizeMeters;
             _gridOriginAup = ResolveCurrentRuntimeOriginDouble3();
-            _lastQualityWeight = AuthoritativeQualityWeight;
+            _lastQualityWeight = ResolveRuntimeQualityWeight01();
             _nativeReady = true;
             PrewarmSignalLanes();
             GenerateEmergencyMockChemistry();
+#if UNITY_EDITOR
             TryReloadCsvOverrides();
+#endif
             ProbeColdBinaryPayloads();
             UpdateGridHeader();
         }
@@ -627,13 +662,15 @@ namespace Hecton8.Atmosphere
                    IsHandleCreated(in _entityCorrosionTimers) &&
                    IsHandleCreated(in _entityExposureAccumulators) &&
                    IsHandleCreated(in _exposureSignals) &&
-                   IsHandleCreated(in _combatSignals) &&
+                   IsHandleCreated(in _statusSignals) &&
                    IsHandleCreated(in _biolumSignals) &&
                    IsHandleCreated(in _signalCounters) &&
                    IsHandleCreated(in _telemetryRing) &&
                    IsHandleCreated(in _telemetryScratch) &&
                    IsHandleCreated(in _constants) &&
+#if UNITY_EDITOR
                    IsHandleCreated(in _csvBytes) &&
+#endif
                    IsHandleCreated(in _binaryProbeBytes) &&
                    IsHandleCreated(in _nanFlags) &&
                    IsHandleCreated(in _gridHeader) &&
@@ -643,7 +680,7 @@ namespace Hecton8.Atmosphere
 
         private static double3 ResolveCurrentRuntimeOriginDouble3()
         {
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return originAup.IsFinite()
                 ? originAup.ToAbsoluteDouble3()
                 : double3.zero;
@@ -656,7 +693,8 @@ namespace Hecton8.Atmosphere
                 return _vault;
             }
 
-            if (GlobalRegistry.TryGet(out IDataVault vault) && vault != null)
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null)
             {
                 _vault = vault;
                 return _vault;
@@ -675,7 +713,7 @@ namespace Hecton8.Atmosphere
                     : default;
             }
 
-            return vault.GetGenerationHandle<T>(id, length, SystemID.External, NativeArrayOptions.UninitializedMemory);
+            return vault.EnsureGenerationHandle<T>(id, length, SystemID.External, NativeArrayOptions.UninitializedMemory);
         }
 
         private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -685,6 +723,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryOpenBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
+            buffer = default;
             IDataVault vault = EnsureVault();
             return handle.BufferID != 0u &&
                    vault.TryResolveHandle(in handle, out buffer) &&
@@ -696,6 +735,53 @@ namespace Hecton8.Atmosphere
             return TryOpenBuffer(in handle, out NativeArray<T> buffer)
                 ? buffer
                 : default;
+        }
+
+        private void ClearNativeHandleDescriptors()
+        {
+            _densityFront = default;
+            _densityBack = default;
+            _densityMirror = default;
+            _flowField = default;
+            _worldSampler = default;
+            _sources = default;
+            _sourceIds = default;
+            _entityAups = default;
+            _entityIds = default;
+            _entityCorrosionTimers = default;
+            _entityExposureAccumulators = default;
+            _exposureSignals = default;
+            _statusSignals = default;
+            _biolumSignals = default;
+            _signalCounters = default;
+            _telemetryRing = default;
+            _telemetryScratch = default;
+            _constants = default;
+#if UNITY_EDITOR
+            _csvBytes = default;
+#endif
+            _binaryProbeBytes = default;
+            _nanFlags = default;
+            _gridHeader = default;
+            _cellStatesFront = default;
+            _cellStatesBack = default;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void ClearAllNativeBuffersWithMemClear()
@@ -712,13 +798,15 @@ namespace Hecton8.Atmosphere
             MemClearArray(OpenBuffer(in _entityCorrosionTimers));
             MemClearArray(OpenBuffer(in _entityExposureAccumulators));
             MemClearArray(OpenBuffer(in _exposureSignals));
-            MemClearArray(OpenBuffer(in _combatSignals));
+            MemClearArray(OpenBuffer(in _statusSignals));
             MemClearArray(OpenBuffer(in _biolumSignals));
             MemClearArray(OpenBuffer(in _signalCounters));
             MemClearArray(OpenBuffer(in _telemetryRing));
             MemClearArray(OpenBuffer(in _telemetryScratch));
             MemClearArray(OpenBuffer(in _constants));
+#if UNITY_EDITOR
             MemClearArray(OpenBuffer(in _csvBytes));
+#endif
             MemClearArray(OpenBuffer(in _binaryProbeBytes));
             MemClearArray(OpenBuffer(in _nanFlags));
             MemClearArray(OpenBuffer(in _gridHeader));
@@ -784,7 +872,7 @@ namespace Hecton8.Atmosphere
             NativeArray<float> corrosionTimers = OpenBuffer(in _entityCorrosionTimers);
             NativeArray<float> exposureAccumulators = OpenBuffer(in _entityExposureAccumulators);
             NativeArray<ToxicityExposureSignal> exposureSignals = OpenBuffer(in _exposureSignals);
-            NativeArray<ToxicityCombatDamageSignal> combatSignals = OpenBuffer(in _combatSignals);
+            NativeArray<ToxicityStatusSignal> statusSignals = OpenBuffer(in _statusSignals);
             NativeArray<ToxicBioluminescenceSignal> biolumSignals = OpenBuffer(in _biolumSignals);
             NativeArray<int> signalCounters = OpenBuffer(in _signalCounters);
             NativeArray<int> nanFlags = OpenBuffer(in _nanFlags);
@@ -878,7 +966,7 @@ namespace Hecton8.Atmosphere
                 CorrosionTimers = corrosionTimers,
                 ExposureAccumulators = exposureAccumulators,
                 ExposureSignals = exposureSignals,
-                CombatSignals = combatSignals,
+                StatusSignals = statusSignals,
                 SignalCounters = signalCounters,
                 Constants = constants,
                 GridOriginAup = _gridOriginAup,
@@ -889,7 +977,7 @@ namespace Hecton8.Atmosphere
                 CorrosionDelta = _corrosionAccumulator,
                 GlobalQualityWeight = qualityWeight,
                 Frame = simulationFrame,
-                ToxicDamageType = ToxicDamageTypeBit | AcidDamageTypeBit,
+                ToxicStatusType = ToxicStatusTypeBit | AcidStatusTypeBit,
                 AcidChemicalHashValue = AcidChemicalHash,
                 RuntimeSourceId = RuntimeSourceId,
                 RuntimeChannel = RuntimeChannel
@@ -978,7 +1066,7 @@ namespace Hecton8.Atmosphere
             _hasScheduledWork = false;
 
             NativeArray<ToxicityExposureSignal> exposureSignals = OpenBuffer(in _exposureSignals);
-            NativeArray<ToxicityCombatDamageSignal> combatSignals = OpenBuffer(in _combatSignals);
+            NativeArray<ToxicityStatusSignal> statusSignals = OpenBuffer(in _statusSignals);
             NativeArray<ToxicBioluminescenceSignal> biolumSignals = OpenBuffer(in _biolumSignals);
             NativeArray<int> signalCounters = OpenBuffer(in _signalCounters);
             NativeArray<ToxicityGridTelemetryEntry> scratch = OpenBuffer(in _telemetryScratch);
@@ -987,7 +1075,7 @@ namespace Hecton8.Atmosphere
             _densityVersion++;
             UpdateGridHeader();
 
-            PublishSignals(exposureSignals, combatSignals, biolumSignals, signalCounters);
+            PublishSignals(exposureSignals, statusSignals, biolumSignals, signalCounters);
             CommitTelemetryScratch(scratch);
         }
 
@@ -1006,7 +1094,7 @@ namespace Hecton8.Atmosphere
             return TryFinalizeScheduledWorkNoWait();
         }
 
-        private void PublishSignals(NativeArray<ToxicityExposureSignal> exposures, NativeArray<ToxicityCombatDamageSignal> combats, NativeArray<ToxicBioluminescenceSignal> biolums, NativeArray<int> counters)
+        private void PublishSignals(NativeArray<ToxicityExposureSignal> exposures, NativeArray<ToxicityStatusSignal> statuses, NativeArray<ToxicBioluminescenceSignal> biolums, NativeArray<int> counters)
         {
             int exposureCount = math.clamp(counters[0], 0, MaxSignalsPerFrame);
             for (int i = 0; i < exposureCount; i++)
@@ -1015,46 +1103,34 @@ namespace Hecton8.Atmosphere
                 if (math.isfinite(exposure.Exposure01))
                 {
                     SignalBus<ToxicityExposureSignal>.TryPush(in exposure);
-
-                    var physiology = new PhysiologyStateSignal
-                    {
-                        PlayerStress01 = math.saturate(exposure.Exposure01),
-                        O2DrainMultiplier = 1f + math.saturate(exposure.ToxemiaDelta),
-                        Recovery01 = 0f,
-                        Frame = exposure.Frame,
-                        Cause = RuntimeChannel,
-                        Flags = exposure.Flags
-                    };
-                    GlobalSignals.Publish(in physiology);
                 }
             }
 
-            int combatCount = math.clamp(counters[1], 0, MaxSignalsPerFrame);
-            for (int i = 0; i < combatCount; i++)
+            int statusCount = math.clamp(counters[1], 0, MaxSignalsPerFrame);
+            for (int i = 0; i < statusCount; i++)
             {
-                ToxicityCombatDamageSignal staged = combats[i];
+                ToxicityStatusSignal staged = statuses[i];
                 float3 local = AupPrecisionMath.LocalDeltaFloat3(staged.AUP, _gridOriginAup, float3.zero);
                 if (!math.all(math.isfinite(local)) || !math.isfinite(staged.Magnitude))
                 {
                     continue;
                 }
 
-                var combat = new CombatDamageSignal
-                {
-                    ImpactAup = staged.AUP,
-                    Direction = new float3(0f, 1f, 0f),
-                    Magnitude = math.max(0f, staged.Magnitude),
-                    DamageType = staged.DamageType,
-                    TargetHash = staged.TargetHash,
-                    SourceHash = staged.SourceHash,
-                    Frame = staged.Frame,
-                    SourceId = staged.SourceId,
-                    TargetId = staged.TargetId,
-                    Channel = staged.Channel,
-                    Flags = (byte)(staged.Flags | CombatDamageSignal.DirectRuntimeFlag),
-                    IntegrityDelta = (byte)math.clamp((int)math.round(math.max(0f, staged.Magnitude) * 255f), 0, 255)
-                };
-                GlobalSignals.Publish(in combat);
+                int targetId = staged.TargetHash <= (uint)int.MaxValue
+                    ? (int)staged.TargetHash
+                    : 0;
+                if (targetId == 0 && staged.TargetId != 0)
+                    targetId = staged.TargetId;
+
+                if (targetId == 0)
+                    continue;
+
+                CombatDamageRuntime.TryQueueStatusEffect(
+                    targetId,
+                    CombatStatusBits.Poisoned64,
+                    ToxicCorrosionStatusDurationSeconds,
+                    staged.SourceId != 0 ? staged.SourceId : RuntimeSourceId,
+                    math.saturate(staged.Magnitude));
             }
 
             int biolumCount = math.clamp(counters[2], 0, MaxSignalsPerFrame);
@@ -1207,7 +1283,6 @@ namespace Hecton8.Atmosphere
 
         private void ProbeColdBinaryPayloads()
         {
-            _binaryProbePerformed = true;
             try
             {
                 string root = ProjectRootPath();
@@ -1260,31 +1335,31 @@ namespace Hecton8.Atmosphere
 
         private static void PrewarmSignalLanes()
         {
-            SignalBus<ToxicityExposureSignal>.Configure(MaxSignalsPerFrame, MaxSignalsPerFrame, MaxSignalsPerFrame, ToxicityExposureLaneHash);
-            SignalBus<ToxicBioluminescenceSignal>.Configure(MaxSignalsPerFrame, MaxSignalsPerFrame, MaxSignalsPerFrame, ToxicityBiolumLaneHash);
+            SignalBus<ToxicityExposureSignal>.Configure(
+                ToxicityExposureSignal.ExpectedCapacity,
+                ToxicityExposureSignal.MaxFrameSignals,
+                ToxicityExposureSignal.LowTierFrameSignals,
+                ToxicityExposureSignal.LaneHash);
             SignalBus<ToxicityExposureSignal>.EnsureInitialized();
+
+            SignalBus<ToxicBioluminescenceSignal>.Configure(MaxSignalsPerFrame, MaxSignalsPerFrame, MaxSignalsPerFrame, ToxicityBiolumLaneHash);
             SignalBus<ToxicBioluminescenceSignal>.EnsureInitialized();
-            SignalBus<PhysiologyStateSignal>.EnsureInitialized();
-            SignalBus<CombatDamageSignal>.EnsureInitialized();
         }
 
+#if UNITY_EDITOR
         private static int FillByteBufferFromFile(string path, NativeArray<byte> buffer)
         {
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 int length = (int)math.min(buffer.Length, stream.Length);
-                for (int i = 0; i < length; i++)
+                if (length <= 0)
+                    return 0;
+
+                unsafe
                 {
-                    int value = stream.ReadByte();
-                    if (value < 0)
-                    {
-                        return i;
-                    }
-
-                    buffer[i] = (byte)value;
+                    Span<byte> span = new Span<byte>(buffer.GetUnsafePtr(), length);
+                    return stream.Read(span);
                 }
-
-                return length;
             }
         }
 
@@ -1407,6 +1482,7 @@ namespace Hecton8.Atmosphere
                     break;
             }
         }
+#endif
 
         private static ToxicOutgassingConstants SanitizeConstants(ToxicOutgassingConstants constants)
         {
@@ -1434,28 +1510,39 @@ namespace Hecton8.Atmosphere
 
         private float ResolveQualityWeight()
         {
-            _lastQualityWeight = AuthoritativeQualityWeight;
-            return AuthoritativeQualityWeight;
+            _lastQualityWeight = ResolveRuntimeQualityWeight01();
+            return _lastQualityWeight;
         }
 
         private float ReadCachedQualityWeight()
         {
-            return AuthoritativeQualityWeight;
+            return math.saturate(math.isfinite(_lastQualityWeight) ? _lastQualityWeight : ResolveRuntimeQualityWeight01());
         }
 
         private static int ResolveResolution(float qualityWeight)
         {
-            return HighResolution;
+            float quality = Smooth01(qualityWeight);
+            return math.clamp((int)math.round(math.lerp(LowResolution, HighResolution, quality)), LowResolution, HighResolution);
         }
 
         private static float ResolveTickInterval(float qualityWeight)
         {
-            return 0.08333334f;
+            return math.lerp(0.2f, 0.08333334f, Smooth01(qualityWeight));
         }
 
         private static int ResolveSourceBudget(float qualityWeight, int sourceCount)
         {
             return math.clamp(sourceCount, 0, MaxSourceCount);
+        }
+
+        private static float ResolveRuntimeQualityWeight01()
+        {
+            float signalWeight = SignalBusRegistry.GlobalQualityWeight01;
+            if (math.isfinite(signalWeight) && signalWeight > 0f)
+                return math.saturate(signalWeight);
+
+            float brainWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(brainWeight) ? brainWeight : DefaultQualityWeight);
         }
 
         private static float Smooth01(float value)
@@ -1590,11 +1677,11 @@ namespace Hecton8.Atmosphere
                 float3 curl = float3.zero;
                 if (detailBlend > 0.0001f)
                 {
-                    double3 phase = (GridOriginAup * 0.001d) + (new double3(local.x, local.y, local.z) * 0.013d);
-                    float3 p = AupPrecisionMath.DowncastProceduralPhase(phase, local * 0.013f);
-                    float phase = Frame * math.lerp(0.001f, 0.004f, quality);
-                    float s0 = math.sin(p.x + p.z * 0.37f + phase);
-                    float s1 = math.cos(p.y * 0.61f - p.x * 0.23f + phase * 0.7f);
+                    double3 phaseAup = (GridOriginAup * 0.001d) + (new double3(local.x, local.y, local.z) * 0.013d);
+                    float3 p = AupPrecisionMath.DowncastProceduralPhase(phaseAup, local * 0.013f);
+                    float timePhase = Frame * math.lerp(0.001f, 0.004f, quality);
+                    float s0 = MathLodApproximation.ApproxSinBhaskara(p.x + p.z * 0.37f + timePhase);
+                    float s1 = MathLodApproximation.ApproxCosBhaskara(p.y * 0.61f - p.x * 0.23f + timePhase * 0.7f);
                     float3 raw = new float3(s1, s0 * 0.15f, s0 - s1 * 0.35f);
                     float lenSq = math.max(math.lengthsq(raw), NaNEpsilon);
                     direction = raw * math.rsqrt(lenSq);
@@ -1639,8 +1726,8 @@ namespace Hecton8.Atmosphere
                 {
                     double3 phase = (GridOriginAup * 0.0007d) + (new double3(local.x, local.y, local.z) * 0.017d);
                     float3 p = AupPrecisionMath.DowncastProceduralPhase(phase, local * 0.017f);
-                    rib = math.sin(p.x * 1.7f + p.z * 0.9f) * math.lerp(2f, 8f, quality) * detailBlend;
-                    float kelpWave = math.sin(p.x * 2.1f) * math.cos(p.z * 1.3f);
+                    rib = MathLodApproximation.ApproxSinBhaskara(p.x * 1.7f + p.z * 0.9f) * math.lerp(2f, 8f, quality) * detailBlend;
+                    float kelpWave = MathLodApproximation.ApproxSinBhaskara(p.x * 2.1f) * MathLodApproximation.ApproxCosBhaskara(p.z * 1.3f);
                     flora = math.saturate((kelpWave - 0.35f) * 2.2f) * math.saturate((local.y + CellSizeMeters * 8f) / math.max(CellSizeMeters * 16f, NaNEpsilon)) * detailBlend;
                 }
 
@@ -1846,7 +1933,7 @@ namespace Hecton8.Atmosphere
             [NoAlias] public NativeArray<float> CorrosionTimers;
             [NoAlias] public NativeArray<float> ExposureAccumulators;
             [NoAlias] public NativeArray<ToxicityExposureSignal> ExposureSignals;
-            [NoAlias] public NativeArray<ToxicityCombatDamageSignal> CombatSignals;
+            [NoAlias] public NativeArray<ToxicityStatusSignal> StatusSignals;
             [NoAlias] public NativeArray<int> SignalCounters;
             public ToxicOutgassingConstants Constants;
             public double3 GridOriginAup;
@@ -1857,7 +1944,7 @@ namespace Hecton8.Atmosphere
             public float CorrosionDelta;
             public float GlobalQualityWeight;
             public uint Frame;
-            public uint ToxicDamageType;
+            public uint ToxicStatusType;
             public uint AcidChemicalHashValue;
             public ushort RuntimeSourceId;
             public byte RuntimeChannel;
@@ -1923,17 +2010,17 @@ namespace Hecton8.Atmosphere
                     ExposureAccumulators[i] += math.max(0f, exposure - 0.12f) * Constants.AcidCorrosionDamage * dt;
                     if (CorrosionTimers[i] >= 2f && ExposureAccumulators[i] > 0.0001f)
                     {
-                        int combatIndex = SignalCounters[1];
-                        if (combatIndex < CombatSignals.Length)
+                        int statusIndex = SignalCounters[1];
+                        if (statusIndex < StatusSignals.Length)
                         {
-                            SignalCounters[1] = combatIndex + 1;
-                            CombatSignals[combatIndex] = new ToxicityCombatDamageSignal
+                            SignalCounters[1] = statusIndex + 1;
+                            StatusSignals[statusIndex] = new ToxicityStatusSignal
                             {
                                 AUP = aup,
                                 Magnitude = math.saturate(ExposureAccumulators[i]),
                                 TargetHash = entityId,
                                 SourceHash = AcidChemicalHashValue,
-                                DamageType = ToxicDamageType,
+                                StatusType = ToxicStatusType,
                                 Frame = Frame,
                                 SourceId = RuntimeSourceId,
                                 TargetId = (ushort)math.min(entityId & 0xFFFFu, 0xFFFFu),

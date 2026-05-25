@@ -45,7 +45,7 @@ namespace Hecton8.World
             float safeHeightScale = math.max(0.001f, HeightScaleMeters);
             float dx = (east - west) * safeHeightScale / (safeCellSize * 2f);
             float dz = (north - south) * safeHeightScale / (safeCellSize * 2f);
-            float slopeDegrees = math.degrees(math.atan(FastMagnitudeApprox(new float2(dx, dz))));
+            float slopeDegrees = math.degrees(global::Hecton8.Core.MathLodApproximation.ApproxAtanFast(FastMagnitudeApprox(new float2(dx, dz))));
 
             float halfBlend = math.max(0.001f, SlopeBlendWidthDegrees);
             float rock = math.smoothstep(

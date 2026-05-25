@@ -12,6 +12,8 @@ namespace Hecton8.EditorTools
     public static class WorldProceduralGeologyFinalValidator
     {
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
+        private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(32);
+        private static readonly List<LODGroup> s_LodGroupScratch = new List<LODGroup>(8);
 
         /// <summary>
         /// Validates geological family/profile/final contracts.
@@ -185,15 +187,17 @@ namespace Hecton8.EditorTools
                     continue;
 
                 GameObject prefab = variant.prefab;
-                Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-                if (renderers == null || renderers.Length <= 0)
+                s_RendererScratch.Clear();
+                prefab.GetComponentsInChildren(true, s_RendererScratch);
+                if (s_RendererScratch.Count <= 0)
                 {
                     Debug.LogError($"[WorldProceduralGeologyFinalValidator] {record.AssetPath}: geological variant '{variant.variantId}' has no renderers in prefab '{AssetDatabase.GetAssetPath(prefab)}'.");
                     errorCount++;
                 }
 
-                LODGroup[] lodGroups = prefab.GetComponentsInChildren<LODGroup>(true);
-                if (RequiresLargeFormLod(family) && (lodGroups == null || lodGroups.Length <= 0))
+                s_LodGroupScratch.Clear();
+                prefab.GetComponentsInChildren(true, s_LodGroupScratch);
+                if (RequiresLargeFormLod(family) && s_LodGroupScratch.Count <= 0)
                 {
                     Debug.LogWarning($"[WorldProceduralGeologyFinalValidator] {record.AssetPath}: geological variant '{variant.variantId}' has no LODGroup on large-form prefab '{AssetDatabase.GetAssetPath(prefab)}'.");
                     warningCount++;

@@ -11,15 +11,15 @@ namespace Hecton8.Core
         internal readonly struct ArenaBlock
         {
             [FieldOffset(0)]
-            public readonly byte* Ptr;
+            internal readonly byte* Ptr;
 
             [FieldOffset(8)]
-            public readonly int ByteCount;
+            internal readonly int ByteCount;
 
             [FieldOffset(12)]
             private readonly int _pad0;
 
-            public ArenaBlock(byte* ptr, int byteCount)
+            internal ArenaBlock(byte* ptr, int byteCount)
             {
                 Ptr = ptr;
                 ByteCount = byteCount;
@@ -29,15 +29,15 @@ namespace Hecton8.Core
 
         private const int DefaultArenaBytes = 256 * 1024;
 
-        public static int CapacityBytes => NativeArenaAllocator.CapacityBytes;
-        public static int UsedBytes => NativeArenaAllocator.UsedBytes;
+        internal static int CapacityBytes => NativeArenaAllocator.CapacityBytes;
+        internal static int UsedBytes => NativeArenaAllocator.UsedBytes;
 
-        public static void Initialize(int capacityBytes = DefaultArenaBytes)
+        internal static void Initialize(int capacityBytes = DefaultArenaBytes)
         {
             NativeArenaAllocator.Initialize(capacityBytes);
         }
 
-        public static bool TryAllocate(int byteCount, int alignment, out ArenaBlock block)
+        internal static bool TryAllocate(int byteCount, int alignment, out ArenaBlock block)
         {
             block = default;
             if (!NativeArenaAllocator.TryAllocateBytes(byteCount, alignment, out byte* ptr))
@@ -47,12 +47,12 @@ namespace Hecton8.Core
             return true;
         }
 
-        public static void ResetFrame()
+        internal static void ResetFrame()
         {
             NativeArenaAllocator.Reset();
         }
 
-        public static void Shutdown()
+        internal static void Shutdown()
         {
             NativeArenaAllocator.Shutdown();
         }

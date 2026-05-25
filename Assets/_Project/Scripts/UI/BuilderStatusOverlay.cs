@@ -177,8 +177,17 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService != null && isActiveAndEnabled)
+                if (currentService == null)
+                {
+                    _tickRegistered = false;
+                    return;
+                }
+
+                if (isActiveAndEnabled)
+                {
+                    UnregisterTick();
                     EvaluateTickRegistration();
+                }
                 return;
             }
 
@@ -218,7 +227,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedEnvironmentContext = GlobalRegistry.Environment;
         }
 
@@ -244,7 +253,7 @@ namespace Hecton8.UI
                 inventory = playerContext.Inventory;
 
             if (forceAssign || playerBuilder == null)
-                playerBuilder = toolManager != null ? toolManager.CurrentTool as PlayerBuilder : null;
+                playerBuilder = playerContext.PlayerBuilder;
         }
 
         private void ApplyCachedEnvironmentContext(bool forceAssign)
@@ -351,7 +360,7 @@ namespace Hecton8.UI
         private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
         {
             return manager != null && manager.gameObject != null
-                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
                 : 0u;
         }
 
@@ -886,7 +895,7 @@ namespace Hecton8.UI
             int length = math.min(value.Length, buffer.Length - index);
             for (int i = 0; i < length; i++)
             {
-                buffer[index + i] = char.ToUpperInvariant(value[i]);
+                buffer[index + i] = ToAsciiUpperInvariant(value[i]);
             }
 
             return index + length;
@@ -903,10 +912,15 @@ namespace Hecton8.UI
             int length = math.min(value.Length, buffer.Length - index);
             for (int i = 0; i < length; i++)
             {
-                buffer[index + i] = char.ToUpperInvariant(value[i]);
+                buffer[index + i] = ToAsciiUpperInvariant(value[i]);
             }
 
             return index + length;
+        }
+
+        private static char ToAsciiUpperInvariant(char value)
+        {
+            return value >= 'a' && value <= 'z' ? (char)(value - 32) : value;
         }
 
         private static int AppendInt(char[] buffer, int index, int value)

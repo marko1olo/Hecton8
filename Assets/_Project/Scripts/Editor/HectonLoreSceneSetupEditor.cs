@@ -16,7 +16,7 @@ namespace Hecton8.Editor
         [MenuItem("Hecton8/Lore/Setup Lore Systems in Scene")]
         public static void SetupLoreSystemsInScene()
         {
-            HectonLoreSystemsRoot existing = Object.FindAnyObjectByType<HectonLoreSystemsRoot>();
+            HectonLoreSystemsRoot existing = Object.FindAnyObjectByType<HectonLoreSystemsRoot>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 existing.ValidateSystems();
@@ -56,7 +56,7 @@ namespace Hecton8.Editor
         [MenuItem("Hecton8/Lore/Validate Lore Systems in Scene")]
         public static void ValidateLoreSystemsInScene()
         {
-            HectonLoreSystemsRoot existing = Object.FindAnyObjectByType<HectonLoreSystemsRoot>();
+            HectonLoreSystemsRoot existing = Object.FindAnyObjectByType<HectonLoreSystemsRoot>(FindObjectsInactive.Include);
             if (existing == null)
             {
                 EditorUtility.DisplayDialog(

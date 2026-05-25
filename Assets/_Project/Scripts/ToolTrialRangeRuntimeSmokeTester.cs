@@ -921,7 +921,7 @@ namespace Hecton8.Gameplay
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogSmoke(string message)
         {
-            Debug.Log(message);
+            Hecton8.Core.H8Debug.Log(message);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

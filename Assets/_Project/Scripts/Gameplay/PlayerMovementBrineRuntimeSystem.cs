@@ -1,8 +1,9 @@
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Environment.Fluids;
+using Hecton8.Core.Contracts.Fluids;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
@@ -40,11 +41,11 @@ namespace Hecton8.Gameplay
             return resolved;
         }
 
-        internal static float ResolveFogHardClip(byte scalabilityTierProfileByte)
+        internal static float ResolveFogHardClip(float qualityWeight01)
         {
-            return scalabilityTierProfileByte == 0
-                ? 1f
-                : BrineLayerConstants.DefaultBrineFogHardClip;
+            float t = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
+            float smoothQuality = t * t * (3f - (2f * t));
+            return math.lerp(1f, BrineLayerConstants.DefaultBrineFogHardClip, smoothQuality);
         }
 
         private static void ReportWatchdogCost(long startTimestamp)

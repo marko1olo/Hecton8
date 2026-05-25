@@ -4,6 +4,11 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
+    internal static class LogisticsPipeLayout
+    {
+        internal const int SplineDescriptorStrideBytes = 64;
+    }
+
     [Flags]
     internal enum PipeRenderFlags : byte
     {
@@ -19,7 +24,7 @@ namespace Hecton8.Core
         Line = 2
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = LogisticsPipeLayout.SplineDescriptorStrideBytes)]
     internal struct SplineDescriptor
     {
         [FieldOffset(0)]

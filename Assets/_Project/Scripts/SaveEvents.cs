@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Hecton.Localization;
 using Hecton8.Core;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -22,8 +23,9 @@ namespace Hecton8.SaveSystem
     {
         public SaveEventType Type;
         public ulong TimestampTicks;
-        public FixedString64Bytes SlotName;
-        public FixedString128Bytes Message;
+        public uint SlotHash;
+        public uint MessageHash;
+        public int MessageSlot;
     }
 
     public interface ISaveEventListener
@@ -35,6 +37,7 @@ namespace Hecton8.SaveSystem
     {
         private const int PendingEventCapacity = 16;
         private const int ListenerCapacity = 16;
+        private const int MessageSlotCapacity = 16;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         public const int ManualSlotCount = 3;
         private const string Slot0Name = "slot_0";
@@ -54,6 +57,24 @@ namespace Hecton8.SaveSystem
         private const uint SaveEventPayloadTruncatedWarningHash = 0x53455654u; // SEVT
         private const uint SaveEventSlotTruncatedContextHash = 0x5345534Cu; // SESL
         private const uint SaveEventMessageTruncatedContextHash = 0x53454D53u; // SEMS
+        private static readonly uint Slot0Hash = ComputeHash(Slot0Name);
+        private static readonly uint Slot1Hash = ComputeHash(Slot1Name);
+        private static readonly uint Slot2Hash = ComputeHash(Slot2Name);
+        private static readonly uint UnknownSlotHash = ComputeHash(UnknownSlotName);
+
+        private struct MessageSlot
+        {
+            public uint MessageHash;
+            public string Message;
+            public byte IsValid;
+
+            public void Clear()
+            {
+                MessageHash = 0u;
+                Message = null;
+                IsValid = 0;
+            }
+        }
 
         private struct ListenerSlot
         {
@@ -131,8 +152,12 @@ namespace Hecton8.SaveSystem
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: ListenerSlot[16] — listener removals deferred while dispatching save events — owner: SaveEvents
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: MessageSlot[16] - fixed save UI message sidecar; queued DTO carries only hashes/slot index - owner: SaveEvents
+        private static readonly MessageSlot[] _messageSlots = new MessageSlot[MessageSlotCapacity];
         private static NativeQueue<SaveEventPayload> _pendingEvents;
         private static NativeQueue<SaveEventPayload> _nextFrameEvents;
+        private static int _messageSlotWriteIndex;
+        private static int _messageSlotPendingCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredRegisterCount;
@@ -172,45 +197,57 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        public static uint ResolveManualSlotHash(int slotIndex)
+        {
+            switch (slotIndex)
+            {
+                case 0:
+                    return Slot0Hash;
+                case 1:
+                    return Slot1Hash;
+                case 2:
+                    return Slot2Hash;
+                default:
+                    return UnknownSlotHash;
+            }
+        }
+
         public static bool IsKnownManualSlotName(string slotName)
         {
             return ResolveKnownSlotIndex(slotName) >= 0;
         }
 
-        public static string ResolveSlotName(in FixedString64Bytes slotName)
+        public static string ResolveSlotName(uint slotHash)
         {
-            if (slotName.Length <= 0)
+            if (slotHash == 0u)
                 return string.Empty;
 
-            return TryResolveKnownSlotName(in slotName, out string resolvedSlotName)
+            return TryResolveKnownSlotName(slotHash, out string resolvedSlotName)
                 ? resolvedSlotName
                 : UnknownSlotName;
         }
 
-        public static bool TryResolveKnownSlotName(in FixedString64Bytes slotName, out string resolvedSlotName)
+        public static bool TryResolveKnownSlotName(uint slotHash, out string resolvedSlotName)
         {
-            resolvedSlotName = string.Empty;
-            if (slotName.Length <= 0)
-                return false;
-
-            if (IsFixedStringEqual(in slotName, Slot0Name))
+            if (slotHash == Slot0Hash)
             {
                 resolvedSlotName = Slot0Name;
                 return true;
             }
 
-            if (IsFixedStringEqual(in slotName, Slot1Name))
+            if (slotHash == Slot1Hash)
             {
                 resolvedSlotName = Slot1Name;
                 return true;
             }
 
-            if (IsFixedStringEqual(in slotName, Slot2Name))
+            if (slotHash == Slot2Hash)
             {
                 resolvedSlotName = Slot2Name;
                 return true;
             }
 
+            resolvedSlotName = string.Empty;
             return false;
         }
 
@@ -226,6 +263,18 @@ namespace Hecton8.SaveSystem
                 return Slot1Number;
 
             if (string.Equals(slotName, Slot2Name, System.StringComparison.Ordinal))
+                return Slot2Number;
+
+            return UnknownSlotNumber;
+        }
+
+        public static string ResolveSlotNumber(uint slotHash)
+        {
+            if (slotHash == Slot0Hash)
+                return Slot0Number;
+            if (slotHash == Slot1Hash)
+                return Slot1Number;
+            if (slotHash == Slot2Hash)
                 return Slot2Number;
 
             return UnknownSlotNumber;
@@ -248,6 +297,43 @@ namespace Hecton8.SaveSystem
             return -1;
         }
 
+        public static uint ComputeSlotHash(string slotName)
+        {
+            return ComputeHash(slotName);
+        }
+
+        public static uint ComputeMessageHash(string message)
+        {
+            return ComputeHash(message);
+        }
+
+        public static string ResolveMessage(in SaveEventPayload payload)
+        {
+            if (!TryResolveMessage(in payload, out string message))
+                return string.Empty;
+
+            return message;
+        }
+
+        public static bool TryResolveMessage(in SaveEventPayload payload, out string message)
+        {
+            message = string.Empty;
+            int slot = payload.MessageSlot;
+            if ((uint)slot >= MessageSlotCapacity)
+                return false;
+
+            ref MessageSlot messageSlot = ref _messageSlots[slot];
+            if (messageSlot.IsValid == 0 ||
+                messageSlot.MessageHash != payload.MessageHash ||
+                string.IsNullOrEmpty(messageSlot.Message))
+            {
+                return false;
+            }
+
+            message = messageSlot.Message;
+            return true;
+        }
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
@@ -267,6 +353,9 @@ namespace Hecton8.SaveSystem
             }
 
             _listeners.Clear();
+            ClearMessageSlots();
+            _messageSlotWriteIndex = 0;
+            _messageSlotPendingCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
@@ -330,7 +419,10 @@ namespace Hecton8.SaveSystem
                     return;
 
                 if (!_pendingEvents.TryDequeue(out SaveEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -353,6 +445,8 @@ namespace Hecton8.SaveSystem
                     _isDispatching = false;
                     ApplyDeferredListenerMutations();
                 }
+
+                ReleaseMessageSlot(payload.MessageSlot);
             }
 
             if (_pendingEvents.IsEmpty())
@@ -362,44 +456,92 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        public static bool TryRaiseSaveStarted(uint slotHash)
+        {
+            return TryEnqueue(SaveEventType.SaveStarted, slotHash, 0u, null);
+        }
+
+        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseSaveStarted(uint).", true)]
         public static void RaiseSaveStarted(string slot)
         {
-            Enqueue(SaveEventType.SaveStarted, slot, default);
+            TryRaiseSaveStarted(ComputeSlotHash(slot));
         }
 
+        public static bool TryRaiseSaveCompleted(uint slotHash)
+        {
+            return TryEnqueue(SaveEventType.SaveCompleted, slotHash, 0u, null);
+        }
+
+        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseSaveCompleted(uint).", true)]
         public static void RaiseSaveCompleted(string slot)
         {
-            Enqueue(SaveEventType.SaveCompleted, slot, default);
+            TryRaiseSaveCompleted(ComputeSlotHash(slot));
         }
 
+        public static bool TryRaiseSaveFailed(uint slotHash, uint errorHash, string errorMessage)
+        {
+            return TryEnqueue(SaveEventType.SaveFailed, slotHash, errorHash, errorMessage);
+        }
+
+        [Obsolete("Save event payloads must use precomputed hashes; use TryRaiseSaveFailed(uint,uint,string).", true)]
         public static void RaiseSaveFailed(string slot, string error)
         {
-            Enqueue(SaveEventType.SaveFailed, slot, error);
+            TryRaiseSaveFailed(ComputeSlotHash(slot), ComputeHash(error), error);
         }
 
+        public static bool TryRaiseMappedWriteStarted(uint slotHash)
+        {
+            return TryEnqueue(SaveEventType.MappedWriteStarted, slotHash, 0u, null);
+        }
+
+        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseMappedWriteStarted(uint).", true)]
         public static void RaiseMappedWriteStarted(string slot)
         {
-            Enqueue(SaveEventType.MappedWriteStarted, slot, default);
+            TryRaiseMappedWriteStarted(ComputeSlotHash(slot));
         }
 
+        public static bool TryRaiseLoadStarted(uint slotHash)
+        {
+            return TryEnqueue(SaveEventType.LoadStarted, slotHash, 0u, null);
+        }
+
+        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseLoadStarted(uint).", true)]
         public static void RaiseLoadStarted(string slot)
         {
-            Enqueue(SaveEventType.LoadStarted, slot, default);
+            TryRaiseLoadStarted(ComputeSlotHash(slot));
         }
 
+        public static bool TryRaiseLoadCompleted(uint slotHash)
+        {
+            return TryEnqueue(SaveEventType.LoadCompleted, slotHash, 0u, null);
+        }
+
+        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseLoadCompleted(uint).", true)]
         public static void RaiseLoadCompleted(string slot)
         {
-            Enqueue(SaveEventType.LoadCompleted, slot, default);
+            TryRaiseLoadCompleted(ComputeSlotHash(slot));
         }
 
+        public static bool TryRaiseLoadFailed(uint slotHash, uint errorHash, string errorMessage)
+        {
+            return TryEnqueue(SaveEventType.LoadFailed, slotHash, errorHash, errorMessage);
+        }
+
+        [Obsolete("Save event payloads must use precomputed hashes; use TryRaiseLoadFailed(uint,uint,string).", true)]
         public static void RaiseLoadFailed(string slot, string error)
         {
-            Enqueue(SaveEventType.LoadFailed, slot, error);
+            TryRaiseLoadFailed(ComputeSlotHash(slot), ComputeHash(error), error);
         }
 
+        public static bool TryRaiseEmergencyBackupRestoreRequested(uint slotHash)
+        {
+            return TryEnqueue(SaveEventType.EmergencyBackupRestoreRequested, slotHash, 0u, null);
+        }
+
+        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseEmergencyBackupRestoreRequested(uint).", true)]
         public static void RaiseEmergencyBackupRestoreRequested(string slot)
         {
-            Enqueue(SaveEventType.EmergencyBackupRestoreRequested, slot, default);
+            TryRaiseEmergencyBackupRestoreRequested(ComputeSlotHash(slot));
         }
 
         private static void DispatchToListener(ISaveEventListener listener, in SaveEventPayload payload)
@@ -598,38 +740,56 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static void Enqueue(SaveEventType type, string slot, string message)
+        private static bool TryEnqueue(SaveEventType type, uint slotHash, uint messageHash, string message)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflow(type);
-                return;
+                return false;
+            }
+
+            if (slotHash == 0u)
+                slotHash = UnknownSlotHash;
+
+            int messageSlot = -1;
+            if (!string.IsNullOrEmpty(message))
+            {
+                if (messageHash == 0u)
+                    messageHash = ComputeHash(message);
+
+                if (!TryReserveMessageSlot(messageHash, message, out messageSlot))
+                {
+                    ReportPayloadTruncated(SaveEventMessageTruncatedContextHash);
+                    return false;
+                }
             }
 
             SaveEventPayload payload = new SaveEventPayload
             {
                 Type = type,
                 TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
-                SlotName = CopySlotName(slot),
-                Message = CopyMessage(message)
+                SlotHash = slotHash,
+                MessageHash = messageHash,
+                MessageSlot = messageSlot
             };
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static void ReportOverflow(SaveEventType type)
         {
             _droppedEventCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastOverflowTelemetryFrame == frame)
                 return;
 
@@ -644,7 +804,7 @@ namespace Hecton8.SaveSystem
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -658,7 +818,7 @@ namespace Hecton8.SaveSystem
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -672,7 +832,7 @@ namespace Hecton8.SaveSystem
         private static void ReportPayloadTruncated(uint contextHash)
         {
             _truncatedPayloadCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastPayloadTruncationTelemetryFrame == frame)
                 return;
 
@@ -683,42 +843,60 @@ namespace Hecton8.SaveSystem
                 math.max(1, _truncatedPayloadCount));
         }
 
-        private static FixedString64Bytes CopySlotName(string slot)
+        private static bool TryReserveMessageSlot(uint messageHash, string message, out int slot)
         {
-            FixedString64Bytes value = default;
-            if (string.IsNullOrEmpty(slot))
-                return value;
+            slot = -1;
+            if (messageHash == 0u || string.IsNullOrEmpty(message))
+                return true;
 
-            if (value.CopyFromTruncated(slot) != CopyError.None)
-                ReportPayloadTruncated(SaveEventSlotTruncatedContextHash);
-
-            return value;
-        }
-
-        private static FixedString128Bytes CopyMessage(string message)
-        {
-            FixedString128Bytes value = default;
-            if (string.IsNullOrEmpty(message))
-                return value;
-
-            if (value.CopyFromTruncated(message) != CopyError.None)
-                ReportPayloadTruncated(SaveEventMessageTruncatedContextHash);
-
-            return value;
-        }
-
-        private static bool IsFixedStringEqual(in FixedString64Bytes value, string expected)
-        {
-            if (string.IsNullOrEmpty(expected) || value.Length != expected.Length)
+            if (_messageSlotPendingCount >= MessageSlotCapacity)
                 return false;
 
-            for (int i = 0; i < expected.Length; i++)
+            for (int probe = 0; probe < MessageSlotCapacity; probe++)
             {
-                if (value[i] != (byte)expected[i])
-                    return false;
+                int candidate = _messageSlotWriteIndex;
+                _messageSlotWriteIndex++;
+                if (_messageSlotWriteIndex >= MessageSlotCapacity)
+                    _messageSlotWriteIndex = 0;
+
+                if (_messageSlots[candidate].IsValid != 0)
+                    continue;
+
+                _messageSlots[candidate].MessageHash = messageHash;
+                _messageSlots[candidate].Message = message;
+                _messageSlots[candidate].IsValid = 1;
+                _messageSlotPendingCount++;
+                slot = candidate;
+                return true;
             }
 
-            return true;
+            return false;
+        }
+
+        private static void ReleaseMessageSlot(int slot)
+        {
+            if ((uint)slot >= MessageSlotCapacity)
+                return;
+
+            if (_messageSlots[slot].IsValid == 0)
+                return;
+
+            _messageSlots[slot].Clear();
+            if (_messageSlotPendingCount > 0)
+                _messageSlotPendingCount--;
+        }
+
+        private static void ClearMessageSlots()
+        {
+            for (int i = 0; i < MessageSlotCapacity; i++)
+                _messageSlots[i].Clear();
+        }
+
+        private static uint ComputeHash(string value)
+        {
+            return string.IsNullOrEmpty(value)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(value));
         }
 
         private static void DrainWithoutDispatch()
@@ -745,11 +923,16 @@ namespace Hecton8.SaveSystem
             int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !queue.IsEmpty())
             {
-                if (!queue.TryDequeue(out _))
+                if (!queue.TryDequeue(out SaveEventPayload payload))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
+
+                ReleaseMessageSlot(payload.MessageSlot);
             }
 
             if (queue.IsEmpty())

@@ -322,7 +322,7 @@ namespace Hecton8.Visor
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetGenerationHandle<NoirPostProcessTuningDTO>(
+                handle = vault.EnsureGenerationHandle<NoirPostProcessTuningDTO>(
                     NoirTuningVaultId,
                     1,
                     SystemID.GraphicsScalability,
@@ -419,14 +419,18 @@ namespace Hecton8.Visor
                         if (settings != null && settings.deepSeaNoirUnifiedPass)
                         {
                             EnsureNoirVaultHandles();
+#if UNITY_EDITOR
                             if (settings.loadNoirColorCsv)
                                 TryLoadNoirColorCsvCold();
+#endif
                         }
                         else
                         {
                             EnsureReconstructionVaultHandles();
+#if UNITY_EDITOR
                             if (settings != null && settings.loadAestheticCsv)
                                 TryLoadAestheticCsvCold();
+#endif
                         }
                     }
                     break;
@@ -437,6 +441,13 @@ namespace Hecton8.Visor
                     break;
                 case GlobalRegistryServiceSlot.ResolutionScalerService:
                     _noirResolutionScaler = currentService as IResolutionScalerService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                        break;
+
+                    TryUnregisterLateFrameTickable();
+                    TryRegisterLateFrameTickable();
                     break;
             }
         }
@@ -495,7 +506,7 @@ namespace Hecton8.Visor
         {
             _dataVault = GlobalRegistry.DataVault;
             _noirResolutionScaler = GlobalRegistry.ResolutionScaler;
-            _noirPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _noirPlayerContext = GlobalRegistry.Player;
             RefreshNoirPlayerContextCold();
         }
 
@@ -672,7 +683,7 @@ namespace Hecton8.Visor
             if (TryReadNoirVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
                 return true;
 
-            handle = _dataVault.GetGenerationHandle<T>(
+            handle = _dataVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GraphicsScalability,
@@ -1051,6 +1062,7 @@ namespace Hecton8.Visor
             return false;
         }
 
+#if UNITY_EDITOR
         private unsafe bool TryLoadNoirColorCsvCold()
         {
             if (_noirColorCsvLoaded || _noirColorCsvLoadAttempted)
@@ -1209,6 +1221,7 @@ namespace Hecton8.Visor
             path = Path.Combine(root, NoirColorCsvFileName);
             return File.Exists(path) ? path : null;
         }
+#endif
 
         private float ResolveNoirQualityWeight01()
         {
@@ -1383,8 +1396,8 @@ namespace Hecton8.Visor
             uint frameIndex)
         {
             float phase = wrappedTimeSeconds * 0.031f;
-            float wave = 0.5f + 0.5f * math.sin(phase * 6.2831853f);
-            float pulse = 0.5f + 0.5f * math.sin((phase * 2.71f + 0.37f) * 6.2831853f);
+            float wave = Triangle01(phase);
+            float pulse = Triangle01(phase * 2.71f + 0.37f);
             NoirPostProcessInputDTO input = default;
             input.Stress01 = math.saturate(0.18f + wave * 0.62f);
             input.DepthMeters = math.max(0f, 160f + pulse * 840f);
@@ -1398,6 +1411,11 @@ namespace Hecton8.Visor
             input.Flags = NoirFlagMockInput;
             input.SourceHash = NoirSourceHash;
             return input;
+        }
+
+        private static float Triangle01(float phase)
+        {
+            return math.abs(math.frac(phase) * 2f - 1f);
         }
 
         private static NoirPostProcessDTO CalculateNoirParameters(

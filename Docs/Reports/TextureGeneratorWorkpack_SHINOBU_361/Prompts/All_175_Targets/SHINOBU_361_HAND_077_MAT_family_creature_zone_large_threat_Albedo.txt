@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_077
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_077_MAT_family_creature_zone_large_threat_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_creature_zone_large_threat_Albedo.png
+FINAL_FILENAME: MAT_family_creature_zone_large_threat_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Large threat creature zone albedo for Hecton open-water danger areas. Use strong readable biological patterning: graphite-teal plate fragments, pearl scrape trails, coral-red boundary strokes, amber sensory beads, and pale mineral silt caught in recesses. The result should feel like a territorial warning surface designed by nature, sharp and beautiful without visual clutter. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

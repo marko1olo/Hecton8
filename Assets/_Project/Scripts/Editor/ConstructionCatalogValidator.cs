@@ -18,11 +18,11 @@ namespace Hecton8.EditorTools
 
             int errorCount = 0;
             int warningCount = 0;
-            HashSet<string> moduleNames = new HashSet<string>(System.StringComparer.Ordinal);
-            HashSet<string> moduleIds = new HashSet<string>(System.StringComparer.Ordinal);
-            Dictionary<string, BuildableData> identityAliases = new Dictionary<string, BuildableData>(System.StringComparer.Ordinal);
+            HashSet<string> moduleNames = new HashSet<string>(buildableGuids.Length, System.StringComparer.Ordinal);
+            HashSet<string> moduleIds = new HashSet<string>(buildableGuids.Length, System.StringComparer.Ordinal);
+            Dictionary<string, BuildableData> identityAliases = new Dictionary<string, BuildableData>(buildableGuids.Length * 2, System.StringComparer.Ordinal);
             List<BuildableData> discoveredBuildables = new List<BuildableData>(buildableGuids.Length);
-            HashSet<BuildableData> catalogReferencedBuildables = new HashSet<BuildableData>();
+            HashSet<BuildableData> catalogReferencedBuildables = new HashSet<BuildableData>(buildableGuids.Length);
 
             for (int i = 0; i < buildableGuids.Length; i++)
             {
@@ -49,7 +49,7 @@ namespace Hecton8.EditorTools
 
             if (errorCount <= 0 && warningCount <= 0)
             {
-                Debug.Log("[ConstructionValidation] PASS no issues found.");
+                Hecton8.Core.H8Debug.Log("[ConstructionValidation] PASS no issues found.");
                 return;
             }
 
@@ -160,7 +160,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            HashSet<BuildableData> unique = new HashSet<BuildableData>();
+            HashSet<BuildableData> unique = new HashSet<BuildableData>(modules.Count);
             for (int i = 0; i < modules.Count; i++)
             {
                 BuildableData module = modules[i];

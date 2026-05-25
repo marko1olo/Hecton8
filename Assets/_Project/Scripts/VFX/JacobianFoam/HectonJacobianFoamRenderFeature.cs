@@ -163,7 +163,7 @@ namespace Hecton8.VFX
                     builder.SetGlobalTextureAfterPass(fallbackTexture, ShaderConstants.JacobianFoamTextureId);
                     builder.AllowPassCulling(false);
                     builder.AllowGlobalStateModification(true);
-                    builder.SetRenderFunc(static (FallbackPassData data, ComputeGraphContext context)
+                    builder.SetRenderFunc(static (FallbackPassData data, ComputeGraphContext context) =>
                     {
                         JacobianFoamGpuRuntime.AcknowledgeFallbackFoamTexture();
                     });

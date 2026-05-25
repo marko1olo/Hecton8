@@ -31,7 +31,7 @@ namespace Hecton8.Input
         [SerializeField] private bool verboseLogging;
 
         private InputActionRebindingExtensions.RebindingOperation _activeRebind;
-        private InputManager _nativeInputManager;
+        private INativeInputManagerRuntime _nativeInputManager;
         private bool _registeredService;
         private bool _initialOverridesLoadAttempted;
 
@@ -95,7 +95,7 @@ namespace Hecton8.Input
         /// Binds the bootstrap-owned native input action owner used for rebind operations.
         /// </summary>
         /// <param name="inputManager">Bootstrap-owned native input manager.</param>
-        internal void BindNativeInputManager(InputManager inputManager)
+        internal void BindNativeInputManager(INativeInputManagerRuntime inputManager)
         {
             if (ReferenceEquals(_nativeInputManager, inputManager))
                 return;
@@ -118,7 +118,7 @@ namespace Hecton8.Input
                 return false;
             }
 
-            InputManager inputManager = ResolveNativeInputManager();
+            INativeInputManagerRuntime inputManager = ResolveNativeInputManager();
             if (inputManager == null)
             {
                 LogWarning("Cannot start rebind because the native input manager is not bound.");
@@ -204,7 +204,7 @@ namespace Hecton8.Input
                 if (wasEnabled) action.Enable();
 
                 string display = "--";
-                if (!InputManager.TryGetBindingDisplayStringSafe(action, bindingIndex, out display) ||
+                if (!inputManager.TryGetBindingDisplayString(action, bindingIndex, out display) ||
                     string.IsNullOrEmpty(display))
                 {
                     display = "--";
@@ -265,7 +265,7 @@ namespace Hecton8.Input
                 return false;
             }
 
-            InputManager inputManager = ResolveNativeInputManager();
+            INativeInputManagerRuntime inputManager = ResolveNativeInputManager();
             if (inputManager == null)
             {
                 LogWarning("Cannot start rebind by id because the native input manager is not bound.");
@@ -304,7 +304,7 @@ namespace Hecton8.Input
 
         public void SaveOverrides()
         {
-            InputManager inputManager = ResolveNativeInputManager();
+            INativeInputManagerRuntime inputManager = ResolveNativeInputManager();
             if (inputManager == null)
             {
                 LogWarning("Cannot save binding overrides because the native input manager is not bound.");
@@ -331,7 +331,7 @@ namespace Hecton8.Input
 
         public void LoadOverrides()
         {
-            InputManager inputManager = ResolveNativeInputManager();
+            INativeInputManagerRuntime inputManager = ResolveNativeInputManager();
             if (inputManager == null)
             {
                 LogWarning("Cannot load binding overrides because the native input manager is not bound.");
@@ -350,7 +350,7 @@ namespace Hecton8.Input
         public void ClearOverrides(bool clearPlayerPrefs = true)
         {
             CancelRebind();
-            InputManager inputManager = ResolveNativeInputManager();
+            INativeInputManagerRuntime inputManager = ResolveNativeInputManager();
             if (inputManager != null)
                 inputManager.ClearBindingOverrides();
 
@@ -363,7 +363,7 @@ namespace Hecton8.Input
             Log("Binding overrides cleared.");
         }
 
-        private bool TryLoadOverridesFromFile(InputManager inputManager)
+        private bool TryLoadOverridesFromFile(INativeInputManagerRuntime inputManager)
         {
             string path = GetOverridesFilePath();
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
@@ -390,7 +390,7 @@ namespace Hecton8.Input
             }
         }
 
-        private bool TryLoadOverridesFromLegacyStorage(InputManager inputManager)
+        private bool TryLoadOverridesFromLegacyStorage(INativeInputManagerRuntime inputManager)
         {
             if (string.IsNullOrWhiteSpace(overridesPlayerPrefsKey))
                 return false;
@@ -577,7 +577,7 @@ namespace Hecton8.Input
             _registeredService = false;
         }
 
-        private InputManager ResolveNativeInputManager()
+        private INativeInputManagerRuntime ResolveNativeInputManager()
         {
             return _nativeInputManager;
         }
@@ -602,7 +602,7 @@ namespace Hecton8.Input
         private void Log(string message)
         {
             if (!verboseLogging) return;
-            Debug.Log("[RebindingManager] " + message);
+            Hecton8.Core.H8Debug.Log("[RebindingManager] " + message);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -618,7 +618,7 @@ namespace Hecton8.Input
         /// </summary>
         private string DetectConflict(InputAction currentAction, int currentBindingIndex, string currentActionMap)
         {
-            InputManager inputManager = ResolveNativeInputManager();
+            INativeInputManagerRuntime inputManager = ResolveNativeInputManager();
             if (currentAction == null || inputManager == null)
                 return null;
 
@@ -644,8 +644,10 @@ namespace Hecton8.Input
             if (actionMap.actions.Count == 0)
                 return null;
 
-            foreach (InputAction action in actionMap.actions)
+            int actionCount = actionMap.actions.Count;
+            for (int actionIndex = 0; actionIndex < actionCount; actionIndex++)
             {
+                InputAction action = actionMap.actions[actionIndex];
                 if (action == null || action == currentAction)
                     continue;
 

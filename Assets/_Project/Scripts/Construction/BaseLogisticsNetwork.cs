@@ -148,6 +148,53 @@ namespace Hecton8.Construction
             }
         }
 
+        public static int CollectStorageCratesNonAlloc(Vector3 origin, float radius, StorageCrate[] results)
+        {
+            if (results == null ||
+                results.Length == 0 ||
+                !math.isfinite(origin.x) ||
+                !math.isfinite(origin.y) ||
+                !math.isfinite(origin.z) ||
+                !math.isfinite(radius) ||
+                radius <= 0f)
+            {
+                return 0;
+            }
+
+            float radiusSq = radius * radius;
+            int count = 0;
+            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                StorageCrate crate = endpoint.Crate;
+                if (crate == null || !crate.gameObject.activeInHierarchy)
+                    continue;
+
+                float distanceSq = (crate.transform.position - origin).sqrMagnitude;
+                if (distanceSq > radiusSq)
+                    continue;
+
+                bool duplicate = false;
+                for (int resultIndex = 0; resultIndex < count; resultIndex++)
+                {
+                    if (!ReferenceEquals(results[resultIndex], crate))
+                        continue;
+
+                    duplicate = true;
+                    break;
+                }
+
+                if (duplicate)
+                    continue;
+
+                results[count++] = crate;
+                if (count >= results.Length)
+                    break;
+            }
+
+            return count;
+        }
+
         public static void RegisterFabricator(Fabricator fabricator, PowerNode node)
         {
             if (fabricator == null || node == null)
@@ -731,10 +778,11 @@ namespace Hecton8.Construction
                     continue;
 
                 int token = ThreadSafeCommandQueue.RegisterGameObjectTarget(crate.gameObject);
-                if (token > 0)
-                    ThreadSafeCommandQueue.Enqueue(EntityCommand.CreateCommitStorageReservation(token, reservationId, requesterId));
-                else
+                if (token <= 0 ||
+                    !ThreadSafeCommandQueue.TryEnqueue(EntityCommand.CreateCommitStorageReservation(token, reservationId, requesterId)))
+                {
                     crate.CommitReservation(reservationId);
+                }
             }
 
             ReturnReservation(reservation);

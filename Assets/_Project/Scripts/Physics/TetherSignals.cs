@@ -34,7 +34,25 @@ namespace Hecton8.Physics
             _initialized = true;
         }
 
+        [Obsolete("Use TryPublishFire(...) so SignalBus enqueue refusal is visible.", true)]
         public static bool PublishFire(
+            int managerInstanceId,
+            int ownerInstanceId,
+            int payloadBodyInstanceId,
+            int payloadColliderInstanceId,
+            float initialDistance,
+            uint frameIndex)
+        {
+            return TryPublishFire(
+                managerInstanceId,
+                ownerInstanceId,
+                payloadBodyInstanceId,
+                payloadColliderInstanceId,
+                initialDistance,
+                frameIndex);
+        }
+
+        public static bool TryPublishFire(
             int managerInstanceId,
             int ownerInstanceId,
             int payloadBodyInstanceId,
@@ -63,21 +81,31 @@ namespace Hecton8.Physics
                 Flags = 0
             };
 
-            SignalBus<CoreTetherFiredSignal>.Push(in signal);
-            return true;
+            return SignalBus<CoreTetherFiredSignal>.TryPush(in signal);
         }
 
+        [Obsolete("Use TryPublishSnap(in TetherSnappedSignal) so SignalBus enqueue refusal is visible.", true)]
         public static bool PublishSnap(in TetherSnappedSignal signal)
         {
-            EnsureInitialized();
-            SignalBus<TetherSnappedSignal>.Push(in signal);
-            return true;
+            return TryPublishSnap(in signal);
         }
 
-        public static void PublishTension(in TetherTensionSignal signal)
+        public static bool TryPublishSnap(in TetherSnappedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<TetherTensionSignal>.Push(in signal);
+            return SignalBus<TetherSnappedSignal>.TryPush(in signal);
+        }
+
+        [Obsolete("Use TryPublishTension(in TetherTensionSignal) so SignalBus enqueue refusal is visible.", true)]
+        public static void PublishTension(in TetherTensionSignal signal)
+        {
+            TryPublishTension(in signal);
+        }
+
+        public static bool TryPublishTension(in TetherTensionSignal signal)
+        {
+            EnsureInitialized();
+            return SignalBus<TetherTensionSignal>.TryPush(in signal);
         }
 
         public static bool TryDequeueSnap(out TetherSnappedSignal signal)

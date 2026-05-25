@@ -41,10 +41,16 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                     continue;
 
                 scanned++;
-                string text = File.ReadAllText(path);
-                int localRenderFog = Count(text, "m_Fog: 1");
-                int localVolumeFog = Count(text, "UnityEngine.Rendering.Volume") + Count(text, "VolumetricFog") + Count(text, "FogOverride");
-                int localPost = Count(text, "PostProcessVolume") + Count(text, "PostProcessLayer") + Count(text, "Post-processing");
+                int localRenderFog = 0;
+                int localVolumeFog = 0;
+                int localPost = 0;
+                foreach (string line in File.ReadLines(path))
+                {
+                    localRenderFog += Count(line, "m_Fog: 1");
+                    localVolumeFog += Count(line, "UnityEngine.Rendering.Volume") + Count(line, "VolumetricFog") + Count(line, "FogOverride");
+                    localPost += Count(line, "PostProcessVolume") + Count(line, "PostProcessLayer") + Count(line, "Post-processing");
+                }
+
                 if (localRenderFog == 0 && localVolumeFog == 0 && localPost == 0)
                     continue;
 

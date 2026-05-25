@@ -55,82 +55,82 @@ namespace Hecton8.Quest
             handles.PlayerItemCapacity = playerItemCapacity;
             handles.FactionCapacity = factionCapacity;
 
-            handles.GlobalStateMasks = vault.GetGenerationHandle<ulong>(
+            handles.GlobalStateMasks = vault.EnsureGenerationHandle<ulong>(
                 BufferID.QuestDagGlobalStateMasks,
                 stateChunkCount,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.OldStateMasks = vault.GetGenerationHandle<ulong>(
+            handles.OldStateMasks = vault.EnsureGenerationHandle<ulong>(
                 BufferID.QuestDagOldStateMasks,
                 stateChunkCount,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.Nodes = vault.GetGenerationHandle<QuestNodeDTO>(
+            handles.Nodes = vault.EnsureGenerationHandle<QuestNodeDTO>(
                 BufferID.QuestDagNodes,
                 nodeCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.NodeRuntime = vault.GetGenerationHandle<QuestNodeRuntimeDTO>(
+            handles.NodeRuntime = vault.EnsureGenerationHandle<QuestNodeRuntimeDTO>(
                 BufferID.QuestDagNodeRuntime,
                 nodeCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.TriggerVolumes = vault.GetGenerationHandle<TriggerVolumeDTO>(
+            handles.TriggerVolumes = vault.EnsureGenerationHandle<TriggerVolumeDTO>(
                 BufferID.QuestDagTriggerVolumes,
                 triggerCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.RequiredItemHashes = vault.GetGenerationHandle<uint>(
+            handles.RequiredItemHashes = vault.EnsureGenerationHandle<uint>(
                 BufferID.QuestDagRequiredItemHashes,
                 itemLinkCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.RequiredItemQuantities = vault.GetGenerationHandle<int>(
+            handles.RequiredItemQuantities = vault.EnsureGenerationHandle<int>(
                 BufferID.QuestDagRequiredItemQuantities,
                 itemLinkCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.PlayerItemHashes = vault.GetGenerationHandle<uint>(
+            handles.PlayerItemHashes = vault.EnsureGenerationHandle<uint>(
                 BufferID.QuestDagPlayerItemHashes,
                 playerItemCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.PlayerItemQuantities = vault.GetGenerationHandle<int>(
+            handles.PlayerItemQuantities = vault.EnsureGenerationHandle<int>(
                 BufferID.QuestDagPlayerItemQuantities,
                 playerItemCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.FactionStandings = vault.GetGenerationHandle<float>(
+            handles.FactionStandings = vault.EnsureGenerationHandle<float>(
                 BufferID.QuestDagFactionStandings,
                 factionCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetGenerationHandle<QuestDagTelemetryEntry>(
+            handles.TelemetryRing = vault.EnsureGenerationHandle<QuestDagTelemetryEntry>(
                 BufferID.QuestDagTelemetryRing,
                 QuestDagRuntimeConstants.TelemetryCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
+            handles.TelemetryCursor = vault.EnsureGenerationHandle<int>(
                 BufferID.QuestDagTelemetryCursor,
                 1,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.Counters = vault.GetGenerationHandle<int>(
+            handles.Counters = vault.EnsureGenerationHandle<int>(
                 BufferID.QuestDagCounters,
                 QuestDagRuntimeConstants.CounterCount,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.TriggerNodeIndices = vault.GetGenerationHandle<int>(
+            handles.TriggerNodeIndices = vault.EnsureGenerationHandle<int>(
                 BufferID.QuestDagTriggerNodeIndices,
                 triggerCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.NoTriggerNodeIndices = vault.GetGenerationHandle<int>(
+            handles.NoTriggerNodeIndices = vault.EnsureGenerationHandle<int>(
                 BufferID.QuestDagNoTriggerNodeIndices,
                 nodeCapacity,
                 VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvMonitor = vault.GetGenerationHandle<long>(
+            handles.CsvMonitor = vault.EnsureGenerationHandle<long>(
                 BufferID.QuestDagCsvMonitor,
                 2,
                 VaultOwnerSystem,
@@ -419,6 +419,7 @@ namespace Hecton8.Quest
                 NoTriggerNodeIndices = buffers.NoTriggerNodeIndices,
                 SpatialHash = _triggerSpatialHash,
                 StateChangedWriter = SignalBus<StateChangedSignal>.ParallelWriter,
+                StateChangedWriterBudget = SignalBus<StateChangedSignal>.ParallelWriterBudget,
                 PlayerAUP = playerAup,
                 CurrentTimestamp = currentTimestamp,
                 Frame = frame,
@@ -487,6 +488,7 @@ namespace Hecton8.Quest
         /// <summary>
         /// Cold live-balance bridge for quest_logic_overrides.csv. Call from an editor tool or slow tick.
         /// </summary>
+#if UNITY_EDITOR
         public bool TryApplyCsvOverrides(string path, out int appliedRows)
         {
             appliedRows = 0;
@@ -495,6 +497,7 @@ namespace Hecton8.Quest
 
             return QuestDagCsvOverrideIngestor.TryApplyOverridesFromFile(_vault, ref _handles, path, out appliedRows);
         }
+#endif
 
         /// <summary>
         /// Marks the transient spatial hash dirty after cold trigger data mutation.
@@ -726,6 +729,7 @@ namespace Hecton8.Quest
         [ReadOnly] [NoAlias] public NativeArray<int> NoTriggerNodeIndices;
         [ReadOnly] [NoAlias] public NativeParallelMultiHashMap<int, int> SpatialHash;
         [NoAlias] public NativeQueue<StateChangedSignal>.ParallelWriter StateChangedWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> StateChangedWriterBudget;
         public double3 PlayerAUP;
         public ulong CurrentTimestamp;
         public uint Frame;
@@ -1006,7 +1010,7 @@ namespace Hecton8.Quest
                 if (flipped == 0UL)
                     continue;
 
-                StateChangedWriter.Enqueue(new StateChangedSignal
+                SignalBus<StateChangedSignal>.TryEnqueueBounded(StateChangedWriter, StateChangedWriterBudget, new StateChangedSignal
                 {
                     FlippedMask = flipped,
                     NewMask = newMask,
@@ -1225,7 +1229,7 @@ namespace Hecton8.Quest
                 if ((uint)runtime.StateChunk < (uint)buffers.OldStateMasks.Length)
                     buffers.OldStateMasks[runtime.StateChunk] = newMask;
 
-                SignalBus<StateChangedSignal>.Push(new StateChangedSignal
+                SignalBus<StateChangedSignal>.TryPush(new StateChangedSignal
                 {
                     FlippedMask = oldMask ^ newMask,
                     NewMask = newMask,

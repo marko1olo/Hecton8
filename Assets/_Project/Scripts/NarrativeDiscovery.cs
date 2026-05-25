@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 - NarrativeDiscovery.cs
 // Interaction component for lore objects, black boxes, PDAs, and wreckage.
 // ============================================================================
@@ -10,12 +10,13 @@ using Hecton8.Interaction;
 using Hecton8.Modding;
 using Hecton8.Narrative;
 using Hecton8.World;
+using System;
 using UnityEngine;
 
 namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
-    public sealed class NarrativeDiscovery : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class NarrativeDiscovery : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const string DefaultStudyVerbRu = "Izuchit";
         private const string DefaultStudyVerbEn = "Study";
@@ -70,7 +71,9 @@ namespace Hecton8.Interaction
         [Tooltip("Optional highlight object shown while hovered.")]
         [SerializeField] private GameObject highlightObject;
 
-        private string _cachedInteractText;
+        private const int InteractTextCapacity = 128;
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextCapacity];
+        private int _cachedInteractTextLength;
         private AbsoluteUniversePosition _cachedAup;
         private double _cachedAupTriggerRadiusSq;
         private uint _cachedDiscoveryHash;
@@ -80,10 +83,10 @@ namespace Hecton8.Interaction
         private NarrativeSpatialTriggerFlags _cachedSpatialFlags;
         private bool _registeredLifecycle;
         private bool _hotSwapRegistered;
-        private HectonNarrativeDirector _narrativeDirector;
-        private AudioLogSystem _audioLogs;
-        private LoreDatabaseManager _loreDatabase;
-        private LocalizationManager _localization;
+        private INarrativeDiscoveryReadModel _narrativeDiscoveryReadModel;
+        private IAudioLogRuntime _audioLogs;
+        private ILoreUnlockSink _loreUnlockSink;
+        private ILocalizationTextReadModel _localization;
         private static int _activeDiscoveryCount;
 
         public string DiscoveryId => discoveryId;
@@ -102,17 +105,20 @@ namespace Hecton8.Interaction
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildCache();
             RefreshAupTriggerCache();
 
-            NarrativeEvents.RaiseNarrativePOIRegistered(this);
+            NarrativeEvents.TryNotifyNarrativePOIRegistered(this);
             _registeredLifecycle = true;
             _activeDiscoveryCount++;
 
-            HectonNarrativeDirector narrativeDirector = _narrativeDirector;
-            if (disableAfterDiscovery && narrativeDirector != null &&
-                narrativeDirector.HasDiscovery(discoveryId))
+            INarrativeDiscoveryReadModel narrativeDiscovery = _narrativeDiscoveryReadModel;
+            if (disableAfterDiscovery &&
+                narrativeDiscovery != null &&
+                _cachedDiscoveryHash != 0u &&
+                narrativeDiscovery.HasDiscovery(_cachedDiscoveryHash))
             {
                 gameObject.SetActive(false);
             }
@@ -120,12 +126,13 @@ namespace Hecton8.Interaction
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
 
             if (_registeredLifecycle)
             {
-                NarrativeEvents.RaiseNarrativePOIDisposed(this);
+                NarrativeEvents.TryNotifyNarrativePOIDisposed(this);
                 _registeredLifecycle = false;
                 if (_activeDiscoveryCount > 0)
                     _activeDiscoveryCount--;
@@ -137,7 +144,25 @@ namespace Hecton8.Interaction
 
         private void RebuildCache()
         {
-            _cachedInteractText = ResolveInteractVerb() + " " + ResolveDisplayName();
+            _cachedInteractTextLength = 0;
+            AppendInteractText(ResolveInteractVerbSpan());
+            if (_cachedInteractTextLength > 0)
+                AppendInteractText(" ".AsSpan());
+            AppendInteractText(ResolveDisplayNameSpan());
+
+            if (_cachedInteractTextLength == 0)
+                AppendInteractText(DefaultStudyVerbEn.AsSpan());
+        }
+
+        private void AppendInteractText(ReadOnlySpan<char> value)
+        {
+            int remaining = _cachedInteractTextBuffer.Length - _cachedInteractTextLength;
+            if (remaining <= 0 || value.Length == 0)
+                return;
+
+            int copyLength = value.Length <= remaining ? value.Length : remaining;
+            value.Slice(0, copyLength).CopyTo(_cachedInteractTextBuffer.AsSpan(_cachedInteractTextLength));
+            _cachedInteractTextLength += copyLength;
         }
 
         private string ResolveInteractVerb()
@@ -146,15 +171,32 @@ namespace Hecton8.Interaction
                 return interactVerb;
 
             if (linkedAudioLog == null)
-                return ResolveLocalized(LocalizationKeys.INTERACT_STUDY, DefaultStudyVerbEn);
+                return DefaultStudyVerbEn;
 
             if (linkedAudioLog.IsTextOnlyPlayback)
-                return ResolveLocalized(LocalizationKeys.INTERACT_OPEN_LOG, DefaultTextVerbEn);
+                return DefaultTextVerbEn;
 
             if (!linkedAudioLog.HasPlaybackPayload && linkedAudioLog.HasVisibleContent)
-                return ResolveLocalized(LocalizationKeys.INTERACT_OPEN_ARCHIVE, DefaultArchiveVerbEn);
+                return DefaultArchiveVerbEn;
 
-            return ResolveLocalized(LocalizationKeys.INTERACT_PLAY_LOG, DefaultPlaybackVerbEn);
+            return DefaultPlaybackVerbEn;
+        }
+
+        private ReadOnlySpan<char> ResolveInteractVerbSpan()
+        {
+            if (HasCustomInteractVerb())
+                return interactVerb.AsSpan();
+
+            if (linkedAudioLog == null)
+                return ResolveLocalizedSpan(LocalizationKeys.INTERACT_STUDY, DefaultStudyVerbEn);
+
+            if (linkedAudioLog.IsTextOnlyPlayback)
+                return ResolveLocalizedSpan(LocalizationKeys.INTERACT_OPEN_LOG, DefaultTextVerbEn);
+
+            if (!linkedAudioLog.HasPlaybackPayload && linkedAudioLog.HasVisibleContent)
+                return ResolveLocalizedSpan(LocalizationKeys.INTERACT_OPEN_ARCHIVE, DefaultArchiveVerbEn);
+
+            return ResolveLocalizedSpan(LocalizationKeys.INTERACT_PLAY_LOG, DefaultPlaybackVerbEn);
         }
 
         public void OnHoverStart()
@@ -174,40 +216,50 @@ namespace Hecton8.Interaction
             if (!HasValidDiscoveryId)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[Narrative] '{name}' has no discoveryId. Interaction ignored.");
+                Debug.LogWarning("[Narrative] Missing discoveryId. Interaction ignored.");
 #endif
                 return;
             }
 
-            HectonNarrativeDirector narrativeDirector = _narrativeDirector;
-            if (narrativeDirector != null && narrativeDirector.HasDiscovery(discoveryId))
+            INarrativeDiscoveryReadModel narrativeDiscovery = _narrativeDiscoveryReadModel;
+            if (narrativeDiscovery != null &&
+                _cachedDiscoveryHash != 0u &&
+                narrativeDiscovery.HasDiscovery(_cachedDiscoveryHash))
             {
                 if (linkedAudioLog != null && _audioLogs != null)
-                    _audioLogs.PlayLog(linkedAudioLog);
+                    _audioLogs.TryPlayAudioLog(linkedAudioLog.logId);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[Narrative] '{discoveryId}' already discovered.");
+                H8Debug.Log("[Narrative] Discovery already registered.");
 #endif
                 return;
             }
 
-            NarrativeEvents.RaiseDiscoveryMade(discoveryId);
-            LoreDatabaseManager loreDatabase = _loreDatabase;
-            if (loreDatabase != null)
-                loreDatabase.TryUnlockByHash(LoreDatabaseManager.ComputeLoreHash(discoveryId));
+            NarrativeEvents.TryRaiseDiscoveryMade(_cachedDiscoveryHash);
+            ILoreUnlockSink loreUnlockSink = _loreUnlockSink;
+            if (loreUnlockSink != null)
+                loreUnlockSink.TryUnlockByHash(LocHash.ComputeAscii(discoveryId));
 
             if (linkedAudioLog != null && _audioLogs != null)
-                _audioLogs.PlayLog(linkedAudioLog);
+                _audioLogs.TryPlayAudioLog(linkedAudioLog.logId);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Narrative] Discovery made: {discoveryId} ({ResolveDisplayName()})");
+            H8Debug.Log("[Narrative] Discovery made.");
 #endif
 
             if (disableAfterDiscovery)
                 gameObject.SetActive(false);
         }
 
-        public string GetInteractText() => _cachedInteractText;
+        public string GetInteractText() => ResolveInteractVerb();
+
+        public bool TryCopyInteractText(Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(
+                _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength),
+                destination,
+                out length);
+        }
 
         internal bool TryGetAupTrigger(
             out int bitIndex,
@@ -247,7 +299,7 @@ namespace Hecton8.Interaction
                 QuestHash = _cachedQuestHash,
                 BiomeHash = _cachedBiomeHash,
                 SoundscapeHash = _cachedSoundscapeHash,
-                LoreHash = LoreDatabaseManager.ComputeLoreHash(discoveryId),
+                LoreHash = LocHash.ComputeAscii(discoveryId),
                 BitIndex = aupTriggerBitIndex,
                 Flags = _cachedSpatialFlags
             };
@@ -272,12 +324,12 @@ namespace Hecton8.Interaction
 
         {
 
-            HandleLanguageChanged((GameLanguage)payload.Language);
+            HandleLanguageChanged();
 
         }
 
 
-        private void HandleLanguageChanged(GameLanguage language)
+        private void HandleLanguageChanged()
         {
             RebuildCache();
         }
@@ -285,6 +337,11 @@ namespace Hecton8.Interaction
         private string ResolveDisplayName()
         {
             return localizedDisplayName.ResolveOrFallback(_localization, FallbackOrDefault(displayName, "Object"));
+        }
+
+        private ReadOnlySpan<char> ResolveDisplayNameSpan()
+        {
+            return localizedDisplayName.ResolveSpanOrFallback(_localization, FallbackOrDefault(displayName, "Object"));
         }
 
         private bool HasCustomInteractVerb()
@@ -315,16 +372,16 @@ namespace Hecton8.Interaction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.NarrativeDirectorRuntime:
-                    _narrativeDirector = currentService as HectonNarrativeDirector;
+                    _narrativeDiscoveryReadModel = currentService as INarrativeDiscoveryReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogs = currentService as AudioLogSystem;
+                    _audioLogs = currentService as IAudioLogRuntime;
                     break;
                 case GlobalRegistryServiceSlot.LoreDatabaseRuntime:
-                    _loreDatabase = currentService as LoreDatabaseManager;
+                    _loreUnlockSink = currentService as ILoreUnlockSink;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
+                    _localization = currentService as ILocalizationTextReadModel;
                     RebuildCache();
                     break;
             }
@@ -332,10 +389,10 @@ namespace Hecton8.Interaction
 
         private void CacheRegistryServicesCold()
         {
-            _narrativeDirector = GlobalRegistry.NarrativeDirector;
-            _audioLogs = GlobalRegistry.AudioLogs;
-            _loreDatabase = GlobalRegistry.LoreDatabase;
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _narrativeDiscoveryReadModel = GlobalRegistry.NarrativeDiscoveryReadModel;
+            _audioLogs = GlobalRegistry.AudioLogRuntime;
+            _loreUnlockSink = GlobalRegistry.LoreUnlockSink;
+            _localization = GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterHotSwapListener()
@@ -355,12 +412,12 @@ namespace Hecton8.Interaction
             _hotSwapRegistered = false;
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+            ILocalizationTextReadModel manager = _localization;
+            return manager != null && !string.IsNullOrEmpty(key)
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
         private static string FallbackOrDefault(string value, string fallback)

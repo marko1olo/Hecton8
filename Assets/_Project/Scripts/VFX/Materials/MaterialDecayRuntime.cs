@@ -19,6 +19,7 @@ namespace Hecton8.VFX.Materials
     [AddComponentMenu("Hecton8/VFX/Material Decay Runtime")]
     public sealed class MaterialDecayRuntime : MonoBehaviour,
         IUpdatable,
+        ILateFrameTickable,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
     {
@@ -72,10 +73,14 @@ namespace Hecton8.VFX.Materials
         private byte _lastReason;
         private byte _qualityWeightByte = 255;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private bool _dispatcherReady;
         private bool _hasDurabilitySignal;
+        private bool _shaderGlobalsDirty;
+#pragma warning disable CS0414
         private bool _blackBoxReady;
+#pragma warning restore CS0414
         private bool _dumpedFault;
         private float _globalQualityWeight01 = 1f;
 
@@ -179,25 +184,43 @@ namespace Hecton8.VFX.Materials
             if (_wetnessFadeRemaining > 0f)
                 _wetnessFadeRemaining = math.max(0f, _wetnessFadeRemaining - deltaTime);
 
-            UploadShaderGlobals(force: false);
+            _shaderGlobalsDirty = true;
             PushBlackBox();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_shaderGlobalsDirty)
+                return;
+
+            _shaderGlobalsDirty = false;
+            UploadShaderGlobals(force: false);
         }
 
         private void TryRegisterTick()
         {
-            if (_registered || !Application.isPlaying || !_dispatcherReady)
+            if (!Application.isPlaying || !_dispatcherReady)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
         {
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -324,7 +347,7 @@ namespace Hecton8.VFX.Materials
                 State = signal.Reason,
                 Flags = signal.Flags
             };
-            SignalBus<ToolAcousticSignal>.Push(in acousticSignal);
+            SignalBus<ToolAcousticSignal>.TryPush(in acousticSignal);
         }
 
         private void UploadShaderGlobals(bool force)
@@ -470,7 +493,7 @@ namespace Hecton8.VFX.Materials
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<MaterialDecayState> acquired = vault.GetGenerationHandle<MaterialDecayState>(
+            VaultGenerationHandle<MaterialDecayState> acquired = vault.EnsureGenerationHandle<MaterialDecayState>(
                 BufferID.MaterialDecayBlackBox,
                 TelemetryCapacity,
                 SystemID.Vfx,

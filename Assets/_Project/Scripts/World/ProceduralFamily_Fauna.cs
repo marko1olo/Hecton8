@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class ProceduralFamilyFaunaLayout
+    {
+        public const int RuntimeDescriptorStrideBytes = 56;
+    }
+
     /// <summary>
     /// Authoring template for procedural fauna families.
     /// Exports a blittable runtime descriptor for SOA/boid lanes without carrying managed authoring state into simulation.
@@ -36,7 +41,7 @@ namespace Hecton8.World
             public Vector4 phaseOffsetScale;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 56)]
+        [StructLayout(LayoutKind.Explicit, Size = ProceduralFamilyFaunaLayout.RuntimeDescriptorStrideBytes)]
         public struct RuntimeDescriptor
         {
             [FieldOffset(0)]

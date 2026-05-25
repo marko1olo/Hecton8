@@ -115,7 +115,7 @@ namespace Hecton8.EditorTools
                 GameObject prefab = variant.prefab;
                 string prefabPath = AssetDatabase.GetAssetPath(prefab);
                 Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-                HashSet<Material> inspectedMaterials = new HashSet<Material>();
+            HashSet<Material> inspectedMaterials = new HashSet<Material>(32);
                 if (renderers == null || renderers.Length <= 0)
                 {
                     Debug.LogError($"[WorldProceduralStructuralFinalValidator] {record.AssetPath}: structural variant '{variant.variantId}' has no renderers in prefab '{prefabPath}'.");

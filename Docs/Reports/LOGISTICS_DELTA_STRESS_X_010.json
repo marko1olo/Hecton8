@@ -1,0 +1,53 @@
+﻿{
+  "activeCompartmentGate": {
+    "activeNodeCount": 384,
+    "bounded": true,
+    "frames": 512,
+    "inactiveNodeCount": 1616,
+    "inactiveWrites": 0,
+    "maxEdgeVisitsPerFrame": 2280,
+    "maxFrameDelta": 0.9521249049013855,
+    "maxPotential": 1.0,
+    "maxShortCircuitSkipsPerFrame": 170,
+    "minPotential": 0.0,
+    "nanCount": 0,
+    "pythonElapsedMicroseconds": 2063967.7,
+    "stateHash": 4042907795
+  },
+  "agent": "X_010",
+  "algorithmProof": {
+    "boundedPotential": "Each output is saturate(current + (weightedAverage(saturate(neighbor)) - current) * saturate(gain)); nonnegative conductance and clamp force [0,1].",
+    "noDivergence": "There is no convergence loop; exactly two passes execute, then the frame terminates.",
+    "noOscillationAmplification": "Any frame-to-frame change is bounded by 1.0 because all stored potentials are clamped.",
+    "shortCircuitHandling": "Short-circuit edges are skipped from conductance accumulation; zero conductance cannot divide because conductanceSum <= epsilon falls back to current."
+  },
+  "blackoutFastPath": {
+    "firstTransitionEdgeWrites": 6000,
+    "firstTransitionNodeWrites": 2000,
+    "latchedIdleEdgeVisits": 0,
+    "latchedIdleNodeWrites": 0,
+    "scheduledPasses": 0,
+    "subMicrosecondClaim": "valid only for latched unchanged idle blackout/open-circuit frames; first transition is O(nodes+edges)"
+  },
+  "edgeCount": 6000,
+  "frames": 512,
+  "fullActiveShortStorm": {
+    "activeNodeCount": 2000,
+    "bounded": true,
+    "frames": 512,
+    "inactiveNodeCount": 0,
+    "inactiveWrites": 0,
+    "maxEdgeVisitsPerFrame": 11874,
+    "maxFrameDelta": 0.964,
+    "maxPotential": 1.0,
+    "maxShortCircuitSkipsPerFrame": 768,
+    "minPotential": 0.0,
+    "nanCount": 0,
+    "pythonElapsedMicroseconds": 14791494.9,
+    "stateHash": 2337012671
+  },
+  "honesty": "A full 2000-node/6000-edge active solve is bounded, but not sub-microsecond on weak hardware. Sub-microsecond applies only to latched idle fast-path frames with zero CSR touches.",
+  "nodeCount": 2000,
+  "shortCircuitsPerFrame": 384,
+  "status": "PASS"
+}

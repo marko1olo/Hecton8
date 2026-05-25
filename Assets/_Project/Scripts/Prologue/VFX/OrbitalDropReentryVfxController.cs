@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -30,6 +31,8 @@ namespace Hecton8.Prologue.VFX
         private const uint OceanWavesHash = 0x4F574156u; // OWAV
         private const uint MassiveSplashHash = 0x4D53504Cu; // MSPL
         private const byte MassiveSplashDebrisKind = 32;
+        private const SystemID VaultOwnerSystemId = SystemID.Vfx;
+        private const BufferID TelemetryBufferId = BufferID.OrbitalDropReentryVfxTelemetryRing;
         private const float DefaultWhiteoutAltitudeMeters = 500f;
         private const float ShaderEpsilon = 0.0005f;
         private const float MaxPresentationDeltaSeconds = 0.25f;
@@ -101,7 +104,8 @@ namespace Hecton8.Prologue.VFX
         [SerializeField] private Color oceanAmbientColor = _defaultOceanAmbientColor;
         [SerializeField] private bool driveAmbientProbe = true;
 
-        private NativeArray<ReentryVfxTelemetryEntry> _telemetry;
+        private VaultGenerationHandle<ReentryVfxTelemetryEntry> _telemetryHandle;
+        private IDataVault _dataVault;
         private ITickDispatcher _tickDispatcher;
         private Material _activeMaterial;
         private AbsoluteUniversePosition _lastCapsuleAup;
@@ -187,12 +191,11 @@ namespace Hecton8.Prologue.VFX
 
         private void OnDestroy()
         {
-            if (_telemetry.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetry);
-                _telemetry.Dispose();
-            }
-            _telemetry = default;
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _telemetryHandle))
+                vault.ReleaseBuffer(in _telemetryHandle);
+
+            _telemetryHandle = default;
         }
 
         /// <summary>
@@ -221,11 +224,39 @@ namespace Hecton8.Prologue.VFX
 
         private void EnsureNativeTelemetry()
         {
-            if (_telemetry.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
                 return;
 
-            _telemetry = new NativeArray<ReentryVfxTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ReentryVfxTelemetryEntry>[300] - fixed re-entry VFX blackbox ring - owner: OrbitalDropReentryVfxController
-            NativeMemorySentinel.RegisterNativeArray(_telemetry, nameof(OrbitalDropReentryVfxController), nameof(_telemetry), NativeAllocationLifetime.Scene);
+            if (IsVaultHandleCreated(in _telemetryHandle) &&
+                vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<ReentryVfxTelemetryEntry>.ReadOnly telemetry) &&
+                telemetry.IsCreated &&
+                telemetry.Length >= TelemetryCapacity)
+            {
+                return;
+            }
+
+            if (IsVaultHandleCreated(in _telemetryHandle))
+                vault.ReleaseBuffer(in _telemetryHandle);
+
+            _telemetryHandle = vault.EnsureGenerationHandle<ReentryVfxTelemetryEntry>(
+                TelemetryBufferId,
+                TelemetryCapacity,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void ResetTransientState()
@@ -643,7 +674,7 @@ namespace Hecton8.Prologue.VFX
                 Channel = 0,
                 Flags = 0
             };
-            GlobalSignals.Publish(in ping);
+            SignalBus<AcousticPingSignal>.TryPush(in ping);
         }
 
         private void PublishPlasmaRoar()
@@ -661,7 +692,7 @@ namespace Hecton8.Prologue.VFX
                 Channel = 0,
                 Flags = 0
             };
-            GlobalSignals.Publish(in ping);
+            SignalBus<AcousticPingSignal>.TryPush(in ping);
         }
 
         private void PublishOceanWaves()
@@ -679,7 +710,7 @@ namespace Hecton8.Prologue.VFX
                 Channel = 0,
                 Flags = 0
             };
-            GlobalSignals.Publish(in ping);
+            SignalBus<AcousticPingSignal>.TryPush(in ping);
         }
 
         private void PublishMassiveSplash()
@@ -698,7 +729,7 @@ namespace Hecton8.Prologue.VFX
                 Flags = 1,
                 Quantity = ResolveSplashDebrisQuantity()
             };
-            GlobalSignals.Publish(in debris);
+            SignalBus<DebrisSpawnSignal>.TryPush(in debris);
 
             VisorDropletSignal droplets = new VisorDropletSignal
             {
@@ -710,7 +741,7 @@ namespace Hecton8.Prologue.VFX
                 Flags = VisorDropletSignal.FlagExternalSplash,
                 Sequence = _stateSequence
             };
-            SignalBus<VisorDropletSignal>.Push(in droplets);
+            SignalBus<VisorDropletSignal>.TryPush(in droplets);
         }
 
         private void PublishStateSignal()
@@ -736,13 +767,23 @@ namespace Hecton8.Prologue.VFX
                 QualityTier = _qualityWeightByte,
                 Reserved = 0
             };
-            SignalBus<ReentryVfxStateSignal>.Push(in signal);
+            SignalBus<ReentryVfxStateSignal>.TryPush(in signal);
         }
 
         private void WriteTelemetry(byte extraFlags)
         {
-            if (!_telemetry.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in _telemetryHandle))
                 return;
+
+            if (!vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwnerSystemId, out NativeArray<ReentryVfxTelemetryEntry> telemetry))
+                return;
+
+            if (!telemetry.IsCreated || telemetry.Length < TelemetryCapacity)
+            {
+                vault.ReleaseWriteLock(in _telemetryHandle, VaultOwnerSystemId);
+                return;
+            }
 
             byte flags = extraFlags;
             if (_opacity01 >= 0.995f)
@@ -772,14 +813,28 @@ namespace Hecton8.Prologue.VFX
                 Reserved2 = 0
             };
 
-            _telemetry[_telemetryCursor] = entry;
-            _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+            try
+            {
+                telemetry[_telemetryCursor] = entry;
+                _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryHandle, VaultOwnerSystemId);
+            }
         }
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !_telemetry.IsCreated)
+            IDataVault vault = _dataVault;
+            if (_blackBoxDumped ||
+                vault == null ||
+                !IsVaultHandleCreated(in _telemetryHandle) ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<ReentryVfxTelemetryEntry>.ReadOnly telemetry) ||
+                !telemetry.IsCreated)
+            {
                 return;
+            }
 
             _blackBoxDumped = true;
             try
@@ -794,9 +849,10 @@ namespace Hecton8.Prologue.VFX
                     writer.Write(TelemetryCapacity);
                     writer.Write(_telemetryCursor);
                     writer.Write(_stateSequence);
-                    for (int i = 0; i < _telemetry.Length; i++)
+                    int length = math.min(TelemetryCapacity, telemetry.Length);
+                    for (int i = 0; i < length; i++)
                     {
-                        ReentryVfxTelemetryEntry entry = _telemetry[i];
+                        ReentryVfxTelemetryEntry entry = telemetry[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.Sequence);
                         writer.Write(entry.HydrationSequence);

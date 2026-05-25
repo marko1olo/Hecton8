@@ -1,4 +1,4 @@
-# HECTON-8 Steam Tag And Search Strategy
+﻿# HECTON-8 Steam Tag And Search Strategy
 
 Status: pre-store-page operating plan
 Owner lane: SHINOBU_81 / Steam positioning

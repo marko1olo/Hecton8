@@ -74,8 +74,8 @@ namespace Hecton8.Core.Bucketing
         {
             get
             {
-                NativeArray<int> entityBuckets = ResolveEntityBuckets();
-                return _entityCapacity > 0 && entityBuckets.IsCreated && entityBuckets.Length >= _entityCapacity;
+                NativeArray<int>.ReadOnly entityBuckets = ReadEntityBuckets();
+                return _entityCapacity > 0 && entityBuckets.Length >= _entityCapacity;
             }
         }
 
@@ -83,8 +83,7 @@ namespace Hecton8.Core.Bucketing
         {
             get
             {
-                NativeArray<int> entityBuckets = ResolveEntityBuckets();
-                return entityBuckets.IsCreated ? entityBuckets.AsReadOnly() : default;
+                return ReadEntityBuckets();
             }
         }
 
@@ -154,42 +153,42 @@ namespace Hecton8.Core.Bucketing
             _entityCapacity = capacity;
             _entityMask = capacity - 1;
 
-            _entityBucketsHandle = dataVault.GetGenerationHandle<int>(
+            _entityBucketsHandle = dataVault.EnsureGenerationHandle<int>(
                 BufferID.SimulationBucketEntityFront,
                 capacity,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.UninitializedMemory);
-            _entityBucketsWorkHandle = dataVault.GetGenerationHandle<int>(
+            _entityBucketsWorkHandle = dataVault.EnsureGenerationHandle<int>(
                 BufferID.SimulationBucketEntityWork,
                 capacity,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.UninitializedMemory);
-            _entityCostEwmaHandle = dataVault.GetGenerationHandle<float>(
+            _entityCostEwmaHandle = dataVault.EnsureGenerationHandle<float>(
                 BufferID.SimulationBucketEntityCostEwma,
                 capacity,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _bucketLoadEwmaHandle = dataVault.GetGenerationHandle<float>(
+            _bucketLoadEwmaHandle = dataVault.EnsureGenerationHandle<float>(
                 BufferID.SimulationBucketLoadEwma,
                 SimulationBucketConstants.SurvivalSlowBucketCount,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _rebalanceBucketLoadsHandle = dataVault.GetGenerationHandle<float>(
+            _rebalanceBucketLoadsHandle = dataVault.EnsureGenerationHandle<float>(
                 BufferID.SimulationBucketRebalanceLoads,
                 SimulationBucketConstants.SurvivalSlowBucketCount,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _rebalanceResultHandle = dataVault.GetGenerationHandle<SimulationBucketRebalanceResult>(
+            _rebalanceResultHandle = dataVault.EnsureGenerationHandle<SimulationBucketRebalanceResult>(
                 BufferID.SimulationBucketRebalanceResult,
                 RebalanceResultLength,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _frameStateHandle = dataVault.GetGenerationHandle<SimulationBucketFrameState>(
+            _frameStateHandle = dataVault.EnsureGenerationHandle<SimulationBucketFrameState>(
                 BufferID.SimulationBucketFrameState,
                 FrameStateLength,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _blackBoxHandle = dataVault.GetGenerationHandle<SimulationBucketBlackBoxEntry>(
+            _blackBoxHandle = dataVault.EnsureGenerationHandle<SimulationBucketBlackBoxEntry>(
                 BufferID.SimulationBucketBlackBox,
                 BlackBoxFrameCount,
                 SystemID.SimulationBucketer,
@@ -441,6 +440,11 @@ namespace Hecton8.Core.Bucketing
             return TryResolveVaultBuffer(in _entityBucketsHandle, out NativeArray<int> buffer) ? buffer : default;
         }
 
+        private NativeArray<int>.ReadOnly ReadEntityBuckets()
+        {
+            return TryReadVaultBuffer(in _entityBucketsHandle, out NativeArray<int>.ReadOnly buffer) ? buffer : default;
+        }
+
         private NativeArray<int> ResolveEntityBucketsWork()
         {
             return TryResolveVaultBuffer(in _entityBucketsWorkHandle, out NativeArray<int> buffer) ? buffer : default;
@@ -490,11 +494,25 @@ namespace Hecton8.Core.Bucketing
             return vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || handle.BufferID == 0u)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return vault.TryReadOnlyHandle(in handle, out buffer) && buffer.Length > 0;
+        }
+
         private void ReleaseHandlesOnly()
         {
             if (_rebalancePending)
             {
-                Hecton8.Core.DispatcherJobFence.TryComplete(ref _rebalanceHandle, forceComplete: true);
+                CompleteRebalanceHandle(ref _rebalanceHandle);
                 _rebalancePending = false;
             }
 
@@ -625,7 +643,7 @@ namespace Hecton8.Core.Bucketing
             if (!_rebalancePending || !_rebalanceHandle.IsCompleted)
                 return;
 
-            if (!Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _rebalanceHandle))
+            if (!TryFinalizeRebalanceHandle(ref _rebalanceHandle))
                 return;
 
             _rebalancePending = false;
@@ -658,6 +676,24 @@ namespace Hecton8.Core.Bucketing
 
                 _rebalanceSequence = _rebalanceSequence == uint.MaxValue ? 1u : _rebalanceSequence + 1u;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void CompleteRebalanceHandle(ref JobHandle handle)
+        {
+            handle.Complete();
+            handle = default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryFinalizeRebalanceHandle(ref JobHandle handle)
+        {
+            if (!handle.IsCompleted)
+                return false;
+
+            handle.Complete();
+            handle = default;
+            return true;
         }
 
         private void UpdatePacingFlags()

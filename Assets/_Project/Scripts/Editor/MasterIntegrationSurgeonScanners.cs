@@ -726,7 +726,7 @@ namespace Hecton8.Editor
 
         private static HashSet<string> CollectInterfaceNames(string[] files)
         {
-            var names = new HashSet<string>(StringComparer.Ordinal);
+            var names = new HashSet<string>(files.Length, StringComparer.Ordinal);
             for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
             {
                 string[] lines = MasterIntegrationSource.ReadAllLinesSafe(files[fileIndex]);
@@ -1127,9 +1127,8 @@ namespace Hecton8.Editor
                 devirtualization.CriticalCount +
                 rollback.CriticalCount);
             float signalTopology = ScoreFromCriticals(signal.CriticalCount);
-            float hPhi = math.pow(
-                math.max(0.000001f, dataSovereignty * cacheAlignment * compileIsolation * hotPathDiscipline * signalTopology),
-                0.2f);
+            float hPhi = FifthRoot01(
+                math.max(0.000001f, dataSovereignty * cacheAlignment * compileIsolation * hotPathDiscipline * signalTopology));
 
             MasterIntegrationReportWriter.WriteHPhi(
                 "Docs/Reports/HECTON_PHI_SCORE_FINAL.json",
@@ -1151,6 +1150,24 @@ namespace Hecton8.Editor
                 signal);
             Debug.Log("SHINOBU_140 H-Phi static score: " + hPhi.ToString("0.000000", CultureInfo.InvariantCulture));
             return hPhi;
+        }
+
+        private static float FifthRoot01(float value)
+        {
+            float target = math.saturate(value);
+            float low = 0f;
+            float high = 1f;
+            for (int i = 0; i < 16; i++)
+            {
+                float mid = (low + high) * 0.5f;
+                float mid2 = mid * mid;
+                float mid5 = mid2 * mid2 * mid;
+                bool raiseLow = mid5 < target;
+                low = math.select(low, mid, raiseLow);
+                high = math.select(mid, high, raiseLow);
+            }
+
+            return (low + high) * 0.5f;
         }
 
         private static float ScoreFromCriticals(int criticals)

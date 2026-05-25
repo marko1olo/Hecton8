@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor.Build
 {
@@ -24,7 +25,7 @@ namespace Hecton8.Editor.Build
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("[HFI_AUDIT] Android Quest XR route repair executed: Quest URP quality route + Android OpenXR provider route.");
+            H8Debug.Log("[HFI_AUDIT] Android Quest XR route repair executed: Quest URP quality route + Android OpenXR provider route.");
         }
     }
 }

@@ -86,9 +86,9 @@ namespace Hecton8.Core
         public static int LastFrameHighWaterBytes => Volatile.Read(ref _lastFrameHighWaterBytes);
         public static int OomCount => Volatile.Read(ref _oomCount);
         public static int CurrentFrameSequence => Volatile.Read(ref _frameSequence);
-        public static IntPtr GlobalArenaPtr => (IntPtr)_basePtr;
-        public static IntPtr WriteArenaPtr => (IntPtr)GetArenaBasePtr(Volatile.Read(ref _writeArenaIndex));
-        public static IntPtr ReadArenaPtr => (IntPtr)GetArenaBasePtr(Volatile.Read(ref _readArenaIndex));
+        internal static IntPtr GlobalArenaPtr => (IntPtr)_basePtr;
+        internal static IntPtr WriteArenaPtr => (IntPtr)GetArenaBasePtr(Volatile.Read(ref _writeArenaIndex));
+        internal static IntPtr ReadArenaPtr => (IntPtr)GetArenaBasePtr(Volatile.Read(ref _readArenaIndex));
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -289,12 +289,12 @@ namespace Hecton8.Core
             return TryAllocateSpan(charCount, true, out span);
         }
 
-        public static bool TryAllocateBytes(int byteCount, int alignment, out byte* ptr)
+        internal static bool TryAllocateBytes(int byteCount, int alignment, out byte* ptr)
         {
             return TryAllocateBytes(byteCount, alignment, DefaultOwnerHash, out ptr);
         }
 
-        public static bool TryAllocateBytes(int byteCount, int alignment, uint ownerHash, out byte* ptr)
+        internal static bool TryAllocateBytes(int byteCount, int alignment, uint ownerHash, out byte* ptr)
         {
             ptr = null;
             if (!TryAllocateBytesInternal(byteCount, alignment, ownerHash, out ArenaAllocation allocation))
@@ -832,7 +832,7 @@ namespace Hecton8.Core
         public readonly struct NativeArenaSlice<T> where T : unmanaged
         {
             [FieldOffset(0)]
-            public readonly void* Ptr;
+            internal readonly void* Ptr;
 
             [FieldOffset(8)]
             public readonly int Length;
@@ -849,7 +849,7 @@ namespace Hecton8.Core
             [FieldOffset(24)]
             private readonly long _pad0;
 
-            public NativeArenaSlice(void* ptr, int length, int stride, int byteCount, int frameSequence)
+            internal NativeArenaSlice(void* ptr, int length, int stride, int byteCount, int frameSequence)
             {
                 Ptr = ptr;
                 Length = length;
@@ -880,7 +880,7 @@ namespace Hecton8.Core
         internal readonly struct ArenaAllocation
         {
             [FieldOffset(0)]
-            public readonly void* Ptr;
+            internal readonly void* Ptr;
 
             [FieldOffset(8)]
             public readonly int ByteCount;
@@ -897,7 +897,7 @@ namespace Hecton8.Core
             [FieldOffset(24)]
             private readonly long _pad0;
 
-            public ArenaAllocation(void* ptr, int byteCount, int arenaIndex, int slabIndex, int frameSequence)
+            internal ArenaAllocation(void* ptr, int byteCount, int arenaIndex, int slabIndex, int frameSequence)
             {
                 Ptr = ptr;
                 ByteCount = byteCount;

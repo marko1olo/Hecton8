@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using Hecton.UI.MainMenu;
 using Hecton8.UI;
@@ -26,6 +27,8 @@ namespace Hecton8.Editor
         private static readonly Color ValueColor = new Color(0.92f, 0.98f, 1f, 1f);
         private static readonly Color AccentColor = new Color(0.24f, 0.77f, 0.86f, 1f);
         private static readonly Color ToggleOnColor = new Color(0.18f, 0.78f, 0.64f, 1f);
+        private static readonly List<GameObject> SceneRootScratch = new List<GameObject>(16);
+        private static readonly List<Component> ComponentScratch = new List<Component>(8);
 
         [MenuItem("Hecton/UI/Rebuild Main Menu Settings Panel", priority = 231)]
         private static void RebuildMainMenuSettingsPanel()
@@ -563,23 +566,59 @@ namespace Hecton8.Editor
 
         private static Object FindComponentByTypeName(string gameObjectName, string fullTypeName)
         {
-            GameObject target = GameObject.Find(gameObjectName);
+            GameObject target = FindLoadedSceneGameObject(gameObjectName);
             if (target == null)
             {
                 throw new MissingReferenceException("Required GameObject not found: " + gameObjectName);
             }
 
-            Component[] components = target.GetComponents<Component>();
-            for (int i = 0; i < components.Length; i++)
+            ComponentScratch.Clear();
+            target.GetComponents(ComponentScratch);
+            Object result = null;
+            for (int i = 0; i < ComponentScratch.Count; i++)
             {
-                Component component = components[i];
+                Component component = ComponentScratch[i];
                 if (component != null && component.GetType().FullName == fullTypeName)
                 {
-                    return component;
+                    result = component;
+                    break;
                 }
             }
 
+            ComponentScratch.Clear();
+            if (result != null)
+                return result;
+
             throw new MissingReferenceException("Required component not found: " + fullTypeName);
+        }
+
+        private static GameObject FindLoadedSceneGameObject(string gameObjectName)
+        {
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                SceneRootScratch.Clear();
+                scene.GetRootGameObjects(SceneRootScratch);
+                for (int rootIndex = 0; rootIndex < SceneRootScratch.Count; rootIndex++)
+                {
+                    GameObject root = SceneRootScratch[rootIndex];
+                    if (root == null)
+                        continue;
+
+                    Transform found = FindDeepChild(root.transform, gameObjectName);
+                    if (found != null)
+                    {
+                        SceneRootScratch.Clear();
+                        return found.gameObject;
+                    }
+                }
+            }
+
+            SceneRootScratch.Clear();
+            return null;
         }
 
         private static Transform FindDeepChild(Transform parent, string childName)

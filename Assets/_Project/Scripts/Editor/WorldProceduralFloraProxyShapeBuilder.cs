@@ -610,12 +610,10 @@ namespace Hecton8.EditorTools
             child.transform.localRotation = localRotation;
             child.transform.localScale = localScale;
 
-            Collider collider = child.GetComponent<Collider>();
-            if (collider != null)
+            if (child.TryGetComponent(out Collider collider))
                 UnityEngine.Object.DestroyImmediate(collider);
 
-            Renderer renderer = child.GetComponent<Renderer>();
-            if (renderer != null)
+            if (child.TryGetComponent(out Renderer renderer))
                 renderer.sharedMaterial = material;
         }
     }

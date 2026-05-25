@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -23,7 +24,6 @@ namespace Hecton8.World
         private const Allocator DataVaultExemptAbyssalNavGraphAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptAbyssalPathAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptAbyssalNodeAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptAbyssalTelemetryAllocator = Allocator.Persistent;
 
         public bool TryGetLatestAbyssalPathPayload(out NativeArray<Vector3>.ReadOnly path, out int count)
         {
@@ -1144,20 +1144,47 @@ namespace Hecton8.World
             RecordAbyssalPathTelemetry(funnelMs, rawPathCount, _abyssalPathCount, start, end, finite);
         }
 
-        private void EnsureAbyssalPathTelemetry()
+        private bool EnsureAbyssalPathTelemetry()
         {
-            if (_abyssalPathTelemetry.IsCreated)
-                return;
+            IDataVault vault = CacheAbyssalPathTelemetryVaultCold();
+            if (vault == null)
+                return false;
 
-            _abyssalPathTelemetry = new NativeArray<AbyssalPathTelemetryEntry>(
+            if (IsAbyssalPathTelemetryHandleCreated() &&
+                vault.TryReadOnlyHandle(in _abyssalPathTelemetryHandle, out NativeArray<AbyssalPathTelemetryEntry>.ReadOnly telemetry) &&
+                telemetry.IsCreated &&
+                telemetry.Length >= AbyssalPathTelemetryFrameCount)
+            {
+                return true;
+            }
+
+            if (IsAbyssalPathTelemetryHandleCreated())
+                vault.ReleaseBuffer(in _abyssalPathTelemetryHandle);
+
+            _abyssalPathTelemetryHandle = vault.EnsureGenerationHandle<AbyssalPathTelemetryEntry>(
+                AbyssalPathTelemetryBufferId,
                 AbyssalPathTelemetryFrameCount,
-                DataVaultExemptAbyssalTelemetryAllocator,
+                AbyssalPathTelemetryOwner,
                 NativeArrayOptions.ClearMemory);
-            RegisterTrackedNativeArray(_abyssalPathTelemetry, nameof(_abyssalPathTelemetry));
             _abyssalPathTelemetryCursor = 0;
             _abyssalPathTelemetryWrittenCount = 0;
             _abyssalPathTelemetrySequence = 0;
             _abyssalPathTelemetryDumpedForFault = false;
+            return IsAbyssalPathTelemetryHandleCreated();
+        }
+
+        private IDataVault CacheAbyssalPathTelemetryVaultCold()
+        {
+            if (_abyssalPathTelemetryVault == null)
+                _abyssalPathTelemetryVault = GlobalRegistry.DataVault;
+
+            return _abyssalPathTelemetryVault;
+        }
+
+        private bool IsAbyssalPathTelemetryHandleCreated()
+        {
+            return _abyssalPathTelemetryHandle.BufferID != 0u &&
+                   _abyssalPathTelemetryHandle.Generation != 0u;
         }
 
         private static float ResolveAbyssalPathElapsedMs(long elapsedTicks)
@@ -1176,7 +1203,9 @@ namespace Hecton8.World
             Vector3 end,
             bool finite)
         {
-            EnsureAbyssalPathTelemetry();
+            if (!EnsureAbyssalPathTelemetry())
+                return;
+
             if (outputCount <= 0 &&
                 TryResolveAbyssalRawPathTelemetry(rawCount, out Vector3 rawStart, out Vector3 rawEnd, out bool rawFinite))
             {
@@ -1193,30 +1222,46 @@ namespace Hecton8.World
             if (!finite)
                 flags |= 4u;
 
-            _abyssalPathTelemetry[_abyssalPathTelemetryCursor] = new AbyssalPathTelemetryEntry
+            IDataVault vault = _abyssalPathTelemetryVault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _abyssalPathTelemetryHandle, AbyssalPathTelemetryOwner, out NativeArray<AbyssalPathTelemetryEntry> telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length < AbyssalPathTelemetryFrameCount)
             {
-                Frame = Time.frameCount,
-                RawCount = rawCount,
-                OutputCount = outputCount,
-                PortalLookAhead = _lastAbyssalPathPortalLookAhead,
-                MaxDdaSamples = _lastAbyssalPathMaxSamples,
-                FunnelMs = funnelMs,
-                StartX = start.x,
-                StartY = start.y,
-                StartZ = start.z,
-                EndX = end.x,
-                EndY = end.y,
-                EndZ = end.z,
-                Flags = flags,
-                Sequence = _abyssalPathTelemetrySequence
-            };
+                return;
+            }
 
-            _abyssalPathTelemetryCursor++;
-            if (_abyssalPathTelemetryCursor >= AbyssalPathTelemetryFrameCount)
-                _abyssalPathTelemetryCursor = 0;
-            if (_abyssalPathTelemetryWrittenCount < AbyssalPathTelemetryFrameCount)
-                _abyssalPathTelemetryWrittenCount++;
-            _abyssalPathTelemetrySequence++;
+            try
+            {
+                telemetry[_abyssalPathTelemetryCursor] = new AbyssalPathTelemetryEntry
+                {
+                    Frame = Time.frameCount,
+                    RawCount = rawCount,
+                    OutputCount = outputCount,
+                    PortalLookAhead = _lastAbyssalPathPortalLookAhead,
+                    MaxDdaSamples = _lastAbyssalPathMaxSamples,
+                    FunnelMs = funnelMs,
+                    StartX = start.x,
+                    StartY = start.y,
+                    StartZ = start.z,
+                    EndX = end.x,
+                    EndY = end.y,
+                    EndZ = end.z,
+                    Flags = flags,
+                    Sequence = _abyssalPathTelemetrySequence
+                };
+
+                _abyssalPathTelemetryCursor++;
+                if (_abyssalPathTelemetryCursor >= AbyssalPathTelemetryFrameCount)
+                    _abyssalPathTelemetryCursor = 0;
+                if (_abyssalPathTelemetryWrittenCount < AbyssalPathTelemetryFrameCount)
+                    _abyssalPathTelemetryWrittenCount++;
+                _abyssalPathTelemetrySequence++;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _abyssalPathTelemetryHandle, AbyssalPathTelemetryOwner);
+            }
 
             if (funnelMs > 0.1f)
                 GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathOverBudgetHash, AbyssalPathTelemetryContextHash, funnelMs);
@@ -1247,7 +1292,7 @@ namespace Hecton8.World
 
         private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
         {
-            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return IsFiniteAup(in originAup);
         }
 
@@ -1293,8 +1338,15 @@ namespace Hecton8.World
 
         private void DumpAbyssalPathTelemetry(uint reasonHash)
         {
-            if (_abyssalPathTelemetryDumpedForFault || !_abyssalPathTelemetry.IsCreated)
+            IDataVault vault = _abyssalPathTelemetryVault;
+            if (_abyssalPathTelemetryDumpedForFault ||
+                vault == null ||
+                !IsAbyssalPathTelemetryHandleCreated() ||
+                !vault.TryReadOnlyHandle(in _abyssalPathTelemetryHandle, out NativeArray<AbyssalPathTelemetryEntry>.ReadOnly telemetry) ||
+                !telemetry.IsCreated)
+            {
                 return;
+            }
 
             _abyssalPathTelemetryDumpedForFault = true;
             try
@@ -1320,7 +1372,7 @@ namespace Hecton8.World
                         if (entryIndex >= AbyssalPathTelemetryFrameCount)
                             entryIndex -= AbyssalPathTelemetryFrameCount;
 
-                        AbyssalPathTelemetryEntry entry = _abyssalPathTelemetry[entryIndex];
+                        AbyssalPathTelemetryEntry entry = telemetry[entryIndex];
                         writer.Write(entry.Frame);
                         writer.Write(entry.RawCount);
                         writer.Write(entry.OutputCount);
@@ -1355,7 +1407,10 @@ namespace Hecton8.World
             DisposeNativeArray(ref _nativeMemory.AbyssalPathHeapNodesNative, disposeHandle);
             DisposeNativeArray(ref _nativeMemory.AbyssalPathHeapPositionsNative, disposeHandle);
             DisposeNativeArray(ref _nativeMemory.PredatorFearNodesSnapshotNative, disposeHandle);
-            DisposeNativeArray(ref _abyssalPathTelemetry);
+            IDataVault telemetryVault = _abyssalPathTelemetryVault;
+            if (telemetryVault != null && IsAbyssalPathTelemetryHandleCreated())
+                telemetryVault.ReleaseBuffer(in _abyssalPathTelemetryHandle);
+            _abyssalPathTelemetryHandle = default;
             DisposeNativeList(ref _nativeMemory.AbyssalPathRawResultNative, disposeHandle, nameof(_nativeMemory.AbyssalPathRawResultNative));
             DisposeNativeList(ref _nativeMemory.AbyssalPathResultNative, disposeHandle, nameof(_nativeMemory.AbyssalPathResultNative));
             _abyssalPathHandle = default;

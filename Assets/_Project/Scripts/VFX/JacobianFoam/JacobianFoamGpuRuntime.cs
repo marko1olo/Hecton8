@@ -10,7 +10,7 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.VFX
 {
-    public sealed class JacobianFoamGpuRuntime : MonoBehaviour, ILateFrameTickable
+    public sealed class JacobianFoamGpuRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int FallbackThreadGroupSizeX = 8;
         private const int FallbackThreadGroupSizeY = 8;
@@ -96,6 +96,7 @@ namespace Hecton8.VFX
         private uint _lastVisualClockFrameId = uint.MaxValue;
         private bool _clearHistoryNextDispatch;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
         private bool _vaultReady;
         private bool _hasPreparedPayload;
         private RenderTexture _activeFoamTexture;
@@ -121,27 +122,55 @@ namespace Hecton8.VFX
 
         private void OnEnable()
         {
-            _instanceId = GetInstanceID();
-            _vault = GlobalRegistry.DataVault;
+            _instanceId = GetEntityId().GetHashCode();
+            CacheDataVaultCold();
             CacheRenderContextCameraIfMissing();
             ResolveKernels();
             EnsureVaultState(true);
             EnsureGpuState(JacobianFoamContracts.ResolveFoamResolution(0.5f, _minResolution, _maxResolution));
             _visualClockSeconds = 0f;
             _lastVisualClockFrameId = uint.MaxValue;
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            TryRegisterHotSwapListener();
+            TryRegisterLateFrameTickable();
         }
 
         private void OnDisable()
         {
             FlushDeferredTelemetryDump();
-            if (_registeredLateFrame)
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrame = false;
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
             _vaultReady = false;
             ClearPreparedPayload();
             DisposeGpuState();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null || !isActiveAndEnabled)
+                    return;
+
+                TryUnregisterLateFrameTickable();
+                TryRegisterLateFrameTickable();
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            _vault = currentService as IDataVault;
+            _vaultReady = false;
+            _paramsHandle = default;
+            _tuningHandle = default;
+            _wakeHandle = default;
+            _telemetryHandle = default;
+
+            if (isActiveAndEnabled && _vault != null)
+                EnsureVaultState(true);
         }
 
         public void LateFrameTick()
@@ -221,6 +250,49 @@ namespace Hecton8.VFX
         {
             payload = _preparedPayload;
             return IsPayloadValid(in payload, _hasPreparedPayload);
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_vault != null)
+                return _vault;
+
+            _vault = GlobalRegistry.DataVault;
+            return _vault;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         public static bool TryReadPublishedRenderGraphPayload(out FoamRenderGraphPayload payload)
@@ -757,7 +829,7 @@ namespace Hecton8.VFX
         private static float2 ResolveCameraScrollOffset(Camera camera, float textureWorldSizeMeters)
         {
             Vector3 runtimePosition = camera != null ? camera.transform.position : Vector3.zero;
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return JacobianFoamContracts.ResolveWrappedScrollOffset(new double2(runtimePosition.x, runtimePosition.z), textureWorldSizeMeters);
 

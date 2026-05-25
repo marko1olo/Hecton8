@@ -16,14 +16,15 @@ namespace Hecton8.Ecosystem
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6235)]
     [AddComponentMenu("Hecton8/Ecosystem/Fauna Genetics Manager")]
-    public sealed class FaunaGeneticsManager : MonoBehaviour, ISaveable
+    public sealed class FaunaGeneticsManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
     {
         private const int FallbackWorldSeed = unchecked((int)0x51ED270B);
-        private const double TraitPositionBucketsPerMeter = 4d;
 
         [SerializeField] private int _worldSeed;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
+        private ISaveService _saveService;
 
         /// <summary>Persisted deterministic world seed used by ecosystem systems.</summary>
         public int WorldSeed => _worldSeed;
@@ -56,18 +57,24 @@ namespace Hecton8.Ecosystem
             if (_duplicateServiceSuppressed)
                 return;
 
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
+            CacheSaveServiceCold();
+            TryRegisterHotSwapListener();
+            _saveService?.Register(this);
         }
 
         private void OnDisable()
         {
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
+            _saveService?.Unregister(this);
+            TryUnregisterHotSwapListener();
+            _saveService = null;
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
+            _saveService?.Unregister(this);
+            TryUnregisterHotSwapListener();
+            _saveService = null;
             TryUnregisterService();
         }
 
@@ -101,6 +108,45 @@ namespace Hecton8.Ecosystem
 
             GlobalRegistry.UnregisterFaunaGeneticsRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void CacheSaveServiceCold()
+        {
+            _saveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            if (Application.isPlaying && previousService is ISaveService previousSave)
+                previousSave.Unregister(this);
+
+            _saveService = currentService as ISaveService;
+
+            if (Application.isPlaying && _saveService != null && isActiveAndEnabled && !_duplicateServiceSuppressed)
+                _saveService.Register(this);
         }
 
         /// <summary>
@@ -196,26 +242,19 @@ namespace Hecton8.Ecosystem
             unchecked
             {
                 bool hasAupProof = TryResolveAupFromRuntimeOrigin(spawnPosition, out Hecton8.World.AbsoluteUniversePosition spawnAup);
-                uint hash = Mix((uint)_worldSeed);
-                hash = Mix(hash ^ (uint)biomeIndex * 0x85EBCA6Bu);
+                uint speciesHash = HashString(archetype != null ? archetype.creatureId : string.Empty);
                 if (hasAupProof)
                 {
-                    hash = Mix(hash ^ FoldInt64(spawnAup.GridX));
-                    hash = Mix(hash ^ FoldInt64(spawnAup.GridY));
-                    hash = Mix(hash ^ FoldInt64(spawnAup.GridZ));
-                    hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalX));
-                    hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalY));
-                    hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalZ));
-                }
-                else
-                {
-                    float3 safeSpawn = new float3(spawnPosition.x, spawnPosition.y, spawnPosition.z);
-                    hash = Mix(hash ^ math.asuint(math.select(0f, safeSpawn.x, math.isfinite(safeSpawn.x))));
-                    hash = Mix(hash ^ math.asuint(math.select(0f, safeSpawn.y, math.isfinite(safeSpawn.y))));
-                    hash = Mix(hash ^ math.asuint(math.select(0f, safeSpawn.z, math.isfinite(safeSpawn.z))));
+                    return FaunaGenome64.BuildAupSeed(
+                        in spawnAup,
+                        (uint)_worldSeed,
+                        speciesHash,
+                        (uint)biomeIndex);
                 }
 
-                hash = Mix(hash ^ HashString(archetype != null ? archetype.creatureId : string.Empty));
+                uint hash = Mix((uint)_worldSeed);
+                hash = Mix(hash ^ (uint)biomeIndex * 0x85EBCA6Bu);
+                hash = Mix(hash ^ speciesHash);
                 return hash;
             }
         }
@@ -227,7 +266,7 @@ namespace Hecton8.Ecosystem
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            Hecton8.World.AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -235,22 +274,6 @@ namespace Hecton8.Ecosystem
                 in originAup,
                 new double3(localRuntime.x, localRuntime.y, localRuntime.z));
             return positionAup.IsFinite();
-        }
-
-        private static uint FoldInt64(long value)
-        {
-            unchecked
-            {
-                ulong bits = (ulong)value;
-                return (uint)(bits ^ (bits >> 32));
-            }
-        }
-
-        private static uint QuantizeAupLocal(double value)
-        {
-            double scaled = value * TraitPositionBucketsPerMeter;
-            int rounded = scaled >= 0d ? (int)(scaled + 0.5d) : (int)(scaled - 0.5d);
-            return unchecked((uint)rounded);
         }
 
         private int GenerateInitialSeed()
@@ -266,9 +289,7 @@ namespace Hecton8.Ecosystem
                 }
             }
 
-            long ticks = DateTime.UtcNow.Ticks;
-            int seed = unchecked((int)(ticks ^ (ticks >> 32)));
-            return seed != 0 ? seed : FallbackWorldSeed;
+            return FallbackWorldSeed;
         }
 
         private static uint HashString(string value)

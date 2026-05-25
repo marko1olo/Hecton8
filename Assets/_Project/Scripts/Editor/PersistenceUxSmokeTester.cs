@@ -60,7 +60,7 @@ namespace Hecton8.Dev
                 SourceIndex(thumbnailSystem, "ReleaseWriteInProgress();") < SourceIndex(thumbnailSystem, "CompleteRequest(completion);") &&
                 ContainsAll(captureFeature, "RequestAsyncReadback", "SaveThumbnailSystem.ReadbackCompletedCallback") &&
                 SourceIndex(saveManager, "SaveThumbnailSystem.CaptureThumbnailForSave(slotName, slotIndex, operationId)") <
-                SourceIndex(saveManager, "SaveEvents.RaiseSaveStarted(slotName);");
+                SourceIndex(saveManager, "SaveEvents.TryRaiseSaveStarted(SaveEvents.ComputeSlotHash(slotName));");
 
             bool loadingStagePass =
                 ContainsAll(loadingScreen, "LoadingPipelineStage", "Paging Sectors...", "Hydrating Entities...", "Building NavGrid...", "CharBufferPool.TryAcquire", "SetCharArray", "WritePercent") &&
@@ -70,7 +70,7 @@ namespace Hecton8.Dev
                 ContainsAll(saveManager, "TryApplySafeAupSnapOnLoad(data)", "AbsoluteUniversePosition.FromRuntimePosition", "HectonFloatingOrigin.BeginSafeTeleportProtocol");
 
             bool savingHudPass =
-                ContainsAll(saveManager, "SaveEvents.RaiseMappedWriteStarted(slotName);") &&
+                ContainsAll(saveManager, "SaveEvents.TryRaiseMappedWriteStarted(SaveEvents.ComputeSlotHash(slotName));") &&
                 ContainsAll(suitHud, "ISaveEventListener", "SavingProgressRoot", "SaveEventType.MappedWriteStarted", "SaveEventType.SaveCompleted", "_savingProgressTargetAlpha", "DataRecPulseShaderName") &&
                 ContainsAll(dataRecPulseShader, "Shader \"Hecton8/UI/DataRecPulse\"", "sin(_Time.y * _PulseSpeed)") &&
                 ContainsAll(suitHud, "SavingProgressMinimumVisibleSeconds", "_savingProgressHidePending", "BeginSavingProgressMappedWrite", "EmitSavingProgressHapticPulse", "ToolHapticsRuntime.EnqueueSinusoidalCommand", "RequestSavingProgressHide");
@@ -136,13 +136,13 @@ namespace Hecton8.Dev
             bool saveEventOverflowTelemetryPass =
                 ContainsAll(saveEvents, "DroppedEventCount", "ReportOverflow(type);", "GlobalTelemetryBus.PublishPerformanceWarning", "SaveEventOverflowWarningHash", "SaveEventQueueContextHash", "ResolveKnownSlotIndex", "UnknownSlotNumber") &&
                 ContainsAll(saveEvents, "DroppedListenerRegistrationCount", "ReportListenerRegistrationOverflow", "SaveEventListenerOverflowWarningHash", "TryRegister(listener)") &&
-                ContainsAll(saveEvents, "TruncatedPayloadCount", "ReportPayloadTruncated", "SaveEventPayloadTruncatedWarningHash", "CopyFromTruncated", "CopySlotName(slot)", "CopyMessage(message)") &&
-                ContainsAll(saveEvents, "ManualSlotCount = 3", "ResolveManualSlotName", "TryResolveKnownSlotName", "if (slotName.Length <= 0)", "resolvedSlotName = Slot0Name", "resolvedSlotName = Slot2Name", "return false;") &&
+                ContainsAll(saveEvents, "TruncatedPayloadCount", "ReportPayloadTruncated", "SaveEventPayloadTruncatedWarningHash", "TryReserveMessageSlot", "MessageSlotCapacity", "MessageSlot") &&
+                ContainsAll(saveEvents, "ManualSlotCount = 3", "ResolveManualSlotName", "ResolveManualSlotHash", "TryResolveKnownSlotName", "slotHash == Slot0Hash", "resolvedSlotName = Slot2Name", "return false;") &&
                 ContainsAll(saveEvents, "private static void DrainQueueWithoutBudget", "silent stale-event cleanup must not steal shared LateFrame dispatch budget") &&
                 ContainsAll(saveEvents, "NativeMemorySentinel.RegisterNativeQueue", "NativeAllocationLifetime.Session") &&
-                ContainsAll(pauseMenuController, "_cachedUpperSlotDisplayNames", "ClearUpperSlotDisplayCache", "SaveEvents.ResolveKnownSlotIndex(slotName)") &&
-                ContainsAll(pauseMenuController, "NormalizeSaveSlots()", "saveSlots = { \"slot_0\", \"slot_1\", \"slot_2\" }", "new string[SaveEvents.ManualSlotCount]") &&
-                ContainsAll(pauseMenuController, "CopyFixedStringUpperAsciiToBuffer(in error, buffer, ref cursor)", "CopyStringToBuffer(_cachedUnknownErrorStatus, buffer, cursor)") &&
+                ContainsAll(pauseMenuController, "ResolveConfiguredSaveSlotName", "ResolveSlotDisplayName", "SaveEvents.ResolveKnownSlotIndex(slotName)") &&
+                ContainsAll(pauseMenuController, "NormalizeSaveSlots()", "saveSlots = { \"slot_0\", \"slot_1\", \"slot_2\" }", "ResolveConfiguredSaveSlotName(i)") &&
+                ContainsAll(pauseMenuController, "CopyUpperAsciiStringToBuffer(error, buffer, ref cursor)", "CopyStringToBuffer(_cachedUnknownErrorStatus, buffer, cursor)") &&
                 ContainsAll(mainMenuController, "SlotCount = SaveEvents.ManualSlotCount", "SaveEvents.ResolveManualSlotName(0)", "SaveEvents.ResolveManualSlotName(1)", "SaveEvents.ResolveManualSlotName(2)") &&
                 ContainsAll(saveThumbnailCapture, "public void CaptureThumbnail(string slotName)", "SaveManager.TryResolveSafeSlotName(slotName, out string safeSlotName)", "SaveThumbnailSystem.CaptureThumbnail(safeSlotName, captureCamera);") &&
                 SourceIndex(saveThumbnailCapture, "SaveEvents.Register(this)") == int.MaxValue &&
@@ -155,7 +155,9 @@ namespace Hecton8.Dev
                 SourceIndex(saveEvents, ".ToString()") == int.MaxValue &&
                 SourceIndex(saveEvents, "Substring(") == int.MaxValue &&
                 SourceIndex(saveEvents, "SlotName = string.IsNullOrEmpty(slot)") == int.MaxValue &&
-                SourceIndex(saveEvents, "Message = string.IsNullOrEmpty(message)") == int.MaxValue;
+                SourceIndex(saveEvents, "Message = string.IsNullOrEmpty(message)") == int.MaxValue &&
+                SourceIndex(saveEvents, "FixedString64Bytes SlotName") == int.MaxValue &&
+                SourceIndex(saveEvents, "FixedString128Bytes Message") == int.MaxValue;
 
             bool saveEventDispatchMutationPass =
                 ContainsAll(saveEvents, "ListenerCapacity = 16", "_deferredRegisterListeners", "_deferredUnregisterListeners") &&
@@ -191,7 +193,7 @@ namespace Hecton8.Dev
             bool saveSlotPathGuardPass =
                 ContainsAll(saveManager, "MaxSaveSlotNameLength = 48", "InvalidSlotNameReason = \"Invalid save slot name.\"", "InvalidSlotFileStem = \"slot_invalid\"") &&
                 ContainsAll(saveManager, "TryResolveSafeSlotName", "ResolveSafeSlotFileStem", "IsReservedManualSlotPattern", "StringComparison.OrdinalIgnoreCase", "!SaveEvents.IsKnownManualSlotName(slotName)", "safeSlotName = slotName;") &&
-                ContainsAll(saveManager, "SaveEvents.RaiseSaveFailed(string.Empty, InvalidSlotNameReason);", "SaveEvents.RaiseLoadFailed(string.Empty, InvalidSlotNameReason);") &&
+                ContainsAll(saveManager, "SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);", "SaveEvents.TryRaiseLoadFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);") &&
                 ContainsAll(saveManager, "GetPrimarySaveFilePath(string slotName) => $\"{ResolveSafeSlotFileStem(slotName)}.sav\"", "GetTempSaveFilePath(string slotName) => $\"{ResolveSafeSlotFileStem(slotName)}.sav.tmp\"", "GetDiagnosticSaveFilePath(string slotName) => $\"{ResolveSafeSlotFileStem(slotName)}.diag\"") &&
                 ContainsAll(saveManager, "return TryResolveSafeSlotName(slotName, out slotName);", "BuildSaveSlotInfoInternal(string slotName)") &&
                 CountOccurrences(saveManager, "if (!TryResolveSafeSlotName(slotName, out slotName))") >= 7 &&
@@ -414,10 +416,9 @@ namespace Hecton8.Dev
             if (!Directory.Exists(sourceRoot))
                 return false;
 
-            string[] files = Directory.GetFiles(sourceRoot, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(sourceRoot, "*.cs", SearchOption.AllDirectories))
             {
-                if (File.ReadAllText(files[i]).IndexOf(value, StringComparison.Ordinal) >= 0)
+                if (File.ReadAllText(file).IndexOf(value, StringComparison.Ordinal) >= 0)
                     return true;
             }
 

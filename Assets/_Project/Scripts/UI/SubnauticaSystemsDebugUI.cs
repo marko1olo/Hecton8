@@ -27,7 +27,6 @@ namespace Hecton8.UI
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
         private static SubnauticaSystemsDebugUI s_activeRuntimeInstance;
         private static bool s_isBootstrappingRuntimeOverlay;
-        [ThreadStatic] private static char[] s_runtimeSnapshotNumberBuffer;
 
         internal static SubnauticaSystemsDebugUI ActiveRuntimeInstance => s_activeRuntimeInstance;
 
@@ -217,7 +216,7 @@ namespace Hecton8.UI
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     if (logLifecycleDiagnostics)
-                        Debug.Log($"[SubnauticaSystemsDebugUI] Destroying duplicate runtime owner '{name}' id={EntityId.ToULong(GetEntityId())} active={gameObject.activeSelf}.", this);
+                        Hecton8.Core.H8Debug.Log("[SubnauticaSystemsDebugUI] Destroying duplicate runtime owner.", this);
 #endif
                     Destroy(gameObject);
                     return;
@@ -234,7 +233,7 @@ namespace Hecton8.UI
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (logLifecycleDiagnostics)
-                Debug.Log($"[SubnauticaSystemsDebugUI] Awake '{name}' id={EntityId.ToULong(GetEntityId())} persist={persistAcrossSceneLoads}.", this);
+                Hecton8.Core.H8Debug.Log("[SubnauticaSystemsDebugUI] Awake.", this);
 #endif
             QueueRuntimeBootstrap(forceManagerResolve: true);
         }
@@ -243,7 +242,7 @@ namespace Hecton8.UI
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying && logLifecycleDiagnostics)
-                Debug.Log($"[SubnauticaSystemsDebugUI] OnEnable '{name}' id={EntityId.ToULong(GetEntityId())}.", this);
+                Hecton8.Core.H8Debug.Log("[SubnauticaSystemsDebugUI] OnEnable.", this);
 #endif
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             TryRegisterHotSwapListener();
@@ -268,7 +267,7 @@ namespace Hecton8.UI
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying && logLifecycleDiagnostics)
-                Debug.Log($"[SubnauticaSystemsDebugUI] OnDestroy '{name}' id={EntityId.ToULong(GetEntityId())}.", this);
+                Hecton8.Core.H8Debug.Log("[SubnauticaSystemsDebugUI] OnDestroy.", this);
 #endif
             if (s_activeRuntimeInstance == this)
                 s_activeRuntimeInstance = null;
@@ -836,7 +835,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI CreateLabel(string name, string text, Vector2 anchoredPos, Vector2 size, float fontSize, FontStyles fontStyle)
         {
             TextMeshProUGUI label = CreateText(name, anchoredPos, size, fontSize, fontStyle);
-            label.SetText(text);
+            TmpTextNoAlloc.Set(label, text);
             label.color = new Color(0.50f, 0.86f, 0.92f, 0.82f);
             return label;
         }
@@ -1242,41 +1241,8 @@ namespace Hecton8.UI
             _runtimeSnapshotScene = activeScene.name;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(
-                "[SubnauticaSystemsDebugUI] runtime-snapshot " +
-                "scene=" + activeScene.name +
-                " ticks=" + debugTickCounts +
-                " renderScale=" + FormatSnapshotNumber(scaler.CurrentRenderScale, "0.00") +
-                " pressure=" + pressureLabel +
-                " faunaBiome=" + faunaBiome +
-                " faunaBias=" + faunaBias +
-                " faunaCaps=" +
-                FormatSnapshotNumber(fauna.DebugEffectiveSpawnsPerTick, "0") + "/" +
-                FormatSnapshotNumber(fauna.DebugEffectiveBiomeMaxCount, "0") + "/" +
-                FormatSnapshotNumber(fauna.DebugEffectiveGlobalMaxCount, "0") +
-                " tension=" + FormatSnapshotNumber(music.CurrentTension01, "0.00") +
-                " musicProfile=" + (music.ActiveResolvedProfile != null ? music.ActiveResolvedProfile.name : MissingLabel) +
-                " soundscape=" + ResolveSoundscapeLabel(soundscape.CurrentTier) +
-                " underwater=LIVE HUD" +
-                " camera=LIVE HUD" +
-                " stress=" + (enableStressTest ? EnabledLabel : DisabledLabel),
-                this);
+            Hecton8.Core.H8Debug.Log("[SubnauticaSystemsDebugUI] runtime snapshot captured.", this);
 #endif
-        }
-
-        private static string FormatSnapshotNumber(float value, string format)
-        {
-            char[] buffer = s_runtimeSnapshotNumberBuffer;
-            if (buffer == null || buffer.Length < 32)
-            {
-                buffer = new char[32]; // COLD ALLOC: char[32] — runtime snapshot numeric staging buffer — owner: SubnauticaSystemsDebugUI
-                s_runtimeSnapshotNumberBuffer = buffer;
-            }
-
-            if (!ZeroGCFormatter.TryWriteFloat(value, format.AsSpan(), buffer.AsSpan(), out int length))
-                length = 0;
-
-            return new string(buffer, 0, length);
         }
 
         private bool IsSnapshotRuntimeReady(

@@ -9,6 +9,7 @@ using Hecton.Localization;
 using Hecton8.Atmosphere;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Unity.Burst;
@@ -47,8 +48,8 @@ namespace Hecton8.Power
         private const float MinimumSubmergedOverloadHeatJoules = 3200f;
         private const float HydrogenPocketUnitsPerMegajoule = 0.04f;
         private const float OxygenPocketUnitsPerMegajoule = 0.02f;
-        private const float BrownoutPotentialThreshold = LogisticsNetworkGraph.JacobiPowerGridSolverJob.BrownoutPotentialThreshold;
-        private const float FloodedShortCircuitPotentialThreshold = LogisticsNetworkGraph.JacobiPowerGridSolverJob.FloodedShortCircuitPotentialThreshold;
+        private const float BrownoutPotentialThreshold = LogisticsNetworkGraph.TwoPassPowerGridSolverJob.BrownoutPotentialThreshold;
+        private const float FloodedShortCircuitPotentialThreshold = LogisticsNetworkGraph.TwoPassPowerGridSolverJob.FloodedShortCircuitPotentialThreshold;
         private const string NativeMemoryOwner = nameof(PowerGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly uint ThermalDissipationDeferredWarningHash =
@@ -990,12 +991,12 @@ namespace Hecton8.Power
                 TargetId = nodeId > ushort.MaxValue ? ushort.MaxValue : (ushort)nodeId,
                 Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<CombatDamageSignal>.TryPush(in signal);
         }
 
         private void PublishNodeBrownoutSignal(uint nodeId, float supplyRatio, int priority)
         {
-            Hecton8.Core.Contracts.Signals.BrownoutSignal signal = new Hecton8.Core.Contracts.Signals.BrownoutSignal
+            BrownoutSignal signal = new BrownoutSignal
             {
                 NetworkId = unchecked((uint)math.max(0, Id)),
                 NodeId = nodeId,
@@ -1005,7 +1006,7 @@ namespace Hecton8.Power
                 Priority = (byte)math.clamp(priority, 0, byte.MaxValue),
                 Flags = 1
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<BrownoutSignal>.TryPush(in signal);
         }
 
         private static void ApplySubmergedOverloadFluidHeating(in OverloadThermalBinding binding, float overloadHeatWatts)
@@ -1054,7 +1055,8 @@ namespace Hecton8.Power
             if (directedEdgeCount <= 0)
                 return false;
 
-            int qualityIterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(PowerSolverConvergenceMath.AuthoritativeQualityWeight);
+            float qualityWeight = PowerGridManager.ResolveMathLodQualityWeight();
+            int qualityIterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(qualityWeight);
             int iterationBudget = math.clamp(_cableThermalIterationBudget, 1, qualityIterationBudget);
             NativeArray<float> inputTemperatures = _thermalTemperatureFront;
             NativeArray<float> outputTemperatures = _thermalTemperatureBack;
@@ -1389,7 +1391,7 @@ namespace Hecton8.Power
                     binding.BaseModule.transform.position,
                     math.max(0.25f, stress01),
                     math.lerp(0.95f, 0.55f, stress01));
-            global::Hecton8.Core.Contracts.Signals.SignalBus<global::Hecton8.Core.Contracts.Signals.AudioEvent>.Push(in audioEvent);
+            global::Hecton8.Core.Contracts.Signals.SignalBus<global::Hecton8.Core.Contracts.Signals.AudioEvent>.TryPush(in audioEvent);
         }
 
         private static float ResolveNodeCapacity(PowerNode node)

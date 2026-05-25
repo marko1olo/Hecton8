@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 — Fabricator.cs
 // Mashina-verstak dlya krafta predmetov.
 //
@@ -12,7 +12,7 @@
 //
 // ZhIZNENNYY TsIKL KRAFTA:
 //   1. Igrok navoditsya → OnHoverStart → HUD pokazyvaet prompt
-//   2. [E] → Interact → CraftingEvents.RaiseFabricatorOpened
+//   2. [E] → Interact → CraftingEvents.TryRaiseFabricatorOpened
 //   3. UI vyzyvaet StartCraft(recipe) → CanCraft proverka
 //   4. Resursy spisyvayutsya SRAZU -> Vault FabricationJobDTO zapuskaetsya
 //      → NotifyGridBalanceChanged() — set pereschityvaet s -100W
@@ -59,7 +59,7 @@ namespace Hecton8.Crafting
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class Fabricator : MonoBehaviour, IInteractable, ISlowTickable, IUpdatable, IPowerComponent, IFabricator, IModRegistryEventListener, ILocalizationLanguageChangedListener, IOriginShiftListener
+    public sealed partial class Fabricator : MonoBehaviour, IInteractable, IInteractableTextProvider, ISlowTickable, IUpdatable, ILateFrameTickable, IPowerComponent, IFabricator, IModRegistryEventListener, ILocalizationLanguageChangedListener, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
@@ -68,6 +68,7 @@ namespace Hecton8.Crafting
         private static Mesh s_sharedAssemblyFallbackMesh;
         private static bool s_emergencyPowerLockActive;
         private const int InteractTextBufferCapacity = 96;
+        private const string LegacyInteractText = "FABRICATOR";
         private const float ExothermicRunningHeatDeltaCelsius = 20f;
 
         // ══════════════════════════════════════════════════════════
@@ -178,8 +179,6 @@ namespace Hecton8.Crafting
         //  CACHED STATE
         // ══════════════════════════════════════════════════════════
 
-        /// <summary>Keshirovannyy tekst prompta. Stroitsya odin raz.</summary>
-        private string _interactText;
         // COLD ALLOC: char[96] - cached IInteractable prompt staging buffer - owner: Fabricator
         private readonly char[] _interactTextBuffer = new char[InteractTextBufferCapacity];
         private int _interactTextLength;
@@ -204,11 +203,18 @@ namespace Hecton8.Crafting
         /// Null-safe: esli PowerNode otsutstvuet — uvedomlenie ne otpravlyaetsya.
         /// </summary>
         private PowerNode _powerNode;
-        private ScanLogSystem _scanLogSystem;
+        private IScanLogService _scanLogSystem;
+        private ResourceScarcityDirector _resourceScarcityDirector;
+        private IPowerGridService _powerGridService;
+        private PersistentWorldRegistry _persistentWorldRegistry;
+        private IAudioService _audioService;
+        private ILocalizationTextReadModel _localizationManager;
         private uint _observedScanLogRevision;
         private readonly List<RecipeData> _visibleRecipes = new List<RecipeData>(16);
         private bool _recipeCacheDirty = true;
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
+        private bool _hotSwapListenerRegistered;
         private int _lockedRecipeCount;
         private float _activeCraftPowerMultiplier = 1f;
         private int _activeCraftMultiplier = 1;
@@ -235,6 +241,15 @@ namespace Hecton8.Crafting
         private bool _assemblyPreviewActive;
         private bool _assemblyMaterialSwapped;
         private bool _assemblyOriginShiftListenerRegistered;
+        private RecipeData _pendingAssemblyBeginRecipe;
+        private byte _pendingAssemblyVisualCommand;
+        private bool _pendingFabricationSparksDirty;
+        private bool _pendingFabricationSparksActive;
+        private bool _pendingErrorFeedbackDirty;
+        private float _pendingErrorFeedbackIntensity;
+        private AudioClip _pendingAudioClip;
+        private Vector3 _pendingAudioPosition;
+        private bool _pendingAudioDirty;
 
         // ── Craft State ──
         private bool       _isCrafting;
@@ -456,14 +471,14 @@ namespace Hecton8.Crafting
             // Keshiruem PowerNode dlya mgnovennogo uvedomleniya seti.
             // PowerNode dolzhen byt na tom zhe GameObject, chto i Fabricator.
             TryGetComponent(out _powerNode);
-            EnsureScanLogSystem();
+            CacheRegistryServicesCold();
             MarkRecipeCacheDirty();
             _activeCraftPowerMultiplier = 1f;
             _sparkProxyLightKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x4641424C);
             _errorFeedbackBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - fabricator error emission property staging - owner: Fabricator
             if (assemblyFallbackMesh == null)
                 EnsureSharedAssemblyFallbackMesh();
-            EndAssemblyVisual();
+            FlushEndAssemblyVisual();
             ToolHapticsRuntime.EnsureRuntimeInstance();
             EnsureCraftingScratch();
             CacheFabricatorAup();
@@ -478,12 +493,14 @@ namespace Hecton8.Crafting
         {
             RegisterActiveFabricator(this);
             PublishFabricatorActiveCountBlackBox();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             BaseLogisticsNetwork.RegisterFabricator(this, _powerNode);
             LocalizationEvents.RegisterLanguageListener(this);
             ModRegistryEvents.Register(this);
             RebuildInteractText();
             TryRegister();
-            EnsureScanLogSystem();
             MarkRecipeCacheDirty();
             ApplyEmergencyPowerLock(s_emergencyPowerLockActive);
             CacheFabricatorAup();
@@ -492,33 +509,39 @@ namespace Hecton8.Crafting
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             UnregisterActiveFabricator(this);
             BaseLogisticsNetwork.UnregisterFabricator(this);
             LocalizationEvents.UnregisterLanguageListener(this);
             ModRegistryEvents.Unregister(this);
             TryUnregisterAssemblyOriginShiftListener();
+            TryUnregisterHotSwapListener();
 
             if (_isCrafting)
                 CancelCraft();
 
-            SetFabricationSparksActive(false);
-            EndAssemblyVisual();
+            FlushSetFabricationSparksActive(false);
+            FlushEndAssemblyVisual();
             UnregisterSparkProxyLight();
             TryUnregisterSparkLightTick();
+            TryUnregisterLateFrame();
             TryUnregister();
             PublishFabricatorActiveCountBlackBox();
         }
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             UnregisterActiveFabricator(this);
             BaseLogisticsNetwork.UnregisterFabricator(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterAssemblyOriginShiftListener();
-            SetFabricationSparksActive(false);
-            EndAssemblyVisual();
+            FlushSetFabricationSparksActive(false);
+            FlushEndAssemblyVisual();
             UnregisterSparkProxyLight();
             TryUnregisterSparkLightTick();
+            TryUnregisterLateFrame();
             DisposeCraftingScratch();
             PublishFabricatorActiveCountBlackBox();
         }
@@ -541,13 +564,26 @@ namespace Hecton8.Crafting
                 interactor.TryGetComponent(out _playerInventory);
             TryCachePlayerMovement(interactor);
 
-            CraftingEvents.RaiseFabricatorOpened(this);
-            InteractionEvents.RaiseInteractionStarted(this, interactor);
+            CraftingEvents.TryRaiseFabricatorOpened(this);
+            InteractionEvents.TryRaiseInteractionStarted(this, interactor);
         }
 
         public string GetInteractText()
         {
-            return _interactText;
+            return LegacyInteractText;
+        }
+
+        public bool TryCopyInteractText(Span<char> destination, out int length)
+        {
+            length = _interactTextLength;
+            if (length <= 0 || destination.Length < length)
+            {
+                length = 0;
+                return false;
+            }
+
+            _interactTextBuffer.AsSpan(0, length).CopyTo(destination);
+            return true;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -585,10 +621,10 @@ namespace Hecton8.Crafting
             if (!PassesBiomeLock(recipe)) return false;
 
             int safeMultiplier = Mathf.Max(1, multiplier);
-            if (!HasIngredients(recipe, safeMultiplier))
+            if (!HasIngredientsFastFailOrLegacy(recipe, safeMultiplier))
                 return false;
 
-            if (IsOutputStorageCapacityExceeded(recipe, safeMultiplier))
+            if (IsOutputStorageCapacityExceededFastOrExact(recipe, safeMultiplier))
                 return false;
 
             return true;
@@ -606,7 +642,8 @@ namespace Hecton8.Crafting
             if (!PassesBiomeLock(recipe)) return false;
 
             int safeMultiplier = Mathf.Max(1, multiplier);
-            return HasIngredients(recipe, safeMultiplier) && IsOutputStorageCapacityExceeded(recipe, safeMultiplier);
+            return HasIngredientsFastFailOrLegacy(recipe, safeMultiplier) &&
+                   IsOutputStorageCapacityExceededFastOrExact(recipe, safeMultiplier);
         }
 
         private bool IsOutputStorageCapacityExceeded(RecipeData recipe, int multiplier)
@@ -648,7 +685,7 @@ namespace Hecton8.Crafting
                 return 0;
 
             int itemHashId = ComputeItemHash(cost.item);
-            ResourceScarcityDirector scarcityDirector = GlobalRegistry.ResourceScarcity;
+            ResourceScarcityDirector scarcityDirector = _resourceScarcityDirector;
             CacheFabricatorAup();
             return scarcityDirector != null
                 ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, in _fabricatorAup, CountAccessibleItem(cost.item))
@@ -726,9 +763,9 @@ namespace Hecton8.Crafting
             NotifyGridBalanceChanged();
             PublishFabricatorActiveCountBlackBox();
 
-            CraftingEvents.RaiseCraftStarted(recipe);
+            CraftingEvents.TryRaiseCraftStarted(recipe);
             PublishCraftingStartedSignal(recipe, safeMultiplier);
-            CraftingEvents.RaiseCraftProgressUpdated(0f);
+            CraftingEvents.TryRaiseCraftProgressUpdated(0f);
             PlaySound(craftStartSound);
 
             return true;
@@ -768,8 +805,8 @@ namespace Hecton8.Crafting
             NotifyGridBalanceChanged();
             PublishFabricatorActiveCountBlackBox();
 
-            CraftingEvents.RaiseCraftCancelled();
-            CraftingEvents.RaiseCraftProgressUpdated(0f);
+            CraftingEvents.TryRaiseCraftCancelled();
+            CraftingEvents.TryRaiseCraftProgressUpdated(0f);
 
             PlaySound(craftCancelSound);
         }
@@ -808,6 +845,37 @@ namespace Hecton8.Crafting
 
             UnregisterSparkProxyLight();
             _sparkLightTickSleeping = true;
+        }
+
+        public void LateFrameTick()
+        {
+            byte command = _pendingAssemblyVisualCommand;
+            RecipeData beginRecipe = _pendingAssemblyBeginRecipe;
+            _pendingAssemblyVisualCommand = 0;
+            _pendingAssemblyBeginRecipe = null;
+
+            if (command == 1)
+                FlushBeginAssemblyVisual(beginRecipe);
+            else if (command == 2)
+                FlushCompleteAssemblyVisual();
+            else if (command == 3)
+                FlushEndAssemblyVisual();
+
+            if (_pendingFabricationSparksDirty)
+            {
+                bool active = _pendingFabricationSparksActive;
+                _pendingFabricationSparksDirty = false;
+                FlushSetFabricationSparksActive(active);
+            }
+
+            if (_pendingErrorFeedbackDirty)
+            {
+                float intensity = _pendingErrorFeedbackIntensity;
+                _pendingErrorFeedbackDirty = false;
+                FlushApplyErrorFeedback(intensity);
+            }
+
+            FlushPendingAudio();
         }
 
         public void SlowTick()
@@ -891,7 +959,7 @@ namespace Hecton8.Crafting
                 || progress >= 1f)
             {
                 _lastPublishedProgress = progress;
-                CraftingEvents.RaiseCraftProgressUpdated(progress);
+                CraftingEvents.TryRaiseCraftProgressUpdated(progress);
             }
 
             if (craftCompleted)
@@ -949,7 +1017,7 @@ namespace Hecton8.Crafting
             if (!HasOperationalPower)
                 return 0f;
 
-            IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
+            IPowerGridService powerGrid = _powerGridService;
             if (powerGrid != null && powerGrid.BatterySnapshot.EmergencyReserveActive != 0)
                 return 0f;
 
@@ -1012,7 +1080,7 @@ namespace Hecton8.Crafting
             if (!HasOperationalPower)
                 return false;
 
-            IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
+            IPowerGridService powerGrid = _powerGridService;
             if (powerGrid != null && powerGrid.BatterySnapshot.EmergencyReserveActive != 0)
                 return false;
 
@@ -1132,12 +1200,12 @@ namespace Hecton8.Crafting
             if (result != null && deliveredQuantity > 0)
                 PublishCraftItemAcquiredSignal(result, deliveredQuantity);
 
-            CraftingEvents.RaiseCraftProgressUpdated(1f);
+            CraftingEvents.TryRaiseCraftProgressUpdated(1f);
 
             if (result != null)
             {
                 PublishCraftingCompletedSignal(recipe, result, deliveredQuantity);
-                CraftingEvents.RaiseCraftCompleted(result);
+                CraftingEvents.TryRaiseCraftCompleted(result);
             }
 
             PublishFabricatorActiveCountBlackBox();
@@ -1487,7 +1555,7 @@ namespace Hecton8.Crafting
             if (recipe == null || result == null)
                 return false;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return false;
 
@@ -1497,7 +1565,7 @@ namespace Hecton8.Crafting
             if (!synthesized)
                 return false;
 
-            CraftingEvents.RaiseCraftOutputSynthesized(
+            CraftingEvents.TryRaiseCraftOutputSynthesized(
                 new CraftedItemSynthesisEvent(result, quantity, spawnPosition, velocityChange));
             return true;
         }
@@ -1507,7 +1575,7 @@ namespace Hecton8.Crafting
             if (result == null || quantity <= 0)
                 return false;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return false;
 
@@ -1516,7 +1584,7 @@ namespace Hecton8.Crafting
             if (!synthesized)
                 return false;
 
-            CraftingEvents.RaiseCraftOutputSynthesized(
+            CraftingEvents.TryRaiseCraftOutputSynthesized(
                 new CraftedItemSynthesisEvent(result, quantity, spawnPosition, velocityChange));
             return true;
         }
@@ -1573,7 +1641,7 @@ namespace Hecton8.Crafting
                 if (!TryEmitDeconstructionYield(outputItem, output.x, output.y, spawnPosition, velocityChange))
                     continue;
 
-                CraftingEvents.RaiseCraftOutputSynthesized(
+                CraftingEvents.TryRaiseCraftOutputSynthesized(
                     new CraftedItemSynthesisEvent(outputItem, output.y, spawnPosition, velocityChange));
                 emittedAny = true;
             }
@@ -1594,7 +1662,7 @@ namespace Hecton8.Crafting
             if (outputItem == null || itemHashId == 0 || quantity <= 0)
                 return false;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null &&
                 registry.TryRegisterDroppedItem(outputItem, quantity, spawnPosition, Vector3.zero, velocityChange))
             {
@@ -1713,6 +1781,11 @@ namespace Hecton8.Crafting
             }
 
             int safeMultiplier = Mathf.Max(1, multiplier);
+            if (TryReserveDirectFastFailRecipeCosts(recipe, safeMultiplier))
+                return true;
+
+            RefundIngredients();
+
             if (CraftingSystem.TryBuildRecipeCostBuffer(recipe, this, _craftRecipeCosts, out int recipeCostCount, safeMultiplier) &&
                 TryReserveIngredientCostBuffer(_craftRecipeCosts, recipeCostCount))
                 return true;
@@ -1836,7 +1909,7 @@ namespace Hecton8.Crafting
             if (!IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1912,14 +1985,31 @@ namespace Hecton8.Crafting
             if (clip == null)
                 return;
 
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null)
-                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayAtPoint(clip, transform.position);
+            _pendingAudioClip = clip;
+            _pendingAudioPosition = transform.position;
+            _pendingAudioDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void FlushPendingAudio()
+        {
+            if (!_pendingAudioDirty)
+                return;
+
+            AudioClip clip = _pendingAudioClip;
+            Vector3 position = _pendingAudioPosition;
+            _pendingAudioClip = null;
+            _pendingAudioDirty = false;
+            if (clip == null)
+                return;
+
+            _audioService?.PlayAtPoint(clip, position);
         }
 
         private void RaiseFabricatorProgressAudioPing()
         {
             float pitchCarrierHz = Mathf.Clamp(900f + (_activeCraftPowerMultiplier * 180f), 900f, 2200f);
-            ProceduralAudioEvents.RaiseAudioPingTriggered(
+            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
                 transform.position,
                 Mathf.Clamp01(0.18f + _activeCraftPowerMultiplier * 0.08f),
                 0.08f,
@@ -1940,7 +2030,7 @@ namespace Hecton8.Crafting
             float lowFrequencyIntensity = math.saturate(math.lerp(0.12f, 0.3f, progress) + finalPulse01 * 0.35f);
             float highFrequencyIntensity = math.saturate(0.025f + finalPulse01 * 0.05f);
             float pulseFrequencyHz = math.lerp(18f, 30f, finalPulse01);
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 lowFrequencyIntensity,
                 highFrequencyIntensity,
                 0.18f,
@@ -1953,9 +2043,9 @@ namespace Hecton8.Crafting
         {
             _errorFlashRemainingSeconds = Mathf.Max(_errorFlashRemainingSeconds, errorFlashDurationSeconds);
             ApplyErrorFeedback(1f);
-            CraftingEvents.RaiseCraftFailed(this);
+            CraftingEvents.TryRaiseCraftFailed(this);
             PlaySound(fabricationErrorBuzzerSound);
-            ProceduralAudioEvents.RaiseAudioPingTriggered(
+            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
                 transform.position,
                 0.85f,
                 0.12f,
@@ -2012,6 +2102,13 @@ namespace Hecton8.Crafting
 
         private void BeginAssemblyVisual(RecipeData recipe)
         {
+            _pendingAssemblyBeginRecipe = recipe;
+            _pendingAssemblyVisualCommand = 1;
+            TryRegisterLateFrame();
+        }
+
+        private void FlushBeginAssemblyVisual(RecipeData recipe)
+        {
             _assemblyTargetHash = recipe != null ? unchecked((uint)ComputeItemHash(recipe.resultItem)) : FabricatorWeldingFallbackHash;
             _assemblyMaterialSwapped = false;
             _assemblyActualMaterial = null;
@@ -2025,7 +2122,7 @@ namespace Hecton8.Crafting
                 recipe.resultItem == null ||
                 !TryResolveAssemblySource(recipe.resultItem, out Mesh sourceMesh, out Material actualMaterial))
             {
-                EndAssemblyVisual();
+                FlushEndAssemblyVisual();
                 return;
             }
 
@@ -2256,6 +2353,12 @@ namespace Hecton8.Crafting
 
         private void CompleteAssemblyVisual()
         {
+            _pendingAssemblyVisualCommand = 2;
+            TryRegisterLateFrame();
+        }
+
+        private void FlushCompleteAssemblyVisual()
+        {
             if (!_assemblyPreviewActive)
                 return;
 
@@ -2281,6 +2384,13 @@ namespace Hecton8.Crafting
 
         private void EndAssemblyVisual()
         {
+            _pendingAssemblyVisualCommand = 3;
+            _pendingAssemblyBeginRecipe = null;
+            TryRegisterLateFrame();
+        }
+
+        private void FlushEndAssemblyVisual()
+        {
             FabricationAssemblerRuntime.ClearSlot(_fabricationJobSlot);
             _fabricationJobSlot = -1;
             _assemblyPreviewActive = false;
@@ -2304,14 +2414,15 @@ namespace Hecton8.Crafting
         private void PublishWeldingToolAcoustic(float progress01)
         {
             float progress = math.saturate(progress01);
-            GlobalSignals.Publish(new ToolAcousticSignal
+            uint frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
+            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
             {
                 ToolHash = FabricatorToolHash,
                 TargetHash = _assemblyTargetHash != 0u ? _assemblyTargetHash : FabricatorWeldingFallbackHash,
                 Progress01 = progress,
                 PitchScale = math.lerp(fabricationWeldingLoopMinPitch, fabricationWeldingLoopMaxPitch, progress),
                 Intensity01 = math.saturate(0.32f + _activeCraftPowerMultiplier * 0.12f),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = frame,
                 State = ToolAcousticStateWelding,
                 Flags = IsPausedNoPower ? PowerDrainFlagPaused : (byte)0
             });
@@ -2324,13 +2435,14 @@ namespace Hecton8.Crafting
             if (!(watts > 0f) && !paused)
                 return;
 
-            GlobalSignals.Publish(new PowerDrainSignal
+            uint frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
+            SignalBus<PowerDrainSignal>.TryPush(new PowerDrainSignal
             {
                 ConsumerHash = ResolveFabricatorSignalHash(),
                 NetworkHash = 0u,
                 Watts = watts,
                 Progress01 = math.saturate(progress01),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = frame,
                 Reason = PowerDrainReasonFabrication,
                 Flags = paused ? PowerDrainFlagPaused : (byte)0
             });
@@ -2338,12 +2450,13 @@ namespace Hecton8.Crafting
 
         private void PublishCraftingStartedSignal(RecipeData recipe, int multiplier)
         {
-            GlobalSignals.Publish(new CraftingStartedSignal
+            uint frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
+            SignalBus<CraftingStartedSignal>.TryPush(new CraftingStartedSignal
             {
                 FabricatorHash = ResolveFabricatorSignalHash(),
                 RecipeHash = ComputeRecipeSignalHash(recipe),
                 ResultItemHash = recipe != null ? unchecked((uint)ComputeItemHash(recipe.resultItem)) : 0u,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = frame,
                 Multiplier = (ushort)math.min(math.max(1, multiplier), ushort.MaxValue),
                 Flags = 0
             });
@@ -2351,12 +2464,13 @@ namespace Hecton8.Crafting
 
         private void PublishCraftingCompletedSignal(RecipeData recipe, ItemData item, int quantity)
         {
-            GlobalSignals.Publish(new CraftingCompletedSignal
+            uint frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
+            CraftingSignalRoute.TryQueueCompleted(new CraftingCompletedSignal
             {
                 FabricatorHash = ResolveFabricatorSignalHash(),
                 RecipeHash = ComputeRecipeSignalHash(recipe),
                 ResultItemHash = unchecked((uint)ComputeItemHash(item)),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = frame,
                 Quantity = (ushort)math.min(math.max(0, quantity), ushort.MaxValue),
                 Flags = 0
             });
@@ -2372,7 +2486,7 @@ namespace Hecton8.Crafting
             if (!TryResolveAupFromRuntimeOrigin(spawnPosition, out AbsoluteUniversePosition positionAup))
                 return;
 
-            GlobalSignals.Publish(new ItemAcquiredSignal
+            SignalBus<ItemAcquiredSignal>.TryPush(new ItemAcquiredSignal
             {
                 PositionAup = positionAup,
                 ItemHash = unchecked((uint)itemHash),
@@ -2380,7 +2494,7 @@ namespace Hecton8.Crafting
                 Quantity = (ushort)math.min(math.max(1, quantity), ushort.MaxValue),
                 SourceKind = ItemAcquiredSourceFabricator,
                 Flags = 0,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex))
             });
         }
 
@@ -2423,6 +2537,13 @@ namespace Hecton8.Crafting
         }
 
         private void SetFabricationSparksActive(bool active)
+        {
+            _pendingFabricationSparksActive = active;
+            _pendingFabricationSparksDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void FlushSetFabricationSparksActive(bool active)
         {
             UpdateWeldingAudioLoop(active, Mathf.Max(1f, _activeCraftPowerMultiplier));
 
@@ -2502,6 +2623,13 @@ namespace Hecton8.Crafting
 
         private void ApplyErrorFeedback(float intensity)
         {
+            _pendingErrorFeedbackIntensity = Mathf.Clamp01(intensity);
+            _pendingErrorFeedbackDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void FlushApplyErrorFeedback(float intensity)
+        {
             if (errorFeedbackRenderers == null || errorFeedbackRenderers.Length == 0)
             {
                 _errorFeedbackApplied = intensity > 0f;
@@ -2525,7 +2653,11 @@ namespace Hecton8.Crafting
 
         private void EnsureScanLogSystem()
         {
-            ScanLogSystem current = Hecton8.Core.GlobalRegistry.ScanLog;
+            CacheScanLogSystem(_scanLogSystem);
+        }
+
+        private void CacheScanLogSystem(IScanLogService current)
+        {
             if (ReferenceEquals(_scanLogSystem, current))
                 return;
 
@@ -2872,6 +3004,14 @@ namespace Hecton8.Crafting
             _tickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
         private void TryUnregister()
         {
             if (!_tickRegistered)
@@ -2879,6 +3019,21 @@ namespace Hecton8.Crafting
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _tickRegistered = false;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
+            _pendingAssemblyVisualCommand = 0;
+            _pendingAssemblyBeginRecipe = null;
+            _pendingFabricationSparksDirty = false;
+            _pendingErrorFeedbackDirty = false;
+            _pendingAudioClip = null;
+            _pendingAudioDirty = false;
         }
 
         private void TryRegisterSparkLightTick()
@@ -2899,6 +3054,62 @@ namespace Hecton8.Crafting
             _sparkLightTickSleeping = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ResourceScarcityRuntime:
+                    _resourceScarcityDirector = currentService as ResourceScarcityDirector;
+                    break;
+                case GlobalRegistryServiceSlot.PowerGrid:
+                    _powerGridService = currentService as IPowerGridService;
+                    break;
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as ILocalizationTextReadModel;
+                    RebuildInteractText();
+                    break;
+                case GlobalRegistryServiceSlot.ScanLogRuntime:
+                    CacheScanLogSystem(currentService as IScanLogService);
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _resourceScarcityDirector = GlobalRegistry.ResourceScarcity;
+            _powerGridService = GlobalRegistry.PowerGrid;
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _audioService = GlobalRegistry.Audio;
+            _localizationManager = Hecton8.Core.GlobalRegistry.LocalizationText;
+            CacheScanLogSystem(Hecton8.Core.GlobalRegistry.ScanLogService);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
         private void RebuildInteractText()
         {
             ReadOnlySpan<char> fallbackName = string.IsNullOrWhiteSpace(fabricatorName)
@@ -2907,12 +3118,6 @@ namespace Hecton8.Crafting
             ReadOnlySpan<char> pattern = ResolveLocalizedSpan(_interactUseFabricatorLocalizationHash, "Use {0}".AsSpan());
 
             _interactTextLength = WriteInteractTemplate(pattern, fallbackName, _interactTextBuffer);
-            ReadOnlySpan<char> cachedPrompt = _interactText == null ? ReadOnlySpan<char>.Empty : _interactText.AsSpan();
-            ReadOnlySpan<char> nextPrompt = _interactTextBuffer.AsSpan(0, _interactTextLength);
-            if (cachedPrompt.SequenceEqual(nextPrompt))
-                return;
-
-            _interactText = new string(_interactTextBuffer, 0, _interactTextLength); // COLD ALLOC: string[<=96] - cached IInteractable compatibility prompt rebuilt on localization change - owner: Fabricator
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -2929,9 +3134,9 @@ namespace Hecton8.Crafting
             RebuildInteractText();
         }
 
-        private static ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextReadModel manager = _localizationManager;
             if (manager == null)
                 return fallback;
 

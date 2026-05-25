@@ -174,7 +174,9 @@ namespace Hecton8.Core
         /// </summary>
         public static UIStateData GetPDAState()
         {
-            EnsureInitialized();
+            if (!IsInitialized)
+                return default;
+
             return _states[(int)UIStateSlot.PDA];
         }
 
@@ -183,7 +185,9 @@ namespace Hecton8.Core
         /// </summary>
         public static NativeArray<UIStateData>.ReadOnly GetReadOnlyStates()
         {
-            EnsureInitialized();
+            if (!IsInitialized)
+                return default;
+
             return _states.AsReadOnly();
         }
 
@@ -192,7 +196,9 @@ namespace Hecton8.Core
         /// </summary>
         public static NativeArray<UIValueSlot>.ReadOnly GetReadOnlyValueSlots()
         {
-            EnsureInitialized();
+            if (!IsInitialized)
+                return default;
+
             return _valueSlots.AsReadOnly();
         }
 
@@ -206,10 +212,9 @@ namespace Hecton8.Core
             if ((uint)index >= ValueSlotCount)
                 return false;
 
-            if (!Application.isPlaying && !IsInitialized)
+            if (!IsInitialized)
                 return false;
 
-            EnsureInitialized();
             valueSlot = _valueSlots[index];
             return valueSlot.Version != 0u;
         }
@@ -417,7 +422,9 @@ namespace Hecton8.Core
         {
             eventHash = 0u;
             timestampSeconds = 0f;
-            EnsureInitialized();
+            if (!IsInitialized)
+                return false;
+
             if ((uint)newestFirstIndex >= (uint)_pdaLogCount)
                 return false;
 
@@ -435,7 +442,9 @@ namespace Hecton8.Core
         /// </summary>
         public static bool TryRollbackPDAState(int framesBack)
         {
-            EnsureInitialized();
+            if (!IsInitialized)
+                return false;
+
             if (_historyCount <= 0)
                 return false;
 

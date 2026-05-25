@@ -1,4 +1,4 @@
-# Community Post Templates
+﻿# Community Post Templates
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
@@ -109,6 +109,226 @@ We are testing the Seed Ship anomaly concept: a deep structure corrupting instru
 Does this image/clip communicate systemic corruption, or does it just look like random sci-fi effects?
 
 Use this only after the first packet already has agency/decision proof with AB-009/KPI decision-read fields, or label it internally as anomaly-only feedback that cannot advance Campaign 01.
+
+## 4chan / Dvach Imageboard Templates
+
+Status: no-link critique templates. Use only after same-day board/thread rules are checked. These are not announcement copy, not wishlist copy, and not permission to post.
+
+### 4chan Game-Dev Critique Drop
+
+Use in dev-friendly threads when the asset has one inspectable mechanic.
+
+```text
+Working on a single-player deep-sea survival horror project.
+
+Not asking for wishlists or Discord joins. I need a read on whether this mechanic is legible from the media alone.
+
+Clip/image:
+[direct media only]
+
+What should be readable:
+1. [instrument / pressure / power state changes]
+2. [machine or route reacts]
+3. [player has to repair / retreat / seal / reroute / continue]
+
+Question:
+Does the decision read before the caption explains it, or does this just look like generic underwater darkness?
+```
+
+### 4chan Technical / Engine Critique
+
+Use only when the topic is rendering, Unity pipeline, capture readability, or fake-first implementation. Do not sell the game.
+
+```text
+Testing [system] for a Unity underwater survival project.
+
+Target floor is low-spec laptop GPU class, so the first pass is a visual fake unless gameplay truth needs simulation.
+
+Current approach:
+- [shader / LUT / proxy collider / UI warning / audio cue]
+
+Rejected for now:
+- [expensive sim or full physical approach]
+
+What I need criticized:
+- [readability]
+- [failure cases]
+- [where the fake breaks]
+
+No store link. Looking for technical holes before I polish the shot.
+```
+
+### 4chan AI-Agent Thread Boundary
+
+Use only if someone directly asks about process in an AI/dev workflow thread. Do not post HECTON media there unless the thread itself asks for project examples.
+
+```text
+I use agents as narrow production tools: doc cleanup, research summaries, checklist generation, and small bounded edits.
+
+Guardrails matter more than hype:
+- human owns architecture and public claims;
+- build/runtime proof beats agent confidence;
+- no generated claim ships without source or artifact;
+- no agent gets to invent scope.
+
+For game marketing I would not sell "AI made this". The only thing players can judge is the build.
+```
+
+### Dvach /gd/ RU Critique Drop
+
+Use for Russian dev critique. Keep it blunt, no sales pitch.
+
+```text
+Пилю одиночный подводный survival horror про давление, технику и черную воду.
+
+Не рекламный пост, нужен разбор читаемости кадра/гифки.
+
+Что должно считываться без пояснения:
+1. прибор или система начали вести себя неправильно;
+2. машина/отсек влияет на выживание;
+3. игрок должен выбрать: чинить, отступать, герметизировать, обходить или продолжать риск.
+
+Материал:
+[скрин/гиф/вебм без ссылки на магазин]
+
+Вопрос:
+понятно, что именно сломалось и почему это опасно, или это выглядит как обычная темная подводная картинка?
+```
+
+### Dvach /gd/ RU Visual Identity Test
+
+Use when the question is "does this look distinct enough?"
+
+```text
+Нужен холодный разбор визуального направления.
+
+Цель: не яркий alien-ocean туризм, а индустриальная глубина, давление, коррозия, приборы, черная вода и ощущение, что техника держит океан в миллиметре от лица.
+
+По кадру считывается:
+- подводная глубина;
+- промышленная техника;
+- опасность давления/маршрута;
+- действие игрока;
+- отличие от обычного Subnautica-like?
+
+Если нет, что первым ломает восприятие?
+```
+
+### Dvach /ai/ RU Process Boundary
+
+Use only for workflow discussion, not game promotion.
+
+```text
+Агенты у меня не "делают игру". Они закрывают узкие задачи: сводки, документы, чеклисты, мелкие правки, поиск противоречий.
+
+Правило простое: архитектура, сборка, публичные обещания и финальное качество остаются за человеком. Если нет артефакта, билда или источника, агентский ответ ничего не доказывает.
+
+Вопрос не "заменит ли ИИ разработчика", а какие guardrails реально спасают проект от сломанного билда, выдуманных фич и мусорных обещаний.
+```
+
+### No-Link Reply Bank
+
+If asked "Steam?"
+
+```text
+Not linking it in this thread. This post is only for critique on readability/mechanic. Public links wait for the right surface and proof gates.
+```
+
+If asked "Subnautica clone?"
+
+```text
+That is the exact risk I am testing against. The intended lane is single-player industrial depth: pressure, machinery, salvage, sonar, black water, and route decisions. Which part still reads too close?
+```
+
+Russian variant:
+
+```text
+Это как раз риск, который проверяю. Цель не "клон Сабнатики", а одиночная индустриальная глубина: давление, техника, сонар, черная вода и решения по маршруту. Что в кадре все еще считывается слишком близко?
+```
+
+If accused of AI slop:
+
+```text
+Fair thing to check. I am not selling AI usage. Judge the media: if the mechanic, material language, or player decision does not read, the asset fails.
+```
+
+Russian variant:
+
+```text
+Нормальная претензия. Я не продаю "ИИ сделал игру". Смотрите на кадр/гифку: если механика, материалы или решение игрока не считываются, ассет провален.
+```
+
+If engine-war bait starts:
+
+```text
+Engine argument is not the useful signal here. The question is whether the frame communicates pressure, machinery, and a player decision.
+```
+
+Russian variant:
+
+```text
+Спор про движок тут не дает сигнала. Вопрос в том, считываются ли давление, техника и решение игрока.
+```
+
+If co-op is requested:
+
+```text
+Public plan is single-player-first. I am not promising co-op.
+```
+
+Russian variant:
+
+```text
+Публичная позиция сейчас: single-player-first. Кооп не обещаю.
+```
+
+### Failure-First Clip Prompt
+
+Use when showing a 10-20 second capture.
+
+```text
+Watch once without reading other replies.
+
+What did you think the player should do?
+- repair
+- retreat
+- seal
+- reroute
+- continue
+- no readable decision
+
+If the answer is "no readable decision", what cue is missing: instrument, sound, animation, lighting, UI, or environment state?
+```
+
+Russian variant:
+
+```text
+Посмотрите один раз, не читая ответы.
+
+Что, по-вашему, игрок должен сделать?
+- чинить
+- отступать
+- герметизировать
+- искать обход
+- продолжать риск
+- решения не видно
+
+Если "решения не видно", какого сигнала не хватает: прибор, звук, анимация, свет, UI или состояние окружения?
+```
+
+### Thread Exit Line
+
+Use once when the thread has produced enough signal or is turning useless.
+
+```text
+Got enough signal. Main takeaway for me: [one concrete issue]. I am going back to revise the asset instead of debating it here.
+```
+
+Russian variant:
+
+```text
+Сигнала достаточно. Главный вывод: [одна конкретная проблема]. Ухожу править ассет, спорить дальше смысла нет.
+```
 
 ## Steam Announcement Templates
 

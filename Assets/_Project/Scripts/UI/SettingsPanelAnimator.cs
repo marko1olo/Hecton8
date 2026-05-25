@@ -4,6 +4,11 @@ using UnityEngine;
 
 namespace Hecton8.UI
 {
+    internal static class SettingsPanelAnimatorLayout
+    {
+        public const int GroupStateStrideBytes = 16;
+    }
+
     /// <summary>
     /// Settings panel animator — staggered fade-in for UI elements.
     /// Zero-GC: late-frame state machine, cached CanvasGroup references, no coroutines.
@@ -53,7 +58,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private System.Action _onFadeOutComplete;
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = SettingsPanelAnimatorLayout.GroupStateStrideBytes)]
         private struct GroupState
         {
             [FieldOffset(0)]
@@ -107,8 +112,20 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registered = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                Unregister();
                 TryRegister();
+            }
         }
 
         // ══════════════════════════════════════════════════════════

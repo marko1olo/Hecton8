@@ -36,7 +36,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
-    public sealed class ItemHighlight : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class ItemHighlight : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -85,6 +85,8 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonPlayerMovement _cachedPlayerMovement;
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
+        private bool _highlightPropertiesDirty;
         private bool _hotSwapRegistered;
 
         // â”€â”€ Shader property IDs (cached once) â”€â”€
@@ -122,7 +124,7 @@ namespace Hecton8.Gameplay
             _currentIntensity = 0f;
             _targetIntensity = 0f;
             CachePlayerContextCold();
-            ApplyHighlightProperties();
+            ApplyHighlightPropertiesImmediate();
         }
 
         private void OnEnable()
@@ -225,6 +227,25 @@ namespace Hecton8.Gameplay
 
         private void ApplyHighlightProperties()
         {
+            _highlightPropertiesDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            FlushHighlightProperties();
+        }
+
+        private void FlushHighlightProperties()
+        {
+            if (!_highlightPropertiesDirty)
+                return;
+
+            _highlightPropertiesDirty = false;
+            ApplyHighlightPropertiesImmediate();
+        }
+
+        private void ApplyHighlightPropertiesImmediate()
+        {
             if (targetRenderer == null || _mpb == null) return;
 
             // â”€â”€ Set highlight properties â”€â”€
@@ -248,10 +269,18 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
         {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
             if (!_tickRegistered) return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -260,7 +289,7 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerContextCold()
         {
-            _cachedPlayerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
@@ -58,7 +59,7 @@ namespace Hecton8.Thermodynamics
             value.HeatDiffusionRate = EditorGUILayout.Slider("Heat Diffusion Rate", value.HeatDiffusionRate, 0f, 1f);
             float halfLife = DecayToHalfLife(value.RadiationDecayCoefficient);
             halfLife = EditorGUILayout.Slider("Radiation Half-Life", halfLife, MinHalfLifeSeconds, MaxHalfLifeSeconds);
-            value.RadiationDecayCoefficient = Mathf.Pow(0.5f, 1f / Mathf.Max(1f, halfLife));
+            value.RadiationDecayCoefficient = MathLodApproximation.ApproxExpNegPade33Reduced(new float4(0.69314718056f / Mathf.Max(1f, halfLife))).x;
             value.RockShieldingFactor = EditorGUILayout.Slider("Rock Shielding Factor", value.RockShieldingFactor, 0f, 1f);
             _drawGrid = EditorGUILayout.Toggle("Draw Grid", _drawGrid);
             _heatThreshold = EditorGUILayout.Slider("Heat Gizmo Threshold", _heatThreshold, -8f, 300f);
@@ -124,7 +125,18 @@ namespace Hecton8.Thermodynamics
         private static float DecayToHalfLife(float decay)
         {
             float safeDecay = Mathf.Clamp(decay, 0.9001f, 0.9999f);
-            return Mathf.Clamp(Mathf.Log(0.5f) / Mathf.Log(safeDecay), MinHalfLifeSeconds, MaxHalfLifeSeconds);
+            float low = MinHalfLifeSeconds;
+            float high = MaxHalfLifeSeconds;
+            for (int i = 0; i < 18; i++)
+            {
+                float mid = (low + high) * 0.5f;
+                float candidate = MathLodApproximation.ApproxExpNegPade33Reduced(new float4(0.69314718056f / Mathf.Max(1f, mid))).x;
+                bool raiseLow = candidate < safeDecay;
+                low = math.select(low, mid, raiseLow);
+                high = math.select(mid, high, raiseLow);
+            }
+
+            return Mathf.Clamp((low + high) * 0.5f, MinHalfLifeSeconds, MaxHalfLifeSeconds);
         }
     }
 }

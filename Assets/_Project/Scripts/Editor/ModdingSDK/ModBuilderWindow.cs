@@ -354,7 +354,8 @@ namespace Hecton8.Editor.ModdingSDK
                 return Array.Empty<string>();
 
             // COLD ALLOC: List<string>[dll count] — manifest assembly filename list — owner: ModBuilderWindow
-            List<string> copiedFileNames = new List<string>(assemblyPaths.Length);
+            string[] copiedFileNames = new string[assemblyPaths.Length];
+            int copiedCount = 0;
 
             for (int i = 0; i < assemblyPaths.Length; i++)
             {
@@ -362,10 +363,14 @@ namespace Hecton8.Editor.ModdingSDK
                 string fileName = Path.GetFileName(sourcePath);
                 string destinationPath = Path.Combine(outputDirectory, fileName);
                 File.Copy(sourcePath, destinationPath, true);
-                copiedFileNames.Add(fileName);
+                copiedFileNames[copiedCount++] = fileName;
             }
 
-            return copiedFileNames.ToArray();
+            if (copiedCount == copiedFileNames.Length)
+                return copiedFileNames;
+
+            Array.Resize(ref copiedFileNames, copiedCount);
+            return copiedFileNames;
         }
 
         private void WriteManifest(string outputDirectory, ModManifestData manifest)
@@ -484,7 +489,18 @@ namespace Hecton8.Editor.ModdingSDK
                 return Array.Empty<string>();
 
             // COLD ALLOC: List<string>[input count] — filtered manifest/build entries — owner: ModBuilderWindow
-            List<string> filtered = new List<string>(values.Count);
+            int validCount = 0;
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(values[i]))
+                    validCount++;
+            }
+
+            if (validCount == 0)
+                return Array.Empty<string>();
+
+            string[] filtered = new string[validCount];
+            int filteredIndex = 0;
 
             for (int i = 0; i < values.Count; i++)
             {
@@ -492,10 +508,10 @@ namespace Hecton8.Editor.ModdingSDK
                 if (string.IsNullOrWhiteSpace(value))
                     continue;
 
-                filtered.Add(value.Trim());
+                filtered[filteredIndex++] = value.Trim();
             }
 
-            return filtered.ToArray();
+            return filtered;
         }
 
         private static string GetProjectRootPath()

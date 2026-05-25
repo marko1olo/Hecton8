@@ -13,6 +13,16 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class VoxelDynamicNavGridRuntimeLayout
+    {
+        public const int DirtyVolumeRequestStrideBytes = 16;
+        public const int DynamicObstacleClearRequestStrideBytes = 32;
+        public const int PortalNodeStrideBytes = 32;
+        public const int RouteNodeStateStrideBytes = 16;
+        public const int NavObstaclePrimitiveStrideBytes = 32;
+        public const int HybridNavigationSampleStrideBytes = 32;
+    }
+
     /// <summary>
     /// Runtime double-buffered voxel passability snapshots built directly from the cave SDF density field.
     /// Owner: voxel rebuild pipeline. Eviction: explicit unregister or domain reset.
@@ -538,7 +548,7 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = VoxelDynamicNavGridRuntimeLayout.DirtyVolumeRequestStrideBytes)]
         private struct DirtyVolumeRequest
         {
             [FieldOffset(0)] public int VolumeInstanceId;
@@ -553,7 +563,7 @@ namespace Hecton8.World
             public int RemainingSlowTicks;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = VoxelDynamicNavGridRuntimeLayout.DynamicObstacleClearRequestStrideBytes)]
         private struct DynamicObstacleClearRequest
         {
             [FieldOffset(0)] public float3 Center;
@@ -561,7 +571,7 @@ namespace Hecton8.World
             [FieldOffset(24)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = VoxelDynamicNavGridRuntimeLayout.PortalNodeStrideBytes)]
         private struct PortalNode
         {
             [FieldOffset(0)] public uint ChunkId;
@@ -574,7 +584,7 @@ namespace Hecton8.World
             [FieldOffset(28)] private uint _pad2;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = VoxelDynamicNavGridRuntimeLayout.RouteNodeStateStrideBytes)]
         private struct RouteNodeState
         {
             [FieldOffset(0)] public float GScore;
@@ -585,7 +595,7 @@ namespace Hecton8.World
             [FieldOffset(14)] private ushort _pad1;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = VoxelDynamicNavGridRuntimeLayout.NavObstaclePrimitiveStrideBytes)]
         internal struct NavObstaclePrimitive
         {
             [FieldOffset(0)] public float3 Center;
@@ -593,7 +603,7 @@ namespace Hecton8.World
             [FieldOffset(24)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = VoxelDynamicNavGridRuntimeLayout.HybridNavigationSampleStrideBytes)]
         internal struct HybridNavigationSample
         {
             [FieldOffset(0)] public HybridNavigationMode Mode;

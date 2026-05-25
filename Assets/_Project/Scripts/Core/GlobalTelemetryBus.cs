@@ -14,6 +14,11 @@ using UnityEngine;
 
 namespace Hecton8.Core
 {
+    internal static class GlobalTelemetryLayout
+    {
+        internal const int TelemetryEventStrideBytes = 64;
+    }
+
     public enum TelemetryEventType : byte
     {
         PlayerDeath = 0,
@@ -48,7 +53,7 @@ namespace Hecton8.Core
         PrologueStage = 29
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = GlobalTelemetryLayout.TelemetryEventStrideBytes)]
     public struct TelemetryEvent
     {
         [FieldOffset(0)] public uint FrameIndex;
@@ -206,19 +211,26 @@ namespace Hecton8.Core
             EnsureInitialized();
         }
 
+        [Obsolete("Use PublishBiomeVisited(uint,int,float). Telemetry ingress must receive precomputed hashes.", true)]
         public static void PublishBiomeVisited(string biomeId, int depthTier, float depthMeters)
+        {
+            PublishBiomeVisited(ComputeContextHash(biomeId), depthTier, depthMeters);
+        }
+
+        public static void PublishBiomeVisited(uint biomeHash, int depthTier, float depthMeters)
         {
             Publish(
                 TelemetryEventType.BiomeVisited,
-                ComputeHash(biomeId),
+                biomeHash,
                 unchecked((uint)depthTier),
                 depthMeters,
                 default);
         }
 
+        [Obsolete("Use PublishItemCrafted(uint). Telemetry ingress must receive precomputed hashes.", true)]
         public static void PublishItemCrafted(string itemPersistentId)
         {
-            Publish(TelemetryEventType.ItemCrafted, ComputeHash(itemPersistentId), 0u, 1f, default);
+            PublishItemCrafted(ComputeContextHash(itemPersistentId));
         }
 
         public static void PublishItemCrafted(uint itemHashId)
@@ -226,22 +238,34 @@ namespace Hecton8.Core
             Publish(TelemetryEventType.ItemCrafted, itemHashId, 0u, 1f, default);
         }
 
+        [Obsolete("Use PublishBootstrapDependencyCycle(uint,uint). Telemetry ingress must receive precomputed hashes.", true)]
         public static void PublishBootstrapDependencyCycle(string serviceId, string dependencyId)
+        {
+            PublishBootstrapDependencyCycle(ComputeContextHash(serviceId), ComputeContextHash(dependencyId));
+        }
+
+        public static void PublishBootstrapDependencyCycle(uint serviceHash, uint dependencyHash)
         {
             Publish(
                 TelemetryEventType.BootstrapDependencyCycle,
-                ComputeHash(serviceId),
-                ComputeHash(dependencyId),
+                serviceHash,
+                dependencyHash,
                 0f,
                 default);
         }
 
+        [Obsolete("Use PublishJobBarrierStall(uint,uint,float). Telemetry ingress must receive precomputed hashes.", true)]
         public static void PublishJobBarrierStall(string systemName, string phaseName, float stallMilliseconds)
+        {
+            PublishJobBarrierStall(ComputeContextHash(systemName), ComputeContextHash(phaseName), stallMilliseconds);
+        }
+
+        public static void PublishJobBarrierStall(uint systemHash, uint phaseHash, float stallMilliseconds)
         {
             Publish(
                 TelemetryEventType.JobBarrierStall,
-                ComputeHash(systemName),
-                ComputeHash(phaseName),
+                systemHash,
+                phaseHash,
                 stallMilliseconds,
                 default);
         }

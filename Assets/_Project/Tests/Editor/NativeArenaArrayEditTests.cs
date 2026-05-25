@@ -64,19 +64,21 @@ namespace Hecton8.Tests.Editor
             int firstSize = HectonArenaAllocator.SlabCapacityBytes - HectonArenaAllocator.CacheLineAlignment;
             int secondSize = HectonArenaAllocator.CacheLineAlignment * 2;
 
-            Assert.IsTrue(HectonArenaAllocator.TryAllocateBytes(
+            Assert.IsTrue(HectonArenaAllocator.TryAllocateNativeArenaArray(
                 firstSize,
-                HectonArenaAllocator.CacheLineAlignment,
-                out byte* first));
+                NativeArrayOptions.UninitializedMemory,
+                out NativeArenaArray<byte> first));
 
             int oomBefore = HectonArenaAllocator.OomCount;
-            Assert.IsTrue(HectonArenaAllocator.TryAllocateBytes(
+            Assert.IsTrue(HectonArenaAllocator.TryAllocateNativeArenaArray(
                 secondSize,
-                HectonArenaAllocator.CacheLineAlignment,
-                out byte* second));
+                NativeArrayOptions.UninitializedMemory,
+                out NativeArenaArray<byte> second));
 
             Assert.AreEqual(oomBefore, HectonArenaAllocator.OomCount);
-            Assert.AreNotEqual((IntPtr)first, (IntPtr)second);
+            Assert.AreNotEqual(
+                (IntPtr)NativeArrayUnsafeUtility.GetUnsafePtr(first.AsNativeArray()),
+                (IntPtr)NativeArrayUnsafeUtility.GetUnsafePtr(second.AsNativeArray()));
         }
 
         [Test]
@@ -86,17 +88,19 @@ namespace Hecton8.Tests.Editor
             const int FirstBytes = 64;
             const int SecondBytes = 128;
 
-            Assert.IsTrue(HectonArenaAllocator.TryAllocateBytes(
+            Assert.IsTrue(HectonArenaAllocator.TryAllocateNativeArenaArray(
                 FirstBytes,
-                HectonArenaAllocator.CacheLineAlignment,
+                NativeArrayOptions.UninitializedMemory,
                 OwnerHash,
-                out byte* first));
-            Assert.IsTrue(HectonArenaAllocator.TryAllocateBytes(
+                out NativeArenaArray<byte> first));
+            Assert.IsTrue(HectonArenaAllocator.TryAllocateNativeArenaArray(
                 SecondBytes,
-                HectonArenaAllocator.CacheLineAlignment,
+                NativeArrayOptions.UninitializedMemory,
                 OwnerHash,
-                out byte* second));
-            Assert.AreNotEqual((IntPtr)first, (IntPtr)second);
+                out NativeArenaArray<byte> second));
+            Assert.AreNotEqual(
+                (IntPtr)NativeArrayUnsafeUtility.GetUnsafePtr(first.AsNativeArray()),
+                (IntPtr)NativeArrayUnsafeUtility.GetUnsafePtr(second.AsNativeArray()));
 
             Assert.IsTrue(HectonArenaAllocator.TryGetOwnerHighWaterBytes(OwnerHash, out int highWaterBytes));
             Assert.AreEqual(FirstBytes + SecondBytes, highWaterBytes);
@@ -116,7 +120,9 @@ namespace Hecton8.Tests.Editor
                 OwnerHash,
                 out HectonArenaAllocator.NativeArenaSlice<int> slice));
 
-            Assert.AreEqual(0L, ((long)slice.Ptr) & (HectonArenaAllocator.CacheLineAlignment - 1L));
+            Assert.IsTrue(slice.IsCreated());
+            Assert.AreEqual(8, slice.Length);
+            Assert.AreEqual(UnsafeUtility.SizeOf<int>(), slice.Stride);
 
             ref int value = ref slice.GetElementAsRef(3);
             value = 911;
@@ -130,12 +136,12 @@ namespace Hecton8.Tests.Editor
             const uint OwnerHash = 0x5348444Eu;
             const int ByteCount = 64;
 
-            Assert.IsTrue(HectonArenaAllocator.TryAllocateBytes(
+            Assert.IsTrue(HectonArenaAllocator.TryAllocateNativeArenaArray(
                 ByteCount,
-                HectonArenaAllocator.CacheLineAlignment,
+                NativeArrayOptions.UninitializedMemory,
                 OwnerHash,
-                out byte* ptr));
-            Assert.AreNotEqual(IntPtr.Zero, (IntPtr)ptr);
+                out NativeArenaArray<byte> buffer));
+            Assert.IsTrue(buffer.IsCreated);
 
             HectonArenaAllocator.EndFrameSwap();
             Assert.IsTrue(HectonArenaAllocator.TryGetOwnerLastFrameBytes(OwnerHash, out int lastFrameBytes));

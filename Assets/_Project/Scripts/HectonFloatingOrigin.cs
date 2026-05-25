@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -16,7 +16,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Jobs;
 using UnityEngine.SceneManagement;
 
 namespace Hecton8.Core
@@ -27,28 +26,8 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)]
-    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct OriginShiftTranslateJob : IJobParallelForTransform
-        {
-            public Vector3 ShiftOffset;
-
-            public void Execute(int index, TransformAccess transform)
-            {
-                if (!transform.isValid)
-                    return;
-
-                float3 shift = new float3(ShiftOffset.x, ShiftOffset.y, ShiftOffset.z);
-                Vector3 localPositionVector = transform.localPosition;
-                float3 position = new float3(localPositionVector.x, localPositionVector.y, localPositionVector.z);
-                if (!math.all(math.isfinite(shift)) || !math.all(math.isfinite(position)))
-                    return;
-
-                transform.localPosition = localPositionVector - ShiftOffset;
-            }
-        }
-
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct AupDriftCheckJob : IJobParallelFor
         {
@@ -103,7 +82,7 @@ namespace Hecton8.Core
         // COLD ALLOC: List<GameObject>[1024] - scene root staging for shift target and particle rebases - owner: HectonFloatingOrigin
         private readonly List<GameObject> _sceneRootObjects = new List<GameObject>(ShiftSceneRootCapacity);
         private readonly List<Scene> _pendingLoadedScenes = new List<Scene>(8);
-        // COLD ALLOC: List<Transform>[1024] - root transform staging for TransformAccessArray rebuilds - owner: HectonFloatingOrigin
+        // COLD ALLOC: List<Transform>[1024] - root transform staging for VISUAL_SYNC origin shifts - owner: HectonFloatingOrigin
         private readonly List<Transform> _shiftTargetTransforms = new List<Transform>(ShiftSceneRootCapacity);
         private readonly List<MonoBehaviour> _sceneComponentScratch = new List<MonoBehaviour>(512);
         // COLD ALLOC: List<ParticleSystem>[4096] - shift-frame particle system discovery staging - owner: HectonFloatingOrigin
@@ -111,14 +90,15 @@ namespace Hecton8.Core
         // COLD ALLOC: ParticleSystem.Particle[16384] - shift-frame world-space particle rebase scratch - owner: HectonFloatingOrigin
         private readonly ParticleSystem.Particle[] _originShiftParticleScratch = new ParticleSystem.Particle[OriginShiftParticleBufferCapacity];
 
-        private TransformAccessArray _shiftTargetAccessArray;
         private Transform[] _shiftTargetArray = Array.Empty<Transform>();
         private bool _shiftTargetsDirty = true;
         private bool _isRegistered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _sceneEventsSubscribed;
         private bool _isShiftInProgress;
         private bool _hasPendingShift;
+        private bool _hasPendingImmediateShiftVisualSync;
         private bool _physicsPauseActive;
         private bool _shiftDeadzoneArmed = true;
         private bool _hasPreviousAnchorPosition;
@@ -136,8 +116,14 @@ namespace Hecton8.Core
         private int _driftCheckCount;
         private int _lastShiftSceneReadyCount;
         private int _lastShiftSceneTotal;
+        private bool _pendingSceneSynchronizationVisualSync;
+        private bool _pendingParticleSystemRebase;
+        private bool _pendingAupJitterMaskUpload;
+        private float _pendingAupJitterMaskValue;
         private Vector3 _previousAnchorPosition;
         private Vector3 _pendingShiftOffset;
+        private Vector3 _pendingImmediateShiftVisualSyncOffset;
+        private OriginShiftEventData _pendingParticleSystemRebaseEvent;
         private Rigidbody _anchorRigidbody;
         private CriticalAupTracker _playerDriftTracker;
         private CriticalAupTracker _submarineDriftTracker;
@@ -226,7 +212,7 @@ namespace Hecton8.Core
         public static bool TryGetAupUniverseTunerSnapshot(out AupUniverseTunerSnapshot snapshot)
         {
             HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
-            IDataVault vault = origin != null ? origin._dataVault ?? GlobalRegistry.DataVault : GlobalRegistry.DataVault;
+            IDataVault vault = ResolveAupTunerVault(origin);
             uint sequence = origin != null ? origin._shiftSequence : 0u;
             return AupOriginShiftCoordinator.TryGetEditorSnapshot(vault, sequence, out snapshot);
         }
@@ -235,7 +221,7 @@ namespace Hecton8.Core
         public static void SetRebaseThresholdForTuner(float thresholdMeters)
         {
             HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
-            IDataVault vault = origin != null ? origin._dataVault ?? GlobalRegistry.DataVault : GlobalRegistry.DataVault;
+            IDataVault vault = ResolveAupTunerVault(origin);
             float threshold = math.clamp(math.isfinite(thresholdMeters) ? thresholdMeters : 4000f, 2000f, 8000f);
             if (origin != null)
             {
@@ -250,20 +236,25 @@ namespace Hecton8.Core
         public static void ForceRebaseNowForTuner()
         {
             HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
-            IDataVault vault = origin != null ? origin._dataVault ?? GlobalRegistry.DataVault : GlobalRegistry.DataVault;
+            IDataVault vault = ResolveAupTunerVault(origin);
             AupOriginShiftCoordinator.RequestManualRebase(vault);
         }
 
         /// <summary>Editor facade for cold CSV override reloads outside the simulation hot path.</summary>
         public static bool ReloadAupConstantsForTuner()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
-            IDataVault vault = origin != null ? origin._dataVault ?? GlobalRegistry.DataVault : GlobalRegistry.DataVault;
+            IDataVault vault = ResolveAupTunerVault(origin);
             return AupOriginShiftCoordinator.TryReloadCsvOverrideFromDisk(vault);
 #else
             return false;
 #endif
+        }
+
+        private static IDataVault ResolveAupTunerVault(HectonFloatingOrigin origin)
+        {
+            return origin != null ? origin._dataVault : GlobalRegistry.DataVault;
         }
 
         /// <summary>Last committed shift event payload.</summary>
@@ -429,8 +420,8 @@ namespace Hecton8.Core
 
             body.position = runtimePosition;
             body.MovePosition(runtimePosition);
-            body.linearVelocity = linearVelocity;
-            body.angularVelocity = angularVelocity;
+            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(body, linearVelocity, wake: !wasSleeping);
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, angularVelocity, wake: !wasSleeping);
             if (wasSleeping)
                 body.Sleep();
             else
@@ -456,7 +447,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="listener">Listener instance to test.</param>
         /// <returns>True when the listener is present.</returns>
-        internal static bool IsListenerRegistered(IOriginShiftListener listener)
+        public static bool IsListenerRegistered(IOriginShiftListener listener)
         {
             return listener != null && ContainsOriginShiftListener(listener);
         }
@@ -539,7 +530,7 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterFloatingOriginRuntime(this);
             _dataVault = GlobalRegistry.DataVault;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
             _submarineRuntime = GlobalRegistry.Submarine;
             TryRegisterHotSwapListener();
             RefreshThresholdCache();
@@ -614,7 +605,6 @@ namespace Hecton8.Core
             TryUnregister();
             TryUnregisterHotSwapListener();
             UnsubscribeSceneEvents();
-            DisposeShiftTargetAccessArray();
             DisposeDriftCheckState();
 
             if (GlobalRegistry.FloatingOrigin == this)
@@ -669,7 +659,7 @@ namespace Hecton8.Core
             }
 
             if (_shiftTargetsDirty || _pendingLoadedScenes.Count > 0)
-                ProcessPendingSceneSynchronization();
+                _pendingSceneSynchronizationVisualSync = true;
 
             if (_hasPendingShift)
             {
@@ -679,7 +669,7 @@ namespace Hecton8.Core
                     _pendingShiftOffset = Vector3.zero;
                     _pendingShiftFrame = -1;
                     _hasPendingShift = false;
-                    BeginShiftWorldImmediate(pendingShiftOffset);
+                    QueueImmediateShiftVisualSync(pendingShiftOffset);
                 }
 
                 return;
@@ -745,6 +735,37 @@ namespace Hecton8.Core
             }
         }
 
+        public void LateFrameTick()
+        {
+            if (_hasPendingImmediateShiftVisualSync && !_isShiftInProgress && !_physicsPauseActive)
+            {
+                Vector3 shiftOffset = _pendingImmediateShiftVisualSyncOffset;
+                _pendingImmediateShiftVisualSyncOffset = Vector3.zero;
+                _hasPendingImmediateShiftVisualSync = false;
+                BeginShiftWorldImmediate(shiftOffset);
+            }
+
+            if (_pendingSceneSynchronizationVisualSync && !_isShiftInProgress && !_physicsPauseActive)
+            {
+                _pendingSceneSynchronizationVisualSync = false;
+                ProcessPendingSceneSynchronization();
+            }
+
+            if (_pendingParticleSystemRebase)
+            {
+                OriginShiftEventData shiftEvent = _pendingParticleSystemRebaseEvent;
+                _pendingParticleSystemRebaseEvent = default;
+                _pendingParticleSystemRebase = false;
+                RebaseParticleSystemsForOriginShift(in shiftEvent);
+            }
+
+            if (_pendingAupJitterMaskUpload)
+            {
+                _pendingAupJitterMaskUpload = false;
+                Shader.SetGlobalFloat(_AupJitterMaskId, _pendingAupJitterMaskValue);
+            }
+        }
+
         private bool ShouldRunPrecisionWatchdogFrame()
         {
             int frame = Time.frameCount;
@@ -785,6 +806,13 @@ namespace Hecton8.Core
             _pendingShiftFrame = Time.frameCount + 1;
             _hasPendingShift = true;
             PublishAupPreShiftSignal(shiftOffset, _shiftSequence + 1u);
+        }
+
+        private void QueueImmediateShiftVisualSync(Vector3 shiftOffset)
+        {
+            _pendingImmediateShiftVisualSyncOffset = shiftOffset;
+            _hasPendingImmediateShiftVisualSync = true;
+            TryRegister();
         }
 
         private void BeginShiftWorldImmediate(Vector3 shiftOffset)
@@ -853,21 +881,8 @@ namespace Hecton8.Core
                     nextShiftSequence,
                     out aupScheduleInfo);
 
-                if (_shiftTargetAccessArray.isCreated && _shiftTargetAccessArray.length > 0)
-                {
-                    OriginShiftTranslateJob shiftJob = new OriginShiftTranslateJob
-                    {
-                        ShiftOffset = shiftOffset
-                    };
-
-                    JobHandle transformHandle = UnityEngine.Jobs.IJobParallelForTransformExtensions.ScheduleByRef(ref shiftJob, _shiftTargetAccessArray, default);
-                    JobHandle combinedHandle = JobHandle.CombineDependencies(aupRebaseHandle, transformHandle);
-                    await AwaitTransformShiftJobAsync(combinedHandle, cancellationToken);
-                }
-                else
-                {
-                    await AwaitTransformShiftJobAsync(aupRebaseHandle, cancellationToken);
-                }
+                ApplyOriginShiftToCachedRootTransforms(shiftOffset);
+                await AwaitTransformShiftJobAsync(aupRebaseHandle, cancellationToken);
 
                 aupRebaseElapsedMs = (System.Diagnostics.Stopwatch.GetTimestamp() - aupRebaseStartTicks) *
                     1000.0d /
@@ -892,7 +907,7 @@ namespace Hecton8.Core
                     fixedInterpolationAlpha);
 
                 ArmAupJitterMask(Time.frameCount);
-                RebaseParticleSystemsForOriginShift(in _lastShiftEvent);
+                QueueParticleSystemRebase(in _lastShiftEvent);
                 PublishAupShiftSignal(in _lastShiftEvent);
                 CrashTelemetryBuffer.ReportOriginShift(shiftOffset, _shiftSequence);
                 PublishGlobalOffsets();
@@ -944,7 +959,7 @@ namespace Hecton8.Core
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (trackedBodiesFinalized)
-                Debug.Log("[FloatingOrigin] shift committed.");
+                Hecton8.Core.H8Debug.Log("[FloatingOrigin] shift committed.");
 #endif
         }
 
@@ -958,7 +973,7 @@ namespace Hecton8.Core
                 SectorDelta = sectorDelta,
                 Flags = shiftData.IsSafeTeleport != 0 ? 1u : 0u
             };
-            GlobalSignals.Publish(in signal);
+            AupSignalRoute.TryQueueShift(in signal);
         }
 
         private void PublishAupPreShiftSignal(Vector3 shiftOffset, uint nextShiftSequence)
@@ -972,7 +987,7 @@ namespace Hecton8.Core
                 SectorDelta = ResolveAupSectorDelta(previousOffset, newOffset),
                 Flags = 0u
             };
-            GlobalSignals.Publish(in signal);
+            AupSignalRoute.TryQueuePreShift(in signal);
         }
 
         private static int3 ResolveAupSectorDelta(double3 previousOffset, double3 newOffset)
@@ -1031,7 +1046,7 @@ namespace Hecton8.Core
                     }
                 }
 
-                RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
+                IRenderTexturePoolService pool = GlobalRegistry.RenderTexturePoolService;
                 pool?.ClearAllPools();
             }
             catch (OperationCanceledException)
@@ -1184,6 +1199,12 @@ namespace Hecton8.Core
 
             _sceneComponentScratch.Clear();
             _sceneRootObjects.Clear();
+        }
+
+        private void QueueParticleSystemRebase(in OriginShiftEventData shiftData)
+        {
+            _pendingParticleSystemRebaseEvent = shiftData;
+            _pendingParticleSystemRebase = true;
         }
 
         private void RebaseParticleSystemsForOriginShift(in OriginShiftEventData shiftData)
@@ -1761,7 +1782,7 @@ namespace Hecton8.Core
                 return TryOpenDriftCheckBuffer(vault, ref handle, bufferId, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 DriftCheckEntityCapacity,
                 DriftCheckOwnerSystemId,
@@ -1845,20 +1866,26 @@ namespace Hecton8.Core
             for (int i = 0; i < transformCount; i++)
                 _shiftTargetArray[i] = _shiftTargetTransforms[i];
 
-            DisposeShiftTargetAccessArray();
-            if (transformCount > 0)
-            {
-                TransformAccessArray.Allocate(transformCount, -1, out _shiftTargetAccessArray);
-                _shiftTargetAccessArray.SetTransforms(_shiftTargetArray);
-            }
-
             _shiftTargetsDirty = false;
         }
 
-        private void DisposeShiftTargetAccessArray()
+        private void ApplyOriginShiftToCachedRootTransforms(Vector3 shiftOffset)
         {
-            if (_shiftTargetAccessArray.isCreated)
-                _shiftTargetAccessArray.Dispose();
+            if (!IsFiniteVector(shiftOffset))
+                return;
+
+            for (int i = 0; i < _shiftTargetArray.Length; i++)
+            {
+                Transform rootTransform = _shiftTargetArray[i];
+                if (rootTransform == null)
+                    continue;
+
+                Vector3 localPositionVector = rootTransform.localPosition;
+                if (!IsFiniteVector(localPositionVector))
+                    continue;
+
+                rootTransform.localPosition = localPositionVector - shiftOffset;
+            }
         }
 
         private void TryResolveAnchor(bool force)
@@ -1948,7 +1975,7 @@ namespace Hecton8.Core
         private void ArmAupJitterMask(int frame)
         {
             _aupJitterMaskReleaseFrame = frame + 1;
-            Shader.SetGlobalFloat(_AupJitterMaskId, 1f);
+            QueueAupJitterMaskUpload(1f);
         }
 
         private void UpdateAupJitterMaskRelease()
@@ -1957,7 +1984,13 @@ namespace Hecton8.Core
                 return;
 
             _aupJitterMaskReleaseFrame = -1;
-            Shader.SetGlobalFloat(_AupJitterMaskId, 0f);
+            QueueAupJitterMaskUpload(0f);
+        }
+
+        private void QueueAupJitterMaskUpload(float value)
+        {
+            _pendingAupJitterMaskValue = math.saturate(value);
+            _pendingAupJitterMaskUpload = true;
         }
 
         private float ResolveAupJitterMask()
@@ -1972,22 +2005,35 @@ namespace Hecton8.Core
 
         private void TryRegister()
         {
-            if (_isRegistered)
+            if (_isRegistered && _lateFrameRegistered)
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            if (!_isRegistered)
+            {
+                _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            }
+
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
         {
-            if (!_isRegistered)
+            if (!_isRegistered && !_lateFrameRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            if (_isRegistered)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            if (_lateFrameRegistered)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+
             _isRegistered = false;
+            _lateFrameRegistered = false;
+            _pendingSceneSynchronizationVisualSync = false;
+            _pendingParticleSystemRebase = false;
+            _pendingAupJitterMaskUpload = false;
         }
 
         private void TryRegisterHotSwapListener()

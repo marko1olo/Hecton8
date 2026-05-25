@@ -134,9 +134,9 @@ namespace Hecton8.Editor
                 return TopographicalSonarSynthesizer.ActiveRuntime;
 
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindFirstObjectByType<TopographicalSonarSynthesizer>();
+            return UnityEngine.Object.FindAnyObjectByType<TopographicalSonarSynthesizer>();
 #else
-            return UnityEngine.Object.FindObjectOfType<TopographicalSonarSynthesizer>();
+            return UnityEngine.Object.FindAnyObjectByType<TopographicalSonarSynthesizer>();
 #endif
         }
     }

@@ -1,4 +1,4 @@
-# Steam Page Asset Requirements Checklist
+﻿# Steam Page Asset Requirements Checklist
 
 Status: working checklist / recheck official Steamworks docs before upload
 Public stance: single-player-first scope / proof-first public copy

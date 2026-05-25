@@ -10,6 +10,7 @@ namespace Hecton8.Editor
     using System.IO;
     using System.Text;
     using Hecton8.Core;
+    using Hecton8.Core.Contracts;
     using Hecton8.Core.Memory;
     using Hecton8.Interaction;
     using Newtonsoft.Json;

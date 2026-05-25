@@ -1,0 +1,139 @@
+﻿{
+    "schema":  "hecton8.vault_exorcism_report.v15",
+    "agentId":  "X_000",
+    "domain":  "ECHELON 1 CORE \u0026 MEMORY INFRASTRUCTURE",
+    "generatedAtLocal":  "2026-05-24T10:29:38.8206547+04:00",
+    "sourceRoot":  "Assets/_Project/Scripts",
+    "targetedDomain":  [
+                           "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
+                           "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
+                           "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs",
+                           "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                           "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+                           "Assets/_Project/Scripts/Gameplay/DebrisManager.cs",
+                           "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+                           "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+                           "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+                           "Assets/_Project/Scripts/HUDNotification.cs",
+                           "Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs",
+                           "Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs",
+                           "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
+                           "Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs",
+                           "Assets/_Project/Scripts/RaycastBatchHelper.cs",
+                           "Assets/_Project/Scripts/Interaction/PhysicalToolGripOffsets.cs",
+                           "Assets/_Project/Scripts/UI/DiegeticHudManualLayout.cs",
+                           "Assets/_Project/Scripts/UI/FontStreamingManager.cs",
+                           "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+                           "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs"
+                       ],
+    "verification":  {
+                         "latestCompileCommand":  "dotnet build Hecton8.Editor.csproj --no-restore /nr:false -p:UseSharedCompilation=false -v:minimal",
+                         "latestCompileResult":  "succeeded",
+                         "latestCompileDuration":  "00:01:34.75",
+                         "warnings":  0,
+                         "errors":  0,
+                         "buildGate":  "Final accepted run launched after gate sampled CPU 47% and active dotnet/csc 0 after 26 attempts.",
+                         "roslynAuditExecutable":  "Tools/VaultNativeAliasRoslynAudit/bin/Debug/net10.0/VaultNativeAliasRoslynAudit.exe",
+                         "sourceLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_X_000.json",
+                         "monoBehaviourResidualReport":  "Docs/Reports/VAULT_MONOBEHAVIOUR_NATIVE_FIELD_AUDIT_X_000.json",
+                         "vehicleSubOsCockpitScopedForbiddenPersistentFindings":  0,
+                         "fakeRadarBlipControllerScopedForbiddenPersistentFindings":  0,
+                         "parseFailures":  0,
+                         "sourceLedgerHashSha256":  "aeca727724ffa3d082660c7c28726bd038689766a6e25f42ab9fc5e9d335638e"
+                     },
+    "globalNativeAliasCounts":  {
+                                    "initial":  {
+                                                    "scannedFiles":  2369,
+                                                    "parseFailures":  0,
+                                                    "totalNativeFieldDeclarations":  7774,
+                                                    "forbiddenPersistentCandidates":  2270,
+                                                    "forbiddenMonoBehaviourCandidates":  699,
+                                                    "auditHashSha256":  "9ca7dd4a557409d491330d465ea51689ae64fb2b37c3550580e08f5002305f99"
+                                                },
+                                    "afterVehicleSubOsAndFakeRadar":  {
+                                                                          "scannedFiles":  2398,
+                                                                          "parseFailures":  0,
+                                                                          "totalNativeFieldDeclarations":  7736,
+                                                                          "forbiddenPersistentCandidates":  2224,
+                                                                          "forbiddenMonoBehaviourCandidates":  661,
+                                                                          "monoBehaviourFiles":  60,
+                                                                          "jobTransientFields":  5467,
+                                                                          "coreMemoryAllowedFields":  45,
+                                                                          "rawPointerFields":  894,
+                                                                          "auditHashSha256":  "aeca727724ffa3d082660c7c28726bd038689766a6e25f42ab9fc5e9d335638e"
+                                                                      },
+                                    "targetedPersistentNativeAliasesRemovedByX000":  39,
+                                    "latestSliceTargetedPersistentNativeAliasesRemoved":  10,
+                                    "globalDeltaForbiddenPersistentCandidatesFromInitial":  -46,
+                                    "globalDeltaMonoBehaviourCandidatesFromInitial":  -38,
+                                    "concurrencyNote":  "Global residual counts include concurrent workspace edits by other agents. X_000 latest targeted delta is -7 fields in VehicleSubOsCockpitRuntime and -3 fields in FakeRadarBlipController."
+                                },
+    "targetedNativeAliasCounts":  {
+                                      "VehicleSubOsCockpitRuntime":  {
+                                                                         "persistentNativeFieldsBefore":  [
+                                                                                                              "NativeArray\u003cbyte\u003e _buttonStates",
+                                                                                                              "NativeArray\u003cbyte\u003e _buttonTargets",
+                                                                                                              "NativeArray\u003cfloat\u003e _buttonProgress",
+                                                                                                              "NativeArray\u003cfloat\u003e _buttonOffsets",
+                                                                                                              "NativeArray\u003cfloat3\u003e _buttonBaseLocalPositions",
+                                                                                                              "NativeArray\u003cfloat4x4\u003e _buttonMatrices",
+                                                                                                              "NativeArray\u003cCockpitTelemetryEntry\u003e _telemetryRing"
+                                                                                                          ],
+                                                                         "persistentNativeFieldsAfter":  [
+
+                                                                                                         ],
+                                                                         "persistentNativeFieldDelta":  -7,
+                                                                         "remainingForbiddenPersistentFindings":  0,
+                                                                         "scopeNote":  "Button and telemetry payloads moved to DataVault BufferID 74328..74334; MonoBehaviour stores generation handles and scalar lock state only."
+                                                                     },
+                                      "FakeRadarBlipController":  {
+                                                                      "persistentNativeFieldsBefore":  [
+                                                                                                           "NativeArray\u003cRadarCullCandidate\u003e _radarCullCandidates",
+                                                                                                           "NativeArray\u003cRadarCullResult\u003e _radarCullResults",
+                                                                                                           "NativeList\u003cMatrix4x4\u003e _visibleBlipMatrices"
+                                                                                                       ],
+                                                                      "persistentNativeFieldsAfter":  [
+
+                                                                                                      ],
+                                                                      "persistentNativeFieldDelta":  -3,
+                                                                      "remainingForbiddenPersistentFindings":  0,
+                                                                      "scopeNote":  "Tiny 64-blip cull job and native handoff list removed. Tick computes value cull directly into fixed managed Matrix4x4[64] draw buffer."
+                                                                  }
+                                  },
+    "arm64LayoutProof":  {
+                             "report":  "Docs/Reports/VAULT_ARM64_LAYOUT_REPORT_X_000.md",
+                             "rowsCheckedLatest":  [
+                                                       "CockpitButtonBasePosition explicit 16-byte row",
+                                                       "CockpitTelemetryEntry explicit 64-byte row",
+                                                       "VehicleSub primitive byte/float lanes and float4x4 matrix rows",
+                                                       "FakeRadarBlipController introduced no DataVault DTO and removed RadarCullCandidate/RadarCullResult native rows"
+                                                   ],
+                             "verdict":  "Latest custom DTO rows are 8-byte-size-clean; no double/long/ulong field is misaligned."
+                         },
+    "readAccessorPurityProof":  {
+                                    "report":  "Docs/Reports/VAULT_READ_ACCESSOR_PURITY_X_000.md",
+                                    "verdict":  "VehicleSub TryRead* methods resolve read-only DataVault views only. FakeRadarBlipController no longer has native read accessors; render reads fixed managed Matrix4x4 buffer only."
+                                },
+    "residualRisk":  {
+                         "projectWideAliasEradicationComplete":  false,
+                         "reason":  "Full Roslyn audit still reports 2224 forbidden persistent native alias candidates, including 661 MonoBehaviour candidates across 60 files.",
+                         "topMonoBehaviourResidualOwners":  [
+                                                                "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs: 50",
+                                                                "Assets/_Project/Scripts/PlayerInventory.cs: 49",
+                                                                "Assets/_Project/Scripts/HectonFluidEngine.cs: 39",
+                                                                "Assets/_Project/Scripts/World/EcosystemDirector.cs: 39",
+                                                                "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs: 34",
+                                                                "Assets/_Project/Scripts/SpatialAudioManager.cs: 33",
+                                                                "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs: 33",
+                                                                "Assets/_Project/Scripts/TetherInstance.cs: 25",
+                                                                "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs: 24",
+                                                                "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs: 19"
+                                                            ],
+                         "nextHardBlockers":  [
+                                                  "Large world, inventory, fluid, atmosphere, audio, and AI owners require dependency maps before migration.",
+                                                  "Static NativeQueue lanes require SignalBus route decisions before removal.",
+                                                  "Multi-instance prefab-owned state cannot safely use one global BufferID without a per-instance route card."
+                                              ]
+                     },
+    "proofHashSha256":  "aeca727724ffa3d082660c7c28726bd038689766a6e25f42ab9fc5e9d335638e"
+}

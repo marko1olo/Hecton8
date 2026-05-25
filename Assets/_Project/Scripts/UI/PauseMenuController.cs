@@ -1,15 +1,13 @@
-using System;
+﻿using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Input;
 using Hecton8.Optimization;
 using Hecton8.SaveSystem;
 using Hecton8.Crafting;
 using Hecton.Localization;
 using Hecton.UI.MainMenu;
 using TMPro;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,7 +20,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Pause Menu Controller")]
-    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener
+    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
         private const string PauseMenuRootName = "PauseMenu_Root";
@@ -74,7 +72,11 @@ namespace Hecton8.UI
         private float _cachedTimeDilationScalar = 1f;
         private uint _pauseSignalSequence;
         private uint _lastPlayerInputSignalSequence;
-        private InputManager _inputManager;
+        private INativeInputManagerRuntime _inputManager;
+        private bool _hotSwapListenerRegistered;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private ISaveService _cachedSaveService;
+        private LocalizationManager _cachedLocalization;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
         private RectTransform _root;
@@ -108,6 +110,8 @@ namespace Hecton8.UI
         private readonly char[] _settingsLanguageBuffer = new char[96];
         // COLD ALLOC: char[64] — save slot button label staging buffer — owner: PauseMenuController
         private readonly char[] _saveSlotLabelBuffer = new char[64];
+        // COLD ALLOC: char[192] — modal save-error staging buffer copied directly into TMP — owner: PauseMenuController
+        private readonly char[] _modalMessageBuffer = new char[192];
 
         public bool IsOpen => _isOpen;
         public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
@@ -126,13 +130,13 @@ namespace Hecton8.UI
             SimulationPauseSignal signal = new SimulationPauseSignal
             {
                 SourceHash = PauseMenuSignalSourceHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
                 Sequence = _pauseSignalSequence,
                 Paused = paused ? (byte)1 : (byte)0,
                 Flags = 0,
                 RestoreScalar = restoreScalar
             };
-            GlobalSignals.Publish(in signal);
+            SimulationSignalRoute.TryQueuePause(in signal);
 
             ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
             if (dispatcher != null)
@@ -149,32 +153,11 @@ namespace Hecton8.UI
         private static readonly string _cachedFailedTerminal = " FAILED.";
         private static readonly string _cachedUnknownErrorStatus = "UNKNOWN ERROR";
         private static readonly string _cachedUnknownErrorModal = "Unknown error";
-        private static readonly string _cachedSaveManagerUnavailable = "SAVE MANAGER UNAVAILABLE.";
+        private static readonly string _cachedSaveServiceUnavailable = "SAVE SERVICE UNAVAILABLE.";
         private static readonly string _cachedSaveInProgress = "SAVE ALREADY IN PROGRESS.";
         private static readonly string _cachedAwaitingSaveCommand = "Awaiting save command.";
         private static readonly string _cachedPreparingSceneTransition = "Preparing scene transition...";
         private static readonly string _cachedWritePrefix = "WRITE ";
-
-        // Simple cache for ToUpperInvariant to reduce allocations in UI strings
-        private static readonly string[] _cachedUpperStrings = new string[16];
-        // COLD ALLOC: string[3] — fixed save-slot uppercase labels reused across pause-menu save status updates — owner: PauseMenuController
-        private static readonly string[] _cachedUpperSlotDisplayNames = new string[SaveEvents.ManualSlotCount];
-        private static GameLanguage _cachedUpperSlotLanguage = (GameLanguage)(-1);
-
-        private static string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return input;
-
-            int hash = input.GetHashCode() & 0xF;
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
-        }
 
         private void TryRegister()
         {
@@ -196,11 +179,36 @@ namespace Hecton8.UI
             _registered = false;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedSaveService = Hecton8.Core.GlobalRegistry.Save;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
         private void Awake()
         {
             if (Application.isPlaying)
                 ActiveRuntimeInstance = this;
 
+            CacheRegistryServicesCold();
             NormalizeSaveSlots();
             AutoResolve();
             EnsureBuilt();
@@ -213,6 +221,8 @@ namespace Hecton8.UI
                 ActiveRuntimeInstance = this;
 
             NormalizeSaveSlots();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryAcquireSaveStatusBuffer();
             TryRegister();
             BindInputActions();
@@ -230,6 +240,7 @@ namespace Hecton8.UI
 
             LocalizationEvents.UnregisterLanguageListener(this);
             SaveEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
 
             TryUnregister();
             ReleaseSaveStatusBuffer();
@@ -250,7 +261,38 @@ namespace Hecton8.UI
                 ActiveRuntimeInstance = null;
 
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ReleaseSaveStatusBuffer();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    if (playerPDA == null && _cachedPlayerContext != null)
+                        playerPDA = _cachedPlayerContext.PlayerPDA;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _cachedSaveService = currentService as ISaveService;
+                    if (_activeSection == PauseSection.Saves)
+                        RefreshSaveSectionState();
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as LocalizationManager;
+                    if (_built)
+                    {
+                        RefreshSaveSlotButtonLabels();
+                        RefreshLanguageSettingsStatus();
+                        if (_activeSection == PauseSection.Saves)
+                            RefreshSaveSectionState();
+                    }
+                    break;
+            }
         }
 
         private void OnValidate()
@@ -272,10 +314,11 @@ namespace Hecton8.UI
 
         private void NormalizeSaveSlots()
         {
-            if (saveSlots == null || saveSlots.Length != SaveEvents.ManualSlotCount)
-                saveSlots = new string[SaveEvents.ManualSlotCount]; // COLD ALLOC: string[3] — repair stale serialized save slot config — owner: PauseMenuController
+            if (saveSlots == null)
+                return;
 
-            for (int i = 0; i < SaveEvents.ManualSlotCount; i++)
+            int count = math.min(saveSlots.Length, SaveEvents.ManualSlotCount);
+            for (int i = 0; i < count; i++)
             {
                 string canonicalSlotName = SaveEvents.ResolveManualSlotName(i);
                 if (!string.Equals(saveSlots[i], canonicalSlotName, StringComparison.Ordinal))
@@ -321,16 +364,15 @@ namespace Hecton8.UI
             switch (payload.Type)
             {
                 case SaveEventType.SaveStarted:
-                    HandleSaveStarted(SaveEvents.ResolveSlotName(in payload.SlotName));
+                    HandleSaveStarted(SaveEvents.ResolveSlotName(payload.SlotHash));
                     return;
 
                 case SaveEventType.SaveCompleted:
-                    HandleSaveCompleted(SaveEvents.ResolveSlotName(in payload.SlotName));
+                    HandleSaveCompleted(SaveEvents.ResolveSlotName(payload.SlotHash));
                     return;
 
                 case SaveEventType.SaveFailed:
-                    FixedString128Bytes failedMessage = payload.Message;
-                    HandleSaveFailed(SaveEvents.ResolveSlotName(in payload.SlotName), in failedMessage);
+                    HandleSaveFailed(SaveEvents.ResolveSlotName(payload.SlotHash), SaveEvents.ResolveMessage(in payload));
                     return;
             }
         }
@@ -350,7 +392,7 @@ namespace Hecton8.UI
             if (HectonFabricatorUI.IsMenuOpen)
             {
                 // Trigger the deferred fabricator-closed payload so HectonFabricatorUI closes through the event lane.
-                CraftingEvents.RaiseFabricatorClosed();
+                CraftingEvents.TryRaiseFabricatorClosed();
             }
 
             EnsureBuilt();
@@ -421,7 +463,6 @@ namespace Hecton8.UI
 
         private void OnLanguageChanged(GameLanguage newLanguage)
         {
-            ClearUpperSlotDisplayCache();
             RefreshLocalizedTexts();
         }
 
@@ -509,7 +550,7 @@ namespace Hecton8.UI
                 if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                    IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                     if (playerContext != null && playerContext.PlayerPDA != null)
                     {
                         playerPDA = playerContext.PlayerPDA;
@@ -600,7 +641,7 @@ namespace Hecton8.UI
             _headerTitle = CreateText(header, "HeaderTitle", labelFont, 20f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(_headerTitle.rectTransform, new Vector2(0f, 0f), new Vector2(0.55f, 1f), new Vector2(18f, 0f), new Vector2(-8f, 0f));
             _headerTitle.color = Primary;
-            _headerTitle.SetText("MISSION PAUSE");
+            TmpTextNoAlloc.Set(_headerTitle, "MISSION PAUSE");
 
             _headerSub = CreateText(header, "HeaderSub", labelFont, 11f, FontStyles.Normal, TextAlignmentOptions.Right);
             Anchor(_headerSub.rectTransform, new Vector2(0.42f, 0f), new Vector2(1f, 1f), new Vector2(8f, 0f), new Vector2(-18f, 0f));
@@ -635,7 +676,7 @@ namespace Hecton8.UI
             _footerHint = CreateText(footer, "FooterHint", labelFont, 10.5f, FontStyles.Italic, TextAlignmentOptions.Center);
             Stretch(_footerHint.rectTransform, 12f, 12f, 0f, 0f);
             _footerHint.color = DimLow;
-            _footerHint.SetText("ESC = back / resume  |  SETTINGS hosts controls and rebinds");
+            TmpTextNoAlloc.Set(_footerHint, "ESC = back / resume  |  SETTINGS hosts controls and rebinds");
 
             _built = true;
         }
@@ -679,7 +720,7 @@ namespace Hecton8.UI
         private void BuildMainPanel(RectTransform panel)
         {
             TextMeshProUGUI title = CreateSectionTitle(panel, "MISSION CONTROL");
-            title.SetText("MISSION CONTROL");
+            TmpTextNoAlloc.Set(title, "MISSION CONTROL");
 
             string[] labels =
             {
@@ -703,28 +744,28 @@ namespace Hecton8.UI
 
             for (int i = 0; i < labels.Length; i++)
             {
-                RectTransform btn = CreateButton(panel, $"MainButton_{i}", labels[i], new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                RectTransform btn = CreateButton(panel, "MainButton", labels[i], new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2(0f, -88f - i * 58f), new Vector2(420f, 42f), actions[i]);
 
                 if (i == 0)
                 {
                     btn.TryGetComponent(out _mainResumeButton);
-                    GetText(btn, "Label")?.SetText("RESUME EXPEDITION");
+                    TmpTextNoAlloc.Set(GetText(btn, "Label"), "RESUME EXPEDITION");
                 }
             }
         }
 
         private void BuildSavesPanel(RectTransform panel)
         {
-            CreateSectionTitle(panel, "SAVE STATION").SetText("SAVE STATION");
+            TmpTextNoAlloc.Set(CreateSectionTitle(panel, "SAVE STATION"), "SAVE STATION");
             CreateSectionSub(panel, "Manual save points. Use these before risky dives or major construction changes.")
                 .rectTransform.anchoredPosition = new Vector2(0f, -42f);
 
-            _saveSlotButtons = new Button[saveSlots.Length];
-            for (int i = 0; i < saveSlots.Length; i++)
+            _saveSlotButtons = new Button[SaveEvents.ManualSlotCount];
+            for (int i = 0; i < SaveEvents.ManualSlotCount; i++)
             {
-                string slotName = saveSlots[i];
-                RectTransform btn = CreateButton(panel, $"SaveSlot_{i}", string.Concat(_cachedWritePrefix, GetUpperSlotDisplayName(slotName)),
+                string slotName = ResolveConfiguredSaveSlotName(i);
+                RectTransform btn = CreateButton(panel, "SaveSlot", "WRITE SLOT",
                     new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2(0f, -108f - i * 56f), new Vector2(420f, 40f),
                     () => SaveSlot(slotName));
@@ -752,36 +793,26 @@ namespace Hecton8.UI
 
         private void BuildHelpPanel(RectTransform panel)
         {
-            CreateSectionTitle(panel, "FIELD GUIDE").SetText("FIELD GUIDE");
+            TmpTextNoAlloc.Set(CreateSectionTitle(panel, "FIELD GUIDE"), "FIELD GUIDE");
 
             TextMeshProUGUI body = CreateText(panel, "HelpBody", numericFont, 12f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
             Anchor(body.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(28f, 68f), new Vector2(-28f, -74f));
             body.color = Dim;
             body.textWrappingMode = TextWrappingModes.Normal;
-            body.SetText(
-                "CORE INPUTS\n" +
-                "TAB  // PDA shell\n" +
-                "I    // inventory direct open\n" +
-                "1-4  // quick slot arm/swap\n" +
-                "LMB/RMB // primary / secondary tool action\n\n" +
-                "MISSION RHYTHM\n" +
-                "1. Scan and classify unknowns.\n" +
-                "2. Repair and stabilize critical infrastructure.\n" +
-                "3. Keep loadout aligned with cargo before committing to depth.\n" +
-                "4. Save before hazardous traversal, fauna contact, or base edits.");
+            TmpTextNoAlloc.Set(body, "CORE INPUTS\nTAB  // PDA shell\nI    // inventory direct open\n1-4  // quick slot arm/swap\nLMB/RMB // primary / secondary tool action\n\nMISSION RHYTHM\n1. Scan and classify unknowns.\n2. Repair and stabilize critical infrastructure.\n3. Keep loadout aligned with cargo before committing to depth.\n4. Save before hazardous traversal, fauna contact, or base edits.");
 
             _helpBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
         }
 
         private void BuildSettingsPanel(RectTransform panel)
         {
-            CreateSectionTitle(panel, "SETTINGS").SetText("SETTINGS");
-            CreateSectionSub(panel, ResolveLocalized(LocalizationKeys.SETTINGS_LANGUAGE_HINT,
+            TmpTextNoAlloc.Set(CreateSectionTitle(panel, "SETTINGS"), "SETTINGS");
+            CreateSectionSub(panel, ResolveLocalizedSpan(LocalizationKeys.SETTINGS_LANGUAGE_HINT,
                 "Controls were moved out of the PDA. Rebind them here. Language cycling is also available."))
                 .rectTransform.anchoredPosition = new Vector2(0f, -42f);
 
             RectTransform languageButton = CreateButton(panel, "LanguageButton",
-                ResolveLocalized(LocalizationKeys.SETTINGS_CYCLE_LANGUAGE, "CYCLE LANGUAGE"),
+                ResolveLocalizedSpan(LocalizationKeys.SETTINGS_CYCLE_LANGUAGE, "CYCLE LANGUAGE"),
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -98f), new Vector2(420f, 38f), CycleLanguage);
             languageButton.TryGetComponent(out _settingsLanguageButton);
@@ -822,18 +853,18 @@ namespace Hecton8.UI
             switch (section)
             {
                 case PauseSection.Main:
-                    _headerSub.SetText("resume, save, inspect field guidance, or move into settings");
+                    TmpTextNoAlloc.Set(_headerSub, "resume, save, inspect field guidance, or move into settings");
                     break;
                 case PauseSection.Saves:
-                    _headerSub.SetText("manual persistence via SaveManager");
+                    TmpTextNoAlloc.Set(_headerSub, "manual persistence via SaveManager");
                     RefreshSaveSlotButtonLabels();
                     RefreshSaveSectionState();
                     break;
                 case PauseSection.Help:
-                    _headerSub.SetText("compact operational reference for current tool and inventory loop");
+                    TmpTextNoAlloc.Set(_headerSub, "compact operational reference for current tool and inventory loop");
                     break;
                 case PauseSection.Settings:
-                    _headerSub.SetText("controls and interaction tuning are managed here now");
+                    TmpTextNoAlloc.Set(_headerSub, "controls and interaction tuning are managed here now");
                     RefreshSettingsPanel();
                     break;
             }
@@ -862,42 +893,42 @@ namespace Hecton8.UI
         /// </summary>
         private async Awaitable SaveSlotAsync(string slotName)
         {
-            string upperSlotName = GetUpperSlotDisplayName(slotName);
+            string upperSlotName = ResolveSlotDisplayName(slotName);
 
             if (_saveStatus != null)
                 ApplySaveStatusText(_cachedWriting, upperSlotName, "...");
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
-            if (saveManager == null)
+            ISaveService saveService = _cachedSaveService;
+            if (saveService == null)
             {
                 if (_saveStatus != null)
-                    ApplySaveStatusLiteral(_cachedSaveManagerUnavailable);
+                    ApplySaveStatusLiteral(_cachedSaveServiceUnavailable);
 
-                // Localized error message
-                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
-                string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save Error";
-                string message = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save system is unavailable. Cannot save game.";
+                int messageLength = CopyLocalizedSpanToModalBuffer(
+                    LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE,
+                    "Save system is unavailable. Cannot save game.");
 
                 ModalWindow.ShowWithCustomLabels(
-                    title,
-                    message,
+                    "Save Error",
+                    _modalMessageBuffer,
+                    messageLength,
                     null,
                     null,
-                    ResolveLocalized(LocalizationKeys.UI_OK, "OK"),
+                    "OK",
                     null);
                 return;
             }
 
             try
             {
-                if (saveManager.IsBusy)
+                if (saveService.IsBusy)
                 {
                     if (_saveStatus != null)
                         ApplySaveStatusLiteral(_cachedSaveInProgress);
                     return;
                 }
 
-                await saveManager.SaveGameAsync(slotName);
+                await saveService.SaveGameAsync(slotName);
             }
             catch (Exception ex)
             {
@@ -905,21 +936,20 @@ namespace Hecton8.UI
                 if (_saveStatus != null)
                     ApplySaveStatusText(string.Empty, upperSlotName, _cachedFailedTerminal);
 
-                // Localized error message
-                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
-                string displaySlotName = BuildSlotDisplayName(loc, slotName);
-                string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_CRASHED_TITLE) : "Save Error";
-                string message = loc != null 
-                    ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_CRASHED_MESSAGE, displaySlotName)
-                    : $"Save operation crashed for {displaySlotName}.\n\nRetry?";
+                int messageLength = BuildSaveModalMessage(
+                    LocalizationKeys.ERROR_SAVE_CRASHED_MESSAGE,
+                    "Save operation crashed.",
+                    slotName,
+                    default,
+                    false);
 
-                // Show retry modal on exception
                 ModalWindow.ShowWithCustomLabels(
-                    title,
-                    message,
+                    "Save Error",
+                    _modalMessageBuffer,
+                    messageLength,
                     () => SaveSlot(slotName), // Retry
                     null, // Cancel just closes modal
-                    ResolveLocalized(LocalizationKeys.UI_RETRY, "Retry"),
+                    "Retry",
                     "Cancel");
             }
         }
@@ -929,7 +959,7 @@ namespace Hecton8.UI
         private static void LogSaveSlotFailed(string slotName, Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {exception.Message}");
+            Debug.LogError("[PauseMenuController] Save failed.");
 #endif
         }
 
@@ -973,7 +1003,7 @@ namespace Hecton8.UI
             ApplySaveStatusText(string.Empty, value, string.Empty);
         }
 
-        private void ApplySaveFailedStatusText(string slotName, in FixedString128Bytes error)
+        private void ApplySaveFailedStatusText(string slotName, string error)
         {
             if (_saveStatus == null)
             {
@@ -984,10 +1014,10 @@ namespace Hecton8.UI
             TryAcquireSaveStatusBuffer();
             char[] buffer = _saveStatusBufferLease.IsValid ? _saveStatusBufferLease.Buffer : _saveStatusFallbackBuffer;
             int cursor = 0;
-            cursor += CopyStringToBuffer(GetUpperSlotDisplayName(slotName), buffer, cursor);
+            cursor += CopyStringToBuffer(ResolveSlotDisplayName(slotName), buffer, cursor);
             cursor += CopyStringToBuffer(_cachedFailed, buffer, cursor);
 
-            if (!CopyFixedStringUpperAsciiToBuffer(in error, buffer, ref cursor))
+            if (!CopyUpperAsciiStringToBuffer(error, buffer, ref cursor))
             {
                 cursor += CopyStringToBuffer(_cachedUnknownErrorStatus, buffer, cursor);
             }
@@ -1016,17 +1046,17 @@ namespace Hecton8.UI
             return safeLength;
         }
 
-        private static bool CopyFixedStringUpperAsciiToBuffer(
-            in FixedString128Bytes value,
+        private static bool CopyUpperAsciiStringToBuffer(
+            string value,
             char[] buffer,
             ref int offset)
         {
-            if (value.Length <= 0)
+            if (string.IsNullOrEmpty(value))
                 return false;
 
             for (int i = 0; i < value.Length; i++)
             {
-                if (value[i] > (byte)0x7F)
+                if (value[i] > 0x7F)
                     return false;
             }
 
@@ -1036,11 +1066,11 @@ namespace Hecton8.UI
             int safeLength = math.min(value.Length, buffer.Length - offset);
             for (int i = 0; i < safeLength; i++)
             {
-                byte raw = value[i];
-                if (raw >= (byte)'a' && raw <= (byte)'z')
-                    raw = (byte)(raw - 32);
+                char raw = value[i];
+                if (raw >= 'a' && raw <= 'z')
+                    raw = (char)(raw - 32);
 
-                buffer[offset + i] = (char)raw;
+                buffer[offset + i] = raw;
             }
 
             offset += safeLength;
@@ -1075,13 +1105,13 @@ namespace Hecton8.UI
             ClearPauseSelection();
 
             if (_headerTitle != null)
-                _headerTitle.SetText("RETURNING TO MAIN MENU");
+                TmpTextNoAlloc.Set(_headerTitle, "RETURNING TO MAIN MENU");
 
             if (_headerSub != null)
-                _headerSub.SetText("asynchronous scene handoff in progress");
+                TmpTextNoAlloc.Set(_headerSub, "asynchronous scene handoff in progress");
 
             if (_footerHint != null)
-                _footerHint.SetText("loading menu shell and releasing world memory");
+                TmpTextNoAlloc.Set(_footerHint, "loading menu shell and releasing world memory");
 
             if (_saveStatus != null)
                 ApplySaveStatusLiteral(_cachedPreparingSceneTransition);
@@ -1126,18 +1156,18 @@ namespace Hecton8.UI
             }
 
             if (_headerTitle != null)
-                _headerTitle.SetText("MISSION PAUSE");
+                TmpTextNoAlloc.Set(_headerTitle, "MISSION PAUSE");
 
             ShowSection(PauseSection.Main);
 
             if (_footerHint != null)
-                _footerHint.SetText("ESC = back / resume  |  SETTINGS hosts controls and rebinds");
+                TmpTextNoAlloc.Set(_footerHint, "ESC = back / resume  |  SETTINGS hosts controls and rebinds");
 
             if (_saveStatus != null)
                 ApplySaveStatusLiteral(message);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[PauseMenuController] {message}");
+            Debug.LogError("[PauseMenuController] Fatal pause-menu state.");
 #endif
         }
 
@@ -1268,6 +1298,20 @@ namespace Hecton8.UI
         private RectTransform CreateButton(Transform parent, string name, string label,
             Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPosition, Vector2 size, Action onClick)
         {
+            return CreateButton(
+                parent,
+                name,
+                string.IsNullOrEmpty(label) ? ReadOnlySpan<char>.Empty : label.AsSpan(),
+                anchorMin,
+                anchorMax,
+                anchoredPosition,
+                size,
+                onClick);
+        }
+
+        private RectTransform CreateButton(Transform parent, string name, ReadOnlySpan<char> label,
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPosition, Vector2 size, Action onClick)
+        {
             RectTransform rect = CreateRect(parent, name);
             Anchor(rect, anchorMin, anchorMax, anchoredPosition, size);
             Image bg = EnsureImage(rect.gameObject);
@@ -1287,7 +1331,7 @@ namespace Hecton8.UI
             TextMeshProUGUI text = CreateText(rect, "Label", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(text.rectTransform, 0f, 0f, 0f, 0f);
             text.color = Primary;
-            text.SetText(label);
+            TmpTextNoAlloc.Set(text, label);
 
             return rect;
         }
@@ -1302,19 +1346,24 @@ namespace Hecton8.UI
 
         private TextMeshProUGUI CreateSectionTitle(Transform parent, string value)
         {
-            TextMeshProUGUI text = CreateText(parent, $"{value}_Title", labelFont, 18f, FontStyles.Bold, TextAlignmentOptions.Left);
+            TextMeshProUGUI text = CreateText(parent, "SectionTitle", labelFont, 18f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(text.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(24f, -18f), new Vector2(-24f, 24f));
             text.color = Primary;
-            text.SetText(value);
+            TmpTextNoAlloc.Set(text, value);
             return text;
         }
 
         private TextMeshProUGUI CreateSectionSub(Transform parent, string value)
         {
+            return CreateSectionSub(parent, string.IsNullOrEmpty(value) ? ReadOnlySpan<char>.Empty : value.AsSpan());
+        }
+
+        private TextMeshProUGUI CreateSectionSub(Transform parent, ReadOnlySpan<char> value)
+        {
             TextMeshProUGUI text = CreateText(parent, "Subtitle", labelFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             Anchor(text.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(24f, -42f), new Vector2(-24f, 18f));
             text.color = DimLow;
-            text.SetText(value);
+            TmpTextNoAlloc.Set(text, value);
             return text;
         }
 
@@ -1461,21 +1510,21 @@ namespace Hecton8.UI
 
         private void RefreshSaveSectionState()
         {
-            // TASK 31: SaveManager null check with user-facing error message
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            // TASK 31: Save service null check with user-facing error message
+            ISaveService saveService = _cachedSaveService;
             
-            // If SaveManager is unavailable, disable all save buttons and display error
-            if (saveManager == null)
+            // If save service is unavailable, disable all save buttons and display error
+            if (saveService == null)
             {
                 SetSaveButtonsInteractable(false);
                 
                 if (_saveStatus != null)
-                    ApplySaveStatusLiteral(_cachedSaveManagerUnavailable);
+                    ApplySaveStatusLiteral(_cachedSaveServiceUnavailable);
                 
                 return;
             }
             
-            bool isBusy = _saveOperationInFlight || saveManager.IsBusy;
+            bool isBusy = _saveOperationInFlight || saveService.IsBusy;
             SetSaveButtonsInteractable(!isBusy);
 
             if (_saveStatus == null)
@@ -1496,7 +1545,7 @@ namespace Hecton8.UI
             if (_saveSlotButtons == null || saveSlots == null)
                 return;
 
-            int count = math.min(_saveSlotButtons.Length, saveSlots.Length);
+            int count = math.min(_saveSlotButtons.Length, SaveEvents.ManualSlotCount);
             for (int i = 0; i < count; i++)
             {
                 Button button = _saveSlotButtons[i];
@@ -1507,7 +1556,7 @@ namespace Hecton8.UI
                 if (label == null)
                     continue;
 
-                ApplyTemplatedText(label, _cachedWritePrefix, GetUpperSlotDisplayName(saveSlots[i]), string.Empty, _saveSlotLabelBuffer);
+                ApplyTemplatedText(label, _cachedWritePrefix, ResolveSlotDisplayName(ResolveConfiguredSaveSlotName(i)), string.Empty, _saveSlotLabelBuffer);
             }
         }
 
@@ -1539,7 +1588,7 @@ namespace Hecton8.UI
             SetSaveButtonsInteractable(false);
 
             if (_saveStatus != null)
-                ApplySaveStatusText(_cachedWriting, GetUpperSlotDisplayName(slotName), "...");
+                ApplySaveStatusText(_cachedWriting, ResolveSlotDisplayName(slotName), "...");
         }
 
         private void HandleSaveCompleted(string slotName)
@@ -1548,52 +1597,43 @@ namespace Hecton8.UI
             SetSaveButtonsInteractable(true);
 
             if (_saveStatus != null)
-                ApplySaveStatusText(string.Empty, GetUpperSlotDisplayName(slotName), _cachedWritten);
+                ApplySaveStatusText(string.Empty, ResolveSlotDisplayName(slotName), _cachedWritten);
 
             if (_activeSection == PauseSection.Saves)
                 SelectDefaultButtonForSection(PauseSection.Saves);
         }
 
-        private void HandleSaveFailed(string slotName, in FixedString128Bytes error)
+        private void HandleSaveFailed(string slotName, string error)
         {
             _saveOperationInFlight = false;
             SetSaveButtonsInteractable(true);
 
             if (_saveStatus != null)
-                ApplySaveFailedStatusText(slotName, in error);
+                ApplySaveFailedStatusText(slotName, error);
 
-            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
-            string normalizedError = ResolveSaveErrorForModal(in error);
-            string displaySlotName = BuildSlotDisplayName(loc, slotName);
-            string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_FAILED_TITLE) : "Save Failed";
-            string message = loc != null
-                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, displaySlotName, normalizedError)
-                : $"Failed to save to {displaySlotName}.\n\n{normalizedError}\n\nRetry?";
+            int messageLength = BuildSaveModalMessage(
+                LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE,
+                "Failed to save.",
+                slotName,
+                error,
+                true);
 
             ModalWindow.ShowWithCustomLabels(
-                title,
-                message,
+                "Save Failed",
+                _modalMessageBuffer,
+                messageLength,
                 () => SaveSlot(slotName),
                 null,
-                ResolveLocalized(LocalizationKeys.UI_RETRY, "Retry"),
+                "Retry",
                 "Cancel");
 
             if (_activeSection == PauseSection.Saves)
                 SelectDefaultButtonForSection(PauseSection.Saves);
         }
 
-        private static string ResolveSaveErrorForModal(in FixedString128Bytes error)
-        {
-            if (error.Length <= 0)
-                return _cachedUnknownErrorModal;
-
-            FixedString128Bytes errorCopy = error;
-            return errorCopy.ConvertToString();
-        }
-
         private void CycleLanguage()
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _cachedLocalization;
             if (localization == null)
             {
                 RefreshLanguageSettingsStatus();
@@ -1609,52 +1649,49 @@ namespace Hecton8.UI
             if (_settingsLanguageStatus == null)
                 return;
 
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _cachedLocalization;
             if (localization == null)
             {
-                SetSettingsLanguageStatus(ResolveLocalized(
+                SetSettingsLanguageStatus(ResolveLocalizedSpan(
                     LocalizationKeys.SETTINGS_LANGUAGE_OWNER_UNAVAILABLE,
                     "LANGUAGE OWNER UNAVAILABLE."));
                 return;
             }
 
             ApplyFormattedSettingsLanguageStatus(
-                ResolveLocalized(
+                ResolveLocalizedSpan(
                     LocalizationKeys.SETTINGS_CURRENT_LANGUAGE,
                     "CURRENT LANGUAGE: {0}"),
-                CachedToUpperInvariant(GetLanguageDisplayName(localization.CurrentLanguage)));
+                GetLanguageDisplayName(localization.CurrentLanguage).AsSpan());
         }
 
-        private void SetSettingsLanguageStatus(string value)
+        private void SetSettingsLanguageStatus(ReadOnlySpan<char> value)
         {
             if (_settingsLanguageStatus == null)
                 return;
 
-            ApplyTemplatedText(_settingsLanguageStatus, string.Empty, value, string.Empty, _settingsLanguageBuffer);
+            ApplyTemplatedText(_settingsLanguageStatus, ReadOnlySpan<char>.Empty, value, ReadOnlySpan<char>.Empty, _settingsLanguageBuffer);
         }
 
-        private void ApplyFormattedSettingsLanguageStatus(string template, string replacement)
+        private void ApplyFormattedSettingsLanguageStatus(ReadOnlySpan<char> template, ReadOnlySpan<char> replacement)
         {
             if (_settingsLanguageStatus == null)
                 return;
 
-            int placeholderIndex = string.IsNullOrEmpty(template)
-                ? -1
-                : template.IndexOf("{0}", StringComparison.Ordinal);
+            int placeholderIndex = IndexOfPlaceholder(template);
             if (placeholderIndex < 0)
             {
-                ApplyTemplatedText(_settingsLanguageStatus, string.Empty, template, string.Empty, _settingsLanguageBuffer);
+                ApplyTemplatedText(_settingsLanguageStatus, ReadOnlySpan<char>.Empty, template, ReadOnlySpan<char>.Empty, _settingsLanguageBuffer);
                 return;
             }
 
-            ReadOnlySpan<char> templateSpan = template.AsSpan();
             ReadOnlySpan<char> prefix = placeholderIndex > 0
-                ? templateSpan.Slice(0, placeholderIndex)
+                ? template.Slice(0, placeholderIndex)
                 : ReadOnlySpan<char>.Empty;
-            ReadOnlySpan<char> suffix = placeholderIndex + 3 < templateSpan.Length
-                ? templateSpan.Slice(placeholderIndex + 3)
+            ReadOnlySpan<char> suffix = placeholderIndex + 3 < template.Length
+                ? template.Slice(placeholderIndex + 3)
                 : ReadOnlySpan<char>.Empty;
-            ApplyTemplatedText(_settingsLanguageStatus, prefix, replacement.AsSpan(), suffix, _settingsLanguageBuffer);
+            ApplyTemplatedText(_settingsLanguageStatus, prefix, replacement, suffix, _settingsLanguageBuffer, true);
         }
 
         private static string GetLanguageDisplayName(GameLanguage language)
@@ -1682,53 +1719,93 @@ namespace Hecton8.UI
             }
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _cachedLocalization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
+                : fallback.AsSpan();
+        }
+
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, ReadOnlySpan<char> fallback)
+        {
+            LocalizationManager manager = _cachedLocalization;
+            return manager != null
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
                 : fallback;
         }
 
-        private static string GetUpperSlotDisplayName(string slotName)
+        private static int IndexOfPlaceholder(ReadOnlySpan<char> template)
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
-            GameLanguage language = localization != null ? localization.CurrentLanguage : (GameLanguage)(-1);
-            int slotIndex = SaveEvents.ResolveKnownSlotIndex(slotName);
-            if (slotIndex < 0 || slotIndex >= _cachedUpperSlotDisplayNames.Length)
-                return CachedToUpperInvariant(BuildSlotDisplayName(localization, slotName));
-
-            if (_cachedUpperSlotLanguage != language)
+            for (int i = 0; i < template.Length - 2; i++)
             {
-                ClearUpperSlotDisplayCache();
-                _cachedUpperSlotLanguage = language;
+                if (template[i] == '{' && template[i + 1] == '0' && template[i + 2] == '}')
+                    return i;
             }
 
-            string cached = _cachedUpperSlotDisplayNames[slotIndex];
-            if (!string.IsNullOrEmpty(cached))
-                return cached;
-
-            string upper = CachedToUpperInvariant(BuildSlotDisplayName(localization, slotName));
-            _cachedUpperSlotDisplayNames[slotIndex] = upper;
-            return upper;
+            return -1;
         }
 
-        private static void ClearUpperSlotDisplayCache()
-        {
-            for (int i = 0; i < _cachedUpperSlotDisplayNames.Length; i++)
-                _cachedUpperSlotDisplayNames[i] = null;
-        }
-
-        private static string BuildSlotDisplayName(LocalizationManager loc, string slotName)
+        private static string ResolveSlotDisplayName(string slotName)
         {
             if (string.IsNullOrEmpty(slotName))
                 return "?";
 
-            string slotPrefix = loc != null
-                ? loc.GetOrFallback(loc.CurrentLanguage, LocalizationKeys.SLOT_PREFIX, "SLOT")
-                : "SLOT";
+            int slotIndex = SaveEvents.ResolveKnownSlotIndex(slotName);
+            switch (slotIndex)
+            {
+                case 0:
+                    return "SLOT 1";
+                case 1:
+                    return "SLOT 2";
+                case 2:
+                    return "SLOT 3";
+                default:
+                    return "SLOT ?";
+            }
+        }
 
-            return string.Concat(slotPrefix, " ", SaveEvents.ResolveSlotNumber(slotName));
+        private string ResolveConfiguredSaveSlotName(int slotIndex)
+        {
+            if (saveSlots != null &&
+                (uint)slotIndex < (uint)saveSlots.Length &&
+                SaveEvents.IsKnownManualSlotName(saveSlots[slotIndex]))
+            {
+                return saveSlots[slotIndex];
+            }
+
+            return SaveEvents.ResolveManualSlotName(slotIndex);
+        }
+
+        private int CopyLocalizedSpanToModalBuffer(string key, ReadOnlySpan<char> fallback)
+        {
+            return CopySpanToBuffer(ResolveLocalizedSpan(key, fallback), _modalMessageBuffer, 0);
+        }
+
+        private int BuildSaveModalMessage(
+            string localizationKey,
+            ReadOnlySpan<char> fallback,
+            string slotName,
+            string error,
+            bool appendError)
+        {
+            if (_modalMessageBuffer == null)
+                return 0;
+
+            int cursor = 0;
+            cursor += CopySpanToBuffer(ResolveLocalizedSpan(localizationKey, fallback), _modalMessageBuffer, cursor);
+            cursor += CopySpanToBuffer(" // ".AsSpan(), _modalMessageBuffer, cursor);
+            cursor += CopySpanToBuffer(ResolveSlotDisplayName(slotName).AsSpan(), _modalMessageBuffer, cursor);
+
+            if (appendError)
+            {
+                cursor += CopySpanToBuffer("\n".AsSpan(), _modalMessageBuffer, cursor);
+                if (!CopyUpperAsciiStringToBuffer(error, _modalMessageBuffer, ref cursor))
+                    cursor += CopySpanToBuffer(_cachedUnknownErrorModal.AsSpan(), _modalMessageBuffer, cursor);
+            }
+
+            cursor += CopySpanToBuffer("\n\nRetry?".AsSpan(), _modalMessageBuffer, cursor);
+            return cursor;
         }
 
         private static void ApplyTemplatedText(TMP_Text label, string prefix, string value, string suffix, char[] buffer)
@@ -1743,14 +1820,36 @@ namespace Hecton8.UI
 
         private static void ApplyTemplatedText(TMP_Text label, ReadOnlySpan<char> prefix, ReadOnlySpan<char> value, ReadOnlySpan<char> suffix, char[] buffer)
         {
+            ApplyTemplatedText(label, prefix, value, suffix, buffer, false);
+        }
+
+        private static void ApplyTemplatedText(TMP_Text label, ReadOnlySpan<char> prefix, ReadOnlySpan<char> value, ReadOnlySpan<char> suffix, char[] buffer, bool uppercaseValue)
+        {
             if (label == null || buffer == null || buffer.Length == 0)
                 return;
 
             int cursor = 0;
             cursor += CopySpanToBuffer(prefix, buffer, cursor);
-            cursor += CopySpanToBuffer(value, buffer, cursor);
+            cursor += uppercaseValue
+                ? CopyUpperAsciiSpanToBuffer(value, buffer, cursor)
+                : CopySpanToBuffer(value, buffer, cursor);
             cursor += CopySpanToBuffer(suffix, buffer, cursor);
             label.SetCharArray(buffer, 0, cursor);
+        }
+
+        private static int CopyUpperAsciiSpanToBuffer(ReadOnlySpan<char> value, char[] buffer, int offset)
+        {
+            if (value.IsEmpty || buffer == null || offset >= buffer.Length)
+                return 0;
+
+            int safeLength = math.min(value.Length, buffer.Length - offset);
+            for (int i = 0; i < safeLength; i++)
+            {
+                char c = value[i];
+                buffer[offset + i] = c >= 'a' && c <= 'z' ? (char)(c - 32) : c;
+            }
+
+            return safeLength;
         }
 
         private void ClearPauseSelection()
@@ -1795,14 +1894,14 @@ namespace Hecton8.UI
                 inputSystemModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
             }
 
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
             if (inputManager != null)
                 inputManager.TryConfigureUiInputModule(inputSystemModule);
         }
 
         private void BindInputActions()
         {
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
             if (ReferenceEquals(_inputManager, inputManager))
                 return;
 

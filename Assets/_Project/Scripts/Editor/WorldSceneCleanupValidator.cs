@@ -76,8 +76,8 @@ namespace Hecton8.Editor
                 EditorSceneManager.OpenScene(ProductionWorldScene, OpenSceneMode.Single);
             }
 
-            List<GameObject> tempObjects = new List<GameObject>(); // COLD ALLOC: temp object collection for validation
-            List<GameObject> suspiciousObjects = new List<GameObject>(); // COLD ALLOC: suspicious object collection for validation
+            List<GameObject> tempObjects = new List<GameObject>(64); // COLD ALLOC: temp object collection for validation
+            List<GameObject> suspiciousObjects = new List<GameObject>(64); // COLD ALLOC: suspicious object collection for validation
 
             GameObject[] rootObjects = SceneManager.GetActiveScene().GetRootGameObjects();
             foreach (GameObject root in rootObjects)
@@ -170,8 +170,8 @@ namespace Hecton8.Editor
         [MenuItem("HECTON-8/Select All Temp Objects in Scene", priority = 101)]
         public static void SelectAllTempObjects()
         {
-            List<GameObject> tempObjects = new List<GameObject>(); // COLD ALLOC: temp object collection for selection
-            List<GameObject> suspiciousObjects = new List<GameObject>(); // COLD ALLOC: suspicious object collection for selection
+            List<GameObject> tempObjects = new List<GameObject>(64); // COLD ALLOC: temp object collection for selection
+            List<GameObject> suspiciousObjects = new List<GameObject>(64); // COLD ALLOC: suspicious object collection for selection
 
             GameObject[] rootObjects = SceneManager.GetActiveScene().GetRootGameObjects();
             foreach (GameObject root in rootObjects)

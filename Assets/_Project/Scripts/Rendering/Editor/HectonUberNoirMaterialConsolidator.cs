@@ -112,7 +112,7 @@ namespace Hecton8.Rendering.Editor
             report.AppendLine($"Converted materials: {converted}");
             report.AppendLine($"Skipped materials: {skipped}");
             Directory.CreateDirectory(Path.GetDirectoryName(ReportPath) ?? "Docs/AgentLogs");
-            File.WriteAllText(ReportPath, report.ToString());
+            File.WriteAllText(ReportPath, report.ToString(), new UTF8Encoding(false));
         }
 
         private static bool TryGetSourceSpec(string shaderName, out SourceShaderSpec spec)

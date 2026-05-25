@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -290,8 +291,6 @@ namespace Hecton8.Gameplay
 
         internal const string WireShaderPath = "Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader";
 
-        private const string NativeMemoryOwner = nameof(DataArchaeologyRuntime);
-        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
         private const int MmfHeaderBytes = 16;
         private const int MmfFragmentRecordBytes = 16;
         private const int MmfPartialRecordBytes = 8;
@@ -349,8 +348,8 @@ namespace Hecton8.Gameplay
         private readonly Matrix4x4[] _hologramMatrices = new Matrix4x4[HologramInstanceCapacity]; // COLD ALLOC: Matrix4x4[64] - instanced hologram draw buffer - owner: DataArchaeologyRuntime
         private readonly Vector4[] _scannerShaderPoints = new Vector4[ScannerShaderPointCapacity]; // COLD ALLOC: Vector4[4] - scanner emissive mask shader point payload - owner: DataArchaeologyRuntime
 
-        private NativeParallelHashMap<uint, float3> _fragmentPositions;
-        private NativeParallelHashMap<int, byte> _scanStates;
+        private readonly Dictionary<uint, float3> _fragmentPositions = new Dictionary<uint, float3>(MaxDiscoveryCount);
+        private readonly Dictionary<int, byte> _scanStates = new Dictionary<int, byte>(MaxDiscoveryCount);
         private VaultGenerationHandle<ulong> _unlockedLoreWordsHandle;
         private VaultGenerationHandle<DataArchaeologyNotification> _notificationsHandle;
         private VaultGenerationHandle<DataArchaeologyTelemetryEntry> _telemetryRingHandle;
@@ -379,6 +378,7 @@ namespace Hecton8.Gameplay
         private bool _disposed;
         private bool _hotSwapListenerRegistered;
         private LoreDatabaseManager _cachedLoreDatabase;
+        private ISaveService _saveService;
 
         /// <inheritdoc />
         public int SavePriority => 206;
@@ -455,9 +455,9 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Registers a raycast-scanned target hash and seeds its zero-GC scan state.
+        /// Registers a probe-scanned target hash and seeds its zero-GC scan state.
         /// </summary>
-        public bool RegisterRaycastTarget(uint entityHash, float3 hitPosition)
+        public bool RegisterProbeTarget(uint entityHash, float3 hitPosition)
         {
             if (entityHash == 0u)
                 return false;
@@ -474,9 +474,9 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Updates a held raycast target scan using caller-owned local progress seconds.
+        /// Updates a held probe target scan using caller-owned local progress seconds.
         /// </summary>
-        public bool UpdateRaycastTargetProgress(uint entityHash, float3 hitPosition, float progressSeconds, out bool completed)
+        public bool UpdateProbeTargetProgress(uint entityHash, float3 hitPosition, float progressSeconds, out bool completed)
         {
             completed = false;
             if (entityHash == 0u)
@@ -589,7 +589,7 @@ namespace Hecton8.Gameplay
             bool changed = DataArchaeologyDiscoveryBitMask.TrySet(_discoveryWords, bitIndex);
             SetNativeLoreBit(bitIndex);
             SetScanState(hash, ScanStateScanned);
-            bool hasKnownPosition = _fragmentPositions.IsCreated && _fragmentPositions.ContainsKey(hash);
+            bool hasKnownPosition = _fragmentPositions.ContainsKey(hash);
             if (!changed && hasKnownPosition)
                 return;
 
@@ -598,7 +598,7 @@ namespace Hecton8.Gameplay
 
             RegisterFragmentPosition(hash, fragmentPosition);
             RegisterHologram(fragment, fragmentPosition);
-            ScanEvents.RaiseEntryDiscovered(hash, 0u, 0u, 0u, ScanEntryKind.Scannable);
+            ScanEvents.TryRaiseEntryDiscovered(hash, 0u, 0u, 0u, ScanEntryKind.Scannable);
             PublishCompletionSignals(hash, fragmentPosition);
             EnqueueNotification(hash, 1000, NotificationKindDiscovery, 0);
             RecordTelemetry(hash, TelemetryFlagCompleted, fragmentPosition, 1f, 1000);
@@ -697,8 +697,7 @@ namespace Hecton8.Gameplay
             DataArchaeologyDiscoveryBitMask.Clear(_discoveryWords);
             _partialCount = 0;
             ClearNativeLoreWords();
-            if (_scanStates.IsCreated)
-                _scanStates.Clear();
+            _scanStates.Clear();
 
             if (data != null)
             {
@@ -778,19 +777,8 @@ namespace Hecton8.Gameplay
             _loreMmf?.Dispose();
             _loreMmf = null;
 
-            if (_fragmentPositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, nameof(_fragmentPositions));
-                _fragmentPositions.Dispose();
-                _fragmentPositions = default;
-            }
-
-            if (_scanStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, nameof(_scanStates));
-                _scanStates.Dispose();
-                _scanStates = default;
-            }
+            _fragmentPositions.Clear();
+            _scanStates.Clear();
 
             ReleaseVaultHandles(_dataVault);
             _dataVault = null;
@@ -848,7 +836,10 @@ namespace Hecton8.Gameplay
 
             if (_registeredSave)
             {
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
+                ISaveService saveService = _saveService;
+                if (saveService != null)
+                    saveService.Unregister(this);
+
                 _registeredSave = false;
             }
         }
@@ -874,6 +865,22 @@ namespace Hecton8.Gameplay
             {
                 ReleaseVaultHandles(previousService as IDataVault ?? _dataVault);
                 _dataVault = currentService as IDataVault;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Save)
+            {
+                if (_registeredSave)
+                {
+                    ISaveService previousSave = _saveService ?? previousService as ISaveService;
+                    if (previousSave != null)
+                        previousSave.Unregister(this);
+
+                    _registeredSave = false;
+                }
+
+                _saveService = currentService as ISaveService;
+                TryRegisterRuntime();
             }
         }
 
@@ -898,6 +905,7 @@ namespace Hecton8.Gameplay
         {
             _cachedLoreDatabase = GlobalRegistry.LoreDatabase;
             _dataVault = GlobalRegistry.DataVault;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterRuntime()
@@ -911,9 +919,15 @@ namespace Hecton8.Gameplay
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
 
-            if (!_registeredSave && Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+            if (!_registeredSave)
             {
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
+                if (_saveService == null)
+                    _saveService = GlobalRegistry.Save;
+
+                if (_saveService == null)
+                    return;
+
+                _saveService.Register(this);
                 _registeredSave = true;
             }
         }
@@ -948,18 +962,6 @@ namespace Hecton8.Gameplay
 
         private void EnsureNativeState()
         {
-            if (!_fragmentPositions.IsCreated)
-            {
-                _fragmentPositions = new NativeParallelHashMap<uint, float3>(MaxDiscoveryCount, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashMap<uint,float3>[1024] - fragment position hash table - owner: DataArchaeologyRuntime
-                NativeMemorySentinel.RegisterNativeParallelHashMap(_fragmentPositions, NativeMemoryOwner, nameof(_fragmentPositions), NativeAllocationLifetime.Scene);
-            }
-
-            if (!_scanStates.IsCreated)
-            {
-                _scanStates = new NativeParallelHashMap<int, byte>(MaxDiscoveryCount, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashMap<int,byte>[1024] - scanner AUP/entity scan state table - owner: DataArchaeologyRuntime
-                NativeMemorySentinel.RegisterNativeParallelHashMap(_scanStates, NativeMemoryOwner, nameof(_scanStates), NativeAllocationLifetime.Scene);
-            }
-
             bool loreHandleWasCreated = IsHandleCreated(in _unlockedLoreWordsHandle);
             if (TryOpenOrAcquireUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) && !loreHandleWasCreated)
                 SyncManagedLoreToNative(unlockedLoreWords);
@@ -1030,7 +1032,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GameplayTools,
@@ -1119,13 +1121,12 @@ namespace Hecton8.Gameplay
         {
             state = ScanStateUnscanned;
             return hash != 0u &&
-                   _scanStates.IsCreated &&
                    _scanStates.TryGetValue(unchecked((int)hash), out state);
         }
 
         private void SetScanState(uint hash, byte state)
         {
-            if (hash == 0u || !_scanStates.IsCreated)
+            if (hash == 0u)
                 return;
 
             int key = unchecked((int)hash);
@@ -1195,8 +1196,8 @@ namespace Hecton8.Gameplay
             if (!TryResolveRuntimeAup(position, out AbsoluteUniversePosition aup))
                 return;
 
-            uint frame = unchecked((uint)Time.frameCount);
-            GlobalSignals.Publish(new ScanCompleteSignal
+            uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            SignalBus<ScanCompleteSignal>.TryPush(new ScanCompleteSignal
             {
                 PositionAup = aup,
                 EntryHash = hash,
@@ -1205,14 +1206,14 @@ namespace Hecton8.Gameplay
                 ReconKind = (byte)ScanEntryKind.Scannable,
                 Flags = 0
             });
-            GlobalSignals.Publish(new LoreFragmentScannedSignal
+            SignalBus<LoreFragmentScannedSignal>.TryPush(new LoreFragmentScannedSignal
             {
                 Hash = hash,
                 Frame = frame,
                 SourceId = _scannerToolHash,
                 Flags = 0
             });
-            GlobalSignals.Publish(new ProgressionEventSignal
+            SignalBus<ProgressionEventSignal>.TryPush(new ProgressionEventSignal
             {
                 PositionAup = aup,
                 PoiHash = hash,
@@ -1221,7 +1222,7 @@ namespace Hecton8.Gameplay
                 Source = 2,
                 Flags = 0
             });
-            GlobalSignals.Publish(new BlueprintUnlockedSignal
+            SignalBus<BlueprintUnlockedSignal>.TryPush(new BlueprintUnlockedSignal
             {
                 EntityHash = hash,
                 BlueprintHash = hash,
@@ -1230,7 +1231,7 @@ namespace Hecton8.Gameplay
                 Category = 0,
                 Flags = 0
             });
-            GlobalSignals.Publish(new HUDNotificationSignal
+            SignalBus<HUDNotificationSignal>.TryPush(new HUDNotificationSignal
             {
                 MessageHash = hash,
                 ContextHash = hash,
@@ -1280,7 +1281,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(runtimePosition)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1295,14 +1296,14 @@ namespace Hecton8.Gameplay
             if (hash == 0u)
                 return;
 
-            GlobalSignals.Publish(new ToolAcousticSignal
+            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
             {
                 ToolHash = _scannerToolHash,
                 TargetHash = hash,
                 Progress01 = math.saturate(progress01),
                 PitchScale = math.max(0.1f, pitchScale),
                 Intensity01 = math.saturate(intensity01),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 State = ToolAcousticStateScanning,
                 Flags = 0
             });
@@ -1323,7 +1324,7 @@ namespace Hecton8.Gameplay
                 Vector3 position = _fragmentPositionsMirror[i];
                 position += new Vector3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z);
                 _fragmentPositionsMirror[i] = position;
-                if (_fragmentPositions.IsCreated && _fragmentPositions.ContainsKey(hash))
+                if (_fragmentPositions.ContainsKey(hash))
                     _fragmentPositions[hash] = new float3(position.x, position.y, position.z);
                 persistedPositionsChanged = true;
             }
@@ -1346,7 +1347,7 @@ namespace Hecton8.Gameplay
 
         private void RegisterFragmentPosition(uint hash, float3 position)
         {
-            if (!_fragmentPositions.IsCreated || hash == 0u || !math.all(math.isfinite(new float4(position, 1f))))
+            if (hash == 0u || !math.all(math.isfinite(new float4(position, 1f))))
                 return;
 
             if (_fragmentPositions.ContainsKey(hash))
@@ -1358,8 +1359,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!_fragmentPositions.TryAdd(hash, position))
-                return;
+            _fragmentPositions.Add(hash, position);
 
             if (_fragmentCount < MaxDiscoveryCount)
             {
@@ -1550,7 +1550,7 @@ namespace Hecton8.Gameplay
 
             telemetryRing[_telemetryCursor] = new DataArchaeologyTelemetryEntry
             {
-                Frame = (uint)Time.frameCount,
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 Hash = hash,
                 Position = position,
                 Match01 = match01,
@@ -1569,12 +1569,12 @@ namespace Hecton8.Gameplay
                 return;
 
             float intensity = math.saturate(result.Match01);
-            PlayerSignalEvents.RaiseInteractionSignal(new PlayerInteractionStressSignal(
+            PlayerSignalEvents.TryRaiseInteractionSignal(new PlayerInteractionStressSignal(
                 0f,
                 intensity,
                 result.FeedbackPitchScale,
                 result.FeedbackFrequency01));
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 intensity * 0.18f,
                 intensity * 0.32f,
                 0.07f,
@@ -1639,11 +1639,11 @@ namespace Hecton8.Gameplay
         {
             EnsureScanStateSaveArrays(data);
             data.dataArchaeologyScanStateCount = 0;
-            if (!_scanStates.IsCreated)
+            if (_scanStates.Count == 0)
                 return;
 
             int safeCount = 0;
-            NativeParallelHashMap<int, byte>.Enumerator scanStateEnumerator = _scanStates.GetEnumerator();
+            Dictionary<int, byte>.Enumerator scanStateEnumerator = _scanStates.GetEnumerator();
             while (scanStateEnumerator.MoveNext())
             {
                 var pair = scanStateEnumerator.Current;
@@ -1851,7 +1851,7 @@ namespace Hecton8.Gameplay
 
         private void DumpTelemetryCold()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!TryOpenOrAcquireTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
                 return;
 

@@ -302,6 +302,10 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             static const float3 FALLBACK_AEGIR_DIR = float3(0.0, 0.93633, -0.35112);
             static const float  DIR_THRESHOLD      = 0.001;
             static const float  HORIZON_CLAMP      = 0.08;    // v5.3: was 0.12 (v5.2), 0.05 (v5.1)
+            static const float  HECTON_PI          = 3.14159265;
+            static const float  HECTON_HALF_PI     = 1.57079633;
+            static const float  HECTON_INV_PI      = 0.31830988618;
+            static const float  HECTON_HALF_INV_PI = 0.15915494309;
 
             struct Attributes
             {
@@ -324,6 +328,43 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return (lenSq < DIR_THRESHOLD * DIR_THRESHOLD)
                     ? fallback
                     : v * rsqrt(lenSq);
+            }
+
+            float HectonFastAsinUnit(float y)
+            {
+                float x = clamp(y, -1.0, 1.0);
+                float ax = abs(x);
+                float root = sqrt(max(0.0, 1.0 - ax));
+                float approx = 1.5707288 + ax * (-0.2121144 + ax * (0.0742610 - 0.0187293 * ax));
+                return (1.5707963 - root * approx) * sign(x);
+            }
+
+            float HectonFastLatitude01(float y)
+            {
+                return HectonFastAsinUnit(y) * HECTON_INV_PI + 0.5;
+            }
+
+            float HectonFastAtan2(float y, float x)
+            {
+                float ax = abs(x);
+                float ay = abs(y);
+                float major = max(ax, ay);
+                float minor = min(ax, ay);
+                float ratio = minor / max(major, 0.00000001);
+                float ratioSq = ratio * ratio;
+                float poly = (((-0.0464964749 * ratioSq + 0.15931422) * ratioSq - 0.327622764) * ratioSq + 1.0) * ratio;
+                float swapped = step(ax, ay);
+                float angle = lerp(poly, HECTON_HALF_PI - poly, swapped);
+                float xNeg = 1.0 - step(0.0, x);
+                angle = lerp(angle, HECTON_PI - angle, xNeg);
+                float yNeg = 1.0 - step(0.0, y);
+                angle = lerp(angle, -angle, yNeg);
+                return angle * step(0.00000001, major);
+            }
+
+            float HectonFastLongitude01(float z, float x)
+            {
+                return HectonFastAtan2(z, x) * HECTON_HALF_INV_PI + 0.5;
             }
 
             half ComputeSkyOccluderVisibility(float3 viewDir)
@@ -402,7 +443,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     return half3(0.0h, 0.0h, 0.0h);
 
                 float2 uv;
-                uv.x = atan2(viewDir.z, viewDir.x) * (0.5 / 3.14159265) + 0.5;
+                uv.x = HectonFastLongitude01(viewDir.z, viewDir.x);
                 uv.y = saturate(viewDir.y * 0.5 + 0.5);
 
                 float2 noiseUv = uv * _AuroraScale.xy;
@@ -453,8 +494,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     return half3(0.0h, 0.0h, 0.0h);
 
                 float2 meteorUV;
-                meteorUV.x = atan2(Vf.z, Vf.x) * (0.5 / 3.14159265) + 0.5;
-                meteorUV.y = asin(Vf.y) * (1.0 / 3.14159265) + 0.5;
+                meteorUV.x = HectonFastLongitude01(Vf.z, Vf.x);
+                meteorUV.y = HectonFastLatitude01(Vf.y);
 
                 float2 travelDir = _MeteorShowerDirection.xy;
                 float travelLenSq = dot(travelDir, travelDir);
@@ -528,7 +569,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             float2 ComputeCelestialTransmittanceUV(float3 V)
             {
                 float2 uv;
-                uv.x = atan2(V.z, V.x) * (0.5 / 3.14159265) + 0.5;
+                uv.x = HectonFastLongitude01(V.z, V.x);
                 uv.y = V.y * 0.5 + 0.5;
                 uv *= _CelestialTransmittanceTiling.xy;
                 float animationTime = HectonSkyAnimationTime();
@@ -711,8 +752,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 {
                     float3 starLookupDir = normalize(mul((float3x3)_HectonSkyRotation, sampledVf));
                     float2 starUV;
-                    starUV.x = atan2(starLookupDir.z, starLookupDir.x) * (0.5 / 3.14159265) + 0.5;
-                    starUV.y = asin(starLookupDir.y) * (1.0 / 3.14159265) + 0.5;
+                    starUV.x = HectonFastLongitude01(starLookupDir.z, starLookupDir.x);
+                    starUV.y = HectonFastLatitude01(starLookupDir.y);
                     starUV *= _StarTiling.xy;
 
                     float2 starGrid = starUV * 128.0;

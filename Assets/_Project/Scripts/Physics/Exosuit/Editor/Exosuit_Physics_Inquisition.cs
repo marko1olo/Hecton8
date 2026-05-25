@@ -29,196 +29,194 @@ namespace Hecton8.Physics.Exosuit.Editor
             uint sourceHash = 2166136261u;
 
             StringBuilder violations = new StringBuilder(4096);
-            string[] files = Directory.Exists(scriptsRoot)
-                ? Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories)
-                : System.Array.Empty<string>();
-
-            for (int i = 0; i < files.Length; i++)
+            if (Directory.Exists(scriptsRoot))
             {
-                string path = files[i];
-                if (Path.GetFileName(path) == "Exosuit_Physics_Inquisition.cs")
-                    continue;
-
-                fileCount++;
-                string text = File.ReadAllText(path);
-                sourceHash = MixHash(sourceHash, path);
-                sourceHash = MixHash(sourceHash, text);
-                if (text.IndexOf("Exosuit", System.StringComparison.OrdinalIgnoreCase) < 0 &&
-                    text.IndexOf("mech", System.StringComparison.OrdinalIgnoreCase) < 0)
+                foreach (string path in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
                 {
-                    continue;
-                }
+                    if (Path.GetFileName(path) == "Exosuit_Physics_Inquisition.cs")
+                        continue;
 
-                exosuitFiles++;
-                string[] lines = text.Split('\n');
-                bool inLegacyExosuitMethod = false;
-                bool legacyBraceSeen = false;
-                int legacyBraceDepth = 0;
-                bool legacyMethodGuardSeen = false;
-                int legacyMethodStartLine = 0;
-                string legacyMethodSource = string.Empty;
-                bool inAuthorityMutationMethod = false;
-                bool authorityMutationBraceSeen = false;
-                int authorityMutationBraceDepth = 0;
-                bool authorityMutationGuardSeen = false;
-                bool authorityMutationSinkSeen = false;
-                int authorityMutationStartLine = 0;
-                string authorityMutationSource = string.Empty;
-                for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
-                {
-                    string line = lines[lineIndex];
-                    bool legacyPath = IsLegacyExosuitPath(line);
-                    if (legacyPath)
+                    fileCount++;
+                    string text = File.ReadAllText(path);
+                    sourceHash = MixHash(sourceHash, path);
+                    sourceHash = MixHash(sourceHash, text);
+                    if (text.IndexOf("Exosuit", System.StringComparison.OrdinalIgnoreCase) < 0 &&
+                        text.IndexOf("mech", System.StringComparison.OrdinalIgnoreCase) < 0)
                     {
-                        legacyMovementHits++;
-                        AppendViolation(violations, projectRoot, path, lineIndex + 1, "legacy_exosuit_path", line);
+                        continue;
                     }
 
-                    if (IsLegacyExosuitMethodDefinition(line))
+                    exosuitFiles++;
+                    string[] lines = text.Split('\n');
+                    bool inLegacyExosuitMethod = false;
+                    bool legacyBraceSeen = false;
+                    int legacyBraceDepth = 0;
+                    bool legacyMethodGuardSeen = false;
+                    int legacyMethodStartLine = 0;
+                    string legacyMethodSource = string.Empty;
+                    bool inAuthorityMutationMethod = false;
+                    bool authorityMutationBraceSeen = false;
+                    int authorityMutationBraceDepth = 0;
+                    bool authorityMutationGuardSeen = false;
+                    bool authorityMutationSinkSeen = false;
+                    int authorityMutationStartLine = 0;
+                    string authorityMutationSource = string.Empty;
+                    for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
                     {
-                        inLegacyExosuitMethod = true;
-                        legacyBraceSeen = false;
-                        legacyBraceDepth = 0;
-                        legacyMethodGuardSeen = false;
-                        legacyMethodStartLine = lineIndex + 1;
-                        legacyMethodSource = line.Trim();
-                    }
-
-                    if (IsAuthorityMutationMethodDefinition(line))
-                    {
-                        inAuthorityMutationMethod = true;
-                        authorityMutationBraceSeen = false;
-                        authorityMutationBraceDepth = 0;
-                        authorityMutationGuardSeen = IsAuthorityMutationGuardLine(line);
-                        authorityMutationSinkSeen = false;
-                        authorityMutationStartLine = lineIndex + 1;
-                        authorityMutationSource = line.Trim();
-                    }
-
-                    if (inLegacyExosuitMethod &&
-                        line.IndexOf("ExosuitKinematicAuthority.HasActiveAuthority", System.StringComparison.Ordinal) >= 0)
-                    {
-                        legacyMethodGuardSeen = true;
-                    }
-
-                    if (inAuthorityMutationMethod)
-                    {
-                        if (IsAuthorityMutationGuardLine(line))
-                            authorityMutationGuardSeen = true;
-                        if (IsAuthorityMutationSink(line))
-                            authorityMutationSinkSeen = true;
-                    }
-
-                    if (IsAuthoritySensitiveMutationCall(line))
-                    {
-                        if (IsAuthorityMutationGuardLine(line))
+                        string line = lines[lineIndex];
+                        bool legacyPath = IsLegacyExosuitPath(line);
+                        if (legacyPath)
                         {
-                            guardedAuthorityMutationRouteHits++;
-                        }
-                        else
-                        {
-                            unguardedAuthorityMutationRouteHits++;
-                            AppendViolation(violations, projectRoot, path, lineIndex + 1, "unguarded_authority_mutation_call", line);
-                        }
-                    }
-
-                    bool exosuitRelevantLine = inLegacyExosuitMethod || ContainsExosuitToken(line);
-                    if (line.IndexOf("ConfigurableJoint", System.StringComparison.Ordinal) >= 0 ||
-                        line.IndexOf("FixedJoint", System.StringComparison.Ordinal) >= 0)
-                    {
-                        if (exosuitRelevantLine)
-                        {
-                            jointHits++;
-                            AppendViolation(violations, projectRoot, path, lineIndex + 1, "joint", line);
-                        }
-                    }
-
-                    bool rigidbody = IsForbiddenPhysicsRoute(line);
-                    if (rigidbody && exosuitRelevantLine)
-                    {
-                        if (inLegacyExosuitMethod && legacyMethodGuardSeen)
-                        {
-                            guardedLegacyRigidbodyHits++;
-                            AppendViolation(violations, projectRoot, path, lineIndex + 1, "guarded_legacy_rigidbody_route", line);
-                        }
-                        else
-                        {
-                            rigidbodyHits++;
-                            AppendViolation(violations, projectRoot, path, lineIndex + 1, "rigidbody_movement", line);
-                        }
-                    }
-
-                    bool legacyScopeEnded = UpdateLegacyScope(line, ref inLegacyExosuitMethod, ref legacyBraceSeen, ref legacyBraceDepth);
-                    if (legacyScopeEnded)
-                    {
-                        if (!legacyMethodGuardSeen)
-                        {
-                            unguardedLegacyMovementHits++;
-                            AppendViolation(
-                                violations,
-                                projectRoot,
-                                path,
-                                legacyMethodStartLine > 0 ? legacyMethodStartLine : lineIndex + 1,
-                                "unguarded_legacy_method_scope",
-                                string.IsNullOrEmpty(legacyMethodSource) ? line : legacyMethodSource);
+                            legacyMovementHits++;
+                            AppendViolation(violations, projectRoot, path, lineIndex + 1, "legacy_exosuit_path", line);
                         }
 
-                        legacyMethodGuardSeen = false;
-                        legacyMethodStartLine = 0;
-                        legacyMethodSource = string.Empty;
-                    }
-
-                    bool authorityScopeEnded = UpdateLegacyScope(line, ref inAuthorityMutationMethod, ref authorityMutationBraceSeen, ref authorityMutationBraceDepth);
-                    if (authorityScopeEnded)
-                    {
-                        if (authorityMutationSinkSeen)
+                        if (IsLegacyExosuitMethodDefinition(line))
                         {
-                            if (authorityMutationGuardSeen)
+                            inLegacyExosuitMethod = true;
+                            legacyBraceSeen = false;
+                            legacyBraceDepth = 0;
+                            legacyMethodGuardSeen = false;
+                            legacyMethodStartLine = lineIndex + 1;
+                            legacyMethodSource = line.Trim();
+                        }
+
+                        if (IsAuthorityMutationMethodDefinition(line))
+                        {
+                            inAuthorityMutationMethod = true;
+                            authorityMutationBraceSeen = false;
+                            authorityMutationBraceDepth = 0;
+                            authorityMutationGuardSeen = IsAuthorityMutationGuardLine(line);
+                            authorityMutationSinkSeen = false;
+                            authorityMutationStartLine = lineIndex + 1;
+                            authorityMutationSource = line.Trim();
+                        }
+
+                        if (inLegacyExosuitMethod &&
+                            line.IndexOf("ExosuitKinematicAuthority.HasActiveAuthority", System.StringComparison.Ordinal) >= 0)
+                        {
+                            legacyMethodGuardSeen = true;
+                        }
+
+                        if (inAuthorityMutationMethod)
+                        {
+                            if (IsAuthorityMutationGuardLine(line))
+                                authorityMutationGuardSeen = true;
+                            if (IsAuthorityMutationSink(line))
+                                authorityMutationSinkSeen = true;
+                        }
+
+                        if (IsAuthoritySensitiveMutationCall(line))
+                        {
+                            if (IsAuthorityMutationGuardLine(line))
                             {
                                 guardedAuthorityMutationRouteHits++;
                             }
                             else
                             {
                                 unguardedAuthorityMutationRouteHits++;
+                                AppendViolation(violations, projectRoot, path, lineIndex + 1, "unguarded_authority_mutation_call", line);
+                            }
+                        }
+
+                        bool exosuitRelevantLine = inLegacyExosuitMethod || ContainsExosuitToken(line);
+                        if (line.IndexOf("ConfigurableJoint", System.StringComparison.Ordinal) >= 0 ||
+                            line.IndexOf("FixedJoint", System.StringComparison.Ordinal) >= 0)
+                        {
+                            if (exosuitRelevantLine)
+                            {
+                                jointHits++;
+                                AppendViolation(violations, projectRoot, path, lineIndex + 1, "joint", line);
+                            }
+                        }
+
+                        bool rigidbody = IsForbiddenPhysicsRoute(line);
+                        if (rigidbody && exosuitRelevantLine)
+                        {
+                            if (inLegacyExosuitMethod && legacyMethodGuardSeen)
+                            {
+                                guardedLegacyRigidbodyHits++;
+                                AppendViolation(violations, projectRoot, path, lineIndex + 1, "guarded_legacy_rigidbody_route", line);
+                            }
+                            else
+                            {
+                                rigidbodyHits++;
+                                AppendViolation(violations, projectRoot, path, lineIndex + 1, "rigidbody_movement", line);
+                            }
+                        }
+
+                        bool legacyScopeEnded = UpdateLegacyScope(line, ref inLegacyExosuitMethod, ref legacyBraceSeen, ref legacyBraceDepth);
+                        if (legacyScopeEnded)
+                        {
+                            if (!legacyMethodGuardSeen)
+                            {
+                                unguardedLegacyMovementHits++;
                                 AppendViolation(
                                     violations,
                                     projectRoot,
                                     path,
-                                    authorityMutationStartLine > 0 ? authorityMutationStartLine : lineIndex + 1,
-                                    "unguarded_authority_mutation_scope",
-                                    string.IsNullOrEmpty(authorityMutationSource) ? line : authorityMutationSource);
+                                    legacyMethodStartLine > 0 ? legacyMethodStartLine : lineIndex + 1,
+                                    "unguarded_legacy_method_scope",
+                                    string.IsNullOrEmpty(legacyMethodSource) ? line : legacyMethodSource);
                             }
+
+                            legacyMethodGuardSeen = false;
+                            legacyMethodStartLine = 0;
+                            legacyMethodSource = string.Empty;
                         }
 
-                        authorityMutationGuardSeen = false;
-                        authorityMutationSinkSeen = false;
-                        authorityMutationStartLine = 0;
-                        authorityMutationSource = string.Empty;
+                        bool authorityScopeEnded = UpdateLegacyScope(line, ref inAuthorityMutationMethod, ref authorityMutationBraceSeen, ref authorityMutationBraceDepth);
+                        if (authorityScopeEnded)
+                        {
+                            if (authorityMutationSinkSeen)
+                            {
+                                if (authorityMutationGuardSeen)
+                                {
+                                    guardedAuthorityMutationRouteHits++;
+                                }
+                                else
+                                {
+                                    unguardedAuthorityMutationRouteHits++;
+                                    AppendViolation(
+                                        violations,
+                                        projectRoot,
+                                        path,
+                                        authorityMutationStartLine > 0 ? authorityMutationStartLine : lineIndex + 1,
+                                        "unguarded_authority_mutation_scope",
+                                        string.IsNullOrEmpty(authorityMutationSource) ? line : authorityMutationSource);
+                                }
+                            }
+
+                            authorityMutationGuardSeen = false;
+                            authorityMutationSinkSeen = false;
+                            authorityMutationStartLine = 0;
+                            authorityMutationSource = string.Empty;
+                        }
                     }
-                }
 
-                if (inLegacyExosuitMethod && !legacyMethodGuardSeen)
-                {
-                    unguardedLegacyMovementHits++;
-                    AppendViolation(
-                        violations,
-                        projectRoot,
-                        path,
-                        legacyMethodStartLine > 0 ? legacyMethodStartLine : lines.Length,
-                        "unterminated_unguarded_legacy_method_scope",
-                        legacyMethodSource);
-                }
+                    if (inLegacyExosuitMethod && !legacyMethodGuardSeen)
+                    {
+                        unguardedLegacyMovementHits++;
+                        AppendViolation(
+                            violations,
+                            projectRoot,
+                            path,
+                            legacyMethodStartLine > 0 ? legacyMethodStartLine : lines.Length,
+                            "unterminated_unguarded_legacy_method_scope",
+                            legacyMethodSource);
+                    }
 
-                if (inAuthorityMutationMethod && authorityMutationSinkSeen && !authorityMutationGuardSeen)
-                {
-                    unguardedAuthorityMutationRouteHits++;
-                    AppendViolation(
-                        violations,
-                        projectRoot,
-                        path,
-                        authorityMutationStartLine > 0 ? authorityMutationStartLine : lines.Length,
-                        "unterminated_unguarded_authority_mutation_scope",
-                        authorityMutationSource);
+                    if (inAuthorityMutationMethod && authorityMutationSinkSeen && !authorityMutationGuardSeen)
+                    {
+                        unguardedAuthorityMutationRouteHits++;
+                        AppendViolation(
+                            violations,
+                            projectRoot,
+                            path,
+                            authorityMutationStartLine > 0 ? authorityMutationStartLine : lines.Length,
+                            "unterminated_unguarded_authority_mutation_scope",
+                            authorityMutationSource);
+                    }
                 }
             }
 

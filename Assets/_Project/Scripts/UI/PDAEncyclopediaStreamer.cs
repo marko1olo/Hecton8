@@ -262,7 +262,9 @@ namespace Hecton8.UI
         private bool _vaultReady;
         private bool _mockSeeded;
         private bool _h8lrMetadataSeeded;
+#pragma warning disable CS0414
         private bool _coldBootstrapAttempted;
+#pragma warning restore CS0414
         private bool _isPdaVisible;
         private bool _needsEntryReload = true;
         private bool _canvasSplitReady;
@@ -1602,52 +1604,52 @@ namespace Hecton8.UI
                 return false;
             }
 
-            _unlockMaskHandle = _vault.GetGenerationHandle<EncyclopediaStateDTO>(
+            _unlockMaskHandle = _vault.EnsureGenerationHandle<EncyclopediaStateDTO>(
                 UnlockMaskBufferId,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _runtimeStateHandle = _vault.GetGenerationHandle<PdaEncyclopediaRuntimeStateDTO>(
+            _runtimeStateHandle = _vault.EnsureGenerationHandle<PdaEncyclopediaRuntimeStateDTO>(
                 RuntimeStateBufferId,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _metadataHandle = _vault.GetGenerationHandle<PdaEncyclopediaEntryMetaDTO>(
+            _metadataHandle = _vault.EnsureGenerationHandle<PdaEncyclopediaEntryMetaDTO>(
                 MetadataBufferId,
                 MaxMetadataEntries,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _vault.GetGenerationHandle<PdaEncyclopediaTelemetryEntry>(
+            _telemetryHandle = _vault.EnsureGenerationHandle<PdaEncyclopediaTelemetryEntry>(
                 TelemetryBufferId,
                 TelemetryFrameCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = _vault.GetGenerationHandle<int>(
+            _telemetryCursorHandle = _vault.EnsureGenerationHandle<int>(
                 TelemetryCursorBufferId,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
-            _mockUtf8Handle = _vault.GetGenerationHandle<byte>(
+            _mockUtf8Handle = _vault.EnsureGenerationHandle<byte>(
                 MockUtf8BufferId,
                 MockUtf8Bytes,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _mockIndexHandle = _vault.GetGenerationHandle<BabelIndexDTO>(
+            _mockIndexHandle = _vault.EnsureGenerationHandle<BabelIndexDTO>(
                 MockIndexBufferId,
                 MockEntryCapacity,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = _vault.GetGenerationHandle<byte>(
+            _csvScratchHandle = _vault.EnsureGenerationHandle<byte>(
                 CsvScratchBufferId,
                 CsvScratchBytes,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _typewriterStateHandle = _vault.GetGenerationHandle<PdaTypewriterStateDTO>(
+            _typewriterStateHandle = _vault.EnsureGenerationHandle<PdaTypewriterStateDTO>(
                 TypewriterStateBufferId,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _h8lrMirrorHandle = _vault.GetGenerationHandle<byte>(
+            _h8lrMirrorHandle = _vault.EnsureGenerationHandle<byte>(
                 H8lrMirrorBufferId,
                 H8lrMirrorBytes,
                 SystemID.UI,
@@ -1703,7 +1705,7 @@ namespace Hecton8.UI
             if (_playerContext != null)
                 return;
 
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private void EnsureTextLeases()
@@ -1788,7 +1790,7 @@ namespace Hecton8.UI
                 meta.BitIndex = bitIndex;
                 meta.SourceId = H8lrSourceId;
                 meta.TitleHash = record.Hash;
-                meta.Flags |= 2u;
+                meta.Flags = (ushort)(meta.Flags | 2u);
                 meta.Revision++;
             }
 
@@ -1920,6 +1922,7 @@ namespace Hecton8.UI
             return result;
         }
 
+#if UNITY_EDITOR
         private bool ParseCsvMetadata(NativeArray<byte> scratch, int byteLength)
         {
             if (!scratch.IsCreated || byteLength <= 0 || !EnsureVaultBuffers())
@@ -2002,6 +2005,7 @@ namespace Hecton8.UI
             bitIndex = (ushort)(parsedBit & (UnlockBitCount - 1));
             return true;
         }
+#endif
 
         private void ClearMetadataBuffer()
         {

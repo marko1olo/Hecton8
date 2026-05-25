@@ -59,7 +59,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float feedbackInterval = 0.45f;
 
         private HectonSurvivalSystem _survival;
-        private ScanLogSystem _scanLog;
+        private IScanLogService _scanLog;
         private HUDNotification _notification;
         private float _cooldown;
         private float _feedbackCooldownRemaining;
@@ -77,7 +77,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            CacheScanLog(GlobalRegistry.ScanLog);
+            CacheScanLog(GlobalRegistry.ScanLogService);
         }
 
         public override void OnDespawn()
@@ -109,7 +109,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
 
-            CacheScanLog(GlobalRegistry.ScanLog);
+            CacheScanLog(GlobalRegistry.ScanLogService);
             TryResolveSurvival();
 
             if (_notification == null)
@@ -119,16 +119,16 @@ namespace Hecton8.Gameplay
         protected override void OnToolRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.ScanLogRuntime)
-                CacheScanLog(currentService as ScanLogSystem);
+                CacheScanLog(currentService as IScanLogService);
         }
 
         protected override void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.ScanLogRuntime)
-                CacheScanLog(currentService as ScanLogSystem);
+                CacheScanLog(currentService as IScanLogService);
         }
 
-        private void CacheScanLog(ScanLogSystem scanLog)
+        private void CacheScanLog(IScanLogService scanLog)
         {
             _scanLog = scanLog;
         }
@@ -538,7 +538,7 @@ namespace Hecton8.Gameplay
 
         private void ArchiveTargetIntel(RaycastHit hit, AnalyzerAssessment assessment)
         {
-            ScanLogSystem scanLog = _scanLog;
+            IScanLogService scanLog = _scanLog;
             if (scanLog == null || hit.collider == null)
                 return;
 
@@ -626,7 +626,7 @@ namespace Hecton8.Gameplay
 
         private void ArchiveSuitDiagnostic(AnalyzerAssessment assessment)
         {
-            ScanLogSystem scanLog = _scanLog;
+            IScanLogService scanLog = _scanLog;
             if (scanLog == null || _survival == null)
                 return;
 

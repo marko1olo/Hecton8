@@ -92,6 +92,9 @@ namespace Hecton8.World
         public const int DefaultRawBytesCapacity = 5 * 1024 * 1024;
         public const int DefaultCsvScratchCapacity = 256 * 1024;
         public const uint OverloadWarningHash = 0x464F5632u; // FOV2
+        private const float MiddleHardwareQualityThreshold01 = 0.25f;
+        private const float HighHardwareQualityThreshold01 = 0.55f;
+        private const float UltraHardwareQualityThreshold01 = 0.85f;
 
         private IDataVault _vault;
         private VaultGenerationHandle<byte> _rawBytesHandle;
@@ -166,6 +169,7 @@ namespace Hecton8.World
             _matrixCapacity = matrixCapacity;
             _hazardCapacity = hazardCapacity;
             SignalBus<FloraSpawnedSignal>.Configure(256, 4096, 512, FloraGenomeLSystemConstants.OwnerHash);
+            SignalBus<FloraSpawnedSignal>.EnsureInitialized();
             DecodeLoadedBytes(0);
             return true;
         }
@@ -274,6 +278,7 @@ namespace Hecton8.World
             return true;
         }
 
+#if UNITY_EDITOR
         public bool TryApplyCsvOverrides(string csvPath, out int updatedCount)
         {
             updatedCount = 0;
@@ -288,6 +293,7 @@ namespace Hecton8.World
 
             return FloraGenomeCsvHotloader.TryApplyOverrides(csvPath, scratch, genomes, ref _csvLastWriteTicks, out updatedCount);
         }
+#endif
 
         public bool TrySchedulePlantGeneration(
             int genomeIndex,
@@ -442,20 +448,21 @@ namespace Hecton8.World
 
         private static FloraGenomeHardwareTier ResolveHardwareTier()
         {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return FloraGenomeHardwareTier.Low;
-                case HectonQualityTier.Mid:
-                    return FloraGenomeHardwareTier.Middle;
-                case HectonQualityTier.Ultra:
-                    return FloraGenomeHardwareTier.Ultra;
-                case HectonQualityTier.High:
-                    return FloraGenomeHardwareTier.High;
-                default:
-                    return FloraGenomeHardwareTier.Low;
-            }
+            float qualityWeight01 = ResolveGenomeQualityWeight01();
+            if (qualityWeight01 < MiddleHardwareQualityThreshold01)
+                return FloraGenomeHardwareTier.Low;
+            if (qualityWeight01 < HighHardwareQualityThreshold01)
+                return FloraGenomeHardwareTier.Middle;
+            if (qualityWeight01 < UltraHardwareQualityThreshold01)
+                return FloraGenomeHardwareTier.High;
+
+            return FloraGenomeHardwareTier.Ultra;
+        }
+
+        private static float ResolveGenomeQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1f;
         }
 
         private static void PublishBiomassSignal(
@@ -550,7 +557,7 @@ namespace Hecton8.World
             if (TryResolveFloraGenomeVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
             return TryResolveFloraGenomeVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
         }
 

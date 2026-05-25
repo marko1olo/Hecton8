@@ -17,6 +17,8 @@ namespace Hecton8.EditorTools
         private const string PrefabRoot = "Assets/_Project/Prefabs";
         private const int TriangleThreshold = 2000;
         private const int MaxConsoleEntries = 48;
+        private static readonly List<MeshFilter> s_MeshFilterScratch = new List<MeshFilter>(64);
+        private static readonly List<SkinnedMeshRenderer> s_SkinnedMeshScratch = new List<SkinnedMeshRenderer>(16);
 
         internal sealed class AuditResult
         {
@@ -81,10 +83,11 @@ namespace Hecton8.EditorTools
             hasBrokenMeshReference = false;
             int triangles = 0;
 
-            MeshFilter[] meshFilters = assetRoot.GetComponentsInChildren<MeshFilter>(true);
-            for (int i = 0; i < meshFilters.Length; i++)
+            s_MeshFilterScratch.Clear();
+            assetRoot.GetComponentsInChildren(true, s_MeshFilterScratch);
+            for (int i = 0; i < s_MeshFilterScratch.Count; i++)
             {
-                MeshFilter meshFilter = meshFilters[i];
+                MeshFilter meshFilter = s_MeshFilterScratch[i];
                 if (meshFilter == null)
                     continue;
 
@@ -98,10 +101,11 @@ namespace Hecton8.EditorTools
                 triangles += CountTriangles(mesh);
             }
 
-            SkinnedMeshRenderer[] skinnedMeshes = assetRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            for (int i = 0; i < skinnedMeshes.Length; i++)
+            s_SkinnedMeshScratch.Clear();
+            assetRoot.GetComponentsInChildren(true, s_SkinnedMeshScratch);
+            for (int i = 0; i < s_SkinnedMeshScratch.Count; i++)
             {
-                SkinnedMeshRenderer skinnedMesh = skinnedMeshes[i];
+                SkinnedMeshRenderer skinnedMesh = s_SkinnedMeshScratch[i];
                 if (skinnedMesh == null)
                     continue;
 

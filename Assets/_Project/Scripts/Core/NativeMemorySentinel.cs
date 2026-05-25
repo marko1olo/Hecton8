@@ -27,11 +27,11 @@ namespace Hecton8.Core
     /// Blittable source descriptor for deterministic replay snapshot capture.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct NativeAllocationSnapshotSource
+    internal struct NativeAllocationSnapshotSource
     {
-        /// <summary>Raw pointer to a stable pointer-backed native allocation.</summary>
+        /// <summary>Internal native address value copied only into the replay recorder.</summary>
         [FieldOffset(0)]
-        public ulong Pointer;
+        internal ulong SourcePointerValue;
 
         /// <summary>Allocation byte count.</summary>
         [FieldOffset(8)]
@@ -95,7 +95,7 @@ namespace Hecton8.Core
         private struct NativeAllocationRecord
         {
             public int Id;
-            public IntPtr Pointer;
+            internal IntPtr Pointer;
             public long Bytes;
             public int AllocationFrame;
             public NativeAllocationLifetime Lifetime;
@@ -153,7 +153,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Copies pointer-backed replay snapshot sources into a caller-owned native buffer.
         /// </summary>
-        public static int CopySnapshotSources(NativeArray<NativeAllocationSnapshotSource> destination, uint excludedOwnerHash = 0u)
+        internal static int CopySnapshotSources(NativeArray<NativeAllocationSnapshotSource> destination, uint excludedOwnerHash = 0u)
         {
             if (!destination.IsCreated)
                 return 0;
@@ -168,7 +168,7 @@ namespace Hecton8.Core
 
                 destination[writeIndex++] = new NativeAllocationSnapshotSource
                 {
-                    Pointer = unchecked((ulong)record.Pointer.ToInt64()),
+                    SourcePointerValue = unchecked((ulong)record.Pointer.ToInt64()),
                     Bytes = record.Bytes,
                     OwnerHash = record.OwnerHash,
                     LabelHash = record.LabelHash,
@@ -625,9 +625,9 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Unregisters a raw persistent native pointer.
+        /// Unregisters a raw persistent native pointer from the Core sentinel owner path.
         /// </summary>
-        public static void UnregisterPointer(void* pointer)
+        internal static void UnregisterPointer(void* pointer)
         {
             IntPtr target = (IntPtr)pointer;
             if (target == IntPtr.Zero)

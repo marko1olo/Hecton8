@@ -16,10 +16,9 @@ public sealed class BaseAtmosphereMathEditTests
     [Test]
     public void MathLod_ResolvesHighAt5HzAndMx350At1Hz()
     {
-        Assert.That(BaseAtmosphereMath.ResolveColdTickIntervalSeconds(HectonQualityTier.High), Is.EqualTo(0.2f));
-        Assert.That(BaseAtmosphereMath.ResolveColdTickIntervalSeconds(HectonQualityTier.Mx350), Is.EqualTo(1f));
-        Assert.That(BaseAtmosphereMath.ResolveSolveMode(HectonQualityTier.High), Is.EqualTo(BaseAtmosphereSolveMode.High5Hz));
-        Assert.That(BaseAtmosphereMath.ResolveSolveMode(HectonQualityTier.Low), Is.EqualTo(BaseAtmosphereSolveMode.ActiveCompartment1Hz));
+        Assert.That(BaseAtmosphereMath.ResolveColdTickIntervalSeconds(), Is.EqualTo(0.2f));
+        Assert.That(BaseAtmosphereMath.ResolveSolveMode(2, 2), Is.EqualTo(BaseAtmosphereSolveMode.High5Hz));
+        Assert.That(BaseAtmosphereMath.ResolveSolveMode(1, 2), Is.EqualTo(BaseAtmosphereSolveMode.ActiveCompartment1Hz));
     }
 
     [Test]
@@ -65,7 +64,7 @@ public sealed class BaseAtmosphereMathEditTests
     }
 
     [Test]
-    public void PhysiologyHazard_AppliesImmediateBendsDamage()
+    public void PhysiologyHazard_AppliesRapidAscentBlurWithoutDamageAuthority()
     {
         AtmospherePhysiologyHazard hazard = BaseAtmosphereMath.ResolvePhysiologyHazard(
             0f,
@@ -79,8 +78,7 @@ public sealed class BaseAtmosphereMathEditTests
             0f,
             1f);
 
-        Assert.That(hazard.HealthDamage, Is.EqualTo(BaseAtmosphereMath.BendsHealthDamage).Within(0.0001f));
-        Assert.That(BaseAtmosphereMath.HasFlag(hazard.Flags, BaseAtmosphereFlags.BendsDamageRequested), Is.True);
+        Assert.That(hazard.HealthDamage, Is.EqualTo(0f).Within(0.0001f));
         Assert.That(BaseAtmosphereMath.HasFlag(hazard.Flags, BaseAtmosphereFlags.VisualBlurRequested), Is.True);
     }
 
@@ -117,13 +115,12 @@ public sealed class BaseAtmosphereMathEditTests
                 CarbonDioxideByteLane = carbonDioxideBytes,
                 CompartmentCount = 2,
                 ActiveCompartmentIndex = 1,
+                CompartmentSolveCount = 1,
                 DeltaTime = 1f,
                 PlayerStressMultiplier = 2f,
                 LogisticsPowerWatts = 10f,
                 ScrubberKPaPerSecond = 0.1f,
-                SolveMode = (byte)BaseAtmosphereSolveMode.ActiveCompartment1Hz,
-                ScrubberBytePerColdTick = 1,
-                ScalabilityHigh = 0
+                ScrubberBytePerColdTick = 1
             };
 
             job.Execute();
@@ -165,13 +162,12 @@ public sealed class BaseAtmosphereMathEditTests
                 CarbonDioxideByteLane = carbonDioxideBytes,
                 CompartmentCount = 1,
                 ActiveCompartmentIndex = 0,
+                CompartmentSolveCount = 1,
                 DeltaTime = 1f,
                 PlayerStressMultiplier = 1f,
                 LogisticsPowerWatts = 10f,
                 ScrubberKPaPerSecond = 2f,
-                SolveMode = (byte)BaseAtmosphereSolveMode.ActiveCompartment1Hz,
-                ScrubberBytePerColdTick = 3,
-                ScalabilityHigh = 0
+                ScrubberBytePerColdTick = 3
             };
 
             job.Execute();
@@ -220,8 +216,8 @@ public sealed class BaseAtmosphereMathEditTests
         CompartmentState state = BaseAtmosphereMath.CreateDefaultCompartment(100f, 0);
         state.HumidityPercent = 91;
 
-        CompartmentState high = BaseAtmosphereMath.StepCompartment(state, 1f, 1f, 0f, 0f, 0f, 10f, 0f, true);
-        CompartmentState low = BaseAtmosphereMath.StepCompartment(state, 1f, 1f, 0f, 0f, 0f, 10f, 0f, false);
+        CompartmentState high = BaseAtmosphereMath.StepCompartment(state, 1f, 1f, 0f, 0f, 0f, 10f, 0f, 1f);
+        CompartmentState low = BaseAtmosphereMath.StepCompartment(state, 1f, 1f, 0f, 0f, 0f, 10f, 0f, 0f);
 
         Assert.That(BaseAtmosphereMath.HasFlag(high.Flags, BaseAtmosphereFlags.RenderFogRequested), Is.True);
         Assert.That(BaseAtmosphereMath.HasFlag(low.Flags, BaseAtmosphereFlags.RenderFogRequested), Is.False);
@@ -237,7 +233,7 @@ public sealed class BaseAtmosphereMathEditTests
             state.CarbonDioxideKPa,
             state.NitrogenKPa);
 
-        CompartmentState ruptured = BaseAtmosphereMath.StepCompartment(state, 1f, 1f, 0f, 0f, 20f, 10f, 0.1f, false);
+        CompartmentState ruptured = BaseAtmosphereMath.StepCompartment(state, 1f, 1f, 0f, 0f, 20f, 10f, 0.1f, 0f);
 
         Assert.That(ruptured.OxygenKPa, Is.LessThan(20f));
         Assert.That(BaseAtmosphereMath.HasFlag(ruptured.Flags, BaseAtmosphereFlags.BubbleVfxRequested), Is.True);

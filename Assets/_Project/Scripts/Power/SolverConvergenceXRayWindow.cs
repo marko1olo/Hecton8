@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -86,7 +87,11 @@ namespace Hecton8.Power
 
             _statusLabel.text = "Runtime: online";
             _telemetryLabel.text =
-                $"Residual {telemetry.JacobiResidual:0.000000} | Omega {telemetry.SolverOmega:0.00} | Tolerance {telemetry.TargetTolerance:0.000000} | Iter {telemetry.IterationCount} | Fault {state.FaultFlags}";
+                "Residual " + telemetry.JacobiResidual.ToString("0.000000", CultureInfo.InvariantCulture) +
+                " | Omega " + telemetry.SolverOmega.ToString("0.00", CultureInfo.InvariantCulture) +
+                " | Tolerance " + telemetry.TargetTolerance.ToString("0.000000", CultureInfo.InvariantCulture) +
+                " | Iter " + telemetry.IterationCount +
+                " | Fault " + state.FaultFlags;
 
             _residualSamples[_writeCursor] = Mathf.Max(0f, telemetry.JacobiResidual);
             _writeCursor = (_writeCursor + 1) % SampleCount;

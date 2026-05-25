@@ -1287,7 +1287,7 @@ namespace Hecton8.Construction
             if (handle.BufferID != 0u)
                 _catalogVault.ReleaseBuffer(in handle);
 
-            return _catalogVault.GetGenerationHandle<T>(
+            return _catalogVault.EnsureGenerationHandle<T>(
                 bufferId,
                 math.max(1, requiredLength),
                 SystemID.Construction,

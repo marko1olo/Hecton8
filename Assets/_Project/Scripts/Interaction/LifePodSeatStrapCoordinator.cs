@@ -1,7 +1,6 @@
 namespace Hecton8.Interaction
 {
     using Hecton8.Core;
-    using Hecton8.Gameplay;
     using Hecton8.Tools;
     using Hecton8.World;
     using Unity.Mathematics;
@@ -89,8 +88,7 @@ namespace Hecton8.Interaction
         private Transform _leftIkAnchor;
         private Transform _rightIkAnchor;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private HectonPlayerMotor _playerMotor;
-        private HectonPlayerMovement _playerMovement;
+        private IPlayerSeatLockMotorSink _playerMotor;
         private AbsoluteUniversePosition _seatLockAup;
         private float _resolvedMaximumCorrectionMetersPerSecond;
         private float _resolvedHardSnapDistanceSq;
@@ -264,9 +262,9 @@ namespace Hecton8.Interaction
             float distanceSq = delta.sqrMagnitude;
             if (distanceSq <= _resolvedHardSnapDistanceSq)
             {
-                _playerMotor.MovePosition(targetPosition);
+                _playerMotor.MoveSeatLockPosition(targetPosition);
                 if (zeroLinearVelocityWhileLocked)
-                    _playerMotor.SetLinearVelocity(Vector3.zero);
+                    _playerMotor.SetSeatLockLinearVelocity(Vector3.zero);
                 return;
             }
 
@@ -274,9 +272,9 @@ namespace Hecton8.Interaction
             float maxStepSq = maxStep * maxStep;
             if (distanceSq <= maxStepSq)
             {
-                _playerMotor.MovePosition(targetPosition);
+                _playerMotor.MoveSeatLockPosition(targetPosition);
                 if (zeroLinearVelocityWhileLocked)
-                    _playerMotor.SetLinearVelocity(Vector3.zero);
+                    _playerMotor.SetSeatLockLinearVelocity(Vector3.zero);
                 return;
             }
 
@@ -286,9 +284,9 @@ namespace Hecton8.Interaction
             if (!IsFinite(nextPosition))
                 return;
 
-            _playerMotor.MovePosition(nextPosition);
+            _playerMotor.MoveSeatLockPosition(nextPosition);
             if (zeroLinearVelocityWhileLocked)
-                _playerMotor.SetLinearVelocity(Vector3.zero);
+                _playerMotor.SetSeatLockLinearVelocity(Vector3.zero);
         }
 
         private void EngageSeatLock()
@@ -302,7 +300,7 @@ namespace Hecton8.Interaction
 
             if (hapticsEnabled)
             {
-                ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                     _resolvedLockLowFrequency,
                     _resolvedLockHighFrequency,
                     _resolvedLockHapticDurationSeconds,
@@ -314,35 +312,27 @@ namespace Hecton8.Interaction
 
         private bool TryEnsurePlayerMotor()
         {
-            HectonPlayerMotor motor = _playerMotor;
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            HectonPlayerMovement movement = _playerMovement;
-            if (playerContext != null)
-                movement = playerContext.PlayerMovement;
-
-            _playerMovement = movement;
-
-            if (motor != null && motor.Body != null && movement != null)
-                return true;
-
-            return false;
+            return _playerMotor != null &&
+                   _playerMotor.HasControllableBody &&
+                   _playerRuntimeContext != null &&
+                   _playerRuntimeContext.IsInitialized;
         }
 
         private void InvalidatePlayerCache()
         {
             _playerMotor = null;
-            _playerMovement = null;
         }
 
         private bool TryResolveCurrentPlayerAup(out AbsoluteUniversePosition currentAup, out Vector3 runtimePosition)
         {
             currentAup = default;
             runtimePosition = Vector3.zero;
-            if (_playerMovement == null)
+            if (_playerRuntimeContext == null ||
+                !_playerRuntimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 return false;
 
-            currentAup = _playerMovement.CurrentAup;
-            float3 runtime = currentAup.ToRuntimeFloat3();
+            currentAup = snapshot.Aup;
+            float3 runtime = snapshot.RuntimePosition;
             runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
             return IsFinite(runtimePosition);
         }
@@ -379,7 +369,7 @@ namespace Hecton8.Interaction
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -394,7 +384,7 @@ namespace Hecton8.Interaction
             if (!hapticsEnabled)
                 return;
 
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 _resolvedLatchLowFrequency,
                 _resolvedLatchHighFrequency,
                 _resolvedLatchHapticDurationSeconds,
@@ -425,9 +415,8 @@ namespace Hecton8.Interaction
 
         private void RefreshColdRegistryReferences()
         {
-            _playerMotor = GlobalRegistry.PlayerMotor;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _playerMovement = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerMovement : null;
+            _playerMotor = GlobalRegistry.PlayerSeatLockMotor;
+            _playerRuntimeContext = GlobalRegistry.Player;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -438,11 +427,10 @@ namespace Hecton8.Interaction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.PlayerMotor:
-                    _playerMotor = currentService as HectonPlayerMotor;
+                    _playerMotor = currentService as IPlayerSeatLockMotorSink;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    _playerMovement = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerMovement : null;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     if (_seatLockActive)

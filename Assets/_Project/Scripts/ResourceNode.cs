@@ -29,15 +29,56 @@ namespace Hecton8.Scavenging
         private const int DepletionLockFree = 0;
         private const int DepletionLockOwned = 1;
         private static readonly int _SteamExplosionLayerMask = HectonLayerMasks.MountedSweepLayerMask;
-        private static readonly Collider[] _steamExplosionOverlapBuffer = new Collider[16];
+        private static readonly SpatialQueryHit[] _steamExplosionContacts = new SpatialQueryHit[16];
         private static readonly Rigidbody[] _steamExplosionBodyBuffer = new Rigidbody[16];
         // COLD ALLOC: RegistryBucket<ResourceNode>[4096] — authored/persistent resource node registry for legacy world-state compatibility — owner: ResourceNode
         private static readonly RegistryBucket<ResourceNode> _worldStateRegistry = new RegistryBucket<ResourceNode>(4096);
+        private static readonly RegistryCacheListener _registryCacheListener = new RegistryCacheListener();
+        private static PersistentWorldRegistry s_persistentWorldRegistry;
+        private static WorldStateManager s_worldStateManager;
+        private static IPlayerInventoryService s_playerInventoryService;
+        private static IModularEquipmentService s_modularEquipmentService;
+        private static IObjectPoolService s_objectPool;
+        private static bool s_registryCacheRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _worldStateRegistry.Clear();
+            s_persistentWorldRegistry = null;
+            s_worldStateManager = null;
+            s_playerInventoryService = null;
+            s_modularEquipmentService = null;
+            s_objectPool = null;
+            s_registryCacheRegistered = false;
+        }
+
+        private sealed class RegistryCacheListener : IGlobalRegistryHotSwapListener
+        {
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                switch (serviceSlot)
+                {
+                    case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                        s_persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                        break;
+                    case GlobalRegistryServiceSlot.WorldStateRuntime:
+                        s_worldStateManager = currentService as WorldStateManager;
+                        break;
+                    case GlobalRegistryServiceSlot.PlayerInventory:
+                        s_playerInventoryService = currentService as IPlayerInventoryService;
+                        break;
+                    case GlobalRegistryServiceSlot.ModularEquipment:
+                        s_modularEquipmentService = currentService as IModularEquipmentService;
+                        break;
+                    case GlobalRegistryServiceSlot.ObjectPool:
+                        s_objectPool = currentService as IObjectPoolService;
+                        break;
+                }
+            }
         }
 
         [Header("Identity")]
@@ -172,8 +213,23 @@ namespace Hecton8.Scavenging
             return _worldStateRegistry.GetAt(index);
         }
 
+        private static void EnsureRegistryCache()
+        {
+            s_persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            s_worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
+            s_playerInventoryService = GlobalRegistry.PlayerInventory;
+            s_modularEquipmentService = GlobalRegistry.ModularEquipment;
+            s_objectPool = GlobalRegistry.ObjectPoolService;
+
+            if (s_registryCacheRegistered || !Application.isPlaying)
+                return;
+
+            s_registryCacheRegistered = GlobalRegistry.TryRegisterHotSwapListener(_registryCacheListener);
+        }
+
         private void Awake()
         {
+            EnsureRegistryCache();
             _cachedTransform = transform;
             TryGetComponent(out _meshFilter);
             TryGetComponent(out _meshRenderer);
@@ -190,6 +246,7 @@ namespace Hecton8.Scavenging
 
         private void OnEnable()
         {
+            EnsureRegistryCache();
             RegisterWorldStateRegistry();
 
             if (IsPooledInstance())
@@ -206,6 +263,7 @@ namespace Hecton8.Scavenging
 
         public void OnSpawn()
         {
+            EnsureRegistryCache();
             ResetState();
             RegisterWorldStateRegistry();
             ActivateRuntimeState();
@@ -408,7 +466,7 @@ namespace Hecton8.Scavenging
             if (!IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 
@@ -439,13 +497,13 @@ namespace Hecton8.Scavenging
 
         private bool ShouldSuppressSpawn()
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = s_persistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(_persistentTombstoneId))
                 return true;
 
             if (!string.IsNullOrEmpty(uniqueId))
             {
-                WorldStateManager worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
+                WorldStateManager worldStateManager = s_worldStateManager;
                 if (worldStateManager != null && worldStateManager.IsNodeDepleted(uniqueId))
                     return true;
             }
@@ -455,13 +513,13 @@ namespace Hecton8.Scavenging
 
         private void RegisterPersistentDepletion()
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = s_persistentWorldRegistry;
             if (registry != null)
                 registry.TryRegisterDestroyedResourceNode(_persistentTombstoneId, in _persistentAup);
 
             if (!string.IsNullOrEmpty(uniqueId))
             {
-                WorldStateManager worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
+                WorldStateManager worldStateManager = s_worldStateManager;
                 if (worldStateManager != null)
                     worldStateManager.RegisterDepletedNode(uniqueId);
             }
@@ -493,7 +551,8 @@ namespace Hecton8.Scavenging
             if (!_hasPersistentAup || !IsFiniteAup(in _persistentAup))
                 return false;
 
-            var inventory = GlobalRegistry.PlayerInventoryRuntime;
+            IPlayerInventoryService inventoryService = s_playerInventoryService;
+            var inventory = inventoryService != null ? inventoryService.Inventory : null;
             uint signalQuantity = ScavengingLootOracleRuntime.ClampItemSignalQuantity(quantity);
             int quantityForCapacity = (int)signalQuantity;
             bool capacityAvailable = inventory == null ||
@@ -548,7 +607,8 @@ namespace Hecton8.Scavenging
 
             if (allowHierarchyScan)
             {
-                PickupItem childPickup = lootPrefab.GetComponentInChildren<PickupItem>(true);
+                if (!lootPrefab.TryGetComponent(out PickupItem childPickup))
+                    childPickup = lootPrefab.GetComponentInChildren<PickupItem>(true);
                 if (childPickup != null && childPickup.ItemData != null)
                 {
                     return CacheLootOraclePayload(lootPrefab, unchecked((uint)childPickup.ItemData.PersistentHashId), childPickup.Quantity, out itemHash, out quantity);
@@ -562,7 +622,8 @@ namespace Hecton8.Scavenging
 
             if (allowHierarchyScan)
             {
-                HectonItem childHectonItem = lootPrefab.GetComponentInChildren<HectonItem>(true);
+                if (!lootPrefab.TryGetComponent(out HectonItem childHectonItem))
+                    childHectonItem = lootPrefab.GetComponentInChildren<HectonItem>(true);
                 if (childHectonItem != null && childHectonItem.Data != null)
                 {
                     return CacheLootOraclePayload(lootPrefab, unchecked((uint)childHectonItem.Data.PersistentHashId), childHectonItem.Quantity, out itemHash, out quantity);
@@ -618,7 +679,7 @@ namespace Hecton8.Scavenging
                 return false;
             }
 
-            IModularEquipmentService modularEquipment = GlobalRegistry.ModularEquipment;
+            IModularEquipmentService modularEquipment = s_modularEquipmentService;
             return modularEquipment == null ||
                    !modularEquipment.HasUpgrade(signal.Source.ToolID, ToolUpgradeBits.ThermalShield);
         }
@@ -648,24 +709,30 @@ namespace Hecton8.Scavenging
             if (radius <= 0f || impulseMagnitude <= 0f)
                 return;
 
-            int overlapCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+            const SpatialTargetKind kindMask =
+                SpatialTargetKind.Resource |
+                SpatialTargetKind.Bioform |
+                SpatialTargetKind.Pickup |
+                SpatialTargetKind.Scannable |
+                SpatialTargetKind.Module;
+
+            int overlapCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 runtimeOrigin,
                 radius,
-                _steamExplosionOverlapBuffer,
-                _SteamExplosionLayerMask,
-                QueryTriggerInteraction.Ignore);
+                kindMask,
+                _steamExplosionContacts);
             if (overlapCount <= 0)
                 return;
 
             int uniqueBodyCount = 0;
             for (int i = 0; i < overlapCount; i++)
             {
-                Collider collider = _steamExplosionOverlapBuffer[i];
-                _steamExplosionOverlapBuffer[i] = null;
-                if (collider == null)
+                SpatialQueryHit hit = _steamExplosionContacts[i];
+                _steamExplosionContacts[i] = default;
+                if (!LayerMatchesMask(hit.Layer, _SteamExplosionLayerMask))
                     continue;
 
-                Rigidbody body = collider.attachedRigidbody;
+                Rigidbody body = hit.Rigidbody;
                 if (body == null)
                     continue;
 
@@ -708,6 +775,11 @@ namespace Hecton8.Scavenging
             }
         }
 
+        private static bool LayerMatchesMask(int layer, int mask)
+        {
+            return layer >= 0 && layer < 32 && (mask & (1 << layer)) != 0;
+        }
+
         private void TryApplyDepletionCrater()
         {
             if (resourceTemplate == null || !resourceTemplate.LeavesDepletionCrater)
@@ -740,7 +812,7 @@ namespace Hecton8.Scavenging
 
             _despawnRequested = true;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = s_objectPool;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);
@@ -902,7 +974,8 @@ namespace Hecton8.Scavenging
 
             uint itemHash = unchecked((uint)itemData.PersistentHashId);
             uint signalQuantity = ScavengingLootOracleRuntime.ClampItemSignalQuantity((uint)quantity);
-            var inventory = GlobalRegistry.PlayerInventoryRuntime;
+            IPlayerInventoryService inventoryService = s_playerInventoryService;
+            var inventory = inventoryService != null ? inventoryService.Inventory : null;
             bool capacityAvailable = inventory == null || inventory.CanAcceptItemQuantity(unchecked((int)itemHash), (int)signalQuantity);
             return ScavengingLootOracleRuntime.TryQueueResourceNodeLoot(
                 in aup,
@@ -944,7 +1017,7 @@ namespace Hecton8.Scavenging
             signal.DebrisKind = DebrisSpawnSignal.DebrisKindRockShard;
             signal.Flags = DebrisSpawnSignal.FlagComputeShard;
             signal.Quantity = (ushort)math.clamp(requestedParticles, 1, 96);
-            SignalBus<DebrisSpawnSignal>.Push(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
         }
 
         private ResourceNodeTemplate.DebrisPhysicalProfile ResolveDebrisPhysicalProfile()

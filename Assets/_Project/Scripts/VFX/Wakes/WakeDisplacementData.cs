@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -70,7 +71,7 @@ namespace Hecton8.VFX.Wakes
 
             float safeDeltaTime = math.isfinite(DeltaTime) ? math.clamp(DeltaTime, 0f, 0.25f) : 0f;
             float safeDecayRate = math.isfinite(DecayRate) ? math.max(0f, DecayRate) : 0f;
-            float decay = math.exp(-safeDeltaTime * safeDecayRate);
+            float decay = MathLodApproximation.ApproxExpNegPade33Wide40(safeDeltaTime * safeDecayRate);
             source.Intensity = math.max(0f, source.Intensity * decay);
             source.AgeSeconds = math.isfinite(source.AgeSeconds)
                 ? source.AgeSeconds + safeDeltaTime

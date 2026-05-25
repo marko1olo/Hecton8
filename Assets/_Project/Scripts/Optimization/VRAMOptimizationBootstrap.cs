@@ -9,6 +9,7 @@ namespace Hecton8.Optimization
     /// Creates registry-owned runtime services under the active GameBootstrapper.
     /// </summary>
     [DefaultExecutionOrder(-8000)]
+    [DisallowMultipleComponent]
     public sealed class VRAMOptimizationBootstrap : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

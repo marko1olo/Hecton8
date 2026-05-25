@@ -1,0 +1,65 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_LOCAL_PARSER_ISOLATION_V1",
+    "agent":  "X_002",
+    "generated":  "2026-05-23T18:21:00",
+    "status":  "PASS_DATA_MONOLITH_SCOPE_ONLY",
+    "scope":  "Assets/_Project/Scripts/Data/Monolith runtime plus Assets/_Project/Scripts/Editor/DataMonolith editor tools. This does not clear other domains.",
+    "runtimeCsvOrTextParserMatches":  [
+
+                                      ],
+    "runtimeCsvOrTextParserMatchCount":  0,
+    "runtimeFileStreamReadByteMatchCount":  0,
+    "runtimeFileStreamBinaryMatches":  [
+                                           {
+                                               "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                                               "line":  38,
+                                               "text":  "private const uint PathFlagFileStream = 1u;"
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                                               "line":  1409,
+                                               "text":  "using FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.SequentialScan);"
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                                               "line":  1425,
+                                               "text":  "_lastReadPathFlags = pathFlags | PathFlagFileStream;"
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                                               "line":  1794,
+                                               "text":  "using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                                           }
+                                       ],
+    "runtimeFileStreamBinaryMatchCount":  4,
+    "editorCsvParserFiles":  [
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs",
+                                     "includePlatformsEditorFolder":  true,
+                                     "firstLine":  "#if UNITY_EDITOR",
+                                     "hasUnityEditorFence":  true
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Editor/DataMonolith/OOP_StaticData_Scanner.cs",
+                                     "includePlatformsEditorFolder":  true,
+                                     "firstLine":  "#if UNITY_EDITOR",
+                                     "hasUnityEditorFence":  true
+                                 }
+                             ],
+    "editorCsvParserFileCount":  2,
+    "editorAsmdef":  {
+                         "path":  "Assets/_Project/Scripts/Editor/DataMonolith/Hecton8.DataMonolith.Editor.asmdef",
+                         "includePlatforms":  [
+                                                  "Editor"
+                                              ],
+                         "autoReferenced":  false,
+                         "overrideReferences":  true,
+                         "precompiledReferences":  [
+                                                       "Microsoft.CodeAnalysis.dll",
+                                                       "Microsoft.CodeAnalysis.CSharp.dll",
+                                                       "System.Collections.Immutable.dll",
+                                                       "System.Reflection.Metadata.dll"
+                                                   ]
+                     },
+    "conclusion":  "Data Monolith-owned CSV parsing is physically in Editor/DataMonolith files fenced by #if UNITY_EDITOR and Editor-only asmdef. Runtime Monolith contains binary FileStream/MMF ingestion and telemetry dump only; no ReadByte/string CSV parser in this scope."
+}

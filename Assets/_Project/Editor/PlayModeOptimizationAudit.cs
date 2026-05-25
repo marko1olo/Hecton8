@@ -39,7 +39,7 @@ namespace Hecton8.Editor
             @"\[ObjectPoolManager\] '(?<prefab>[^']+)'",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private static readonly HashSet<string> _poolWarningPrefabs = new HashSet<string>(StringComparer.Ordinal);
+        private static readonly HashSet<string> _poolWarningPrefabs = new HashSet<string>(32, StringComparer.Ordinal);
         private static readonly StringBuilder _summaryBuilder = new StringBuilder(1024);
 
         private static bool _active;

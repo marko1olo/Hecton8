@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Editor.Build
 {
@@ -92,7 +93,7 @@ namespace Hecton8.Editor.Build
 
             if (blockerCount <= 0)
             {
-                Debug.Log("[PLATFORM] Native plugin matrix validation passed for " + target + ".");
+                H8Debug.Log("[PLATFORM] Native plugin matrix validation passed for " + target + ".");
                 return;
             }
 
@@ -105,7 +106,7 @@ namespace Hecton8.Editor.Build
             if (strictBuild)
                 throw new BuildFailedException(message);
 
-            Debug.LogWarning(message + "\nDefine " + StrictDefine + " to convert this report into a hard build failure.");
+            H8Debug.LogWarning(message + "\nDefine " + StrictDefine + " to convert this report into a hard build failure.");
         }
 
         private static void RequireFile(string assetPath, string label, StringBuilder blockers, ref int blockerCount)

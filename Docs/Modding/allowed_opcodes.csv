@@ -1,4 +1,4 @@
-# opcode
+﻿# opcode
 # Authoritative editor-reload source for FutureCommandSandboxValidator.TryReloadAllowedOpcodesCsvFromDisk.
 # Hex values are used instead of names so the file is independent of casing or FNV token drift.
 0x3A3DA9C4 # SpawnItem

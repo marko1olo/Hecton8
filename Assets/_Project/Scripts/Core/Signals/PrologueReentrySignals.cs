@@ -10,7 +10,7 @@ namespace Hecton8.Core.Contracts.Signals
         /// </summary>
         public static void Warm()
         {
-            GlobalSignals.InitializeAllQueues();
+            Hecton8.Core.SignalCorridorRuntime.EnsureInitialized();
         }
     }
 }

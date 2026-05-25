@@ -1,9 +1,11 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using Hecton8.Core;
+using Hecton.Localization;
 
 namespace Hecton8.UI
 {
@@ -14,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/UI Tooltip")]
-    public sealed class UITooltip : MonoBehaviour, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class UITooltip : MonoBehaviour, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         // REGISTRY SERVICE
@@ -49,11 +51,12 @@ namespace Hecton8.UI
 
         private bool _registered;
         private bool _runtimeRegistered;
+        private bool _hotSwapRegistered;
         private bool _isVisible;
         private bool _isFading;
         private float _showTimer;
         private float _fadeTimer;
-        private string _currentText;
+        private uint _currentTextHash;
         private Vector2 _lastPointerPosition;
         private Vector2 _lastTooltipSize;
         private Vector2 _lastCanvasSize;
@@ -107,12 +110,14 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegisterRuntime();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
             HideInternal();
         }
@@ -120,16 +125,27 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
         }
 
         public void OnServiceShutdown()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
             HideInternal();
             if (ReferenceEquals(s_activeRuntime, this))
                 s_activeRuntime = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                RefreshTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -143,6 +159,15 @@ namespace Hecton8.UI
         {
             UITooltip instance = s_activeRuntime;
             if (instance == null || string.IsNullOrEmpty(text))
+                return;
+
+            instance.ShowInternal(text.AsSpan());
+        }
+
+        public static void Show(ReadOnlySpan<char> text)
+        {
+            UITooltip instance = s_activeRuntime;
+            if (instance == null || text.Length <= 0)
                 return;
 
             instance.ShowInternal(text);
@@ -258,13 +283,36 @@ namespace Hecton8.UI
             _registered = false;
         }
 
-        private void ShowInternal(string text)
+        private void TryRegisterHotSwapListener()
         {
-            if (_currentText == text && _isVisible)
+            if (_hotSwapRegistered || !Application.isPlaying)
                 return;
 
-            _currentText = text;
-            _currentTextLength = CopyStringToBuffer(text, _textBuffer);
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void ShowInternal(ReadOnlySpan<char> text)
+        {
+            uint textHash = unchecked((uint)LocHash.Compute(text));
+            if (_currentTextHash == textHash &&
+                _currentTextLength == text.Length &&
+                BufferMatches(text, _textBuffer, _currentTextLength) &&
+                _isVisible)
+            {
+                return;
+            }
+
+            _currentTextHash = textHash;
+            _currentTextLength = CopySpanToBuffer(text, _textBuffer);
             _showTimer = showDelay;
             _isVisible = false;
             _pendingPositionRefresh = true;
@@ -305,7 +353,7 @@ namespace Hecton8.UI
             _isVisible = false;
             _isFading = false;
             _showTimer = 0f;
-            _currentText = null;
+            _currentTextHash = 0u;
             _currentTextLength = 0;
             _hasPositionCache = false;
             _pendingPositionRefresh = false;
@@ -391,15 +439,23 @@ namespace Hecton8.UI
             if (buffer == null || string.IsNullOrEmpty(value))
                 return 0;
 
+            return CopySpanToBuffer(value.AsSpan(), buffer);
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> value, char[] buffer)
+        {
+            if (buffer == null || value.Length <= 0)
+                return 0;
+
             int length = value.Length;
             if (length <= buffer.Length)
             {
-                value.CopyTo(0, buffer, 0, length);
+                value.CopyTo(buffer.AsSpan(0, length));
                 return length;
             }
 
             int copyLength = buffer.Length;
-            value.CopyTo(0, buffer, 0, copyLength);
+            value.Slice(0, copyLength).CopyTo(buffer);
             if (copyLength >= 3)
             {
                 buffer[copyLength - 3] = '.';
@@ -408,6 +464,13 @@ namespace Hecton8.UI
             }
 
             return copyLength;
+        }
+
+        private static bool BufferMatches(ReadOnlySpan<char> value, char[] buffer, int length)
+        {
+            return buffer != null &&
+                   length == value.Length &&
+                   value.SequenceEqual(buffer.AsSpan(0, length));
         }
     }
 
@@ -423,7 +486,7 @@ namespace Hecton8.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (!string.IsNullOrEmpty(tooltipText))
-                UITooltip.Show(tooltipText);
+                UITooltip.Show(tooltipText.AsSpan());
         }
 
         public void OnPointerExit(PointerEventData eventData)

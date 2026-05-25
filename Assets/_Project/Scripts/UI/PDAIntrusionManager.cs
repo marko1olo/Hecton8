@@ -2,7 +2,6 @@ using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Hecton8.Input;
 using Hecton8.Systems.AI;
 using Hecton8.World;
 using System;
@@ -223,7 +222,7 @@ namespace Hecton8.UI
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogError($"[PDAIntrusionEvents] {ownerName} was destroyed while still registered as an IPDAIntrusionEventListener.");
+            UnityEngine.Debug.LogError("[PDAIntrusionEvents] Listener destroyed while still registered.");
 #endif
         }
 
@@ -268,7 +267,10 @@ namespace Hecton8.UI
                     return;
 
                 if (!_pendingEvents.TryDequeue(out PDAIntrusionEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -373,7 +375,10 @@ namespace Hecton8.UI
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -553,7 +558,7 @@ namespace Hecton8.UI
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -567,7 +572,7 @@ namespace Hecton8.UI
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -641,7 +646,7 @@ namespace Hecton8.UI
 
         private PlayerPDA _playerPda;
         private HectonPlayerMovement _playerMovement;
-        private InputManager _inputManager;
+        private INativeInputManagerRuntime _inputManager;
         private InputAction _submitAction;
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private GameObject _driftPanelRoot;
@@ -1098,12 +1103,12 @@ namespace Hecton8.UI
             ResolveInputActionOwner(ResolveNativeInputManager());
         }
 
-        private static InputManager ResolveNativeInputManager()
+        private static INativeInputManagerRuntime ResolveNativeInputManager()
         {
-            return GlobalRegistry.NativeInputManager;
+            return GlobalRegistry.NativeInputRuntime;
         }
 
-        private void ResolveInputActionOwner(InputManager inputManager)
+        private void ResolveInputActionOwner(INativeInputManagerRuntime inputManager)
         {
             if (ReferenceEquals(_inputManager, inputManager) &&
                 (_inputManager == null || _submitAction != null))

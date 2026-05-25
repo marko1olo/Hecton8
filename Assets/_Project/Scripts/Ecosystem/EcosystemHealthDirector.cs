@@ -29,9 +29,10 @@ namespace Hecton8.Ecosystem
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
-        private PlayerExplorationTracker _playerExploration;
+        private IPlayerExplorationChunkReadModel _playerExploration;
         private FaunaGeneticsManager _faunaGenetics;
         private EnvironmentalStrainManager _environmentalStrain;
+        private ISaveService _saveService;
 
         /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
         public static EcosystemHealthDirector Instance => GlobalRegistry.EcosystemHealth;
@@ -61,9 +62,10 @@ namespace Hecton8.Ecosystem
                 return;
 
             CacheRuntimeDependencies();
+            CacheSaveServiceCold();
             TryRegisterHotSwapListener();
             TryRegisterToTickManager();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
+            _saveService?.Register(this);
         }
 
         private void Start()
@@ -80,8 +82,9 @@ namespace Hecton8.Ecosystem
         {
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
+            _saveService?.Unregister(this);
+            _saveService = null;
             ClearRuntimeDependencies();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
             TryUnregisterService();
         }
 
@@ -89,8 +92,9 @@ namespace Hecton8.Ecosystem
         {
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
+            _saveService?.Unregister(this);
+            _saveService = null;
             ClearRuntimeDependencies();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
             TryUnregisterService();
         }
 
@@ -187,7 +191,7 @@ namespace Hecton8.Ecosystem
 
         private void EnsureZoneBudget(int targetZoneCount, float infectionPressure)
         {
-            PlayerExplorationTracker tracker = _playerExploration;
+            IPlayerExplorationChunkReadModel tracker = _playerExploration;
             if (tracker == null)
                 return;
 
@@ -267,8 +271,7 @@ namespace Hecton8.Ecosystem
             if (_registeredToTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTickManager()
@@ -282,9 +285,14 @@ namespace Hecton8.Ecosystem
 
         private void CacheRuntimeDependencies()
         {
-            _playerExploration = GlobalRegistry.PlayerExploration;
+            _playerExploration = GlobalRegistry.PlayerExplorationReadModel;
             _faunaGenetics = GlobalRegistry.FaunaGenetics;
             _environmentalStrain = GlobalRegistry.EnvironmentalStrain;
+        }
+
+        private void CacheSaveServiceCold()
+        {
+            _saveService = GlobalRegistry.Save;
         }
 
         private void ClearRuntimeDependencies()
@@ -319,13 +327,22 @@ namespace Hecton8.Ecosystem
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.PlayerExplorationRuntime:
-                    _playerExploration = currentService as PlayerExplorationTracker;
+                    _playerExploration = currentService as IPlayerExplorationChunkReadModel;
                     break;
                 case GlobalRegistryServiceSlot.FaunaGeneticsRuntime:
                     _faunaGenetics = currentService as FaunaGeneticsManager;
                     break;
                 case GlobalRegistryServiceSlot.EnvironmentalStrainRuntime:
                     _environmentalStrain = currentService as EnvironmentalStrainManager;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    if (Application.isPlaying && previousService is ISaveService previousSave)
+                        previousSave.Unregister(this);
+
+                    _saveService = currentService as ISaveService;
+
+                    if (Application.isPlaying && _saveService != null && isActiveAndEnabled && !_duplicateServiceSuppressed)
+                        _saveService.Register(this);
                     break;
             }
         }

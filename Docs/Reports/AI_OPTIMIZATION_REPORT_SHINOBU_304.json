@@ -1,0 +1,18 @@
+﻿{
+  "scanner": "OOP_NavMesh_Scanner",
+  "agent": "SHINOBU_304",
+  "status": "OOP NavMesh Calls Eradicated",
+  "scope": "Assets/_Project/Scripts/AI runtime scripts excluding Editor",
+  "scannerUsesStructuralSyntaxPass": true,
+  "scannerUsesLightweightSyntaxTree": true,
+  "scannerUsesRoslynAst": false,
+  "scannerParserRoute": "comment/string stripped lightweight syntax tree; no new Roslyn dependency added to isolated pathfinding editor assembly",
+  "filesScanned": 31,
+  "syntaxTypeNodes": 224,
+  "syntaxMethodNodes": 942,
+  "syntaxInvocationNodes": 9977,
+  "forbiddenHitCount": 0,
+  "tokens": ["NavMeshAgent", "NavMesh.CalculatePath", "NavMeshPath", "Physics.SphereCast", "SphereCastAll", "Queue<PathRequest>"],
+  "verdict": "PASS",
+  "findings": []
+}

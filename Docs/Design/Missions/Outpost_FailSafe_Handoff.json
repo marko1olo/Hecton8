@@ -1,4 +1,4 @@
-{
+﻿{
   "schema": "H8.OUTPOST.FAILSAFE.HANDOFF.V1",
   "agent": "MISSION_FAIL_SAFE_ARCHITECT",
   "evidenceClass": "STATIC_DOC",

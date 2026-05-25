@@ -36,12 +36,13 @@ namespace Hecton8.Core.Memory
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct InitializeAlignedBufferJob : IJobParallelFor
+    internal unsafe struct InitializeAlignedBufferJob : IJobParallelFor
     {
         public const int CacheLineBytes = 64;
         public const int ULongsPerCacheLine = CacheLineBytes / sizeof(ulong);
 
-        [NoAlias, NativeDisableUnsafePtrRestriction] public void* BufferPtr;
+        // Invariant: BufferPtr is H8Memory/Vault-owned 64-byte aligned memory, ByteLength is fixed before scheduling, and no relocation/free may run until the producer handle has returned.
+        [NoAlias, NativeDisableUnsafePtrRestriction] internal void* BufferPtr;
         public long ByteLength;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -139,7 +140,7 @@ namespace Hecton8.Core.Memory
             cursorBuffer[0] = cursor;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            TryWriteFaultHistory(ring, cursorBuffer);
+            TryWriteFaultHistory(ring.AsReadOnly(), cursorBuffer.AsReadOnly());
 #endif
             return true;
         }
@@ -147,11 +148,11 @@ namespace Hecton8.Core.Memory
         public static bool TryGetNewestFault(IDataVault vault, out AlignmentTelemetryEntry entry)
         {
             entry = default;
-            if (vault == null || !TryResolveRing(vault, out NativeArray<AlignmentTelemetryEntry> ring))
+            if (vault == null || !TryReadRing(vault, out NativeArray<AlignmentTelemetryEntry>.ReadOnly ring))
                 return false;
 
             if (ring.Length == 0 ||
-                !TryResolveCursor(vault, out NativeArray<int> cursorBuffer) ||
+                !TryReadCursor(vault, out NativeArray<int>.ReadOnly cursorBuffer) ||
                 cursorBuffer.Length == 0)
             {
                 return false;
@@ -171,13 +172,13 @@ namespace Hecton8.Core.Memory
             if (vault == null || !EnsureRing(vault))
                 return false;
 
-            if (!TryResolveRing(vault, out NativeArray<AlignmentTelemetryEntry> ring) ||
+            if (!TryReadRing(vault, out NativeArray<AlignmentTelemetryEntry>.ReadOnly ring) ||
                 ring.Length == 0)
             {
                 return false;
             }
 
-            if (!TryResolveCursor(vault, out NativeArray<int> cursorBuffer) ||
+            if (!TryReadCursor(vault, out NativeArray<int>.ReadOnly cursorBuffer) ||
                 cursorBuffer.Length == 0)
             {
                 return false;
@@ -191,8 +192,8 @@ namespace Hecton8.Core.Memory
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool TryWriteFaultHistory(
-            NativeArray<AlignmentTelemetryEntry> ring,
-            NativeArray<int> cursorBuffer)
+            NativeArray<AlignmentTelemetryEntry>.ReadOnly ring,
+            NativeArray<int>.ReadOnly cursorBuffer)
         {
             if (!ring.IsCreated ||
                 ring.Length == 0 ||
@@ -254,13 +255,13 @@ namespace Hecton8.Core.Memory
                 _cursorHandle = default;
             }
 
-            _ringHandle = vault.GetGenerationHandle<AlignmentTelemetryEntry>(
+            _ringHandle = vault.EnsureGenerationHandle<AlignmentTelemetryEntry>(
                 BufferID.Arm64AlignmentTelemetryRing,
                 Capacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
 
-            _cursorHandle = vault.GetGenerationHandle<int>(
+            _cursorHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.Arm64AlignmentTelemetryCursor,
                 1,
                 SystemID.CoreDiagnostics,
@@ -306,12 +307,30 @@ namespace Hecton8.Core.Memory
                    ring.IsCreated;
         }
 
+        private static bool TryReadRing(IDataVault vault, out NativeArray<AlignmentTelemetryEntry>.ReadOnly ring)
+        {
+            ring = default;
+            return vault != null &&
+                   _ringHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _ringHandle, out ring) &&
+                   ring.IsCreated;
+        }
+
         private static bool TryResolveCursor(IDataVault vault, out NativeArray<int> cursor)
         {
             cursor = default;
             return vault != null &&
                    _cursorHandle.BufferID != 0u &&
                    vault.TryResolveHandle(in _cursorHandle, out cursor) &&
+                   cursor.IsCreated;
+        }
+
+        private static bool TryReadCursor(IDataVault vault, out NativeArray<int>.ReadOnly cursor)
+        {
+            cursor = default;
+            return vault != null &&
+                   _cursorHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _cursorHandle, out cursor) &&
                    cursor.IsCreated;
         }
 

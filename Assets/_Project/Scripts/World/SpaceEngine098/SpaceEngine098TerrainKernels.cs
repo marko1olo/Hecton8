@@ -98,6 +98,40 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproxPow01Curve(float value01, float exponent)
+        {
+            float x = math.saturate(math.select(0f, value01, math.isfinite(value01)));
+            float e = math.clamp(math.select(1f, exponent, math.isfinite(exponent)), 0.25f, 4f);
+            float sqrt1 = math.sqrt(x);
+            float sqrt2 = math.sqrt(sqrt1);
+            float x2 = x * x;
+            float x3 = x2 * x;
+            float x4 = x2 * x2;
+            float r025To05 = math.lerp(sqrt2, sqrt1, math.saturate((e - 0.25f) * 4f));
+            float r05To1 = math.lerp(sqrt1, x, math.saturate((e - 0.5f) * 2f));
+            float r1To2 = math.lerp(x, x2, math.saturate(e - 1f));
+            float r2To3 = math.lerp(x2, x3, math.saturate(e - 2f));
+            float r3To4 = math.lerp(x3, x4, math.saturate(e - 3f));
+            float result = r3To4;
+            result = math.select(result, r2To3, e < 3f);
+            result = math.select(result, r1To2, e < 2f);
+            result = math.select(result, r05To1, e < 1f);
+            result = math.select(result, r025To05, e < 0.5f);
+            return math.saturate(math.select(0f, result, math.isfinite(result)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproxSpectralGain(float lacunarity, float h)
+        {
+            float safeLacunarity = math.clamp(math.select(DefaultLacunarity, lacunarity, math.isfinite(lacunarity)), 1.0001f, 8f);
+            float safeH = math.clamp(math.select(DefaultH, h, math.isfinite(h)), 0.0001f, 4f);
+            float x = safeH * (safeLacunarity - 1f);
+            float denominator = 1f + (0.66f * x) + (0.17f * x * x);
+            float gain = math.rcp(math.max(0.0001f, denominator));
+            return math.saturate(math.select(0.5f, gain, math.isfinite(gain)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float RidgedMultifractalErodedDetail(
             float3 point,
             in SpaceEngine098RidgedMultifractalParams parameters,
@@ -106,8 +140,9 @@ namespace Hecton8.World
             int octaves = math.clamp(parameters.Octaves, 2, 12);
             float lacunarity = math.max(1.0001f, parameters.Lacunarity);
             float h = math.max(0.0001f, parameters.H);
+            float spectralGain = ApproxSpectralGain(lacunarity, h);
             float frequency = lacunarity;
-            float amplitude = math.pow(lacunarity, -h);
+            float amplitude = spectralGain;
             float signal = math.max(0f, parameters.FirstOctaveValue);
             float sum = 0f;
             float3 dsum = default;
@@ -123,7 +158,7 @@ namespace Hecton8.World
                 sum += signal * amplitude;
                 dsum -= amplitude * noiseDeriv.xyz * noiseDeriv.w;
                 frequency *= lacunarity;
-                amplitude *= math.pow(lacunarity, -h);
+                amplitude *= spectralGain;
             }
 
             return sum;
@@ -217,7 +252,7 @@ namespace Hecton8.World
             float amplitude = 0.5f;
             float normalization = 0f;
             float frequency = 1f;
-            float gain = math.pow(math.max(1.0001f, lacunarity), -math.max(0.0001f, h));
+            float gain = ApproxSpectralGain(math.max(1.0001f, lacunarity), math.max(0.0001f, h));
             int count = math.clamp(octaves, 1, 8);
 
             for (int i = 0; i < count; i++)
@@ -612,7 +647,7 @@ namespace Hecton8.World
             float2 cell = SpaceEngine098TerrainMath.Cell2F1F2(warped * math.max(0.0000001f, Parameters.CellFrequency), Seed);
             float borderDistance = math.abs(cell.y - cell.x);
             float r = SpaceEngine098TerrainMath.SmoothStep(0f, 1f, math.max(1f, Parameters.Narrowness) * borderDistance);
-            float fissure = math.pow(1f - r, math.max(0.25f, Parameters.Sharpness));
+            float fissure = SpaceEngine098TerrainMath.ApproxPow01Curve(1f - r, math.max(0.25f, Parameters.Sharpness));
             float shoulder = SpaceEngine098TerrainMath.SmoothStep(0.35f, 0.8f, r) * (1f - r) * math.max(0f, Parameters.RimLift01);
             float height = math.saturate(InputHeights01[index]);
             OutputHeights01[index] = math.saturate(height - fissure * math.max(0f, Parameters.Depth01) + shoulder);

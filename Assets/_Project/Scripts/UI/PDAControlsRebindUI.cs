@@ -1,6 +1,5 @@
 using System;
 using Hecton8.Core;
-using Hecton8.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -85,7 +84,7 @@ namespace Hecton8.UI
         private bool _built;
         private int _selectedIndex;
         private bool _subscribed;
-        private InputManager _subscribedInput;
+        private INativeInputManagerRuntime _subscribedInput;
         private IInputBindingService _subscribedRebindingService;
         private bool _hotSwapListenerRegistered;
         private Image[] _rowBackgrounds = Array.Empty<Image>();
@@ -181,7 +180,7 @@ namespace Hecton8.UI
         {
             if (_subscribed) return;
 
-            InputManager input = ResolveInputManager();
+            INativeInputManagerRuntime input = ResolveInputManager();
             IInputBindingService rebinding = ResolveRebindingService();
             if (input == null || rebinding == null)
                 return;
@@ -191,7 +190,7 @@ namespace Hecton8.UI
             input.OnCancel += HandleCancel;
             input.OnTabNext += HandleTabNext;
             input.OnTabPrevious += HandleTabPrevious;
-            input.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+            input.OnInputDisplayStyleCodeChanged += HandleInputDisplayStyleChanged;
 
             rebinding.OnRebindStarted += HandleRebindStarted;
             rebinding.OnRebindCompleted += HandleRebindCompleted;
@@ -211,7 +210,7 @@ namespace Hecton8.UI
         {
             if (!_subscribed) return;
 
-            InputManager input = _subscribedInput;
+            INativeInputManagerRuntime input = _subscribedInput;
             if (input != null)
             {
                 input.OnNavigate -= HandleNavigate;
@@ -219,7 +218,7 @@ namespace Hecton8.UI
                 input.OnCancel -= HandleCancel;
                 input.OnTabNext -= HandleTabNext;
                 input.OnTabPrevious -= HandleTabPrevious;
-                input.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+                input.OnInputDisplayStyleCodeChanged -= HandleInputDisplayStyleChanged;
             }
 
             IInputBindingService rebinding = _subscribedRebindingService;
@@ -309,7 +308,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            InputManager inputManager = ResolveInputManager();
+            INativeInputManagerRuntime inputManager = ResolveInputManager();
             if (inputManager == null)
             {
                 SetStatus("Input manager unavailable.");
@@ -443,7 +442,7 @@ namespace Hecton8.UI
             UpdateStatusForSelected();
         }
 
-        private void HandleInputDisplayStyleChanged(InputDisplayStyle style)
+        private void HandleInputDisplayStyleChanged(byte styleCode)
         {
             if (!IsControlsTabActive)
                 return;
@@ -461,7 +460,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            InputManager inputManager = ResolveInputManager();
+            INativeInputManagerRuntime inputManager = ResolveInputManager();
             if (inputManager == null)
             {
                 SetStatus("Input manager unavailable.");
@@ -552,7 +551,7 @@ namespace Hecton8.UI
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(18f, -18f), new Vector2(-18f, 24f));
             title.color = BindingColor;
-            title.SetText("CONTROL MATRIX");
+            TmpTextNoAlloc.Set(title, "CONTROL MATRIX");
 
             TextMeshProUGUI hint = CreateText(self, "Hint", labelFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Right);
             Anchor(hint.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
@@ -581,7 +580,7 @@ namespace Hecton8.UI
                 if (row == null)
                     continue;
 
-                RectTransform rowRoot = CreateRect(listRoot, $"Row_{row.actionName}");
+                RectTransform rowRoot = CreateRect(listRoot, "Row");
                 Anchor(rowRoot, new Vector2(0f, 1f), new Vector2(1f, 1f),
                     new Vector2(0f, startY - i * (rowHeight + rowGap)),
                     new Vector2(0f, rowHeight));
@@ -591,7 +590,7 @@ namespace Hecton8.UI
                 rowBg.raycastTarget = false;
                 _rowBackgrounds[i] = rowBg;
 
-                RectTransform accent = CreateRect(rowRoot, $"Accent_{row.actionName}");
+                RectTransform accent = CreateRect(rowRoot, "Accent");
                 Anchor(accent, new Vector2(0f, 0f), new Vector2(0f, 1f),
                     new Vector2(0f, 0f), new Vector2(4f, 0f));
                 Image accentImg = EnsureImage(accent.gameObject);
@@ -599,20 +598,20 @@ namespace Hecton8.UI
                 accentImg.raycastTarget = false;
                 _rowAccentBars[i] = accentImg;
 
-                RectTransform selected = CreateRect(rowRoot, $"Selected_{row.actionName}");
+                RectTransform selected = CreateRect(rowRoot, "Selected");
                 Anchor(selected, new Vector2(0f, 0f), new Vector2(0f, 1f),
                     new Vector2(0f, 0f), new Vector2(3f, 0f));
                 Image selImg = EnsureImage(selected.gameObject);
                 selImg.color = SelectionColor;
                 selImg.raycastTarget = false;
 
-                TextMeshProUGUI label = CreateText(rowRoot, $"Label_{row.actionName}",
+                TextMeshProUGUI label = CreateText(rowRoot, "Label",
                     labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
                 Anchor(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.55f, 1f),
                     new Vector2(14f, 0f), new Vector2(-12f, 0f));
                 label.color = LabelColor;
 
-                RectTransform bindingBox = CreateRect(rowRoot, $"BindingBox_{row.actionName}");
+                RectTransform bindingBox = CreateRect(rowRoot, "BindingBox");
                 Anchor(bindingBox, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                     new Vector2(-12f, 0f), new Vector2(164f, 22f));
                 Image bindingBg = EnsureImage(bindingBox.gameObject);
@@ -620,7 +619,7 @@ namespace Hecton8.UI
                 bindingBg.raycastTarget = false;
                 _bindingBackgrounds[i] = bindingBg;
 
-                TextMeshProUGUI binding = CreateText(bindingBox, $"Binding_{row.actionName}",
+                TextMeshProUGUI binding = CreateText(bindingBox, "Binding",
                     bindingFont, 11.5f, FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(binding.rectTransform, 0f, 0f, 0f, 0f);
                 binding.color = BindingColor;
@@ -690,22 +689,21 @@ namespace Hecton8.UI
                     row.label = row.actionName;
                 }
 
-                string key = row.actionName;
                 if (row.labelText == null)
                 {
-                    Transform t = FindDeepChild(transform, $"Label_{key}");
+                    Transform t = FindDeepChildByPrefixSuffix(transform, "Label_", row.actionName) ?? FindDeepChild(transform, "Label");
                     if (t != null) t.TryGetComponent(out row.labelText);
                 }
 
                 if (row.bindingText == null)
                 {
-                    Transform t = FindDeepChild(transform, $"Binding_{key}");
+                    Transform t = FindDeepChildByPrefixSuffix(transform, "Binding_", row.actionName) ?? FindDeepChild(transform, "Binding");
                     if (t != null) t.TryGetComponent(out row.bindingText);
                 }
 
                 if (row.selectedIndicator == null)
                 {
-                    Transform t = FindDeepChild(transform, $"Selected_{key}");
+                    Transform t = FindDeepChildByPrefixSuffix(transform, "Selected_", row.actionName) ?? FindDeepChild(transform, "Selected");
                     if (t != null) row.selectedIndicator = t.gameObject;
                 }
             }
@@ -723,6 +721,29 @@ namespace Hecton8.UI
                 Transform child = parent.GetChild(i);
                 Transform result = FindDeepChild(child, targetName);
                 if (result != null) return result;
+            }
+
+            return null;
+        }
+
+        private static Transform FindDeepChildByPrefixSuffix(Transform parent, string prefix, string suffix)
+        {
+            if (parent == null || string.IsNullOrEmpty(prefix) || string.IsNullOrEmpty(suffix))
+                return null;
+
+            string name = parent.name;
+            if (!string.IsNullOrEmpty(name) &&
+                name.StartsWith(prefix, StringComparison.Ordinal) &&
+                name.EndsWith(suffix, StringComparison.Ordinal))
+            {
+                return parent;
+            }
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform result = FindDeepChildByPrefixSuffix(parent.GetChild(i), prefix, suffix);
+                if (result != null)
+                    return result;
             }
 
             return null;
@@ -774,7 +795,7 @@ namespace Hecton8.UI
 
                 if (row.labelText != null)
                 {
-                    row.labelText.SetText(row.label);
+                    TmpTextNoAlloc.Set(row.labelText, row.label);
                 }
             }
         }
@@ -800,7 +821,7 @@ namespace Hecton8.UI
 
             if (row.bindingText == null) return;
 
-            InputManager inputManager = ResolveInputManager();
+            INativeInputManagerRuntime inputManager = ResolveInputManager();
             InputAction action = inputManager != null
                 ? inputManager.GetAction(row.actionName, row.actionMap)
                 : null;
@@ -809,18 +830,18 @@ namespace Hecton8.UI
                 : -1;
             if (action == null || bindingIndex < 0)
             {
-                row.bindingText.SetText("--");
+                TmpTextNoAlloc.Set(row.bindingText, "--");
                 return;
             }
 
-            if (InputManager.TryWriteBindingDisplayStringSafe(action, bindingIndex, _bindingDisplayBuffer, 0, out int charsWritten) &&
+            if (inputManager.TryWriteBindingDisplayString(action, bindingIndex, _bindingDisplayBuffer, 0, out int charsWritten) &&
                 charsWritten > 0)
             {
                 row.bindingText.SetCharArray(_bindingDisplayBuffer, 0, charsWritten);
                 return;
             }
 
-            row.bindingText.SetText("--");
+            TmpTextNoAlloc.Set(row.bindingText, "--");
         }
 
         private void RefreshSelectionVisuals()
@@ -920,7 +941,7 @@ namespace Hecton8.UI
 
             bool hasBindingDisplay = false;
             int bindingCharsWritten = 0;
-            InputManager inputManager = ResolveInputManager();
+            INativeInputManagerRuntime inputManager = ResolveInputManager();
             InputAction action = inputManager != null
                 ? inputManager.GetAction(row.actionName, row.actionMap)
                 : null;
@@ -929,7 +950,7 @@ namespace Hecton8.UI
                 int bindingIndex = ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex);
                 if (bindingIndex >= 0)
                 {
-                    hasBindingDisplay = InputManager.TryWriteBindingDisplayStringSafe(
+                    hasBindingDisplay = inputManager.TryWriteBindingDisplayString(
                         action,
                         bindingIndex,
                         _bindingDisplayBuffer,
@@ -1029,7 +1050,7 @@ namespace Hecton8.UI
             if (action == null)
                 return -1;
 
-            InputManager inputManager = ResolveInputManager();
+            INativeInputManagerRuntime inputManager = ResolveInputManager();
             if (inputManager != null)
             {
                 int displayPreferredIndex = inputManager.GetPreferredBindingIndex(actionName, actionMap);
@@ -1088,7 +1109,7 @@ namespace Hecton8.UI
 
         private void AppendResetHintText(char[] buffer, ref int index)
         {
-            InputManager inputManager = ResolveInputManager();
+            INativeInputManagerRuntime inputManager = ResolveInputManager();
             if (inputManager == null)
             {
                 index = AppendToBuffer(buffer, index, resetHint);
@@ -1118,7 +1139,7 @@ namespace Hecton8.UI
             if (_headerHintText == null)
                 return;
 
-            InputManager inputManager = ResolveInputManager();
+            INativeInputManagerRuntime inputManager = ResolveInputManager();
             if (inputManager == null)
             {
                 SetHeaderHint("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
@@ -1150,7 +1171,7 @@ namespace Hecton8.UI
             SetHeaderHint(_headerHintBuffer, headerLength);
         }
 
-        private bool TryAppendBindingDisplay(InputManager inputManager, string actionName, string actionMap, char[] buffer, ref int index)
+        private bool TryAppendBindingDisplay(INativeInputManagerRuntime inputManager, string actionName, string actionMap, char[] buffer, ref int index)
         {
             if (inputManager == null || buffer == null || index < 0 || index >= buffer.Length)
                 return false;
@@ -1163,7 +1184,7 @@ namespace Hecton8.UI
             if (bindingIndex < 0)
                 return false;
 
-            if (!InputManager.TryWriteBindingDisplayStringSafe(action, bindingIndex, buffer, index, out int charsWritten) ||
+            if (!inputManager.TryWriteBindingDisplayString(action, bindingIndex, buffer, index, out int charsWritten) ||
                 charsWritten <= 0)
             {
                 return false;
@@ -1318,11 +1339,11 @@ namespace Hecton8.UI
             return GlobalRegistry.InputBinding;
         }
 
-        private InputManager ResolveInputManager()
+        private INativeInputManagerRuntime ResolveInputManager()
         {
             return _subscribedInput != null
                 ? _subscribedInput
-                : GlobalRegistry.NativeInputManager;
+                : GlobalRegistry.NativeInputRuntime;
         }
 
         public void Configure(PlayerPDA pda, TextMeshProUGUI statusOutput, int tabIndex)

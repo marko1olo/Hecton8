@@ -1,0 +1,554 @@
+﻿# X_007 APEX Math LOD Proof
+
+Source artifacts:
+- Core approximation: `Assets/_Project/Scripts/MathLodApproximation.cs`
+- Decompression authority path: `Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs`
+- Dynamic Jacobi schedule: `Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs`
+- Power-grid voltage/current guard: `Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs`
+- Headless Jacobi stress fuzzer: `Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs`
+- Zero-GC Math-LOD config/blackbox route: `Assets/_Project/Scripts/MathLodApproximation.cs`, published by `Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs`
+- Reproducible static report: `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`
+
+Build/profiler status: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed in `1:46.70` with `0` errors and `4` warnings after the missing sourcelink directory and `ResourceDistributionDirector.CacheDataVaultCold()` compile wall were fixed. Profiler/hardware timing remains pending.
+
+## 1. Decompression Exponential Residual
+
+Implementation shape:
+
+```text
+P33(y) = (1 - y/2 + y^2/10 - y^3/120) / (1 + y/2 + y^2/10 + y^3/120)
+A(x) = P33(clamp(x, 0, 4) / 4)^4
+```
+
+Formal local series:
+
+```text
+P33(y) - exp(-y) = -y^7 / 100800 + O(y^8)
+```
+
+The numerator/denominator match `exp(-y)` through degree 6. Range reduction keeps `y in [0,1]` for decompression `x in [0,4]`, then reconstructs with four multiplies. The denominator is positive on `[0,1]`; code still guards it with `max(denominator, Epsilon)`.
+
+Sample residuals against `exp(-clamp(x,0,4))` using the current float path:
+
+| x | approx | exact | abs error |
+|---:|---:|---:|---:|
+| 0 | 1.0 | 1.0 | 0 |
+| 0.0001 | 0.9998998641967773 | 0.9999000049998333 | 1.4080305599240006e-07 |
+| 0.0142 | 0.9859007596969604 | 0.9859003444746455 | 4.1522231497559403e-07 |
+| 0.147871398519455 | 0.8625420928001404 | 0.8625420319921906 | 6.080794978657877e-08 |
+| 1 | 0.3678794503211975 | 0.36787944117144233 | 9.149755175741348e-09 |
+| 3.9988 | 0.018336867913603783 | 0.018337630847937145 | 7.629343333620531e-07 |
+| 4 | 0.01831487938761711 | 0.01831563888873418 | 7.595011170674626e-07 |
+
+Validator scan:
+- `[0,1]` max abs error: `4.1522231497559403e-07`
+- `[0,4]` max abs error: `7.629343333620531e-07`
+- physiology decompression worst sampled case: `6.080794978657877e-08` at `x=0.147871398519455`
+
+Extreme input behavior:
+- `NaN`, `-Inf`, and negative extreme inputs map to finite `1.0`.
+- `+Inf` maps to the maximum finite decay side `0.01831487938761711`.
+- `x >= 4`, including `40`, `1000`, and `1000000`, clamps to finite `0.01831487938761711`.
+- Output is saturated to `[0,1]`.
+
+Directional infinity correction:
+- `NaN` still maps to the safe fallback side `1.0`.
+- `-Inf` still maps to the lower clamp side `1.0`.
+- `+Inf` now maps to the maximum finite decay side, not to the NaN fallback.
+- Latest numeric proof: `ApproxExpNegPade33Reduced(+Inf) = 0.01831487938761711`, which matches the clamped `x=4` decay envelope.
+- The correction is branchless through `ClampFiniteWithDirectionalInfinity` and is hard-anchored by `expPositiveInfinityClampsToMaxRange`.
+- Branchless gate for the new clamp: `directionalInfinityClampIfCount = 0`, `directionalInfinityClampUsesMathSelect = true`.
+
+Current torture coverage:
+- `MathLodTortureJob` now executes the exp negative, exp positive, quality blend, Bhaskara sine/cosine, clamped tangent, atan, atan2, acos, and pow approximation kernels on the same 16-sample set.
+- The sample set includes `NaN`, `+Inf`, `-Inf`, `1000000`, `-1000000`, `1000 atm`, and `1000000 atm` cases.
+- `NonFiniteCount` is incremented if any raw kernel output becomes non-finite; `MaxAbsOutput`, `MinOutput`, `MaxOutput`, and telemetry `ApproxOutput` use sanitized finite values so the blackbox row does not become the next NaN carrier.
+- The scanner hard-fails if `mathLodTortureCoversAngleKernels`, `mathLodTortureCoversExtremePressureTemperature`, `mathLodTortureChecksNonFiniteAllKernels`, or `mathLodTortureSanitizesEnvelope` becomes false.
+- Latest full scanner proof: `tortureProof.coversExtremeInputs = true`, `tortureProof.coversAngleAndPowKernels = true`, `tortureProof.checksNonFiniteAcrossAllKernels = true`, `tortureProof.sanitizesResultEnvelope = true`.
+
+## 2. Quality Drop Does Not Jump Tissue State
+
+Authority decompression currently uses:
+
+```text
+activeCompartments = ShinobuPhysiologyConstants.TissueCompartmentCount
+```
+
+That is the fixed authority count `3`, independent of `GlobalQualityWeight`. The quality-dependent `ResolveActiveCompartmentCount(GlobalQualityWeight)` remains for signals/telemetry, not for the decompression update.
+
+For equal physical inputs:
+
+```text
+T_next = F(T_prev, ambientPressure, inspiredPressure, effectiveK, dt)
+T_next(q=1.0) - T_next(q=0.1) = 0
+```
+
+Therefore a sharp quality drop from `1.0` to `0.1` cannot create a decompression damage spike by dropping or blending tissue lanes. The only numerical change from the original exp path is the bounded residual above.
+
+## 2.1 Thermal External Heat Quality Boundary
+
+The thermal grid external heat path was audited after the Jacobi proof because `ExternalHeat` feeds `ThermalLoad`, `Overheating`, `MicroDamage`, `ShortCircuit`, and brownout outcomes.
+
+Old risk:
+
+```text
+sample01(q=1.0) = smoothstep(near01)
+sample01(q=0.1) = smoothstep(saturate(near01 * 50))
+max |delta| on near01 in [0,1] = 0.998816425961998 at near01 = 0.01999
+```
+
+That was a real quality-driven heat cliff near the hazard radius. It could turn an edge node from almost cold to full external heat on a quality drop. That is not a valid Math-LOD; it changes the heat source truth.
+
+Current policy:
+
+```text
+ExternalThermalInjectionJob.sample01 = near01^2 * (3 - 2 * near01)
+ExternalHeat retention per solve first iteration = externalHeat * 0.55
+qualityAffectsExternalHeatTruth = false
+```
+
+`GlobalQualityWeight` still controls Jacobi iterations, solver tolerance, residual sampling, and visual overkill state. It no longer changes external thermal source amplitude or heat carry-over. Latest validator anchors: `thermalInjectionTruthProof.heatShapeQualityInvariant = true`, `thermalInjectionTruthProof.heatRetentionQualityInvariant = true`.
+
+## 3. Jacobi Dynamic Iteration Cap
+
+Runtime schedule:
+
+```text
+qualityWeight = SaturateFinite(globalQualityWeight, 1)
+iterations = ResolvePropagationIterations(qualityWeight)
+solverTolerance = ResolveSolverTargetTolerance(baseTolerance, qualityWeight) * toleranceMultiplier
+solverOmega = clamp(ResolveSolverOmega(qualityWeight) * baseOmegaFactor, 0.55, 1.0)
+for iteration in [0, iterations): schedule Jacobi step + residual reduction
+```
+
+Validator samples:
+
+| GlobalQualityWeight | iterations | omega | tolerance at base 0.001 | residual mask |
+|---:|---:|---:|---:|---:|
+| 0.0 | 2 | 0.55 | 0.032 | 7 |
+| 0.1 | 3 | 0.56036 | 0.031118 | 7 |
+| 0.5 | 26 | 0.735 | 0.01625 | 4 |
+| 1.0 | 50 | 0.92 | 0.0005 | 0 |
+
+No convergence is claimed at minimum quality. The guarantee at 2 or 3 iterations is bounded finite advancement, not solved equilibrium. Under-convergence is recorded by residual/max-iteration flags.
+
+Safety invariants:
+- Conductance is finite and clamped to `[0, 4096]` in CSR build and solver reads.
+- Potential reads/writes are sanitized into `[0,1]`.
+- Solver denominator uses a guarded reciprocal: `rcp(max(conductanceSum + 1, 1))`.
+- Edge current is signed by direction, but clamped to `[-4096, 4096]`.
+- Accumulated net current is clamped to `[-1048576, 1048576]`.
+- Battery integration clamps tick delta to `[0,1]` and storage to `[0, capacity]`.
+- Thermal-grid Jacobi flags non-finite or divergent residuals and falls back to previous potential before saturating output.
+
+This prevents negative node voltage and infinite node current output. It does not pretend that 2 iterations solve a stiff graph; it only advances a stable bounded state until higher quality or later frames spend more passes.
+
+Headless fuzzer correction:
+
+```text
+iterations = ResolveIterationCount(requestedIterations, GlobalQualityWeight)
+if requestedIterations > 0: clamp to [2, 50]
+else: round(2 + (50 - 2) * smoothstep(GlobalQualityWeight))
+omega = lerp(0.55, 0.92, profile)
+conductance = clamp(finite(conductance), 0, 4096)
+edgeCurrent = clamp((sourcePotential - destinationPotential) * conductance, -4096, 4096)
+isolated QA vault = new GlobalDataVault() + Initialize(), not GlobalDataVault.Create()
+```
+
+The fuzzer previously used a legacy default of `1000` iterations and `omega = 1.90`. That was a proof defect: it stress-tested a different solver contract than the Math-LOD production target. The fuzzer now follows the `2..50` budget and damped `0.55..0.92` relaxation range, so a green fuzzer result no longer hides behind an ultra-only iteration count.
+
+The fuzzer also no longer creates its private QA vault through `GlobalDataVault.Create()`. That factory publishes the instance into `TryGetLatestCreated()`; a headless/offline fuzzer vault must not become a global bootstrap/diagnostic fallback target.
+
+Logistics graph route correction:
+
+```text
+qualityWeight = MathLodRuntimeConfig.TryReadLatestConfig(out dto)
+    ? SaturateFinite(dto.GlobalQualityWeight, 1)
+    : 1
+ResolveAdaptiveSolveWindow(qualityWeight, out start, out count)
+EvaluateGraphJob.GlobalQualityWeight = qualityWeight
+```
+
+Before this correction, `EvaluateGraphJob` and `ResolveAdaptiveSolveNodesPerFrame` were both fed `AuthoritativeQualityWeight = 1`, so the adaptive logistics solve always behaved as ultra quality. Latest validator anchors: `logisticsQualityRouteProof.readsMathLodConfig = true`, `jobUsesResolvedQuality = true`, `adaptiveWindowUsesResolvedQuality = true`.
+
+Power-grid manager route correction:
+
+```text
+qualityWeight = MathLodRuntimeConfig.TryReadLatestConfig(out dto)
+    ? SaturateFinite(dto.GlobalQualityWeight, 1)
+    : 1
+submarineThermalCadence = lerp(0.2s, 1/60s, smoothstep(qualityWeight))
+runtime.ScheduleSolve(cadenceSeconds, qualityWeight, frame, ...)
+cableThermalIterationBudget = ResolvePropagationIterations(qualityWeight)
+```
+
+Before this correction, the submarine thermal grid owner ticked at the high cadence and passed `quality = 1`; cable thermal share iteration caps also used `AuthoritativeQualityWeight`. Latest validator anchors: `powerGridManagerQualityRouteProof.readsMathLodConfig = true`, `thermalCadenceContinuous = true`, `thermalScheduleUsesResolvedQuality = true`, `cableThermalIterationBudgetUsesResolvedQuality = true`.
+
+Battery charger logistics route correction:
+
+```text
+qualityWeight = QualityOverride >= 0
+    ? saturate(QualityOverride)
+    : MathLodRuntimeConfig.TryReadLatestConfig(out dto)
+        ? SaturateFinite(dto.GlobalQualityWeight, 1)
+        : 1
+tuning.GlobalQualityWeight = qualityWeight
+tuning.CadenceHz = lerp(5Hz, 60Hz, smoothstep(qualityWeight))
+ScheduleSimulation samples tuning.GlobalQualityWeight under the tuning lock before cadence gating
+```
+
+Before this correction, charger logistics always ran the 60Hz cadence because both the schedule path and tuning DTO forced `quality = 1`. The route now preserves the existing accumulator, so low quality reduces solve frequency without discarding wall-clock charge integration. Latest validator anchors: `batteryChargerQualityRouteProof.readsMathLodConfig = true`, `cadenceContinuous = true`, `scheduleUsesTuningQuality = true`, `tuningUsesResolvedQuality = true`, `samplesQualityUnderTuningLock = true`.
+
+Base atmosphere logistics route correction:
+
+```text
+qualityWeight = MathLodRuntimeConfig.TryReadLatestConfig(out dto)
+    ? SaturateFinite(dto.GlobalQualityWeight, 1)
+    : SaturateFinite(HomeostasisBrain.GlobalQualityWeight, 1)
+tuning.GlobalQualityWeight = qualityWeight
+diffusionIterations = round(lerp(2, 8, smoothstep(qualityWeight)))
+baseColdTickSeconds = lerp(1.0s, 0.2s, smoothstep(qualityWeight))
+```
+
+Before this correction, base-atmosphere gas diffusion always wrote tuning quality `1`, always scheduled `8` diffusion passes, and base compartment cold ticks always ran at `0.2s`. The current route keeps oxygen, carbon dioxide, toxin, vent, leak, and consumer source rates unchanged. Quality scales diffusion pass count in logistics and cold-tick cadence in the base compartment engine. The base compartment solve budget remains full-compartment because the current job leaves unsolved compartments unchanged; reducing solve count would freeze non-active compartments. Latest validator anchors: `baseAtmosphereQualityRouteProof.readsMathLodConfig = true`, `tuningUsesResolvedQuality = true`, `diffusionIterationsContinuous = true`, `engineReadsMathLodConfig = true`, `engineColdTickCadenceContinuous = true`.
+
+## 4. Branch Audit
+
+Approximation cores:
+- `ApproxExpNegPade33Reduced`: `if` count `0`, ternary count `0`, uses `math.select`.
+- `ApproxSinBhaskara`/`ApproxCosBhaskara`: `if` count `0`, ternary count `0`, uses `math.select`.
+- `ApproxTanClamped`: `if` count `0`, finite-clamped Bhaskara ratio.
+- `ApproxAtanFast`/`ApproxAtan2Fast`/`ApproxAcosFast`: `if` count `0`, branchless `math.select` reduction.
+
+Whole jobs:
+- They are not branchless.
+- Latest fuzzer branch audit: `PowerGridJacobiStressFuzzer.cs` has `ifCount = 130`, `ternaryCount = 65`, `switchCount = 0`, `BurstCompile = 6`.
+- Audited X_007 solver set has `FloatMode.Fast = 0` in all seven scanner-tracked files.
+- Project-wide `FloatMode.Fast = 703` remains outside this scoped proof and is not being misreported as fixed.
+- Branches remain for topology bounds, NativeArray creation checks, graph traversal, damaged/offline node gates, and fault handling.
+- Removing those branches would trade deterministic failure containment for undefined memory or invalid graph state.
+
+Current hard fail:
+- Direct `exp/log/sin/cos/sincos/pow/tan/atan/atan2/asin/acos` calls are zero in the scanner target set across `math`, `UnityMathf`, `SystemMath`, and `SystemMathF`.
+- Full direct-call purge for the counted transcendental set is now true: validator reports `0` remaining direct variants and `hardFailures = []`.
+- Scanner still counts source tokens only; it does not replace profiler validation or Burst disassembly. The proof claim is limited to direct source calls in `Assets/_Project/Scripts`.
+- Latest scanner strips comments, strings, verbatim strings, raw strings, and char literals before counting, so smoke-test assertion text is no longer counted as executable math.
+- Current remaining counts: all tracked categories are `0`.
+- Zero-count categories include: `math.exp/log/sin/cos/sincos/pow/tan/atan/atan2/asin/acos`, `UnityMathf.Exp/Log/Sin/Cos/Pow/Tan/Atan/Atan2/Asin/Acos`, `SystemMath.Exp/Log/Sin/Cos/Pow/Tan/Atan/Atan2/Asin/Acos`, and `SystemMathF.Exp/Log/Sin/Cos/Pow/Tan/Atan/Atan2/Asin/Acos`.
+- Latest blind-spot closure: runtime inventory biological decay now uses `ApproxExpSignedPade33Wide40`; scientific-notation parser powers now use bounded integer `ScaleByFloatPow10` loops instead of `Math.Pow(10, exponent)`.
+- Latest angle blind-spot closure: direct `tan/atan/atan2/acos` sites now use `ApproxTanClamped`, `ApproxAtanFast`, `ApproxAtan2Fast`, or `ApproxAcosFast`.
+- Latest scanner run completed after the final safety pass; power Jacobi conductance/current/tick caps are anchor-checked true.
+- Residual risk: profiler/hardware timing is still pending until compile/profiler gate clears.
+
+## 5. Zero-GC Config And Blackbox Route
+
+Runtime route:
+
+```text
+HomeostasisBrain owner phase
+  -> MathLodRuntimeConfig.PublishConfig(...)
+  -> GlobalDataVault.ShinobuMathLodConfig[0]
+  -> GlobalDataVault.ShinobuMathLodTelemetryRing[300]
+  -> MathLodRuntimeConfig.TryReadLatestConfig() uses TryReadOnlyHandle only
+```
+
+`MathLodConfigDTO` is explicit 64 bytes:
+
+```text
+quality, fractional time slice, min/max Jacobi budget,
+Padé/Bhaskara residual ceilings, pressure, active iteration budget,
+frame, flags, frame/vram/thermal pressure, state hash
+```
+
+Fault route:
+
+```text
+non-finite config input
+  -> telemetry row flags ConfigFlagNonFiniteInput
+  -> MathLodRuntimeConfig.TryDumpOnFault(null)
+  -> Docs/AgentLogs/Dump_SHINOBU_300_MathLOD.bin
+```
+
+The read accessor does not allocate, grow buffers, publish signals, or mutate global state. The scanner anchor-checks:
+
+- `MathLodConfigDTO` 64-byte layout present.
+- `BufferID.ShinobuMathLodConfig`, `ShinobuMathLodTelemetryRing`, and `ShinobuMathLodTelemetryCursor` present.
+- Config is published by `HomeostasisBrain`.
+- `TryReadLatestConfig` uses `TryReadOnlyHandle` and does not call `EnsureRuntimeBuffers`.
+- Fault dump integration is present.
+
+Latest validator result for this section: all anchors true, `hardFailures = []`.
+
+## 6. Continuous Distance Math Shader Route
+
+`DistanceMath` now publishes a continuous shader global:
+
+```text
+_HectonMathLodWeight = saturate(GlobalQualityWeight)
+```
+
+Legacy compatibility remains:
+
+```text
+_HectonMathLodMode and _MATH_LOD_HIGH/_MATH_LOD_LOW
+```
+
+The legacy mode is now a bridge derived from the continuous weight, not the primary call-site API. Updated call sites:
+
+- `GameBootstrapper.WarmMathLodShaderKeywords()`
+- `FrameTimeWatchdog.TrySwitchScalability()`
+- `FrameTimeWatchdog.PushInitialScalabilityFromGlobalQuality()`
+- `LODSystemManager.ApplyQualityPreset()`
+- `HeadlessSimulationRunner.CaptureRuntimePolicy()`
+
+`DistanceMath.ResolveDistanceQualityWeight01(distanceSq, globalQualityWeight)` blends by both distance and global quality. New continuous overloads exist for:
+
+- `DistanceMath.Sin(radians, distanceSq, globalQualityWeight)`
+- `DistanceMath.Cos(radians, distanceSq, globalQualityWeight)`
+- `DistanceMath.Normalize(value, distanceSq, globalQualityWeight, fallback)`
+
+The scanner hard-fails if `_HectonMathLodWeight` or `ResolveDistanceQualityWeight01` disappears. Latest validator result: both anchors true, `remainingTranscendentalTotal = 0`, `hardFailures = []`.
+
+## 7. Expanded Angle Residuals
+
+New direct-call class removed after the original APEX proof:
+
+```text
+tan / atan / atan2 / asin / acos
+```
+
+The scanner now tracks these in all source API families:
+
+```text
+math, UnityMathf, SystemMath, SystemMathF
+```
+
+Residual scans from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+| Approximation | Domain | max abs error |
+|---|---:|---:|
+| `ApproxAtanFast` | `[0,16]` | `0.004680133605322934 rad` |
+| `ApproxAcosFast` | `[0,1]` | `0.00006754795578522987 rad` |
+| `ApproxTanClamped` | `[0,1.4]` | `0.05517876098057872` |
+
+The tangent value is only used after explicit FOV/talus/cutoff clamps and is additionally output-clamped. It is not used for saved identity or network authority state.
+
+The regenerated JSON report is now PowerShell-readable: case-only duplicate keys were removed by renaming categories to `UnityMathf`, `SystemMath`, and `SystemMathF`.
+
+The validator now includes an asmdef dependency audit for every central `MathLodApproximation` call. Runtime assemblies that would cycle through `Hecton8.Core` (`Hecton8.Animation.IK`, `Hecton8.Audio.Virtualization`, `Hecton8.Cartography`) use local finite-safe branchless trig helpers instead of central Core calls. Seven non-cyclic asmdefs now explicitly reference `Hecton8.Core`.
+
+Latest hard proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2405
+remainingTranscendentalTotal = 0
+asmdefDependencyAudit.mathLodApproximationMissingCoreReferenceCount = 0
+hardFailures = []
+```
+
+## 8. Runtime Quality Snapshot Route
+
+The latest sweep removed direct quality-source drift from 18 heavy runtime readers. These systems now read the owner-published `MathLodRuntimeConfig` snapshot first and use `HomeostasisBrain.GlobalQualityWeight` only as a bootstrap fallback:
+
+- `HectonFluidEngine`: fluid advection and abyssal visual quality.
+- `HectonSeismicTideDirector`: filtered global quality target.
+- `AsyncBuoyancyReadbackRuntime`: readback/sample/wave quality.
+- `BuoyancyDisplacementRuntime`: displacement SIMD and benchmark tuning quality.
+- `AnalyticalGerstnerWaveRuntime`: wave sample quality.
+- `ExosuitKinematicsRuntime`: frame quality cap.
+- `SubmarineDynamicsRuntime`: hydrodynamics scheduling and vault telemetry stride quality.
+- `SubmarineAutopilotSdfNavigator`: scheduling quality with tuning cap.
+- `HydrodynamicKccRuntime`: KCC water/drag quality.
+- `VehicleComponentDamageRuntime`: mock damage signal quality.
+- `HullIntegrityRuntime`: dent/visual hull quality.
+- `StructuralIntegrityCalculatorRuntime`: structural visual quality.
+- `AbyssalCavitationRuntime`: cavitation shockwave quality.
+- `HabitatFluidIncursionDirector`: BFS/solver quality.
+- `AssetLoadDispatcher`: load pressure quality response.
+- `AssetLifecycleGovernor`: cache TTL/eviction quality response.
+- `VRAMPressureMonitor`: VRAM pressure quality response.
+- `VRAMEnforcer`: mip/render budget quality curve.
+
+Latest scanner route proof:
+
+```text
+runtimeQualitySnapshotRouteProof false entries = []
+remainingTranscendentalTotal = 0
+hardFailures = []
+```
+
+## 9. Continuous Cadence And Visual Route Proof
+
+The next hard gate covers runtime paths that had a quality field but still executed as ultra-only or binary quality logic.
+
+Fixed paths:
+
+- `ShinobuPhysiologyRuntime`: reads `MathLodRuntimeConfig` first and blends tick cadence from `0.25s` at low quality to `0.1s` at full quality. The accumulator is preserved, so physiology integrates elapsed time instead of frame count.
+- `GasDynamicsSolver`: reads `MathLodRuntimeConfig` first and blends cold cadence across the authored low/mid/high cadence values. Gas source, leak, pressure, toxicity, and narcosis formulas are not quality-scaled.
+- `SeaglideHydrodynamicsRuntime`: writes snapshot quality into `SeaglideTuningDTO`.
+- `CalculateSeaglideThrustJob`: consumes the job `GlobalQualityWeight` field through branchless finite-safe `math.select` instead of resetting to `SeaglideSimdMath.AuthoritativeQualityWeight`.
+- `VolcanicUpdraftDirector`: reads `MathLodRuntimeConfig` first, passes `Settings.GlobalQualityWeight` into Burst turbulence/debris paths, and replaces the hard `math.step(0.3f, q)` gates with smooth continuous quality curves.
+
+Latest scanner proof:
+
+```text
+runtimeContinuousCadenceAndVisualProof false entries = []
+runtimeQualitySnapshotRouteProof false entries = []
+scannedCSharpFiles = 2405
+remainingTranscendentalTotal = 0
+hardFailures = []
+```
+
+Honest boundary: this is static/code-route proof. The latest build was not launched after this sweep because the project no-build gate was violated: CPU sampled at `100` with Unity Roslyn `VBCSCompiler.dll` running as `dotnet` PID `19092`.
+
+## 10. Thermodynamics, Metabolism, Bulkhead, And Hatch Route Proof
+
+The latest scanner gate also covers the next quality-route sweep:
+
+- `AbyssalThermodynamicsSolver`: `BuildTuning()` and `TryWriteTuning()` resolve `safeQuality` from `MathLodRuntimeConfig` first, write it into `ThermalGridTuningDTO.GlobalQualityWeight`, and pass it to `ResolveJacobiIterations(safeQuality)`.
+- `AbyssalThermodynamicsSolver.ReactorBridge`: reactor and nuclear reactor default tuning builders plus write fallback routes use `ResolveVisualQualityWeight()` instead of `AbyssalThermalMath.AuthoritativeQualityWeight`.
+- `ShinobuMetabolismRuntime`: reads `MathLodRuntimeConfig` before `HomeostasisBrain` or signal fallback.
+- `ShinobuMetabolismJobs`: thermal interpolation is continuous `q*q*(3-2*q)` and no longer gates at `math.step(0.3f, q)`.
+- `BulkheadContainmentRuntime`: editor snapshot, tuning refresh, authority cadence, telemetry, shader globals, and job quality use `ResolveBulkheadQualityWeight()`.
+- `BulkheadContainmentRuntime_HatchLocks`: hatch tuning rows use `ResolveBulkheadQualityWeight()` instead of direct `HomeostasisBrain.GlobalQualityWeight`.
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2405
+remainingTranscendentalTotal = 0
+hardFailures = []
+runtimeContinuousCadenceAndVisualProof false entries = []
+bulkheadRuntimeSnapshotRoute = true
+bulkheadAuthorityCadenceUsesResolvedQuality = true
+bulkheadHatchTuningUsesResolvedQuality = true
+abyssalReactorDefaultsUseResolvedQuality = true
+abyssalReactorWriteFallbackUsesResolvedQuality = true
+```
+
+Truth boundary: thermal source truth, metabolic truth, pressure differential, hatch lock pressure truth, bulkhead integrity, and containment damage inputs are not scaled by quality. Quality controls cadence, iteration budget, interpolation, visual upload weight, and optional presentation cost.
+
+Build boundary: no post-sweep build was launched. Current no-build gate is violated by CPU `100` plus active `dotnet` MSBuild nodes and `VBCSCompiler.exe`.
+
+## 11. AI Ecosystem, Migration, And Boid Route Proof
+
+The latest scanner gate covers the AI ecosystem quality routes that could still drift to ultra-only behavior:
+
+- `ShinobuFloraFaunaSymbiosisSolver`: `ResolveSymbiosisQualityWeight()` reads `MathLodRuntimeConfig` first; cold bootstrap fallback is `HomeostasisBrain.GlobalQualityWeight`. Tuning writes use the resolved scalar.
+- `SymbiosisExchangeKernelJob`: stride/sample complexity uses continuous `q*q*(3-2*q)`.
+- Symbiosis truth boundary: oxygen emitter output and macro-feeding rate use quality-invariant `truthCurve = 1f`; quality only changes sampled coverage/complexity.
+- `MigrationDirector`: `ResolveMigrationQualityWeight()` reads `MathLodRuntimeConfig` first; field cadence now calls `ResolveMigrationFieldColdTickIntervalSeconds(float)` and blends continuously through `math.lerp(2.4f, 0.2f, quality)`.
+- `MigrationDirector` job scheduling writes `GlobalQualityWeight = ResolveMigrationQualityWeight()`.
+- `HectonBoidController`: social LOD resolves from `MathLodRuntimeConfig` first and sanitizes through `MathLodApproximation.SaturateFinite`.
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+asmdefDependencyAudit.mathLodApproximationMissingCoreReferenceCount = 0
+aiEcosystemQualityRouteProof false entries = []
+```
+
+Truth boundary: the patch does not scale oxygen source truth, macro-feeding rate truth, migration authority identity, boid state identity, save identity, or DTO layout. Quality controls cadence, stride, sample budget, and visual-social LOD.
+
+## 12. Animation IK Quality Gate Proof
+
+The latest animation pass removed binary quality gates from scoped presentation-only IK paths:
+
+- `LeviathanTerrainIkJobs.TrySampleSdfAdaptive`: nearest/trilinear SDF density no longer switches at `quality >= 0.3`; it blends by continuous `Smooth01(qualityWeight)`.
+- `ProceduralBoneBlenderJobs`: secondary bone coverage no longer multiplies by `secondaryGate = math.step(...)`; `SmoothRange01` is the sole coverage curve.
+- `ProceduralBoneBlenderJobs`: jaw IK weight no longer multiplies by `jawGate = math.step(...)`; `SmoothRange01(quality, 0.35f, 1f)` is the sole weight curve.
+- `KineticCharacterAnimatorJobs.TrySampleSdf`: SDF gradient normal contribution no longer opens at `quality >= 0.24`; it blends by `SmoothRange01(quality, 0.08f, 1f)`.
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+animationQualityGateProof false entries = []
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Truth boundary: bone identity, bind poses, collision/SDF validity checks, and pose authority are not quality-scaled. Quality controls interpolation/detail weights only. Build boundary: no post-sweep build was launched because CPU `97` and active `csc`/`dotnet` violated the project compile gate.
+
+## 13. Cable, Tether, And Interior GI Quality Gate Proof
+
+The latest presentation/lighting pass removed binary quality gates from scoped spline/GI routes:
+
+- `TetherAupVerletJobs`: Catmull spline interpolation no longer requires `math.step(0.3f, q)`; it blends by continuous `Smooth01(q)`.
+- `CablePhysicsSolver132`: Catmull spline interpolation no longer requires `math.step(0.25f, q)`; it blends by continuous `Smooth01(q)`.
+- `InteriorGIProbeVolumeRuntime.ResolveQualityWeight`: reads `MathLodRuntimeConfig` first and uses `HomeostasisBrain` only as cold fallback.
+- `InteriorGIProbeVolumeRuntime.BuildTuning`: directional and L2 lighting weights no longer use `l1Gate/l2Gate`; `Smooth01` curves are the only quality ramps.
+- `InteriorGIProbeVolumeRuntime.ResolveCadenceSeconds`: thermal-vs-normal cadence no longer switches at `quality >= 0.3`; it blends by `Smooth01((q - 0.05f) * 2.2222223f)`.
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+physicsLightingQualityGateProof false entries = []
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Truth boundary: tether constraints, cable tension events, source light truth, and GI occlusion validity are not quality-scaled. Quality controls spline interpolation, GI directional/L2 detail, cadence, and presentation cost. Build boundary: no post-sweep build was launched because active `dotnet` PID `48968` violated the project compile gate.
+
+## 14. Presentation Quality Gate And Voxel Debug Step Proof
+
+The latest presentation pass removed scoped binary gates without touching gameplay truth:
+
+- `DynamicMusicGranularSynthesizer`: grain interpolation no longer opens at `quality >= 0.3`; it blends by continuous `Smooth01(qualityWeight)`.
+- `ShinobuStormPropagationContracts.ResolveNoiseOctaveCount`: octave count is still an integer budget, but its source is `round(Smooth01(q) * 2)` clamped to `1..3` instead of step thresholds.
+- `HectonOceanSurfaceMath.ResolveRadialGridLod`: the unused `Flags` field no longer encodes a `0.28` quality threshold. `GlobalQualityWeight` is the explicit continuous quality carrier.
+- `VoxelSurfaceNetsJobs.SampleDensityLocal`: nearest/trilinear density uses continuous `Smooth01(quality)`.
+- `VoxelSurfaceNetsJobs`: mock shell/sphere selection uses arithmetic authoring flag weight, and raw debug capture uses saturated scalar input instead of `math.step`.
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+presentationQualityGateProof false entries = []
+animationQualityGateProof false entries = []
+physicsLightingQualityGateProof false entries = []
+aiEcosystemQualityRouteProof false entries = []
+physiologyWorstCase.absError = 6.080794978657877e-08
+```
+
+Truth boundary: audio transport state, storm authority, ocean DTO layout, ocean wave truth, voxel topology safety checks, native-array validity checks, and capacity clamps are not quality-scaled. Quality controls interpolation weight, octave budget, sampling/detail cost, and presentation/debug richness. Branch boundary remains honest: safety `if` statements still exist in jobs; the branchless claim is limited to approximation/math kernels and selected arithmetic gates. Build boundary: no post-sweep build was launched because active `dotnet` PID `42500` violated the project compile gate.
+
+## 15. Power Jacobi Hot Branch Mask Proof
+
+The APEX branch challenge is valid for the actual edge accumulation lane, but not for native memory safety branches. The latest patch removes the avoidable data branches in `PowerGridJacobiContracts`:
+
+- `PowerVoltageSolverJob`: low-conductance edge rejection no longer uses `if/continue`; it uses `conductance *= math.select(1f, 0f, conductance <= MinimumConductance)`.
+- `PowerVoltageSolverJob`: brownout flag write no longer uses `if/else`; it writes with `math.select(clearBrownoutFlags, setBrownoutFlags, solvedPotential < BrownoutThreshold01)`.
+- `PowerVoltageSolverJob`, `IntegrateBatteryChargeJob`, and `ApplyEquipmentPowerDrainJob`: hot finite guards now use `math.select` instead of branch-style ternaries.
+
+The non-removed branches are deliberate:
+
+- pointer/null and native-array bounds checks prevent invalid memory access;
+- offline/damaged node branches preserve gameplay authority state;
+- hash-map lookup branches are required to avoid invalid demand writes;
+- battery capacity and buffer-length checks prevent invalid storage or native writes.
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+powerVoltageConductanceMaskBranchless = true
+powerVoltageBrownoutUsesMathSelect = true
+powerHotFiniteGuardsUseMathSelect = true
+jacobi q=0.0 -> iterations=2, omega=0.55, residualMask=7
+jacobi q=0.1 -> iterations=3, omega=0.56036, residualMask=7
+jacobi q=0.5 -> iterations=26, omega=0.735, residualMask=4
+jacobi q=1.0 -> iterations=50, omega=0.92, residualMask=0
+```
+
+Compile proof: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed in `00:01:33.90` with `0` warnings and `0` errors.

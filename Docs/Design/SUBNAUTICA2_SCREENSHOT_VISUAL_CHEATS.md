@@ -1,4 +1,4 @@
-# Subnautica 2 Screenshot Visual Cheats For HECTON-8
+﻿# Subnautica 2 Screenshot Visual Cheats For HECTON-8
 
 Date: 2026-05-17
 Status: SOURCE-REFERENCE CHEAT SHEET / RUNTIME PENDING

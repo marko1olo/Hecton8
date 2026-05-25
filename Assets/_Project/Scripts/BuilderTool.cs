@@ -35,7 +35,7 @@ namespace Hecton8.Gameplay
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public sealed class BuilderTool : PlayerTool
+    public sealed class BuilderTool : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — VISUAL
@@ -121,6 +121,8 @@ namespace Hecton8.Gameplay
         private BuildableData _lastDisplayedBuildable;
         private PlayerBuilder.BuildReadiness _lastReadinessState;
         private FixedCharBuffer _legacyOperationalBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - builder tool legacy string bridge - owner: BuilderTool
+        private bool _screenVisualDirty;
+        private bool _lateFrameRegistered;
 
         /// <summary>Flag uspeshnoy privyazki k stsene.</summary>
         private bool _bound;
@@ -189,7 +191,11 @@ namespace Hecton8.Gameplay
             }
 
             // ── Kesh Main Camera Transform ──
-            Camera playerCamera = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera : playerTransform.GetComponent<Camera>());
+            Camera playerCamera = null;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+                playerCamera = runtimeContext.PlayerCamera;
+            if (playerCamera == null)
+                playerTransform.TryGetComponent(out playerCamera);
             if (playerCamera != null)
             {
                 _cameraTransform = playerCamera.transform;
@@ -221,8 +227,23 @@ namespace Hecton8.Gameplay
 
             _lastDisplayedBuildable = null;
             _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
+            _screenVisualDirty = false;
+            TryUnregisterLateFrameTick();
 
             base.OnDespawn();
+        }
+
+        protected override void OnToolRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            base.OnToolRegistryServiceReplaced(serviceSlot, previousService, currentService);
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled || !_lateFrameRegistered)
+                return;
+
+            TryUnregisterLateFrameTick();
+            TryRegisterLateFrameTick();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -253,7 +274,7 @@ namespace Hecton8.Gameplay
             }
 
             // ── Obnovit LCD ekran s tekuschim modulem ──
-            UpdateScreen();
+            QueueScreenRefresh();
         }
 
         /// <summary>
@@ -322,8 +343,20 @@ namespace Hecton8.Gameplay
             bool brownoutActive = TryGetToolBrownoutFlicker(out _);
             if (brownoutActive || !ReferenceEquals(current, _lastDisplayedBuildable) || readiness != _lastReadinessState)
             {
+                QueueScreenRefresh();
+            }
+        }
+
+        public void LateFrameTick()
+        {
+            if (_screenVisualDirty)
+            {
+                _screenVisualDirty = false;
                 UpdateScreen();
             }
+
+            if (!IsEquipped && !_screenVisualDirty)
+                TryUnregisterLateFrameTick();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -502,6 +535,29 @@ namespace Hecton8.Gameplay
             screenRenderer.SetPropertyBlock(_screenPropBlock, screenMaterialIndex);
         }
 
+        private void QueueScreenRefresh()
+        {
+            _screenVisualDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
+        }
+
         private void EnsureScreenPropertyBlock()
         {
             if (_screenPropBlock != null)
@@ -517,7 +573,7 @@ namespace Hecton8.Gameplay
             if (limitAngle != _cachedSwayLimitAngle)
             {
                 float halfLimit = math.radians(limitAngle) * 0.5f;
-                float sinLimit = math.sin(halfLimit);
+                float sinLimit = MathLodApproximation.ApproxSinBhaskara(halfLimit);
                 _cachedSwayLimitSinSq = sinLimit * sinLimit;
                 _cachedSwayLimitAngle = limitAngle;
             }

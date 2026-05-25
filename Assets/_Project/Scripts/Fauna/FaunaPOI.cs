@@ -34,7 +34,7 @@ namespace Hecton8.AI
 
         private void Awake()
         {
-            _collider = GetComponent<SphereCollider>();
+            TryGetComponent(out _collider);
             _collider.isTrigger = true;
             radius = GetSafeRadius();
             _collider.radius = radius;
@@ -58,7 +58,7 @@ namespace Hecton8.AI
             {
                 radius = GetSafeRadius();
                 if (_collider == null)
-                    _collider = GetComponent<SphereCollider>();
+                    TryGetComponent(out _collider);
 
                 if (_collider != null)
                 {

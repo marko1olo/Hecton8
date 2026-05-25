@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Hecton8.Core;
 
 namespace Hecton8.Editor
 {
@@ -49,7 +50,7 @@ namespace Hecton8.Editor
             if (EditorSceneManager.playModeStartScene != null)
                 return;
 
-            Debug.LogError(
+            H8Debug.LogError(
                 $"[BootstrapPlayModeEntryGuard] Play Mode blocked. Active scene '{activeScene.name}' violates the bootstrap contract and '{BootstrapScenePath}' could not be resolved.");
 
             EditorApplication.isPlaying = false;

@@ -1,4 +1,4 @@
-# LUT Memory Layout
+﻿# LUT Memory Layout
 
 Date: 2026-05-14
 Status: PENDING VERIFICATION

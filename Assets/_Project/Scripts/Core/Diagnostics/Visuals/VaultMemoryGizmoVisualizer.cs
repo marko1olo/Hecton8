@@ -24,11 +24,10 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private void OnDrawGizmos()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
             if (!drawVaultMemoryGizmos ||
-                vault == null ||
-                !TryReadBuffer(vault, BufferID.VaultAup64, out NativeArray<VaultAup64> aups) ||
-                !TryReadBuffer(vault, BufferID.VaultHotEntityData, out NativeArray<VaultHotEntityData> hotEntities) ||
+                !GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault) ||
+                !TryReadBuffer(vault, BufferID.VaultAup64, out NativeArray<VaultAup64>.ReadOnly aups) ||
+                !TryReadBuffer(vault, BufferID.VaultHotEntityData, out NativeArray<VaultHotEntityData>.ReadOnly hotEntities) ||
                 !aups.IsCreated ||
                 !hotEntities.IsCreated)
             {
@@ -49,7 +48,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 if (hot.EntityId == 0u)
                     continue;
 
-                Vector3 runtimePosition = ReconstructRuntimePosition(in aups[i]);
+                VaultAup64 aup = aups[i];
+                Vector3 runtimePosition = ReconstructRuntimePosition(in aup);
                 Gizmos.color = WasMovedBySwapPop(i, hot.EntityId, frame, shifts)
                     ? Color.yellow
                     : Color.green;
@@ -59,7 +59,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private static void DrawLastPointerFault(
             GlobalDataVault vault,
-            NativeArray<VaultAup64> aups,
+            NativeArray<VaultAup64>.ReadOnly aups,
             int count,
             uint frame)
         {
@@ -73,8 +73,9 @@ namespace Hecton8.Core.Diagnostics.Visuals
             }
 
             int index = math.abs(telemetry.LastFaultBufferID) % count;
-            float pulse = 0.75f + (0.25f * math.sin(frame * 0.21f));
-            Vector3 position = ReconstructRuntimePosition(in aups[index]);
+            float pulse = 0.75f + (0.25f * MathLodApproximation.ApproxSinBhaskara(frame * 0.21f));
+            VaultAup64 aup = aups[index];
+            Vector3 position = ReconstructRuntimePosition(in aup);
             Gizmos.color = new Color(1f, 0f, 0f, 0.85f);
             Gizmos.DrawWireSphere(position, DefaultWireSizeMeters * (2f + pulse));
         }
@@ -96,14 +97,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private static bool TryReadBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             return
                 vault != null &&
                 vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
-                vault.TryReadHandle(in handle, out buffer) &&
-                buffer.IsCreated;
+                vault.TryReadOnlyHandle(in handle, out buffer) &&
+                buffer.Length > 0;
         }
 
         private static bool WasMovedBySwapPop(

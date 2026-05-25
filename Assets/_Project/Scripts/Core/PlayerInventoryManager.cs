@@ -11,7 +11,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9922)]
-    public sealed class PlayerInventoryManager : MonoBehaviour, IPlayerInventoryService, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class PlayerInventoryManager : MonoBehaviour, IPlayerInventoryService, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         [Header("── Inventory Capacity ──────────────────")]
         [Tooltip("Authoritative player carry-capacity ceiling used by UI/readiness systems. Current inventory mass above this value is treated as encumbered.")]
@@ -20,12 +20,15 @@ namespace Hecton8.Core
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
+        private bool _hotSwapRegistered;
         private bool _syncInProgress;
         private GameObject _playerObject;
         private PlayerToolManager _toolManager;
         private PlayerInventory _inventory;
         private PlayerBuilder _playerBuilder;
         private Transform _handAnchor;
+
+        internal static PlayerInventoryManager ActiveRuntimeInstance { get; private set; }
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -36,7 +39,7 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public bool IsServiceReady => _isInitialized;
 
-        internal float CarryCapacityKilograms => Mathf.Max(1f, carryCapacityKilograms);
+        public float CarryCapacityKilograms => Mathf.Max(1f, carryCapacityKilograms);
         internal PlayerToolManager CachedToolManager => _toolManager;
         internal PlayerInventory CachedInventory => _inventory;
         internal PlayerBuilder CachedPlayerBuilder => _playerBuilder;
@@ -45,41 +48,25 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public PlayerToolManager ToolManager
         {
-            get
-            {
-                SyncInventoryContext();
-                return _toolManager;
-            }
+            get { return _toolManager; }
         }
 
         /// <inheritdoc />
         public PlayerInventory Inventory
         {
-            get
-            {
-                SyncInventoryContext();
-                return _inventory;
-            }
+            get { return _inventory; }
         }
 
         /// <inheritdoc />
         public PlayerBuilder PlayerBuilder
         {
-            get
-            {
-                SyncInventoryContext();
-                return _playerBuilder;
-            }
+            get { return _playerBuilder; }
         }
 
         /// <inheritdoc />
         public Transform HandAnchor
         {
-            get
-            {
-                SyncInventoryContext();
-                return _handAnchor;
-            }
+            get { return _handAnchor; }
         }
 
         /// <summary>
@@ -87,9 +74,8 @@ namespace Hecton8.Core
         /// </summary>
         public static PlayerInventoryManager EnsureRuntimeInstance()
         {
-            IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
-            if (registeredService != null)
-                return registeredService as PlayerInventoryManager;
+            if (ActiveRuntimeInstance != null)
+                return ActiveRuntimeInstance;
 
             GameObject runtimeRoot = new GameObject("[PlayerInventoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player inventory/tooling service root - owner: PlayerInventoryManager
             return runtimeRoot.AddComponent<PlayerInventoryManager>();
@@ -102,6 +88,7 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
                 SyncInventoryContext();
@@ -109,6 +96,7 @@ namespace Hecton8.Core
             }
 
             _isInitialized = true;
+            TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterService();
             SyncInventoryContext();
@@ -122,8 +110,12 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             if (_isInitialized)
             {
+                TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
                 SyncInventoryContext();
@@ -132,13 +124,20 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
             TryUnregisterService();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void OnDestroy()
         {
             ShutdownServiceState();
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         public void OnServiceShutdown()
@@ -148,6 +147,7 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
             TryUnregisterService();
             _isInitialized = false;
@@ -157,6 +157,15 @@ namespace Hecton8.Core
             _inventory = null;
             _playerBuilder = null;
             _handAnchor = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                TryRegisterUpdatable();
         }
 
         private void SyncInventoryContext()
@@ -193,7 +202,9 @@ namespace Hecton8.Core
                     _inventory = _toolManager.Inventory;
 
                 _handAnchor = _toolManager.HandAnchor;
-                _playerBuilder = _toolManager.CurrentTool as PlayerBuilder;
+
+                if (_playerBuilder == null)
+                    _playerObject.TryGetComponent(out _playerBuilder);
             }
             finally
             {
@@ -209,8 +220,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterUpdatable()
@@ -238,6 +248,23 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterPlayerInventoryService(this);
             _registeredService = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

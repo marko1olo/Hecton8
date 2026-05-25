@@ -368,7 +368,7 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 n = Hash01(x * 73856093 ^ y * 19349663 ^ ((int)kind * 83492791));
             }
-            float ridges = Mathf.Abs(Mathf.Sin((u * 37f + v * 29f + n * 0.2f) * Mathf.PI));
+            float ridges = Mathf.Abs(Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((u * 37f + v * 29f + n * 0.2f) * Mathf.PI));
 
             if (kind == AtlasKind.Normal)
             {
@@ -1362,8 +1362,7 @@ namespace Hecton8.Editor.ProceduralGen
 
             ValidatePrefabNameContract(path, familyFolder, prefab, rock, ref failures);
 
-            LODGroup lodGroup = prefab.GetComponent<LODGroup>();
-            if (lodGroup == null || lodGroup.GetLODs().Length != 3)
+            if (!prefab.TryGetComponent(out LODGroup lodGroup) || lodGroup.GetLODs().Length != 3)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Invalid LODGroup at {path}.");
@@ -1814,7 +1813,9 @@ namespace Hecton8.Editor.ProceduralGen
                 }
 
                 Renderer renderer = renderers[0];
-                MeshFilter meshFilter = renderer != null ? renderer.GetComponent<MeshFilter>() : null;
+                MeshFilter meshFilter = null;
+                if (renderer != null)
+                    meshFilter = renderer.TryGetComponent(out MeshFilter resolvedMeshFilter) ? resolvedMeshFilter : null;
                 Mesh mesh = meshFilter != null ? meshFilter.sharedMesh : null;
                 if (renderer == null || meshFilter == null || mesh == null)
                 {

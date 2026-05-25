@@ -12,7 +12,7 @@
 //
 // Retained:
 //   - Archimedean spiral search, fallback, nearshore search.
-//   - Zero-GC raycast fields: _rayOrigin and _hitInfo.
+//   - Zero-GC ground-probe fields: _rayOrigin and _hitInfo.
 //   - Rigidbody teleport with kinematic/interpolation/velocity reset.
 //   - Unity 6 Awaitable API.
 //
@@ -29,7 +29,10 @@ using System;
 using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
@@ -54,6 +57,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     private const float SpawnAngleLutCosDelta = 0.99998117528f;
     private const float SpawnSearchTwoPi = 6.2831853071795864769f;
     private const float NearshoreDiagonal = 0.70710678118f;
+    private const uint KccVelocitySpawnerMaxAgeFrames = 12u;
 
     // COLD ALLOC: float[1024] — spawn spiral trigonometry lookup — owner: HectonPlayerSpawner
     private static readonly float[] s_spawnSinLut = new float[SpawnAngleLutSize];
@@ -66,7 +70,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     private static void LogSpawner(string message)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log(message);
+        Hecton8.Core.H8Debug.Log(message);
 #endif
     }
 
@@ -170,9 +174,8 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Predallotsirovannaya tochka nachala lucha Raycast.
-    /// Pereispolzuetsya vo vseh vyzovah Physics.Raycast
-    /// bez sozdaniya novyh Vector3.
+    /// Predallotsirovannaya tochka nachala legacy-probe lucha.
+    /// Pereispolzuetsya vo vseh poverhnostnyh probah bez sozdaniya novyh Vector3.
     /// </summary>
     private Vector3 _rayOrigin;
 
@@ -183,11 +186,10 @@ public class HectonPlayerSpawner : MonoBehaviour
     private Vector3 _spawnPosition;
 
     /// <summary>
-    /// Predallotsirovannaya struktura rezultata Raycast.
-    /// Unity perezapisyvaet polya pri kazhdom vyzove Physics.Raycast.
+    /// Predallotsirovannaya struktura rezultata cached terrain-probe.
+    /// Zapolnyaetsya bez PhysX i bez Unity hit DTO.
     /// </summary>
-    private RaycastHit _hitInfo;
-    private readonly RaycastHit[] _groundHits = new RaycastHit[1]; // COLD ALLOC: RaycastHit[1] — nearest terrain hit for spawn probe — owner: HectonPlayerSpawner
+    private SpawnGroundHit _hitInfo;
 
     /// <summary>
     /// Vremya nachala operatsii SpawnPlayerAsync (realtimeSinceStartup).
@@ -221,6 +223,13 @@ public class HectonPlayerSpawner : MonoBehaviour
         ValidShallowWater
     }
 
+    private struct SpawnGroundHit
+    {
+        public Vector3 point;
+        public Vector3 normal;
+        public float distance;
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  LIFECYCLE
     // ══════════════════════════════════════════════════════════════
@@ -235,7 +244,7 @@ public class HectonPlayerSpawner : MonoBehaviour
             InitializeSpawnTrigLut();
         }
 
-        IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
         if (playerRigidbody == null && playerContext != null)
             playerRigidbody = playerContext.PlayerRigidbody;
         if (_playerMovement == null && playerContext != null)
@@ -352,7 +361,7 @@ public class HectonPlayerSpawner : MonoBehaviour
                 return;
             }
 
-            if (TryRaycastGround(out _hitInfo))
+            if (TryResolveGroundHit(out _hitInfo))
             {
                 terrainReady = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -453,7 +462,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 
             _rayOrigin.Set(testX, raycastOriginHeight, testZ);
 
-            if (TryRaycastGround(out _hitInfo))
+            if (TryResolveGroundHit(out _hitInfo))
             {
                 // ── Raycast uspeshen — sbrasyvaem schetchik popytok ──
                 retryCount = 0;
@@ -557,7 +566,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 
             _rayOrigin.Set(testX, raycastOriginHeight, testZ);
 
-            if (TryRaycastGround(out _hitInfo))
+            if (TryResolveGroundHit(out _hitInfo))
             {
                 float groundY = _hitInfo.point.y;
 
@@ -712,34 +721,36 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Otsenivaet tochku karty, puskaya Raycast vniz.
+    /// Otsenivaet tochku karty cherez cached terrain height.
     /// Pri nahozhdenii validnogo melkovodya zapolnyaet _spawnPosition.
-    /// Zero-GC: predallotsirovannye _rayOrigin i _hitInfo.
+    /// Zero-GC: no PhysX query, no managed allocation.
     /// </summary>
-    private bool TryRaycastGround(out RaycastHit hit)
+    private bool TryResolveGroundHit(out SpawnGroundHit hit)
     {
-        int hitCount = Physics.RaycastNonAlloc(
-            _rayOrigin,
-            Vector3.down,
-            _groundHits,
-            raycastOriginHeight * 2f,
-            terrainLayerMask);
-
-        if (hitCount > 0)
-        {
-            hit = _groundHits[0];
-            return true;
-        }
-
         hit = default;
-        return false;
+        if (!TryResolveCachedTerrainHeight(_rayOrigin.x, _rayOrigin.z, out float groundY))
+            return false;
+
+        hit.point = new Vector3(_rayOrigin.x, groundY, _rayOrigin.z);
+        hit.normal = Vector3.up;
+        hit.distance = Mathf.Max(0f, _rayOrigin.y - groundY);
+        return true;
+    }
+
+    private static bool TryResolveCachedTerrainHeight(float x, float z, out float groundY)
+    {
+        groundY = 0f;
+        HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+        return vegetationBridge != null &&
+               vegetationBridge.TryGetCachedTerrainHeight(x, z, out groundY) &&
+               float.IsFinite(groundY);
     }
 
     private SpawnSearchResult EvaluatePoint(float x, float z)
     {
         _rayOrigin.Set(x, raycastOriginHeight, z);
 
-        if (!TryRaycastGround(out _hitInfo))
+        if (!TryResolveGroundHit(out _hitInfo))
         {
             return SpawnSearchResult.NoTerrain;
         }
@@ -749,7 +760,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 
     /// <summary>
     /// Otsenivaet tochku na osnove uzhe zapolnennogo _hitInfo.
-    /// Vyzyvaetsya posle uspeshnogo Raycast.
+    /// Vyzyvaetsya posle uspeshnogo cached terrain probe.
     /// </summary>
     private SpawnSearchResult EvaluatePointFromHit(float x, float z)
     {
@@ -820,15 +831,79 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// </summary>
     private void PrepareRigidbodyForTeleport()
     {
-        _teleportPreservedAngularVelocity = HectonPlayerMotor.SafeVelocity(playerRigidbody.angularVelocity);
-        if (!TryResolveTeleportVelocityFrame(playerRigidbody.position, playerRigidbody.linearVelocity, out _teleportPreservedLocalVelocity, out _teleportPreservedPlatformVelocity))
+        _teleportPreservedAngularVelocity = Vector3.zero;
+        Vector3 currentVelocity = ResolveKccVelocityForTeleport();
+        Vector3 currentPosition = ResolvePlayerRuntimePositionForTeleport();
+        if (!TryResolveTeleportVelocityFrame(currentPosition, currentVelocity, out _teleportPreservedLocalVelocity, out _teleportPreservedPlatformVelocity))
         {
-            _teleportPreservedLocalVelocity = HectonPlayerMotor.SafeVelocity(playerRigidbody.linearVelocity);
+            _teleportPreservedLocalVelocity = HectonPlayerMotor.SafeVelocity(currentVelocity);
             _teleportPreservedPlatformVelocity = Vector3.zero;
         }
 
-        playerRigidbody.isKinematic = true;
-        playerRigidbody.interpolation = RigidbodyInterpolation.None;
+        if (TryResolveHydroPlayerMotor(out _))
+            return;
+
+        PrepareLegacyRigidbodyForTeleport(playerRigidbody);
+    }
+
+    private static Vector3 ResolveKccVelocityForTeleport()
+    {
+        if (!Hecton8.Physics.PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) ||
+            signal.Sequence == 0u)
+        {
+            return Vector3.zero;
+        }
+
+        uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+        uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
+        if (currentFrame != 0u &&
+            signalFrame != 0u &&
+            (signalFrame > currentFrame || currentFrame - signalFrame > KccVelocitySpawnerMaxAgeFrames))
+        {
+            return Vector3.zero;
+        }
+
+        float3 velocity = signal.Velocity;
+        return math.all(math.isfinite(velocity))
+            ? HectonPlayerMotor.SafeVelocity(new Vector3(velocity.x, velocity.y, velocity.z))
+            : Vector3.zero;
+    }
+
+    private static Vector3 ResolvePlayerRuntimePositionForTeleport()
+    {
+        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        if (playerContext != null &&
+            playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+            math.all(math.isfinite(snapshot.RuntimePosition)))
+        {
+            float3 position = snapshot.RuntimePosition;
+            return HectonPlayerMotor.SafeVelocity(new Vector3(position.x, position.y, position.z));
+        }
+
+        return Vector3.zero;
+    }
+
+    private static Quaternion ResolvePlayerRuntimeRotationForTeleport()
+    {
+        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        if (playerContext != null &&
+            playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+            math.all(math.isfinite(snapshot.Forward)))
+        {
+            float3 forward3 = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(forward3);
+            if (math.isfinite(forwardLengthSq) && forwardLengthSq > 0.0001f)
+            {
+                float invLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+                Vector3 forward = new Vector3(
+                    forward3.x * invLength,
+                    forward3.y * invLength,
+                    forward3.z * invLength);
+                return Quaternion.LookRotation(forward, Vector3.up);
+            }
+        }
+
+        return Quaternion.identity;
     }
 
     /// <summary>
@@ -846,19 +921,30 @@ public class HectonPlayerSpawner : MonoBehaviour
             platformVelocityAtTarget = transportPlatform.GetPlatformPointVelocity(position);
         }
 
-        Vector3 targetLinearVelocity = HectonPlayerMotor.SafeVelocity(
-            platformVelocityAtTarget + _teleportPreservedLocalVelocity,
-            playerRigidbody.linearVelocity);
-        Vector3 targetAngularVelocity = HectonPlayerMotor.SafeVelocity(
-            _teleportPreservedAngularVelocity,
-            playerRigidbody.angularVelocity);
+        Vector3 targetLinearVelocity = HectonPlayerMotor.SafeVelocity(platformVelocityAtTarget + _teleportPreservedLocalVelocity);
+        Vector3 targetAngularVelocity = HectonPlayerMotor.SafeVelocity(_teleportPreservedAngularVelocity);
 
-        playerRigidbody.MovePosition(position);
-        playerRigidbody.isKinematic = false;
-        playerRigidbody.linearVelocity = targetLinearVelocity;
-        playerRigidbody.angularVelocity = targetAngularVelocity;
-        playerRigidbody.WakeUp();
-        playerRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+        playerRigidbody.TryGetComponent(out HectonPlayerMotor playerMotor);
+        if (playerMotor != null && playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+        {
+            playerMotor.MovePosition(position);
+            playerMotor.SetLinearVelocity(targetLinearVelocity);
+            Transform playerTransform = ResolvePlayerTransformForTeleport();
+            if (playerTransform != null)
+                playerTransform.SetPositionAndRotation(position, ResolvePlayerRuntimeRotationForTeleport());
+            return;
+        }
+
+        if (playerMotor != null)
+            playerMotor.MovePosition(position);
+        else
+            Hecton8.Physics.PhysicsForceRouter.QueuePoseSet(playerRigidbody, position, ResolvePlayerRuntimeRotationForTeleport());
+
+        if (playerMotor != null)
+            playerMotor.SetLinearVelocity(targetLinearVelocity);
+        if (playerMotor == null || !playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(playerRigidbody, targetAngularVelocity);
+        RestoreLegacyRigidbodyAfterTeleport(playerRigidbody);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         float elapsed = Time.realtimeSinceStartup - _operationStartTime;
@@ -870,6 +956,45 @@ public class HectonPlayerSpawner : MonoBehaviour
             $"   Water depth: {waterLevel - _hitInfo.point.y:F1}m\n" +
             $"   Search time: {elapsed:F1}s");
 #endif
+    }
+
+    private bool TryResolveHydroPlayerMotor(out HectonPlayerMotor playerMotor)
+    {
+        playerMotor = null;
+        return playerRigidbody != null &&
+               playerRigidbody.TryGetComponent(out playerMotor) &&
+               playerMotor.HydrodynamicKccOwnsCollisionAuthority;
+    }
+
+    private Transform ResolvePlayerTransformForTeleport()
+    {
+        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        if (playerContext != null && playerContext.PlayerTransform != null)
+            return playerContext.PlayerTransform;
+
+        if (_playerMovement != null)
+            return _playerMovement.transform;
+
+        return playerRigidbody != null ? playerRigidbody.transform : null;
+    }
+
+    private static void PrepareLegacyRigidbodyForTeleport(Rigidbody body)
+    {
+        if (body == null)
+            return;
+
+        body.isKinematic = true;
+        body.interpolation = RigidbodyInterpolation.None;
+    }
+
+    private static void RestoreLegacyRigidbodyAfterTeleport(Rigidbody body)
+    {
+        if (body == null)
+            return;
+
+        body.isKinematic = false;
+        body.WakeUp();
+        body.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
     // ══════════════════════════════════════════════════════════════

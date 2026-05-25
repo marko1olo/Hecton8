@@ -8,6 +8,11 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.Outposts
 {
+    internal static class MarauderOutpostJobsLayout
+    {
+        public const int OutpostTelemetryEntryStrideBytes = 128;
+    }
+
     internal static class MarauderOutpostConstants
     {
         public const int FullWidth = 10;
@@ -97,7 +102,7 @@ namespace Hecton8.World.Outposts
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = MarauderOutpostJobsLayout.OutpostTelemetryEntryStrideBytes)]
     internal struct OutpostTelemetryEntry
     {
         [FieldOffset(0)]

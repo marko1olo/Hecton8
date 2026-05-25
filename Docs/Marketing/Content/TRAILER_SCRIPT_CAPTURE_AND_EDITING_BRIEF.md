@@ -1,4 +1,4 @@
-# HECTON-8 Trailer Script, Capture, And Editing Brief
+﻿# HECTON-8 Trailer Script, Capture, And Editing Brief
 
 Status: pre-footage production brief
 Owner lane: SHINOBU_81 / trailer planning

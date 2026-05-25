@@ -1,4 +1,4 @@
-# Creator Contract Terms And Rate Card
+﻿# Creator Contract Terms And Rate Card
 
 Status: negotiation prep / not legal advice
 Public stance: single-player-first scope / proof-first creator copy

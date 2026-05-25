@@ -67,7 +67,8 @@ namespace Hecton8.Atmosphere
             for (int i = 1; i <= 32; i++)
             {
                 float angle = i * (math.PI * 2f / 32f);
-                Vector3 current = center + new Vector3(math.cos(angle) * safeRadius, 0f, math.sin(angle) * safeRadius);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sine, out float cosine);
+                Vector3 current = center + new Vector3(cosine * safeRadius, 0f, sine * safeRadius);
                 Gizmos.DrawLine(previous, current);
                 previous = current;
             }

@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Hecton8.Physics;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -11,13 +10,15 @@ using Unity.Mathematics;
 namespace Hecton8.Construction
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct DrainageMockNetworkJob : IJob
+    public struct GenerateMockPipeNetworkJob : IJob
     {
-        [NoAlias] public NativeArray<PumpNodeDTO> PumpNodes;
+        [NoAlias] public NativeArray<DrainageNodeDTO> PumpNodes;
         [NoAlias] public NativeArray<PipeEdgeDTO> PipeEdges;
         [NoAlias] public NativeArray<double3> NodeAup;
         [NoAlias] public NativeArray<int> PumpRoomIndices;
         [NoAlias] public NativeArray<float> PowerPotential;
+        [NoAlias] public NativeArray<float> PumpBaseMaxRate;
+        [NoAlias] public NativeArray<uint> PumpPowerNodeHashes;
         [NoAlias] public NativeArray<int> Counters;
         [NoAlias] public NativeArray<DrainageTuningDTO> Tuning;
         public int RequestedNodeCount;
@@ -33,6 +34,8 @@ namespace Hecton8.Construction
             safeNodeCount = math.min(safeNodeCount, PumpRoomIndices.Length);
             safeNodeCount = math.min(safeNodeCount, PowerPotential.Length);
             int safeEdgeCount = math.min(math.max(0, RequestedEdgeCount), PipeEdges.Length);
+            safeNodeCount = math.min(safeNodeCount, PumpBaseMaxRate.Length);
+            safeNodeCount = math.min(safeNodeCount, PumpPowerNodeHashes.Length);
             int activePumps = 0;
             float safeConductance = math.max(0.0001f, BaseConductance);
             float safePumpRate = math.max(0.0001f, MaxPumpRate);
@@ -43,15 +46,17 @@ namespace Hecton8.Construction
                 uint nodeHash = HashIndex(i, 0x50323232u);
                 bool isPump = (i % 7) == 0 || i == 0;
                 float pumpScale = 0.55f + ((i & 15) * 0.035f);
-                PumpNodes[i] = new PumpNodeDTO
+                float baseRate = safePumpRate * pumpScale;
+                PumpNodes[i] = new DrainageNodeDTO
                 {
-                    NodeHash = nodeHash,
-                    IngressRate = 0f,
-                    MaxPumpRate = safePumpRate * pumpScale,
-                    CurrentEvacuationRate = 0f,
-                    Flags = SumpPumpNodeFlags.Active | SumpPumpNodeFlags.Mock | (isPump ? SumpPumpNodeFlags.Pump : 0u),
-                    PowerDraw = safePowerDraw
+                    NodeHashID = nodeHash,
+                    HydraulicPressure = 0.05f + ((HashIndex(i, 0x50524553u) & 1023u) * (1f / 1023f)),
+                    MaxPumpRate = baseRate,
+                    CurrentFlow = 0f,
+                    Flags = SumpPumpNodeFlags.Active | SumpPumpNodeFlags.Mock | (isPump ? SumpPumpNodeFlags.Pump : 0u)
                 };
+                PumpBaseMaxRate[i] = baseRate;
+                PumpPowerNodeHashes[i] = 0u;
 
                 if (isPump)
                     activePumps++;
@@ -72,6 +77,10 @@ namespace Hecton8.Construction
                 PumpRoomIndices[i] = -1;
             for (int i = safeNodeCount; i < PowerPotential.Length; i++)
                 PowerPotential[i] = 0f;
+            for (int i = safeNodeCount; i < PumpBaseMaxRate.Length; i++)
+                PumpBaseMaxRate[i] = 0f;
+            for (int i = safeNodeCount; i < PumpPowerNodeHashes.Length; i++)
+                PumpPowerNodeHashes[i] = 0u;
 
             for (int edgeIndex = 0; edgeIndex < safeEdgeCount; edgeIndex++)
             {
@@ -79,19 +88,19 @@ namespace Hecton8.Construction
                 int stride = 1 + ((edgeIndex * 17) % math.max(1, safeNodeCount - 1));
                 int destination = (source + stride) % safeNodeCount;
                 uint edgeHash = HashIndex(edgeIndex, 0x45444745u);
+                uint flags = SumpPipeEdgeFlags.Active | SumpPipeEdgeFlags.Mock;
+                if ((edgeIndex % 31) == 17)
+                    flags |= SumpPipeEdgeFlags.Sealed;
                 PipeEdges[edgeIndex] = new PipeEdgeDTO
                 {
                     SourceNodeIndex = source,
                     DestinationNodeIndex = destination,
                     Conductance = safeConductance * (0.70f + ((edgeIndex & 7) * 0.055f)),
                     CurrentFlow = 0f,
-                    Flags = SumpPipeEdgeFlags.Active | SumpPipeEdgeFlags.Mock,
-                    PowerPotential = 1f,
-                    FractionalRemainderM3 = 0f,
-                    DownhillScalar = 0f,
+                    Flags = flags,
                     EdgeHash = edgeHash,
-                    SourceNodeHash = PumpNodes[source].NodeHash,
-                    DestinationNodeHash = PumpNodes[destination].NodeHash
+                    SourceNodeHash = PumpNodes[source].NodeHashID,
+                    DestinationNodeHash = PumpNodes[destination].NodeHashID
                 };
             }
 
@@ -111,8 +120,11 @@ namespace Hecton8.Construction
                 DrainageTuningDTO tuning = Tuning[0];
                 tuning.BasePipeConductance = safeConductance;
                 tuning.PumpPowerDraw = safePowerDraw;
-                tuning.JacobiSmoothingFactor = SumpPumpPipeGridConstants.DefaultJacobiSmoothingFactor;
+                tuning.DeltaSmoothingFactor = SumpPumpPipeGridConstants.DefaultDeltaSmoothingFactor;
                 tuning.MaxPumpRateScale = 1f;
+                tuning.MaxPumpThroughputM3PerSecond = safePumpRate;
+                tuning.GravityAssistScalar = SumpPumpPipeGridConstants.DefaultGravityAssistScalar;
+                tuning.GravityResistanceScalar = SumpPumpPipeGridConstants.DefaultGravityResistanceScalar;
                 tuning.VisualFlowGain = SumpPumpPipeGridConstants.DefaultVisualFlowGain;
                 tuning.MassQuantumM3 = SumpPumpPipeGridConstants.DefaultMassQuantumM3;
                 tuning.NodeCount = (ushort)math.min(ushort.MaxValue, safeNodeCount);
@@ -207,10 +219,9 @@ namespace Hecton8.Construction
                     continue;
 
                 EdgeWriteCursor[source] = slot + 1;
-                float downhill = ResolveDownhillScalar(source, edge.DestinationNodeIndex);
-                float conductance = ResolveConductance(edge.Conductance, downhill);
-                edge.DownhillScalar = downhill;
+                float conductance = ResolveConductance(edge.Conductance);
                 edge.Conductance = conductance;
+                float downhill = ResolveDownhillScalar(source, edge.DestinationNodeIndex);
                 edge.Flags = downhill > 0f ? edge.Flags | SumpPipeEdgeFlags.DownhillBoosted : edge.Flags & ~SumpPipeEdgeFlags.DownhillBoosted;
                 PipeEdges[edgeIndex] = edge;
 
@@ -258,38 +269,119 @@ namespace Hecton8.Construction
             return math.saturate(math.dot(direction, new float3(0f, -1f, 0f)));
         }
 
-        private float ResolveConductance(float edgeConductance, float downhill)
+        private float ResolveConductance(float edgeConductance)
         {
             float baseConductance = math.max(0.000001f, BasePipeConductance);
-            float conductance = math.max(baseConductance, math.isfinite(edgeConductance) ? edgeConductance : baseConductance);
-            return conductance * (1f + (downhill * 0.35f));
+            return math.max(baseConductance, math.isfinite(edgeConductance) ? edgeConductance : baseConductance);
         }
     }
 
+    // NativeDisableUnsafePtrRestriction safety proof:
+    // The DrainageNodeDTO pointer is a Vault view pinned by SumpPumpPipeGridRuntime before the job chain is scheduled.
+    // The runtime keeps the involved Vault lanes locked until DispatcherJobFence reports completion, so compaction cannot
+    // relocate the pointer while Burst workers are active.
+    //
+    // Rejected alternative: NativeArray<DrainageNodeDTO> copy/writeback per job. NativeArray indexers do not expose a ref
+    // to the row field, so direct field mutation becomes copy-modify-store traffic and reintroduces CS1612 pressure on the
+    // hottest pump rows. The pointer is intentionally paired with UnsafeUtility.AsRef for in-place 32-byte row edits.
+    //
+    // Scheduling invariant: each job writes disjoint row ranges by IJobParallelFor index, shared scalar lanes carry [NoAlias],
+    // and external Power/Fluid inputs are either read-only snapshots or the single back-buffer mutation route guarded by
+    // DrainageRoomDrainLock64. No same-frame job reads these pointers after UnlockJobBuffers runs.
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct PipePressureSolverJob : IJobParallelFor
+    public unsafe struct ApplyPumpPowerConstraintJob : IJobParallelFor
     {
-        [NoAlias, NativeDisableUnsafePtrRestriction] public PumpNodeDTO* PumpNodes;
-        [NoAlias, ReadOnly] public NativeArray<int> NodeEdgeOffsets;
-        [NoAlias, ReadOnly] public NativeArray<int> EdgeDestinations;
-        [NoAlias, ReadOnly] public NativeArray<float> EdgeConductance;
-        [NoAlias, ReadOnly] public NativeArray<float> PressureFront;
-        [NoAlias, ReadOnly] public NativeArray<float> PowerPotential;
-        [NoAlias] public NativeArray<float> PressureBack;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public DrainageNodeDTO* PumpNodes;
+        [NoAlias, ReadOnly] public NativeArray<float> PumpBaseMaxRate;
+        [NoAlias, ReadOnly] public NativeArray<uint> PumpPowerNodeHashes;
+        [NoAlias, ReadOnly] public NativeArray<Hecton8.Power.PowerNodeDTO> PowerNodes;
+        [NoAlias, ReadOnly] public NativeArray<float> PowerPotentialFront;
+        [NoAlias] public NativeArray<float> PowerPotential;
         public int NodeCount;
-        public float JacobiSmoothingFactor;
+        public float MaxPumpThroughputM3PerSecond;
 
         public void Execute(int index)
         {
             if ((uint)index >= (uint)NodeCount || PumpNodes == null)
                 return;
 
-            ref PumpNodeDTO pump = ref UnsafeUtility.AsRef<PumpNodeDTO>(PumpNodes + index);
+            ref DrainageNodeDTO node = ref UnsafeUtility.AsRef<DrainageNodeDTO>(PumpNodes + index);
+            float baseRate = ReadFloat(PumpBaseMaxRate, index, node.MaxPumpRate);
+            float throughputLimit = math.max(0.000001f, math.isfinite(MaxPumpThroughputM3PerSecond) ? MaxPumpThroughputM3PerSecond : SumpPumpPipeGridConstants.DefaultMaxPumpRateM3PerSecond);
+            baseRate = math.min(math.max(0f, baseRate), throughputLimit);
+            uint expectedPowerHash = ReadUInt(PumpPowerNodeHashes, index, node.NodeHashID);
+            float potential = ResolvePowerPotential(index, expectedPowerHash);
+            node.MaxPumpRate = baseRate * potential;
+            if (potential <= 0.0001f)
+                node.Flags |= SumpPumpNodeFlags.PowerStarved;
+            else
+                node.Flags &= ~SumpPumpNodeFlags.PowerStarved;
+
+            if (PowerPotential.IsCreated && (uint)index < (uint)PowerPotential.Length)
+                PowerPotential[index] = potential;
+        }
+
+        private float ResolvePowerPotential(int index, uint expectedPowerHash)
+        {
+            if (!PowerPotentialFront.IsCreated || (uint)index >= (uint)PowerPotentialFront.Length)
+                return 0f;
+
+            if (PowerNodes.IsCreated)
+            {
+                if ((uint)index >= (uint)PowerNodes.Length)
+                    return 0f;
+
+                Hecton8.Power.PowerNodeDTO powerNode = PowerNodes[index];
+                if (expectedPowerHash != 0u && powerNode.NodeHash != expectedPowerHash)
+                    return 0f;
+            }
+
+            return SumpPumpPipeGridValidation.Sanitize01(PowerPotentialFront[index], 0f);
+        }
+
+        private static float ReadFloat(NativeArray<float> array, int index, float fallback)
+        {
+            if (!array.IsCreated || (uint)index >= (uint)array.Length)
+                return fallback;
+
+            float value = array[index];
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private static uint ReadUInt(NativeArray<uint> array, int index, uint fallback)
+        {
+            return array.IsCreated && (uint)index < (uint)array.Length ? array[index] : fallback;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct EvaluatePipePressureDeltaPassJob : IJobParallelFor
+    {
+        [NoAlias, NativeDisableUnsafePtrRestriction] public DrainageNodeDTO* PumpNodes;
+        [NoAlias, ReadOnly] public NativeArray<int> NodeEdgeOffsets;
+        [NoAlias, ReadOnly] public NativeArray<int> EdgeDestinations;
+        [NoAlias, ReadOnly] public NativeArray<float> EdgeConductance;
+        [NoAlias, ReadOnly] public NativeArray<double3> NodeAup;
+        [NoAlias, ReadOnly] public NativeArray<float> PressureFront;
+        [NoAlias, ReadOnly] public NativeArray<float> PowerPotential;
+        [NoAlias] public NativeArray<float> PressureBack;
+        public int NodeCount;
+        public float DeltaSmoothingFactor;
+        public float GravityAssistScalar;
+        public float GravityResistanceScalar;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)NodeCount || PumpNodes == null)
+                return;
+
+            ref DrainageNodeDTO pump = ref UnsafeUtility.AsRef<DrainageNodeDTO>(PumpNodes + index);
             float oldPressure = ReadFloat(PressureFront, index, 0f);
             if ((pump.Flags & SumpPumpNodeFlags.Active) == 0u)
             {
                 PressureBack[index] = 0f;
-                pump.CurrentEvacuationRate = 0f;
+                pump.HydraulicPressure = 0f;
+                pump.CurrentFlow = 0f;
                 return;
             }
 
@@ -303,17 +395,17 @@ namespace Hecton8.Construction
                 if ((uint)destination >= (uint)NodeCount)
                     continue;
 
-                float conductance = math.max(0f, ReadFloat(EdgeConductance, edgeIndex, 0f));
+                float conductance = ResolveGravityConductance(index, destination, ReadFloat(EdgeConductance, edgeIndex, 0f));
                 weightedPressure += conductance * ReadFloat(PressureFront, destination, 0f);
                 conductanceSum += conductance;
             }
 
             float power = SumpPumpPipeGridValidation.Sanitize01(ReadFloat(PowerPotential, index, 0f), 0f);
             float pumpRate = ((pump.Flags & SumpPumpNodeFlags.Pump) != 0u)
-                ? math.max(0f, pump.MaxPumpRate) * power
+                ? math.max(0f, pump.MaxPumpRate)
                 : 0f;
             float solvedPressure = (weightedPressure + pumpRate) * math.rcp(math.max(0.000001f, conductanceSum + 1f));
-            float smoothing = math.saturate(math.isfinite(JacobiSmoothingFactor) ? JacobiSmoothingFactor : SumpPumpPipeGridConstants.DefaultJacobiSmoothingFactor);
+            float smoothing = math.saturate(math.isfinite(DeltaSmoothingFactor) ? DeltaSmoothingFactor : SumpPumpPipeGridConstants.DefaultDeltaSmoothingFactor);
             float nextPressure = math.lerp(oldPressure, solvedPressure, smoothing);
             if (!math.isfinite(nextPressure))
             {
@@ -326,8 +418,35 @@ namespace Hecton8.Construction
             else
                 pump.Flags &= ~SumpPumpNodeFlags.PowerStarved;
 
-            pump.CurrentEvacuationRate = math.isfinite(pumpRate) ? pumpRate : 0f;
+            pump.HydraulicPressure = nextPressure;
+            pump.CurrentFlow = math.isfinite(pumpRate) ? pumpRate : 0f;
             PressureBack[index] = nextPressure;
+        }
+
+        private float ResolveGravityConductance(int sourceIndex, int destinationIndex, float baseConductance)
+        {
+            float conductance = math.max(0f, math.isfinite(baseConductance) ? baseConductance : 0f);
+            if (!NodeAup.IsCreated ||
+                (uint)sourceIndex >= (uint)NodeAup.Length ||
+                (uint)destinationIndex >= (uint)NodeAup.Length)
+            {
+                return conductance;
+            }
+
+            double3 source = NodeAup[sourceIndex];
+            double3 destination = NodeAup[destinationIndex];
+            bool destinationLower = destination.y < source.y;
+            bool destinationHigher = destination.y > source.y;
+            double3 high = destinationLower ? source : destination;
+            double3 low = destinationLower ? destination : source;
+            double3 stableDelta = high - low;
+            float verticalMeters = (float)math.clamp(stableDelta.y, 0d, 100000d);
+            float gravityWeight = math.saturate(verticalMeters * 0.25f);
+            float assist = math.max(0f, math.isfinite(GravityAssistScalar) ? GravityAssistScalar : SumpPumpPipeGridConstants.DefaultGravityAssistScalar);
+            float resistance = math.max(0f, math.isfinite(GravityResistanceScalar) ? GravityResistanceScalar : SumpPumpPipeGridConstants.DefaultGravityResistanceScalar);
+            float multiplier = math.select(1f, math.lerp(1f, assist, gravityWeight), destinationLower);
+            multiplier = math.select(multiplier, math.lerp(1f, resistance, gravityWeight), destinationHigher);
+            return conductance * multiplier;
         }
 
         private static float ReadFloat(NativeArray<float> array, int index, float fallback)
@@ -424,11 +543,22 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct EvacuateWaterVolumeJob : IJobParallelFor
+    public unsafe struct ExecuteWaterEvacuationJob : IJobParallelFor
     {
-        [NoAlias, NativeDisableUnsafePtrRestriction] public PumpNodeDTO* PumpNodes;
-        [NoAlias, NativeDisableUnsafePtrRestriction] public FluidCompartmentDTO* FrontCompartments;
-        [NoAlias, NativeDisableUnsafePtrRestriction] public FluidCompartmentDTO* BackCompartments;
+        // Pointer safety: runtime locks all Vault-backed lanes before scheduling and releases them only after
+        // the dispatcher completion window. FrontCompartments is a read-only owner snapshot; this job mutates
+        // only BackCompartments, guarded by 64-byte room locks to prevent cross-thread water writes.
+        //
+        // Rejected alternative: copying FluidCompartmentDTO rows into a Construction-owned shadow lane would
+        // break GlobalDataVault type identity and make Physics rollback snapshots stale. NativeArray copy/writeback
+        // would also widen the contended path from one atomic field update to full 64-byte row stores.
+        //
+        // Scheduling invariant: each pump indexes one room through PumpRoomIndices; out-of-range rooms fail closed,
+        // lock acquisition is bounded, and CompareExchange mutates only CurrentWaterVolume. The job never writes
+        // FrontCompartments and never touches adjacent lock rows because DrainageRoomDrainLock64 is cache-line sized.
+        [NoAlias, NativeDisableUnsafePtrRestriction] public DrainageNodeDTO* PumpNodes;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public Hecton8.Physics.FluidCompartmentDTO* FrontCompartments;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public Hecton8.Physics.FluidCompartmentDTO* BackCompartments;
         [NoAlias, ReadOnly] public NativeArray<int> PumpRoomIndices;
         [NoAlias] public NativeArray<float> PumpRemainderM3;
         [NoAlias] public NativeArray<float> PumpMassErrorM3;
@@ -444,11 +574,11 @@ namespace Hecton8.Construction
             if ((uint)index >= (uint)NodeCount || PumpNodes == null)
                 return;
 
-            ref PumpNodeDTO pump = ref UnsafeUtility.AsRef<PumpNodeDTO>(PumpNodes + index);
+            ref DrainageNodeDTO pump = ref UnsafeUtility.AsRef<DrainageNodeDTO>(PumpNodes + index);
             float deltaTime = math.isfinite(DeltaTime) ? math.max(0f, DeltaTime) : 0f;
             if ((pump.Flags & (SumpPumpNodeFlags.Active | SumpPumpNodeFlags.Pump)) != (SumpPumpNodeFlags.Active | SumpPumpNodeFlags.Pump))
             {
-                pump.CurrentEvacuationRate = 0f;
+                pump.CurrentFlow = 0f;
                 WriteFloat(PumpMassErrorM3, index, 0f);
                 return;
             }
@@ -457,13 +587,13 @@ namespace Hecton8.Construction
             if ((uint)roomIndex >= (uint)CompartmentCount || FrontCompartments == null || BackCompartments == null || RoomDrainLocks == null || (uint)roomIndex >= (uint)RoomDrainLockCount)
             {
                 pump.Flags |= SumpPumpNodeFlags.NonFinite;
-                pump.CurrentEvacuationRate = 0f;
+                pump.CurrentFlow = 0f;
                 WriteFloat(PumpMassErrorM3, index, 0f);
                 return;
             }
 
             float quantum = math.max(0.000001f, math.isfinite(MassQuantumM3) ? MassQuantumM3 : SumpPumpPipeGridConstants.DefaultMassQuantumM3);
-            float evacuationRate = math.isfinite(pump.CurrentEvacuationRate) ? math.max(0f, pump.CurrentEvacuationRate) : 0f;
+            float evacuationRate = math.isfinite(pump.CurrentFlow) ? math.max(0f, pump.CurrentFlow) : 0f;
             float oldRemainder = ReadFloat(PumpRemainderM3, index, 0f);
             float requested = evacuationRate * deltaTime;
             requested += oldRemainder;
@@ -471,7 +601,7 @@ namespace Hecton8.Construction
             {
                 pump.Flags |= SumpPumpNodeFlags.NonFinite;
                 WriteFloat(PumpRemainderM3, index, 0f);
-                pump.CurrentEvacuationRate = 0f;
+                pump.CurrentFlow = 0f;
                 WriteFloat(PumpMassErrorM3, index, 0f);
                 return;
             }
@@ -490,7 +620,7 @@ namespace Hecton8.Construction
             if (quantizedUnits <= 0)
             {
                 WriteFloat(PumpRemainderM3, index, math.max(0f, requested));
-                pump.CurrentEvacuationRate = 0f;
+                pump.CurrentFlow = 0f;
                 WriteFloat(PumpMassErrorM3, index, 0f);
                 return;
             }
@@ -500,28 +630,37 @@ namespace Hecton8.Construction
             if (!TryAcquireRoomLock(roomIndex))
             {
                 WriteFloat(PumpRemainderM3, index, oldRemainder);
-                pump.CurrentEvacuationRate = 0f;
+                pump.CurrentFlow = 0f;
                 WriteFloat(PumpMassErrorM3, index, 0f);
                 return;
             }
 
-            ref FluidCompartmentDTO front = ref FluidCompartmentPointerUtility.ElementRef(FrontCompartments, roomIndex);
-            ref FluidCompartmentDTO back = ref FluidCompartmentPointerUtility.ElementRef(BackCompartments, roomIndex);
-            float frontWater = SanitizeCompartmentWater(ref front);
-            float backWater = SanitizeCompartmentWater(ref back);
+            ref Hecton8.Physics.FluidCompartmentDTO front = ref Hecton8.Physics.FluidCompartmentPointerUtility.ElementRef(FrontCompartments, roomIndex);
+            ref Hecton8.Physics.FluidCompartmentDTO back = ref Hecton8.Physics.FluidCompartmentPointerUtility.ElementRef(BackCompartments, roomIndex);
+            float frontWater = ReadCompartmentWater(ref front);
+            float backWater = ReadCompartmentWater(ref back);
             float availableWater = math.min(frontWater, backWater);
             float actualDrained = math.min(availableWater, quantizedM3);
             if (actualDrained > 0f)
             {
-                front.CurrentWaterVolume = math.max(0f, frontWater - actualDrained);
-                back.CurrentWaterVolume = math.max(0f, backWater - actualDrained);
+                if (!TryDeductWaterAtomic(ref back, actualDrained, out float backDrained))
+                {
+                    ReleaseRoomLock(roomIndex);
+                    WriteFloat(PumpRemainderM3, index, oldRemainder);
+                    pump.Flags |= SumpPumpNodeFlags.NonFinite;
+                    pump.CurrentFlow = 0f;
+                    WriteFloat(PumpMassErrorM3, index, actualDrained);
+                    return;
+                }
+
+                actualDrained = backDrained;
             }
 
             ReleaseRoomLock(roomIndex);
             WriteFloat(PumpRemainderM3, index, remainder);
-            pump.CurrentEvacuationRate = deltaTime > 0f ? actualDrained * math.rcp(deltaTime) : 0f;
+            pump.CurrentFlow = deltaTime > 0f ? actualDrained * math.rcp(deltaTime) : 0f;
 
-            float conservativeError = math.abs(front.CurrentWaterVolume - back.CurrentWaterVolume);
+            float conservativeError = math.abs(frontWater - back.CurrentWaterVolume);
             WriteFloat(PumpMassErrorM3, index, conservativeError);
         }
 
@@ -546,28 +685,58 @@ namespace Hecton8.Construction
             Interlocked.Exchange(ref state, 0);
         }
 
-        private static float SanitizeCompartmentWater(ref FluidCompartmentDTO dto)
+        private static float ReadCompartmentWater(ref Hecton8.Physics.FluidCompartmentDTO dto)
         {
             float water = dto.CurrentWaterVolume;
             if (!math.isfinite(water))
             {
-                dto.Flags |= FluidCompartmentFlags.NonFinite;
-                dto.CurrentWaterVolume = 0f;
                 return 0f;
             }
 
-            float maxVolume = dto.MaxVolume;
+            float maxVolume = dto.MaxWaterVolume;
             if (!math.isfinite(maxVolume) || maxVolume <= 0f)
             {
-                dto.Flags |= FluidCompartmentFlags.NonFinite;
-                dto.CurrentWaterVolume = 0f;
                 return 0f;
             }
 
-            water = math.max(0f, water);
-            water = math.min(water, maxVolume);
-            dto.CurrentWaterVolume = water;
-            return water;
+            return math.clamp(water, 0f, maxVolume);
+        }
+
+        private static bool TryDeductWaterAtomic(ref Hecton8.Physics.FluidCompartmentDTO dto, float requested, out float drained)
+        {
+            drained = 0f;
+            float maxVolume = dto.MaxWaterVolume;
+            if (!math.isfinite(maxVolume) || maxVolume <= 0f || requested <= 0f || !math.isfinite(requested))
+                return false;
+
+            unsafe
+            {
+                int* bits = (int*)UnsafeUtility.AddressOf(ref dto.CurrentWaterVolume);
+                int oldBits = *bits;
+                float oldWater = math.asfloat(oldBits);
+                if (!math.isfinite(oldWater))
+                {
+                    dto.Flags |= Hecton8.Physics.FluidCompartmentFlags.NonFinite;
+                    return false;
+                }
+
+                oldWater = math.clamp(oldWater, 0f, maxVolume);
+                float nextWater = math.max(0f, oldWater - requested);
+                int nextBits = math.asint(nextWater);
+                if (Interlocked.CompareExchange(ref UnsafeUtility.AsRef<int>(bits), nextBits, oldBits) != oldBits)
+                    return false;
+
+                drained = oldWater - nextWater;
+                dto.WaterLevelHeight01 = ResolveFill01(nextWater, maxVolume);
+                return true;
+            }
+        }
+
+        private static float ResolveFill01(float volume, float maxVolume)
+        {
+            return maxVolume > Hecton8.Physics.HabitatFluidIncursionConstants.WaterEpsilonM3
+                ? math.saturate(volume * math.rcp(maxVolume))
+                : 0f;
         }
 
         private static int ReadInt(NativeArray<int> array, int index, int fallback)
@@ -594,7 +763,7 @@ namespace Hecton8.Construction
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct DrainageTelemetryRecorderJob : IJob
     {
-        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public PumpNodeDTO* PumpNodes;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public DrainageNodeDTO* PumpNodes;
         [NoAlias, ReadOnly] public NativeArray<float> Pressure;
         [NoAlias, ReadOnly] public NativeArray<float> PumpMassErrorM3;
         [NoAlias] public NativeArray<int> Counters;
@@ -604,9 +773,10 @@ namespace Hecton8.Construction
         [NoAlias] public NativeArray<int> TelemetryCursor;
         public int NodeCount;
         public int EdgeCount;
-        public int SolverIterations;
+        public int DeltaPassCount;
         public uint FrameIndex;
         public float GlobalQualityWeight;
+        public float PumpPowerDrawWatts;
         public uint InputFlags;
 
         public void Execute()
@@ -643,9 +813,9 @@ namespace Hecton8.Construction
                 stateHash = SumpPumpPipeGridValidation.MixHash(stateHash, math.asuint(pressure));
                 if (PumpNodes != null)
                 {
-                    PumpNodeDTO pump = UnsafeUtility.AsRef<PumpNodeDTO>(PumpNodes + i);
-                    float evacuationRate = math.isfinite(pump.CurrentEvacuationRate) ? math.max(0f, pump.CurrentEvacuationRate) : 0f;
-                    if ((pump.Flags & SumpPumpNodeFlags.NonFinite) != 0u || !math.isfinite(pump.CurrentEvacuationRate))
+                    DrainageNodeDTO pump = UnsafeUtility.AsRef<DrainageNodeDTO>(PumpNodes + i);
+                    float evacuationRate = math.isfinite(pump.CurrentFlow) ? math.max(0f, pump.CurrentFlow) : 0f;
+                    if ((pump.Flags & SumpPumpNodeFlags.NonFinite) != 0u || !math.isfinite(pump.CurrentFlow))
                         nanCount++;
                     if (evacuationApplied &&
                         (pump.Flags & (SumpPumpNodeFlags.Active | SumpPumpNodeFlags.Pump)) == (SumpPumpNodeFlags.Active | SumpPumpNodeFlags.Pump) &&
@@ -655,13 +825,13 @@ namespace Hecton8.Construction
                         frameEvacuated += evacuationRate * deltaTime;
                         float maxRate = math.max(0f, math.isfinite(pump.MaxPumpRate) ? pump.MaxPumpRate : 0f);
                         float utilization = maxRate > 0.000001f ? math.saturate(evacuationRate * math.rcp(maxRate)) : 0f;
-                        powerDraw += math.max(0f, math.isfinite(pump.PowerDraw) ? pump.PowerDraw : 0f) * utilization;
+                        powerDraw += math.max(0f, math.isfinite(PumpPowerDrawWatts) ? PumpPowerDrawWatts : 0f) * utilization;
                     }
 
                     float pumpMassError = ReadFloat(PumpMassErrorM3, i, 0f);
                     if (evacuationApplied)
                         massError += pumpMassError;
-                    stateHash = SumpPumpPipeGridValidation.MixHash(stateHash, pump.NodeHash);
+                    stateHash = SumpPumpPipeGridValidation.MixHash(stateHash, pump.NodeHashID);
                     stateHash = SumpPumpPipeGridValidation.MixHash(stateHash, math.asuint(evacuationRate));
                     stateHash = SumpPumpPipeGridValidation.MixHash(stateHash, math.asuint(pumpMassError));
                     stateHash = SumpPumpPipeGridValidation.MixHash(stateHash, pump.Flags);
@@ -715,7 +885,7 @@ namespace Hecton8.Construction
                 tuning.NodeCount = (ushort)math.min(ushort.MaxValue, math.max(0, NodeCount));
                 tuning.EdgeCount = (ushort)math.min(ushort.MaxValue, math.max(0, EdgeCount));
                 tuning.ActivePumpCount = (ushort)math.min(ushort.MaxValue, entry.ActivePumpCount);
-                tuning.SolverIterations = (ushort)math.min(ushort.MaxValue, math.max(0, SolverIterations));
+                tuning.DeltaPassCount = (ushort)math.min(ushort.MaxValue, math.max(0, DeltaPassCount));
                 tuning.Flags = flags;
                 Tuning[0] = tuning;
             }

@@ -10,6 +10,15 @@ namespace Hecton8.VFX.Bioluminescence.Editor
     [InitializeOnLoad]
     internal static class BiolumPulseLayoutGuard
     {
+        private const int GlowStateStrideBytes = 16;
+        private const int SyncPulseStrideBytes = 32;
+        private const int MockWeatherSignalStrideBytes = 16;
+        private const int BiolumPulseStateStrideBytes = 64;
+        private const int BiolumSpeciesTuningStrideBytes = 24;
+        private const int MockPredatorProximityStrideBytes = 64;
+        private const int MockCombatDamageStrideBytes = 64;
+        private const int BiolumPulseTelemetryStrideBytes = 32;
+
         static BiolumPulseLayoutGuard()
         {
             ValidateOrThrow();
@@ -17,18 +26,18 @@ namespace Hecton8.VFX.Bioluminescence.Editor
 
         internal static void ValidateOrThrow()
         {
-            AssertSize<GlowStateDTO>(16);
-            AssertSize<SyncPulseDTO>(32);
-            AssertSize<MockWeatherSignal>(16);
-            AssertSize<BiolumPulseStateDTO>(64);
+            AssertSize<GlowStateDTO>(GlowStateStrideBytes);
+            AssertSize<SyncPulseDTO>(SyncPulseStrideBytes);
+            AssertSize<MockWeatherSignal>(MockWeatherSignalStrideBytes);
+            AssertSize<BiolumPulseStateDTO>(BiolumPulseStateStrideBytes);
             AssertOffset<BiolumPulseStateDTO>(nameof(BiolumPulseStateDTO.Group1_Params), 0);
             AssertOffset<BiolumPulseStateDTO>(nameof(BiolumPulseStateDTO.Group2_Params), 16);
             AssertOffset<BiolumPulseStateDTO>(nameof(BiolumPulseStateDTO.Group3_Params), 32);
             AssertOffset<BiolumPulseStateDTO>(nameof(BiolumPulseStateDTO.Group4_Params), 48);
-            AssertSize<BiolumSpeciesTuningDTO>(24);
-            AssertSize<MockPredatorProximitySignal>(64);
-            AssertSize<MockCombatDamageSignal>(64);
-            AssertSize<BiolumPulseSyncRuntime.BiolumPulseTelemetryEntry>(32);
+            AssertSize<BiolumSpeciesTuningDTO>(BiolumSpeciesTuningStrideBytes);
+            AssertSize<MockPredatorProximitySignal>(MockPredatorProximityStrideBytes);
+            AssertSize<MockCombatDamageSignal>(MockCombatDamageStrideBytes);
+            AssertSize<BiolumPulseSyncRuntime.BiolumPulseTelemetryEntry>(BiolumPulseTelemetryStrideBytes);
         }
 
         private static void AssertSize<T>(int expectedBytes) where T : struct

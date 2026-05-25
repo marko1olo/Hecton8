@@ -1,4 +1,4 @@
-using Hecton8.Bootstrap;
+﻿using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -11,7 +11,7 @@ namespace Hecton8.Audio
     /// Drives low-frequency hallucination cues when the player is deep, oxygen-starved, or psychologically overloaded by pollution pressure.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DeepPsychosisController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class DeepPsychosisController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int DependencyRetryFrameInterval = 30;
         private const float DiagonalCueAxis = 0.70710678f;
@@ -20,9 +20,6 @@ namespace Hecton8.Audio
         [Header("── Clip Pools ──────────────────")]
         [Tooltip("3D whisper cues emitted around the player during deep psychosis windows.")]
         [SerializeField] private AudioClip[] whisperClips;
-
-        [Tooltip("3D hull groans and metallic scrapes emitted around the player during deep psychosis windows.")]
-        [SerializeField] private AudioClip[] hullStressClips;
 
         [Header("── Thresholds ──────────────────")]
         [Tooltip("Depth threshold where the deep psychosis layer starts evaluating oxygen stress.")]
@@ -64,15 +61,16 @@ namespace Hecton8.Audio
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private HectonSurvivalSystem _survivalSystem;
         private Transform _playerTransform;
         private Transform _dependencyPlayerTransform;
         private HectonPlayerMovement _playerMovement;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private EnvironmentalStrainManager _environmentalStrainManager;
+        private IEnvironmentalStrainReadModel _environmentalStrainReadModel;
         private IAudioService _audioService;
-        private AcousticZoneController _acousticZone;
+        private IAcousticZoneMadnessCueSink _acousticZone;
         private bool _movementLookupAttempted;
         private bool _survivalLookupAttempted;
         private int _nextDependencyRetryFrame;
@@ -83,6 +81,7 @@ namespace Hecton8.Audio
         private float _psychosisIntensity01;
         private float _cueTimerSeconds;
         private uint _psychosisRandomState;
+        private bool _pendingPsychosisCue;
 
         private void Awake()
         {
@@ -109,6 +108,7 @@ namespace Hecton8.Audio
             TryUnregisterTickHandlers();
             _cueTimerSeconds = cueIntervalMaxSeconds;
             _psychosisIntensity01 = 0f;
+            _pendingPsychosisCue = false;
             _debugPsychosisIntensity01 = 0f;
             ClearCachedRuntimeServices();
         }
@@ -154,8 +154,17 @@ namespace Hecton8.Audio
             if (_cueTimerSeconds > 0f)
                 return;
 
-            PlayPsychosisCue();
+            _pendingPsychosisCue = true;
             _cueTimerSeconds = math.lerp(cueIntervalMaxSeconds, cueIntervalMinSeconds, _psychosisIntensity01);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingPsychosisCue)
+                return;
+
+            _pendingPsychosisCue = false;
+            PlayPsychosisCue();
         }
 
         /// <summary>
@@ -172,9 +181,9 @@ namespace Hecton8.Audio
                 ? math.saturate(math.unlerp(oxygenThreshold, 0.05f, oxygenNormalized))
                 : 0f;
 
-            EnvironmentalStrainManager strainManager = ResolveEnvironmentalStrainManager();
-            float pollutionLoad = strainManager != null
-                ? math.max(0f, strainManager.MicroplasticStrain + strainManager.GeneralPollution)
+            IEnvironmentalStrainReadModel strainReadModel = ResolveEnvironmentalStrainReadModel();
+            float pollutionLoad = strainReadModel != null
+                ? math.max(0f, strainReadModel.MicroplasticStrain + strainReadModel.GeneralPollution)
                 : 0f;
             float pollutionPressure01 = pollutionLoad <= pollutionThreshold
                 ? 0f
@@ -219,7 +228,7 @@ namespace Hecton8.Audio
             if ((_playerMovement == null && _movementLookupAttempted) ||
                 (_survivalSystem == null && _survivalLookupAttempted))
             {
-                if (Time.frameCount >= _nextDependencyRetryFrame)
+                if (Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _nextDependencyRetryFrame)
                 {
                     _movementLookupAttempted = _playerMovement != null;
                     _survivalLookupAttempted = _survivalSystem != null;
@@ -240,7 +249,7 @@ namespace Hecton8.Audio
                 _movementLookupAttempted = true;
                 _playerTransform.TryGetComponent(out _playerMovement);
                 if (_playerMovement == null)
-                    _nextDependencyRetryFrame = Time.frameCount + DependencyRetryFrameInterval;
+                    _nextDependencyRetryFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + DependencyRetryFrameInterval;
             }
 
             if (_survivalSystem == null && !_survivalLookupAttempted)
@@ -253,7 +262,7 @@ namespace Hecton8.Audio
                     TryGetComponent(out _survivalSystem);
 
                 if (_survivalSystem == null)
-                    _nextDependencyRetryFrame = Time.frameCount + DependencyRetryFrameInterval;
+                    _nextDependencyRetryFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + DependencyRetryFrameInterval;
             }
         }
 
@@ -271,6 +280,11 @@ namespace Hecton8.Audio
             {
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             }
+
+            if (!_registeredLateFrame)
+            {
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            }
         }
 
         private void TryUnregisterTickHandlers()
@@ -285,6 +299,12 @@ namespace Hecton8.Audio
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
                 _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
             }
         }
 
@@ -308,7 +328,7 @@ namespace Hecton8.Audio
         private void ClearCachedRuntimeServices()
         {
             _playerRuntimeContext = null;
-            _environmentalStrainManager = null;
+            _environmentalStrainReadModel = null;
             _audioService = null;
             _acousticZone = null;
             _nextPlayerContextRetryFrame = 0;
@@ -319,16 +339,16 @@ namespace Hecton8.Audio
 
         private void RefreshCachedRuntimeServicesCold()
         {
-            int frame = Time.frameCount;
-            CachePlayerRuntimeContext(PlayerRuntimeContextService.ActiveRuntimeContext, frame);
-            CacheEnvironmentalStrainManager(GlobalRegistry.EnvironmentalStrain, frame);
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
-            CacheAcousticZone(GlobalRegistry.AcousticZone, frame);
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
+            CacheEnvironmentalStrainReadModel(GlobalRegistry.EnvironmentalStrainReadModel, frame);
+            CacheAudioService(GlobalRegistry.Audio, frame);
+            CacheAcousticZone(GlobalRegistry.AcousticZoneMadnessCueSink, frame);
         }
 
         private void CacheReboundRuntimeService(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Player:
@@ -341,20 +361,20 @@ namespace Hecton8.Audio
                     _nextDependencyRetryFrame = 0;
                     break;
                 case GlobalRegistryServiceSlot.EnvironmentalStrainRuntime:
-                    CacheEnvironmentalStrainManager(currentService as EnvironmentalStrainManager, frame);
+                    CacheEnvironmentalStrainReadModel(currentService as IEnvironmentalStrainReadModel, frame);
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     CacheAudioService(currentService as IAudioService, frame);
                     break;
                 case GlobalRegistryServiceSlot.AcousticZoneRuntime:
-                    CacheAcousticZone(currentService as AcousticZoneController, frame);
+                    CacheAcousticZone(currentService as IAcousticZoneMadnessCueSink, frame);
                     break;
             }
         }
 
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && playerContext.IsInitialized && frame < _nextPlayerContextRetryFrame)
                 return playerContext;
@@ -366,23 +386,23 @@ namespace Hecton8.Audio
             return _playerRuntimeContext;
         }
 
-        private EnvironmentalStrainManager ResolveEnvironmentalStrainManager()
+        private IEnvironmentalStrainReadModel ResolveEnvironmentalStrainReadModel()
         {
-            int frame = Time.frameCount;
-            EnvironmentalStrainManager strainManager = _environmentalStrainManager;
-            if (strainManager != null && frame < _nextEnvironmentalStrainRetryFrame)
-                return strainManager;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            IEnvironmentalStrainReadModel strainReadModel = _environmentalStrainReadModel;
+            if (strainReadModel != null && frame < _nextEnvironmentalStrainRetryFrame)
+                return strainReadModel;
 
             if (frame < _nextEnvironmentalStrainRetryFrame)
                 return null;
 
             RefreshEnvironmentalStrainManagerIfStale(frame);
-            return _environmentalStrainManager;
+            return _environmentalStrainReadModel;
         }
 
         private IAudioService ResolveAudioService()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IAudioService audioService = _audioService;
             if (audioService != null && audioService.IsInitialized && frame < _nextAudioServiceRetryFrame)
                 return audioService;
@@ -394,10 +414,10 @@ namespace Hecton8.Audio
             return _audioService;
         }
 
-        private AcousticZoneController ResolveAcousticZone()
+        private IAcousticZoneMadnessCueSink ResolveAcousticZone()
         {
-            int frame = Time.frameCount;
-            AcousticZoneController acousticZone = _acousticZone;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            IAcousticZoneMadnessCueSink acousticZone = _acousticZone;
             if (acousticZone != null && frame < _nextAcousticZoneRetryFrame)
                 return acousticZone;
 
@@ -410,22 +430,22 @@ namespace Hecton8.Audio
 
         private void RefreshPlayerRuntimeContextIfStale(int frame)
         {
-            CachePlayerRuntimeContext(PlayerRuntimeContextService.ActiveRuntimeContext, frame);
+            CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
         }
 
         private void RefreshEnvironmentalStrainManagerIfStale(int frame)
         {
-            CacheEnvironmentalStrainManager(GlobalRegistry.EnvironmentalStrain, frame);
+            CacheEnvironmentalStrainReadModel(GlobalRegistry.EnvironmentalStrainReadModel, frame);
         }
 
         private void RefreshAudioServiceIfStale(int frame)
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
+            CacheAudioService(GlobalRegistry.Audio, frame);
         }
 
         private void RefreshAcousticZoneIfStale(int frame)
         {
-            CacheAcousticZone(GlobalRegistry.AcousticZone, frame);
+            CacheAcousticZone(GlobalRegistry.AcousticZoneMadnessCueSink, frame);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, int frame)
@@ -434,9 +454,9 @@ namespace Hecton8.Audio
             _nextPlayerContextRetryFrame = frame + DependencyRetryFrameInterval;
         }
 
-        private void CacheEnvironmentalStrainManager(EnvironmentalStrainManager strainManager, int frame)
+        private void CacheEnvironmentalStrainReadModel(IEnvironmentalStrainReadModel strainReadModel, int frame)
         {
-            _environmentalStrainManager = strainManager;
+            _environmentalStrainReadModel = strainReadModel;
             _nextEnvironmentalStrainRetryFrame = frame + DependencyRetryFrameInterval;
         }
 
@@ -446,7 +466,7 @@ namespace Hecton8.Audio
             _nextAudioServiceRetryFrame = frame + DependencyRetryFrameInterval;
         }
 
-        private void CacheAcousticZone(AcousticZoneController acousticZone, int frame)
+        private void CacheAcousticZone(IAcousticZoneMadnessCueSink acousticZone, int frame)
         {
             _acousticZone = acousticZone;
             _nextAcousticZoneRetryFrame = frame + DependencyRetryFrameInterval;
@@ -454,25 +474,14 @@ namespace Hecton8.Audio
 
         private void PlayHelmetWhisperCue()
         {
-            AcousticZoneController acousticZone = ResolveAcousticZone();
+            IAcousticZoneMadnessCueSink acousticZone = ResolveAcousticZone();
             if (acousticZone != null)
                 acousticZone.PlayMadnessWhisperCue();
         }
 
         private void PlayPsychosisCue()
         {
-            IAudioService audioManager = ResolveAudioService();
-            if (_playerTransform == null || audioManager == null)
-                return;
-
-            AudioClip clip = SelectCueClip();
-            if (clip == null)
-            {
-                PlayHelmetWhisperCue();
-                return;
-            }
-
-            if (!TryResolvePlayerAupRuntimePosition(out Vector3 origin))
+            if (_playerTransform == null || !TryResolvePlayerAupRuntimePosition(out Vector3 origin))
                 return;
 
             float radius = math.lerp(cueRadiusMin, cueRadiusMax, _psychosisIntensity01);
@@ -484,7 +493,21 @@ namespace Hecton8.Audio
             Vector3 cuePosition = origin + new Vector3(offset.x, offset.y, offset.z) * radius;
             float volume = math.lerp(cueVolumeMin, cueVolumeMax, _psychosisIntensity01);
             float pitch = NextRandomRange(0.88f, 1.08f);
-            audioManager.PlayAtPoint(clip, cuePosition, volume, pitch, audioManager.AmbientGroup);
+            if (_psychosisIntensity01 >= 0.6f)
+            {
+                AudioClip clip = SelectRandomClip(whisperClips);
+                IAudioService audioManager = ResolveAudioService();
+                if (clip != null && audioManager != null)
+                    audioManager.PlayAtPoint(clip, cuePosition, volume, pitch, audioManager.AmbientGroup);
+                else
+                    PlayHelmetWhisperCue();
+            }
+            else
+            {
+                float stress01 = math.saturate(math.lerp(0.30f, 0.78f, _psychosisIntensity01));
+                float stressPitch = math.lerp(0.74f, 0.52f, stress01) * math.clamp(pitch, 0.85f, 1.12f);
+                ProceduralAudioEvents.TryRaiseStructuralStressTriggered(cuePosition, stress01, stressPitch);
+            }
 
             if (_psychosisIntensity01 >= 0.55f && NextRandom01() <= helmetWhisperChance)
                 PlayHelmetWhisperCue();
@@ -508,17 +531,6 @@ namespace Hecton8.Audio
             float3 runtime = movement.CurrentAup.ToRuntimeFloat3();
             runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
             return true;
-        }
-
-        private AudioClip SelectCueClip()
-        {
-            AudioClip[] primaryPool = _psychosisIntensity01 >= 0.6f ? whisperClips : hullStressClips;
-            AudioClip clip = SelectRandomClip(primaryPool);
-            if (clip != null)
-                return clip;
-
-            AudioClip[] fallbackPool = ReferenceEquals(primaryPool, whisperClips) ? hullStressClips : whisperClips;
-            return SelectRandomClip(fallbackPool);
         }
 
         private static float3 ResolveCinematicCueOffset(float x, float y, float z)

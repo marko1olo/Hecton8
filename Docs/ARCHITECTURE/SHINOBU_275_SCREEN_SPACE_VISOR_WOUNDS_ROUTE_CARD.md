@@ -1,4 +1,10 @@
-# SHINOBU_275 Screen-Space Visor Wounds Route Card
+﻿# SHINOBU_275 Screen-Space Visor Wounds Route Card
+
+Supersession note, 2026-05-22:
+
+- Active trauma decal ownership moved to `SHINOBU_325_SCREEN_SPACE_TRAUMA_DECAL_RESOLVER`.
+- Use route card `SHINOBU_325_SCREEN_SPACE_TRAUMA_DECAL_ROUTE_CARD.md`, BufferIDs `73190..73198`, shader `Hecton_VisorTrauma.shader`, `_GlobalVisorTrauma`.
+- Old `71490..71496` range collides with auxiliary/propwash lanes.
 
 Route ID: `SHINOBU_275_SCREEN_SPACE_VISOR_WOUNDS`
 Date: 2026-05-21
@@ -16,19 +22,33 @@ Why direct caller/owner interface is insufficient: multiple damage producers can
 Instrument:
 - `SignalBus<CombatDamageSignal>` first-party broadcast.
 - `SignalBus<HighSpeedImpactSignal>` compatibility visual ingress.
-- `GlobalSignals.CurrentRuntimeOriginAup()` / `GlobalSignals.TryRuntimePositionToAup()` retained as a read-only AUP bridge for camera/runtime-position localization only. Owner: Core origin/AUP lane; phase: dispatcher visual sync/camera staging; cadence: once per staged camera context or request localization; fallback: cached `IPlayerRuntimeContext` snapshot then current origin; telemetry: non-finite AUP/matrix faults are recorded in the wound ring. This route does not publish direct GlobalSignals queues and does not replace the SignalBus damage ingress.
+- Read-only AUP bridge:
+  - APIs: `GlobalSignals.CurrentRuntimeOriginAup()`, `GlobalSignals.TryRuntimePositionToAup()`.
+  - Scope: camera/runtime-position localization only.
+  - Owner: Core origin/AUP lane.
+  - Phase: dispatcher visual sync/camera staging.
+  - Cadence: once per staged camera context or request localization.
+  - Fallback: cached `IPlayerRuntimeContext` snapshot, then current origin.
+  - Telemetry: non-finite AUP/matrix faults recorded in the wound ring.
+  - Forbidden: direct GlobalSignals queue publish.
+  - Does not replace SignalBus damage ingress.
 - `GlobalDataVault / IDataVault` for persistent visor wound DTO, upload scratch, tuning, profiles, CSV scratch, and black-box telemetry.
 - Black-box telemetry route.
 
 Producer/consumer phase:
 - Producers: combat/impact owners publish unmanaged signals in their owner phases.
-- Consumer: `DeferredDecalPass` registers as dispatcher `ILateFrameTickable`; renderer enqueue captures camera context and publishes only the prior staged GPU buffer, while `LateFrameTick()` performs visor wound visual sync for the next frame. `RecordRenderGraph()` reads only the last published GPU buffer snapshot.
+- Consumer: `DeferredDecalPass` registers as dispatcher `ILateFrameTickable`.
+- Renderer enqueue captures camera context and publishes only prior staged GPU buffer.
+- `LateFrameTick()` performs visor wound visual sync for the next frame.
+- `RecordRenderGraph()` reads only last published GPU buffer snapshot.
 
 Cadence/capacity:
 - Signal snapshot read once per Unity frame.
 - Active GPU-evaluated wounds scale 8..128.
 - Request ingress queue is fixed and prewarmed; active ring insertion is O(1).
-- Runtime damage ingress fails closed unless cold storage is already initialized. `TryEnqueueRuntimeImpact()` and `TryEnqueueAupImpact()` do not call `EnsureInitialized()`, so gameplay producers cannot trigger `GlobalRegistry` polling, queue allocation/prewarm, Vault handle acquisition, or default tuning seed from a hot impact call.
+- Runtime damage ingress fails closed unless cold storage is initialized.
+- `TryEnqueueRuntimeImpact()` and `TryEnqueueAupImpact()` do not call `EnsureInitialized()`.
+- Gameplay producers cannot trigger registry polling, queue allocation/prewarm, Vault handle acquisition, or default tuning seed from a hot impact.
 - While a visual-sync job is pending, public/mock ingress fails closed and increments dropped-ingress telemetry instead of touching the `NativeQueue` that the scheduled dequeue job owns.
 
 Expected max events/reads per frame:
@@ -36,18 +56,26 @@ Expected max events/reads per frame:
 - Shader reads at most `_GlobalVisorWoundCount`, clamped by the quality-scaled upload count.
 - Signal ingress resolves material profile rows and live tuning once per visual-sync snapshot; accepted signal count no longer multiplies profile descriptor resolves.
 
-GlobalQualityWeight behavior:
+## GlobalQualityWeight behavior
+
 - `ResolveMaxActiveDecals()` uses smoothed `GlobalQualityWeight` to lerp 8..128.
 - Thermal pressure increases decay pressure.
 - Shader crack/refraction detail scales by quality and `NormalRefractionIntensity`; DTO layout and authority route do not change.
 - Active Noir integration is pre-tonemap only; URP Volume Tonemapping owns final ACES, so `Hecton_VisorGlitchACES.shader` must not apply a local fragment tonemap curve or clamp HDR color with `saturate(color)`.
 - Active Noir timing follows the dispatcher route: `TimeSliceScheduler.CurrentFrameId` supplies frame/profile cadence and finite `SystemDispatcher.CurrentFrameDeltaTime` advances wrapped visual phase. Unity `Time.*` is not part of the owned wound/noir route.
 - Active Noir CBuffer publication is owned by `HectonVisorUberPostFeature.LateFrameTick`; `AddRenderPasses()` only consumes the last valid buffer and enqueues the RenderGraph pass. One-record mock/parameter math is direct scalar code, not synchronous `IJob.Run()`.
-- The shared host player-context path consumes cached `IPlayerRuntimeContext` snapshots instead of calling `PlayerRuntimeContextService.TryGetActiveRuntimeContext()` from render enqueue. The touched host file no longer imports `Hecton8.Gameplay`; survival status and hull stress come from owner-published snapshot DTOs, with wet-lens kept as a presentation-only read from the cached movement owner.
-- The shared host no longer imports concrete `Hecton8.Physics`, caches `HectonFluidEngine`, or handles `GlobalRegistryServiceSlot.FluidRuntime`. Maelstrom pressure is not sampled from the fluid owner in this presentation route; current pressure/stress trauma uses an owner-local screen-space surge scalar from cached presentation inputs until a contracts-only fluid read model is approved.
-- Reconstruction constants use A/B mapped constant buffers and publish one active buffer for RenderGraph. AB split is bound in the reconstruction raster function; the enqueue path does not mutate the reconstruction material.
+- Shared host player-context path consumes cached `IPlayerRuntimeContext` snapshots; render enqueue does not call `PlayerRuntimeContextService.TryGetActiveRuntimeContext()`.
+- Touched host file no longer imports `Hecton8.Gameplay`; survival status and hull stress come from owner-published snapshot DTOs.
+- Wet-lens stays presentation-only from cached movement owner.
+- Shared host no longer imports concrete `Hecton8.Physics`, caches `HectonFluidEngine`, or handles `GlobalRegistryServiceSlot.FluidRuntime`.
+- Maelstrom pressure is not sampled from fluid owner in this presentation route; current pressure/stress trauma uses owner-local screen-space surge scalar until a contracts-only model is approved.
+- Reconstruction constants use A/B mapped constant buffers.
+- One active buffer is published for RenderGraph.
+- AB split is bound in the reconstruction raster function.
+- Enqueue path does not mutate reconstruction material.
 - Reconstruction aesthetic CSV/profile data is cold-loaded into a fixed 32-row snapshot cache. `AddRenderPasses()` selects profiles without Vault locks or file IO retries.
-- Legacy shader low-tier behavior is continuous for heat haze, VR comfort edge detail, light shaft budget/intensity, water refraction, and droplet refraction; quality may scale ALU and intensity, not snap feature ownership or DTO layout.
+- Legacy shader low-tier behavior is continuous for heat haze, VR comfort, light shafts, water refraction, and droplets.
+- Quality may scale ALU/intensity, not feature ownership or DTO layout.
 
 Accessor purity:
 - Public read accessors now fail closed unless cold initialization already created handles.
@@ -58,7 +86,9 @@ Accessor purity:
 Payload/data shape:
 - Managed fields present: no.
 - UnityEngine.Object fields present: no.
-- Layout proof: `VisorDecalDTO` is explicit 80 bytes: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B. Offset 72 matches the original XML shader ABI; request/profile lifetime is packed into bits 8..23 of `DecalTypeHash`, while bits 0..3 remain wound type and bits 4..7 remain atlas slice.
+- Layout proof: `VisorDecalDTO` is explicit 80 bytes.
+- Offsets: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B.
+- Offset 72 matches original XML shader ABI; lifetime is packed into bits 8..23 of `DecalTypeHash`; wound type remains bits 0..3, atlas slice bits 4..7.
 - Telemetry proof: `VisorWoundTelemetryEntry` is explicit 64 bytes.
 - Fault dump proof: `Dump_SHINOBU_275.bin` writes a fixed 16-byte little-endian header plus fixed 64-byte telemetry rows via stack spans. The crash proof lane does not use `BinaryWriter`.
 

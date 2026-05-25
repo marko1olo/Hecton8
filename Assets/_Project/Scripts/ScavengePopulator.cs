@@ -69,8 +69,10 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
-    public sealed class ScavengePopulator : MonoBehaviour, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class ScavengePopulator : MonoBehaviour, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private const int SpawnQueueCapacity = 512;
+
         // ══════════════════════════════════════════════════════════
         //  REGISTRY SERVICE
         // ══════════════════════════════════════════════════════════
@@ -214,7 +216,7 @@ namespace Hecton8.Core
 
         /// <summary>Keshirovannyy Transform igroka.</summary>
         private Transform _playerTransform;
-        private ObjectPoolManager _objectPool;
+        private IObjectPoolService _objectPool;
         private WorldStateManager _worldState;
 
         /// <summary>Kvadrat unloadDistance — dlya sqrMagnitude sravneniy.</summary>
@@ -237,6 +239,8 @@ namespace Hecton8.Core
         private bool _initialized;
         private bool _isDuplicateInstance;
         private bool _registeredToSlowTickManager;
+        private bool _registeredToLateFrame;
+        private bool _pendingScavengeVisualSync;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
 
@@ -265,7 +269,7 @@ namespace Hecton8.Core
             // ── Local allocation only ──
             // ── Pre-allocate collections ──
             _chunks         = new Dictionary<Vector2Int, ChunkData>(32);
-            _spawnQueue     = new Queue<SpawnRequest>(512);
+            _spawnQueue     = new Queue<SpawnRequest>(SpawnQueueCapacity);
             _idBuilder      = new StringBuilder(64);
             _chunksToUnload = new List<Vector2Int>(16);
             _initialized    = true;
@@ -292,9 +296,11 @@ namespace Hecton8.Core
 
             if (!_registeredToSlowTickManager && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredToSlowTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
+
+            if (!_registeredToLateFrame && Application.isPlaying && GlobalRegistry.Dispatcher != null)
+                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
             if (!_serviceRegistered && Application.isPlaying)
             {
@@ -317,6 +323,13 @@ namespace Hecton8.Core
                 _registeredToSlowTickManager = false;
             }
 
+            if (_registeredToLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredToLateFrame = false;
+                _pendingScavengeVisualSync = false;
+            }
+
             if (_serviceRegistered)
             {
                 GlobalRegistry.UnregisterScavengePopulatorRuntime(this);
@@ -334,6 +347,13 @@ namespace Hecton8.Core
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredToSlowTickManager = false;
+            }
+
+            if (_registeredToLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredToLateFrame = false;
+                _pendingScavengeVisualSync = false;
             }
 
             if (_serviceRegistered)
@@ -364,7 +384,7 @@ namespace Hecton8.Core
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     break;
                 case GlobalRegistryServiceSlot.WorldStateRuntime:
                     _worldState = currentService as WorldStateManager;
@@ -375,7 +395,7 @@ namespace Hecton8.Core
         private void CacheRegistryServicesCold()
         {
             if (_objectPool == null)
-                _objectPool = GlobalRegistry.ObjectPool;
+                _objectPool = GlobalRegistry.ObjectPoolService;
 
             if (_worldState == null)
                 _worldState = GlobalRegistry.WorldState;
@@ -448,7 +468,8 @@ namespace Hecton8.Core
                 context    = context
             };
 
-            _spawnQueue.Enqueue(request);
+            if (_spawnQueue.Count < SpawnQueueCapacity)
+                _spawnQueue.Enqueue(request);
         }
 
         /// <summary>
@@ -499,6 +520,15 @@ namespace Hecton8.Core
                 return;
 
             RefreshRuntimeStreamingSettings();
+            _pendingScavengeVisualSync = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingScavengeVisualSync)
+                return;
+
+            _pendingScavengeVisualSync = false;
             ProcessSpawnQueue();
             CullDistantChunks();
             UpdateDiagnostics();
@@ -523,7 +553,7 @@ namespace Hecton8.Core
         {
             if (_spawnQueue.Count == 0) return;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             WorldStateManager wsm  = _worldState;
 
             if (pool == null) return;
@@ -682,7 +712,7 @@ namespace Hecton8.Core
             if (!_chunks.TryGetValue(coord, out ChunkData chunk))
                 return;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
 
             List<ActiveNode> nodes = chunk.activeNodes;
             int count = nodes.Count;
@@ -1034,7 +1064,7 @@ namespace Hecton8.Core
             if (bestNodeGO == null)
             {
 #if UNITY_EDITOR
-                Debug.Log("[ScavengePopulator] HighlightNearbyResource: " +
+                Hecton8.Core.H8Debug.Log("[ScavengePopulator] HighlightNearbyResource: " +
                           "no active nodes found near hint position.");
 #endif
                 return;
@@ -1048,7 +1078,7 @@ namespace Hecton8.Core
             else
             {
                 // Vizualnaya sistema podsvetki ne do kontsa gotova — logiruem
-                Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     "[ScavengePopulator] Resource Highlighted: " +
                     (bestNodeId ?? "unknown") +
                     " (InteractionHighlighter not found on node)");
@@ -1132,9 +1162,10 @@ namespace Hecton8.Core
             for (int i = 1; i <= segments; i++)
             {
                 float angle = step * i;
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
                 Vector3 next = center + new Vector3(
-                    Mathf.Cos(angle) * radius, 0f,
-                    Mathf.Sin(angle) * radius);
+                    cos * radius, 0f,
+                    sin * radius);
                 Gizmos.DrawLine(prev, next);
                 prev = next;
             }

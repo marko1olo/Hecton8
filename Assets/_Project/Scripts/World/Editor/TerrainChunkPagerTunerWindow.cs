@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -148,8 +149,8 @@ namespace Hecton8.World.Editor
             _chunkKiB.SetValueWithoutNotify(UnityEngine.Mathf.Max(4, tuning.ChunkByteCapacity / 1024));
             _mockDelayMin.SetValueWithoutNotify(tuning.WorkerMockDelayMinMs);
             _mockDelayMax.SetValueWithoutNotify(tuning.WorkerMockDelayMaxMs);
-            _statusLabel.text = "Active. Effective radius " + tuning.EffectiveRingRadius.ToString("0.00") +
-                                ", latency EWMA " + tuning.LatencyEwmaMs.ToString("0.0") + " ms.";
+            _statusLabel.text = "Active. Effective radius " + tuning.EffectiveRingRadius.ToString("0.00", CultureInfo.InvariantCulture) +
+                                ", latency EWMA " + tuning.LatencyEwmaMs.ToString("0.0", CultureInfo.InvariantCulture) + " ms.";
         }
 
         private void UpdateWaterfall()
@@ -184,7 +185,7 @@ namespace Hecton8.World.Editor
                     active01);
             }
 
-            _graphLabel.text = "Latency " + counters.LatencyEwmaMs.ToString("0.0") +
+            _graphLabel.text = "Latency " + counters.LatencyEwmaMs.ToString("0.0", CultureInfo.InvariantCulture) +
                                " ms | active " + counters.ActiveChunks +
                                " | pending " + counters.PendingRequests;
         }

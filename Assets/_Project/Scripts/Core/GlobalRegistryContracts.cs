@@ -9,11 +9,14 @@ using Hecton8.Building;
 using Hecton8.Audio;
 using Hecton8.Audio.Propagation;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
+using Hecton8.Items;
 using Hecton8.Meta;
 using Hecton8.Physics;
 using Hecton8.Systems.AI;
@@ -22,10 +25,14 @@ using Hecton8.UI;
 using Hecton8.World;
 using NASAPunk.Visor;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Rendering;
+#if UNITY_ADDRESSABLES_EXIST
+using UnityEngine.ResourceManagement.AsyncOperations;
+#endif
 
 namespace Hecton8.Core
 {
@@ -1032,6 +1039,36 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Cold object-pool facade for systems that spawn/despawn without binding to the pool owner class.
+    /// </summary>
+    public interface IObjectPoolService : ISystem
+    {
+        void Warmup(GameObject prefab, int count);
+
+        GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation);
+
+        GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, bool allowExpand);
+
+        Awaitable<bool> WarmupPrefabAsync(GameObject prefab, int count, double frameBudgetMilliseconds, System.Threading.CancellationToken cancellationToken);
+
+        void Despawn(GameObject instance);
+
+        void Despawn(GameObject instance, float delaySeconds);
+
+        bool CanDespawnWithoutDestroy(GameObject instance);
+
+        bool HasPool(GameObject prefab);
+
+        int GetAvailableCount(GameObject prefab);
+
+        bool TryGetAvailableCountForPooledInstance(GameObject instance, out int availableCount);
+
+        void TrimInactivePoolsForMemoryPressure(float releaseFraction);
+
+        void FlushInactivePoolsForMemoryPressure();
+    }
+
+    /// <summary>
     /// Authoritative physics routing service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IPhysicsService : ISystem
@@ -1061,6 +1098,24 @@ namespace Hecton8.Core
         /// <param name="wake">True to wake sleeping bodies before applying.</param>
         /// <returns>True when the packet was accepted.</returns>
         bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true);
+
+        /// <summary>
+        /// Queues an authoritative linear velocity assignment through the physics owner.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="linearVelocity">World-space linear velocity.</param>
+        /// <param name="wake">True to wake sleeping bodies before applying.</param>
+        /// <returns>True when the packet was accepted.</returns>
+        bool QueueLinearVelocitySet(Rigidbody body, Vector3 linearVelocity, bool wake = true);
+
+        /// <summary>
+        /// Queues an authoritative angular velocity assignment through the physics owner.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="angularVelocity">World-space angular velocity.</param>
+        /// <param name="wake">True to wake sleeping bodies before applying.</param>
+        /// <returns>True when the packet was accepted.</returns>
+        bool QueueAngularVelocitySet(Rigidbody body, Vector3 angularVelocity, bool wake = true);
 
         /// <summary>
         /// Queues a torque packet for deferred main-thread application.
@@ -1139,6 +1194,51 @@ namespace Hecton8.Core
         [FieldOffset(48)] public double AbsoluteTimeSeconds;
         [FieldOffset(56)] public uint Reserved2;
         [FieldOffset(60)] public uint Reserved3;
+    }
+
+    /// <summary>
+    /// Blittable sonar echo tap bridge shared by player-critical DSP and cockpit radar presentation.
+    /// Layout must stay 64 bytes; DSP and compute upload paths consume it directly.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SonarEchoTap
+    {
+        [FieldOffset(0)] public float DelaySeconds;
+        [FieldOffset(4)] public float PreviousDopplerRatio;
+        [FieldOffset(8)] public float DopplerRatio;
+        [FieldOffset(12)] public float Attenuation;
+        [FieldOffset(16)] public float LeftPanDeltaGain;
+        [FieldOffset(20)] public float RightPanDeltaGain;
+        [FieldOffset(24)] public float LowPassCutoffHz;
+        [FieldOffset(28)] public float LowPassB0;
+        [FieldOffset(32)] public float LowPassB1;
+        [FieldOffset(36)] public float LowPassB2;
+        [FieldOffset(40)] public float LowPassA1;
+        [FieldOffset(44)] public float LowPassA2;
+        [FieldOffset(48)] public int DelaySamples;
+        [FieldOffset(52)] public int UseLowPass;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
+    }
+
+    /// <summary>
+    /// Narrow write route into player-critical procedural DSP without exposing the concrete renderer.
+    /// </summary>
+    public interface IPlayerCriticalAudioSignalSink
+    {
+        bool QueuePrologueAudioTransition(in AudioTransitionState state);
+        bool QueueHighSpeedImpactSignal(in HighSpeedImpactSignal signal);
+    }
+
+    /// <summary>
+    /// Read-only cockpit sonar tap route for UI radar presentation.
+    /// </summary>
+    public interface IPlayerCriticalSonarEchoReadModel
+    {
+        bool TryGetCockpitSonarEchoTaps(
+            out NativeArray<SonarEchoTap>.ReadOnly taps,
+            out int tapCount,
+            out int sequence);
     }
 
     /// <summary>
@@ -1227,7 +1327,7 @@ namespace Hecton8.Core
             out NativeArray<float>.ReadOnly energyGrid,
             out int azimuthBins,
             out int elevationBins,
-            out ComputeBuffer gridBuffer);
+            out GraphicsBuffer gridBuffer);
 
         /// <summary>
         /// Emits one sandboxed mod acoustic ping through the engine-owned sensory path.
@@ -1241,6 +1341,148 @@ namespace Hecton8.Core
         /// Stops every active world and UI voice immediately.
         /// </summary>
         void StopAll();
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SpatialAudioImpactEmitterSample
+    {
+        [FieldOffset(0)]
+        public AbsoluteUniversePosition PositionAup;
+
+        [FieldOffset(48)]
+        public float Amplitude;
+
+        [FieldOffset(52)]
+        private uint _pad0;
+
+        [FieldOffset(56)]
+        private ulong _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SpatialAudioActiveEmitterSample
+    {
+        [FieldOffset(0)]
+        public AbsoluteUniversePosition PositionAup;
+
+        [FieldOffset(48)]
+        public Vector3 Position;
+
+        [FieldOffset(60)]
+        public float Amplitude;
+    }
+
+    /// <summary>
+    /// Read-only acoustic impact emitter route for HUD/radar presentation.
+    /// </summary>
+    public interface ISpatialAudioImpactEmitterReadModel
+    {
+        int CopyActiveImpactEmitterSamples(SpatialAudioImpactEmitterSample[] destination);
+    }
+
+    /// <summary>
+    /// Read-only active world-emitter route for acoustic occlusion and passive hydrophone presentation.
+    /// </summary>
+    public interface ISpatialAudioWorldEmitterReadModel
+    {
+        int CopyActiveWorldEmitterSamples(SpatialAudioActiveEmitterSample[] destination);
+    }
+
+    /// <summary>
+    /// Read-only listener cave state for signal-noise presentation.
+    /// </summary>
+    public interface ISpatialAudioListenerCaveReadModel
+    {
+        bool IsListenerInsideCaveVolume { get; }
+
+        float ListenerCaveInterior01 { get; }
+
+        float ListenerSabineRt60Seconds { get; }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SpatialAudioBinauralEmitterTelemetry
+    {
+        [FieldOffset(0)] public Vector3 Position;
+        [FieldOffset(12)] public float DistanceMeters;
+        [FieldOffset(16)] public float AzimuthRadians;
+        [FieldOffset(20)] public float RightDot;
+        [FieldOffset(24)] public float ItdSeconds;
+        [FieldOffset(28)] public float ShadowAmount01;
+        [FieldOffset(32)] public float ShadowCutoffHertz;
+        [FieldOffset(36)] public float Energy;
+        [FieldOffset(40)] public float WaterDensityMul;
+        [FieldOffset(44)] public int Valid;
+    }
+
+    public interface ISpatialAudioBinauralEmitterReadModel
+    {
+        bool TryGetDominantBinauralEmitter(out SpatialAudioBinauralEmitterTelemetry telemetry);
+    }
+
+    /// <summary>
+    /// Narrow meteor-boom playback route for random-event presentation.
+    /// </summary>
+    public interface IMeteorShowerAudioSink
+    {
+        void PlayMeteorShowerBoom(Vector3 position, float intensity01, float lowPassCutoffHz);
+    }
+
+    public interface ISpatialAudioLowPassPlayback
+    {
+        void PlayAtPointWithLowPass(
+            AudioClip clip,
+            Vector3 position,
+            float volume,
+            float pitch,
+            AudioMixerGroup mixerGroup,
+            float lowPassCutoffHz);
+    }
+
+    public interface ISpatialAudioEnvironmentModulationSink
+    {
+        float EclipseAcousticPitchShiftCents { get; }
+
+        float EclipseAcousticPitchRatio { get; }
+
+        void SetParasiteRoomAcousticLoad(int parasiteCount);
+
+        void SetEclipseAcousticPitchShiftCents(float shiftCents);
+    }
+
+    public interface ISpatialAudioSfxMixerRouteReadModel
+    {
+        AudioMixerGroup SfxGroup { get; }
+    }
+
+    public interface ISpatialAudioNarrativeRadioSink
+    {
+        bool TryPlayStatic2DBitCrushed(AudioClip clip, float volume);
+
+        void SetNarrativeRadioInterference(float interference01);
+    }
+
+    public interface ISpatialAudioInventoryRunawaySink
+    {
+        void QueueInventoryRunawayExplosion(Vector3 runtimePosition, float volume01);
+    }
+
+    public interface ISpatialAudioHarvestPlaybackSink
+    {
+        void PlayHarvestAtAup(in AbsoluteUniversePosition positionAup, AudioClip clip, float volume = 1f, float pitch = 1f);
+
+        void PlaySporeEmissionAtAup(
+            in AbsoluteUniversePosition positionAup,
+            AudioClip clip,
+            float pulseFrequencyHz,
+            float simulationTimeSeconds,
+            float phaseOffset01,
+            float volume = 1f);
+    }
+
+    public interface ISpatialAudioWeatherPlaybackSink
+    {
+        void PlayWeatherAtPoint(AudioClip clip, Vector3 position, float volume, float pitch, AudioMixerGroup mixerGroup);
     }
 
     public static class AudioResidencyDomainIds
@@ -1978,6 +2220,62 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Narrow damage-interrupt route for delayed player actions without exposing the concrete action owner.
+    /// </summary>
+    public interface IPlayerActionInterruptSink
+    {
+        bool IsActionInProgress { get; }
+
+        void OnDamageTaken();
+    }
+
+    /// <summary>
+    /// Read/command facade for player expression identity UI without exposing the concrete manager.
+    /// </summary>
+    public interface IPlayerExpressionReadModel
+    {
+        int ProfileCount { get; }
+
+        bool TryGetNextProfileDisplayName(out string displayName);
+
+        string GetActiveProfileName();
+
+        string GetActiveProfileSummary();
+
+        string GetActiveRecommendedLoadoutName();
+
+        string GetActiveRecommendedSuitName();
+
+        string GetLiveSuitName();
+
+        bool IsActiveRecommendedSuitApplied();
+
+        bool CycleNextProfile(bool applyRecommendedLoadout);
+    }
+
+    /// <summary>
+    /// Read facade for prefab-bound player tool metadata without binding UI to the concrete tool base class.
+    /// </summary>
+    public interface IPlayerToolDataReadModel
+    {
+        ItemData ToolData { get; }
+
+        ToolMetadata Metadata { get; }
+    }
+
+    /// <summary>
+    /// Narrow command route for emergency systems that must pin the player motor without binding to the motor owner.
+    /// </summary>
+    public interface IPlayerSeatLockMotorSink
+    {
+        bool HasControllableBody { get; }
+
+        void MoveSeatLockPosition(Vector3 position);
+
+        void SetSeatLockLinearVelocity(Vector3 velocity);
+    }
+
+    /// <summary>
     /// Authoritative player runtime-context contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IPlayerRuntimeContext
@@ -2041,6 +2339,11 @@ namespace Hecton8.Core
         /// Cached transport coordinator resolved from the current player root.
         /// </summary>
         PlayerTransportCoordinator PlayerTransportCoordinator { get; }
+
+        /// <summary>
+        /// Narrow active-transport lifecycle resolver exposed without binding consumers to the coordinator implementation.
+        /// </summary>
+        IPlayerTransportLifecycleResolver PlayerTransportLifecycleResolver { get; }
 
         /// <summary>
         /// Authoritative player camera resolved from player-owned movement state.
@@ -2134,6 +2437,103 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Read-only bleeding signal route for fauna sensory consumers.
+    /// </summary>
+    public interface IPlayerBleedingReadModel
+    {
+        bool IsBleeding { get; }
+        float BleedingSeverity01 { get; }
+    }
+
+    /// <summary>
+    /// Narrow presentation command route for player hypoxia distortion.
+    /// </summary>
+    public interface IPlayerHypoxiaPresentationSink
+    {
+        void RequestHypoxiaVisorDistortion(float intensity, float holdDuration, float recoverySpeed);
+    }
+
+    /// <summary>
+    /// Marker route for the player-owned internal achievement registry.
+    /// </summary>
+    public interface IPlayerAchievementRegistryRuntime
+    {
+    }
+
+    /// <summary>
+    /// Read-only exploration route for systems that need PDA-owned discovered chunk keys.
+    /// </summary>
+    public interface IPlayerExplorationChunkReadModel
+    {
+        float ChunkWorldSize { get; }
+
+        int CopyExploredChunks(Vector2Int[] buffer);
+
+        int CopyExploredChunkKeys(long[] buffer);
+
+        bool IsChunkExplored(Vector2Int chunkCoordinates);
+    }
+
+    /// <summary>
+    /// Narrow save-runtime callback for owners that need to observe mapped inventory writes
+    /// without binding the save pipeline to the concrete inventory implementation.
+    /// </summary>
+    public interface IMappedInventoryWriteCommitSink
+    {
+        void NotifyMappedInventoryWriteCommitted();
+    }
+
+    /// <summary>
+    /// Marker route for authored fauna distractors.
+    /// </summary>
+    public interface IFaunaDistractorSignalSource
+    {
+    }
+
+    /// <summary>
+    /// Read-only bait route for fauna sensory consumers.
+    /// </summary>
+    public interface IFaunaBaitSource
+    {
+        bool IsFaunaBait { get; }
+    }
+
+    /// <summary>
+    /// Read-only fauna contact route for spatial hash consumers.
+    /// </summary>
+    public interface IFaunaSpatialContact
+    {
+        int SpeciesId { get; }
+        bool IsDead { get; }
+        bool HasActiveApexIntimidation { get; }
+        bool IsLeviathanContact { get; }
+        bool IsApexPredatorContact { get; }
+        bool RespondsToParentalDefenseSignal { get; }
+        Transform ContactTransform { get; }
+
+        bool TryResolveLogicAup(out AbsoluteUniversePosition selfAup);
+        bool CanConsumePrey(uint preyMaskBits);
+        bool IsValidPreyFor(IFaunaSpatialContact predatorContact);
+        void ApplyParentalDefenseStimulus(Vector3 sourcePosition);
+        void TriggerPanicPulse(Vector3 predatorPos);
+        void ApplyCleanerSymbiosis(float fatigueRelief);
+        Vector3 ResolveContactForward();
+        float ResolveApexIntimidationRadiusMeters();
+    }
+
+    /// <summary>
+    /// Narrow mutable route used only by fauna predation resolution.
+    /// Keeps predator logic off the concrete fauna controller type.
+    /// </summary>
+    public interface IFaunaPredationTarget : IFaunaSpatialContact
+    {
+        float HealthNormalized { get; }
+        bool IsBiolumFlashBangPrey { get; }
+        void ApplyPredationDamage(float amount, Vector3 predatorPosition);
+        void ForceApexRetreatFrom(Vector3 rivalPosition);
+    }
+
+    /// <summary>
     /// Read-only chemical influence grid route for scanner and sensory consumers.
     /// </summary>
     public interface IChemicalInfluenceReadModel
@@ -2160,6 +2560,8 @@ namespace Hecton8.Core
     public interface IBrineFluidDensityReadModel
     {
         bool TrySampleBrineFluidDensity(Vector3 runtimePosition, out float fluidDensityKgPerCubicMeter);
+
+        bool TrySampleBrineLayer(Vector3 runtimePosition, out BrineLayerSample sample);
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -2178,14 +2580,74 @@ namespace Hecton8.Core
 
     public interface IAtlasSignalReadModel
     {
+        float CurrentAtlasSignalStrength01 { get; }
+        int CurrentAtlasSignalRevealStage { get; }
+        bool IsAtlasSignalDetected { get; }
+
+        bool TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition coreAup);
+
         bool TryReadAtlasSignalSnapshot(
             in AbsoluteUniversePosition observerAup,
             out AtlasSignalReadSnapshot snapshot);
     }
 
+    public interface INarrativeDiscoveryReadModel
+    {
+        bool HasDiscovery(uint discoveryHash);
+    }
+
+    public interface IFirstHourReadModel
+    {
+        bool IsFirstHourComplete { get; }
+        bool IsFirstHourMilestoneComplete(int milestoneCode);
+    }
+
+    public interface IFirstHourRouteContactSink
+    {
+        void RegisterServiceRelayRouteContact();
+    }
+
+    public interface IAudioLogRuntime
+    {
+        int DiscoveredAudioLogCount { get; }
+        bool IsAudioLogDiscovered(string logId);
+        bool IsAudioLogDiscovered(uint logHash);
+        bool TryPlayAudioLog(string logId);
+        bool TryPlayAudioLogByHash(uint logHash);
+        void NotifyAtmosphericWarningStarted(float durationSeconds);
+        uint GetRecoveredEncryptedAudioLogBits(uint logHash);
+        bool RecoverEncryptedAudioLogFragment(uint logHash, uint fragmentHash);
+    }
+
+    public interface ILocalizationTextReadModel
+    {
+        ushort ActiveLanguageId { get; }
+        string GetOrFallback(string key, string fallback);
+        string GetFormatted(string key, params object[] args);
+        ReadOnlySpan<char> GetRawSpanOrFallback(int keyHash, ReadOnlySpan<char> fallback);
+    }
+
+    public interface ILocalizationStressPresentationReadModel : ILocalizationTextReadModel
+    {
+        float GetHullStressCorruptionIntensity();
+        int GetHullStressCorruptionBucket();
+        bool IsMadnessWhisperVisualActive();
+        bool TryApplyHullStressCorruptionIfNeeded(ReadOnlySpan<char> text, char[] destination, out int length);
+    }
+
+    public interface IPdaCorrosionPresentationSink
+    {
+        void RequestExternalPdaCorrosion(float intensity, float duration);
+    }
+
     public interface ILoreUnlockReadModel
     {
         bool IsLoreUnlocked(uint logHash);
+    }
+
+    public interface ILoreUnlockSink
+    {
+        bool TryUnlockByHash(uint logHash);
     }
 
     /// <summary>
@@ -2198,6 +2660,11 @@ namespace Hecton8.Core
         /// True once the service has completed bootstrap registration.
         /// </summary>
         bool IsInitialized { get; }
+
+        /// <summary>
+        /// Authoritative player carry-capacity ceiling used by loadout/readiness consumers.
+        /// </summary>
+        float CarryCapacityKilograms { get; }
 
         /// <summary>
         /// Current authoritative handheld-tool owner.
@@ -2341,6 +2808,28 @@ namespace Hecton8.Core
         float GetHazardIntensity(in AbsoluteUniversePosition pointAup, HazardType type);
 
         float GetToxicityIntensity(in AbsoluteUniversePosition pointAup);
+
+        bool TrySampleHazardAvoidance(Vector3 runtimePoint, float sampleRadius, out Vector3 fleeDirection, out float hazardPressure01);
+    }
+
+    /// <summary>
+    /// Read-only atmosphere scalars used by physics and AI without depending on the atmosphere owner class.
+    /// </summary>
+    public interface IAtmosphereReadModel : ISystem
+    {
+        float CurrentFogAttenuationDistance { get; }
+
+        float CurrentFogDensity { get; }
+
+        float CurrentTemperature { get; }
+
+        float CurrentRadiation { get; }
+
+        float CycleDuration { get; }
+
+        float SeaLevelY { get; }
+
+        bool IsUnderwaterState { get; }
     }
 
     /// <summary>
@@ -2405,6 +2894,63 @@ namespace Hecton8.Core
         WeatherRuntimeSnapshot GetRuntimeSnapshot();
     }
 
+    public static class SurfaceWeatherKindCodes
+    {
+        public const byte ClearCalm = 0;
+        public const byte ClearBreeze = 1;
+        public const byte Overcast = 2;
+        public const byte HeavyRain = 3;
+        public const byte ElectricalStorm = 4;
+    }
+
+    /// <summary>
+    /// Read-only surface-weather presentation route without binding consumers to the director owner.
+    /// </summary>
+    public interface ISurfaceWeatherReadModel : ISystem
+    {
+        bool IsSurfaceSuppressed { get; }
+        bool IsLocallySheltered { get; }
+        float CurrentPrecipitationIntensity { get; }
+        float CurrentElectricalActivity { get; }
+        byte CurrentWeatherKindCode { get; }
+    }
+
+    /// <summary>
+    /// Read-only acoustic-zone route without binding audio consumers to the concrete zone controller.
+    /// </summary>
+    public interface IAcousticZoneReadModel : ISystem
+    {
+        bool IsInterior { get; }
+    }
+
+    /// <summary>
+    /// Narrow madness-whisper cue sink owned by the acoustic-zone runtime.
+    /// </summary>
+    public interface IAcousticZoneMadnessCueSink : ISystem
+    {
+        void PlayMadnessWhisperCue();
+    }
+
+    /// <summary>
+    /// Contract-only hydrothermal flow sample. Size: 64 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct ThermodynamicFlowSampleDTO
+    {
+        [FieldOffset(0)] public float3 FlowVelocityWS;
+        [FieldOffset(12)] public float Heat01;
+        [FieldOffset(16)] public float DragMultiplier;
+        [FieldOffset(20)] public float3 CableAnchorWS;
+        [FieldOffset(32)] public float CableTension01;
+        [FieldOffset(36)] public float CableCutProgress01;
+        [FieldOffset(40)] public float CableEscapeSuppression01;
+        [FieldOffset(44)] public byte HasFlow;
+        [FieldOffset(45)] public byte IsCableZone;
+        [FieldOffset(46)] private ushort _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
+    }
+
     /// <summary>
     /// Authoritative thermodynamics service exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
@@ -2422,7 +2968,7 @@ namespace Hecton8.Core
         /// <param name="radiusWS">Additional sample radius.</param>
         /// <param name="sample">Resolved flow and cable payload.</param>
         /// <returns>True when any updraft or cable influence is active at the sample point.</returns>
-        bool SampleThermalFlow(Vector3 positionWS, float radiusWS, out AbyssalThermalManager.ThermalFlowSample sample);
+        bool SampleThermalFlow(Vector3 positionWS, float radiusWS, out ThermodynamicFlowSampleDTO sample);
 
         /// <summary>
         /// Samples the latest Celsius heat field without allocating.
@@ -2453,9 +2999,40 @@ namespace Hecton8.Core
             out int version);
 
         /// <summary>
+        /// Exposes the front-buffer Celsius grid with an owner-local absolute-universe origin.
+        /// </summary>
+        bool TryGetThermalGridReadbackAup(
+            out NativeArray<float>.ReadOnly temperatureCelsius,
+            out int width,
+            out int height,
+            out int depth,
+            out double3 originAup,
+            out float cellSizeMeters,
+            out int version);
+
+        /// <summary>
+        /// Acquires the front-buffer Celsius grid for an asynchronous consumer. Caller must release after its read job finishes.
+        /// </summary>
+        bool TryAcquireThermalGridReadbackAup(
+            out NativeArray<float>.ReadOnly temperatureCelsius,
+            out int width,
+            out int height,
+            out int depth,
+            out double3 originAup,
+            out float cellSizeMeters,
+            out int version);
+
+        /// <summary>
+        /// Releases a readback acquired through <see cref="TryAcquireThermalGridReadbackAup"/>.
+        /// </summary>
+        void ReleaseThermalGridReadback();
+
+        /// <summary>
         /// Injects a transient heat source without exposing thermodynamics internals.
         /// </summary>
         bool TryInjectTransientHeatSource(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId);
+
+        bool TryResolveApexMigrationThermalAttractor(out Vector3 attractorPosition, out float strength01);
     }
 
     /// <summary>
@@ -2809,10 +3386,22 @@ namespace Hecton8.Core
         void ActivateQuest(string questId);
 
         /// <summary>
+        /// Activates the authored quest by stable quest hash.
+        /// </summary>
+        /// <param name="questHash">Stable quest hash.</param>
+        void ActivateQuest(uint questHash);
+
+        /// <summary>
         /// Completes the authored quest when it exists in the registry.
         /// </summary>
         /// <param name="questId">Stable quest identifier.</param>
         void CompleteQuest(string questId);
+
+        /// <summary>
+        /// Completes the authored quest by stable quest hash.
+        /// </summary>
+        /// <param name="questHash">Stable quest hash.</param>
+        void CompleteQuest(uint questHash);
 
         /// <summary>
         /// Returns true when the quest is currently active.
@@ -2821,10 +3410,22 @@ namespace Hecton8.Core
         bool IsActive(string questId);
 
         /// <summary>
+        /// Returns true when the quest hash is currently active.
+        /// </summary>
+        /// <param name="questHash">Stable quest hash.</param>
+        bool IsActive(uint questHash);
+
+        /// <summary>
         /// Returns true when the quest is currently completed.
         /// </summary>
         /// <param name="questId">Stable quest identifier.</param>
         bool IsCompleted(string questId);
+
+        /// <summary>
+        /// Returns true when the quest hash is currently completed.
+        /// </summary>
+        /// <param name="questHash">Stable quest hash.</param>
+        bool IsCompleted(uint questHash);
 
         /// <summary>
         /// Returns true when the native quest flag bit is set for the supplied stable flag hash.
@@ -2833,12 +3434,43 @@ namespace Hecton8.Core
         bool GetFlag(uint flagId);
 
         /// <summary>
+        /// Updates quest graph depth conditions from the depth-zone owner route.
+        /// </summary>
+        /// <param name="depthMeters">Current player depth in meters.</param>
+        /// <param name="zoneHash">Stable active depth-zone hash, or 0 when no authored zone is active.</param>
+        /// <param name="isThermalZone">True when the current authored depth zone is thermal.</param>
+        void UpdateDepthContext(float depthMeters, uint zoneHash, bool isThermalZone);
+
+        /// <summary>
         /// Resolves the authored quest identifier from a stable quest hash.
         /// </summary>
         /// <param name="questHash">Stable quest hash.</param>
         /// <param name="questId">Resolved authored quest identifier.</param>
         /// <returns>True when the hash maps to an authored quest.</returns>
         bool TryGetQuestIdByHash(uint questHash, out string questId);
+
+        bool TryCopyQuestPresentation(
+            uint questHash,
+            char[] titleDestination,
+            out int titleLength,
+            char[] descriptionDestination,
+            out int descriptionLength,
+            out uint markerTargetHash,
+            out Vector3 markerWorldPosition,
+            out float markerHeightOffset);
+
+        bool UpsertProceduralDirective(
+            uint questHash,
+            uint completionItemHash,
+            string title,
+            string description,
+            uint markerTargetHash,
+            Vector3 markerWorldPosition,
+            float markerHeightOffset,
+            byte phaseGateCode,
+            float requiredQuantity,
+            bool activateWhenAllowed,
+            out bool activatedNow);
     }
 
     /// <summary>
@@ -3302,6 +3934,15 @@ namespace Hecton8.Core
             string confirmLabel,
             string cancelLabel);
 
+        void ShowModal(
+            string title,
+            char[] messageBuffer,
+            int messageLength,
+            System.Action onConfirm,
+            System.Action onCancel,
+            string confirmLabel,
+            string cancelLabel);
+
         void CloseModal();
     }
 
@@ -3328,6 +3969,67 @@ namespace Hecton8.Core
     public interface IRegistryEventListener
     {
         void OnRegistryEvent(in RegistryEventPayload payload);
+    }
+
+    /// <summary>
+    /// Cold dependency route for the SHINOBU 132 cable solver runtime.
+    /// Core owners call this interface instead of referencing the physics solver assembly directly.
+    /// </summary>
+    public interface ICablePhysics132Service : ISystem
+    {
+        /// <summary>
+        /// Validates the unmanaged cable DTO layout used by the solver.
+        /// </summary>
+        /// <returns>True when the current DTO layout matches the solver contract.</returns>
+        bool ValidateLayout();
+
+        /// <summary>
+        /// Checks whether the deterministic mock cable buffers already exist in the vault.
+        /// </summary>
+        /// <param name="vault">Vault owner that stores cable buffers.</param>
+        /// <returns>True when all required buffers are present.</returns>
+        bool TryHasMockBuffers(IDataVault vault);
+
+        /// <summary>
+        /// Creates or refreshes deterministic mock cable buffers in the owner vault.
+        /// </summary>
+        /// <param name="vault">Vault owner that stores cable buffers.</param>
+        /// <param name="globalQualityWeight">Continuous quality weight used for capacity/fidelity scaling.</param>
+        /// <param name="frameIndex">Frame index written to bootstrap telemetry.</param>
+        void EnsureMockBuffers(IDataVault vault, float globalQualityWeight, uint frameIndex);
+
+        /// <summary>
+        /// Schedules the deterministic mock cable solve from existing vault buffers.
+        /// </summary>
+        /// <param name="vault">Vault owner that stores cable buffers.</param>
+        /// <param name="frameIndex">Frame index for telemetry and signal records.</param>
+        /// <param name="fixedDeltaTime">Sanitized fixed delta for the solver step.</param>
+        /// <param name="gravity">Gravity vector for the current cable solve.</param>
+        /// <param name="abyssalFlow">Authoritative flow vector already sampled by the caller.</param>
+        /// <param name="cameraAup">Camera absolute position used for deterministic mock anchoring.</param>
+        /// <param name="globalQualityWeight">Continuous quality weight used for Math LOD.</param>
+        /// <param name="lastElapsedMicroseconds">Previous solve duration used for black-box telemetry.</param>
+        /// <param name="dependency">Input job dependency.</param>
+        /// <param name="handle">Scheduled solver handle when the call succeeds.</param>
+        /// <returns>True when the schedule was accepted.</returns>
+        bool TryScheduleMockFromVault(
+            IDataVault vault,
+            uint frameIndex,
+            float fixedDeltaTime,
+            float3 gravity,
+            float3 abyssalFlow,
+            double3 cameraAup,
+            float globalQualityWeight,
+            float lastElapsedMicroseconds,
+            JobHandle dependency,
+            out JobHandle handle);
+
+        /// <summary>
+        /// Dumps the latest solver telemetry only when the solver reports a non-finite recovery or constraint fault.
+        /// </summary>
+        /// <param name="vault">Vault owner that stores cable telemetry.</param>
+        /// <returns>True when a fault dump was written.</returns>
+        bool TryDumpLatestFault(IDataVault vault);
     }
 
     /// <summary>
@@ -3510,6 +4212,7 @@ namespace Hecton8.Core
         ProceduralLadderClimbRuntime = 172,
         ChemicalInfluenceRuntime = 173,
         DestructibleOrganicRuntime = 174,
+        CablePhysics132Runtime = 175,
         Unknown = 255
     }
 
@@ -3548,6 +4251,450 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Thermal vent snapshot consumed by nutrient drift without referencing the persistent-world owner type.
+    /// </summary>
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    public struct NutrientThermalVentSnapshotDTO
+    {
+        [FieldOffset(0)] public long RuntimeKey;
+        [FieldOffset(8)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(56)] public float RadiusWS;
+        [FieldOffset(60)] public float HeightWS;
+        [FieldOffset(64)] public float UpdraftVelocity;
+        [FieldOffset(68)] public float HeatIntensity;
+        [FieldOffset(72)] public float SmokeDensity;
+        [FieldOffset(76)] public float CableRadiusWS;
+    }
+
+    /// <summary>
+    /// Read-only thermal vent route for consumers that need bounded source snapshots.
+    /// </summary>
+    public interface INutrientThermalVentReadModel : ISystem
+    {
+        /// <summary>
+        /// Reads the active thermal vent count from the owner snapshot.
+        /// </summary>
+        int ReadActiveNutrientThermalVentCount();
+
+        /// <summary>
+        /// Reads the current vent revision from the owner snapshot.
+        /// </summary>
+        int ReadActiveNutrientThermalVentRevision();
+
+        /// <summary>
+        /// Reads one active thermal vent row into a nutrient-specific DTO.
+        /// </summary>
+        bool TryGetActiveNutrientThermalVent(int index, out NutrientThermalVentSnapshotDTO record);
+    }
+
+    /// <summary>
+    /// Read-only abyssal flow volume route for Burst consumers.
+    /// </summary>
+    public interface IAbyssalFlowVolumeReadModel : ISystem
+    {
+        /// <summary>
+        /// Returns the current read-only abyssal flow volume and ring-buffer metadata.
+        /// </summary>
+        bool TryGetAbyssalFlowVolumePayload(
+            out NativeArray<float3>.ReadOnly flowVolume,
+            out Vector3 center,
+            out int resolutionXZ,
+            out int resolutionY,
+            out int ringOffsetX,
+            out int ringOffsetY,
+            out int ringOffsetZ,
+            out float horizontalCellSize,
+            out float verticalCellSize,
+            out float surfaceY,
+            out float depthMeters);
+
+        bool TrySampleAbyssalFlow(Vector3 position, out Vector3 flowVector);
+    }
+
+    /// <summary>
+    /// Read-only terrain height payload alias exposed without binding consumers to the vegetation bridge owner type.
+    /// </summary>
+    public readonly struct TerrainHeightSamplePayloadDTO
+    {
+        public TerrainHeightSamplePayloadDTO(
+            NativeArray<ushort> heightSamples,
+            Vector3 terrainPosition,
+            Vector3 terrainSize,
+            int heightmapResolution,
+            int cacheRevision)
+        {
+            HeightSamples = heightSamples;
+            TerrainPosition = terrainPosition;
+            TerrainSize = terrainSize;
+            HeightmapResolution = heightmapResolution;
+            CacheRevision = cacheRevision;
+        }
+
+        public readonly NativeArray<ushort> HeightSamples;
+        public readonly Vector3 TerrainPosition;
+        public readonly Vector3 TerrainSize;
+        public readonly int HeightmapResolution;
+        public readonly int CacheRevision;
+
+        public static bool IsValid(in TerrainHeightSamplePayloadDTO payload)
+        {
+            return payload.HeightSamples.IsCreated &&
+                   payload.HeightmapResolution > 1 &&
+                   payload.HeightSamples.Length >= payload.HeightmapResolution * payload.HeightmapResolution;
+        }
+    }
+
+    /// <summary>
+    /// Read-only terrain heightmap payload route for physics/fluid jobs.
+    /// </summary>
+    public interface ITerrainHeightSampleReadModel : ISystem
+    {
+        bool TryGetActiveTerrainHeightSamplePayload(out TerrainHeightSamplePayloadDTO payload);
+
+        bool TryGetTerrainHeightSamplePayload(float worldX, float worldZ, out TerrainHeightSamplePayloadDTO payload);
+    }
+
+    /// <summary>
+    /// Read-only GPU abyssal-flow payload for visual consumers without binding to the physics runtime type.
+    /// </summary>
+    public interface IAbyssalFlowGpuReadModel : ISystem
+    {
+        int MaxActiveMaelstromCapacity { get; }
+
+        bool TrySampleModAbyssalFlow(Vector3 samplePosition, out float3 flowVector);
+
+        bool TryGetActiveMaelstroms(
+            out NativeArray<float4>.ReadOnly maelstroms,
+            out int activeCount,
+            out Vector4 maelstromMeta);
+
+        bool TryGetGpuAbyssalFlowFieldTexture(
+            out Texture flowFieldTexture,
+            out Vector4 gridResolution,
+            out Vector4 flowCenter,
+            out Vector4 flowSpacing);
+
+        bool TryGetGpuAbyssalFlowFieldBuffer(
+            out GraphicsBuffer flowFieldBuffer,
+            out Vector4 gridResolution,
+            out Vector4 flowCenter,
+            out Vector4 flowSpacing);
+
+        bool TryGetDynamicWakeGpuPayload(
+            out GraphicsBuffer dynamicWakeBuffer,
+            out GraphicsBuffer dynamicWakeVectorBuffer,
+            out Vector4 dynamicWakeParams);
+
+        bool TryUploadActiveMaelstroms(GraphicsBuffer destination, int requestedCount);
+    }
+
+    /// <summary>
+    /// Read-only analytical flow sampler for physics consumers that need a scalar flow vector.
+    /// </summary>
+    public interface IAnalyticalFlowReadModel : ISystem
+    {
+        float3 SampleAnalyticalFlow(float3 samplePosition);
+
+        bool TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly whirlpools, out int activeCount);
+    }
+
+    /// <summary>
+    /// Read-only authored/global current sampler exposed without binding consumers to physics CurrentVolume.
+    /// </summary>
+    public interface IAmbientCurrentReadModel : ISystem
+    {
+        bool TrySampleCombinedCurrent(Vector3 samplePosition, out Vector3 currentVector);
+    }
+
+    /// <summary>
+    /// Read-only fluid surface/current route for vegetation and presentation systems.
+    /// </summary>
+    public interface IFluidSurfaceCurrentReadModel : ISystem
+    {
+        float WaterLevel { get; }
+
+        float CurrentWaterLevelY { get; }
+
+        Vector3 CurrentVector { get; }
+
+        float CurrentStrength { get; }
+
+        bool EnablePhantomCurrent { get; }
+
+        float PhantomCurrentStrength { get; }
+
+        float CurrentNoiseScale { get; }
+
+        float CurrentTimeScale { get; }
+
+        float CurrentVerticalFactor { get; }
+    }
+
+    /// <summary>
+    /// Narrow fluid presentation command route for advected bubble bursts.
+    /// </summary>
+    public interface IFluidBubbleBurstSink : ISystem
+    {
+        bool TryQueueAdvectedBubbleBurst(Vector3 runtimePosition, int requestedCount, float intensity01);
+    }
+
+    /// <summary>
+    /// Narrow fluid current write route for the weather owner.
+    /// </summary>
+    public interface IFluidCurrentWriteSink : ISystem
+    {
+        void ApplyWeatherCurrent(Vector3 currentVector, float strength);
+    }
+
+    /// <summary>
+    /// Read-only celestial sky-direction route for physics/fluid consumers.
+    /// </summary>
+    public interface ICelestialSkyDirectionReadModel : ISystem
+    {
+        bool TryGetAegirSkyDirection(out Vector3 direction);
+    }
+
+    /// <summary>
+    /// Read-only depth-zone route used by spawn and presentation systems.
+    /// </summary>
+    public interface IDepthZoneReadModel : ISystem
+    {
+        DepthZoneProfile CurrentZone { get; }
+    }
+
+    /// <summary>
+    /// Read-only soundscape tier route used by acoustic presentation without binding to the concrete owner.
+    /// </summary>
+    public interface ISoundscapeTierReadModel : ISystem
+    {
+        byte CurrentTierCode { get; }
+    }
+
+    /// <summary>
+    /// Read-only environmental strain route for stress/audio consumers.
+    /// </summary>
+    public interface IEnvironmentalStrainReadModel : ISystem
+    {
+        float MicroplasticStrain { get; }
+        float GeneralPollution { get; }
+    }
+
+    /// <summary>
+    /// Read-only VRAM/RAM pressure gate state exposed without binding bootstrap to the concrete optimization owner.
+    /// </summary>
+    public interface IVramPressureReadModel : ISystem
+    {
+        bool HasSample { get; }
+
+        float VramPressureFactor { get; }
+
+        float RamPressureFactor { get; }
+
+        float PressureFactor { get; }
+
+        float BrgLodDistanceScalar { get; }
+    }
+
+    /// <summary>
+    /// Cold command route for forcing an immediate pressure sample without exposing the concrete optimization owner.
+    /// </summary>
+    public interface IVramPressureSampleSink : ISystem
+    {
+        void ForceImmediateSampleAndResponse();
+    }
+
+    /// <summary>
+    /// Narrow UI mip-bias feedback route used by asset dispatch policy.
+    /// </summary>
+    public interface IVramPressureMipBiasSink : ISystem
+    {
+        void SetExternalMipPressureResponse(float pressureResponse, long observedVramBytes);
+    }
+
+    /// <summary>
+    /// Narrow scan-log route for archive writes, scan-lock reads, and signal-source filtering.
+    /// </summary>
+    public interface IScanLogService : ISystem
+    {
+        int EntryCount { get; }
+
+        int RecentCount { get; }
+
+        uint ChangeRevision { get; }
+
+        uint SourceId { get; }
+
+        bool ContainsEntry(uint entryHash);
+
+        void ArchiveEntry(string entryId, string title, string category, string summary, bool markRecent = true);
+    }
+
+    /// <summary>
+    /// Read-only VRAM budget counters without binding callers to the concrete monitor owner.
+    /// </summary>
+    public interface IVramBudgetReadModel : ISystem
+    {
+        long TextureMemoryBytes { get; }
+
+        long RenderTextureMemoryBytes { get; }
+
+        long TotalVRAMBytes { get; }
+
+        float RenderTextureBudgetUtilization { get; }
+
+        bool IsTextureMemoryOverBudget { get; }
+
+        bool IsRenderTextureMemoryOverBudget { get; }
+
+        bool IsTotalVRAMOverBudget { get; }
+
+        byte PressureStateCode { get; }
+
+        void GetVRAMBreakdown(out long textureMemoryBytes, out long renderTextureMemoryBytes, out long totalVRAMBytes);
+    }
+
+    /// <summary>
+    /// Cold sample route for consumers that must refresh VRAM counters before pressure decisions.
+    /// </summary>
+    public interface IVramBudgetSampleSink : ISystem
+    {
+        void SampleVramCounters();
+    }
+
+    public static class VramPressureStateCodes
+    {
+        public const byte Stable = 0;
+        public const byte Warning = 1;
+        public const byte Critical = 2;
+    }
+
+    public static class AssetPriorityTierCodes
+    {
+        public const byte Tier0PlayerCritical = 0x00;
+        public const byte Tier1Equipped = 0x01;
+        public const byte Tier2Proximity = 0x10;
+        public const byte Tier3Ambient = 0x20;
+        public const byte Tier4MidRange = 0x30;
+        public const byte Tier5DistantHlod = 0x40;
+        public const byte Tier6Speculative = 0xFF;
+    }
+
+    /// <summary>
+    /// Narrow pressure/release control route for asset-residency consumers.
+    /// </summary>
+    public interface IAssetLifecyclePressureSink : ISystem
+    {
+        long NativeHeapEstimateBytes { get; }
+
+        void SetHeapSanitizerBlindFrameWindow(bool active, float durationSeconds);
+
+        void SetHeapSanitizerVramPanicWindow(bool active, float durationSeconds);
+
+        void ForceDrainPendingReleaseQueue();
+
+        int DrainPendingReleaseQueueBudgeted(int maxCount);
+
+        int EvictLowestPriorityUnusedAssets(int maxCount, byte minimumPriorityCode);
+
+#if UNITY_ADDRESSABLES_EXIST
+        bool TryStageExternalAddressableRelease(AsyncOperationHandle handle);
+
+        bool TryReleaseExternalAddressableFault(AsyncOperationHandle handle);
+#endif
+    }
+
+    /// <summary>
+    /// Presentation-only fluid aftermath route. Consumers request visual decals without knowing the world owner type.
+    /// </summary>
+    public interface IFluidDecalPresentationSink : ISystem
+    {
+        void RegisterRuptureFluid(Vector3 positionWS, float radiusScale);
+
+        void RegisterPressureSpray(Vector3 positionWS, Vector3 inwardDirectionWS, float intensity01);
+
+        void RegisterSeismicDust(Vector3 positionWS, float radiusScale);
+    }
+
+    /// <summary>
+    /// Tool durability authority route for UI, equipment, and maintenance consumers.
+    /// </summary>
+    public interface IToolDurabilityService : ISystem
+    {
+        float GetDurability(string toolID, float maxDurability);
+
+        float GetDurabilityNormalized(string toolID, float maxDurability);
+
+        bool IsBroken(string toolID);
+
+        bool IsDegraded(string toolID);
+
+        void DrainDurability(string toolID, float amount, float maxDurability);
+
+        void DrainDurabilityByTime(string toolID, uint itemHashId, float scaledDeltaTime, float maxDurability);
+
+        void RegisterCentralizedEquipmentMirror(string toolID, uint itemHashId, float maxDurability);
+
+        float ResolveCentralizedEquipmentWearMultiplier(uint itemHashId);
+
+        void SetDurabilityNormalizedFromEquipment(string toolID, uint itemHashId, float normalizedDurability, float maxDurability);
+
+        void RepairTool(string toolID, float amount, float maxDurability);
+
+        void RepairToolFull(string toolID, float maxDurability);
+
+        void BreakTool(string toolID);
+
+        void ResetDurability(string toolID, float maxDurability);
+    }
+
+    /// <summary>
+    /// Read-only vegetation threat route used by fauna spawn weighting.
+    /// </summary>
+    public interface IVegetationThreatReadModel : ISystem
+    {
+        float GetSpawnWeightModifier(Vector3 position);
+    }
+
+    /// <summary>
+    /// Vegetation threat pulse sink used by AI without binding to the vegetation owner type.
+    /// </summary>
+    public interface IVegetationThreatPulseSink : ISystem
+    {
+        /// <summary>
+        /// Records a species-scoped predator fear sector without binding AI callers to the vegetation owner type.
+        /// </summary>
+        void RegisterPredatorFearNode(int speciesId, Vector3 worldPosition, float normalizedDamage);
+
+        /// <summary>
+        /// Applies a temporary generic vegetation threat pulse.
+        /// </summary>
+        void ApplyExternalThreatPulse(Vector3 position, float radius, float strength, float holdDuration);
+    }
+
+    /// <summary>
+    /// Read-only biome physics influence route used by fluid/buoyancy jobs.
+    /// </summary>
+    public interface IBiomePhysicsInfluenceReadModel : ISystem
+    {
+        bool TrySampleBiomePhysicsInfluence(Vector3 position, out float buoyancyMultiplier);
+    }
+
+    /// <summary>
+    /// Read-only sargassum drag route used by fluid/buoyancy jobs.
+    /// </summary>
+    public interface ISargassumDragReadModel : ISystem
+    {
+        bool SampleInfluence(
+            Vector3 positionWS,
+            float radius,
+            Vector3 movementVelocityWS,
+            out float speedMultiplier,
+            out float dragMultiplier,
+            out float density01);
+    }
+
+    /// <summary>
     /// Terrain height/normal authority exposed to gameplay without leaking MapMagic types.
     /// Implementations must answer from cached terrain ownership and avoid scene-wide scans in hot queries.
     /// </summary>
@@ -3567,6 +4714,11 @@ namespace Hecton8.Core
         /// Samples runtime-space terrain height at X/Z.
         /// </summary>
         bool TryGetHeight(float x, float z, out float height);
+
+        /// <summary>
+        /// Samples the dominant biome index at runtime-space X/Z without exposing the terrain backend type.
+        /// </summary>
+        bool TryGetBiomeIndex(float x, float z, out int biomeIndex);
 
         /// <summary>
         /// Samples runtime-space terrain normal at X/Z using caller-provided spacing.
@@ -3924,6 +5076,22 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Presentation pulse sink for micro-fauna reactions. Producers stay off the concrete boid owner.
+    /// </summary>
+    public interface IMicroFaunaPresentationPulseSink : ISystem
+    {
+        void RegisterLeviathanThreatPulse(Vector3 originWS, Vector3 directionWS, float radiusMeters, float durationSeconds);
+
+        void RegisterPredatorFearBurst(Vector3 originWS, Vector3 directionWS, float radiusMeters, float durationSeconds, float intensity01);
+
+        int RegisterPredatorConsumptionBurst(Vector3 predatorPositionWS, Vector3 biteCenterWS, float biteRangeMeters, uint predatorId, float currentTimeSeconds);
+
+        void RegisterVatHitReaction(Vector3 originWS, float radiusMeters, float intensity01);
+
+        void RegisterAcousticPanicBurst(Vector3 originWS, float radiusMeters, float durationSeconds, float intensity01, uint sourceId);
+    }
+
+    /// <summary>
     /// Allocation-free global biomass audit sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 24)]
@@ -4044,6 +5212,94 @@ namespace Hecton8.Core
         /// <param name="worldPosition">Runtime-space world position where the apex predator was killed.</param>
         /// <param name="hostilityDelta">Hostility increase applied before clamping.</param>
         void ReportApexPredatorKilled(Vector3 worldPosition, float hostilityDelta);
+
+        void RegisterApexPredatorKill(uint uniqueInstanceUid, Vector3 worldPosition, float hostilityDelta);
+
+        bool TryResolveCorpseDiseaseExposure(
+            in AbsoluteUniversePosition queryAup,
+            float currentTimeSeconds,
+            out float severity01,
+            out Vector3 sourcePosition);
+
+        bool TryResolveSpawnWeightMultiplier(
+            Hecton8.AI.CreatureArchetypeData archetype,
+            Vector3 worldPosition,
+            out float selectionMultiplier);
+
+        bool TryConsumeSpawnCredit(
+            Hecton8.AI.CreatureArchetypeData archetype,
+            bool isLargeThreat,
+            bool isPredator);
+
+        void RefundSpawnCredit(
+            Hecton8.AI.CreatureArchetypeData archetype,
+            bool isLargeThreat,
+            bool isPredator);
+
+        bool IsApexTombstoned(uint uniqueInstanceUid);
+
+        bool TryResolveNearestOrganicMass(Vector3 worldPosition, out Vector3 organicPosition);
+
+        bool TryConsumeOrganicMassAtPosition(Vector3 worldPosition, float searchRadius);
+
+        bool TryResolveMigrationTarget(int speciesId, Vector3 origin, out Vector3 target);
+
+        float ScavengerHungerThreshold { get; }
+
+        float ScavengerConsumeDistanceMeters { get; }
+
+        float ScavengerConsumeUnitsPerSecond { get; }
+
+        bool TryResolveCorpseScavengeTarget(
+            in AbsoluteUniversePosition queryAup,
+            out Vector3 corpsePosition,
+            out uint corpseNodeId);
+
+        bool TryConsumeCorpseScavengeTarget(uint corpseNodeId, float consumeUnits);
+
+        bool DoesSpeciesRespondToBait(int speciesId, bool isScavenger, bool isAggressive, bool isLeviathan);
+
+        float BaitFeedingDistanceMeters { get; }
+
+        bool IsHerbivoreSpecies(int speciesId);
+
+        float HerbivoreGrazeHungerThreshold { get; }
+
+        float HerbivoreGrazeSearchRadiusMeters { get; }
+
+        float HerbivoreConsumeDistanceMeters { get; }
+
+        bool TryResolveNearestThermalVentAttractor(
+            in AbsoluteUniversePosition queryAup,
+            float searchRadiusMeters,
+            out Vector3 target,
+            out float heat01);
+
+        bool TryResolveHerbivoreGrazeTarget(Vector3 worldPosition, out Vector3 floraPosition, out uint floraInstanceUid);
+
+        bool TryConsumeHerbivoreGrazeTarget(uint floraInstanceUid);
+
+        bool IsCleanerSpecies(int speciesId);
+
+        bool IsCleanerHostSpecies(int speciesId, bool isLeviathan);
+
+        float CleanerHostSearchRadiusMeters { get; }
+
+        float CleanerSymbiosisDistanceMeters { get; }
+
+        float CleanerFatigueReliefPerSecond { get; }
+
+        void PublishBiolumFlashBang(in AbsoluteUniversePosition flashAup, float currentTimeSeconds, float radiusMeters = 42f);
+
+        void RegisterCorpseResourceNode(
+            in AbsoluteUniversePosition positionAup,
+            int speciesId,
+            float capacityUnits,
+            uint contaminatedItemHash);
+
+        FaunaLogicalLodTier ResolveLogicalLodTier(
+            in AbsoluteUniversePosition observerAup,
+            in AbsoluteUniversePosition faunaAup);
 
         /// <summary>
         /// Opens or clears the eclipse predator migration window that suppresses shallow light aversion.

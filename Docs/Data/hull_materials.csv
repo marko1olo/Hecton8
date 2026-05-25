@@ -1,4 +1,4 @@
-# material,base_strength,buckling_start01,pressure_scale
+﻿# material,base_strength,buckling_start01,pressure_scale
 Glass,420,0.55,1.15
 Titanium,1220,0.72,1.0
 Plasteel,2100,0.82,0.85

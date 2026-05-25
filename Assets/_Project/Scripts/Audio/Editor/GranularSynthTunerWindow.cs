@@ -202,7 +202,7 @@ namespace Hecton8.Audio.Editor
                 return registeredRenderer;
 
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindAnyObjectByType<PlayerCriticalProceduralAudioRenderer>();
+            return UnityEngine.Object.FindAnyObjectByType<PlayerCriticalProceduralAudioRenderer>(FindObjectsInactive.Include);
 #else
             return UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
 #endif

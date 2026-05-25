@@ -1,4 +1,4 @@
-# SCATTER REFACTORING MANIFESTO v2.0
+﻿# SCATTER REFACTORING MANIFESTO v2.0
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -155,7 +155,7 @@ private SamplingSnapshot _samplingSnapshot;
 
 STATE MACHINE FLOW IN SlowTick():
 
-```
+```text
 ScatterState.Idle:
     Ã¢â€ â€™ Populate _cellSamplingInputs NativeArray
     Ã¢â€ â€™ Capture SamplingSnapshot (see Section 5)
@@ -484,7 +484,7 @@ caveProximity and seafloorHeight to determine which vertical domain is being eva
 
 All new files are plain C# (no MonoBehaviour). Director stays as single scene component.
 
-```
+```text
 WorldProceduralScatterDirector.cs   Ã¢â€ Â coordinator only, owns all [SerializeField]
 ScatterWorkingMemory.cs             Ã¢â€ Â IDisposable, owns NativeArrays and buffers
 FastCandidateMap.cs                 Ã¢â€ Â Linear probing hash map, zero-alloc
@@ -534,7 +534,7 @@ public struct CellSamplingJob : IJobParallelFor
 
 ### 13.1 INIT SEQUENCE (Awake / Start)
 
-```
+```text
 1. _memory = new ScatterWorkingMemory()
 2. _memory.Init(maxCells, maxCandidates * 2, maxPlacements)  // *2 for load factor
 3. _candidateMap initialized inside _memory.Init()
@@ -544,7 +544,7 @@ public struct CellSamplingJob : IJobParallelFor
 
 ### 13.2 DESTROY SEQUENCE (OnDestroy)
 
-```
+```text
 1. Recover native ownership through the current source-approved shutdown path.
 2. Dispose immediately only when no job can reference the memory; otherwise defer disposal through JobHandle-backed ownership.
 3. null out service references
@@ -596,7 +596,7 @@ Narrative AI uses this accessor. Do not change its signature or remove it.
 
 Implement in this exact sequence. Complete each step before starting the next.
 
-```
+```text
 STEP 1: FastCandidateMap
   - Implement struct with Init(), TryGet(), TrySet(), Contains(), Clear()
   - Fibonacci hash, linear probing, load factor guard
@@ -665,7 +665,7 @@ STEP 13: Final audit
 
 ## ANTI-PATTERNS Ã¢â‚¬â€ INSTANT REJECT LIST
 
-```
+```text
 Ã¢ÂÅ’ new List<T>() inside SlowTick or any tick method
 Ã¢ÂÅ’ .Where() .Select() .FirstOrDefault() anywhere in runtime code
 Ã¢ÂÅ’ Lambda in sort: array.Sort((a,b) => ...) Ã¢â‚¬â€ use IComparable<T>
@@ -681,4 +681,4 @@ STEP 13: Final audit
 Ã¢ÂÅ’ Any modification to StableRandom01 / ComputeStableHash / ComposeKey
 Ã¢ÂÅ’ Array.Resize() in FastCandidateMap after Init()
 Ã¢ÂÅ’ New [SerializeField] in any file except WorldProceduralScatterDirector.cs
-``
+```

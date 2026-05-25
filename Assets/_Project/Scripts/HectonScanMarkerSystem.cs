@@ -14,7 +14,7 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, IScanEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IScanEventListener, IGlobalRegistryHotSwapListener
     {
         private const string MarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int MaxMarkers = 64;
@@ -98,6 +98,7 @@ namespace Hecton8.Gameplay
         private int _cachedPixelHeight = -1;
         private bool _markerMaterialDirty = true;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _registeredHotSwapListener;
 
         public void Initialize(Shader shaderOverride)
@@ -122,18 +123,21 @@ namespace Hecton8.Gameplay
             TryRegisterHotSwapListener();
             ScanEvents.Register(this);
             RegisterTick();
+            RegisterLateFrameTick();
         }
 
         private void OnDisable()
         {
             ScanEvents.Unregister(this);
             UnregisterTick();
+            UnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             UnregisterTick();
+            UnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
 
             if (_runtimeMarkerMaterial != null)
@@ -158,7 +162,25 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
+            {
+                if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                {
+                    if (currentService == null)
+                    {
+                        _registered = false;
+                        _lateFrameRegistered = false;
+                    }
+                    else if (isActiveAndEnabled)
+                    {
+                        UnregisterTick();
+                        UnregisterLateFrameTick();
+                        RegisterTick();
+                        RegisterLateFrameTick();
+                    }
+                }
+
                 return;
+            }
 
             _cachedPlayerContext = currentService as IPlayerRuntimeContext;
             _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
@@ -170,6 +192,14 @@ namespace Hecton8.Gameplay
                 return;
 
             UpdateMarkerTimers(deltaTime);
+            if (_activeMarkerMask == 0UL)
+                return;
+
+            RegisterLateFrameTick();
+        }
+
+        public void LateFrameTick()
+        {
             if (_activeMarkerMask == 0UL)
                 return;
 
@@ -433,8 +463,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
@@ -444,6 +473,26 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private void RegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void UnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = false;
         }
 
         private void CachePlayerContextCold()
@@ -537,7 +586,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

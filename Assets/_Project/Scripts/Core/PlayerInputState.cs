@@ -5,6 +5,13 @@ using UnityEngine;
 
 namespace Hecton8.Core
 {
+    internal static class PlayerInputStateLayout
+    {
+        public const int DeterministicInputStrideBytes = 24;
+        public const int PlayerInputStrideBytes = 64;
+        public const int XrInputStrideBytes = 64;
+    }
+
     /// <summary>
     /// Action bits exposed through the frame-cached player input snapshot.
     /// </summary>
@@ -66,7 +73,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Bit-packed deterministic input sample consumed by simulation and replay.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerInputStateLayout.DeterministicInputStrideBytes)]
     public struct InputState
     {
         public const float AxisQuantizeScale = 32767.0f;
@@ -168,7 +175,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Zero-allocation player input snapshot captured once at the start of each frame.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerInputStateLayout.PlayerInputStrideBytes)]
     public struct PlayerInputState
     {
         /// <summary>
@@ -253,7 +260,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable OpenXR controller state captured once per dispatcher frame.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = PlayerInputStateLayout.XrInputStrideBytes)]
     internal struct XRInputState
     {
         /// <summary>Grip-pose rotation in runtime world space.</summary>

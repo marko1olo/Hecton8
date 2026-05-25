@@ -282,7 +282,10 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
 
             ReadOnlySpan<byte> source = bytes.AsSpan(0, count * stride);
             ReadOnlySpan<ArchitectEyeBlackBoxEntry> frames = MemoryMarshal.Cast<byte, ArchitectEyeBlackBoxEntry>(source);
-            _frames = frames.ToArray();
+            if (_frames == null || _frames.Length != frames.Length)
+                _frames = new ArchitectEyeBlackBoxEntry[frames.Length];
+
+            frames.CopyTo(_frames);
             _selectedFrame = math.clamp(_selectedFrame, 0, _frames.Length - 1);
             _loadedPath = path;
             RefreshWindow();

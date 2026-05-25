@@ -128,8 +128,7 @@ namespace Hecton8.Animation.FaunaProcedural
             float qualityCurve = ProceduralBoneMath.Smooth01(quality);
             int primaryCount = math.clamp(rig.PrimaryBoneCount, 1, boneCount);
             int secondaryCount = math.max(0, boneCount - primaryCount);
-            float secondaryGate = math.step(tuning.SecondaryBoneStart01, quality);
-            float secondaryCurve = secondaryGate * ProceduralBoneMath.SmoothRange01(quality, tuning.SecondaryBoneStart01, 1f);
+            float secondaryCurve = ProceduralBoneMath.SmoothRange01(quality, tuning.SecondaryBoneStart01, 1f);
             int activeBoneCount = math.clamp(primaryCount + (int)math.floor(secondaryCount * secondaryCurve + 0.0001f), 1, boneCount);
             uint flags = ProceduralBoneBlenderConstants.TelemetryFlagVisible;
             if (activeBoneCount < boneCount)
@@ -196,7 +195,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 float traumaAngle = ProceduralBoneMath.FastSin(traumaPhase + rig.StableSeed * 0.00017f) *
                                     tuning.TraumaAmplitudeRadians *
                                     trauma01;
-                rootRotation = math.mul(rootRotation, quaternion.AxisAngle(ProceduralBoneMath.Forward(), traumaAngle));
+                rootRotation = math.mul(rootRotation, ProceduralBoneMath.FastSmallAngleRotation(ProceduralBoneMath.Forward(), traumaAngle));
                 flags |= ProceduralBoneBlenderConstants.RigFlagTrauma;
             }
 
@@ -242,8 +241,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 int jawRelative = rig.JawBoneIndex;
                 if (jawRelative == relativeIndex && (rig.Flags & ProceduralBoneBlenderConstants.RigFlagHasJaw) != 0u)
                 {
-                    float jawGate = math.step(0.35f, quality);
-                    float jawWeight = math.saturate(tuning.JawIkWeight * jawGate * ProceduralBoneMath.SmoothRange01(quality, 0.35f, 1f));
+                    float jawWeight = math.saturate(tuning.JawIkWeight * ProceduralBoneMath.SmoothRange01(quality, 0.35f, 1f));
                     if (jawWeight > 0.0001f)
                     {
                         float3 target = ProceduralBoneMath.SanitizeFinite(input.JawTargetLocal, ProceduralBoneMath.Forward());
@@ -252,7 +250,7 @@ namespace Hecton8.Animation.FaunaProcedural
                         float3 direction = ProceduralBoneMath.NormalizeSafe(target - bindPosition, ProceduralBoneMath.Forward());
                         quaternion aim = quaternion.LookRotationSafe(direction, ProceduralBoneMath.Up());
                         float jawOpen = math.saturate(math.lerp(input.JawOpen01, mock.JawOpen01, mockBlend));
-                        quaternion open = quaternion.AxisAngle(ProceduralBoneMath.Right(), jawOpen * 0.38f * jawWeight);
+                        quaternion open = ProceduralBoneMath.FastSmallAngleRotation(ProceduralBoneMath.Right(), jawOpen * 0.38f * jawWeight);
                         localRotation = ProceduralBoneMath.FastNlerp(localRotation, math.mul(aim, open), jawWeight);
                         flags |= ProceduralBoneBlenderConstants.TelemetryFlagJawSolved;
                     }
@@ -496,6 +494,17 @@ namespace Hecton8.Animation.FaunaProcedural
             }
 
             return math.normalize(rotation);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion FastSmallAngleRotation(float3 axis, float radians)
+        {
+            float safeRadians = math.select(0f, radians, math.isfinite(radians));
+            float half = safeRadians * 0.5f;
+            float3 safeAxis = NormalizeSafe(axis, Forward());
+            quaternion rotation = default;
+            rotation.value = new float4(safeAxis * half, math.max(0f, 1f - (half * half * 0.5f)));
+            return SanitizeRotation(rotation);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

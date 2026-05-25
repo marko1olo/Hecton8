@@ -1,0 +1,108 @@
+﻿<SELF_AUDIT agent="SHINOBU_329" domain="PLAYER_RESPAWN_RECONCILIATION_RUNTIME" date="2026-05-23">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">Scanner and reports show zero Player/Core/Gameplay/Physiology/Combat player-death reload findings, with Core boot/watchdog authority explicitly excluded.</TASK>
+    <TASK id="02" status="PASS">Death producers pass player GameObject entity hash into PlayerRespawnSignal.PlayerHash; missing/nonfinite AUP is sanitized by PlayerDeathReconciliationBridge into an invalid-flagged fallback request, and no death-route bridge failure invokes PlayerDiedEvent, OnDeath, PublishPlayerDeath, Transform fallback, or component disable. Inventory penalty resolves DeathAUP from sanitized InventoryRespawnDeathAupSignal.Sequence sideband or same-frame PlayerRespawnSignal fallback matched by PlayerHash, removes SOA rows, publishes InventoryDeathLootCacheSignal into data-only loot cache with genetics/quality/state flags, restores the removed item if the initial cache signal is rejected, and refuses Transform/PersistentWorldRegistry fallback on mismatch.</TASK>
+    <TASK id="03" status="PASS">Respawn DTOs are explicit unmanaged fields; scoped scan found no hot DTO properties.</TASK>
+    <TASK id="04" status="PASS">MedicalBayDTO is exact 32-byte ARM64-safe explicit layout.</TASK>
+    <TASK id="05" status="PASS">GenerateMockLethalDamageJob injects synthetic PlayerFatalPressureSignal and PlayerRespawnSignal while repopulating dummy priority MedicalBayDTO rows.</TASK>
+    <TASK id="06" status="PASS">FindNearestMedicalBayJob performs Burst linear contiguous medbay selection; main-thread nearest resolver was removed.</TASK>
+    <TASK id="07" status="PASS">Player kinematic AUP sector/local and zero velocity are overwritten in the reset job.</TASK>
+    <TASK id="08" status="PASS">Dear Lie fade vector is primed to black in Vault before reset scheduling; VisualSync publishes shader black/chromatic/grain scalars, not a scene transition.</TASK>
+    <TASK id="09" status="PASS">Penalty rules are Vault CSV rows; ResetPlayerPhysiologyJob emits InventoryCommandSignal plus sanitized InventoryRespawnDeathAupSignal sideband, inventory emits AUP-anchored InventoryDeathLootCacheSignal rows plus actual dropped count through hash-matched InventoryRespawnPenaltyResultSignal; LootMagnetJob preserves sideband metadata, acquired data-only cache rows recover before inactive cleanup, saturation or zero writable capacity requeues the cache signal through TryPush, rejected requeues are telemetry-visible, and loot recovery restores identity through TryAddItemWithState.</TASK>
+    <TASK id="10" status="PASS">GlobalQualityWeight continuously scales fade rate, chromatic aberration, and grain only. Respawn/death-cache truth lanes keep low-tier frame limits equal to max frame limits so quality never drops gameplay truth.</TASK>
+    <TASK id="11" status="PASS">Respawn signal carries SuspendCollisionFrames=1; KCC consumes the one-frame fence.</TASK>
+    <TASK id="12" status="PASS">Distance math subtracts double3 AUP first and only then casts local delta to float3.</TASK>
+    <TASK id="13" status="PASS">State mutation is blittable Vault write plus SignalBus commit; player scene identity is not recreated, and low-tier SignalBus caps no longer reduce respawn/death-cache truth retention.</TASK>
+    <TASK id="14" status="PASS">Reset job explicitly writes hot rows; no blanket death-time buffer clearing was added.</TASK>
+    <TASK id="15" status="PASS">Telemetry ring records death/respawn AUP, cause, frame, microseconds, flags, packed actual drop count, and invalid death AUP dump flags.</TASK>
+    <TASK id="16" status="PASS">Editor tuner exposes FadeToBlackDuration, RespawnDelaySeconds, InventoryDropPercentage, latest telemetry, CSV reloads, mock lethal injection, and blackbox dump.</TASK>
+    <TASK id="17" status="PASS">medical_bay_profiles.csv cold parser hydrates active/powered/priority MedicalBayDTO rows from Vault scratch, with legacy respawn_medical_bays.csv fallback.</TASK>
+    <TASK id="18" status="PASS">Gizmo draws active powered medbays green, inactive/unpowered rows red, and last death-to-respawn route yellow.</TASK>
+    <TASK id="19" status="PASS">Scene_Reload_Scanner writes dedicated/shared physics report entries: 375 scoped files, 0 findings.</TASK>
+    <TASK id="20" status="PASS_STATIC_RUNTIME_COMPILE_BLOCKED_EXTERNAL">Self-audit and docs generated; guarded compile ran after CPU/compiler gate cleared and is blocked by external Airlock/Solar missing DTOs, with no SHINOBU_329 diagnostics displayed.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT name="MedicalBayDTO" size="32" alignment="8-byte fields first, 4-byte fields after">
+    <FIELD name="BayAUP" type="double3" offset="0" size="24"/>
+    <FIELD name="AssociatedBaseHash" type="uint" offset="24" size="4"/>
+    <FIELD name="Flags" type="uint" offset="28" size="4"/>
+    <PADDING bytes="0"/>
+    <MATH>24 + 4 + 4 = 32 bytes. 32 is a power-of-two cache-friendly row and multiple of 8/16/32; no Pack=1.</MATH>
+  </STRUCT_LAYOUT>
+  <STRUCT_LAYOUT name="InventoryRespawnPenaltyResultSignal" size="32" alignment="4-byte public fields, explicit 8-byte tail pad">
+    <FIELD name="InventoryHash" type="uint" offset="0" size="4"/>
+    <FIELD name="Frame" type="uint" offset="4" size="4"/>
+    <FIELD name="Sequence" type="uint" offset="8" size="4"/>
+    <FIELD name="DroppedCount" type="uint" offset="12" size="4"/>
+    <FIELD name="Flags" type="uint" offset="16" size="4"/>
+    <PADDING bytes="12"/>
+    <MATH>5 * 4 + 4 + 8 = 32 bytes. Public field offsets are guarded in ShinobuRespawnLayoutGuards; Core also validates signal size.</MATH>
+  </STRUCT_LAYOUT>
+  <STRUCT_LAYOUT name="InventoryRespawnDeathAupSignal" size="64" alignment="double3 first, scalar route fields after, explicit 16-byte tail pad">
+    <FIELD name="DeathAUP" type="double3" offset="0" size="24"/>
+    <FIELD name="InventoryHash" type="uint" offset="24" size="4"/>
+    <FIELD name="Frame" type="uint" offset="28" size="4"/>
+    <FIELD name="Sequence" type="uint" offset="32" size="4"/>
+    <FIELD name="Flags" type="uint" offset="36" size="4"/>
+    <FIELD name="SourceHash" type="uint" offset="40" size="4"/>
+    <PADDING bytes="20"/>
+    <MATH>24 + (5 * 4) + 20 = 64 bytes. Public field offsets are guarded in ShinobuRespawnLayoutGuards; Core also validates signal size and finite DeathAUP.</MATH>
+  </STRUCT_LAYOUT>
+  <STRUCT_LAYOUT name="InventoryDeathLootCacheSignal" size="128" alignment="48-byte AUP first, scalar fields after, explicit 64-byte tail half">
+    <FIELD name="PositionAup" type="AbsoluteUniversePosition" offset="0" size="48"/>
+    <FIELD name="GeneticsMask" type="ulong" offset="48" size="8"/>
+    <FIELD name="InventoryHash" type="uint" offset="56" size="4"/>
+    <FIELD name="ItemHash" type="uint" offset="60" size="4"/>
+    <FIELD name="Sequence" type="uint" offset="64" size="4"/>
+    <FIELD name="Frame" type="uint" offset="68" size="4"/>
+    <FIELD name="Quantity" type="ushort" offset="72" size="2"/>
+    <FIELD name="QualityMilli" type="ushort" offset="74" size="2"/>
+    <FIELD name="Flags" type="uint" offset="76" size="4"/>
+    <FIELD name="StateFlags" type="ushort" offset="80" size="2"/>
+    <PADDING bytes="46"/>
+    <MATH>48 + 8 + 4 + 4 + 4 + 4 + 2 + 2 + 4 + 2 + 46 = 128 bytes. Public field offsets are guarded in ShinobuRespawnLayoutGuards; Core also validates signal size.</MATH>
+  </STRUCT_LAYOUT>
+  <STRUCT_LAYOUT name="LootMagnetSignalEvent" size="128" alignment="metadata stored in existing explicit tail padding">
+    <FIELD name="PositionAup" type="AbsoluteUniversePosition" offset="0" size="48"/>
+    <FIELD name="Velocity" type="float3" offset="48" size="12"/>
+    <FIELD name="ItemHash" type="uint" offset="60" size="4"/>
+    <FIELD name="Quantity" type="uint" offset="64" size="4"/>
+    <FIELD name="DistanceSq" type="float" offset="68" size="4"/>
+    <FIELD name="Frame" type="uint" offset="72" size="4"/>
+    <FIELD name="Flags" type="uint" offset="76" size="4"/>
+    <FIELD name="GeneticsMask" type="ulong" offset="80" size="8"/>
+    <FIELD name="QualityMilli" type="ushort" offset="88" size="2"/>
+    <FIELD name="StateFlags" type="ushort" offset="90" size="2"/>
+    <PADDING bytes="36"/>
+    <MATH>48 + 12 + 4 + 4 + 4 + 4 + 4 + 8 + 2 + 2 + 36 = 128 bytes; no new Vault buffer and no managed sidecar identity store. `LootMagnetLayoutGuards.ValidateSignalEventLayout()` guards the offsets.</MATH>
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    GlobalQualityWeight is read once per schedule path and clamped to 0..1. Reset truth does not scale because authority cannot degrade; respawn and inventory death-cache lanes use max frame limits even at low quality.
+    Presentation cost scales continuously: fade rate lerps between high-quality and minimum-survival endpoints, chromatic aberration uses a smooth polynomial gate, and film grain lerps from cheap coverage to full visual noise pressure.
+    Under 0.3 the Dear Lie collapses to fast fade/grain scalar work; near 1.0 it feeds stronger shader detail without adding CPU scene work.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    Persistent respawn memory is owned by GlobalDataVault buffers 71604..71613.
+    Borrowed rows are physiology vitals, decompression, tissue compartments, physiology scalars, metabolism, gas physiology, and player kinematics.
+    No private persistent NativeArray or NativeList was added to the respawn runtime.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>
+    FindNearestMedicalBayJob consumes the dispatcher dependency and outputs nearestHandle.
+    ResetPlayerPhysiologyJob depends on nearestHandle and outputs resetHandle.
+    UpdateRespawnFadeJob depends on resetHandle and outputs fadeHandle to SystemDispatcher.
+    Job pointer fields are annotated NativeDisableUnsafePtrRestriction plus NoAlias; queue writers are WriteOnly/NoAlias.
+    No hidden same-frame Complete is added; completion remains post/visual sync fence.
+  </POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Initial CPU guard sampled 77 percent and VBCSCompiler.exe was active; first build was deferred.
+    One guarded build later failed in unrelated Hecton8.Core.csproj dependencies before SHINOBU_329 diagnostics; follow-up attempts were deferred at 100 percent CPU, 97 percent CPU, 86 percent CPU with active dotnet MSBuild workers, a post-wait pass where active dotnet workers plus repeat 100 percent CPU blocked build launch, an AOT-patch verification pass where CPU was 96 percent with active csc/dotnet processes, a runtime-polish pass where CPU was 100 percent with active dotnet/csc processes, and a final wait pass where compiler processes were gone but CPU sampled 70 percent then 100 percent.
+    InventoryRespawnDeathAupSignal, InventoryDeathLootCacheSignal, and InventoryRespawnPenaltyResultSignal are colocated in the existing GlobalSignals contract surface, registered in direct lane configure/flush/clear/dispatch lists, and included in SignalBusAotPreserve.PreserveGenerics, preserving Core SignalBus routing without generated-project include drift or IL2CPP closed-generic risk. Compile pass 9 was deferred because CPU sampled 54 percent and active VBCSCompiler.exe PID 24996 was present.
+    Compile pass 29 ran only after CPU sampled 14 percent and no compiler workers were active; it failed with 72 external diagnostics in SubmarineAutoLevelBallastController, VRSomaticProvider, CombatDamageRuntime_StatusEffects, SubmarineDynamicsRuntime, and TetherManager, with no displayed SHINOBU_329 respawn/player-inventory/death-bridge diagnostics.
+    Follow-up static passes 30..40 hardened co-op penalty-result matching by PlayerHash, sanitized corrupted request DeathAUP inside ResetPlayerPhysiologyJob, requeued saturated death-cache signals, recovered acquired DataOnlyDeathCache rows before inactive cleanup, removed runtime-origin Transform fallback from the death authority route, purged bridge-failure managed death events, changed missing-source AUP producers to send a non-finite sentinel so bridge-side InvalidDeathAup telemetry is guaranteed, and reran scoped diff/conflict/reload scans with no death-route reload findings.
+    Truth-lane hardening pass 44 set respawn/death-cache low-tier frame limits equal to max limits, changed the inventory sideband to the sanitized job DeathAUP, and restored inventory rows if the initial death-cache signal enqueue is rejected. Compile pass 46 ran under guard and failed externally in Airlock/Solar missing DTOs (`FluidCompartmentDTO`, `SolarConditionsDTO`) with no SHINOBU_329 diagnostics. Pass 48 then requeued death-cache signals on zero writable loot capacity and replaced fire-and-forget death-cache requeue Push calls with TryPush plus a rejection telemetry bit. Compile pass 50 reran under guard and failed on the same external `SolarConditionsDTO`/`FluidCompartmentDTO` wall with no SHINOBU_329 diagnostics.
+    Respawn runtime communicates through Core contracts, SignalBus, and Vault. No direct scene reload route was added.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    Before: death path could degrade into scene reload, player destroy/recreate, asset churn, late blackout masking, Transform-space fallback, PlayerDiedEvent/OnDeath event fanout, or managed world-drop registry/event churn.
+    After: O(1) shader scalar publish plus O(N medbay) Burst AUP-local scan, O(1) physiology row overwrite, sanitized fail-closed SignalBus request, and bounded data-only loot-cache signal writes. No CPU fluid/light/physics simulation, managed death event, managed scene transition, or managed item instantiation is used for the death screen/corpse-run fake.
+  </DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

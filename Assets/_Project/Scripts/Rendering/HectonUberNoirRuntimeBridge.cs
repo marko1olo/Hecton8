@@ -285,7 +285,7 @@ namespace Hecton8.Core
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<UberNoirShaderTelemetryEntry> acquired = vault.GetGenerationHandle<UberNoirShaderTelemetryEntry>(
+            VaultGenerationHandle<UberNoirShaderTelemetryEntry> acquired = vault.EnsureGenerationHandle<UberNoirShaderTelemetryEntry>(
                 BufferID.ShaderFeatureTelemetryRing,
                 TelemetryCapacity,
                 SystemID.GraphicsScalability,

@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Environment;
+using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -33,6 +34,7 @@ namespace Hecton8.Visor
         private const int MaterialParameterStateSizeBytes = 152;
         private const float ExposureStateDefaultMultiplier = 1f;
         private const float ThermalHazeMotionCullSpeedMetersPerSecondSq = 225f;
+        private const uint KccVelocityShaftMaxAgeFrames = 12u;
         private const float SurfaceNoirSuppressionDepth = 0.08f;
         private const float UnderwaterNoirFullDepth = 0.24f;
         private static readonly Color DefaultNoirLiftFloor = new Color(0.01f, 0.012f, 0.016f, 1f);
@@ -732,8 +734,8 @@ namespace Hecton8.Visor
                 if (playerMovement != null)
                     return ToFloat3(playerMovement.InterpolatedLinearVelocity);
 
-                return playerContext.PlayerRigidbody != null
-                    ? ToFloat3(playerContext.PlayerRigidbody.linearVelocity)
+                return PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityShaftMaxAgeFrames, out float3 velocity)
+                    ? velocity
                     : default;
             }
 
@@ -982,7 +984,7 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _compositeMaterial, shader);
             TryRegisterHotSwapListener();
             _cachedUnderwaterVisuals = GlobalRegistry.UnderwaterVisuals;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         /// <inheritdoc />

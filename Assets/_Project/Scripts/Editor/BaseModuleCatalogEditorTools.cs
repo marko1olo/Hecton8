@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -155,7 +156,13 @@ namespace Hecton8.Editor
 
                 Vector3 bounds = template.ProxyBoundsSize;
                 BaseModuleTemplate.SocketDefinition[] sockets = template.SocketDefinitions;
-                block.Add(new Label($"{template.name} | Hash {template.TemplateHashId} | Bounds {bounds.x:0.###},{bounds.y:0.###},{bounds.z:0.###} | Sockets {(sockets != null ? sockets.Length : 0)}"));
+                block.Add(new Label(
+                    template.name +
+                    " | Hash " + template.TemplateHashId +
+                    " | Bounds " + bounds.x.ToString("0.###", CultureInfo.InvariantCulture) +
+                    "," + bounds.y.ToString("0.###", CultureInfo.InvariantCulture) +
+                    "," + bounds.z.ToString("0.###", CultureInfo.InvariantCulture) +
+                    " | Sockets " + (sockets != null ? sockets.Length : 0)));
 
                 if (sockets != null)
                 {
@@ -163,7 +170,13 @@ namespace Hecton8.Editor
                     {
                         BaseModuleTemplate.SocketDefinition socket = sockets[s];
                         Vector3 p = socket.LocalPosition;
-                        block.Add(new Label($"  [{s}] {socket.Direction} offset=({p.x:0.###},{p.y:0.###},{p.z:0.###}) mask=0x{BaseModuleCatalogRuntime.ComputeCompatibilityMask(socket.CompatibleType):X8}"));
+                        block.Add(new Label(
+                            "  [" + s +
+                            "] " + socket.Direction +
+                            " offset=(" + p.x.ToString("0.###", CultureInfo.InvariantCulture) +
+                            "," + p.y.ToString("0.###", CultureInfo.InvariantCulture) +
+                            "," + p.z.ToString("0.###", CultureInfo.InvariantCulture) +
+                            ") mask=0x" + BaseModuleCatalogRuntime.ComputeCompatibilityMask(socket.CompatibleType).ToString("X8")));
                     }
                 }
 

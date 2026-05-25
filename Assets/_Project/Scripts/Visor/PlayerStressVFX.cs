@@ -12,7 +12,7 @@ namespace Hecton8.Visor
     /// Applies critical-state pulse feedback through shader globals and heartbeat cues.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerStressVFX : MonoBehaviour, ITickable, IPlayerSignalEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PlayerStressVFX : MonoBehaviour, ITickable, ILateFrameTickable, IPlayerSignalEventListener, IGlobalRegistryHotSwapListener
     {
         [Header("── Audio ──────────────────")]
         [Tooltip("Helmet heartbeat cue played while the player approaches death.")]
@@ -81,6 +81,7 @@ namespace Hecton8.Visor
         private static readonly int HectonHudFogFrostId = Shader.PropertyToID("_HectonHudFogFrost");
 
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
@@ -105,6 +106,13 @@ namespace Hecton8.Visor
         private float _appliedHudStressChromaticAberration;
         private float _appliedHudStressVignette;
         private Vector4 _appliedHudFogFrost;
+        private float _pendingPlayerStress01;
+        private float _pendingHudStressChroma;
+        private float _pendingShaderVignette;
+        private Vector4 _pendingFogFrost;
+        private float _pendingHeartbeatStress01;
+        private bool _stressGlobalsDirty;
+        private bool _heartbeatDirty;
 
         private const float ShaderUniformEpsilon = 0.0005f;
 
@@ -200,7 +208,7 @@ namespace Hecton8.Visor
                 _pulsePhase = 0f;
                 _heartbeatTimer = heartbeatIntervalMaxSeconds;
                 ApplyDebugPulseState(stress01, 0f);
-                ApplyStressPulse(0f, 0f, fog01, frost01);
+                QueueStressPulse(0f, 0f, fog01, frost01);
                 return;
             }
 
@@ -218,12 +226,33 @@ namespace Hecton8.Visor
             _heartbeatTimer -= deltaTime;
             if (_heartbeatTimer <= 0f)
             {
-                PlayHeartbeat(audioStress01);
+                _pendingHeartbeatStress01 = audioStress01;
+                _heartbeatDirty = true;
                 _heartbeatTimer = heartbeatInterval;
             }
 
             ApplyDebugPulseState(stress01, beat01);
-            ApplyStressPulse(stress01, beat01, fog01, frost01);
+            QueueStressPulse(stress01, beat01, fog01, frost01);
+        }
+
+        public void LateFrameTick()
+        {
+            if (_heartbeatDirty)
+            {
+                _heartbeatDirty = false;
+                PlayHeartbeat(_pendingHeartbeatStress01);
+            }
+
+            if (!_stressGlobalsDirty)
+                return;
+
+            _stressGlobalsDirty = false;
+            ApplyStressGlobals(
+                _pendingPlayerStress01,
+                _pendingHudStressChroma,
+                _pendingShaderVignette,
+                _pendingFogFrost,
+                force: false);
         }
 
         private static float EvaluateCheapHeartbeatPulse01(float phaseRadians)
@@ -317,20 +346,28 @@ namespace Hecton8.Visor
 
         private void TryRegisterTickHandler()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickHandler()
         {
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -352,13 +389,13 @@ namespace Hecton8.Visor
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private float ResolveStress01()
         {
-            if (GlobalSignals.TryGetLatestPlayerStressSignal(out PlayerStressSignal stressSignal, out int sequence) &&
+            if (SignalBus<PlayerStressSignal>.TryGetLatest(out PlayerStressSignal stressSignal, out int sequence) &&
                 sequence != _lastPlayerStressSignalSequence)
             {
                 _lastPlayerStressSignalSequence = sequence;
@@ -379,24 +416,22 @@ namespace Hecton8.Visor
             return stress01;
         }
 
-        private void ApplyStressPulse(float stress01, float beat01, float fog01, float frost01)
+        private void QueueStressPulse(float stress01, float beat01, float fog01, float frost01)
         {
             float playerStress01 = SanitizeUnit(stress01);
             float safeBeat01 = SanitizeUnit(beat01);
             float safeFog01 = SanitizeUnit(fog01);
             float safeFrost01 = SanitizeUnit(frost01);
             float pulse = playerStress01 * (0.35f + safeBeat01 * 0.65f);
-            float hudStressChroma = math.saturate(playerStress01 + safeFog01 * 0.18f);
-            float shaderVignette = math.saturate((pulse + safeFrost01 * 0.58f + safeFog01 * 0.18f) * SanitizeUnit(shaderVignetteMaximum));
-            float shaderFog = math.saturate(safeFog01 * SanitizeUnit(shaderFogCondensationMaximum));
-            float shaderFrost = math.saturate(safeFrost01 * SanitizeUnit(shaderFrostMaximum));
-            Vector4 fogFrost;
-            fogFrost.x = shaderFog;
-            fogFrost.y = shaderFrost;
-            fogFrost.z = safeFog01;
-            fogFrost.w = safeFrost01;
-
-            ApplyStressGlobals(playerStress01, hudStressChroma, shaderVignette, fogFrost, force: false);
+            _pendingPlayerStress01 = playerStress01;
+            _pendingHudStressChroma = math.saturate(playerStress01 + safeFog01 * 0.18f);
+            _pendingShaderVignette = math.saturate((pulse + safeFrost01 * 0.58f + safeFog01 * 0.18f) * SanitizeUnit(shaderVignetteMaximum));
+            _pendingFogFrost = new Vector4(
+                math.saturate(safeFog01 * SanitizeUnit(shaderFogCondensationMaximum)),
+                math.saturate(safeFrost01 * SanitizeUnit(shaderFrostMaximum)),
+                safeFog01,
+                safeFrost01);
+            _stressGlobalsDirty = true;
         }
 
         private void ResetRuntimeEffects()

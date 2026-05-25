@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Shader Compass Ribbon")]
-    public sealed class ShaderCompassRibbon : MonoBehaviour, ILateFrameTickable
+    public sealed class ShaderCompassRibbon : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string RootName = "ShaderCompassRibbon";
         private const float RootWidth = 420f;
@@ -32,11 +32,13 @@ namespace Hecton8.UI
         private IInertialNavigationService _navigation;
         private float _lastOffset = -1f;
         private float _lastRootAlpha = -1f;
+        private bool _hotSwapListenerRegistered;
 
         private void OnEnable()
         {
             EnsureUiBuilt(allowCreate: true);
             ResolveNavigationService();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -44,22 +46,52 @@ namespace Hecton8.UI
         {
             EnsureUiBuilt(allowCreate: true);
             ResolveNavigationService();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ApplyRootAlpha(0f);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             if (_runtimeMaterial != null)
             {
                 Destroy(_runtimeMaterial);
                 _runtimeMaterial = null;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.InertialNavigationRuntime)
+            {
+                _navigation = currentService as IInertialNavigationService;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registered = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregister();
+                TryRegister();
             }
         }
 
@@ -178,6 +210,23 @@ namespace Hecton8.UI
                 return;
 
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void TryUnregister()

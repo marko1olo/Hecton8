@@ -116,8 +116,9 @@ namespace Hecton8.Tools
             if (compatibleCategories == null || compatibleCategories.Length == 0)
                 return true; // universalnoe uluchshenie
 
-            foreach (ToolCategory cat in compatibleCategories)
+            for (int i = 0; i < compatibleCategories.Length; i++)
             {
+                ToolCategory cat = compatibleCategories[i];
                 if (tool.category == cat)
                     return true;
             }

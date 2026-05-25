@@ -54,6 +54,7 @@
 //   • GameTickManager.Register/Unregister — zero GC (buffered list ops).
 // ============================================================================
 
+using System.Collections.Generic;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -61,7 +62,7 @@ using UnityEngine;
 namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
-    public sealed class InteractionHighlighter : MonoBehaviour, ITickable, IUpdatable
+    public sealed class InteractionHighlighter : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  SETTINGS
@@ -97,6 +98,7 @@ namespace Hecton8.Interaction
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
         private static readonly int _BaseColorID     = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorID         = Shader.PropertyToID("_Color");
+        private static readonly List<Renderer> _RendererScratch = new List<Renderer>(16);
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
@@ -133,6 +135,10 @@ namespace Hecton8.Interaction
         private bool _isTicking;
 
         private bool _tickDormant;
+        private bool _lateFrameRegistered;
+        private bool _pendingVisualApply;
+        private Color _pendingVisualValue;
+        private bool _hotSwapRegistered;
 
         /// <summary>
         /// Kesh originalnyh tsvetov rendererov (dlya BaseColorTint mode).
@@ -151,7 +157,7 @@ namespace Hecton8.Interaction
 
             // ── Avto-zapolnenie rendererov ──
             if (targetRenderers == null || targetRenderers.Length == 0)
-                targetRenderers = GetComponentsInChildren<Renderer>();
+                AutoCollectRenderers();
 
             // ── Kesh originalnyh tsvetov (dlya BaseColorTint) ──
             if (highlightMode == Mode.BaseColorTint)
@@ -165,6 +171,14 @@ namespace Hecton8.Interaction
             _highlighted   = false;
             _isTicking     = false;
             _tickDormant   = false;
+        }
+
+        private void AutoCollectRenderers()
+        {
+            _RendererScratch.Clear();
+            GetComponentsInChildren<Renderer>(false, _RendererScratch);
+            targetRenderers = _RendererScratch.ToArray();
+            _RendererScratch.Clear();
         }
 
         /// <summary>
@@ -181,6 +195,7 @@ namespace Hecton8.Interaction
         {
             // ── Otpiska ot GameTickManager ──
             StopTicking();
+            StopLateFrameTicking();
 
             if (targetRenderers == null || targetRenderers.Length == 0)
                 return;
@@ -222,7 +237,7 @@ namespace Hecton8.Interaction
             if (fadeDuration <= 0f)
             {
                 // ── Mgnovennyy perehod ──
-                ApplyImmediate(target);
+                QueueVisualApply(target);
                 _currentValue  = target;
                 _fadeToColor   = target;
                 _lerpProgress  = 1f;
@@ -273,7 +288,7 @@ namespace Hecton8.Interaction
                 // ── Fade zavershen ──
                 _lerpProgress = 1f;
                 _currentValue = _fadeToColor;
-                ApplyImmediate(_currentValue);
+                QueueVisualApply(_currentValue);
 
                 // Hot Tick only parks. Physical unregister stays in lifecycle/non-Tick paths.
                 _tickDormant = true;
@@ -282,7 +297,7 @@ namespace Hecton8.Interaction
             {
                 // ── Interpolyatsiya v protsesse ──
                 _currentValue = LerpColor(_fadeFromColor, _fadeToColor, _lerpProgress);
-                ApplyImmediate(_currentValue);
+                QueueVisualApply(_currentValue);
             }
         }
 
@@ -335,7 +350,10 @@ namespace Hecton8.Interaction
 
             _isTicking = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (_isTicking)
+            {
                 _tickDormant = false;
+                TryRegisterHotSwapListener();
+            }
         }
 
         /// <summary>
@@ -350,6 +368,98 @@ namespace Hecton8.Interaction
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _isTicking = false;
             _tickDormant = false;
+            TryUnregisterHotSwapListenerIfIdle();
+        }
+
+        public void LateFrameTick()
+        {
+            if (_pendingVisualApply)
+            {
+                _pendingVisualApply = false;
+                ApplyImmediate(_pendingVisualValue);
+            }
+
+            StopLateFrameTicking();
+        }
+
+        private void QueueVisualApply(Color value)
+        {
+            _pendingVisualValue = value;
+            _pendingVisualApply = true;
+            StartLateFrameTicking();
+        }
+
+        private void StartLateFrameTicking()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (_lateFrameRegistered)
+                TryRegisterHotSwapListener();
+        }
+
+        private void StopLateFrameTicking()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = false;
+            TryUnregisterHotSwapListenerIfIdle();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            bool wasTicking = _isTicking;
+            bool hadLateFrame = _lateFrameRegistered;
+            if (currentService == null)
+                return;
+
+            if (wasTicking)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _isTicking = false;
+            }
+
+            if (hadLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                if (wasTicking)
+                    StartTicking();
+                if (hadLateFrame)
+                    StartLateFrameTicking();
+            }
+
+            TryUnregisterHotSwapListenerIfIdle();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListenerIfIdle()
+        {
+            if (!_hotSwapRegistered || _isTicking || _lateFrameRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

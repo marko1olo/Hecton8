@@ -137,7 +137,7 @@ namespace Hecton8.World
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[WorldLODSceneBootstrap] Registered {_trackedLODGroups.Count} LODGroup components for scene '{currentScene.name}'.");
+            Hecton8.Core.H8Debug.Log($"[WorldLODSceneBootstrap] Registered {_trackedLODGroups.Count} LODGroup components for scene '{currentScene.name}'.");
 #endif
         }
 

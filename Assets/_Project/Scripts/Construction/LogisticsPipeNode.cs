@@ -18,7 +18,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Logistics Pipe Node")]
-    public sealed class LogisticsPipeNode : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent
+    public sealed class LogisticsPipeNode : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent, IGlobalRegistryHotSwapListener
     {
         private const float SlowTickDeltaTime = 0.5f;
         private const float PositionRefreshEpsilonSqr = 0.0004f;
@@ -94,6 +94,7 @@ namespace Hecton8.Construction
         private Transform _cachedSourceTransform;
         private Transform _cachedDestinationTransform;
         private bool _registered;
+        private bool _registeredHotSwap;
         private bool _despawning;
         private bool _hasPower = true;
         private float _exportTimer;
@@ -110,6 +111,8 @@ namespace Hecton8.Construction
         private Vector3 _lastDestinationPosition;
         private int _cachedRoomIndex = -1;
         private byte _payloadIntegrity = MaxPayloadIntegrity;
+        private IFluidDecalPresentationSink _fluidDecals;
+        private PersistentWorldRegistry _persistentWorldRegistry;
 
         public float PowerRating => _inFlightItem != null ? -activePowerDraw : 0f;
         public int PowerPriority => powerPriority;
@@ -130,6 +133,7 @@ namespace Hecton8.Construction
             _powerNode = GetComponent<PowerNode>();
             _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
             _pipeLinkId = unchecked((int)EntityId.ToULong(GetEntityId()));
+            CacheRegistryServicesCold();
             RefreshEndpointCache(true);
         }
 
@@ -138,6 +142,8 @@ namespace Hecton8.Construction
             if (_atmosphereSystem == null)
                 _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
 
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
             RefreshEndpointCache(true);
             RefreshCableVisuals(true);
@@ -149,6 +155,7 @@ namespace Hecton8.Construction
                 ResolveInFlightLossToWorldOrRollback(_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
 
             _despawning = false;
+            TryUnregisterHotSwapListener();
             TryUnregister();
             ClearCableVisuals();
         }
@@ -156,6 +163,7 @@ namespace Hecton8.Construction
         private void OnDestroy()
         {
             ResolveInFlightLossToWorldOrRollback(_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
+            TryUnregisterHotSwapListener();
             TryUnregister();
             ClearCableVisuals();
         }
@@ -179,6 +187,8 @@ namespace Hecton8.Construction
                 _powerNode.SetRuptured(false);
                 _powerNode.SetShortCircuited(false);
             }
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
             RefreshEndpointCache(true);
             RefreshCableVisuals(true);
@@ -204,8 +214,35 @@ namespace Hecton8.Construction
                 _powerNode.SetRuptured(false);
                 _powerNode.SetShortCircuited(false);
             }
+            TryUnregisterHotSwapListener();
             TryUnregister();
             ClearCableVisuals();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                        return;
+
+                    TryUnregister();
+                    TryRegister();
+                    break;
+                case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
+                    _fluidDecals = currentService as IFluidDecalPresentationSink;
+                    break;
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+            }
         }
 
         public void SlowTick()
@@ -285,12 +322,11 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            if (!GlobalRegistry.SlowTickables.Contains(this))
+            if (!GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment))
                 return;
 
             LogisticsPipeTransportScheduler.Register(this);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = true;
         }
 
         private void TryUnregister()
@@ -298,11 +334,33 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            if (GlobalRegistry.SlowTickables.Contains(this))
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             LogisticsPipeTransportScheduler.Unregister(this);
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _fluidDecals = GlobalRegistry.FluidDecalPresentation;
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
         }
 
         private void TryStageTransfer()
@@ -613,7 +671,7 @@ namespace Hecton8.Construction
                 Flags = 1,
                 RoomIndex = (short)math.clamp(_cachedRoomIndex, short.MinValue, short.MaxValue)
             };
-            GlobalSignals.Publish(in ruptureSignal);
+            SignalBus<PipeRuptureSignal>.TryPush(in ruptureSignal);
 
             ImpactSignal impactSignal = new ImpactSignal
             {
@@ -624,7 +682,7 @@ namespace Hecton8.Construction
                 WeightClass = 1,
                 Flags = 1
             };
-            GlobalSignals.Publish(in impactSignal);
+            SignalBus<ImpactSignal>.TryPush(in impactSignal);
         }
 
         internal void TriggerExternalRupture()
@@ -665,7 +723,7 @@ namespace Hecton8.Construction
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -677,7 +735,7 @@ namespace Hecton8.Construction
 
         internal void RegisterEmergencyVentVisual(float normalizedIntensity)
         {
-            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            IFluidDecalPresentationSink fluidDecals = _fluidDecals;
             if (fluidDecals == null)
                 return;
 
@@ -698,7 +756,7 @@ namespace Hecton8.Construction
             if (_inFlightItem == null)
                 return false;
 
-            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry persistentWorldRegistry = _persistentWorldRegistry;
             if (persistentWorldRegistry == null)
                 return false;
 

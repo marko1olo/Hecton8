@@ -86,7 +86,11 @@ namespace Hecton8.UI.Navigation
 
         public static void ConfigureOwnedLanes()
         {
-            SignalBus<AnomalyProximitySignal>.Configure(8, 16, 4, CompassAnomalyLaneHash);
+            SignalBus<AnomalyProximitySignal>.Configure(
+                AnomalyProximitySignal.ExpectedCapacity,
+                AnomalyProximitySignal.MaxFrameSignals,
+                AnomalyProximitySignal.LowTierFrameSignals,
+                AnomalyProximitySignal.LaneHash);
             SignalBus<AnomalyProximitySignal>.EnsureInitialized();
             SignalBus<CompassCalibratedSignal>.Configure(4, 8, 2, CompassCalibrationLaneHash);
             SignalBus<CompassCalibratedSignal>.EnsureInitialized();
@@ -107,7 +111,7 @@ namespace Hecton8.UI.Navigation
                 CalibrationQuality01 = SanitizeUnit01(quality01),
                 Flags = 1
             };
-            SignalBus<CompassCalibratedSignal>.Push(in signal);
+            SignalBus<CompassCalibratedSignal>.TryPush(in signal);
         }
 
         /// <summary>
@@ -130,7 +134,7 @@ namespace Hecton8.UI.Navigation
                 Frame = frame,
                 Flags = 1
             };
-            SignalBus<AnomalyProximitySignal>.Push(in signal);
+            SignalBus<AnomalyProximitySignal>.TryPush(in signal);
         }
 
         private static AbsoluteUniversePosition SanitizeAup(in AbsoluteUniversePosition sourceAup)
@@ -154,7 +158,7 @@ namespace Hecton8.UI.Navigation
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Navigation/Diegetic Gyro Compass Runtime")]
-    public sealed class DiegeticGyroCompassRuntime : MonoBehaviour, IInertialNavigationService, IFastTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class DiegeticGyroCompassRuntime : MonoBehaviour, IInertialNavigationService, IFastTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int StateLength = 1;
         private const int BlackBoxCapacity = 300;
@@ -167,6 +171,10 @@ namespace Hecton8.UI.Navigation
         private const float HeadingEpsilon = 0.001f;
         private const float ChromaticEpsilon = 0.001f;
         private const float VelocityClampMetersPerSecond = 100000f;
+        private const float DegreesToRadians = 0.01745329252f;
+        private const float TwoPi = 6.28318530718f;
+        private const float HalfPi = 1.57079632679f;
+        private const float Pi = 3.14159265359f;
         private const int MaxAnomalyParticleBurst = 128;
         private const int DialMatrixStrideBytes = 64;
         private const float DialPositionUploadEpsilon = 0.000001f;
@@ -250,9 +258,9 @@ namespace Hecton8.UI.Navigation
         private bool _registeredLateFrame;
         private bool _registeredService;
         private bool _hotSwapListenerRegistered;
-        private bool _scalabilityListenerRegistered;
         private bool _diegeticTextValid = true;
         private bool _blackBoxDumped;
+        private bool _indirectBuffersDirty;
         private float _qualityWeight01 = 1f;
         private float _visualOverkillWeight01 = 1f;
         private float _fastCadenceAccumulatedDelta;
@@ -296,7 +304,6 @@ namespace Hecton8.UI.Navigation
         {
             ConfigureSignalLanes();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             TryRegisterService();
             TryRegisterTickables();
         }
@@ -315,7 +322,6 @@ namespace Hecton8.UI.Navigation
             CompletePendingJob(forceComplete: true);
             TryUnregisterTickables();
             TryUnregisterService();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             ClearCompassShaderGlobals();
         }
@@ -469,6 +475,9 @@ namespace Hecton8.UI.Navigation
         /// <inheritdoc />
         public void SlowTick()
         {
+            RefreshQualityPolicy();
+            _indirectBuffersDirty = true;
+
             if (_playerContext == null || _vault == null)
                 return;
 
@@ -485,6 +494,12 @@ namespace Hecton8.UI.Navigation
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            if (_indirectBuffersDirty)
+            {
+                _indirectBuffersDirty = false;
+                EnsureIndirectBuffers();
+            }
+
             CompletePendingJob(forceComplete: false);
             ApplyPresentation();
         }
@@ -503,7 +518,7 @@ namespace Hecton8.UI.Navigation
             RefreshQualityPolicy();
 
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             if (_vault == null)
                 _vault = GlobalRegistry.DataVault;
@@ -733,7 +748,7 @@ namespace Hecton8.UI.Navigation
             if (vault == null || requiredLength <= 0)
                 return default;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystem,
@@ -800,12 +815,6 @@ namespace Hecton8.UI.Navigation
             }
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshQualityPolicy();
-            EnsureIndirectBuffers();
-        }
-
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapListenerRegistered || !Application.isPlaying)
@@ -821,24 +830,6 @@ namespace Hecton8.UI.Navigation
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityListenerRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityListenerRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityListenerRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityListenerRegistered = false;
         }
 
         private void RefreshQualityPolicy()
@@ -1182,7 +1173,7 @@ namespace Hecton8.UI.Navigation
             if (dialPivot == null)
                 return false;
 
-            dialPivot.localRotation = Quaternion.AngleAxis(NormalizeHeading(safeHeading + dialDegreesOffset), Vector3.up);
+            dialPivot.localRotation = ApproximateRotationDegreesNoTrig(NormalizeHeading(safeHeading + dialDegreesOffset), Vector3.up);
             return true;
         }
 
@@ -1210,7 +1201,7 @@ namespace Hecton8.UI.Navigation
             Transform source = dialPivot != null ? dialPivot : (toolRoot != null ? toolRoot : transform);
             float resolvedHeading = NormalizeHeading(heading + dialDegreesOffset);
             Vector3 position = source.position;
-            Quaternion rotation = source.rotation * Quaternion.AngleAxis(resolvedHeading, Vector3.up);
+            Quaternion rotation = source.rotation * ApproximateRotationDegreesNoTrig(resolvedHeading, Vector3.up);
             Vector3 scale = source.lossyScale;
             bool stateDirty;
             GraphicsBuffer matrixBuffer = ResolveDialMatrixBuffer(position, rotation, scale, resolvedHeading, ref presentation, out stateDirty);
@@ -1604,7 +1595,7 @@ namespace Hecton8.UI.Navigation
         private static bool SupportsIndirectDial()
         {
             GraphicsDeviceType deviceType = SystemInfo.graphicsDeviceType;
-            if (deviceType == GraphicsDeviceType.OpenGLES2 || deviceType == GraphicsDeviceType.OpenGLES3)
+            if (deviceType == GraphicsDeviceType.OpenGLES3)
                 return false;
 
             return SystemInfo.supportsInstancing && SystemInfo.supportsComputeShaders;
@@ -1628,7 +1619,7 @@ namespace Hecton8.UI.Navigation
             if (!math.all(math.isfinite(forward)) || math.lengthsq(forward) < 0.0001f)
                 return NormalizeHeading(fallback);
 
-            float heading = math.degrees(math.atan2(forward.x, forward.z));
+            float heading = math.degrees(MathLodApproximation.ApproxAtan2Fast(forward.x, forward.z));
             return NormalizeHeading(heading);
         }
 
@@ -1681,6 +1672,48 @@ namespace Hecton8.UI.Navigation
 
             float normalized = math.fmod(heading, 360f);
             return normalized < 0f ? normalized + 360f : normalized;
+        }
+
+        private static Quaternion ApproximateRotationDegreesNoTrig(float angleDegrees, Vector3 normalizedAxis)
+        {
+            ApproximateSinCosFullNoTrig(angleDegrees * DegreesToRadians * 0.5f, out float sinHalf, out float cosHalf);
+            Quaternion rotation = new Quaternion(
+                normalizedAxis.x * sinHalf,
+                normalizedAxis.y * sinHalf,
+                normalizedAxis.z * sinHalf,
+                cosHalf);
+            return NormalizeQuaternionNoSqrt(rotation);
+        }
+
+        private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float cosSign = 1f;
+            if (x > HalfPi)
+            {
+                x = Pi - x;
+                cosSign = -1f;
+            }
+            else if (x < -HalfPi)
+            {
+                x = -Pi - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
+        private static Quaternion NormalizeQuaternionNoSqrt(Quaternion value)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            float lengthSq = math.lengthsq(q);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return Quaternion.identity;
+
+            q *= math.rsqrt(lengthSq);
+            return new Quaternion(q.x, q.y, q.z, q.w);
         }
 
         private static float SanitizeUnit01(float value)
@@ -1926,11 +1959,11 @@ namespace Hecton8.UI.Navigation
                 if ((flags & FlagReducedQualityNoise) != 0u)
                     return TriangleNoise(t);
 
-                float baseNoise = noise.cnoise(new float2(t, 17.371f));
+                float baseNoise = TriangleNoise(t + 0.371f);
                 if ((flags & FlagIndirectDial) == 0u)
                     return baseNoise;
 
-                return math.clamp(baseNoise + noise.cnoise(new float2(t * 2.07f, 43.113f)) * 0.35f, -1f, 1f);
+                return math.clamp(baseNoise + TriangleNoise(t * 2.07f + 0.113f) * 0.35f, -1f, 1f);
             }
 
             private static float TriangleNoise(float t)

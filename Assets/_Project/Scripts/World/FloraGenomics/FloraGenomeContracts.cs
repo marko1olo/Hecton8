@@ -446,10 +446,9 @@ namespace Hecton8.World
             byteCount = 0;
             try
             {
-                string[] files = Directory.GetFiles(root, pattern, SearchOption.AllDirectories);
-                for (int i = 0; i < files.Length; i++)
+                foreach (string file in Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories))
                 {
-                    if (TryReadFileIntoNative(files[i], destination, out byteCount))
+                    if (TryReadFileIntoNative(file, destination, out byteCount))
                         return true;
                 }
             }
@@ -472,10 +471,9 @@ namespace Hecton8.World
             filePath = string.Empty;
             try
             {
-                string[] files = Directory.GetFiles(root, pattern, SearchOption.AllDirectories);
-                if (files.Length > 0)
+                foreach (string file in Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories))
                 {
-                    filePath = files[0];
+                    filePath = file;
                     return true;
                 }
             }

@@ -27,8 +27,10 @@ namespace Hecton8.Editor
             if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
                 return result;
 
-            foreach (string path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
+            for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
             {
+                string path = files[fileIndex];
                 result.FilesScanned++;
                 string text = File.ReadAllText(path);
                 int graphicsBlit = CountOccurrences(text, "Graphics.Blit");

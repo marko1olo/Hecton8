@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_248" role="SHOCKWAVE_NAN_AUDITOR_AND_LINK" domain="Explosive shockwave physics / cavitation VFX integration" evidence="STATIC_SOURCE" date="2026-05-21" status="STATIC_PASS_EIGHTH_POLISH_COMPILE_BLOCKED_CPU_GATE">
+﻿<SELF_AUDIT agent="SHINOBU_248" role="SHOCKWAVE_NAN_AUDITOR_AND_LINK" domain="Explosive shockwave physics / cavitation VFX integration" evidence="STATIC_SOURCE" date="2026-05-21" status="STATIC_PASS_EIGHTH_POLISH_COMPILE_BLOCKED_CPU_GATE">
   <PROMPT source="Docs/Tasks/CURRENT_BATCH.md" taskCount="20" extractedByCli="true" extraction="attribute-aware tag regex" />
   <TASK_RECONCILIATION>
     <TASK id="01" name="NAN_PROPAGATION_INQUISITION" status="[PASS]">Division_By_Zero_Scanner scans Physics plus Gameplay/Combat; legacy Assets/_Project/Scripts/Combat is absent and recorded as missing root. Cavitation unsafe inverse-square hits are zero.</TASK>

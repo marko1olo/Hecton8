@@ -1,0 +1,11 @@
+﻿JOB_ID: WALL_LAYER_004
+ROLE: NORMAL_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS_LAYERED_WALL
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\LayeredWallSystem\WALL_LAYER_004_WallTrimHeight
+FINAL_TARGET_PATH: LOOKDEV_LAYER_SOURCE
+FINAL_FILENAME: LOOKDEV_WALL_LAYER_004_WallTrimHeight_NormalSource.png
+REFERENCES: approved base wall and conduit overlay if available
+
+PROMPT:
+Create a seamless grayscale heightfield source for a layered HECTON-8 abyssal habitat wall normal map. This is not albedo. Use broad mid-gray base wall fields, shallow raised titanium ribs, recessed gasket lanes, cable raceway lips, mounting rail grooves, screw wells, access hatch bevels, and pass-through collar relief. Avoid repeated bathroom-tile squares and random noise. Black only in real recessed seams and deep utility grooves; white only on raised ribs, rail lips, and collar edges; mid gray for calm wall planes. The relief must support a wall assembled from layers: base pressure skin plus service conduits plus separate instruments. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text, no labels, no logo, no watermark, no border.
+

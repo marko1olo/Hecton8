@@ -3,7 +3,6 @@ using System.Threading;
 using Hecton.UI.MainMenu;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
-using Hecton8.Input;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -410,7 +409,7 @@ namespace Hecton8.Tools
         private static bool IsSimulationPaused()
         {
             ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
-            return dispatcher != null ? dispatcher.SimulationPaused : GlobalSignals.SimulationPaused;
+            return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;
         }
 
         private bool IsMainMenuStateValid()
@@ -443,7 +442,7 @@ namespace Hecton8.Tools
 
         private bool IsPauseInputModeValid()
         {
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
             if (inputManager == null || !inputManager.CanSwitchActionMaps)
                 return false;
 
@@ -452,7 +451,7 @@ namespace Hecton8.Tools
 
         private bool IsGameplayInputModeValid()
         {
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
             if (inputManager == null || !inputManager.CanSwitchActionMaps)
                 return false;
 
@@ -466,7 +465,7 @@ namespace Hecton8.Tools
 
         private string ResolveExistingSaveSlot()
         {
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
             if (saveManager == null || _saveSlotProbeOrder == null)
                 return string.Empty;
 
@@ -517,7 +516,7 @@ namespace Hecton8.Tools
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_enableLogging)
-                Debug.Log($"[StateRecoveryVerifier] {message}");
+                Hecton8.Core.H8Debug.Log($"[StateRecoveryVerifier] {message}");
 #endif
         }
     }

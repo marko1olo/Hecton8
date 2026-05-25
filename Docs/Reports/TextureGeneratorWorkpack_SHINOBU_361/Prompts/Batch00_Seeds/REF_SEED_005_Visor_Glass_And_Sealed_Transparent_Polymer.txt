@@ -1,0 +1,10 @@
+﻿JOB_ID: REF_SEED_005
+ROLE: LOOKDEV_REFERENCE
+CATEGORY: SEED_REFERENCE
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch00_Seeds\REF_SEED_005
+FINAL_TARGET_PATH: LOOKDEV_ONLY_NOT_ASSET_TARGET
+FINAL_FILENAME: LOOKDEV_APPROVED_REF_SEED_005.png
+REFERENCES: project planet/cloud mood image if useful; no random primary refs
+
+PROMPT:
+Create a seamless albedo reference for pressure-rated transparent polymer and visor glass used in premium abyssal expedition equipment. Show a clean smoky-clear polymer surface with faint teal optical coating, very fine micro-scratches, tiny salt freckles near gasket contact areas, soft laminated edge bands, subtle pressure stress arcs, and delicate amber service alignment marks. Keep the base mostly transparent-looking through restrained milky gray-blue values, not black, not mirror chrome. It should feel like an expensive scientific viewport that has survived use but is still carefully maintained. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

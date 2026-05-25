@@ -30,6 +30,8 @@ namespace Hecton8.Guardian
     [DefaultExecutionOrder(-29000)] // Posle BootstrapController, no do ostalnogo
     public sealed class SceneGuard : MonoBehaviour
     {
+        private const string BootstrapSceneName = "00_BOOTSTRAP";
+
         [SerializeField] private bool _enforceBootstrap = true;
 
         private void Awake()
@@ -46,7 +48,7 @@ namespace Hecton8.Guardian
 
                 Debug.LogError(
                     $"[SceneGuard] Scene '{currentScene.name}' loaded WITHOUT bootstrap! " +
-                    $"This violates the architecture. Reloading 00_BOOTSTRAP...");
+                    $"This violates the architecture. Reloading {BootstrapSceneName}...");
 
                 // ── Perehod: 00_BOOTSTRAP → nuzhnaya stsena ──
                 string targetScene = currentScene.name;
@@ -61,7 +63,7 @@ namespace Hecton8.Guardian
             GameStartContextHolder.Reset();
 
             // ── Zagruzhaem bootstrap ──
-            SceneManager.LoadScene("00_BOOTSTRAP");
+            SceneManager.LoadScene(BootstrapSceneName);
 
             // Primechanie: Pravilnyy perehod (bootstrap → menu → world) budet
             // kogda user nazhimaet knopki v UI. Etot guard prosto vosstanavlivaet

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -58,7 +59,7 @@ namespace Hecton8.EditorTools
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllText(outputPath, text);
+            File.WriteAllText(outputPath, text, new UTF8Encoding(false));
         }
 
         private static string ResolveProjectPath(string relativePath)

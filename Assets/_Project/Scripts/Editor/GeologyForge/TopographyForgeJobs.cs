@@ -40,6 +40,29 @@ namespace Hecton8.Editor.GeologyForge
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ApproxPow01Curve(float value01, float exponent)
+        {
+            float x = math.saturate(math.select(0f, value01, math.isfinite(value01)));
+            float e = math.clamp(math.select(1f, exponent, math.isfinite(exponent)), 0.25f, 4f);
+            float sqrt1 = math.sqrt(x);
+            float sqrt2 = math.sqrt(sqrt1);
+            float x2 = x * x;
+            float x3 = x2 * x;
+            float x4 = x2 * x2;
+            float r025To05 = math.lerp(sqrt2, sqrt1, math.saturate((e - 0.25f) * 4f));
+            float r05To1 = math.lerp(sqrt1, x, math.saturate((e - 0.5f) * 2f));
+            float r1To2 = math.lerp(x, x2, math.saturate(e - 1f));
+            float r2To3 = math.lerp(x2, x3, math.saturate(e - 2f));
+            float r3To4 = math.lerp(x3, x4, math.saturate(e - 3f));
+            float result = r3To4;
+            result = math.select(result, r2To3, e < 3f);
+            result = math.select(result, r1To2, e < 2f);
+            result = math.select(result, r05To1, e < 1f);
+            result = math.select(result, r025To05, e < 0.5f);
+            return math.saturate(math.select(0f, result, math.isfinite(result)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double2 EvaluateDomainWarp(double2 aupXZ, DomainWarpParamsDTO parameters)
         {
             double frequency = math.max(0.0000001f, parameters.Frequency);
@@ -449,7 +472,7 @@ namespace Hecton8.Editor.GeologyForge
                 double distanceSq = DistanceSqToSegment(aup, rift.StartAupXZ, rift.EndAupXZ);
                 float invWidthSq = math.rcp(width * width);
                 float t = math.saturate(1f - ((float)distanceSq * invWidthSq));
-                float edge = math.pow(t, math.max(0.25f, rift.FalloffPower));
+                float edge = TopographyNoiseMath.ApproxPow01Curve(t, math.max(0.25f, rift.FalloffPower));
                 float sharpened = math.smoothstep(0f, 1f, edge);
                 float depth = math.max(0f, math.select(Config.RiftDepthMeters, rift.DepthMeters, rift.DepthMeters > 0f));
                 carve = math.max(carve, depth * sharpened);
@@ -516,7 +539,7 @@ namespace Hecton8.Editor.GeologyForge
                 double dSq = DistanceSqToSegment(aup, rift.StartAupXZ, rift.EndAupXZ);
                 float invWidthSq = math.rcp(width * width);
                 float t = math.saturate(1f - ((float)dSq * invWidthSq));
-                float edge = math.pow(t, math.max(0.25f, rift.FalloffPower));
+                float edge = TopographyNoiseMath.ApproxPow01Curve(t, math.max(0.25f, rift.FalloffPower));
                 float sharpened = math.smoothstep(0f, 1f, edge);
                 float depth = math.max(0f, math.select(Config.RiftDepthMeters, rift.DepthMeters, rift.DepthMeters > 0f));
                 carve = math.max(carve, depth * sharpened);

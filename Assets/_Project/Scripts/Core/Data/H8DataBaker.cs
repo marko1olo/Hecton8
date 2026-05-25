@@ -163,7 +163,7 @@ namespace Hecton8.Core.Data
             if (result.Success)
             {
                 AssetDatabase.Refresh();
-                Debug.Log("[H8DataBaker] Static data bake complete. Records=" + result.RecordCount.ToString(CultureInfo.InvariantCulture));
+                Hecton8.Core.H8Debug.Log("[H8DataBaker] Static data bake complete. Records=" + result.RecordCount.ToString(CultureInfo.InvariantCulture));
             }
             else
             {
@@ -520,7 +520,10 @@ namespace Hecton8.Core.Data
                 for (int i = 0; i < btreeNodes.Length; i++)
                     WriteStruct(basePtr + btreeOffset + (i * UnsafeUtility.SizeOf<BTreeNodeDTO>()), in btreeNodes[i]);
 
-                uint crc = H8Crc32.Compute(basePtr + BabelHeaderSizeBytes, totalBytes - BabelHeaderSizeBytes);
+                uint crc = H8Crc32.Compute(new ReadOnlySpan<byte>(
+                    bytes,
+                    BabelHeaderSizeBytes,
+                    totalBytes - BabelHeaderSizeBytes));
                 H8BabelDictionaryHeader header = new H8BabelDictionaryHeader
                 {
                     Magic = H8StaticDataFormat.BabelMagic,
@@ -613,7 +616,10 @@ namespace Hecton8.Core.Data
                     }
                 }
 
-                uint crc = H8Crc32.Compute(basePtr + HeaderSizeBytes, bytes.Length - HeaderSizeBytes);
+                uint crc = H8Crc32.Compute(new ReadOnlySpan<byte>(
+                    bytes,
+                    HeaderSizeBytes,
+                    bytes.Length - HeaderSizeBytes));
                 H8StaticDataHeader header = new H8StaticDataHeader
                 {
                     Magic = H8StaticDataFormat.StaticDataMagic,

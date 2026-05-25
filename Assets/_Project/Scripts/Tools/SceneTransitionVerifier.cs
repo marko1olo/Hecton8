@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Threading;
 using Hecton.UI.MainMenu;
 using Hecton8.Bootstrap;
@@ -91,7 +92,7 @@ namespace Hecton8.Tools
         {
             float loadTime = Time.unscaledTime - _sceneLoadStartTime;
             _isTransitioning = false;
-            LogVerification($"Scene loaded: {scene.name} (mode: {mode}, time: {loadTime:0.00}s)");
+            LogVerification("Scene loaded: " + scene.name + " (mode: " + mode + ", time: " + loadTime.ToString("0.00", CultureInfo.InvariantCulture) + "s)");
         }
 
         private void OnSceneUnloaded(Scene scene)
@@ -128,7 +129,7 @@ namespace Hecton8.Tools
 
                 if (_isTransitioning)
                 {
-                    LogVerification($"FAIL {transitionName} - transition timeout after {_transitionTimeout:0.00}s");
+                    LogVerification("FAIL " + transitionName + " - transition timeout after " + _transitionTimeout.ToString("0.00", CultureInfo.InvariantCulture) + "s");
                     return;
                 }
 
@@ -190,7 +191,7 @@ namespace Hecton8.Tools
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_enableLogging)
-                Debug.Log($"[SceneTransitionVerifier] {message}");
+                Hecton8.Core.H8Debug.Log($"[SceneTransitionVerifier] {message}");
 #endif
         }
     }

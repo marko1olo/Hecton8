@@ -14,15 +14,7 @@ namespace Hecton8.Gameplay
         private const float ThermalShockBoilingThresholdCelsius = 90f;
         private const float ThermalShockFreezingThresholdCelsius = -2f;
         private const float ThermalShockFullSeverityRangeCelsius = 40f;
-        private const float NitrogenAscentRiskDepthMeters = 400f;
-        private const float NitrogenAscentRiskMetersPerSecond = 5f;
         private const float NitrogenCriticalBuildUp = 100f;
-        private const float NitrogenBuildUpHardCap = 160f;
-        private const float NitrogenBuildUpPerExcessMeterSecond = 12f;
-        private const float NitrogenBuildUpDepthFullRangeMeters = 400f;
-        private const float NitrogenNarcosisFullRange = 50f;
-        private const float NitrogenStaminaPenaltyMultiplier = 0.8f;
-        private const float DecompressionVomitThreshold = 150f;
         private const float NutritionalToxicityDamageScale = 0.45f;
         private const float NutritionalToxicityRegenFloor = 0.35f;
         private const float SuitPunctureBleedDamageFraction = 0.30f;
@@ -101,29 +93,16 @@ namespace Hecton8.Gameplay
             float ascentOriginDepthMeters,
             float deltaTime)
         {
-            if (!math.isfinite(ascentMetersPerSecond) ||
-                !math.isfinite(ascentOriginDepthMeters) ||
-                !math.isfinite(deltaTime) ||
-                deltaTime <= 0f ||
-                ascentMetersPerSecond <= NitrogenAscentRiskMetersPerSecond ||
-                ascentOriginDepthMeters <= NitrogenAscentRiskDepthMeters)
-            {
-                return 0f;
-            }
-
-            float speedExcess = ascentMetersPerSecond - NitrogenAscentRiskMetersPerSecond;
-            float depthScale = math.saturate(
-                (ascentOriginDepthMeters - NitrogenAscentRiskDepthMeters) /
-                math.max(0.01f, NitrogenBuildUpDepthFullRangeMeters));
-            return speedExcess * depthScale * NitrogenBuildUpPerExcessMeterSecond * deltaTime;
+            _ = ascentMetersPerSecond;
+            _ = ascentOriginDepthMeters;
+            _ = deltaTime;
+            return 0f;
         }
 
         internal static float ResolveNitrogenNarcosis01(float nitrogenBuildUp)
         {
-            if (!math.isfinite(nitrogenBuildUp) || nitrogenBuildUp <= NitrogenCriticalBuildUp)
-                return 0f;
-
-            return math.saturate((nitrogenBuildUp - NitrogenCriticalBuildUp) / math.max(0.01f, NitrogenNarcosisFullRange));
+            _ = nitrogenBuildUp;
+            return 0f;
         }
 
         internal static float ResolveNitrogenTissueLoad(
@@ -132,10 +111,11 @@ namespace Hecton8.Gameplay
             float deltaTime,
             float absorptionRate)
         {
+            _ = ambientPressure;
+            _ = deltaTime;
+            _ = absorptionRate;
             float safeCurrent = math.select(1f, currentLoad, math.isfinite(currentLoad) && currentLoad > 0f);
-            float safeAmbient = math.select(1f, ambientPressure, math.isfinite(ambientPressure) && ambientPressure > 0f);
-            float alpha = math.saturate(math.max(0f, deltaTime) * math.max(0f, absorptionRate));
-            return math.lerp(safeCurrent, safeAmbient, alpha);
+            return math.max(0f, safeCurrent);
         }
 
         internal static float ResolvePressureNarcosis01(
@@ -143,15 +123,10 @@ namespace Hecton8.Gameplay
             float narcosisThreshold,
             float narcosisFullRange)
         {
-            if (!math.isfinite(ambientPressure) ||
-                !math.isfinite(narcosisThreshold) ||
-                ambientPressure <= narcosisThreshold)
-            {
-                return 0f;
-            }
-
-            float invFullRange = math.rcp(math.max(0.01f, narcosisFullRange));
-            return math.saturate((ambientPressure - narcosisThreshold) * invFullRange);
+            _ = ambientPressure;
+            _ = narcosisThreshold;
+            _ = narcosisFullRange;
+            return 0f;
         }
 
         internal static bool ShouldApplyBendsDamage(
@@ -160,27 +135,23 @@ namespace Hecton8.Gameplay
             float safeAscentRate,
             float nitrogenLoadThreshold)
         {
-            return math.isfinite(verticalSpeed) &&
-                   math.isfinite(nitrogenLoad) &&
-                   math.isfinite(safeAscentRate) &&
-                   math.isfinite(nitrogenLoadThreshold) &&
-                   verticalSpeed > safeAscentRate &&
-                   nitrogenLoad > nitrogenLoadThreshold;
+            _ = verticalSpeed;
+            _ = nitrogenLoad;
+            _ = safeAscentRate;
+            _ = nitrogenLoadThreshold;
+            return false;
         }
 
         internal static float ResolveNitrogenStaminaMultiplier(float nitrogenBuildUp)
         {
-            return nitrogenBuildUp > NitrogenCriticalBuildUp ? NitrogenStaminaPenaltyMultiplier : 1f;
+            _ = nitrogenBuildUp;
+            return 1f;
         }
 
         internal static float ResolveDecompressionVomitSeverity01(float nitrogenBuildUp)
         {
-            if (!math.isfinite(nitrogenBuildUp) || nitrogenBuildUp <= DecompressionVomitThreshold)
-                return 0f;
-
-            return math.saturate(
-                (nitrogenBuildUp - DecompressionVomitThreshold) /
-                math.max(0.01f, NitrogenBuildUpHardCap - DecompressionVomitThreshold));
+            _ = nitrogenBuildUp;
+            return 0f;
         }
 
         internal static float ResolveNutritionalToxicityDamagePerSecond(float severity01, float baseDamageRate)

@@ -2,6 +2,7 @@
     "name": "Hecton8.World.GeographySanity.Editor",
     "rootNamespace": "Hecton8.Editor.GeographySanity",
     "references": [
+        "Hecton8.Core",
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Jobs",

@@ -15,7 +15,7 @@ namespace Hecton8.AI.Pathfinding
     /// Persistent state lives in GlobalDataVault buffers; this component only caches generation-checked handles.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PathFunnelNavmeshRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed partial class PathFunnelNavmeshRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int DefaultActivePathCapacity = 128;
         private const int DefaultInvalidationCapacity = 64;
@@ -36,9 +36,11 @@ namespace Hecton8.AI.Pathfinding
         private VaultGenerationHandle<PathFunnelInvalidation> _invalidationsHandle;
         private VaultGenerationHandle<PathFunnelTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<PathFunnelRuntimeState> _runtimeStateHandle;
+        private VaultGenerationHandle<byte> _wfcGridHandle;
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
+        private bool _pathFunnelColdBootstrapped;
 
         /// <summary>Total WFC-driven path invalidations observed by this runtime.</summary>
         public uint PathInvalidationCount
@@ -59,25 +61,15 @@ namespace Hecton8.AI.Pathfinding
 
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
-            EnsureVaultBuffers();
-            _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            BootstrapPathFunnelCold();
+            BootstrapVoxelAStarCold();
+            TryRegisterDispatcherTicks();
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void OnDisable()
         {
-            if (_registeredFastTick)
-            {
-                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Environment);
-                _registeredFastTick = false;
-            }
-
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = false;
-            }
+            TryUnregisterDispatcherTicks();
 
             if (_registeredHotSwap)
             {
@@ -85,7 +77,10 @@ namespace Hecton8.AI.Pathfinding
                 _registeredHotSwap = false;
             }
 
+            ForceCompleteVoxelAStarJobsForTeardown();
+            ReleaseVoxelAStarVaultHandles(_dataVault);
             ReleaseVaultHandles(_dataVault);
+            ClearVoxelAStarVaultHandles();
             ClearVaultHandles();
             _dataVault = null;
         }
@@ -99,6 +94,7 @@ namespace Hecton8.AI.Pathfinding
                     out NativeArray<PathFunnelInvalidation> invalidations,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
             {
+                FastTickVoxelAStar(deltaTime);
                 return;
             }
 
@@ -120,6 +116,7 @@ namespace Hecton8.AI.Pathfinding
             }
 
             runtimeStateBuffer[0] = runtimeState;
+            FastTickVoxelAStar(deltaTime);
         }
 
         /// <inheritdoc />
@@ -129,6 +126,7 @@ namespace Hecton8.AI.Pathfinding
                     out NativeArray<PathFunnelTelemetryEntry> telemetry,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
             {
+                LateFrameTickVoxelAStar();
                 return;
             }
 
@@ -152,6 +150,8 @@ namespace Hecton8.AI.Pathfinding
                 PatchTelemetryFlags(telemetry, telemetryCursor, patchedTelemetryFlags);
                 runtimeStateBuffer[0] = runtimeState;
             }
+
+            LateFrameTickVoxelAStar();
         }
 
         /// <inheritdoc />
@@ -160,13 +160,50 @@ namespace Hecton8.AI.Pathfinding
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterDispatcherTicks();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ForceCompleteVoxelAStarJobsForTeardown();
+                    ReleaseVoxelAStarVaultHandles(_dataVault);
+                    ReleaseVaultHandles(_dataVault);
+                    _dataVault = currentService as IDataVault;
+                    ClearVoxelAStarVaultHandles();
+                    ClearVaultHandles();
+                    BootstrapPathFunnelCold();
+                    BootstrapVoxelAStarCold();
+                    break;
+            }
+        }
+
+        private void TryRegisterDispatcherTicks()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            ReleaseVaultHandles(_dataVault);
-            _dataVault = currentService as IDataVault;
-            ClearVaultHandles();
-            EnsureVaultBuffers();
+            if (!_registeredFastTick)
+                _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredFastTick)
+            {
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Environment);
+                _registeredFastTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
         }
 
         /// <summary>
@@ -373,6 +410,39 @@ namespace Hecton8.AI.Pathfinding
                        out _);
         }
 
+        private bool BootstrapPathFunnelCold()
+        {
+            if (!EnsureVaultBuffers())
+            {
+                _pathFunnelColdBootstrapped = false;
+                _wfcGridHandle = default;
+                return false;
+            }
+
+            _pathFunnelColdBootstrapped = true;
+            RefreshWfcGridHandleCold();
+            if (TryResolveVaultBuffer(in _runtimeStateHandle, 1, out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
+            {
+                InitializeRuntimeState(
+                    runtimeStateBuffer,
+                    PathFunnelConstants.TelemetryFrames,
+                    ResolveActivePathLengthForState(),
+                    ResolveInvalidationLengthForState());
+            }
+
+            return true;
+        }
+
+        private void RefreshWfcGridHandleCold()
+        {
+            _wfcGridHandle = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return;
+
+            vault.TryGetGenerationHandle<byte>(BufferID.WfcOutpostGrid, out _wfcGridHandle);
+        }
+
         private void ClearVaultHandles()
         {
             _activePathsHandle = default;
@@ -380,6 +450,8 @@ namespace Hecton8.AI.Pathfinding
             _invalidationsHandle = default;
             _telemetryHandle = default;
             _runtimeStateHandle = default;
+            _wfcGridHandle = default;
+            _pathFunnelColdBootstrapped = false;
         }
 
         private int ResolveActivePathCapacity()
@@ -425,6 +497,20 @@ namespace Hecton8.AI.Pathfinding
                    buffer.Length >= requiredLength;
         }
 
+        private bool TryReadVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
         private static bool EnsureVaultBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
@@ -444,7 +530,7 @@ namespace Hecton8.AI.Pathfinding
                 return true;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AIPathfinding,
@@ -493,7 +579,7 @@ namespace Hecton8.AI.Pathfinding
             invalidations = default;
             runtimeStateBuffer = default;
 
-            if (!EnsureVaultBuffers())
+            if (!_pathFunnelColdBootstrapped)
                 return false;
 
             if (!TryResolveVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out activePaths) ||
@@ -522,7 +608,7 @@ namespace Hecton8.AI.Pathfinding
             activePathCellMasks = default;
             runtimeStateBuffer = default;
 
-            if (!EnsureVaultBuffers())
+            if (!_pathFunnelColdBootstrapped)
                 return false;
 
             if (!TryResolveVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out activePaths) ||
@@ -543,13 +629,13 @@ namespace Hecton8.AI.Pathfinding
         private bool TryReadRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
         {
             runtimeStateBuffer = default;
-            return TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer);
+            return TryReadVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer);
         }
 
         private bool EnsureRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
         {
             runtimeStateBuffer = default;
-            if (!EnsureVaultBuffers())
+            if (!_pathFunnelColdBootstrapped)
                 return false;
 
             if (!TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer))
@@ -565,7 +651,7 @@ namespace Hecton8.AI.Pathfinding
         {
             telemetry = default;
             runtimeStateBuffer = default;
-            if (!EnsureVaultBuffers())
+            if (!_pathFunnelColdBootstrapped)
                 return false;
 
             if (!TryResolveVaultBuffer(in _telemetryHandle, PathFunnelConstants.TelemetryFrames, out telemetry) ||
@@ -584,8 +670,8 @@ namespace Hecton8.AI.Pathfinding
         {
             activePaths = default;
             runtimeStateBuffer = default;
-            if (!TryResolveVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out activePaths) ||
-                !TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer))
+            if (!TryReadVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out activePaths) ||
+                !TryReadVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer))
                 return false;
             return true;
         }
@@ -596,7 +682,7 @@ namespace Hecton8.AI.Pathfinding
         {
             invalidations = default;
             runtimeStateBuffer = default;
-            if (!EnsureVaultBuffers())
+            if (!_pathFunnelColdBootstrapped)
                 return false;
 
             if (!TryResolveVaultBuffer(in _invalidationsHandle, ResolveInvalidationCapacity(), out invalidations) ||
@@ -646,15 +732,7 @@ namespace Hecton8.AI.Pathfinding
         private bool TryResolveWfcGrid(out NativeArray<byte> wfcGridBitmasks)
         {
             wfcGridBitmasks = default;
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !vault.TryGetGenerationHandle<byte>(BufferID.WfcOutpostGrid, out VaultGenerationHandle<byte> handle) ||
-                !vault.TryResolveHandle(in handle, out wfcGridBitmasks))
-            {
-                return false;
-            }
-
-            return wfcGridBitmasks.IsCreated;
+            return TryReadVaultBuffer(in _wfcGridHandle, 1, out wfcGridBitmasks);
         }
 
         private void ProcessWfcStateSignal(

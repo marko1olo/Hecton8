@@ -1,0 +1,79 @@
+﻿{
+    "schema":  "hecton8.architecture_ultra_density_audit.x012.v1",
+    "generatedLocal":  "2026-05-24",
+    "evidenceClass":  [
+                          "STATIC_DOC",
+                          "STATIC_SOURCE",
+                          "STATIC_FILESYSTEM",
+                          "OFFLINE_VALIDATOR"
+                      ],
+    "scope":  "Docs/ARCHITECTURE/**/*.md,*.txt plus source constants",
+    "rewriteMode":  "manual apply_patch edits only; scripts used for discovery/validation/proof",
+    "thresholds":  {
+                       "unstructuredParagraphWordsGe":  50,
+                       "structuredLineWordsGe":  50,
+                       "markerPatterns":  [
+                                              "clearly",
+                                              "this document",
+                                              "in this document",
+                                              "how to",
+                                              "for example",
+                                              "tutorial",
+                                              "lesson",
+                                              "academic",
+                                              "over-engineer",
+                                              "in order to",
+                                              "this means",
+                                              "this allows",
+                                              "basically",
+                                              "simply",
+                                              "obviously"
+                                          ]
+                   },
+    "finalDensity":  {
+                         "paragraphsGe50":  0,
+                         "structuredLinesGe50":  0,
+                         "markerHits":  0
+                     },
+    "officialScanners":  {
+                             "oopDocScanner":  {
+                                                   "finalPass":  true,
+                                                   "activeFileCount":  586,
+                                                   "activeWordCount":  537687,
+                                                   "activeArchitectureFileCount":  192,
+                                                   "activeArchitectureWordCount":  169017,
+                                                   "sourceSyncPass":  true,
+                                                   "staleParameterFiles":  0,
+                                                   "reductionPercent":  55.00994039112259,
+                                                   "reductionPass":  true,
+                                                   "strictArchitecturePass":  true
+                                               },
+                             "verifyDocStructure":  {
+                                                        "pass":  true,
+                                                        "activeDocCount":  586,
+                                                        "rootTextDocCount":  3,
+                                                        "brokenLinkFiles":  0,
+                                                        "duplicateHeaderFiles":  0,
+                                                        "fenceIssueFiles":  0,
+                                                        "staleParameterFiles":  0,
+                                                        "encodingWithoutUtf8Sig":  0
+                                                    }
+                         },
+    "sourceConstants":  {
+                            "saveCurrentVersion":  "0x000B",
+                            "saveHeaderBytes":  56,
+                            "signalBusLaneCapacity":  512,
+                            "dataMonolithHeaderBytes":  64,
+                            "dataMonolithPayloadBytes":  1064384,
+                            "promptSignalBusCapacity256":  "stale prompt example; source value is 512"
+                        },
+    "criticalParameterPreservation":  {
+                                          "sourceSyncPass":  true,
+                                          "staleParameterFiles":  0,
+                                          "changedCSharpByX012":  false
+                                      },
+    "artifactLinks":  {
+                          "optimizationReport":  "Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json",
+                          "structureReport":  "Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json"
+                      }
+}

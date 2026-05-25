@@ -28,6 +28,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         _HitFlash("Hit Flash", Range(0, 1)) = 0.0
         _FaunaMutationHueShift("Fauna Mutation Hue Shift", Range(0, 1)) = 0.0
         _FaunaMutationTwitch("Fauna Mutation Twitch", Range(0, 1)) = 0.0
+        _H8FaunaGeneticMaskBytes0("Fauna Genetic Mask Bytes 0", Vector) = (0, 0, 0, 0)
+        _H8FaunaGeneticMaskBytes1("Fauna Genetic Mask Bytes 1", Vector) = (0, 0, 0, 0)
         _HitFlashBloatStrength("Hit Flash Bloat Strength", Range(0, 0.12)) = 0.035
         [HDR] _HitFlashEmissionColor("Hit Flash Emission Color", Color) = (1.2, 0.12, 0.04, 1)
         _TailSwayStrength("Tail Sway Strength", Range(0, 0.35)) = 0.045
@@ -85,6 +87,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float4 _FaunaCamouflageTint;
             float4 _FaunaCamouflageParams;
             float4 _HitFlashEmissionColor;
+            float4 _H8FaunaGeneticMaskBytes0;
+            float4 _H8FaunaGeneticMaskBytes1;
             float _NormalScale;
             float _Metallic;
             float _Smoothness;
@@ -118,6 +122,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         CBUFFER_END
 
         float _HectonCreatureWoundCount;
+        float _H8GlobalQualityWeight;
         float4 _HectonCreatureWounds[8];
         float4x4 _HectonCreatureWoundOwnerWorldToLocal;
         float4 _HectonCreatureWoundOwnerSphere;
@@ -135,11 +140,17 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         float4 _GlobalBiolumClock;
         float4 _GlobalBiolumAupOffset;
         StructuredBuffer<float4x4> _H8LeviathanBones;
-        float _H8LeviathanBoneCount;
-        float _H8LeviathanIkTier;
-        float _H8LeviathanTailWhip01;
-        float _H8LeviathanSegmentLength;
-        float _H8LeviathanGpuSkinning;
+
+        CBUFFER_START(_H8LeviathanIkGlobals)
+            float4 _H8LeviathanIkScalars0;
+            float4 _H8LeviathanIkScalars1;
+        CBUFFER_END
+
+        #define _H8LeviathanBoneCount _H8LeviathanIkScalars0.x
+        #define _H8LeviathanIkQuality _H8LeviathanIkScalars0.y
+        #define _H8LeviathanTailWhip01 _H8LeviathanIkScalars0.z
+        #define _H8LeviathanSegmentLength _H8LeviathanIkScalars0.w
+        #define _H8LeviathanGpuSkinning _H8LeviathanIkScalars1.x
 
         struct Attributes
         {
@@ -182,6 +193,30 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         {
             float t = frac(phase * 0.15915494 + 0.25);
             return 1.0 - abs(t * 2.0 - 1.0) * 2.0;
+        }
+
+        uint H8FaunaMaskByte(float value)
+        {
+            return (uint)clamp((int)round(value), 0, 255);
+        }
+
+        half H8FaunaByte01(uint value)
+        {
+            return (half)value * 0.00392156863h;
+        }
+
+        half H8FaunaGeneticQualityWeight()
+        {
+            float quality = isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 0.0;
+            quality = quality * quality * (3.0 - 2.0 * quality);
+            return (half)quality;
+        }
+
+        half3 H8FaunaGeneticHuePalette(half hue01)
+        {
+            float h = (float)hue01;
+            float3 rgb = saturate(abs(frac(h + float3(0.0, 0.6666667, 0.3333333)) * 6.0 - 3.0) - 1.0);
+            return (half3)lerp(float3(0.58, 0.82, 0.92), rgb, 0.72);
         }
 
         float ResolveHitFlash01()
@@ -276,19 +311,19 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float3 forwardWS = NormalizeApprox3D(lerp(ResolveLeviathanBoneAxisWS(boneA, float3(0.0, 0.0, 1.0)), ResolveLeviathanBoneAxisWS(boneB, float3(0.0, 0.0, 1.0)), blend01));
             float3 bindCenterOS = float3(0.0, 0.0, -bodyT * bodyLength);
             float3 localOffsetOS = presentedPositionOS - bindCenterOS;
-            float tierBlend = lerp(0.72, 1.0, saturate(_H8LeviathanIkTier));
+            float qualityBlend = lerp(0.72, 1.0, saturate(_H8LeviathanIkQuality));
             float3 targetPositionWS = centerWS + rightWS * localOffsetOS.x + upWS * localOffsetOS.y + forwardWS * localOffsetOS.z;
             float tailWhipMask = bodyT * bodyT;
-            float tailWhipAmplitude = saturate(_H8LeviathanTailWhip01) * tailWhipMask * lerp(0.08, 0.18, saturate(_H8LeviathanIkTier));
+            float tailWhipAmplitude = saturate(_H8LeviathanTailWhip01) * tailWhipMask * lerp(0.08, 0.18, saturate(_H8LeviathanIkQuality));
             targetPositionWS += rightWS * (CheapSignedWave(_Time.y * 11.0 + bodyT * 9.0) * tailWhipAmplitude);
             positionWS = lerp(
                 positionWS,
                 targetPositionWS,
-                tierBlend);
+                qualityBlend);
             float3 skinnedNormalWS = NormalizeApprox3D(rightWS * sourceNormalOS.x + upWS * sourceNormalOS.y + forwardWS * sourceNormalOS.z);
             float3 skinnedTangentWS = NormalizeApprox3D(rightWS * sourceTangentOS.x + upWS * sourceTangentOS.y + forwardWS * sourceTangentOS.z);
-            normalWS = NormalizeApprox3D(lerp(normalWS, skinnedNormalWS, tierBlend));
-            tangentWS = NormalizeApprox3D(lerp(tangentWS, skinnedTangentWS, tierBlend));
+            normalWS = NormalizeApprox3D(lerp(normalWS, skinnedNormalWS, qualityBlend));
+            tangentWS = NormalizeApprox3D(lerp(tangentWS, skinnedTangentWS, qualityBlend));
         }
 
         half2 EvaluateWoundMask(float3 positionWS)
@@ -471,11 +506,24 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
             half4 surface = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
             half4 packedMask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
-            half bodyFxTier = _H8LeviathanGpuSkinning > 0.5 ? saturate((half)_H8LeviathanIkTier) : 1.0h;
+            half bodyFxQuality = _H8LeviathanGpuSkinning > 0.5 ? saturate((half)_H8LeviathanIkQuality) : 1.0h;
+            uint geneticSizeByte = H8FaunaMaskByte(_H8FaunaGeneticMaskBytes0.x);
+            uint geneticAggressionByte = H8FaunaMaskByte(_H8FaunaGeneticMaskBytes0.z);
+            uint geneticHueByte = H8FaunaMaskByte(_H8FaunaGeneticMaskBytes0.w);
+            uint geneticPackedByte4 = H8FaunaMaskByte(_H8FaunaGeneticMaskBytes1.x);
+            uint geneticPackedByte5 = H8FaunaMaskByte(_H8FaunaGeneticMaskBytes1.y);
+            uint geneticPatternIndex = geneticPackedByte4 & 15u;
+            uint geneticBiolumByte = (geneticPackedByte4 >> 4) | ((geneticPackedByte5 & 15u) << 4);
+            half geneticQuality = H8FaunaGeneticQualityWeight();
+            half geneticSize01 = H8FaunaByte01(geneticSizeByte);
+            half geneticAggression01 = H8FaunaByte01(geneticAggressionByte);
+            half geneticHue01 = H8FaunaByte01(geneticHueByte);
+            half geneticPattern01 = (half)geneticPatternIndex * 0.0666666667h;
+            half geneticBiolum01 = H8FaunaByte01(geneticBiolumByte);
             half3 normalWS = NormalizeApprox3D(input.normalWS);
             float wetnessVelocityMagnitudeSq = dot(_WetnessVelocityWS.xyz, _WetnessVelocityWS.xyz);
             [branch]
-            if (bodyFxTier > 0.5h)
+            if (bodyFxQuality > 0.5h)
             {
                 half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalScale);
                 float3x3 tangentToWorld = BuildTangentToWorld((float3)normalWS, input.tangentWS);
@@ -484,6 +532,13 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             }
             half3 ambientSh = input.ambientSH;
             surface.rgb = ApplyFaunaCamouflage(surface.rgb, input.positionWS, ambientSh);
+            half geneticHueWeight = smoothstep(0.08h, 0.72h, geneticQuality);
+            half geneticPatternWeight = smoothstep(0.36h, 0.94h, geneticQuality);
+            half3 geneticTint = H8FaunaGeneticHuePalette(geneticHue01);
+            half3 aggressionTint = half3(1.0h, 0.82h, 0.62h);
+            surface.rgb = lerp(surface.rgb, surface.rgb * lerp(geneticTint, aggressionTint, geneticAggression01 * 0.22h), geneticHueWeight * 0.34h);
+            half patternWave = saturate((half)(CheapSignedWave(input.uv.x * (9.0 + (float)geneticPattern01 * 39.0) + input.uv.y * (6.0 + (float)geneticSize01 * 25.0)) * 0.5 + 0.5));
+            surface.rgb *= lerp(1.0h, lerp(0.88h, 1.16h, patternWave), geneticPatternWeight * 0.28h);
             half mutationHue01 = saturate((half)_FaunaMutationHueShift);
             half3 sicklyMutationColor = half3(0.72h, 0.86h, 0.16h);
             surface.rgb = lerp(surface.rgb, surface.rgb * sicklyMutationColor + sicklyMutationColor * 0.18h, mutationHue01);
@@ -540,12 +595,13 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, input.positionCS);
             color += (surface.rgb * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainShadow * contactShadow);
 
-            half faunaBiolumDim = saturate((half)_FaunaBiolumDim);
+            half geneticPulse = saturate((half)(CheapSignedWave(_Time.y * lerp(0.35, 4.2, (float)geneticBiolum01) + input.uv.x * (5.0 + (float)geneticPattern01 * 19.0)) * 0.5 + 0.5));
+            half faunaBiolumDim = saturate((half)_FaunaBiolumDim * lerp(1.0h, lerp(0.78h, 1.22h, geneticPulse), geneticQuality * smoothstep(0.18h, 0.75h, geneticBiolum01)));
             half3 sss = half3(0.0h, 0.0h, 0.0h);
             half3 caustics = half3(0.0h, 0.0h, 0.0h);
             half3 biolum = half3(0.0h, 0.0h, 0.0h);
             [branch]
-            if (bodyFxTier > 0.5h)
+            if (bodyFxQuality > 0.5h)
             {
                 sss = HectonCoreLitEvaluateOrganicSss(
                     viewDirWS,

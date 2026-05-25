@@ -1,4 +1,4 @@
-# HECTON-8 P0 Foundation Proof Matrix
+﻿# HECTON-8 P0 Foundation Proof Matrix
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION
@@ -11,7 +11,7 @@ Evidence class: STATIC_DOC / STATIC_SOURCE
 |---|---|---|
 | root documentation policy | root scan shows only allowed markdown files | none for filesystem scan; rerun before release |
 | save container constants | source reports version `0x000B`, header `56`, legacy header `44` | save/load runtime artifact |
-| Data Monolith | target path defined; `static_data.h8bin` absent | bake/import/boot validation |
+| Data Monolith | target path defined; `static_data.h8bin` present in X_012 filesystem scan; Unity/player boot proof pending | bake/import/boot validation |
 | global authority boundaries | contracts updated for registry, signals, event bus, vault | runtime lane/profiler proof |
 | memory sovereignty | DataVault route documented; buffer ranges summarized | leak/dump proof and owner disposal proof |
 | continuous scalability | `GlobalQualityWeight` route documented | frame-time and shader capture |

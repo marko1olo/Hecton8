@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_063
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_063_terrain_2_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\terrain_2_Albedo.png
+FINAL_FILENAME: terrain_2_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Terrain 2 albedo for alternate Hecton seabed zones. Use smoother pale mineral flats, blue-gray stone islands, opal-cyan vein traces, faint amber mineral specks, and soft sediment arcs that imply current flow through color only. The look should be open, calm, and elegant for larger exploration spaces, with strong tiling discipline and clear value hierarchy. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

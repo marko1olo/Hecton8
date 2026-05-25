@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using Hecton8.Build;
 using UnityEditor;
@@ -32,7 +33,7 @@ namespace Hecton8.Editor.Build
                 commit,
                 BuildInfo.ParseCommitHash32(fullCommit),
                 isDirty,
-                DateTime.UtcNow.ToString("O"),
+                DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
                 Application.unityVersion,
                 report.summary.platform.ToString());
 

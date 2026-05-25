@@ -1,0 +1,96 @@
+﻿<SELF_AUDIT agent="SHINOBU_340" domain="PIPE_CONDUCTANCE_SUMP_PUMP_FLOW" status="PENDING_UNITY_COMPILE_RUNTIME_PROOF">
+  <TASK_RECONCILIATION count="20">
+    <TASK id="01" status="PASS">OOP scanner covers Habitat, Logistics, Construction and reports findingCount=0 for WaterPipe/SumpPumpController/PropagateWater/List Pipe/Queue Pipe routes.</TASK>
+    <TASK id="02" status="PASS">Scanner reports zero water Rigidbody or water ParticleSystem authority routes.</TASK>
+    <TASK id="03" status="PASS">Hot DTOs use explicit raw fields; no hot get/set properties in drainage DTOs.</TASK>
+    <TASK id="04" status="PASS">DrainageNodeDTO validates 32 bytes and exact offsets 0/4/8/12/16/20/24/28.</TASK>
+    <TASK id="05" status="PASS">GenerateMockPipeNetworkJob seeds deterministic 2000-node/6000-edge topology. Public/editor facade now refuses active-solver force-complete.</TASK>
+    <TASK id="06" status="PASS">EvaluatePipePressureJob is Burst deterministic, compile-synchronous, CSR front-read/back-write Jacobi.</TASK>
+    <TASK id="07" status="PASS">ExecuteWaterEvacuationJob uses 64-byte room locks and float-bit Interlocked deduction against BackCompartments only; FrontCompartments is read-only snapshot.</TASK>
+    <TASK id="08" status="PASS">Pipe water visual truth is DrainagePipeFlowGpuDTO StructuredBuffer, not CPU particles, mesh water, or rigidbody droplets.</TASK>
+    <TASK id="09" status="PASS">ApplyPumpPowerConstraintJob reads PowerGrid lanes and clamps pump max rate from potential.</TASK>
+    <TASK id="10" status="PASS">Gravity assist/resistance modifies conductance after double3 AUP subtraction and float-local conversion.</TASK>
+    <TASK id="11" status="PASS">GlobalQualityWeight maps continuously to solve cadence, 1..8 Jacobi iterations, and low-tier spline-flow publish budget.</TASK>
+    <TASK id="12" status="PASS">AUP math subtracts high-low double3 before float relative height; no absolute float world cast in gravity path.</TASK>
+    <TASK id="13" status="PASS">Rollback-facing state is explicit native lanes; pressure double buffer avoids same-buffer Jacobi writes.</TASK>
+    <TASK id="14" status="PASS">Pressure front/back Vault lanes use NativeArrayOptions.UninitializedMemory and deterministic active writes.</TASK>
+    <TASK id="15" status="PASS_WITH_TIMING_PROVENANCE">300-frame telemetry ring exists; solver frames write Burst summary rows and free LateFrame windows append HeartbeatFrame rows without hidden completion. Fault path stages 64-byte HECTON8 header plus raw 64-byte telemetry rows into a cold preallocated buffer and signals the writer thread. SolverWallMicroseconds is explicitly flagged ScheduleWindowTiming until Unity Profiler/SystemDispatcher exact Burst timing proof exists.</TASK>
+    <TASK id="16" status="PASS">Hydraulic Sump Tuner reads telemetry and writes tuning through runtime facade; mock button no longer scene-searches; CSV bridge exposes source/output paths, schema version, schema hash, row count, validation code, row, column, field, layout summary, import, and bake controls.</TASK>
+    <TASK id="17" status="PASS">CSV parser uses ReadOnlySpan byte slicing, FNV-1a hashes, manual float parsing, deterministic editor .h8bin bake rows, and atomic temp-write/validate/rename publishing.</TASK>
+    <TASK id="18" status="PASS">SceneView pressure x-ray draws runtime-copied CSR snapshots using AUP delta-before-float positions and refuses reads while solver/mock jobs are active.</TASK>
+    <TASK id="19" status="PASS">OOP_Fluid_Scanner writes PHYSICS_OPTIMIZATION_REPORT_SHINOBU_340.json with findingCount=0.</TASK>
+    <TASK id="20" status="PASS">Status, rationale, route card, ledger addendum, self-audit, scanner report, and final log artifacts are maintained on disk.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DrainageNodeDTO size="32" alignment="multiple_of_32">
+      <Field name="NodeHashID" offset="0" size="4" />
+      <Field name="HydraulicPressure" offset="4" size="4" />
+      <Field name="MaxPumpRate" offset="8" size="4" />
+      <Field name="CurrentFlow" offset="12" size="4" />
+      <Field name="Flags" offset="16" size="4" />
+      <Field name="_pad0" offset="20" size="4" />
+      <Field name="_pad1" offset="24" size="4" />
+      <Field name="_pad2" offset="28" size="4" />
+      <Math>5 public scalar fields = 20 bytes; 12 explicit pad bytes; total 32 bytes.</Math>
+    </DrainageNodeDTO>
+    <PipeEdgeDTO size="64" alignment="one_l1_cache_line">
+      <Math>Offsets cover 0..44 with 4-byte fields plus ulong pads at 48 and 56; total 64 bytes.</Math>
+    </PipeEdgeDTO>
+    <DrainageTelemetryEntry size="64" alignment="one_l1_cache_line">
+      <Math>15 semantic 4-byte fields through offset 56 plus Reserved0 at offset 60; total 64 bytes.</Math>
+    </DrainageTelemetryEntry>
+    <DrainageDumpHeader size="64" alignment="one_l1_cache_line">
+      <Field name="Magic" offset="0" size="8" value="HECTON8\0 little-endian" />
+      <Field name="EntryCount" offset="8" size="4" />
+      <Field name="StructSizeBytes" offset="12" size="4" />
+      <Field name="Version" offset="16" size="4" />
+      <Field name="Capacity" offset="20" size="4" />
+      <Field name="WriteCount" offset="24" size="4" />
+      <Field name="OldestIndex" offset="28" size="4" />
+      <Field name="RuntimeHash" offset="32" size="4" />
+      <Field name="Flags" offset="36" size="4" />
+      <Field name="Reserved0" offset="40" size="8" />
+      <Field name="Reserved1" offset="48" size="8" />
+      <Field name="Reserved2" offset="56" size="8" />
+      <Math>8-byte magic + seven 4-byte metadata lanes + one 4-byte flags lane + 24 reserved pad bytes = 64 bytes.</Math>
+    </DrainageDumpHeader>
+    <DrainageRoomDrainLock64 size="64" falseSharing="padded">
+      <Math>LockState at offset 0; explicit padding through Pad6 offset 56 isolates each contested room lock to one 64-byte row.</Math>
+    </DrainageRoomDrainLock64>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    GlobalQualityWeight is clamped continuous 0..1 and mapped through math.smoothstep, math.step, and math.lerp curves. Below 0.3, solve cadence stretches beyond the low-power 0.5s base by a smooth thermal hold, Jacobi iterations collapse toward 1, and managed spline-flow fanout samples a small rotating node budget while shader flow remains driven from cached scalar StructuredBuffer data. Middle weights use intermediate cadence/iteration/publish counts. At 1.0, solver reaches 8 Jacobi iterations, dense spline publication, and the GPU flow buffer can buy richer panned normals/foam without changing fluid or power authority.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS status="PASS_WITH_YELLOW_CROSS_DOMAIN_CONTRACT_DEBT">
+    SHINOBU_340 persistent lanes are VaultGenerationHandle descriptors only: 95820..95845. Runtime does not declare private NativeArray/NativeList/NativeHashMap owner fields. Cross-domain fluid and power lanes are existing Vault buffers; literal Physics/Power using imports are removed, but fully qualified DTO references remain until shared contracts extraction exists.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <NoAlias>All non-overlapping NativeArray fields in pressure, power, evacuation, flow, and telemetry jobs carry NoAlias where they are passed to Burst kernels.</NoAlias>
+    <RawPointerSafety>Raw pointer fields are backed by Vault buffers locked before scheduling and unlocked after dispatcher finalization. ExecuteWaterEvacuationJob marks FrontCompartments read-only and receives it from GetUnsafeReadOnlyPtr, reads Power/front lanes through TryReadHandle, and mutates only BackCompartments.</RawPointerSafety>
+    <Consumes>Mock seed completion, topology build dependency, power clamp dependency, Jacobi pressure dependency chain, pipe flow dependency, water evacuation dependency.</Consumes>
+    <Outputs>_mockSeedHandle and _solverHandle returned to runtime dispatcher windows; normal path finalization uses TryFinalize*NoWait, teardown only uses forceComplete.</Outputs>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD status="YELLOW">
+    No Construction asmdef exists in the current tree, so there is no immediate sibling asmdef edge to delete. Literal using Hecton8.Physics and using Hecton8.Power imports are removed from SHINOBU_340 runtime/jobs; fully qualified type references remain to preserve GlobalDataVault type identity. Required future fix: move FluidCompartmentDTO, PowerNodeDTO, and their BufferIDs into shared contracts or expose contract facades before introducing Hecton8.Construction.Runtime.asmdef.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    CPU truth is scalar CSR pressure and compartment water deduction. Visible pipe flow is a shader StructuredBuffer fake from DrainagePipeFlowGpuDTO; no water particles, rigidbody droplets, or pipe mesh simulation. Before Dear Lie: O(edges + visual_objects) with per-object visuals or particles. After Dear Lie: O(edges) scalar write plus one double-buffered GPU upload; visual richness moves to shader ALU.
+  </DEAR_LIE_CONFIRMATION>
+  <TIMING_PROVENANCE status="PASS_WITH_PROFILER_PENDING">
+    SolverWallMicroseconds is a scheduler-to-finalize wall window stamped after non-blocking dispatcher finalization and marked with SumpDrainageTelemetryFlags.ScheduleWindowTiming. Exact Burst worker body timing is not claimed until Unity Profiler/SystemDispatcher timing integration is available.
+  </TIMING_PROVENANCE>
+  <BLACKBOX_HEARTBEAT status="PASS_STATIC">
+    LateFrameTick records HeartbeatFrame telemetry when no mock or solver job is scheduled. The heartbeat preserves last solved pressure/total-drained state, zeroes per-frame evacuation and solver wall time, advances FrameIndex, writes frame summary plus the 300-row ring, and does not call Complete or perform file I/O.
+  </BLACKBOX_HEARTBEAT>
+  <CSV_BINARY_BRIDGE status="PASS_STATIC">
+    Pipe profile bake writes outputPath.tmp with a 64-byte H8PIPE header and 32-byte PipeProfileDTO rows, flushes, validates magic/schema/count/row-size/source-hash/layout-hash, then publishes by File.Replace for existing output or File.Move for first creation. Direct overwrite of the active binary is rejected.
+  </CSV_BINARY_BRIDGE>
+  <VERIFICATION>
+    <Check command="python Tools/OOP_Fluid_Scanner.py" status="PASS" detail="findingCount=0 scannedFileCount=78" />
+    <Check command="python -m py_compile Tools/OOP_Fluid_Scanner.py Tools/OOP_Fluid_Scanner_SHINOBU_340.py" status="PASS" />
+    <Check command="scoped forbidden-pattern rg" status="PASS" />
+    <Check command="git diff --check scoped touched C# files" status="PASS_CRLF_WARNINGS_ONLY" />
+    <Check command="Test-Path Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin" status="YELLOW_ABSENT" reason="Global monolith artifact is absent; SHINOBU_340 pipe-profile bake bridge is local editor output only." />
+    <Check command="dotnet build" status="NOT_RUN_POLICY_GATE" reason="Latest gate CPU=99.81 percent, DotnetCount=0, CscCount=0; CPU still above the 50 percent policy limit." />
+  </VERIFICATION>
+</SELF_AUDIT>

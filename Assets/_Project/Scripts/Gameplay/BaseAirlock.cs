@@ -15,17 +15,17 @@
 //
 // INTEGRATION:
 //   • OnEnvironmentChanged(bool isDry) — fires when player transitions
-//   • BuoyancyObject.EnterDryZone/ExitDryZone — called on player's buoyancy
 // ============================================================================
 
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
-using Hecton8.Input;
+using Hecton8.Gameplay.AirlockPressurization;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.World;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -50,7 +50,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
     [AddComponentMenu("Hecton/Gameplay/Base Airlock")]
-    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable, IOriginShiftListener, global::Hecton8.Interaction.IInteractionSignalConsumer, global::Hecton8.Interaction.IInteractionVulnerabilitySource, ILocalizationLanguageChangedListener, global::Hecton8.Interaction.IKinematicRepairTarget
+    public sealed class BaseAirlock : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, global::Hecton8.Interaction.IInteractionSignalConsumer, global::Hecton8.Interaction.IInteractionVulnerabilitySource, ILocalizationLanguageChangedListener, global::Hecton8.Interaction.IKinematicRepairTarget, IGlobalRegistryHotSwapListener
     {
         private const float DefaultWeldOverrideDurationSeconds = 5f;
         private const float MaxSignalWeldDeltaSeconds = 0.25f;
@@ -74,15 +74,15 @@ namespace Hecton8.Gameplay
         private const float PlayerDockingSnapDurationSeconds = 0.5f;
         private const float PlayerDockingSnapInverseDuration = 1f / PlayerDockingSnapDurationSeconds;
         private const float PlayerDockingSnapCompletionSeconds = PlayerDockingSnapDurationSeconds - 0.0001f;
-        private const float AirlockEqualizationFakeSeconds = 5f;
+        private const float FallbackEqualizationSeconds = 5f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
 
         [Header("── Airlock Settings ───────────────────────────")]
-        [Tooltip("Duration of the airlock cycle animation (seconds).")]
-        [SerializeField, Range(1f, 10f)] private float cycleDuration = AirlockEqualizationFakeSeconds;
+        [Tooltip("Legacy lower-bound cycle budget. Mathematical pressure equalization resolves the active duration.")]
+        [SerializeField, Range(1f, 10f)] private float cycleDuration = FallbackEqualizationSeconds;
 
         [Tooltip("Internal airlock chamber volume used to calculate pressure equalization time.")]
         [SerializeField, Min(0.1f)] private float airlockVolumeM3 = 18f;
@@ -90,7 +90,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Equalization flow coefficient in m3 per sqrt(kPa) per second.")]
         [SerializeField, Min(0.01f)] private float equalizationFlowM3PerSqrtKPaSecond = 1.35f;
 
-        [Tooltip("Fixed fake pressure equalization time. No gas particle simulation.")]
+        [Tooltip("Maximum mathematical pressure equalization time. Gas particles are not simulated.")]
         [SerializeField, Min(1f)] private float maximumEqualizationSeconds = 18f;
 
         [Tooltip("Transform where the player spawns when entering the base.")]
@@ -173,6 +173,20 @@ namespace Hecton8.Gameplay
         private float _cycleTimer;
         private bool _isPlayerInside; // True if player is currently inside the base
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _statusLightDirty;
+        private Color _pendingStatusLightColor;
+        private bool _audioPresentationDirty;
+        private bool _pendingEnvironmentSnapshot;
+        private bool _pendingEnvironmentInsideDryVolume;
+        private bool _pendingCycleEndSound;
+        private Vector3 _pendingCycleEndAudioPosition;
+        private bool _pendingPressureWhistle;
+        private Vector3 _pendingPressureWhistlePosition;
+        private float _pendingPressureWhistleIntensity01;
+        private float _pendingPressureWhistleAttackSeconds;
+        private float _pendingPressureWhistleReleaseSeconds;
+        private float _pendingPressureWhistleFrequencyHz;
         private bool _emergencyLockedDown;
         private bool _lockdownOverrideBlockedByFloodedNeighbor;
         private float _weldOverrideProgressSeconds;
@@ -182,15 +196,14 @@ namespace Hecton8.Gameplay
         private Quaternion _pendingDestinationRotation = Quaternion.identity;
         private bool _hasPendingDestination;
         private bool _inputWasEnabledBeforeCycle;
-        private InputManager _cycleInputManager;
+        private INativeInputManagerRuntime _cycleInputManager;
         private Transform _cachedInteractorTransform;
         private Rigidbody _cachedInteractorBody;
-        private global::Hecton8.Physics.BuoyancyObject _cachedInteractorBuoyancy;
         private bool _cachedInteractorComponentCacheValid;
         private bool _playerDockingSnapActive;
         private Transform _snapInteractor;
         private Rigidbody _snapBody;
-        private global::Hecton8.Physics.BuoyancyObject _snapBuoyancy;
+        private HectonPlayerMotor _snapMotor;
         private Vector3 _snapStartLocalPosition;
         private Vector3 _snapTargetLocalPosition;
         private Quaternion _snapStartLocalRotation = Quaternion.identity;
@@ -210,6 +223,9 @@ namespace Hecton8.Gameplay
         private uint _bulkheadPoseShiftSequence;
         private bool _bulkheadPoseSnapshotValid;
         private bool _originShiftRegistered;
+        private bool _hotSwapListenerRegistered;
+        private IAudioService _cachedAudioService;
+        private INativeInputManagerRuntime _cachedNativeInputManager;
 
         // Cached references
         private Transform _cachedTransform;
@@ -222,10 +238,15 @@ namespace Hecton8.Gameplay
         private const string DefaultExitText = "Exit Base";
         private const string DefaultCyclingText = "Cycling...";
         private const string DefaultLockedText = "Bulkhead Lockdown";
-        private string _cachedEnterText;
-        private string _cachedExitText;
-        private string _cachedCyclingText;
-        private string _cachedLockedText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedEnterTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedExitTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedCyclingTextBuffer = new char[InteractTextBufferCapacity];
+        private readonly char[] _cachedLockedTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedEnterTextLength;
+        private int _cachedExitTextLength;
+        private int _cachedCyclingTextLength;
+        private int _cachedLockedTextLength;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -276,6 +297,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             TryRegisterOriginShiftListener();
@@ -299,20 +323,42 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             CancelPlayerDockingSnap();
             ReleaseCycleInputLock();
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             ClearInteractorComponentCache();
         }
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             CancelPlayerDockingSnap();
             ReleaseCycleInputLock();
             TryUnregister();
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedAudioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
+                    _cachedNativeInputManager = currentService as INativeInputManagerRuntime;
+                    break;
+            }
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -332,15 +378,23 @@ namespace Hecton8.Gameplay
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
         }
 
         private void TryRegisterOriginShiftListener()
@@ -361,6 +415,35 @@ namespace Hecton8.Gameplay
             _originShiftRegistered = false;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedNativeInputManager = GlobalRegistry.NativeInputRuntime;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _cachedAudioService = null;
+            _cachedNativeInputManager = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ITickable — STATE MACHINE
         // ══════════════════════════════════════════════════════════
@@ -374,7 +457,7 @@ namespace Hecton8.Gameplay
             if (_bulkheadContainmentPublishPending)
                 RetryBulkheadContainmentPublish();
 
-            EmitPressureDifferentialWhistle();
+            QueuePressureDifferentialWhistle();
 
             if (_playerDockingSnapActive)
             {
@@ -394,6 +477,12 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
+        public void LateFrameTick()
+        {
+            FlushStatusLight();
+            FlushAirlockAudioPresentation();
+        }
+
         //  IInteractable
         // ══════════════════════════════════════════════════════════
 
@@ -430,17 +519,44 @@ namespace Hecton8.Gameplay
         /// </summary>
         public string GetInteractText()
         {
+            return ResolveInteractTextLegacy();
+        }
+
+        private string ResolveInteractTextLegacy()
+        {
             switch (_state)
             {
                 case AirlockState.Ready:
                     if (_emergencyLockedDown)
-                        return _cachedLockedText;
-                    return _isPlayerInside ? _cachedExitText : _cachedEnterText;
+                        return DefaultLockedText;
+                    return _isPlayerInside ? DefaultExitText : DefaultEnterText;
                 case AirlockState.Cycling:
-                    return _cachedCyclingText;
+                    return DefaultCyclingText;
                 default:
                     return string.Empty;
             }
+        }
+
+        private ReadOnlySpan<char> ResolveInteractTextSpan()
+        {
+            switch (_state)
+            {
+                case AirlockState.Ready:
+                    if (_emergencyLockedDown)
+                        return _cachedLockedTextBuffer.AsSpan(0, _cachedLockedTextLength);
+                    return _isPlayerInside
+                        ? _cachedExitTextBuffer.AsSpan(0, _cachedExitTextLength)
+                        : _cachedEnterTextBuffer.AsSpan(0, _cachedEnterTextLength);
+                case AirlockState.Cycling:
+                    return _cachedCyclingTextBuffer.AsSpan(0, _cachedCyclingTextLength);
+                default:
+                    return ReadOnlySpan<char>.Empty;
+            }
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(ResolveInteractTextSpan(), destination, out length);
         }
 
         /// <summary>
@@ -663,11 +779,12 @@ namespace Hecton8.Gameplay
             // Update status light to red
             UpdateStatusLight(cyclingColor);
 
-            BaseAirlockEvents.RaiseCycleStarted(this, player);
+            BaseAirlockEvents.TryRaiseCycleStarted(this, player);
 
             // Play cycle start sound
+            IAudioService audio = _cachedAudioService;
             if (cycleStartSound != null &&
-                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio &&
+                audio != null &&
                 TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
             {
                 audio.PlayAtPoint(cycleStartSound, audioPosition);
@@ -701,14 +818,9 @@ namespace Hecton8.Gameplay
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
 
             // Play cycle end sound
-            if (cycleEndSound != null &&
-                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio &&
-                TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
-            {
-                audio.PlayAtPoint(cycleEndSound, audioPosition);
-            }
+            QueueCycleEndSound();
 
-            BaseAirlockEvents.RaiseCycleCompleted(this, completedInteractor);
+            BaseAirlockEvents.TryRaiseCycleCompleted(this, completedInteractor);
             _cycleInteractor = null;
             _hasPendingDestination = false;
             ReleaseCycleInputLock();
@@ -752,7 +864,7 @@ namespace Hecton8.Gameplay
 
         private void TeleportPlayer(Transform player, Vector3 destinationPosition, Quaternion destinationRotation)
         {
-            ResolveInteractorComponents(player, out Rigidbody playerBody, out global::Hecton8.Physics.BuoyancyObject buoyancy);
+            ResolveInteractorBody(player, out Rigidbody playerBody);
 
             bool useSafeTeleportProtocol = Application.isPlaying;
             if (useSafeTeleportProtocol)
@@ -760,7 +872,9 @@ namespace Hecton8.Gameplay
 
             try
             {
-                if (playerBody != null)
+                if (TryResolveHydroPlayerMotor(player, playerBody, out HectonPlayerMotor hydroMotor))
+                    TeleportHydroPlayer(player, hydroMotor, destinationPosition, destinationRotation);
+                else if (playerBody != null)
                     TeleportBody(playerBody, destinationPosition, destinationRotation);
                 else
                     player.SetPositionAndRotation(destinationPosition, destinationRotation);
@@ -771,7 +885,7 @@ namespace Hecton8.Gameplay
                     HectonFloatingOrigin.EndSafeTeleportProtocol();
             }
 
-            ApplyCompletedEnvironmentTransition(player, buoyancy);
+            ApplyCompletedEnvironmentTransition(player);
         }
 
         private bool BeginPlayerDockingSnap(Transform player, Vector3 destinationPosition, Quaternion destinationRotation)
@@ -783,9 +897,9 @@ namespace Hecton8.Gameplay
             if (frame == null || !IsFinite(frame.position) || !IsFinite(frame.rotation))
                 return false;
 
-            ResolveInteractorComponents(player, out Rigidbody playerBody, out global::Hecton8.Physics.BuoyancyObject buoyancy);
-            Vector3 startPosition = playerBody != null ? playerBody.position : player.position;
-            Quaternion startRotation = playerBody != null ? playerBody.rotation : player.rotation;
+            ResolveInteractorBody(player, out Rigidbody playerBody);
+            Vector3 startPosition = player.position;
+            Quaternion startRotation = player.rotation;
             if (!IsFinite(startPosition) || !IsFinite(startRotation))
                 return false;
 
@@ -796,19 +910,21 @@ namespace Hecton8.Gameplay
             _snapTargetLocalRotation = inverseFrameRotation * destinationRotation;
             _snapInteractor = player;
             _snapBody = playerBody;
-            _snapBuoyancy = buoyancy;
+            _snapMotor = TryResolveHydroPlayerMotor(player, playerBody, out HectonPlayerMotor hydroMotor)
+                ? hydroMotor
+                : null;
             _snapElapsedSeconds = 0f;
             _playerDockingSnapActive = true;
 
-            if (_snapBody != null)
+            if (_snapMotor == null && _snapBody != null)
             {
                 _snapBodyWasKinematic = _snapBody.isKinematic;
                 _snapBodyUseGravity = _snapBody.useGravity;
                 _snapBodyLinearDamping = _snapBody.linearDamping;
                 _snapBodyAngularDamping = _snapBody.angularDamping;
                 _snapBodyStateCached = true;
-                _snapBody.linearVelocity = Vector3.zero;
-                _snapBody.angularVelocity = Vector3.zero;
+                Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_snapBody, Vector3.zero, wake: false);
+                Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_snapBody, Vector3.zero, wake: false);
                 _snapBody.useGravity = false;
                 _snapBody.linearDamping = 0f;
                 _snapBody.angularDamping = 0f;
@@ -844,6 +960,14 @@ namespace Hecton8.Gameplay
             if (!IsFinite(worldPosition) || !IsFinite(worldRotation))
                 return;
 
+            if (_snapMotor != null)
+            {
+                _snapMotor.MovePosition(worldPosition);
+                if (_snapInteractor != null)
+                    _snapInteractor.SetPositionAndRotation(worldPosition, worldRotation);
+                return;
+            }
+
             if (_snapBody != null)
             {
                 _snapBody.MovePosition(worldPosition);
@@ -858,14 +982,13 @@ namespace Hecton8.Gameplay
         private void CompletePlayerDockingSnap()
         {
             Transform completedInteractor = _snapInteractor;
-            global::Hecton8.Physics.BuoyancyObject buoyancy = _snapBuoyancy;
             ApplyPlayerDockingSnapPose(1f);
             RestorePlayerDockingSnapBodyState();
             _playerDockingSnapActive = false;
             _snapInteractor = null;
             _snapBody = null;
-            _snapBuoyancy = null;
-            ApplyCompletedEnvironmentTransition(completedInteractor, buoyancy);
+            _snapMotor = null;
+            ApplyCompletedEnvironmentTransition(completedInteractor);
             FinalizeCompletedCycle(completedInteractor);
         }
 
@@ -878,7 +1001,7 @@ namespace Hecton8.Gameplay
             _playerDockingSnapActive = false;
             _snapInteractor = null;
             _snapBody = null;
-            _snapBuoyancy = null;
+            _snapMotor = null;
         }
 
         private void RestorePlayerDockingSnapBodyState()
@@ -889,8 +1012,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _snapBody.linearVelocity = Vector3.zero;
-            _snapBody.angularVelocity = Vector3.zero;
+            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_snapBody, Vector3.zero, wake: false);
+            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_snapBody, Vector3.zero, wake: false);
             _snapBody.linearDamping = _snapBodyLinearDamping;
             _snapBody.angularDamping = _snapBodyAngularDamping;
             _snapBody.useGravity = _snapBodyUseGravity;
@@ -898,26 +1021,17 @@ namespace Hecton8.Gameplay
             _snapBodyStateCached = false;
         }
 
-        private void ApplyCompletedEnvironmentTransition(Transform player, global::Hecton8.Physics.BuoyancyObject buoyancy)
+        private void ApplyCompletedEnvironmentTransition(Transform player)
         {
             _isPlayerInside = !_isPlayerInside;
-            TransitionAirlockAudioSnapshot(_isPlayerInside);
-            BaseAirlockEvents.RaiseEnvironmentChanged(this, player);
+            QueueAirlockAudioSnapshot(_isPlayerInside);
+            BaseAirlockEvents.TryRaiseEnvironmentChanged(this, player);
             OnEnvironmentChanged?.Invoke(_isPlayerInside);
-
-            if (buoyancy == null)
-                return;
-
-            if (_isPlayerInside)
-                buoyancy.EnterDryZone();
-            else
-                buoyancy.ExitDryZone();
         }
 
-        private void ResolveInteractorComponents(Transform player, out Rigidbody body, out global::Hecton8.Physics.BuoyancyObject buoyancy)
+        private void ResolveInteractorBody(Transform player, out Rigidbody body)
         {
             body = null;
-            buoyancy = null;
             if (player == null)
                 return;
 
@@ -925,12 +1039,10 @@ namespace Hecton8.Gameplay
             {
                 _cachedInteractorTransform = player;
                 player.TryGetComponent(out _cachedInteractorBody);
-                player.TryGetComponent(out _cachedInteractorBuoyancy);
                 _cachedInteractorComponentCacheValid = true;
             }
 
             body = _cachedInteractorBody;
-            buoyancy = _cachedInteractorBuoyancy;
         }
 
         private void ClearInteractorComponentCache()
@@ -938,19 +1050,26 @@ namespace Hecton8.Gameplay
             _cycleInteractor = null;
             _cachedInteractorTransform = null;
             _cachedInteractorBody = null;
-            _cachedInteractorBuoyancy = null;
             _cachedInteractorComponentCacheValid = false;
         }
 
         private static void TeleportBody(Rigidbody body, Vector3 position, Quaternion rotation)
         {
+            if (body.TryGetComponent(out HectonPlayerMotor playerMotor) &&
+                playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+            {
+                TeleportHydroPlayer(body.transform, playerMotor, position, rotation);
+                return;
+            }
+
             bool wasKinematic = body.isKinematic;
             bool wasDetectingCollisions = body.detectCollisions;
             bool wasSleeping = body.IsSleeping();
 
             body.isKinematic = true;
             body.detectCollisions = false;
-            body.transform.SetPositionAndRotation(position, rotation);
+            body.position = position;
+            body.rotation = rotation;
             body.PublishTransform();
             body.isKinematic = false;
             body.isKinematic = wasKinematic;
@@ -958,8 +1077,8 @@ namespace Hecton8.Gameplay
 
             if (!wasKinematic)
             {
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
+                Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+                Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
                 if (wasSleeping)
                     body.Sleep();
                 else
@@ -969,6 +1088,38 @@ namespace Hecton8.Gameplay
             {
                 body.Sleep();
             }
+        }
+
+        private static bool TryResolveHydroPlayerMotor(
+            Transform player,
+            Rigidbody playerBody,
+            out HectonPlayerMotor playerMotor)
+        {
+            playerMotor = null;
+            if (playerBody != null && playerBody.TryGetComponent(out playerMotor) && playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+                return true;
+
+            if (player != null && player.TryGetComponent(out playerMotor) && playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+                return true;
+
+            playerMotor = null;
+            return false;
+        }
+
+        private static void TeleportHydroPlayer(
+            Transform player,
+            HectonPlayerMotor playerMotor,
+            Vector3 position,
+            Quaternion rotation)
+        {
+            if (playerMotor != null)
+            {
+                playerMotor.MovePosition(position);
+                playerMotor.SetLinearVelocity(Vector3.zero);
+            }
+
+            if (player != null)
+                player.SetPositionAndRotation(position, rotation);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -987,6 +1138,23 @@ namespace Hecton8.Gameplay
                 return;
 
             targetSnapshot.TransitionTo(transitionSeconds);
+        }
+
+        private void QueueAirlockAudioSnapshot(bool insideDryVolume)
+        {
+            _pendingEnvironmentInsideDryVolume = insideDryVolume;
+            _pendingEnvironmentSnapshot = true;
+            _audioPresentationDirty = true;
+        }
+
+        private void QueueCycleEndSound()
+        {
+            if (cycleEndSound == null || !TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
+                return;
+
+            _pendingCycleEndAudioPosition = audioPosition;
+            _pendingCycleEndSound = true;
+            _audioPresentationDirty = true;
         }
 
         private void ApplyOceanRoarLowPass(bool insideDryVolume)
@@ -1238,7 +1406,7 @@ namespace Hecton8.Gameplay
             return hash;
         }
 
-        private void EmitPressureDifferentialWhistle()
+        private void QueuePressureDifferentialWhistle()
         {
             if (!_emergencyLockedDown)
                 return;
@@ -1265,13 +1433,13 @@ namespace Hecton8.Gameplay
             if (!TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
                 return;
 
-            ProceduralAudioEvents.RaiseAudioPingTriggered(
-                audioPosition,
-                intensity01,
-                math.lerp(0.035f, 0.11f, intensity01),
-                math.lerp(0.18f, 0.52f, intensity01),
-                math.lerp(6200f, 12800f, intensity01),
-                ProceduralAudioPingKind.MechanicalWhirr);
+            _pendingPressureWhistlePosition = audioPosition;
+            _pendingPressureWhistleIntensity01 = intensity01;
+            _pendingPressureWhistleAttackSeconds = math.lerp(0.035f, 0.11f, intensity01);
+            _pendingPressureWhistleReleaseSeconds = math.lerp(0.18f, 0.52f, intensity01);
+            _pendingPressureWhistleFrequencyHz = math.lerp(6200f, 12800f, intensity01);
+            _pendingPressureWhistle = true;
+            _audioPresentationDirty = true;
         }
 
         private bool TryResolveBulkheadAudioRuntimePosition(out Vector3 runtimePosition)
@@ -1289,12 +1457,56 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void UpdateStatusLight(Color color)
         {
+            _pendingStatusLightColor = color;
+            _statusLightDirty = true;
+        }
+
+        private void FlushStatusLight()
+        {
+            if (!_statusLightDirty)
+                return;
+
+            _statusLightDirty = false;
             if (statusLightRenderer == null)
                 return;
 
             statusLightRenderer.GetPropertyBlock(_mpb);
-            _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, color);
+            _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, _pendingStatusLightColor);
             statusLightRenderer.SetPropertyBlock(_mpb);
+        }
+
+        private void FlushAirlockAudioPresentation()
+        {
+            if (!_audioPresentationDirty)
+                return;
+
+            _audioPresentationDirty = false;
+
+            if (_pendingEnvironmentSnapshot)
+            {
+                _pendingEnvironmentSnapshot = false;
+                TransitionAirlockAudioSnapshot(_pendingEnvironmentInsideDryVolume);
+            }
+
+            if (_pendingCycleEndSound)
+            {
+                _pendingCycleEndSound = false;
+                IAudioService audio = _cachedAudioService;
+                if (cycleEndSound != null && audio != null)
+                    audio.PlayAtPoint(cycleEndSound, _pendingCycleEndAudioPosition);
+            }
+
+            if (_pendingPressureWhistle)
+            {
+                _pendingPressureWhistle = false;
+                ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+                    _pendingPressureWhistlePosition,
+                    _pendingPressureWhistleIntensity01,
+                    _pendingPressureWhistleAttackSeconds,
+                    _pendingPressureWhistleReleaseSeconds,
+                    _pendingPressureWhistleFrequencyHz,
+                    ProceduralAudioPingKind.MechanicalWhirr);
+            }
         }
 
         private void CacheOwningModule()
@@ -1310,15 +1522,25 @@ namespace Hecton8.Gameplay
 
         private float ResolveEqualizationDurationSeconds()
         {
-            _ = airlockVolumeM3;
-            _ = equalizationFlowM3PerSqrtKPaSecond;
-            _ = maximumEqualizationSeconds;
-            return AirlockEqualizationFakeSeconds;
+            float pressureDeltaAtm = 1f;
+            BaseModule module = owningModule;
+            if (module != null)
+            {
+                float pressureDeltaKPa = math.abs(module.ResolveExternalPressureDeltaKPa());
+                pressureDeltaAtm = pressureDeltaKPa * math.rcp(HectonSurvivalContract.KPaPerAtmosphere);
+            }
+
+            float fallbackMax = SanitizePositive(maximumEqualizationSeconds, FallbackEqualizationSeconds);
+            return AirlockPressurizationMath.EstimateEqualizationDurationSeconds(
+                SanitizePositive(airlockVolumeM3, 18f),
+                SanitizePositive(equalizationFlowM3PerSqrtKPaSecond, 1.35f),
+                pressureDeltaAtm,
+                fallbackMax);
         }
 
         private void CaptureCycleInputLock()
         {
-            _cycleInputManager = GlobalRegistry.NativeInputManager;
+            _cycleInputManager = _cachedNativeInputManager;
             if (_cycleInputManager == null)
                 return;
 
@@ -1588,12 +1810,12 @@ namespace Hecton8.Gameplay
 
                     owningModule.ForceFloodFromBulkheadOverride(breachAnchor);
                 }
-                BaseAirlockEvents.RaiseManualOverrideCompleted(this);
+                BaseAirlockEvents.TryRaiseManualOverrideCompleted(this);
                 return;
             }
 
             SetEmergencyLockdown(false);
-            BaseAirlockEvents.RaiseManualOverrideCompleted(this);
+            BaseAirlockEvents.TryRaiseManualOverrideCompleted(this);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1644,10 +1866,11 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            _cachedEnterText = ResolveLocalized(LocalizationKeys.INTERACT_ENTER_BASE, DefaultEnterText);
-            _cachedExitText = ResolveLocalized(LocalizationKeys.INTERACT_EXIT_BASE, DefaultExitText);
-            _cachedCyclingText = ResolveLocalized(LocalizationKeys.INTERACT_CYCLING, DefaultCyclingText);
-            _cachedLockedText = ResolveLocalized(LocalizationKeys.INTERACT_LOCKED, DefaultLockedText);
+            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
+            _cachedEnterTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_ENTER_BASE, DefaultEnterText, _cachedEnterTextBuffer);
+            _cachedExitTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_EXIT_BASE, DefaultExitText, _cachedExitTextBuffer);
+            _cachedCyclingTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_CYCLING, DefaultCyclingText, _cachedCyclingTextBuffer);
+            _cachedLockedTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_LOCKED, DefaultLockedText, _cachedLockedTextBuffer);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -1662,14 +1885,6 @@ namespace Hecton8.Gameplay
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
-        }
-
-        private static string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
         }
 
         /// <summary>
@@ -1688,7 +1903,7 @@ namespace Hecton8.Gameplay
             if (_state == AirlockState.Ready)
                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
 
-            BaseAirlockEvents.RaiseEmergencyLockdownChanged(this);
+            BaseAirlockEvents.TryRaiseEmergencyLockdownChanged(this);
         }
 
         /// <summary>
@@ -1703,7 +1918,7 @@ namespace Hecton8.Gameplay
             if (blocked)
                 _weldOverrideProgressSeconds = 0f;
 
-            BaseAirlockEvents.RaiseManualOverrideBlockedChanged(this);
+            BaseAirlockEvents.TryRaiseManualOverrideBlockedChanged(this);
         }
     }
 }

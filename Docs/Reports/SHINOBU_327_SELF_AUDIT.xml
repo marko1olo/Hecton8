@@ -1,0 +1,71 @@
+﻿<SELF_AUDIT agent="SHINOBU_327" status="SOURCE_PATCHED_BUILD_GATED" date="2026-05-22">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">MANDATORY_CODEBASE_GREP_SCAN completed with focused rg archaeology.</TASK>
+    <TASK id="02" status="PASS">PARTIAL_CLASS_INTEGRATION_MANDATE completed by making ModularEquipmentEngine partial and retaining authority.</TASK>
+    <TASK id="03" status="PASS">SIGNALBUS_MATRIX_VERIFICATION kept typed overheat/depleted SignalBus lanes and moved FlashlightEvents payload transport to SignalBus&lt;FlashlightEventPayload&gt;.</TASK>
+    <TASK id="04" status="PASS">MONOBEHAVIOUR_LIGHT_INQUISITION removed runtime Light.intensity writes from PlayerFlashlight, removed dynamic flashlight provider creation, removed PlayerFlashlight dispatcher registration, and made the voxel provider inert.</TASK>
+    <TASK id="05" status="PASS">MANAGED_FLICKER_COROUTINE_PURGE removed CPU Perlin flicker from PlayerFlashlight.</TASK>
+    <TASK id="06" status="PASS">EMERGENCY_MOCK_THERMAL_ENVIRONMENT added GenerateMockThermalEquipmentJob.</TASK>
+    <TASK id="07" status="PASS">BURST_THERMODYNAMIC_INTEGRATION_KERNEL integrates battery/heat in one NoAlias Burst job.</TASK>
+    <TASK id="08" status="PASS">BATTERY_NONLINEAR_DISCHARGE_MATH added deterministic cold discharge multiplier.</TASK>
+    <TASK id="09" status="PASS">THE_DEAR_LIE_PROCEDURAL_FLICKER moved flicker into shaders via _HectonFlashlightFailureState.</TASK>
+    <TASK id="10" status="PASS">CATASTROPHIC_MELTDOWN_ROUTING sets Broken/Depleted and emits non-visual overheat signal.</TASK>
+    <TASK id="11" status="PASS">CONTINUOUS_SCALABILITY_TICK_CADENCE remains lerped by GlobalQualityWeight.</TASK>
+    <TASK id="12" status="PASS">AUP_PRECISION_GRID_LOCALIZATION uses local AUP delta before float thermal-grid sampling.</TASK>
+    <TASK id="13" status="PASS">ROLLBACK_NETCODE_STATE_FENCE keeps hot DTOs explicit, blittable, and pointer-free.</TASK>
+    <TASK id="14" status="PASS">ZERO_INIT_OVERHEAD_BYPASS replaced cold MemClear helper with explicit overwrite.</TASK>
+    <TASK id="15" status="PASS">TELEMETRY_EQUIPMENT_RECORDER added FlashlightTelemetryEntry[300] with depth, ambient, drain, heat, CPU, flags, and dump route.</TASK>
+    <TASK id="16" status="PASS">FLASHLIGHT_TUNER_EDITOR_WINDOW reads FlashlightTelemetryEntry directly, charts thermal load versus ambient cooling effect, and exposes heat/water/cold controls.</TASK>
+    <TASK id="17" status="PASS">CSV_EQUIPMENT_PROFILES_INGESTOR added illumination parser wrapper and CSV load path.</TASK>
+    <TASK id="18" status="PASS">LIVE_THERMAL_DEBUG_GIZMO retained editor gizmo over active equipment rows.</TASK>
+    <TASK id="19" status="PASS">ARCHITECTURAL_METRIC_VALIDATOR added scoped OOP_Battery_Scanner with clean verdict output.</TASK>
+    <TASK id="20" status="PASS_WITH_COMPILE_GUARD">SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION written; dotnet build blocked by CPU guard.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    <STRUCT name="ActiveEquipmentDTO" size="32">
+      <FIELD offset="0" size="4">uint ToolHashID</FIELD>
+      <FIELD offset="4" size="4">float CurrentBattery</FIELD>
+      <FIELD offset="8" size="4">float ThermalLoad</FIELD>
+      <FIELD offset="12" size="4">uint StateFlags</FIELD>
+      <FIELD offset="16" size="4">float PowerDrawRate</FIELD>
+      <FIELD offset="20" size="4">float HeatGenerationRate</FIELD>
+      <FIELD offset="24" size="4">uint _pad0</FIELD>
+      <FIELD offset="28" size="4">uint _pad1</FIELD>
+      <MATH>8 fields * 4 bytes = 32 bytes; 32 is divisible by 8, 16, and 32.</MATH>
+    </STRUCT>
+    <STRUCT name="FlashlightTelemetryEntry" size="64">
+      <FIELD offset="0" size="4">uint Frame</FIELD>
+      <FIELD offset="4" size="4">uint ToolHashID</FIELD>
+      <FIELD offset="8" size="4">float Battery01</FIELD>
+      <FIELD offset="12" size="4">float Thermal01</FIELD>
+      <FIELD offset="16" size="4">float DepthMeters</FIELD>
+      <FIELD offset="20" size="4">float AmbientCelsius</FIELD>
+      <FIELD offset="24" size="4">float BatteryDrainWattSeconds</FIELD>
+      <FIELD offset="28" size="4">float PeakThermal01</FIELD>
+      <FIELD offset="32" size="4">float CpuMicroseconds</FIELD>
+      <FIELD offset="36" size="4">float GlobalQualityWeight</FIELD>
+      <FIELD offset="40" size="4">float TickIntervalSeconds</FIELD>
+      <FIELD offset="44" size="4">uint StateFlags</FIELD>
+      <FIELD offset="48" size="4">uint FaultFlags</FIELD>
+      <FIELD offset="52" size="4">uint SnapshotHash</FIELD>
+      <FIELD offset="56" size="4">uint SignalCount</FIELD>
+      <FIELD offset="60" size="4">float WearDrainNormalized</FIELD>
+      <MATH>16 fields * 4 bytes = 64 bytes; exactly one L1 cache line.</MATH>
+    </STRUCT>
+  </STRUCT_LAYOUT>
+  <SCALABILITY>
+    Below quality 0.3 the equipment cadence approaches MaximumTickInterval 0.2 seconds, ambient sampling collapses toward nearest thermal cell, and cooling math uses the low LOD scalar. The legacy voxel provider is inert, so low tier does not pay physics voxelization or texture upload cost. At quality 1.0 cadence approaches 0.016 seconds, thermal-grid sampling blends into trilinear, and shader flicker keeps the richer volumetric/silt/shaft modulation. DTO layout, save identity, and SignalBus authority are unchanged.
+  </SCALABILITY>
+  <H_PHI_VAULT_STATUS>
+    Runtime integration declares no new private NativeArray ownership. The previous flashlight voxel provider private native buffers were removed from runtime by converting that component to an inert legacy facade. PlayerFlashlight no longer implements IUpdatable or ITickable and does not register with the update dispatcher; its remaining presentation shell is owner-called by ModularEquipmentEngine. FlashlightEvents no longer owns private NativeQueue storage; its 16-byte payloads use the typed SignalBus lane FLEV and a listener compatibility bridge over frame snapshots with a per-generation dispatch cursor. Vault lanes used: 71300 ActiveEquipmentState, 71301 PublishedState, 71302 AupSamples, 71303 GridLoadRequests, 71304 EquipmentTelemetryRing, 71305 EquipmentTelemetryCursor, 71306 IntegrationCounters, 71308 Tuning, 71309 HardwareSpecs, 71311 ToolStates, 71312 ToolStats, 71313 ToolTypes, 71314 StatusMasks, 71315 EnvironmentHeat01, 71316 WearDrainRates, 71317 FlashlightTelemetryRing, 71318 FlashlightTelemetryCursor.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    EquipmentStateIntegrationJob consumes inputDeps and outputs _equipmentIntegrationHandle registered with H8Memory. NoAlias pointers: Equipment, ToolStates, Stats, ToolAups, WearDrainRates, ThermalGrid, GridLoadRequests, Counters. Overheat/depletion writers use typed NativeQueue ParallelWriter lanes; flashlight presentation events use SignalBus&lt;FlashlightEventPayload&gt; snapshots. ModularEquipmentEngine completes the equipment job at its documented late-frame owner fence, then calls active/enabled PlayerFlashlight.StepFromEquipmentOwner and publishes owner shader globals. No independent flashlight dispatcher update remains; cold mock/clear paths still use explicit forced completion before publication.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef or sibling runtime reference was changed. dotnet build not launched because guard sampled CPU 76 percent with active dotnet/VBCS first, CPU 83 percent after compiler processes exited, later CPU samples 26.23, 99.22, and 78.15 percent, the owner-shell recheck sampled 57.93, 88.34, and 86.61 percent, the signal-cursor recheck sampled 100, 97.92, and 71.62 percent, and final delayed rechecks sampled 21.06, 29.54, 57.99 then 88.88, 45.55, 38.52. A focused static auditor reported no high-confidence source blocker while compile remained gated.
+  </COMPILE_GUARD>
+  <DEAR_LIE>
+    CPU flicker, GameObject light intensity mutation, PlayerFlashlight dispatcher ticking, runtime provider creation, and CPU voxelized physics shadowing were replaced by owner-phase presentation stepping, owner global vectors, and existing shader passes. Before: managed per-frame flashlight presentation writes plus possible Unity light source evaluation and provider scan/upload work. After: O(1) owner shell call, O(1) owner vector publication, and constant ALU inside already-running shader work.
+  </DEAR_LIE>
+</SELF_AUDIT>

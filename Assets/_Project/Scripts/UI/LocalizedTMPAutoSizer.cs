@@ -16,7 +16,7 @@ namespace Hecton8.UI
         private const float CollapsedRectThreshold = 0.5f;
         private const int MaxRectRepairPasses = 4;
         private const int MaxRectRepairDepth = 4;
-        private static LocalizationManager s_cachedLocalization;
+        private static ILocalizationTextReadModel s_cachedLocalization;
         private static bool s_localizationColdResolved;
 
         [Header("References")]
@@ -166,15 +166,24 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
-                s_cachedLocalization = currentService as LocalizationManager;
+                s_cachedLocalization = currentService as ILocalizationTextReadModel;
                 s_localizationColdResolved = true;
                 InvalidateConfiguration();
                 QueueConfigurationApply();
                 return;
             }
 
+            if (currentService == null)
+            {
+                _registeredForTick = false;
+                return;
+            }
+
             if (isActiveAndEnabled)
+            {
+                TryUnregisterFromTick();
                 TryRegisterForTick();
+            }
         }
 
         /// <inheritdoc />
@@ -285,15 +294,15 @@ namespace Hecton8.UI
             if (s_localizationColdResolved && s_cachedLocalization != null)
                 return;
 
-            s_cachedLocalization = LocalizationManager.ActiveRuntimeInstance;
+            s_cachedLocalization = GlobalRegistry.LocalizationText;
             s_localizationColdResolved = s_cachedLocalization != null;
         }
 
         private static GameLanguage ResolveCurrentLanguage()
         {
             CacheLocalizationCold();
-            LocalizationManager manager = s_cachedLocalization;
-            return manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            ILocalizationTextReadModel manager = s_cachedLocalization;
+            return manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
         }
 
         private void TryRegisterHotSwapListener()

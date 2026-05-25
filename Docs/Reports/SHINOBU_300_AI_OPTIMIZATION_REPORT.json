@@ -1,0 +1,42 @@
+﻿{
+  "agent": "SHINOBU_300",
+  "scanner": "OOP_Spawner_Scanner",
+  "summary": "OOP Macro-Simulations Eradicated",
+  "sourcePath": "Docs/Reports/AI_OPTIMIZATION_REPORT.json",
+  "stableCopy": "Docs/Reports/SHINOBU_300_AI_OPTIMIZATION_REPORT.json",
+  "aggregateReportMode": "upsert agent property; never overwrite neighboring scanner evidence",
+  "scannerUsesStructuralSyntaxPass": true,
+  "scannerUsesProjectAst": true,
+  "scannerUsesLightweightSyntaxTree": true,
+  "scannerUsesRoslynAst": false,
+  "scannerParserRoute": "comment/string stripped lightweight syntax tree; no Roslyn dependency added to editor assemblies",
+  "scannedFiles": 1685,
+  "candidateFiles": 43,
+  "instantiateHits": 0,
+  "coroutineHits": 0,
+  "managedSectorMapHits": 1,
+  "macroTruthViolations": 0,
+  "scope": "Assets/_Project/Scripts/Ecosystem, Assets/_Project/Scripts/AI/Ecosystem, Assets/_Project/Scripts/Fauna, Assets/_Project/Scripts/World/EcosystemDirector.cs",
+  "macroTruthRoute": "FrostTick -> MacroEcosystemMathematicianRuntime -> GlobalDataVault flat Hecton8.Core.Contracts.EcosystemSectorDTO[64B]",
+  "canonicalSectorDto": "Hecton8.Core.Contracts.EcosystemSectorDTO",
+  "legacyShinobuEcosystemBalancerFallback": "AI/Ecosystem/ShinobuEcosystemBalancer skips LotkaVolterraMacroJob when BufferID.ShinobuMacroEcosystemSectorFront exists; 32B ShinobuEcosystemSectors is fallback-only",
+  "readAccessorPurity": "PASS_STATIC_RG: EcosystemDirector biomass reads only cached descriptors and read-only published slots; refresh/slot creation is cold/owner phase",
+  "aupHashRoute": "absolute AUP X/Z -> int64 floor -> MacroEcosystemVaultContract hash with SectorY=0 horizontal biomass layer",
+  "verdict": "PASS",
+  "verification": {
+    "instantiateScan": "rg -n \"Instantiate|StartCoroutine|IEnumerator\" Assets/_Project/Scripts/Ecosystem Assets/_Project/Scripts/Fauna Assets/_Project/Scripts/World/EcosystemDirector.cs",
+    "contractScan": "rg -n \"Hecton8.Ecosystem.EcosystemSectorDTO|VaultGenerationHandle<MacroEcosystemSectorVaultRecord>|NativeArray<MacroEcosystemSectorVaultRecord>\" Assets/_Project/Scripts",
+    "staleFieldScan": "rg -n \"sector.LocalTemperature|sector.ToxinLevel|SterileSectorCount|ToxicSectorCount|TotalMass\\b\" Assets/_Project/Scripts/Ecosystem Assets/_Project/Scripts/World/EcosystemDirector.cs Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+    "readPurityScan": "rg -n \"TryResolveMacroEcosystemVaultSnapshot|RefreshMacroEcosystemVaultHandlesCold|TryGetGenerationHandle\" Assets/_Project/Scripts/World/EcosystemDirector.cs",
+    "aupHashScan": "rg -n \"ToAbsoluteDouble3|ComputeSectorHash\\(sectorX, 0L, sectorZ\\)|sectorY = 0L\" Assets/_Project/Scripts/Ecosystem Assets/_Project/Scripts/World/EcosystemDirector.cs Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs"
+  },
+  "findings": [
+    {
+      "file": "Assets/_Project/Scripts/Ecosystem/EcosystemHealthDirector.cs",
+      "line": 25,
+      "kind": "MANAGED_SECTOR_MAP",
+      "macroAuthorityFile": false,
+      "snippet": "private readonly Dictionary<long, float> _severityByChunkKey"
+    }
+  ]
+}

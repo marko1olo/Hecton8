@@ -9,9 +9,9 @@ namespace Hecton8.Physics
     {
         private const int PhysicsWakeRequestFlushLimit = 16;
 
-        private void QueuePhysicsWakeRequest(in WakeRequestSignal request)
+        private bool QueuePhysicsWakeRequest(in WakeRequestSignal request)
         {
-            SignalBus<WakeRequestSignal>.TryPush(in request);
+            return SignalBus<WakeRequestSignal>.TryPush(in request);
         }
 
         private void FlushPhysicsWakeRequests()

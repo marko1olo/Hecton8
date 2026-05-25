@@ -8,6 +8,7 @@ namespace Hecton8.World
     public sealed class WorldSliceAnchor : MonoBehaviour
     {
         private static readonly List<WorldSliceAnchor> _ActiveAnchors = new List<WorldSliceAnchor>(32);
+        private static readonly List<WorldFidelityRoot> _FidelityRootScratch = new List<WorldFidelityRoot>(8);
 
         public enum SliceState
         {
@@ -238,7 +239,10 @@ namespace Hecton8.World
 
         private void RefreshFidelityRoots()
         {
-            fidelityRoots = GetComponentsInChildren<WorldFidelityRoot>(true);
+            _FidelityRootScratch.Clear();
+            GetComponentsInChildren<WorldFidelityRoot>(true, _FidelityRootScratch);
+            fidelityRoots = _FidelityRootScratch.ToArray();
+            _FidelityRootScratch.Clear();
         }
 
 #if UNITY_EDITOR

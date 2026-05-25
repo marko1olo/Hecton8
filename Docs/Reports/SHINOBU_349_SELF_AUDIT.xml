@@ -1,0 +1,54 @@
+﻿<SELF_AUDIT agent="SHINOBU_349" domain="AUP_NARRATIVE_POI_TRIGGER_SOLVER" status="STATIC_VERIFIED_COMPILE_BLOCKED_RESTORE_ASSETS">
+  <task_reconciliation>
+    <task id="01" result="PASS" proof="Narrative and related trigger paths scanned; existing HectonNarrativeDirector owner selected." />
+    <task id="02" result="PASS" proof="HectonNarrativeDirector converted to partial; POI route isolated in Narrative/HectonNarrativeDirector_PoiTriggers.cs." />
+    <task id="03" result="PASS" proof="Existing ProgressionEventSignal adopted; GlobalSignals legacy dequeue consumes SignalBus first." />
+    <task id="04" result="PASS" proof="OOP_Trigger_Scanner sidecar reports storyOffenderCount=0." />
+    <task id="05" result="PASS" proof="Hot prerequisites are ulong mask AND/compare, not managed quest objects." />
+    <task id="06" result="PASS" proof="GenerateMockPoiTriggersJob writes 10000-capable unmanaged POI rows." />
+    <task id="07" result="PASS" proof="EvaluatePoiTriggersJob searches only the player spatial-hash bucket." />
+    <task id="08" result="PASS" proof="(GlobalMask &amp; PrerequisiteBitmask) == PrerequisiteBitmask." />
+    <task id="09" result="PASS" proof="StateFlags use Triggered, Inside, Exhausted and 1.2x exit hysteresis." />
+    <task id="10" result="PASS" proof="ProgressionEventSignal enqueued through NativeQueue ParallelWriter from the Burst job; managed completion consumes DispatchPending DTO flags instead of one aliased ulong diff." />
+    <task id="11" result="PASS" proof="Cadence uses continuous GlobalQualityWeight curve from 0.25s to 0.05s." />
+    <task id="12" result="PASS" proof="PlayerAUP - PoiAUP is computed in double3 before float3 distance." />
+    <task id="13" result="PASS" proof="Burst jobs use FloatMode.Deterministic for rollback truth." />
+    <task id="14" result="PASS" proof="Vault lanes use NativeArrayOptions.UninitializedMemory and owner overwrite." />
+    <task id="15" result="PASS" proof="300-entry telemetry ring and Dump_SHINOBU_349.bin raw dump route." />
+    <task id="16" result="PASS" proof="AUP Trigger Analytics UI Toolkit window reads Vault telemetry and state mask." />
+    <task id="17" result="PASS" proof="NarrativePoiCsvIngestor parses ReadOnlySpan&lt;byte&gt; fields, FNV, double, float, and hex ulong." />
+    <task id="18" result="PASS" proof="SceneView gizmo draws Vault DTO POI radii colored by prerequisite/trigger state." />
+    <task id="19" result="PASS" proof="OOP_Trigger_Scanner writes sidecar and shared JSON proof through Roslyn syntax scanning and JObject upsert." />
+    <task id="20" result="PASS" proof="Static audit artifacts, route card, DTO layout proof, and compile gate state recorded." />
+  </task_reconciliation>
+  <struct_layout name="NarrativePoiDTO" size_bytes="64" alignment="cache_line">
+    <field name="PoiAUP" offset="0" size="24" type="double3" />
+    <field name="EventHashID" offset="24" size="4" type="uint" />
+    <field name="TriggerRadiusMeters" offset="28" size="4" type="float" />
+    <field name="PrerequisiteBitmask" offset="32" size="8" type="ulong" />
+    <field name="StateFlags" offset="40" size="4" type="uint" />
+    <field name="_pad0_to_pad4" offset="44" size="20" type="uint[5]" />
+  </struct_layout>
+  <struct_layout name="NarrativePoiPresentationDTO" size_bytes="64" alignment="cache_line">
+    <field name="PoiHash" offset="0" size="4" type="uint" />
+    <field name="QuestHash" offset="4" size="4" type="uint" />
+    <field name="BiomeHash" offset="8" size="4" type="uint" />
+    <field name="SoundscapeHash" offset="12" size="4" type="uint" />
+    <field name="LoreHash" offset="16" size="4" type="uint" />
+    <field name="Flags" offset="20" size="4" type="uint" />
+    <field name="BitIndex" offset="24" size="4" type="int" />
+    <field name="Reserved0" offset="28" size="4" type="uint" />
+    <field name="_pad0_to_pad3" offset="32" size="32" type="ulong[4]" />
+  </struct_layout>
+  <vault owner="SystemID.NarrativePoiTriggers" ids="74000,74001,74002,74003,74004,74005,74006,74007,74008" state_mask_words_default="157" state_identity="poiIndex word array, not single ulong" private_native_fields="0" />
+  <prerequisites source="QuestDagGlobalStateMasks[0]" authored_first_hour="H8QuestMasks" csv="hex ulong PrerequisiteBitmask" />
+  <dispatch state="DispatchPending|Dispatched DTO flags" aliasing="no 64-bit global POI identity diff" rebuild_identity="discovered POI hash, not legacy narrativeAupTriggeredMask" managed_presentation="NarrativePoiPresentationDTO Vault lane" progression_source="AupNarrativePoiRuntimeConstants.ProgressionSourceNarrativePoi" />
+  <telemetry state_hash="FNV over every NarrativePoiStateMasks word plus player cell hash" compatibility_mask="GlobalProgressionMask records word0 only for legacy quick inspection" />
+  <bucket_faults range_flags="NarrativePoiBucketRangeFlags.Occupied|Overflow" telemetry="Overflow maps to AupNarrativeTriggerTelemetryFlags.BucketOverflow and can trigger Dump_SHINOBU_349.bin" />
+  <signal route="SignalBus&lt;ProgressionEventSignal&gt;" legacy_bridge="GlobalSignals.TryDequeueProgressionEvent" />
+  <quality curve="math.lerp(0.05f,0.25f,1.0f-smoothQuality)" binary_switches="false" />
+  <dear_lie before="PhysX trigger volume callbacks" after="same-cell AUP distance squared plus 1.2x hysteresis" />
+  <scanner parser="Roslyn CSharpSyntaxTree method/invocation/type/member pass" shared_report_update="JObject upsert" token_fallback="parser failure only" />
+  <verification buffer_id_audit="PASS duplicates=0" job_completion_audit="PASS_WITH_WARNINGS framePathBlockers=0" assembly_audit="FAIL unrelated project-wide core concrete sibling refs" />
+  <compile_guard status="blocked_before_csharp_compile" command="dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false" reason="NETSDK1004 missing Temp/obj/Assembly-CSharp/project.assets.json; restore/build not continued after CPU resampled above threshold; latest CPU sample 100 percent with 7 active dotnet processes, above policy threshold" />
+</SELF_AUDIT>

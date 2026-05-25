@@ -69,10 +69,10 @@ namespace Hecton8.Editor.Build
         private static bool TryFindHalfToken(string assetPath, out int lineNumber)
         {
             lineNumber = 0;
-            string[] lines = File.ReadAllLines(assetPath);
-            for (int i = 0; i < lines.Length; i++)
+            int currentLineNumber = 0;
+            foreach (string line in File.ReadLines(assetPath))
             {
-                string line = lines[i];
+                currentLineNumber++;
                 if (line.IndexOf(WaiverToken, StringComparison.Ordinal) >= 0)
                     continue;
 
@@ -80,7 +80,7 @@ namespace Hecton8.Editor.Build
                 int scanLength = commentIndex >= 0 ? commentIndex : line.Length;
                 if (ContainsHalfToken(line, scanLength))
                 {
-                    lineNumber = i + 1;
+                    lineNumber = currentLineNumber;
                     return true;
                 }
             }

@@ -539,7 +539,7 @@ namespace Hecton8.Vehicles.Automation
             if (_dataVault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<ActiveSplineData> acquired = _dataVault.GetGenerationHandle<ActiveSplineData>(
+            VaultGenerationHandle<ActiveSplineData> acquired = _dataVault.EnsureGenerationHandle<ActiveSplineData>(
                 BufferID.VehicleDockingActiveSplines,
                 activeSplineCapacity,
                 SystemID.VehiclesPhysics,

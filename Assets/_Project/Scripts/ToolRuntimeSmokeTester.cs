@@ -163,7 +163,7 @@ namespace Hecton8.Dev
                 int passed = 0;
                 int failed = 0;
 
-                Debug.Log("[ToolSmoke] Starting runtime smoke pass.");
+                Hecton8.Core.H8Debug.Log("[ToolSmoke] Starting runtime smoke pass.");
 
                 for (int i = 0; i < heldToolPrefabs.Length; i++)
                 {
@@ -311,7 +311,7 @@ namespace Hecton8.Dev
                     }
                 }
 
-                Debug.Log($"[ToolSmoke] COMPLETE pass={passed} fail={failed}");
+                Hecton8.Core.H8Debug.Log($"[ToolSmoke] COMPLETE pass={passed} fail={failed}");
             }
             catch (OperationCanceledException)
             {
@@ -349,7 +349,7 @@ namespace Hecton8.Dev
                 liveTool.UsePrimary(simulatedDeltaTime);
                 LogVerbose($"SECONDARY {toolName}");
                 liveTool.UseSecondary(simulatedDeltaTime);
-                Debug.Log($"[ToolSmoke] PASS {toolName} -> {liveTool.GetType().Name}");
+                Hecton8.Core.H8Debug.Log($"[ToolSmoke] PASS {toolName} -> {liveTool.GetType().Name}");
                 return true;
             }
             catch (System.Exception ex)
@@ -373,7 +373,7 @@ namespace Hecton8.Dev
             if (!verboseLogging)
                 return;
 
-            Debug.Log($"[ToolSmoke] {message}");
+            Hecton8.Core.H8Debug.Log($"[ToolSmoke] {message}");
         }
 
 #if UNITY_EDITOR

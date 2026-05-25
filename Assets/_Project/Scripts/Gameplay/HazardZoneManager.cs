@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
@@ -231,15 +233,13 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5695)]
-    public sealed class HazardZoneManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IHazardZoneReadModel
+    public sealed class HazardZoneManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IHazardZoneReadModel
     {
         private const int HazardTypeCount = 4;
         private const int DefaultMaxZoneCount = 512;
         private const int MinZoneCapacity = 32;
         private const int PendingMutationCapacity = 64;
-        private const int MaxStepIterationsPerTick = 4;
         private const float HazardStepIntervalSeconds = 0.1f;
-        private const float MaxHazardAccumulatedSeconds = HazardStepIntervalSeconds * MaxStepIterationsPerTick;
         private const float MinHazardRadius = 0.01f;
         private const double HazardSpatialCellSizeMeters = 12d;
         private const int HazardSpatialQueryCapacity = 64;
@@ -254,12 +254,15 @@ namespace Hecton8.Gameplay
         private const float ToxicityDamagePulseIntervalSeconds = 0.5f;
         private const float ToxicityDamagePerPulse = 1.1f;
         private const float ToxicityOverdoseDamageScale = 0.85f;
+        private const float ToxicityPoisonStatusDurationSeconds = 5f;
+        private const float ToxicityExposureToxemiaScale = 0.08f;
         private const float RadiationClarityTransferScale = 0.85f;
         private const float ThermalClarityTransferDenominator = 18f;
         private const float ToxicClarityTransferScale = 1.35f;
         private const float MinResistance = 0.1f;
         private const float MaxProtectedResistance = 1000f;
         private const float ConservativeAabbSphereFactor = 1.7320508f;
+        private const uint ToxicityHazardChemicalHash = 0x544F5848u; // TOXH
         private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
         private static readonly Vector3 DefaultPlayerBoundsSize = new Vector3(0.9f, 1.9f, 0.9f);
         private static readonly Vector3 DefaultTransportBoundsSize = new Vector3(2.2f, 1.6f, 3.8f);
@@ -299,17 +302,18 @@ namespace Hecton8.Gameplay
         private bool _ownsJobResultHandle;
         private bool _pendingDataVaultSwap;
         private int _activeCount;
-        private float _stepAccumulator;
         private float _toxicityDose;
-        private float _toxicityDamageTimer;
+        private float _toxicityPulseAccumulatorSeconds;
         private int _publishedExposureMask;
 
         private Transform _playerTransform;
         private IDataVault _pendingDataVault;
         private HectonSurvivalSystem _playerSurvival;
+        private HectonPlayerHealth _playerHealth;
         private TraumaDispatcher _playerTraumaDispatcher;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private Collider _playerCollider;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private IPlayerTransportLifecycleOwner _activeTransportOwner;
         private MonoBehaviour _activeTransportBehaviour;
         private Collider _activeTransportCollider;
@@ -537,7 +541,7 @@ namespace Hecton8.Gameplay
             return GetHazardIntensity(in pointAup, HazardType.Toxicity);
         }
 
-        internal bool TrySampleHazardAvoidance(Vector3 runtimePoint, float sampleRadius, out Vector3 fleeDirection, out float hazardPressure01)
+        public bool TrySampleHazardAvoidance(Vector3 runtimePoint, float sampleRadius, out Vector3 fleeDirection, out float hazardPressure01)
         {
             fleeDirection = Vector3.zero;
             hazardPressure01 = 0f;
@@ -629,6 +633,7 @@ namespace Hecton8.Gameplay
 
             CacheHazardVaultCold(GlobalRegistry.DataVault);
             AllocateNativeState();
+            CachePlayerRuntimeContextCold();
             ResolvePlayerContext();
             UpdateDiagnostics();
         }
@@ -638,6 +643,7 @@ namespace Hecton8.Gameplay
             TryRegisterHotSwapListener();
             CacheHazardVaultCold(GlobalRegistry.DataVault);
             AllocateNativeState();
+            CachePlayerRuntimeContextCold();
             ResolvePlayerContext();
             TryRegister();
             TryRegisterService();
@@ -669,6 +675,20 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                if (_playerRuntimeContext != null)
+                    ApplyPlayerContextReferences(
+                        _playerRuntimeContext.PlayerTransform,
+                        _playerRuntimeContext.PlayerCollider,
+                        _playerRuntimeContext.PlayerHealth,
+                        _playerRuntimeContext.SurvivalSystem,
+                        _playerRuntimeContext.TraumaDispatcher,
+                        _playerRuntimeContext.PlayerTransportCoordinator);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -706,27 +726,14 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Runs the 10Hz hazard step without using MonoBehaviour Update.
+        /// Runs the hazard/toxicity authority step on the dispatcher slow cadence.
         /// </summary>
-        public void Tick(float deltaTime)
+        public void SlowTick()
         {
             if (!_volumes.IsCreated)
                 return;
 
-            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
-            if (safeDeltaTime <= 0f)
-                return;
-
-            _stepAccumulator = math.min(
-                FiniteNonNegativeOrZero(_stepAccumulator) + safeDeltaTime,
-                MaxHazardAccumulatedSeconds);
-            int iterations = 0;
-            while (_stepAccumulator >= HazardStepIntervalSeconds && iterations < MaxStepIterationsPerTick)
-            {
-                AdvanceHazardStep(HazardStepIntervalSeconds);
-                _stepAccumulator -= HazardStepIntervalSeconds;
-                iterations++;
-            }
+            AdvanceHazardStep(HazardStepIntervalSeconds);
         }
 
         private void AdvanceHazardStep(float dt)
@@ -847,18 +854,20 @@ namespace Hecton8.Gameplay
                 ApplyPlayerContextReferences(
                     runtimeContext.PlayerTransform,
                     runtimeContext.PlayerCollider,
+                    runtimeContext.PlayerHealth,
                     runtimeContext.SurvivalSystem,
                     runtimeContext.TraumaDispatcher,
                     runtimeContext.PlayerTransportCoordinator);
             }
             else
             {
-                IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                 {
                     ApplyPlayerContextReferences(
                         playerContext.PlayerTransform,
                         playerContext.PlayerCollider,
+                        playerContext.PlayerHealth,
                         playerContext.SurvivalSystem,
                         playerContext.TraumaDispatcher,
                         playerContext.PlayerTransportCoordinator);
@@ -895,6 +904,7 @@ namespace Hecton8.Gameplay
                 ApplyPlayerContextReferences(
                     runtimeContext.PlayerTransform,
                     runtimeContext.PlayerCollider,
+                    runtimeContext.PlayerHealth,
                     runtimeContext.SurvivalSystem,
                     runtimeContext.TraumaDispatcher,
                     runtimeContext.PlayerTransportCoordinator);
@@ -920,6 +930,7 @@ namespace Hecton8.Gameplay
         private void ApplyPlayerContextReferences(
             Transform playerTransform,
             Collider playerCollider,
+            HectonPlayerHealth playerHealth,
             HectonSurvivalSystem survivalSystem,
             TraumaDispatcher traumaDispatcher,
             PlayerTransportCoordinator transportCoordinator)
@@ -929,12 +940,16 @@ namespace Hecton8.Gameplay
                 _playerTransform = playerTransform;
                 _playerCollider = null;
                 _playerSurvival = null;
+                _playerHealth = null;
                 _playerTraumaDispatcher = null;
                 _playerTransportCoordinator = null;
             }
 
             if (playerCollider != null)
                 _playerCollider = playerCollider;
+
+            if (playerHealth != null)
+                _playerHealth = playerHealth;
 
             if (survivalSystem != null)
                 _playerSurvival = survivalSystem;
@@ -1011,49 +1026,92 @@ namespace Hecton8.Gameplay
             {
                 _toxicityDose = math.max(0f, FiniteNonNegativeOrZero(_toxicityDose) - ToxicityDoseDecayPerSecond * safeDt);
                 if (_toxicityDose <= ToxicityDoseThreshold)
-                    _toxicityDamageTimer = 0f;
+                    _toxicityPulseAccumulatorSeconds = 0f;
             }
 
             if (_toxicityDose <= ToxicityDoseThreshold || _playerSurvival == null)
                 return;
 
-            _toxicityDamageTimer += safeDt;
-            while (_toxicityDamageTimer >= ToxicityDamagePulseIntervalSeconds)
+            _toxicityPulseAccumulatorSeconds += safeDt;
+            while (_toxicityPulseAccumulatorSeconds >= ToxicityDamagePulseIntervalSeconds)
             {
-                _toxicityDamageTimer -= ToxicityDamagePulseIntervalSeconds;
+                _toxicityPulseAccumulatorSeconds -= ToxicityDamagePulseIntervalSeconds;
                 ApplyToxicityDamagePulse(currentToxicityIntensity);
             }
         }
 
         private void ApplyToxicityDamagePulse(float currentIntensity)
         {
-            if (_playerSurvival == null)
-                return;
-
-            float previousIntegrityNormalized = _playerSurvival.IntegrityNormalized;
             float overdose = math.max(0f, _toxicityDose - ToxicityDoseThreshold);
             float damageMagnitude = ToxicityDamagePerPulse *
                                     math.max(0.25f, currentIntensity) *
                                     (1f + overdose * ToxicityOverdoseDamageScale);
 
-            _playerSurvival.TakeDamage(damageMagnitude);
-            float nextIntegrityNormalized = _playerSurvival.IntegrityNormalized;
-            float integrityDeltaNormalized = math.abs(nextIntegrityNormalized - previousIntegrityNormalized);
-            if (_playerTraumaDispatcher == null || integrityDeltaNormalized <= 0.0001f)
+            int targetId = ResolvePlayerCombatTargetId();
+            PublishToxicityExposureSignal(targetId, damageMagnitude, currentIntensity);
+            _ = TryQueueToxicityPoisonStatus(targetId, damageMagnitude, currentIntensity);
+        }
+
+        private int ResolvePlayerCombatTargetId()
+        {
+            HectonPlayerHealth playerHealth = _playerHealth;
+            if (playerHealth == null && _playerTransform != null && _playerTransform.TryGetComponent(out HectonPlayerHealth transformHealth))
+            {
+                playerHealth = transformHealth;
+                _playerHealth = transformHealth;
+            }
+
+            if (playerHealth == null && _playerSurvival != null && _playerSurvival.TryGetComponent(out HectonPlayerHealth survivalHealth))
+            {
+                playerHealth = survivalHealth;
+                _playerHealth = survivalHealth;
+            }
+
+            return playerHealth != null
+                ? CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject)
+                : 0;
+        }
+
+        private static bool TryQueueToxicityPoisonStatus(int targetId, float damageMagnitude, float currentIntensity)
+        {
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return false;
+
+            float severity01 = math.saturate(math.max(currentIntensity, damageMagnitude * 0.05f));
+            float durationSeconds = ToxicityPoisonStatusDurationSeconds * math.max(0.25f, severity01);
+            return CombatDamageRuntime.TryQueueStatusEffect(
+                targetId,
+                CombatStatusBits.Poisoned64,
+                durationSeconds,
+                DamageSourceIds.EnvironmentHazard,
+                severity01);
+        }
+
+        private void PublishToxicityExposureSignal(int targetId, float damageMagnitude, float currentIntensity)
+        {
+            if (targetId == 0)
                 return;
 
-            HabitatDamageSignal signal = default;
-            signal.magnitude = damageMagnitude;
-            signal.localPoint = float3.zero;
-            signal.damageType = (uint)DamageTypeMask.Parasite;
-            signal.integrityDelta = (byte)math.clamp(
-                (int)math.round(integrityDeltaNormalized * byte.MaxValue),
-                0,
-                byte.MaxValue);
-            signal.depth = _playerSurvival.Depth;
-            signal.sourceID = DamageSourceIds.EnvironmentHazard;
+            if (!TryResolvePlayerPredictedAup(out AbsoluteUniversePosition playerAup) &&
+                (_playerTransform == null || !TryResolveAupFromRuntimeOrigin(_playerTransform.position, out playerAup)))
+            {
+                return;
+            }
 
-            _playerTraumaDispatcher.OnIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, signal);
+            float exposure01 = math.saturate(currentIntensity);
+            float toxemiaDelta = math.saturate(exposure01 * math.max(0.1f, damageMagnitude) * ToxicityExposureToxemiaScale);
+            if (exposure01 <= 0.0001f && toxemiaDelta <= 0f)
+                return;
+
+            ToxicityExposureSignal signal = default;
+            signal.AUP = playerAup.ToAbsoluteDouble3();
+            signal.Exposure01 = exposure01;
+            signal.ToxemiaDelta = toxemiaDelta;
+            signal.EntityId = unchecked((uint)targetId);
+            signal.ChemicalHash = ToxicityHazardChemicalHash;
+            signal.Frame = TimeSliceScheduler.CurrentFrameId;
+            signal.Flags = 1;
+            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
         }
 
         private float ResolveToxicityResistance()
@@ -1161,7 +1219,7 @@ namespace Hecton8.Gameplay
             if (!allowAllocation || vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<HazardExposureJobResult> acquired = vault.GetGenerationHandle<HazardExposureJobResult>(
+            VaultGenerationHandle<HazardExposureJobResult> acquired = vault.EnsureGenerationHandle<HazardExposureJobResult>(
                 BufferID.HazardExposureJobResult,
                 1,
                 SystemID.GameplayPlayer,
@@ -1186,6 +1244,11 @@ namespace Hecton8.Gameplay
 
             ClearHazardExposureResultDescriptor();
             _dataVault = vault;
+        }
+
+        private void CachePlayerRuntimeContextCold()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
         }
 
         private void ReleaseHazardExposureResultBuffer()
@@ -1751,14 +1814,14 @@ namespace Hecton8.Gameplay
 
             ClearPendingMutations();
             _activeCount = 0;
-            _stepAccumulator = 0f;
             _toxicityDose = 0f;
-            _toxicityDamageTimer = 0f;
+            _toxicityPulseAccumulatorSeconds = 0f;
             _publishedExposureMask = 0;
             _activeTransportOwner = null;
             _activeTransportBehaviour = null;
             _activeTransportCollider = null;
             _playerCollider = null;
+            _playerRuntimeContext = null;
 
             for (int i = 0; i < HazardTypeCount; i++)
             {
@@ -1874,7 +1937,7 @@ namespace Hecton8.Gameplay
 
         private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
         {
-            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return IsFiniteAup(in originAup);
         }
 
@@ -2187,9 +2250,16 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            bool slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            bool lateRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registered = slowRegistered && lateRegistered;
+            if (_registered)
+                return;
+
+            if (slowRegistered)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (lateRegistered)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -2197,7 +2267,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registered = false;
         }

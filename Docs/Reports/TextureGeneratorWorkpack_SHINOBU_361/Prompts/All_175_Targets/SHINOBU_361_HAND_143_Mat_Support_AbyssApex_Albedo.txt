@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_143
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_143_Mat_Support_AbyssApex_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Support_AbyssApex_Albedo.png
+FINAL_FILENAME: Mat_Support_AbyssApex_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Support marker albedo for abyss apex gameplay classification. Create a refined icon-free material with deep teal pressure bands, opal mineral ribs, amber sensory dots, pearl edge dust, and violet depth undertones. It should support data-driven zone visualization while looking like a natural premium material, not a flat debug color. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

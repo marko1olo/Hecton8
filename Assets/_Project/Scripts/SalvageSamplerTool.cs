@@ -50,8 +50,8 @@ namespace Hecton8.Gameplay
         private uint _cachedDiagnosisStamp = uint.MaxValue;
         private bool _cachedDiagnosisValid;
         private SamplerDiagnosis _cachedDiagnosis;
-        private ScanLogSystem _scanLog;
-        private LocalizationManager _localization;
+        private IScanLogService _scanLog;
+        private ILocalizationTextReadModel _localization;
 
         public override void OnSpawn()
         {
@@ -79,8 +79,8 @@ namespace Hecton8.Gameplay
 
         private void CacheColdDependencies()
         {
-            _scanLog = GlobalRegistry.ScanLog;
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _scanLog = GlobalRegistry.ScanLogService;
+            _localization = GlobalRegistry.LocalizationText;
         }
 
         public override void UsePrimary(float deltaTime)
@@ -98,7 +98,9 @@ namespace Hecton8.Gameplay
                     effectiveDamage,
                     hit.point,
                     sampleDirection,
-                    sampleImpulse);
+                    sampleImpulse,
+                    DamageSourceIds.SalvageSampler,
+                    CombatDamageTypes.MicroFracture);
 
                 if (!applied && TryConsumeFeedbackGate())
                 {
@@ -270,7 +272,7 @@ namespace Hecton8.Gameplay
 
         private void ArchiveRecoveredItem(ItemData item)
         {
-            ScanLogSystem scanLog = _scanLog;
+            IScanLogService scanLog = _scanLog;
             if (item == null || scanLog == null)
                 return;
 
@@ -368,9 +370,8 @@ namespace Hecton8.Gameplay
                 };
             }
 
-            Hecton8.Scavenging.ResourceNode node =
-                hitCollider.GetComponent<Hecton8.Scavenging.ResourceNode>() ??
-                hitCollider.GetComponentInParent<Hecton8.Scavenging.ResourceNode>();
+            if (!hitCollider.TryGetComponent(out Hecton8.Scavenging.ResourceNode node))
+                node = hitCollider.GetComponentInParent<Hecton8.Scavenging.ResourceNode>();
             if (node != null)
             {
                 float integrityPercent = node.HealthNormalized * 100f;
@@ -642,9 +643,9 @@ namespace Hecton8.Gameplay
 
         private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetOrFallback(key, fallback)
                 : fallback;
         }
 

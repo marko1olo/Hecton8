@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -66,6 +67,11 @@ namespace Hecton8.Environment.Fluids
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GenerateEmergencyMockOceanJob : IJobParallelFor
         {
+            private const float TwoPi = 6.28318530718f;
+            private const float InvTwoPi = 0.15915494309f;
+            private const float Pi = 3.14159265359f;
+            private const float Epsilon = 0.0001f;
+
             [ReadOnly, NoAlias] public NativeArray<OceanSampleRequestDTO> Requests;
             [WriteOnly, NoAlias] public NativeArray<OceanSampleResultDTO> Results;
             public double3 ActiveOriginAUP;
@@ -89,18 +95,18 @@ namespace Hecton8.Environment.Fluids
                 float lowAmp = math.lerp(0.025f, 0.35f, quality);
                 float highAmp = math.lerp(0.1f, 1.25f, quality * quality);
                 float phase0 = math.dot(xz, new float2(0.0031f, 0.0023f));
-                float height = SeaLevel + math.sin(phase0) * math.select(highAmp, lowAmp, simplified);
+                float height = SeaLevel + ApproxSinBhaskara(phase0) * math.select(highAmp, lowAmp, simplified);
 
                 if (!simplified)
                 {
                     float detailWeight0 = math.smoothstep(0.2f, 0.65f, quality);
                     float detailWeight1 = math.smoothstep(0.45f, 0.95f, quality);
-                    height += math.sin(math.dot(xz, new float2(-0.0067f, 0.0049f)) + 1.7f) * (0.35f * highAmp * detailWeight0);
-                    height += math.sin(math.dot(xz, new float2(0.011f, -0.008f)) + 3.1f) * (0.16f * highAmp * detailWeight1);
+                    height += ApproxSinBhaskara(math.dot(xz, new float2(-0.0067f, 0.0049f)) + 1.7f) * (0.35f * highAmp * detailWeight0);
+                    height += ApproxSinBhaskara(math.dot(xz, new float2(0.011f, -0.008f)) + 3.1f) * (0.16f * highAmp * detailWeight1);
                 }
 
-                float slopeX = math.cos(phase0) * 0.0031f * lowAmp;
-                float slopeZ = math.cos(phase0) * 0.0023f * lowAmp;
+                float slopeX = ApproxCosBhaskara(phase0) * 0.0031f * lowAmp;
+                float slopeZ = ApproxCosBhaskara(phase0) * 0.0023f * lowAmp;
                 float3 normal = math.normalize(new float3(-slopeX, 1f, -slopeZ));
                 float3 velocity = new float3(slopeZ, 0f, -slopeX);
 
@@ -118,6 +124,28 @@ namespace Hecton8.Environment.Fluids
                 result.LatencyMilliseconds = simplified ? 3f : 1f;
                 result.StatusFlags = flags;
                 Results[index] = result;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float ApproxSinBhaskara(float radians)
+            {
+                float angle = math.select(0f, radians, math.isfinite(radians));
+                float cycle = angle * InvTwoPi;
+                float wrapped = cycle - math.floor(cycle);
+                float x = wrapped * TwoPi;
+                float mirrored = math.select(x, TwoPi - x, x > Pi);
+                float sign = math.select(1f, -1f, x > Pi);
+                float shape = mirrored * (Pi - mirrored);
+                float numerator = 16f * shape;
+                float denominator = math.max(Epsilon, (5f * Pi * Pi) - (4f * shape));
+                float sine = sign * numerator * math.rcp(denominator);
+                return math.clamp(math.select(0f, sine, math.isfinite(sine)), -1f, 1f);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float ApproxCosBhaskara(float radians)
+            {
+                return ApproxSinBhaskara(radians + (0.5f * Pi));
             }
         }
     }

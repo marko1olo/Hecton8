@@ -31,15 +31,11 @@ namespace Hecton8.Physics
         private const int PropulsionRequestExpectedSignals = 8;
         private const int PropulsionRequestMaxFrameSignals = 16;
         private const int PropulsionRequestMinimumQualityFrameSignals = 4;
-        private const int ToolAcousticExpectedSignals = 128;
-        private const int ToolAcousticMaxFrameSignals = 128;
-        private const int ToolAcousticMinimumQualityFrameSignals = 32;
-        private const int BubbleSpawnExpectedSignals = 64;
 
         private static SeaglideHydrodynamicsRuntime s_activeRuntimeInstance;
 
         private IDataVault _dataVault;
-        private PhysicsApplySystem _physicsApplySystem;
+        private IPhysicsService _physicsService;
         private GlobalPhysicsStateManager _bodyResolver;
         private VaultGenerationHandle<SeaglideStateDTO> _statesHandle;
         private VaultGenerationHandle<SeaglidePropulsionRequestDTO> _requestsHandle;
@@ -433,7 +429,7 @@ namespace Hecton8.Physics
             NativeArray<SeaglideCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
             NativeArray<SeaglideBodyBindingDTO> bodyBindings = ResolveVaultBuffer(vault, in _bodyBindingsHandle);
             PhysicsApplySystem.DrainSeaglideForcePackets(
-                _physicsApplySystem,
+                _physicsService,
                 _bodyResolver,
                 forcePackets,
                 counters,
@@ -477,7 +473,7 @@ namespace Hecton8.Physics
                 EnsureColdBooted();
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         public bool GenerateMockPropulsionRequests()
         {
             IDataVault vault = _dataVault;
@@ -646,7 +642,9 @@ namespace Hecton8.Physics
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             EnsureSeaglideSignalLanes();
             SeedDefaultTuningIfNeeded();
+#if UNITY_EDITOR
             TryLoadVehicleProfileCsvCold();
+#endif
             TryBindPlayerBodyCold();
             _coldBootCompleted = true;
             return true;
@@ -664,7 +662,7 @@ namespace Hecton8.Physics
         private void RefreshColdDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _physicsApplySystem = GlobalRegistry.Physics as PhysicsApplySystem;
+            _physicsService = GlobalRegistry.Physics;
             _bodyResolver = GlobalRegistry.PhysicsStateManager;
             if (_coldBootCompleted)
                 TryBindPlayerBodyCold();
@@ -761,7 +759,7 @@ namespace Hecton8.Physics
             if (vault.IsAllocationLocked)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.VehiclesPhysics, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.VehiclesPhysics, options);
             return HasHandle(in handle) &&
                    vault.TryResolveHandle(in handle, out NativeArray<T> resolved) &&
                    resolved.IsCreated &&
@@ -864,14 +862,16 @@ namespace Hecton8.Physics
                 ComputeStableSignalLaneHash(nameof(SeaglidePropulsionRequestSignal)));
             SignalBus<SeaglidePropulsionRequestSignal>.EnsureInitialized();
             SignalBus<ToolAcousticSignal>.Configure(
-                ToolAcousticExpectedSignals,
-                ToolAcousticMaxFrameSignals,
-                ToolAcousticMinimumQualityFrameSignals,
-                ComputeStableSignalLaneHash(nameof(ToolAcousticSignal)));
+                ToolAcousticSignal.ExpectedCapacity,
+                ToolAcousticSignal.MaxFrameSignals,
+                ToolAcousticSignal.LowTierFrameSignals,
+                ToolAcousticSignal.LaneHash);
             SignalBus<ToolAcousticSignal>.EnsureInitialized();
             SignalBus<BubbleSpawnSignal>.Configure(
-                BubbleSpawnExpectedSignals,
-                laneHash: ComputeStableSignalLaneHash(nameof(BubbleSpawnSignal)));
+                BubbleSpawnSignal.ExpectedCapacity,
+                maxFrameSignals: BubbleSpawnSignal.MaxFrameSignals,
+                lowTierFrameSignals: BubbleSpawnSignal.LowTierFrameSignals,
+                laneHash: BubbleSpawnSignal.LaneHash);
             SignalBus<BubbleSpawnSignal>.EnsureInitialized();
         }
 
@@ -975,8 +975,10 @@ namespace Hecton8.Physics
             int published = 0;
             for (int i = 0; i < scanWindow && published < publishBudget; i++)
             {
-                bool emitted = PublishAudioSignal(in audioSignals[i]);
-                emitted |= PublishBubbleSignal(in cavitationSignals[i], counter.GlobalQualityWeight);
+                SeaglideAudioSignalDTO audioSignal = audioSignals[i];
+                SeaglideCavitationVfxSignalDTO cavitationSignal = cavitationSignals[i];
+                bool emitted = PublishAudioSignal(in audioSignal);
+                emitted |= PublishBubbleSignal(in cavitationSignal, counter.GlobalQualityWeight);
                 if (emitted)
                     published++;
             }
@@ -1198,6 +1200,7 @@ namespace Hecton8.Physics
             tuning[0] = value;
         }
 
+#if UNITY_EDITOR
         private unsafe bool TryLoadVehicleProfileCsvCold()
         {
             IDataVault vault = _dataVault;
@@ -1223,13 +1226,16 @@ namespace Hecton8.Physics
                     return false;
 
                 int length = (int)stream.Length;
-                for (int i = 0; i < length; i++)
+                byte* scratchPtr = (byte*)scratch.GetUnsafePtr();
+                Span<byte> destination = new Span<byte>(scratchPtr, length);
+                int total = 0;
+                while (total < length)
                 {
-                    int next = stream.ReadByte();
-                    if (next < 0)
+                    int read = stream.Read(destination.Slice(total));
+                    if (read <= 0)
                         return false;
 
-                    scratch[i] = (byte)next;
+                    total += read;
                 }
 
                 SeaglideTuningDTO value = tuning[0];
@@ -1269,6 +1275,7 @@ namespace Hecton8.Physics
             string legacy = Path.Combine(projectRoot, SeaglideHydrodynamicsConstants.LegacyCsvRelativePath);
             return File.Exists(legacy) ? legacy : null;
         }
+#endif
 
         private static float ResolveThrustCadenceSeconds(float fixedDeltaTime, float quality)
         {
@@ -1279,7 +1286,15 @@ namespace Hecton8.Physics
         private static float ApplyResolvedGlobalQualityWeight(ref SeaglideTuningDTO tuning)
         {
             float quality = SeaglideSimdMath.AuthoritativeQualityWeight;
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+            {
+                quality = MathLodApproximation.SaturateFinite(
+                    config.GlobalQualityWeight,
+                    SeaglideSimdMath.AuthoritativeQualityWeight);
+            }
+
             tuning.GlobalQualityWeight = quality;
+            tuning.ResolvedQualityWeight = quality;
             return quality;
         }
 

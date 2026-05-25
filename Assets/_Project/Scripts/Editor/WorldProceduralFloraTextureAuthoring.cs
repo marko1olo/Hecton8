@@ -1346,11 +1346,10 @@ namespace Hecton8.EditorTools
             if (!Directory.Exists(importedRootPath))
                 return false;
 
-            string[] candidateDirectories = Directory.GetDirectories(importedRootPath, familyId + ".v*");
             int bestRevision = -1;
-            for (int i = 0; i < candidateDirectories.Length; i++)
+            foreach (string candidateDirectory in Directory.EnumerateDirectories(importedRootPath, familyId + ".v*"))
             {
-                string candidateFolderName = Path.GetFileName(candidateDirectories[i]);
+                string candidateFolderName = Path.GetFileName(candidateDirectory);
                 if (!TryParseImportedRevisionFolderName(candidateFolderName, familyId, out int revision))
                     continue;
 

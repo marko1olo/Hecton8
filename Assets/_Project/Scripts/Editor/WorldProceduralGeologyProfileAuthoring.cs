@@ -60,6 +60,7 @@ namespace Hecton8.EditorTools
         private static Dictionary<string, WorldPrefabFamilyProfile> LoadFamiliesById()
         {
             string[] familyGuids = AssetDatabase.FindAssets($"t:{nameof(WorldPrefabFamilyProfile)}", new[] { ProceduralFamilyFolder });
+            Array.Sort(familyGuids, StringComparer.Ordinal);
             Dictionary<string, WorldPrefabFamilyProfile> familiesById = new Dictionary<string, WorldPrefabFamilyProfile>(16, StringComparer.Ordinal);
 
             for (int i = 0; i < familyGuids.Length; i++)

@@ -116,7 +116,7 @@ namespace Hecton8.Editor.Validation
 
         private static Dictionary<ItemData, int> BuildStagingCounts()
         {
-            Dictionary<ItemData, int> counts = new Dictionary<ItemData, int>();
+            Dictionary<ItemData, int> counts = new Dictionary<ItemData, int>(32);
             var scene = EditorSceneManager.GetActiveScene();
             if (!scene.IsValid() || !scene.isLoaded)
                 return counts;

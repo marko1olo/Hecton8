@@ -6,7 +6,13 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.Core.Contracts
 {
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal static class GroundRadarLayout
+    {
+        internal const int VoxelSonarSdfRaycastHitStrideBytes = 64;
+        internal const int VoxelSdfPayloadDescriptorStrideBytes = 64;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = GroundRadarLayout.VoxelSonarSdfRaycastHitStrideBytes)]
     public struct VoxelSonarSdfRaycastHit
     {
         public const uint FlagHit = 1u << 0;
@@ -23,7 +29,7 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(56)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = GroundRadarLayout.VoxelSdfPayloadDescriptorStrideBytes)]
     public struct VoxelSdfPayloadDescriptorDTO
     {
         public const uint FlagValid = 1u << 0;

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Globalization;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -133,7 +134,7 @@ namespace Hecton8.UI.Editor
 
             bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
                 hash,
-                _decodedPreview.AsSpan(),
+                new Span<char>(_decodedPreview),
                 out int decodedLength,
                 false);
             _decodedLabel.text = found && decodedLength > 0

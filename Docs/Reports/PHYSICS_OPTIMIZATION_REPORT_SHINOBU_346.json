@@ -1,0 +1,30 @@
+﻿{
+  "agent": "SHINOBU_346",
+  "allExplosionApiSites": 0,
+  "analysisMode": "CLI preflight token scan with namespace/type/member context",
+  "companionRoslynAstScanner": "Assets/_Project/Scripts/Environment/Editor/OOP_Explosion_Scanner.cs",
+  "companionRoslynStatus": "source-added with shared-report upsert and unqualified OverlapSphere detection; Unity menu execution pending",
+  "filesScanned": 11,
+  "findings": [],
+  "proof": {
+    "forbiddenRuntimeApis": [
+      "Physics.OverlapSphere",
+      "Rigidbody.AddExplosionForce"
+    ],
+    "hotPathManagedAllocations": 0,
+    "runtimeRoute": "SeismicEventDTO + SeismicStateDTO in GlobalDataVault -> SeismicSignal via SignalBus"
+  },
+  "scanScope": [
+    "Assets/_Project/Scripts/Environment"
+  ],
+  "scanner": "OOP_Explosion_Scanner",
+  "scannerUsesRoslynAst": false,
+  "searchedTokens": [
+    "Rigidbody.AddExplosionForce",
+    ".AddExplosionForce",
+    "Physics.OverlapSphere",
+    "UnityEngine.Physics.OverlapSphere"
+  ],
+  "seismicExplosionApiSites": 0,
+  "summary": "OOP Seismic Forces Eradicated"
+}

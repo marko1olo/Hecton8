@@ -79,7 +79,10 @@ namespace Hecton8.Visor
             private Material _material;
             private RuntimeState _runtimeState;
             private GraphicsBuffer _brownoutGlobalsBuffer;
+            private GraphicsBuffer _brownoutGlobalsBufferA;
+            private GraphicsBuffer _brownoutGlobalsBufferB;
             private BrownoutGlobalsDTO _lastBrownoutGlobals;
+            private int _brownoutGlobalsWriteIndex;
             private bool _hasBrownoutGlobals;
 
             public BrownoutPass()
@@ -151,8 +154,12 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
-                _brownoutGlobalsBuffer?.Release();
+                _brownoutGlobalsBufferA?.Release();
+                _brownoutGlobalsBufferA = null;
+                _brownoutGlobalsBufferB?.Release();
+                _brownoutGlobalsBufferB = null;
                 _brownoutGlobalsBuffer = null;
+                _brownoutGlobalsWriteIndex = 0;
                 _hasBrownoutGlobals = false;
             }
 
@@ -164,17 +171,30 @@ namespace Hecton8.Visor
                     return false;
                 }
 
-                if (_brownoutGlobalsBuffer != null && _brownoutGlobalsBuffer.IsValid())
+                if (_brownoutGlobalsBufferA != null && _brownoutGlobalsBufferA.IsValid() &&
+                    _brownoutGlobalsBufferB != null && _brownoutGlobalsBufferB.IsValid())
+                {
+                    if (_brownoutGlobalsBuffer == null)
+                        _brownoutGlobalsBuffer = _brownoutGlobalsBufferA;
                     return true;
+                }
 
-                _brownoutGlobalsBuffer?.Release();
-                _brownoutGlobalsBuffer = new GraphicsBuffer(
+                _brownoutGlobalsBufferA?.Release();
+                _brownoutGlobalsBufferB?.Release();
+                _brownoutGlobalsBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     VRBrownoutGlobalsStrideBytes);
+                _brownoutGlobalsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    VRBrownoutGlobalsStrideBytes);
+                _brownoutGlobalsBuffer = _brownoutGlobalsBufferA;
+                _brownoutGlobalsWriteIndex = 1;
                 _hasBrownoutGlobals = false;
-                return _brownoutGlobalsBuffer.IsValid();
+                return _brownoutGlobalsBufferA.IsValid() && _brownoutGlobalsBufferB.IsValid();
             }
 
             private bool UpdateBrownoutGlobals(FeatureSettings settings, RuntimeState runtimeState)
@@ -201,9 +221,15 @@ namespace Hecton8.Visor
                     return true;
                 }
 
-                NativeArray<BrownoutGlobalsDTO> mapped = _brownoutGlobalsBuffer.LockBufferForWrite<BrownoutGlobalsDTO>(0, 1);
+                GraphicsBuffer writeBuffer = _brownoutGlobalsWriteIndex == 0 ? _brownoutGlobalsBufferA : _brownoutGlobalsBufferB;
+                if (writeBuffer == null || !writeBuffer.IsValid())
+                    return false;
+
+                NativeArray<BrownoutGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<BrownoutGlobalsDTO>(0, 1);
                 mapped[0] = globals;
-                _brownoutGlobalsBuffer.UnlockBufferAfterWrite<BrownoutGlobalsDTO>(1);
+                writeBuffer.UnlockBufferAfterWrite<BrownoutGlobalsDTO>(1);
+                _brownoutGlobalsBuffer = writeBuffer;
+                _brownoutGlobalsWriteIndex ^= 1;
                 _lastBrownoutGlobals = globals;
                 _hasBrownoutGlobals = true;
                 Shader.SetGlobalConstantBuffer(ShaderConstants.BrownoutGlobalsBufferId, _brownoutGlobalsBuffer, 0, VRBrownoutGlobalsStrideBytes);
@@ -294,7 +320,7 @@ namespace Hecton8.Visor
 
             RecreateMaterial(ref _material, shader);
             TryRegisterHotSwapListener();
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         /// <inheritdoc />

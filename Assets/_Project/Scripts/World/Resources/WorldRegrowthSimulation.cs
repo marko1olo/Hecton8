@@ -12,6 +12,13 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    internal static class WorldRegrowthSimulationLayout
+    {
+        public const int WorldRegrowthConfigStrideBytes = 48;
+        public const int WorldRegrowthTelemetryEntryStrideBytes = 48;
+        public const int WorldRegrowthPayloadHeaderStrideBytes = 80;
+    }
+
     /// <summary>
     /// Macro-sector biome ids used by the deterministic world regrowth simulation.
     /// </summary>
@@ -37,7 +44,7 @@ namespace Hecton8.World
     /// <summary>
     /// Fixed-point constants for the daily macro regrowth solve.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = WorldRegrowthSimulationLayout.WorldRegrowthConfigStrideBytes)]
     public struct WorldRegrowthConfig
     {
         [FieldOffset(0)]
@@ -134,7 +141,7 @@ namespace Hecton8.World
     /// <summary>
     /// Last-frame state sample for post-mortem regrowth diagnostics.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = WorldRegrowthSimulationLayout.WorldRegrowthTelemetryEntryStrideBytes)]
     public struct WorldRegrowthTelemetryEntry
     {
         [FieldOffset(0)] public uint DayIndex;
@@ -934,7 +941,7 @@ namespace Hecton8.World
     /// <summary>
     /// H8_MacroDB binary payload header for regrowth pages.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = WorldRegrowthSimulationLayout.WorldRegrowthPayloadHeaderStrideBytes)]
     public struct WorldRegrowthPayloadHeader
     {
         [FieldOffset(0)]

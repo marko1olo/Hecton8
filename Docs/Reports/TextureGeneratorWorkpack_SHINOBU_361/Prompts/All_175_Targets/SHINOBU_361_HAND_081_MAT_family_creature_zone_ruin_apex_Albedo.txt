@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_081
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_081_MAT_family_creature_zone_ruin_apex_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_creature_zone_ruin_apex_Albedo.png
+FINAL_FILENAME: MAT_family_creature_zone_ruin_apex_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Ruin apex creature zone albedo for top predators around ancient structures. Blend satin graphite ruin fragments, teal biological scale traces, pearl mineral dust, amber sensor-like pores, and faded off-white ceramic chips. The texture should feel like apex territory crossing old engineered surfaces, elegant and readable rather than chaotic. Use a premium ruin-meets-biology palette that connects world lore and gameplay danger. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

@@ -3,10 +3,15 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
+    internal static class HectonCameraStateLayout
+    {
+        internal const int CameraStateStrideBytes = 96;
+    }
+
     /// <summary>
     /// Immutable camera target state produced by locomotion and consumed by the camera rig owner.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = HectonCameraStateLayout.CameraStateStrideBytes)]
     public struct HectonCameraState
     {
         public const uint ApplyTransformDirectlyFlag = 1u << 0;

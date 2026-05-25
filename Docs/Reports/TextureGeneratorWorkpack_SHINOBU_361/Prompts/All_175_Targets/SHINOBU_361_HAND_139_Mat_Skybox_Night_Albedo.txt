@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_139
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_139_Mat_Skybox_Night_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Skybox_Night_Albedo.png
+FINAL_FILENAME: Mat_Skybox_Night_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Night skybox albedo source for Hecton with elegant deep ocean atmosphere. Create refined indigo-teal gradients, pearl star-dust fields, soft cyan aurora ribbons, muted violet high haze, and tiny warm amber distant light specks. The texture should feel calm, expensive, and readable, like an alien research sky above the sea. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

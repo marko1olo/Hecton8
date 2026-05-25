@@ -55,10 +55,8 @@ namespace Hecton8.Editor
                 if (!Directory.Exists(root))
                     continue;
 
-                string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                foreach (string path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
                 {
-                    string path = files[fileIndex];
                     filesVisited++;
                     string original = File.ReadAllText(path);
                     SyntaxTree tree;

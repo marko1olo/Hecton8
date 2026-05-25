@@ -105,7 +105,7 @@ namespace Hecton8.Core
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         public static void ReportRejectedCopy(string owner)
         {
-            Debug.LogError(RejectedCopyMessage);
+            Hecton8.Core.H8Debug.LogError(RejectedCopyMessage);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -293,13 +293,13 @@ namespace Hecton8.Core
                 DamageType = state.StatusMask,
                 TargetHash = PlayerTargetHash,
                 SourceHash = SurvivalSourceHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 SourceId = 0,
                 TargetId = 0,
                 Channel = 0,
                 Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag
             };
-            SignalBus<Hecton8.Core.Contracts.Signals.CombatDamageSignal>.Push(in signal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CombatDamageSignal>.TryPush(in signal);
         }
 
         private static PlayerMovementRuntimeState SanitizeMovementState(

@@ -31,6 +31,6 @@ namespace Hecton8.MockDomain.Contracts
     public interface IMockContractImplementation : IBootstrapNode
     {
         PhysicsFacade CreatePhysicsFacade(GlobalNativeBufferHandle bodyBuffer);
-        ref MockDomainState GetStateRef();
+        ref readonly MockDomainState GetStateRef();
     }
 }

@@ -5,6 +5,7 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Visor;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -143,9 +144,9 @@ namespace Hecton8.UI
             float3 p = VolumeOrigin + new float3(x * CellSize.x, y * CellSize.y, z * CellSize.z);
             float3 local = p - MockCenter;
             float radial = ApproxMagnitude(local);
-            float angle = math.atan2(local.z, local.x);
-            float ridge = math.sin(angle * 7.0f + Seed * 0.00013f) * 4.5f +
-                          math.sin((local.y + local.x) * 0.091f) * 2.0f;
+            float angle = MathLodApproximation.ApproxAtan2Fast(local.z, local.x);
+            float ridge = MathLodApproximation.ApproxSinBhaskara(angle * 7.0f + Seed * 0.00013f) * 4.5f +
+                          MathLodApproximation.ApproxSinBhaskara((local.y + local.x) * 0.091f) * 2.0f;
             float caveRadius = math.lerp(42f, 74f, math.saturate(QualityWeight)) + ridge;
             float shell = radial - caveRadius;
 
@@ -153,9 +154,9 @@ namespace Hecton8.UI
             float2 pillarB = local.xz - new float2(-28f, 16f);
             float pillar0 = 6.0f - ApproxMagnitude(new float3(pillarA.x, 0f, pillarA.y));
             float pillar1 = 4.0f - ApproxMagnitude(new float3(pillarB.x, 0f, pillarB.y));
-            float floorNoise = math.sin(local.x * 0.12f + local.z * 0.071f) * 2.75f;
+            float floorNoise = MathLodApproximation.ApproxSinBhaskara(local.x * 0.12f + local.z * 0.071f) * 2.75f;
             float floor = -(local.y + 18f + floorNoise);
-            float ceiling = local.y - 38f + math.sin(local.x * 0.05f) * 3.0f;
+            float ceiling = local.y - 38f + MathLodApproximation.ApproxSinBhaskara(local.x * 0.05f) * 3.0f;
             float signedDistance = math.max(math.max(shell, math.max(pillar0, pillar1)), math.max(floor, ceiling));
             signedDistance = math.clamp(signedDistance, -SdfRange, SdfRange);
 
@@ -163,7 +164,7 @@ namespace Hecton8.UI
             EncodedSdf[index] = (byte)math.clamp((int)(encoded + 0.5f), 0, 255);
 
             byte material = 1;
-            float oreMask = math.frac(math.sin(math.dot(local, new float3(12.9898f, 78.233f, 37.719f)) + Seed) * 43758.5453f);
+            float oreMask = math.frac(MathLodApproximation.ApproxSinBhaskara(math.dot(local, new float3(12.9898f, 78.233f, 37.719f)) + Seed) * 43758.5453f);
             if (oreMask > math.lerp(0.965f, 0.91f, math.saturate(QualityWeight)) && signedDistance > -1.5f)
                 material = 2;
             if (local.y < -24f && signedDistance > -2.0f)
@@ -323,16 +324,6 @@ namespace Hecton8.UI
                 return float.NaN;
             }
 
-            if (math.step(0.3f, QualityWeight) < 0.5f)
-            {
-                int nx = math.clamp((int)math.round(grid.x), 0, GridDimensions.x - 1);
-                int ny = math.clamp((int)math.round(grid.y), 0, GridDimensions.y - 1);
-                int nz = math.clamp((int)math.round(grid.z), 0, GridDimensions.z - 1);
-                int nearestIndex = nx + GridDimensions.x * (ny + GridDimensions.y * nz);
-                materialId = (uint)nearestIndex < (uint)MaterialIds.Length ? MaterialIds[nearestIndex] : (byte)0;
-                return DecodeAt(nx, ny, nz);
-            }
-
             grid = math.clamp(grid, float3.zero, new float3(GridDimensions.x - 1.001f, GridDimensions.y - 1.001f, GridDimensions.z - 1.001f));
             int x0 = (int)math.floor(grid.x);
             int y0 = (int)math.floor(grid.y);
@@ -362,7 +353,9 @@ namespace Hecton8.UI
             int nz = math.clamp((int)math.round(grid.z), 0, GridDimensions.z - 1);
             int materialIndex = nx + GridDimensions.x * (ny + GridDimensions.y * nz);
             materialId = (uint)materialIndex < (uint)MaterialIds.Length ? MaterialIds[materialIndex] : (byte)0;
-            return math.lerp(math.lerp(c00, c10, ty), math.lerp(c01, c11, ty), tz);
+            float nearest = DecodeAt(nx, ny, nz);
+            float trilinear = math.lerp(math.lerp(c00, c10, ty), math.lerp(c01, c11, ty), tz);
+            return math.lerp(nearest, trilinear, ResolveWorkCurve(QualityWeight));
         }
 
         private float DecodeAt(int x, int y, int z)
@@ -429,7 +422,8 @@ namespace Hecton8.UI
             float radius = math.sqrt(math.max(0f, 1f - z * z));
             float phase = (seed & 1023u) * 0.006135923f;
             float theta = k * 2.39996323f + phase;
-            return new float3(math.cos(theta) * radius, z, math.sin(theta) * radius);
+            MathLodApproximation.ApproxSinCosBhaskara(theta, out float thetaSin, out float thetaCos);
+            return new float3(thetaCos * radius, z, thetaSin * radius);
         }
 
         private static float ResolveSingleLookupDistance01(int index, uint seed)
@@ -508,7 +502,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Topographical Sonar Synthesizer")]
-    public sealed class TopographicalSonarSynthesizer : MonoBehaviour, ILateFrameTickable, IRenderable, ISonarPingEventListener, IDisposable
+    public sealed class TopographicalSonarSynthesizer : MonoBehaviour, ILateFrameTickable, IRenderable, ISonarPingEventListener, IDisposable, IGlobalRegistryHotSwapListener
     {
         private const string OwnerName = "SHINOBU_144";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SONAR_SYNTHESIZER.bin";
@@ -559,6 +553,7 @@ namespace Hecton8.UI
         private int _registeredLateFrame;
         private int _registeredRenderable;
         private int _registeredPingListener;
+        private int _registeredHotSwapListener;
         private int _pendingPing;
         private int _activePointCount;
         private int _lastHitCount;
@@ -619,7 +614,8 @@ namespace Hecton8.UI
             AllocatePersistentState();
             EnsureGraphicsResources();
             InitializeMaterialColorLut();
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI) ? 1 : 0;
+            TryRegisterHotSwapListener();
+            TryRegisterLateFrameTickable();
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
             SpectrumEvents.RegisterSonarPingListener(this);
             _registeredPingListener = 1;
@@ -637,6 +633,8 @@ namespace Hecton8.UI
 
         public void Dispose()
         {
+            TryUnregisterHotSwapListener();
+
             if (_registeredPingListener != 0)
             {
                 SpectrumEvents.UnregisterSonarPingListener(this);
@@ -649,46 +647,54 @@ namespace Hecton8.UI
                 _registeredRenderable = 0;
             }
 
-            if (_registeredLateFrame != 0)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = 0;
-            }
+            TryUnregisterLateFrameTickable();
 
-            if (_scanJobScheduled != 0)
-            {
-                if (DispatcherJobFence.TryComplete(ref _scanHandle, forceComplete: true))
-                    _scanJobScheduled = 0;
-            }
-
-            if (_fadeJobScheduled != 0)
-            {
-                if (DispatcherJobFence.TryComplete(ref _fadeHandle, forceComplete: true))
-                    _fadeJobScheduled = 0;
-            }
+            CompleteScheduledJobs();
 
             ReleaseGraphicsBuffer(ref _pointBufferA);
             ReleaseGraphicsBuffer(ref _pointBufferB);
             ReleaseGraphicsBuffer(ref _argsBuffer);
             ReleaseGraphicsBuffer(ref _shaderGlobalsBuffer);
 
-            IDataVault vault = _dataVault;
-            ReleaseVaultBuffer(vault, ref _pointsHandle);
-            ReleaseVaultBuffer(vault, ref _hitMaskHandle);
-            ReleaseVaultBuffer(vault, ref _countersHandle);
-            ReleaseVaultBuffer(vault, ref _mockSdfHandle);
-            ReleaseVaultBuffer(vault, ref _mockMaterialIdsHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle);
-            ReleaseVaultBuffer(vault, ref _materialColorLutHandle);
-            ReleaseVaultBuffer(vault, ref _csvScratchHandle);
-            ReleaseVaultBuffer(vault, ref _indirectArgsHandle);
-            ReleaseVaultBuffer(vault, ref _shaderGlobalsHandle);
+            ReleaseVaultBuffers(_dataVault);
             _dataVault = null;
             _activePointCount = 0;
             _lastHitCount = 0;
             if (ReferenceEquals(ActiveRuntime, this))
                 ActiveRuntime = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null || !isActiveAndEnabled)
+                    return;
+
+                TryUnregisterLateFrameTickable();
+                TryRegisterLateFrameTickable();
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            CompleteScheduledJobs();
+            ReleaseVaultBuffers(_dataVault);
+            _dataVault = currentService as IDataVault;
+            _activePointCount = 0;
+            _lastHitCount = 0;
+            _lastTelemetryFlags = 0u;
+
+            if (!isActiveAndEnabled || _dataVault == null)
+                return;
+
+            AllocatePersistentState();
+            InitializeMaterialColorLut();
+            UpdateIndirectArgsBuffer(0u);
         }
 
         public void OnSonarPingSent(float intensity)
@@ -754,7 +760,7 @@ namespace Hecton8.UI
             UploadShaderGlobals();
             Shader.SetGlobalBuffer(SonarPointsId, readPointBuffer);
             Shader.SetGlobalConstantBuffer(SonarGlobalsId, _shaderGlobalsBuffer, 0, UnsafeUtility.SizeOf<TopographicalSonarShaderGlobalsDTO>());
-            Graphics.DrawProceduralIndirect(
+            UnityEngine.Graphics.DrawProceduralIndirect(
                 material,
                 _drawBounds,
                 MeshTopology.Triangles,
@@ -781,6 +787,7 @@ namespace Hecton8.UI
             SetTuningFromEditor(maxDistance, step, pointSize, echoFadeSeconds, quality);
         }
 
+#if UNITY_EDITOR
         public bool TryApplyMaterialColorCsv(NativeArray<byte> csvBytes, out int appliedRows)
         {
             appliedRows = 0;
@@ -841,67 +848,68 @@ namespace Hecton8.UI
 
             return applied;
         }
+#endif
 
         private void AllocatePersistentState()
         {
             if (_pointsHandle.BufferID != 0u && _pointBufferA != null && _pointBufferB != null && _argsBuffer != null)
                 return;
 
-            IDataVault vault = ResolveDataVaultCold();
+            IDataVault vault = CacheDataVaultCold();
             if (vault == null)
                 return;
 
-            _pointsHandle = vault.GetGenerationHandle<SonarPointDTO>(
+            _pointsHandle = vault.EnsureGenerationHandle<SonarPointDTO>(
                 TopographicalSonarBufferIds.Points,
                 TopographicalSonarConstants.MaxRays,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _hitMaskHandle = vault.GetGenerationHandle<byte>(
+            _hitMaskHandle = vault.EnsureGenerationHandle<byte>(
                 TopographicalSonarBufferIds.HitMask,
                 TopographicalSonarConstants.MaxRays,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _countersHandle = vault.GetGenerationHandle<int>(
+            _countersHandle = vault.EnsureGenerationHandle<int>(
                 TopographicalSonarBufferIds.Counters,
                 TopographicalSonarConstants.CounterCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _mockSdfHandle = vault.GetGenerationHandle<byte>(
+            _mockSdfHandle = vault.EnsureGenerationHandle<byte>(
                 TopographicalSonarBufferIds.MockSdf,
                 TopographicalSonarConstants.MockVoxelCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _mockMaterialIdsHandle = vault.GetGenerationHandle<byte>(
+            _mockMaterialIdsHandle = vault.EnsureGenerationHandle<byte>(
                 TopographicalSonarBufferIds.MockMaterialIds,
                 TopographicalSonarConstants.MockVoxelCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetGenerationHandle<TopographicalSonarTelemetryEntry>(
+            _telemetryRingHandle = vault.EnsureGenerationHandle<TopographicalSonarTelemetryEntry>(
                 TopographicalSonarBufferIds.TelemetryRing,
                 TopographicalSonarConstants.TelemetryFrames,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = vault.GetGenerationHandle<int>(
+            _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(
                 TopographicalSonarBufferIds.TelemetryCursor,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _materialColorLutHandle = vault.GetGenerationHandle<uint>(
+            _materialColorLutHandle = vault.EnsureGenerationHandle<uint>(
                 TopographicalSonarBufferIds.MaterialColorLut,
                 TopographicalSonarConstants.ColorLutEntries,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 TopographicalSonarBufferIds.CsvScratch,
                 TopographicalSonarConstants.CsvScratchBytes,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _indirectArgsHandle = vault.GetGenerationHandle<SonarProceduralArgsDTO>(
+            _indirectArgsHandle = vault.EnsureGenerationHandle<SonarProceduralArgsDTO>(
                 TopographicalSonarBufferIds.IndirectArgs,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _shaderGlobalsHandle = vault.GetGenerationHandle<TopographicalSonarShaderGlobalsDTO>(
+            _shaderGlobalsHandle = vault.EnsureGenerationHandle<TopographicalSonarShaderGlobalsDTO>(
                 TopographicalSonarBufferIds.ShaderGlobals,
                 1,
                 SystemID.UI,
@@ -1160,7 +1168,7 @@ namespace Hecton8.UI
                 CameraAupX = _lastCameraAup.x,
                 CameraAupY = _lastCameraAup.y,
                 CameraAupZ = _lastCameraAup.z,
-                Frame = (uint)math.max(0, Time.frameCount),
+                Frame = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
                 Sequence = _sequence,
                 RequestedRayCount = ResolveRayCount(quality),
                 ActivePointCount = _activePointCount,
@@ -1195,13 +1203,77 @@ namespace Hecton8.UI
             return resolvedPoints && resolvedHitMask && resolvedCounters && resolvedMockSdf && resolvedMockMaterials && resolvedColorLut;
         }
 
-        private IDataVault ResolveDataVaultCold()
+        private IDataVault CacheDataVaultCold()
         {
             if (_dataVault != null)
                 return _dataVault;
 
             _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrame != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI) ? 1 : 0;
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (_registeredLateFrame == 0)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = 0;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener != 0 || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this) ? 1 : 0;
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener == 0)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = 0;
+        }
+
+        private void CompleteScheduledJobs()
+        {
+            if (_scanJobScheduled != 0 &&
+                DispatcherJobFence.TryComplete(ref _scanHandle, forceComplete: true))
+            {
+                _scanJobScheduled = 0;
+            }
+
+            if (_fadeJobScheduled != 0 &&
+                DispatcherJobFence.TryComplete(ref _fadeHandle, forceComplete: true))
+            {
+                _fadeJobScheduled = 0;
+            }
+        }
+
+        private void ReleaseVaultBuffers(IDataVault vault)
+        {
+            ReleaseVaultBuffer(vault, ref _pointsHandle);
+            ReleaseVaultBuffer(vault, ref _hitMaskHandle);
+            ReleaseVaultBuffer(vault, ref _countersHandle);
+            ReleaseVaultBuffer(vault, ref _mockSdfHandle);
+            ReleaseVaultBuffer(vault, ref _mockMaterialIdsHandle);
+            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
+            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle);
+            ReleaseVaultBuffer(vault, ref _materialColorLutHandle);
+            ReleaseVaultBuffer(vault, ref _csvScratchHandle);
+            ReleaseVaultBuffer(vault, ref _indirectArgsHandle);
+            ReleaseVaultBuffer(vault, ref _shaderGlobalsHandle);
         }
 
         private static bool TryResolveVaultBuffer<T>(
@@ -1446,7 +1518,7 @@ namespace Hecton8.UI
             }
             catch (Exception exception)
             {
-                Debug.LogError("[" + OwnerName + "] Failed to dump topographical sonar blackbox: " + exception.Message, this);
+                Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
                 return false;
             }
         }
@@ -1460,6 +1532,7 @@ namespace Hecton8.UI
             buffer = null;
         }
 
+#if UNITY_EDITOR
         private static void SkipSeparators(NativeArray<byte> bytes, int length, ref int index)
         {
             while (index < length)
@@ -1623,6 +1696,7 @@ namespace Hecton8.UI
             value = 0;
             return false;
         }
+#endif
 
         private static uint PackColor(int r, int g, int b, int a)
         {
@@ -1646,7 +1720,7 @@ namespace Hecton8.UI
                 !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1676,14 +1750,17 @@ namespace Hecton8.UI
             int byteCount = 0;
             using (FileStream stream = File.OpenRead(path))
             {
+                Span<byte> readBuffer = stackalloc byte[4096];
                 while (byteCount < scratch.Length)
                 {
-                    int value = stream.ReadByte();
-                    if (value < 0)
+                    int requestedBytes = math.min(readBuffer.Length, scratch.Length - byteCount);
+                    int read = stream.Read(readBuffer.Slice(0, requestedBytes));
+                    if (read <= 0)
                         break;
 
-                    scratch[byteCount] = (byte)value;
-                    byteCount++;
+                    for (int i = 0; i < read; i++)
+                        scratch[byteCount + i] = readBuffer[i];
+                    byteCount += read;
                 }
             }
 
@@ -1705,8 +1782,9 @@ namespace Hecton8.UI
             Gizmos.color = new Color(0.1f, 0.9f, 1f, 0.35f);
             Vector3 origin = originTransform.position;
             int count = math.min(96, math.max(8, ResolveRayCount(ResolveQualityWeight()) / 256));
+            NativeArray<SonarPointDTO> points = default;
             bool hasPoints = Application.isPlaying &&
-                             TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> points) &&
+                             TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarConstants.MaxRays, out points) &&
                              points.IsCreated;
             Transform cameraTransform = renderCamera != null ? renderCamera.transform : transform;
             Vector3 cameraPosition = cameraTransform != null ? cameraTransform.position : origin;
@@ -1716,7 +1794,8 @@ namespace Hecton8.UI
                 float z = 1f - 2f * k / count;
                 float radius = Mathf.Sqrt(Mathf.Max(0f, 1f - z * z));
                 float theta = k * 2.39996323f;
-                Vector3 direction = new Vector3(Mathf.Cos(theta) * radius, z, Mathf.Sin(theta) * radius);
+                MathLodApproximation.ApproxSinCosBhaskara(theta, out float thetaSin, out float thetaCos);
+                Vector3 direction = new Vector3(thetaCos * radius, z, thetaSin * radius);
                 if (hasPoints && i < _activePointCount && i < points.Length && ((points[i].ColorPacked >> 24) & 0xFFu) != 0u)
                 {
                     float3 local = points[i].LocalPosition;

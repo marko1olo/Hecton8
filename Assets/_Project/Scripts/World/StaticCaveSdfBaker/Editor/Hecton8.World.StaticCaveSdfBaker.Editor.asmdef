@@ -2,6 +2,7 @@
     "name": "Hecton8.World.StaticCaveSdfBaker.Editor",
     "rootNamespace": "Hecton8.World.StaticCaveSdfBaker.Editor",
     "references": [
+        "Hecton8.Core",
         "Hecton8.World.StaticCaveSdfBaker",
         "Unity.Burst",
         "Unity.Collections",

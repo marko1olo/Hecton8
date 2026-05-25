@@ -361,11 +361,13 @@ namespace Hecton8.Rendering
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadQualityProfilesCsv(string projectRelativePath)
         {
             HectonBilateralDrsUpscalerRuntime runtime = EnsureRuntimeInstance();
             return runtime != null && runtime.LoadQualityProfilesCsv(projectRelativePath);
         }
+#endif
 
         public static bool IsEdgeMaskDebugEnabled()
         {
@@ -696,6 +698,7 @@ namespace Hecton8.Rendering
                 out NativeArray<byte> _);
         }
 
+#if UNITY_EDITOR
         private bool LoadQualityProfilesCsv(string projectRelativePath)
         {
             EnsureVaultState();
@@ -722,6 +725,7 @@ namespace Hecton8.Rendering
             _profilesSeeded = true;
             return true;
         }
+#endif
 
         private static void ClearProfiles(NativeArray<UpscalerProfileDTO> profiles)
         {
@@ -907,7 +911,7 @@ namespace Hecton8.Rendering
             if (IsVaultHandleCreated(in handle))
                 ReleaseVaultHandle(vault, ref handle);
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return IsVaultHandleCreated(in handle) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
@@ -1174,6 +1178,7 @@ namespace Hecton8.Rendering
             }
         }
 
+#if UNITY_EDITOR
         private static int LoadFileBytesIntoScratch(string fullPath, NativeArray<byte> csvScratch)
         {
             if (string.IsNullOrEmpty(fullPath) || !File.Exists(fullPath) || !csvScratch.IsCreated)
@@ -1471,6 +1476,7 @@ namespace Hecton8.Rendering
 
             return Path.Combine(root, projectRelativePath);
         }
+#endif
 
         private void DumpBlackBox()
         {

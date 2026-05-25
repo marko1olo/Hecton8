@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_078
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_078_MAT_family_creature_zone_large_threat_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_creature_zone_large_threat_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_creature_zone_large_threat_Placeholder_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Replacement albedo for large threat zone placeholder. Create a clean danger-biome tile with deep teal biological plating, coral linear warning motifs, opal chipped edges, amber dot clusters, and blue-gray seabed silt. It should be clear and game-readable, with premium material taste and restrained contrast that works in underwater lighting. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

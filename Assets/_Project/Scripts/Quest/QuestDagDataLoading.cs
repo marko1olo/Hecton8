@@ -400,8 +400,12 @@ namespace Hecton8.Quest
     /// <summary>
     /// Zero-allocation span parser for quest_logic_overrides.csv.
     /// </summary>
+    #if UNITY_EDITOR
     public static class QuestDagCsvOverrideIngestor
     {
+        private const int CsvScratchCharCapacity = 64 * 1024;
+        private static readonly char[] s_csvScratch = new char[CsvScratchCharCapacity]; // EDITOR COLD ALLOC: char[64k] - quest override CSV scratch, no full-file managed CSV string - owner: QuestDagCsvOverrideIngestor
+
         /// <summary>
         /// Monitors file timestamp and applies changed override rows. File read is cold/editor; row parser is span-only.
         /// </summary>
@@ -424,8 +428,10 @@ namespace Hecton8.Quest
             if (buffers.CsvMonitor[0] == writeTicks)
                 return false;
 
-            string csv = File.ReadAllText(path);
-            bool applied = TryApplyOverrides(vault, ref handles, csv.AsSpan(), out appliedRows);
+            if (!TryReadCsvIntoScratch(path, out int charCount))
+                return false;
+
+            bool applied = TryApplyOverrides(vault, ref handles, new ReadOnlySpan<char>(s_csvScratch, 0, charCount), out appliedRows);
             if (applied)
             {
                 buffers.CsvMonitor[0] = writeTicks;
@@ -433,6 +439,35 @@ namespace Hecton8.Quest
             }
 
             return applied;
+        }
+
+        private static bool TryReadCsvIntoScratch(string path, out int charCount)
+        {
+            charCount = 0;
+            try
+            {
+                using StreamReader reader = new StreamReader(path);
+                while (charCount < s_csvScratch.Length)
+                {
+                    int delta = reader.Read(s_csvScratch, charCount, s_csvScratch.Length - charCount);
+                    if (delta <= 0)
+                        return charCount > 0;
+
+                    charCount += delta;
+                }
+
+                return reader.Peek() < 0;
+            }
+            catch (IOException)
+            {
+                charCount = 0;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                charCount = 0;
+                return false;
+            }
         }
 
         /// <summary>
@@ -706,4 +741,5 @@ namespace Hecton8.Quest
             return counters.IsCreated && (uint)index < (uint)counters.Length ? counters[index] : 0;
         }
     }
+    #endif
 }

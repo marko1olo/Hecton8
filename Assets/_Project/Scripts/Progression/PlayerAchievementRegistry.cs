@@ -1,8 +1,9 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Modding;
 using Hecton8.PDA;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
@@ -18,7 +19,7 @@ namespace Hecton8.Progression
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Progression/Player Achievement Registry")]
-    public sealed class PlayerAchievementRegistry : MonoBehaviour, ITickable, ISlowTickable, ISaveable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerAchievementRegistry : MonoBehaviour, ITickable, ISlowTickable, ISaveable, IGlobalRegistryHotSwapListener, IPlayerAchievementRegistryRuntime
     {
         private enum AchievementMetric : byte
         {
@@ -76,6 +77,8 @@ namespace Hecton8.Progression
         private const double MaxReasonableStepMetersSq = 18d * 18d;
         private const string AchievementLogPrefix = "Achievement unlocked: ";
         private const string AchievementLogbookPrefix = "achievement.";
+        private const int AchievementMessageCapacity = 128;
+        private const int AchievementOriginCapacity = 96;
         private const int AchievementLogbookCategoryHash = unchecked((int)0x7E122BEA);
         private const int TelemetryCooldownFrames = 30;
         private const uint AchievementUnlockedHashOverflowWarningHash = 0x4143484Fu;
@@ -107,14 +110,15 @@ namespace Hecton8.Progression
         private readonly int[] _achievementLogMessageHashes = new int[_definitions.Length];
         // COLD ALLOC: int[6] - pending achievement side-effect queue drained in SlowTick - owner: PlayerAchievementRegistry
         private readonly int[] _pendingUnlockDefinitionIndices = new int[_definitions.Length];
+        private readonly char[] _achievementMessageBuffer = new char[AchievementMessageCapacity];
+        private readonly char[] _achievementOriginBuffer = new char[AchievementOriginCapacity];
 
         private HectonSurvivalSystem _survivalSystem;
         private HectonDiscoveryManager _discoveryManager;
         private HectonPlayerMovement _playerMovement;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IPDALogbookService _logbookManager;
-        private SaveManager _saveManager;
-        private HectonEventSubscription _gameLoadedSubscription;
+        private ISaveService _saveService;
         private bool _registeredToTick;
         private bool _registeredToSlowTick;
         private bool _registeredToSave;
@@ -131,6 +135,8 @@ namespace Hecton8.Progression
         private int _lastPendingUnlockOverflowTelemetryFrame;
         private int _lastAchievementNotificationMissTelemetryFrame;
         private uint _lastCraftingCompletedSequence;
+        private uint _lastProgressionMetaSequence;
+        private uint _lastSessionLifecycleSequence;
         private float _swamDistanceMeters;
         private int _craftedItemCount;
         private int _discoveredBiomeCount;
@@ -179,7 +185,6 @@ namespace Hecton8.Progression
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
             SyncCraftingSignalBaseline();
-            SubscribeToEventBus();
             RebindOwnerSubscriptions();
         }
 
@@ -196,7 +201,6 @@ namespace Hecton8.Progression
         {
             DrainPendingUnlocks();
             UnbindOwnerSubscriptions();
-            UnsubscribeFromEventBus();
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
@@ -205,7 +209,6 @@ namespace Hecton8.Progression
         private void OnDestroy()
         {
             UnbindOwnerSubscriptions();
-            UnsubscribeFromEventBus();
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
@@ -214,6 +217,8 @@ namespace Hecton8.Progression
         /// <inheritdoc />
         public void Tick(float dt)
         {
+            ProcessSessionLifecycleSignals();
+            ProcessProgressionMetaSignals();
             ProcessCraftingCompletions();
 
             if (!ResolveOwnersHot() ||
@@ -342,7 +347,7 @@ namespace Hecton8.Progression
 
         private void ProcessCraftingCompletions()
         {
-            uint currentSequence = GlobalSignals.LatestCraftingCompletedUnitCount;
+            uint currentSequence = CraftingSignalRoute.LatestCompletedUnitCount;
             uint delta = currentSequence - _lastCraftingCompletedSequence;
             if (delta == 0u)
                 return;
@@ -356,10 +361,45 @@ namespace Hecton8.Progression
 
         private void SyncCraftingSignalBaseline()
         {
-            _lastCraftingCompletedSequence = GlobalSignals.LatestCraftingCompletedUnitCount;
+            _lastCraftingCompletedSequence = CraftingSignalRoute.LatestCompletedUnitCount;
         }
 
-        private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
+        private void ProcessProgressionMetaSignals()
+        {
+            global::System.ReadOnlySpan<ProgressionMetaSignal> signals = SignalBus<ProgressionMetaSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ProgressionMetaSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastProgressionMetaSequence))
+                    continue;
+
+                _lastProgressionMetaSequence = signal.Sequence;
+                if (signal.Kind == ProgressionMetaSignal.KindBiomeDiscovered)
+                    HandleBiomeDiscovered(unchecked((int)signal.ContextHash));
+            }
+        }
+
+        private static bool IsNewerSequence(uint candidate, uint lastProcessed)
+        {
+            return candidate != 0u && (lastProcessed == 0u || unchecked((int)(candidate - lastProcessed)) > 0);
+        }
+
+        private void ProcessSessionLifecycleSignals()
+        {
+            global::System.ReadOnlySpan<SessionLifecycleSignal> signals = SignalBus<SessionLifecycleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                SessionLifecycleSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastSessionLifecycleSequence))
+                    continue;
+
+                _lastSessionLifecycleSequence = signal.Sequence;
+                if (signal.Kind == SessionLifecycleSignal.KindGameLoaded)
+                    HandleGameLoaded();
+            }
+        }
+
+        private void HandleGameLoaded()
         {
             RebindOwnerSubscriptions();
             RefreshDiscoveredBiomeTotalCold();
@@ -372,18 +412,6 @@ namespace Hecton8.Progression
             EvaluateUnlocks(AchievementMetric.DiscoveredBiomes);
         }
 
-        private void SubscribeToEventBus()
-        {
-            if (_gameLoadedSubscription == null)
-                _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "progression.achievements");
-        }
-
-        private void UnsubscribeFromEventBus()
-        {
-            _gameLoadedSubscription?.Dispose();
-            _gameLoadedSubscription = null;
-        }
-
         private void RebindOwnerSubscriptions()
         {
             UnbindOwnerSubscriptions();
@@ -392,9 +420,6 @@ namespace Hecton8.Progression
 
         private void UnbindOwnerSubscriptions()
         {
-            if (_discoveryManager != null)
-                _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
-
             _discoveryManager = null;
         }
 
@@ -410,29 +435,16 @@ namespace Hecton8.Progression
 
             if (_playerMovement == null)
             {
-                CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+                CachePlayerRuntimeContext(GlobalRegistry.Player);
 
                 if (_playerMovement == null)
                     TryGetComponent(out _playerMovement);
             }
 
             _logbookManager = GlobalRegistry.PDALogbook;
-            if (_saveManager == null)
-                _saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
-            RefreshDiscoveryBindingCold(GlobalRegistry.Discovery);
-        }
-
-        private void RefreshDiscoveryBindingCold(HectonDiscoveryManager discoveryManager)
-        {
-            if (ReferenceEquals(_discoveryManager, discoveryManager))
-                return;
-
-            if (_discoveryManager != null)
-                _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
-
-            _discoveryManager = discoveryManager;
-            if (_discoveryManager != null)
-                _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+            _discoveryManager = GlobalRegistry.Discovery;
         }
 
         private void RefreshDiscoveredBiomeTotalCold()
@@ -587,7 +599,7 @@ namespace Hecton8.Progression
                     logbookManager.TryAppendEntry(originHash, AchievementLogbookCategoryHash, messageHash);
             }
 
-            HectonEventBus.Publish(new AchievementUnlockedEvent(definition.IdHash, definition.Id, definition.Title));
+            ProgressionMetaSignalRoute.TryPublishAchievementUnlocked(definition.IdHash);
         }
 
         private void TryPushAchievementNotification(int definitionIndex, uint achievementHash)
@@ -598,7 +610,7 @@ namespace Hecton8.Progression
             uint notificationHash = _achievementNotificationHashes[definitionIndex];
             if (notificationHash != 0u && NotificationEvents.TryResolveMessage(notificationHash, out _))
             {
-                NotificationEvents.PushRegisteredInfo(notificationHash);
+                NotificationEvents.TryPushRegisteredInfo(notificationHash);
                 return;
             }
 
@@ -606,7 +618,7 @@ namespace Hecton8.Progression
             notificationHash = _achievementNotificationHashes[definitionIndex];
             if (notificationHash != 0u && NotificationEvents.TryResolveMessage(notificationHash, out _))
             {
-                NotificationEvents.PushRegisteredInfo(notificationHash);
+                NotificationEvents.TryPushRegisteredInfo(notificationHash);
                 return;
             }
 
@@ -621,13 +633,35 @@ namespace Hecton8.Progression
             for (int i = 0; i < _definitions.Length; i++)
             {
                 AchievementDefinition definition = _definitions[i];
-                string message = AchievementLogPrefix + definition.Title;
-                _achievementLogOriginHashes[i] = LocHash.Compute(AchievementLogbookPrefix + definition.Id);
+                int messageLength = 0;
+                TryAppendSpan(AchievementLogPrefix.AsSpan(), _achievementMessageBuffer, ref messageLength);
+                TryAppendSpan(definition.Title.AsSpan(), _achievementMessageBuffer, ref messageLength);
+
+                int originLength = 0;
+                TryAppendSpan(AchievementLogbookPrefix.AsSpan(), _achievementOriginBuffer, ref originLength);
+                TryAppendSpan(definition.Id.AsSpan(), _achievementOriginBuffer, ref originLength);
+
+                ReadOnlySpan<char> message = _achievementMessageBuffer.AsSpan(0, messageLength);
+                _achievementLogOriginHashes[i] = LocHash.Compute(_achievementOriginBuffer.AsSpan(0, originLength));
                 _achievementLogMessageHashes[i] = LocHash.Compute(message);
                 _achievementNotificationHashes[i] = NotificationEvents.RegisterMessage(message);
             }
 
             _achievementPresentationCached = true;
+        }
+
+        private static bool TryAppendSpan(ReadOnlySpan<char> source, char[] destination, ref int length)
+        {
+            if (destination == null || length < 0 || length > destination.Length)
+                return false;
+
+            int copyLength = math.min(source.Length, destination.Length - length);
+            if (copyLength <= 0)
+                return source.Length == 0;
+
+            source.Slice(0, copyLength).CopyTo(destination.AsSpan(length, copyLength));
+            length += copyLength;
+            return copyLength == source.Length;
         }
 
         private void RefreshAchievementPresentation()
@@ -649,7 +683,7 @@ namespace Hecton8.Progression
         {
             _droppedUnlockedHashCount++;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame < _lastUnlockedHashOverflowTelemetryFrame)
                 return;
 
@@ -664,7 +698,7 @@ namespace Hecton8.Progression
         {
             _droppedPendingUnlockCount++;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame < _lastPendingUnlockOverflowTelemetryFrame)
                 return;
 
@@ -679,7 +713,7 @@ namespace Hecton8.Progression
         {
             _achievementNotificationMissCount++;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame < _lastAchievementNotificationMissTelemetryFrame)
                 return;
 
@@ -719,18 +753,16 @@ namespace Hecton8.Progression
 
         private void TryRegisterWithSaveManager()
         {
-            if (_registeredToSave)
+            if (_registeredToSave || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            SaveManager saveManager = _saveManager;
-            if (saveManager == null)
-                saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
 
-            if (saveManager == null)
+            if (_saveService == null)
                 return;
 
-            saveManager.Register(this);
-            _saveManager = saveManager;
+            _saveService.Register(this);
             _registeredToSave = true;
         }
 
@@ -739,9 +771,9 @@ namespace Hecton8.Progression
             if (!_registeredToSave)
                 return;
 
-            SaveManager saveManager = _saveManager;
-            if (saveManager != null)
-                saveManager.Unregister(this);
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
 
             _registeredToSave = false;
         }
@@ -764,7 +796,7 @@ namespace Hecton8.Progression
                     _logbookManager = currentService as IPDALogbookService;
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    RebindSaveManager(previousService as SaveManager, currentService as SaveManager);
+                    RebindSaveService(currentService as ISaveService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryRegisterWithTickManager();
@@ -778,16 +810,16 @@ namespace Hecton8.Progression
             _playerMovement = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerMovement : null;
         }
 
-        private void RebindSaveManager(SaveManager previousSaveManager, SaveManager currentSaveManager)
+        private void RefreshDiscoveryBindingCold(HectonDiscoveryManager discoveryManager)
         {
-            SaveManager oldSaveManager = previousSaveManager != null ? previousSaveManager : _saveManager;
-            if (_registeredToSave && oldSaveManager != null)
-            {
-                oldSaveManager.Unregister(this);
-                _registeredToSave = false;
-            }
+            if (!ReferenceEquals(_discoveryManager, discoveryManager))
+                _discoveryManager = discoveryManager;
+        }
 
-            _saveManager = currentSaveManager;
+        private void RebindSaveService(ISaveService currentSaveService)
+        {
+            UnregisterFromSaveManager();
+            _saveService = currentSaveService;
             TryRegisterWithSaveManager();
         }
 

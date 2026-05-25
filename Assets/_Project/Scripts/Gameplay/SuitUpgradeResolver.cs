@@ -9,6 +9,11 @@ using Unity.Mathematics;
 
 namespace Hecton8.Gameplay
 {
+    internal static class SuitUpgradeLayout
+    {
+        internal const int SuitStatsStrideBytes = 64;
+    }
+
     [System.Flags]
     public enum SuitUpgrades : ulong
     {
@@ -26,7 +31,7 @@ namespace Hecton8.Gameplay
         ThermalGenerator = 1UL << 10
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = SuitUpgradeLayout.SuitStatsStrideBytes)]
     public struct SuitStats
     {
         [FieldOffset(0)] public float MaxO2;

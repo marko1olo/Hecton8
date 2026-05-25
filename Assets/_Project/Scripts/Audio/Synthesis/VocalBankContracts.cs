@@ -399,9 +399,25 @@ namespace Hecton8.Audio.Synthesis
         {
             float t = sampleIndex / math.max(1f, sampleRate);
             float env = math.saturate(math.min(t * 6f, (safeDuration(sampleRate) - t) * 4f));
-            float a = math.sin(t * baseHz * 6.28318530718f);
-            float b = math.sin(t * (baseHz * 1.497f) * 6.28318530718f) * 0.33f;
+            float a = ApproxSinBhaskara(t * baseHz * 6.28318530718f);
+            float b = ApproxSinBhaskara(t * (baseHz * 1.497f) * 6.28318530718f) * 0.33f;
             return (a + b) * env * 0.42f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ApproxSinBhaskara(float radians)
+        {
+            float angle = math.select(0f, radians, math.isfinite(radians));
+            float cycle = angle * 0.15915494309189535f;
+            float wrapped = cycle - math.floor(cycle);
+            float x = wrapped * (2f * math.PI);
+            float mirrored = math.select(x, (2f * math.PI) - x, x > math.PI);
+            float sign = math.select(1f, -1f, x > math.PI);
+            float shape = mirrored * (math.PI - mirrored);
+            float numerator = 16f * shape;
+            float denominator = math.max(0.0001f, (5f * math.PI * math.PI) - (4f * shape));
+            float sine = sign * numerator * math.rcp(denominator);
+            return math.clamp(math.select(0f, sine, math.isfinite(sine)), -1f, 1f);
         }
 
         private float safeDuration(uint sampleRate)
@@ -699,7 +715,7 @@ namespace Hecton8.Audio.Synthesis
                 if ((predictor & 0x8000) != 0)
                     predictor -= 0x10000;
                 codec.Predictor = (short)predictor;
-                codec.Step = math.max((byte)1, payload[blockByteOffset + 2]);
+                codec.Step = (byte)math.max(1, payload[blockByteOffset + 2]);
                 codec.DecodedSampleIndex = (int)blockSampleStart;
                 codec.LastSample = math.clamp(codec.Predictor / 32768f, -1f, 1f);
             }

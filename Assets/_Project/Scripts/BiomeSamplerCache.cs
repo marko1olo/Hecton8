@@ -5,7 +5,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4300)]
-    public sealed class BiomeSamplerCache : MonoBehaviour, ISlowTickable, IOriginShiftListener
+    public sealed class BiomeSamplerCache : MonoBehaviour, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         internal static BiomeSamplerCache ActiveRuntimeInstance { get; private set; }
 
@@ -38,6 +38,7 @@ namespace Hecton8.World
         private int _gridWidth;
         private int _sampleCount;
         private bool _registeredToTickManager;
+        private bool _hotSwapListenerRegistered;
         private Vector3 _lastCenterPosition;
         private bool _hasLastCenterPosition;
 
@@ -61,11 +62,13 @@ namespace Hecton8.World
         private void OnEnable()
         {
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
 
             RebuildCache(force: true);
@@ -74,12 +77,14 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
 
             if (ActiveRuntimeInstance == this)
@@ -94,8 +99,7 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -105,6 +109,44 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registeredToTickManager = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregister();
+                TryRegister();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         public void SlowTick()

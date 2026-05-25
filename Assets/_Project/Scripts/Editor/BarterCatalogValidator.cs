@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using UnityEditor;
@@ -15,6 +16,7 @@ namespace Hecton8.EditorTools
             int errors = 0;
             int warnings = 0;
             string[] guids = AssetDatabase.FindAssets("t:BarterOfferCatalog", new[] { CatalogRoot });
+            Array.Sort(guids, StringComparer.Ordinal);
             if (guids.Length <= 0)
             {
                 Debug.LogWarning("[BarterValidation] No BarterOfferCatalog assets found.");
@@ -63,14 +65,14 @@ namespace Hecton8.EditorTools
 
             if (errors <= 0 && warnings <= 0)
             {
-                Debug.Log("[BarterValidation] PASS no issues found.");
+                Hecton8.Core.H8Debug.Log("[BarterValidation] PASS no issues found.");
                 return;
             }
 
             Debug.LogWarning($"[BarterValidation] COMPLETE errors={errors} warnings={warnings}");
         }
 
-        private static void ValidateBundle(string label, BarterItemAmount[] bundle, Object context, ref int errors)
+        private static void ValidateBundle(string label, BarterItemAmount[] bundle, UnityEngine.Object context, ref int errors)
         {
             if (bundle == null)
                 return;

@@ -1,0 +1,22 @@
+﻿{
+  "agent": "SHINOBU_336",
+  "domain": "MODULE_DECONSTRUCTION_RESOURCE_RETURN",
+  "scanner": "OOP_Module_Deconstruction_Scanner_SHINOBU336_StaticMirror",
+  "generated_utc": "2026-05-22T00:00:00.0000000Z",
+  "filesScanned": 4,
+  "destroyCallHits": 0,
+  "oldRetireHelperHits": 0,
+  "inventoryPreflightHits": 0,
+  "managedRecipeFallbackHits": 2,
+  "kernelHits": 3,
+  "explicitDtoLayoutHits": 5,
+  "csrLaneHits": 2,
+  "typedLootSignalHits": 1,
+  "legacyLootPublishHits": 0,
+  "blackBoxHits": 1,
+  "legacyFallbackBoundary": "buildData.buildCost is retained only when DataMonolith module-cost lanes are missing; the transaction kernel consumes ModuleCostDTO either way.",
+  "authorityRoute": "ConstructionManager -> ExecuteModuleTeardownJob -> RefundCommandDTO/LootCacheDTO -> PlayerInventory authority or typed loot-cache signal",
+  "csrRoute": "HabitatGraphManager exposes native CSR lanes for zero-strength severing and then marks matching edge records ruptured without GameObject destruction.",
+  "verdict": "PASS_STATIC_ROUTE",
+  "findings": []
+}

@@ -15,17 +15,24 @@ using UnityEngine;
 namespace Hecton8.Core.Contracts.Signals
 {
     /// <summary>
-    /// Hash-addressed subtitle cue signal. Size: 16 bytes.
+    /// Hash-addressed subtitle cue signal. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SubtitleCueSignal : ISignal
     {
         [FieldOffset(0)] public uint TokenHash;
-        [FieldOffset(4)] public uint StartAudioFrame;
-        [FieldOffset(8)] public ushort DurationMilliseconds;
-        [FieldOffset(10)] public byte Priority;
-        [FieldOffset(11)] public byte Flags;
-        [FieldOffset(12)] public uint SourceHash;
+        [FieldOffset(4)] public uint SourceHash;
+        [FieldOffset(8)] public uint StartAudioFrame;
+        [FieldOffset(12)] public ushort DurationMilliseconds;
+        [FieldOffset(14)] public byte Priority;
+        [FieldOffset(15)] public byte Flags;
+        [FieldOffset(16)] public uint AudioFrameLatency;
+        [FieldOffset(20)] private uint _pad0;
+        [FieldOffset(24)] private ulong _pad1;
+        [FieldOffset(32)] private ulong _pad2;
+        [FieldOffset(40)] private ulong _pad3;
+        [FieldOffset(48)] private ulong _pad4;
+        [FieldOffset(56)] private ulong _pad5;
     }
 }
 
@@ -119,7 +126,8 @@ namespace Hecton8.UI
         private static uint s_lastTokenHash;
         private static uint s_audioFrameClock;
         private static int s_sampleRate = DefaultSampleRate;
-        private static int s_lastPreparedFrame = -1;
+        private static uint s_lastPreparedFrame;
+        private static uint s_fallbackPresentationFrame;
         private static int s_editorAudioFrameOffset;
         private static bool s_initialized;
         private static bool s_dispatcherRegistered;
@@ -127,6 +135,7 @@ namespace Hecton8.UI
         private static bool s_pendingCueEvaluationActive;
 
         public static uint CurrentAudioFrame => s_audioFrameClock;
+        public static uint CurrentPresentationFrame => s_lastPreparedFrame;
         public static int CurrentSampleRate => math.max(1, s_sampleRate);
         public static int ActiveCueCount => s_activeCueCount;
         public static int EditorAudioFrameOffset => s_editorAudioFrameOffset;
@@ -152,7 +161,8 @@ namespace Hecton8.UI
             s_lastTokenHash = 0u;
             s_audioFrameClock = 0u;
             s_sampleRate = DefaultSampleRate;
-            s_lastPreparedFrame = -1;
+            s_lastPreparedFrame = 0u;
+            s_fallbackPresentationFrame = 0u;
             s_editorAudioFrameOffset = 0;
             s_initialized = false;
             s_dispatcherRegistered = false;
@@ -190,12 +200,12 @@ namespace Hecton8.UI
             }
 
             s_vault = vault;
-            s_cueHandle = vault.GetGenerationHandle<SubtitleCueDTO>(
+            s_cueHandle = vault.EnsureGenerationHandle<SubtitleCueDTO>(
                 SubtitleCueStateBufferId,
                 MaxSubtitleCueCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            s_telemetryHandle = vault.GetGenerationHandle<LocalizationTelemetryEntry>(
+            s_telemetryHandle = vault.EnsureGenerationHandle<LocalizationTelemetryEntry>(
                 SubtitleCueTelemetryBufferId,
                 TelemetryFrameCapacity,
                 SystemID.UI,
@@ -230,12 +240,12 @@ namespace Hecton8.UI
 
             if (!TryCompletePendingCueEvaluation())
                 return;
-            int frame = Time.frameCount;
+            ResolveAudioClock();
+            uint frame = ResolvePresentationFrameId();
             if (s_lastPreparedFrame == frame)
                 return;
 
             s_lastPreparedFrame = frame;
-            ResolveAudioClock();
             DrainCueSignals();
             ScheduleCueEvaluation(default);
             WriteFrameTelemetry(0f);
@@ -294,6 +304,7 @@ namespace Hecton8.UI
             signal.DurationMilliseconds = SecondsToMilliseconds(durationSeconds);
             signal.Priority = priority;
             signal.Flags = PackSignalFlags(flags);
+            signal.SourceHash = SystemHash;
             return SignalBus<SubtitleCueSignal>.TryPush(in signal);
         }
 
@@ -497,7 +508,7 @@ namespace Hecton8.UI
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.Flags)) == 16 &&
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO._pad0)) == 20 &&
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO._pad11)) == 31 &&
-                   UnsafeUtility.SizeOf<SubtitleCueSignal>() == 16 &&
+                   UnsafeUtility.SizeOf<SubtitleCueSignal>() == 64 &&
                    UnsafeUtility.SizeOf<LocalizationTelemetryEntry>() == 64;
         }
 
@@ -567,7 +578,8 @@ namespace Hecton8.UI
                 float duration = signal.DurationMilliseconds > 0
                     ? signal.DurationMilliseconds * 0.001f
                     : 3.25f;
-                RegisterCue(signal.TokenHash, signal.StartAudioFrame, duration, flags);
+                uint startAudioFrame = signal.StartAudioFrame != 0u ? signal.StartAudioFrame : s_audioFrameClock;
+                RegisterCue(signal.TokenHash, startAudioFrame, duration, flags);
                 s_cueSignalCountThisFrame++;
             }
         }
@@ -685,6 +697,21 @@ namespace Hecton8.UI
             s_audioFrameClock = (uint)rawFrame;
         }
 
+        private static uint ResolvePresentationFrameId()
+        {
+            uint frame = SystemDispatcher.ReadPublishedDispatcherFrameId();
+            if (frame != 0u)
+                return frame;
+
+            if (s_audioFrameClock != 0u)
+                return s_audioFrameClock;
+
+            s_fallbackPresentationFrame++;
+            if (s_fallbackPresentationFrame == 0u)
+                s_fallbackPresentationFrame = 1u;
+            return s_fallbackPresentationFrame;
+        }
+
         private static ushort SecondsToMilliseconds(float seconds)
         {
             float safe = math.max(0.001f, math.select(0.001f, seconds, math.isfinite(seconds)));
@@ -703,7 +730,7 @@ namespace Hecton8.UI
 
             telemetry[slot] = new LocalizationTelemetryEntry
             {
-                Frame = (uint)math.max(0, Time.frameCount),
+                Frame = s_lastPreparedFrame,
                 AudioFrameClock = s_audioFrameClock,
                 ActiveSubtitleCount = (uint)math.max(0, s_activeCueCount),
                 DecodedCharacterCount = (uint)math.max(0, s_decodedCharactersThisFrame),

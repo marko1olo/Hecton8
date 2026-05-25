@@ -23,7 +23,7 @@ namespace Hecton8.EditorTools
         private const byte ChannelDifferenceThreshold = 3;
         private static readonly string[] MaterialRoots = { "Assets/_Project/Art/Materials", "Assets/_Project/Materials", "Assets/_Project/Prefabs" };
         private static readonly string[] PackedMaskPropertyNames = { "_MaskMap", "_Mask_Map" };
-        private static readonly HashSet<string> TargetShaders = new HashSet<string>(StringComparer.Ordinal)
+        private static readonly HashSet<string> TargetShaders = new HashSet<string>(8, StringComparer.Ordinal)
         {
             "Hecton8/Rendering/UberNoir",
             "Universal Render Pipeline/Lit",

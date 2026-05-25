@@ -50,18 +50,13 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(128, UnsafeUtility.SizeOf<LockstepReplayBlockHeader>());
             Assert.AreEqual(0, OffsetOf<RollbackRuntimeStateDTO>(nameof(RollbackRuntimeStateDTO.LastFrameHash64)));
             Assert.AreEqual(8, OffsetOf<RollbackRuntimeStateDTO>(nameof(RollbackRuntimeStateDTO.LastRemoteHash64)));
-            Assert.AreEqual(96, UnsafeUtility.SizeOf<LockstepPlayerKinematicState>());
-            Assert.AreEqual(0, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.SectorX)));
-            Assert.AreEqual(8, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.SectorY)));
-            Assert.AreEqual(16, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.SectorZ)));
-            Assert.AreEqual(24, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.LocalPosition)));
-            Assert.AreEqual(36, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Velocity)));
-            Assert.AreEqual(48, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Forward)));
-            Assert.AreEqual(60, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Frame)));
-            Assert.AreEqual(64, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Flags)));
-            Assert.AreEqual(68, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.InputActions)));
-            Assert.AreEqual(72, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.StableId)));
-            Assert.AreEqual(76, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.HashCadenceFrames)));
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<LockstepPlayerKinematicState>());
+            Assert.AreEqual(0, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.PositionAup)));
+            Assert.AreEqual(24, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Velocity)));
+            Assert.AreEqual(36, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.InputVector)));
+            Assert.AreEqual(48, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Frame)));
+            Assert.AreEqual(52, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.Flags)));
+            Assert.AreEqual(56, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.InputActions)));
             Assert.AreEqual(0, OffsetOf<RollbackAup48>(nameof(RollbackAup48.GridX)));
             Assert.AreEqual(8, OffsetOf<RollbackAup48>(nameof(RollbackAup48.GridY)));
             Assert.AreEqual(16, OffsetOf<RollbackAup48>(nameof(RollbackAup48.GridZ)));
@@ -107,12 +102,11 @@ namespace Hecton8.Tests.Editor
 
             uint lookOnly = RollbackNetcodeMath.ResolveInputDifferenceFlags(predicted, remote, 0.001f, 0.001f);
             Assert.AreEqual(InputMismatchFlags.Look, lookOnly);
-            Assert.IsFalse(RollbackNetcodeMath.ShouldRollback(lookOnly, 0.1f, 0.55f));
-            Assert.IsTrue(RollbackNetcodeMath.ShouldRollback(lookOnly, 1f, 0.55f));
+            Assert.IsTrue(RollbackNetcodeMath.ShouldRollback(lookOnly));
 
             remote.ButtonMask = 1u;
             uint buttonMismatch = RollbackNetcodeMath.ResolveInputDifferenceFlags(predicted, remote, 0.001f, 0.001f);
-            Assert.IsTrue(RollbackNetcodeMath.ShouldRollback(buttonMismatch, 0f, 0.55f));
+            Assert.IsTrue(RollbackNetcodeMath.ShouldRollback(buttonMismatch));
         }
 
         [Test]
@@ -190,7 +184,7 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void DetectInputMismatch_UsesScheduledPreviousFrameAcrossWrap()
         {
-            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<PredictedInputDTO> predicted = new NativeArray<PredictedInputDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RollbackInputJournalSlot64> journal = new NativeArray<RollbackInputJournalSlot64>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RollbackRuntimeStateDTO> runtime = new NativeArray<RollbackRuntimeStateDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -198,22 +192,22 @@ namespace Hecton8.Tests.Editor
             {
                 uint matchingFrame = uint.MaxValue - 1u;
                 uint mismatchFrame = uint.MaxValue;
-                predicted[(int)(matchingFrame % (uint)predicted.Length)] = new InputStateDTO { ButtonMask = 1u };
-                predicted[(int)(mismatchFrame % (uint)predicted.Length)] = new InputStateDTO { ButtonMask = 1u };
+                predicted[(int)(matchingFrame % (uint)predicted.Length)] = CreatePredictedInput(matchingFrame, 1u);
+                predicted[(int)(mismatchFrame % (uint)predicted.Length)] = CreatePredictedInput(mismatchFrame, 1u);
                 remote[(int)(matchingFrame % (uint)remote.Length)] = new RemoteInputFrameDTO
                 {
-                    Input = new InputStateDTO { ButtonMask = 1u },
+                    Input = CreatePredictedInput(matchingFrame, 1u),
                     Frame = matchingFrame,
                     Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
                 };
                 remote[(int)(mismatchFrame % (uint)remote.Length)] = new RemoteInputFrameDTO
                 {
-                    Input = new InputStateDTO { ButtonMask = 2u },
+                    Input = CreatePredictedInput(mismatchFrame, 2u),
                     Frame = mismatchFrame,
                     Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
                 };
 
-                new DetectInputMismatchJob
+                new EvaluateInputMismatchJob
                 {
                     PredictedJournal = predicted,
                     RemoteInputRing = remote,
@@ -223,9 +217,9 @@ namespace Hecton8.Tests.Editor
                     PreviousFrame = uint.MaxValue,
                     MaxRollbackFrames = 4,
                     GlobalQualityWeight = 1f,
-                    MinQualityForLookRollback = 0f,
                     MoveEpsilon = 0.001f,
-                    LookEpsilon = 0.001f
+                    LookEpsilon = 0.001f,
+                    LookMismatchSeverityWeight = 1f
                 }.Run();
 
                 Assert.AreEqual(mismatchFrame, runtime[0].LastMismatchFrame);
@@ -391,7 +385,7 @@ namespace Hecton8.Tests.Editor
         {
             NativeArray<RollbackTuningDTO> tuning = new NativeArray<RollbackTuningDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RollbackRuntimeStateDTO> runtime = new NativeArray<RollbackRuntimeStateDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<PredictedInputDTO> predicted = new NativeArray<PredictedInputDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RemoteInputFrameDTO> remoteInput = new NativeArray<RemoteInputFrameDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RollbackInputJournalSlot64> inputJournal = new NativeArray<RollbackInputJournalSlot64>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<byte> stateRing = new NativeArray<byte>(4096, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -417,7 +411,7 @@ namespace Hecton8.Tests.Editor
                     LastRemoteHash64 = 0x9999888877776666UL
                 };
 
-                InputStateDTO input = new InputStateDTO { ButtonMask = 3u };
+                PredictedInputDTO input = CreatePredictedInput(15u, 3u);
                 predicted[15] = input;
                 remoteInput[15] = new RemoteInputFrameDTO
                 {
@@ -728,13 +722,13 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void MockNetworkJitter_DelaysAndReleasesInput()
         {
-            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(32, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<PredictedInputDTO> predicted = new NativeArray<PredictedInputDTO>(32, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(32, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<MockNetworkJitterPacket64> packets = new NativeArray<MockNetworkJitterPacket64>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<MockNetworkJitterState64> state = new NativeArray<MockNetworkJitterState64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             try
             {
-                predicted[10] = new InputStateDTO { ButtonMask = 7u };
+                predicted[10] = CreatePredictedInput(10u, 7u);
                 GenerateMockNetworkJitterJob jitter = new GenerateMockNetworkJitterJob
                 {
                     PredictedJournal = predicted,
@@ -753,7 +747,7 @@ namespace Hecton8.Tests.Editor
                 jitter.CurrentFrame = 12u;
                 jitter.Run();
                 Assert.AreEqual(10u, remote[10].Frame);
-                Assert.AreEqual(7u, remote[10].Input.ButtonMask);
+                Assert.AreEqual(7u, remote[10].Input.ActionButtonsMask);
                 Assert.AreNotEqual(0u, remote[10].Flags & RemoteInputFlags.Received);
                 Assert.AreNotEqual(0u, remote[10].Flags & RemoteInputFlags.Valid);
             }
@@ -769,16 +763,16 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void MockNetworkJitter_DoesNotOverwriteRealRemoteInput()
         {
-            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<PredictedInputDTO> predicted = new NativeArray<PredictedInputDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<MockNetworkJitterPacket64> packets = new NativeArray<MockNetworkJitterPacket64>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<MockNetworkJitterState64> state = new NativeArray<MockNetworkJitterState64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             try
             {
-                predicted[3] = new InputStateDTO { ButtonMask = 1u };
+                predicted[3] = CreatePredictedInput(3u, 1u);
                 remote[3] = new RemoteInputFrameDTO
                 {
-                    Input = new InputStateDTO { ButtonMask = 9u },
+                    Input = CreatePredictedInput(3u, 9u),
                     Frame = 3u,
                     Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
                 };
@@ -797,7 +791,7 @@ namespace Hecton8.Tests.Editor
                 }.Run();
 
                 Assert.AreEqual(3u, remote[3].Frame);
-                Assert.AreEqual(9u, remote[3].Input.ButtonMask);
+                Assert.AreEqual(9u, remote[3].Input.ActionButtonsMask);
                 Assert.AreEqual(0u, remote[3].Flags & RemoteInputFlags.MockGenerated);
             }
             finally
@@ -812,14 +806,14 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void MockNetworkJitter_ReleasesAcrossUintWrap()
         {
-            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<PredictedInputDTO> predicted = new NativeArray<PredictedInputDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<MockNetworkJitterPacket64> packets = new NativeArray<MockNetworkJitterPacket64>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<MockNetworkJitterState64> state = new NativeArray<MockNetworkJitterState64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             try
             {
                 uint sourceFrame = uint.MaxValue;
-                predicted[(int)(sourceFrame % (uint)predicted.Length)] = new InputStateDTO { ButtonMask = 13u };
+                predicted[(int)(sourceFrame % (uint)predicted.Length)] = CreatePredictedInput(sourceFrame, 13u);
 
                 GenerateMockNetworkJitterJob jitter = new GenerateMockNetworkJitterJob
                 {
@@ -840,7 +834,7 @@ namespace Hecton8.Tests.Editor
                 jitter.CurrentFrame = 1u;
                 jitter.Run();
                 Assert.AreEqual(sourceFrame, remote[remoteIndex].Frame);
-                Assert.AreEqual(13u, remote[remoteIndex].Input.ButtonMask);
+                Assert.AreEqual(13u, remote[remoteIndex].Input.ActionButtonsMask);
                 Assert.AreNotEqual(0u, remote[remoteIndex].Flags & RemoteInputFlags.Received);
                 Assert.AreNotEqual(0u, remote[remoteIndex].Flags & RemoteInputFlags.Valid);
             }
@@ -856,7 +850,7 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void ApplyRemoteInputCorrection_HandlesUintWrap()
         {
-            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<PredictedInputDTO> predicted = new NativeArray<PredictedInputDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             try
             {
@@ -866,7 +860,7 @@ namespace Hecton8.Tests.Editor
                     uint frame = start + (uint)offset;
                     remote[(int)(frame % (uint)remote.Length)] = new RemoteInputFrameDTO
                     {
-                        Input = new InputStateDTO { ButtonMask = (uint)(20 + offset) },
+                        Input = CreatePredictedInput(frame, (uint)(20 + offset)),
                         Frame = frame,
                         Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
                     };
@@ -883,7 +877,7 @@ namespace Hecton8.Tests.Editor
                 for (int offset = 0; offset <= 3; offset++)
                 {
                     uint frame = start + (uint)offset;
-                    Assert.AreEqual((uint)(20 + offset), predicted[(int)(frame % (uint)predicted.Length)].ButtonMask);
+                    Assert.AreEqual((uint)(20 + offset), predicted[(int)(frame % (uint)predicted.Length)].ActionButtonsMask);
                 }
             }
             finally
@@ -896,14 +890,14 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void ApplyRemoteInputCorrection_IgnoresUnsealedRemoteSlot()
         {
-            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<PredictedInputDTO> predicted = new NativeArray<PredictedInputDTO>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             try
             {
-                predicted[4] = new InputStateDTO { ButtonMask = 1u };
+                predicted[4] = CreatePredictedInput(4u, 1u);
                 remote[4] = new RemoteInputFrameDTO
                 {
-                    Input = new InputStateDTO { ButtonMask = 99u },
+                    Input = CreatePredictedInput(4u, 99u),
                     Frame = 4u,
                     Flags = RemoteInputFlags.Received
                 };
@@ -916,7 +910,7 @@ namespace Hecton8.Tests.Editor
                     CurrentFrame = 4u
                 }.Run();
 
-                Assert.AreEqual(1u, predicted[4].ButtonMask);
+                Assert.AreEqual(1u, predicted[4].ActionButtonsMask);
 
                 RemoteInputFrameDTO sealedRemote = remote[4];
                 sealedRemote.Flags |= RemoteInputFlags.Valid;
@@ -930,7 +924,7 @@ namespace Hecton8.Tests.Editor
                     CurrentFrame = 4u
                 }.Run();
 
-                Assert.AreEqual(99u, predicted[4].ButtonMask);
+                Assert.AreEqual(99u, predicted[4].ActionButtonsMask);
             }
             finally
             {
@@ -956,6 +950,18 @@ namespace Hecton8.Tests.Editor
         private static int OffsetOf<T>(string fieldName) where T : unmanaged
         {
             return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
+        }
+
+        private static PredictedInputDTO CreatePredictedInput(uint tickNumber, uint buttonMask)
+        {
+            return new PredictedInputDTO
+            {
+                TickNumber = tickNumber,
+                LocalMoveVector = float3.zero,
+                LookDelta = float2.zero,
+                ActionButtonsMask = buttonMask,
+                _pad0 = PredictedInputFlags.Predicted | PredictedInputFlags.Valid
+            };
         }
     }
 }

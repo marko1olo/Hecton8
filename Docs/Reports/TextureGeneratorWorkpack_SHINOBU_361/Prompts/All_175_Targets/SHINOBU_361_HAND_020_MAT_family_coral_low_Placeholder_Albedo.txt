@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_020
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_020_MAT_family_coral_low_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_coral_low_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_coral_low_Placeholder_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Replacement albedo for low coral placeholder material, built for attractive seabed coverage. Use smooth ivory coral cushions, soft salmon-pink growth bands, faint turquoise biological freckles, and small pearl highlights painted only as material color, not directional light. The texture must tile into a gentle living floor without becoming flat paste. Keep the design clean, elegant, and scientifically plausible for a premium NASA-Punk deep sea biome. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

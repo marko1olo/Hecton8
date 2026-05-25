@@ -1,4 +1,4 @@
-# Atmosphere Scattering LUT
+﻿# Atmosphere Scattering LUT
 
 Date: 2026-05-17
 Status: PENDING VERIFICATION  

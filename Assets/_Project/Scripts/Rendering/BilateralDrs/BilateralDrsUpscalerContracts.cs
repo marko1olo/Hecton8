@@ -137,7 +137,7 @@ namespace Hecton8.Rendering
                 return;
 
             float phase = TimeSeconds * 0.71f + (FrameIndex & 63u) * 0.013f;
-            float wave = math.saturate(0.5f + 0.5f * math.sin(phase));
+            float wave = math.saturate(0.5f + 0.5f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phase));
             float scale = math.lerp(0.4f, 0.72f, wave);
 
             DrsStateDTO* ptr = (DrsStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(MockState);

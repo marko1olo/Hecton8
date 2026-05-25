@@ -1,4 +1,4 @@
-# HECTON-8 Dream vs Subnautica 2 Counterposition
+﻿# HECTON-8 Dream vs Subnautica 2 Counterposition
 
 Date: 2026-05-17
 Status: DESIGN AUTHORITY PROPOSAL / RUNTIME PENDING

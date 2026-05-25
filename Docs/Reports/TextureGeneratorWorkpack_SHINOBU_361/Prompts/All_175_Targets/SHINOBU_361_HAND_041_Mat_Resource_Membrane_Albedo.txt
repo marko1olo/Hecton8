@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_041
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_041_Mat_Resource_Membrane_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\Mat_Resource_Membrane_Albedo.png
+FINAL_FILENAME: Mat_Resource_Membrane_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Premium resource membrane albedo for collectible or interactable organic material. Create a translucent opal membrane with pale cyan and soft violet internal veining, warm amber nutrient nodes, pearl-white tension lines, and clean hydrated surface variation. The texture should look valuable and desirable, like a rare biotech specimen with a clear gameplay silhouette. Keep the diffuse smooth enough for shader translucency and masks, with clear veins that can guide gameplay readability. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

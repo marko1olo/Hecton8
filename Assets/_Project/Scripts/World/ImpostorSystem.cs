@@ -69,7 +69,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-130)]
-    public sealed class ImpostorSystem : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
+    public sealed class ImpostorSystem : MonoBehaviour, ITickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float MinimumBillboardWidth = 0.25f;
         private const float MinimumBillboardHeight = 0.25f;
@@ -166,14 +166,17 @@ namespace Hecton8.World
         private AbsoluteUniversePosition _viewerAupCache;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ITickDispatcher _dispatcher;
-        private ObjectPoolManager _objectPool;
+        private IObjectPoolService _objectPool;
         private LODSystemManager _lodSystemManager;
         private DynamicResolutionScaler _dynamicResolutionScaler;
         private float _cameraResolveRetryTimer;
         private int _impostorTickCursor;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
+        private bool _hasPendingImpostorTick;
+        private float _pendingImpostorDeltaTime;
 
         /// <summary>
         /// Registry-backed runtime instance. Null when the system is absent.
@@ -222,12 +225,14 @@ namespace Hecton8.World
             InvalidatePlayerRuntimeCache();
             TryRegisterService();
             TryRegister();
+            TryRegisterLateFrame();
         }
 
         private void OnDisable()
         {
             RestoreAllOriginalVisibility();
             InvalidatePlayerRuntimeCache();
+            TryUnregisterLateFrame();
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
@@ -238,6 +243,7 @@ namespace Hecton8.World
         {
             RestoreAllOriginalVisibility();
             InvalidatePlayerRuntimeCache();
+            TryUnregisterLateFrame();
             TryUnregister();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
@@ -270,6 +276,23 @@ namespace Hecton8.World
             _registered = false;
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || _dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
+        }
+
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
@@ -293,13 +316,13 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContext = GlobalRegistry.Player;
 
             if (_dispatcher == null)
                 _dispatcher = GlobalRegistry.Dispatcher;
 
             if (_objectPool == null)
-                _objectPool = GlobalRegistry.ObjectPool;
+                _objectPool = GlobalRegistry.ObjectPoolService;
 
             if (_lodSystemManager == null)
                 _lodSystemManager = GlobalRegistry.LODSystem;
@@ -353,9 +376,10 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
                     TryRegister();
+                    TryRegisterLateFrame();
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     break;
                 case GlobalRegistryServiceSlot.LODSystemRuntime:
                     _lodSystemManager = currentService as LODSystemManager;
@@ -370,6 +394,12 @@ namespace Hecton8.World
         /// Updates impostor activation against the cached camera position.
         /// </summary>
         public void Tick(float dt)
+        {
+            _pendingImpostorDeltaTime = math.min(0.25f, _pendingImpostorDeltaTime + math.max(0f, dt));
+            _hasPendingImpostorTick = true;
+        }
+
+        private void ProcessImpostorTick(float dt)
         {
             if (!TryResolveCamera(dt))
                 return;
@@ -430,6 +460,17 @@ namespace Hecton8.World
 
                 _impostorTickCursor++;
             }
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_hasPendingImpostorTick)
+                return;
+
+            float dt = _pendingImpostorDeltaTime;
+            _pendingImpostorDeltaTime = 0f;
+            _hasPendingImpostorTick = false;
+            ProcessImpostorTick(dt);
         }
 
         private static Vector3 ResolveOriginalRuntimePosition(Transform originalTransform)
@@ -573,7 +614,7 @@ namespace Hecton8.World
             if (!_textureCache.TryGetValue(instance.ImpostorID, out ImpostorTextureData data) || !data.IsLoaded)
                 return;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (_billboardPrefab == null || pool == null)
                 return;
 
@@ -771,7 +812,7 @@ namespace Hecton8.World
         {
             if (instance.BillboardObject != null)
             {
-                ObjectPoolManager pool = _objectPool;
+                IObjectPoolService pool = _objectPool;
                 if (pool != null)
                     pool.Despawn(instance.BillboardObject);
                 else
@@ -889,7 +930,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1127,7 +1168,7 @@ namespace Hecton8.World
         {
             Shader impostorShader = FindAmplifyImpostorShaderAsset();
             if (impostorShader != null)
-                Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
+                Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
             else
                 Debug.LogWarning("[ImpostorSystem] Amplify impostor package or shader not found.");
         }
@@ -1147,7 +1188,7 @@ namespace Hecton8.World
             {
                 string path = AssetDatabase.GUIDToAssetPath(prefabGuids[i]);
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab == null || prefab.GetComponent<LODGroup>() == null)
+                if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
                     continue;
 
                 if (prefab.GetComponent("AmplifyImpostor") == null)
@@ -1156,7 +1197,7 @@ namespace Hecton8.World
                 bakedCount++;
             }
 
-            Debug.Log($"[ImpostorSystem] Batch bake scan complete. Candidates={bakedCount}");
+            Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Batch bake scan complete. Candidates={bakedCount}");
         }
         private static Shader FindAmplifyImpostorShaderAsset()
         {

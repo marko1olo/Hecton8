@@ -1,4 +1,4 @@
-# HECTON-8 Modding SDK And Authoring Interface Plan
+﻿# HECTON-8 Modding SDK And Authoring Interface Plan
 
 Date: 2026-05-19
 Status: SDK ARCHITECTURE PLAN / ENVELOPE-ONLY RUNTIME / PENDING RUNTIME VERIFICATION

@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Blockout Rig")]
-    public sealed partial class PlayerSwimBlockoutRig : MonoBehaviour, ITickable, IUpdatable
+    public sealed partial class PlayerSwimBlockoutRig : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string LeftShoulderName = "Swim_LeftShoulder";
         private const string RightShoulderName = "Swim_RightShoulder";
@@ -242,6 +242,7 @@ namespace Hecton8.Gameplay
         public Transform RightHandAttachment => rightHandAttachment != null ? rightHandAttachment : rightGlove;
 
         private bool _registered;
+        private bool _registeredLateFrame;
         private int _firstPersonToolsLayer = -1;
         private float _visualWeight;
         private float _leftVisualWeight;
@@ -258,6 +259,22 @@ namespace Hecton8.Gameplay
         private Vector3 _leftGloveBaseScale = Vector3.one;
         private Vector3 _rightGloveBaseScale = Vector3.one;
         private int _lastDrivenFrame = -1;
+        private bool _leftForearmVisible;
+        private bool _rightForearmVisible;
+        private bool _leftShoulderVisible;
+        private bool _rightShoulderVisible;
+        private bool _leftUpperArmVisible;
+        private bool _rightUpperArmVisible;
+        private bool _leftGloveVisible;
+        private bool _rightGloveVisible;
+        private bool _leftForearmVisibleDirty;
+        private bool _rightForearmVisibleDirty;
+        private bool _leftShoulderVisibleDirty;
+        private bool _rightShoulderVisibleDirty;
+        private bool _leftUpperArmVisibleDirty;
+        private bool _rightUpperArmVisibleDirty;
+        private bool _leftGloveVisibleDirty;
+        private bool _rightGloveVisibleDirty;
 
         private void Awake()
         {
@@ -269,6 +286,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
         }
 
@@ -286,11 +306,13 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
 #if UNITY_EDITOR
@@ -314,6 +336,11 @@ namespace Hecton8.Gameplay
         public void Tick(float dt)
         {
             SyncFromPresentation(dt);
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedRendererVisibility();
         }
 
         /// <summary>Applies the current swim presentation frame to the blockout rig. Safe to call from the presentation owner.</summary>
@@ -474,22 +501,41 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registered = false;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void AutoResolveReferences()
@@ -767,8 +813,7 @@ namespace Hecton8.Gameplay
             part.localScale = scaled;
 
             bool rendererVisible = showDebugCubes && visibility > rendererDisableThreshold;
-            if (partRenderer != null && partRenderer.enabled != rendererVisible)
-                partRenderer.enabled = rendererVisible;
+            QueueRendererVisibility(partRenderer, rendererVisible);
         }
 
         private void ApplyUpperArm(
@@ -787,8 +832,7 @@ namespace Hecton8.Gameplay
 
             float visibility = math.saturate(visibilityWeight);
             bool rendererVisible = showDebugCubes && visibility > rendererDisableThreshold;
-            if (upperArmRenderer != null && upperArmRenderer.enabled != rendererVisible)
-                upperArmRenderer.enabled = rendererVisible;
+            QueueRendererVisibility(upperArmRenderer, rendererVisible);
 
             if (!rendererVisible)
                 return;
@@ -812,6 +856,75 @@ namespace Hecton8.Gameplay
             scaled.y *= bulkScale * visibility * verticalCompression;
             scaled.z = distance;
             upperArm.localScale = scaled;
+        }
+
+        private void QueueRendererVisibility(Renderer renderer, bool visible)
+        {
+            if (renderer == null)
+                return;
+
+            if (ReferenceEquals(renderer, leftForearmRenderer))
+            {
+                _leftForearmVisible = visible;
+                _leftForearmVisibleDirty = true;
+            }
+            else if (ReferenceEquals(renderer, rightForearmRenderer))
+            {
+                _rightForearmVisible = visible;
+                _rightForearmVisibleDirty = true;
+            }
+            else if (ReferenceEquals(renderer, leftShoulderRenderer))
+            {
+                _leftShoulderVisible = visible;
+                _leftShoulderVisibleDirty = true;
+            }
+            else if (ReferenceEquals(renderer, rightShoulderRenderer))
+            {
+                _rightShoulderVisible = visible;
+                _rightShoulderVisibleDirty = true;
+            }
+            else if (ReferenceEquals(renderer, leftUpperArmRenderer))
+            {
+                _leftUpperArmVisible = visible;
+                _leftUpperArmVisibleDirty = true;
+            }
+            else if (ReferenceEquals(renderer, rightUpperArmRenderer))
+            {
+                _rightUpperArmVisible = visible;
+                _rightUpperArmVisibleDirty = true;
+            }
+            else if (ReferenceEquals(renderer, leftGloveRenderer))
+            {
+                _leftGloveVisible = visible;
+                _leftGloveVisibleDirty = true;
+            }
+            else if (ReferenceEquals(renderer, rightGloveRenderer))
+            {
+                _rightGloveVisible = visible;
+                _rightGloveVisibleDirty = true;
+            }
+        }
+
+        private void FlushQueuedRendererVisibility()
+        {
+            FlushRendererVisibility(leftForearmRenderer, ref _leftForearmVisibleDirty, _leftForearmVisible);
+            FlushRendererVisibility(rightForearmRenderer, ref _rightForearmVisibleDirty, _rightForearmVisible);
+            FlushRendererVisibility(leftShoulderRenderer, ref _leftShoulderVisibleDirty, _leftShoulderVisible);
+            FlushRendererVisibility(rightShoulderRenderer, ref _rightShoulderVisibleDirty, _rightShoulderVisible);
+            FlushRendererVisibility(leftUpperArmRenderer, ref _leftUpperArmVisibleDirty, _leftUpperArmVisible);
+            FlushRendererVisibility(rightUpperArmRenderer, ref _rightUpperArmVisibleDirty, _rightUpperArmVisible);
+            FlushRendererVisibility(leftGloveRenderer, ref _leftGloveVisibleDirty, _leftGloveVisible);
+            FlushRendererVisibility(rightGloveRenderer, ref _rightGloveVisibleDirty, _rightGloveVisible);
+        }
+
+        private static void FlushRendererVisibility(Renderer renderer, ref bool dirty, bool visible)
+        {
+            if (!dirty)
+                return;
+
+            dirty = false;
+            if (renderer != null && renderer.enabled != visible)
+                renderer.enabled = visible;
         }
 
         private static void ApplyAttachmentPose(Transform attachment, Transform source)

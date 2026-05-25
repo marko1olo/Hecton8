@@ -14,6 +14,14 @@ namespace Hecton8.Gameplay
     [InitializeOnLoad]
     internal static class BallisticsLayoutVerifier
     {
+        private const int BallisticTrajectoryStrideBytes = 64;
+        private const int AabbPrimitiveStrideBytes = 96;
+        private const int BallisticHitResultStrideBytes = 112;
+        private const int BallisticImpactVfxStrideBytes = 80;
+        private const int BallisticsTuningStrideBytes = 64;
+        private const int BallisticsTelemetryStrideBytes = 64;
+        private const int BallisticsCountersStrideBytes = 64;
+
         static BallisticsLayoutVerifier()
         {
             Validate(logSuccess: false);
@@ -28,7 +36,7 @@ namespace Hecton8.Gameplay
         public static bool Validate(bool logSuccess)
         {
             bool valid =
-                UnsafeUtility.SizeOf<BallisticTrajectoryDTO>() == 64 &&
+                UnsafeUtility.SizeOf<BallisticTrajectoryDTO>() == BallisticTrajectoryStrideBytes &&
                 OffsetOf<BallisticTrajectoryDTO>(nameof(BallisticTrajectoryDTO.OriginAUP)) == 0 &&
                 OffsetOf<BallisticTrajectoryDTO>(nameof(BallisticTrajectoryDTO.Direction)) == 24 &&
                 OffsetOf<BallisticTrajectoryDTO>(nameof(BallisticTrajectoryDTO.Velocity)) == 36 &&
@@ -38,16 +46,16 @@ namespace Hecton8.Gameplay
                 OffsetOf<BallisticTrajectoryDTO>(nameof(BallisticTrajectoryDTO.Flags)) == 52 &&
                 OffsetOf<BallisticTrajectoryDTO>(nameof(BallisticTrajectoryDTO._pad0)) == 56 &&
                 OffsetOf<BallisticTrajectoryDTO>(nameof(BallisticTrajectoryDTO._pad1)) == 60 &&
-                UnsafeUtility.SizeOf<AABBPrimitiveDTO>() == 96 &&
-                UnsafeUtility.SizeOf<BallisticHitResultDTO>() == 112 &&
+                UnsafeUtility.SizeOf<AABBPrimitiveDTO>() == AabbPrimitiveStrideBytes &&
+                UnsafeUtility.SizeOf<BallisticHitResultDTO>() == BallisticHitResultStrideBytes &&
                 OffsetOf<BallisticHitResultDTO>(nameof(BallisticHitResultDTO.ImpactDirection)) == 48 &&
-                UnsafeUtility.SizeOf<BallisticImpactVfxDTO>() == 80 &&
+                UnsafeUtility.SizeOf<BallisticImpactVfxDTO>() == BallisticImpactVfxStrideBytes &&
                 OffsetOf<BallisticImpactVfxDTO>(nameof(BallisticImpactVfxDTO.Matrix)) == 0 &&
                 OffsetOf<BallisticImpactVfxDTO>(nameof(BallisticImpactVfxDTO.MaterialHash)) == 64 &&
-                UnsafeUtility.SizeOf<BallisticsTuningDTO>() == 64 &&
+                UnsafeUtility.SizeOf<BallisticsTuningDTO>() == BallisticsTuningStrideBytes &&
                 OffsetOf<BallisticsTuningDTO>(nameof(BallisticsTuningDTO.Revision)) == 44 &&
-                UnsafeUtility.SizeOf<BallisticsTelemetryEntry>() == 64 &&
-                UnsafeUtility.SizeOf<BallisticsCountersDTO>() == 64;
+                UnsafeUtility.SizeOf<BallisticsTelemetryEntry>() == BallisticsTelemetryStrideBytes &&
+                UnsafeUtility.SizeOf<BallisticsCountersDTO>() == BallisticsCountersStrideBytes;
 
             if (!valid)
             {
@@ -56,7 +64,7 @@ namespace Hecton8.Gameplay
             }
 
             if (logSuccess)
-                Debug.Log("[BallisticsLayoutVerifier] BallisticTrajectoryDTO=64B, AABBPrimitiveDTO=96B, BallisticHitResultDTO=112B, ImpactVfx=80B, Tuning/Telemetry/Counters=64B.");
+                Hecton8.Core.H8Debug.Log("[BallisticsLayoutVerifier] BallisticTrajectoryDTO=64B, AABBPrimitiveDTO=96B, BallisticHitResultDTO=112B, ImpactVfx=80B, Tuning/Telemetry/Counters=64B.");
 
             return true;
         }

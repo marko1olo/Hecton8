@@ -1,4 +1,4 @@
-# HECTON-8 Modding SDK Product Blueprint
+﻿# HECTON-8 Modding SDK Product Blueprint
 
 Date: 2026-05-19
 Status: PRODUCT BLUEPRINT / ENVELOPE-ONLY / PENDING IMPLEMENTATION

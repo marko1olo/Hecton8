@@ -5,10 +5,16 @@ using Unity.Mathematics;
 
 namespace Hecton8.SaveSystem
 {
+    internal static class VoxelDeltaPersistenceLayout
+    {
+        public const int VoxelDeltaCellDTOStrideBytes = 24;
+        public const int VoxelCarvingOperationDTOStrideBytes = 24;
+    }
+
 #pragma warning disable CS0649
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelDeltaPersistenceLayout.VoxelDeltaCellDTOStrideBytes)]
     public struct VoxelDeltaCellDTO
     {
         [FieldOffset(0)]
@@ -102,7 +108,7 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelDeltaPersistenceLayout.VoxelCarvingOperationDTOStrideBytes)]
     public struct VoxelCarvingOperationDTO
     {
         [FieldOffset(0)]

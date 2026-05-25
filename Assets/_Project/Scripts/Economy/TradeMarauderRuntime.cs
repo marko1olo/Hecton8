@@ -315,6 +315,43 @@ namespace Hecton8.Economy
         public int HoardedQuantity;
     }
 
+    public static class MarauderEconomyHash
+    {
+        private const uint FnvOffset = 2166136261u;
+        private const uint FnvPrime = 16777619u;
+
+        public static uint HashLowerAscii(ReadOnlySpan<byte> text)
+        {
+            uint hash = FnvOffset;
+            for (int i = 0; i < text.Length; i++)
+            {
+                byte value = text[i];
+                if (value >= (byte)'A' && value <= (byte)'Z')
+                    value = (byte)(value + 32);
+
+                hash ^= value;
+                hash *= FnvPrime;
+            }
+
+            return hash;
+        }
+
+        public static uint HashLowerAscii(ReadOnlySpan<char> text)
+        {
+            uint hash = FnvOffset;
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                uint value = c >= 'A' && c <= 'Z' ? (uint)(c + 32) : c;
+                hash ^= value & 0xFFu;
+                hash *= FnvPrime;
+            }
+
+            return hash;
+        }
+    }
+
+#if UNITY_EDITOR
     public static class MarauderEconomyCsvParser
     {
         private const uint FnvOffset = 2166136261u;
@@ -599,6 +636,8 @@ namespace Hecton8.Economy
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+#endif
+
     public struct MarauderScarcityMockInventoryJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<uint> InventoryItemHashes;
@@ -832,7 +871,8 @@ namespace Hecton8.Economy
             }
 
             double angle = (index + 1) * 1.61803398875;
-            return fallback + new double3(math.cos((float)angle), 0d, math.sin((float)angle)) * 2000d;
+            MathLodApproximation.ApproxSinCosBhaskara((float)angle, out float sin, out float cos);
+            return fallback + new double3(cos, 0d, sin) * 2000d;
         }
 
         private void WriteTelemetry(int active, int solved, int failed, int items, float scarcity, float quality, uint flags)
@@ -1706,7 +1746,12 @@ namespace Hecton8.Economy
             float phase = (factionHash & 1023u) * 0.006135923f;
             float x = localDelta.x * 0.001f + phase;
             float z = localDelta.z * 0.001f - phase;
-            return SafeNormalize(new float3(math.sin(x * 1.7f), 0f, math.cos(z * 1.3f)), new float3(1f, 0f, 0f));
+            return SafeNormalize(
+                new float3(
+                    MathLodApproximation.ApproxSinBhaskara(x * 1.7f),
+                    0f,
+                    MathLodApproximation.ApproxCosBhaskara(z * 1.3f)),
+                new float3(1f, 0f, 0f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1828,11 +1873,11 @@ namespace Hecton8.Economy
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6230)]
     [AddComponentMenu("Hecton8/Economy/Trade Marauder Director")]
-    public sealed class TradeMarauderDirector : MonoBehaviour, ISlowTickable, IFrostTickable
+    public sealed class TradeMarauderDirector : MonoBehaviour, ISlowTickable, IFrostTickable, IGlobalRegistryHotSwapListener
     {
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_TRADE_SURGEON.bin";
-        private static readonly uint CopperHash = MarauderEconomyCsvParser.HashLowerAscii("Data_Copper".AsSpan());
-        private static readonly uint TitaniumHash = MarauderEconomyCsvParser.HashLowerAscii("Data_TitaniumScrap".AsSpan());
+        private static readonly uint CopperHash = MarauderEconomyHash.HashLowerAscii("Data_Copper".AsSpan());
+        private static readonly uint TitaniumHash = MarauderEconomyHash.HashLowerAscii("Data_TitaniumScrap".AsSpan());
 
         [Header("Trade Marauder Runtime")]
         [SerializeField, Range(0f, 1f)] private float _globalQualityWeight = 1f;
@@ -1876,6 +1921,7 @@ namespace Hecton8.Economy
         private bool _jobScheduled;
         private bool _registeredSlowTick;
         private bool _registeredFrostTick;
+        private bool _registeredHotSwapListener;
         private bool _defaultsInitialized;
         private int _frameIndex;
         private int _searchEpoch = 1;
@@ -1894,8 +1940,8 @@ namespace Hecton8.Economy
                 TryCompleteFinishedJob();
             if (!_jobScheduled)
                 EnsureVaultBuffers();
-            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredFrostTick = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
+            TryRegisterHotSwapListener();
+            TryRegisterRuntimeLanes();
         }
 
         private void OnDisable()
@@ -1907,17 +1953,8 @@ namespace Hecton8.Economy
                 PublishCompletedSignals();
             }
 
-            if (_registeredSlowTick)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = false;
-            }
-
-            if (_registeredFrostTick)
-            {
-                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
-                _registeredFrostTick = false;
-            }
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntimeLanes();
 
             if (ReferenceEquals(ActiveForEditor, this))
                 ActiveForEditor = null;
@@ -1928,6 +1965,34 @@ namespace Hecton8.Economy
             ReleaseOwnedVaultHandles(_vault);
             ClearHandles();
             _vault = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null || !isActiveAndEnabled)
+                    return;
+
+                TryUnregisterRuntimeLanes();
+                TryRegisterRuntimeLanes();
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            CompleteActiveJobForVaultSwap();
+            ReleaseOwnedVaultHandles(_vault);
+            ClearHandles();
+            _vault = currentService as IDataVault;
+            _defaultsInitialized = false;
+
+            if (isActiveAndEnabled && _vault != null)
+                EnsureVaultBuffers();
         }
 
         public void SlowTick()
@@ -2168,6 +2233,7 @@ namespace Hecton8.Economy
             return true;
         }
 
+#if UNITY_EDITOR
         public bool TryApplyCsvOverride(ReadOnlySpan<byte> csvBytes, out int acceptedRows, out int rejectedRows)
         {
             acceptedRows = 0;
@@ -2189,6 +2255,7 @@ namespace Hecton8.Economy
 
             return parsed;
         }
+#endif
 
         public static void WarmSignalLanes()
         {
@@ -2196,6 +2263,49 @@ namespace Hecton8.Economy
             SignalBus<MockInventoryTransactionSignal>.EnsureInitialized();
             SignalBus<AcousticPingSignal>.EnsureInitialized();
             SignalBus<HUDNotificationSignal>.EnsureInitialized();
+        }
+
+        private void TryRegisterRuntimeLanes()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredFrostTick)
+                _registeredFrostTick = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterRuntimeLanes()
+        {
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredFrostTick)
+            {
+                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
+                _registeredFrostTick = false;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private bool EnsureVaultBuffers()
@@ -2313,7 +2423,7 @@ namespace Hecton8.Economy
             if (_vault.IsAllocationLocked)
                 return default;
 
-            handle = _vault.GetGenerationHandle<T>(bufferId, length, SystemID.TradeMarauders, options);
+            handle = _vault.EnsureGenerationHandle<T>(bufferId, length, SystemID.TradeMarauders, options);
             return TryOpenVaultView(_vault, in handle, length, out NativeArray<T> _)
                 ? handle
                 : default;
@@ -2443,7 +2553,11 @@ namespace Hecton8.Economy
 
         private float ResolveGlobalQualityWeight()
         {
-            float profileWeight = math.lerp(0.1f, 1f, math.saturate(GlobalRegistry.ScalabilityTierProfileByte));
+            float profileWeight = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(profileWeight))
+                profileWeight = 0.5f;
+
+            profileWeight = math.saturate(profileWeight);
             float requested = math.saturate(_globalQualityWeight * profileWeight);
             float stress = SignalBusRegistry.SystemStress01;
             float vaultPressure = _vault != null ? math.saturate(_vault.CapacityPressure01) : 0f;
@@ -2457,6 +2571,18 @@ namespace Hecton8.Economy
                 return;
 
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
+                return;
+
+            _jobScheduled = false;
+            PublishCompletedSignals();
+        }
+
+        private void CompleteActiveJobForVaultSwap()
+        {
+            if (!_jobScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
                 return;
 
             _jobScheduled = false;
@@ -2477,7 +2603,7 @@ namespace Hecton8.Economy
             for (int i = 0; hasTransactions && i < transactionCount && i < transactions.Length; i++)
             {
                 MockInventoryTransactionSignal signal = transactions[i];
-                SignalBus<MockInventoryTransactionSignal>.Push(in signal);
+                SignalBus<MockInventoryTransactionSignal>.TryPush(in signal);
                 HUDNotificationSignal hud = new HUDNotificationSignal
                 {
                     MessageHash = TradeMarauderConstants.MessageBaseRaidedHash,
@@ -2487,7 +2613,7 @@ namespace Hecton8.Economy
                     Severity = 2,
                     Flags = 0
                 };
-                SignalBus<HUDNotificationSignal>.Push(in hud);
+                SignalBus<HUDNotificationSignal>.TryPush(in hud);
             }
 
             int acousticCount = ReadCounter(counters, MarauderCounterIndex.AcousticSignalCount);
@@ -2503,7 +2629,7 @@ namespace Hecton8.Economy
                     Channel = (byte)math.min(signature.Channel, byte.MaxValue),
                     Flags = (byte)math.min(signature.Flags, byte.MaxValue)
                 };
-                SignalBus<AcousticPingSignal>.Push(in signal);
+                SignalBus<AcousticPingSignal>.TryPush(in signal);
             }
 
             if (ReadCounter(counters, MarauderCounterIndex.FaultFlags) != 0)
@@ -2580,9 +2706,10 @@ namespace Hecton8.Economy
             for (int i = 0; i < states.Length; i++)
             {
                 float angle = (i / (float)math.max(1, states.Length)) * math.PI * 2f;
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
                 states[i] = new MarauderStateDTO
                 {
-                    AUP = new double3(math.cos(angle) * 18000d, -200d - i * 3d, math.sin(angle) * 18000d),
+                    AUP = new double3(cos * 18000d, -200d - i * 3d, sin * 18000d),
                     Velocity = float3.zero,
                     FactionHash = (uint)(0xFA630000u + (uint)(i & 3)),
                     CurrentTask = (uint)MarauderTaskKind.TradeRoute,
@@ -2595,10 +2722,10 @@ namespace Hecton8.Economy
             for (int i = 0; i < inventories.Length; i++)
                 inventories[i] = default;
 
-            uint quartzHash = MarauderEconomyCsvParser.HashLowerAscii("Data_Quartz".AsSpan());
-            uint glassHash = MarauderEconomyCsvParser.HashLowerAscii("Data_Glass".AsSpan());
-            uint silverHash = MarauderEconomyCsvParser.HashLowerAscii("Data_Silver".AsSpan());
-            uint lithiumHash = MarauderEconomyCsvParser.HashLowerAscii("Data_Lithium".AsSpan());
+            uint quartzHash = MarauderEconomyHash.HashLowerAscii("Data_Quartz".AsSpan());
+            uint glassHash = MarauderEconomyHash.HashLowerAscii("Data_Glass".AsSpan());
+            uint silverHash = MarauderEconomyHash.HashLowerAscii("Data_Silver".AsSpan());
+            uint lithiumHash = MarauderEconomyHash.HashLowerAscii("Data_Lithium".AsSpan());
             for (int i = 0; i < weights.Length; i++)
             {
                 uint itemHash = ResolveDefaultItemHash(i, quartzHash, glassHash, silverHash, lithiumHash);

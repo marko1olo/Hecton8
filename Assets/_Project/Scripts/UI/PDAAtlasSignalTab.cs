@@ -81,9 +81,9 @@ namespace Hecton8.UI
         private bool _built;
         private bool _registered;
         private bool _hotSwapRegistered;
-        private AtlasSignalSystem _atlasSignalSystem;
+        private IAtlasSignalReadModel _atlasSignalSystem;
         private AtlasSignalDecoder _atlasSignalDecoder;
-        private FirstHourDirector _firstHourDirector;
+        private IFirstHourReadModel _firstHourDirector;
         private IPlayerRuntimeContext _playerRuntimeContext;
 
         // UI elements
@@ -331,7 +331,7 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
-                    _atlasSignalSystem = currentService as AtlasSignalSystem;
+                    _atlasSignalSystem = currentService as IAtlasSignalReadModel;
                     _dirty = true;
                     return;
                 case GlobalRegistryServiceSlot.AtlasSignalDecoderRuntime:
@@ -339,7 +339,7 @@ namespace Hecton8.UI
                     _dirty = true;
                     return;
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
-                    _firstHourDirector = currentService as FirstHourDirector;
+                    _firstHourDirector = currentService as IFirstHourReadModel;
                     _dirty = true;
                     return;
                 case GlobalRegistryServiceSlot.Player:
@@ -351,10 +351,10 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _atlasSignalSystem = GlobalRegistry.AtlasSignal;
+            _atlasSignalSystem = GlobalRegistry.AtlasSignalReadModel;
             _atlasSignalDecoder = GlobalRegistry.AtlasSignalDecoder;
-            _firstHourDirector = GlobalRegistry.FirstHour;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _firstHourDirector = GlobalRegistry.FirstHourReadModel;
+            _playerRuntimeContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -538,7 +538,7 @@ namespace Hecton8.UI
 
         private void RefreshAll()
         {
-            AtlasSignalSystem sys = _atlasSignalSystem;
+            IAtlasSignalReadModel sys = _atlasSignalSystem;
             AtlasSignalDecoder decoder = _atlasSignalDecoder;
             _signalBeaconContact = SignalBeaconRegistry.TryGetDominantTelemetry(out _beaconStrength01, out _beaconStatic01) &&
                                    _beaconStrength01 > 0f;
@@ -556,7 +556,7 @@ namespace Hecton8.UI
             }
             else if (_atlasTelemetryVisible)
             {
-                _currentStrength = sys != null ? sys.CurrentStrength : 0f;
+                _currentStrength = sys != null ? sys.CurrentAtlasSignalStrength01 : 0f;
                 _signalDetected = hasReadableContact;
                 _currentPhase = decoder != null ? decoder.CurrentPhase : 0;
             }
@@ -698,8 +698,8 @@ namespace Hecton8.UI
         {
             if (_directionLabel == null) return;
 
-            AtlasSignalSystem sys = _atlasSignalSystem;
-            int revealStage = sys != null ? sys.CurrentRevealStage : 0;
+            IAtlasSignalReadModel sys = _atlasSignalSystem;
+            int revealStage = sys != null ? sys.CurrentAtlasSignalRevealStage : 0;
 
             if (_signalBeaconContact)
             {
@@ -728,7 +728,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            Vector3 dir = sys.DirectionToCore;
+            Vector3 dir = ResolveAtlasDirection(sys);
             if (!TryResolveAtlasCoreDistanceMeters(sys, out int distanceMeters))
             {
                 SetLabelText(_directionLabel, DirectionDataErrorLabel);
@@ -770,26 +770,43 @@ namespace Hecton8.UI
             SetNumericText(_pulseTimerLabel, _pulseTimerBuffer, PulseTimerTemplateChars, LocNumericArg.Int(mins), LocNumericArg.Int(secs));
         }
 
-        private bool CanRevealAtlasTelemetry(AtlasSignalSystem sys)
+        private bool CanRevealAtlasTelemetry(IAtlasSignalReadModel sys)
         {
-            FirstHourDirector firstHourDirector = _firstHourDirector;
+            IFirstHourReadModel firstHourDirector = _firstHourDirector;
             if (firstHourDirector != null)
             {
-                return firstHourDirector.IsMilestoneComplete(minimumMilestoneToReveal) &&
+                return firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestoneToReveal) &&
                     HasReadableAtlasContact(sys);
             }
 
             return HasReadableAtlasContact(sys);
         }
 
-        private static bool HasReadableAtlasContact(AtlasSignalSystem sys)
+        private static bool HasReadableAtlasContact(IAtlasSignalReadModel sys)
         {
             return sys != null &&
-                sys.CurrentRevealStage >= 2 &&
-                sys.IsDetected;
+                sys.CurrentAtlasSignalRevealStage >= 2 &&
+                sys.IsAtlasSignalDetected;
         }
 
-        private bool TryResolveAtlasCoreDistanceMeters(AtlasSignalSystem sys, out int distanceMeters)
+        private Vector3 ResolveAtlasDirection(IAtlasSignalReadModel sys)
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (sys == null || playerMovement == null)
+                return Vector3.down;
+
+            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
+            if (!sys.TryReadAtlasSignalSnapshot(in playerAup, out AtlasSignalReadSnapshot snapshot))
+                return Vector3.down;
+
+            return new Vector3(
+                snapshot.DirectionToCore.x,
+                snapshot.DirectionToCore.y,
+                snapshot.DirectionToCore.z);
+        }
+
+        private bool TryResolveAtlasCoreDistanceMeters(IAtlasSignalReadModel sys, out int distanceMeters)
         {
             distanceMeters = 0;
             if (sys == null)
@@ -801,7 +818,7 @@ namespace Hecton8.UI
                 return false;
 
             AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
-            if (!TryResolveRuntimeAup(sys.AtlasCorePosition, out AbsoluteUniversePosition coreAup))
+            if (!sys.TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition coreAup))
                 return false;
 
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
@@ -816,7 +833,7 @@ namespace Hecton8.UI
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

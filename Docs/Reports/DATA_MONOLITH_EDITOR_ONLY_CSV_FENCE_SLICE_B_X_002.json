@@ -1,0 +1,148 @@
+{
+    "schema":  "HECTON8_DATA_MONOLITH_EDITOR_ONLY_CSV_FENCE_SLICE_V1",
+    "agent":  "X_002",
+    "generated":  "2026-05-23T20:16:01.6119891Z",
+    "status":  "PATCHED_STATIC_CONFIG_DEV_GUARD_SLICE_B_CORE_COMPILE_PASS",
+    "policy":  "Second high-risk CSV/text/static-config bridge slice narrowed from UNITY_EDITOR || DEVELOPMENT_BUILD to UNITY_EDITOR. GameBootstrapper/SpatialAudio broad diagnostics intentionally left untouched pending owner review.",
+    "filesTouched":  32,
+    "gitDiffChangedCodeFiles":  25,
+    "guardReplacements":  82,
+    "directUnityEditorOrDevelopmentBuildGuardsInTouchedSlice":  0,
+    "preprocessorBalance":  "PASS: #if/#endif counts equal in touched slice",
+    "diffCheck":  "PASS with LF/CRLF warnings only",
+    "releaseGateStatus":  "PASS_RELEASE_PARSER_GATE",
+    "releaseGateBlockingFindings":  0,
+    "releaseGateAllowedPersistenceFindings":  12,
+    "compileStatus":  "PASS_HECTON8_CORE_0_WARNINGS_0_ERRORS_108340MS",
+    "compileGate":  "OPENED: CPU 47.49%, compiler processes 0; dotnet build Hecton8.Core.csproj --no-restore -v:minimal PASS",
+    "changedFiles":  [
+                         {
+                             "Path":  "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/Scheduling/JobSchedulingProfileCatalog.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Lighting/HectonLightingRuntime_DayNightRelay.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.FileWorker.cs",
+                             "Replacements":  1
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+                             "Replacements":  6
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                             "Replacements":  5
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                             "Replacements":  5
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/World/SpawnZoneSdfValidation.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
+                             "Replacements":  3
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                             "Replacements":  2
+                         },
+                         {
+                             "Path":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                             "Replacements":  2
+                         }
+                     ]
+}

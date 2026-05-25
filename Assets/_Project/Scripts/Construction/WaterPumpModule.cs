@@ -263,7 +263,10 @@ namespace Hecton8.Construction
             if (_hostModule == null)
                 _hostModule = GetComponentInParent<BaseModule>();
             if (_atmosphereSystem == null)
-                _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            {
+                if (!TryGetComponent(out _atmosphereSystem))
+                    _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            }
         }
 
         private bool TryConnectDefaultOutlet(IFluidPipeGraphService graph, int networkId, int ingressNodeIndex)
@@ -367,7 +370,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 

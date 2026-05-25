@@ -1,7 +1,5 @@
 namespace Hecton8.Interaction
 {
-    using Hecton8.Core;
-    using Unity.Collections;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -12,7 +10,6 @@ namespace Hecton8.Interaction
     [AddComponentMenu("Hecton8/Interaction/Physical Tool Grip Offsets")]
     public sealed class PhysicalToolGripOffsets : MonoBehaviour
     {
-        private const int GripOffsetCount = 2;
         private const int LeftIndex = 0;
         private const int RightIndex = 1;
         private const float MaximumGripOffsetMeters = 3f;
@@ -21,8 +18,9 @@ namespace Hecton8.Interaction
         [SerializeField] private Matrix4x4 rightHandGripOffset = Matrix4x4.identity;
         [SerializeField] private bool applyOffsetsOnEquip = true;
 
-        private NativeArray<float4x4> _gripOffsets;
-        private bool _allocated;
+        private float4x4 _leftGripOffset;
+        private float4x4 _rightGripOffset;
+        private bool _offsetsCached;
 
         public bool ApplyOffsetsOnEquip => applyOffsetsOnEquip;
 
@@ -31,25 +29,22 @@ namespace Hecton8.Interaction
             if (!applyOffsetsOnEquip || toolTransform == null || !isActiveAndEnabled)
                 return false;
 
-            EnsureAllocated();
             int index = handSide == PhysicalHandSide.Left ? LeftIndex : RightIndex;
-            ApplyOffset(toolTransform, _gripOffsets[index]);
+            if (!TryReadGripOffset(index, out float4x4 offset))
+                return false;
+
+            ApplyOffset(toolTransform, offset);
             return true;
         }
 
         private void Awake()
         {
-            if (HectonXRRuntimeState.IsXRActive)
-                EnsureAllocated();
+            CacheAuthoredOffsets();
         }
 
         private void OnEnable()
         {
-            if (_allocated || HectonXRRuntimeState.IsXRActive)
-            {
-                EnsureAllocated();
-                WriteAuthoredOffsets();
-            }
+            CacheAuthoredOffsets();
         }
 
         private void OnDisable()
@@ -58,38 +53,33 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
-            DisposeGripOffsets();
+            _offsetsCached = false;
         }
 
-        private void DisposeGripOffsets()
+        private bool TryReadGripOffset(int index, out float4x4 offset)
         {
-            if (_gripOffsets.IsCreated)
+            if (!_offsetsCached)
+                CacheAuthoredOffsets();
+
+            switch (index)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_gripOffsets);
-                _gripOffsets.Dispose();
+                case LeftIndex:
+                    offset = _leftGripOffset;
+                    return true;
+                case RightIndex:
+                    offset = _rightGripOffset;
+                    return true;
+                default:
+                    offset = float4x4.identity;
+                    return false;
             }
-
-            _allocated = false;
         }
 
-        private void EnsureAllocated()
+        private void CacheAuthoredOffsets()
         {
-            if (_allocated && _gripOffsets.IsCreated)
-                return;
-
-            _gripOffsets = new NativeArray<float4x4>(GripOffsetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[2] - VR hand grip offsets - owner: PhysicalToolGripOffsets
-            NativeMemorySentinel.RegisterNativeArray(_gripOffsets, nameof(PhysicalToolGripOffsets), nameof(_gripOffsets), NativeAllocationLifetime.Session);
-            _allocated = true;
-            WriteAuthoredOffsets();
-        }
-
-        private void WriteAuthoredOffsets()
-        {
-            if (!_gripOffsets.IsCreated)
-                return;
-
-            _gripOffsets[LeftIndex] = ToFloat4x4(leftHandGripOffset);
-            _gripOffsets[RightIndex] = ToFloat4x4(rightHandGripOffset);
+            _leftGripOffset = ToFloat4x4(leftHandGripOffset);
+            _rightGripOffset = ToFloat4x4(rightHandGripOffset);
+            _offsetsCached = true;
         }
 
         private static float4x4 ToFloat4x4(Matrix4x4 matrix)
@@ -228,7 +218,7 @@ namespace Hecton8.Interaction
         {
             leftHandGripOffset = SanitizeGripMatrix(leftHandGripOffset);
             rightHandGripOffset = SanitizeGripMatrix(rightHandGripOffset);
-            WriteAuthoredOffsets();
+            CacheAuthoredOffsets();
         }
 
         private static Matrix4x4 SanitizeGripMatrix(Matrix4x4 matrix)

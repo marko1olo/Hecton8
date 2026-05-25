@@ -1,5 +1,6 @@
 using System;
 using Hecton.Localization;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Quest
@@ -100,6 +101,24 @@ namespace Hecton8.Quest
         /// Localized description for the active language.
         /// </summary>
         public string DescriptionOrFallback => localizedDescription.ResolveOrFallback(description);
+
+        public bool TryWriteDisplayTitleOrFallback(ILocalizationTextReadModel manager, char[] destination, out int length)
+        {
+            return localizedDisplayTitle.TryCopyResolvedOrFallback(
+                manager,
+                destination,
+                out length,
+                FallbackOrDefault(displayTitle, "UNKNOWN OBJECTIVE"));
+        }
+
+        public bool TryWriteDescriptionOrFallback(ILocalizationTextReadModel manager, char[] destination, out int length)
+        {
+            return localizedDescription.TryCopyResolvedOrFallback(
+                manager,
+                destination,
+                out length,
+                description);
+        }
 
         private static string FallbackOrDefault(string value, string fallback)
         {

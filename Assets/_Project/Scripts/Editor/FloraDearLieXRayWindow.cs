@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
@@ -74,7 +75,7 @@ namespace Hecton8.Editor
             SetText(
                 "lastFrame=" + runtime.DearLieLastDamageFrame + " destroyed=" + runtime.DearLieLastDestroyedCount + " vfx=" + runtime.DearLieLastVfxCount,
                 "surface=" + runtime.DearLieSurfaceInstanceCount + " underwater=" + runtime.DearLieUnderwaterInstanceCount + " regen=" + runtime.DearLieRegenQueueCount,
-                "quality=" + runtime.DearLieQualityWeight.ToString("0.000"));
+                "quality=" + runtime.DearLieQualityWeight.ToString("0.000", CultureInfo.InvariantCulture));
             SyncSliders(runtime);
             int sampleCount = runtime.EditorCopyDearLieTelemetry(_frameScratch, _destroyedScratch, _vfxScratch, _regenScratch);
             _graph?.SetSamples(_destroyedScratch, _vfxScratch, _regenScratch, sampleCount);

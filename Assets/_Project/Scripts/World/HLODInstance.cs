@@ -3,11 +3,16 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class HLODInstanceLayout
+    {
+        public const int HLODInstanceStrideBytes = 96;
+    }
+
     /// <summary>
     /// Cartographer-published far-field HLOD instance payload.
     /// Coordinates stay in local runtime space and are shifted on GPU.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = HLODInstanceLayout.HLODInstanceStrideBytes)]
     public struct HLODInstance
     {
         [FieldOffset(0)]

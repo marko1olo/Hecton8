@@ -1,4 +1,4 @@
-# HECTON-8 Owned Audience, Email, And Newsletter Plan
+﻿# HECTON-8 Owned Audience, Email, And Newsletter Plan
 
 Status: pre-list operating plan
 Owner lane: SHINOBU_81 / owned audience

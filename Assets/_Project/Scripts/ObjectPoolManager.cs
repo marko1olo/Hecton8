@@ -12,7 +12,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class ObjectPoolManager : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
+    public sealed class ObjectPoolManager : MonoBehaviour, IObjectPoolService, IServiceHeartbeat, IServiceShutdown
     {
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private const string PoolContainerRuntimeName = "[Pool]";
@@ -82,6 +82,7 @@ namespace Hecton8.Core
             public Transform container;
             public GameObject prefab;
             public int prefabId;
+            public int capacity;
         }
 
         private void Awake()
@@ -502,6 +503,11 @@ namespace Hecton8.Core
             instanceTransform.localPosition = Vector3.zero;
             instanceTransform.localRotation = Quaternion.identity;
 
+            if (pool.available.Count >= pool.capacity)
+            {
+                return;
+            }
+
             pool.available.Enqueue(instance);
         }
 
@@ -605,6 +611,20 @@ namespace Hecton8.Core
                 return 0;
 
             return _pools.TryGetValue(prefabId, out Pool pool) ? pool.available.Count : 0;
+        }
+
+        /// <summary>
+        /// Reads inactive reserve count for a pooled runtime instance without exposing pool marker internals to consumers.
+        /// </summary>
+        public bool TryGetAvailableCountForPooledInstance(GameObject instance, out int availableCount)
+        {
+            availableCount = 0;
+
+            if (instance == null || !instance.TryGetComponent(out PoolItemMarker marker))
+                return false;
+
+            availableCount = GetAvailableCountByPrefabId(marker.PrefabId);
+            return true;
         }
 
         /// <summary>
@@ -723,7 +743,10 @@ namespace Hecton8.Core
                     releaseCount--;
                     GameObject instance = pool.available.Dequeue();
                     if (instance != null)
+                    {
                         Destroy(instance);
+                        pool.capacity = Mathf.Max(0, pool.capacity - 1);
+                    }
                 }
 
                 pool.available.TrimExcess();
@@ -772,7 +795,8 @@ namespace Hecton8.Core
                 available = new Queue<GameObject>(32),
                 container = containerObject.transform,
                 prefab = prefab,
-                prefabId = prefabId
+                prefabId = prefabId,
+                capacity = 0
             };
 
             _pools.Add(prefabId, pool);
@@ -813,6 +837,7 @@ namespace Hecton8.Core
                 marker = instance.AddComponent<PoolItemMarker>();
 
             marker.Initialize(prefabId);
+            pool.capacity++;
             return instance;
         }
 
@@ -913,11 +938,14 @@ namespace Hecton8.Core
         /// </summary>
         [DisallowMultipleComponent]
         [AddComponentMenu("")]
-        public sealed class DespawnTimer : MonoBehaviour, ITickable
+        public sealed class DespawnTimer : MonoBehaviour, ITickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
         {
             private float _timer;
             private bool _active;
+            private bool _pendingDespawn;
             private bool _registeredToTickManager;
+            private bool _registeredToLateFrame;
+            private bool _registeredHotSwap;
 
             /// <summary>
             /// Starts the countdown and registers the timer into the dispatcher.
@@ -947,12 +975,24 @@ namespace Hecton8.Core
 
                 _timer = delaySeconds;
                 _active = true;
+                _pendingDespawn = false;
 
-                if (!_registeredToTickManager)
-                {
-                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                    _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
-                }
+                TryRegisterHotSwapListener();
+                TryRegisterLanes();
+            }
+
+            public void OnGlobalRegistryServiceReplaced(
+                GlobalRegistryServiceSlot serviceSlot,
+                object previousService,
+                object currentService)
+            {
+                if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                    return;
+
+                bool shouldRestore = _active || _pendingDespawn || _registeredToTickManager || _registeredToLateFrame;
+                TryUnregisterLanes();
+                if (shouldRestore && currentService != null && isActiveAndEnabled)
+                    TryRegisterLanes();
             }
 
             /// <summary>
@@ -968,7 +1008,15 @@ namespace Hecton8.Core
                     return;
 
                 _active = false;
+                _pendingDespawn = true;
+            }
 
+            public void LateFrameTick()
+            {
+                if (!_pendingDespawn)
+                    return;
+
+                _pendingDespawn = false;
                 ObjectPoolManager pool = ObjectPoolManager.Instance;
                 if (pool != null)
                     pool.Despawn(gameObject);
@@ -977,12 +1025,52 @@ namespace Hecton8.Core
             private void OnDisable()
             {
                 _active = false;
+                _pendingDespawn = false;
+                TryUnregisterLanes();
+                TryUnregisterHotSwapListener();
+            }
 
+            private void TryRegisterLanes()
+            {
+                if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                    return;
+
+                if (!_registeredToTickManager)
+                    _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+                if (!_registeredToLateFrame)
+                    _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            }
+
+            private void TryUnregisterLanes()
+            {
                 if (_registeredToTickManager)
                 {
                     GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                     _registeredToTickManager = false;
                 }
+
+                if (_registeredToLateFrame)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                    _registeredToLateFrame = false;
+                }
+            }
+
+            private void TryRegisterHotSwapListener()
+            {
+                if (_registeredHotSwap || !Application.isPlaying)
+                    return;
+
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+            }
+
+            private void TryUnregisterHotSwapListener()
+            {
+                if (!_registeredHotSwap)
+                    return;
+
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
             }
         }
     }

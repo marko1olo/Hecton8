@@ -948,7 +948,7 @@ namespace Hecton8.World
                     {
                         float u = resolution > 1 ? (float)x / (resolution - 1) : 0f;
                         float v = resolution > 1 ? (float)z / (resolution - 1) : 0f;
-                        float wave = 0.5f + 0.25f * math.sin((u + v) * sineFrequency * math.PI * 2f);
+                        float wave = 0.5f + 0.25f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((u + v) * sineFrequency * math.PI * 2f);
                         int index = x + z * resolution;
                         data.HeightSamples[index] = (ushort)math.clamp((int)math.round(wave * 65535f), 0, 65535);
 
@@ -965,7 +965,7 @@ namespace Hecton8.World
 
                         if (data.ErosionMask.IsCreated && index < data.ErosionMask.Length)
                         {
-                            float ridge = math.abs(math.sin((u - v) * sineFrequency * math.PI * 2f));
+                            float ridge = math.abs(Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((u - v) * sineFrequency * math.PI * 2f));
                             data.ErosionMask[index] = (byte)math.clamp((int)math.round(ridge * 255f), 0, 255);
                         }
                     }
@@ -2392,7 +2392,8 @@ namespace Hecton8.World
             float a = index * 2.3999632f;
             float y = 1f - 2f * math.frac(index * 0.61803398875f);
             float r = math.sqrt(math.max(0f, 1f - y * y));
-            return GlobalWorldSampler.Float3(math.cos(a) * r, y, math.sin(a) * r);
+            Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(a, out float sin, out float cos);
+            return GlobalWorldSampler.Float3(cos * r, y, sin * r);
         }
     }
 
@@ -3054,7 +3055,7 @@ namespace Hecton8.World
             if (_probeVault == null || requiredLength <= 0)
                 return default;
 
-            VaultGenerationHandle<T> handle = _probeVault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = _probeVault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 ProbeOwner,

@@ -250,7 +250,7 @@ namespace Hecton8.UI
             _lastObservedDistance = distance;
 
             ApplyScreenPosition(screenPosition);
-            UpdateLabel(routeTarget.RelayLabel);
+            UpdateLabel(routeTarget.ResolveRelayLabelSpan());
             UpdateDistance(distance);
             UpdateColor(clampedToEdge);
             _lastVisibilityState = clampedToEdge
@@ -322,7 +322,7 @@ namespace Hecton8.UI
             return 0.5f * (estimate + (clampedSq / math.max(estimate, 0.0001f)));
         }
 
-        private void UpdateLabel(string relayLabel)
+        private void UpdateLabel(ReadOnlySpan<char> relayLabel)
         {
             if (labelText == null)
                 return;
@@ -377,7 +377,7 @@ namespace Hecton8.UI
                 : 0;
         }
 
-        private bool LabelBufferMatches(string relayLabel, int displayLength, bool truncated)
+        private bool LabelBufferMatches(ReadOnlySpan<char> relayLabel, int displayLength, bool truncated)
         {
             for (int i = 0; i < displayLength; i++)
             {
@@ -388,29 +388,28 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static int ResolveLabelDisplayLength(string relayLabel, char[] destination)
+        private static int ResolveLabelDisplayLength(ReadOnlySpan<char> relayLabel, char[] destination)
         {
-            if (string.IsNullOrEmpty(relayLabel) || destination == null || destination.Length == 0)
+            if (relayLabel.IsEmpty || destination == null || destination.Length == 0)
                 return 0;
 
             return math.min(relayLabel.Length, destination.Length);
         }
 
-        private static bool IsLabelTruncated(string relayLabel, int displayLength, char[] destination)
+        private static bool IsLabelTruncated(ReadOnlySpan<char> relayLabel, int displayLength, char[] destination)
         {
-            return relayLabel != null &&
-                   destination != null &&
+            return destination != null &&
                    relayLabel.Length > destination.Length &&
                    displayLength >= 3;
         }
 
-        private static void WriteLabelToBuffer(string relayLabel, char[] destination, int displayLength, bool truncated)
+        private static void WriteLabelToBuffer(ReadOnlySpan<char> relayLabel, char[] destination, int displayLength, bool truncated)
         {
             for (int i = 0; i < displayLength; i++)
                 destination[i] = ResolveLabelDisplayChar(relayLabel, i, displayLength, truncated);
         }
 
-        private static uint ComputeLabelDisplayHash(string relayLabel, int displayLength, bool truncated)
+        private static uint ComputeLabelDisplayHash(ReadOnlySpan<char> relayLabel, int displayLength, bool truncated)
         {
             uint hash = LabelHashSeed;
             for (int i = 0; i < displayLength; i++)
@@ -422,7 +421,7 @@ namespace Hecton8.UI
             return hash;
         }
 
-        private static char ResolveLabelDisplayChar(string relayLabel, int index, int displayLength, bool truncated)
+        private static char ResolveLabelDisplayChar(ReadOnlySpan<char> relayLabel, int index, int displayLength, bool truncated)
         {
             if (truncated && index >= displayLength - 3)
                 return '.';
@@ -540,7 +539,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _relayDirector = GlobalRegistry.EmergencyRelay;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             if (_cachedPlayerContext != null)
             {
                 _mainCamera = _cachedPlayerContext.PlayerCamera;

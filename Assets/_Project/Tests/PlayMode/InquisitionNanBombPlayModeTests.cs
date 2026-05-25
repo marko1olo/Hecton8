@@ -155,7 +155,7 @@ namespace Hecton8.Tests.PlayMode
             AssertFinite(sanitized.Velocity, "Velocity");
             AssertFinite(sanitized.Forward, "Forward");
             AssertFinite(sanitized.CameraForward, "CameraForward");
-            Assert.IsTrue(MathGuard.IsFinite(in sanitized.PredictedAup), "PredictedAup is non-finite.");
+            Assert.IsTrue(AbsoluteUniversePosition.IsFinite(in sanitized.PredictedAup), "PredictedAup is non-finite.");
             Assert.AreEqual(fallback.WorldPosition, sanitized.WorldPosition);
             Assert.AreEqual(fallback.PredictedAup.LocalX, sanitized.PredictedAup.LocalX);
             Assert.GreaterOrEqual(sanitized.DepthMeters, 0f);

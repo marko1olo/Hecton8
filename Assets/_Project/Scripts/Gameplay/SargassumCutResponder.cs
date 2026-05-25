@@ -192,7 +192,8 @@ namespace Hecton8.Gameplay
             if (cutManager == null)
                 return;
 
-            cutManager.RegisterExternalCut(positionWS, math.max(minCutRadius, _cutRadius), _cutStrength, velocityWS, 0.45f);
+            float recoverySeconds = math.rcp(math.max(0.5f, cutRecoverySpeed));
+            cutManager.RegisterExternalCut(positionWS, math.max(minCutRadius, _cutRadius), _cutStrength, velocityWS, recoverySeconds);
         }
 
         private void CacheColdDependencies()

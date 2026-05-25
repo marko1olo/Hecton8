@@ -1,0 +1,34 @@
+{
+  "agent": "X_002",
+  "slice": "Q",
+  "status": "PATCHED_PLAYER_HEAP_STAGING_CORE_COMPILE_PASS",
+  "generatedUtc": "2026-05-24T08:24:00Z",
+  "changedFiles": [
+    "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs"
+  ],
+  "fixes": [
+    "Moved the editor/manual font-metrics CSV scratch byte[8192] field behind UNITY_EDITOR.",
+    "The CSV and legacy font metric import methods were already editor-only; this closes the remaining player-instantiation heap staging allocation."
+  ],
+  "staticProof": {
+    "managedPlayerAllocationRemovedBytesPerInstance": 8192,
+    "runtimeParserAdded": false,
+    "binarySchemaChanged": false,
+    "dataMonolithLayoutChanged": false,
+    "editorAuthoringPreserved": true,
+    "preprocessorBalance": "PASS_1_FILE_IF_9_ENDIF_9_DELTA_0",
+    "diffCheck": "PASS_WARNINGS_ONLY_LF_CRLF"
+  },
+  "compileStatus": "CORE_BUILD_PASS_WITH_DUPLICATE_SOURCE_WARNINGS",
+  "coreBuildProof": {
+    "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+    "buildServerShutdownBeforeBuild": true,
+    "result": "PASS",
+    "errors": 0,
+    "warnings": 5,
+    "warningClass": "CS2002 duplicate source entries in generated Hecton8.Core.csproj; not introduced by this slice.",
+    "elapsed": "00:01:24.55",
+    "generatedUtc": "2026-05-24T08:36:51.1927326Z"
+  },
+  "claimBoundary": "Source-level heap staging fix only; Core compile is still required before this slice can be marked build-proven."
+}

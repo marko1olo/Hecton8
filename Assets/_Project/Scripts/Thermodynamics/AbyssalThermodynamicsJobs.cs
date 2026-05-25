@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -34,11 +35,17 @@ namespace Hecton8.Thermodynamics
         public const float AuthoritativeSolverOmega = 1f;
         public const float AuthoritativeSolverTargetTolerance = 0.001f;
         public const int AuthoritativeResidualSampleMask = 0;
+        public const int MinQualityJacobiIterations = 2;
+        public const int MaxQualityJacobiIterations = 50;
+        public const float MinQualitySolverOmega = 0.55f;
+        public const float MaxQualitySolverOmega = 0.92f;
+        public const float MinQualitySolverTargetTolerance = 0.05f;
+        public const float MaxQualitySolverTargetTolerance = 0.001f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FiniteOr(float value, float fallback)
         {
-            return math.isfinite(value) ? value : fallback;
+            return math.select(fallback, value, math.isfinite(value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -79,7 +86,7 @@ namespace Hecton8.Thermodynamics
         {
             int safeModulus = math.max(1, modulus);
             int result = value % safeModulus;
-            return result < 0 ? result + safeModulus : result;
+            return math.select(result, result + safeModulus, result < 0);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -104,31 +111,46 @@ namespace Hecton8.Thermodynamics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveJacobiIterations(float globalQualityWeight)
         {
-            return AuthoritativeJacobiIterations;
+            float q = SmoothQuality01(globalQualityWeight);
+            int iterations = (int)math.round(math.lerp(MinQualityJacobiIterations, MaxQualityJacobiIterations, q));
+            return math.clamp(iterations, MinQualityJacobiIterations, MaxQualityJacobiIterations);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSolverOmega(float globalQualityWeight)
         {
-            return AuthoritativeSolverOmega;
+            return math.lerp(MinQualitySolverOmega, MaxQualitySolverOmega, SmoothQuality01(globalQualityWeight));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSolverTargetTolerance(float globalQualityWeight)
         {
-            return AuthoritativeSolverTargetTolerance;
+            return math.lerp(MinQualitySolverTargetTolerance, MaxQualitySolverTargetTolerance, SmoothQuality01(globalQualityWeight));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveResidualSampleMask(float globalQualityWeight)
         {
-            return AuthoritativeResidualSampleMask;
+            float q = SmoothQuality01(globalQualityWeight);
+            int skipStride = (int)math.round(math.lerp(7f, 0f, q));
+            return math.clamp(skipStride, 0, 7);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveActiveResolution(float globalQualityWeight, int minResolution, int maxResolution)
         {
-            return math.clamp(maxResolution, minResolution, maxResolution);
+            float q = SmoothQuality01(globalQualityWeight);
+            int minSafe = math.clamp(minResolution, 1, MaxSafeResolution);
+            int maxSafe = math.clamp(maxResolution, minSafe, MaxSafeResolution);
+            int resolution = (int)math.round(math.lerp(minSafe, maxSafe, q));
+            return math.clamp(resolution, minSafe, maxSafe);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SmoothQuality01(float globalQualityWeight)
+        {
+            float q = math.saturate(FiniteOr(globalQualityWeight, AuthoritativeQualityWeight));
+            return q * q * (3f - 2f * q);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -150,7 +172,7 @@ namespace Hecton8.Thermodynamics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint Fnv1A(uint seed, uint value)
         {
-            uint hash = seed == 0u ? 2166136261u : seed;
+            uint hash = math.select(seed, 2166136261u, seed == 0u);
             hash ^= value & 0xFFu;
             hash *= 16777619u;
             hash ^= (value >> 8) & 0xFFu;
@@ -169,7 +191,7 @@ namespace Hecton8.Thermodynamics
                 return;
 
             float current = *target;
-            *target = math.isfinite(current) ? current + value : value;
+            *target = math.select(value, current + value, math.isfinite(current));
         }
     }
 
@@ -280,8 +302,8 @@ namespace Hecton8.Thermodynamics
             for (int i = 0; i < count; i++)
             {
                 float t = (i + 1f) / (count + 1f);
-                float x = (t * span) + (math.sin((Frame * 0.013f) + (i * 3.17f)) * cellSize * 1.5f);
-                float z = ((1f - t) * span) + (math.cos((Frame * 0.011f) + (i * 2.41f)) * cellSize * 1.5f);
+                float x = (t * span) + (Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((Frame * 0.013f) + (i * 3.17f)) * cellSize * 1.5f);
+                float z = ((1f - t) * span) + (Hecton8.Core.MathLodApproximation.ApproxCosBhaskara((Frame * 0.011f) + (i * 2.41f)) * cellSize * 1.5f);
                 float y = cellSize * math.lerp(0.35f, 1.75f, math.frac(t * 2.37f));
 
                 HeatSourceDTO source;
@@ -321,7 +343,7 @@ namespace Hecton8.Thermodynamics
             int count = math.clamp(*SourceCount, 0, sourceCapacity);
             int3 resolution = AbyssalThermalMath.SafeResolution(Tuning.GridResolution);
             float cellSize = math.max(0.001f, AbyssalThermalMath.FiniteOr(Tuning.CellSizeMeters, 8f));
-            float safeDeltaTime = math.clamp(math.isfinite(DeltaTime) ? DeltaTime : 1f / 60f, 1f / 60f, 0.2f);
+            float safeDeltaTime = math.clamp(math.select(1f / 60f, DeltaTime, math.isfinite(DeltaTime)), 1f / 60f, 0.2f);
             double3 origin = Tuning.GridOriginAup;
 
             for (int sourceIndex = 0; sourceIndex < count; sourceIndex++)
@@ -363,7 +385,7 @@ namespace Hecton8.Thermodynamics
                             int iy = AbyssalThermalMath.PositiveModulo(centerCell.y + y, resolution.y);
                             int iz = AbyssalThermalMath.PositiveModulo(centerCell.z + z, resolution.z);
                             int index = AbyssalThermalMath.Index(ix, iy, iz, resolution);
-                            float weight = math.pow(math.saturate(1f - (distance * invRadius)), falloff);
+                            float weight = MathLodApproximation.ApproxPow01Curve(1f - (distance * invRadius), falloff);
                             float heat = intensity * safeDeltaTime * weight;
                             if (!math.isfinite(heat) || heat == 0f)
                                 continue;
@@ -853,6 +875,7 @@ namespace Hecton8.Thermodynamics
         }
     }
 
+    #if UNITY_EDITOR
     public static unsafe class HeatSourceProfileCsvParser
     {
         public static int Parse(ReadOnlySpan<byte> csvBytes, HeatSourceProfileDTO* profiles, int maxProfiles)
@@ -997,4 +1020,5 @@ namespace Hecton8.Thermodynamics
             return true;
         }
     }
+    #endif
 }

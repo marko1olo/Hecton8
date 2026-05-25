@@ -274,7 +274,7 @@ public class HectonCelestialEngineEditTests
     {
         AtmosphericLightingState state = new AtmosphericLightingState
         {
-            IsValid = true,
+            IsValid = 1,
             FogDensity = 0.0024f,
             FogColor = new Color(0.42f, 0.45f, 0.5f, 1f),
             AmbientEquatorColor = new Color(0.31f, 0.34f, 0.38f, 1f),

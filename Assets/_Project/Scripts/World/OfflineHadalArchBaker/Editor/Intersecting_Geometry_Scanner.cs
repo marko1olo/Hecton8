@@ -152,8 +152,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
             if (ContainsRockToken(name))
                 return true;
 
-            MeshFilter filter = renderer.GetComponent<MeshFilter>();
-            if (filter != null && filter.sharedMesh != null && ContainsRockToken(filter.sharedMesh.name))
+            if (renderer.TryGetComponent(out MeshFilter filter) && filter.sharedMesh != null && ContainsRockToken(filter.sharedMesh.name))
                 return true;
 
             Material shared = renderer.sharedMaterial;

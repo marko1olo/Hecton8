@@ -11,7 +11,7 @@ namespace Hecton8.Visor
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Visor/VR Diegetic Focus Controller")]
-    public sealed class HectonVRDiegeticFocusController : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
+    public sealed class HectonVRDiegeticFocusController : MonoBehaviour, ITickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float GlobalWriteEpsilon = 0.001f;
         private const float FocusSleepEpsilon = 0.002f;
@@ -33,11 +33,16 @@ namespace Hecton8.Visor
         [SerializeField] private bool clearGlobalsOnDisable = true;
 
         private bool _registeredToTick;
+        private bool _registeredToLateFrame;
         private bool _hotSwapRegistered;
         private float _worldBlur;
         private float _hudBlur;
         private float _appliedWorldBlur = -1f;
         private float _appliedHudBlur = -1f;
+        private float _pendingWorldTarget;
+        private float _pendingHudTarget;
+        private float _pendingFocusDeltaTime;
+        private bool _focusVisualDirty;
 
         private void OnEnable()
         {
@@ -80,8 +85,7 @@ namespace Hecton8.Visor
         {
             if (!TryResolveEyeSelectionPose(out Vector3 rayOriginPosition, out Vector3 rayForward))
             {
-                ApplyFocusTargets(0f, 0f, deltaTime);
-
+                QueueFocusTargets(0f, 0f, deltaTime);
                 return;
             }
 
@@ -96,7 +100,18 @@ namespace Hecton8.Visor
 
             float worldTarget = pdaFocused ? worldBlurWhenPdaFocused : 0f;
             float hudTarget = pdaFocused ? 0f : hudBlurWhenSceneFocused;
-            ApplyFocusTargets(worldTarget, hudTarget, deltaTime);
+            QueueFocusTargets(worldTarget, hudTarget, deltaTime);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_focusVisualDirty)
+                return;
+
+            _focusVisualDirty = false;
+            float deltaTime = _pendingFocusDeltaTime;
+            _pendingFocusDeltaTime = 0f;
+            ApplyFocusTargets(_pendingWorldTarget, _pendingHudTarget, deltaTime);
         }
 
         internal void OverrideFocusTargets(Transform selectionOrigin, DiegeticPanelController panel)
@@ -141,7 +156,7 @@ namespace Hecton8.Visor
 
                 if (camera == null)
                 {
-                    IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                    IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
                     camera = playerContext != null ? playerContext.PlayerCamera : null;
                 }
             }
@@ -198,6 +213,14 @@ namespace Hecton8.Visor
             ApplyGlobalIfChanged(HectonHudFocusBlurId, ref _appliedHudBlur, _hudBlur);
         }
 
+        private void QueueFocusTargets(float worldTarget, float hudTarget, float deltaTime)
+        {
+            _pendingWorldTarget = Sanitize01(worldTarget);
+            _pendingHudTarget = Sanitize01(hudTarget);
+            _pendingFocusDeltaTime += math.max(0f, math.isfinite(deltaTime) ? deltaTime : 0f);
+            _focusVisualDirty = true;
+        }
+
         private bool AreFocusTargetsSettled(float worldTarget, float hudTarget)
         {
             return math.abs(Sanitize01(_worldBlur) - Sanitize01(worldTarget)) <= FocusSleepEpsilon &&
@@ -234,19 +257,28 @@ namespace Hecton8.Visor
 
         private void TryRegisterTick()
         {
-            if (_registeredToTick || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredToTick)
+                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredToLateFrame)
+                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTick()
         {
-            if (!_registeredToTick)
-                return;
+            if (_registeredToLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredToLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = false;
+            if (_registeredToTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredToTick = false;
+            }
         }
 
         private void TryRegisterHotSwapListener()

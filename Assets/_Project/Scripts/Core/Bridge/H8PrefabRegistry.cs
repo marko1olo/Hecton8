@@ -342,7 +342,7 @@ namespace Hecton8.Core.Bridge
                 OneDimensionalLutHash = entry.OneDimensionalLutHash,
                 Flags = entry.Flags
             };
-            SignalBus<PrefabAcousticSignatureSignal>.Push(in acoustic);
+            SignalBus<PrefabAcousticSignatureSignal>.TryPush(in acoustic);
 
             PrefabLoreLinkSignal lore = new PrefabLoreLinkSignal
             {
@@ -353,7 +353,7 @@ namespace Hecton8.Core.Bridge
                 HighTierVisualHash = entry.HighTierVisualHash,
                 Flags = entry.Flags
             };
-            SignalBus<PrefabLoreLinkSignal>.Push(in lore);
+            SignalBus<PrefabLoreLinkSignal>.TryPush(in lore);
         }
     }
 
@@ -388,7 +388,7 @@ namespace Hecton8.Core.Bridge
                         if (texture == null)
                             continue;
 
-                        int textureId = texture.GetInstanceID();
+                        int textureId = texture.GetEntityId().GetHashCode();
                         if (!countedTextures.Add(textureId))
                             continue;
 

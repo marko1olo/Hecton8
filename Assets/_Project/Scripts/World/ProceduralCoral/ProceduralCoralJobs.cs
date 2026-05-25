@@ -78,6 +78,33 @@ namespace Hecton8.World.ProceduralCoral
             return new quaternion(raw * math.rsqrt(math.max(lengthSq, ProceduralCoralConstants.Epsilon)));
         }
 
+        public static quaternion FastRotationNoTrig(float3 axis, float radians)
+        {
+            ApproximateSinCosFullNoTrig(math.select(0f, radians, math.isfinite(radians)) * 0.5f, out float sinHalf, out float cosHalf);
+            float3 safeAxis = math.normalizesafe(axis, new float3(1f, 0f, 0f));
+            return SafeRotation(new quaternion(new float4(safeAxis * sinHalf, cosHalf)));
+        }
+
+        public static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (6.28318530718f * math.round(radians * 0.15915494309f));
+            float cosSign = 1f;
+            if (x > 1.57079632679f)
+            {
+                x = 3.14159265359f - x;
+                cosSign = -1f;
+            }
+            else if (x < -1.57079632679f)
+            {
+                x = -3.14159265359f - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
         public static bool IsFinite(double3 value)
         {
             return math.all(math.isfinite(value));
@@ -311,7 +338,7 @@ namespace Hecton8.World.ProceduralCoral
                     uint opcode = source[i];
                     if (TryFindRule(opcode, activeRuleCount, out CoralLSystemRuleDTO rule) && rule.ReplacementCount > 0)
                     {
-                        int replacementCount = math.min(rule.ReplacementCount, (byte)8);
+                        int replacementCount = math.min((int)rule.ReplacementCount, 8);
                         for (int r = 0; r < replacementCount && write < instructionLimit; r++)
                             target[write++] = GetReplacement(rule, r);
                     }
@@ -511,7 +538,7 @@ namespace Hecton8.World.ProceduralCoral
                 {
                     turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
                         ProceduralCoralMath.SafeRotation(turtle.Rotation),
-                        quaternion.AxisAngle(new float3(0f, 0f, 1f), opcodeAngle + variance)));
+                        ProceduralCoralMath.FastRotationNoTrig(new float3(0f, 0f, 1f), opcodeAngle + variance)));
                     continue;
                 }
 
@@ -519,7 +546,7 @@ namespace Hecton8.World.ProceduralCoral
                 {
                     turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
                         ProceduralCoralMath.SafeRotation(turtle.Rotation),
-                        quaternion.AxisAngle(new float3(0f, 0f, 1f), -opcodeAngle + variance)));
+                        ProceduralCoralMath.FastRotationNoTrig(new float3(0f, 0f, 1f), -opcodeAngle + variance)));
                     continue;
                 }
 
@@ -527,7 +554,7 @@ namespace Hecton8.World.ProceduralCoral
                 {
                     turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
                         ProceduralCoralMath.SafeRotation(turtle.Rotation),
-                        quaternion.AxisAngle(new float3(1f, 0f, 0f), opcodeAngle * 0.72f + variance)));
+                        ProceduralCoralMath.FastRotationNoTrig(new float3(1f, 0f, 0f), opcodeAngle * 0.72f + variance)));
                     continue;
                 }
 
@@ -535,7 +562,7 @@ namespace Hecton8.World.ProceduralCoral
                 {
                     turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
                         ProceduralCoralMath.SafeRotation(turtle.Rotation),
-                        quaternion.AxisAngle(new float3(1f, 0f, 0f), -opcodeAngle * 0.55f + variance)));
+                        ProceduralCoralMath.FastRotationNoTrig(new float3(1f, 0f, 0f), -opcodeAngle * 0.55f + variance)));
                     continue;
                 }
 
@@ -543,7 +570,7 @@ namespace Hecton8.World.ProceduralCoral
                 {
                     turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
                         ProceduralCoralMath.SafeRotation(turtle.Rotation),
-                        quaternion.AxisAngle(new float3(0f, 1f, 0f), (opcodeAngle * 0.5f) + variance)));
+                        ProceduralCoralMath.FastRotationNoTrig(new float3(0f, 1f, 0f), (opcodeAngle * 0.5f) + variance)));
                     continue;
                 }
 

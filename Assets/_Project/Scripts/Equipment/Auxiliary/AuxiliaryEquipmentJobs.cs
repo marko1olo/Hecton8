@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -139,8 +140,11 @@ namespace Hecton8.Equipment.Auxiliary
         // SAFETY_JUSTIFICATION_PARAGRAPH_2: These fields are SignalBus ParallelWriter producer lanes only; each Execute index appends independent signal records and never reads or aliases queue storage, deployment buffers, state buffers, tether buffers, or VFX buffers.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3: LateFrameTick finalizes _pendingHandle through DispatcherJobFence.TryFinalizeCompleted before buffer unlock/readback, and teardown uses the forced dispatcher fence before releasing Vault handles, so queue writers cannot outlive the scheduled producer window.
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliaryFlareLightSignal>.ParallelWriter FlareWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> FlareWriterBudget;
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliarySonarRequestSignal>.ParallelWriter SonarWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> SonarWriterBudget;
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliaryTetherConnectionSignal>.ParallelWriter TetherWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> TetherWriterBudget;
         public AuxiliaryTuningDTO Tuning;
         public uint FrameIndex;
         public float SimulationDeltaTime;
@@ -258,7 +262,7 @@ namespace Hecton8.Equipment.Auxiliary
                 return;
             }
 
-            FlareWriter.Enqueue(signal);
+            SignalBus<AuxiliaryFlareLightSignal>.TryEnqueueBounded(FlareWriter, FlareWriterBudget, signal);
             counter.FlareSignals = 1u;
         }
 
@@ -288,7 +292,7 @@ namespace Hecton8.Equipment.Auxiliary
                 return;
             }
 
-            SonarWriter.Enqueue(signal);
+            SignalBus<AuxiliarySonarRequestSignal>.TryEnqueueBounded(SonarWriter, SonarWriterBudget, signal);
             counter.PingSignals = 1u;
         }
 
@@ -337,7 +341,7 @@ namespace Hecton8.Equipment.Auxiliary
                 return;
             }
 
-            TetherWriter.Enqueue(signal);
+            SignalBus<AuxiliaryTetherConnectionSignal>.TryEnqueueBounded(TetherWriter, TetherWriterBudget, signal);
             counter.TetherSignals = 1u;
         }
 

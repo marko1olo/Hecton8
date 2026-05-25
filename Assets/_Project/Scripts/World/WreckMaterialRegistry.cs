@@ -1,4 +1,4 @@
-using Hecton8.Core;
+﻿using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -15,7 +15,7 @@ namespace Hecton8.World
     /// Owns the render contracts for procedural wreck modules and publishes them through BRG direct draws.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class WreckMaterialRegistry : MonoBehaviour, ISlowTickable, IOriginShiftListener
+    public sealed class WreckMaterialRegistry : MonoBehaviour, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxModuleContracts = 16;
         private const int WreckBrgMetadataCount = 1;
@@ -164,8 +164,13 @@ namespace Hecton8.World
             private Material _materialSource;
             private Material _runtimeMaterialSource;
             private Shader _runtimeShader;
-            private GraphicsBuffer _matrixBuffer;
-            private GraphicsBuffer _ageBuffer;
+            private GraphicsBuffer _matrixBufferA;
+            private GraphicsBuffer _matrixBufferB;
+            private GraphicsBuffer _activeMatrixBuffer;
+            private GraphicsBuffer _ageBufferA;
+            private GraphicsBuffer _ageBufferB;
+            private GraphicsBuffer _activeAgeBuffer;
+            private int _uploadBufferIndex;
             private NativeList<Matrix4x4> _matrices;
             private NativeList<float> _ages;
             private NativeList<Matrix4x4> _visibleMatrices;
@@ -299,7 +304,7 @@ namespace Hecton8.World
 
             public bool Publish(
                 Bounds drawBounds,
-                NativeArray<float4> frustumPlanes,
+                float4[] frustumPlanes,
                 bool enableFrustumCulling,
                 int frustumVersion,
                 bool forceCullCompletion = true)
@@ -331,18 +336,28 @@ namespace Hecton8.World
                 EnsureRuntimeMaterial();
                 EnsureMatrixBufferCapacity(visibleCount);
                 EnsureAgeBufferCapacity(visibleCount);
-                if (_batchRendererGroup == null || _runtimeMaterial == null || _matrixBuffer == null || _ageBuffer == null)
+                if (_batchRendererGroup == null ||
+                    _runtimeMaterial == null ||
+                    _matrixBufferA == null ||
+                    _matrixBufferB == null ||
+                    _ageBufferA == null ||
+                    _ageBufferB == null)
                 {
                     _uploadedInstanceCount = 0;
                     return false;
                 }
 
                 long uploadStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
-                GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _visibleMatrices.AsArray(), visibleCount);
-                GraphicsBufferUploadUtility.UploadNativeArray(_ageBuffer, _visibleAges.AsArray(), visibleCount);
-                _runtimeMaterial.SetBuffer(_WreckMatricesId, _matrixBuffer);
-                _runtimeMaterial.SetBuffer(_WreckAgesId, _ageBuffer);
-                SyncBatchBuffer(_matrixBuffer);
+                GraphicsBuffer matrixWriteBuffer = _uploadBufferIndex == 0 ? _matrixBufferA : _matrixBufferB;
+                GraphicsBuffer ageWriteBuffer = _uploadBufferIndex == 0 ? _ageBufferA : _ageBufferB;
+                GraphicsBufferUploadUtility.UploadNativeArray(matrixWriteBuffer, _visibleMatrices.AsArray(), visibleCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(ageWriteBuffer, _visibleAges.AsArray(), visibleCount);
+                _activeMatrixBuffer = matrixWriteBuffer;
+                _activeAgeBuffer = ageWriteBuffer;
+                _uploadBufferIndex ^= 1;
+                _runtimeMaterial.SetBuffer(_WreckMatricesId, _activeMatrixBuffer);
+                _runtimeMaterial.SetBuffer(_WreckAgesId, _activeAgeBuffer);
+                SyncBatchBuffer(_activeMatrixBuffer);
                 SyncBatchRegistration();
                 _uploadedInstanceCount = visibleCount;
                 _batchRendererGroup.SetGlobalBounds(_drawBounds);
@@ -351,7 +366,7 @@ namespace Hecton8.World
             }
 
             private bool TryCullVisibleSubset(
-                NativeArray<float4> frustumPlanes,
+                float4[] frustumPlanes,
                 bool enableFrustumCulling,
                 int frustumVersion,
                 bool forceCompletion,
@@ -416,14 +431,14 @@ namespace Hecton8.World
             }
 
             private void ScheduleVisibilityCull(
-                NativeArray<float4> frustumPlanes,
+                float4[] frustumPlanes,
                 bool enableFrustumCulling,
                 int frustumVersion,
                 int count,
                 int visibleCapacity)
             {
                 int ageCount = _ages.IsCreated ? _ages.Length : 0;
-                bool hasPlanes = enableFrustumCulling && frustumPlanes.IsCreated && frustumPlanes.Length >= FrustumPlaneCount;
+                bool hasPlanes = enableFrustumCulling && frustumPlanes != null && frustumPlanes.Length >= FrustumPlaneCount;
                 NativeArray<float4> jobFrustumPlanes = default;
                 if (hasPlanes && _frustumPlaneSnapshot.IsCreated)
                 {
@@ -473,10 +488,20 @@ namespace Hecton8.World
                         ApplyOriginShiftToMatrices(_visibleMatrices.AsArray(), visibleCount, runtimeOffset);
 
                     int uploadCount = math.min(_uploadedInstanceCount, _visibleMatrices.Length);
-                    if (_matrixBuffer != null && uploadCount > 0)
+                    if (uploadCount > 0)
                     {
+                        EnsureMatrixBufferCapacity(uploadCount);
+                        GraphicsBuffer matrixWriteBuffer = _uploadBufferIndex == 0 ? _matrixBufferA : _matrixBufferB;
+                        if (matrixWriteBuffer == null)
+                            return;
+
                         _uploadedInstanceCount = uploadCount;
-                        GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _visibleMatrices.AsArray(), uploadCount);
+                        GraphicsBufferUploadUtility.UploadNativeArray(matrixWriteBuffer, _visibleMatrices.AsArray(), uploadCount);
+                        _activeMatrixBuffer = matrixWriteBuffer;
+                        _uploadBufferIndex ^= 1;
+                        if (_runtimeMaterial != null)
+                            _runtimeMaterial.SetBuffer(_WreckMatricesId, _activeMatrixBuffer);
+                        SyncBatchBuffer(_activeMatrixBuffer);
                     }
                 }
 
@@ -533,17 +558,13 @@ namespace Hecton8.World
                     _batchHandleBuffer = null;
                 }
 
-                if (_matrixBuffer != null)
-                {
-                    _matrixBuffer.Release();
-                    _matrixBuffer = null;
-                }
-
-                if (_ageBuffer != null)
-                {
-                    _ageBuffer.Release();
-                    _ageBuffer = null;
-                }
+                ReleaseBuffer(ref _matrixBufferA);
+                ReleaseBuffer(ref _matrixBufferB);
+                ReleaseBuffer(ref _ageBufferA);
+                ReleaseBuffer(ref _ageBufferB);
+                _activeMatrixBuffer = null;
+                _activeAgeBuffer = null;
+                _uploadBufferIndex = 0;
 
                 if (_ownsRuntimeMaterial && _runtimeMaterial != null)
                 {
@@ -694,29 +715,57 @@ namespace Hecton8.World
                 _runtimeShader = runtimeShader;
             }
 
+            private static void ReleaseBuffer(ref GraphicsBuffer buffer)
+            {
+                if (buffer == null)
+                    return;
+
+                buffer.Release();
+                buffer = null;
+            }
+
             private void EnsureMatrixBufferCapacity(int instanceCount)
             {
                 int required = RoundUpPowerOfTwo(instanceCount);
-                if (_matrixBuffer != null && _matrixBuffer.count >= required)
+                if (_matrixBufferA != null &&
+                    _matrixBufferA.count >= required &&
+                    _matrixBufferB != null &&
+                    _matrixBufferB.count >= required)
+                {
+                    if (_activeMatrixBuffer == null)
+                        _activeMatrixBuffer = _matrixBufferA;
                     return;
+                }
 
-                if (_matrixBuffer != null)
-                    _matrixBuffer.Release();
+                ReleaseBuffer(ref _matrixBufferA);
+                ReleaseBuffer(ref _matrixBufferB);
 
-                _matrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] - wreck module matrix upload buffer - owner: WreckMaterialRegistry
+                _matrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] A - wreck module matrix upload buffer - owner: WreckMaterialRegistry
+                _matrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] B - wreck module matrix upload buffer - owner: WreckMaterialRegistry
+                _activeMatrixBuffer = _matrixBufferA;
+                _uploadBufferIndex = 0;
                 _registeredBatchBuffer = null;
             }
 
             private void EnsureAgeBufferCapacity(int instanceCount)
             {
                 int required = RoundUpPowerOfTwo(instanceCount);
-                if (_ageBuffer != null && _ageBuffer.count >= required)
+                if (_ageBufferA != null &&
+                    _ageBufferA.count >= required &&
+                    _ageBufferB != null &&
+                    _ageBufferB.count >= required)
+                {
+                    if (_activeAgeBuffer == null)
+                        _activeAgeBuffer = _ageBufferA;
                     return;
+                }
 
-                if (_ageBuffer != null)
-                    _ageBuffer.Release();
+                ReleaseBuffer(ref _ageBufferA);
+                ReleaseBuffer(ref _ageBufferB);
 
-                _ageBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] - wreck module age metadata upload buffer - owner: WreckMaterialRegistry
+                _ageBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] A - wreck module age metadata upload buffer - owner: WreckMaterialRegistry
+                _ageBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] B - wreck module age metadata upload buffer - owner: WreckMaterialRegistry
+                _activeAgeBuffer = _ageBufferA;
             }
 
             private static int RoundUpPowerOfTwo(int value)
@@ -863,7 +912,7 @@ namespace Hecton8.World
         private Transform _playerTransform;
         private Camera _viewCamera;
         private Plane[] _frustumPlaneCache;
-        private NativeArray<float4> _frustumPlanes;
+        private float4[] _frustumPlanes;
         private Vector3 _lastFrustumCameraPosition;
         private Quaternion _lastFrustumCameraRotation = Quaternion.identity;
         private float4 _lastFrustumProjectionSignature0;
@@ -874,8 +923,11 @@ namespace Hecton8.World
         private int _skippedVisibilityUploadCount;
         private bool _hasPublishedWreck;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
+        private bool _hotSwapListenerRegistered;
         private bool _pdaSignalLatched;
         private bool _hasCachedFrustumState;
+        private bool _visibilityUploadRequested;
 
         public int SkippedVisibilityUploadCount => _skippedVisibilityUploadCount;
 
@@ -896,12 +948,14 @@ namespace Hecton8.World
             ResolveIndirectShader();
             EnsureBatches();
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterHotSwapListener();
             TryRegisterSlowTick();
         }
 
         private void OnDisable()
         {
             TryUnregisterSlowTick();
+            TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
             DisposeBatches();
         }
@@ -909,6 +963,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregisterSlowTick();
+            TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
             DisposeBatches();
         }
@@ -918,7 +973,7 @@ namespace Hecton8.World
             if (!_hasPublishedWreck)
                 return;
 
-            RefreshVisibilityUploads();
+            _visibilityUploadRequested = true;
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
@@ -932,7 +987,7 @@ namespace Hecton8.World
 
                 _pdaSignalLatched = true;
                 Vector3 pingCenter = _publishedWorldBounds.center;
-                ScanEvents.RaiseWreckSignalPing(
+                ScanEvents.TryRaiseWreckSignalPing(
                     new float3(pingCenter.x, pingCenter.y, pingCenter.z),
                     math.max(1f, pdaSignalPingRadiusMeters));
                 return;
@@ -944,18 +999,27 @@ namespace Hecton8.World
                 _pdaSignalLatched = false;
         }
 
+        public void LateFrameTick()
+        {
+            if (!_visibilityUploadRequested)
+                return;
+
+            _visibilityUploadRequested = false;
+            RefreshVisibilityUploads();
+        }
+
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement != null)
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
             {
-                playerAup = playerMovement.CurrentAup;
-                return true;
-            }
+                HectonPlayerMovement playerMovement = runtimeContext.PlayerMovement;
+                if (playerMovement != null)
+                {
+                    playerAup = playerMovement.CurrentAup;
+                    return true;
+                }
 
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-            {
                 PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
                 if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
@@ -1251,10 +1315,11 @@ namespace Hecton8.World
 
         private Camera ResolveViewCamera()
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            if (playerContext != null && playerContext.PlayerCamera != null)
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                runtimeContext.PlayerCamera != null)
             {
-                _viewCamera = playerContext.PlayerCamera;
+                _viewCamera = runtimeContext.PlayerCamera;
                 return _viewCamera;
             }
 
@@ -1352,19 +1417,55 @@ namespace Hecton8.World
 
         private void TryRegisterSlowTick()
         {
-            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredLateFrameTick)
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterSlowTick()
         {
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+
             if (!_registeredSlowTick)
                 return;
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredSlowTick = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegisterSlowTick();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void EnsureBatches()
@@ -1385,11 +1486,8 @@ namespace Hecton8.World
             if (_frustumPlaneCache == null || _frustumPlaneCache.Length != FrustumPlaneCount)
                 _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - player-camera wreck BRG upload culling planes - owner: WreckMaterialRegistry
 
-            if (!_frustumPlanes.IsCreated)
-            {
-                _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] - Burst frustum planes for wreck BRG upload culling - owner: WreckMaterialRegistry
-                NativeMemorySentinel.RegisterNativeArray(_frustumPlanes, nameof(WreckMaterialRegistry), nameof(_frustumPlanes), NativeAllocationLifetime.Scene);
-            }
+            if (_frustumPlanes == null || _frustumPlanes.Length != FrustumPlaneCount)
+                _frustumPlanes = new float4[FrustumPlaneCount]; // COLD ALLOC: float4[6] - managed camera-frustum snapshot copied into per-batch native job snapshots.
         }
 
         private void ResetAllBatches()
@@ -1422,12 +1520,7 @@ namespace Hecton8.World
 
         private void DisposeFrustumScratch()
         {
-            if (!_frustumPlanes.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_frustumPlanes);
-            _frustumPlanes.Dispose();
-            _frustumPlanes = default;
+            _frustumPlanes = null;
         }
 
         private Material ResolveMaterialForModule(int moduleIndex, WreckLodTier tier)

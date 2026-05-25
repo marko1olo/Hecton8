@@ -191,7 +191,7 @@ namespace Hecton8.Power
             _shinobuLogisticsRouter = null;
             _submarineThermalGridRuntime?.Dispose();
             _submarineThermalGridRuntime = null;
-            ReleaseJacobiPowerVaultBuffers(_jacobiVaultOwner ?? GlobalRegistry.DataVault);
+            ReleaseJacobiPowerVaultBuffers(_jacobiVaultOwner);
             _pendingWirelessToolDemandWattSeconds = 0f;
             _debugPendingWirelessToolDemandWattSeconds = 0f;
             _slowTickFinalizationPending = false;
@@ -277,6 +277,12 @@ namespace Hecton8.Power
             if (serviceSlot == GlobalRegistryServiceSlot.GasDynamicsRuntime)
             {
                 _wfcOutpostPowerBoot?.BindGasDynamics(currentService as IGasDynamicsSolver);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime)
+            {
+                _shinobuLogisticsRouter?.BindPipeRenderer(currentService as IConnectionSplineBatchRendererService);
                 return;
             }
 
@@ -608,7 +614,7 @@ namespace Hecton8.Power
                 highestBrownoutTier,
                 deficitCount > 0,
                 emergencyReserveGridCount > 0);
-            PowerGridTelemetryEvents.Raise(in telemetrySnapshot);
+            PowerGridTelemetryEvents.TryRaise(in telemetrySnapshot);
             PublishBrownoutSignal(in telemetrySnapshot);
         }
 
@@ -648,8 +654,8 @@ namespace Hecton8.Power
                 Priority = (byte)highestBrownoutTier,
                 Flags = flags
             };
-            GlobalSignals.Publish(in signal);
-            float quality = HomeostasisBrain.GlobalQualityWeight;
+            SignalBus<BrownoutSignal>.TryPush(in signal);
+            float quality = ResolveMathLodQualityWeight();
             HectonShaderGlobalDataVaultBridge.PublishPowerBrownout(new Vector4(
                 supplyRatio,
                 severity01,
@@ -662,10 +668,8 @@ namespace Hecton8.Power
             if (_dispatcherRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _dispatcherRegistered = SystemDispatcher.GetSlowLane(PriorityLayer.Environment).Contains(this);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            _dispatcherRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterService()
@@ -770,6 +774,7 @@ namespace Hecton8.Power
                 _shinobuLogisticsRouter = new ShinobuLogisticsRouter();
 
             _shinobuLogisticsRouter.InjectDataVault(GlobalRegistry.DataVault);
+            _shinobuLogisticsRouter.BindPipeRenderer(GlobalRegistry.ConnectionSplineBatchRenderer);
             _shinobuLogisticsRouter.EnsureInitialized();
         }
 
@@ -788,7 +793,7 @@ namespace Hecton8.Power
             if (runtime == null)
                 return;
 
-            float quality = PowerSolverConvergenceMath.AuthoritativeQualityWeight;
+            float quality = ResolveMathLodQualityWeight();
             float cadenceSeconds = ResolveSubmarineThermalGridCadenceSeconds(quality);
             if (now + 0.0001f < _nextSubmarineThermalGridTickTime)
                 return;
@@ -809,7 +814,17 @@ namespace Hecton8.Power
 
         internal static float ResolveSubmarineThermalGridCadenceSeconds(float globalQualityWeight)
         {
-            return SubmarineThermalGridHighCadenceSeconds;
+            float q = MathLodApproximation.SaturateFinite(globalQualityWeight, PowerSolverConvergenceMath.AuthoritativeQualityWeight);
+            float curve = MathLodApproximation.SmoothStep01(q);
+            return math.lerp(SubmarineThermalGridLowCadenceSeconds, SubmarineThermalGridHighCadenceSeconds, curve);
+        }
+
+        internal static float ResolveMathLodQualityWeight()
+        {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, PowerSolverConvergenceMath.AuthoritativeQualityWeight);
+
+            return PowerSolverConvergenceMath.AuthoritativeQualityWeight;
         }
 
         private void TryRegisterHotSwapListener()

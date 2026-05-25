@@ -76,9 +76,9 @@ namespace Hecton8.Core
     /// Raw view over the SHINOBU blackbox. Fields are intentionally public to avoid CS1612 copies.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public unsafe struct BlackboxRingBufferDTO
+    internal unsafe struct BlackboxRingBufferDTO
     {
-        [FieldOffset(0)] public byte* Bytes;
+        [FieldOffset(0)] internal byte* Bytes;
         [FieldOffset(8)] public int FrameCapacity;
         [FieldOffset(12)] public int ActiveFrameCount;
         [FieldOffset(16)] public int FrameStrideBytes;
@@ -123,7 +123,7 @@ namespace Hecton8.Core
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal unsafe struct BlackboxSourceSlot
     {
-        [FieldOffset(0)] public byte* SourcePtr;
+        [FieldOffset(0)] internal byte* SourcePtr;
         [FieldOffset(8)] public uint SourceHash;
         [FieldOffset(12)] public uint Flags;
         [FieldOffset(16)] public int PayloadBytes;
@@ -133,21 +133,21 @@ namespace Hecton8.Core
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct NanSweeperJob : IJob
+    internal unsafe struct NanSweeperJob : IJob
     {
         [FieldOffset(0)]
         [NoAlias] [NativeDisableUnsafePtrRestriction]
-        public byte* Payload;
+        internal byte* Payload;
         [FieldOffset(8)]
         public int PayloadBytes;
         [FieldOffset(12)]
         public uint FatalHash;
         [FieldOffset(16)]
         [NoAlias] [NativeDisableUnsafePtrRestriction]
-        public int* IsCatastrophicFailure;
+        internal int* IsCatastrophicFailure;
         [FieldOffset(24)]
         [NoAlias] [NativeDisableUnsafePtrRestriction]
-        public int* FatalHashOutput;
+        internal int* FatalHashOutput;
 
         public void Execute()
         {
@@ -171,11 +171,11 @@ namespace Hecton8.Core
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct MockOriginShiftFireJob : IJob
+    internal unsafe struct MockOriginShiftFireJob : IJob
     {
         [FieldOffset(0)]
         [NoAlias] [NativeDisableUnsafePtrRestriction]
-        public MockOriginShiftSignal* Output;
+        internal MockOriginShiftSignal* Output;
         [FieldOffset(8)]
         public int OutputLength;
         [FieldOffset(12)]
@@ -470,7 +470,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Exposes a raw view suitable for Burst job field injection.
         /// </summary>
-        public static unsafe bool TryGetBlackboxRingBuffer(out BlackboxRingBufferDTO dto)
+        internal static unsafe bool TryGetBlackboxRingBuffer(out BlackboxRingBufferDTO dto)
         {
             dto = default;
             if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
@@ -538,6 +538,7 @@ namespace Hecton8.Core
             PushEvent(0x4D4F5348u, copy.DeltaLocalMeters.x, copy.SourceHash); // MOSH
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Applies one CSV line in `key,mask` form without allocating inside the parser.
         /// </summary>
@@ -552,6 +553,7 @@ namespace Hecton8.Core
             SetActiveLoggingMask(keyHash, mask);
             return true;
         }
+#endif
 
         /// <summary>
         /// Returns the active unmanaged logging mask for a prehashed system key.
@@ -665,57 +667,57 @@ namespace Hecton8.Core
             int mmfFrames = math.min(BlackboxMmfFlushFrameCount, desiredFrameCount);
             int mmfByteCount = mmfFrames * BlackboxFrameStrideBytes;
 
-            VaultGenerationHandle<byte> bytesHandle = vault.GetGenerationHandle<byte>(
+            VaultGenerationHandle<byte> bytesHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.ShinobuCrashBlackboxBytes,
                 byteCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<byte> mmfScratchHandle = vault.GetGenerationHandle<byte>(
+            VaultGenerationHandle<byte> mmfScratchHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.ShinobuCrashMmfScratch,
                 mmfByteCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<byte> dumpHeaderHandle = vault.GetGenerationHandle<byte>(
+            VaultGenerationHandle<byte> dumpHeaderHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.ShinobuCrashDumpHeader,
                 BlackboxDumpHeaderBytes,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<TelemetryEventDTO> eventsHandle = vault.GetGenerationHandle<TelemetryEventDTO>(
+            VaultGenerationHandle<TelemetryEventDTO> eventsHandle = vault.EnsureGenerationHandle<TelemetryEventDTO>(
                 BufferID.ShinobuCrashTelemetryEvents,
                 BlackboxEventCapacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<BlackboxSourceSlot> sourcesHandle = vault.GetGenerationHandle<BlackboxSourceSlot>(
+            VaultGenerationHandle<BlackboxSourceSlot> sourcesHandle = vault.EnsureGenerationHandle<BlackboxSourceSlot>(
                 BufferID.ShinobuCrashSourceSlots,
                 BlackboxMaxSourceCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<TelemetryLoggingMaskDTO> loggingMasksHandle = vault.GetGenerationHandle<TelemetryLoggingMaskDTO>(
+            VaultGenerationHandle<TelemetryLoggingMaskDTO> loggingMasksHandle = vault.EnsureGenerationHandle<TelemetryLoggingMaskDTO>(
                 BufferID.ShinobuCrashLoggingMasks,
                 BlackboxLoggingMaskCapacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> atomicStateHandle = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> atomicStateHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuCrashAtomicState,
                 2,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> watchdogCountersHandle = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> watchdogCountersHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuCrashWatchdogCounters,
                 BlackboxWatchdogLaneCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> watchdogSamplesHandle = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> watchdogSamplesHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuCrashWatchdogSamples,
                 BlackboxWatchdogLaneCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> watchdogStaleProbesHandle = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> watchdogStaleProbesHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuCrashWatchdogStaleProbes,
                 BlackboxWatchdogLaneCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> watchdogActiveHandle = vault.GetGenerationHandle<int>(
+            VaultGenerationHandle<int> watchdogActiveHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuCrashWatchdogActive,
                 BlackboxWatchdogLaneCount,
                 SystemID.CoreDiagnostics,

@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
 using Unity.Mathematics;
@@ -12,7 +13,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8007)]
-    public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable, IUpdatable, IVramPressureReadModel, IVramPressureSampleSink, IVramPressureMipBiasSink, IGlobalRegistryHotSwapListener
     {
         private const float BytesPerMegabyte = 1024f * 1024f;
         private const float DefaultWarningVramFraction = 1600f / 1800f;
@@ -57,10 +58,11 @@ namespace Hecton8.Optimization
         private bool _lodAggressionActive;
         private VRAMBudgetThresholds _runtimeBudgetThresholds;
         private long _runtimeTotalVramBudgetBytes;
-        private VRAMMonitor _vramMonitor;
-        private AssetLifecycleGovernor _assetLifecycle;
+        private IVramBudgetReadModel _vramMonitor;
+        private IVramBudgetSampleSink _vramBudgetSample;
+        private IAssetLifecyclePressureSink _assetLifecycle;
         private IPlayerInventoryService _playerInventory;
-        private RenderTexturePool _renderTexturePool;
+        private IRenderTexturePoolService _renderTexturePool;
 
         internal static float BrgLodDistanceScalar { get; private set; } = 1f;
 
@@ -71,6 +73,22 @@ namespace Hecton8.Optimization
         internal float LastStreamingMipBudgetMb { get; private set; }
         internal long LastUsedVramBytes { get; private set; }
         internal int EmergencyEvictionCount { get; private set; }
+
+        bool IVramPressureReadModel.HasSample => HasSample;
+        float IVramPressureReadModel.VramPressureFactor => VramPressureFactor;
+        float IVramPressureReadModel.RamPressureFactor => RamPressureFactor;
+        float IVramPressureReadModel.PressureFactor => PressureFactor;
+        float IVramPressureReadModel.BrgLodDistanceScalar => BrgLodDistanceScalar;
+
+        void IVramPressureSampleSink.ForceImmediateSampleAndResponse()
+        {
+            ForceImmediateSampleAndResponse();
+        }
+
+        void IVramPressureMipBiasSink.SetExternalMipPressureResponse(float pressureResponse, long observedVramBytes)
+        {
+            SetExternalMipPressureResponse(pressureResponse, observedVramBytes);
+        }
 
         private void Awake()
         {
@@ -206,11 +224,12 @@ namespace Hecton8.Optimization
 
         private void SampleAndRespond()
         {
-            VRAMMonitor monitor = _vramMonitor;
-            if (monitor != null)
-                monitor.SlowTick();
+            IVramBudgetReadModel monitor = _vramMonitor;
+            IVramBudgetSampleSink budgetSample = _vramBudgetSample;
+            if (budgetSample != null)
+                budgetSample.SampleVramCounters();
 
-            AssetLifecycleGovernor governor = _assetLifecycle;
+            IAssetLifecyclePressureSink governor = _assetLifecycle;
             long maxSystemRamBytes = (long)SystemInfo.systemMemorySize * 1024L * 1024L;
             long currentReservedBytes = Profiler.GetTotalReservedMemoryLong();
             if (governor != null)
@@ -237,18 +256,21 @@ namespace Hecton8.Optimization
         private void CacheDependencies()
         {
             if (_vramMonitor == null)
-                _vramMonitor = GlobalRegistry.VRAMMonitor;
+                _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
+            if (_vramBudgetSample == null)
+                _vramBudgetSample = GlobalRegistry.VRAMBudgetSampleSink;
             if (_assetLifecycle == null)
-                _assetLifecycle = GlobalRegistry.AssetLifecycle;
+                _assetLifecycle = GlobalRegistry.AssetLifecyclePressureSink;
             if (_playerInventory == null)
                 _playerInventory = GlobalRegistry.PlayerInventory;
             if (_renderTexturePool == null)
-                _renderTexturePool = GlobalRegistry.RenderTexturePool;
+                _renderTexturePool = GlobalRegistry.RenderTexturePoolService;
         }
 
         private void ClearCachedDependencies()
         {
             _vramMonitor = null;
+            _vramBudgetSample = null;
             _assetLifecycle = null;
             _playerInventory = null;
             _renderTexturePool = null;
@@ -262,21 +284,22 @@ namespace Hecton8.Optimization
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
-                    _vramMonitor = currentService as VRAMMonitor;
+                    _vramMonitor = currentService as IVramBudgetReadModel;
+                    _vramBudgetSample = currentService as IVramBudgetSampleSink;
                     break;
                 case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
-                    _assetLifecycle = currentService as AssetLifecycleGovernor;
+                    _assetLifecycle = currentService as IAssetLifecyclePressureSink;
                     break;
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     _playerInventory = currentService as IPlayerInventoryService;
                     break;
                 case GlobalRegistryServiceSlot.RenderTexturePoolRuntime:
-                    _renderTexturePool = currentService as RenderTexturePool;
+                    _renderTexturePool = currentService as IRenderTexturePoolService;
                     break;
             }
         }
 
-        private void ApplyStreamingMipBudget(VRAMMonitor monitor, VRAMBudgetThresholds thresholds)
+        private void ApplyStreamingMipBudget(IVramBudgetReadModel monitor, VRAMBudgetThresholds thresholds)
         {
             long nonTextureBytes = 0L;
             if (monitor != null)
@@ -344,7 +367,7 @@ namespace Hecton8.Optimization
             int oldMipLimit = _activeMipLimit;
             QualitySettings.globalTextureMipmapLimit = targetMipLimit;
             _activeMipLimit = targetMipLimit;
-            GlobalSignals.Publish(new ResolutionChangedSignal
+            SignalBus<ResolutionChangedSignal>.TryPush(new ResolutionChangedSignal
             {
                 Frame = unchecked((uint)Time.frameCount),
                 SourceHash = ResolutionChangeSourceHash,
@@ -485,6 +508,9 @@ namespace Hecton8.Optimization
 
         private static float ResolveGlobalQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
@@ -495,7 +521,7 @@ namespace Hecton8.Optimization
             return math.max(1, (int)math.ceil(math.lerp(1f, safeMax, math.saturate(response))));
         }
 
-        private void RunPressureEviction(AssetLifecycleGovernor governor, VRAMMonitor monitor)
+        private void RunPressureEviction(IAssetLifecyclePressureSink governor, IVramBudgetReadModel monitor)
         {
             EmergencyEvictionCount = 0;
             IPlayerInventoryService playerInventory = _playerInventory;
@@ -528,12 +554,12 @@ namespace Hecton8.Optimization
                     governor.ForceDrainPendingReleaseQueue();
                     EmergencyEvictionCount = governor.EvictLowestPriorityUnusedAssets(
                         emergencyEvictionBudget,
-                        AssetPriorityTier.Tier4MidRange);
+                        AssetPriorityTierCodes.Tier4MidRange);
                 }
 
                 if (redZoneVramPressure || (monitor != null && monitor.RenderTextureBudgetUtilization >= 1f))
                 {
-                    RenderTexturePool pool = _renderTexturePool;
+                    IRenderTexturePoolService pool = _renderTexturePool;
                     if (pool != null)
                         pool.ClearAllPools();
                 }
@@ -556,7 +582,7 @@ namespace Hecton8.Optimization
                 if (governor != null)
                 {
                     governor.DrainPendingReleaseQueueBudgeted(softReleaseDrain);
-                    governor.EvictLowestPriorityUnusedAssets(softEvictionBudget, AssetPriorityTier.Tier5DistantHlod);
+                    governor.EvictLowestPriorityUnusedAssets(softEvictionBudget, AssetPriorityTierCodes.Tier5DistantHlod);
                 }
 
                 if (itemCatalog != null && hardwareHeadroomBytes < MinimumHardwareHeadroomBytes)

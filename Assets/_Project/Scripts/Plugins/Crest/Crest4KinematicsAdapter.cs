@@ -22,7 +22,7 @@ namespace Hecton8.Physics
 
         [Header("References")]
         [Tooltip("Explicit Crest ocean owner. Assign this directly or colocate the OceanRenderer on the same GameObject.")]
-        [SerializeField] private Crest.OceanRenderer crestOceanRenderer;
+        [SerializeField] private global::Crest.OceanRenderer crestOceanRenderer;
 
         [Header("Burst Sampling")]
         [Tooltip("Depth below the resolved surface where Burst ocean kinematics returns a still-water result before trigonometry.")]
@@ -57,7 +57,7 @@ namespace Hecton8.Physics
         {
             get
             {
-                Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
+                global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
                 return oceanRenderer != null && oceanRenderer.CollisionProvider != null;
             }
         }
@@ -69,7 +69,7 @@ namespace Hecton8.Physics
         public override bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)
         {
             state = default;
-            Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
+            global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
             if (oceanRenderer == null)
                 return false;
 
@@ -105,7 +105,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public override bool ApplySurfaceWeatherState(in HectonOceanSurfaceWeatherState state)
         {
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
+            global::Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
             if (oceanRenderer == null)
                 return false;
 
@@ -141,7 +141,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public override bool TryAssignPrimaryLight(Light primaryLight)
         {
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
+            global::Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
             if (oceanRenderer == null || primaryLight == null)
                 return false;
 
@@ -161,7 +161,7 @@ namespace Hecton8.Physics
         public bool TryBuildBurstTuning(float simulationTimeSeconds, uint frameIndex, out OceanKinematicsTuningDTO tuning)
         {
             tuning = default;
-            Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
+            global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
             if (oceanRenderer == null)
                 return false;
 
@@ -243,7 +243,7 @@ namespace Hecton8.Physics
                 in tuning,
                 count,
                 tuning.Flags | OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAnalyticalWave);
-            EvaluateAnalyticalWavesJob job = new EvaluateAnalyticalWavesJob
+            EvaluateCrestAnalyticalWavesJob job = new EvaluateCrestAnalyticalWavesJob
             {
                 Requests = requests,
                 Results = results,
@@ -298,7 +298,7 @@ namespace Hecton8.Physics
                 in tuning,
                 scheduleCount,
                 tuning.Flags | OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAnalyticalWave);
-            EvaluateAnalyticalWavesJob evaluateJob = new EvaluateAnalyticalWavesJob
+            EvaluateCrestAnalyticalWavesJob evaluateJob = new EvaluateCrestAnalyticalWavesJob
             {
                 Requests = packedRequests,
                 RequestCounter = queueCounters,
@@ -539,7 +539,7 @@ namespace Hecton8.Physics
             if (!ValidateHeightRequest(samplePositions, sampleCount, waterHeights))
                 return false;
 
-            if (!TryReadCollisionProvider(out Crest.ICollProvider collisionProvider))
+            if (!TryReadCollisionProvider(out global::Crest.ICollProvider collisionProvider))
                 return false;
 
             int queryStatus = collisionProvider.Query(
@@ -573,11 +573,11 @@ namespace Hecton8.Physics
             if (!ValidateVectorRequest(samplePositions, sampleCount, surfaceFlows))
                 return false;
 
-            Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
+            global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
             if (oceanRenderer == null || oceanRenderer.FlowProvider == null)
                 return false;
 
-            Crest.IFlowProvider flowProvider = oceanRenderer.FlowProvider;
+            global::Crest.IFlowProvider flowProvider = oceanRenderer.FlowProvider;
             int queryStatus = flowProvider.Query(
                 _flowQueryOwnerHash,
                 Mathf.Max(0.01f, minSpatialLength),
@@ -613,7 +613,7 @@ namespace Hecton8.Physics
             if (!ValidateWaveRequest(samplePositions, sampleCount, waveNormals, surfaceVelocities, displacements))
                 return false;
 
-            if (!TryReadCollisionProvider(out Crest.ICollProvider collisionProvider))
+            if (!TryReadCollisionProvider(out global::Crest.ICollProvider collisionProvider))
                 return false;
 
             float resolvedMinSpatialLength = Mathf.Max(0.01f, minSpatialLength);
@@ -680,9 +680,9 @@ namespace Hecton8.Physics
             return succeeded;
         }
 
-        private bool TryReadCollisionProvider(out Crest.ICollProvider collisionProvider)
+        private bool TryReadCollisionProvider(out global::Crest.ICollProvider collisionProvider)
         {
-            Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
+            global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
             collisionProvider = oceanRenderer != null ? oceanRenderer.CollisionProvider : null;
             return collisionProvider != null;
         }
@@ -693,22 +693,22 @@ namespace Hecton8.Physics
                 TryGetComponent(out crestOceanRenderer);
         }
 
-        protected override Crest.OceanRenderer ReadBoundOceanRenderer()
+        protected override global::Crest.OceanRenderer ReadBoundOceanRenderer()
         {
             return crestOceanRenderer;
         }
 
-        private Crest.OceanRenderer TryReadBoundOceanRenderer()
+        private global::Crest.OceanRenderer TryReadBoundOceanRenderer()
         {
             return ReadBoundOceanRenderer();
         }
 
-        private Crest.OceanRenderer ResolveOceanRenderer()
+        private global::Crest.OceanRenderer ResolveOceanRenderer()
         {
             return crestOceanRenderer;
         }
 
-        private static double3 ResolveOceanRootAUP(Crest.OceanRenderer oceanRenderer)
+        private static double3 ResolveOceanRootAUP(global::Crest.OceanRenderer oceanRenderer)
         {
             double3 rootAup = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffsetDouble;
             if (oceanRenderer == null || oceanRenderer.Root == null)
@@ -720,7 +720,7 @@ namespace Hecton8.Physics
             return math.select(double3.zero, rootAup, math.isfinite(rootAup));
         }
 
-        private static float ResolveSeaLevel(Crest.OceanRenderer oceanRenderer)
+        private static float ResolveSeaLevel(global::Crest.OceanRenderer oceanRenderer)
         {
             if (oceanRenderer != null && oceanRenderer.Root != null)
                 return oceanRenderer.Root.position.y;

@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Hecton8.Audio.Virtualization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -394,7 +393,7 @@ namespace Hecton8.AI.Sensory
                 return true;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AISensory,
@@ -596,7 +595,7 @@ namespace Hecton8.AI.Sensory
         }
 
         public static bool TryHydrateFromAcousticEchoTaps(
-            NativeArray<AcousticEchoTap>.ReadOnly echoTaps,
+            NativeArray<Hecton8.Core.Contracts.AcousticEchoTap>.ReadOnly echoTaps,
             int tapCount,
             int frame,
             float currentTime,
@@ -607,7 +606,7 @@ namespace Hecton8.AI.Sensory
             bool any = false;
             for (int i = 0; i < safeCount; i++)
             {
-                AcousticEchoTap echoTap = echoTaps[i];
+                Hecton8.Core.Contracts.AcousticEchoTap echoTap = echoTaps[i];
                 if (!AcousticAup.IsFinite(in echoTap.SourceAup) ||
                     !math.isfinite(echoTap.DelaySeconds) ||
                     !math.isfinite(echoTap.Volume01) ||

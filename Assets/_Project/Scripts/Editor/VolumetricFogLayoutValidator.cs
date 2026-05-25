@@ -68,12 +68,21 @@ namespace Hecton8.EditorTools
             if (!File.Exists(ComputeShaderAssetPath))
                 return false;
 
-            string source = File.ReadAllText(ComputeShaderAssetPath);
-            return !ContainsShaderToken(source, ShaderPragmaPrefix, MultiCompileToken) &&
-                   !ContainsShaderToken(source, ShaderPragmaPrefix, ShaderFeatureToken) &&
-                   ContainsKernelPragma(source, GridBuildKernelName, true) &&
-                   ContainsKernelPragma(source, RaymarchKernelName, true) &&
-                   ContainsKernelPragma(source, RaymarchXrKernelName, false);
+            bool hasGridKernel = false;
+            bool hasRaymarchKernel = false;
+            bool hasRaymarchXrKernel = false;
+            foreach (string line in File.ReadLines(ComputeShaderAssetPath))
+            {
+                if (LineContainsShaderToken(line, ShaderPragmaPrefix, MultiCompileToken) ||
+                    LineContainsShaderToken(line, ShaderPragmaPrefix, ShaderFeatureToken))
+                    return false;
+
+                hasGridKernel |= LineContainsKernelPragma(line, GridBuildKernelName, true);
+                hasRaymarchKernel |= LineContainsKernelPragma(line, RaymarchKernelName, true);
+                hasRaymarchXrKernel |= LineContainsKernelPragma(line, RaymarchXrKernelName, false);
+            }
+
+            return hasGridKernel && hasRaymarchKernel && hasRaymarchXrKernel;
         }
 
         public static bool ValidateDearLieShader()
@@ -82,56 +91,62 @@ namespace Hecton8.EditorTools
             if (shader == null || !File.Exists(DearLieShaderAssetPath))
                 return false;
 
-            string source = File.ReadAllText(DearLieShaderAssetPath);
-            return !ContainsShaderToken(source, ShaderPragmaPrefix, MultiCompileToken) &&
-                   !ContainsShaderToken(source, ShaderPragmaPrefix, ShaderFeatureToken) &&
-                   source.IndexOf(KernelPragmaPrefix, StringComparison.Ordinal) < 0 &&
-                   source.IndexOf(DearLieProxyPassName, StringComparison.Ordinal) >= 0 &&
-                   source.IndexOf(BilateralCompositePassName, StringComparison.Ordinal) >= 0 &&
-                   source.IndexOf(FragmentPragmaPrefix + "FragProxy", StringComparison.Ordinal) >= 0 &&
-                   source.IndexOf(FragmentPragmaPrefix + "FragComposite", StringComparison.Ordinal) >= 0;
+            bool hasDearLieProxy = false;
+            bool hasBilateralComposite = false;
+            bool hasFragProxy = false;
+            bool hasFragComposite = false;
+            foreach (string line in File.ReadLines(DearLieShaderAssetPath))
+            {
+                if (LineContainsShaderToken(line, ShaderPragmaPrefix, MultiCompileToken) ||
+                    LineContainsShaderToken(line, ShaderPragmaPrefix, ShaderFeatureToken) ||
+                    line.IndexOf(KernelPragmaPrefix, StringComparison.Ordinal) >= 0)
+                    return false;
+
+                hasDearLieProxy |= line.IndexOf(DearLieProxyPassName, StringComparison.Ordinal) >= 0;
+                hasBilateralComposite |= line.IndexOf(BilateralCompositePassName, StringComparison.Ordinal) >= 0;
+                hasFragProxy |= line.IndexOf(FragmentPragmaPrefix + "FragProxy", StringComparison.Ordinal) >= 0;
+                hasFragComposite |= line.IndexOf(FragmentPragmaPrefix + "FragComposite", StringComparison.Ordinal) >= 0;
+            }
+
+            return hasDearLieProxy && hasBilateralComposite && hasFragProxy && hasFragComposite;
         }
 
-        private static bool ContainsKernelPragma(string source, string kernelName, bool requiresTexture2DArrayDisable)
+        private static bool LineContainsKernelPragma(string line, string kernelName, bool requiresTexture2DArrayDisable)
         {
-            int offset = source.IndexOf(ShaderPragmaPrefix, StringComparison.Ordinal);
+            int offset = line.IndexOf(ShaderPragmaPrefix, StringComparison.Ordinal);
             while (offset >= 0)
             {
                 int tokenOffset = offset + ShaderPragmaPrefix.Length;
-                if (source.IndexOf("kernel ", tokenOffset, StringComparison.Ordinal) == tokenOffset)
+                if (line.IndexOf("kernel ", tokenOffset, StringComparison.Ordinal) == tokenOffset)
                 {
                     int kernelOffset = tokenOffset + 7;
-                    if (source.IndexOf(kernelName, kernelOffset, StringComparison.Ordinal) == kernelOffset)
+                    if (line.IndexOf(kernelName, kernelOffset, StringComparison.Ordinal) == kernelOffset)
                     {
-                        int lineEnd = source.IndexOf('\n', kernelOffset);
-                        if (lineEnd < 0)
-                            lineEnd = source.Length;
-
                         int kernelNameEnd = kernelOffset + kernelName.Length;
-                        if (kernelNameEnd >= lineEnd || char.IsWhiteSpace(source[kernelNameEnd]))
+                        if (kernelNameEnd >= line.Length || char.IsWhiteSpace(line[kernelNameEnd]))
                         {
-                            bool hasTexture2DArrayDisable = source.IndexOf(DisableTexture2DArrayToken, kernelOffset, lineEnd - kernelOffset, StringComparison.Ordinal) >= 0;
+                            bool hasTexture2DArrayDisable = line.IndexOf(DisableTexture2DArrayToken, kernelOffset, StringComparison.Ordinal) >= 0;
                             return hasTexture2DArrayDisable == requiresTexture2DArrayDisable;
                         }
                     }
                 }
 
-                offset = source.IndexOf(ShaderPragmaPrefix, tokenOffset, StringComparison.Ordinal);
+                offset = line.IndexOf(ShaderPragmaPrefix, tokenOffset, StringComparison.Ordinal);
             }
 
             return false;
         }
 
-        private static bool ContainsShaderToken(string source, string prefix, string token)
+        private static bool LineContainsShaderToken(string line, string prefix, string token)
         {
-            int offset = source.IndexOf(prefix, StringComparison.Ordinal);
+            int offset = line.IndexOf(prefix, StringComparison.Ordinal);
             while (offset >= 0)
             {
                 int tokenOffset = offset + prefix.Length;
-                if (source.IndexOf(token, tokenOffset, StringComparison.Ordinal) == tokenOffset)
+                if (line.IndexOf(token, tokenOffset, StringComparison.Ordinal) == tokenOffset)
                     return true;
 
-                offset = source.IndexOf(prefix, tokenOffset, StringComparison.Ordinal);
+                offset = line.IndexOf(prefix, tokenOffset, StringComparison.Ordinal);
             }
 
             return false;

@@ -130,7 +130,7 @@ namespace Hecton8.Audio.Editor
             MatchCollection matches = Regex.Matches(
                 enumMatch.Groups["body"].Value,
                 "(?<name>[A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(?<value>\\d+)");
-            HashSet<int> values = new HashSet<int>();
+            HashSet<int> values = new HashSet<int>(16);
             for (int i = 0; i < matches.Count; i++)
             {
                 int value = int.Parse(matches[i].Groups["value"].Value);

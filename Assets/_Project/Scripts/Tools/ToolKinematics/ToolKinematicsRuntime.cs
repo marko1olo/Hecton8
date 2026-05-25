@@ -19,12 +19,14 @@ namespace Hecton8.Tools.ToolKinematics
     {
         public const int MaxToolCapacity = 8;
         public const int BeamVerticesPerTool = 64;
-        private const int CsvBufferBytes = 4096;
         private const uint MockTriggerLaneHash = 0x54323254u; // T22T
         private const uint MockCarveLaneHash = 0x54323243u; // T22C
         private const uint ToolHeatLaneHash = 0x54323248u; // T22H
         private const uint ToolSparkLaneHash = 0x54323253u; // T22S
+#if UNITY_EDITOR
+        private const int CsvBufferBytes = 4096;
         private const string EquipmentStatsFileName = "equipment_stats.csv";
+#endif
         private const string BlackBoxDumpFileName = "Dump_TOOL_KINEMATICS.h8dump";
 
         [SerializeField] private int toolCapacity = 2;
@@ -44,10 +46,12 @@ namespace Hecton8.Tools.ToolKinematics
         [SerializeField] private float collisionSpring = 0.42f;
         [SerializeField] private float beamRadius = 0.018f;
 
+#if UNITY_EDITOR
         private readonly byte[] _csvIoBuffer = new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - background CSV read buffer - owner: ToolKinematicsRuntime
         private readonly byte[] _csvPendingBuffer = new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - worker/main handoff buffer - owner: ToolKinematicsRuntime
         private readonly byte[] _csvConsumeBuffer = new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - main-thread parse buffer - owner: ToolKinematicsRuntime
         private readonly object _csvGate = new object(); // COLD ALLOC: object[1] - background-to-main CSV handoff lock - owner: ToolKinematicsRuntime
+#endif
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<ToolStateDTO> _statesHandle;
@@ -67,6 +71,7 @@ namespace Hecton8.Tools.ToolKinematics
         private VaultGenerationHandle<ToolPoseOutputDTO> _poseOutputsHandle;
 
         private JobHandle _pendingHandle;
+#if UNITY_EDITOR
         private Thread _csvThread;
         private string _equipmentStatsPath;
         private long _equipmentStatsStampUtcTicks;
@@ -75,6 +80,7 @@ namespace Hecton8.Tools.ToolKinematics
         private int _csvPendingSequence;
         private int _csvConsumedSequence;
         private int _csvThreadFaultCode;
+#endif
         private int _tuningDirty = 1;
         private uint _frameIndex;
         private int _activeToolCapacity;
@@ -88,6 +94,7 @@ namespace Hecton8.Tools.ToolKinematics
         private bool _abiValid;
         private IDataVault _pendingDataVault;
 
+#if UNITY_EDITOR
         private enum EquipmentCsvKey : uint
         {
             LaserRange = 0x0F503FF1u,
@@ -102,12 +109,15 @@ namespace Hecton8.Tools.ToolKinematics
             SystemHealthIndex = 0x37DFA8CEu,
             SystemHealth = 0x9EE949DAu
         }
+#endif
 
         private void Awake()
         {
             _abiValid = ValidateAbiLayout();
             _activeToolCapacity = math.clamp(toolCapacity, 1, MaxToolCapacity);
+#if UNITY_EDITOR
             _equipmentStatsPath = ResolveEquipmentStatsPath();
+#endif
             CacheRegistryDependenciesCold();
         }
 
@@ -130,7 +140,9 @@ namespace Hecton8.Tools.ToolKinematics
         private void OnDisable()
         {
             CompletePendingFrameForTeardown();
+#if UNITY_EDITOR
             StopCsvWatcher();
+#endif
             TryUnregisterFixed();
             TryUnregisterPostFixed();
             TryUnregisterSlow();
@@ -143,7 +155,9 @@ namespace Hecton8.Tools.ToolKinematics
         {
             CompletePendingFrameForTeardown();
             TryUnregisterHotSwap();
+#if UNITY_EDITOR
             StopCsvWatcher();
+#endif
             ReleaseVaultHandles();
             ClearHandles();
         }
@@ -224,7 +238,9 @@ namespace Hecton8.Tools.ToolKinematics
             if (!_abiValid)
                 return;
 
+#if UNITY_EDITOR
             TryConsumeEquipmentStatsCsv();
+#endif
             if (!TryResolveTuning(out NativeArray<ToolKinematicsTuningDTO> tuning))
                 return;
 
@@ -424,7 +440,7 @@ namespace Hecton8.Tools.ToolKinematics
                 DominantController = (byte)math.min(trigger.ToolSlot, 255u),
                 Flags = trigger.Trigger01 > 0.0001f ? (byte)1 : (byte)0
             };
-            GlobalSignals.Publish(in globalTrigger);
+            SignalBus<ToolTriggerSignal>.TryPush(in globalTrigger);
         }
 
         private static void PublishGlobalToolStateBridge(in ToolHeatSignal heat, in ToolScreenExportDTO screen)
@@ -444,7 +460,7 @@ namespace Hecton8.Tools.ToolKinematics
                 Flags = flags,
                 ToolTypeId = ResolveToolTypeId(heat.ToolHash)
             };
-            GlobalSignals.Publish(in state);
+            SignalBus<ToolStateChangedSignal>.TryPush(in state);
         }
 
         private static void PublishGlobalToolAcousticBridge(in ToolHeatSignal heat, in ToolScreenExportDTO screen)
@@ -463,7 +479,7 @@ namespace Hecton8.Tools.ToolKinematics
                 State = ToolAcousticSignal.StateLaserLoop,
                 Flags = ToolAcousticSignal.FlagLooping
             };
-            GlobalSignals.Publish(in acoustic);
+            SignalBus<ToolAcousticSignal>.TryPush(in acoustic);
         }
 
         private static byte ResolveToolTypeId(uint toolHash)
@@ -611,7 +627,9 @@ namespace Hecton8.Tools.ToolKinematics
             WriteTuning(buffers.Tuning);
             SeedEmergencyMockTools(buffers.States, buffers.RecoilStates);
             EnsureSignalLanesReady();
+#if UNITY_EDITOR
             StartCsvWatcher();
+#endif
             TryRegisterFixed();
             TryRegisterPostFixed();
             TryRegisterSlow();
@@ -704,7 +722,7 @@ namespace Hecton8.Tools.ToolKinematics
                 return true;
             }
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
             if (!IsHandleCreated(in acquired) ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||
@@ -722,7 +740,11 @@ namespace Hecton8.Tools.ToolKinematics
             if (!tuning.IsCreated || tuning.Length <= 0)
                 return;
 
+#if UNITY_EDITOR
             uint csvFaultFlag = Volatile.Read(ref _csvThreadFaultCode) != 0 ? (uint)ToolKinematicsFlags.CsvIoFault : 0u;
+#else
+            const uint csvFaultFlag = 0u;
+#endif
             ToolKinematicsTuningDTO current = tuning[0];
             bool existingValid = current.LaserRange > 0.0001f && current.MaxHeat > 0.0001f;
             if (Volatile.Read(ref _tuningDirty) == 0 && existingValid)
@@ -863,6 +885,7 @@ namespace Hecton8.Tools.ToolKinematics
             return new float3(side * 0.18f, -0.2f, 0.08f);
         }
 
+#if UNITY_EDITOR
         private void StartCsvWatcher()
         {
             if (string.IsNullOrEmpty(_equipmentStatsPath))
@@ -1136,6 +1159,7 @@ namespace Hecton8.Tools.ToolKinematics
 
             return true;
         }
+#endif
 
         private void TryRegisterFixed()
         {
@@ -1226,10 +1250,12 @@ namespace Hecton8.Tools.ToolKinematics
             return valid;
         }
 
+#if UNITY_EDITOR
         private static string ResolveEquipmentStatsPath()
         {
             return Path.Combine(ResolveProjectRootPath(), EquipmentStatsFileName);
         }
+#endif
 
         private static string ResolveProjectRootPath()
         {

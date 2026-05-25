@@ -740,9 +740,9 @@ namespace Hecton8.Physics
             float3 p1 = ToCameraLocal(NodeOffset + segment);
             float3 p2 = ToCameraLocal(NodeOffset + segment + 1);
             float3 linear = math.lerp(p1, p2, t);
-            float catmullWeight = math.step(0.3f, q) * Smooth01(q);
+            float catmullWeight = Smooth01(q);
             float3 position = linear;
-            if (catmullWeight > 0f)
+            if (catmullWeight > 0.0001f)
             {
                 float3 p0 = ToCameraLocal(NodeOffset + math.max(0, segment - 1));
                 float3 p3 = ToCameraLocal(NodeOffset + math.min(NodeCount - 1, segment + 2));
@@ -1235,7 +1235,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.Physics,

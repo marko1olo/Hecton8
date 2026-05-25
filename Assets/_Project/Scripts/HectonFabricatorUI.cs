@@ -7,7 +7,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Crafting;
 using Hecton8.Economy;
-using Hecton8.Input;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton.Localization;
@@ -24,7 +23,7 @@ using UnityEditor;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ICraftingEventListener, IGlobalRegistryHotSwapListener, IOriginShiftListener
+    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener, IOriginShiftListener, ILocalizationLanguageChangedListener
     {
         private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
@@ -57,6 +56,16 @@ namespace Hecton8.UI
             public WorldSpaceTMPSharpnessController Sharpness;
             public WorldSpaceTMPSharpnessController InflationSharpness;
             public int RecipeIndex;
+            public RecipeData FastFailRecipe;
+            public RecipeRequirementDTO FastFailRequirement;
+            public int FastFailRequirementMultiplier;
+            public int FastFailScarcityVersion;
+            public float FastFailInflationMultiplier;
+            public bool HasFastFailRequirement;
+            public RecipeData LabelRecipe;
+            public char[] CachedDisplayNameBuffer;
+            public int CachedDisplayNameLength;
+            public int CachedDisplayNameVersion;
         }
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -174,14 +183,20 @@ namespace Hecton8.UI
         private bool _isCrafting;
         private float _craftProgress;
         private bool _tickRegistered;
+        private bool _lateFrameTickRegistered;
+        private float _pendingFabricatorVisualDeltaTime;
+        private bool _hasPendingFabricatorVisualTick;
+        private bool _pendingRecipeListVisibility;
+        private bool _hasPendingRecipeListVisibility;
         private bool _hotSwapListenerRegistered;
         private bool _originShiftListenerRegistered;
+        private bool _localizationListenerRegistered;
         private IInputService _inputService;
         private IPlayerInventoryService _playerInventoryService;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private InputManager _nativeInputManager;
+        private INativeInputManagerRuntime _nativeInputManager;
         private ResourceScarcityDirector _resourceScarcityRuntime;
-        private InputManager _subscribedInputManager;
+        private INativeInputManagerRuntime _subscribedInputManager;
         private uint _lastPlayerInputSignalSequence;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private int _selectedHologramRecipeHash;
@@ -208,6 +223,7 @@ namespace Hecton8.UI
         private float _failurePanelShakeRemainingSeconds;
         private float _failurePanelShakeElapsedSeconds;
         private int _nextPerformanceWarningFrame;
+        private int _recipeLabelTextVersion;
 
         public static bool IsMenuOpen { get; private set; }
         public int CraftBatchMultiplier
@@ -250,6 +266,7 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
             SubscribeInputManagerIfAvailable();
+            TryRegisterLocalizationListener();
 
             CraftingEvents.Register(this);
         }
@@ -268,10 +285,12 @@ namespace Hecton8.UI
             UnsubscribeInputManager();
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
+            TryUnregisterLocalizationListener();
 
             CraftingEvents.Unregister(this);
 
             UnregisterTick();
+            UnregisterLateFrameTick();
 
             if (_isOpen)
                 CloseMenu();
@@ -283,6 +302,7 @@ namespace Hecton8.UI
             UnsubscribeInputManager();
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
+            TryUnregisterLocalizationListener();
 
             if (_runtimeHologramMaterial != null)
             {
@@ -359,25 +379,71 @@ namespace Hecton8.UI
                 ResolveRuntimeReferences(allowFallbackLookup: false);
 
             AdvanceFailurePanelShake(deltaTime);
-            UpdateRecipeListPose();
             UpdateRecipePointerSelection();
-            RefreshRecipeListIfDirty();
-            RenderActiveRecipeHologram(deltaTime);
             UpdateDiagnostics();
+            _pendingFabricatorVisualDeltaTime += math.max(0f, deltaTime);
+            _hasPendingFabricatorVisualTick = true;
             PublishSolveWarningIfNeeded(solveStartTimestamp);
+        }
+
+        public void LateFrameTick()
+        {
+            FlushFabricatorVisualTick();
+            TryRetireLateFrameTickAfterClose();
+        }
+
+        void ILateFrameTickable.LateFrameTick()
+        {
+            FlushFabricatorVisualTick();
+            TryRetireLateFrameTickAfterClose();
+        }
+
+        private void FlushFabricatorVisualTick()
+        {
+            FlushPendingRecipeListVisibility();
+
+            if (!_hasPendingFabricatorVisualTick)
+                return;
+
+            float visualDeltaTime = _pendingFabricatorVisualDeltaTime;
+            _pendingFabricatorVisualDeltaTime = 0f;
+            _hasPendingFabricatorVisualTick = false;
+
+            if (!_isOpen && !_isCrafting)
+            {
+                _debugVisibleInstanceCount = 0;
+                return;
+            }
+
+            if (hudCamera == null || playerInventory == null)
+                ResolveRuntimeReferences(allowFallbackLookup: false);
+
+            UpdateRecipeListPose();
+            RefreshRecipeListIfDirty();
+            RenderActiveRecipeHologram(visualDeltaTime);
+            UpdateDiagnostics();
+        }
+
+        private void TryRetireLateFrameTickAfterClose()
+        {
+            if (_isOpen || _isCrafting || _hasPendingFabricatorVisualTick || _hasPendingRecipeListVisibility)
+                return;
+
+            UnregisterLateFrameTick();
         }
 
         private void PublishSolveWarningIfNeeded(long startTimestamp)
         {
             long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
-            if (elapsedTicks <= _FabricatorUiSolveBudgetTicks || Time.frameCount < _nextPerformanceWarningFrame)
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            if (elapsedTicks <= _FabricatorUiSolveBudgetTicks || currentFrame < _nextPerformanceWarningFrame)
                 return;
 
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _FabricatorUiSolveBudgetWarningHash,
                 _FabricatorUiContextHash,
                 (elapsedTicks * 1000f) / Stopwatch.Frequency);
-            _nextPerformanceWarningFrame = Time.frameCount + FabricatorUiPerformanceWarningCooldownFrames;
+            _nextPerformanceWarningFrame = currentFrame + FabricatorUiPerformanceWarningCooldownFrames;
         }
 
         public void OnCraftingEvent(in CraftingEventPayload payload)
@@ -411,6 +477,16 @@ namespace Hecton8.UI
             }
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+        {
+            unchecked
+            {
+                _recipeLabelTextVersion++;
+            }
+
+            _lastRecipeVisualVersion = int.MinValue;
+        }
+
         private void HandleFabricatorOpened(Fabricator fabricator)
         {
             if (fabricator == null || fabricator.AvailableRecipes == null)
@@ -430,6 +506,7 @@ namespace Hecton8.UI
             SetRecipeListVisible(true);
             BaselinePlayerInputSignalSequence();
             RegisterTick();
+            RegisterLateFrameTick();
 
             IInputService inputService = _inputService;
             if (inputService != null)
@@ -569,7 +646,7 @@ namespace Hecton8.UI
             _recipeListPoseValid = false;
             _lastRecipeVisualVersion = int.MinValue;
             InvalidateHologramMatrixCache();
-            SetRecipeListVisible(false);
+            QueueRecipeListVisibility(false);
 
             UnregisterTick();
 
@@ -590,6 +667,14 @@ namespace Hecton8.UI
             _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
+        private void RegisterLateFrameTick()
+        {
+            if (_lateFrameTickRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
         private void UnregisterTick()
         {
             if (_tickRegistered)
@@ -599,12 +684,25 @@ namespace Hecton8.UI
             }
         }
 
+        private void UnregisterLateFrameTick()
+        {
+            if (_lateFrameTickRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameTickRegistered = false;
+            }
+
+            _pendingFabricatorVisualDeltaTime = 0f;
+            _hasPendingFabricatorVisualTick = false;
+            _hasPendingRecipeListVisibility = false;
+        }
+
         private void SubscribeInputManagerIfAvailable()
         {
             if (_subscribedInputManager != null)
                 return;
 
-            InputManager inputManager = _nativeInputManager;
+            INativeInputManagerRuntime inputManager = _nativeInputManager;
             if (inputManager == null)
                 return;
 
@@ -702,7 +800,7 @@ namespace Hecton8.UI
                     _inputService = currentService as IInputService;
                     return;
                 case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
-                    RebindNativeInputManager(currentService as InputManager);
+                    RebindNativeInputManager(currentService as INativeInputManagerRuntime);
                     return;
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     RebindPlayerInventoryService(currentService as IPlayerInventoryService);
@@ -735,6 +833,24 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterHotSwapListener(this);
 
             _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterLocalizationListener()
+        {
+            if (_localizationListenerRegistered || !Application.isPlaying)
+                return;
+
+            LocalizationEvents.RegisterLanguageListener(this);
+            _localizationListenerRegistered = true;
+        }
+
+        private void TryUnregisterLocalizationListener()
+        {
+            if (!_localizationListenerRegistered)
+                return;
+
+            LocalizationEvents.UnregisterLanguageListener(this);
+            _localizationListenerRegistered = false;
         }
 
         private void SetSelectedIndex(int nextIndex)
@@ -974,7 +1090,7 @@ namespace Hecton8.UI
 
         private static float4x4 BuildYRotationMatrix(float radians)
         {
-            math.sincos(radians, out float sinYaw, out float cosYaw);
+            MathLodApproximation.ApproxSinCosBhaskara(radians, out float sinYaw, out float cosYaw);
             return new float4x4(
                 new float4(cosYaw, 0f, -sinYaw, 0f),
                 new float4(0f, 1f, 0f, 0f),
@@ -1217,13 +1333,13 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _inputService = GlobalRegistry.Input;
-            _nativeInputManager = GlobalRegistry.NativeInputManager;
+            _nativeInputManager = GlobalRegistry.NativeInputRuntime;
             _resourceScarcityRuntime = GlobalRegistry.ResourceScarcity;
             RebindPlayerInventoryService(GlobalRegistry.PlayerInventory);
-            RebindPlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            RebindPlayerRuntimeContext(GlobalRegistry.Player);
         }
 
-        private void RebindNativeInputManager(InputManager inputManager)
+        private void RebindNativeInputManager(INativeInputManagerRuntime inputManager)
         {
             if (ReferenceEquals(_nativeInputManager, inputManager))
                 return;
@@ -1358,6 +1474,7 @@ namespace Hecton8.UI
                     InflationLabel = inflationLabel,
                     Sharpness = sharpness,
                     InflationSharpness = inflationSharpness,
+                    CachedDisplayNameBuffer = new char[RecipeLabelBufferCapacity],
                     RecipeIndex = -1
                 };
             }
@@ -1481,12 +1598,19 @@ namespace Hecton8.UI
                    (inventoryVersion << 1) ^
                    ((_hoveredRecipeIndex + 1) << 24) ^
                    (batchMultiplier << 4) ^
-                   (scarcityVersion << 5);
+                   (scarcityVersion << 5) ^
+                   (_recipeLabelTextVersion << 6);
         }
 
         private void RebuildRecipeListEntries()
         {
             int visibleRecipeCount = _recipes != null ? Mathf.Min(_recipes.Count, MaxVisibleRecipeEntries) : 0;
+            bool hasFastFailInventory = TryReadRecipeListFastFailInventory(
+                out NativeArray<uint> fastFailHashes,
+                out NativeArray<uint> fastFailQuantities,
+                out int fastFailActiveSlotCount,
+                out ulong fastFailInventoryMask);
+            int fastFailScarcityVersion = ResolveFastFailScarcityVersion();
 
             for (int i = 0; i < MaxVisibleRecipeEntries; i++)
             {
@@ -1498,10 +1622,24 @@ namespace Hecton8.UI
                 {
                     RecipeData recipe = _recipes[i];
                     bool selected = i == _selectedIndex;
-                    bool craftable = CanCraftRecipe(recipe);
-                    float inflationMultiplier = _currentFabricator != null
-                        ? _currentFabricator.GetRecipeInflationMultiplier(recipe)
-                        : 1f;
+                    int safeBatchMultiplier = Mathf.Max(1, craftBatchMultiplier);
+                    bool hasFastFailRequirement = TryGetRecipeListFastFailRequirement(
+                        ref entry,
+                        recipe,
+                        safeBatchMultiplier,
+                        fastFailScarcityVersion,
+                        out RecipeRequirementDTO fastFailRequirement,
+                        out float inflationMultiplier);
+                    bool craftable = CanCraftRecipe(
+                        recipe,
+                        safeBatchMultiplier,
+                        hasFastFailRequirement,
+                        in fastFailRequirement,
+                        hasFastFailInventory,
+                        fastFailHashes,
+                        fastFailQuantities,
+                        fastFailActiveSlotCount,
+                        fastFailInventoryMask);
                     bool inflated = inflationMultiplier > 1.001f;
                     entry.RecipeIndex = i;
                     entry.Root.localPosition = new Vector3(0f, -i * recipeEntrySpacing, 0f);
@@ -1518,7 +1656,13 @@ namespace Hecton8.UI
                     if (entry.InflationSharpness != null)
                         entry.InflationSharpness.Bind(entry.InflationLabel, hudCamera);
 
-                    int length = BuildRecipeLabel(entry.Label, recipe, selected, craftable);
+                    int displayNameLength = ResolveRecipeListDisplayName(ref entry, recipe);
+                    int length = BuildRecipeLabel(
+                        entry.Label,
+                        recipe,
+                        entry.CachedDisplayNameBuffer.AsSpan(0, displayNameLength),
+                        selected,
+                        craftable);
                     entry.Label.SetCharArray(_recipeLabelBuffer, 0, length);
                     ApplyInflationLabel(entry, inflated, inflationMultiplier);
                     _recipeEntries[i] = entry;
@@ -1526,10 +1670,99 @@ namespace Hecton8.UI
                 else
                 {
                     entry.RecipeIndex = -1;
+                    entry.FastFailRecipe = null;
+                    entry.HasFastFailRequirement = false;
+                    entry.FastFailRequirementMultiplier = 0;
+                    entry.FastFailScarcityVersion = 0;
+                    entry.FastFailInflationMultiplier = 1f;
+                    entry.FastFailRequirement = default;
+                    entry.LabelRecipe = null;
+                    entry.CachedDisplayNameLength = 0;
+                    entry.CachedDisplayNameVersion = 0;
                     SetRecipeEntryVisible(in entry, false);
                     _recipeEntries[i] = entry;
                 }
             }
+        }
+
+        private void QueueRecipeListVisibility(bool visible)
+        {
+            _pendingRecipeListVisibility = visible;
+            _hasPendingRecipeListVisibility = true;
+            RegisterLateFrameTick();
+        }
+
+        private void FlushPendingRecipeListVisibility()
+        {
+            if (!_hasPendingRecipeListVisibility)
+                return;
+
+            bool visible = _pendingRecipeListVisibility;
+            _hasPendingRecipeListVisibility = false;
+            SetRecipeListVisible(visible);
+        }
+
+        private int ResolveFastFailScarcityVersion()
+        {
+            ResourceScarcityDirector scarcity = _resourceScarcityRuntime;
+            return scarcity != null ? scarcity.RuntimeVersion : 0;
+        }
+
+        private bool TryGetRecipeListFastFailRequirement(
+            ref RecipeListEntry entry,
+            RecipeData recipe,
+            int batchMultiplier,
+            int scarcityVersion,
+            out RecipeRequirementDTO requirement,
+            out float inflationMultiplier)
+        {
+            requirement = default;
+            inflationMultiplier = 1f;
+            if (recipe == null)
+            {
+                entry.FastFailRecipe = null;
+                entry.HasFastFailRequirement = false;
+                entry.FastFailRequirementMultiplier = 0;
+                entry.FastFailScarcityVersion = 0;
+                entry.FastFailInflationMultiplier = 1f;
+                entry.FastFailRequirement = default;
+                return false;
+            }
+
+            int safeBatchMultiplier = batchMultiplier < 1 ? 1 : batchMultiplier;
+            if (entry.HasFastFailRequirement &&
+                ReferenceEquals(entry.FastFailRecipe, recipe) &&
+                entry.FastFailRequirementMultiplier == safeBatchMultiplier &&
+                entry.FastFailScarcityVersion == scarcityVersion)
+            {
+                requirement = entry.FastFailRequirement;
+                inflationMultiplier = entry.FastFailInflationMultiplier;
+                return true;
+            }
+
+            bool baked = _currentFabricator != null
+                ? _currentFabricator.TryBuildAdjustedFastFailRequirement(recipe, safeBatchMultiplier, out requirement, out inflationMultiplier)
+                : CraftingFastFailValidator.TryBuildRequirementFromRecipeData(recipe, safeBatchMultiplier, out requirement);
+            if (!baked)
+            {
+                entry.FastFailRecipe = recipe;
+                entry.FastFailRequirementMultiplier = safeBatchMultiplier;
+                entry.FastFailScarcityVersion = scarcityVersion;
+                entry.FastFailInflationMultiplier = 1f;
+                entry.FastFailRequirement = default;
+                entry.HasFastFailRequirement = false;
+                inflationMultiplier = 1f;
+                return false;
+            }
+
+            entry.FastFailRecipe = recipe;
+            entry.FastFailRequirementMultiplier = safeBatchMultiplier;
+            entry.FastFailScarcityVersion = scarcityVersion;
+            entry.FastFailInflationMultiplier = math.max(1f, inflationMultiplier);
+            entry.FastFailRequirement = requirement;
+            entry.HasFastFailRequirement = true;
+            inflationMultiplier = entry.FastFailInflationMultiplier;
+            return true;
         }
 
         private static void SetRecipeEntryVisible(in RecipeListEntry entry, bool visible)
@@ -1574,18 +1807,44 @@ namespace Hecton8.UI
             }
         }
 
-        private int BuildRecipeLabel(TMP_Text label, RecipeData recipe, bool selected, bool craftable)
+        private int ResolveRecipeListDisplayName(ref RecipeListEntry entry, RecipeData recipe)
+        {
+            if (recipe == null)
+            {
+                entry.LabelRecipe = null;
+                entry.CachedDisplayNameLength = 0;
+                entry.CachedDisplayNameVersion = _recipeLabelTextVersion;
+                return 0;
+            }
+
+            if (entry.CachedDisplayNameBuffer == null || entry.CachedDisplayNameBuffer.Length != RecipeLabelBufferCapacity)
+                entry.CachedDisplayNameBuffer = new char[RecipeLabelBufferCapacity];
+
+            if (!ReferenceEquals(entry.LabelRecipe, recipe) ||
+                entry.CachedDisplayNameVersion != _recipeLabelTextVersion ||
+                entry.CachedDisplayNameLength <= 0)
+            {
+                entry.LabelRecipe = recipe;
+                entry.CachedDisplayNameVersion = _recipeLabelTextVersion;
+                if (!recipe.TryWriteDisplayNameOrFallback(entry.CachedDisplayNameBuffer, out int nameLength))
+                    nameLength = CopySpanToBuffer(recipe.name.AsSpan(), entry.CachedDisplayNameBuffer);
+                entry.CachedDisplayNameLength = math.clamp(nameLength, 0, entry.CachedDisplayNameBuffer.Length);
+            }
+
+            return entry.CachedDisplayNameLength;
+        }
+
+        private int BuildRecipeLabel(TMP_Text label, RecipeData recipe, ReadOnlySpan<char> displayName, bool selected, bool craftable)
         {
             int cursor = 0;
             cursor = AppendLiteral(selected ? '>' : ' ', _recipeLabelBuffer, cursor);
             cursor = AppendLiteral(' ', _recipeLabelBuffer, cursor);
             cursor = AppendLiteral(craftable ? '[' : '[', _recipeLabelBuffer, cursor);
-            cursor = AppendString(craftable ? "OK" : "LOW", _recipeLabelBuffer, cursor);
+            cursor = AppendSpan(craftable ? "OK".AsSpan() : "LOW".AsSpan(), _recipeLabelBuffer, cursor);
             cursor = AppendLiteral(']', _recipeLabelBuffer, cursor);
             cursor = AppendLiteral(' ', _recipeLabelBuffer, cursor);
 
-            string displayName = recipe != null ? recipe.DisplayNameOrFallback : string.Empty;
-            cursor = AppendString(displayName, _recipeLabelBuffer, cursor);
+            cursor = AppendSpan(displayName, _recipeLabelBuffer, cursor);
 
             int displayOutputQuantity = ResolveDisplayedOutputQuantity(recipe, craftBatchMultiplier);
             if (displayOutputQuantity > 1)
@@ -1670,13 +1929,67 @@ namespace Hecton8.UI
             }
         }
 
-        private bool CanCraftRecipe(RecipeData recipe)
+        private bool TryReadRecipeListFastFailInventory(
+            out NativeArray<uint> itemHashIds,
+            out NativeArray<uint> quantities,
+            out int activeSlotCount,
+            out ulong currentInventoryMask)
+        {
+            itemHashIds = default;
+            quantities = default;
+            activeSlotCount = 0;
+            currentInventoryMask = 0UL;
+            return playerInventory != null &&
+                   playerInventory.TryReadFastFailInventorySoA(out itemHashIds, out quantities, out activeSlotCount, out currentInventoryMask);
+        }
+
+        private bool CanCraftRecipe(
+            RecipeData recipe,
+            int batchMultiplier,
+            bool hasFastFailRequirement,
+            in RecipeRequirementDTO fastFailRequirement,
+            bool hasFastFailInventory,
+            NativeArray<uint> fastFailHashes,
+            NativeArray<uint> fastFailQuantities,
+            int fastFailActiveSlotCount,
+            ulong fastFailInventoryMask)
         {
             if (recipe == null || recipe.ingredients == null || playerInventory == null)
                 return false;
 
             if (_currentFabricator != null)
-                return _currentFabricator.CanCraft(recipe, Mathf.Max(1, craftBatchMultiplier));
+            {
+                if (hasFastFailInventory &&
+                    hasFastFailRequirement &&
+                    _currentFabricator.TryCanCraftFastFailPresentation(
+                        recipe,
+                        batchMultiplier,
+                        in fastFailRequirement,
+                        fastFailHashes,
+                        fastFailQuantities,
+                        fastFailActiveSlotCount,
+                        fastFailInventoryMask,
+                        out bool craftable))
+                {
+                    return craftable;
+                }
+
+                return _currentFabricator.CanCraft(recipe, batchMultiplier);
+            }
+
+            if (hasFastFailInventory &&
+                hasFastFailRequirement &&
+                TryCanCraftRecipeFastFailFallback(
+                    recipe,
+                    in fastFailRequirement,
+                    fastFailHashes,
+                    fastFailQuantities,
+                    fastFailActiveSlotCount,
+                    fastFailInventoryMask,
+                    out bool fallbackCraftable))
+            {
+                return fallbackCraftable;
+            }
 
             InventoryGrid grid = playerInventory.Grid;
             NativeArray<int>.ReadOnly anchorHashIds = grid != null ? grid.AnchorHashIds : default;
@@ -1696,7 +2009,7 @@ namespace Hecton8.UI
 
                 int availableCount = 0;
                 int anchorCount = Mathf.Min(anchorHashIds.Length, stackCounts.Length);
-                int requiredAmount = Mathf.Max(1, ingredient.amount) * Mathf.Max(1, craftBatchMultiplier);
+                int requiredAmount = Mathf.Max(1, ingredient.amount) * batchMultiplier;
                 for (int anchorIndex = 0; anchorIndex < anchorCount; anchorIndex++)
                 {
                     if (anchorHashIds[anchorIndex] != itemHashId)
@@ -1712,6 +2025,32 @@ namespace Hecton8.UI
             }
 
             return true;
+        }
+
+        private bool TryCanCraftRecipeFastFailFallback(
+            RecipeData recipe,
+            in RecipeRequirementDTO requirement,
+            NativeArray<uint> fastFailHashes,
+            NativeArray<uint> fastFailQuantities,
+            int fastFailActiveSlotCount,
+            ulong fastFailInventoryMask,
+            out bool craftable)
+        {
+            craftable = false;
+            if (recipe == null || recipe.resultItem == null)
+                return false;
+
+            ulong unlockedMask = CraftingFastFailValidator.NormalizePlayerUnlockMask(requirement.BlueprintUnlockMask);
+            craftable = CraftingFastFailValidator.TryEvaluateRecipeAvailability(
+                in requirement,
+                fastFailHashes,
+                fastFailQuantities,
+                fastFailActiveSlotCount,
+                fastFailInventoryMask,
+                unlockedMask,
+                out CraftingFastFailStatus status,
+                out _);
+            return status != CraftingFastFailStatus.InvalidInput;
         }
 
         private static int ComputeItemHash(ItemData item)
@@ -1775,15 +2114,24 @@ namespace Hecton8.UI
             return cursor + 1;
         }
 
-        private static int AppendString(string value, char[] buffer, int cursor)
+        private static int AppendSpan(ReadOnlySpan<char> value, char[] buffer, int cursor)
         {
-            if (string.IsNullOrEmpty(value) || cursor >= buffer.Length)
+            if (value.Length == 0 || cursor >= buffer.Length)
                 return cursor;
 
-            ReadOnlySpan<char> span = value.AsSpan();
-            int writable = Mathf.Min(span.Length, buffer.Length - cursor);
-            span.Slice(0, writable).CopyTo(buffer.AsSpan(cursor, writable));
+            int writable = Mathf.Min(value.Length, buffer.Length - cursor);
+            value.Slice(0, writable).CopyTo(buffer.AsSpan(cursor, writable));
             return cursor + writable;
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> value, char[] buffer)
+        {
+            if (buffer == null || value.Length == 0)
+                return 0;
+
+            int writable = Mathf.Min(value.Length, buffer.Length);
+            value.Slice(0, writable).CopyTo(buffer.AsSpan(0, writable));
+            return writable;
         }
 
         private static Mesh CreateBillboardQuadMesh()

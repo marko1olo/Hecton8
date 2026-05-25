@@ -90,7 +90,7 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.Frame)));
             Assert.AreEqual(4, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.FeatureMask)));
             Assert.AreEqual(8, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.SystemStress01)));
-            Assert.AreEqual(20, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.QualityTier)));
+            Assert.AreEqual(20, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.QualityWeightByte)));
             Assert.AreEqual(32, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.PomEnabled01)));
             Assert.AreEqual(44, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.Reserved0)));
         }

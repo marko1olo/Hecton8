@@ -1,16 +1,16 @@
-# Crest Version Quarantine - SHINOBU_260
+﻿# Crest Version Quarantine - SHINOBU_260
 
 ## Ownership
 
-Agent: SHINOBU_260  
-Domain: CREST_VERSION_QUARANTINE_DIRECTOR  
-Active donor: Crest 4 under `Assets/Crest`  
+Agent: SHINOBU_260
+Domain: CREST_VERSION_QUARANTINE_DIRECTOR
+Active donor: Crest 4 under `Assets/Crest`
 Quarantined donor: Crest 5 moved from `Packages/com.waveharmonic.crest` to `Docs/Archive/Crest_Version_Quarantine/Packages/com.waveharmonic.crest`
 
 ## Restore Artifacts
 
-Baseline backup folder: `Docs/Archive/Crest_Baseline_Backup/`  
-Ignore policy: local `.gitignore` ignores archived payloads.  
+Baseline backup folder: `Docs/Archive/Crest_Baseline_Backup/`
+Ignore policy: local `.gitignore` ignores archived payloads.
 Backup zips produced by `Tools/Crest_Baseline_Archiver.py --execute`:
 
 - `crest4_assets_crest_20260521_104429.zip`: 642 files, 8,514,554 source bytes.
@@ -53,17 +53,33 @@ Crest 4 asmdefs are leaf-import guarded with `autoReferenced=false`:
 - `Assets/Crest/Crest/Scripts/Crest.asmdef`
 - `Assets/Crest/Crest/Scripts/Editor/Crest.Editor.asmdef`
 
-Static proof: `Docs/Reports/ARCHITECTURE_OPTIMIZATION_REPORT.json` reports `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, and non-failing `vocabulary_debt_hit_count=111`. The scanner now covers active serialized text in `Assets`, `ProjectSettings`, and `Packages` for Crest5/WaveHarmonic/direct UnderwaterRenderer/bare Crest assembly-list breaches, active `Packages/com.waveharmonic.crest` visibility, shader/HLSL/compute Crest includes outside the bridge, Unity `.asmref` sidecars, Unity `GUID:<asmdef-guid>` references to the active Crest 4 asmdefs, active backreferences to archived Crest5/recovery asset GUIDs, non-bridge first-party `#if CREST_OCEAN` / `#if CREST_URP` branches, and policy-only Crest denylist strings in the editor compliance validator.
+- Static proof: `Docs/Reports/ARCHITECTURE_OPTIMIZATION_REPORT.json` reports `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, and non-failing `vocabulary_debt_hit_count=111`.
+- Scanner covers active serialized text in `Assets`, `ProjectSettings`, and `Packages`.
+- Targets: Crest5/WaveHarmonic/direct UnderwaterRenderer/bare Crest assembly-list breaches, active `Packages/com.waveharmonic.crest` visibility.
+- Additional targets: shader/HLSL/compute Crest includes outside the bridge, Unity `.asmref`, `GUID:<asmdef-guid>` refs to active Crest 4 asmdefs, archived Crest5/recovery GUID backrefs.
+- non-bridge first-party `#if CREST_OCEAN` / `#if CREST_URP` branches, and policy-only Crest denylist strings in the editor compliance validator.
 
-Loop 21 donor reference cleanup: `Assets/Crest/Crest/Scripts/Crest.asmdef` no longer references `Unity.RenderPipelines.HighDefinition.Runtime` or `Unity.Postprocessing.Runtime`, because the backing `com.unity.render-pipelines.high-definition` and `com.unity.postprocessing` packages are absent from `Packages/manifest.json`, `packages-lock.json`, and physical `Packages/`. The selected active Crest4 donor remains URP-scoped instead of adding unused packages.
+Loop 21 donor reference cleanup:
+
+- `Assets/Crest/Crest/Scripts/Crest.asmdef` no longer references `Unity.RenderPipelines.HighDefinition.Runtime` or `Unity.Postprocessing.Runtime`.
+- Backing HDRP/Postprocessing packages are absent from `manifest.json`, `packages-lock.json`, and physical `Packages/`.
+- Selected active Crest4 donor remains URP-scoped.
 
 Loop 21 generated-report cleanup: stale `Assets/profilermarkers.csv(.meta)` moved to `Docs/Archive/Crest_Version_Quarantine/Assets/`. The archived CSV still preserves Crest profiler rows as forensic evidence, but it is no longer Unity-visible active project input.
 
 The scanner also fails if active Crest donor asmdefs or Crest bridge asmdefs become auto-referenced. This keeps Crest opt-in at the assembly importer level, not only at the direct-reference level.
 
-`ProjectSettings/ProjectSettings.asset` still carries Standalone `CREST_OCEAN` and `CREST_URP` scripting defines. They are recorded as non-failing donor-state evidence because the active Crest 4 donor uses `CREST_URP` internally. Any first-party non-bridge use of those symbols is a scanner breach.
+`ProjectSettings/ProjectSettings.asset` still carries Standalone `CREST_OCEAN` and `CREST_URP` scripting defines.
 
-Scanner throughput proof: after broadening the serialized surface, `scan_active_assets` was moved to `rg --json` with a Python fallback. Full scanner wall time on this workspace dropped from about 262 seconds to about 35.5 seconds while preserving `breach_count=0`.
+- They are non-failing donor-state evidence.
+- Active Crest 4 donor uses `CREST_URP` internally.
+- Any first-party non-bridge use is a scanner breach.
+
+Scanner throughput proof:
+
+- `scan_active_assets` moved to `rg --json` with Python fallback.
+- Wall time dropped from about `262s` to about `35.5s`.
+- `breach_count=0` preserved.
 
 ## Contract Route
 
@@ -102,25 +118,54 @@ All large bridge lanes are acquired with `NativeArrayOptions.UninitializedMemory
 
 ## Runtime Boundary
 
-`CrestOceanRuntimeAdapter` lives only inside `Hecton8.Crest.Bridge`. It accepts `NativeArray<OceanSampleRequestDTO>`, returns a `JobHandle`, subtracts ocean-root AUP in `double3`, casts only local deltas to `float3`, and marks output as delayed by 1-3 frames. It does not call `JobHandle.Complete()`. The hot submission path does not call `TryGetComponent`, repair bindings, or reconstruct AUP authority from `Transform.position`.
+`CrestOceanRuntimeAdapter` boundary:
+
+- Namespace: `Hecton8.Crest.Bridge` only.
+- Input: `NativeArray<OceanSampleRequestDTO>`.
+- Output: `JobHandle`.
+- Math: subtract ocean-root AUP in `double3`; cast only local deltas to `float3`.
+- Latency: output delayed by 1-3 frames.
+- Forbidden: `JobHandle.Complete()`, `TryGetComponent`, binding repair, `Transform.position` AUP reconstruction.
 
 `EmergencyMockOceanKinematicsAdapter.GenerateEmergencyMockOceanAdapter()` bypasses Crest entirely and produces deterministic sine-wave results for profiling when Crest is broken. It is a value type, not a managed fallback object.
 
-Legacy `Crest4KinematicsAdapter` remains present for old `Hecton8.Physics` consumers. It is not the strict forward route, but its binding repair was fenced: `ResolveOceanRenderer()` no longer calls `TryGetComponent` or logs, `TryBuildBurstTuning` uses the cached renderer, `TryGetSurfaceWeatherState`/flow/collision reads use cached binding, and `SeaLevel` does not fall back through `GlobalRegistry`.
+- Legacy `Crest4KinematicsAdapter` remains present for old `Hecton8.Physics` consumers.
+- It is not the strict forward route.
+- Binding repair was fenced:
+  - `ResolveOceanRenderer()` no longer calls `TryGetComponent` or logs;
+  - `TryBuildBurstTuning` uses the cached renderer;
+  - weather/flow/collision reads use cached binding;
+  - `SeaLevel` does not fall back through `GlobalRegistry`.
 
-Base `CrestBridge` no longer polls `Crest.OceanRenderer.Instance` or `Crest.UnderwaterRenderer.Instance`; visual material/camera helpers read only the renderer supplied by a concrete bridge adapter, and underwater Has/Try helpers read a cache populated by the command path.
+- Base `CrestBridge` no longer polls `Crest.OceanRenderer.Instance` or `Crest.UnderwaterRenderer.Instance`.
+- Visual material/camera helpers read only the renderer supplied by a concrete bridge adapter.
+- Underwater Has/Try helpers read a cache populated by the command path.
 
 `IOceanVisualBridge` exposes vendor-neutral underwater pass verbs and `CameraColorTextureId`. Non-bridge render code must not hard-code `_Crest_CameraColorTexture`; `HectonDryVolumeFeature` reads the active bridge's texture ID before scheduling dry-volume restore.
 
-`HectonUnderwaterVisuals` no longer contains `"Crest.OceanRenderer"` or `"Crest.UnderwaterRenderer"` reflection fallbacks. It consumes the bridge through `IOceanVisualBridge` only. The old serialized field name `crestSkyBaseFogLink` is preserved only as `[FormerlySerializedAs("crestSkyBaseFogLink")]` migration metadata for `oceanSkyBaseFogLink`.
+- `HectonUnderwaterVisuals` no longer contains `"Crest.OceanRenderer"` or `"Crest.UnderwaterRenderer"` reflection fallbacks.
+- It consumes the bridge through `IOceanVisualBridge` only.
+- Old field `crestSkyBaseFogLink` is only `[FormerlySerializedAs("crestSkyBaseFogLink")]` migration metadata.
+- Current field: `oceanSkyBaseFogLink`.
 
-The shared first-party base formerly named `HectonCrestOceanKinematics` is now `HectonOceanKinematicsBridgeBase` with the same `.meta` GUID. This removes a Crest-specific first-party type name without remapping serialized scene objects because the class is an abstract base, not an attached component.
+The shared first-party base formerly named `HectonCrestOceanKinematics` is now `HectonOceanKinematicsBridgeBase`.
+
+- `.meta` GUID is unchanged.
+- Crest-specific first-party type name is removed.
+- No scene remap: class is abstract base, not attached component.
 
 `HectonCrestOceanDepthCacheBootstrap` no longer falls back to `Crest.OceanRenderer.Instance`. It still belongs to World/depth-cache integration for broader lifecycle ownership, but the Crest singleton recovery path is removed from this quarantine bridge.
 
-`Ocean_Crest.prefab` no longer carries the quarantined Crest5 adapter MonoBehaviour. Exact scans found no remaining `Crest5KinematicsAdapter`, script GUID `51fcb9de0aa92b842be404fec8bf21d4`, or component fileID `4153056372701123456` in active prefabs/scenes/assets. This prefab format does not contain `m_RootGameObject`; raw-YAML proof is therefore the root GameObject component-list removal plus exact GUID/fileID absence.
+`Ocean_Crest.prefab` no longer carries the quarantined Crest5 adapter MonoBehaviour.
 
-`Player.prefab` no longer carries a direct `Crest::Crest.UnderwaterRenderer` MonoBehaviour. Exact scan found no remaining component fileID `9079297290110143596`, script GUID `1b0c0a69611596146aceb2f60532940c`, or `Crest::Crest.UnderwaterRenderer` class identifier in the prefab. Underwater pass ownership stays behind the bridge command path.
+Exact scans found no remaining `Crest5KinematicsAdapter`, script GUID `51fcb9de0aa92b842be404fec8bf21d4`, or component fileID `4153056372701123456` in active prefabs/scenes/assets. This prefab format lacks `m_RootGameObject`; raw-YAML proof is component-list removal plus GUID/fileID absence.
+
+`Player.prefab` no longer carries direct `Crest::Crest.UnderwaterRenderer`.
+
+- Exact scan found no fileID `9079297290110143596`.
+- Exact scan found no script GUID `1b0c0a69611596146aceb2f60532940c`.
+- Exact scan found no `Crest::Crest.UnderwaterRenderer` class identifier.
+- Underwater pass ownership stays behind bridge command path.
 
 Crest-specific sargassum input shaders now live under `Assets/_Project/Scripts/Plugins/Crest/Shaders/` with original metas preserved:
 
@@ -132,11 +177,21 @@ Exact shader scan reports only bridge-owned Crest shader/HLSL references. Shared
 
 `Assets/Plugins/Easy Save 3/Resources/ES3/ES3Defaults.asset` no longer lists `Crest` or `WaveHarmonic.Crest*` in global serializer assembly defaults. Root `Assets/InitTestScene*.unity` files no longer list `WaveHarmonic.Crest*` in TestRunner `m_AssembliesWithTests`.
 
-`Assets/_Recovery` no longer exists under active Unity visibility. It was moved with its `.meta` to `Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery` after static scan found binary recovery scenes with `Crest::Crest.UnderwaterRenderer` and `Crest5KinematicsAdapter` strings. This is archival containment; the folder is Unity recovery payload, not an authoritative runtime source route.
+`Assets/_Recovery` no longer exists under active Unity visibility.
 
-Known serialized vocabulary debt outside this agent's safe write boundary: `SargassumCrestDampingController` and `HectonPlayerMovement.useCrestOceanHeight` still carry Crest in serialized Player/World names. They do not create a direct Crest assembly reference and should be remapped only by the owning agents with Unity serialization validation.
+It was moved with `.meta` to `Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery` after static scan found binary recovery scenes with Crest strings.
 
-Loop 12 low-risk text polish removed donor names from non-serialized comments/tooltips in Visor, Atmosphere, Environment, Fluid, and Sargassum authoring code. Remaining vocabulary debt is tracked by `Crest_Dependency_Scanner.py` as non-failing `vocabulary_debt_hits`, not as compile-wall breaches. Loop 21 also tracks policy-only `Crest` / `WaveHarmonic.Crest*` strings in `HectonComplianceValidator.cs` as non-failing `compliance_denylist_hits`, preserving the editor gate while preventing false hidden-coupling reports.
+This is archival containment. The folder is Unity recovery payload, not an authoritative runtime source route.
+
+Known serialized vocabulary debt outside this agent's safe write boundary:
+- `SargassumCrestDampingController`
+- `HectonPlayerMovement.useCrestOceanHeight`
+
+They create no direct Crest assembly reference. Remap only by owning agents with Unity serialization validation.
+
+- Loop 12 low-risk text polish removed donor names from non-serialized comments/tooltips in Visor, Atmosphere, Environment, Fluid, and Sargassum authoring code.
+- Remaining vocabulary debt is tracked by `Crest_Dependency_Scanner.py` as non-failing `vocabulary_debt_hits`, not as compile-wall breaches.
+- Loop 21 also tracks policy-only `Crest` / `WaveHarmonic.Crest*` strings in `HectonComplianceValidator.cs` as non-failing `compliance_denylist_hits`, preserving the editor gate while preventing false hidden-coupling reports.
 
 Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.OnEnable`/`Start` requires an invasive vendor-source lifecycle patch by a later Crest-internal agent. This pass does not edit donor lifecycle code.
 
@@ -152,7 +207,7 @@ Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `crest_donor_no_absent_hdrp_postprocessing_references`, `stale_profiler_markers_outside_unity_visibility`, `dependency_scanner_blocks_absent_optional_donor_references`, and `dependency_scanner_blocks_stale_generated_report_crest_rows`.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `crest4_project_bindings_have_baseline_archives`, proving the latest baseline report includes project-side Crest4 settings, prefab, and scene binding archives.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `underwater_visuals_no_crest_reflection_fallback`, `underwater_visuals_vendor_neutral_pass_vocabulary`, `visual_bridge_contract_vendor_neutral`, `dry_volume_reads_vendor_texture_id_through_bridge`, `crest5_prefab_adapter_reference_removed`, `ocean_kinematics_base_vendor_neutral`, `low_risk_non_bridge_text_uses_ocean_vocabulary`, and `dependency_scanner_tracks_vocabulary_debt`.
-- `python Tools/BufferIDSovereigntyAudit.py --report-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.md --json-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.json`: passed as static evidence; global `duplicateValueCount=3` comes from unrelated `H8Memory.cs` values `70534..70536`, while `72960..72965` are local casts only in `OceanAdapterVaultRoute.cs`.
+- `python Tools/BufferIDSovereigntyAudit.py --report-path Docs/_Archive/Reports_X_012_2026-05-23/SHINOBU_260_BufferIDSovereigntyAudit.md --json-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.json`: passed as static evidence; global `duplicateValueCount=3` comes from unrelated `H8Memory.cs` values `70534..70536`, while `72960..72965` are local casts only in `OceanAdapterVaultRoute.cs`.
 - `python -m py_compile Tools/Crest_Baseline_Archiver.py Tools/Crest_Dependency_Scanner.py Tools/Crest_Quarantine_Polish_Audit.py Tools/BufferIDSovereigntyAudit.py`: passed.
 - `git diff --check` for touched Crest bridge, tools, and report files: passed; only Git CRLF conversion warnings were emitted.
 - Exact active asset scan: no `WaveHarmonic.Crest`, Crest5 script GUIDs `382a5d8b1147b4e78a31353c022b8e15` / `03aa24b56404b45a190a2cfc0c7cc100`, `Crest::Crest.UnderwaterRenderer`, `Crest5_WaveSpectrum`, or `Crest5_FoamSettings` hits remain under active `Assets/_Project`.
@@ -176,7 +231,10 @@ Generated project quarantine:
 - Root `WaveHarmonic.Crest*.csproj` and `WaveHarmonic.Crest*.csproj.lscache` files are archived under `Docs/Archive/Crest_Version_Quarantine/GeneratedProject/`.
 - Broad root generated first-party `.csproj` files no longer carry direct `Crest.csproj`, `Crest.Helpers.Editor.csproj`, `WaveHarmonic.Crest*.csproj`, or `Packages/com.waveharmonic.crest` routes.
 - `Directory.Build.targets` no longer injects `Crest` or `WaveHarmonic.Crest*` references into `Hecton8.Core`; only the missing-package prune target remains.
-- `Tools/Crest_Dependency_Scanner.py` scans `.csproj`, `.lscache`, `.sln`, `.slnx`, `.props`, `.targets`, and `.rsp` for hard generated-project Crest routes outside donor/helper boundaries. Current report keeps generated-project `CREST_OCEAN` / `CREST_URP` symbols as evidence only: `generated_project_scripting_define_hit_count=67`, `generated_project_prune_rule_hit_count=6`.
+- `Tools/Crest_Dependency_Scanner.py` scans `.csproj`, `.lscache`, `.sln`, `.slnx`, `.props`, `.targets`, and `.rsp`.
+- Target: hard generated-project Crest routes outside donor/helper boundaries.
+- Current report keeps generated-project `CREST_OCEAN` / `CREST_URP` symbols as evidence only.
+- Counts: `generated_project_scripting_define_hit_count=67`, `generated_project_prune_rule_hit_count=6`.
 
 Shader and stale-payload quarantine:
 
@@ -194,4 +252,42 @@ Latest proof after Loop 23:
 - `python Tools/Crest_Dependency_Scanner.py`: passed with `breach_count=0`, `allowed_hit_count=40`, `global_scripting_define_hit_count=1`, `generated_project_scripting_define_hit_count=67`, `generated_project_prune_rule_hit_count=6`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`.
 - `python Tools/Crest_Quarantine_Polish_Audit.py`: passed with `failed_count=0`.
 - Full `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` was executed after Loop 22 generated-project cleanup when the gate opened: 0 errors, 171 warnings, elapsed 00:02:20.78.
-- A second build after the Loop 23 C# render-pass/shader patch was not launched because the latest gate found active `VBCSCompiler` and CPU sampled at 89.8 percent. This is recorded as a gated compile proof gap, not hidden success.
+- Second build after Loop 23 C# render-pass/shader patch was not launched.
+- Gate state: active `VBCSCompiler`; CPU sampled at `89.8%`.
+- Status: gated compile proof gap, not hidden success.
+
+## Loop 24 Addendum: No-Python Broad Lscache Closure
+
+User instruction for this loop: do not launch `.py` scripts because they are deadlocking the PC. Verification is therefore PowerShell/rg/static-text only.
+
+Additional quarantine:
+
+- Active SHINOBU_260 status/rationale/log files were restored from `Docs/Archive/Batch011/` because the active files were absent and Git-marked deleted.
+- 10 broad root C# Dev Kit cache files with stale WaveHarmonic/CrestMigration routes were moved to `Docs/Archive/Crest_Version_Quarantine/GeneratedProject/`:
+  - `Assembly-CSharp.csproj.lscache`
+  - `Assembly-CSharp-Editor.csproj.lscache`
+  - `Assembly-CSharp-Editor-firstpass.csproj.lscache`
+  - `Assembly-CSharp-firstpass.csproj.lscache`
+  - `Hecton8.Core.csproj.lscache`
+  - `Hecton8.Editor.csproj.lscache`
+  - `Unity.RenderPipelines.Core.Editor.csproj.lscache`
+  - `Unity.RenderPipelines.Universal.Editor.csproj.lscache`
+  - `Unity.RenderPipelines.Universal.Runtime.csproj.lscache`
+  - `Unity.ShaderGraph.Editor.csproj.lscache`
+- The archive now contains 17 `.csproj.lscache` files for Crest quarantine: the prior 7 WaveHarmonic-named files plus the 10 broad stale cache files.
+- `Tools/Crest_Dependency_Scanner.py` now includes `generated_project_stale_lscache_crest_route` to fail broad root lscache files that retain stale `WaveHarmonic.Crest`, `Packages/com.waveharmonic.crest`, or `CrestMigration` text.
+- `Tools/Crest_Quarantine_Polish_Audit.py` now includes `stale_broad_csharp_devkit_lscache_no_waveharmonic_crest` and `dependency_scanner_blocks_broad_stale_lscache_crest_routes`.
+
+No-Python proof:
+
+- PowerShell `Select-String` over remaining root `*.csproj.lscache`: `NO_ROOT_STALE_LSCACHE_HITS`.
+- `rg` source scan confirms the new scanner/audit gate names.
+- `git diff --check -- Tools/Crest_Dependency_Scanner.py Tools/Crest_Quarantine_Polish_Audit.py`: passed with CRLF warnings only.
+
+## Loop 25 Addendum: No-Python Side-Audit Integration
+
+- `Hecton8.Core.csproj` no longer compiles `Assets/_Project/Scripts/Plugins/Crest/CrestDepthCacheDebugger.cs` or `CrestFoamDebugger.cs`; PowerShell reports `NO_BROAD_CSPROJ_BRIDGE_SOURCE_HITS`.
+- `Tools/test_memory_budget_check.py` no longer points at `Packages/com.waveharmonic.crest`; the HDR parser fixture is active `Assets/ScifiFacility/Textures/sky_hdr.hdr`.
+- `Tools/Crest_Dependency_Scanner.py` now includes `generated_project_bridge_source_in_broad_project`; `Tools/Crest_Quarantine_Polish_Audit.py` gates the same condition through `generated_first_party_projects_do_not_compile_bridge_sources` and `dependency_scanner_blocks_bridge_source_in_broad_project`.
+- `Ocean_Crest.prefab`, `Assets/_Project/Data/Ocean/*.asset`, and `Assets/_Project/crest/*.asset` keep selected Crest4 donor bindings. They are active donor route evidence and have baseline backups; this loop does not raw-edit selected donor prefab/settings YAML.
+- `ARCHITECTURE_OPTIMIZATION_REPORT.json` and `CREST_QUARANTINE_POLISH_AUDIT.json` were not regenerated in this loop because `.py` execution was explicitly forbidden. The source gates are updated; report regeneration is deferred until the Python deadlock condition is cleared.

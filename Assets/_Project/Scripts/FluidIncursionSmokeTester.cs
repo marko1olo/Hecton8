@@ -3,6 +3,7 @@
 // Dev-only smoke for pressure leak volume versus powered pump drainage.
 // ============================================================================
 
+using System.Globalization;
 using Hecton8.Construction;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
@@ -57,15 +58,23 @@ namespace Hecton8.Dev
             if (!passed)
             {
                 Debug.LogError(
-                    $"[FluidIncursionSmoke] FAIL leakOnly={leakOnlyVolume:F4}m3 pumped={pumpedVolume:F4}m3",
+                    "[FluidIncursionSmoke] FAIL leakOnly=" +
+                    leakOnlyVolume.ToString("F4", CultureInfo.InvariantCulture) +
+                    "m3 pumped=" +
+                    pumpedVolume.ToString("F4", CultureInfo.InvariantCulture) +
+                    "m3",
                     this);
                 return;
             }
 
             if (verboseLogging)
             {
-                Debug.Log(
-                    $"[FluidIncursionSmoke] PASS leakOnly={leakOnlyVolume:F4}m3 pumped={pumpedVolume:F4}m3",
+                Hecton8.Core.H8Debug.Log(
+                    "[FluidIncursionSmoke] PASS leakOnly=" +
+                    leakOnlyVolume.ToString("F4", CultureInfo.InvariantCulture) +
+                    "m3 pumped=" +
+                    pumpedVolume.ToString("F4", CultureInfo.InvariantCulture) +
+                    "m3",
                     this);
             }
         }

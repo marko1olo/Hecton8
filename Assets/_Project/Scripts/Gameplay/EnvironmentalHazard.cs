@@ -3,7 +3,7 @@
 // Environmental hazard zone that damages the player.
 //
 // ARCHITECTURE:
-//   • ITickable for periodic damage logic (no Update)
+//   • ISlowTickable for periodic damage logic (no Update)
 //   • Trigger-based or radius-based detection
 //   • Distance-scaled damage intensity
 //   • MaterialPropertyBlock for visual feedback (zero GC)
@@ -15,10 +15,12 @@
 //
 // INTEGRATION:
 //   • UnityEvent OnIntensityChanged for post-process effects
-//   • UnityEvent OnDamageDealt for UI/audio feedback
+//   • Player injury authority remains status/signal based, not UnityEvent based.
 // ============================================================================
 
+using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -28,12 +30,16 @@ namespace Hecton8.Gameplay
 {
     /// <summary>
     /// Environmental hazard zone that damages the player.
-    /// Implements ITickable for periodic damage logic.
+    /// Implements ISlowTickable for periodic damage logic.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Environmental Hazard")]
-    public sealed class EnvironmentalHazard : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class EnvironmentalHazard : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private const float HazardSlowTickDeltaSeconds = 0.1f;
+        private const float ToxicityExposureToxemiaScale = 0.08f;
+        private const float ToxicityPoisonStatusDurationSeconds = 6f;
+        private const uint EnvironmentalToxicityChemicalHash = 0x45544F58u; // ETOX
         private static int PlayerLayerIndex = -1;
 
         // ══════════════════════════════════════════════════════════
@@ -86,9 +92,6 @@ namespace Hecton8.Gameplay
         [Tooltip("Fired when player exits hazard zone.")]
         [SerializeField] private UnityEvent OnPlayerExit;
 
-        [Tooltip("Fired when damage is dealt. Parameter: damage amount.")]
-        [SerializeField] private UnityEvent<float> OnDamageDealt;
-
         [Tooltip("Fired when intensity changes. Parameter: normalized intensity (0-1).")]
         [SerializeField] private UnityEvent<float> OnIntensityChanged;
 
@@ -101,11 +104,18 @@ namespace Hecton8.Gameplay
         private float _damageTimer;
         private float _currentIntensity;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
+        private bool _indicatorDirty;
         private bool _radiationSourceRegistered;
         private int _radiationSourceId;
         private int _emissionPropertyId;
         private IThermodynamicsService _thermodynamicsService;
+        private IPlayerRuntimeContext _playerRuntime;
+        private IPlayerActionInterruptSink _playerActionInterrupts;
+        private HectonPlayerHealth _playerHealth;
+        private Collider _triggerCollider;
+        private CachedTriggerVolume _triggerVolume;
 
         // Cached references
         private Transform _cachedTransform;
@@ -118,8 +128,6 @@ namespace Hecton8.Gameplay
         private static readonly string _toxicText = "Toxic Hazard";
 
         // COLD ALLOC: Collider[8] — player radius overlap buffer — owner: EnvironmentalHazard
-        private readonly Collider[] _playerOverlapBuffer = new Collider[8];
-
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
         // ══════════════════════════════════════════════════════════
@@ -158,6 +166,8 @@ namespace Hecton8.Gameplay
         {
             EnsureLayerCache();
             _cachedTransform = transform;
+            TryGetComponent(out _triggerCollider);
+            _triggerVolume = CachedTriggerVolume.FromCollider(_triggerCollider, hazardRadius);
             RefreshColdRegistryReferences();
             _radiationSourceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
@@ -177,15 +187,17 @@ namespace Hecton8.Gameplay
         {
             RefreshColdRegistryReferences();
             TryRegister();
+            TryRegisterLateFrame();
             TryRegisterHotSwapListener();
             TryRegisterRadiationSource();
-            UpdateIndicator();
+            QueueIndicatorUpdate();
         }
 
         private void OnDisable()
         {
             TryUnregisterRadiationSource();
             TryUnregisterHotSwapListener();
+            TryUnregisterLateFrame();
             TryUnregister();
             ClearExposureState();
         }
@@ -194,8 +206,18 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterRadiationSource();
             TryUnregisterHotSwapListener();
+            TryUnregisterLateFrame();
             TryUnregister();
             ClearExposureState();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_indicatorDirty)
+                return;
+
+            _indicatorDirty = false;
+            UpdateIndicator();
         }
 
         private void TryRegister()
@@ -206,7 +228,7 @@ namespace Hecton8.Gameplay
             if (hazardType == HazardType.Radiation)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -214,8 +236,25 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -238,6 +277,9 @@ namespace Hecton8.Gameplay
         private void RefreshColdRegistryReferences()
         {
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+            _playerRuntime = GlobalRegistry.Player;
+            _playerActionInterrupts = GlobalRegistry.PlayerActionInterrupts;
+            _playerHealth = _playerRuntime != null ? _playerRuntime.PlayerHealth : null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -246,7 +288,20 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
+            {
                 _thermodynamicsService = currentService as IThermodynamicsService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntime = currentService as IPlayerRuntimeContext;
+                _playerHealth = _playerRuntime != null ? _playerRuntime.PlayerHealth : null;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerActionRuntime)
+                _playerActionInterrupts = currentService as IPlayerActionInterruptSink;
         }
 
         private void ClearExposureState()
@@ -264,63 +319,15 @@ namespace Hecton8.Gameplay
         //  TRIGGER DETECTION (Optional)
         // ══════════════════════════════════════════════════════════
 
-        private void OnTriggerEnter(Collider other)
-        {
-            if (hazardType == HazardType.Radiation || hazardType == HazardType.Heat)
-                return;
-
-            if (!useTriggerCollider)
-                return;
-
-            if (!other.CompareTag(playerTag))
-                return;
-
-            _playerTransform = other.transform;
-            bool wasInHazard = _playerInHazard;
-            _playerInHazard = true;
-
-            if (!wasInHazard)
-            {
-                HazardExposureNotifier.Enter(hazardType);
-                OnPlayerEnter?.Invoke();
-            }
-        }
-
-        private void OnTriggerExit(Collider other)
-        {
-            if (hazardType == HazardType.Radiation || hazardType == HazardType.Heat)
-                return;
-
-            if (!useTriggerCollider)
-                return;
-
-            if (!other.CompareTag(playerTag))
-                return;
-
-            if (_playerTransform == other.transform)
-            {
-                if (_playerInHazard)
-                    HazardExposureNotifier.Exit(hazardType);
-
-                _playerTransform = null;
-                _playerInHazard = false;
-                _currentIntensity = 0f;
-
-                OnPlayerExit?.Invoke();
-                OnIntensityChanged?.Invoke(0f);
-                UpdateIndicator();
-            }
-        }
-
         // ══════════════════════════════════════════════════════════
-        //  ITickable — DAMAGE LOGIC
+        //  ISlowTickable — DAMAGE LOGIC
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// ITickable implementation. Handles damage logic.
+        /// ISlowTickable implementation. Handles damage logic.
         /// Zero GC: no allocations, uses CompareTag.
         /// </summary>
-        public void Tick(float deltaTime)
+        public void SlowTick()
         {
             if (hazardType == HazardType.Radiation)
                 return;
@@ -331,11 +338,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // If not using trigger, check radius
-            if (!useTriggerCollider)
-            {
+            if (useTriggerCollider)
+                CheckPlayerInTriggerVolume();
+            else
                 CheckPlayerInRadius();
-            }
 
             if (!_playerInHazard || _playerTransform == null)
                 return;
@@ -348,11 +354,11 @@ namespace Hecton8.Gameplay
             {
                 _currentIntensity = newIntensity;
                 OnIntensityChanged?.Invoke(_currentIntensity);
-                UpdateIndicator();
+                QueueIndicatorUpdate();
             }
 
             // Apply damage at intervals
-            _damageTimer += deltaTime;
+            _damageTimer += HazardSlowTickDeltaSeconds;
             if (_damageTimer >= damageInterval)
             {
                 _damageTimer = 0f;
@@ -369,25 +375,25 @@ namespace Hecton8.Gameplay
             if (hazardType == HazardType.Radiation)
                 return;
 
-            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                _cachedTransform.position,
-                hazardRadius,
-                _playerOverlapBuffer,
-                playerLayer,
-                QueryTriggerInteraction.Ignore
-            );
+            Transform playerTransform = ResolveRuntimePlayerTransform();
+            bool foundPlayer = playerTransform != null && IsPlayerInsideHazardRadius(playerTransform);
+            SetPlayerHazardState(foundPlayer, playerTransform);
+        }
 
-            bool foundPlayer = false;
-            for (int i = 0; i < hitCount; i++)
-            {
-                Collider hit = _playerOverlapBuffer[i];
-                if (hit != null && hit.CompareTag(playerTag))
-                {
-                    _playerTransform = hit.transform;
-                    foundPlayer = true;
-                    break;
-                }
-            }
+        private void CheckPlayerInTriggerVolume()
+        {
+            if (hazardType == HazardType.Radiation)
+                return;
+
+            Transform playerTransform = ResolveRuntimePlayerTransform();
+            bool foundPlayer = playerTransform != null && IsPlayerInsideTriggerVolume(playerTransform);
+            SetPlayerHazardState(foundPlayer, playerTransform);
+        }
+
+        private void SetPlayerHazardState(bool foundPlayer, Transform playerTransform)
+        {
+            if (foundPlayer)
+                _playerTransform = playerTransform;
 
             if (foundPlayer && !_playerInHazard)
             {
@@ -403,8 +409,60 @@ namespace Hecton8.Gameplay
                 _currentIntensity = 0f;
                 OnPlayerExit?.Invoke();
                 OnIntensityChanged?.Invoke(0f);
-                UpdateIndicator();
+                QueueIndicatorUpdate();
             }
+        }
+
+        private bool IsPlayerInsideTriggerVolume(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return false;
+
+            if (!string.IsNullOrEmpty(playerTag) && !playerTransform.CompareTag(playerTag))
+                return false;
+
+            int layer = playerTransform.gameObject.layer;
+            if (layer >= 0 && layer < 32 && (playerLayer.value & (1 << layer)) == 0)
+                return false;
+
+            return _triggerVolume.Contains(_cachedTransform, playerTransform.position);
+        }
+
+        private Transform ResolveRuntimePlayerTransform()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntime;
+            if (playerContext != null && playerContext.PlayerTransform != null)
+                return playerContext.PlayerTransform;
+
+            return _playerTransform;
+        }
+
+        private bool IsPlayerInsideHazardRadius(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return false;
+
+            if (!string.IsNullOrEmpty(playerTag) && !playerTransform.CompareTag(playerTag))
+                return false;
+
+            int layer = playerTransform.gameObject.layer;
+            if (layer >= 0 && layer < 32 && (playerLayer.value & (1 << layer)) == 0)
+                return false;
+
+            double radius = math.max(0d, hazardRadius);
+            double radiusSq = radius * radius;
+            Vector3 hazardPosition = _cachedTransform.position;
+            Vector3 playerPosition = playerTransform.position;
+            if (hazardRadius <= 50f)
+                return (playerPosition - hazardPosition).sqrMagnitude <= radiusSq;
+
+            if (!TryResolveAupFromRuntimeOrigin(hazardPosition, out AbsoluteUniversePosition hazardAup) ||
+                !TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+            {
+                return false;
+            }
+
+            return AbsoluteUniversePosition.DistanceSq(in hazardAup, in playerAup) <= radiusSq;
         }
 
         /// <summary>
@@ -460,7 +518,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -483,28 +541,206 @@ namespace Hecton8.Gameplay
                 return;
 
             float damage = baseDamagePerSecond * _currentIntensity * damageInterval;
-
-            // Fire damage event for external systems (survival, UI, audio)
-            OnDamageDealt?.Invoke(damage);
+            if (!(damage > 0f) || !math.isfinite(damage))
+                return;
 
             // ── Interrupt player action (eating, healing) ──
-            PlayerActionController actionController = _playerTransform.GetComponent<PlayerActionController>();
-            if (actionController != null)
+            _playerActionInterrupts?.OnDamageTaken();
+            HectonPlayerHealth playerHealth = ResolvePlayerHealth();
+            if (playerHealth == null)
+                return;
+
+            if (IsToxicHazardType())
             {
-                actionController.OnDamageTaken();
+                ApplyToxicityExposure(playerHealth, damage);
+                return;
             }
 
-            // Future: Direct integration with HectonSurvivalSystem
-            // var survival = _playerTransform.GetComponent<HectonSurvivalSystem>();
-            // if (survival != null)
-            // {
-            //     survival.TakeDamage(damage, hazardType);
-            // }
+            if (!TryQueueCentralHazardDamage(playerHealth, damage))
+                ApplyOwnerHazardDamageFallback(playerHealth, damage);
         }
 
         // ══════════════════════════════════════════════════════════
         //  VISUALS
         // ══════════════════════════════════════════════════════════
+
+        private HectonPlayerHealth ResolvePlayerHealth()
+        {
+            HectonPlayerHealth playerHealth = _playerHealth;
+            if (playerHealth != null)
+                return playerHealth;
+
+            IPlayerRuntimeContext playerContext = _playerRuntime;
+            playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
+            if (playerHealth == null && _playerTransform != null)
+            {
+                if (!_playerTransform.TryGetComponent(out playerHealth))
+                    playerHealth = _playerTransform.GetComponentInParent<HectonPlayerHealth>();
+            }
+
+            _playerHealth = playerHealth;
+            return playerHealth;
+        }
+
+        private void ApplyToxicityExposure(HectonPlayerHealth playerHealth, float damageMagnitude)
+        {
+            if (playerHealth == null)
+                return;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+            float exposure01 = math.saturate(_currentIntensity);
+            if (targetId != 0 && CombatDamageRuntime.IsTargetRegistered(targetId))
+            {
+                float severity01 = math.saturate(math.max(exposure01, damageMagnitude * 0.05f));
+                if (severity01 > 0.0001f)
+                {
+                    CombatDamageRuntime.TryQueueStatusEffect(
+                        targetId,
+                        CombatStatusBits.Poisoned64,
+                        ToxicityPoisonStatusDurationSeconds * math.max(0.25f, severity01),
+                        DamageSourceIds.EnvironmentHazard,
+                        severity01);
+                }
+            }
+
+            float toxemiaDelta = math.saturate(exposure01 * math.max(0.1f, damageMagnitude) * ToxicityExposureToxemiaScale);
+            if (targetId == 0 || (exposure01 <= 0.0001f && toxemiaDelta <= 0f))
+                return;
+
+            if (!TryResolveAupFromRuntimeOrigin(playerHealth.transform.position, out AbsoluteUniversePosition playerAup))
+                return;
+
+            ToxicityExposureSignal signal = default;
+            signal.AUP = playerAup.ToAbsoluteDouble3();
+            signal.Exposure01 = exposure01;
+            signal.ToxemiaDelta = toxemiaDelta;
+            signal.EntityId = unchecked((uint)targetId);
+            signal.ChemicalHash = EnvironmentalToxicityChemicalHash;
+            signal.Frame = TimeSliceScheduler.CurrentFrameId;
+            signal.Flags = 1;
+            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
+        }
+
+        private bool TryQueueCentralHazardDamage(HectonPlayerHealth playerHealth, float damage)
+        {
+            if (hazardType != HazardType.Heat)
+                return false;
+
+            if (playerHealth == null)
+                return false;
+
+            Transform playerTransform = playerHealth.transform;
+            if (playerTransform == null)
+                return false;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return false;
+
+            Vector3 impactPoint = playerTransform.position;
+            float3 localPoint = ResolveTargetLocalPoint(playerTransform, impactPoint);
+            float3 direction = ResolveHazardDirection(playerTransform);
+            CombatDamageRequest signal = new CombatDamageRequest
+            {
+                TargetId = targetId,
+                SourceId = DamageSourceIds.EnvironmentHazard,
+                Amount = damage,
+                ImpulseMagnitude = 0f,
+                Direction = direction,
+                PackedMeta = CombatDamageRuntime.PackSignalMeta(
+                    ResolveHazardDamageType(),
+                    ResolveHazardStatusBits(),
+                    CombatWeakspotTier.None)
+            };
+            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
+            {
+                LocalPoint = localPoint,
+                ArmorNormal = -direction,
+                LocalTemperatureCelsius = 0f,
+                StatusDurationSeconds = math.max(damageInterval, HazardSlowTickDeltaSeconds)
+            };
+
+            double3 impactAup = double3.zero;
+            if (TryResolveAupFromRuntimeOrigin(impactPoint, out AbsoluteUniversePosition playerAup) &&
+                playerAup.IsFinite())
+            {
+                double3 resolvedAup = playerAup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(resolvedAup)))
+                    impactAup = resolvedAup;
+            }
+
+            CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);
+            return true;
+        }
+
+        private void ApplyOwnerHazardDamageFallback(HectonPlayerHealth playerHealth, float damage)
+        {
+            if (hazardType != HazardType.Heat || playerHealth == null || !(damage > 0f) || !math.isfinite(damage))
+                return;
+
+            Transform playerTransform = playerHealth.transform;
+            Vector3 impactPoint = playerTransform != null &&
+                                  math.isfinite(playerTransform.position.x) &&
+                                  math.isfinite(playerTransform.position.y) &&
+                                  math.isfinite(playerTransform.position.z)
+                ? playerTransform.position
+                : Vector3.zero;
+
+            DamagePacket packet = new DamagePacket
+            {
+                Channel = DamageChannel.Integrity,
+                PreviousValue = 0f,
+                NextValue = 0f,
+                Magnitude = damage,
+                LocalPoint = ResolveTargetLocalPoint(playerTransform, impactPoint),
+                DamageType = ResolveHazardDamageType(),
+                IntegrityDelta = 0,
+                Depth = 0f,
+                SourceId = DamageSourceIds.EnvironmentHazard,
+                TraumaLevel = 0
+            };
+            playerHealth.ReceiveDamage(in packet);
+        }
+
+        private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)
+        {
+            if (targetTransform == null ||
+                !math.isfinite(impactPoint.x) ||
+                !math.isfinite(impactPoint.y) ||
+                !math.isfinite(impactPoint.z))
+            {
+                return float3.zero;
+            }
+
+            Vector3 localPoint = targetTransform.InverseTransformPoint(impactPoint);
+            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
+            return math.all(math.isfinite(localPoint3)) ? localPoint3 : float3.zero;
+        }
+
+        private float3 ResolveHazardDirection(Transform playerTransform)
+        {
+            if (playerTransform == null || _cachedTransform == null)
+                return new float3(0f, 1f, 0f);
+
+            Vector3 offset = playerTransform.position - _cachedTransform.position;
+            float3 direction = new float3(offset.x, offset.y, offset.z);
+            return math.normalizesafe(direction, new float3(0f, 1f, 0f));
+        }
+
+        private uint ResolveHazardDamageType()
+        {
+            return CombatDamageTypes.Thermal;
+        }
+
+        private uint ResolveHazardStatusBits()
+        {
+            return hazardType == HazardType.Heat ? CombatStatusBits.Burning : 0u;
+        }
+
+        private bool IsToxicHazardType()
+        {
+            return hazardType == HazardType.Toxicity || hazardType == HazardType.Biohazard;
+        }
 
         /// <summary>
         /// Updates the hazard indicator using MaterialPropertyBlock.
@@ -522,6 +758,11 @@ namespace Hecton8.Gameplay
             hazardIndicator.GetPropertyBlock(_mpb);
             _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, indicatorColor);
             hazardIndicator.SetPropertyBlock(_mpb);
+        }
+
+        private void QueueIndicatorUpdate()
+        {
+            _indicatorDirty = true;
         }
 
         private void TryRegisterRadiationSource()

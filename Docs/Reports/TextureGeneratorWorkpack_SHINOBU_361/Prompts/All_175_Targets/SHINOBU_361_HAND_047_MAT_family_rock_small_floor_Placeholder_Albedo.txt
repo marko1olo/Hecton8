@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_047
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_047_MAT_family_rock_small_floor_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\MAT_family_rock_small_floor_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_rock_small_floor_Placeholder_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Small floor rock placeholder replacement albedo for traversable seabed stone. Build a clean field of compact rounded stones, blue-gray basalt chips, pale mineral dust, teal micro-veins, and soft pearl sediment in the low gaps. The surface should look walkable, legible, and attractive, with controlled variation that tiles without visual clutter. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

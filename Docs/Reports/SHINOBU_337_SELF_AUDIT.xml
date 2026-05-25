@@ -1,0 +1,61 @@
+﻿<SELF_AUDIT agent="SHINOBU_337" evidence="STATIC_SOURCE_NO_DOTNET_BUILD">
+  <TASK_CHECK>
+    <TASK id="01" status="PASS" proof="Vehicles/Environment rg scan plus PHYSICS_OPTIMIZATION_REPORT_SHINOBU_337.json"/>
+    <TASK id="02" status="PASS" proof="No List&lt;HeatSource&gt; in requested scan roots; Vault ReactorStateDTO route added"/>
+    <TASK id="03" status="PASS" proof="Hot DTOs use raw fields; job uses UnsafeUtility.AsRef"/>
+    <TASK id="04" status="PASS" proof="ReactorThermalLayoutValidator validates 32-byte ReactorStateDTO offsets"/>
+    <TASK id="05" status="PASS" proof="GenerateMockReactorLoadJob writes deterministic overload states ramping toward 2000 C"/>
+    <TASK id="06" status="PASS" proof="InjectReactorHeatJob writes atomic deltas into AbyssalThermalCellInjection"/>
+    <TASK id="07" status="PASS" proof="Generated joules raise core; cooling joules are injected into water and subtracted"/>
+    <TASK id="08" status="PASS" proof="ThermalStateChangedSignal plus shader scalar/point upload"/>
+    <TASK id="09" status="PASS" proof="Meltdown flag and CombatDamageSignal; no prefab path"/>
+    <TASK id="10" status="PASS" proof="GlobalQualityWeight keeps below-0.30 central-only, writes axial cross at middle quality, and smoothsteps diagonal shell weights toward 3x3x3"/>
+    <TASK id="11" status="PASS" proof="math.lengthsq velocity forced-convection multiplier"/>
+    <TASK id="12" status="PASS" proof="double3 grid-origin subtraction before float3 local index"/>
+    <TASK id="13" status="PASS" proof="Burst FloatMode.Deterministic and telemetry state hash"/>
+    <TASK id="14" status="PASS" proof="GlobalDataVault Acquire uses NativeArrayOptions.UninitializedMemory"/>
+    <TASK id="15" status="PASS_STATIC_TIMING_PROXY" proof="300-entry 128-byte ReactorThermalTelemetryEntry ring records hot AUP plus hashes and Dump_SHINOBU_337.bin span dump; LastInjectionMicroseconds is marked with TelemetryFlagTimingProxy until profiler proof exists"/>
+    <TASK id="16" status="PASS" proof="Retained UI Toolkit tuner writes Vault tuning through UnsafeUtility.AsRef and renders telemetry graph with VisualElement.generateVisualContent/Painter2D; no IMGUIContainer, GUILayoutUtility, EditorGUI, or Handles graph path remains"/>
+    <TASK id="17" status="PASS" proof="ReadOnlySpan CSV parser with FNV-1a and manual float parse"/>
+    <TASK id="18" status="PASS" proof="SceneView gizmo draws heat sphere, voxel wireframe, and red injection dot"/>
+    <TASK id="19" status="PASS" proof="OOP_Thermal_Scanner and shared/dedicated JSON reports"/>
+    <TASK id="20" status="PASS_WITH_BUILD_BLOCKED" proof="Self-audit written; dotnet/csc guard blocked compilation"/>
+  </TASK_CHECK>
+  <ARM64_CHECK primary="ReactorStateDTO" size="32">
+    <FIELD name="CurrentCoreTempCelsius" offset="0" size="4"/>
+    <FIELD name="TargetPowerOutputMW" offset="4" size="4"/>
+    <FIELD name="ThermalDissipationRate" offset="8" size="4"/>
+    <FIELD name="ReactorHashID" offset="12" size="4"/>
+    <FIELD name="Flags" offset="16" size="4"/>
+    <FIELD name="_pad0" offset="20" size="4"/>
+    <FIELD name="_pad1" offset="24" size="4"/>
+    <FIELD name="_pad2" offset="28" size="4"/>
+  </ARM64_CHECK>
+  <ZERO_GC_CHECK result="PASS_STATIC">
+    Hot jobs contain no LINQ, foreach, managed collections, GetComponent, FindObjectsOfType, OnTriggerStay, or new NativeArray allocations. FileStream and StringBuilder exist only in editor/cold/fault paths.
+  </ZERO_GC_CHECK>
+  <AUP_CHECK result="PASS_STATIC">
+    ReactorThermalMath.TryMapAupToCell subtracts reactor double3 AUP minus grid double3 origin before casting the local delta to float3.
+  </AUP_CHECK>
+  <VAULT_BUFFERS rejectedCandidate="71810..71820 collided at 71820 with SHINOBU_264 async buoyancy">
+    73620 ReactorStates; 73621 ReactorKinematics; 73622 ReactorCount; 73623 ReactorTuning; 73624 TelemetryRing; 73625 TelemetryCursor; 73626 Profiles; 73627 ProfileCount; 73628 CsvScratch; 73629 Scratch; 73630 DumpLatch.
+  </VAULT_BUFFERS>
+  <DATA_MONOLITH status="NOT_CLAIMED_STATIC_DATA_MISSING">
+    Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin is absent. Reactor profiles hydrate from unmanaged defaults plus editor-only Assets/_SourceData/Thermodynamics/vehicle_reactor_profiles.csv cold parsing; player-runtime Data Monolith readiness is not claimed.
+  </DATA_MONOLITH>
+  <TELEMETRY_LAYOUT name="ReactorThermalTelemetryEntry" size="128" ringBytes="38400">
+    HotReactorAup@0:24; TotalJoulesInjected@24:4; AverageCoreTempCelsius@28:4; MaxCoreTempCelsius@32:4; MaxSpeedMetersPerSecond@36:4; LastInjectionMicroseconds@40:4; ActiveReactorCount@44:4; MeltdownCount@48:4; Flags@52:4; Frame@56:4; StateHash@60:4; HotCellHash@64:4; InjectionCellWrites@68:4; NonFiniteCount@72:4; ThermalSignalCount@76:4; DamageSignalCount@80:4; RingIndex@84:4; HotReactorHashID@88:4; HotEntityHashID@92:4; padding@96:32.
+  </TELEMETRY_LAYOUT>
+  <COMPILE_GUARD result="PASS_STATIC">
+    Thermodynamics no longer imports Hecton8.Physics.Vehicles for reactor heat. Kinematics enter through ReactorKinematicStateDTO in the SHINOBU_337 Vault route.
+  </COMPILE_GUARD>
+  <TIMING_STATUS result="PENDING_PROFILER_PROOF">
+    Exact Burst execution time is not claimed. The current telemetry value is a non-blocking schedule overhead proxy flagged by TelemetryFlagTimingProxy.
+  </TIMING_STATUS>
+  <EDITOR_FACADE result="PASS_STATIC">
+    SubmarineThermodynamicsTunerWindow uses retained UI Toolkit graph rendering via VisualElement.generateVisualContent and Painter2D. Goodall audit P2 tokens are absent in the tuner source.
+  </EDITOR_FACADE>
+  <BUILD_CHECK status="BLOCKED_BY_PROTOCOL">
+    Active dotnet processes were present and CPU sampled at 29.4 percent on 2026-05-23. Generated csproj files still do not include the new SHINOBU_337 Thermodynamics source files, so no dotnet build was launched or claimed as reactor compile proof.
+  </BUILD_CHECK>
+</SELF_AUDIT>

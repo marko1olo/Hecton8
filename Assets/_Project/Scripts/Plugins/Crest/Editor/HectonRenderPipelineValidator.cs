@@ -20,7 +20,7 @@ namespace Hecton8.Editor
     /// <summary>
     /// Enforces URP water/depth requirements and emits hard warnings for renderer features that can destabilize Crest.
     /// </summary>
-    internal static class HectonRenderPipelineValidator
+    public static class HectonRenderPipelineValidator
     {
         private const string ValidateMenuPath = "Hecton/Validation/Graphics/Run Render Pipeline Validator";
         private const string RepairMenuPath = "Hecton/Validation/Graphics/Repair Render Pipeline Assets";
@@ -112,12 +112,12 @@ namespace Hecton8.Editor
             Validate(logSummary: true, applyRepairs: true);
         }
 
-        internal static void RunBatchValidation()
+        public static void RunBatchValidation()
         {
             Validate(logSummary: true, applyRepairs: true);
         }
 
-        internal static void RunBatchWorldValidation()
+        public static void RunBatchWorldValidation()
         {
             if (File.Exists(WorldScenePath))
                 EditorSceneManager.OpenScene(WorldScenePath, OpenSceneMode.Single);

@@ -4,6 +4,18 @@ using Unity.Mathematics;
 
 namespace Hecton8.Input.Determinism
 {
+    internal static class DeterministicInputContractLayout
+    {
+        public const int InputStateStrideBytes = 32;
+        public const int HapticCommandStrideBytes = 16;
+        public const int InputProfileStrideBytes = 64;
+        public const int TelemetryEntryStrideBytes = 64;
+        public const int MockCollisionSignalStrideBytes = 16;
+        public const int MockToolEquipSignalStrideBytes = 16;
+        public const int MockPlayerKinematicsSignalStrideBytes = 32;
+        public const int StateContractStrideBytes = 32;
+    }
+
     [Flags]
     public enum DeterministicInputContractFlags : ushort
     {
@@ -27,7 +39,7 @@ namespace Hecton8.Input.Determinism
     /// Authoritative unmanaged input frame for lockstep, replay, and rollback.
     /// Layout: 0 float2 LookDelta, 8 float2 MoveAxis, 16 uint ButtonMask, 20 uint padding.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.InputStateStrideBytes)]
     public struct InputStateDTO
     {
         [FieldOffset(0)] public float2 LookDelta;
@@ -40,7 +52,7 @@ namespace Hecton8.Input.Determinism
     /// <summary>
     /// Sixteen-byte haptic command consumed by math-only decay evaluators.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.HapticCommandStrideBytes)]
     public struct HapticCommandDTO
     {
         [FieldOffset(0)] public float LowFreqIntensity;
@@ -52,7 +64,7 @@ namespace Hecton8.Input.Determinism
     /// <summary>
     /// Vault-resident deterministic input tuning values. Designers overwrite this through CSV or editor tooling.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.InputProfileStrideBytes)]
     public struct InputProfileDTO
     {
         [FieldOffset(0)] public float InnerDeadzone;
@@ -73,7 +85,7 @@ namespace Hecton8.Input.Determinism
     /// <summary>
     /// Three hundred frame black-box record for input latency and haptic load postmortems.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.TelemetryEntryStrideBytes)]
     public struct InputTelemetryEntryDTO
     {
         [FieldOffset(0)] public double InputSystemTimeSeconds;
@@ -91,7 +103,7 @@ namespace Hecton8.Input.Determinism
         [FieldOffset(56)] private ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.MockCollisionSignalStrideBytes)]
     public struct MockCollisionSignal
     {
         [FieldOffset(0)] public float Magnitude01;
@@ -100,7 +112,7 @@ namespace Hecton8.Input.Determinism
         [FieldOffset(12)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.MockToolEquipSignalStrideBytes)]
     public struct MockToolEquipSignal
     {
         [FieldOffset(0)] public uint ToolHash;
@@ -109,7 +121,7 @@ namespace Hecton8.Input.Determinism
         [FieldOffset(12)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.MockPlayerKinematicsSignalStrideBytes)]
     public struct MockPlayerKinematicsSignal
     {
         [FieldOffset(0)] public double2 AupLocalCell;
@@ -121,7 +133,7 @@ namespace Hecton8.Input.Determinism
     /// <summary>
     /// Cross-assembly ABI for the standardized 60 Hz input tick.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = DeterministicInputContractLayout.StateContractStrideBytes)]
     public struct DeterministicInputStateContract
     {
         [FieldOffset(0)] public uint Frame;

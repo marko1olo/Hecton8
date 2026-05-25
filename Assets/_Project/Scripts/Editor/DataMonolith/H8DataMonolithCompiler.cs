@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace Hecton8.EditorValidation
 {
@@ -33,6 +35,8 @@ namespace Hecton8.EditorValidation
         private const int Utf8ScratchBytes = 2048;
         private const string TempOutputSuffix = ".tmp";
         private const string BackupOutputSuffix = ".bak";
+        private const int MoveFileReplaceExisting = 0x1;
+        private const int MoveFileWriteThrough = 0x8;
 
         internal static string LastError;
 
@@ -75,7 +79,8 @@ namespace Hecton8.EditorValidation
         public static void BakeFromCommandLine()
         {
             bool baked = BakeAll(logSummary: true);
-            bool valid = baked && TryValidateOutputBlob(out string validationError);
+            string validationError = string.Empty;
+            bool valid = baked && TryValidateOutputBlob(out validationError);
             if (!valid && string.IsNullOrEmpty(LastError))
                 LastError = validationError;
 
@@ -222,7 +227,7 @@ namespace Hecton8.EditorValidation
             if (csvFiles.Length == 0)
                 return results;
 
-            int workerCount = Math.Min(csvFiles.Length, Math.Max(1, Environment.ProcessorCount - 1));
+            int workerCount = Math.Min(csvFiles.Length, Math.Max(1, System.Environment.ProcessorCount - 1));
             Task[] workers = new Task[workerCount]; // COLD ALLOC: Task[bounded worker count] - editor-only CSV import workers - owner: H8DataMonolithCompiler
             int nextIndex = -1;
             for (int i = 0; i < workerCount; i++)
@@ -279,13 +284,28 @@ namespace Hecton8.EditorValidation
         private static bool TryWriteValidatedBlob(byte[] blob, out string error)
         {
             error = string.Empty;
-            string tempPath = OutputAssetPath + TempOutputSuffix;
-            string backupPath = OutputAssetPath + BackupOutputSuffix;
+            string uniqueSuffix = "." +
+                                  Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture) +
+                                  "." +
+                                  DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture);
+            string outputPath = Path.GetFullPath(OutputAssetPath);
+            string tempPath = outputPath + uniqueSuffix + TempOutputSuffix;
+            string backupPath = outputPath + uniqueSuffix + BackupOutputSuffix;
 
             try
             {
+                TryDeleteFile(Path.GetFullPath(OutputAssetPath + TempOutputSuffix));
+                TryDeleteFile(Path.GetFullPath(OutputAssetPath + BackupOutputSuffix));
+                TryDeleteStalePromoteFiles(outputPath);
                 TryDeleteFile(tempPath);
                 TryDeleteFile(backupPath);
+                if (File.Exists(outputPath) &&
+                    TryValidateBlobFile(outputPath, out _) &&
+                    TryFileEqualsBytes(outputPath, blob, out _))
+                {
+                    return true;
+                }
+
                 using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                     stream.Write(blob, 0, blob.Length);
 
@@ -295,17 +315,23 @@ namespace Hecton8.EditorValidation
                     return false;
                 }
 
-                if (File.Exists(OutputAssetPath))
+                if (File.Exists(outputPath) &&
+                    TryValidateBlobFile(outputPath, out _) &&
+                    TryFilesEqual(outputPath, tempPath, out _))
                 {
-                    File.Replace(tempPath, OutputAssetPath, backupPath, true);
+                    TryDeleteFile(tempPath);
                     TryDeleteFile(backupPath);
-                }
-                else
-                {
-                    File.Move(tempPath, OutputAssetPath);
+                    return true;
                 }
 
-                if (!TryValidateBlobFile(OutputAssetPath, out error))
+                if (!TryPromoteValidatedBlob(outputPath, tempPath, backupPath, out error))
+                {
+                    TryDeleteFile(tempPath);
+                    TryDeleteFile(backupPath);
+                    return false;
+                }
+
+                if (!TryValidateBlobFile(outputPath, out error))
                     return false;
 
                 return true;
@@ -314,7 +340,306 @@ namespace Hecton8.EditorValidation
             {
                 error = "Atomic output write failed: " + ex.Message;
                 TryDeleteFile(tempPath);
+                TryDeleteFile(backupPath);
                 return false;
+            }
+        }
+
+        private static bool TryPromoteValidatedBlob(string outputPath, string tempPath, string backupPath, out string error)
+        {
+            error = string.Empty;
+            if (!File.Exists(outputPath))
+            {
+                File.Move(tempPath, outputPath);
+                return true;
+            }
+
+            try
+            {
+                Exception lastReplaceException = null;
+                for (int attempt = 0; attempt < 8; attempt++)
+                {
+                    try
+                    {
+                        TryDeleteFile(backupPath);
+                        PrepareWritableFile(outputPath);
+                        PrepareWritableFile(tempPath);
+                        File.Replace(tempPath, outputPath, backupPath, true);
+                        TryDeleteFile(backupPath);
+                        return true;
+                    }
+                    catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                    {
+                        lastReplaceException = ex;
+                        Thread.Sleep(15 * (attempt + 1));
+                    }
+                }
+
+                throw lastReplaceException ?? new IOException("File.Replace failed without a captured exception.");
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                if (TryPromoteWithNativeReplace(outputPath, tempPath, backupPath, out string nativeError))
+                    return true;
+
+                if (TryPromoteWithRecoverableMove(outputPath, tempPath, backupPath, out string moveError))
+                    return true;
+
+                if (TryPromoteWithValidatedCopy(outputPath, tempPath, backupPath, out string copyError))
+                    return true;
+
+                error = "Atomic output promote failed: File.Replace=" + ex.GetType().Name + ": " + ex.Message + "; " + nativeError;
+                if (!string.IsNullOrEmpty(moveError))
+                    error += "; RecoverableMove=" + moveError;
+                if (!string.IsNullOrEmpty(copyError))
+                    error += "; ValidatedCopy=" + copyError;
+                return false;
+            }
+        }
+
+        private static bool TryPromoteWithNativeReplace(string outputPath, string tempPath, string backupPath, out string error)
+        {
+            error = string.Empty;
+            if (System.Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                error = "native replace unavailable on platform " + System.Environment.OSVersion.Platform;
+                return false;
+            }
+
+            try
+            {
+                TryDeleteFile(backupPath);
+                File.Copy(outputPath, backupPath, true);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                error = "backup copy failed: " + ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+
+            PrepareWritableFile(outputPath);
+            PrepareWritableFile(tempPath);
+            if (MoveFileEx(tempPath, outputPath, MoveFileReplaceExisting | MoveFileWriteThrough))
+            {
+                TryDeleteFile(backupPath);
+                return true;
+            }
+
+            int moveError = Marshal.GetLastWin32Error();
+            if (!File.Exists(outputPath) && File.Exists(backupPath))
+                MoveFileEx(backupPath, outputPath, MoveFileReplaceExisting | MoveFileWriteThrough);
+
+            error = "MoveFileExW failed with error " + moveError.ToString(CultureInfo.InvariantCulture);
+            return false;
+        }
+
+        private static bool TryPromoteWithRecoverableMove(string outputPath, string tempPath, string backupPath, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                if (!File.Exists(backupPath))
+                    File.Copy(outputPath, backupPath, true);
+
+                PrepareWritableFile(outputPath);
+                PrepareWritableFile(tempPath);
+                File.Delete(outputPath);
+                File.Move(tempPath, outputPath);
+                TryDeleteFile(backupPath);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                if (!File.Exists(outputPath) && File.Exists(backupPath))
+                {
+                    try
+                    {
+                        File.Move(backupPath, outputPath);
+                    }
+                    catch (Exception restoreEx) when (restoreEx is IOException || restoreEx is UnauthorizedAccessException)
+                    {
+                        error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        private static bool TryPromoteWithValidatedCopy(string outputPath, string tempPath, string backupPath, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                if (!File.Exists(backupPath))
+                    File.Copy(outputPath, backupPath, true);
+
+                PrepareWritableFile(outputPath);
+                PrepareWritableFile(tempPath);
+                File.Copy(tempPath, outputPath, true);
+                if (!TryValidateBlobFile(outputPath, out string validationError))
+                {
+                    TryRestoreBackup(outputPath, backupPath, out string restoreError);
+                    error = "post-copy validation failed: " + validationError;
+                    if (!string.IsNullOrEmpty(restoreError))
+                        error += "; restore failed: " + restoreError;
+                    return false;
+                }
+
+                TryDeleteFile(tempPath);
+                TryDeleteFile(backupPath);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                TryRestoreBackup(outputPath, backupPath, out string restoreError);
+                error = ex.GetType().Name + ": " + ex.Message;
+                if (!string.IsNullOrEmpty(restoreError))
+                    error += "; restore failed: " + restoreError;
+                return false;
+            }
+        }
+
+        private static bool TryRestoreBackup(string outputPath, string backupPath, out string error)
+        {
+            error = string.Empty;
+            if (!File.Exists(backupPath))
+                return false;
+
+            try
+            {
+                PrepareWritableFile(outputPath);
+                File.Copy(backupPath, outputPath, true);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+        }
+
+        private static bool TryFilesEqual(string leftPath, string rightPath, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                FileInfo leftInfo = new FileInfo(leftPath);
+                FileInfo rightInfo = new FileInfo(rightPath);
+                if (leftInfo.Length != rightInfo.Length)
+                    return false;
+
+                byte[] leftBuffer = new byte[8192];
+                byte[] rightBuffer = new byte[8192];
+                using FileStream left = new FileStream(leftPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using FileStream right = new FileStream(rightPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                while (true)
+                {
+                    int leftRead = left.Read(leftBuffer, 0, leftBuffer.Length);
+                    int rightRead = right.Read(rightBuffer, 0, rightBuffer.Length);
+                    if (leftRead != rightRead)
+                        return false;
+
+                    if (leftRead == 0)
+                        return true;
+
+                    for (int i = 0; i < leftRead; i++)
+                    {
+                        if (leftBuffer[i] != rightBuffer[i])
+                            return false;
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+        }
+
+        private static bool TryFileEqualsBytes(string path, byte[] bytes, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                FileInfo info = new FileInfo(path);
+                if (info.Length != bytes.Length)
+                    return false;
+
+                byte[] buffer = new byte[8192];
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                int offset = 0;
+                while (offset < bytes.Length)
+                {
+                    int read = stream.Read(buffer, 0, Math.Min(buffer.Length, bytes.Length - offset));
+                    if (read <= 0)
+                        return false;
+
+                    for (int i = 0; i < read; i++)
+                    {
+                        if (buffer[i] != bytes[offset + i])
+                            return false;
+                    }
+
+                    offset += read;
+                }
+
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                return false;
+            }
+        }
+
+        private static void PrepareWritableFile(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+
+            FileAttributes attributes = File.GetAttributes(path);
+            if ((attributes & FileAttributes.ReadOnly) != 0)
+                File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+        }
+
+        private static void TryDeleteStalePromoteFiles(string outputPath)
+        {
+            string directory = Path.GetDirectoryName(outputPath);
+            string fileName = Path.GetFileName(outputPath);
+            if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName) || !Directory.Exists(directory))
+                return;
+
+            string[] candidates;
+            try
+            {
+                candidates = Directory.GetFiles(directory, fileName + "*");
+            }
+            catch (IOException)
+            {
+                return;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return;
+            }
+
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                string candidate = candidates[i];
+                if (string.Equals(Path.GetFullPath(candidate), outputPath, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string candidateName = Path.GetFileName(candidate);
+                if (!candidateName.StartsWith(fileName + ".", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (candidate.EndsWith(TempOutputSuffix, StringComparison.OrdinalIgnoreCase) ||
+                    candidate.EndsWith(BackupOutputSuffix, StringComparison.OrdinalIgnoreCase))
+                {
+                    TryDeleteFile(candidate);
+                }
             }
         }
 
@@ -323,19 +648,35 @@ namespace Hecton8.EditorValidation
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return;
 
-            try
+            for (int attempt = 0; attempt < 10; attempt++)
             {
-                File.Delete(path);
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
+                try
+                {
+                    FileAttributes attributes = File.GetAttributes(path);
+                    if ((attributes & FileAttributes.ReadOnly) != 0)
+                        File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+
+                    File.Delete(path);
+                    return;
+                }
+                catch (IOException)
+                {
+                    Thread.Sleep(20 * (attempt + 1));
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Thread.Sleep(20 * (attempt + 1));
+                }
+
+                if (!File.Exists(path))
+                    return;
             }
         }
 
-        private static bool TryValidateBlobFile(string path, out string error)
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool MoveFileEx(string existingFileName, string newFileName, int flags);
+
+        internal static bool TryValidateBlobFile(string path, out string error)
         {
             error = string.Empty;
             if (!File.Exists(path))
@@ -364,7 +705,7 @@ namespace Hecton8.EditorValidation
             }
 
             byte[] bytes = new byte[(int)info.Length];
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
             {
                 int total = 0;
                 while (total < bytes.Length)
@@ -387,6 +728,15 @@ namespace Hecton8.EditorValidation
             ushort headerVersion = ReadUInt16(bytes, 4);
             ushort headerBytes = ReadUInt16(bytes, 6);
             ulong checksum = ReadUInt64(bytes, 8);
+            uint headerBlobBytes = ReadUInt32(bytes, 16);
+            uint headerDirectoryOffset = ReadUInt32(bytes, 20);
+            uint headerDirectoryBytes = ReadUInt32(bytes, 24);
+            uint headerSectionTableOffset = ReadUInt32(bytes, 28);
+            uint headerSectionCount = ReadUInt32(bytes, 32);
+            uint headerFlags = ReadUInt32(bytes, 36);
+            uint headerWorldSeed = ReadUInt32(bytes, 40);
+            uint headerAppVersionHash = ReadUInt32(bytes, 44);
+            uint headerSchemaHash = ReadUInt32(bytes, 48);
             if (headerMagic != H8DataLayoutConstants.BlobMagic)
             {
                 error = "Header magic mismatch: 0x" + headerMagic.ToString("X8");
@@ -402,6 +752,28 @@ namespace Hecton8.EditorValidation
             if (headerBytes != H8DataLayoutConstants.HeaderSizeMarker)
             {
                 error = "Header byte-count mismatch: " + headerBytes;
+                return false;
+            }
+
+            uint expectedDirectoryOffset = H8DataLayoutConstants.HeaderSizeBytes;
+            uint expectedDirectoryBytes = H8DataLayoutConstants.DirectorySizeBytes;
+            uint expectedSectionTableOffset = expectedDirectoryOffset + expectedDirectoryBytes;
+            uint expectedSectionTableBytes = (uint)(SectionOrder.Length * UnsafeUtility.SizeOf<H8DataSectionEntry>());
+            if (headerBlobBytes != bytes.Length ||
+                headerDirectoryOffset != expectedDirectoryOffset ||
+                headerDirectoryBytes != expectedDirectoryBytes ||
+                headerSectionTableOffset != expectedSectionTableOffset ||
+                headerSectionCount != SectionOrder.Length ||
+                (headerFlags & H8DataLayoutConstants.BlobFlagLittleEndian) == 0u ||
+                headerSchemaHash != H8DataLayoutConstants.SchemaHash)
+            {
+                error = "Header schema range mismatch: blob=" + headerBlobBytes +
+                        " dirOffset=" + headerDirectoryOffset +
+                        " dirBytes=" + headerDirectoryBytes +
+                        " tableOffset=" + headerSectionTableOffset +
+                        " sections=" + headerSectionCount +
+                        " flags=0x" + headerFlags.ToString("X8") +
+                        " schema=0x" + headerSchemaHash.ToString("X8");
                 return false;
             }
 
@@ -422,6 +794,9 @@ namespace Hecton8.EditorValidation
             uint dataStartOffset = ReadUInt32(bytes, directoryOffset + 20);
             uint localizationOffset = ReadUInt32(bytes, directoryOffset + 24);
             uint localizationBytes = ReadUInt32(bytes, directoryOffset + 28);
+            uint directoryFlags = ReadUInt32(bytes, directoryOffset + 32);
+            uint directoryWorldSeed = ReadUInt32(bytes, directoryOffset + 36);
+            uint directoryAppVersionHash = ReadUInt32(bytes, directoryOffset + 40);
             if (directoryMagic != H8DataLayoutConstants.BlobMagic)
             {
                 error = "Directory magic mismatch: 0x" + directoryMagic.ToString("X8");
@@ -440,11 +815,19 @@ namespace Hecton8.EditorValidation
                 return false;
             }
 
-            uint expectedSectionTableOffset = H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes;
-            uint expectedSectionTableBytes = (uint)(SectionOrder.Length * UnsafeUtility.SizeOf<H8DataSectionEntry>());
             if (sectionTableOffset != expectedSectionTableOffset || sectionTableBytes != expectedSectionTableBytes)
             {
                 error = "Section table range mismatch: offset=" + sectionTableOffset + " bytes=" + sectionTableBytes;
+                return false;
+            }
+
+            if (directoryFlags != headerFlags ||
+                directoryWorldSeed != headerWorldSeed ||
+                directoryAppVersionHash != headerAppVersionHash)
+            {
+                error = "Header/directory identity mismatch: flags=0x" + directoryFlags.ToString("X8") +
+                        " worldSeed=" + directoryWorldSeed +
+                        " appHash=0x" + directoryAppVersionHash.ToString("X8");
                 return false;
             }
 
@@ -454,7 +837,9 @@ namespace Hecton8.EditorValidation
                 return false;
             }
 
-            if (dataStartOffset != sectionTableOffset + sectionTableBytes || (dataStartOffset & 15u) != 0u)
+            uint expectedDataStartOffset = AlignUp(sectionTableOffset + sectionTableBytes, (uint)H8DataLayoutConstants.SectionAlignmentBytes);
+            if (dataStartOffset != expectedDataStartOffset ||
+                (dataStartOffset & ((uint)H8DataLayoutConstants.SectionAlignmentBytes - 1u)) != 0u)
             {
                 error = "Data start offset mismatch or alignment failure: " + dataStartOffset;
                 return false;
@@ -468,6 +853,7 @@ namespace Hecton8.EditorValidation
             }
 
             bool sawLocalization = false;
+            ulong expectedSectionOffset = dataStartOffset;
             for (int i = 0; i < SectionOrder.Length; i++)
             {
                 int entryOffset = (int)sectionTableOffset + (i * UnsafeUtility.SizeOf<H8DataSectionEntry>());
@@ -500,9 +886,9 @@ namespace Hecton8.EditorValidation
                     continue;
                 }
 
-                if ((offset & 15u) != 0u)
+                if ((offset & ((uint)H8DataLayoutConstants.SectionAlignmentBytes - 1u)) != 0u)
                 {
-                    error = expectedId + " section offset is not 16-byte aligned: " + offset;
+                    error = expectedId + " section offset is not " + H8DataLayoutConstants.SectionAlignmentBytes + "-byte aligned: " + offset;
                     return false;
                 }
 
@@ -516,6 +902,19 @@ namespace Hecton8.EditorValidation
                 if ((ulong)offset + sectionBytes > (ulong)bytes.Length)
                 {
                     error = expectedId + " section range exceeds blob length.";
+                    return false;
+                }
+
+                if ((ulong)offset != expectedSectionOffset)
+                {
+                    error = expectedId + " section offset is not canonical: got=" + offset + " expected=" + expectedSectionOffset;
+                    return false;
+                }
+
+                expectedSectionOffset = AlignUp((ulong)offset + sectionBytes, (uint)H8DataLayoutConstants.SectionAlignmentBytes);
+                if (expectedSectionOffset > (ulong)bytes.Length + (uint)H8DataLayoutConstants.SectionAlignmentBytes)
+                {
+                    error = expectedId + " canonical section cursor overflow.";
                     return false;
                 }
 
@@ -555,6 +954,7 @@ namespace Hecton8.EditorValidation
             int sectionTableOffset = H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes;
             int sectionTableBytes = SectionOrder.Length * UnsafeUtility.SizeOf<H8DataSectionEntry>();
             WriteZeros(stream, sectionTableOffset + sectionTableBytes);
+            AlignSection(stream);
 
             for (int i = 0; i < SectionOrder.Length; i++)
             {
@@ -642,8 +1042,9 @@ namespace Hecton8.EditorValidation
                 }
             }
 
-            Align16(stream);
+            AlignSection(stream);
 
+            uint appVersionHash = H8DataHash.ComputeFnv1A32(Application.version.AsSpan());
             H8DataBlobDirectory directory = new H8DataBlobDirectory
             {
                 Magic = H8DataLayoutConstants.BlobMagic,
@@ -652,9 +1053,10 @@ namespace Hecton8.EditorValidation
                 SectionTableOffset = (uint)sectionTableOffset,
                 SectionTableBytes = (uint)sectionTableBytes,
                 BlobBytes = (uint)stream.Length,
-                DataStartOffset = (uint)(sectionTableOffset + sectionTableBytes),
+                DataStartOffset = AlignUp((uint)(sectionTableOffset + sectionTableBytes), (uint)H8DataLayoutConstants.SectionAlignmentBytes),
+                Flags = H8DataLayoutConstants.BlobFlagLittleEndian,
                 WorldSeed = 0u,
-                AppVersionHash = H8DataHash.ComputeFnv1A32(Application.version.AsSpan())
+                AppVersionHash = appVersionHash
             };
 
             for (int i = 0; i < entries.Length; i++)
@@ -681,7 +1083,16 @@ namespace Hecton8.EditorValidation
                 Magic = H8DataLayoutConstants.BlobMagic,
                 FormatVersion = H8DataLayoutConstants.FormatVersion,
                 HeaderBytes = H8DataLayoutConstants.HeaderSizeMarker,
-                Checksum64 = ComputeHash64(blob, H8DataLayoutConstants.HeaderSizeBytes, blob.Length - H8DataLayoutConstants.HeaderSizeBytes)
+                Checksum64 = ComputeHash64(blob, H8DataLayoutConstants.HeaderSizeBytes, blob.Length - H8DataLayoutConstants.HeaderSizeBytes),
+                BlobBytes = (uint)blob.Length,
+                DirectoryOffset = H8DataLayoutConstants.HeaderSizeBytes,
+                DirectoryBytes = H8DataLayoutConstants.DirectorySizeBytes,
+                SectionTableOffset = (uint)sectionTableOffset,
+                SectionCount = (uint)SectionOrder.Length,
+                Flags = H8DataLayoutConstants.BlobFlagLittleEndian,
+                WorldSeed = directory.WorldSeed,
+                AppVersionHash = directory.AppVersionHash,
+                SchemaHash = H8DataLayoutConstants.SchemaHash
             };
 
             WriteHeader(blob, in header);
@@ -2184,7 +2595,7 @@ namespace Hecton8.EditorValidation
         private static H8DataSectionEntry AppendSection<T>(MemoryStream stream, H8DataSectionId sectionId, List<T> records, int recordSize)
             where T : unmanaged
         {
-            Align16(stream);
+            AlignSection(stream);
             uint offset = records.Count > 0 ? (uint)stream.Position : 0u;
             for (int i = 0; i < records.Count; i++)
                 WriteStruct(stream, records[i]);
@@ -2200,7 +2611,7 @@ namespace Hecton8.EditorValidation
 
         private static H8DataSectionEntry AppendLocalizationSection(MemoryStream stream, LocalizationPool localizationPool)
         {
-            Align16(stream);
+            AlignSection(stream);
             byte[] bytes = localizationPool.ToArray();
             uint offset = bytes.Length > 0 ? (uint)stream.Position : 0u;
             stream.Write(bytes, 0, bytes.Length);
@@ -2213,11 +2624,23 @@ namespace Hecton8.EditorValidation
             };
         }
 
-        private static void Align16(MemoryStream stream)
+        private static void AlignSection(MemoryStream stream)
         {
-            long aligned = (stream.Position + 15L) & ~15L;
+            long alignment = H8DataLayoutConstants.SectionAlignmentBytes;
+            long aligned = (stream.Position + (alignment - 1L)) & ~(alignment - 1L);
             while (stream.Position < aligned)
                 stream.WriteByte(0);
+        }
+
+        private static uint AlignUp(uint value, uint alignment)
+        {
+            return (value + (alignment - 1u)) & ~(alignment - 1u);
+        }
+
+        private static ulong AlignUp(ulong value, uint alignment)
+        {
+            ulong mask = alignment - 1UL;
+            return (value + mask) & ~mask;
         }
 
         private static void WriteZeros(MemoryStream stream, int count)
@@ -2238,6 +2661,18 @@ namespace Hecton8.EditorValidation
             WriteUInt16(blob, 4, header.FormatVersion);
             WriteUInt16(blob, 6, header.HeaderBytes);
             WriteUInt64(blob, 8, header.Checksum64);
+            WriteUInt32(blob, 16, header.BlobBytes);
+            WriteUInt32(blob, 20, header.DirectoryOffset);
+            WriteUInt32(blob, 24, header.DirectoryBytes);
+            WriteUInt32(blob, 28, header.SectionTableOffset);
+            WriteUInt32(blob, 32, header.SectionCount);
+            WriteUInt32(blob, 36, header.Flags);
+            WriteUInt32(blob, 40, header.WorldSeed);
+            WriteUInt32(blob, 44, header.AppVersionHash);
+            WriteUInt32(blob, 48, header.SchemaHash);
+            WriteUInt32(blob, 52, header.Reserved0);
+            WriteUInt32(blob, 56, header.Reserved1);
+            WriteUInt32(blob, 60, header.Reserved2);
         }
 
         private static void WriteDirectory(MemoryStream stream, in H8DataBlobDirectory directory)
@@ -2351,7 +2786,7 @@ namespace Hecton8.EditorValidation
             stream.Write(scratch);
         }
 
-        private static ulong ComputeHash64(byte[] bytes, int offset, int count)
+        internal static ulong ComputeHash64(byte[] bytes, int offset, int count)
         {
             fixed (byte* ptr = bytes)
             {

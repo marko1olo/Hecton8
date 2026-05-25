@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using UnityEditor;
 using UnityEngine;
@@ -322,7 +323,7 @@ namespace Hecton8.Optimization.Editor
                     _trackerRows[i].text = "0x" + tracker.AssetHash.ToString("X8") +
                                            " | ref " + tracker.ReferenceCount.ToString() +
                                            " | slot " + tracker.HandlePointer.ToString() +
-                                           " | ttl " + (ttlTenths * 0.1f).ToString("0.0") +
+                                           " | ttl " + (ttlTenths * 0.1f).ToString("0.0", CultureInfo.InvariantCulture) +
                                            " | flags 0x" + flags.ToString("X2");
                     _rowHashes[i] = tracker.AssetHash;
                     _rowRefCounts[i] = tracker.ReferenceCount;

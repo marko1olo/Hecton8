@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using UnityEditor;
@@ -63,13 +64,13 @@ namespace Hecton8.Editor
             }
 
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Global Quality Weight", snapshot.GlobalQualityWeight.ToString("0.000"));
-            EditorGUILayout.LabelField("Last Validation ms", snapshot.LastValidationMs.ToString("0.000"));
-            EditorGUILayout.LabelField("Targets", snapshot.TargetCount.ToString());
-            EditorGUILayout.LabelField("Last Bytes Hashed", snapshot.LastBytesHashed.ToString());
-            EditorGUILayout.LabelField("Last Corrected", snapshot.LastCorrectedCount.ToString());
-            EditorGUILayout.LabelField("Last Fatal", snapshot.LastFatalCount.ToString());
-            EditorGUILayout.LabelField("Modded Mask", "0x" + snapshot.ModdedGameMask.ToString("X8"));
+            EditorGUILayout.LabelField("Global Quality Weight", snapshot.GlobalQualityWeight.ToString("0.000", CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Last Validation ms", snapshot.LastValidationMs.ToString("0.000", CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Targets", snapshot.TargetCount.ToString(CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Last Bytes Hashed", snapshot.LastBytesHashed.ToString(CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Last Corrected", snapshot.LastCorrectedCount.ToString(CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Last Fatal", snapshot.LastFatalCount.ToString(CultureInfo.InvariantCulture));
+            EditorGUILayout.LabelField("Modded Mask", "0x" + snapshot.ModdedGameMask.ToString("X8", CultureInfo.InvariantCulture));
         }
     }
 }

@@ -243,11 +243,11 @@ namespace Hecton8.World
                 return false;
 
             string normalized = value.ToLowerInvariant();
-            return normalized.Contains("leviathan")
-                || normalized.Contains("large_threat")
-                || normalized.Contains("large-threat")
-                || normalized.Contains("apex")
-                || normalized.Contains("macrozone");
+            return normalized.Contains("leviathan", StringComparison.Ordinal)
+                || normalized.Contains("large_threat", StringComparison.Ordinal)
+                || normalized.Contains("large-threat", StringComparison.Ordinal)
+                || normalized.Contains("apex", StringComparison.Ordinal)
+                || normalized.Contains("macrozone", StringComparison.Ordinal);
         }
 
 #if UNITY_EDITOR

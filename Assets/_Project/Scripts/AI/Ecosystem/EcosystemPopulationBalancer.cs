@@ -328,12 +328,14 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             EcosystemPopulationCoefficient coefficient = EcosystemPopulationCoefficient.CreateDefault();
+#if UNITY_EDITOR
             if (TryReadCoefficientJson(out EcosystemCoefficientJson json))
             {
                 coefficient = EcosystemPopulationCoefficient.FromJson(in json);
                 _runtimeFlags &= ~TelemetryFallbackCoefficientsFlag;
             }
             else
+#endif
             {
                 _runtimeFlags |= TelemetryFallbackCoefficientsFlag;
             }
@@ -343,6 +345,7 @@ namespace Hecton8.AI.Ecosystem
             _coefficientsLoaded = true;
         }
 
+#if UNITY_EDITOR
         private static bool TryReadCoefficientJson(out EcosystemCoefficientJson coefficient)
         {
             coefficient = default;
@@ -384,6 +387,7 @@ namespace Hecton8.AI.Ecosystem
 
             return coefficient.PreyCarryingCapacity > 0f;
         }
+#endif
 
         private bool TryBuildSectorState(IDataVault vault, uint frame, out int entityCount, out int totalActiveEntities)
         {
@@ -659,7 +663,7 @@ namespace Hecton8.AI.Ecosystem
                     Intensity01 = math.saturate(cullEvent.Intensity01),
                     Flags = EcologyDeathSignalFlag
                 };
-                SignalBus<EntityDeathSignal>.Push(in signal);
+                SignalBus<EntityDeathSignal>.TryPush(in signal);
             }
 
             bool invalidMath = counters.Length > EcosystemPopulationCounters.InvalidMathRecovered &&
@@ -872,7 +876,7 @@ namespace Hecton8.AI.Ecosystem
                 return false;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AIEcology,

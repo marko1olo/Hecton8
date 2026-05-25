@@ -15,7 +15,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Logistics Sorter Module")]
-    public sealed class LogisticsSorterModule : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent
+    public sealed class LogisticsSorterModule : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent, IGlobalRegistryHotSwapListener
     {
         private const float SlowTickDeltaTime = 0.5f;
         private const int MaxBufferSlots = 8;
@@ -61,6 +61,7 @@ namespace Hecton8.Construction
 
         private PowerNode _powerNode;
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _hasPower = true;
         private readonly ItemData[] _bufferItems = new ItemData[MaxBufferSlots];
         private readonly int[] _bufferQuantities = new int[MaxBufferSlots];
@@ -72,23 +73,26 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
-            _powerNode = GetComponent<PowerNode>();
+            TryGetComponent(out _powerNode);
             ClampBufferSlotCount();
         }
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         public void OnSpawn()
@@ -96,6 +100,7 @@ namespace Hecton8.Construction
             _hasPower = true;
             _debugHasPower = true;
             ClearBufferedState();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -103,8 +108,21 @@ namespace Hecton8.Construction
         {
             ClearBufferedState();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             _hasPower = true;
             _debugHasPower = true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregister();
+            TryRegister();
         }
 
         public void SlowTick()
@@ -211,7 +229,7 @@ namespace Hecton8.Construction
             }
         }
 
-        internal void EjectBufferedContents(BaseModule owner, PlayerInventory inventory, ObjectPoolManager pool, ref Vector3 dropPosition)
+        internal void EjectBufferedContents(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, ref Vector3 dropPosition)
         {
             if (owner == null || _bufferedItemCount <= 0)
                 return;
@@ -241,8 +259,7 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -252,6 +269,23 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private bool TryBufferItem(ItemData item)

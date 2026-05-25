@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -97,12 +98,12 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
                 {
                     VoxelMeshingTelemetryEntry telemetry = buffers.TelemetryRing[math.clamp(cursor, 0, buffers.TelemetryRing.Length - 1)];
                     EditorGUILayout.Space(8f);
-                    EditorGUILayout.LabelField("Last Chunk Hash", telemetry.ChunkHash.ToString("X8"));
-                    EditorGUILayout.LabelField("Vertices", telemetry.VertexCount.ToString());
-                    EditorGUILayout.LabelField("Indices", telemetry.IndexCount.ToString());
-                    EditorGUILayout.LabelField("Estimated Extraction Ms", telemetry.ExtractionComputeTimeMs.ToString("0.000"));
-                    EditorGUILayout.LabelField("Sampling Ratio", telemetry.SamplingRatio.ToString("0.00"));
-                    EditorGUILayout.LabelField("Decimation Ratio", telemetry.DecimationRatio.ToString("0.00"));
+                    EditorGUILayout.LabelField("Last Chunk Hash", telemetry.ChunkHash.ToString("X8", CultureInfo.InvariantCulture));
+                    EditorGUILayout.LabelField("Vertices", telemetry.VertexCount.ToString(CultureInfo.InvariantCulture));
+                    EditorGUILayout.LabelField("Indices", telemetry.IndexCount.ToString(CultureInfo.InvariantCulture));
+                    EditorGUILayout.LabelField("Estimated Extraction Ms", telemetry.ExtractionComputeTimeMs.ToString("0.000", CultureInfo.InvariantCulture));
+                    EditorGUILayout.LabelField("Sampling Ratio", telemetry.SamplingRatio.ToString("0.00", CultureInfo.InvariantCulture));
+                    EditorGUILayout.LabelField("Decimation Ratio", telemetry.DecimationRatio.ToString("0.00", CultureInfo.InvariantCulture));
                 }
             }
 

@@ -233,7 +233,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct HapticPulseSignal : ISignal
+    public struct ModHapticPulseSignal : ISignal
     {
         [FieldOffset(0)] public double3 TargetAUP;
         [FieldOffset(24)] public uint WaveformHash;
@@ -246,7 +246,7 @@ namespace Hecton8.Modding
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct SubtitleCueSignal : ISignal
+    public struct ModSubtitleCueSignal : ISignal
     {
         [FieldOffset(0)] public uint TokenHash;
         [FieldOffset(4)] public float Duration;
@@ -924,6 +924,7 @@ namespace Hecton8.Modding
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryIngestAllowedOpcodesCsv(NativeArray<byte> csvBytes, int byteLength)
         {
             Initialize();
@@ -968,6 +969,7 @@ namespace Hecton8.Modding
             ringState[0] = state;
             return true;
         }
+#endif
 
 #if UNITY_EDITOR
         public static bool TryReloadAllowedOpcodesCsvFromDisk()
@@ -1039,6 +1041,7 @@ namespace Hecton8.Modding
         }
 #endif
 
+#if UNITY_EDITOR
         public static bool TryIngestKernelTuningProfilesCsv(ReadOnlySpan<byte> csvBytes)
         {
             AcquireVaultBuffers();
@@ -1072,6 +1075,7 @@ namespace Hecton8.Modding
 
             return accepted == profileCount;
         }
+#endif
 
         public static void SetRollbackResimulationActive(bool active)
         {
@@ -1164,8 +1168,8 @@ namespace Hecton8.Modding
                 DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,
                 DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,
                 SurvivalWriter = SignalBus<SurvivalOverrideSignal>.ParallelWriter,
-                HapticWriter = SignalBus<HapticPulseSignal>.ParallelWriter,
-                SubtitleWriter = SignalBus<SubtitleCueSignal>.ParallelWriter,
+                HapticWriter = SignalBus<ModHapticPulseSignal>.ParallelWriter,
+                SubtitleWriter = SignalBus<ModSubtitleCueSignal>.ParallelWriter,
                 RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,
                 CameraJuiceImpulses = cameraJuiceImpulses,
                 CameraJuiceState = cameraJuiceState,
@@ -1232,6 +1236,7 @@ namespace Hecton8.Modding
             return ((ulong)hash.y << 32) | hash.x;
         }
 
+#if UNITY_EDITOR
         private static bool TryParseOpcodeCsvLine(NativeArray<byte> bytes, int start, int length, out uint opcodeHash)
         {
             opcodeHash = 0u;
@@ -1532,6 +1537,7 @@ namespace Hecton8.Modding
             opcodeHash = ComputeFnv1A32(token);
             return opcodeHash != 0u;
         }
+#endif
 
         private static bool IsAsciiToken(ReadOnlySpan<byte> token, string literal)
         {
@@ -2427,8 +2433,8 @@ namespace Hecton8.Modding
                 UnsafeUtility.SizeOf<ModSandboxTelemetryEntry>() == 64 &&
                 UnsafeUtility.SizeOf<ModSpawnRequestSignal>() == 64 &&
                 UnsafeUtility.SizeOf<SurvivalOverrideSignal>() == 32 &&
-                UnsafeUtility.SizeOf<HapticPulseSignal>() == 64 &&
-                UnsafeUtility.SizeOf<SubtitleCueSignal>() == 16 &&
+                UnsafeUtility.SizeOf<ModHapticPulseSignal>() == 64 &&
+                UnsafeUtility.SizeOf<ModSubtitleCueSignal>() == 16 &&
                 UnsafeUtility.SizeOf<KernelExecutionTelemetryEntry>() == 64 &&
                 UnsafeUtility.SizeOf<ModCommandKernelOpcodeRecord>() == 16 &&
                 UnsafeUtility.SizeOf<ModKernelTuningProfile>() == 32 &&
@@ -2458,10 +2464,10 @@ namespace Hecton8.Modding
             SignalBus<ModFutureDevNullSignal>.EnsureInitialized();
             SignalBus<SurvivalOverrideSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 64, laneHash: 0x53564F52u);
             SignalBus<SurvivalOverrideSignal>.EnsureInitialized();
-            SignalBus<HapticPulseSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 8, laneHash: 0x48505450u);
-            SignalBus<HapticPulseSignal>.EnsureInitialized();
-            SignalBus<SubtitleCueSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 8, laneHash: 0x53554251u);
-            SignalBus<SubtitleCueSignal>.EnsureInitialized();
+            SignalBus<ModHapticPulseSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 8, laneHash: 0x48505450u);
+            SignalBus<ModHapticPulseSignal>.EnsureInitialized();
+            SignalBus<ModSubtitleCueSignal>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 8, laneHash: 0x53554251u);
+            SignalBus<ModSubtitleCueSignal>.EnsureInitialized();
             SignalBus<ModInteractionRejectedPayload>.Configure(128, maxFrameSignals: 256, lowTierFrameSignals: 32, laneHash: 0x4D52454Au);
             SignalBus<ModInteractionRejectedPayload>.EnsureInitialized();
         }
@@ -2476,7 +2482,7 @@ namespace Hecton8.Modding
             if (vault == null || requiredLength <= 0)
                 return default;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 owner,
@@ -2835,8 +2841,8 @@ namespace Hecton8.Modding
                 DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,
                 DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,
                 SurvivalWriter = SignalBus<SurvivalOverrideSignal>.ParallelWriter,
-                HapticWriter = SignalBus<HapticPulseSignal>.ParallelWriter,
-                SubtitleWriter = SignalBus<SubtitleCueSignal>.ParallelWriter,
+                HapticWriter = SignalBus<ModHapticPulseSignal>.ParallelWriter,
+                SubtitleWriter = SignalBus<ModSubtitleCueSignal>.ParallelWriter,
                 RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,
                 CameraJuiceImpulses = cameraJuiceImpulses,
                 CameraJuiceState = cameraJuiceState,
@@ -3194,8 +3200,8 @@ namespace Hecton8.Modding
             [NoAlias] [WriteOnly] public NativeQueue<MockDamageSignal>.ParallelWriter DamageWriter;
             [NoAlias] [WriteOnly] public NativeQueue<ModFutureDevNullSignal>.ParallelWriter DevNullSignalWriter;
             [NoAlias] [WriteOnly] public NativeQueue<SurvivalOverrideSignal>.ParallelWriter SurvivalWriter;
-            [NoAlias] [WriteOnly] public NativeQueue<HapticPulseSignal>.ParallelWriter HapticWriter;
-            [NoAlias] [WriteOnly] public NativeQueue<SubtitleCueSignal>.ParallelWriter SubtitleWriter;
+            [NoAlias] [WriteOnly] public NativeQueue<ModHapticPulseSignal>.ParallelWriter HapticWriter;
+            [NoAlias] [WriteOnly] public NativeQueue<ModSubtitleCueSignal>.ParallelWriter SubtitleWriter;
             [NoAlias] [WriteOnly] public NativeQueue<ModInteractionRejectedPayload>.ParallelWriter RejectionWriter;
             [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
             public int Count;
@@ -3451,7 +3457,7 @@ namespace Hecton8.Modding
                     return true;
                 }
 
-                HapticWriter.Enqueue(new HapticPulseSignal
+                HapticWriter.Enqueue(new ModHapticPulseSignal
                 {
                     TargetAUP = envelope.TargetAUP,
                     WaveformHash = waveformHash == 0u ? (envelope.ModderSignature ^ FutureCommandOpcodes.HapticPulse) : waveformHash,
@@ -3486,7 +3492,7 @@ namespace Hecton8.Modding
                         : envelope.OpcodeHash,
                     out ModKernelTuningProfile profile);
                 float durationMax = hasProfile ? math.max(0.05f, profile.MaxDurationSeconds) : 30f;
-                SubtitleWriter.Enqueue(new SubtitleCueSignal
+                SubtitleWriter.Enqueue(new ModSubtitleCueSignal
                 {
                     TokenHash = tokenHash,
                     Duration = math.clamp(envelope.PayloadData.y, 0.05f, durationMax),
@@ -3994,7 +4000,7 @@ namespace Hecton8.Modding
             [NoAlias] public NativeArray<ModKernelCameraJuiceImpulse> CameraJuiceImpulses;
             [NoAlias] public NativeArray<ModKernelCameraJuiceState> CameraJuiceState;
             [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
-            [NoAlias] [WriteOnly] public NativeQueue<HapticPulseSignal>.ParallelWriter Output;
+            [NoAlias] [WriteOnly] public NativeQueue<ModHapticPulseSignal>.ParallelWriter Output;
             public int Count;
             public uint Frame;
             public uint RollbackActive;
@@ -4045,7 +4051,7 @@ namespace Hecton8.Modding
                     }
 
                     uint waveformHash = math.asuint(envelope.PayloadData.x);
-                    Output.Enqueue(new HapticPulseSignal
+                    Output.Enqueue(new ModHapticPulseSignal
                     {
                         TargetAUP = envelope.TargetAUP,
                         WaveformHash = waveformHash == 0u ? (envelope.ModderSignature ^ FutureCommandOpcodes.HapticPulse) : waveformHash,
@@ -4107,7 +4113,7 @@ namespace Hecton8.Modding
         {
             [NoAlias] [ReadOnly] public NativeArray<FutureCommandEnvelope> Inputs;
             [NoAlias] [ReadOnly] public NativeArray<ModKernelTuningProfile> KernelProfiles;
-            [NoAlias] [WriteOnly] public NativeQueue<SubtitleCueSignal>.ParallelWriter Output;
+            [NoAlias] [WriteOnly] public NativeQueue<ModSubtitleCueSignal>.ParallelWriter Output;
             public int Count;
             public uint RollbackActive;
 
@@ -4135,7 +4141,7 @@ namespace Hecton8.Modding
                             ? FutureCommandOpcodes.SubtitleCue
                             : envelope.OpcodeHash,
                         out ModKernelTuningProfile profile);
-                    Output.Enqueue(new SubtitleCueSignal
+                    Output.Enqueue(new ModSubtitleCueSignal
                     {
                         TokenHash = math.asuint(envelope.PayloadData.x),
                         Duration = math.clamp(envelope.PayloadData.y, 0.05f, hasProfile ? math.max(0.05f, profile.MaxDurationSeconds) : 30f),

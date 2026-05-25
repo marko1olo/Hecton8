@@ -10,7 +10,7 @@ namespace Hecton8.EditorTools
         [MenuItem("Hecton/Validation/Validate Field Operations Stack")]
         private static void Validate()
         {
-            List<string> issues = new List<string>();
+            List<string> issues = new List<string>(16);
 
             if (Object.FindAnyObjectByType<FieldOperationLogSystem>() == null)
                 issues.Add("FieldOperationLogSystem is missing from the active scene.");

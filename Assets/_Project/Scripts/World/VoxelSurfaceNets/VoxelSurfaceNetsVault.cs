@@ -131,92 +131,92 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return handles.IsCreated();
             }
 
-            handles.Density = vault.GetGenerationHandle<sbyte>(
+            handles.Density = vault.EnsureGenerationHandle<sbyte>(
                 VoxelSurfaceNetsVaultBufferIds.Density,
                 VoxelSurfaceNetsConstants.DensitySampleCount,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Vertices = vault.GetGenerationHandle<VoxelVertexDTO>(
+            handles.Vertices = vault.EnsureGenerationHandle<VoxelVertexDTO>(
                 VoxelSurfaceNetsVaultBufferIds.Vertices,
                 VoxelSurfaceNetsConstants.MaxVertices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Indices = vault.GetGenerationHandle<uint>(
+            handles.Indices = vault.EnsureGenerationHandle<uint>(
                 VoxelSurfaceNetsVaultBufferIds.Indices,
                 VoxelSurfaceNetsConstants.MaxIndices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.CellVertexMap = vault.GetGenerationHandle<int>(
+            handles.CellVertexMap = vault.EnsureGenerationHandle<int>(
                 VoxelSurfaceNetsVaultBufferIds.CellVertexMap,
                 VoxelSurfaceNetsConstants.CellCount,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.States = vault.GetGenerationHandle<ChunkMeshingStateDTO>(
+            handles.States = vault.EnsureGenerationHandle<ChunkMeshingStateDTO>(
                 VoxelSurfaceNetsVaultBufferIds.States,
                 VoxelSurfaceNetsConstants.MaxTrackedChunks,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Tuning = vault.GetGenerationHandle<VoxelMeshingTuningDTO>(
+            handles.Tuning = vault.EnsureGenerationHandle<VoxelMeshingTuningDTO>(
                 VoxelSurfaceNetsVaultBufferIds.Tuning,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetGenerationHandle<VoxelMeshingTelemetryEntry>(
+            handles.TelemetryRing = vault.EnsureGenerationHandle<VoxelMeshingTelemetryEntry>(
                 VoxelSurfaceNetsVaultBufferIds.TelemetryRing,
                 VoxelSurfaceNetsConstants.TelemetryFrames,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
+            handles.TelemetryCursor = vault.EnsureGenerationHandle<int>(
                 VoxelSurfaceNetsVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetGenerationHandle<byte>(
+            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(
                 VoxelSurfaceNetsVaultBufferIds.CsvScratch,
                 VoxelSurfaceNetsConstants.CsvScratchBytes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.SurfaceEdgeMasks = vault.GetGenerationHandle<uint>(
+            handles.SurfaceEdgeMasks = vault.EnsureGenerationHandle<uint>(
                 VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks,
                 VoxelSurfaceNetsConstants.LookupCaseCount,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.RawDebugVertices = vault.GetGenerationHandle<float3>(
+            handles.RawDebugVertices = vault.EnsureGenerationHandle<float3>(
                 VoxelSurfaceNetsVaultBufferIds.RawDebugVertices,
                 VoxelSurfaceNetsConstants.MaxRawDebugVertices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ChunkAabbs = vault.GetGenerationHandle<VoxelSurfaceAabbDTO>(
+            handles.ChunkAabbs = vault.EnsureGenerationHandle<VoxelSurfaceAabbDTO>(
                 VoxelSurfaceNetsVaultBufferIds.ChunkAabbs,
                 VoxelSurfaceNetsConstants.MaxTrackedChunks,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ModifiedSignals = vault.GetGenerationHandle<VoxelSurfaceModifiedSignal>(
+            handles.ModifiedSignals = vault.EnsureGenerationHandle<VoxelSurfaceModifiedSignal>(
                 VoxelSurfaceNetsVaultBufferIds.ModifiedSignals,
                 VoxelSurfaceNetsConstants.MaxModifiedSignals,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Priorities = vault.GetGenerationHandle<VoxelSurfacePriorityDTO>(
+            handles.Priorities = vault.EnsureGenerationHandle<VoxelSurfacePriorityDTO>(
                 VoxelSurfaceNetsVaultBufferIds.Priorities,
                 VoxelSurfaceNetsConstants.MaxTrackedChunks,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.IndirectArgs = vault.GetGenerationHandle<VoxelSurfaceIndirectArgsDTO>(
+            handles.IndirectArgs = vault.EnsureGenerationHandle<VoxelSurfaceIndirectArgsDTO>(
                 VoxelSurfaceNetsVaultBufferIds.IndirectArgs,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.MockDensityConfig = vault.GetGenerationHandle<MockVoxelDensityArray>(
+            handles.MockDensityConfig = vault.EnsureGenerationHandle<MockVoxelDensityArray>(
                 VoxelSurfaceNetsVaultBufferIds.MockDensityConfig,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.PhysicsBakeRequests = vault.GetGenerationHandle<VoxelSurfacePhysicsBakeRequestDTO>(
+            handles.PhysicsBakeRequests = vault.EnsureGenerationHandle<VoxelSurfacePhysicsBakeRequestDTO>(
                 VoxelSurfaceNetsVaultBufferIds.PhysicsBakeRequests,
                 VoxelSurfaceNetsConstants.MaxTrackedChunks,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.HzbTiles = vault.GetGenerationHandle<VoxelSurfaceHzbTileDTO>(
+            handles.HzbTiles = vault.EnsureGenerationHandle<VoxelSurfaceHzbTileDTO>(
                 VoxelSurfaceNetsVaultBufferIds.HzbTiles,
                 VoxelSurfaceNetsConstants.MaxHzbTiles,
                 SystemID.WorldStreaming,
@@ -534,6 +534,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadCsvOverrides(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)
         {
             if (!TryResolveViews(vault, ref handles, out VoxelSurfaceNetsVaultBuffers buffers) ||
@@ -652,6 +653,8 @@ namespace Hecton8.World.VoxelSurfaceNets
 
             return changed;
         }
+
+#endif
 
         public static bool TryDumpBlackBoxOnSlowExtraction(in VoxelSurfaceNetsVaultBuffers buffers, string projectRoot)
         {
@@ -815,6 +818,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             UnsafeUtility.MemClear(ptr, array.Length * UnsafeUtility.SizeOf<T>());
         }
 
+#if UNITY_EDITOR
         private static int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch)
         {
             if (!scratch.IsCreated || string.IsNullOrEmpty(path))
@@ -957,6 +961,8 @@ namespace Hecton8.World.VoxelSurfaceNets
 
             return hash;
         }
+
+#endif
 
         private static uint HashAsciiLiteral(string text)
         {

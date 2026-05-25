@@ -15,7 +15,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Transport Charging Station")]
-    public sealed class TransportChargingStation : MonoBehaviour, ITickable, IUpdatable, IPowerComponent
+    public sealed class TransportChargingStation : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPowerComponent, IGlobalRegistryHotSwapListener
     {
         [Header("-- Docking -------------------------")]
         [Tooltip("Maximum number of simultaneously tracked transports inside this trigger.")]
@@ -48,10 +48,16 @@ namespace Hecton8.Gameplay
         [SerializeField] private Color noPowerColor = new Color(0.18f, 0.05f, 0.05f);
 
         private Collider _triggerCollider;
+        private Transform _cachedTransform;
+        private CachedTriggerVolume _cachedVolume;
         private MaterialPropertyBlock _mpb;
         private IPlayerTransportLifecycleOwner[] _trackedTransports;
         private MonoBehaviour[] _trackedBehaviours;
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
+        private bool _indicatorDirty;
+        private Color _pendingIndicatorColor;
         private bool _hasPower = true;
         private int _activeChargingCount;
         private Color _lastIndicatorColor = new Color(float.MinValue, float.MinValue, float.MinValue, float.MinValue);
@@ -68,8 +74,10 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            _cachedTransform = transform;
             _triggerCollider = GetComponent<Collider>();
             _triggerCollider.isTrigger = true;
+            _cachedVolume = CachedTriggerVolume.FromCollider(_triggerCollider, 2f);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] -- transport charging station emission state -- owner: TransportChargingStation
 
             int capacity = Mathf.Clamp(maxDockedTransports, 1, 16);
@@ -80,6 +88,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
             UpdateIndicators();
         }
@@ -87,37 +96,27 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ClearTrackedTransports();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
-        private void OnTriggerEnter(Collider other)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            if (other == null)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            if (!TryResolveTransportLifecycleOwner(other, out IPlayerTransportLifecycleOwner lifecycleOwner, out MonoBehaviour lifecycleBehaviour))
-                return;
-
-            if (!string.IsNullOrEmpty(requiredTransportTag) && !lifecycleBehaviour.CompareTag(requiredTransportTag))
-                return;
-
-            AddTrackedTransport(lifecycleOwner, lifecycleBehaviour);
-        }
-
-        private void OnTriggerExit(Collider other)
-        {
-            if (other == null)
-                return;
-
-            if (!TryResolveTransportLifecycleOwner(other, out IPlayerTransportLifecycleOwner lifecycleOwner, out MonoBehaviour lifecycleBehaviour))
-                return;
-
-            RemoveTrackedTransport(lifecycleOwner, lifecycleBehaviour);
+            TryUnregister();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         /// <summary>
@@ -125,6 +124,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
+            RefreshTrackedTransportsFromRegistry();
+
             int nextActiveChargingCount = 0;
             if (_hasPower && chargeRatePerSecond > 0f)
             {
@@ -157,6 +158,11 @@ namespace Hecton8.Gameplay
             }
         }
 
+        public void LateFrameTick()
+        {
+            FlushIndicators();
+        }
+
         /// <summary>
         /// Called by the power grid when station power changes.
         /// </summary>
@@ -171,23 +177,91 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void RefreshTrackedTransportsFromRegistry()
+        {
+            for (int i = 0; i < _trackedTransports.Length; i++)
+            {
+                MonoBehaviour behaviour = _trackedBehaviours[i];
+                IPlayerTransportLifecycleOwner owner = _trackedTransports[i];
+                if (owner == null || (object)behaviour == null || behaviour == null ||
+                    !PassesTransportFilter(behaviour) ||
+                    !IsTransportInsideStation(behaviour))
+                {
+                    _trackedTransports[i] = null;
+                    _trackedBehaviours[i] = null;
+                }
+            }
+
+            for (int i = 0; i < PlayerTransportLifecycleRegistry.SlotCapacity; i++)
+            {
+                if (!PlayerTransportLifecycleRegistry.TryGetAt(i, out IPlayerTransportLifecycleOwner owner, out MonoBehaviour behaviour))
+                    continue;
+
+                if (!PassesTransportFilter(behaviour) || !IsTransportInsideStation(behaviour))
+                    continue;
+
+                AddTrackedTransport(owner, behaviour);
+            }
+        }
+
+        private bool PassesTransportFilter(MonoBehaviour lifecycleBehaviour)
+        {
+            return lifecycleBehaviour != null &&
+                   (string.IsNullOrEmpty(requiredTransportTag) || lifecycleBehaviour.CompareTag(requiredTransportTag));
+        }
+
+        private bool IsTransportInsideStation(MonoBehaviour lifecycleBehaviour)
+        {
+            if (lifecycleBehaviour == null)
+                return false;
+
+            Transform transportTransform = lifecycleBehaviour.transform;
+            return transportTransform != null &&
+                   _cachedVolume.Contains(_cachedTransform, transportTransform.position);
         }
 
         private bool TryResolveTransportLifecycleOwner(Collider other, out IPlayerTransportLifecycleOwner lifecycleOwner, out MonoBehaviour lifecycleBehaviour)
@@ -197,8 +271,8 @@ namespace Hecton8.Gameplay
             if (lifecycleOwner != null && lifecycleBehaviour != null)
                 return true;
 
-            PlayerTransportCoordinator transportCoordinator = other.GetComponentInParent<PlayerTransportCoordinator>();
-            if (transportCoordinator != null && transportCoordinator.TryResolveTransportLifecycleOwner(out lifecycleOwner))
+            IPlayerTransportLifecycleResolver transportResolver = other.GetComponentInParent<IPlayerTransportLifecycleResolver>();
+            if (transportResolver != null && transportResolver.TryResolveTransportLifecycleOwner(out lifecycleOwner))
             {
                 lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
                 return lifecycleBehaviour != null;
@@ -270,6 +344,16 @@ namespace Hecton8.Gameplay
                 return;
 
             _lastIndicatorColor = targetColor;
+            _pendingIndicatorColor = targetColor;
+            _indicatorDirty = true;
+        }
+
+        private void FlushIndicators()
+        {
+            if (!_indicatorDirty)
+                return;
+
+            _indicatorDirty = false;
             for (int i = 0; i < statusRenderers.Length; i++)
             {
                 Renderer targetRenderer = statusRenderers[i];
@@ -277,7 +361,7 @@ namespace Hecton8.Gameplay
                     continue;
 
                 targetRenderer.GetPropertyBlock(_mpb);
-                _mpb.SetColor(_EmissionColorID, targetColor);
+                _mpb.SetColor(_EmissionColorID, _pendingIndicatorColor);
                 targetRenderer.SetPropertyBlock(_mpb);
             }
         }

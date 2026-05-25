@@ -7,13 +7,20 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    internal static class TOOLProceduralWreckageGeneratorLayout
+    {
+        public const int GridCellStrideBytes = 16;
+        public const int MeshDataSliceStrideBytes = 16;
+        public const int ModuleDefinitionStrideBytes = 64;
+    }
+
     /// <summary>
     /// Foundational DOD contracts for the procedural wreckage generator mandate.
     /// This file owns blittable template layouts only. Runtime authoring/execution stays in <see cref="ProceduralWreckGenerator"/>.
     /// </summary>
     internal static class TOOL_Procedural_Wreckage_Generator
     {
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = TOOLProceduralWreckageGeneratorLayout.GridCellStrideBytes)]
         internal struct GridCell
         {
             [FieldOffset(0)] public ushort PossibleModuleMask;
@@ -24,7 +31,7 @@ namespace Hecton8.World
             [FieldOffset(12)] private uint _reserved1;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = TOOLProceduralWreckageGeneratorLayout.MeshDataSliceStrideBytes)]
         internal struct MeshDataSlice
         {
             [FieldOffset(0)] public uint VertexStart;
@@ -33,7 +40,7 @@ namespace Hecton8.World
             [FieldOffset(12)] public uint IndexCount;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = TOOLProceduralWreckageGeneratorLayout.ModuleDefinitionStrideBytes)]
         internal struct ModuleDefinition
         {
             [FieldOffset(0)] public MeshDataSlice MeshSlice;

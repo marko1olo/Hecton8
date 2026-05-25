@@ -15,7 +15,7 @@ namespace Hecton8.Interaction
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [AddComponentMenu("Hecton8/Interaction/Heavy Carry Interactable")]
-    public sealed class HeavyCarryInteractable : MonoBehaviour, IInteractable
+    public sealed class HeavyCarryInteractable : MonoBehaviour, IInteractable, IInteractableTextProvider
     {
         private const int MaxParentResolveDepth = 32;
 
@@ -66,6 +66,11 @@ namespace Hecton8.Interaction
             return body != null;
         }
 
+        private void OnEnable()
+        {
+            InteractableRegistry.RegisterTree(this);
+        }
+
         private void OnDisable()
         {
             InteractableRegistry.InvalidateTree(this);
@@ -91,6 +96,11 @@ namespace Hecton8.Interaction
         string IInteractable.GetInteractText()
         {
             return _isBeingDragged ? _cachedReleasePrompt : _cachedIdlePrompt;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(_isBeingDragged ? _cachedReleasePrompt : _cachedIdlePrompt, destination, out length);
         }
 
         private void ResolveCarryBody()

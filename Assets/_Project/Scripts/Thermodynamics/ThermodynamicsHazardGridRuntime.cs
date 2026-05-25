@@ -5,6 +5,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -19,7 +20,7 @@ namespace Hecton8.Thermodynamics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Thermodynamics/Thermodynamics Hazard Grid Runtime")]
-    public sealed unsafe partial class ThermodynamicsHazardGridRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    public sealed unsafe partial class ThermodynamicsHazardGridRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         public const int HighResolution = 32;
         public const int LowResolution = 16;
@@ -57,6 +58,7 @@ namespace Hecton8.Thermodynamics
         private const float CsvPollSeconds = 1f;
         private const float UpdraftThresholdCelsius = 120f;
         private const float DefaultRadiationDecayCoefficient = 0.9975f;
+        private const int ConfigFileStreamBufferBytes = 4096;
         private const int LowTierVisualUploadStride = 4;
         private const int HealthPressureLowTierFrames = 120;
         private const int CsvBufferBytes = 4096;
@@ -65,6 +67,7 @@ namespace Hecton8.Thermodynamics
         private const uint TelemetryFlagLowTier = 1u << 1;
         private const uint TelemetryFlagRebase = 1u << 2;
         private const uint TelemetryFlagHealthPressureLowTier = 1u << 3;
+        private const uint TelemetryFlagSignalDrop = 1u << 4;
         private static readonly int HeatTexturePropertyId = Shader.PropertyToID("_HectonThermoHazardHeatTex3D");
         private static readonly int GridMetaPropertyId = Shader.PropertyToID("_HectonThermoHazardGridMeta");
 
@@ -124,6 +127,7 @@ namespace Hecton8.Thermodynamics
         private int _lastTextureVersion = -1;
         private int _vaultMirrorVersion = -1;
         private int _healthPressureLowTierFrames;
+        private int _droppedSignalCount;
         private uint _simulationFrame;
         private float _tierSwitchTimer;
         private float _decayAccumulator;
@@ -136,7 +140,6 @@ namespace Hecton8.Thermodynamics
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredOriginShift;
-        private bool _registeredScalability;
         private bool _registeredHotSwap;
         private bool _pendingDataVaultRebind;
         private bool _mockSeeded;
@@ -144,10 +147,11 @@ namespace Hecton8.Thermodynamics
         private bool _vaultMirrorRequested;
         private IDataVault _pendingDataVault;
         private uint _shiftSequence;
-        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
 
         /// <summary>True after native buffers are allocated and the runtime is registered.</summary>
         public bool IsInitialized => HasHandle(in _temperatureFront) && HasHandle(in _constants);
+
+        public int DroppedSignalCount => _droppedSignalCount;
 
         private void Awake()
         {
@@ -158,6 +162,7 @@ namespace Hecton8.Thermodynamics
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            _droppedSignalCount = 0;
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             EnsureNativeState();
@@ -268,12 +273,6 @@ namespace Hecton8.Thermodynamics
 
             _pendingRebaseCells += (int3)math.round(shift / safeCellSize);
             _shiftSequence = shiftData.Sequence;
-        }
-
-        /// <inheritdoc />
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedScalabilityTier = payload.CurrentQualityTier;
         }
 
         /// <inheritdoc />
@@ -578,7 +577,9 @@ namespace Hecton8.Thermodynamics
             _entityIds = AcquireBuffer<uint>(VaultEntityIdsBuffer, MaxEntityCount);
             _updraftSignals = AcquireBuffer<ThermalUpdraftSignal>(VaultUpdraftSignalsBuffer, MaxSignalsPerFrame);
             _signalCounters = AcquireBuffer<int>(VaultSignalCountersBuffer, 4);
+#if UNITY_EDITOR
             _csvBytes = AcquireBuffer<byte>(VaultCsvBytesBuffer, CsvBufferBytes);
+#endif
             _binaryConstantBytes = AcquireBuffer<byte>(VaultBinaryConstantBytesBuffer, BinaryConstantsBytes);
             _telemetryRing = AcquireBuffer<ThermodynamicsHazardTelemetryEntry>(VaultTelemetryRingBuffer, TelemetryCapacity);
             _telemetryScratch = AcquireBuffer<ThermodynamicsHazardTelemetryEntry>(VaultTelemetryScratchBuffer, 1);
@@ -598,7 +599,7 @@ namespace Hecton8.Thermodynamics
         private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
         {
             IDataVault vault = EnsureVault();
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 length,
                 MemoryOwner,
@@ -612,7 +613,7 @@ namespace Hecton8.Thermodynamics
         private static bool TryResolveCurrentRuntimeOrigin(out double3 originAup)
         {
             originAup = default;
-            AbsoluteUniversePosition runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!runtimeOriginAup.IsFinite())
                 return false;
 
@@ -813,12 +814,6 @@ namespace Hecton8.Thermodynamics
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
-            if (!_registeredScalability)
-            {
-                ScalabilityEvents.Register(this);
-                _registeredScalability = true;
-            }
-
             if (!_registeredOriginShift)
             {
                 HectonFloatingOrigin.RegisterListener(this);
@@ -852,12 +847,6 @@ namespace Hecton8.Thermodynamics
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
-            }
-
-            if (_registeredScalability)
-            {
-                ScalabilityEvents.Unregister(this);
-                _registeredScalability = false;
             }
 
             if (_registeredOriginShift)
@@ -898,23 +887,12 @@ namespace Hecton8.Thermodynamics
         private float ResolveContinuousQualityWeight()
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
-            float quality = math.isfinite(weight) ? math.saturate(weight) : ResolveFallbackQualityWeight(_cachedScalabilityTier);
+            float quality = math.isfinite(weight) ? math.saturate(weight) : 1f;
             quality = math.min(quality, math.saturate(qualityCeiling));
 
             float pressure01 = math.saturate(_healthPressureLowTierFrames * math.rcp(math.max(1f, HealthPressureLowTierFrames)));
             float pressureCurve = pressure01 * pressure01 * (3f - (2f * pressure01));
             return math.saturate(quality * math.lerp(1f, 0.1f, pressureCurve));
-        }
-
-        private static float ResolveFallbackQualityWeight(HectonQualityTier tier)
-        {
-            if (tier == HectonQualityTier.Ultra)
-                return 1f;
-            if (tier == HectonQualityTier.High)
-                return 0.82f;
-            if (tier == HectonQualityTier.Mid)
-                return 0.55f;
-            return 0.1f;
         }
 
         private void ConsumeSystemHealthSignals()
@@ -1135,8 +1113,11 @@ namespace Hecton8.Thermodynamics
             for (int i = 0; i < updraftCount; i++)
             {
                 ThermalUpdraftSignal signal = updraftSignals[i];
-                if (math.isfinite(signal.TemperatureCelsius))
-                    SignalBus<ThermalUpdraftSignal>.Push(in signal);
+                if (math.isfinite(signal.TemperatureCelsius) &&
+                    !SignalBus<ThermalUpdraftSignal>.TryPush(in signal))
+                {
+                    IncrementDroppedSignalCount();
+                }
             }
         }
 
@@ -1153,10 +1134,18 @@ namespace Hecton8.Thermodynamics
 
             ThermodynamicsHazardTelemetryEntry entry = telemetryScratch[0];
             entry.DiffusionComputeTimeMs = _lastCompleteMs;
+            if (_droppedSignalCount > 0)
+                entry.Flags |= TelemetryFlagSignalDrop;
             telemetryRing[_telemetryWriteIndex % TelemetryCapacity] = entry;
             _telemetryWriteIndex++;
             if ((entry.Flags & TelemetryFlagNaN) != 0u)
                 DumpBlackBox();
+        }
+
+        private void IncrementDroppedSignalCount()
+        {
+            if (_droppedSignalCount < 0x3FFFFFFF)
+                _droppedSignalCount++;
         }
 
         private void UploadVisualTextureIfDirty()
@@ -1220,6 +1209,7 @@ namespace Hecton8.Thermodynamics
             };
         }
 
+#if UNITY_EDITOR
         private void TryReloadCsvOverrides()
         {
             if (!HasHandle(in _csvBytes) || !HasHandle(in _constants))
@@ -1255,6 +1245,7 @@ namespace Hecton8.Thermodynamics
                     cursor++;
             }
         }
+#endif
 
         private static void ApplyCsvValue(uint keyHash, float value, ref ThermodynamicsHazardConstants constants)
         {
@@ -1279,7 +1270,7 @@ namespace Hecton8.Thermodynamics
                     constants.RadiationDecayCoefficient = value;
                     break;
                 case 0xCA7D3E13u:
-                    constants.RadiationDecayCoefficient = math.pow(0.5f, math.rcp(math.max(1f, value)));
+                    constants.RadiationDecayCoefficient = MathLodApproximation.ApproxExpNegPade33Reduced(new float4(0.69314718056f * math.rcp(math.max(1f, value)))).x;
                     break;
             }
         }

@@ -608,48 +608,6 @@ namespace Hecton8.Audio.Virtualization
         private uint _reserved3;
     }
 
-    /// <summary>
-    /// DSP echo tap payload produced from virtual acoustic selections and bridged to sensory systems.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 144)]
-    public partial struct AcousticEchoTap
-    {
-        [FieldOffset(0)]
-        public AcousticAup SourceAup;
-        [FieldOffset(40)]
-        public AcousticAup ListenerAup;
-        [FieldOffset(80)]
-        public float3 Position;
-        [FieldOffset(92)]
-        public float Magnitude;
-        [FieldOffset(96)]
-        public float Volume01;
-        [FieldOffset(100)]
-        public float DelaySeconds;
-        [FieldOffset(104)]
-        public float LowPassCutoffHz;
-        [FieldOffset(108)]
-        public float Rt60Seconds;
-        [FieldOffset(112)]
-        public uint SoundHash;
-        [FieldOffset(116)]
-        public uint SourceId;
-        [FieldOffset(120)]
-        public uint ClipHash;
-        [FieldOffset(124)]
-        public VirtualVoiceDspFlags Flags;
-        [FieldOffset(125)]
-        public byte QualityTier;
-        [FieldOffset(126)]
-        private ushort _reserved0;
-        [FieldOffset(128)]
-        private uint _reserved1;
-        [FieldOffset(132)]
-        private uint _reserved2;
-        [FieldOffset(136)]
-        private uint _reserved3;
-    }
-
     [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct MockAcousticEmitterSignal
     {
@@ -992,6 +950,7 @@ namespace Hecton8.Audio.Virtualization
         }
     }
 
+#if UNITY_EDITOR
     public static class VirtualVoiceProfileCsvParser
     {
         private const byte RowKindGlobalTuning = 1;
@@ -1766,4 +1725,5 @@ namespace Hecton8.Audio.Virtualization
                 value == (byte)'\n';
         }
     }
+#endif
 }

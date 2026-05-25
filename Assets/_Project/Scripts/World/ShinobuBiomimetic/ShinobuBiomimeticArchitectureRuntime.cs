@@ -349,7 +349,7 @@ namespace Hecton8.World.ShinobuBiomimetic
                     BiomeID = 0xA8000000u | (uint)i,
                     MinDepthMeters = 30f,
                     MaxDepthMeters = 900f,
-                    MaxSlopeCos = math.cos(math.radians(maxSlopeDegrees)),
+                    MaxSlopeCos = MathLodApproximation.ApproxCosBhaskara(math.radians(maxSlopeDegrees)),
                     MinClusterSpacingMeters = 2000f,
                     ClusterRadiusMeters = mockBounds.ClearanceRadius + 40f + i * 2f,
                     BoundsIndex = i,
@@ -418,7 +418,8 @@ namespace Hecton8.World.ShinobuBiomimetic
             if (math.lengthsq(forward) < 0.0001f)
             {
                 float yaw = HashToUnit01(seed) * math.PI * 2f;
-                forward = new float3(math.sin(yaw), 0f, math.cos(yaw));
+                MathLodApproximation.ApproxSinCosBhaskara(yaw, out float yawSin, out float yawCos);
+                forward = new float3(yawSin, 0f, yawCos);
             }
 
             forward = math.normalizesafe(forward, new float3(0f, 0f, 1f));
@@ -439,6 +440,17 @@ namespace Hecton8.World.ShinobuBiomimetic
         public static float HashToUnit01(uint hash)
         {
             return (hash & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion RotationYNoTrig(float radians)
+        {
+            MathLodApproximation.ApproxSinCosBhaskara(math.select(0f, radians, math.isfinite(radians)) * 0.5f, out float sinHalf, out float cosHalf);
+            quaternion rotation = new quaternion(0f, sinHalf, 0f, cosHalf);
+            float lenSq = math.lengthsq(rotation.value);
+            return math.isfinite(lenSq) && lenSq > 0.000001f
+                ? new quaternion(rotation.value * math.rsqrt(lenSq))
+                : quaternion.identity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -542,15 +554,11 @@ namespace Hecton8.World.ShinobuBiomimetic
             if (vault == null)
                 return false;
 
-            bool hasPoi = TryOpenExistingWorldStreamingBuffer(vault, PoiTransformsBufferId, 1, out NativeArray<PoiTransformDTO> poiBuffer);
-            if (hasPoi)
-                poiTransforms = poiBuffer.AsReadOnly();
+            bool hasPoi = TryReadExistingWorldStreamingBuffer(vault, PoiTransformsBufferId, 1, out poiTransforms);
 
-            if (TryOpenExistingWorldStreamingBuffer(vault, PoiNarrativeRulesBufferId, 1, out NativeArray<NarrativeBeaconRuleDTO> ruleBuffer))
-                narrativeRules = ruleBuffer.AsReadOnly();
+            TryReadExistingWorldStreamingBuffer(vault, PoiNarrativeRulesBufferId, 1, out narrativeRules);
 
-            if (TryOpenExistingWorldStreamingBuffer(vault, PoiTelemetryRingBufferId, BlackBoxFrameCount, out NativeArray<PoiPlacementTelemetryEntry> telemetryBuffer))
-                telemetryRing = telemetryBuffer.AsReadOnly();
+            TryReadExistingWorldStreamingBuffer(vault, PoiTelemetryRingBufferId, BlackBoxFrameCount, out telemetryRing);
 
             return hasPoi;
         }
@@ -585,7 +593,7 @@ namespace Hecton8.World.ShinobuBiomimetic
             if (vault == null || vault.IsAllocationLocked)
                 return default;
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 length,
                 OwnerSystem,
@@ -612,6 +620,30 @@ namespace Hecton8.World.ShinobuBiomimetic
             return TryOpenWorldStreamingBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
+        private static bool TryReadExistingWorldStreamingBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)OwnerSystem ||
+                handle.Generation == 0u ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
         private static bool TryOpenWorldStreamingBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
@@ -625,7 +657,7 @@ namespace Hecton8.World.ShinobuBiomimetic
                 handle.BufferID != (uint)bufferId ||
                 handle.SystemID != (uint)OwnerSystem ||
                 handle.Generation == 0u ||
-                !vault.TryReadHandle(in handle, out buffer) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -843,11 +875,11 @@ namespace Hecton8.World.ShinobuBiomimetic
             float sectorPhase = ShinobuPoiMath.HashToUnit01(ShinobuPoiMath.ResolveSectorHash(absolute, ShinobuPoiConstants.SectorMeters)) * math.PI * 2f;
             float x = local.x * 0.0031f + sectorPhase;
             float z = local.z * 0.0027f - sectorPhase * 0.37f;
-            float waveA = math.sin(x + (seed & 31u) * 0.17f);
-            float waveB = math.cos(z - ((seed >> 5) & 31u) * 0.11f);
+            float waveA = MathLodApproximation.ApproxSinBhaskara(x + (seed & 31u) * 0.17f);
+            float waveB = MathLodApproximation.ApproxCosBhaskara(z - ((seed >> 5) & 31u) * 0.11f);
             float terrainHeight = -120f + (waveA * 16f) + (waveB * 11f);
-            float dx = 0.0031f * 16f * math.cos(x);
-            float dz = -0.0027f * 11f * math.sin(z);
+            float dx = 0.0031f * 16f * MathLodApproximation.ApproxCosBhaskara(x);
+            float dz = -0.0027f * 11f * MathLodApproximation.ApproxSinBhaskara(z);
             float3 normal = math.normalizesafe(new float3(-dx, 1f, -dz), new float3(0f, 1f, 0f));
             float slope01 = 1f - math.saturate(math.dot(normal, new float3(0f, 1f, 0f)));
             uint hash = HashAup(absolute, seed);
@@ -876,7 +908,8 @@ namespace Hecton8.World.ShinobuBiomimetic
         public static float3 ForceSlopeNormalDegrees(float slopeDegrees)
         {
             float radians = math.radians(math.clamp(slopeDegrees, 0f, 85f));
-            return math.normalizesafe(new float3(math.sin(radians), math.cos(radians), 0f), new float3(0f, 1f, 0f));
+            MathLodApproximation.ApproxSinCosBhaskara(radians, out float sine, out float cosine);
+            return math.normalizesafe(new float3(sine, cosine, 0f), new float3(0f, 1f, 0f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1094,7 +1127,8 @@ namespace Hecton8.World.ShinobuBiomimetic
             if (math.lengthsq(forward) < 0.0001f)
             {
                 float yaw = ((seed & 1023u) / 1023f) * math.PI * 2f;
-                forward = new float3(math.sin(yaw), 0f, math.cos(yaw));
+                MathLodApproximation.ApproxSinCosBhaskara(yaw, out float yawSin, out float yawCos);
+                forward = new float3(yawSin, 0f, yawCos);
             }
 
             forward = math.normalizesafe(forward, new float3(0f, 0f, 1f));
@@ -1372,7 +1406,7 @@ namespace Hecton8.World.ShinobuBiomimetic
 
                 PoiPlacementRuleDTO rule = Rules[i % ruleCount];
                 if (MaxSlopeDegreesOverride > 0f)
-                    rule.MaxSlopeCos = math.cos(math.radians(math.clamp(MaxSlopeDegreesOverride, 1f, 85f)));
+                    rule.MaxSlopeCos = MathLodApproximation.ApproxCosBhaskara(math.radians(math.clamp(MaxSlopeDegreesOverride, 1f, 85f)));
 
                 int boundsIndex = math.clamp(rule.BoundsIndex, 0, math.max(0, boundsCount - 1));
                 StructuralBoundsDTO structuralBounds = boundsCount > 0 ? Bounds[boundsIndex] : default;
@@ -1756,7 +1790,7 @@ namespace Hecton8.World.ShinobuBiomimetic
 
                     DebrisTransforms.AddNoResize(ShinobuPoiMath.CreateTransform(
                         debrisAup,
-                        quaternion.AxisAngle(new float3(0f, 1f, 0f), yaw),
+                        ShinobuPoiMath.RotationYNoTrig(yaw),
                         new float3(scale, math.max(0.04f, scale * 0.08f), scale * 0.55f),
                         debrisPrefab,
                         major.BiomeID,
@@ -1794,8 +1828,8 @@ namespace Hecton8.World.ShinobuBiomimetic
             float z = local.z * 0.0013f;
             float phase = ((seed & 1023u) * 0.006135923f)
                 + ShinobuPoiMath.HashToUnit01(ShinobuPoiMath.ResolveSectorHash(aup, ShinobuPoiConstants.SectorMeters)) * math.PI * 2f;
-            float dPsiDz = -0.00221f * math.sin(z * 1.7f - phase) + 0.0013f * math.cos(x * 0.5f + z + phase);
-            float dPsiDx = 0.0017f * math.cos(x + phase) - 0.00085f * math.sin(x * 0.5f + z + phase);
+            float dPsiDz = -0.00221f * MathLodApproximation.ApproxSinBhaskara(z * 1.7f - phase) + 0.0013f * MathLodApproximation.ApproxCosBhaskara(x * 0.5f + z + phase);
+            float dPsiDx = 0.0017f * MathLodApproximation.ApproxCosBhaskara(x + phase) - 0.00085f * MathLodApproximation.ApproxSinBhaskara(x * 0.5f + z + phase);
             return math.normalizesafe(new float2(dPsiDz, -dPsiDx), new float2(1f, 0f));
         }
 
@@ -2456,8 +2490,7 @@ namespace Hecton8.World.ShinobuBiomimetic
             float invTanX = invTanY / aspect;
             float depthBias = math.max(0f, DepthBiasMeters);
             float quality = math.saturate(GlobalQualityWeight);
-            float highTapGate = math.step(0.3f, quality);
-            int tapCount = 1 + (int)math.floor(ShinobuPoiMath.ResolveQualityCurve(quality) * 4f * highTapGate);
+            int tapCount = 1 + (int)math.floor(ShinobuPoiMath.ResolveQualityCurve(quality) * 4f);
             int visible = 0;
             int culled = 0;
             uint stateHash = ShinobuPoiConstants.SectorHashSeed;

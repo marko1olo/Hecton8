@@ -1,4 +1,5 @@
 using UnityEngine;
+using Hecton8.Core;
 using Hecton8.UI;
 
 namespace Hecton8.PDA
@@ -16,7 +17,7 @@ namespace Hecton8.PDA
             if (playerObject == null)
                 return;
 
-            if (!playerObject.TryGetComponent<PlayerExplorationTracker>(out _))
+            if (!playerObject.TryGetComponent<IPlayerExplorationChunkReadModel>(out _))
                 playerObject.AddComponent<PlayerExplorationTracker>();
 
             if (!playerObject.TryGetComponent<PDALogbookManager>(out _))

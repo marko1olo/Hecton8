@@ -910,7 +910,7 @@ namespace Hecton8.Editor.OfflineGeometry
                     SourceVertexStart = start,
                     SourceVertexCount = triangleIndexCount,
                     MaterialIndex = segment.MaterialIndex,
-                    RendererIndex = segment.Renderer.GetInstanceID(),
+                    RendererIndex = segment.Renderer.GetEntityId().GetHashCode(),
                     StableHash = StableHash(segment.Transform.name),
                     Flags = 0u,
                     RoomRelativeOffset = offset,

@@ -103,7 +103,7 @@ namespace Hecton8.Bootstrap
             RefreshLoreContentStatus();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 $"[LoreSystemsRoot] Validation: {CountFoundSystems()}/{ExpectedSystemCount} systems present. " +
                 $"Missing: {GetMissingSystemsSummary()}. " +
                 $"NarrativeDiscovery placed: {_narrativeDiscoveryCount}. " +
@@ -248,7 +248,7 @@ namespace Hecton8.Bootstrap
             Transform existingChild = transform.Find(goName);
             if (existingChild != null)
             {
-                if (existingChild.GetComponent<T>() == null)
+                if (!existingChild.TryGetComponent<T>(out _))
                 {
 #if UNITY_EDITOR
                     Undo.AddComponent<T>(existingChild.gameObject);

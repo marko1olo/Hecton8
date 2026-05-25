@@ -52,7 +52,7 @@ namespace Hecton8.Core.Bridge.EditorTools
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllText(fullPath, builder.ToString());
+            File.WriteAllText(fullPath, builder.ToString(), new UTF8Encoding(false));
             AssetDatabase.ImportAsset(OutputPath);
             Debug.Log("[H8Bridge] Design facade contracts generated.");
         }

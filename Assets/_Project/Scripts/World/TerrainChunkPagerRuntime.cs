@@ -19,7 +19,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4130)]
-    public unsafe sealed class TerrainChunkPagerRuntime : MonoBehaviour, IFrostTickable, IDisposable
+    public unsafe sealed class TerrainChunkPagerRuntime : MonoBehaviour, IFrostTickable, IDisposable, IGlobalRegistryHotSwapListener
     {
         private const string WorkerName = "H8_Terrain_Pager";
         private const string DefaultChunkRootRelativePath = "Hecton8/TerrainChunks";
@@ -96,7 +96,7 @@ namespace Hecton8.World
 
         private IDataVault _vault;
         private VaultGenerationHandle<ChunkMetadataDTO> _metadataHandle;
-        private VaultGenerationHandle<long2> _sectorCoordsHandle;
+        private VaultGenerationHandle<TerrainChunkSectorCoordDTO> _sectorCoordsHandle;
         private VaultGenerationHandle<byte> _stagingBytesHandle;
         private VaultGenerationHandle<byte> _activeBytesHandle;
         private VaultGenerationHandle<byte> _compressedScratchBytesHandle;
@@ -116,7 +116,7 @@ namespace Hecton8.World
         private VaultGenerationHandle<byte> _telemetryDumpSnapshotBytesHandle;
 
         private ChunkMetadataDTO* _metadataPtr;
-        private long2* _sectorCoordsPtr;
+        private void* _sectorCoordsPtr;
         private byte* _stagingPtr;
         private byte* _activePtr;
         private byte* _compressedScratchPtr;
@@ -176,6 +176,7 @@ namespace Hecton8.World
         private int _registeredPostSimulation;
         private int _registeredVisualSync;
         private int _registeredFrost;
+        private int _registeredHotSwap;
         private int _initialized;
         private int _disposed;
         private int _telemetryCursor;
@@ -277,7 +278,7 @@ namespace Hecton8.World
             return true;
         }
 
-        public static bool TryGetDebugCell(int index, out ChunkMetadataDTO metadata, out long2 sectorCoord, out int count)
+        public static bool TryGetDebugCell(int index, out ChunkMetadataDTO metadata, out TerrainChunkSectorCoordDTO sectorCoord, out int count)
         {
             TerrainChunkPagerRuntime active = s_active;
             if (active == null || active._initialized == 0 || active._metadataPtr == null || active._sectorCoordsPtr == null)
@@ -297,7 +298,7 @@ namespace Hecton8.World
             }
 
             metadata = active._metadataPtr[index];
-            sectorCoord = active._sectorCoordsPtr[index];
+            sectorCoord = UnsafeUtility.ReadArrayElement<TerrainChunkSectorCoordDTO>(active._sectorCoordsPtr, index);
             return true;
         }
 
@@ -489,6 +490,8 @@ namespace Hecton8.World
                 _registeredVisualSync = 1;
             if (_registeredFrost == 0 && GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment))
                 _registeredFrost = 1;
+            if (_registeredHotSwap == 0 && GlobalRegistry.TryRegisterHotSwapListener(this))
+                _registeredHotSwap = 1;
         }
 
         private void UnregisterDispatcher(bool keepVisualSyncForDeferredShutdown)
@@ -516,6 +519,35 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
                 _registeredFrost = 0;
             }
+
+            if (!keepVisualSyncForDeferredShutdown && _registeredHotSwap != 0)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwap = 0;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (_initialized == 0)
+                    _vault = currentService as IDataVault;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                (_initialized == 0 && Volatile.Read(ref _deferredShutdown) == 0))
+            {
+                return;
+            }
+
+            UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
+            RegisterDispatcher();
         }
 
         private void AllocateNativeState()
@@ -571,7 +603,7 @@ namespace Hecton8.World
             IDataVault vault = _vault;
             if (vault != null)
             {
-                handle = vault.GetGenerationHandle<T>(bufferId, math.max(1, length), SystemID.WorldStreaming, options);
+                handle = vault.EnsureGenerationHandle<T>(bufferId, math.max(1, length), SystemID.WorldStreaming, options);
                 if (HasVaultHandle(in handle) &&
                     vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
                     buffer.IsCreated &&
@@ -616,7 +648,7 @@ namespace Hecton8.World
         {
             ResetVaultAliases();
             if (!TryResolveArray(in _metadataHandle, maxChunkSlots, out NativeArray<ChunkMetadataDTO> metadata) ||
-                !TryResolveArray(in _sectorCoordsHandle, maxChunkSlots, out NativeArray<long2> sectorCoords) ||
+                !TryResolveArray(in _sectorCoordsHandle, maxChunkSlots, out NativeArray<TerrainChunkSectorCoordDTO> sectorCoords) ||
                 !TryResolveArray(in _stagingBytesHandle, _chunkSlabByteLength, out NativeArray<byte> stagingBytes) ||
                 !TryResolveArray(in _activeBytesHandle, _chunkSlabByteLength, out NativeArray<byte> activeBytes) ||
                 !TryResolveArray(in _compressedScratchBytesHandle, _compressedSlabByteLength, out NativeArray<byte> compressedScratchBytes) ||
@@ -641,7 +673,7 @@ namespace Hecton8.World
             }
 
             _metadataPtr = (ChunkMetadataDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(metadata);
-            _sectorCoordsPtr = (long2*)NativeArrayUnsafeUtility.GetUnsafePtr(sectorCoords);
+            _sectorCoordsPtr = NativeArrayUnsafeUtility.GetUnsafePtr(sectorCoords);
             _stagingPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(stagingBytes);
             _activePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(activeBytes);
             _compressedScratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(compressedScratchBytes);
@@ -816,6 +848,7 @@ namespace Hecton8.World
 
         private bool TryResolveArray<T>(in VaultGenerationHandle<T> handle, int minLength, out NativeArray<T> buffer) where T : struct
         {
+            buffer = default;
             IDataVault vault = _vault;
             return vault != null &&
                    HasVaultHandle(in handle) &&
@@ -1111,11 +1144,11 @@ namespace Hecton8.World
                 meta.StateFlags = TerrainChunkStateFlags.Loading | TerrainChunkStateFlags.NetcodeExcluded;
                 meta.DistanceSq = request.DistanceSq;
                 _metadataPtr[slot] = meta;
-                _sectorCoordsPtr[slot] = new long2(request.SectorX, request.SectorZ);
+                UnsafeUtility.WriteArrayElement(_sectorCoordsPtr, slot, new TerrainChunkSectorCoordDTO(request.SectorX, request.SectorZ));
                 if (!TryEnqueueWorkerRequest(in request))
                 {
                     _metadataPtr[slot] = default;
-                    _sectorCoordsPtr[slot] = default;
+                    UnsafeUtility.WriteArrayElement(_sectorCoordsPtr, slot, default(TerrainChunkSectorCoordDTO));
                     _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultQueueOverflow;
                     IncrementQueueOverflow();
                     break;
@@ -1160,7 +1193,7 @@ namespace Hecton8.World
                                       ~TerrainChunkStateFlags.Stale;
                     if ((result.Flags & TerrainChunkPagerConstants.ResultFlagMock) != 0u)
                         meta.StateFlags |= TerrainChunkStateFlags.MockPayload;
-                    _sectorCoordsPtr[result.SlotIndex] = new long2(result.SectorX, result.SectorZ);
+                    UnsafeUtility.WriteArrayElement(_sectorCoordsPtr, result.SlotIndex, new TerrainChunkSectorCoordDTO(result.SectorX, result.SectorZ));
                 }
                 else
                 {
@@ -1544,7 +1577,9 @@ namespace Hecton8.World
 
         private static bool ValidateChunkPayloadCrc(byte* payload, int byteCount, uint expectedCrc)
         {
-            return payload != null && byteCount > 0 && H8Crc32.Compute(payload, byteCount) == expectedCrc;
+            return payload != null &&
+                   byteCount > 0 &&
+                   H8Crc32.Compute(new ReadOnlySpan<byte>(payload, byteCount)) == expectedCrc;
         }
 
         private static uint ReverseUInt32(uint value)
@@ -1932,6 +1967,9 @@ namespace Hecton8.World
 
         private void LoadColdStreamingProfile()
         {
+#if !UNITY_EDITOR
+            return;
+#else
             if (!loadCsvProfileOnEnable ||
                 _tuningPtr == null ||
                 _tuningLength == 0 ||
@@ -1994,6 +2032,7 @@ namespace Hecton8.World
             {
                 _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
             }
+#endif
         }
 
         private void RequestTelemetryDumpOnce()
@@ -2249,9 +2288,9 @@ namespace Hecton8.World
                 else
                     Gizmos.color = Color.gray;
 
-                long2 coord = _sectorCoordsPtr[i];
-                float x = (float)(coord.x - _lastCameraSectorX) * sectorSize;
-                float z = (float)(coord.y - _lastCameraSectorZ) * sectorSize;
+                TerrainChunkSectorCoordDTO coord = UnsafeUtility.ReadArrayElement<TerrainChunkSectorCoordDTO>(_sectorCoordsPtr, i);
+                float x = (float)(coord.X - _lastCameraSectorX) * sectorSize;
+                float z = (float)(coord.Z - _lastCameraSectorZ) * sectorSize;
                 Vector3 center = root + new Vector3(x + sectorSize * 0.5f, 0f, z + sectorSize * 0.5f);
                 Gizmos.DrawWireCube(center, size);
             }

@@ -9,7 +9,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Physical Terminal Keyboard")]
-    public sealed class PhysicalTerminalKeyboard : MonoBehaviour, IPanelInteractable, IKinematicTerminalButtonResolver
+    public sealed class PhysicalTerminalKeyboard : MonoBehaviour, IPanelInteractable, IKinematicTerminalButtonResolver, IGlobalRegistryHotSwapListener
     {
         private const int KeyColumnCount = 10;
         private const int KeyRowCount = 4;
@@ -50,9 +50,36 @@ namespace Hecton8.UI
         private float _keyHeight;
         private float _invKeyWidth;
         private float _invKeyHeight;
+        private IAudioService _cachedAudioService;
         private bool _layoutCached;
+        private bool _hotSwapListenerRegistered;
 
         public int TextLength => _textLength;
+
+        private void OnEnable()
+        {
+            _cachedAudioService = GlobalRegistry.Audio;
+            TryRegisterHotSwapListener();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                _cachedAudioService = currentService as IAudioService;
+        }
 
         public void ReceiveCanvasInput(in DiegeticPanelInputEvent inputEvent)
         {
@@ -76,7 +103,7 @@ namespace Hecton8.UI
 
             if (emitPressHaptics)
             {
-                ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                     0.04f,
                     0.22f,
                     0.05f,
@@ -171,7 +198,7 @@ namespace Hecton8.UI
 
         private void QueuePressAudio()
         {
-            IAudioService audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            IAudioService audio = _cachedAudioService;
             if (!emitPressAudio || pressAudioEventId == 0u || audio == null || !audio.IsInitialized)
                 return;
 
@@ -185,6 +212,23 @@ namespace Hecton8.UI
                 math.saturate(pressAudioVolume),
                 math.clamp(pressAudioPitch, 0.25f, 2.5f));
             audio.QueueAudioEvent(in audioEvent);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
 #if UNITY_EDITOR

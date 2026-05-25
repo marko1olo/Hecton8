@@ -1,4 +1,4 @@
-# HECTON-8 Mod Payload Layout Audit Matrix
+﻿# HECTON-8 Mod Payload Layout Audit Matrix
 
 Date: 2026-05-19
 Status: ENVELOPE-ONLY STATIC SOURCE AUDIT / PENDING RUNTIME VERIFICATION

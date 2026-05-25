@@ -19,7 +19,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(20)] public uint Flags;
         [FieldOffset(24)] public int BufferId;
         [FieldOffset(28)] public int ByteLength;
-        [FieldOffset(32)] public ulong TargetMemoryPointer;
+        [FieldOffset(32)] public ulong TargetMemoryFingerprint;
         [FieldOffset(40)] public ulong FullHash64;
         [FieldOffset(48)] public float Severity01;
         [FieldOffset(52)] public float GlobalQualityWeight;
@@ -41,7 +41,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(20)] public int ByteOffset;
         [FieldOffset(24)] public int ByteLength;
         [FieldOffset(28)] public uint Flags;
-        [FieldOffset(32)] public ulong TargetMemoryPointer;
+        [FieldOffset(32)] public ulong TargetMemoryFingerprint;
         [FieldOffset(40)] public ulong SourceLogicHash;
         [FieldOffset(48)] public ulong _pad0;
         [FieldOffset(56)] public ulong _pad1;
@@ -58,7 +58,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(20)] public int BufferId;
         [FieldOffset(24)] public int ByteLength;
         [FieldOffset(28)] public int RollbackByteOffset;
-        [FieldOffset(32)] public ulong TargetMemoryPointer;
+        [FieldOffset(32)] public ulong TargetMemoryFingerprint;
         [FieldOffset(40)] public ulong _pad0;
         [FieldOffset(48)] public ulong _pad1;
         [FieldOffset(56)] public ulong _pad2;

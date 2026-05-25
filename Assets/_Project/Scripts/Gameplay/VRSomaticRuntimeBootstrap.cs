@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    internal sealed class VRSomaticRuntimeBootstrap : MonoBehaviour, ISlowTickable, IGameBootstrapperEventListener
+    internal sealed class VRSomaticRuntimeBootstrap : MonoBehaviour, ISlowTickable, IGameBootstrapperEventListener, IGlobalRegistryHotSwapListener
     {
         private const string RuntimeOwnerName = "[VRSomaticRuntimeBootstrap]";
         private const string DecoupledRootName = "VR_Somatic_DecoupledRoot";
@@ -24,6 +24,7 @@ namespace Hecton8.Gameplay
         private bool _createdFlareSocketTransform;
         private bool _registeredSlowTick;
         private bool _registeredBootstrap;
+        private bool _hotSwapRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -95,6 +96,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _runtime = this;
+            TryRegisterHotSwapListener();
             TryRegisterBootstrap();
             if (!HectonXRRuntimeState.IsXRActive)
             {
@@ -116,11 +118,40 @@ namespace Hecton8.Gameplay
             }
 
             TryUnregisterSlowTick();
+            TryUnregisterHotSwapListener();
             TryUnregisterBootstrap();
             if (ReferenceEquals(_runtime, this))
                 _runtime = null;
 
             ClearBoundSocketState();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null && _registeredSlowTick)
+                {
+                    TryUnregisterSlowTick();
+                    TryRegisterSlowTick();
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player && HectonXRRuntimeState.IsXRActive)
+            {
+                if (TryResolveAndBindProvider(true))
+                    TryUnregisterSlowTick();
+                else
+                    TryRegisterSlowTick();
+            }
         }
 
         public void SlowTick()
@@ -168,6 +199,23 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registeredSlowTick = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void TryRegisterBootstrap()

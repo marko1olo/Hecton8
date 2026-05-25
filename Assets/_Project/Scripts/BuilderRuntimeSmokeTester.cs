@@ -10,6 +10,7 @@ using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Dev
@@ -43,6 +44,8 @@ namespace Hecton8.Dev
 
         // COLD ALLOC: int[32] - build-cost inventory snapshot reused by builder smoke pass - owner: BuilderRuntimeSmokeTester
         private readonly int[] _buildCostCountSnapshot = new int[BuildCostSnapshotCapacity];
+        // COLD ALLOC: SpatialQueryHit[7] - registered placement probe scratch - owner: BuilderRuntimeSmokeTester
+        private readonly SpatialQueryHit[] _placementProbeHits = new SpatialQueryHit[PlacementCandidateCount];
         private bool _isRunning;
         private float _nextWaitHeartbeatAt;
 
@@ -215,7 +218,7 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     $"[BuilderSmoke] PASS buildable={buildable.moduleName} registry={moduleCountBefore}->{moduleCountAfterDeploy}->{moduleCountAfterRecover}");
             }
             catch (System.OperationCanceledException)
@@ -230,13 +233,13 @@ namespace Hecton8.Dev
         private void AutoResolveSceneReferences()
         {
             if (playerBuilder == null)
-                playerBuilder = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerBuilder : null);
+                playerBuilder = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.PlayerBuilder : null);
 
             if (constructionManager == null)
                 constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
 
             if (playerInventory == null)
-                playerInventory = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory : null);
+                playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
 
             if (loadoutProvisioner == null)
                 loadoutProvisioner = ToolLoadoutProvisioner.ActiveRuntimeInstance;
@@ -258,7 +261,7 @@ namespace Hecton8.Dev
                 if (verboseLogging && Time.realtimeSinceStartup >= _nextWaitHeartbeatAt)
                 {
                     float remaining = Mathf.Max(0f, endAt - Time.realtimeSinceStartup);
-                    Debug.Log($"[BuilderSmoke] WAIT_HEARTBEAT phase={phase} remaining={remaining:0.00}s");
+                    Hecton8.Core.H8Debug.Log($"[BuilderSmoke] WAIT_HEARTBEAT phase={phase} remaining={remaining:0.00}s");
                     _nextWaitHeartbeatAt = Time.realtimeSinceStartup + 0.25f;
                 }
 
@@ -277,7 +280,11 @@ namespace Hecton8.Dev
 
             if (playerBuilder != null)
             {
-                Camera playerCamera = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera : playerBuilder.GetComponent<Camera>());
+                Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
+                    ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                    : null;
+                if (playerCamera == null)
+                    playerBuilder.TryGetComponent(out playerCamera);
                 reference = playerCamera != null ? playerCamera.transform : playerBuilder.transform;
             }
 
@@ -285,7 +292,11 @@ namespace Hecton8.Dev
                 GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                Camera playerCamera = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera : playerTransform.GetComponent<Camera>());
+                Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
+                    ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                    : null;
+                if (playerCamera == null)
+                    playerTransform.TryGetComponent(out playerCamera);
                 reference = playerCamera != null ? playerCamera.transform : playerTransform;
             }
 
@@ -310,7 +321,7 @@ namespace Hecton8.Dev
             for (int i = 0; i < PlacementCandidateCount; i++)
             {
                 Vector3 candidate = basePos + ResolvePlacementOffset(i, right, forward);
-                if (!UnityEngine.Physics.CheckSphere(candidate, 0.75f, Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask, QueryTriggerInteraction.Ignore))
+                if (!IsPlacementCandidateBlocked(candidate, 0.75f))
                 {
                     position = candidate;
                     return true;
@@ -319,6 +330,42 @@ namespace Hecton8.Dev
 
             position = basePos;
             return true;
+        }
+
+        private bool IsPlacementCandidateBlocked(Vector3 candidate, float radius)
+        {
+            const SpatialTargetKind kindMask =
+                SpatialTargetKind.Resource |
+                SpatialTargetKind.Bioform |
+                SpatialTargetKind.Pickup |
+                SpatialTargetKind.Scannable |
+                SpatialTargetKind.Module;
+
+            float safeRadius = Mathf.Max(0.1f, radius);
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(candidate, safeRadius, kindMask, _placementProbeHits);
+            if (hitCount <= 0)
+                return false;
+
+            int layerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+            float radiusSq = safeRadius * safeRadius;
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                SpatialQueryHit hit = _placementProbeHits[hitIndex];
+                _placementProbeHits[hitIndex] = default;
+
+                if (!LayerMatchesMask(hit.Layer, layerMask))
+                    continue;
+
+                if (hit.DistanceSqr <= radiusSq)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool LayerMatchesMask(int layer, int mask)
+        {
+            return layer >= 0 && layer < 32 && (mask & (1 << layer)) != 0;
         }
 
         private BaseModule ResolveLastSpawnedModule()
@@ -412,7 +459,7 @@ namespace Hecton8.Dev
             if (!verboseLogging)
                 return;
 
-            Debug.Log($"[BuilderSmoke] {message}");
+            Hecton8.Core.H8Debug.Log($"[BuilderSmoke] {message}");
         }
     }
 }

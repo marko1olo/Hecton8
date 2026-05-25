@@ -1,4 +1,4 @@
-# HECTON-8 Post Bank And Hook Library
+﻿# HECTON-8 Post Bank And Hook Library
 
 Status: pre-asset copy bank / do not post without `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`; public links require `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`
 Public stance: single-player-first scope / proof-first post copy
@@ -135,6 +135,92 @@ Use these only in communities that permit developer posts or critique requests.
 18. What should a deep-sea survival game never fake?
 19. Does this clip feel scary because of the system or just the lighting?
 20. Which screenshot belongs first on Steam?
+
+## Imageboard No-Link Critique Hooks
+
+Use only in board/thread contexts that permit developer WIP critique. No Steam link, no Discord link, no signup, no wishlist ask, no fake-player tone. The post must identify the exact thing to judge.
+
+### 4chan / English Hooks
+
+1. WIP underwater survival clip. Does the player decision read, or is it just dark water?
+2. Testing whether this machine looks functional or decorative. What breaks first?
+3. Does this read as pressure failure, power failure, or random sci-fi noise?
+4. Is the sonar cue readable before the visual reveal?
+5. Does the frame say "industrial depth" or "generic Subnautica-like"?
+6. I need the harsh read: what tells you the base is a pressure vessel?
+7. Does this salvage route look like a decision, or just loot sparkle?
+8. Which cue is missing: gauge, sound, silhouette, route, or tool?
+9. Is the threat readable enough to react to, or only visible after the caption?
+10. Does this look authored or like AI/concept-art slop?
+11. Does the heavy movement read as mechanical weight or just clunk?
+12. What would make this failure feel fair instead of scripted?
+13. Does the Seed Ship effect look like systemic interference or random glow?
+14. Does this shot survive without lore?
+15. Would you know whether to repair, retreat, seal, reroute, or continue?
+
+### Dvach / Russian Hooks
+
+1. WIP-кадр подводного survival horror. Считывается решение игрока или просто темная вода?
+2. Нужен жесткий разбор: машина выглядит функциональной или декоративной?
+3. Это читается как авария давления, проблема питания или случайный sci-fi шум?
+4. Сонарный сигнал понятен до визуального контакта?
+5. Кадр дает "индустриальную глубину" или обычный Subnautica-like?
+6. Что первым говорит, что база это сосуд под давлением?
+7. Маршрут за лутом выглядит как решение или как подсветка мусора?
+8. Чего не хватает: прибор, звук, силуэт, маршрут или инструмент?
+9. Угроза читается достаточно рано, чтобы реагировать?
+10. Это выглядит как билд или как нейро-концепт?
+11. Тяжелое движение читается как масса или как кривой контроллер?
+12. Что сделает аварию честной, а не скриптовой?
+13. Эффект Seed Ship выглядит как вмешательство системы или просто свечение?
+14. Кадр выживает без лора?
+15. Понятно, что делать: чинить, отступать, герметизировать, обходить или продолжать риск?
+
+### Imageboard Asset Pairing Matrix
+
+| Asset type | Best hook | Must be visible | Kill if comments say |
+|---|---|---|---|
+| Pressure room still | "pressure vessel" critique | gauges, seals, warning light, route/door, failure clue | "clean sci-fi room", "what does this do?" |
+| Salvage still | "decision or loot sparkle" critique | tool, target, hazard, return route | "generic loot", "no player action" |
+| Sonar clip | "sonar cue before reveal" critique | ping/state change, delayed visual, player response | "random UI", "monster jumpscare only" |
+| Machinery clip | "functional or decorative" critique | moving part, state change, consequence | "asset-store prop", "animation only" |
+| Threat silhouette | "reactable threat" critique | scale cue, light cone, escape/scan/route option | "terrain", "nothing to do" |
+| Seed Ship anomaly | "systemic interference" critique | instrument corruption plus world response | "random glow", "needs lore" |
+| Low-spec capture | internal only | same nouns as high capture with cheap visual route | any attempt to use it as FPS proof |
+
+### Imageboard Posting Sequence
+
+One surface, one asset, one question.
+
+```text
+Post:
+- direct media
+- one-sentence project boundary
+- one exact critique question
+- no external link
+
+First reply window:
+- answer one scope question
+- answer one source/build question
+- ask one clarification if a useful critique appears
+
+Exit:
+- summarize one concrete takeaway
+- stop replying
+- revise asset/template
+```
+
+### Imageboard Hook Kill Rules
+
+Kill or rewrite the hook if:
+
+- the first line reads like a sales pitch;
+- the word "wishlist" appears;
+- the Steam/Discord/signup route is needed to understand the post;
+- the hook mentions competitor pain;
+- the hook mentions AI agents before someone asks;
+- the hook asks "do you like this?" instead of a narrow readability question;
+- the media cannot answer the question by itself.
 
 ## Steam Announcement Titles
 

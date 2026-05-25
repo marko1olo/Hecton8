@@ -273,17 +273,17 @@ namespace Hecton8.Core.Contracts.Signals
             }
 
             _vault = vault;
-            _profilesHandle = vault.GetGenerationHandle<SignalTuningProfile>(
+            _profilesHandle = vault.EnsureGenerationHandle<SignalTuningProfile>(
                 ProfileBufferId,
                 MaxProfiles,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            _countHandle = vault.GetGenerationHandle<int>(
+            _countHandle = vault.EnsureGenerationHandle<int>(
                 ProfileCountBufferId,
                 1,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 CsvScratchBufferId,
                 CsvScratchBytes,
                 SystemID.CoreDiagnostics,
@@ -301,6 +301,7 @@ namespace Hecton8.Core.Contracts.Signals
             UpsertProfile(ComputeLabelHash(nameof(CombatDamageSignal)), 16, 128, DefaultCoalescingRadiusMeters, 100);
         }
 
+#if UNITY_EDITOR
         /// <summary>Reads editor CSV bytes into owner scratch and exposes only a span to the parser.</summary>
         public static unsafe bool TryReadCsvBytesForLoad(string path, out ReadOnlySpan<byte> bytes)
         {
@@ -367,6 +368,7 @@ namespace Hecton8.Core.Contracts.Signals
             scratch = csvScratch;
             return true;
         }
+#endif
 
         /// <summary>Reads a tuning profile by stable lane hash without touching GlobalRegistry.</summary>
         public static bool TryGetProfile(uint laneHash, out SignalTuningProfile profile)
@@ -445,15 +447,15 @@ namespace Hecton8.Core.Contracts.Signals
             profiles = default;
             count = 0;
             if (vault == null ||
-                !vault.TryResolveHandle(in _profilesHandle, out NativeArray<SignalTuningProfile> profileArray) ||
-                !vault.TryResolveHandle(in _countHandle, out NativeArray<int> countArray) ||
+                !vault.TryReadOnlyHandle(in _profilesHandle, out NativeArray<SignalTuningProfile>.ReadOnly profileArray) ||
+                !vault.TryReadOnlyHandle(in _countHandle, out NativeArray<int>.ReadOnly countArray) ||
                 profileArray.Length < MaxProfiles ||
                 countArray.Length < 1)
             {
                 return false;
             }
 
-            profiles = profileArray.AsReadOnly();
+            profiles = profileArray;
             count = math.clamp(countArray[0], 0, math.min(MaxProfiles, profileArray.Length));
             return true;
         }
@@ -512,6 +514,7 @@ namespace Hecton8.Core.Contracts.Signals
         }
     }
 
+#if UNITY_EDITOR
     /// <summary>
     /// Editor/source-data parser for signal_tuning_profiles.csv.
     /// Expected columns: signal,min_frame,max_frame,coalescing_radius,priority.
@@ -725,6 +728,7 @@ namespace Hecton8.Core.Contracts.Signals
             return math.isfinite(value);
         }
     }
+#endif
 
     /// <summary>
     /// Fixed black-box row for signal-bus throughput snapshots. Size: 64 bytes.
@@ -783,12 +787,12 @@ namespace Hecton8.Core.Contracts.Signals
             }
 
             _vault = vault;
-            _ringHandle = vault.GetGenerationHandle<SignalTelemetryFrame>(
+            _ringHandle = vault.EnsureGenerationHandle<SignalTelemetryFrame>(
                 SignalTelemetryRingBufferId,
                 Capacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _cursorHandle = vault.GetGenerationHandle<int>(
+            _cursorHandle = vault.EnsureGenerationHandle<int>(
                 SignalTelemetryCursorBufferId,
                 1,
                 OwnerSystemId,
@@ -813,7 +817,7 @@ namespace Hecton8.Core.Contracts.Signals
             _initialized = 0;
         }
 
-        /// <summary>Writes one black-box row. Call cadence is owned by GlobalSignals.</summary>
+        /// <summary>Writes one black-box row. Call cadence is owned by the signal corridor.</summary>
         public static void ReportFrame(
             int frame,
             int totalPushedSignals,
@@ -1131,7 +1135,15 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(36)] public float Intensity01;
         [FieldOffset(40)] public uint EntityId;
         [FieldOffset(44)] public uint Frame;
-        [FieldOffset(48)] public FixedString64Bytes SurfaceName;
+        [FieldOffset(48)] public uint SurfaceHash;
+        [FieldOffset(52)] private uint _surfacePad0;
+        [FieldOffset(56)] private ulong _surfacePad1;
+        [FieldOffset(64)] private ulong _surfacePad2;
+        [FieldOffset(72)] private ulong _surfacePad3;
+        [FieldOffset(80)] private ulong _surfacePad4;
+        [FieldOffset(88)] private ulong _surfacePad5;
+        [FieldOffset(96)] private ulong _surfacePad6;
+        [FieldOffset(104)] private ulong _surfacePad7;
         [FieldOffset(112)] public byte Flags;
         [FieldOffset(113)] private byte _pad0;
         [FieldOffset(114)] private byte _pad1;
@@ -1344,7 +1356,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(56)] public ulong Reserved2;
     }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
     /// <summary>Cold boot layout guard for SHINOBU_200 cache-line DTO contracts.</summary>
     public static class SignalThreadContentionLayoutGuard
     {
@@ -1508,7 +1520,7 @@ namespace Hecton8.Core.Contracts.Signals
         // The invariant is MaxThreadCount <= 64, ThreadStrideBytes fixed for the frame, and one thread index writes one
         // slice only. SignalThreadLocalCommitJob reads the previous buffer after the producer dependency, never while
         // this writer mutates Bytes.
-        [NativeDisableParallelForRestriction] public NativeArray<byte> Bytes;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> Bytes;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // Headers is indexed by the sanitized worker thread index. Unity cannot prove that each producer writes only
         // its own 64-byte SignalThreadLocalHeader64 row, so the safety system treats the shared NativeArray as aliased.
@@ -1519,7 +1531,7 @@ namespace Hecton8.Core.Contracts.Signals
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Each header row is 64 bytes and maps one-to-one with the worker index. Producer jobs write only their own row;
         // commit and telemetry read Headers only after the scheduled producer handle is complete.
-        [NativeDisableParallelForRestriction] public NativeArray<SignalThreadLocalHeader64> Headers;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SignalThreadLocalHeader64> Headers;
         public int ThreadStrideBytes;
         public int ActivePayloadBytesPerThread;
         public int MaxThreadCount;
@@ -2322,26 +2334,26 @@ namespace Hecton8.Core.Contracts.Signals
                 _initialized = 0;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!SignalThreadContentionLayoutGuard.Validate())
                 return false;
 #endif
 
             _vault = vault;
             int byteCapacity = (MaxThreadCount * MaxThreadStrideBytes) + 64;
-            _frontBytesHandle = vault.GetGenerationHandle<byte>(FrontBytesBufferId, byteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _backBytesHandle = vault.GetGenerationHandle<byte>(BackBytesBufferId, byteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _frontHeadersHandle = vault.GetGenerationHandle<SignalThreadLocalHeader64>(FrontHeadersBufferId, MaxThreadCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _backHeadersHandle = vault.GetGenerationHandle<SignalThreadLocalHeader64>(BackHeadersBufferId, MaxThreadCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _committedSignalsHandle = vault.GetGenerationHandle<SignalWardenMockDamageSignal>(CommittedSignalsBufferId, MaxCommittedSignals, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _committedCountHandle = vault.GetGenerationHandle<int>(CommittedCountBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetGenerationHandle<SignalThreadContentionTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _telemetryCursorHandle = vault.GetGenerationHandle<int>(TelemetryCursorBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _tuningHandle = vault.GetGenerationHandle<SignalThreadContentionTuning64>(TuningBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _coalescenceBucketsHandle = vault.GetGenerationHandle<int>(CoalescenceBucketsBufferId, MaxCommittedSignals * 2, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _overflowSignalsHandle = vault.GetGenerationHandle<SignalWardenMockDamageSignal>(OverflowSignalsBufferId, MaxOverflowSignals, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _overflowHeaderHandle = vault.GetGenerationHandle<SignalThreadOverflowHeader64>(OverflowHeaderBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(CsvScratchBufferId, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _frontBytesHandle = vault.EnsureGenerationHandle<byte>(FrontBytesBufferId, byteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _backBytesHandle = vault.EnsureGenerationHandle<byte>(BackBytesBufferId, byteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _frontHeadersHandle = vault.EnsureGenerationHandle<SignalThreadLocalHeader64>(FrontHeadersBufferId, MaxThreadCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _backHeadersHandle = vault.EnsureGenerationHandle<SignalThreadLocalHeader64>(BackHeadersBufferId, MaxThreadCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _committedSignalsHandle = vault.EnsureGenerationHandle<SignalWardenMockDamageSignal>(CommittedSignalsBufferId, MaxCommittedSignals, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _committedCountHandle = vault.EnsureGenerationHandle<int>(CommittedCountBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = vault.EnsureGenerationHandle<SignalThreadContentionTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(TelemetryCursorBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _tuningHandle = vault.EnsureGenerationHandle<SignalThreadContentionTuning64>(TuningBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _coalescenceBucketsHandle = vault.EnsureGenerationHandle<int>(CoalescenceBucketsBufferId, MaxCommittedSignals * 2, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _overflowSignalsHandle = vault.EnsureGenerationHandle<SignalWardenMockDamageSignal>(OverflowSignalsBufferId, MaxOverflowSignals, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _overflowHeaderHandle = vault.EnsureGenerationHandle<SignalThreadOverflowHeader64>(OverflowHeaderBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(CsvScratchBufferId, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _activeStrideBytes = activeStride;
             _writeBufferIndex = 0;
             _initialized = AreVaultBuffersReady(vault) ? 1 : 0;
@@ -2652,7 +2664,7 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static bool TryOpenCommittedSignalsForOwner(out NativeArray<SignalWardenMockDamageSignal> signals, out int count)
         {
-            return TryOpenCommittedSignalsBuffer(out signals, out count);
+            return TryOpenCommittedSignalsBufferForOwner(out signals, out count);
         }
 
         /// <summary>Returns a read-only view of the finalized mock signal snapshot for consumers and editor diagnostics.</summary>
@@ -2660,10 +2672,10 @@ namespace Hecton8.Core.Contracts.Signals
         {
             signals = default;
             count = 0;
-            if (!TryOpenCommittedSignalsBuffer(out NativeArray<SignalWardenMockDamageSignal> committedSignals, out count))
+            if (!TryReadCommittedSignalsBuffer(out NativeArray<SignalWardenMockDamageSignal>.ReadOnly committedSignals, out count))
                 return false;
 
-            signals = committedSignals.AsReadOnly();
+            signals = committedSignals;
             return true;
         }
 
@@ -2671,8 +2683,8 @@ namespace Hecton8.Core.Contracts.Signals
         {
             entry = default;
             if (!IsInitializedForRead() ||
-                !TryResolve(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry> telemetry) ||
-                !TryResolve(_vault, in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
+                !TryRead(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry>.ReadOnly telemetry) ||
+                !TryRead(_vault, in _telemetryCursorHandle, out NativeArray<int>.ReadOnly telemetryCursor) ||
                 telemetryCursor.Length <= 0)
             {
                 return false;
@@ -2691,15 +2703,15 @@ namespace Hecton8.Core.Contracts.Signals
             telemetry = default;
             cursor = 0;
             if (!IsInitializedForRead() ||
-                !TryResolve(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry> telemetryArray) ||
-                !TryResolve(_vault, in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
+                !TryRead(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry>.ReadOnly telemetryArray) ||
+                !TryRead(_vault, in _telemetryCursorHandle, out NativeArray<int>.ReadOnly telemetryCursor) ||
                 telemetryCursor.Length <= 0 ||
                 telemetryArray.Length <= 0)
             {
                 return false;
             }
 
-            telemetry = telemetryArray.AsReadOnly();
+            telemetry = telemetryArray;
             cursor = math.clamp(telemetryCursor[0], 0, telemetryArray.Length - 1);
             return true;
         }
@@ -2728,14 +2740,14 @@ namespace Hecton8.Core.Contracts.Signals
             if (!IsInitializedForRead())
                 return false;
 
-            NativeArray<SignalThreadLocalHeader64> headers = default;
+            NativeArray<SignalThreadLocalHeader64>.ReadOnly headers = default;
             bool resolved = _writeBufferIndex == 0
-                ? TryResolve(_vault, in _frontHeadersHandle, out headers)
-                : TryResolve(_vault, in _backHeadersHandle, out headers);
+                ? TryRead(_vault, in _frontHeadersHandle, out headers)
+                : TryRead(_vault, in _backHeadersHandle, out headers);
             if (!resolved)
                 return false;
 
-            if (!headers.IsCreated || (uint)threadIndex >= (uint)headers.Length)
+            if ((uint)threadIndex >= (uint)headers.Length)
                 return false;
 
             header = headers[threadIndex];
@@ -2797,7 +2809,7 @@ namespace Hecton8.Core.Contracts.Signals
         {
             tuning = default;
             if (!IsInitializedForRead() ||
-                !TryResolve(_vault, in _tuningHandle, out NativeArray<SignalThreadContentionTuning64> tuningArray) ||
+                !TryRead(_vault, in _tuningHandle, out NativeArray<SignalThreadContentionTuning64>.ReadOnly tuningArray) ||
                 tuningArray.Length <= 0)
             {
                 return false;
@@ -2807,6 +2819,7 @@ namespace Hecton8.Core.Contracts.Signals
             return tuning.Magic == TuningMagic;
         }
 
+#if UNITY_EDITOR
         public static unsafe bool TryReadCsvBytesForLoad(string path, out ReadOnlySpan<byte> bytes)
         {
             bytes = default;
@@ -2869,6 +2882,7 @@ namespace Hecton8.Core.Contracts.Signals
             scratch = csvScratch;
             return true;
         }
+#endif
 
         public static bool DumpToDisk()
         {
@@ -2939,13 +2953,30 @@ namespace Hecton8.Core.Contracts.Signals
             return _initialized != 0 && _vault != null;
         }
 
-        private static bool TryOpenCommittedSignalsBuffer(out NativeArray<SignalWardenMockDamageSignal> signals, out int count)
+        private static bool TryOpenCommittedSignalsBufferForOwner(out NativeArray<SignalWardenMockDamageSignal> signals, out int count)
         {
             signals = default;
             count = 0;
             if (!IsInitializedForRead() ||
                 !TryResolve(_vault, in _committedSignalsHandle, out NativeArray<SignalWardenMockDamageSignal> committedSignals) ||
                 !TryResolve(_vault, in _committedCountHandle, out NativeArray<int> committedCount) ||
+                committedCount.Length <= 0)
+            {
+                return false;
+            }
+
+            signals = committedSignals;
+            count = math.clamp(committedCount[0], 0, committedSignals.Length);
+            return true;
+        }
+
+        private static bool TryReadCommittedSignalsBuffer(out NativeArray<SignalWardenMockDamageSignal>.ReadOnly signals, out int count)
+        {
+            signals = default;
+            count = 0;
+            if (!IsInitializedForRead() ||
+                !TryRead(_vault, in _committedSignalsHandle, out NativeArray<SignalWardenMockDamageSignal>.ReadOnly committedSignals) ||
+                !TryRead(_vault, in _committedCountHandle, out NativeArray<int>.ReadOnly committedCount) ||
                 committedCount.Length <= 0)
             {
                 return false;
@@ -2967,7 +2998,7 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static bool EnsureInitializedForCrashDumpRoute()
         {
-            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _vault;
             if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
                 vault = latest;
             if (vault == null)
@@ -3014,6 +3045,13 @@ namespace Hecton8.Core.Contracts.Signals
         {
             buffer = default;
             return vault != null && vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
+        }
+
+        private static bool TryRead<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null && vault.TryReadOnlyHandle(in handle, out buffer) && buffer.Length > 0;
         }
 
         private static void EnsureDefaultTuning(NativeArray<SignalThreadContentionTuning64> tuningArray)
@@ -3139,6 +3177,7 @@ namespace Hecton8.Core.Contracts.Signals
         }
     }
 
+#if UNITY_EDITOR
     /// <summary>Editor/source-data parser for signal_corridor_capacities.csv.</summary>
     [Preserve]
     public static class SignalThreadContentionCsvHotSwap
@@ -3395,6 +3434,7 @@ namespace Hecton8.Core.Contracts.Signals
             return c >= 'A' && c <= 'Z' ? (char)(c + 32) : c;
         }
     }
+#endif
 
     [ExecuteAlways]
     [AddComponentMenu("Hecton8/Core/Signal Thread Contention Heatmap")]
@@ -3666,6 +3706,9 @@ namespace Hecton8.Core.Contracts.Signals
             PreserveLane<WakeRequestSignal>();
             PreserveLane<WaterlineBreachSignal>();
             PreserveLane<PlayerRespawnSignal>();
+            PreserveLane<InventoryRespawnDeathAupSignal>();
+            PreserveLane<InventoryDeathLootCacheSignal>();
+            PreserveLane<InventoryRespawnPenaltyResultSignal>();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

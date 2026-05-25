@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Gameplay.Loot.Contracts
@@ -63,6 +64,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const uint Pulling = 1u << 3;
         public const uint Acquired = 1u << 4;
         public const uint LowTierLerp = 1u << 5;
+        public const uint DataOnlyDeathCache = 1u << 6;
         public const uint Bit_IsMagnetic = PullEnabled;
         public const uint Flag_Acquired = Acquired;
         public const uint NonFinite = 1u << 31;
@@ -75,6 +77,30 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const uint Acquired = 1u << 2;
     }
 
+    public static class LootMagnetLayoutGuards
+    {
+        public static bool ValidateSignalEventLayout()
+        {
+            return UnsafeUtility.SizeOf<LootMagnetSignalEvent>() == 128 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.PositionAup)) == 0 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.Velocity)) == 48 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.ItemHash)) == 60 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.Quantity)) == 64 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.DistanceSq)) == 68 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.Frame)) == 72 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.Flags)) == 76 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.GeneticsMask)) == 80 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.QualityMilli)) == 88 &&
+                   OffsetOf<LootMagnetSignalEvent>(nameof(LootMagnetSignalEvent.StateFlags)) == 90;
+        }
+
+        private static int OffsetOf<T>(string fieldName) where T : struct
+        {
+            var field = typeof(T).GetField(fieldName);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct LootMagnetSignalEvent
     {
@@ -85,12 +111,14 @@ namespace Hecton8.Gameplay.Loot.Contracts
         [FieldOffset(68)] public float DistanceSq;
         [FieldOffset(72)] public uint Frame;
         [FieldOffset(76)] public uint Flags;
-        [FieldOffset(80)] private ulong _pad0;
-        [FieldOffset(88)] private ulong _pad1;
-        [FieldOffset(96)] private ulong _pad2;
-        [FieldOffset(104)] private ulong _pad3;
-        [FieldOffset(112)] private ulong _pad4;
-        [FieldOffset(120)] private ulong _pad5;
+        [FieldOffset(80)] public ulong GeneticsMask;
+        [FieldOffset(88)] public ushort QualityMilli;
+        [FieldOffset(90)] public ushort StateFlags;
+        [FieldOffset(92)] private uint _pad0;
+        [FieldOffset(96)] private ulong _pad1;
+        [FieldOffset(104)] private ulong _pad2;
+        [FieldOffset(112)] private ulong _pad3;
+        [FieldOffset(120)] private ulong _pad4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]

@@ -41,7 +41,7 @@ namespace Hecton8.Editor
             if (sanitizedMixerCount <= 0)
             {
                 if (logSummary)
-                    Debug.Log("[AudioMixerSanitizer] No mixer changes were required.");
+                    Hecton8.Core.H8Debug.Log("[AudioMixerSanitizer] No mixer changes were required.");
 
                 return;
             }
@@ -49,7 +49,7 @@ namespace Hecton8.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 $"[AudioMixerSanitizer] Sanitized {sanitizedMixerCount} mixer asset(s). Removed {removedEffectCount} broken/custom effect reference(s).");
         }
 
@@ -65,7 +65,7 @@ namespace Hecton8.Editor
             if (subAssets == null || subAssets.Length == 0)
                 return false;
 
-            HashSet<Object> effectsToRemove = new HashSet<Object>();
+            HashSet<Object> effectsToRemove = new HashSet<Object>(16);
             for (int i = 0; i < subAssets.Length; i++)
             {
                 Object subAsset = subAssets[i];

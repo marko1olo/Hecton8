@@ -26,7 +26,9 @@ namespace Hecton8.AI.Cognition
         public const BufferID InfluenceNodes = (BufferID)70619;
         public const BufferID TelemetryRing = (BufferID)70626;
         public const BufferID TelemetryCursor = (BufferID)70627;
+#if UNITY_EDITOR
         public const BufferID CsvScratch = (BufferID)70628;
+#endif
         public const BufferID AmbushNodeScratch = (BufferID)70629;
     }
 
@@ -49,7 +51,9 @@ namespace Hecton8.AI.Cognition
         public VaultGenerationHandle<float3> AmbushNodeScratch;
         public VaultGenerationHandle<ApexTelemetryEntry> TelemetryRing;
         public VaultGenerationHandle<int> TelemetryCursor;
+#if UNITY_EDITOR
         public VaultGenerationHandle<byte> CsvScratch;
+#endif
 
         public bool IsCreated()
         {
@@ -66,8 +70,11 @@ namespace Hecton8.AI.Cognition
                    IsHandleCreated(in InfluenceNodes) &&
                    IsHandleCreated(in AmbushNodeScratch) &&
                    IsHandleCreated(in TelemetryRing) &&
-                   IsHandleCreated(in TelemetryCursor) &&
-                   IsHandleCreated(in CsvScratch);
+                   IsHandleCreated(in TelemetryCursor)
+#if UNITY_EDITOR
+                   && IsHandleCreated(in CsvScratch)
+#endif
+                   ;
         }
 
         private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
@@ -96,7 +103,9 @@ namespace Hecton8.AI.Cognition
         public NativeArray<float3> AmbushNodeScratch;
         public NativeArray<ApexTelemetryEntry> TelemetryRing;
         public NativeArray<int> TelemetryCursor;
+#if UNITY_EDITOR
         public NativeArray<byte> CsvScratch;
+#endif
 
         public bool IsCreated()
         {
@@ -113,8 +122,11 @@ namespace Hecton8.AI.Cognition
                    InfluenceNodes.IsCreated &&
                    AmbushNodeScratch.IsCreated &&
                    TelemetryRing.IsCreated &&
-                   TelemetryCursor.IsCreated &&
-                   CsvScratch.IsCreated;
+                   TelemetryCursor.IsCreated
+#if UNITY_EDITOR
+                   && CsvScratch.IsCreated
+#endif
+                   ;
         }
     }
 
@@ -128,6 +140,7 @@ namespace Hecton8.AI.Cognition
         private const int DumpVersion = 1;
         private const string DumpFileName = "Dump_SHINOBU_61.bin";
         private const string LegacyDumpFileName = "Dump_LEVIATHAN_CORTEX.bin";
+#if UNITY_EDITOR
         private const string CsvFileName = "apex_predator_stats.csv";
         private static readonly uint _aggressionMultiplierHash = HashAscii("aggression_multiplier");
         private static readonly uint _acousticSensitivityHash = HashAscii("acoustic_sensitivity");
@@ -151,6 +164,7 @@ namespace Hecton8.AI.Cognition
         private static readonly uint _visualOverkillGainHash = HashAscii("visual_overkill_gain");
         private static readonly uint _biteHeadLocalOffsetHash = HashAscii("bite_head_local_offset");
         private static readonly uint _globalQualityHash = HashAscii("global_quality_weight");
+#endif
 
         /// <summary>
         /// Acquires or recovers all SHINOBU_61 vault handles.
@@ -173,81 +187,83 @@ namespace Hecton8.AI.Cognition
                 return true;
             }
 
-            handles.States = vault.GetGenerationHandle<ApexStateDTO>(
+            handles.States = vault.EnsureGenerationHandle<ApexStateDTO>(
                 ApexBrainVaultBufferIds.ApexState,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.MockTargets = vault.GetGenerationHandle<MockPlayerAUP>(
+            handles.MockTargets = vault.EnsureGenerationHandle<MockPlayerAUP>(
                 ApexBrainVaultBufferIds.MockPlayerAup,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.AcousticTaps = vault.GetGenerationHandle<ApexBrainAcousticEchoTap>(
+            handles.AcousticTaps = vault.EnsureGenerationHandle<ApexBrainAcousticEchoTap>(
                 ApexBrainVaultBufferIds.AcousticEchoTap,
                 ApexBrainConstants.MaxAcousticTaps,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.Tuning = vault.GetGenerationHandle<ApexBrainTuning>(
+            handles.Tuning = vault.EnsureGenerationHandle<ApexBrainTuning>(
                 ApexBrainVaultBufferIds.Tuning,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.EmergencyStats = vault.GetGenerationHandle<ApexEmergencyStats>(
+            handles.EmergencyStats = vault.EnsureGenerationHandle<ApexEmergencyStats>(
                 ApexBrainVaultBufferIds.EmergencyStats,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.WorldSampler = vault.GetGenerationHandle<MockWorldSampler>(
+            handles.WorldSampler = vault.EnsureGenerationHandle<MockWorldSampler>(
                 ApexBrainVaultBufferIds.MockWorldSampler,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.Outputs = vault.GetGenerationHandle<ApexBrainOutputDTO>(
+            handles.Outputs = vault.EnsureGenerationHandle<ApexBrainOutputDTO>(
                 ApexBrainVaultBufferIds.Output,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ProximitySignals = vault.GetGenerationHandle<ApexProximitySignal>(
+            handles.ProximitySignals = vault.EnsureGenerationHandle<ApexProximitySignal>(
                 ApexBrainVaultBufferIds.ProximitySignal,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.CombatDamageSignals = vault.GetGenerationHandle<MockCombatDamageSignal>(
+            handles.CombatDamageSignals = vault.EnsureGenerationHandle<MockCombatDamageSignal>(
                 ApexBrainVaultBufferIds.CombatDamageSignal,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.PanicSignals = vault.GetGenerationHandle<ApexPanicSignal>(
+            handles.PanicSignals = vault.EnsureGenerationHandle<ApexPanicSignal>(
                 ApexBrainVaultBufferIds.PanicSignal,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.InfluenceNodes = vault.GetGenerationHandle<ApexInfluenceNode>(
+            handles.InfluenceNodes = vault.EnsureGenerationHandle<ApexInfluenceNode>(
                 ApexBrainVaultBufferIds.InfluenceNodes,
                 ApexBrainConstants.InfluenceNodeCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.AmbushNodeScratch = vault.GetGenerationHandle<float3>(
+            handles.AmbushNodeScratch = vault.EnsureGenerationHandle<float3>(
                 ApexBrainVaultBufferIds.AmbushNodeScratch,
                 ApexBrainConstants.InfluenceNodeCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryRing = vault.GetGenerationHandle<ApexTelemetryEntry>(
+            handles.TelemetryRing = vault.EnsureGenerationHandle<ApexTelemetryEntry>(
                 ApexBrainVaultBufferIds.TelemetryRing,
                 ApexBrainConstants.TelemetryCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
+            handles.TelemetryCursor = vault.EnsureGenerationHandle<int>(
                 ApexBrainVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetGenerationHandle<byte>(
+#if UNITY_EDITOR
+            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(
                 ApexBrainVaultBufferIds.CsvScratch,
                 ApexBrainConstants.CsvScratchBytes,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
+#endif
 
             if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers))
                 return false;
@@ -278,12 +294,19 @@ namespace Hecton8.AI.Cognition
                 !TryOpenVaultView(vault, in handles.InfluenceNodes, ApexBrainConstants.InfluenceNodeCapacity, out buffers.InfluenceNodes) ||
                 !TryOpenVaultView(vault, in handles.AmbushNodeScratch, ApexBrainConstants.InfluenceNodeCapacity, out buffers.AmbushNodeScratch) ||
                 !TryOpenVaultView(vault, in handles.TelemetryRing, ApexBrainConstants.TelemetryCapacity, out buffers.TelemetryRing) ||
-                !TryOpenVaultView(vault, in handles.TelemetryCursor, 1, out buffers.TelemetryCursor) ||
-                !TryOpenVaultView(vault, in handles.CsvScratch, ApexBrainConstants.CsvScratchBytes, out buffers.CsvScratch))
+                !TryOpenVaultView(vault, in handles.TelemetryCursor, 1, out buffers.TelemetryCursor))
             {
                 buffers = default;
                 return false;
             }
+
+#if UNITY_EDITOR
+            if (!TryOpenVaultView(vault, in handles.CsvScratch, ApexBrainConstants.CsvScratchBytes, out buffers.CsvScratch))
+            {
+                buffers = default;
+                return false;
+            }
+#endif
 
             return buffers.IsCreated();
         }
@@ -393,8 +416,11 @@ namespace Hecton8.AI.Cognition
             uint frame,
             JobHandle inputDependency,
             NativeQueue<ApexProximitySignal>.ParallelWriter proximityWriter,
+            NativeArray<int> proximityWriterBudget,
             NativeQueue<MockCombatDamageSignal>.ParallelWriter combatWriter,
+            NativeArray<int> combatWriterBudget,
             NativeQueue<ApexPanicSignal>.ParallelWriter panicWriter,
+            NativeArray<int> panicWriterBudget,
             out JobHandle outputDependency)
         {
             outputDependency = inputDependency;
@@ -404,7 +430,14 @@ namespace Hecton8.AI.Cognition
             if (!TryCreateJob(in buffers, frame, out ApexBrainJob job, out int scheduleLength))
                 return false;
 
-            AttachSignalWriters(ref job, proximityWriter, combatWriter, panicWriter);
+            AttachSignalWriters(
+                ref job,
+                proximityWriter,
+                proximityWriterBudget,
+                combatWriter,
+                combatWriterBudget,
+                panicWriter,
+                panicWriterBudget);
             outputDependency = job.Schedule(scheduleLength, 1, inputDependency);
             return true;
         }
@@ -454,12 +487,18 @@ namespace Hecton8.AI.Cognition
         public static void AttachSignalWriters(
             ref ApexBrainJob job,
             NativeQueue<ApexProximitySignal>.ParallelWriter proximityWriter,
+            NativeArray<int> proximityWriterBudget,
             NativeQueue<MockCombatDamageSignal>.ParallelWriter combatWriter,
-            NativeQueue<ApexPanicSignal>.ParallelWriter panicWriter)
+            NativeArray<int> combatWriterBudget,
+            NativeQueue<ApexPanicSignal>.ParallelWriter panicWriter,
+            NativeArray<int> panicWriterBudget)
         {
             job.ProximitySignalWriter = proximityWriter;
+            job.ProximitySignalWriterBudget = proximityWriterBudget;
             job.CombatDamageSignalWriter = combatWriter;
+            job.CombatDamageSignalWriterBudget = combatWriterBudget;
             job.PanicSignalWriter = panicWriter;
+            job.PanicSignalWriterBudget = panicWriterBudget;
             job.EnableSignalQueueWrites = 1;
         }
 
@@ -496,6 +535,7 @@ namespace Hecton8.AI.Cognition
             return true;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Loads apex_predator_stats.csv into vault scratch and applies zero-allocation key-hash parsing.
         /// </summary>
@@ -603,6 +643,7 @@ namespace Hecton8.AI.Cognition
 
             return changed;
         }
+#endif
 
         /// <summary>
         /// Writes a binary black-box dump for the last 300 frames.
@@ -677,21 +718,25 @@ namespace Hecton8.AI.Cognition
         private static bool TryReadExistingHandles(IDataVault vault, out ApexBrainVaultHandles handles)
         {
             handles = default;
-            return vault.TryGetGenerationHandle<ApexStateDTO>(ApexBrainVaultBufferIds.ApexState, out handles.States) &&
-                   vault.TryGetGenerationHandle<MockPlayerAUP>(ApexBrainVaultBufferIds.MockPlayerAup, out handles.MockTargets) &&
-                   vault.TryGetGenerationHandle<ApexBrainAcousticEchoTap>(ApexBrainVaultBufferIds.AcousticEchoTap, out handles.AcousticTaps) &&
-                   vault.TryGetGenerationHandle<ApexBrainTuning>(ApexBrainVaultBufferIds.Tuning, out handles.Tuning) &&
-                   vault.TryGetGenerationHandle<ApexEmergencyStats>(ApexBrainVaultBufferIds.EmergencyStats, out handles.EmergencyStats) &&
-                   vault.TryGetGenerationHandle<MockWorldSampler>(ApexBrainVaultBufferIds.MockWorldSampler, out handles.WorldSampler) &&
-                   vault.TryGetGenerationHandle<ApexBrainOutputDTO>(ApexBrainVaultBufferIds.Output, out handles.Outputs) &&
-                   vault.TryGetGenerationHandle<ApexProximitySignal>(ApexBrainVaultBufferIds.ProximitySignal, out handles.ProximitySignals) &&
-                   vault.TryGetGenerationHandle<MockCombatDamageSignal>(ApexBrainVaultBufferIds.CombatDamageSignal, out handles.CombatDamageSignals) &&
-                   vault.TryGetGenerationHandle<ApexPanicSignal>(ApexBrainVaultBufferIds.PanicSignal, out handles.PanicSignals) &&
-                   vault.TryGetGenerationHandle<ApexInfluenceNode>(ApexBrainVaultBufferIds.InfluenceNodes, out handles.InfluenceNodes) &&
-                   vault.TryGetGenerationHandle<float3>(ApexBrainVaultBufferIds.AmbushNodeScratch, out handles.AmbushNodeScratch) &&
-                   vault.TryGetGenerationHandle<ApexTelemetryEntry>(ApexBrainVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
-                   vault.TryGetGenerationHandle<int>(ApexBrainVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
-                   vault.TryGetGenerationHandle<byte>(ApexBrainVaultBufferIds.CsvScratch, out handles.CsvScratch);
+            bool acquired =
+                vault.TryGetGenerationHandle<ApexStateDTO>(ApexBrainVaultBufferIds.ApexState, out handles.States) &&
+                vault.TryGetGenerationHandle<MockPlayerAUP>(ApexBrainVaultBufferIds.MockPlayerAup, out handles.MockTargets) &&
+                vault.TryGetGenerationHandle<ApexBrainAcousticEchoTap>(ApexBrainVaultBufferIds.AcousticEchoTap, out handles.AcousticTaps) &&
+                vault.TryGetGenerationHandle<ApexBrainTuning>(ApexBrainVaultBufferIds.Tuning, out handles.Tuning) &&
+                vault.TryGetGenerationHandle<ApexEmergencyStats>(ApexBrainVaultBufferIds.EmergencyStats, out handles.EmergencyStats) &&
+                vault.TryGetGenerationHandle<MockWorldSampler>(ApexBrainVaultBufferIds.MockWorldSampler, out handles.WorldSampler) &&
+                vault.TryGetGenerationHandle<ApexBrainOutputDTO>(ApexBrainVaultBufferIds.Output, out handles.Outputs) &&
+                vault.TryGetGenerationHandle<ApexProximitySignal>(ApexBrainVaultBufferIds.ProximitySignal, out handles.ProximitySignals) &&
+                vault.TryGetGenerationHandle<MockCombatDamageSignal>(ApexBrainVaultBufferIds.CombatDamageSignal, out handles.CombatDamageSignals) &&
+                vault.TryGetGenerationHandle<ApexPanicSignal>(ApexBrainVaultBufferIds.PanicSignal, out handles.PanicSignals) &&
+                vault.TryGetGenerationHandle<ApexInfluenceNode>(ApexBrainVaultBufferIds.InfluenceNodes, out handles.InfluenceNodes) &&
+                vault.TryGetGenerationHandle<float3>(ApexBrainVaultBufferIds.AmbushNodeScratch, out handles.AmbushNodeScratch) &&
+                vault.TryGetGenerationHandle<ApexTelemetryEntry>(ApexBrainVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
+                vault.TryGetGenerationHandle<int>(ApexBrainVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor);
+#if UNITY_EDITOR
+            acquired &= vault.TryGetGenerationHandle<byte>(ApexBrainVaultBufferIds.CsvScratch, out handles.CsvScratch);
+#endif
+            return acquired;
         }
 
         public static void ReleaseOwnedHandles(IDataVault vault, ref ApexBrainVaultHandles handles)
@@ -716,7 +761,9 @@ namespace Hecton8.AI.Cognition
             ReleaseVaultHandle(vault, ref handles.AmbushNodeScratch);
             ReleaseVaultHandle(vault, ref handles.TelemetryRing);
             ReleaseVaultHandle(vault, ref handles.TelemetryCursor);
+#if UNITY_EDITOR
             ReleaseVaultHandle(vault, ref handles.CsvScratch);
+#endif
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
@@ -791,7 +838,9 @@ namespace Hecton8.AI.Cognition
             MemClearArray(buffers.AmbushNodeScratch);
             MemClearArray(buffers.TelemetryRing);
             MemClearArray(buffers.TelemetryCursor);
+#if UNITY_EDITOR
             MemClearArray(buffers.CsvScratch);
+#endif
         }
 
         private static unsafe void MemClearArray<T>(NativeArray<T> array)
@@ -838,6 +887,7 @@ namespace Hecton8.AI.Cognition
             return tuning;
         }
 
+#if UNITY_EDITOR
         private static bool ApplyCsvValue(uint keyHash, float value, ref ApexBrainTuning tuning)
         {
             if (!math.isfinite(value))
@@ -895,7 +945,6 @@ namespace Hecton8.AI.Cognition
 
         private static string ResolveCsvPath(string projectRoot)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
             string sourceDataPath = Path.Combine(root, "Assets", "_SourceData", "AI", CsvFileName);
             if (File.Exists(sourceDataPath))
@@ -908,7 +957,6 @@ namespace Hecton8.AI.Cognition
             string rootPath = Path.Combine(root, CsvFileName);
             if (File.Exists(rootPath))
                 return rootPath;
-#endif
             return null;
         }
 
@@ -918,17 +966,15 @@ namespace Hecton8.AI.Cognition
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    int total = 0;
-                    int max = scratch.Length;
-                    while (total < max)
-                    {
-                        int value = stream.ReadByte();
-                        if (value < 0)
-                            break;
-                        scratch[total++] = (byte)value;
-                    }
+                    int max = (int)math.min(scratch.Length, stream.Length);
+                    if (max <= 0)
+                        return 0;
 
-                    return total;
+                    unsafe
+                    {
+                        Span<byte> span = new Span<byte>(scratch.GetUnsafePtr(), max);
+                        return stream.Read(span);
+                    }
                 }
             }
             catch (IOException)
@@ -1060,6 +1106,7 @@ namespace Hecton8.AI.Cognition
                 return 0UL;
             }
         }
+#endif
 
         private static float ResolveSchedulingQuality(float value)
         {

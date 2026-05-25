@@ -29,32 +29,43 @@ namespace Hecton8.Gameplay
 
         internal static bool RequestRespawn(double3 deathAup, uint damageHash)
         {
-            if (!math.all(math.isfinite(deathAup)))
-                return false;
+            return RequestRespawn(deathAup, damageHash, DefaultPlayerHash);
+        }
 
+        internal static bool RequestRespawn(double3 deathAup, uint damageHash, uint playerHash)
+        {
             ConfigureSignalLanes();
 
             uint sequence = ++s_sequence;
             if (sequence == 0u)
                 sequence = ++s_sequence;
 
+            bool deathAupFinite = math.all(math.isfinite(deathAup));
+            double3 safeDeathAup = deathAupFinite ? deathAup : DefaultFallbackAup();
+
             PlayerRespawnSignal signal = default;
-            signal.DeathAUP = deathAup;
+            signal.DeathAUP = safeDeathAup;
             signal.RespawnAUP = signal.DeathAUP;
-            signal.PlayerHash = DefaultPlayerHash;
+            signal.PlayerHash = playerHash != 0u ? playerHash : DefaultPlayerHash;
             signal.DamageHash = damageHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
             signal.Sequence = sequence;
             signal.Flags = PlayerRespawnSignalFlags.Requested | PlayerRespawnSignalFlags.SuspendCollision;
+            if (!deathAupFinite)
+                signal.Flags |= PlayerRespawnSignalFlags.InvalidDeathAup | PlayerRespawnSignalFlags.InvalidTargetAup;
             signal.Phase = PlayerRespawnSignalPhase.Request;
             signal.SuspendCollisionFrames = 1;
 
+            if (SignalBus<PlayerRespawnSignal>.TryPush(in signal))
+                return true;
+
+            ConfigureSignalLanes();
             return SignalBus<PlayerRespawnSignal>.TryPush(in signal);
         }
 
         private static void ConfigureSignalLanes()
         {
-            if (s_lanesConfigured)
+            if (s_lanesConfigured && SignalBus<PlayerRespawnSignal>.HasNativeStorage)
                 return;
 
             SignalBus<PlayerRespawnSignal>.Configure(
@@ -63,7 +74,14 @@ namespace Hecton8.Gameplay
                 lowTierFrameSignals: PlayerRespawnSignal.LowTierFrameSignals,
                 laneHash: PlayerRespawnSignal.LaneHash);
             SignalBus<PlayerRespawnSignal>.EnsureInitialized();
-            s_lanesConfigured = true;
+            s_lanesConfigured = SignalBus<PlayerRespawnSignal>.HasNativeStorage;
+        }
+
+        private static double3 DefaultFallbackAup()
+        {
+            double3 fallback = default;
+            fallback.y = -18d;
+            return fallback;
         }
     }
 }

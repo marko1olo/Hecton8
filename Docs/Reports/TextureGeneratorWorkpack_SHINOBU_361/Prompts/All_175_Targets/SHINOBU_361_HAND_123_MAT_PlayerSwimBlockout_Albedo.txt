@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_123
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_123_MAT_PlayerSwimBlockout_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_PlayerSwimBlockout_Albedo.png
+FINAL_FILENAME: MAT_PlayerSwimBlockout_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Player swim blockout albedo for readable prototype volumes that still fit HECTON-8 presentation. Create a clean semi-technical material with translucent cyan panels, pearl-white calibration blocks, teal flow lines, amber boundary dots, and graphite edge marks. It should clearly signal swim-space debugging or traversal volume while looking intentional and polished in capture. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

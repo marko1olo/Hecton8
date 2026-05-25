@@ -129,6 +129,9 @@ namespace Hecton8.World
         private const float BrownoutFlickerFrequency = 47.3f;
         private const float BrownoutBiasPadeK = 0.32f;
         private const float TwoPi = 6.28318530718f;
+        private const float ProxyLightMathQualityStart01 = 0.15f;
+        private const float ProxyLightMathQualityFull01 = 0.85f;
+        private const float ProxyLightMathFarDistanceSq = DistanceMath.HighQualityDistanceSq * 4f;
         private const Allocator DataVaultExemptProxyLightDataAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptProxyLightIndexAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptProxyLightFreeSlotAllocator = Allocator.Persistent;
@@ -255,8 +258,8 @@ namespace Hecton8.World
             if (!IsInitialized || !output.IsCreated || output.Length == 0)
                 return 0;
 
-            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
-            float3 safeForward = DistanceMath.Normalize(viewerForward, 0f, scalabilityTier, new float3(0f, 0f, 1f));
+            float qualityWeight01 = ResolveProxyLightQualityWeight01();
+            float3 safeForward = NormalizeProxyLightVector(viewerForward, 0f, qualityWeight01, new float3(0f, 0f, 1f));
             bool useForwardGate = minimumForwardDot > -1f;
             float safeMaxDistance = math.isfinite(maxDistanceMeters) && maxDistanceMeters > 0f
                 ? maxDistanceMeters
@@ -288,7 +291,7 @@ namespace Hecton8.World
 
                 if (useForwardGate)
                 {
-                    float3 direction = DistanceMath.Normalize(cameraRelative, distanceSq, scalabilityTier, safeForward);
+                    float3 direction = NormalizeProxyLightVector(cameraRelative, distanceSq, qualityWeight01, safeForward);
                     if (math.dot(direction, safeForward) < minimumForwardDot)
                         continue;
                 }
@@ -449,6 +452,51 @@ namespace Hecton8.World
                 return new float3(0f, value.y < 0f ? -1f : 1f, 0f);
 
             return new float3(0f, 0f, value.z < 0f ? -1f : 1f);
+        }
+
+        private static float ResolveProxyLightQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1f;
+        }
+
+        private static float ResolveProxyLightMathBlend01(float distanceSq, float qualityWeight01)
+        {
+            float safeDistanceSq = math.isfinite(distanceSq)
+                ? math.max(0f, distanceSq)
+                : ProxyLightMathFarDistanceSq;
+            float nearWeight = 1f - math.saturate(safeDistanceSq * math.rcp(ProxyLightMathFarDistanceSq));
+            float qualityWeight = math.smoothstep(
+                ProxyLightMathQualityStart01,
+                ProxyLightMathQualityFull01,
+                math.saturate(qualityWeight01));
+            return math.saturate(nearWeight * qualityWeight);
+        }
+
+        private static float3 NormalizeProxyLightVector(float3 value, float distanceSq, float qualityWeight01, float3 fallback)
+        {
+            if (!math.all(math.isfinite(value)))
+                return fallback;
+
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return fallback;
+
+            float3 cheap = ResolveDominantAxisOrDefault(value, fallback);
+            float blend = ResolveProxyLightMathBlend01(distanceSq, qualityWeight01);
+            if (blend <= 0.0001f)
+                return cheap;
+
+            float3 exact = value * math.rsqrt(lengthSq);
+            if (blend >= 0.9999f)
+                return exact;
+
+            float3 mixed = math.lerp(cheap, exact, blend);
+            float mixedLengthSq = math.lengthsq(mixed);
+            if (!math.isfinite(mixedLengthSq) || mixedLengthSq <= 0.000001f)
+                return fallback;
+
+            return mixed * math.rsqrt(mixedLengthSq);
         }
 
         private static bool TryResolvePowerGridBrownout(out bool brownoutActive, out float supplyRatio)

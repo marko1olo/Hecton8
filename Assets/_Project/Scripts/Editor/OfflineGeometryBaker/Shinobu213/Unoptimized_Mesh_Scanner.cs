@@ -47,7 +47,7 @@ namespace Hecton8.Editor.OfflineGeometry
         internal static List<UnoptimizedMeshFinding> ScanProject()
         {
             var findings = new List<UnoptimizedMeshFinding>(128);
-            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var seen = new HashSet<string>(128, StringComparer.Ordinal);
             for (int rootIndex = 0; rootIndex < _ScanRoots.Length; rootIndex++)
             {
                 string root = _ScanRoots[rootIndex];
@@ -71,7 +71,7 @@ namespace Hecton8.Editor.OfflineGeometry
         internal static int RepairHighPolyConcaveMeshColliders()
         {
             int repaired = 0;
-            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var seen = new HashSet<string>(128, StringComparer.Ordinal);
             for (int rootIndex = 0; rootIndex < _ScanRoots.Length; rootIndex++)
             {
                 string root = _ScanRoots[rootIndex];

@@ -12,7 +12,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6000)]
-    public sealed class WorldStateManager : MonoBehaviour, ISaveable
+    public sealed class WorldStateManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
     {
         private struct PickupPersistenceEntry
         {
@@ -33,6 +33,9 @@ namespace Hecton8.World
         private HashSet<string> _depletedNodeIds;
         private HashSet<long> _depletedPickupKeys;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
+        private bool _saveRegistered;
+        private ISaveService _saveService;
 
         // COLD ALLOC: Dictionary<long,long>[128] — pickup key-to-chunk lookup for save/load persistence — owner: WorldStateManager
         private readonly Dictionary<long, long> _depletedPickupChunkKeysByPickupKey = new Dictionary<long, long>(128);
@@ -114,18 +117,39 @@ namespace Hecton8.World
         private void OnEnable()
         {
             TryRegisterService();
-            GlobalRegistry.Save?.Register(this);
+            TryRegisterHotSwapListener();
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
-            GlobalRegistry.Save?.Unregister(this);
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            TryUnregisterSaveParticipant();
+            _saveService = currentService as ISaveService;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
         }
 
         /// <summary>
@@ -237,8 +261,10 @@ namespace Hecton8.World
             dto.EnsureCapacity();
 
             int nodeIndex = 0;
-            foreach (string id in _depletedNodeIds)
+            HashSet<string>.Enumerator depletedNodeEnumerator = _depletedNodeIds.GetEnumerator();
+            while (depletedNodeEnumerator.MoveNext())
             {
+                string id = depletedNodeEnumerator.Current;
                 if (nodeIndex >= WorldStateDTO.MaxNodes)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -288,7 +314,7 @@ namespace Hecton8.World
             UpdateDiagnostics();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 $"[WorldStateManager] Loaded {_depletedNodeIds.Count} depleted nodes and {_depletedPickupKeys.Count} depleted pickups.");
 #endif
         }
@@ -334,7 +360,7 @@ namespace Hecton8.World
             if (deactivatedNodes > 0)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     $"[WorldStateManager] Deactivated {deactivatedNodes} depleted nodes in scene.");
 #endif
             }
@@ -373,6 +399,49 @@ namespace Hecton8.World
             _serviceRegistered = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            _saveService = GlobalRegistry.Save;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
+        }
+
         private void PopulatePackedPickupState(ref WorldStateDTO dto)
         {
             _pickupPersistenceEntries.Clear();
@@ -388,8 +457,10 @@ namespace Hecton8.World
                 return;
             }
 
-            foreach (long pickupKey in _depletedPickupKeys)
+            HashSet<long>.Enumerator pickupKeyEnumerator = _depletedPickupKeys.GetEnumerator();
+            while (pickupKeyEnumerator.MoveNext())
             {
+                long pickupKey = pickupKeyEnumerator.Current;
                 long chunkKey;
                 if (!_depletedPickupChunkKeysByPickupKey.TryGetValue(pickupKey, out chunkKey) || chunkKey == 0L)
                     chunkKey = pickupKey;
@@ -551,7 +622,7 @@ namespace Hecton8.World
             if (deactivatedPickups > 0)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log(
+                Hecton8.Core.H8Debug.Log(
                     $"[WorldStateManager] Deactivated {deactivatedPickups} depleted pickups in scene.");
 #endif
             }

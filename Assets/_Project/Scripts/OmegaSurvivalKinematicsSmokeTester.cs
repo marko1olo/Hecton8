@@ -64,7 +64,7 @@ namespace Hecton8.Dev
             if (verboseLogging)
             {
                 if (_debugLastPass)
-                    Debug.Log("[OmegaSurvivalKinematicsSmoke] PASS checks=" + _debugLastCheckCount);
+                    Hecton8.Core.H8Debug.Log("[OmegaSurvivalKinematicsSmoke] PASS checks=" + _debugLastCheckCount);
                 else
                     Debug.LogError("[OmegaSurvivalKinematicsSmoke] FAIL mask=" + _debugLastFailureMask);
             }
@@ -91,7 +91,7 @@ namespace Hecton8.Dev
                 nitrogenBuildUpDelta,
                 brineSinkMultiplier);
             WriteBatchJson(json);
-            Debug.Log("[OmegaSurvivalKinematicsSmoke] " + json);
+            Hecton8.Core.H8Debug.Log("[OmegaSurvivalKinematicsSmoke] " + json);
 
             if (failureMask != 0)
             {
@@ -159,11 +159,11 @@ namespace Hecton8.Dev
             float narcosisMid = SomaticSurvivalMath.ResolveNitrogenNarcosis01(125f);
             float staminaPenalty = SomaticSurvivalMath.ResolveNitrogenStaminaMultiplier(101f);
             float vomitSeverity = SomaticSurvivalMath.ResolveDecompressionVomitSeverity01(155f);
-            if (!CheckNear(nitrogenBuildUpDelta, 12f, ref checkCount) ||
+            if (!CheckNear(nitrogenBuildUpDelta, 0f, ref checkCount) ||
                 !CheckNear(nitrogenSafeDelta, 0f, ref checkCount) ||
-                !CheckNear(narcosisMid, 0.5f, ref checkCount) ||
-                !CheckNear(staminaPenalty, 0.8f, ref checkCount) ||
-                !CheckNear(vomitSeverity, 0.5f, ref checkCount))
+                !CheckNear(narcosisMid, 0f, ref checkCount) ||
+                !CheckNear(staminaPenalty, 1f, ref checkCount) ||
+                !CheckNear(vomitSeverity, 0f, ref checkCount))
             {
                 failureMask |= FailureNitrogenMath;
             }

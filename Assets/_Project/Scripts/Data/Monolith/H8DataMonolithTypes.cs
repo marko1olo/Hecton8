@@ -27,13 +27,22 @@ namespace Hecton8.Data
         public const int DefaultArenaCapacityBytes = 10 * 1024 * 1024;
 
         /// <summary>Fixed header size required by the BIOS checksum contract.</summary>
-        public const int HeaderSizeBytes = 16;
+        public const int HeaderSizeBytes = 64;
 
-        /// <summary>Fixed directory size after the 16-byte header.</summary>
+        /// <summary>Fixed schema hash for the X_002 Data Monolith layout contract.</summary>
+        public const uint SchemaHash = 0x58303032u;
+
+        /// <summary>Header/directory flag: blob payload is little-endian.</summary>
+        public const uint BlobFlagLittleEndian = 1u;
+
+        /// <summary>Fixed directory size after the 64-byte header.</summary>
         public const int DirectorySizeBytes = 64;
 
-        /// <summary>Required section alignment.</summary>
-        public const int SectionAlignmentBytes = 16;
+        /// <summary>Required section start alignment. Section payloads begin on 64-byte cache-line boundaries.</summary>
+        public const int SectionAlignmentBytes = 64;
+
+        /// <summary>Required fixed-record size alignment inside sections.</summary>
+        public const int RecordAlignmentBytes = 16;
 
         /// <summary>Master item record size.</summary>
         public const int ItemRecordSize = 80;
@@ -113,7 +122,7 @@ namespace Hecton8.Data
     }
 
     /// <summary>
-    /// Mandatory 16-byte BIOS header. Checksum covers all bytes after this header.
+    /// Mandatory 64-byte BIOS header. Checksum covers all bytes after this header.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.HeaderSizeBytes)]
     public struct H8DataBlobHeader
@@ -124,15 +133,46 @@ namespace Hecton8.Data
         /// <summary>Binary format version.</summary>
         [FieldOffset(4)] public ushort FormatVersion;
 
-        /// <summary>Header byte count. Must be 16.</summary>
+        /// <summary>Header byte count. Must be 64.</summary>
         [FieldOffset(6)] public ushort HeaderBytes;
 
-        /// <summary>XXHash3-64 checksum for bytes [16..blobLength).</summary>
+        /// <summary>XXHash3-64 checksum for bytes [64..blobLength).</summary>
         [FieldOffset(8)] public ulong Checksum64;
+
+        /// <summary>Total blob byte count.</summary>
+        [FieldOffset(16)] public uint BlobBytes;
+
+        /// <summary>Offset of the fixed directory block.</summary>
+        [FieldOffset(20)] public uint DirectoryOffset;
+
+        /// <summary>Directory block byte count.</summary>
+        [FieldOffset(24)] public uint DirectoryBytes;
+
+        /// <summary>Offset of the section table.</summary>
+        [FieldOffset(28)] public uint SectionTableOffset;
+
+        /// <summary>Number of section table entries.</summary>
+        [FieldOffset(32)] public uint SectionCount;
+
+        /// <summary>Schema flags. Bit 0 currently means little-endian payload.</summary>
+        [FieldOffset(36)] public uint Flags;
+
+        /// <summary>Expected world seed, or zero for seed-agnostic static data.</summary>
+        [FieldOffset(40)] public uint WorldSeed;
+
+        /// <summary>Application version hash baked with this blob.</summary>
+        [FieldOffset(44)] public uint AppVersionHash;
+
+        /// <summary>Static schema hash for layout drift detection.</summary>
+        [FieldOffset(48)] public uint SchemaHash;
+
+        [FieldOffset(52)] public uint Reserved0;
+        [FieldOffset(56)] public uint Reserved1;
+        [FieldOffset(60)] public uint Reserved2;
     }
 
     /// <summary>
-    /// Fixed blob directory stored immediately after the 16-byte BIOS header.
+    /// Fixed blob directory stored immediately after the 64-byte BIOS header.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.DirectorySizeBytes)]
     public struct H8DataBlobDirectory
@@ -624,36 +664,36 @@ namespace Hecton8.Data
                    UnsafeUtility.SizeOf<H8CreatureGenomeTraitBlock>() == H8DataLayoutConstants.CreatureGenomeTraitBlockSize &&
                    UnsafeUtility.SizeOf<H8CreatureTraitRecord>() == H8DataLayoutConstants.CreatureTraitRecordSize &&
                    UnsafeUtility.SizeOf<H8BiomeRecord>() == H8DataLayoutConstants.BiomeRecordSize &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8RecipeRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8BiomeHeatmapCellRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8QuestNodeRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8QuestEdgeRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8LootCdfRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8VoxelMaterialRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8AudioClipRegistryRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8VfxScalarRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8DepthPressureSampleRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8ToolHeatCapacityRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8SubmarineHullConstantRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8NarrativeTriggerRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8PhysicsMaterialRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8GhostModuleRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8RadiationIntensityCellRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8SpawnCreditCostRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8LightAttenuationSampleRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8SopErrorRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8HudLayoutRecord>()) &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8SectorPageRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8RecipeRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8BiomeHeatmapCellRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8QuestNodeRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8QuestEdgeRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8LootCdfRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8VoxelMaterialRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8AudioClipRegistryRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8VfxScalarRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8DepthPressureSampleRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8ToolHeatCapacityRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8SubmarineHullConstantRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8NarrativeTriggerRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8PhysicsMaterialRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8GhostModuleRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8RadiationIntensityCellRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8SpawnCreditCostRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8LightAttenuationSampleRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8SopErrorRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8HudLayoutRecord>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8SectorPageRecord>()) &&
                    UnsafeUtility.SizeOf<H8EconomyRecord>() == H8DataLayoutConstants.EconomyRecordSize &&
                    UnsafeUtility.SizeOf<H8PhysicsConstantsRecord>() == H8DataLayoutConstants.PhysicsConstantsRecordSize &&
                    UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>() == H8DataLayoutConstants.TelemetryEntrySize &&
-                   IsAligned16(UnsafeUtility.SizeOf<H8StaticLocalizationReference>()) &&
+                   IsRecordAligned(UnsafeUtility.SizeOf<H8StaticLocalizationReference>()) &&
                    UnsafeUtility.SizeOf<H8StaticLocalizationCursor>() == 8;
         }
 
-        private static bool IsAligned16(int byteCount)
+        private static bool IsRecordAligned(int byteCount)
         {
-            return byteCount > 0 && (byteCount & (H8DataLayoutConstants.SectionAlignmentBytes - 1)) == 0;
+            return byteCount > 0 && (byteCount & (H8DataLayoutConstants.RecordAlignmentBytes - 1)) == 0;
         }
     }
 }

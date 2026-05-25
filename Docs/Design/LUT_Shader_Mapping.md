@@ -1,4 +1,4 @@
-# LUT Shader Mapping
+﻿# LUT Shader Mapping
 
 Date: 2026-05-17
 Status: `PENDING UNITY VERIFICATION`

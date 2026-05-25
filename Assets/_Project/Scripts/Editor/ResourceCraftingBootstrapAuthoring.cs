@@ -5,6 +5,7 @@ using Hecton8.Crafting;
 using Hecton8.Items;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.EditorTools
 {
@@ -258,7 +259,7 @@ namespace Hecton8.EditorTools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[ResourceBootstrap] Core resource kit rebuilt.");
+            H8Debug.Log("[ResourceBootstrap] Core resource kit rebuilt.");
         }
 
         [MenuItem("Hecton/Validation/Validate Core Resource Kit", priority = 169)]
@@ -340,9 +341,9 @@ namespace Hecton8.EditorTools
             ValidateRecipeAsset("Recipe_ElectrolyteAmpoule.asset", ref errors);
 
             if (errors == 0)
-                Debug.Log("[ResourceBootstrap] PASS no issues found.");
+                H8Debug.Log("[ResourceBootstrap] PASS no issues found.");
             else
-                Debug.LogError($"[ResourceBootstrap] FAIL {errors} issue(s) found.");
+                H8Debug.LogError($"[ResourceBootstrap] FAIL {errors} issue(s) found.");
         }
 
         private static ItemData CreateOrUpdateItem(
@@ -466,20 +467,20 @@ namespace Hecton8.EditorTools
             ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>(assetPath);
             if (item == null)
             {
-                Debug.LogError($"[ResourceBootstrap] Missing item asset: {assetPath}");
+                H8Debug.LogError($"[ResourceBootstrap] Missing item asset: {assetPath}");
                 errors++;
                 return;
             }
 
             if (item.category != category)
             {
-                Debug.LogError($"[ResourceBootstrap] Wrong item category on {assetPath}: {item.category}", item);
+                H8Debug.LogError($"[ResourceBootstrap] Wrong item category on {assetPath}: {item.category}", item);
                 errors++;
             }
 
             if (item.resourceFamily != family)
             {
-                Debug.LogError($"[ResourceBootstrap] Wrong resource family on {assetPath}: {item.resourceFamily}", item);
+                H8Debug.LogError($"[ResourceBootstrap] Wrong resource family on {assetPath}: {item.resourceFamily}", item);
                 errors++;
             }
         }
@@ -489,26 +490,26 @@ namespace Hecton8.EditorTools
             RecipeData recipe = AssetDatabase.LoadAssetAtPath<RecipeData>($"{RecipesFolder}/{fileName}");
             if (recipe == null)
             {
-                Debug.LogError($"[ResourceBootstrap] Missing recipe asset: {fileName}");
+                H8Debug.LogError($"[ResourceBootstrap] Missing recipe asset: {fileName}");
                 errors++;
                 return;
             }
 
             if (recipe.resultItem == null)
             {
-                Debug.LogError($"[ResourceBootstrap] Recipe '{recipe.name}' has no result item.", recipe);
+                H8Debug.LogError($"[ResourceBootstrap] Recipe '{recipe.name}' has no result item.", recipe);
                 errors++;
             }
 
             if (recipe.ingredients == null || recipe.ingredients.Count == 0)
             {
-                Debug.LogError($"[ResourceBootstrap] Recipe '{recipe.name}' has no ingredient list.", recipe);
+                H8Debug.LogError($"[ResourceBootstrap] Recipe '{recipe.name}' has no ingredient list.", recipe);
                 errors++;
             }
 
             if (recipe.fabricationGroup == FabricationGroup.Unspecified)
             {
-                Debug.LogError($"[ResourceBootstrap] Recipe '{recipe.name}' has no fabrication group.", recipe);
+                H8Debug.LogError($"[ResourceBootstrap] Recipe '{recipe.name}' has no fabrication group.", recipe);
                 errors++;
             }
         }

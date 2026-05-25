@@ -22,7 +22,9 @@ namespace Hecton8.Gameplay
         private const string RightCalfAttachmentName = "Swim_RightCalfAttachment";
         private const string LeftFinAttachmentName = "Swim_LeftFinAttachment";
         private const string RightFinAttachmentName = "Swim_RightFinAttachment";
-        [StructLayout(LayoutKind.Explicit, Size = 96)]
+        private const int BodyModePoseStrideBytes = 96;
+
+        [StructLayout(LayoutKind.Explicit, Size = BodyModePoseStrideBytes)]
         private struct BodyModePose
         {
             [FieldOffset(0)] public float BodyWeight;

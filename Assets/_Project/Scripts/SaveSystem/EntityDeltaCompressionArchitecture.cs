@@ -631,6 +631,7 @@ namespace Hecton8.SaveSystem
             }.Schedule(telemetry);
         }
 
+#if UNITY_EDITOR
         public static JobHandle ScheduleCompressionProfileCsvParse(
             NativeArray<byte> csvBytes,
             NativeArray<EntityDeltaCompressionTuningDTO> tuning,
@@ -651,6 +652,7 @@ namespace Hecton8.SaveSystem
                 ByteCount = byteCount
             }.Schedule(dependency);
         }
+#endif
 
         public static JobHandle ScheduleWalPayloadDecodePipeline(
             NativeArray<byte> walPayloadBytes,
@@ -1414,7 +1416,7 @@ namespace Hecton8.SaveSystem
             int requiredLength,
             NativeArrayOptions options) where T : struct
         {
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.SavePersistence,
@@ -3593,6 +3595,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
+#if UNITY_EDITOR
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct EntityCompressionProfileCsvParseJob : IJob
         {
@@ -3932,5 +3935,6 @@ namespace Hecton8.SaveSystem
                 return hash == 0UL ? 1UL : hash;
             }
         }
+#endif
     }
 }

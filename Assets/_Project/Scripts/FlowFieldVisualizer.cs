@@ -55,7 +55,6 @@ namespace Hecton8.Physics
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const NativeAllocationLifetime NativeTempJobLifetime = NativeAllocationLifetime.TempJob;
         private const int SelectedVolumeCapacity = 32;
         private const int ParticlePreviewCapacity = 32;
@@ -182,12 +181,6 @@ namespace Hecton8.Physics
         /// <summary>Nuzhno li pereschitat kesh (pri izmenenii nastroek)</summary>
         private bool _needsRecalculation = true;
 
-        /// <summary>Idet li asinhronnyy raschet</summary>
-        private bool _isCalculatingAsync = false;
-
-        /// <summary>Vremya nachala asinhronnogo rascheta</summary>
-        private float _asyncStartTime;
-
         /// <summary>Profiler marker dlya Recalculate</summary>
         private static readonly ProfilerMarker RecalculateMarker
             = new ProfilerMarker("FlowFieldVisualizer.Recalculate");
@@ -220,6 +213,13 @@ namespace Hecton8.Physics
             public void Release(ParticleSystem item)
             {
                 _releaseAction?.Invoke(item);
+                if (_pool.Count >= ParticlePreviewCapacity)
+                {
+                    if (item != null)
+                        Object.DestroyImmediate(item.gameObject);
+                    return;
+                }
+
                 _pool.Enqueue(item);
             }
 
@@ -250,12 +250,6 @@ namespace Hecton8.Physics
         /// <summary>Kesh aktivnoy kamery stseny dlya izbezhaniya povtornogo resolve.</summary>
         private Camera _cachedMainCamera;
 
-        private JobHandle _calculationJobHandle;
-        private NativeArray<float3> _nativeSamplePositions;
-        private NativeArray<float3> _nativeFlowResults;
-        private NativeArray<CurrentVolumeJobData> _nativeVolumeData;
-        private bool _isCalculationJobRunning = false;
-        private uint _calculationShiftSequence;
         private readonly List<CurrentVolume> _volumeScratch = new List<CurrentVolume>(SelectedVolumeCapacity); // COLD ALLOC: List<CurrentVolume>[32] — current-volume job-data gather scratch — owner: FlowFieldVisualizer
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -572,15 +566,13 @@ namespace Hecton8.Physics
         /// </summary>
         public void DrawFlowField()
         {
-            PumpAsyncJob();
-
-            if (_needsRecalculation && !_isCalculatingAsync)
+            if (_needsRecalculation)
             {
                 RecalculateFlowField();
                 _needsRecalculation = false;
             }
 
-            if (_samplePositions == null || _flowVectors == null || _isCalculatingAsync)
+            if (_samplePositions == null || _flowVectors == null)
                 return;
 
             // Animatsionnyy faktor dlya preview
@@ -642,39 +634,6 @@ namespace Hecton8.Physics
             }
         }
 
-        private void EnsureNativeJobBuffers(int totalPoints, Allocator allocator)
-        {
-            if (_nativeSamplePositions.IsCreated && _nativeSamplePositions.Length != totalPoints)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_nativeSamplePositions);
-                _nativeSamplePositions.Dispose();
-            }
-            if (!_nativeSamplePositions.IsCreated)
-            {
-                _nativeSamplePositions = new NativeArray<float3>(totalPoints, allocator, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _nativeSamplePositions,
-                    nameof(FlowFieldVisualizer),
-                    nameof(_nativeSamplePositions),
-                    NativeMemoryLifetime);
-            }
-
-            if (_nativeFlowResults.IsCreated && _nativeFlowResults.Length != totalPoints)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_nativeFlowResults);
-                _nativeFlowResults.Dispose();
-            }
-            if (!_nativeFlowResults.IsCreated)
-            {
-                _nativeFlowResults = new NativeArray<float3>(totalPoints, allocator, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _nativeFlowResults,
-                    nameof(FlowFieldVisualizer),
-                    nameof(_nativeFlowResults),
-                    NativeMemoryLifetime);
-            }
-        }
-
         private void UpdateCaches()
         {
             Camera currentCamera = Camera.current;
@@ -701,8 +660,7 @@ namespace Hecton8.Physics
                 sb.AppendLine("FlowFieldVisualizer:");
                 sb.Append("  Resolution: ").Append(gridResolution.x).Append('x').Append(gridResolution.y).AppendLine();
                 sb.Append("  Total points: ").Append(_samplePositions != null ? _samplePositions.Length : 0).AppendLine();
-                sb.Append("  Job running: ").Append(_isCalculationJobRunning).AppendLine();
-                sb.Append("  Async state: ").Append(_isCalculatingAsync ? "in progress" : "ready").AppendLine();
+                sb.AppendLine("  Sampling mode: immediate");
 
                 if (showPerformanceStats)
                 {
@@ -793,129 +751,7 @@ namespace Hecton8.Physics
 
             EnsureSampleBuffers(totalPoints);
 
-            // Asinhronnyy raschet dlya bolshih grid'ov
-            if (totalPoints > asyncThreshold && !_isCalculatingAsync)
-            {
-                if (useBurstSampling || useJobSystem)
-                {
-                    StartAsyncCalculation(totalPoints);
-                    return;
-                }
-            }
-
-            // Sinhronnyy raschet dlya nebolshih grid'ov
             PerformCalculation(totalPoints);
-        }
-
-        /// <summary>Zapuskaet job-pereschet dlya bolshih grid'ov</summary>
-        private void StartAsyncCalculation(int totalPoints)
-        {
-            if (_isCalculationJobRunning || HectonFloatingOrigin.IsShiftInProgress)
-                return;
-
-            _asyncStartTime = Time.realtimeSinceStartup;
-            _calculationShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-            DisposeNativeJobBuffers();
-
-            EnsureSampleBuffers(totalPoints);
-            PrepareSamplePositions(totalPoints);
-            EnsureNativeJobBuffers(totalPoints, Allocator.Persistent);
-
-            for (int i = 0; i < totalPoints; i++)
-            {
-                Vector3 p = _samplePositions[i];
-                _nativeSamplePositions[i] = new float3(p.x, p.y, p.z);
-            }
-
-            _nativeVolumeData = BuildVolumeJobData(Allocator.Persistent);
-            NativeMemorySentinel.RegisterNativeArray(
-                _nativeVolumeData,
-                nameof(FlowFieldVisualizer),
-                nameof(_nativeVolumeData),
-                NativeMemoryLifetime);
-            HectonFluidEngine engine = GlobalRegistry.Fluid;
-            bool includeGlobalCurrent = showGlobalCurrent && engine != null;
-
-            var job = new FlowSamplingJob
-            {
-                SamplePositions = _nativeSamplePositions,
-                FlowVectors = _nativeFlowResults,
-                VolumeData = _nativeVolumeData,
-                VolumeCount = _nativeVolumeData.IsCreated ? _nativeVolumeData.Length : 0,
-                ShowGlobalCurrent = includeGlobalCurrent ? (byte)1 : (byte)0,
-                Time = Time.realtimeSinceStartup,
-                NoiseScale = includeGlobalCurrent ? engine.CurrentNoiseScale : 0f,
-                TimeScale = includeGlobalCurrent ? engine.CurrentTimeScale : 0f,
-                Strength = includeGlobalCurrent ? engine.PhantomCurrentStrength : 0f,
-                VerticalFactor = includeGlobalCurrent ? engine.CurrentVerticalFactor : 0f,
-                ShowLocalCurrents = showLocalCurrents ? (byte)1 : (byte)0
-            };
-
-            _calculationJobHandle = job.Schedule(totalPoints, Mathf.Max(1, totalPoints / 8));
-            _isCalculationJobRunning = true;
-            _isCalculatingAsync = true;
-
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.update += PumpAsyncJob;
-#endif
-        }
-
-        /// <summary>Proveryaet i zavershaet job rascheta</summary>
-        private void PumpAsyncJob()
-        {
-            if (!_isCalculationJobRunning)
-                return;
-
-            bool timedOut = !_calculationJobHandle.IsCompleted &&
-                            Time.realtimeSinceStartup - _asyncStartTime >= asyncTimeout;
-
-            if (!_calculationJobHandle.IsCompleted && !timedOut)
-                return;
-
-            if (timedOut)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[FlowFieldVisualizer] Async flow calculation exceeded timeout. Completing on main thread.", this);
-#endif
-            }
-
-            if (!DispatcherJobSwap.TryComplete(ref _calculationJobHandle, timedOut))
-                return;
-
-            if (HectonFloatingOrigin.IsShiftInProgress ||
-                _calculationShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
-            {
-                DisposeNativeJobBuffers();
-#if UNITY_EDITOR
-                UnityEditor.EditorApplication.update -= PumpAsyncJob;
-#endif
-                return;
-            }
-
-            int totalPoints = _samplePositions.Length;
-
-            if (_flowVectors == null || _flowVectors.Length != totalPoints ||
-                _flowMagnitudes == null || _flowMagnitudes.Length != totalPoints)
-            {
-                _flowVectors = new Vector3[totalPoints];
-                _flowMagnitudes = new float[totalPoints];
-            }
-
-            for (int i = 0; i < totalPoints; i++)
-            {
-                Vector3 flow = new Vector3(_nativeFlowResults[i].x, _nativeFlowResults[i].y, _nativeFlowResults[i].z);
-                _flowVectors[i] = flow;
-                _flowMagnitudes[i] = ApproximateVectorMagnitude(flow);
-            }
-
-            _lastCalculationTime = Time.realtimeSinceStartup - _asyncStartTime;
-            _lastPointCount = totalPoints;
-
-            DisposeNativeJobBuffers();
-
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.update -= PumpAsyncJob;
-#endif
         }
 
         /// <summary>Vypolnyaet fakticheskiy raschet techeniy</summary>
@@ -1220,32 +1056,6 @@ namespace Hecton8.Physics
             }
         }
 
-        private void DisposeNativeJobBuffers()
-        {
-            if (_nativeVolumeData.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_nativeVolumeData);
-                _nativeVolumeData.Dispose();
-            }
-            if (_nativeSamplePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_nativeSamplePositions);
-                _nativeSamplePositions.Dispose();
-            }
-            if (_nativeFlowResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_nativeFlowResults);
-                _nativeFlowResults.Dispose();
-            }
-
-            _nativeVolumeData = default;
-            _nativeSamplePositions = default;
-            _nativeFlowResults = default;
-            _isCalculationJobRunning = false;
-            _isCalculatingAsync = false;
-            _calculationShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-        }
-
         private void GetVisualizationCameraPose(out Vector3 cameraPosition, out Vector3 cameraForward)
         {
             Camera currentCamera = Camera.current ?? _cachedMainCamera;
@@ -1444,7 +1254,7 @@ namespace Hecton8.Physics
                 {
                     GameObject go = Instantiate(particlePrefab);
                     go.hideFlags = HideFlags.HideAndDontSave;
-                    var ps = go.GetComponent<ParticleSystem>();
+                    go.TryGetComponent(out ParticleSystem ps);
                     if (ps == null)
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1495,17 +1305,6 @@ namespace Hecton8.Physics
                 _subscribedFluidEngine.OnCurrentSettingsChangedEvent -= OnCurrentSettingsChanged;
                 _subscribedFluidEngine = null;
             }
-
-            if (_isCalculationJobRunning)
-            {
-                DispatcherJobSwap.TryComplete(ref _calculationJobHandle, true);
-            }
-
-            DisposeNativeJobBuffers();
-
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.update -= PumpAsyncJob;
-#endif
 
             // Polnostyu osvobozhdaem preview-resursy, chtoby ne ostavlyat hidden editor objects.
             DisposeParticlePreviewPool();

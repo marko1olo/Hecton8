@@ -46,7 +46,7 @@ namespace Hecton8.EditorTools
         public static void GenerateReport()
         {
             string[] guids = AssetDatabase.FindAssets("t:MonoScript", new[] { "Assets/_Project" });
-            List<HookEntry> entries = new List<HookEntry>();
+            List<HookEntry> entries = new List<HookEntry>(guids.Length);
 
             foreach (string guid in guids)
             {
@@ -58,10 +58,13 @@ namespace Hecton8.EditorTools
                     continue;
 
                 string source = File.ReadAllText(assetPath);
-                List<string> hooks = Patterns
-                    .Where(pattern => source.Contains(pattern.Token, StringComparison.Ordinal))
-                    .Select(pattern => pattern.Name)
-                    .ToList();
+                List<string> hooks = new List<string>(Patterns.Length);
+                for (int patternIndex = 0; patternIndex < Patterns.Length; patternIndex++)
+                {
+                    HookPattern pattern = Patterns[patternIndex];
+                    if (source.Contains(pattern.Token, StringComparison.Ordinal))
+                        hooks.Add(pattern.Name);
+                }
 
                 if (hooks.Count == 0)
                     continue;
@@ -130,7 +133,7 @@ namespace Hecton8.EditorTools
 
         private static string BuildMarkdown(IReadOnlyList<HookEntry> entries)
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new StringBuilder(8192);
             builder.AppendLine("# Unity Reload Audit Report");
             builder.AppendLine();
             builder.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");

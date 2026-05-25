@@ -216,28 +216,73 @@ namespace Hecton8.World
                 _nativeMemory.PredatorFearNodesSnapshotNative[i] = snapshot;
             }
 
-            UploadPredatorFearShaderPayload(activeCount);
+            QueuePredatorFearShaderPayload(activeCount);
+        }
+
+        private void QueuePredatorFearShaderPayload(int activeCount)
+        {
+            _pendingPredatorFearShaderActiveCount = math.max(0, activeCount);
+            _pendingPredatorFearShaderUpload = true;
+        }
+
+        private void FlushPredatorFearShaderPayloadVisualSync()
+        {
+            if (!_pendingPredatorFearShaderUpload)
+                return;
+
+            _pendingPredatorFearShaderUpload = false;
+            UploadPredatorFearShaderPayload(_pendingPredatorFearShaderActiveCount);
         }
 
         private void UploadPredatorFearShaderPayload(int activeCount)
         {
             int safeCount = Mathf.Max(1, activeCount);
             EnsurePredatorFearShaderBuffer(safeCount);
-            if (_predatorFearNodeBuffer == null || !_nativeMemory.PredatorFearNodesSnapshotNative.IsCreated)
+            if (!_nativeMemory.PredatorFearNodesSnapshotNative.IsCreated)
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_predatorFearNodeBuffer, _nativeMemory.PredatorFearNodesSnapshotNative, safeCount);
-            Shader.SetGlobalBuffer(_PredatorFearNodeBufferId, _predatorFearNodeBuffer);
+            GraphicsBuffer writeBuffer = ResolvePredatorFearShaderWriteBuffer();
+            if (writeBuffer == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _nativeMemory.PredatorFearNodesSnapshotNative, safeCount);
+            _activePredatorFearNodeBuffer = writeBuffer;
+            _predatorFearNodeBufferWriteIndex ^= 1;
+            Shader.SetGlobalBuffer(_PredatorFearNodeBufferId, _activePredatorFearNodeBuffer);
             Shader.SetGlobalInt(_PredatorFearNodeCountId, activeCount);
         }
 
         private void EnsurePredatorFearShaderBuffer(int requiredCount)
         {
-            if (_predatorFearNodeBuffer != null && _predatorFearNodeBuffer.count >= requiredCount)
+            if (_predatorFearNodeBufferA != null &&
+                _predatorFearNodeBufferA.count >= requiredCount &&
+                _predatorFearNodeBufferB != null &&
+                _predatorFearNodeBufferB.count >= requiredCount)
+            {
+                if (_activePredatorFearNodeBuffer == null)
+                    _activePredatorFearNodeBuffer = _predatorFearNodeBufferA;
                 return;
+            }
 
-            ReleaseBuffer(ref _predatorFearNodeBuffer);
-            _predatorFearNodeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<PredatorFearNodeSnapshot>(requiredCount); // COLD ALLOC: GraphicsBuffer[requiredCount] - global predator-fear StructuredBuffer for flora stealth dimming - owner: HectonMapMagicVegetationBridge
+            ReleaseBuffer(ref _predatorFearNodeBufferA);
+            ReleaseBuffer(ref _predatorFearNodeBufferB);
+            _predatorFearNodeBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<PredatorFearNodeSnapshot>(requiredCount); // COLD ALLOC: GraphicsBuffer[requiredCount] A - global predator-fear StructuredBuffer for flora stealth dimming - owner: HectonMapMagicVegetationBridge
+            _predatorFearNodeBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<PredatorFearNodeSnapshot>(requiredCount); // COLD ALLOC: GraphicsBuffer[requiredCount] B - global predator-fear StructuredBuffer for flora stealth dimming - owner: HectonMapMagicVegetationBridge
+            _activePredatorFearNodeBuffer = _predatorFearNodeBufferA;
+            _predatorFearNodeBufferWriteIndex = 0;
+        }
+
+        private GraphicsBuffer ResolvePredatorFearShaderWriteBuffer()
+        {
+            GraphicsBuffer writeBuffer = _predatorFearNodeBufferWriteIndex == 0
+                ? _predatorFearNodeBufferA
+                : _predatorFearNodeBufferB;
+            if (writeBuffer != null)
+                return writeBuffer;
+
+            return ReferenceEquals(_activePredatorFearNodeBuffer, _predatorFearNodeBufferA)
+                ? _predatorFearNodeBufferB
+                : _predatorFearNodeBufferA;
         }
     }
 }

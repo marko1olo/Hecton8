@@ -63,6 +63,10 @@ namespace Hecton8.Inventory
     /// </summary>
     public static class ItemPhysicalMetadataUtility
     {
+        public const byte AudioMaterialOrganic = 0;
+        public const byte AudioMaterialMetal = 1;
+        public const byte AudioMaterialGlass = 2;
+
         public static uint ResolveDefaultVulnerabilityMask(ItemCategory category, ResourceFamily resourceFamily, string persistentId)
         {
             string safeId = persistentId ?? string.Empty;

@@ -1,4 +1,4 @@
-# Equipment SOA Layout
+﻿# Equipment SOA Layout
 
 Date: 2026-05-21
 Status: PENDING VERIFICATION

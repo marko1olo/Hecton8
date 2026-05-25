@@ -106,12 +106,12 @@ namespace Hecton8.Audio
                 return;
 
             _dataVault = vault;
-            _framesHandle = vault.GetGenerationHandle<float>(
+            _framesHandle = vault.EnsureGenerationHandle<float>(
                 BufferID.AudioFrameRingFrames,
                 resolvedCapacity * resolvedChannels,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _sharedStateHandle = vault.GetGenerationHandle<int>(
+            _sharedStateHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.AudioFrameRingSharedState,
                 NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount,
                 VaultOwner,

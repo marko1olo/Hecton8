@@ -1,4 +1,4 @@
-# HECTON-8 Competitor And Sentiment Monitoring Queries
+﻿# HECTON-8 Competitor And Sentiment Monitoring Queries
 
 Status: living monitoring playbook
 Owner lane: SHINOBU_81 / competitive intelligence
@@ -312,6 +312,111 @@ Extract:
 - whether creator is positive, skeptical, or hostile.
 
 Do not fabricate top-liked comment order if the platform does not expose it.
+
+### Imageboard / Chan Monitoring
+
+Evidence boundary: anonymous board monitoring is low-confidence by default. It can reveal harsh wording, clone-risk, AI-agent stigma, engine-war friction, and whether a shot survives hostile reading. It cannot produce adoption percentages, conversion forecasts, creator targets, consent, or public claims.
+
+Weekly surfaces to check only as public pages/API endpoints:
+
+```text
+4chan catalog endpoints:
+https://a.4cdn.org/vg/catalog.json
+https://a.4cdn.org/g/catalog.json
+https://a.4cdn.org/v/catalog.json
+
+Dvach catalog/thread endpoints:
+https://2ch.org/gd/threads.json
+https://2ch.org/v/threads.json
+https://2ch.org/vg/threads.json
+https://2ch.org/ai/threads.json
+```
+
+Search terms:
+
+| Surface | Terms |
+|---|---|
+| 4chan game-dev | `agdg`, `game dev`, `gamedev`, `Unity`, `Godot`, `Unreal`, `solo dev`, `indie`, `survival`, `underwater`, `Subnautica`, `AI`, `agent`, `vibe coding` |
+| 4chan player boards | `Subnautica`, `underwater`, `survival`, `base building`, `co-op`, `Early Access`, `AI slop`, `Unity game` |
+| Dvach game-dev | `геймдев`, `Unity`, `Godot`, `Unreal`, `выживач`, `подвод`, `хоррор`, `сабнатика`, `Subnautica`, `инди` |
+| Dvach AI/workflow | `агент`, `вайб`, `нейро`, `ИИ`, `кодинг`, `Unity`, `геймдев` |
+
+Classification buckets:
+
+- clone-risk language;
+- "too dark / cannot read" visual criticism;
+- industrial/machinery readability;
+- pressure/failure readability;
+- player agency named or absent;
+- AI-slop stigma;
+- Unity/engine trust issue;
+- underwater fatigue;
+- survival/base-building expectation;
+- Subnautica/SN2 comparison wording;
+- hostility with no actionable signal.
+
+Do not store personal data. Do not contact anonymous users. Do not quote slurs or unsafe content in marketing docs. Paraphrase neutrally and preserve only the product-relevant signal.
+
+#### Imageboard Signal Row
+
+```text
+Date checked:
+Agent:
+Surface:
+Board:
+Thread ID / catalog URL:
+Thread status: live / archived / 404
+Search terms:
+Evidence class: forum thread / public catalog / anecdotal
+Asset shown by HECTON: none / screenshot / clip / demo
+Observed wording:
+Paraphrased signal:
+Signal class: reject / anecdotal / directional / recurring
+Player decision named: yes / no / not applicable
+Clone-risk read:
+AI-agent read:
+Engine/tool read:
+Action: monitor / revise asset / revise template / kill angle
+Confidence:
+Next check date:
+```
+
+#### Chan Digest Template
+
+```text
+Week:
+Boards checked:
+Threads checked:
+Useful signals:
+Rejected noise:
+Strongest clone-risk phrase:
+Strongest AI-slop warning:
+Best asset critique:
+Template correction needed:
+Product/shotlist implication:
+Do not post notes:
+```
+
+#### Promotion Boundary
+
+Imageboard signal can:
+
+- revise a screenshot/clip;
+- revise a no-link critique question;
+- add a risk to community strategy;
+- update clone-risk wording;
+- update AI-agent public boundary;
+- inform which proof asset to cold-read next.
+
+Imageboard signal cannot:
+
+- authorize a public post;
+- authorize a CTA link;
+- authorize Steam page movement;
+- authorize creator outreach;
+- become a KPI without route-specific class and consent/provenance fields;
+- become a public comparison claim;
+- become an adoption percentage for AI agents.
 
 ## Signal Table Template
 

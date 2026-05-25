@@ -24,7 +24,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8012)]
-    public sealed class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IAssetLifecyclePressureSink, IGlobalRegistryHotSwapListener
     {
         private const uint CollisionSalt = 0xDEADBEEF;
         private const float NativeHeapOverheadFactor = 1.15f;
@@ -80,8 +80,11 @@ namespace Hecton8.Optimization
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
         private bool _registeredService;
         private bool _registeredHotSwap;
+        private readonly Component[] _pendingPresentationDisableOwners = new Component[MaxHardReaperEvictions];
+        private int _pendingPresentationDisableCount;
         private long _frameSequence;
         private float _nextColdReleaseTime;
         private float _nextColdTickWarningTime;
@@ -117,7 +120,7 @@ namespace Hecton8.Optimization
         private VaultGenerationHandle<AssetHeapTelemetryEntry> _heapTelemetryVaultHandle;
         private SystemDispatcher _cachedDispatcher;
         private AssetLoadDispatcher _cachedAssetLoadDispatcher;
-        private VRAMPressureMonitor _cachedVramPressure;
+        private IVramPressureReadModel _cachedVramPressure;
         private IPlayerRuntimeContext _cachedPlayer;
         private IPlayerInventoryService _cachedPlayerInventory;
         private IScannerInterferenceUiSink _cachedScannerInterferenceUi;
@@ -151,7 +154,7 @@ namespace Hecton8.Optimization
         private FixedUIntList _evictionCandidates;
         private FixedUIntList _retryCandidates;
         private bool _pendingReleaseOverflowDraining;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         // COLD ALLOC: StringBuilder[512] - throttled diagnostics builder - owner: AssetLifecycleGovernor
 #endif
 
@@ -355,6 +358,11 @@ namespace Hecton8.Optimization
             {
                 ReportColdTickBudgetIfNeeded(startTicks);
             }
+        }
+
+        public void LateFrameTick()
+        {
+            FlushPendingPresentationDisables();
         }
 
         internal uint Acquire(
@@ -768,6 +776,56 @@ namespace Hecton8.Optimization
                 : 0f;
         }
 
+        long IAssetLifecyclePressureSink.NativeHeapEstimateBytes => NativeHeapEstimateBytes;
+
+        void IAssetLifecyclePressureSink.ForceDrainPendingReleaseQueue()
+        {
+            ForceDrainPendingReleaseQueue();
+        }
+
+        int IAssetLifecyclePressureSink.DrainPendingReleaseQueueBudgeted(int maxCount)
+        {
+            return DrainPendingReleaseQueueBudgeted(maxCount);
+        }
+
+        int IAssetLifecyclePressureSink.EvictLowestPriorityUnusedAssets(int maxCount, byte minimumPriorityCode)
+        {
+            return EvictLowestPriorityUnusedAssets(maxCount, ResolveAssetPriorityTier(minimumPriorityCode));
+        }
+
+#if UNITY_ADDRESSABLES_EXIST
+        bool IAssetLifecyclePressureSink.TryStageExternalAddressableRelease(AsyncOperationHandle handle)
+        {
+            return TryStageExternalAddressableRelease(handle);
+        }
+
+        bool IAssetLifecyclePressureSink.TryReleaseExternalAddressableFault(AsyncOperationHandle handle)
+        {
+            return TryReleaseExternalAddressableFault(handle);
+        }
+#endif
+
+        private static AssetPriorityTier ResolveAssetPriorityTier(byte code)
+        {
+            switch (code)
+            {
+                case AssetPriorityTierCodes.Tier0PlayerCritical:
+                    return AssetPriorityTier.Tier0PlayerCritical;
+                case AssetPriorityTierCodes.Tier1Equipped:
+                    return AssetPriorityTier.Tier1Equipped;
+                case AssetPriorityTierCodes.Tier2Proximity:
+                    return AssetPriorityTier.Tier2Proximity;
+                case AssetPriorityTierCodes.Tier3Ambient:
+                    return AssetPriorityTier.Tier3Ambient;
+                case AssetPriorityTierCodes.Tier4MidRange:
+                    return AssetPriorityTier.Tier4MidRange;
+                case AssetPriorityTierCodes.Tier5DistantHlod:
+                    return AssetPriorityTier.Tier5DistantHlod;
+                default:
+                    return AssetPriorityTier.Tier6Speculative;
+            }
+        }
+
         internal void MarkChunkResidency(uint key)
         {
             if (!_assetRecords.TryGetValue(key, out AssetRecord record))
@@ -813,7 +871,7 @@ namespace Hecton8.Optimization
                 }
 
                 GlobalTelemetryBus.PublishPerformanceWarning(_DoubleReleaseWarningHash, _AssetLifecycleContextHash, key);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 Debug.LogError("[AssetLifecycleGovernor] Double release detected.", this);
 #endif
             }
@@ -915,7 +973,7 @@ namespace Hecton8.Optimization
             ApplyFallbackMaterial(record.Owner);
             _assetRecords.Set(key, record);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("[AssetLifecycleGovernor] Asset load failed.", this);
 #endif
         }
@@ -2755,13 +2813,16 @@ namespace Hecton8.Optimization
 
         private static float ResolveGlobalQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
         private float ResolveVramPressureFactor()
         {
-            VRAMPressureMonitor pressure = _cachedVramPressure;
+            IVramPressureReadModel pressure = _cachedVramPressure;
             if (pressure == null)
                 return 0f;
 
@@ -2984,7 +3045,7 @@ namespace Hecton8.Optimization
             if (TryResolveHeapSanitizerVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
             return TryResolveHeapSanitizerVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
         }
 
@@ -3361,6 +3422,7 @@ namespace Hecton8.Optimization
             return true;
         }
 
+#if UNITY_EDITOR
         public bool TryParseAssetCacheRulesCsv(string absolutePath)
         {
             if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
@@ -3630,6 +3692,7 @@ namespace Hecton8.Optimization
             value = negative ? -parsed : parsed;
             return math.isfinite(value);
         }
+#endif
 
         private int CountActiveAddressableHandles()
         {
@@ -3797,17 +3860,21 @@ namespace Hecton8.Optimization
 
             bool tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
             bool slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
-            if (!tickRegistered || !slowTickRegistered)
+            bool lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            if (!tickRegistered || !slowTickRegistered || !lateFrameRegistered)
             {
                 if (tickRegistered)
                     GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                 if (slowTickRegistered)
                     GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                if (lateFrameRegistered)
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
                 return;
             }
 
             _registeredTick = true;
             _registeredSlowTick = true;
+            _registeredLateFrame = true;
         }
 
         private bool TryRegisterService()
@@ -3837,6 +3904,13 @@ namespace Hecton8.Optimization
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
                 _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrame = false;
+                _pendingPresentationDisableCount = 0;
             }
 
             if (!_registeredTick)
@@ -3894,9 +3968,9 @@ namespace Hecton8.Optimization
             if (_cachedAssetLoadDispatcher == null)
                 _cachedAssetLoadDispatcher = GlobalRegistry.AssetLoadDispatcher;
             if (_cachedVramPressure == null)
-                _cachedVramPressure = GlobalRegistry.VRAMPressure;
+                _cachedVramPressure = GlobalRegistry.VRAMPressureReadModel;
             if (_cachedPlayer == null)
-                _cachedPlayer = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _cachedPlayer = GlobalRegistry.Player;
             if (_cachedPlayerInventory == null)
                 _cachedPlayerInventory = GlobalRegistry.PlayerInventory;
             if (_cachedScannerInterferenceUi == null)
@@ -3929,7 +4003,7 @@ namespace Hecton8.Optimization
                     _cachedAssetLoadDispatcher = currentService as AssetLoadDispatcher;
                     break;
                 case GlobalRegistryServiceSlot.VRAMPressureRuntime:
-                    _cachedVramPressure = currentService as VRAMPressureMonitor;
+                    _cachedVramPressure = currentService as IVramPressureReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayer = currentService as IPlayerRuntimeContext;
@@ -4335,7 +4409,7 @@ namespace Hecton8.Optimization
                     dispatcher.AcknowledgeDispatchRequest(record.ActiveRequestId, false);
             }
 
-            DisableOwnerPresentation(record.Owner);
+            QueueOwnerPresentationDisable(record.Owner);
 
 #if UNITY_ADDRESSABLES_EXIST
             if (hasValidAddressableHandle)
@@ -4662,6 +4736,29 @@ namespace Hecton8.Optimization
 
             if (owner.TryGetComponent(out Renderer ownerRenderer))
                 ownerRenderer.enabled = false;
+        }
+
+        private void QueueOwnerPresentationDisable(Component owner)
+        {
+            if (owner == null)
+                return;
+
+            if (_pendingPresentationDisableCount >= _pendingPresentationDisableOwners.Length)
+                return;
+
+            _pendingPresentationDisableOwners[_pendingPresentationDisableCount++] = owner;
+        }
+
+        private void FlushPendingPresentationDisables()
+        {
+            for (int i = 0; i < _pendingPresentationDisableCount; i++)
+            {
+                Component owner = _pendingPresentationDisableOwners[i];
+                _pendingPresentationDisableOwners[i] = null;
+                DisableOwnerPresentation(owner);
+            }
+
+            _pendingPresentationDisableCount = 0;
         }
 
         private void ApplyFallbackMaterial(Component owner)
@@ -5212,7 +5309,7 @@ namespace Hecton8.Optimization
                 return true;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             Debug.LogError("[AssetLifecycleGovernor] Asset key collision.");
 #endif
             return false;

@@ -72,14 +72,21 @@ namespace Hecton8.Tools
             [FieldOffset(56)] private ulong _pad3;
         }
 
+        [Obsolete("Use TryEnqueueToolFeedback(float,float,byte) so bounded refusal stays visible at the producer.", true)]
         public static void EnqueueToolFeedback(float powerDelivered, float ratedPower, byte priority = 1)
         {
-            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
-                return;
-
-            runtime.EnqueueBackBuffer(powerDelivered, ratedPower, priority);
+            TryEnqueueToolFeedback(powerDelivered, ratedPower, priority);
         }
 
+        public static bool TryEnqueueToolFeedback(float powerDelivered, float ratedPower, byte priority = 1)
+        {
+            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
+                return false;
+
+            return runtime.TryEnqueueBackBuffer(powerDelivered, ratedPower, priority);
+        }
+
+        [Obsolete("Use TryEnqueueCommand(...) so bounded refusal stays visible at the producer.", true)]
         public static void EnqueueCommand(
             float lowFreqIntensity,
             float highFreqIntensity,
@@ -89,10 +96,29 @@ namespace Hecton8.Tools
             byte motorMask,
             byte blendMode)
         {
-            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
-                return;
+            TryEnqueueCommand(
+                lowFreqIntensity,
+                highFreqIntensity,
+                durationSeconds,
+                decayRate,
+                priority,
+                motorMask,
+                blendMode);
+        }
 
-            runtime.EnqueueBackBufferCommand(
+        public static bool TryEnqueueCommand(
+            float lowFreqIntensity,
+            float highFreqIntensity,
+            float durationSeconds,
+            float decayRate,
+            byte priority,
+            byte motorMask,
+            byte blendMode)
+        {
+            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
+                return false;
+
+            return runtime.TryEnqueueBackBufferCommand(
                 lowFreqIntensity,
                 highFreqIntensity,
                 durationSeconds,
@@ -106,6 +132,7 @@ namespace Hecton8.Tools
         /// <summary>
         /// Enqueues a bounded sinusoidal rumble envelope for critical UI and tool warnings.
         /// </summary>
+        [Obsolete("Use TryEnqueueSinusoidalCommand(...) so bounded refusal stays visible at the producer.", true)]
         public static void EnqueueSinusoidalCommand(
             float lowFreqIntensity,
             float highFreqIntensity,
@@ -114,10 +141,27 @@ namespace Hecton8.Tools
             byte priority,
             byte motorMask)
         {
-            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
-                return;
+            TryEnqueueSinusoidalCommand(
+                lowFreqIntensity,
+                highFreqIntensity,
+                durationSeconds,
+                frequencyHz,
+                priority,
+                motorMask);
+        }
 
-            runtime.EnqueueBackBufferCommand(
+        public static bool TryEnqueueSinusoidalCommand(
+            float lowFreqIntensity,
+            float highFreqIntensity,
+            float durationSeconds,
+            float frequencyHz,
+            byte priority,
+            byte motorMask)
+        {
+            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
+                return false;
+
+            return runtime.TryEnqueueBackBufferCommand(
                 lowFreqIntensity,
                 highFreqIntensity,
                 durationSeconds,
@@ -396,7 +440,7 @@ namespace Hecton8.Tools
                 rightIntensity = intensity * 0.65f;
             }
 
-            EnqueueBackBufferCommand(
+            TryEnqueueBackBufferCommand(
                 leftIntensity,
                 rightIntensity,
                 PhysicsImpulseHapticDurationSeconds,
@@ -451,7 +495,7 @@ namespace Hecton8.Tools
                 return true;
             }
 
-            VaultGenerationHandle<HapticCommand> acquired = vault.GetGenerationHandle<HapticCommand>(
+            VaultGenerationHandle<HapticCommand> acquired = vault.EnsureGenerationHandle<HapticCommand>(
                 bufferId,
                 BufferCapacity,
                 SystemID.GameplayTools,
@@ -548,10 +592,10 @@ namespace Hecton8.Tools
             _backCount = 0;
         }
 
-        private void EnqueueBackBuffer(float powerDelivered, float ratedPower, byte priority)
+        private bool TryEnqueueBackBuffer(float powerDelivered, float ratedPower, byte priority)
         {
             if (PowerSaveMuteActive)
-                return;
+                return false;
 
             EnsureBuffers();
 
@@ -559,14 +603,14 @@ namespace Hecton8.Tools
                 ? ClampFinite01(powerDelivered * math.rcp(ratedPower))
                 : 0f;
             if (normalizedPower <= 0f)
-                return;
+                return false;
 
             byte motorMask = RightMotorMask;
             if (!TrySelectBackBufferSlot(priority, out int slotIndex))
-                return;
+                return false;
 
             if (!TryApplyHapticDebounce(ref motorMask, priority))
-                return;
+                return false;
 
             HapticCommand command = default;
             command.LowFreqIntensity = 0f;
@@ -580,9 +624,10 @@ namespace Hecton8.Tools
             command.BlendMode = BlendModeAdditive;
             command.FrequencyHz = 0f;
             StoreBackBufferCommand(slotIndex, in command);
+            return true;
         }
 
-        private void EnqueueBackBufferCommand(
+        private bool TryEnqueueBackBufferCommand(
             float lowFreqIntensity,
             float highFreqIntensity,
             float durationSeconds,
@@ -593,12 +638,12 @@ namespace Hecton8.Tools
             float frequencyHz)
         {
             if (PowerSaveMuteActive)
-                return;
+                return false;
 
             EnsureBuffers();
             byte resolvedMotorMask = (byte)(motorMask & BothMotorMask);
             if (resolvedMotorMask == 0)
-                return;
+                return false;
 
             float resolvedLow = math.isfinite(lowFreqIntensity)
                 ? math.saturate(lowFreqIntensity)
@@ -613,13 +658,13 @@ namespace Hecton8.Tools
                 ? math.clamp(decayRate, 0f, MaxCommandDecayRate)
                 : 0f;
             if ((resolvedLow <= 0f && resolvedHigh <= 0f) || resolvedDuration <= 0f)
-                return;
+                return false;
 
             if (!TrySelectBackBufferSlot(priority, out int slotIndex))
-                return;
+                return false;
 
             if (!TryApplyHapticDebounce(ref resolvedMotorMask, priority))
-                return;
+                return false;
 
             HapticCommand command = default;
             command.LowFreqIntensity = resolvedLow;
@@ -633,6 +678,7 @@ namespace Hecton8.Tools
             command.BlendMode = (byte)math.clamp((int)blendMode, BlendModeOverride, BlendModeMax);
             command.FrequencyHz = math.isfinite(frequencyHz) ? math.clamp(frequencyHz, 0f, MaxCommandFrequencyHz) : 0f;
             StoreBackBufferCommand(slotIndex, in command);
+            return true;
         }
 
         private bool TrySelectBackBufferSlot(byte priority, out int slotIndex)
@@ -742,7 +788,7 @@ namespace Hecton8.Tools
         {
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
         }
 
         private void RebindDataVault(IDataVault dataVault)

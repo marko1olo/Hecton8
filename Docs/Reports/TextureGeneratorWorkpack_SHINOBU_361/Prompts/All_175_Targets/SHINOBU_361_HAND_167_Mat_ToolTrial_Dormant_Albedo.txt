@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_167
+ROLE: MASK_ORM
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_167_Mat_ToolTrial_Dormant_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_ToolTrial_Dormant_Albedo.png
+FINAL_FILENAME: Mat_ToolTrial_Dormant_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Dormant tool trial albedo for inactive prototype equipment. Create pearl ceramic casing panels, desaturated teal standby bands, soft amber inactive pips, graphite grip strips, satin titanium service seams, and gentle salt dust around storage edges. The material should read as powered down but maintained, useful for dormant props and test states. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

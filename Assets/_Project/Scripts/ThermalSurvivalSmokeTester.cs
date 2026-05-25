@@ -61,7 +61,7 @@ namespace Hecton8.Dev
             if (verboseLogging)
             {
                 if (_debugLastPass)
-                    Debug.Log("[ThermalSurvivalSmoke] PASS");
+                    Hecton8.Core.H8Debug.Log("[ThermalSurvivalSmoke] PASS");
                 else
                     Debug.LogError("[ThermalSurvivalSmoke] FAIL mask=" + _debugLastFailureMask);
             }
@@ -85,7 +85,7 @@ namespace Hecton8.Dev
                     "Thermal survival smoke failed. FailureMask=" + failureMask);
             }
 
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "[ThermalSurvivalSmoke] PASS thermalDps=" + thermalDamagePerSecond +
                 " brineSinkMultiplier=" + brineSinkMultiplier);
         }
@@ -133,7 +133,7 @@ namespace Hecton8.Dev
 
             float vomitSeverity = HectonSurvivalSystem.ResolveDecompressionVomitSeverity01(155f);
             float safeVomitSeverity = HectonSurvivalSystem.ResolveDecompressionVomitSeverity01(150f);
-            if (math.abs(vomitSeverity - 0.5f) > 0.0001f || safeVomitSeverity > 0.0001f)
+            if (math.abs(vomitSeverity) > 0.0001f || safeVomitSeverity > 0.0001f)
                 failureMask |= FailureDecompressionVomit;
 
             if (!HectonSurvivalSystem.ShouldForceSuitPunctureBleeding(31f, 100f) ||

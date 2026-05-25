@@ -155,7 +155,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
                 return;
 
             s_previewMaterial.SetPass(0);
-            Graphics.DrawMeshNow(s_previewMesh, Matrix4x4.identity);
+            UnityEngine.Graphics.DrawMeshNow(s_previewMesh, Matrix4x4.identity);
         }
 
         private static void EnsurePreviewMesh()

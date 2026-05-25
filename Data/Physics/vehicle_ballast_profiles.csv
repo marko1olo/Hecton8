@@ -1,0 +1,4 @@
+# vehicle_hash_name,hull_volume_m3,hull_height_m,tank_volume_liters,pump_rate_lps,blow_rate_lps,air_bank_pressure_atm,fluid_density_kg_m3
+Deep_Sea_Bathyscaphe,24.0,4.8,1200.0,180.0,420.0,95.0,1032.0
+Industrial_Submarine,18.0,3.4,850.0,153.0,382.5,72.0,1025.0
+Light_Scout,9.5,2.2,360.0,48.0,135.0,38.0,1022.0

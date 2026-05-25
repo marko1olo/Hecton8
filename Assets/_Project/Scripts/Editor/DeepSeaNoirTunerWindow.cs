@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core.Contracts;
 using Hecton8.Visor;
 using Unity.Mathematics;
@@ -162,7 +163,10 @@ namespace Hecton8.Editor
                 if (!_hasReadoutHash || readoutHash != _lastReadoutHash)
                 {
                     _constantsLabel.text =
-                        $"CBuffer: q {constants.QualityAndLimits.x:0.000}, stress {constants.QualityAndLimits.y:0.000}, grain {constants.GrainParams.x:0.000}, glitch {constants.AberrationParams.y:0.000}";
+                        "CBuffer: q " + constants.QualityAndLimits.x.ToString("0.000", CultureInfo.InvariantCulture) +
+                        ", stress " + constants.QualityAndLimits.y.ToString("0.000", CultureInfo.InvariantCulture) +
+                        ", grain " + constants.GrainParams.x.ToString("0.000", CultureInfo.InvariantCulture) +
+                        ", glitch " + constants.AberrationParams.y.ToString("0.000", CultureInfo.InvariantCulture);
                     _lastReadoutHash = readoutHash;
                     _hasReadoutHash = true;
                 }

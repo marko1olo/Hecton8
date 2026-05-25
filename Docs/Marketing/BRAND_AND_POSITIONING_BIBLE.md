@@ -1,4 +1,4 @@
-# HECTON-8 Brand And Positioning Bible
+﻿# HECTON-8 Brand And Positioning Bible
 
 Status: pre-screenshot positioning system / do not publish as-is
 Public stance: single-player-first scope / proof-first public copy / no competitor-war copy

@@ -14,11 +14,13 @@ namespace Hecton8.Equipment.Auxiliary
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Equipment/Auxiliary Equipment Router Runtime")]
-    public sealed class AuxiliaryEquipmentRouterRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable
+    public sealed class AuxiliaryEquipmentRouterRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int JobBatchSize = 64;
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_229.bin";
+#if UNITY_EDITOR
         private const string ProfilesCsvFileName = "auxiliary_equipment_profiles.csv";
+#endif
         private static readonly double s_timestampToMicroseconds = 1000000.0 / System.Diagnostics.Stopwatch.Frequency;
 
         [SerializeField, Range(64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries)]
@@ -60,13 +62,14 @@ namespace Hecton8.Equipment.Auxiliary
         private bool _jobActive;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
         private bool _buffersReady;
         private bool _signalLanesReady;
         private bool _mockSeeded;
         private bool _dumpWritten;
         private bool _profilesLoaded;
         private bool _vfxUploadValid;
-        private AuxiliaryCsvParseResult _lastCsvParseResult;
+        private AuxiliaryProfileLoadResult _lastProfileLoadResult;
 
         public static bool TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime)
         {
@@ -349,6 +352,7 @@ namespace Hecton8.Equipment.Auxiliary
         {
             s_activeRuntime = this;
             InitializeService(GlobalRegistry.DataVault);
+            TryRegisterHotSwapListener();
             if (!registerWithDispatcher)
                 return;
 
@@ -359,6 +363,7 @@ namespace Hecton8.Equipment.Auxiliary
         private void OnDisable()
         {
             CompletePendingJobForTeardown();
+            TryUnregisterHotSwapListener();
             if (_registeredUpdate)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -383,6 +388,64 @@ namespace Hecton8.Equipment.Auxiliary
             _vfxUploadValid = false;
             _buffersReady = false;
             _profilesLoaded = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            {
+                if (_registeredUpdate)
+                {
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                    _registeredUpdate = false;
+                }
+
+                if (_registeredLateFrame)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _registeredLateFrame = false;
+                }
+
+                if (registerWithDispatcher)
+                {
+                    _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+                    _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault && currentService != null)
+            {
+                CompletePendingJobForTeardown();
+                ReleaseOwnedVaultHandles();
+                _buffersReady = false;
+                _profilesLoaded = false;
+                InitializeService(currentService as IDataVault);
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         public void InitializeService(IDataVault dataVault)
@@ -428,8 +491,11 @@ namespace Hecton8.Equipment.Auxiliary
                 RouteCounters = views.RouteCounters,
                 ActiveCount = views.ActiveCount,
                 FlareWriter = SignalBus<AuxiliaryFlareLightSignal>.OpenParallelWriter(),
+                FlareWriterBudget = SignalBus<AuxiliaryFlareLightSignal>.ParallelWriterBudget,
                 SonarWriter = SignalBus<AuxiliarySonarRequestSignal>.OpenParallelWriter(),
+                SonarWriterBudget = SignalBus<AuxiliarySonarRequestSignal>.ParallelWriterBudget,
                 TetherWriter = SignalBus<AuxiliaryTetherConnectionSignal>.OpenParallelWriter(),
+                TetherWriterBudget = SignalBus<AuxiliaryTetherConnectionSignal>.ParallelWriterBudget,
                 Tuning = tuning,
                 FrameIndex = _frameIndex,
                 SimulationDeltaTime = deltaTime,
@@ -839,7 +905,7 @@ namespace Hecton8.Equipment.Auxiliary
             if (!views.Profiles.IsCreated || views.Profiles.Length == 0 || !views.Tuning.IsCreated || views.Tuning.Length == 0)
                 return false;
 
-            AuxiliaryCsvParseResult result = default;
+            AuxiliaryProfileLoadResult result = default;
             bool parsed = false;
 #if UNITY_EDITOR
             if (views.CsvScratch.IsCreated && views.CsvScratch.Length > 0)
@@ -848,15 +914,17 @@ namespace Hecton8.Equipment.Auxiliary
                 int byteCount = TryReadProfilesFileIntoScratch(path, views.CsvScratch);
                 if (byteCount > 0)
                 {
+                    AuxiliaryCsvParseResult csvResult;
                     unsafe
                     {
                         byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.CsvScratch);
                         parsed = AuxiliaryEquipmentProfilesCsvParser.TryApplyProfilesCsv(
                             new ReadOnlySpan<byte>(ptr, byteCount),
                             views.Profiles,
-                            out result);
+                            out csvResult);
                     }
 
+                    result = csvResult.ToProfileLoadResult();
                     ClearProfileTail(views.Profiles, result.ParsedRows);
                 }
             }
@@ -871,11 +939,12 @@ namespace Hecton8.Equipment.Auxiliary
             if (parsed)
                 ApplyProfilesToTuning(views.Profiles, result.ParsedRows, views.Tuning);
 
-            _lastCsvParseResult = result;
+            _lastProfileLoadResult = result;
             _profilesLoaded = parsed;
             return parsed;
         }
 
+#if UNITY_EDITOR
         private static unsafe int TryReadProfilesFileIntoScratch(string path, NativeArray<byte> scratch)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path) || !scratch.IsCreated || scratch.Length == 0)
@@ -891,14 +960,14 @@ namespace Hecton8.Equipment.Auxiliary
 
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
                     int total = 0;
+                    Span<byte> destination = new Span<byte>(ptr, limit);
                     while (total < limit)
                     {
-                        int value = stream.ReadByte();
-                        if (value < 0)
+                        int read = stream.Read(destination.Slice(total));
+                        if (read <= 0)
                             break;
 
-                        ptr[total] = (byte)value;
-                        total++;
+                        total += read;
                     }
 
                     return total;
@@ -913,6 +982,7 @@ namespace Hecton8.Equipment.Auxiliary
                 return 0;
             }
         }
+#endif
 
         private static void ClearProfileTail(NativeArray<AuxiliaryProfileDTO> profiles, int parsedRows)
         {
@@ -927,7 +997,7 @@ namespace Hecton8.Equipment.Auxiliary
         private static void SeedFallbackProfiles(
             NativeArray<AuxiliaryProfileDTO> profiles,
             in AuxiliaryTuningDTO tuning,
-            out AuxiliaryCsvParseResult result)
+            out AuxiliaryProfileLoadResult result)
         {
             result = default;
             if (!profiles.IsCreated || profiles.Length == 0)
@@ -1045,18 +1115,18 @@ namespace Hecton8.Equipment.Auxiliary
                 maxFrameSignals: maxAuxiliarySignalsPerFrame,
                 lowTierFrameSignals: lowTierFlareSignalsPerFrame,
                 laneHash: AuxiliaryEquipmentConstants.FlareLightLaneHash);
+            SignalBus<AuxiliaryFlareLightSignal>.EnsureInitialized();
             SignalBus<AuxiliarySonarRequestSignal>.Configure(
                 expectedCapacity: maxAuxiliarySignalsPerFrame,
                 maxFrameSignals: maxAuxiliarySignalsPerFrame,
                 lowTierFrameSignals: lowTierSonarSignalsPerFrame,
                 laneHash: AuxiliaryEquipmentConstants.SensorPingLaneHash);
+            SignalBus<AuxiliarySonarRequestSignal>.EnsureInitialized();
             SignalBus<AuxiliaryTetherConnectionSignal>.Configure(
                 expectedCapacity: maxAuxiliarySignalsPerFrame,
                 maxFrameSignals: maxAuxiliarySignalsPerFrame,
                 lowTierFrameSignals: lowTierTetherSignalsPerFrame,
                 laneHash: AuxiliaryEquipmentConstants.TetherLaneHash);
-            SignalBus<AuxiliaryFlareLightSignal>.EnsureInitialized();
-            SignalBus<AuxiliarySonarRequestSignal>.EnsureInitialized();
             SignalBus<AuxiliaryTetherConnectionSignal>.EnsureInitialized();
             _signalLanesReady = true;
         }
@@ -1123,7 +1193,7 @@ namespace Hecton8.Equipment.Auxiliary
                 return true;
             }
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
             return IsHandleCreated(in handle) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&

@@ -57,7 +57,10 @@ namespace Hecton8.Tools
 
             PauseMenuHost host = FindSceneObjectIncludingInactive<PauseMenuHost>();
             if (host != null)
-                return host.GetComponent<PauseMenuController>();
+            {
+                host.TryGetComponent(out PauseMenuController controller);
+                return controller;
+            }
 
             return null;
         }
@@ -84,8 +87,7 @@ namespace Hecton8.Tools
             if (pauseObject == null || !pauseObject.activeInHierarchy)
                 return false;
 
-            CanvasGroup canvasGroup = pauseObject.GetComponent<CanvasGroup>();
-            if (canvasGroup == null)
+            if (!pauseObject.TryGetComponent(out CanvasGroup canvasGroup))
                 return true;
 
             return canvasGroup.alpha > 0.001f && canvasGroup.blocksRaycasts && canvasGroup.interactable;
@@ -115,7 +117,10 @@ namespace Hecton8.Tools
                 return null;
 
             if (string.Equals(root.name, childName, System.StringComparison.Ordinal))
-                return root.GetComponent<T>();
+            {
+                root.TryGetComponent(out T component);
+                return component;
+            }
 
             for (int i = 0; i < root.childCount; i++)
             {

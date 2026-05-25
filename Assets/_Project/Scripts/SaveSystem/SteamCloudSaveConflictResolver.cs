@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using Hecton8.Core;
 
 namespace Hecton8.SaveSystem
@@ -13,7 +12,7 @@ namespace Hecton8.SaveSystem
         private const string PromptTitle = "SYNC ANOMALY DETECTED";
         private static readonly Action _confirmSuggestedAction = ConfirmSuggested; // COLD ALLOC: Action[1] - modal confirm delegate cache - owner: SteamCloudSaveConflictResolver
         private static readonly Action _confirmOtherAction = ConfirmOther; // COLD ALLOC: Action[1] - modal alternate delegate cache - owner: SteamCloudSaveConflictResolver
-        private static readonly StringBuilder _promptBuilder = new StringBuilder(192); // COLD ALLOC: StringBuilder[192] - reused cloud conflict prompt builder - owner: SteamCloudSaveConflictResolver
+        private static readonly char[] _promptBuffer = new char[256]; // COLD ALLOC: char[256] - reused cloud conflict prompt buffer - owner: SteamCloudSaveConflictResolver
 
         private static Action<SteamCloudSaveChoice> _pendingResolver;
         private static SteamCloudSaveChoice _pendingSuggestedChoice;
@@ -36,7 +35,8 @@ namespace Hecton8.SaveSystem
             in SteamCloudSaveCandidate cloud,
             Action<SteamCloudSaveChoice> onResolved)
         {
-            if (onResolved == null || !GlobalRegistry.TryGet(out IModalWindowService modalWindow))
+            IModalWindowService modalWindow = GlobalRegistry.ModalWindow;
+            if (onResolved == null || modalWindow == null)
                 return false;
 
             SteamCloudSaveResolution resolution = Resolve(in local, in cloud);
@@ -44,9 +44,11 @@ namespace Hecton8.SaveSystem
             _pendingSuggestedChoice = resolution.SuggestedChoice;
             _pendingAlternateChoice = resolution.AlternateChoice;
 
+            int promptLength = BuildPromptMessage(in local, in cloud, in resolution);
             modalWindow.ShowModal(
                 PromptTitle,
-                BuildPromptMessage(in local, in cloud, in resolution),
+                _promptBuffer,
+                promptLength,
                 _confirmSuggestedAction,
                 _confirmOtherAction,
                 FormatChoiceLabel(resolution.SuggestedChoice),
@@ -70,7 +72,7 @@ namespace Hecton8.SaveSystem
             return SteamCloudSaveChoice.Local;
         }
 
-        private static string BuildPromptMessage(
+        private static int BuildPromptMessage(
             in SteamCloudSaveCandidate local,
             in SteamCloudSaveCandidate cloud,
             in SteamCloudSaveResolution resolution)
@@ -78,20 +80,33 @@ namespace Hecton8.SaveSystem
             int localPlayTimeSeconds = local.PlayTimeSeconds > 0f ? (int)local.PlayTimeSeconds : 0;
             int cloudPlayTimeSeconds = cloud.PlayTimeSeconds > 0f ? (int)cloud.PlayTimeSeconds : 0;
 
-            _promptBuilder.Length = 0;
-            _promptBuilder
-                .Append("Local MMF header: timestamp=")
-                .Append(local.TimestampUnixMs)
-                .Append(", playTime=")
-                .Append(localPlayTimeSeconds)
-                .Append("s\nCloud MMF header: timestamp=")
-                .Append(cloud.TimestampUnixMs)
-                .Append(", playTime=")
-                .Append(cloudPlayTimeSeconds)
-                .Append("s\nSuggested source: ")
-                .Append(FormatChoiceLabel(resolution.SuggestedChoice));
+            Span<char> destination = _promptBuffer.AsSpan();
+            int cursor = 0;
+            if (!ZeroGCFormatter.AppendToSpan("Local MMF header: timestamp=".AsSpan(), destination, ref cursor) ||
+                !local.TimestampUnixMs.TryFormat(destination.Slice(cursor), out int written))
+            {
+                return 0;
+            }
 
-            return _promptBuilder.ToString();
+            cursor += written;
+            if (!ZeroGCFormatter.AppendToSpan(", playTime=".AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendInt(localPlayTimeSeconds, destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan("s\nCloud MMF header: timestamp=".AsSpan(), destination, ref cursor) ||
+                !cloud.TimestampUnixMs.TryFormat(destination.Slice(cursor), out written))
+            {
+                return 0;
+            }
+
+            cursor += written;
+            if (!ZeroGCFormatter.AppendToSpan(", playTime=".AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendInt(cloudPlayTimeSeconds, destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan("s\nSuggested source: ".AsSpan(), destination, ref cursor) ||
+                !ZeroGCFormatter.AppendToSpan(FormatChoiceLabel(resolution.SuggestedChoice).AsSpan(), destination, ref cursor))
+            {
+                return 0;
+            }
+
+            return cursor;
         }
 
         private static string FormatChoiceLabel(SteamCloudSaveChoice choice)

@@ -1,4 +1,6 @@
 #if UNITY_EDITOR
+using System.Reflection;
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Physiology;
 using Unity.Collections.LowLevel.Unsafe;
@@ -10,6 +12,9 @@ namespace Hecton8.Physiology.Editor
     [InitializeOnLoad]
     internal static class ShinobuMetabolismLayoutValidator
     {
+        private const BindingFlags ThermodynamicFlowFieldFlags =
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
         static ShinobuMetabolismLayoutValidator()
         {
             Validate();
@@ -25,6 +30,7 @@ namespace Hecton8.Physiology.Editor
         {
             bool valid = ShinobuMetabolismLayoutGuards.ValidateMetabolismLayouts() &&
                          ShinobuPhysiologyLayoutGuards.ValidatePhysiologyLayouts() &&
+                         ValidateThermodynamicFlowSampleLayout() &&
                          UnsafeUtility.SizeOf<MetabolicStateDTO>() == 32 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Calories))) == 0 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Hydration))) == 4 &&
@@ -32,6 +38,7 @@ namespace Hecton8.Physiology.Editor
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Toxicity))) == 12 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.EntityHashID))) == 16 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Flags))) == 20 &&
+                         UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO.Fatigue01))) == 24 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO._pad0))) == 24 &&
                          UnsafeUtility.GetFieldOffset(typeof(MetabolicStateDTO).GetField(nameof(MetabolicStateDTO._pad1))) == 28 &&
                          UnsafeUtility.SizeOf<GasPhysiologyStateDTO>() == 32 &&
@@ -42,7 +49,7 @@ namespace Hecton8.Physiology.Editor
                          UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyStateDTO).GetField(nameof(GasPhysiologyStateDTO.NarcosisLevel01))) == 16 &&
                          UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyStateDTO).GetField(nameof(GasPhysiologyStateDTO.StaminaDrainRate))) == 20 &&
                          UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyStateDTO).GetField(nameof(GasPhysiologyStateDTO.Flags))) == 24 &&
-                         UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyStateDTO).GetField(nameof(GasPhysiologyStateDTO._pad0))) == 28 &&
+                         UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyStateDTO).GetField(nameof(GasPhysiologyStateDTO.LastWarningFrame))) == 28 &&
                          UnsafeUtility.SizeOf<GasPhysiologyTuningDTO>() == 64 &&
                          UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyTuningDTO).GetField(nameof(GasPhysiologyTuningDTO.HypoxiaPartialPressureAtm))) == 0 &&
                          UnsafeUtility.GetFieldOffset(typeof(GasPhysiologyTuningDTO).GetField(nameof(GasPhysiologyTuningDTO.AnoxiaPartialPressureAtm))) == 4 &&
@@ -65,6 +72,29 @@ namespace Hecton8.Physiology.Editor
                 Debug.LogError("[SHINOBU_145/272] Metabolism or GasPhysiology DTO layout violation. Required explicit 32-byte gas state and 64-byte gas tuning offsets.");
 
             return valid;
+        }
+
+        private static bool ValidateThermodynamicFlowSampleLayout()
+        {
+            return UnsafeUtility.SizeOf<ThermodynamicFlowSampleDTO>() == 64 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.FlowVelocityWS)) == 0 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.Heat01)) == 12 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.DragMultiplier)) == 16 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.CableAnchorWS)) == 20 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.CableTension01)) == 32 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.CableCutProgress01)) == 36 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.CableEscapeSuppression01)) == 40 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.HasFlow)) == 44 &&
+                   GetThermodynamicFlowSampleOffset(nameof(ThermodynamicFlowSampleDTO.IsCableZone)) == 45 &&
+                   GetThermodynamicFlowSampleOffset("_pad0") == 46 &&
+                   GetThermodynamicFlowSampleOffset("_pad1") == 48 &&
+                   GetThermodynamicFlowSampleOffset("_pad2") == 56;
+        }
+
+        private static int GetThermodynamicFlowSampleOffset(string fieldName)
+        {
+            FieldInfo field = typeof(ThermodynamicFlowSampleDTO).GetField(fieldName, ThermodynamicFlowFieldFlags);
+            return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
         }
     }
 }

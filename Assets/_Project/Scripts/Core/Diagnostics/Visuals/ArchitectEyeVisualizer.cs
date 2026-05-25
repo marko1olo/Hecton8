@@ -357,7 +357,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (vault.IsCompactionFenceActive)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.CoreDiagnostics,
@@ -643,7 +643,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             ref int nonFiniteCount,
             ref float3 lastFaultPosition)
         {
-            if (!TryResolveHotEntityData(vault, out NativeArray<VaultHotEntityData> hotEntities, out uint generation))
+            if (!TryReadHotEntityData(vault, out NativeArray<VaultHotEntityData>.ReadOnly hotEntities, out uint generation))
                 return;
 
             int budget = math.min(ResolveEntityBudget(), hotEntities.Length);
@@ -852,7 +852,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 return;
 
             MacroDatabaseAup anchor = default;
-            if (TryResolveHotEntityData(vault, out NativeArray<VaultHotEntityData> hotEntities, out _) &&
+            if (TryReadHotEntityData(vault, out NativeArray<VaultHotEntityData>.ReadOnly hotEntities, out _) &&
                 hotEntities.Length > 0)
             {
                 float3 localPosition = hotEntities[0].LocalPosition;
@@ -887,7 +887,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             ref int nonFiniteCount,
             ref float3 lastFaultPosition)
         {
-            if (!TryResolveHotEntityData(vault, out NativeArray<VaultHotEntityData> hotEntities, out _))
+            if (!TryReadHotEntityData(vault, out NativeArray<VaultHotEntityData>.ReadOnly hotEntities, out _))
             {
                 return;
             }
@@ -1185,7 +1185,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             {
                 float segmentT = (segment + 0.5f) * invSegments;
                 float angle = cursorRadians + sweepRadians * segmentT;
-                math.sincos(angle, out float s, out float c);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float s, out float c);
                 float2 direction = new float2(c, s);
 
                 for (int ring = 0; ring < rings; ring++)
@@ -1366,7 +1366,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private float3 ResolveFallbackProbePosition(IDataVault vault)
         {
-            if (TryResolveHotEntityData(vault, out NativeArray<VaultHotEntityData> hotEntities, out _) &&
+            if (TryReadHotEntityData(vault, out NativeArray<VaultHotEntityData>.ReadOnly hotEntities, out _) &&
                 hotEntities.Length > 0)
             {
                 float3 position = hotEntities[0].LocalPosition;
@@ -1377,9 +1377,9 @@ namespace Hecton8.Core.Diagnostics.Visuals
             return float3.zero;
         }
 
-        private static bool TryResolveHotEntityData(
+        private static bool TryReadHotEntityData(
             IDataVault vault,
-            out NativeArray<VaultHotEntityData> hotEntities,
+            out NativeArray<VaultHotEntityData>.ReadOnly hotEntities,
             out uint generation)
         {
             hotEntities = default;
@@ -1388,8 +1388,12 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 !vault.TryGetGenerationHandle(
                     BufferID.VaultHotEntityData,
                     out VaultGenerationHandle<VaultHotEntityData> handle) ||
-                !TryOpenVaultBuffer(vault, in handle, BufferID.VaultHotEntityData, 1, out hotEntities))
+                !IsMatchingVaultHandle(in handle, BufferID.VaultHotEntityData) ||
+                !vault.TryReadOnlyHandle(in handle, out hotEntities) ||
+                !hotEntities.IsCreated ||
+                hotEntities.Length < 1)
             {
+                hotEntities = default;
                 return false;
             }
 

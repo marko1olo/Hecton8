@@ -21,7 +21,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4036)]
-    public sealed partial class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable, IUpdatable, ILateFrameTickable, IGameBootstrapperEventListener, IWorldGenService, IOriginShiftListener
+    public sealed partial class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable, IUpdatable, ILateFrameTickable, IGameBootstrapperEventListener, IWorldGenService, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const float StartupScatterStabilizationDelaySeconds = 2f;
         private const int MaxRegisteredScatterDirectors = 4;
@@ -102,6 +102,9 @@ namespace Hecton8.World
         private int _observerAbsolutePositionCacheFrame = -1;
         private bool _observerAbsolutePositionCacheValid;
         private Vector3 _observerAbsolutePositionCache;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private IObjectPoolService _cachedObjectPool;
+        private bool _registeredHotSwapListener;
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
 #endif
@@ -519,6 +522,8 @@ namespace Hecton8.World
         private ScatterLifecycleRuntimeState _lifecycleRuntimeState;
         private ScatterWorkingMemory _memory;
         private ScatterInstancingService _instancingService;
+        private bool _pendingScatterVisualSync;
+        private bool _pendingScatterVisualSyncForceRebuild;
         private bool _originShiftListenerRegistered;
         private bool _registeredRuntimeDirector;
         private bool _floraGpuiFrustumPlanesValid;
@@ -671,12 +676,12 @@ namespace Hecton8.World
                 if (ShouldSkipScatterRefresh())
                 {
                     if (HasPendingScatterReconcileWork())
-                        ContinuePendingScatterReconcile();
+                        QueueScatterVisualSync(forceRebuild: false);
 
                     return;
                 }
 
-                RebuildScatterPreview();
+                QueueScatterVisualSync(forceRebuild: true);
             }
         }
 
@@ -684,6 +689,7 @@ namespace Hecton8.World
         {
             _scatterState = ScatterState.Idle;
             _isSamplingJobRunning = false;
+            CachePlayerContextCold();
             EnsureWorkingMemory();
             ResolveReferences();
             RegisterProceduralStateRegistryCallbacks();
@@ -707,6 +713,8 @@ namespace Hecton8.World
         private void OnEnable()
         {
             GlobalRegistry.RegisterWorldGenService(this);
+            CachePlayerContextCold();
+            TryRegisterHotSwapListener();
             TryRegisterRuntimeDirector();
             EnsureWorkingMemory();
             ResolveReferences();
@@ -743,6 +751,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             GlobalRegistry.UnregisterWorldGenService(this);
             TryUnregisterRuntimeDirector();
             UnsubscribeFromBootstrap();
@@ -769,6 +778,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 GlobalRegistry.UnregisterWorldGenService(this);
             TryUnregisterRuntimeDirector();
@@ -948,7 +958,7 @@ namespace Hecton8.World
 
                 if (_scatterState != ScatterState.Idle)
                 {
-                    RebuildScatterPreview();
+                    QueueScatterVisualSync(forceRebuild: true);
                     return;
                 }
 
@@ -956,12 +966,12 @@ namespace Hecton8.World
                 if (ShouldSkipScatterRefresh())
                 {
                     if (HasPendingScatterReconcileWork())
-                        ContinuePendingScatterReconcile();
+                        QueueScatterVisualSync(forceRebuild: false);
 
                     return;
                 }
 
-                RebuildScatterPreview();
+                QueueScatterVisualSync(forceRebuild: true);
             }
         }
 
@@ -969,7 +979,7 @@ namespace Hecton8.World
         private static void LogFirstSlowTick(UnityEngine.Object context)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.Log("[WorldScatterRuntime] First slow tick reached.", context);
+            Hecton8.Core.H8Debug.Log("[WorldScatterRuntime] First slow tick reached.", context);
 #endif
         }
 
@@ -978,6 +988,7 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
+            FlushScatterVisualSync();
             PumpScatterBackendShadowPass();
             CompleteScatterSamplingJobIfReady();
             CompleteMigratorySargassumJobIfReady();
@@ -1179,8 +1190,8 @@ namespace Hecton8.World
             if (ShouldLogScatterLifecycleDiagnostics())
             {
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
-                UnityEngine.Debug.Log(
-                        $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager != 0} dilation={GlobalSignals.TimeDilationScalar:0.###}",
+                Hecton8.Core.H8Debug.Log(
+                        $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager != 0} dilation={SimulationSignalRoute.TimeDilationScalar:0.###}",
                     this);
             }
 #endif
@@ -1231,8 +1242,8 @@ namespace Hecton8.World
             if (ShouldLogScatterLifecycleDiagnostics())
             {
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
-                UnityEngine.Debug.Log(
-                        $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager != 0} dilation={GlobalSignals.TimeDilationScalar:0.###}",
+                Hecton8.Core.H8Debug.Log(
+                        $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager != 0} dilation={SimulationSignalRoute.TimeDilationScalar:0.###}",
                     this);
             }
 #endif
@@ -1368,6 +1379,31 @@ namespace Hecton8.World
                     ? "pending-startup-batch"
                     : (_reconcileRuntimeState.HasPendingRuntimePlacements != 0 ? "pending-runtime-budget" : "pending-complete");
             }
+        }
+
+        private void QueueScatterVisualSync(bool forceRebuild)
+        {
+            _pendingScatterVisualSync = true;
+            _pendingScatterVisualSyncForceRebuild |= forceRebuild;
+        }
+
+        private void FlushScatterVisualSync()
+        {
+            if (!_pendingScatterVisualSync)
+                return;
+
+            bool forceRebuild = _pendingScatterVisualSyncForceRebuild;
+            _pendingScatterVisualSync = false;
+            _pendingScatterVisualSyncForceRebuild = false;
+
+            if (forceRebuild || _scatterState != ScatterState.Idle)
+            {
+                RebuildScatterPreview();
+                return;
+            }
+
+            if (HasPendingScatterReconcileWork())
+                ContinuePendingScatterReconcile();
         }
 
         private void RetainTopCandidate(
@@ -1547,13 +1583,21 @@ namespace Hecton8.World
             if (_lifecycleRuntimeState.RegisteredToTickManager != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _lifecycleRuntimeState.RegisteredToTickManager =
-                GlobalRegistry.Updatables.Contains(this) &&
-                GlobalRegistry.SlowTickables.Contains(this) &&
-                SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this) ? (byte)1 : (byte)0;
+            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            bool slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            bool lateRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            bool registered = updateRegistered && slowRegistered && lateRegistered;
+            if (!registered)
+            {
+                if (lateRegistered)
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                if (slowRegistered)
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                if (updateRegistered)
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            }
+
+            _lifecycleRuntimeState.RegisteredToTickManager = registered ? (byte)1 : (byte)0;
         }
 
         private bool TryGetScatterCenterCell(out int centerCellX, out int centerCellZ)
@@ -2873,7 +2917,7 @@ namespace Hecton8.World
             Dictionary<int, int> prefabCreateAllowances = _memory.PrefabCreateAllowances;
             prefabCreateAllowances.Clear();
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _cachedObjectPool;
             if (pool == null)
                 return false;
 
@@ -3373,7 +3417,7 @@ namespace Hecton8.World
                 : FloraScatterMaxTiltAngleDegrees;
             Vector3 clampedUp = ClampScatterUpVector(terrainNormal, maxTiltAngleDegrees);
             Quaternion alignRotation = Quaternion.FromToRotation(Vector3.up, clampedUp);
-            Quaternion yawRotation = Quaternion.AngleAxis(RepeatDegrees360(yawDegrees), clampedUp);
+            Quaternion yawRotation = ApproximateAngleAxisDegreesNoTrig(RepeatDegrees360(yawDegrees), clampedUp);
             runtimePosition.y = terrainHeight + surfaceYOffset;
             resolvedPosition = ToAbsoluteScatterPosition(runtimePosition);
             rotation = yawRotation * alignRotation;
@@ -3383,6 +3427,36 @@ namespace Hecton8.World
         private static float RepeatDegrees360(float degrees)
         {
             return degrees - math.floor(degrees * (1f / 360f)) * 360f;
+        }
+
+        private static Quaternion ApproximateAngleAxisDegreesNoTrig(float angleDegrees, Vector3 axis)
+        {
+            float axisLengthSq = axis.sqrMagnitude;
+            if (axisLengthSq <= 0.000001f || !float.IsFinite(axisLengthSq))
+                return Quaternion.identity;
+
+            Vector3 safeAxis = axis * math.rsqrt(axisLengthSq);
+            MathLodApproximation.ApproxSinCosBhaskara(angleDegrees * Mathf.Deg2Rad * 0.5f, out float sinHalf, out float cosHalf);
+            Quaternion rotation = new Quaternion(
+                safeAxis.x * sinHalf,
+                safeAxis.y * sinHalf,
+                safeAxis.z * sinHalf,
+                cosHalf);
+            return NormalizeQuaternion(rotation);
+        }
+
+        private static Quaternion NormalizeQuaternion(Quaternion value)
+        {
+            float lengthSq =
+                (value.x * value.x) +
+                (value.y * value.y) +
+                (value.z * value.z) +
+                (value.w * value.w);
+            if (lengthSq <= 0.000001f || !float.IsFinite(lengthSq))
+                return Quaternion.identity;
+
+            float invLength = math.rsqrt(lengthSq);
+            return new Quaternion(value.x * invLength, value.y * invLength, value.z * invLength, value.w * invLength);
         }
 
         private bool TrySnapRiftSideDebrisPlacementToMapMagicTerrain(
@@ -3420,7 +3494,7 @@ namespace Hecton8.World
             Vector3 clampedUp = ClampScatterUpVector(softenedSlopeUp, maxTiltAngleDegrees);
             float wrappedYawDegrees = yawDegrees - math.floor(yawDegrees / 360f) * 360f;
             Quaternion alignRotation = Quaternion.FromToRotation(Vector3.up, clampedUp);
-            Quaternion yawRotation = Quaternion.AngleAxis(wrappedYawDegrees, clampedUp);
+            Quaternion yawRotation = ApproximateAngleAxisDegreesNoTrig(wrappedYawDegrees, clampedUp);
             Vector3 runtimePosition = ToRuntimeScatterPosition(resolvedPosition);
             runtimePosition.y = terrainHeight + surfaceYOffset;
             resolvedPosition = ToAbsoluteScatterPosition(runtimePosition);
@@ -3435,9 +3509,9 @@ namespace Hecton8.World
         {
             float fakeAzimuthDegrees = yawDegrees + (stableHash & 31) * 11.25f;
             float fakeAzimuthRadians = math.radians(fakeAzimuthDegrees);
-            math.sincos(fakeAzimuthRadians, out float azimuthSin, out float azimuthCos);
+            MathLodApproximation.ApproxSinCosBhaskara(fakeAzimuthRadians, out float azimuthSin, out float azimuthCos);
             float slopeRadians = math.radians(math.clamp(slopeDegrees, 45f, 62f));
-            math.sincos(slopeRadians, out float slopeSin, out float slopeCos);
+            MathLodApproximation.ApproxSinCosBhaskara(slopeRadians, out float slopeSin, out float slopeCos);
             float scaledUpX = azimuthCos * slopeSin * 0.5f;
             float scaledUpY = math.lerp(1f, slopeCos, 0.5f);
             float scaledUpZ = azimuthSin * slopeSin * 0.5f;
@@ -3463,7 +3537,7 @@ namespace Hecton8.World
 
             float safeMaxTilt = math.clamp(maxTiltAngleDegrees, 0f, 89.5f);
             float safeMaxTiltRadians = math.radians(safeMaxTilt);
-            float minUpDot = math.cos(safeMaxTiltRadians);
+            float minUpDot = MathLodApproximation.ApproxCosBhaskara(safeMaxTiltRadians);
             if (safeNormal.y >= minUpDot)
                 return safeNormal;
 
@@ -3472,7 +3546,7 @@ namespace Hecton8.World
                 return Vector3.up;
 
             float horizontalInvMagnitude = math.rsqrt(horizontalMagnitudeSq);
-            float horizontalScale = math.sin(safeMaxTiltRadians);
+            float horizontalScale = MathLodApproximation.ApproxSinBhaskara(safeMaxTiltRadians);
             return new Vector3(
                 safeNormal.x * horizontalInvMagnitude * horizontalScale,
                 minUpDot,
@@ -7736,7 +7810,7 @@ namespace Hecton8.World
             return false;
         }
 
-        private static GameObject CreateScatterInstance(
+        private GameObject CreateScatterInstance(
             Transform parent,
             ScatterPlacement placement,
             WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
@@ -7748,11 +7822,11 @@ namespace Hecton8.World
             metadata = null;
             Vector3 runtimePosition = placement.ReadRuntimePosition();
             bool poolManaged = false;
-            ObjectPoolManager pool = null;
+            IObjectPoolService pool = null;
 
             if (prefab != null)
             {
-                pool = GlobalRegistry.ObjectPool;
+                pool = _cachedObjectPool;
                 if (pool != null)
                 {
                     instance = pool.Spawn(prefab, runtimePosition, placement.Rotation, !Application.isPlaying);
@@ -7808,13 +7882,13 @@ namespace Hecton8.World
             return instance;
         }
 
-        private static void DestroyProxyInstance(WorldProceduralProxyInstance proxy)
+        private void DestroyProxyInstance(WorldProceduralProxyInstance proxy)
         {
             if (proxy == null)
                 return;
 
             GameObject instance = proxy.gameObject;
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _cachedObjectPool;
             if (pool != null && proxy.IsPoolManaged)
             {
                 pool.Despawn(instance);
@@ -7846,7 +7920,8 @@ namespace Hecton8.World
             int familyHash = GetPreferredFamilyInstanceId(family);
             float radiusT = StableRandom01(stableHash, stableHash >> 4, familyHash);
             float radius = baseRadius * math.lerp(0.18f, 1f, math.saturate(radiusT));
-            Vector3 offset = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+            Vector3 offset = new Vector3(cos * radius, 0f, sin * radius);
             return origin + offset;
         }
 
@@ -11141,7 +11216,7 @@ namespace Hecton8.World
             return null;
         }
 
-        private static void ClearRootChildren(Transform root)
+        private void ClearRootChildren(Transform root)
         {
             for (int i = root.childCount - 1; i >= 0; i--)
             {
@@ -11149,7 +11224,7 @@ namespace Hecton8.World
             }
         }
 
-        private static void ClearScatterHierarchy(Transform node)
+        private void ClearScatterHierarchy(Transform node)
         {
             if (node == null)
                 return;
@@ -11268,7 +11343,12 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerTransform == null && playerContext != null)
+                playerTransform = playerContext.PlayerTransform;
+
+            if (playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
             WorldRuntimeReferenceUtility.TryResolveWorldProceduralFieldSampler(ref fieldSampler);
             WorldRuntimeReferenceUtility.TryResolveWorldProceduralFillDirector(ref proceduralFillDirector);
@@ -11287,6 +11367,53 @@ namespace Hecton8.World
 
             if (faunaSpawnRegistry != null)
                 faunaSpawnRegistry.SetProceduralStateRegistry(proceduralStateRegistry);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+                    if (previousContext != null && ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+                        playerTransform = null;
+
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    if (_cachedPlayerContext != null && _cachedPlayerContext.PlayerTransform != null)
+                        playerTransform = _cachedPlayerContext.PlayerTransform;
+
+                    InvalidateObserverAbsolutePositionCache();
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _cachedObjectPool = currentService as IObjectPoolService;
+                    break;
+            }
+        }
+
+        private void CachePlayerContextCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void ResetFloraGpuiAggregation()
@@ -11348,9 +11475,9 @@ namespace Hecton8.World
             _floraGpuiFrustumPlanesValid = true;
         }
 
-        private static Camera ResolveFloraGpuiCullingCamera()
+        private Camera ResolveFloraGpuiCullingCamera()
         {
-            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext player = _cachedPlayerContext;
             if (player != null && player.PlayerCamera != null)
                 return player.PlayerCamera;
 

@@ -1,4 +1,4 @@
-module_type,oxygen01,carbon_dioxide01,nitrogen01,toxin01,temperature
+﻿module_type,oxygen01,carbon_dioxide01,nitrogen01,toxin01,temperature
 corridor_standard,0.209500,0.000420,0.790080,0.000000,20.000000
 reactor_room,0.205000,0.001200,0.790000,0.003800,34.000000
 hydroponics_bay,0.215000,0.000300,0.784700,0.000000,22.000000

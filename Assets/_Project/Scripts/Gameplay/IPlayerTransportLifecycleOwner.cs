@@ -37,4 +37,30 @@ namespace Hecton8.Gameplay
         /// <param name="hitNormal">World hit normal.</param>
         void ApplyTransportCollisionImpact(float impactSpeed, Vector3 hitPoint, Vector3 hitNormal);
     }
+
+    /// <summary>
+    /// Narrow command route for docking stations that must suppress rider control while a vehicle is physically docked.
+    /// </summary>
+    public interface ITransportDockControlLock
+    {
+        void BeginDockControlLock();
+
+        void EndDockControlLock();
+    }
+
+    /// <summary>
+    /// Narrow command route for transports that need a rider bailout drift without exposing the concrete vehicle owner.
+    /// </summary>
+    public interface ITransportEmergencyBailoutDriftSink
+    {
+        void TriggerEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity);
+    }
+
+    /// <summary>
+    /// Read-only route that resolves the player's currently active transport lifecycle owner.
+    /// </summary>
+    public interface IPlayerTransportLifecycleResolver
+    {
+        bool TryResolveTransportLifecycleOwner(out IPlayerTransportLifecycleOwner lifecycleOwner);
+    }
 }

@@ -79,7 +79,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             builder.Append("  ]\n");
             builder.Append("}\n");
             string report = builder.ToString();
-            File.WriteAllText(AITextureControlMapConstants.MaterialSetupReportPath, report);
+            File.WriteAllText(AITextureControlMapConstants.MaterialSetupReportPath, report, new UTF8Encoding(false));
             MergeIntoSharedRenderingReport(report);
             Debug.Log("[Material_Setup_Scanner] Materials=" + scanned.ToString(CultureInfo.InvariantCulture) +
                       " ErrorsPrevented=" + errorsPrevented.ToString(CultureInfo.InvariantCulture) + ".");
@@ -154,7 +154,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             string path = AITextureControlMapConstants.MaterialAuditReportPath;
             string current = File.Exists(path) ? File.ReadAllText(path) : string.Empty;
             string merged = MergeJsonObjectEntry(current, key, report);
-            File.WriteAllText(path, merged);
+            File.WriteAllText(path, merged, new UTF8Encoding(false));
         }
 
         private static string MergeJsonObjectEntry(string currentJson, string key, string entryJson)

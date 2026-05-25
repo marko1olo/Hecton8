@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
 using Hecton8.Audio;
@@ -195,7 +195,7 @@ namespace Hecton8.Dev
             ProceduralAudioEvents.ResetForSmokeTest();
 
             for (int i = 0; i < 9; i++)
-                ProceduralAudioEvents.RaiseAudioPingTriggered(Vector3.zero, 1f, 0.05f, 1f, 22000f, ProceduralAudioPingKind.Sonar);
+                ProceduralAudioEvents.TryRaiseAudioPingTriggered(Vector3.zero, 1f, 0.05f, 1f, 22000f, ProceduralAudioPingKind.Sonar);
 
             pendingAfterAudioOverflow = ProceduralAudioEvents.PendingCount;
             droppedAudioPings = ProceduralAudioEvents.DroppedAudioPingCount;
@@ -203,7 +203,7 @@ namespace Hecton8.Dev
 
             ProceduralAudioEvents.FlushPending();
             for (int i = 0; i < 9; i++)
-                ProceduralAudioEvents.RaiseStructuralStressTriggered(Vector3.zero, 1f, 1f);
+                ProceduralAudioEvents.TryRaiseStructuralStressTriggered(Vector3.zero, 1f, 1f);
 
             droppedStructuralStress = ProceduralAudioEvents.DroppedStructuralStressCount;
             bool structuralOverflowPass = ProceduralAudioEvents.PendingCount == 8 && droppedStructuralStress == 1;
@@ -220,7 +220,7 @@ namespace Hecton8.Dev
             // COLD ALLOC: ReentrantAudioListener[1] - dev-only procedural audio reentry probe - owner: OmegaAutonomySmokeTester
             ReentrantAudioListener listener = new ReentrantAudioListener();
             ProceduralAudioEvents.Register(listener);
-            ProceduralAudioEvents.RaiseAudioPingTriggered(Vector3.zero, 1f, 0.05f, 1f, 22000f, ProceduralAudioPingKind.Sonar);
+            ProceduralAudioEvents.TryRaiseAudioPingTriggered(Vector3.zero, 1f, 0.05f, 1f, 22000f, ProceduralAudioPingKind.Sonar);
             ProceduralAudioEvents.FlushPending();
             pendingAfterFirstFlush = ProceduralAudioEvents.PendingCount;
             ProceduralAudioEvents.FlushPending();
@@ -258,7 +258,7 @@ namespace Hecton8.Dev
                     typeof(EventSystem),
                     typeof(StandaloneInputModule)); // COLD ALLOC: GameObject[1] - editor smoke EventSystem route probe - owner: OmegaAutonomySmokeTester
 
-                EventSystem eventSystem = eventSystemRoot.GetComponent<EventSystem>();
+                eventSystemRoot.TryGetComponent(out EventSystem eventSystem);
                 MainMenuInputRoutingGuard.EnsureInputSystemEventRouting(eventSystem);
                 int publishCountAfterFirstRepair = MainMenuInputRoutingGuard.RepairTelemetryPublishCountForSmoke;
                 MainMenuInputRoutingGuard.EnsureInputSystemEventRouting(eventSystem);
@@ -266,8 +266,8 @@ namespace Hecton8.Dev
                 moduleCountAfterSecondRepair = s_InputSystemModulesScratch.Count;
                 s_InputSystemModulesScratch.Clear();
 
-                InputSystemUIInputModule inputModule = eventSystemRoot.GetComponent<InputSystemUIInputModule>();
-                StandaloneInputModule legacyInputModule = eventSystemRoot.GetComponent<StandaloneInputModule>();
+                eventSystemRoot.TryGetComponent(out InputSystemUIInputModule inputModule);
+                eventSystemRoot.TryGetComponent(out StandaloneInputModule legacyInputModule);
                 inputModulePresent = inputModule != null && inputModule.enabled;
                 inputActionsBound = MainMenuInputRoutingGuard.HasUsableUiModuleActions(inputModule);
                 legacyModuleRemoved = legacyInputModule == null || !legacyInputModule.enabled;
@@ -620,7 +620,7 @@ namespace Hecton8.Dev
                     return;
 
                 _raisedReentrantPing = true;
-                ProceduralAudioEvents.RaiseAudioPingTriggered(Vector3.zero, 0.5f, 0.025f, 1f, 22000f, ProceduralAudioPingKind.Sonar);
+                ProceduralAudioEvents.TryRaiseAudioPingTriggered(Vector3.zero, 0.5f, 0.025f, 1f, 22000f, ProceduralAudioPingKind.Sonar);
             }
 
             public void OnStructuralStressTriggered(in StructuralStressAudioInfo info)

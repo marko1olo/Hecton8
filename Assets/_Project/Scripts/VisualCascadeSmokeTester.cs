@@ -4,6 +4,7 @@
 // ============================================================================
 
 using System.Text;
+using System.Globalization;
 using Hecton8.Visor;
 using UnityEngine;
 
@@ -125,10 +126,10 @@ namespace Hecton8.Dev
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _reportBuilder.Clear();
             _reportBuilder.Append("[VisualCascadeSmoke] FAIL issue=").Append(issue)
-                .Append(" estimated=").Append(_debugEstimatedCascadeMb.ToString("0.00")).Append("MB")
-                .Append(" caustics=").Append(_debugCausticsKb.ToString("0.00")).Append("KB")
-                .Append(" biolum=").Append(_debugBiolumMb.ToString("0.00")).Append("MB")
-                .Append(" exposure=").Append(_debugExposureKb.ToString("0.00")).Append("KB");
+                .Append(" estimated=").Append(_debugEstimatedCascadeMb.ToString("0.00", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" caustics=").Append(_debugCausticsKb.ToString("0.00", CultureInfo.InvariantCulture)).Append("KB")
+                .Append(" biolum=").Append(_debugBiolumMb.ToString("0.00", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" exposure=").Append(_debugExposureKb.ToString("0.00", CultureInfo.InvariantCulture)).Append("KB");
             Debug.LogError(_reportBuilder.ToString(), this);
 #endif
             return false;
@@ -141,11 +142,11 @@ namespace Hecton8.Dev
                 return;
 
             _reportBuilder.Clear();
-            _reportBuilder.Append("[VisualCascadeSmoke] PASS estimated=").Append(BytesToMegabytes(totalBytes).ToString("0.00")).Append("MB")
-                .Append(" caustics=").Append((causticsBytes / (float)BytesPerKilobyte).ToString("0.00")).Append("KB")
-                .Append(" biolum=").Append(BytesToMegabytes(biolumBytes).ToString("0.00")).Append("MB")
-                .Append(" exposure=").Append((exposureBytes / (float)BytesPerKilobyte).ToString("0.00")).Append("KB");
-            Debug.Log(_reportBuilder.ToString(), this);
+            _reportBuilder.Append("[VisualCascadeSmoke] PASS estimated=").Append(BytesToMegabytes(totalBytes).ToString("0.00", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" caustics=").Append((causticsBytes / (float)BytesPerKilobyte).ToString("0.00", CultureInfo.InvariantCulture)).Append("KB")
+                .Append(" biolum=").Append(BytesToMegabytes(biolumBytes).ToString("0.00", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" exposure=").Append((exposureBytes / (float)BytesPerKilobyte).ToString("0.00", CultureInfo.InvariantCulture)).Append("KB");
+            Hecton8.Core.H8Debug.Log(_reportBuilder.ToString(), this);
 #endif
         }
 

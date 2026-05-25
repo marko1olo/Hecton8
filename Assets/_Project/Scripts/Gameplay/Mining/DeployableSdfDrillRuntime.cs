@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Gameplay.Mining.Contracts;
@@ -23,16 +23,15 @@ namespace Hecton8.Gameplay.Mining
     [AddComponentMenu("Hecton8/Gameplay/Deployable SDF Drill")]
     public sealed class DeployableSdfDrillRuntime : MonoBehaviour,
         IColdTickable,
+        ILateFrameTickable,
         IOriginShiftListener,
         IPoolable,
         ICuttable,
         IGlobalRegistryHotSwapListener,
-        IGlobalRegistryHotSwapRefListener,
-        IScalabilityChangedEventListener
+        IGlobalRegistryHotSwapRefListener
     {
         private const int InventorySlotCount = 4;
         private const int BlackBoxCapacity = 300;
-        private const int SnapCommandCount = 1;
         private const int MaxVaultDrillInstances = 256;
         private const float DefaultPowerDrawWatts = 50000f;
         private const float WirelessDrainQueueCapWattSeconds = 4096f;
@@ -51,7 +50,7 @@ namespace Hecton8.Gameplay.Mining
         [Header("Snap")]
         [Tooltip("Physics layers accepted as terrain/seabed when the drill is deployed.")]
         [SerializeField] private LayerMask seabedLayerMask = ~0;
-        [Tooltip("Height above the current transform used as the RaycastCommand origin.")]
+        [Tooltip("Height above the current transform used as the cached terrain/SDF snap origin.")]
         [SerializeField] private float snapProbeHeightMeters = 18f;
         [Tooltip("Depth below the current transform searched by the deploy snap probe.")]
         [SerializeField] private float snapProbeDepthMeters = 36f;
@@ -131,17 +130,21 @@ namespace Hecton8.Gameplay.Mining
         private double _lastMacroUpdateUnscaledTime;
         private double _lastCarveUnscaledTime;
         private bool _registeredColdTick;
+        private bool _registeredLateFrame;
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
-        private bool _registeredScalability;
         private bool _countedActive;
-        private bool _snapPending;
         private bool _snappedToTerrain;
         private bool _extractionPending;
         private bool _broken;
         private bool _faultDumped;
+        private Vector3 _pendingRuntimePosition;
+        private Quaternion _pendingRuntimeRotation = Quaternion.identity;
+        private bool _pendingRuntimePoseDirty;
         private DeployableSdfDrillFlags _stateFlags;
         private IPowerGridService _powerGrid;
+        private ITerrainProvider _terrainProvider;
+        private IVoxelSonarSdfReadModel _voxelSdfReadModel;
         private VoxelDeltaProcessor _cachedVoxelDeltaProcessor;
         private MapMagicBridge _mapMagic;
         private IDataVault _dataVault;
@@ -149,7 +152,6 @@ namespace Hecton8.Gameplay.Mining
         private DeployableSdfDrillMathLod _targetMathLod = AuthoritativeMathLod;
         private double _mathLodChangeEligibleUnscaledTime;
         private HectonVoxelVolume _resolvedVoxelVolume;
-        private JobHandle _snapHandle;
         private JobHandle _extractionHandle;
 
         private int _vaultSlotIndex = -1;
@@ -160,8 +162,6 @@ namespace Hecton8.Gameplay.Mining
         private VaultGenerationHandle<uint> _inventoryOreHashesHandle;
         private VaultGenerationHandle<DeployableSdfDrillExtractionResult> _extractionResultHandle;
         private VaultGenerationHandle<DeployableSdfDrillTelemetryEntry> _blackBoxHandle;
-        private VaultGenerationHandle<RaycastCommand> _snapCommandsHandle;
-        private VaultGenerationHandle<RaycastHit> _snapHitsHandle;
         private int _blackBoxCursor;
 
         /// <summary>True once the drill has been destroyed by damage or a fatal state fault.</summary>
@@ -286,7 +286,6 @@ namespace Hecton8.Gameplay.Mining
             UnregisterRuntimeHooks();
             ReleaseActiveInstance();
             _stateFlags = DeployableSdfDrillFlags.None;
-            _snapPending = false;
             _extractionPending = false;
             _snappedToTerrain = false;
             _broken = false;
@@ -347,6 +346,16 @@ namespace Hecton8.Gameplay.Mining
             WriteBlackBox(0);
         }
 
+        public void LateFrameTick()
+        {
+            if (!_pendingRuntimePoseDirty)
+                return;
+
+            _pendingRuntimePoseDirty = false;
+            if (_cachedTransform != null)
+                _cachedTransform.SetPositionAndRotation(_pendingRuntimePosition, _pendingRuntimeRotation);
+        }
+
         /// <summary>
         /// Reprojects the authoritative AUP anchor after a floating-origin shift.
         /// </summary>
@@ -374,7 +383,11 @@ namespace Hecton8.Gameplay.Mining
                 case GlobalRegistryServiceSlot.PowerGrid:
                     _powerGrid = currentService as IPowerGridService;
                     break;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _terrainProvider = currentService as ITerrainProvider;
+                    break;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _voxelSdfReadModel = currentService as IVoxelSonarSdfReadModel;
                     RebindVoxelDependencies(currentService as HectonVoxelEngine);
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
@@ -391,16 +404,6 @@ namespace Hecton8.Gameplay.Mining
             object previousService,
             object currentService)
         {
-        }
-
-        /// <summary>
-        /// Defers drill math LOD transitions through a hysteresis window.
-        /// </summary>
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _targetMathLod = AuthoritativeMathLod;
-            _cachedMathLod = AuthoritativeMathLod;
-            _mathLodChangeEligibleUnscaledTime = 0d;
         }
 
         /// <summary>
@@ -584,8 +587,6 @@ namespace Hecton8.Gameplay.Mining
                     out _,
                     out _,
                     out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox,
-                    out NativeArray<RaycastCommand> snapCommands,
-                    out NativeArray<RaycastHit> snapHits,
                     out bool assignedNewSlot))
             {
                 return;
@@ -596,8 +597,6 @@ namespace Hecton8.Gameplay.Mining
 
             ClearSlice(quantities);
             ClearSlice(blackBox);
-            ClearNativeArray(snapCommands);
-            ClearNativeArray(snapHits);
             if (TryResolveExtractionResultBuffer(out NativeSlice<DeployableSdfDrillExtractionResult> extractionResult))
                 extractionResult[0] = default;
         }
@@ -685,6 +684,9 @@ namespace Hecton8.Gameplay.Mining
             if (!_registeredColdTick && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                 _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
 
+            if (!_registeredLateFrame && Application.isPlaying && GlobalRegistry.Dispatcher != null)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+
             if (!_registeredOriginShift)
             {
                 HectonFloatingOrigin.RegisterListener(this);
@@ -694,11 +696,6 @@ namespace Hecton8.Gameplay.Mining
             if (!_registeredHotSwap && Application.isPlaying)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
 
-            if (!_registeredScalability && Application.isPlaying)
-            {
-                ScalabilityEvents.Register(this);
-                _registeredScalability = true;
-            }
         }
 
         private void UnregisterRuntimeHooks()
@@ -707,6 +704,12 @@ namespace Hecton8.Gameplay.Mining
             {
                 GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
                 _registeredColdTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
             }
 
             if (_registeredOriginShift)
@@ -721,17 +724,14 @@ namespace Hecton8.Gameplay.Mining
                 _registeredHotSwap = false;
             }
 
-            if (_registeredScalability)
-            {
-                ScalabilityEvents.Unregister(this);
-                _registeredScalability = false;
-            }
         }
 
         private void CacheRuntimeDependencies()
         {
             RebindDataVault(GlobalRegistry.DataVault, false);
             _powerGrid = GlobalRegistry.PowerGrid;
+            _terrainProvider = GlobalRegistry.Terrain;
+            _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
             _mapMagic = MapMagicBridge.Instance;
             _cachedMathLod = AuthoritativeMathLod;
             _targetMathLod = _cachedMathLod;
@@ -792,14 +792,10 @@ namespace Hecton8.Gameplay.Mining
 
         private void ScheduleTerrainSnap()
         {
-            if (_snapPending)
-                return;
-
             _snappedToTerrain = false;
             SetFlag(DeployableSdfDrillFlags.Snapped, false);
 
-            if (!TryResolveSnapBuffers(out NativeArray<RaycastCommand> snapCommands, out NativeArray<RaycastHit> snapHits) ||
-                _cachedTransform == null)
+            if (_cachedTransform == null)
             {
                 return;
             }
@@ -811,74 +807,177 @@ namespace Hecton8.Gameplay.Mining
                 return;
             }
 
-            QueryParameters parameters = new QueryParameters
-            {
-                layerMask = seabedLayerMask.value,
-                hitTriggers = QueryTriggerInteraction.Ignore,
-                hitBackfaces = false,
-                hitMultipleFaces = false
-            };
+            Vector3 origin = position + Vector3.up * math.max(0.1f, snapProbeHeightMeters);
+            float range = math.max(0.1f, snapProbeHeightMeters + snapProbeDepthMeters);
+            if (!TryResolveCachedTerrainSnap(origin, range, ResolveSnapProbeMask(), out Vector3 point, out Vector3 normal))
+                return;
 
-            snapCommands[0] = new RaycastCommand
-            {
-                from = position + Vector3.up * math.max(0.1f, snapProbeHeightMeters),
-                direction = Vector3.down,
-                distance = math.max(0.1f, snapProbeHeightMeters + snapProbeDepthMeters),
-                queryParameters = parameters
-            };
-            _snapHandle = RaycastCommand.ScheduleBatch(snapCommands, snapHits, SnapCommandCount, default);
-            _snapPending = true;
+            if (normal.y < minimumSeabedNormalY)
+                return;
+
+            quaternion rotation = quaternion.LookRotationSafe(
+                math.normalizesafe(new float3(normal.x, normal.y, normal.z), math.up()),
+                math.up());
+            QueueRuntimePose(point, ToQuaternion(rotation));
+            _snappedToTerrain = true;
+            SetFlag(DeployableSdfDrillFlags.Snapped, true);
+            CaptureAnchorFromRuntimePosition(point);
         }
 
         private void TryFinalizeTerrainSnapNoWait()
         {
-            if (!_snapPending)
-                return;
+        }
 
-            if (!_snapHandle.IsCompleted)
-                return;
+        private int ResolveSnapProbeMask()
+        {
+            int mask = seabedLayerMask.value;
+            int terrainSdfMask = HectonLayerMasks.TerrainLayerMask |
+                                 HectonLayerMasks.VoxelCaveLayerMask |
+                                 HectonLayerMasks.VoxelProxyLayerMask;
+            if (mask == 0 || mask == HectonLayerMasks.EverythingLayerMaskValue)
+                return terrainSdfMask;
 
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _snapHandle))
+            if (mask == HectonLayerMasks.StrictInteractionLayerMask)
+                return mask | terrainSdfMask;
+
+            return mask;
+        }
+
+        private bool TryResolveCachedTerrainSnap(
+            Vector3 origin,
+            float range,
+            int layerMask,
+            out Vector3 point,
+            out Vector3 normal)
+        {
+            point = default;
+            normal = Vector3.up;
+            if (!IsFiniteVector3(origin) || !math.isfinite(range) || range <= 0f)
+                return false;
+
+            bool hasHit = false;
+            float bestDistance = float.PositiveInfinity;
+            if (TryResolveTerrainSnap(origin, range, layerMask, out Vector3 terrainPoint, out Vector3 terrainNormal, out float terrainDistance))
             {
-                return;
+                point = terrainPoint;
+                normal = terrainNormal;
+                bestDistance = terrainDistance;
+                hasHit = true;
             }
 
-            _snapPending = false;
-            if (!TryResolveSnapBuffers(out _, out NativeArray<RaycastHit> snapHits))
-                return;
-
-            RaycastHit hit = snapHits[0];
-            if (hit.collider == null)
+            if (TryResolveVoxelSnap(origin, range, layerMask, out Vector3 voxelPoint, out Vector3 voxelNormal, out float voxelDistance) &&
+                (!hasHit || voxelDistance < bestDistance))
             {
-                _snappedToTerrain = false;
-                SetFlag(DeployableSdfDrillFlags.Snapped, false);
-                return;
+                point = voxelPoint;
+                normal = voxelNormal;
+                hasHit = true;
             }
 
-            float3 normal = NormalizeSafe(new float3(hit.normal.x, hit.normal.y, hit.normal.z), math.up());
-            if (normal.y < minimumSeabedNormalY)
+            return hasHit;
+        }
+
+        private bool TryResolveTerrainSnap(
+            Vector3 origin,
+            float range,
+            int layerMask,
+            out Vector3 point,
+            out Vector3 normal,
+            out float distance)
+        {
+            point = default;
+            normal = Vector3.up;
+            distance = 0f;
+            if (!IncludesAnyLayer(layerMask, HectonLayerMasks.TerrainLayerMask))
+                return false;
+
+            ITerrainProvider terrainProvider = _terrainProvider;
+            if (terrainProvider == null ||
+                !terrainProvider.IsAvailable ||
+                !terrainProvider.TryGetHeight(origin.x, origin.z, out float terrainHeight) ||
+                !math.isfinite(terrainHeight))
             {
-                _snappedToTerrain = false;
-                SetFlag(DeployableSdfDrillFlags.Snapped, false);
-                return;
+                return false;
             }
 
-            quaternion rotation = quaternion.LookRotationSafe(normal, math.up());
-            _cachedTransform.SetPositionAndRotation(hit.point, ToQuaternion(rotation));
-            _snappedToTerrain = true;
-            SetFlag(DeployableSdfDrillFlags.Snapped, true);
-            CaptureAnchorFromTransform();
+            distance = origin.y - terrainHeight;
+            if (!math.isfinite(distance) || distance < 0f || distance > range)
+                return false;
+
+            point = new Vector3(origin.x, terrainHeight, origin.z);
+            if (terrainProvider.TryGetNormal(point.x, point.z, 1f, out Vector3 sampledNormal) && IsFiniteVector3(sampledNormal))
+                normal = sampledNormal.normalized;
+
+            return true;
+        }
+
+        private bool TryResolveVoxelSnap(
+            Vector3 origin,
+            float range,
+            int layerMask,
+            out Vector3 point,
+            out Vector3 normal,
+            out float distance)
+        {
+            point = default;
+            normal = Vector3.up;
+            distance = 0f;
+            if (!IncludesAnyLayer(layerMask, HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask))
+                return false;
+
+            IVoxelSonarSdfReadModel readModel = _voxelSdfReadModel;
+            if (readModel == null)
+                return false;
+
+            if (!readModel.TryRaymarchNearestSonarSdf(
+                    new float3(origin.x, origin.y, origin.z),
+                    new float3(0f, -1f, 0f),
+                    range,
+                    ResolveSnapSdfStepMeters(range),
+                    out VoxelSonarSdfRaycastHit hit,
+                    out NativeArray<byte>.ReadOnly _,
+                    out int3 _,
+                    out float3 _,
+                    out float3 _,
+                    out float _) ||
+                (hit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
+                !math.all(math.isfinite(hit.Point)) ||
+                !math.all(math.isfinite(hit.Normal)) ||
+                !math.isfinite(hit.Distance) ||
+                hit.Distance < 0f ||
+                hit.Distance > range)
+            {
+                return false;
+            }
+
+            float3 safeNormal = math.normalizesafe(hit.Normal, math.up());
+            point = new Vector3(hit.Point.x, hit.Point.y, hit.Point.z);
+            normal = new Vector3(safeNormal.x, safeNormal.y, safeNormal.z);
+            distance = hit.Distance;
+            return true;
+        }
+
+        private static float ResolveSnapSdfStepMeters(float range)
+        {
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float coarse = math.max(0.2f, range * 0.2f);
+            float fine = math.max(0.05f, range * 0.04f);
+            return math.lerp(coarse, fine, quality);
+        }
+
+        private static bool IncludesAnyLayer(int queryMask, int requiredMask)
+        {
+            return (queryMask & requiredMask) != 0;
+        }
+
+        private void QueueRuntimePose(Vector3 position, Quaternion rotation)
+        {
+            _pendingRuntimePosition = position;
+            _pendingRuntimeRotation = rotation;
+            _pendingRuntimePoseDirty = true;
         }
 
         private void CancelTerrainSnap()
         {
-            if (!_snapPending)
-                return;
-
-            DispatcherJobFence.TryComplete(ref _snapHandle, forceComplete: true);
-            _snapPending = false;
-            if (TryResolveSnapBuffers(out _, out NativeArray<RaycastHit> snapHits))
-                snapHits[0] = default;
         }
 
         private void CaptureAnchorFromTransform()
@@ -887,6 +986,11 @@ namespace Hecton8.Gameplay.Mining
                 return;
 
             Vector3 position = _cachedTransform.position;
+            CaptureAnchorFromRuntimePosition(position);
+        }
+
+        private void CaptureAnchorFromRuntimePosition(Vector3 position)
+        {
             if (!IsFiniteVector3(position))
             {
                 FaultInvalidRuntimePosition();
@@ -1168,7 +1272,7 @@ namespace Hecton8.Gameplay.Mining
                 Channel = AcousticChannelThumper,
                 Flags = AcousticFlagThreat
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<AcousticPingSignal>.TryPush(in signal);
         }
 
         private void PublishItemAcquired(in DeployableSdfDrillExtractionResult result)
@@ -1194,7 +1298,7 @@ namespace Hecton8.Gameplay.Mining
                 Flags = 0,
                 Frame = unchecked((uint)Time.frameCount)
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
         }
 
         private void PublishCombatDamage(float damage, Vector3 hitPoint, uint sourceHash)
@@ -1216,7 +1320,7 @@ namespace Hecton8.Gameplay.Mining
                 Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag,
                 IntegrityDelta = (byte)math.clamp((int)math.ceil(damage * math.rcp(math.max(1f, maxHealth)) * 255f), 1, 255)
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<CombatDamageSignal>.TryPush(in signal);
         }
 
         private void MarkBroken(Vector3 hitPoint)
@@ -1243,7 +1347,7 @@ namespace Hecton8.Gameplay.Mining
                 Flags = DebrisSpawnSignal.FlagComputeShard | DebrisSpawnSignal.FlagToolSparks,
                 Quantity = 7
             };
-            SignalBus<DebrisSpawnSignal>.Push(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
         }
 
         private int ResolveBiomeId()
@@ -1510,7 +1614,7 @@ namespace Hecton8.Gameplay.Mining
             if (!IsFiniteVector3(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -1573,8 +1677,6 @@ namespace Hecton8.Gameplay.Mining
             _inventoryOreHashesHandle = default;
             _extractionResultHandle = default;
             _blackBoxHandle = default;
-            _snapCommandsHandle = default;
-            _snapHitsHandle = default;
             _vaultSlotIndex = -1;
         }
 
@@ -1584,8 +1686,6 @@ namespace Hecton8.Gameplay.Mining
             out NativeSlice<uint> itemHashes,
             out NativeSlice<uint> oreHashes,
             out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox,
-            out NativeArray<RaycastCommand> snapCommands,
-            out NativeArray<RaycastHit> snapHits,
             out bool assignedNewSlot)
         {
             quantities = default;
@@ -1593,8 +1693,6 @@ namespace Hecton8.Gameplay.Mining
             itemHashes = default;
             oreHashes = default;
             blackBox = default;
-            snapCommands = default;
-            snapHits = default;
             assignedNewSlot = false;
 
             if (!TryResolveVaultBuffer(
@@ -1633,18 +1731,6 @@ namespace Hecton8.Gameplay.Mining
                     MaxVaultDrillInstances * BlackBoxCapacity,
                     NativeArrayOptions.ClearMemory,
                     out NativeArray<DeployableSdfDrillTelemetryEntry> blackBoxBuffer) ||
-                !TryResolveVaultBuffer(
-                    ref _snapCommandsHandle,
-                    BufferID.DeployableSdfDrillSnapCommands,
-                    MaxVaultDrillInstances * SnapCommandCount,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<RaycastCommand> snapCommandBuffer) ||
-                !TryResolveVaultBuffer(
-                    ref _snapHitsHandle,
-                    BufferID.DeployableSdfDrillSnapHits,
-                    MaxVaultDrillInstances * SnapCommandCount,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<RaycastHit> snapHitBuffer) ||
                 !EnsureVaultSlot(slotOwners, out assignedNewSlot))
             {
                 return false;
@@ -1652,14 +1738,11 @@ namespace Hecton8.Gameplay.Mining
 
             int inventoryOffset = _vaultSlotIndex * InventorySlotCount;
             int blackBoxOffset = _vaultSlotIndex * BlackBoxCapacity;
-            int snapOffset = _vaultSlotIndex * SnapCommandCount;
             return TryBuildSlice(quantityBuffer, inventoryOffset, InventorySlotCount, out quantities) &&
                 TryBuildSlice(capacityBuffer, inventoryOffset, InventorySlotCount, out capacities) &&
                 TryBuildSlice(itemHashBuffer, inventoryOffset, InventorySlotCount, out itemHashes) &&
                 TryBuildSlice(oreHashBuffer, inventoryOffset, InventorySlotCount, out oreHashes) &&
-                TryBuildSlice(blackBoxBuffer, blackBoxOffset, BlackBoxCapacity, out blackBox) &&
-                TryBuildSubArray(snapCommandBuffer, snapOffset, SnapCommandCount, out snapCommands) &&
-                TryBuildSubArray(snapHitBuffer, snapOffset, SnapCommandCount, out snapHits);
+                TryBuildSlice(blackBoxBuffer, blackBoxOffset, BlackBoxCapacity, out blackBox);
         }
 
         private bool TryResolveInventoryState(
@@ -1674,8 +1757,6 @@ namespace Hecton8.Gameplay.Mining
                 out itemHashes,
                 out oreHashes,
                 out _,
-                out _,
-                out _,
                 out _);
         }
 
@@ -1687,25 +1768,8 @@ namespace Hecton8.Gameplay.Mining
                 out _,
                 out _,
                 out blackBox,
-                out _,
-                out _,
                 out _);
             return resolved;
-        }
-
-        private bool TryResolveSnapBuffers(
-            out NativeArray<RaycastCommand> snapCommands,
-            out NativeArray<RaycastHit> snapHits)
-        {
-            return TryPrepareNativeState(
-                out _,
-                out _,
-                out _,
-                out _,
-                out _,
-                out snapCommands,
-                out snapHits,
-                out _);
         }
 
         private bool TryResolveExtractionResultBuffer(out NativeSlice<DeployableSdfDrillExtractionResult> extractionResult)
@@ -1784,7 +1848,7 @@ namespace Hecton8.Gameplay.Mining
             if (_sourceId != 0u)
                 return _sourceId;
 
-            return DeployableSdfDrillMath.Mix(DrillToolHash, unchecked((uint)GetInstanceID()));
+            return DeployableSdfDrillMath.Mix(DrillToolHash, Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId())));
         }
 
         private void ReleaseVaultSlot()
@@ -1838,7 +1902,7 @@ namespace Hecton8.Gameplay.Mining
                 return TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GameplayTools,
@@ -1891,33 +1955,10 @@ namespace Hecton8.Gameplay.Mining
             return slice.Length == length;
         }
 
-        private static bool TryBuildSubArray<T>(
-            NativeArray<T> buffer,
-            int offset,
-            int length,
-            out NativeArray<T> subArray) where T : struct
-        {
-            subArray = default;
-            if (!buffer.IsCreated || offset < 0 || length <= 0 || offset > buffer.Length - length)
-                return false;
-
-            subArray = buffer.GetSubArray(offset, length);
-            return subArray.IsCreated && subArray.Length == length;
-        }
-
         private static void ClearSlice<T>(NativeSlice<T> slice) where T : struct
         {
             for (int i = 0; i < slice.Length; i++)
                 slice[i] = default;
-        }
-
-        private static void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct
-        {
-            if (!buffer.IsCreated)
-                return;
-
-            for (int i = 0; i < buffer.Length; i++)
-                buffer[i] = default;
         }
     }
 }

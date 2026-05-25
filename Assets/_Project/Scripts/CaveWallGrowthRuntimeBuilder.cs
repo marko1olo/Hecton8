@@ -8,7 +8,8 @@ namespace Hecton8.Caves
     internal static class CaveWallGrowthRuntimeBuilder
     {
         private const string WallGrowthRootName = "_WallGrowth";
-        private static readonly string[] _GrowthNames = CreateNameCache("Growth_", 18); // COLD ALLOC: bounded wall-growth child names.
+        private const int MaxGrowthCount = 18;
+        private static readonly string[] _GrowthNames = CreateNameCache("Growth_", MaxGrowthCount); // COLD ALLOC: bounded wall-growth child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -149,7 +150,7 @@ namespace Hecton8.Caves
             return Mathf.Clamp(
                 Mathf.RoundToInt(math.lerp(4f, 16f, Mathf.Max(complexity, surfaceFactor)) * swayBias * intensity),
                 3,
-                18);
+                MaxGrowthCount);
         }
 
         private static Material ResolveGrowthMaterial(HectonVoxelVolume volume)

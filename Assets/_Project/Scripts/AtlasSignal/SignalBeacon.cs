@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
@@ -49,7 +48,7 @@ namespace Hecton8.AtlasSignal
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Atlas Signal/Signal Beacon")]
-    public sealed class SignalBeacon : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class SignalBeacon : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float DefaultBipPeriodSeconds = 0.1f;
         private const double TriangulationCentroidWeight = 1d / 3d;
@@ -81,7 +80,6 @@ namespace Hecton8.AtlasSignal
         [Header("Runtime Cadence")]
         [SerializeField, Min(0.02f)] private float signalSolveIntervalSeconds = 0.1f;
 
-        private HectonPlayerMovement _playerMovement;
         private AbsoluteUniversePosition _pointAup0;
         private AbsoluteUniversePosition _pointAup1;
         private AbsoluteUniversePosition _pointAup2;
@@ -96,16 +94,18 @@ namespace Hecton8.AtlasSignal
         private bool _aupCacheValid;
         private bool _beaconAupCacheValid;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private bool _fragmentRecovered;
         private int _registrySlot = -1;
-        private AudioLogSystem _audioLogs;
-        private SpatialAudioManager _spatialAudio;
+        private IAudioLogRuntime _audioLogs;
+        private ISpatialAudioListenerCaveReadModel _spatialAudio;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private SignalBeaconTelemetry _telemetry;
 
         private static readonly int _ShaderSignalStatic = Shader.PropertyToID("_AtlasSignalStatic");
         private static float _lastPublishedShaderStatic01 = -1f;
+        private static bool _pendingDominantShaderStaticDirty;
 
         /// <summary>Latest published beacon telemetry.</summary>
         public SignalBeaconTelemetry Telemetry => _telemetry;
@@ -130,6 +130,7 @@ namespace Hecton8.AtlasSignal
             RefreshBeaconAupCache(force: true);
             _registrySlot = SignalBeaconRegistry.Register(this);
             TryRegisterTick();
+            TryRegisterLateFrame();
             ResolvePlayer();
         }
 
@@ -138,6 +139,8 @@ namespace Hecton8.AtlasSignal
             TryUnregisterTick();
             TryUnregisterHotSwapListener();
             UnregisterBeaconAndRefreshShaderStatic();
+            FlushPendingDominantStaticShaderValue();
+            TryUnregisterLateFrame();
         }
 
         private void OnDestroy()
@@ -145,12 +148,15 @@ namespace Hecton8.AtlasSignal
             TryUnregisterTick();
             TryUnregisterHotSwapListener();
             UnregisterBeaconAndRefreshShaderStatic();
+            FlushPendingDominantStaticShaderValue();
+            TryUnregisterLateFrame();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticShaderState()
         {
             _lastPublishedShaderStatic01 = -1f;
+            _pendingDominantShaderStaticDirty = false;
         }
 
         public void Tick(float deltaTime)
@@ -172,6 +178,11 @@ namespace Hecton8.AtlasSignal
                 _bipTimer = math.min(_bipTimer - safeBipPeriod, safeBipPeriod);
                 EmitBreadcrumb();
             }
+        }
+
+        public void LateFrameTick()
+        {
+            FlushPendingDominantStaticShaderValue();
         }
 
         private void SolveTelemetry()
@@ -210,15 +221,15 @@ namespace Hecton8.AtlasSignal
             _telemetry.ErrorNoise01 = result.ErrorNoise01;
             _telemetry.Static01 = result.Static01;
 
-            AudioLogSystem audioLogs = _audioLogs;
+            IAudioLogRuntime audioLogs = _audioLogs;
             _telemetry.RecoveredBits = audioLogs != null
-                ? audioLogs.GetRecoveredEncryptedBits(linkedAudioLogHash)
+                ? audioLogs.GetRecoveredEncryptedAudioLogBits(linkedAudioLogHash)
                 : 0u;
 
             if (!_fragmentRecovered && result.Strength01 >= fragmentRecoveryStrength01)
                 TryRecoverFragment();
 
-            SignalBeaconRegistry.PublishTelemetry(_registrySlot, in _telemetry);
+            SignalBeaconRegistry.TryPublishTelemetry(_registrySlot, in _telemetry);
             PublishDominantStaticToShader();
         }
 
@@ -237,6 +248,21 @@ namespace Hecton8.AtlasSignal
             if (!publishStaticToShader)
                 return;
 
+            QueueDominantStaticShaderValue();
+        }
+
+        private void QueueDominantStaticShaderValue()
+        {
+            _pendingDominantShaderStaticDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private static void FlushPendingDominantStaticShaderValue()
+        {
+            if (!_pendingDominantShaderStaticDirty)
+                return;
+
+            _pendingDominantShaderStaticDirty = false;
             PublishDominantStaticToShaderValue();
         }
 
@@ -257,7 +283,7 @@ namespace Hecton8.AtlasSignal
             SignalBeaconRegistry.Unregister(this, _registrySlot);
             _registrySlot = -1;
             if (publishStaticToShader || _lastPublishedShaderStatic01 >= 0f)
-                PublishDominantStaticToShaderValue();
+                QueueDominantStaticShaderValue();
         }
 
         private void EmitBreadcrumb()
@@ -276,7 +302,7 @@ namespace Hecton8.AtlasSignal
                 acousticSourceId,
                 10f);
 
-            PhysicsEventBus.NotifyAcousticPing(in pingEvent);
+            PhysicsEventBus.TryNotifyAcousticPing(in pingEvent);
         }
 
         private bool TryRecoverFragment()
@@ -284,12 +310,12 @@ namespace Hecton8.AtlasSignal
             if (linkedAudioLogHash == 0u || fragmentHash == 0u)
                 return false;
 
-            AudioLogSystem audioLogs = _audioLogs;
+            IAudioLogRuntime audioLogs = _audioLogs;
             if (audioLogs == null)
                 return false;
 
-            _fragmentRecovered = audioLogs.RecoverEncryptedFragment(linkedAudioLogHash, fragmentHash);
-            _telemetry.RecoveredBits = audioLogs.GetRecoveredEncryptedBits(linkedAudioLogHash);
+            _fragmentRecovered = audioLogs.RecoverEncryptedAudioLogFragment(linkedAudioLogHash, fragmentHash);
+            _telemetry.RecoveredBits = audioLogs.GetRecoveredEncryptedAudioLogBits(linkedAudioLogHash);
             return _fragmentRecovered;
         }
 
@@ -330,7 +356,7 @@ namespace Hecton8.AtlasSignal
 
         private void RefreshBeaconAupCache(bool force)
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             if (!force && _beaconAupCacheValid)
             {
                 if (_cachedBeaconRuntimeFrame != currentFrame)
@@ -364,17 +390,15 @@ namespace Hecton8.AtlasSignal
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (_playerMovement == null)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose))
             {
-                ResolvePlayer();
-                if (_playerMovement == null)
-                {
-                    playerAup = default;
-                    return false;
-                }
+                playerAup = default;
+                return false;
             }
 
-            playerAup = _playerMovement.CurrentAup;
+            playerAup = pose.Aup;
             return true;
         }
 
@@ -384,7 +408,7 @@ namespace Hecton8.AtlasSignal
             if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -396,7 +420,7 @@ namespace Hecton8.AtlasSignal
 
         private float ResolveCaveErrorMultiplier()
         {
-            SpatialAudioManager spatialAudio = _spatialAudio;
+            ISpatialAudioListenerCaveReadModel spatialAudio = _spatialAudio;
             if (spatialAudio != null &&
                 spatialAudio.IsListenerInsideCaveVolume)
             {
@@ -407,15 +431,6 @@ namespace Hecton8.AtlasSignal
             return 1f;
         }
 
-        private void ResolvePlayer()
-        {
-            _playerMovement = null;
-
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext != null)
-                _playerMovement = playerContext.PlayerMovement;
-        }
-
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -424,24 +439,35 @@ namespace Hecton8.AtlasSignal
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogs = currentService as AudioLogSystem;
+                    _audioLogs = currentService as IAudioLogRuntime;
                     return;
                 case GlobalRegistryServiceSlot.Audio:
-                    _spatialAudio = currentService as SpatialAudioManager;
+                    _spatialAudio = currentService as ISpatialAudioListenerCaveReadModel;
                     return;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    ResolvePlayer();
+                    return;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                    {
+                        TryRegisterTick();
+                        TryRegisterLateFrame();
+                    }
                     return;
             }
         }
 
         private void CacheRegistryServicesCold()
         {
-            _audioLogs = GlobalRegistry.AudioLogs;
-            _spatialAudio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as SpatialAudioManager;
+            _audioLogs = GlobalRegistry.AudioLogRuntime;
+            _spatialAudio = GlobalRegistry.Audio as ISpatialAudioListenerCaveReadModel;
             _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            ResolvePlayer();
+        }
+
+        private void ResolvePlayer()
+        {
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void TryRegisterHotSwapListener()
@@ -469,6 +495,14 @@ namespace Hecton8.AtlasSignal
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+        }
+
         private void TryUnregisterTick()
         {
             if (!_registered)
@@ -476,6 +510,15 @@ namespace Hecton8.AtlasSignal
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registered = false;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            _registeredLateFrame = false;
         }
 
 #if UNITY_EDITOR
@@ -572,10 +615,16 @@ namespace Hecton8.AtlasSignal
             }
         }
 
+        [System.Obsolete("Use TryPublishTelemetry(int,in SignalBeaconTelemetry) so bounded slot rejection stays visible at the producer.", true)]
         public static void PublishTelemetry(int slot, in SignalBeaconTelemetry telemetry)
         {
+            TryPublishTelemetry(slot, in telemetry);
+        }
+
+        public static bool TryPublishTelemetry(int slot, in SignalBeaconTelemetry telemetry)
+        {
             if (slot < 0 || slot >= Capacity || (_occupiedMask & (1u << slot)) == 0u)
-                return;
+                return false;
 
             uint slotBit = 1u << slot;
             bool hadTelemetry = (_telemetryMask & slotBit) != 0u;
@@ -606,6 +655,7 @@ namespace Hecton8.AtlasSignal
 
             if (rebuildDominants)
                 RebuildDominantFromTelemetrySlots();
+            return true;
         }
 
         public static bool TryGetDominant(out SignalBeaconTelemetry telemetry)

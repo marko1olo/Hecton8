@@ -229,7 +229,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Wrist Hologram HUD Runtime")]
-    public sealed unsafe class WristHologramHudRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe partial class WristHologramHudRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int StateCapacity = 1;
         private const int GlyphCapacity = 128;
@@ -237,9 +237,10 @@ namespace Hecton8.UI
         private const int CounterCapacity = 16;
         private const int MaxDefaultQuadCapacity = 512;
         private const int MaxDrawMeshInstancedBatch = 1023;
+        private const int VitalsQueueCapacity = 64;
+        private const int PdaQueueCapacity = 16;
         private const int DefaultAcousticCapacity = 128;
         private const int CsvOverrideMaxBytes = 8192;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const float AttentionDotThreshold = 0.70710678f;
         private const float JobWarningMicroseconds = 200f;
         private const string DefaultShaderName = "Hecton8/UI/WristHudSDF";
@@ -313,8 +314,10 @@ namespace Hecton8.UI
         private VaultGenerationHandle<WristHudTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<uint> _counterHandle;
         private VaultGenerationHandle<AcousticEchoTap> _acousticTapHandle;
-        private NativeQueue<PlayerVitalsSignal> _vitalsQueue;
-        private NativeQueue<PdaOpenedSignal> _pdaQueue;
+        private FixedList4096Bytes<PlayerVitalsSignal> _vitalsSignals;
+        private FixedList512Bytes<PdaOpenedSignal> _pdaSignals;
+        private int _vitalsQueueCount;
+        private int _pdaQueueCount;
 
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
@@ -323,6 +326,9 @@ namespace Hecton8.UI
         private bool _csvLoaded;
         private bool _legacyMissing;
         private bool _fontAtlasGenerated;
+        private bool _nativeResourcesDirty;
+        private bool _hudTextJobDirty = true;
+        private bool _materialColdStateDirty = true;
         private bool _jobScheduled;
         private JobHandle _pendingJob;
         private long _jobStartTimestamp;
@@ -330,10 +336,13 @@ namespace Hecton8.UI
         private int _lastUploadedFrameIndex = -1;
         private int _frontQuadCount;
         private int _quadBufferCapacity;
+        private float _lastHudDeltaTime;
         private float _cachedQualityWeight01 = 1f;
         private PlayerVitalsSignal _latestVitals;
         private PdaOpenedSignal _latestPdaSignal;
+#if UNITY_EDITOR
         private readonly byte[] _csvReadBuffer = new byte[CsvOverrideMaxBytes]; // COLD ALLOC: byte[8192] - editor/manual font metrics CSV scratch - owner: SHINOBU_07
+#endif
         private FixedString64Bytes _o2Text;
         private FixedString64Bytes _depthText;
         private FixedString64Bytes _headingText;
@@ -387,9 +396,11 @@ namespace Hecton8.UI
 
         public void InjectVitalsSignal(in PlayerVitalsSignal signal)
         {
-            EnsureNativeQueues();
-            if (_vitalsQueue.IsCreated)
-                _vitalsQueue.Enqueue(signal);
+            if (_vitalsSignals.Length < VitalsQueueCapacity)
+            {
+                _vitalsSignals.Add(signal);
+                _vitalsQueueCount = _vitalsSignals.Length;
+            }
         }
 
         public void InjectO2Signal(in O2LevelChangedSignal signal)
@@ -402,9 +413,11 @@ namespace Hecton8.UI
 
         public void InjectPdaOpenedSignal(in PdaOpenedSignal signal)
         {
-            EnsureNativeQueues();
-            if (_pdaQueue.IsCreated)
-                _pdaQueue.Enqueue(signal);
+            if (_pdaSignals.Length < PdaQueueCapacity)
+            {
+                _pdaSignals.Add(signal);
+                _pdaQueueCount = _pdaSignals.Length;
+            }
         }
 
         public void InjectAcousticEchoTap(in AcousticEchoTap tap)
@@ -440,9 +453,10 @@ namespace Hecton8.UI
                 state.CompassAndVitals.w = glitchMultiplier;
             }
 
-            ApplyMaterialColdState();
+            _materialColdStateDirty = true;
         }
 
+#if UNITY_EDITOR
         public bool TryReloadFontMetricsOverride()
         {
             if (!EnsureNativeBuffers())
@@ -460,6 +474,7 @@ namespace Hecton8.UI
 
             return loaded;
         }
+#endif
 
         private void OnEnable()
         {
@@ -467,9 +482,10 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             ColdSanityCheckLayout();
             EnsureNativeBuffers();
-            EnsureNativeQueues();
+            EnsureSignalBuffers();
             EnsureGraphicsResources();
             SeedInitialState();
+            PdaProjectorOnEnable();
             TryRegisterTickLanes();
         }
 
@@ -489,6 +505,7 @@ namespace Hecton8.UI
             _frontQuadCount = 0;
             _lastUploadCount = -1;
             _lastUploadedFrameIndex = -1;
+            PdaProjectorOnDisable();
         }
 
         private void OnDestroy()
@@ -496,36 +513,67 @@ namespace Hecton8.UI
             CompletePendingJob(forceComplete: true);
             TryUnregisterTickLanes();
             TryUnregisterHotSwapListener();
+            PdaProjectorOnDestroy();
             ReleaseGraphicsResources();
             DisposeNativeState();
-            DisposeNativeQueues();
+            ClearSignalBuffers();
         }
 
         public void Tick(float deltaTime)
         {
-            if (!EnsureNativeBuffers())
+            if (!HasRequiredVaultHandles())
+            {
+                _nativeResourcesDirty = true;
                 return;
+            }
 
-            EnsureNativeQueues();
+            if (!HasSignalBuffers())
+            {
+                _nativeResourcesDirty = true;
+                return;
+            }
+
             if (!HasRequiredVaultHandles())
                 return;
 
-            if (_jobScheduled)
-                CompletePendingJob(forceComplete: false);
-
             DrainSignalQueues(deltaTime);
+            PdaProjectorTick(deltaTime);
             RefreshUiStateStoreInputs();
-#if UNITY_EDITOR
-            PollCsvOverride(deltaTime);
-#endif
-            BuildFixedTexts();
-            ScheduleTextToQuadsJob(deltaTime);
+            _lastHudDeltaTime = math.max(0f, deltaTime);
+            _hudTextJobDirty = true;
         }
 
         public void LateFrameTick()
         {
+            if (_nativeResourcesDirty || !HasRequiredVaultHandles() || !HasSignalBuffers())
+            {
+                _nativeResourcesDirty = false;
+                if (!EnsureNativeBuffers())
+                    return;
+
+                EnsureSignalBuffers();
+            }
+
+            if (_materialColdStateDirty && _runtimeMaterial != null)
+            {
+                _materialColdStateDirty = false;
+                ApplyMaterialColdState();
+            }
+
+#if UNITY_EDITOR
+            PollCsvOverride(_lastHudDeltaTime);
+#endif
+
             CompletePendingJob(forceComplete: false);
+            if (!_jobScheduled && _hudTextJobDirty)
+            {
+                _hudTextJobDirty = false;
+                BuildFixedTexts();
+                ScheduleTextToQuadsJob(_lastHudDeltaTime);
+            }
+
             UploadAndDraw();
+            PdaProjectorLateFrameTick();
         }
 
         private bool EnsureNativeBuffers()
@@ -553,12 +601,12 @@ namespace Hecton8.UI
             }
 
             int safeQuadCapacity = math.clamp(quadCapacity, 64, MaxDrawMeshInstancedBatch);
-            _stateHandle = vault.GetGenerationHandle<WristHudStateDTO>(BufferID.WristHudState, StateCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _quadHandle = vault.GetGenerationHandle<WristHudQuadTransformDTO>(BufferID.WristHudQuads, safeQuadCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _fontAtlasHandle = vault.GetGenerationHandle<WristHudFontGlyphDTO>(BufferID.WristHudFontAtlas, GlyphCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetGenerationHandle<WristHudTelemetryEntry>(BufferID.WristHudTelemetryRing, TelemetryCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _counterHandle = vault.GetGenerationHandle<uint>(BufferID.WristHudCounters, CounterCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _acousticTapHandle = vault.GetGenerationHandle<AcousticEchoTap>(BufferID.WristHudAcousticTaps, DefaultAcousticCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _stateHandle = vault.EnsureGenerationHandle<WristHudStateDTO>(BufferID.WristHudState, StateCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _quadHandle = vault.EnsureGenerationHandle<WristHudQuadTransformDTO>(BufferID.WristHudQuads, safeQuadCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _fontAtlasHandle = vault.EnsureGenerationHandle<WristHudFontGlyphDTO>(BufferID.WristHudFontAtlas, GlyphCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = vault.EnsureGenerationHandle<WristHudTelemetryEntry>(BufferID.WristHudTelemetryRing, TelemetryCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _counterHandle = vault.EnsureGenerationHandle<uint>(BufferID.WristHudCounters, CounterCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _acousticTapHandle = vault.EnsureGenerationHandle<AcousticEchoTap>(BufferID.WristHudAcousticTaps, DefaultAcousticCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
 
             if (!TryResolveHudBuffers(
                     out _,
@@ -573,8 +621,8 @@ namespace Hecton8.UI
             if (!_fontAtlasGenerated)
             {
                 GenerateMockFontAtlas();
-                TryLoadLegacyFontMetrics();
 #if UNITY_EDITOR
+                TryLoadLegacyFontMetrics();
                 TryReloadFontMetricsOverride();
 #endif
             }
@@ -585,19 +633,21 @@ namespace Hecton8.UI
             return true;
         }
 
-        private void EnsureNativeQueues()
+        private void EnsureSignalBuffers()
         {
-            if (!_vitalsQueue.IsCreated)
-            {
-                _vitalsQueue = new NativeQueue<PlayerVitalsSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerVitalsSignal> - blind mock input lane - owner: SHINOBU_07
-                NativeMemorySentinel.RegisterNativeQueue(_vitalsQueue, 64, nameof(WristHologramHudRuntime), nameof(_vitalsQueue), NativeAllocationLifetime.Scene);
-            }
+            if (_vitalsSignals.Length > VitalsQueueCapacity)
+                _vitalsSignals.Length = VitalsQueueCapacity;
+            if (_pdaSignals.Length > PdaQueueCapacity)
+                _pdaSignals.Length = PdaQueueCapacity;
 
-            if (!_pdaQueue.IsCreated)
-            {
-                _pdaQueue = new NativeQueue<PdaOpenedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PdaOpenedSignal> - PDA mock input lane - owner: SHINOBU_07
-                NativeMemorySentinel.RegisterNativeQueue(_pdaQueue, 16, nameof(WristHologramHudRuntime), nameof(_pdaQueue), NativeAllocationLifetime.Scene);
-            }
+            _vitalsQueueCount = _vitalsSignals.Length;
+            _pdaQueueCount = _pdaSignals.Length;
+        }
+
+        private bool HasSignalBuffers()
+        {
+            return _vitalsSignals.Capacity >= VitalsQueueCapacity &&
+                   _pdaSignals.Capacity >= PdaQueueCapacity;
         }
 
         private void DisposeNativeState()
@@ -618,22 +668,12 @@ namespace Hecton8.UI
             _vault = null;
         }
 
-        private void DisposeNativeQueues()
+        private void ClearSignalBuffers()
         {
-            if (_vitalsQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(WristHologramHudRuntime), nameof(_vitalsQueue));
-                _vitalsQueue.Dispose();
-                _vitalsQueue = default;
-            }
-
-            if (_pdaQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(WristHologramHudRuntime), nameof(_pdaQueue));
-                _pdaQueue.Dispose();
-                _pdaQueue = default;
-            }
-
+            _vitalsSignals.Clear();
+            _pdaSignals.Clear();
+            _vitalsQueueCount = 0;
+            _pdaQueueCount = 0;
         }
 
         private bool HasRequiredVaultHandles()
@@ -837,13 +877,25 @@ namespace Hecton8.UI
             if (_survivalPressureHoldFrames > 0)
                 _survivalPressureHoldFrames--;
             if (math.abs(previousMathLodPressure - ResolveMathLodPressure01()) > 0.02f)
-                ApplyMaterialColdState();
+                _materialColdStateDirty = true;
 
-            while (_vitalsQueue.IsCreated && _vitalsQueue.TryDequeue(out PlayerVitalsSignal signal))
-                _latestVitals = SanitizeVitals(signal);
+            int vitalsCount = math.min(_vitalsSignals.Length, VitalsQueueCapacity);
+            for (int i = 0; i < vitalsCount; i++)
+            {
+                _latestVitals = SanitizeVitals(_vitalsSignals[i]);
+            }
 
-            while (_pdaQueue.IsCreated && _pdaQueue.TryDequeue(out PdaOpenedSignal signal))
-                _latestPdaSignal = signal;
+            _vitalsSignals.Clear();
+            _vitalsQueueCount = 0;
+
+            int pdaCount = math.min(_pdaSignals.Length, PdaQueueCapacity);
+            for (int i = 0; i < pdaCount; i++)
+            {
+                _latestPdaSignal = _pdaSignals[i];
+            }
+
+            _pdaSignals.Clear();
+            _pdaQueueCount = 0;
         }
 
         private void DrainGlobalSignalSnapshots()
@@ -887,18 +939,10 @@ namespace Hecton8.UI
 
         private void RunMockSignalInjector(float deltaTime)
         {
-            if (!_vitalsQueue.IsCreated)
-                return;
+            PlayerVitalsSignal vitals = BuildMockVitalsSignal(_latestVitals, math.max(0f, deltaTime), Time.unscaledTime);
+            InjectVitalsSignal(in vitals);
 
-            MockVitalsGeneratorJob job = new MockVitalsGeneratorJob
-            {
-                Previous = _latestVitals,
-                DeltaTime = math.max(0f, deltaTime),
-                TimeSeconds = Time.unscaledTime,
-                Output = _vitalsQueue.AsParallelWriter()
-            };
-            job.Execute();
-            if ((Time.frameCount & 127) == 0)
+            if ((Hecton8.Core.SystemDispatcher.CurrentFrameIndex & 127) == 0)
             {
                 PdaOpenedSignal pda = _latestPdaSignal;
                 pda.IsOpen = pda.IsOpen == 0u ? 1u : 0u;
@@ -907,6 +951,31 @@ namespace Hecton8.UI
             }
 
             GenerateMockAcousticTaps();
+        }
+
+        private static PlayerVitalsSignal BuildMockVitalsSignal(in PlayerVitalsSignal previous, float deltaTime, float timeSeconds)
+        {
+            float pulse = HudTriangle01(timeSeconds * 0.1114f);
+            PlayerVitalsSignal next = previous;
+            next.Oxygen01 = math.saturate(math.lerp(previous.Oxygen01 <= 0f ? 1f : previous.Oxygen01, 0.12f + pulse * 0.88f, deltaTime * 0.05f));
+            next.Health01 = math.saturate(0.62f + HudTriangle01(timeSeconds * 0.0302f) * 0.36f);
+            next.Power01 = math.saturate(0.45f + HudTriangle01(timeSeconds * 0.0175f) * 0.5f);
+            next.DepthMeters = math.max(0f, 120f + TriangleWave(timeSeconds * 0.0207f) * 145f);
+            next.SafeDepthMeters = 220f;
+            next.Radiation01 = HudTriangle01(timeSeconds * 0.0366f);
+            next.Toxemia01 = HudTriangle01(timeSeconds * 0.0271f + 0.21f);
+            next.Flags = 1u;
+            return next;
+        }
+
+        private static float HudTriangle01(float phase)
+        {
+            return math.abs(math.frac(phase) * 2f - 1f);
+        }
+
+        private static float TriangleWave(float phase)
+        {
+            return HudTriangle01(phase) * 2f - 1f;
         }
 
         private void GenerateMockAcousticTaps()
@@ -919,12 +988,15 @@ namespace Hecton8.UI
             float t = Time.unscaledTime;
             for (int i = 0; i < count; i++)
             {
-                float phase = t * (0.3f + i * 0.017f) + i * 1.6180339f;
+                float phase = t * (0.0477f + i * 0.0027f) + i * 0.6180339f;
                 float radius = 8f + ((i * 13) % 27);
                 acousticTaps[i] = new AcousticEchoTap
                 {
-                    RelativePositionMeters = new float3(math.cos(phase) * radius, math.sin(phase * 0.37f) * 3f, math.sin(phase) * radius),
-                    Amplitude01 = math.saturate(0.25f + math.sin(phase * 2.17f) * 0.45f),
+                    RelativePositionMeters = new float3(
+                        TriangleWaveSigned(phase) * radius,
+                        TriangleWaveSigned(phase * 0.37f + 0.11f) * 3f,
+                        TriangleWaveSigned(phase + 0.25f) * radius),
+                    Amplitude01 = math.saturate(0.25f + HudTriangle01(phase * 2.17f) * 0.45f),
                     StableId = (uint)(0xA700u + i),
                     AgeSeconds = math.frac(t + i * 0.13f),
                     Flags = 1u
@@ -932,6 +1004,11 @@ namespace Hecton8.UI
             }
 
             counters[2] = (uint)count;
+        }
+
+        private static float TriangleWaveSigned(float phase)
+        {
+            return HudTriangle01(phase) * 2f - 1f;
         }
 
         private void RefreshUiStateStoreInputs()
@@ -955,6 +1032,7 @@ namespace Hecton8.UI
             }
         }
 
+#if UNITY_EDITOR
         private void PollCsvOverride(float deltaTime)
         {
             if (!enableCsvHotReload)
@@ -975,6 +1053,7 @@ namespace Hecton8.UI
 
             TryReloadFontMetricsOverride();
         }
+#endif
 
         private void BuildFixedTexts()
         {
@@ -1081,7 +1160,7 @@ namespace Hecton8.UI
                 GlitchMultiplier = glitchMultiplier,
                 TimeSeconds = Time.unscaledTime,
                 DeltaTime = math.max(0f, deltaTime),
-                FrameIndex = Time.frameCount,
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
                 QualityWeight01 = _cachedQualityWeight01,
                 MathLodPressure01 = ResolveMathLodPressure01(),
                 PdaOpen = _latestPdaSignal.IsOpen,
@@ -1242,7 +1321,7 @@ namespace Hecton8.UI
             if (math.lengthsq(planar) < 0.0001f)
                 return 0f;
 
-            float angle = math.degrees(math.atan2(planar.x, planar.y));
+            float angle = math.degrees(MathLodApproximation.ApproxAtan2Fast(planar.x, planar.y));
             return angle < 0f ? angle + 360f : angle;
         }
 
@@ -1280,6 +1359,7 @@ namespace Hecton8.UI
             _fontAtlasGenerated = true;
         }
 
+#if UNITY_EDITOR
         private void TryLoadLegacyFontMetrics()
         {
             try
@@ -1304,36 +1384,36 @@ namespace Hecton8.UI
                 if (palettePath != null)
                     TryReadBinaryPalette(palettePath);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 _legacyMissing = true;
-                Debug.LogWarning(ex.Message);
+                Debug.LogWarning("[SHINOBU_07] Legacy font atlas discovery failed.");
                 GenerateMockFontAtlas();
             }
         }
 
         private static string FindFirstFile(string root, string fileName)
         {
-            using (System.Collections.Generic.IEnumerator<string> paths = Directory.EnumerateFiles(root, fileName, SearchOption.AllDirectories).GetEnumerator())
-            {
-                if (paths.MoveNext())
-                    return paths.Current;
-            }
+            foreach (string path in Directory.EnumerateFiles(root, fileName, SearchOption.AllDirectories))
+                return path;
 
             return null;
         }
 
         private bool TryReadBinaryFontMetrics(string path)
         {
-            byte[] bytes = File.ReadAllBytes(path);
+            if (!TryReadWholeFileIntoBuffer(path, _csvReadBuffer, out int byteCount))
+                return false;
+
+            byte[] bytes = _csvReadBuffer;
             const int recordSize = 24;
-            if (bytes.Length < recordSize)
+            if (byteCount < recordSize)
                 return false;
 
             if (!TryResolveVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
                 return false;
 
-            int count = math.min(bytes.Length / recordSize, fontAtlas.Length);
+            int count = math.min(byteCount / recordSize, fontAtlas.Length);
             for (int i = 0; i < count; i++)
             {
                 int offset = i * recordSize;
@@ -1360,20 +1440,20 @@ namespace Hecton8.UI
 
         private bool TryReadBinaryPalette(string path)
         {
-            byte[] bytes = File.ReadAllBytes(path);
-            if (bytes.Length < 48)
+            if (!TryReadWholeFileIntoBuffer(path, _csvReadBuffer, out int byteCount) || byteCount < 48)
                 return false;
 
-            lowColor = ReadColor(bytes, 0, lowColor);
-            midColor = ReadColor(bytes, 16, midColor);
-            dangerColor = ReadColor(bytes, 32, dangerColor);
+            byte[] bytes = _csvReadBuffer;
+            lowColor = ReadColor(bytes, byteCount, 0, lowColor);
+            midColor = ReadColor(bytes, byteCount, 16, midColor);
+            dangerColor = ReadColor(bytes, byteCount, 32, dangerColor);
             ApplyTunerSettings(hologramDistanceFromWrist, textScale, glitchMultiplier, lowColor, midColor, dangerColor);
             return true;
         }
 
-        private static Color ReadColor(byte[] bytes, int offset, Color fallback)
+        private static Color ReadColor(byte[] bytes, int length, int offset, Color fallback)
         {
-            if (bytes.Length < offset + 16)
+            if (bytes == null || length < offset + 16)
                 return fallback;
 
             return new Color(
@@ -1381,6 +1461,43 @@ namespace Hecton8.UI
                 BitConverter.ToSingle(bytes, offset + 4),
                 BitConverter.ToSingle(bytes, offset + 8),
                 BitConverter.ToSingle(bytes, offset + 12));
+        }
+
+        private static bool TryReadWholeFileIntoBuffer(string path, byte[] buffer, out int bytesRead)
+        {
+            bytesRead = 0;
+            if (buffer == null || string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    if (stream.Length <= 0L || stream.Length > buffer.Length)
+                        return false;
+
+                    int length = (int)stream.Length;
+                    while (bytesRead < length)
+                    {
+                        int delta = stream.Read(buffer, bytesRead, length - bytesRead);
+                        if (delta <= 0)
+                            break;
+                        bytesRead += delta;
+                    }
+
+                    return bytesRead == length;
+                }
+            }
+            catch (IOException)
+            {
+                bytesRead = 0;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                bytesRead = 0;
+                return false;
+            }
         }
 
         private bool TryParseFontMetricsCsv(string path)
@@ -1596,6 +1713,7 @@ namespace Hecton8.UI
         {
             return value == ' ' || value == '\t';
         }
+#endif
 
         private void DumpBlackBoxOnce()
         {
@@ -1635,9 +1753,9 @@ namespace Hecton8.UI
                     stream.Write(new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry), payloadBytes));
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError("SHINOBU_07 blackbox dump failed: " + ex.Message);
+                Debug.LogError("SHINOBU_07 blackbox dump failed.");
             }
         }
 
@@ -1863,8 +1981,10 @@ namespace Hecton8.UI
             _cachedDataVault = currentService as IDataVault;
             if (!ReferenceEquals(_vault, _cachedDataVault))
             {
+                PdaProjectorReleaseNativeStateHandles();
                 ReleaseNativeStateHandles();
                 _fontAtlasGenerated = false;
+                PdaProjectorOnDataVaultServiceReplaced();
             }
         }
 
@@ -1914,13 +2034,15 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            if (!TryGetPdaGridGizmo(out Matrix4x4 matrix, out Vector3 size))
-                return;
+            if (TryGetPdaGridGizmo(out Matrix4x4 matrix, out Vector3 size))
+            {
+                Gizmos.color = new Color(midColor.r, midColor.g, midColor.b, 0.85f);
+                Gizmos.matrix = matrix;
+                Gizmos.DrawWireCube(Vector3.zero, size);
+                Gizmos.matrix = Matrix4x4.identity;
+            }
 
-            Gizmos.color = new Color(midColor.r, midColor.g, midColor.b, 0.85f);
-            Gizmos.matrix = matrix;
-            Gizmos.DrawWireCube(Vector3.zero, size);
-            Gizmos.matrix = Matrix4x4.identity;
+            PdaProjectorOnDrawGizmosSelected();
         }
 
         private void OnValidate()
@@ -1933,33 +2055,9 @@ namespace Hecton8.UI
             pdaGridDistanceMeters = math.clamp(pdaGridDistanceMeters, 0.02f, 0.6f);
             baseIntensity = math.clamp(baseIntensity, 0.1f, 8f);
             csvPollIntervalSeconds = math.clamp(csvPollIntervalSeconds, 0.05f, 2f);
+            PdaProjectorOnValidate();
         }
 #endif
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct MockVitalsGeneratorJob : IJob
-        {
-            public PlayerVitalsSignal Previous;
-            public float DeltaTime;
-            public float TimeSeconds;
-            [NoAlias]
-            public NativeQueue<PlayerVitalsSignal>.ParallelWriter Output;
-
-            public void Execute()
-            {
-                float pulse = math.sin(TimeSeconds * 0.7f) * 0.5f + 0.5f;
-                PlayerVitalsSignal next = Previous;
-                next.Oxygen01 = math.saturate(math.lerp(Previous.Oxygen01 <= 0f ? 1f : Previous.Oxygen01, 0.12f + pulse * 0.88f, DeltaTime * 0.05f));
-                next.Health01 = math.saturate(0.8f + math.sin(TimeSeconds * 0.19f) * 0.18f);
-                next.Power01 = math.saturate(0.7f + math.sin(TimeSeconds * 0.11f) * 0.25f);
-                next.DepthMeters = math.max(0f, 120f + math.sin(TimeSeconds * 0.13f) * 145f);
-                next.SafeDepthMeters = 220f;
-                next.Radiation01 = math.saturate(math.sin(TimeSeconds * 0.23f) * 0.5f + 0.5f);
-                next.Toxemia01 = math.saturate(math.sin(TimeSeconds * 0.17f + 1.3f) * 0.5f + 0.5f);
-                next.Flags = 1u;
-                Output.Enqueue(next);
-            }
-        }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct TextToQuadsJob : IJob
@@ -2157,9 +2255,7 @@ namespace Hecton8.UI
                 {
                     float fill01 = math.saturate(filled - i);
                     float critical = math.saturate((depth01 - 0.82f) * 5.555555f);
-                    float triangleWave = TriangleWave(TimeSeconds * 7f + i * 0.17f);
-                    float sineWave = math.sin(TimeSeconds * 22f + i * 0.73f);
-                    float wave = math.lerp(triangleWave, sineWave, visualBudget01);
+                    float wave = TriangleWave(TimeSeconds * math.lerp(7f, 22f, visualBudget01) + i * math.lerp(0.17f, 0.73f, visualBudget01));
                     float shiver = 1f + critical * wave * 0.12f;
                     float4 color = math.lerp(LowColor, DangerColor, math.saturate((float)i / (segments - 1f) + critical * 0.6f));
                     color.w *= math.lerp(0.18f, 1f, fill01);
@@ -2322,7 +2418,7 @@ namespace Hecton8.UI
                 if (math.lengthsq(planar) < 0.0001f)
                     return 0f;
 
-                float angle = math.degrees(math.atan2(planar.x, planar.y));
+                float angle = math.degrees(MathLodApproximation.ApproxAtan2Fast(planar.x, planar.y));
                 return angle < 0f ? angle + 360f : angle;
             }
 

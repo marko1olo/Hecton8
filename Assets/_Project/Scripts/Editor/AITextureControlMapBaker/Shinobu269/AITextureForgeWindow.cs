@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
@@ -170,7 +171,9 @@ namespace Hecton8.Editor.AITextureControlMaps
         {
             _progressBar.value = math.saturate(value);
             _progressBar.title = label;
-            _statusLabel.text = value >= 1.0f ? "Batch report written" : "GPU readback " + ((int)(value * 100.0f)).ToString() + "%";
+            _statusLabel.text = value >= 1.0f
+                ? "Batch report written"
+                : "GPU readback " + ((int)(value * 100.0f)).ToString(CultureInfo.InvariantCulture) + "%";
         }
 
         private void RefreshPreview()

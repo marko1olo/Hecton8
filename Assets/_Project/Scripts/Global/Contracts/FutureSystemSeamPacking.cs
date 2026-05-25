@@ -101,6 +101,7 @@ namespace Hecton8.Global.Contracts
             return true;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Parses CSV rows as surface,payloadBytes,blackboxFrames,flagsMask,proofMask.
         /// </summary>
@@ -408,6 +409,7 @@ namespace Hecton8.Global.Contracts
 
             return true;
         }
+#endif
 
         private static ulong HashRecords(ReadOnlySpan<FutureSystemSeamRecord64> records)
         {

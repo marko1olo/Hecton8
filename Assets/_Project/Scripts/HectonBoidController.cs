@@ -66,7 +66,6 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -76,7 +75,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.AI.GPU
 {
     [DisallowMultipleComponent]
-    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  BOID DATA â€” must match compute shader struct exactly
@@ -405,7 +404,7 @@ namespace Hecton8.AI.GPU
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð°Ñ ÐºÐ°Ð¼ÐµÑ€Ð°.</summary>
         private Camera _mainCamera;
         private IFoveatedSimulationDirector _foveatedSimulationDirector;
-        private HectonFluidEngine _fluidRuntime;
+        private IAbyssalFlowGpuReadModel _fluidRuntime;
         private FoveatedSimulationTier _foveatedSimulationTier = FoveatedSimulationTier.Active;
         private bool _hotSwapListenerRegistered;
 
@@ -503,8 +502,7 @@ namespace Hecton8.AI.GPU
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
             if (_playerTransform == null)
                 FindPlayer();
@@ -514,7 +512,7 @@ namespace Hecton8.AI.GPU
         {
             if (_registeredToTickManager)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredToTickManager = false;
             }
 
@@ -547,7 +545,7 @@ namespace Hecton8.AI.GPU
                     _mainCamera = null;
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
-                    _fluidRuntime = currentService as HectonFluidEngine;
+                    _fluidRuntime = currentService as IAbyssalFlowGpuReadModel;
                     break;
                 case GlobalRegistryServiceSlot.FoveatedSimulationDirector:
                     _foveatedSimulationDirector = currentService as IFoveatedSimulationDirector;
@@ -575,6 +573,15 @@ namespace Hecton8.AI.GPU
         /// Actual computation happens on GPU asynchronously.
         /// </summary>
         public void Tick(float deltaTime)
+        {
+        }
+
+        public void LateFrameTick()
+        {
+            RunBoidVisualSync(Time.deltaTime);
+        }
+
+        private void RunBoidVisualSync(float deltaTime)
         {
             using (ProfilerRegistry.AiTick.Auto())
             {
@@ -1238,7 +1245,7 @@ namespace Hecton8.AI.GPU
             Vector4 flowSpacing = Vector4.zero;
             float active = 0f;
 
-            HectonFluidEngine fluid = _fluidRuntime;
+            IAbyssalFlowGpuReadModel fluid = _fluidRuntime;
             if (enableAbyssalFlowAdvection && fluid != null)
             {
                 if (fluid.TryGetGpuAbyssalFlowFieldTexture(
@@ -1502,7 +1509,7 @@ namespace Hecton8.AI.GPU
             }
 
             if (forceRefresh || _fluidRuntime == null)
-                _fluidRuntime = GlobalRegistry.Fluid;
+                _fluidRuntime = GlobalRegistry.AbyssalFlowGpu;
 
             if (forceRefresh || _foveatedSimulationDirector == null)
                 _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
@@ -1527,9 +1534,10 @@ namespace Hecton8.AI.GPU
 
         private static float ResolveBoidSocialLodWeight01()
         {
-            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
-            qualityWeight = math.select(0f, qualityWeight, math.isfinite(qualityWeight));
-            qualityWeight = math.saturate(qualityWeight);
+            float qualityWeight = MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)
+                ? config.GlobalQualityWeight
+                : HomeostasisBrain.GlobalQualityWeight;
+            qualityWeight = MathLodApproximation.SaturateFinite(qualityWeight, 1f);
             return math.saturate(math.smoothstep(0.2f, 0.85f, qualityWeight));
         }
 

@@ -7,11 +7,45 @@ namespace Hecton8.World
     /// Unity lifecycle bridge for the static voxel navgrid runtime native containers.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class VoxelDynamicNavGridRuntimeLifecycle : MonoBehaviour, ISlowTickable
+    public sealed class VoxelDynamicNavGridRuntimeLifecycle : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private bool _registeredSlowTick;
+        private bool _hotSwapRegistered;
 
         private void OnEnable()
+        {
+            TryRegisterHotSwapListener();
+            TryRegisterSlowTick();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterSlowTick();
+            TryUnregisterHotSwapListener();
+            VoxelDynamicNavGridRuntime.DisposeAll();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterSlowTick();
+            TryUnregisterHotSwapListener();
+            VoxelDynamicNavGridRuntime.DisposeAll();
+            VoxelDynamicNavGridRuntime.ClearLifecycleOwner(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterSlowTick();
+            TryRegisterSlowTick();
+        }
+
+        private void TryRegisterSlowTick()
         {
             if (_registeredSlowTick || !Application.isPlaying)
                 return;
@@ -19,21 +53,30 @@ namespace Hecton8.World
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
-        private void OnDisable()
+        private void TryUnregisterSlowTick()
         {
             if (_registeredSlowTick)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
-
-            VoxelDynamicNavGridRuntime.DisposeAll();
         }
 
-        private void OnDestroy()
+        private void TryRegisterHotSwapListener()
         {
-            VoxelDynamicNavGridRuntime.DisposeAll();
-            VoxelDynamicNavGridRuntime.ClearLifecycleOwner(this);
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void SlowTick()

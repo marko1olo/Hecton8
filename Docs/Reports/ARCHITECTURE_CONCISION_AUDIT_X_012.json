@@ -1,0 +1,789 @@
+﻿{
+  "schema": "hecton8.architecture_concision_audit.x012.v2",
+  "generatedUtc": "2026-05-24T05:45:25.959057+00:00",
+  "thresholdWords": 90,
+  "modifiedFileCount": 39,
+  "rewrittenParagraphCount": 67,
+  "modifiedFiles": [
+    {
+      "path": "Docs/ARCHITECTURE/ABYSSAL_CAUSTICS_SHINOBU_232.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_ABYSSAL_CAUSTICS_SHINOBU_232.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 20,
+          "beforeWords": 103,
+          "afterBulletCount": 5,
+          "preview": "CSV profile names are cold-parsed with `ReadOnlySpan<byte>`. Known weather names map to canonical `WeatherState` masks so examples like `Calm` and `Hurricane` bind to the Core weat"
+        },
+        {
+          "paragraph": 27,
+          "beforeWords": 136,
+          "afterBulletCount": 8,
+          "preview": "Shader warmup is curated through `Assets/_Project/Art/Shaders/Variants/HectonDeferredCaustics.shadervariants` with GUID `232232232ca00147aa7d232232ca0014`. `00_BOOTSTRAP.unity` ser"
+        },
+        {
+          "paragraph": 33,
+          "beforeWords": 127,
+          "afterBulletCount": 7,
+          "preview": "Runtime persistent CPU memory is Vault-owned. The runtime stores generation-handle descriptors and resolves phase-local `NativeArray` views only while writing or uploading. The 64-"
+        },
+        {
+          "paragraph": 40,
+          "beforeWords": 118,
+          "afterBulletCount": 6,
+          "preview": "BlackBox telemetry is Vault-owned and seeded to zero once when the ring is acquired. The dump path and directory are resolved and created from lifecycle/cold setup before faults. `"
+        }
+      ],
+      "paragraphCount": 4,
+      "wordsBefore": 1796,
+      "wordsAfter": 1796
+    },
+    {
+      "path": "Docs/ARCHITECTURE/ARM64_MEMORY_ALIGNMENT_SHINOBU_204.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_ARM64_MEMORY_ALIGNMENT_SHINOBU_204.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 2,
+          "beforeWords": 118,
+          "afterBulletCount": 4,
+          "preview": "Status: partial enforcement pass. Last recorded static scan text reported zero `StructLayout(...Pack=...)` parameters under `Assets/_Project/Scripts`; rerun and link an artifact pa"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 1161,
+      "wordsAfter": 1161
+    },
+    {
+      "path": "Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 34,
+          "beforeWords": 94,
+          "afterBulletCount": 4,
+          "preview": "Routine and critical ingress are now fixed Vault rings, not exporter-owned persistent `NativeQueue` objects. The exporter locks ingress and worker transfer buffers against compacti"
+        },
+        {
+          "paragraph": 47,
+          "beforeWords": 155,
+          "afterBulletCount": 6,
+          "preview": "Compression is explicitly RLE envelope compression, not claimed LZ4. `CompressAnalyticsBufferJob` remains a Burst unmanaged RLE kernel, while the live worker path uses equivalent s"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1638,
+      "wordsAfter": 1638
+    },
+    {
+      "path": "Docs/ARCHITECTURE/AUXILIARY_EQUIPMENT_ROUTER_SHINOBU_229.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_AUXILIARY_EQUIPMENT_ROUTER_SHINOBU_229.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 29,
+          "beforeWords": 91,
+          "afterBulletCount": 4,
+          "preview": "Burst producers open typed lanes through `SignalBus<T>.OpenParallelWriter()` and sanitize lifetime, radius, cadence, scalar, and tether rest-length inputs before enqueue. Auxiliary"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 1053,
+      "wordsAfter": 1053
+    },
+    {
+      "path": "Docs/ARCHITECTURE/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 9,
+          "beforeWords": 127,
+          "afterBulletCount": 5,
+          "preview": "Build-resource readiness now reads the Inventory owner's native read-only SOA lanes: item IDs, stack counts, and craft-locked counts. `HasBuildResources` no longer copies `PlayerIn"
+        },
+        {
+          "paragraph": 49,
+          "beforeWords": 116,
+          "afterBulletCount": 4,
+          "preview": "`HabitatConstructionManager` structural graph validation resolves generation handles for buffers 70949-70958 from the injected catalog Vault and releases them on Vault replacement "
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1866,
+      "wordsAfter": 1866
+    },
+    {
+      "path": "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 25,
+          "beforeWords": 125,
+          "afterBulletCount": 4,
+          "preview": "2026-05-21 correction: the active SHINOBU snap update no longer hydrates target socket rows from `ConstructionManager.SpawnedModules`, `GameObject.GetInstanceID()`, `ModuleMarker`,"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 2059,
+      "wordsAfter": 2059
+    },
+    {
+      "path": "Docs/ARCHITECTURE/FLORA_PROCEDURAL_SWAY_FIELD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_FLORA_PROCEDURAL_SWAY_FIELD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 16,
+          "beforeWords": 139,
+          "afterBulletCount": 5,
+          "preview": "The runtime folds editor `PhaseSpatialOffset` into `SwayMathParams.z`, preserving the mandated 32-byte CBuffer ABI instead of adding a third lane. The shader computes `sin(time + d"
+        },
+        {
+          "paragraph": 19,
+          "beforeWords": 171,
+          "afterBulletCount": 7,
+          "preview": "The field is generated by Burst gather jobs: `DecayFloraForcesJob`, `AccumulateFloraForcesJob`, optional `MockDisplacementInjectorJob`, and `UploadDisplacementTextureJob` for stats"
+        },
+        {
+          "paragraph": 22,
+          "beforeWords": 112,
+          "afterBulletCount": 4,
+          "preview": "Disabling the field does not clear or upload the 64^3 node buffer on the main thread. The runtime clears only metadata and publishes inactive shader globals; if a flora field job i"
+        },
+        {
+          "paragraph": 23,
+          "beforeWords": 120,
+          "afterBulletCount": 6,
+          "preview": "Scalability is driven by continuous `HomeostasisBrain.GlobalQualityWeight`: source count, update interval, displacement gain, and shader interpolation scale immediately with curren"
+        }
+      ],
+      "paragraphCount": 4,
+      "wordsBefore": 1920,
+      "wordsAfter": 1920
+    },
+    {
+      "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 50,
+          "beforeWords": 109,
+          "afterBulletCount": 5,
+          "preview": "Source-only cleanup loops55-73 removed more hot global tails without adding new routes. Current scope: binary scalability event/tier tails outside the Core bridge, beacon/construct"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 3966,
+      "wordsAfter": 3966
+    },
+    {
+      "path": "Docs/ARCHITECTURE/H8BIN_VALIDATOR_SHINOBU_258.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_H8BIN_VALIDATOR_SHINOBU_258.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 13,
+          "beforeWords": 180,
+          "afterBulletCount": 10,
+          "preview": "The JSON report also emits `migration_summary`, a deterministic owner grouping for current text-artifact and runtime-loader blockers. `--csv-diff` now fails closed when the source "
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 1433,
+      "wordsAfter": 1433
+    },
+    {
+      "path": "Docs/ARCHITECTURE/KINEMATICS_AUP_INTEGRATION.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_KINEMATICS_AUP_INTEGRATION.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 46,
+          "beforeWords": 111,
+          "afterBulletCount": 6,
+          "preview": "The KCC input lane is intentionally named `HydrodynamicKccInputDTO`, not `InputStateDTO`. Canonical device/rollback input remains owned by `Hecton8.Core.InputStateDTO` and `BufferI"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 2842,
+      "wordsAfter": 2842
+    },
+    {
+      "path": "Docs/ARCHITECTURE/MACRO_ECOSYSTEM_MATHEMATICIAN.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_MACRO_ECOSYSTEM_MATHEMATICIAN.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 56,
+          "beforeWords": 114,
+          "afterBulletCount": 6,
+          "preview": "`FrostTick` schedules `EcosystemPopulationJob`, one to six Lotka-Volterra/logistic substeps derived from a polynomial `HomeostasisBrain.GlobalQualityWeight` curve, one to five adja"
+        },
+        {
+          "paragraph": 61,
+          "beforeWords": 103,
+          "afterBulletCount": 4,
+          "preview": "Prior static scan text reported no `UnityEngine.Physics`, `Physics.`, managed collection creation, coroutine, `Update()`, private persistent `NativeParallelHashMap`, `NativeDisable"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1364,
+      "wordsAfter": 1364
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_GEOLOGY_MESH_BAKER.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_OFFLINE_GEOLOGY_MESH_BAKER.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 57,
+          "beforeWords": 102,
+          "afterBulletCount": 5,
+          "preview": "Static manifest source is present: `GeologyMeshManifestHeader` validates at 64 bytes and `GeologyMeshManifestRecord` validates at 128 bytes. `BoundsExtents` occupies bytes 60..71, "
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 2611,
+      "wordsAfter": 2611
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 15,
+          "beforeWords": 106,
+          "afterBulletCount": 6,
+          "preview": "The batch report also emits `Assets/_Project/BakedGeometry/Optimized/offline_lod_manifest.h8lod`: a flat little-endian binary manifest with a 64-byte header and 128-byte records fo"
+        },
+        {
+          "paragraph": 42,
+          "beforeWords": 125,
+          "afterBulletCount": 5,
+          "preview": "LOD1/LOD2 source-triangle selection uses bounded partition-local saliency. Each output triangle maps to a deterministic non-overlapping source partition. `GlobalQualityWeight` and "
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1497,
+      "wordsAfter": 1497
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_WRECKAGE_GEOMETRY_BAKER_SHINOBU_209.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_OFFLINE_WRECKAGE_GEOMETRY_BAKER_SHINOBU_209.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 14,
+          "beforeWords": 113,
+          "afterBulletCount": 5,
+          "preview": "Runtime destruction enforcement is handled by `Runtime_Destruction_Scanner`, which scans requested and actual combat/environment roots outside `Editor/` for runtime mesh mutation, "
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 1530,
+      "wordsAfter": 1530
+    },
+    {
+      "path": "Docs/ARCHITECTURE/PARASITIC_FAUNA_PARTICLE_SWARMS_SHINOBU_313.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_PARASITIC_FAUNA_PARTICLE_SWARMS_SHINOBU_313.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 14,
+          "beforeWords": 96,
+          "afterBulletCount": 7,
+          "preview": "`GlobalQualityWeight` continuously scales particle budget, curl contribution, and dispatch group count. The hard supported GPU ceiling is 2,000,000 particles; the serialized cold d"
+        },
+        {
+          "paragraph": 20,
+          "beforeWords": 99,
+          "afterBulletCount": 5,
+          "preview": "GPU advection consumes a fixed `1/60` visual tick. The runtime does not feed `Time.deltaTime` or `Time.time` into the compute shader. Runtime visual phase and telemetry frame IDs a"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 962,
+      "wordsAfter": 962
+    },
+    {
+      "path": "Docs/ARCHITECTURE/PROCEDURAL_CORAL_GROWTH_ENGINE.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_PROCEDURAL_CORAL_GROWTH_ENGINE.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 17,
+          "beforeWords": 129,
+          "afterBulletCount": 7,
+          "preview": "`CoralPaddedCounterDTO` is the logical-count, fault, and effective-quality authority. `BranchCount`, `SpatialCellCount`, `RenderMatrixCount`, `SyncPulseCount`, and `CollisionProxyC"
+        },
+        {
+          "paragraph": 22,
+          "beforeWords": 107,
+          "afterBulletCount": 6,
+          "preview": "The GPU upload dispatcher is no-grow by default during `UploadFromVault()`. Double-buffered `GraphicsBuffer` resources must be allocated in a cold prewarm path through `EnsureGraph"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 633,
+      "wordsAfter": 633
+    },
+    {
+      "path": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 55,
+          "beforeWords": 113,
+          "afterBulletCount": 5,
+          "preview": "The owner registers through `GlobalRegistry` fixed, post-fixed, and slow tick lanes. This remains static source orientation until a proof artifact names owner, producer/consumer ph"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 1170,
+      "wordsAfter": 1170
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 39,
+          "beforeWords": 106,
+          "afterBulletCount": 4,
+          "preview": "Expected max events/reads per frame: 64 queued requests, 512 maximum-quality visual signals, 64 minimum-quality visual signals. GlobalQualityWeight behavior: loot math is invariant"
+        },
+        {
+          "paragraph": 69,
+          "beforeWords": 174,
+          "afterBulletCount": 4,
+          "preview": "Current compile note: current CLI project surface includes `ScavengingLootOracle.cs`, `ItemAcquiredSignalSourceKinds.cs`, and `VisualScavengeSignal.cs`; SHINOBU AUP namespace error"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1307,
+      "wordsAfter": 1307
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 28,
+          "beforeWords": 91,
+          "afterBulletCount": 4,
+          "preview": "Prior static project scan text found no `LightDistanceCull` script and no `Vector3.Distance` light-distance-cull pattern, and reported gameplay-owned Unity `Light` toggles in `Play"
+        },
+        {
+          "paragraph": 58,
+          "beforeWords": 92,
+          "afterBulletCount": 6,
+          "preview": "`GlobalQualityWeight` is continuous. `ResolveMaxActiveLights(weight, thermal)` uses `math.step` only as a zero-quality numeric gate, a cubic smooth polynomial, and `math.lerp` to m"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1057,
+      "wordsAfter": 1057
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_200_SIGNAL_THREAD_CONTENTION_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_200_SIGNAL_THREAD_CONTENTION_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 35,
+          "beforeWords": 102,
+          "afterBulletCount": 3,
+          "preview": "Overflow is a sequence-tagged MPSC ring: `SignalThreadOverflowHeader64` carries monotonic `long WriteCursor` and `long ReadCursor`, and each overflow payload publishes `OverflowSeq"
+        },
+        {
+          "paragraph": 37,
+          "beforeWords": 107,
+          "afterBulletCount": 6,
+          "preview": "`SignalThreadLocalScratchpad` persists only `VaultGenerationHandle<T>` descriptors for buffers `73043..73055`. It resolves transient `NativeArray<T>` views through `IDataVault.TryR"
+        },
+        {
+          "paragraph": 38,
+          "beforeWords": 117,
+          "afterBulletCount": 5,
+          "preview": "`SignalBusRegistry.FlushPreSimulation()` and `ClearPostSimulationSnapshots()` dispatch generated Core lanes through explicit generic direct calls. Sibling-owned/non-generated typed"
+        },
+        {
+          "paragraph": 39,
+          "beforeWords": 118,
+          "afterBulletCount": 6,
+          "preview": "Legacy `GlobalSignals.Publish(...)` overloads now route legacy payloads through `SignalBus<T>.Push(...)` only. The old `NativeQueue<T>` fields are compatibility handles copied from"
+        }
+      ],
+      "paragraphCount": 4,
+      "wordsBefore": 3801,
+      "wordsAfter": 3801
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_233_COMPUTE_VOLUMETRIC_FOG.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_233_COMPUTE_VOLUMETRIC_FOG.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 34,
+          "beforeWords": 120,
+          "afterBulletCount": 6,
+          "preview": "`HomeostasisBrain.GlobalQualityWeight` continuously drives ray steps, proxy blend, internal resolution scale, frustum-grid XY cap, light count, and shader noise octaves. `ResolvePr"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 908,
+      "wordsAfter": 908
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 22,
+          "beforeWords": 153,
+          "afterBulletCount": 6,
+          "preview": "`GlobalQualityWeight` is written into `QualityAndDepthLimits.x`. HLSL continuously blends from one scalar monochrome extinction approximation to spectral RGB extinction correction "
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 1176,
+      "wordsAfter": 1176
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_266_JACOBIAN_FOAM_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_266_JACOBIAN_FOAM_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 15,
+          "beforeWords": 126,
+          "afterBulletCount": 9,
+          "preview": "Payload/data shape: Managed fields present: no UnityEngine.Object fields present: no in DTOs; RenderGraph payload references GPU resource handles only after owner publication. Layo"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 2236,
+      "wordsAfter": 2236
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_273_FREQUENCY_TUNING_DECRYPTION_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_273_FREQUENCY_TUNING_DECRYPTION_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 16,
+          "beforeWords": 99,
+          "afterBulletCount": 6,
+          "preview": "`Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader` reads `StructuredBuffer<GlobalDecryptionPuzzleDTO> _GlobalDecryptionPuzzles` and `_GlobalDecryptionPuzzleCount` from th"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 1061,
+      "wordsAfter": 1061
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 10,
+          "beforeWords": 157,
+          "afterBulletCount": 6,
+          "preview": "Collision consumes one owner-published Vault descriptor before scheduling. The voxel owner holds the `BufferID.VoxelSdfPayloadDescriptor` write lock while refreshing `BufferID.Voxe"
+        },
+        {
+          "paragraph": 24,
+          "beforeWords": 138,
+          "afterBulletCount": 5,
+          "preview": "`ExosuitLayoutVerifier.ValidateRuntimeLayouts()` validates state/input/tuning/signal/screen/terrain/output/telemetry sizes and editor offsets. `Exosuit_Physics_Inquisition` reports"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1236,
+      "wordsAfter": 1236
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_311_ACOUSTIC_SENSORY_ROUTE.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_311_ACOUSTIC_SENSORY_ROUTE.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 2,
+          "beforeWords": 148,
+          "afterBulletCount": 9,
+          "preview": "Owner: `PredatorCognitionDomain`. Phase: AI simulation after SignalBus snapshot staging, before `PredatorCognitionJob`. Buffers: `72760..72768` for stimuli, 64-byte counter, 128-by"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 697,
+      "wordsAfter": 697
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 14,
+          "beforeWords": 94,
+          "afterBulletCount": 4,
+          "preview": "The 300-entry telemetry ring records active live-mask row count, request count, damage, VFX count, bit extraction count, state hash, anomaly hash, and elapsed microseconds. Active "
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 567,
+      "wordsAfter": 567
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_338_AIRLOCK_PRESSURIZATION_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_338_AIRLOCK_PRESSURIZATION_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 25,
+          "beforeWords": 96,
+          "afterBulletCount": 6,
+          "preview": "Compile: guarded run failed outside SHINOBU first. Guard passed with no active `dotnet`/`csc`/`VBCSCompiler` and CPU samples 24.53/18.21/26.85/49.92/35.13%. `dotnet build Hecton8.C"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 630,
+      "wordsAfter": 630
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_340_PIPE_DRAINAGE_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_340_PIPE_DRAINAGE_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 16,
+          "beforeWords": 138,
+          "afterBulletCount": 7,
+          "preview": "Telemetry requests `Docs/AgentLogs/Dump_SHINOBU_340.bin` on non-finite state or solver wall time over 0.5 ms. `SolverWallMicroseconds` carries `ScheduleWindowTiming`, meaning sched"
+        },
+        {
+          "paragraph": 21,
+          "beforeWords": 104,
+          "afterBulletCount": 5,
+          "preview": "`Hydraulic Sump Tuner` exposes live tuning sliders plus a Pipe Profile CSV Bridge. Designers can select a CSV source, select a `.h8bin` output path, view schema version, source has"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 683,
+      "wordsAfter": 683
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_345_CELESTIAL_ORBIT_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_345_CELESTIAL_ORBIT_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 9,
+          "beforeWords": 113,
+          "afterBulletCount": 7,
+          "preview": "Producer/consumer phase: Producer: FrostTick/slow owner cadence in HectonSeismicTideDirector. Consumers: VISUAL_SYNC shader globals, `HectonCelestialEngine` cached read-only Vault "
+        },
+        {
+          "paragraph": 11,
+          "beforeWords": 149,
+          "afterBulletCount": 4,
+          "preview": "Payload/data shape: Managed fields present: no UnityEngine.Object fields present: no Layout proof: CelestialStateDTO=64 bytes: double3 SunDirection @0 size 24 double3 MoonDirection"
+        },
+        {
+          "paragraph": 15,
+          "beforeWords": 101,
+          "afterBulletCount": 6,
+          "preview": "Why this does not increase global monolith risk: The route exposes one cache-line optics truth, one cache-line environment truth, typed transition signal, and one telemetry ring. I"
+        },
+        {
+          "paragraph": 22,
+          "beforeWords": 105,
+          "afterBulletCount": 4,
+          "preview": "Global authority review: Result: `YELLOW` Route ID: `SHINOBU_345_CELESTIAL_ORBIT_VAULT` Owner: `HectonSeismicTideDirector` Instrument: `GlobalDataVault`, `SignalBus<EclipseGameplay"
+        }
+      ],
+      "paragraphCount": 4,
+      "wordsBefore": 1311,
+      "wordsAfter": 1311
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_348_SCREEN_SPACE_PDA_PROJECTOR_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 9,
+          "beforeWords": 169,
+          "afterBulletCount": 7,
+          "preview": "On direct-file platforms, the CSV ingestor reads packaged `Assets/StreamingAssets/Hecton8/PDA/pda_interface_profiles.csv` directly into the `348736` Vault scratch row through `File"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 887,
+      "wordsAfter": 887
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_353_HAPTIC_SYNTHESIS_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_353_HAPTIC_SYNTHESIS_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 6,
+          "beforeWords": 179,
+          "afterBulletCount": 9,
+          "preview": "Producer/consumer phase: Producers publish typed unmanaged signals during their owner phases. `InputDispatcher` prewarms required haptic Vault handles and requests `GlobalSignals.E"
+        },
+        {
+          "paragraph": 12,
+          "beforeWords": 119,
+          "afterBulletCount": 5,
+          "preview": "Why this does not increase global monolith risk: The route consumes existing typed signals, stores bounded native scratch/telemetry buffers, emits one narrow `HapticPulseSignal`, a"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 786,
+      "wordsAfter": 786
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_354_PROCEDURAL_CAMERA_SHAKE_ROUTE_CARD.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 11,
+          "beforeWords": 103,
+          "afterBulletCount": 6,
+          "preview": "Telemetry fields: Frame, Flags, TraumaScalar, MaxTranslationalOffsetMagnitude, Offset, RotationDegrees, IncomingSignalCount, BurstExecutionMicroseconds, GlobalQualityWeight01, Dire"
+        },
+        {
+          "paragraph": 12,
+          "beforeWords": 140,
+          "afterBulletCount": 9,
+          "preview": "Shutdown/disposal: Owner releases only buffers it acquired and clears generation descriptors on disable/destroy or DataVault rebind. Scene unload behavior: Projection is cleared; t"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1321,
+      "wordsAfter": 1321
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_61_APEX_COGNITION.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SHINOBU_61_APEX_COGNITION.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 64,
+          "beforeWords": 98,
+          "afterBulletCount": 4,
+          "preview": "Loop 22 expands the zero-GC CSV bridge from a partial slider-adjacent surface to the gameplay-relevant `ApexBrainTuning` float surface. Optional/pending tuning source `apex_predato"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 1076,
+      "wordsAfter": 1076
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SOA_INVENTORY_QUERY_ENGINE.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SOA_INVENTORY_QUERY_ENGINE.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 9,
+          "beforeWords": 103,
+          "afterBulletCount": 5,
+          "preview": "`QueryInventoryHashJob` scans `ItemHashIDs` and `Quantities` as parallel `NativeArray<uint>` lanes. Existing rollback storage for quantities remains `NativeArray<int>`; `SoaInvento"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 465,
+      "wordsAfter": 465
+    },
+    {
+      "path": "Docs/ARCHITECTURE/STATIC_CAVE_SDF_VOLUME_BAKER.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_STATIC_CAVE_SDF_VOLUME_BAKER.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 21,
+          "beforeWords": 131,
+          "afterBulletCount": 5,
+          "preview": "SHINOBU_244 does not request runtime Vault buffers because it owns no runtime streaming route. The editor baker also does not retain persistent private `NativeArray` fields: bake s"
+        },
+        {
+          "paragraph": 29,
+          "beforeWords": 178,
+          "afterBulletCount": 6,
+          "preview": "Mutating Editor helpers use action verbs instead of read-looking accessors: mesh conversion is `BuildTrianglesFromMeshData`, CSV ingestion is `LoadProfilesFromCsv`, parser cursor c"
+        }
+      ],
+      "paragraphCount": 2,
+      "wordsBefore": 1713,
+      "wordsAfter": 1713
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 98,
+          "beforeWords": 106,
+          "afterBulletCount": 5,
+          "preview": "Telemetry wraps modulo 300 with signed-overflow-safe cursor helpers. Missing Vault, missing weather owner row, stale handle, compaction fence, missing CSV, oversized CSV, or short "
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 2004,
+      "wordsAfter": 2004
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_SYSTEM_INTERCONNECT_MATRIX.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 219,
+          "beforeWords": 177,
+          "afterBulletCount": 11,
+          "preview": "Owner: `InputDispatcher` PAL boundary, isolated in `HectonInputRuntime_HapticSynth.cs`. Phase: `InputDispatcher` prewarms haptic Vault handles and requests `GlobalSignals.EnsureHap"
+        }
+      ],
+      "paragraphCount": 1,
+      "wordsBefore": 3616,
+      "wordsAfter": 3616
+    },
+    {
+      "path": "Docs/ARCHITECTURE/TERRESTRIAL_HEIGHTMAP_REFORMATTER_SHINOBU_240.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/ARCHITECTURE_APEX_PRE_STRICT_TERRESTRIAL_HEIGHTMAP_REFORMATTER_SHINOBU_240.md",
+      "paragraphsRewritten": [
+        {
+          "paragraph": 47,
+          "beforeWords": 100,
+          "afterBulletCount": 6,
+          "preview": "Full sector generation schedules Domain Warp -> Ridge -> Terracing -> Rift as a single JobHandle dependency chain and completes only at the terminal readback needed for checksum/se"
+        },
+        {
+          "paragraph": 48,
+          "beforeWords": 110,
+          "afterBulletCount": 5,
+          "preview": "`GlobalQualityWeight` is continuous for editor scheduling and preview resolution. Production sector, macro, and mock bake configs force `GlobalQualityWeight = 1.0` so generated `.h"
+        },
+        {
+          "paragraph": 78,
+          "beforeWords": 162,
+          "afterBulletCount": 8,
+          "preview": "Fatal terrain payload warnings include invalid height NaN and invalid biome-mask RGBA payloads. Both routes write the current 300-entry terminal bake ring before the exception cont"
+        },
+        {
+          "paragraph": 80,
+          "beforeWords": 141,
+          "afterBulletCount": 8,
+          "preview": "Current proof class is static source plus documentation. JSON reports and `.h8bin` files are generated only after the Unity editor menu actions run. Compilation is still pending be"
+        }
+      ],
+      "paragraphCount": 4,
+      "wordsBefore": 1586,
+      "wordsAfter": 1586
+    }
+  ],
+  "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/",
+  "postValidationUtc": "2026-05-24T06:01:58.967575+00:00",
+  "postValidation": {
+    "oopDocScannerFinalPass": true,
+    "sourceSyncPass": true,
+    "activeStaleParameterFileCount": 0,
+    "activeFileCount": 580,
+    "activeWordCount": 549304,
+    "wordReductionPercent": 48.02898547982247,
+    "architectureFileCount": 192,
+    "architectureWordCount": 186508,
+    "architectureMarkerHits": {
+      "docGlobalRefreshMarkers": 0,
+      "r51BoundaryBoilerplate": 0,
+      "docGlobalLegacyHeadings": 0,
+      "dataMonolithWasAbsent": 0
+    },
+    "longNarrativeParagraphCount": 0,
+    "strictUnstructuredParagraphThresholdWords": 90,
+    "strictUnstructuredParagraphCount": 0,
+    "tutorialMarkerHitCount": 0,
+    "verifyDocStructurePass": true,
+    "brokenLinkFileCount": 0,
+    "duplicateHeaderFileCount": 0,
+    "fenceIssueFileCount": 0,
+    "encodingWithoutUtf8SigCount": 0
+  }
+}

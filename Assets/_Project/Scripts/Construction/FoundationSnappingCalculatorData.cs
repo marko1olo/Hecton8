@@ -167,7 +167,7 @@ namespace Hecton8.Construction
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct BaseStructuralWarningSignal : ISignal
+    public struct FoundationStructuralWarningSignal : ISignal
     {
         public const uint LaneHash = 0x46574E47u; // FWNG
 
@@ -507,6 +507,7 @@ namespace Hecton8.Construction
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadProfilesFromCsvBytes(
             ReadOnlySpan<byte> csv,
             NativeArray<FoundationRayOriginDTO> rayOrigins,
@@ -701,6 +702,7 @@ namespace Hecton8.Construction
                 EndProfileWriteFence();
             }
         }
+#endif
 
         public static bool TryBeginProfileReadFence()
         {
@@ -949,13 +951,14 @@ namespace Hecton8.Construction
                 return handle;
             }
 
-            return vault.GetGenerationHandle<T>(
+            return vault.EnsureGenerationHandle<T>(
                 bufferId,
                 math.max(1, requiredLength),
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
         }
 
+#if UNITY_EDITOR
         private static bool TryBeginProfileWriteFence()
         {
             if (Volatile.Read(ref s_ProfileReadFenceDepth) != 0 ||
@@ -1017,7 +1020,9 @@ namespace Hecton8.Construction
             if (lockedCount >= 1)
                 vault.TryUnlockBuffer(RayOriginBufferId, SystemID.Construction);
         }
+#endif
 
+#if UNITY_EDITOR
         private static bool TryParseProfileLine(
             ReadOnlySpan<byte> line,
             out uint moduleHash,
@@ -1202,6 +1207,7 @@ namespace Hecton8.Construction
             while (cursor < line.Length && line[cursor] == (byte)' ')
                 cursor++;
         }
+#endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SanitizePositive(float value, float fallback)

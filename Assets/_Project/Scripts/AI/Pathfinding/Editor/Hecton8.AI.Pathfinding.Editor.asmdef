@@ -1,0 +1,23 @@
+{
+    "name": "Hecton8.AI.Pathfinding.Editor",
+    "rootNamespace": "Hecton8.AI.Pathfinding.Editor",
+    "references": [
+        "Hecton8.AI.Pathfinding",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

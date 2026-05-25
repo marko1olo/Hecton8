@@ -48,14 +48,11 @@ namespace Hecton8.EditorTools
                 return result;
             }
 
-            string[] files = Directory.GetFiles(fullScanRoot, "*.cs", SearchOption.AllDirectories);
-            result.FilesScanned = files.Length;
-
             var findings = new List<Finding>(128); // COLD ALLOC: List<Finding>[128] — editor-only audit result list — owner: NativeLeakScanner
 
-            for (int i = 0; i < files.Length; i++)
+            foreach (string filePath in Directory.EnumerateFiles(fullScanRoot, "*.cs", SearchOption.AllDirectories))
             {
-                string filePath = files[i];
+                result.FilesScanned++;
                 string text = File.ReadAllText(filePath);
                 string codeText = MaskCommentsAndStrings(text);
                 int allocationHits = CountNativeAllocations(codeText);

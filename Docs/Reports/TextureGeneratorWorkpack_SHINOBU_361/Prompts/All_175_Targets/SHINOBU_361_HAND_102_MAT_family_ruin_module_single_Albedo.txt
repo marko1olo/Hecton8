@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_102
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_102_MAT_family_ruin_module_single_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_ruin_module_single_Albedo.png
+FINAL_FILENAME: MAT_family_ruin_module_single_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Single ruin module family albedo for smaller ancient structure pieces. Create a modular tile of pale ceramic panels, graphite underframe strips, teal mineral edge deposits, pearl dust, and small amber alignment marks. It should look like one recovered piece of high-end ocean technology, usable on compact props and modular fragments. Keep the design clean, specific, and readable. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

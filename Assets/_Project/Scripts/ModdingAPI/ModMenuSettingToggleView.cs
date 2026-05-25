@@ -45,10 +45,10 @@ namespace Hecton8.Modding
             _settingName = view.SettingName;
 
             if (label != null)
-                label.SetText(view.DisplayName);
+                Hecton8.UI.TmpTextNoAlloc.Set(label, view.DisplayName);
 
             if (ownerLabel != null)
-                ownerLabel.SetText(view.ModId);
+                Hecton8.UI.TmpTextNoAlloc.Set(ownerLabel, view.ModId);
 
             if (toggle != null)
                 toggle.SetIsOnWithoutNotify(view.BoolValue);

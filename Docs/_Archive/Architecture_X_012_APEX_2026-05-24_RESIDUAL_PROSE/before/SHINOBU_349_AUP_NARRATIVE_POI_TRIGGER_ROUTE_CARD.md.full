@@ -1,0 +1,79 @@
+﻿# SHINOBU_349 AUP Narrative POI Trigger Route Card
+
+Date: 2026-05-23
+Owner: `SystemID.NarrativePoiTriggers`
+Domain: Echelon 8 Presentation and UX / AUP Narrative Triggers
+
+## Authority
+
+One fact: narrative POI trigger truth.
+One owner: `HectonNarrativeDirector` plus `SystemID.NarrativePoiTriggers` Vault buffers.
+One route: `GlobalDataVault` rows evaluated by deterministic Burst, then `SignalBus<ProgressionEventSignal>`.
+One proof artifact: telemetry ring, `Docs/AgentLogs/Dump_SHINOBU_349.bin`, scanner JSON, and this route card.
+
+`GlobalRegistry` is used only in cold owner phases to resolve `IDataVault`, dispatcher registration, and existing service ownership. The Burst job receives Vault-backed arrays and a cached SignalBus writer. It does not poll registry, scene objects, quest managers, colliders, or dialogue systems.
+
+## Vault Lanes
+
+| BufferID | Name | Type | Capacity | Owner |
+| --- | --- | --- | --- | --- |
+| `74000` | `NarrativePoiTriggers` | `NarrativePoiDTO` | `10000` | `NarrativePoiTriggers` |
+| `74001` | `NarrativePoiBucketRanges` | `NarrativePoiBucketRangeDTO` | `4096` | `NarrativePoiTriggers` |
+| `74002` | `NarrativePoiBucketIndices` | `int` | `4096 * 8` | `NarrativePoiTriggers` |
+| `74003` | `NarrativePoiStateMasks` | `ulong` | `(PoiCapacity + 63) / 64`, default `157` | `NarrativePoiTriggers` |
+| `74004` | `NarrativePoiTelemetryRing` | `AupNarrativeTriggerTelemetryEntry` | `300` | `NarrativePoiTriggers` |
+| `74005` | `NarrativePoiTelemetryCursor` | `int` | `1` | `NarrativePoiTriggers` |
+| `74006` | `NarrativePoiCounters` | `int` | `16` | `NarrativePoiTriggers` |
+| `74007` | `NarrativePoiCsvScratch` | `long` | `4` | `NarrativePoiTriggers` |
+| `74008` | `NarrativePoiPresentation` | `NarrativePoiPresentationDTO` | `10000` | `NarrativePoiTriggers` |
+
+All lanes are acquired with `NativeArrayOptions.UninitializedMemory`. Active POI rows, bucket ranges, counters, cursor, and state masks are explicitly overwritten by owner code before use. Release is centralized through `AupNarrativePoiVault.ReleaseBuffers`.
+
+## DTO ABI
+
+`NarrativePoiDTO` is `[StructLayout(LayoutKind.Explicit, Size = 64)]`:
+
+| Offset | Size | Field |
+| --- | ---: | --- |
+| `0` | `24` | `double3 PoiAUP` |
+| `24` | `4` | `uint EventHashID` |
+| `28` | `4` | `float TriggerRadiusMeters` |
+| `32` | `8` | `ulong PrerequisiteBitmask` |
+| `40` | `4` | `uint StateFlags` |
+| `44` | `20` | five `uint` padding fields |
+
+The layout is one 64-byte cache line. The only hot-path fields are raw public fields; no properties are used in the DTO.
+
+`NarrativePoiPresentationDTO` is `[StructLayout(LayoutKind.Explicit, Size = 64)]`: `PoiHash@0`, `QuestHash@4`, `BiomeHash@8`, `SoundscapeHash@12`, `LoreHash@16`, `Flags@20`, `BitIndex@24`, `Reserved0@28`, and four `ulong` pads from `32..63`. This is the cold managed-presentation mirror lane for signals that need quest/biome/soundscape/lore metadata; it is Vault-owned, not a private `NativeArray`.
+
+## Runtime Route
+
+- 1. Authoring or CSV boot writes `NarrativePoiDTO` rows and cold `NarrativePoiPresentationDTO` metadata rows.
+- 2. `BuildNarrativePoiBucketsJob` builds same-cell bucket ranges and indices from AUP spatial hash.
+- 3. `Tick(float deltaTime)` applies continuous cadence: `math.lerp(0.05f, 0.25f, 1.0f - smoothQuality)`.
+- 4. `EvaluatePoiTriggersJob` reads player `double3` AUP, finds the player cell, evaluates only local bucket indices, subtracts `PlayerAUP - PoiAUP` in double precision, casts only the localized delta to `float3`, then checks squared radius.
+- 5. Prerequisite truth is `(GlobalNarrativeStateMask & PrerequisiteBitmask) == PrerequisiteBitmask`. Authored first-hour POIs resolve prerequisite masks through generated `H8QuestMasks`; CSV/mock POIs carry the mask directly.
+- 6. On first entry, state flags set `Triggered | Inside | Exhausted | DispatchPending`, the Vault state mask word array flips the POI index bit, and `ProgressionEventSignal` is enqueued through `NativeQueue<ProgressionEventSignal>.ParallelWriter` with `AupNarrativePoiRuntimeConstants.ProgressionSourceNarrativePoi`.
+- 7. Completion scans `DispatchPending` DTO flags, marks `Dispatched`, and runs managed presentation from the Vault presentation lane. It does not diff a single `ulong`, does not read private native mirrors, and therefore does not alias 10k POI rows onto 64 bits.
+- 8. Registry rebuild/sync treats discovered POI hash identity as the AUP solver exhaustion source. The legacy serialized `narrativeAupTriggeredMask` remains a mirror for old public save/API compatibility, not the large-POI runtime identity route.
+- 9. `LateFrameTick()` finalizes only completed jobs through `DispatcherJobFence.TryFinalizeCompleted`. Forced completion is limited to teardown/registry mutation. `HectonNarrativeDirector` now declares no private `NativeArray`, `NativeList`, or `NativeHashMap` fields for the POI trigger route.
+
+## Quality And Dear Lie
+
+There is no binary hardware switch. Quality scales cadence continuously, not gameplay truth or DTO layout. Low weight moves the solver toward 0.25s cadence; high weight moves it toward 0.05s cadence. Spatial hashing keeps work local on every tier.
+
+The Dear Lie is replacing thousands of invisible story colliders and PhysX broadphase updates with a local-cell mathematical radius check plus 1.2x exit hysteresis. Before: scene-trigger behavior trends toward broadphase and callback overhead across authored trigger volumes. After: `O(localBucketCount)` per cadence tick, normally 2-3 POIs, with no collider callbacks.
+
+## First 20 Minutes Route Impact
+
+Early discoveries, starter wreck breadcrumbs, and tutorial POIs no longer require physical trigger volumes. Quest and audio consumers receive the existing `ProgressionEventSignal` lane, so first-session narrative beats remain routed while the player avoids collider-driven broadphase cost in the starting biome.
+
+## Forensics
+
+`AupNarrativeTriggerTelemetryEntry[300]` records frame, player AUP, evaluated count, signal count, player cell hash, compatibility state-mask word0, flags, full state hash, and schedule-to-completion timing. `StateHash` is FNV over every `NarrativePoiStateMasks` word plus the player cell hash, so 10k POI state changes do not collapse into the first 64 bits. `NarrativePoiBucketRangeFlags.Overflow` maps directly to `AupNarrativeTriggerTelemetryFlags.BucketOverflow`; invalid player/POI AUP, bucket overflow, or >0.1ms timing stages a raw dump to `Docs/AgentLogs/Dump_SHINOBU_349.bin`.
+
+`Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_349.json` is the sidecar scanner proof. The shared report keeps a non-destructive `SHINOBU_349_AUP_Narrative_Poi_Trigger_Scanner` section. The scanner route is Roslyn `CSharpSyntaxTree` syntax-node detection with token fallback only on parser failure; shared JSON is updated by key, not by string splice.
+
+## Verification Boundary
+
+Static verification only. No Unity import, Play Mode profiler, GCMonitor, or green build proof is implied. A narrow `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false` attempt stopped before C# compilation with `NETSDK1004` because `Temp/obj/Assembly-CSharp/project.assets.json` is missing. Later CPU samples remained above threshold; the latest was 100% with 7 active `dotnet` processes, above the 50% build policy gate, so restore/build was not continued.

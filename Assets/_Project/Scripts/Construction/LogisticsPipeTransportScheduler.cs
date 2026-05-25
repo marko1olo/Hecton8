@@ -607,7 +607,7 @@ namespace Hecton8.Construction
 
             _nextCycleWarningFrame = currentFrame + CycleWarningCadenceFrames;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(CycleRepairWarningMessage);
+            Hecton8.Core.H8Debug.LogWarning(CycleRepairWarningMessage);
 #endif
         }
 

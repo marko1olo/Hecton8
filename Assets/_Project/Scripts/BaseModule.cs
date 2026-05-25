@@ -4,13 +4,12 @@
 //
 // RESPONSIBILITIES:
 //   1. Stores module integrity at runtime.
-//   2. Controls flooding and draining.
+//   2. Maintains legacy flood presentation state; CSR flood truth is owned by HabitatFluidIncursionDirector.
 //   3. Implements IPowerComponent for base power consumption.
 //   4. Implements IPoolable for ObjectPoolManager compatibility.
 //   5. Implements ISlowTickable for centralized slow ticking.
 //   6. Implements ICuttable for LaserCutter compatibility through ApplyDamage.
-//   7. Controls the interior dry zone and suppresses water physics for objects
-//      inside an unflooded module.
+//   7. Tracks player interior occupancy for life support.
 //   8. Handles deconstruction refund and module destruction handoff.
 //
 // DECONSTRUCTION:
@@ -21,12 +20,8 @@
 //   - ConstructionManager.DestroyModule() owns final destruction.
 //
 // INTERIOR DRY ZONE:
-//   - A trigger BoxCollider defines the module interior.
-//   - OnTriggerEnter sends unflooded occupants to BuoyancyObject.EnterDryZone().
-//   - OnTriggerExit calls BuoyancyObject.ExitDryZone().
-//   - Flood-state changes resync all tracked occupants.
-//   - Dictionary<ulong, BuoyancyObject> is preallocated by EntityId; OnTriggerStay
-//     is not used.
+//   - A trigger BoxCollider defines the module interior for player life-support entry/exit only.
+//   - Buoyancy dry-zone suppression and interior water planes are rejected; CSR flood truth is scalar Vault data.
 //
 // SAVE:
 //   Module state is not self-serialized.
@@ -72,6 +67,7 @@ using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -96,7 +92,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, Hecton8.Physics.IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget, Hecton8.Interaction.IRepairableModuleTarget, IGlobalRegistryHotSwapListener
+    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ILateFrameTickable, ICuttable, Hecton8.Physics.IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget, Hecton8.Interaction.IRepairableModuleTarget, IGlobalRegistryHotSwapListener
     {
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
@@ -116,9 +112,13 @@ namespace Hecton8.Gameplay
         private static readonly Vector4[] s_moduleAmbienceData = new Vector4[ModuleWaterLevelShaderCapacity];
         // COLD ALLOC: Vector4[256] - global module water/flicker upload scratch - owner: BaseModule
         private static readonly Vector4[] s_moduleFloodAndFlickerData = new Vector4[ModuleWaterLevelShaderCapacity];
-        private static ComputeBuffer s_moduleAmbienceDataBuffer;
-        private static ComputeBuffer s_moduleFloodAndFlickerDataBuffer;
+        private static GraphicsBuffer s_moduleAmbienceDataBufferA;
+        private static GraphicsBuffer s_moduleAmbienceDataBufferB;
+        private static GraphicsBuffer s_moduleFloodAndFlickerDataBufferA;
+        private static GraphicsBuffer s_moduleFloodAndFlickerDataBufferB;
+        private static int s_moduleWaterLevelUploadIndex;
         private static int s_lastModuleWaterLevelUploadFrame = -1;
+        private static bool s_moduleWaterLevelShaderDirty;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetActiveModuleRegistry()
@@ -126,6 +126,7 @@ namespace Hecton8.Gameplay
             ReleaseModuleWaterLevelBuffers();
             s_activeModules.Clear();
             s_lastModuleWaterLevelUploadFrame = -1;
+            s_moduleWaterLevelShaderDirty = false;
             for (int i = 0; i < ModuleWaterLevelShaderCapacity; i++)
             {
                 s_moduleAmbienceData[i] = Vector4.zero;
@@ -154,40 +155,77 @@ namespace Hecton8.Gameplay
 
         private static void EnsureModuleWaterLevelBuffers()
         {
-            if (s_moduleAmbienceDataBuffer != null && s_moduleFloodAndFlickerDataBuffer != null)
+            if (s_moduleAmbienceDataBufferA != null &&
+                s_moduleAmbienceDataBufferB != null &&
+                s_moduleFloodAndFlickerDataBufferA != null &&
+                s_moduleFloodAndFlickerDataBufferB != null)
+            {
                 return;
+            }
 
             ReleaseModuleWaterLevelBuffers();
-            // COLD ALLOC: ComputeBuffer[64 float4] - local module ambience data for shader StructuredBuffer - owner: BaseModule
-            s_moduleAmbienceDataBuffer = new ComputeBuffer(ModuleWaterLevelShaderCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
-            // COLD ALLOC: ComputeBuffer[64 float4] - local module water/flicker/condensation data for shader StructuredBuffer - owner: BaseModule
-            s_moduleFloodAndFlickerDataBuffer = new ComputeBuffer(ModuleWaterLevelShaderCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
+            s_moduleAmbienceDataBufferA = CreateModuleWaterLevelBuffer(); // COLD ALLOC: GraphicsBuffer[64 float4] A - module ambience shader upload - owner: BaseModule
+            s_moduleAmbienceDataBufferB = CreateModuleWaterLevelBuffer(); // COLD ALLOC: GraphicsBuffer[64 float4] B - module ambience shader upload - owner: BaseModule
+            s_moduleFloodAndFlickerDataBufferA = CreateModuleWaterLevelBuffer(); // COLD ALLOC: GraphicsBuffer[64 float4] A - module water/flicker shader upload - owner: BaseModule
+            s_moduleFloodAndFlickerDataBufferB = CreateModuleWaterLevelBuffer(); // COLD ALLOC: GraphicsBuffer[64 float4] B - module water/flicker shader upload - owner: BaseModule
+            s_moduleWaterLevelUploadIndex = 0;
         }
 
         private static void ReleaseModuleWaterLevelBuffers()
         {
-            if (s_moduleAmbienceDataBuffer != null)
-            {
-                s_moduleAmbienceDataBuffer.Release();
-                s_moduleAmbienceDataBuffer = null;
-            }
-
-            if (s_moduleFloodAndFlickerDataBuffer != null)
-            {
-                s_moduleFloodAndFlickerDataBuffer.Release();
-                s_moduleFloodAndFlickerDataBuffer = null;
-            }
+            ReleaseModuleWaterLevelBuffer(ref s_moduleAmbienceDataBufferA);
+            ReleaseModuleWaterLevelBuffer(ref s_moduleAmbienceDataBufferB);
+            ReleaseModuleWaterLevelBuffer(ref s_moduleFloodAndFlickerDataBufferA);
+            ReleaseModuleWaterLevelBuffer(ref s_moduleFloodAndFlickerDataBufferB);
+            s_moduleWaterLevelUploadIndex = 0;
         }
 
         private static void UploadModuleWaterLevelBuffers()
         {
-            if (s_moduleAmbienceDataBuffer == null || s_moduleFloodAndFlickerDataBuffer == null)
+            GraphicsBuffer ambienceWrite = s_moduleWaterLevelUploadIndex == 0 ? s_moduleAmbienceDataBufferA : s_moduleAmbienceDataBufferB;
+            GraphicsBuffer floodWrite = s_moduleWaterLevelUploadIndex == 0 ? s_moduleFloodAndFlickerDataBufferA : s_moduleFloodAndFlickerDataBufferB;
+            if (ambienceWrite == null || floodWrite == null)
                 return;
 
-            s_moduleAmbienceDataBuffer.SetData(s_moduleAmbienceData);
-            s_moduleFloodAndFlickerDataBuffer.SetData(s_moduleFloodAndFlickerData);
-            Shader.SetGlobalBuffer(s_ModuleAmbienceDataId, s_moduleAmbienceDataBuffer);
-            Shader.SetGlobalBuffer(s_ModuleWaterLevelsId, s_moduleFloodAndFlickerDataBuffer);
+            UploadModuleWaterLevelArray(ambienceWrite, s_moduleAmbienceData);
+            UploadModuleWaterLevelArray(floodWrite, s_moduleFloodAndFlickerData);
+            Shader.SetGlobalBuffer(s_ModuleAmbienceDataId, ambienceWrite);
+            Shader.SetGlobalBuffer(s_ModuleWaterLevelsId, floodWrite);
+            s_moduleWaterLevelUploadIndex ^= 1;
+        }
+
+        private static GraphicsBuffer CreateModuleWaterLevelBuffer()
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                ModuleWaterLevelShaderCapacity,
+                sizeof(float) * 4);
+        }
+
+        private static void ReleaseModuleWaterLevelBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
+        }
+
+        private static void UploadModuleWaterLevelArray(GraphicsBuffer buffer, Vector4[] source)
+        {
+            NativeArray<Vector4> mapped = buffer.LockBufferForWrite<Vector4>(0, ModuleWaterLevelShaderCapacity);
+            for (int i = 0; i < ModuleWaterLevelShaderCapacity; i++)
+                mapped[i] = source[i];
+            buffer.UnlockBufferAfterWrite<Vector4>(ModuleWaterLevelShaderCapacity);
+        }
+
+        private static void QueueActiveModuleWaterLevelsShaderUpload(bool force = false)
+        {
+            if (force)
+                s_lastModuleWaterLevelUploadFrame = -1;
+
+            s_moduleWaterLevelShaderDirty = true;
         }
         // ==========================================================
         //  CONSTANTS
@@ -198,12 +236,6 @@ namespace Hecton8.Gameplay
         /// GameTickManager vyzyvaet SlowTick() s etim intervalom.
         /// </summary>
         private const float SLOW_TICK_DT = 0.5f;
-
-        /// <summary>
-        /// Nachalnaya emkost slovarya otslezhivaemyh obektov.
-        /// Tipichnyy modul soderzhit 0-16 plavuchih obektov odnovremenno.
-        /// </summary>
-        private const int TRACKED_INITIAL_CAPACITY = 16;
 
         /// <summary>
         /// Maksimum kollayderov, pereschityvaemyh pri holodnoy sinhronizatsii interior zone.
@@ -467,10 +499,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Player suit energy drain rate inside a burning module.")]
         [SerializeField] private float fireSuitEnergyDrainRate = 6f;
 
-        [Header("Interior Zone (Dry Zone)")]
+        [Header("Interior Zone")]
         [Tooltip("Trigger BoxCollider covering the module interior. " +
-                 "BuoyancyObject instances inside this trigger ignore water forces while the module is dry. " +
-                 "Assign manually or let the module generate it.")]
+                 "Used only for player life-support occupancy; flood water truth is owned by HabitatFluidIncursionDirector.")]
         [SerializeField] private BoxCollider interiorTrigger;
 
         [Tooltip("Authored interior wall surfaces that swap to a dedicated condensation material when hot air meets cold hull.")]
@@ -504,7 +535,7 @@ namespace Hecton8.Gameplay
         [Header("Deconstruction")]
         [Tooltip("Prefab mirovogo predmeta (HectonItem) dlya spavna resursov, " +
                  "kotorye ne pomestilis v inventar. " +
-                 "Dolzhen imet HectonItem + BuoyancyObject + Rigidbody.")]
+                 "Dolzhen imet HectonItem + physics pickup runtime body.")]
         [SerializeField] private GameObject worldItemPrefab;
 
         [Tooltip("Optional renderer whose shared material is swapped while this module is targeted for deconstruction.")]
@@ -617,6 +648,8 @@ namespace Hecton8.Gameplay
         private bool _hasPower = true;
         private bool _ambientLightsBrownedOut;
         private bool _updatableRegistered;
+        private bool _pendingInteriorLightsEnabled;
+        private bool _hasPendingInteriorLightsEnabled;
         private float _ambientVoltageSupplyRatio = 1f;
         private float _brownoutNoiseSeed;
         private float _currentBrownoutFlicker01 = 1f;
@@ -645,13 +678,30 @@ namespace Hecton8.Gameplay
         private bool _interiorReefInfestationActive;
         private bool _tickRegistered;
         private bool _fixedTickRegistered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private bool _isUnmoored;
+        private bool _pendingLeakVisualDirty;
+        private bool _pendingLeakActive;
+        private bool _pendingFloodVisualDirty;
+        private bool _pendingOxygenHumVisualDirty;
+        private bool _pendingPressureVisualScaleDirty;
+        private bool _pendingPressureVisualRotationDirty;
+        private bool _pendingInteriorReefVisualDirty;
+        private Vector3 _pendingPressureVisualScale = Vector3.one;
+        private Quaternion _pendingPressureVisualRotation = Quaternion.identity;
+        private Quaternion _pressureCompressionVisualRotationState = Quaternion.identity;
+        private bool _pendingInteriorReefVisualActive;
 
         private ModuleMarker _moduleMarker;
         private HabitatIntegrityManager _habitatIntegrityManager;
         private SubmarineAtmosphereSystem _submarineAtmosphereSystem;
-        private HectonAtmosphereManager _atmosphereRuntime;
+        private IAtmosphereReadModel _atmosphereRuntime;
+        private IPlayerInventoryService _cachedPlayerInventoryService;
+        private Hecton8.Core.IAudioService _cachedAudioService;
+        private ISpatialAudioSfxMixerRouteReadModel _cachedSpatialAudioSfxRoute;
+        private IObjectPoolService _cachedObjectPool;
+        private IPlayerRuntimeContext _cachedPlayerRuntime;
         private PowerNode _powerNode;
         private HectonVoxelVolume _voxelVolume;
         private bool _breachLatched;
@@ -713,26 +763,12 @@ namespace Hecton8.Gameplay
         /// Null = player is not inside this module.
         /// </summary>
         private HectonSurvivalSystem _trackedPlayerSurvival;
-        private HectonPlayerMovement _trackedPlayerMovement;
+        private IPlayerMovementEnvironmentSink _trackedPlayerMovement;
+        private IPlayerHypoxiaPresentationSink _trackedPlayerHypoxiaPresentation;
         private readonly ModuleIntegrityComponent _integrityComponent = new ModuleIntegrityComponent();
         private readonly ModuleLifeSupportComponent _lifeSupportComponent = new ModuleLifeSupportComponent();
-        // ==========================================================
-        //  INTERIOR ZONE - TRACKED OBJECTS
-        // ==========================================================
-
-        /// <summary>
-        /// Tracked BuoyancyObject entries inside the interior zone.
-        /// Key: Collider.GetEntityId(); trigger callbacks see Collider, not GameObject.
-        /// Value: cached BuoyancyObject.
-        /// </summary>
-        private readonly Dictionary<ulong, BuoyancyObject> _trackedObjects
-            = new Dictionary<ulong, BuoyancyObject>(TRACKED_INITIAL_CAPACITY);
-
-        /// <summary>
-        /// Temporary key list for safe dictionary removal during flood-state resync.
-        /// Pre-allocated, zero GC.
-        /// </summary>
-        private readonly List<ulong> _keysToRemove = new List<ulong>(TRACKED_INITIAL_CAPACITY);
+        // SHINOBU_330: interior trigger remains life-support occupancy only.
+        // Flood water and dry-zone physics truth is routed through HabitatFluidIncursionDirector and SignalBus.
         // COLD ALLOC: List<BaseAirlock>[2] - cached owned airlock controllers for emergency lockdown fan-out - owner: BaseModule
         private readonly List<BaseAirlock> _airlockBuffer = new List<BaseAirlock>(2);
         // COLD ALLOC: List<SealedDoor>[2] - cached owned sealed bulkhead doors for quarantine locking - owner: BaseModule
@@ -940,9 +976,9 @@ namespace Hecton8.Gameplay
         }
         internal HectonVoxelVolume CachedVoxelVolume => _voxelVolume;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  IPowerComponent
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Base module power draw.
@@ -976,7 +1012,7 @@ namespace Hecton8.Gameplay
             _hasPower = hasPower;
             _debugHasPower = hasPower;
 
-            SetLightsEnabled(ShouldLightsBeEnabled());
+            QueueLightsEnabled(ShouldLightsBeEnabled());
 
             if (!HasOperationalPower)
             {
@@ -991,13 +1027,13 @@ namespace Hecton8.Gameplay
             SyncSpatialRole();
             UpdateOxygenScrubberHumTarget();
             AdvanceBrownoutShaderState(0f);
-            PublishActiveModuleWaterLevelsToShader(true);
+            QueueActiveModuleWaterLevelsShaderUpload(true);
             UpdateAmbienceTickRegistration();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ICuttable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// ICuttable bridge into ApplyDamage.
@@ -1009,9 +1045,9 @@ namespace Hecton8.Gameplay
             ApplyDamageInternal(damage, true, transform.InverseTransformPoint(hitPoint));
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  IPoolable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void OnSpawn()
         {
@@ -1041,6 +1077,7 @@ namespace Hecton8.Gameplay
             _emergencyBulkheadLockedDown = false;
             _implosionTriggered = false;
             _trackedPlayerMovement = null;
+            _trackedPlayerHypoxiaPresentation = null;
             _cultivationScrubberPowerDrainWatts = 0f;
             _cultivationLightingPowerCreditWatts = 0f;
             _parasiteAddedMassKilograms = 0f;
@@ -1083,7 +1120,7 @@ namespace Hecton8.Gameplay
             _ruptureGroanNoisePhase = 0f;
             _ruptureGroanPreviousNoise = -1f;
             SetDeconstructionPreview(false);
-            SetLightsEnabled(true);
+            QueueLightsEnabled(true);
 
             _isDeconstructing = false;
             _breachLatched = false;
@@ -1100,6 +1137,7 @@ namespace Hecton8.Gameplay
             ClearQueuedHydroStructuralLoad();
             _trackedPlayerSurvival = null;
             _trackedPlayerMovement = null;
+            _trackedPlayerHypoxiaPresentation = null;
             _parasitePowerDrainWatts = 0f;
             _parasiteRootPowerDrainWatts = 0f;
             _solarEmpBlackoutRemainingSeconds = 0f;
@@ -1124,6 +1162,8 @@ namespace Hecton8.Gameplay
             ApplyCondensationVisualState(false);
             SetInteriorReefVisualActive(false);
             ResetPressureCompressionVisualState();
+            FlushInteriorReefVisualState();
+            FlushPressureCompressionVisualState();
             _integrityComponent.ResetForDespawn();
             _lifeSupportComponent.ResetForDespawn();
             TryUnregisterFixedTick();
@@ -1137,9 +1177,9 @@ namespace Hecton8.Gameplay
             ReleaseAllTrackedObjects();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISlowTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Central slow tick from GameTickManager.
@@ -1148,6 +1188,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void SlowTick()
         {
+            UpdateInteriorOccupancyFromPlayerRuntime();
             ApplyCascadeFailureEffects();
             ApplyDeepSeaCompressionState(false);
             UpdateLifeSupport(SLOW_TICK_DT);
@@ -1249,18 +1290,34 @@ namespace Hecton8.Gameplay
 
             UpdateOxygenScrubberHum(dt);
             if (shaderStateChanged)
-                PublishActiveModuleWaterLevelsToShader(true);
+                QueueActiveModuleWaterLevelsShaderUpload(true);
 
             UpdateAmbienceTickRegistration();
         }
 
-        // ══════════════════════════════════════════════════════════
+        public void LateFrameTick()
+        {
+            FlushLeakVisualState();
+            FlushFloodVisualState();
+            FlushOxygenScrubberHumVisualState();
+            FlushPressureCompressionVisualState();
+            FlushInteriorReefVisualState();
+            FlushPendingInteriorLightState();
+            if (s_moduleWaterLevelShaderDirty)
+            {
+                PublishActiveModuleWaterLevelsToShader(true);
+                s_moduleWaterLevelShaderDirty = false;
+            }
+        }
+
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
             CacheReferences();
+            CacheRegistryServicesCold();
             TryRouteAudioSourceToSfxGroup(audioSource);
             ReadBuildablePower();
             ValidateInteriorTrigger();
@@ -1283,11 +1340,14 @@ namespace Hecton8.Gameplay
             if (!s_activeModules.Contains(this))
                 s_activeModules.Add(this);
 
-            CacheAtmosphereRuntimeCold();
+            CacheRegistryServicesCold();
+            TryRouteAudioSourceToSfxGroup(audioSource);
+            TryRouteAudioSourceToSfxGroup(oxygenScrubberHumSource);
             TryRegisterHotSwapListener();
             LaserCutterTargetRegistry.RegisterModuleTree(this);
             PhysicsEventBus.Register(this);
             TryRegister();
+            TryRegisterLateFrameTick();
             ResyncInteriorOccupants(true);
             BaseDegradationSystem.SynchronizeIntegrityState(this);
             if (_isUnmoored)
@@ -1309,7 +1369,9 @@ namespace Hecton8.Gameplay
         {
             LaserCutterTargetRegistry.UnregisterModuleTree(this);
             TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             TryUnregisterUpdatable();
+            TryUnregisterLateFrameTick();
             ResetBrownoutShaderState();
             ResetOxygenScrubberHumRuntime(false);
             s_activeModules.Remove(this);
@@ -1332,7 +1394,9 @@ namespace Hecton8.Gameplay
         {
             LaserCutterTargetRegistry.UnregisterModuleTree(this);
             TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             TryUnregisterUpdatable();
+            TryUnregisterLateFrameTick();
             ResetBrownoutShaderState();
             ResetOxygenScrubberHumRuntime(true);
             s_activeModules.Remove(this);
@@ -1346,48 +1410,75 @@ namespace Hecton8.Gameplay
             PublishActiveModuleWaterLevelsToShader(true);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INTERIOR ZONE — TRIGGER CALLBACKS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  INTERIOR ZONE � TRIGGER CALLBACKS
+        // ----------------------------------------------------------
 
-        private void OnTriggerEnter(Collider other)
+        private void UpdateInteriorOccupancyFromPlayerRuntime()
         {
-            if (other == null) return;
-
-            // ── Life Support: detect player entry ──
-            // CompareTag is zero GC (no string allocation).
-            // Player check runs BEFORE BuoyancyObject check —
-            // player may or may not have BuoyancyObject,
-            // but life support must work regardless.
-            TryTrackPlayer(other, true);
-
-            // ── Interior Zone: BuoyancyObject tracking ──
-            if (!other.TryGetComponent(out BuoyancyObject buoyancy))
+            IPlayerRuntimeContext playerRuntime = _cachedPlayerRuntime;
+            if (playerRuntime == null)
                 return;
 
-            TrackBuoyancyObject(other, buoyancy);
+            Vector3 playerPosition;
+            Transform playerTransform = null;
+            if (playerRuntime.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose))
+            {
+                float3 runtimePosition = pose.RuntimePosition;
+                playerPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            }
+            else
+            {
+                playerTransform = playerRuntime.PlayerTransform;
+                if (playerTransform == null)
+                    return;
+
+                playerPosition = playerTransform.position;
+            }
+
+            if (!TryContainsInteriorRuntimePoint(playerPosition))
+            {
+                NotifyModuleExitIfNeeded();
+                return;
+            }
+
+            if (_trackedPlayerSurvival != null)
+                return;
+
+            HectonSurvivalSystem survival = playerRuntime.SurvivalSystem;
+            if (survival == null)
+            {
+                playerTransform ??= playerRuntime.PlayerTransform;
+                if (playerTransform != null)
+                    TryTrackPlayer(playerTransform, true);
+                return;
+            }
+
+            playerTransform ??= playerRuntime.PlayerTransform;
+            TrackPlayer(survival, playerTransform, playerRuntime.PlayerCollider, true);
         }
 
-        private void OnTriggerExit(Collider other)
+        private void HandleInteriorTriggerEnterLegacyDisabled(Collider other)
         {
             if (other == null) return;
 
-            // ── Life Support: detect player exit ──
+            // -- Life Support: detect player entry --
+            // CompareTag is zero GC (no string allocation).
+            // Player occupancy remains here; water authority is scalar CSR/Vault state.
+            TryTrackPlayer(other, true);
+        }
+
+        private void HandleInteriorTriggerExitLegacyDisabled(Collider other)
+        {
+            if (other == null) return;
+
+            // -- Life Support: detect player exit --
             bool trackedPlayerExited = IsTrackedPlayerCollider(other);
             if (trackedPlayerExited)
-                _trackedPlayerSurvival = null;
-            // ── Interior Zone: BuoyancyObject tracking ──
-            ulong key = ResolveColliderRuntimeId(other);
-
-            if (_trackedObjects.TryGetValue(key, out BuoyancyObject buoyancy))
             {
-                _trackedObjects.Remove(key);
-                UpdateTrackedDiagnostics();
-
-                if (buoyancy != null && !_integrityComponent.IsFlooded)
-                {
-                    buoyancy.ExitDryZone();
-                }
+                _trackedPlayerSurvival = null;
+                _trackedPlayerMovement = null;
+                _trackedPlayerHypoxiaPresentation = null;
             }
 
             if (trackedPlayerExited)
@@ -1395,19 +1486,19 @@ namespace Hecton8.Gameplay
                 ResyncInteriorOccupants(false);
                 if (_trackedPlayerSurvival == null)
                 {
-                    ModuleStatusEvents.NotifyExit(this);
+                    ModuleStatusEvents.TryNotifyExit(this);
                     PublishPlayerBaseTransitionSignal(false);
                 }
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC GAMEPLAY API
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Nanosit uron modulyu.
-        /// Pri dostizhenii 0 — modul probit i zataplivaetsya.
+        /// Pri dostizhenii 0 � modul probit i zataplivaetsya.
         /// </summary>
         public void ApplyDamage(float amount)
         {
@@ -1488,7 +1579,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Remontiruet modul.
-        /// Esli tselostnost polnostyu vosstanovlena i est pitanie —
+        /// Esli tselostnost polnostyu vosstanovlena i est pitanie �
         /// nachinaetsya otkachka vody.
         /// </summary>
         public void Repair(float amount)
@@ -2011,7 +2102,7 @@ namespace Hecton8.Gameplay
             float pitch = math.lerp(pitchMin, pitchMax, pitch01) * math.lerp(1f, 0.82f, damage01);
 
             ResolveModuleAmbienceBounds(out Vector3 centerWS, out _);
-            ProceduralAudioEvents.RaiseStructuralStressTriggered(centerWS, stress01, pitch);
+            ProceduralAudioEvents.TryRaiseStructuralStressTriggered(centerWS, stress01, pitch);
         }
 
         internal void ApplyRuptureCascadeStress(float stressMultiplier01)
@@ -2250,9 +2341,9 @@ namespace Hecton8.Gameplay
             BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — DECONSTRUCTION
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PUBLIC API � DECONSTRUCTION
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Razbiraet modul, vozvraschaya resursy igroku.
@@ -2261,23 +2352,23 @@ namespace Hecton8.Gameplay
         ///   1. Poluchit buildCost iz ModuleMarker.Data.
         ///   2. Dlya kazhdogo resursa: refund = floor(amount / 2).
         ///   3. Popytka dobavit v PlayerInventory.Grid.
-        ///   4. Esli inventar polon — spavn HectonItem v mir cherez ObjectPoolManager.
+        ///   4. Esli inventar polon � spavn HectonItem v mir cherez ObjectPoolManager.
         ///   5. Osvobozhdenie dry zone (ReleaseAllTrackedObjects).
         ///   6. ConstructionManager.DestroyModule(gameObject).
         ///
         /// ZERO GC:
-        ///   • for-tsikly po List, bez LINQ.
-        ///   • TryAddItem vozvraschaet bool, bez allokatsiy.
-        ///   • ObjectPoolManager.Spawn — zero GC (pre-warmed pool).
+        ///   � for-tsikly po List, bez LINQ.
+        ///   � TryAddItem vozvraschaet bool, bez allokatsiy.
+        ///   � ObjectPoolManager.Spawn � zero GC (pre-warmed pool).
         ///
         /// ZASchITA:
-        ///   • _isDeconstructing predotvraschaet povtornyy vyzov.
-        ///   • Null-safe: esli ModuleMarker/Data/buildCost otsutstvuyut —
+        ///   � _isDeconstructing predotvraschaet povtornyy vyzov.
+        ///   � Null-safe: esli ModuleMarker/Data/buildCost otsutstvuyut �
         ///     modul unichtozhaetsya bez vozvrata resursov (s Warning).
         /// </summary>
         /// <param name="playerInventory">
         /// Inventar igroka dlya vozvrata resursov.
-        /// Null dopustim — vse resursy budut spavneny v mir.
+        /// Null dopustim � vse resursy budut spavneny v mir.
         /// </param>
         public void Deconstruct(PlayerInventory playerInventory)
         {
@@ -2326,7 +2417,7 @@ namespace Hecton8.Gameplay
             ReleaseAllTrackedObjects();
         }
 
-        internal void EjectHostedContentsForDeconstruction(PlayerInventory playerInventory, ObjectPoolManager pool)
+        internal void EjectHostedContentsForDeconstruction(PlayerInventory playerInventory, IObjectPoolService pool)
         {
             Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
             EjectHostedModuleContents(playerInventory, pool, ref dropPosition);
@@ -2377,7 +2468,7 @@ namespace Hecton8.Gameplay
                 RequesterEntityId = 0u,
                 MaxDistance = 0f,
                 RayDirection = new float3(0f, -1f, 0f),
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Frame = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex),
                 ToolKind = 0,
                 Flags = 1
             };
@@ -2389,7 +2480,7 @@ namespace Hecton8.Gameplay
             int itemHashId,
             int quantity,
             PlayerInventory playerInventory,
-            ObjectPoolManager pool,
+            IObjectPoolService pool,
             ref Vector3 dropPosition)
         {
             if (itemHashId == 0 || quantity <= 0)
@@ -2412,28 +2503,28 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — WORLD ITEM SPAWN
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � WORLD ITEM SPAWN
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Spavnit resurs kak fizicheskiy predmet v mire.
         ///
         /// Pattern:
-        ///   1. Esli worldItemPrefab naznachen → Spawn cherez ObjectPoolManager.
+        ///   1. Esli worldItemPrefab naznachen ? Spawn cherez ObjectPoolManager.
         ///   2. Spavnennyy HectonItem initsializiruetsya po hashId cherez ItemCatalog.
-        ///   3. Esli worldItemPrefab == null → resurs poteryan (s Warning).
+        ///   3. Esli worldItemPrefab == null ? resurs poteryan (s Warning).
         ///
         /// Razdelenie otvetstvennostey:
         ///   BaseModule NE znaet pro konkretnyy vizual predmeta.
-        ///   worldItemPrefab — generic konteyner s HectonItem + Rigidbody.
+        ///   worldItemPrefab � generic konteyner s HectonItem + Rigidbody.
         ///   Katalozhnye dannye na HectonItem ustanavlivayutsya programmno.
         ///
         /// Buduschee: esli nuzhna vizualnaya differentsiatsiya (raznye modeli
         /// dlya titana vs stekla), worldItemPrefab mozhet byt zamenen
         /// na per-resource world prefab, esli poyavitsya otdelnyy vizualnyy vladelets.
         /// </summary>
-        private void SpawnWorldItem(int itemHashId, Vector3 position, ObjectPoolManager pool, PlayerInventory playerInventory)
+        private void SpawnWorldItem(int itemHashId, Vector3 position, IObjectPoolService pool, PlayerInventory playerInventory)
         {
             if (itemHashId == 0)
                 return;
@@ -2475,7 +2566,7 @@ namespace Hecton8.Gameplay
             if (itemGO == null)
                 return;
 
-            // ── Initsializatsiya HectonItem dannymi ──
+            // -- Initsializatsiya HectonItem dannymi --
             // HectonItem na worldItemPrefab initsializiruetsya hashId cherez ItemCatalog.
             // Bazovyy modul ne tyanet asset-ssylki v logiku vozvrata resursov.
             //
@@ -2488,21 +2579,21 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static ItemCatalog ResolveItemCatalog(PlayerInventory playerInventory)
+        private ItemCatalog ResolveItemCatalog(PlayerInventory playerInventory)
         {
             if (playerInventory != null && playerInventory.ItemCatalog != null)
                 return playerInventory.ItemCatalog;
 
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService inventoryService = _cachedPlayerInventoryService;
             PlayerInventory inventoryInstance = inventoryService != null && inventoryService.IsInitialized
                 ? inventoryService.Inventory
                 : null;
             return inventoryInstance != null ? inventoryInstance.ItemCatalog : null;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — CORE STATE LOGIC
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � CORE STATE LOGIC
+        // ----------------------------------------------------------
 
         private float GetRepairIntegrityCap()
         {
@@ -2516,7 +2607,7 @@ namespace Hecton8.Gameplay
                 : 0f;
         }
 
-        private void EjectHostedModuleContents(PlayerInventory playerInventory, ObjectPoolManager pool, ref Vector3 dropPosition)
+        private void EjectHostedModuleContents(PlayerInventory playerInventory, IObjectPoolService pool, ref Vector3 dropPosition)
         {
             if (TryGetComponent(out MaintenanceStationModule maintenanceStation) &&
                 maintenanceStation.TryExtractSlottedToolHashForDeconstruct(out int slottedToolHashId))
@@ -2565,16 +2656,16 @@ namespace Hecton8.Gameplay
             {
                 _ambientVoltageSupplyRatio = sanitizedVoltageRatio;
                 AdvanceBrownoutShaderState(0f);
-                PublishActiveModuleWaterLevelsToShader(true);
+                QueueActiveModuleWaterLevelsShaderUpload(true);
                 UpdateAmbienceTickRegistration();
                 return;
             }
 
             _ambientLightsBrownedOut = brownedOut;
             _ambientVoltageSupplyRatio = sanitizedVoltageRatio;
-            SetLightsEnabled(ShouldLightsBeEnabled());
+            QueueLightsEnabled(ShouldLightsBeEnabled());
             AdvanceBrownoutShaderState(0f);
-            PublishActiveModuleWaterLevelsToShader(true);
+            QueueActiveModuleWaterLevelsShaderUpload(true);
             UpdateAmbienceTickRegistration();
         }
 
@@ -2617,7 +2708,7 @@ namespace Hecton8.Gameplay
                 pulseEvent.DurationSeconds);
             _debugSolarEmpBlackoutSeconds = _solarEmpBlackoutRemainingSeconds;
             _integrityComponent.StopDrain();
-            SetLightsEnabled(false);
+            QueueLightsEnabled(false);
             UpdateDrainDiagnostics();
             SyncSpatialRole();
             UpdateOxygenScrubberHumTarget();
@@ -2637,7 +2728,7 @@ namespace Hecton8.Gameplay
             if (_solarEmpBlackoutRemainingSeconds > 0f)
                 return;
 
-            SetLightsEnabled(ShouldLightsBeEnabled());
+            QueueLightsEnabled(ShouldLightsBeEnabled());
             if (HasOperationalPower)
                 _integrityComponent.TryStartDrain(_hasPower);
             UpdateDrainDiagnostics();
@@ -2661,24 +2752,24 @@ namespace Hecton8.Gameplay
                 case BaseModuleFailureMode.Fire:
                     PlaySpatialSfx(floodClip);
                     RecordCascadeFailure("MODULE FIRE", "Compartment ignition risk. Repair before occupancy.");
-                    NotificationEvents.PushWarning("BASE MODULE FIRE // SERVICE NOW");
+                    NotificationEvents.TryPushWarning("BASE MODULE FIRE // SERVICE NOW".AsSpan());
                     break;
                 case BaseModuleFailureMode.ShortCircuit:
                     PlaySpatialSfx(floodClip);
                     RecordCascadeFailure("SHORT CIRCUIT", "Compartment flooded and pumps offline until hull service completes.");
-                    NotificationEvents.PushWarning("BASE SHORT CIRCUIT // POWER LOCKOUT");
+                    NotificationEvents.TryPushWarning("BASE SHORT CIRCUIT // POWER LOCKOUT".AsSpan());
                     break;
                 default:
                     PlaySpatialSfx(floodClip);
                     RecordCascadeFailure("OXYGEN LEAK", "Compartment seal lost. Oxygen-safe shelter compromised.");
-                    NotificationEvents.PushWarning("BASE OXYGEN LEAK // COMPARTMENT BREACHED");
+                    NotificationEvents.TryPushWarning("BASE OXYGEN LEAK // COMPARTMENT BREACHED".AsSpan());
                     break;
             }
 
             SetLeakActive(ShouldLeakBeActive());
             SetFloodedVisual(_integrityComponent.IsFlooded);
             SyncTrackedObjectsFloodState();
-            SetLightsEnabled(ShouldLightsBeEnabled());
+            QueueLightsEnabled(ShouldLightsBeEnabled());
             SyncSpatialRole();
         }
 
@@ -2699,12 +2790,12 @@ namespace Hecton8.Gameplay
             SetLeakActive(ShouldLeakBeActive());
 
             SetFloodedVisual(_integrityComponent.IsFlooded);
-            SetLightsEnabled(ShouldLightsBeEnabled());
+            QueueLightsEnabled(ShouldLightsBeEnabled());
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — INTERIOR ZONE SYNC
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � INTERIOR ZONE SYNC
+        // ----------------------------------------------------------
 
         private bool ShouldLeakBeActive()
         {
@@ -2823,100 +2914,51 @@ namespace Hecton8.Gameplay
 
         private void SyncTrackedObjectsFloodState()
         {
-            bool isFloodedNow = _integrityComponent.IsFlooded;
-            if (isFloodedNow == _wasFlooded)
-                return;
-
-            _wasFlooded = isFloodedNow;
-
-            if (_trackedObjects.Count == 0)
-                return;
-
-            _keysToRemove.Clear();
-
-            Dictionary<ulong, BuoyancyObject>.Enumerator enumerator = _trackedObjects.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                KeyValuePair<ulong, BuoyancyObject> kvp = enumerator.Current;
-                BuoyancyObject buoyancy = kvp.Value;
-
-                if (buoyancy == null)
-                {
-                    _keysToRemove.Add(kvp.Key);
-                    continue;
-                }
-
-                if (isFloodedNow)
-                    buoyancy.ExitDryZone();
-                else
-                    buoyancy.EnterDryZone();
-            }
-
-            for (int i = 0, count = _keysToRemove.Count; i < count; i++)
-            {
-                _trackedObjects.Remove(_keysToRemove[i]);
-            }
-
-            _keysToRemove.Clear();
+            _wasFlooded = _integrityComponent.IsFlooded;
             UpdateTrackedDiagnostics();
         }
 
         private void ReleaseAllTrackedObjects()
         {
-            if (_trackedObjects.Count == 0)
-                return;
-
-            Dictionary<ulong, BuoyancyObject>.Enumerator enumerator = _trackedObjects.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                KeyValuePair<ulong, BuoyancyObject> kvp = enumerator.Current;
-                BuoyancyObject buoyancy = kvp.Value;
-
-                if (buoyancy != null && !_integrityComponent.IsFlooded)
-                {
-                    buoyancy.ExitDryZone();
-                }
-            }
-
-            _trackedObjects.Clear();
             UpdateTrackedDiagnostics();
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — VISUALS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � VISUALS
+        // ----------------------------------------------------------
 
         private void ResyncInteriorOccupants(bool notifyPlayerEnter)
         {
-            if (!TryGetInteriorOverlapQuery(out Vector3 worldCenter, out Vector3 halfExtents, out Quaternion worldRotation))
+            if (_trackedPlayerSurvival != null)
                 return;
 
-            int overlapCount = UnityEngine.Physics.OverlapBoxNonAlloc(
-                worldCenter,
-                halfExtents,
-                _interiorOverlapBuffer,
-                worldRotation,
-                HectonLayerMasks.DefaultRaycastLayerMask,
-                QueryTriggerInteraction.Collide);
+            IPlayerRuntimeContext playerContext = _cachedPlayerRuntime;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                return;
 
-            for (int i = 0; i < overlapCount; i++)
-            {
-                Collider overlap = _interiorOverlapBuffer[i];
-                _interiorOverlapBuffer[i] = null;
+            if (!TryContainsInteriorRuntimePoint(playerTransform.position))
+                return;
 
-                if (overlap == null || ReferenceEquals(overlap, interiorTrigger))
-                    continue;
-
-                TryTrackPlayer(overlap, notifyPlayerEnter);
-
-                if (overlap.TryGetComponent(out BuoyancyObject buoyancy))
-                    TrackBuoyancyObject(overlap, buoyancy);
-            }
+            TryTrackPlayer(playerTransform, notifyPlayerEnter);
         }
 
         private void SetLeakActive(bool active)
         {
+            _pendingLeakActive = active;
+            _pendingLeakVisualDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushLeakVisualState()
+        {
             if (leakVfx == null) return;
+
+            if (!_pendingLeakVisualDirty)
+                return;
+
+            _pendingLeakVisualDirty = false;
+            bool active = _pendingLeakActive;
 
             if (active)
             {
@@ -2967,21 +3009,22 @@ namespace Hecton8.Gameplay
         {
             float sanitizedFloodLevel01 = Mathf.Clamp01(floodLevel01);
             _cachedFloodLevel01 = sanitizedFloodLevel01;
-            bool floodVisible = sanitizedFloodLevel01 > 0.001f;
+            _pendingFloodVisualDirty = true;
+            QueueActiveModuleWaterLevelsShaderUpload(true);
+            TryRegisterLateFrameTick();
+        }
 
-            if (waterVolume != null && waterVolume.activeSelf != floodVisible)
-                waterVolume.SetActive(floodVisible);
+        private void FlushFloodVisualState()
+        {
+            if (!_pendingFloodVisualDirty)
+                return;
 
-            if (floodSurfacePlane != null)
-            {
-                CaptureFloodSurfaceDefaults();
-                Vector3 nextLocalPosition = _defaultFloodSurfaceLocalPosition;
-                nextLocalPosition.y = math.lerp(ResolveFloodSurfaceMinimumLocalY(), ResolveFloodSurfaceMaximumLocalY(), sanitizedFloodLevel01);
-                floodSurfacePlane.localPosition = nextLocalPosition;
-            }
+            _pendingFloodVisualDirty = false;
+            bool floodVisible = _cachedFloodLevel01 > 0.001f;
+            if (waterVolume != null && waterVolume.activeSelf)
+                waterVolume.SetActive(false);
 
             UpdateFloodDistortionVolume(floodVisible);
-            PublishActiveModuleWaterLevelsToShader(true);
         }
 
         private void UpdateFloodDistortionVolume(bool floodVisible)
@@ -3018,7 +3061,7 @@ namespace Hecton8.Gameplay
 
         private static void PublishActiveModuleWaterLevelsToShader(bool force = false)
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             if (!force && s_lastModuleWaterLevelUploadFrame == currentFrame)
                 return;
 
@@ -3070,6 +3113,7 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalFloat(s_BaseVoltageFlickerSpeedId, baseFlickerSpeed);
             Shader.SetGlobalFloat(s_BaseVoltageMinimumId, baseVoltageMinimum);
             Shader.SetGlobalColor(s_BaseBrownoutEmergencyColorId, baseEmergencyColor);
+            s_moduleWaterLevelShaderDirty = false;
         }
 
         private float ResolveHullCondensationDepth01()
@@ -3160,7 +3204,7 @@ namespace Hecton8.Gameplay
             Vector3 nextScale = _defaultPressureCompressionVisualScale;
             nextScale.x *= axisScale;
             nextScale.y *= axisScale;
-            pressureCompressionVisualRoot.localScale = nextScale;
+            QueuePressureCompressionVisualScale(nextScale);
         }
 
         private void ResetPressureCompressionVisualState()
@@ -3175,8 +3219,51 @@ namespace Hecton8.Gameplay
                 return;
 
             CapturePressureCompressionDefaults();
-            pressureCompressionVisualRoot.localScale = _defaultPressureCompressionVisualScale;
-            pressureCompressionVisualRoot.localRotation = _defaultPressureCompressionVisualRotation;
+            QueuePressureCompressionVisualScale(_defaultPressureCompressionVisualScale);
+            QueuePressureCompressionVisualRotation(_defaultPressureCompressionVisualRotation);
+        }
+
+        private void QueuePressureCompressionVisualScale(Vector3 localScale)
+        {
+            if (!IsFiniteVector(localScale))
+                return;
+
+            _pendingPressureVisualScale = localScale;
+            _pendingPressureVisualScaleDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void QueuePressureCompressionVisualRotation(Quaternion localRotation)
+        {
+            if (!IsFiniteQuaternion(localRotation))
+                localRotation = _defaultPressureCompressionVisualRotation;
+
+            _pressureCompressionVisualRotationState = localRotation;
+            _pendingPressureVisualRotation = localRotation;
+            _pendingPressureVisualRotationDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushPressureCompressionVisualState()
+        {
+            if (pressureCompressionVisualRoot == null)
+            {
+                _pendingPressureVisualScaleDirty = false;
+                _pendingPressureVisualRotationDirty = false;
+                return;
+            }
+
+            if (_pendingPressureVisualScaleDirty)
+            {
+                _pendingPressureVisualScaleDirty = false;
+                pressureCompressionVisualRoot.localScale = _pendingPressureVisualScale;
+            }
+
+            if (_pendingPressureVisualRotationDirty)
+            {
+                _pendingPressureVisualRotationDirty = false;
+                pressureCompressionVisualRoot.localRotation = _pendingPressureVisualRotation;
+            }
         }
 
         private void ApplyFluidIncursion(float deltaTime)
@@ -3446,6 +3533,7 @@ namespace Hecton8.Gameplay
 
             _defaultPressureCompressionVisualScale = pressureCompressionVisualRoot.localScale;
             _defaultPressureCompressionVisualRotation = pressureCompressionVisualRoot.localRotation;
+            _pressureCompressionVisualRotationState = _defaultPressureCompressionVisualRotation;
             _pressureCompressionDefaultsCaptured = true;
         }
 
@@ -3500,6 +3588,23 @@ namespace Hecton8.Gameplay
                 if (l.enabled != enabled)
                     l.enabled = enabled;
             }
+        }
+
+        private void QueueLightsEnabled(bool enabled)
+        {
+            _pendingInteriorLightsEnabled = enabled;
+            _hasPendingInteriorLightsEnabled = true;
+            if (Application.isPlaying)
+                TryRegisterLateFrameTick();
+        }
+
+        private void FlushPendingInteriorLightState()
+        {
+            if (!_hasPendingInteriorLightsEnabled)
+                return;
+
+            _hasPendingInteriorLightsEnabled = false;
+            SetLightsEnabled(_pendingInteriorLightsEnabled);
         }
 
         private void InitializeAmbienceNoiseSeed()
@@ -3560,7 +3665,7 @@ namespace Hecton8.Gameplay
             _currentBrownoutFlicker01 = 1f;
             _brownoutTransition01 = 0f;
             _brownoutTransitionTarget01 = 0f;
-            PublishActiveModuleWaterLevelsToShader(true);
+            QueueActiveModuleWaterLevelsShaderUpload(true);
         }
 
         private void ConfigureOxygenScrubberHumSource()
@@ -3592,13 +3697,14 @@ namespace Hecton8.Gameplay
             _oxygenHumSourceConfigured = true;
         }
 
-        private static void TryRouteAudioSourceToSfxGroup(AudioSource source)
+        private void TryRouteAudioSourceToSfxGroup(AudioSource source)
         {
             if (source == null || source.outputAudioMixerGroup != null)
                 return;
 
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is SpatialAudioManager spatialAudioManager)
-                source.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
+            ISpatialAudioSfxMixerRouteReadModel spatialAudioRoute = _cachedSpatialAudioSfxRoute;
+            if (spatialAudioRoute != null)
+                source.outputAudioMixerGroup = spatialAudioRoute.SfxGroup;
         }
 
         private void ResetOxygenScrubberHumRuntime(bool invalidateConfiguration)
@@ -3635,6 +3741,21 @@ namespace Hecton8.Gameplay
 
         private void UpdateOxygenScrubberHum(float dt)
         {
+            float fadeSeconds = _oxygenHumTarget01 > _oxygenHum01
+                ? 0.25f
+                : math.max(0.1f, oxygenScrubberHumFailFadeSeconds);
+            float alpha = dt > 0f ? dt / (fadeSeconds + dt) : 1f;
+            _oxygenHum01 = math.lerp(_oxygenHum01, _oxygenHumTarget01, alpha);
+            _pendingOxygenHumVisualDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushOxygenScrubberHumVisualState()
+        {
+            if (!_pendingOxygenHumVisualDirty)
+                return;
+
+            _pendingOxygenHumVisualDirty = false;
             if (oxygenScrubberHumSource == null)
                 return;
 
@@ -3644,12 +3765,6 @@ namespace Hecton8.Gameplay
             {
                 ConfigureOxygenScrubberHumSource();
             }
-
-            float fadeSeconds = _oxygenHumTarget01 > _oxygenHum01
-                ? 0.25f
-                : math.max(0.1f, oxygenScrubberHumFailFadeSeconds);
-            float alpha = dt > 0f ? dt / (fadeSeconds + dt) : 1f;
-            _oxygenHum01 = math.lerp(_oxygenHum01, _oxygenHumTarget01, alpha);
 
             if (_oxygenHum01 <= 0.001f)
             {
@@ -3684,14 +3799,14 @@ namespace Hecton8.Gameplay
             if (clip == null)
                 return;
 
-            Hecton8.Core.IAudioService sam = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            Hecton8.Core.IAudioService sam = _cachedAudioService;
             if (sam != null)
                 sam.PlayAtPoint(clip, ResolveInteriorHazardWorldPosition());
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — DATA HELPERS
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � DATA HELPERS
+        // ----------------------------------------------------------
 
         private void CacheReferences()
         {
@@ -3941,7 +4056,7 @@ namespace Hecton8.Gameplay
             if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) && atmosphereSystem != null)
                 return atmosphereSystem.ResolveExternalDepthMeters();
 
-            HectonAtmosphereManager atmosphereManager = _atmosphereRuntime;
+            IAtmosphereReadModel atmosphereManager = _atmosphereRuntime;
             if (atmosphereManager != null)
                 return ResolveExternalDepthMetersAup(atmosphereManager.SeaLevelY);
 
@@ -4069,7 +4184,7 @@ namespace Hecton8.Gameplay
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             aup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -4166,16 +4281,16 @@ namespace Hecton8.Gameplay
 
             if (!IsFiniteQuaternion(targetRotation))
             {
-                pressureCompressionVisualRoot.localRotation = _defaultPressureCompressionVisualRotation;
+                QueuePressureCompressionVisualRotation(_defaultPressureCompressionVisualRotation);
                 return;
             }
 
             float tauSeconds = ResolveFloodVisualLeanTauSeconds();
             float alpha = ResolveOneMinusExpPade(fixedDeltaTime / tauSeconds);
-            pressureCompressionVisualRoot.localRotation = Quaternion.Lerp(
-                pressureCompressionVisualRoot.localRotation,
+            QueuePressureCompressionVisualRotation(Quaternion.Lerp(
+                _pressureCompressionVisualRotationState,
                 targetRotation,
-                alpha);
+                alpha));
         }
 
         private static float ResolveOneMinusExpPade(float normalizedStep)
@@ -4205,13 +4320,59 @@ namespace Hecton8.Gameplay
             if (resolvedSurvival == null)
                 return;
 
+            TrackPlayer(resolvedSurvival, other.transform, other, notifyEnter);
+        }
+
+        private void TryTrackPlayer(Transform playerTransform, bool notifyEnter)
+        {
+            if (_trackedPlayerSurvival != null || playerTransform == null)
+                return;
+
+            HectonSurvivalSystem resolvedSurvival = playerTransform.GetComponentInParent<HectonSurvivalSystem>();
+            if (resolvedSurvival == null)
+                return;
+
+            TrackPlayer(resolvedSurvival, playerTransform, null, notifyEnter);
+        }
+
+        private void TrackPlayer(
+            HectonSurvivalSystem resolvedSurvival,
+            Transform playerTransform,
+            Collider playerCollider,
+            bool notifyEnter)
+        {
             _trackedPlayerSurvival = resolvedSurvival;
-            _trackedPlayerMovement = other.GetComponentInParent<HectonPlayerMovement>();
+            _trackedPlayerMovement = ResolvePlayerMovementEnvironmentSink(playerCollider, playerTransform);
+            _trackedPlayerHypoxiaPresentation = ResolvePlayerHypoxiaPresentationSink(playerCollider, playerTransform);
             if (notifyEnter)
             {
-                ModuleStatusEvents.NotifyEnter(this);
+                ModuleStatusEvents.TryNotifyEnter(this);
                 PublishPlayerBaseTransitionSignal(true);
             }
+        }
+
+        private static IPlayerMovementEnvironmentSink ResolvePlayerMovementEnvironmentSink(Collider playerCollider, Transform playerTransform)
+        {
+            IPlayerMovementContracts registryContracts = Hecton8.Core.GlobalRegistry.PlayerMovementContracts;
+            if (registryContracts != null)
+                return registryContracts;
+
+            if (playerCollider != null)
+                return playerCollider.GetComponentInParent<IPlayerMovementEnvironmentSink>();
+
+            return playerTransform != null
+                ? playerTransform.GetComponentInParent<IPlayerMovementEnvironmentSink>()
+                : null;
+        }
+
+        private static IPlayerHypoxiaPresentationSink ResolvePlayerHypoxiaPresentationSink(Collider playerCollider, Transform playerTransform)
+        {
+            if (playerCollider != null)
+                return playerCollider.GetComponentInParent<IPlayerHypoxiaPresentationSink>();
+
+            return playerTransform != null
+                ? playerTransform.GetComponentInParent<IPlayerHypoxiaPresentationSink>()
+                : null;
         }
 
         private bool IsTrackedPlayerCollider(Collider other)
@@ -4223,27 +4384,6 @@ namespace Hecton8.Gameplay
             return ReferenceEquals(_trackedPlayerSurvival, resolvedSurvival);
         }
 
-        private void TrackBuoyancyObject(Collider other, BuoyancyObject buoyancy)
-        {
-            ulong key = ResolveColliderRuntimeId(other);
-
-            if (_trackedObjects.ContainsKey(key))
-                return;
-
-            _trackedObjects[key] = buoyancy;
-            UpdateTrackedDiagnostics();
-
-            if (!_integrityComponent.IsFlooded)
-                buoyancy.EnterDryZone();
-        }
-
-        private static ulong ResolveColliderRuntimeId(Collider collider)
-        {
-            return collider != null
-                ? EntityId.ToULong(collider.GetEntityId())
-                : 0UL;
-        }
-
         private void NotifyModuleExitIfNeeded()
         {
             if (_trackedPlayerSurvival == null)
@@ -4251,7 +4391,8 @@ namespace Hecton8.Gameplay
 
             _trackedPlayerSurvival = null;
             _trackedPlayerMovement = null;
-            ModuleStatusEvents.NotifyExit(this);
+            _trackedPlayerHypoxiaPresentation = null;
+            ModuleStatusEvents.TryNotifyExit(this);
             PublishPlayerBaseTransitionSignal(false);
         }
 
@@ -4272,7 +4413,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveAupFromRuntimeOrigin(center, out AbsoluteUniversePosition centerAup))
                 return;
 
-            uint frame = (uint)math.max(0, Time.frameCount);
+            uint frame = (uint)math.max(0, SystemDispatcher.CurrentFrameIndex);
             if (playerInside)
             {
                 PlayerBaseEnterSignal signal = new PlayerBaseEnterSignal
@@ -4283,7 +4424,7 @@ namespace Hecton8.Gameplay
                     Frame = frame,
                     Flags = PlayerBaseEnterSignal.DirectPlayerInsideFlag
                 };
-                GlobalSignals.Publish(in signal);
+                SignalBus<PlayerBaseEnterSignal>.TryPush(in signal);
                 return;
             }
 
@@ -4295,7 +4436,7 @@ namespace Hecton8.Gameplay
                 Frame = frame,
                 Flags = PlayerBaseExitSignal.DirectPlayerOutsideFlag
             };
-            GlobalSignals.Publish(in exitSignal);
+            SignalBus<PlayerBaseExitSignal>.TryPush(in exitSignal);
         }
 
         private void ReadBuildablePower()
@@ -4356,7 +4497,7 @@ namespace Hecton8.Gameplay
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateTrackedDiagnostics()
         {
-            _debugTrackedObjectCount = _trackedObjects.Count;
+            _debugTrackedObjectCount = 0;
         }
 
         internal bool ResolveStructuralAnchorRole(ModuleMarker markerOverride = null)
@@ -4639,6 +4780,25 @@ namespace Hecton8.Gameplay
             _updatableRegistered = false;
         }
 
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered)
+                return;
+            if (!Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
+        }
+
         private void TryRegisterFixedTick()
         {
             if (_fixedTickRegistered || !_isUnmoored)
@@ -4649,9 +4809,24 @@ namespace Hecton8.Gameplay
             _fixedTickRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
-        private void CacheAtmosphereRuntimeCold()
+        private void CacheRegistryServicesCold()
         {
-            _atmosphereRuntime = Hecton8.Core.GlobalRegistry.Atmosphere;
+            _atmosphereRuntime = Hecton8.Core.GlobalRegistry.AtmosphereReadModel;
+            _cachedPlayerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
+            _cachedAudioService = Hecton8.Core.GlobalRegistry.Audio;
+            _cachedSpatialAudioSfxRoute = _cachedAudioService as ISpatialAudioSfxMixerRouteReadModel;
+            _cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
+            _cachedPlayerRuntime = Hecton8.Core.GlobalRegistry.Player;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _atmosphereRuntime = null;
+            _cachedPlayerInventoryService = null;
+            _cachedAudioService = null;
+            _cachedSpatialAudioSfxRoute = null;
+            _cachedObjectPool = null;
+            _cachedPlayerRuntime = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -4677,7 +4852,24 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
-                _atmosphereRuntime = currentService as HectonAtmosphereManager;
+                _atmosphereRuntime = currentService as IAtmosphereReadModel;
+            else if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+                _cachedPlayerInventoryService = currentService as IPlayerInventoryService;
+            else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                _cachedAudioService = currentService as Hecton8.Core.IAudioService;
+                _cachedSpatialAudioSfxRoute = _cachedAudioService as ISpatialAudioSfxMixerRouteReadModel;
+                TryRouteAudioSourceToSfxGroup(audioSource);
+                TryRouteAudioSourceToSfxGroup(oxygenScrubberHumSource);
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
+            {
+                _cachedObjectPool = currentService as IObjectPoolService;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerRuntime = currentService as IPlayerRuntimeContext;
+            }
         }
 
         private void TryUnregisterFixedTick()
@@ -4713,26 +4905,14 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Allows the atmosphere owner to sum mature oxygen-producing cultivation slots directly from the native slot lane.
+        /// Allows cultivation modules to compute mature oxygen-producing slot output without exposing storage.
         /// </summary>
         public void ApplyCultivationOxygen(CultivationManager cultivationManager, float oxygenUnitsPerMaturePlant)
         {
-            if (cultivationManager == null ||
-                oxygenUnitsPerMaturePlant <= 0f ||
-                !TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) ||
-                atmosphereSystem == null)
-            {
-                return;
-            }
-
-            int roomIndex = ResolveAtmosphereRoomIndex(atmosphereSystem);
-            if (roomIndex < 0)
+            if (cultivationManager == null || oxygenUnitsPerMaturePlant <= 0f)
                 return;
 
-            atmosphereSystem.InjectCultivationOxygenFromSlots(
-                roomIndex,
-                cultivationManager.SlotStateReadOnly,
-                oxygenUnitsPerMaturePlant);
+            ApplyCultivationOxygen(cultivationManager.CalculateMatureOxygenUnits(oxygenUnitsPerMaturePlant));
         }
 
         internal float ParasiteInfectionLevel => _parasiteInfectionLevel;
@@ -5018,13 +5198,28 @@ namespace Hecton8.Gameplay
                     return false;
             }
 
+            _pendingInteriorReefVisualActive = active;
+            _pendingInteriorReefVisualDirty = true;
+            TryRegisterLateFrameTick();
+            return true;
+        }
+
+        private void FlushInteriorReefVisualState()
+        {
+            if (!_pendingInteriorReefVisualDirty)
+                return;
+
+            _pendingInteriorReefVisualDirty = false;
+            ApplyInteriorReefVisualActiveImmediate(_pendingInteriorReefVisualActive);
+        }
+
+        private void ApplyInteriorReefVisualActiveImmediate(bool active)
+        {
             if (interiorCaveWeed != null && interiorCaveWeed.activeSelf != active)
                 interiorCaveWeed.SetActive(active);
 
             if (interiorBarnacles != null && interiorBarnacles.activeSelf != active)
                 interiorBarnacles.SetActive(active);
-
-            return true;
         }
 
         private void ResolveInteriorReefProxyReferences()
@@ -5051,7 +5246,7 @@ namespace Hecton8.Gameplay
 
         private bool HasInteriorReefProxyPoolReserve()
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _cachedObjectPool;
             if (pool == null)
                 return true;
 
@@ -5059,20 +5254,20 @@ namespace Hecton8.Gameplay
                    HasProxyPoolReserve(interiorBarnacles, pool);
         }
 
-        private static bool HasProxyPoolReserve(GameObject proxy, ObjectPoolManager pool)
+        private static bool HasProxyPoolReserve(GameObject proxy, IObjectPoolService pool)
         {
             if (proxy == null || pool == null)
                 return true;
 
-            if (!proxy.TryGetComponent(out ObjectPoolManager.PoolItemMarker marker))
+            if (!pool.TryGetAvailableCountForPooledInstance(proxy, out int availableCount))
                 return true;
 
-            return pool.GetAvailableCountByPrefabId(marker.PrefabId) >= MinimumFloodedReefProxyPoolReserve;
+            return availableCount >= MinimumFloodedReefProxyPoolReserve;
         }
 
         private float ResolveFloodedReefActivationSeconds()
         {
-            HectonAtmosphereManager atmosphereManager = _atmosphereRuntime;
+            IAtmosphereReadModel atmosphereManager = _atmosphereRuntime;
             float daySeconds = atmosphereManager != null
                 ? Mathf.Max(1f, atmosphereManager.CycleDuration)
                 : DefaultInGameDaySeconds;
@@ -5465,11 +5660,11 @@ namespace Hecton8.Gameplay
 
         private void TriggerCo2HypoxiaDistortion()
         {
-            if (_trackedPlayerMovement == null)
+            if (_trackedPlayerHypoxiaPresentation == null)
                 return;
 
             float intensity = Mathf.InverseLerp(0.8f, 1f, Co2Normalized);
-            _trackedPlayerMovement.TriggerHypoxiaVisorDistortion(Mathf.Clamp01(intensity), 0.45f, 2.5f);
+            _trackedPlayerHypoxiaPresentation.RequestHypoxiaVisorDistortion(Mathf.Clamp01(intensity), 0.45f, 2.5f);
         }
 
 #if UNITY_EDITOR

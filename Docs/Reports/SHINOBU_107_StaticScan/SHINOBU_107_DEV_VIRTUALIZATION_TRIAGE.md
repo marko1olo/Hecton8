@@ -1,4 +1,4 @@
-# SHINOBU_107 Dev Virtualization Triage
+﻿# SHINOBU_107 Dev Virtualization Triage
 
 Source report: `Docs/Reports/SHINOBU_107_StaticScan/SHINOBU_140_Dev_Virtualization.json`
 

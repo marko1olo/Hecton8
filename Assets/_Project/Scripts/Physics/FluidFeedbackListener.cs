@@ -125,12 +125,18 @@ namespace Hecton8.Physics
         /// <summary>
         /// Publishes one splash payload to the deferred presentation lane.
         /// </summary>
+        [Obsolete("Use TryPublishSplashQueued(in SplashEvent) so SignalBus enqueue refusal is visible.", true)]
         public static void PublishSplashQueued(in SplashEvent splashEvent)
         {
-            if (_listenerCount <= 0)
-                return;
+            TryPublishSplashQueued(in splashEvent);
+        }
 
-            Enqueue(in splashEvent);
+        public static bool TryPublishSplashQueued(in SplashEvent splashEvent)
+        {
+            if (_listenerCount <= 0)
+                return false;
+
+            return Enqueue(in splashEvent);
         }
 
         /// <summary>
@@ -184,8 +190,7 @@ namespace Hecton8.Physics
                 return false;
 
             EnsureInitialized();
-            SignalBus<SplashEvent>.Push(in splashEvent);
-            return true;
+            return SignalBus<SplashEvent>.TryPush(in splashEvent);
         }
 
         private static void DispatchToListeners(in SplashEvent splashEvent)
@@ -204,7 +209,11 @@ namespace Hecton8.Physics
             for (int i = startIndex; i < snapshot.Length; i++)
             {
                 SplashEvent splashEvent = snapshot[i];
-                SignalBus<SplashEvent>.Push(in splashEvent);
+                if (!SignalBus<SplashEvent>.TryPush(in splashEvent))
+                {
+                    ReportOverflowOncePerSnapshot();
+                    return;
+                }
             }
         }
 
@@ -221,23 +230,17 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
-    /// Presentation listener that owns flat decal and optional AudioSource feedback for fluid events.
+    /// Presentation listener that owns flat decal feedback for fluid events.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Fluid Feedback Listener")]
     public sealed class FluidFeedbackListener : MonoBehaviour, IFluidSplashEventListener
     {
-        [Header("Feedback")]
-        [Tooltip("Optional audio source reserved for low-frequency hull splash feedback.")]
-        [SerializeField] private AudioSource splashAudioSource;
-
         private AbyssalFluidDecalManager _fluidDecals;
-        private IAudioService _audio;
 
         private void OnEnable()
         {
             _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
-            _audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             FluidFeedbackEvents.Register(this);
         }
 
@@ -245,7 +248,6 @@ namespace Hecton8.Physics
         {
             FluidFeedbackEvents.Unregister(this);
             _fluidDecals = null;
-            _audio = null;
         }
 
         /// <inheritdoc />
@@ -264,24 +266,6 @@ namespace Hecton8.Physics
                     splashEvent.ImpactSpeedMetersPerSecond * 0.055f +
                     splashEvent.KineticEnergyJoules * 0.00008f);
                 _fluidDecals.RegisterWaterSplash(runtimePosition, decalVelocity, intensity);
-            }
-
-            if (splashAudioSource == null)
-                return;
-
-            Transform audioTransform = splashAudioSource.transform;
-            if (audioTransform != null)
-                audioTransform.position = runtimePosition;
-
-            AudioClip clip = splashAudioSource.clip;
-            if (clip != null && _audio != null)
-            {
-                _audio.PlayAtPoint(
-                    clip,
-                    runtimePosition,
-                    splashAudioSource.volume,
-                    splashAudioSource.pitch,
-                    splashAudioSource.outputAudioMixerGroup);
             }
         }
     }

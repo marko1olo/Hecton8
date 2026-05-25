@@ -181,7 +181,7 @@ namespace Hecton8.Gameplay
         private void PublishUpgradesChanged(byte reason)
         {
             if (_signalSourceId == 0u)
-                _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+                _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
 
             VehicleUpgradesChangedSignal signal = new VehicleUpgradesChangedSignal
             {
@@ -194,7 +194,7 @@ namespace Hecton8.Gameplay
                 Flags = 0
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<VehicleUpgradesChangedSignal>.TryPush(in signal);
         }
 
         private ulong ComposeAuthoredBitmask64()

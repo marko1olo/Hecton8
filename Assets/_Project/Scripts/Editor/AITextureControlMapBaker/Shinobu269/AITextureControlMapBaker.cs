@@ -252,7 +252,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                 if (superSampleMultiplier > 1)
                     commandBuffer.Blit(drawTexture, readbackTexture);
 
-                Graphics.ExecuteCommandBuffer(commandBuffer);
+                UnityEngine.Graphics.ExecuteCommandBuffer(commandBuffer);
                 renderStopwatch.Stop();
                 string outputPath = AITextureControlMapConstants.TemplateOutputFolder + "/" + safeName + "_" + SelectPassToken(pass) + ".png";
                 ReadbackContext context = new ReadbackContext(readbackTexture, drawTexture != readbackTexture ? drawTexture : null, material, outputPath, resolution, pass, state, renderStopwatch.Elapsed.TotalMilliseconds, meshHash, mesh.vertexCount, mesh.subMeshCount, boundsExtents, quality);

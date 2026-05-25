@@ -329,7 +329,7 @@ namespace Hecton8.Editor
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllText(ReportPath, report);
+            File.WriteAllText(ReportPath, report, new UTF8Encoding(false));
         }
 
         private static bool IsAllowedSize(int size)

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_017
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_017_MAT_family_coral_branching_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_coral_branching_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_coral_branching_Placeholder_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Production replacement for a branching coral placeholder, designed as a high-value modular reef surface. Use elegant off-white coral tubes, soft mauve membranes between small branches, teal micro-speckles, and restrained amber node glow marks that can become an emissive mask later. The image should look like a clean scientific close-up texture, not a noisy fantasy bark. Keep broad readable biological forms and a pleasant color balance suitable for a playable underwater scene. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

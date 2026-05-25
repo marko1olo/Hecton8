@@ -15,7 +15,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Marker HUD Element")]
-    public sealed class PDAMarkerHUDElement : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAMarkerHUDElement : MonoBehaviour, IUpdatable, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private sealed class MarkerIconDisplay
         {
@@ -122,7 +122,17 @@ namespace Hecton8.PDA
         }
 
         /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            SampleMarkerDisplay(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+        }
+
+        /// <inheritdoc />
         public void Tick(float deltaTime)
+        {
+        }
+
+        private void SampleMarkerDisplay(float deltaTime)
         {
             float safeDeltaTime = math.max(0f, deltaTime);
             _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
@@ -552,7 +562,7 @@ namespace Hecton8.PDA
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registeredToTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -560,7 +570,7 @@ namespace Hecton8.PDA
             if (!_registeredToTick)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredToTick = false;
         }
 

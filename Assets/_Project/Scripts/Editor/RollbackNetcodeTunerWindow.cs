@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.Networking;
 using Hecton8.Core;
 using Unity.Mathematics;
@@ -247,7 +248,7 @@ namespace Hecton8.Editor
                 {
                     _lastTextResimFrames = state.FramesResimulated;
                     _lastTextResimMs = state.ResimComputeTimeMs;
-                    _resimLabel.text = "Resim: " + state.ResimComputeTimeMs.ToString("0.000") + " ms / " + state.FramesResimulated + " ticks";
+                    _resimLabel.text = "Resim: " + state.ResimComputeTimeMs.ToString("0.000", CultureInfo.InvariantCulture) + " ms / " + state.FramesResimulated + " ticks";
                 }
             }
 

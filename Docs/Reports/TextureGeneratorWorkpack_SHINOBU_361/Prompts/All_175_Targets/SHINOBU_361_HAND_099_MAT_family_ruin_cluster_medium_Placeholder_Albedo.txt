@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_099
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_099_MAT_family_ruin_cluster_medium_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_ruin_cluster_medium_Placeholder_Albedo.png
+FINAL_FILENAME: MAT_family_ruin_cluster_medium_Placeholder_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Replacement albedo for medium ruin cluster placeholder. Create a clean cluster texture of pale ceramic ruin tiles, graphite machine-edge fragments, teal mineral seams, pearl dust, and amber marker flecks. The result should sell old technical architecture without losing readability on small meshes. Use clear large fragments first and fine mineral detail second. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

@@ -256,7 +256,7 @@ namespace Hecton8.Audio
             if (TryResolveAupFromRuntimeOrigin(safeWorldPosition, out AbsoluteUniversePosition sourceAup))
                 return sourceAup;
 
-            AbsoluteUniversePosition fallbackAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition fallbackAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return AbsoluteUniversePosition.IsFinite(in fallbackAup) ? fallbackAup : default;
         }
 
@@ -266,7 +266,7 @@ namespace Hecton8.Audio
             if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -652,26 +652,44 @@ namespace Hecton8.Audio
         /// <param name="sampleRate">Audio output sample rate used to resolve the frame timestamp.</param>
         /// <param name="intensity">Normalized ping intensity in the 0..1 range.</param>
         /// <param name="chirpDurationSeconds">Primary chirp duration in seconds.</param>
+        [Obsolete("Use TryRaiseAudioPingTriggered(long,int,float,float) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseAudioPingTriggered(long startSampleFrame, int sampleRate, float intensity, float chirpDurationSeconds)
+        {
+            TryRaiseAudioPingTriggered(startSampleFrame, sampleRate, intensity, chirpDurationSeconds);
+        }
+
+        public static bool TryRaiseAudioPingTriggered(long startSampleFrame, int sampleRate, float intensity, float chirpDurationSeconds)
         {
             AudioPingTriggerInfo info = new AudioPingTriggerInfo(startSampleFrame, sampleRate, intensity, chirpDurationSeconds);
             AudioEvent audioEvent = CreateAudioPingEvent(in info);
-            PublishTypedAudioEvent(in audioEvent);
+            bool typedQueued = PublishTypedAudioEvent(in audioEvent);
 
             if (_listeners.Count <= 0)
-                return;
+                return typedQueued;
 
             EnsureInitialized(allowAllocate: false);
             if (_pendingAudioPingCount + _nextFrameAudioPingCount >= PendingAudioPingCapacity)
             {
                 ReportAudioPingOverflow();
-                return;
+                return false;
             }
 
-            EnqueueAudioPing(in info);
+            return typedQueued && EnqueueAudioPing(in info);
         }
 
+        [Obsolete("Use TryRaiseAudioPingTriggered(Vector3,float,float,float,float,ProceduralAudioPingKind) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseAudioPingTriggered(
+            Vector3 worldPosition,
+            float intensity,
+            float chirpDurationSeconds,
+            float acousticTransmission01,
+            float lowPassCutoffHz,
+            ProceduralAudioPingKind kind)
+        {
+            TryRaiseAudioPingTriggered(worldPosition, intensity, chirpDurationSeconds, acousticTransmission01, lowPassCutoffHz, kind);
+        }
+
+        public static bool TryRaiseAudioPingTriggered(
             Vector3 worldPosition,
             float intensity,
             float chirpDurationSeconds,
@@ -687,27 +705,27 @@ namespace Hecton8.Audio
                 lowPassCutoffHz,
                 kind);
             AudioEvent audioEvent = CreateAudioPingEvent(in info);
-            PublishTypedAudioEvent(in audioEvent);
+            bool typedQueued = PublishTypedAudioEvent(in audioEvent);
 
             if (_listeners.Count <= 0)
-                return;
+                return typedQueued;
 
             EnsureInitialized(allowAllocate: false);
             if (_pendingAudioPingCount + _nextFrameAudioPingCount >= PendingAudioPingCapacity)
             {
                 ReportAudioPingOverflow();
-                return;
+                return false;
             }
 
-            EnqueueAudioPing(in info);
+            return typedQueued && EnqueueAudioPing(in info);
         }
 
-        private static void EnqueueAudioPing(in AudioPingTriggerInfo info)
+        private static bool EnqueueAudioPing(in AudioPingTriggerInfo info)
         {
             if (!EnsureInitialized(allowAllocate: false))
             {
                 ReportAudioPingOverflow();
-                return;
+                return false;
             }
 
             AudioEvent audioEvent = CreateAudioPingEvent(in info);
@@ -716,70 +734,90 @@ namespace Hecton8.Audio
                 if (!TryWriteAudioEvent(_nextFrameAudioEvents, ref _nextFrameAudioEventWriteIndex, _nextFrameAudioEventCount, in audioEvent))
                 {
                     ReportAudioPingOverflow();
-                    return;
+                    return false;
                 }
 
                 _nextFrameAudioEventCount++;
                 _nextFrameAudioPingCount++;
+                return true;
             }
             else
             {
                 if (!TryWriteAudioEvent(_pendingAudioEvents, ref _pendingAudioEventWriteIndex, _pendingAudioEventCount, in audioEvent))
                 {
                     ReportAudioPingOverflow();
-                    return;
+                    return false;
                 }
 
                 _pendingAudioEventCount++;
                 _pendingAudioPingCount++;
+                return true;
             }
         }
 
         /// <summary>
         /// Queues a habitat structural stress groan notification on the main thread.
         /// </summary>
+        [Obsolete("Use TryRaiseStructuralStressTriggered(Vector3,float,float) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseStructuralStressTriggered(Vector3 worldPosition, float stress01, float pitchScale)
         {
+            TryRaiseStructuralStressTriggered(worldPosition, stress01, pitchScale);
+        }
+
+        public static bool TryRaiseStructuralStressTriggered(Vector3 worldPosition, float stress01, float pitchScale)
+        {
             StructuralStressAudioInfo info = new StructuralStressAudioInfo(worldPosition, stress01, pitchScale);
-            RaiseStructuralStressTriggered(in info);
+            return TryRaiseStructuralStressTriggered(in info);
         }
 
         /// <summary>
         /// Queues a pressure-derived hull stress signal on the main thread.
         /// </summary>
+        [Obsolete("Use TryRaiseHullStressSignal(in HullStressSignal) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseHullStressSignal(in HullStressSignal signal)
         {
+            TryRaiseHullStressSignal(in signal);
+        }
+
+        public static bool TryRaiseHullStressSignal(in HullStressSignal signal)
+        {
             StructuralStressAudioInfo info = new StructuralStressAudioInfo(in signal);
-            RaiseStructuralStressTriggered(in info);
+            return TryRaiseStructuralStressTriggered(in info);
         }
 
         /// <summary>
         /// Queues a habitat structural stress groan notification on the main thread.
         /// </summary>
+        [Obsolete("Use TryRaiseStructuralStressTriggered(in StructuralStressAudioInfo) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseStructuralStressTriggered(in StructuralStressAudioInfo info)
         {
+            TryRaiseStructuralStressTriggered(in info);
+        }
+
+        public static bool TryRaiseStructuralStressTriggered(in StructuralStressAudioInfo info)
+        {
             AudioEvent audioEvent = CreateStructuralStressEvent(in info);
-            PublishTypedAudioEvent(in audioEvent);
+            bool typedQueued = PublishTypedAudioEvent(in audioEvent);
 
             if (_listeners.Count <= 0)
-                return;
+                return typedQueued;
 
             EnsureInitialized(allowAllocate: false);
             if (_pendingStructuralStressCount + _nextFrameStructuralStressCount >= PendingStructuralStressCapacity)
             {
                 ReportStructuralStressOverflow();
-                return;
+                return false;
             }
 
-            EnqueueStructuralStress(in info);
+            return typedQueued && EnqueueStructuralStress(in info);
         }
 
-        private static void EnqueueStructuralStress(in StructuralStressAudioInfo info)
+        private static bool EnqueueStructuralStress(in StructuralStressAudioInfo info)
         {
             if (!EnsureInitialized(allowAllocate: false))
             {
                 ReportStructuralStressOverflow();
-                return;
+                return false;
             }
 
             AudioEvent audioEvent = CreateStructuralStressEvent(in info);
@@ -788,22 +826,24 @@ namespace Hecton8.Audio
                 if (!TryWriteAudioEvent(_nextFrameAudioEvents, ref _nextFrameAudioEventWriteIndex, _nextFrameAudioEventCount, in audioEvent))
                 {
                     ReportStructuralStressOverflow();
-                    return;
+                    return false;
                 }
 
                 _nextFrameAudioEventCount++;
                 _nextFrameStructuralStressCount++;
+                return true;
             }
             else
             {
                 if (!TryWriteAudioEvent(_pendingAudioEvents, ref _pendingAudioEventWriteIndex, _pendingAudioEventCount, in audioEvent))
                 {
                     ReportStructuralStressOverflow();
-                    return;
+                    return false;
                 }
 
                 _pendingAudioEventCount++;
                 _pendingStructuralStressCount++;
+                return true;
             }
         }
 
@@ -837,10 +877,10 @@ namespace Hecton8.Audio
             return AudioEvent.FromStructuralStress(in payload);
         }
 
-        private static void PublishTypedAudioEvent(in AudioEvent audioEvent)
+        private static bool PublishTypedAudioEvent(in AudioEvent audioEvent)
         {
             EnsureTypedSignalLaneConfigured();
-            SignalBus<AudioEvent>.Push(in audioEvent);
+            return SignalBus<AudioEvent>.TryPush(in audioEvent);
         }
 
         private static void EnsureTypedSignalLaneConfigured()
@@ -848,7 +888,7 @@ namespace Hecton8.Audio
             if (_typedSignalLaneConfigured)
                 return;
 
-            GlobalSignals.InitializeAllQueues();
+            SignalCorridorRuntime.EnsureInitialized();
             SignalBus<AudioEvent>.EnsureInitialized();
             _typedSignalLaneConfigured = true;
         }
@@ -858,11 +898,16 @@ namespace Hecton8.Audio
             if (_pendingAudioEvents.IsCreated && _nextFrameAudioEvents.IsCreated)
                 return true;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
+            if (vault == null && allowAllocate)
+            {
+                vault = GlobalRegistry.DataVault;
+                _dataVault = vault;
+            }
+
             if (vault == null)
                 return false;
 
-            _dataVault = vault;
             if (!IsVaultHandleCreated(in _pendingAudioEventsHandle))
             {
                 if (!allowAllocate || vault.IsAllocationLocked)
@@ -876,7 +921,7 @@ namespace Hecton8.Audio
                 }
                 else
                 {
-                    _pendingAudioEventsHandle = vault.GetGenerationHandle<AudioEvent>(
+                    _pendingAudioEventsHandle = vault.EnsureGenerationHandle<AudioEvent>(
                         PendingAudioEventsBufferId,
                         PendingAudioEventCapacity,
                         VaultOwner,
@@ -897,7 +942,7 @@ namespace Hecton8.Audio
                 }
                 else
                 {
-                    _nextFrameAudioEventsHandle = vault.GetGenerationHandle<AudioEvent>(
+                    _nextFrameAudioEventsHandle = vault.EnsureGenerationHandle<AudioEvent>(
                         NextFrameAudioEventsBufferId,
                         PendingAudioEventCapacity,
                         VaultOwner,
@@ -1312,7 +1357,7 @@ namespace Hecton8.Audio
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -1326,7 +1371,7 @@ namespace Hecton8.Audio
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

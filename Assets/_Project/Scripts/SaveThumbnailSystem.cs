@@ -8,6 +8,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Optimization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -25,6 +26,7 @@ namespace Hecton8.SaveSystem
         private const string Extension = ".jpg";
         private const string LegacyExtension = ".png";
         private const int JpegQuality = 82;
+        private const float ThumbnailCaptureQualityThreshold01 = 0.25f;
         private const int MaxCachedTextures = 12;
         private const int MaxCaptureWaitFrames = 90;
         private const int CompletionHistoryCapacity = 8;
@@ -32,8 +34,7 @@ namespace Hecton8.SaveSystem
         private const float MinPoseCaptureAngleDegrees = 5f;
         private const float MinPoseCaptureDistanceSq = MinPoseCaptureDistanceMeters * MinPoseCaptureDistanceMeters;
         private const string NativeMemoryOwner = nameof(SaveThumbnailSystem);
-        private static readonly float MinPoseCaptureQuaternionDot =
-            Mathf.Cos(MinPoseCaptureAngleDegrees * Mathf.Deg2Rad * 0.5f);
+        private const float MinPoseCaptureQuaternionDot = 0.99904823f; // cos(2.5 degrees)
 
         public enum CaptureStatus : byte
         {
@@ -557,8 +558,8 @@ namespace Hecton8.SaveSystem
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                _cachedCaptureCamera = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null
-                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera
+                _cachedCaptureCamera = GlobalRegistry.Player != null && GlobalRegistry.Player.PlayerCamera != null
+                    ? GlobalRegistry.Player.PlayerCamera
                     : ResolveCaptureCamera(playerTransform);
             }
 
@@ -835,8 +836,13 @@ namespace Hecton8.SaveSystem
 
         private static bool ShouldSkipScreenshotForCurrentTier()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+            return ResolveThumbnailCaptureQualityWeight01() < ThumbnailCaptureQualityThreshold01;
+        }
+
+        private static float ResolveThumbnailCaptureQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
         }
 
         private static uint ResolveSlotHash(string slotName, byte slotIndex)
@@ -967,7 +973,7 @@ namespace Hecton8.SaveSystem
                 Result = ToMetadataResult(completion.Status),
                 Flags = ToMetadataFlags(completion.Status)
             };
-            SignalBus<SaveMetadataReadySignal>.Push(in signal);
+            SignalBus<SaveMetadataReadySignal>.TryPush(in signal);
         }
 
         private static byte ToMetadataResult(CaptureStatus status)

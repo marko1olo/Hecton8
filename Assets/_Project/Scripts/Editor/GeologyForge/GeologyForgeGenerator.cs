@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Unity.Collections;
@@ -733,7 +734,7 @@ namespace Hecton8.Editor.GeologyForge
             List<GeologyMeshManifestRecord> manifestRecords)
         {
             string safeName = SanitizeFileName(profile.Name.ToString());
-            string stem = $"GEN_Geology_{safeName}_{seed:X8}_{variation:000}";
+            string stem = $"GEN_Geology_{safeName}_{seed:X8}_{variation.ToString("000", CultureInfo.InvariantCulture)}";
             string path0 = $"{GeologyForgeConstants.MeshOutputFolder}/{stem}_LOD0.asset";
             string path1 = $"{GeologyForgeConstants.MeshOutputFolder}/{stem}_LOD1.asset";
             string path2 = $"{GeologyForgeConstants.MeshOutputFolder}/{stem}_LOD2.asset";

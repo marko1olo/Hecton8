@@ -14,7 +14,7 @@ namespace Hecton8.UI
 
         internal static void RecordActiveUiUpdate()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (s_frame != frame)
             {
                 PublishPreviousFrame();

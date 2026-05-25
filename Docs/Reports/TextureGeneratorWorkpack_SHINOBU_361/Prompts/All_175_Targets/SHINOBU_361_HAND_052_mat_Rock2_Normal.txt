@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_052
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_052_mat_Rock2_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\mat_Rock2_Normal.png
+FINAL_FILENAME: mat_Rock2_Normal.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Heightfield source for the second Hecton rock normal map. Create clean quartz-veined basalt relief: medium stone slabs, smooth vein ridges, shallow broken edges, rounded silt pockets, and pressure-polished high points. The image must be useful as a normal source, with clear elevation logic and uniform flat generation. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

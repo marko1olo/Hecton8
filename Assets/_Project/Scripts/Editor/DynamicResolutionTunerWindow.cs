@@ -15,6 +15,7 @@ namespace Hecton8.Editor
     public sealed class DynamicResolutionTunerWindow : EditorWindow
     {
         private const int ScopeSampleCount = 300;
+        private const long MaxCsvProfileBytes = 256L * 1024L;
         private const float ScopeHeight = 150f;
         private const float ScopePadding = 6f;
 
@@ -171,7 +172,14 @@ namespace Hecton8.Editor
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return;
 
-            string csv = File.ReadAllText(path);
+            FileInfo csvFile = new FileInfo(path);
+            if (csvFile.Length > MaxCsvProfileBytes)
+            {
+                Debug.LogError($"[DynamicResolutionTuner] CSV profile is too large: {csvFile.Length} bytes.");
+                return;
+            }
+
+            string csv = File.ReadAllText(csvFile.FullName);
             adapter.TryApplyCsvProfile(csv.AsSpan());
         }
     }

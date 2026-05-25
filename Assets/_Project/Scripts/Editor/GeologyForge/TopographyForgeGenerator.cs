@@ -1491,7 +1491,7 @@ namespace Hecton8.Editor.GeologyForge
             AppendJson(builder, "rollback_excluded", true, true);
             AppendJson(builder, "critical_warning", (metrics.WarningFlags & (TopographyForgeConstants.WarningNaNHeight | TopographyForgeConstants.WarningInvalidBiomeMask)) != 0u, false);
             builder.AppendLine("}");
-            File.WriteAllText(TopographyForgeConstants.BakeReportPath, builder.ToString());
+            File.WriteAllText(TopographyForgeConstants.BakeReportPath, builder.ToString(), new UTF8Encoding(false));
         }
 
         private static void AppendJson(StringBuilder builder, string name, string value, bool comma)

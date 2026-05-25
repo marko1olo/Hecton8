@@ -10,6 +10,8 @@ namespace Hecton8.Editor.GeographySanity
 {
     public static class Runtime_Spatial_Query_Scanner
     {
+        private static readonly Encoding ReportEncoding = new UTF8Encoding(false);
+
         [MenuItem("Tools/Hecton8/World Sanity Checker/Run Runtime Spatial Query Scanner")]
         public static void RunMenu()
         {
@@ -28,20 +30,19 @@ namespace Hecton8.Editor.GeographySanity
             PendingFinding[] pending = new PendingFinding[32];
             if (Directory.Exists(scriptsRoot))
             {
-                using (IEnumerator<string> files = Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories).GetEnumerator())
+                string[] files = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
+                Array.Sort(files, StringComparer.Ordinal);
+                for (int i = 0; i < files.Length; i++)
                 {
-                    while (files.MoveNext())
-                    {
-                        string file = files.Current;
-                        string normalized = Normalize(file);
-                        if (ShouldExclude(normalized))
-                            continue;
+                    string file = files[i];
+                    string normalized = Normalize(file);
+                    if (ShouldExclude(normalized))
+                        continue;
 
-                        scannedFiles++;
-                        if (IsRequestedScope(normalized))
-                            requestedScopeFiles++;
-                        ScanFile(projectRoot, file, normalized, findings, safeSpawnLines, pending);
-                    }
+                    scannedFiles++;
+                    if (IsRequestedScope(normalized))
+                        requestedScopeFiles++;
+                    ScanFile(projectRoot, file, normalized, findings, safeSpawnLines, pending);
                 }
             }
 
@@ -51,10 +52,10 @@ namespace Hecton8.Editor.GeographySanity
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllText(agentReportPath, report, Encoding.UTF8);
+            File.WriteAllText(agentReportPath, report, ReportEncoding);
             string sharedReportPath = Path.Combine(projectRoot, GeographySanityConstants.OptimizationReportPath);
             if (CanWriteSharedReport(sharedReportPath))
-                File.WriteAllText(sharedReportPath, report, Encoding.UTF8);
+                File.WriteAllText(sharedReportPath, report, ReportEncoding);
 
             AssetDatabase.Refresh();
             return findings.Count;
@@ -67,7 +68,7 @@ namespace Hecton8.Editor.GeographySanity
 
             try
             {
-                using (StreamReader reader = new StreamReader(path))
+                using (StreamReader reader = new StreamReader(path, ReportEncoding, detectEncodingFromByteOrderMarks: true))
                 {
                     for (int i = 0; i < 16; i++)
                     {
@@ -109,7 +110,7 @@ namespace Hecton8.Editor.GeographySanity
             int lineNumber = 0;
             int safeSpawnLineCount = 0;
             int pendingCount = 0;
-            using (StreamReader reader = new StreamReader(file))
+            using (StreamReader reader = new StreamReader(file, ReportEncoding, detectEncodingFromByteOrderMarks: true))
             {
                 string rawLine;
                 while ((rawLine = reader.ReadLine()) != null)

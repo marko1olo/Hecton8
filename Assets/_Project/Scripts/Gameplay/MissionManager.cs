@@ -28,7 +28,7 @@ namespace Hecton8.Gameplay
         private readonly Dictionary<uint, MissionInstance> _activeMissions = new Dictionary<uint, MissionInstance>(MissionCacheCapacity);
         // COLD ALLOC: HashSet<uint>[32] - compatibility facade completed mission cache keyed by FNV quest hash - owner: MissionManager
         private readonly HashSet<uint> _completedMissions = new HashSet<uint>(MissionCacheCapacity);
-        private QuestManager _questManager;
+        private IQuestSystem _questManager;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
 
@@ -81,7 +81,7 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered)
             {
                 s_activeRuntime = this;
-                _questManager = QuestManager.ActiveRuntimeInstance;
+                _questManager = GlobalRegistry.QuestSystem;
             }
         }
 
@@ -106,7 +106,7 @@ namespace Hecton8.Gameplay
             if (missionHash == 0u || _completedMissions.Contains(missionHash) || _activeMissions.ContainsKey(missionHash))
                 return;
 
-            QuestManager questManager = _questManager;
+            IQuestSystem questManager = _questManager;
             if (questManager == null)
                 return;
 
@@ -120,7 +120,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(missionId) || string.IsNullOrWhiteSpace(objectiveId))
                 return;
 
-            QuestManager questManager = _questManager;
+            IQuestSystem questManager = _questManager;
             if (questManager == null || !questManager.IsActive(missionId))
                 return;
 
@@ -136,7 +136,7 @@ namespace Hecton8.Gameplay
             if (missionHash == 0u)
                 return null;
 
-            QuestManager questManager = _questManager;
+            IQuestSystem questManager = _questManager;
             if (questManager != null && questManager.IsActive(missionId))
                 return EnsureActiveInstance(missionHash, missionId);
 
@@ -161,7 +161,7 @@ namespace Hecton8.Gameplay
             if (_completedMissions.Contains(missionHash))
                 return true;
 
-            QuestManager questManager = _questManager;
+            IQuestSystem questManager = _questManager;
             return questManager != null && questManager.IsCompleted(missionId);
         }
 
@@ -170,8 +170,9 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.QuestRuntime)
-                _questManager = currentService as QuestManager;
+            if (serviceSlot == GlobalRegistryServiceSlot.QuestRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.QuestSystem)
+                _questManager = currentService as IQuestSystem;
         }
 
         private void TryRegisterHotSwapListener()

@@ -109,7 +109,7 @@ namespace Hecton8.Editor
         {
             if (_runtime == null)
             {
-                _runtime = Object.FindFirstObjectByType<VehicleComponentDamageRuntime>();
+                _runtime = Object.FindAnyObjectByType<VehicleComponentDamageRuntime>();
                 _serializedRuntime = _runtime != null ? new SerializedObject(_runtime) : null;
                 PullSerializedValues();
             }
@@ -123,7 +123,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            int runtimeId = _runtime.GetInstanceID();
+            int runtimeId = _runtime.GetEntityId().GetHashCode();
             if (runtimeId != _lastRuntimeInstanceId)
             {
                 _statusLabel.text = "Runtime: " + _runtime.name;
@@ -164,7 +164,7 @@ namespace Hecton8.Editor
         private void ApplyFloat(string propertyName, float value)
         {
             if (_runtime == null)
-                _runtime = Object.FindFirstObjectByType<VehicleComponentDamageRuntime>();
+                _runtime = Object.FindAnyObjectByType<VehicleComponentDamageRuntime>();
             if (_runtime == null)
                 return;
 

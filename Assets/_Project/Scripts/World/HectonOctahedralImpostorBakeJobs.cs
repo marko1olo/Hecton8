@@ -51,14 +51,21 @@ namespace Hecton8.World
                 record.CameraPosition = cameraPosition;
                 record.CameraDistance = cameraDistance;
                 record.ViewMatrix = float4x4.LookAt(cameraPosition, safeCenter, up);
-                record.ProjectionMatrix = float4x4.Ortho(
-                    -orthoSize,
-                    orthoSize,
-                    -orthoSize,
-                    orthoSize,
-                    safeNearClip,
-                    farClip);
+                record.ProjectionMatrix = CreateSymmetricOrthoProjection(orthoSize, safeNearClip, farClip);
             }
+        }
+
+        private static float4x4 CreateSymmetricOrthoProjection(float halfExtent, float nearClip, float farClip)
+        {
+            float safeHalfExtent = math.max(0.001f, halfExtent);
+            float safeDepth = math.max(0.001f, farClip - nearClip);
+            float zScale = -2f / safeDepth;
+            float zOffset = -(farClip + nearClip) / safeDepth;
+            return new float4x4(
+                new float4(1f / safeHalfExtent, 0f, 0f, 0f),
+                new float4(0f, 1f / safeHalfExtent, 0f, 0f),
+                new float4(0f, 0f, zScale, 0f),
+                new float4(0f, 0f, zOffset, 1f));
         }
 
         private static float3 ResolveFibonacciDirection(int index, int count, byte hemisphereOnly)
@@ -70,9 +77,7 @@ namespace Hecton8.World
                 : 1f - 2f * t;
             float radius = math.sqrt(math.max(0f, 1f - y * y));
             float theta = index * 2.39996323f;
-            float s;
-            float c;
-            math.sincos(theta, out s, out c);
+            Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(theta, out float s, out float c);
             float3 direction = new float3(c * radius, y, s * radius);
             float lenSq = math.lengthsq(direction);
             float invLen = math.rsqrt(math.max(lenSq, 0.000001f));
@@ -105,7 +110,7 @@ namespace Hecton8.World
             float v = (((hash >> 10) & 1023u) + 0.5f) * (1f / 1024f);
             float w = (((hash >> 20) & 1023u) + 0.5f) * (1f / 1024f);
             float3 p = new float3(u * 2f - 1f, v * 2f - 1f, w * 2f - 1f);
-            float twist = math.sin((p.x + p.z + index * 0.0137f) * math.lerp(4f, 19f, q));
+            float twist = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((p.x + p.z + index * 0.0137f) * math.lerp(4f, 19f, q));
             float bulge = 0.62f + 0.28f * twist;
             float3 shaped = new float3(p.x * bulge, p.y * (0.45f + 0.2f * q), p.z * (1.0f - 0.2f * twist));
             float3 safeShaped = math.select(new float3(0f, 1f, 0f), shaped, math.isfinite(shaped));

@@ -107,7 +107,7 @@ namespace Hecton8.EditorTools
             if (!vault.TryGetGenerationHandle(BufferID.JacobianFoamTuning, out VaultGenerationHandle<FoamTuningDTO> handle) ||
                 !IsHandleCreated(in handle, BufferID.JacobianFoamTuning))
             {
-                handle = vault.GetGenerationHandle<FoamTuningDTO>(
+                handle = vault.EnsureGenerationHandle<FoamTuningDTO>(
                     BufferID.JacobianFoamTuning,
                     1,
                     SystemID.Vfx,

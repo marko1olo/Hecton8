@@ -326,7 +326,7 @@ namespace Hecton8.EditorTools
                 return false;
 
             string normalizedPath = assetPath.Replace('\\', '/');
-            return normalizedPath.Contains("/WorldProceduralFlora/Imported/");
+            return normalizedPath.IndexOf("/WorldProceduralFlora/Imported/", System.StringComparison.Ordinal) >= 0;
         }
 
         private static bool ApplyCoralMaterial(

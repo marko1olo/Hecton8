@@ -3,10 +3,15 @@ using Unity.Collections;
 
 namespace Hecton8.Core
 {
+    internal static class PowerGridRuntimeLayout
+    {
+        internal const int BatterySnapshotStrideBytes = 16;
+    }
+
     /// <summary>
     /// Aggregate storage snapshot published by the global power runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = PowerGridRuntimeLayout.BatterySnapshotStrideBytes)]
     public struct BatteryRuntimeSnapshot
     {
         /// <summary>Total committed stored energy across all runtime banks.</summary>

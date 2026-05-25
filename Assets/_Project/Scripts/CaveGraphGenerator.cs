@@ -43,6 +43,7 @@
 using Unity.Collections;
 using Unity.Mathematics;
 using Hecton8.Caves;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 /// <summary>
@@ -69,6 +70,9 @@ public static class CaveGraphGenerator
 
     /// <summary>Maximum entrances.</summary>
     const int MAX_ENTRANCES = 8;
+
+    /// <summary>Maximum structures kept in stack scratch. Authored presets are far below this; custom presets fail closed by truncation.</summary>
+    const int MAX_STRUCTURES = 128;
 
     /// <summary>Minimum distance between room centers as fraction of combined radii.
     /// Prevents rooms from overlapping so much they merge into a blob.</summary>
@@ -119,28 +123,25 @@ public static class CaveGraphGenerator
         if (preset == null)
             return false;
 
-        GenerateAllocated(
+        System.Span<CaveNode> rooms = stackalloc CaveNode[MAX_ROOMS];
+        System.Span<CaveTunnel> tunnels = stackalloc CaveTunnel[MAX_TUNNELS];
+        System.Span<CaveEntrance> entrances = stackalloc CaveEntrance[MAX_ENTRANCES];
+        System.Span<CaveStructure> structures = stackalloc CaveStructure[MAX_STRUCTURES];
+        System.Span<int> branchIndices = stackalloc int[MAX_ROOMS];
+        System.Span<byte> usedRooms = stackalloc byte[MAX_ROOMS];
+        return GenerateIntoScratch(
             seed,
             preset,
             worldCenter,
             terrainHeightAtCenter,
             volumeHalfExtent,
-            out NativeArray<CaveNode> nodes,
-            out NativeArray<CaveTunnel> tunnels,
-            out NativeArray<CaveEntrance> entrances,
-            out NativeArray<CaveStructure> structures,
-            Allocator.Temp);
-
-        counts = new CaveGraphCounts
-        {
-            Nodes = nodes.Length,
-            Tunnels = tunnels.Length,
-            Entrances = entrances.Length,
-            Structures = structures.Length
-        };
-
-        DisposeGeneratedArrays(ref nodes, ref tunnels, ref entrances, ref structures);
-        return true;
+            rooms,
+            tunnels,
+            entrances,
+            structures,
+            branchIndices,
+            usedRooms,
+            out counts);
     }
 
     public static bool TryFill(
@@ -159,25 +160,29 @@ public static class CaveGraphGenerator
         if (preset == null)
             return false;
 
-        GenerateAllocated(
+        System.Span<CaveNode> generatedNodes = stackalloc CaveNode[MAX_ROOMS];
+        System.Span<CaveTunnel> generatedTunnels = stackalloc CaveTunnel[MAX_TUNNELS];
+        System.Span<CaveEntrance> generatedEntrances = stackalloc CaveEntrance[MAX_ENTRANCES];
+        System.Span<CaveStructure> generatedStructures = stackalloc CaveStructure[MAX_STRUCTURES];
+        System.Span<int> branchIndices = stackalloc int[MAX_ROOMS];
+        System.Span<byte> usedRooms = stackalloc byte[MAX_ROOMS];
+
+        if (!GenerateIntoScratch(
             seed,
             preset,
             worldCenter,
             terrainHeightAtCenter,
             volumeHalfExtent,
-            out NativeArray<CaveNode> generatedNodes,
-            out NativeArray<CaveTunnel> generatedTunnels,
-            out NativeArray<CaveEntrance> generatedEntrances,
-            out NativeArray<CaveStructure> generatedStructures,
-            Allocator.Temp);
-
-        counts = new CaveGraphCounts
+            generatedNodes,
+            generatedTunnels,
+            generatedEntrances,
+            generatedStructures,
+            branchIndices,
+            usedRooms,
+            out counts))
         {
-            Nodes = generatedNodes.Length,
-            Tunnels = generatedTunnels.Length,
-            Entrances = generatedEntrances.Length,
-            Structures = generatedStructures.Length
-        };
+            return false;
+        }
 
         bool hasCapacity =
             HasCapacity(nodes, counts.Nodes) &&
@@ -187,13 +192,12 @@ public static class CaveGraphGenerator
 
         if (hasCapacity)
         {
-            CopyArray(generatedNodes, nodes);
-            CopyArray(generatedTunnels, tunnels);
-            CopyArray(generatedEntrances, entrances);
-            CopyArray(generatedStructures, structures);
+            CopySpan(generatedNodes.Slice(0, counts.Nodes), nodes);
+            CopySpan(generatedTunnels.Slice(0, counts.Tunnels), tunnels);
+            CopySpan(generatedEntrances.Slice(0, counts.Entrances), entrances);
+            CopySpan(generatedStructures.Slice(0, counts.Structures), structures);
         }
 
-        DisposeGeneratedArrays(ref generatedNodes, ref generatedTunnels, ref generatedEntrances, ref generatedStructures);
         return hasCapacity;
     }
 
@@ -202,40 +206,38 @@ public static class CaveGraphGenerator
         return requiredLength <= 0 || (destination.IsCreated && destination.Length >= requiredLength);
     }
 
-    private static void CopyArray<T>(NativeArray<T> source, NativeArray<T> destination) where T : unmanaged
+    private static void CopySpan<T>(System.ReadOnlySpan<T> source, NativeArray<T> destination) where T : struct
     {
         for (int i = 0; i < source.Length; i++)
             destination[i] = source[i];
     }
 
-    private static void DisposeGeneratedArrays(
-        ref NativeArray<CaveNode> nodes,
-        ref NativeArray<CaveTunnel> tunnels,
-        ref NativeArray<CaveEntrance> entrances,
-        ref NativeArray<CaveStructure> structures)
-    {
-        if (nodes.IsCreated)
-            nodes.Dispose();
-        if (tunnels.IsCreated)
-            tunnels.Dispose();
-        if (entrances.IsCreated)
-            entrances.Dispose();
-        if (structures.IsCreated)
-            structures.Dispose();
-    }
-
-    private static void GenerateAllocated(
+    private static bool GenerateIntoScratch(
         uint seed,
         CavePreset preset,
         float3 worldCenter,
         float terrainHeightAtCenter,
         float volumeHalfExtent,
-        out NativeArray<CaveNode> nodes,
-        out NativeArray<CaveTunnel> tunnels,
-        out NativeArray<CaveEntrance> entrances,
-        out NativeArray<CaveStructure> structures,
-        Allocator allocator)
+        System.Span<CaveNode> rooms,
+        System.Span<CaveTunnel> tunnels,
+        System.Span<CaveEntrance> entrances,
+        System.Span<CaveStructure> structures,
+        System.Span<int> branchIndices,
+        System.Span<byte> usedRooms,
+        out CaveGraphCounts counts)
     {
+        counts = default;
+        if (preset == null ||
+            rooms.Length < MAX_ROOMS ||
+            tunnels.Length < MAX_TUNNELS ||
+            entrances.Length < MAX_ENTRANCES ||
+            structures.Length < MAX_STRUCTURES ||
+            branchIndices.Length < MAX_ROOMS ||
+            usedRooms.Length < MAX_ROOMS)
+        {
+            return false;
+        }
+
         var rng = new Random(seed != 0 ? seed : 1u);
 
         int roomCount = rng.NextInt(preset.minRooms, preset.maxRooms + 1);
@@ -255,57 +257,62 @@ public static class CaveGraphGenerator
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             UnityEngine.Debug.LogWarning(
-                $"[CaveGraph] Terrain height ({terrainHeightAtCenter:F1}m) is above " +
-                $"volume top ({volumeTopY:F1}m). Entrances may be clipped. " +
-                $"Consider raising worldCenter.y or increasing gridDimension.");
+                "[CaveGraph] Terrain height (" + terrainHeightAtCenter.ToString("F1", CultureInfo.InvariantCulture) + "m) is above " +
+                "volume top (" + volumeTopY.ToString("F1", CultureInfo.InvariantCulture) + "m). Entrances may be clipped. " +
+                "Consider raising worldCenter.y or increasing gridDimension.");
 #endif
         }
 
-        // Phase 1
-        var roomList = new NativeList<CaveNode>(roomCount, Allocator.Temp);
-        PlaceRooms(ref rng, preset, worldCenter, terrainHeightAtCenter,
-                   volumeHalfExtent, roomCount, dynamicMargin, ref roomList);
+        int actualRoomCount = PlaceRooms(
+            ref rng,
+            preset,
+            worldCenter,
+            terrainHeightAtCenter,
+            volumeHalfExtent,
+            roomCount,
+            dynamicMargin,
+            rooms,
+            branchIndices);
 
-        int actualRoomCount = roomList.Length;
+        int actualTunnelCount = GenerateTunnels(
+            ref rng,
+            preset,
+            rooms.Slice(0, actualRoomCount),
+            tunnels);
 
-        // Phase 2
-        var tunnelList = new NativeList<CaveTunnel>(actualRoomCount * 2, Allocator.Temp);
-        GenerateTunnels(ref rng, preset, roomList, ref tunnelList);
+        int actualEntranceCount = GenerateEntrances(
+            ref rng,
+            preset,
+            worldCenter,
+            terrainHeightAtCenter,
+            volumeHalfExtent,
+            dynamicMargin,
+            rooms.Slice(0, actualRoomCount),
+            usedRooms,
+            entrances);
 
-        // Phase 3
-        var entranceList = new NativeList<CaveEntrance>(preset.maxEntrances, Allocator.Temp);
-        GenerateEntrances(ref rng, preset, worldCenter, terrainHeightAtCenter,
-                          volumeHalfExtent, dynamicMargin, roomList, ref entranceList);
-
-        // Phase 4: Generate interior structures
-        var structureList = new NativeList<CaveStructure>(preset.maxStructures, Allocator.Temp);
+        int actualStructureCount = 0;
         if (preset.enableStructures && preset.maxStructures > 0)
         {
-            GenerateStructures(ref rng, preset, worldCenter, terrainHeightAtCenter,
-                               volumeHalfExtent, roomList, tunnelList, ref structureList);
+            actualStructureCount = GenerateStructures(
+                ref rng,
+                preset,
+                worldCenter,
+                terrainHeightAtCenter,
+                volumeHalfExtent,
+                rooms.Slice(0, actualRoomCount),
+                tunnels.Slice(0, actualTunnelCount),
+                structures);
         }
 
-        // Phase 5: Copy to output
-        nodes = new NativeArray<CaveNode>(roomList.Length, allocator, NativeArrayOptions.ClearMemory);
-        for (int i = 0; i < roomList.Length; i++)
-            nodes[i] = roomList[i];
-
-        tunnels = new NativeArray<CaveTunnel>(tunnelList.Length, allocator, NativeArrayOptions.ClearMemory);
-        for (int i = 0; i < tunnelList.Length; i++)
-            tunnels[i] = tunnelList[i];
-
-        entrances = new NativeArray<CaveEntrance>(entranceList.Length, allocator, NativeArrayOptions.ClearMemory);
-        for (int i = 0; i < entranceList.Length; i++)
-            entrances[i] = entranceList[i];
-
-        structures = new NativeArray<CaveStructure>(structureList.Length, allocator, NativeArrayOptions.ClearMemory);
-        for (int i = 0; i < structureList.Length; i++)
-            structures[i] = structureList[i];
-
-        roomList.Dispose();
-        tunnelList.Dispose();
-        entranceList.Dispose();
-        structureList.Dispose();
+        counts = new CaveGraphCounts
+        {
+            Nodes = actualRoomCount,
+            Tunnels = actualTunnelCount,
+            Entrances = actualEntranceCount,
+            Structures = actualStructureCount
+        };
+        return true;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -323,7 +330,7 @@ public static class CaveGraphGenerator
     /// 5. All rooms clamped to stay within volume bounds and below terrain.
     /// 6. Rooms that would overlap existing rooms too much are retried or skipped.
     /// </summary>
-    static void PlaceRooms(
+    static int PlaceRooms(
         ref Random rng,
         CavePreset preset,
         float3 worldCenter,
@@ -331,7 +338,8 @@ public static class CaveGraphGenerator
         float volumeHalfExtent,
         int targetCount,
         float edgeMargin,        // v4.1: dynamic margin
-        ref NativeList<CaveNode> roomList)
+        System.Span<CaveNode> rooms,
+        System.Span<int> branchIndices)
     {
         float3 volumeMin = worldCenter - volumeHalfExtent;
         float3 volumeMax = worldCenter + volumeHalfExtent;
@@ -348,10 +356,10 @@ public static class CaveGraphGenerator
         firstPos = ClampToVolume(firstPos, volumeMin, volumeMax, edgeMargin);
 
         CaveNode firstRoom = CreateRoom(ref rng, preset, firstPos);
-        roomList.Add(firstRoom);
+        rooms[0] = firstRoom;
+        int roomCount = 1;
 
         int branchPointCount = 0;
-        var branchIndices = new NativeArray<int>(MAX_ROOMS, Allocator.Temp, NativeArrayOptions.ClearMemory);
 
         float3 currentPos = firstPos;
         int currentRoomIdx = 0;
@@ -366,15 +374,15 @@ public static class CaveGraphGenerator
                 if (branchPointCount > 0 && rng.NextFloat() < 0.25f)
                 {
                     int branchIdx = branchIndices[rng.NextInt(0, branchPointCount)];
-                    originPos = roomList[branchIdx].position;
+                    originPos = rooms[branchIdx].position;
                 }
 
                 float3 dir = rng.NextFloat3Direction();
                 dir.y = math.lerp(dir.y, -math.abs(dir.y), preset.verticalSpread);
                 dir = math.normalizesafe(dir, new float3(0, -1, 0));
 
-                float prevRadius = (roomList.Length > 0)
-                    ? math.cmax(roomList[roomList.Length - 1].radii)
+                float prevRadius = roomCount > 0
+                    ? math.cmax(rooms[roomCount - 1].radii)
                     : preset.minRoomRadius;
                 float nextRadiusEstimate = rng.NextFloat(preset.minRoomRadius, preset.maxRoomRadius);
                 float stepDist = (prevRadius + nextRadiusEstimate) * rng.NextFloat(0.8f, 1.6f);
@@ -394,14 +402,18 @@ public static class CaveGraphGenerator
                 minY = math.max(minY, volumeMin.y + roomMargin);
                 candidatePos.y = math.max(candidatePos.y, minY);
 
-                if (IsRoomTooClose(candidatePos, nextRadiusEstimate, roomList))
+                if (IsRoomTooClose(candidatePos, nextRadiusEstimate, rooms.Slice(0, roomCount)))
                     continue;
 
                 CaveNode room = CreateRoom(ref rng, preset, candidatePos);
-                roomList.Add(room);
+                if (roomCount >= rooms.Length)
+                    return roomCount;
+
+                rooms[roomCount] = room;
 
                 currentPos = candidatePos;
-                currentRoomIdx = roomList.Length - 1;
+                currentRoomIdx = roomCount;
+                roomCount++;
 
                 if (rng.NextFloat() < 0.35f)
                 {
@@ -417,7 +429,7 @@ public static class CaveGraphGenerator
             }
         }
 
-        branchIndices.Dispose();
+        return roomCount;
     }
 
     /// <summary>
@@ -529,22 +541,27 @@ public static class CaveGraphGenerator
     /// 2. Extra connections between nearby non-adjacent rooms create loops.
     /// 3. Tunnel properties (radius, cross-section, warp) randomized per preset.
     /// </summary>
-    static void GenerateTunnels(
+    static int GenerateTunnels(
         ref Random rng,
         CavePreset preset,
-        NativeList<CaveNode> rooms,
-        ref NativeList<CaveTunnel> tunnelList)
+        System.ReadOnlySpan<CaveNode> rooms,
+        System.Span<CaveTunnel> tunnels)
     {
         int roomCount = rooms.Length;
-        if (roomCount < 2) return;
+        if (roomCount < 2)
+            return 0;
+
+        int tunnelCount = 0;
 
         // ── Phase 2a: Sequential connections (guaranteed connectivity) ──
         for (int i = 0; i < roomCount - 1; i++)
         {
             CaveTunnel tunnel = CreateTunnel(ref rng, preset, rooms[i], rooms[i + 1]);
-            tunnelList.Add(tunnel);
+            tunnels[tunnelCount] = tunnel;
+            tunnelCount++;
 
-            if (tunnelList.Length >= MAX_TUNNELS) return;
+            if (tunnelCount >= tunnels.Length)
+                return tunnelCount;
         }
 
         // ── Phase 2b: Extra connections (loops) ──
@@ -553,7 +570,8 @@ public static class CaveGraphGenerator
         {
             for (int j = i + 2; j < roomCount; j++)
             {
-                if (tunnelList.Length >= MAX_TUNNELS) return;
+                if (tunnelCount >= tunnels.Length)
+                    return tunnelCount;
 
                 // Skip if rooms are too far apart. These are local generator coordinates, not Transform authority.
                 float3 roomDelta = rooms[i].position - rooms[j].position;
@@ -567,9 +585,12 @@ public static class CaveGraphGenerator
                 if (rng.NextFloat() >= preset.extraConnectionChance) continue;
 
                 CaveTunnel extraTunnel = CreateTunnel(ref rng, preset, rooms[i], rooms[j]);
-                tunnelList.Add(extraTunnel);
+                tunnels[tunnelCount] = extraTunnel;
+                tunnelCount++;
             }
         }
+
+        return tunnelCount;
     }
 
     /// <summary>
@@ -645,27 +666,31 @@ public static class CaveGraphGenerator
     /// 3. Create a conic capsule from surface point inward.
     /// 4. Avoid placing multiple entrances near the same room.
     /// </summary>
-    static void GenerateEntrances(
+    static int GenerateEntrances(
         ref Random rng,
         CavePreset preset,
         float3 worldCenter,
         float terrainHeight,
         float volumeHalfExtent,
         float edgeMargin,         // v4.1
-        NativeList<CaveNode> rooms,
-        ref NativeList<CaveEntrance> entranceList)
+        System.ReadOnlySpan<CaveNode> rooms,
+        System.Span<byte> usedRooms,
+        System.Span<CaveEntrance> entrances)
     {
-        if (rooms.Length == 0) return;
+        if (rooms.Length == 0)
+            return 0;
 
         int entranceCount = rng.NextInt(preset.minEntrances, preset.maxEntrances + 1);
         entranceCount = math.min(entranceCount, rooms.Length);
-        entranceCount = math.min(entranceCount, MAX_ENTRANCES);
+        entranceCount = math.min(entranceCount, entrances.Length);
 
         // v4.1: Check that terrain surface is reachable from volume
         float volumeTopY = worldCenter.y + volumeHalfExtent;
 
-        var usedRooms = new NativeArray<byte>(rooms.Length, Allocator.Temp, NativeArrayOptions.ClearMemory);
+        for (int r = 0; r < rooms.Length; r++)
+            usedRooms[r] = 0;
 
+        int writtenCount = 0;
         for (int e = 0; e < entranceCount; e++)
         {
             int bestRoom = -1;
@@ -732,17 +757,18 @@ public static class CaveGraphGenerator
 
             float innerRadius = radius * rng.NextFloat(0.4f, 0.7f);
 
-            entranceList.Add(new CaveEntrance
+            entrances[writtenCount] = new CaveEntrance
             {
                 surfacePosition = surfacePos,
                 inwardDirection = inward,
                 radius          = radius,
                 funnelLength    = funnelLen,
                 innerRadius     = innerRadius
-            });
+            };
+            writtenCount++;
         }
 
-        usedRooms.Dispose();
+        return writtenCount;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -762,7 +788,7 @@ public static class CaveGraphGenerator
     /// "Too close" = centers closer than MIN_SEPARATION_FACTOR × combined max radii.
     /// </summary>
     static bool IsRoomTooClose(float3 candidatePos, float candidateRadius,
-                                NativeList<CaveNode> existingRooms)
+                                System.ReadOnlySpan<CaveNode> existingRooms)
     {
         for (int i = 0; i < existingRooms.Length; i++)
         {
@@ -845,7 +871,7 @@ public static class CaveGraphGenerator
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
-                    $"[CaveGraph] Tunnel {i} is degenerate (length = {tunnelLen:F2})");
+                    "[CaveGraph] Tunnel " + i + " is degenerate (length = " + tunnelLen.ToString("F2", CultureInfo.InvariantCulture) + ")");
 #endif
                 valid = false;
             }
@@ -859,7 +885,7 @@ public static class CaveGraphGenerator
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
-                    $"[CaveGraph] Entrance {i} inwardDirection is not normalized (length = {dirLen:F3})");
+                    "[CaveGraph] Entrance " + i + " inwardDirection is not normalized (length = " + dirLen.ToString("F3", CultureInfo.InvariantCulture) + ")");
 #endif
                 valid = false;
             }
@@ -877,7 +903,7 @@ public static class CaveGraphGenerator
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (valid)
         {
-            UnityEngine.Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 $"[CaveGraph] Validation PASSED: {nodes.Length} rooms, " +
                 $"{tunnels.Length} tunnels, {entrances.Length} entrances");
         }
@@ -932,11 +958,12 @@ public static class CaveGraphGenerator
 
         float depth = maxY - minY;
 
-        return $"[CaveGraph] {nodes.Length} rooms " +
-               $"(S:{spheres} E:{ellipsoids} V:{shafts} H:{halls} C:{crevices}) | " +
-               $"{tunnels.Length} tunnels (R:{roundT} T:{tallT} W:{wideT}) | " +
-               $"{entrances.Length} entrances | " +
-               $"Depth span: {depth:F0}m | Max radius: {maxRadius:F1}m";
+        return "[CaveGraph] " + nodes.Length + " rooms " +
+               "(S:" + spheres + " E:" + ellipsoids + " V:" + shafts + " H:" + halls + " C:" + crevices + ") | " +
+               tunnels.Length + " tunnels (R:" + roundT + " T:" + tallT + " W:" + wideT + ") | " +
+               entrances.Length + " entrances | " +
+               "Depth span: " + depth.ToString("F0", CultureInfo.InvariantCulture) +
+               "m | Max radius: " + maxRadius.ToString("F1", CultureInfo.InvariantCulture) + "m";
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -954,22 +981,23 @@ public static class CaveGraphGenerator
     /// 4. Columns span floor to ceiling.
     /// 5. Structures avoid overlapping entrances and tunnels.
     /// </summary>
-    static void GenerateStructures(
+    static int GenerateStructures(
         ref Random rng,
         CavePreset preset,
         float3 worldCenter,
         float terrainHeight,
         float volumeHalfExtent,
-        NativeList<CaveNode> rooms,
-        NativeList<CaveTunnel> tunnels,
-        ref NativeList<CaveStructure> structures)
+        System.ReadOnlySpan<CaveNode> rooms,
+        System.ReadOnlySpan<CaveTunnel> tunnels,
+        System.Span<CaveStructure> structures)
     {
         if (preset.allowedStructureTypes == null || preset.allowedStructureTypes.Length == 0 || rooms.Length == 0)
-            return;
+            return 0;
 
         int targetCount = (int)(preset.maxStructures * preset.structureDensity);
-        targetCount = math.clamp(targetCount, 0, preset.maxStructures);
+        targetCount = math.clamp(targetCount, 0, math.min(preset.maxStructures, structures.Length));
 
+        int structureCount = 0;
         for (int i = 0; i < targetCount; i++)
         {
             int roomIdx = rng.NextInt(0, rooms.Length);
@@ -979,11 +1007,19 @@ public static class CaveGraphGenerator
 
             CaveStructure structure = CreateStructure(ref rng, type, room, worldCenter, volumeHalfExtent);
             if (!IsStructureBlocked(structure, tunnels))
-                structures.Add(structure);
+            {
+                if (structureCount >= structures.Length)
+                    break;
+
+                structures[structureCount] = structure;
+                structureCount++;
+            }
         }
 
         if (preset.presetType == CavePresetType.Abyss || preset.presetType == CavePresetType.Mega)
-            AddAbyssalArchways(ref rng, preset, worldCenter, terrainHeight, volumeHalfExtent, rooms, tunnels, ref structures);
+            AddAbyssalArchways(ref rng, preset, worldCenter, terrainHeight, volumeHalfExtent, rooms, tunnels, structures, ref structureCount);
+
+        return structureCount;
     }
 
     /// <summary>
@@ -1117,12 +1153,17 @@ public static class CaveGraphGenerator
         float3 worldCenter,
         float terrainHeight,
         float volumeHalfExtent,
-        NativeList<CaveNode> rooms,
-        NativeList<CaveTunnel> tunnels,
-        ref NativeList<CaveStructure> structures)
+        System.ReadOnlySpan<CaveNode> rooms,
+        System.ReadOnlySpan<CaveTunnel> tunnels,
+        System.Span<CaveStructure> structures,
+        ref int structureCount)
     {
-        if (structures.Length >= preset.maxStructures || rooms.Length == 0)
+        if (structureCount >= structures.Length ||
+            structureCount >= preset.maxStructures ||
+            rooms.Length == 0)
+        {
             return;
+        }
 
         int deepestRoomIndex = 0;
         float deepestY = rooms[0].position.y;
@@ -1136,7 +1177,9 @@ public static class CaveGraphGenerator
         }
 
         CaveNode anchorRoom = rooms[deepestRoomIndex];
-        int archCount = math.min(preset.maxStructures - structures.Length, preset.presetType == CavePresetType.Abyss ? 2 : 1);
+        int archCount = math.min(
+            math.min(preset.maxStructures, structures.Length) - structureCount,
+            preset.presetType == CavePresetType.Abyss ? 2 : 1);
         float3 volumeMin = worldCenter - volumeHalfExtent + 4f;
         float3 volumeMax = worldCenter + volumeHalfExtent - 4f;
 
@@ -1166,7 +1209,13 @@ public static class CaveGraphGenerator
             };
 
             if (!IsStructureBlocked(arch, tunnels))
-                structures.Add(arch);
+            {
+                if (structureCount >= structures.Length)
+                    return;
+
+                structures[structureCount] = arch;
+                structureCount++;
+            }
         }
     }
 
@@ -1174,7 +1223,7 @@ public static class CaveGraphGenerator
     /// Checks if a structure would be blocked by tunnels or entrances.
     /// Returns true if the structure should be skipped.
     /// </summary>
-    static bool IsStructureBlocked(CaveStructure structure, NativeList<CaveTunnel> tunnels)
+    static bool IsStructureBlocked(CaveStructure structure, System.ReadOnlySpan<CaveTunnel> tunnels)
     {
         // Simple check: if structure position is too close to any tunnel
         for (int i = 0; i < tunnels.Length; i++)

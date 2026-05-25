@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core.Memory;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
@@ -255,8 +256,7 @@ namespace Hecton8.EditorTools
 
             fixed (byte* ptr = bytes)
             {
-                uint2 hash = xxHash3.Hash64(ptr + offset, length);
-                return ((ulong)hash.y << 32) | hash.x;
+                return MemorySentinelMath.ComputeXXHash3Full64(new ReadOnlySpan<byte>(ptr + offset, length));
             }
         }
     }

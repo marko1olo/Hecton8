@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -34,8 +35,10 @@ namespace Hecton8.Narrative.Prologue
         private const uint FaultHash = 0x46414C54u; // FALT
         private const uint DumpFailedHash = 0x444D5046u; // DMPF
         private const string DumpFileName = "Dump_PROLOGUE_SEQUENCE_DIRECTOR.bin";
+        private const SystemID OwnerSystemId = SystemID.PrologueSequence;
 
-        private NativeArray<PrologueSequenceTelemetryEntry> _blackBox;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<PrologueSequenceTelemetryEntry> _blackBoxHandle;
         private IPrologueSequenceRuntime _runtime;
         private PrologueStage _stage;
         private int _blackBoxCursor;
@@ -176,13 +179,7 @@ namespace Hecton8.Narrative.Prologue
             }
 
             _disposed = true;
-            if (_blackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                _blackBox.Dispose();
-                _blackBox = default;
-                _blackBoxCursor = 0;
-            }
+            ReleaseBlackBox();
         }
 
         private async Awaitable<bool> AwaitAtmosphericReentryAsync(CancellationToken cancellationToken)
@@ -442,36 +439,59 @@ namespace Hecton8.Narrative.Prologue
 
         private void EnsureBlackBox()
         {
-            if (_blackBox.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
                 return;
 
-            _blackBox = new NativeArray<PrologueSequenceTelemetryEntry>(
+            if (IsVaultHandleCreated(in _blackBoxHandle) &&
+                vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<PrologueSequenceTelemetryEntry>.ReadOnly buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= TelemetryCapacity)
+            {
+                return;
+            }
+
+            _blackBoxHandle = vault.EnsureGenerationHandle<PrologueSequenceTelemetryEntry>(
+                BufferID.PrologueSequenceTelemetryRing,
                 TelemetryCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PrologueSequenceTelemetryEntry>[300] - prologue sequence black-box ring - owner: AwaitableDropSequenceDirector
-            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(AwaitableDropSequenceDirector), nameof(_blackBox), NativeAllocationLifetime.Scene);
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
         }
 
         private void RecordStage(PrologueStage stage, uint stateHash, byte flags)
         {
             _stage = stage;
 
-            if (_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault != null &&
+                IsVaultHandleCreated(in _blackBoxHandle) &&
+                vault.TryAcquireWriteLock(in _blackBoxHandle, OwnerSystemId, out NativeArray<PrologueSequenceTelemetryEntry> blackBox))
             {
-                PrologueSequenceTelemetryEntry entry = default;
-                entry.Frame = _runtime != null ? _runtime.CurrentFrame : 0u;
-                entry.StateHash = stateHash;
-                entry.Stage = (byte)stage;
-                entry.Flags = flags;
-                entry.Sequence = _lastComplete.Sequence != 0 ? _lastComplete.Sequence : _lastAtmosphericReentry.Sequence;
-                if (_hasLastOrbitalSnapshot)
+                try
                 {
-                    entry.UniverseSpeedMetersPerSecond = ResolveTelemetrySpeedMetersPerSecond();
-                    entry.PlanetDistanceMeters = _lastOrbital.PlanetDistanceMeters;
-                }
+                    if (!blackBox.IsCreated || blackBox.Length < TelemetryCapacity)
+                        return;
 
-                _blackBox[_blackBoxCursor] = entry;
-                _blackBoxCursor = (_blackBoxCursor + 1) % _blackBox.Length;
+                    PrologueSequenceTelemetryEntry entry = default;
+                    entry.Frame = _runtime != null ? _runtime.CurrentFrame : 0u;
+                    entry.StateHash = stateHash;
+                    entry.Stage = (byte)stage;
+                    entry.Flags = flags;
+                    entry.Sequence = _lastComplete.Sequence != 0 ? _lastComplete.Sequence : _lastAtmosphericReentry.Sequence;
+                    if (_hasLastOrbitalSnapshot)
+                    {
+                        entry.UniverseSpeedMetersPerSecond = ResolveTelemetrySpeedMetersPerSecond();
+                        entry.PlanetDistanceMeters = _lastOrbital.PlanetDistanceMeters;
+                    }
+
+                    int index = math.clamp(_blackBoxCursor, 0, TelemetryCapacity - 1);
+                    blackBox[index] = entry;
+                    _blackBoxCursor = (index + 1) % TelemetryCapacity;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _blackBoxHandle, OwnerSystemId);
+                }
             }
 
             if (_runtime != null &&
@@ -576,8 +596,16 @@ namespace Hecton8.Narrative.Prologue
 
         private void DumpBlackBox()
         {
-            if (_blackBoxDumped || !_blackBox.IsCreated)
+            IDataVault vault = _dataVault;
+            if (_blackBoxDumped ||
+                vault == null ||
+                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<PrologueSequenceTelemetryEntry>.ReadOnly blackBox) ||
+                !blackBox.IsCreated ||
+                blackBox.Length <= 0)
+            {
                 return;
+            }
 
             _blackBoxDumped = true;
             try
@@ -592,10 +620,11 @@ namespace Hecton8.Narrative.Prologue
                     writer.Write(SourceHash);
                     writer.Write(TelemetryCapacity);
                     writer.Write(_blackBoxCursor);
-                    for (int i = 0; i < _blackBox.Length; i++)
+                    int length = math.min(TelemetryCapacity, blackBox.Length);
+                    for (int i = 0; i < length; i++)
                     {
-                        int index = (_blackBoxCursor + i) % _blackBox.Length;
-                        PrologueSequenceTelemetryEntry entry = _blackBox[index];
+                        int index = (_blackBoxCursor + i) % length;
+                        PrologueSequenceTelemetryEntry entry = blackBox[index];
                         writer.Write(entry.Frame);
                         writer.Write(entry.StateHash);
                         writer.Write(entry.UniverseSpeedMetersPerSecond);
@@ -610,6 +639,29 @@ namespace Hecton8.Narrative.Prologue
             {
                 TryPushTelemetryNoThrow(PrologueStage.Faulted, DumpFailedHash, 1);
             }
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private void ReleaseBlackBox()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in _blackBoxHandle))
+                vault.ReleaseBuffer(in _blackBoxHandle);
+
+            _blackBoxHandle = default;
+            _blackBoxCursor = 0;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static uint HashAtmospheric(in PrologueAtmosphericReentrySnapshot snapshot)

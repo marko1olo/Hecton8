@@ -66,7 +66,9 @@ namespace Hecton8.Graphics.Culling
         private VaultGenerationHandle<TBDRIndirectDrawArgsDTO> _indirectDrawArgsHandle;
         private TBDRHardwareBudgetLimits _limits;
         private TBDRPipelineTelemetryRecorder _telemetry;
+#if UNITY_EDITOR
         private TBDRGpuBudgetCsvIngestor _csvIngestor;
+#endif
         private int _lastSortedCount;
         private uint _lastFrame;
         private float _lastSortMs;
@@ -117,9 +119,13 @@ namespace Hecton8.Graphics.Culling
             _telemetry = new TBDRPipelineTelemetryRecorder();
             _telemetry.BindExternalRing(Vault.TelemetryRing);
             _telemetry.EnsureCreated();
+#if UNITY_EDITOR
             _csvIngestor = new TBDRGpuBudgetCsvIngestor();
+#endif
             TBDRComputeDispatchLimiter.Boot();
+#if UNITY_EDITOR
             ResolveGpuBudgetCsvPath();
+#endif
             SeedMockData();
             _initialized = true;
             PushShaderBudgetGlobals();
@@ -143,6 +149,7 @@ namespace Hecton8.Graphics.Culling
             PushShaderBudgetGlobals();
         }
 
+#if UNITY_EDITOR
         public bool PollBudgetCsvOverride()
         {
             Initialize();
@@ -158,6 +165,7 @@ namespace Hecton8.Graphics.Culling
 
             return applied;
         }
+#endif
 
         public unsafe JobHandle ScheduleTBDRProtectionPass(int requestedInstanceCount, JobHandle dependency)
         {
@@ -412,7 +420,9 @@ namespace Hecton8.Graphics.Culling
             if (_telemetry != null)
                 _telemetry.Dispose();
             _telemetry = null;
+#if UNITY_EDITOR
             _csvIngestor = null;
+#endif
             _initialized = false;
             _usesVaultStorage = false;
             _dataVault = null;

@@ -23,6 +23,8 @@ namespace Hecton8.Graphics.Materials
         public static readonly int RustDetailMapSt = Shader.PropertyToID("_RustDetailMap_ST");
         /// <summary>Per-material base color.</summary>
         public static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        /// <summary>Legacy/unlit material color.</summary>
+        public static readonly int Color = Shader.PropertyToID("_Color");
         /// <summary>Per-material emission color.</summary>
         public static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
         /// <summary>Rust tint color.</summary>
@@ -95,5 +97,13 @@ namespace Hecton8.Graphics.Materials
         public static readonly int HectonEquipmentRust01 = Shader.PropertyToID("_HectonEquipmentRust01");
         /// <summary>Player blood/stress splatter vector.</summary>
         public static readonly int HectonPlayerBloodSplatter = Shader.PropertyToID("_HectonPlayerBloodSplatter");
+        /// <summary>Material source blend mode.</summary>
+        public static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
+        /// <summary>Material destination blend mode.</summary>
+        public static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
+        /// <summary>Material culling mode.</summary>
+        public static readonly int Cull = Shader.PropertyToID("_Cull");
+        /// <summary>Material depth write toggle.</summary>
+        public static readonly int ZWrite = Shader.PropertyToID("_ZWrite");
     }
 }

@@ -1,4 +1,4 @@
-namespace Hecton8.Gameplay
+﻿namespace Hecton8.Gameplay
 {
     using System;
     using System.Collections.Generic;
@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/LifePod Tactile Prologue Controller")]
-    public sealed class LifePodTactilePrologueController : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class LifePodTactilePrologueController : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const uint StateCrashActive = 1u << 0;
         private const uint StateStrapsLocked = 1u << 1;
@@ -143,6 +143,7 @@ namespace Hecton8.Gameplay
         private uint _biosLootCacheFrameCounter;
         private bool _cachedHasLootSphereAup;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _tickDormant;
         private uint _coldReferenceSearchMask;
@@ -153,6 +154,16 @@ namespace Hecton8.Gameplay
         private Vector4 _lastPodGravityVector = Vector4.positiveInfinity;
         private Vector4 _lastVisorVibration = Vector4.positiveInfinity;
         private Vector4 _lastFoamParams = Vector4.positiveInfinity;
+        private Vector4 _pendingSmokeParams;
+        private Vector4 _pendingPodGravityVector;
+        private Vector4 _pendingVisorVibration;
+        private Vector4 _pendingFoamParams;
+        private bool _smokeParamsDirty;
+        private bool _podGravityVectorDirty;
+        private bool _visorVibrationDirty;
+        private bool _foamParamsDirty;
+        private bool _coldStartFeedbackPending;
+        private bool _biosDiagnosticDirty;
         private float3 _resolvedFakePodGravityVector = new float3(0f, -1f, 0f);
         private float _resolvedImpactSeverity01;
         private float _resolvedPcImpactShakeScale;
@@ -202,6 +213,7 @@ namespace Hecton8.Gameplay
             RefreshValveTelemetryCache();
             RefreshBiosLootCache();
             PublishShaderState();
+            FlushQueuedShaderState();
             WriteBiosDiagnostic();
         }
 
@@ -217,7 +229,6 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
-            TryUnregisterTick();
             HectonBiosDiagnosticState.SetActive(false, 0f);
             if (damageSystem != null)
                 damageSystem.ClearShortCircuits();
@@ -233,6 +244,8 @@ namespace Hecton8.Gameplay
             InvalidateColdReferenceCache();
             InvalidatePublishedShaderCache();
             PublishShaderState();
+            FlushQueuedShaderState();
+            TryUnregisterTick();
         }
 
         /// <summary>
@@ -373,6 +386,17 @@ namespace Hecton8.Gameplay
             if (!NeedsActiveTick())
             {
                 _tickDormant = true;
+            }
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedShaderState();
+            FlushQueuedColdStartFeedback();
+            if (_biosDiagnosticDirty)
+            {
+                _biosDiagnosticDirty = false;
+                WriteBiosDiagnostic();
             }
         }
 
@@ -532,15 +556,8 @@ namespace Hecton8.Gameplay
 
             _stateBits |= StatePowerRestored;
             _stateBits &= ~StateCrashActive;
-            HectonBiosDiagnosticState.SetActive(true, 1f);
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
-                0.2f,
-                0.46f,
-                0.08f,
-                ColdStartHapticFrequencyHz,
-                HapticPriorityCritical,
-                BothMotorMask);
-            WriteBiosDiagnostic();
+            _coldStartFeedbackPending = true;
+            _biosDiagnosticDirty = true;
         }
 
         private void TriggerImpactFeedback(float severity01)
@@ -565,13 +582,13 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                CameraJuiceSignals.PublishImpact(
+                CameraJuiceSignals.TryPublishImpact(
                     severity01 * _resolvedPcImpactShakeScale,
                     transform.position,
                     -transform.forward);
             }
 
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 0.38f,
                 0.72f,
                 0.12f,
@@ -710,7 +727,23 @@ namespace Hecton8.Gameplay
                 return;
 
             _biosRefreshTimer = _resolvedBiosRefreshSeconds;
-            WriteBiosDiagnostic();
+            _biosDiagnosticDirty = true;
+        }
+
+        private void FlushQueuedColdStartFeedback()
+        {
+            if (!_coldStartFeedbackPending)
+                return;
+
+            _coldStartFeedbackPending = false;
+            HectonBiosDiagnosticState.SetActive(true, 1f);
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
+                0.2f,
+                0.46f,
+                0.08f,
+                ColdStartHapticFrequencyHz,
+                HapticPriorityCritical,
+                BothMotorMask);
         }
 
         private void UpdateBiosLootCacheFrame()
@@ -813,24 +846,31 @@ namespace Hecton8.Gameplay
                 return;
 
             _tickDormant = false;
-            if (_registeredTick)
-                return;
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
         {
-            if (!_registeredTick)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = false;
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
         }
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
             _cachedObserverMovement = null;
         }
 
@@ -883,13 +923,64 @@ namespace Hecton8.Gameplay
             return (_stateBits & StatePowerRestored) != 0u && biosCrtText != null;
         }
 
-        private static void PublishIfChanged(int propertyId, Vector4 value, ref Vector4 previous)
+        private void PublishIfChanged(int propertyId, Vector4 value, ref Vector4 previous)
         {
             if (Approximately(value, previous))
                 return;
 
-            Shader.SetGlobalVector(propertyId, value);
             previous = value;
+            QueueShaderVector(propertyId, value);
+        }
+
+        private void QueueShaderVector(int propertyId, Vector4 value)
+        {
+            if (propertyId == LifePodSmokeParamsId)
+            {
+                _pendingSmokeParams = value;
+                _smokeParamsDirty = true;
+            }
+            else if (propertyId == PodGravityVectorId)
+            {
+                _pendingPodGravityVector = value;
+                _podGravityVectorDirty = true;
+            }
+            else if (propertyId == LifePodVisorVibrationId)
+            {
+                _pendingVisorVibration = value;
+                _visorVibrationDirty = true;
+            }
+            else if (propertyId == LifePodFoamParamsId)
+            {
+                _pendingFoamParams = value;
+                _foamParamsDirty = true;
+            }
+        }
+
+        private void FlushQueuedShaderState()
+        {
+            if (_smokeParamsDirty)
+            {
+                _smokeParamsDirty = false;
+                Shader.SetGlobalVector(LifePodSmokeParamsId, _pendingSmokeParams);
+            }
+
+            if (_podGravityVectorDirty)
+            {
+                _podGravityVectorDirty = false;
+                Shader.SetGlobalVector(PodGravityVectorId, _pendingPodGravityVector);
+            }
+
+            if (_visorVibrationDirty)
+            {
+                _visorVibrationDirty = false;
+                Shader.SetGlobalVector(LifePodVisorVibrationId, _pendingVisorVibration);
+            }
+
+            if (_foamParamsDirty)
+            {
+                _foamParamsDirty = false;
+                Shader.SetGlobalVector(LifePodFoamParamsId, _pendingFoamParams);
+            }
         }
 
         private static bool Approximately(Vector4 a, Vector4 b)

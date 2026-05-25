@@ -26,8 +26,8 @@ namespace Hecton8.Debugging
 
         private void Awake()
         {
-            _inventory = GetComponent<PlayerInventory>();
-            _scanLogSystem = GetComponent<ScanLogSystem>();
+            TryGetComponent(out _inventory);
+            TryGetComponent(out _scanLogSystem);
         }
 
         private void Start()
@@ -105,7 +105,7 @@ namespace Hecton8.Debugging
 
                 if (verboseLogging)
                 {
-                    Debug.Log(
+                    Hecton8.Core.H8Debug.Log(
                         $"[FabricationSmoke] PASS recipe='{recipe.recipeName}' menuOpened={menuOpened} before={beforeCount} after={afterCount}");
                 }
             }

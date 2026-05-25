@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Hecton8.Caves;
 using Hecton8.SaveSystem;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using float2 = Unity.Mathematics.float2;
@@ -12,7 +12,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4029)]
-    public sealed class SeamRegistry : MonoBehaviour, ISaveable
+    public sealed class SeamRegistry : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
     {
         [Header("Settings")]
         [SerializeField] private int initialCapacity = 128;
@@ -27,10 +27,10 @@ namespace Hecton8.World
 
         private Dictionary<long, ProceduralGeologySeamStateDTO> _recordsByRuntimeKey;
         private Dictionary<long, ProceduralGeologyCaveEntranceDTO> _caveEntrancesByRuntimeKey;
-        private NativeParallelHashMap<int2, float2> _seamHeightsByChunk;
-        private const Allocator DataVaultExemptSeamHeightIndexAllocator = Allocator.Persistent;
+        private Dictionary<long, float2> _seamHeightsByChunk;
         private ISaveService _saveService;
         private bool _saveRegistered;
+        private bool _hotSwapRegistered;
 
         internal static SeamRegistry ActiveRuntimeInstance { get; private set; }
 
@@ -51,34 +51,46 @@ namespace Hecton8.World
             _recordsByRuntimeKey = new Dictionary<long, ProceduralGeologySeamStateDTO>(capacity);
             // COLD ALLOC: Dictionary<long, ProceduralGeologyCaveEntranceDTO>[capacity] - deterministic cave-mouth persistence keyed by runtime key - owner: SeamRegistry
             _caveEntrancesByRuntimeKey = new Dictionary<long, ProceduralGeologyCaveEntranceDTO>(capacity);
-            // COLD ALLOC: NativeParallelHashMap<int2, float2>[capacity] - terrain chunk seam min/max bounds lookup in AUP frame - owner: SeamRegistry
-            _seamHeightsByChunk = new NativeParallelHashMap<int2, float2>(capacity, DataVaultExemptSeamHeightIndexAllocator);
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_seamHeightsByChunk, nameof(SeamRegistry), nameof(_seamHeightsByChunk), NativeAllocationLifetime.Scene);
+            // COLD ALLOC: Dictionary<long, float2>[capacity] - terrain chunk seam min/max bounds lookup in AUP frame - owner: SeamRegistry
+            _seamHeightsByChunk = new Dictionary<long, float2>(capacity);
             UpdateDiagnostics(0L, 0f, 0f);
             EnsureGapDitherRenderer();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregisterSaveParticipant();
-            if (_seamHeightsByChunk.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(SeamRegistry), nameof(_seamHeightsByChunk));
-                _seamHeightsByChunk.Dispose();
-            }
+            TryUnregisterHotSwapListener();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            TryUnregisterSaveParticipant();
+            _saveService = currentService as ISaveService;
+            if (isActiveAndEnabled)
+                TryRegisterSaveParticipant();
         }
 
         private void TryRegisterSaveParticipant()
@@ -86,11 +98,11 @@ namespace Hecton8.World
             if (_saveRegistered)
                 return;
 
-            _saveService = GlobalRegistry.Save;
-            if (_saveService == null)
+            ISaveService saveService = _saveService;
+            if (saveService == null)
                 return;
 
-            _saveService.Register(this);
+            saveService.Register(this);
             _saveRegistered = true;
         }
 
@@ -107,12 +119,34 @@ namespace Hecton8.World
             _saveRegistered = false;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _saveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         /// <summary>
         /// Upserts the current seam transition so save/load and runtime chunk lookups stay aligned.
         /// </summary>
         public void Upsert(in WorldGenerativeGeologySeamPlan plan)
         {
-            if (plan.runtimeKey == 0L || !plan.hasTerrainSample || _recordsByRuntimeKey == null || !_seamHeightsByChunk.IsCreated)
+            if (plan.runtimeKey == 0L || !plan.hasTerrainSample || _recordsByRuntimeKey == null || _seamHeightsByChunk == null)
                 return;
 
             float absoluteSeamHeight = VoxelSeamDirector.ComputeTargetSnapHeight(plan.absoluteTerrainHeight);
@@ -161,7 +195,7 @@ namespace Hecton8.World
         public bool TryGetChunkSeamHeight(int chunkX, int chunkZ, out float absoluteSeamHeight)
         {
             absoluteSeamHeight = 0f;
-            if (!_seamHeightsByChunk.IsCreated || !_seamHeightsByChunk.TryGetValue(new int2(chunkX, chunkZ), out float2 seamBounds))
+            if (_seamHeightsByChunk == null || !_seamHeightsByChunk.TryGetValue(PackChunkKey(chunkX, chunkZ), out float2 seamBounds))
                 return false;
 
             absoluteSeamHeight = seamBounds.x;
@@ -175,7 +209,7 @@ namespace Hecton8.World
         public bool TryGetChunkSeamBounds(int chunkX, int chunkZ, out float2 absoluteSeamBounds)
         {
             absoluteSeamBounds = default;
-            return _seamHeightsByChunk.IsCreated && _seamHeightsByChunk.TryGetValue(new int2(chunkX, chunkZ), out absoluteSeamBounds);
+            return _seamHeightsByChunk != null && _seamHeightsByChunk.TryGetValue(PackChunkKey(chunkX, chunkZ), out absoluteSeamBounds);
         }
 
         /// <summary>
@@ -223,8 +257,7 @@ namespace Hecton8.World
         {
             _recordsByRuntimeKey?.Clear();
             _caveEntrancesByRuntimeKey?.Clear();
-            if (_seamHeightsByChunk.IsCreated)
-                _seamHeightsByChunk.Clear();
+            _seamHeightsByChunk?.Clear();
 
             UpdateDiagnostics(0L, 0f, 0f);
         }
@@ -279,7 +312,7 @@ namespace Hecton8.World
             ProceduralWorldStateDTO dto = data.proceduralWorldState;
             ClearAll();
 
-            if (_recordsByRuntimeKey == null || !_seamHeightsByChunk.IsCreated || dto.geologySeamStates == null)
+            if (_recordsByRuntimeKey == null || _seamHeightsByChunk == null || dto.geologySeamStates == null)
                 return;
 
             int seamCount = Mathf.Min(dto.geologySeamStateCount, dto.geologySeamStates.Length);
@@ -307,7 +340,7 @@ namespace Hecton8.World
 
         private void RefreshChunkSeamHeight(int2 chunkKey, long removedRuntimeKey)
         {
-            if (!_seamHeightsByChunk.IsCreated)
+            if (_seamHeightsByChunk == null)
                 return;
 
             RebuildChunkSeamHeight(chunkKey, removedRuntimeKey);
@@ -315,7 +348,7 @@ namespace Hecton8.World
 
         private void RebuildChunkSeamHeight(int2 chunkKey, long ignoredRuntimeKey = 0L)
         {
-            if (!_seamHeightsByChunk.IsCreated)
+            if (_seamHeightsByChunk == null)
                 return;
 
             float minSeamHeight = float.MaxValue;
@@ -345,14 +378,21 @@ namespace Hecton8.World
             }
 
             _debugLastChunkOverlapCount = overlapCount;
+            long packedChunkKey = PackChunkKey(chunkKey.x, chunkKey.y);
             if (overlapCount > 0)
             {
-                _seamHeightsByChunk[chunkKey] = new float2(minSeamHeight, maxSeamHeight);
+                _seamHeightsByChunk[packedChunkKey] = new float2(minSeamHeight, maxSeamHeight);
                 _debugLastAbsoluteMinSeamHeight = minSeamHeight;
                 _debugLastAbsoluteMaxSeamHeight = maxSeamHeight;
             }
             else
-                _seamHeightsByChunk.Remove(chunkKey);
+                _seamHeightsByChunk.Remove(packedChunkKey);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long PackChunkKey(int chunkX, int chunkZ)
+        {
+            return ((long)chunkX << 32) ^ (uint)chunkZ;
         }
 
         private void UpsertCaveEntrance(in WorldGenerativeGeologySeamPlan plan)

@@ -299,12 +299,12 @@ namespace Hecton8.Bootstrap
                 if (inDegree[sourceIndex] <= 0 || inDegree[dependencyIndex] <= 0)
                     continue;
 
-                string sourceName = GetServiceSlotName(edges[edgeIndex].Source);
-                string dependencyName = GetServiceSlotName(edges[edgeIndex].Dependency);
-                GlobalTelemetryBus.PublishBootstrapDependencyCycle(sourceName, dependencyName);
+                uint sourceHash = GlobalTelemetryBus.ComputeContextHash(GetServiceSlotName(edges[edgeIndex].Source));
+                uint dependencyHash = GlobalTelemetryBus.ComputeContextHash(GetServiceSlotName(edges[edgeIndex].Dependency));
+                GlobalTelemetryBus.PublishBootstrapDependencyCycle(sourceHash, dependencyHash);
             }
 
-            Debug.LogError("[BootstrapRegistryCycleValidator] Circular registry dependency detected. Edge details emitted to GlobalTelemetryBus.");
+            Hecton8.Core.H8Debug.LogError("[BootstrapRegistryCycleValidator] Circular registry dependency detected. Edge details emitted to GlobalTelemetryBus.");
 #endif
         }
 

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_037
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_037_MAT_FloraProxy_Sargassum_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_FloraProxy_Sargassum_Albedo.png
+FINAL_FILENAME: MAT_FloraProxy_Sargassum_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Sargassum-style abyssal flora proxy albedo with a refined deep-sea palette. Use elegant olive ribbons, honey-amber air bladders, muted teal membrane edges, pale mineral dust, and tiny violet stress freckles. It should feel buoyant, decorative, and biologically plausible, not a brown seaweed mat. Keep the tile readable for floating strands and simple prop meshes. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

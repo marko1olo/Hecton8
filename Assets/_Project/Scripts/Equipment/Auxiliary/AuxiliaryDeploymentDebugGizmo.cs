@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Unity.Mathematics;
@@ -35,7 +36,7 @@ namespace Hecton8.Equipment.Auxiliary
                 Vector3 position = new Vector3(local.x, local.y, local.z);
                 Gizmos.DrawWireSphere(position, ResolveRadius(deployment.PrefabHashID));
                 if (drawLabels)
-                    UnityEditor.Handles.Label(position + Vector3.up * 0.35f, deployment.RemainingLifetime.ToString("0.0"));
+                    UnityEditor.Handles.Label(position + Vector3.up * 0.35f, deployment.RemainingLifetime.ToString("0.0", CultureInfo.InvariantCulture));
             }
         }
 

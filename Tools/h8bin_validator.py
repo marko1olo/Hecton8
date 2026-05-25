@@ -9,15 +9,17 @@ It deliberately does not import Unity or compiled C# assemblies.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import csv
 import json
 import math
 import mmap
 import os
-import re
 import struct
 import sys
 import time
+import tempfile
+import threading
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -43,14 +45,13 @@ DEFAULT_DIRECTORY_BYTES = 64
 DEFAULT_SECTION_ALIGNMENT = 16
 DEFAULT_STATIC_DATA_RELATIVE = Path("Hecton8/DataMonolith/static_data.h8bin")
 DEFAULT_RUNTIME_MAX_BYTES = 256 * 1024 * 1024
+BINARY_SCHEMA_AUDIT_REPORT = "Docs/Reports/BINARY_SCHEMA_AUDIT_REPORT.json"
+METRIC_PHI_BINARY_SCHEMA_ROWS = "Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json"
+AST_CACHE_RELATIVE = Path("Docs/Reports/.h8bin_validator_ast_cache_SHINOBU_358.json")
+AST_CACHE_SCHEMA = "h8bin_validator.ast_cache.v3"
+WATCHDOG_SECONDS = 10.0
 AUP_BOUND_METERS = 100000.0
 TEXT_RUNTIME_SUFFIXES = {".csv", ".json", ".xml"}
-TEXT_ARTIFACT_SYMBOL_DECLARATION = re.compile(
-    r"\b(?:(?:public|private|internal|protected)\s+)*"
-    r"(?:const|static\s+readonly|readonly\s+static)\s+string\s+"
-    r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*\"(?P<value>[^\"]+)\"",
-    re.IGNORECASE,
-)
 VOCAL_BANK_MAGIC = 0x42563848  # H8VB, little-endian bytes 48 38 56 42.
 VOCAL_BANK_VERSION = 1
 VOCAL_BANK_HEADER_SIZE = 64
@@ -156,6 +157,67 @@ PRIMITIVE_TYPES: dict[str, tuple[int, int, str]] = {
     "ulong": (8, 8, "Q"),
     "float": (4, 4, "f"),
     "double": (8, 8, "d"),
+}
+
+CS_NUMERIC_CAST_TYPES = {
+    "byte",
+    "sbyte",
+    "short",
+    "ushort",
+    "int",
+    "uint",
+    "long",
+    "ulong",
+}
+
+CS_FIELD_MODIFIERS = {
+    "public",
+    "private",
+    "protected",
+    "internal",
+    "readonly",
+    "volatile",
+    "unsafe",
+    "new",
+    "extern",
+}
+
+CS_STATIC_FIELD_MARKERS = {
+    "static",
+    "const",
+}
+
+ARM64_ALIGNMENT_CODES = {
+    "FIELD_ALIGNMENT",
+    "FIELD_NEGATIVE_OFFSET",
+    "FIELD_OUT_OF_STRUCT",
+    "FIELD_OVERLAP",
+    "STRUCT_SIZE_ALIGNMENT",
+    "PACK_1_FORBIDDEN",
+    "STRUCT_UNRESOLVED_FIELD",
+    "STRUCT_LAYOUT_MISSING",
+    "STRUCT_SIZE_MISSING",
+    "STRUCT_SIZE_UNRESOLVED",
+    "FIELD_OFFSET_MISSING",
+    "FIELD_OFFSET_UNRESOLVED",
+    "FIELD_DECL_UNPARSED",
+}
+
+PROPERTY_BAN_CODES = {
+    "STRUCT_PROPERTY_BANNED",
+}
+
+SCHEMA_MISMATCH_CODES = {
+    "RECORD_SIZE_MISMATCH",
+    "RECORD_SIZE_UNDER_STRUCT",
+    "RECORD_SIZE_ZERO",
+    "SECTION_RECORD_SIZE",
+    "SECTION_COUNT",
+    "SECTION_ID",
+    "SECTION_OUT_OF_FILE",
+    "SECTION_OVERLAP",
+    "CSV_TO_BIN_VALUE_MISMATCH",
+    "CSV_TO_BIN_MISSING_HASHES",
 }
 
 VECTOR_TYPES: dict[str, tuple[int, int]] = {
@@ -288,6 +350,7 @@ class FieldLayout:
     size: int = 0
     alignment: int = 1
     struct_format: str = ""
+    line: int = 0
 
     @property
     def end(self) -> int:
@@ -301,6 +364,7 @@ class StructLayout:
     size: int
     source_path: Path
     attribute: str
+    line: int = 0
     fields: list[FieldLayout] = field(default_factory=list)
     largest_alignment: int = 1
     final_padding: int = 0
@@ -315,6 +379,12 @@ class StructLayout:
             )
         lines.append(f"  final_padding={self.final_padding} payload_padding={self.payload_padding}")
         return "\n".join(lines)
+
+
+@dataclass(frozen=True, slots=True)
+class CSharpToken:
+    value: str
+    line: int
 
 
 @dataclass
@@ -401,12 +471,6 @@ def resolve_path(value: str | Path) -> Path:
     return path.resolve()
 
 
-def strip_csharp_comments(text: str) -> str:
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
-    text = re.sub(r"//.*", "", text)
-    return text
-
-
 def normalize_type(type_name: str) -> str:
     type_name = type_name.strip()
     if "." in type_name:
@@ -415,17 +479,46 @@ def normalize_type(type_name: str) -> str:
 
 
 def sanitize_int_expr(expr: str, constants: dict[str, int]) -> str:
-    expr = expr.strip()
-    expr = re.sub(r"\(\s*(?:uint|int|ushort|short|ulong|long)\s*\)", "", expr)
-    expr = re.sub(r"\b(?:uint|int|ushort|short|ulong|long)\s*\)", ")", expr)
-    expr = re.sub(r"(?<=\d)[uUlL]+\b", "", expr)
-    for key in sorted(constants, key=len, reverse=True):
-        expr = re.sub(rf"\b{re.escape(key)}\b", str(constants[key]), expr)
-        bare = key.rsplit(".", 1)[-1]
-        expr = re.sub(rf"\b{re.escape(bare)}\b", str(constants[key]), expr)
-    if not re.fullmatch(r"[0-9xa-fA-F+\-*/%() <>&|~]+", expr):
-        raise ValueError(f"unsupported integer expression: {expr!r}")
-    return expr
+    tokens = tokenize_csharp_bytes(expr.encode("utf-8", errors="ignore"))
+    sanitized: list[str] = []
+    index = 0
+    while index < len(tokens):
+        value = tokens[index].value
+        if (
+            value == "("
+            and index + 2 < len(tokens)
+            and tokens[index + 1].value in CS_NUMERIC_CAST_TYPES
+            and tokens[index + 2].value == ")"
+        ):
+            index += 3
+            continue
+        if is_identifier_value(value):
+            parts = [value]
+            cursor = index
+            while cursor + 2 < len(tokens) and tokens[cursor + 1].value == "." and is_identifier_value(tokens[cursor + 2].value):
+                parts.extend([".", tokens[cursor + 2].value])
+                cursor += 2
+            qualified = "".join(parts)
+            if qualified in constants:
+                sanitized.append(str(constants[qualified]))
+                index = cursor + 1
+                continue
+            bare = qualified.rsplit(".", 1)[-1]
+            if bare in constants:
+                sanitized.append(str(constants[bare]))
+                index = cursor + 1
+                continue
+            raise ValueError(f"unsupported integer symbol: {qualified!r}")
+        if value and (value[0].isdigit() or value.startswith("0x") or value.startswith("0X")):
+            sanitized.append(strip_numeric_suffix(value))
+            index += 1
+            continue
+        if value in {"+", "-", "*", "/", "%", "(", ")", "<<", ">>", "<", ">", "&", "|", "~"}:
+            sanitized.append(value)
+            index += 1
+            continue
+        raise ValueError(f"unsupported integer expression token: {value!r}")
+    return " ".join(sanitized)
 
 
 def eval_int_expr(expr: str, constants: dict[str, int]) -> int:
@@ -442,6 +535,515 @@ def collect_csharp_files(paths: Iterable[Path]) -> list[Path]:
         elif root.exists():
             files.extend(sorted(root.rglob("*.cs")))
     return sorted(set(files))
+
+
+def is_identifier_start(byte_value: int) -> bool:
+    return byte_value == 95 or 65 <= byte_value <= 90 or 97 <= byte_value <= 122 or byte_value >= 128
+
+
+def is_identifier_part(byte_value: int) -> bool:
+    return is_identifier_start(byte_value) or 48 <= byte_value <= 57
+
+
+def is_identifier_value(value: str) -> bool:
+    if not value:
+        return False
+    first = value[0]
+    return first == "_" or first == "@" or first.isalpha()
+
+
+def decode_token(data: bytes | mmap.mmap, start: int, end: int) -> str:
+    return bytes(data[start:end]).decode("utf-8", errors="ignore")
+
+
+def skip_quoted_literal(data: bytes | mmap.mmap, index: int, line: int, quote: int) -> tuple[int, int]:
+    index += 1
+    escaped = False
+    length = len(data)
+    while index < length:
+        char = data[index]
+        if char == 10:
+            line += 1
+        if escaped:
+            escaped = False
+        elif char == 92:
+            escaped = True
+        elif char == quote:
+            return index + 1, line
+        index += 1
+    return index, line
+
+
+def skip_verbatim_string(data: bytes | mmap.mmap, index: int, line: int) -> tuple[int, int]:
+    index += 2
+    length = len(data)
+    while index < length:
+        char = data[index]
+        if char == 10:
+            line += 1
+        if char == 34:
+            if index + 1 < length and data[index + 1] == 34:
+                index += 2
+                continue
+            return index + 1, line
+        index += 1
+    return index, line
+
+
+def tokenize_csharp_bytes(data: bytes | mmap.mmap) -> list[CSharpToken]:
+    tokens: list[CSharpToken] = []
+    index = 0
+    line = 1
+    length = len(data)
+    while index < length:
+        char = data[index]
+        if char in (9, 11, 12, 13, 32):
+            index += 1
+            continue
+        if char == 10:
+            line += 1
+            index += 1
+            continue
+        if char == 47 and index + 1 < length:
+            nxt = data[index + 1]
+            if nxt == 47:
+                index += 2
+                while index < length and data[index] != 10:
+                    index += 1
+                continue
+            if nxt == 42:
+                index += 2
+                while index + 1 < length:
+                    if data[index] == 10:
+                        line += 1
+                    if data[index] == 42 and data[index + 1] == 47:
+                        index += 2
+                        break
+                    index += 1
+                continue
+        if char == 36 and index + 2 < length and data[index + 1] == 64 and data[index + 2] == 34:
+            index, line = skip_verbatim_string(data, index + 1, line)
+            tokens.append(CSharpToken('""', line))
+            continue
+        if char == 64 and index + 1 < length and data[index + 1] == 34:
+            index, line = skip_verbatim_string(data, index, line)
+            tokens.append(CSharpToken('""', line))
+            continue
+        if char == 36 and index + 1 < length and data[index + 1] == 34:
+            index, line = skip_quoted_literal(data, index + 1, line, 34)
+            tokens.append(CSharpToken('""', line))
+            continue
+        if char in (34, 39):
+            index, line = skip_quoted_literal(data, index, line, char)
+            tokens.append(CSharpToken('""', line))
+            continue
+        if is_identifier_start(char) or (char == 64 and index + 1 < length and is_identifier_start(data[index + 1])):
+            start = index
+            index += 1
+            while index < length and is_identifier_part(data[index]):
+                index += 1
+            tokens.append(CSharpToken(decode_token(data, start, index), line))
+            continue
+        if 48 <= char <= 57:
+            start = index
+            index += 1
+            while index < length:
+                nxt = data[index]
+                if is_identifier_part(nxt) or nxt in (46,):
+                    index += 1
+                    continue
+                break
+            tokens.append(CSharpToken(decode_token(data, start, index), line))
+            continue
+        if char == 61 and index + 1 < length and data[index + 1] == 62:
+            tokens.append(CSharpToken("=>", line))
+            index += 2
+            continue
+        if char == 58 and index + 1 < length and data[index + 1] == 58:
+            tokens.append(CSharpToken("::", line))
+            index += 2
+            continue
+        if char in (60, 62) and index + 1 < length and data[index + 1] == char:
+            tokens.append(CSharpToken(chr(char) * 2, line))
+            index += 2
+            continue
+        tokens.append(CSharpToken(chr(char), line))
+        index += 1
+    return tokens
+
+
+def tokenize_csharp_file(path: Path) -> list[CSharpToken]:
+    if not path.exists() or path.stat().st_size == 0:
+        return []
+    with path.open("rb") as handle:
+        with mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as mm_obj:
+            return tokenize_csharp_bytes(mm_obj)
+
+
+def file_contains_any(path: Path, needles: tuple[bytes, ...]) -> bool:
+    try:
+        if not path.exists() or path.stat().st_size == 0:
+            return False
+        with path.open("rb") as handle:
+            with mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as mm_obj:
+                for needle in needles:
+                    if mm_obj.find(needle) >= 0:
+                        return True
+    except OSError:
+        return False
+    return False
+
+
+def file_contains_all_groups(path: Path, groups: tuple[tuple[bytes, ...], ...]) -> bool:
+    try:
+        if not path.exists() or path.stat().st_size == 0:
+            return False
+        with path.open("rb") as handle:
+            with mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as mm_obj:
+                for group in groups:
+                    if not any(mm_obj.find(needle) >= 0 for needle in group):
+                        return False
+    except OSError:
+        return False
+    return True
+
+
+def filter_files_by_any(files: list[Path], needles: tuple[bytes, ...]) -> list[Path]:
+    if not files:
+        return []
+    worker_count = max(1, min(32, (os.cpu_count() or 1) + 4, len(files)))
+    selected: list[Path] = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="h8bin-prefilter") as executor:
+        future_map = {executor.submit(file_contains_any, path, needles): path for path in files}
+        for future in concurrent.futures.as_completed(future_map):
+            if future.result():
+                selected.append(future_map[future])
+    return sorted(selected)
+
+
+def is_ident_byte(byte_value: int) -> bool:
+    return byte_value == 95 or 48 <= byte_value <= 57 or 65 <= byte_value <= 90 or 97 <= byte_value <= 122
+
+
+def is_word_at(data: bytes | mmap.mmap, index: int, word: bytes) -> bool:
+    end = index + len(word)
+    if index < 0 or end > len(data) or data[index:end] != word:
+        return False
+    if index > 0 and is_ident_byte(data[index - 1]):
+        return False
+    if end < len(data) and is_ident_byte(data[end]):
+        return False
+    return True
+
+
+def find_matching_brace_bytes(data: bytes | mmap.mmap, start: int) -> int:
+    depth = 0
+    index = start
+    length = len(data)
+    quote = 0
+    escaped = False
+    verbatim = False
+    while index < length:
+        char = data[index]
+        if quote:
+            if verbatim:
+                if char == 34:
+                    if index + 1 < length and data[index + 1] == 34:
+                        index += 2
+                        continue
+                    quote = 0
+                    verbatim = False
+            elif escaped:
+                escaped = False
+            elif char == 92:
+                escaped = True
+            elif char == quote:
+                quote = 0
+            index += 1
+            continue
+        if char == 47 and index + 1 < length:
+            nxt = data[index + 1]
+            if nxt == 47:
+                index += 2
+                while index < length and data[index] != 10:
+                    index += 1
+                continue
+            if nxt == 42:
+                index += 2
+                while index + 1 < length and not (data[index] == 42 and data[index + 1] == 47):
+                    index += 1
+                index += 2
+                continue
+        if char == 64 and index + 1 < length and data[index + 1] == 34:
+            quote = 34
+            verbatim = True
+            index += 2
+            continue
+        if char in (34, 39):
+            quote = char
+            index += 1
+            continue
+        if char == 123:
+            depth += 1
+        elif char == 125:
+            depth -= 1
+            if depth == 0:
+                return index
+        index += 1
+    return -1
+
+
+def body_contains_direct_word(data: bytes | mmap.mmap, start: int, end: int, word: bytes) -> bool:
+    depth = 0
+    index = start
+    quote = 0
+    escaped = False
+    verbatim = False
+    length = min(end, len(data))
+    while index < length:
+        char = data[index]
+        if quote:
+            if verbatim:
+                if char == 34:
+                    if index + 1 < length and data[index + 1] == 34:
+                        index += 2
+                        continue
+                    quote = 0
+                    verbatim = False
+            elif escaped:
+                escaped = False
+            elif char == 92:
+                escaped = True
+            elif char == quote:
+                quote = 0
+            index += 1
+            continue
+        if char == 47 and index + 1 < length:
+            nxt = data[index + 1]
+            if nxt == 47:
+                index += 2
+                while index < length and data[index] != 10:
+                    index += 1
+                continue
+            if nxt == 42:
+                index += 2
+                while index + 1 < length and not (data[index] == 42 and data[index + 1] == 47):
+                    index += 1
+                index += 2
+                continue
+        if char == 64 and index + 1 < length and data[index + 1] == 34:
+            quote = 34
+            verbatim = True
+            index += 2
+            continue
+        if char in (34, 39):
+            quote = char
+            index += 1
+            continue
+        if char == 123:
+            depth += 1
+            index += 1
+            continue
+        if char == 125:
+            if depth > 0:
+                depth -= 1
+            index += 1
+            continue
+        if depth == 0 and is_word_at(data, index, word):
+            return True
+        index += 1
+    return False
+
+
+def find_attribute_span_start(data: bytes | mmap.mmap, struct_index: int) -> int:
+    search_start = max(0, struct_index - 2048)
+    struct_layout_start = data.rfind(b"[", search_start, struct_index)
+    while struct_layout_start >= 0:
+        if data.find(b"StructLayout", struct_layout_start, struct_index) >= 0:
+            return struct_layout_start
+        struct_layout_start = data.rfind(b"[", search_start, struct_layout_start)
+    cursor = struct_index
+    while cursor > 0 and data[cursor - 1] in b" \t\r\n":
+        cursor -= 1
+    while cursor > 0 and data[cursor - 1] == 93:
+        depth = 0
+        index = cursor - 1
+        while index >= 0:
+            char = data[index]
+            if char == 93:
+                depth += 1
+            elif char == 91:
+                depth -= 1
+                if depth == 0:
+                    cursor = index
+                    while cursor > 0 and data[cursor - 1] in b" \t\r\n":
+                        cursor -= 1
+                    break
+            index -= 1
+        else:
+            break
+    return cursor
+
+
+def extract_struct_candidate_spans(path: Path) -> list[tuple[bytes, int]]:
+    spans: list[tuple[bytes, int]] = []
+    if not path.exists() or path.stat().st_size == 0:
+        return spans
+    with path.open("rb") as handle:
+        with mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as mm_obj:
+            cursor = 0
+            line = 1
+            while True:
+                index = mm_obj.find(b"struct", cursor)
+                if index < 0:
+                    break
+                line += mm_obj[cursor:index].count(b"\n")
+                cursor = index + 6
+                if not is_word_at(mm_obj, index, b"struct"):
+                    continue
+                line_start = mm_obj.rfind(b"\n", 0, index) + 1
+                if mm_obj.find(b"//", line_start, index) >= 0:
+                    continue
+                name_cursor = index + 6
+                length = len(mm_obj)
+                while name_cursor < length and mm_obj[name_cursor] in b" \t\r\n":
+                    name_cursor += 1
+                if name_cursor >= length:
+                    break
+                name_char = mm_obj[name_cursor + 1] if mm_obj[name_cursor] == 64 and name_cursor + 1 < length else mm_obj[name_cursor]
+                if not is_identifier_start(name_char):
+                    continue
+                open_brace = mm_obj.find(b"{", name_cursor)
+                if open_brace < 0:
+                    break
+                close_brace = find_matching_brace_bytes(mm_obj, open_brace)
+                if close_brace < 0:
+                    cursor = open_brace + 1
+                    continue
+                start = find_attribute_span_start(mm_obj, index)
+                if (
+                    mm_obj.find(b"LayoutKind.Explicit", start, open_brace) >= 0
+                    or body_contains_direct_word(mm_obj, open_brace + 1, close_brace, b"FieldOffset")
+                ):
+                    base_line = max(1, line - mm_obj[start:index].count(b"\n"))
+                    spans.append((bytes(mm_obj[start : close_brace + 1]), base_line))
+                cursor = index + 6
+    return spans
+
+
+def tokenize_csharp_span_fast(data: bytes, base_line: int = 1) -> list[CSharpToken]:
+    tokens = tokenize_csharp_bytes(data)
+    if base_line <= 1:
+        return tokens
+    line_delta = base_line - 1
+    return [CSharpToken(token.value, token.line + line_delta) for token in tokens]
+
+
+def token_values(tokens: list[CSharpToken]) -> list[str]:
+    return [token.value for token in tokens]
+
+
+def tokens_to_text(tokens: list[CSharpToken]) -> str:
+    return " ".join(token.value for token in tokens)
+
+
+def find_matching_token(tokens: list[CSharpToken], start: int, open_value: str, close_value: str) -> int:
+    depth = 0
+    for index in range(start, len(tokens)):
+        value = tokens[index].value
+        if value == open_value:
+            depth += 1
+        elif value == close_value:
+            depth -= 1
+            if depth == 0:
+                return index
+    return -1
+
+
+def attribute_name_matches(value: str, target: str) -> bool:
+    if value.startswith("@"):
+        value = value[1:]
+    return value == target or value == f"{target}Attribute"
+
+
+def extract_attribute_args(attribute_blocks: list[list[CSharpToken]], attribute_name: str) -> list[CSharpToken] | None:
+    for block in attribute_blocks:
+        index = 0
+        while index < len(block):
+            if attribute_name_matches(block[index].value, attribute_name):
+                if index + 1 < len(block) and block[index + 1].value == "(":
+                    end = find_matching_token(block, index + 1, "(", ")")
+                    if end >= 0:
+                        return block[index + 2 : end]
+            index += 1
+    return None
+
+
+def attribute_tokens_text(attribute_blocks: list[list[CSharpToken]], attribute_name: str) -> str:
+    args = extract_attribute_args(attribute_blocks, attribute_name)
+    if args is None:
+        return ""
+    return f"{attribute_name}({tokens_to_text(args)})"
+
+
+def args_contain_layout_explicit(args: list[CSharpToken]) -> bool:
+    for index, token in enumerate(args):
+        if token.value == "Explicit":
+            if index >= 2 and args[index - 2].value == "LayoutKind" and args[index - 1].value == ".":
+                return True
+            if index == 0 or args[index - 1].value in {"(", ",", "="}:
+                return True
+    return False
+
+
+def split_top_level_arguments(tokens: list[CSharpToken]) -> list[list[CSharpToken]]:
+    args: list[list[CSharpToken]] = []
+    start = 0
+    depth = 0
+    for index, token in enumerate(tokens):
+        value = token.value
+        if value in {"(", "[", "{"}:
+            depth += 1
+        elif value in {")",
+            "]",
+            "}",
+        } and depth > 0:
+            depth -= 1
+        elif value == "," and depth == 0:
+            args.append(tokens[start:index])
+            start = index + 1
+    args.append(tokens[start:])
+    return [arg for arg in args if arg]
+
+
+def extract_named_argument_tokens(args: list[CSharpToken], name: str) -> list[CSharpToken] | None:
+    for arg in split_top_level_arguments(args):
+        if len(arg) >= 3 and arg[0].value == name and arg[1].value == "=":
+            return arg[2:]
+    return None
+
+
+def extract_first_argument_tokens(args: list[CSharpToken]) -> list[CSharpToken] | None:
+    split_args = split_top_level_arguments(args)
+    if not split_args:
+        return None
+    first = split_args[0]
+    if len(first) >= 2 and first[1].value == "=":
+        return None
+    return first
+
+
+def expr_from_tokens(tokens: list[CSharpToken]) -> str:
+    return " ".join(token.value for token in tokens)
+
+
+def strip_numeric_suffix(value: str) -> str:
+    if not value:
+        return value
+    end = len(value)
+    while end > 0 and value[end - 1] in "uUlLfFdDmM":
+        end -= 1
+    return value[:end] or value
 
 
 def resolve_constants(raw_constants: dict[str, str]) -> dict[str, int]:
@@ -462,323 +1064,821 @@ def resolve_constants(raw_constants: dict[str, str]) -> dict[str, int]:
     return constants
 
 
-def find_matching_brace(text: str, start: int) -> int:
+class LazyConstants(dict[str, int]):
+    def __init__(self, raw_constants: dict[str, str]) -> None:
+        super().__init__()
+        self._raw = raw_constants
+        self._resolving: set[str] = set()
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
+        return dict.__contains__(self, key) or key in self._raw or key.rsplit(".", 1)[-1] in self._raw
+
+    def __getitem__(self, key: str) -> int:
+        if dict.__contains__(self, key):
+            return dict.__getitem__(self, key)
+        return self._resolve(key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return self[key]
+        except Exception:
+            return default
+
+    def _resolve(self, key: str) -> int:
+        bare = key.rsplit(".", 1)[-1]
+        raw_key = key if key in self._raw else bare
+        if raw_key not in self._raw:
+            raise KeyError(key)
+        if raw_key in self._resolving:
+            raise ValueError(f"cyclic constant reference: {raw_key}")
+        self._resolving.add(raw_key)
+        try:
+            value = eval_int_expr(self._raw[raw_key], self)
+        finally:
+            self._resolving.remove(raw_key)
+        dict.__setitem__(self, raw_key, value)
+        dict.__setitem__(self, bare, value)
+        if "." in key:
+            dict.__setitem__(self, key, value)
+        return value
+
+
+def add_parse_error(
+    findings: list[Finding],
+    code: str,
+    message: str,
+    path: Path,
+    line: int = 0,
+    layout: str = "",
+    offset: int | None = None,
+) -> None:
+    rendered = f"line {line}: {message}" if line > 0 else message
+    findings.append(Finding("ERROR", code, rendered, str(path), offset, layout=layout))
+
+
+def strip_statement_initializer(tokens: list[CSharpToken]) -> list[CSharpToken]:
     depth = 0
-    for index in range(start, len(text)):
-        char = text[index]
-        if char == "{":
+    for index, token in enumerate(tokens):
+        value = token.value
+        if value in {"(", "[", "{"}:
             depth += 1
-        elif char == "}":
+        elif value in {")",
+            "]",
+            "}",
+        } and depth > 0:
             depth -= 1
-            if depth == 0:
-                return index
-    return -1
+        elif value == "=" and depth == 0:
+            return tokens[:index]
+    return tokens
 
 
-def extract_named_argument(attribute: str, name: str) -> str | None:
-    match = re.search(rf"\b{re.escape(name)}\s*=", attribute)
-    if not match:
+def statement_contains_arrow_expression(tokens: list[CSharpToken]) -> int:
+    for index, token in enumerate(tokens):
+        if token.value == "=>":
+            return token.line
+        if token.value == "=" and index + 1 < len(tokens) and tokens[index + 1].value == ">":
+            return token.line
+    return 0
+
+
+def parse_qualified_type(tokens: list[CSharpToken], start: int) -> tuple[str, int]:
+    parts: list[str] = []
+    index = start
+    if index + 1 < len(tokens) and tokens[index].value == "global" and tokens[index + 1].value == "::":
+        index += 2
+    while index < len(tokens):
+        if is_identifier_value(tokens[index].value):
+            parts.append(tokens[index].value.lstrip("@"))
+            index += 1
+            if index < len(tokens) and tokens[index].value == ".":
+                parts.append(".")
+                index += 1
+                continue
+            break
+        break
+    return "".join(parts), index
+
+
+def parse_field_tokens(tokens: list[CSharpToken]) -> tuple[str, str] | None:
+    if statement_contains_arrow_expression(tokens):
         return None
-    cursor = match.end()
+    tokens = strip_statement_initializer(tokens)
+    if not tokens:
+        return None
+    values = token_values(tokens)
+    if any(value in CS_STATIC_FIELD_MARKERS for value in values):
+        return None
+    if "(" in values:
+        return None
+    index = 0
+    while index < len(tokens) and tokens[index].value in CS_FIELD_MODIFIERS:
+        index += 1
+    if index < len(tokens) and tokens[index].value == "fixed":
+        type_name, cursor = parse_qualified_type(tokens, index + 1)
+        if not type_name or cursor >= len(tokens) or not is_identifier_value(tokens[cursor].value):
+            return None
+        name = tokens[cursor].value.lstrip("@")
+        if cursor + 2 < len(tokens) and tokens[cursor + 1].value == "[":
+            close_bracket = find_matching_token(tokens, cursor + 1, "[", "]")
+            if close_bracket > cursor + 2:
+                count_expr = expr_from_tokens(tokens[cursor + 2 : close_bracket])
+                if count_expr:
+                    return f"{type_name}[{count_expr}]", name
+        return type_name, name
+    clean = [token for token in tokens[index:] if token.value not in {"[", "]", ","}]
+    identifier_indexes = [idx for idx, token in enumerate(clean) if is_identifier_value(token.value)]
+    if len(identifier_indexes) < 2:
+        return None
+    name_index = identifier_indexes[-1]
+    name = clean[name_index].value.lstrip("@")
+    type_tokens = clean[:name_index]
+    while type_tokens and type_tokens[0].value in CS_FIELD_MODIFIERS:
+        type_tokens = type_tokens[1:]
+    if not type_tokens:
+        return None
+    type_name = "".join(token.value for token in type_tokens if token.value not in {"<", ">", ","})
+    return type_name, name
+
+
+def contains_field_offset_attribute(attribute_blocks: list[list[CSharpToken]]) -> bool:
+    return extract_attribute_args(attribute_blocks, "FieldOffset") is not None
+
+
+def body_contains_fieldoffset(tokens: list[CSharpToken]) -> bool:
     depth = 0
-    value: list[str] = []
-    while cursor < len(attribute):
-        char = attribute[cursor]
-        if char == "," and depth == 0:
-            break
-        if char == ")" and depth == 0:
-            break
-        value.append(char)
-        if char == "(":
+    for token in tokens:
+        if token.value == "{":
             depth += 1
-        elif char == ")" and depth > 0:
-            depth -= 1
-        cursor += 1
-    return "".join(value).strip()
-
-
-def read_balanced_span(text: str, start: int, open_char: str, close_char: str) -> tuple[str, int]:
-    if start >= len(text) or text[start] != open_char:
-        return "", -1
-    depth = 0
-    cursor = start
-    quote = ""
-    escaped = False
-    while cursor < len(text):
-        char = text[cursor]
-        if quote:
-            if escaped:
-                escaped = False
-            elif char == "\\":
-                escaped = True
-            elif char == quote:
-                quote = ""
-            cursor += 1
             continue
-        if char in {'"', "'"}:
-            quote = char
-            cursor += 1
+        if token.value == "}":
+            if depth > 0:
+                depth -= 1
             continue
-        if char == open_char:
-            depth += 1
-        elif char == close_char:
-            depth -= 1
-            if depth == 0:
-                return text[start : cursor + 1], cursor + 1
-        cursor += 1
-    return "", -1
+        if depth == 0 and attribute_name_matches(token.value, "FieldOffset"):
+            return True
+    return False
 
 
-def skip_csharp_whitespace(text: str, cursor: int) -> int:
-    while cursor < len(text) and text[cursor].isspace():
-        cursor += 1
-    return cursor
+def detect_property_tokens(tokens: list[CSharpToken]) -> int:
+    for index, token in enumerate(tokens):
+        if token.value in {"get", "set", "init"} and index + 1 < len(tokens) and tokens[index + 1].value in {";", "{", "=>"}:
+            return token.line
+    return 0
 
 
-def extract_attribute_call(attribute_blocks: list[str], attribute_name: str) -> str | None:
-    pattern = re.compile(
-        rf"(?:global::)?(?:[\w]+\.)*{re.escape(attribute_name)}(?:Attribute)?\s*\(",
-        re.DOTALL,
-    )
-    for block in attribute_blocks:
-        for match in pattern.finditer(block):
-            open_paren = block.find("(", match.start())
-            call_args, end = read_balanced_span(block, open_paren, "(", ")")
-            if end >= 0:
-                return block[match.start() : open_paren] + call_args
-    return None
+def is_method_or_nested_type_header(tokens: list[CSharpToken]) -> bool:
+    values = token_values(tokens)
+    if "(" in values:
+        return True
+    return any(value in {"class", "struct", "interface", "enum", "record"} for value in values)
 
 
-def extract_first_argument(attribute_call: str) -> str | None:
-    open_paren = attribute_call.find("(")
-    if open_paren < 0:
-        return None
-    cursor = open_paren + 1
-    depth = 0
-    value: list[str] = []
-    while cursor < len(attribute_call):
-        char = attribute_call[cursor]
-        if char == "," and depth == 0:
-            break
-        if char == ")" and depth == 0:
-            break
-        value.append(char)
-        if char == "(":
-            depth += 1
-        elif char == ")" and depth > 0:
-            depth -= 1
-        cursor += 1
-    result = "".join(value).strip()
-    return result or None
-
-
-def parse_field_declaration(statement: str) -> tuple[str, str] | None:
-    compact = " ".join(statement.strip().split())
-    compact = re.sub(r"\s*=\s*.*$", "", compact).strip()
-    fixed_match = re.search(
-        r"\bfixed\s+(?P<type>[\w\.]+)\s+(?P<name>\w+)\s*\[[^\]]+\]\s*$",
-        compact,
-    )
-    if fixed_match:
-        return fixed_match.group("type"), fixed_match.group("name")
-    field_match = re.search(r"(?P<type>[\w\.]+)\s+(?P<name>\w+)\s*$", compact)
-    if not field_match:
-        return None
-    return field_match.group("type"), field_match.group("name")
-
-
-def parse_fieldoffset_fields(body: str, constants: dict[str, int], path: Path, struct_name: str, state: ValidationState | None) -> list[FieldLayout]:
+def parse_fieldoffset_fields(
+    body_tokens: list[CSharpToken],
+    constants: dict[str, int],
+    path: Path,
+    struct_name: str,
+    explicit_layout: bool,
+    attribute_text: str,
+    findings: list[Finding],
+) -> list[FieldLayout]:
     fields: list[FieldLayout] = []
-    pending_attributes: list[str] = []
+    pending_attributes: list[list[CSharpToken]] = []
     cursor = 0
-    while cursor < len(body):
-        cursor = skip_csharp_whitespace(body, cursor)
-        if cursor >= len(body):
-            break
-        if body[cursor] == "[":
-            attribute, end = read_balanced_span(body, cursor, "[", "]")
+    statement_start = 0
+    while cursor < len(body_tokens):
+        value = body_tokens[cursor].value
+        if value == "[" and cursor == statement_start:
+            end = find_matching_token(body_tokens, cursor, "[", "]")
             if end < 0:
                 break
-            pending_attributes.append(attribute)
-            cursor = end
+            pending_attributes.append(body_tokens[cursor + 1 : end])
+            cursor = end + 1
+            statement_start = cursor
             continue
-        semicolon = body.find(";", cursor)
-        open_brace = body.find("{", cursor)
-        if semicolon < 0:
-            break
-        if open_brace >= 0 and open_brace < semicolon:
+        if value == "{":
+            close_brace = find_matching_token(body_tokens, cursor, "{", "}")
+            statement_head = body_tokens[statement_start:cursor]
+            property_line = 0
+            if not is_method_or_nested_type_header(statement_head):
+                property_line = detect_property_tokens(body_tokens[cursor + 1 : close_brace if close_brace >= 0 else len(body_tokens)])
+            if property_line:
+                add_parse_error(
+                    findings,
+                    "STRUCT_PROPERTY_BANNED",
+                    f"{struct_name} contains get/set property tokens inside unmanaged layout contract",
+                    path,
+                    property_line,
+                    attribute_text,
+                )
             pending_attributes = []
-            cursor = open_brace + 1
+            cursor = close_brace + 1 if close_brace >= 0 else cursor + 1
+            statement_start = cursor
             continue
-        field_offset_attr = extract_attribute_call(pending_attributes, "FieldOffset")
-        statement = body[cursor:semicolon]
-        if field_offset_attr:
-            parsed_decl = parse_field_declaration(statement)
+        if value != ";":
+            cursor += 1
+            continue
+        statement = body_tokens[statement_start:cursor]
+        property_line = statement_contains_arrow_expression(statement)
+        if property_line and "(" not in token_values(statement):
+            add_parse_error(
+                findings,
+                "STRUCT_PROPERTY_BANNED",
+                f"{struct_name} contains expression-bodied property inside unmanaged layout contract",
+                path,
+                property_line,
+                attribute_text,
+            )
+            pending_attributes = []
+            cursor += 1
+            statement_start = cursor
+            continue
+        field_offset_args = extract_attribute_args(pending_attributes, "FieldOffset")
+        if field_offset_args is not None:
+            parsed_decl = parse_field_tokens(statement)
             if not parsed_decl:
-                if state:
-                    state.add_error("FIELD_DECL_UNPARSED", f"{struct_name} field declaration could not be parsed: {statement.strip()}", str(path))
+                line = statement[0].line if statement else body_tokens[cursor].line
+                add_parse_error(
+                    findings,
+                    "FIELD_DECL_UNPARSED",
+                    f"{struct_name} field declaration could not be parsed: {tokens_to_text(statement)}",
+                    path,
+                    line,
+                    attribute_text,
+                )
                 pending_attributes = []
-                cursor = semicolon + 1
+                cursor += 1
+                statement_start = cursor
                 continue
-            offset_expr = extract_first_argument(field_offset_attr)
-            if not offset_expr:
-                if state:
-                    state.add_error("FIELD_OFFSET_MISSING", f"{struct_name}.{parsed_decl[1]} FieldOffset has no argument", str(path))
+            offset_tokens = extract_first_argument_tokens(field_offset_args)
+            if not offset_tokens:
+                add_parse_error(
+                    findings,
+                    "FIELD_OFFSET_MISSING",
+                    f"{struct_name}.{parsed_decl[1]} FieldOffset has no argument",
+                    path,
+                    statement[0].line if statement else body_tokens[cursor].line,
+                    attribute_text,
+                )
                 pending_attributes = []
-                cursor = semicolon + 1
+                cursor += 1
+                statement_start = cursor
                 continue
             try:
-                offset = eval_int_expr(offset_expr, constants)
+                offset = eval_int_expr(expr_from_tokens(offset_tokens), constants)
             except Exception as exc:
-                if state:
-                    state.add_error("FIELD_OFFSET_UNRESOLVED", f"{struct_name}.{parsed_decl[1]} offset failed: {exc}", str(path))
+                add_parse_error(
+                    findings,
+                    "FIELD_OFFSET_UNRESOLVED",
+                    f"{struct_name}.{parsed_decl[1]} offset failed: {exc}",
+                    path,
+                    statement[0].line if statement else body_tokens[cursor].line,
+                    attribute_text,
+                )
                 pending_attributes = []
-                cursor = semicolon + 1
+                cursor += 1
+                statement_start = cursor
                 continue
-            fields.append(FieldLayout(name=parsed_decl[1], type_name=normalize_type(parsed_decl[0]), offset=offset))
+            fields.append(
+                FieldLayout(
+                    name=parsed_decl[1],
+                    type_name=normalize_type(parsed_decl[0]),
+                    offset=offset,
+                    line=statement[0].line if statement else body_tokens[cursor].line,
+                )
+            )
+        elif explicit_layout:
+            parsed_decl = parse_field_tokens(statement)
+            if parsed_decl:
+                add_parse_error(
+                    findings,
+                    "FIELD_OFFSET_MISSING",
+                    f"{struct_name}.{parsed_decl[1]} is inside explicit layout but has no FieldOffset",
+                    path,
+                    statement[0].line if statement else body_tokens[cursor].line,
+                    attribute_text,
+                )
         pending_attributes = []
-        cursor = semicolon + 1
+        cursor += 1
+        statement_start = cursor
     return fields
 
 
 def parse_constants(files: list[Path]) -> dict[str, int]:
     raw: dict[str, str] = {}
-    class_re = re.compile(r"\b(?:public|internal|private)?\s*(?:static\s+)?class\s+(\w+)\s*\{")
-    const_re = re.compile(
-        r"\bpublic\s+const\s+(?:uint|int|ushort|short|ulong|long)\s+(\w+)\s*=\s*([^;]+);"
-    )
-    for path in files:
-        text = strip_csharp_comments(path.read_text(encoding="utf-8-sig", errors="ignore"))
-        for class_match in class_re.finditer(text):
-            class_name = class_match.group(1)
-            open_brace = text.find("{", class_match.end() - 1)
-            close_brace = find_matching_brace(text, open_brace)
-            if close_brace < 0:
+    for path in filter_files_by_any(files, (b"const",)):
+        try:
+            if not path.exists() or path.stat().st_size == 0:
                 continue
-            body = text[open_brace + 1 : close_brace]
-            for match in const_re.finditer(body):
-                name = match.group(1)
-                expr = match.group(2)
-                raw[f"{class_name}.{name}"] = expr
-                raw.setdefault(name, expr)
-    return resolve_constants(raw)
+            handle = path.open("rb")
+        except OSError:
+            continue
+        with handle:
+            with mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as mm_obj:
+                cursor = 0
+                while True:
+                    const_index = mm_obj.find(b"const", cursor)
+                    if const_index < 0:
+                        break
+                    cursor = const_index + 5
+                    if not is_word_at(mm_obj, const_index, b"const"):
+                        continue
+                    line_start = mm_obj.rfind(b"\n", 0, const_index) + 1
+                    if mm_obj.find(b"//", line_start, const_index) >= 0:
+                        continue
+                    line_end = mm_obj.find(b"\n", const_index)
+                    if line_end < 0:
+                        line_end = len(mm_obj)
+                    scan = bytes(mm_obj[line_start:line_end]).split(b"//", 1)[0]
+                    after = scan[const_index - line_start :].strip()
+                    parts = after.split(None, 3)
+                    if len(parts) < 4:
+                        continue
+                    keyword = parts[0].decode("ascii", errors="ignore")
+                    type_name = parts[1].decode("ascii", errors="ignore")
+                    if keyword != "const" or type_name not in CS_NUMERIC_CAST_TYPES:
+                        continue
+                    name = parts[2].decode("ascii", errors="ignore").strip()
+                    expr_part = parts[3]
+                    equals = expr_part.find(b"=")
+                    semicolon = expr_part.find(b";")
+                    if equals < 0 or semicolon <= equals:
+                        continue
+                    expr = expr_part[equals + 1 : semicolon].decode("utf-8", errors="ignore").strip()
+                    raw.setdefault(name, expr)
+    return LazyConstants(raw)
 
 
 def parse_enum_sections(files: list[Path]) -> dict[str, int]:
     result: dict[str, int] = {}
-    enum_re = re.compile(r"\benum\s+H8DataSectionId\s*(?::\s*\w+)?\s*\{(?P<body>.*?)\}", re.DOTALL)
-    item_re = re.compile(r"\b(\w+)\s*=\s*([^,\n]+)")
-    for path in files:
-        text = strip_csharp_comments(path.read_text(encoding="utf-8-sig", errors="ignore"))
-        match = enum_re.search(text)
-        if not match:
+    for path in filter_files_by_any(files, (b"H8DataSectionId",)):
+        tokens = tokenize_csharp_file(path)
+        index = 0
+        while index < len(tokens):
+            if tokens[index].value != "enum" or index + 1 >= len(tokens) or tokens[index + 1].value != "H8DataSectionId":
+                index += 1
+                continue
+            open_brace = index + 2
+            while open_brace < len(tokens) and tokens[open_brace].value != "{":
+                open_brace += 1
+            close_brace = find_matching_token(tokens, open_brace, "{", "}") if open_brace < len(tokens) else -1
+            if close_brace < 0:
+                return result
+            body = tokens[open_brace + 1 : close_brace]
+            cursor = 0
+            local_constants: dict[str, int] = {}
+            next_value = 0
+            while cursor < len(body):
+                if not is_identifier_value(body[cursor].value):
+                    cursor += 1
+                    continue
+                name = body[cursor].value.lstrip("@")
+                cursor += 1
+                if cursor < len(body) and body[cursor].value == "=":
+                    expr_start = cursor + 1
+                    expr_end = expr_start
+                    while expr_end < len(body) and body[expr_end].value not in {",", "}"}:
+                        expr_end += 1
+                    value = eval_int_expr(expr_from_tokens(body[expr_start:expr_end]), local_constants)
+                    cursor = expr_end
+                else:
+                    value = next_value
+                result[name] = value
+                local_constants[name] = value
+                next_value = value + 1
+                if cursor < len(body) and body[cursor].value == ",":
+                    cursor += 1
+            return result
             continue
-        constants = {}
-        for item in item_re.finditer(match.group("body")):
-            result[item.group(1)] = eval_int_expr(item.group(2), constants)
-        break
     return result
 
 
 def parse_section_order(files: list[Path], enum_sections: dict[str, int]) -> list[str]:
-    order_re = re.compile(
-        r"SectionOrder\s*=\s*\{(?P<body>.*?)\};",
-        re.DOTALL,
-    )
-    item_re = re.compile(r"H8DataSectionId\.(\w+)")
-    for path in files:
-        text = strip_csharp_comments(path.read_text(encoding="utf-8-sig", errors="ignore"))
-        match = order_re.search(text)
-        if not match:
-            continue
-        order = item_re.findall(match.group("body"))
+    for path in filter_files_by_any(files, (b"SectionOrder",)):
+        tokens = tokenize_csharp_file(path)
+        order: list[str] = []
+        index = 0
+        while index < len(tokens):
+            if tokens[index].value != "SectionOrder":
+                index += 1
+                continue
+            cursor = index + 1
+            while cursor < len(tokens) and tokens[cursor].value != "{":
+                cursor += 1
+            close = find_matching_token(tokens, cursor, "{", "}") if cursor < len(tokens) else -1
+            if close < 0:
+                index += 1
+                continue
+            body = tokens[cursor + 1 : close]
+            body_index = 0
+            while body_index + 2 < len(body):
+                if body[body_index].value == "H8DataSectionId" and body[body_index + 1].value == ".":
+                    order.append(body[body_index + 2].value)
+                    body_index += 3
+                    continue
+                body_index += 1
+            if order:
+                return order
+            index = close + 1
         if order:
             return order
     return [name for name, _ in sorted(enum_sections.items(), key=lambda kv: kv[1])]
 
 
-def parse_structs(files: list[Path], constants: dict[str, int], state: ValidationState | None = None) -> dict[str, StructLayout]:
-    structs: dict[str, StructLayout] = {}
-    struct_decl_re = re.compile(
-        r"\b(?:(?:public|internal|private|protected|readonly|partial|unsafe|new)\s+)*struct\s+(?P<name>\w+)\b",
-        re.DOTALL,
-    )
-    for path in files:
-        text = strip_csharp_comments(path.read_text(encoding="utf-8-sig", errors="ignore"))
-        pending_attributes: list[str] = []
-        cursor = 0
-        while cursor < len(text):
-            cursor = skip_csharp_whitespace(text, cursor)
-            if cursor >= len(text):
+def parse_structs_from_tokens(
+    path: Path,
+    tokens: list[CSharpToken],
+    constants: dict[str, int],
+    first_struct_only: bool = False,
+) -> tuple[list[StructLayout], list[Finding]]:
+    structs: list[StructLayout] = []
+    findings: list[Finding] = []
+    pending_attributes: list[list[CSharpToken]] = []
+    cursor = 0
+    while cursor < len(tokens):
+        value = tokens[cursor].value
+        if value == "[":
+            end = find_matching_token(tokens, cursor, "[", "]")
+            if end < 0:
                 break
-            if text[cursor] == "[":
-                attribute, end = read_balanced_span(text, cursor, "[", "]")
-                if end < 0:
-                    break
-                pending_attributes.append(attribute)
-                cursor = end
-                continue
-            if not (text[cursor].isalpha() or text[cursor] == "_"):
-                pending_attributes = []
-                cursor += 1
-                continue
-            open_brace = text.find("{", cursor)
-            semicolon = text.find(";", cursor)
-            if open_brace < 0 and semicolon < 0:
-                break
-            if open_brace >= 0 and (semicolon < 0 or open_brace < semicolon):
-                declaration = text[cursor:open_brace]
-                struct_match = struct_decl_re.search(declaration)
-                struct_layout_attr = extract_attribute_call(pending_attributes, "StructLayout")
-                pending_attributes = []
-                if not struct_match or not struct_layout_attr or "LayoutKind.Explicit" not in struct_layout_attr:
-                    if re.search(r"\benum\b", declaration):
-                        close_brace = find_matching_brace(text, open_brace)
-                        cursor = close_brace + 1 if close_brace >= 0 else open_brace + 1
-                        continue
-                    cursor = open_brace + 1
-                    continue
-                close_brace = find_matching_brace(text, open_brace)
-                if close_brace < 0:
-                    if state:
-                        state.add_error("STRUCT_BRACE_ERROR", f"{struct_match.group('name')} body is not closed", str(path))
-                    cursor = open_brace + 1
-                    continue
-                attribute = " ".join(struct_layout_attr.split())
-                name = struct_match.group("name")
-                body = text[open_brace + 1 : close_brace]
-                cursor = close_brace + 1
-            else:
-                pending_attributes = []
-                cursor = semicolon + 1
-                continue
-            size_expr = extract_named_argument(attribute, "Size")
-            if not size_expr:
-                if state:
-                    state.add_error("STRUCT_SIZE_MISSING", f"{name} has explicit layout without Size", str(path))
-                continue
+            pending_attributes.append(tokens[cursor + 1 : end])
+            cursor = end + 1
+            continue
+        if value == ";":
+            pending_attributes = []
+            cursor += 1
+            continue
+        if value != "struct":
+            cursor += 1
+            continue
+        if cursor + 1 >= len(tokens) or not is_identifier_value(tokens[cursor + 1].value):
+            pending_attributes = []
+            cursor += 1
+            continue
+        name = tokens[cursor + 1].value.lstrip("@")
+        open_brace = cursor + 2
+        while open_brace < len(tokens) and tokens[open_brace].value != "{":
+            open_brace += 1
+        if open_brace >= len(tokens):
+            pending_attributes = []
+            break
+        close_brace = find_matching_token(tokens, open_brace, "{", "}")
+        if close_brace < 0:
+            add_parse_error(findings, "STRUCT_BRACE_ERROR", f"{name} body is not closed", path, tokens[cursor].line)
+            pending_attributes = []
+            cursor = open_brace + 1
+            continue
+        body_tokens = tokens[open_brace + 1 : close_brace]
+        struct_layout_args = extract_attribute_args(pending_attributes, "StructLayout")
+        explicit_layout = struct_layout_args is not None and args_contain_layout_explicit(struct_layout_args)
+        has_fieldoffset = body_contains_fieldoffset(body_tokens)
+        if not explicit_layout and not has_fieldoffset:
+            pending_attributes = []
+            cursor = close_brace + 1
+            continue
+        attribute_text = attribute_tokens_text(pending_attributes, "StructLayout")
+        if has_fieldoffset and not explicit_layout:
+            add_parse_error(
+                findings,
+                "STRUCT_LAYOUT_MISSING",
+                f"{name} contains FieldOffset fields but is not marked StructLayout(LayoutKind.Explicit)",
+                path,
+                tokens[cursor].line,
+                attribute_text,
+            )
+        if struct_layout_args is None:
+            pending_attributes = []
+            cursor = close_brace + 1
+            continue
+        size_tokens = extract_named_argument_tokens(struct_layout_args, "Size")
+        if not size_tokens:
+            add_parse_error(
+                findings,
+                "STRUCT_SIZE_MISSING",
+                f"{name} has explicit layout without Size",
+                path,
+                tokens[cursor].line,
+                attribute_text,
+            )
+            pending_attributes = []
+            cursor = close_brace + 1
+            continue
+        size_expr = expr_from_tokens(size_tokens)
+        try:
+            size = eval_int_expr(size_expr, constants)
+        except Exception as exc:
+            add_parse_error(
+                findings,
+                "STRUCT_SIZE_UNRESOLVED",
+                f"{name} size expression failed: {exc}",
+                path,
+                tokens[cursor].line,
+                attribute_text,
+            )
+            pending_attributes = []
+            cursor = close_brace + 1
+            continue
+        pack_tokens = extract_named_argument_tokens(struct_layout_args, "Pack")
+        if pack_tokens:
             try:
-                size = eval_int_expr(size_expr, constants)
-            except Exception as exc:
-                if state:
-                    state.add_error("STRUCT_SIZE_UNRESOLVED", f"{name} size expression failed: {exc}", str(path))
-                continue
-            layout = StructLayout(name, size_expr, size, path, attribute)
-            pack_expr = extract_named_argument(attribute, "Pack")
-            if pack_expr:
+                pack_value = eval_int_expr(expr_from_tokens(pack_tokens), constants)
+            except Exception:
+                pack_value = 0
+            if pack_value == 1:
+                add_parse_error(findings, "PACK_1_FORBIDDEN", f"{name} uses Pack=1", path, tokens[cursor].line, attribute_text)
+        layout = StructLayout(name, size_expr, size, path, attribute_text, line=tokens[cursor].line)
+        layout.fields.extend(
+            parse_fieldoffset_fields(body_tokens, constants, path, name, explicit_layout, attribute_text, findings)
+        )
+        structs.append(layout)
+        if first_struct_only:
+            return structs, findings
+        pending_attributes = []
+        cursor = close_brace + 1
+    return structs, findings
+
+
+def parse_csharp_file(path: Path, constants: dict[str, int]) -> tuple[list[StructLayout], list[Finding]]:
+    parsed: list[StructLayout] = []
+    findings: list[Finding] = []
+    for span, base_line in extract_struct_candidate_spans(path):
+        structs, span_findings = parse_structs_from_tokens(
+            path,
+            tokenize_csharp_span_fast(span, base_line),
+            constants,
+            first_struct_only=True,
+        )
+        parsed.extend(structs)
+        findings.extend(span_findings)
+    return parsed, findings
+
+
+def parse_csharp_file_worker(payload: tuple[str, dict[str, int]]) -> tuple[str, list[StructLayout], list[Finding], str]:
+    path_text, constants = payload
+    path = Path(path_text)
+    try:
+        parsed_structs, findings = parse_csharp_file(path, constants)
+    except Exception as exc:
+        return path_text, [], [], str(exc)
+    return path_text, parsed_structs, findings, ""
+
+
+def ast_cache_path() -> Path:
+    return PROJECT_ROOT / AST_CACHE_RELATIVE
+
+
+def file_cache_key(path: Path) -> str:
+    try:
+        return path.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def file_cache_stamp(path: Path) -> dict[str, int]:
+    stat = path.stat()
+    return {"size": int(stat.st_size), "mtime_ns": int(stat.st_mtime_ns)}
+
+
+def serialize_field_layout(field_layout: FieldLayout) -> dict[str, Any]:
+    return {
+        "name": field_layout.name,
+        "type_name": field_layout.type_name,
+        "offset": field_layout.offset,
+        "line": field_layout.line,
+    }
+
+
+def deserialize_field_layout(value: dict[str, Any]) -> FieldLayout:
+    return FieldLayout(
+        name=str(value.get("name", "")),
+        type_name=str(value.get("type_name", "")),
+        offset=int(value.get("offset", 0)),
+        line=int(value.get("line", 0)),
+    )
+
+
+def serialize_struct_layout(layout: StructLayout) -> dict[str, Any]:
+    return {
+        "name": layout.name,
+        "size_expr": layout.size_expr,
+        "size": layout.size,
+        "attribute": layout.attribute,
+        "line": layout.line,
+        "fields": [serialize_field_layout(field_layout) for field_layout in layout.fields],
+    }
+
+
+def deserialize_struct_layout(value: dict[str, Any], path: Path) -> StructLayout:
+    layout = StructLayout(
+        name=str(value.get("name", "")),
+        size_expr=str(value.get("size_expr", "")),
+        size=int(value.get("size", 0)),
+        source_path=path,
+        attribute=str(value.get("attribute", "")),
+        line=int(value.get("line", 0)),
+    )
+    raw_fields = value.get("fields", [])
+    if isinstance(raw_fields, list):
+        layout.fields = [deserialize_field_layout(item) for item in raw_fields if isinstance(item, dict)]
+    return layout
+
+
+def serialize_finding(finding: Finding) -> dict[str, Any]:
+    return finding.to_json()
+
+
+def deserialize_finding(value: dict[str, Any]) -> Finding:
+    references = value.get("references", [])
+    return Finding(
+        severity=str(value.get("severity", "ERROR")),
+        code=str(value.get("code", "")),
+        message=str(value.get("message", "")),
+        path=str(value.get("path", "")),
+        offset=value.get("offset") if isinstance(value.get("offset"), int) else None,
+        hexdump=str(value.get("hexdump", "")),
+        layout=str(value.get("layout", "")),
+        remediation=str(value.get("remediation", "")),
+        references=[str(item) for item in references] if isinstance(references, list) else [],
+    )
+
+
+def load_ast_cache() -> dict[str, Any]:
+    path = ast_cache_path()
+    if not path.exists():
+        return {"schema": AST_CACHE_SCHEMA, "files": {}}
+    try:
+        with path.open("r", encoding="utf-8-sig") as handle:
+            payload = json.load(handle)
+    except Exception:
+        return {"schema": AST_CACHE_SCHEMA, "files": {}}
+    if not isinstance(payload, dict) or payload.get("schema") != AST_CACHE_SCHEMA or not isinstance(payload.get("files"), dict):
+        return {"schema": AST_CACHE_SCHEMA, "files": {}}
+    return payload
+
+
+def save_ast_cache(cache: dict[str, Any]) -> None:
+    path = ast_cache_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    with temp_path.open("w", encoding="utf-8") as handle:
+        json.dump(cache, handle, separators=(",", ":"))
+        handle.write("\n")
+    os.replace(temp_path, path)
+
+
+def try_read_cached_parse(
+    cache: dict[str, Any],
+    path: Path,
+) -> tuple[list[StructLayout], list[Finding]] | None:
+    files = cache.get("files")
+    if not isinstance(files, dict):
+        return None
+    key = file_cache_key(path)
+    entry = files.get(key)
+    if not isinstance(entry, dict):
+        return None
+    try:
+        stamp = file_cache_stamp(path)
+    except OSError:
+        return None
+    if entry.get("stamp") != stamp:
+        return None
+    raw_structs = entry.get("structs", [])
+    raw_findings = entry.get("findings", [])
+    if not isinstance(raw_structs, list) or not isinstance(raw_findings, list):
+        return None
+    structs = [deserialize_struct_layout(item, path) for item in raw_structs if isinstance(item, dict)]
+    findings = [deserialize_finding(item) for item in raw_findings if isinstance(item, dict)]
+    return structs, findings
+
+
+def write_cached_parse(
+    cache: dict[str, Any],
+    path: Path,
+    structs: list[StructLayout],
+    findings: list[Finding],
+) -> None:
+    files = cache.setdefault("files", {})
+    if not isinstance(files, dict):
+        cache["files"] = {}
+        files = cache["files"]
+    files[file_cache_key(path)] = {
+        "stamp": file_cache_stamp(path),
+        "structs": [serialize_struct_layout(layout) for layout in structs],
+        "findings": [serialize_finding(finding) for finding in findings],
+    }
+
+
+def parse_structs(
+    files: list[Path],
+    constants: dict[str, int],
+    state: ValidationState | None = None,
+    prefiltered: bool = False,
+) -> dict[str, StructLayout]:
+    structs: dict[str, StructLayout] = {}
+    if not files:
+        return structs
+    if not prefiltered:
+        files = filter_files_by_any(files, (b"StructLayout", b"FieldOffset", b"LayoutKind.Explicit"))
+    if not files:
+        return structs
+    use_cache = prefiltered and all(path.is_relative_to(PROJECT_ROOT) for path in files)
+    cache = load_ast_cache() if use_cache else {}
+    parsed_since_save = 0
+    missed_files: list[Path] = []
+
+    def record_parsed(path: Path, parsed_structs: list[StructLayout], findings: list[Finding]) -> None:
+        for finding in findings:
+            if state:
+                state.findings.append(finding)
+                if state.args.fail_fast and finding.severity == "ERROR":
+                    raise FailFastAbort(finding.message)
+        for layout in parsed_structs:
+            structs[layout.name] = layout
+
+    for path in files:
+        try:
+            cached = try_read_cached_parse(cache, path) if use_cache else None
+            if cached is not None:
+                parsed_structs, findings = cached
+                record_parsed(path, parsed_structs, findings)
+            else:
+                missed_files.append(path)
+        except Exception as exc:
+            if state:
+                state.add_error("CS_PARSE_ERROR", f"{path} parse failed: {exc}", str(path))
+            continue
+    if missed_files:
+        use_process_pool = (
+            len(missed_files) >= 16
+            and os.environ.get("H8BIN_VALIDATOR_USE_PROCESS_POOL") == "1"
+        )
+        if use_process_pool:
+            worker_count = max(1, min(8, max(1, (os.cpu_count() or 2) - 1), len(missed_files)))
+            with concurrent.futures.ProcessPoolExecutor(max_workers=worker_count) as executor:
+                payloads = ((str(path), constants) for path in missed_files)
+                for path_text, parsed_structs, findings, error in executor.map(parse_csharp_file_worker, payloads, chunksize=4):
+                    path = Path(path_text)
+                    if error:
+                        if state:
+                            state.add_error("CS_PARSE_ERROR", f"{path} parse failed: {error}", str(path))
+                        continue
+                    record_parsed(path, parsed_structs, findings)
+                    if use_cache:
+                        write_cached_parse(cache, path, parsed_structs, findings)
+                        parsed_since_save += 1
+                        if parsed_since_save >= 64:
+                            save_ast_cache(cache)
+                            parsed_since_save = 0
+        else:
+            for path in missed_files:
                 try:
-                    pack_value = eval_int_expr(pack_expr, constants)
-                except Exception:
-                    pack_value = 0
-                if pack_value == 1 and state:
-                    state.add_error("PACK_1_FORBIDDEN", f"{name} uses Pack=1", str(path), layout=attribute)
-            layout.fields.extend(parse_fieldoffset_fields(body, constants, path, name, state))
-            structs[name] = layout
+                    parsed_structs, findings = parse_csharp_file(path, constants)
+                except Exception as exc:
+                    if state:
+                        state.add_error("CS_PARSE_ERROR", f"{path} parse failed: {exc}", str(path))
+                    continue
+                record_parsed(path, parsed_structs, findings)
+                if use_cache:
+                    write_cached_parse(cache, path, parsed_structs, findings)
+                    parsed_since_save += 1
+                    if parsed_since_save >= 64:
+                        save_ast_cache(cache)
+                        parsed_since_save = 0
+    if use_cache and parsed_since_save:
+        save_ast_cache(cache)
     return structs
 
 
-def resolve_type_layout(type_name: str, structs: dict[str, StructLayout]) -> tuple[int, int, str] | None:
+def resolve_fixed_buffer_layout(type_name: str, constants: dict[str, int]) -> tuple[int, int, str] | None:
+    close = type_name.rfind("]")
+    open_bracket = type_name.rfind("[", 0, close)
+    if close != len(type_name) - 1 or open_bracket <= 0:
+        return None
+    base = normalize_type(type_name[:open_bracket])
+    primitive = PRIMITIVE_TYPES.get(base)
+    if not primitive:
+        return None
+    count_expr = type_name[open_bracket + 1 : close].strip()
+    if not count_expr:
+        return None
+    try:
+        count = eval_int_expr(count_expr, constants)
+    except Exception:
+        return None
+    if count <= 0:
+        return None
+    element_size, element_alignment, _ = primitive
+    return element_size * count, element_alignment, ""
+
+
+def resolve_type_layout(type_name: str, structs: dict[str, StructLayout], constants: dict[str, int]) -> tuple[int, int, str] | None:
     base = normalize_type(type_name)
+    fixed_buffer = resolve_fixed_buffer_layout(base, constants)
+    if fixed_buffer:
+        return fixed_buffer
     if base in PRIMITIVE_TYPES:
         return PRIMITIVE_TYPES[base]
     if base in VECTOR_TYPES:
@@ -802,7 +1902,7 @@ def validate_struct_layouts(structs: dict[str, StructLayout], state: ValidationS
             payload_bytes = 0
             max_end = 0
             for item in layout.fields:
-                resolved = resolve_type_layout(item.type_name, structs)
+                resolved = resolve_type_layout(item.type_name, structs, state.schema.constants)
                 if not resolved:
                     fields_ready = False
                     break
@@ -855,10 +1955,11 @@ def validate_struct_layouts(structs: dict[str, StructLayout], state: ValidationS
             layout.resolved = True
             unresolved.remove(name)
             progressed = True
-            if layout.size % largest_alignment != 0:
+            required_struct_alignment = max(8, largest_alignment)
+            if layout.size % required_struct_alignment != 0:
                 state.add_error(
                     "STRUCT_SIZE_ALIGNMENT",
-                    f"{name} size {layout.size} is not a multiple of largest field alignment {largest_alignment}",
+                    f"{name} size {layout.size} is not a multiple of required {required_struct_alignment}-byte ARM64 alignment",
                     str(layout.source_path),
                     layout=layout.describe(),
                 )
@@ -868,6 +1969,129 @@ def validate_struct_layouts(structs: dict[str, StructLayout], state: ValidationS
         state.add_error("STRUCT_UNRESOLVED_FIELD", f"{name} has unresolved field types", str(structs[name].source_path))
 
 
+def is_aup_field_name(name: str) -> bool:
+    lowered = name.lower()
+    return (
+        lowered in {"aupx", "aupy", "aupz"}
+        or lowered.endswith("aupx")
+        or lowered.endswith("aupy")
+        or lowered.endswith("aupz")
+        or "absoluteuniverse" in lowered
+        or "worldposition" in lowered
+        or "absoluteposition" in lowered
+        or "universeposition" in lowered
+    )
+
+
+def validate_aup_precision(structs: dict[str, StructLayout], state: ValidationState) -> None:
+    for layout in structs.values():
+        fields_by_name = {field.name: field for field in layout.fields}
+        for field_layout in layout.fields:
+            type_name = normalize_type(field_layout.type_name)
+            if not is_aup_field_name(field_layout.name):
+                continue
+            if type_name in {"float", "float2", "float3", "float4", "Vector3", "Vector2", "Vector4"}:
+                state.add_error(
+                    "AUP_FLOAT_FIELD",
+                    f"{layout.name}.{field_layout.name} stores AUP/world position as {type_name}; binary schema requires double3 or contiguous double lanes",
+                    str(layout.source_path),
+                    field_layout.offset,
+                    layout=layout.describe(),
+                )
+        for prefix in ("Aup", "AUP", "WorldPosition", "AbsolutePosition", "UniversePosition"):
+            x = fields_by_name.get(f"{prefix}X")
+            y = fields_by_name.get(f"{prefix}Y")
+            z = fields_by_name.get(f"{prefix}Z")
+            if not (x and y and z):
+                continue
+            if not (
+                normalize_type(x.type_name) == "double"
+                and normalize_type(y.type_name) == "double"
+                and normalize_type(z.type_name) == "double"
+                and y.offset == x.offset + 8
+                and z.offset == y.offset + 8
+            ):
+                state.add_error(
+                    "AUP_DOUBLE3_CONTIGUITY",
+                    f"{layout.name}.{prefix}X/Y/Z are not contiguous double lanes at +0,+8,+16",
+                    str(layout.source_path),
+                    x.offset,
+                    layout=layout.describe(),
+                )
+
+
+def scan_aup_float_casts(files: list[Path], state: ValidationState) -> None:
+    write_tokens = {"Write", "WriteBytes", "WriteRecord", "Serialize", "BinaryWriter", "FileStream"}
+    aup_tokens = {"Aup", "AUP", "AbsoluteUniversePosition", "WorldPosition", "AbsolutePosition", "UniversePosition"}
+    candidate_files = [
+        path
+        for path in filter_files_by_any(files, (b"float3", b"Vector3"))
+        if file_contains_all_groups(
+            path,
+            (
+                (b"Aup", b"AUP", b"AbsoluteUniverse", b"WorldPosition", b"AbsolutePosition", b"UniversePosition"),
+                (b"BinaryWriter", b"FileStream", b".h8bin", b"WriteRecord", b"WriteBytes"),
+            ),
+        )
+    ]
+    for path in candidate_files:
+        try:
+            lines = path.read_text(encoding="utf-8-sig", errors="ignore").splitlines()
+        except OSError as exc:
+            state.add_error("AUP_CAST_SCAN_READ_ERROR", f"{path} could not be scanned: {exc}", str(path))
+            continue
+        for line_index, raw in enumerate(lines, 1):
+            scan = raw.split("//", 1)[0]
+            if "float3" not in scan and "Vector3" not in scan:
+                continue
+            if not any(token in scan for token in aup_tokens):
+                continue
+            window_start = max(0, line_index - 3)
+            window_end = min(len(lines), line_index + 4)
+            window = "\n".join(lines[window_start:window_end])
+            if any(token in window for token in write_tokens):
+                type_name = "float3" if "float3" in scan else "Vector3"
+                state.add_error(
+                    "AUP_FLOAT_CAST_BEFORE_WRITE",
+                    f"line {line_index}: {path} casts or stages AUP/world position through {type_name} near serialization/write tokens",
+                    str(path),
+                )
+
+
+def find_sizeof_struct_name(tokens: list[CSharpToken]) -> str | None:
+    index = 0
+    while index < len(tokens):
+        if tokens[index].value != "SizeOf":
+            index += 1
+            continue
+        cursor = index + 1
+        if cursor >= len(tokens) or tokens[cursor].value != "<":
+            index += 1
+            continue
+        if cursor + 2 < len(tokens) and is_identifier_value(tokens[cursor + 1].value) and tokens[cursor + 2].value == ">":
+            return tokens[cursor + 1].value.lstrip("@")
+        index += 1
+    return None
+
+
+def replace_sizeof_tokens_with_zero(tokens: list[CSharpToken]) -> list[CSharpToken]:
+    output: list[CSharpToken] = []
+    index = 0
+    while index < len(tokens):
+        if tokens[index].value == "SizeOf" and index + 4 < len(tokens) and tokens[index + 1].value == "<":
+            close = index + 2
+            while close < len(tokens) and tokens[close].value != ">":
+                close += 1
+            cursor = close + 1
+            if close < len(tokens) and cursor + 1 < len(tokens) and tokens[cursor].value == "(" and tokens[cursor + 1].value == ")":
+                output.append(CSharpToken("0", tokens[index].line))
+                index = cursor + 2
+                continue
+        output.append(tokens[index])
+        index += 1
+    return output
+
+
 def parse_expected_record_sizes(
     files: list[Path],
     constants: dict[str, int],
@@ -875,25 +2099,52 @@ def parse_expected_record_sizes(
 ) -> tuple[dict[str, int], dict[str, str]]:
     expected: dict[str, int] = {}
     section_structs: dict[str, str] = {}
-    case_re = re.compile(r"case\s+H8DataSectionId\.(\w+)\s*:\s*return\s+([^;]+);")
-    sizeof_re = re.compile(r"SizeOf\s*<\s*(\w+)\s*>\s*\(\s*\)")
-    for path in files:
-        text = strip_csharp_comments(path.read_text(encoding="utf-8-sig", errors="ignore"))
-        for match in case_re.finditer(text):
-            section_name = match.group(1)
-            expr = match.group(2).strip()
-            size_match = sizeof_re.search(expr)
-            if size_match:
-                struct_name = size_match.group(1)
-                if struct_name in structs:
-                    expected[section_name] = structs[struct_name].size
-                    section_structs[section_name] = struct_name
-                    continue
-            cleaned = re.sub(r"UnsafeUtility\.SizeOf\s*<\s*\w+\s*>\s*\(\s*\)", "0", expr)
-            try:
-                expected[section_name] = eval_int_expr(cleaned, constants)
-            except Exception:
+    candidates = [
+        path
+        for path in filter_files_by_any(files, (b"H8DataSectionId",))
+        if file_contains_all_groups(path, ((b"case",), (b"return",)))
+    ]
+    for path in candidates:
+        tokens = tokenize_csharp_file(path)
+        cursor = 0
+        while cursor < len(tokens):
+            if tokens[cursor].value != "case":
+                cursor += 1
                 continue
+            if cursor + 4 >= len(tokens):
+                break
+            if tokens[cursor + 1].value != "H8DataSectionId" or tokens[cursor + 2].value != ".":
+                cursor += 1
+                continue
+            section_name = tokens[cursor + 3].value
+            colon = cursor + 4
+            while colon < len(tokens) and tokens[colon].value != ":":
+                colon += 1
+            if colon >= len(tokens):
+                cursor += 1
+                continue
+            ret = colon + 1
+            while ret < len(tokens) and tokens[ret].value != "return":
+                if tokens[ret].value == "case":
+                    break
+                ret += 1
+            if ret >= len(tokens) or tokens[ret].value != "return":
+                cursor = colon + 1
+                continue
+            end = ret + 1
+            while end < len(tokens) and tokens[end].value != ";":
+                end += 1
+            expr_tokens = tokens[ret + 1 : end]
+            struct_name = find_sizeof_struct_name(expr_tokens)
+            if struct_name and struct_name in structs:
+                expected[section_name] = structs[struct_name].size
+                section_structs[section_name] = struct_name
+            else:
+                try:
+                    expected[section_name] = eval_int_expr(expr_from_tokens(replace_sizeof_tokens_with_zero(expr_tokens)), constants)
+                except Exception:
+                    pass
+            cursor = end + 1
     for section_name, size in list(expected.items()):
         if section_name in section_structs:
             continue
@@ -909,6 +2160,7 @@ def parse_expected_record_sizes(
 
 def parse_csharp_schema(cs_roots: list[Path], args: argparse.Namespace) -> SchemaModel:
     files = collect_csharp_files(cs_roots)
+    layout_candidate_files = filter_files_by_any(files, (b"StructLayout", b"FieldOffset", b"LayoutKind.Explicit"))
     placeholder = SchemaModel({}, {}, [], {}, {}, {})
     schema_args = argparse.Namespace(**vars(args))
     schema_args.fail_fast = False
@@ -916,21 +2168,29 @@ def parse_csharp_schema(cs_roots: list[Path], args: argparse.Namespace) -> Schem
     if not files:
         roots = ", ".join(str(root) for root in cs_roots)
         state.add_error("CS_SOURCE_EMPTY", f"no C# source files found under: {roots}", roots)
-    constants = parse_constants(files)
+    constants = parse_constants(layout_candidate_files)
     if constants.get("SectionAlignmentBytes", DEFAULT_SECTION_ALIGNMENT) < DEFAULT_SECTION_ALIGNMENT:
         state.add_error(
             "SECTION_ALIGNMENT_CONTRACT",
             f"SectionAlignmentBytes {constants.get('SectionAlignmentBytes')} is below the 16-byte H8DM floor",
             "",
         )
-    enum_sections = parse_enum_sections(files)
-    section_order = parse_section_order(files, enum_sections)
+    enum_sections = parse_enum_sections(layout_candidate_files)
+    if not enum_sections:
+        enum_sections = parse_enum_sections(files)
+    section_order = parse_section_order(layout_candidate_files, enum_sections)
+    if not section_order:
+        section_order = parse_section_order(files, enum_sections)
     schema = SchemaModel(constants, enum_sections, section_order, {}, {}, {})
     state.schema = schema
-    structs = parse_structs(files, constants, state)
+    structs = parse_structs(layout_candidate_files, constants, state, prefiltered=True)
     schema.structs = structs
     validate_struct_layouts(structs, state)
-    expected, section_structs = parse_expected_record_sizes(files, constants, structs)
+    validate_aup_precision(structs, state)
+    scan_aup_float_casts(layout_candidate_files, state)
+    expected, section_structs = parse_expected_record_sizes(layout_candidate_files, constants, structs)
+    if not expected:
+        expected, section_structs = parse_expected_record_sizes(files, constants, structs)
     schema.expected_sizes = expected
     schema.section_structs = section_structs
     for primary in ("H8DataBlobHeader", "H8DataBlobDirectory", "H8DataSectionEntry"):
@@ -997,7 +2257,7 @@ def build_artifact_remediation(path: Path) -> tuple[str, list[str]]:
             "Move the text file out of runtime StreamingAssets into a source-data folder and add an explicit baker "
             "that emits binary payload bytes before build."
         )
-    return remediation, find_artifact_references(name)
+    return remediation, []
 
 
 def get_reference_text_cache() -> list[tuple[str, list[str]]]:
@@ -1044,25 +2304,68 @@ def is_editor_source_path(path: Path) -> bool:
     return any(part.lower() == "editor" or part.lower().endswith(".editor") for part in path.parts)
 
 
+def extract_first_csharp_string_literal(text: str) -> str:
+    start = text.find('"')
+    if start < 0:
+        return ""
+    value: list[str] = []
+    escaped = False
+    for char in text[start + 1 :]:
+        if escaped:
+            value.append(char)
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+            continue
+        if char == '"':
+            return "".join(value)
+        value.append(char)
+    return ""
+
+
 def collect_text_artifact_symbols(lines: list[str]) -> dict[str, tuple[str, str]]:
     symbols: dict[str, tuple[str, str]] = {}
     for line in lines:
         stripped = line.strip()
         if stripped.startswith("//"):
             continue
-        match = TEXT_ARTIFACT_SYMBOL_DECLARATION.search(stripped)
-        if not match:
+        scan = stripped.split("//", 1)[0]
+        if "=" not in scan or "string" not in scan or '"' not in scan:
             continue
-        value = match.group("value")
+        left, right = scan.split("=", 1)
+        left_parts = left.replace("\t", " ").split()
+        if "string" not in left_parts:
+            continue
+        if "const" not in left_parts and not ("static" in left_parts and "readonly" in left_parts):
+            continue
+        string_index = left_parts.index("string")
+        if string_index + 1 >= len(left_parts):
+            continue
+        name = left_parts[string_index + 1].lstrip("@").strip()
+        if not name or not is_identifier_value(name):
+            continue
+        value = extract_first_csharp_string_literal(right)
         if any(value.lower().endswith(suffix) for suffix in TEXT_RUNTIME_SUFFIXES):
-            name = match.group("name")
             symbols[name.lower()] = (name, value)
     return symbols
 
 
+def contains_identifier_word(text: str, word: str) -> bool:
+    cursor = text.find(word)
+    while cursor >= 0:
+        left_ok = cursor == 0 or not (text[cursor - 1].isalnum() or text[cursor - 1] == "_")
+        end = cursor + len(word)
+        right_ok = end >= len(text) or not (text[end].isalnum() or text[end] == "_")
+        if left_ok and right_ok:
+            return True
+        cursor = text.find(word, cursor + 1)
+    return False
+
+
 def referenced_text_artifact_symbol(lower_line: str, symbols: dict[str, tuple[str, str]]) -> tuple[str, str] | None:
     for lower_name, symbol in symbols.items():
-        if re.search(rf"\b{re.escape(lower_name)}\b", lower_line):
+        if contains_identifier_word(lower_line, lower_name):
             return symbol
     return None
 
@@ -2220,17 +3523,23 @@ def build_report(state: ValidationState) -> dict[str, Any]:
         if name in {"H8DataBlobHeader", "H8DataBlobDirectory", "H8DataSectionEntry"}
     }
     self_audit = {
-        "agent_id": "SHINOBU_258",
+        "agent_id": "SHINOBU_358",
+        "legacy_tool_owner": "SHINOBU_258",
         "task_count": 20,
         "standalone_python": True,
         "unity_runtime_dependency": False,
         "mmap_file_access": True,
+        "watchdog_seconds": WATCHDOG_SECONDS,
         "checksum": "Unity.Collections.xxHash3.Hash64 pure-Python oracle over bytes[16..end)",
         "csharp_parser": {
-            "mode": "lightweight syntax tree scanner: comments stripped, attribute blocks balanced, declaration bodies matched by braces",
-            "struct": r"leading attribute blocks -> StructLayout(Attribute)(...LayoutKind.Explicit..., Size=...) -> modifiers struct Name { ... }",
-            "field": r"field attribute blocks -> FieldOffset(Attribute)(X) -> modifiers type Name;",
-            "combined_attributes": "supports [Serializable, StructLayout(...)] and [NonSerialized, FieldOffset(...)] lists",
+            "mode": "deterministic mmap token stream; no regex in StructLayout/FieldOffset AST path",
+            "struct": "attribute token blocks -> StructLayout token call -> LayoutKind.Explicit token -> Size token expression -> struct body brace span",
+            "field": "field attribute token blocks -> FieldOffset token call -> declaration token statement -> byte offset expression",
+            "combined_attributes": "supports combined attribute lists and fully qualified Attribute suffix calls",
+            "property_gate": "get/set/init accessors and top-level expression-bodied properties inside unmanaged layout contracts emit STRUCT_PROPERTY_BANNED and exit code 3",
+            "fixed_buffer_gate": "fixed primitive buffers are resolved as elementSize * declared constant length without treating [] as attributes",
+            "nested_scope_gate": "nested explicit structs are parsed through their own candidate spans; outer job/queue structs do not inherit nested FieldOffset tokens",
+            "cache_schema": AST_CACHE_SCHEMA,
             "section_order": "SectionOrder = { H8DataSectionId.* }",
             "record_size": "case H8DataSectionId.*: return ...;",
         },
@@ -2250,8 +3559,9 @@ def build_report(state: ValidationState) -> dict[str, Any]:
         "migration_summary": "Report groups runtime text artifacts and loader sites by required route owner.",
     }
     return {
-        "schema": "h8bin_validator.report.v1",
-        "agent_id": "SHINOBU_258",
+        "schema": "h8bin_validator.report.v2",
+        "agent_id": "SHINOBU_358",
+        "legacy_tool_owner": "SHINOBU_258",
         "status": "PASS" if state.ok else "FAIL",
         "elapsed_seconds": round(elapsed, 6),
         "bytes_processed": state.bytes_processed,
@@ -2357,7 +3667,11 @@ def normalize_report_path(path_text: str) -> str:
 
 def write_json_report(path: Path, report: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    temp_path = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    with temp_path.open("w", encoding="utf-8") as handle:
+        json.dump(report, handle, indent=2)
+        handle.write("\n")
+    os.replace(temp_path, path)
 
 
 def write_junit_report(path: Path, report: dict[str, Any]) -> None:
@@ -2396,10 +3710,10 @@ def write_junit_report(path: Path, report: dict[str, Any]) -> None:
 
 def append_metrics(path: Path, report: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    warning = " PERF_WARN" if report["elapsed_seconds"] > 15.0 else ""
+    warning = " PERF_WARN" if report["elapsed_seconds"] > 0.5 else ""
     stamp = time.strftime("%Y-%m-%d")
     line = (
-        f"{stamp} SHINOBU_258 status={report['status']} "
+        f"{stamp} SHINOBU_358 status={report['status']} "
         f"mb={report['mb_processed']} files={report['files_checked']} "
         f"structs={report['structs_parsed']} seconds={report['elapsed_seconds']}{warning}\n"
     )
@@ -2407,11 +3721,149 @@ def append_metrics(path: Path, report: dict[str, Any]) -> None:
         handle.write(line)
 
 
+def append_metric_phi_data_truth_row(path: Path, report: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    row = {
+        "agentId": "SHINOBU_358",
+        "tool": "h8bin_validator",
+        "status": report["status"],
+        "filesScanned": report["files_checked"],
+        "structsValidated": report["structs_parsed"],
+        "arm64Violations": sum(1 for item in report["findings"] if item["code"] in ARM64_ALIGNMENT_CODES),
+        "propertyViolations": sum(1 for item in report["findings"] if item["code"] in PROPERTY_BAN_CODES),
+        "schemaMismatches": sum(1 for item in report["findings"] if item["code"] in SCHEMA_MISMATCH_CODES),
+        "executionTimeMs": round(float(report["elapsed_seconds"]) * 1000.0, 3),
+        "performanceRegressionWarning": float(report["elapsed_seconds"]) > 0.5,
+    }
+    payload: dict[str, Any]
+    if path.exists():
+        try:
+            with path.open("r", encoding="utf-8-sig") as handle:
+                existing = json.load(handle)
+        except Exception:
+            existing = None
+        if isinstance(existing, dict) and isinstance(existing.get("rows"), list):
+            rows = existing["rows"]
+        elif isinstance(existing, list):
+            rows = existing
+        elif existing is None:
+            rows = []
+        else:
+            rows = [{"legacyPayload": existing}]
+    else:
+        rows = []
+    rows.append(row)
+    payload = {
+        "schema": "hecton8.metric_phi.binary_schema_ast_rows.v1",
+        "rows": rows[-300:],
+    }
+    temp_path = path.with_name(f".{path.name}.tmp.{os.getpid()}")
+    with temp_path.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+        handle.write("\n")
+    os.replace(temp_path, path)
+
+
+def exit_code_for_findings(findings: list[Finding]) -> int:
+    codes = {finding.code for finding in findings if finding.severity == "ERROR"}
+    if codes & PROPERTY_BAN_CODES:
+        return 3
+    if codes & ARM64_ALIGNMENT_CODES:
+        return 2
+    if codes & SCHEMA_MISMATCH_CODES:
+        return 4
+    return 1 if codes else 0
+
+
 def default_cs_roots() -> list[Path]:
     return [
-        PROJECT_ROOT / "Assets/_Project/Scripts/Data/Monolith",
-        PROJECT_ROOT / "Assets/_Project/Scripts/Editor/DataMonolith",
+        PROJECT_ROOT / "Assets/_Project/Scripts",
     ]
+
+
+def generate_mock_csharp_structs(root: Path) -> Path:
+    source = root / "Scripts"
+    source.mkdir(parents=True, exist_ok=True)
+    (source / "MockBinarySchemas.cs").write_text(
+        """
+using System.Runtime.InteropServices;
+using Unity.Mathematics;
+
+public static class H8DataLayoutConstants
+{
+    public const int HeaderSizeBytes = 16;
+}
+
+[StructLayout(LayoutKind.Explicit, Size = 16)]
+public struct H8MockValidRecord
+{
+    [FieldOffset(0)] public double AupX;
+    [FieldOffset(8)] public ulong HashId;
+}
+
+[StructLayout(LayoutKind.Explicit, Size = 16)]
+public struct H8MockUnalignedRecord
+{
+    [FieldOffset(1)] public double AupX;
+}
+
+[StructLayout(LayoutKind.Explicit, Size = 16)]
+public struct H8MockPropertyRecord
+{
+    public int SlowCopy { get; set; }
+    [FieldOffset(0)] public int RawValue;
+}
+
+[StructLayout(LayoutKind.Explicit, Size = 12)]
+public struct H8MockBadSizeRecord
+{
+    [FieldOffset(0)] public double AupX;
+}
+
+[StructLayout(LayoutKind.Explicit, Size = 16)]
+public struct H8MockFloatAupRecord
+{
+    [FieldOffset(0)] public float3 WorldPosition;
+}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    return source
+
+
+def run_self_tests() -> int:
+    with tempfile.TemporaryDirectory() as raw:
+        source = generate_mock_csharp_structs(Path(raw))
+        args = argparse.Namespace(fail_fast=False)
+        placeholder = SchemaModel({}, {}, [], {}, {}, {})
+        state = ValidationState(args, placeholder)
+        files = collect_csharp_files([source])
+        constants = parse_constants(files)
+        structs = parse_structs(files, constants, state)
+        state.schema = SchemaModel(constants, {}, [], structs, {}, {})
+        validate_struct_layouts(structs, state)
+        validate_aup_precision(structs, state)
+        codes = {finding.code for finding in state.findings if finding.severity == "ERROR"}
+        required = {
+            "FIELD_ALIGNMENT",
+            "STRUCT_PROPERTY_BANNED",
+            "STRUCT_SIZE_ALIGNMENT",
+            "AUP_FLOAT_FIELD",
+        }
+        missing = sorted(required - codes)
+        if missing:
+            print(f"SELF_TEST_FAIL missing={','.join(missing)}")
+            return 1
+        print(f"SELF_TEST_PASS structs={len(structs)} codes={','.join(sorted(codes))}")
+        return 0
+
+
+def start_watchdog() -> threading.Timer:
+    timer = threading.Timer(WATCHDOG_SECONDS, lambda: os._exit(1))
+    timer.daemon = True
+    timer.start()
+    return timer
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -2423,9 +3875,10 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="C# source root to parse; can be supplied multiple times",
     )
-    parser.add_argument("--report-json", default="Docs/Reports/SHINOBU_258_h8bin_validation.json")
+    parser.add_argument("--report-json", default=BINARY_SCHEMA_AUDIT_REPORT)
     parser.add_argument("--report-junit", default="")
     parser.add_argument("--metrics-log", default="Docs/Reports/CI_BINARY_VALIDATION.log")
+    parser.add_argument("--metric-phi-json", default=METRIC_PHI_BINARY_SCHEMA_ROWS)
     parser.add_argument("--known-hash-list", default="", help="optional newline-separated master hash allow-list")
     parser.add_argument("--fail-fast", action="store_true")
     parser.add_argument("--thorough", action="store_true", help="validate every sampled-capable record")
@@ -2441,12 +3894,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="runtime C# root scanned for forbidden text StreamingAssets loaders; can be supplied multiple times",
     )
     parser.add_argument("--csv-diff", nargs=2, metavar=("SOURCE_CSV", "GENERATED_H8BIN"))
+    parser.add_argument("--test", action="store_true", help="run SHINOBU_358 self-tests and exit")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.test:
+        return run_self_tests()
+    watchdog = start_watchdog()
     cs_roots = [resolve_path(value) for value in args.cs_source_dir] if args.cs_source_dir else default_cs_roots()
     runtime_roots = (
         [resolve_path(value) for value in args.runtime_source_dir]
@@ -2454,11 +3911,11 @@ def main(argv: list[str] | None = None) -> int:
         else default_runtime_source_roots()
     )
     target_dir = resolve_path(args.target_dir)
-    schema = parse_csharp_schema(cs_roots, args)
-    state = ValidationState(args, schema)
-    for finding in getattr(args, "_schema_findings", []):
-        state.findings.append(finding)
     try:
+        schema = parse_csharp_schema(cs_roots, args)
+        state = ValidationState(args, schema)
+        for finding in getattr(args, "_schema_findings", []):
+            state.findings.append(finding)
         if args.fail_fast and not state.ok:
             raise FailFastAbort("schema validation failed")
         if not args.allow_unbaked_artifacts:
@@ -2484,20 +3941,26 @@ def main(argv: list[str] | None = None) -> int:
             csv_to_bin_diff(resolve_path(args.csv_diff[0]), resolve_path(args.csv_diff[1]), state)
     except FailFastAbort:
         pass
+    finally:
+        watchdog.cancel()
     report = build_report(state)
     write_json_report(resolve_path(args.report_json), report)
     if args.report_junit:
         write_junit_report(resolve_path(args.report_junit), report)
     append_metrics(resolve_path(args.metrics_log), report)
+    append_metric_phi_data_truth_row(resolve_path(args.metric_phi_json), report)
     print(
         f"h8bin_validator status={report['status']} files={report['files_checked']} "
         f"structs={report['structs_parsed']} mb={report['mb_processed']} seconds={report['elapsed_seconds']}"
     )
-    if not state.ok:
+    exit_code = exit_code_for_findings(state.findings)
+    if exit_code:
+        red = "\033[91m"
+        reset = "\033[0m"
         for finding in state.findings[:12]:
             if finding.severity == "ERROR":
-                print(f"ERROR {finding.code}: {finding.message}", file=sys.stderr)
-        return 1
+                print(f"{red}ERROR {finding.code}: {finding.message}{reset}", file=sys.stderr)
+        return exit_code
     return 0
 
 

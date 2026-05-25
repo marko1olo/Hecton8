@@ -76,6 +76,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the official pickup flow adds one or more world-collected items into player inventory.
     /// </summary>
+    [System.Obsolete("First-party item lifecycle managed event is retired. Use ItemLifecycleSignalRoute and SignalBus<ItemLifecycleSignal>.", true)]
     internal sealed class ItemCollectedEvent : HectonEvent
     {
         /// <summary>
@@ -163,6 +164,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the official recycling owner dismantles one or more inventory items into resource outputs.
     /// </summary>
+    [System.Obsolete("First-party item lifecycle managed event is retired. Use ItemLifecycleSignalRoute and SignalBus<ItemLifecycleSignal>.", true)]
     internal sealed class ItemRecycledEvent : HectonEvent
     {
         /// <summary>
@@ -197,6 +199,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the player deliberately removes an inventory item through the supported discard flow.
     /// </summary>
+    [System.Obsolete("First-party item lifecycle managed event is retired. Use ItemLifecycleSignalRoute and SignalBus<ItemLifecycleSignal>.", true)]
     internal sealed class ItemDiscardedEvent : HectonEvent
     {
         /// <summary>
@@ -365,6 +368,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the survival owner resolves a fatal state and records the completed death telemetry.
     /// </summary>
+    [System.Obsolete("First-party player death managed event is retired. Use SurvivalSignalRoute and SignalBus<SurvivalVitalsChangedSignal>.", true)]
     internal sealed class PlayerDiedEvent : HectonEvent
     {
         /// <summary>
@@ -399,6 +403,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the game's internal progression registry unlocks a persistent achievement.
     /// </summary>
+    [System.Obsolete("First-party achievement unlock managed event is retired. Use ProgressionMetaSignalRoute and SignalBus<ProgressionMetaSignal>.", true)]
     internal sealed class AchievementUnlockedEvent : HectonEvent
     {
         /// <summary>
@@ -443,6 +448,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the contextual advisory system pushes a non-repeatable suit/PDA recommendation.
     /// </summary>
+    [System.Obsolete("First-party advisory managed event is retired. Use ProgressionMetaSignalRoute and SignalBus<ProgressionMetaSignal>.", true)]
     internal sealed class PlayerAdvisoryIssuedEvent : HectonEvent
     {
         /// <summary>

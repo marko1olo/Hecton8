@@ -1,0 +1,1668 @@
+{
+  "agent": "X_007",
+  "branchAudit": {
+    "Assets/_Project/Scripts/MathLodApproximation.cs": {
+      "burstCompileCount": 1,
+      "ifCount": 6,
+      "switchCount": 3,
+      "ternaryCount": 5
+    },
+    "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs": {
+      "burstCompileCount": 9,
+      "ifCount": 50,
+      "switchCount": 3,
+      "ternaryCount": 67
+    },
+    "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs": {
+      "burstCompileCount": 6,
+      "ifCount": 56,
+      "switchCount": 0,
+      "ternaryCount": 42
+    },
+    "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs": {
+      "burstCompileCount": 8,
+      "ifCount": 206,
+      "switchCount": 0,
+      "ternaryCount": 48
+    },
+    "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs": {
+      "burstCompileCount": 11,
+      "ifCount": 205,
+      "switchCount": 0,
+      "ternaryCount": 47
+    },
+    "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsJobs.cs": {
+      "burstCompileCount": 12,
+      "ifCount": 48,
+      "switchCount": 0,
+      "ternaryCount": 9
+    }
+  },
+  "codeAnchorAudit": {
+    "aiAnxietyApproxIfCount": 0,
+    "aiAnxietyDirectExpRemoved": true,
+    "approxCoreIfCount": 0,
+    "approxCoreTernaryCount": 0,
+    "approxCoreUsesMathSelect": true,
+    "ballisticsDirectExpRemoved": true,
+    "bhaskaraCoreIfCount": 0,
+    "bhaskaraCoreTernaryCount": 0,
+    "bhaskaraCoreUsesMathSelect": true,
+    "decompressionApproxPresent": true,
+    "decompressionAuthorityConstantTissues": true,
+    "decompressionAuthorityTissueCount": 3,
+    "decompressionDirectExpRemoved": true,
+    "editorBioForgeExpLogRemoved": true,
+    "gasLeakDirectExpRemoved": true,
+    "hydraulicErosionExpRemoved": true,
+    "jacobiContinuousIterationsPresent": true,
+    "jacobiRuntimeUsesGlobalQualityParameter": true,
+    "jacobiSelfAuditMonotonic": true,
+    "mathLodApproximationContractPresent": true,
+    "mathLodBlackBoxDumpWriterPresent": true,
+    "mathLodTelemetryEntry64BytesDeclared": true,
+    "mathLodTortureJobPresent": true,
+    "physiologyDirectExpRemoved": true,
+    "remainingFloatModeFastCount": 695,
+    "rollbackDirectExpRemoved": true,
+    "solarDirectExpRemoved": true,
+    "stormAttenuationDirectExpRemoved": true
+  },
+  "firstOccurrences": [
+    {
+      "file": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionAnxietyJobs.cs",
+      "hotHeuristic": false,
+      "line": 56,
+      "pattern": "math.sin",
+      "text": "aup.AUP = new double3(math.cos(angle) * radius, -48.0 + ((index & 15) * 2.0), math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionAnxietyJobs.cs",
+      "hotHeuristic": false,
+      "line": 56,
+      "pattern": "math.cos",
+      "text": "aup.AUP = new double3(math.cos(angle) * radius, -48.0 + ((index & 15) * 2.0), math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/Fauna/ProceduralBiteIkJobs.cs",
+      "hotHeuristic": false,
+      "line": 353,
+      "pattern": "math.sin",
+      "text": "float hingeOffset = math.sin(bendAngle) * jawOpen;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/IK/LeviathanProceduralIkStageJobs.cs",
+      "hotHeuristic": false,
+      "line": 324,
+      "pattern": "math.cos",
+      "text": "math.cos(phase) * radius,"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/IK/LeviathanProceduralIkStageJobs.cs",
+      "hotHeuristic": false,
+      "line": 325,
+      "pattern": "math.sin",
+      "text": "math.sin(phase * 0.37d) * vertical,"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/IK/LeviathanProceduralIkStageJobs.cs",
+      "hotHeuristic": false,
+      "line": 326,
+      "pattern": "math.sin",
+      "text": "math.sin(phase) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/IK/VRPhysicalHandPresenceIkJobs.cs",
+      "hotHeuristic": false,
+      "line": 908,
+      "pattern": "math.sin",
+      "text": "float sinAngle = math.sin(shoulderAngle);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/IK/VRPhysicalHandPresenceIkJobs.cs",
+      "hotHeuristic": false,
+      "line": 909,
+      "pattern": "math.cos",
+      "text": "float cosAngle = math.cos(shoulderAngle);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+      "hotHeuristic": false,
+      "line": 255,
+      "pattern": "math.sin",
+      "text": "float3 upperDirection = (handDirection * math.cos(shoulderAngle)) + (bendDirection * math.sin(shoulderAngle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+      "hotHeuristic": false,
+      "line": 255,
+      "pattern": "math.cos",
+      "text": "float3 upperDirection = (handDirection * math.cos(shoulderAngle)) + (bendDirection * math.sin(shoulderAngle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs",
+      "hotHeuristic": false,
+      "line": 619,
+      "pattern": "math.sin",
+      "text": "float pulse = 0.5f + (0.5f * math.sin(TimeSeconds * 0.071f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationDebugGizmo.cs",
+      "hotHeuristic": false,
+      "line": 70,
+      "pattern": "math.sin",
+      "text": "Vector3 current = center + new Vector3(math.cos(angle) * safeRadius, 0f, math.sin(angle) * safeRadius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationDebugGizmo.cs",
+      "hotHeuristic": false,
+      "line": 70,
+      "pattern": "math.cos",
+      "text": "Vector3 current = center + new Vector3(math.cos(angle) * safeRadius, 0f, math.sin(angle) * safeRadius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+      "hotHeuristic": false,
+      "line": 1593,
+      "pattern": "math.sin",
+      "text": "float depth01 = 0.5f + 0.5f * math.sin(depthPhase * math.PI * 2f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "hotHeuristic": false,
+      "line": 9480,
+      "pattern": "math.sin",
+      "text": "? math.sin(chorusPhase) * BinauralNarcosisMaximumChorusSamples * narcosisChorusDrive"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 171,
+      "pattern": "math.sin",
+      "text": "float stress = 0.5f + 0.5f * math.sin(time * stressHz * 6.28318530718f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 172,
+      "pattern": "math.sin",
+      "text": "float tension = 0.5f + 0.5f * math.sin((time * tensionHz * 6.28318530718f) + 1.7f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 173,
+      "pattern": "math.sin",
+      "text": "float depth = 0.5f + 0.5f * math.sin((time * depthHz * 6.28318530718f) + 0.42f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 230,
+      "pattern": "math.cos",
+      "text": "HanningLut[index] = 0.5f - 0.5f * math.cos(t * 6.28318530718f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 262,
+      "pattern": "math.sin",
+      "text": "math.sin(t * frequency * 6.28318530718f) * 0.44f +"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 263,
+      "pattern": "math.sin",
+      "text": "math.sin(t * frequency * 2.71f * 6.28318530718f) * 0.25f +"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 264,
+      "pattern": "math.sin",
+      "text": "math.sin(t * frequency * 5.39f * 6.28318530718f) * 0.12f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 276,
+      "pattern": "math.cos",
+      "text": "return 0.5f - 0.5f * math.cos(t * 6.28318530718f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs",
+      "hotHeuristic": true,
+      "line": 691,
+      "pattern": "math.sin",
+      "text": "float raw = math.sin((float)state.Phase) * envelope * amplitude;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 926,
+      "pattern": "math.sin",
+      "text": "float scrape = math.sin(phase * math.PI * 2f) * 0.55f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 927,
+      "pattern": "math.sin",
+      "text": "scrape += math.sin(phase * math.PI * 9.7f + 0.8f) * 0.22f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 928,
+      "pattern": "math.sin",
+      "text": "scrape += math.sin(phase * math.PI * 37.1f + 1.7f) * 0.08f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 930,
+      "pattern": "math.sin",
+      "text": "float envelope = math.sin(phase * math.PI);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 1701,
+      "pattern": "math.sin",
+      "text": "float dangerWave = 0.5f + 0.5f * math.sin(frame * 0.021f + math.sin(frame * 0.0031f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 1702,
+      "pattern": "math.sin",
+      "text": "float depthWave = 0.5f + 0.5f * math.sin(slowPhase);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 1746,
+      "pattern": "math.sin",
+      "text": "float heartbeat = 0.55f + 0.45f * math.sin(lfoPhase * math.PI * 2f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 1763,
+      "pattern": "math.pow",
+      "text": "float detune = math.pow(2f, cents / 1200f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 1831,
+      "pattern": "math.sin",
+      "text": "float grainWindow = math.sin(phase * math.PI);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "hotHeuristic": false,
+      "line": 1839,
+      "pattern": "math.sin",
+      "text": "float fold = math.sin((grainSample + (HashToUnit(Hash32(hash ^ (uint)frame)) - 0.5f) * tuning.NoiseFoldback * scalar.TensionIndex) * math.PI);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs",
+      "hotHeuristic": true,
+      "line": 210,
+      "pattern": "math.cos",
+      "text": "return 0.5f - 0.5f * math.cos(phase * TwoPi);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs",
+      "hotHeuristic": true,
+      "line": 539,
+      "pattern": "math.cos",
+      "text": "math.cos(angle) * radius,"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs",
+      "hotHeuristic": true,
+      "line": 540,
+      "pattern": "math.sin",
+      "text": "math.sin(angle * 0.37f) * 2.5f,"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs",
+      "hotHeuristic": true,
+      "line": 541,
+      "pattern": "math.sin",
+      "text": "math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankContracts.cs",
+      "hotHeuristic": false,
+      "line": 402,
+      "pattern": "math.sin",
+      "text": "float a = math.sin(t * baseHz * 6.28318530718f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankContracts.cs",
+      "hotHeuristic": false,
+      "line": 403,
+      "pattern": "math.sin",
+      "text": "float b = math.sin(t * (baseHz * 1.497f) * 6.28318530718f) * 0.33f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Virtualization/AudioVirtualizationJobs.cs",
+      "hotHeuristic": false,
+      "line": 427,
+      "pattern": "math.sin",
+      "text": "double3 position = CenterAup + new double3(math.cos(angle) * radius, depth, math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Virtualization/AudioVirtualizationJobs.cs",
+      "hotHeuristic": false,
+      "line": 427,
+      "pattern": "math.cos",
+      "text": "double3 position = CenterAup + new double3(math.cos(angle) * radius, depth, math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Virtualization/AudioVirtualizationJobs.cs",
+      "hotHeuristic": false,
+      "line": 429,
+      "pattern": "math.sin",
+      "text": "PreviousSourceAup[index] = position - new double3(0.05 * math.sin(angle), 0.0, 0.05 * math.cos(angle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Audio/Virtualization/AudioVirtualizationJobs.cs",
+      "hotHeuristic": false,
+      "line": 429,
+      "pattern": "math.cos",
+      "text": "PreviousSourceAup[index] = position - new double3(0.05 * math.sin(angle), 0.0, 0.05 * math.cos(angle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/BuilderTool.cs",
+      "hotHeuristic": false,
+      "line": 524,
+      "pattern": "math.sin",
+      "text": "float sinLimit = math.sin(halfLimit);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+      "hotHeuristic": false,
+      "line": 2045,
+      "pattern": "math.sin",
+      "text": "(math.sin(x) * 46f) -"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+      "hotHeuristic": false,
+      "line": 2046,
+      "pattern": "math.cos",
+      "text": "(math.cos(z) * 33f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/CaveBioRootsGenerator.cs",
+      "hotHeuristic": false,
+      "line": 432,
+      "pattern": "math.sin",
+      "text": "values[i] = math.sin((i + 0.5f) * (2f * math.PI / SwayLutSize));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/CaveSedimentShelfRuntimeBuilder.cs",
+      "hotHeuristic": true,
+      "line": 62,
+      "pattern": "Mathf.Cos",
+      "text": "volumeBounds.center.x + Mathf.Cos(angleRadians) * radiusX * radial,"
+    },
+    {
+      "file": "Assets/_Project/Scripts/CaveSedimentShelfRuntimeBuilder.cs",
+      "hotHeuristic": true,
+      "line": 64,
+      "pattern": "Mathf.Sin",
+      "text": "volumeBounds.center.z + Mathf.Sin(angleRadians) * radiusZ * radial);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "hotHeuristic": true,
+      "line": 248,
+      "pattern": "math.sin",
+      "text": "float3 local = new float3(math.cos(angle) * radius, -1.5f + ((i % 3) * 1.5f), math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "hotHeuristic": true,
+      "line": 248,
+      "pattern": "math.cos",
+      "text": "float3 local = new float3(math.cos(angle) * radius, -1.5f + ((i % 3) * 1.5f), math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "hotHeuristic": true,
+      "line": 294,
+      "pattern": "math.sin",
+      "text": "float3 local = new float3(math.cos(angle) * radius, -1.5f + ((i % 3) * 1.5f), math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "hotHeuristic": true,
+      "line": 294,
+      "pattern": "math.cos",
+      "text": "float3 local = new float3(math.cos(angle) * radius, -1.5f + ((i % 3) * 1.5f), math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/HabitatDeconstructionTransactionKernel.cs",
+      "hotHeuristic": true,
+      "line": 422,
+      "pattern": "math.sin",
+      "text": "return new float3(math.cos(angle) * radius, y, math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/HabitatDeconstructionTransactionKernel.cs",
+      "hotHeuristic": true,
+      "line": 422,
+      "pattern": "math.cos",
+      "text": "return new float3(math.cos(angle) * radius, y, math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+      "hotHeuristic": false,
+      "line": 136,
+      "pattern": "math.sin",
+      "text": "math.sin((localPosition.x + localPosition.z + (Seed & 1023u)) * math.max(RidgeFrequency, 0.0001f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionJobs.cs",
+      "hotHeuristic": false,
+      "line": 699,
+      "pattern": "math.sin",
+      "text": "float terrainFake = math.sin((x * 0.173f) + (z * 0.097f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "hotHeuristic": true,
+      "line": 1438,
+      "pattern": "math.sin",
+      "text": "return new float3(math.cos(angle) * radius, 0.45f, math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "hotHeuristic": true,
+      "line": 1438,
+      "pattern": "math.cos",
+      "text": "return new float3(math.cos(angle) * radius, 0.45f, math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Arm64AlignmentFaultGizmo.cs",
+      "hotHeuristic": false,
+      "line": 32,
+      "pattern": "math.sin",
+      "text": "float pulse = 0.55f + (0.45f * math.abs(math.sin(Time.realtimeSinceStartup * math.max(0.01f, pulseSpeed))));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Diagnostics/Visuals/VaultMemoryGizmoVisualizer.cs",
+      "hotHeuristic": false,
+      "line": 76,
+      "pattern": "math.sin",
+      "text": "float pulse = 0.75f + (0.25f * math.sin(frame * 0.21f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Editor/InputCurveHapticsTunerWindow.cs",
+      "hotHeuristic": false,
+      "line": 93,
+      "pattern": "Mathf.Pow",
+      "text": "float y = Mathf.Pow(normalized, Mathf.Clamp(profile.MoveExponent, 0.25f, 4f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/InputDeterminismDtos.cs",
+      "hotHeuristic": false,
+      "line": 267,
+      "pattern": "math.sin",
+      "text": "input.LocalMoveVector = math.normalizesafe(new float3(math.sin(phase) + (jitterX * 0.35f), 0f, math.cos(phase * 1.37f) + (jitterY * 0.35f)));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/InputDeterminismDtos.cs",
+      "hotHeuristic": false,
+      "line": 267,
+      "pattern": "math.cos",
+      "text": "input.LocalMoveVector = math.normalizesafe(new float3(math.sin(phase) + (jitterX * 0.35f), 0f, math.cos(phase * 1.37f) + (jitterY * 0.35f)));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+      "hotHeuristic": false,
+      "line": 2582,
+      "pattern": "math.pow",
+      "text": "float curved = math.pow(normalized, exponent);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "hotHeuristic": true,
+      "line": 874,
+      "pattern": "math.sin",
+      "text": "return fallback + new double3(math.cos((float)angle), 0d, math.sin((float)angle)) * 2000d;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "hotHeuristic": true,
+      "line": 874,
+      "pattern": "math.cos",
+      "text": "return fallback + new double3(math.cos((float)angle), 0d, math.sin((float)angle)) * 2000d;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "hotHeuristic": true,
+      "line": 1748,
+      "pattern": "math.sin",
+      "text": "return SafeNormalize(new float3(math.sin(x * 1.7f), 0f, math.cos(z * 1.3f)), new float3(1f, 0f, 0f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "hotHeuristic": true,
+      "line": 1748,
+      "pattern": "math.cos",
+      "text": "return SafeNormalize(new float3(math.sin(x * 1.7f), 0f, math.cos(z * 1.3f)), new float3(1f, 0f, 0f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "hotHeuristic": true,
+      "line": 2630,
+      "pattern": "math.sin",
+      "text": "AUP = new double3(math.cos(angle) * 18000d, -200d - i * 3d, math.sin(angle) * 18000d),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "hotHeuristic": true,
+      "line": 2630,
+      "pattern": "math.cos",
+      "text": "AUP = new double3(math.cos(angle) * 18000d, -200d - i * 3d, math.sin(angle) * 18000d),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "hotHeuristic": true,
+      "line": 1514,
+      "pattern": "math.sin",
+      "text": "float pulse = 0.65f + 0.35f * math.sin(TimeSeconds * 0.37f + local.y * 0.03125f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "hotHeuristic": true,
+      "line": 1516,
+      "pattern": "math.sin",
+      "text": "float vertical = math.sin((local.x + local.z) * 0.045f + TimeSeconds * 0.23f) * 0.18f * speed;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 54,
+      "pattern": "math.cos",
+      "text": "float radial = config.MajorRadius + 0.28f * math.cos(t * 3.0f + twist);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 56,
+      "pattern": "math.cos",
+      "text": "radial * math.cos(t * 2.0f),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 57,
+      "pattern": "math.sin",
+      "text": "0.42f * math.sin(t * 3.0f),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 58,
+      "pattern": "math.sin",
+      "text": "radial * math.sin(t * 2.0f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 61,
+      "pattern": "math.sin",
+      "text": "-2.0f * radial * math.sin(t * 2.0f) - 0.84f * math.sin(t * 3.0f + twist) * math.cos(t * 2.0f),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 61,
+      "pattern": "math.cos",
+      "text": "-2.0f * radial * math.sin(t * 2.0f) - 0.84f * math.sin(t * 3.0f + twist) * math.cos(t * 2.0f),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 62,
+      "pattern": "math.cos",
+      "text": "1.26f * math.cos(t * 3.0f),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 63,
+      "pattern": "math.sin",
+      "text": "2.0f * radial * math.cos(t * 2.0f) - 0.84f * math.sin(t * 3.0f + twist) * math.sin(t * 2.0f)));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 63,
+      "pattern": "math.cos",
+      "text": "2.0f * radial * math.cos(t * 2.0f) - 0.84f * math.sin(t * 3.0f + twist) * math.sin(t * 2.0f)));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 64,
+      "pattern": "math.sin",
+      "text": "float3 radialAxis = Normalize(new float3(math.cos(t * 2.0f), 0.0f, math.sin(t * 2.0f)));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 64,
+      "pattern": "math.cos",
+      "text": "float3 radialAxis = Normalize(new float3(math.cos(t * 2.0f), 0.0f, math.sin(t * 2.0f)));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 69,
+      "pattern": "math.sin",
+      "text": "float wave = math.sin(t * 7.0f + p * 5.0f + (config.Seed & 15u));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 71,
+      "pattern": "math.sin",
+      "text": "float3 shell = normalAxis * math.cos(p) + binormal * math.sin(p);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "hotHeuristic": false,
+      "line": 71,
+      "pattern": "math.cos",
+      "text": "float3 shell = normalAxis * math.cos(p) + binormal * math.sin(p);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/CelestialSyncSmokeTester.cs",
+      "hotHeuristic": false,
+      "line": 105,
+      "pattern": "math.sin",
+      "text": "return math.normalize(new float3(math.cos(radians), math.sin(radians), 0f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/CelestialSyncSmokeTester.cs",
+      "hotHeuristic": false,
+      "line": 105,
+      "pattern": "math.cos",
+      "text": "return math.normalize(new float3(math.cos(radians), math.sin(radians), 0f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs",
+      "hotHeuristic": false,
+      "line": 204,
+      "pattern": "Mathf.Sin",
+      "text": "float wave = Mathf.Sin(_time + t * Mathf.Max(0.001f, _frequency) * 6.28318f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs",
+      "hotHeuristic": false,
+      "line": 219,
+      "pattern": "Mathf.Sin",
+      "text": "float flowWave = _flow.x * Mathf.Sin(t * 6.28318f) + _flow.z * Mathf.Cos(t * 6.28318f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs",
+      "hotHeuristic": false,
+      "line": 219,
+      "pattern": "Mathf.Cos",
+      "text": "float flowWave = _flow.x * Mathf.Sin(t * 6.28318f) + _flow.z * Mathf.Cos(t * 6.28318f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityAnomalySceneView.cs",
+      "hotHeuristic": false,
+      "line": 64,
+      "pattern": "Mathf.Sin",
+      "text": "float pulse = 1f + Mathf.Sin((float)EditorApplication.timeSinceStartup * 3.0f) * 0.15f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityMockJobs.cs",
+      "hotHeuristic": false,
+      "line": 54,
+      "pattern": "math.sin",
+      "text": "float ridge = math.sin((fx * 13.0f) + (Sector.WorldSeed & 255u) * 0.01f) * 18f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityMockJobs.cs",
+      "hotHeuristic": false,
+      "line": 55,
+      "pattern": "math.cos",
+      "text": "float shelf = math.cos((fz * 7.0f) + Sector.SectorX * 0.37f) * 11f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityMockJobs.cs",
+      "hotHeuristic": false,
+      "line": 174,
+      "pattern": "math.sin",
+      "text": "float ridge = math.sin((fx * 13.0f) + (Sector.WorldSeed & 255u) * 0.01f) * 18f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityMockJobs.cs",
+      "hotHeuristic": false,
+      "line": 175,
+      "pattern": "math.cos",
+      "text": "float shelf = math.cos((fz * 7.0f) + Sector.SectorX * 0.37f) * 11f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 688,
+      "pattern": "math.sin",
+      "text": "float3 local = new float3(math.cos(angle) * r, math.sin(angle) * r, z);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 688,
+      "pattern": "math.cos",
+      "text": "float3 local = new float3(math.cos(angle) * r, math.sin(angle) * r, z);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 452,
+      "pattern": "math.pow",
+      "text": "float edge = math.pow(t, math.max(0.25f, rift.FalloffPower));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 519,
+      "pattern": "math.pow",
+      "text": "float edge = math.pow(t, math.max(0.25f, rift.FalloffPower));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 146,
+      "pattern": "math.sin",
+      "text": "droplet.Direction = new float2(math.cos(angle), math.sin(angle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 146,
+      "pattern": "math.cos",
+      "text": "droplet.Direction = new float2(math.cos(angle), math.sin(angle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 442,
+      "pattern": "math.sin",
+      "text": "return new float2(math.cos(angle), math.sin(angle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 442,
+      "pattern": "math.cos",
+      "text": "return new float2(math.cos(angle), math.sin(angle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/MasterIntegrationSurgeonScanners.cs",
+      "hotHeuristic": false,
+      "line": 1130,
+      "pattern": "math.pow",
+      "text": "float hPhi = math.pow("
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/MesofaunaAiTunerWindow.cs",
+      "hotHeuristic": false,
+      "line": 261,
+      "pattern": "math.sin",
+      "text": "vertex.position = new Vector3(center.x + math.cos(angle) * radius, center.y + math.sin(angle) * radius, 0f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/MesofaunaAiTunerWindow.cs",
+      "hotHeuristic": false,
+      "line": 261,
+      "pattern": "math.cos",
+      "text": "vertex.position = new Vector3(center.x + math.cos(angle) * radius, center.y + math.sin(angle) * radius, 0f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 685,
+      "pattern": "math.sin",
+      "text": "float3 center = new float3(math.cos(angle) * radius, ((shapeIndex % 17) - 8) * 0.11f, math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeJobs.cs",
+      "hotHeuristic": false,
+      "line": 685,
+      "pattern": "math.cos",
+      "text": "float3 center = new float3(math.cos(angle) * radius, ((shapeIndex % 17) - 8) * 0.11f, math.sin(angle) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBakerJobs.cs",
+      "hotHeuristic": false,
+      "line": 54,
+      "pattern": "math.cos",
+      "text": "float cp = math.cos(phi);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBakerJobs.cs",
+      "hotHeuristic": false,
+      "line": 55,
+      "pattern": "math.sin",
+      "text": "float3 unit = new float3(math.cos(theta) * cp, math.sin(phi), math.sin(theta) * cp);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBakerJobs.cs",
+      "hotHeuristic": false,
+      "line": 55,
+      "pattern": "math.cos",
+      "text": "float3 unit = new float3(math.cos(theta) * cp, math.sin(phi), math.sin(theta) * cp);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/OOP_Sun_Scanner.cs",
+      "hotHeuristic": false,
+      "line": 199,
+      "pattern": "Mathf.Sin",
+      "text": "AppendFinding(normalizedPath, tree, invocation, \"Mathf.Sin(Time.time)\", ref report);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs",
+      "hotHeuristic": false,
+      "line": 695,
+      "pattern": "math.pow",
+      "text": "float depthLengthScale = math.pow(rule.LengthTaper, state.Depth);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs",
+      "hotHeuristic": false,
+      "line": 696,
+      "pattern": "math.pow",
+      "text": "float depthRadiusScale = math.pow(rule.RadiusTaper, state.Depth);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/ProceduralGen/ShallowsBioForgeBatchBaker.cs",
+      "hotHeuristic": false,
+      "line": 371,
+      "pattern": "Mathf.Sin",
+      "text": "float ridges = Mathf.Abs(Mathf.Sin((u * 37f + v * 29f + n * 0.2f) * Mathf.PI));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 252,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 dir = new Vector3(Mathf.Cos(yaw), rng.Range(0.05f, 0.22f), Mathf.Sin(yaw)).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 252,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 dir = new Vector3(Mathf.Cos(yaw), rng.Range(0.05f, 0.22f), Mathf.Sin(yaw)).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 265,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 dir = new Vector3(Mathf.Cos(yaw), rng.Range(-0.04f, 0.08f), Mathf.Sin(yaw)).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 265,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 dir = new Vector3(Mathf.Cos(yaw), rng.Range(-0.04f, 0.08f), Mathf.Sin(yaw)).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 278,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 origin = new Vector3(Mathf.Cos(yaw) * rng.Range(0.24f, 0.86f), rng.Range(-0.1f, 0.08f), Mathf.Sin(yaw) * rng.Range(0.24f, 0.86f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 278,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 origin = new Vector3(Mathf.Cos(yaw) * rng.Range(0.24f, 0.86f), rng.Range(-0.1f, 0.08f), Mathf.Sin(yaw) * rng.Range(0.24f, 0.86f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 293,
+      "pattern": "Mathf.Cos",
+      "text": "Mathf.Cos(yaw) * radius,"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 295,
+      "pattern": "Mathf.Sin",
+      "text": "Mathf.Sin(yaw) * radius);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 367,
+      "pattern": "Mathf.Sin",
+      "text": "float sine = Mathf.Sin((t * 1.9f + phase) * Mathf.PI * 2f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SargassumGenerator.cs",
+      "hotHeuristic": false,
+      "line": 368,
+      "pattern": "Mathf.Cos",
+      "text": "float cosine = Mathf.Cos((t * 1.4f + phase * 0.7f) * Mathf.PI * 2f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs",
+      "hotHeuristic": false,
+      "line": 507,
+      "pattern": "math.sin",
+      "text": "AssertContains(generateJobBody, \"math.sin(x * TargetFrequency) * TargetAmplitude\", \"Target sine uses Burst math sine with amplitude\", report, ref failureCount);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs",
+      "hotHeuristic": false,
+      "line": 508,
+      "pattern": "math.sin",
+      "text": "AssertContains(generateJobBody, \"math.sin(x * PlayerFrequency) * PlayerAmplitude\", \"Player sine uses Burst math sine with amplitude\", report, ref failureCount);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/ToxicOutgassingTunerWindow.cs",
+      "hotHeuristic": false,
+      "line": 134,
+      "pattern": "math.pow",
+      "text": "int stride = math.max(1, (int)math.ceil(math.pow((resolution * resolution * resolution) / math.max(1f, _maxWireCells), 1f / 3f)));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 446,
+      "pattern": "Mathf.Sin",
+      "text": "float zWave = Mathf.Sin((t + 0.17f) * Mathf.PI * 2f) * scale.z * 0.12f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 448,
+      "pattern": "Mathf.Sin",
+      "text": "float meander = Mathf.Sin((ridgeIndex + 1) * 1.37f) * scale.x * 0.08f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1158,
+      "pattern": "Mathf.Sin",
+      "text": "float rib = 1f + Mathf.Sin(angle * 3f + t * 6f) * ribAmplitude;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1160,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 radial = (normalAxis * Mathf.Cos(angle) + binormal * Mathf.Sin(angle)).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1160,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 radial = (normalAxis * Mathf.Cos(angle) + binormal * Mathf.Sin(angle)).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1190,
+      "pattern": "Mathf.Sin",
+      "text": "float wave = Mathf.Sin(angle * 3f) * wobble + Mathf.Cos(angle * 5f) * wobble * 0.45f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1190,
+      "pattern": "Mathf.Cos",
+      "text": "float wave = Mathf.Sin(angle * 3f) * wobble + Mathf.Cos(angle * 5f) * wobble * 0.45f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1191,
+      "pattern": "Mathf.Sin",
+      "text": "float edgeDrop = Mathf.Sin(angle * 2f + 0.6f) * thickness * 0.22f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1192,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 radial = right * (Mathf.Cos(angle) * (radiusX + wave)) + forward * (Mathf.Sin(angle) * (radiusZ + wave * 0.76f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1192,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 radial = right * (Mathf.Cos(angle) * (radiusX + wave)) + forward * (Mathf.Sin(angle) * (radiusZ + wave * 0.76f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1198,
+      "pattern": "Mathf.Sin",
+      "text": "buffers.AddVertex(topVertex, up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1198,
+      "pattern": "Mathf.Cos",
+      "text": "buffers.AddVertex(topVertex, up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1199,
+      "pattern": "Mathf.Sin",
+      "text": "buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1199,
+      "pattern": "Mathf.Cos",
+      "text": "buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1231,
+      "pattern": "Mathf.Sin",
+      "text": "float wave = Mathf.Sin(angle * 3f) * wobble + Mathf.Cos(angle * 5f) * wobble * 0.45f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1231,
+      "pattern": "Mathf.Cos",
+      "text": "float wave = Mathf.Sin(angle * 3f) * wobble + Mathf.Cos(angle * 5f) * wobble * 0.45f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1232,
+      "pattern": "Mathf.Sin",
+      "text": "float edgeDrop = Mathf.Sin(angle * 2f + 0.6f) * thickness * 0.22f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1233,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 radial = right * (Mathf.Cos(angle) * (radiusX + wave)) + forward * (Mathf.Sin(angle) * (radiusZ + wave * 0.76f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1233,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 radial = right * (Mathf.Cos(angle) * (radiusX + wave)) + forward * (Mathf.Sin(angle) * (radiusZ + wave * 0.76f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1238,
+      "pattern": "Mathf.Sin",
+      "text": "buffers.AddVertex(topVertex, up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1238,
+      "pattern": "Mathf.Cos",
+      "text": "buffers.AddVertex(topVertex, up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1239,
+      "pattern": "Mathf.Sin",
+      "text": "buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1239,
+      "pattern": "Mathf.Cos",
+      "text": "buffers.AddVertex(bottomVertex, -up, tangent, new Vector2((Mathf.Cos(angle) + 1f) * 0.5f, (Mathf.Sin(angle) + 1f) * 0.5f), color);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1283,
+      "pattern": "Mathf.Cos",
+      "text": "float cosPhi = Mathf.Cos(phi);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1284,
+      "pattern": "Mathf.Sin",
+      "text": "float sinPhi = Mathf.Sin(phi);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1291,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 dir = new Vector3(Mathf.Cos(theta) * cosPhi, sinPhi, Mathf.Sin(theta) * cosPhi).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1291,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 dir = new Vector3(Mathf.Cos(theta) * cosPhi, sinPhi, Mathf.Sin(theta) * cosPhi).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1292,
+      "pattern": "Mathf.Sin",
+      "text": "float warp = Mathf.Sin(theta * frequencyA) * warpAmplitude"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1293,
+      "pattern": "Mathf.Cos",
+      "text": "+ Mathf.Cos((phi + 1.2f) * frequencyB) * warpAmplitude * 0.58f"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1294,
+      "pattern": "Mathf.Sin",
+      "text": "+ Mathf.Sin((theta + phi) * (frequencyA * 0.42f + 1.3f)) * warpAmplitude * 0.34f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1298,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 tangentDir = new Vector3(-Mathf.Sin(theta), 0f, Mathf.Cos(theta)).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralCoralMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1298,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 tangentDir = new Vector3(-Mathf.Sin(theta), 0f, Mathf.Cos(theta)).normalized;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+      "hotHeuristic": false,
+      "line": 344,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 position = new Vector3(Mathf.Cos(radians) * 0.42f, 2.96f + (i % 2 == 0 ? 0.08f : -0.04f), Mathf.Sin(radians) * 0.42f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+      "hotHeuristic": false,
+      "line": 344,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 position = new Vector3(Mathf.Cos(radians) * 0.42f, 2.96f + (i % 2 == 0 ? 0.08f : -0.04f), Mathf.Sin(radians) * 0.42f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+      "hotHeuristic": false,
+      "line": 503,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 position = new Vector3(Mathf.Cos(radians) * 0.72f, 0.22f, Mathf.Sin(radians) * 0.72f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+      "hotHeuristic": false,
+      "line": 503,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 position = new Vector3(Mathf.Cos(radians) * 0.72f, 0.22f, Mathf.Sin(radians) * 0.72f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+      "hotHeuristic": false,
+      "line": 535,
+      "pattern": "Mathf.Sin",
+      "text": "new Vector3(Mathf.Cos(radians) * 0.42f, predator ? 0.44f : 0.28f, Mathf.Sin(radians) * 0.42f),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+      "hotHeuristic": false,
+      "line": 535,
+      "pattern": "Mathf.Cos",
+      "text": "new Vector3(Mathf.Cos(radians) * 0.42f, predator ? 0.44f : 0.28f, Mathf.Sin(radians) * 0.42f),"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+      "hotHeuristic": false,
+      "line": 764,
+      "pattern": "Mathf.Sin",
+      "text": "return new Vector3(Mathf.Cos(angle) * distance, y, Mathf.Sin(angle) * distance);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralPlaceholderAuthoring.cs",
+      "hotHeuristic": false,
+      "line": 764,
+      "pattern": "Mathf.Cos",
+      "text": "return new Vector3(Mathf.Cos(angle) * distance, y, Mathf.Sin(angle) * distance);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 70,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 dir = new Vector3(Mathf.Cos(yaw), 0f, Mathf.Sin(yaw));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 70,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 dir = new Vector3(Mathf.Cos(yaw), 0f, Mathf.Sin(yaw));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 72,
+      "pattern": "Mathf.Sin",
+      "text": "float length = scale.x * Mathf.Lerp(0.36f, 0.62f, 0.5f + 0.5f * Mathf.Sin((i + 1) * 1.37f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 105,
+      "pattern": "Mathf.Sin",
+      "text": "float wobbleX = Mathf.Sin((v * 2.6f + spec.BendDegrees * 0.02f) * Mathf.PI) * scale.x * 0.03f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 106,
+      "pattern": "Mathf.Sin",
+      "text": "float wobbleZ = Mathf.Sin((v * 4.3f + spec.RibCount * 0.11f) * Mathf.PI) * scale.z * 0.018f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 111,
+      "pattern": "Mathf.Sin",
+      "text": "float scarNoise = Mathf.Sin((v * 8.5f + spec.BendDegrees * 0.03f) * Mathf.PI) * 0.035f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 118,
+      "pattern": "Mathf.Sin",
+      "text": "float rib = 1f + Mathf.Sin(angle * spec.RibCount + v * 2.2f) * spec.RibAmplitude;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 120,
+      "pattern": "Mathf.Sin",
+      "text": "Vector3 radial = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 120,
+      "pattern": "Mathf.Cos",
+      "text": "Vector3 radial = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 123,
+      "pattern": "Mathf.Sin",
+      "text": "Vector4 tangent = new Vector4(-Mathf.Sin(angle), 0f, Mathf.Cos(angle), 1f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 123,
+      "pattern": "Mathf.Cos",
+      "text": "Vector4 tangent = new Vector4(-Mathf.Sin(angle), 0f, Mathf.Cos(angle), 1f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 174,
+      "pattern": "Mathf.Pow",
+      "text": "normalized = Mathf.Lerp(0.16f, 1f, Mathf.Pow(sequence, 0.9f));"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 191,
+      "pattern": "Mathf.Sin",
+      "text": "float morphologyNoise = 0.5f + 0.5f * Mathf.Sin((bladeIndex + 1) * 2.17f + normalized * 4.9f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1059,
+      "pattern": "Mathf.Sin",
+      "text": "float towerNoise = Mathf.Sin((bladeIndex + 1) * 1.31f) * Mathf.Lerp(1.5f, 4.5f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1068,
+      "pattern": "Mathf.Sin",
+      "text": "float sheetNoise = Mathf.Sin((bladeIndex + 1) * 1.43f) * Mathf.Lerp(0.45f, 1.4f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1079,
+      "pattern": "Mathf.Sin",
+      "text": "float broadleafNoise = Mathf.Sin((bladeIndex + 1) * 1.22f) * Mathf.Lerp(1.4f, 5.2f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1080,
+      "pattern": "Mathf.Sin",
+      "text": "float broadleafBias = Mathf.Sin(sequence * Mathf.PI) * ((((bladeIndex / 3) & 1) == 0) ? 1f : -1f) * 4.8f;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1089,
+      "pattern": "Mathf.Sin",
+      "text": "float paddlefanNoise = Mathf.Sin((bladeIndex + 1) * 1.33f) * Mathf.Lerp(1.8f, 5.8f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1098,
+      "pattern": "Mathf.Sin",
+      "text": "float petalNoise = Mathf.Sin((bladeIndex + 1) * 1.26f) * Mathf.Lerp(1.8f, 5f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1105,
+      "pattern": "Mathf.Sin",
+      "text": "float paddleNoise = Mathf.Sin((bladeIndex + 1) * 1.38f) * Mathf.Lerp(1.2f, 4.2f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1114,
+      "pattern": "Mathf.Sin",
+      "text": "float frillNoise = Mathf.Sin((bladeIndex + 1) * 1.41f) * Mathf.Lerp(2.4f, 6.2f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1123,
+      "pattern": "Mathf.Sin",
+      "text": "float canopyNoise = Mathf.Sin((bladeIndex + 1) * 1.47f) * Mathf.Lerp(0.75f, 2.6f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1132,
+      "pattern": "Mathf.Sin",
+      "text": "float foldedNoise = Mathf.Sin((bladeIndex + 1) * 1.29f) * Mathf.Lerp(0.8f, 2.4f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1139,
+      "pattern": "Mathf.Sin",
+      "text": "float noise = Mathf.Sin((bladeIndex + 1) * 1.73f) * Mathf.Lerp(4f, 14f, sequence);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1351,
+      "pattern": "Mathf.Sin",
+      "text": "float angle = spec.BladeStartYaw + normalized * spec.BladeYawArc + Mathf.Sin((normalized + 0.13f) * Mathf.PI * 3.1f) * 7f + angleOffsetDegrees;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1379,
+      "pattern": "Mathf.Pow",
+      "text": "? Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.78f), 0.42f)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1381,
+      "pattern": "Mathf.Pow",
+      "text": "? Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.82f), 0.34f)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1382,
+      "pattern": "Mathf.Pow",
+      "text": ": Mathf.Lerp(normalized, Mathf.Pow(normalized, 0.84f), 0.28f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/WorldProceduralSeaweedMeshBuilder.cs",
+      "hotHeuristic": false,
+      "line": 1383,
+      "pattern": "Mathf.Sin",
+      "text": "float nodeRhythm = Mathf.Sin((normalized * 3.7f + spec.BendDegrees * 0.015f) * Mathf.PI) * 0.032f;"
+    }
+  ],
+  "generatedBy": "Tools/OOP_MathLOD_Scanner.py",
+  "hardFailures": [
+    "remaining direct transcendental calls exist; full purge is false"
+  ],
+  "jacobiProof": {
+    "convergenceClaimAtMinQuality": "not claimed",
+    "safetyInvariant": "bounded relaxation: non-negative conductance, guarded denominator, saturated [0,1] potential, finite fallback, divergence flags",
+    "samples": [
+      {
+        "curve": 0.0,
+        "globalQualityWeight": 0.0,
+        "iterations": 2,
+        "omega": 0.55,
+        "residualSampleMask": 7,
+        "targetToleranceAtBase0_001": 0.032
+      },
+      {
+        "curve": 0.028000000000000004,
+        "globalQualityWeight": 0.1,
+        "iterations": 3,
+        "omega": 0.5603600000000001,
+        "residualSampleMask": 7,
+        "targetToleranceAtBase0_001": 0.031118
+      },
+      {
+        "curve": 0.5,
+        "globalQualityWeight": 0.5,
+        "iterations": 26,
+        "omega": 0.7350000000000001,
+        "residualSampleMask": 4,
+        "targetToleranceAtBase0_001": 0.01625
+      },
+      {
+        "curve": 1.0,
+        "globalQualityWeight": 1.0,
+        "iterations": 50,
+        "omega": 0.92,
+        "residualSampleMask": 0,
+        "targetToleranceAtBase0_001": 0.0005000000000000004
+      }
+    ]
+  },
+  "qualityDropProof": {
+    "authorityTissueCount": 3,
+    "authorityUsesGlobalQualityWeightForTissueCount": false,
+    "expectedTissueStateDeltaForEqualPhysicalInputs": 0.0,
+    "globalQualityWeightInputs": [
+      1.0,
+      0.1
+    ]
+  },
+  "remainingTranscendentalTotal": 406,
+  "remainingTranscendentals": {
+    "Mathf.Cos": 43,
+    "Mathf.Exp": 0,
+    "Mathf.Log": 2,
+    "Mathf.Pow": 11,
+    "Mathf.Sin": 109,
+    "math.cos": 71,
+    "math.exp": 0,
+    "math.log": 0,
+    "math.pow": 20,
+    "math.sin": 150
+  },
+  "residualProof": {
+    "approximation": "P33(clamp(x,0,4)/4)^4",
+    "bhaskaraCosScan0To2Pi": {
+      "domain": [
+        0.0,
+        6.283185307179586
+      ],
+      "maxAbsAtX": 4.5096,
+      "maxAbsError": 0.0016323108809562503,
+      "step": 0.0001
+    },
+    "bhaskaraSinScan0To2Pi": {
+      "domain": [
+        0.0,
+        6.283185307179586
+      ],
+      "maxAbsAtX": 6.08,
+      "maxAbsError": 0.0016321921131719486,
+      "step": 0.0001
+    },
+    "extremeInputs": [
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "nan",
+        "within01": true
+      },
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "inf",
+        "within01": true
+      },
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "-inf",
+        "within01": true
+      },
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "-1000000000.0",
+        "within01": true
+      },
+      {
+        "approx": 0.01831487938761711,
+        "finite": true,
+        "input": "1000000.0",
+        "within01": true
+      },
+      {
+        "approx": 0.01831487938761711,
+        "finite": true,
+        "input": "1000.0",
+        "within01": true
+      },
+      {
+        "approx": 0.01831487938761711,
+        "finite": true,
+        "input": "4.0",
+        "within01": true
+      },
+      {
+        "approx": 0.3678794503211975,
+        "finite": true,
+        "input": "1.0",
+        "within01": true
+      },
+      {
+        "approx": 1.0,
+        "finite": true,
+        "input": "0.0",
+        "within01": true
+      }
+    ],
+    "floatScan0To1": {
+      "domain": [
+        0.0,
+        1.0
+      ],
+      "maxAbsAtX": 0.0142,
+      "maxAbsError": 4.1522231497559403e-07,
+      "maxRelAtX": 0.9599000000000001,
+      "maxRelError": 5.560966548862889e-07,
+      "step": 0.0001
+    },
+    "floatScan0To4": {
+      "domain": [
+        0.0,
+        4.0
+      ],
+      "maxAbsAtX": 3.9988,
+      "maxAbsError": 7.629343333620531e-07,
+      "maxRelAtX": 3.9991000000000003,
+      "maxRelError": 4.161334768844376e-05,
+      "step": 0.0001
+    },
+    "p33Denominator": "1 + y/2 + y^2/10 + y^3/120",
+    "p33Numerator": "1 - y/2 + y^2/10 - y^3/120",
+    "physiologyWorstCase": {
+      "absError": 6.080794978657877e-08,
+      "approx": 0.8625420928001404,
+      "exact": 0.8625420319921906,
+      "x": 0.147871398519455
+    },
+    "positiveExpScan0To4": {
+      "domain": [
+        0.0,
+        4.0
+      ],
+      "maxAbsAtX": 3.9991000000000003,
+      "maxAbsError": 0.0022700597923801524,
+      "maxRelAtX": 3.9991000000000003,
+      "maxRelError": 4.1615032092920464e-05,
+      "step": 0.0001
+    },
+    "wideExpNegScan0To40": {
+      "domain": [
+        0.0,
+        40.0
+      ],
+      "maxAbsAtX": 0.012,
+      "maxAbsError": 3.7819043048337164e-06,
+      "maxRelAtX": 39.976,
+      "maxRelError": 0.00041646376305333374,
+      "step": 0.001
+    }
+  },
+  "scannedCSharpFiles": 2390,
+  "sourceRoot": "C:\\hades\\Hecton8"
+}

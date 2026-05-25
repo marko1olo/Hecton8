@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_109
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_109_Mat_HectonSky_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_HectonSky_Albedo.png
+FINAL_FILENAME: Mat_HectonSky_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Hecton sky albedo atlas source for an ocean-world atmosphere. Create refined bands of deep cyan atmosphere, pale pearl cloud veils, soft teal horizon glow, muted violet upper haze, and warm amber distant light traces. The material should support a hopeful alien sky above a deep sea world, cinematic but clean, with broad gradients and no scenic objects. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

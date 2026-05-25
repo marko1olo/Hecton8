@@ -74,9 +74,13 @@ namespace Hecton8.EditorTools
             if (!File.Exists(absolutePath))
                 throw new FileNotFoundException(relativePath);
 
-            string text = File.ReadAllText(absolutePath);
-            if (text.IndexOf(requiredToken, StringComparison.Ordinal) < 0)
-                throw new InvalidOperationException(relativePath + " missing " + requiredToken);
+            foreach (string line in File.ReadLines(absolutePath))
+            {
+                if (line.IndexOf(requiredToken, StringComparison.Ordinal) >= 0)
+                    return;
+            }
+
+            throw new InvalidOperationException(relativePath + " missing " + requiredToken);
         }
     }
 }

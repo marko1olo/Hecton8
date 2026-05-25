@@ -133,7 +133,7 @@ namespace Hecton8.Gameplay
         private bool _secondaryLatched;
         private bool _cachedAssessmentValid;
         private StunAssessment _cachedAssessment;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol HUD staging buffer - owner: StunPistolTool
         private static FixedCharBuffer s_logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol field log staging buffer - owner: StunPistolTool
         private static FixedCharBuffer s_logTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - stun pistol log title staging buffer - owner: StunPistolTool
@@ -142,7 +142,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            RefreshLocalization(LocalizationManager.ActiveRuntimeInstance);
+            RefreshLocalization(GlobalRegistry.LocalizationText);
             _cooldown = 0f;
             _feedbackCooldownRemaining = 0f;
             _secondaryLatched = false;
@@ -162,7 +162,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
-            RefreshLocalization(LocalizationManager.ActiveRuntimeInstance);
+            RefreshLocalization(GlobalRegistry.LocalizationText);
             InvalidateAssessmentCache();
         }
 
@@ -171,7 +171,7 @@ namespace Hecton8.Gameplay
             ref object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
-                RefreshLocalization(currentService as LocalizationManager);
+                RefreshLocalization(currentService as ILocalizationTextReadModel);
         }
 
         protected override void OnToolRegistryServiceReplaced(
@@ -180,10 +180,10 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
-                RefreshLocalization(currentService as LocalizationManager);
+                RefreshLocalization(currentService as ILocalizationTextReadModel);
         }
 
-        private void RefreshLocalization(LocalizationManager localization)
+        private void RefreshLocalization(ILocalizationTextReadModel localization)
         {
             if (ReferenceEquals(_localization, localization))
                 return;
@@ -540,7 +540,7 @@ namespace Hecton8.Gameplay
                 "WARN");
         }
 
-        internal static void RecordRecoveryLog(LocalizationManager localization)
+        internal static void RecordRecoveryLog(ILocalizationTextReadModel localization)
         {
             s_logSummaryBuffer.Clear();
             TryAppendSingleStringTemplate(
@@ -557,14 +557,14 @@ namespace Hecton8.Gameplay
 
         private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             return ResolveLocalized(manager, key, fallback);
         }
 
-        private static string ResolveLocalized(LocalizationManager manager, string key, string fallback)
+        private static string ResolveLocalized(ILocalizationTextReadModel manager, string key, string fallback)
         {
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetOrFallback(key, fallback)
                 : fallback;
         }
 
@@ -675,7 +675,7 @@ namespace Hecton8.Gameplay
 
     public sealed class StunTargetRuntime : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private float _remaining;
         private bool _armed;
         private bool _registeredToTickManager;
@@ -715,7 +715,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            _localization = LocalizationManager.ActiveRuntimeInstance;
+            _localization = GlobalRegistry.LocalizationText;
             TryRegisterHotSwapListener();
             RegisterToTickManager();
         }
@@ -740,7 +740,7 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
-                _localization = currentService as LocalizationManager;
+                _localization = currentService as ILocalizationTextReadModel;
         }
 
         private void LogRecovery()

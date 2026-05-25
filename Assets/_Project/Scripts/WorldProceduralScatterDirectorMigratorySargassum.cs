@@ -10,6 +10,12 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class WorldProceduralScatterDirectorMigratorySargassumLayout
+    {
+        public const int MigratorySargassumSourceStateStrideBytes = 80;
+        public const int MigratorySargassumIslandStateStrideBytes = 96;
+    }
+
     public sealed partial class WorldProceduralScatterDirector
     {
         private const int MaxMigratorySargassumIslandCount = 24;
@@ -106,7 +112,7 @@ namespace Hecton8.World
         private float _migratorySargassumTideHeightMeters;
         private uint _migratorySargassumTideSequence;
 
-        [StructLayout(LayoutKind.Explicit, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = WorldProceduralScatterDirectorMigratorySargassumLayout.MigratorySargassumSourceStateStrideBytes)]
         private struct MigratorySargassumSourceState
         {
             [FieldOffset(0)]
@@ -129,7 +135,7 @@ namespace Hecton8.World
             private ulong _pad2;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 96)]
+        [StructLayout(LayoutKind.Explicit, Size = WorldProceduralScatterDirectorMigratorySargassumLayout.MigratorySargassumIslandStateStrideBytes)]
         private struct MigratorySargassumIslandState
         {
             [FieldOffset(0)]

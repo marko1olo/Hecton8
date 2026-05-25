@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Hecton.Localization;
 using UnityEngine;
 
@@ -24,6 +25,7 @@ namespace Hecton8.Modding
         private const int MaxRawTextureDimension = 2048;
         private const string MaxRawTextureBytesLabel = "8388608";
         private const string MaxRawTextureDimensionLabel = "2048";
+        private static readonly Encoding LedgerEncoding = new UTF8Encoding(false);
         private static bool _modCompatibleLedgerLoaded;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -308,7 +310,7 @@ namespace Hecton8.Modding
             try
             {
                 // COLD ALLOC: StreamReader[1] - sequential project content ledger scan for mod prefab allowlist - owner: ModAssetManager
-                using (StreamReader reader = new StreamReader(ledgerPath))
+                using (StreamReader reader = new StreamReader(ledgerPath, LedgerEncoding, detectEncodingFromByteOrderMarks: true))
                 {
                     string line;
                     while ((line = reader.ReadLine()) != null)

@@ -77,7 +77,7 @@ namespace Hecton8.Graphics.Culling.Editor
             _target = (TBDRPipelineSurgeonRuntime)EditorGUILayout.ObjectField("Runtime", _target, typeof(TBDRPipelineSurgeonRuntime), true);
             if (GUILayout.Button("Find", GUILayout.Width(64f)))
             {
-                _target = FindAnyObjectByType<TBDRPipelineSurgeonRuntime>();
+                _target = FindAnyObjectByType<TBDRPipelineSurgeonRuntime>(FindObjectsInactive.Include);
                 PullSnapshot();
             }
 

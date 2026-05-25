@@ -18,8 +18,9 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4029)]
-    public sealed class WorldGenerativeGeologyTerrainSeamApplier : MonoBehaviour, ISlowTickable
+    public sealed class WorldGenerativeGeologyTerrainSeamApplier : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+#pragma warning disable 0649
         private struct SeismicTrenchState
         {
             public long TrenchId;
@@ -29,6 +30,7 @@ namespace Hecton8.World
             public float Slope;
             public float InfluenceRadius;
         }
+#pragma warning restore 0649
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct TerrainSeamTelemetryEntry
@@ -130,7 +132,9 @@ namespace Hecton8.World
         [SerializeField] private float raiseStrength = 0.9f;
         [SerializeField] private float cutStrength = 0.8f;
         [SerializeField] private float rimSmoothing = 0.35f;
+#pragma warning disable CS0414
         [SerializeField] private int maxActiveTrenches = 8;
+#pragma warning restore CS0414
         [SerializeField] private float trenchRadiusPaddingMeters = 3f;
         [SerializeField] private float trenchRimBlendStrength = 0.55f;
 
@@ -152,6 +156,14 @@ namespace Hecton8.World
         private Texture2D _voxelBlendMaskTexture;
         private VaultGenerationHandle<TerrainSeamTelemetryEntry> _terrainSeamBlackBoxHandle;
         private bool _registeredToTickManager;
+        private bool _registeredToLateFrameTickManager;
+        private bool _hotSwapRegistered;
+        private bool _pendingVoxelBlendMaskGlobalClear;
+        private UnityEngine.Terrain _pendingVoxelBlendMaskTerrain;
+        private RectInt _pendingVoxelBlendMaskRect;
+        private int _pendingVoxelBlendMaskSampleCount;
+        private bool _pendingVoxelBlendMaskLowTierVisualOnly;
+        private bool _hasPendingVoxelBlendMaskUpload;
         private int _nextPatchTelemetryFrame;
         private int _blackBoxWriteIndex;
         private uint _seamFrameCounter;
@@ -184,21 +196,27 @@ namespace Hecton8.World
             EnsureHybridTerrainSeamState();
             GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
             ResolveReferences();
+            TryRegisterHotSwapListener();
             TryRegisterToTickManager();
+            TryRegisterToLateFrameTickManager();
         }
 
         private void Start()
         {
             TryRegisterToTickManager();
+            TryRegisterToLateFrameTickManager();
             ReconcileTerrainSeams();
         }
 
         private void OnDisable()
         {
             TryUnregisterFromTickManager();
+            TryUnregisterFromLateFrameTickManager();
+            TryUnregisterHotSwapListener();
             RestoreAllTerrains();
             DisposeTerrainStateNativeBuffers();
             DisableVoxelBlendMaskGlobal();
+            FlushPendingVoxelBlendMaskGlobalClear();
 
             if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
                 GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
@@ -207,6 +225,8 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregisterFromTickManager();
+            TryUnregisterFromLateFrameTickManager();
+            TryUnregisterHotSwapListener();
             RestoreAllTerrains();
             DisposeTerrainStateNativeBuffers();
             DisposeHybridTerrainSeamState();
@@ -219,6 +239,12 @@ namespace Hecton8.World
         {
             ProcessTerrainChunkGeneratedSignals();
             ReconcileTerrainSeams();
+        }
+
+        public void LateFrameTick()
+        {
+            FlushPendingVoxelBlendMaskUpload();
+            FlushPendingVoxelBlendMaskGlobalClear();
         }
 
         public async Awaitable ProcessTerrainChunkGeneratedSignalsAsync(CancellationToken cancellationToken = default)
@@ -361,8 +387,7 @@ namespace Hecton8.World
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFromTickManager()
@@ -373,6 +398,55 @@ namespace Hecton8.World
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
+        }
+
+        private void TryRegisterToLateFrameTickManager()
+        {
+            if (_registeredToLateFrameTickManager)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+            _registeredToLateFrameTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterFromLateFrameTickManager()
+        {
+            if (!_registeredToLateFrameTickManager)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredToLateFrameTickManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterFromTickManager();
+            TryUnregisterFromLateFrameTickManager();
+            TryRegisterToTickManager();
+            TryRegisterToLateFrameTickManager();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void ApplyTerrainPlans(
@@ -750,7 +824,7 @@ namespace Hecton8.World
                     }
                 }
 
-                UploadVoxelBlendMaskTexture(terrain, applyRect, blendMask, lowTierVisualOnly);
+                QueueVoxelBlendMaskTextureUpload(terrain, applyRect, blendMask, lowTierVisualOnly);
                 uint terrainHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId()));
                 uint stateHash = HashTerrainSeamState(
                     terrainHash,
@@ -787,7 +861,7 @@ namespace Hecton8.World
                         maxHeight01,
                         stateHash);
                 }
-                WorldGenerativeGeologyTelemetry.PublishTerrainSeamsBlended(
+                WorldGenerativeGeologyTelemetry.TryPublishTerrainSeamsBlended(
                     sampleCount,
                     hybridPlanCount,
                     lowTierVisualOnly);
@@ -942,7 +1016,7 @@ namespace Hecton8.World
             if (vault == null || vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 length,
                 OwnerSystem,
@@ -994,7 +1068,7 @@ namespace Hecton8.World
         private static BufferID ResolveTerrainBaselineBufferId(UnityEngine.Terrain terrain)
         {
             uint terrainKey = terrain != null
-                ? unchecked((uint)terrain.GetInstanceID())
+                ? Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(terrain.GetEntityId()))
                 : 0u;
             return (BufferID)(TerrainSeamBaselineBufferIdBase + (int)(terrainKey & (uint)TerrainSeamBaselineBufferIdMask));
         }
@@ -1114,7 +1188,7 @@ namespace Hecton8.World
             if (!IsFiniteRuntimeVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFiniteAup(in originAup))
                 return false;
 
@@ -1201,16 +1275,15 @@ namespace Hecton8.World
 
         private static float ResolveSeamExpensiveWeight(float globalQualityWeight)
         {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float active = math.step(SeamExpensiveSamplingStartWeight, q);
+            float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
             float t = math.saturate((q - SeamExpensiveSamplingStartWeight) *
                                     math.rcp(math.max(1f - SeamExpensiveSamplingStartWeight, 0.0001f)));
-            return active * SmoothStep01(t);
+            return SmoothStep01(t);
         }
 
         private static float ResolveMaskDetailWeight(float globalQualityWeight)
         {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
             return SmoothStep01(math.saturate((q - 0.70f) * math.rcp(0.30f)));
         }
 
@@ -1266,6 +1339,45 @@ namespace Hecton8.World
             Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, new Vector4(1f, lowTierVisualOnly ? 0.82f : 1f, lowTierVisualOnly ? 1f : 0f, 0f));
             _voxelBlendMaskGlobalActive = true;
             _voxelBlendMaskUploadedThisPass = true;
+        }
+
+        private void QueueVoxelBlendMaskTextureUpload(
+            UnityEngine.Terrain terrain,
+            RectInt applyRect,
+            NativeArray<byte> blendMask,
+            bool lowTierVisualOnly)
+        {
+            _pendingVoxelBlendMaskTerrain = terrain;
+            _pendingVoxelBlendMaskRect = applyRect;
+            _pendingVoxelBlendMaskSampleCount = blendMask.IsCreated ? math.min(blendMask.Length, applyRect.width * applyRect.height) : 0;
+            _pendingVoxelBlendMaskLowTierVisualOnly = lowTierVisualOnly;
+            _hasPendingVoxelBlendMaskUpload = true;
+            _voxelBlendMaskUploadedThisPass = true;
+            TryRegisterToLateFrameTickManager();
+        }
+
+        private void FlushPendingVoxelBlendMaskUpload()
+        {
+            if (!_hasPendingVoxelBlendMaskUpload)
+                return;
+
+            _hasPendingVoxelBlendMaskUpload = false;
+            if (_pendingVoxelBlendMaskSampleCount > 0 &&
+                TryOpenExistingTerrainSeamBuffer(
+                    GlobalRegistry.DataVault,
+                    TerrainSeamBlendMaskBufferId,
+                    _pendingVoxelBlendMaskSampleCount,
+                    out NativeArray<byte> blendMask))
+            {
+                UploadVoxelBlendMaskTexture(
+                    _pendingVoxelBlendMaskTerrain,
+                    _pendingVoxelBlendMaskRect,
+                    blendMask,
+                    _pendingVoxelBlendMaskLowTierVisualOnly);
+            }
+
+            _pendingVoxelBlendMaskTerrain = null;
+            _pendingVoxelBlendMaskSampleCount = 0;
         }
 
         private void PublishTerrainPatchVoxelModifiedEvent(
@@ -1735,7 +1847,7 @@ namespace Hecton8.World
                 state.patchBuffer = new float[rect.height, rect.width];
             }
 
-            WorldGenerativeGeologyTelemetry.PublishTerrainPatchBridgeWarningIfNeeded(
+            WorldGenerativeGeologyTelemetry.TryPublishTerrainPatchBridgeWarningIfNeeded(
                 rect.width * rect.height,
                 TerrainPatchBridgeSampleBudgetMx350,
                 ref _nextPatchTelemetryFrame);
@@ -1776,7 +1888,7 @@ namespace Hecton8.World
                     }
                     else
                     {
-                        state.baselineHeightsHandle = vault.GetGenerationHandle<float>(
+                        state.baselineHeightsHandle = vault.EnsureGenerationHandle<float>(
                             state.baselineHeightsBufferId,
                             totalHeights,
                             OwnerSystem,
@@ -1887,7 +1999,7 @@ namespace Hecton8.World
             }
             else
             {
-                _terrainSeamBlackBoxHandle = vault.GetGenerationHandle<TerrainSeamTelemetryEntry>(
+                _terrainSeamBlackBoxHandle = vault.EnsureGenerationHandle<TerrainSeamTelemetryEntry>(
                     TerrainSeamBlackBoxBufferId,
                     TerrainSeamBlackBoxCapacity,
                     OwnerSystem,
@@ -1926,8 +2038,18 @@ namespace Hecton8.World
             if (!_voxelBlendMaskGlobalActive)
                 return;
 
-            ClearVoxelBlendMaskGlobal();
+            _pendingVoxelBlendMaskGlobalClear = true;
+            TryRegisterToLateFrameTickManager();
             _voxelBlendMaskGlobalActive = false;
+        }
+
+        private void FlushPendingVoxelBlendMaskGlobalClear()
+        {
+            if (!_pendingVoxelBlendMaskGlobalClear)
+                return;
+
+            _pendingVoxelBlendMaskGlobalClear = false;
+            ClearVoxelBlendMaskGlobal();
         }
 
         private static void ClearVoxelBlendMaskGlobal()

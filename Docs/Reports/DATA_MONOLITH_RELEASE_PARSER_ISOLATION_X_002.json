@@ -1,0 +1,1020 @@
+﻿{
+    "schema":  "HECTON8_RELEASE_PARSER_ISOLATION_AUDIT_V1",
+    "agent":  "X_002",
+    "generated":  "2026-05-23T18:07:52",
+    "status":  "FAIL_GLOBAL_RELEASE_ISOLATION_NOT_PROVEN",
+    "policy":  "No production release claim may be made while non-Editor code still contains config file IO or string/CSV parser patterns without route cards.",
+    "productionPatternMatches":  1047,
+    "dataMonolithRuntimePatternMatches":  4,
+    "releaseBuildGate":  {
+                             "path":  "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_X_002.json",
+                             "source":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs",
+                             "status":  "FAIL_RELEASE_PARSER_GATE_BLOCKED",
+                             "blockingFindingCount":  722,
+                             "effect":  "Non-development player builds are blocked while release-active production parser routes remain."
+                         },
+    "note":  "This is a broad static pattern audit. Some hits are blackbox dumps or binary IO, not CSV config reads. They still block the requested absolute guarantee until owner-classified.",
+    "sampleLimit":  200,
+    "sample":  [
+                   {
+                       "path":  "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+                       "line":  1175,
+                       "text":  "using (FileStream stream = new FileStream(BlackBoxDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+                       "line":  880,
+                       "text":  "if (TryParseGasProfilesCsv(span, profiles, out int parsed) \u0026\u0026"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+                       "line":  892,
+                       "text":  "public static bool TryParseGasProfilesCsv(ReadOnlySpan\u003cbyte\u003e bytes, NativeArray\u003cAtmosphereGasProfileDTO\u003e profiles, out int count)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+                       "line":  1163,
+                       "text":  "using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+                       "line":  1209,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                       "line":  835,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                       "line":  958,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                       "line":  998,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                       "line":  1013,
+                       "text":  "private int ReadStreamToScratch(FileStream stream, NativeArray\u003cbyte\u003e scratch, int maxBytes)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                       "line":  1681,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+                       "line":  552,
+                       "text":  "ParseChemicalCsv(csvBytes, length, ref constants);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+                       "line":  1174,
+                       "text":  "using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+                       "line":  1272,
+                       "text":  "using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+                       "line":  1277,
+                       "text":  "int value = stream.ReadByte();"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+                       "line":  1290,
+                       "text":  "private static void ParseChemicalCsv(NativeArray\u003cbyte\u003e bytes, int length, ref ToxicOutgassingConstants constants)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorTypes.cs",
+                       "line":  850,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+                       "line":  1730,
+                       "text":  "using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+                       "line":  810,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+                       "line":  814,
+                       "text":  "int value = stream.ReadByte();"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+                       "line":  822,
+                       "text":  "appliedRows = ParseScannerProfilesCsv(buffers.CsvScratch, byteCount, buffers.ScannerProfiles);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+                       "line":  826,
+                       "text":  "public static int ParseScannerProfilesCsv("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+                       "line":  884,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs",
+                       "line":  1004,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationRuntime.cs",
+                       "line":  1026,
+                       "text":  "using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationRuntime.cs",
+                       "line":  1170,
+                       "text":  "using (FileStream stream = File.OpenRead(path))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/EncounterDirector.cs",
+                       "line":  1092,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime_VoxelAStar.cs",
+                       "line":  796,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs",
+                       "line":  997,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                       "line":  160,
+                       "text":  "// COLD ALLOC: StringBuilder[256] - BIOS route-error overlay formatter without string.Format params/boxing - owner: GameBootstrapper"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                       "line":  162,
+                       "text":  "// COLD ALLOC: StringBuilder[128] - fatal boot overlay formatter without string.Format params array - owner: GameBootstrapper"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                       "line":  4802,
+                       "text":  "using FileStream stream = new FileStream("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                       "line":  1121,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                       "line":  1026,
+                       "text":  "if (!TryOpenDumpStream(out FileStream stream))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                       "line":  1077,
+                       "text":  "private static bool TryOpenDumpStream(out FileStream stream)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                       "line":  1114,
+                       "text":  "private static bool TryOpenDumpPath(string path, out FileStream stream)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  740,
+                       "text":  "ParseCsvOverrides(scratch, bytesRead, ref profile, links);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1117,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, share, math.max(1, limit), FileOptions.SequentialScan))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1167,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1203,
+                       "text":  "private static void ParseCsvOverrides("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1235,
+                       "text":  "cursor = ParseCsvUInt(bytes, cursor, length, out link.FloraHash);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1236,
+                       "text":  "cursor = ParseCsvUInt(bytes, cursor, length, out link.FaunaHash);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1237,
+                       "text":  "cursor = ParseCsvFloat(bytes, cursor, length, out link.ChemicalTransferRate);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1238,
+                       "text":  "cursor = ParseCsvUInt(bytes, cursor, length, out link.Flags);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1249,
+                       "text":  "cursor = ParseCsvFloat(bytes, cursor, length, out value);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1291,
+                       "text":  "private static int ParseCsvFloat(NativeArray\u003cbyte\u003e bytes, int cursor, int length, out float value)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+                       "line":  1334,
+                       "text":  "private static int ParseCsvUInt(NativeArray\u003cbyte\u003e bytes, int cursor, int length, out uint value)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs",
+                       "line":  262,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs",
+                       "line":  290,
+                       "text":  "private static unsafe void WriteFlockingEntrySegment(FileStream stream, FlockingTelemetryEntry* ptr, int start, int count)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                       "line":  1358,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, share, math.max(1, limit), FileOptions.SequentialScan))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                       "line":  1506,
+                       "text":  "ParseCsvOverrides(scratch, bytesRead, ref profile);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                       "line":  2557,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                       "line":  2595,
+                       "text":  "private static void ParseCsvOverrides(NativeArray\u003cbyte\u003e bytes, int length, ref ShinobuEcosystemTuning tuning)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+                       "line":  362,
+                       "text":  "using (FileStream stream = new FileStream("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+                       "line":  369,
+                       "text":  "using (StreamReader reader = new StreamReader(stream))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+                       "line":  377,
+                       "text":  "coefficient = JsonUtility.FromJson\u003cEcosystemCoefficientJson\u003e(json);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+                       "line":  1010,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                       "line":  1530,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                       "line":  1880,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "line":  641,
+                       "text":  "if (!TryParseCsvFloat(valueSpan, out float value))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "line":  1882,
+                       "text":  "using FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "line":  1993,
+                       "text":  "private static bool TryParseCsvFloat(ReadOnlySpan\u003cchar\u003e valueSpan, out float value)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs",
+                       "line":  365,
+                       "text":  "int profileCount = TryParsePsychologyProfiles(buffers.CsvScratch, length, buffers.Profiles, out _);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs",
+                       "line":  544,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs",
+                       "line":  708,
+                       "text":  "using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  191,
+                       "text":  "private FileStream _dumpStream;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  192,
+                       "text":  "private FileStream _degradationDumpStream;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  1551,
+                       "text":  "private static FileStream OpenDumpStreamCold(string path, ref bool failureLogged)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  1563,
+                       "text":  "return new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, TelemetryDumpSnapshotBytes, FileOptions.WriteThrough);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  1589,
+                       "text":  "private static void ReleaseDumpStream(ref FileStream stream)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  1698,
+                       "text":  "if (!ParseAgingRulesCsv(scratch, bytesRead, ref dto))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  1721,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  1744,
+                       "text":  "private static bool ParseAgingRulesCsv(NativeArray\u003cbyte\u003e bytes, int byteCount, ref VisualAgingTuningDTO tuning)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                       "line":  1863,
+                       "text":  "private bool TryWriteTelemetryDumpSnapshot(NativeArray\u003cbyte\u003e snapshot, int byteCount, FileStream stream, ref bool failureLogged)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+                       "line":  358,
+                       "text":  "int profileCount = TryParseProfiles(buffers.CsvScratch, length, buffers.Profiles);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+                       "line":  394,
+                       "text":  "int profileCount = TryParseProfiles(buffers.CsvScratch, length, buffers.Profiles);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+                       "line":  607,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+                       "line":  861,
+                       "text":  "using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs",
+                       "line":  1126,
+                       "text":  "int rowCount = ParseTextureSetCsv(scratch, bytesRead, mappings, generation);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs",
+                       "line":  1155,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs",
+                       "line":  1168,
+                       "text":  "private static int ParseTextureSetCsv(NativeArray\u003cbyte\u003e bytes, int byteCount, NativeArray\u003cTextureSetMappingDTO\u003e mappings, uint generation)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Materials/ShinobuMaterialResponseRuntime.cs",
+                       "line":  1368,
+                       "text":  "using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+                       "line":  919,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+                       "line":  925,
+                       "text":  "int value = stream.ReadByte();"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+                       "line":  1091,
+                       "text":  "using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Cognition/AlphaLeviathanCognitionVault.cs",
+                       "line":  371,
+                       "text":  "using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+                       "line":  1402,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AcousticZoneController.cs",
+                       "line":  3050,
+                       "text":  "return string.Concat("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/AcousticZoneController.cs",
+                       "line":  3063,
+                       "text":  "return string.Concat("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                       "line":  650,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                       "line":  694,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+                       "line":  781,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+                       "line":  807,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+                       "line":  824,
+                       "text":  "private static bool TryReadUInt32AutoEndian(FileStream stream, uint fallback, uint maxPlausible, out uint value)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+                       "line":  1301,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+                       "line":  1566,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                       "line":  984,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                       "line":  1028,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
+                       "line":  580,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs",
+                       "line":  766,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs",
+                       "line":  812,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingTypes.cs",
+                       "line":  511,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs",
+                       "line":  343,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs",
+                       "line":  354,
+                       "text":  "bool parsed = AbyssalShadowProfileCsv.Parse(scratch, bytesRead, rules, out ShadowCullCsvParseResultDTO result);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderTypes.cs",
+                       "line":  551,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                       "line":  3485,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+                       "line":  1211,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+                       "line":  1250,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+                       "line":  1257,
+                       "text":  "ParseCsvRules(bytesRead, ref views);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+                       "line":  1265,
+                       "text":  "private void ParseCsvRules(int byteCount, ref AdaptiveStemVaultViews views)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+                       "line":  1202,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+                       "line":  300,
+                       "text":  "return SumpPumpPipeGridValidation.TryParsePipeProfilesCsv(csvBytes, profiles, out profileCount);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+                       "line":  1490,
+                       "text":  "using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridContracts.cs",
+                       "line":  465,
+                       "text":  "public static bool TryParsePipeProfilesCsv(ReadOnlySpan\u003cbyte\u003e csv, NativeArray\u003cPipeProfileDTO\u003e profiles, out int profileCount)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridContracts.cs",
+                       "line":  503,
+                       "text":  "public static bool TryParsePipeProfilesCsv(ReadOnlySpan\u003cbyte\u003e csv, Span\u003cPipeProfileDTO\u003e profiles, out int profileCount)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+                       "line":  873,
+                       "text":  "using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+                       "line":  1135,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+                       "line":  498,
+                       "text":  "public static bool TryParseModuleBoundsCsv("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+                       "line":  523,
+                       "text":  "public static bool TryParseModuleBoundsCsvToVault("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+                       "line":  809,
+                       "text":  "using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+                       "line":  1023,
+                       "text":  "public static int ParseRows(ReadOnlySpan\u003cchar\u003e csv, NativeArray\u003cAudioProfileCsvRow\u003e rows)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+                       "line":  1099,
+                       "text":  "public static int ParseRows(ReadOnlySpan\u003cbyte\u003e csv, NativeArray\u003cAudioProfileCsvRow\u003e rows)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                       "line":  10645,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                       "line":  10691,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+                       "line":  665,
+                       "text":  "// COLD ALLOC: FileStream[1] - designer CSV authoring bridge; bytes land in Vault scratch - owner: SHINOBU_252"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+                       "line":  666,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+                       "line":  809,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+                       "line":  740,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+                       "line":  753,
+                       "text":  "_csvMetadataCount = ParseDialogueCsv(csv, views.CsvMetadata);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+                       "line":  761,
+                       "text":  "private static int ParseDialogueCsv(ReadOnlySpan\u003cbyte\u003e csv, NativeArray\u003cVocalDialogueMetadataDTO\u003e metadata)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+                       "line":  959,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Global/Contracts/FutureSystemSeamPacking.cs",
+                       "line":  107,
+                       "text":  "public static int ParseCsvReservations("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+                       "line":  637,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                       "line":  435,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                       "line":  450,
+                       "text":  "ParseSynthPresetCsv(bytesRead, ref views);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                       "line":  1231,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                       "line":  1267,
+                       "text":  "private void ParseSynthPresetCsv(int byteCount)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                       "line":  1272,
+                       "text":  "ParseSynthPresetCsv(byteCount, ref views);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+                       "line":  1275,
+                       "text":  "private void ParseSynthPresetCsv(int byteCount, ref DynamicMusicVaultViews views)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+                       "line":  429,
+                       "text":  "using (var stream = new FileStream("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+                       "line":  896,
+                       "text":  "using (FileStream stream = File.Create(path))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs",
+                       "line":  904,
+                       "text":  "public static bool TryParseBuildCostCsv(ReadOnlySpan\u003cbyte\u003e bytes, NativeArray\u003cModuleCostDTO\u003e costs, out int count)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/DroneFleetManager_Transactions.cs",
+                       "line":  1052,
+                       "text":  "using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                       "line":  5146,
+                       "text":  "using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                       "line":  5460,
+                       "text":  "using (FileStream stream = File.OpenRead(resolvedPath))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+                       "line":  752,
+                       "text":  "using FileStream stream = new FileStream(_hatchDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+                       "line":  821,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+                       "line":  196,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+                       "line":  1697,
+                       "text":  "using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Animation/IK/LeviathanTerrainIkJobs.cs",
+                       "line":  166,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs",
+                       "line":  527,
+                       "text":  "return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/CraftingSystem.FastFail.cs",
+                       "line":  338,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Animation/IK/VRPhysicalHandPresenceIkJobs.cs",
+                       "line":  339,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Dev/NarrativeProgressionSmokeTester.cs",
+                       "line":  120,
+                       "text":  "return File.Exists(absolutePath) ? File.ReadAllText(absolutePath) : string.Empty;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                       "line":  305,
+                       "text":  "private FileStream _liveTelemetryStream;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                       "line":  306,
+                       "text":  "private FileStream _crashTelemetryStream;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                       "line":  2996,
+                       "text":  "_liveTelemetryStream = new FileStream(_liveTelemetryPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                       "line":  3035,
+                       "text":  "_crashTelemetryStream = new FileStream(_crashTelemetryPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                       "line":  3064,
+                       "text":  "private static void EnsureTelemetryBackingFileSize(FileStream stream, string path, long expectedBytes)"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                       "line":  38,
+                       "text":  "private const uint PathFlagFileStream = 1u;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                       "line":  1409,
+                       "text":  "using FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.SequentialScan);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                       "line":  1425,
+                       "text":  "_lastReadPathFlags = pathFlags | PathFlagFileStream;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                       "line":  1794,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationContracts.cs",
+                       "line":  446,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+                       "line":  689,
+                       "text":  "using (FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+                       "line":  697,
+                       "text":  "bool parsed = ParseTimingCsv(scratch, readLength, timings, out parsedRows);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+                       "line":  1190,
+                       "text":  "using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+                       "line":  1310,
+                       "text":  "private static bool ParseTimingCsv("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+                       "line":  69,
+                       "text":  "private AuxiliaryCsvParseResult _lastCsvParseResult;"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+                       "line":  854,
+                       "text":  "parsed = AuxiliaryEquipmentProfilesCsvParser.TryApplyProfilesCsv("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+                       "line":  886,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+                       "line":  896,
+                       "text":  "int value = stream.ReadByte();"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+                       "line":  1337,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs",
+                       "line":  530,
+                       "text":  ": string.Concat(\"fauna.species.\", speciesId); // COLD ALLOC: fallback scan ID cached per species id."
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+                       "line":  972,
+                       "text":  "using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+                       "line":  1239,
+                       "text":  "using FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+                       "line":  1246,
+                       "text":  "ParseConstraintCsv(csvScratch, read, boneConstraints);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+                       "line":  1260,
+                       "text":  "private static void ParseConstraintCsv("
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+                       "line":  2285,
+                       "text":  "using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+                       "line":  2349,
+                       "text":  "using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                       "line":  2182,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                       "line":  2336,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                       "line":  3557,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                       "line":  3601,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                       "line":  3636,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                       "line":  3730,
+                       "text":  "using (FileStream stream = new FileStream(TelemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs",
+                       "line":  393,
+                       "text":  "string report = File.Exists(absoluteReport) ? File.ReadAllText(absoluteReport) : \"{\\n}\\n\";"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs",
+                       "line":  465,
+                       "text":  "string text = File.ReadAllText(files[fileIndex]);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+                       "line":  732,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+                       "line":  1285,
+                       "text":  "byte[] bytes = File.ReadAllBytes(path);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+                       "line":  376,
+                       "text":  "byte[] bytes = File.ReadAllBytes(path);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+                       "line":  1337,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+                       "line":  1703,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+                       "line":  1797,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+                       "line":  1861,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+                       "line":  1258,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+                       "line":  874,
+                       "text":  "using (FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+                       "line":  1195,
+                       "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+                       "line":  2522,
+                       "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs",
+                       "line":  383,
+                       "text":  "string text = File.ReadAllText(filePath);"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs",
+                       "line":  420,
+                       "text":  "string text = File.ReadAllText(filePath);"
+                   }
+               ]
+}

@@ -190,6 +190,41 @@ public unsafe partial struct H8CombinedAttributeRecord
 }
 """
 
+EXPRESSION_PROPERTY_STRUCT = """
+[StructLayout(LayoutKind.Explicit, Size = 16)]
+public readonly struct H8ExpressionPropertyRecord
+{
+    [FieldOffset(0)] public readonly ulong HashId;
+    [FieldOffset(8)] public readonly uint Flags;
+    [FieldOffset(12)] private readonly uint _pad0;
+
+    public bool IsValid => Flags != 0u;
+}
+"""
+
+FIXED_BUFFER_STRUCT = """
+[StructLayout(LayoutKind.Explicit, Size = 16)]
+public unsafe struct H8FixedBufferRecord
+{
+    [FieldOffset(0)] public uint HashId;
+    [FieldOffset(4)] public fixed byte Payload[12];
+}
+"""
+
+NESTED_EXPLICIT_STRUCT = """
+public unsafe struct H8OuterJobLikeStruct
+{
+    public int Count;
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct H8NestedExplicitRecord
+    {
+        [FieldOffset(0)] public ulong HashId;
+        [FieldOffset(8)] public ulong Value;
+    }
+}
+"""
+
 
 def write_schema(
     path: Path,
@@ -634,6 +669,87 @@ class H8BinValidatorTests(unittest.TestCase):
             self.assertEqual(report["structs_parsed"], 6)
             layout = report["primary_struct_layouts"]["H8DataBlobHeader"]
             self.assertEqual(layout["size"], 16)
+
+    def test_struct_candidate_scan_ignores_comment_struct_text(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            source = tmp / "Scripts"
+            source.mkdir()
+            path = source / "CommentNoise.cs"
+            path.write_text(
+                "// struct. This comment must not become a declaration span.\n"
+                "public sealed class LargeManagedClass\n"
+                "{\n"
+                "    public void Run() { if (true) { } }\n"
+                "}\n"
+                "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]\n"
+                "public struct H8OnlyRealStruct\n"
+                "{\n"
+                "    [System.Runtime.InteropServices.FieldOffset(0)] public ulong HashId;\n"
+                "    [System.Runtime.InteropServices.FieldOffset(8)] public ulong Value;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            spans = h8bin_validator.extract_struct_candidate_spans(path)
+            parsed, findings = h8bin_validator.parse_csharp_file(path, {})
+
+        self.assertEqual(len(spans), 1)
+        self.assertEqual([item.name for item in parsed], ["H8OnlyRealStruct"])
+        self.assertEqual([item.code for item in findings], [])
+
+    def test_expression_bodied_property_is_banned_not_missing_fieldoffset(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            source = tmp / "Scripts"
+            source.mkdir()
+            path = source / "ExpressionProperty.cs"
+            path.write_text(EXPRESSION_PROPERTY_STRUCT, encoding="utf-8")
+            parsed, findings = h8bin_validator.parse_csharp_file(path, {})
+
+        self.assertEqual([item.name for item in parsed], ["H8ExpressionPropertyRecord"])
+        codes = [item.code for item in findings]
+        self.assertIn("STRUCT_PROPERTY_BANNED", codes)
+        self.assertNotIn("FIELD_OFFSET_MISSING", codes)
+
+    def test_fixed_buffer_field_uses_declared_byte_span(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            source = tmp / "Scripts"
+            source.mkdir()
+            path = source / "FixedBuffer.cs"
+            path.write_text(FIXED_BUFFER_STRUCT, encoding="utf-8")
+            parsed, findings = h8bin_validator.parse_csharp_file(path, {})
+            schema = h8bin_validator.SchemaModel({}, {}, [], {item.name: item for item in parsed}, {}, {})
+            args = argparse.Namespace(fail_fast=False)
+            state = h8bin_validator.ValidationState(args, schema)
+            h8bin_validator.validate_struct_layouts(schema.structs, state)
+
+        self.assertEqual([item.name for item in parsed], ["H8FixedBufferRecord"])
+        self.assertEqual([item.code for item in findings], [])
+        self.assertEqual(schema.structs["H8FixedBufferRecord"].fields[1].type_name, "byte[12]")
+        self.assertEqual(schema.structs["H8FixedBufferRecord"].fields[1].size, 12)
+        self.assertNotIn("FIELD_DECL_UNPARSED", [item.code for item in state.findings])
+        self.assertNotIn("FIELD_OUT_OF_STRUCT", [item.code for item in state.findings])
+
+    def test_nested_explicit_struct_does_not_mark_outer_layout_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            source = tmp / "Scripts"
+            source.mkdir()
+            path = source / "NestedExplicit.cs"
+            path.write_text(NESTED_EXPLICIT_STRUCT, encoding="utf-8")
+            spans = h8bin_validator.extract_struct_candidate_spans(path)
+            parsed, findings = h8bin_validator.parse_csharp_file(path, {})
+
+        self.assertEqual(len(spans), 1)
+        self.assertEqual([item.name for item in parsed], ["H8NestedExplicitRecord"])
+        self.assertNotIn("STRUCT_LAYOUT_MISSING", [item.code for item in findings])
+
+    def test_h8bin_validator_source_has_no_python_regex_dependency(self) -> None:
+        source = VALIDATOR.read_text(encoding="utf-8")
+        self.assertNotIn("import re", source)
+        self.assertNotIn("re.compile", source)
+        self.assertNotIn("re.search", source)
 
     def test_thorough_sampling_uses_lazy_range(self) -> None:
         indices = h8bin_validator.sample_indices(1_000_000_000, 5.0, True, 123)

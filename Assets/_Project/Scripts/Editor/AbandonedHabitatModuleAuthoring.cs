@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using Hecton8.Building;
 using UnityEditor;
@@ -204,7 +205,13 @@ namespace Hecton8.EditorTools
                     continue;
 
                 string assetPath = AssetDatabase.GetAssetPath(asset);
-                writer.WriteLine($"| {asset.name} | {asset.PersistentId} | {asset.TemplateHashId} | {asset.DefaultIntegrityState:0.00} | {assetPath} |");
+                writer.WriteLine(
+                    "| " + asset.name +
+                    " | " + asset.PersistentId +
+                    " | " + asset.TemplateHashId +
+                    " | " + asset.DefaultIntegrityState.ToString("0.00", CultureInfo.InvariantCulture) +
+                    " | " + assetPath +
+                    " |");
             }
         }
 

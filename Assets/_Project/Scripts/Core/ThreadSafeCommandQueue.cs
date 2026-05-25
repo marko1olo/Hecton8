@@ -206,6 +206,8 @@ namespace Hecton8.Core
             void OnStorageReservationCommitResolved(in StorageReservationCommitResolvedPayload payload);
         }
 
+        private static readonly uint _commandOverflowWarningHash = unchecked((uint)LocHash.Compute("ThreadSafeCommandQueue.CommandOverflow"));
+        private static readonly uint _commandQueueHash = unchecked((uint)LocHash.Compute("ThreadSafeCommandQueue.Commands"));
         private static readonly uint _storageCommitOverflowWarningHash = unchecked((uint)LocHash.Compute("ThreadSafeCommandQueue.StorageReservationCommitOverflow"));
         private static readonly uint _storageCommitQueueHash = unchecked((uint)LocHash.Compute("ThreadSafeCommandQueue.StorageReservationCommit"));
 
@@ -221,17 +223,22 @@ namespace Hecton8.Core
         private static NativeQueue<EntityCommand> _pendingCommands;
         private static NativeQueue<StorageReservationCommitResolvedPayload> _pendingStorageReservationCommitResolved;
         private static int _nextToken = 1;
+        private static int _pendingCommandCount;
+        private static int _droppedCommandCount;
         private static int _pendingStorageReservationCommitResolvedCount;
         private static int _storageReservationCommitListenerCount;
+        private static int _lastCommandOverflowWarningFrame = -1;
         private static int _lastStorageReservationCommitOverflowWarningFrame = -1;
-        private static ObjectPoolManager _objectPool;
+        private static IObjectPoolService _objectPool;
 
         /// <summary>
         /// True once the structural command queue has allocated its persistent native storage.
         /// </summary>
         public static bool IsReady => _pendingCommands.IsCreated;
 
-        public static int PendingCount => _pendingCommands.IsCreated ? _pendingCommands.Count : 0;
+        public static int PendingCount => _pendingCommandCount;
+
+        public static int DroppedCommandCount => _droppedCommandCount;
 
         public static int PendingStorageReservationCommitResolvedCount => _pendingStorageReservationCommitResolvedCount;
 
@@ -293,14 +300,31 @@ namespace Hecton8.Core
 
         public static void Enqueue(in EntityCommand command)
         {
+            TryEnqueue(in command);
+        }
+
+        public static bool TryEnqueue(in EntityCommand command)
+        {
             if (command.CommandType == EntityCommandType.None)
-                return;
+                return false;
 
             if (RequiresGameObjectTarget(command.CommandType) && command.TargetToken <= 0)
-                return;
+                return false;
 
             Initialize();
+            if (_pendingCommandCount >= MaxMainThreadCommandsPerDrain)
+            {
+                _droppedCommandCount++;
+                if (command.CommandType == EntityCommandType.CommitStorageReservation)
+                    RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, false);
+
+                ReportCommandOverflowOncePerFrame();
+                return false;
+            }
+
             _pendingCommands.Enqueue(command);
+            _pendingCommandCount++;
+            return true;
         }
 
         public static int RegisterGameObjectTarget(GameObject instance)
@@ -356,6 +380,8 @@ namespace Hecton8.Core
             _tokensByInstanceId.Clear();
             _freeTokens.Clear();
             _nextToken = 1;
+            _pendingCommandCount = 0;
+            _droppedCommandCount = 0;
             _pendingStorageReservationCommitResolvedCount = 0;
             _objectPool = null;
         }
@@ -372,11 +398,20 @@ namespace Hecton8.Core
                     return false;
 
                 if (!_pendingCommands.TryDequeue(out EntityCommand command))
+                {
+                    _pendingCommandCount = 0;
                     break;
+                }
+
+                if (_pendingCommandCount > 0)
+                    _pendingCommandCount--;
 
                 ExecuteCommand(in command);
                 remainingBudget--;
             }
+
+            if (_pendingCommands.IsEmpty())
+                _pendingCommandCount = 0;
 
             return _pendingCommands.IsEmpty();
         }
@@ -395,7 +430,10 @@ namespace Hecton8.Core
                     return false;
 
                 if (!_pendingStorageReservationCommitResolved.TryDequeue(out StorageReservationCommitResolvedPayload payload))
+                {
+                    _pendingStorageReservationCommitResolvedCount = 0;
                     break;
+                }
 
                 if (_pendingStorageReservationCommitResolvedCount > 0)
                     _pendingStorageReservationCommitResolvedCount--;
@@ -437,7 +475,10 @@ namespace Hecton8.Core
             System.Array.Clear(_storageReservationCommitListeners, 0, _storageReservationCommitListenerCount);
             _storageReservationCommitListenerCount = 0;
             _nextToken = 1;
+            _pendingCommandCount = 0;
+            _droppedCommandCount = 0;
             _pendingStorageReservationCommitResolvedCount = 0;
+            _lastCommandOverflowWarningFrame = -1;
             _lastStorageReservationCommitOverflowWarningFrame = -1;
             _objectPool = null;
         }
@@ -485,7 +526,7 @@ namespace Hecton8.Core
             {
                 case EntityCommandType.DespawnGameObject:
                 {
-                    ObjectPoolManager pool = ResolveObjectPoolCold();
+                    IObjectPoolService pool = ResolveObjectPoolCold();
                     if (pool != null)
                         pool.Despawn(instance, Mathf.Max(0f, command.FloatValue));
                     else
@@ -506,7 +547,7 @@ namespace Hecton8.Core
 
                 case EntityCommandType.SpawnGameObject:
                 {
-                    ObjectPoolManager pool = ResolveObjectPoolCold();
+                    IObjectPoolService pool = ResolveObjectPoolCold();
                     if (pool != null)
                         pool.Spawn(instance, command.VectorValue, Quaternion.identity);
                     break;
@@ -547,16 +588,16 @@ namespace Hecton8.Core
 
         private static void CacheRegistryServicesCold()
         {
-            _objectPool = GlobalRegistry.ObjectPool;
+            _objectPool = GlobalRegistry.ObjectPoolService;
         }
 
-        private static ObjectPoolManager ResolveObjectPoolCold()
+        private static IObjectPoolService ResolveObjectPoolCold()
         {
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool != null)
                 return pool;
 
-            _objectPool = GlobalRegistry.ObjectPool;
+            _objectPool = GlobalRegistry.ObjectPoolService;
             return _objectPool;
         }
 
@@ -625,6 +666,19 @@ namespace Hecton8.Core
             _pendingStorageReservationCommitResolved.Enqueue(payload);
             _pendingStorageReservationCommitResolvedCount++;
             return true;
+        }
+
+        private static void ReportCommandOverflowOncePerFrame()
+        {
+            int frame = Time.frameCount;
+            if (_lastCommandOverflowWarningFrame == frame)
+                return;
+
+            _lastCommandOverflowWarningFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _commandOverflowWarningHash,
+                _commandQueueHash,
+                MaxMainThreadCommandsPerDrain);
         }
 
         private static void ReportStorageReservationCommitOverflowOncePerFrame()

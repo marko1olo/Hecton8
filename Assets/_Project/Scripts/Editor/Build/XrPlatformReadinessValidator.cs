@@ -369,8 +369,13 @@ namespace Hecton8.Editor.Build
                 return false;
             }
 
-            string text = File.ReadAllText(path);
-            return text.IndexOf(marker, StringComparison.Ordinal) >= 0;
+            foreach (string line in File.ReadLines(path))
+            {
+                if (line.IndexOf(marker, StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private static void Append(StringBuilder builder, string message)

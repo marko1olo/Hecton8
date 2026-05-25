@@ -2127,7 +2127,7 @@ namespace Hecton8.EditorTools
             asset.finalPrefab = finalPrefab;
             asset.powerRating = powerRating;
             asset.powerPriority = powerPriority;
-            asset.buildCost ??= new List<InventoryCost>();
+            asset.buildCost ??= new List<InventoryCost>(4);
             asset.buildCost.Clear();
             EditorUtility.SetDirty(asset);
             return asset;
@@ -2200,7 +2200,7 @@ namespace Hecton8.EditorTools
             if (buildable == null || costs == null || costs.Length == 0)
                 return;
 
-            buildable.buildCost ??= new List<InventoryCost>();
+            buildable.buildCost ??= new List<InventoryCost>(costs.Length);
             buildable.buildCost.Clear();
 
             for (int i = 0; i < costs.Length; i++)

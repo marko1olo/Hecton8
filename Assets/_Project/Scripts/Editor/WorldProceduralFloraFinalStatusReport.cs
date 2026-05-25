@@ -1061,7 +1061,7 @@ namespace Hecton8.EditorTools
                 return allRenderers ?? Array.Empty<Renderer>();
 
             List<Renderer> budgetRenderers = new List<Renderer>(8);
-            HashSet<Renderer> seen = new HashSet<Renderer>();
+            HashSet<Renderer> seen = new HashSet<Renderer>(allRenderers != null ? allRenderers.Length : 8);
             for (int groupIndex = 0; groupIndex < lodGroups.Length; groupIndex++)
             {
                 LODGroup lodGroup = lodGroups[groupIndex];

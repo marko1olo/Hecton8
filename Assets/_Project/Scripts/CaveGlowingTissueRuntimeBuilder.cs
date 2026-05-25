@@ -8,7 +8,8 @@ namespace Hecton8.Caves
     internal static class CaveGlowingTissueRuntimeBuilder
     {
         private const string TissueRootName = "_GlowingTissue";
-        private static readonly string[] _TissueNames = CreateNameCache("Tissue_", 24); // COLD ALLOC: bounded glowing-tissue child names.
+        private const int MaxTissueCount = 24;
+        private static readonly string[] _TissueNames = CreateNameCache("Tissue_", MaxTissueCount); // COLD ALLOC: bounded glowing-tissue child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -140,7 +141,7 @@ namespace Hecton8.Caves
             GlowingTissueConfig config,
             float globalIntensity)
         {
-            int maxCount = Mathf.Clamp(config.maxCount, 0, 24);
+            int maxCount = Mathf.Clamp(config.maxCount, 0, MaxTissueCount);
             if (maxCount <= 0)
                 return 0;
 

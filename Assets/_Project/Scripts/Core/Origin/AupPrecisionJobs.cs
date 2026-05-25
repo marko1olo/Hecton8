@@ -35,7 +35,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Ensures owner-local Vault buffers exist and resolves transient job views.
         /// </summary>
-        public static bool EnsureBuffers(IDataVault vault, int requestedCapacity, out AupPrecisionVaultViews views)
+        internal static bool EnsureBuffers(IDataVault vault, int requestedCapacity, out AupPrecisionVaultViews views)
         {
             views = default;
             if (vault == null)
@@ -51,47 +51,47 @@ namespace Hecton8.Core
                 return true;
             }
 
-            VaultGenerationHandle<double3> targetAups = vault.GetGenerationHandle<double3>(
+            VaultGenerationHandle<double3> targetAups = vault.EnsureGenerationHandle<double3>(
                 TargetAupsBuffer,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<AupPrecisionRuntimeStateDTO> runtimeState = vault.GetGenerationHandle<AupPrecisionRuntimeStateDTO>(
+            VaultGenerationHandle<AupPrecisionRuntimeStateDTO> runtimeState = vault.EnsureGenerationHandle<AupPrecisionRuntimeStateDTO>(
                 RuntimeStateBuffer,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<float3> localOffsets = vault.GetGenerationHandle<float3>(
+            VaultGenerationHandle<float3> localOffsets = vault.EnsureGenerationHandle<float3>(
                 LocalOffsetsBuffer,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<uint> resultFlags = vault.GetGenerationHandle<uint>(
+            VaultGenerationHandle<uint> resultFlags = vault.EnsureGenerationHandle<uint>(
                 ResultFlagsBuffer,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<AupPrecisionTelemetryEntry> telemetryRing = vault.GetGenerationHandle<AupPrecisionTelemetryEntry>(
+            VaultGenerationHandle<AupPrecisionTelemetryEntry> telemetryRing = vault.EnsureGenerationHandle<AupPrecisionTelemetryEntry>(
                 TelemetryRingBuffer,
                 AupPrecisionMath.TelemetryCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<AupToleranceProfileDTO> toleranceProfiles = vault.GetGenerationHandle<AupToleranceProfileDTO>(
+            VaultGenerationHandle<AupToleranceProfileDTO> toleranceProfiles = vault.EnsureGenerationHandle<AupToleranceProfileDTO>(
                 ToleranceProfilesBuffer,
                 ToleranceProfileCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<byte> csvScratch = vault.GetGenerationHandle<byte>(
+            VaultGenerationHandle<byte> csvScratch = vault.EnsureGenerationHandle<byte>(
                 CsvScratchBuffer,
                 CsvScratchBytes,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<double3> mockExtremeAups = vault.GetGenerationHandle<double3>(
+            VaultGenerationHandle<double3> mockExtremeAups = vault.EnsureGenerationHandle<double3>(
                 MockExtremeAupsBuffer,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<AupPrecisionFaultCounter64> faultCounters = vault.GetGenerationHandle<AupPrecisionFaultCounter64>(
+            VaultGenerationHandle<AupPrecisionFaultCounter64> faultCounters = vault.EnsureGenerationHandle<AupPrecisionFaultCounter64>(
                 FaultCounterBuffer,
                 1,
                 OwnerSystemId,
@@ -184,8 +184,9 @@ namespace Hecton8.Core
             return true;
         }
 
+#if UNITY_EDITOR
         /// <summary>
-        /// Cold-boot parser for `aup_tolerance_profiles.csv` bytes into Vault tuning rows.
+        /// Editor-only parser for `aup_tolerance_profiles.csv` bytes into Vault tuning rows.
         /// </summary>
         public static int LoadToleranceProfilesFromBytes(IDataVault vault, ReadOnlySpan<byte> csvBytes)
         {
@@ -213,6 +214,7 @@ namespace Hecton8.Core
 
             return written;
         }
+#endif
 
         /// <summary>
         /// Dumps the Vault telemetry ring when a fault counter indicates non-finite or clamped precision state.
@@ -323,19 +325,19 @@ namespace Hecton8.Core
         }
     }
 
-    public struct AupPrecisionVaultViews
+    internal struct AupPrecisionVaultViews
     {
-        public NativeArray<double3> TargetAups;
-        public NativeArray<AupPrecisionRuntimeStateDTO> RuntimeState;
-        public NativeArray<float3> LocalOffsets;
-        public NativeArray<uint> ResultFlags;
-        public NativeArray<AupPrecisionTelemetryEntry> TelemetryRing;
-        public NativeArray<AupToleranceProfileDTO> ToleranceProfiles;
-        public NativeArray<byte> CsvScratch;
-        public NativeArray<double3> MockExtremeAups;
-        public NativeArray<AupPrecisionFaultCounter64> FaultCounters;
+        internal NativeArray<double3> TargetAups;
+        internal NativeArray<AupPrecisionRuntimeStateDTO> RuntimeState;
+        internal NativeArray<float3> LocalOffsets;
+        internal NativeArray<uint> ResultFlags;
+        internal NativeArray<AupPrecisionTelemetryEntry> TelemetryRing;
+        internal NativeArray<AupToleranceProfileDTO> ToleranceProfiles;
+        internal NativeArray<byte> CsvScratch;
+        internal NativeArray<double3> MockExtremeAups;
+        internal NativeArray<AupPrecisionFaultCounter64> FaultCounters;
 
-        public bool IsValidForCapacity(int capacity)
+        internal bool IsValidForCapacity(int capacity)
         {
             return TargetAups.IsCreated &&
                 RuntimeState.IsCreated &&

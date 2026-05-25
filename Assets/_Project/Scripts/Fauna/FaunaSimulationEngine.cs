@@ -345,7 +345,7 @@ namespace Hecton8.AI
             if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
                 return default;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 owner,
@@ -634,7 +634,7 @@ namespace Hecton8.AI
             if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
                 return default;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 owner,
@@ -879,7 +879,7 @@ namespace Hecton8.AI
             if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
                 return default;
 
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 owner,

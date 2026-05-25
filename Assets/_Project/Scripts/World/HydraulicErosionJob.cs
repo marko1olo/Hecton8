@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -9,10 +10,15 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    internal static class HydraulicErosionJobLayout
+    {
+        public const int HydraulicErosionHeightDeltaStrideBytes = 16;
+    }
+
     /// <summary>
     /// Blittable hydraulic erosion height/silt delta emitted by droplet slices.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = HydraulicErosionJobLayout.HydraulicErosionHeightDeltaStrideBytes)]
     public struct HydraulicErosionHeightDelta
     {
         /// <summary>Linear heightmap cell index.</summary>
@@ -133,10 +139,11 @@ namespace Hecton8.World
             int dropletsPerSlice,
             int innerLoopBatchCount,
             NativeQueue<HydraulicErosionHeightDelta> heightDeltas,
+            NativeArray<int> heightDeltaBudget,
             int maxDeltasPerApply,
             JobHandle dependency)
         {
-            if (!heightDeltas.IsCreated)
+            if (!heightDeltas.IsCreated || !heightDeltaBudget.IsCreated || heightDeltaBudget.Length < 2)
                 return ScheduleFourPhaseSliced(ref job, dropletsPerSlice, innerLoopBatchCount, dependency);
 
             int originalDropletCount = math.max(0, job.DropletCount);
@@ -144,6 +151,7 @@ namespace Hecton8.World
             byte originalQueueHeightDeltas = job.QueueHeightDeltas;
             byte originalDeferHeightDeltaApplication = job.DeferHeightDeltaApplication;
             NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter originalHeightDeltaQueue = job.HeightDeltaQueue;
+            NativeArray<int> originalHeightDeltaBudget = job.HeightDeltaBudget;
             int safeDropletsPerSlice = math.max(1, dropletsPerSlice);
             int safeMaxDeltasPerApply = ResolvePreferredMaxDeltasPerApply(
                 maxDeltasPerApply,
@@ -156,15 +164,17 @@ namespace Hecton8.World
             job.QueueHeightDeltas = 1;
             job.DeferHeightDeltaApplication = 1;
             job.HeightDeltaQueue = heightDeltas.AsParallelWriter();
+            job.HeightDeltaBudget = heightDeltaBudget;
 
             JobHandle handle = dependency;
             for (int dropletOffset = 0; dropletOffset < originalDropletCount; dropletOffset += safeDropletsPerSlice)
             {
                 job.DropletCount = math.min(safeDropletsPerSlice, originalDropletCount - dropletOffset);
                 job.DropletIndexOffset = originalDropletIndexOffset + dropletOffset;
-                handle = ScheduleFourPhase(ref job, innerLoopBatchCount, handle);
                 int applyBudget = safeMaxDeltasPerApply;
                 int applyPassCount = ResolveHeightDeltaApplyPlan(job.DropletCount, job.MaxLifetime, safeMaxDeltasPerApply, out applyBudget);
+                ResetHeightDeltaBudget(heightDeltaBudget, applyBudget, applyPassCount);
+                handle = ScheduleFourPhase(ref job, innerLoopBatchCount, handle);
                 for (int applyPass = 0; applyPass < applyPassCount; applyPass++)
                 {
                     handle = new HydraulicErosionDeltaApplyJob
@@ -184,7 +194,18 @@ namespace Hecton8.World
             job.QueueHeightDeltas = originalQueueHeightDeltas;
             job.DeferHeightDeltaApplication = originalDeferHeightDeltaApplication;
             job.HeightDeltaQueue = originalHeightDeltaQueue;
+            job.HeightDeltaBudget = originalHeightDeltaBudget;
             return handle;
+        }
+
+        private static void ResetHeightDeltaBudget(NativeArray<int> heightDeltaBudget, int applyBudget, int applyPassCount)
+        {
+            if (!heightDeltaBudget.IsCreated || heightDeltaBudget.Length < 2)
+                return;
+
+            long budget = (long)math.max(1, applyBudget) * math.max(1, applyPassCount);
+            heightDeltaBudget[0] = budget > int.MaxValue ? int.MaxValue : (int)budget;
+            heightDeltaBudget[1] = 0;
         }
 
         private static int ResolvePreferredMaxDeltasPerApply(int requestedMaxDeltasPerApply, int dropletsPerSlice, int maxLifetime)
@@ -308,6 +329,9 @@ namespace Hecton8.World
 
         /// <summary>Optional queue writer for deferred terrain deltas.</summary>
         public NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter HeightDeltaQueue;
+
+        /// <summary>Two-int writer budget: remaining delta slots, dropped delta count.</summary>
+        [NativeDisableParallelForRestriction] public NativeArray<int> HeightDeltaBudget;
 
         /// <summary>Non-zero emits every terrain mutation into <see cref="HeightDeltaQueue"/>.</summary>
         public byte QueueHeightDeltas;
@@ -964,13 +988,14 @@ namespace Hecton8.World
 
             if (QueueHeightDeltas != 0)
             {
-                HeightDeltaQueue.Enqueue(new HydraulicErosionHeightDelta
+                HydraulicErosionHeightDelta delta = new HydraulicErosionHeightDelta
                 {
                     Index = index,
                     HeightDelta01 = heightDelta01,
                     SedimentDelta01 = sedimentDelta01,
                     ErosionDepthDelta01 = erosionDepthDelta01
-                });
+                };
+                TryEnqueueHeightDeltaBounded(HeightDeltaQueue, HeightDeltaBudget, in delta);
             }
 
             if (DeferHeightDeltaApplication != 0)
@@ -981,6 +1006,27 @@ namespace Hecton8.World
                 SedimentMask[index] += sedimentDelta01;
             if (erosionDepthDelta01 != 0f && ErosionDepthMask.IsCreated)
                 ErosionDepthMask[index] += erosionDepthDelta01;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe bool TryEnqueueHeightDeltaBounded(
+            NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter writer,
+            NativeArray<int> writerBudget,
+            in HydraulicErosionHeightDelta delta)
+        {
+            if (!writerBudget.IsCreated || writerBudget.Length < 2)
+                return false;
+
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
+            int remainingAfterClaim = Interlocked.Decrement(ref budget[0]);
+            if (remainingAfterClaim < 0)
+            {
+                Interlocked.Increment(ref budget[1]);
+                return false;
+            }
+
+            writer.Enqueue(delta);
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -531,7 +531,7 @@ namespace Hecton8.Vehicles.Automation
         // and feeler rows are per-vehicle outputs, and EncodedSdf is read-only sample data. The safety system cannot prove
         // that separation after pointer lowering, so the job enforces VehicleCount and SDF length bounds explicitly.
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // A Physics.Raycast/MeshCollider path was rejected as CPU-heavy and nondeterministic for the 100km AUP world.
+        // A Unity physics/MeshCollider path was rejected as CPU-heavy and nondeterministic for the 100km AUP world.
         // Duplicating the SDF into managed or temporary containers was rejected because it creates ownership and copy cost.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The invariant is per-vehicle row ownership: Execute(index) writes only the rows derived from index and its
@@ -1560,7 +1560,9 @@ namespace Hecton8.Vehicles.Automation
             if (!_buffersReady || _buffersLocked || _solverPending || _initPending)
                 return;
 
+#if UNITY_EDITOR
             TryApplyHandlingProfilesCsv();
+#endif
         }
 
         public bool TryWriteTargetAup(int submarineIndex, double3 targetAup, float speed)
@@ -1818,62 +1820,62 @@ namespace Hecton8.Vehicles.Automation
                 return false;
             }
 
-            _autopilotHandle = _dataVault.GetGenerationHandle<AutopilotStateDTO>(
+            _autopilotHandle = _dataVault.EnsureGenerationHandle<AutopilotStateDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotStates,
                 capacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _avoidanceHandle = _dataVault.GetGenerationHandle<AutopilotAvoidanceDTO>(
+            _avoidanceHandle = _dataVault.EnsureGenerationHandle<AutopilotAvoidanceDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotAvoidance,
                 capacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _feelerHandle = _dataVault.GetGenerationHandle<AutopilotFeelerResultDTO>(
+            _feelerHandle = _dataVault.EnsureGenerationHandle<AutopilotFeelerResultDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotFeelerResults,
                 capacity * SubmarineAutopilotConstants.MaxFeelersPerVehicle,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _waypointHandle = _dataVault.GetGenerationHandle<AutopilotWaypointDTO>(
+            _waypointHandle = _dataVault.EnsureGenerationHandle<AutopilotWaypointDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotWaypoints,
                 SubmarineAutopilotConstants.WaypointCapacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _routeHandle = _dataVault.GetGenerationHandle<AutopilotRouteRangeDTO>(
+            _routeHandle = _dataVault.EnsureGenerationHandle<AutopilotRouteRangeDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotRouteRanges,
                 capacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = _dataVault.GetGenerationHandle<AutopilotTuningDTO>(
+            _tuningHandle = _dataVault.EnsureGenerationHandle<AutopilotTuningDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotTuning,
                 1,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _dataVault.GetGenerationHandle<AutopilotTelemetryEntry>(
+            _telemetryHandle = _dataVault.EnsureGenerationHandle<AutopilotTelemetryEntry>(
                 SubmarineAutopilotVaultRoute.AutopilotTelemetryRing,
                 SubmarineAutopilotConstants.BlackBoxFrames,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = _dataVault.GetGenerationHandle<uint>(
+            _telemetryCursorHandle = _dataVault.EnsureGenerationHandle<uint>(
                 SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor,
                 1,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _mockSdfHandle = _dataVault.GetGenerationHandle<byte>(
+            _mockSdfHandle = _dataVault.EnsureGenerationHandle<byte>(
                 SubmarineAutopilotVaultRoute.AutopilotMockSdf,
                 SubmarineAutopilotConstants.MockSdfVoxelCount,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _flowHandle = _dataVault.GetGenerationHandle<float3>(
+            _flowHandle = _dataVault.EnsureGenerationHandle<float3>(
                 SubmarineAutopilotVaultRoute.AutopilotFlowSamples,
                 SubmarineAutopilotConstants.FlowSampleCount,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = _dataVault.GetGenerationHandle<byte>(
+            _csvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(
                 SubmarineAutopilotVaultRoute.AutopilotCsvScratch,
                 SubmarineAutopilotConstants.CsvScratchBytes,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _handlingProfileHandle = _dataVault.GetGenerationHandle<AutopilotHandlingProfileDTO>(
+            _handlingProfileHandle = _dataVault.EnsureGenerationHandle<AutopilotHandlingProfileDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles,
                 SubmarineAutopilotConstants.HandlingProfileCapacity,
                 SystemID.VehiclesPhysics,
@@ -2372,6 +2374,7 @@ namespace Hecton8.Vehicles.Automation
             }
         }
 
+#if UNITY_EDITOR
         private bool TryApplyHandlingProfilesCsv()
         {
             if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))
@@ -2424,7 +2427,9 @@ namespace Hecton8.Vehicles.Automation
                 _dataVault.TryUnlockBuffer(SubmarineAutopilotVaultRoute.AutopilotCsvScratch, SystemID.VehiclesPhysics);
             }
         }
+#endif
 
+#if UNITY_EDITOR
         private static int ReadCsvBytes(string path, byte* destination, int maxBytes)
         {
             try
@@ -2483,6 +2488,7 @@ namespace Hecton8.Vehicles.Automation
             if (!ContainsProfile(profiles, profileCapacity, SubmarineAutopilotConstants.HandlingProfileDefaultHash))
                 InsertProfile(profiles, profileCapacity, BuildHandlingProfile(SubmarineAutopilotConstants.HandlingProfileDefaultHash, 0.42f, 12f, 1f, 1f));
         }
+#endif
 
         private static void WriteDefaultHandlingProfiles(AutopilotHandlingProfileDTO* profiles, int profileCapacity)
         {
@@ -2552,6 +2558,7 @@ namespace Hecton8.Vehicles.Automation
             }
         }
 
+#if UNITY_EDITOR
         private static bool TryParseProfileLine(ReadOnlySpan<byte> bytes, int start, int end, out AutopilotHandlingProfileDTO dto)
         {
             dto = default;
@@ -2651,6 +2658,7 @@ namespace Hecton8.Vehicles.Automation
         {
             return b >= (byte)'A' && b <= (byte)'Z' ? (byte)(b + 32) : b;
         }
+#endif
 
         private void OnDrawGizmos()
         {
@@ -2757,7 +2765,12 @@ namespace Hecton8.Vehicles.Automation
 
         private static float ResolveRuntimeQualityWeight(float qualityCap)
         {
-            float liveQuality = HomeostasisBrain.GlobalQualityWeight;
+            float liveQuality;
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                liveQuality = config.GlobalQualityWeight;
+            else
+                liveQuality = HomeostasisBrain.GlobalQualityWeight;
+
             float cap = SanitizeQualityWeight(qualityCap, 1f);
             float quality = math.min(SanitizeQualityWeight(liveQuality, 1f), cap);
             return QuantizeQualityWeight(quality);

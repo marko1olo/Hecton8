@@ -1,5 +1,5 @@
 {
-  "brainDigest": "8f96fe1c84c9b136aac2a4a0fcc3550e62ddaae28d0b6d66c782e064eae80edf",
+  "brainDigest": "fc2661ac8fe59553a75adb9eb4b8027e048e4d60a12005b6ad227aa0bfe0e932",
   "brainPath": "Data/AI/Leviathan_Brain.json",
   "calibration": {
     "aggressionLowered": false,
@@ -7,7 +7,7 @@
     "initialAggressionScalar": 1.0,
     "passes": 1
   },
-  "elapsedSeconds": 154.832,
+  "elapsedSeconds": 13.062,
   "evidenceClass": "CLI_PYTHON_BATTLE_SIMULATION",
   "frustrationAudit": {
     "allKillsUnder30": false,
@@ -28,8 +28,8 @@
   "generatedBy": "AI_BEHAVIOR_BIOMIMETIC_DESIGNER",
   "globalDataVaultAudit": {
     "feedCount": 7,
-    "fieldCount": 22,
-    "knownBufferCount": 523,
+    "fieldCount": 19,
+    "knownBufferCount": 1807,
     "knownBufferSource": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
     "knownBufferSourceStatus": "SOURCE_PARSED",
     "status": "PASSED",
@@ -806,8 +806,8 @@
     "contextCount": 10,
     "errors": [],
     "globalDataVaultFeedCount": 7,
-    "globalDataVaultFieldCount": 22,
-    "knownBufferCount": 523,
+    "globalDataVaultFieldCount": 19,
+    "knownBufferCount": 1807,
     "knownBufferSource": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
     "knownBufferSourceStatus": "SOURCE_PARSED",
     "mathLodTierCount": 4,

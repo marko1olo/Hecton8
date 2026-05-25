@@ -5,11 +5,11 @@
 // ============================================================================
 
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using Hecton8.Dev;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Object = UnityEngine.Object;
 
 namespace Hecton8.Editor
 {
@@ -25,6 +25,11 @@ namespace Hecton8.Editor
         private static bool _awaitingDirtyPlayEvaluation;
         private static int _retryAttempts;
         private static string _lastReason = "None";
+        private static readonly List<GameObject> s_sceneRoots = new List<GameObject>(8);
+        private static readonly List<ShellVerificationRuntimeSmokeTester> s_shellSmokeScratch =
+            new List<ShellVerificationRuntimeSmokeTester>(2);
+        private static readonly List<RuntimePerformanceProfiler> s_runtimeProfilerScratch =
+            new List<RuntimePerformanceProfiler>(2);
 
         [MenuItem(EnableMenuPath, false, 140)]
         private static void Enable()
@@ -124,15 +129,13 @@ namespace Hecton8.Editor
                 return false;
             }
 
-            ShellVerificationRuntimeSmokeTester shellSmoke =
-                Object.FindAnyObjectByType<ShellVerificationRuntimeSmokeTester>(FindObjectsInactive.Include);
+            ShellVerificationRuntimeSmokeTester shellSmoke = FindInActiveScene(s_shellSmokeScratch);
             return shellSmoke != null || ShellVerificationRuntimeSmokeTester.HasPersistedResumeState();
         }
 
         private static bool ShouldYieldToRuntimeProfiler(string reason)
         {
-            RuntimePerformanceProfiler profiler =
-                Object.FindAnyObjectByType<RuntimePerformanceProfiler>(FindObjectsInactive.Include);
+            RuntimePerformanceProfiler profiler = FindInActiveScene(s_runtimeProfilerScratch);
             if (profiler == null || !profiler.IsProfilingActive)
                 return false;
 
@@ -141,6 +144,39 @@ namespace Hecton8.Editor
                 $"owner={nameof(ShellVerificationPlayModeCompileGate)} reason={reason} action=continue " +
                 $"scene={SceneManager.GetActiveScene().name} compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating}");
             return true;
+        }
+
+        private static T FindInActiveScene<T>(List<T> scratch) where T : Component
+        {
+            scratch.Clear();
+            s_sceneRoots.Clear();
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid() || !activeScene.isLoaded)
+                return null;
+
+            if (s_sceneRoots.Capacity < activeScene.rootCount)
+                s_sceneRoots.Capacity = activeScene.rootCount;
+
+            activeScene.GetRootGameObjects(s_sceneRoots);
+            for (int i = 0; i < s_sceneRoots.Count; i++)
+            {
+                GameObject root = s_sceneRoots[i];
+                if (root == null)
+                    continue;
+
+                root.GetComponentsInChildren<T>(true, scratch);
+                if (scratch.Count <= 0)
+                    continue;
+
+                T result = scratch[0];
+                scratch.Clear();
+                s_sceneRoots.Clear();
+                return result;
+            }
+
+            scratch.Clear();
+            s_sceneRoots.Clear();
+            return null;
         }
 
         private static void ClearRetryState()

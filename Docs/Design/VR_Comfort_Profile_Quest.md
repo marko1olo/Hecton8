@@ -1,4 +1,4 @@
-# VR Comfort Profile - Quest 2/3
+﻿# VR Comfort Profile - Quest 2/3
 
 Date: 2026-05-14
 Owner: SOMATIC_COMFORT_ANALYST

@@ -22,7 +22,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             double lengthMeters = math.max(1.0d, (double)(Config.Resolution.x - 1) * Config.VoxelSizeMeters);
             double3 start = Config.SectorOriginAUP + new double3(lengthMeters * 0.12d, 0.0d, lengthMeters * 0.18d);
             double3 end = Config.SectorOriginAUP + new double3(lengthMeters * 0.88d, 0.0d, lengthMeters * 0.82d);
-            float sineOffset = math.sin((float)(sampleAUP.x * 0.004d) + Config.Seed * 0.00013f) * Config.DefaultWidthMeters * 0.35f;
+            float sineOffset = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((float)(sampleAUP.x * 0.004d) + Config.Seed * 0.00013f) * Config.DefaultWidthMeters * 0.35f;
             FaultLineParamsDTO fault = new FaultLineParamsDTO
             {
                 StartAUP = start,
@@ -328,7 +328,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             float uBlend = math.lerp(0.78f, 0.92f, q);
             float effectiveWidth = width * math.lerp(wallTightness, 0.82f, uBlend * (1f - depth01 * 0.35f));
             float ridge = RidgedMultifractal(sampleAUP, config.Seed ^ HadalTrenchBakeMath.HashFault(in fault), math.max(config.NoiseFrequency, 0.0001f));
-            float longitudinalPulse = math.sin((along01 * 34.0f) + ridge * 2.3f) * 0.5f + 0.5f;
+            float longitudinalPulse = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((along01 * 34.0f) + ridge * 2.3f) * 0.5f + 0.5f;
             float roughness = (ridge * 2f - 1f) * math.max(0f, fault.NoiseIntensity) * math.lerp(0.18f, 0.46f, q);
             float lateralSdf = lateral - effectiveWidth - roughness - longitudinalPulse * fault.NoiseIntensity * 0.08f;
             return math.max(lateralSdf, insideVertical);

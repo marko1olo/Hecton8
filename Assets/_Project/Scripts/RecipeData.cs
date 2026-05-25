@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using System.Text;
 using Hecton.Localization;
 using Hecton8.Building;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -53,7 +53,7 @@ namespace Hecton8.Crafting
 
         [Header("Ingredients")]
         [Tooltip("Required ingredients and quantities.")]
-        public List<InventoryCost> ingredients = new List<InventoryCost>();
+        public List<InventoryCost> ingredients = new List<InventoryCost>(4);
 
         [Header("Timing")]
         [Tooltip("Craft duration in seconds.")]
@@ -136,6 +136,18 @@ namespace Hecton8.Crafting
             return _cachedCraftText ?? string.Empty;
         }
 
+        public bool TryWriteDisplayNameOrFallback(char[] destination, out int length)
+        {
+            string fallback = resultItem != null && !string.IsNullOrWhiteSpace(resultItem.itemName)
+                ? resultItem.itemName
+                : recipeName;
+            return localizedRecipeName.TryCopyResolvedOrFallback(
+                Hecton8.Core.GlobalRegistry.LocalizationText,
+                destination,
+                out length,
+                fallback);
+        }
+
         /// <summary>
         /// Localized cost summary used by prompt-style UI.
         /// </summary>
@@ -163,7 +175,7 @@ namespace Hecton8.Crafting
         public int RequiredAnchoredBiomeFamilyHashId => _requiredAnchoredBiomeFamilyHashId;
         public ulong RecipeMask => _recipeMask;
 
-        public bool IsUnlocked(ScanLogSystem scanLogSystem)
+        public bool IsUnlocked(IScanLogService scanLogSystem)
         {
             if (!RequiresScanUnlock)
                 return true;
@@ -197,54 +209,30 @@ namespace Hecton8.Crafting
 
         public string GetFabricationGroupLabel()
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             switch (GetResolvedFabricationGroup())
             {
                 case FabricationGroup.Materials:
-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_MATERIALS, "MATERIALS") : "MATERIALS";
+                    return "MATERIALS";
                 case FabricationGroup.Components:
-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_COMPONENTS, "COMPONENTS") : "COMPONENTS";
+                    return "COMPONENTS";
                 case FabricationGroup.Tools:
-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_TOOLS, "TOOLS") : "TOOLS";
+                    return "TOOLS";
                 case FabricationGroup.Suit:
-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_SUIT, "SUIT") : "SUIT";
+                    return "SUIT";
                 case FabricationGroup.Construction:
-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_CONSTRUCTION, "CONSTRUCTION") : "CONSTRUCTION";
+                    return "CONSTRUCTION";
                 case FabricationGroup.Power:
-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_POWER, "POWER") : "POWER";
+                    return "POWER";
                 default:
-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_ALL, "ALL") : "ALL";
+                    return "ALL";
             }
         }
 
         private void RebuildCache()
         {
             // Cold cache build only. Runtime UI getters return these references without rebuilding strings.
-            _cachedCraftText = "Create " + DisplayNameOrFallback;
-
-            var sb = new StringBuilder(64);
-            int ingredientCount = ingredients != null ? ingredients.Count : 0;
-            for (int i = 0; i < ingredientCount; i++)
-            {
-                InventoryCost cost = ingredients[i];
-                if (cost == null || cost.item == null)
-                    continue;
-
-                if (sb.Length > 0)
-                    sb.Append(", ");
-
-                if (LocalizedInlineIconResolver.TryResolveItemChip(cost.item, out string chip))
-                {
-                    sb.Append(chip);
-                    sb.Append(' ');
-                }
-
-                sb.Append(cost.item.itemName);
-                sb.Append(" x");
-                sb.Append(cost.amount);
-            }
-
-            _cachedCostSummary = sb.Length > 0 ? sb.ToString() : "-";
+            _cachedCraftText = "Create";
+            _cachedCostSummary = "-";
         }
 
         private void RefreshRuntimeHashes()

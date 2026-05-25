@@ -37,11 +37,10 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Crafting;
 using Hecton8.Gameplay;
-using Hecton8.Input;
-using Hecton8.Optimization;
 using Hecton8.World;
 using System;
 using System.Runtime.InteropServices;
@@ -199,7 +198,10 @@ namespace Hecton8.UI
                         return;
 
                     if (!_pendingEvents.TryDequeue(out PDAEventPayload payload))
+                    {
+                        _pendingEventCount = 0;
                         return;
+                    }
 
                     if (_pendingEventCount > 0)
                         _pendingEventCount--;
@@ -228,9 +230,9 @@ namespace Hecton8.UI
             PromoteNextFrameEvents();
         }
 
-        internal static void RaiseOpened(int tab)
+        internal static bool TryRaiseOpened(int tab)
         {
-            Enqueue(new PDAEventPayload
+            return Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
                 PreviousTab = -1,
@@ -240,9 +242,12 @@ namespace Hecton8.UI
             });
         }
 
-        internal static void RaiseClosed(float duration)
+        [System.Obsolete("Use TryRaiseOpened so bounded queue refusal is visible at the producer.", true)]
+        internal static void RaiseOpened(int tab) => TryRaiseOpened(tab);
+
+        internal static bool TryRaiseClosed(float duration)
         {
-            Enqueue(new PDAEventPayload
+            return Enqueue(new PDAEventPayload
             {
                 DurationSeconds = duration,
                 PreviousTab = -1,
@@ -252,9 +257,12 @@ namespace Hecton8.UI
             });
         }
 
-        internal static void RaiseTabChanged(int oldTab, int newTab)
+        [System.Obsolete("Use TryRaiseClosed so bounded queue refusal is visible at the producer.", true)]
+        internal static void RaiseClosed(float duration) => TryRaiseClosed(duration);
+
+        internal static bool TryRaiseTabChanged(int oldTab, int newTab)
         {
-            Enqueue(new PDAEventPayload
+            return Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
                 PreviousTab = oldTab,
@@ -264,9 +272,12 @@ namespace Hecton8.UI
             });
         }
 
-        internal static void RaiseLowBatteryShutdown()
+        [System.Obsolete("Use TryRaiseTabChanged so bounded queue refusal is visible at the producer.", true)]
+        internal static void RaiseTabChanged(int oldTab, int newTab) => TryRaiseTabChanged(oldTab, newTab);
+
+        internal static bool TryRaiseLowBatteryShutdown()
         {
-            Enqueue(new PDAEventPayload
+            return Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
                 PreviousTab = -1,
@@ -280,9 +291,12 @@ namespace Hecton8.UI
             });
         }
 
-        internal static void RaiseMapChunkExplored(int chunkX, int chunkY)
+        [System.Obsolete("Use TryRaiseLowBatteryShutdown so bounded queue refusal is visible at the producer.", true)]
+        internal static void RaiseLowBatteryShutdown() => TryRaiseLowBatteryShutdown();
+
+        internal static bool TryRaiseMapChunkExplored(int chunkX, int chunkY)
         {
-            Enqueue(new PDAEventPayload
+            return Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
                 PreviousTab = -1,
@@ -296,9 +310,12 @@ namespace Hecton8.UI
             });
         }
 
-        internal static void RaiseMarkerChanged(uint markerHashId, int markerCount)
+        [System.Obsolete("Use TryRaiseMapChunkExplored so bounded queue refusal is visible at the producer.", true)]
+        internal static void RaiseMapChunkExplored(int chunkX, int chunkY) => TryRaiseMapChunkExplored(chunkX, chunkY);
+
+        internal static bool TryRaiseMarkerChanged(uint markerHashId, int markerCount)
         {
-            Enqueue(new PDAEventPayload
+            return Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
                 PreviousTab = -1,
@@ -312,9 +329,12 @@ namespace Hecton8.UI
             });
         }
 
-        internal static void RaiseLogbookChanged(int entryCount, uint latestEventHash = 0u)
+        [System.Obsolete("Use TryRaiseMarkerChanged so bounded queue refusal is visible at the producer.", true)]
+        internal static void RaiseMarkerChanged(uint markerHashId, int markerCount) => TryRaiseMarkerChanged(markerHashId, markerCount);
+
+        internal static bool TryRaiseLogbookChanged(int entryCount, uint latestEventHash = 0u)
         {
-            Enqueue(new PDAEventPayload
+            return Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
                 PreviousTab = -1,
@@ -328,9 +348,12 @@ namespace Hecton8.UI
             });
         }
 
-        internal static void RaiseUndoRequest(int framesBack = 1)
+        [System.Obsolete("Use TryRaiseLogbookChanged so bounded queue refusal is visible at the producer.", true)]
+        internal static void RaiseLogbookChanged(int entryCount, uint latestEventHash = 0u) => TryRaiseLogbookChanged(entryCount, latestEventHash);
+
+        internal static bool TryRaiseUndoRequest(int framesBack = 1)
         {
-            Enqueue(new PDAEventPayload
+            return Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
                 PreviousTab = -1,
@@ -343,6 +366,9 @@ namespace Hecton8.UI
                 Reserved = 0
             });
         }
+
+        [System.Obsolete("Use TryRaiseUndoRequest so bounded queue refusal is visible at the producer.", true)]
+        internal static void RaiseUndoRequest(int framesBack = 1) => TryRaiseUndoRequest(framesBack);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -467,29 +493,29 @@ namespace Hecton8.UI
             }
         }
 
-        private static void Enqueue(in PDAEventPayload payload)
+        private static bool Enqueue(in PDAEventPayload payload)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+                return false;
 
             PrepareDedupFrame();
             PDAEventPayload resolvedPayload = payload;
             ResolveDedupFields(ref resolvedPayload);
             ulong dedupKey = ComposeDedupKey(in resolvedPayload);
             if (dedupKey != 0UL && !TryRegisterDedupKey(dedupKey))
-                return;
+                return false;
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(resolvedPayload);
                 _nextFrameEventCount++;
+                return true;
             }
-            else
-            {
-                _pendingEvents.Enqueue(resolvedPayload);
-                _pendingEventCount++;
-            }
+
+            _pendingEvents.Enqueue(resolvedPayload);
+            _pendingEventCount++;
+            return true;
         }
 
         private static void DrainWithoutDispatch(int maxEventsPerFrame)
@@ -508,7 +534,10 @@ namespace Hecton8.UI
                     return;
 
                 if (!_pendingEvents.TryDequeue(out PDAEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     return;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -545,7 +574,7 @@ namespace Hecton8.UI
 
         private static void PrepareDedupFrame()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_dedupFrame == frame)
                 return;
 
@@ -640,8 +669,9 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player PDA")]
-    public sealed class PlayerPDA : MonoBehaviour, ITickable, ICraftingEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PlayerPDA : MonoBehaviour, ITickable, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener
     {
+        private const int PendingPdaSoundCapacity = 4;
         private const float CraftStartedClickPitch = 0.92f;
         private const float CraftCompletedClickPitch = 1.08f;
         private const float CraftCancelledClickPitch = 0.74f;
@@ -751,6 +781,7 @@ namespace Hecton8.UI
 
         private int _activeTab = -1;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _craftingEventsRegistered;
         private bool _hotSwapRegistered;
         private bool _missingUiShellReported;
@@ -760,7 +791,7 @@ namespace Hecton8.UI
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private IInputService _inputService;
         private IAudioService _audioService;
-        private RenderTexturePool _renderTexturePool;
+        private IRenderTexturePoolService _renderTexturePool;
         private IPlayerRuntimeContext _playerRuntimeContext;
 
         // Fade animation
@@ -778,6 +809,12 @@ namespace Hecton8.UI
         private readonly int[] _tabHistory = new int[8];
         private int _tabHistoryCount;
         private CanvasGroup[] _tabCanvasGroups;
+        private readonly AudioClip[] _pendingSoundClips = new AudioClip[PendingPdaSoundCapacity];
+        private readonly float[] _pendingSoundVolumes = new float[PendingPdaSoundCapacity];
+        private readonly float[] _pendingSoundPitches = new float[PendingPdaSoundCapacity];
+        private int _pendingSoundCount;
+        private bool _pendingLowBatteryShutdownClose;
+        private bool _survivalResolveDirty;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -851,9 +888,7 @@ namespace Hecton8.UI
             IInputService inputManager = _inputService;
             if (inputManager == null || !inputManager.IsInitialized)
             {
-                Debug.LogError(
-                    "[PlayerPDA] GlobalRegistry.Input is not initialized at Start(). " +
-                    "PDA will not function.");
+                Debug.LogError("[PlayerPDA] GlobalRegistry.Input is not initialized at Start. PDA will not function.");
             }
         }
 
@@ -1066,19 +1101,28 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1099,7 +1143,7 @@ namespace Hecton8.UI
                     _audioService = currentService as IAudioService;
                     break;
                 case GlobalRegistryServiceSlot.RenderTexturePoolRuntime:
-                    _renderTexturePool = currentService as RenderTexturePool;
+                    _renderTexturePool = currentService as IRenderTexturePoolService;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
@@ -1113,9 +1157,9 @@ namespace Hecton8.UI
         private void RefreshColdRegistryReferences()
         {
             _inputService = GlobalRegistry.Input;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _renderTexturePool = GlobalRegistry.RenderTexturePool;
-            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            _audioService = GlobalRegistry.Audio;
+            _renderTexturePool = GlobalRegistry.RenderTexturePoolService;
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
@@ -1173,26 +1217,41 @@ namespace Hecton8.UI
         {
             AdvancePdaClock(deltaTime);
             ConsumePlayerInputSignals();
-            ApplyHeadlessUIState();
-
-            // ── Fade animation ──
-            if (_isFading)
-            {
-                ProcessFadeAnimation(deltaTime);
-            }
 
             // ── Battery drain ──
             if (IsOpen && enableBatteryDrain)
             {
                 if (survivalSystem == null)
-                    TryResolveSurvivalSystemFromRuntimeContext();
+                    _survivalResolveDirty = true;
 
                 if (survivalSystem != null)
                     ProcessBatteryDrain(deltaTime);
             }
+        }
 
-            // ── Diagnostics ──
+        public void LateFrameTick()
+        {
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            if (_survivalResolveDirty)
+            {
+                _survivalResolveDirty = false;
+                TryResolveSurvivalSystemFromRuntimeContext();
+            }
+
+            ApplyHeadlessUIState();
+
+            if (_pendingLowBatteryShutdownClose)
+            {
+                _pendingLowBatteryShutdownClose = false;
+                PDAEvents.TryRaiseLowBatteryShutdown();
+                Close();
+            }
+
+            if (_isFading)
+                ProcessFadeAnimation(deltaTime);
+
             UpdateDiagnostics();
+            FlushPendingSounds();
         }
 
         public void OnCraftingEvent(in CraftingEventPayload payload)
@@ -1284,7 +1343,7 @@ namespace Hecton8.UI
             }
 
             PlaySound(openSound);
-            PDAEvents.RaiseOpened(targetTab);
+            PDAEvents.TryRaiseOpened(targetTab);
         }
 
         public void Close()
@@ -1313,7 +1372,7 @@ namespace Hecton8.UI
             }
 
             PlaySound(closeSound);
-            PDAEvents.RaiseClosed(duration);
+            PDAEvents.TryRaiseClosed(duration);
             ReclaimPdaRenderTextures();
 
             ClearTabHistory();
@@ -1339,7 +1398,7 @@ namespace Hecton8.UI
             if (oldTab >= 0) // not initial open
             {
                 PlaySound(tabSwitchSound);
-                PDAEvents.RaiseTabChanged(oldTab, newTab);
+                PDAEvents.TryRaiseTabChanged(oldTab, newTab);
             }
         }
 
@@ -1366,7 +1425,7 @@ namespace Hecton8.UI
             // Switch back to Player input map on force close
             SwitchToPlayerInputIfAvailable();
 
-            PDAEvents.RaiseClosed(duration);
+            PDAEvents.TryRaiseClosed(duration);
             ReclaimPdaRenderTextures();
             ClearTabHistory();
         }
@@ -1486,7 +1545,7 @@ namespace Hecton8.UI
 
         private void ReclaimPdaRenderTextures()
         {
-            RenderTexturePool pool = _renderTexturePool;
+            IRenderTexturePoolService pool = _renderTexturePool;
             if (pool != null)
                 pool.ReclaimPdaRenderTextures();
         }
@@ -1638,8 +1697,7 @@ namespace Hecton8.UI
                 // Force close on critical
                 if (energyPercent <= 1f)
                 {
-                    PDAEvents.RaiseLowBatteryShutdown();
-                    Close();
+                    _pendingLowBatteryShutdownClose = true;
                 }
             }
         }
@@ -1697,10 +1755,38 @@ namespace Hecton8.UI
         private void PlaySound(AudioClip clip, float volume, float pitch)
         {
             if (clip == null) return;
-            IAudioService audioManager = _audioService;
-            if (audioManager == null) return;
+            if (_pendingSoundCount >= PendingPdaSoundCapacity)
+                _pendingSoundCount = PendingPdaSoundCapacity - 1;
 
-            audioManager.PlayAtPoint(clip, ResolvePdaAudioPosition(), volume, pitch, audioManager.InterfaceGroup);
+            int index = _pendingSoundCount++;
+            _pendingSoundClips[index] = clip;
+            _pendingSoundVolumes[index] = volume;
+            _pendingSoundPitches[index] = pitch;
+        }
+
+        private void FlushPendingSounds()
+        {
+            if (_pendingSoundCount <= 0)
+                return;
+
+            IAudioService audioManager = _audioService;
+            if (audioManager == null)
+            {
+                _pendingSoundCount = 0;
+                return;
+            }
+
+            Vector3 position = ResolvePdaAudioPosition();
+            for (int i = 0; i < _pendingSoundCount; i++)
+            {
+                AudioClip clip = _pendingSoundClips[i];
+                if (clip != null)
+                    audioManager.PlayAtPoint(clip, position, _pendingSoundVolumes[i], _pendingSoundPitches[i], audioManager.InterfaceGroup);
+
+                _pendingSoundClips[i] = null;
+            }
+
+            _pendingSoundCount = 0;
         }
 
         private Vector3 ResolvePdaAudioPosition()
@@ -1839,7 +1925,7 @@ namespace Hecton8.UI
             EntityCommand command = tabIndex < 0
                 ? EntityCommand.CreateClosePDA()
                 : EntityCommand.CreateOpenPDATab(tabIndex);
-            ThreadSafeCommandQueue.Enqueue(in command);
+            ThreadSafeCommandQueue.TryEnqueue(in command);
         }
     }
 
@@ -1848,7 +1934,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Diagnostic Terminal")]
-    public sealed class PDADiagnosticTerminal : MonoBehaviour, ISlowTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDADiagnosticTerminal : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private const int DiagnosticsTabIndex = 7;
         private const string TitleText = "DIAGNOSTIC TERMINAL // PERF / HULL / OFFSET";
@@ -1869,7 +1955,10 @@ namespace Hecton8.UI
 
         private bool _built;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
+        private bool _terminalRefreshDirty;
+        private bool _terminalForceRefresh;
         private CanvasGroup _group;
         private TextMeshProUGUI _titleLabel;
         private TextMeshProUGUI _bodyLabel;
@@ -1887,7 +1976,7 @@ namespace Hecton8.UI
             if (playerPda == null)
                 playerPda = ResolvePlayerPdaInParents(transform);
 
-            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
 
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
@@ -1896,11 +1985,11 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
-            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
             EnsureBuilt();
             PDAEvents.Register(this);
             EvaluateTickRegistration();
-            RefreshTerminal(force: true);
+            QueueTerminalRefresh(force: true);
         }
 
         private void OnDisable()
@@ -1923,7 +2012,18 @@ namespace Hecton8.UI
             if (!IsDiagnosticsVisible())
                 return;
 
-            RefreshTerminal(force: false);
+            QueueTerminalRefresh(force: false);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_terminalRefreshDirty || !IsDiagnosticsVisible())
+                return;
+
+            bool force = _terminalForceRefresh;
+            _terminalRefreshDirty = false;
+            _terminalForceRefresh = false;
+            RefreshTerminal(force);
         }
 
         public void OnPDAEvent(in PDAEventPayload payload)
@@ -1946,7 +2046,7 @@ namespace Hecton8.UI
         {
             EvaluateTickRegistration();
             if (initialTab == DiagnosticsTabIndex)
-                RefreshTerminal(force: true);
+                QueueTerminalRefresh(force: true);
         }
 
         private void HandlePdaClosed(float openDuration)
@@ -1958,7 +2058,13 @@ namespace Hecton8.UI
         {
             EvaluateTickRegistration();
             if (newTab == DiagnosticsTabIndex)
-                RefreshTerminal(force: true);
+                QueueTerminalRefresh(force: true);
+        }
+
+        private void QueueTerminalRefresh(bool force)
+        {
+            _terminalRefreshDirty = true;
+            _terminalForceRefresh |= force;
         }
 
         private void EnsureBuilt()
@@ -2089,19 +2195,28 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registered)
-                return;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registered = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(

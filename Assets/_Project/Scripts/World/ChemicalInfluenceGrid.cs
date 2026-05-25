@@ -550,12 +550,14 @@ namespace Hecton8.World
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryReloadEmitterProfilesFromDefaultPath()
         {
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             instance.InitializeRuntime();
             return instance.TryLoadEmitterProfilesFromCsv();
         }
+#endif
 
         private static void RegisterChemicalTransient(Vector3 worldPosition, float intensity)
         {
@@ -621,6 +623,9 @@ namespace Hecton8.World
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     break;
@@ -801,21 +806,16 @@ namespace Hecton8.World
                 InitializeGridOrigin(ResolveFocusAup());
                 InitializeTuningBuffer();
                 InitializeDefaultEmitterProfiles();
+#if UNITY_EDITOR
                 TryLoadEmitterProfilesFromCsv();
+#endif
                 UpdateDebugState();
             }
         }
 
         private bool TryResolveDataVault()
         {
-            if (_dataVault != null)
-                return true;
-
-            _dataVault = GlobalRegistry.DataVault;
-            if (_dataVault != null)
-                return true;
-
-            return false;
+            return _dataVault != null;
         }
 
         private bool TryInitializeVaultBuffers()
@@ -929,7 +929,7 @@ namespace Hecton8.World
                 return OpenChemicalVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AISensory,
@@ -981,7 +981,7 @@ namespace Hecton8.World
         private bool TryOpenExistingVaultBuffer<T>(
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _dataVault;
@@ -990,7 +990,7 @@ namespace Hecton8.World
                 !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
                 handle.BufferID != (uint)bufferId ||
                 handle.Generation == 0u ||
-                !vault.TryReadHandle(in handle, out buffer) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
@@ -1092,6 +1092,7 @@ namespace Hecton8.World
             }
         }
 
+#if UNITY_EDITOR
         private bool TryLoadEmitterProfilesFromCsv()
         {
             if (!_buffersReady)
@@ -1208,6 +1209,7 @@ namespace Hecton8.World
             profile = CreateProfile(profileHash, blood, pheromone, toxin, radius, dissipation, flags);
             return profileHash != 0u;
         }
+#endif
 
         private void InitializeGridOrigin(double3 focusAup)
         {
@@ -1463,11 +1465,10 @@ namespace Hecton8.World
             void* telemetryCursorPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryCursor);
             void* counterPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counters);
             void* zonesPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(zones);
-            byte* sdfPtr = null;
+            NativeArray<byte>.ReadOnly sdf = default;
             int sdfLength = 0;
-            if (TryOpenExistingVaultBuffer(BufferID.VoxelSdfTexture3D, 1, out NativeArray<byte> sdf))
+            if (TryOpenExistingVaultBuffer(BufferID.VoxelSdfTexture3D, 1, out sdf))
             {
-                sdfPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sdf);
                 sdfLength = sdf.Length;
             }
 
@@ -1549,7 +1550,7 @@ namespace Hecton8.World
                 {
                     Source = readPtr,
                     Destination = writePtr,
-                    Sdf = sdfPtr,
+                    Sdf = sdf,
                     Counters = (ChemicalAtomicCounterDTO*)counterPtr,
                     Dimensions = GridDimensions,
                     CellCount = ChemicalCellCount,
@@ -1742,7 +1743,7 @@ namespace Hecton8.World
             }
 
             float quality = ResolveGlobalQualityWeight();
-            float sampleBlend = math.step(0.3f, quality) * Smooth01(quality);
+            float sampleBlend = Smooth01(quality);
             float4 nearest = SamplePublishedNearest(published, grid);
             float4 trilinear = sampleBlend > 0f ? SamplePublishedTrilinear(published, grid) : nearest;
             float4 sampledChannels = math.lerp(nearest, trilinear, sampleBlend);
@@ -2186,11 +2187,27 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContext = GlobalRegistry.Player;
 
             if (_submarineRuntimeContext == null)
                 _submarineRuntimeContext = GlobalRegistry.Submarine;
+        }
+
+        private void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            CompleteScheduledWorkForTeardown();
+            UnlockSimulationBuffers();
+            ResetVaultStateForRebind();
+            _dataVault = currentVault;
+            if (_dataVault != null && isActiveAndEnabled)
+                InitializeRuntime();
         }
 
         private void TryRegisterHotSwapListener()
@@ -2230,6 +2247,14 @@ namespace Hecton8.World
 
         private void ResetRuntimeStateForDisable()
         {
+            ResetVaultStateForRebind();
+            _dataVault = null;
+            _playerRuntimeContext = null;
+            _submarineRuntimeContext = null;
+        }
+
+        private void ResetVaultStateForRebind()
+        {
             _breadcrumbCount = 0;
             _breadcrumbWriteCursor = 0;
             _pendingEmitterWriteCursor = 0;
@@ -2239,9 +2264,34 @@ namespace Hecton8.World
             _runtimeInitialized = false;
             _buffersReady = false;
             _gridHasOrigin = false;
-            _dataVault = null;
-            _playerRuntimeContext = null;
-            _submarineRuntimeContext = null;
+            _scheduledBuffersLocked = false;
+            _hasScheduledWork = false;
+            _scheduledSwapAfterFinalize = false;
+            _scheduledTelemetryIndex = -1;
+            ClearVaultHandles();
+        }
+
+        private void ClearVaultHandles()
+        {
+            _frontCellHandle = default;
+            _backCellHandle = default;
+            _publishedGridHandle = default;
+            _overlayGridHandle = default;
+            _breadcrumbsHandle = default;
+            _pendingEmitterHandle = default;
+            _pendingEmitterCountHandle = default;
+            _activeEmitterHandle = default;
+            _activeEmitterCountHandle = default;
+            _mockEmitterHandle = default;
+            _mockEmitterCountHandle = default;
+            _tuningHandle = default;
+            _telemetryRingHandle = default;
+            _telemetryCursorHandle = default;
+            _atomicCounterHandle = default;
+            _defoliantZoneHandle = default;
+            _csvScratchHandle = default;
+            _profileTableHandle = default;
+            _profileCountHandle = default;
         }
 
         private double3 ResolveFocusAup()
@@ -2280,7 +2330,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -2515,6 +2565,7 @@ namespace Hecton8.World
             return hash == 0u ? 1u : hash;
         }
 
+#if UNITY_EDITOR
         private static uint HashBytes(ReadOnlySpan<byte> bytes)
         {
             uint hash = 2166136261u;
@@ -2670,6 +2721,7 @@ namespace Hecton8.World
             value = sign * (integer + fraction * math.rcp(math.max(divisor, 0.0001f)));
             return math.isfinite(value);
         }
+#endif
 
         private static string ResolveProjectRoot()
         {
@@ -2837,7 +2889,8 @@ namespace Hecton8.World
                 {
                     float angle = (i + rng.NextFloat(0.05f, 0.95f)) * 2.094395102f;
                     float radius = math.lerp(18f, 55f, q) + rng.NextFloat(-4f, 4f);
-                    double3 offset = new double3(math.cos(angle) * radius, rng.NextFloat(-6f, 6f), math.sin(angle) * radius);
+                    MathLodApproximation.ApproxSinCosBhaskara(angle, out float angleSin, out float angleCos);
+                    double3 offset = new double3(angleCos * radius, rng.NextFloat(-6f, 6f), angleSin * radius);
                     float lane = i == 0 ? 0.12f : i == 1 ? 0.08f : 0.05f;
                     MockEmitters[i] = new ChemicalEmitterDTO
                     {
@@ -2949,7 +3002,7 @@ namespace Hecton8.World
         {
             [NoAlias, NativeDisableUnsafePtrRestriction] public ChemicalCellDTO* Source;
             [NoAlias, NativeDisableUnsafePtrRestriction] public ChemicalCellDTO* Destination;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public byte* Sdf;
+            [NoAlias, ReadOnly] public NativeArray<byte>.ReadOnly Sdf;
             [NoAlias, NativeDisableUnsafePtrRestriction] public ChemicalAtomicCounterDTO* Counters;
             public int3 Dimensions;
             public int CellCount;
@@ -2994,16 +3047,16 @@ namespace Hecton8.World
                 float diffusionRate = math.saturate(BaseDiffusionRate * math.lerp(0.35f, 1.2f, qCurve) * dt);
                 float sumRate = 6f * diffusionRate;
                 float4 jacobi = (neighborSum * diffusionRate + centerV) * math.rcp(math.max(0.0001f, sumRate + 1f));
-                float driftGate = math.step(0.18f, q);
+                float driftGate = qCurve;
                 float4 advected = centerV;
-                if (driftGate > 0f)
+                if (driftGate > 0.0001f)
                 {
                     float3 local = (new float3(c.x, c.y, c.z) + 0.5f) * math.max(GridSampleEpsilon, CellSizeMeters);
                     float3 drift = SampleAbyssalDrift(local, SectorHash, q);
                     float3 previous = (local - drift * (AdvectionStrength * dt * math.lerp(0.25f, 1.5f, qCurve))) * math.rcp(math.max(GridSampleEpsilon, CellSizeMeters)) - 0.5f;
                     float4 nearest = ToVector(ReadNearest(previous));
-                    float4 tri = q > 0.3f ? SampleTrilinear(previous) : nearest;
-                    advected = math.lerp(nearest, tri, math.step(0.3f, q) * qCurve);
+                    float4 tri = SampleTrilinear(previous);
+                    advected = math.lerp(nearest, tri, qCurve);
                 }
 
                 float4 result = jacobi + (advected - centerV) * (driftGate * math.saturate(AdvectionStrength) * 0.35f);
@@ -3072,7 +3125,7 @@ namespace Hecton8.World
 
             private bool IsSolidSdf(int index)
             {
-                if (Sdf == null || SdfLength <= 0)
+                if (!Sdf.IsCreated || SdfLength <= 0)
                     return false;
 
                 int sdfIndex = math.abs((index * 1103515245 + (int)SectorHash) % SdfLength);
@@ -3285,8 +3338,8 @@ namespace Hecton8.World
 
                 float q = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
                 float4 nearest = SampleFloat4Nearest(PublishedGrid, grid, Dimensions);
-                float4 tri = q > 0.3f ? SampleFloat4Trilinear(PublishedGrid, grid, Dimensions) : nearest;
-                float4 channels = math.lerp(nearest, tri, math.step(0.3f, q) * Smooth01(q));
+                float4 tri = SampleFloat4Trilinear(PublishedGrid, grid, Dimensions);
+                float4 channels = math.lerp(nearest, tri, Smooth01(q));
                 result.Channels = channels;
                 result.BloodScalar = math.saturate(channels.x);
                 result.FearScalar = math.saturate(channels.z);
@@ -3327,14 +3380,14 @@ namespace Hecton8.World
                 ((seed >> 8) & 255u) * 0.019f,
                 ((seed >> 16) & 255u) * 0.023f);
             float3 baseFlow = new float3(
-                math.sin(p.y + p.z * 0.57f),
-                math.sin(p.z * 0.43f + p.x * 0.29f) * 0.28f,
-                math.cos(p.x - p.y * 0.31f));
-            float highTap = math.step(0.7f, q) * Smooth01((q - 0.7f) * 3.3333333f);
+                MathLodApproximation.ApproxSinBhaskara(p.y + p.z * 0.57f),
+                MathLodApproximation.ApproxSinBhaskara(p.z * 0.43f + p.x * 0.29f) * 0.28f,
+                MathLodApproximation.ApproxCosBhaskara(p.x - p.y * 0.31f));
+            float highTap = Smooth01((q - 0.7f) * 3.3333333f);
             float3 overkill = new float3(
-                math.sin(p.x * 2.1f + p.z),
-                math.cos(p.y * 1.7f + p.x),
-                math.sin(p.z * 1.9f - p.y)) * highTap;
+                MathLodApproximation.ApproxSinBhaskara(p.x * 2.1f + p.z),
+                MathLodApproximation.ApproxCosBhaskara(p.y * 1.7f + p.x),
+                MathLodApproximation.ApproxSinBhaskara(p.z * 1.9f - p.y)) * highTap;
             float3 drift = baseFlow + overkill * 0.35f;
             float invLen = math.rsqrt(math.max(0.0001f, math.lengthsq(drift)));
             return drift * invLen;

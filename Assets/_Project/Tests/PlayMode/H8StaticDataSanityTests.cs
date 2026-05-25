@@ -45,11 +45,11 @@ namespace Hecton8.Tests.PlayMode
                     Assert.IsTrue(report.IsClean, report.Message);
 
                     uint scrapHash = H8DataHashTool.ComputeFnv1a32("scrap_metal".AsSpan());
-                    ref readonly H8ItemStaticRecord scrap = ref store.GetRecord<H8ItemStaticRecord>(scrapHash);
+                    ref readonly H8ItemStaticRecord scrap = ref store.FetchRecord<H8ItemStaticRecord>(scrapHash);
                     Assert.AreEqual(scrapHash, scrap.Hash);
                     Assert.AreEqual(12, scrap.Cost);
 
-                    ref readonly H8PhysicsStaticRecord wrongType = ref store.GetRecord<H8PhysicsStaticRecord>(scrapHash);
+                    ref readonly H8PhysicsStaticRecord wrongType = ref store.FetchRecord<H8PhysicsStaticRecord>(scrapHash);
                     Assert.AreEqual(0u, wrongType.Hash);
                     Assert.IsTrue(store.TryReload(bake.StaticDataPath));
                     Assert.AreEqual(expectedBabelCrc32, store.BabelCrc32);
@@ -73,11 +73,11 @@ namespace Hecton8.Tests.PlayMode
                     Assert.AreEqual(expectedBabelCrc32, babel.PayloadCrc32);
 
                     uint nameHash = H8DataHashTool.ComputeFnv1a32Utf8("Scrap Metal".AsSpan());
-                    ReadOnlySpan<byte> utf8 = babel.GetUtf8(nameHash);
+                    ReadOnlySpan<byte> utf8 = babel.TrackUtf8Lookup(nameHash);
                     Assert.Greater(utf8.Length, 0);
                     Assert.AreEqual("Scrap Metal", Encoding.UTF8.GetString(utf8));
 
-                    ReadOnlySpan<byte> missing = babel.GetUtf8(0xDEADBEEFu);
+                    ReadOnlySpan<byte> missing = babel.TrackUtf8Lookup(0xDEADBEEFu);
                     Assert.AreEqual("ERROR", Encoding.UTF8.GetString(missing));
                     Assert.IsTrue(babel.TryReload(bake.BabelPath, expectedBabelCrc32));
                     Assert.AreEqual(expectedBabelCrc32, babel.PayloadCrc32);

@@ -1,4 +1,4 @@
-using Hecton8.AtlasSignal;
+﻿using Hecton8.AtlasSignal;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -153,8 +153,8 @@ namespace Hecton8.Progression
                 return;
 
             _hullFailureIssued = true;
-            NarrativeEvents.RaiseDiscoveryMade(_hullFailureDiscoveryHash);
-            ProceduralAudioEvents.RaiseStructuralStressTriggered(ResolvePlayerRuntimePosition(), 1f, 0.72f);
+            NarrativeEvents.TryRaiseDiscoveryMade(_hullFailureDiscoveryHash);
+            ProceduralAudioEvents.TryRaiseStructuralStressTriggered(ResolvePlayerRuntimePosition(), 1f, 0.72f);
 
             AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
             if (audioLogs != null)
@@ -222,13 +222,13 @@ namespace Hecton8.Progression
             }
 
             _exitLifePodIssued = true;
-            NarrativeEvents.RaiseDiscoveryMade(_exitLifePodDiscoveryHash);
+            NarrativeEvents.TryRaiseDiscoveryMade(_exitLifePodDiscoveryHash);
             return true;
         }
 
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 playerAup = playerContext.PlayerMovement.CurrentAup;
@@ -249,7 +249,7 @@ namespace Hecton8.Progression
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -298,13 +298,13 @@ namespace Hecton8.Progression
 
         private static bool HasAtlasLorePrerequisite()
         {
-            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
-            if (narrativeDirector != null && narrativeDirector.HasDiscovery(_atlasSignalDiscoveryHash))
+            INarrativeDiscoveryReadModel narrativeDiscovery = GlobalRegistry.NarrativeDiscoveryReadModel;
+            if (narrativeDiscovery != null && narrativeDiscovery.HasDiscovery(_atlasSignalDiscoveryHash))
                 return true;
 
-            QuestManager questManager = GlobalRegistry.Quest;
-            return questManager != null &&
-                   (questManager.IsActive(_atlasSignalQuestHash) || questManager.IsCompleted(_atlasSignalQuestHash));
+            IQuestSystem questSystem = GlobalRegistry.QuestSystem;
+            return questSystem != null &&
+                   (questSystem.IsActive(_atlasSignalQuestHash) || questSystem.IsCompleted(_atlasSignalQuestHash));
         }
 
         private void TryPublishBiomeMarkers(int biomeId)
@@ -353,16 +353,16 @@ namespace Hecton8.Progression
         {
             if (rule.requiredDiscoveryHash != 0u)
             {
-                HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
-                if (narrativeDirector == null || !narrativeDirector.HasDiscovery(rule.requiredDiscoveryHash))
+                INarrativeDiscoveryReadModel narrativeDiscovery = GlobalRegistry.NarrativeDiscoveryReadModel;
+                if (narrativeDiscovery == null || !narrativeDiscovery.HasDiscovery(rule.requiredDiscoveryHash))
                     return false;
             }
 
             if (rule.requiredQuestHash != 0u)
             {
-                QuestManager questManager = GlobalRegistry.Quest;
-                if (questManager == null ||
-                    (!questManager.IsActive(rule.requiredQuestHash) && !questManager.IsCompleted(rule.requiredQuestHash)))
+                IQuestSystem questSystem = GlobalRegistry.QuestSystem;
+                if (questSystem == null ||
+                    (!questSystem.IsActive(rule.requiredQuestHash) && !questSystem.IsCompleted(rule.requiredQuestHash)))
                 {
                     return false;
                 }

@@ -4,6 +4,11 @@ using Unity.Mathematics;
 
 namespace Hecton8.VFX
 {
+    internal static class VfxComputeParticleBudgetCatalogLayout
+    {
+        public const int VfxComputeParticleBudgetStrideBytes = 32;
+    }
+
     /// <summary>
     /// Allocation-free VFX compute-particle budget catalog mirrored by
     /// Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json.
@@ -377,7 +382,7 @@ namespace Hecton8.VFX
     /// <summary>
     /// Immutable compute-particle budget row.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = VfxComputeParticleBudgetCatalogLayout.VfxComputeParticleBudgetStrideBytes)]
     public struct VfxComputeParticleBudget
     {
         /// <summary>Minimum-quality budget row.</summary>

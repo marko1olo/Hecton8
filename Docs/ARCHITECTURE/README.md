@@ -1,9 +1,9 @@
-# Architecture Index
+﻿# Architecture Index
 
-Date: 2026-05-21
+Date: 2026-05-24
 Status: PENDING VERIFICATION
-Owner: SHINOBU_ARCHIVARIUS_SURGEON
-Evidence class: STATIC_DOC / STATIC_SOURCE
+Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
+Evidence class: STATIC_DOC / STATIC_SOURCE / CLI_COMPILE where artifact cited
 
 This folder stores stable architecture contracts. Dated reports are evidence only.
 
@@ -35,12 +35,27 @@ This folder stores stable architecture contracts. Dated reports are evidence onl
 | Surface | Current source fact |
 |---|---|
 | Save container | version `0x000B`; header `56` bytes; legacy header `44` bytes |
-| H8DM static data | target path `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; file absent in current scan |
+| H8DM static data | target path `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; file exists (`1,064,384` bytes); header `64` bytes; Unity/player proof pending |
 | Scalability | `ScalabilityStateDTO` is `16` bytes; `GlobalQualityWeight` is continuous `0.0..1.0` |
 | Shader quality sinks | `_GlobalQualityWeight`, `_H8GlobalQualityWeight`; `_GlobalQualityParameters` is not current source authority |
-| Signal registry | capacity `256`; direct queue surface remains legacy bridge |
+| Signal registry | `SignalBusRegistry.LaneCapacity = 512`; direct queue surface remains legacy bridge |
 | AUP | 48-byte sector/local struct; subtract in double before float local handoff |
 | Netcode | static protocol only; `HectonNetworkManager.cs` is not a transport implementation |
+
+## Current Evidence Boundary
+
+- 2026-05-24 EXTERNAL_CODEX:
+  - Last zero-warning local dirty-workspace CLI PASS: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`.
+  - Latest compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup147_gi_despawn.log`; fails before C# with missing project.assets and Temp/obj access denied.
+  - Latest state: editor DLL output reached; 1 `MSB3101` Temp/obj cache warning; 0 errors; no `CS*`; no final summary/exit line.
+- Loops66-151 fixed warning causes, registry fallbacks, SaveRuntime tails, owner-cache leaks, dispatcher/save/DataVault rebind gaps, interaction scene scan, Atlas read-model tails.
+- Same span also fixed duplicate source inputs, tick-list probes, static-driver residues, release log callsites, sonar polls, and context getter mutation.
+- It also covers loop151 rebind gaps, loop153 owner-cache ownership, loop154-156 Dispatcher tails, loop157 UI/Construction singleton tail removal, duplicate include tail, and FaunaBrain namespace wall.
+- Targeted hot-swap greps pass in touched scopes; broad file-level scan still includes split-line/static-driver/legacy-stub false positives.
+  - Runtime proof remains pending.
+- 2026-05-23 X_012: `Docs/Reports/DOCUMENTATION_CORPUS_INVENTORY_X_012.json`, `Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json`, and `Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json` are offline documentation scan artifacts.
+- This is CLI_COMPILE evidence only. Runtime architecture remains `PENDING VERIFICATION` until Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, player build, save/load, scene wiring, and visual proof exist.
+- The generated-project proof is provisional until Unity/project regeneration preserves the local asmdef references without hand-patching ignored `.csproj` files.
 
 ## Active Contract Groups
 

@@ -66,15 +66,14 @@ namespace Hecton8.Physiology.Editor
             if (!Directory.Exists(root))
                 return;
 
-            string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
             {
-                string normalized = files[i].Replace('\\', '/');
+                string normalized = file.Replace('\\', '/');
                 if (normalized.EndsWith("/Editor/Physiology_OOP_Scanner.cs", StringComparison.Ordinal))
                     continue;
                 if (normalized.Contains("/Physiology/Editor/"))
                     continue;
-                ScanFile(projectRoot, files[i], findings);
+                ScanFile(projectRoot, file, findings);
             }
         }
 

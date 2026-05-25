@@ -3,7 +3,9 @@
 // Zero-GC bridge from hazard enter/exit to HUD notification events.
 // ============================================================================
 
+using System;
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.UI;
 using UnityEngine;
 
@@ -45,7 +47,7 @@ namespace Hecton8.Gameplay
             s_activeExposureCounts[index] = previousCount + 1;
 
             if (previousCount == 0)
-                NotificationEvents.PushWarning(GetEnterMessage(type));
+                NotificationEvents.TryPushWarning(GetEnterMessage(type));
         }
 
         /// <summary>Marks the player as no longer exposed to a hazard type.</summary>
@@ -67,10 +69,10 @@ namespace Hecton8.Gameplay
             s_activeExposureCounts[index] = nextCount;
 
             if (nextCount == 0)
-                NotificationEvents.PushInfo(GetExitMessage(type));
+                NotificationEvents.TryPushInfo(GetExitMessage(type));
         }
 
-        private static string GetEnterMessage(HazardType type)
+        private static ReadOnlySpan<char> GetEnterMessage(HazardType type)
         {
             switch (type)
             {
@@ -87,7 +89,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static string GetExitMessage(HazardType type)
+        private static ReadOnlySpan<char> GetExitMessage(HazardType type)
         {
             switch (type)
             {
@@ -104,10 +106,12 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager localization = LocalizationManager.ActiveRuntimeInstance;
-            return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
+            ILocalizationTextReadModel localization = GlobalRegistry.LocalizationText;
+            return localization != null
+                ? localization.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
     }
 }

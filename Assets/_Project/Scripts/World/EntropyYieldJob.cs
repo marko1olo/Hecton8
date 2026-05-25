@@ -1,7 +1,9 @@
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Scavenging;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -140,6 +142,7 @@ namespace Hecton8.World
         [NoAlias] [ReadOnly] public NativeArray<HarvestableTemplate.LootRuntimeEntry> LootEntries;
         [NoAlias] [ReadOnly] public NativeArray<EntropyYieldMaterialLutEntry> MaterialLut;
         public NativeQueue<ItemDropData>.ParallelWriter DropWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> DropBudget;
         public int EventCount;
 
         public void Execute(int index)
@@ -216,7 +219,7 @@ namespace Hecton8.World
             int rarityBonus = rarityTier >= 3 ? 2 : rarityTier;
             int finalQuantity = authoredQuantity + math.max(0, massQuantity - 1) + volumeBonus + rarityBonus;
 
-            DropWriter.Enqueue(new ItemDropData
+            TryEnqueueBounded(DropWriter, DropBudget, new ItemDropData
             {
                 Position = organicEvent.Position,
                 ItemHashId = resolvedLoot.ItemHashId,
@@ -227,6 +230,29 @@ namespace Hecton8.World
                 Reserved0 = 0,
                 SourceInstanceUid = organicEvent.InstanceUid
             });
+        }
+
+        private static unsafe bool TryEnqueueBounded(
+            NativeQueue<ItemDropData>.ParallelWriter writer,
+            NativeArray<int> writerBudget,
+            ItemDropData drop)
+        {
+            const int remainingIndex = 0;
+            const int droppedIndex = 1;
+            const int budgetLength = 2;
+            if (!writerBudget.IsCreated || writerBudget.Length < budgetLength)
+                return false;
+
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
+            int remainingAfterClaim = Interlocked.Decrement(ref budget[remainingIndex]);
+            if (remainingAfterClaim < 0)
+            {
+                Interlocked.Increment(ref budget[droppedIndex]);
+                return false;
+            }
+
+            writer.Enqueue(drop);
+            return true;
         }
 
         private static byte ResolveRarityTier(float quality01)

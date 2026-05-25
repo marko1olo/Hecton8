@@ -28,9 +28,9 @@ namespace Hecton8.Core.Contracts.Signals
     public struct PlayerRespawnSignal : ISignal
     {
         public const uint LaneHash = 0x5253504Eu; // RSPN
-        public const int ExpectedCapacity = 8;
+        public const int ExpectedCapacity = 16;
         public const int MaxFrameSignals = 16;
-        public const int LowTierFrameSignals = 4;
+        public const int LowTierFrameSignals = 16;
         public const byte MaxSuspendCollisionFrames = 4;
 
         [FieldOffset(0)] public double3 DeathAUP;

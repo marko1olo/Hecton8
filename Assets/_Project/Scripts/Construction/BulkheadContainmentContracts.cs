@@ -41,7 +41,7 @@ namespace Hecton8.Construction
         public const uint ScheduleTimeOnly = 1u << 2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadStateLayoutGuard.StateSizeBytes)]
     public struct BulkheadStateDTO
     {
         [FieldOffset(0)] public uint EdgeHashID;
@@ -63,7 +63,7 @@ namespace Hecton8.Construction
         [FieldOffset(31)] public byte _pad11;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadStateLayoutGuard.PlaneSizeBytes)]
     public struct BulkheadPlaneDTO
     {
         [FieldOffset(0)] public double3 CenterAup;
@@ -77,7 +77,7 @@ namespace Hecton8.Construction
         [FieldOffset(60)] public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadStateLayoutGuard.CsrEdgeSizeBytes)]
     public struct BulkheadCsrEdgeDTO
     {
         [FieldOffset(0)] public uint EdgeHashID;
@@ -90,7 +90,7 @@ namespace Hecton8.Construction
         [FieldOffset(28)] public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadStateLayoutGuard.TuningSizeBytes)]
     public struct BulkheadTuningDTO
     {
         [FieldOffset(0)] public float CloseSpeedPerSecond;
@@ -103,7 +103,7 @@ namespace Hecton8.Construction
         [FieldOffset(28)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadStateLayoutGuard.ProfileSizeBytes)]
     public struct BulkheadProfileDTO
     {
         [FieldOffset(0)] public uint ProfileHash;
@@ -116,7 +116,7 @@ namespace Hecton8.Construction
         [FieldOffset(28)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = BulkheadStateLayoutGuard.TelemetrySizeBytes)]
     public struct BulkheadTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;

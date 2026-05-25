@@ -1,0 +1,64 @@
+﻿# SHINOBU_303 Leviathan Steering Route
+
+Date: 2026-05-22
+Status: STATIC_SOURCE / PENDING UNITY VERIFICATION
+Owner: `SHINOBU_303 / LEVIATHAN_STEERING_MOTOR`
+Domain: Echelon 3, Predator Steering & Lunge
+
+## Authority
+
+One fact: leviathan steering output velocity.
+One owner: `PredatorCognitionDomain` partial steering route.
+One route: `GlobalDataVault` buffers owned by `SystemID.AICognition`.
+One proof artifact: `SteeringTelemetryEntry[300]`, central `GlobalTelemetryBus` breadcrumb, and `Docs/AgentLogs/Dump_SHINOBU_303.bin`.
+
+## Phase
+
+- Producer phase: Predator cognition evaluation chain, after cognition outputs and before post-evaluation telemetry.
+- Consumer phase: leviathan presentation bridge reads `KinematicStateDTO` and bypasses legacy `FaunaSteeringEngine.FixedTick` when Vault kinematics are valid.
+- Cold hydration: `PredatorCognitionDomain.EnsureInitialized()` prepares BufferIDs `72500..72509`; `ScheduleLeviathanSteering()` only checks already-created handles and returns the incoming dependency if they are absent.
+- Read fence: SHINOBU_303 presentation/debug/tuning reads return false while the steering writer chain is in flight; no read accessor completes jobs.
+
+## Buffer IDs
+
+- `72500` `Shinobu303SteeringParams`, `SteeringParamsDTO[256]`, 32-byte stride.
+- `72501` `Shinobu303SteeringAvoidance`, `SteeringAvoidanceDTO[256]`, 64-byte stride.
+- `72502` `Shinobu303SteeringWhiskers`, `SteeringWhiskerResultDTO[6656]`, 64-byte stride.
+- `72503` `Shinobu303KinematicStates`, `KinematicStateDTO[256]`, external KCC ABI.
+- `72504` `Shinobu303SteeringTelemetryRing`, `SteeringTelemetryEntry[300]`, 64-byte stride.
+- `72505` `Shinobu303SteeringTelemetryCursor`, `int[1]`.
+- `72506` `Shinobu303MockSdf`, `float[55296]`.
+- `72507` `Shinobu303SdfConfig`, `SteeringSdfConfigDTO[1]`, 64-byte stride.
+- `72508` `Shinobu303SteeringProfiles`, `SteeringProfileDTO[64]`, 32-byte stride.
+- `72509` `Shinobu303CsvScratch`, `byte[16384]`, cold CSV staging only.
+
+## Failure Mode
+
+- Non-finite velocity or steering telemetry budget breach sets telemetry flags, publishes `SteeringDumpFaultHash` through `GlobalTelemetryBus`, and dumps the 300-frame ring to `Docs/AgentLogs/Dump_SHINOBU_303.bin` through pure Vault read handles.
+- If Vault allocation is locked, cold hydration did not run, or a handle is stale, scheduler returns incoming dependency.
+- It allocates nothing.
+- Legacy presentation remains fallback for non-procedural fauna.
+
+## Scalability
+
+`GlobalQualityWeight` continuously maps active SDF whiskers from `6` to `26`.
+
+Mock SDF whisker length maps from `24m` to `48m`. DTO layout, BufferIDs, save identity, and authority route do not change with quality.
+Non-finite quality resolves to `0.0`, not ultra fidelity.
+
+## Compile-Wall Boundary
+
+No asmdef reference was added.
+
+- `Physics/KCC` has only `Hecton8.Physics.KCC.Editor.asmdef`.
+- Runtime `KinematicStateDTO` remains under existing `Hecton8.Core`.
+- SHINOBU_303 consumes that ABI because task requires output lane.
+- Runtime communication stays Vault-owned.
+
+## ABI Guard
+
+- `ValidateLeviathanSteeringAbiLayout()` checks `SteeringParamsDTO` size and field offsets: `MaxSpeed@0`, `TurnSpeed@4`, `LungeMultiplier@8`, `ObstacleAvoidanceWeight@12`, `CurrentTargetDirection@16`, `_pad0@28`.
+- The proof uses unsafe pointer deltas inside the DTO type, not runtime reflection.
+- Hot jobs access the private padding lane through a fixed byte-offset helper, so the DTO keeps raw fields only and no hot instance methods.
+- SHINOBU_303 does not write external DTO padding fields; `KinematicStateDTO` writes stay on public authority fields.
+- Direction smoothing is deterministic normalized smoothstep lerp, with no `acos/cos/sin` in the steering partial.

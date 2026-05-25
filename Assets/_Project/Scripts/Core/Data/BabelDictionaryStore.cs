@@ -433,7 +433,7 @@ namespace Hecton8.Core.Data
 
         public void DumpBlackBox(string path = null)
         {
-            if (!TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
+            if (!TryReadBlackBox(out NativeArray<H8StaticDataTelemetryEntry>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor))
             {
                 return;
             }
@@ -441,7 +441,7 @@ namespace Hecton8.Core.Data
             string resolvedPath = string.IsNullOrEmpty(path)
                 ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_207.bin"))
                 : path;
-            H8StaticDataTelemetryEntry* ringPtr = (H8StaticDataTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+            H8StaticDataTelemetryEntry* ringPtr = (H8StaticDataTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
             H8StaticDataBlackBoxDump.Write(
                 resolvedPath,
                 ringPtr,
@@ -452,9 +452,9 @@ namespace Hecton8.Core.Data
 
         public void DumpBTreeTelemetry(string path = null)
         {
-            if (!TryResolveBTreeTelemetry(
-                    out NativeArray<BTreeTelemetryEntry> ring,
-                    out NativeArray<int> cursor,
+            if (!TryReadBTreeTelemetry(
+                    out NativeArray<BTreeTelemetryEntry>.ReadOnly ring,
+                    out NativeArray<int>.ReadOnly cursor,
                     out _))
             {
                 return;
@@ -463,7 +463,7 @@ namespace Hecton8.Core.Data
             string resolvedPath = string.IsNullOrEmpty(path)
                 ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_207.bin"))
                 : path;
-            BTreeTelemetryEntry* ringPtr = (BTreeTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+            BTreeTelemetryEntry* ringPtr = (BTreeTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
             H8BTreeTelemetryDump.Write(
                 resolvedPath,
                 ringPtr,
@@ -527,11 +527,11 @@ namespace Hecton8.Core.Data
             if (paddedLength <= 0L || paddedLength > int.MaxValue)
                 return false;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _mappedBytesHandle = vault.GetGenerationHandle<byte>(
+            _mappedBytesHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.BabelDictionaryMappedBytes,
                 (int)paddedLength,
                 SystemID.CoreDataVault,
@@ -552,7 +552,6 @@ namespace Hecton8.Core.Data
             }
 
             _ownedFallbackPointer = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(paddedBytes);
-            _dataVault = vault;
             return true;
         }
 
@@ -651,7 +650,9 @@ namespace Hecton8.Core.Data
                 return false;
             }
 
-            uint crc = H8Crc32.Compute(basePointer + _header.HeaderSizeBytes, (int)(logicalFileBytes - _header.HeaderSizeBytes));
+            uint crc = H8Crc32.Compute(new ReadOnlySpan<byte>(
+                basePointer + _header.HeaderSizeBytes,
+                (int)(logicalFileBytes - _header.HeaderSizeBytes)));
             if (crc != _header.PayloadCrc32)
             {
                 RecordTelemetry(StateErrorHash, ErrorCrcHash, 0u, 0L);
@@ -847,7 +848,7 @@ namespace Hecton8.Core.Data
             {
                 TextHash = textHash,
                 VoiceHash = voiceHash,
-                FrameIndex = (uint)Mathf.Max(0, Time.frameCount),
+                FrameIndex = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex),
                 Flags = 1u
             };
             SignalBus<PlayVoiceOverSignal>.TryPush(in signal);
@@ -888,10 +889,10 @@ namespace Hecton8.Core.Data
             if (!_errorSliceVaultBacked && _errorPointer != null)
                 return true;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault != null)
             {
-                _errorSliceHandle = vault.GetGenerationHandle<byte>(
+                _errorSliceHandle = vault.EnsureGenerationHandle<byte>(
                     BufferID.BabelErrorUtf8,
                     ErrorSliceBytes,
                     SystemID.CoreDataVault,
@@ -900,7 +901,6 @@ namespace Hecton8.Core.Data
                     errorBytes.IsCreated &&
                     errorBytes.Length >= ErrorSliceBytes)
                 {
-                    _dataVault = vault;
                     _errorPointer = null;
                     _errorSliceVaultBacked = true;
                     WriteErrorSlice(errorBytes);
@@ -1041,26 +1041,16 @@ namespace Hecton8.Core.Data
 
         private bool EnsureBlackBox()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
-
-            if (!ReferenceEquals(_dataVault, vault))
-            {
-                _dataVault = vault;
-                _blackBoxHandle = default;
-                _blackBoxCursorHandle = default;
-                _btreeTelemetryHandle = default;
-                _btreeTelemetryCursorHandle = default;
-                _btreeTelemetryAccumulatorHandle = default;
-            }
 
             if (_blackBoxHandle.BufferID == 0u ||
                 !vault.TryResolveHandle(in _blackBoxHandle, out NativeArray<H8StaticDataTelemetryEntry> ring) ||
                 !ring.IsCreated ||
                 ring.Length < H8StaticDataFormat.TelemetryFrameCount)
             {
-                _blackBoxHandle = vault.GetGenerationHandle<H8StaticDataTelemetryEntry>(
+                _blackBoxHandle = vault.EnsureGenerationHandle<H8StaticDataTelemetryEntry>(
                     BufferID.StaticDataTelemetryRing,
                     H8StaticDataFormat.TelemetryFrameCount,
                     SystemID.CoreDataVault,
@@ -1072,7 +1062,7 @@ namespace Hecton8.Core.Data
                 !cursor.IsCreated ||
                 cursor.Length < 1)
             {
-                _blackBoxCursorHandle = vault.GetGenerationHandle<int>(
+                _blackBoxCursorHandle = vault.EnsureGenerationHandle<int>(
                     BufferID.StaticDataTelemetryCursor,
                     1,
                     SystemID.CoreDataVault,
@@ -1084,26 +1074,16 @@ namespace Hecton8.Core.Data
 
         private bool EnsureBTreeTelemetry()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
-
-            if (!ReferenceEquals(_dataVault, vault))
-            {
-                _dataVault = vault;
-                _blackBoxHandle = default;
-                _blackBoxCursorHandle = default;
-                _btreeTelemetryHandle = default;
-                _btreeTelemetryCursorHandle = default;
-                _btreeTelemetryAccumulatorHandle = default;
-            }
 
             if (_btreeTelemetryHandle.BufferID == 0u ||
                 !vault.TryResolveHandle(in _btreeTelemetryHandle, out NativeArray<BTreeTelemetryEntry> ring) ||
                 !ring.IsCreated ||
                 ring.Length < H8StaticDataFormat.TelemetryFrameCount)
             {
-                _btreeTelemetryHandle = vault.GetGenerationHandle<BTreeTelemetryEntry>(
+                _btreeTelemetryHandle = vault.EnsureGenerationHandle<BTreeTelemetryEntry>(
                     H8CacheBTree.BTreeTelemetryRingBufferId,
                     H8StaticDataFormat.TelemetryFrameCount,
                     SystemID.CoreDataVault,
@@ -1115,7 +1095,7 @@ namespace Hecton8.Core.Data
                 !cursor.IsCreated ||
                 cursor.Length < 1)
             {
-                _btreeTelemetryCursorHandle = vault.GetGenerationHandle<int>(
+                _btreeTelemetryCursorHandle = vault.EnsureGenerationHandle<int>(
                     H8CacheBTree.BTreeTelemetryCursorBufferId,
                     1,
                     SystemID.CoreDataVault,
@@ -1127,7 +1107,7 @@ namespace Hecton8.Core.Data
                 !accumulator.IsCreated ||
                 accumulator.Length < 1)
             {
-                _btreeTelemetryAccumulatorHandle = vault.GetGenerationHandle<BTreeTelemetryAccumulatorDTO>(
+                _btreeTelemetryAccumulatorHandle = vault.EnsureGenerationHandle<BTreeTelemetryAccumulatorDTO>(
                     H8CacheBTree.BTreeTelemetryAccumulatorBufferId,
                     1,
                     SystemID.CoreDataVault,
@@ -1151,6 +1131,24 @@ namespace Hecton8.Core.Data
                    ring.IsCreated &&
                    ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
                    vault.TryResolveHandle(in _blackBoxCursorHandle, out cursor) &&
+                   cursor.IsCreated &&
+                   cursor.Length >= 1;
+        }
+
+        private bool TryReadBlackBox(
+            out NativeArray<H8StaticDataTelemetryEntry>.ReadOnly ring,
+            out NativeArray<int>.ReadOnly cursor)
+        {
+            ring = default;
+            cursor = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _blackBoxHandle.BufferID != 0u &&
+                   _blackBoxCursorHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _blackBoxHandle, out ring) &&
+                   ring.IsCreated &&
+                   ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
+                   vault.TryReadOnlyHandle(in _blackBoxCursorHandle, out cursor) &&
                    cursor.IsCreated &&
                    cursor.Length >= 1;
         }
@@ -1179,9 +1177,33 @@ namespace Hecton8.Core.Data
                    accumulator.Length >= 1;
         }
 
+        private bool TryReadBTreeTelemetry(
+            out NativeArray<BTreeTelemetryEntry>.ReadOnly ring,
+            out NativeArray<int>.ReadOnly cursor,
+            out NativeArray<BTreeTelemetryAccumulatorDTO>.ReadOnly accumulator)
+        {
+            ring = default;
+            cursor = default;
+            accumulator = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _btreeTelemetryHandle.BufferID != 0u &&
+                   _btreeTelemetryCursorHandle.BufferID != 0u &&
+                   _btreeTelemetryAccumulatorHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _btreeTelemetryHandle, out ring) &&
+                   ring.IsCreated &&
+                   ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
+                   vault.TryReadOnlyHandle(in _btreeTelemetryCursorHandle, out cursor) &&
+                   cursor.IsCreated &&
+                   cursor.Length >= 1 &&
+                   vault.TryReadOnlyHandle(in _btreeTelemetryAccumulatorHandle, out accumulator) &&
+                   accumulator.IsCreated &&
+                   accumulator.Length >= 1;
+        }
+
         private void RefreshFrameLookupCounters()
         {
-            int frame = Mathf.Max(0, Time.frameCount);
+            int frame = Mathf.Max(0, SystemDispatcher.CurrentFrameIndex);
             if (frame == _lastTelemetryFrame)
                 return;
 
@@ -1204,7 +1226,7 @@ namespace Hecton8.Core.Data
 
             ring[index] = new H8StaticDataTelemetryEntry
             {
-                FrameIndex = (uint)Mathf.Max(0, Time.frameCount),
+                FrameIndex = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex),
                 StateHash = stateHash,
                 LastRequestedHash = requestedHash,
                 LookupCount = _frameLookupCount,
@@ -1236,7 +1258,7 @@ namespace Hecton8.Core.Data
             }
 
             uint safeOffset = offset >= 0L && offset <= uint.MaxValue ? (uint)offset : H8CacheBTree.NotFound;
-            uint frameIndex = (uint)Mathf.Max(0, Time.frameCount);
+            uint frameIndex = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex);
             BTreeTelemetryAccumulatorDTO accumulator = accumulatorBuffer[0];
             H8CacheBTree.AccumulateTelemetry(
                 ref accumulator,
@@ -1264,7 +1286,7 @@ namespace Hecton8.Core.Data
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public unsafe struct BabelBTreeSearchKernel : IJobParallelFor
+        internal unsafe struct BabelBTreeSearchKernel : IJobParallelFor
         {
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // The index pointer and base pointer are read-only views into the already validated Babel MMF/Vault blob.
@@ -1277,8 +1299,8 @@ namespace Hecton8.Core.Data
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // Execute() only writes Output[index]. The tree value is a validated index into IndexTable; malformed
             // values are converted to miss flags rather than dereferenced.
-            [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public BabelIndexDTO* IndexTable;
+            [NoAlias, NativeDisableUnsafePtrRestriction] internal byte* BasePointer;
+            [NoAlias, NativeDisableUnsafePtrRestriction] internal BabelIndexDTO* IndexTable;
             [ReadOnly, NoAlias] public NativeArray<uint> TextHashes;
             [WriteOnly, NoAlias] public NativeArray<BabelLookupResultDTO> Output;
             public uint EntryCount;
@@ -1419,7 +1441,7 @@ namespace Hecton8.Core.Data
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public unsafe struct BabelLoreXorDecryptPointerJob : IJobParallelFor
+        internal unsafe struct BabelLoreXorDecryptPointerJob : IJobParallelFor
         {
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // SourceBytes points at a read-only MMF-backed Babel byte blob. Vault mirrors use
@@ -1432,7 +1454,7 @@ namespace Hecton8.Core.Data
             // The caller owns OutputBytes and passes a created DecryptionMask. Each Execute(index) writes
             // only OutputBytes[index], so parallel iterations do not share output slots; the source pointer
             // is read-only for the whole scheduled range.
-            [NoAlias, NativeDisableUnsafePtrRestriction] public byte* SourceBytes;
+            [NoAlias, NativeDisableUnsafePtrRestriction] internal byte* SourceBytes;
             public long SourceByteLength;
             [ReadOnly, NoAlias] public NativeArray<byte> DecryptionMask;
             [WriteOnly, NoAlias] public NativeArray<byte> OutputBytes;

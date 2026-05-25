@@ -53,7 +53,7 @@ namespace Hecton8.EditorTools
             ref int warningCount)
         {
             string[] questGuids = AssetDatabase.FindAssets("t:QuestData", new[] { ProjectDataRoot });
-            HashSet<string> questIds = new HashSet<string>(System.StringComparer.Ordinal);
+            HashSet<string> questIds = new HashSet<string>(questGuids.Length, System.StringComparer.Ordinal);
 
             for (int i = 0; i < questGuids.Length; i++)
             {
@@ -138,7 +138,7 @@ namespace Hecton8.EditorTools
             ref int warningCount)
         {
             string[] missionGuids = AssetDatabase.FindAssets("t:MissionData", new[] { ProjectDataRoot });
-            HashSet<string> missionIds = new HashSet<string>(System.StringComparer.Ordinal);
+            HashSet<string> missionIds = new HashSet<string>(missionGuids.Length, System.StringComparer.Ordinal);
 
             for (int i = 0; i < missionGuids.Length; i++)
             {
@@ -174,7 +174,7 @@ namespace Hecton8.EditorTools
             if (mission.objectives == null)
                 return;
 
-            HashSet<string> objectiveIds = new HashSet<string>(System.StringComparer.Ordinal);
+            HashSet<string> objectiveIds = new HashSet<string>(mission.objectives.Count, System.StringComparer.Ordinal);
             for (int i = 0; i < mission.objectives.Count; i++)
             {
                 ObjectiveData objective = mission.objectives[i];
@@ -257,7 +257,7 @@ namespace Hecton8.EditorTools
             ColonistLoreRegistry loreRegistry,
             ref int errorCount)
         {
-            HashSet<string> loreDiscoveryIds = new HashSet<string>(System.StringComparer.Ordinal);
+            HashSet<string> loreDiscoveryIds = new HashSet<string>(loreRegistry != null && loreRegistry.entries != null ? loreRegistry.entries.Length : 0, System.StringComparer.Ordinal);
             if (loreRegistry == null)
                 return loreDiscoveryIds;
 
@@ -296,8 +296,8 @@ namespace Hecton8.EditorTools
             ref int warningCount)
         {
             string[] zoneGuids = AssetDatabase.FindAssets("t:DepthZoneProfile", new[] { DepthZoneRoot });
-            HashSet<string> zoneIds = new HashSet<string>(System.StringComparer.Ordinal);
-            HashSet<string> zoneDiscoveryIds = new HashSet<string>(System.StringComparer.Ordinal);
+            HashSet<string> zoneIds = new HashSet<string>(zoneGuids.Length, System.StringComparer.Ordinal);
+            HashSet<string> zoneDiscoveryIds = new HashSet<string>(zoneGuids.Length, System.StringComparer.Ordinal);
 
             for (int i = 0; i < zoneGuids.Length; i++)
             {
@@ -356,9 +356,9 @@ namespace Hecton8.EditorTools
             if (relays == null || relays.Length <= 0)
                 return;
 
-            HashSet<string> relayIds = new HashSet<string>(System.StringComparer.Ordinal);
+            HashSet<string> relayIds = new HashSet<string>(relays.Length, System.StringComparer.Ordinal);
             Dictionary<string, HashSet<int>> relayOrdersByChain =
-                new Dictionary<string, HashSet<int>>(System.StringComparer.Ordinal);
+                new Dictionary<string, HashSet<int>>(relays.Length, System.StringComparer.Ordinal);
 
             for (int i = 0; i < relays.Length; i++)
             {
@@ -387,7 +387,7 @@ namespace Hecton8.EditorTools
                 {
                     if (!relayOrdersByChain.TryGetValue(relay.ChainId, out HashSet<int> chainOrders))
                     {
-                        chainOrders = new HashSet<int>();
+                        chainOrders = new HashSet<int>(8);
                         relayOrdersByChain.Add(relay.ChainId, chainOrders);
                     }
 

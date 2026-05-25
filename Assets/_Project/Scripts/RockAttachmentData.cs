@@ -54,7 +54,7 @@ namespace Hecton8.Building
         [Header("═══ SOCKET POINTS ═══")]
         [Tooltip("Vse tochki krepleniya na etom kamne.\n" +
                  "Avtomaticheski zapolnyaetsya cherez Rock Data Baker Window.")]
-        public List<SocketData> sockets = new List<SocketData>();
+        public List<SocketData> sockets = new List<SocketData>(8);
 
         [Header("═══ METADATA ═══")]
         [Tooltip("Imya ishodnoy gruppy kamney pri eksporte.")]

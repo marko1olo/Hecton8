@@ -1,0 +1,817 @@
+﻿{
+  "agent": "X_010",
+  "findings": [
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 14,
+      "severity": "INFO",
+      "text": "public static class PowerGridJacobiConstants",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 59,
+      "severity": "INFO",
+      "text": "[StructLayout(LayoutKind.Explicit, Size = PowerGridJacobiConstants.PowerNodeDtoSizeBytes)]",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 78,
+      "severity": "INFO",
+      "text": "[StructLayout(LayoutKind.Explicit, Size = PowerGridJacobiConstants.PowerGridEdgeDtoSizeBytes)]",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 91,
+      "severity": "INFO",
+      "text": "[StructLayout(LayoutKind.Explicit, Size = PowerGridJacobiConstants.PowerProfileDtoSizeBytes)]",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 104,
+      "severity": "INFO",
+      "text": "[StructLayout(LayoutKind.Explicit, Size = PowerGridJacobiConstants.PowerTelemetryEntrySizeBytes)]",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 148,
+      "severity": "INFO",
+      "text": "[StructLayout(LayoutKind.Explicit, Size = PowerGridJacobiConstants.PowerGridCounter64SizeBytes)]",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 186,
+      "severity": "INFO",
+      "text": "return UnsafeUtility.SizeOf<PowerNodeDTO>() == PowerGridJacobiConstants.PowerNodeDtoSizeBytes &&",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 209,
+      "severity": "INFO",
+      "text": "return UnsafeUtility.SizeOf<PowerGridEdgeDTO>() == PowerGridJacobiConstants.PowerGridEdgeDtoSizeBytes &&",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 222,
+      "severity": "INFO",
+      "text": "return UnsafeUtility.SizeOf<PowerProfileDTO>() == PowerGridJacobiConstants.PowerProfileDtoSizeBytes &&",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 235,
+      "severity": "INFO",
+      "text": "return UnsafeUtility.SizeOf<PowerTelemetryEntry>() == PowerGridJacobiConstants.PowerTelemetryEntrySizeBytes &&",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 259,
+      "severity": "INFO",
+      "text": "return UnsafeUtility.SizeOf<PowerGridCounter64>() == PowerGridJacobiConstants.PowerGridCounter64SizeBytes &&",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 329,
+      "severity": "INFO",
+      "text": "handles.TelemetryRing = vault.EnsureGenerationHandle<PowerTelemetryEntry>(PowerGridBufferIds.TelemetryRing, PowerGridJacobiConstants.TelemetryFrameCount, SystemID.Power, NativeArrayOptions.ClearMemory);",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 345,
+      "severity": "INFO",
+      "text": "HasResolvedBuffer(vault, in handles.TelemetryRing, PowerGridJacobiConstants.TelemetryFrameCount) &&",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 374,
+      "severity": "INFO",
+      "text": "HasResolvedBuffer(vault, in handles.TelemetryRing, PowerGridJacobiConstants.TelemetryFrameCount) &&",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 512,
+      "severity": "INFO",
+      "text": "if ((edge.Flags & (PowerGridJacobiConstants.EdgeFlagSealed | PowerGridJacobiConstants.EdgeFlagDamaged | PowerGridJacobiConstants.EdgeFlagShortCircuit)) != 0u)",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 516,
+      "severity": "INFO",
+      "text": "if (((sourceFlags | destinationFlags) & PowerGridJacobiConstants.NodeFlagDamaged) != 0u)",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 550,
+      "severity": "INFO",
+      "text": "if ((flags & (PowerGridJacobiConstants.NodeFlagOffline | PowerGridJacobiConstants.NodeFlagDamaged)) != 0u)",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 569,
+      "severity": "INFO",
+      "text": "if (conductance <= PowerGridJacobiConstants.MinimumConductance)",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 576,
+      "severity": "INFO",
+      "text": "float generatorRate = (flags & PowerGridJacobiConstants.NodeFlagSource) != 0u ? 1f : 0f;",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 590,
+      "severity": "INFO",
+      "text": "if (solvedPotential < PowerGridJacobiConstants.BrownoutThreshold01)",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 591,
+      "severity": "INFO",
+      "text": "node.Flags = flags | PowerGridJacobiConstants.NodeFlagBrownout;",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 593,
+      "severity": "INFO",
+      "text": "node.Flags = flags & ~PowerGridJacobiConstants.NodeFlagBrownout;",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 645,
+      "severity": "INFO",
+      "text": "if ((node.Flags & PowerGridJacobiConstants.NodeFlagBattery) == 0u)",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 770,
+      "severity": "INFO",
+      "text": "if ((node.Flags & PowerGridJacobiConstants.NodeFlagSource) != 0u)",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 777,
+      "severity": "INFO",
+      "text": "if (potential < PowerGridJacobiConstants.BrownoutThreshold01)",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 786,
+      "severity": "INFO",
+      "text": "reasonFlags |= PowerGridJacobiConstants.TelemetryReasonBrownout;",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 837,
+      "severity": "INFO",
+      "text": "reasonFlags |= PowerGridJacobiConstants.TelemetryReasonNonFinite;",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 847,
+      "severity": "INFO",
+      "text": "reasonFlags |= PowerGridJacobiConstants.TelemetryReasonNonFinite;",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 894,
+      "severity": "INFO",
+      "text": "node.Flags = PowerGridJacobiConstants.NodeFlagActive |",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 895,
+      "severity": "INFO",
+      "text": "(generator ? PowerGridJacobiConstants.NodeFlagSource : 0u) |",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 896,
+      "severity": "INFO",
+      "text": "(battery ? PowerGridJacobiConstants.NodeFlagBattery : 0u);",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 995,
+      "severity": "INFO",
+      "text": "profile.Flags = (profile.GeneratorRateWatts > 0f ? PowerGridJacobiConstants.ProfileFlagGenerator : 0u) |",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 996,
+      "severity": "INFO",
+      "text": "(profile.BatteryCapacityWattSeconds > 0f ? PowerGridJacobiConstants.ProfileFlagBattery : 0u);",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "legacy_name",
+      "file": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+      "line": 757,
+      "severity": "INFO",
+      "text": "node.Flags |= PowerGridJacobiConstants.NodeFlagActive | PowerGridJacobiConstants.NodeFlagSource;",
+      "tokens": [
+        "PowerGridJacobiConstants"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 52,
+      "severity": "WARN",
+      "text": "public static int ResolvePropagationIterations(float globalQualityWeight)",
+      "tokens": [
+        "ResolvePropagationIterations"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 60,
+      "severity": "WARN",
+      "text": "public static float ResolveSolverTargetTolerance(float baseTolerance, float globalQualityWeight)",
+      "tokens": [
+        "ResolveSolverTargetTolerance",
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 71,
+      "severity": "WARN",
+      "text": "public static float ResolveSolverOmega(float globalQualityWeight)",
+      "tokens": [
+        "ResolveSolverOmega",
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 137,
+      "severity": "WARN",
+      "text": "[FieldOffset(8)] public float JacobiTolerance;",
+      "tokens": [
+        "JacobiTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 177,
+      "severity": "WARN",
+      "text": "[FieldOffset(28)] public float JacobiResidual;",
+      "tokens": [
+        "JacobiResidual"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 184,
+      "severity": "WARN",
+      "text": "[FieldOffset(56)] public float SolverOmega;",
+      "tokens": [
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 185,
+      "severity": "WARN",
+      "text": "[FieldOffset(60)] public float TargetTolerance;",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 667,
+      "severity": "WARN",
+      "text": "int iterations = ResolvePropagationIterations(qualityWeight);",
+      "tokens": [
+        "ResolvePropagationIterations"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 680,
+      "severity": "WARN",
+      "text": "float solverTolerance = ResolveSolverTargetTolerance(tuning.JacobiTolerance, qualityWeight) * math.max(Epsilon, tuning.ToleranceMultiplier);",
+      "tokens": [
+        "ResolveSolverTargetTolerance",
+        "JacobiTolerance",
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 681,
+      "severity": "WARN",
+      "text": "float solverOmega = math.clamp(ResolveSolverOmega(qualityWeight) * math.max(0.25f, tuning.BaseOmegaFactor), 0.55f, 1f);",
+      "tokens": [
+        "ResolveSolverOmega",
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 725,
+      "severity": "WARN",
+      "text": "PowerGridRelaxationJob job = new PowerGridRelaxationJob",
+      "tokens": [
+        "PowerGridRelaxationJob"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 742,
+      "severity": "WARN",
+      "text": "TargetTolerance = solverTolerance,",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 751,
+      "severity": "WARN",
+      "text": "TargetTolerance = solverTolerance,",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 785,
+      "severity": "WARN",
+      "text": "TargetTolerance = solverTolerance",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1119,
+      "severity": "WARN",
+      "text": "public static int ResolvePropagationIterations(float globalQualityWeight)",
+      "tokens": [
+        "ResolvePropagationIterations"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1121,
+      "severity": "WARN",
+      "text": "return PowerSolverConvergenceMath.ResolvePropagationIterations(globalQualityWeight);",
+      "tokens": [
+        "ResolvePropagationIterations"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1124,
+      "severity": "WARN",
+      "text": "public static float ResolveSolverTargetTolerance(float baseTolerance, float globalQualityWeight)",
+      "tokens": [
+        "ResolveSolverTargetTolerance",
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1126,
+      "severity": "WARN",
+      "text": "return PowerSolverConvergenceMath.ResolveSolverTargetTolerance(baseTolerance, globalQualityWeight);",
+      "tokens": [
+        "ResolveSolverTargetTolerance",
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1129,
+      "severity": "WARN",
+      "text": "public static float ResolveSolverOmega(float globalQualityWeight)",
+      "tokens": [
+        "ResolveSolverOmega",
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1131,
+      "severity": "WARN",
+      "text": "return PowerSolverConvergenceMath.ResolveSolverOmega(globalQualityWeight);",
+      "tokens": [
+        "ResolveSolverOmega",
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1145,
+      "severity": "WARN",
+      "text": "JacobiTolerance = 0.001f,",
+      "tokens": [
+        "JacobiTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1199,
+      "severity": "WARN",
+      "text": "float lowTolerance = ResolveSolverTargetTolerance(0.001f, 0f);",
+      "tokens": [
+        "ResolveSolverTargetTolerance",
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1200,
+      "severity": "WARN",
+      "text": "float midTolerance = ResolveSolverTargetTolerance(0.001f, 0.5f);",
+      "tokens": [
+        "ResolveSolverTargetTolerance",
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1201,
+      "severity": "WARN",
+      "text": "float highTolerance = ResolveSolverTargetTolerance(0.001f, 1f);",
+      "tokens": [
+        "ResolveSolverTargetTolerance",
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1202,
+      "severity": "WARN",
+      "text": "float lowOmega = ResolveSolverOmega(0f);",
+      "tokens": [
+        "ResolveSolverOmega",
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1203,
+      "severity": "WARN",
+      "text": "float midOmega = ResolveSolverOmega(0.5f);",
+      "tokens": [
+        "ResolveSolverOmega",
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1204,
+      "severity": "WARN",
+      "text": "float highOmega = ResolveSolverOmega(1f);",
+      "tokens": [
+        "ResolveSolverOmega",
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1205,
+      "severity": "WARN",
+      "text": "int lowIterations = ResolvePropagationIterations(0f);",
+      "tokens": [
+        "ResolvePropagationIterations"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1206,
+      "severity": "WARN",
+      "text": "int midIterations = ResolvePropagationIterations(0.5f);",
+      "tokens": [
+        "ResolvePropagationIterations"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1207,
+      "severity": "WARN",
+      "text": "int highIterations = ResolvePropagationIterations(1f);",
+      "tokens": [
+        "ResolvePropagationIterations"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1697,
+      "severity": "WARN",
+      "text": "writer.Write(entry.JacobiResidual);",
+      "tokens": [
+        "JacobiResidual"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1704,
+      "severity": "WARN",
+      "text": "writer.Write(entry.SolverOmega);",
+      "tokens": [
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1705,
+      "severity": "WARN",
+      "text": "writer.Write(entry.TargetTolerance);",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 1715,
+      "severity": "WARN",
+      "text": "JacobiTolerance = math.max(Epsilon, FiniteOr(tuning.JacobiTolerance, 0.001f)),",
+      "tokens": [
+        "JacobiTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2070,
+      "severity": "WARN",
+      "text": "public float TargetTolerance;",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2105,
+      "severity": "WARN",
+      "text": "float tolerance = math.max(Epsilon * 0.25f, FiniteOr(TargetTolerance, 0.001f));",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2146,
+      "severity": "WARN",
+      "text": "public unsafe struct PowerGridRelaxationJob : IJobParallelFor",
+      "tokens": [
+        "PowerGridRelaxationJob"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2163,
+      "severity": "WARN",
+      "text": "public float TargetTolerance;",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2396,
+      "severity": "WARN",
+      "text": "public float TargetTolerance;",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2443,
+      "severity": "WARN",
+      "text": "residual > math.max(Epsilon, TargetTolerance);",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2478,
+      "severity": "WARN",
+      "text": "JacobiResidual = residual,",
+      "tokens": [
+        "JacobiResidual"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2485,
+      "severity": "WARN",
+      "text": "SolverOmega = math.clamp(FiniteOr(convergenceState.Omega, 1f), 0.55f, 1f),",
+      "tokens": [
+        "SolverOmega"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2486,
+      "severity": "WARN",
+      "text": "TargetTolerance = math.max(Epsilon * 0.25f, FiniteOr(TargetTolerance, 0.001f))",
+      "tokens": [
+        "TargetTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "line": 2610,
+      "severity": "WARN",
+      "text": "value.JacobiTolerance = math.max(0.0001f, tolerance);",
+      "tokens": [
+        "JacobiTolerance"
+      ]
+    },
+    {
+      "classification": "heavy_numerical_method",
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "line": 1058,
+      "severity": "WARN",
+      "text": "int qualityIterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(PowerSolverConvergenceMath.AuthoritativeQualityWeight);",
+      "tokens": [
+        "ResolvePropagationIterations"
+      ]
+    }
+  ],
+  "projectWideHeavyNumericalMethodCount": 45,
+  "projectWideLegacyJacobiNameCount": 34,
+  "projectWideZeroJacobiClaim": false,
+  "releaseCompileFileCount": 1208,
+  "scope": "Hecton8.Core.csproj compile includes. PASS only means X_010 hot logistics files are clear; project-wide legacy/thermal Jacobi names are reported honestly.",
+  "status": "PASS",
+  "x010HotLogisticsHeavyJacobiCount": 0
+}

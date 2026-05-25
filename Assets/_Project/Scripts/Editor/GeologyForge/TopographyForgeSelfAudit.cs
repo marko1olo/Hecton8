@@ -464,8 +464,10 @@ namespace Hecton8.Editor.GeologyForge
 
                 fixed (byte* src = headerBytes)
                 {
-                    HeightmapFileHeaderDTO* dst = &header;
+                    HeightmapFileHeaderDTO local = default;
+                    HeightmapFileHeaderDTO* dst = &local;
                     UnsafeUtility.MemCpy(dst, src, TopographyForgeConstants.HeightmapHeaderBytes);
+                    header = local;
                 }
 
                 return true;
@@ -493,8 +495,10 @@ namespace Hecton8.Editor.GeologyForge
 
                 fixed (byte* src = headerBytes)
                 {
-                    BiomeMaskFileHeaderDTO* dst = &header;
+                    BiomeMaskFileHeaderDTO local = default;
+                    BiomeMaskFileHeaderDTO* dst = &local;
                     UnsafeUtility.MemCpy(dst, src, TopographyForgeConstants.BiomeMaskHeaderBytes);
+                    header = local;
                 }
 
                 return true;

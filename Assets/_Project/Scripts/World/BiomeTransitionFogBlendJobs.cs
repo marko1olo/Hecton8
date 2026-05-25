@@ -539,6 +539,7 @@ namespace Hecton8.World
         [WriteOnly, NoAlias] public NativeArray<BiomeInfluenceDTO> Influence;
         [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
         [WriteOnly, NoAlias] public NativeQueue<BiomeChangedSignal>.ParallelWriter BiomeChangedWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> BiomeChangedWriterBudget;
         public AbsoluteUniversePositionBlit128 PlayerAup;
         public float GlobalQualityWeight;
         public float RadiusScale;
@@ -717,7 +718,7 @@ namespace Hecton8.World
             uint previous = counter.CurrentDominantBiomeHash != 0u ? counter.CurrentDominantBiomeHash : counter.PreviousDominantBiomeHash;
             if (dominant != 0u && dominant != previous)
             {
-                BiomeChangedWriter.Enqueue(new BiomeChangedSignal
+                SignalBus<BiomeChangedSignal>.TryEnqueueBounded(BiomeChangedWriter, BiomeChangedWriterBudget, new BiomeChangedSignal
                 {
                     PositionAup = BiomeTransitionMath.ToAup(in resolvedPlayerAup),
                     PreviousBiomeHash = previous,
@@ -1051,6 +1052,7 @@ namespace Hecton8.World
         }
     }
 
+#if UNITY_EDITOR
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct BiomeAtmosphereCsvIngestJob : IJob
     {
@@ -1252,4 +1254,5 @@ namespace Hecton8.World
             }
         }
     }
+#endif
 }

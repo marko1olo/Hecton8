@@ -1,0 +1,69 @@
+﻿{
+  "schema": "hecton8.architecture_file_cap_audit.x012.v1",
+  "generatedUtc": "2026-05-24T06:36:53.081149+00:00",
+  "fileWordCap": 2500,
+  "modifiedFileCount": 6,
+  "modifiedFiles": [
+    {
+      "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/ARCHITECTURE_APEX_PRE_FILE_CAP_GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "wordsBefore": 4009,
+      "wordsAfter": 370
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_200_SIGNAL_THREAD_CONTENTION_ROUTE_CARD.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/ARCHITECTURE_APEX_PRE_FILE_CAP_SHINOBU_200_SIGNAL_THREAD_CONTENTION_ROUTE_CARD.md",
+      "wordsBefore": 3801,
+      "wordsAfter": 378
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/ARCHITECTURE_APEX_PRE_FILE_CAP_SYSTEM_INTERCONNECT_MATRIX.md",
+      "wordsBefore": 3616,
+      "wordsAfter": 295
+    },
+    {
+      "path": "Docs/ARCHITECTURE/KINEMATICS_AUP_INTEGRATION.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/ARCHITECTURE_APEX_PRE_FILE_CAP_KINEMATICS_AUP_INTEGRATION.md",
+      "wordsBefore": 2842,
+      "wordsAfter": 300
+    },
+    {
+      "path": "Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/ARCHITECTURE_APEX_PRE_FILE_CAP_HECTON_PHI_STATIC_METRIC.md",
+      "wordsBefore": 2626,
+      "wordsAfter": 297
+    },
+    {
+      "path": "Docs/ARCHITECTURE/OFFLINE_GEOLOGY_MESH_BAKER.md",
+      "archivedAs": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/ARCHITECTURE_APEX_PRE_FILE_CAP_OFFLINE_GEOLOGY_MESH_BAKER.md",
+      "wordsBefore": 2611,
+      "wordsAfter": 430
+    }
+  ],
+  "archive": "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/",
+  "postValidationUtc": "2026-05-24T06:49:47.436491+00:00",
+  "postValidation": {
+    "oopDocScannerFinalPass": true,
+    "sourceSyncPass": true,
+    "activeStaleParameterFileCount": 0,
+    "activeFileCount": 581,
+    "activeWordCount": 534156,
+    "wordReductionPercent": 48.72497832967122,
+    "architectureFileCount": 192,
+    "architectureWordCount": 169584,
+    "strictFileWordThreshold": 2500,
+    "strictFileWordCount": 0,
+    "strictStructuredLineCount": 0,
+    "strictUnstructuredParagraphCount": 0,
+    "tutorialMarkerHitCount": 0,
+    "verifyDocStructurePass": true,
+    "activeDocCountStructure": 581,
+    "rootTextDocCount": 3,
+    "brokenLinkFileCount": 0,
+    "duplicateHeaderFileCount": 0,
+    "fenceIssueFileCount": 0,
+    "encodingWithoutUtf8SigCount": 0,
+    "staleParameterFileCountStructure": 0
+  }
+}

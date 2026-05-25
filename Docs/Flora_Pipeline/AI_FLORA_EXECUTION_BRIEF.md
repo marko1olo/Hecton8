@@ -1,4 +1,4 @@
-# AI Flora Execution Brief
+﻿# AI Flora Execution Brief
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION

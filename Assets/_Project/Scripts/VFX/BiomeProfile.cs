@@ -65,7 +65,7 @@ namespace Hecton8.VFX
             // Log warnings for invalid configurations
             if (AOIntensity > 3f)
             {
-                Debug.LogWarning("[BiomeProfile] High AOIntensity may impact performance.");
+                Hecton8.Core.H8Debug.LogWarning("[BiomeProfile] High AOIntensity may impact performance.");
             }
         }
 #endif

@@ -88,8 +88,9 @@ namespace Hecton8.Audio
     }
 
     [DisallowMultipleComponent]
-    public sealed class PlayerFootstepAudio : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerFootstepAudio : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private const int MaxPendingFootstepCues = 8;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -175,7 +176,7 @@ namespace Hecton8.Audio
 
         private Rigidbody _playerRb;
         private float _lastStepTime;
-        private RaycastHit _surfaceHit;
+        private HectonPlayerMovement.PlayerMovementSurfaceHit _surfaceHit;
         private bool _surfaceHitValid;
         private float _footstepClockSeconds;
         private int _lastClipIndex = -1;
@@ -184,7 +185,9 @@ namespace Hecton8.Audio
         private IAudioService _audioService;
         private MapMagicBridge _mapMagic;
         private bool _registeredUpdate;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
+        private int _pendingFootstepCueCount;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -194,7 +197,7 @@ namespace Hecton8.Audio
         {
             if (Application.isPlaying && playerMovement != null && !_registeredUpdate)
             {
-                _playerRb = playerMovement.GetComponent<Rigidbody>();
+                playerMovement.TryGetComponent(out _playerRb);
             }
 
             uint entitySeed = unchecked((uint)EntityId.ToULong(GetEntityId()));
@@ -210,6 +213,8 @@ namespace Hecton8.Audio
 
             if (!_registeredUpdate)
                 _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void OnDisable()
@@ -220,9 +225,16 @@ namespace Hecton8.Audio
                 _registeredUpdate = false;
             }
 
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
+
             TryUnregisterHotSwapListener();
             _audioService = null;
             _mapMagic = null;
+            _pendingFootstepCueCount = 0;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -242,8 +254,13 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled && !_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                if (!_registeredUpdate)
+                    _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+                if (!_registeredLateFrame)
+                    _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -262,8 +279,20 @@ namespace Hecton8.Audio
                     continue;
 
                 _lastConsumedFootstepSignalFrame = signal.Frame;
-                HandleFootstep();
+                if (_pendingFootstepCueCount < MaxPendingFootstepCues)
+                    _pendingFootstepCueCount++;
             }
+        }
+
+        public void LateFrameTick()
+        {
+            int cueCount = _pendingFootstepCueCount;
+            if (cueCount <= 0)
+                return;
+
+            _pendingFootstepCueCount = 0;
+            for (int i = 0; i < cueCount; i++)
+                HandleFootstep();
         }
 
         private void HandleFootstep()
@@ -428,7 +457,7 @@ namespace Hecton8.Audio
         //    • CompareTag: uses internal string interning (no alloc)
         //    • TryGetBiomeIndex: returns int (struct), zero GC internally
         //    • Linear scan of surfaceSounds: array index, no alloc
-        //    • RaycastHit: cached as _surfaceHit field
+        //    • PlayerMovementSurfaceHit: cached as _surfaceHit field
         //    • No LINQ, no lambda, no temporary arrays
         // ══════════════════════════════════════════════════════════
 
@@ -546,7 +575,7 @@ namespace Hecton8.Audio
         //  DIAGNOSTICS
         // ══════════════════════════════════════════════════════════
 
-        private bool TryGetSurfaceHit(out RaycastHit hit)
+        private bool TryGetSurfaceHit(out HectonPlayerMovement.PlayerMovementSurfaceHit hit)
         {
             if (playerMovement != null &&
                 playerMovement.TryGetRecentFootstepSurfaceHit(surfaceRayDistance, surfaceLayers, out hit))
@@ -560,7 +589,7 @@ namespace Hecton8.Audio
 
         private void RefreshColdRegistryReferences()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _mapMagic = GlobalRegistry.MapMagic;
         }
 

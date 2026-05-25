@@ -1,0 +1,37 @@
+﻿{
+    "shinobu356JacobiPowerFuzzer":  {
+                                        "agent":  "SHINOBU_356",
+                                        "scanner":  "OOP_Fuzz_Scanner",
+                                        "evidence_class":  "STATIC_SOURCE_ROSLYN_AST_IMPLEMENTED_UNITY_IMPORT_BLOCKED",
+                                        "status":  "AST_SCANNER_IMPLEMENTED_UNITY_IMPORT_BLOCKED_CORE_MEMORY",
+                                        "scannedRoots":  [
+                                                             "Assets/_Project/Scripts/Power",
+                                                             "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer",
+                                                             "Assets/_Project/Scripts/QA/Headless/Editor/JacobiStressFuzzer",
+                                                             "Assets/_Project/Tests"
+                                                         ],
+                                        "residualRisk":  "Roslyn AST scanner is implemented in the QA editor assembly and Roslyn DLLs exist under Assets/Plugins/Roslyn, but Unity batchmode stopped in shared Core/Memory before the QA editor assembly imported; scanner execution remains blocked by H8Memory.cs DispatcherJobFence dependency errors.",
+                                        "scopeNote":  "Counts below are explicit allow-list owned files only; broad roots are scanned to discover external noise, and non-owned Power/Test tokens are tracked separately as ignoredNonOwned counts.",
+                                        "scannedFiles":  55,
+                                        "contextFilteredFiles":  3,
+                                        "managedGraphHits":  0,
+                                        "physicsApiHits":  0,
+                                        "gameObjectInstantiationHits":  0,
+                                        "ignoredNonOwnedManagedGraphHits":  1,
+                                        "ignoredNonOwnedPhysicsHits":  0,
+                                        "ignoredNonOwnedGameObjectInstantiationHits":  5,
+                                        "ownedParseFailureFiles":  "not_executed_unity_import_blocked",
+                                        "ignoredNonOwnedParseFailureFiles":  "not_executed_unity_import_blocked",
+                                        "ownedFiles":  [
+                                                           "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+                                                           "Assets/_Project/Scripts/QA/Headless/Editor/JacobiStressFuzzer/JacobiStressFuzzerWindow.cs",
+                                                           "Assets/_Project/Tests/Editor/PowerGridJacobiStressFuzzerEditTests.cs"
+                                                       ],
+                                        "manualSourceGuard":  "Focused source guard after hardening found zero owned forbidden raw tokens and zero reflection offset tokens; narrow git diff --check passed with CRLF warnings only.",
+                                        "findings":  [
+
+                                                     ],
+                                        "scannerParserRoute":  "Roslyn CSharpSyntaxTree AST primary pass; parse failures are fail-closed for owned files and lexical fallback is diagnostic only.",
+                                        "lastExecutedScannerRoute":  "previous static counts retained; Unity EditMode import attempt 20260523_094102 stopped in Core/Memory before scanner menu execution"
+                                    }
+}

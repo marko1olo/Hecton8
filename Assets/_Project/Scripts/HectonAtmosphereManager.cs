@@ -216,24 +216,31 @@ namespace Hecton8.Atmosphere
         /// <summary>
         /// Queues a new atmosphere state change.
         /// </summary>
-        public static void RaiseStateChanged(EnvironmentState state)
+        public static bool TryRaiseStateChanged(EnvironmentState state)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingStateCount + _nextFrameStateCount >= ExpectedPendingStateEventCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
                 _nextFrameStates.Enqueue(state);
                 _nextFrameStateCount++;
-                return;
+                return true;
             }
 
             _pendingStates.Enqueue(state);
             _pendingStateCount++;
+            return true;
+        }
+
+        [Obsolete("Atmosphere state producers must use TryRaiseStateChanged and handle bounded enqueue failure.", true)]
+        public static void RaiseStateChanged(EnvironmentState state)
+        {
+            TryRaiseStateChanged(state);
         }
 
         /// <summary>
@@ -252,7 +259,10 @@ namespace Hecton8.Atmosphere
                     return;
 
                 if (!_pendingStates.TryDequeue(out EnvironmentState state))
+                {
+                    _pendingStateCount = 0;
                     return;
+                }
 
                 if (_pendingStateCount > 0)
                     _pendingStateCount--;
@@ -550,7 +560,7 @@ namespace Hecton8.Atmosphere
     [AddComponentMenu("Hecton/Atmosphere Manager")]
     [DefaultExecutionOrder(-6000)]  // v4.3: MUST tick before UnderwaterVisuals(-4000)
     [ExecuteAlways]
-    public class HectonAtmosphereManager : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener, IAtmosphereRenderSettingsBridge
+    public class HectonAtmosphereManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener, IAtmosphereRenderSettingsBridge, IAtmosphereReadModel, IGlobalRegistryHotSwapListener
     {
         private const float VisualEnterUnderwaterDepth = 0.01f;
         private const float VisualExitUnderwaterDepth = 0.005f;
@@ -733,13 +743,17 @@ namespace Hecton8.Atmosphere
         private bool _autoUnderwaterState;
         private HectonPlayerMovement _playerMovement;
         private Transform _playerCameraTransform;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private HectonCelestialEngine _cachedCelestialEngine;
 
         private AtmosphereSnapshot _transitionOrigin;
         private AtmosphereSnapshot _currentValues;
         private float              _transitionProgress;
 
         private bool _registeredToTickManager;
+        private bool _registeredLateFrameTick;
         private bool _registeredAtmosphereRuntime;
+        private bool _registeredHotSwapListener;
         private float _lastAtmosphereSlowTickTime;
         private float _atmosphereTimelineAccumulator;
         private int _nextAtmosphereTimelineWarningFrame;
@@ -777,6 +791,15 @@ namespace Hecton8.Atmosphere
         private float _cachedShaderSargassumBiolumPhaseMultiplier = float.NaN;
         private float4 _cachedFinalGiantAbyssLight = new float4(-1f, -1f, -1f, -1f);
         private float4 _cachedAegirDirection = new float4(0f, 0f, 0f, -999f);
+        private bool _pendingSunPresentationDirty;
+        private Vector3 _pendingSunForwardVector = Vector3.forward;
+        private bool _pendingSunDirectionShaderDirty;
+        private float3 _pendingShaderSunDirection = new float3(0f, 0f, 1f);
+        private bool _pendingCycleShaderDirty;
+        private float _pendingShaderTimeOfDay01;
+        private float _pendingShaderNightFactor;
+        private float _pendingShaderSargassumBiolumPhaseMultiplier = HectonVegetationConstants.SargassumBiolumPhaseMultiplier;
+        private bool _pendingGiantAbyssLightDirty;
         private Texture2D _aegirRingShadowCookie;
         private int _aegirRingShadowCookieResolutionApplied;
 
@@ -840,6 +863,7 @@ namespace Hecton8.Atmosphere
         public float CurrentTemperature  => _currentValues.temperature;
         public float CurrentRadiation    => _currentValues.radiation;
         public float SeaLevelY           => ResolveSeaLevelY();
+        public bool IsUnderwaterState    => _currentState == EnvironmentState.UNDERWATER;
 
         #endregion
 
@@ -871,6 +895,7 @@ namespace Hecton8.Atmosphere
 
             InitializeCycleTimer();
             InitializeAtmosphereValues();
+            CacheRegistryRuntimeReferences();
             CachePlayerMovement();
             EnsureAegirRingShadowCookie();
             _lastAtmosphereSlowTickTime = 0f;
@@ -887,10 +912,13 @@ namespace Hecton8.Atmosphere
             if (Application.isPlaying)
             {
                 TryRegisterService();
+                TryRegisterHotSwapListener();
                 TryRegister();
+                TryRegisterLateFrame();
 
                 MapMagicBiomeEvents.Register(this);
                 BiomeMatrixEvents.Register(this);
+                CacheRegistryRuntimeReferences();
                 ResolveBiomeMatrixDirector();
                 ApplyCurrentMatrixAtmosphereOverride();
             }
@@ -911,6 +939,7 @@ namespace Hecton8.Atmosphere
             if (!_registeredToTickManager)
             {
                 TryRegister();
+                TryRegisterLateFrame();
                 if (!_registeredToTickManager)
                 {
                     Debug.LogError(
@@ -934,6 +963,8 @@ namespace Hecton8.Atmosphere
             if (Application.isPlaying)
             {
                 TryUnregister();
+                TryUnregisterLateFrame();
+                TryUnregisterHotSwapListener();
                 TryUnregisterService();
 
                 MapMagicBiomeEvents.Unregister(this);
@@ -959,6 +990,8 @@ namespace Hecton8.Atmosphere
                 MapMagicBiomeEvents.Unregister(this);
                 BiomeMatrixEvents.Unregister(this);
                 TryUnregister();
+                TryUnregisterLateFrame();
+                TryUnregisterHotSwapListener();
                 TryUnregisterService();
             }
 
@@ -970,7 +1003,7 @@ namespace Hecton8.Atmosphere
 
         private void EnsureAegirRingShadowCookie()
         {
-            if (GlobalRegistry.CelestialEngine != null)
+            if (_cachedCelestialEngine != null)
             {
                 ReleaseAegirRingShadowCookie();
                 return;
@@ -1050,6 +1083,34 @@ namespace Hecton8.Atmosphere
             _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
         private void TryUnregister()
         {
             if (!_registeredToTickManager)
@@ -1057,6 +1118,21 @@ namespace Hecton8.Atmosphere
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = false;
+        }
+
+        private void QueueLateFrameFlush()
+        {
+            if (Application.isPlaying)
+                TryRegisterLateFrame();
         }
 
         private void TryRegisterService()
@@ -1084,6 +1160,42 @@ namespace Hecton8.Atmosphere
                 GlobalRegistry.UnregisterAtmosphereRuntime(this);
 
             _registeredAtmosphereRuntime = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    CachePlayerMovement();
+                    break;
+                case GlobalRegistryServiceSlot.CelestialEngineRuntime:
+                    _cachedCelestialEngine = currentService as HectonCelestialEngine;
+                    EnsureAegirRingShadowCookie();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredToTickManager = false;
+                        _registeredLateFrameTick = false;
+                        break;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryUnregisterLateFrame();
+                        TryRegister();
+                        TryRegisterLateFrame();
+                    }
+                    break;
+            }
+
+            _ = previousService;
         }
 
 #if UNITY_EDITOR
@@ -1168,7 +1280,7 @@ namespace Hecton8.Atmosphere
             localForward = NormalizeVisualRsqrt(localForward, new float3(0f, 0f, 1f));
 
             float resolvedSunAngle = math.degrees(
-                math.atan2(-localForward.y, localForward.z));
+                MathLodApproximation.ApproxAtan2Fast(-localForward.y, localForward.z));
             if (resolvedSunAngle < 0f)
                 resolvedSunAngle += 360f;
 
@@ -1295,6 +1407,23 @@ namespace Hecton8.Atmosphere
             PublishAtmosphereTimelineBudgetWarningIfNeeded(timelineStartTicks);
         }
 
+        public void LateFrameTick()
+        {
+            FlushLateFramePresentation();
+        }
+
+        void ILateFrameTickable.LateFrameTick()
+        {
+            FlushLateFramePresentation();
+        }
+
+        private void FlushLateFramePresentation()
+        {
+            FlushSunPresentation();
+            FlushCycleShaderGlobals();
+            FlushGiantAbyssLight();
+        }
+
         private static float ResolveAtmosphereTimelineClockSeconds()
         {
             SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
@@ -1341,6 +1470,7 @@ namespace Hecton8.Atmosphere
             ApplyProceduralBiomeInfluenceAtmosphere();
 
             ComputeSunValues();
+            QueueGiantAbyssLight();
         }
 
         #endregion
@@ -1368,7 +1498,7 @@ namespace Hecton8.Atmosphere
 
             RotateSun();
             ComputeSunValues();
-            PublishGiantAbyssLight();
+            QueueGiantAbyssLight();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1398,7 +1528,10 @@ namespace Hecton8.Atmosphere
             float3 sunForwardMath = math.mul(rotationMatrix, new float4(0f, 0f, 1f, 0f)).xyz;
             Vector3 sunForwardVector = new Vector3(sunForwardMath.x, sunForwardMath.y, sunForwardMath.z);
             if (sunForwardVector.sqrMagnitude > 0.0001f)
-                _sunLight.transform.forward = sunForwardVector;
+            {
+                _pendingSunForwardVector = sunForwardVector;
+                _pendingSunPresentationDirty = true;
+            }
 
             float3 sunForward = new float3(sunForwardVector.x, sunForwardVector.y, sunForwardVector.z);
             _sunElevationDot = math.dot(-sunForward, new float3(0f, 1f, 0f));
@@ -1406,13 +1539,12 @@ namespace Hecton8.Atmosphere
             // v2.1 OPT: Dirty-write batching — only write to shader if changed
             if (!sunForward.Equals(_cachedShaderSunDirection))
             {
-                _cachedShaderSunDirection = sunForward;
-                Shader.SetGlobalVector(
-                    _shaderID_SunDirection,
-                    new Vector4(sunForward.x, sunForward.y, sunForward.z, 0f));
+                _pendingShaderSunDirection = sunForward;
+                _pendingSunDirectionShaderDirty = true;
             }
 
             PublishCycleShaderGlobals(normalized);
+            QueueLateFrameFlush();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1462,22 +1594,16 @@ namespace Hecton8.Atmosphere
             float nightFactor = 1f - smoothedDaytime;
             float biolumPhaseMultiplier = HectonVegetationConstants.SargassumBiolumPhaseMultiplier;
 
-            if (math.abs(timeOfDay01 - _cachedShaderTimeOfDay01) > 0.0001f)
+            if (math.abs(timeOfDay01 - _cachedShaderTimeOfDay01) > 0.0001f ||
+                math.abs(nightFactor - _cachedShaderNightFactor) > 0.0001f ||
+                math.abs(biolumPhaseMultiplier - _cachedShaderSargassumBiolumPhaseMultiplier) > 0.0001f ||
+                float.IsNaN(_cachedShaderSargassumBiolumPhaseMultiplier))
             {
-                _cachedShaderTimeOfDay01 = timeOfDay01;
-                Shader.SetGlobalFloat(_shaderID_HectonTimeOfDay01, timeOfDay01);
-            }
-
-            if (math.abs(nightFactor - _cachedShaderNightFactor) > 0.0001f)
-            {
-                _cachedShaderNightFactor = nightFactor;
-                Shader.SetGlobalFloat(_shaderID_HectonNightFactor, nightFactor);
-            }
-
-            if (math.abs(biolumPhaseMultiplier - _cachedShaderSargassumBiolumPhaseMultiplier) > 0.0001f || float.IsNaN(_cachedShaderSargassumBiolumPhaseMultiplier))
-            {
-                _cachedShaderSargassumBiolumPhaseMultiplier = biolumPhaseMultiplier;
-                Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, biolumPhaseMultiplier);
+                _pendingShaderTimeOfDay01 = timeOfDay01;
+                _pendingShaderNightFactor = nightFactor;
+                _pendingShaderSargassumBiolumPhaseMultiplier = biolumPhaseMultiplier;
+                _pendingCycleShaderDirty = true;
+                QueueLateFrameFlush();
             }
         }
 
@@ -1488,11 +1614,63 @@ namespace Hecton8.Atmosphere
             _cachedShaderSargassumBiolumPhaseMultiplier = float.NaN;
             _cachedFinalGiantAbyssLight = new float4(-1f, -1f, -1f, -1f);
             _cachedAegirDirection = new float4(0f, 0f, 0f, -999f);
+            _pendingSunPresentationDirty = false;
+            _pendingSunDirectionShaderDirty = false;
+            _pendingCycleShaderDirty = false;
+            _pendingGiantAbyssLightDirty = false;
             Shader.SetGlobalFloat(_shaderID_HectonTimeOfDay01, 0f);
             Shader.SetGlobalFloat(_shaderID_HectonNightFactor, 0f);
             Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, HectonVegetationConstants.SargassumBiolumPhaseMultiplier);
             Shader.SetGlobalVector(_shaderID_FinalGiantAbyssLight, Vector4.zero);
             Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(0f, 0f, 1f, 0f));
+        }
+
+        private void FlushSunPresentation()
+        {
+            if (_pendingSunPresentationDirty)
+            {
+                _pendingSunPresentationDirty = false;
+                if (_sunLight != null && _pendingSunForwardVector.sqrMagnitude > 0.0001f)
+                    _sunLight.transform.forward = _pendingSunForwardVector;
+            }
+
+            if (!_pendingSunDirectionShaderDirty)
+                return;
+
+            _pendingSunDirectionShaderDirty = false;
+            float3 sunForward = _pendingShaderSunDirection;
+            if (sunForward.Equals(_cachedShaderSunDirection))
+                return;
+
+            _cachedShaderSunDirection = sunForward;
+            Shader.SetGlobalVector(_shaderID_SunDirection, new Vector4(sunForward.x, sunForward.y, sunForward.z, 0f));
+        }
+
+        private void FlushCycleShaderGlobals()
+        {
+            if (!_pendingCycleShaderDirty)
+                return;
+
+            _pendingCycleShaderDirty = false;
+
+            if (math.abs(_pendingShaderTimeOfDay01 - _cachedShaderTimeOfDay01) > 0.0001f)
+            {
+                _cachedShaderTimeOfDay01 = _pendingShaderTimeOfDay01;
+                Shader.SetGlobalFloat(_shaderID_HectonTimeOfDay01, _pendingShaderTimeOfDay01);
+            }
+
+            if (math.abs(_pendingShaderNightFactor - _cachedShaderNightFactor) > 0.0001f)
+            {
+                _cachedShaderNightFactor = _pendingShaderNightFactor;
+                Shader.SetGlobalFloat(_shaderID_HectonNightFactor, _pendingShaderNightFactor);
+            }
+
+            if (math.abs(_pendingShaderSargassumBiolumPhaseMultiplier - _cachedShaderSargassumBiolumPhaseMultiplier) > 0.0001f ||
+                float.IsNaN(_cachedShaderSargassumBiolumPhaseMultiplier))
+            {
+                _cachedShaderSargassumBiolumPhaseMultiplier = _pendingShaderSargassumBiolumPhaseMultiplier;
+                Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, _pendingShaderSargassumBiolumPhaseMultiplier);
+            }
         }
 
         #endregion
@@ -1601,7 +1779,7 @@ namespace Hecton8.Atmosphere
             _currentState = newState;
 
             if (Application.isPlaying)
-                AtmosphereEvents.RaiseStateChanged(_currentState);
+                AtmosphereEvents.TryRaiseStateChanged(_currentState);
         }
 
         #endregion
@@ -1652,9 +1830,24 @@ namespace Hecton8.Atmosphere
             _computedSunIntensity = _currentValues.sunIntensity * _computedHorizonFade;
         }
 
+        private void QueueGiantAbyssLight()
+        {
+            _pendingGiantAbyssLightDirty = true;
+            QueueLateFrameFlush();
+        }
+
+        private void FlushGiantAbyssLight()
+        {
+            if (!_pendingGiantAbyssLightDirty)
+                return;
+
+            _pendingGiantAbyssLightDirty = false;
+            PublishGiantAbyssLight();
+        }
+
         private void PublishGiantAbyssLight()
         {
-            HectonCelestialEngine celestial = GlobalRegistry.CelestialEngine;
+            HectonCelestialEngine celestial = _cachedCelestialEngine;
             float3 aegirDirection = new float3(0f, 0f, 1f);
             float planetPhase = 0f;
             float eclipseBacklit = 0f;
@@ -1871,7 +2064,7 @@ namespace Hecton8.Atmosphere
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -2039,15 +2232,40 @@ namespace Hecton8.Atmosphere
             _playerMovement = null;
             _playerCameraTransform = null;
 
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null)
+            {
+                Transform contextTransform = playerContext.PlayerTransform;
+                if (_playerTransform == null && contextTransform != null)
+                    _playerTransform = contextTransform;
+
+                if (_playerTransform != null && ReferenceEquals(_playerTransform, contextTransform))
+                {
+                    _playerMovement = playerContext.PlayerMovement;
+                    Camera contextCamera = playerContext.PlayerCamera;
+                    if (contextCamera != null)
+                        _playerCameraTransform = contextCamera.transform;
+                }
+            }
+
             if (_playerTransform != null)
             {
-                _playerTransform.TryGetComponent(out _playerMovement);
-                Camera playerOwnedCamera = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null
-                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera
-                    : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
-                if (playerOwnedCamera != null)
-                    _playerCameraTransform = playerOwnedCamera.transform;
+                if (_playerMovement == null)
+                    _playerTransform.TryGetComponent(out _playerMovement);
+
+                if (_playerCameraTransform == null)
+                {
+                    Camera playerOwnedCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
+                    if (playerOwnedCamera != null)
+                        _playerCameraTransform = playerOwnedCamera.transform;
+                }
             }
+        }
+
+        private void CacheRegistryRuntimeReferences()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _cachedCelestialEngine = GlobalRegistry.CelestialEngine;
         }
 
         private void ResolveBiomeMatrixDirector()

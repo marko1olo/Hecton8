@@ -157,7 +157,9 @@ namespace Hecton8.Audio
     public sealed unsafe class AdaptiveStemAudioMixer : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
+#if UNITY_EDITOR
         private const int CsvScratchBytes = 4096;
+#endif
         private const float DefaultAttackSeconds = 0.1f;
         private const float DefaultReleaseSeconds = 15f;
         private const float DefaultCrossfadeSeconds = 2f;
@@ -185,12 +187,15 @@ namespace Hecton8.Audio
         private const uint FlagClipNotStreaming = 1u << 3;
         private const uint FlagNonFinite = 1u << 4;
         private const ulong DefaultBossNarrativeMask = 1ul << 7;
-        private const bool ProceduralSynthOwnsStemTransport = true;
+        private static readonly bool ProceduralSynthOwnsStemTransport = true;
         private const SystemID VaultOwner = SystemID.AudioStemMixer;
+#if UNITY_EDITOR
         private const int CsvPollSlowTickInterval = 2;
         private const string CsvDefaultRelativePath = "Docs/Audio/audio_stem_rules.csv";
+#endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_STEM_MIXER.bin";
 
+#if UNITY_EDITOR
         private const uint CsvAttackSecondsHash = 0x02EDD0B3u;
         private const uint CsvReleaseSecondsHash = 0x55F57658u;
         private const uint CsvCrossfadeSecondsHash = 0x8CA0446Bu;
@@ -204,6 +209,7 @@ namespace Hecton8.Audio
         private const uint CsvCombatExitHash = 0xBA0F98D2u;
         private const uint CsvNarrativeOverrideWeightHash = 0x1634D39Fu;
         private const uint CsvBiomeFadeSecondsHash = 0x578347A4u;
+#endif
 
         private static AdaptiveStemAudioMixer _activeInstance;
 
@@ -223,8 +229,10 @@ namespace Hecton8.Audio
         [SerializeField] private AudioLowPassFilter _depthLowPassFilter;
         [SerializeField] private AudioLowPassFilter _bossLowPassFilter;
 
+#if UNITY_EDITOR
         [Header("Cold Tuning")]
         [SerializeField] private string _csvRelativePath = CsvDefaultRelativePath;
+#endif
         [SerializeField, Range(0f, 1f)] private float _mockDamage01;
         [SerializeField, Range(0f, 1f)] private float _mockOxygenDanger01;
         [SerializeField, Range(0f, 1f)] private float _mockQualityBias01 = 1f;
@@ -244,7 +252,9 @@ namespace Hecton8.Audio
             public NativeArray<MockTensionSignal> MockTension;
             public NativeArray<AudioStemTelemetryEntry> TelemetryRing;
             public NativeArray<int> TelemetryCursor;
+#if UNITY_EDITOR
             public NativeArray<byte> CsvScratch;
+#endif
         }
 
         private IDataVault _dataVault;
@@ -257,11 +267,15 @@ namespace Hecton8.Audio
         private VaultGenerationHandle<MockTensionSignal> _mockTensionHandle;
         private VaultGenerationHandle<AudioStemTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
+#if UNITY_EDITOR
         private string _resolvedCsvPath;
         private string _lastResolvedCsvRelativePath;
         private DateTime _lastCsvWriteUtc;
+#endif
         private float _beatTimerSeconds;
         private float _kernelAccumulatorSeconds;
         private float _biomeBlend01;
@@ -281,10 +295,15 @@ namespace Hecton8.Audio
         private int _nativeAllocated;
         private int _telemetryDumped;
         private int _audioJobsPending;
+#if UNITY_EDITOR
         private int _csvPollCountdown;
+#endif
         private uint _simulationFrameCounter;
         private uint _streamingFaultFlags;
         private JobHandle _audioJobHandle;
+        private StemMixFrameDTO _pendingUnityMixFrame;
+        private AudioStemRuleDTO _pendingUnityMixRule;
+        private int _pendingUnityMixFrameDirty;
 
         public static bool TryGetActive(out AdaptiveStemAudioMixer mixer)
         {
@@ -296,7 +315,9 @@ namespace Hecton8.Audio
         {
             CacheDataVaultCold();
             EnsureVaultStorage();
+#if UNITY_EDITOR
             RefreshCsvPathCold();
+#endif
             ConfigureSourcesCold();
             if (!ScanLegacyBinaryProfilesCold())
                 GenerateEmergencyMockAudioProfiles();
@@ -306,7 +327,9 @@ namespace Hecton8.Audio
         {
             CacheDataVaultCold();
             EnsureVaultStorage();
+#if UNITY_EDITOR
             RefreshCsvPathCold();
+#endif
             ConfigureSourcesCold();
             _activeInstance = this;
             if (GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment))
@@ -365,6 +388,7 @@ namespace Hecton8.Audio
                 return;
 
             TryFlushCompletedAudioJobs();
+            FlushPendingUnityMixFrame();
         }
 
         public void SlowTick()
@@ -374,7 +398,9 @@ namespace Hecton8.Audio
 
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
+#if UNITY_EDITOR
             PollCsvRulesCold();
+#endif
             ValidateStreamingClipsCold();
         }
 
@@ -548,56 +574,58 @@ namespace Hecton8.Audio
                 return;
 
             _dataVault = vault;
-            _stemStateHandle = vault.GetGenerationHandle<AudioStemStateDTO>(
+            _stemStateHandle = vault.EnsureGenerationHandle<AudioStemStateDTO>(
                 BufferID.AudioStemState,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _stemCommandsHandle = vault.GetGenerationHandle<StemCommandDTO>(
+            _stemCommandsHandle = vault.EnsureGenerationHandle<StemCommandDTO>(
                 BufferID.AudioStemCommands,
                 2,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _mixFrameHandle = vault.GetGenerationHandle<StemMixFrameDTO>(
+            _mixFrameHandle = vault.EnsureGenerationHandle<StemMixFrameDTO>(
                 BufferID.AudioStemMixFrame,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _rulesHandle = vault.GetGenerationHandle<AudioStemRuleDTO>(
+            _rulesHandle = vault.EnsureGenerationHandle<AudioStemRuleDTO>(
                 BufferID.AudioStemRules,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _mockPredatorHandle = vault.GetGenerationHandle<MockPredatorProximitySignal>(
+            _mockPredatorHandle = vault.EnsureGenerationHandle<MockPredatorProximitySignal>(
                 BufferID.AudioStemMockPredator,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _mockDepthHandle = vault.GetGenerationHandle<MockDepthSignal>(
+            _mockDepthHandle = vault.EnsureGenerationHandle<MockDepthSignal>(
                 BufferID.AudioStemMockDepth,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _mockTensionHandle = vault.GetGenerationHandle<MockTensionSignal>(
+            _mockTensionHandle = vault.EnsureGenerationHandle<MockTensionSignal>(
                 BufferID.AudioStemMockTension,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetGenerationHandle<AudioStemTelemetryEntry>(
+            _telemetryRingHandle = vault.EnsureGenerationHandle<AudioStemTelemetryEntry>(
                 BufferID.AudioStemTelemetry,
                 TelemetryCapacity,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = vault.GetGenerationHandle<int>(
+            _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.AudioStemTelemetryCursor,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(
+#if UNITY_EDITOR
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.AudioStemCsvScratch,
                 CsvScratchBytes,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
+#endif
 
             if (!TryResolveStemViews(out AdaptiveStemVaultViews views))
             {
@@ -614,7 +642,9 @@ namespace Hecton8.Audio
             MemClearArray(views.MockTension);
             MemClearArray(views.TelemetryRing);
             MemClearArray(views.TelemetryCursor);
+#if UNITY_EDITOR
             MemClearArray(views.CsvScratch);
+#endif
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
             Volatile.Write(ref _nativeAllocated, 1);
@@ -632,10 +662,14 @@ namespace Hecton8.Audio
             ReleaseVaultBuffer(vault, ref _mockTensionHandle);
             ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
             ReleaseVaultBuffer(vault, ref _telemetryCursorHandle);
+#if UNITY_EDITOR
             ReleaseVaultBuffer(vault, ref _csvScratchHandle);
+#endif
             _scalabilityStateHandle = default;
+#if UNITY_EDITOR
             _resolvedCsvPath = null;
             _lastResolvedCsvRelativePath = null;
+#endif
             _dataVault = null;
             Volatile.Write(ref _nativeAllocated, 0);
         }
@@ -665,7 +699,9 @@ namespace Hecton8.Audio
                 !vault.TryResolveHandle(in _mockTensionHandle, out views.MockTension) ||
                 !vault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
                 !vault.TryResolveHandle(in _telemetryCursorHandle, out views.TelemetryCursor) ||
+#if UNITY_EDITOR
                 !vault.TryResolveHandle(in _csvScratchHandle, out views.CsvScratch) ||
+#endif
                 !views.StemState.IsCreated ||
                 !views.StemCommands.IsCreated ||
                 !views.MixFrame.IsCreated ||
@@ -675,7 +711,9 @@ namespace Hecton8.Audio
                 !views.MockTension.IsCreated ||
                 !views.TelemetryRing.IsCreated ||
                 !views.TelemetryCursor.IsCreated ||
+#if UNITY_EDITOR
                 !views.CsvScratch.IsCreated ||
+#endif
                 views.StemState.Length <= 0 ||
                 views.StemCommands.Length < 2 ||
                 views.MixFrame.Length <= 0 ||
@@ -684,8 +722,11 @@ namespace Hecton8.Audio
                 views.MockDepth.Length <= 0 ||
                 views.MockTension.Length <= 0 ||
                 views.TelemetryRing.Length <= 0 ||
-                views.TelemetryCursor.Length <= 0 ||
-                views.CsvScratch.Length <= 0)
+                views.TelemetryCursor.Length <= 0
+#if UNITY_EDITOR
+                || views.CsvScratch.Length <= 0
+#endif
+                )
             {
                 views = default;
                 return false;
@@ -793,9 +834,9 @@ namespace Hecton8.Audio
                        File.Exists(streamingStem) ||
                        File.Exists(unityStreamingStem);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_46] Legacy audio binary scan failed; emergency mock profiles are active. " + ex.Message);
+                Debug.LogWarning("[SHINOBU_46] Legacy audio binary scan failed; emergency mock profiles are active.");
                 return false;
             }
         }
@@ -1021,7 +1062,7 @@ namespace Hecton8.Audio
             if (!TryResolveStemViews(out AdaptiveStemVaultViews views))
                 return true;
 
-            ApplyMixFrameToUnityAudio(ref views);
+            QueueMixFrameForVisualSync(ref views);
             float elapsedMicroseconds = ResolveElapsedMicroseconds(startTicks);
             WriteTelemetry(ref views, elapsedMicroseconds);
             if (elapsedMicroseconds > MixerDumpThresholdMicroseconds || HasNonFiniteMixFrame(ref views))
@@ -1044,12 +1085,29 @@ namespace Hecton8.Audio
             }
         }
 
-        private void ApplyMixFrameToUnityAudio(ref AdaptiveStemVaultViews views)
+        private void QueueMixFrameForVisualSync(ref AdaptiveStemVaultViews views)
         {
-            StemMixFrameDTO frame = views.MixFrame[0];
+            if (!views.MixFrame.IsCreated || views.MixFrame.Length <= 0)
+                return;
+
+            _pendingUnityMixFrame = views.MixFrame[0];
+            _pendingUnityMixRule = views.Rules.IsCreated && views.Rules.Length > 0 ? views.Rules[0] : default;
+            Volatile.Write(ref _pendingUnityMixFrameDirty, 1);
+        }
+
+        private void FlushPendingUnityMixFrame()
+        {
+            if (Volatile.Read(ref _pendingUnityMixFrameDirty) == 0)
+                return;
+
+            Volatile.Write(ref _pendingUnityMixFrameDirty, 0);
+            ApplyMixFrameToUnityAudio(in _pendingUnityMixFrame, in _pendingUnityMixRule);
+        }
+
+        private void ApplyMixFrameToUnityAudio(in StemMixFrameDTO frame, in AudioStemRuleDTO rule)
+        {
             if (ProceduralSynthOwnsStemTransport)
             {
-                AudioStemRuleDTO rule = views.Rules.IsCreated ? views.Rules[0] : default;
                 float depthMeters = math.max(0f, math.isfinite(rule.MockDepthMeters) ? rule.MockDepthMeters : 0f);
                 float quality = math.saturate(math.isfinite(frame.QualityWeight) ? frame.QualityWeight : 1f);
                 float tension = math.saturate(math.isfinite(frame.TensionIndex) ? frame.TensionIndex : 0f);
@@ -1213,12 +1271,13 @@ namespace Hecton8.Audio
                     stream.Write(new ReadOnlySpan<byte>(source, byteCount));
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_46] Failed to dump adaptive stem telemetry. " + ex.Message);
+                Debug.LogWarning("[SHINOBU_46] Failed to dump adaptive stem telemetry.");
             }
         }
 
+#if UNITY_EDITOR
         private void PollCsvRulesCold()
         {
             if (!TryResolveStemViews(out AdaptiveStemVaultViews views) ||
@@ -1256,9 +1315,9 @@ namespace Hecton8.Audio
 
                 ParseCsvRules(bytesRead, ref views);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed. " + ex.Message);
+                Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed.");
             }
         }
 
@@ -1458,6 +1517,7 @@ namespace Hecton8.Audio
         {
             return IsLineBreak(value) || IsHorizontalSpace(value);
         }
+#endif
 
         private static AudioStemRuleDTO SanitizeRule(AudioStemRuleDTO rule)
         {
@@ -1586,7 +1646,7 @@ namespace Hecton8.Audio
                 float proximityMeters = math.lerp(100f, 0f, triangle);
                 float proximity01 = 1f - math.saturate(proximityMeters * 0.01f);
                 float depthPhase = math.frac(phaseSeconds / math.max(4f, cycle * 2.7f));
-                float depth01 = 0.5f + 0.5f * math.sin(depthPhase * math.PI * 2f);
+                float depth01 = 0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara(depthPhase * math.PI * 2f);
                 float depthMeters = depth01 * math.max(0f, FiniteOrFallback(MockDepthAmplitudeMeters, DefaultDepthMaxMeters));
 
                 predator.ProximityMeters = proximityMeters;

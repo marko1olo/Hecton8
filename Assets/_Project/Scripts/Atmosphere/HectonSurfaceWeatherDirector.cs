@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Unity.Burst;
 using Unity.Collections;
@@ -26,7 +26,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Surface Weather Director")]
     [DefaultExecutionOrder(-4500)]
-    public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, ISurfaceWeatherReadModel, IGlobalRegistryHotSwapListener
     {
         private const float ExponentialBlendCompletion = 0.99f;
         private const float ExponentialBlendRateScale = 4.6051702f;
@@ -282,11 +282,15 @@ namespace Hecton8.Atmosphere
         private float _pendingThunderVolume;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredHotSwap;
         private bool _serviceRegistered;
         private bool _runtimeStateInitialized;
         private bool _bindingsApplied;
+        private bool _weatherShaderDirty;
+        private bool _weatherShaderClearPending;
         private HectonPlayerMovement _subscribedPlayerMovement;
         private Transform _selfTransform;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private Transform _playerTransform;
         private BuoyancyObject _playerBuoyancy;
 
@@ -307,12 +311,29 @@ namespace Hecton8.Atmosphere
         private bool _cachedOceanDefaults;
         private Vector3 _pendingThunderPosition;
         private float _pendingThunderPitch = 1f;
+        private bool _pendingThunderPlayback;
+        private bool _pendingStormEquipmentPulse;
+        private float _pendingStormEquipmentIntensity;
+        private float _pendingStormEquipmentGlitchDuration;
+        private float _pendingStormEquipmentVisorHoldDuration;
+        private float _pendingStormEquipmentVisorRecoverySpeed;
+        private float _pendingStormEquipmentFlashlightHoldDuration;
+        private float _pendingStormEquipmentFlashlightRecoverySpeed;
         private float _gustTimeOffset;
         private float _currentLocalRainExposure = 1f;
         private float _targetLocalRainExposure = 1f;
+        private float _pendingWeatherBindingDeltaTime;
+        private float _pendingSurfaceSplashSurfaceY;
+        private float _pendingSurfaceSplashIntensity;
         private bool _isLocallySheltered;
+        private bool _surfaceSplashVisualDirty;
         private float _stormEquipmentPulseTimer;
+        private Vector3 _pendingSurfaceSplashPosition;
+        private Vector2 _pendingSurfaceSplashWindDirection;
         private SurfaceWeatherBindingSnapshot _computedBindings;
+        private SurfaceWeatherBindingSnapshot _pendingShaderBindings;
+        private float _pendingShaderSurfaceY;
+        private bool _pendingShaderSurfaceVfxActive;
         private VaultGenerationHandle<SurfaceWeatherJobOutput> _weatherJobOutputHandle;
         private IDataVault _dataVault;
         private JobHandle _weatherJobHandle;
@@ -329,6 +350,11 @@ namespace Hecton8.Atmosphere
         /// Weather family currently targeted by the director.
         /// </summary>
         public SurfaceWeatherKind CurrentWeatherKind => _targetProfile.kind;
+
+        /// <summary>
+        /// Weather family encoded as a contract byte to avoid leaking the atmosphere enum to consumers.
+        /// </summary>
+        public byte CurrentWeatherKindCode => (byte)_targetProfile.kind;
 
         /// <summary>
         /// Current precipitation intensity after runtime blending.
@@ -364,6 +390,7 @@ namespace Hecton8.Atmosphere
             TryAssignEditorAuthoringDefaults();
 #endif
             CacheDataVaultCold();
+            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
             TryResolveDependencies(true);
             InitializeRuntimeStateIfNeeded();
         }
@@ -371,7 +398,9 @@ namespace Hecton8.Atmosphere
         private void OnEnable()
         {
             CacheDataVaultCold();
+            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
             TryRegisterService();
+            TryRegisterHotSwapListener();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterTickManagers();
             TryResolveDependencies(true);
@@ -385,10 +414,13 @@ namespace Hecton8.Atmosphere
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterTickManagers();
+            TryUnregisterHotSwapListener();
 
             RefreshPlayerMovementSubscription(null);
+            _playerRuntimeContext = null;
             _stormEquipmentPulseTimer = 0f;
             ClearWeatherBindings();
+            FlushWeatherShaderGlobals();
             TryUnregisterService();
         }
 
@@ -396,6 +428,7 @@ namespace Hecton8.Atmosphere
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterTickManagers();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             RefreshPlayerMovementSubscription(null);
             _stormEquipmentPulseTimer = 0f;
@@ -415,7 +448,7 @@ namespace Hecton8.Atmosphere
             ConsumePlayerWaterSplashSignals();
             UpdateExecutionMode(deltaTime);
             UpdateWeatherSelection(deltaTime);
-            ApplyWeatherBindings(deltaTime);
+            _pendingWeatherBindingDeltaTime = math.max(0f, deltaTime);
             UpdateDiagnostics();
             ScheduleWeatherMathJob(deltaTime);
             PublishSurfaceWeatherSolveWarningIfNeeded(solveStartTicks);
@@ -434,6 +467,11 @@ namespace Hecton8.Atmosphere
         public void LateFrameTick()
         {
             TryCompleteWeatherMathJob();
+            FlushQueuedStormEquipmentPulse();
+            FlushQueuedThunderPlayback();
+            ApplyWeatherBindings(_pendingWeatherBindingDeltaTime);
+            FlushSurfaceSplashVisualSync();
+            FlushWeatherShaderGlobals();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -458,6 +496,23 @@ namespace Hecton8.Atmosphere
 
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void TryUnregisterTickManagers()
@@ -494,6 +549,20 @@ namespace Hecton8.Atmosphere
             _serviceRegistered = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+            ResolvePlayerMovementReference();
+            RefreshPlayerMovementSubscription();
+            _ = previousService;
+        }
+
         private void TryResolveDependencies(bool force)
         {
             if (!Application.isPlaying)
@@ -517,7 +586,7 @@ namespace Hecton8.Atmosphere
 
         private void ResolvePlayerMovementReference()
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 playerMovement = playerContext.PlayerMovement;
@@ -578,7 +647,7 @@ namespace Hecton8.Atmosphere
 
             if (_playerTransform != null)
             {
-                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (stormVisorController == null || !stormVisorController.transform.IsChildOf(_playerTransform))
                     stormVisorController = playerContext != null ? playerContext.VisorController : null;
 
@@ -602,6 +671,11 @@ namespace Hecton8.Atmosphere
         private void RefreshPlayerMovementSubscription()
         {
             RefreshPlayerMovementSubscription(playerMovement);
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
         }
 
         private void RefreshPlayerMovementSubscription(HectonPlayerMovement target)
@@ -665,7 +739,7 @@ namespace Hecton8.Atmosphere
             if (vault == null || vault.IsAllocationLocked)
                 return false;
 
-            _weatherJobOutputHandle = vault.GetGenerationHandle<SurfaceWeatherJobOutput>(
+            _weatherJobOutputHandle = vault.EnsureGenerationHandle<SurfaceWeatherJobOutput>(
                 BufferID.SurfaceWeatherJobOutput,
                 1,
                 SystemID.HabitatAtmosphere,
@@ -848,7 +922,7 @@ namespace Hecton8.Atmosphere
 
             if (output.shouldTriggerLightning != 0)
             {
-                WeatherEvents.RaiseLightning(math.saturate(_lightningFlashStrength));
+                WeatherEvents.TryRaiseLightning(math.saturate(_lightningFlashStrength));
                 if (weatherVfxRig != null &&
                     _executionMode == SurfaceExecutionMode.SurfaceActive)
                 {
@@ -864,7 +938,7 @@ namespace Hecton8.Atmosphere
             }
 
             if (output.shouldPlayThunder != 0)
-                PlayThunder();
+                QueueThunderPlayback();
         }
 
         private static SurfaceWeatherMathState ToMathState(in WeatherFrameState state)
@@ -1033,11 +1107,33 @@ namespace Hecton8.Atmosphere
 
             Vector3 followPosition = ResolveFollowPosition();
             float surfaceY = ResolveSurfaceY(followPosition);
+            _pendingSurfaceSplashPosition = followPosition;
+            _pendingSurfaceSplashSurfaceY = surfaceY;
+            _pendingSurfaceSplashWindDirection = _currentState.windDirection;
+            _pendingSurfaceSplashIntensity = math.max(_pendingSurfaceSplashIntensity, clampedIntensity);
+            _surfaceSplashVisualDirty = true;
+        }
+
+        private void FlushSurfaceSplashVisualSync()
+        {
+            if (!_surfaceSplashVisualDirty)
+                return;
+
+            _surfaceSplashVisualDirty = false;
+            float intensity = _pendingSurfaceSplashIntensity;
+            _pendingSurfaceSplashIntensity = 0f;
+            if (weatherVfxRig == null ||
+                _executionMode != SurfaceExecutionMode.SurfaceActive ||
+                intensity <= 0.01f)
+            {
+                return;
+            }
+
             weatherVfxRig.TriggerSurfaceSplashBurst(
-                followPosition,
-                surfaceY,
-                _currentState.windDirection,
-                clampedIntensity);
+                _pendingSurfaceSplashPosition,
+                _pendingSurfaceSplashSurfaceY,
+                _pendingSurfaceSplashWindDirection,
+                intensity);
         }
 
         private Vector3 ResolveFollowPosition()
@@ -1047,9 +1143,9 @@ namespace Hecton8.Atmosphere
 
         private float ResolveSurfaceY(Vector3 followPosition)
         {
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
-            if (fluidEngine != null)
-                return fluidEngine.CurrentWaterLevelY;
+            IFluidSurfaceCurrentReadModel fluidSurface = GlobalRegistry.FluidSurfaceCurrent;
+            if (fluidSurface != null)
+                return fluidSurface.CurrentWaterLevelY;
 
             return playerMovement != null ? playerMovement.CurrentWaterSurfaceY : followPosition.y;
         }
@@ -1089,7 +1185,7 @@ namespace Hecton8.Atmosphere
                 _pendingThunderDelay -= deltaTime;
                 if (_pendingThunderDelay <= 0f)
                 {
-                    PlayThunder();
+                    QueueThunderPlayback();
                     _pendingThunderDelay = -1f;
                 }
             }
@@ -1125,7 +1221,7 @@ namespace Hecton8.Atmosphere
             _lightningFlashRemaining = flashDuration;
             _lightningFlashStrength = flashBase * flashVariance;
             _lightningCooldown = ResolveNextLightningCooldown(electricalActivity);
-            WeatherEvents.RaiseLightning(math.saturate(_lightningFlashStrength));
+            WeatherEvents.TryRaiseLightning(math.saturate(_lightningFlashStrength));
             TriggerStormEquipmentPulse(
                 math.lerp(0.58f, 1f, electricalActivity),
                 lightningHudGlitchDuration,
@@ -1206,21 +1302,46 @@ namespace Hecton8.Atmosphere
             if (clampedIntensity <= 0f)
                 return;
 
+            if (_pendingStormEquipmentPulse &&
+                clampedIntensity < _pendingStormEquipmentIntensity)
+            {
+                return;
+            }
+
+            _pendingStormEquipmentPulse = true;
+            _pendingStormEquipmentIntensity = clampedIntensity;
+            _pendingStormEquipmentGlitchDuration = glitchDuration;
+            _pendingStormEquipmentVisorHoldDuration = visorHoldDuration;
+            _pendingStormEquipmentVisorRecoverySpeed = visorRecoverySpeed;
+            _pendingStormEquipmentFlashlightHoldDuration = flashlightHoldDuration;
+            _pendingStormEquipmentFlashlightRecoverySpeed = flashlightRecoverySpeed;
+        }
+
+        private void FlushQueuedStormEquipmentPulse()
+        {
+            if (!_pendingStormEquipmentPulse)
+                return;
+
+            _pendingStormEquipmentPulse = false;
+            float clampedIntensity = math.saturate(_pendingStormEquipmentIntensity);
+            if (clampedIntensity <= 0f)
+                return;
+
             if (stormVisorController != null)
             {
-                stormVisorController.GlitchPulse(glitchDuration);
+                stormVisorController.GlitchPulse(_pendingStormEquipmentGlitchDuration);
                 stormVisorController.TriggerEnvironmentalDistortion(
                     clampedIntensity,
-                    visorHoldDuration,
-                    visorRecoverySpeed);
+                    _pendingStormEquipmentVisorHoldDuration,
+                    _pendingStormEquipmentVisorRecoverySpeed);
             }
 
             if (stormFlashlight != null)
             {
                 stormFlashlight.TriggerExternalInterference(
                     clampedIntensity,
-                    flashlightHoldDuration,
-                    flashlightRecoverySpeed);
+                    _pendingStormEquipmentFlashlightHoldDuration,
+                    _pendingStormEquipmentFlashlightRecoverySpeed);
             }
         }
 
@@ -1297,7 +1418,7 @@ namespace Hecton8.Atmosphere
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1310,7 +1431,7 @@ namespace Hecton8.Atmosphere
         private static bool TryResolveCurrentRuntimeOriginDouble3(out double3 absoluteAup)
         {
             absoluteAup = default;
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1551,7 +1672,7 @@ namespace Hecton8.Atmosphere
                     surfaceVfxActive);
             }
 
-            PublishWeatherShaderGlobals(surfaceY, bindings, surfaceVfxActive);
+            QueueWeatherShaderGlobals(surfaceY, bindings, surfaceVfxActive);
             _debugGustMultiplier = bindings.gustMultiplier;
             _debugSquallMultiplier = bindings.squallMultiplier;
             ApplyOceanState(bindings);
@@ -1560,7 +1681,7 @@ namespace Hecton8.Atmosphere
 
         private void ClearWeatherBindings()
         {
-            PublishClearedWeatherShaderGlobals();
+            QueueClearedWeatherShaderGlobals();
 
             if (!_bindingsApplied)
                 return;
@@ -1582,6 +1703,35 @@ namespace Hecton8.Atmosphere
             _pendingThunderPitch = 1f;
             RestoreOceanDefaults();
             _bindingsApplied = false;
+        }
+
+        private void QueueWeatherShaderGlobals(float surfaceY, in SurfaceWeatherBindingSnapshot bindings, bool surfaceVfxActive)
+        {
+            _pendingShaderSurfaceY = surfaceY;
+            _pendingShaderBindings = bindings;
+            _pendingShaderSurfaceVfxActive = surfaceVfxActive;
+            _weatherShaderClearPending = false;
+            _weatherShaderDirty = true;
+        }
+
+        private void QueueClearedWeatherShaderGlobals()
+        {
+            _weatherShaderClearPending = true;
+            _weatherShaderDirty = true;
+        }
+
+        private void FlushWeatherShaderGlobals()
+        {
+            if (!_weatherShaderDirty)
+                return;
+
+            if (_weatherShaderClearPending)
+                PublishClearedWeatherShaderGlobals();
+            else
+                PublishWeatherShaderGlobals(_pendingShaderSurfaceY, in _pendingShaderBindings, _pendingShaderSurfaceVfxActive);
+
+            _weatherShaderDirty = false;
+            _weatherShaderClearPending = false;
         }
 
         private void PublishWeatherShaderGlobals(float surfaceY, in SurfaceWeatherBindingSnapshot bindings, bool surfaceVfxActive)
@@ -1709,12 +1859,31 @@ namespace Hecton8.Atmosphere
 
         private void PlayThunder()
         {
+            QueueThunderPlayback();
+        }
+
+        private void QueueThunderPlayback()
+        {
+            _pendingThunderPlayback = true;
+        }
+
+        private void FlushQueuedThunderPlayback()
+        {
+            if (!_pendingThunderPlayback)
+                return;
+
+            _pendingThunderPlayback = false;
+            PlayThunderNow();
+        }
+
+        private void PlayThunderNow()
+        {
             DispatchThunderAcousticShock(_pendingThunderPosition, _pendingThunderVolume);
 
             if (thunderClips == null || thunderClips.Length == 0)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
             if (audioManager == null)
                 return;
 
@@ -1723,9 +1892,9 @@ namespace Hecton8.Atmosphere
             if (clip == null)
                 return;
 
-            if (audioManager is SpatialAudioManager spatialAudioManager)
+            if (audioManager is ISpatialAudioWeatherPlaybackSink weatherAudio)
             {
-                spatialAudioManager.PlayWeatherAtPoint(
+                weatherAudio.PlayWeatherAtPoint(
                     clip,
                     _pendingThunderPosition,
                     _pendingThunderVolume,
@@ -1752,7 +1921,7 @@ namespace Hecton8.Atmosphere
             float acousticEnergy = intensity01 * ThunderAcousticShockEnergyScale;
             float cameraShake01 = math.saturate(intensity01 * ThunderCameraShakeScale);
 
-            PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
+            PhysicsEventBus.TryNotifyAcousticPing(new AcousticPingEvent(
                 shockPosition,
                 radiusMeters,
                 intensity01,
@@ -1761,7 +1930,7 @@ namespace Hecton8.Atmosphere
                 0,
                 acousticEnergy));
 
-            CameraJuiceSignals.PublishImpact(cameraShake01, shockPosition, Vector3.down);
+            CameraJuiceSignals.TryPublishImpact(cameraShake01, shockPosition, Vector3.down);
         }
 
         private bool TrySelectInitialProfile(out RuntimeWeatherProfile profile)

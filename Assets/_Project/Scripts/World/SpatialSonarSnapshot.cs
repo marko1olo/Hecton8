@@ -3,10 +3,15 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.World
 {
+    internal static class SpatialSonarSnapshotLayout
+    {
+        public const int SpatialSonarSnapshotStrideBytes = 32;
+    }
+
     /// <summary>
     /// Immutable sonar contact summary used by visor and PDA spectrum surfaces.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = SpatialSonarSnapshotLayout.SpatialSonarSnapshotStrideBytes)]
     public readonly struct SpatialSonarSnapshot
     {
         private const uint HasNearestResourceMask = 1u << 0;

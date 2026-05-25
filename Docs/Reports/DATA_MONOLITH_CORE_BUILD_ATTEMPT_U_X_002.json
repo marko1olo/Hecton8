@@ -1,0 +1,31 @@
+{
+  "agent": "X_002",
+  "slice": "U",
+  "status": "CORE_BUILD_FAILED_STALE_AFTER_COMPILER_SERVER_SHUTDOWN_PENDING_RETRY",
+  "generatedUtc": "2026-05-24T09:15:00Z",
+  "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+  "preBuildAction": "dotnet build-server shutdown",
+  "buildGate": {
+    "opened": true,
+    "cpuAtLaunchPercent": 38,
+    "compilerProcessesAtLaunch": 0
+  },
+  "result": {
+    "exitCode": 1,
+    "warnings": 5,
+    "errors": 4,
+    "elapsedSeconds": 52.77
+  },
+  "errors": [
+    "HectonCaveVoxelLightingVolume.cs: HasRequiredResources missing",
+    "FaunaBrain.cs: PhysicsDeterminismSignals missing",
+    "FaunaBrain.cs: unassigned kccVelocity after missing facade"
+  ],
+  "currentSourceInspection": {
+    "hectonCaveVoxelLightingVolumeDefinesHasRequiredResources": true,
+    "physicsDeterminismSignalsFileIncludedInCoreCsproj": true,
+    "faunaBrainImportsHecton8Physics": true,
+    "assessment": "Even with compiler-server shutdown and shared compilation disabled, diagnostics still failed on current-source mismatches. This is treated as concurrent source churn/build snapshot instability until a later retry proves otherwise."
+  },
+  "claimBoundary": "No compile pass claimed. No source patch was applied for diagnostics whose target definitions already exist in the inspected current files."
+}

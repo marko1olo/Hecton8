@@ -212,10 +212,7 @@ namespace Hecton8.Editor.Validation
                 return;
             }
 
-            string sourceText = File.ReadAllText(sourceBatchPath);
-            bool containsPrompt =
-                sourceText.IndexOf(ExpectedAgent, StringComparison.Ordinal) >= 0 &&
-                sourceText.IndexOf(ExpectedRole, StringComparison.Ordinal) >= 0;
+            bool containsPrompt = FileContainsAll(sourceBatchPath, ExpectedAgent, ExpectedRole);
 
             if (sourceAuthority.activeBatchContainsPrompt != containsPrompt)
                 errors.Add("sourceAuthority.activeBatchContainsPrompt does not match current sourceBatch contents.");
@@ -241,6 +238,21 @@ namespace Hecton8.Editor.Validation
 
             if (IsBlank(runtimeAssetDecision.reason))
                 errors.Add("runtimeAssetDecision.reason is missing.");
+        }
+
+        private static bool FileContainsAll(string path, string firstNeedle, string secondNeedle)
+        {
+            bool hasFirst = false;
+            bool hasSecond = false;
+            foreach (string line in File.ReadLines(path))
+            {
+                hasFirst |= line.IndexOf(firstNeedle, StringComparison.Ordinal) >= 0;
+                hasSecond |= line.IndexOf(secondNeedle, StringComparison.Ordinal) >= 0;
+                if (hasFirst && hasSecond)
+                    return true;
+            }
+
+            return false;
         }
 
         private static void ValidateHashContract(HashContract hashContract, List<string> errors)

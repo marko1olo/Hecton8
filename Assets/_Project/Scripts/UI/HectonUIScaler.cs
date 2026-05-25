@@ -12,7 +12,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton UI Scaler")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class HectonUIScaler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener
+    public sealed class HectonUIScaler : MonoBehaviour, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string ContentRootName = "HectonUI_ScaledRoot";
 
@@ -48,6 +48,7 @@ namespace Hecton8.UI
         private RectTransform _contentRoot;
         private bool _registeredToTickManager;
         private bool _registeredToSlowTickManager;
+        private bool _hotSwapRegistered;
         private bool _pendingContentRootBootstrap = true;
         private int _lastScreenWidth = -1;
         private int _lastScreenHeight = -1;
@@ -83,6 +84,7 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
+            TryRegisterHotSwapListener();
             HectonFloatingOrigin.RegisterListener(this);
             RegisterToTickManager();
         }
@@ -90,20 +92,54 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _registeredToTickManager = false;
+                    _registeredToSlowTickManager = false;
+                    return;
+                }
+
+                UnregisterFromTickManager();
+                RegisterToTickManager();
+            }
+        }
+
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (_pendingContentRootBootstrap)
+            {
+                RectTransform contentRoot = EnsureContentRoot();
+                if (contentRoot == null)
+                {
+                    _pendingContentRootBootstrap = true;
+                    return;
+                }
+
+                DisableUnityLayoutGroupsIfConfigured();
+                ApplyManualLinearLayout();
+                ApplyScale(force: true);
+                _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
                 return;
+            }
 
             if (ResolveContentRootInternal(createIfMissing: false) == null)
                 return;
@@ -120,17 +156,7 @@ namespace Hecton8.UI
             if (!_pendingContentRootBootstrap && ResolveContentRootInternal(createIfMissing: false) != null)
                 return;
 
-            RectTransform contentRoot = EnsureContentRoot();
-            if (contentRoot == null)
-            {
-                _pendingContentRootBootstrap = true;
-                return;
-            }
-
-            DisableUnityLayoutGroupsIfConfigured();
-            ApplyManualLinearLayout();
-            ApplyScale(force: true);
-            _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
+            _pendingContentRootBootstrap = true;
         }
 
         /// <inheritdoc />
@@ -455,22 +481,20 @@ namespace Hecton8.UI
 
             if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+                _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
             }
 
             if (_registeredToSlowTickManager || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToSlowTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
             if (_registeredToTickManager)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredToTickManager = false;
             }
 
@@ -479,6 +503,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
             _registeredToSlowTickManager = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)

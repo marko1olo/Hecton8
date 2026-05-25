@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 using Hecton8.AtlasSignal;
 using Hecton8.Celestial;
@@ -199,7 +199,7 @@ namespace Hecton8.Quest
                     Time.timeAsDouble,
                     out QuestRevertRequest revertRequest))
             {
-                QuestEvents.RaiseRevertRequested(in revertRequest);
+                QuestEvents.TryRaiseRevertRequested(in revertRequest);
                 _onResultsAvailable?.Invoke();
             }
         }
@@ -348,7 +348,10 @@ namespace Hecton8.Quest
                         return false;
 
                     if (!_pendingSignals.TryDequeue(out QuestSignalPayload payload))
+                    {
+                        _pendingSignalCount = 0;
                         break;
+                    }
 
                     if (_pendingSignalCount > 0)
                         _pendingSignalCount--;
@@ -382,7 +385,7 @@ namespace Hecton8.Quest
         private void ReportPendingSignalOverflow(ushort eventType)
         {
             _droppedSignalCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastPendingSignalOverflowTelemetryFrame == frame)
                 return;
 
@@ -397,7 +400,7 @@ namespace Hecton8.Quest
         private static void ReportActiveEvaluatorRejected()
         {
             _activeEvaluatorRejectCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastActiveEvaluatorRejectedTelemetryFrame == frame)
                 return;
 

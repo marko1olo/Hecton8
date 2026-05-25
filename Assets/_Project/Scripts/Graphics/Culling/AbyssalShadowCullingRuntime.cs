@@ -325,6 +325,7 @@ namespace Hecton8.Graphics.Culling
             return string.IsNullOrEmpty(_profileCsvPath) ? DefaultCsvPath : _profileCsvPath;
         }
 
+#if UNITY_EDITOR
         public bool LoadProfileCsv()
         {
             IDataVault vault = ResolveVault();
@@ -367,6 +368,7 @@ namespace Hecton8.Graphics.Culling
             _lastTelemetryExtraFlags |= TelemetryFlagCsvLoaded;
             return true;
         }
+#endif
 
         public bool TryGetTunerSnapshot(out AbyssalShadowTunerSnapshot snapshot)
         {
@@ -468,10 +470,12 @@ namespace Hecton8.Graphics.Culling
             return s_active != null && s_active.RunMockCullingOnce();
         }
 
+#if UNITY_EDITOR
         public static bool LoadActiveProfileCsv()
         {
             return s_active != null && s_active.LoadProfileCsv();
         }
+#endif
 
         public static void SetActiveProfileCsvPath(string path)
         {
@@ -518,14 +522,17 @@ namespace Hecton8.Graphics.Culling
         private bool EnsureVaultBuffers(IDataVault vault)
         {
             int instanceCount = math.max(1, _instanceCapacity);
+            NativeArray<float4> planes = default;
+            NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray = default;
+            NativeArray<ShadowCullProfileRuleDTO> profileRules = default;
             bool buffersReady = OpenOrAcquireVaultBuffer(vault, ref _instanceHandle, AbyssalShadowBufferIds.Instances, instanceCount, NativeArrayOptions.UninitializedMemory, out _) &&
                                 OpenOrAcquireVaultBuffer(vault, ref _stateHandle, AbyssalShadowBufferIds.States, instanceCount, NativeArrayOptions.UninitializedMemory, out _) &&
                                 OpenOrAcquireVaultBuffer(vault, ref _illuminationHandle, AbyssalShadowBufferIds.IlluminationScalars, instanceCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                                OpenOrAcquireVaultBuffer(vault, ref _frustumHandle, AbyssalShadowBufferIds.FrustumPlanes, AbyssalShadowCullingConstants.FrustumPlaneCount, NativeArrayOptions.UninitializedMemory, out NativeArray<float4> planes) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _frustumHandle, AbyssalShadowBufferIds.FrustumPlanes, AbyssalShadowCullingConstants.FrustumPlaneCount, NativeArrayOptions.UninitializedMemory, out planes) &&
                                 OpenOrAcquireVaultBuffer(vault, ref _counterHandle, AbyssalShadowBufferIds.Counters, 1, NativeArrayOptions.UninitializedMemory, out _) &&
                                 OpenOrAcquireVaultBuffer(vault, ref _telemetryHandle, AbyssalShadowBufferIds.TelemetryRing, AbyssalShadowCullingConstants.TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
-                                OpenOrAcquireVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, NativeArrayOptions.UninitializedMemory, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray) &&
-                                OpenOrAcquireVaultBuffer(vault, ref _profileRuleHandle, AbyssalShadowBufferIds.ProfileRules, AbyssalShadowCullingConstants.ProfileRuleCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<ShadowCullProfileRuleDTO> profileRules) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, NativeArrayOptions.UninitializedMemory, out runtimeArray) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _profileRuleHandle, AbyssalShadowBufferIds.ProfileRules, AbyssalShadowCullingConstants.ProfileRuleCapacity, NativeArrayOptions.UninitializedMemory, out profileRules) &&
                                 OpenOrAcquireVaultBuffer(vault, ref _csvScratchHandle, AbyssalShadowBufferIds.CsvScratch, AbyssalShadowCullingConstants.CsvScratchCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
                                 OpenOrAcquireVaultBuffer(vault, ref _hzbTileHandle, AbyssalShadowBufferIds.HzbDepthTiles, AbyssalShadowCullingConstants.HzbTileCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<ShadowCullHzbTileDTO> hzbTiles) &&
                                 OpenOrAcquireVaultBuffer(vault, ref _indirectArgsHandle, AbyssalShadowBufferIds.IndirectArgs, 1, NativeArrayOptions.UninitializedMemory, out NativeArray<ShadowCullIndirectArgsDTO> indirectArgs);
@@ -583,7 +590,7 @@ namespace Hecton8.Graphics.Culling
                 return false;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 OwnerSystemId,

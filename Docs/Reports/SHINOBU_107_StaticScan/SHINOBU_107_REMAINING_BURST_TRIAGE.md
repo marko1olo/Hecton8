@@ -1,4 +1,4 @@
-# SHINOBU_107 Remaining Burst Triage
+﻿# SHINOBU_107 Remaining Burst Triage
 
 Date: 2026-05-21
 Evidence: STATIC_SOURCE / SHINOBU_140 scanner output

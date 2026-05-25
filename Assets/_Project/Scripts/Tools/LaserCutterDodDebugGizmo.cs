@@ -6,6 +6,7 @@ namespace Hecton8.Tools
     using Unity.Mathematics;
     using UnityEngine;
 
+    [DisallowMultipleComponent]
     public sealed class LaserCutterDodDebugGizmo : MonoBehaviour
     {
         [SerializeField, Range(1, LaserCutterDodConstants.MaxRequests)] private int requestCount = 16;

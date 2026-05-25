@@ -9,6 +9,16 @@ namespace Hecton8.World.Editor
     [InitializeOnLoad]
     public static class ProceduralGeologyLayoutValidator
     {
+        private const int ResourceNodeStrideBytes = 128;
+        private const int TerrainSampleStrideBytes = 32;
+        private const int DistributionRuleStrideBytes = 64;
+        private const int TuningStrideBytes = 64;
+        private const int TelemetryStrideBytes = 64;
+        private const int SelfAuditStrideBytes = 64;
+        private const int IndirectArgsStrideBytes = 16;
+        private const int HzbTileStrideBytes = 16;
+        private const int HzbMetaStrideBytes = 128;
+
         static ProceduralGeologyLayoutValidator()
         {
             ValidateLayouts(logSuccess: false);
@@ -23,7 +33,7 @@ namespace Hecton8.World.Editor
         public static bool ValidateLayouts(bool logSuccess)
         {
             bool ok = true;
-            ok &= ValidateSize<ResourceNodeDTO>(128);
+            ok &= ValidateSize<ResourceNodeDTO>(ResourceNodeStrideBytes);
             ok &= ValidateOffset<ResourceNodeDTO>(nameof(ResourceNodeDTO.LocalMatrix), 0);
             ok &= ValidateOffset<ResourceNodeDTO>(nameof(ResourceNodeDTO.ResourceTypeHash), 64);
             ok &= ValidateOffset<ResourceNodeDTO>(nameof(ResourceNodeDTO.YieldRemaining), 68);
@@ -32,24 +42,24 @@ namespace Hecton8.World.Editor
             ok &= ValidateOffset<ResourceNodeDTO>("_pad1", 104);
             ok &= ValidateOffset<ResourceNodeDTO>("_pad2", 112);
             ok &= ValidateOffset<ResourceNodeDTO>("_pad3", 120);
-            ok &= ValidateSize<GeologyTerrainSampleDTO>(32);
-            ok &= ValidateSize<GeologyDistributionRuleDTO>(64);
-            ok &= ValidateSize<GeologyTuningDTO>(64);
-            ok &= ValidateSize<GeologyGenerationTelemetryEntry>(64);
+            ok &= ValidateSize<GeologyTerrainSampleDTO>(TerrainSampleStrideBytes);
+            ok &= ValidateSize<GeologyDistributionRuleDTO>(DistributionRuleStrideBytes);
+            ok &= ValidateSize<GeologyTuningDTO>(TuningStrideBytes);
+            ok &= ValidateSize<GeologyGenerationTelemetryEntry>(TelemetryStrideBytes);
             ok &= ValidateOffset<GeologyGenerationTelemetryEntry>(nameof(GeologyGenerationTelemetryEntry.SectorHash), 0);
             ok &= ValidateOffset<GeologyGenerationTelemetryEntry>(nameof(GeologyGenerationTelemetryEntry.Frame), 8);
             ok &= ValidateOffset<GeologyGenerationTelemetryEntry>(nameof(GeologyGenerationTelemetryEntry.GenerationBudgetUs), 32);
             ok &= ValidateOffset<GeologyGenerationTelemetryEntry>(nameof(GeologyGenerationTelemetryEntry.StateHash), 56);
-            ok &= ValidateSize<GeologySelfAuditResultDTO>(64);
-            ok &= ValidateSize<GeologyIndirectArgsDTO>(16);
+            ok &= ValidateSize<GeologySelfAuditResultDTO>(SelfAuditStrideBytes);
+            ok &= ValidateSize<GeologyIndirectArgsDTO>(IndirectArgsStrideBytes);
             ok &= ValidateOffset<GeologyIndirectArgsDTO>(nameof(GeologyIndirectArgsDTO.VertexCountPerInstance), 0);
             ok &= ValidateOffset<GeologyIndirectArgsDTO>(nameof(GeologyIndirectArgsDTO.InstanceCount), 4);
             ok &= ValidateOffset<GeologyIndirectArgsDTO>(nameof(GeologyIndirectArgsDTO.StartVertex), 8);
             ok &= ValidateOffset<GeologyIndirectArgsDTO>(nameof(GeologyIndirectArgsDTO.StartInstance), 12);
-            ok &= ValidateSize<GeologyHzbTileDTO>(16);
+            ok &= ValidateSize<GeologyHzbTileDTO>(HzbTileStrideBytes);
             ok &= ValidateOffset<GeologyHzbTileDTO>(nameof(GeologyHzbTileDTO.Depth01), 0);
             ok &= ValidateOffset<GeologyHzbTileDTO>(nameof(GeologyHzbTileDTO.Flags), 12);
-            ok &= ValidateSize<GeologyHzbMetaDTO>(128);
+            ok &= ValidateSize<GeologyHzbMetaDTO>(HzbMetaStrideBytes);
             ok &= ValidateOffset<GeologyHzbMetaDTO>(nameof(GeologyHzbMetaDTO.CameraRelativeViewProjection), 0);
             ok &= ValidateOffset<GeologyHzbMetaDTO>(nameof(GeologyHzbMetaDTO.Width), 64);
             ok &= ValidateOffset<GeologyHzbMetaDTO>(nameof(GeologyHzbMetaDTO.Flags), 72);

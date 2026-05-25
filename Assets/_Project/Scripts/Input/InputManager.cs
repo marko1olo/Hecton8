@@ -35,8 +35,10 @@ namespace Hecton8.Input
     /// Supports keyboard, mouse, and gamepad with full rebinding support.
     /// </summary>
     [DefaultExecutionOrder(-31000)] // Must initialize before bootstrap input consumers.
-    public class InputManager : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
+    public class InputManager : MonoBehaviour, INativeInputManagerRuntime
     {
+        private const string GeneratedInputActionsTypeName = "HectonInputActions, Hecton8.Input.Generated";
+
         private enum InputRecoveryState : byte
         {
             Stable = 0,
@@ -52,6 +54,7 @@ namespace Hecton8.Input
         private bool _serviceRegistered;
         private bool _serviceShuttingDown;
         private bool _serviceShutdownComplete;
+        internal static InputManager ActiveRuntimeInstance { get; private set; }
         // COLD ALLOC: string[36] — cached single-character binding labels — owner: InputManager
         private static readonly string[] SingleCharacterBindingLabels =
         {
@@ -61,11 +64,9 @@ namespace Hecton8.Input
             "U", "V", "W", "X", "Y", "Z"
         };
 
-        private HectonInputActions _generatedInputActions;
+        private IInputActionCollection2 _generatedInputActions;
         private InputActionAsset _runtimeInputActionAsset;
         private bool _inputMapsInitialized;
-        private bool _playerActionsSubscribed;
-        private bool _uiActionsSubscribed;
         private bool _initialActivationComplete;
         private bool _restorePlayerInputOnEnable;
         private bool _restoreUiInputOnEnable;
@@ -212,6 +213,7 @@ namespace Hecton8.Input
         public event Action OnTabNext;
         public event Action OnTabPrevious;
         public event Action<InputDisplayStyle> OnInputDisplayStyleChanged;
+        public event Action<byte> OnInputDisplayStyleCodeChanged;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         public event Action OnDebugToggleBlackBoxDashboard;
         public event Action OnDebugToggleEngineHealthOverlay;
@@ -225,6 +227,7 @@ namespace Hecton8.Input
         public bool IsUIInputEnabled => TryGetActionMapEnabled(_uiActionMap);
         public bool CanSwitchActionMaps => _serviceRegistered && !_serviceShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
         public InputDisplayStyle CurrentDisplayStyle { get; private set; } = InputDisplayStyle.KeyboardMouse;
+        public byte CurrentDisplayStyleCode => (byte)CurrentDisplayStyle;
         
         public Vector2 MoveInput => _moveInput;
         public Vector2 LookInput => _lookInput;
@@ -351,8 +354,8 @@ namespace Hecton8.Input
         
         private void Awake()
         {
-            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out InputManager registered);
-            if (registered != null && registered != this)
+            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out INativeInputManagerRuntime registered);
+            if (registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
                 return;
@@ -416,10 +419,7 @@ namespace Hecton8.Input
 
             InputActionAsset templateAsset = _inputActionAsset;
             if (templateAsset == null)
-            {
-                _generatedInputActions ??= new HectonInputActions(); // COLD ALLOC: HectonInputActions[1] — runtime fallback input asset wrapper — owner: InputManager
-                templateAsset = _generatedInputActions.asset;
-            }
+                templateAsset = TryResolveGeneratedInputActionAsset(ref _generatedInputActions);
 
             if (templateAsset == null)
             {
@@ -577,10 +577,10 @@ namespace Hecton8.Input
             {
                 return Instantiate(templateAsset); // COLD ALLOC: InputActionAsset[1] — detached runtime input asset clone — owner: InputManager
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[InputManager] Runtime InputActionAsset clone failed: " + ex.Message);
+                Debug.LogError("[InputManager] Runtime InputActionAsset clone failed.");
 #endif
                 return null;
             }
@@ -590,24 +590,61 @@ namespace Hecton8.Input
         // EVENT SUBSCRIPTION (ZERO GC)
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         
+        private static InputActionAsset TryResolveGeneratedInputActionAsset(ref IInputActionCollection2 generatedInputActions)
+        {
+            if (generatedInputActions != null)
+                return TryExtractGeneratedInputActionAsset(generatedInputActions);
+
+            Type generatedType = Type.GetType(GeneratedInputActionsTypeName, throwOnError: false);
+            if (generatedType == null)
+                return null;
+
+            object instance = null;
+            try
+            {
+                instance = Activator.CreateInstance(generatedType);
+                if (instance is IInputActionCollection2 actions)
+                {
+                    generatedInputActions = actions;
+                    return TryExtractGeneratedInputActionAsset(actions);
+                }
+            }
+            catch (Exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
+#endif
+            }
+
+            (instance as IDisposable)?.Dispose();
+            return null;
+        }
+
+        private static InputActionAsset TryExtractGeneratedInputActionAsset(IInputActionCollection2 actions)
+        {
+            if (actions == null)
+                return null;
+
+            System.Reflection.PropertyInfo assetProperty = actions.GetType().GetProperty(
+                "asset",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            return assetProperty != null ? assetProperty.GetValue(actions) as InputActionAsset : null;
+        }
+
         private void SubscribeToPlayerActions()
         {
-            _playerActionsSubscribed = false;
         }
         
         private void SubscribeToUIActions()
         {
-            _uiActionsSubscribed = false;
         }
 
         private void UnsubscribeFromPlayerActions()
         {
-            _playerActionsSubscribed = false;
         }
 
         private void UnsubscribeFromUIActions()
         {
-            _uiActionsSubscribed = false;
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -934,6 +971,21 @@ namespace Hecton8.Input
             if (bindingIndex < 0 || bindingIndex >= action.bindings.Count)
                 bindingIndex = GetPreferredBindingIndex(action, CurrentDisplayStyle);
 
+            return TryWriteBindingDisplayStringSafe(action, bindingIndex, buffer, bufferOffset, out charsWritten);
+        }
+
+        public bool TryGetBindingDisplayString(InputAction action, int bindingIndex, out string display)
+        {
+            return TryGetBindingDisplayStringSafe(action, bindingIndex, out display);
+        }
+
+        public bool TryWriteBindingDisplayString(
+            InputAction action,
+            int bindingIndex,
+            char[] buffer,
+            int bufferOffset,
+            out int charsWritten)
+        {
             return TryWriteBindingDisplayStringSafe(action, bindingIndex, buffer, bufferOffset, out charsWritten);
         }
 
@@ -1820,6 +1872,7 @@ namespace Hecton8.Input
 
             CurrentDisplayStyle = nextStyle;
             OnInputDisplayStyleChanged?.Invoke(nextStyle);
+            OnInputDisplayStyleCodeChanged?.Invoke((byte)nextStyle);
         }
 
         private static InputDisplayStyle ResolveDisplayStyle(InputDevice device)
@@ -1916,7 +1969,7 @@ namespace Hecton8.Input
             _serviceShuttingDown = true;
             UnsubscribeFromDeviceChanges();
             ResetInputActionCaches(disposeRuntimeAsset: true);
-            _generatedInputActions?.Dispose();
+            (_generatedInputActions as IDisposable)?.Dispose();
             _generatedInputActions = null;
             UnregisterService();
 
@@ -1928,8 +1981,8 @@ namespace Hecton8.Input
             if (_serviceShuttingDown || !Application.isPlaying)
                 return;
 
-            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out InputManager registered);
-            if (registered != null && registered != this)
+            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out INativeInputManagerRuntime registered);
+            if (registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
                 return;
@@ -1941,6 +1994,9 @@ namespace Hecton8.Input
             _serviceRegistered =
                 BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out registered) &&
                 ReferenceEquals(registered, this);
+
+            if (_serviceRegistered)
+                ActiveRuntimeInstance = this;
         }
 
         private void UnregisterService()
@@ -1950,6 +2006,9 @@ namespace Hecton8.Input
 
             BootstrapRegistryBridge.Unregister(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, this);
             _serviceRegistered = false;
+
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void SafeEnableActionMap(InputActionMap actionMap)

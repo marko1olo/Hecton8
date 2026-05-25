@@ -24,7 +24,7 @@ namespace Hecton8.Physics
 
         private static IDataVault _vault;
         private static bool _initialized;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private static bool _layoutValidated;
         private static bool _faultHookRegistered;
         private static int _faultDumpInProgress;
@@ -35,6 +35,7 @@ namespace Hecton8.Physics
         private static JobHandle _scheduledHandle;
         private static long _scheduleTimestamp;
         private static float _lastSolveMicroseconds;
+        private static int _droppedSignalCount;
         private static uint _frameIndex;
 
         private static VaultGenerationHandle<ShockwaveEventDTO> _shockwaveHandle;
@@ -61,6 +62,7 @@ namespace Hecton8.Physics
         private static GraphicsBuffer _lastUploadedBuffer;
 
         public static uint FrameIndex => _frameIndex;
+        public static int DroppedSignalCount => _droppedSignalCount;
         public static bool HasScheduledWork => _jobScheduled;
         public static bool IsRuntimeReady => _initialized &&
                                             HasRuntimeDescriptorProof(_vault);
@@ -96,68 +98,69 @@ namespace Hecton8.Physics
 
             ValidateLayoutColdOnce();
             _vault = vault;
-            _shockwaveHandle = vault.GetGenerationHandle<ShockwaveEventDTO>(
+            _shockwaveHandle = vault.EnsureGenerationHandle<ShockwaveEventDTO>(
                 AbyssalCavitationVaultBufferIds.ShockwaveEvents,
                 AbyssalCavitationConstants.MaxShockwaves,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _counterHandle = vault.GetGenerationHandle<ShockwaveCounterBlock>(
+            _counterHandle = vault.EnsureGenerationHandle<ShockwaveCounterBlock>(
                 AbyssalCavitationVaultBufferIds.ShockwaveCounters,
                 AbyssalCavitationConstants.CounterBlockCount,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _entityHandle = vault.GetGenerationHandle<ShockwaveEntitySnapshotDTO>(
+            _entityHandle = vault.EnsureGenerationHandle<ShockwaveEntitySnapshotDTO>(
                 AbyssalCavitationVaultBufferIds.EntitySnapshots,
                 AbyssalCavitationConstants.MaxEntitySnapshots,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _forceHandle = vault.GetGenerationHandle<ShockwaveForcePacketDTO>(
+            _forceHandle = vault.EnsureGenerationHandle<ShockwaveForcePacketDTO>(
                 AbyssalCavitationVaultBufferIds.ForcePackets,
                 AbyssalCavitationConstants.MaxForcePackets,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _forceTransportHandle = vault.GetGenerationHandle<ForcePacketDTO>(
+            _forceTransportHandle = vault.EnsureGenerationHandle<ForcePacketDTO>(
                 AbyssalCavitationVaultBufferIds.ForceTransportPackets,
                 AbyssalCavitationConstants.MaxForcePackets,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _visualHandle = vault.GetGenerationHandle<CavitationVisualSphereDTO>(
+            _visualHandle = vault.EnsureGenerationHandle<CavitationVisualSphereDTO>(
                 AbyssalCavitationVaultBufferIds.VisualSpheres,
                 AbyssalCavitationConstants.MaxVisualSpheres,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetGenerationHandle<ShockwaveTelemetryEntry>(
+            _telemetryHandle = vault.EnsureGenerationHandle<ShockwaveTelemetryEntry>(
                 AbyssalCavitationVaultBufferIds.TelemetryRing,
                 AbyssalCavitationConstants.TelemetryCapacity,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _profileHandle = vault.GetGenerationHandle<OrdnanceProfileDTO>(
+            _profileHandle = vault.EnsureGenerationHandle<OrdnanceProfileDTO>(
                 AbyssalCavitationVaultBufferIds.OrdnanceProfiles,
                 AbyssalCavitationConstants.OrdnanceProfileCapacity,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 AbyssalCavitationVaultBufferIds.CsvScratch,
                 AbyssalCavitationConstants.CsvScratchBytes,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetGenerationHandle<AbyssalCavitationTuningDTO>(
+            _tuningHandle = vault.EnsureGenerationHandle<AbyssalCavitationTuningDTO>(
                 AbyssalCavitationVaultBufferIds.Tuning,
                 1,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _sdfDescriptorHandle = vault.GetGenerationHandle<AbyssalCavitationSdfVolumeDTO>(
+            _sdfDescriptorHandle = vault.EnsureGenerationHandle<AbyssalCavitationSdfVolumeDTO>(
                 AbyssalCavitationVaultBufferIds.SdfDescriptor,
                 AbyssalCavitationConstants.SdfDescriptorCount,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _sdfVoxelsHandle = vault.GetGenerationHandle<sbyte>(
+            _sdfVoxelsHandle = vault.EnsureGenerationHandle<sbyte>(
                 AbyssalCavitationVaultBufferIds.SdfVoxels,
                 AbyssalCavitationConstants.SdfVoxelCapacity,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
 
             InitializeBuffersCold(vault);
+            _droppedSignalCount = 0;
             _csvLoaded = false;
             _defaultCsvLoadAttempted = false;
             _initialized = true;
@@ -167,7 +170,7 @@ namespace Hecton8.Physics
 
         private static void RegisterFaultDumpHookCold()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (_faultHookRegistered)
                 return;
 
@@ -178,7 +181,7 @@ namespace Hecton8.Physics
 
         private static void UnregisterFaultDumpHookCold()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!_faultHookRegistered)
                 return;
 
@@ -187,7 +190,7 @@ namespace Hecton8.Physics
 #endif
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private static void OnUnityLogFault(string condition, string stackTrace, LogType type)
         {
             if (type != LogType.Exception && type != LogType.Error && type != LogType.Assert)
@@ -209,7 +212,7 @@ namespace Hecton8.Physics
 
         private static void ValidateLayoutColdOnce()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (_layoutValidated)
                 return;
 
@@ -499,7 +502,7 @@ namespace Hecton8.Physics
 
         public static bool GenerateMockDetonations(uint sectorHash = 0x5348494Eu)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!EnsureInitialized() || _jobScheduled)
                 return false;
 
@@ -531,7 +534,7 @@ namespace Hecton8.Physics
 
         public static bool GenerateMockSingularityExplosion(uint sectorHash = AbyssalCavitationConstants.SourceHash)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!EnsureInitialized() || _jobScheduled)
                 return false;
 
@@ -910,6 +913,7 @@ namespace Hecton8.Physics
             return uploadCount;
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadDefaultOrdnanceCsv()
         {
             return TryLoadDefaultOrdnanceCsv(false);
@@ -938,7 +942,7 @@ namespace Hecton8.Physics
             return TryLoadOrdnanceCsv(legacyPath);
         }
 
-        public static bool TryLoadOrdnanceCsv(string csvPath)
+        public static unsafe bool TryLoadOrdnanceCsv(string csvPath)
         {
             if (!EnsureInitialized() || _jobScheduled || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
                 return false;
@@ -954,21 +958,28 @@ namespace Hecton8.Physics
             {
                 using (FileStream stream = File.OpenRead(csvPath))
                 {
-                    while (bytesRead < scratch.Length)
-                    {
-                        int value = stream.ReadByte();
-                        if (value < 0)
-                            break;
-                        scratch[bytesRead++] = (byte)value;
-                    }
-
-                    if (bytesRead == scratch.Length && stream.ReadByte() >= 0)
+                    if (stream.Length > scratch.Length)
                         return false;
+
+                    int targetLength = (int)stream.Length;
+                    unsafe
+                    {
+                        byte* scratchPtr = (byte*)scratch.GetUnsafePtr();
+                        Span<byte> destination = new Span<byte>(scratchPtr, targetLength);
+                        while (bytesRead < targetLength)
+                        {
+                            int read = stream.Read(destination.Slice(bytesRead));
+                            if (read <= 0)
+                                break;
+
+                            bytesRead += read;
+                        }
+                    }
                 }
             }
             catch (Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 Debug.LogWarning("[SHINOBU_248] Ordnance CSV load failed.");
 #endif
                 return false;
@@ -987,6 +998,7 @@ namespace Hecton8.Physics
             _csvLoaded = parsed > 0;
             return _csvLoaded;
         }
+#endif
 
         public static bool TrySampleLatestTelemetry(out ShockwaveTelemetryEntry telemetry)
         {
@@ -1081,7 +1093,7 @@ namespace Hecton8.Physics
                 {
                 }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 Debug.LogError("[SHINOBU_248] Cavitation black-box dump failed.");
 #endif
                 return false;
@@ -1188,7 +1200,8 @@ namespace Hecton8.Physics
             ping.SourceId = wave.SourceHashID;
             ping.Channel = AcousticPingSignal.ChannelMetalStress;
             ping.Flags = AcousticPingSignal.FlagActiveSonar;
-            SignalBus<AcousticPingSignal>.Push(in ping);
+            if (!SignalBus<AcousticPingSignal>.TryPush(in ping))
+                RecordDroppedSignal();
 
             WakeRequestSignal wake = default;
             wake.OriginAup = wave.EpicenterAUP;
@@ -1196,11 +1209,29 @@ namespace Hecton8.Physics
             wake.SourceHash = wave.SourceHashID;
             wake.Frame = _frameIndex;
             wake.Flags = 1;
-            SignalBus<WakeRequestSignal>.Push(in wake);
+            if (!SignalBus<WakeRequestSignal>.TryPush(in wake))
+                RecordDroppedSignal();
+        }
+
+        private static void RecordDroppedSignal()
+        {
+            if (_droppedSignalCount < 0x3FFFFFFF)
+                _droppedSignalCount++;
+
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            if (!counters.IsCreated || counters.Length <= AbyssalCavitationCounterIndex.FaultFlags)
+                return;
+
+            ShockwaveCounterBlock block = counters[AbyssalCavitationCounterIndex.FaultFlags];
+            block.Value |= (int)AbyssalCavitationTelemetryFlags.SignalDrop;
+            counters[AbyssalCavitationCounterIndex.FaultFlags] = block;
         }
 
         private static float ResolveGlobalQualityWeight()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
@@ -1253,11 +1284,13 @@ namespace Hecton8.Physics
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Abyssal Cavitation Runtime")]
-    public sealed class AbyssalCavitationRuntimeHost : MonoBehaviour, IFixedTickable, ILateFrameTickable, ISlowTickable
+    public sealed class AbyssalCavitationRuntimeHost : MonoBehaviour, IFixedTickable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
+#if UNITY_EDITOR
         [SerializeField] private bool autoLoadCsv = true;
+#endif
         [SerializeField] private bool uploadShaderVisuals = true;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         [SerializeField] private bool injectMockOnEnable;
 #endif
         [SerializeField] private bool drawDebugGizmos = true;
@@ -1265,26 +1298,25 @@ namespace Hecton8.Physics
         private bool _registeredFixed;
         private bool _registeredLate;
         private bool _registeredSlow;
+        private bool _registeredHotSwap;
 
         private void Awake()
         {
             AbyssalCavitationRuntime.EnsureInitialized();
             AbyssalCavitationRuntime.EnsureGraphicsBuffers();
+#if UNITY_EDITOR
             if (autoLoadCsv)
                 AbyssalCavitationRuntime.TryLoadDefaultOrdnanceCsv();
+#endif
         }
 
         private void OnEnable()
         {
             AbyssalCavitationRuntime.EnsureInitialized();
             AbyssalCavitationRuntime.EnsureGraphicsBuffers();
-            if (!_registeredFixed)
-                _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
-            if (!_registeredLate)
-                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            if (!_registeredSlow)
-                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RegisterRuntimeLanes();
+            TryRegisterHotSwapListener();
+#if UNITY_EDITOR
             if (injectMockOnEnable)
                 AbyssalCavitationRuntime.GenerateMockDetonations();
 #endif
@@ -1293,6 +1325,23 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             AbyssalCavitationRuntime.CompleteScheduledForTeardown();
+            TryUnregisterHotSwapListener();
+            UnregisterRuntimeLanes();
+            AbyssalCavitationRuntime.ReleaseGraphicsBuffers();
+        }
+
+        private void RegisterRuntimeLanes()
+        {
+            if (!_registeredFixed)
+                _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+            if (!_registeredLate)
+                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!_registeredSlow)
+                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void UnregisterRuntimeLanes()
+        {
             if (_registeredFixed)
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             if (_registeredLate)
@@ -1302,7 +1351,39 @@ namespace Hecton8.Physics
             _registeredFixed = false;
             _registeredLate = false;
             _registeredSlow = false;
-            AbyssalCavitationRuntime.ReleaseGraphicsBuffers();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
+                currentService == null ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            UnregisterRuntimeLanes();
+            RegisterRuntimeLanes();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -1322,8 +1403,10 @@ namespace Hecton8.Physics
             if (!AbyssalCavitationRuntime.IsRuntimeReady)
                 return;
 
+#if UNITY_EDITOR
             if (autoLoadCsv && !AbyssalCavitationRuntime.IsCsvLoaded())
                 AbyssalCavitationRuntime.TryLoadDefaultOrdnanceCsv();
+#endif
         }
 
         private void OnDrawGizmos()

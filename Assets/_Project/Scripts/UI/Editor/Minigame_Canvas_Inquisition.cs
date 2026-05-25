@@ -166,15 +166,14 @@ namespace Hecton8.UI.Editor
 
             for (int extensionIndex = 0; extensionIndex < ScanExtensions.Length; extensionIndex++)
             {
-                string[] files = Directory.GetFiles(folder, ScanExtensions[extensionIndex], SearchOption.AllDirectories);
-                for (int i = 0; i < files.Length; i++)
+                foreach (string file in Directory.EnumerateFiles(folder, ScanExtensions[extensionIndex], SearchOption.AllDirectories))
                 {
-                    string path = files[i].Replace('\\', '/');
+                    string path = file.Replace('\\', '/');
                     if (path.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0)
                         continue;
 
                     scannedFiles++;
-                    string text = File.ReadAllText(files[i]);
+                    string text = File.ReadAllText(file);
                     canvasForceCalls += Count(text, "Canvas.ForceUpdateCanvases");
                     canvasTokens += Count(text, "Canvas");
                     graphicRaycasterTokens += Count(text, "GraphicRaycaster");

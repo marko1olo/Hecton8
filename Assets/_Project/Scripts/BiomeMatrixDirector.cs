@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -157,39 +156,49 @@ namespace Hecton8.Environment
             TryUnregisterImmediate(listener);
         }
 
-        public static void RaiseMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        public static bool TryRaiseMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportQueueOverflow(MatrixBiomeChangedEventType);
-                return;
+                return false;
             }
 
             int profileSlot = ResolveProfileSlot(profile);
             if (profile != null && profileSlot < 0)
+            {
                 ReportProfileSlotOverflow();
+                return false;
+            }
 
             Enqueue(new BiomeMatrixEventPayload
             {
                 EventType = MatrixBiomeChangedEventType,
                 ProfileSlot = profileSlot
             });
+            return true;
         }
 
-        public static void RaiseDepthTierChanged(int depthTier, float depthMeters)
+        [Obsolete("Biome matrix producers must use TryRaiseMatrixBiomeChanged and handle bounded enqueue failure.", true)]
+        public static void RaiseMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            TryRaiseMatrixBiomeChanged(profile);
+        }
+
+        public static bool TryRaiseDepthTierChanged(int depthTier, float depthMeters)
         {
             if (_listenerCount <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportQueueOverflow(DepthTierChangedEventType);
-                return;
+                return false;
             }
 
             Enqueue(new BiomeMatrixEventPayload
@@ -198,6 +207,13 @@ namespace Hecton8.Environment
                 DepthTier = depthTier,
                 DepthMeters = depthMeters
             });
+            return true;
+        }
+
+        [Obsolete("Biome matrix producers must use TryRaiseDepthTierChanged and handle bounded enqueue failure.", true)]
+        public static void RaiseDepthTierChanged(int depthTier, float depthMeters)
+        {
+            TryRaiseDepthTierChanged(depthTier, depthMeters);
         }
 
         public static void FlushPending()
@@ -213,7 +229,10 @@ namespace Hecton8.Environment
                     return;
 
                 if (!_pendingEvents.TryDequeue(out BiomeMatrixEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -743,10 +762,10 @@ namespace Hecton8.Environment
         private float _currentDepthMeters;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
-        private AbyssalFluidDecalManager _resolvedFluidDecals;
-        private HectonFluidEngine _resolvedFluidEngine;
-        private MapMagicBridge _resolvedMapMagicBridge;
-        private HectonAtmosphereManager _resolvedAtmosphereManager;
+        private IFluidDecalPresentationSink _resolvedFluidDecals;
+        private IFluidSurfaceCurrentReadModel _resolvedFluidEngine;
+        private ITerrainProvider _resolvedTerrainProvider;
+        private IAtmosphereReadModel _resolvedAtmosphereReadModel;
         private bool _editorPreviewDirty = true;
         private Transform _editorLastEvaluationTransform;
         private Vector3 _editorLastEvaluationPosition;
@@ -891,8 +910,7 @@ namespace Hecton8.Environment
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -916,16 +934,29 @@ namespace Hecton8.Environment
                     ApplyPlayerRuntimeContext();
                     break;
                 case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
-                    _resolvedFluidDecals = currentService as AbyssalFluidDecalManager;
+                    _resolvedFluidDecals = currentService as IFluidDecalPresentationSink;
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
-                    _resolvedFluidEngine = currentService as HectonFluidEngine;
+                    _resolvedFluidEngine = currentService as IFluidSurfaceCurrentReadModel;
                     break;
-                case GlobalRegistryServiceSlot.MapMagicRuntime:
-                    _resolvedMapMagicBridge = currentService as MapMagicBridge;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _resolvedTerrainProvider = currentService as ITerrainProvider;
                     break;
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
-                    _resolvedAtmosphereManager = currentService as HectonAtmosphereManager;
+                    _resolvedAtmosphereReadModel = currentService as IAtmosphereReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredToTickManager = false;
+                        break;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
                     break;
             }
         }
@@ -933,10 +964,10 @@ namespace Hecton8.Environment
         private void CacheRuntimeDependencies()
         {
             _playerRuntimeContext ??= Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _resolvedFluidDecals ??= GlobalRegistry.AbyssalFluidDecals;
-            _resolvedFluidEngine ??= GlobalRegistry.Fluid;
-            _resolvedMapMagicBridge ??= GlobalRegistry.MapMagic;
-            _resolvedAtmosphereManager ??= Hecton8.Core.GlobalRegistry.Atmosphere;
+            _resolvedFluidDecals ??= GlobalRegistry.FluidDecalPresentation;
+            _resolvedFluidEngine ??= GlobalRegistry.FluidSurfaceCurrent;
+            _resolvedTerrainProvider ??= GlobalRegistry.Terrain;
+            _resolvedAtmosphereReadModel ??= Hecton8.Core.GlobalRegistry.AtmosphereReadModel;
             ApplyPlayerRuntimeContext();
         }
 
@@ -946,8 +977,8 @@ namespace Hecton8.Environment
             _playerMovement = null;
             _resolvedFluidDecals = null;
             _resolvedFluidEngine = null;
-            _resolvedMapMagicBridge = null;
-            _resolvedAtmosphereManager = null;
+            _resolvedTerrainProvider = null;
+            _resolvedAtmosphereReadModel = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1013,7 +1044,7 @@ namespace Hecton8.Environment
                 ClearPendingBiomeHysteresis();
                 _debugResolutionMode = evaluationTransform == null ? "Missing evaluation transform" : "Missing catalog";
                 if (hadProfile && Application.isPlaying)
-                    BiomeMatrixEvents.RaiseMatrixBiomeChanged(null);
+                    BiomeMatrixEvents.TryRaiseMatrixBiomeChanged(null);
                 UpdateDiagnostics(null, 1, HectonBiomeMatrixProfile.CardinalRegion.North);
                 return;
             }
@@ -1032,7 +1063,7 @@ namespace Hecton8.Environment
             _debugResolutionMode = next == null ? MissingProfileLabel : usedFallback ? "Fallback" : "Exact";
 
             if (depthTierChanged && Application.isPlaying)
-                BiomeMatrixEvents.RaiseDepthTierChanged(_currentDepthTier, _currentDepthMeters);
+                BiomeMatrixEvents.TryRaiseDepthTierChanged(_currentDepthTier, _currentDepthMeters);
 
             if (!ShouldCommitBiomeProfile(next, evaluationTransform.position, forcePublish))
             {
@@ -1050,8 +1081,11 @@ namespace Hecton8.Environment
                     if (changedProfile)
                         TryEmitSeismicDustForBiome(next, evaluationTransform.position);
 
-                    GlobalTelemetryBus.PublishBiomeVisited(next != null ? next.biomeName : string.Empty, tier, depth);
-                    BiomeMatrixEvents.RaiseMatrixBiomeChanged(_currentProfile);
+                    uint biomeTelemetryHash = next != null
+                        ? GlobalTelemetryBus.ComputeContextHash(next.biomeName)
+                        : 0u;
+                    GlobalTelemetryBus.PublishBiomeVisited(biomeTelemetryHash, tier, depth);
+                    BiomeMatrixEvents.TryRaiseMatrixBiomeChanged(_currentProfile);
                 }
             }
 
@@ -1095,7 +1129,7 @@ namespace Hecton8.Environment
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1121,12 +1155,12 @@ namespace Hecton8.Environment
             if (now - _lastSeismicDustTime < Mathf.Max(1f, seismicDustCooldownSeconds))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = _resolvedFluidDecals;
+            IFluidDecalPresentationSink fluidDecals = _resolvedFluidDecals;
             if (fluidDecals == null)
                 return;
 
-            if (_resolvedMapMagicBridge == null ||
-                !_resolvedMapMagicBridge.TryGetHeight(evaluationPosition.x, evaluationPosition.z, out float seafloorHeight))
+            if (_resolvedTerrainProvider == null ||
+                !_resolvedTerrainProvider.TryGetHeight(evaluationPosition.x, evaluationPosition.z, out float seafloorHeight))
             {
                 return;
             }
@@ -1279,16 +1313,16 @@ namespace Hecton8.Environment
                 return _resolvedFluidEngine.WaterLevel;
             }
 
-            if (_resolvedMapMagicBridge != null)
+            if (_resolvedTerrainProvider != null)
             {
-                _debugDepthSource = "MapMagicBridge";
-                return _resolvedMapMagicBridge.WaterSurfaceLevel;
+                _debugDepthSource = "TerrainProvider";
+                return _resolvedTerrainProvider.WaterSurfaceLevel;
             }
 
-            if (_resolvedAtmosphereManager != null)
+            if (_resolvedAtmosphereReadModel != null)
             {
-                _debugDepthSource = "AtmosphereManager";
-                return _resolvedAtmosphereManager.SeaLevelY;
+                _debugDepthSource = "AtmosphereReadModel";
+                return _resolvedAtmosphereReadModel.SeaLevelY;
             }
 
             _debugDepthSource = "SurfaceOffset";

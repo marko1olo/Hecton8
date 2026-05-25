@@ -21,13 +21,18 @@ namespace Hecton8.Networking
         private const uint PauseSourceHash = 0x4E455452u;
         private const uint LegacyProfileMagic = 0x4E455450u;
         private const uint LegacyProfileVersion = 1u;
+#if UNITY_EDITOR
         private const int CsvPollIntervalFrames = 300;
+#endif
         private const int SimulatedPingFrames200Ms = 12;
         private const float MoveMismatchEpsilon = 0.001f;
         private const float LookMismatchEpsilon = 0.001f;
         private const string LegacyProfileRelativePath = "Docs/Archive/netcode_latency_profiles.h8bin";
+#if UNITY_EDITOR
         private const string CsvProfileRelativePath = "netcode_input_profiles.csv";
+#endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_278.bin";
+#if UNITY_EDITOR
         private const uint CsvHashMaxRollbackFrames = 0x09632D65u;
         private const uint CsvHashMaxRollbackDepth = 0x5E49FC48u;
         private const uint CsvHashVisualInterpolationFrames = 0xD47FD347u;
@@ -53,6 +58,7 @@ namespace Hecton8.Networking
         private const uint CsvHashDefaultProfile = 0x933B5BDEu;
         private const uint CsvHashGlobalProfile = 0x1DFF06AEu;
         private const uint CsvHashGenericProfile = 0x51CCEFFAu;
+#endif
 
         private static HectonRollbackNetcodeRuntime _activeInstance;
         private static uint _modeFlags;
@@ -69,7 +75,9 @@ namespace Hecton8.Networking
         private VaultGenerationHandle<NetTelemetryEntry64> _telemetryHandle;
         private VaultGenerationHandle<RollbackTuningDTO> _tuningHandle;
         private VaultGenerationHandle<RollbackAudioSuppressionDTO> _audioSuppressionHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<RollbackLegacyProfileDTO> _latencyProfileHandle;
         private VaultGenerationHandle<InputStateDTO> _inputJournalHandle;
         private VaultGenerationHandle<PredictedInputDTO> _predictedInputHandle;
@@ -101,8 +109,9 @@ namespace Hecton8.Networking
         private int _registeredHotSwapListener;
         private int _buffersReady;
         private uint _rollbackSignalsReady;
-        private NativeQueue<RollbackRequiredSignal>.ParallelWriter _rollbackSignalWriter;
+#if UNITY_EDITOR
         private uint _nextCsvPollFrame;
+#endif
         private int _telemetryWriteIndex;
         private uint _frame;
         private uint _previousScheduledFrame;
@@ -111,7 +120,9 @@ namespace Hecton8.Networking
         private uint _lastDumpFrame = uint.MaxValue;
         private string _projectRoot;
         private string _legacyProfilePath;
+#if UNITY_EDITOR
         private string _csvProfilePath;
+#endif
         private string _dumpPath;
 
         public static HectonRollbackNetcodeRuntime ActiveInstance => _activeInstance;
@@ -153,7 +164,7 @@ namespace Hecton8.Networking
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            if (!runtime.TryReadOwned(in runtime._tuningHandle, out NativeArray<RollbackTuningDTO> tuningBuffer) ||
+            if (!runtime.TryReadOwned(in runtime._tuningHandle, out NativeArray<RollbackTuningDTO>.ReadOnly tuningBuffer) ||
                 tuningBuffer.Length <= 0)
                 return false;
 
@@ -181,7 +192,7 @@ namespace Hecton8.Networking
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtimeInstance))
                 return false;
 
-            if (!runtimeInstance.TryReadOwned(in runtimeInstance._runtimeStateHandle, out NativeArray<RollbackRuntimeStateDTO> runtime) ||
+            if (!runtimeInstance.TryReadOwned(in runtimeInstance._runtimeStateHandle, out NativeArray<RollbackRuntimeStateDTO>.ReadOnly runtime) ||
                 runtime.Length <= 0)
                 return false;
 
@@ -195,11 +206,9 @@ namespace Hecton8.Networking
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            if (!runtime.TryReadOwned(in runtime._visualStateHandle, out NativeArray<VisualStateDTO> mutableVisualStates) ||
-                !mutableVisualStates.IsCreated)
+            if (!runtime.TryReadOwned(in runtime._visualStateHandle, out visualStates))
                 return false;
 
-            visualStates = mutableVisualStates.AsReadOnly();
             return visualStates.Length > 0;
         }
 
@@ -209,11 +218,9 @@ namespace Hecton8.Networking
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            if (!runtime.TryReadOwned(in runtime._visualHistoryHandle, out NativeArray<VisualStateHistoryDTO> mutableVisualHistory) ||
-                !mutableVisualHistory.IsCreated)
+            if (!runtime.TryReadOwned(in runtime._visualHistoryHandle, out visualHistory))
                 return false;
 
-            visualHistory = mutableVisualHistory.AsReadOnly();
             return visualHistory.Length > 0;
         }
 
@@ -223,11 +230,9 @@ namespace Hecton8.Networking
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            if (!runtime.TryReadOwned(in runtime._telemetryHandle, out NativeArray<NetTelemetryEntry64> mutableTelemetry) ||
-                !mutableTelemetry.IsCreated)
+            if (!runtime.TryReadOwned(in runtime._telemetryHandle, out telemetry))
                 return false;
 
-            telemetry = mutableTelemetry.AsReadOnly();
             return telemetry.Length > 0;
         }
 
@@ -237,11 +242,9 @@ namespace Hecton8.Networking
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            if (!runtime.TryReadOwned(in runtime._inputPredictionTelemetryHandle, out NativeArray<InputPredictionTelemetryEntry> mutableTelemetry) ||
-                !mutableTelemetry.IsCreated)
+            if (!runtime.TryReadOwned(in runtime._inputPredictionTelemetryHandle, out telemetry))
                 return false;
 
-            telemetry = mutableTelemetry.AsReadOnly();
             return telemetry.Length > 0;
         }
 
@@ -251,7 +254,7 @@ namespace Hecton8.Networking
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            if (!runtime.TryReadOwned(in runtime._predictedInputHandle, out NativeArray<PredictedInputDTO> predictedInputs))
+            if (!runtime.TryReadOwned(in runtime._predictedInputHandle, out NativeArray<PredictedInputDTO>.ReadOnly predictedInputs))
                 return false;
 
             capacity = predictedInputs.Length;
@@ -275,13 +278,13 @@ namespace Hecton8.Networking
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryReadOwned<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool TryReadOwned<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             return _vault != null &&
                    handle.BufferID != 0u &&
-                   _vault.TryReadHandle(in handle, out buffer) &&
-                   buffer.IsCreated;
+                   _vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.Length > 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -436,7 +439,6 @@ namespace Hecton8.Networking
 
             TryUnregisterHotSwapListener();
             _rollbackSignalsReady = 0u;
-            _rollbackSignalWriter = default;
 
             if (_activeInstance == this)
                 _activeInstance = null;
@@ -575,6 +577,19 @@ namespace Hecton8.Networking
             };
             JobHandle merkleHandle = merkleRoot.Schedule(merkleLeaves);
 
+            uint rollbackSignalsEnabled = _rollbackSignalsReady;
+            NativeQueue<RollbackRequiredSignal>.ParallelWriter rollbackSignals = default;
+            NativeArray<int> rollbackSignalsBudget = default;
+            if (rollbackSignalsEnabled != 0u && SignalBus<RollbackRequiredSignal>.HasNativeStorage)
+            {
+                rollbackSignals = SignalBus<RollbackRequiredSignal>.OpenParallelWriter();
+                rollbackSignalsBudget = SignalBus<RollbackRequiredSignal>.ParallelWriterBudget;
+            }
+            else
+            {
+                rollbackSignalsEnabled = 0u;
+            }
+
             RollbackFixedPipelineJob pipeline = new RollbackFixedPipelineJob
             {
                 Tuning = tuningBuffer,
@@ -629,8 +644,9 @@ namespace Hecton8.Networking
                 LookEpsilon = LookMismatchEpsilon,
                 TelemetryWriteIndex = telemetryIndex,
                 ModQuarantineMask = ResolveModQuarantineMask(),
-                RollbackSignals = _rollbackSignalWriter,
-                RollbackSignalsEnabled = _rollbackSignalsReady
+                RollbackSignals = rollbackSignals,
+                RollbackSignalsBudget = rollbackSignalsBudget,
+                RollbackSignalsEnabled = rollbackSignalsEnabled
             };
 
             JobHandle handle = pipeline.Schedule(merkleHandle);
@@ -675,7 +691,7 @@ namespace Hecton8.Networking
             NativeArray<VisualStateHistoryDTO> visualHistory = ResolveOwned(in _visualHistoryHandle);
             BlendVisualStates(visualStates, visualHistory, _frame, ResolveGlobalQualityWeight());
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (HasFrameReached(_frame, _nextCsvPollFrame))
             {
                 _nextCsvPollFrame = _frame + CsvPollIntervalFrames;
@@ -781,7 +797,9 @@ namespace Hecton8.Networking
             _telemetryHandle = default;
             _tuningHandle = default;
             _audioSuppressionHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _latencyProfileHandle = default;
             _inputJournalHandle = default;
             _predictedInputHandle = default;
@@ -809,7 +827,6 @@ namespace Hecton8.Networking
             _predatorChosenStatesLiveHandle = default;
             _snapshotStrideBytes = 0;
             _rollbackSignalsReady = 0u;
-            _rollbackSignalWriter = default;
             _buffersReady = 0;
         }
 
@@ -830,26 +847,28 @@ namespace Hecton8.Networking
 
             _snapshotStrideBytes = RollbackNetcodeConstants.ResolveSnapshotStrideBytes();
             int stateRingBytes = _snapshotStrideBytes * RollbackNetcodeConstants.StateRingFrameCapacity;
-            _stateRingHandle = _vault.GetGenerationHandle<byte>(RollbackNetcodeVault.StateRingBuffer, stateRingBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _frameSnapshotHandle = _vault.GetGenerationHandle<FrameSnapshotDTO>(RollbackNetcodeVault.FrameSnapshots, RollbackNetcodeConstants.StateRingFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _runtimeStateHandle = _vault.GetGenerationHandle<RollbackRuntimeStateDTO>(RollbackNetcodeVault.RuntimeState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _remoteInputHandle = _vault.GetGenerationHandle<RemoteInputFrameDTO>(RollbackNetcodeVault.RemoteInputRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _tickCommandHandle = _vault.GetGenerationHandle<MockTickCommand>(RollbackNetcodeVault.TickCommands, RollbackNetcodeConstants.CommandCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _visualStateHandle = _vault.GetGenerationHandle<VisualStateDTO>(RollbackNetcodeVault.VisualStates, RollbackNetcodeConstants.VisualStateCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _visualHistoryHandle = _vault.GetGenerationHandle<VisualStateHistoryDTO>(RollbackNetcodeVault.VisualHistory, RollbackNetcodeConstants.VisualHistoryCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _vault.GetGenerationHandle<NetTelemetryEntry64>(RollbackNetcodeVault.TelemetryRing, RollbackNetcodeConstants.TelemetryFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _inputPredictionTelemetryHandle = _vault.GetGenerationHandle<InputPredictionTelemetryEntry>(RollbackNetcodeVault.InputPredictionTelemetry, RollbackNetcodeConstants.TelemetryFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _tuningHandle = _vault.GetGenerationHandle<RollbackTuningDTO>(RollbackNetcodeVault.Tuning, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _audioSuppressionHandle = _vault.GetGenerationHandle<RollbackAudioSuppressionDTO>(RollbackNetcodeVault.AudioSuppression, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _vault.GetGenerationHandle<byte>(RollbackNetcodeVault.CsvScratch, RollbackNetcodeConstants.CsvScratchBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _latencyProfileHandle = _vault.GetGenerationHandle<RollbackLegacyProfileDTO>(RollbackNetcodeVault.LatencyProfile, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _merkleNodeHandle = _vault.GetGenerationHandle<H8NetMerkleNodeRecord32>(RollbackNetcodeVault.MerkleNodes, RollbackNetcodeConstants.MerkleNodeCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _remoteMerkleNodeHandle = _vault.GetGenerationHandle<H8NetMerkleNodeRecord32>(RollbackNetcodeVault.RemoteMerkleNodes, RollbackNetcodeConstants.MerkleNodeCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _merkleDescriptorHandle = _vault.GetGenerationHandle<RollbackVaultBufferDescriptor32>(RollbackNetcodeVault.MerkleLeafDescriptors, RollbackNetcodeConstants.MerkleLeafCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _leafDeltaHandle = _vault.GetGenerationHandle<H8NetLeafDeltaRecord64>(RollbackNetcodeVault.LeafDeltaRecords, RollbackNetcodeConstants.LeafDeltaCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _rollbackInputJournalHandle = _vault.GetGenerationHandle<RollbackInputJournalSlot64>(RollbackNetcodeVault.InputJournalRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _mockJitterPacketHandle = _vault.GetGenerationHandle<MockNetworkJitterPacket64>(RollbackNetcodeVault.MockJitterPackets, RollbackNetcodeConstants.MockJitterPacketCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _mockJitterStateHandle = _vault.GetGenerationHandle<MockNetworkJitterState64>(RollbackNetcodeVault.MockJitterState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _stateRingHandle = _vault.EnsureGenerationHandle<byte>(RollbackNetcodeVault.StateRingBuffer, stateRingBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _frameSnapshotHandle = _vault.EnsureGenerationHandle<FrameSnapshotDTO>(RollbackNetcodeVault.FrameSnapshots, RollbackNetcodeConstants.StateRingFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _runtimeStateHandle = _vault.EnsureGenerationHandle<RollbackRuntimeStateDTO>(RollbackNetcodeVault.RuntimeState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _remoteInputHandle = _vault.EnsureGenerationHandle<RemoteInputFrameDTO>(RollbackNetcodeVault.RemoteInputRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _tickCommandHandle = _vault.EnsureGenerationHandle<MockTickCommand>(RollbackNetcodeVault.TickCommands, RollbackNetcodeConstants.CommandCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _visualStateHandle = _vault.EnsureGenerationHandle<VisualStateDTO>(RollbackNetcodeVault.VisualStates, RollbackNetcodeConstants.VisualStateCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _visualHistoryHandle = _vault.EnsureGenerationHandle<VisualStateHistoryDTO>(RollbackNetcodeVault.VisualHistory, RollbackNetcodeConstants.VisualHistoryCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = _vault.EnsureGenerationHandle<NetTelemetryEntry64>(RollbackNetcodeVault.TelemetryRing, RollbackNetcodeConstants.TelemetryFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _inputPredictionTelemetryHandle = _vault.EnsureGenerationHandle<InputPredictionTelemetryEntry>(RollbackNetcodeVault.InputPredictionTelemetry, RollbackNetcodeConstants.TelemetryFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _tuningHandle = _vault.EnsureGenerationHandle<RollbackTuningDTO>(RollbackNetcodeVault.Tuning, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _audioSuppressionHandle = _vault.EnsureGenerationHandle<RollbackAudioSuppressionDTO>(RollbackNetcodeVault.AudioSuppression, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
+            _csvScratchHandle = _vault.EnsureGenerationHandle<byte>(RollbackNetcodeVault.CsvScratch, RollbackNetcodeConstants.CsvScratchBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+#endif
+            _latencyProfileHandle = _vault.EnsureGenerationHandle<RollbackLegacyProfileDTO>(RollbackNetcodeVault.LatencyProfile, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _merkleNodeHandle = _vault.EnsureGenerationHandle<H8NetMerkleNodeRecord32>(RollbackNetcodeVault.MerkleNodes, RollbackNetcodeConstants.MerkleNodeCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _remoteMerkleNodeHandle = _vault.EnsureGenerationHandle<H8NetMerkleNodeRecord32>(RollbackNetcodeVault.RemoteMerkleNodes, RollbackNetcodeConstants.MerkleNodeCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _merkleDescriptorHandle = _vault.EnsureGenerationHandle<RollbackVaultBufferDescriptor32>(RollbackNetcodeVault.MerkleLeafDescriptors, RollbackNetcodeConstants.MerkleLeafCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _leafDeltaHandle = _vault.EnsureGenerationHandle<H8NetLeafDeltaRecord64>(RollbackNetcodeVault.LeafDeltaRecords, RollbackNetcodeConstants.LeafDeltaCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _rollbackInputJournalHandle = _vault.EnsureGenerationHandle<RollbackInputJournalSlot64>(RollbackNetcodeVault.InputJournalRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _mockJitterPacketHandle = _vault.EnsureGenerationHandle<MockNetworkJitterPacket64>(RollbackNetcodeVault.MockJitterPackets, RollbackNetcodeConstants.MockJitterPacketCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _mockJitterStateHandle = _vault.EnsureGenerationHandle<MockNetworkJitterState64>(RollbackNetcodeVault.MockJitterState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
 
             TryBindInputTruthHandles();
             TryBindBorrowedSnapshotHandles();
@@ -880,7 +899,6 @@ namespace Hecton8.Networking
             if (!SignalBus<RollbackRequiredSignal>.HasNativeStorage)
                 return false;
 
-            _rollbackSignalWriter = SignalBus<RollbackRequiredSignal>.OpenParallelWriter();
             _rollbackSignalsReady = 1u;
             return true;
         }
@@ -1273,7 +1291,9 @@ namespace Hecton8.Networking
         {
             _projectRoot = ResolveProjectRoot();
             _legacyProfilePath = Path.Combine(_projectRoot, LegacyProfileRelativePath);
+#if UNITY_EDITOR
             _csvProfilePath = Path.Combine(_projectRoot, CsvProfileRelativePath);
+#endif
             _dumpPath = Path.Combine(_projectRoot, DumpRelativePath);
         }
 
@@ -1288,6 +1308,7 @@ namespace Hecton8.Networking
                 : Path.Combine(currentDirectory, "Hecton8");
         }
 
+#if UNITY_EDITOR
         private void TryApplyCsvOverride()
         {
             if (string.IsNullOrEmpty(_csvProfilePath) || !File.Exists(_csvProfilePath))
@@ -1481,6 +1502,7 @@ namespace Hecton8.Networking
         {
             return value >= 'A' && value <= 'Z' ? (byte)(value + 32) : value;
         }
+#endif
 
         private void PublishPauseSignal(uint currentFrame)
         {
@@ -1491,7 +1513,7 @@ namespace Hecton8.Networking
             signal.Paused = 1;
             signal.Flags = 1;
             signal.RestoreScalar = 1f;
-            SignalBus<SystemPauseSignal>.Push(in signal);
+            SignalBus<SystemPauseSignal>.TryPush(in signal);
         }
 
         private void DumpNetcodeBlackBox(uint currentFrame, uint flags)

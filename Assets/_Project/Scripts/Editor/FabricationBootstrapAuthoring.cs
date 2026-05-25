@@ -322,8 +322,7 @@ namespace Hecton8.EditorTools
             station.transform.position = worldPosition;
             station.transform.localScale = localScale;
 
-            Renderer renderer = station.GetComponent<Renderer>();
-            if (renderer != null)
+            if (station.TryGetComponent(out Renderer renderer))
                 renderer.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Material.mat");
 
             Fabricator fabricator = station.AddComponent<Fabricator>();
@@ -359,8 +358,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            Fabricator fabricator = fabricatorTransform.GetComponent<Fabricator>();
-            if (fabricator == null)
+            if (!fabricatorTransform.TryGetComponent(out Fabricator fabricator))
             {
                 Debug.LogError($"[FabricationBootstrap] {fabricatorName} is missing Fabricator component.", fabricatorTransform.gameObject);
                 errors++;

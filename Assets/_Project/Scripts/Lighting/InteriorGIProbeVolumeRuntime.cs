@@ -192,7 +192,7 @@ namespace Hecton8.Lighting
 
     [DisallowMultipleComponent]
     [AddComponentMenu("HECTON-8/Lighting/Interior GI Probe Volume Runtime")]
-    public sealed unsafe class InteriorGIProbeVolumeRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    public sealed unsafe class InteriorGIProbeVolumeRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         public const int MaxResolution = 32;
         public const int MinResolution = 12;
@@ -281,7 +281,6 @@ namespace Hecton8.Lighting
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
-        private bool _registeredScalability;
         private bool _registeredOriginShift;
         private bool _registeredHotSwapListener;
         private bool _nativeReady;
@@ -310,8 +309,6 @@ namespace Hecton8.Lighting
         private Vector4 _gpuUploadPendingOrigin;
         private Vector4 _gpuUploadPendingRootAup;
         private Vector4 _gpuUploadPendingState;
-        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
-
         private VaultGenerationHandle<CustomLightProbeDTO> _probeFront;
         private VaultGenerationHandle<CustomLightProbeDTO> _probeBack;
         private VaultGenerationHandle<InteriorGISourceDTO> _sources;
@@ -473,11 +470,6 @@ namespace Hecton8.Lighting
             }
 
             _visualDirty = true;
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedQualityTier = payload.CurrentQualityTier;
         }
 
         public bool TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO>.ReadOnly probes, out int resolution, out double3 rootAup, out float cellSize, out int version)
@@ -729,7 +721,7 @@ namespace Hecton8.Lighting
         private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
         {
             IDataVault vault = EnsureVault();
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 length,
                 MemoryOwner,
@@ -965,12 +957,6 @@ namespace Hecton8.Lighting
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
-            if (!_registeredScalability)
-            {
-                ScalabilityEvents.Register(this);
-                _registeredScalability = true;
-            }
-
             if (!_registeredOriginShift)
             {
                 HectonFloatingOrigin.RegisterListener(this);
@@ -996,12 +982,6 @@ namespace Hecton8.Lighting
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
-            }
-
-            if (_registeredScalability)
-            {
-                ScalabilityEvents.Unregister(this);
-                _registeredScalability = false;
             }
 
             if (_registeredOriginShift)
@@ -1493,10 +1473,8 @@ namespace Hecton8.Lighting
         {
             float safeQuality = math.saturate(math.isfinite(quality) ? quality : 0f);
             int resolution = ResolveResolutionFromQuality(safeQuality);
-            float l1Gate = math.step(0.08f, safeQuality);
-            float l2Gate = math.step(0.54f, safeQuality);
-            float directional = Smooth01((safeQuality - 0.08f) * 1.35f) * l1Gate;
-            float l2 = Smooth01((safeQuality - 0.54f) * 2.05f) * l2Gate;
+            float directional = Smooth01((safeQuality - 0.08f) * 1.35f);
+            float l2 = Smooth01((safeQuality - 0.54f) * 2.05f);
             int sampleLimit = math.clamp((int)math.round(math.lerp(4f, MaxSourceCount, safeQuality * safeQuality)), 1, MaxSourceCount);
             float uploadCadence = math.lerp(0.45f, 0.10f, safeQuality);
             int iterations = math.clamp(1 + (int)math.floor(Smooth01(safeQuality) * 3.999f), 1, 4);
@@ -1587,19 +1565,11 @@ namespace Hecton8.Lighting
             if (forceQualityWeight >= 0f)
                 return math.saturate(forceQualityWeight);
 
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            if (!math.isfinite(weight))
-                weight = ResolveFallbackQualityWeight(_cachedQualityTier);
+            float weight = MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)
+                ? config.GlobalQualityWeight
+                : HomeostasisBrain.GlobalQualityWeight;
 
-            return math.saturate(weight);
-        }
-
-        private static float ResolveFallbackQualityWeight(HectonQualityTier tier)
-        {
-            float tierIndex = math.clamp((float)tier, (float)HectonQualityTier.Low, (float)HectonQualityTier.Ultra);
-            float normalized = math.saturate((tierIndex - (float)HectonQualityTier.Low) / math.max(0.0001f, (float)HectonQualityTier.Ultra - (float)HectonQualityTier.Low));
-            float curved = Smooth01(normalized);
-            return math.lerp(0.1f, 1f, curved);
+            return MathLodApproximation.SaturateFinite(weight, 1f);
         }
 
         private void ResolveActiveResolution(float quality)
@@ -1632,7 +1602,7 @@ namespace Hecton8.Lighting
         {
             float q = math.saturate(quality);
             float smooth = Smooth01(q);
-            float thermalGate = 1f - math.step(0.3f, q);
+            float thermalGate = 1f - Smooth01((q - 0.05f) * 2.2222223f);
             float thermalCadence = math.lerp(0.20f, 0.25f, smooth);
             float normalCadence = math.lerp(0.25f, 0.12f, smooth);
             return math.lerp(normalCadence, thermalCadence, thermalGate);
@@ -1717,14 +1687,17 @@ namespace Hecton8.Lighting
 
             int count = 0;
             using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            Span<byte> readBuffer = stackalloc byte[4096];
             while (count < maxBytes)
             {
-                int value = stream.ReadByte();
-                if (value < 0)
+                int requestedBytes = math.min(readBuffer.Length, maxBytes - count);
+                int read = stream.Read(readBuffer.Slice(0, requestedBytes));
+                if (read <= 0)
                     break;
 
-                destination[count] = (byte)value;
-                count++;
+                for (int i = 0; i < read; i++)
+                    destination[count + i] = readBuffer[i];
+                count += read;
             }
 
             return count;
@@ -1822,7 +1795,7 @@ namespace Hecton8.Lighting
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1911,6 +1884,7 @@ namespace Hecton8.Lighting
 #endif
     }
 
+#if UNITY_EDITOR
     public static class InteriorGICsvParser
     {
         public static int Parse(NativeArray<byte> bytes, int byteCount, NativeArray<InteriorGISourceDTO> sources, int maxSources, double3 rootAup, out int rowsRejected)
@@ -2137,6 +2111,7 @@ namespace Hecton8.Lighting
             public int Position;
         }
     }
+#endif
 
     public static class CustomLightProbeLayoutAudit
     {
@@ -2164,6 +2139,7 @@ namespace Hecton8.Lighting
         }
     }
 
+#if UNITY_EDITOR
     public static class AmbientLightingProfileCsvParser
     {
         public static unsafe int Parse(NativeArray<byte> csv, int byteCount, NativeArray<AmbientLightingProfileDTO> profiles, int maxProfiles, out int rowsRejected)
@@ -2392,6 +2368,7 @@ namespace Hecton8.Lighting
             public int Position;
         }
     }
+#endif
 
     public static class InteriorGIProbeMath
     {
@@ -2774,7 +2751,7 @@ namespace Hecton8.Lighting
             float3 uvw = new float3(coord.x, coord.y, coord.z) / denom;
             float depth01 = math.saturate(1f - uvw.y);
             float sideGlow = math.saturate(1f - math.abs(uvw.x - 0.5f) * 2f);
-            float causticLie = 0.85f + 0.15f * math.sin((coord.x * 12.9898f) + (coord.z * 78.233f) + (Tuning.FrameIndex * 0.071f));
+            float causticLie = 0.85f + 0.15f * MathLodApproximation.ApproxSinBhaskara((coord.x * 12.9898f) + (coord.z * 78.233f) + (Tuning.FrameIndex * 0.071f));
             float3 color = math.lerp(new float3(0.02f, 0.035f, 0.07f), new float3(0.08f, 0.64f, 0.82f), math.saturate(1f - depth01));
             color += new float3(0.02f, 0.18f, 0.13f) * sideGlow * causticLie * math.saturate(Tuning.GlobalQualityWeight);
 
@@ -2816,7 +2793,7 @@ namespace Hecton8.Lighting
             }
 
             double3 deltaAup = AupPrecisionMath.LocalDeltaDouble(EntityAup[index], Tuning.RootAup);
-            float3 local = AupPrecisionMath.DowncastLocalDelta(deltaAup, GlobalFallback);
+            float3 local = AupPrecisionMath.DowncastLocalDelta(deltaAup, float3.zero);
             if (!math.all(math.isfinite(local)))
             {
                 Output[index] = GlobalFallback;
@@ -3160,7 +3137,7 @@ namespace Hecton8.Lighting
 
                 float emergency = ((source.Flags & InteriorGIProbeVolumeRuntime.SourceFlagEmergency) != 0u) ? math.max(power.Emergency01, Tuning.EmergencyOverride01) : 1f;
                 float flora = ((source.Flags & InteriorGIProbeVolumeRuntime.SourceFlagFlora) != 0u)
-                    ? Tuning.FloraGlowScale * (0.7f + 0.3f * math.sin((Tuning.FrameIndex + source.Phase01 * 32f) * 0.17f))
+                    ? Tuning.FloraGlowScale * (0.7f + 0.3f * MathLodApproximation.ApproxSinBhaskara((Tuning.FrameIndex + source.Phase01 * 32f) * 0.17f))
                     : 1f;
                 float flashlight = ((source.Flags & InteriorGIProbeVolumeRuntime.SourceFlagFlashlight) != 0u) ? Tuning.FlashlightIntensity : 1f;
                 float water = 1f - math.saturate(currentCell.Water01) * Tuning.WaterAbsorption * math.max(0f, source.WaterAbsorptionScalar);
@@ -3181,7 +3158,7 @@ namespace Hecton8.Lighting
         {
             if (currentCell.FloraGlow01 > 0.0001f)
             {
-                float pulse = 0.75f + 0.25f * math.sin(Tuning.FrameIndex * 0.13f + currentCell.RoomHash * 0.0001f);
+                float pulse = 0.75f + 0.25f * MathLodApproximation.ApproxSinBhaskara(Tuning.FrameIndex * 0.13f + currentCell.RoomHash * 0.0001f);
                 InteriorGIProbeMath.AddDirectional(ref result, new float3(0.08f, 0.75f, 0.42f), currentCell.FloraGlow01 * Tuning.FloraGlowScale * pulse * Tuning.SimulationDelta, new float3(0f, 1f, 0f), Tuning.DirectionalWeight, Tuning.L2Weight);
             }
 

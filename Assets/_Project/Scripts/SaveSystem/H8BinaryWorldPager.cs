@@ -67,6 +67,7 @@ namespace Hecton8.Core.Persistence.Paging
         private VaultGenerationHandle<byte> _writeArenaHandle;
         private VaultGenerationHandle<byte> _readArenaHandle;
         private VaultGenerationHandle<byte> _readSlotStatesHandle;
+        private VaultGenerationHandle<byte> _readStagingHandle;
         private VaultGenerationHandle<byte> _compressionScratchHandle;
         private VaultGenerationHandle<byte> _hotStateArenaHandle;
         private VaultGenerationHandle<PagerTelemetryEntry> _telemetryRingHandle;
@@ -470,7 +471,7 @@ namespace Hecton8.Core.Persistence.Paging
             long sectorHash,
             uint payloadType,
             uint frame,
-            out VaultBufferSlice<byte> slice,
+            out VaultSliceHandle<byte> slice,
             out int bytesWritten,
             out H8WorldPageStatus status)
         {
@@ -488,16 +489,7 @@ namespace Hecton8.Core.Persistence.Paging
                 return false;
             }
 
-            if (!vault.TryAcquireSlice(
-                    BufferID.SaveWorldPagerReadStaging,
-                    SectorPayloadBytes * 2,
-                    0,
-                    SectorPayloadBytes * 2,
-                    VaultOwner,
-                    out slice,
-                    NativeArrayOptions.UninitializedMemory) ||
-                !slice.IsCreated ||
-                slice.Ptr == null)
+            if (!TryResolveDirectReadStaging(vault, out VaultSliceHandle<byte> stagingSlice, out NativeArray<byte> sliceBytes))
             {
                 return false;
             }
@@ -543,7 +535,7 @@ namespace Hecton8.Core.Persistence.Paging
                             return true;
                         }
 
-                        byte* rawPtr = (byte*)slice.Ptr;
+                        byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sliceBytes);
                         if ((flags & PageFlagCompressed) != 0u)
                         {
                             byte* storedPtr = rawPtr + SectorPayloadBytes;
@@ -575,6 +567,7 @@ namespace Hecton8.Core.Persistence.Paging
 
                         bytesWritten = rawBytes;
                         status = H8WorldPageStatus.Ready;
+                        slice = stagingSlice;
                         RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, rawBytes, PagerTelemetryOperation.ReadReady, status, flags);
                         return true;
                     }
@@ -781,47 +774,52 @@ namespace Hecton8.Core.Persistence.Paging
             if (!_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
 
-            _writeCommandsHandle = vault.GetGenerationHandle<PageWriteCommand>(
+            _writeCommandsHandle = vault.EnsureGenerationHandle<PageWriteCommand>(
                 BufferID.SaveWorldPagerWriteCommands,
                 WriteSlotCount,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _readCommandsHandle = vault.GetGenerationHandle<PageReadCommand>(
+            _readCommandsHandle = vault.EnsureGenerationHandle<PageReadCommand>(
                 BufferID.SaveWorldPagerReadCommands,
                 QueueCapacity,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _readResultsHandle = vault.GetGenerationHandle<PageReadResult>(
+            _readResultsHandle = vault.EnsureGenerationHandle<PageReadResult>(
                 BufferID.SaveWorldPagerReadResults,
                 ReadSlotCount,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _writeArenaHandle = vault.GetGenerationHandle<byte>(
+            _writeArenaHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.SaveWorldPagerWriteArena,
                 WriteSlotCount * SectorPayloadBytes,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _readArenaHandle = vault.GetGenerationHandle<byte>(
+            _readArenaHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.SaveWorldPagerReadArena,
                 ReadSlotCount * SectorPayloadBytes,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _readSlotStatesHandle = vault.GetGenerationHandle<byte>(
+            _readSlotStatesHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.SaveWorldPagerReadSlotStates,
                 ReadSlotCount,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _compressionScratchHandle = vault.GetGenerationHandle<byte>(
+            _readStagingHandle = vault.EnsureGenerationHandle<byte>(
+                BufferID.SaveWorldPagerReadStaging,
+                SectorPayloadBytes * 2,
+                VaultOwner,
+                NativeArrayOptions.UninitializedMemory);
+            _compressionScratchHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.SaveWorldPagerCompressionScratch,
                 SectorPayloadBytes,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _hotStateArenaHandle = vault.GetGenerationHandle<byte>(
+            _hotStateArenaHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.SaveWorldPagerHotState,
                 HotStateMaxBytes,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _telemetryRingHandle = vault.GetGenerationHandle<PagerTelemetryEntry>(
+            _telemetryRingHandle = vault.EnsureGenerationHandle<PagerTelemetryEntry>(
                 BufferID.SaveWorldPagerTelemetryRing,
                 TelemetryCapacity,
                 VaultOwner,
@@ -903,6 +901,7 @@ namespace Hecton8.Core.Persistence.Paging
                 HasPagerVaultBuffer(in _writeArenaHandle, BufferID.SaveWorldPagerWriteArena, WriteSlotCount * SectorPayloadBytes) &&
                 HasPagerVaultBuffer(in _readArenaHandle, BufferID.SaveWorldPagerReadArena, ReadSlotCount * SectorPayloadBytes) &&
                 HasPagerVaultBuffer(in _readSlotStatesHandle, BufferID.SaveWorldPagerReadSlotStates, ReadSlotCount) &&
+                HasPagerVaultBuffer(in _readStagingHandle, BufferID.SaveWorldPagerReadStaging, SectorPayloadBytes * 2) &&
                 HasPagerVaultBuffer(in _compressionScratchHandle, BufferID.SaveWorldPagerCompressionScratch, SectorPayloadBytes) &&
                 HasPagerVaultBuffer(in _hotStateArenaHandle, BufferID.SaveWorldPagerHotState, HotStateMaxBytes) &&
                 HasPagerVaultBuffer(in _telemetryRingHandle, BufferID.SaveWorldPagerTelemetryRing, TelemetryCapacity);
@@ -937,7 +936,7 @@ namespace Hecton8.Core.Persistence.Paging
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> array) where T : struct
+            out NativeArray<T>.ReadOnly array) where T : struct
         {
             IDataVault vault = _vault;
             array = default;
@@ -945,7 +944,7 @@ namespace Hecton8.Core.Persistence.Paging
                    !vault.IsCompactionFenceActive &&
                    requiredLength > 0 &&
                    IsPagerVaultHandle(in handle, bufferId) &&
-                   vault.TryReadHandle(in handle, out array) &&
+                   vault.TryReadOnlyHandle(in handle, out array) &&
                    array.IsCreated &&
                    array.Length >= requiredLength;
         }
@@ -966,6 +965,7 @@ namespace Hecton8.Core.Persistence.Paging
             ReleasePagerVaultHandle(vault, ref _writeArenaHandle, BufferID.SaveWorldPagerWriteArena);
             ReleasePagerVaultHandle(vault, ref _readArenaHandle, BufferID.SaveWorldPagerReadArena);
             ReleasePagerVaultHandle(vault, ref _readSlotStatesHandle, BufferID.SaveWorldPagerReadSlotStates);
+            ReleasePagerVaultHandle(vault, ref _readStagingHandle, BufferID.SaveWorldPagerReadStaging);
             ReleasePagerVaultHandle(vault, ref _compressionScratchHandle, BufferID.SaveWorldPagerCompressionScratch);
             ReleasePagerVaultHandle(vault, ref _hotStateArenaHandle, BufferID.SaveWorldPagerHotState);
             ReleasePagerVaultHandle(vault, ref _telemetryRingHandle, BufferID.SaveWorldPagerTelemetryRing);
@@ -1005,6 +1005,35 @@ namespace Hecton8.Core.Persistence.Paging
         private void ResolveReadArena(out NativeArray<byte> array)
         {
             TryResolvePagerVaultBuffer(in _readArenaHandle, BufferID.SaveWorldPagerReadArena, ReadSlotCount * SectorPayloadBytes, out array);
+        }
+
+        private bool TryResolveDirectReadStaging(
+            IDataVault vault,
+            out VaultSliceHandle<byte> slice,
+            out NativeArray<byte> sliceBytes)
+        {
+            slice = default;
+            sliceBytes = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsPagerVaultHandle(in _readStagingHandle, BufferID.SaveWorldPagerReadStaging) ||
+                !vault.TryResolveHandle(in _readStagingHandle, out NativeArray<byte> staging) ||
+                !staging.IsCreated ||
+                staging.Length < SectorPayloadBytes * 2)
+            {
+                return false;
+            }
+
+            slice.BufferID = _readStagingHandle.BufferID;
+            slice.SystemID = _readStagingHandle.SystemID;
+            slice.Generation = _readStagingHandle.Generation;
+            slice.HandleFlags = _readStagingHandle.Flags;
+            slice.StartIndex = 0;
+            slice.Length = SectorPayloadBytes * 2;
+            slice.Flags = 0u;
+            slice.Reserved0 = 0u;
+            sliceBytes = staging;
+            return true;
         }
 
         private void ResolveReadSlotStates(out NativeArray<byte> array)

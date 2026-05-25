@@ -10,6 +10,13 @@ using UnityEngine;
 
 namespace Hecton8.Scavenging
 {
+    internal static class ResourceNodeTemplateLayout
+    {
+        public const int YieldRuntimeEntryStrideBytes = 16;
+        public const int RarityDropRuntimeEntryStrideBytes = 16;
+        public const int RuntimeDescriptorStrideBytes = 64;
+    }
+
     /// <summary>
     /// Authoring template for harvestable resource-node families.
     /// Owns environmental envelopes, runtime yield tables, ghost-box dimensions, and optional presentation assets.
@@ -88,7 +95,7 @@ namespace Hecton8.Scavenging
             public ushort amount;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = ResourceNodeTemplateLayout.YieldRuntimeEntryStrideBytes)]
         public struct YieldRuntimeEntry
         {
             [FieldOffset(0)] public int ItemHashId;
@@ -100,7 +107,7 @@ namespace Hecton8.Scavenging
             [FieldOffset(12)] public uint Reserved2;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = ResourceNodeTemplateLayout.RarityDropRuntimeEntryStrideBytes)]
         public struct RarityDropRuntimeEntry
         {
             [FieldOffset(0)] public int ItemHashId;
@@ -111,7 +118,7 @@ namespace Hecton8.Scavenging
             [FieldOffset(12)] public uint Reserved1;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = ResourceNodeTemplateLayout.RuntimeDescriptorStrideBytes)]
         public struct RuntimeDescriptor
         {
             [FieldOffset(0)] public int StableHashId;

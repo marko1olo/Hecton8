@@ -1,240 +1,335 @@
-# HECTON-8 Audio DSP Pipeline
+﻿# HECTON-8 Audio DSP Pipeline
+
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
-
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-21 R51 Root/Architecture Actuality Boundary
-
-This document is active only where it agrees with:
-
-- `Docs/README.md`
-- `Docs/DOC_GOVERNANCE.md`
-- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-- current source files
-- fresh verification logs and artifacts
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Source Anchors
 
 Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not Unity audio-thread behavior, profiler, GC, console, or player-build proof.
 
 - `Assets/_Project/Scripts/SpatialAudioManager.cs`
+
 - `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`
+
 - `Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs`
+
 - `Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs`
+
 - `Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs`
 
 Verification: PENDING VERIFICATION
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
-- Historical data boundary snapshot: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
 - Historical manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+
 - Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json` (historical snapshot only; do not use for current counts or proof).
+
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
-- Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R51 root/architecture encoding/boundary/read-order/route-card/source-counter correction (`Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md`) (R49 prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction; R48 prior date-rollover/AtlasCheck/source-counter correction; R47 prior authority-spine/runtime-wording/counter-drift correction; R46 prior interior-authority/route-field/proof-language correction; R45 prior R43/R44 residue/proof-artifact/source-counter correction); R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; AtlasCheck fails `ATLAS_CHECK_FAIL references=6881 missing=60` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HectonMaskChannelPacker and HectonMaterialChannelPackValidator source refs in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
+
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
+
 Historical 2026-05-04 boundary:
 
 - This is the first-party audio DSP architecture reference, not live mixer/profiler proof.
+
 - Historical project-state orientation previously started at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+
 - `SpatialAudioManager` and `PlayerCriticalProceduralAudioRenderer` are source-backed owners; runtime pool state, console health, audio-thread cost, and zero-GC transport still require fresh Unity/profiler verification.
 
 ## Scope
-This document records the first-party procedural audio path owned by:
+
+First-party procedural audio owner path:
+
 - `Assets/_Project/Scripts/SpatialAudioManager.cs`
+
 - `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`
 
 The target is zero-allocation runtime transport with sample-stable DSP parameters and deterministic underwater psychoacoustics.
 
 ## Documentation Lifecycle
+
 This file is the normative audio DSP architecture reference for first-party runtime systems.
 
 Historical notes and iteration logs under:
+
 - `Docs/ARCHIVARIUS REPORTS/03_OBSOLETE/`
 
 are archived records only. They are not the source of truth for current runtime ownership, DSP order, or transport contracts.
 
 ## Runtime Ownership
+
 - `SpatialAudioManager` owns world-source playback pools, binaural telemetry, passive radar payloads, and delayed acoustic world events.
+
 - `PlayerCriticalProceduralAudioRenderer` owns player-local procedural DSP: hull stress, sonar, thrusters, dread sub-bass, heartbeat, bubble synthesis, and final binaural shaping.
 
 ## SPSC Parameter Sync
+
 The procedural renderer uses a double-buffered snapshot handoff between the main thread and the audio producer thread.
 
 ### Producer Write Sequence
+
 1. Main thread writes the next `AudioParameterSnapshot` into the inactive slot.
+
 2. Main thread publishes the slot with `Interlocked.Exchange(ref _currentSnapshotReadIndex, nextIndex)`.
+
 3. No audio-thread field mutation is allowed.
 
 ### Consumer Read Sequence
+
 1. Audio worker enters one synthesis block.
+
 2. Worker performs `Volatile.Read(ref _currentSnapshotReadIndex)` once.
+
 3. Worker copies the chosen snapshot into a local struct.
+
 4. All samples in the block use that local copy only.
 
 This prevents mid-block parameter tearing and satisfies the SPSC mandate.
 
 ## World Event Propagation Delay
+
 Large underwater events must not arrive instantly.
 
 ### Data Path
+
 - Ingress queue: `NativeQueue<DelayedAudioEvent>`
+
 - Active schedule: `NativeList<DelayedAudioEvent>`
+
 - Owner: `SpatialAudioManager`
 
 ### Delay Math
+
 ```text
+
 DelaySeconds = distance(listenerPos, eventPos) / 1480.0
+
 Dispatch when: Time.time >= EventTimeSeconds + DelaySeconds
+
 ```
 
 ### Current Implosion Path
+
 `HandleFatalPressureImplosion(...)` computes delay from absolute listener position to event position, enqueues `DelayedAudioEvent`, and `ProcessDelayedAudioEvents(...)` dispatches the clip and trauma only after the underwater travel time has elapsed.
 
 ## Active Sonar Cone Echoes
+
 The player sonar ping is owned by `PlayerCriticalProceduralAudioRenderer`, not `SpatialAudioManager`, because the final echo clicks must land on the sample-accurate DSP timeline.
 
 ### Query Pattern
+
 - dry ping publishes immediately through the existing double-buffered sonar trigger state
+
 - the same ping also schedules `12` async `RaycastCommand` probes in a forward cone
+
 - when the batch resolves, the main thread publishes a same-sequence sonar-state revision with up to `12` echo taps
+
 - the audio worker consumes that revision once per block and renders the delayed clicks through the Hermite delay ring
 
 ### Echo Math
+
 ```text
+
 EchoDelaySeconds = (hitDistanceMeters * 2.0) / 1480.0
+
 TransmissionLossDb = 20 * log10(pathDistance) + k_absorption * pathDistance
+
 EchoAttenuation = 10^(-TransmissionLossDb / 20) * materialTransmission
+
 ```
 
 Each tap also carries:
+
 - Doppler ratio for read-pointer advance
+
 - material-derived low-pass cutoff
+
 - precomputed biquad coefficients when low-pass filtering is required
 
 ## 4-Point Hermite Resampling
+
 The canonical fractional-delay / pitch-resample kernel is a 4-point Hermite interpolator over a power-of-two ring buffer.
 
 ### Wrap Rule
+
 Every tap must be masked. Naked offset reads are forbidden.
 
 ```text
+
 xm1 = buffer[(i - 1) & mask]
+
 x0  = buffer[i & mask]
+
 x1  = buffer[(i + 1) & mask]
+
 x2  = buffer[(i + 2) & mask]
+
 ```
 
 ### Polynomial
+
 ```text
+
 c0 = x0
+
 c1 = 0.5 * (x1 - xm1)
+
 c2 = xm1 - 2.5*x0 + 2*x1 - 0.5*x2
+
 c3 = 0.5*(x2 - xm1) + 1.5*(x0 - x1)
+
 y(t) = ((c3*t + c2)*t + c1)*t + c0
+
 ```
 
 ### Doppler / Fractional Delay Use
+
 For variable-rate playback:
+
 ```text
+
 frac = readPtr - floor(readPtr)
+
 i = floor(readPtr)
+
 sample = hermite(buffer[(i-1)&mask], buffer[i&mask], buffer[(i+1)&mask], buffer[(i+2)&mask], frac)
+
 readPtr += dopplerRatio
+
 ```
 
 The renderer already uses masked Hermite helpers for tonal/ring interpolation. Any future world-voice fractional resampler must use the same masked-tap form.
 
 ## Hull Stress FM Kernel
+
 Hull stress synthesis is finalized in the procedural renderer and follows the stress-driven FM recipe.
 
 ```text
+
 modFreq = lerp(5 Hz, 80 Hz, stress^2)
+
 modIndex = lerp(0.1, 12.0, stress)
+
 carrierFreq = 80 Hz + sin(modPhase * 2Ï€) * modIndex * noise
+
 output = tanh(raw * (1 + stress * 3))
+
 ```
 
 At high modulation index the kernel can oversample before decimation to reduce aliasing.
 
 ## Psychoacoustic Pressure Filter
+
 High frequencies collapse as the player goes deeper.
 
 ### Current Law
+
 ```text
+
 HF_cutoff = LPF_OPEN_HZ / (1.0 + depth / 500.0)
+
 ```
 
 The renderer clamps this against a minimum cutoff floor to avoid fully killing intelligibility.
 
 ## Dread Sub-Bass
+
 Tight caves intensify low-frequency dread.
 
 ```text
+
 f_rumble = lerp(30 Hz, 15 Hz, EDI)
+
 gain = baseDepthGain * lerp(0.35, 1.65, EDI)
+
 ```
 
 `EDI` is the enclosure density index derived from the six-axis enclosure probe result.
 
 ## Sabine Enclosure Reverb
+
 Listener enclosure probing is owned by `AcousticOcclusionUtility` and consumed by `PlayerCriticalProceduralAudioRenderer`.
 
 ### Probe Pattern
+
 - 6 orthogonal rays: up, down, left, right, forward, back
+
 - probes are time-sliced in batches of `2` to avoid one-frame spikes
+
 - each hit contributes span and absorption data
 
 ### Sabine RT60
+
 ```text
+
 V_approx = spanVertical * spanHorizontal * spanDepth
+
 RT60 = 0.161 * (V_approx / TotalAbsorption)
+
 ```
 
 `TotalAbsorption` is the equivalent absorption area accumulated from the six surfaces. The result is clamped to authored floor/ceiling limits before being pushed into the listener reverb mixer decay parameter.
 
 ## Procedural Bubble Synthesis
+
 Bubble chirps are generated as short decaying sine bursts while the plasma cutter boils water.
 
 ### Minnaert Frequency
+
 ```text
+
 f_bubble = (1 / (2πR)) * sqrt((3 * γ * P_ambient) / ρ_water)
+
 ```
 
 Where:
+
 - `R` = bubble radius in meters
+
 - `γ` = heat capacity ratio
+
 - `P_ambient = 101325 + ρ_water * g * depth`
+
 - `ρ_water` = water density
 
 ### Envelope
+
 Each spawned bubble uses:
+
 - randomized radius within authored min/max bounds
+
 - exponentially decaying gain
+
 - sine carrier at `f_bubble`
 
 ## Water / Air Binaural Blend
+
 `SpatialAudioManager` publishes `WaterDensityMul` in `BinauralEmitterTelemetry`.
+
 `PlayerCriticalProceduralAudioRenderer` consumes it per block to blend:
+
 - ITD behavior between air and water propagation
+
 - ILD contra-ear floor between air and underwater shadow models
 
 This keeps interior-base acoustics from sounding fully submerged.
 
 ## OnAudioFilterRead Contract
+
 `OnAudioFilterRead(float[] data, int channels)` remains a transfer bridge only.
 
 Rules:
+
 - no `new float[]`
+
 - no LINQ
+
 - no per-call container growth
+
 - no synthesis work inside the managed callback
 
 The callback only pulls interleaved frames from the prebuilt SPSC ring buffer into Unity's output buffer.

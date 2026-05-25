@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_050
+ROLE: MASK_ORM
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_050_mat_Rock_Shared_ORM
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\mat_Rock_Shared_ORM.png
+FINAL_FILENAME: mat_Rock_Shared_ORM.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Packed ORM source for shared Hecton rock, generated as an RGB mask image. Red channel should describe ambient occlusion in plate cracks, vein grooves, and sediment pits. Green channel should describe roughness variation: smoother pressure-polished stone, rougher mineral dust, medium basalt planes. Blue channel should be almost empty with only rare teal crystal flecks. Keep masks clean, tileable, non-directional, and usable for triplanar projection. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

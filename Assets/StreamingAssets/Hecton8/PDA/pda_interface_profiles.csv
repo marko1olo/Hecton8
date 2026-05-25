@@ -1,0 +1,10 @@
+# name,u,v,w,h
+default,0,0,1,1
+inventory,0,0,0.25,0.5
+loadout,0.25,0,0.25,0.5
+construction,0.5,0,0.25,0.5
+barter,0.75,0,0.25,0.5
+data_log,0,0.5,0.25,0.5
+spectrum,0.25,0.5,0.25,0.5
+atlas_signal,0.5,0.5,0.25,0.5
+diagnostics,0.75,0.5,0.25,0.5

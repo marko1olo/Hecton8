@@ -316,6 +316,7 @@ namespace Hecton8.Crafting
 
                 if (!_pendingEvents.TryDequeue(out CraftingEventPayload payload))
                 {
+                    _pendingEventCount = 0;
                     ReleaseProcessedReferenceSlots(releaseCount);
                     return;
                 }
@@ -402,16 +403,22 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Enqueues a fabricator-opened event.
         /// </summary>
+        [Obsolete("Use TryRaiseFabricatorOpened(Fabricator) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseFabricatorOpened(Fabricator fabricator)
         {
+            TryRaiseFabricatorOpened(fabricator);
+        }
+
+        public static bool TryRaiseFabricatorOpened(Fabricator fabricator)
+        {
             if (!TryReserveReferenceSlot(CraftingEventType.FabricatorOpened, out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Fabricator = fabricator;
             _referenceSlots[referenceSlot].Recipe = null;
             _referenceSlots[referenceSlot].Item = null;
 
-            Enqueue(new CraftingEventPayload
+            return Enqueue(new CraftingEventPayload
             {
                 FabricatorHashId = ComputeFabricatorHash(fabricator),
                 RecipeHashId = 0u,
@@ -424,9 +431,15 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Enqueues a fabricator-closed event.
         /// </summary>
+        [Obsolete("Use TryRaiseFabricatorClosed() so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseFabricatorClosed()
         {
-            Enqueue(new CraftingEventPayload
+            TryRaiseFabricatorClosed();
+        }
+
+        public static bool TryRaiseFabricatorClosed()
+        {
+            return Enqueue(new CraftingEventPayload
             {
                 ReferenceSlot = -1,
                 EventType = (ushort)CraftingEventType.FabricatorClosed
@@ -436,16 +449,22 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Enqueues a crafting-started event.
         /// </summary>
+        [Obsolete("Use TryRaiseCraftStarted(RecipeData) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseCraftStarted(RecipeData recipe)
         {
+            TryRaiseCraftStarted(recipe);
+        }
+
+        public static bool TryRaiseCraftStarted(RecipeData recipe)
+        {
             if (!TryReserveReferenceSlot(CraftingEventType.CraftStarted, out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Fabricator = null;
             _referenceSlots[referenceSlot].Recipe = recipe;
             _referenceSlots[referenceSlot].Item = null;
 
-            Enqueue(new CraftingEventPayload
+            return Enqueue(new CraftingEventPayload
             {
                 FabricatorHashId = 0u,
                 RecipeHashId = ComputeRecipeHash(recipe),
@@ -458,9 +477,15 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Enqueues a crafting-progress update.
         /// </summary>
+        [Obsolete("Use TryRaiseCraftProgressUpdated(float) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseCraftProgressUpdated(float progress01)
         {
-            Enqueue(new CraftingEventPayload
+            TryRaiseCraftProgressUpdated(progress01);
+        }
+
+        public static bool TryRaiseCraftProgressUpdated(float progress01)
+        {
+            return Enqueue(new CraftingEventPayload
             {
                 Progress01 = progress01,
                 ReferenceSlot = -1,
@@ -471,20 +496,26 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Enqueues a crafting-completed event and publishes item-crafted telemetry.
         /// </summary>
+        [Obsolete("Use TryRaiseCraftCompleted(ItemData) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseCraftCompleted(ItemData resultItem)
+        {
+            TryRaiseCraftCompleted(resultItem);
+        }
+
+        public static bool TryRaiseCraftCompleted(ItemData resultItem)
         {
             uint resultItemHash = ComputeItemHash(resultItem);
             if (resultItemHash != 0u)
                 GlobalTelemetryBus.PublishItemCrafted(resultItemHash);
 
             if (!TryReserveReferenceSlot(CraftingEventType.CraftCompleted, out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Fabricator = null;
             _referenceSlots[referenceSlot].Recipe = null;
             _referenceSlots[referenceSlot].Item = resultItem;
 
-            Enqueue(new CraftingEventPayload
+            return Enqueue(new CraftingEventPayload
             {
                 FabricatorHashId = 0u,
                 RecipeHashId = 0u,
@@ -497,16 +528,22 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Enqueues a physical crafted-output synthesis event.
         /// </summary>
+        [Obsolete("Use TryRaiseCraftOutputSynthesized(CraftedItemSynthesisEvent) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseCraftOutputSynthesized(CraftedItemSynthesisEvent synthesisEvent)
         {
+            TryRaiseCraftOutputSynthesized(synthesisEvent);
+        }
+
+        public static bool TryRaiseCraftOutputSynthesized(CraftedItemSynthesisEvent synthesisEvent)
+        {
             if (!TryReserveReferenceSlot(CraftingEventType.CraftOutputSynthesized, out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Fabricator = null;
             _referenceSlots[referenceSlot].Recipe = null;
             _referenceSlots[referenceSlot].Item = synthesisEvent.Item;
 
-            Enqueue(new CraftingEventPayload
+            return Enqueue(new CraftingEventPayload
             {
                 SpawnPosition = synthesisEvent.SpawnPosition,
                 VelocityChange = synthesisEvent.VelocityChange,
@@ -522,9 +559,15 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Enqueues a crafting-cancelled event.
         /// </summary>
+        [Obsolete("Use TryRaiseCraftCancelled() so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseCraftCancelled()
         {
-            Enqueue(new CraftingEventPayload
+            TryRaiseCraftCancelled();
+        }
+
+        public static bool TryRaiseCraftCancelled()
+        {
+            return Enqueue(new CraftingEventPayload
             {
                 ReferenceSlot = -1,
                 EventType = (ushort)CraftingEventType.CraftCancelled
@@ -534,16 +577,22 @@ namespace Hecton8.Crafting
         /// <summary>
         /// Enqueues a diegetic crafting-failure event for panel shake and local feedback.
         /// </summary>
+        [Obsolete("Use TryRaiseCraftFailed(Fabricator) so overflow/drop semantics stay visible at the producer.", true)]
         public static void RaiseCraftFailed(Fabricator fabricator)
         {
+            TryRaiseCraftFailed(fabricator);
+        }
+
+        public static bool TryRaiseCraftFailed(Fabricator fabricator)
+        {
             if (!TryReserveReferenceSlot(CraftingEventType.CraftFailed, out int referenceSlot))
-                return;
+                return false;
 
             _referenceSlots[referenceSlot].Fabricator = fabricator;
             _referenceSlots[referenceSlot].Recipe = null;
             _referenceSlots[referenceSlot].Item = null;
 
-            Enqueue(new CraftingEventPayload
+            return Enqueue(new CraftingEventPayload
             {
                 FabricatorHashId = ComputeFabricatorHash(fabricator),
                 ReferenceSlot = referenceSlot,
@@ -703,7 +752,10 @@ namespace Hecton8.Crafting
                     return false;
 
                 if (!queue.TryDequeue(out CraftingEventPayload payload))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;

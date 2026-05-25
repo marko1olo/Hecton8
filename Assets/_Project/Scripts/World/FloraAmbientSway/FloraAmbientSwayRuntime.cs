@@ -87,7 +87,10 @@ namespace Hecton8.World.FloraAmbientSway
             float speed = math.max(0.001f, SanitizeFinite(MockSpeed, 0.18f));
             float intensity = math.max(0f, SanitizeFinite(MockIntensity, 0.75f));
             float phase = WrappedTime * speed;
-            float3 rawDirection = math.float3(math.sin(phase), 0.08f * math.sin(phase * 0.37f), math.cos(phase * 0.73f));
+            float3 rawDirection = math.float3(
+                MathLodApproximation.ApproxSinBhaskara(phase),
+                0.08f * MathLodApproximation.ApproxSinBhaskara(phase * 0.37f),
+                MathLodApproximation.ApproxCosBhaskara(phase * 0.73f));
             float lengthSq = math.lengthsq(rawDirection);
             float3 direction = rawDirection * math.rsqrt(math.max(lengthSq, 0.0001f));
             if (!math.all(math.isfinite(direction)) || lengthSq < 0.0001f)
@@ -566,14 +569,13 @@ namespace Hecton8.World.FloraAmbientSway
         {
             dto = default;
             IDataVault vault = _vault;
-            if (vault == null || !TryRead(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO> parameters) ||
+            if (vault == null || !TryRead(vault, in _paramsHandle, out NativeArray<FloraSwayParamsDTO>.ReadOnly parameters) ||
                 !parameters.IsCreated || parameters.Length == 0)
             {
                 return false;
             }
 
-            ref readonly FloraSwayParamsDTO source = ref ReadFirstParamsReadonly(parameters);
-            dto = source;
+            dto = parameters[0];
             return true;
         }
 
@@ -635,6 +637,7 @@ namespace Hecton8.World.FloraAmbientSway
             return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 
+#if UNITY_EDITOR
         public static unsafe bool TryParseBiomeProfiles(ReadOnlySpan<byte> csvBytes, NativeArray<FloraBiomeSwayProfileDTO> profiles, out int count)
         {
             count = 0;
@@ -666,6 +669,7 @@ namespace Hecton8.World.FloraAmbientSway
 
             return any;
         }
+#endif
 
         private bool TryColdBootstrapVault()
         {
@@ -740,37 +744,37 @@ namespace Hecton8.World.FloraAmbientSway
                 return true;
 
             NativeArrayOptions options = clearExisting ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
-            _paramsHandle = vault.GetGenerationHandle<FloraSwayParamsDTO>(
+            _paramsHandle = vault.EnsureGenerationHandle<FloraSwayParamsDTO>(
                 FloraAmbientSwayParamsBufferId,
                 1,
                 SystemID.FloraGenomics,
                 options);
-            _flowStateHandle = vault.GetGenerationHandle<FloraAmbientFlowStateDTO>(
+            _flowStateHandle = vault.EnsureGenerationHandle<FloraAmbientFlowStateDTO>(
                 FloraAmbientSwayFlowStateBufferId,
                 1,
                 SystemID.FloraGenomics,
                 options);
-            _tuningHandle = vault.GetGenerationHandle<FloraSwayTuningDTO>(
+            _tuningHandle = vault.EnsureGenerationHandle<FloraSwayTuningDTO>(
                 FloraAmbientSwayTuningBufferId,
                 1,
                 SystemID.FloraGenomics,
                 options);
-            _profileHandle = vault.GetGenerationHandle<FloraBiomeSwayProfileDTO>(
+            _profileHandle = vault.EnsureGenerationHandle<FloraBiomeSwayProfileDTO>(
                 FloraAmbientSwayBiomeProfilesBufferId,
                 BiomeProfileCapacity,
                 SystemID.FloraGenomics,
                 options);
-            _telemetryHandle = vault.GetGenerationHandle<SwayTelemetryEntry>(
+            _telemetryHandle = vault.EnsureGenerationHandle<SwayTelemetryEntry>(
                 FloraAmbientSwayTelemetryRingBufferId,
                 SwayTelemetryCapacity,
                 SystemID.FloraGenomics,
                 options);
-            _telemetryCursorHandle = vault.GetGenerationHandle<int>(
+            _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(
                 FloraAmbientSwayTelemetryCursorBufferId,
                 1,
                 SystemID.FloraGenomics,
                 options);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 FloraAmbientSwayCsvScratchBufferId,
                 CsvScratchBytes,
                 SystemID.FloraGenomics,
@@ -1135,10 +1139,10 @@ namespace Hecton8.World.FloraAmbientSway
             return vault != null && handle.BufferID != 0u && vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
-        private static bool TryRead<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private static bool TryRead<T>(IDataVault vault, in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
-            return vault != null && handle.BufferID != 0u && vault.TryReadHandle(in handle, out buffer) && buffer.IsCreated;
+            return vault != null && handle.BufferID != 0u && vault.TryReadOnlyHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
         private void ReleaseOwnedVaultBuffers(IDataVault vault)
@@ -1179,6 +1183,7 @@ namespace Hecton8.World.FloraAmbientSway
             UnsafeUtility.MemClear(ptr, (long)UnsafeUtility.SizeOf<T>() * buffer.Length);
         }
 
+#if UNITY_EDITOR
         private static bool IsHeader(ReadOnlySpan<byte> line)
         {
             int cursor = 0;
@@ -1340,6 +1345,7 @@ namespace Hecton8.World.FloraAmbientSway
             float parsed = result * sign;
             return any && math.isfinite(parsed) ? parsed : fallback;
         }
+#endif
         private sealed class VisualSyncUploadSystem : IDispatcherSystem
         {
             private const uint VisualSystemHash = 0x53483237u;

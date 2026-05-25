@@ -7,6 +7,12 @@ using UnityEngine;
 
 namespace Hecton8.Interaction
 {
+    internal static class KinematicTerminalInteractionLayout
+    {
+        public const int PointerStateStrideBytes = 64;
+        public const int PhysicalHandIkTargetStrideBytes = 64;
+    }
+
     [System.Flags]
     public enum TerminalActionFlags : byte
     {
@@ -18,7 +24,7 @@ namespace Hecton8.Interaction
         Scroll = 1 << 4,
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = KinematicTerminalInteractionLayout.PointerStateStrideBytes)]
     public readonly struct KinematicTerminalPointerState
     {
         public KinematicTerminalPointerState(
@@ -60,7 +66,7 @@ namespace Hecton8.Interaction
         private readonly ulong _pad5;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = KinematicTerminalInteractionLayout.PhysicalHandIkTargetStrideBytes)]
     public readonly struct PhysicalHandIkTarget
     {
         public PhysicalHandIkTarget(
@@ -254,7 +260,7 @@ namespace Hecton8.Interaction
 
             if (emitPressHaptics && (actionFlags & TerminalActionFlags.Press) != 0)
             {
-                ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                     0.04f,
                     0.22f,
                     0.05f,

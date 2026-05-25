@@ -69,10 +69,8 @@ namespace Hecton8.Tools.Editor
             ref int violations,
             StringBuilder findings)
         {
-            string[] files = Directory.GetFiles(directory, "*.cs", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
             {
-                string file = files[i];
                 string normalizedPath = file.Replace('\\', '/');
                 if (normalizedPath.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0)
                     continue;

@@ -2,10 +2,15 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.World
 {
+    internal static class EcosystemEnvelopeLayout
+    {
+        public const int EcosystemEnvelopeStrideBytes = 32;
+    }
+
     /// <summary>
     /// O(1) environmental sample used by fauna spawn and logical-LOD decisions.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = EcosystemEnvelopeLayout.EcosystemEnvelopeStrideBytes)]
     internal readonly struct EcosystemEnvelope
     {
         [FieldOffset(0)] public readonly float TemperatureCelsius;

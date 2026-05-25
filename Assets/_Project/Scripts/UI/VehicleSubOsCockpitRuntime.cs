@@ -1,11 +1,11 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Optimization;
 using Hecton8.Power;
 using Hecton8.World;
 using TMPro;
@@ -72,6 +72,14 @@ namespace Hecton8.UI
         private const int StatusModeExternalLive = 1;
         private const int StatusModeExternalStatic = 2;
         private const int StatusModeExternalLocked = 3;
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
+        private const BufferID ButtonStatesBufferId = BufferID.VehicleSubOsButtonStates;
+        private const BufferID ButtonTargetsBufferId = BufferID.VehicleSubOsButtonTargets;
+        private const BufferID ButtonProgressBufferId = BufferID.VehicleSubOsButtonProgress;
+        private const BufferID ButtonOffsetsBufferId = BufferID.VehicleSubOsButtonOffsets;
+        private const BufferID ButtonBaseLocalPositionsBufferId = BufferID.VehicleSubOsButtonBaseLocalPositions;
+        private const BufferID ButtonMatricesBufferId = BufferID.VehicleSubOsButtonMatrices;
+        private const BufferID TelemetryRingBufferId = BufferID.VehicleSubOsTelemetryRing;
 
         private static readonly int SonarTapsId = Shader.PropertyToID("_SonarEchoTaps");
         private static readonly int RadarBlipsId = Shader.PropertyToID("_RadarBlips");
@@ -234,22 +242,28 @@ namespace Hecton8.UI
         private readonly float[] _damageRoomWaterUpload = new float[MaxDamageHologramRooms]; // COLD ALLOC: float[32] - habitat room flood upload staging - owner: VehicleSubOsCockpitRuntime
         private readonly Vector4[] _damageFallbackPoint = new Vector4[FallbackDamageWarningPoints]; // COLD ALLOC: Vector4[7] - static warning glyph upload fallback - owner: VehicleSubOsCockpitRuntime
 
-        private NativeArray<byte> _buttonStates;
-        private NativeArray<byte> _buttonTargets;
-        private NativeArray<float> _buttonProgress;
-        private NativeArray<float> _buttonOffsets;
-        private NativeArray<float3> _buttonBaseLocalPositions;
-        private NativeArray<float4x4> _buttonMatrices;
-        private NativeArray<CockpitTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<byte> _buttonStatesHandle;
+        private VaultGenerationHandle<byte> _buttonTargetsHandle;
+        private VaultGenerationHandle<float> _buttonProgressHandle;
+        private VaultGenerationHandle<float> _buttonOffsetsHandle;
+        private VaultGenerationHandle<CockpitButtonBasePosition> _buttonBaseLocalPositionsHandle;
+        private VaultGenerationHandle<float4x4> _buttonMatricesHandle;
+        private VaultGenerationHandle<CockpitTelemetryEntry> _telemetryRingHandle;
 
         private GraphicsBuffer _sonarTapBuffer;
         private GraphicsBuffer _radarBlipBuffer;
         private GraphicsBuffer _radarArgsBuffer;
-        private GraphicsBuffer _buttonMatrixBuffer;
-        private GraphicsBuffer _damageProxyVertexBuffer;
+        private GraphicsBuffer _buttonMatrixBufferA;
+        private GraphicsBuffer _buttonMatrixBufferB;
+        private GraphicsBuffer _activeButtonMatrixBuffer;
+        private GraphicsBuffer _damageProxyVertexBufferA;
+        private GraphicsBuffer _damageProxyVertexBufferB;
+        private GraphicsBuffer _activeDamageProxyVertexBuffer;
         private GraphicsBuffer _damagePointBuffer;
         private GraphicsBuffer _damageArgsBuffer;
-        private GraphicsBuffer _damageRoomWaterBuffer;
+        private GraphicsBuffer _damageRoomWaterBufferA;
+        private GraphicsBuffer _damageRoomWaterBufferB;
+        private GraphicsBuffer _activeDamageRoomWaterBuffer;
         private Material _radarRuntimeMaterial;
         private Material _damageRuntimeMaterial;
         private Mesh _runtimeRadarQuad;
@@ -257,21 +271,24 @@ namespace Hecton8.UI
         private readonly MaterialPropertyBlock _screenPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - cockpit screen per-renderer properties - owner: VehicleSubOsCockpitRuntime
         private RenderTexture _uiRenderTexture;
         private RenderTexture _externalRenderTexture;
-        private RenderTexturePool _externalRenderTexturePoolOwner;
-        private RenderTexturePool _cachedRenderTexturePool;
-        private PlayerCriticalProceduralAudioRenderer _cachedPlayerCriticalAudio;
+        private IRenderTexturePoolService _externalRenderTexturePoolOwner;
+        private IRenderTexturePoolService _cachedRenderTexturePool;
+        private IPlayerCriticalSonarEchoReadModel _cachedPlayerCriticalAudio;
         private IGroundRadarService _cachedGroundRadar;
         private IHabitatGraphService _cachedHabitatGraph;
         private IPowerGridService _cachedPowerGrid;
+        private IDataVault _dataVault;
 
         private JobHandle _buttonJobHandle;
         private bool _buttonJobScheduled;
+        private bool _buttonJobBuffersLocked;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
         private bool _hotSwapListenerRegistered;
         private bool _externalFeedRequested;
         private bool _externalFeedActive;
+        private bool _externalFeedStateDirty = true;
         private bool _radarPowered;
         private bool _screenDirty = true;
         private bool _offscreenUiCameraRenderRequested = true;
@@ -279,6 +296,7 @@ namespace Hecton8.UI
         private bool _buttonUploadDirty = true;
         private bool _buttonBasesInitialized;
         private bool _resourcesReady;
+        private bool _resourceRefreshDirty;
         private bool _radarResourcesReady;
         private bool _damageHologramResourcesReady;
         private bool _radarMaterialBufferBound;
@@ -295,6 +313,9 @@ namespace Hecton8.UI
         private int _radarActivePoints;
         private int _damageHologramKernel = -1;
         private int _damageProxyVertexCount;
+        private int _buttonMatrixUploadIndex;
+        private int _damageProxyUploadIndex;
+        private int _damageRoomWaterUploadIndex;
         private int _damageHologramEstimatedPoints;
         private int _damageKnownActiveDentCount;
         private int _damageLastHullSignalFrame = -1;
@@ -346,7 +367,7 @@ namespace Hecton8.UI
         /// <summary>
         /// GPU matrix buffer for cockpit button presentation consumers.
         /// </summary>
-        public GraphicsBuffer ButtonMatrixBuffer => _buttonMatrixBuffer;
+        public GraphicsBuffer ButtonMatrixBuffer => _activeButtonMatrixBuffer;
 
         /// <summary>
         /// Number of currently drawable holographic radar points after quality-weight clamping.
@@ -446,15 +467,10 @@ namespace Hecton8.UI
             RefreshQualityPolicy();
             if (!_resourcesReady)
             {
-                EnsureNativeResources();
-                EnsureRenderTargets();
-                if (!_resourcesReady)
-                    return;
+                _resourceRefreshDirty = true;
+                return;
             }
 
-            if (ShouldRetryRadarGraphicsResources())
-                EnsureGraphicsResources();
-            EnsureRenderTargets();
             _nodeVoltageSupplyRatio = ResolveNodeVoltageSupplyRatio();
             _radarPowered = _nodeVoltageSupplyRatio >= RadarPowerCutoff;
             _damageFlicker = math.isfinite(_damageFlicker) ? math.max(0f, _damageFlicker - safeDeltaTime * 0.8f) : 0f;
@@ -464,21 +480,42 @@ namespace Hecton8.UI
 
             ConsumeDamageHologramSignals();
             RefreshDamageHologramFloodState();
-            UpdateExternalFeedState();
-            UploadSonarTapsAndDispatchRadar();
-            if (UpdateOffscreenText(safeDeltaTime))
-                RequestOffscreenUiRender();
+            _externalFeedStateDirty = true;
             ScheduleButtonJob(safeDeltaTime);
             RecordTelemetry();
-            ApplyScreenMaterial();
-            ApplyOffscreenUiCameraState();
         }
 
         public void LateFrameTick()
         {
+            if (_resourceRefreshDirty || !_resourcesReady)
+            {
+                _resourceRefreshDirty = false;
+                EnsureNativeResources();
+                EnsureRenderTargets();
+            }
+
+            if (_resourcesReady)
+            {
+                if (_externalFeedStateDirty)
+                {
+                    _externalFeedStateDirty = false;
+                    UpdateExternalFeedState();
+                }
+
+                if (ShouldRetryRadarGraphicsResources())
+                    EnsureGraphicsResources();
+                EnsureRenderTargets();
+                UploadSonarTapsAndDispatchRadar();
+                if (UpdateOffscreenText(SystemDispatcher.CurrentFrameUnscaledDeltaTime))
+                    RequestOffscreenUiRender();
+                ApplyScreenMaterial();
+                ApplyOffscreenUiCameraState();
+            }
+
             if (_buttonJobScheduled && DispatcherJobSwap.TryFinalizeCompleted(ref _buttonJobHandle))
             {
                 _buttonJobScheduled = false;
+                ReleaseButtonJobBufferLocks();
                 UploadButtonMatrices();
                 ApplyButtonTransforms();
                 _buttonAnimationActive = HasButtonTransitions();
@@ -657,10 +694,10 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.RenderTexturePoolRuntime:
-                    _cachedRenderTexturePool = currentService as RenderTexturePool;
+                    _cachedRenderTexturePool = currentService as IRenderTexturePoolService;
                     break;
                 case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
-                    _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
+                    _cachedPlayerCriticalAudio = currentService as IPlayerCriticalSonarEchoReadModel;
                     InvalidateRadarDispatchCache();
                     break;
                 case GlobalRegistryServiceSlot.GroundRadarRuntime:
@@ -680,8 +717,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedRenderTexturePool = GlobalRegistry.RenderTexturePool;
-            _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio;
+            _cachedRenderTexturePool = GlobalRegistry.RenderTexturePoolService;
+            _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalSonarEcho;
             _cachedGroundRadar = GlobalRegistry.GroundRadar;
             _cachedHabitatGraph = GlobalRegistry.HabitatGraph;
             _cachedPowerGrid = GlobalRegistry.PowerGrid;
@@ -716,7 +753,6 @@ namespace Hecton8.UI
                 _radarCapacity = capacity;
                 _radarResourcesReady = false;
                 DisposeGraphicsResources();
-                EnsureGraphicsResources();
                 InvalidateRadarDispatchCache();
                 _buttonUploadDirty = true;
                 _buttonAnimationActive = true;
@@ -760,82 +796,474 @@ namespace Hecton8.UI
         private void EnsureNativeResources()
         {
             int safeButtonCount = ResolveButtonCount();
-            bool allocated = false;
-            if (!_buttonStates.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
             {
-                _buttonStates = new NativeArray<byte>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                _buttonTargets = new NativeArray<byte>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                _buttonProgress = new NativeArray<float>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                _buttonOffsets = new NativeArray<float>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                _buttonBaseLocalPositions = new NativeArray<float3>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                _buttonMatrices = new NativeArray<float4x4>(MaxButtons, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                _telemetryRing = new NativeArray<CockpitTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_buttonStates, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonStates), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(_buttonTargets, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonTargets), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(_buttonProgress, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonProgress), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(_buttonOffsets, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonOffsets), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(_buttonBaseLocalPositions, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonBaseLocalPositions), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(_buttonMatrices, nameof(VehicleSubOsCockpitRuntime), nameof(_buttonMatrices), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(VehicleSubOsCockpitRuntime), nameof(_telemetryRing), NativeAllocationLifetime.Session);
-                allocated = true;
+                _resourcesReady = false;
+                return;
             }
 
-            if (allocated || !_buttonBasesInitialized)
+            bool recreated = false;
+            if (!EnsureCockpitVaultBuffer(ref _buttonStatesHandle, ButtonStatesBufferId, MaxButtons, NativeArrayOptions.ClearMemory, out bool statesRecreated) ||
+                !EnsureCockpitVaultBuffer(ref _buttonTargetsHandle, ButtonTargetsBufferId, MaxButtons, NativeArrayOptions.ClearMemory, out bool targetsRecreated) ||
+                !EnsureCockpitVaultBuffer(ref _buttonProgressHandle, ButtonProgressBufferId, MaxButtons, NativeArrayOptions.ClearMemory, out bool progressRecreated) ||
+                !EnsureCockpitVaultBuffer(ref _buttonOffsetsHandle, ButtonOffsetsBufferId, MaxButtons, NativeArrayOptions.ClearMemory, out bool offsetsRecreated) ||
+                !EnsureCockpitVaultBuffer(ref _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId, MaxButtons, NativeArrayOptions.ClearMemory, out bool baseRecreated) ||
+                !EnsureCockpitVaultBuffer(ref _buttonMatricesHandle, ButtonMatricesBufferId, MaxButtons, NativeArrayOptions.ClearMemory, out bool matricesRecreated) ||
+                !EnsureCockpitVaultBuffer(ref _telemetryRingHandle, TelemetryRingBufferId, TelemetryCapacity, NativeArrayOptions.ClearMemory, out bool telemetryRecreated))
             {
-                for (int i = 0; i < safeButtonCount; i++)
+                _resourcesReady = false;
+                return;
+            }
+
+            recreated = statesRecreated || targetsRecreated || progressRecreated || offsetsRecreated ||
+                        baseRecreated || matricesRecreated || telemetryRecreated;
+
+            if (recreated)
+                _buttonBasesInitialized = false;
+
+            if ((recreated || !_buttonBasesInitialized) &&
+                TryAcquireButtonBaseWriteBuffers(out NativeArray<CockpitButtonBasePosition> baseLocalPositions, out NativeArray<float4x4> matrices))
+            {
+                try
                 {
-                    Transform button = buttonTransforms != null && i < buttonTransforms.Length ? buttonTransforms[i] : null;
-                    float3 fallbackPosition = ResolveButtonGridLocalPosition(i);
-                    Vector3 baseVector = button != null
-                        ? button.localPosition
-                        : new Vector3(fallbackPosition.x, fallbackPosition.y, fallbackPosition.z);
-                    float3 basePosition = IsFinite(baseVector) ? new float3(baseVector.x, baseVector.y, baseVector.z) : fallbackPosition;
-                    _buttonBaseLocalPositions[i] = basePosition;
-                    _buttonMatrices[i] = float4x4.TRS(basePosition, quaternion.identity, new float3(1f));
-                }
+                    for (int i = 0; i < safeButtonCount; i++)
+                    {
+                        Transform button = buttonTransforms != null && i < buttonTransforms.Length ? buttonTransforms[i] : null;
+                        float3 fallbackPosition = ResolveButtonGridLocalPosition(i);
+                        Vector3 baseVector = button != null
+                            ? button.localPosition
+                            : new Vector3(fallbackPosition.x, fallbackPosition.y, fallbackPosition.z);
+                        float3 basePosition = IsFinite(baseVector) ? new float3(baseVector.x, baseVector.y, baseVector.z) : fallbackPosition;
+                        baseLocalPositions[i] = new CockpitButtonBasePosition { LocalPosition = basePosition };
+                        matrices[i] = float4x4.TRS(basePosition, quaternion.identity, new float3(1f));
+                    }
 
-                _buttonBasesInitialized = true;
-                _buttonUploadDirty = true;
-                _buttonAnimationActive = true;
+                    _buttonBasesInitialized = true;
+                    _buttonUploadDirty = true;
+                    _buttonAnimationActive = true;
+                }
+                finally
+                {
+                    ReleaseButtonBaseWriteBuffers();
+                }
+            }
+            else if (recreated || !_buttonBasesInitialized)
+            {
+                _resourcesReady = false;
+                return;
             }
 
-            _resourcesReady = _buttonStates.IsCreated &&
-                              _buttonTargets.IsCreated &&
-                              _buttonProgress.IsCreated &&
-                              _buttonOffsets.IsCreated &&
-                              _buttonBaseLocalPositions.IsCreated &&
-                              _buttonMatrices.IsCreated &&
-                              _telemetryRing.IsCreated;
+            _resourcesReady = HasButtonNativeResources(safeButtonCount);
         }
 
         private void DisposeNativeResources()
         {
-            DisposeNativeArray(ref _buttonStates);
-            DisposeNativeArray(ref _buttonTargets);
-            DisposeNativeArray(ref _buttonProgress);
-            DisposeNativeArray(ref _buttonOffsets);
-            DisposeNativeArray(ref _buttonBaseLocalPositions);
-            DisposeNativeArray(ref _buttonMatrices);
-            DisposeNativeArray(ref _telemetryRing);
+            CompleteButtonJobForTeardown();
+            ReleaseButtonJobBufferLocks();
+            ReleaseCockpitVaultHandle(ref _buttonStatesHandle);
+            ReleaseCockpitVaultHandle(ref _buttonTargetsHandle);
+            ReleaseCockpitVaultHandle(ref _buttonProgressHandle);
+            ReleaseCockpitVaultHandle(ref _buttonOffsetsHandle);
+            ReleaseCockpitVaultHandle(ref _buttonBaseLocalPositionsHandle);
+            ReleaseCockpitVaultHandle(ref _buttonMatricesHandle);
+            ReleaseCockpitVaultHandle(ref _telemetryRingHandle);
             _buttonBasesInitialized = false;
             _resourcesReady = false;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private IDataVault CacheDataVaultCold()
         {
-            if (!array.IsCreated)
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private bool EnsureCockpitVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out bool recreated) where T : struct
+        {
+            recreated = false;
+            IDataVault vault = _dataVault;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (IsExactVaultHandle(in handle, bufferId) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                VaultOwnerSystemId,
+                options);
+            recreated = true;
+
+            return IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
+                   resolved.IsCreated &&
+                   resolved.Length >= requiredLength;
+        }
+
+        private bool HasButtonNativeResources(int requiredButtonCount)
+        {
+            return TryReadButtonStates(requiredButtonCount, out _) &&
+                   TryReadButtonTargets(requiredButtonCount, out _) &&
+                   TryReadButtonProgress(requiredButtonCount, out _) &&
+                   TryReadButtonOffsets(requiredButtonCount, out _) &&
+                   TryReadButtonBaseLocalPositions(requiredButtonCount, out _) &&
+                   TryReadButtonMatrices(requiredButtonCount, out _) &&
+                   TryReadTelemetryRing(out _);
+        }
+
+        private bool TryAcquireButtonBaseWriteBuffers(
+            out NativeArray<CockpitButtonBasePosition> baseLocalPositions,
+            out NativeArray<float4x4> matrices)
+        {
+            baseLocalPositions = default;
+            matrices = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId) ||
+                !vault.TryAcquireWriteLock(in _buttonBaseLocalPositionsHandle, VaultOwnerSystemId, out baseLocalPositions))
+            {
+                return false;
+            }
+
+            if (!IsExactVaultHandle(in _buttonMatricesHandle, ButtonMatricesBufferId) ||
+                !vault.TryAcquireWriteLock(in _buttonMatricesHandle, VaultOwnerSystemId, out matrices))
+            {
+                vault.ReleaseWriteLock(in _buttonBaseLocalPositionsHandle, VaultOwnerSystemId);
+                baseLocalPositions = default;
+                return false;
+            }
+
+            if (baseLocalPositions.IsCreated && baseLocalPositions.Length >= MaxButtons &&
+                matrices.IsCreated && matrices.Length >= MaxButtons)
+            {
+                return true;
+            }
+
+            vault.ReleaseWriteLock(in _buttonMatricesHandle, VaultOwnerSystemId);
+            vault.ReleaseWriteLock(in _buttonBaseLocalPositionsHandle, VaultOwnerSystemId);
+            baseLocalPositions = default;
+            matrices = default;
+            return false;
+        }
+
+        private void ReleaseButtonBaseWriteBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            if (IsExactVaultHandle(in _buttonMatricesHandle, ButtonMatricesBufferId))
+                vault.ReleaseWriteLock(in _buttonMatricesHandle, VaultOwnerSystemId);
+
+            if (IsExactVaultHandle(in _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId))
+                vault.ReleaseWriteLock(in _buttonBaseLocalPositionsHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryAcquireButtonStateWriteBuffers(
+            int requiredButtonCount,
+            out NativeArray<byte> states,
+            out NativeArray<byte> targets)
+        {
+            states = default;
+            targets = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                _buttonJobBuffersLocked ||
+                !IsExactVaultHandle(in _buttonStatesHandle, ButtonStatesBufferId) ||
+                !vault.TryAcquireWriteLock(in _buttonStatesHandle, VaultOwnerSystemId, out states))
+            {
+                return false;
+            }
+
+            if (!IsExactVaultHandle(in _buttonTargetsHandle, ButtonTargetsBufferId) ||
+                !vault.TryAcquireWriteLock(in _buttonTargetsHandle, VaultOwnerSystemId, out targets))
+            {
+                vault.ReleaseWriteLock(in _buttonStatesHandle, VaultOwnerSystemId);
+                states = default;
+                return false;
+            }
+
+            if (states.IsCreated && states.Length >= requiredButtonCount &&
+                targets.IsCreated && targets.Length >= requiredButtonCount)
+            {
+                return true;
+            }
+
+            vault.ReleaseWriteLock(in _buttonTargetsHandle, VaultOwnerSystemId);
+            vault.ReleaseWriteLock(in _buttonStatesHandle, VaultOwnerSystemId);
+            states = default;
+            targets = default;
+            return false;
+        }
+
+        private void ReleaseButtonStateWriteBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            if (IsExactVaultHandle(in _buttonTargetsHandle, ButtonTargetsBufferId))
+                vault.ReleaseWriteLock(in _buttonTargetsHandle, VaultOwnerSystemId);
+
+            if (IsExactVaultHandle(in _buttonStatesHandle, ButtonStatesBufferId))
+                vault.ReleaseWriteLock(in _buttonStatesHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryAcquireButtonJobBuffers(
+            int requiredButtonCount,
+            out NativeArray<byte> states,
+            out NativeArray<byte> targets,
+            out NativeArray<float> progress,
+            out NativeArray<float> offsets,
+            out NativeArray<CockpitButtonBasePosition> baseLocalPositions,
+            out NativeArray<float4x4> matrices)
+        {
+            states = default;
+            targets = default;
+            progress = default;
+            offsets = default;
+            baseLocalPositions = default;
+            matrices = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || _buttonJobBuffersLocked)
+                return false;
+
+            bool statesLocked = false;
+            bool targetsLocked = false;
+            bool progressLocked = false;
+            bool offsetsLocked = false;
+            bool baseLocked = false;
+            bool matricesLocked = false;
+            bool success = false;
+
+            try
+            {
+                if (!IsExactVaultHandle(in _buttonStatesHandle, ButtonStatesBufferId) ||
+                    !vault.TryAcquireWriteLock(in _buttonStatesHandle, VaultOwnerSystemId, out states))
+                    return false;
+                statesLocked = true;
+
+                if (!IsExactVaultHandle(in _buttonTargetsHandle, ButtonTargetsBufferId) ||
+                    !vault.TryAcquireWriteLock(in _buttonTargetsHandle, VaultOwnerSystemId, out targets))
+                    return false;
+                targetsLocked = true;
+
+                if (!IsExactVaultHandle(in _buttonProgressHandle, ButtonProgressBufferId) ||
+                    !vault.TryAcquireWriteLock(in _buttonProgressHandle, VaultOwnerSystemId, out progress))
+                    return false;
+                progressLocked = true;
+
+                if (!IsExactVaultHandle(in _buttonOffsetsHandle, ButtonOffsetsBufferId) ||
+                    !vault.TryAcquireWriteLock(in _buttonOffsetsHandle, VaultOwnerSystemId, out offsets))
+                    return false;
+                offsetsLocked = true;
+
+                if (!IsExactVaultHandle(in _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId) ||
+                    !vault.TryAcquireWriteLock(in _buttonBaseLocalPositionsHandle, VaultOwnerSystemId, out baseLocalPositions))
+                    return false;
+                baseLocked = true;
+
+                if (!IsExactVaultHandle(in _buttonMatricesHandle, ButtonMatricesBufferId) ||
+                    !vault.TryAcquireWriteLock(in _buttonMatricesHandle, VaultOwnerSystemId, out matrices))
+                    return false;
+                matricesLocked = true;
+
+                if (!states.IsCreated || states.Length < requiredButtonCount ||
+                    !targets.IsCreated || targets.Length < requiredButtonCount ||
+                    !progress.IsCreated || progress.Length < requiredButtonCount ||
+                    !offsets.IsCreated || offsets.Length < requiredButtonCount ||
+                    !baseLocalPositions.IsCreated || baseLocalPositions.Length < requiredButtonCount ||
+                    !matrices.IsCreated || matrices.Length < requiredButtonCount)
+                {
+                    return false;
+                }
+
+                _buttonJobBuffersLocked = true;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    if (matricesLocked)
+                        vault.ReleaseWriteLock(in _buttonMatricesHandle, VaultOwnerSystemId);
+                    if (baseLocked)
+                        vault.ReleaseWriteLock(in _buttonBaseLocalPositionsHandle, VaultOwnerSystemId);
+                    if (offsetsLocked)
+                        vault.ReleaseWriteLock(in _buttonOffsetsHandle, VaultOwnerSystemId);
+                    if (progressLocked)
+                        vault.ReleaseWriteLock(in _buttonProgressHandle, VaultOwnerSystemId);
+                    if (targetsLocked)
+                        vault.ReleaseWriteLock(in _buttonTargetsHandle, VaultOwnerSystemId);
+                    if (statesLocked)
+                        vault.ReleaseWriteLock(in _buttonStatesHandle, VaultOwnerSystemId);
+                }
+            }
+        }
+
+        private void ReleaseButtonJobBufferLocks()
+        {
+            if (!_buttonJobBuffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                if (IsExactVaultHandle(in _buttonMatricesHandle, ButtonMatricesBufferId))
+                    vault.ReleaseWriteLock(in _buttonMatricesHandle, VaultOwnerSystemId);
+                if (IsExactVaultHandle(in _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId))
+                    vault.ReleaseWriteLock(in _buttonBaseLocalPositionsHandle, VaultOwnerSystemId);
+                if (IsExactVaultHandle(in _buttonOffsetsHandle, ButtonOffsetsBufferId))
+                    vault.ReleaseWriteLock(in _buttonOffsetsHandle, VaultOwnerSystemId);
+                if (IsExactVaultHandle(in _buttonProgressHandle, ButtonProgressBufferId))
+                    vault.ReleaseWriteLock(in _buttonProgressHandle, VaultOwnerSystemId);
+                if (IsExactVaultHandle(in _buttonTargetsHandle, ButtonTargetsBufferId))
+                    vault.ReleaseWriteLock(in _buttonTargetsHandle, VaultOwnerSystemId);
+                if (IsExactVaultHandle(in _buttonStatesHandle, ButtonStatesBufferId))
+                    vault.ReleaseWriteLock(in _buttonStatesHandle, VaultOwnerSystemId);
+            }
+
+            _buttonJobBuffersLocked = false;
+        }
+
+        private bool TryAcquireTelemetryWriteBuffer(out NativeArray<CockpitTelemetryEntry> telemetryRing)
+        {
+            telemetryRing = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId) ||
+                !vault.TryAcquireWriteLock(in _telemetryRingHandle, VaultOwnerSystemId, out telemetryRing))
+            {
+                return false;
+            }
+
+            if (telemetryRing.IsCreated && telemetryRing.Length >= TelemetryCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+            telemetryRing = default;
+            return false;
+        }
+
+        private void ReleaseTelemetryWriteBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId))
+                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryReadButtonStates(int requiredButtonCount, out NativeArray<byte>.ReadOnly states)
+        {
+            return TryReadCockpitVaultBuffer(in _buttonStatesHandle, ButtonStatesBufferId, requiredButtonCount, out states);
+        }
+
+        private bool TryReadButtonTargets(int requiredButtonCount, out NativeArray<byte>.ReadOnly targets)
+        {
+            return TryReadCockpitVaultBuffer(in _buttonTargetsHandle, ButtonTargetsBufferId, requiredButtonCount, out targets);
+        }
+
+        private bool TryReadButtonProgress(int requiredButtonCount, out NativeArray<float>.ReadOnly progress)
+        {
+            return TryReadCockpitVaultBuffer(in _buttonProgressHandle, ButtonProgressBufferId, requiredButtonCount, out progress);
+        }
+
+        private bool TryReadButtonOffsets(int requiredButtonCount, out NativeArray<float>.ReadOnly offsets)
+        {
+            return TryReadCockpitVaultBuffer(in _buttonOffsetsHandle, ButtonOffsetsBufferId, requiredButtonCount, out offsets);
+        }
+
+        private bool TryReadButtonBaseLocalPositions(int requiredButtonCount, out NativeArray<CockpitButtonBasePosition>.ReadOnly baseLocalPositions)
+        {
+            return TryReadCockpitVaultBuffer(in _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId, requiredButtonCount, out baseLocalPositions);
+        }
+
+        private bool TryReadButtonMatrices(int requiredButtonCount, out NativeArray<float4x4> matrices)
+        {
+            return TryReadMutableCockpitVaultBuffer(in _buttonMatricesHandle, ButtonMatricesBufferId, requiredButtonCount, out matrices);
+        }
+
+        private bool TryReadTelemetryRing(out NativeArray<CockpitTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            return TryReadCockpitVaultBuffer(in _telemetryRingHandle, TelemetryRingBufferId, TelemetryCapacity, out telemetryRing);
+        }
+
+        private bool TryReadCockpitVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryReadMutableCockpitVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private void ReleaseCockpitVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void EnsureGraphicsResources()
         {
             _radarCapacity = math.clamp(_radarCapacity <= 0 ? ResolveRadarCapacity(_qualityWeight01) : _radarCapacity, MinQualityRadarPoints, MaxRadarPoints);
-            if (_buttonMatrixBuffer == null)
-                _buttonMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(MaxButtons); // COLD ALLOC: GraphicsBuffer[32] - kinematic dashboard matrix bridge - owner: VehicleSubOsCockpitRuntime
+            if (_buttonMatrixBufferA == null || _buttonMatrixBufferB == null)
+            {
+                ReleaseBuffer(ref _buttonMatrixBufferA);
+                ReleaseBuffer(ref _buttonMatrixBufferB);
+                _buttonMatrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(MaxButtons); // COLD ALLOC: GraphicsBuffer[32] - kinematic dashboard matrix bridge A - owner: VehicleSubOsCockpitRuntime
+                _buttonMatrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(MaxButtons); // COLD ALLOC: GraphicsBuffer[32] - kinematic dashboard matrix bridge B - owner: VehicleSubOsCockpitRuntime
+                _activeButtonMatrixBuffer = _buttonMatrixBufferA;
+                _buttonMatrixUploadIndex = 0;
+            }
             EnsureDamageHologramGraphicsResources();
             if (radarCompute == null)
             {
@@ -882,11 +1310,20 @@ namespace Hecton8.UI
             ReleaseBuffer(ref _sonarTapBuffer);
             ReleaseBuffer(ref _radarBlipBuffer);
             ReleaseBuffer(ref _radarArgsBuffer);
-            ReleaseBuffer(ref _buttonMatrixBuffer);
-            ReleaseBuffer(ref _damageProxyVertexBuffer);
+            ReleaseBuffer(ref _buttonMatrixBufferA);
+            ReleaseBuffer(ref _buttonMatrixBufferB);
+            _activeButtonMatrixBuffer = null;
+            ReleaseBuffer(ref _damageProxyVertexBufferA);
+            ReleaseBuffer(ref _damageProxyVertexBufferB);
+            _activeDamageProxyVertexBuffer = null;
             ReleaseBuffer(ref _damagePointBuffer);
             ReleaseBuffer(ref _damageArgsBuffer);
-            ReleaseBuffer(ref _damageRoomWaterBuffer);
+            ReleaseBuffer(ref _damageRoomWaterBufferA);
+            ReleaseBuffer(ref _damageRoomWaterBufferB);
+            _activeDamageRoomWaterBuffer = null;
+            _buttonMatrixUploadIndex = 0;
+            _damageProxyUploadIndex = 0;
+            _damageRoomWaterUploadIndex = 0;
             _radarKernel = -1;
             _damageHologramKernel = -1;
             _radarResourcesReady = false;
@@ -912,14 +1349,54 @@ namespace Hecton8.UI
             buffer = null;
         }
 
+        private GraphicsBuffer ResolveButtonMatrixWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_buttonMatrixUploadIndex & 1) == 0
+                ? _buttonMatrixBufferB
+                : _buttonMatrixBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _buttonMatrixBufferA != null && _buttonMatrixBufferA.IsValid()
+                ? _buttonMatrixBufferA
+                : _buttonMatrixBufferB;
+        }
+
+        private GraphicsBuffer ResolveDamageProxyWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_damageProxyUploadIndex & 1) == 0
+                ? _damageProxyVertexBufferB
+                : _damageProxyVertexBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _damageProxyVertexBufferA != null && _damageProxyVertexBufferA.IsValid()
+                ? _damageProxyVertexBufferA
+                : _damageProxyVertexBufferB;
+        }
+
+        private GraphicsBuffer ResolveDamageRoomWaterWriteBuffer()
+        {
+            GraphicsBuffer preferred = (_damageRoomWaterUploadIndex & 1) == 0
+                ? _damageRoomWaterBufferB
+                : _damageRoomWaterBufferA;
+            if (preferred != null && preferred.IsValid())
+                return preferred;
+
+            return _damageRoomWaterBufferA != null && _damageRoomWaterBufferA.IsValid()
+                ? _damageRoomWaterBufferA
+                : _damageRoomWaterBufferB;
+        }
+
         private void EnsureDamageHologramGraphicsResources()
         {
             if (_damagePointBuffer == null)
             {
                 _damagePointBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.Append,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     MaxDamageHologramPoints,
-                16); // COLD ALLOC: GraphicsBuffer[512 float4] - GPU append hologram point cloud - owner: VehicleSubOsCockpitRuntime
+                    16); // COLD ALLOC: GraphicsBuffer[512 float4] - GPU append hologram point cloud - owner: VehicleSubOsCockpitRuntime
                 _damageHologramMaterialBufferBound = false;
                 _damageHologramFallbackPointUploaded = false;
                 _damageHologramFallbackWarningActive = false;
@@ -935,10 +1412,16 @@ namespace Hecton8.UI
                 UpdateDamageHologramArgs(0, true);
             }
 
-            if (_damageRoomWaterBuffer == null)
+            if (_damageRoomWaterBufferA == null || _damageRoomWaterBufferB == null)
             {
-                _damageRoomWaterBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(MaxDamageHologramRooms); // COLD ALLOC: GraphicsBuffer[32 float] - room flood levels for hologram tint - owner: VehicleSubOsCockpitRuntime
-                GraphicsBufferUploadUtility.UploadArray(_damageRoomWaterBuffer, _damageRoomWaterUpload, MaxDamageHologramRooms);
+                ReleaseBuffer(ref _damageRoomWaterBufferA);
+                ReleaseBuffer(ref _damageRoomWaterBufferB);
+                _damageRoomWaterBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(MaxDamageHologramRooms); // COLD ALLOC: GraphicsBuffer[32 float] - room flood levels for hologram tint A - owner: VehicleSubOsCockpitRuntime
+                _damageRoomWaterBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(MaxDamageHologramRooms); // COLD ALLOC: GraphicsBuffer[32 float] - room flood levels for hologram tint B - owner: VehicleSubOsCockpitRuntime
+                GraphicsBufferUploadUtility.UploadArray(_damageRoomWaterBufferA, _damageRoomWaterUpload, MaxDamageHologramRooms);
+                GraphicsBufferUploadUtility.UploadArray(_damageRoomWaterBufferB, _damageRoomWaterUpload, MaxDamageHologramRooms);
+                _activeDamageRoomWaterBuffer = _damageRoomWaterBufferA;
+                _damageRoomWaterUploadIndex = 0;
             }
 
             if (_damageRuntimeMaterial == null && damageHologramMaterial != null)
@@ -961,8 +1444,8 @@ namespace Hecton8.UI
             bool computeReady = _damagePointBuffer != null &&
                                 _damageArgsBuffer != null &&
                                 _damageRuntimeMaterial != null &&
-                                _damageProxyVertexBuffer != null &&
-                                _damageRoomWaterBuffer != null &&
+                                _activeDamageProxyVertexBuffer != null &&
+                                _activeDamageRoomWaterBuffer != null &&
                                 damageHologramCompute != null &&
                                 _damageHologramKernel >= 0 &&
                                 ResolveDamagePointMesh() != null &&
@@ -973,7 +1456,7 @@ namespace Hecton8.UI
         private void EnsureDamageProxyVertexBuffer()
         {
             Mesh mesh = damageProxyMeshLod3;
-            if (ReferenceEquals(mesh, _lastDamageProxyMesh) && _damageProxyVertexBuffer != null)
+            if (ReferenceEquals(mesh, _lastDamageProxyMesh) && _activeDamageProxyVertexBuffer != null)
                 return;
 
             _lastDamageProxyMesh = mesh;
@@ -1025,13 +1508,24 @@ namespace Hecton8.UI
             }
 
             _damageProxyBounds = new Vector4(minX, maxX, minY, maxY);
-            if (_damageProxyVertexBuffer == null || _damageProxyVertexBuffer.count != safeCount)
+            if (_damageProxyVertexBufferA == null || _damageProxyVertexBufferA.count != safeCount ||
+                _damageProxyVertexBufferB == null || _damageProxyVertexBufferB.count != safeCount)
             {
-                ReleaseBuffer(ref _damageProxyVertexBuffer);
-                _damageProxyVertexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector3>(safeCount); // COLD ALLOC: GraphicsBuffer[proxy vertices] - submarine local-space damage hologram proxy - owner: VehicleSubOsCockpitRuntime
+                ReleaseBuffer(ref _damageProxyVertexBufferA);
+                ReleaseBuffer(ref _damageProxyVertexBufferB);
+                _damageProxyVertexBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector3>(safeCount); // COLD ALLOC: GraphicsBuffer[proxy vertices] - submarine local-space damage hologram proxy A - owner: VehicleSubOsCockpitRuntime
+                _damageProxyVertexBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector3>(safeCount); // COLD ALLOC: GraphicsBuffer[proxy vertices] - submarine local-space damage hologram proxy B - owner: VehicleSubOsCockpitRuntime
+                _activeDamageProxyVertexBuffer = _damageProxyVertexBufferA;
+                _damageProxyUploadIndex = 0;
             }
 
-            GraphicsBufferUploadUtility.UploadArray(_damageProxyVertexBuffer, _damageProxyUploadVertices, safeCount);
+            GraphicsBuffer proxyWriteBuffer = ResolveDamageProxyWriteBuffer();
+            if (proxyWriteBuffer != null)
+            {
+                GraphicsBufferUploadUtility.UploadArray(proxyWriteBuffer, _damageProxyUploadVertices, safeCount);
+                _activeDamageProxyVertexBuffer = proxyWriteBuffer;
+                _damageProxyUploadIndex ^= 1;
+            }
             _damageProxyVertexCount = safeCount;
         }
 
@@ -1166,7 +1660,7 @@ namespace Hecton8.UI
             {
                 int width = ResolveExternalWidth();
                 int height = ResolveExternalHeight();
-                RenderTexturePool pool = _cachedRenderTexturePool;
+                IRenderTexturePoolService pool = _cachedRenderTexturePool;
                 _externalRenderTexture = pool != null
                     ? pool.Rent(width, height, RenderTextureFormat.ARGB32, this, 16)
                     : CreateRenderTexture(width, height, RenderTextureFormat.ARGB32, "VSOS_EXTCAM_RT");
@@ -1206,7 +1700,7 @@ namespace Hecton8.UI
             RenderTexture released = _externalRenderTexture;
             _externalRenderTexture = null;
 
-            RenderTexturePool pool = _externalRenderTexturePoolOwner;
+            IRenderTexturePoolService pool = _externalRenderTexturePoolOwner;
             _externalRenderTexturePoolOwner = null;
             if (pool != null)
                 pool.Return(released);
@@ -1396,7 +1890,7 @@ namespace Hecton8.UI
             if (TryUploadGroundRadarPingsAndDispatchRadar())
                 return;
 
-            PlayerCriticalProceduralAudioRenderer audioRuntime = _cachedPlayerCriticalAudio;
+            IPlayerCriticalSonarEchoReadModel audioRuntime = _cachedPlayerCriticalAudio;
             if (audioRuntime == null ||
                 !audioRuntime.TryGetCockpitSonarEchoTaps(out NativeArray<SonarEchoTap>.ReadOnly taps, out int tapCount, out int sequence))
             {
@@ -1521,7 +2015,7 @@ namespace Hecton8.UI
                     continue;
                 }
 
-                _damageLastHullSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : unchecked((uint)Time.frameCount));
+                _damageLastHullSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex));
                 _damageKnownActiveDentCount = math.clamp(signal.ActiveDentCount, 0, 16);
                 _damageHologramHadSignal = true;
                 _screenDirty = true;
@@ -1536,7 +2030,7 @@ namespace Hecton8.UI
                 if (impactSpeed <= 0.01f && lostEnergy <= 0.01f)
                     continue;
 
-                _damageLastImpactSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : unchecked((uint)Time.frameCount));
+                _damageLastImpactSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex));
                 _damageHologramFlickerTimer = DamageHologramFlickerSeconds;
                 _damageHologramFlickerSeed = signal.SourceHash ^ (signal.TargetHash * 747796405u) ^ signal.Frame;
                 SetDamageFlicker(math.saturate(impactSpeed * 0.025f + lostEnergy * 0.0002f));
@@ -1578,8 +2072,13 @@ namespace Hecton8.UI
 
             _damageRoomCount = safeCount;
             _damageRoomSequence = unchecked((int)sequence);
-            if (_damageRoomWaterBuffer != null)
-                GraphicsBufferUploadUtility.UploadArray(_damageRoomWaterBuffer, _damageRoomWaterUpload, MaxDamageHologramRooms);
+            GraphicsBuffer roomWriteBuffer = ResolveDamageRoomWaterWriteBuffer();
+            if (roomWriteBuffer != null)
+            {
+                GraphicsBufferUploadUtility.UploadArray(roomWriteBuffer, _damageRoomWaterUpload, MaxDamageHologramRooms);
+                _activeDamageRoomWaterBuffer = roomWriteBuffer;
+                _damageRoomWaterUploadIndex ^= 1;
+            }
         }
 
         private int ResolveRadarVisualPointCount(int tapCount)
@@ -1756,9 +2255,9 @@ namespace Hecton8.UI
         {
             if (damageHologramCompute == null ||
                 _damageHologramKernel < 0 ||
-                _damageProxyVertexBuffer == null ||
+                _activeDamageProxyVertexBuffer == null ||
                 _damageProxyVertexCount <= 0 ||
-                _damageRoomWaterBuffer == null)
+                _activeDamageRoomWaterBuffer == null)
             {
                 UpdateDamageHologramArgs(0, true);
                 _damageHologramEstimatedPoints = 0;
@@ -1768,9 +2267,9 @@ namespace Hecton8.UI
             _damageHologramUsingFallbackGlyph = false;
             int pointBudget = ResolveDamageHologramPointBudget();
             _damagePointBuffer.SetCounterValue(0u);
-            damageHologramCompute.SetBuffer(_damageHologramKernel, DamageProxyVerticesId, _damageProxyVertexBuffer);
+            damageHologramCompute.SetBuffer(_damageHologramKernel, DamageProxyVerticesId, _activeDamageProxyVertexBuffer);
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageHologramPointsId, _damagePointBuffer);
-            damageHologramCompute.SetBuffer(_damageHologramKernel, DamageRoomWaterLevelsId, _damageRoomWaterBuffer);
+            damageHologramCompute.SetBuffer(_damageHologramKernel, DamageRoomWaterLevelsId, _activeDamageRoomWaterBuffer);
             damageHologramCompute.SetVector(
                 DamageHologramParamsId,
                 new Vector4(Time.time, ResolveDamageHologramScanlineWidth(), pointBudget, _cheapVisualWeight01));
@@ -1789,9 +2288,9 @@ namespace Hecton8.UI
         {
             return damageHologramCompute != null &&
                    _damageHologramKernel >= 0 &&
-                   _damageProxyVertexBuffer != null &&
+                   _activeDamageProxyVertexBuffer != null &&
                    _damageProxyVertexCount >= MinDamageProxyVertices &&
-                   _damageRoomWaterBuffer != null;
+                   _activeDamageRoomWaterBuffer != null;
         }
 
         private int ResolveDamageHologramPointBudget()
@@ -1811,7 +2310,10 @@ namespace Hecton8.UI
                     FillFallbackWarningGlyph();
                 else
                     FillFallbackIdleGlyph();
-                _damagePointBuffer.SetData(_damageFallbackPoint, 0, 0, FallbackDamageWarningPoints);
+                GraphicsBufferUploadUtility.UploadArray(
+                    _damagePointBuffer,
+                    _damageFallbackPoint,
+                    FallbackDamageWarningPoints);
                 _damageHologramFallbackPointUploaded = true;
                 _damageHologramFallbackWarningActive = warningActive;
             }
@@ -1854,7 +2356,7 @@ namespace Hecton8.UI
             if (!_damageHologramMaterialBufferBound)
             {
                 _damageRuntimeMaterial.SetBuffer(DamageHologramPointsId, _damagePointBuffer);
-                _damageRuntimeMaterial.SetBuffer(DamageRoomWaterLevelsId, _damageRoomWaterBuffer);
+                _damageRuntimeMaterial.SetBuffer(DamageRoomWaterLevelsId, _activeDamageRoomWaterBuffer);
                 _damageHologramMaterialBufferBound = true;
             }
 
@@ -1926,7 +2428,7 @@ namespace Hecton8.UI
                 return 0f;
 
             float normalized = math.saturate(_damageHologramFlickerTimer * DamageHologramFlickerSecondsInv);
-            return normalized * Hash01(unchecked((uint)Time.frameCount) ^ _damageHologramFlickerSeed);
+            return normalized * Hash01(unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex) ^ _damageHologramFlickerSeed);
         }
 
         private static float Hash01(uint value)
@@ -1975,32 +2477,57 @@ namespace Hecton8.UI
 
         private void ScheduleButtonJob(float deltaTime)
         {
-            if (_buttonJobScheduled || !_buttonStates.IsCreated || (!_buttonAnimationActive && !_buttonUploadDirty))
+            int safeButtonCount = ResolveButtonCount();
+            if (_buttonJobScheduled || (!_buttonAnimationActive && !_buttonUploadDirty) ||
+                !TryAcquireButtonJobBuffers(
+                    safeButtonCount,
+                    out NativeArray<byte> states,
+                    out NativeArray<byte> targets,
+                    out NativeArray<float> progress,
+                    out NativeArray<float> offsets,
+                    out NativeArray<CockpitButtonBasePosition> baseLocalPositions,
+                    out NativeArray<float4x4> matrices))
+            {
                 return;
+            }
 
             ButtonKinematicJob job = new ButtonKinematicJob
             {
-                States = _buttonStates,
-                Targets = _buttonTargets,
-                Progress = _buttonProgress,
-                Offsets = _buttonOffsets,
-                BaseLocalPositions = _buttonBaseLocalPositions,
-                Matrices = _buttonMatrices,
+                States = states,
+                Targets = targets,
+                Progress = progress,
+                Offsets = offsets,
+                BaseLocalPositions = baseLocalPositions,
+                Matrices = matrices,
                 DeltaTime = math.max(0f, deltaTime),
                 TravelSecondsInv = ButtonTravelSecondsInv,
                 PressedLocalZ = ResolvePressedLocalZ(),
                 ButtonScale = new float3(1f)
             };
-            _buttonJobHandle = job.Schedule(ResolveButtonCount(), 8);
-            _buttonJobScheduled = true;
+            try
+            {
+                _buttonJobHandle = job.Schedule(safeButtonCount, 8);
+                _buttonJobScheduled = true;
+            }
+            catch
+            {
+                ReleaseButtonJobBufferLocks();
+                throw;
+            }
         }
 
         private void UploadButtonMatrices()
         {
-            if (_buttonMatrixBuffer == null || !_buttonMatrices.IsCreated)
+            GraphicsBuffer buttonWriteBuffer = ResolveButtonMatrixWriteBuffer();
+            if (buttonWriteBuffer == null ||
+                !TryReadButtonMatrices(ResolveButtonCount(), out NativeArray<float4x4> buttonMatrices))
+            {
                 return;
+            }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_buttonMatrixBuffer, _buttonMatrices, ResolveButtonCount());
+            GraphicsBufferUploadUtility.UploadNativeArray(buttonWriteBuffer, buttonMatrices, ResolveButtonCount());
+            _activeButtonMatrixBuffer = buttonWriteBuffer;
+            _buttonMatrixUploadIndex ^= 1;
         }
 
         private void ApplyButtonTransforms()
@@ -2008,6 +2535,11 @@ namespace Hecton8.UI
             int safeButtonCount = ResolveButtonCount();
             if (buttonTransforms == null)
                 return;
+            if (!TryReadButtonBaseLocalPositions(safeButtonCount, out NativeArray<CockpitButtonBasePosition>.ReadOnly baseLocalPositions) ||
+                !TryReadButtonOffsets(safeButtonCount, out NativeArray<float>.ReadOnly offsets))
+            {
+                return;
+            }
 
             int transformCount = math.min(safeButtonCount, buttonTransforms.Length);
             for (int i = 0; i < transformCount; i++)
@@ -2016,8 +2548,8 @@ namespace Hecton8.UI
                 if (button == null)
                     continue;
 
-                float3 basePosition = _buttonBaseLocalPositions[i];
-                basePosition.z += _buttonOffsets[i];
+                float3 basePosition = baseLocalPositions[i].LocalPosition;
+                basePosition.z += offsets[i];
                 button.localPosition = (Vector3)basePosition;
             }
         }
@@ -2025,14 +2557,26 @@ namespace Hecton8.UI
         private void PressCockpitButton(int buttonIndex)
         {
             int safeButtonCount = ResolveButtonCount();
-            if ((uint)buttonIndex >= (uint)safeButtonCount || !_buttonStates.IsCreated)
+            if ((uint)buttonIndex >= (uint)safeButtonCount ||
+                !TryAcquireButtonStateWriteBuffers(safeButtonCount, out NativeArray<byte> states, out NativeArray<byte> targets))
+            {
                 return;
+            }
 
-            byte state = _buttonStates[buttonIndex];
-            byte target = _buttonTargets[buttonIndex];
-            byte desired = state == 2 || (state == 1 && target == 2) ? (byte)0 : (byte)2;
-            _buttonTargets[buttonIndex] = desired;
-            _buttonStates[buttonIndex] = 1;
+            byte desired;
+            try
+            {
+                byte state = states[buttonIndex];
+                byte target = targets[buttonIndex];
+                desired = state == 2 || (state == 1 && target == 2) ? (byte)0 : (byte)2;
+                targets[buttonIndex] = desired;
+                states[buttonIndex] = 1;
+            }
+            finally
+            {
+                ReleaseButtonStateWriteBuffers();
+            }
+
             _buttonAnimationActive = true;
             _buttonUploadDirty = true;
             _cockpitInteractions++;
@@ -2136,7 +2680,7 @@ namespace Hecton8.UI
 
         private void RecordTelemetry()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryAcquireTelemetryWriteBuffer(out NativeArray<CockpitTelemetryEntry> telemetryRing))
                 return;
 
             Transform anchor = radarDomeAnchor != null ? radarDomeAnchor : transform;
@@ -2152,39 +2696,54 @@ namespace Hecton8.UI
                           math.isfinite(holoFlicker);
             Vector3 safePosition = positionFinite ? position : Vector3.zero;
             int slot = _telemetryWriteIndex;
-            _telemetryRing[slot] = new CockpitTelemetryEntry
+            bool shouldDump = false;
+            bool shouldPublish = false;
+            try
             {
-                Frame = Time.frameCount,
-                RadarActivePoints = _radarActivePoints,
-                CockpitInteractions = _cockpitInteractions,
-                Flags = BuildTelemetryFlags(finite),
-                Power = SaturateFinite(_nodeVoltageSupplyRatio, 0f),
-                Oxygen = SaturateFinite(_latestOxygenNormalized, 0f),
-                Co2 = SaturateFinite(_latestCarbonDioxideNormalized, 0f),
-                SpeedKnots = math.isfinite(_latestSpeedKnots) ? _latestSpeedKnots : 0f,
-                AnchorPosition = safePosition,
-                HoloDamagePoints = _damageHologramEstimatedPoints,
-                HoloProxyVertices = _damageProxyVertexCount,
-                HoloFlicker = SaturateFinite(holoFlicker, 0f),
-                HoloFlood01 = SaturateFinite(_damageHologramFlood01, 0f),
-                HoloFlags = BuildDamageHologramTelemetryFlags()
-            };
-            _telemetryCursor++;
-            _telemetryWriteIndex++;
-            if (_telemetryWriteIndex >= TelemetryCapacity)
-                _telemetryWriteIndex = 0;
+                telemetryRing[slot] = new CockpitTelemetryEntry
+                {
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
+                    RadarActivePoints = _radarActivePoints,
+                    CockpitInteractions = _cockpitInteractions,
+                    Flags = BuildTelemetryFlags(finite),
+                    Power = SaturateFinite(_nodeVoltageSupplyRatio, 0f),
+                    Oxygen = SaturateFinite(_latestOxygenNormalized, 0f),
+                    Co2 = SaturateFinite(_latestCarbonDioxideNormalized, 0f),
+                    SpeedKnots = math.isfinite(_latestSpeedKnots) ? _latestSpeedKnots : 0f,
+                    AnchorPosition = safePosition,
+                    HoloDamagePoints = _damageHologramEstimatedPoints,
+                    HoloProxyVertices = _damageProxyVertexCount,
+                    HoloFlicker = SaturateFinite(holoFlicker, 0f),
+                    HoloFlood01 = SaturateFinite(_damageHologramFlood01, 0f),
+                    HoloFlags = BuildDamageHologramTelemetryFlags()
+                };
+                _telemetryCursor++;
+                _telemetryWriteIndex++;
+                if (_telemetryWriteIndex >= TelemetryCapacity)
+                    _telemetryWriteIndex = 0;
 
-            if (!finite && _nanDumped == 0)
+                if (!finite && _nanDumped == 0)
+                {
+                    _nanDumped = 1;
+                    shouldDump = true;
+                }
+
+                if (Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _telemetryPublishFrame)
+                {
+                    _telemetryPublishFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + 30;
+                    shouldPublish = true;
+                }
+            }
+            finally
             {
-                _nanDumped = 1;
+                ReleaseTelemetryWriteBuffer();
+            }
+
+            if (shouldDump)
                 DumpBlackbox();
-            }
 
-            if (Time.frameCount >= _telemetryPublishFrame)
-            {
-                _telemetryPublishFrame = Time.frameCount + 30;
+            if (shouldPublish)
                 GlobalTelemetryBus.PublishPerformanceWarning(RadarActiveHash, TelemetryContextHash, _radarActivePoints);
-            }
         }
 
         private uint BuildTelemetryFlags(bool finite)
@@ -2221,7 +2780,7 @@ namespace Hecton8.UI
 
         private void DumpBlackbox()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryReadTelemetryRing(out NativeArray<CockpitTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             try
@@ -2247,7 +2806,7 @@ namespace Hecton8.UI
                     if (slot >= TelemetryCapacity)
                         slot -= TelemetryCapacity;
 
-                    CockpitTelemetryEntry entry = _telemetryRing[slot];
+                    CockpitTelemetryEntry entry = telemetryRing[slot];
                     writer.Write(entry.Frame);
                     writer.Write(entry.RadarActivePoints);
                     writer.Write(entry.CockpitInteractions);
@@ -2266,7 +2825,7 @@ namespace Hecton8.UI
                     writer.Write(entry.HoloFlags);
                 }
 
-                WriteDamageHolographerMirrorDump(directory, entryCount);
+                WriteDamageHolographerMirrorDump(directory, entryCount, telemetryRing);
             }
             catch (Exception)
             {
@@ -2274,7 +2833,10 @@ namespace Hecton8.UI
             }
         }
 
-        private void WriteDamageHolographerMirrorDump(string directory, int entryCount)
+        private void WriteDamageHolographerMirrorDump(
+            string directory,
+            int entryCount,
+            NativeArray<CockpitTelemetryEntry>.ReadOnly telemetryRing)
         {
             string path = Path.Combine(directory, "Dump_DIEGETIC_DAMAGE_HOLOGRAPHER.bin");
             using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
@@ -2290,7 +2852,7 @@ namespace Hecton8.UI
                 if (slot >= TelemetryCapacity)
                     slot -= TelemetryCapacity;
 
-                CockpitTelemetryEntry entry = _telemetryRing[slot];
+                CockpitTelemetryEntry entry = telemetryRing[slot];
                 writer.Write(entry.Frame);
                 writer.Write(entry.HoloDamagePoints);
                 writer.Write(entry.HoloProxyVertices);
@@ -2302,13 +2864,13 @@ namespace Hecton8.UI
 
         private bool HasButtonTransitions()
         {
-            if (!_buttonStates.IsCreated)
+            if (!TryReadButtonStates(ResolveButtonCount(), out NativeArray<byte>.ReadOnly buttonStates))
                 return false;
 
             int safeButtonCount = ResolveButtonCount();
             for (int i = 0; i < safeButtonCount; i++)
             {
-                if (_buttonStates[i] == 1)
+                if (buttonStates[i] == 1)
                     return true;
             }
 
@@ -2322,6 +2884,7 @@ namespace Hecton8.UI
 
             DispatcherJobSwap.TryComplete(ref _buttonJobHandle, forceComplete: true);
             _buttonJobScheduled = false;
+            ReleaseButtonJobBufferLocks();
         }
 
         private static bool IsFinite(Vector3 value)
@@ -2423,7 +2986,7 @@ namespace Hecton8.UI
             [NoAlias]
             public NativeArray<float> Offsets;
             [ReadOnly, NoAlias]
-            public NativeArray<float3> BaseLocalPositions;
+            public NativeArray<CockpitButtonBasePosition> BaseLocalPositions;
             [NoAlias]
             public NativeArray<float4x4> Matrices;
             public float DeltaTime;
@@ -2456,7 +3019,7 @@ namespace Hecton8.UI
                 Progress[index] = progress;
                 float offset = progress * pressedLocalZ;
                 Offsets[index] = offset;
-                float3 position = BaseLocalPositions[index];
+                float3 position = BaseLocalPositions[index].LocalPosition;
                 position.z += offset;
                 Matrices[index] = float4x4.TRS(position, quaternion.identity, ButtonScale);
             }
@@ -2477,6 +3040,15 @@ namespace Hecton8.UI
             public float4 LocalPositionSize;
             [FieldOffset(16)]
             public float4 ColorAlpha;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct CockpitButtonBasePosition
+        {
+            [FieldOffset(0)]
+            public float3 LocalPosition;
+            [FieldOffset(12)]
+            private uint _pad0;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]

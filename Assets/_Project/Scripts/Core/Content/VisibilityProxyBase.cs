@@ -5,6 +5,7 @@ namespace Hecton8.Core.Content
     /// <summary>
     /// Cheap AABB frustum gate to block heavy SDF or procedural visibility work when the proxy is off-screen.
     /// </summary>
+    [DisallowMultipleComponent]
     public abstract class VisibilityProxyBase : MonoBehaviour
     {
         private const float MinVisibilityExtentMeters = 0.01f;

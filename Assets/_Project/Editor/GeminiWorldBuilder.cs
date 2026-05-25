@@ -43,7 +43,7 @@ public class GeminiWorldBuilder
 
         // --- 3. THE BIOME MATRIX (27 Tiers x 4 Regions) ---
         // We will collect each tier's final output node here
-        List<Generator> tierOutputs = new List<Generator>();
+        List<Generator> tierOutputs = new List<Generator>(27);
 
         for (int t = 0; t < 27; t++)
         {

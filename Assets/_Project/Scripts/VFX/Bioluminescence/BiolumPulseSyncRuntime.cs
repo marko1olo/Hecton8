@@ -1192,7 +1192,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Vfx, options);
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Vfx, options);
             if (TryResolveBiolumVaultBuffer(vault, in acquired, bufferId, requiredLength, out buffer))
             {
                 handle = acquired;
@@ -1654,7 +1654,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (TryFindProfilePath(Application.streamingAssetsPath, out string profilePath))
                 return profilePath;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             if (TryFindProfilePath(Path.Combine(projectRoot, "Data", "Visuals"), out profilePath))
                 return profilePath;
@@ -1808,7 +1808,7 @@ namespace Hecton8.VFX.Bioluminescence
             float oxygen01 = -1f;
             bool weatherDirty = false;
 
-            if (GlobalSignals.TryGetLatestLightLevelSignal(out LightLevelSignal light, out int lightSequence) &&
+            if (SignalBus<LightLevelSignal>.TryGetLatest(out LightLevelSignal light, out int lightSequence) &&
                 lightSequence != _lastGlobalLightLevelSignalSequence)
             {
                 _lastGlobalLightLevelSignalSequence = lightSequence;
@@ -1816,7 +1816,7 @@ namespace Hecton8.VFX.Bioluminescence
                 weatherDirty = true;
             }
 
-            if (GlobalSignals.TryGetLatestSurvivalDeathSignal(out SurvivalVitalsChangedSignal vitals, out int vitalsSequence) &&
+            if (SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal vitals, out int vitalsSequence) &&
                 vitalsSequence != _lastGlobalSurvivalVitalsSequence)
             {
                 _lastGlobalSurvivalVitalsSequence = vitalsSequence;
@@ -1827,7 +1827,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (weatherDirty)
                 MirrorGlobalWeatherSignalsToVault(ambientLight01, oxygen01);
 
-            if (GlobalSignals.TryGetLatestDamageSignal(out CombatDamageSignal damage, out int damageSequence) &&
+            if (SignalBus<CombatDamageSignal>.TryGetLatest(out CombatDamageSignal damage, out int damageSequence) &&
                 damageSequence != _lastGlobalDamageSignalSequence)
             {
                 _lastGlobalDamageSignalSequence = damageSequence;
@@ -2133,9 +2133,9 @@ namespace Hecton8.VFX.Bioluminescence
                     float radiusX = rng.NextFloat(64f, 96f);
                     float radiusZ = rng.NextFloat(60f, 92f);
                     signal.OriginAUP = new double3(
-                        math.sin(angleX) * radiusX,
+                        MathLodApproximation.ApproxSinBhaskara(angleX) * radiusX,
                         -218.0,
-                        math.cos(angleZ) * radiusZ);
+                        MathLodApproximation.ApproxCosBhaskara(angleZ) * radiusZ);
                     signal.RadiusMeters = rng.NextFloat(92f, 124f);
                     signal.Strength01 = 1f;
                     signal.SpeciesMask = 0xFFFFFFFFu;
@@ -2465,6 +2465,7 @@ namespace Hecton8.VFX.Bioluminescence
         }
 #endif
 
+#if UNITY_EDITOR
         private static void ParseCsvOverrides(
             NativeArray<byte> scratch,
             int byteCount,
@@ -2765,6 +2766,8 @@ namespace Hecton8.VFX.Bioluminescence
 
             return hash;
         }
+
+#endif
 
         private void ScheduleStateJob(float cadenceSeconds, float deltaTime)
         {

@@ -10,6 +10,7 @@ namespace Hecton8.World
     /// <summary>
     /// Cold-tick CSV override path for human-authored botany rules. Parsing is byte-based and allocation-free after caller-owned scratch exists.
     /// </summary>
+    #if UNITY_EDITOR
     public static unsafe class FloraGenomeCsvHotloader
     {
         private const byte Comma = (byte)',';
@@ -328,4 +329,5 @@ namespace Hecton8.World
             return end;
         }
     }
+    #endif
 }

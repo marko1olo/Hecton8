@@ -1,4 +1,4 @@
-<SELF_AUDIT agent_id="SHINOBU_226" domain="SCANNER_LORE_DATABASE_SYNC" task_count="19">
+﻿<SELF_AUDIT agent_id="SHINOBU_226" domain="SCANNER_LORE_DATABASE_SYNC" task_count="19">
   <TASK_RECONCILIATION>
     <TASK id="01" status="PASS">STRING_LOOKUP_INQUISITION: scanner/PDA hot-pattern scan rejects target.name/GetComponent identity paths; runtime route uses uint FNV hashes and no longer reads item.PersistentId, data.PersistentId, scannable.EntryCategory, or lazy EntityHash during scan pulse.</TASK>
     <TASK id="02" status="PASS">MONOBEHAVIOUR_UPDATE_PURGE: scan work remains registered FastTick/SlowTick/LateFrameTick; no Unity Update loop added.</TASK>

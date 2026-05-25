@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Data;
 using Hecton8.World;
 using Hecton8.World.Biomes.Contracts;
@@ -15,7 +16,7 @@ namespace Hecton8.World.Biomes
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4310)]
-    public sealed class BiomeBoundarySdfRuntime : MonoBehaviour, ISlowTickable, IOriginShiftListener
+    public sealed class BiomeBoundarySdfRuntime : MonoBehaviour, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         internal static BiomeBoundarySdfRuntime ActiveRuntimeInstance { get; private set; }
 
@@ -26,8 +27,12 @@ namespace Hecton8.World.Biomes
         private const float DefaultBlendWidthMeters = 50f;
         private const uint RuntimeContextHash = 0x42424C44u;
         private const uint InvalidResultHash = 0x4242494Eu;
-        private const string NativeMemoryOwner = nameof(BiomeBoundarySdfRuntime);
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_BIOME_TRANSITION_BLENDER.bin";
+        private const SystemID VaultOwnerSystemId = SystemID.WorldStreaming;
+        private const BufferID GlobalBiomeMapBufferId = BufferID.BiomeBoundaryGlobalBiomeMap;
+        private const BufferID GlobalBiomeHashMapBufferId = BufferID.BiomeBoundaryGlobalBiomeHashMap;
+        private const BufferID SampleResultBufferId = BufferID.BiomeBoundarySampleResult;
+        private const BufferID TelemetryRingBufferId = BufferID.BiomeBoundaryTelemetryRing;
 
         [Header("Heatmap")]
         [SerializeField] private Transform playerTransform;
@@ -44,10 +49,11 @@ namespace Hecton8.World.Biomes
         [SerializeField] private int _debugSampleDiameter;
         [SerializeField] private uint _debugPublishedSequence;
 
-        private NativeArray<byte> _globalBiomeMap;
-        private NativeArray<uint> _globalBiomeHashMap;
-        private NativeArray<BiomeBoundarySdfResult> _sampleResult;
-        private NativeArray<BiomeBoundaryTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<byte> _globalBiomeMapHandle;
+        private VaultGenerationHandle<uint> _globalBiomeHashMapHandle;
+        private VaultGenerationHandle<BiomeBoundarySdfResult> _sampleResultHandle;
+        private VaultGenerationHandle<BiomeBoundaryTelemetryEntry> _telemetryRingHandle;
+        private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
         private int _telemetryCursor;
         private int _telemetryCount;
@@ -56,6 +62,7 @@ namespace Hecton8.World.Biomes
         private bool _nativeStorageReady;
         private bool _registeredSlowTick;
         private bool _originShiftRegistered;
+        private bool _registeredHotSwapListener;
         private uint _lastOriginShiftSequence;
         private uint _sequence;
 
@@ -81,6 +88,7 @@ namespace Hecton8.World.Biomes
 
             EnsureNativeStorage();
             RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterOriginShift();
         }
@@ -88,6 +96,7 @@ namespace Hecton8.World.Biomes
         private void Start()
         {
             RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterOriginShift();
             RefreshGlobalBiomeMapIfDirty();
@@ -97,6 +106,7 @@ namespace Hecton8.World.Biomes
         {
             TryUnregister();
             TryUnregisterOriginShift();
+            TryUnregisterHotSwapListener();
             _playerContext = null;
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -107,6 +117,7 @@ namespace Hecton8.World.Biomes
         {
             TryUnregister();
             TryUnregisterOriginShift();
+            TryUnregisterHotSwapListener();
             DisposeNativeStorage();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -140,18 +151,35 @@ namespace Hecton8.World.Biomes
                 Flags = (byte)BiomeBoundarySdfFlags.None
             };
 
-            var job = new BiomeBoundarySdfJobs.BiomeBoundarySdfSampleJob
+            if (!TryAcquireSampleBuffers(
+                    out NativeArray<byte> globalBiomeMap,
+                    out NativeArray<uint> globalBiomeHashMap,
+                    out NativeArray<BiomeBoundarySdfResult> sampleResult))
             {
-                GlobalBiomeMap = _globalBiomeMap,
-                BiomeHashMap = _globalBiomeHashMap,
-                Result = _sampleResult,
-                Settings = settings,
-                SampleAupXZ = new double2(absolute.x, absolute.z)
-            };
+                _debugMapReady = false;
+                return;
+            }
 
-            job.Execute();
+            BiomeBoundarySdfResult result;
+            try
+            {
+                var job = new BiomeBoundarySdfJobs.BiomeBoundarySdfSampleJob
+                {
+                    GlobalBiomeMap = globalBiomeMap,
+                    BiomeHashMap = globalBiomeHashMap,
+                    Result = sampleResult,
+                    Settings = settings,
+                    SampleAupXZ = new double2(absolute.x, absolute.z)
+                };
 
-            BiomeBoundarySdfResult result = _sampleResult[0];
+                job.Execute();
+                result = sampleResult[0];
+            }
+            finally
+            {
+                ReleaseSampleBufferLocks();
+            }
+
             if (!IsFiniteResult(in result))
             {
                 RecordTelemetry(in playerAup, in result, (byte)BiomeBoundarySdfFlags.InvalidInput);
@@ -172,6 +200,29 @@ namespace Hecton8.World.Biomes
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             _lastOriginShiftSequence = shiftData.Sequence;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerContext = currentService as IPlayerRuntimeContext;
+                if (_playerContext != null && _playerContext.PlayerTransform != null)
+                    playerTransform = _playerContext.PlayerTransform;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryRegister();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                RebindDataVault(currentService as IDataVault);
         }
 
         private bool TryClaimActiveRuntime()
@@ -202,7 +253,19 @@ namespace Hecton8.World.Biomes
 
         private void RefreshColdRegistryReferences()
         {
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            CacheDataVaultCold();
+
+            if (_playerContext == null)
+                _playerContext = GlobalRegistry.Player;
+
+            if (_playerContext != null && _playerContext.PlayerTransform != null)
+                playerTransform = _playerContext.PlayerTransform;
+        }
+
+        private void CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
         }
 
         private void TryUnregister()
@@ -212,6 +275,23 @@ namespace Hecton8.World.Biomes
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredSlowTick = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void TryRegisterOriginShift()
@@ -237,15 +317,20 @@ namespace Hecton8.World.Biomes
             if (_nativeStorageReady)
                 return;
 
-            _globalBiomeMap = new NativeArray<byte>(BiomeHeatmapPixelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _globalBiomeHashMap = new NativeArray<uint>(BiomeHeatmapPixelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _sampleResult = new NativeArray<BiomeBoundarySdfResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _telemetryRing = new NativeArray<BiomeBoundaryTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            CacheDataVaultCold();
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
 
-            NativeMemorySentinel.RegisterNativeArray(_globalBiomeMap, NativeMemoryOwner, nameof(_globalBiomeMap), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_globalBiomeHashMap, NativeMemoryOwner, nameof(_globalBiomeHashMap), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_sampleResult, NativeMemoryOwner, nameof(_sampleResult), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeAllocationLifetime.Scene);
+            bool ready =
+                EnsureBiomeVaultBuffer(vault, GlobalBiomeMapBufferId, BiomeHeatmapPixelCount, ref _globalBiomeMapHandle) &&
+                EnsureBiomeVaultBuffer(vault, GlobalBiomeHashMapBufferId, BiomeHeatmapPixelCount, ref _globalBiomeHashMapHandle) &&
+                EnsureBiomeVaultBuffer(vault, SampleResultBufferId, 1, ref _sampleResultHandle) &&
+                EnsureBiomeVaultBuffer(vault, TelemetryRingBufferId, TelemetryCapacity, ref _telemetryRingHandle);
+
+            if (!ready)
+                return;
+
             _lastBlobBytes = -1;
             _lastBlobChecksum = 0UL;
             _nativeStorageReady = true;
@@ -253,24 +338,11 @@ namespace Hecton8.World.Biomes
 
         private void DisposeNativeStorage()
         {
-            DisposeNativeArray(ref _globalBiomeMap);
-            DisposeNativeArray(ref _globalBiomeHashMap);
-            DisposeNativeArray(ref _sampleResult);
-            DisposeNativeArray(ref _telemetryRing);
+            ReleaseBiomeVaultBuffers();
             _nativeStorageReady = false;
             _debugMapReady = false;
             _telemetryCursor = 0;
             _telemetryCount = 0;
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
         }
 
         private void RefreshGlobalBiomeMapIfDirty()
@@ -290,23 +362,36 @@ namespace Hecton8.World.Biomes
                 return;
             }
 
-            for (int y = 0; y < BiomeHeatmapResolution; y++)
+            if (!TryAcquireBiomeMapWriteBuffers(out NativeArray<byte> globalBiomeMap, out NativeArray<uint> globalBiomeHashMap))
             {
-                int rowOffset = y * BiomeHeatmapResolution;
-                for (int x = 0; x < BiomeHeatmapResolution; x++)
+                _debugMapReady = false;
+                return;
+            }
+
+            try
+            {
+                for (int y = 0; y < BiomeHeatmapResolution; y++)
                 {
-                    int index = rowOffset + x;
-                    if (H8StaticDataArena.TryGetBiomeHeatmapCell(x, y, out uint biomeHash))
+                    int rowOffset = y * BiomeHeatmapResolution;
+                    for (int x = 0; x < BiomeHeatmapResolution; x++)
                     {
-                        _globalBiomeHashMap[index] = biomeHash;
-                        _globalBiomeMap[index] = ResolveBiomeHeatmapByte(biomeHash);
-                    }
-                    else
-                    {
-                        _globalBiomeHashMap[index] = 0u;
-                        _globalBiomeMap[index] = 0;
+                        int index = rowOffset + x;
+                        if (H8StaticDataArena.TryGetBiomeHeatmapCell(x, y, out uint biomeHash))
+                        {
+                            globalBiomeHashMap[index] = biomeHash;
+                            globalBiomeMap[index] = ResolveBiomeHeatmapByte(biomeHash);
+                        }
+                        else
+                        {
+                            globalBiomeHashMap[index] = 0u;
+                            globalBiomeMap[index] = 0;
+                        }
                     }
                 }
+            }
+            finally
+            {
+                ReleaseBiomeMapWriteLocks();
             }
 
             _debugMapReady = true;
@@ -316,14 +401,238 @@ namespace Hecton8.World.Biomes
 
         private void ClearGlobalBiomeMap()
         {
-            if (!_globalBiomeMap.IsCreated || !_globalBiomeHashMap.IsCreated)
+            if (!TryAcquireBiomeMapWriteBuffers(out NativeArray<byte> globalBiomeMap, out NativeArray<uint> globalBiomeHashMap))
                 return;
 
-            for (int i = 0; i < BiomeHeatmapPixelCount; i++)
+            try
             {
-                _globalBiomeMap[i] = 0;
-                _globalBiomeHashMap[i] = 0u;
+                for (int i = 0; i < BiomeHeatmapPixelCount; i++)
+                {
+                    globalBiomeMap[i] = 0;
+                    globalBiomeHashMap[i] = 0u;
+                }
             }
+            finally
+            {
+                ReleaseBiomeMapWriteLocks();
+            }
+        }
+
+        private bool TryAcquireBiomeMapWriteBuffers(
+            out NativeArray<byte> globalBiomeMap,
+            out NativeArray<uint> globalBiomeHashMap)
+        {
+            globalBiomeMap = default;
+            globalBiomeHashMap = default;
+            EnsureNativeStorage();
+            if (!_nativeStorageReady || _dataVault == null)
+                return false;
+
+            bool mapLocked = false;
+            bool hashLocked = false;
+            try
+            {
+                if (!_dataVault.TryAcquireWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId, out globalBiomeMap))
+                    return false;
+
+                mapLocked = true;
+                if (!_dataVault.TryAcquireWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId, out globalBiomeHashMap))
+                    return false;
+
+                hashLocked = true;
+                if (globalBiomeMap.Length < BiomeHeatmapPixelCount || globalBiomeHashMap.Length < BiomeHeatmapPixelCount)
+                    return false;
+
+                return true;
+            }
+            finally
+            {
+                if (!hashLocked || globalBiomeMap.Length < BiomeHeatmapPixelCount || globalBiomeHashMap.Length < BiomeHeatmapPixelCount)
+                {
+                    if (hashLocked)
+                        _dataVault.ReleaseWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId);
+
+                    if (mapLocked)
+                        _dataVault.ReleaseWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId);
+                }
+            }
+        }
+
+        private void ReleaseBiomeMapWriteLocks()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            vault.ReleaseWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId);
+            vault.ReleaseWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryAcquireSampleBuffers(
+            out NativeArray<byte> globalBiomeMap,
+            out NativeArray<uint> globalBiomeHashMap,
+            out NativeArray<BiomeBoundarySdfResult> sampleResult)
+        {
+            globalBiomeMap = default;
+            globalBiomeHashMap = default;
+            sampleResult = default;
+            EnsureNativeStorage();
+            if (!_nativeStorageReady || _dataVault == null)
+                return false;
+
+            bool mapLocked = false;
+            bool hashLocked = false;
+            bool resultLocked = false;
+            try
+            {
+                if (!_dataVault.TryAcquireWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId, out globalBiomeMap))
+                    return false;
+
+                mapLocked = true;
+                if (!_dataVault.TryAcquireWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId, out globalBiomeHashMap))
+                    return false;
+
+                hashLocked = true;
+                if (!_dataVault.TryAcquireWriteLock(in _sampleResultHandle, VaultOwnerSystemId, out sampleResult))
+                    return false;
+
+                resultLocked = true;
+                if (globalBiomeMap.Length < BiomeHeatmapPixelCount ||
+                    globalBiomeHashMap.Length < BiomeHeatmapPixelCount ||
+                    sampleResult.Length < 1)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            finally
+            {
+                bool invalid =
+                    !resultLocked ||
+                    globalBiomeMap.Length < BiomeHeatmapPixelCount ||
+                    globalBiomeHashMap.Length < BiomeHeatmapPixelCount ||
+                    sampleResult.Length < 1;
+                if (invalid)
+                {
+                    if (resultLocked)
+                        _dataVault.ReleaseWriteLock(in _sampleResultHandle, VaultOwnerSystemId);
+
+                    if (hashLocked)
+                        _dataVault.ReleaseWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId);
+
+                    if (mapLocked)
+                        _dataVault.ReleaseWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId);
+                }
+            }
+        }
+
+        private void ReleaseSampleBufferLocks()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            vault.ReleaseWriteLock(in _sampleResultHandle, VaultOwnerSystemId);
+            vault.ReleaseWriteLock(in _globalBiomeHashMapHandle, VaultOwnerSystemId);
+            vault.ReleaseWriteLock(in _globalBiomeMapHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryAcquireTelemetryWriteBuffer(out NativeArray<BiomeBoundaryTelemetryEntry> telemetryRing)
+        {
+            telemetryRing = default;
+            EnsureNativeStorage();
+            if (!_nativeStorageReady ||
+                _dataVault == null ||
+                !_dataVault.TryAcquireWriteLock(in _telemetryRingHandle, VaultOwnerSystemId, out telemetryRing))
+            {
+                return false;
+            }
+
+            if (telemetryRing.Length > 0)
+                return true;
+
+            _dataVault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+            telemetryRing = default;
+            return false;
+        }
+
+        private void ReleaseTelemetryWriteLock()
+        {
+            _dataVault?.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryReadTelemetryRing(out NativeArray<BiomeBoundaryTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            telemetryRing = default;
+            return _nativeStorageReady &&
+                   _dataVault != null &&
+                   _telemetryRingHandle.BufferID == (uint)TelemetryRingBufferId &&
+                   _dataVault.TryReadOnlyHandle(in _telemetryRingHandle, out telemetryRing) &&
+                   telemetryRing.Length > 0;
+        }
+
+        private bool EnsureBiomeVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (IsExactVaultHandle(vault, in handle, bufferId, requiredLength))
+                return true;
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            return IsExactVaultHandle(vault, in handle, bufferId, requiredLength);
+        }
+
+        private static bool IsExactVaultHandle<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return vault != null &&
+                   handle.BufferID == (uint)bufferId &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                   existing.Length >= requiredLength;
+        }
+
+        private void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            ReleaseBiomeVaultBuffers();
+            _dataVault = currentVault;
+            _nativeStorageReady = false;
+            _debugMapReady = false;
+            _lastBlobBytes = -1;
+            _lastBlobChecksum = 0UL;
+            _telemetryCursor = 0;
+            _telemetryCount = 0;
+        }
+
+        private void ReleaseBiomeVaultBuffers()
+        {
+            ReleaseBiomeVaultHandle(ref _globalBiomeMapHandle);
+            ReleaseBiomeVaultHandle(ref _globalBiomeHashMapHandle);
+            ReleaseBiomeVaultHandle(ref _sampleResultHandle);
+            ReleaseBiomeVaultHandle(ref _telemetryRingHandle);
+        }
+
+        private void ReleaseBiomeVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (_dataVault != null && handle.BufferID != 0u)
+                _dataVault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -356,7 +665,7 @@ namespace Hecton8.World.Biomes
                 Flags = result.Flags
             };
 
-            SignalBus<BiomeGradientSignal>.Push(in signal);
+            SignalBus<BiomeGradientSignal>.TryPush(in signal);
         }
 
         private static bool IsFiniteResult(in BiomeBoundarySdfResult result)
@@ -369,39 +678,46 @@ namespace Hecton8.World.Biomes
 
         private void RecordTelemetry(in AbsoluteUniversePosition playerAup, in BiomeBoundarySdfResult result, byte flags)
         {
-            if (!_telemetryRing.IsCreated || _telemetryRing.Length == 0)
+            if (!TryAcquireTelemetryWriteBuffer(out NativeArray<BiomeBoundaryTelemetryEntry> telemetryRing))
                 return;
 
-            int index = _telemetryCursor;
-            _telemetryRing[index] = new BiomeBoundaryTelemetryEntry
+            try
             {
-                FrameIndex = Time.frameCount,
-                Sequence = _sequence,
-                OriginShiftSequence = _lastOriginShiftSequence,
-                StateHash = HashState(in playerAup, in result, flags),
-                GridX = playerAup.GridX,
-                GridZ = playerAup.GridZ,
-                LocalX = playerAup.LocalX,
-                LocalZ = playerAup.LocalZ,
-                BiomeAHash = result.BiomeAHash,
-                BiomeBHash = result.BiomeBHash,
-                BlendFactor01 = result.BlendFactor01,
-                BoundaryDistanceMeters = result.BoundaryDistanceMeters,
-                MacroCellX = (short)math.clamp(result.MacroCell.x, short.MinValue, short.MaxValue),
-                MacroCellY = (short)math.clamp(result.MacroCell.y, short.MinValue, short.MaxValue),
-                Flags = flags,
-                SampleDiameter = result.SampleDiameter
-            };
+                int index = _telemetryCursor;
+                telemetryRing[index] = new BiomeBoundaryTelemetryEntry
+                {
+                    FrameIndex = Time.frameCount,
+                    Sequence = _sequence,
+                    OriginShiftSequence = _lastOriginShiftSequence,
+                    StateHash = HashState(in playerAup, in result, flags),
+                    GridX = playerAup.GridX,
+                    GridZ = playerAup.GridZ,
+                    LocalX = playerAup.LocalX,
+                    LocalZ = playerAup.LocalZ,
+                    BiomeAHash = result.BiomeAHash,
+                    BiomeBHash = result.BiomeBHash,
+                    BlendFactor01 = result.BlendFactor01,
+                    BoundaryDistanceMeters = result.BoundaryDistanceMeters,
+                    MacroCellX = (short)math.clamp(result.MacroCell.x, short.MinValue, short.MaxValue),
+                    MacroCellY = (short)math.clamp(result.MacroCell.y, short.MinValue, short.MaxValue),
+                    Flags = flags,
+                    SampleDiameter = result.SampleDiameter
+                };
 
-            index++;
-            _telemetryCursor = index >= _telemetryRing.Length ? 0 : index;
-            if (_telemetryCount < _telemetryRing.Length)
-                _telemetryCount++;
+                index++;
+                _telemetryCursor = index >= telemetryRing.Length ? 0 : index;
+                if (_telemetryCount < telemetryRing.Length)
+                    _telemetryCount++;
+            }
+            finally
+            {
+                ReleaseTelemetryWriteLock();
+            }
         }
 
         private void DumpBlackBox()
         {
-            if (!_telemetryRing.IsCreated || _telemetryRing.Length == 0)
+            if (!TryReadTelemetryRing(out NativeArray<BiomeBoundaryTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             try
@@ -413,7 +729,7 @@ namespace Hecton8.World.Biomes
 
                 using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
-                int capacity = _telemetryRing.Length;
+                int capacity = telemetryRing.Length;
                 int count = math.min(_telemetryCount, capacity);
                 int start = count == capacity ? _telemetryCursor : 0;
                 for (int i = 0; i < count; i++)
@@ -422,7 +738,7 @@ namespace Hecton8.World.Biomes
                     if (entryIndex >= capacity)
                         entryIndex -= capacity;
 
-                    BiomeBoundaryTelemetryEntry entry = _telemetryRing[entryIndex];
+                    BiomeBoundaryTelemetryEntry entry = telemetryRing[entryIndex];
                     writer.Write(entry.FrameIndex);
                     writer.Write(entry.Sequence);
                     writer.Write(entry.OriginShiftSequence);

@@ -1,12 +1,15 @@
-# Async Buoyancy Readback Route - SHINOBU_264
+﻿# Async Buoyancy Readback Route - SHINOBU_264
 
 Owner: `AsyncBuoyancyReadbackRuntime`
 
 Runtime assembly: `Hecton8.Physics.Buoyancy.Runtime` under `Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback`.
 
 ## Route
+
 - Vehicles submit sample AUPs through `TryQueueSample(double3 sampleAup, double3 cameraAup, uint entityHash)`.
-- Owner-published camera AUP can be supplied through `TryPublishCameraAupSnapshot` or the shift-sequenced `TryQueueSample(..., cameraShiftSequence, ...)` overload. Runtime `Transform.position` is not used in player builds; the serialized transform anchor is `UNITY_EDITOR` fallback only.
+- Owner-published camera AUP sources: `TryPublishCameraAupSnapshot` or `TryQueueSample(..., cameraShiftSequence, ...)`.
+- Runtime `Transform.position` is not used in player builds.
+- Serialized transform anchor is `UNITY_EDITOR` fallback only.
 - The owner subtracts `cameraAup` in double precision and stores only `float2 LocalXZ` in `ReadbackRequestDTO`.
 - The runtime listens to `IOriginShiftListener` and caches the latest origin snapshot. Hot `PreSimulation` uses the cached origin, not `GlobalRegistry` or `HectonFloatingOrigin.CurrentTotalOffsetDouble`.
 - `PreSimulation` issues one compute dispatch and one `AsyncGPUReadback.Request` for the whole batch.
@@ -19,7 +22,9 @@ Runtime assembly: `Hecton8.Physics.Buoyancy.Runtime` under `Assets/_Project/Scri
 - `PostSimulation` records the 300-frame black-box telemetry ring and raises a dump request if latency exceeds four frames.
 - `VisualSync` performs the diagnostic file write to `Docs/AgentLogs/Dump_SHINOBU_264.bin` as a 16-byte header plus raw `ReadOnlySpan<byte>` telemetry rows, keeping physics phases free of file I/O.
 - GPU wave inputs use `AsyncBuoyancyWaveParametersDTO` in the Physics-owned Vault lane. Runtime no longer borrows `Hecton8.Atmosphere` concrete DTOs or constants.
-- Request buffers and wave-parameter buffers are both three-slot GPU rings. Each readback slot binds its own request buffer and its own wave buffer; wave upload is dirty-hashed per slot to avoid overwriting data still consumed by an older GPU dispatch.
+- Request buffers and wave-parameter buffers are three-slot GPU rings.
+- Each readback slot binds its own request buffer and wave buffer.
+- Wave upload is dirty-hashed per slot, so older GPU dispatches are not overwritten.
 - `ReleaseGpuBuffers` resets readback request metadata, active flags, counts, frames, slots, and mock state so re-enable cannot inherit stale pending requests.
 - The compute kernel also samples the render-published `_H8OceanWakeDisplacement` texture through `_H8OceanShorelineDepthParams`; if the render path has not published a wake target, runtime binds `Texture2D.blackTexture`.
 - Wake UV is AUP-stable: runtime writes camera AUP modulo the wake texture world size into `_H8OceanCameraAupLocalProjection.xy`, and the shader samples wake at `request.LocalXZ + cameraProjection`.
@@ -66,7 +71,10 @@ Rollback must reuse cached resolved heights. It must not block on a new GPU read
 - No root `Buoyancy` asmdef was added because that would capture neighboring agents' files already present in the folder.
 - No sibling-domain `Hecton8.Atmosphere` runtime type is referenced by the buoyancy readback engine.
 - GPU uploads use private local `GraphicsBuffer.LockBufferForWrite` helpers; the route no longer depends on internal `GraphicsBufferUploadUtility`.
-- Cross-domain ocean presentation remains a shader ABI only: `_H8OceanWaveParameters`, `_H8OceanWakeDisplacement`, and `_H8OceanShorelineDepthParams` are shader property routes, not C# assembly dependencies. Wave ownership stays in the Physics fallback route until a contracts-only wave provider is approved.
+- Cross-domain ocean presentation remains shader ABI only.
+- Shader routes: `_H8OceanWaveParameters`, `_H8OceanWakeDisplacement`, `_H8OceanShorelineDepthParams`.
+- These are not C# assembly dependencies.
+- Wave ownership stays in Physics fallback until a contracts-only provider is approved.
 
 ## Vault Access
 - Pure public/editor read routes use `IDataVault.TryReadHandle`.
@@ -75,7 +83,9 @@ Rollback must reuse cached resolved heights. It must not block on a new GPU read
 
 ## Tooling
 - `AsyncGpuReadbackXRayWindow` is UI Toolkit editor tooling. It reads Vault telemetry/counters and writes tuning through `ApplyEditorTuning`; refresh is throttled to 10Hz and unchanged label writes are skipped.
-- `SynchronousGpuReadbackScanner` is a Roslyn AST scanner. It flags `ReadPixels`, `GetPixel*`, `WaitForCompletion`, unsafe `GetData`, `SetData`, `new Texture2D`, `new RenderTexture`, hot `new[]`, hot `new NativeArray`, `Pack=1`, and DTO properties; async readback `GetData<T>()` is allowed only after a prior `SystemDispatcher.IsAsyncReadbackReadyNoWait` guard in the same method.
+- `SynchronousGpuReadbackScanner` is a Roslyn AST scanner.
+- It flags `ReadPixels`, `GetPixel*`, `WaitForCompletion`, unsafe `GetData`, `SetData`, texture allocation, hot arrays, `Pack=1`, and DTO properties.
+- Async readback `GetData<T>()` is allowed only after `SystemDispatcher.IsAsyncReadbackReadyNoWait` in the same method.
 - `ApplyMicros` telemetry is schedule-side until Unity Profiler/SystemDispatcher worker timing is integrated; rows are marked with `FlagApplyMicrosScheduleOnly`.
 - No separate telemetry Burst job exists. One 64-byte telemetry row is written directly during `PostSimulation`; dumping stays in `VisualSync`.
 

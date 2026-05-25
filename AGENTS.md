@@ -1,5 +1,106 @@
-# AGENTS.md — HECTON-8 Codex System Instructions
-Documentation actuality boundary: current root/architecture documentation correction is R51 (2026-05-21), static/tool-only. Use `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` as the latest DOC_GLOBAL root/architecture boundary; R50 remains the prior generated-atlas regeneration/R48-interior/dump-target/source-counter correction, R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction, R48 remains the prior date-rollover/AtlasCheck/source-counter correction, R47 remains the prior authority-spine/runtime-wording/counter-drift correction, R46 remains the prior interior-authority/route-field/proof-language correction, and R45/R44/R43 remain earlier static correction layers. Runtime proof requires fresh Unity import, Console, Play Mode, profiler/GCMonitor, Memory Profiler, Frame Debugger, player-build, save/load, platform, and visual-route artifacts.
+﻿# AGENTS.md — HECTON-8 Codex System Instructions
+Documentation actuality boundary: current root/architecture documentation correction is R51 (2026-05-21), static/tool-only. Use `Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` as the latest DOC_GLOBAL root/architecture boundary; 2026-05-24 `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log` is the last local dirty-workspace CLI_COMPILE PASS for `Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false` and has 0 `: warning ` / 0 `: error ` text matches. Runtime proof requires fresh Unity import, Console, Play Mode, profiler/GCMonitor, Memory Profiler, Frame Debugger, player-build, save/load, platform, and visual-route artifacts.
+2026-05-24 EXTERNAL_CODEX loop56: SOURCE_ONLY player/submarine cleanup removed dead `HectonPlayerMotor` and ballast scalability listeners and moved `HectonSubmarineOS` sonar LOD to continuous `HomeostasisBrain.GlobalQualityWeight`; scoped `diff --check`/greps passed, build blocked by CPU >50% guard (earlier non-owned `dotnet`, latest guard no compiler procs).
+2026-05-24 EXTERNAL_CODEX loop57: SOURCE_ONLY scanner/gyro/interior-GI cleanup removed binary scalability listeners from `ScannerTool`, `DiegeticGyroCompassRuntime`, and `InteriorGIProbeVolumeRuntime`; quality now samples continuous `HomeostasisBrain.GlobalQualityWeight`; scoped `diff --check`/greps passed, build blocked by CPU >50% guard.
+2026-05-24 EXTERNAL_CODEX loop58: SOURCE_ONLY player movement cleanup removed binary scalability listener/profile byte from `HectonPlayerMovement`; brine fog hard-clip and cinematic focus FOV now scale from continuous `HomeostasisBrain.GlobalQualityWeight`; scoped `diff --check`/greps passed, build blocked by CPU >50%.
+2026-05-24 EXTERNAL_CODEX loop59: SOURCE_ONLY runtime binary scalability burn-down cleared remaining non-editor/non-Core bridge `GlobalRegistry.ScalabilityTier*` and `ScalabilityEvents` routes in bootstrap, DRS, player kinematics, submarine fluid, and hydro KCC; scoped grep is empty outside Core bridge/editor. Guarded build attempt exited 1 with 0-byte log/no diagnostics; follow-up build blocked by CPU >50%.
+2026-05-24 EXTERNAL_CODEX loop60: SOURCE_ONLY beacon/construction registry fanout cleanup moved beacon static action reads to active runtime pointer and construction blueprint scans to cached `IQuestSystem` overloads; scoped `diff --check` passed, build blocked by CPU >50%.
+2026-05-24 EXTERNAL_CODEX loop61: SOURCE_ONLY SDF/Terrain probe owner-cache cleanup removed hot `?? GlobalRegistry.VoxelSonarSdf/Terrain` fallbacks from PDA focus, buoyancy, equipment interaction, contextual IK, VR somatic, deployable drill, and laser cutter DOD probe paths; scoped `diff --check` and project runtime grep passed, build blocked by CPU >50% plus active `VBCSCompiler`.
+2026-05-24 EXTERNAL_CODEX loop62: SOURCE_ONLY ConstructionManager service-cache cleanup moved deconstruction/load/clear/save-catalog/telemetry paths to cached ObjectPool/PlayerInventory/DataVault refs with hot-swap refresh; scoped `diff --check` and service-owner grep passed, build blocked by CPU >50% plus active compiler processes.
+2026-05-24 EXTERNAL_CODEX loop63: SOURCE_ONLY callback/physics/audio cleanup removed registry retry from service-replacement callbacks, fauna ragdoll physics handoff, procedural-audio non-allocating DataVault setup, and power-grid non-owned vault release; scoped `diff --check` and callback-fallback grep passed, build blocked by CPU >50%.
+2026-05-24 EXTERNAL_CODEX loop64: SOURCE_ONLY structural integrity DataVault late-bind cleanup made `StructuralIntegrityCalculatorRuntime` register hot-swap before init and removed `TryInitialize` registry fallback; scoped `diff --check`/DataVault grep passed, build blocked by CPU >50%.
+2026-05-24 EXTERNAL_CODEX loop65: SOURCE_ONLY organic/hull/voxel DataVault owner-cache cleanup removed selected `?? GlobalRegistry.DataVault` fallback tails from Dear Lie bootstrap, hull init, and voxel black-box release/dump; scoped `diff --check` passed, build blocked by CPU >50%.
+2026-05-24 EXTERNAL_CODEX loop66: SOURCE_ONLY warning cleanup after `Build_EXTERNAL_CODEX_hotpath_cleanup65_owner_cache.log` pass-with-warnings; fixed three `GameBootstrapper` `CS0168` catch locals, rebuild blocked by CPU >50%.
+2026-05-24 EXTERNAL_CODEX loop67: SOURCE_ONLY BeaconNetwork static action cleanup removed the remaining `GetOrCreate`/Awake fallback to `GlobalRegistry.BeaconNetwork`; static helpers now rely on `s_activeRuntime`, with service registration confined to owner lifecycle/recovery.
+2026-05-24 EXTERNAL_CODEX loop68: SOURCE_ONLY armor warning cleanup removed dead unreferenced `CombatDamageTortureJob` after `cleanup66_warning_fix` pass-with-warnings exposed 6 `CS0649`; rebuild blocked by CPU >50%.
+2026-05-24 EXTERNAL_CODEX loop69: SOURCE_ONLY ScannerDataMiningRouter DataVault owner-cache cleanup removed instance fallback to `GlobalRegistry.DataVault`; DataVault replacement now rebinding through registry hot-swap and pending rebind waits for query/completion buffers.
+2026-05-24 EXTERNAL_CODEX loop70: SOURCE_ONLY HectonFloatingOrigin AUP tuner DataVault cleanup removed owner-present `origin._dataVault ?? GlobalRegistry.DataVault`; registry fallback remains only when no floating-origin owner exists.
+2026-05-24 EXTERNAL_CODEX loop71: SOURCE_ONLY Combat DataVault owner-cache cleanup removed combat `?? GlobalRegistry.DataVault` fallbacks from ballistics/status/armor init; combat DataVault now routes through owner cache/hot-swap, and ballistics releases vault handles on swap/shutdown.
+2026-05-24 EXTERNAL_CODEX loop73: SOURCE_ONLY AsynchronousTelemetryExporter DataVault cleanup removed analytics `_dataVault ?? GlobalRegistry.DataVault`; exporter listens for DataVault replacement, stops worker before rebind, then reacquires vault buffers from cached owner state. GameBootstrapper floating-origin bootstrap fallback now uses explicit cold null check instead of `?? GlobalRegistry` pattern.
+2026-05-24 EXTERNAL_CODEX loop74: SOURCE_ONLY suit/loot/vehicle owner-cache cleanup moved SuitUpgrade DataVault telemetry, LootMagnet DataVault/player/inventory dependencies, and VehicleMotor vault helper resolution to cached owner state with hot-swap/cold-cache boundaries; guarded rebuild blocked by CPU 100%.
+2026-05-24 EXTERNAL_CODEX loop75: SOURCE_ONLY ProceduralLadderClimbRuntime owner-cache cleanup moved climb-start DataVault/player/movement dependencies to cold cache plus hot-swap rebind; direct action-path registry reads removed; guarded rebuild blocked by CPU >50% and active dotnet/csc.
+2026-05-24 EXTERNAL_CODEX loop76: SOURCE_ONLY PlayerKinematicsRuntime and VRSomaticProvider DataVault resolver cleanup confined registry access to cold cache and cached owner reads; guarded rebuild blocked by CPU >50% and active dotnet/VBCSCompiler.
+2026-05-24 EXTERNAL_CODEX loop77: SOURCE_ONLY DebrisManager DataVault cleanup blocked hot `EnsureVaultBuffer` registry retry and releases old vault handles before DataVault replacement rebind; guarded rebuild blocked by CPU 100%.
+2026-05-24 EXTERNAL_CODEX loop78: SOURCE_ONLY SomaticKinematicsRuntime service-rebind cleanup confined DataVault registry access to cold cache and dedicated DataVault hot-swap; guarded rebuild blocked by CPU 100%.
+2026-05-24 EXTERNAL_CODEX loop79: SOURCE_ONLY ChemicalInfluenceGrid/FloraInteractionManager DataVault resolver cleanup moved chemical/flora runtime resolvers to cached owner vaults, resets flora handles on vault change before OnEnable resolve, and restores queued wake-trail shader publish; guarded rebuild blocked by CPU 100%.
+2026-05-24 EXTERNAL_CODEX loop80: SOURCE_ONLY EnvironmentalHazard/BioReactor/HabitatIntegrityManager owner-cache cleanup moved slow/action-path Player/FluidDecals/Atmosphere/Terrain reads to cached owners with hot-swap; guarded rebuild blocked by CPU 100%.
+2026-05-24 EXTERNAL_CODEX loop81: SOURCE_ONLY VehicleMotor wake-silt cleanup moved AbyssalFluidDecals wake emission to cached owner plus hot-swap; guarded rebuild blocked by CPU 91.8%.
+2026-05-24 EXTERNAL_CODEX loop83: SOURCE_ONLY HazardZoneManager player-context cleanup moved fallback player exposure resolution to cached Player owner plus hot-swap; guarded rebuild blocked by CPU 83.2%.
+2026-05-24 EXTERNAL_CODEX loop84: SOURCE_ONLY SettingsManager graphics binding cleanup moved player camera/volume lookup to cached player context with Player hot-swap rebind; guarded rebuild blocked by active dotnet/VBCSCompiler contention after earlier CPU 88%.
+2026-05-24 EXTERNAL_CODEX loop85: SOURCE_ONLY VRSomaticProvider player-camera cleanup moved player camera fallback to cached Player owner plus hot-swap; guarded rebuild blocked by active dotnet/VBCSCompiler despite CPU 22%.
+2026-05-24 EXTERNAL_CODEX loop86: SOURCE_ONLY PlayerKinematicsRuntime service-rebind cleanup confined Fluid/Voxel/Gas/PlayerMotor/Player registry reads to cold pre-listener cache; hot-swap now uses currentService and cached Player camera context.
+2026-05-24 EXTERNAL_CODEX loop87: SOURCE_ONLY RepairTool DataVault cleanup routes hull-dent/black-box vault handles through PlayerTool DataVault hot-swap; build86 exposed a RepairTool late-frame contract wall, current source contains LateFrameTick, retry blocked by CPU/compiler guard.
+2026-05-24 EXTERNAL_CODEX loop88: SOURCE_ONLY EnvironmentalHazard damage interrupt cleanup moved PlayerActionInterrupts to cached owner plus PlayerActionRuntime hot-swap; guarded retry blocked by CPU guard.
+2026-05-24 EXTERNAL_CODEX loop89: SOURCE_ONLY PlayerActionController completion/cancel cleanup moved PlayerInventory/Audio action-path lookups to cached owners with hot-swap refresh.
+2026-05-24 EXTERNAL_CODEX loop90: SOURCE_ONLY FloraInteractionManager cleanup moved Player/Atmosphere/Construction helper reads to cached owners with Player/AtmosphereRuntime/Logistics hot-swap; guarded retry blocked by CPU guard (latest 100%).
+2026-05-24 EXTERNAL_CODEX loop91: SOURCE_ONLY ConsumableItem cleanup removed static `GlobalRegistry.Audio` use-sound lookup; PlayerActionController now passes cached `IAudioService`.
+2026-05-24 EXTERNAL_CODEX loop92: SOURCE_ONLY ClimbableLadder cleanup moved climb audio and interact localization to cached Audio/Localization owners plus hot-swap.
+2026-05-24 EXTERNAL_CODEX loop93: SOURCE_ONLY ecosystem save cleanup moved FaunaGenetics/EcosystemHealth/EnvironmentalStrain save registration to cached `ISaveService` plus Save hot-swap.
+2026-05-24 EXTERNAL_CODEX loop94: SOURCE_ONLY StorageCrate cleanup moved open/close audio and interact localization to cached Audio/Localization owners plus hot-swap.
+2026-05-24 EXTERNAL_CODEX loop95: SOURCE_ONLY SargassumGlobalDragManager save cleanup moved save registration/unregistration to cached `ISaveService` plus Save hot-swap.
+2026-05-24 EXTERNAL_CODEX loop96: SOURCE_ONLY OxygenBubble cleanup moved collection audio and pooled despawn to cached Audio/ObjectPool owners plus hot-swap.
+2026-05-24 EXTERNAL_CODEX loop97: SOURCE_ONLY Floater cleanup moved pickup/attach audio and interact localization to cached Audio/Localization owners plus hot-swap.
+2026-05-24 EXTERNAL_CODEX loop98: SOURCE_ONLY WorldState/WorldProcedural/FaunaDirector/AtlasSignal save cleanup moved touched save owner registration to cached `ISaveService` plus Save hot-swap; guarded build blocked by CPU 100%.
+2026-05-24 EXTERNAL_CODEX loop99: SOURCE_ONLY HectonPlayerHealth cleanup moved survival heartbeat and radiation advisory audio-log routing to cached Audio/AudioLogRuntime owners plus hot-swap.
+2026-05-24 EXTERNAL_CODEX loop100: SOURCE_ONLY MessageTerminal cleanup moved access/new-message audio and localized prompt routing to cached Audio/LocalizationRuntime owners, pushed WFC datapad state through `SignalBus<WfcOutpostStateChangedSignal>`, and deferred status-light MPB writes to late frame; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop101: SOURCE_ONLY TraumaDispatcher cleanup moved parasite-room acoustic load and EMP PDA corrosion to cached Audio/LocalizationRuntime owners plus hot-swap; guarded build pending CPU/compiler clearance.
+2026-05-24 EXTERNAL_CODEX loop102: SOURCE_ONLY Narrative/Suit/PDA/Inventory save cleanup moved HectonNarrativeDirector, SuitUpgradeManager, PDAExchangeSystem, and PlayerInventory Save registration to cached `ISaveService` plus Save hot-swap; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop103: SOURCE_ONLY FirstHourDirector save cleanup moved first-hour persistence registration to cached `ISaveService` plus Save hot-swap; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop104: SOURCE_ONLY DataArchaeologyRuntime save cleanup moved scanner archaeology persistence registration to cached `ISaveService` plus Save hot-swap; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop105: SOURCE_ONLY CorporateOrderSystem, ProceduralLoreDirector, and MetaCampaignService cleanup moved narrative/meta save ownership to cached `ISaveService`; ProceduralLoreDirector also caches exploration, AudioLog, and ObjectPool owners with per-placement pool ownership; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop106: SOURCE_ONLY RunModifierController, ModWorldPersistenceManager, and PlayerExpressionManager cleanup removed remaining direct SaveRuntime register/unregister tails; cached `ISaveService` plus Save hot-swap now owns meta/mod/expression persistence registration; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop107: SOURCE_ONLY GlobalProfileManager and DynamicDifficultyDirector cleanup moved run-time Save/Discovery reads to cached Save/Discovery owners plus hot-swap; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop108: SOURCE_ONLY FaunaBrain compile-wall fix added missing `Hecton8.Physics` import for `PhysicsDeterminismSignals`; guarded rebuild blocked by CPU 92.4.
+2026-05-24 EXTERNAL_CODEX loop109: SOURCE_ONLY HectonDiscoveryManager, PlayerExplorationTracker, PDAMarkerRegistry, and PDALogbookManager cleanup moved PDA/discovery save registration to cached `ISaveService` plus Save hot-swap; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop110: SOURCE_ONLY PlayerAchievementRegistry and PDAContextualAdvisorySystem cleanup moved progression/advisory save registration to cached `ISaveService`; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop111: SOURCE_ONLY runtime SaveRuntime interface cleanup moved AudioLogSystem, BeaconNetworkSystem, ResourceScarcityDirector, PauseMenuController, SaveStation, PDAClockUtility, EndingSystem, CrashTelemetryBuffer, and WorldChunkResidencyManager to save/persistence interfaces where no concrete SaveManager API is needed; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop112: SOURCE_ONLY MainMenuController and SaveSlotHoverPreview cleanup removed concrete SaveRuntime reads; menu metadata binds concrete SaveManager through `GlobalRegistry.Save` plus Save hot-swap; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop113: SOURCE_ONLY GameBootstrapper and save diagnostic cleanup removed remaining non-self SaveRuntime reads; only GlobalRegistry compatibility accessor and SaveManager self-checks still reference SaveRuntime; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop114: SOURCE_ONLY ScanLogSystem and RadioisotopeThermalGenerator cleanup moved save participant registration to cached `ISaveService` plus Save hot-swap; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop115: SOURCE_ONLY UI/crafting/scavenging owner-cache cleanup moved PDAMapTab/Fabricator/HUDQuickBar/ModalWindow/UITooltip/HectonUIScaler/ThermalGeyser/ResourceNode/QuestManager/ScrapManager to cached owners plus hot-swap where needed, and made PlayerInventoryManager getters pure; guarded build blocked by active compiler processes.
+2026-05-24 EXTERNAL_CODEX loop116: SOURCE_ONLY ConstructionManager/LoreDatabaseManager/SeamRegistry/LODSystemManager/DynamicResolutionScaler Save owner cleanup moved save registration to cached `ISaveService`, added missing Save hot-swap, and unregistered disabled presentation participants; guarded build blocked by active compiler processes.
+2026-05-24 EXTERNAL_CODEX loop117: SOURCE_ONLY CaveBioRootsGenerator cleanup removed spline-renderer `GlobalRegistry.TryGet` from submit/remove paths and clears old renderer links on service replacement; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop118: SOURCE_ONLY BuoyancyObject cleanup removed FluidRuntime `GlobalRegistry.TryGet` from OnEnable; buoyancy registration now uses cached `IBuoyancyObjectRegistry` plus hot-swap; guarded build blocked by CPU/compiler contention.
+2026-05-24 EXTERNAL_CODEX loop119: SOURCE_ONLY dispatcher/save lifecycle cleanup updated 20 UI/world/visor/AI/runtime owners with Dispatcher hot-swap rebinds, DataVault old-handle release where needed, and bound `ISaveService` register/unregister helpers for Survival/AudioLog; scoped `diff --check` and grep gates passed, guarded build pending CPU/compiler clearance.
+2026-05-24 EXTERNAL_CODEX loop120: SOURCE_ONLY interaction registry cleanup removed automatic `FindObjectsByType` bootstrap scan and added explicit collider-tree registration to remaining runtime `IInteractable` owners; scoped `diff --check` and grep gates passed, guarded build blocked by active compiler processes.
+2026-05-24 EXTERNAL_CODEX loop121: SOURCE_ONLY dispatcher/DataVault/Atlas cleanup rebinds `PathFunnelNavmeshRuntime`, `AmbientWaterMotionManager`, `AtlasSignalDecoder`, and `Atlas6DirectiveSystem` on Dispatcher replacement; path funnel vault reads are cold-bootstrapped/cached, Atlas directive/decode uses read-model interfaces and fixed conflict-id storage; scoped source gates passed, guarded build blocked by `BUILD_SKIP cpu=74.2 compiler_count=0`.
+2026-05-24 EXTERNAL_CODEX loop122: PASS_WITH_WARNINGS runtime dispatcher rebind cleanup added Dispatcher hot-swap listeners to 20 world/submarine/interaction/economy owners; `Build_EXTERNAL_CODEX_hotpath_cleanup122_dispatcher_rebind_tail.log` exits 0 with pre-existing duplicate-source `CS2002` warnings. `Directory.Build.targets` now removes those generated source items before re-include; retry blocked by `BUILD_SKIP cpu=23 compiler_count=8`.
+2026-05-24 EXTERNAL_CODEX loop123: CLI_COMPILE PASS removed slow-tick hot-list registration probes from 22 owners and added seven missing Dispatcher rebind callbacks; `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log` records 0 warning/error text matches, stdout Build succeeded / 0 warnings / 0 errors.
+2026-05-24 EXTERNAL_CODEX loop124: SOURCE_ONLY removed updatable hot-list registration probes from 10 owners; scoped grep/diff gates passed, rebuild blocked by `BUILD_SKIP cpu=33.3 compiler_count=8`.
+2026-05-24 EXTERNAL_CODEX loop125: SOURCE_ONLY removed updatable/fixed/slow hot-list registration probes from 30 runtime owners; scoped grep/diff gates passed, rebuild blocked by active compiler guard `BUILD_SKIP cpu=9 compiler_count=7`.
+2026-05-24 EXTERNAL_CODEX loop126: SOURCE_ONLY removed remaining observed updatable hot-list registration probes from 13 Core/player/UI/tool owners; scoped grep/diff gates passed, rebuild blocked by active compiler guard `BUILD_SKIP cpu=100 compiler_count=10`.
+2026-05-24 EXTERNAL_CODEX loop127: SOURCE_ONLY removed slow-tick hot-list registration probes from 20 simple owners; scoped grep/diff gates passed, rebuild blocked by active compiler guard `BUILD_SKIP cpu=65 compiler_count=8`.
+2026-05-24 EXTERNAL_CODEX loop128: SOURCE_ONLY removed cave voxel lighting/AO updatable/slow registration probes; scoped grep/diff gates passed, rebuild blocked by active compiler guard `BUILD_SKIP cpu=62.6 compiler_count=8`.
+2026-05-24 EXTERNAL_CODEX loop129: SOURCE_ONLY removed multi-lane tick/late-frame registration probes from 40 runtime owners; scoped grep/diff gates passed, rebuild blocked by active compiler guard `BUILD_SKIP cpu=12 compiler_count=7`.
+2026-05-24 EXTERNAL_CODEX loop130: SOURCE_ONLY zeroed remaining non-editor runtime register/probe patterns; project grep returned no matches. Guarded build `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup129_registration_probe_zero.log` failed with `MSB3491 Access to the path is denied` writing `Temp/obj/*`; this is ENV/ACCESS_DENIED, not C# diagnostics.
+2026-05-24 EXTERNAL_CODEX loop131: SOURCE_ONLY fixed remaining `FluidAnalyticalContracts.cs` duplicate generated-project include in `Directory.Build.targets`; duplicate-risk parser returns 0. Rebuild retry blocked by external `dotnet build Assembly-CSharp.csproj` plus active `csc`; latest clean CLI_COMPILE remains loop123 artifact.
+2026-05-24 EXTERNAL_CODEX loop132: CLI_COMPILE OUTPUT_WITH_WARNING `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup131_target_dedupe.log`; log reaches `Hecton8.Editor -> Temp/bin/Debug/Hecton8.Editor.dll`, has 1 `MSB3101` Temp/obj cache warning, 0 errors, no `CS*` diagnostics, and no final summary/exit line; latest zero-warning pass remains loop123.
+2026-05-24 EXTERNAL_CODEX loop133: SOURCE_ONLY removed remaining non-editor raw static-driver/renderable registration probes in DroneFleetManager, HectonVoxelEngine, HectonVoxelVolume, and HectonUnderwaterVisuals; greps/diff passed, rebuild blocked by `BUILD_GUARD cpu=92.6 compiler_count=7`.
+2026-05-24 EXTERNAL_CODEX loop134: SOURCE_ONLY stripped info-only runtime logs in 21 systems to conditional `H8Debug.Log` and removed remaining Save/Steam/Ecosystem/Foveated frost/render membership probes; greps/diff passed, rebuild blocked by latest `BUILD_GUARD cpu=77 compiler_count=1`.
+2026-05-24 EXTERNAL_CODEX loop135: SOURCE_ONLY HectonVoxelVolume sonar DataVault runtime polls moved to cached owner/hot-swap; grep/diff passed, rebuild blocked by CPU guard (`BUILD_GUARD cpu=96.1 compiler_count=0` in status).
+2026-05-24 EXTERNAL_CODEX loop136: SOURCE_ONLY added Dispatcher hot-swap rebind to `PerformanceBudgetController`; scoped grep/diff passed, rebuild blocked by `BUILD_GUARD cpu=96.3 compiler_count=1`.
+2026-05-24 EXTERNAL_CODEX loop137: SOURCE_ONLY added Dispatcher hot-swap rebind to `EntityChangeManager`, `LandingImpactVFX`, `PlayerStressMetricsRuntime`, and `RenderTextureLifecycleTracker`; targeted grep/diff passed, rebuild blocked by `BUILD_GUARD cpu=100 compiler_count=1`.
+2026-05-24 EXTERNAL_CODEX loop138: SOURCE_ONLY added Dispatcher hot-swap rebind to `VoxelDynamicNavGridRuntimeLifecycle`, `InstanceCullingServiceRegistryBridge`, `HectonSuitHUDExtensions`, `GCMonitor`, and `MeteorSplashQuadVfx`; targeted grep/diff passed, rebuild blocked by `BUILD_GUARD cpu=99.8 compiler_count=1`.
+2026-05-24 EXTERNAL_CODEX loop139: SOURCE_ONLY stripped 71 additional info-only `Debug.Log` callsites in 39 runtime files to conditional `H8Debug.Log` and added context overload; targeted raw-log grep/diff passed, rebuild blocked by `BUILD_GUARD cpu=98.8 compiler_count=1`.
+2026-05-24 EXTERNAL_CODEX loop140: ENV_BUILD_WALL made Environment/Ocean context getters pure and added RaycastBatch Dispatcher rebind; source grep/diff passed, build `Build_EXTERNAL_CODEX_hotpath_cleanup139_context_purity.log` failed before C# with `NETSDK1004` missing project.assets and `MSB3491` Temp/obj access denied.
+2026-05-24 EXTERNAL_CODEX loop141: SOURCE_ONLY stripped 63 executable info-only `Debug.Log` callsites plus 2 debug-log comments in 40 smoke/diagnostic/runtime-support files to conditional `H8Debug.Log`; targeted raw-log grep/diff passed, build skipped by latest guard (`cpu=93.2`, `compiler_count=1`).
+2026-05-24 EXTERNAL_CODEX loop142: SOURCE_ONLY stripped the remaining non-editor raw info `Debug.Log` surface (excluding `H8Debug` facade) plus 8 root editor proof tools in 20 files; 35 executable calls now route to conditional `H8Debug.Log`; guarded build skipped by latest pre-build guard (`cpu=78.3`, `compiler_count=2`).
+2026-05-24 EXTERNAL_CODEX loop143: SOURCE_ONLY added Dispatcher/service hot-swap rebind to ten runtime cadence/context owners and made PlayerSensory getters pure cached reads; targeted hot-swap/getter grep and `diff --check` passed, guarded build skipped by CPU guard (`cpu=100`, `compiler_count=0`).
+2026-05-24 EXTERNAL_CODEX loop144: SOURCE_ONLY added Dispatcher/DataVault/service hot-swap rebind/cache refresh to fourteen more runtime owners; no-hot-swap candidate count is 47, scoped greps/`diff --check` passed, guarded build still ENV_BUILD_WALL (`NETSDK1004` missing project.assets + `MSB3491` Temp/obj access denied before C#).
+2026-05-24 EXTERNAL_CODEX loop145: SOURCE_ONLY added Dispatcher hot-swap rebind to `ConnectionSplineBatchRenderer`, `InteractionHighlighter`, `PlayerTransportCoordinator`, and `TransportChargingStation`; no-hot-swap candidate count is 43, scoped greps/`diff --check` passed, compile pending CPU/compiler guard.
+2026-05-24 EXTERNAL_CODEX loop146: SOURCE_ONLY added Dispatcher hot-swap rebind to `SealedDoor`, `VRValveWheelHandle`, `PhysicalBatteryCompartment`, and `LifePodSeatStrapLatch`; pending visual/audio/snap/hold work is preserved, current no-hot-swap candidate count is 27, scoped greps/`diff --check` passed, rebuild skipped by guard (`cpu=100`, `compiler_count=1`).
+2026-05-24 EXTERNAL_CODEX loop147: SOURCE_ONLY added Dispatcher/DataVault/service hot-swap coverage for delayed despawn and GI relay; no-hot-swap candidate count is 24, scoped greps/`diff --check` passed, rebuild pending guard.
+2026-05-24 EXTERNAL_CODEX loop148: SOURCE_ONLY added Dispatcher hot-swap rebind to 13 more cadence/render/UI/physics/geology owners; no-hot-swap candidate count is 13, scoped greps/`diff --check` passed, rebuild skipped by guard (`cpu=100`, `compiler_count=1`).
+2026-05-24 EXTERNAL_CODEX loop149: SOURCE_ONLY added Dispatcher/DataVault/player hot-swap coverage to topographical sonar, GPU Jacobian foam, and indirect vegetation; scoped greps/`diff --check` passed.
+2026-05-24 EXTERNAL_CODEX loop150: SOURCE_ONLY added Dispatcher/DataVault/service hot-swap coverage to marauder outpost, trade marauders, vehicle damage, submarine dynamics, and abyssal thermodynamics while concurrent source cleanup covered several core/bootstrap/QA/world partials; current type-aware no-hot-swap scan leaves 4 infra/QA/tool owners (`PlayerBuilder`, `RepairTool`, two QA headless bots), scoped greps/`diff --check` passed.
+2026-05-24 EXTERNAL_CODEX loop151: SOURCE_ONLY closed reachable tool/QA and small runtime Dispatcher rebind gaps in `PlayerBuilder`, `RepairTool`, `HeadlessStressFractureBot`, `SteamManager`, `MantaEmergencyWreck`, `AbyssalCavitationRuntimeHost`, `TerrainChunkPagerRuntime`, and `HectonUIScaler`; scoped `diff --check` passed, targeted hot-swap greps passed, broad file-local scan still has known false positives, build skipped by latest guard (`cpu=38`, `compiler_count=1`).
+2026-05-24 EXTERNAL_CODEX loop152: SOURCE_ONLY `PersistentWorldRegistry` tombstone day resolution now reads cached `ISaveService` and Save hot-swap state instead of static `GlobalRegistry.Save`; source greps pass (`TYPE_AWARE_NO_HOTSWAP_COUNT=0`, hot-swap unregister scan 0), scoped `diff --check` passed, build skipped by latest CPU/compiler guard (`cpu=100`, `compiler_count=2`).
+2026-05-24 EXTERNAL_CODEX loop153: SOURCE_ONLY `PersistentWorldRegistry` hydration/catalog helpers now read cached Player/PlayerInventory owner services plus hot-swap state instead of direct `GlobalRegistry.Player/PlayerInventory`; scoped greps and `diff --check` passed, build skipped by CPU guard (`cpu=76.3`, `compiler_count=0`).
+2026-05-24 EXTERNAL_CODEX loop154: SOURCE_ONLY 12 short UI/audio/construction owners now unregister/re-register on Dispatcher hot-swap instead of keeping stale registration flags; `PDADeathMemoryDump` reads cached Player context instead of `GlobalRegistry.Player`; scoped `diff --check` passed, build skipped by active dotnet guard (`cpu=68.3`, `compiler_count=7`).
+2026-05-24 EXTERNAL_CODEX loop155: SOURCE_ONLY 8 additional UI owners now unregister/re-register on Dispatcher hot-swap and 3 loop154 UI owners reset flags on null Dispatcher; scoped UI `diff --check` passed, build skipped by active csc/dotnet guard (`cpu=100`, `compiler_count=9`).
+2026-05-25 EXTERNAL_CODEX loop156: SOURCE_ONLY 15 remaining UI/construction owners now reset or unregister local Dispatcher lanes before re-registering after replacement; scoped `diff --check` passed with LF warnings only; build skipped by guard (`cpu=64`, `compiler_count=0`).
+2026-05-25 EXTERNAL_CODEX loop157: SOURCE_ONLY UI/Construction runtime no longer contains `PlayerRuntimeContextService.ActiveRuntimeContext` or `LocalizationManager.ActiveRuntimeInstance`; scoped `diff --check` passed; build skipped by guard (`cpu=100`, `compiler_count=2`).
+2026-05-25 EXTERNAL_CODEX loop158: ENV_BUILD_WALL after 23 world/environment/AI Dispatcher rebind repairs; scoped `diff --check` and 23-file reset/unregister grep passed; `Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log` fails before C# with `NETSDK1004` missing project.assets, 0 warnings, no `CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`.
 
 [CORE IDENTITY]
 Senior Technical Lead, HECTON-8 (NASA-Punk / Deep Sea Noir). 15 years AA/AAA experience. Brutal, factual, zero optimism. You are brilliant, technically demanding, and have zero tolerance for "refactoring loops," half-measures, or fake reports.
@@ -10,7 +111,7 @@ Senior Technical Director / Lead Unity 6 C# Developer.
 HECTON-8 — AA commercial 3D game (NASA-Punk + Deep Sea Noir).
 Engine: Unity 6000.4 URP. Target: NVIDIA MX350 2GB VRAM, 8GB RAM, i5-1135G7.
 Perf target: 60 FPS / 16.67 ms. Throttle threshold = 25 ms.
-Guardrails: main thread ≤ 12 ms · GC = 0 B/frame · SetPass ≤ 600 · Batches ≤ 1800 · mem ≤ 4096 MB.
+Guardrails: main thread = 12 ms · GC = 0 B/frame · SetPass = 600 · Batches = 1800 · mem = 4096 MB.
 VRAM HARD CEILING: 1800MB (MX350). Texture budget: 900MB. RT+Depth: 320MB. [REQ] Graduation response: used/total > 0.90 triggers Mip-downgrade.
 
 Every system: Complete · Robust · Optimized · Integrated · Documented.
@@ -46,7 +147,7 @@ strict rules
 ## PROJECT ARCHITECTURE
 
 ### Scene Flow
-Normative: 00_BOOTSTRAP → 01_MAIN_MENU → 02_HECTON_WORLD.
+Normative: 00_BOOTSTRAP ? 01_MAIN_MENU ? 02_HECTON_WORLD.
 Single-scene load via SceneManager.LoadScene/LoadSceneAsync.
 01_ORBIT exists as scene asset but is not in the main handoff.
 sandbox/ and _Recovery are not production.
@@ -58,7 +159,7 @@ BuildSettings currently aligned — contains 00_BOOTSTRAP, 01_MAIN_MENU, 02_HECT
 [REQ] Addressables groups — split by logical zone. No single bundle for everything.
 [REQ] After scene load: measure Texture Memory + Total Reserved Memory before gameplay starts.
 
-[REQ] Audio: Vorbis Q70 ambient/music · ADPCM SFX<2s · Load: Compressed In Memory (ambient/music) · Decompress On Load SFX<0.5s · Force To Mono all 3D SFX (−50% mem) · 44100 Hz music · 22050 Hz SFX.
+[REQ] Audio: Vorbis Q70 ambient/music · ADPCM SFX<2s · Load: Compressed In Memory (ambient/music) · Decompress On Load SFX<0.5s · Force To Mono all 3D SFX (-50% mem) · 44100 Hz music · 22050 Hz SFX.
 [FORBID] Streaming SFX (latency) — streaming music only.
 
 ### URP Config
@@ -69,11 +170,11 @@ Medium: HDR · MSAA=OFF (use FXAA) · scale 1.0
 Low:    HDR · MSAA=OFF (use FXAA) · scale 0.85
 
 ### Folder Structure
-Assets/_Project/  ← ALL first-party
-├── Scripts/  (Gameplay/ Interaction/ Items/ Tools/ UI/ Input/ Visor/ Editor/)
-├── Data/ (ScriptableObjects)
-├── Prefabs/ Audio/ Art/ Scenes/
-Assets/_ThirdParty/  ← preferred quarantine target; currently absent in the static scan
+Assets/_Project/  ? ALL first-party
++-- Scripts/  (Gameplay/ Interaction/ Items/ Tools/ UI/ Input/ Visor/ Editor/)
++-- Data/ (ScriptableObjects)
++-- Prefabs/ Audio/ Art/ Scenes/
+Assets/_ThirdParty/  ? preferred quarantine target; currently absent in the static scan
 Current third-party contamination also exists under Assets/Plugins, Assets/AstarPathfindingProject, Assets/Resources, and physical Packages/. Do not use, move, or strip it without an explicit cleanup task.
 
 ### Naming Contract
@@ -118,7 +219,7 @@ If task requests MasterAudio event names — confirm first; first-party does not
 Slots: slot_0/slot_1/slot_2. Files: .sav · .bak · .tmp.
 Metadata: SlotName/GameVersion/Timestamp/PlayTimeSeconds/SceneName/PlayerPosition/Checksum.
 Migration: SaveDataMigration exists. Autosave: do not assume — verify via code/log only.
-[REQ] Atomic: .tmp→verify→rename .sav. Never write directly to .sav. Create .bak BEFORE overwrite.
+[REQ] Atomic: .tmp?verify?rename .sav. Never write directly to .sav. Create .bak BEFORE overwrite.
 [REQ] On load: verify checksum; mismatch = use .bak.
 [FORBID] Save during scene transitions — SaveEvents.OnSaveStarted must block.
 [REQ] Save failure: SaveEvents.OnSaveFailed + UI notification. Autosave min 30 s.
@@ -209,7 +310,7 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 
 [FORBID] Update/LateUpdate/FixedUpdate in gameplay code.
 [REQ] Use IUpdatable via GlobalRegistry.Updatables / SystemDispatcher.
-[REQ] Register/Unregister pattern: OnEnable→Register, OnDisable→Unregister. Double buffering for jobs: read FrontBuffer, write BackBuffer.
+[REQ] Register/Unregister pattern: OnEnable?Register, OnDisable?Unregister. Double buffering for jobs: read FrontBuffer, write BackBuffer.
 [EXCEPT] Update allowed: #if UNITY_EDITOR · camera controllers (post-Tick) · third-party timing wrappers · UI menu controllers (prefer ITickable).
 [FORBID] Time.deltaTime/fixedDeltaTime inside ITickable — use dt/fdt parameter only (tick scaling, dilation, testing).
 
@@ -226,7 +327,7 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 [REQ] Allocate once in Awake as field: private readonly MaterialPropertyBlock _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: self
 [FORBID] new MaterialPropertyBlock() in Tick or any hot path.
 
-### 5. COROUTINES → STATE MACHINES
+### 5. COROUTINES ? STATE MACHINES
 
 [FORBID] StartCoroutine in gameplay code (~100 B alloc per call).
 [REQ] ITickable state machine with enum State + _timer.
@@ -241,7 +342,7 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 ### 7. COLLECTION DETERMINISM
 
 [REQ] Verify .Clear() timing — data must be fresh at usage point.
-[REQ] Empty collection → TryReserve MUST return false (Fail-Safe). Never assume data exists — verify at usage point.
+[REQ] Empty collection ? TryReserve MUST return false (Fail-Safe). Never assume data exists — verify at usage point.
 
 ### 8. PHYSICS — NONALLOC ONLY
 
@@ -308,7 +409,7 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 
 ### 15. EVENT SUBSCRIPTION LEAKS
 
-[REQ] OnEnable += → OnDisable -=. Start += → OnDestroy -=.
+[REQ] OnEnable += ? OnDisable -=. Start += ? OnDestroy -=.
 [REQ] OnDespawn (pooled): unsubscribe ALL events.
 
 ### 16. ADDRESSABLES
@@ -382,31 +483,31 @@ Hot paths = Tick / Update / LateUpdate / FixedUpdate / per-frame.
 ### [RULE] LOD GROUPS — MANDATORY
 
 [REQ] Props > 0.5 m: LOD0+LOD1+Cull min. Hero: LOD0+LOD1+LOD2+Cull.
-[REQ] LOD transitions: Crossfade/dithered near-field, discrete distant. LOD1 ≤ 50% LOD0 poly. LOD2 ≤ 25%.
+[REQ] LOD transitions: Crossfade/dithered near-field, discrete distant. LOD1 = 50% LOD0 poly. LOD2 = 25%.
 [REQ] Cull: < 1 m @ 30 m · medium @ 80 m · large @ 200 m.
 [FORBID] LOD0-only on props visible beyond 20 m. LOD bias > 1.0 without justification.
 
-[REQ] Rigidbody.sleepThreshold: don't lower (default 0.005 sufficient). Static after spawn → isKinematic or Sleep().
+[REQ] Rigidbody.sleepThreshold: don't lower (default 0.005 sufficient). Static after spawn ? isKinematic or Sleep().
 [FORBID] Rigidbody + complex Mesh Collider. [FORBID] ALL Unity Joints (Hinge, Spring, Configurable). Use custom Verlet/Acceleration constraints ONLY.
 [REQ] Max active non-sleeping Rigidbodies — define budget as a constant.
 [FORBID] Direct rb.AddForce() in gameplay code. [REQ] Write ForcePacket structs to physics NativeQueue during FixedUpdate gather phase. PhysicsApplySystem handles actual application.
 
 [REQ] ShaderVariantCollection: warm up in bootstrap via WarmupAllShaders() or .WarmUp().
 [FORBID] New shader keyword without adding variant to ShaderVariantCollection.
-[REQ] Strip unused variants (Player Settings → Shader Stripping). Always Include = critical only.
+[REQ] Strip unused variants (Player Settings ? Shader Stripping). Always Include = critical only.
 [REQ] After new material/shader: check Compiled Variant count in Shader Inspector.
 [FORBID] multi_compile > 4 keywords without justification (exponential variant growth).
 
 [REQ] Read/Write: Off (production). On only if CPU reads mesh (BakeMesh/programmatic).
 [REQ] Optimize Mesh = On for static props. Normals: Calculate if poor, Import if high-quality.
 [FORBID] BlendShapes import if unused (memory overhead). Mesh Compression: Medium world / Off hero.
-[REQ] LOD0 poly budget: hero ≤ 15k · medium prop ≤ 5k · small prop ≤ 1k.
+[REQ] LOD0 poly budget: hero = 15k · medium prop = 5k · small prop = 1k.
 [FORBID] Unity triangulation on complex meshes — triangulate in DCC (Blender/Maya).
 
 [REQ] MapMagic: only via MapMagicBridge.Instance. Direct API [FORBID].
 [REQ] Terrain chunk size — consistent with scatter budget, never changed at runtime.
 [FORBID] Terrain.SampleHeight, Terrain.GetHeights() (allocates). [REQ] Heightmap access MUST use Texture2D.GetPixelData<ushort>() -> NativeArray alias + bilinear math interpolation (Zero-GC Tile Cache).
-[REQ] Terrain splat layers ≤ 4/chunk (+4 = +1 draw call). Draw Instanced = On. Pixel Error ≥ 5.
+[REQ] Terrain splat layers = 4/chunk (+4 = +1 draw call). Draw Instanced = On. Pixel Error = 5.
 [FORBID] TerrainData.heightmapTexture at runtime without explicit task.
 [REQ] After MapMagic graph change: check scatter budget + Stats draw calls.
 
@@ -437,20 +538,20 @@ Before writing ANY logic: Does this belong here? · Is there already an owner? �
 
 ### [RULE] PREFAB / SCENE CONSISTENCY GUARD
 
-Reusable gameplay objects → prefab = source of truth. Scene-only → scene object = source of truth.
+Reusable gameplay objects ? prefab = source of truth. Scene-only ? scene object = source of truth.
 [FORBID] Blanket Apply All/Revert All on: Player · HUD_Render_Camera · Suit_Visor · visor/HUD cameras · RT-driving cameras · pooling/streaming/world-runtime prefabs.
 [REQ] After prefab change: verify prefab asset AND scene instance values. Report: what changed · instance match.
 [FORBID] Auto-save dirty scene after prefab-sync if unrelated edits may be present.
-Without readback → PENDING VERIFICATION.
+Without readback ? PENDING VERIFICATION.
 
 ### [RULE] OWNERSHIP / AMBIGUITY / EXTERNAL PATCH COMPLIANCE
 
-Unclear task → list unclear points, offer 2-3 variants with tradeoffs, ask.
-Contradicts architecture → flag, do not silently fix, wait for confirmation.
-Found bug → // BUG: [desc], do not fix unless blocking, report after task.
-External patch: verify → implement FULLY (not paraphrased) → explain any deviation → list implemented points.
+Unclear task ? list unclear points, offer 2-3 variants with tradeoffs, ask.
+Contradicts architecture ? flag, do not silently fix, wait for confirmation.
+Found bug ? // BUG: [desc], do not fix unless blocking, report after task.
+External patch: verify ? implement FULLY (not paraphrased) ? explain any deviation ? list implemented points.
 [FORBID] "meaning already covered" without literal implementation.
-[FORBID] Guessing/assuming/inventing. Unclear → ASK.
+[FORBID] Guessing/assuming/inventing. Unclear ? ASK.
 
 ---
 
@@ -460,14 +561,14 @@ External patch: verify → implement FULLY (not paraphrased) → explain any dev
 _privateField · _serializedPrivate · PublicField · PropertyName · MethodName (PascalCase) · localVariable (camelCase) · const SomeConstant (PascalCase) · static readonly int _StaticField
 
 ### Attributes
-[Header("── Section ──────────────────")] · [Tooltip("description")] on all [SerializeField] · [SerializeField, Range()] where applicable · [DisallowMultipleComponent] · [RequireComponent(typeof(X))]
+[Header("-- Section ------------------")] · [Tooltip("description")] on all [SerializeField] · [SerializeField, Range()] where applicable · [DisallowMultipleComponent] · [RequireComponent(typeof(X))]
 sealed class unless inheritance intended.
 
 ### File Section Order
-File header → usings → namespace → class declaration →
-INSPECTOR SETTINGS → PRIVATE STATE → PUBLIC PROPERTIES →
-LIFECYCLE (Awake/OnEnable/OnDisable) → ITickable → IPoolable →
-PUBLIC API → PRIVATE METHODS → EDITOR (#if UNITY_EDITOR: OnValidate, OnDrawGizmos)
+File header ? usings ? namespace ? class declaration ?
+INSPECTOR SETTINGS ? PRIVATE STATE ? PUBLIC PROPERTIES ?
+LIFECYCLE (Awake/OnEnable/OnDisable) ? ITickable ? IPoolable ?
+PUBLIC API ? PRIVATE METHODS ? EDITOR (#if UNITY_EDITOR: OnValidate, OnDrawGizmos)
 
 XML docs on all public members (summary · param · remarks).
 
@@ -507,56 +608,56 @@ WITHOUT THIS BLOCK — CODE IS REJECTED.
 Read full task · Grep existing systems · Identify dependencies · Find reference class as template · Plan edge cases (pooled reuse, null manager, null deps, post-OnDisable).
 
 ### Post-Code Self-Review Checklist
-□ new in Tick?                → cache
-□ StartCoroutine?             → ITickable state machine
-□ Update()?                    → ITickable (unless exception applies)
-□ renderer.material?          → MaterialPropertyBlock
-□ GetComponent in hot path?     → Awake cache
-□ Find* at runtime?          → inject/cache
-□ string ops in Tick?           → remove
-□ OnEnable/OnDisable register/unregister? → verify
-□ IPoolable.OnSpawn resets ALL state?   → verify
-□ IPoolable.OnDespawn unsubscribes all? → verify
-□ XML docs on public?           → add
-□ [Tooltip] on serialized?       → add
-□ [Header] grouping?            → add
-□ Physics.*Cast without NonAlloc?  → NonAlloc + buffer
-□ Camera.main in hot path?         → cache
-□ Debug.Log without #if guard?     → wrap
-□ UI text using string assignment?      → change to char[] + SetCharArray
-□ SetActive on UI in Tick?         → CanvasGroup
-□ Multiple transform reads?       → cache to local var
-□ OnGUI anywhere?                 → delete
-□ Exception thrown in gameplay?   → LogError + disable
-□ Animator.Set* with string?      → StringToHash
-□ tag == "string"?               → CompareTag
-□ SendMessage/BroadcastMessage?   → delete, use interface
-□ LayerMask.NameToLayer uncached?   → static readonly
-□ Every += has matching -=?     → verify
-□ Lambda/delegate created in Tick?  → cache as field
-□ GetComponents<T>() (alloc)?      → pre-allocated List overload
-□ mesh.vertices/normals in loop?    → cache or non-alloc API
-□ Input.touches?               → touchCount + GetTouch(i)
-□ ScriptableObject mutated at runtime?  → clone or runtime data
-□ Singleton access in OnDestroy?    → null-check
-□ Particle GetParticles with new array? → pre-allocate
-□ Addressables.Load without Release?    → track + release
-□ Raw Instantiate()?          → ObjectPoolManager.Spawn
-□ new MaterialPropertyBlock() in Tick?  → Awake cache _mpb
-□ jobHandle.Complete() before Dispose()? → verify order
-□ Renderer.materials (alloc)?     → sharedMaterials
-□ gameObject.name in hot path?     → cache
+? new in Tick?                ? cache
+? StartCoroutine?             ? ITickable state machine
+? Update()?                    ? ITickable (unless exception applies)
+? renderer.material?          ? MaterialPropertyBlock
+? GetComponent in hot path?     ? Awake cache
+? Find* at runtime?          ? inject/cache
+? string ops in Tick?           ? remove
+? OnEnable/OnDisable register/unregister? ? verify
+? IPoolable.OnSpawn resets ALL state?   ? verify
+? IPoolable.OnDespawn unsubscribes all? ? verify
+? XML docs on public?           ? add
+? [Tooltip] on serialized?       ? add
+? [Header] grouping?            ? add
+? Physics.*Cast without NonAlloc?  ? NonAlloc + buffer
+? Camera.main in hot path?         ? cache
+? Debug.Log without #if guard?     ? wrap
+? UI text using string assignment?      ? change to char[] + SetCharArray
+? SetActive on UI in Tick?         ? CanvasGroup
+? Multiple transform reads?       ? cache to local var
+? OnGUI anywhere?                 ? delete
+? Exception thrown in gameplay?   ? LogError + disable
+? Animator.Set* with string?      ? StringToHash
+? tag == "string"?               ? CompareTag
+? SendMessage/BroadcastMessage?   ? delete, use interface
+? LayerMask.NameToLayer uncached?   ? static readonly
+? Every += has matching -=?     ? verify
+? Lambda/delegate created in Tick?  ? cache as field
+? GetComponents<T>() (alloc)?      ? pre-allocated List overload
+? mesh.vertices/normals in loop?    ? cache or non-alloc API
+? Input.touches?               ? touchCount + GetTouch(i)
+? ScriptableObject mutated at runtime?  ? clone or runtime data
+? Singleton access in OnDestroy?    ? null-check
+? Particle GetParticles with new array? ? pre-allocate
+? Addressables.Load without Release?    ? track + release
+? Raw Instantiate()?          ? ObjectPoolManager.Spawn
+? new MaterialPropertyBlock() in Tick?  ? Awake cache _mpb
+? jobHandle.Complete() before Dispose()? ? verify order
+? Renderer.materials (alloc)?     ? sharedMaterials
+? gameObject.name in hot path?     ? cache
 
 ### Compilation Guard
 - [ ] All using directives present: `UnityEngine`, `Hecton8.*`, `System`, etc.
 - [ ] All types exist in project; do not invent types.
 - [ ] No name conflicts with existing classes.
 - [ ] No `#if UNITY_EDITOR` code breaks runtime builds.
-□ If unsure about existing signatures — ASK first
+? If unsure about existing signatures — ASK first
 Non-compiling code = rejected.
 
 If code uses Reflection / exotic [Serializable] / AOT-limited generics / UnityEvent dynamic subscription:
-[WARN] "WARNING: May break in IL2CPP build" → propose alternative ([Preserve], static dispatch).
+[WARN] "WARNING: May break in IL2CPP build" ? propose alternative ([Preserve], static dispatch).
 For legacy Easy Save 3 serialized assets: do not add new ES3 usage. If touching pre-existing ES3 attributes, quarantine/report instead of extending them.
 
 ---
@@ -564,11 +665,11 @@ For legacy Easy Save 3 serialized assets: do not add new ES3 usage. If touching 
 ## VERIFICATION PROTOCOLS
 
 ### [RULE] GC VALIDATION
-Format: BEFORE: X KB/frame · AFTER: Z KB/frame · STATUS: 0 B / −N% / no change.
-If not 0 B → PENDING VERIFICATION + next step. No real measurements → "measured proof absent". [FORBID] BEFORE: N/A.
+Format: BEFORE: X KB/frame · AFTER: Z KB/frame · STATUS: 0 B / -N% / no change.
+If not 0 B ? PENDING VERIFICATION + next step. No real measurements ? "measured proof absent". [FORBID] BEFORE: N/A.
 
 ### [RULE] REGRESSION GUARD
-[REGRESSION CHECK] BEFORE→AFTER (Mean GC · Peak GC · Reserved). >10% worse → revert + report. STATUS: NO REGRESSION / REGRESSION DETECTED in [X].
+[REGRESSION CHECK] BEFORE?AFTER (Mean GC · Peak GC · Reserved). >10% worse ? revert + report. STATUS: NO REGRESSION / REGRESSION DETECTED in [X].
 
 ### [RULE] MEMORY RETENTION GUARD
 Baseline: idle 10 min. Capture: App Resident · Texture · GC Reserved · Total Reserved. Compare slope, not snapshot. Memory flat + CPU worse = REGRESSION DETECTED.
@@ -577,13 +678,13 @@ Baseline: idle 10 min. Capture: App Resident · Texture · GC Reserved · Total 
 Every technical report must include: REGRESSION MODEL (CPU/GC/memory/cadence/correctness) · HOT PATH IMPACT · FAILURE MODES · WHY KEPT/REJECTED.
 
 ### [PROTOCOL] MCP SERVER
-MCP: run scene → wait 5 s → read GCMonitor → decide. Inject AGENTS.md every call. No logs → ask for GCMonitor. No MCP → Profiler screenshot before+after. WITHOUT numbers — never declare solved.
+MCP: run scene ? wait 5 s ? read GCMonitor ? decide. Inject AGENTS.md every call. No logs ? ask for GCMonitor. No MCP ? Profiler screenshot before+after. WITHOUT numbers — never declare solved.
 
 ### [REQ] AUTOMATED SELF-TEST PROTOCOL
 After writing any system: Exact repro steps · Expected GCMonitor output (0 B hot paths) · Edge cases (spam interact ×20, UI ×10, despawn during Tick, null manager) · MCP: auto-execute + report; no MCP: checklist.
 
 ### [RULE] STALL PROTOCOL (2+ failed passes)
-Document changes + GC delta + reason → Revert → Different approach → Bundle logs/facts/hypotheses → Offer external review.
+Document changes + GC delta + reason ? Revert ? Different approach ? Bundle logs/facts/hypotheses ? Offer external review.
 
 ---
 
@@ -597,7 +698,7 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 [REQ] Outsource shader work OK with: exact prompt · target file path · constraints · perf limits.
 [REQ] Static geometry: Contribute GI = On. Cast Shadows = On only if in shadow frustum.
 [REQ] < 0.5 m objects: Cast Shadows = Off (justify if enabled). Flora: Two-Sided only for hero near-field.
-[REQ] Check shadow casters via Frame Debugger → Shadow Map before each art iteration.
+[REQ] Check shadow casters via Frame Debugger ? Shadow Map before each art iteration.
 [FORBID] Dynamic objects Cast Shadows = On without justification - use Light Probes, APV where approved, or cheap probe approximation.
 [REQ] Occlusion Culling baked for caves/modules/corridors. Occludee Static > 1 m³. Occluder Static > 2 m³.
 [FORBID] Occluder Static on dynamic spawned objects. Rebake after cave/module geometry changes.
@@ -607,7 +708,7 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 [FORBID] Static Batching + GPU Instancing on same object. Unique material per prop.
 [REQ] Check SetPass + Batches in Stats after each art iteration.
 [REQ] Textures: BC7 (albedo/roughness/AO) · BC5 (normals, RG/DXT5nm). Never uncompressed RGB/RGBA.
-[REQ] Max size: hero ≤ 2048 · world/terrain ≤ 2048 tiled · small props ≤ 512.
+[REQ] Max size: hero = 2048 · world/terrain = 2048 tiled · small props = 512.
 [REQ] Atlases for same material family (rocks/debris/coral). MipMaps On for world, Off for UI.
 [REQ] After new textures: check Texture Memory. > 900 MB = RED.
 [REQ] Baked Lighting for static geo. Realtime GI [FORBID] without justification.
@@ -615,7 +716,7 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 [REQ] Reflection Probes: Baked or Realtime (refresh = Via Scripting). One per logical zone.
 [FORBID] Realtime Reflection Probe refresh = Every Frame (full extra render pass).
 [REQ] After lighting changes: rebake + check Baked Lightmaps memory.
-[REQ] layerCullDistances for all layers: debris/particles ≤ 40 m · props/flora ≤ 100 m · large geo = far clip.
+[REQ] layerCullDistances for all layers: debris/particles = 40 m · props/flora = 100 m · large geo = far clip.
 [FORBID] All layers at same far clip without layerCullDistances.
 [REQ] Post Processing: URP Volume system. Global Volume + local overrides.
 [REQ] AA mandatory: Tonemapping (ACES) · Color Grading · Vignette · DoF (Bokeh cutscenes / Gaussian gameplay).
@@ -635,8 +736,8 @@ Document changes + GC delta + reason → Revert → Different approach → Bundl
 
 ## COMMUNICATION
 
-Response format: What was wrong → What I did → In-game result → What was verified.
-[REQ] Simple language. Separate Unity-verified from code-review-only. No metrics → regression model, not fake tables.
+Response format: What was wrong ? What I did ? In-game result ? What was verified.
+[REQ] Simple language. Separate Unity-verified from code-review-only. No metrics ? regression model, not fake tables.
 ---
 
 ## ABSOLUTELY FORBIDDEN
@@ -647,16 +748,16 @@ Response format: What was wrong → What I did → In-game result → What was v
 [FORBID] Change public API without permission — list deps first, confirm.
 [FORBID] Editor tools unless asked. async/await + destroyCancellationToken on pooled objects.
 [FORBID] UnityWebRequest without explicit task. [ExecuteInEditMode]/[ExecuteAlways] without need.
-[FORBID] async void (uncaught exceptions) and async Task (allocates). [REQ] Use Unity 6 Awaitable for all async ops (zero-alloc). No Awaitable in gameplay hot paths → use ITickable state machine.
+[FORBID] async void (uncaught exceptions) and async Task (allocates). [REQ] Use Unity 6 Awaitable for all async ops (zero-alloc). No Awaitable in gameplay hot paths ? use ITickable state machine.
 [EXCEPT] async only: bootstrap load · SaveManager internals · Addressables — outside hot path.
 [REQ] Non-pooled MonoBehaviour async: destroyCancellationToken with WithCancellation().
-[FORBID] async on pooled objects — destroyCancellationToken does not fire on Despawn → leak. Use ITickable + handle.IsDone instead.
+[FORBID] async on pooled objects — destroyCancellationToken does not fire on Despawn ? leak. Use ITickable + handle.IsDone instead.
 [FORBID] DontDestroyOnLoad without instruction.
 [FORBID] Singleton base classes (MonoSingleton<T> etc.).
 [REQ] GlobalRegistry pattern — explicit Initialize() and OnDisable() unregister. [FORBID] Cross-script wiring in Awake.
 [FORBID] Resources.Load. OnGUI(). Cross-scene Inspector refs.
 [FORBID] Exceptions in gameplay — LogError + disable + continue. Complex Mesh Collider without justification.
-[FORBID] Guessing/inventing. Unclear → ASK.
+[FORBID] Guessing/inventing. Unclear ? ASK.
 [RULE] VISUAL CURRENCY PROTOCOL
 [REQ] Performance optimization is never the end goal; Immersion is.
 [REQ] Use performance savings to "buy" AAA visuals: If you simplify a math loop, you are MANDATED to increase visual fidelity (e.g., more detailed debris, better light response, smoother IK) in the High-Tier profile.

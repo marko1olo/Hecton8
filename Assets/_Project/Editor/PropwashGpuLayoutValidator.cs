@@ -11,6 +11,15 @@ namespace Hecton8.EditorTools
     [InitializeOnLoad]
     internal static class PropwashGpuLayoutValidator
     {
+        private const int PropwashEventLocalPositionOffset = 0;
+        private const int PropwashEventThrustVectorOffset = 12;
+        private const int PropwashEventIntensityOffset = 24;
+        private const int PropwashEventRadiusOffset = 28;
+        private const int WakeProfileEngineHashOffset = 0;
+        private const int WakeProfileEmissionRateOffset = 8;
+        private const int WakeProfileCurlFrequencyOffset = 44;
+        private const int WakeProfileReserved2Offset = 60;
+
         static PropwashGpuLayoutValidator()
         {
             Validate();
@@ -23,20 +32,20 @@ namespace Hecton8.EditorTools
                 throw new InvalidOperationException("SHINOBU_237 propwash runtime layout mismatch.");
 
             AssertSize<PropwashEventDTO>(PropwashGpuContracts.EventStrideBytes);
-            AssertOffset<PropwashEventDTO>(nameof(PropwashEventDTO.LocalPosition), 0);
-            AssertOffset<PropwashEventDTO>(nameof(PropwashEventDTO.ThrustVector), 12);
-            AssertOffset<PropwashEventDTO>(nameof(PropwashEventDTO.Intensity), 24);
-            AssertOffset<PropwashEventDTO>(nameof(PropwashEventDTO.Radius), 28);
+            AssertOffset<PropwashEventDTO>(nameof(PropwashEventDTO.LocalPosition), PropwashEventLocalPositionOffset);
+            AssertOffset<PropwashEventDTO>(nameof(PropwashEventDTO.ThrustVector), PropwashEventThrustVectorOffset);
+            AssertOffset<PropwashEventDTO>(nameof(PropwashEventDTO.Intensity), PropwashEventIntensityOffset);
+            AssertOffset<PropwashEventDTO>(nameof(PropwashEventDTO.Radius), PropwashEventRadiusOffset);
             AssertSize<KinematicWakeSourceDTO>(PropwashGpuContracts.KinematicSourceStrideBytes);
             AssertSize<WakeSource>(PropwashGpuContracts.WakeSourceStrideBytes);
             AssertSize<PropwashRingCursorDTO>(PropwashGpuContracts.RingCursorStrideBytes);
             AssertSize<PropwashTelemetryEntry>(PropwashGpuContracts.TelemetryEntryStrideBytes);
             AssertSize<PropwashGpuTuningDTO>(PropwashGpuContracts.TuningStrideBytes);
             AssertSize<PropwashWakeProfileDTO>(PropwashGpuContracts.WakeProfileStrideBytes);
-            AssertOffset<PropwashWakeProfileDTO>(nameof(PropwashWakeProfileDTO.EngineHash), 0);
-            AssertOffset<PropwashWakeProfileDTO>(nameof(PropwashWakeProfileDTO.EmissionRate), 8);
-            AssertOffset<PropwashWakeProfileDTO>(nameof(PropwashWakeProfileDTO.CurlFrequency), 44);
-            AssertOffset<PropwashWakeProfileDTO>(nameof(PropwashWakeProfileDTO.Reserved2), 60);
+            AssertOffset<PropwashWakeProfileDTO>(nameof(PropwashWakeProfileDTO.EngineHash), WakeProfileEngineHashOffset);
+            AssertOffset<PropwashWakeProfileDTO>(nameof(PropwashWakeProfileDTO.EmissionRate), WakeProfileEmissionRateOffset);
+            AssertOffset<PropwashWakeProfileDTO>(nameof(PropwashWakeProfileDTO.CurlFrequency), WakeProfileCurlFrequencyOffset);
+            AssertOffset<PropwashWakeProfileDTO>(nameof(PropwashWakeProfileDTO.Reserved2), WakeProfileReserved2Offset);
         }
 
         private static void AssertSize<T>(int expectedBytes) where T : struct

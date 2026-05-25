@@ -1,6 +1,8 @@
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Caves;
 using Hecton8.World;
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -20,7 +22,6 @@ namespace Hecton8.Gameplay
     {
         private const int MaxActiveChunks = 192;
         private const int MaxPendingBursts = 24;
-        private const int MatrixStrideBytes = sizeof(float) * 16;
         private const float PhysicsPhaseDuration = 3f;
         private const float SinkPhaseDuration = 2f;
         private const float PoolReturnDelay = PhysicsPhaseDuration + SinkPhaseDuration;
@@ -39,6 +40,9 @@ namespace Hecton8.Gameplay
         private const int DebrisPoolTelemetryId = unchecked((int)0x00DEB815u);
         private const uint PendingBurstQueueFullReason = 0x44504251u;
         private const uint ActiveSlotPoolExhaustedReason = 0x4450534Cu;
+        private const Hecton8.Core.Memory.SystemID VaultOwnerSystemId = Hecton8.Core.Memory.SystemID.GameplayDebris;
+        private const Hecton8.Core.Memory.BufferID FrontStatesBufferId = Hecton8.Core.Memory.BufferID.GameplayDebrisFrontStates;
+        private const Hecton8.Core.Memory.BufferID BackStatesBufferId = Hecton8.Core.Memory.BufferID.GameplayDebrisBackStates;
         private static readonly uint _DebrisSolveWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DebrisManager.SolveBudgetExceeded"));
         private static readonly uint _DebrisTelemetryContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DebrisManager"));
 
@@ -66,8 +70,6 @@ namespace Hecton8.Gameplay
         private readonly int[] _batchCounts = new int[MaxActiveChunks];
         // COLD ALLOC: int[36864] - flat batch-to-slot lookup table - owner: DebrisManager
         private readonly int[] _batchSlotIndices = new int[MaxActiveChunks * MaxActiveChunks];
-        // COLD ALLOC: Matrix4x4[192] - per-batch GPU matrix upload staging - owner: DebrisManager
-        private readonly Matrix4x4[] _batchMatrices = new Matrix4x4[MaxActiveChunks];
         // COLD ALLOC: DebrisInstanceData[192] - per-batch instanced draw staging - owner: DebrisManager
         private readonly DebrisInstanceData[] _batchInstanceData = new DebrisInstanceData[MaxActiveChunks];
         // COLD ALLOC: PendingBurstRequest[24] - deferred burst queue for post-job insertion - owner: DebrisManager
@@ -79,13 +81,16 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: byte[192] - cached per-slot thermal petrification eligibility flags - owner: DebrisManager
         private readonly byte[] _thermalPetrificationHotFlags = new byte[MaxActiveChunks];
 
-        private NativeArray<DebrisChunkState> _frontStates;
-        private NativeArray<DebrisChunkState> _backStates;
+        private VaultGenerationHandle<DebrisChunkState> _frontStatesHandle;
+        private VaultGenerationHandle<DebrisChunkState> _backStatesHandle;
         private JobHandle _simulationHandle;
-        private GraphicsBuffer _matrixBuffer;
+        private IDataVault _dataVault;
         private Vector3 _pendingShiftOffset;
+        private BufferID _simulationReadBufferId;
+        private BufferID _simulationWriteBufferId;
         private int _pendingBurstCount;
         private bool _simulationScheduled;
+        private bool _simulationJobBuffersLocked;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _originShiftRegistered;
@@ -204,7 +209,6 @@ namespace Hecton8.Gameplay
             _clearRequested = true;
             _pendingBurstCount = 0;
             ReleaseNativeState();
-            ReleaseBuffer(ref _matrixBuffer);
         }
 
         private void UnregisterRuntimeHooks()
@@ -236,30 +240,17 @@ namespace Hecton8.Gameplay
 
         private void EnsureRuntimeResources()
         {
-            if (!_frontStates.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<DebrisChunkState>[192] - front debris simulation state buffer - owner: DebrisManager
-                _frontStates = new NativeArray<DebrisChunkState>(MaxActiveChunks, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _frontStates,
-                    nameof(DebrisManager),
-                    nameof(_frontStates),
-                    NativeAllocationLifetime.Session);
-            }
+            EnsureVaultBuffer(
+                ref _frontStatesHandle,
+                FrontStatesBufferId,
+                MaxActiveChunks,
+                NativeArrayOptions.ClearMemory);
+            EnsureVaultBuffer(
+                ref _backStatesHandle,
+                BackStatesBufferId,
+                MaxActiveChunks,
+                NativeArrayOptions.ClearMemory);
 
-            if (!_backStates.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<DebrisChunkState>[192] - back debris simulation state buffer - owner: DebrisManager
-                _backStates = new NativeArray<DebrisChunkState>(MaxActiveChunks, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _backStates,
-                    nameof(DebrisManager),
-                    nameof(_backStates),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (_matrixBuffer == null)
-                _matrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxActiveChunks, MatrixStrideBytes); // COLD ALLOC: GraphicsBuffer[192] - runtime chunk transform upload buffer - owner: DebrisManager
         }
 
         /// <inheritdoc />
@@ -367,19 +358,35 @@ namespace Hecton8.Gameplay
 
             if (_pendingShiftOffset.sqrMagnitude > 0.000001f && !_simulationScheduled)
             {
-                ApplyShiftToBuffer(_frontStates, _pendingShiftOffset);
+                if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> shiftedFrontStates))
+                {
+                    try
+                    {
+                        ApplyShiftToBuffer(shiftedFrontStates, _pendingShiftOffset);
+                    }
+                    finally
+                    {
+                        ReleaseVaultWrite(in _frontStatesHandle);
+                    }
+                }
+
                 _pendingShiftOffset = Vector3.zero;
             }
 
-            FlushPendingBursts();
-            RenderActiveChunks();
+            if (!_simulationScheduled)
+                FlushPendingBursts();
 
-            if (!_simulationScheduled && HasSimulatedChunks())
+            if (!_simulationScheduled &&
+                TryReadVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStatesForScan) &&
+                HasSimulatedChunks(frontStatesForScan) &&
+                TryLockSimulationJobBuffers() &&
+                TryOpenVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates) &&
+                TryOpenVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
             {
                 DebrisSimulationJob job = new DebrisSimulationJob
                 {
-                    ReadStates = _frontStates,
-                    WriteStates = _backStates,
+                    ReadStates = frontStates,
+                    WriteStates = backStates,
                     DeltaTime = math.max(0.0001f, _lastTickDeltaTime),
                     PhysicsPhaseDuration = PhysicsPhaseDuration,
                     PoolReturnDelay = PoolReturnDelay,
@@ -390,8 +397,12 @@ namespace Hecton8.Gameplay
                     WorldCullY = WorldCullY,
                     RandomSeed = ResolveJobSeed()
                 };
-                _simulationHandle = job.Schedule(_frontStates.Length, 32);
+                _simulationHandle = job.Schedule(frontStates.Length, 32);
                 _simulationScheduled = true;
+            }
+            else if (!_simulationScheduled)
+            {
+                UnlockSimulationJobBuffers();
             }
 
             PublishDebrisSolveWarningIfNeeded(solveStartTimestamp);
@@ -400,14 +411,20 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (!_simulationScheduled)
-                return;
+            bool completedSimulation = false;
 
-            if (!DispatcherJobSwap.TryComplete(ref _simulationHandle, forceComplete: false))
-                return;
+            if (_simulationScheduled && DispatcherJobSwap.TryComplete(ref _simulationHandle, forceComplete: false))
+            {
+                _simulationScheduled = false;
+                UnlockSimulationJobBuffers();
+                SwapStateBuffers();
+                completedSimulation = true;
+            }
 
-            _simulationScheduled = false;
-            SwapStateBuffers();
+            RenderActiveChunks();
+
+            if (!completedSimulation)
+                return;
 
             long solveStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
             ProcessThermalPetrification();
@@ -421,11 +438,35 @@ namespace Hecton8.Gameplay
             if (shiftOffset.sqrMagnitude <= 0.000001f)
                 return;
 
-            ApplyShiftToBuffer(_frontStates, shiftOffset);
             if (_simulationScheduled)
+            {
                 _pendingShiftOffset += shiftOffset;
-            else
-                ApplyShiftToBuffer(_backStates, shiftOffset);
+                return;
+            }
+
+            if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates))
+            {
+                try
+                {
+                    ApplyShiftToBuffer(frontStates, shiftOffset);
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _frontStatesHandle);
+                }
+            }
+
+            if (TryAcquireVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
+            {
+                try
+                {
+                    ApplyShiftToBuffer(backStates, shiftOffset);
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _backStatesHandle);
+                }
+            }
         }
 
         private void FlushPendingBursts()
@@ -433,6 +474,17 @@ namespace Hecton8.Gameplay
             if (_pendingBurstCount <= 0)
                 return;
 
+            if (!TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates))
+                return;
+
+            if (!TryAcquireVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
+            {
+                ReleaseVaultWrite(in _frontStatesHandle);
+                return;
+            }
+
+            try
+            {
             for (int requestIndex = 0; requestIndex < _pendingBurstCount; requestIndex++)
             {
                 PendingBurstRequest request = _pendingBursts[requestIndex];
@@ -449,7 +501,7 @@ namespace Hecton8.Gameplay
                 if (requestedSlots <= 0)
                     continue;
 
-                if (CountFreeSlots() < requestedSlots)
+                if (CountFreeSlots(frontStates) < requestedSlots)
                 {
                     PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
                     continue;
@@ -478,7 +530,7 @@ namespace Hecton8.Gameplay
                     if (mesh == null)
                         continue;
 
-                    int slotIndex = FindFreeSlot();
+                    int slotIndex = FindFreeSlot(frontStates);
                     if (slotIndex < 0)
                     {
                         PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
@@ -530,9 +582,9 @@ namespace Hecton8.Gameplay
                         SettledStatic = 0
                     };
 
-                    _frontStates[slotIndex] = state;
+                    frontStates[slotIndex] = state;
                     if (!_simulationScheduled)
-                        _backStates[slotIndex] = state;
+                        backStates[slotIndex] = state;
 
                     _slotMeshes[slotIndex] = mesh;
                     _slotMaterials[slotIndex] = request.Definition.SharedMaterial;
@@ -542,21 +594,29 @@ namespace Hecton8.Gameplay
                     spawnedChunks++;
                 }
             }
+            }
+            finally
+            {
+                ReleaseVaultWrite(in _backStatesHandle);
+                ReleaseVaultWrite(in _frontStatesHandle);
+            }
 
             _pendingBurstCount = 0;
         }
 
         private void RenderActiveChunks()
         {
-            if (_matrixBuffer == null || !_frontStates.IsCreated)
+            if (!TryReadOnlyVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState>.ReadOnly frontStates))
+            {
                 return;
+            }
 
             int batchCount = 0;
             System.Array.Clear(_batchCounts, 0, _batchCounts.Length);
 
-            for (int slotIndex = 0; slotIndex < _frontStates.Length; slotIndex++)
+            for (int slotIndex = 0; slotIndex < frontStates.Length; slotIndex++)
             {
-                DebrisChunkState state = _frontStates[slotIndex];
+                DebrisChunkState state = frontStates[slotIndex];
                 if (state.Active == 0)
                     continue;
 
@@ -594,13 +654,12 @@ namespace Hecton8.Gameplay
                 for (int localIndex = 0; localIndex < instanceCount; localIndex++)
                 {
                     int slotIndex = _batchSlotIndices[(batchIndex * MaxActiveChunks) + localIndex];
-                    DebrisChunkState state = _frontStates[slotIndex];
+                    DebrisChunkState state = frontStates[slotIndex];
                     Matrix4x4 matrix = Matrix4x4.TRS(
                         new Vector3(state.Position.x, state.Position.y, state.Position.z),
                         ToUnityQuaternion(state.Rotation),
                         new Vector3(state.Scale.x, state.Scale.y, state.Scale.z));
 
-                    _batchMatrices[localIndex] = matrix;
                     _batchInstanceData[localIndex] = new DebrisInstanceData
                     {
                         objectToWorld = matrix,
@@ -619,8 +678,6 @@ namespace Hecton8.Gameplay
                     }
                 }
 
-                _matrixBuffer.SetData(_batchMatrices, 0, 0, instanceCount);
-
                 RenderParams renderParams = new RenderParams(_batchMaterials[batchIndex])
                 {
                     worldBounds = worldBounds,
@@ -638,11 +695,14 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private bool HasSimulatedChunks()
+        private static bool HasSimulatedChunks(NativeArray<DebrisChunkState> frontStates)
         {
-            for (int i = 0; i < _frontStates.Length; i++)
+            if (!frontStates.IsCreated)
+                return false;
+
+            for (int i = 0; i < frontStates.Length; i++)
             {
-                DebrisChunkState state = _frontStates[i];
+                DebrisChunkState state = frontStates[i];
                 if (state.Active != 0 && state.SettledStatic == 0)
                     return true;
             }
@@ -696,12 +756,15 @@ namespace Hecton8.Gameplay
             return count;
         }
 
-        private int CountFreeSlots()
+        private static int CountFreeSlots(NativeArray<DebrisChunkState> frontStates)
         {
             int freeCount = 0;
-            for (int i = 0; i < _frontStates.Length; i++)
+            if (!frontStates.IsCreated)
+                return 0;
+
+            for (int i = 0; i < frontStates.Length; i++)
             {
-                DebrisChunkState state = _frontStates[i];
+                DebrisChunkState state = frontStates[i];
                 if (state.Active == 0 || state.SettledStatic != 0)
                     freeCount++;
             }
@@ -709,19 +772,22 @@ namespace Hecton8.Gameplay
             return freeCount;
         }
 
-        private int FindFreeSlot()
+        private static int FindFreeSlot(NativeArray<DebrisChunkState> frontStates)
         {
-            for (int i = 0; i < _frontStates.Length; i++)
+            if (!frontStates.IsCreated)
+                return -1;
+
+            for (int i = 0; i < frontStates.Length; i++)
             {
-                if (_frontStates[i].Active == 0)
+                if (frontStates[i].Active == 0)
                     return i;
             }
 
             int bestSettledSlot = -1;
             float bestSettledAge = -1f;
-            for (int i = 0; i < _frontStates.Length; i++)
+            for (int i = 0; i < frontStates.Length; i++)
             {
-                DebrisChunkState state = _frontStates[i];
+                DebrisChunkState state = frontStates[i];
                 if (state.SettledStatic == 0 || state.Age <= bestSettledAge)
                     continue;
 
@@ -739,16 +805,30 @@ namespace Hecton8.Gameplay
 
         private void ResetActiveState()
         {
-            if (_frontStates.IsCreated)
+            if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates))
             {
-                for (int i = 0; i < _frontStates.Length; i++)
-                    _frontStates[i] = default;
+                try
+                {
+                    for (int i = 0; i < frontStates.Length; i++)
+                        frontStates[i] = default;
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _frontStatesHandle);
+                }
             }
 
-            if (_backStates.IsCreated)
+            if (TryAcquireVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
             {
-                for (int i = 0; i < _backStates.Length; i++)
-                    _backStates[i] = default;
+                try
+                {
+                    for (int i = 0; i < backStates.Length; i++)
+                        backStates[i] = default;
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _backStatesHandle);
+                }
             }
 
             System.Array.Clear(_slotMeshes, 0, _slotMeshes.Length);
@@ -763,78 +843,85 @@ namespace Hecton8.Gameplay
 
         private void ProcessThermalPetrification()
         {
-            if (!_frontStates.IsCreated)
+            if (!TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates))
                 return;
 
-            AbyssalThermalManager thermalManager = _thermalRuntime;
-            if (thermalManager == null)
-                return;
-
-            float deltaTime = _lastTickDeltaTime;
-            for (int slotIndex = 0; slotIndex < _frontStates.Length; slotIndex++)
+            try
             {
-                DebrisChunkState state = _frontStates[slotIndex];
-                if (state.Active == 0 || state.SettledStatic != 0)
-                {
-                    _thermalPetrificationTimers[slotIndex] = 0f;
-                    _thermalPetrificationNextProbeAges[slotIndex] = 0f;
-                    _thermalPetrificationHotFlags[slotIndex] = 0;
-                    continue;
-                }
+                AbyssalThermalManager thermalManager = _thermalRuntime;
+                if (thermalManager == null)
+                    return;
 
-                Vector3 runtimePosition = new Vector3(state.Position.x, state.Position.y, state.Position.z);
-                if (math.lengthsq(state.Velocity) > ThermalPetrificationVelocitySq)
+                float deltaTime = _lastTickDeltaTime;
+                for (int slotIndex = 0; slotIndex < frontStates.Length; slotIndex++)
                 {
-                    _thermalPetrificationTimers[slotIndex] = 0f;
-                    _thermalPetrificationNextProbeAges[slotIndex] = 0f;
-                    _thermalPetrificationHotFlags[slotIndex] = 0;
-                    continue;
-                }
+                    DebrisChunkState state = frontStates[slotIndex];
+                    if (state.Active == 0 || state.SettledStatic != 0)
+                    {
+                        _thermalPetrificationTimers[slotIndex] = 0f;
+                        _thermalPetrificationNextProbeAges[slotIndex] = 0f;
+                        _thermalPetrificationHotFlags[slotIndex] = 0;
+                        continue;
+                    }
 
-                if (state.Age >= _thermalPetrificationNextProbeAges[slotIndex])
-                {
-                    _thermalPetrificationNextProbeAges[slotIndex] = state.Age + ThermalPetrificationProbeIntervalSeconds;
-                    bool hasThermalFlow = thermalManager.SampleThermalFlow(
-                        runtimePosition,
-                        ThermalPetrificationProbeRadius,
-                        out AbyssalThermalManager.ThermalFlowSample sample) &&
-                        sample.Heat01 > 0.1f;
-                    _thermalPetrificationHotFlags[slotIndex] = hasThermalFlow ? (byte)1 : (byte)0;
-                }
+                    Vector3 runtimePosition = new Vector3(state.Position.x, state.Position.y, state.Position.z);
+                    if (math.lengthsq(state.Velocity) > ThermalPetrificationVelocitySq)
+                    {
+                        _thermalPetrificationTimers[slotIndex] = 0f;
+                        _thermalPetrificationNextProbeAges[slotIndex] = 0f;
+                        _thermalPetrificationHotFlags[slotIndex] = 0;
+                        continue;
+                    }
 
-                if (_thermalPetrificationHotFlags[slotIndex] == 0)
-                {
-                    _thermalPetrificationTimers[slotIndex] = 0f;
-                    continue;
-                }
+                    if (state.Age >= _thermalPetrificationNextProbeAges[slotIndex])
+                    {
+                        _thermalPetrificationNextProbeAges[slotIndex] = state.Age + ThermalPetrificationProbeIntervalSeconds;
+                        bool hasThermalFlow = thermalManager.SampleThermalFlow(
+                            runtimePosition,
+                            ThermalPetrificationProbeRadius,
+                            out AbyssalThermalManager.ThermalFlowSample sample) &&
+                            sample.Heat01 > 0.1f;
+                        _thermalPetrificationHotFlags[slotIndex] = hasThermalFlow ? (byte)1 : (byte)0;
+                    }
 
-                _thermalPetrificationTimers[slotIndex] += deltaTime;
-                if (_thermalPetrificationTimers[slotIndex] < ThermalPetrificationStillSeconds)
-                {
-                    state.Age = math.min(state.Age, PoolReturnDelay - 0.05f);
-                    _frontStates[slotIndex] = state;
-                    continue;
-                }
+                    if (_thermalPetrificationHotFlags[slotIndex] == 0)
+                    {
+                        _thermalPetrificationTimers[slotIndex] = 0f;
+                        continue;
+                    }
 
-                if (!TryResolveRuntimeAup(runtimePosition, out double3 absolutePosition))
-                    continue;
+                    _thermalPetrificationTimers[slotIndex] += deltaTime;
+                    if (_thermalPetrificationTimers[slotIndex] < ThermalPetrificationStillSeconds)
+                    {
+                        state.Age = math.min(state.Age, PoolReturnDelay - 0.05f);
+                        frontStates[slotIndex] = state;
+                        continue;
+                    }
 
-                if (HectonVoxelVolume.TryDepositAdditiveSdfSphere(
-                        absolutePosition,
-                        ThermalPetrificationSdfRadius * math.max(0.5f, state.MassScale),
-                        ThermalPetrificationSdfRadius))
-                {
-                    state.CollisionEnabled = 0;
-                    state.Kinematic = 1;
-                    state.SettledStatic = 1;
-                    state.Velocity = float3.zero;
-                    state.AngularVelocity = float3.zero;
-                    state.Position.y = math.min(state.Position.y, state.SinkTargetY);
-                    _frontStates[slotIndex] = state;
-                    _thermalPetrificationTimers[slotIndex] = 0f;
-                    _thermalPetrificationNextProbeAges[slotIndex] = 0f;
-                    _thermalPetrificationHotFlags[slotIndex] = 0;
+                    if (!TryResolveRuntimeAup(runtimePosition, out double3 absolutePosition))
+                        continue;
+
+                    if (HectonVoxelVolume.TryDepositAdditiveSdfSphere(
+                            absolutePosition,
+                            ThermalPetrificationSdfRadius * math.max(0.5f, state.MassScale),
+                            ThermalPetrificationSdfRadius))
+                    {
+                        state.CollisionEnabled = 0;
+                        state.Kinematic = 1;
+                        state.SettledStatic = 1;
+                        state.Velocity = float3.zero;
+                        state.AngularVelocity = float3.zero;
+                        state.Position.y = math.min(state.Position.y, state.SinkTargetY);
+                        frontStates[slotIndex] = state;
+                        _thermalPetrificationTimers[slotIndex] = 0f;
+                        _thermalPetrificationNextProbeAges[slotIndex] = 0f;
+                        _thermalPetrificationHotFlags[slotIndex] = 0;
+                    }
                 }
+            }
+            finally
+            {
+                ReleaseVaultWrite(in _frontStatesHandle);
             }
         }
 
@@ -846,7 +933,7 @@ namespace Hecton8.Gameplay
                 !math.isfinite(runtimePosition.z))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -865,10 +952,206 @@ namespace Hecton8.Gameplay
             _thermalRuntime = GlobalRegistry.Thermodynamics;
         }
 
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null && !_hotSwapRegistered)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private bool EnsureVaultBuffer(
+            ref VaultGenerationHandle<DebrisChunkState> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options)
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (IsVaultHandleCreated(in handle) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<DebrisChunkState>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = vault.EnsureGenerationHandle<DebrisChunkState>(
+                bufferId,
+                requiredLength,
+                VaultOwnerSystemId,
+                options);
+
+            return IsVaultHandleCreated(in handle) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<DebrisChunkState>.ReadOnly resolved) &&
+                   resolved.IsCreated &&
+                   resolved.Length >= requiredLength;
+        }
+
+        private bool TryReadVaultBuffer(
+            in VaultGenerationHandle<DebrisChunkState> handle,
+            int requiredLength,
+            out NativeArray<DebrisChunkState> buffer)
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in handle))
+                return false;
+
+            return vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryReadOnlyVaultBuffer(
+            in VaultGenerationHandle<DebrisChunkState> handle,
+            int requiredLength,
+            out NativeArray<DebrisChunkState>.ReadOnly buffer)
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in handle))
+                return false;
+
+            return vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryOpenVaultBuffer(
+            in VaultGenerationHandle<DebrisChunkState> handle,
+            int requiredLength,
+            out NativeArray<DebrisChunkState> buffer)
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in handle))
+                return false;
+
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryAcquireVaultBuffer(
+            in VaultGenerationHandle<DebrisChunkState> handle,
+            int requiredLength,
+            out NativeArray<DebrisChunkState> buffer)
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseVaultWrite(in VaultGenerationHandle<DebrisChunkState> handle)
+        {
+            _dataVault?.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+        }
+
+        private void ReleaseVaultBuffer(ref VaultGenerationHandle<DebrisChunkState> handle)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private bool TryLockSimulationJobBuffers()
+        {
+            if (_simulationJobBuffersLocked)
+                return true;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _frontStatesHandle) ||
+                !IsVaultHandleCreated(in _backStatesHandle))
+            {
+                return false;
+            }
+
+            BufferID readBufferId = ToBufferID(in _frontStatesHandle);
+            BufferID writeBufferId = ToBufferID(in _backStatesHandle);
+            if (!vault.TryLockBuffer(readBufferId, VaultOwnerSystemId))
+                return false;
+
+            if (!vault.TryLockBuffer(writeBufferId, VaultOwnerSystemId))
+            {
+                vault.TryUnlockBuffer(readBufferId, VaultOwnerSystemId);
+                return false;
+            }
+
+            _simulationReadBufferId = readBufferId;
+            _simulationWriteBufferId = writeBufferId;
+            _simulationJobBuffersLocked = true;
+            return true;
+        }
+
+        private void UnlockSimulationJobBuffers()
+        {
+            if (!_simulationJobBuffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                if (_simulationReadBufferId != BufferID.Unknown)
+                    vault.TryUnlockBuffer(_simulationReadBufferId, VaultOwnerSystemId);
+
+                if (_simulationWriteBufferId != BufferID.Unknown)
+                    vault.TryUnlockBuffer(_simulationWriteBufferId, VaultOwnerSystemId);
+            }
+
+            _simulationReadBufferId = BufferID.Unknown;
+            _simulationWriteBufferId = BufferID.Unknown;
+            _simulationJobBuffersLocked = false;
+        }
+
+        private static BufferID ToBufferID(in VaultGenerationHandle<DebrisChunkState> handle)
+        {
+            return (BufferID)unchecked((int)handle.BufferID);
+        }
+
+        private static bool IsVaultHandleCreated(in VaultGenerationHandle<DebrisChunkState> handle)
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsRuntime)
+            {
                 _thermalRuntime = currentService as AbyssalThermalManager;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault nextVault = currentService as IDataVault;
+                if (ReferenceEquals(_dataVault, nextVault))
+                    return;
+
+                ReleaseNativeState();
+                _dataVault = nextVault;
+                EnsureRuntimeResources();
+            }
         }
 
         private void PublishDebrisSolveWarningIfNeeded(long startTimestamp)
@@ -893,9 +1176,9 @@ namespace Hecton8.Gameplay
 
         private void SwapStateBuffers()
         {
-            NativeArray<DebrisChunkState> oldFront = _frontStates;
-            _frontStates = _backStates;
-            _backStates = oldFront;
+            VaultGenerationHandle<DebrisChunkState> oldFront = _frontStatesHandle;
+            _frontStatesHandle = _backStatesHandle;
+            _backStatesHandle = oldFront;
         }
 
         private void ApplyShiftToBuffer(NativeArray<DebrisChunkState> buffer, Vector3 shiftOffset)
@@ -923,30 +1206,15 @@ namespace Hecton8.Gameplay
 
         private void ReleaseNativeState()
         {
-            if (_frontStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_frontStates);
-                if (_simulationScheduled)
-                    _frontStates.Dispose(_simulationHandle);
-                else
-                    _frontStates.Dispose();
+            if (_simulationScheduled)
+                DispatcherJobSwap.TryComplete(ref _simulationHandle, forceComplete: true);
 
-                _frontStates = default;
-            }
-
-            if (_backStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_backStates);
-                if (_simulationScheduled)
-                    _backStates.Dispose(_simulationHandle);
-                else
-                    _backStates.Dispose();
-
-                _backStates = default;
-            }
+            _simulationScheduled = false;
+            UnlockSimulationJobBuffers();
+            ReleaseVaultBuffer(ref _frontStatesHandle);
+            ReleaseVaultBuffer(ref _backStatesHandle);
 
             _simulationHandle = default;
-            _simulationScheduled = false;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -1043,29 +1311,53 @@ namespace Hecton8.Gameplay
             public uint renderingLayerMask;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 120)]
         private struct DebrisChunkState
         {
+            [FieldOffset(0)]
             public float3 Position;
+            [FieldOffset(12)]
             public quaternion Rotation;
+            [FieldOffset(28)]
             public float3 Scale;
+            [FieldOffset(40)]
             public float3 Velocity;
+            [FieldOffset(52)]
             public float3 AngularVelocity;
+            [FieldOffset(64)]
             public float Age;
+            [FieldOffset(68)]
             public float GroundY;
+            [FieldOffset(72)]
             public float SinkStartY;
+            [FieldOffset(76)]
             public float SinkTargetY;
+            [FieldOffset(80)]
             public float SinkDuration;
+            [FieldOffset(84)]
             public float SinkDistance;
+            [FieldOffset(88)]
             public float LinearDamping;
+            [FieldOffset(92)]
             public float AngularDamping;
+            [FieldOffset(96)]
             public float BounceDamping;
+            [FieldOffset(100)]
             public float MassScale;
+            [FieldOffset(104)]
             public float PhysicsPhaseDuration;
+            [FieldOffset(108)]
             public float PoolReturnDelay;
+            [FieldOffset(112)]
             public byte Active;
+            [FieldOffset(113)]
             public byte CollisionEnabled;
+            [FieldOffset(114)]
             public byte Kinematic;
+            [FieldOffset(115)]
             public byte SettledStatic;
+            [FieldOffset(116)]
+            private uint _pad0;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

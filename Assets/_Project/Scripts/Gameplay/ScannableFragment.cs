@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 — ScannableFragment.cs
 // Debris on the ocean floor that the player scans to unlock tech.
 //
@@ -28,6 +28,7 @@ using Hecton8.Data;
 using Hecton8.Interaction;
 using Hecton8.Narrative;
 using Hecton8.World;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
@@ -50,7 +51,7 @@ namespace Hecton8.Gameplay
     /// Implements IInteractable for scanner tool integration.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ScannableFragment : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class ScannableFragment : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
@@ -157,9 +158,23 @@ namespace Hecton8.Gameplay
         private byte _appliedLoreStagesMask;
         private float _scanPulsePhase;
         private IAudioService _audioService;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private LoreDatabaseManager _loreDatabase;
         private bool _hotSwapRegistered;
+        private bool _lateFrameRegistered;
+        private bool _pendingScanVisualDirty;
+        private bool _pendingScanVisualReset;
+        private bool _pendingScanProxyActive;
+        private bool _pendingScanProxyDirty;
+        private bool _pendingScanningAudio;
+        private bool _pendingCompleteAudio;
+        private bool _pendingCompleteParticles;
+        private bool _pendingFragmentDisable;
+        private bool _pendingRendererEnableDirty;
+        private bool _pendingRendererEnabled;
+        private float _pendingScanVisualProgress;
+        private float _pendingScanVisualPulse;
+        private Vector3 _pendingCompleteParticlePosition;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for scan VFX.
@@ -170,7 +185,9 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Pre-cached interaction text to avoid runtime allocations.
         /// </summary>
-        private string _cachedInteractText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedInteractTextLength;
         private uint _discoveryHash;
 
         // ══════════════════════════════════════════════════════════
@@ -245,6 +262,7 @@ namespace Hecton8.Gameplay
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshDiscoveryHash();
             RebuildLocalizedTextCache();
@@ -254,16 +272,20 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             UnregisterSpatialContact();
+            StopLateFrameTicking();
             UnregisterScanRenderProxy();
             LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             UnregisterSpatialContact();
+            StopLateFrameTicking();
         }
 
         private void RegisterSpatialContact()
@@ -305,7 +327,15 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
-            return CanBeScanned ? _cachedInteractText : null;
+            return CanBeScanned ? ResolveLegacyConfigured(interactText, DefaultInteractText) : null;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            ReadOnlySpan<char> source = CanBeScanned
+                ? _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength)
+                : ReadOnlySpan<char>.Empty;
+            return InteractableTextCopy.TryCopy(source, destination, out length);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -341,7 +371,7 @@ namespace Hecton8.Gameplay
             TryUnlockLoreStages(previousProgressNormalized, currentProgressNormalized);
 
             // Update visuals
-            UpdateScanVisuals(AdvanceScanPulse(safeProgressDelta));
+            QueueScanVisuals(currentProgressNormalized, AdvanceScanPulse(safeProgressDelta));
 
             // Fire progress event
             OnProgressChanged?.Invoke(currentProgressNormalized);
@@ -363,10 +393,10 @@ namespace Hecton8.Gameplay
             _isScanning = false;
             _state = FragmentState.Scannable;
             _scanPulsePhase = 0f;
-            UnregisterScanRenderProxy();
+            QueueScanRenderProxyState(false);
 
             // Reset visuals
-            ResetScanVisuals();
+            QueueScanVisualReset();
 
             // Fire stopped event
             OnScanStopped?.Invoke();
@@ -393,7 +423,7 @@ namespace Hecton8.Gameplay
 
             _currentProgress = math.min(restoredProgress, duration);
             TryUnlockLoreStages(previousProgressNormalized, ProgressNormalized);
-            UpdateScanVisuals(AdvanceScanPulse(0f));
+            QueueScanVisuals(ProgressNormalized, AdvanceScanPulse(0f));
             OnProgressChanged?.Invoke(ProgressNormalized);
         }
 
@@ -425,13 +455,9 @@ namespace Hecton8.Gameplay
         {
             _state = FragmentState.Scanning;
             _isScanning = true;
-            RegisterScanRenderProxy();
+            QueueScanRenderProxyState(true);
 
-            // Play scanning sound
-            if (scanningSound != null && _audioService != null)
-            {
-                _audioService.PlayAtPoint(scanningSound, _transform.position, scanVolume);
-            }
+            QueueScanAudio(complete: false);
 
             // Fire started event
             OnScanStarted?.Invoke();
@@ -442,20 +468,9 @@ namespace Hecton8.Gameplay
             _state = FragmentState.Completed;
             _isScanning = false;
             _scanPulsePhase = 0f;
-            UnregisterScanRenderProxy();
+            QueueScanRenderProxyState(false);
 
-            // Play complete particles
-            if (completeParticles != null)
-            {
-                completeParticles.transform.position = _transform.position;
-                completeParticles.Play();
-            }
-
-            // Play complete sound
-            if (completeSound != null && _audioService != null)
-            {
-                _audioService.PlayAtPoint(completeSound, _transform.position, scanVolume);
-            }
+            QueueCompletePresentation();
 
             // Fire completion event with unlock ID
             OnScanComplete?.Invoke(unlockId);
@@ -465,7 +480,7 @@ namespace Hecton8.Gameplay
             OnProgressChanged?.Invoke(1f);
 
             // Disable the fragment
-            DisableFragment();
+            QueueFragmentDisable();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -481,13 +496,22 @@ namespace Hecton8.Gameplay
             return 1f - math.abs((_scanPulsePhase * 2f) - 1f);
         }
 
-        private void UpdateScanVisuals(float pulse = 0f)
+        private void QueueScanVisuals(float progress, float pulse)
+        {
+            _pendingScanVisualProgress = math.saturate(progress);
+            _pendingScanVisualPulse = math.saturate(pulse);
+            _pendingScanVisualDirty = true;
+            _pendingScanVisualReset = false;
+            StartLateFrameTicking();
+        }
+
+        private void UpdateScanVisuals(float progress, float pulse = 0f)
         {
             // Update shader properties
             if (fragmentRenderer != null && _mpb != null)
             {
                 fragmentRenderer.GetPropertyBlock(_mpb);
-                _mpb.SetFloat(_ScanProgressID, ProgressNormalized);
+                _mpb.SetFloat(_ScanProgressID, progress);
                 _mpb.SetColor(_ScanGlowColorID, scanGlowColor);
                 _mpb.SetFloat(_ScanPulseID, pulse);
 
@@ -497,6 +521,20 @@ namespace Hecton8.Gameplay
 
         private void ResetScanVisuals()
         {
+            _pendingScanVisualProgress = 0f;
+            _pendingScanVisualPulse = 0f;
+            _pendingScanVisualDirty = true;
+            _pendingScanVisualReset = true;
+            StartLateFrameTicking();
+        }
+
+        private void QueueScanVisualReset()
+        {
+            ResetScanVisuals();
+        }
+
+        private void ApplyScanVisualReset()
+        {
             if (fragmentRenderer == null || _mpb == null) return;
 
             fragmentRenderer.GetPropertyBlock(_mpb);
@@ -505,13 +543,75 @@ namespace Hecton8.Gameplay
             fragmentRenderer.SetPropertyBlock(_mpb);
         }
 
+        public void LateFrameTick()
+        {
+            if (_pendingScanProxyDirty)
+            {
+                _pendingScanProxyDirty = false;
+                if (_pendingScanProxyActive)
+                    RegisterScanRenderProxy();
+                else
+                    UnregisterScanRenderProxy();
+            }
+
+            if (_pendingScanVisualDirty)
+            {
+                _pendingScanVisualDirty = false;
+                if (_pendingScanVisualReset)
+                    ApplyScanVisualReset();
+                else
+                    UpdateScanVisuals(_pendingScanVisualProgress, _pendingScanVisualPulse);
+                _pendingScanVisualReset = false;
+            }
+
+            if (_pendingRendererEnableDirty)
+            {
+                _pendingRendererEnableDirty = false;
+                if (fragmentRenderer != null)
+                    fragmentRenderer.enabled = _pendingRendererEnabled;
+            }
+
+            IAudioService audio = _audioService;
+            if (_pendingScanningAudio)
+            {
+                _pendingScanningAudio = false;
+                if (scanningSound != null && audio != null)
+                    audio.PlayAtPoint(scanningSound, _transform.position, scanVolume);
+            }
+
+            if (_pendingCompleteParticles)
+            {
+                _pendingCompleteParticles = false;
+                if (completeParticles != null)
+                {
+                    completeParticles.transform.position = _pendingCompleteParticlePosition;
+                    completeParticles.Play();
+                }
+            }
+
+            if (_pendingCompleteAudio)
+            {
+                _pendingCompleteAudio = false;
+                if (completeSound != null && audio != null)
+                    audio.PlayAtPoint(completeSound, _transform.position, scanVolume);
+            }
+
+            if (_pendingFragmentDisable)
+            {
+                _pendingFragmentDisable = false;
+                DisableFragment();
+            }
+
+            StopLateFrameTicking();
+        }
+
         // ══════════════════════════════════════════════════════════
         //  STATE RESET
         // ══════════════════════════════════════════════════════════
 
         private void ResetState()
         {
-            UnregisterScanRenderProxy();
+            QueueScanRenderProxyState(false);
             _state = canBeScanned ? FragmentState.Scannable : FragmentState.Locked;
             _currentProgress = 0f;
             _isScanning = false;
@@ -519,13 +619,63 @@ namespace Hecton8.Gameplay
             _scanPulsePhase = 0f;
 
             // Reset visuals
-            ResetScanVisuals();
+            QueueScanVisualReset();
 
             // Re-enable renderer
-            if (fragmentRenderer != null)
-            {
-                fragmentRenderer.enabled = true;
-            }
+            QueueRendererEnabled(true);
+        }
+
+        private void QueueScanRenderProxyState(bool active)
+        {
+            _pendingScanProxyActive = active;
+            _pendingScanProxyDirty = true;
+            StartLateFrameTicking();
+        }
+
+        private void QueueScanAudio(bool complete)
+        {
+            if (complete)
+                _pendingCompleteAudio = true;
+            else
+                _pendingScanningAudio = true;
+            StartLateFrameTicking();
+        }
+
+        private void QueueCompletePresentation()
+        {
+            _pendingCompleteParticlePosition = _transform != null ? _transform.position : transform.position;
+            _pendingCompleteParticles = true;
+            QueueScanAudio(complete: true);
+        }
+
+        private void QueueFragmentDisable()
+        {
+            _pendingFragmentDisable = true;
+            StartLateFrameTicking();
+        }
+
+        private void QueueRendererEnabled(bool enabled)
+        {
+            _pendingRendererEnabled = enabled;
+            _pendingRendererEnableDirty = true;
+            StartLateFrameTicking();
+        }
+
+        private void StartLateFrameTicking()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void StopLateFrameTicking()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
         }
 
         private void RegisterScanRenderProxy()
@@ -599,15 +749,26 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            _cachedInteractText = HasCustomInteractText()
-                ? interactText
-                : ResolveLocalized(LocalizationKeys.INTERACT_SCAN_FRAGMENT, DefaultInteractText);
+            _cachedInteractTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(
+                interactText,
+                DefaultInteractText,
+                LocalizationKeys.INTERACT_SCAN_FRAGMENT,
+                _localization,
+                _cachedInteractTextBuffer);
         }
 
         private bool HasCustomInteractText()
         {
             return !string.IsNullOrWhiteSpace(interactText) &&
                    !string.Equals(interactText, DefaultInteractText, System.StringComparison.Ordinal);
+        }
+
+        private static string ResolveLegacyConfigured(string configuredText, string defaultText)
+        {
+            return !string.IsNullOrWhiteSpace(configuredText) &&
+                   !string.Equals(configuredText, defaultText, StringComparison.Ordinal)
+                ? configuredText
+                : defaultText;
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -624,14 +785,6 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
         }
 
-        private string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = _localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
-        }
-
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -643,7 +796,7 @@ namespace Hecton8.Gameplay
                     _audioService = currentService as IAudioService;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
+                    _localization = currentService as ILocalizationTextReadModel;
                     RebuildLocalizedTextCache();
                     break;
                 case GlobalRegistryServiceSlot.LoreDatabaseRuntime:
@@ -654,8 +807,8 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
+            _localization = GlobalRegistry.LocalizationText;
             _loreDatabase = GlobalRegistry.LoreDatabase;
         }
 
@@ -680,7 +833,7 @@ namespace Hecton8.Gameplay
         {
             if (_discoveryHash != 0u)
             {
-                ScanEvents.RaiseEntryDiscovered(_discoveryHash, 0u, 0u, 0u, ScanEntryKind.Scannable);
+                ScanEvents.TryRaiseEntryDiscovered(_discoveryHash, 0u, 0u, 0u, ScanEntryKind.Scannable);
                 return;
             }
 
@@ -694,14 +847,18 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(entryId))
                 return;
 
-            string title = HasCustomInteractText()
-                ? interactText.Trim().ToUpperInvariant()
-                : ResolveLocalized(LocalizationKeys.INTERACT_SCAN_FRAGMENT, DefaultInteractText).ToUpperInvariant();
-            ScanEvents.RaiseEntryDiscovered(
-                entryId,
-                title,
-                DefaultResearchCategory,
-                DefaultResearchSummary,
+            ReadOnlySpan<char> title = HasCustomInteractText()
+                ? interactText.AsSpan()
+                : DefaultInteractText.AsSpan();
+            uint entryHash = ScanEvents.ComputeEntryHash(entryId);
+            uint titleHash = title.IsEmpty ? 0u : unchecked((uint)LocHash.Compute(title));
+            uint categoryHash = unchecked((uint)LocHash.Compute(DefaultResearchCategory));
+            uint summaryHash = unchecked((uint)LocHash.Compute(DefaultResearchSummary));
+            ScanEvents.TryRaiseEntryDiscovered(
+                entryHash,
+                titleHash,
+                categoryHash,
+                summaryHash,
                 ScanEntryKind.Scannable);
 #endif
         }

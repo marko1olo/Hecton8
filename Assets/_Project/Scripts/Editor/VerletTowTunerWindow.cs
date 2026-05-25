@@ -35,8 +35,8 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
-            SceneView.duringSceneGui += OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
+            SceneView.duringSceneGui += DrawSceneGizmos;
             _csvPath = ResolveCsvPath();
             RefreshTuning();
             MonitorCsv();
@@ -44,7 +44,7 @@ namespace Hecton8.Editor
 
         private void OnDisable()
         {
-            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
         }
 
         private void OnGUI()
@@ -214,7 +214,7 @@ namespace Hecton8.Editor
             _status = parsed > 0 ? $"CSV overrides applied: {parsed} rows." : "CSV parsed no material rows.";
         }
 
-        private void OnDrawGizmos(SceneView sceneView)
+        private void DrawSceneGizmos(SceneView sceneView)
         {
             if (!_drawTension || !EditorApplication.isPlaying)
                 return;
@@ -279,7 +279,7 @@ namespace Hecton8.Editor
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetGenerationHandle<T>(
+                handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     required,
                     owner,

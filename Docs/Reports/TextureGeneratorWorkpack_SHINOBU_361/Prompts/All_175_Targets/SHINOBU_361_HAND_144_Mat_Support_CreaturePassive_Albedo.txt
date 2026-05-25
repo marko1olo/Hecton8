@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_144
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_144_Mat_Support_CreaturePassive_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Support_CreaturePassive_Albedo.png
+FINAL_FILENAME: Mat_Support_CreaturePassive_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Support marker albedo for passive creature classification. Create soft pearl sediment, jade membrane marks, tiny amber comfort dots, pale coral speckles, and teal biological trails arranged in a calm readable pattern. It should make passive creature support zones attractive and clear without using text or symbols. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

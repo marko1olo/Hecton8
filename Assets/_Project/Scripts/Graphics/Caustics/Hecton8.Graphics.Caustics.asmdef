@@ -1,14 +1,7 @@
 {
     "name": "Hecton8.Graphics.Caustics",
     "rootNamespace": "Hecton8.Graphics.Caustics",
-    "references": [
-        "Hecton8.Bootstrap.Contracts",
-        "Hecton8.Core",
-        "Hecton8.Core.Contracts",
-        "Hecton8.Core.Memory",
-        "Unity.Collections",
-        "Unity.Mathematics"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

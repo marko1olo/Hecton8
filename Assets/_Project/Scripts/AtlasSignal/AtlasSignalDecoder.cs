@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 - AtlasSignalDecoder.cs
 // Atlas-6 signal decoder.
 //
@@ -72,8 +72,8 @@ namespace Hecton8.AtlasSignal
         private bool _serviceRegistered;
         private bool _atlasSignalEventRegistered;
         private bool _hotSwapRegistered;
-        private AtlasSignalSystem _atlasSignal;
-        private FirstHourDirector _firstHourDirector;
+        private IAtlasSignalReadModel _atlasSignal;
+        private IFirstHourReadModel _firstHourDirector;
         private bool _decodeWindowOpen;
         private float _decodeProgress;
         private float _submittedCarrierFrequencyHz;
@@ -151,13 +151,13 @@ namespace Hecton8.AtlasSignal
         {
             if (_fullyDecoded) return;
 
-            AtlasSignalSystem sys = _atlasSignal;
+            IAtlasSignalReadModel sys = _atlasSignal;
             if (sys == null) return;
             if (!CanDecodeSignal(sys)) return;
 
             SynchronizePhaseFromSignal(sys);
 
-            float strength = sys.CurrentStrength;
+            float strength = sys.CurrentAtlasSignalStrength01;
             int newPhase = CalculatePhase(strength);
             if (newPhase >= 4)
             {
@@ -198,8 +198,7 @@ namespace Hecton8.AtlasSignal
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
@@ -217,18 +216,20 @@ namespace Hecton8.AtlasSignal
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.AtlasSignalRuntime)
-                _atlasSignal = currentService as AtlasSignalSystem;
+                _atlasSignal = currentService as IAtlasSignalReadModel;
             else if (serviceSlot == GlobalRegistryServiceSlot.FirstHourRuntime)
-                _firstHourDirector = currentService as FirstHourDirector;
+                _firstHourDirector = currentService as IFirstHourReadModel;
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void CacheAtlasSignalCold()
         {
             if (_atlasSignal == null)
-                _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+                _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
 
             if (_firstHourDirector == null)
-                _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+                _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHourReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -303,13 +304,13 @@ namespace Hecton8.AtlasSignal
             // Signal pulse accelerates decode; check phase immediately.
             if (_fullyDecoded) return;
 
-            AtlasSignalSystem sys = _atlasSignal;
+            IAtlasSignalReadModel sys = _atlasSignal;
             if (sys == null) return;
             if (!CanDecodeSignal(sys)) return;
 
             SynchronizePhaseFromSignal(sys);
 
-            int newPhase = CalculatePhase(sys.CurrentStrength);
+            int newPhase = CalculatePhase(sys.CurrentAtlasSignalStrength01);
             if (newPhase >= 4)
             {
                 _decodeWindowOpen = true;
@@ -328,7 +329,7 @@ namespace Hecton8.AtlasSignal
             if (_fullyDecoded)
                 return;
 
-            AtlasSignalSystem sys = _atlasSignal;
+            IAtlasSignalReadModel sys = _atlasSignal;
             if (sys == null)
                 return;
 
@@ -338,27 +339,27 @@ namespace Hecton8.AtlasSignal
             SynchronizePhaseFromSignal(sys);
         }
 
-        private void SynchronizePhaseFromSignal(AtlasSignalSystem sys)
+        private void SynchronizePhaseFromSignal(IAtlasSignalReadModel sys)
         {
             if (sys == null || _fullyDecoded)
                 return;
 
-            int synchronizedPhase = math.min(MaximumSynchronizedPhase, CalculatePhase(sys.CurrentStrength));
+            int synchronizedPhase = math.min(MaximumSynchronizedPhase, CalculatePhase(sys.CurrentAtlasSignalStrength01));
             if (synchronizedPhase > _currentPhase)
                 _currentPhase = synchronizedPhase;
-            _decodeWindowOpen = CalculatePhase(sys.CurrentStrength) >= 4;
+            _decodeWindowOpen = CalculatePhase(sys.CurrentAtlasSignalStrength01) >= 4;
         }
 
-        private bool CanDecodeSignal(AtlasSignalSystem sys)
+        private bool CanDecodeSignal(IAtlasSignalReadModel sys)
         {
-            if (sys == null || sys.CurrentRevealStage <= 0)
+            if (sys == null || sys.CurrentAtlasSignalRevealStage <= 0)
                 return false;
 
-            FirstHourDirector firstHourDirector = _firstHourDirector;
+            IFirstHourReadModel firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
-            return firstHourDirector.IsMilestoneComplete(minimumMilestoneToDecode);
+            return firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestoneToDecode);
         }
 
         internal bool TryAdvanceDecode(float dt)
@@ -412,8 +413,8 @@ namespace Hecton8.AtlasSignal
             _currentPhase = 4;
             _decodeProgress = 1f;
             _decodeWindowOpen = false;
-            AtlasSignalEvents.RaiseDecoded(_coreMessageHash);
-            NarrativeEvents.RaiseDiscoveryMade(_fullyDecodedDiscoveryHash);
+            AtlasSignalEvents.TryRaiseDecoded(_coreMessageHash);
+            NarrativeEvents.TryRaiseDiscoveryMade(_fullyDecodedDiscoveryHash);
             LogSignalFullyDecoded();
         }
 
@@ -451,7 +452,7 @@ namespace Hecton8.AtlasSignal
         private static void LogSignalFullyDecoded()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[AtlasDecoder] Signal fully decoded. Atlas-6 core message received.");
+            H8Debug.Log("[AtlasDecoder] Signal fully decoded. Atlas-6 core message received.");
 #endif
         }
 
@@ -462,19 +463,19 @@ namespace Hecton8.AtlasSignal
             switch (phase)
             {
                 case 1:
-                    Debug.Log("[AtlasDecoder] Phase 1: UNKNOWN SIGNAL - RHYTHMIC PATTERN.");
+                    H8Debug.Log("[AtlasDecoder] Phase 1: UNKNOWN SIGNAL - RHYTHMIC PATTERN.");
                     break;
                 case 2:
-                    Debug.Log("[AtlasDecoder] Phase 2: UNSTABLE EMOTIONAL PATTERN.");
+                    H8Debug.Log("[AtlasDecoder] Phase 2: UNSTABLE EMOTIONAL PATTERN.");
                     break;
                 case 3:
-                    Debug.Log("[AtlasDecoder] Phase 3: ATLAS-6 IDENTITY LOCK.");
+                    H8Debug.Log("[AtlasDecoder] Phase 3: ATLAS-6 IDENTITY LOCK.");
                     break;
                 case 4:
-                    Debug.Log("[AtlasDecoder] Phase 4: DECODE COMPLETE.");
+                    H8Debug.Log("[AtlasDecoder] Phase 4: DECODE COMPLETE.");
                     break;
                 default:
-                    Debug.Log("[AtlasDecoder] Phase advanced.");
+                    H8Debug.Log("[AtlasDecoder] Phase advanced.");
                     break;
             }
 #endif

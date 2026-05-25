@@ -20,7 +20,7 @@ namespace Hecton8.Core
                 SourceTier = signal.SourceTier,
                 Flags = signal.Flags
             };
-            GlobalSignals.Publish(in payload);
+            SignalBus<MacroDatabaseSectorHydrationSignal>.TryPush(in payload);
         }
     }
 }

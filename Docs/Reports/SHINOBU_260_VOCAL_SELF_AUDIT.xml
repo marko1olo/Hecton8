@@ -1,4 +1,4 @@
-<SELF_AUDIT agent_id="SHINOBU_260" domain="VOCAL_SYNTHESIS_PIPELINE_AND_PLAYBACK" date="2026-05-21" evidence="STATIC_SOURCE">
+﻿<SELF_AUDIT agent_id="SHINOBU_260" domain="VOCAL_SYNTHESIS_PIPELINE_AND_PLAYBACK" date="2026-05-21" evidence="STATIC_SOURCE">
   <TASK_RECONCILIATION>
     <TASK id="01" result="PASS">Managed director/protagonist voice clip route removed from `VocalWarningSystem`; scanner reports zero SHINOBU_260 voice suspects.</TASK>
     <TASK id="02" result="PASS">Playback route uses `VocalCueSignal.PhraseHashID`, not runtime string IDs.</TASK>

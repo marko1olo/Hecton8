@@ -1,10 +1,7 @@
 {
     "name": "Hecton8.World.Streaming",
     "rootNamespace": "Hecton8.World",
-    "references": [
-        "Hecton8.World.Contracts",
-        "Hecton8.Core"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

@@ -48,9 +48,10 @@
 using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Ecosystem;
 using Hecton8.Environment;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.World;
@@ -66,7 +67,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener, RuntimeWatchdog.IEmergencyResetTarget, RuntimeWatchdog.IEmergencyColdTickCullTarget, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, RuntimeWatchdog.IEmergencyResetTarget, RuntimeWatchdog.IEmergencyColdTickCullTarget, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
@@ -445,10 +446,13 @@ namespace Hecton8.AI
         private int _playerRuntimeContextCacheFrame = -1;
         private bool _playerRuntimeContextCacheValid;
         private PlayerRuntimeContext _playerRuntimeContextCache;
-        private HectonMapMagicVegetationBridge _vegetationThreatBridge;
+        private IPhysicsService _physicsService;
+        private IVegetationThreatReadModel _vegetationThreatBridge;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
+        private bool _saveRegistered;
+        private ISaveService _saveService;
         private float _slowTickAccumulator;
         // COLD ALLOC: AcousticPanicCommand[8] - active sonar panic bridge to GPU boids - owner: FaunaDirector
         private readonly AcousticPanicCommand[] _acousticPanicCommands = new AcousticPanicCommand[AcousticPanicCommandCapacity];
@@ -456,6 +460,7 @@ namespace Hecton8.AI
         private int _acousticPanicWriteIndex;
         private int _acousticPanicCount;
         private uint _acousticPanicSequence;
+        private int _lastAcousticPingSnapshotGeneration;
         private bool _acousticPingSubscribed;
 
         /// <summary>ÐšÐ²Ð°Ð´Ñ€Ð°Ñ‚ killDistance Ð´Ð»Ñ sqrMagnitude.</summary>
@@ -524,18 +529,22 @@ namespace Hecton8.AI
         private FaunaSimulationEngine _faunaSimulationEngine;
         private FaunaPresentationService _faunaPresentationService;
         private bool _faunaSimulationRegistered;
-        private MapMagicBridge _mapMagicRuntime;
-        private SargassumMicroFaunaBoids _sargassumMicroFauna;
-        private ObjectPoolManager _objectPool;
-        private EcosystemDirector _ecosystemDirector;
-        private PersistentWorldRegistry _persistentWorldRegistry;
-        private AbyssalThermalManager _thermalRuntime;
-        private DynamicResolutionScaler _dynamicResolutionRuntime;
+        private ITerrainProvider _mapMagicRuntime;
+        private IMicroFaunaPresentationPulseSink _sargassumMicroFauna;
+        private IObjectPoolService _objectPool;
+        private IEcosystemDirectorService _ecosystemDirector;
+        private IFaunaPersistentWorldStateService _persistentWorldRegistry;
+        private IThermodynamicsService _thermalRuntime;
+        private IDynamicResolutionRuntime _dynamicResolutionRuntime;
+        private IDepthZoneReadModel _depthZoneReadModel;
         // COLD ALLOC: FaunaResidencyState[512] - resident fauna state cache for dehydration and restore - owner: FaunaDirector
         private FaunaResidencyState[] _dehydratedCreatureStates;
         // COLD ALLOC: int[512] - active dehydrated slot index list for rehydration scans - owner: FaunaDirector
         private int[] _activeDehydrationSlots;
         private int _activeDehydrationSlotCount;
+        // COLD ALLOC: GameObject[200] - LateFrame fauna presentation disable queue for poolless fallbacks - owner: FaunaDirector
+        private readonly GameObject[] _pendingPresentationDeactivations = new GameObject[GlobalFaunaHardCap];
+        private int _pendingPresentationDeactivationCount;
         // COLD ALLOC: List<EntityDataRecord>[64] - nearby tier-2 fauna restore scratch loaded from persistent sector cache - owner: FaunaDirector
         private List<EntityDataRecord> _persistedFaunaRestoreScratch;
         private int _persistedTier2FaunaCount;
@@ -632,7 +641,7 @@ namespace Hecton8.AI
 
             RefreshColdRegistryDependencies();
             TryRegisterHotSwapListener();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
+            TryRegisterSaveParticipant();
             TryRegisterFaunaSimulationService();
             RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
             SubscribeAcousticPingEvents();
@@ -684,8 +693,7 @@ namespace Hecton8.AI
 
         private void ShutdownServiceState(bool releaseNativeState)
         {
-            if (Application.isPlaying)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
+            TryUnregisterSaveParticipant();
 
             InvalidatePlayerRuntimeContextCache();
             RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
@@ -763,17 +771,23 @@ namespace Hecton8.AI
 
         private void RefreshColdRegistryDependencies()
         {
-            _mapMagicRuntime = GlobalRegistry.MapMagic;
-            _sargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
-            _objectPool = GlobalRegistry.ObjectPool;
-            _ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            _mapMagicRuntime = GlobalRegistry.Terrain;
+            _physicsService = GlobalRegistry.Physics;
+            _sargassumMicroFauna = GlobalRegistry.MicroFaunaPresentationPulses;
+            _objectPool = GlobalRegistry.ObjectPoolService;
+            _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _thermalRuntime = GlobalRegistry.Thermodynamics;
-            _dynamicResolutionRuntime = GlobalRegistry.DynamicResolution;
+            _thermalRuntime = GlobalRegistry.ThermodynamicsService;
+            _dynamicResolutionRuntime = GlobalRegistry.DynamicResolutionRuntime;
+            _depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
             if (depthZoneDirector == null)
                 depthZoneDirector = GlobalRegistry.DepthZone;
+            if (_depthZoneReadModel == null && depthZoneDirector != null)
+                _depthZoneReadModel = depthZoneDirector;
             if (_vegetationThreatBridge == null)
-                _vegetationThreatBridge = GlobalRegistry.MapMagicVegetation;
+                _vegetationThreatBridge = GlobalRegistry.VegetationThreat;
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -784,38 +798,79 @@ namespace Hecton8.AI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.MapMagicRuntime:
-                    _mapMagicRuntime = currentService as MapMagicBridge;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _mapMagicRuntime = currentService as ITerrainProvider;
                     _cachedBiomeIndex = -1;
                     _nextBiomeCheckTime = float.NegativeInfinity;
                     break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
+                    break;
                 case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
-                    _sargassumMicroFauna = currentService as SargassumMicroFaunaBoids;
+                    _sargassumMicroFauna = currentService as IMicroFaunaPresentationPulseSink;
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
-                    _objectPool = currentService as ObjectPoolManager;
+                    _objectPool = currentService as IObjectPoolService;
                     _creaturePoolsWarmed = false;
                     break;
                 case GlobalRegistryServiceSlot.EcosystemDirector:
-                    _ecosystemDirector = currentService as EcosystemDirector;
+                    _ecosystemDirector = currentService as IEcosystemDirectorService;
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
-                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    _persistentWorldRegistry = currentService as IFaunaPersistentWorldStateService;
                     break;
                 case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
-                    _thermalRuntime = currentService as AbyssalThermalManager;
+                case GlobalRegistryServiceSlot.ThermodynamicsService:
+                    _thermalRuntime = currentService as IThermodynamicsService;
                     break;
                 case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
-                    _dynamicResolutionRuntime = currentService as DynamicResolutionScaler;
+                    _dynamicResolutionRuntime = currentService as IDynamicResolutionRuntime;
                     _runtimeSettingsDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
-                    depthZoneDirector = currentService as DepthZoneDirector;
+                    _depthZoneReadModel = currentService as IDepthZoneReadModel;
                     _runtimeSettingsDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
-                    _vegetationThreatBridge = currentService as HectonMapMagicVegetationBridge;
+                    _vegetationThreatBridge = currentService as IVegetationThreatReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    if (_saveService != null)
+                    {
+                        _saveService.Register(this);
+                        _saveRegistered = true;
+                    }
                     break;
             }
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
         }
 
         public void ServiceEmergencyReset()
@@ -874,6 +929,7 @@ namespace Hecton8.AI
                 return;
             }
 
+            ConsumeAcousticPingSignals();
             DrainAcousticPanicCommands();
             AccumulateResidentDataOnlyLodDelta(deltaTime);
 
@@ -898,19 +954,7 @@ namespace Hecton8.AI
         public void LateFrameTick()
         {
             CompleteResidentDataOnlySimulation(forceComplete: false);
-        }
-
-        public void OnAcousticPing(in AcousticPingEvent pingEvent)
-        {
-            float intensity01 = math.saturate(pingEvent.Intensity01);
-            if (intensity01 <= 0.0001f)
-                return;
-
-            EnqueueAcousticPanicCommand(
-                pingEvent.RuntimePosition,
-                AcousticPingBoidPanicRadiusMeters,
-                AcousticPingBoidPanicDurationSeconds,
-                intensity01);
+            FlushPendingPresentationDeactivations();
         }
 
         private void SubscribeAcousticPingEvents()
@@ -918,7 +962,8 @@ namespace Hecton8.AI
             if (_acousticPingSubscribed || !Application.isPlaying)
                 return;
 
-            PhysicsEventBus.Register(this);
+            SignalBus<AcousticPingSignal>.EnsureInitialized();
+            _lastAcousticPingSnapshotGeneration = SignalBus<AcousticPingSignal>.SnapshotGeneration;
             _acousticPingSubscribed = true;
         }
 
@@ -927,11 +972,41 @@ namespace Hecton8.AI
             if (!_acousticPingSubscribed)
                 return;
 
-            PhysicsEventBus.Unregister(this);
             _acousticPingSubscribed = false;
+            _lastAcousticPingSnapshotGeneration = 0;
             _acousticPanicReadIndex = 0;
             _acousticPanicWriteIndex = 0;
             _acousticPanicCount = 0;
+        }
+
+        private void ConsumeAcousticPingSignals()
+        {
+            if (!_acousticPingSubscribed)
+                return;
+
+            int snapshotGeneration = SignalBus<AcousticPingSignal>.SnapshotGeneration;
+            if (snapshotGeneration == 0 || snapshotGeneration == _lastAcousticPingSnapshotGeneration)
+                return;
+
+            _lastAcousticPingSnapshotGeneration = snapshotGeneration;
+            System.ReadOnlySpan<AcousticPingSignal> signals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly AcousticPingSignal signal = ref signals[i];
+                float intensity01 = math.saturate(signal.Intensity01);
+                if (intensity01 <= 0.0001f)
+                    continue;
+
+                float3 runtimePosition = signal.PositionAup.ToRuntimeFloat3();
+                if (!math.all(math.isfinite(runtimePosition)))
+                    continue;
+
+                EnqueueAcousticPanicCommand(
+                    new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                    AcousticPingBoidPanicRadiusMeters,
+                    AcousticPingBoidPanicDurationSeconds,
+                    intensity01);
+            }
         }
 
         private void EnqueueAcousticPanicCommand(
@@ -974,7 +1049,7 @@ namespace Hecton8.AI
             if (_acousticPanicCount <= 0)
                 return;
 
-            SargassumMicroFaunaBoids boids = _sargassumMicroFauna;
+            IMicroFaunaPresentationPulseSink boids = _sargassumMicroFauna;
             while (_acousticPanicCount > 0)
             {
                 AcousticPanicCommand command = _acousticPanicCommands[_acousticPanicReadIndex];
@@ -1067,7 +1142,7 @@ namespace Hecton8.AI
             //     Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð±Ð¸Ð¾Ð¼ Ñ€Ð°Ð· Ð² BiomeCheckInterval ÑÐµÐºÑƒÐ½Ð´.
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            MapMagicBridge bridge = _mapMagicRuntime;
+            ITerrainProvider bridge = _mapMagicRuntime;
             if (bridge == null)
             {
                 UpdateDiagnostics(cullCount, 0, spawnValidationAttempts, spawnValidationSuccesses, anchorBasedSpawns, fallbackRingSpawns);
@@ -1100,7 +1175,7 @@ namespace Hecton8.AI
                 ? biomeMatrixDirector.CurrentProfile.faunaMood
                 : WorldProceduralFaunaMood.None;
             _currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
-            _currentDepthZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
+            _currentDepthZone = _depthZoneReadModel != null ? _depthZoneReadModel.CurrentZone : null;
             _currentZoneIsSafePocket = IsSafePocketZone(_currentZone);
 
             RefreshAdaptiveBudgetResponse();
@@ -1141,7 +1216,7 @@ namespace Hecton8.AI
                 return 0;
 
             int dehydrated = 0;
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
@@ -1181,7 +1256,7 @@ namespace Hecton8.AI
                 if (pool != null)
                     pool.Despawn(creature.gameObject);
                 else
-                    creature.gameObject.SetActive(false);
+                    QueuePresentationDeactivation(creature.gameObject);
 
                 AddActiveDehydrationSlot(creature.dehydrationSlotIndex);
                 SwapRemoveAt(i);
@@ -1189,6 +1264,27 @@ namespace Hecton8.AI
             }
 
             return dehydrated;
+        }
+
+        private void QueuePresentationDeactivation(GameObject target)
+        {
+            if (target == null || _pendingPresentationDeactivationCount >= _pendingPresentationDeactivations.Length)
+                return;
+
+            _pendingPresentationDeactivations[_pendingPresentationDeactivationCount++] = target;
+        }
+
+        private void FlushPendingPresentationDeactivations()
+        {
+            for (int i = 0; i < _pendingPresentationDeactivationCount; i++)
+            {
+                GameObject target = _pendingPresentationDeactivations[i];
+                _pendingPresentationDeactivations[i] = null;
+                if (target != null && target.activeSelf)
+                    target.SetActive(false);
+            }
+
+            _pendingPresentationDeactivationCount = 0;
         }
 
         //  SPAWN
@@ -1214,17 +1310,17 @@ namespace Hecton8.AI
             FaunaBiomeData biomeData,
             Vector3 playerPos,
             in AbsoluteUniversePosition playerAup,
-            MapMagicBridge bridge,
+            ITerrainProvider bridge,
             ref int spawnValidationAttempts,
             ref int spawnValidationSuccesses,
             ref int anchorBasedSpawns,
             ref int fallbackRingSpawns)
         {
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null) return 0;
 
             int biomeIdx = biomeData.biomeIndex;
-            EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
+            IEcosystemDirectorService ecosystemDirector = ResolveEcosystemDirector();
 
             // â”€â”€ ÐŸÐ¾Ð»ÑƒÑ‡ÐµÐ½Ð¸Ðµ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² Ð¸Ð· stateful-ÑÑ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€ (O(1)) â”€â”€
             int biomeAlive = (biomeIdx >= 0 && biomeIdx < _countsPerBiome.Length)
@@ -1476,7 +1572,7 @@ namespace Hecton8.AI
             Vector3 playerPos,
             in AbsoluteUniversePosition playerAup,
             Transform playerViewTransform,
-            MapMagicBridge bridge,
+            ITerrainProvider bridge,
             FaunaBiomeData biomeData,
             out Vector3 spawnPos,
             out WorldFaunaSpawnRegistry.Anchor registryAnchor,
@@ -1523,7 +1619,7 @@ namespace Hecton8.AI
             Vector3 playerPos,
             in AbsoluteUniversePosition playerAup,
             Transform playerViewTransform,
-            MapMagicBridge bridge,
+            ITerrainProvider bridge,
             FaunaBiomeData biomeData,
             out Vector3 spawnPos,
             out WorldMacroZoneCoordinate macroZoneCoord,
@@ -1582,7 +1678,7 @@ namespace Hecton8.AI
             float outerRadius,
             Transform playerViewTransform,
             FaunaBiomeData biomeData,
-            MapMagicBridge bridge,
+            ITerrainProvider bridge,
             out Vector3 spawnPos,
             ref int spawnValidationAttempts,
             ref int spawnValidationSuccesses)
@@ -1609,7 +1705,7 @@ namespace Hecton8.AI
             float anchorRadius,
             Transform playerViewTransform,
             FaunaBiomeData biomeData,
-            MapMagicBridge bridge,
+            ITerrainProvider bridge,
             out Vector3 spawnPos,
             ref int spawnValidationAttempts,
             ref int spawnValidationSuccesses)
@@ -1636,7 +1732,7 @@ namespace Hecton8.AI
             Vector3 candidateCenter,
             Transform playerViewTransform,
             FaunaBiomeData biomeData,
-            MapMagicBridge bridge,
+            ITerrainProvider bridge,
             out Vector3 spawnPos,
             ref int spawnValidationAttempts,
             ref int spawnValidationSuccesses)
@@ -1680,8 +1776,9 @@ namespace Hecton8.AI
             for (int i = 0; i < SpawnDirectionLutSize; i++)
             {
                 float angle = (Mathf.PI * 2f * i) / SpawnDirectionLutSize;
-                directions[i].x = Mathf.Cos(angle);
-                directions[i].y = Mathf.Sin(angle);
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+                directions[i].x = cos;
+                directions[i].y = sin;
             }
 
             return directions;
@@ -1845,8 +1942,8 @@ namespace Hecton8.AI
             float depthZoneSpecialistScale,
             bool requireLargeThreatClass,
             Vector3 spawnPosition,
-            HectonMapMagicVegetationBridge vegetationBridge,
-            EcosystemDirector ecosystemDirector,
+            IVegetationThreatReadModel vegetationBridge,
+            IEcosystemDirectorService ecosystemDirector,
             out ResolvedFaunaEntry selectedEntry)
         {
             selectedEntry = default;
@@ -2492,7 +2589,7 @@ namespace Hecton8.AI
             return value >= 0d ? (int)(value + 0.5d) : (int)(value - 0.5d);
         }
 
-        private EcosystemDirector ResolveConcreteEcosystemDirector()
+        private IEcosystemDirectorService ResolveEcosystemDirector()
         {
             return _ecosystemDirector;
         }
@@ -2686,7 +2783,7 @@ namespace Hecton8.AI
             if (_activeDehydrationSlotCount <= 0 || _activeCreatures == null)
                 return 0;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
                 return 0;
 
@@ -2734,10 +2831,7 @@ namespace Hecton8.AI
                     ai.SetHibernationHunger01(state.hunger01);
                     _faunaPresentationService?.ConfigureSpawnedCreature(ai, state.archetype, state.biomeIndex, runtimePosition, in state.chunkCoord);
 
-                    float clampedHealth = Mathf.Clamp(state.health, 0f, ai.MaxHealth);
-                    float restoreDamage = ai.MaxHealth - clampedHealth;
-                    if (restoreDamage > 0.001f)
-                        ai.TakeDamage(restoreDamage);
+                    ai.ApplyHibernationHealthSnapshot(state.health);
 
                     if (state.hasPendingHibernationHuntTarget)
                     {
@@ -2753,8 +2847,12 @@ namespace Hecton8.AI
 
                 if (instance.TryGetComponent(out Rigidbody rigidbody))
                 {
-                    rigidbody.linearVelocity = state.linearVelocity;
-                    rigidbody.angularVelocity = state.angularVelocity;
+                    IPhysicsService physicsService = _physicsService;
+                    if (physicsService != null)
+                    {
+                        physicsService.QueueLinearVelocitySet(rigidbody, state.linearVelocity);
+                        physicsService.QueueAngularVelocitySet(rigidbody, state.angularVelocity);
+                    }
                 }
 
                 ActiveCreature creature = new ActiveCreature
@@ -2808,7 +2906,7 @@ namespace Hecton8.AI
             if (_activeDehydrationSlotCount <= 0)
                 return;
 
-            PersistentWorldRegistry registry = _persistentWorldRegistry;
+            IFaunaPersistentWorldStateService registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2860,14 +2958,14 @@ namespace Hecton8.AI
                 return;
 
             _nextThermalApexMigrationTime = nowSeconds + ThermalApexMigrationIntervalSeconds;
-            AbyssalThermalManager thermalManager = _thermalRuntime;
+            IThermodynamicsService thermalManager = _thermalRuntime;
             if (thermalManager == null ||
                 !thermalManager.TryResolveApexMigrationThermalAttractor(out Vector3 attractorPosition, out float strength01))
             {
                 return;
             }
 
-            PersistentWorldRegistry registry = _persistentWorldRegistry;
+            IFaunaPersistentWorldStateService registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2880,7 +2978,7 @@ namespace Hecton8.AI
 
         private void RestorePersistedTier2Fauna(in AbsoluteUniversePosition playerAup)
         {
-            PersistentWorldRegistry registry = _persistentWorldRegistry;
+            IFaunaPersistentWorldStateService registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2986,7 +3084,7 @@ namespace Hecton8.AI
         private bool TryResolveHibernationStarvationHuntTarget(Vector3 runtimePosition, out Vector3 huntTarget)
         {
             huntTarget = default;
-            EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
+            IEcosystemDirectorService ecosystemDirector = ResolveEcosystemDirector();
             return ecosystemDirector != null && ecosystemDirector.TryResolveNearestOrganicMass(runtimePosition, out huntTarget);
         }
 
@@ -3401,14 +3499,17 @@ namespace Hecton8.AI
 
         private void ResolveDepthZoneDirector()
         {
-            if (depthZoneDirector == null)
-                return;
+            if (_depthZoneReadModel == null)
+                _depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+
+            if (_depthZoneReadModel == null && depthZoneDirector != null)
+                _depthZoneReadModel = depthZoneDirector;
         }
 
         private void ResolveVegetationThreatBridge()
         {
             if (_vegetationThreatBridge == null)
-                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationThreatBridge);
+                _vegetationThreatBridge = GlobalRegistry.VegetationThreat;
         }
 
         private int ResolveEffectiveGlobalMaxCount(WorldProceduralFaunaMood faunaMood, DepthZoneProfile depthZone)
@@ -3449,14 +3550,14 @@ namespace Hecton8.AI
                 return;
             }
 
-            DynamicResolutionScaler scaler = _dynamicResolutionRuntime;
-            if (scaler == null || !scaler.Enabled)
+            IDynamicResolutionRuntime scaler = _dynamicResolutionRuntime;
+            if (scaler == null)
             {
                 ApplyAdaptiveBudgetResponse(1f, 1f);
                 return;
             }
 
-            float renderScale = Mathf.Clamp01(scaler.CurrentRenderScale);
+            float renderScale = Mathf.Clamp01(scaler.CurrentRenderScale01);
             float normalized = Mathf.Clamp01(
                 (renderScale - adaptiveBudgetFloorRenderScale) /
                 Mathf.Max(0.0001f, 1f - adaptiveBudgetFloorRenderScale));
@@ -3890,7 +3991,7 @@ namespace Hecton8.AI
             if (_creaturePoolsWarmed || biomeDatasets == null || biomeDatasets.Length == 0)
                 return;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -4032,7 +4133,7 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             ResolvePlayerViewTransform();
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
                 return false;
 
@@ -4074,7 +4175,7 @@ namespace Hecton8.AI
                 return false;
             }
 
-            EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
+            IEcosystemDirectorService ecosystemDirector = ResolveEcosystemDirector();
             if (ecosystemDirector != null &&
                 !ecosystemDirector.TryResolveSpawnWeightMultiplier(selectedEntry.archetype, spawnPosition, out _))
             {
@@ -4178,7 +4279,7 @@ namespace Hecton8.AI
             if (instanceId == 0 || _activeCreatures == null || _activeCreatures.Count <= 0)
                 return false;
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
                 ActiveCreature creature = _activeCreatures[i];
@@ -4215,7 +4316,7 @@ namespace Hecton8.AI
         public void DespawnAll()
         {
             CompleteResidentDataOnlySimulation(forceComplete: true);
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
@@ -4274,7 +4375,7 @@ namespace Hecton8.AI
         /// </summary>
         /// <param name="enabled">true = Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ð¾, false = Ð¾Ñ‚ÑÑ‚ÑƒÐ¿Ð»ÐµÐ½Ð¸Ðµ.</param>
         private bool TryResolveEncounterBiomeData(
-            ObjectPoolManager pool,
+            IObjectPoolService pool,
             out FaunaBiomeData biomeData,
             out ResolvedFaunaEntry[] resolvedEntries,
             out int[] creatureTypeCounts,
@@ -4549,7 +4650,7 @@ namespace Hecton8.AI
 
             ResolvePlayerViewTransform();
 
-            ObjectPoolManager pool = _objectPool;
+            IObjectPoolService pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -4610,7 +4711,7 @@ namespace Hecton8.AI
             }
 
             int biomeIdx = biomeData.biomeIndex;
-            EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
+            IEcosystemDirectorService ecosystemDirector = ResolveEcosystemDirector();
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  Ð¡Ð¿Ð°Ð²Ð½ Ð¾Ñ€Ð´Ñ‹
@@ -4777,8 +4878,8 @@ namespace Hecton8.AI
             _debugEffectiveGlobalMaxCount = _currentEffectiveGlobalMaxCount;
             _debugEffectiveSpawnsPerTick = _currentEffectiveSpawnsPerTick;
             _debugEffectiveBiomeMaxCount = _cachedBiomeIndex >= 0 ? _currentEffectiveBiomeMaxCount : 0;
-            DynamicResolutionScaler scaler = _dynamicResolutionRuntime;
-            _debugAdaptiveRenderScale = scaler != null ? scaler.CurrentRenderScale : 1f;
+            IDynamicResolutionRuntime scaler = _dynamicResolutionRuntime;
+            _debugAdaptiveRenderScale = scaler != null ? scaler.CurrentRenderScale01 : 1f;
             _debugAdaptiveBudgetNormalized = _adaptiveBudgetNormalized;
             _debugAdaptiveGlobalBudgetScale = _adaptiveGlobalBudgetScale;
             _debugAdaptiveBiomeBudgetScale = _adaptiveBiomeBudgetScale;
@@ -4868,9 +4969,10 @@ namespace Hecton8.AI
             for (int i = 1; i <= segments; i++)
             {
                 float angle = step * i;
+                MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
                 Vector3 next = center + new Vector3(
-                    Mathf.Cos(angle) * radius, 0f,
-                    Mathf.Sin(angle) * radius);
+                    cos * radius, 0f,
+                    sin * radius);
 
                 Gizmos.DrawLine(prev, next);
                 prev = next;

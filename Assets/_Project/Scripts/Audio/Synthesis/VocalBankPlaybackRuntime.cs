@@ -12,7 +12,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
 namespace Hecton8.Audio.Synthesis
@@ -27,11 +26,14 @@ namespace Hecton8.Audio.Synthesis
         private const int WaveformCapacity = 2048;
         private const int MockBankByteCapacity = 196608;
         private const int MockRecordCapacity = 1;
+#if UNITY_EDITOR
         private const int CsvMetadataCapacity = 8192;
         private const int CsvScratchBytes = 1048576;
+#endif
         private const int DefaultMockSamples = 32000;
         private const uint DefaultMockPhraseHash = 0x05203E88u; // FNV1a("VO_SHINOBU_MOCK").
         private const uint VocalCueLaneHash = 0xC001260u;
+        private const uint VwsPreemptedFlag = 1u << 5;
         private const float DspDumpThresholdMicroseconds = 1000f;
         private const string BankRelativePath = "Hecton8/Audio/vocal_banks.h8bin";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_260.bin";
@@ -54,8 +56,10 @@ namespace Hecton8.Audio.Synthesis
         private VaultGenerationHandle<float> _waveformHandle;
         private VaultGenerationHandle<byte> _mockBankBytesHandle;
         private VaultGenerationHandle<VocalBankIndexRecordDTO> _mockRecordsHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<VocalDialogueMetadataDTO> _csvMetadataHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
 
         private VocalStateDTO* _statePtr;
         private VocalCodecStateDTO* _codecPtr;
@@ -78,7 +82,9 @@ namespace Hecton8.Audio.Synthesis
         private int _dumpRequested;
         private int _audioCallbackInFlight;
         private int _bankReleaseInProgress;
+#if UNITY_EDITOR
         private int _csvMetadataCount;
+#endif
         private uint _frameCounter;
         private float _cachedGlobalQualityWeight = 1f;
 
@@ -91,8 +97,10 @@ namespace Hecton8.Audio.Synthesis
             public NativeArray<float> Waveform;
             public NativeArray<byte> MockBankBytes;
             public NativeArray<VocalBankIndexRecordDTO> MockRecords;
+#if UNITY_EDITOR
             public NativeArray<VocalDialogueMetadataDTO> CsvMetadata;
             public NativeArray<byte> CsvScratch;
+#endif
         }
 
         public static bool TryGetActive(out VocalBankPlaybackRuntime runtime)
@@ -163,24 +171,38 @@ namespace Hecton8.Audio.Synthesis
             if (_activeInstance != null)
                 return;
 
-#if UNITY_2023_1_OR_NEWER
-            VocalBankPlaybackRuntime existing = UnityEngine.Object.FindAnyObjectByType<VocalBankPlaybackRuntime>();
-#else
-            VocalBankPlaybackRuntime existing = UnityEngine.Object.FindObjectOfType<VocalBankPlaybackRuntime>();
-#endif
-            if (existing != null)
+            AudioListener listener = ResolvePlayerAudioListenerCold();
+            if (listener == null)
+                return;
+
+            GameObject listenerObject = listener.gameObject;
+            if (listenerObject.TryGetComponent(out VocalBankPlaybackRuntime existing))
             {
                 _activeInstance = existing;
                 return;
             }
 
-#if UNITY_2023_1_OR_NEWER
-            AudioListener listener = UnityEngine.Object.FindAnyObjectByType<AudioListener>();
-#else
-            AudioListener listener = UnityEngine.Object.FindObjectOfType<AudioListener>();
-#endif
-            if (listener != null)
-                listener.gameObject.AddComponent<VocalBankPlaybackRuntime>();
+            _activeInstance = listenerObject.AddComponent<VocalBankPlaybackRuntime>();
+        }
+
+        private static AudioListener ResolvePlayerAudioListenerCold()
+        {
+            Camera playerCamera = null;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                playerCamera = playerContext.PlayerCamera;
+
+            if (playerCamera == null)
+            {
+                IPlayerSensoryService playerSensory = GlobalRegistry.PlayerSensory;
+                if (playerSensory != null)
+                    playerCamera = playerSensory.PlayerCamera;
+            }
+
+            if (playerCamera == null)
+                return null;
+
+            return playerCamera.TryGetComponent(out AudioListener listener) ? listener : null;
         }
 
         private static void EnsureDecodeFunctionPointerCold()
@@ -206,7 +228,9 @@ namespace Hecton8.Audio.Synthesis
             EnsureVaultStorage();
             RefreshGlobalQualitySnapshotCold();
             OpenOrGenerateBankCold();
+#if UNITY_EDITOR
             ReloadDialogueCsvMetadataCold();
+#endif
         }
 
         private void OnEnable()
@@ -372,7 +396,8 @@ namespace Hecton8.Audio.Synthesis
                 VocalStateDTO current = *_statePtr;
                 VocalCodecStateDTO currentCodec = *_codecPtr;
                 bool isPlaying = (current.Flags & VocalBankConstants.StateFlagPlaying) != 0u;
-                if (isPlaying && signal.Priority < currentCodec.Priority)
+                bool vwsPreempted = (signal.Flags & VwsPreemptedFlag) != 0u;
+                if (isPlaying && signal.Priority < currentCodec.Priority && !vwsPreempted)
                     continue;
 
                 if (!VocalBankReader.TryFindRecord(_bankPtr, _bankByteLength, signal.PhraseHashID, out VocalBankIndexRecordDTO record))
@@ -459,15 +484,17 @@ namespace Hecton8.Audio.Synthesis
             if (vault == null)
                 return;
 
-            _stateHandle = vault.GetGenerationHandle<VocalStateDTO>(BufferID.AudioVocalSynthesisState, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _codecHandle = vault.GetGenerationHandle<VocalCodecStateDTO>(BufferID.AudioVocalSynthesisCodecState, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetGenerationHandle<VocalTelemetryEntryDTO>(BufferID.AudioVocalSynthesisTelemetry, TelemetryCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _countersHandle = vault.GetGenerationHandle<VocalDecodeCounters64>(BufferID.AudioVocalSynthesisTelemetryCursor, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _waveformHandle = vault.GetGenerationHandle<float>(BufferID.AudioVocalSynthesisWaveform, WaveformCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _mockBankBytesHandle = vault.GetGenerationHandle<byte>(BufferID.AudioVocalSynthesisMockBankBytes, MockBankByteCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _mockRecordsHandle = vault.GetGenerationHandle<VocalBankIndexRecordDTO>(BufferID.AudioVocalSynthesisMockBankRecords, MockRecordCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _csvMetadataHandle = vault.GetGenerationHandle<VocalDialogueMetadataDTO>(BufferID.AudioVocalSynthesisCsvMetadata, CsvMetadataCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.AudioVocalSynthesisCsvScratch, CsvScratchBytes, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _stateHandle = vault.EnsureGenerationHandle<VocalStateDTO>(BufferID.AudioVocalSynthesisState, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _codecHandle = vault.EnsureGenerationHandle<VocalCodecStateDTO>(BufferID.AudioVocalSynthesisCodecState, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _telemetryHandle = vault.EnsureGenerationHandle<VocalTelemetryEntryDTO>(BufferID.AudioVocalSynthesisTelemetry, TelemetryCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _countersHandle = vault.EnsureGenerationHandle<VocalDecodeCounters64>(BufferID.AudioVocalSynthesisTelemetryCursor, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _waveformHandle = vault.EnsureGenerationHandle<float>(BufferID.AudioVocalSynthesisWaveform, WaveformCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _mockBankBytesHandle = vault.EnsureGenerationHandle<byte>(BufferID.AudioVocalSynthesisMockBankBytes, MockBankByteCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _mockRecordsHandle = vault.EnsureGenerationHandle<VocalBankIndexRecordDTO>(BufferID.AudioVocalSynthesisMockBankRecords, MockRecordCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+#if UNITY_EDITOR
+            _csvMetadataHandle = vault.EnsureGenerationHandle<VocalDialogueMetadataDTO>(BufferID.AudioVocalSynthesisCsvMetadata, CsvMetadataCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.AudioVocalSynthesisCsvScratch, CsvScratchBytes, VaultOwner, NativeArrayOptions.UninitializedMemory);
+#endif
 
             if (!TryResolveViews(out VocalVaultViews views))
             {
@@ -482,11 +509,15 @@ namespace Hecton8.Audio.Synthesis
                 views.Waveform[0] = 0f;
             if (views.MockRecords.Length > 0)
                 views.MockRecords[0] = default;
+#if UNITY_EDITOR
             if (views.CsvMetadata.Length > 0)
                 views.CsvMetadata[0] = default;
+#endif
             for (int i = 0; i < views.Telemetry.Length; i++)
                 views.Telemetry[i] = default;
+#if UNITY_EDITOR
             _csvMetadataCount = 0;
+#endif
             RefreshUnsafePointers(in views);
             Volatile.Write(ref _nativeAllocated, 1);
         }
@@ -505,8 +536,10 @@ namespace Hecton8.Audio.Synthesis
                 !vault.TryResolveHandle(in _waveformHandle, out views.Waveform) ||
                 !vault.TryResolveHandle(in _mockBankBytesHandle, out views.MockBankBytes) ||
                 !vault.TryResolveHandle(in _mockRecordsHandle, out views.MockRecords) ||
+#if UNITY_EDITOR
                 !vault.TryResolveHandle(in _csvMetadataHandle, out views.CsvMetadata) ||
                 !vault.TryResolveHandle(in _csvScratchHandle, out views.CsvScratch) ||
+#endif
                 !views.State.IsCreated ||
                 !views.Codec.IsCreated ||
                 !views.Telemetry.IsCreated ||
@@ -514,8 +547,11 @@ namespace Hecton8.Audio.Synthesis
                 !views.Waveform.IsCreated ||
                 !views.MockBankBytes.IsCreated ||
                 !views.MockRecords.IsCreated ||
+#if UNITY_EDITOR
                 !views.CsvMetadata.IsCreated ||
-                !views.CsvScratch.IsCreated)
+                !views.CsvScratch.IsCreated ||
+#endif
+                false)
             {
                 views = default;
                 return false;
@@ -544,8 +580,10 @@ namespace Hecton8.Audio.Synthesis
             ReleaseVaultBuffer(vault, ref _waveformHandle);
             ReleaseVaultBuffer(vault, ref _mockBankBytesHandle);
             ReleaseVaultBuffer(vault, ref _mockRecordsHandle);
+#if UNITY_EDITOR
             ReleaseVaultBuffer(vault, ref _csvMetadataHandle);
             ReleaseVaultBuffer(vault, ref _csvScratchHandle);
+#endif
             _statePtr = null;
             _codecPtr = null;
             _telemetryPtr = null;
@@ -611,9 +649,9 @@ namespace Hecton8.Audio.Synthesis
                 Volatile.Write(ref _usingMockBank, 0);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_260] vocal_banks.h8bin MMF open failed: " + ex.Message, this);
+                Debug.LogWarning("[SHINOBU_260] vocal_banks.h8bin MMF open failed.", this);
                 ReleaseMmfCold();
                 return false;
             }
@@ -683,6 +721,9 @@ namespace Hecton8.Audio.Synthesis
         private bool TryFindMetadata(uint hash, out VocalDialogueMetadataDTO metadata)
         {
             metadata = default;
+#if !UNITY_EDITOR
+            return false;
+#else
             if (!TryResolveViews(out VocalVaultViews views) || !views.CsvMetadata.IsCreated)
                 return false;
 
@@ -706,8 +747,10 @@ namespace Hecton8.Audio.Synthesis
             }
 
             return false;
+#endif
         }
 
+#if UNITY_EDITOR
         private void ReloadDialogueCsvMetadataCold()
         {
             if (!TryResolveViews(out VocalVaultViews views) ||
@@ -739,9 +782,9 @@ namespace Hecton8.Audio.Synthesis
                 ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(scratch, bytesRead);
                 _csvMetadataCount = ParseDialogueCsv(csv, views.CsvMetadata);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_260] dialogue_script.csv metadata parse failed: " + ex.Message, this);
+                Debug.LogWarning("[SHINOBU_260] dialogue_script.csv metadata parse failed.", this);
             }
         }
 
@@ -912,6 +955,7 @@ namespace Hecton8.Audio.Synthesis
 
             return value;
         }
+#endif
 
         private void RefreshGlobalQualitySnapshotCold()
         {
@@ -967,9 +1011,9 @@ namespace Hecton8.Audio.Synthesis
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_260] black-box dump failed: " + ex.Message, this);
+                Debug.LogWarning("[SHINOBU_260] black-box dump failed.", this);
             }
         }
 

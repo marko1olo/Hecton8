@@ -73,8 +73,8 @@ namespace Hecton8.World
                 return true;
 
             GameObject temp = GameObject.CreatePrimitive(primitiveType);
-            MeshFilter filter = temp.GetComponent<MeshFilter>();
-            MeshRenderer renderer = temp.GetComponent<MeshRenderer>();
+            temp.TryGetComponent(out MeshFilter filter);
+            temp.TryGetComponent(out MeshRenderer renderer);
             mesh = filter != null ? filter.sharedMesh : null;
             material = renderer != null ? renderer.sharedMaterial : null;
             _CachedMeshes[index] = mesh;
@@ -106,12 +106,10 @@ namespace Hecton8.World
             primitiveTransform.localRotation = localRotation;
             primitiveTransform.localScale = localScale;
 
-            MeshFilter filter = primitive.GetComponent<MeshFilter>();
-            if (filter == null)
+            if (!primitive.TryGetComponent(out MeshFilter filter))
                 filter = primitive.AddComponent<MeshFilter>();
 
-            MeshRenderer renderer = primitive.GetComponent<MeshRenderer>();
-            if (renderer == null)
+            if (!primitive.TryGetComponent(out MeshRenderer renderer))
                 renderer = primitive.AddComponent<MeshRenderer>();
 
             filter.sharedMesh = mesh;

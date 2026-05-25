@@ -1,0 +1,22 @@
+﻿{
+  "agent": "SHINOBU_337",
+  "scanner": "OOP_Thermal_Scanner.StaticArchaeology",
+  "summary": "OOP Thermal Hacks Eradicated",
+  "scannedRoots": [
+    "Assets/_Project/Scripts/Vehicles",
+    "Assets/_Project/Scripts/Environment"
+  ],
+  "triggerThermalHits": 0,
+  "managedHeatListHits": 0,
+  "managedHeatClassHits": 0,
+  "route": "ReactorStateDTO + ReactorKinematicStateDTO -> Burst InjectReactorHeatJob -> AbyssalThermalCellInjection -> HeatDiffusionSolverJob",
+  "vaultBufferIds": "73620..73630 owned by SHINOBU_337 reactor thermal link; 71810..71820 rejected because 71820 collides with SHINOBU_264 async buoyancy",
+  "compileWallIsolation": "PASS_STATIC: no Hecton8.Physics.Vehicles import in SHINOBU_337 Thermodynamics files; kinematics enter through ReactorKinematicStateDTO Vault lane",
+  "dataMonolithStatus": "NOT_CLAIMED_STATIC_DATA_MISSING: Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin is absent; reactor profiles use unmanaged defaults plus editor-only Assets/_SourceData/Thermodynamics/vehicle_reactor_profiles.csv cold hydration",
+  "timingDisclosure": "LastInjectionMicroseconds is a schedule overhead proxy flagged by TelemetryFlagTimingProxy; exact Burst execution timing requires profiler proof",
+  "scalabilityCurve": "GlobalQualityWeight <0.30 central cell only; middle quality writes center plus six axial neighbors; high/ultra smoothstep-admits diagonal and corner shell weights toward 3x3x3",
+  "blackBoxRoute": "300 x 128-byte ReactorThermalTelemetryEntry ring records hot reactor AUP, hot reactor/entity hashes, joules, flags, counts, state hash, and timing proxy",
+  "forbiddenRuntimeRoute": "OnTriggerStay/SphereCollider/List<HeatSource>",
+  "evidenceCommand": "rg -n \"OnTriggerStay|SphereCollider|isTrigger|List\\\\s*<\\\\s*HeatSource\\\\s*>|class\\\\s+HeatSource|struct\\\\s+HeatSource\" Assets/_Project/Scripts/Vehicles Assets/_Project/Scripts/Environment -S",
+  "findings": []
+}

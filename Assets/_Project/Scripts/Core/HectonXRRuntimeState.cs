@@ -27,7 +27,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            Hecton8.World.AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
             {
                 aup = default;
@@ -108,7 +108,7 @@ namespace Hecton8.Core
         internal bool TryToRuntimeFloat3(out float3 runtimePosition)
         {
             double3 absolute = ToAbsoluteDouble3(in this);
-            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            Hecton8.World.AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
             {
                 runtimePosition = float3.zero;
@@ -222,6 +222,18 @@ namespace Hecton8.Core
         private static Vector4 _lastOriginShiftState = Vector4.positiveInfinity;
         private static Vector4 _lastCadenceState = Vector4.positiveInfinity;
         private static Vector4 _lastPoseSyncState = Vector4.positiveInfinity;
+        private static Vector4 _pendingFoveatedParams;
+        private static Vector4 _pendingFoveatedCenterRadius;
+        private static Vector4 _pendingNearClipDitherParams;
+        private static Vector4 _pendingOriginShiftState;
+        private static Vector4 _pendingCadenceState;
+        private static Vector4 _pendingPoseSyncState;
+        private static bool _pendingFoveatedParamsDirty;
+        private static bool _pendingFoveatedCenterRadiusDirty;
+        private static bool _pendingNearClipDitherParamsDirty;
+        private static bool _pendingOriginShiftStateDirty;
+        private static bool _pendingCadenceStateDirty;
+        private static bool _pendingPoseSyncStateDirty;
         private static bool _publishedInactiveShaderState;
         private static bool _originShiftPoseLocked;
         private static int _originShiftPoseLockFrame = -1;
@@ -264,6 +276,12 @@ namespace Hecton8.Core
             _lastOriginShiftState = Vector4.positiveInfinity;
             _lastCadenceState = Vector4.positiveInfinity;
             _lastPoseSyncState = Vector4.positiveInfinity;
+            _pendingFoveatedParamsDirty = false;
+            _pendingFoveatedCenterRadiusDirty = false;
+            _pendingNearClipDitherParamsDirty = false;
+            _pendingOriginShiftStateDirty = false;
+            _pendingCadenceStateDirty = false;
+            _pendingPoseSyncStateDirty = false;
             _publishedInactiveShaderState = false;
             _originShiftPoseLocked = false;
             _originShiftPoseLockFrame = -1;
@@ -412,7 +430,7 @@ namespace Hecton8.Core
         {
             if (!_isXRActive)
             {
-                PublishIfChanged(_HectonXROriginShiftStateId, Vector4.zero, ref _lastOriginShiftState);
+                QueueIfChanged(_HectonXROriginShiftStateId, Vector4.zero, ref _lastOriginShiftState);
                 return;
             }
 
@@ -421,7 +439,7 @@ namespace Hecton8.Core
                 shiftSequence,
                 _lastForcedPoseRefreshFrame,
                 math.saturate(fixedInterpolationAlpha));
-            PublishIfChanged(_HectonXROriginShiftStateId, originShiftState, ref _lastOriginShiftState);
+            QueueIfChanged(_HectonXROriginShiftStateId, originShiftState, ref _lastOriginShiftState);
         }
 
         internal static void BeginOriginShiftPoseLock()
@@ -484,6 +502,7 @@ namespace Hecton8.Core
         internal static void ResetShaderGlobals()
         {
             InvalidateShaderStateCache();
+            ClearPendingShaderState();
             Shader.SetGlobalVector(_HectonXRFoveatedParamsId, Vector4.zero);
             Shader.SetGlobalVector(_HectonXRFoveatedCenterRadiusId, Vector4.zero);
             Shader.SetGlobalVector(_HectonXRNearClipDitherParamsId, Vector4.zero);
@@ -522,6 +541,7 @@ namespace Hecton8.Core
             _lastOriginShiftState = Vector4.positiveInfinity;
             _lastCadenceState = Vector4.positiveInfinity;
             _lastPoseSyncState = Vector4.positiveInfinity;
+            ClearPendingShaderState();
         }
 
         private static float ResolveDisplayRefreshRateHz()
@@ -572,12 +592,12 @@ namespace Hecton8.Core
                 ? new Vector4(1f, _refreshRateHz, FrameIntervalSeconds, RefreshSampleIntervalFrames)
                 : Vector4.zero;
 
-            PublishIfChanged(_HectonXRFoveatedParamsId, foveatedParams, ref _lastFoveatedParams);
-            PublishIfChanged(_HectonXRFoveatedCenterRadiusId, foveatedCenterRadius, ref _lastFoveatedCenterRadius);
-            PublishIfChanged(_HectonXRNearClipDitherParamsId, nearClipDitherParams, ref _lastNearClipDitherParams);
-            PublishIfChanged(_HectonXRCadenceStateId, cadenceState, ref _lastCadenceState);
+            QueueIfChanged(_HectonXRFoveatedParamsId, foveatedParams, ref _lastFoveatedParams);
+            QueueIfChanged(_HectonXRFoveatedCenterRadiusId, foveatedCenterRadius, ref _lastFoveatedCenterRadius);
+            QueueIfChanged(_HectonXRNearClipDitherParamsId, nearClipDitherParams, ref _lastNearClipDitherParams);
+            QueueIfChanged(_HectonXRCadenceStateId, cadenceState, ref _lastCadenceState);
             if (!_isXRActive)
-                PublishIfChanged(_HectonXROriginShiftStateId, Vector4.zero, ref _lastOriginShiftState);
+                QueueIfChanged(_HectonXROriginShiftStateId, Vector4.zero, ref _lastOriginShiftState);
             PublishPoseSyncState();
             _publishedInactiveShaderState = !_isXRActive;
             if (_isXRActive)
@@ -588,12 +608,6 @@ namespace Hecton8.Core
 
         private static void MarkInactiveShaderStatePublished()
         {
-            _lastFoveatedParams = Vector4.zero;
-            _lastFoveatedCenterRadius = Vector4.zero;
-            _lastNearClipDitherParams = Vector4.zero;
-            _lastOriginShiftState = Vector4.zero;
-            _lastCadenceState = Vector4.zero;
-            _lastPoseSyncState = Vector4.zero;
             _publishedInactiveShaderState = true;
         }
 
@@ -634,16 +648,92 @@ namespace Hecton8.Core
                     _lastForcedPoseRefreshFrame,
                     _originShiftPoseLocked ? _originShiftPoseLockFrame : _lastForcedPoseRefreshFrame)
                 : Vector4.zero;
-            PublishIfChanged(_HectonXRPoseSyncStateId, poseSyncState, ref _lastPoseSyncState);
+            QueueIfChanged(_HectonXRPoseSyncStateId, poseSyncState, ref _lastPoseSyncState);
         }
 
-        private static void PublishIfChanged(int propertyId, Vector4 value, ref Vector4 previous)
+        internal static void FlushVisualSyncShaderState()
         {
-            if (Approximately(previous, value))
+            FlushQueuedIfDirty(_HectonXRFoveatedParamsId, ref _pendingFoveatedParams, ref _pendingFoveatedParamsDirty, ref _lastFoveatedParams);
+            FlushQueuedIfDirty(_HectonXRFoveatedCenterRadiusId, ref _pendingFoveatedCenterRadius, ref _pendingFoveatedCenterRadiusDirty, ref _lastFoveatedCenterRadius);
+            FlushQueuedIfDirty(_HectonXRNearClipDitherParamsId, ref _pendingNearClipDitherParams, ref _pendingNearClipDitherParamsDirty, ref _lastNearClipDitherParams);
+            FlushQueuedIfDirty(_HectonXROriginShiftStateId, ref _pendingOriginShiftState, ref _pendingOriginShiftStateDirty, ref _lastOriginShiftState);
+            FlushQueuedIfDirty(_HectonXRCadenceStateId, ref _pendingCadenceState, ref _pendingCadenceStateDirty, ref _lastCadenceState);
+            FlushQueuedIfDirty(_HectonXRPoseSyncStateId, ref _pendingPoseSyncState, ref _pendingPoseSyncStateDirty, ref _lastPoseSyncState);
+
+            if (!_isXRActive && !_pendingFoveatedParamsDirty && !_pendingFoveatedCenterRadiusDirty && !_pendingNearClipDitherParamsDirty &&
+                !_pendingOriginShiftStateDirty && !_pendingCadenceStateDirty && !_pendingPoseSyncStateDirty)
+            {
+                _publishedInactiveShaderState = true;
+            }
+        }
+
+        private static void QueueIfChanged(int propertyId, Vector4 value, ref Vector4 previous)
+        {
+            if (propertyId == _HectonXRFoveatedParamsId)
+            {
+                if (!_pendingFoveatedParamsDirty && Approximately(previous, value))
+                    return;
+                _pendingFoveatedParams = value;
+                _pendingFoveatedParamsDirty = true;
+            }
+            else if (propertyId == _HectonXRFoveatedCenterRadiusId)
+            {
+                if (!_pendingFoveatedCenterRadiusDirty && Approximately(previous, value))
+                    return;
+                _pendingFoveatedCenterRadius = value;
+                _pendingFoveatedCenterRadiusDirty = true;
+            }
+            else if (propertyId == _HectonXRNearClipDitherParamsId)
+            {
+                if (!_pendingNearClipDitherParamsDirty && Approximately(previous, value))
+                    return;
+                _pendingNearClipDitherParams = value;
+                _pendingNearClipDitherParamsDirty = true;
+            }
+            else if (propertyId == _HectonXROriginShiftStateId)
+            {
+                if (!_pendingOriginShiftStateDirty && Approximately(previous, value))
+                    return;
+                _pendingOriginShiftState = value;
+                _pendingOriginShiftStateDirty = true;
+            }
+            else if (propertyId == _HectonXRCadenceStateId)
+            {
+                if (!_pendingCadenceStateDirty && Approximately(previous, value))
+                    return;
+                _pendingCadenceState = value;
+                _pendingCadenceStateDirty = true;
+            }
+            else if (propertyId == _HectonXRPoseSyncStateId)
+            {
+                if (!_pendingPoseSyncStateDirty && Approximately(previous, value))
+                    return;
+                _pendingPoseSyncState = value;
+                _pendingPoseSyncStateDirty = true;
+            }
+        }
+
+        private static void FlushQueuedIfDirty(int propertyId, ref Vector4 pending, ref bool dirty, ref Vector4 previous)
+        {
+            if (!dirty)
                 return;
 
-            Shader.SetGlobalVector(propertyId, value);
-            previous = value;
+            dirty = false;
+            if (Approximately(previous, pending))
+                return;
+
+            Shader.SetGlobalVector(propertyId, pending);
+            previous = pending;
+        }
+
+        private static void ClearPendingShaderState()
+        {
+            _pendingFoveatedParamsDirty = false;
+            _pendingFoveatedCenterRadiusDirty = false;
+            _pendingNearClipDitherParamsDirty = false;
+            _pendingOriginShiftStateDirty = false;
+            _pendingCadenceStateDirty = false;
+            _pendingPoseSyncStateDirty = false;
         }
 
         private static bool Approximately(Vector4 a, Vector4 b)
@@ -662,7 +752,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerContext != null)
             {
                 if (playerContext.PlayerCamera != null)

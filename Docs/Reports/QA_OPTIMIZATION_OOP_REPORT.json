@@ -1,0 +1,27 @@
+﻿{
+  "oopTestsEradicated": true,
+  "scanner": "OOP_Test_Scanner",
+  "scope": "KCC_KINEMATIC_TEST_FILES_ONLY",
+  "scanned_roots": [
+    "Assets/_Project/Tests scoped by Kcc/Kinematic source tokens"
+  ],
+  "forbidden_patterns_checked": [
+    "Physics.Simulate",
+    "new GameObject",
+    "Instantiate(",
+    "List<Vector3>",
+    "EditorWindow in Tests",
+    "SceneView in Tests",
+    "UIElements in Tests"
+  ],
+  "scanned_files": 6,
+  "skipped_non_kcc_kinematic_files": 28,
+  "physics_simulate_hits": 0,
+  "gameobject_create_hits": 0,
+  "instantiate_hits": 0,
+  "list_vector3_hits": 0,
+  "editor_window_hits": 0,
+  "scene_view_hits": 0,
+  "ui_elements_hits": 0,
+  "note": "Static shell count for Kcc/Kinematic test files; menu scanner now reports scoped evidence explicitly and detects unqualified Instantiate invocations."
+}

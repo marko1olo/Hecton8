@@ -605,7 +605,7 @@ namespace Hecton8.Physics
             _physicsCullingDtos[bodyIndex] = new PhysicsCullingDTO
             {
                 AUP = bodyAup.ToAbsoluteDouble3(),
-                InstanceId = body != null ? body.GetInstanceID() : 0,
+                InstanceId = body != null ? body.GetEntityId().GetHashCode() : 0,
                 ActivationRadiusSq = ResolvePhysicsCullingActivationRadiusSq(body, in bodyState),
                 IsAsleep = bodyState.DistanceSleepActive != 0 ? (byte)1 : (byte)0,
                 CullingFlags = flags
@@ -985,8 +985,8 @@ namespace Hecton8.Physics
                 _physicsFrozenVelocities[bodyIndex] = frozen;
             }
 
-            body.linearVelocity = Vector3.zero;
-            body.angularVelocity = Vector3.zero;
+            PhysicsForceRouter.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+            PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
         }
 
         private void RestoreFrozenVelocityForDistanceSleep(int bodyIndex, Rigidbody body)
@@ -999,9 +999,18 @@ namespace Hecton8.Physics
                 return;
 
             if (math.all(math.isfinite(frozen.LinearVelocity)))
-                body.linearVelocity = new Vector3(frozen.LinearVelocity.x, frozen.LinearVelocity.y, frozen.LinearVelocity.z);
+            {
+                PhysicsForceRouter.QueueLinearVelocitySet(
+                    body,
+                    new Vector3(frozen.LinearVelocity.x, frozen.LinearVelocity.y, frozen.LinearVelocity.z));
+            }
+
             if (math.all(math.isfinite(frozen.AngularVelocity)))
-                body.angularVelocity = new Vector3(frozen.AngularVelocity.x, frozen.AngularVelocity.y, frozen.AngularVelocity.z);
+            {
+                PhysicsForceRouter.QueueAngularVelocitySet(
+                    body,
+                    new Vector3(frozen.AngularVelocity.x, frozen.AngularVelocity.y, frozen.AngularVelocity.z));
+            }
 
             _physicsFrozenVelocities[bodyIndex] = default;
         }
@@ -1426,7 +1435,7 @@ namespace Hecton8.Physics
 
         private void TickPhysicsCullingCsvOverrideMonitor()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _physicsCullingCsvPollAccumulator += PhysicsCullingSlowTickIntervalSeconds;
             if (_physicsCullingCsvPollAccumulator < PhysicsCullingCsvPollIntervalSeconds)
                 return;
@@ -1478,6 +1487,7 @@ namespace Hecton8.Physics
             return _physicsCullingCsvAbsolutePath;
         }
 
+#if UNITY_EDITOR
         public bool TryIngestPhysicsCullingCsv(ReadOnlySpan<byte> csv)
         {
             if (!_physicsCullingTuning.IsCreated)
@@ -1648,6 +1658,7 @@ namespace Hecton8.Physics
 
             return hash;
         }
+#endif
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ClearPhysicsChangedIndicesJob : IJobParallelFor

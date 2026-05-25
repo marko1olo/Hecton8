@@ -34,8 +34,8 @@ namespace Hecton8.Tools
 
         public const BufferID RequestsBuffer = (BufferID)71320;
         public const BufferID RequestCountBuffer = (BufferID)71321;
-        public const BufferID RaycastCommandsBuffer = (BufferID)71322;
-        public const BufferID RaycastHitsBuffer = (BufferID)71323;
+        public const BufferID ReservedLegacyProbeBuffer = (BufferID)71322;
+        public const BufferID SdfProbeHitsBuffer = (BufferID)71323;
         public const BufferID HitResultsBuffer = (BufferID)71324;
         public const BufferID DeformationBuffer = (BufferID)71325;
         public const BufferID BatteryDrainBuffer = (BufferID)71326;
@@ -227,6 +227,7 @@ namespace Hecton8.Tools
         [FieldOffset(56)] public ulong Reserved2;
     }
 
+#if UNITY_EDITOR
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct LaserCutterCsvParseResult
     {
@@ -238,6 +239,7 @@ namespace Hecton8.Tools
         [FieldOffset(20)] public uint Reserved0;
         [FieldOffset(24)] public ulong Reserved1;
     }
+#endif
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct LaserCutterCountersDTO
@@ -296,10 +298,15 @@ namespace Hecton8.Tools
                 faultFlags |= FaultMetaFlagsOffset;
             if (OffsetOf<LaserCutRequestMetaDTO>(nameof(LaserCutRequestMetaDTO.RequestSequence)) != 8)
                 faultFlags |= FaultMetaSequenceOffset;
-            if (LaserCutterDodConstants.BlackBoxFrameCount != 300)
+            if (LaserCutterDodConstants.BlackBoxFrameCount != RequiredBlackBoxFrameCount())
                 faultFlags |= FaultTelemetryCapacity;
 
             return faultFlags == 0u;
+        }
+
+        private static int RequiredBlackBoxFrameCount()
+        {
+            return 300;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct

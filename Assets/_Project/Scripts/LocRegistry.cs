@@ -1509,6 +1509,7 @@ namespace Hecton.Localization
         /// Applies project-root loc_overrides.csv into the active UTF-8 blob without rebaking.
         /// Longer replacements append to the Vault UTF-8 blob and update the active index slice.
         /// </summary>
+#if UNITY_EDITOR
         public static unsafe bool TryApplyLocOverridesCsv(string path, out int applied, out int rejected)
         {
             applied = 0;
@@ -1667,6 +1668,7 @@ namespace Hecton.Localization
         {
             return TryApplyLocOverridesCsv(path, out applied, out rejected);
         }
+#endif
 
         /// <summary>
         /// Updates the localization black-box with the active CharBufferPool lease count.
@@ -1685,7 +1687,7 @@ namespace Hecton.Localization
                 Revision = ++_languageSignalRevision,
                 Language = (ushort)language
             };
-            SignalBus<LocalizationLanguageChangedSignal>.Push(in signal);
+            SignalBus<LocalizationLanguageChangedSignal>.TryPush(in signal);
         }
 
         private static void EnsureLanguageSignalLane()
@@ -1938,7 +1940,7 @@ namespace Hecton.Localization
             if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
                 return false;
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.UI,
@@ -2074,7 +2076,9 @@ namespace Hecton.Localization
                 return false;
             }
 
-            uint crc = H8Crc32.Compute(basePtr + header.HeaderSizeBytes, (int)header.FileByteLength - header.HeaderSizeBytes);
+            uint crc = H8Crc32.Compute(new ReadOnlySpan<byte>(
+                basePtr + header.HeaderSizeBytes,
+                (int)header.FileByteLength - header.HeaderSizeBytes));
             return crc == header.PayloadCrc32;
         }
 
@@ -2223,6 +2227,7 @@ namespace Hecton.Localization
             return true;
         }
 
+#if UNITY_EDITOR
         private static unsafe bool TryApplyUtf8Override(uint keyHash, int valueStart, int valueEnd)
         {
             int byteLength = CountCsvValueBytes(_overrideCsvScratch, valueStart, valueEnd);
@@ -2290,6 +2295,7 @@ namespace Hecton.Localization
             _utf8Index[index] = entry;
             return true;
         }
+#endif
 
         private static bool TryEnsureUtf8ByteCapacity(int requiredLength)
         {
@@ -2355,6 +2361,7 @@ namespace Hecton.Localization
             return false;
         }
 
+#if UNITY_EDITOR
         private static bool TryReadCsvLine(
             NativeArray<byte> bytes,
             int length,
@@ -2566,6 +2573,7 @@ namespace Hecton.Localization
 
             return true;
         }
+#endif
 
         private static uint HashAsciiLower(NativeArray<byte> bytes, int start, int end)
         {
@@ -2626,7 +2634,7 @@ namespace Hecton.Localization
 
         private static void RefreshLookupTelemetryFrame()
         {
-            int frame = Time.frameCount;
+            int frame = ResolveTelemetryFrameIndex();
             if (_telemetryFrameIndex == frame)
                 return;
 
@@ -2985,7 +2993,7 @@ namespace Hecton.Localization
             if (!_telemetryFrames.IsCreated)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = ResolveTelemetryFrameIndex();
             if (_telemetryFrameIndex == frame)
             {
                 _translationsThisFrame++;
@@ -3022,6 +3030,17 @@ namespace Hecton.Localization
             uint effectiveSearchNs = searchComputeTimeNs != 0u ? searchComputeTimeNs : _lookupSearchNsThisFrame;
             if (effectiveSearchNs > SlowSearchDumpThresholdNs)
                 WriteTelemetryDumpFiles();
+        }
+
+        private static int ResolveTelemetryFrameIndex()
+        {
+            uint frame = SystemDispatcher.ReadPublishedDispatcherFrameId();
+            if (frame == 0u)
+                frame = SystemDispatcher.CurrentFrameId;
+            if (frame == 0u)
+                frame = 1u;
+
+            return (int)(frame & 0x7FFFFFFFu);
         }
 
         private static void DumpTelemetryForSlowDecode(uint keyHash, int length, float spanConversionTimeMs)

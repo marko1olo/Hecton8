@@ -1,4 +1,4 @@
-# Lore Bible Redirect
+﻿# Lore Bible Redirect
 
 Date: 2026-05-17
 Status: MOVED

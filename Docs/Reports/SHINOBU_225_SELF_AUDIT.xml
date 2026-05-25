@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <SELF_AUDIT agent="SHINOBU_225" task="LASER_CUTTER_DOD_REWRITE" utc="2026-05-21T01:23:00Z">
   <Scope domain="ECHELON 4 Player, Kinematics &amp; Tools / Equipment Runtime Tools" taskCount="20" status="LOOP25_HOT_MANAGED_ROUTE_SCAN_OK_REBUILD_NOT_LAUNCHED" />
   <TaskReconciliation>

@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -9,7 +10,7 @@ namespace Hecton8.Caves
     /// Anchors use deterministic local-bounds sampling; root motion stays on the tick path.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CaveBioRootsGenerator : MonoBehaviour, ITickable, IUpdatable
+    public sealed class CaveBioRootsGenerator : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const int MaxRootCount = 32;
         private const string LegacyRootNamePrefix = "_BioRoot_";
@@ -19,6 +20,7 @@ namespace Hecton8.Caves
         private const float InvTau = 0.15915494309189535f;
         private const float Hash24ToUnit = 1f / 16777216f;
         private const float CeilingAnchorInset = 0.12f;
+        private const uint KccVelocityMaxAgeFrames = 12u;
         private static readonly float[] _SwaySinLut = CreateSwaySinLut(); // COLD ALLOC: float[1024] - visual root sway sine LUT - owner: CaveBioRootsGenerator
 
         [Header("Runtime Wiring")]
@@ -47,6 +49,7 @@ namespace Hecton8.Caves
         private Color _glowColor;
         private float _swayTime;
         private bool _registeredTick;
+        private bool _hotSwapRegistered;
         private IConnectionSplineBatchRendererService _splineRenderer;
         private long[] _rootLinkIds;
         private Vector3[][] _rootPositions;
@@ -111,7 +114,9 @@ namespace Hecton8.Caves
             _swayTime += math.max(0f, dt);
 
             Vector3 playerPosition = ResolvePlayerRuntimePosition();
-            Vector3 playerVelocity = _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
+            Vector3 playerVelocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityMaxAgeFrames, out Vector3 kccVelocity)
+                ? kccVelocity
+                : Vector3.zero;
             float playerSpeedSq = playerVelocity.sqrMagnitude;
             float playerSpeed = playerSpeedSq > 0.0625f ? EstimateLength3D(playerVelocity) : 0f;
             float time = _swayTime;
@@ -148,10 +153,14 @@ namespace Hecton8.Caves
         {
             if (volume != null)
                 _volumeTransform = volume.transform;
+
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             if (_rootCount > 0)
                 TryRegister();
         }
@@ -160,12 +169,16 @@ namespace Hecton8.Caves
         {
             RemoveAllRootLinks();
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
         {
             RemoveAllRootLinks();
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
         }
 
         private void EnsureBuffers()
@@ -259,13 +272,18 @@ namespace Hecton8.Caves
 
         private void RemoveAllRootLinks()
         {
+            RemoveAllRootLinks(_splineRenderer);
+        }
+
+        private void RemoveAllRootLinks(IConnectionSplineBatchRendererService renderer)
+        {
             if (_rootLinkIds == null)
                 return;
 
             for (int i = 0; i < _rootLinkIds.Length; i++)
             {
                 long linkId = _rootLinkIds[i];
-                if (linkId != 0L && TryResolveSplineRenderer(out IConnectionSplineBatchRendererService renderer))
+                if (linkId != 0L && renderer != null)
                     renderer.RemovePipeLink(linkId);
             }
         }
@@ -276,16 +294,71 @@ namespace Hecton8.Caves
             if (renderer != null)
                 return true;
 
-            if (!GlobalRegistry.TryGet(out renderer) || renderer == null)
-                return false;
+            return false;
+        }
 
-            _splineRenderer = renderer;
-            return true;
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _registeredTick = false;
+                    return;
+                }
+
+                if (isActiveAndEnabled)
+                {
+                    TryUnregister();
+                    TryRegister();
+                }
+
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime)
+                return;
+
+            IConnectionSplineBatchRendererService previousRenderer =
+                _splineRenderer ?? previousService as IConnectionSplineBatchRendererService;
+            RemoveAllRootLinks(previousRenderer);
+            _splineRenderer = currentService as IConnectionSplineBatchRendererService;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_splineRenderer == null)
+                _splineRenderer = GlobalRegistry.ConnectionSplineBatchRenderer;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _splineRenderer = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private long ResolveRootLinkId(int rootIndex)
         {
-            long owner = GetInstanceID();
+            long owner = unchecked((long)EntityId.ToULong(GetEntityId()));
             return (owner << 32) ^ (uint)rootIndex;
         }
 
@@ -371,8 +444,7 @@ namespace Hecton8.Caves
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -429,7 +501,7 @@ namespace Hecton8.Caves
             float[] values = new float[SwayLutSize];
             for (int i = 0; i < SwayLutSize; i++)
             {
-                values[i] = math.sin((i + 0.5f) * (2f * math.PI / SwayLutSize));
+                values[i] = MathLodApproximation.ApproxSinBhaskara((i + 0.5f) * (2f * math.PI / SwayLutSize));
             }
 
             return values;

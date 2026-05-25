@@ -179,10 +179,10 @@ namespace Hecton8.SaveSystem
         }
 
         [Header("All item assets in the project")]
-        [SerializeField] private List<ItemData> allItems = new List<ItemData>();
+        [SerializeField] private List<ItemData> allItems = new List<ItemData>(128);
 #if UNITY_ADDRESSABLES_EXIST
         [Header("Addressable world prefabs keyed by item hash")]
-        [SerializeField] private List<WorldPrefabAddressableEntry> worldPrefabAddressables = new List<WorldPrefabAddressableEntry>();
+        [SerializeField] private List<WorldPrefabAddressableEntry> worldPrefabAddressables = new List<WorldPrefabAddressableEntry>(64);
 #endif
 
         /// <summary>
@@ -1187,7 +1187,7 @@ namespace Hecton8.SaveSystem
             if (_cachedAssetLoadDispatcher == null)
                 _cachedAssetLoadDispatcher = GlobalRegistry.AssetLoadDispatcher;
             if (_cachedPlayerContext == null)
-                _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _cachedPlayerContext = GlobalRegistry.Player;
 #endif
         }
 

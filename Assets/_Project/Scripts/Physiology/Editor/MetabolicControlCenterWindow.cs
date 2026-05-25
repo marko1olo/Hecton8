@@ -86,16 +86,12 @@ namespace Hecton8.Physiology.Editor
             }
 
             DecompressionStateDTO state = states[entityIndex];
-            unsafe
+            for (int i = 0; i < ShinobuPhysiologyConstants.TissueCompartmentCount; i++)
             {
-                float* tissues = state.TissueTensions;
-                {
-                    for (int i = 0; i < ShinobuPhysiologyConstants.TissueCompartmentCount; i++)
-                    {
-                        _tissueScratch[i] = math.max(0f, tissues[i]);
-                        _mValueScratch[i] = math.max(0.1f, state.AmbientPressure * math.max(1.01f, coefficients[i].MValueRatio));
-                    }
-                }
+                _tissueScratch[i] = math.max(0f, state.GetTissueTensionN2(i));
+                float a = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(coefficients[i].BuhlmannA, ShinobuPhysiologyJobMath.ResolveEmergencyBuhlmannA(i)));
+                float b = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(coefficients[i].BuhlmannB, ShinobuPhysiologyJobMath.ResolveEmergencyBuhlmannB(i)), 0.1f, 2f);
+                _mValueScratch[i] = ShinobuPhysiologyJobMath.ResolveBuhlmannAllowedAmbientPressure(_tissueScratch[i], a, b);
             }
         }
 

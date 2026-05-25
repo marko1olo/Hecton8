@@ -21,12 +21,22 @@ namespace Hecton8.Gameplay.Loot.Contracts
         [NoAlias] public NativeArray<float3> EntityVelocities;
         [ReadOnly, NoAlias] public NativeArray<uint> EntityItemHashes;
         [ReadOnly, NoAlias] public NativeArray<ushort> EntityQuantities;
-        [WriteOnly, NoAlias] public NativeArray<LootMagnetSignalEvent> SignalEvents;
+        [NoAlias] public NativeArray<LootMagnetSignalEvent> SignalEvents;
 
         public void Execute(int index)
         {
-            SignalEvents[index] = default;
             uint flags = EntityFlags[index];
+            LootMagnetSignalEvent cachedSignal = default;
+            if ((flags & LootEntityFlags.DataOnlyDeathCache) != 0u)
+            {
+                cachedSignal = SignalEvents[index];
+                SignalEvents[index] = PreserveCachedSideband(in cachedSignal);
+            }
+            else
+            {
+                SignalEvents[index] = default;
+            }
+
             const uint requiredFlags = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.Bit_IsMagnetic;
             if ((flags & requiredFlags) != requiredFlags)
             {
@@ -85,7 +95,8 @@ namespace Hecton8.Gameplay.Loot.Contracts
                     lootAup,
                     float3.zero,
                     distSq,
-                    LootMagnetEventFlags.Acquired | LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake);
+                    LootMagnetEventFlags.Acquired | LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake,
+                    in cachedSignal);
                 return;
             }
 
@@ -124,8 +135,30 @@ namespace Hecton8.Gameplay.Loot.Contracts
                     nextAup,
                     velocity,
                     distSq,
-                    LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake);
+                    LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake,
+                    in cachedSignal);
             }
+        }
+
+        private static LootMagnetSignalEvent PreserveCachedSideband(in LootMagnetSignalEvent cachedSignal)
+        {
+            if (cachedSignal.ItemHash == 0u &&
+                cachedSignal.Quantity == 0u &&
+                cachedSignal.GeneticsMask == 0UL &&
+                cachedSignal.QualityMilli == 0 &&
+                cachedSignal.StateFlags == 0)
+            {
+                return default;
+            }
+
+            return new LootMagnetSignalEvent
+            {
+                ItemHash = cachedSignal.ItemHash,
+                Quantity = cachedSignal.Quantity,
+                GeneticsMask = cachedSignal.GeneticsMask,
+                QualityMilli = cachedSignal.QualityMilli,
+                StateFlags = cachedSignal.StateFlags
+            };
         }
 
         private bool TryResolveKernelParameters(
@@ -172,7 +205,8 @@ namespace Hecton8.Gameplay.Loot.Contracts
             AbsoluteUniversePosition positionAup,
             float3 velocity,
             float distSq,
-            uint eventFlags)
+            uint eventFlags,
+            in LootMagnetSignalEvent cachedSignal)
         {
             SignalEvents[index] = new LootMagnetSignalEvent
             {
@@ -182,7 +216,10 @@ namespace Hecton8.Gameplay.Loot.Contracts
                 Quantity = EntityQuantities[index],
                 DistanceSq = distSq,
                 Frame = Frame,
-                Flags = eventFlags
+                Flags = eventFlags,
+                GeneticsMask = cachedSignal.GeneticsMask,
+                QualityMilli = cachedSignal.QualityMilli,
+                StateFlags = cachedSignal.StateFlags
             };
         }
 

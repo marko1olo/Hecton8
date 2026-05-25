@@ -9,7 +9,7 @@ namespace Hecton8.Editor
         public static void RunBatchExtractorStorageRouteSmokePass()
         {
             bool passed = AutomationSmokeTester.RunExtractorFillsStorageSmoke(out int routedNode, out int depositedUnits);
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "[AutomationSmokeTester] ExtractorStorageRouteSmoke pass=" +
                 passed +
                 " routed=" +
@@ -33,7 +33,7 @@ namespace Hecton8.Editor
             int lastMockProgressMilli = Mathf.RoundToInt(lastMockProgress * 1000f);
             int averageMockProgressMilli = Mathf.RoundToInt(averageMockProgress * 1000f);
 
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "{\"CraftingRuntimeSmokeTester\":{\"pass\":" +
                 (passed ? "true" : "false") +
                 ",\"firstMockProgressMilli\":" +
@@ -51,7 +51,7 @@ namespace Hecton8.Editor
         public static void RunBatchOmegaAutomationSmokePass()
         {
             AutomationOmegaSmokeResult result = AutomationOmegaSmokeTester.RunLogisticsRouteStressSmoke();
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "{\"AutomationOmegaSmokeTester\":{\"pass\":" +
                 (result.Passed != 0 ? "true" : "false") +
                 ",\"nodes\":" +

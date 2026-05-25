@@ -4,8 +4,10 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Optimization;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -131,7 +133,7 @@ namespace Hecton8.Dev
             postFxRtBytes = 0L;
             uiRtBytes = 0L;
 
-            RenderTextureLifecycleTracker tracker = GlobalRegistry.RenderTextureLifecycle;
+            IRenderTextureLifecycleService tracker = GlobalRegistry.RenderTextureLifecycleService;
             if (tracker == null)
             {
                 VisorRTManager visorManager = GlobalRegistry.VisorRT;
@@ -194,12 +196,12 @@ namespace Hecton8.Dev
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _reportBuilder.Clear();
             _reportBuilder.Append("[VisualBudgetSmoke] FAIL issue=").Append(issue)
-                .Append(" graphics=").Append(_debugGraphicsDriverMemoryMb.ToString("0.0")).Append("/")
-                .Append(_debugGraphicsBudgetMb.ToString("0.0")).Append("MB")
-                .Append(" rt=").Append(_debugTrackedRenderTextureMemoryMb.ToString("0.0")).Append("MB")
-                .Append(" visor=").Append(_debugVisorRenderTextureMemoryMb.ToString("0.0")).Append("MB")
-                .Append(" postfx=").Append(_debugPostFxRenderTextureMemoryMb.ToString("0.0")).Append("MB")
-                .Append(" ui=").Append(_debugUiRenderTextureMemoryMb.ToString("0.0")).Append("MB");
+                .Append(" graphics=").Append(_debugGraphicsDriverMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("/")
+                .Append(_debugGraphicsBudgetMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" rt=").Append(_debugTrackedRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" visor=").Append(_debugVisorRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" postfx=").Append(_debugPostFxRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" ui=").Append(_debugUiRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
             Debug.LogError(_reportBuilder.ToString(), this);
 #endif
             return false;
@@ -219,13 +221,13 @@ namespace Hecton8.Dev
 
             _reportBuilder.Clear();
             _reportBuilder.Append("[VisualBudgetSmoke] PASS graphics=")
-                .Append(BytesToMegabytes(graphicsDriverBytes).ToString("0.0")).Append("/")
-                .Append(BytesToMegabytes(graphicsBudgetBytes).ToString("0.0")).Append("MB")
-                .Append(" rt=").Append(BytesToMegabytes(trackedRtBytes).ToString("0.0")).Append("MB")
-                .Append(" visor=").Append(BytesToMegabytes(visorRtBytes).ToString("0.0")).Append("MB")
-                .Append(" postfx=").Append(BytesToMegabytes(postFxRtBytes).ToString("0.0")).Append("MB")
-                .Append(" ui=").Append(BytesToMegabytes(uiRtBytes).ToString("0.0")).Append("MB");
-            Debug.Log(_reportBuilder.ToString(), this);
+                .Append(BytesToMegabytes(graphicsDriverBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("/")
+                .Append(BytesToMegabytes(graphicsBudgetBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" rt=").Append(BytesToMegabytes(trackedRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" visor=").Append(BytesToMegabytes(visorRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" postfx=").Append(BytesToMegabytes(postFxRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" ui=").Append(BytesToMegabytes(uiRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
+            Hecton8.Core.H8Debug.Log(_reportBuilder.ToString(), this);
 #endif
         }
 

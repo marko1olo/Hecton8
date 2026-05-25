@@ -1,17 +1,22 @@
-# SHINOBU_271 VR Interaction Kinematic Bridge Route Card
+﻿# SHINOBU_271 VR Interaction Kinematic Bridge Route Card
 
-Route ID: `SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE`
-Date: 2026-05-21
-Owner: `SHINOBU_271`
-Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge
-Owning file/system: `PhysicalHandController`, `VRInteractionKinematicBridge`, `VRPhysicsInquisition`
-Status: `YELLOW / LOOP 14 DOTNET SOLUTION GREEN; PENDING UNITY IMPORT, PLAY MODE, PROFILER, AND DEVICE PROOF`
+- Route ID: `SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE` Date: 2026-05-21 Owner: `SHINOBU_271` Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge Owning file/system: `PhysicalHandController`,
+- `VRInteractionKinematicBridge`,
+- `VRPhysicsInquisition` Status: `YELLOW / LOOP 14 DOTNET SOLUTION GREEN;
+- PENDING UNITY IMPORT,
+- PLAY MODE,
+- PROFILER,
+- AND DEVICE PROOF`
 
 Problem: VR hands must stop using SpringJoint/ConfigurableJoint/Rigidbody hand truth and resolve controller motion through deterministic AUP, Voxel SDF, and socket math.
 
-Why owner-local data is insufficient: the bridge consumes player/controller pose, immutable Voxel SDF data, interaction sockets, and emits presentation matrices plus combat velocity signals. Keeping those facts inside a MonoBehaviour would create duplicate truth and rollback ambiguity.
+Owner-local data is insufficient.
 
-Why direct caller/owner interface is insufficient: Voxel SDF, interaction sockets, skinned hand presentation, telemetry, and velocity damage consumers are separate domains. The bridge needs unmanaged DTO lanes and typed signal output without concrete sibling-domain references.
+Bridge consumes player/controller pose, immutable Voxel SDF data, and interaction sockets. It emits presentation matrices plus combat velocity signals. MonoBehaviour ownership would duplicate truth and rollback authority.
+
+Direct caller/owner interface is insufficient.
+
+Voxel SDF, sockets, hand presentation, telemetry, and damage consumers are separate domains. Bridge needs unmanaged DTO lanes and typed signals without sibling-domain references.
 
 Instrument:
 - `GlobalRegistry` cold service/interface for `IDataVault` and `IVoxelSonarSdfReadModel` only during cold bootstrap.

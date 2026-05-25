@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using UnityEngine;
 using Hecton8.Core;
@@ -13,7 +14,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(500)] // After most systems but before rendering
-    public sealed class PerformanceBudgetController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PerformanceBudgetController : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         [Header("Budget Settings (Target MX350)")]
         [SerializeField, Tooltip("Target frame time budget in milliseconds (16.67ms = 60fps)")]
@@ -58,6 +59,7 @@ namespace Hecton8.Tools
         private float _currentFrameTimeAverage;
         private float _nextBudgetStatusLogTime;
         private bool _registeredToTickManager;
+        private bool _hotSwapRegistered;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private readonly StringBuilder _statusLogBuilder = new StringBuilder(256); // COLD ALLOC: reused development-only status builder
@@ -74,14 +76,44 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
-            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            TryRegisterHotSwapListener();
+            TryRegisterUpdatable();
         }
 
         private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+            TryUnregisterUpdatable();
+        }
+
+        private void OnDestroy()
+        {
+            OnDisable();
+            _systemBudgetIndices.Clear();
+            _systemBudgetCount = 0;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterUpdatable();
+            TryRegisterUpdatable();
+        }
+
+        private void TryRegisterUpdatable()
+        {
+            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterUpdatable()
         {
             if (!_registeredToTickManager)
                 return;
@@ -90,11 +122,21 @@ namespace Hecton8.Tools
             _registeredToTickManager = false;
         }
 
-        private void OnDestroy()
+        private void TryRegisterHotSwapListener()
         {
-            OnDisable();
-            _systemBudgetIndices.Clear();
-            _systemBudgetCount = 0;
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void Tick(float dt)
@@ -514,32 +556,37 @@ namespace Hecton8.Tools
 
         private void LogSystemRegistered(string systemName, float budgetMs)
         {
-            Debug.Log($"[PerformanceBudgetController] Registered system '{systemName}' with {budgetMs:F2}ms budget");
+            Hecton8.Core.H8Debug.Log("[PerformanceBudgetController] Registered system '" + systemName + "' with " + budgetMs.ToString("F2", CultureInfo.InvariantCulture) + "ms budget");
         }
 
         private void LogSystemUnregistered(string systemName)
         {
-            Debug.Log($"[PerformanceBudgetController] Unregistered system '{systemName}'");
+            Hecton8.Core.H8Debug.Log($"[PerformanceBudgetController] Unregistered system '{systemName}'");
         }
 
         private void LogSystemOverBudget(string systemName, float timeUsedMs, float budgetMs)
         {
-            Debug.LogWarning($"[PerformanceBudgetController] System '{systemName}' over budget: {timeUsedMs:F2}ms > {budgetMs:F2}ms");
+            Debug.LogWarning("[PerformanceBudgetController] System '" + systemName + "' over budget: " +
+                timeUsedMs.ToString("F2", CultureInfo.InvariantCulture) + "ms > " +
+                budgetMs.ToString("F2", CultureInfo.InvariantCulture) + "ms");
         }
 
         private void LogSystemThrottled(string systemName, float frameTimeMs, float maxFrameTimeMs)
         {
-            Debug.Log($"[PerformanceBudgetController] Throttling system '{systemName}' due to high frame time ({frameTimeMs:F2}ms > {maxFrameTimeMs:F2}ms)");
+            Hecton8.Core.H8Debug.Log("[PerformanceBudgetController] Throttling system '" + systemName +
+                "' due to high frame time (" +
+                frameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms > " +
+                maxFrameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms)");
         }
 
         private void LogSystemRestored(string systemName)
         {
-            Debug.Log($"[PerformanceBudgetController] Restoring system '{systemName}' performance");
+            Hecton8.Core.H8Debug.Log($"[PerformanceBudgetController] Restoring system '{systemName}' performance");
         }
 
         private void LogBudgetStatusInternal()
         {
-            Debug.Log(DescribeStatus());
+            Hecton8.Core.H8Debug.Log(DescribeStatus());
         }
 #else
         private void LogDuplicateRegistration(string systemName) { }

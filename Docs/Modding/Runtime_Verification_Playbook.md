@@ -1,4 +1,4 @@
-# HECTON-8 Mod API Runtime Verification Playbook
+﻿# HECTON-8 Mod API Runtime Verification Playbook
 
 Date: 2026-05-19
 Status: ENVELOPE-ONLY RUNTIME PLAYBOOK / NOT EXECUTED IN THIS PASS

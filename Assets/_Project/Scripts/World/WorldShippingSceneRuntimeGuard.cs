@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -58,7 +59,12 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (suppressedCount > 0)
             {
-                Debug.Log($"[WorldShippingSceneRuntimeGuard] Deactivated {suppressedCount} suppressed objects in scene '{scene.name}'.");
+                Hecton8.Core.H8Debug.Log(
+                    "[WorldShippingSceneRuntimeGuard] Deactivated " +
+                    suppressedCount.ToString(CultureInfo.InvariantCulture) +
+                    " suppressed objects in scene '" +
+                    scene.name +
+                    "'.");
             }
 #endif
 

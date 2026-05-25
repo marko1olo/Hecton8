@@ -37,7 +37,7 @@ namespace Hecton8.Editor
             builder.Append("  \"cavityWeight\": ").Append(result.CavityWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
             builder.Append("  \"checksum\": ").Append(result.Checksum).AppendLine();
             builder.AppendLine("}");
-            File.WriteAllText(ArtifactPath, builder.ToString());
+            File.WriteAllText(ArtifactPath, builder.ToString(), new UTF8Encoding(false));
         }
     }
 }

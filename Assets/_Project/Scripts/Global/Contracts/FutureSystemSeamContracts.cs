@@ -3,6 +3,14 @@ using System.Runtime.InteropServices;
 
 namespace Hecton8.Global.Contracts
 {
+    internal static class FutureSystemSeamContractLayout
+    {
+        public const int SeamRecordStrideBytes = 64;
+        public const int CommandEnvelopeStrideBytes = 64;
+        public const int KernelBlackboxEntryStrideBytes = 64;
+        public const int FloatBitsStrideBytes = 4;
+    }
+
     public enum FutureSystemSlot : ushort
     {
         Unknown = 0,
@@ -74,7 +82,7 @@ namespace Hecton8.Global.Contracts
         RecordValidationFailed = 1u << 14
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = FutureSystemSeamContractLayout.SeamRecordStrideBytes)]
     public struct FutureSystemSeamRecord64
     {
         [FieldOffset(0)] public ulong ContractHash;
@@ -94,7 +102,7 @@ namespace Hecton8.Global.Contracts
         [FieldOffset(56)] public ulong Reserved2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = FutureSystemSeamContractLayout.CommandEnvelopeStrideBytes)]
     public struct FutureCommandEnvelope64
     {
         [FieldOffset(0)] public ushort ReservedOpcode;
@@ -110,7 +118,7 @@ namespace Hecton8.Global.Contracts
         [FieldOffset(56)] public ulong Payload6;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = FutureSystemSeamContractLayout.KernelBlackboxEntryStrideBytes)]
     public struct FutureKernelBlackboxEntry64
     {
         [FieldOffset(0)] public ulong SimTick;
@@ -128,7 +136,7 @@ namespace Hecton8.Global.Contracts
         [FieldOffset(56)] public ulong Reserved1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 4)]
+    [StructLayout(LayoutKind.Explicit, Size = FutureSystemSeamContractLayout.FloatBitsStrideBytes)]
     internal struct FutureFloatBits
     {
         [FieldOffset(0)] public float FloatValue;

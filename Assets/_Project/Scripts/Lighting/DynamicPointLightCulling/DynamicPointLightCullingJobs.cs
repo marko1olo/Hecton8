@@ -508,6 +508,7 @@ namespace Hecton8.Lighting
     /// <summary>
     /// Allocation-free CSV parser for light profile rules. The caller owns file IO and byte scratch storage.
     /// </summary>
+    #if UNITY_EDITOR
     public static class DynamicPointLightProfileCsvParser
     {
         public static int Parse(
@@ -741,4 +742,5 @@ namespace Hecton8.Lighting
             return -1;
         }
     }
+    #endif
 }

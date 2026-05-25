@@ -181,7 +181,7 @@ namespace Hecton8.Dev
                 _debugLastPass = true;
                 _debugLastIssue = string.Empty;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[BarterSmoke] COMPLETE pass=True offer={offer.offerId}");
+                Hecton8.Core.H8Debug.Log($"[BarterSmoke] COMPLETE pass=True offer={offer.offerId}");
 #endif
             }
             catch (OperationCanceledException)
@@ -315,7 +315,7 @@ namespace Hecton8.Dev
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (verboseLogging)
-                Debug.Log($"[BarterSmoke] {message}");
+                Hecton8.Core.H8Debug.Log($"[BarterSmoke] {message}");
 #endif
         }
 

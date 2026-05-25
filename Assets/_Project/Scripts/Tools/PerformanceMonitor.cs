@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Hecton8.BuildTools;
 using UnityEngine;
 using Unity.Profiling;
@@ -12,7 +13,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(1000)] // Run after most systems
-    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         [Header("Monitoring Settings")]
         [SerializeField, Tooltip("Frames to capture for averaging")]
@@ -65,6 +66,7 @@ namespace Hecton8.Tools
         // State
         private bool _isCapturing;
         private bool _registeredToTickManager;
+        private bool _hotSwapRegistered;
         private float _captureStartTime;
         private float[] _frameTimes;
         private int _frameTimeCount;
@@ -77,14 +79,33 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
-            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            TryRegisterHotSwapListener();
+            TryRegister();
         }
 
         private void OnDisable()
+        {
+            TryUnregister();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+            TryUnregisterHotSwapListener();
+            _frameTimes = null;
+            _frameTimeCount = 0;
+        }
+
+        private void TryRegister()
+        {
+            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregister()
         {
             if (!_registeredToTickManager)
                 return;
@@ -93,11 +114,33 @@ namespace Hecton8.Tools
             _registeredToTickManager = false;
         }
 
-        private void OnDestroy()
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            OnDisable();
-            _frameTimes = null;
-            _frameTimeCount = 0;
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregister();
+            TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void Tick(float dt)
@@ -179,9 +222,14 @@ namespace Hecton8.Tools
                 CalculateStats(_frameTimes, sampleCount, out mean, out worst, out best);
 
             return
-                $"capturing={_isCapturing} samples={sampleCount}/{_captureFrameCount} elapsed={elapsed:F1}s " +
-                $"mean={mean:F2}ms worst={worst:F2}ms best={best:F2}ms " +
-                $"autoLog={_autoLogToConsole} recordEntry={_recordBuildPlaytestEntry}";
+                "capturing=" + _isCapturing +
+                " samples=" + sampleCount + "/" + _captureFrameCount +
+                " elapsed=" + elapsed.ToString("F1", CultureInfo.InvariantCulture) + "s " +
+                "mean=" + mean.ToString("F2", CultureInfo.InvariantCulture) + "ms " +
+                "worst=" + worst.ToString("F2", CultureInfo.InvariantCulture) + "ms " +
+                "best=" + best.ToString("F2", CultureInfo.InvariantCulture) + "ms " +
+                "autoLog=" + _autoLogToConsole +
+                " recordEntry=" + _recordBuildPlaytestEntry;
         }
 
         private void CompleteCapture()
@@ -306,7 +354,7 @@ namespace Hecton8.Tools
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static void LogCaptureStarted(int targetFrameCount)
         {
-            Debug.Log($"[PerformanceMonitor] Started performance capture | targetFrames={targetFrameCount}");
+            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Started performance capture | targetFrames={targetFrameCount}");
         }
 
         private static void LogCaptureCompleted(PerformanceSnapshot snapshot, int sampleCount)
@@ -317,12 +365,12 @@ namespace Hecton8.Tools
                 return;
             }
 
-            Debug.Log($"[PerformanceMonitor] Capture complete | samples={sampleCount}\n{snapshot.ToDetailedString()}");
+            Hecton8.Core.H8Debug.Log($"[PerformanceMonitor] Capture complete | samples={sampleCount}\n{snapshot.ToDetailedString()}");
         }
 
         private static void LogCurrentFrameTime(float currentFrameTimeMs, int sampleCount)
         {
-            Debug.Log($"[PerformanceMonitor] Current: {currentFrameTimeMs:F2}ms | samples={sampleCount}");
+            Hecton8.Core.H8Debug.Log("[PerformanceMonitor] Current: " + currentFrameTimeMs.ToString("F2", CultureInfo.InvariantCulture) + "ms | samples=" + sampleCount);
         }
 #else
         private static void LogCaptureStarted(int targetFrameCount) { }
@@ -358,15 +406,21 @@ namespace Hecton8.Tools
 
         public string ToDetailedString()
         {
-            return $"Performance Snapshot ({Timestamp:yyyy-MM-dd HH:mm:ss})\n" +
-                   $"Frame Time: Mean={MeanFrameTime:F2}ms, Worst={WorstFrameTime:F2}ms, Best={BestFrameTime:F2}ms\n" +
-                   $"FPS: Mean={MeanFPS:F1}, Worst={WorstFPS:F1}, Best={BestFPS:F1}\n" +
-                   $"Samples: {SampleCount}";
+            return "Performance Snapshot (" + Timestamp.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) + ")\n" +
+                   "Frame Time: Mean=" + MeanFrameTime.ToString("F2", CultureInfo.InvariantCulture) +
+                   "ms, Worst=" + WorstFrameTime.ToString("F2", CultureInfo.InvariantCulture) +
+                   "ms, Best=" + BestFrameTime.ToString("F2", CultureInfo.InvariantCulture) + "ms\n" +
+                   "FPS: Mean=" + MeanFPS.ToString("F1", CultureInfo.InvariantCulture) +
+                   ", Worst=" + WorstFPS.ToString("F1", CultureInfo.InvariantCulture) +
+                   ", Best=" + BestFPS.ToString("F1", CultureInfo.InvariantCulture) + "\n" +
+                   "Samples: " + SampleCount;
         }
 
         public string ToCompactString()
         {
-            return $"{Timestamp:HH:mm:ss} | {MeanFrameTime:F1}ms ({MeanFPS:F0}fps)";
+            return Timestamp.ToString("HH:mm:ss", CultureInfo.InvariantCulture) + " | " +
+                   MeanFrameTime.ToString("F1", CultureInfo.InvariantCulture) + "ms (" +
+                   MeanFPS.ToString("F0", CultureInfo.InvariantCulture) + "fps)";
         }
     }
 }

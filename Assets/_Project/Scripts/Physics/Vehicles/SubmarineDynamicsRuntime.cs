@@ -13,7 +13,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Physics.Vehicles
 {
-    public sealed class SubmarineDynamicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable, IVehicleCommandSignalListener
+    public sealed partial class SubmarineDynamicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable, IVehicleCommandSignalListener, IGlobalRegistryHotSwapListener
     {
         private const int MockSignalCapacity = 64;
         private const int SurvivalMockSignalCapacity = 8;
@@ -87,12 +87,15 @@ namespace Hecton8.Physics.Vehicles
         private bool _registeredPostFixed;
         private bool _registeredLateFrame;
         private bool _registeredSlow;
+        private bool _registeredHotSwapListener;
         private bool _dumpWritten;
         private bool _hasPendingVehicleCommand;
+        private int _droppedSignalCount;
         private uint _frameCounter;
         private long _hydrodynamicsScheduleTicks;
         private int _commandTargetInstanceId;
         private int _visualCommandTargetInstanceId;
+        private uint _primaryVehicleEntityHash;
         private float _fluidDensityMultiplier = 1f;
         private VehicleCommandSignal _pendingVehicleCommand;
         private long _csvLastWriteTicks;
@@ -101,10 +104,21 @@ namespace Hecton8.Physics.Vehicles
         private string _csvPath;
         private string _hullProfilesCsvPath;
 
+        public int DroppedSignalCount => _droppedSignalCount;
+
         public static bool TryGetLatest(out SubmarineDynamicsRuntime runtime)
         {
             runtime = _latest;
             return runtime != null && runtime._buffersReady;
+        }
+
+        public static bool TryGetActiveGyroRouteForEntity(uint entityHash)
+        {
+            SubmarineDynamicsRuntime runtime = _latest;
+            return entityHash != 0u &&
+                   runtime != null &&
+                   runtime._buffersReady &&
+                   runtime.MatchesGyroRouteTarget(entityHash);
         }
 
         private static SubmarineDynamicsRuntime _latest;
@@ -112,19 +126,19 @@ namespace Hecton8.Physics.Vehicles
         private void OnEnable()
         {
             _latest = this;
+            _droppedSignalCount = 0;
             _projectRoot = ResolveProjectRoot();
             _csvPath = Path.Combine(_projectRoot, "sub_physics_overrides.csv");
             _hullProfilesCsvPath = Path.Combine(_projectRoot, "Data", "Physics", "vehicle_hull_profiles.csv");
+            InitializeGyroRuntimePaths();
             EnsureSignalLanes();
             RefreshCommandTargetIds();
             VehicleCommandSignalBus.Register(this);
             EnsureDataVault();
             EnsureVaultBuffers();
 
-            _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            TryRegisterHotSwapListener();
+            TryRegisterRuntimeLanes();
         }
 
         private void OnDisable()
@@ -136,22 +150,43 @@ namespace Hecton8.Physics.Vehicles
             VehicleCommandSignalBus.Unregister(this);
             UnlockSimulationBuffers();
             DumpBlackBoxIfFaulted();
+            DumpGyroBlackBoxIfFaulted();
+            DisposeGyroRuntime();
 
-            if (_registeredFixed)
-                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
-            if (_registeredPostFixed)
-                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
-            if (_registeredLateFrame)
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            if (_registeredSlow)
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-
-            _registeredFixed = false;
-            _registeredPostFixed = false;
-            _registeredLateFrame = false;
-            _registeredSlow = false;
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntimeLanes();
             if (ReferenceEquals(_latest, this))
                 _latest = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null || !isActiveAndEnabled)
+                    return;
+
+                TryUnregisterRuntimeLanes();
+                TryRegisterRuntimeLanes();
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (_integratorPending)
+                DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true);
+
+            _integratorPending = false;
+            UnlockSimulationBuffers();
+            _dataVault = currentService as IDataVault;
+            ClearVaultHandles();
+            _buffersReady = false;
+            if (isActiveAndEnabled && _dataVault != null)
+                EnsureVaultBuffers();
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -188,7 +223,7 @@ namespace Hecton8.Physics.Vehicles
             ConsumeSignals(controls, masses, forces, configs);
 
             uint frame = ++_frameCounter;
-            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float quality = ResolveMathLodQualityWeight();
             _hydrodynamicsScheduleTicks = Stopwatch.GetTimestamp();
             if (enableMockSignals)
                 TryPushMockFloodSignal(frame, quality);
@@ -207,6 +242,15 @@ namespace Hecton8.Physics.Vehicles
                 VehicleCount = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles)
             };
             JobHandle addedMassHandle = addedMassJob.Schedule(addedMassJob.VehicleCount, SubmarineDynamicsConstants.IntegratorBatchSize);
+            JobHandle gyroHandle = ScheduleGyroPipeline(
+                states,
+                forces,
+                addedMassProfiles,
+                addedMassTuning,
+                fixedDeltaTime,
+                quality,
+                frame,
+                addedMassHandle);
 
             Submarine6DIntegratorJob integratorJob = new Submarine6DIntegratorJob
             {
@@ -221,13 +265,14 @@ namespace Hecton8.Physics.Vehicles
                 Configs = configs,
                 DragLut = dragLut,
                 CavitationWriter = SignalBus<CavitationAcousticSignal>.ParallelWriter,
+                CavitationWriterBudget = SignalBus<CavitationAcousticSignal>.ParallelWriterBudget,
                 FixedDeltaTime = fixedDeltaTime,
                 GlobalQualityWeight = quality,
                 Frame = frame,
                 VehicleCount = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles)
             };
 
-            _integratorHandle = integratorJob.Schedule(integratorJob.VehicleCount, SubmarineDynamicsConstants.IntegratorBatchSize, addedMassHandle);
+            _integratorHandle = integratorJob.Schedule(integratorJob.VehicleCount, SubmarineDynamicsConstants.IntegratorBatchSize, gyroHandle);
             H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _integratorHandle);
             _integratorPending = true;
         }
@@ -247,7 +292,8 @@ namespace Hecton8.Physics.Vehicles
             signal.FillRatio01 = math.saturate(signal.WaterMassKg / 4000f);
             signal.Frame = frame;
             signal.Flags = 1;
-            SignalBus<MockFloodSignal>.TryPush(in signal);
+            if (!SignalBus<MockFloodSignal>.TryPush(in signal))
+                IncrementDroppedSignalCount();
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -260,10 +306,12 @@ namespace Hecton8.Physics.Vehicles
 
             _integratorPending = false;
             PatchHydrodynamicsElapsedMicros(ResolveElapsedMicros(_hydrodynamicsScheduleTicks));
+            PatchGyroElapsedMicros(ResolveElapsedMicros(_gyroScheduleTicks));
             UnlockSimulationBuffers();
             DrainCavitationSignals();
             bool faulted = DumpBlackBoxIfFaulted();
-            if (!faulted)
+            bool gyroFaulted = DumpGyroBlackBoxIfFaulted();
+            if (!faulted && !gyroFaulted)
                 RecordVaultSovereigntyTelemetry(0u);
         }
 
@@ -279,6 +327,7 @@ namespace Hecton8.Physics.Vehicles
             Transform target = visualRoot != null ? visualRoot : transform;
             Quaternion rotation = new Quaternion(state.Rotation.value.x, state.Rotation.value.y, state.Rotation.value.z, state.Rotation.value.w);
             target.SetPositionAndRotation(new Vector3(state.LocalPosition.x, state.LocalPosition.y, state.LocalPosition.z), rotation);
+            SyncGyroVisualBuffer();
         }
 
 #if UNITY_EDITOR
@@ -304,6 +353,7 @@ namespace Hecton8.Physics.Vehicles
             Gizmos.matrix = Matrix4x4.TRS(origin, rotation, new Vector3(axisScale.x, axisScale.y, axisScale.z));
             Gizmos.DrawWireSphere(Vector3.zero, 1f);
             Gizmos.matrix = previousMatrix;
+            DrawGyroDebugGizmos();
         }
 
         private bool TryResolveEditorKinematicPose(ref Vector3 origin, ref Quaternion rotation)
@@ -363,8 +413,11 @@ namespace Hecton8.Physics.Vehicles
             if (!_integratorPending && !_buffersLocked)
                 EnsureVaultBuffers();
             RefreshCommandTargetIds();
+#if UNITY_EDITOR
             TryApplyCsvOverrides();
             TryApplyHullProfilesCsv();
+            TryApplyGyroProfilesCsv();
+#endif
         }
 
         public void OnVehicleCommandSignal(in VehicleCommandSignal signal)
@@ -392,6 +445,72 @@ namespace Hecton8.Physics.Vehicles
             _dataVault = GlobalRegistry.DataVault;
 
             return _dataVault != null;
+        }
+
+        private void TryRegisterRuntimeLanes()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredFixed)
+                _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+            if (!_registeredPostFixed)
+                _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!_registeredSlow)
+                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterRuntimeLanes()
+        {
+            if (_registeredFixed)
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            if (_registeredPostFixed)
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+            if (_registeredLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (_registeredSlow)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+
+            _registeredFixed = false;
+            _registeredPostFixed = false;
+            _registeredLateFrame = false;
+            _registeredSlow = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void ClearVaultHandles()
+        {
+            _stateHandle = default;
+            _controlHandle = default;
+            _pidHandle = default;
+            _massHandle = default;
+            _forceHandle = default;
+            _telemetryHandle = default;
+            _addedMassHandle = default;
+            _hydrodynamicsTelemetryHandle = default;
+            _hullProfileHandle = default;
+            _addedMassTuningHandle = default;
+            _configHandle = default;
+            _dragLutHandle = default;
+            _vehicleDamageStateReadHandle = default;
         }
 
         private bool TryResolveVaultHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
@@ -446,18 +565,23 @@ namespace Hecton8.Physics.Vehicles
                 return false;
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
-            _stateHandle = _dataVault.GetGenerationHandle<SubmarineKinematicState>(BufferID.SubmarineKinematicStates, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _controlHandle = _dataVault.GetGenerationHandle<SubmarineKinematicControl>(BufferID.SubmarineKinematicControls, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _pidHandle = _dataVault.GetGenerationHandle<SubmarinePidState>(BufferID.SubmarineKinematicPidStates, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _massHandle = _dataVault.GetGenerationHandle<SubmarineMassProperties>(BufferID.SubmarineKinematicMassProperties, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _forceHandle = _dataVault.GetGenerationHandle<SubmarineForceAccumulator>(BufferID.SubmarineKinematicForces, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _dataVault.GetGenerationHandle<SubmarineKinematicTelemetry>(BufferID.SubmarineKinematicTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _addedMassHandle = _dataVault.GetGenerationHandle<AddedMassProfileDTO>(BufferID.Shinobu251AddedMassProfiles, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
-            _hydrodynamicsTelemetryHandle = _dataVault.GetGenerationHandle<SubmarineHydrodynamicsTelemetry>(BufferID.Shinobu251HydrodynamicsTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
-            _hullProfileHandle = _dataVault.GetGenerationHandle<SubmarineHullProfileDTO>(BufferID.Shinobu251HullProfiles, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _addedMassTuningHandle = _dataVault.GetGenerationHandle<SubmarineAddedMassTuningDTO>(BufferID.Shinobu251AddedMassTuning, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _configHandle = _dataVault.GetGenerationHandle<SubmarineKinematicConfig>(BufferID.SubmarineKinematicConfig, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _dragLutHandle = _dataVault.GetGenerationHandle<float>(BufferID.SubmarineKinematicDragLut, SubmarineDynamicsConstants.DragLutSamples, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _stateHandle = _dataVault.EnsureGenerationHandle<SubmarineKinematicState>(BufferID.SubmarineKinematicStates, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _controlHandle = _dataVault.EnsureGenerationHandle<SubmarineKinematicControl>(BufferID.SubmarineKinematicControls, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _pidHandle = _dataVault.EnsureGenerationHandle<SubmarinePidState>(BufferID.SubmarineKinematicPidStates, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _massHandle = _dataVault.EnsureGenerationHandle<SubmarineMassProperties>(BufferID.SubmarineKinematicMassProperties, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _forceHandle = _dataVault.EnsureGenerationHandle<SubmarineForceAccumulator>(BufferID.SubmarineKinematicForces, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = _dataVault.EnsureGenerationHandle<SubmarineKinematicTelemetry>(BufferID.SubmarineKinematicTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _addedMassHandle = _dataVault.EnsureGenerationHandle<AddedMassProfileDTO>(BufferID.Shinobu251AddedMassProfiles, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _hydrodynamicsTelemetryHandle = _dataVault.EnsureGenerationHandle<SubmarineHydrodynamicsTelemetry>(BufferID.Shinobu251HydrodynamicsTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _hullProfileHandle = _dataVault.EnsureGenerationHandle<SubmarineHullProfileDTO>(BufferID.Shinobu251HullProfiles, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _addedMassTuningHandle = _dataVault.EnsureGenerationHandle<SubmarineAddedMassTuningDTO>(BufferID.Shinobu251AddedMassTuning, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _configHandle = _dataVault.EnsureGenerationHandle<SubmarineKinematicConfig>(BufferID.SubmarineKinematicConfig, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _dragLutHandle = _dataVault.EnsureGenerationHandle<float>(BufferID.SubmarineKinematicDragLut, SubmarineDynamicsConstants.DragLutSamples, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            if (!EnsureGyroVaultBuffers(capacity))
+            {
+                _buffersReady = false;
+                return false;
+            }
 
             if (!IsGenerationHandleCreated(in _stateHandle) || !IsGenerationHandleCreated(in _controlHandle) || !IsGenerationHandleCreated(in _pidHandle) ||
                 !IsGenerationHandleCreated(in _massHandle) || !IsGenerationHandleCreated(in _forceHandle) || !IsGenerationHandleCreated(in _telemetryHandle) ||
@@ -699,7 +823,7 @@ namespace Hecton8.Physics.Vehicles
                 float yaw = math.clamp(command.Yaw, -1f, 1f);
                 control.Throttle01 = math.saturate(command.Throttle);
                 control.TorqueLocal = new float3(-pitch, yaw, 0f);
-                if ((((VehicleCommandSignalFlags)command.Flags) & VehicleCommandSignalFlags.BallastBlow) != 0 ||
+                if ((command.Flags & (byte)VehicleCommandSignalFlags.BallastBlow) != 0 ||
                     math.abs(command.BallastDelta) > 0.0001f)
                 {
                     control.BallastCommand01 = math.saturate(control.BallastCommand01 + command.BallastDelta);
@@ -884,7 +1008,8 @@ namespace Hecton8.Physics.Vehicles
                 !TryAcquireVaultWriteLock(in _hullProfileHandle, out _) ||
                 !TryAcquireVaultWriteLock(in _addedMassTuningHandle, out _) ||
                 !TryAcquireVaultWriteLock(in _configHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _dragLutHandle, out _))
+                !TryAcquireVaultWriteLock(in _dragLutHandle, out _) ||
+                !TryLockGyroBuffers())
             {
                 _buffersLocked = true;
                 UnlockSimulationBuffers();
@@ -912,6 +1037,7 @@ namespace Hecton8.Physics.Vehicles
             ReleaseVaultWriteLock(in _addedMassTuningHandle);
             ReleaseVaultWriteLock(in _configHandle);
             ReleaseVaultWriteLock(in _dragLutHandle);
+            UnlockGyroBuffers();
             _buffersLocked = false;
         }
 
@@ -1062,7 +1188,7 @@ namespace Hecton8.Physics.Vehicles
                 state.CenterOfBuoyancyLocal = ToFloat3(centerOfBuoyancyLocal);
                 state.InertiaTensor = new float3(28000f, 92000f, 92000f);
                 state.TotalMassKg = config.BaseMassKg;
-                state.EntityId = (uint)i;
+                state.EntityId = ResolveVehicleEntityHashForIndex(i);
                 states[i] = state;
 
                 SubmarineKinematicControl control = controls[i];
@@ -1109,6 +1235,7 @@ namespace Hecton8.Physics.Vehicles
             }
         }
 
+#if UNITY_EDITOR
         private bool TryApplyCsvOverrides()
         {
             if (!_buffersReady || _dataVault == null || _integratorPending || _buffersLocked)
@@ -1500,76 +1627,82 @@ namespace Hecton8.Physics.Vehicles
             bool fractional = false;
             float value = 0f;
             float fractionScale = 0.1f;
+            Span<byte> readBuffer = stackalloc byte[512];
 
             while (true)
             {
-                int raw = stream.ReadByte();
-                bool end = raw < 0;
-                byte c = end ? (byte)'\n' : (byte)raw;
-                if (c == (byte)',' && !readingValue)
+                int read = stream.Read(readBuffer);
+                if (read <= 0)
+                    break;
+
+                for (int i = 0; i < read; i++)
                 {
-                    readingValue = true;
-                    continue;
-                }
+                    byte c = readBuffer[i];
+                    if (c == (byte)',' && !readingValue)
+                    {
+                        readingValue = true;
+                        continue;
+                    }
 
-                bool lineEnd = c == (byte)'\n' || c == (byte)'\r';
-                if (lineEnd || end)
-                {
-                    if (keyActive && readingValue)
-                        ApplyOverride(keyHash, negative ? -value : value, ref config, ref control, ref hull);
+                    bool lineEnd = c == (byte)'\n' || c == (byte)'\r';
+                    if (lineEnd)
+                    {
+                        if (keyActive && readingValue)
+                            ApplyOverride(keyHash, negative ? -value : value, ref config, ref control, ref hull);
 
-                    keyHash = 2166136261u;
-                    keyActive = false;
-                    readingValue = false;
-                    negative = false;
-                    fractional = false;
-                    value = 0f;
-                    fractionScale = 0.1f;
-                    if (end)
-                        break;
+                        keyHash = 2166136261u;
+                        keyActive = false;
+                        readingValue = false;
+                        negative = false;
+                        fractional = false;
+                        value = 0f;
+                        fractionScale = 0.1f;
+                        continue;
+                    }
 
-                    continue;
-                }
+                    if (!readingValue)
+                    {
+                        if (c == (byte)' ' || c == (byte)'\t')
+                            continue;
 
-                if (!readingValue)
-                {
-                    if (c == (byte)' ' || c == (byte)'\t')
+                        if (c >= (byte)'A' && c <= (byte)'Z')
+                            c = (byte)(c + 32);
+                        keyHash ^= c;
+                        keyHash *= 16777619u;
+                        keyActive = true;
+                        continue;
+                    }
+
+                    if (c == (byte)'-')
+                    {
+                        negative = true;
+                        continue;
+                    }
+
+                    if (c == (byte)'.')
+                    {
+                        fractional = true;
+                        continue;
+                    }
+
+                    if (c < (byte)'0' || c > (byte)'9')
                         continue;
 
-                    if (c >= (byte)'A' && c <= (byte)'Z')
-                        c = (byte)(c + 32);
-                    keyHash ^= c;
-                    keyHash *= 16777619u;
-                    keyActive = true;
-                    continue;
-                }
-
-                if (c == (byte)'-')
-                {
-                    negative = true;
-                    continue;
-                }
-
-                if (c == (byte)'.')
-                {
-                    fractional = true;
-                    continue;
-                }
-
-                if (c < (byte)'0' || c > (byte)'9')
-                    continue;
-
-                float digit = c - (byte)'0';
-                if (fractional)
-                {
-                    value += digit * fractionScale;
-                    fractionScale *= 0.1f;
-                }
-                else
-                {
-                    value = (value * 10f) + digit;
+                    float digit = c - (byte)'0';
+                    if (fractional)
+                    {
+                        value += digit * fractionScale;
+                        fractionScale *= 0.1f;
+                    }
+                    else
+                    {
+                        value = (value * 10f) + digit;
+                    }
                 }
             }
+
+            if (keyActive && readingValue)
+                ApplyOverride(keyHash, negative ? -value : value, ref config, ref control, ref hull);
         }
 
         private void ApplyOverride(
@@ -1651,6 +1784,7 @@ namespace Hecton8.Physics.Vehicles
                     break;
             }
         }
+#endif
 
         private bool DumpBlackBoxIfFaulted()
         {
@@ -1702,7 +1836,7 @@ namespace Hecton8.Physics.Vehicles
 
         private void RecordVaultSovereigntyTelemetry(uint flags)
         {
-            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float quality = ResolveMathLodQualityWeight();
             VaultSovereigntyTelemetry.TryRecord(
                 _dataVault,
                 _frameCounter,
@@ -1712,6 +1846,15 @@ namespace Hecton8.Physics.Vehicles
                 globalQualityWeight: quality,
                 sourceHash: VaultSovereigntyTelemetry.PhysicsSourceHash,
                 flags: flags);
+        }
+
+        private static float ResolveMathLodQualityWeight()
+        {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
         private int ResolveVaultTelemetryStride(float globalQualityWeight)
@@ -1821,12 +1964,15 @@ namespace Hecton8.Physics.Vehicles
         private static void EnsureSignalLanes()
         {
             SignalBus<MockFloodSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x4D464C44u);
-            SignalBus<MockImpactSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x4D494D50u);
-            SignalBus<CavitationAcousticSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x43564156u);
-            SignalBus<FluidDensityChangedSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x46444E53u);
             SignalBus<MockFloodSignal>.EnsureInitialized();
+
+            SignalBus<MockImpactSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x4D494D50u);
             SignalBus<MockImpactSignal>.EnsureInitialized();
+
+            SignalBus<CavitationAcousticSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x43564156u);
             SignalBus<CavitationAcousticSignal>.EnsureInitialized();
+
+            SignalBus<FluidDensityChangedSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x46444E53u);
             SignalBus<FluidDensityChangedSignal>.EnsureInitialized();
         }
 
@@ -1851,8 +1997,15 @@ namespace Hecton8.Physics.Vehicles
                 ping.SourceId = CavitationSourceId;
                 ping.Channel = AcousticPingSignal.ChannelMetalStress;
                 ping.Flags = 0;
-                SignalBus<AcousticPingSignal>.TryPush(in ping);
+                if (!SignalBus<AcousticPingSignal>.TryPush(in ping))
+                    IncrementDroppedSignalCount();
             }
+        }
+
+        private void IncrementDroppedSignalCount()
+        {
+            if (_droppedSignalCount < 0x3FFFFFFF)
+                _droppedSignalCount++;
         }
 
         private bool TryReadConfigForSignalBridge(out SubmarineKinematicConfig config)
@@ -1876,19 +2029,41 @@ namespace Hecton8.Physics.Vehicles
             _visualCommandTargetInstanceId = visualRoot != null
                 ? unchecked((int)EntityId.ToULong(visualRoot.gameObject.GetEntityId()))
                 : 0;
+            _primaryVehicleEntityHash = unchecked((uint)_commandTargetInstanceId);
+        }
+
+        private uint ResolveVehicleEntityHashForIndex(int index)
+        {
+            return index == 0 && _primaryVehicleEntityHash != 0u
+                ? _primaryVehicleEntityHash
+                : (uint)index;
+        }
+
+        private bool MatchesGyroRouteTarget(uint entityHash)
+        {
+            uint commandHash = unchecked((uint)_commandTargetInstanceId);
+            uint visualHash = unchecked((uint)_visualCommandTargetInstanceId);
+            return entityHash != 0u &&
+                   (entityHash == _primaryVehicleEntityHash ||
+                    entityHash == commandHash ||
+                    (visualHash != 0u && entityHash == visualHash));
         }
 
         private static uint ReadUInt32At(FileStream stream, long offset)
         {
             stream.Position = offset;
-            int b0 = stream.ReadByte();
-            int b1 = stream.ReadByte();
-            int b2 = stream.ReadByte();
-            int b3 = stream.ReadByte();
-            if ((b0 | b1 | b2 | b3) < 0)
-                throw new EndOfStreamException();
+            Span<byte> bytes = stackalloc byte[4];
+            int total = 0;
+            while (total < bytes.Length)
+            {
+                int read = stream.Read(bytes.Slice(total));
+                if (read <= 0)
+                    throw new EndOfStreamException();
 
-            return (uint)(b0 | (b1 << 8) | (b2 << 16) | (b3 << 24));
+                total += read;
+            }
+
+            return (uint)(bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24));
         }
 
         private static float ReadFloatAt(FileStream stream, long offset)

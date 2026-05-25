@@ -1,0 +1,60 @@
+﻿{
+  "schema": "HECTON8_UX_OPTIMIZATION_REPORT_MULTI_AGENT_V1",
+  "updatedBy": "SHINOBU_353",
+  "reports": [
+    {
+      "agent": "SHINOBU_353",
+      "summary": "OOP Hardware API Calls Eradicated",
+      "scanner": "OOP_Gamepad_Scanner Roslyn AST haptic hardware scan",
+      "status": "STATIC PASS / BUILD EXTERNAL CONSTRUCTION_HABITAT WALL",
+      "scannerMode": "ROSLYN_AST_WITH_TOKEN_FALLBACK",
+      "scannerUsesRoslynAst": true,
+      "lastShellProofMode": "PowerShell token re-scan after AST scanner patch; Unity Editor menu invocation writes live astParsedFiles/fallback counters",
+      "rootsRequested": [
+        "Assets/_Project/Scripts/Physics",
+        "Assets/_Project/Scripts/Input",
+        "Assets/_Project/Scripts/Interaction",
+        "Assets/_Project/Scripts/Combat",
+        "Assets/_Project/Scripts/Gameplay"
+      ],
+      "rootsPresent": 4,
+      "missingRoots": [
+        "Assets/_Project/Scripts/Combat"
+      ],
+      "filesScanned": 269,
+      "directHardwareCalls": 0,
+      "collisionCallbacksObserved": 1,
+      "hardwarePatterns": [
+        "Gamepad.current",
+        "SetMotorSpeeds",
+        "OVRInput.SetControllerVibration",
+        "SendHapticImpulse",
+        "SendImpulse (XR/rumbler qualified only)"
+      ],
+      "findings": [
+        {
+          "kind": "collisionCallback",
+          "path": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
+          "line": 411,
+          "source": "private void OnCollisionEnter(Collision collision)"
+        }
+      ],
+      "requiredRuntimeRoute": "SignalBus snapshots -> Burst haptic synthesis jobs -> HapticPulseSignal -> InputDispatcher PAL haptic command buffer",
+      "manualProof": "OOP_Gamepad_Scanner now parses C# through Roslyn CSharpSyntaxTree with token fallback only for parser failures and preserves adjacent agent reports when writing this shared JSON. A shell token re-scan after the AST patch found zero direct controller haptic hardware calls in the requested producer roots. One legacy collision callback remains in Gameplay, but no haptic hardware call is present there."
+    },
+    {
+      "agent": "SHINOBU_354",
+      "summary": "OOP Camera Shake Eradicated",
+      "scanner": "Zero-dependency scoped source parser for Camera.main transform / AnimationClip / AnimationCurve / Cinemachine impulse-source / managed random camera-shake routes",
+      "status": "STATIC PASS / BUILD EXTERNAL CONSTRUCTION_HABITAT WALL",
+      "findings": [],
+      "filesScanned": 2368,
+      "cameraRelevantFiles": 75,
+      "findingCount": 0,
+      "scannerParserRoute": "Comment/string-stripped lexical source parser with method-scope checks; no external parser dependency",
+      "requiredRuntimeRoute": "SignalBus snapshots -> Burst CameraJuiceStateDTO -> projection matrix offset; no transform hierarchy shake",
+      "burstBudgetProof": "Burst section over 100 us sets CameraJuiceFlagBurstBudgetExceeded, records the current telemetry row, then requests Dump_SHINOBU_354.bin.",
+      "manualProof": "rg over SHINOBU_354 runtime found no Camera.main.transform, CinemachineImpulse, AnimationClip, AnimationCurve, Random.insideUnitSphere, Random.Range, StartCoroutine, WaitForSeconds, Unity Time API use, TryGetLatestCreated, Pack=1, new NativeArray, hidden Complete(), BinaryWriter, NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr, CameraJuiceSignals.TryDequeueImpact, impactSignal.Point fallback, default mock NativeArray.ReadOnly route, math.rotateleft, _playerMovement.CurrentAup hot fallback, or hardware-class binary quality switches in the procedural camera juice path. ShakeProfile source is scalar-only; stale serialized FalloffCurve YAML in old ScriptableObject assets is ignored by runtime because no source field exists. RunProceduralCameraJuice clears projection and fails closed on _cameraJuiceBuffersSeeded or stale cached rows; EnsureProceduralCameraJuiceBuffers remains cold lifecycle/editor only. Missing AUP/Vault failure now clears pending manual trauma and native state/impulse/projection rows when cached handles resolve, then fails closed instead of reading Gameplay player movement state. Player AUP, telemetry dump/editor graph, and selected-camera gizmo readbacks use TryReadOnlyHandle; mutable Vault views are reserved for owner writes. EvaluateCameraTraumaJob guards every SignalBus GetFrameSnapshotArray result with IsCreated before Length/indexing, because empty snapshots return default read-only native views; the same job rejects non-finite player/epicenter/delta AUP values, clamps local double deltas to +/-262144 meters before float-local math, finite-gates raw signal severity/radius before max/abs/amplitude/radius derivation, reads and finite-gates read-only Vault tuning radii for AUP attenuation, finite-gates quality before attenuation math, and finite-gates plus bounds manual presentation trauma/direction and stale directional memory/timer before directional normalization. IntegrateProceduralShakeJob consumes Vault tuning through a read-only NoAlias view, preserves non-finite effective scale until the Burst finite gate, sanitizes incoming trauma/directional lanes before saturate/projection emission, finite-gates effective scale plus Vault tuning scalars before sine/noise/projection math, uses deterministic TemporalAdmission01 quality-weight Math LOD with exact zero/one endpoints so expected Simplex ALU scales with smooth weights while visual contribution ramps continuously, records CameraJuiceFlagNanSanitized before invalid scalar/vector lanes are zeroed or defaulted, and wraps CameraJuiceStateDTO.TimeAccumulator through CameraJuiceBurstMath.WrapPhase() into a 1024-cycle window so 100-hour sessions do not lose float phase precision while preserving the mandated 32-byte DTO layout. Managed ingress now finite-gates CombatDamageResult.TraumaLevel and physics impact normals before manual impulse accumulation. The cold camera_trauma_profiles.csv bridge is ReadOnlySpan<byte>-based; required numeric cells must parse, blank optional cells keep safe defaults, malformed/trailing-junk tokens reject the row instead of being partially accepted, and valid radius cells hydrate the same Vault tuning row consumed by the Burst evaluator. Invalid native projection/state rows are sanitized into _cameraJuiceLast*, recorded, and then dumped, so Dump_SHINOBU_354.bin includes the fault frame. Dump_SHINOBU_354.bin starts with a 32-byte SCJ5/version4/stride/capacity/unsignedCursor/count/startIndex header before raw fixed rows and emits wrapped rings oldest-to-newest through raw ReadOnlySpan<byte> writes from NativeArray<T>.ReadOnly.GetUnsafeReadOnlyPtr(); the dump throttle flips only after successful stream write completion, managed shake exceptions force a telemetry row and dump request, and the cold fault path ensures Docs/AgentLogs exists. OOP_CameraShake_Scanner now also catches hot transform.localRotation and transform.localEulerAngles writes, then upserts SHINOBU_354 into this shared multi-agent report without Roslyn/package imports or overwriting adjacent reports. The broad VFX hit speedLineObject.transform.localPosition/localRotation is cold speed-line child setup, not camera shake. Adjacent CameraJuiceProcessor/HectonPlayerMovement findings are Player locomotion/somatic bob/FOV ownership, not the SHINOBU_354 explosive/seismic AUP projection-shake route."
+    }
+  ]
+}

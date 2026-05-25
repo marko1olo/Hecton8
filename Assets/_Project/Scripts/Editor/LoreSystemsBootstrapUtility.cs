@@ -35,8 +35,7 @@ namespace Hecton8.Editor
                 Undo.RegisterCreatedObjectUndo(loreSystemsGo, "Create LoreSystems");
             }
 
-            HectonLoreSystemsRoot root = loreSystemsGo.GetComponent<HectonLoreSystemsRoot>();
-            if (root == null)
+            if (!loreSystemsGo.TryGetComponent(out HectonLoreSystemsRoot root))
             {
                 root = Undo.AddComponent<HectonLoreSystemsRoot>(loreSystemsGo);
             }

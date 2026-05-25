@@ -1,4 +1,4 @@
-# SHINOBU_263 Analytical Gerstner Wave Solver
+﻿# SHINOBU_263 Analytical Gerstner Wave Solver
 
 Owner: ECHELON 4 / Hydrodynamic Drag & Buoyancy.
 
@@ -19,13 +19,25 @@ Owner: ECHELON 4 / Hydrodynamic Drag & Buoyancy.
 - `Shinobu263WaveTelemetryRing`: 300-entry black box.
 - `Shinobu263WaveTelemetryCursor`: telemetry write cursor.
 - `Shinobu263WaveProfiles`: CSV wave profile rows.
-- `Shinobu263WaveCounters`: 64-byte `WaveMathCounterLane` rows for evaluated/coarse/nonfinite/stale-origin counters; each mutated lane is isolated to one cache line to prevent counter false sharing. The four rows are cleared synchronously in the locked owner window, not through a tiny scheduled job.
+- `Shinobu263WaveCounters`: 64-byte `WaveMathCounterLane` rows.
+- Counters: evaluated, coarse, nonfinite, stale-origin.
+- Each mutated lane is one cache line to prevent false sharing.
+- Four rows clear synchronously in locked owner window, not tiny scheduled job.
 
 ## Math Rules
 
-- AUP is localized in double precision as `SampleAUP - LocalOriginAUP`, then each octave adds a double-precision `dot(direction, LocalOriginAUP) mod wavelength` phase term before float SIMD trig. This preserves absolute Gerstner phase across floating-origin shifts without raw absolute double trigonometry in the hot lane loop.
-- Time phase uses `GerstnerWaveTuningDTO.PhaseTimeSeconds@120` as a double and wraps `phaseVelocity * waveNumber * time` in double before float SIMD trig. `ResolvePhaseTimeSeconds` seeds from sanitized legacy `TimeSeconds` only when the double lane is not yet positive/finite, so hot-loaded or partially hydrated DTOs do not snap phase to zero or propagate legacy NaN.
-- `GlobalQualityWeight` continuously resolves an octave budget through `math.smoothstep`; the budget is cached once per SIMD group/scalar sample, `ResolveActiveOctaves` schedules the partially active last octave, and `ResolveOctaveWeight` fades its amplitude instead of popping octave rows on/off. It does not change DTO layout, request identity, or authority route.
+- AUP localizes in double precision as `SampleAUP - LocalOriginAUP`.
+- Each octave adds double-precision `dot(direction, LocalOriginAUP) mod wavelength` phase before float SIMD trig.
+- This preserves absolute Gerstner phase across floating-origin shifts without raw absolute double trigonometry in the hot lane loop.
+- Time phase:
+  - Lane: `GerstnerWaveTuningDTO.PhaseTimeSeconds@120` as double.
+  - Wrap: `phaseVelocity * waveNumber * time` in double before float SIMD trig.
+  - Legacy seed: sanitized `TimeSeconds` only when the double lane is not positive/finite.
+  - Guard: hot-loaded or partially hydrated DTOs cannot snap phase to zero or propagate legacy NaN.
+- `GlobalQualityWeight` continuously resolves octave budget through `math.smoothstep`.
+- Budget is cached once per SIMD group/scalar sample.
+- `ResolveActiveOctaves` schedules the partially active last octave; `ResolveOctaveWeight` fades amplitude instead of toggling rows.
+- DTO layout, request identity, and authority route are unchanged.
 - Coarse samples use the macro grid. Mixed vector groups still compute full lanes and select per lane; all-coarse groups skip full Gerstner accumulation.
 - Packed full evaluation and scalar macro-grid generation both route amplitude through `AnalyticalGerstnerWaveMath.ResolveAmplitude`, including authored storm weight, so quality LOD changes octave count and sampling path without changing the swell amplitude envelope.
 - The Dear Lie is explicit: buoyancy samples use requested XZ without iterative horizontal inversion. Rendering remains presentation-owned.
@@ -36,10 +48,19 @@ Owner: ECHELON 4 / Hydrodynamic Drag & Buoyancy.
 
 ## Black Box
 
-The solver records the last 300 high-level frames to `WaveMathTelemetryEntry`. `PostFixedTick` locks `Shinobu263WaveTelemetryRing` and `Shinobu263WaveTelemetryCursor` before writing the ring/cursor and before dump readback. `TelemetryCursor[0]` is a monotonic write count, not a wrapped slot, so early dumps and wrapped dumps can both be decoded. If elapsed solver time exceeds the tuning threshold or nonfinite output is detected, it dumps `Docs/AgentLogs/Dump_SHINOBU_263.bin` as a 32-byte little-endian header followed by 64-byte telemetry rows in oldest-to-newest ring order.
+- The solver records the last 300 high-level frames to `WaveMathTelemetryEntry`.
+- `PostFixedTick` locks `Shinobu263WaveTelemetryRing` and `Shinobu263WaveTelemetryCursor` before writing the ring/cursor and before dump readback.
+- `TelemetryCursor[0]` is a monotonic write count, not a wrapped slot, so early dumps and wrapped dumps can both be decoded.
+- If elapsed solver time exceeds the tuning threshold or nonfinite output is detected, it dumps `Docs/AgentLogs/Dump_SHINOBU_263.bin` as a 32-byte little-endian header followed by 64-byte telemetry rows in oldest-to-newest ring order.
 
-Header bytes start with ASCII `H8S263`. Header fields include row size, telemetry capacity, monotonic write count, `AnalyticalGerstnerWaveConstants.KernelHash`, oldest-start slot, and valid-row count. Reserved bytes are zeroed before field writes. The dump header is diagnostic only; it does not change gameplay truth, save identity, rollback state, BufferIDs, or telemetry row stride.
+Dump header:
+
+- Magic: ASCII `H8S263`.
+- Fields: row size, telemetry capacity, monotonic write count, `AnalyticalGerstnerWaveConstants.KernelHash`, oldest-start slot, valid-row count.
+- Reserved bytes: zeroed before field writes.
+- Scope: diagnostic only.
+- Does not change gameplay truth, save identity, rollback state, BufferIDs, or telemetry row stride.
 
 ## Verification Status
 
-Implementation is pending Unity import/Burst compile verification. No frame-time claim in this document is treated as verified until a fresh Console/profiler artifact is attached by the integrator.
+Implementation is pending Unity import/Burst compile verification. Frame-time claims require fresh Console/profiler artifact.

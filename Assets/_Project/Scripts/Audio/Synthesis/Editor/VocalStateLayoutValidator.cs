@@ -9,6 +9,15 @@ namespace Hecton8.Audio.Synthesis.Editor
 {
     public static class VocalStateLayoutValidator
     {
+        private const int VocalBankHeaderStrideBytes = 64;
+        private const int VocalBankIndexRecordStrideBytes = 32;
+        private const int VocalDialogueMetadataStrideBytes = 16;
+        private const int VocalStateStrideBytes = 32;
+        private const int VocalCodecStateStrideBytes = 64;
+        private const int VocalTelemetryStrideBytes = 64;
+        private const int VocalDecodeCountersStrideBytes = 64;
+        private const int VocalCueSignalStrideBytes = 64;
+
         [MenuItem("HECTON-8/Audio/Validate Vocal Bank ABI")]
         public static void ValidateMenu()
         {
@@ -18,14 +27,14 @@ namespace Hecton8.Audio.Synthesis.Editor
 
         public static void ValidateOrThrow()
         {
-            AssertSize<VocalBankHeaderDTO>(64);
-            AssertSize<VocalBankIndexRecordDTO>(32);
-            AssertSize<VocalDialogueMetadataDTO>(16);
-            AssertSize<VocalStateDTO>(32);
-            AssertSize<VocalCodecStateDTO>(64);
-            AssertSize<VocalTelemetryEntryDTO>(64);
-            AssertSize<VocalDecodeCounters64>(64);
-            AssertSize<VocalCueSignal>(64);
+            AssertSize<VocalBankHeaderDTO>(VocalBankHeaderStrideBytes);
+            AssertSize<VocalBankIndexRecordDTO>(VocalBankIndexRecordStrideBytes);
+            AssertSize<VocalDialogueMetadataDTO>(VocalDialogueMetadataStrideBytes);
+            AssertSize<VocalStateDTO>(VocalStateStrideBytes);
+            AssertSize<VocalCodecStateDTO>(VocalCodecStateStrideBytes);
+            AssertSize<VocalTelemetryEntryDTO>(VocalTelemetryStrideBytes);
+            AssertSize<VocalDecodeCounters64>(VocalDecodeCountersStrideBytes);
+            AssertSize<VocalCueSignal>(VocalCueSignalStrideBytes);
 
             AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.PhraseHashID), 0);
             AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.CurrentSampleIndex), 4);

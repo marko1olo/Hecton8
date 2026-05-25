@@ -28,6 +28,52 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void WalFuzzStateDTO_IsExplicit32AndArm64Aligned()
+        {
+            StructLayoutAttribute layout = typeof(WalFuzzStateDTO).StructLayoutAttribute;
+            Assert.IsNotNull(layout);
+            Assert.AreEqual(LayoutKind.Explicit, layout.Value);
+            Assert.AreEqual(32, UnsafeUtility.SizeOf<WalFuzzStateDTO>());
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<WalFuzzStateDTO>() & 7);
+            Assert.AreEqual(0, (int)Marshal.OffsetOf<WalFuzzStateDTO>(nameof(WalFuzzStateDTO.InterruptedByteOffset)));
+            Assert.AreEqual(4, (int)Marshal.OffsetOf<WalFuzzStateDTO>(nameof(WalFuzzStateDTO.FinalValidatedBytes)));
+            Assert.AreEqual(8, (int)Marshal.OffsetOf<WalFuzzStateDTO>(nameof(WalFuzzStateDTO.MismatchFlags)));
+        }
+
+        [Test]
+        public void Shinobu357TelemetryAndHandleDTOs_AreCacheLineAligned()
+        {
+            StructLayoutAttribute telemetryLayout = typeof(WalFuzzTelemetryEntry).StructLayoutAttribute;
+            StructLayoutAttribute handleLayout = typeof(WalFuzzFileHandleStatusDTO).StructLayoutAttribute;
+
+            Assert.IsNotNull(telemetryLayout);
+            Assert.IsNotNull(handleLayout);
+            Assert.AreEqual(LayoutKind.Explicit, telemetryLayout.Value);
+            Assert.AreEqual(LayoutKind.Explicit, handleLayout.Value);
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<WalFuzzTelemetryEntry>());
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<WalFuzzFileHandleStatusDTO>());
+            Assert.AreEqual(8, UnsafeUtility.AlignOf<WalFuzzTelemetryEntry>());
+            Assert.AreEqual(8, UnsafeUtility.AlignOf<WalFuzzFileHandleStatusDTO>());
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<WalFuzzTelemetryEntry>() & 63);
+            Assert.AreEqual(0, UnsafeUtility.SizeOf<WalFuzzFileHandleStatusDTO>() & 63);
+            Assert.AreEqual(0, (int)Marshal.OffsetOf<WalFuzzTelemetryEntry>(nameof(WalFuzzTelemetryEntry.Frame)));
+            Assert.AreEqual(16, (int)Marshal.OffsetOf<WalFuzzTelemetryEntry>(nameof(WalFuzzTelemetryEntry.PathHash)));
+            Assert.AreEqual(0, (int)Marshal.OffsetOf<WalFuzzFileHandleStatusDTO>(nameof(WalFuzzFileHandleStatusDTO.PrimaryWritable)));
+            Assert.AreEqual(12, (int)Marshal.OffsetOf<WalFuzzFileHandleStatusDTO>(nameof(WalFuzzFileHandleStatusDTO.FailureCode)));
+        }
+
+        [Test]
+        public void Shinobu357DefaultProfile_UsesHundredIterationsAndTenMegabytePayload()
+        {
+            WalFuzzerProfileDTO profile = WalIntegrityFuzzerCore.BuildShinobu357DefaultProfile();
+
+            Assert.AreEqual(10u * 1024u * 1024u, profile.PayloadBytes);
+            Assert.AreEqual(100u, profile.LoopIterations);
+            Assert.AreEqual(1f, profile.GlobalQualityWeight);
+            Assert.AreEqual(1u, profile.EnforceZeroGcLoop);
+        }
+
+        [Test]
         public void SaveRuntimeRoute_RejectsManagedTextSerializers()
         {
             string root = Path.Combine(Application.dataPath, "_Project/Scripts");
@@ -66,6 +112,42 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void Shinobu357WalFuzzer_CorruptedPrimaryPromotesBackupAndValidatesHash()
+        {
+            WalFuzzerProfileDTO profile = WalIntegrityFuzzerCore.BuildShinobu357DefaultProfile();
+            profile.PayloadBytes = 64u * 1024u;
+            profile.LoopPayloadBytes = 1024u;
+            profile.LoopIterations = 8u;
+            profile.ChunkBytes = 4096u;
+            profile.WriteReports = 0u;
+            profile.StallThresholdMicros = 8000u;
+
+            string root = Path.Combine(Application.temporaryCachePath, "H8_SHINOBU_357_WAL_TEST");
+            bool passed = WalIntegrityFuzzerCore.RunShinobu357PersistenceIntegrityFuzzer(root, in profile, out WalFuzzStateDTO state, out WalFuzzerResultDTO result);
+
+            Assert.IsTrue(passed);
+            Assert.AreEqual(0u, state.MismatchFlags);
+            Assert.AreEqual(0u, result.ErrorFlags);
+            Assert.Greater(state.InterruptedByteOffset, 0u);
+            Assert.Greater(state.FinalValidatedBytes, 0u);
+            Assert.AreEqual(result.TruthHash, result.RecoveredHash);
+            Assert.AreEqual(result.RecoveredBytes, state.FinalValidatedBytes);
+        }
+
+        [Test]
+        public void OopWalFuzzScanner_RejectsManagedSerializerFindings()
+        {
+            bool passed = WalIntegrityFuzzerCore.RunOopWalFuzzScannerForProject(out OopWalFuzzScanResultDTO result);
+
+            Assert.IsTrue(passed);
+            Assert.Greater(result.FilesScanned, 0u);
+            Assert.AreEqual(0u, result.FatalFindings);
+            Assert.AreEqual(0u, result.StreamWriterFindings);
+            Assert.AreEqual(0u, result.JsonUtilityFindings);
+            Assert.AreEqual(0u, result.BinaryFormatterFindings);
+        }
+
+        [Test]
         public void ProfileCsvParser_AcceptsLegacyRowsWithoutQualityColumn()
         {
             string path = Path.Combine(Application.temporaryCachePath, "shinobu_256_legacy_profiles.csv");
@@ -74,7 +156,7 @@ namespace Hecton8.Tests.Editor
             NativeArray<WalFuzzerProfileDTO> profiles = new NativeArray<WalFuzzerProfileDTO>(2, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             try
             {
-                bool parsed = WalIntegrityFuzzerCore.TryLoadProfilesCsv(path, profiles, out int count, out uint errorCode);
+                bool parsed = WalIntegrityFuzzerCore.TryLoadShinobu357ProfilesCsv(path, profiles, out int count, out uint errorCode);
                 Assert.IsTrue(parsed);
                 Assert.AreEqual(2, count);
                 Assert.AreEqual(1f, profiles[0].GlobalQualityWeight);

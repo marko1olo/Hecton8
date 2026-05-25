@@ -1,4 +1,4 @@
-# HECTON-8 Showcase And Festival Submission Playbook
+﻿# HECTON-8 Showcase And Festival Submission Playbook
 
 Status: pre submission operating plan / not ready to submit
 Owner lane: SHINOBU_81 / press and showcase ops

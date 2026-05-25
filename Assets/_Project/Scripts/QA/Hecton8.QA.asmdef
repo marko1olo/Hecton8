@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.QA",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Memory",
         "Hecton8.Core.Contracts",
         "Unity.Mathematics",
         "Unity.Collections"

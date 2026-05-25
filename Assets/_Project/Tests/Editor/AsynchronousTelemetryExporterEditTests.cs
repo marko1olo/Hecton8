@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Diagnostics;
@@ -66,96 +67,128 @@ namespace Hecton8.Tests.Editor
         public void RuntimeSourceContainsNoMainThreadWebOrJsonRoute()
         {
             string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
-            string source = File.ReadAllText(path);
-            Assert.That(source, Does.Not.Contain("UnityWebRequest"));
-            Assert.That(source, Does.Not.Contain("JsonUtility"));
-            Assert.That(source, Does.Not.Contain("ToJson"));
-            Assert.That(source, Does.Not.Contain("Schedule().Complete"));
-            Assert.That(source, Does.Not.Contain("Encoding.UTF8.GetBytes"));
-            Assert.That(source, Does.Not.Contain("using Hecton8.World;"));
-            Assert.That(source, Does.Not.Contain("TryGetParallelWriter"));
-            Assert.That(source, Does.Not.Contain("Time.frameCount"));
-            Assert.That(source, Does.Not.Contain("UnityEngine.Random"));
-            Assert.That(source, Does.Not.Contain("new AnalyticEventDTO"));
-            Assert.That(source, Does.Not.Contain("EventCount = 500"));
-            Assert.That(source, Does.Not.Contain("System.Reflection"));
-            Assert.That(source, Does.Not.Contain(".GetField("));
-            Assert.That(source, Does.Contain("Name = \"H8_Analytics_IO\""));
-            Assert.That(source, Does.Contain("DispatcherPhase.PostSimulation"));
-            Assert.That(source, Does.Contain("ResolveFrameId"));
-            Assert.That(source, Does.Contain("Unity.Mathematics.Random"));
-            Assert.That(source, Does.Contain("AnalyticsIngressCursorDTO"));
-            Assert.That(source, Does.Contain("AnalyticsVaultBufferIds.RoutineIngress"));
-            Assert.That(source, Does.Contain("AnalyticsVaultBufferIds.CriticalIngress"));
-            Assert.That(source, Does.Contain("AnalyticsVaultBufferIds.IngressCursor"));
-            Assert.That(source, Does.Contain("TryWriteIngressEvent"));
-            Assert.That(source, Does.Contain("UnsafeUtility.AsRef<AnalyticsIngressCursorDTO>"));
-            Assert.That(source, Does.Contain("private const int IngressWriteOverflow = 2"));
-            Assert.That(source, Does.Contain("writeResult != IngressWriteOverflow"));
-            Assert.That(source, Does.Contain("cursor.RoutineOverflowDrops += 1u"));
-            Assert.That(source, Does.Contain("cursor.CriticalOverflowDrops += 1u"));
-            Assert.That(source, Does.Not.Contain("NativeQueue<AnalyticEventDTO>"));
-            Assert.That(source, Does.Not.Contain("new NativeQueue"));
-            Assert.That(source, Does.Not.Contain("TryGetQueues"));
-            Assert.That(source, Does.Contain("drained < drainBudget"));
-            Assert.That(source, Does.Contain("ResolveVaultTelemetryBytes"));
-            Assert.That(source, Does.Contain("VaultBytes"));
-            Assert.That(source, Does.Contain("IngestGameplaySignals"));
-            Assert.That(source, Does.Contain("SignalBus<EntityDeathSignal>.GetFrameSnapshot"));
-            Assert.That(source, Does.Contain("SignalBus<ItemAcquiredSignal>.GetFrameSnapshot"));
-            Assert.That(source, Does.Contain("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot"));
-            Assert.That(source, Does.Contain("SignalBus<FrameTimeSignal>.GetFrameSnapshot"));
-            Assert.That(source, Does.Contain("if (!recordRouteSample || _heatmapTimerSeconds < sampleSeconds)"));
-            Assert.That(source, Does.Contain("math.lerp(20f, 500f, smoothQuality)"));
-            Assert.That(source, Does.Contain("ResolveBacklogPressureEvents() / math.max(1f, (float)pressureLimit)"));
-            Assert.That(source, Does.Contain("FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard"));
-            Assert.That(source, Does.Contain("AnalyticsVaultBufferIds.HandoffA"));
-            Assert.That(source, Does.Contain("AnalyticsVaultBufferIds.RawBatchScratch"));
-            Assert.That(source, Does.Contain("BatchStateWriting"));
-            Assert.That(source, Does.Contain("Interlocked.Exchange(ref _pendingBatchState, BatchStatePending)"));
-            Assert.That(source, Does.Contain("request.Abort()"));
-            Assert.That(source, Does.Contain("TeardownStoppedWorkerState"));
-            Assert.That(source, Does.Contain("CreateLockedWorkerView"));
-            Assert.That(source, Does.Contain("ResolveWorkerHandoffBuffer"));
-            Assert.That(source, Does.Contain("ShouldAcceptHotPathEvent"));
-            Assert.That(source, Does.Contain("HashHotPathGate(eventHashId, timestampSeconds, unchecked((uint)backlog), eventAup)"));
-            Assert.That(source, Does.Contain("ShouldDropRoutineDuringDrain"));
-            Assert.That(source, Does.Contain("HashDrainGate"));
-            Assert.That(source, Does.Contain("math.aslong(value)"));
-            Assert.That(source, Does.Not.Contain("bool pressureCull"));
-            Assert.That(source, Does.Contain("BitConverter.DoubleToInt64Bits"));
-            Assert.That(source, Does.Contain("Interlocked.Increment(ref _ingressPendingEstimate)"));
-            Assert.That(source, Does.Contain("Interlocked.Add(ref _hotEnqueuedDelta, written)"));
-            Assert.That(source, Does.Contain("Interlocked.Add(ref _ingressPendingEstimate, written)"));
-            Assert.That(source, Does.Contain("telemetry_config.csv"));
-            Assert.That(source, Does.Contain("NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray"));
-            Assert.That(source, Does.Contain("AnalyticsVaultBufferIds.DumpSnapshot"));
-            Assert.That(source, Does.Contain("TryWritePendingBlackBoxDump"));
-            Assert.That(source, Does.Contain("File.Move(tmpPath, finalPath)"));
-            Assert.That(source, Does.Contain("bool deleteAfterRead = false"));
-            Assert.That(source, Does.Contain("if (deleteAfterRead)"));
-            Assert.That(source, Does.Contain("TryFlushDiskBacklogUnchecked"));
-            Assert.That(source, Does.Contain("TryDeleteReplayFile"));
-            Assert.That(source, Does.Contain("if (read != length)"));
-            Assert.That(source, Does.Contain("deleteAfterRead = true;"));
-            Assert.That(source, Does.Contain("_fallbackFileSequence"));
-            Assert.That(source, Does.Contain("FileMode.CreateNew"));
-            Assert.That(source, Does.Contain("TryDeleteTempFallbackFile"));
-            Assert.That(source, Does.Contain("response.Dispose();"));
-            Assert.That(source, Does.Contain("IsHttpEndpoint"));
-            Assert.That(source, Does.Contain("StringComparison.OrdinalIgnoreCase"));
-            Assert.That(source, Does.Not.Contain("PrewarmQueue"));
-            Assert.That(source, Does.Contain("AnalyticsLayout.ValidateOrThrow();"));
-            Assert.That(source, Does.Contain("NoteHotPathNonFinite"));
-            Assert.That(source, Does.Contain("Interlocked.Exchange(ref _hotNonFiniteDelta, 0)"));
-            Assert.That(source, Does.Contain("value.NonFiniteEvents += unchecked((uint)nonFinite)"));
-            Assert.That(source, Does.Contain("SetWorkerFlag(WorkerFlagFaulted)"));
-            Assert.That(source, Does.Contain("ClearWorkerFlag(WorkerFlagRunning)"));
-            Assert.That(source, Does.Contain("Interlocked.CompareExchange(ref _workerFlags"));
-            Assert.That(source, Does.Contain("PublishWorkerAccumCount(accumCount)"));
-            Assert.That(source, Does.Contain("PublishWorkerAccumCount(0)"));
-            Assert.That(source, Does.Not.Contain("Volatile.Write(ref _workerFlags, Volatile.Read(ref _workerFlags)"));
-            Assert.That(source, Does.Not.Contain("File.Delete(finalPath)"));
+            AssertFileTokens(
+                path,
+                new[]
+                {
+                    "Name = \"H8_Analytics_IO\"",
+                    "DispatcherPhase.PostSimulation",
+                    "ResolveFrameId",
+                    "Unity.Mathematics.Random",
+                    "AnalyticsIngressCursorDTO",
+                    "AnalyticsVaultBufferIds.RoutineIngress",
+                    "AnalyticsVaultBufferIds.CriticalIngress",
+                    "AnalyticsVaultBufferIds.IngressCursor",
+                    "TryWriteIngressEvent",
+                    "UnsafeUtility.AsRef<AnalyticsIngressCursorDTO>",
+                    "private const int IngressWriteOverflow = 2",
+                    "writeResult != IngressWriteOverflow",
+                    "cursor.RoutineOverflowDrops += 1u",
+                    "cursor.CriticalOverflowDrops += 1u",
+                    "drained < drainBudget",
+                    "ResolveVaultTelemetryBytes",
+                    "VaultBytes",
+                    "IngestGameplaySignals",
+                    "SignalBus<EntityDeathSignal>.GetFrameSnapshot",
+                    "SignalBus<ItemAcquiredSignal>.GetFrameSnapshot",
+                    "SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot",
+                    "SignalBus<FrameTimeSignal>.GetFrameSnapshot",
+                    "if (!recordRouteSample || _heatmapTimerSeconds < sampleSeconds)",
+                    "math.lerp(20f, 500f, smoothQuality)",
+                    "ResolveBacklogPressureEvents() / math.max(1f, (float)pressureLimit)",
+                    "FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard",
+                    "AnalyticsVaultBufferIds.HandoffA",
+                    "AnalyticsVaultBufferIds.RawBatchScratch",
+                    "BatchStateWriting",
+                    "Interlocked.Exchange(ref _pendingBatchState, BatchStatePending)",
+                    "request.Abort()",
+                    "TeardownStoppedWorkerState",
+                    "CreateLockedWorkerView",
+                    "ResolveWorkerHandoffBuffer",
+                    "ShouldAcceptHotPathEvent",
+                    "HashHotPathGate(eventHashId, timestampSeconds, unchecked((uint)backlog), eventAup)",
+                    "ShouldDropRoutineDuringDrain",
+                    "HashDrainGate",
+                    "math.aslong(value)",
+                    "BitConverter.DoubleToInt64Bits",
+                    "Interlocked.Increment(ref _ingressPendingEstimate)",
+                    "Interlocked.Add(ref _hotEnqueuedDelta, written)",
+                    "Interlocked.Add(ref _ingressPendingEstimate, written)",
+                    "telemetry_config.csv",
+                    "NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray",
+                    "AnalyticsVaultBufferIds.DumpSnapshot",
+                    "TryWritePendingBlackBoxDump",
+                    "File.Move(tmpPath, finalPath)",
+                    "bool deleteAfterRead = false",
+                    "if (deleteAfterRead)",
+                    "TryFlushDiskBacklogUnchecked",
+                    "TryDeleteReplayFile",
+                    "if (read != length)",
+                    "deleteAfterRead = true;",
+                    "_fallbackFileSequence",
+                    "FileMode.CreateNew",
+                    "TryDeleteTempFallbackFile",
+                    "response.Dispose();",
+                    "IsHttpEndpoint",
+                    "StringComparison.OrdinalIgnoreCase",
+                    "AnalyticsLayout.ValidateOrThrow();",
+                    "NoteHotPathNonFinite",
+                    "Interlocked.Exchange(ref _hotNonFiniteDelta, 0)",
+                    "value.NonFiniteEvents += unchecked((uint)nonFinite)",
+                    "SetWorkerFlag(WorkerFlagFaulted)",
+                    "ClearWorkerFlag(WorkerFlagRunning)",
+                    "Interlocked.CompareExchange(ref _workerFlags",
+                    "PublishWorkerAccumCount(accumCount)",
+                    "PublishWorkerAccumCount(0)"
+                },
+                new[]
+                {
+                    "UnityWebRequest",
+                    "JsonUtility",
+                    "ToJson",
+                    "Schedule().Complete",
+                    "Encoding.UTF8.GetBytes",
+                    "using Hecton8.World;",
+                    "TryGetParallelWriter",
+                    "Time.frameCount",
+                    "UnityEngine.Random",
+                    "new AnalyticEventDTO",
+                    "EventCount = 500",
+                    "System.Reflection",
+                    ".GetField(",
+                    "NativeQueue<AnalyticEventDTO>",
+                    "new NativeQueue",
+                    "TryGetQueues",
+                    "bool pressureCull",
+                    "PrewarmQueue",
+                    "Volatile.Write(ref _workerFlags, Volatile.Read(ref _workerFlags)",
+                    "File.Delete(finalPath)"
+                });
+        }
+
+        private static void AssertFileTokens(string path, string[] required, string[] forbidden)
+        {
+            bool[] requiredFound = new bool[required.Length];
+            foreach (string line in File.ReadLines(path))
+            {
+                for (int i = 0; i < forbidden.Length; i++)
+                {
+                    if (line.IndexOf(forbidden[i], StringComparison.Ordinal) >= 0)
+                        Assert.Fail(path + " contains forbidden token: " + forbidden[i]);
+                }
+
+                for (int i = 0; i < required.Length; i++)
+                {
+                    if (!requiredFound[i] && line.IndexOf(required[i], StringComparison.Ordinal) >= 0)
+                        requiredFound[i] = true;
+                }
+            }
+
+            for (int i = 0; i < required.Length; i++)
+            {
+                if (!requiredFound[i])
+                    Assert.Fail(path + " missing token: " + required[i]);
+            }
         }
     }
 }

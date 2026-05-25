@@ -154,8 +154,7 @@ namespace Hecton8.Editor.Build
                 return;
             }
 
-            MeshFilter filter = renderer.GetComponent<MeshFilter>();
-            if (filter != null)
+            if (renderer.TryGetComponent(out MeshFilter filter))
                 filter.sharedMesh = null;
         }
 

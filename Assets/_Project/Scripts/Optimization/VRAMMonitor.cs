@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Profiling;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 
 namespace Hecton8.Optimization
 {
@@ -15,7 +17,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class VRAMMonitor : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class VRAMMonitor : MonoBehaviour, ISlowTickable, IVramBudgetReadModel, IVramBudgetSampleSink, IGlobalRegistryHotSwapListener
     {
         /// <summary>
         /// High-level VRAM pressure state derived from budget utilization.
@@ -47,7 +49,7 @@ namespace Hecton8.Optimization
         private ProfilerRecorder _textureMemoryRecorder;
         private ProfilerRecorder _renderTextureMemoryRecorder;
         private ProfilerRecorder _gfxUsedMemoryRecorder;
-        private RenderTextureLifecycleTracker _cachedRenderTextureLifecycle;
+        private IRenderTextureLifecycleService _cachedRenderTextureLifecycle;
         
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: VRAMMonitor
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
@@ -134,6 +136,8 @@ namespace Hecton8.Optimization
         /// Current high-level VRAM pressure state.
         /// </summary>
         public VRAMPressureState PressureState { get; private set; }
+
+        public byte PressureStateCode => (byte)PressureState;
         
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
         
@@ -176,7 +180,7 @@ namespace Hecton8.Optimization
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
-                _cachedRenderTextureLifecycle = currentService as RenderTextureLifecycleTracker;
+                _cachedRenderTextureLifecycle = currentService as IRenderTextureLifecycleService;
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -205,6 +209,11 @@ namespace Hecton8.Optimization
             renderTextureMemoryBytes = RenderTextureMemoryBytes;
             totalVRAMBytes = TotalVRAMBytes;
         }
+
+        void IVramBudgetSampleSink.SampleVramCounters()
+        {
+            SlowTick();
+        }
         
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
         
@@ -222,8 +231,7 @@ namespace Hecton8.Optimization
             if (!ReferenceEquals(GlobalRegistry.VRAMMonitor, this))
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -265,7 +273,7 @@ namespace Hecton8.Optimization
 
         private void CacheRegistryServicesCold()
         {
-            _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycle;
+            _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycleService;
         }
 
         private void TryRegisterHotSwapListener()
@@ -397,7 +405,7 @@ namespace Hecton8.Optimization
             if (recorderValue > 0L)
                 return recorderValue;
 
-            RenderTextureLifecycleTracker tracker = _cachedRenderTextureLifecycle;
+            IRenderTextureLifecycleService tracker = _cachedRenderTextureLifecycle;
             if (tracker != null)
                 return tracker.TrackedRenderTextureMemoryBytes;
 
@@ -415,9 +423,9 @@ namespace Hecton8.Optimization
         {
             _reportBuilder.Clear();
             _reportBuilder.Append("[VRAMMonitor] BUDGET EXCEEDED: ");
-            _reportBuilder.Append("Texture=").Append((TextureMemoryBytes / (1024f * 1024f)).ToString("0.0")).Append("MB ");
-            _reportBuilder.Append("RT=").Append((RenderTextureMemoryBytes / (1024f * 1024f)).ToString("0.0")).Append("MB ");
-            _reportBuilder.Append("Total=").Append((TotalVRAMBytes / (1024f * 1024f)).ToString("0.0")).Append("MB");
+            _reportBuilder.Append("Texture=").Append((TextureMemoryBytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB ");
+            _reportBuilder.Append("RT=").Append((RenderTextureMemoryBytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB ");
+            _reportBuilder.Append("Total=").Append((TotalVRAMBytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
             
             Debug.LogWarning(_reportBuilder.ToString(), this);
         }

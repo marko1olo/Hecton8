@@ -42,7 +42,7 @@ namespace Hecton8.AI
         [Header("── Creatures ─────────────────────────────────")]
         [Tooltip("Spisok vozmozhnyh suschestv dlya etogo bioma. " +
                  "Ves opredelyaet veroyatnost spavna.")]
-        public List<FaunaEntry> possibleCreatures = new List<FaunaEntry>();
+        public List<FaunaEntry> possibleCreatures = new List<FaunaEntry>(8);
 
         [Header("── Spawn Settings ────────────────────────────")]
         [Tooltip("Maksimalnoe kolichestvo suschestv etogo bioma odnovremenno.")]

@@ -1,4 +1,4 @@
-# Press And Steam Curator Targets
+﻿# Press And Steam Curator Targets
 
 Status: public seed map / not outreach-ready. Operational send status lives in `Press/PRESS_TARGET_VERIFICATION_TRACKER.csv` and `Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv`; recheck same-day before outreach/key use and fill `send_route_class` / `reply_consent_provenance` fields before counting replies.
 Date: 2026-05-18

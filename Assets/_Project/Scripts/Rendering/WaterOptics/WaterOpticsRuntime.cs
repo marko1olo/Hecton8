@@ -151,9 +151,11 @@ namespace Hecton8.Rendering.WaterOptics
         private GraphicsBuffer _shaderParamsBufferA;
         private GraphicsBuffer _shaderParamsBufferB;
         private GraphicsBuffer _activeShaderParamsBuffer;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private VisualSyncUploadSystem _visualSyncSystem;
         private int _shaderWriteIndex;
         private uint _loadedProfileCount;
+        private bool _cameraRuntimeResolved;
         private bool _registered;
         private bool _visualRegistered;
         private bool _hotSwapRegistered;
@@ -192,8 +194,7 @@ namespace Hecton8.Rendering.WaterOptics
             s_instance = this;
             TryColdBootstrapVault(clearExisting: true);
             TryColdBootstrapShaderParamsBuffers();
-            if (_camera == null)
-                _camera = Camera.main; // COLD LOOKUP: cached once for AUP-local surface conversion.
+            RefreshPlayerCameraBindingCold();
         }
 
         private void OnEnable()
@@ -207,8 +208,7 @@ namespace Hecton8.Rendering.WaterOptics
             s_instance = this;
             TryColdBootstrapVault(clearExisting: !_vaultBootstrapped);
             TryColdBootstrapShaderParamsBuffers();
-            if (_camera == null)
-                _camera = Camera.main; // COLD LOOKUP: cached once for AUP-local surface conversion.
+            RefreshPlayerCameraBindingCold();
 
             _visualSyncSystem = new VisualSyncUploadSystem(this); // COLD ALLOC: IDispatcherSystem[1] - SHINOBU_265 VisualSync constant-buffer upload bridge.
             _registered = GlobalRegistry.TryRegisterDispatcherSystem(this);
@@ -256,6 +256,10 @@ namespace Hecton8.Rendering.WaterOptics
             _shaderWriteIndex = 0;
             _hasUploadedDto = false;
             _lastUploadedDto = default;
+            _playerRuntimeContext = null;
+            if (_cameraRuntimeResolved)
+                _camera = null;
+            _cameraRuntimeResolved = false;
 
             IDataVault vault = _vault;
             if (vault != null)
@@ -275,6 +279,12 @@ namespace Hecton8.Rendering.WaterOptics
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -344,15 +354,15 @@ namespace Hecton8.Rendering.WaterOptics
 
             if (!SystemInfo.supportsSetConstantBuffer)
             {
-                WaterOpticsDTO dto = ReadFirstWaterOpticsDto(parameters);
-                RecordTelemetry(frameIndex, TelemetryFlagConstantBufferUnsupported, in dto);
+                WaterOpticsDTO unsupportedDto = ReadFirstWaterOpticsDto(parameters);
+                RecordTelemetry(frameIndex, TelemetryFlagConstantBufferUnsupported, in unsupportedDto);
                 return;
             }
 
             if (!HasValidShaderParamsBuffers())
             {
-                WaterOpticsDTO dto = ReadFirstWaterOpticsDto(parameters);
-                RecordTelemetry(frameIndex, TelemetryFlagUploadSkipped, in dto);
+                WaterOpticsDTO skippedDto = ReadFirstWaterOpticsDto(parameters);
+                RecordTelemetry(frameIndex, TelemetryFlagUploadSkipped, in skippedDto);
                 return;
             }
 
@@ -560,6 +570,7 @@ namespace Hecton8.Rendering.WaterOptics
             return WaterOpticsNativeLayout.ValidateDumpHeader(out headerSize);
         }
 
+#if UNITY_EDITOR
         public static bool TryParseProfiles(ReadOnlySpan<byte> csvBytes, NativeArray<WaterOpticsProfileDTO> profiles, out int count)
         {
             count = 0;
@@ -590,6 +601,7 @@ namespace Hecton8.Rendering.WaterOptics
 
             return any;
         }
+#endif
 
         private bool TryColdBootstrapVault(bool clearExisting)
         {
@@ -628,32 +640,32 @@ namespace Hecton8.Rendering.WaterOptics
                 return true;
 
             NativeArrayOptions options = NativeArrayOptions.UninitializedMemory;
-            _paramsHandle = vault.GetGenerationHandle<WaterOpticsDTO>(
+            _paramsHandle = vault.EnsureGenerationHandle<WaterOpticsDTO>(
                 BufferID.ShinobuWaterOpticsParams,
                 1,
                 SystemID.Vfx,
                 options);
-            _tuningHandle = vault.GetGenerationHandle<WaterOpticsTuningDTO>(
+            _tuningHandle = vault.EnsureGenerationHandle<WaterOpticsTuningDTO>(
                 BufferID.ShinobuWaterOpticsTuning,
                 1,
                 SystemID.Vfx,
                 options);
-            _profileHandle = vault.GetGenerationHandle<WaterOpticsProfileDTO>(
+            _profileHandle = vault.EnsureGenerationHandle<WaterOpticsProfileDTO>(
                 BufferID.ShinobuWaterOpticsProfiles,
                 ProfileCapacity,
                 SystemID.Vfx,
                 options);
-            _telemetryHandle = vault.GetGenerationHandle<WaterOpticsTelemetryEntry>(
+            _telemetryHandle = vault.EnsureGenerationHandle<WaterOpticsTelemetryEntry>(
                 BufferID.ShinobuWaterOpticsTelemetryRing,
                 TelemetryCapacity,
                 SystemID.Vfx,
                 options);
-            _telemetryCursorHandle = vault.GetGenerationHandle<int>(
+            _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuWaterOpticsTelemetryCursor,
                 1,
                 SystemID.Vfx,
                 options);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.ShinobuWaterOpticsCsvScratch,
                 CsvScratchBytes,
                 SystemID.Vfx,
@@ -899,7 +911,7 @@ namespace Hecton8.Rendering.WaterOptics
 
         private float ResolveLocalSurfaceY()
         {
-            Camera camera = _camera;
+            Camera camera = ResolveActiveCamera();
             if (camera == null)
                 return 0f;
 
@@ -916,6 +928,38 @@ namespace Hecton8.Rendering.WaterOptics
             double surfaceAupY = origin.y + _oceanSurfaceWorldY;
             double local = surfaceAupY - cameraAupY;
             return math.isfinite(local) ? (float)math.clamp(local, -100000d, 100000d) : 0f;
+        }
+
+        private void RefreshPlayerCameraBindingCold()
+        {
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            _playerRuntimeContext = playerRuntimeContext;
+            TryRefreshRuntimeCamera();
+        }
+
+        private Camera ResolveActiveCamera()
+        {
+            TryRefreshRuntimeCamera();
+            return _camera;
+        }
+
+        private bool TryRefreshRuntimeCamera()
+        {
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            Camera playerCamera = playerRuntimeContext != null ? playerRuntimeContext.PlayerCamera : null;
+            if (playerCamera == null)
+                return false;
+
+            if (_camera != null && !_cameraRuntimeResolved)
+                return false;
+
+            _camera = playerCamera;
+            _cameraRuntimeResolved = true;
+            return true;
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -1127,6 +1171,7 @@ namespace Hecton8.Rendering.WaterOptics
             return _shaderWriteIndex == 0 ? _shaderParamsBufferA : _shaderParamsBufferB;
         }
 
+#if UNITY_EDITOR
         private static bool TryParseProfileRow(ReadOnlySpan<byte> line, out WaterOpticsProfileDTO profile)
         {
             profile = default;
@@ -1273,6 +1318,7 @@ namespace Hecton8.Rendering.WaterOptics
         {
             return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
         }
+#endif
 
         private static string ResolveProjectRoot()
         {

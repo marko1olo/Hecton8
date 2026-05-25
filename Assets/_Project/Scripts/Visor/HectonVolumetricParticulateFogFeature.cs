@@ -506,13 +506,13 @@ namespace Hecton8.Visor
                 }
 
                 if (_paramsHandle.BufferID == 0u)
-                    _paramsHandle = vault.GetGenerationHandle<FogConstantsDTO>(BufferID.ShinobuVolumetricFogParams, 1, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+                    _paramsHandle = vault.EnsureGenerationHandle<FogConstantsDTO>(BufferID.ShinobuVolumetricFogParams, 1, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
                 if (_pointLightsHandle.BufferID == 0u)
-                    _pointLightsHandle = vault.GetGenerationHandle<PointLightDTO>(BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+                    _pointLightsHandle = vault.EnsureGenerationHandle<PointLightDTO>(BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
                 if (_telemetryHandle.BufferID == 0u)
-                    _telemetryHandle = vault.GetGenerationHandle<VolumetricFogTelemetryEntry>(BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+                    _telemetryHandle = vault.EnsureGenerationHandle<VolumetricFogTelemetryEntry>(BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
                 if (_extinctionProfilesHandle.BufferID == 0u)
-                    _extinctionProfilesHandle = vault.GetGenerationHandle<WaterExtinctionProfileDTO>(BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+                    _extinctionProfilesHandle = vault.EnsureGenerationHandle<WaterExtinctionProfileDTO>(BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
 
                 if (!HasNativeState)
                     return false;
@@ -753,8 +753,8 @@ namespace Hecton8.Visor
 
                 if (proxyOnly)
                 {
-                    BufferHandle paramsBufferHandle = renderGraph.ImportBuffer(activeParamsBuffer);
-                    BufferHandle frameParamsBufferHandle = renderGraph.ImportBuffer(activeFrameParamsBuffer);
+                    BufferHandle proxyParamsBufferHandle = renderGraph.ImportBuffer(activeParamsBuffer);
+                    BufferHandle proxyFrameParamsBufferHandle = renderGraph.ImportBuffer(activeFrameParamsBuffer);
                     if (!AddRasterFogCompositePass(
                             renderGraph,
                             "Hecton Dear Lie Fog Proxy",
@@ -762,8 +762,8 @@ namespace Hecton8.Visor
                             depthTexture,
                             TextureHandle.nullHandle,
                             compositeTexture,
-                            paramsBufferHandle,
-                            frameParamsBufferHandle,
+                            proxyParamsBufferHandle,
+                            proxyFrameParamsBufferHandle,
                             false,
                             DearLieProxyMaterialPass))
                     {
@@ -971,13 +971,13 @@ namespace Hecton8.Visor
                         if (data.hasHalfInput)
                             context.cmd.SetGlobalTexture(ShaderConstants.HalfInputId, data.halfInput);
                         context.cmd.SetGlobalConstantBuffer(
-                            ShaderConstants.ParamsBufferId,
                             paramsBuffer,
+                            ShaderConstants.ParamsBufferId,
                             0,
                             VolumetricFogConstants.ParamsStrideBytes);
                         context.cmd.SetGlobalConstantBuffer(
-                            ShaderConstants.FrameParamsBufferId,
                             frameParamsBuffer,
+                            ShaderConstants.FrameParamsBufferId,
                             0,
                             FrameParamsStrideBytes);
                         CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.passIndex);

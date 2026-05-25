@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -138,7 +139,7 @@ namespace Hecton8.Editor.GeologyForge
         private void RunMockBenchmark()
         {
             TopographyBakeMetrics metrics = TopographyForgeGenerator.RunMockSectorBenchmark(ResolveSettings());
-            Debug.Log("[TopographyForge] 4096 mock sector ms=" + metrics.MockSectorMilliseconds.ToString("F3"));
+            Debug.Log("[TopographyForge] 4096 mock sector ms=" + metrics.MockSectorMilliseconds.ToString("F3", CultureInfo.InvariantCulture));
         }
 
         private void BakeGlobal()

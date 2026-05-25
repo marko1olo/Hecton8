@@ -20,7 +20,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Tether Manager")]
-    public sealed class TetherManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, ISlowTickable, IOriginShiftListener
+    public sealed class TetherManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string RuntimeShaderName = "Hecton8/Physics/TetherLineStrip";
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
@@ -97,10 +97,12 @@ namespace Hecton8.Physics
         private Mesh _indirectArgsMesh;
         private int _indirectArgsSegmentCount = -1;
         private IDataVault _dataVault;
+        private ICablePhysics132Service _cablePhysics132Service;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
         private bool _registeredSlowTick;
         private bool _registeredOriginShiftListener;
+        private bool _hotSwapRegistered;
         private VaultGenerationHandle<TetherManagerTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<int> _telemetryHeadHandle;
         private JobHandle _shinobu143AupMockHandle;
@@ -112,6 +114,14 @@ namespace Hecton8.Physics
         private long _shinobu132CableMockScheduleTicks;
         private float _shinobu132LastMockElapsedUs;
         private bool _shinobu132CableBootstrapRequested;
+        private JobHandle _shinobu328TensionMockHandle;
+        private bool _shinobu328TensionMockScheduled;
+        private long _shinobu328TensionMockScheduleTicks;
+        private float _shinobu328LastMockElapsedUs;
+        private bool _shinobu328TensionBootstrapRequested;
+        private int _shinobu328LastActiveTetherCount;
+        private int _shinobu328LastNodesPerTether;
+        private uint _shinobu328LastFrameIndex;
         private float _fixedStepClockSeconds;
         private int _fixedFrameIndex;
         private bool _telemetryDumped;
@@ -178,11 +188,13 @@ namespace Hecton8.Physics
             EnsureTelemetry();
             EnsureShinobu132CableBootstrap();
             EnsureShinobu143AupBootstrap();
+            EnsureShinobu328TensionBootstrap();
         }
 
         private void OnEnable()
         {
             RefreshColdDependencyCache();
+            TryRegisterHotSwapListener();
             TryRegisterSlowTickable();
             TryRegisterFixedTickable();
             TryRegisterLateFrameTickable();
@@ -196,11 +208,13 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
+            CompleteShinobu328TensionMockForTeardown();
             CompleteShinobu143AupMockForTeardown();
             CompleteShinobu132CableMockForTeardown();
             TryUnregisterFixedTickable();
             TryUnregisterLateFrameTickable();
             TryUnregisterSlowTickable();
+            TryUnregisterHotSwapListener();
 
             if (_registeredOriginShiftListener)
             {
@@ -220,8 +234,7 @@ namespace Hecton8.Physics
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = SystemDispatcher.GetFixedLane(PriorityLayer.Environment).Contains(this);
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFixedTickable()
@@ -241,8 +254,7 @@ namespace Hecton8.Physics
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -259,6 +271,9 @@ namespace Hecton8.Physics
             if (_registeredSlowTick || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
@@ -273,11 +288,13 @@ namespace Hecton8.Physics
 
         private void OnDestroy()
         {
+            CompleteShinobu328TensionMockForTeardown();
             CompleteShinobu143AupMockForTeardown();
             CompleteShinobu132CableMockForTeardown();
             TryUnregisterLateFrameTickable();
             TryUnregisterFixedTickable();
             TryUnregisterSlowTickable();
+            TryUnregisterHotSwapListener();
 
             if (_registeredOriginShiftListener)
             {
@@ -312,6 +329,39 @@ namespace Hecton8.Physics
             _cachedVegetationBridge = null;
             _cachedFluidEngine = null;
             _cachedWeatherService = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterFixedTickable();
+            TryUnregisterLateFrameTickable();
+            TryUnregisterSlowTickable();
+            TryRegisterSlowTickable();
+            TryRegisterFixedTickable();
+            TryRegisterLateFrameTickable();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         /// <summary>
@@ -439,6 +489,7 @@ namespace Hecton8.Physics
             int fixedFrameIndex = AdvanceFixedFrameIndex();
             ScheduleShinobu132CableMock(fixedDeltaTime, unchecked((uint)fixedFrameIndex));
             ScheduleShinobu143AupMock(fixedDeltaTime, unchecked((uint)fixedFrameIndex));
+            ScheduleShinobu328TensionMock(fixedDeltaTime, unchecked((uint)fixedFrameIndex));
             int activeCount = _activeInstances.Count;
             HectonQualityTier qualityTier = _cachedQualityTier;
             for (int i = activeCount - 1; i >= 0; i--)
@@ -753,18 +804,21 @@ namespace Hecton8.Physics
             RefreshColdDependencyCache();
             EnsureShinobu132CableBootstrap();
             EnsureShinobu143AupBootstrap();
+            EnsureShinobu328TensionBootstrap();
         }
 
         private void RefreshColdDependencyCache()
         {
-            _cachedQualityTier = SanitizeQualityTier(GlobalRegistry.ScalabilityTier);
+            _cachedQualityTier = ResolveQualityTierFromGlobalWeight();
             _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
             _cachedFluidEngine = GlobalRegistry.Fluid;
             _cachedWeatherService = GlobalRegistry.Weather;
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
+            if (_cablePhysics132Service == null)
+                _cablePhysics132Service = GlobalRegistry.CablePhysics132;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerContext != null)
             {
                 if (playerContext.PlayerCamera != null)
@@ -791,10 +845,11 @@ namespace Hecton8.Physics
 
         private void EnsureShinobu132CableBootstrap()
         {
-            if (_dataVault == null)
+            ICablePhysics132Service cableService = _cablePhysics132Service;
+            if (_dataVault == null || cableService == null)
                 return;
             if (_shinobu132CableBootstrapRequested &&
-                CablePhysicsSolver132.TryHasMockBuffers(_dataVault))
+                cableService.TryHasMockBuffers(_dataVault))
             {
                 return;
             }
@@ -803,7 +858,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(qualityWeight))
                 qualityWeight = 1f;
 
-            CablePhysicsSolver132.EnsureMockBuffers(
+            cableService.EnsureMockBuffers(
                 _dataVault,
                 math.saturate(qualityWeight),
                 CurrentFixedFrameIndex);
@@ -812,7 +867,8 @@ namespace Hecton8.Physics
 
         private void ScheduleShinobu132CableMock(float fixedDeltaTime, uint frameIndex)
         {
-            if (_dataVault == null)
+            ICablePhysics132Service cableService = _cablePhysics132Service;
+            if (_dataVault == null || cableService == null)
                 return;
 
             TryFinalizeShinobu132CableMock();
@@ -838,7 +894,7 @@ namespace Hecton8.Physics
             }
 
             _shinobu132CableMockScheduleTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            if (!CablePhysicsSolver132.TryScheduleMockFromVault(
+            if (!cableService.TryScheduleMockFromVault(
                     _dataVault,
                     frameIndex,
                     safeDelta,
@@ -887,11 +943,116 @@ namespace Hecton8.Physics
                 0.0d,
                 elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency);
 
-            if (CablePhysicsSolver132.TrySampleLatestTelemetry(_dataVault, out TetherTelemetryEntry telemetry) &&
-                (telemetry.Flags & (CableNodeFlags132.NonFiniteRecovered | CableNodeFlags132.ConstraintFault)) != 0u)
+            _cablePhysics132Service?.TryDumpLatestFault(_dataVault);
+        }
+
+        private void EnsureShinobu328TensionBootstrap()
+        {
+            if (_dataVault == null)
+                return;
+            if (_shinobu328TensionBootstrapRequested &&
+                HarpoonTensionSolver328.TryHasMockBuffers(_dataVault))
             {
-                CablePhysicsSolver132.TryDumpCableSurgeon(_dataVault, telemetry.Flags);
+                return;
             }
+
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(qualityWeight))
+                qualityWeight = 1f;
+
+            HarpoonTensionSolver328.EnsureSignalLanes();
+            HarpoonTensionSolver328.EnsureMockBuffers(
+                _dataVault,
+                math.saturate(qualityWeight),
+                CurrentFixedFrameIndex);
+            _shinobu328TensionBootstrapRequested = HarpoonTensionSolver328.TryHasMockBuffers(_dataVault);
+        }
+
+        private void ScheduleShinobu328TensionMock(float fixedDeltaTime, uint frameIndex)
+        {
+            if (_dataVault == null)
+                return;
+
+            TryFinalizeShinobu328TensionMock();
+            if (_shinobu328TensionMockScheduled)
+                return;
+
+            EnsureShinobu328TensionBootstrap();
+            Vector3 cameraPosition;
+            if (!ResolveShinobu132CameraContext(out cameraPosition, out double3 cameraAup))
+                return;
+
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(qualityWeight))
+                qualityWeight = 1f;
+            float safeDelta = math.isfinite(fixedDeltaTime) && fixedDeltaTime > 0f
+                ? math.min(fixedDeltaTime, 0.05f)
+                : 0.02f;
+
+            _shinobu328TensionMockScheduleTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            if (!HarpoonTensionSolver328.TryScheduleMockFromVault(
+                    _dataVault,
+                    frameIndex,
+                    safeDelta,
+                    cameraAup,
+                    math.saturate(qualityWeight),
+                    _shinobu328LastMockElapsedUs,
+                    default,
+                    out HarpoonTensionSchedule328 schedule))
+            {
+                return;
+            }
+
+            _shinobu328TensionMockHandle = schedule.Handle;
+            _shinobu328LastActiveTetherCount = schedule.ActiveTetherCount;
+            _shinobu328LastNodesPerTether = HarpoonTensionSolver328Constants.MockNodesPerTether;
+            _shinobu328LastFrameIndex = frameIndex;
+            _shinobu328TensionMockScheduled = true;
+            H8Memory.RegisterActiveJob(SystemID.Physics, _shinobu328TensionMockHandle);
+        }
+
+        private void TryFinalizeShinobu328TensionMock()
+        {
+            if (!_shinobu328TensionMockScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _shinobu328TensionMockHandle))
+                return;
+
+            FinishShinobu328TensionMockCompletion();
+        }
+
+        private void CompleteShinobu328TensionMockForTeardown()
+        {
+            if (!_shinobu328TensionMockScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _shinobu328TensionMockHandle, forceComplete: true))
+                return;
+
+            FinishShinobu328TensionMockCompletion();
+        }
+
+        private void FinishShinobu328TensionMockCompletion()
+        {
+            _shinobu328TensionMockScheduled = false;
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _shinobu328TensionMockScheduleTicks;
+            _shinobu328LastMockElapsedUs = (float)math.max(
+                0.0d,
+                elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency);
+
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(qualityWeight))
+                qualityWeight = 1f;
+
+            HarpoonTensionSolver328.TryPublishCompletedSignalsFromVault(
+                _dataVault,
+                _shinobu328LastActiveTetherCount,
+                _shinobu328LastNodesPerTether,
+                _shinobu328LastFrameIndex,
+                math.saturate(qualityWeight),
+                1);
+            HarpoonTensionSolver328.TryDumpTelemetryIfFault(_dataVault, string.Empty, 1);
         }
 
         private bool ResolveShinobu132CameraContext(out Vector3 cameraPosition, out double3 cameraAup)
@@ -901,7 +1062,7 @@ namespace Hecton8.Physics
             cameraPosition = sourceTransform != null ? sourceTransform.position : Vector3.zero;
             if (!math.all(math.isfinite(new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z))))
             {
-                cameraAup = GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+                cameraAup = RuntimeOriginRoute.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
                 cameraPosition = Vector3.zero;
                 return math.all(math.isfinite(cameraAup));
             }
@@ -927,7 +1088,7 @@ namespace Hecton8.Physics
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -1147,6 +1308,25 @@ namespace Hecton8.Physics
             }
         }
 
+        private static HectonQualityTier ResolveQualityTierFromGlobalWeight()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(qualityWeight))
+                qualityWeight = 1f;
+
+            qualityWeight = math.saturate(qualityWeight);
+            if (qualityWeight < 0.18f)
+                return HectonQualityTier.Low;
+            if (qualityWeight < 0.36f)
+                return HectonQualityTier.Mx350;
+            if (qualityWeight < 0.62f)
+                return HectonQualityTier.Mid;
+            if (qualityWeight < 0.86f)
+                return HectonQualityTier.High;
+
+            return HectonQualityTier.Ultra;
+        }
+
         private static float Smooth01(float value)
         {
             float x = math.saturate(value);
@@ -1251,7 +1431,7 @@ namespace Hecton8.Physics
                 return TryOpenPhysicsVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.Physics,
@@ -1312,7 +1492,9 @@ namespace Hecton8.Physics
 
         private void EnsureTelemetry()
         {
-            TryResolveTelemetry(out _, out _);
+            NativeArray<TetherManagerTelemetryEntry> telemetryRing;
+            NativeArray<int> telemetryHead;
+            TryResolveTelemetry(out telemetryRing, out telemetryHead);
         }
 
         private bool TryResolveTelemetry(
@@ -1326,18 +1508,19 @@ namespace Hecton8.Physics
 
             uint previousRingGeneration = _telemetryRingHandle.Generation;
             uint previousHeadGeneration = _telemetryHeadHandle.Generation;
+            bool resetRing = !IsPhysicsVaultHandle(in _telemetryRingHandle, BufferID.TetherManagerBlackBox);
             bool resetHead = !IsPhysicsVaultHandle(in _telemetryHeadHandle, BufferID.TetherManagerBlackBoxHead);
             if (!OpenOrAcquirePhysicsVaultBuffer(
                     ref _telemetryRingHandle,
                     BufferID.TetherManagerBlackBox,
                     TetherBlackBoxCapacity,
-                    NativeArrayOptions.ClearMemory,
+                    NativeArrayOptions.UninitializedMemory,
                     out telemetryRing) ||
                 !OpenOrAcquirePhysicsVaultBuffer(
                     ref _telemetryHeadHandle,
                     BufferID.TetherManagerBlackBoxHead,
                     1,
-                    NativeArrayOptions.ClearMemory,
+                    NativeArrayOptions.UninitializedMemory,
                     out telemetryHead))
             {
                 _telemetryRingHandle = default;
@@ -1345,11 +1528,16 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (resetHead)
-                telemetryHead[0] = 0;
             bool generationChanged =
                 (previousRingGeneration != 0u && previousRingGeneration != _telemetryRingHandle.Generation) ||
                 (previousHeadGeneration != 0u && previousHeadGeneration != _telemetryHeadHandle.Generation);
+            if (resetRing || generationChanged)
+            {
+                for (int i = 0; i < telemetryRing.Length; i++)
+                    telemetryRing[i] = default;
+            }
+            if (resetHead || generationChanged)
+                telemetryHead[0] = 0;
             if (generationChanged)
                 _telemetryDumped = false;
             return true;

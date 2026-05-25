@@ -92,9 +92,8 @@ namespace Hecton8.Core.Content
         {
             get
             {
-                return TryResolveNormalized(
-                    out ContentBundleRefState* _,
-                    out int* _,
+                return TryReadNormalized(
+                    out NativeArray<ContentBundleRefState>.ReadOnly _,
                     out int count)
                     ? count
                     : 0;
@@ -222,7 +221,7 @@ namespace Hecton8.Core.Content
             if (hash == 0u)
                 return false;
 
-            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
+            if (!TryReadNormalized(out NativeArray<ContentBundleRefState>.ReadOnly states, out int count))
                 return false;
 
             for (int i = 0; i < count; i++)
@@ -240,7 +239,7 @@ namespace Hecton8.Core.Content
         public unsafe bool TrySelectOldestUnusedBiomeCache(out uint hash)
         {
             hash = 0u;
-            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
+            if (!TryReadNormalized(out NativeArray<ContentBundleRefState>.ReadOnly states, out int count))
                 return false;
 
             int bestIndex = -1;
@@ -307,7 +306,7 @@ namespace Hecton8.Core.Content
 
         public unsafe long EstimateResidentBytes(out int residentCount)
         {
-            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
+            if (!TryReadNormalized(out NativeArray<ContentBundleRefState>.ReadOnly states, out int count))
             {
                 residentCount = 0;
                 return 0L;
@@ -391,7 +390,7 @@ namespace Hecton8.Core.Content
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
-                handle = vault.GetGenerationHandle<T>(
+                handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     requiredLength,
                     SystemID.ContentAuthority,
@@ -435,6 +434,40 @@ namespace Hecton8.Core.Content
             return true;
         }
 
+        private bool TryReadNormalized(
+            out NativeArray<ContentBundleRefState>.ReadOnly states,
+            out int count)
+        {
+            states = default;
+            count = 0;
+
+            IDataVault vault = _vault;
+            if (vault == null ||
+                _statesHandle.BufferID == 0u ||
+                _countHandle.BufferID == 0u ||
+                !vault.TryReadOnlyHandle(in _statesHandle, out states) ||
+                !states.IsCreated ||
+                states.Length < _capacity ||
+                !vault.TryReadOnlyHandle(in _countHandle, out NativeArray<int>.ReadOnly countBuffer) ||
+                !countBuffer.IsCreated ||
+                countBuffer.Length < 1)
+            {
+                states = default;
+                return false;
+            }
+
+            int resolvedCount = countBuffer[0];
+            if ((uint)resolvedCount <= (uint)_capacity)
+            {
+                count = resolvedCount;
+                return true;
+            }
+
+            LogLedgerCountCorruption();
+            states = default;
+            return false;
+        }
+
         private static unsafe void ClearResolved(ContentBundleRefState* states, int* countPtr, int capacity)
         {
             for (int i = 0; i < capacity; i++)
@@ -447,39 +480,35 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogRefCountViolation(uint hash)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Invalid ref-count transition for hash 0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentBundleReferenceCounter] Invalid ref-count transition.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidAcquireMetadata(uint hash, long bytes, ContentTier tier)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Invalid acquire metadata hash=0x" +
-                           hash.ToString("X8") + " bytes=" + bytes + " tier=" + tier + ".");
+            Debug.LogError("[ContentBundleReferenceCounter] Invalid acquire metadata.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogActiveRemoveRejected(uint hash, int refCount)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Refused to remove active bundle hash=0x" +
-                           hash.ToString("X8") + " refCount=" + refCount + ".");
+            Debug.LogError("[ContentBundleReferenceCounter] Refused to remove active bundle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVaultUnavailable(string operation, uint hash)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Vault unavailable during " +
-                           operation + " hash=0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentBundleReferenceCounter] Vault unavailable.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBundleRefCapacityExceeded(uint hash, int capacity)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Bundle ref ledger full capacity=" +
-                           capacity + " rejectedHash=0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentBundleReferenceCounter] Bundle ref ledger full.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -522,7 +551,7 @@ namespace Hecton8.Core.Content
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8009)]
-    public sealed class ContentAuthorityRuntime : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class ContentAuthorityRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float GhostProxyDelaySeconds = 0.1f;
         private const long HardVramCeilingBytes = 1800L * 1024L * 1024L;
@@ -562,9 +591,9 @@ namespace Hecton8.Core.Content
         private readonly AsyncOperationHandle[] _vfxResidentHandles = new AsyncOperationHandle[ContentVfxPrewarmManifest.MaxEntries];
 #endif
         private IDataVault _dataVault;
-        private VRAMMonitor _vramMonitor;
-        private VRAMPressureMonitor _vramPressure;
-        private AssetLifecycleGovernor _assetLifecycle;
+        private IVramBudgetReadModel _vramMonitor;
+        private IVramPressureReadModel _vramPressure;
+        private IAssetLifecyclePressureSink _assetLifecycle;
         private VaultGenerationHandle<ContentAuthorityTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<ContentPendingLoadState> _pendingLoadsHandle;
@@ -573,6 +602,8 @@ namespace Hecton8.Core.Content
         private GameObject[] _hologramPool;
         private Renderer[] _hologramRenderers;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
+        private bool _pendingContentVisualSyncTick;
         private bool _registeredHotSwap;
         private bool _vfxPrewarmStarted;
         private bool _blackBoxDumpedThisSession;
@@ -648,6 +679,15 @@ namespace Hecton8.Core.Content
 
         public void Tick(float deltaTime)
         {
+            _pendingContentVisualSyncTick = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingContentVisualSyncTick)
+                return;
+
+            _pendingContentVisualSyncTick = false;
             uint flags = 0u;
             TickPendingLoads(ref flags);
             TickAupShiftCleanup(ref flags);
@@ -679,7 +719,7 @@ namespace Hecton8.Core.Content
                 entry.BiomeId,
                 entry.Tier,
                 entry.IsBiomeCache,
-                Time.frameCount);
+                SystemDispatcher.CurrentFrameIndex);
 
             if (accepted)
                 VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
@@ -723,7 +763,7 @@ namespace Hecton8.Core.Content
             if (_dataVault == null)
                 CacheDependencies();
 
-            bool released = _bundleRefs.Release(hash, Time.frameCount, out bool becameUnused);
+            bool released = _bundleRefs.Release(hash, SystemDispatcher.CurrentFrameIndex, out bool becameUnused);
             if (released && becameUnused)
             {
                 bool retainAsBiomeCache = _bundleRefs.TryGetState(hash, out ContentBundleRefState state) &&
@@ -1061,14 +1101,14 @@ namespace Hecton8.Core.Content
             if (shifts.Length == 0)
                 return;
 
-            AssetLifecycleGovernor governor = _assetLifecycle;
+            IAssetLifecyclePressureSink governor = _assetLifecycle;
             if (governor != null)
             {
                 governor.SetHeapSanitizerBlindFrameWindow(true, 0f);
                 try
                 {
                     governor.ForceDrainPendingReleaseQueue();
-                    governor.EvictLowestPriorityUnusedAssets(2, AssetPriorityTier.Tier5DistantHlod);
+                    governor.EvictLowestPriorityUnusedAssets(2, AssetPriorityTierCodes.Tier5DistantHlod);
                 }
                 finally
                 {
@@ -1081,7 +1121,7 @@ namespace Hecton8.Core.Content
 
         private void TickVramIntercept(ref uint flags)
         {
-            VRAMMonitor monitor = _vramMonitor;
+            IVramBudgetReadModel monitor = _vramMonitor;
             if (monitor == null)
                 return;
 
@@ -1089,7 +1129,7 @@ namespace Hecton8.Core.Content
             if (projectedBytes <= HardVramCeilingBytes)
                 return;
 
-            AssetLifecycleGovernor governor = _assetLifecycle;
+            IAssetLifecyclePressureSink governor = _assetLifecycle;
             if (_bundleRefs.TrySelectOldestUnusedBiomeCache(out uint hash))
             {
                 bool releaseAccepted = true;
@@ -1113,7 +1153,7 @@ namespace Hecton8.Core.Content
                 try
                 {
                     governor.ForceDrainPendingReleaseQueue();
-                    governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTier.Tier5DistantHlod);
+                    governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTierCodes.Tier5DistantHlod);
                 }
                 finally
                 {
@@ -1162,7 +1202,7 @@ namespace Hecton8.Core.Content
             if (!handle.IsValid())
                 return true;
 
-            AssetLifecycleGovernor governor = _assetLifecycle;
+            IAssetLifecyclePressureSink governor = _assetLifecycle;
             return governor != null && governor.TryStageExternalAddressableRelease(handle);
         }
 
@@ -1171,7 +1211,7 @@ namespace Hecton8.Core.Content
             if (!handle.IsValid())
                 return true;
 
-            AssetLifecycleGovernor governor = _assetLifecycle;
+            IAssetLifecyclePressureSink governor = _assetLifecycle;
             return governor != null && governor.TryReleaseExternalAddressableFault(handle);
         }
 
@@ -1337,7 +1377,7 @@ namespace Hecton8.Core.Content
 
         private unsafe void WriteTelemetry(uint flags)
         {
-            VRAMPressureMonitor pressure = _vramPressure;
+            IVramPressureReadModel pressure = _vramPressure;
             long estimate = _bundleRefs.EstimateResidentBytes(out int bundleRefCount);
             float rawVramPressure = pressure != null ? pressure.VramPressureFactor : 0f;
             float rawRamPressure = pressure != null ? pressure.RamPressureFactor : 0f;
@@ -1361,7 +1401,7 @@ namespace Hecton8.Core.Content
 
             telemetry[cursor] = new ContentAuthorityTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 Flags = flags,
                 PendingLoads = pendingLoadCount,
                 HologramsActive = _hologramsActive,
@@ -1423,12 +1463,33 @@ namespace Hecton8.Core.Content
 
         private unsafe int GetPendingLoadCount()
         {
-            return TryResolvePendingLoadsNormalized(
-                out ContentPendingLoadState* _,
-                out int* _,
-                out int count)
+            return TryReadPendingLoadCount(out int count)
                 ? count
                 : 0;
+        }
+
+        private bool TryReadPendingLoadCount(out int count)
+        {
+            count = 0;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                _pendingLoadCountHandle.BufferID == 0u ||
+                !vault.TryReadOnlyHandle(in _pendingLoadCountHandle, out NativeArray<int>.ReadOnly countBuffer) ||
+                !countBuffer.IsCreated ||
+                countBuffer.Length < 1)
+            {
+                return false;
+            }
+
+            int resolvedCount = countBuffer[0];
+            if ((uint)resolvedCount <= PendingLoadCapacity)
+            {
+                count = resolvedCount;
+                return true;
+            }
+
+            LogPendingLoadCountCorruption();
+            return false;
         }
 
         private unsafe bool TryResolvePendingLoads(
@@ -1497,7 +1558,7 @@ namespace Hecton8.Core.Content
 
         private void RollbackBundleAcquire(uint hash)
         {
-            if (_bundleRefs.Release(hash, Time.frameCount, out bool becameUnused) && becameUnused)
+            if (_bundleRefs.Release(hash, SystemDispatcher.CurrentFrameIndex, out bool becameUnused) && becameUnused)
                 _bundleRefs.Remove(hash);
 
             VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
@@ -1573,7 +1634,7 @@ namespace Hecton8.Core.Content
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
-                handle = vault.GetGenerationHandle<T>(
+                handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     requiredLength,
                     SystemID.ContentAuthority,
@@ -1743,89 +1804,84 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingAssetHashMap(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Asset hash map missing for hash 0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Asset hash map missing.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingAssetHash(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] No content registry entry for hash 0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentAuthorityRuntime] No content registry entry.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBundleHandleTrackFailed(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Failed to track Addressables bundle handle for hash 0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Failed to track Addressables bundle handle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBundleHandleReleaseMiss(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] No tracked Addressables bundle handle during release for hash 0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentAuthorityRuntime] No tracked Addressables bundle handle during release.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidBundleHandle(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Invalid Addressables bundle handle for hash 0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Invalid Addressables bundle handle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidAsyncLoadTrack(uint hash, bool nullTarget)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Rejected async load tracking hash=0x" +
-                           hash.ToString("X8") + " nullTarget=" + nullTarget + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Rejected async load tracking.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPendingLoadVaultUnavailable(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Pending-load vault unavailable for hash 0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Pending-load vault unavailable.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPendingLoadCapacityExceeded(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Pending-load ledger full for hash 0x" + hash.ToString("X8") + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Pending-load ledger full.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogAsyncLoadCompletionMiss(uint hash, bool nullTarget)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Async load completion had no pending entry hash=0x" +
-                           hash.ToString("X8") + " nullTarget=" + nullTarget + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Async load completion had no pending entry.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidVfxPrewarmReference(int index, bool particle)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Invalid VFX prewarm Addressables reference kind=" +
-                           (particle ? "particle" : "compute") + " index=" + index + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Invalid VFX prewarm Addressables reference.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVfxPrewarmLedgerFull(bool particle)
         {
-            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle ledger full kind=" +
-                           (particle ? "particle" : "compute") + ".");
+            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle ledger full.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidVfxPrewarmHandle(int index, bool particle)
         {
-            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm returned invalid Addressables handle kind=" +
-                           (particle ? "particle" : "compute") + " index=" + index + ".");
+            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm returned invalid Addressables handle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1846,7 +1902,7 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogHologramProxyUnavailable(bool nullTarget)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Hologram proxy unavailable nullTarget=" + nullTarget + ".");
+            Debug.LogError("[ContentAuthorityRuntime] Hologram proxy unavailable.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1867,16 +1923,14 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBlackBoxDumpFailure(string path, Exception exception)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Failed to write content blackbox dump: " +
-                           path + " error=" + exception.Message);
+            Debug.LogError("[ContentAuthorityRuntime] Failed to write content blackbox dump.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBlackBoxPathFailure(Exception exception)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Failed to resolve content blackbox dump path: " +
-                           exception.Message);
+            Debug.LogError("[ContentAuthorityRuntime] Failed to resolve content blackbox dump path.");
         }
 
         private static bool IsFinite(float value)
@@ -1895,20 +1949,29 @@ namespace Hecton8.Core.Content
 
         private void TryRegister()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if ((_registeredTick && _registeredLateFrame) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             CacheDependencies();
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
         {
-            if (!_registeredTick)
+            if (!_registeredTick && !_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            if (_registeredTick)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            if (_registeredLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+
             _registeredTick = false;
+            _registeredLateFrame = false;
+            _pendingContentVisualSyncTick = false;
         }
 
         private void TryRegisterHotSwap()
@@ -1934,11 +1997,11 @@ namespace Hecton8.Core.Content
                 _dataVault = GlobalRegistry.DataVault;
             _bundleRefs.BindVault(_dataVault);
             if (_vramMonitor == null)
-                _vramMonitor = GlobalRegistry.VRAMMonitor;
+                _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
             if (_vramPressure == null)
-                _vramPressure = GlobalRegistry.VRAMPressure;
+                _vramPressure = GlobalRegistry.VRAMPressureReadModel;
             if (_assetLifecycle == null)
-                _assetLifecycle = GlobalRegistry.AssetLifecycle;
+                _assetLifecycle = GlobalRegistry.AssetLifecyclePressureSink;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1958,13 +2021,13 @@ namespace Hecton8.Core.Content
                     _pendingLoadCountHandle = default;
                     break;
                 case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
-                    _vramMonitor = currentService as VRAMMonitor;
+                    _vramMonitor = currentService as IVramBudgetReadModel;
                     break;
                 case GlobalRegistryServiceSlot.VRAMPressureRuntime:
-                    _vramPressure = currentService as VRAMPressureMonitor;
+                    _vramPressure = currentService as IVramPressureReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
-                    _assetLifecycle = currentService as AssetLifecycleGovernor;
+                    _assetLifecycle = currentService as IAssetLifecyclePressureSink;
                     break;
             }
         }
@@ -2081,7 +2144,7 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidContentTier(ContentTier tier)
         {
-            Debug.LogError("[ContentTieredGroupPolicy] Invalid content tier value=" + (byte)tier + ".");
+            Debug.LogError("[ContentTieredGroupPolicy] Invalid content tier value.");
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-85)]
-    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IDepthZoneEventListener, ISonarPulseEventListener, IEclipseGameplayEventListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IDepthZoneEventListener, ISonarPulseEventListener, IEclipseGameplayEventListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -81,6 +81,7 @@ namespace Hecton8.World
         private bool  _eclipseActive;
         private bool  _registered;
         private bool _runtimeRegistered;
+        private bool _hotSwapRegistered;
 
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
@@ -100,6 +101,7 @@ namespace Hecton8.World
             if (!TryRegisterRuntime())
                 return;
 
+            TryRegisterHotSwapListener();
             TryRegister();
 
             TryBindSurvivalSystemFromPlayerContext();
@@ -122,6 +124,7 @@ namespace Hecton8.World
         {
             TryUnregister();
             TryUnregisterRuntime();
+            TryUnregisterHotSwapListener();
 
             EclipseGameplayEvents.Unregister(this);
             AtlasSignalEvents.Unregister(this);
@@ -137,6 +140,7 @@ namespace Hecton8.World
         {
             TryUnregister();
             TryUnregisterRuntime();
+            TryUnregisterHotSwapListener();
             EclipseGameplayEvents.Unregister(this);
             AtlasSignalEvents.Unregister(this);
             DepthZoneEvents.Unregister(this);
@@ -148,6 +152,7 @@ namespace Hecton8.World
         {
             TryUnregister();
             TryUnregisterRuntime();
+            TryUnregisterHotSwapListener();
             EclipseGameplayEvents.Unregister(this);
             AtlasSignalEvents.Unregister(this);
             DepthZoneEvents.Unregister(this);
@@ -360,8 +365,7 @@ namespace Hecton8.World
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private bool TryRegisterRuntime()
@@ -392,6 +396,35 @@ namespace Hecton8.World
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregister();
+            TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void TryUnregisterRuntime()

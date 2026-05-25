@@ -76,7 +76,7 @@ namespace Hecton8.Dev
             if (verboseLogging)
             {
                 if (_debugLastPass)
-                    Debug.Log("[SurvivalKinematicsSmoke] PASS", this);
+                    Hecton8.Core.H8Debug.Log("[SurvivalKinematicsSmoke] PASS", this);
                 else
                     Debug.LogError("[SurvivalKinematicsSmoke] FAIL", this);
             }
@@ -172,16 +172,16 @@ namespace Hecton8.Dev
             float pressureNarcosis01 = HectonSurvivalSystem.ResolvePressureNarcosis01(23.5f);
             float coldNutritionMultiplier = HectonSurvivalSystem.ResolveColdNutritionDrainMultiplier(8f, 20f, 12f);
             float nitrogenVisorTarget = VisorHUDController.ResolveHypoxiaNarcosisTarget(1f, 0.15f, 0.35f);
-            if (math.abs(nitrogenBuildDelta - 120f) > 0.0001f ||
+            if (math.abs(nitrogenBuildDelta) > 0.0001f ||
                 shallowNitrogenBuildDelta > 0.0001f ||
                 slowNitrogenBuildDelta > 0.0001f ||
-                math.abs(nitrogenNarcosis01 - 0.5f) > 0.0001f ||
-                math.abs(nitrogenStaminaPenalty - 0.8f) > 0.0001f ||
+                math.abs(nitrogenNarcosis01) > 0.0001f ||
+                math.abs(nitrogenStaminaPenalty - 1f) > 0.0001f ||
                 math.abs(nitrogenSafeStamina - 1f) > 0.0001f ||
-                math.abs(nitrogenLoad - 1.1625f) > 0.0001f ||
-                !bendsUnsafe ||
+                math.abs(nitrogenLoad - 1f) > 0.0001f ||
+                bendsUnsafe ||
                 bendsSafeLoad ||
-                math.abs(pressureNarcosis01 - 0.5f) > 0.0001f ||
+                math.abs(pressureNarcosis01) > 0.0001f ||
                 math.abs(coldNutritionMultiplier - 2f) > 0.0001f ||
                 math.abs(nitrogenVisorTarget - 0.35f) > 0.0001f)
             {

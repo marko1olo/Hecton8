@@ -1,13 +1,15 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using EcosystemSectorDTO = Hecton8.Core.Contracts.EcosystemSectorDTO;
 
 namespace Hecton8.Ecosystem
 {
     /// <summary>
-    /// Editor gizmo hook for inspecting SHINOBU_116 sector biomass without spawning fauna objects.
+    /// Editor gizmo hook for inspecting SHINOBU_300 sector biomass without spawning fauna objects.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Ecosystem/Macro Ecosystem Heatmap Gizmo")]
@@ -40,17 +42,16 @@ namespace Hecton8.Ecosystem
 
             MacroEcosystemTuningDTO tune = MacroEcosystemTuningDTO.Sanitize(tuning[0]);
             int count = math.min(math.min(sectors.Length, coords.Length), math.max(1, maxDrawnSectors));
-            float invPrey = math.rcp(math.max(1f, tune.CarryingCapacityPrey));
-            float invPredator = math.rcp(math.max(1f, tune.CarryingCapacityPredator));
             Vector3 size = Vector3.one * (1000f * math.clamp(cubeScale, 0.01f, 1f));
             for (int i = 0; i < count; i++)
             {
                 EcosystemSectorDTO sector = sectors[i];
                 EcosystemSectorCoordDTO coord = coords[i];
-                float prey01 = math.saturate(sector.PreyBiomass * invPrey);
-                float predator01 = math.saturate(sector.PredatorBiomass * invPredator);
-                float toxin01 = math.saturate(sector.ToxinLevel);
-                Gizmos.color = new Color(predator01, toxin01, prey01, 0.8f);
+                float capacity = math.max(1f, math.select(tune.CarryingCapacityPrey + tune.CarryingCapacityPredator, sector.CarryingCapacity, math.isfinite(sector.CarryingCapacity) & sector.CarryingCapacity > 0f));
+                float flora01 = math.saturate(sector.FloraBiomass * math.rcp(capacity));
+                float prey01 = math.saturate(sector.PreyBiomass * math.rcp(capacity));
+                float predator01 = math.saturate(sector.PredatorBiomass * math.rcp(capacity));
+                Gizmos.color = new Color(predator01, flora01, prey01, 0.8f);
                 Gizmos.DrawWireCube(
                     new Vector3((float)coord.SectorX * 1000f, (float)coord.SectorY * 1000f, (float)coord.SectorZ * 1000f),
                     size);

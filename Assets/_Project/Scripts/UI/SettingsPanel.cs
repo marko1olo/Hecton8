@@ -1,6 +1,8 @@
+using System;
 using TMPro;
 using Hecton8.Core;
 using Hecton8.Modding;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -144,70 +146,55 @@ namespace Hecton8.UI
         private static readonly string[] AntiAliasingNames = { "None", "FXAA", "SMAA", "TAA" };
         private static readonly string[] TextureQualityNames = { "Low", "Medium", "High", "Ultra" };
 
-        // ZERO-GC: Cached strings for volume/FOV/shadow distance display
-        private static readonly string[] VolumePercentStrings = new string[101]; // COLD ALLOC: string[101] — volume percentage strings 0-100% — owner: SettingsPanel
-        private static readonly string[] FOVStrings = new string[51]; // COLD ALLOC: string[51] — FOV strings 60-110° — owner: SettingsPanel
-        private static readonly string[] ShadowDistanceStrings = new string[251]; // COLD ALLOC: string[251] — shadow distance strings 50-300m — owner: SettingsPanel
+        // ZERO-GC: Cached char buffers for volume/FOV/shadow distance display
+        private static readonly CachedTextLabel[] VolumePercentLabels = new CachedTextLabel[101]; // COLD ALLOC: label[101] - volume percentage char buffers - owner: SettingsPanel
+        private static readonly CachedTextLabel[] FOVLabels = new CachedTextLabel[51]; // COLD ALLOC: label[51] - FOV char buffers - owner: SettingsPanel
+        private static readonly CachedTextLabel[] ShadowDistanceLabels = new CachedTextLabel[251]; // COLD ALLOC: label[251] - shadow distance char buffers - owner: SettingsPanel
 
         // ZERO-GC: Dirty flags to prevent unnecessary SetText calls
-        private string _prevMasterVolumeText = null;
-        private string _prevMusicVolumeText = null;
-        private string _prevSfxVolumeText = null;
-        private string _prevAmbientVolumeText = null;
-        private string _prevFOVText = null;
-        private string _prevShadowDistanceText = null;
-        private string _prevQualityLevelText = null;
-        private string _prevShadowQualityText = null;
-        private string _prevAntiAliasingText = null;
-        private string _prevTextureQualityText = null;
+        private int _prevMasterVolumeIndex = -1;
+        private int _prevMusicVolumeIndex = -1;
+        private int _prevSfxVolumeIndex = -1;
+        private int _prevAmbientVolumeIndex = -1;
+        private int _prevFOVIndex = -1;
+        private int _prevShadowDistanceIndex = -1;
+        private uint _prevQualityLevelTextHash;
+        private uint _prevShadowQualityTextHash;
+        private uint _prevAntiAliasingTextHash;
+        private uint _prevTextureQualityTextHash;
+        private readonly char[] _modalMessageBuffer = new char[192]; // COLD ALLOC: settings modal message staging buffer copied directly into TMP - owner: SettingsPanel
 
-        // ZERO-GC: Static constructor to pre-generate all display strings
+        private readonly struct CachedTextLabel
+        {
+            public readonly char[] Buffer;
+            public readonly int Length;
+
+            public CachedTextLabel(char[] buffer, int length)
+            {
+                Buffer = buffer;
+                Length = length;
+            }
+        }
+
+        // ZERO-GC: Static constructor to pre-generate display buffers.
         static SettingsPanel()
         {
-            // Pre-generate volume percentage strings (0-100%)
             for (int i = 0; i <= 100; i++)
-            {
-                VolumePercentStrings[i] = CreatePercentString(i);
-            }
+                VolumePercentLabels[i] = CreateSuffixedNumericLabel(i, '%');
 
-            // Pre-generate FOV strings (60-110°)
             for (int i = 0; i <= 50; i++)
-            {
-                FOVStrings[i] = CreateDegreeString(60 + i);
-            }
+                FOVLabels[i] = CreateSuffixedNumericLabel(60 + i, '\u00B0');
 
-            // Pre-generate shadow distance strings (50-300m)
             for (int i = 0; i <= 250; i++)
-            {
-                ShadowDistanceStrings[i] = CreateMeterString(50 + i);
-            }
+                ShadowDistanceLabels[i] = CreateSuffixedNumericLabel(50 + i, 'm');
         }
 
-        private static string CreatePercentString(int value)
+        private static CachedTextLabel CreateSuffixedNumericLabel(int value, char suffix)
         {
-            return string.Create(CountPositiveDecimalDigits(value) + 1, value, (buffer, number) =>
-            {
-                number.TryFormat(buffer, out int written);
-                buffer[written] = '%';
-            });
-        }
-
-        private static string CreateDegreeString(int value)
-        {
-            return string.Create(CountPositiveDecimalDigits(value) + 1, value, (buffer, number) =>
-            {
-                number.TryFormat(buffer, out int written);
-                buffer[written] = '\u00B0';
-            });
-        }
-
-        private static string CreateMeterString(int value)
-        {
-            return string.Create(CountPositiveDecimalDigits(value) + 1, value, (buffer, number) =>
-            {
-                number.TryFormat(buffer, out int written);
-                buffer[written] = 'm';
-            });
+            char[] buffer = new char[CountPositiveDecimalDigits(value) + 1]; // COLD ALLOC: numeric label char cache at type initialization.
+            value.TryFormat(new System.Span<char>(buffer), out int written);
+            buffer[written] = suffix;
+            return new CachedTextLabel(buffer, written + 1);
         }
 
         private static int CountPositiveDecimalDigits(int value)
@@ -571,9 +558,9 @@ namespace Hecton8.UI
 
             string[] qualityNames = QualitySettings.names;
             if (_cachedQualityLevel >= 0 && _cachedQualityLevel < qualityNames.Length)
-                SetValueTextIfChanged(txtQualityLevel, ResolveLocalizedQualityName(qualityNames[_cachedQualityLevel]), ref _prevQualityLevelText);
+                SetValueTextIfChanged(txtQualityLevel, ResolveLocalizedQualityName(qualityNames[_cachedQualityLevel]), ref _prevQualityLevelTextHash);
             else
-                SetValueTextIfChanged(txtQualityLevel, "--", ref _prevQualityLevelText);
+                SetValueTextIfChanged(txtQualityLevel, "--".AsSpan(), ref _prevQualityLevelTextHash);
         }
 
         private void RefreshVolumeUI()
@@ -594,45 +581,29 @@ namespace Hecton8.UI
             if (txtMasterVolume != null)
             {
                 int percent = Mathf.RoundToInt(_cachedMasterVolume * 100f);
-                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
-                if (_prevMasterVolumeText != text)
-                {
-                    txtMasterVolume.SetText(text);
-                    _prevMasterVolumeText = text;
-                }
+                int labelIndex = Mathf.Clamp(percent, 0, 100);
+                SetCachedLabelIfChanged(txtMasterVolume, VolumePercentLabels, labelIndex, ref _prevMasterVolumeIndex);
             }
 
             if (txtMusicVolume != null)
             {
                 int percent = Mathf.RoundToInt(_cachedMusicVolume * 100f);
-                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
-                if (_prevMusicVolumeText != text)
-                {
-                    txtMusicVolume.SetText(text);
-                    _prevMusicVolumeText = text;
-                }
+                int labelIndex = Mathf.Clamp(percent, 0, 100);
+                SetCachedLabelIfChanged(txtMusicVolume, VolumePercentLabels, labelIndex, ref _prevMusicVolumeIndex);
             }
 
             if (txtSfxVolume != null)
             {
                 int percent = Mathf.RoundToInt(_cachedSfxVolume * 100f);
-                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
-                if (_prevSfxVolumeText != text)
-                {
-                    txtSfxVolume.SetText(text);
-                    _prevSfxVolumeText = text;
-                }
+                int labelIndex = Mathf.Clamp(percent, 0, 100);
+                SetCachedLabelIfChanged(txtSfxVolume, VolumePercentLabels, labelIndex, ref _prevSfxVolumeIndex);
             }
 
             if (txtAmbientVolume != null)
             {
                 int percent = Mathf.RoundToInt(_cachedAmbientVolume * 100f);
-                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
-                if (_prevAmbientVolumeText != text)
-                {
-                    txtAmbientVolume.SetText(text);
-                    _prevAmbientVolumeText = text;
-                }
+                int labelIndex = Mathf.Clamp(percent, 0, 100);
+                SetCachedLabelIfChanged(txtAmbientVolume, VolumePercentLabels, labelIndex, ref _prevAmbientVolumeIndex);
             }
         }
 
@@ -655,16 +626,11 @@ namespace Hecton8.UI
             {
                 int fov = Mathf.RoundToInt(_cachedFieldOfView);
                 int index = Mathf.Clamp(fov - 60, 0, 50);
-                string text = FOVStrings[index];
-                if (_prevFOVText != text)
-                {
-                    txtFieldOfView.SetText(text);
-                    _prevFOVText = text;
-                }
+                SetCachedLabelIfChanged(txtFieldOfView, FOVLabels, index, ref _prevFOVIndex);
             }
 
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityText);
+                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityTextHash);
 
             if (sliderShadowDistance != null)
                 sliderShadowDistance.SetValueWithoutNotify(_cachedShadowDistance);
@@ -674,16 +640,11 @@ namespace Hecton8.UI
             {
                 int distance = Mathf.RoundToInt(_cachedShadowDistance);
                 int index = Mathf.Clamp(distance - 50, 0, 250);
-                string text = ShadowDistanceStrings[index];
-                if (_prevShadowDistanceText != text)
-                {
-                    txtShadowDistance.SetText(text);
-                    _prevShadowDistanceText = text;
-                }
+                SetCachedLabelIfChanged(txtShadowDistance, ShadowDistanceLabels, index, ref _prevShadowDistanceIndex);
             }
 
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingText);
+                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingTextHash);
 
             if (toggleAmbientOcclusion != null)
                 toggleAmbientOcclusion.SetIsOnWithoutNotify(_cachedAmbientOcclusion);
@@ -695,7 +656,7 @@ namespace Hecton8.UI
                 toggleMotionBlur.SetIsOnWithoutNotify(_cachedMotionBlur);
 
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityText);
+                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityTextHash);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -797,12 +758,7 @@ namespace Hecton8.UI
             {
                 int fov = Mathf.RoundToInt(value);
                 int index = Mathf.Clamp(fov - 60, 0, 50);
-                string text = FOVStrings[index];
-                if (_prevFOVText != text)
-                {
-                    txtFieldOfView.SetText(text);
-                    _prevFOVText = text;
-                }
+                SetCachedLabelIfChanged(txtFieldOfView, FOVLabels, index, ref _prevFOVIndex);
             }
 
             // Live preview
@@ -814,14 +770,14 @@ namespace Hecton8.UI
         {
             _cachedShadowQuality = Mathf.Clamp(_cachedShadowQuality - 1, 0, 3);
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityText);
+                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityTextHash);
         }
 
         private void OnShadowQualityIncrease()
         {
             _cachedShadowQuality = Mathf.Clamp(_cachedShadowQuality + 1, 0, 3);
             if (txtShadowQuality != null && _cachedShadowQuality >= 0 && _cachedShadowQuality < ShadowQualityNames.Length)
-                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityText);
+                SetValueTextIfChanged(txtShadowQuality, ResolveLocalizedShadowQualityName(_cachedShadowQuality), ref _prevShadowQualityTextHash);
         }
 
         private void OnShadowDistanceChanged(float value)
@@ -839,12 +795,7 @@ namespace Hecton8.UI
             {
                 int distance = Mathf.RoundToInt(value);
                 int index = Mathf.Clamp(distance - 50, 0, 250);
-                string text = ShadowDistanceStrings[index];
-                if (_prevShadowDistanceText != text)
-                {
-                    txtShadowDistance.SetText(text);
-                    _prevShadowDistanceText = text;
-                }
+                SetCachedLabelIfChanged(txtShadowDistance, ShadowDistanceLabels, index, ref _prevShadowDistanceIndex);
             }
         }
 
@@ -852,14 +803,14 @@ namespace Hecton8.UI
         {
             _cachedAntiAliasing = Mathf.Clamp(_cachedAntiAliasing - 1, 0, 3);
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingText);
+                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingTextHash);
         }
 
         private void OnAntiAliasingIncrease()
         {
             _cachedAntiAliasing = Mathf.Clamp(_cachedAntiAliasing + 1, 0, 3);
             if (txtAntiAliasing != null && _cachedAntiAliasing >= 0 && _cachedAntiAliasing < AntiAliasingNames.Length)
-                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingText);
+                SetValueTextIfChanged(txtAntiAliasing, ResolveLocalizedAntiAliasingName(_cachedAntiAliasing), ref _prevAntiAliasingTextHash);
         }
 
         private void OnAmbientOcclusionChanged(bool value)
@@ -908,14 +859,14 @@ namespace Hecton8.UI
         {
             _cachedTextureQuality = Mathf.Clamp(_cachedTextureQuality - 1, 0, 3);
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityText);
+                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityTextHash);
         }
 
         private void OnTextureQualityIncrease()
         {
             _cachedTextureQuality = Mathf.Clamp(_cachedTextureQuality + 1, 0, 3);
             if (txtTextureQuality != null && _cachedTextureQuality >= 0 && _cachedTextureQuality < TextureQualityNames.Length)
-                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityText);
+                SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityTextHash);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -969,80 +920,97 @@ namespace Hecton8.UI
                 return;
 
             LocalizedTMPAutoSizer.Configure(label, label.fontSize * 0.72f, label.fontSize, TextOverflowModes.Ellipsis, TextWrappingModes.NoWrap);
-            SetTextIfChanged(label, ResolveLocalized(key, fallback));
+            SetTextIfChanged(label, ResolveLocalizedSpan(key, fallback));
         }
 
-        private static void SetValueTextIfChanged(TMP_Text label, string text, ref string previousText)
+        private static void SetValueTextIfChanged(TMP_Text label, ReadOnlySpan<char> text, ref uint previousHash)
         {
-            if (label == null || previousText == text)
+            if (label == null)
                 return;
 
-            label.SetText(text);
-            previousText = text;
+            uint textHash = unchecked((uint)LocHash.Compute(text));
+            if (previousHash == textHash)
+                return;
+
+            TmpTextNoAlloc.Set(label, text);
+            previousHash = textHash;
         }
 
-        private static void SetTextIfChanged(TMP_Text label, string text)
+        private static void SetCachedLabelIfChanged(TMP_Text label, CachedTextLabel[] labels, int index, ref int previousIndex)
+        {
+            if (label == null || labels == null || index < 0 || index >= labels.Length || previousIndex == index)
+                return;
+
+            CachedTextLabel cached = labels[index];
+            if (cached.Buffer == null || cached.Length <= 0)
+                return;
+
+            label.SetCharArray(cached.Buffer, 0, cached.Length);
+            previousIndex = index;
+        }
+
+        private static void SetTextIfChanged(TMP_Text label, ReadOnlySpan<char> text)
         {
             if (label != null)
-                label.SetText(text);
+                TmpTextNoAlloc.Set(label, text);
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
             if (manager == null)
-                return fallback;
+                return fallback.AsSpan();
 
-            return manager.GetOrFallback(manager.CurrentLanguage, key, fallback);
+            return manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan());
         }
 
-        private static string ResolveLocalizedShadowQualityName(int shadowQualityIndex)
+        private static ReadOnlySpan<char> ResolveLocalizedShadowQualityName(int shadowQualityIndex)
         {
             return shadowQualityIndex switch
             {
-                0 => ResolveLocalized(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF"),
-                1 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
-                2 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
-                3 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
-                _ => ResolveLocalized(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF")
+                0 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF"),
+                1 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
+                2 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
+                3 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
+                _ => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF")
             };
         }
 
-        private static string ResolveLocalizedTextureQualityName(int textureQualityIndex)
+        private static ReadOnlySpan<char> ResolveLocalizedTextureQualityName(int textureQualityIndex)
         {
             return textureQualityIndex switch
             {
-                0 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
-                1 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
-                2 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
-                3 => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA"),
-                _ => ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW")
+                0 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
+                1 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
+                2 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
+                3 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA"),
+                _ => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW")
             };
         }
 
-        private static string ResolveLocalizedAntiAliasingName(int antiAliasingIndex)
+        private static ReadOnlySpan<char> ResolveLocalizedAntiAliasingName(int antiAliasingIndex)
         {
             if (antiAliasingIndex <= 0)
-                return ResolveLocalized(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF");
+                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_VALUE_OFF, "OFF");
 
-            return AntiAliasingNames[Mathf.Clamp(antiAliasingIndex, 0, AntiAliasingNames.Length - 1)];
+            return AntiAliasingNames[Mathf.Clamp(antiAliasingIndex, 0, AntiAliasingNames.Length - 1)].AsSpan();
         }
 
-        private static string ResolveLocalizedQualityName(string qualityName)
+        private static ReadOnlySpan<char> ResolveLocalizedQualityName(string qualityName)
         {
             if (string.IsNullOrWhiteSpace(qualityName))
-                return "--";
+                return "--".AsSpan();
 
             if (qualityName.IndexOf("Low", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW");
+                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW");
             if (qualityName.IndexOf("Medium", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM");
+                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM");
             if (qualityName.IndexOf("High", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH");
+                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH");
             if (qualityName.IndexOf("Ultra", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return ResolveLocalized(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA");
+                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA");
 
-            return qualityName;
+            return qualityName.AsSpan();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1063,12 +1031,8 @@ namespace Hecton8.UI
             if (txtMasterVolume != null)
             {
                 int percent = Mathf.RoundToInt(value * 100f);
-                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
-                if (_prevMasterVolumeText != text)
-                {
-                    txtMasterVolume.SetText(text);
-                    _prevMasterVolumeText = text;
-                }
+                int labelIndex = Mathf.Clamp(percent, 0, 100);
+                SetCachedLabelIfChanged(txtMasterVolume, VolumePercentLabels, labelIndex, ref _prevMasterVolumeIndex);
             }
         }
 
@@ -1086,12 +1050,8 @@ namespace Hecton8.UI
             if (txtMusicVolume != null)
             {
                 int percent = Mathf.RoundToInt(value * 100f);
-                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
-                if (_prevMusicVolumeText != text)
-                {
-                    txtMusicVolume.SetText(text);
-                    _prevMusicVolumeText = text;
-                }
+                int labelIndex = Mathf.Clamp(percent, 0, 100);
+                SetCachedLabelIfChanged(txtMusicVolume, VolumePercentLabels, labelIndex, ref _prevMusicVolumeIndex);
             }
         }
 
@@ -1109,12 +1069,8 @@ namespace Hecton8.UI
             if (txtSfxVolume != null)
             {
                 int percent = Mathf.RoundToInt(value * 100f);
-                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
-                if (_prevSfxVolumeText != text)
-                {
-                    txtSfxVolume.SetText(text);
-                    _prevSfxVolumeText = text;
-                }
+                int labelIndex = Mathf.Clamp(percent, 0, 100);
+                SetCachedLabelIfChanged(txtSfxVolume, VolumePercentLabels, labelIndex, ref _prevSfxVolumeIndex);
             }
         }
 
@@ -1132,12 +1088,8 @@ namespace Hecton8.UI
             if (txtAmbientVolume != null)
             {
                 int percent = Mathf.RoundToInt(value * 100f);
-                string text = VolumePercentStrings[Mathf.Clamp(percent, 0, 100)];
-                if (_prevAmbientVolumeText != text)
-                {
-                    txtAmbientVolume.SetText(text);
-                    _prevAmbientVolumeText = text;
-                }
+                int labelIndex = Mathf.Clamp(percent, 0, 100);
+                SetCachedLabelIfChanged(txtAmbientVolume, VolumePercentLabels, labelIndex, ref _prevAmbientVolumeIndex);
             }
         }
 
@@ -1196,14 +1148,14 @@ namespace Hecton8.UI
             bool success = _settings.ApplyAllSettings();
             if (!success)
             {
-                // Show error modal with retry/revert options (localized)
-                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
-                string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SETTINGS_APPLY_FAILED) : "Settings Apply Failed";
-                string message = loc != null ? loc.Get(LocalizationKeys.ERROR_SETTINGS_UNAVAILABLE) : "Some settings failed to apply. Check console for details.\n\nRetry or revert to defaults?";
+                int messageLength = CopyLocalizedSpanToModalBuffer(
+                    LocalizationKeys.ERROR_SETTINGS_UNAVAILABLE,
+                    "Some settings failed to apply. Check console for details.\n\nRetry or revert to defaults?");
                 
                 Hecton.UI.MainMenu.ModalWindow.ShowWithCustomLabels(
-                    title,
-                    message,
+                    "Settings Apply Failed",
+                    _modalMessageBuffer,
+                    messageLength,
                     () => OnApply(), // Retry
                     () => OnResetDefaults(), // Revert to defaults
                     "Retry",
@@ -1219,6 +1171,21 @@ namespace Hecton8.UI
 
             LoadCurrentSettings();
             RefreshAllUI();
+        }
+
+        private int CopyLocalizedSpanToModalBuffer(string key, string fallback)
+        {
+            return CopySpanToBuffer(ResolveLocalizedSpan(key, fallback), _modalMessageBuffer, 0);
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> value, char[] buffer, int offset)
+        {
+            if (value.Length == 0 || buffer == null || offset >= buffer.Length)
+                return 0;
+
+            int safeLength = math.min(value.Length, buffer.Length - offset);
+            value.Slice(0, safeLength).CopyTo(buffer.AsSpan(offset, safeLength));
+            return safeLength;
         }
     }
 }

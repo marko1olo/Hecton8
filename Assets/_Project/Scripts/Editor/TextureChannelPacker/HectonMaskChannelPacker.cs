@@ -105,12 +105,36 @@ namespace Hecton8.EditorTools
             sourceName = RemoveToken(sourceName, "_AO");
             sourceName = RemoveToken(sourceName, "_R");
             sourceName = RemoveToken(sourceName, "_M");
-            return "TX_ARM_" + HectonEditorMeshUtility.SanitizeAssetToken(sourceName);
+            return "TX_ARM_" + SanitizeAssetToken(sourceName);
         }
 
         private static string RemoveToken(string value, string token)
         {
             return string.IsNullOrEmpty(value) ? value : value.Replace(token, string.Empty);
+        }
+
+        private static string SanitizeAssetToken(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "Unnamed";
+
+            char[] chars = value.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                char c = chars[i];
+                if ((c >= 'a' && c <= 'z') ||
+                    (c >= 'A' && c <= 'Z') ||
+                    (c >= '0' && c <= '9') ||
+                    c == '_' ||
+                    c == '-')
+                {
+                    continue;
+                }
+
+                chars[i] = '_';
+            }
+
+            return new string(chars);
         }
     }
 }

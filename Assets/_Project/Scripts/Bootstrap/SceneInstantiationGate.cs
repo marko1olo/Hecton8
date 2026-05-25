@@ -1,6 +1,5 @@
 using System.Threading;
 using Hecton8.Core;
-using Hecton8.Optimization;
 using UnityEngine;
 
 namespace Hecton8.Bootstrap
@@ -20,7 +19,7 @@ namespace Hecton8.Bootstrap
         private bool _memorySnapshotCaptured;
         private bool _gateOpen;
         private bool _hotSwapRegistered;
-        private VRAMPressureMonitor _vramPressure;
+        private IVramPressureReadModel _vramPressure;
         private string _sceneName = string.Empty;
 
         internal static SceneInstantiationGate ActiveRuntime => s_activeRuntime;
@@ -104,7 +103,7 @@ namespace Hecton8.Bootstrap
                 if (watchdog++ > GateOpenWatchdogFrames)
                 {
                     LastFailureReason = "WATCHDOG_TIMEOUT";
-                    Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         $"[SceneInstantiationGate] WaitForOpenAsync timed out after {GateOpenWatchdogFrames} frames. " +
                         $"Scene='{_sceneName}' LastFailure='{LastFailureReason}'.");
                     return;
@@ -148,7 +147,7 @@ namespace Hecton8.Bootstrap
                 return false;
             }
 
-            VRAMPressureMonitor pressureMonitor = _vramPressure;
+            IVramPressureReadModel pressureMonitor = _vramPressure;
             if (pressureMonitor == null || !pressureMonitor.HasSample)
             {
                 failureReason = "PRESSURE_SAMPLE_PENDING";
@@ -177,12 +176,12 @@ namespace Hecton8.Bootstrap
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.VRAMPressureRuntime)
-                _vramPressure = currentService as VRAMPressureMonitor;
+                _vramPressure = currentService as IVramPressureReadModel;
         }
 
         private void CacheRegistryServicesCold()
         {
-            _vramPressure = GlobalRegistry.VRAMPressure;
+            _vramPressure = GlobalRegistry.VRAMPressureReadModel;
         }
 
         private void TryRegisterHotSwapListener()

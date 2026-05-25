@@ -14,11 +14,14 @@ using Unity.Mathematics;
 
 namespace Hecton8.Atmosphere
 {
-    internal static class AtmosphereLogisticsLayout
+    internal static partial class AtmosphereLogisticsLayout
     {
+        private const int AtmosphereCellStrideBytes = 32;
+        private const int AtmosphereDeltaLaneStrideBytes = 64;
+
         internal static bool ValidateAtmosphereCellLayout()
         {
-            return UnsafeUtility.SizeOf<AtmosphereCellDTO>() == 32 &&
+            return UnsafeUtility.SizeOf<AtmosphereCellDTO>() == AtmosphereCellStrideBytes &&
                    OffsetOf<AtmosphereCellDTO>(nameof(AtmosphereCellDTO.NodeHash)) == 0 &&
                    OffsetOf<AtmosphereCellDTO>(nameof(AtmosphereCellDTO.Oxygen01)) == 4 &&
                    OffsetOf<AtmosphereCellDTO>(nameof(AtmosphereCellDTO.CarbonDioxide01)) == 8 &&
@@ -31,7 +34,7 @@ namespace Hecton8.Atmosphere
 
         internal static bool ValidateAtmosphereDeltaLaneLayout()
         {
-            return UnsafeUtility.SizeOf<AtmosphereDeltaLane64>() == 64 &&
+            return UnsafeUtility.SizeOf<AtmosphereDeltaLane64>() == AtmosphereDeltaLaneStrideBytes &&
                    OffsetOf<AtmosphereDeltaLane64>(nameof(AtmosphereDeltaLane64.Units)) == 0 &&
                    OffsetOf<AtmosphereDeltaLane64>(nameof(AtmosphereDeltaLane64.Flags)) == 4 &&
                    OffsetOf<AtmosphereDeltaLane64>(nameof(AtmosphereDeltaLane64._pad0)) == 8 &&

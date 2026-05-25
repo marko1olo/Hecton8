@@ -156,7 +156,7 @@ namespace Hecton8.Core
 
             RefreshContinuousQualityOutputs();
 
-            if (GlobalSignals.SimulationPaused)
+            if (SimulationSignalRoute.SimulationPaused)
                 return;
 
             float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
@@ -298,8 +298,9 @@ namespace Hecton8.Core
                 s_beginMathPrecisionDegradation(Time.frameCount);
             else
                 s_registerMathPrecisionLevel(MathPrecisionLevel.High);
-            DistanceMath.PushShaderMathLod(targetMode);
-            PerformanceEvents.RaiseSystemDegradation(
+            float shaderQualityWeight01 = ResolveShaderQualityWeight01(ResolveGlobalQualityWeight01(), lowMode);
+            DistanceMath.PushShaderMathLod(shaderQualityWeight01);
+            PerformanceEvents.TryRaiseSystemDegradation(
                 frameTimeMilliseconds,
                 thresholdMilliseconds,
                 Time.frameCount,
@@ -317,7 +318,7 @@ namespace Hecton8.Core
             _lastScalabilitySwitchTimeSeconds = Time.unscaledTime;
             ApplyContinuousQualityState(qualityWeight01, lowMode);
             s_registerMathPrecisionLevel(lowMode ? MathPrecisionLevel.Low : MathPrecisionLevel.High);
-            DistanceMath.PushShaderMathLod(targetMode);
+            DistanceMath.PushShaderMathLod(ResolveShaderQualityWeight01(qualityWeight01, lowMode));
         }
 
         private static void RefreshContinuousQualityOutputs()
@@ -332,6 +333,12 @@ namespace Hecton8.Core
             _systemDegradationActive = forcedLowMathLod || curvedQuality01 <= DistantFloraDisableWeightThreshold01;
             _particleEmissionScale = math.lerp(ThermalParticleSpawnScale, FullParticleSpawnScale, curvedQuality01);
             _voxelAoEnabled = !forcedLowMathLod && curvedQuality01 >= VoxelAoEnableWeightThreshold01;
+        }
+
+        private static float ResolveShaderQualityWeight01(float qualityWeight01, bool forcedLowMathLod)
+        {
+            float safeQuality = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
+            return forcedLowMathLod ? math.min(safeQuality, 0.25f) : safeQuality;
         }
 
         private static MathLodMode ResolveQualityMathLodMode(float qualityWeight01)

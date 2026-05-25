@@ -11,11 +11,11 @@ using UnityEditor;
 [ExecuteAlways]
 [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Environment/Sky System Follow Camera")]
-public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
 {
     [Tooltip("Explicit runtime camera override. Falls back to the current player camera when empty.")]
     [SerializeField] private Camera runtimeCamera;
-    [Tooltip("Optional explicit atmosphere owner. When empty, the component falls back to Hecton8.Core.GlobalRegistry.Atmosphere.")]
+    [Tooltip("Optional explicit atmosphere owner. When empty, the component falls back to the atmosphere read-model route.")]
     [SerializeField] private HectonAtmosphereManager atmosphereManager;
     [Tooltip("Optional explicit player movement owner. When empty, the component resolves the active player and uses its live water surface.")]
     [SerializeField] private HectonPlayerMovement playerMovement;
@@ -42,8 +42,11 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRe
     private Vector3 _editorLastAppliedPosition;
     private bool _editorPositionCached;
     private bool _registeredForTick;
+    private bool _registeredForLateFrame;
     private bool _registeredHotSwapListener;
-    private HectonAtmosphereManager _cachedAtmosphereManager;
+    private Vector3 _pendingFollowPosition;
+    private bool _hasPendingFollowPosition;
+    private IAtmosphereReadModel _cachedAtmosphereReadModel;
 
     private void OnEnable()
     {
@@ -86,7 +89,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRe
         object currentService)
     {
         if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
-            _cachedAtmosphereManager = currentService as HectonAtmosphereManager;
+            _cachedAtmosphereReadModel = currentService as IAtmosphereReadModel;
     }
 
     /// <inheritdoc />
@@ -95,7 +98,16 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRe
         if (!Application.isPlaying || !followInPlayMode)
             return;
 
-        ApplyFollow();
+        QueueFollow();
+    }
+
+    public void LateFrameTick()
+    {
+        if (!_hasPendingFollowPosition)
+            return;
+
+        _hasPendingFollowPosition = false;
+        transform.position = _pendingFollowPosition;
     }
 
     private void TryRegisterForTick()
@@ -103,8 +115,8 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRe
         if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
             return;
 
-        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-        _registeredForTick = GlobalRegistry.Updatables.Contains(this);
+        _registeredForTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        _registeredForLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
     }
 
     private void TryUnregisterFromTick()
@@ -114,21 +126,46 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRe
 
         GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
         _registeredForTick = false;
+        if (_registeredForLateFrame)
+        {
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredForLateFrame = false;
+        }
+
+        _hasPendingFollowPosition = false;
     }
 
     private void ApplyFollow()
     {
-        Camera target = ResolveTargetCamera();
-        if (target == null)
+        if (!TryResolveFollowPosition(out Vector3 targetPosition))
             return;
 
-        Vector3 targetPosition = target.transform.position + positionOffset;
+        transform.position = targetPosition;
+    }
+
+    private void QueueFollow()
+    {
+        if (!TryResolveFollowPosition(out Vector3 targetPosition))
+            return;
+
+        _pendingFollowPosition = targetPosition;
+        _hasPendingFollowPosition = true;
+    }
+
+    private bool TryResolveFollowPosition(out Vector3 targetPosition)
+    {
+        targetPosition = default;
+        Camera target = ResolveTargetCamera();
+        if (target == null)
+            return false;
+
+        targetPosition = target.transform.position + positionOffset;
         if (!ShouldFollowVerticalPosition())
         {
             targetPosition.y = ResolveLockedY();
         }
 
-        transform.position = targetPosition;
+        return true;
     }
 
     private void ApplyFollowImmediately()
@@ -327,7 +364,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRe
 
     private void ResolveSeaLevelOwners()
     {
-        ResolveAtmosphereManager();
+        ResolveAtmosphereReadModel();
 
         if (playerMovement != null)
             return;
@@ -343,17 +380,17 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRe
             CachePlayerMovement(playerTransform);
     }
 
-    private HectonAtmosphereManager ResolveAtmosphereManager()
+    private IAtmosphereReadModel ResolveAtmosphereReadModel()
     {
         if (atmosphereManager != null)
             return atmosphereManager;
 
-        return _cachedAtmosphereManager;
+        return _cachedAtmosphereReadModel;
     }
 
     private void CacheRegistryServicesCold()
     {
-        _cachedAtmosphereManager = GlobalRegistry.Atmosphere;
+        _cachedAtmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
     }
 
     private void TryRegisterHotSwapListener()
@@ -378,7 +415,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRe
         if (playerMovement != null)
             return playerMovement.CurrentWaterSurfaceY;
 
-        HectonAtmosphereManager resolvedAtmosphere = ResolveAtmosphereManager();
+        IAtmosphereReadModel resolvedAtmosphere = ResolveAtmosphereReadModel();
         if (resolvedAtmosphere != null)
             return resolvedAtmosphere.SeaLevelY;
 

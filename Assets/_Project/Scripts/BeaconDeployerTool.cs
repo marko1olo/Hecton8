@@ -130,7 +130,7 @@ namespace Hecton8.Gameplay
         private uint _cachedOperationalTextStamp = uint.MaxValue;
         private string _cachedOperationalDirective;
         private BeaconNetworkSystem _beaconNetwork;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private BiomeMatrixDirector _biomeMatrixDirector;
         private WorldZoneDirector _worldZoneDirector;
         private FixedCharBuffer _beaconHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - beacon HUD staging buffer - owner: BeaconDeployerTool
@@ -575,7 +575,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             aup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -671,7 +671,7 @@ namespace Hecton8.Gameplay
         private void CacheColdDependencies()
         {
             _beaconNetwork = Hecton8.Core.GlobalRegistry.BeaconNetwork;
-            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);
         }
@@ -685,7 +685,7 @@ namespace Hecton8.Gameplay
                     InvalidateNearestAssessmentCache();
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
+                    _localization = currentService as ILocalizationTextReadModel;
                     InvalidateNearestAssessmentCache();
                     break;
             }
@@ -851,9 +851,9 @@ namespace Hecton8.Gameplay
 
         private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetOrFallback(key, fallback)
                 : fallback;
         }
 

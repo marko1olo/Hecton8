@@ -2,10 +2,10 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Ecosystem;
-using Hecton8.Physics;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
@@ -28,7 +28,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-101)]
-    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IGlobalRegistryHotSwapListener
+    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IMicroFaunaPresentationPulseSink, IGlobalRegistryHotSwapListener
     {
         private const int MaxLeviathanNodePathIterations = 4096;
         private const int WhileLoopWatchdogLimit = 10000;
@@ -1697,6 +1697,19 @@ namespace Hecton8.World
         private bool _registeredHotSwap;
         private bool _serviceRegistered;
         private bool _hasSpawnData;
+        private bool _renderCurrentBufferRequested;
+        private bool _insideMicroFaunaVisualSync;
+        private bool _spawnBufferUploadRequested;
+        private bool _grazingAnchorUploadRequested;
+        private bool _massiveThreatUploadRequested;
+        private bool _formationBeaconUploadRequested;
+        private bool _formationObstacleUploadRequested;
+        private bool _activeLeviathanUploadRequested;
+        private int _queuedSpawnBufferUploadCount;
+        private bool _microFaunaGpuStateRefreshRequested;
+        private bool _threatVoxelPayloadRefreshRequested;
+        private bool _originShiftGpuDispatchRequested;
+        private Vector3 _queuedOriginShiftGpuDelta;
         private bool _computeKernelBindingsValid;
         private bool _computeStaticBuffersBound;
         private bool _computeDispatchDisabled;
@@ -1768,7 +1781,7 @@ namespace Hecton8.World
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
         private IDataVault _dataVault;
-        private HectonFluidEngine _fluidEngine;
+        private IAbyssalFlowGpuReadModel _fluidEngine;
         private ISubmarineRuntimeContext _submarineRuntime;
         private IEncounterDirectorService _encounterDirector;
         private IEcosystemDirectorService _ecosystemDirector;
@@ -1895,7 +1908,7 @@ namespace Hecton8.World
             RefreshColdRegistryDependencies();
             ResolveDependencies();
             EnsureBuffers();
-            RefreshThreatVoxelPayload();
+            RefreshThreatVoxelPayloadVisualSync();
             RefreshSpawnData(force: true);
             PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
         }
@@ -1914,7 +1927,7 @@ namespace Hecton8.World
             RefreshColdRegistryDependencies();
             ResolveDependencies();
             EnsureBuffers();
-            RefreshThreatVoxelPayload();
+            RefreshThreatVoxelPayloadVisualSync();
             RefreshSpawnData(force: true);
             PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
             SargassumGlobalDragManager.Register(this);
@@ -2055,6 +2068,10 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
+        }
+
+        private void RunMicroFaunaVisualSync(float dt)
+        {
             RecordFoodChainTelemetry(FoodChainTelemetryFlagTick, _fieldCenter, 0u, 0u);
 
             if (_statisticalPopulationActive)
@@ -2079,7 +2096,7 @@ namespace Hecton8.World
             ConsumeSwarmThreatSignals(dt);
 
             if (!_threatVoxelDataValid && _mapMagicVegetationBridge != null)
-                RefreshThreatVoxelPayload();
+                RefreshThreatVoxelPayloadVisualSync();
             float cameraDistanceSq = ResolveCameraDistanceSq();
             if (boidCompute == null || _computeDispatchDisabled)
             {
@@ -2185,7 +2202,7 @@ namespace Hecton8.World
             _debugVisible = shouldRender;
             _debugHibernation01 = hibernation01;
             if (shouldRender)
-                RenderCurrentBuffer();
+                QueueRenderCurrentBuffer();
 
             _debugDriftOffset = currentDriftOffset;
             _debugDeepModeActive = _deepModeActive;
@@ -2217,7 +2234,7 @@ namespace Hecton8.World
             if (TryDematerializeStatisticalPopulation(cameraDistanceSq))
                 return;
 
-            RefreshThreatVoxelPayload();
+            QueueThreatVoxelPayloadRefresh();
             bool populationBudgetChanged = RefreshActiveBoidCount();
             RefreshSpawnData(force: populationBudgetChanged);
         }
@@ -2227,9 +2244,26 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
-            CompletePendingLeviathanNodeBuild(forceComplete: false);
-            CompletePendingFoveatedSimulationDecision(forceComplete: false);
-            CompletePendingPredatorConsumption(forceComplete: false);
+            _insideMicroFaunaVisualSync = true;
+            try
+            {
+                FlushMicroFaunaGpuStateRefreshVisualSync();
+                FlushThreatVoxelPayloadRefreshVisualSync();
+                RunMicroFaunaVisualSync(Time.deltaTime);
+                CompletePendingLeviathanNodeBuild(forceComplete: false);
+                CompletePendingFoveatedSimulationDecision(forceComplete: false);
+                CompletePendingPredatorConsumption(forceComplete: false);
+                FlushQueuedMicroFaunaGpuUploads();
+                if (_renderCurrentBufferRequested)
+                {
+                    RenderCurrentBuffer();
+                    _renderCurrentBufferRequested = false;
+                }
+            }
+            finally
+            {
+                _insideMicroFaunaVisualSync = false;
+            }
         }
 
         /// <summary>
@@ -2283,7 +2317,7 @@ namespace Hecton8.World
                     cutManager = currentService as SargassumCutManager;
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
-                    _fluidEngine = currentService as HectonFluidEngine;
+                    _fluidEngine = currentService as IAbyssalFlowGpuReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Submarine:
                     _submarineRuntime = currentService as ISubmarineRuntimeContext;
@@ -2325,7 +2359,7 @@ namespace Hecton8.World
                 cutManager = GlobalRegistry.SargassumCut;
 
             if (_fluidEngine == null)
-                _fluidEngine = GlobalRegistry.Fluid;
+                _fluidEngine = GlobalRegistry.AbyssalFlowGpu;
 
             if (_submarineRuntime == null)
                 _submarineRuntime = GlobalRegistry.Submarine;
@@ -2342,7 +2376,7 @@ namespace Hecton8.World
             if (_abyssalFluidDecals == null)
                 _abyssalFluidDecals = GlobalRegistry.AbyssalFluidDecals;
 
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
 
             if (_simulationBucketer == null)
                 _simulationBucketer = GlobalRegistry.SimulationBucketer;
@@ -2363,8 +2397,8 @@ namespace Hecton8.World
             _dataVault = currentVault;
             if (_dataVault != null && isActiveAndEnabled)
             {
-                EnsureBuffers();
-                RefreshThreatVoxelPayload();
+                QueueMicroFaunaGpuStateRefresh();
+                QueueThreatVoxelPayloadRefresh();
                 PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
             }
         }
@@ -2654,6 +2688,56 @@ namespace Hecton8.World
             EnsureComputeKernelBindings();
         }
 
+        private void QueueMicroFaunaGpuStateRefresh()
+        {
+            _microFaunaGpuStateRefreshRequested = true;
+        }
+
+        private void FlushMicroFaunaGpuStateRefreshVisualSync()
+        {
+            if (!_microFaunaGpuStateRefreshRequested)
+                return;
+
+            _microFaunaGpuStateRefreshRequested = false;
+            EnsureBuffers();
+        }
+
+        private bool HasRequiredMicroFaunaStorage()
+        {
+            return ResolveBoidState().IsCreated &&
+                   ResolveGrazingAnchors().IsCreated &&
+                   ResolveMassiveThreats().IsCreated &&
+                   ResolveFormationBeacons().IsCreated &&
+                   ResolveFormationObstacles().IsCreated &&
+                   ResolveSargassumVaultArray(in _staticObstacleCacheHandle, BufferID.SargassumStaticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity)).IsCreated &&
+                   ResolveSargassumVaultArray(in _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity).IsCreated &&
+                   ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity).IsCreated &&
+                   ResolveSargassumVaultArray(in _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1).IsCreated &&
+                   ResolveSargassumVaultArray(in _simulationFrameHandle, BufferID.SargassumSimulationFrame, 1).IsCreated;
+        }
+
+        private bool HasRequiredMicroFaunaGpuState()
+        {
+            return _boidsBufferA != null &&
+                   _boidsBufferB != null &&
+                   _grazingAnchorBuffer != null &&
+                   _massiveThreatBuffer != null &&
+                   _formationBeaconBuffer != null &&
+                   _formationObstacleBuffer != null &&
+                   _leviathanNodeBuffer != null &&
+                   _latchStatsBuffer != null &&
+                   _pbdCorrectionBuffer != null &&
+                   _threatGridBuffer != null &&
+                   _threatVoxelBuffer != null &&
+                   _spatialGridCountBuffer != null &&
+                   _spatialGridCellBuffer != null &&
+                   _simulationFrameBuffer != null &&
+                   _predatorAupFallbackBuffer != null &&
+                   _boidSensoryThreatBufferA != null &&
+                   _boidSensoryThreatBufferB != null &&
+                   _computeKernelBindingsValid;
+        }
+
         private bool RefreshActiveBoidCount()
         {
             int previousActiveBoidCount = _activeBoidCount;
@@ -2695,6 +2779,12 @@ namespace Hecton8.World
         }
 
         private void UploadSpawnDataToBoidBuffers(int uploadCount)
+        {
+            _queuedSpawnBufferUploadCount = math.max(_queuedSpawnBufferUploadCount, math.max(0, uploadCount));
+            _spawnBufferUploadRequested = true;
+        }
+
+        private void UploadSpawnDataToBoidBuffersVisualSync(int uploadCount)
         {
             var boidState = ResolveBoidState();
             int capacity = boidState.IsCreated ? boidState.Length : 0;
@@ -2745,6 +2835,11 @@ namespace Hecton8.World
 
         private void UploadGrazingAnchors()
         {
+            _grazingAnchorUploadRequested = true;
+        }
+
+        private void UploadGrazingAnchorsVisualSync()
+        {
             var grazingAnchors = ResolveGrazingAnchors();
             int capacity = grazingAnchors.IsCreated ? grazingAnchors.Length : 0;
             _activeGrazingAnchorCount = math.clamp(_activeGrazingAnchorCount, 0, math.min(grazingAnchorCount, capacity));
@@ -2757,6 +2852,11 @@ namespace Hecton8.World
 
         private void UploadFormationBeacons()
         {
+            _formationBeaconUploadRequested = true;
+        }
+
+        private void UploadFormationBeaconsVisualSync()
+        {
             var formationBeacons = ResolveFormationBeacons();
             int capacity = formationBeacons.IsCreated ? formationBeacons.Length : 0;
             _debugFormationBeaconCount = math.clamp(_debugFormationBeaconCount, 0, math.min(formationBeaconCapacity, capacity));
@@ -2768,6 +2868,11 @@ namespace Hecton8.World
 
         private void UploadFormationObstacles()
         {
+            _formationObstacleUploadRequested = true;
+        }
+
+        private void UploadFormationObstaclesVisualSync()
+        {
             var formationObstacles = ResolveFormationObstacles();
             int capacity = formationObstacles.IsCreated ? formationObstacles.Length : 0;
             _debugFormationObstacleCount = math.clamp(_debugFormationObstacleCount, 0, math.min(formationObstacleCapacity, capacity));
@@ -2778,6 +2883,11 @@ namespace Hecton8.World
         }
 
         private void UploadMassiveThreats()
+        {
+            _massiveThreatUploadRequested = true;
+        }
+
+        private void UploadMassiveThreatsVisualSync()
         {
             var massiveThreats = ResolveMassiveThreats();
             int capacity = massiveThreats.IsCreated ? massiveThreats.Length : 0;
@@ -2863,13 +2973,28 @@ namespace Hecton8.World
             _threatGridDataValid = false;
         }
 
-        private void RefreshThreatVoxelPayload()
+        private void QueueThreatVoxelPayloadRefresh()
         {
-            RefreshThreatGridPayload();
+            ResetThreatVoxelSnapshot();
+            _threatVoxelPayloadRefreshRequested = true;
+        }
+
+        private void FlushThreatVoxelPayloadRefreshVisualSync()
+        {
+            if (!_threatVoxelPayloadRefreshRequested)
+                return;
+
+            _threatVoxelPayloadRefreshRequested = false;
+            RefreshThreatVoxelPayloadVisualSync();
+        }
+
+        private void RefreshThreatVoxelPayloadVisualSync()
+        {
+            RefreshThreatGridPayloadVisualSync();
             ResetThreatVoxelSnapshot();
         }
 
-        private void RefreshThreatGridPayload()
+        private void RefreshThreatGridPayloadVisualSync()
         {
             if (_mapMagicVegetationBridge == null ||
                 !_mapMagicVegetationBridge.TryGetCompressedEcosystemThreatGridPayload(
@@ -2973,8 +3098,15 @@ namespace Hecton8.World
                 return;
             }
 
-            if (boidCompute == null || boidMaterial == null || boidMesh == null || !EnsureComputeKernelBindings())
+            if (boidCompute == null || boidMaterial == null || boidMesh == null)
             {
+                _hasSpawnData = false;
+                return;
+            }
+
+            if (!HasRequiredMicroFaunaStorage())
+            {
+                QueueMicroFaunaGpuStateRefresh();
                 _hasSpawnData = false;
                 return;
             }
@@ -3101,9 +3233,11 @@ namespace Hecton8.World
                 return false;
 
             _computeDispatchDisabled = false;
-            EnsureBuffers();
-            if (!EnsureComputeKernelBindings())
+            if (!HasRequiredMicroFaunaStorage() || !HasRequiredMicroFaunaGpuState())
+            {
+                QueueMicroFaunaGpuStateRefresh();
                 return false;
+            }
 
             int rematerializedCount = ResolveStatisticalRematerializedCount();
             if (rematerializedCount <= 0)
@@ -3546,7 +3680,7 @@ namespace Hecton8.World
             if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
                 return;
 
-            HectonFluidEngine fluidRuntime = _fluidEngine;
+            IAbyssalFlowGpuReadModel fluidRuntime = _fluidEngine;
             int formationCount = 0;
             for (int i = 0; i < snapshotCount && formationCount < formationBeaconLimit; i++)
             {
@@ -4298,8 +4432,6 @@ namespace Hecton8.World
                 filterMode = FilterMode.Point,
                 anisoLevel = 0
             }; // COLD ALLOC: Texture3D[1] - zero fallback abyssal-flow volume for swarm compute binding - owner: SargassumMicroFaunaBoids
-            _fallbackAbyssalFlowTexture.SetPixel(0, 0, 0, Color.clear);
-            _fallbackAbyssalFlowTexture.Apply(false, true);
         }
 
         private static int ResolvePredatorAupThreatLoopCap(int predatorAupCount, SimulationLodTier simulationLodTier)
@@ -4713,7 +4845,7 @@ namespace Hecton8.World
                 densityTexture = Texture2D.blackTexture;
             Texture activeCutMaskTexture = cutMaskActive && cutMaskTexture != null ? (Texture)cutMaskTexture : Texture2D.blackTexture;
             Vector3 abyssalFlowWeatherCurrent = Vector3.zero;
-            HectonFluidEngine fluidRuntime = _fluidEngine;
+            IAbyssalFlowGpuReadModel fluidRuntime = _fluidEngine;
             if (fluidRuntime != null &&
                 fluidRuntime.TrySampleModAbyssalFlow(_fieldCenter, out float3 resolvedAbyssalFlow))
             {
@@ -5264,7 +5396,7 @@ namespace Hecton8.World
             TriggerFragmentation(signal.PositionWS, displacementDirection, signal.ExtremePanicRadiusWS, absoluteSimulationTime);
         }
 
-        internal void RegisterLeviathanThreatPulse(
+        public void RegisterLeviathanThreatPulse(
             Vector3 positionWS,
             Vector3 directionWS,
             float panicRadiusWS,
@@ -5331,7 +5463,7 @@ namespace Hecton8.World
             UploadMassiveThreats();
         }
 
-        internal void RegisterPredatorFearBurst(
+        public void RegisterPredatorFearBurst(
             Vector3 positionWS,
             Vector3 directionWS,
             float panicRadiusWS,
@@ -5402,7 +5534,7 @@ namespace Hecton8.World
             UploadMassiveThreats();
         }
 
-        internal int RegisterPredatorConsumptionBurst(
+        public int RegisterPredatorConsumptionBurst(
             Vector3 predatorPositionWS,
             Vector3 biteCenterWS,
             float biteRangeMeters,
@@ -5567,7 +5699,7 @@ namespace Hecton8.World
                     DebrisKind = PredatorKillBloodDebrisKind,
                     Flags = PredatorKillDebrisFlags
                 };
-                SignalBus<DebrisSpawnSignal>.Push(in debrisSignal);
+                SignalBus<DebrisSpawnSignal>.TryPush(in debrisSignal);
             }
 
             AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
@@ -5601,7 +5733,7 @@ namespace Hecton8.World
                 Channel = FeedingFrenzyAcousticChannel,
                 Flags = FeedingFrenzyAcousticFlags
             };
-            SignalBus<AcousticPingSignal>.Push(in acousticPingSignal);
+            SignalBus<AcousticPingSignal>.TryPush(in acousticPingSignal);
             _feedingFrenzyKillCount = 0;
             _feedingFrenzyWindowStartTime = safeTime;
         }
@@ -5758,7 +5890,7 @@ namespace Hecton8.World
             if (!IsFiniteVector3(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!math.isfinite(originAup.LocalX) ||
                 !math.isfinite(originAup.LocalY) ||
                 !math.isfinite(originAup.LocalZ))
@@ -6004,7 +6136,7 @@ namespace Hecton8.World
         /// <summary>
         /// Registers a GPU-only VAT hit reaction. Rendering owns the timestamp; no boid buffer mutation or CPU animation path is used.
         /// </summary>
-        internal void RegisterVatHitReaction(Vector3 originWS, float radiusMeters, float intensity01)
+        public void RegisterVatHitReaction(Vector3 originWS, float radiusMeters, float intensity01)
         {
             float clampedIntensity = SaturateFinite01(intensity01) * SaturateFinite01(hitFlashIntensity);
             if (clampedIntensity <= 0.0001f ||
@@ -6160,7 +6292,7 @@ namespace Hecton8.World
             HandleSonarPingSent(intensity);
         }
 
-        internal void RegisterAcousticPanicBurst(
+        public void RegisterAcousticPanicBurst(
             Vector3 originWS,
             float radiusWS,
             float durationSeconds,
@@ -6207,7 +6339,10 @@ namespace Hecton8.World
                 return;
             }
 
-            int count = math.clamp(maelstromCount, 0, math.min(HectonFluidEngine.MaxActiveMaelstromCount, maelstroms.Length));
+            int maelstromCapacity = _fluidEngine != null
+                ? _fluidEngine.MaxActiveMaelstromCapacity
+                : FluidAnalyticalContractConstants.MaxActiveMaelstromCount;
+            int count = math.clamp(maelstromCount, 0, math.min(maelstromCapacity, maelstroms.Length));
             if (count <= 0)
             {
                 _lastMaelstromThreatHash = 0u;
@@ -6349,7 +6484,7 @@ namespace Hecton8.World
                 QualityTier = (byte)_lastSimulationLodTier
             };
 
-            SignalBus<SwarmDispersedSignal>.Push(in signal);
+            SignalBus<SwarmDispersedSignal>.TryPush(in signal);
             RecordFoodChainTelemetry(FoodChainTelemetryFlagBoidsScattered, originWS, resolvedSourceId, 0u);
         }
 
@@ -6548,14 +6683,117 @@ namespace Hecton8.World
 
             float leviathanShockwaveSpeedThresholdSq = math.max(0.01f, leviathanShockwaveSpeedThreshold * leviathanShockwaveSpeedThreshold);
             float speed01 = math.saturate(leviathanHeadSpeedSq / leviathanShockwaveSpeedThresholdSq);
-            Vector3 traumaImpulse = strikeDirection * (leviathanStrikeImpulse * math.lerp(0.8f, 1.35f, speed01));
+            float impulseMagnitude = leviathanStrikeImpulse * math.lerp(0.8f, 1.35f, speed01);
+            Vector3 traumaImpulse = strikeDirection * impulseMagnitude;
             if (_playerMovement != null)
                 _playerMovement.ApplyPhysicalTrauma(traumaImpulse, math.lerp(leviathanStrikeTraumaWeight * 0.65f, leviathanStrikeTraumaWeight, speed01));
 
-            if (_playerHealth != null)
-                _playerHealth.TakeLeviathanDamage(leviathanStrikeDamage);
+            if (_playerHealth != null &&
+                !TryQueueLeviathanStrikeDamage(_playerHealth, leviathanStrikeDamage, playerPosition, strikeDirection, impulseMagnitude))
+            {
+                ApplyLeviathanStrikeOwnerFallbackDamage(_playerHealth, leviathanStrikeDamage, playerPosition);
+            }
 
             _leviathanStrikeCooldownTimer = leviathanStrikeCooldown;
+        }
+
+        private static bool TryQueueLeviathanStrikeDamage(
+            HectonPlayerHealth playerHealth,
+            float damage,
+            Vector3 impactPoint,
+            Vector3 strikeDirection,
+            float impulseMagnitude)
+        {
+            if (playerHealth == null || !(damage > 0f) || !math.isfinite(damage))
+                return false;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(playerHealth.gameObject);
+            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
+                return false;
+
+            Transform targetTransform = playerHealth.transform;
+            Vector3 safeImpactPoint = IsFiniteVector3(impactPoint)
+                ? impactPoint
+                : targetTransform != null && IsFiniteVector3(targetTransform.position)
+                    ? targetTransform.position
+                    : Vector3.zero;
+            Vector3 safeDirection = FastNormalizeVector3(strikeDirection, Vector3.forward);
+            float3 direction3 = new float3(safeDirection.x, safeDirection.y, safeDirection.z);
+            direction3 = math.all(math.isfinite(direction3)) ? direction3 : new float3(0f, 0f, 1f);
+
+            CombatDamageRequest signal = new CombatDamageRequest
+            {
+                TargetId = targetId,
+                SourceId = DamageSourceIds.FaunaLeviathanBite,
+                Amount = damage,
+                ImpulseMagnitude = math.max(0f, math.isfinite(impulseMagnitude) ? impulseMagnitude : 0f),
+                Direction = direction3,
+                PackedMeta = CombatDamageRuntime.PackSignalMeta(
+                    CombatDamageTypes.Impact,
+                    0u,
+                    CombatWeakspotTier.None)
+            };
+
+            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
+            {
+                LocalPoint = ResolveLeviathanStrikeLocalPoint(targetTransform, safeImpactPoint),
+                ArmorNormal = -direction3,
+                LocalTemperatureCelsius = 20f,
+                StatusDurationSeconds = 0f
+            };
+
+            double3 impactAup = double3.zero;
+            if (TryResolveAupFromRuntimeOrigin(safeImpactPoint, out AbsoluteUniversePosition impactPointAup) &&
+                impactPointAup.IsFinite())
+            {
+                double3 resolvedAup = impactPointAup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(resolvedAup)))
+                    impactAup = resolvedAup;
+            }
+
+            CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);
+            return true;
+        }
+
+        private static void ApplyLeviathanStrikeOwnerFallbackDamage(
+            HectonPlayerHealth playerHealth,
+            float damage,
+            Vector3 impactPoint)
+        {
+            if (playerHealth == null || !(damage > 0f) || !math.isfinite(damage))
+                return;
+
+            Transform targetTransform = playerHealth.transform;
+            Vector3 safeImpactPoint = IsFiniteVector3(impactPoint)
+                ? impactPoint
+                : targetTransform != null && IsFiniteVector3(targetTransform.position)
+                    ? targetTransform.position
+                    : Vector3.zero;
+
+            DamagePacket packet = new DamagePacket
+            {
+                Channel = DamageChannel.Integrity,
+                PreviousValue = 0f,
+                NextValue = 0f,
+                Magnitude = damage,
+                LocalPoint = ResolveLeviathanStrikeLocalPoint(targetTransform, safeImpactPoint),
+                DamageType = CombatDamageTypes.Impact,
+                IntegrityDelta = 0,
+                Depth = 0f,
+                SourceId = DamageSourceIds.FaunaLeviathanBite,
+                TraumaLevel = 0
+            };
+            playerHealth.ReceiveDamage(in packet);
+        }
+
+        private static float3 ResolveLeviathanStrikeLocalPoint(Transform targetTransform, Vector3 impactPoint)
+        {
+            if (targetTransform == null || !IsFiniteVector3(impactPoint))
+                return float3.zero;
+
+            Vector3 localPoint = targetTransform.InverseTransformPoint(impactPoint);
+            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
+            return math.all(math.isfinite(localPoint3)) ? localPoint3 : float3.zero;
         }
 
         private void ApplyLeviathanShockwave()
@@ -7537,6 +7775,11 @@ namespace Hecton8.World
 
         private void UploadActiveLeviathanSnapshot()
         {
+            _activeLeviathanUploadRequested = true;
+        }
+
+        private void UploadActiveLeviathanSnapshotVisualSync()
+        {
             var leviathanNodeFront = ResolveSargassumVaultArray(in _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
             if (_leviathanNodeBuffer == null || !leviathanNodeFront.IsCreated || _leviathanPathNodeCount <= 0)
                 return;
@@ -7546,6 +7789,55 @@ namespace Hecton8.World
                 return;
 
             GraphicsBufferUploadUtility.UploadNativeArray(_leviathanNodeBuffer, leviathanNodeFront, safeCount);
+        }
+
+        private void FlushQueuedMicroFaunaGpuUploads()
+        {
+            if (_originShiftGpuDispatchRequested)
+            {
+                Vector3 runtimeOffset = _queuedOriginShiftGpuDelta;
+                _queuedOriginShiftGpuDelta = Vector3.zero;
+                _originShiftGpuDispatchRequested = false;
+                DispatchOriginShiftToLiveBoidBuffersVisualSync(runtimeOffset);
+            }
+
+            if (_spawnBufferUploadRequested)
+            {
+                int uploadCount = _queuedSpawnBufferUploadCount;
+                _queuedSpawnBufferUploadCount = 0;
+                _spawnBufferUploadRequested = false;
+                UploadSpawnDataToBoidBuffersVisualSync(uploadCount);
+            }
+
+            if (_grazingAnchorUploadRequested)
+            {
+                _grazingAnchorUploadRequested = false;
+                UploadGrazingAnchorsVisualSync();
+            }
+
+            if (_massiveThreatUploadRequested)
+            {
+                _massiveThreatUploadRequested = false;
+                UploadMassiveThreatsVisualSync();
+            }
+
+            if (_formationBeaconUploadRequested)
+            {
+                _formationBeaconUploadRequested = false;
+                UploadFormationBeaconsVisualSync();
+            }
+
+            if (_formationObstacleUploadRequested)
+            {
+                _formationObstacleUploadRequested = false;
+                UploadFormationObstaclesVisualSync();
+            }
+
+            if (_activeLeviathanUploadRequested)
+            {
+                _activeLeviathanUploadRequested = false;
+                UploadActiveLeviathanSnapshotVisualSync();
+            }
         }
 
         private void ClearLeviathanSnapshot()
@@ -7667,7 +7959,7 @@ namespace Hecton8.World
 
             if (!TryResolveSargassumVaultArray(vault, in handle, bufferId, requiredLength, out buffer))
             {
-                handle = vault.GetGenerationHandle<T>(
+                handle = vault.EnsureGenerationHandle<T>(
                     bufferId,
                     requiredLength,
                     SystemID.WorldSargassum,
@@ -7921,10 +8213,21 @@ namespace Hecton8.World
             _debugVisible = shouldRender;
             _debugHibernation01 = hibernation01;
             if (shouldRender)
-                RenderCurrentBuffer();
+                QueueRenderCurrentBuffer();
         }
 
-        private void DispatchOriginShiftToLiveBoidBuffers(Vector3 runtimeOffset)
+        private void QueueRenderCurrentBuffer()
+        {
+            _renderCurrentBufferRequested = true;
+        }
+
+        private void QueueOriginShiftGpuDispatch(Vector3 runtimeOffset)
+        {
+            _queuedOriginShiftGpuDelta += runtimeOffset;
+            _originShiftGpuDispatchRequested = true;
+        }
+
+        private void DispatchOriginShiftToLiveBoidBuffersVisualSync(Vector3 runtimeOffset)
         {
             int boidShiftCount = ResolveActiveBoidUploadCount();
             if (boidShiftCount <= 0 ||
@@ -7981,7 +8284,7 @@ namespace Hecton8.World
             _leviathanHeadPositionWS += runtimeOffset;
             _reportedWakeCenterWS += runtimeOffset;
 
-            DispatchOriginShiftToLiveBoidBuffers(runtimeOffset);
+            QueueOriginShiftGpuDispatch(runtimeOffset);
 
             var grazingAnchors = ResolveGrazingAnchors();
             if (grazingAnchors.IsCreated)
@@ -8034,7 +8337,7 @@ namespace Hecton8.World
                     leviathanNodeFront[i] = node;
                 }
 
-                GraphicsBufferUploadUtility.UploadNativeArray(_leviathanNodeBuffer, leviathanNodeFront, frontCount);
+                UploadActiveLeviathanSnapshot();
             }
 
             var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);

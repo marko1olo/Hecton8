@@ -187,9 +187,9 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            float qualityWeight01 = AuthoritativeQualityWeight;
+            float qualityWeight01 = ResolveGlobalQualityWeight01();
             _lastQualityWeight01 = qualityWeight01;
-            _lastResolvedTickIntervalSeconds = BaseAtmosphereMath.ResolveColdTickIntervalSeconds();
+            _lastResolvedTickIntervalSeconds = BaseAtmosphereMath.ResolveColdTickIntervalSeconds(qualityWeight01);
             _lastSolveBudget = BaseAtmosphereMath.ResolveCompartmentSolveBudget(front.Length);
             _lastSolveMode = BaseAtmosphereMath.ResolveSolveMode(_lastSolveBudget, front.Length);
             _tickAccumulator += math.max(0f, fixedDeltaTime);
@@ -370,9 +370,16 @@ namespace Hecton8.Atmosphere
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
+            bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+            bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+            _registered = fixedRegistered && postFixedRegistered;
+            if (!_registered)
+            {
+                if (postFixedRegistered)
+                    GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                if (fixedRegistered)
+                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            }
         }
 
         private void TryUnregister()
@@ -447,17 +454,17 @@ namespace Hecton8.Atmosphere
             if (vault.IsAllocationLocked)
                 return;
 
-            _frontHandle = vault.GetGenerationHandle<CompartmentState>(
+            _frontHandle = vault.EnsureGenerationHandle<CompartmentState>(
                 FrontBufferId,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _backHandle = vault.GetGenerationHandle<CompartmentState>(
+            _backHandle = vault.EnsureGenerationHandle<CompartmentState>(
                 BackBufferId,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _carbonDioxideByteLaneHandle = vault.GetGenerationHandle<byte>(
+            _carbonDioxideByteLaneHandle = vault.EnsureGenerationHandle<byte>(
                 CarbonDioxideByteLaneBufferId,
                 capacity,
                 OwnerSystemId,
@@ -484,7 +491,7 @@ namespace Hecton8.Atmosphere
             if (TryOpenBlackBox(out _) || vault == null || vault.IsAllocationLocked)
                 return;
 
-            _blackBoxHandle = vault.GetGenerationHandle<BaseAtmosphereTelemetryEntry>(
+            _blackBoxHandle = vault.EnsureGenerationHandle<BaseAtmosphereTelemetryEntry>(
                 BlackBoxBufferId,
                 BlackBoxCapacity,
                 OwnerSystemId,
@@ -547,6 +554,14 @@ namespace Hecton8.Atmosphere
 
             _coldTickHandle = job.Schedule();
             _coldTickRunning = true;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AuthoritativeQualityWeight);
+
+            return MathLodApproximation.SaturateFinite(HomeostasisBrain.GlobalQualityWeight, AuthoritativeQualityWeight);
         }
 
         private void TryCompleteColdTick()
@@ -680,6 +695,9 @@ namespace Hecton8.Atmosphere
             out NativeArray<CompartmentState> back,
             out NativeArray<byte> carbonDioxideByteLane)
         {
+            front = default;
+            back = default;
+            carbonDioxideByteLane = default;
             IDataVault vault = _dataVault;
             return TryOpenVaultView(vault, in _frontHandle, requiredLength, out front) &&
                    TryOpenVaultView(vault, in _backHandle, requiredLength, out back) &&

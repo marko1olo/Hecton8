@@ -127,7 +127,7 @@ namespace Hecton8.World.ProceduralCoral
             }
 
             Shader.SetGlobalBuffer(_CoralMatricesId, matrixBuffer);
-            Graphics.DrawProceduralIndirect(
+            UnityEngine.Graphics.DrawProceduralIndirect(
                 material,
                 bounds,
                 topology,

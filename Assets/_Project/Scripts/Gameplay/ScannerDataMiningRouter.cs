@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -369,7 +369,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class ScannerDataMiningRouter : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable
+    public sealed class ScannerDataMiningRouter : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         public const uint MetadataToolLevelMask = 0x000000FFu;
         public const uint MetadataFlagDepletable = 1u << 8;
@@ -445,8 +445,11 @@ namespace Hecton8.Gameplay
         private bool _registeredFast;
         private bool _registeredSlow;
         private bool _registeredLate;
+        private bool _hotSwapListenerRegistered;
         private bool _disableCleanupPending;
         private bool _lateTickDormant;
+        private bool _dataVaultRebindPending;
+        private IDataVault _pendingDataVault;
 
         private static ScannerVfxDTO s_lastVfxTarget;
         private static uint s_lastVfxFrame;
@@ -555,7 +558,7 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            VaultGenerationHandle<ScannerSettingsDTO> handle = vault.GetGenerationHandle<ScannerSettingsDTO>(
+            VaultGenerationHandle<ScannerSettingsDTO> handle = vault.EnsureGenerationHandle<ScannerSettingsDTO>(
                 BufferID.ShinobuScannerSettings,
                 1,
                 OwnerSystemId,
@@ -581,8 +584,17 @@ namespace Hecton8.Gameplay
             _disableCleanupPending = false;
             _lateTickDormant = false;
 
-            if (!EnsureVaultState())
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+
+            if (!TryInitializeRuntimeState())
                 return;
+        }
+
+        private bool TryInitializeRuntimeState()
+        {
+            if (!EnsureVaultState())
+                return false;
 
             CachePlayerRuntimeContextCold();
             if (seedMockData)
@@ -595,6 +607,8 @@ namespace Hecton8.Gameplay
                 _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             if (!_registeredLate)
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+
+            return true;
         }
 
         private void OnDisable()
@@ -609,6 +623,7 @@ namespace Hecton8.Gameplay
 
             _registeredFast = false;
             _registeredSlow = false;
+            TryUnregisterHotSwapListener();
             UnlockCompletionBuffers();
 
             if (_queryScheduled && !TryFinalizeScheduledQuery())
@@ -740,6 +755,7 @@ namespace Hecton8.Gameplay
                 return;
 
             ProcessCompletedQuery(_lastInput.DeltaTime);
+            TryApplyPendingDataVaultRebind();
         }
 
         public void SlowTick()
@@ -808,7 +824,7 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerRuntimeContextCold()
         {
-            _cachedPlayerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 
@@ -903,7 +919,7 @@ namespace Hecton8.Gameplay
                     WriteVfxTarget(in result, in state, in stats, views.VfxTarget);
                     RouteProgressSignals(in result, in state, in settings);
                     WriteTelemetry(in result, in state, in stats, views.Telemetry);
-                    RouteCompletionIfNeeded(in result, ref state, in settings, in views);
+                    RouteCompletionIfNeeded(in result, ref state, in settings, views);
                 }
                 else
                 {
@@ -970,21 +986,21 @@ namespace Hecton8.Gameplay
                 State = ToolAcousticStateScanner,
                 Flags = 0
             };
-            SignalBus<ToolAcousticSignal>.Push(in acousticSignal);
+            SignalBus<ToolAcousticSignal>.TryPush(in acousticSignal);
         }
 
         private void RouteCompletionIfNeeded(
             in ScanResultDTO result,
             ref ActiveScanStateDTO state,
             in ScannerSettingsDTO settings,
-            in ScannerVaultViews views)
+            ScannerVaultViews views)
         {
             if ((state.Flags & StateFlagCompletedThisFrame) == 0u || result.EntityHash == 0u)
                 return;
 
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(result.AUP);
             uint frame = ResolveSimulationFrame();
-            SignalBus<EncyclopediaUnlockSignal>.Push(new EncyclopediaUnlockSignal
+            SignalBus<EncyclopediaUnlockSignal>.TryPush(new EncyclopediaUnlockSignal
             {
                 EntityHash = result.EntityHash,
                 SourceHash = ScannerToolHash,
@@ -1005,12 +1021,12 @@ namespace Hecton8.Gameplay
                 ReconKind = (byte)ScanEntryKind.Scannable,
                 Flags = 0
             };
-            SignalBus<ScanCompleteSignal>.Push(in scanComplete);
-            ScanEvents.RaiseEntryDiscovered(result.EntityHash, result.EntityHash, 0u, 0u, ScanEntryKind.Scannable);
+            SignalBus<ScanCompleteSignal>.TryPush(in scanComplete);
+            ScanEvents.TryRaiseEntryDiscovered(result.EntityHash, result.EntityHash, 0u, 0u, ScanEntryKind.Scannable);
 
             if ((state.MetadataFlags & MetadataFlagDepletable) != 0u)
             {
-                SignalBus<EntityDepletedSignal>.Push(new EntityDepletedSignal
+                SignalBus<EntityDepletedSignal>.TryPush(new EntityDepletedSignal
                 {
                     EntityHash = result.EntityHash,
                     SourceHash = ScannerToolHash,
@@ -1031,10 +1047,10 @@ namespace Hecton8.Gameplay
                     Operation = 1,
                     Flags = 0
                 };
-                SignalBus<ResourceDepletionDeltaSignal>.Push(in depletionDelta);
+                SignalBus<ResourceDepletionDeltaSignal>.TryPush(in depletionDelta);
             }
 
-            GlobalSignals.Publish(new AcousticPingSignal
+            SignalBus<AcousticPingSignal>.TryPush(new AcousticPingSignal
             {
                 PositionAup = aup,
                 RadiusMeters = math.max(1f, result.Distance * 0.25f),
@@ -1044,7 +1060,7 @@ namespace Hecton8.Gameplay
                 Flags = AcousticPingSignal.FlagActiveSonar
             });
 
-            TryEvaluateCompletionScalar(in result, in state, in views);
+            TryEvaluateCompletionScalar(in result, in state, views);
             _completionCount++;
             state.Flags &= ~StateFlagCompletedThisFrame;
         }
@@ -1052,7 +1068,7 @@ namespace Hecton8.Gameplay
         private bool TryEvaluateCompletionScalar(
             in ScanResultDTO result,
             in ActiveScanStateDTO state,
-            in ScannerVaultViews views)
+            ScannerVaultViews views)
         {
             if (_completionBuffersLocked ||
                 !views.ScanProgress.IsCreated ||
@@ -1175,7 +1191,7 @@ namespace Hecton8.Gameplay
 
         private void PublishDumpAnomaly(uint scalar)
         {
-            GlobalSignals.Publish(new AnomalySignal
+            SignalBus<AnomalySignal>.TryPush(new AnomalySignal
             {
                 SystemHash = ScannerToolHash,
                 AnomalyHash = ScannerDumpReasonHash,
@@ -1185,7 +1201,7 @@ namespace Hecton8.Gameplay
                 Flags = 0
             });
 
-            GlobalSignals.Publish(new CrashTelemetrySignal
+            SignalBus<CrashTelemetrySignal>.TryPush(new CrashTelemetrySignal
             {
                 SystemHash = ScannerToolHash,
                 ReasonHash = ScannerAnomalyHash,
@@ -1200,7 +1216,7 @@ namespace Hecton8.Gameplay
 
         private bool EnsureVaultState()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
             {
                 ReleaseHandlesOnly();
@@ -1212,77 +1228,77 @@ namespace Hecton8.Gameplay
             int safeBucketCapacity = ResolveSpatialBucketCapacity(safeEntityCapacity);
             int safeResultCapacity = math.clamp(ScannerDataMiningTuning.Settings.MaxResults, 1, 16);
 
-            _entitiesHandle = vault.GetGenerationHandle<ScannerSpatialEntityDTO>(
+            _entitiesHandle = vault.EnsureGenerationHandle<ScannerSpatialEntityDTO>(
                 BufferID.ShinobuScannerEntities,
                 safeEntityCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _metadataHandle = vault.GetGenerationHandle<ScannableEntityMetadataDTO>(
+            _metadataHandle = vault.EnsureGenerationHandle<ScannableEntityMetadataDTO>(
                 BufferID.ShinobuScannerMetadata,
                 safeEntityCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _occlusionZonesHandle = vault.GetGenerationHandle<MockSdfOcclusionZoneDTO>(
+            _occlusionZonesHandle = vault.EnsureGenerationHandle<MockSdfOcclusionZoneDTO>(
                 BufferID.ShinobuScannerOcclusionZones,
                 8,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _bucketHeadsHandle = vault.GetGenerationHandle<int>(
+            _bucketHeadsHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuScannerSpatialBucketHeads,
                 safeBucketCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _bucketNextHandle = vault.GetGenerationHandle<int>(
+            _bucketNextHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuScannerSpatialNext,
                 safeEntityCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
-            _scanResultsHandle = vault.GetGenerationHandle<ScanResultDTO>(
+            _scanResultsHandle = vault.EnsureGenerationHandle<ScanResultDTO>(
                 BufferID.ShinobuScannerScanResults,
                 safeResultCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _resultCountHandle = vault.GetGenerationHandle<int>(
+            _resultCountHandle = vault.EnsureGenerationHandle<int>(
                 BufferID.ShinobuScannerResultCount,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _activeStateHandle = vault.GetGenerationHandle<ActiveScanStateDTO>(
+            _activeStateHandle = vault.EnsureGenerationHandle<ActiveScanStateDTO>(
                 BufferID.ShinobuScannerActiveState,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _vfxTargetHandle = vault.GetGenerationHandle<ScannerVfxDTO>(
+            _vfxTargetHandle = vault.EnsureGenerationHandle<ScannerVfxDTO>(
                 BufferID.ShinobuScannerVfxTarget,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _queryStatsHandle = vault.GetGenerationHandle<ScannerQueryStatsDTO>(
+            _queryStatsHandle = vault.EnsureGenerationHandle<ScannerQueryStatsDTO>(
                 BufferID.ShinobuScannerQueryStats,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetGenerationHandle<ScannerTelemetryEntry>(
+            _telemetryHandle = vault.EnsureGenerationHandle<ScannerTelemetryEntry>(
                 BufferID.ShinobuScannerTelemetryRing,
                 BlackBoxCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _settingsHandle = vault.GetGenerationHandle<ScannerSettingsDTO>(
+            _settingsHandle = vault.EnsureGenerationHandle<ScannerSettingsDTO>(
                 BufferID.ShinobuScannerSettings,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _scanProgressHandle = vault.GetGenerationHandle<ScanProgressDTO>(
+            _scanProgressHandle = vault.EnsureGenerationHandle<ScanProgressDTO>(
                 BufferID.ShinobuScannerScanProgress,
                 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _loreIndexHandle = vault.GetGenerationHandle<ScannerLoreIndexDTO>(
+            _loreIndexHandle = vault.EnsureGenerationHandle<ScannerLoreIndexDTO>(
                 BufferID.ShinobuScannerLoreIndex,
                 safeEntityCapacity << 1,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _encyclopediaStateHandle = vault.GetGenerationHandle<ScannerEncyclopediaStateDTO>(
+            _encyclopediaStateHandle = vault.EnsureGenerationHandle<ScannerEncyclopediaStateDTO>(
                 BufferID.ShinobuScannerEncyclopediaState,
                 1,
                 OwnerSystemId,
@@ -1367,10 +1383,78 @@ namespace Hecton8.Gameplay
             _cachedVaultViews = default;
             _vaultViewsCached = false;
             _dataVault = null;
+            _pendingDataVault = null;
+            _dataVaultRebindPending = false;
             _entityCount = 0;
             _telemetryCursor = 0;
             _completionCount = 0u;
             _completionBuffersLocked = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                RebindDataVault(currentService as IDataVault);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+        }
+
+        private void RebindDataVault(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            if (_queryScheduled || _queryBuffersLocked || _completionBuffersLocked)
+            {
+                _pendingDataVault = nextVault;
+                _dataVaultRebindPending = true;
+                return;
+            }
+
+            ApplyDataVaultRebind(nextVault);
+        }
+
+        private void TryApplyPendingDataVaultRebind()
+        {
+            if (!_dataVaultRebindPending || _queryScheduled || _queryBuffersLocked || _completionBuffersLocked)
+                return;
+
+            IDataVault nextVault = _pendingDataVault;
+            _pendingDataVault = null;
+            _dataVaultRebindPending = false;
+            ApplyDataVaultRebind(nextVault);
+        }
+
+        private void ApplyDataVaultRebind(IDataVault nextVault)
+        {
+            ReleaseHandlesOnly();
+            _dataVault = nextVault;
+
+            if (nextVault != null && isActiveAndEnabled && !_disableCleanupPending)
+                TryInitializeRuntimeState();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private bool TryLockQueryBuffers(IDataVault vault)
@@ -1823,6 +1907,7 @@ namespace Hecton8.Gameplay
             }
         }
 
+#if UNITY_EDITOR
         public static bool TryApplyLoreIndexCsvLine(
             ReadOnlySpan<byte> line,
             NativeArray<ScannerLoreIndexDTO> loreIndex,
@@ -1844,6 +1929,7 @@ namespace Hecton8.Gameplay
 
             return InsertLoreIndex(loreIndex, targetHash, loreEntryIndex);
         }
+#endif
 
         public static uint ComputeFnv1a32Ascii(ReadOnlySpan<byte> token)
         {
@@ -1859,6 +1945,7 @@ namespace Hecton8.Gameplay
             return hash == 0u ? 2166136261u : hash;
         }
 
+#if UNITY_EDITOR
         public static bool TryApplyCsvOverrideLine(
             ReadOnlySpan<char> line,
             NativeArray<ScannableEntityMetadataDTO> metadata,
@@ -1892,6 +1979,7 @@ namespace Hecton8.Gameplay
 
             return false;
         }
+#endif
 
         private static void SkipCsvSeparators(ReadOnlySpan<char> line, ref int cursor)
         {

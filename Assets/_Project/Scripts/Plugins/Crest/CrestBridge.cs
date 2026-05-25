@@ -10,9 +10,9 @@ namespace Hecton8.Physics
     {
         private static readonly int CrestCameraColorTextureId = Shader.PropertyToID("_Crest_CameraColorTexture");
 
-        private Crest.UnderwaterRenderer _cachedUnderwaterRenderer;
+        private global::Crest.UnderwaterRenderer _cachedUnderwaterRenderer;
 
-        protected virtual Crest.OceanRenderer ReadBoundOceanRenderer()
+        protected virtual global::Crest.OceanRenderer ReadBoundOceanRenderer()
         {
             return null;
         }
@@ -21,7 +21,7 @@ namespace Hecton8.Physics
         {
             get
             {
-                Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
+                global::Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
                 return oceanRenderer != null ? oceanRenderer.OceanMaterial : null;
             }
         }
@@ -45,26 +45,26 @@ namespace Hecton8.Physics
             if (camera == null)
                 return null;
 
-            Crest.UnderwaterRenderer underwaterRenderer = camera.GetComponent<Crest.UnderwaterRenderer>();
+            global::Crest.UnderwaterRenderer underwaterRenderer = camera.GetComponent<global::Crest.UnderwaterRenderer>();
             if (underwaterRenderer != null)
             {
                 _cachedUnderwaterRenderer = underwaterRenderer;
                 return underwaterRenderer;
             }
 
-            _cachedUnderwaterRenderer = camera.gameObject.AddComponent<Crest.UnderwaterRenderer>();
+            _cachedUnderwaterRenderer = camera.gameObject.AddComponent<global::Crest.UnderwaterRenderer>();
             return _cachedUnderwaterRenderer;
         }
 
         public bool IsUnderwaterPassEnabled(Component renderer)
         {
-            Crest.UnderwaterRenderer underwaterRenderer = renderer as Crest.UnderwaterRenderer;
+            global::Crest.UnderwaterRenderer underwaterRenderer = renderer as global::Crest.UnderwaterRenderer;
             return underwaterRenderer != null && underwaterRenderer.enabled;
         }
 
         public void SetUnderwaterPassEnabled(Component renderer, bool enabled)
         {
-            Crest.UnderwaterRenderer underwaterRenderer = renderer as Crest.UnderwaterRenderer;
+            global::Crest.UnderwaterRenderer underwaterRenderer = renderer as global::Crest.UnderwaterRenderer;
             if (underwaterRenderer == null || underwaterRenderer.enabled == enabled)
                 return;
 
@@ -73,13 +73,13 @@ namespace Hecton8.Physics
 
         public bool IsUnderwaterPassActive(Component renderer)
         {
-            Crest.UnderwaterRenderer underwaterRenderer = renderer as Crest.UnderwaterRenderer;
+            global::Crest.UnderwaterRenderer underwaterRenderer = renderer as global::Crest.UnderwaterRenderer;
             return underwaterRenderer != null && underwaterRenderer.IsActive;
         }
 
         public void SetCopyOceanMaterialParamsEachFrame(Component renderer, bool enabled)
         {
-            Crest.UnderwaterRenderer underwaterRenderer = renderer as Crest.UnderwaterRenderer;
+            global::Crest.UnderwaterRenderer underwaterRenderer = renderer as global::Crest.UnderwaterRenderer;
             if (underwaterRenderer == null)
                 return;
 
@@ -88,8 +88,8 @@ namespace Hecton8.Physics
 
         public void CopyUnderwaterPassSettings(Component source, Component target)
         {
-            Crest.UnderwaterRenderer sourceRenderer = source as Crest.UnderwaterRenderer;
-            Crest.UnderwaterRenderer targetRenderer = target as Crest.UnderwaterRenderer;
+            global::Crest.UnderwaterRenderer sourceRenderer = source as global::Crest.UnderwaterRenderer;
+            global::Crest.UnderwaterRenderer targetRenderer = target as global::Crest.UnderwaterRenderer;
             if (sourceRenderer == null || targetRenderer == null || ReferenceEquals(sourceRenderer, targetRenderer))
                 return;
 
@@ -105,7 +105,7 @@ namespace Hecton8.Physics
 
         public bool IsOceanCameraOwnedBy(Camera camera)
         {
-            Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
+            global::Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
             return oceanRenderer != null &&
                    camera != null &&
                    ReferenceEquals(oceanRenderer.ViewCamera, camera) &&
@@ -114,7 +114,7 @@ namespace Hecton8.Physics
 
         public void AssignOceanCamera(Camera camera)
         {
-            Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
+            global::Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
             if (oceanRenderer == null || camera == null)
                 return;
 
@@ -136,19 +136,19 @@ namespace Hecton8.Physics
                 return;
 
             Shader.SetGlobalVector(
-                Crest.UnderwaterRenderer.ShaderIDs.s_CrestDepthFogDensity,
+                global::Crest.UnderwaterRenderer.ShaderIDs.s_CrestDepthFogDensity,
                 new Vector4(depthFogDensity.x, depthFogDensity.y, depthFogDensity.z, 0f));
-            Shader.SetGlobalColor(Crest.UnderwaterRenderer.ShaderIDs.s_CrestDiffuse, diffuse.linear);
-            Shader.SetGlobalColor(Crest.UnderwaterRenderer.ShaderIDs.s_CrestDiffuseGrazing, diffuseGrazing.linear);
-            Shader.SetGlobalColor(Crest.UnderwaterRenderer.ShaderIDs.s_CrestDiffuseShadow, diffuseShadow.linear);
-            Shader.SetGlobalColor(Crest.UnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceColour, diffuseGrazing.linear);
-            Shader.SetGlobalFloat(Crest.UnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceSun, subSurfaceSun);
-            Shader.SetGlobalFloat(Crest.UnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceBase, subSurfaceBase);
-            Shader.SetGlobalFloat(Crest.UnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceSunFallOff, subSurfaceSunFalloff);
-            Crest.Helpers.SetGlobalKeyword(
+            Shader.SetGlobalColor(global::Crest.UnderwaterRenderer.ShaderIDs.s_CrestDiffuse, diffuse.linear);
+            Shader.SetGlobalColor(global::Crest.UnderwaterRenderer.ShaderIDs.s_CrestDiffuseGrazing, diffuseGrazing.linear);
+            Shader.SetGlobalColor(global::Crest.UnderwaterRenderer.ShaderIDs.s_CrestDiffuseShadow, diffuseShadow.linear);
+            Shader.SetGlobalColor(global::Crest.UnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceColour, diffuseGrazing.linear);
+            Shader.SetGlobalFloat(global::Crest.UnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceSun, subSurfaceSun);
+            Shader.SetGlobalFloat(global::Crest.UnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceBase, subSurfaceBase);
+            Shader.SetGlobalFloat(global::Crest.UnderwaterRenderer.ShaderIDs.s_CrestSubSurfaceSunFallOff, subSurfaceSunFalloff);
+            global::Crest.Helpers.SetGlobalKeyword(
                 "CREST_SUBSURFACESCATTERING_ON",
                 targetMaterial.IsKeywordEnabled("_SUBSURFACESCATTERING_ON"));
-            Crest.Helpers.SetGlobalKeyword(
+            global::Crest.Helpers.SetGlobalKeyword(
                 "CREST_SHADOWS_ON",
                 targetMaterial.IsKeywordEnabled("_SHADOWS_ON"));
         }

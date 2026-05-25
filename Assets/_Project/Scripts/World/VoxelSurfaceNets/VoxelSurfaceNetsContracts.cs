@@ -4,6 +4,21 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.VoxelSurfaceNets
 {
+    internal static class VoxelSurfaceNetsContractsLayout
+    {
+        public const int VoxelVertexDTOStrideBytes = 32;
+        public const int ChunkMeshingStateDTOStrideBytes = 64;
+        public const int VoxelMeshingTuningDTOStrideBytes = 64;
+        public const int VoxelMeshingTelemetryEntryStrideBytes = 64;
+        public const int VoxelSurfaceAabbDTOStrideBytes = 64;
+        public const int VoxelSurfaceModifiedSignalStrideBytes = 64;
+        public const int VoxelSurfacePriorityDTOStrideBytes = 16;
+        public const int VoxelSurfaceIndirectArgsDTOStrideBytes = 32;
+        public const int MockVoxelDensityArrayStrideBytes = 48;
+        public const int VoxelSurfacePhysicsBakeRequestDTOStrideBytes = 32;
+        public const int VoxelSurfaceHzbTileDTOStrideBytes = 16;
+    }
+
     public static class VoxelSurfaceNetsConstants
     {
         public const int ChunkResolution = 32;
@@ -72,7 +87,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public const byte PhysicsBakePending = 1 << 6;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelVertexDTOStrideBytes)]
     public struct VoxelVertexDTO
     {
         [FieldOffset(0)]
@@ -87,7 +102,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public float2 UV;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.ChunkMeshingStateDTOStrideBytes)]
     public struct ChunkMeshingStateDTO
     {
         [FieldOffset(0)]
@@ -114,7 +129,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public ushort Priority;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelMeshingTuningDTOStrideBytes)]
     public struct VoxelMeshingTuningDTO
     {
         [FieldOffset(0)]
@@ -149,7 +164,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public ulong LastCsvWriteTicks;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelMeshingTelemetryEntryStrideBytes)]
     public struct VoxelMeshingTelemetryEntry
     {
         [FieldOffset(0)]
@@ -184,7 +199,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelSurfaceAabbDTOStrideBytes)]
     public struct VoxelSurfaceAabbDTO
     {
         [FieldOffset(0)]
@@ -207,7 +222,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelSurfaceModifiedSignalStrideBytes)]
     public struct VoxelSurfaceModifiedSignal
     {
         [FieldOffset(0)]
@@ -230,7 +245,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelSurfacePriorityDTOStrideBytes)]
     public struct VoxelSurfacePriorityDTO
     {
         [FieldOffset(0)]
@@ -243,7 +258,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelSurfaceIndirectArgsDTOStrideBytes)]
     public struct VoxelSurfaceIndirectArgsDTO
     {
         [FieldOffset(0)]
@@ -264,7 +279,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public uint _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.MockVoxelDensityArrayStrideBytes)]
     public partial struct MockVoxelDensityArray
     {
         [FieldOffset(0)]
@@ -285,7 +300,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelSurfacePhysicsBakeRequestDTOStrideBytes)]
     public struct VoxelSurfacePhysicsBakeRequestDTO
     {
         [FieldOffset(0)]
@@ -308,7 +323,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelSurfaceHzbTileDTOStrideBytes)]
     public struct VoxelSurfaceHzbTileDTO
     {
         [FieldOffset(0)]

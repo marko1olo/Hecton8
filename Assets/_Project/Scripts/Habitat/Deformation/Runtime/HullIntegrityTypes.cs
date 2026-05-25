@@ -10,6 +10,26 @@ using Unity.Mathematics;
 
 namespace Hecton8.Habitat.Deformation
 {
+    internal static class HullIntegrityRuntimeLayout
+    {
+        public const int HullDentDTOStrideBytes = 32;
+        public const int HullImpactDTOStrideBytes = 32;
+        public const int DeformationStateDTOStrideBytes = 64;
+        public const int BreachJetDTOStrideBytes = 64;
+        public const int BreachJetIndirectArgsDTOStrideBytes = 16;
+        public const int DeformationTelemetryEntryStrideBytes = 64;
+        public const int HullMaterialStrengthDTOStrideBytes = 32;
+        public const int BaseIntegrityLedgerDTOStrideBytes = 16;
+        public const int BaseModuleStateDTOStrideBytes = 64;
+        public const int MockWFCBaseArrayStrideBytes = 16;
+        public const int MockCombatDamageSignalStrideBytes = 64;
+        public const int MockDepthSignalStrideBytes = 16;
+        public const int MockRepairLaserSignalStrideBytes = 32;
+        public const int MockHullBreachSignalStrideBytes = 32;
+        public const int HullIntegrityTuningDTOStrideBytes = 32;
+        public const int HullIntegrityTelemetryEntryStrideBytes = 64;
+    }
+
     /// <summary>
     /// Structural integrity constants shared by the runtime, jobs, shader bridge, and editor tuner.
     /// </summary>
@@ -41,6 +61,7 @@ namespace Hecton8.Habitat.Deformation
         public const int CounterMaxObservedDentCount = 12;
         public const int CounterActiveDeformationCount = 13;
         public const int CounterPendingVisualImpactCount = 14;
+        public const int CounterSignalDropCount = 15;
         public const int CounterCount = 16;
 
         public const byte ModuleFlagBreached = 1 << 0;
@@ -55,7 +76,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// GPU hull dent payload. Layout is exactly 32 bytes: float3 position + radius, float3 normal + depth.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.HullDentDTOStrideBytes)]
     public struct HullDentDTO
     {
         [FieldOffset(0)] public float3 Position;
@@ -68,7 +89,7 @@ namespace Hecton8.Habitat.Deformation
     /// Authoritative visual-impact payload. Layout is exactly 32 bytes:
     /// double3 AUP impact point + float magnitude + uint damage hash.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.HullImpactDTOStrideBytes)]
     public struct HullImpactDTO
     {
         [FieldOffset(0)] public double3 ImpactAup;
@@ -79,7 +100,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// GPU deformation payload. Layout is exactly 64 bytes and uses raw public fields only.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.DeformationStateDTOStrideBytes)]
     public struct DeformationStateDTO
     {
         [FieldOffset(0)] public float3 LocalPosition;
@@ -123,7 +144,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Breach-jet instance payload. Layout is exactly 64 bytes for clean cache-line fetch.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.BreachJetDTOStrideBytes)]
     public struct BreachJetDTO
     {
         [FieldOffset(0)] public float3 LocalPosition;
@@ -143,7 +164,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// DrawProceduralIndirect argument row. Layout is 16 bytes: verts, instances, start vertex, start instance.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.BreachJetIndirectArgsDTOStrideBytes)]
     public struct BreachJetIndirectArgsDTO
     {
         [FieldOffset(0)] public uint VertexCountPerInstance;
@@ -155,7 +176,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Deformation black-box frame entry. Layout is exactly 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.DeformationTelemetryEntryStrideBytes)]
     public struct DeformationTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
@@ -177,7 +198,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Cold material-strength tuning row. Layout is exactly 32 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.HullMaterialStrengthDTOStrideBytes)]
     public struct HullMaterialStrengthDTO
     {
         [FieldOffset(0)] public uint MaterialHash;
@@ -193,7 +214,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Per-base scalar integrity ledger. Layout is exactly 16 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.BaseIntegrityLedgerDTOStrideBytes)]
     public struct BaseIntegrityLedgerDTO
     {
         [FieldOffset(0)] public uint BaseHash;
@@ -205,7 +226,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Raw mutable module state for Burst jobs. No properties: jobs write CurrentSIP directly.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.BaseModuleStateDTOStrideBytes)]
     public struct BaseModuleStateDTO
     {
         [FieldOffset(0)] public uint NodeId;
@@ -241,7 +262,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Blind WFC base descriptor used when the real generator is absent.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.MockWFCBaseArrayStrideBytes)]
     public struct MockWFCBaseArray
     {
         [FieldOffset(0)] public uint BaseHash;
@@ -253,7 +274,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Blind combat payload proving dent generation without a combat-router dependency.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.MockCombatDamageSignalStrideBytes)]
     public struct MockCombatDamageSignal
     {
         [FieldOffset(0)] public float3 LocalPoint;
@@ -273,7 +294,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Blind pressure-depth payload. Defined partial to allow other agents to extend without direct coupling.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.MockDepthSignalStrideBytes)]
     public partial struct MockDepthSignal
     {
         [FieldOffset(0)] public uint TargetHash;
@@ -285,7 +306,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Blind repair-laser payload used by the repair job.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.MockRepairLaserSignalStrideBytes)]
     public struct MockRepairLaserSignal
     {
         [FieldOffset(0)] public float3 LocalPoint;
@@ -299,7 +320,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Compact breach payload retained for local proof when external flood systems are absent.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.MockHullBreachSignalStrideBytes)]
     public struct MockHullBreachSignal
     {
         [FieldOffset(0)] public uint BaseHash;
@@ -314,7 +335,7 @@ namespace Hecton8.Habitat.Deformation
     /// Play-mode tuning block edited through the Hull Deformation Tuner and read by jobs.
     /// Layout is exactly 32 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.HullIntegrityTuningDTOStrideBytes)]
     public struct HullIntegrityTuningDTO
     {
         [FieldOffset(0)] public float BaseSipMultiplier;
@@ -330,7 +351,7 @@ namespace Hecton8.Habitat.Deformation
     /// <summary>
     /// Black-box frame entry. Retains the last 300 frames of high-level integrity state.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = HullIntegrityRuntimeLayout.HullIntegrityTelemetryEntryStrideBytes)]
     public struct HullIntegrityTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;

@@ -56,7 +56,7 @@ namespace Hecton8.Editor
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project" });
             int processedCount = 0;
             int modifiedCount = 0;
-            List<string> modifiedFiles = new List<string>();
+            List<string> modifiedFiles = new List<string>(64);
 
             for (int i = 0; i < guids.Length; i++)
             {
@@ -228,7 +228,7 @@ namespace Hecton8.Editor
             int validCount = 0;
             int missingShaderCount = 0;
             int missingComponentCount = 0;
-            List<string> issues = new List<string>();
+            List<string> issues = new List<string>(64);
 
             for (int i = 0; i < guids.Length; i++)
             {

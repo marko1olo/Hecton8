@@ -221,6 +221,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         }
     }
 
+    #if UNITY_EDITOR
     public static class OceanAestheticProfileCsvParser
     {
         private const uint FnvOffset = 2166136261u;
@@ -440,6 +441,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                    value == (byte)'\n';
         }
     }
+    #endif
 
     public static unsafe class OceanSinglePassTelemetryDump
     {

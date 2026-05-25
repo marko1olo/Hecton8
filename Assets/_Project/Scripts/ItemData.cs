@@ -1,5 +1,6 @@
 namespace Hecton8.Items
 {
+    using System;
     using Hecton.Localization;
     using Hecton8.Inventory;
     using Hecton8.Physics;
@@ -175,7 +176,6 @@ namespace Hecton8.Items
         private string _cachedItemName = string.Empty;
         private string _cachedDescription = string.Empty;
         private string _cachedInteractVerb = string.Empty;
-        private string _cachedInteractText = string.Empty;
 
         public string itemName
         {
@@ -383,7 +383,7 @@ namespace Hecton8.Items
         public string GetInteractText()
         {
             EnsureLocalizedCache();
-            return _cachedInteractText;
+            return _cachedItemName;
         }
 
         /// <summary>
@@ -392,7 +392,26 @@ namespace Hecton8.Items
         public string GetInteractText(LocalizationManager manager)
         {
             EnsureLocalizedCache(manager);
-            return _cachedInteractText;
+            return _cachedItemName;
+        }
+
+        public bool TryWriteInteractText(LocalizationManager manager, Span<char> destination, out int length)
+        {
+            length = 0;
+            ReadOnlySpan<char> itemNameSpan = localizedItemName.ResolveSpanOrFallback(
+                manager,
+                FallbackOrDefault(legacyItemName, "Unnamed Item"));
+            ReadOnlySpan<char> verbSpan = localizedInteractVerb.ResolveSpanOrFallback(
+                manager,
+                FallbackOrDefault(legacyInteractVerb, "Take"));
+
+            if (verbSpan.IsEmpty)
+                return TryAppendSpan(itemNameSpan, destination, ref length) && length > 0;
+
+            return TryAppendSpan(verbSpan, destination, ref length) &&
+                   TryAppendChar(' ', destination, ref length) &&
+                   TryAppendSpan(itemNameSpan, destination, ref length) &&
+                   length > 0;
         }
 
         /// <summary>
@@ -411,6 +430,14 @@ namespace Hecton8.Items
         {
             EnsureLocalizedCache(manager);
             return _cachedDescription;
+        }
+
+        /// <summary>
+        /// Returns the localized description as a span for caller-owned UI buffers.
+        /// </summary>
+        public ReadOnlySpan<char> GetDescriptionSpan(LocalizationManager manager)
+        {
+            return localizedDescription.ResolveSpanOrFallback(manager, legacyDescription);
         }
 
         /// <summary>
@@ -433,19 +460,15 @@ namespace Hecton8.Items
             GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
 
             if (_cachedLanguage == language &&
-                !string.IsNullOrEmpty(_cachedItemName) &&
-                !string.IsNullOrEmpty(_cachedInteractText))
+                !string.IsNullOrEmpty(_cachedItemName))
             {
                 return;
             }
 
             _cachedLanguage = language;
-            _cachedItemName = ResolveLocalized(localizedItemName, language, manager, legacyItemName, "Unnamed Item");
-            _cachedDescription = ResolveLocalized(localizedDescription, language, manager, legacyDescription, string.Empty);
-            _cachedInteractVerb = ResolveLocalized(localizedInteractVerb, language, manager, legacyInteractVerb, "Take");
-            _cachedInteractText = string.IsNullOrWhiteSpace(_cachedInteractVerb)
-                ? _cachedItemName
-                : _cachedInteractVerb + " " + _cachedItemName;
+            _cachedItemName = ResolveLegacyFallback(localizedItemName, language, manager, legacyItemName, "Unnamed Item");
+            _cachedDescription = ResolveLegacyFallback(localizedDescription, language, manager, legacyDescription, string.Empty);
+            _cachedInteractVerb = ResolveLegacyFallback(localizedInteractVerb, language, manager, legacyInteractVerb, "Take");
         }
 
         private void InvalidateLocalizedCache()
@@ -454,20 +477,42 @@ namespace Hecton8.Items
             _cachedItemName = string.Empty;
             _cachedDescription = string.Empty;
             _cachedInteractVerb = string.Empty;
-            _cachedInteractText = string.Empty;
         }
 
-        private static string ResolveLocalized(
+        private static bool TryAppendSpan(ReadOnlySpan<char> source, Span<char> destination, ref int length)
+        {
+            if (source.Length == 0)
+                return true;
+
+            if (length < 0 || destination.Length - length < source.Length)
+                return false;
+
+            source.CopyTo(destination.Slice(length));
+            length += source.Length;
+            return true;
+        }
+
+        private static bool TryAppendChar(char value, Span<char> destination, ref int length)
+        {
+            if ((uint)length >= (uint)destination.Length)
+                return false;
+
+            destination[length++] = value;
+            return true;
+        }
+
+        private static string FallbackOrDefault(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        private static string ResolveLegacyFallback(
             LocalizedTextReference reference,
             GameLanguage language,
             LocalizationManager manager,
             string legacyFallback,
             string hardFallback)
         {
-            string resolved = reference.Resolve(language, manager);
-            if (!string.IsNullOrWhiteSpace(resolved))
-                return resolved;
-
             if (!string.IsNullOrWhiteSpace(legacyFallback))
                 return legacyFallback;
 

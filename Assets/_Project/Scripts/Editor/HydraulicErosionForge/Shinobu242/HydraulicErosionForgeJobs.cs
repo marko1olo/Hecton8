@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -109,7 +110,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
                 safeHeight <= 1 ? 0f : (z * 2f / (safeHeight - 1)) - 1f);
             float ridge = 1f - math.saturate(math.max(math.abs(p.x), math.abs(p.y)));
             float cone = 1f - math.saturate(math.sqrt(math.max(0f, math.lengthsq(p))));
-            float valley = math.exp(-math.abs(p.x + p.y * 0.37f) * 8f) * math.saturate(1f - math.abs(p.y));
+            float valley = MathLodApproximation.ApproxExpNegPade33Wide40(math.abs(p.x + p.y * 0.37f) * 8f) * math.saturate(1f - math.abs(p.y));
             float h = math.saturate((ridge * 0.58f + cone * 0.42f) * math.max(0f, ConeHeight01) - valley * math.max(0f, BasinDepth01));
 
             float* heightPtr = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Heights);
@@ -142,7 +143,8 @@ namespace Hecton8.Editor.HydraulicErosionForge
             ErosionDropletDTO* ptr = (ErosionDropletDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Droplets);
             ref ErosionDropletDTO droplet = ref UnsafeUtility.AsRef<ErosionDropletDTO>(ptr + index);
             droplet.Position = new float2(x, z);
-            droplet.Direction = new float2(math.cos(angle), math.sin(angle));
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+            droplet.Direction = new float2(cos, sin);
             droplet.Velocity = math.max(0.001f, Settings.InitialVelocity);
             droplet.WaterVolume = math.max(0.001f, Settings.InitialWater);
             droplet.SedimentCapacity = 0f;
@@ -438,7 +440,8 @@ namespace Hecton8.Editor.HydraulicErosionForge
         private static float2 HashDirection(int dropletIndex, int step)
         {
             float angle = ErosionDeterminismHash.Hash01((uint)dropletIndex ^ ((uint)step * 0x9E3779B9u)) * 6.2831855f;
-            return new float2(math.cos(angle), math.sin(angle));
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+            return new float2(cos, sin);
         }
     }
 

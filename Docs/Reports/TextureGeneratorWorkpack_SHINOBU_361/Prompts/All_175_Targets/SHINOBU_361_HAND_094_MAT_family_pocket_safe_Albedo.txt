@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_094
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_094_MAT_family_pocket_safe_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_family_pocket_safe_Albedo.png
+FINAL_FILENAME: MAT_family_pocket_safe_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Safe pocket family albedo for calm shelter or low-risk exploration zones. Create a bright underwater refuge material with warm off-white sediment, soft teal mineral rings, pearly shell dust, gentle jade membrane traces, and tiny amber comfort markers. It should feel safe, breathable, and beautiful, supporting player orientation without looking sterile. Use broad clean shapes and a relaxed premium palette. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

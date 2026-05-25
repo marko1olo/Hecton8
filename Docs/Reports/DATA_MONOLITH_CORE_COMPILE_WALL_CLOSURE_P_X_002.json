@@ -1,0 +1,42 @@
+{
+  "agent": "X_002",
+  "slice": "P",
+  "status": "PATCHED_SPAN_COMPILE_WALL_CORE_COMPILE_PASS",
+  "generatedUtc": "2026-05-24T07:52:00Z",
+  "changedFiles": [
+    "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+    "Assets/_Project/Scripts/LocalizationManager.cs"
+  ],
+  "fixes": [
+    "SubtitleManager.HandleNotificationPushed now keeps the ReadOnlySpan<char> route by calling EnqueueBuffered instead of the string Enqueue overload.",
+    "LocalizationManager plural lookup no longer returns a span derived from stackalloc keyBuffer; the helper computes the LocHash key, then the caller resolves the registry-owned raw buffer span."
+  ],
+  "failurePrevented": [
+    "CS1503 ReadOnlySpan<char> to string conversion at SubtitleManager notification subtitle enqueue.",
+    "CS8350/CS8352 stackalloc span lifetime escape in LocalizationManager plural suffix fallback."
+  ],
+  "runtimeClaims": {
+    "managedAllocationAdded": false,
+    "runtimeParserAdded": false,
+    "binarySchemaChanged": false,
+    "dataMonolithLayoutChanged": false
+  },
+  "diffCheck": "PASS_WARNINGS_ONLY_LF_CRLF",
+  "compileStatus": "CORE_BUILD_PASS_WITH_DUPLICATE_SOURCE_WARNINGS",
+  "coreBuildProof": {
+    "command": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+    "buildServerShutdownBeforeBuild": true,
+    "result": "PASS",
+    "errors": 0,
+    "warnings": 5,
+    "warningClass": "CS2002 duplicate source entries in generated Hecton8.Core.csproj; not introduced by this slice.",
+    "elapsed": "00:01:24.55",
+    "generatedUtc": "2026-05-24T08:36:51.1927326Z"
+  },
+  "buildGate": {
+    "latestWaitSeconds": 1500,
+    "result": "TIMEOUT",
+    "reason": "CPU remained above 50% and/or dotnet/csc/VBCSCompiler processes appeared during the wait window."
+  },
+  "claimBoundary": "Source-level compile-wall fix only; Core compile is still required before this slice can be marked build-proven."
+}

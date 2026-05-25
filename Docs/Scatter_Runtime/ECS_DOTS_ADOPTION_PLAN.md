@@ -1,4 +1,4 @@
-# ECS / DOTS Adoption Plan
+﻿# ECS / DOTS Adoption Plan
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION

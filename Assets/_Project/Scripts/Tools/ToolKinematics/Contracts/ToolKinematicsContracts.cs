@@ -301,6 +301,29 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ApproxSinCosBhaskara(float radians, out float sine, out float cosine)
+        {
+            sine = ApproxSinBhaskara(radians);
+            cosine = ApproxSinBhaskara(radians + (0.5f * math.PI));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ApproxSinBhaskara(float radians)
+        {
+            float angle = math.select(0f, radians, math.isfinite(radians));
+            float cycle = angle * 0.15915494309189535f;
+            float wrapped = cycle - math.floor(cycle);
+            float x = wrapped * (2f * math.PI);
+            float mirrored = math.select(x, (2f * math.PI) - x, x > math.PI);
+            float sign = math.select(1f, -1f, x > math.PI);
+            float shape = mirrored * (math.PI - mirrored);
+            float numerator = 16f * shape;
+            float denominator = math.max(0.0001f, (5f * math.PI * math.PI) - (4f * shape));
+            float sine = sign * numerator * math.rcp(denominator);
+            return math.clamp(math.select(0f, sine, math.isfinite(sine)), -1f, 1f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 SafeNormalize(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
@@ -314,6 +337,15 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             return math.isfinite(lengthSq) && lengthSq > 0.000001f
                 ? new quaternion(value.value * math.rsqrt(lengthSq))
                 : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion FastSmallAngleRotation(float3 axis, float radians)
+        {
+            float3 safeAxis = SafeNormalize(axis, new float3(1f, 0f, 0f));
+            float half = math.clamp(math.select(0f, radians, math.isfinite(radians)), -0.5f, 0.5f) * 0.5f;
+            float halfSq = half * half;
+            return SafeNormalizeQuaternion(new quaternion(new float4(safeAxis * half, 1f - (0.5f * halfSq))), quaternion.identity);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -604,7 +636,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             {
                 float3 recoilAxis = ToolKinematicsMath.SafeNormalize(recoil.AngularOffsetAxis, new float3(1f, 0f, 0f));
                 float recoilRadians = math.clamp(recoil.Recoil01, -0.35f, 0.35f);
-                quaternion recoilRotation = quaternion.AxisAngle(recoilAxis, recoilRadians);
+                quaternion recoilRotation = ToolKinematicsMath.FastSmallAngleRotation(recoilAxis, recoilRadians);
                 quaternion finalRotation = ToolKinematicsMath.SafeNormalizeQuaternion(math.mul(controllerRotation, recoilRotation), controllerRotation);
                 float3 basePivot = math.rotate(controllerRotation, recoil.PivotLocal);
                 float3 rotatedPivot = math.rotate(finalRotation, recoil.PivotLocal);
@@ -808,8 +840,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                 for (int side = 0; side < ringSides && written < VerticesPerTool; side++)
                 {
                     float a = (side * 6.2831855f) * math.rcp(ringSides);
-                    float s = math.sin(a);
-                    float c = math.cos(a);
+                    ToolKinematicsMath.ApproxSinCosBhaskara(a, out float s, out float c);
                     float3 normal = tangent * c + bitangent * s;
                     BeamVertices[start + written] = new ToolBeamVertexDTO
                     {

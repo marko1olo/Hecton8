@@ -1,4 +1,4 @@
-# Outreach Calendar And Batch Plan
+﻿# Outreach Calendar And Batch Plan
 
 Status: future campaign calendar / no dates committed
 Rule: no public push before proof assets, AB-009/KPI decision-read proof, and route-specific class / `reply_consent_provenance` custody

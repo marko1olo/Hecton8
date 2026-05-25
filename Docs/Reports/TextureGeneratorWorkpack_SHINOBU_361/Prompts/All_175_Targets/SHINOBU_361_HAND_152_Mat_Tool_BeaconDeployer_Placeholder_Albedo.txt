@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_152
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_152_Mat_Tool_BeaconDeployer_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Tool_BeaconDeployer_Placeholder_Albedo.png
+FINAL_FILENAME: Mat_Tool_BeaconDeployer_Placeholder_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Beacon deployer tool albedo for premium HECTON-8 field equipment. Create warm off-white ceramic casing panels, satin titanium deployment rails, teal signal paint, amber locator windows, graphite rubber grip pads, and pale salt wear on handled edges. It should read as compact navigation hardware for underwater expeditions, clean and desirable as a usable tool. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

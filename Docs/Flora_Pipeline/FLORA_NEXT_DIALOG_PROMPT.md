@@ -1,4 +1,4 @@
-# Flora Next Dialog Prompt
+﻿# Flora Next Dialog Prompt
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION

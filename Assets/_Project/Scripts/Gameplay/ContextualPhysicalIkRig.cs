@@ -914,7 +914,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Animator))]
     [AddComponentMenu("Hecton8/Gameplay/Contextual Physical IK Rig")]
-    public sealed class ContextualPhysicalIkRig : MonoBehaviour, IOriginShiftListener, IPhysicalHandIkTargetSink, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class ContextualPhysicalIkRig : MonoBehaviour, IOriginShiftListener, IPhysicalHandIkTargetSink, IGlobalRegistryHotSwapListener
     {
         private const int PelvisHandleIndex = 0;
         private const int LeftLegUpperHandleIndex = 1;
@@ -951,6 +951,10 @@ namespace Hecton8.Gameplay
         private const float ExternalWallHandHoldSeconds = 0.12f;
         private const float ExternalSqueezePoleHoldSeconds = 0.18f;
         private const float ExternalSqueezePoleLocalMeters = 0.075f;
+        private const float MinimumIkQualityWeight01 = 0.25f;
+        private const float MinimumWallTouchQualityWeight01 = 0.15f;
+        private const float MinimumBreathingRateWeight01 = 0.75f;
+        private const float LowQualityThrottleDistanceBias = 1.65f;
         private const int MaxAppendageIterations = 12;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
@@ -1402,14 +1406,12 @@ namespace Hecton8.Gameplay
         private int _spineHandleStartIndex = BaseHandleCount;
         private int _secondaryHandleStartIndex = BaseHandleCount;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private byte _stableThrottleTier;
         private bool _runtimeInitialized;
         private bool _animationInjected;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _registeredHotSwapListener;
-        private bool _registeredScalabilityListener;
         private bool _muscleBulgeMaterialInitialized;
         private bool _attemptedMuscleBulgeRendererResolve;
         private bool _hasPreviousLeftPredictiveControllerPose;
@@ -1422,7 +1424,6 @@ namespace Hecton8.Gameplay
             TryResolveReferences();
             RefreshColdRegistryDependencies();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             EnsureRuntimeInitialized();
             TryInitializeAnimationInjection();
             TryRegisterWithRuntime();
@@ -1433,7 +1434,6 @@ namespace Hecton8.Gameplay
         {
             RefreshColdRegistryDependencies();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             EnsureRuntimeInitialized();
             TryInitializeAnimationInjection();
             TryRegisterWithRuntime();
@@ -1443,7 +1443,6 @@ namespace Hecton8.Gameplay
         {
             SetUpperArmRenderersVisible(true);
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             TryUnregisterOriginShiftListener();
             TryUnregisterFromRuntime();
             TearDownAnimationInjection();
@@ -1454,7 +1453,6 @@ namespace Hecton8.Gameplay
         {
             SetUpperArmRenderersVisible(true);
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             TryUnregisterOriginShiftListener();
             TryUnregisterFromRuntime();
             TearDownAnimationInjection();
@@ -1470,15 +1468,9 @@ namespace Hecton8.Gameplay
                 _playerRuntimeContext = currentService as IPlayerRuntimeContext;
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _qualityTier = payload.CurrentQualityTier;
-        }
-
         private void RefreshColdRegistryDependencies()
         {
-            _playerRuntimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
-            _qualityTier = GlobalRegistry.ScalabilityTier;
+            _playerRuntimeContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1496,24 +1488,6 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (!Application.isPlaying || _registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
         }
 
 #if UNITY_EDITOR
@@ -1658,21 +1632,21 @@ namespace Hecton8.Gameplay
             if (_entitySlot < 0)
                 return false;
 
-            HectonQualityTier tier = _qualityTier == HectonQualityTier.Unknown ? HectonQualityTier.Low : _qualityTier;
-            bool lowTier = IsLowTier(tier);
-            bool xrActive = HectonXRRuntimeState.IsXRActive;
-            bool lowerBodyIkEnabled = enableFootPlacement && (xrActive || !lowTier);
-            bool wallTouchEnabled = enableHandBracing && (!disableWallTouchOnLowTier || !lowTier);
+            float qualityWeight01 = ResolveIkQualityWeight01();
+            float footQualityWeight01 = ResolveFootIkQualityWeight01(qualityWeight01);
+            float wallTouchQualityWeight01 = ResolveWallTouchQualityWeight01(qualityWeight01);
+            bool lowerBodyIkEnabled = enableFootPlacement;
+            bool wallTouchEnabled = enableHandBracing;
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
 
             RefreshPlayerStress();
-            TickBreathingState(safeDeltaTime, lowTier);
+            TickBreathingState(safeDeltaTime, qualityWeight01);
             TickExternalSqueezePoleState(safeDeltaTime);
             ApplyExternalSqueezePoleBias();
-            CaptureSpineTargets(lowTier);
+            CaptureSpineTargets(qualityWeight01);
             CaptureAppendageTargets();
             ApplyMuscleBulgeSignal(safeDeltaTime);
-            CapturePredictiveRepairLatch(safeDeltaTime, wallTouchEnabled);
+            CapturePredictiveRepairLatch(safeDeltaTime, wallTouchQualityWeight01);
             TickToolHandTransientState(safeDeltaTime);
             TickUpperArmFovCulling(safeDeltaTime);
 
@@ -1705,7 +1679,8 @@ namespace Hecton8.Gameplay
                 viewerDistanceSq = math.select(viewerDistanceSq, 0.0f, !math.isfinite(viewerDistanceSq));
             }
 
-            ResolveThrottleState(frameIndex, _entitySlot, viewerDistanceSq, ref _stableThrottleTier, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
+            float throttleDistanceSq = viewerDistanceSq * math.lerp(LowQualityThrottleDistanceBias, 1.0f, qualityWeight01);
+            ResolveThrottleState(frameIndex, _entitySlot, throttleDistanceSq, ref _stableThrottleTier, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
             entityState.IsActive = 1;
             entityState.EnableFootPlacement = lowerBodyIkEnabled ? 1 : 0;
             entityState.EnableHandBracing = enableHandBracing ? 1 : 0;
@@ -1750,21 +1725,21 @@ namespace Hecton8.Gameplay
             entityState.ToolRecoilMaxOffset = SanitizeNonNegativeScalar(toolRecoilMaxOffsetMeters);
             entityState.DashboardRightHandBlend = SanitizeUnitScalar(_terminalRightHandBlend);
             entityState.ColdShiverBlend = SanitizeUnitScalar(_coldShiverBlend);
-            entityState.FootContactOffset = SanitizeNonNegativeScalar(footContactOffset);
-            entityState.HandContactOffset = SanitizeNonNegativeScalar(handContactOffset);
-            entityState.FootProbeDistanceScale = SanitizeNonNegativeScalar(footProbeDistanceScale);
-            entityState.HandProbeDistanceScale = SanitizeNonNegativeScalar(handProbeDistanceScale);
+            entityState.FootContactOffset = SanitizeNonNegativeScalar(footContactOffset) * footQualityWeight01;
+            entityState.HandContactOffset = SanitizeNonNegativeScalar(handContactOffset) * wallTouchQualityWeight01;
+            entityState.FootProbeDistanceScale = SanitizeNonNegativeScalar(footProbeDistanceScale) * footQualityWeight01;
+            entityState.HandProbeDistanceScale = SanitizeNonNegativeScalar(handProbeDistanceScale) * wallTouchQualityWeight01;
             entityState.GroundLayerMask = groundMask.value;
             entityState.WallLayerMask = wallMask.value;
             entityState.TunnelClearanceDistance = SanitizeNonNegativeScalar(tunnelClearanceDistance);
-            entityState.HandBraceFadeDistance = SanitizeNonNegativeScalar(handBraceFadeDistance);
+            entityState.HandBraceFadeDistance = SanitizeNonNegativeScalar(handBraceFadeDistance) * math.lerp(0.35f, 1.0f, wallTouchQualityWeight01);
             entityState.TargetPositionSharpness = SanitizeNonNegativeScalar(targetPositionSharpness);
             entityState.TargetNormalSharpness = SanitizeNonNegativeScalar(targetNormalSharpness);
             entityState.BlendFadeSharpness = SanitizeNonNegativeScalar(blendFadeSharpness);
             entityState.MaxDeltaHeight = SanitizeNonNegativeScalar(maxDeltaHeight);
-            entityState.ComShiftLateralFactor = SanitizeNonNegativeScalar(comShiftLateralFactor);
-            entityState.ComShiftForwardFactor = SanitizeNonNegativeScalar(comShiftForwardFactor);
-            entityState.ComShiftVerticalFactor = SanitizeNonNegativeScalar(comShiftVerticalFactor);
+            entityState.ComShiftLateralFactor = SanitizeNonNegativeScalar(comShiftLateralFactor) * footQualityWeight01;
+            entityState.ComShiftForwardFactor = SanitizeNonNegativeScalar(comShiftForwardFactor) * footQualityWeight01;
+            entityState.ComShiftVerticalFactor = SanitizeNonNegativeScalar(comShiftVerticalFactor) * footQualityWeight01;
             entityState.ComResponseSharpness = SanitizeNonNegativeScalar(comResponseSharpness);
             entityState.ComLeanPitchRadians = SanitizeNonNegativeScalar(math.radians(comLeanPitchDegrees));
             entityState.ComLeanRollRadians = SanitizeNonNegativeScalar(math.radians(comLeanRollDegrees));
@@ -1811,13 +1786,13 @@ namespace Hecton8.Gameplay
 
         private void RefreshPlayerStress()
         {
-            if (!GlobalSignals.TryGetLatestPlayerStressSignal(out PlayerStressSignal signal, out int sequence) ||
+            if (!SignalBus<PlayerStressSignal>.TryGetLatest(out PlayerStressSignal signal, out int sequence) ||
                 sequence == _lastPlayerStressSignalSequence)
             {
                 return;
             }
 
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
             if (signal.Frame > frame)
                 return;
 
@@ -1825,7 +1800,7 @@ namespace Hecton8.Gameplay
             _playerStress01 = SanitizeUnitScalar(signal.Stress01);
         }
 
-        private void TickBreathingState(float deltaTime, bool lowTier)
+        private void TickBreathingState(float deltaTime, float qualityWeight01)
         {
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
             float targetBlend = enableProceduralBreathing ? 1.0f : 0.0f;
@@ -1839,8 +1814,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float rate = SanitizeNonNegativeScalar(breathingBaseRateHz) + _playerStress01 * SanitizeNonNegativeScalar(breathingStressRateHz);
-            if (lowTier)
-                rate *= 0.75f;
+            rate *= math.lerp(MinimumBreathingRateWeight01, 1.0f, SanitizeUnitScalar(qualityWeight01));
             _breathingPhase = WrapPositivePhase(_breathingPhase + (rate * safeDeltaTime), BreathingPhaseWrap);
         }
 
@@ -1953,7 +1927,7 @@ namespace Hecton8.Gameplay
             rightOffset = SanitizeFloat3Value((rootRight * -rightLateral) + (rootUp * rightVertical), float3.zero);
         }
 
-        private void CapturePredictiveRepairLatch(float deltaTime, bool wallTouchEnabled)
+        private void CapturePredictiveRepairLatch(float deltaTime, float wallTouchQualityWeight01)
         {
             Transform leftSource = leftControllerProbe != null ? leftControllerProbe : leftHandProbe;
             Transform rightSource = rightControllerProbe != null ? rightControllerProbe : rightHandProbe;
@@ -2054,20 +2028,24 @@ namespace Hecton8.Gameplay
                     safeDeltaTime));
             }
 
-            ApplyExternalWallHandTargetsToPredictiveLatch(safeDeltaTime, wallTouchEnabled);
+            float wallTouchWeight = SanitizeUnitScalar(wallTouchQualityWeight01);
+            _predictiveLeftHandBlend = SanitizeUnitScalar(_predictiveLeftHandBlend * wallTouchWeight);
+            _predictiveRightHandBlend = SanitizeUnitScalar(_predictiveRightHandBlend * wallTouchWeight);
+            ApplyExternalWallHandTargetsToPredictiveLatch(safeDeltaTime, wallTouchWeight);
         }
 
-        private void ApplyExternalWallHandTargetsToPredictiveLatch(float deltaTime, bool wallTouchEnabled)
+        private void ApplyExternalWallHandTargetsToPredictiveLatch(float deltaTime, float wallTouchQualityWeight01)
         {
+            float wallTouchWeight = SanitizeUnitScalar(wallTouchQualityWeight01);
             _externalWallLeftHandHoldTimer = SanitizeNonNegativeScalar(_externalWallLeftHandHoldTimer);
             _externalWallRightHandHoldTimer = SanitizeNonNegativeScalar(_externalWallRightHandHoldTimer);
-            _externalWallLeftHandBlend = SanitizeUnitScalar(_externalWallLeftHandBlend);
-            _externalWallRightHandBlend = SanitizeUnitScalar(_externalWallRightHandBlend);
+            _externalWallLeftHandBlend = SanitizeUnitScalar(_externalWallLeftHandBlend) * wallTouchWeight;
+            _externalWallRightHandBlend = SanitizeUnitScalar(_externalWallRightHandBlend) * wallTouchWeight;
 
             bool hasExternalWallTargets =
                 _externalWallLeftHandHoldTimer > 0.0f ||
                 _externalWallRightHandHoldTimer > 0.0f;
-            if (!wallTouchEnabled && !hasExternalWallTargets)
+            if (wallTouchWeight <= 0.0001f && !hasExternalWallTargets)
             {
                 _externalWallLeftHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
                     _externalWallLeftHandBlend,
@@ -2719,7 +2697,7 @@ namespace Hecton8.Gameplay
             _ikPlayable.SetJobData(job);
         }
 
-        private void CaptureSpineTargets(bool lowTier)
+        private void CaptureSpineTargets(float qualityWeight01)
         {
             if (!_spineChainRuntimes.IsCreated || !_spineTargets.IsCreated || _spineTargets.Length < SpineTargetCountPerChain)
                 return;
@@ -2755,14 +2733,16 @@ namespace Hecton8.Gameplay
                 float3 hmdRight = ContextualPhysicalIkMath.SafeNormalize(
                     math.mul(hmdMathematicsRotation, new float3(1.0f, 0.0f, 0.0f)),
                     new float3(1.0f, 0.0f, 0.0f));
-                float wave = lowTier
-                    ? CinematicMath.FastTriangleWaveSigned(_breathingPhase)
-                    : math.sin(_breathingPhase * 6.28318530718f);
-                float amplitude = SanitizeNonNegativeScalar(breathingAmplitudeMeters) * _breathingBlend * (0.45f + _playerStress01 * 0.55f);
+                float quality = SanitizeUnitScalar(qualityWeight01);
+                float cheapWave = CinematicMath.FastTriangleWaveSigned(_breathingPhase);
+                float smoothWave = CinematicMath.FastSin(_breathingPhase * 6.28318530718f);
+                float wave = math.lerp(cheapWave, smoothWave, quality);
+                float amplitude = SanitizeNonNegativeScalar(breathingAmplitudeMeters) * _breathingBlend * (0.45f + _playerStress01 * 0.55f) * math.lerp(0.65f, 1.0f, quality);
                 float jitter = CinematicMath.FastTriangleWaveSigned((_breathingPhase * 3.17f) + 0.19f) *
                     SanitizeNonNegativeScalar(breathingStressJitterMeters) *
                     _playerStress01 *
-                    _breathingBlend;
+                    _breathingBlend *
+                    math.lerp(0.5f, 1.0f, quality);
                 float3 breathOffset = hmdUp * (wave * amplitude) + hmdRight * jitter;
                 chestTarget += breathOffset;
                 headTarget += breathOffset * 0.35f;
@@ -3425,7 +3405,7 @@ namespace Hecton8.Gameplay
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!originAup.IsFinite())
                 return false;
 
@@ -3480,11 +3460,23 @@ namespace Hecton8.Gameplay
             return IsFiniteVector(position) ? ContextualPhysicalIkMath.ToFloat3(position) : fallback;
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        private static float ResolveIkQualityWeight01()
         {
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1.0f, qualityWeight, math.isfinite(qualityWeight)));
+        }
+
+        private static float ResolveFootIkQualityWeight01(float qualityWeight01)
+        {
+            return math.lerp(MinimumIkQualityWeight01, 1.0f, SanitizeUnitScalar(qualityWeight01));
+        }
+
+        private float ResolveWallTouchQualityWeight01(float qualityWeight01)
+        {
+            float quality = SanitizeUnitScalar(qualityWeight01);
+            return disableWallTouchOnLowTier
+                ? math.saturate((quality - MinimumWallTouchQualityWeight01) * math.rcp(1.0f - MinimumWallTouchQualityWeight01))
+                : quality;
         }
 
         private static Vector3 NormalizeVectorNoSqrt(Vector3 value, Vector3 fallback)

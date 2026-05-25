@@ -231,7 +231,7 @@ namespace Hecton8.VFX
         {
             return new WaterExtinctionProfileDTO
             {
-                ProfileHash = VolumetricFogExtinctionCsvParser.HashAsciiLower("default_abyss"),
+                ProfileHash = VolumetricFogProfileHash.HashAsciiLower("default_abyss"),
                 MinDepthMeters = 0f,
                 MaxDepthMeters = 20000f,
                 DensityMultiplier = 1f,
@@ -278,9 +278,9 @@ namespace Hecton8.VFX
                 float radialMeters = math.lerp(7f, 22f, index01);
                 float heightMeters = math.lerp(-2.5f, 3.5f, math.frac(index01 * 1.6180339f));
                 float3 offset = forward * (10f + radialMeters * 0.8f) +
-                                side * (math.sin(phase) * radialMeters) +
-                                up * (heightMeters + math.cos(phase * 0.7f) * 1.5f);
-                float pulse = 0.65f + 0.35f * math.sin(phase * 1.7f);
+                                side * (Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phase) * radialMeters) +
+                                up * (heightMeters + Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(phase * 0.7f) * 1.5f);
+                float pulse = 0.65f + 0.35f * Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(phase * 1.7f);
                 float radius = math.lerp(7f, 18f, quality) * (0.75f + index01 * 0.5f);
                 float intensity = math.lerp(0.15f, 1.15f, quality) * pulse;
 
@@ -313,6 +313,31 @@ namespace Hecton8.VFX
         }
     }
 
+    public static class VolumetricFogProfileHash
+    {
+        private const uint FnvOffset = 2166136261u;
+        private const uint FnvPrime = 16777619u;
+
+        public static uint HashAsciiLower(string text)
+        {
+            uint hash = FnvOffset;
+            if (string.IsNullOrEmpty(text))
+                return hash;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c >= 'A' && c <= 'Z')
+                    c = (char)(c + 32);
+                hash ^= c <= 127 ? (byte)c : (byte)'?';
+                hash *= FnvPrime;
+            }
+
+            return hash;
+        }
+    }
+
+#if UNITY_EDITOR
     public static class VolumetricFogExtinctionCsvParser
     {
         private const uint FnvOffset = 2166136261u;
@@ -542,4 +567,5 @@ namespace Hecton8.VFX
                    value == (byte)'\n';
         }
     }
+#endif
 }

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using Hecton8.Core.Contracts;
 using UnityEngine;
 
 namespace Hecton8.Optimization.Editor
@@ -62,23 +63,23 @@ namespace Hecton8.Optimization.Editor
         /// <returns>List of recommendations with owner, current format, recommended format, savings.</returns>
         public static List<FormatOptimizationRecommendation> AnalyzeFormats()
         {
-            var recommendations = new List<FormatOptimizationRecommendation>();
+            var recommendations = new List<FormatOptimizationRecommendation>(16);
             
-            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
+            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycleService == null)
             {
                 Debug.LogWarning("[FormatOptimizer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
                 return recommendations;
             }
             
             // Query all tracked RTs
-            var allRTs = new List<RenderTextureAllocationRecord>();
-            var tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycle;
+            var allRTs = new List<RenderTextureAllocationRecord>(64);
+            IRenderTextureLifecycleService tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycleService;
             
             // Get all allocations via categories
             var categories = new[] { "Visor", "Camera", "PostFX", "UI", "Other" };
             foreach (var category in categories)
             {
-                var categoryRTs = new List<RenderTextureAllocationRecord>();
+                var categoryRTs = new List<RenderTextureAllocationRecord>(16);
                 tracker.GetAllocationsByCategory(category, categoryRTs);
                 allRTs.AddRange(categoryRTs);
             }

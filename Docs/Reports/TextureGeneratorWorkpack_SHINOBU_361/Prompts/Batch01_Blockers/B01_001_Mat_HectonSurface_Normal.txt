@@ -1,0 +1,10 @@
+﻿JOB_ID: B01_001
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\Batch01_Blockers\B01_001_Mat_HectonSurface_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_HectonSurface_Normal.png
+FINAL_FILENAME: Mat_HectonSurface_Normal.png
+REFERENCES: Hecton planet surface mood reference if available. `LOOKDEV_APPROVED_REF_SEED_011.png` if geology seed exists.
+
+PROMPT:
+Create a premium heightfield source for the planet Hecton as an alien ocean-world survey surface, designed for conversion into a clean BC5 normal map. Build elegant large-scale landform relief: smooth abyssal shelves, soft basin ridges, continental mineral shelves, pearl-white sediment plains, opal fracture networks, and subtle turquoise hydrothermal seams. The image should feel scientific, expensive, and readable, like a high-resolution orbital geology plate prepared by a NASA ocean lab. Avoid crater spam, random noise, black pits, and dramatic landscape lighting; this is a material source, not a space painting. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

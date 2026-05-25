@@ -139,7 +139,7 @@ namespace Hecton8.Audio.Prologue
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastLateFrame == frame)
                 return;
 
@@ -187,7 +187,7 @@ namespace Hecton8.Audio.Prologue
 
         private void ConsumeAtmosphericSignals()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastAtmosphericFrame == frame)
                 return;
 
@@ -227,7 +227,7 @@ namespace Hecton8.Audio.Prologue
 
         private void ConsumePrologueCompleteSignals()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastCompleteFrame == frame)
                 return;
 
@@ -395,7 +395,7 @@ namespace Hecton8.Audio.Prologue
                 GranularStress01 = 0f,
                 SplashdownGain01 = 0f,
                 PortalBlend01 = 0f,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
                 Sequence = ++_transitionSequence,
                 SourceHash = SourceHash,
                 Stage = AudioTransitionState.StageSpace,
@@ -414,7 +414,7 @@ namespace Hecton8.Audio.Prologue
 
         private void RefreshRuntimeServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             _tickDispatcher = GlobalRegistry.TickDispatcher;
         }
 
@@ -425,7 +425,7 @@ namespace Hecton8.Audio.Prologue
 
         private static float ResolveGlobalQualityWeight01()
         {
-            float quality = Hecton8.Gameplay.HomeostasisBrain.GlobalQualityWeight;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 

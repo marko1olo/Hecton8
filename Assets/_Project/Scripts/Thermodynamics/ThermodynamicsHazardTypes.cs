@@ -286,9 +286,13 @@ namespace Hecton8.Thermodynamics
 
     public static class ThermalCellLayoutValidator
     {
+        private const int ThermalCellStrideBytes = 16;
+        private const int ThermalSolverConvergenceStrideBytes = 16;
+        private const int ThermalResidualSlotStrideBytes = 64;
+
         public static bool ValidateThermalCellLayout()
         {
-            return UnsafeUtility.SizeOf<ThermalCellDTO>() == 16 &&
+            return UnsafeUtility.SizeOf<ThermalCellDTO>() == ThermalCellStrideBytes &&
                    Marshal.OffsetOf<ThermalCellDTO>(nameof(ThermalCellDTO.TemperatureCelsius)).ToInt32() == 0 &&
                    Marshal.OffsetOf<ThermalCellDTO>(nameof(ThermalCellDTO.ThermalConductivity)).ToInt32() == 4 &&
                    Marshal.OffsetOf<ThermalCellDTO>(nameof(ThermalCellDTO.ConvectionVelocityY)).ToInt32() == 8 &&
@@ -297,8 +301,8 @@ namespace Hecton8.Thermodynamics
 
         public static bool ValidateThermalSolverConvergenceLayout()
         {
-            return UnsafeUtility.SizeOf<ThermalSolverConvergenceStateDTO>() == 16 &&
-                   UnsafeUtility.SizeOf<ThermalResidualSlot64>() == 64 &&
+            return UnsafeUtility.SizeOf<ThermalSolverConvergenceStateDTO>() == ThermalSolverConvergenceStrideBytes &&
+                   UnsafeUtility.SizeOf<ThermalResidualSlot64>() == ThermalResidualSlotStrideBytes &&
                    Marshal.OffsetOf<ThermalSolverConvergenceStateDTO>(nameof(ThermalSolverConvergenceStateDTO.MaxResidualFloat)).ToInt32() == 0 &&
                    Marshal.OffsetOf<ThermalSolverConvergenceStateDTO>(nameof(ThermalSolverConvergenceStateDTO.PreviousResidualFloat)).ToInt32() == 4 &&
                    Marshal.OffsetOf<ThermalSolverConvergenceStateDTO>(nameof(ThermalSolverConvergenceStateDTO.Omega)).ToInt32() == 8 &&

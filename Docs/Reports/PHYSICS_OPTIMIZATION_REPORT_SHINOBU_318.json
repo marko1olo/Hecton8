@@ -1,0 +1,55 @@
+﻿{
+  "agent": "SHINOBU_318",
+  "scanner": "OOP_Hitbox_Scanner.StaticMirror",
+  "summary": "OOP Hitboxes Eradicated From Armor Route",
+  "route": "CombatDamageSignal -> CombatDamageRuntime partial -> AUP delta -> 8x6 ArmorProfileDTO LUT -> native health CAS",
+  "vaultBufferIds": "73580..73590",
+  "vaultRuntimeResolver": "Core runtime ensure resolves 73580..73587 only; cold QA mock lanes 73588..73590 require includeMock:true.",
+  "allocationLockPolicy": "Existing SHINOBU-owned generation descriptors may be recovered while IDataVault.IsAllocationLocked; allocation-capable EnsureGenerationHandle is blocked.",
+  "hotPathPolicy": "Damage enqueue and FrameTick scheduling use ensure:false; no allocation-capable Vault resolve runs from the hot damage path. Registered ToolHitUtility damage now requires finite impact AUP, passes zero weakspot metadata, and has no double3.zero hit fallback.",
+  "dataVaultRecovery": "Cold GlobalRegistry hot-swap bridge reopens SHINOBU-owned armor lanes after DataVault replacement; in-flight damage jobs defer rebind until owner completion.",
+  "lockSafety": "Runtime job, mock generator, tuning writer, and CSV writer locks are released through finally blocks.",
+  "blackBoxExportPolicy": "NaN/over-budget runtime path records a dump request; synchronous Dump_SHINOBU_318.bin export is editor/development gated.",
+  "metadataBoundsPolicy": "Burst damage job checks detailIndex before SignalDetails access and clamps packed damage/armor classes before DamageArmorLut indexing.",
+  "colliderDeletionPolicy": "Primitive child collider deletion requires explicit damage naming, damage layer, or damage component marker.",
+  "rejectedVaultCandidate": "71620..71630 collided with SHINOBU_158 buoyancy/SIMD lanes",
+  "forbiddenArmorRoute": "Physics.Raycast / MeshCollider body-part routing / managed SendMessage damage",
+  "focusedScanRoots": [
+    "Assets/_Project/Scripts/Gameplay/Combat",
+    "Assets/_Project/Scripts/Fauna",
+    "Assets/_Project/Scripts/ToolHitUtility.cs"
+  ],
+  "checks": {
+    "physicsRaycastHitsExcludingScannerSelf": 0,
+    "raycastCommandTokenHits": 14,
+    "sendMessageApplyDamageHits": 0,
+    "idamageableHits": 0,
+    "managedTakeDamageHits": 3,
+    "colliderWeakspotInterfaceHits": 0,
+    "colliderLimbInterfaceHits": 0,
+    "resolveLocalizedHitCalls": 0,
+    "inverseTransformPointHitPointHits": 1,
+    "registeredToolHitInverseTransformPointHits": 0,
+    "registeredToolHitZeroAupFallbackHits": 0,
+    "unregisteredLegacyFallbackInverseTransformPointHits": 1,
+    "meshColliderRuntimeFaunaGuards": 2,
+    "weakPointSteeringReferences": 0,
+    "mockBurstNativeArrayNoAliasHits": 6
+  },
+  "acceptedExceptions": [
+    "RaycastCommand hits belong to deferred sensory/leg IK systems, not armor penetration.",
+    "One InverseTransformPoint(hitPoint) hit remains in ToolHitUtility's unregistered legacy IDamageReceiver fallback, not the registered armor route.",
+    "FaunaBrain.TakeDamage remains legacy managed compatibility surface; new ballistic armor route consumes CombatDamageSignal directly.",
+    "FaunaBrain MeshCollider references are guard rails that reject mesh collider hygiene failures."
+  ],
+  "proofArtifacts": [
+    "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+    "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs",
+    "Assets/_Project/Scripts/ToolHitUtility.cs",
+    "Assets/_Project/Scripts/Editor/FaunaColliderValidator.cs",
+    "Docs/ARCHITECTURE/SHINOBU_318_ARMOR_PENETRATION_LUT_ROUTE_CARD.md",
+    "Docs/AgentLogs/Dump_SHINOBU_318.bin"
+  ],
+  "verdict": "Registered armor damage no longer requires physical body-part hitboxes, collider-local weakspot metadata, Transform.InverseTransformPoint(hitPoint), double3.zero impact fallback, or Physics.Raycast.",
+  "compileProof": "EXTERNAL_COMPILE_WALL: guarded Hecton8.Core.csproj build emitted 0 diagnostics for SHINOBU_318 touched files, then failed on VRSomaticProvider*, PlayerKinematicsRuntime_HandIK, HydrodynamicKccRuntime, and external CombatDamageRuntime_StatusEffects.cs. Post-compile ToolHitUtility finite-AUP fallback, scanner correction, and mock NoAlias proof sync were source-audited; rebuild rerun skipped because CPU sampled above the 50% guard and compiler processes were active."
+}

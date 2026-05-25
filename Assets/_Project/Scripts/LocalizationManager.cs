@@ -8,7 +8,6 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 #endif
 using System.Threading;
-using System.Text.RegularExpressions;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -52,30 +51,8 @@ namespace Hecton.Localization
     /// Runtime owner for Babel localization compatibility and language switching.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, IDispatcherSystem
+    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationStressPresentationReadModel, IPdaCorrosionPresentationSink, IDispatcherSystem
     {
-        // COLD ALLOC: Regex[1] — button token replacement for localized TMP text — owner: LocalizationManager
-        private static readonly Regex ButtonTokenRegex = new Regex(
-            "<button:(?<token>[a-zA-Z0-9_\\-]+)>",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex ItemTokenRegex = new Regex(
-            "<item:(?<token>[a-zA-Z0-9_\\-]+)>",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex StatusTokenRegex = new Regex(
-            "<status:(?<token>[a-zA-Z0-9_\\-]+)>",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex TechTokenRegex = new Regex(
-            "<tech:(?<token>[a-zA-Z0-9_\\-]+)>",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex KeyTokenRegex = new Regex(
-            "<key:(?<token>[a-zA-Z0-9_\\-]+)>",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly MatchEvaluator ButtonTokenEvaluator = EvaluateButtonToken;
-        private static readonly MatchEvaluator ItemTokenEvaluator = EvaluateItemToken;
-        private static readonly MatchEvaluator StatusTokenEvaluator = EvaluateStatusToken;
-        private static readonly MatchEvaluator TechTokenEvaluator = EvaluateTechToken;
-        private static readonly MatchEvaluator KeyTokenEvaluator = EvaluateKeyToken;
-        private const int MaxExpansionPasses = 3;
         private const string AnalyzerTechKeyPrefix = "TECH_";
         private const string AnalyzerPrefabToken = "EnvAnalyzer";
         private const string EnvironmentalAnalyzerToolTypeName = "EnvironmentalAnalyzerTool";
@@ -98,10 +75,11 @@ namespace Hecton.Localization
         private const int BabelLocaleReadFaultNullDestination = 3;
         private const int BabelLocaleReadFaultException = 4;
         private const int BabelLocaleReadChunkBytes = 64 * 1024;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private const float BabelOverrideCsvPollSeconds = 0.5f;
 #endif
         private static readonly uint _missingLocalizationWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.MissingKey"));
+        private static readonly uint _babelLegacyStringApiWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.BabelLegacyStringApi"));
         private static readonly uint _formatStringApiWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.FormatStringApi"));
         private static readonly uint _corruptionStringApiWarningHash = unchecked((uint)LocHash.Compute("LocalizationManager.CorruptionStringApi"));
         private static readonly int[] MadnessWhisperKeyHashes =
@@ -139,9 +117,9 @@ namespace Hecton.Localization
 
         private PlayerToolManager _cachedPlayerToolManager;
         private HectonPlayerMovement _cachedPlayerMovement;
-        private int _cachedAnalyzerFrame = -1;
+        private uint _cachedAnalyzerFrame;
         private bool _cachedAnalyzerInstalled;
-        private int _cachedHullStressFrame = -1;
+        private uint _cachedHullStressFrame;
         private float _cachedHullStress01;
         private float _cachedHullStressCorruptionIntensity;
         private float _externalPdaCorrosionIntensity;
@@ -166,16 +144,16 @@ namespace Hecton.Localization
         private int _pendingBabelSwapState;
         private int _pendingBabelReadFault;
         private bool _registeredBabelDispatcher;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private string _overrideCsvPath;
         private long _overrideCsvLastWriteTicks;
         private float _overrideCsvPollTimer;
 #endif
+
         /// <summary>
         /// Active localization owner published by the runtime owner after registry registration.
         /// </summary>
         public static LocalizationManager ActiveRuntimeInstance { get; private set; }
-
 
         /// <summary>
         /// Active language for runtime lookups.
@@ -184,6 +162,11 @@ namespace Hecton.Localization
 
         /// <inheritdoc />
         public ushort ActiveLanguageId => (ushort)_currentLanguage;
+
+        string ILocalizationTextReadModel.GetOrFallback(string key, string fallback)
+        {
+            return GetOrFallback(_currentLanguage, key, fallback);
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -378,7 +361,7 @@ namespace Hecton.Localization
         /// </summary>
         public float GetHullStressCorruptionIntensity()
         {
-            int frame = Time.frameCount;
+            uint frame = ResolvePresentationOwnerFrame();
             if (_cachedHullStressFrame == frame)
                 return _cachedHullStressCorruptionIntensity;
 
@@ -402,8 +385,8 @@ namespace Hecton.Localization
             _externalPdaCorrosionIntensity = Mathf.Max(_externalPdaCorrosionIntensity, clampedIntensity);
             if (!IsAudioFrameBefore(requestedEndFrame, _externalPdaCorrosionEndFrame))
                 _externalPdaCorrosionEndFrame = requestedEndFrame;
-            _cachedHullStressFrame = -1;
-            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
+            _cachedHullStressFrame = 0u;
+            LocalizationEvents.TryPublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
         }
 
         /// <summary>
@@ -472,7 +455,7 @@ namespace Hecton.Localization
         internal void RefreshHullStressHudCorruptionVisuals()
         {
             EvaluateMadnessOverrideState();
-            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
+            LocalizationEvents.TryPublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
         }
 
         /// <summary>
@@ -530,13 +513,45 @@ namespace Hecton.Localization
         }
 
         /// <summary>
+        /// Applies PDA lore corrosion into a caller-owned buffer using a precomputed source-token hash.
+        /// </summary>
+        public bool TryApplyPdaLoreCorruptionIfNeeded(
+            int sourceTokenHash,
+            ReadOnlySpan<char> text,
+            char[] destination,
+            out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            if (text.Length == 0)
+                return true;
+
+            if (TryResolveMadnessOverride(sourceTokenHash, destination, out length))
+                return true;
+
+            float intensity = GetHullStressCorruptionIntensity();
+            if (intensity <= 0f)
+            {
+                length = CopySpanToBuffer(text, destination);
+                return true;
+            }
+
+            return TryCorruptVisibleText(text, intensity, CurrentLanguage, destination, out length);
+        }
+
+        /// <summary>
         /// Resolve a pluralized localized string root for the current language.
         /// Expected suffixes: _ZERO, _ONE, _TWO, _FEW, _MANY, _OTHER.
         /// </summary>
         public string GetPlural(string keyRoot, int count)
         {
-            string pluralKey = ResolvePluralKey(CurrentLanguage, keyRoot, count);
-            return Get(pluralKey);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _babelLegacyStringApiWarningHash,
+                unchecked((uint)LocHash.Compute(keyRoot)),
+                count);
+            return Get(keyRoot);
         }
 
         /// <summary>
@@ -544,9 +559,28 @@ namespace Hecton.Localization
         /// </summary>
         public string GetPluralFormatted(string keyRoot, int count, params object[] args)
         {
-            string pluralKey = ResolvePluralKey(CurrentLanguage, keyRoot, count);
-            string template = Get(pluralKey);
-            return ExpandRuntimeTokens(FormatLocalized(template, pluralKey, args));
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _formatStringApiWarningHash,
+                unchecked((uint)LocHash.Compute(keyRoot)),
+                count);
+            return GetPlural(keyRoot, count);
+        }
+
+        public bool TryCopyPlural(string keyRoot, int count, char[] destination, out int length)
+        {
+            return TryCopyPlural(CurrentLanguage, keyRoot, count, destination, out length);
+        }
+
+        public bool TryCopyPlural(GameLanguage language, string keyRoot, int count, char[] destination, out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            if (!TryResolvePluralRawSpan(language, keyRoot, count, out ReadOnlySpan<char> value))
+                value = keyRoot.AsSpan();
+
+            return TryExpandText(value, destination, out length);
         }
 
         /// <summary>
@@ -583,16 +617,17 @@ namespace Hecton.Localization
             if (keyHash == 0)
                 return false;
 
-            if (!LocRegistry.TryGetVisualBufferFromUtf8(keyHash, out char[] buffer, out int length) ||
-                buffer == null ||
-                length <= 0)
+            if (!LocRegistry.TryGetLocalizedSpan(unchecked((uint)keyHash), out ReadOnlySpan<byte> utf8Bytes) ||
+                utf8Bytes.IsEmpty)
             {
                 return false;
             }
 
-            // Legacy string API only. Zero-GC UI paths use LocRegistry.TryWriteVisualSpanFromUtf8.
-            value = new string(buffer, 0, length);
-            return true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _babelLegacyStringApiWarningHash,
+                unchecked((uint)keyHash),
+                utf8Bytes.Length);
+            return false;
         }
 
         /// <summary>
@@ -625,8 +660,8 @@ namespace Hecton.Localization
             _intrusionGlyphModeActive = false;
             PublishVisualLanguageState();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Localization] Language changed to: {language}");
+#if UNITY_EDITOR
+            Hecton8.Core.H8Debug.Log("[Localization] Language changed.");
 #endif
         }
 
@@ -697,7 +732,7 @@ namespace Hecton.Localization
         public void PostSimulationTick(in DispatcherTimingDTO timing)
         {
             CommitPendingBabelSwapIfReady();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             PollBabelOverrideCsv(timing.FrameDelta);
 #endif
         }
@@ -706,7 +741,7 @@ namespace Hecton.Localization
         {
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private void PollBabelOverrideCsv(float frameDelta)
         {
             float safeDelta = frameDelta > 0f && frameDelta < 10f ? frameDelta : Time.unscaledDeltaTime;
@@ -863,14 +898,14 @@ namespace Hecton.Localization
             _transientLanguageOverrideActive = false;
             _intrusionGlyphModeActive = false;
             _lastPublishedVisualBucket = int.MinValue;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             ResetBabelOverrideCsvMonitor();
 #endif
-            LocalizationEvents.PublishLanguageChanged(CurrentLanguage);
-            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
+            LocalizationEvents.TryPublishLanguageChanged(CurrentLanguage);
+            LocalizationEvents.TryPublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Localization] Babel binary language changed to: {language}");
+#if UNITY_EDITOR
+            Hecton8.Core.H8Debug.Log("[Localization] Babel binary language changed.");
 #endif
         }
 
@@ -1124,20 +1159,7 @@ namespace Hecton.Localization
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            string expanded = ExpandNarrativeTokens(text);
-            for (int pass = 0; pass < MaxExpansionPasses; pass++)
-            {
-                string next = ButtonTokenRegex.Replace(expanded, ButtonTokenEvaluator);
-                next = ItemTokenRegex.Replace(next, ItemTokenEvaluator);
-                next = StatusTokenRegex.Replace(next, StatusTokenEvaluator);
-                next = NormalizeExpandedText(next);
-                if (string.Equals(next, expanded, StringComparison.Ordinal))
-                    break;
-
-                expanded = next;
-            }
-
-            return expanded;
+            return text;
         }
 
         private string ExpandNarrativeTokens(string text)
@@ -1145,96 +1167,349 @@ namespace Hecton.Localization
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            string expanded = text;
-            for (int pass = 0; pass < MaxExpansionPasses; pass++)
-            {
-                string next = KeyTokenRegex.Replace(expanded, KeyTokenEvaluator);
-                next = TechTokenRegex.Replace(next, TechTokenEvaluator);
-                next = NormalizeExpandedText(next);
-                if (string.Equals(next, expanded, StringComparison.Ordinal))
-                    break;
+            return text;
+        }
 
-                expanded = next;
+        public bool TryExpandText(ReadOnlySpan<char> text, char[] destination, out int length)
+        {
+            return TryExpandRuntimeTokens(text, destination, out length);
+        }
+
+        public bool TryExpandNarrativeText(ReadOnlySpan<char> text, char[] destination, out int length)
+        {
+            return TryExpandTokens(text, destination, out length, includeRuntimeTokens: false);
+        }
+
+        private bool TryExpandRuntimeTokens(ReadOnlySpan<char> text, char[] destination, out int length)
+        {
+            return TryExpandTokens(text, destination, out length, includeRuntimeTokens: true);
+        }
+
+        private bool TryExpandTokens(ReadOnlySpan<char> text, char[] destination, out int length, bool includeRuntimeTokens)
+        {
+            length = 0;
+            if (destination == null)
+                return false;
+
+            if (text.Length == 0)
+                return true;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '<' &&
+                    TryParseInlineToken(text, i, out int tagStart, out int tagLength, out int tokenStart, out int tokenLength, out int tokenEnd))
+                {
+                    int before = length;
+                    bool recognized;
+                    if (TryAppendResolvedInlineToken(
+                            text.Slice(tagStart, tagLength),
+                            text.Slice(tokenStart, tokenLength),
+                            destination,
+                            ref length,
+                            includeRuntimeTokens,
+                            out recognized))
+                    {
+                        i = tokenEnd;
+                        continue;
+                    }
+
+                    if (recognized)
+                    {
+                        length = 0;
+                        return false;
+                    }
+
+                    length = before;
+                }
+
+                if (!TryAppendChar(text[i], destination, ref length))
+                {
+                    length = 0;
+                    return false;
+                }
             }
 
-            return expanded;
+            return true;
         }
 
-        private static string EvaluateButtonToken(Match match)
+        private bool TryAppendResolvedInlineToken(
+            ReadOnlySpan<char> tag,
+            ReadOnlySpan<char> token,
+            char[] destination,
+            ref int length,
+            bool includeRuntimeTokens,
+            out bool recognized)
         {
-            if (match == null || !match.Success)
-                return string.Empty;
+            recognized = false;
 
-            string token = match.Groups["token"].Value;
-            InputManager input = GlobalRegistry.NativeInputManager;
-            if (input != null && input.TryGetBindingMarkupForToken(token, out string markup))
-                return markup;
+            if (includeRuntimeTokens && TokenEquals(tag, "button"))
+            {
+                recognized = true;
+                return TryAppendButtonToken(token, destination, ref length);
+            }
 
-            return match.Value;
+            if (includeRuntimeTokens && TokenEquals(tag, "item"))
+            {
+                recognized = true;
+                return LocalizedInlineIconResolver.TryResolveItemChipSpan(token, out ReadOnlySpan<char> markup) &&
+                       TryAppendSpan(markup, destination, ref length);
+            }
+
+            if (includeRuntimeTokens && TokenEquals(tag, "status"))
+            {
+                recognized = true;
+                return LocalizedInlineIconResolver.TryResolveStatusChipSpan(token, out ReadOnlySpan<char> markup) &&
+                       TryAppendSpan(markup, destination, ref length);
+            }
+
+            if (TokenEquals(tag, "key"))
+            {
+                recognized = true;
+                return TryAppendKeyToken(token, destination, ref length);
+            }
+
+            if (TokenEquals(tag, "tech"))
+            {
+                recognized = true;
+                return TryAppendTechToken(token, destination, ref length);
+            }
+
+            return false;
         }
 
-        private static string EvaluateItemToken(Match match)
+        private bool TryAppendButtonToken(ReadOnlySpan<char> token, char[] destination, ref int length)
         {
-            if (match == null || !match.Success)
-                return string.Empty;
+            if (!TryResolveButtonToken(token, out string actionName, out string actionMap))
+                return false;
 
-            string token = match.Groups["token"].Value;
-            return LocalizedInlineIconResolver.TryResolveItemChip(token, out string markup)
-                ? markup
-                : match.Value;
+            INativeInputManagerRuntime input = GlobalRegistry.NativeInputRuntime;
+            if (input == null)
+                return false;
+
+            int bindingIndex = input.GetPreferredBindingIndex(actionName, actionMap);
+            if (bindingIndex < 0)
+                return false;
+
+            int remaining = destination.Length - length;
+            if (remaining <= 0)
+                return false;
+
+            if (!input.TryWriteBindingDisplayString(actionName, actionMap, bindingIndex, destination, length, out int charsWritten) ||
+                charsWritten <= 0 ||
+                charsWritten > remaining)
+            {
+                return false;
+            }
+
+            length += charsWritten;
+            return true;
         }
 
-        private static string EvaluateStatusToken(Match match)
+        private bool TryAppendKeyToken(ReadOnlySpan<char> token, char[] destination, ref int length)
         {
-            if (match == null || !match.Success)
-                return string.Empty;
+            if (token.Length == 0)
+                return true;
 
-            string token = match.Groups["token"].Value;
-            return LocalizedInlineIconResolver.TryResolveStatusChip(token, out string markup)
-                ? markup
-                : match.Value;
+            int keyHash = LocHash.Compute(token);
+            if (LocRegistry.TryGetRawBuffer(keyHash, out char[] rawBuffer, out int rawLength) && rawLength > 0)
+                return TryAppendSpan(rawBuffer.AsSpan(0, rawLength), destination, ref length);
+
+            return TryAppendSpan(token, destination, ref length);
         }
 
-        private static string EvaluateTechToken(Match match)
+        private bool TryAppendTechToken(ReadOnlySpan<char> token, char[] destination, ref int length)
         {
-            if (match == null || !match.Success)
-                return string.Empty;
+            if (token.Length == 0 || !HasAnalyzerContext())
+                return true;
 
-            LocalizationManager manager = GlobalRegistry.Localization;
-            if (manager == null)
-                return string.Empty;
-
-            return manager.ResolveTechToken(match.Groups["token"].Value);
+            int keyHash = ComputeTechTokenHash(token);
+            return LocRegistry.TryGetRawBuffer(keyHash, out char[] rawBuffer, out int rawLength) &&
+                   rawLength > 0 &&
+                   TryAppendSpan(rawBuffer.AsSpan(0, rawLength), destination, ref length);
         }
 
-        private static string EvaluateKeyToken(Match match)
+        private static bool TryParseInlineToken(
+            ReadOnlySpan<char> text,
+            int openIndex,
+            out int tagStart,
+            out int tagLength,
+            out int tokenStart,
+            out int tokenLength,
+            out int closeIndex)
         {
-            if (match == null || !match.Success)
-                return string.Empty;
+            tagStart = openIndex + 1;
+            tagLength = 0;
+            tokenStart = 0;
+            tokenLength = 0;
+            closeIndex = -1;
 
-            LocalizationManager manager = GlobalRegistry.Localization;
-            if (manager == null)
-                return match.Value;
+            int colonIndex = -1;
+            for (int i = openIndex + 1; i < text.Length; i++)
+            {
+                char current = text[i];
+                if (current == ':' && colonIndex < 0)
+                {
+                    colonIndex = i;
+                    continue;
+                }
 
-            string token = match.Groups["token"].Value;
-            return manager.TryGet(manager.CurrentLanguage, token, out string value) ? value : token;
+                if (current == '>')
+                {
+                    closeIndex = i;
+                    break;
+                }
+
+                if (current == '<')
+                    return false;
+            }
+
+            if (colonIndex <= tagStart || closeIndex <= colonIndex + 1)
+                return false;
+
+            tagLength = colonIndex - tagStart;
+            tokenStart = colonIndex + 1;
+            tokenLength = closeIndex - tokenStart;
+            return tagLength > 0 && tokenLength > 0;
         }
 
-        private string ResolveTechToken(string token)
+        private static bool TryResolveButtonToken(ReadOnlySpan<char> token, out string actionName, out string actionMap)
         {
-            if (string.IsNullOrWhiteSpace(token) || !HasAnalyzerContext())
-                return string.Empty;
+            actionName = string.Empty;
+            actionMap = "Player";
 
-            string techKey = token.StartsWith(AnalyzerTechKeyPrefix, StringComparison.OrdinalIgnoreCase)
-                ? token.ToUpperInvariant()
-                : AnalyzerTechKeyPrefix + token.ToUpperInvariant();
+            if (TokenEquals(token, "interact"))
+                return ResolveButtonAction("Interact", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "inventory"))
+                return ResolveButtonAction("Inventory", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "pda"))
+                return ResolveButtonAction("PDA", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "flashlight"))
+                return ResolveButtonAction("Flashlight", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "primary"))
+                return ResolveButtonAction("PrimaryAction", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "secondary"))
+                return ResolveButtonAction("SecondaryAction", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "navigate"))
+                return ResolveButtonAction("Navigate", "UI", out actionName, out actionMap);
+            if (TokenEquals(token, "submit"))
+                return ResolveButtonAction("Submit", "UI", out actionName, out actionMap);
+            if (TokenEquals(token, "cancel"))
+                return ResolveButtonAction("Cancel", "UI", out actionName, out actionMap);
 
-            return TryGet(CurrentLanguage, techKey, out string value) ? value : string.Empty;
+            return false;
+        }
+
+        private static bool ResolveButtonAction(
+            string resolvedActionName,
+            string resolvedActionMap,
+            out string actionName,
+            out string actionMap)
+        {
+            actionName = resolvedActionName;
+            actionMap = resolvedActionMap;
+            return true;
+        }
+
+        private static int ComputeTechTokenHash(ReadOnlySpan<char> token)
+        {
+            unchecked
+            {
+                uint hash = LocHash.FnvOffsetBasis;
+                if (!StartsWithOrdinalIgnoreCase(token, AnalyzerTechKeyPrefix.AsSpan()))
+                {
+                    HashUtf16CodeUnit(ref hash, 'T');
+                    HashUtf16CodeUnit(ref hash, 'E');
+                    HashUtf16CodeUnit(ref hash, 'C');
+                    HashUtf16CodeUnit(ref hash, 'H');
+                    HashUtf16CodeUnit(ref hash, '_');
+                }
+
+                for (int i = 0; i < token.Length; i++)
+                    HashUtf16CodeUnit(ref hash, ToAsciiUpperInvariant(token[i]));
+
+                return (int)hash;
+            }
+        }
+
+        private static bool StartsWithOrdinalIgnoreCase(ReadOnlySpan<char> value, ReadOnlySpan<char> prefix)
+        {
+            if (value.Length < prefix.Length)
+                return false;
+
+            for (int i = 0; i < prefix.Length; i++)
+            {
+                if (ToAsciiUpperInvariant(value[i]) != ToAsciiUpperInvariant(prefix[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool TokenEquals(ReadOnlySpan<char> token, string expected)
+        {
+            int start = 0;
+            int end = token.Length - 1;
+            while (start <= end && char.IsWhiteSpace(token[start]))
+                start++;
+            while (end >= start && char.IsWhiteSpace(token[end]))
+                end--;
+
+            int length = end - start + 1;
+            if (length != expected.Length)
+                return false;
+
+            for (int i = 0; i < length; i++)
+            {
+                if (ToAsciiLowerInvariant(token[start + i]) != expected[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static char ToAsciiUpperInvariant(char value)
+        {
+            return value >= 'a' && value <= 'z' ? (char)(value - 32) : value;
+        }
+
+        private static char ToAsciiLowerInvariant(char value)
+        {
+            return value >= 'A' && value <= 'Z' ? (char)(value + 32) : value;
+        }
+
+        private static bool TryAppendChar(char value, char[] destination, ref int length)
+        {
+            if (length < 0 || length >= destination.Length)
+                return false;
+
+            destination[length++] = value;
+            return true;
+        }
+
+        private static bool TryAppendSpan(ReadOnlySpan<char> value, char[] destination, ref int length)
+        {
+            if (value.Length == 0)
+                return true;
+
+            if (length < 0 || destination.Length - length < value.Length)
+                return false;
+
+            value.CopyTo(destination.AsSpan(length));
+            length += value.Length;
+            return true;
+        }
+
+        private static void HashUtf16CodeUnit(ref uint hash, char current)
+        {
+            hash ^= (byte)current;
+            hash *= LocHash.FnvPrime;
+            hash ^= (byte)(current >> 8);
+            hash *= LocHash.FnvPrime;
         }
 
         private bool HasAnalyzerContext()
         {
-            int frame = Time.frameCount;
+            uint frame = ResolvePresentationOwnerFrame();
             if (_cachedAnalyzerFrame == frame)
                 return _cachedAnalyzerInstalled;
 
@@ -1280,8 +1555,8 @@ namespace Hecton.Localization
                 return null;
 
             _cachedPlayerToolManager =
-                Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager != null
-                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager
+                Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
+                    ? Hecton8.Core.GlobalRegistry.Player.ToolManager
                     : ResolvePlayerToolManager(playerTransform);
             return _cachedPlayerToolManager;
         }
@@ -1374,6 +1649,28 @@ namespace Hecton.Localization
             return length > 0;
         }
 
+        private bool TryResolveMadnessOverride(int sourceTokenHash, char[] destination, out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            EvaluateMadnessOverrideState();
+            if (!IsMadnessOverrideActive())
+                return false;
+
+            int seed = ComputeMadnessSeed(sourceTokenHash, _madnessActiveWindowId, (int)CurrentLanguage);
+            int keyHash = ResolveMadnessWhisperKeyHash(seed);
+            if (!LocRegistry.TryGetRawBuffer(keyHash, out char[] rawBuffer, out int rawLength) || rawLength <= 0)
+                return false;
+
+            length = CopySpanToBuffer(rawBuffer.AsSpan(0, rawLength), destination);
+            if (length > 0)
+                TriggerMadnessWhisperAudioIfNeeded();
+
+            return length > 0;
+        }
+
         /// <summary>
         /// True while the active madness whisper replacement window is live for PDA lore surfaces.
         /// </summary>
@@ -1381,6 +1678,11 @@ namespace Hecton.Localization
         {
             EvaluateMadnessOverrideState();
             return IsMadnessOverrideActive();
+        }
+
+        bool ILocalizationStressPresentationReadModel.IsMadnessWhisperVisualActive()
+        {
+            return IsMadnessWhisperVisualActive();
         }
 
         /// <summary>
@@ -1398,6 +1700,25 @@ namespace Hecton.Localization
 
             madnessText = ExpandRuntimeTokens(madnessText);
             return !string.IsNullOrEmpty(madnessText);
+        }
+
+        internal bool TryResolveMadnessWhisperPreview(
+            int sourceTokenHash,
+            int cycle,
+            char[] destination,
+            out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            int seed = ComputeMadnessSeed(sourceTokenHash, cycle, (int)CurrentLanguage);
+            int keyHash = ResolveMadnessWhisperKeyHash(seed);
+            if (!LocRegistry.TryGetRawBuffer(keyHash, out char[] rawBuffer, out int rawLength) || rawLength <= 0)
+                return false;
+
+            length = CopySpanToBuffer(rawBuffer.AsSpan(0, rawLength), destination);
+            return length > 0;
         }
 
         private void EvaluateMadnessOverrideState()
@@ -1500,6 +1821,16 @@ namespace Hecton.Localization
             return (uint)frame;
         }
 
+        private static uint ResolvePresentationOwnerFrame()
+        {
+            uint frame = SystemDispatcher.ReadPublishedDispatcherFrameId();
+            if (frame != 0u)
+                return frame;
+
+            frame = ResolvePresentationAudioFrame();
+            return frame != 0u ? frame : 1u;
+        }
+
         private static double ResolvePresentationAudioFrameDouble()
         {
             int sampleRate = Mathf.Max(1, AudioSettings.outputSampleRate);
@@ -1562,7 +1893,7 @@ namespace Hecton.Localization
             if (_madnessActiveWindowId < 0 || _lastMadnessAudioWindowId == _madnessActiveWindowId)
                 return;
 
-            AcousticZoneController controller = GlobalRegistry.AcousticZone;
+            IAcousticZoneMadnessCueSink controller = GlobalRegistry.AcousticZoneMadnessCueSink;
             if (controller == null)
                 return;
 
@@ -1576,7 +1907,7 @@ namespace Hecton.Localization
                 return bucket;
 
             _lastPublishedVisualBucket = bucket;
-            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, bucket);
+            LocalizationEvents.TryPublishCorruptionVisualStateChanged(CurrentLanguage, bucket);
             return bucket;
         }
 
@@ -1604,6 +1935,51 @@ namespace Hecton.Localization
                 for (int i = 0; i < token.Length; i++)
                     hash = (hash * 31) + token[i];
 
+                hash = (hash * 31) + cycle;
+                hash = (hash * 31) + languageIndex;
+                return hash & int.MaxValue;
+            }
+        }
+
+        internal static int ComputeMadnessSourceTokenHash(ReadOnlySpan<char> sourceToken)
+        {
+            unchecked
+            {
+                ReadOnlySpan<char> token = sourceToken.Length == 0 ? "<null>".AsSpan() : sourceToken;
+                int hash = 17;
+                for (int i = 0; i < token.Length; i++)
+                    hash = (hash * 31) + token[i];
+
+                return hash;
+            }
+        }
+
+        internal static int ComputeMadnessSourceTokenHash(
+            ReadOnlySpan<char> prefix,
+            ReadOnlySpan<char> separator,
+            ReadOnlySpan<char> suffix)
+        {
+            unchecked
+            {
+                int hash = 17;
+                AppendMadnessTokenHash(prefix, ref hash);
+                AppendMadnessTokenHash(separator, ref hash);
+                AppendMadnessTokenHash(suffix, ref hash);
+                return hash;
+            }
+        }
+
+        private static void AppendMadnessTokenHash(ReadOnlySpan<char> value, ref int hash)
+        {
+            for (int i = 0; i < value.Length; i++)
+                hash = (hash * 31) + value[i];
+        }
+
+        private static int ComputeMadnessSeed(int sourceTokenHash, int cycle, int languageIndex)
+        {
+            unchecked
+            {
+                int hash = sourceTokenHash == 0 ? ComputeMadnessSourceTokenHash(ReadOnlySpan<char>.Empty) : sourceTokenHash;
                 hash = (hash * 31) + cycle;
                 hash = (hash * 31) + languageIndex;
                 return hash & int.MaxValue;
@@ -1673,17 +2049,6 @@ namespace Hecton.Localization
             return playerTransform.TryGetComponent(out PlayerToolManager toolManager) ? toolManager : null;
         }
 
-        private static string NormalizeExpandedText(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
-
-            string normalized = text.Replace("  ", " ");
-            normalized = normalized.Replace(" \n", "\n");
-            normalized = normalized.Replace("\n ", "\n");
-            return normalized.Trim();
-        }
-
         private static string CorruptVisibleText(string text, float intensity, GameLanguage language)
         {
             if (string.IsNullOrEmpty(text) || intensity <= 0f)
@@ -1697,30 +2062,11 @@ namespace Hecton.Localization
             if (threshold <= 0)
                 return text;
 
-            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
-                return text;
-
-            try
-            {
-                if (!lease.IsValid || text.Length > lease.Buffer.Length)
-                    return text;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                return TryCorruptVisibleText(text.AsSpan(), intensity, language, lease.Buffer, out int length) && length > 0
-                    ? new string(lease.Buffer, 0, length)
-                    : text;
-#else
-                GlobalTelemetryBus.PublishPerformanceWarning(
-                    _corruptionStringApiWarningHash,
-                    unchecked((uint)language),
-                    text.Length);
-                return text;
-#endif
-            }
-            finally
-            {
-                CharBufferPool.Release(in lease);
-            }
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _corruptionStringApiWarningHash,
+                unchecked((uint)language),
+                text.Length);
+            return text;
         }
 
         private static bool TryCorruptVisibleText(
@@ -1938,17 +2284,67 @@ namespace Hecton.Localization
             }
         }
 
-        private string ResolvePluralKey(GameLanguage language, string keyRoot, int count)
+        private bool TryResolvePluralRawSpan(GameLanguage language, string keyRoot, int count, out ReadOnlySpan<char> value)
         {
-            string preferred = keyRoot + GetPluralSuffix(language, count);
-            if (TryGet(language, preferred, out _))
-                return preferred;
+            value = ReadOnlySpan<char>.Empty;
+            if (string.IsNullOrWhiteSpace(keyRoot))
+                return false;
 
-            string fallbackOther = keyRoot + "_OTHER";
-            if (TryGet(language, fallbackOther, out _))
-                return fallbackOther;
+            Span<char> keyBuffer = stackalloc char[256];
+            if (TryResolvePluralRawSpanFromSuffix(keyRoot.AsSpan(), GetPluralSuffix(language, count).AsSpan(), keyBuffer, out int keyHash) &&
+                LocRegistry.TryGetRawBuffer(keyHash, out char[] suffixedBuffer, out int suffixedLength) &&
+                suffixedLength > 0)
+            {
+                value = suffixedBuffer.AsSpan(0, suffixedLength);
+                return true;
+            }
 
-            return keyRoot;
+            if (TryResolvePluralRawSpanFromSuffix(keyRoot.AsSpan(), "_OTHER".AsSpan(), keyBuffer, out keyHash) &&
+                LocRegistry.TryGetRawBuffer(keyHash, out char[] otherBuffer, out int otherLength) &&
+                otherLength > 0)
+            {
+                value = otherBuffer.AsSpan(0, otherLength);
+                return true;
+            }
+
+            int rootHash = LocHash.Compute(keyRoot.AsSpan());
+            if (LocRegistry.TryGetRawBuffer(rootHash, out char[] rootBuffer, out int rootLength) && rootLength > 0)
+            {
+                value = rootBuffer.AsSpan(0, rootLength);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryResolvePluralRawSpanFromSuffix(
+            ReadOnlySpan<char> keyRoot,
+            ReadOnlySpan<char> suffix,
+            Span<char> keyBuffer,
+            out int keyHash)
+        {
+            keyHash = 0;
+            if (!TryWriteJoinedSpan(keyRoot, suffix, keyBuffer, out int keyLength))
+                return false;
+
+            keyHash = LocHash.Compute(keyBuffer.Slice(0, keyLength));
+            return true;
+        }
+
+        private static bool TryWriteJoinedSpan(
+            ReadOnlySpan<char> left,
+            ReadOnlySpan<char> right,
+            Span<char> destination,
+            out int length)
+        {
+            length = 0;
+            if (left.Length + right.Length > destination.Length)
+                return false;
+
+            left.CopyTo(destination);
+            right.CopyTo(destination.Slice(left.Length));
+            length = left.Length + right.Length;
+            return true;
         }
 
         private static string GetPluralSuffix(GameLanguage language, int count)
@@ -2016,18 +2412,10 @@ namespace Hecton.Localization
             if (string.IsNullOrEmpty(template) || args == null || args.Length == 0)
                 return template;
 
-            if (TryMeasureLocalizedFormat(template, args, out int formattedLength))
-                return string.Create(formattedLength, new LegacyFormatState(template, args), WriteLocalizedFormat);
-
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _formatStringApiWarningHash,
-                unchecked((uint)LocHash.Compute(key)),
+                string.IsNullOrEmpty(key) ? 0u : unchecked((uint)LocHash.Compute(key)),
                 args.Length);
-#else
-            Debug.LogError(
-                $"[Localization] Format fallback for key \"{key}\", template: \"{template}\", args count: {args.Length}");
-#endif
             return template;
         }
 
@@ -2432,14 +2820,14 @@ namespace Hecton.Localization
         {
             _lastPublishedVisualBucket = int.MinValue;
             RefreshRuntimeRegistry();
-            LocalizationEvents.PublishLanguageChanged(CurrentLanguage);
-            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
+            LocalizationEvents.TryPublishLanguageChanged(CurrentLanguage);
+            LocalizationEvents.TryPublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
         }
 
         private void RefreshRuntimeRegistry()
         {
             LocRegistry.ReloadBinaryOrMock(CurrentLanguage);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             ResetBabelOverrideCsvMonitor();
 #endif
         }

@@ -63,35 +63,35 @@ namespace Hecton8.Gameplay
             if (FieldTargetDescriptor.TryResolve(source, out FieldTargetDescriptor descriptor))
                 return TryBuildDescriptorPresetName(descriptor, out presetName);
 
-            BaseModule module = source.GetComponent<BaseModule>() ?? source.GetComponentInParent<BaseModule>();
+            BaseModule module = ResolveLocalOrParent<BaseModule>(source);
             if (module != null)
             {
                 presetName = PresetConstruction;
                 return true;
             }
 
-            ResourceNode node = source.GetComponent<ResourceNode>() ?? source.GetComponentInParent<ResourceNode>();
+            ResourceNode node = ResolveLocalOrParent<ResourceNode>(source);
             if (node != null)
             {
                 presetName = PresetFieldRecovery;
                 return true;
             }
 
-            FaunaBrain ai = source.GetComponent<FaunaBrain>() ?? source.GetComponentInParent<FaunaBrain>();
+            FaunaBrain ai = ResolveLocalOrParent<FaunaBrain>(source);
             if (ai != null)
             {
                 presetName = PresetDefense;
                 return true;
             }
 
-            PickupItem pickup = source.GetComponent<PickupItem>() ?? source.GetComponentInParent<PickupItem>();
+            PickupItem pickup = ResolveLocalOrParent<PickupItem>(source);
             if (pickup != null)
             {
                 presetName = PresetFieldRecovery;
                 return true;
             }
 
-            ScannableTarget scannable = source.GetComponent<ScannableTarget>() ?? source.GetComponentInParent<ScannableTarget>();
+            ScannableTarget scannable = ResolveLocalOrParent<ScannableTarget>(source);
             if (scannable != null)
             {
                 presetName = PresetExploration;
@@ -110,7 +110,7 @@ namespace Hecton8.Gameplay
             if (FieldTargetDescriptor.TryResolve(source, out FieldTargetDescriptor descriptor))
                 return TryBuildDescriptorAdvice(descriptor, distance, out advice);
 
-            BaseModule module = source.GetComponent<BaseModule>() ?? source.GetComponentInParent<BaseModule>();
+            BaseModule module = ResolveLocalOrParent<BaseModule>(source);
             if (module != null)
             {
                 advice = new LoadoutAdvice(
@@ -121,7 +121,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            ResourceNode node = source.GetComponent<ResourceNode>() ?? source.GetComponentInParent<ResourceNode>();
+            ResourceNode node = ResolveLocalOrParent<ResourceNode>(source);
             if (node != null)
             {
                 advice = new LoadoutAdvice(
@@ -132,7 +132,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            FaunaBrain ai = source.GetComponent<FaunaBrain>() ?? source.GetComponentInParent<FaunaBrain>();
+            FaunaBrain ai = ResolveLocalOrParent<FaunaBrain>(source);
             if (ai != null)
             {
                 advice = new LoadoutAdvice(
@@ -143,7 +143,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            PickupItem pickup = source.GetComponent<PickupItem>() ?? source.GetComponentInParent<PickupItem>();
+            PickupItem pickup = ResolveLocalOrParent<PickupItem>(source);
             if (pickup != null)
             {
                 advice = new LoadoutAdvice(
@@ -152,7 +152,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            ScannableTarget scannable = source.GetComponent<ScannableTarget>() ?? source.GetComponentInParent<ScannableTarget>();
+            ScannableTarget scannable = ResolveLocalOrParent<ScannableTarget>(source);
             if (scannable != null)
             {
                 advice = new LoadoutAdvice(
@@ -221,6 +221,16 @@ namespace Hecton8.Gameplay
             }
 
             return false;
+        }
+
+        private static T ResolveLocalOrParent<T>(Component source) where T : Component
+        {
+            if (source == null)
+                return null;
+
+            return source.TryGetComponent(out T local)
+                ? local
+                : source.GetComponentInParent<T>();
         }
 
         private static bool TryGetForwardTarget(Transform origin, float range, LayerMask mask, out Component source, out float distance)

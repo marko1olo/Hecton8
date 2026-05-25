@@ -143,68 +143,113 @@ namespace Hecton8.Systems.AI
         }
 
         /// <summary>Queues a horde request.</summary>
+        public static bool TryRaiseSpawnHordeRequested(Vector3 position)
+        {
+            bool musicPublished = PublishMusicSignal(SpawnHordeEventType, position, 0f, false);
+            bool eventQueued = EnqueuePosition(SpawnHordeEventType, position);
+            return musicPublished || eventQueued;
+        }
+
+        [Obsolete("DirectorAI producers must use TryRaiseSpawnHordeRequested and handle bounded enqueue failure.", true)]
         public static void RaiseSpawnHordeRequested(Vector3 position)
         {
-            PublishMusicSignal(SpawnHordeEventType, position, 0f, false);
-            EnqueuePosition(SpawnHordeEventType, position);
+            TryRaiseSpawnHordeRequested(position);
         }
 
         /// <summary>Queues an equipment glitch request.</summary>
+        public static bool TryRaiseEquipmentGlitchRequested(float intensity)
+        {
+            bool musicPublished = PublishMusicSignal(EquipmentGlitchEventType, default, intensity, false);
+            bool eventQueued = EnqueueValue(EquipmentGlitchEventType, intensity);
+            return musicPublished || eventQueued;
+        }
+
+        [Obsolete("DirectorAI producers must use TryRaiseEquipmentGlitchRequested and handle bounded enqueue failure.", true)]
         public static void RaiseEquipmentGlitchRequested(float intensity)
         {
-            PublishMusicSignal(EquipmentGlitchEventType, default, intensity, false);
-            EnqueueValue(EquipmentGlitchEventType, intensity);
+            TryRaiseEquipmentGlitchRequested(intensity);
         }
 
         /// <summary>Queues a rare-discovery request.</summary>
+        public static bool TryRaiseRareDiscoveryRequested(Vector3 position)
+        {
+            bool musicPublished = PublishMusicSignal(RareDiscoveryEventType, position, 0f, false);
+            bool eventQueued = EnqueuePosition(RareDiscoveryEventType, position);
+            return musicPublished || eventQueued;
+        }
+
+        [Obsolete("DirectorAI producers must use TryRaiseRareDiscoveryRequested and handle bounded enqueue failure.", true)]
         public static void RaiseRareDiscoveryRequested(Vector3 position)
         {
-            PublishMusicSignal(RareDiscoveryEventType, position, 0f, false);
-            EnqueuePosition(RareDiscoveryEventType, position);
+            TryRaiseRareDiscoveryRequested(position);
         }
 
         /// <summary>Queues a weather shift request.</summary>
+        public static bool TryRaiseWeatherShiftRequested(float intensity)
+        {
+            bool musicPublished = PublishMusicSignal(WeatherShiftEventType, default, intensity, false);
+            bool eventQueued = EnqueueValue(WeatherShiftEventType, intensity);
+            return musicPublished || eventQueued;
+        }
+
+        [Obsolete("DirectorAI producers must use TryRaiseWeatherShiftRequested and handle bounded enqueue failure.", true)]
         public static void RaiseWeatherShiftRequested(float intensity)
         {
-            PublishMusicSignal(WeatherShiftEventType, default, intensity, false);
-            EnqueueValue(WeatherShiftEventType, intensity);
+            TryRaiseWeatherShiftRequested(intensity);
         }
 
         /// <summary>Queues a mission trigger request.</summary>
+        public static bool TryRaiseMissionTriggerRequested(Vector3 position)
+        {
+            bool musicPublished = PublishMusicSignal(MissionTriggerEventType, position, 0f, false);
+            bool eventQueued = EnqueuePosition(MissionTriggerEventType, position);
+            return musicPublished || eventQueued;
+        }
+
+        [Obsolete("DirectorAI producers must use TryRaiseMissionTriggerRequested and handle bounded enqueue failure.", true)]
         public static void RaiseMissionTriggerRequested(Vector3 position)
         {
-            PublishMusicSignal(MissionTriggerEventType, position, 0f, false);
-            EnqueuePosition(MissionTriggerEventType, position);
+            TryRaiseMissionTriggerRequested(position);
         }
 
         /// <summary>Queues a predator pressure state change.</summary>
-        public static void RaisePredatorPressureChanged(bool pressureEnabled)
+        public static bool TryRaisePredatorPressureChanged(bool pressureEnabled)
         {
-            PublishMusicSignal(PredatorPressureEventType, default, pressureEnabled ? 1f : 0f, pressureEnabled);
-            if (_listenerCount <= 0)
-                return;
+            bool musicPublished = PublishMusicSignal(PredatorPressureEventType, default, pressureEnabled ? 1f : 0f, pressureEnabled);
 
-            Enqueue(new DirectorAIEventPayload
+            bool eventQueued = Enqueue(new DirectorAIEventPayload
             {
                 EventType = PredatorPressureEventType,
                 BoolValue = pressureEnabled ? (byte)1 : (byte)0
             });
+            return musicPublished || eventQueued;
+        }
+
+        [Obsolete("DirectorAI producers must use TryRaisePredatorPressureChanged and handle bounded enqueue failure.", true)]
+        public static void RaisePredatorPressureChanged(bool pressureEnabled)
+        {
+            TryRaisePredatorPressureChanged(pressureEnabled);
         }
 
         /// <summary>Queues a predator threat spike.</summary>
-        public static void RaiseThreatSpike(Vector3 position, float intensity)
+        public static bool TryRaiseThreatSpike(Vector3 position, float intensity)
         {
             float clampedIntensity = math.saturate(intensity);
-            PublishMusicSignal(ThreatSpikeEventType, position, clampedIntensity, false);
-            if (_listenerCount <= 0)
-                return;
+            bool musicPublished = PublishMusicSignal(ThreatSpikeEventType, position, clampedIntensity, false);
 
-            Enqueue(new DirectorAIEventPayload
+            bool eventQueued = Enqueue(new DirectorAIEventPayload
             {
                 EventType = ThreatSpikeEventType,
                 Position = position,
                 Value = clampedIntensity
             });
+            return musicPublished || eventQueued;
+        }
+
+        [Obsolete("DirectorAI producers must use TryRaiseThreatSpike and handle bounded enqueue failure.", true)]
+        public static void RaiseThreatSpike(Vector3 position, float intensity)
+        {
+            TryRaiseThreatSpike(position, intensity);
         }
 
         /// <summary>
@@ -244,29 +289,29 @@ namespace Hecton8.Systems.AI
             PromoteNextFrameEvents();
         }
 
-        private static void EnqueuePosition(byte eventType, Vector3 position)
+        private static bool EnqueuePosition(byte eventType, Vector3 position)
         {
-            Enqueue(new DirectorAIEventPayload
+            return Enqueue(new DirectorAIEventPayload
             {
                 EventType = eventType,
                 Position = position
             });
         }
 
-        private static void EnqueueValue(byte eventType, float value)
+        private static bool EnqueueValue(byte eventType, float value)
         {
-            Enqueue(new DirectorAIEventPayload
+            return Enqueue(new DirectorAIEventPayload
             {
                 EventType = eventType,
                 Value = value
             });
         }
 
-        private static void PublishMusicSignal(byte eventType, Vector3 position, float value, bool boolValue)
+        private static bool PublishMusicSignal(byte eventType, Vector3 position, float value, bool boolValue)
         {
             SignalBus<DirectorAIMusicSignal>.EnsureInitialized();
             DirectorAIMusicSignal signal = new DirectorAIMusicSignal(eventType, position, value, boolValue);
-            SignalBus<DirectorAIMusicSignal>.Push(in signal);
+            return SignalBus<DirectorAIMusicSignal>.TryPush(in signal);
         }
 
         private static bool Enqueue(in DirectorAIEventPayload payload)
@@ -425,22 +470,6 @@ namespace Hecton8.Systems.AI
         }
     }
 
-    /// <summary>
-    /// One Burst-built predator sight ray input. Managed brain references stay outside this native lane.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    internal struct PredatorSightRaycastInput
-    {
-        [FieldOffset(0)]
-        public float3 Origin;
-        [FieldOffset(12)]
-        public float3 Target;
-        [FieldOffset(24)]
-        public int LayerMask;
-        [FieldOffset(28)]
-        public int Padding;
-    }
-
     internal static class PredatorSpatialHashMath
     {
         public static int3 ResolveCellCoord(double3 absolutePosition, double cellSizeMeters)
@@ -477,42 +506,6 @@ namespace Hecton8.Systems.AI
 
             int3 cell = PredatorSpatialHashMath.ResolveCellCoord(AbsolutePositions[index], CellSizeMeters);
             CellCoords[index] = cell;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct PredatorSightRaycastBuildJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<PredatorSightRaycastInput> Inputs;
-        [NoAlias] public NativeArray<RaycastCommand> Commands;
-        public int RequestCount;
-
-        public void Execute(int index)
-        {
-            if (index >= RequestCount)
-            {
-                Commands[index] = new RaycastCommand(
-                    Vector3.zero,
-                    Vector3.forward,
-                    new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore, false),
-                    0f);
-                return;
-            }
-
-            PredatorSightRaycastInput input = Inputs[index];
-            float3 delta = input.Target - input.Origin;
-            float3 absDelta = math.abs(delta);
-            float maxAxis = math.cmax(absDelta);
-            float minAxis = math.cmin(absDelta);
-            float midAxis = absDelta.x + absDelta.y + absDelta.z - maxAxis - minAxis;
-            // Cinematic upper-bound segment length: no sqrt/rsqrt in the Burst sight build lane.
-            float length = math.max(0.001f, maxAxis + (midAxis * 0.5f) + (minAxis * 0.25f));
-            float3 direction = delta * math.rcp(length);
-            Commands[index] = new RaycastCommand(
-                new Vector3(input.Origin.x, input.Origin.y, input.Origin.z),
-                new Vector3(direction.x, direction.y, direction.z),
-                new QueryParameters(input.LayerMask, false, QueryTriggerInteraction.Ignore, false),
-                length);
         }
     }
 
@@ -565,21 +558,9 @@ namespace Hecton8.Systems.AI
         private readonly SpatialQueryHit[] _acousticPingPredatorContacts = new SpatialQueryHit[AcousticPingPredatorContactCapacity];
         // COLD ALLOC: SpatialQueryHit[64] - director predator spatial hash contact mirror - owner: HectonDirectorAI
         private readonly SpatialQueryHit[] _predatorSpatialContacts = new SpatialQueryHit[PredatorSpatialHashContactCapacity];
-        // COLD ALLOC: FaunaBrain[1] - managed owner mirror for completed predator LOS rays - owner: HectonDirectorAI
-        private readonly FaunaBrain[] _predatorSightBrains = new FaunaBrain[PredatorSightMaxRaysPerFrame];
-        // COLD ALLOC: Vector3[1] - player-position mirror for completed predator LOS rays - owner: HectonDirectorAI
-        private readonly Vector3[] _predatorSightPlayerPositions = new Vector3[PredatorSightMaxRaysPerFrame];
-        // COLD ALLOC: Vector3[1] - player-velocity mirror for dead-reckoned predator LOS guidance - owner: HectonDirectorAI
-        private readonly Vector3[] _predatorSightPlayerVelocities = new Vector3[PredatorSightMaxRaysPerFrame];
-        // COLD ALLOC: Vector3[1] - player-forward mirror for completed predator LOS rays - owner: HectonDirectorAI
-        private readonly Vector3[] _predatorSightPlayerForwards = new Vector3[PredatorSightMaxRaysPerFrame];
         private IDataVault _dataVault;
-        private VaultGenerationHandle<PredatorSightRaycastInput> _predatorSightInputsHandle;
-        private VaultGenerationHandle<RaycastCommand> _predatorSightCommandsHandle;
-        private VaultGenerationHandle<RaycastHit> _predatorSightHitsHandle;
         private VaultGenerationHandle<double3> _predatorSpatialAbsolutePositionsHandle;
         private VaultGenerationHandle<int3> _predatorSpatialCellCoordsHandle;
-        private JobHandle _predatorSightRaycastHandle;
         private JobHandle _predatorSpatialHashBuildHandle;
         private const float SonarStressDecayPerSecond = 0.18f;
         private const float ActiveSonarLeviathanAggroRadiusMeters = 1000f;
@@ -593,11 +574,7 @@ namespace Hecton8.Systems.AI
         private const float PredatorAcousticDeafenedDurationSeconds = 8f;
         private const float PredatorAcousticDeafeningImpulseEnergyJoules = 6400f;
         private const int AcousticPingPredatorContactCapacity = 64;
-        private const int PredatorSightMaxRaysPerFrame = 1;
         private const int PredatorSpatialHashContactCapacity = 64;
-        private const BufferID PredatorSightInputsBufferId = (BufferID)73235;
-        private const BufferID PredatorSightCommandsBufferId = (BufferID)73236;
-        private const BufferID PredatorSightHitsBufferId = (BufferID)73237;
         private const BufferID PredatorSpatialAbsolutePositionsBufferId = (BufferID)73238;
         private const BufferID PredatorSpatialCellCoordsBufferId = (BufferID)73239;
         private const float PredatorSpatialHashCellSizeMeters = 50f;
@@ -634,12 +611,6 @@ namespace Hecton8.Systems.AI
             unchecked((uint)LocHash.Compute("HectonDirectorAI"));
         private static readonly double _StopwatchTickToMilliseconds =
             1000.0d / System.Diagnostics.Stopwatch.Frequency;
-        private static readonly int PredatorSightLayerMask =
-            HectonLayerMasks.TerrainLayerMask |
-            HectonLayerMasks.BaseModuleLayerMask |
-            HectonLayerMasks.VehicleLayerMask |
-            HectonLayerMasks.VoxelCaveLayerMask |
-            HectonLayerMasks.DebrisLayerMask;
         private static readonly Vector2[] _eventOffsetDirectionLut = BuildEventOffsetDirectionLut(); // COLD ALLOC: Vector2[64] - deterministic director event offset directions - owner: HectonDirectorAI
 
         private HectonPlayerMovement _playerMovement;
@@ -652,9 +623,7 @@ namespace Hecton8.Systems.AI
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private bool _acousticPingSubscribed;
-        private bool _predatorSightVaultLocked;
         private bool _predatorSpatialHashVaultLocked;
-        private bool _predatorSightJobScheduled;
         private bool _predatorSpatialHashJobScheduled;
         private bool _predatorSpatialHashReady;
         private float _resolveRetryTimer;
@@ -666,7 +635,6 @@ namespace Hecton8.Systems.AI
         private float _frustumPlaneRefreshTimer;
         private int _frameTimeHistoryCount;
         private int _frameTimeHistoryIndex;
-        private int _predatorSightScheduledCount;
         private int _predatorSpatialContactCount;
         private int _lastEntityDeathSignalSnapshotGeneration;
         private Vector3 _lastResolvedPlayerForward = Vector3.forward;
@@ -742,7 +710,6 @@ namespace Hecton8.Systems.AI
             _activeSonarPingDebounceTimer = 0f;
             _predatorSpatialHashReady = false;
             _predatorSpatialContactCount = 0;
-            EnsurePredatorSightBuffersAllocated(out _, out _, out _);
             EnsurePredatorSpatialHashBuffersAllocated(out _, out _);
             SpectrumEvents.RegisterSonarPingListener(this);
             SubscribeAcousticPingEvents();
@@ -779,6 +746,21 @@ namespace Hecton8.Systems.AI
                 _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
+        private void TryUnregisterDispatcherLanes()
+        {
+            if (_dispatcherRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                _dispatcherRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _lateFrameRegistered = false;
+            }
+        }
+
         private void OnDisable()
         {
             if (!Application.isPlaying)
@@ -796,18 +778,7 @@ namespace Hecton8.Systems.AI
             _ecosystemDirector = null;
             _sargassumMicroFauna = null;
             TryUnregisterHotSwapListener();
-
-            if (_dispatcherRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-                _dispatcherRegistered = false;
-            }
-
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
-                _lateFrameRegistered = false;
-            }
+            TryUnregisterDispatcherLanes();
 
             SpectrumEvents.UnregisterSonarPingListener(this);
             UnsubscribeAcousticPingEvents();
@@ -853,17 +824,7 @@ namespace Hecton8.Systems.AI
                 _encounterDirectorServiceRegistered = false;
             }
 
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
-                _lateFrameRegistered = false;
-            }
-
-            if (_dispatcherRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-                _dispatcherRegistered = false;
-            }
+            TryUnregisterDispatcherLanes();
 
             CompletePredatorSightBatch(forceComplete: true);
             ReleasePredatorSightBuffers();
@@ -871,6 +832,7 @@ namespace Hecton8.Systems.AI
             ReleasePredatorSpatialHashBuffers();
             _encounterDirector.ForceCompleteActiveJobForTeardown();
             _encounterDirector.ClearPredatorAupPublication();
+            _encounterDirector.FlushPredatorAupVisualSync();
             _encounterDirector.Dispose();
             _dataVault = null;
             _nextDirectorSolveWarningTime = 0f;
@@ -973,6 +935,7 @@ namespace Hecton8.Systems.AI
         public void LateFrameTick()
         {
             _encounterDirector.CompleteReadyOutput(faunaDirector, this, forceComplete: false);
+            _encounterDirector.FlushPredatorAupVisualSync();
             CompletePredatorSightBatch(forceComplete: false);
         }
 
@@ -1090,7 +1053,7 @@ namespace Hecton8.Systems.AI
 
                 if (!raisedThreatSpike)
                 {
-                    DirectorAIEvents.RaiseThreatSpike(_acousticPingPredatorContacts[i].Position, pingEvent.Intensity01);
+                    DirectorAIEvents.TryRaiseThreatSpike(_acousticPingPredatorContacts[i].Position, pingEvent.Intensity01);
                     raisedThreatSpike = true;
                 }
             }
@@ -1145,8 +1108,6 @@ namespace Hecton8.Systems.AI
             in AbsoluteUniversePosition playerAup)
         {
             CompletePredatorSpatialHashBuild(forceComplete: false);
-            if (_predatorSightJobScheduled)
-                return;
 
             if (_predatorSightCooldown > 0f)
             {
@@ -1154,11 +1115,7 @@ namespace Hecton8.Systems.AI
                 return;
             }
 
-            if (!EnsurePredatorSightBuffersAllocated(
-                    out NativeArray<PredatorSightRaycastInput> sightInputs,
-                    out NativeArray<RaycastCommand> sightCommands,
-                    out NativeArray<RaycastHit> sightHits) ||
-                !EnsurePredatorSpatialHashBuffersAllocated(
+            if (!EnsurePredatorSpatialHashBuffersAllocated(
                     out NativeArray<double3> spatialAbsolutePositions,
                     out NativeArray<int3> spatialCellCoords))
             {
@@ -1172,12 +1129,12 @@ namespace Hecton8.Systems.AI
                 return;
             }
 
-            int requestCount = 0;
+            int processedCount = 0;
             Vector3 safePlayerForward = playerForward.sqrMagnitude > 0.0001f ? ResolveDominantAxisDirection(playerForward) : Vector3.forward;
             Vector3 playerProbe = playerPosition + Vector3.up * PredatorSightProbeOffsetMeters;
             int3 playerCell = PredatorSpatialHashMath.ResolveCellCoord(playerAup.ToAbsoluteDouble3(), PredatorSpatialHashCellSizeMeters);
             for (int contactIndex = 0;
-                 contactIndex < _predatorSpatialContactCount && requestCount < PredatorSightMaxRaysPerFrame;
+                 contactIndex < _predatorSpatialContactCount && processedCount < 1;
                  contactIndex++)
             {
                 int3 cellDelta = math.abs(spatialCellCoords[contactIndex] - playerCell);
@@ -1191,33 +1148,10 @@ namespace Hecton8.Systems.AI
                     playerVelocity,
                     safePlayerForward,
                     playerProbe,
-                    sightInputs,
-                    ref requestCount);
+                    ref processedCount);
             }
 
             SchedulePredatorSpatialHashRefresh(in playerAup, spatialAbsolutePositions, spatialCellCoords);
-
-            if (requestCount <= 0)
-                return;
-
-            if (!TryLockPredatorSightVaultBuffers())
-                return;
-
-            PredatorSightRaycastBuildJob buildJob = new PredatorSightRaycastBuildJob
-            {
-                Inputs = sightInputs,
-                Commands = sightCommands,
-                RequestCount = requestCount
-            };
-
-            JobHandle buildHandle = buildJob.Schedule(PredatorSightMaxRaysPerFrame, 1);
-            _predatorSightRaycastHandle = RaycastCommand.ScheduleBatch(
-                sightCommands,
-                sightHits,
-                1,
-                buildHandle);
-            _predatorSightScheduledCount = requestCount;
-            _predatorSightJobScheduled = true;
         }
 
         private void ProcessPredatorSightContact(
@@ -1227,8 +1161,7 @@ namespace Hecton8.Systems.AI
             Vector3 playerVelocity,
             Vector3 safePlayerForward,
             Vector3 playerProbe,
-            NativeArray<PredatorSightRaycastInput> sightInputs,
-            ref int requestCount)
+            ref int processedCount)
         {
             SpatialQueryHit contact = _predatorSpatialContacts[contactIndex];
             FaunaBrain brain = contact.Owner as FaunaBrain;
@@ -1277,17 +1210,43 @@ namespace Hecton8.Systems.AI
                 return;
             }
 
-            sightInputs[requestCount] = new PredatorSightRaycastInput
+            bool hasLineOfSight = !IsPredatorSightTerrainBlocked(predatorProbe, playerProbe);
+            brain.ApplyDirectorLineOfSight(hasLineOfSight, playerPosition, safePlayerForward, playerVelocity);
+            processedCount++;
+        }
+
+        private static bool IsPredatorSightTerrainBlocked(Vector3 origin, Vector3 target)
+        {
+            if (!math.isfinite(origin.x) ||
+                !math.isfinite(origin.y) ||
+                !math.isfinite(origin.z) ||
+                !math.isfinite(target.x) ||
+                !math.isfinite(target.y) ||
+                !math.isfinite(target.z))
+            {
+                return true;
+            }
+
+            MapMagicBridge bridge = GlobalRegistry.MapMagic;
+            if (bridge == null)
+                return false;
+
+            const int sampleCount = 3;
+            for (int i = 1; i <= sampleCount; i++)
+            {
+                float t = i * 0.25f;
+                Vector3 sample = Vector3.LerpUnclamped(origin, target, t);
+                if (!bridge.TryGetHeight(sample.x, sample.z, out float terrainHeight) ||
+                    !math.isfinite(terrainHeight))
                 {
-                    Origin = (float3)predatorProbe,
-                    Target = (float3)playerProbe,
-                    LayerMask = PredatorSightLayerMask
-                };
-            _predatorSightBrains[requestCount] = brain;
-            _predatorSightPlayerPositions[requestCount] = playerPosition;
-            _predatorSightPlayerVelocities[requestCount] = playerVelocity;
-            _predatorSightPlayerForwards[requestCount] = safePlayerForward;
-            requestCount++;
+                    continue;
+                }
+
+                if (sample.y <= terrainHeight + 0.25f)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsInsidePredatorSightCone(Vector3 predatorForward, Vector3 toPlayer, float distanceSqr)
@@ -1405,102 +1364,15 @@ namespace Hecton8.Systems.AI
 
         private bool CompletePredatorSightBatch(bool forceComplete)
         {
-            if (!_predatorSightJobScheduled)
-                return true;
-
-            if (!DispatcherJobSwap.TryComplete(ref _predatorSightRaycastHandle, forceComplete))
-                return false;
-
-            bool hasHits = TryOpenDirectorVaultView(
-                in _predatorSightHitsHandle,
-                PredatorSightMaxRaysPerFrame,
-                out NativeArray<RaycastHit> sightHits);
-            int count = math.min(_predatorSightScheduledCount, PredatorSightMaxRaysPerFrame);
-            for (int i = 0; i < count; i++)
-            {
-                FaunaBrain brain = _predatorSightBrains[i];
-                if (brain == null || brain.IsDead)
-                    continue;
-
-                RaycastHit hit = hasHits ? sightHits[i] : default;
-                bool hasLineOfSight = hit.collider == null;
-                brain.ApplyDirectorLineOfSight(
-                    hasLineOfSight,
-                    _predatorSightPlayerPositions[i],
-                    _predatorSightPlayerForwards[i],
-                    _predatorSightPlayerVelocities[i]);
-            }
-
-            ClearPredatorSightMirrors(count);
-            _predatorSightScheduledCount = 0;
-            _predatorSightJobScheduled = false;
-            UnlockPredatorSightVaultBuffers();
             return true;
-        }
-
-        private void ClearPredatorSightMirrors(int count)
-        {
-            int clampedCount = math.min(count, PredatorSightMaxRaysPerFrame);
-            bool hasInputs = TryOpenDirectorVaultView(
-                in _predatorSightInputsHandle,
-                PredatorSightMaxRaysPerFrame,
-                out NativeArray<PredatorSightRaycastInput> sightInputs);
-            bool hasHits = TryOpenDirectorVaultView(
-                in _predatorSightHitsHandle,
-                PredatorSightMaxRaysPerFrame,
-                out NativeArray<RaycastHit> sightHits);
-            for (int i = 0; i < clampedCount; i++)
-            {
-                _predatorSightBrains[i] = null;
-                _predatorSightPlayerPositions[i] = default;
-                _predatorSightPlayerVelocities[i] = default;
-                _predatorSightPlayerForwards[i] = default;
-                if (hasInputs)
-                    sightInputs[i] = default;
-                if (hasHits)
-                    sightHits[i] = default;
-            }
-        }
-
-        private bool EnsurePredatorSightBuffersAllocated(
-            out NativeArray<PredatorSightRaycastInput> sightInputs,
-            out NativeArray<RaycastCommand> sightCommands,
-            out NativeArray<RaycastHit> sightHits)
-        {
-            sightInputs = default;
-            sightCommands = default;
-            sightHits = default;
-            return TryResolveOrAcquireDirectorVaultBuffer(
-                       ref _predatorSightInputsHandle,
-                       PredatorSightInputsBufferId,
-                       PredatorSightMaxRaysPerFrame,
-                       NativeArrayOptions.ClearMemory,
-                       out sightInputs) &&
-                   TryResolveOrAcquireDirectorVaultBuffer(
-                       ref _predatorSightCommandsHandle,
-                       PredatorSightCommandsBufferId,
-                       PredatorSightMaxRaysPerFrame,
-                       NativeArrayOptions.ClearMemory,
-                       out sightCommands) &&
-                   TryResolveOrAcquireDirectorVaultBuffer(
-                       ref _predatorSightHitsHandle,
-                       PredatorSightHitsBufferId,
-                       PredatorSightMaxRaysPerFrame,
-                       NativeArrayOptions.ClearMemory,
-                       out sightHits);
         }
 
         private void ReleasePredatorSightBuffers()
         {
-            ReleasePredatorSightBuffers(_dataVault);
         }
 
         private void ReleasePredatorSightBuffers(IDataVault vault)
         {
-            UnlockPredatorSightVaultBuffers();
-            ReleaseDirectorVaultHandle(vault, ref _predatorSightInputsHandle);
-            ReleaseDirectorVaultHandle(vault, ref _predatorSightCommandsHandle);
-            ReleaseDirectorVaultHandle(vault, ref _predatorSightHitsHandle);
         }
 
         private bool EnsurePredatorSpatialHashBuffersAllocated(
@@ -1568,7 +1440,7 @@ namespace Hecton8.Systems.AI
                 return false;
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AICognition,
@@ -1600,51 +1472,6 @@ namespace Hecton8.Systems.AI
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
-        }
-
-        private bool TryLockPredatorSightVaultBuffers()
-        {
-            if (_predatorSightVaultLocked)
-                return true;
-
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !vault.TryLockBuffer(PredatorSightInputsBufferId, SystemID.AICognition))
-            {
-                return false;
-            }
-
-            if (!vault.TryLockBuffer(PredatorSightCommandsBufferId, SystemID.AICognition))
-            {
-                vault.TryUnlockBuffer(PredatorSightInputsBufferId, SystemID.AICognition);
-                return false;
-            }
-
-            if (!vault.TryLockBuffer(PredatorSightHitsBufferId, SystemID.AICognition))
-            {
-                vault.TryUnlockBuffer(PredatorSightCommandsBufferId, SystemID.AICognition);
-                vault.TryUnlockBuffer(PredatorSightInputsBufferId, SystemID.AICognition);
-                return false;
-            }
-
-            _predatorSightVaultLocked = true;
-            return true;
-        }
-
-        private void UnlockPredatorSightVaultBuffers()
-        {
-            if (!_predatorSightVaultLocked)
-                return;
-
-            IDataVault vault = _dataVault;
-            if (vault != null)
-            {
-                vault.TryUnlockBuffer(PredatorSightHitsBufferId, SystemID.AICognition);
-                vault.TryUnlockBuffer(PredatorSightCommandsBufferId, SystemID.AICognition);
-                vault.TryUnlockBuffer(PredatorSightInputsBufferId, SystemID.AICognition);
-            }
-
-            _predatorSightVaultLocked = false;
         }
 
         private bool TryLockPredatorSpatialHashVaultBuffers()
@@ -1776,16 +1603,16 @@ namespace Hecton8.Systems.AI
             switch (newPhase)
             {
                 case EncounterPhase.Peak:
-                    DirectorAIEvents.RaiseEquipmentGlitchRequested(math.lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
-                    DirectorAIEvents.RaiseMissionTriggerRequested(eventPosition);
+                    DirectorAIEvents.TryRaiseEquipmentGlitchRequested(math.lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
+                    DirectorAIEvents.TryRaiseMissionTriggerRequested(eventPosition);
                     break;
 
                 case EncounterPhase.Decay:
-                    DirectorAIEvents.RaiseWeatherShiftRequested(math.lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
+                    DirectorAIEvents.TryRaiseWeatherShiftRequested(math.lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
                     break;
 
                 case EncounterPhase.Relax:
-                    DirectorAIEvents.RaiseRareDiscoveryRequested(eventPosition);
+                    DirectorAIEvents.TryRaiseRareDiscoveryRequested(eventPosition);
                     break;
             }
         }
@@ -1793,12 +1620,12 @@ namespace Hecton8.Systems.AI
         internal void HandleThreatSpawned(EncounterThreatClass threatClass, Vector3 spawnPosition)
         {
             if (threatClass == EncounterThreatClass.Swarm)
-                DirectorAIEvents.RaiseSpawnHordeRequested(spawnPosition);
+                DirectorAIEvents.TryRaiseSpawnHordeRequested(spawnPosition);
 
             if (threatClass == EncounterThreatClass.Leviathan)
-                DirectorAIEvents.RaiseThreatSpike(spawnPosition, 1f);
+                DirectorAIEvents.TryRaiseThreatSpike(spawnPosition, 1f);
             else if (threatClass == EncounterThreatClass.Stalker)
-                DirectorAIEvents.RaiseThreatSpike(spawnPosition, 0.75f);
+                DirectorAIEvents.TryRaiseThreatSpike(spawnPosition, 0.75f);
         }
 
         private void RefreshRuntimeReferences(bool force)
@@ -1837,7 +1664,7 @@ namespace Hecton8.Systems.AI
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             _sargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
             _dataVault = GlobalRegistry.DataVault;
@@ -1887,6 +1714,17 @@ namespace Hecton8.Systems.AI
                     BindMetaCampaignService(currentService as IMetaCampaignService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _dispatcherRegistered = false;
+                        _lateFrameRegistered = false;
+                        break;
+                    }
+
+                    if (!isActiveAndEnabled)
+                        break;
+
+                    TryUnregisterDispatcherLanes();
                     TryRegisterDispatcherLanes();
                     break;
             }
@@ -2137,7 +1975,7 @@ namespace Hecton8.Systems.AI
             if (faunaDirector != null)
                 faunaDirector.SetPredatorPressure(enabled);
 
-            DirectorAIEvents.RaisePredatorPressureChanged(enabled);
+            DirectorAIEvents.TryRaisePredatorPressureChanged(enabled);
         }
 
         private static Vector2[] BuildEventOffsetDirectionLut()

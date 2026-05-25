@@ -285,7 +285,7 @@ namespace Hecton8.Audio.Editor
         {
             string[] guids = AssetDatabase.FindAssets("t:AudioClip", new[] { ProjectAudioRoot });
             List<string> paths = new List<string>(guids.Length);
-            HashSet<string> unique = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> unique = new HashSet<string>(guids.Length, StringComparer.Ordinal);
 
             for (int i = 0; i < guids.Length; i++)
             {

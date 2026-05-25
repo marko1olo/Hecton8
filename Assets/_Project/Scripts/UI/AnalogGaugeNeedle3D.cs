@@ -13,6 +13,10 @@ namespace Hecton8.UI
     {
         private const float AngleWriteEpsilonDegrees = 0.001f;
         private const float SettleEpsilonDegrees = 0.01f;
+        private const float DegreesToRadians = 0.01745329252f;
+        private const float TwoPi = 6.28318530718f;
+        private const float HalfPi = 1.57079632679f;
+        private const float Pi = 3.14159265359f;
 
         private enum NeedleAxis : byte
         {
@@ -123,7 +127,10 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            {
+                TryUnregisterTickManager();
                 TryRegisterTickManager();
+            }
         }
 
         public void SetTargetValue(float value)
@@ -180,7 +187,7 @@ namespace Hecton8.UI
                 _initialLocalRotation.y,
                 _initialLocalRotation.z,
                 _initialLocalRotation.w);
-            quaternion deltaRotation = quaternion.AxisAngle(_rotationAxisVector, math.radians(_currentAngle));
+            quaternion deltaRotation = ApproximateRotationDegreesNoTrig(_rotationAxisVector, _currentAngle);
             quaternion resolvedRotation = math.mul(baseRotation, deltaRotation);
             needle.localRotation = new Quaternion(
                 resolvedRotation.value.x,
@@ -246,6 +253,37 @@ namespace Hecton8.UI
                 default:
                     return new float3(0f, 0f, 1f);
             }
+        }
+
+        private static quaternion ApproximateRotationDegreesNoTrig(float3 axis, float angleDegrees)
+        {
+            ApproximateSinCosFullNoTrig(math.select(0f, angleDegrees, math.isfinite(angleDegrees)) * DegreesToRadians * 0.5f, out float sinHalf, out float cosHalf);
+            float3 safeAxis = math.normalizesafe(axis, new float3(0f, 0f, 1f));
+            quaternion rotation = new quaternion(new float4(safeAxis * sinHalf, cosHalf));
+            float lengthSq = math.lengthsq(rotation.value);
+            return math.isfinite(lengthSq) && lengthSq > 0.000001f
+                ? new quaternion(rotation.value * math.rsqrt(lengthSq))
+                : quaternion.identity;
+        }
+
+        private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float cosSign = 1f;
+            if (x > HalfPi)
+            {
+                x = Pi - x;
+                cosSign = -1f;
+            }
+            else if (x < -HalfPi)
+            {
+                x = -Pi - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)

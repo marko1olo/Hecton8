@@ -106,13 +106,7 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Tick(float dt)
         {
-            if (_registeredLateFrame)
-                return;
-
-            if (!_hasPendingState || cameraTransform == null)
-                return;
-
-            ApplyCameraState(_pendingState);
+            // Camera presentation is owned by VISUAL_SYNC/LateFrameTick.
         }
 
         /// <inheritdoc />
@@ -134,7 +128,7 @@ namespace Hecton8.Gameplay
                 _hasLastAppliedTrackingState = true;
             }
 
-            _originShiftTrackingLockFrame = Time.frameCount;
+            _originShiftTrackingLockFrame = SystemDispatcher.CurrentFrameIndex;
         }
 
         private void ApplyCameraState(in HectonCameraState state)
@@ -149,7 +143,7 @@ namespace Hecton8.Gameplay
             float targetFieldOfView = SanitizeFieldOfView(
                 state.TargetFieldOfView,
                 cameraComponent != null ? cameraComponent.fieldOfView : 60f);
-            bool lockTrackingForAup = _hasLastAppliedTrackingState && Time.frameCount == _originShiftTrackingLockFrame;
+            bool lockTrackingForAup = _hasLastAppliedTrackingState && SystemDispatcher.CurrentFrameIndex == _originShiftTrackingLockFrame;
             if (lockTrackingForAup)
             {
                 cameraTransform.rotation = SanitizeQuaternion(_lastAppliedWorldRotation, targetRotation);
@@ -159,7 +153,7 @@ namespace Hecton8.Gameplay
                 _lastAppliedWorldRotation = cameraTransform.rotation;
                 return;
             }
-            else if (_originShiftTrackingLockFrame >= 0 && Time.frameCount > _originShiftTrackingLockFrame)
+            else if (_originShiftTrackingLockFrame >= 0 && SystemDispatcher.CurrentFrameIndex > _originShiftTrackingLockFrame)
             {
                 _originShiftTrackingLockFrame = -1;
             }

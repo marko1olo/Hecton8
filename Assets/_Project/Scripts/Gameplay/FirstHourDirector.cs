@@ -1,26 +1,26 @@
 // ============================================================================
-// HECTON-8 — FirstHourDirector.cs
+// HECTON-8 � FirstHourDirector.cs
 // Rezhissura pervogo chasa igry.
 //
-// LOR (lor1 — Psihologicheskiy arc pervyh dvuh chasov):
-//   Minuta 0-5:    Dezorientatsiya → Orientatsiya
+// LOR (lor1 � Psihologicheskiy arc pervyh dvuh chasov):
+//   Minuta 0-5:    Dezorientatsiya ? Orientatsiya
 //   Minuta 5-15:   Lyubopytstvo bez straha (melkovode bezopasno)
 //   Minuta 15-25:  Pervaya trevoga (ruka iz-pod oblomka, gul snizu)
 //   Minuta 25-40:  Kompetentnost (pervyy kraft)
-//   Minuta 40-50:  Udar po uverennosti (TEN — bolshaya, bystraya, sleva)
+//   Minuta 40-50:  Udar po uverennosti (TEN � bolshaya, bystraya, sleva)
 //   Minuta 50-70:  Ostorozhnost (igrok dvigaetsya inache)
 //   Minuta 70-90:  Malenkaya pobeda (nashel modul)
 //   Minuta 90-120: Predvkushenie (gul priblizhaetsya)
 //
 // MEHANIKA:
-//   • Otslezhivaet vremya sessii i progress.
-//   • Publikuet sobytiya dlya Director AI i narrativnyh sistem.
-//   • Odnorazovye sobytiya (ne povtoryayutsya posle pervogo raza).
-//   • ISaveable: sohranyaet progress pervogo chasa.
+//   � Otslezhivaet vremya sessii i progress.
+//   � Publikuet sobytiya dlya Director AI i narrativnyh sistem.
+//   � Odnorazovye sobytiya (ne povtoryayutsya posle pervogo raza).
+//   � ISaveable: sohranyaet progress pervogo chasa.
 //
 // ZERO GC:
-//   • Bitovaya maska dlya otslezhivaniya vypolnennyh sobytiy.
-//   • ISlowTickable.
+//   � Bitovaya maska dlya otslezhivaniya vypolnennyh sobytiy.
+//   � ISlowTickable.
 // ============================================================================
 
 using System;
@@ -240,16 +240,16 @@ namespace Hecton8.Gameplay
         /// Enqueues a first-hour milestone event.
         /// </summary>
         /// <param name="milestone">Reached milestone.</param>
-        public static void RaiseMilestone(FirstHourMilestone milestone)
+        public static bool TryRaiseMilestone(FirstHourMilestone milestone)
         {
             if (_listeners.Count <= 0)
-                return;
+                return false;
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportEventOverflow();
-                return;
+                return false;
             }
 
             FirstHourEventPayload payload = new FirstHourEventPayload
@@ -264,12 +264,16 @@ namespace Hecton8.Gameplay
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
+
+        [Obsolete("Use TryRaiseMilestone so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseMilestone(FirstHourMilestone milestone) => TryRaiseMilestone(milestone);
 
         /// <summary>
         /// Flushes queued first-hour milestone events to registered listeners.
@@ -291,7 +295,10 @@ namespace Hecton8.Gameplay
                     return;
 
                 if (!_pendingEvents.TryDequeue(out FirstHourEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -327,7 +334,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate — owner: FirstHourEvents
+                _pendingEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] � deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate � owner: FirstHourEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -339,7 +346,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — next-frame first-hour milestone lane prevents same-frame reentrant dispatch — owner: FirstHourEvents
+                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] � next-frame first-hour milestone lane prevents same-frame reentrant dispatch � owner: FirstHourEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -513,7 +520,7 @@ namespace Hecton8.Gameplay
         private static void ReportEventOverflow()
         {
             _droppedEventCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastEventOverflowTelemetryFrame == frame)
                 return;
 
@@ -527,7 +534,7 @@ namespace Hecton8.Gameplay
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -541,7 +548,7 @@ namespace Hecton8.Gameplay
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -604,7 +611,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -662,7 +672,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-65)]
-    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener, ICraftingEventListener, IInteractionEventListener, IGlobalRegistryHotSwapListener
+    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener, ICraftingEventListener, IInteractionEventListener, IFirstHourReadModel, IFirstHourRouteContactSink, IGlobalRegistryHotSwapListener
     {
         [Flags]
         private enum GuidanceStateFlags
@@ -680,20 +690,20 @@ namespace Hecton8.Gameplay
             HasLoreRouteContact = 1 << 10
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Timing (seconds) ────────────────────────")]
+        [Header("-- Timing (seconds) ------------------------")]
         [SerializeField] private float orientationTime   = 300f;   // 5 min
         [SerializeField] private float shadowTime        = 2400f;  // 40 min
         [SerializeField] private float firstModuleTime   = 4200f;  // 70 min
 
-        [Header("── Shadow Trigger ──────────────────────────")]
+        [Header("-- Shadow Trigger --------------------------")]
         [Tooltip("Minimalnaya glubina dlya poyavleniya teni (metry).")]
         [SerializeField] private float shadowMinDepth = 30f;
 
-        [Header("── Early Goal Hooks ─────────────────────────")]
+        [Header("-- Early Goal Hooks -------------------------")]
         [Tooltip("Quest that represents successful arrival/orientation.")]
         [SerializeField] private string arrivalQuestId = "quest_arrival";
 
@@ -709,7 +719,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Narrative discovery that counts as a real ruined-colony/module contact.")]
         [SerializeField] private string firstModuleZoneDiscoveryId = "zone_drowned_factories";
 
-        [Header("── Retention Nudges ─────────────────────────")]
+        [Header("-- Retention Nudges -------------------------")]
         [Tooltip("When to remind the player about the first core resource if they are still drifting.")]
         [SerializeField] private float firstResourceReminderTime = 480f;
 
@@ -719,17 +729,17 @@ namespace Hecton8.Gameplay
         [Tooltip("When to remind the player that shallow safety is no longer the real progression route and the next meaningful contact is a module or ruin.")]
         [SerializeField] private float firstModuleReminderTime = 2100f;
 
-        [Header("── Soft Guidance ───────────────────────────")]
+        [Header("-- Soft Guidance ---------------------------")]
         [Tooltip("Minimum delay between contextual onboarding nudges.")]
         [SerializeField] private float contextualGuidanceCooldown = 24f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private float _sessionTime;
         private int   _completedMilestones; // bitovaya maska
@@ -749,12 +759,12 @@ namespace Hecton8.Gameplay
         private float _nextContextualGuidanceTime;
         private WorldZoneDirector _worldZoneDirector;
         private BiomeMatrixDirector _biomeMatrixDirector;
-        private QuestManager _cachedQuestManager;
-        private AtlasSignalSystem _cachedAtlasSignalSystem;
+        private IQuestSystem _cachedQuestManager;
+        private IAtlasSignalReadModel _cachedAtlasSignalSystem;
         private EmergencyServiceRelayDirector _cachedEmergencyRelayDirector;
-        private AudioLogSystem _cachedAudioLogSystem;
+        private IAudioLogRuntime _cachedAudioLogSystem;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private LocalizationManager _cachedLocalization;
+        private ILocalizationTextReadModel _cachedLocalization;
         private WorldZoneAnchor _lastObservedZone;
         private bool _lastContextResourceCompleted;
         private bool _lastContextDepthCompleted;
@@ -767,6 +777,8 @@ namespace Hecton8.Gameplay
         private int _firstResourceItemHash;
         private bool _firstResourceIsCopper;
         private bool _hotSwapRegistered;
+        private bool _saveRegistered;
+        private ISaveService _saveService;
 
         private const float MinEarnedOrientationTime = 75f;
         private const string DataCopperItemId = "Data_Copper";
@@ -788,22 +800,30 @@ namespace Hecton8.Gameplay
         private const string MsgStarterBackslideRead =
             "THE SHALLOWS ONLY BUY BREATHING ROOM NOW, NOT PROGRESS. REGROUP AND RETURN TO THE DEEPER ROUTE.";
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public int SavePriority => 13;
         public int LoadPriority => 13;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public float SessionTime => _sessionTime;
         public bool IsFirstHourComplete => IsMilestoneComplete(FirstHourMilestone.HumCloser);
 
         public bool IsMilestoneComplete(FirstHourMilestone m)
             => (_completedMilestones & (1 << (int)m)) != 0;
+
+        public bool IsFirstHourMilestoneComplete(int milestoneCode)
+        {
+            if ((uint)milestoneCode > (uint)FirstHourMilestone.HumCloser)
+                return false;
+
+            return IsMilestoneComplete((FirstHourMilestone)milestoneCode);
+        }
 
         /// <summary>
         /// Registers a confirmed service-relay route contact for first-hour pacing.
@@ -813,9 +833,9 @@ namespace Hecton8.Gameplay
             _hasLoreRouteContact = true;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -830,9 +850,7 @@ namespace Hecton8.Gameplay
             TryRegister();
             CacheRuntimeServices();
             TryRegisterHotSwapListener();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
+            TryRegisterSaveParticipant();
 
             ResolveSurvivalSystem();
             ResolveWorldContext(force: true);
@@ -850,9 +868,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
-                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
+            TryUnregisterSaveParticipant();
 
             CraftingEvents.Unregister(this);
             NarrativeEvents.Unregister(this);
@@ -873,6 +889,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
@@ -885,7 +902,7 @@ namespace Hecton8.Gameplay
             TryRegister();
             CacheRuntimeServices();
             TryRegisterHotSwapListener();
-            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
+            TryRegisterSaveParticipant();
             RefreshCachedHashes();
             ResolveSurvivalSystem();
             ResolveWorldContext(force: true);
@@ -899,8 +916,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -947,35 +963,45 @@ namespace Hecton8.Gameplay
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
+                    break;
                 case GlobalRegistryServiceSlot.QuestRuntime:
-                    _cachedQuestManager = currentService as QuestManager;
+                    _cachedQuestManager = currentService as IQuestSystem;
                     break;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
-                    _cachedAtlasSignalSystem = currentService as AtlasSignalSystem;
+                    _cachedAtlasSignalSystem = currentService as IAtlasSignalReadModel;
                     break;
                 case GlobalRegistryServiceSlot.EmergencyRelayRuntime:
                     _cachedEmergencyRelayDirector = currentService as EmergencyServiceRelayDirector;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _cachedAudioLogSystem = currentService as AudioLogSystem;
+                    _cachedAudioLogSystem = currentService as IAudioLogRuntime;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _cachedLocalization = currentService as LocalizationManager;
+                    _cachedLocalization = currentService as ILocalizationTextReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    TryRegisterSaveParticipant();
                     break;
             }
         }
 
         private void CacheRuntimeServices()
         {
-            _cachedQuestManager = GlobalRegistry.Quest;
-            _cachedAtlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            _cachedQuestManager = GlobalRegistry.QuestSystem;
+            _cachedAtlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
             _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
-            _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogRuntime;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
 
         private void ClearCachedRuntimeServices()
@@ -986,6 +1012,7 @@ namespace Hecton8.Gameplay
             _cachedAudioLogSystem = null;
             _cachedPlayerContext = null;
             _cachedLocalization = null;
+            _saveService = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1005,9 +1032,36 @@ namespace Hecton8.Gameplay
             _hotSwapRegistered = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (_saveService == null)
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
+
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
+        }
+
+        // ----------------------------------------------------------
         //  ISlowTickable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void SlowTick()
         {
@@ -1028,7 +1082,7 @@ namespace Hecton8.Gameplay
                 FirstHourMilestone.FirstAnxiety,
                 ShouldTriggerFirstAnxiety(atlasRevealStage));
 
-            // Ten — tolko esli igrok pod vodoy na nuzhnoy glubine
+            // Ten � tolko esli igrok pod vodoy na nuzhnoy glubine
             CheckMilestone(FirstHourMilestone.TheShadow,
                 _sessionTime >= shadowTime && depth >= shadowMinDepth);
 
@@ -1043,7 +1097,7 @@ namespace Hecton8.Gameplay
             {
                 _firstModuleHintIssued = true;
                 _firstModuleReminderIssued = true;
-                NotificationEvents.PushInfo(ResolveLocalized(
+                NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
                     LocalizationKeys.FIRST_HOUR_MODULE_SCAN_HINT,
                     "SCAN RUINS AND MODULES. SOMETHING INTACT IS STILL DOWN HERE."));
             }
@@ -1056,9 +1110,9 @@ namespace Hecton8.Gameplay
                 ShouldTriggerHumCloser(atlasRevealStage));
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  PRIVATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void CheckMilestone(FirstHourMilestone milestone, bool condition)
         {
@@ -1071,7 +1125,7 @@ namespace Hecton8.Gameplay
 
         private void TriggerMilestone(FirstHourMilestone milestone)
         {
-            FirstHourEvents.RaiseMilestone(milestone);
+            FirstHourEvents.TryRaiseMilestone(milestone);
 
             switch (milestone)
             {
@@ -1082,13 +1136,13 @@ namespace Hecton8.Gameplay
                     break;
 
                 case FirstHourMilestone.TheShadow:
-                    // TEN — bolshaya, bystraya, sleva
+                    // TEN � bolshaya, bystraya, sleva
                     // Director AI poluchaet narrative bonus (snizhenie tension posle straha)
-                    NarrativeEvents.RaiseDiscoveryMade(_shadowEventDiscoveryHash);
+                    NarrativeEvents.TryRaiseDiscoveryMade(_shadowEventDiscoveryHash);
                     break;
 
                 case FirstHourMilestone.FirstModule:
-                    NarrativeEvents.RaiseDiscoveryMade(_firstColonyModuleDiscoveryHash);
+                    NarrativeEvents.TryRaiseDiscoveryMade(_firstColonyModuleDiscoveryHash);
                     break;
 
             }
@@ -1196,9 +1250,9 @@ namespace Hecton8.Gameplay
             _firstDepthReminderIssued = false;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  ISaveable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private bool ResolveSurvivalSystem()
         {
@@ -1225,8 +1279,8 @@ namespace Hecton8.Gameplay
 
         private void SynchronizeContextFromRuntimeSystems()
         {
-            AudioLogSystem audioLogSystem = _cachedAudioLogSystem;
-            if (audioLogSystem != null && audioLogSystem.DiscoveredCount > 0)
+            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            if (audioLogSystem != null && audioLogSystem.DiscoveredAudioLogCount > 0)
                 _hasLoreRouteContact = true;
 
             EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelayDirector;
@@ -1260,7 +1314,7 @@ namespace Hecton8.Gameplay
         private static void LogMilestoneTriggered(FirstHourMilestone milestone, float sessionTime)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[FirstHour] Milestone: {milestone} (t={sessionTime:F0}s)");
+            H8Debug.Log($"[FirstHour] Milestone: {milestone} (t={sessionTime:F0}s)");
 #endif
         }
 
@@ -1341,7 +1395,7 @@ namespace Hecton8.Gameplay
             if (questHash == 0u)
                 return;
 
-            QuestManager questManager = _cachedQuestManager;
+            IQuestSystem questManager = _cachedQuestManager;
             if (questManager == null)
                 return;
 
@@ -1354,7 +1408,7 @@ namespace Hecton8.Gameplay
             if (questHash == 0u)
                 return;
 
-            QuestManager questManager = _cachedQuestManager;
+            IQuestSystem questManager = _cachedQuestManager;
             if (questManager == null)
                 return;
 
@@ -1374,7 +1428,7 @@ namespace Hecton8.Gameplay
             ActivateQuest(_firstResourceQuestHash);
             TryAdvanceFirstResourceGoalFromRuntimeInventory();
 
-            QuestManager questManager = _cachedQuestManager;
+            IQuestSystem questManager = _cachedQuestManager;
             if (questManager != null && questManager.IsCompleted(_firstResourceQuestHash))
             {
                 _firstResourceReminderIssued = true;
@@ -1403,8 +1457,8 @@ namespace Hecton8.Gameplay
 
         private int GetCurrentAtlasRevealStage()
         {
-            AtlasSignalSystem atlasSignalSystem = _cachedAtlasSignalSystem;
-            return atlasSignalSystem != null ? atlasSignalSystem.CurrentRevealStage : 0;
+            IAtlasSignalReadModel atlasSignalSystem = _cachedAtlasSignalSystem;
+            return atlasSignalSystem != null ? atlasSignalSystem.CurrentAtlasSignalRevealStage : 0;
         }
 
         private static bool ShouldTriggerFirstAnxiety(int atlasRevealStage)
@@ -1488,7 +1542,7 @@ namespace Hecton8.Gameplay
             if (!IsMilestoneComplete(FirstHourMilestone.Orientation))
                 return;
 
-            QuestManager questManager = _cachedQuestManager;
+            IQuestSystem questManager = _cachedQuestManager;
             if (questManager == null)
                 return;
 
@@ -1497,14 +1551,14 @@ namespace Hecton8.Gameplay
                 _sessionTime >= firstResourceReminderTime)
             {
                 _firstResourceReminderIssued = true;
-                string reminderMessage = _firstResourceIsCopper
-                    ? ResolveLocalized(
+                ReadOnlySpan<char> reminderMessage = _firstResourceIsCopper
+                    ? ResolveLocalizedSpan(
                         LocalizationKeys.FIRST_HOUR_RESOURCE_REMINDER_COPPER,
                         "LOOK FOR COPPER IN THE DEBRIS AND AROUND THE ROCKS. WITHOUT IT, YOU DO NOT MOVE THE CHAIN FORWARD.")
-                    : ResolveLocalized(
+                    : ResolveLocalizedSpan(
                         LocalizationKeys.FIRST_HOUR_RESOURCE_REMINDER_GENERIC,
                         "LOOK FOR THE FIRST CORE MATERIAL IN THE DEBRIS AND ALONG READABLE ROCK FACES. WITHOUT IT, THE CHAIN STOPS HERE.");
-                NotificationEvents.PushInfo(reminderMessage);
+                NotificationEvents.TryPushInfo(reminderMessage);
             }
 
             if (!_firstDepthReminderIssued &&
@@ -1514,7 +1568,7 @@ namespace Hecton8.Gameplay
                 _sessionTime >= firstDepthReminderTime)
             {
                 _firstDepthReminderIssued = true;
-                NotificationEvents.PushInfo(ResolveLocalized(
+                NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
                     LocalizationKeys.FIRST_HOUR_DEPTH_REMINDER,
                     "THE FIRST REAL FIND IS LOWER. GO DEEPER, BUT DO NOT LOSE THE WAY OUT."));
             }
@@ -1528,7 +1582,7 @@ namespace Hecton8.Gameplay
 
                 WorldZoneAnchor currentZone = _worldZoneDirector != null ? _worldZoneDirector.CurrentZone : null;
                 HectonBiomeMatrixProfile currentBiome = ResolveCurrentBiomeProfile(currentZone);
-                NotificationEvents.PushInfo(ResolveModuleRouteGuidanceMessage(currentZone, currentBiome));
+                NotificationEvents.TryPushInfo(ResolveModuleRouteGuidanceMessage(currentZone, currentBiome));
             }
         }
 
@@ -1540,7 +1594,7 @@ namespace Hecton8.Gameplay
             if (Time.unscaledTime < _nextContextualGuidanceTime)
                 return;
 
-            QuestManager questManager = _cachedQuestManager;
+            IQuestSystem questManager = _cachedQuestManager;
             if (questManager == null)
                 return;
 
@@ -1592,7 +1646,7 @@ namespace Hecton8.Gameplay
         {
             EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelayDirector;
             if (relayDirector == null ||
-                !relayDirector.TryBuildContextualGuidanceMessage(out string relayMessage))
+                !relayDirector.TryBuildContextualGuidanceMessageSpan(out ReadOnlySpan<char> relayMessage))
             {
                 return false;
             }
@@ -1602,7 +1656,7 @@ namespace Hecton8.Gameplay
         }
 
         private bool TryIssueEarlyResourceZoneGuidance(
-            QuestManager questManager,
+            IQuestSystem questManager,
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome)
         {
@@ -1619,7 +1673,7 @@ namespace Hecton8.Gameplay
         }
 
         private bool TryIssueFabricationReturnGuidance(
-            QuestManager questManager,
+            IQuestSystem questManager,
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome)
         {
@@ -1648,7 +1702,7 @@ namespace Hecton8.Gameplay
         }
 
         private bool TryIssueDeeperRouteGuidance(
-            QuestManager questManager,
+            IQuestSystem questManager,
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome,
             int currentDepthTier)
@@ -1674,7 +1728,7 @@ namespace Hecton8.Gameplay
         }
 
         private bool TryIssueStarterBackslideGuidance(
-            QuestManager questManager,
+            IQuestSystem questManager,
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome,
             int currentDepthTier)
@@ -1702,7 +1756,7 @@ namespace Hecton8.Gameplay
         }
 
         private bool TryIssueModuleRouteGuidance(
-            QuestManager questManager,
+            IQuestSystem questManager,
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome,
             int currentDepthTier)
@@ -1729,12 +1783,12 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void PublishContextualInfo(string message)
+        private void PublishContextualInfo(ReadOnlySpan<char> message)
         {
-            if (string.IsNullOrEmpty(message))
+            if (message.IsEmpty)
                 return;
 
-            NotificationEvents.PushInfo(message);
+            NotificationEvents.TryPushInfo(message);
             _nextContextualGuidanceTime = Time.unscaledTime + math.max(0f, contextualGuidanceCooldown);
         }
 
@@ -1746,7 +1800,7 @@ namespace Hecton8.Gameplay
             return _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentProfile : null;
         }
 
-        private string ResolveResourceZoneGuidanceMessage(
+        private ReadOnlySpan<char> ResolveResourceZoneGuidanceMessage(
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome)
         {
@@ -1755,16 +1809,16 @@ namespace Hecton8.Gameplay
             WorldSandboxAttractionProfile sandbox = zoneProfile != null ? zoneProfile.sandboxAttractionProfile : null;
             WorldExpeditionLoopProfile expedition = zoneProfile != null ? zoneProfile.expeditionLoopProfile : null;
 
-            return SelectFirstNonEmpty(
+            return SelectFirstNonEmptySpan(
                 motivation != null ? motivation.resourceNeed : null,
                 sandbox != null ? sandbox.ambientValue : null,
                 expedition != null ? expedition.softProgressionPull : null,
                 currentBiome != null ? currentBiome.commonRewardHook : null,
                 currentBiome != null ? currentBiome.landmarkGuidance : null,
-                ResolveLocalized(LocalizationKeys.FIRST_HOUR_RESOURCE_SHELF_READ, MsgResourceShelfRead));
+                ResolveLocalizedSpan(LocalizationKeys.FIRST_HOUR_RESOURCE_SHELF_READ, MsgResourceShelfRead));
         }
 
-        private string ResolveFabricationFallbackMessage(
+        private ReadOnlySpan<char> ResolveFabricationFallbackMessage(
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome)
         {
@@ -1772,16 +1826,16 @@ namespace Hecton8.Gameplay
             WorldSandboxAttractionProfile sandbox = zoneProfile != null ? zoneProfile.sandboxAttractionProfile : null;
             WorldExpeditionLoopProfile expedition = zoneProfile != null ? zoneProfile.expeditionLoopProfile : null;
 
-            return SelectFirstNonEmpty(
+            return SelectFirstNonEmptySpan(
                 expedition != null ? expedition.reliefBeat : null,
                 expedition != null ? expedition.playerPromise : null,
                 sandbox != null ? sandbox.shelterRead : null,
                 currentBiome != null ? currentBiome.safePocketIdentity : null,
                 null,
-                ResolveLocalized(LocalizationKeys.FIRST_HOUR_FABRICATION_FALLBACK, MsgFabricationFallback));
+                ResolveLocalizedSpan(LocalizationKeys.FIRST_HOUR_FABRICATION_FALLBACK, MsgFabricationFallback));
         }
 
-        private string ResolveReturnLoreGuidanceMessage(
+        private ReadOnlySpan<char> ResolveReturnLoreGuidanceMessage(
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome)
         {
@@ -1789,16 +1843,16 @@ namespace Hecton8.Gameplay
             WorldMotivationProfile motivation = zoneProfile != null ? zoneProfile.motivationProfile : null;
             WorldSandboxAttractionProfile sandbox = zoneProfile != null ? zoneProfile.sandboxAttractionProfile : null;
 
-            return SelectFirstNonEmpty(
+            return SelectFirstNonEmptySpan(
                 motivation != null ? motivation.storyPull : null,
                 sandbox != null ? sandbox.storyLure : null,
                 currentBiome != null ? currentBiome.rareRewardHook : null,
                 null,
                 null,
-                ResolveLocalized(LocalizationKeys.FIRST_HOUR_RETURN_LORE_RELAY, MsgReturnLoreRelay));
+                ResolveLocalizedSpan(LocalizationKeys.FIRST_HOUR_RETURN_LORE_RELAY, MsgReturnLoreRelay));
         }
 
-        private string ResolveDeeperRouteGuidanceMessage(
+        private ReadOnlySpan<char> ResolveDeeperRouteGuidanceMessage(
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome)
         {
@@ -1806,16 +1860,16 @@ namespace Hecton8.Gameplay
             WorldSandboxAttractionProfile sandbox = zoneProfile != null ? zoneProfile.sandboxAttractionProfile : null;
             WorldExpeditionLoopProfile expedition = zoneProfile != null ? zoneProfile.expeditionLoopProfile : null;
 
-            return SelectFirstNonEmpty(
+            return SelectFirstNonEmptySpan(
                 sandbox != null ? sandbox.deepLure : null,
                 expedition != null ? expedition.softProgressionPull : null,
                 currentBiome != null ? currentBiome.landmarkGuidance : null,
                 currentBiome != null ? currentBiome.rareRewardHook : null,
                 null,
-                ResolveLocalized(LocalizationKeys.FIRST_HOUR_DEEPER_ROUTE_READ, MsgDeeperRouteRead));
+                ResolveLocalizedSpan(LocalizationKeys.FIRST_HOUR_DEEPER_ROUTE_READ, MsgDeeperRouteRead));
         }
 
-        private string ResolveModuleRouteGuidanceMessage(
+        private ReadOnlySpan<char> ResolveModuleRouteGuidanceMessage(
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome)
         {
@@ -1823,16 +1877,16 @@ namespace Hecton8.Gameplay
             WorldMotivationProfile motivation = zoneProfile != null ? zoneProfile.motivationProfile : null;
             WorldSandboxAttractionProfile sandbox = zoneProfile != null ? zoneProfile.sandboxAttractionProfile : null;
 
-            return SelectFirstNonEmpty(
+            return SelectFirstNonEmptySpan(
                 motivation != null ? motivation.storyPull : null,
                 motivation != null ? motivation.curiosityPull : null,
                 sandbox != null ? sandbox.storyLure : null,
                 currentBiome != null ? currentBiome.landmarkGuidance : null,
                 null,
-                ResolveLocalized(LocalizationKeys.FIRST_HOUR_MODULE_ROUTE_READ, MsgModuleRouteRead));
+                ResolveLocalizedSpan(LocalizationKeys.FIRST_HOUR_MODULE_ROUTE_READ, MsgModuleRouteRead));
         }
 
-        private string ResolveStarterBackslideMessage(
+        private ReadOnlySpan<char> ResolveStarterBackslideMessage(
             WorldZoneAnchor currentZone,
             HectonBiomeMatrixProfile currentBiome)
         {
@@ -1841,37 +1895,37 @@ namespace Hecton8.Gameplay
             WorldMotivationProfile motivation = zoneProfile != null ? zoneProfile.motivationProfile : null;
             WorldSandboxAttractionProfile sandbox = zoneProfile != null ? zoneProfile.sandboxAttractionProfile : null;
 
-            return SelectFirstNonEmpty(
+            return SelectFirstNonEmptySpan(
                 expedition != null ? expedition.playerPromise : null,
                 expedition != null ? expedition.softProgressionPull : null,
                 motivation != null ? motivation.storyPull : null,
                 sandbox != null ? sandbox.deepLure : null,
                 currentBiome != null ? currentBiome.landmarkGuidance : null,
-                ResolveLocalized(LocalizationKeys.FIRST_HOUR_STARTER_BACKSLIDE_READ, MsgStarterBackslideRead));
+                ResolveLocalizedSpan(LocalizationKeys.FIRST_HOUR_STARTER_BACKSLIDE_READ, MsgStarterBackslideRead));
         }
 
-        private static string SelectFirstNonEmpty(
+        private static ReadOnlySpan<char> SelectFirstNonEmptySpan(
             string optionA,
             string optionB,
             string optionC,
             string optionD,
             string optionE,
-            string fallback)
+            ReadOnlySpan<char> fallback)
         {
             if (!string.IsNullOrWhiteSpace(optionA))
-                return optionA;
+                return optionA.AsSpan();
 
             if (!string.IsNullOrWhiteSpace(optionB))
-                return optionB;
+                return optionB.AsSpan();
 
             if (!string.IsNullOrWhiteSpace(optionC))
-                return optionC;
+                return optionC.AsSpan();
 
             if (!string.IsNullOrWhiteSpace(optionD))
-                return optionD;
+                return optionD.AsSpan();
 
             if (!string.IsNullOrWhiteSpace(optionE))
-                return optionE;
+                return optionE.AsSpan();
 
             return fallback;
         }
@@ -1886,7 +1940,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            inventory = playerTransform.GetComponent<PlayerInventory>();
+            playerTransform.TryGetComponent(out inventory);
             if (inventory != null)
                 return true;
 
@@ -1895,10 +1949,12 @@ namespace Hecton8.Gameplay
             return inventory != null;
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager localization = _cachedLocalization;
-            return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
+            ILocalizationTextReadModel localization = _cachedLocalization;
+            return localization != null
+                ? localization.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
         private void RefreshCachedHashes()

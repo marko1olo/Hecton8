@@ -71,7 +71,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
     // COLD ALLOC: Dictionary<Vector3Int,Vector3>[65536] - editor voxel centroid lookup scratch - owner: HectonPhysicsSkinGenerator
     private readonly Dictionary<Vector3Int, Vector3> _voxelCentroids = new Dictionary<Vector3Int, Vector3>(65536);
     // COLD ALLOC: HashSet<TriKey>[196608] - editor unique triangle scratch - owner: HectonPhysicsSkinGenerator
-    private readonly HashSet<TriKey> _uniqueTriangleKeys = new HashSet<TriKey>();
+    private readonly HashSet<TriKey> _uniqueTriangleKeys = new HashSet<TriKey>(196608);
     // COLD ALLOC: List<Vector3Int>[196608] - editor shell voxel scratch - owner: HectonPhysicsSkinGenerator
     private readonly List<Vector3Int> _shellVoxels = new List<Vector3Int>(196608);
     // COLD ALLOC: Dictionary<Vector3Int,int>[65536] - editor voxel index remap scratch - owner: HectonPhysicsSkinGenerator
@@ -201,8 +201,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         // Try to find LOD0 from parent
         if (Selection.activeGameObject != null)
         {
-            var lodGroup = Selection.activeGameObject.GetComponent<LODGroup>();
-            if (lodGroup != null)
+            if (Selection.activeGameObject.TryGetComponent(out LODGroup lodGroup))
             {
                 if (GUILayout.Button("← Find LOD0 from LODGroup", GUILayout.Height(22)))
                 {
@@ -220,8 +219,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         // Show mesh info
         if (targetObject != null)
         {
-            MeshFilter mf = targetObject.GetComponent<MeshFilter>();
-            if (mf == null || mf.sharedMesh == null)
+            if (!targetObject.TryGetComponent(out MeshFilter mf) || mf.sharedMesh == null)
             {
                 EditorGUILayout.HelpBox("⚠ No MeshFilter or mesh is null!", MessageType.Warning);
             }
@@ -424,7 +422,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         for (int i = 0; i < selectedObjects.Length; i++)
         {
             GameObject go = selectedObjects[i];
-            MeshFilter mf = go.GetComponent<MeshFilter>();
+            go.TryGetComponent(out MeshFilter mf);
             string info = mf != null && mf.sharedMesh != null
                 ? $"{CountMeshTriangles(mf.sharedMesh)} tris"
                 : "no mesh";
@@ -690,8 +688,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             if (go == null)
                 continue;
 
-            MeshFilter filter = go.GetComponent<MeshFilter>();
-            if (filter == null || filter.sharedMesh == null || !filter.sharedMesh.isReadable)
+            if (!go.TryGetComponent(out MeshFilter filter) || filter.sharedMesh == null || !filter.sharedMesh.isReadable)
                 continue;
 
             _batchObjects.Add(go);
@@ -1093,7 +1090,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         skinObj.transform.localScale = Vector3.one;
 
         // MeshCollider
-        MeshCollider mc = skinObj.GetComponent<MeshCollider>();
+        skinObj.TryGetComponent(out MeshCollider mc);
         if (mc == null)
             mc = Undo.AddComponent<MeshCollider>(skinObj);
         else
@@ -1107,11 +1104,11 @@ public class HectonPhysicsSkinGenerator : EditorWindow
         mc.sharedMesh = resultMesh;
 
         // Debug visuals (disabled by default)
-        MeshFilter skinMF = skinObj.GetComponent<MeshFilter>();
+        skinObj.TryGetComponent(out MeshFilter skinMF);
         if (skinMF == null) skinMF = skinObj.AddComponent<MeshFilter>();
         skinMF.sharedMesh = resultMesh;
 
-        MeshRenderer skinMR = skinObj.GetComponent<MeshRenderer>();
+        skinObj.TryGetComponent(out MeshRenderer skinMR);
         if (skinMR == null) skinMR = skinObj.AddComponent<MeshRenderer>();
         skinMR.enabled = false;
 
@@ -1130,8 +1127,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
             return null;
         }
 
-        MeshFilter mf = target.GetComponent<MeshFilter>();
-        if (mf == null || mf.sharedMesh == null)
+        if (!target.TryGetComponent(out MeshFilter mf) || mf.sharedMesh == null)
         {
             SetStatus("Target has no MeshFilter or mesh is null.", MessageType.Error);
             return null;
@@ -1160,8 +1156,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
 
         if (targetObject == null) return;
 
-        MeshFilter mf = targetObject.GetComponent<MeshFilter>();
-        if (mf == null || mf.sharedMesh == null) return;
+        if (!targetObject.TryGetComponent(out MeshFilter mf) || mf.sharedMesh == null) return;
 
         sourceTriCount = CountMeshTriangles(mf.sharedMesh);
         sourceVertCount = mf.sharedMesh.vertexCount;

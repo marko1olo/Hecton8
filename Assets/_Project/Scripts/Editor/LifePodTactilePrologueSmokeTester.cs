@@ -867,7 +867,7 @@ namespace Hecton8.Editor
             AppendJsonBool(builder, "hapticFrequencyCapPass", hapticFrequencyCapPass, true);
             AppendJsonBool(builder, "lifecycleScalarRefreshPass", lifecycleScalarRefreshPass, false);
             builder.Append("}\n");
-            File.WriteAllText(path, builder.ToString());
+            File.WriteAllText(path, builder.ToString(), new UTF8Encoding(false));
         }
 
         private static void AppendJsonBool(StringBuilder builder, string key, bool value, bool comma)

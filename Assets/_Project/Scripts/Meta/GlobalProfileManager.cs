@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Items;
-using Hecton8.Modding;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using UnityEngine;
@@ -19,7 +19,7 @@ namespace Hecton8.Meta
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6500)]
     [AddComponentMenu("Hecton8/Meta/Global Profile Manager")]
-    public sealed class GlobalProfileManager : MonoBehaviour, ISlowTickable, IProfileService
+    public sealed class GlobalProfileManager : MonoBehaviour, ISlowTickable, IUpdatable, IProfileService, IGlobalRegistryHotSwapListener
     {
         private enum MarathonMetric : byte
         {
@@ -32,11 +32,15 @@ namespace Hecton8.Meta
         private readonly struct AchievementRewardDefinition
         {
             public readonly uint IdHash;
+            public readonly string Id;
+            public readonly string Title;
             public readonly int ExplorerPoints;
 
-            public AchievementRewardDefinition(string id, int explorerPoints)
+            public AchievementRewardDefinition(string id, string title, int explorerPoints)
             {
                 IdHash = QuestFlagHashKernel.ComputeStableHash(id);
+                Id = id;
+                Title = title;
                 ExplorerPoints = explorerPoints;
             }
         }
@@ -71,12 +75,12 @@ namespace Hecton8.Meta
         // COLD ALLOC: AchievementRewardDefinition[6] - fixed explorer-point rewards for first-time internal achievements - owner: GlobalProfileManager
         private static readonly AchievementRewardDefinition[] _achievementRewards =
         {
-            new AchievementRewardDefinition("achievement.swim.250", 10),
-            new AchievementRewardDefinition("achievement.swim.1000", 25),
-            new AchievementRewardDefinition("achievement.craft.10", 10),
-            new AchievementRewardDefinition("achievement.craft.50", 25),
-            new AchievementRewardDefinition("achievement.biome.5", 15),
-            new AchievementRewardDefinition("achievement.biome.12", 30),
+            new AchievementRewardDefinition("achievement.swim.250", "FIELD DIVER", 10),
+            new AchievementRewardDefinition("achievement.swim.1000", "ABYSS RUNNER", 25),
+            new AchievementRewardDefinition("achievement.craft.10", "FABRICATOR HAND", 10),
+            new AchievementRewardDefinition("achievement.craft.50", "SYSTEMS ENGINEER", 25),
+            new AchievementRewardDefinition("achievement.biome.5", "CHARTED WATER", 15),
+            new AchievementRewardDefinition("achievement.biome.12", "WORLD MEMORY", 30),
         };
 
         // COLD ALLOC: MarathonGoalDefinition[4] - fixed all-time meta retention goals - owner: GlobalProfileManager
@@ -113,18 +117,21 @@ namespace Hecton8.Meta
         private HectonSurvivalSystem _survivalSystem;
         private HectonDiscoveryManager _discoveryManager;
         private GlobalProfileData _profile = new GlobalProfileData();
-        private HectonEventSubscription _achievementUnlockedSubscription;
-        private HectonEventSubscription _gameLoadedSubscription;
-        private HectonEventSubscription _playerDiedSubscription;
-        private HectonEventSubscription _itemCollectedSubscription;
-        private HectonEventSubscription _itemRecycledSubscription;
         private bool _registeredToTick;
+        private bool _registeredToUpdate;
         private bool _registeredProfileService;
+        private bool _registeredHotSwapListener;
         private bool _dirty;
         private float _flushTimer;
         private float _nextLongestLifeRecordThreshold = LongestLifeRecordStepSeconds;
         private uint _lastCraftingCompletedSequence;
+        private uint _survivalSignalSourceId;
+        private int _lastSurvivalDeathSignalSequence;
+        private uint _lastProgressionMetaSequence;
+        private uint _lastItemLifecycleSequence;
+        private uint _lastSessionLifecycleSequence;
         private int _currentRunBiomeDiscoveries;
+        private ISaveService _saveService;
 
         /// <summary>
         /// Raised after the global profile data changes.
@@ -240,15 +247,20 @@ namespace Hecton8.Meta
         private void OnEnable()
         {
             TryRegisterProfileService();
+            TryRegisterHotSwapListener();
+            ResolveOwnersCold();
             TryRegisterWithTickManager();
+            TryRegisterWithUpdateDispatcher();
             SyncCraftingSignalBaseline();
-            SubscribeToEventBus();
             RebindOwnerSubscriptions();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
+            ResolveOwnersCold();
             TryRegisterWithTickManager();
+            TryRegisterWithUpdateDispatcher();
             RebindOwnerSubscriptions();
         }
 
@@ -257,8 +269,9 @@ namespace Hecton8.Meta
             FlushCurrentRunRecords();
             FlushIfDirty();
             UnbindOwnerSubscriptions();
-            UnsubscribeFromEventBus();
+            UnregisterFromUpdateDispatcher();
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             TryUnregisterProfileService();
         }
 
@@ -267,8 +280,9 @@ namespace Hecton8.Meta
             FlushCurrentRunRecords();
             FlushIfDirty();
             UnbindOwnerSubscriptions();
-            UnsubscribeFromEventBus();
+            UnregisterFromUpdateDispatcher();
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             TryUnregisterProfileService();
         }
 
@@ -293,27 +307,76 @@ namespace Hecton8.Meta
                 FlushIfDirty();
         }
 
-        private void HandleAchievementUnlocked(AchievementUnlockedEvent achievementUnlockedEvent)
+        public void Tick(float deltaTime)
         {
-            if (achievementUnlockedEvent == null || achievementUnlockedEvent.AchievementHash == 0u)
+            ProcessSessionLifecycleSignals();
+            ConsumeSurvivalDeathSignal();
+            ProcessProgressionMetaSignals();
+            ProcessItemLifecycleSignals();
+        }
+
+        private void ProcessSessionLifecycleSignals()
+        {
+            global::System.ReadOnlySpan<SessionLifecycleSignal> signals = SignalBus<SessionLifecycleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                SessionLifecycleSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastSessionLifecycleSequence))
+                    continue;
+
+                _lastSessionLifecycleSequence = signal.Sequence;
+                if (signal.Kind == SessionLifecycleSignal.KindGameLoaded)
+                    HandleGameLoaded();
+            }
+        }
+
+        private void ProcessProgressionMetaSignals()
+        {
+            global::System.ReadOnlySpan<ProgressionMetaSignal> signals = SignalBus<ProgressionMetaSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ProgressionMetaSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastProgressionMetaSequence))
+                    continue;
+
+                _lastProgressionMetaSequence = signal.Sequence;
+                switch (signal.Kind)
+                {
+                    case ProgressionMetaSignal.KindAchievementUnlocked:
+                        ProcessAchievementUnlocked(signal.EventHash);
+                        break;
+                    case ProgressionMetaSignal.KindBiomeDiscovered:
+                        HandleBiomeDiscovered(unchecked((int)signal.ContextHash));
+                        break;
+                }
+            }
+        }
+
+        private void ProcessAchievementUnlocked(uint achievementHash)
+        {
+            if (achievementHash == 0u)
                 return;
 
-            float unlockTimeSeconds = ResolveCurrentRunElapsedSeconds();
-            UpdateFastestAchievementRecord(achievementUnlockedEvent.AchievementHash, achievementUnlockedEvent.AchievementId, achievementUnlockedEvent.Title, unlockTimeSeconds);
+            TryResolveAchievementReward(achievementHash, out AchievementRewardDefinition definition);
+            string achievementId = definition.Id ?? string.Empty;
+            string title = definition.Title ?? string.Empty;
 
-            if (_globalUnlockedAchievementHashes.Add(achievementUnlockedEvent.AchievementHash))
+            float unlockTimeSeconds = ResolveCurrentRunElapsedSeconds();
+            UpdateFastestAchievementRecord(achievementHash, achievementId, title, unlockTimeSeconds);
+
+            if (_globalUnlockedAchievementHashes.Add(achievementHash))
             {
-                _profile.explorerPoints += ResolveExplorerPointReward(achievementUnlockedEvent.AchievementHash);
-                StoreUnlockedAchievementId(achievementUnlockedEvent.AchievementId);
+                _profile.explorerPoints += ResolveExplorerPointReward(achievementHash);
+                StoreUnlockedAchievementId(achievementId);
                 MarkDirty();
             }
         }
 
-        private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
+        private void HandleGameLoaded()
         {
             RebindOwnerSubscriptions();
 
-            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
+            HectonDiscoveryManager discoveryManager = _discoveryManager;
             _currentRunBiomeDiscoveries = discoveryManager != null ? discoveryManager.TotalDiscovered : 0;
             if (_currentRunBiomeDiscoveries > _profile.highestBiomeDiscoveriesInSingleRun)
             {
@@ -333,12 +396,8 @@ namespace Hecton8.Meta
             MarkDirty();
         }
 
-        private void HandlePlayerDied(PlayerDiedEvent playerDiedEvent)
+        private void ApplyDeathRecord(in SurvivalDeathRecord deathRecord)
         {
-            if (playerDiedEvent == null)
-                return;
-
-            SurvivalDeathRecord deathRecord = playerDiedEvent.DeathRecord;
             if (deathRecord.LifeDurationSeconds > _profile.longestLifeWithoutDeathSeconds)
             {
                 _profile.longestLifeWithoutDeathSeconds = (float)deathRecord.LifeDurationSeconds;
@@ -353,28 +412,9 @@ namespace Hecton8.Meta
             }
         }
 
-        private void HandleItemCollected(ItemCollectedEvent itemCollectedEvent)
-        {
-            if (itemCollectedEvent == null || itemCollectedEvent.Item == null || itemCollectedEvent.Quantity <= 0)
-                return;
-
-            if (itemCollectedEvent.Item.resourceFamily != ResourceFamily.StructuralMetal)
-                return;
-
-            AdvanceMarathonProgress(MarathonMetric.StructuralMetalCollected, itemCollectedEvent.Quantity);
-        }
-
-        private void HandleItemRecycled(ItemRecycledEvent itemRecycledEvent)
-        {
-            if (itemRecycledEvent == null || itemRecycledEvent.Quantity <= 0)
-                return;
-
-            AdvanceMarathonProgress(MarathonMetric.RecycledItems, itemRecycledEvent.Quantity);
-        }
-
         private void ProcessCraftingCompletions()
         {
-            uint currentSequence = GlobalSignals.LatestCraftingCompletedUnitCount;
+            uint currentSequence = CraftingSignalRoute.LatestCompletedUnitCount;
             uint delta = currentSequence - _lastCraftingCompletedSequence;
             if (delta == 0u)
                 return;
@@ -384,41 +424,40 @@ namespace Hecton8.Meta
             AdvanceMarathonProgress(MarathonMetric.CraftedItems, amount);
         }
 
+        private void ProcessItemLifecycleSignals()
+        {
+            global::System.ReadOnlySpan<ItemLifecycleSignal> signals = SignalBus<ItemLifecycleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ItemLifecycleSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastItemLifecycleSequence))
+                    continue;
+
+                _lastItemLifecycleSequence = signal.Sequence;
+                int quantity = Mathf.Max(0, signal.Quantity);
+                if (quantity <= 0)
+                    continue;
+
+                if (signal.Action == ItemLifecycleSignal.ActionCollected &&
+                    signal.ResourceFamily == (byte)ResourceFamily.StructuralMetal)
+                {
+                    AdvanceMarathonProgress(MarathonMetric.StructuralMetalCollected, quantity);
+                }
+                else if (signal.Action == ItemLifecycleSignal.ActionRecycled)
+                {
+                    AdvanceMarathonProgress(MarathonMetric.RecycledItems, quantity);
+                }
+            }
+        }
+
+        private static bool IsNewerSequence(uint candidate, uint lastProcessed)
+        {
+            return candidate != 0u && (lastProcessed == 0u || unchecked((int)(candidate - lastProcessed)) > 0);
+        }
+
         private void SyncCraftingSignalBaseline()
         {
-            _lastCraftingCompletedSequence = GlobalSignals.LatestCraftingCompletedUnitCount;
-        }
-
-        private void SubscribeToEventBus()
-        {
-            if (_achievementUnlockedSubscription == null)
-                _achievementUnlockedSubscription = HectonEventBus.Subscribe<AchievementUnlockedEvent>(HandleAchievementUnlocked, "meta.profile");
-
-            if (_gameLoadedSubscription == null)
-                _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "meta.profile");
-
-            if (_playerDiedSubscription == null)
-                _playerDiedSubscription = HectonEventBus.Subscribe<PlayerDiedEvent>(HandlePlayerDied, "meta.profile");
-
-            if (_itemCollectedSubscription == null)
-                _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, "meta.profile");
-
-            if (_itemRecycledSubscription == null)
-                _itemRecycledSubscription = HectonEventBus.Subscribe<ItemRecycledEvent>(HandleItemRecycled, "meta.profile");
-        }
-
-        private void UnsubscribeFromEventBus()
-        {
-            _achievementUnlockedSubscription?.Dispose();
-            _achievementUnlockedSubscription = null;
-            _gameLoadedSubscription?.Dispose();
-            _gameLoadedSubscription = null;
-            _playerDiedSubscription?.Dispose();
-            _playerDiedSubscription = null;
-            _itemCollectedSubscription?.Dispose();
-            _itemCollectedSubscription = null;
-            _itemRecycledSubscription?.Dispose();
-            _itemRecycledSubscription = null;
+            _lastCraftingCompletedSequence = CraftingSignalRoute.LatestCompletedUnitCount;
         }
 
         private void RebindOwnerSubscriptions()
@@ -428,28 +467,19 @@ namespace Hecton8.Meta
 
             if (_survivalSystem != null)
                 _nextLongestLifeRecordThreshold = Mathf.Max(_profile.longestLifeWithoutDeathSeconds + LongestLifeRecordStepSeconds, LongestLifeRecordStepSeconds);
+
+            RefreshSurvivalSignalBinding();
         }
 
         private void UnbindOwnerSubscriptions()
         {
-            if (_discoveryManager != null)
-                _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
-
             _discoveryManager = null;
+            _survivalSignalSourceId = 0u;
+            _lastSurvivalDeathSignalSequence = 0;
         }
 
         private bool ResolveOwnersHot()
         {
-            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
-            if (discoveryManager != null && !ReferenceEquals(_discoveryManager, discoveryManager))
-            {
-                if (_discoveryManager != null)
-                    _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
-
-                _discoveryManager = discoveryManager;
-                _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
-            }
-
             if (_discoveryManager != null)
                 _currentRunBiomeDiscoveries = _discoveryManager.TotalDiscovered;
 
@@ -462,7 +492,57 @@ namespace Hecton8.Meta
             if (_survivalSystem == null && playerObject != null)
                 playerObject.TryGetComponent(out _survivalSystem);
 
+            if (_discoveryManager == null)
+                _discoveryManager = GlobalRegistry.Discovery;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            RefreshSurvivalSignalBinding();
             return ResolveOwnersHot();
+        }
+
+        private void RefreshSurvivalSignalBinding()
+        {
+            uint sourceId = ResolveSurvivalSignalSourceId(_survivalSystem);
+            if (_survivalSignalSourceId == sourceId)
+                return;
+
+            _survivalSignalSourceId = sourceId;
+            _lastSurvivalDeathSignalSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)
+                ? sequence
+                : 0;
+        }
+
+        private void ConsumeSurvivalDeathSignal()
+        {
+            uint sourceId = _survivalSignalSourceId;
+            if (sourceId == 0u)
+                return;
+
+            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
+                return;
+
+            if (sequence == _lastSurvivalDeathSignalSequence)
+                return;
+
+            _lastSurvivalDeathSignalSequence = sequence;
+            if (signal.SourceId != sourceId ||
+                (signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u ||
+                _survivalSystem == null ||
+                !_survivalSystem.TryGetLastDeathRecord(out SurvivalDeathRecord deathRecord))
+            {
+                return;
+            }
+
+            ApplyDeathRecord(in deathRecord);
+        }
+
+        private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
+        {
+            return system != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                : 0u;
         }
 
         private void TrackCurrentRunRecords()
@@ -571,6 +651,9 @@ namespace Hecton8.Meta
 
         private void StoreUnlockedAchievementId(string achievementId)
         {
+            if (string.IsNullOrWhiteSpace(achievementId))
+                return;
+
             _profile.EnsureCapacity();
             int count = Mathf.Clamp(_profile.unlockedAchievementCount, 0, GlobalProfileData.MaxUnlockedAchievements);
             if (count >= GlobalProfileData.MaxUnlockedAchievements)
@@ -831,11 +914,44 @@ namespace Hecton8.Meta
 
         private float ResolveCurrentRunElapsedSeconds()
         {
-            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            if (saveManager != null)
-                return Mathf.Max(0f, saveManager.CurrentPlayTimeSeconds);
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                return Mathf.Max(0f, saveService.CurrentPlayTimeSeconds);
 
             return Mathf.Max(0f, Time.realtimeSinceStartup);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DiscoveryRuntime:
+                    _discoveryManager = currentService as HectonDiscoveryManager;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _saveService = currentService as ISaveService;
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private static int ResolveExplorerPointReward(uint achievementHash)
@@ -843,13 +959,24 @@ namespace Hecton8.Meta
             if (achievementHash == 0u)
                 return 10;
 
+            return TryResolveAchievementReward(achievementHash, out AchievementRewardDefinition definition)
+                ? definition.ExplorerPoints
+                : 10;
+        }
+
+        private static bool TryResolveAchievementReward(uint achievementHash, out AchievementRewardDefinition definition)
+        {
             for (int i = 0; i < _achievementRewards.Length; i++)
             {
                 if (_achievementRewards[i].IdHash == achievementHash)
-                    return _achievementRewards[i].ExplorerPoints;
+                {
+                    definition = _achievementRewards[i];
+                    return true;
+                }
             }
 
-            return 10;
+            definition = default;
+            return false;
         }
 
         private void MarkDirty()
@@ -965,8 +1092,7 @@ namespace Hecton8.Meta
             if (_registeredToTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void UnregisterFromTickManager()
@@ -974,9 +1100,26 @@ namespace Hecton8.Meta
             if (!_registeredToTick)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
 
             _registeredToTick = false;
+        }
+
+        private void TryRegisterWithUpdateDispatcher()
+        {
+            if (_registeredToUpdate || !Application.isPlaying)
+                return;
+
+            _registeredToUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void UnregisterFromUpdateDispatcher()
+        {
+            if (!_registeredToUpdate)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredToUpdate = false;
         }
 
         private void TryRegisterProfileService()

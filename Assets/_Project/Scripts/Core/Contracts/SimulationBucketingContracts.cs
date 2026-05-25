@@ -11,6 +11,9 @@ namespace Hecton8.Core
     /// </summary>
     public static class SimulationBucketConstants
     {
+        /// <summary>Byte stride of the bucketer black-box frame snapshot.</summary>
+        public const int FrameStateStrideBytes = 64;
+
         /// <summary>Fast bucket count used by voxel and other frame-distributed work.</summary>
         public const int FastBucketCount = 4;
 
@@ -87,7 +90,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Lightweight frame snapshot emitted by the simulation bucketer and black-box telemetry.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = SimulationBucketConstants.FrameStateStrideBytes)]
     public struct SimulationBucketFrameState
     {
         /// <summary>Monotonic frame count owned by the bucketer, independent of Unity frame wrapping.</summary>

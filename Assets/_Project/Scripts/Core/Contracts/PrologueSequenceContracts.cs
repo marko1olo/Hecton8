@@ -6,6 +6,13 @@ using UnityEngine;
 
 namespace Hecton8.Core.Contracts
 {
+    internal static class PrologueSequenceContractLayout
+    {
+        public const int OrbitalSnapshotStrideBytes = 48;
+        public const int AtmosphericReentrySnapshotStrideBytes = 16;
+        public const int CompleteSnapshotStrideBytes = 16;
+    }
+
     /// <summary>
     /// Deterministic prologue pacing states. Values are persisted in black-box telemetry.
     /// </summary>
@@ -56,7 +63,7 @@ namespace Hecton8.Core.Contracts
         public const uint OrbitalRelativityDirector = 0x4F524249u; // ORBI
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = PrologueSequenceContractLayout.OrbitalSnapshotStrideBytes)]
     public readonly struct PrologueOrbitalSnapshot
     {
         public PrologueOrbitalSnapshot(
@@ -86,7 +93,7 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(45)] public readonly byte Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = PrologueSequenceContractLayout.AtmosphericReentrySnapshotStrideBytes)]
     public readonly struct PrologueAtmosphericReentrySnapshot
     {
         public PrologueAtmosphericReentrySnapshot(
@@ -113,7 +120,7 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(15)] public readonly byte Flags;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = PrologueSequenceContractLayout.CompleteSnapshotStrideBytes)]
     public readonly struct PrologueCompleteSnapshot
     {
         public PrologueCompleteSnapshot(uint frame, float whiteoutHoldSeconds, ushort sequence, byte phase, byte flags)

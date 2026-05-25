@@ -18,7 +18,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Deep Drill Module")]
-    public sealed class DeepDrillModule : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent
+    public sealed class DeepDrillModule : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent, IGlobalRegistryHotSwapListener
     {
         private const float SlowTickDeltaTime = 0.5f;
         private const float OneOver24Bit = 1f / 16777216f;
@@ -131,25 +131,30 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
-            _powerNode = GetComponent<PowerNode>();
+            TryGetComponent(out _powerNode);
             _deterministicEntityId = EntityId.ToULong(gameObject.GetEntityId());
         }
 
         private void OnEnable()
         {
             RegisterModuleInstance();
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             UnregisterModuleInstance();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             UnregisterModuleInstance();
         }
 
@@ -166,6 +171,9 @@ namespace Hecton8.Construction
             _bufferedUnits = 0;
             _debugBufferedItemId = string.Empty;
             _debugBufferedUnits = 0;
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
             RegisterModuleInstance();
         }
@@ -173,6 +181,7 @@ namespace Hecton8.Construction
         public void OnDespawn()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             UnregisterModuleInstance();
             _hasPower = true;
             _debugHasPower = true;
@@ -252,7 +261,7 @@ namespace Hecton8.Construction
             _debugBufferedUnits = _bufferedUnits;
         }
 
-        internal void EjectBufferedOutput(BaseModule owner, PlayerInventory inventory, ObjectPoolManager pool, ref Vector3 dropPosition)
+        internal void EjectBufferedOutput(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, ref Vector3 dropPosition)
         {
             if (owner == null || _bufferedItem == null || _bufferedUnits <= 0)
                 return;
@@ -347,8 +356,7 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -358,6 +366,27 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registered = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                TryUnregister();
+                TryRegister();
+            }
         }
 
         private bool CanAccumulateMoreOutput()

@@ -1,0 +1,56 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_CORE_BUILD_CLOSURE_SLICE_T_NAMESPACE_V1",
+    "agent":  "X_002",
+    "generated":  "2026-05-24T13:29:32.2558465Z",
+    "status":  "PASS_CORE_COMPILE_AND_CLI_MONOLITH_REVALIDATED",
+    "proofBoundary":  "Core csproj compile plus DataMonolith CLI bake/fuzzer/load/fail-closed/parser scan. Not a Unity player profiler trace.",
+    "changes":  [
+                    "Added Hecton8.Physics namespace imports for existing PhysicsDeterminismSignals/SubmarineFluidDynamics/PhysicsForceRouter references in three runtime files.",
+                    "Added Hecton8.Atmosphere namespace import for existing FatalPressureImplosion event references in SpatialAudioManager.",
+                    "No Data Monolith binary schema, payload layout, DTO size, parser route, or gameplay authority route changed."
+                ],
+    "changedFiles":  [
+                         "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                         "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+                         "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+                         "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                         "Docs/Reports/DATA_MONOLITH_PLAYER_CSV_STAGING_FENCE_SLICE_T_X_002.json"
+                     ],
+    "staticVerification":  {
+                               "diffCheck":  "PASS_WITH_EXISTING_LF_CRLF_WARNINGS_ONLY",
+                               "compileWallRootCause":  "Missing namespace imports for already-existing Hecton8.Physics and Hecton8.Atmosphere types.",
+                               "binarySchemaChanged":  false,
+                               "managedParserAdded":  false,
+                               "gameplayAuthorityChanged":  false
+                           },
+    "buildVerification":  {
+                              "command":  "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false",
+                              "gateOpened":  "attempt=29 cpu=42.27 compiler_process_count=0",
+                              "buildServerShutdown":  true,
+                              "status":  "PASS",
+                              "warnings":  0,
+                              "errors":  0,
+                              "elapsed":  "00:02:05.11"
+                          },
+    "cliVerification":  {
+                            "command":  "Tools/DataMonolithBakeCli/bin/Release/net10.0/DataMonolithBakeCli.exe C:\\hades\\Hecton8",
+                            "exitCode":  0,
+                            "blobBytes":  1064384,
+                            "checksumHex":  "0x0D49885F30E5DF35",
+                            "fuzzerStatus":  "PASS",
+                            "fuzzerPassCount":  12,
+                            "fuzzerFailCount":  0,
+                            "loadStressStatus":  "PASS_NATIVE_READ_ZERO_GC_TARGET_TIME",
+                            "nativeReadMicroseconds":  211.4,
+                            "nativeResidentLoadEstimateMicroseconds":  917.35,
+                            "nativeResidentLoadEstimateAllocatedBytes":  0,
+                            "failClosedStatus":  "PASS_FAIL_CLOSED_NO_POISON_PUBLISH",
+                            "failClosedRejectedCases":  6,
+                            "failClosedValidationAllocatedBytes":  0,
+                            "failClosedValidationMeanMicroseconds":  464.673,
+                            "parserAbsenceStatus":  "PASS_PLAYER_STATIC_CONFIG_PARSER_ABSENCE",
+                            "parserAbsenceReleaseBlockingFindings":  0,
+                            "parserAbsenceDevelopmentBlockingFindings":  0,
+                            "directFileStreamReadByteCount":  0
+                        }
+}

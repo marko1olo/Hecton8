@@ -1,3 +1,4 @@
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
@@ -6,7 +7,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4200)]
-    public sealed class ScatterBudgetController : MonoBehaviour, ISlowTickable
+    public sealed class ScatterBudgetController : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const string SurfaceBudgetBandLabel = "Surface";
         private const string MidDepthBudgetBandLabel = "MidDepth";
@@ -140,6 +141,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
         }
 
@@ -153,14 +157,25 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
 
             if (ActiveRuntimeInstance == this)
                 ActiveRuntimeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void TryRegister()
@@ -171,8 +186,7 @@ namespace Hecton8.World
                 return;
 
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -196,9 +210,9 @@ namespace Hecton8.World
         public string DescribeStatus()
         {
             return
-                $"band={_debugCurrentBand} depth={_debugCurrentDepth:F1} applied={_debugApplied} " +
-                $"blocker={_debugLastBlocker} player={_debugPlayerReady} bridge={_debugBridgeReady} " +
-                $"scavenge={_debugScavengeReady} collider={_debugColliderReady}";
+                "band=" + _debugCurrentBand + " depth=" + _debugCurrentDepth.ToString("F1", CultureInfo.InvariantCulture) + " applied=" + _debugApplied + " " +
+                "blocker=" + _debugLastBlocker + " player=" + _debugPlayerReady + " bridge=" + _debugBridgeReady + " " +
+                "scavenge=" + _debugScavengeReady + " collider=" + _debugColliderReady;
         }
 
         public void SetDirectorScales(

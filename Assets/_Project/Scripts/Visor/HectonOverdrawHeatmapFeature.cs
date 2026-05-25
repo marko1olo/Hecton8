@@ -16,6 +16,8 @@ namespace Hecton8.EditorTools
     public sealed class HectonOverdrawHeatmapFeature : ScriptableRendererFeature
     {
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_OverdrawHeatmap.shader";
+        private static readonly int HeatColorId = Shader.PropertyToID("_HeatColor");
+        private static readonly int HeatStrengthId = Shader.PropertyToID("_HeatStrength");
         // COLD ALLOC: List<ShaderTagId>[3] — renderer-list pass tags for overdraw heatmap — owner: HectonOverdrawHeatmapFeature
         private static readonly List<ShaderTagId> ShaderTagIds = new List<ShaderTagId>(3)
         {
@@ -124,8 +126,8 @@ namespace Hecton8.EditorTools
                     _material = CoreUtils.CreateEngineMaterial(settings.shader);
                 }
 
-                _material.SetColor("_HeatColor", settings.heatColor.linear);
-                _material.SetFloat("_HeatStrength", settings.heatStrength);
+                _material.SetColor(HeatColorId, settings.heatColor.linear);
+                _material.SetFloat(HeatStrengthId, settings.heatStrength);
             }
             else
             {

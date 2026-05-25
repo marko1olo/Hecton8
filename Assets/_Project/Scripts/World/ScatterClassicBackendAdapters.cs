@@ -46,6 +46,14 @@ namespace Hecton8.World
             return true;
         }
 
+        public bool TrySchedule(
+            ScatterSimulationConfig config,
+            NativeArray<float> heightSamples,
+            NativeArray<ScatterSimulationCellState> cellStates)
+        {
+            return TrySchedule(config, heightSamples.AsReadOnly(), cellStates.AsReadOnly());
+        }
+
         public bool TryComplete(out ScatterSimulationResult result)
         {
             result = default;

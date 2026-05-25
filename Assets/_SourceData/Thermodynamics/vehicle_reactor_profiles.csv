@@ -1,0 +1,4 @@
+name,base_dissipation_rate,core_heat_capacity_j_per_c,safe_core_temp_c,meltdown_core_temp_c,nominal_power_mw,forced_convection_multiplier
+Ion_Cell,0.052,920000,640,1420,4.5,0.045
+Fission_Reactor,0.085,1250000,760,1850,14.0,0.080
+Abyssal_Breeder,0.112,1680000,820,2050,22.0,0.115

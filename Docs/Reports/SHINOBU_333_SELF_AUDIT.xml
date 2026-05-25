@@ -1,0 +1,102 @@
+﻿<SELF_AUDIT agent="SHINOBU_333" domain="SUBMARINE_BALLAST_BUOYANCY_SOLVER" date="2026-05-23" evidence="STATIC_SOURCE_ONLY">
+  <review_disposition>YELLOW_STATIC_SOURCE_ONLY</review_disposition>
+  <compile_guard>BLOCKED_EXTERNAL: no green build claim. Prior gated builds reached sibling-domain VRSomatic/Gyro/Metabolism/Fauna errors, then csc.exe exit -1 without SHINOBU_333 diagnostics. SHINOBU_333 added no runtime asmdef and no new asmdef reference; Physics/Vehicles currently has only an editor asmdef. Hot PID suppression no longer calls SubmarineDynamicsRuntime.</compile_guard>
+  <task_reconciliation>
+    <task id="01" status="PASS">Scanned Vehicles/Physics plus targeted gameplay bridge; no SimpleBuoyancy/SubmarineController deletion target found; active ballast route no longer uses direct AddForceAtPosition.</task>
+    <task id="02" status="PASS">Removed dynamic Rigidbody.mass ballast fallback and removed scalar BallastLiftN contribution from Submarine6DIntegratorJob force truth.</task>
+    <task id="03" status="PASS">Ballast hot state is explicit unmanaged DTO fields; no hot DTO properties.</task>
+    <task id="04" status="PASS">BallastTankDTO is explicit 32 bytes with editor offset validation.</task>
+    <task id="05" status="PASS">GenerateMockFluidDisplacementJob injects deterministic triangle swell and density stress.</task>
+    <task id="06" status="PASS">EvaluateBallastTanksJob integrates flood/blow liters from Vault command rows.</task>
+    <task id="07" status="PASS">CalculateBuoyancyForceJob computes displaced volume, water ballast gravity, compressed air mass, and net Archimedes force.</task>
+    <task id="08" status="PASS">Compressed-air presentation uses sparse MovementAcousticSignal; no CPU bubbles or audio mixing.</task>
+    <task id="09" status="PASS">Ambient pressure blocks blowdown when compressed air cannot overcome depth pressure.</task>
+    <task id="10" status="PASS">Force packet is written unmanaged and applied through PhysicsForceRouter bridge, not direct Rigidbody force.</task>
+    <task id="11" status="PASS">Active sample count follows finite GlobalQualityWeight through smoothstep/lerp plus 2.5s hysteresis; no low/high binary switch or threshold flicker.</task>
+    <task id="12" status="PASS">Hull/surface AUP double3 values subtract before localized float displacement math.</task>
+    <task id="13" status="PASS">Ballast jobs use FloatMode.Deterministic and finite guards for rollback truth.</task>
+    <task id="14" status="PASS">Tank/command/sample/force/profile scratch buffers are Vault-backed; active rows are seeded or overwritten.</task>
+    <task id="15" status="PASS">300-entry SubmarineBallastTelemetryEntry ring dumps to Docs/AgentLogs/Dump_SHINOBU_333.bin on fault threshold; current ComputeMicros is explicitly flagged as a timing proxy until profiler proof exists.</task>
+    <task id="16" status="PASS">UI Toolkit ballast tuner mutates Vault-backed tuning row in editor only.</task>
+    <task id="17" status="PASS">ReadOnlySpan CSV parser is wired to cold ingestion path Data/Physics/vehicle_ballast_profiles.csv -> Vault 71776 using scratch 71778.</task>
+    <task id="18" status="PASS">Editor gizmo reads DTO state and draws tank fill plus force arrows without runtime debug meshes.</task>
+    <task id="19" status="PASS">OOP_Buoyancy_Scanner reports zero targeted mass/OverlapSphere/AddForceAtPosition hacks.</task>
+    <task id="20" status="PASS">Static self-audit artifacts, route card, ledger entry, report fields, and blocked-external compile evidence are recorded.</task>
+  </task_reconciliation>
+  <struct_layout name="BallastTankDTO" size_bytes="32" alignment="4-byte fields, 32-byte row, two rows per 64-byte cache line">
+    <field name="TankVolumeLiters" type="float" offset="0" size="4"/>
+    <field name="CurrentWaterLiters" type="float" offset="4" size="4"/>
+    <field name="CompressedAirPressureATM" type="float" offset="8" size="4"/>
+    <field name="InputStateFlags" type="uint" offset="12" size="4"/>
+    <field name="PumpRateLitersPerSecond" type="float" offset="16" size="4"/>
+    <field name="_pad0" type="uint" offset="20" size="4"/>
+    <field name="_pad1" type="uint" offset="24" size="4"/>
+    <field name="_pad2" type="uint" offset="28" size="4"/>
+    <proof>5 live fields consume 20 bytes; 12 padding bytes force 32 bytes. No Pack=1. No colocated atomic counter, so false-sharing padding is not required for this DTO.</proof>
+  </struct_layout>
+  <struct_layout name="SubmarineBallastFluidSampleDTO" size_bytes="160" alignment="8-byte envelope, explicit offsets">
+    <field name="HullPositionAup" type="AbsoluteUniversePosition" offset="0" size="48"/>
+    <field name="HullAup" type="double3" offset="48" size="24"/>
+    <field name="OceanSurfaceAup" type="double3" offset="72" size="24"/>
+    <field name="HullVelocity" type="float3" offset="96" size="12"/>
+    <field name="HullHeightMeters" type="float" offset="108" size="4"/>
+    <field name="HullVolumeCubicMeters" type="float" offset="112" size="4"/>
+    <field name="FluidDensityKgPerM3" type="float" offset="116" size="4"/>
+    <field name="AmbientPressureATM" type="float" offset="120" size="4"/>
+    <field name="GlobalQualityWeight" type="float" offset="124" size="4"/>
+    <field name="SimulationDeltaTime" type="float" offset="128" size="4"/>
+    <field name="TargetEntityHash" type="uint" offset="132" size="4"/>
+    <field name="Frame" type="uint" offset="136" size="4"/>
+    <field name="Flags" type="uint" offset="140" size="4"/>
+    <field name="SurfaceSwellMeters" type="float" offset="144" size="4"/>
+    <field name="ActiveSampleBudget" type="int" offset="148" size="4"/>
+    <field name="_pad1" type="ulong" offset="152" size="8"/>
+    <proof>Live fields consume 152 bytes and explicit ulong padding consumes 8 bytes. Final size is 160, divisible by 8, 16, and 32; no Pack=1. ActiveSampleBudget reused prior padding, so no BufferID or size drift occurred.</proof>
+  </struct_layout>
+  <scalability_curve>
+    Below 0.3, the owner-held sample budget collapses toward centerline submerged-ratio math and avoids bow/stern/beam samples. Mid weights add analytical sample points through smoothstep/lerp, but the integer budget only changes after a 2.5 second hysteresis hold. At 1.0, four points approximate long-hull pitch sensitivity. Gameplay authority, BufferIDs, and save identity remain unchanged.
+  </scalability_curve>
+  <h_phi_vault_status private_native_arrays="zero_for_SHINOBU_333">
+    <buffer id="71771" name="Shinobu333BallastTanks"/>
+    <buffer id="71772" name="Shinobu333BallastCommands"/>
+    <buffer id="71773" name="Shinobu333BallastFluidSamples"/>
+    <buffer id="71774" name="Shinobu333BallastForcePackets"/>
+    <buffer id="71775" name="Shinobu333BallastTelemetryRing"/>
+    <buffer id="71776" name="Shinobu333BallastProfiles"/>
+    <buffer id="71777" name="Shinobu333BallastTuning"/>
+    <buffer id="71778" name="Shinobu333BallastCsvScratch"/>
+  </h_phi_vault_status>
+  <external_read_snapshots>
+    <snapshot id="71786" owner="SHINOBU_332" name="Shinobu332GyroCounters" mode="read_only_cached_generation_handle">Owner/cold phase acquires the handle. Hot PID suppression resolves only the cached handle and compares LastTargetEntityHash with the controller target/fallback hashes; SHINOBU_333 does not allocate or release the buffer.</snapshot>
+    <snapshot name="GlobalQualityWeight" mode="owner_phase_scalar_cache">The only live HomeostasisBrain.GlobalQualityWeight read is RefreshGlobalQualityWeightSnapshotCold; Burst/sample prep consumes the cached finite scalar.</snapshot>
+    <snapshot name="RuntimeOriginAup" mode="owner_phase_aup_cache">The only live GlobalSignals.CurrentRuntimeOriginAup() read is RefreshRuntimeOriginAupSnapshotCold; AUP conversion uses the cached origin and fails closed if unavailable.</snapshot>
+  </external_read_snapshots>
+  <hot_vault_read_proof>
+    TryReadVaultBuffer resolves only already cached generation handles and fails closed on stale or missing handles. TryGetGenerationHandle and EnsureGenerationHandle remain in cold Ensure*/external snapshot acquisition paths, so fixed/post-fixed ballast reads no longer refresh Vault metadata from a read-looking helper.
+  </hot_vault_read_proof>
+  <pointer_aliasing_and_dependencies>
+    <job name="GenerateMockFluidDisplacementJob" consumes="dispatcher predecessor handle" outputs="mock fluid sample handle" noalias="FluidSamples"/>
+    <job name="EvaluateBallastTanksJob" consumes="mock/fluid dependency" outputs="tank integration handle" noalias="Tanks, Commands, FluidSamples, AcousticWriter"/>
+    <job name="CalculateBuoyancyForceJob" consumes="EvaluateBallastTanksJob handle" outputs="force packet and telemetry handle" noalias="Tanks, FluidSamples, ForcePackets, Telemetry"/>
+    <completion>PostFixedTick uses DispatcherJobSwap.TryComplete(false); no FixedTick hidden Complete remains for SHINOBU_333 solver.</completion>
+  </pointer_aliasing_and_dependencies>
+  <dear_lie>
+    Heavy pneumatic particle/fluid/audio simulation was rejected. Runtime truth is O(tanks): liter integration, pressure comparison, displaced volume, and one force packet. Presentation is a bounded sparse acoustic signal.
+  </dear_lie>
+  <known_yellow_items>
+    <item>Data Monolith static payload Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin is absent; CSV bridge is cold fallback/source ingestion only.</item>
+    <item>MovementAcousticSignal ABI still carries Hecton8.World AbsoluteUniversePosition through the Core signal contract; no new sibling runtime assembly reference was added by SHINOBU_333.</item>
+    <item>Legacy Rigidbody centerOfMass/angularDamping/inertiaTensor bridge remains outside ballast-force truth until a dedicated vehicle mass-properties packet route exists.</item>
+    <item>ComputeMicros is schedule-to-completion timing flagged by ForceFlagTimingProxy; exact Burst wall-time requires profiler/Burst instrumentation.</item>
+  </known_yellow_items>
+  <polish_2026_05_23>
+    <item>Stable `.meta` files added for the runtime contract, OOP scanner, and CSV source after subagent audit; CSV remains non-Unity external cold source data.</item>
+    <item>Sample budget hysteresis added without changing the 160-byte fluid sample DTO size or any Vault BufferID.</item>
+    <item>Hot route audit reconciled: SHINOBU_332 suppression reads a cached Vault counter snapshot; quality and AUP origin are owner-phase snapshots, not hot global reads.</item>
+    <item>OOP scanner report builder now records that both Physics.OverlapSphere and Physics.OverlapSphereNonAlloc are forbidden CPU broadphase water-volume query routes.</item>
+    <item>Independent read-only hot-path auditor reported no remaining fixed/post-fixed direct sibling runtime/global quality/AUP/global registry/scene-search calls and no hidden allocation or obvious compile hazard in the patch.</item>
+    <item>TryReadVaultBuffer was hardened to cached-handle-only semantics; hot ballast reads fail closed instead of calling TryGetGenerationHandle.</item>
+    <item>Support DTO padding fields were made private without changing offsets or struct sizes.</item>
+    <item>Shared physics report clobber was repaired non-destructively against the current JSON after concurrent SHINOBU_346/340 overwrites; shinobu333SubmarineBallastScanner is present again, the SHINOBU_333 sidecar is authoritative, and scanner generation now matches sidecar GUID and compile proof text.</item>
+  </polish_2026_05_23>
+</SELF_AUDIT>

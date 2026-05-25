@@ -20,7 +20,7 @@ namespace Hecton8.Physics.Exosuit
     [DisallowMultipleComponent]
     // Runs before general player presentation so late-frame readback can publish tactile and acoustic signals in the same visual frame.
     [DefaultExecutionOrder(-9827)]
-    public sealed class ExosuitKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable
+    public sealed class ExosuitKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const int CsvScratchCapacity = 4096;
@@ -160,7 +160,9 @@ namespace Hecton8.Physics.Exosuit
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredLateFrame;
+        private bool _hotSwapRegistered;
         private bool _pendingDisableTeardown;
+        private int _droppedSignalCount;
         private bool _buffersInitialized;
         private bool _coldCsvApplied;
         private bool _signalLanesReady;
@@ -175,6 +177,8 @@ namespace Hecton8.Physics.Exosuit
 
         private static ExosuitKinematicsRuntime s_activeRuntime;
 
+        public int DroppedSignalCount => _droppedSignalCount;
+
         private void Awake()
         {
             _cachedTransform = transform;
@@ -186,14 +190,18 @@ namespace Hecton8.Physics.Exosuit
         private void OnEnable()
         {
             _pendingDisableTeardown = false;
+            _droppedSignalCount = 0;
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
             if (EnsureBuffers(true))
             {
+#if UNITY_EDITOR
                 TryApplyColdCsvOverrides();
+#endif
                 s_activeRuntime = this;
             }
 
+            TryRegisterHotSwapListener();
             TryRegisterFixed();
             TryRegisterPostFixed();
             TryRegisterLateFrame();
@@ -204,6 +212,7 @@ namespace Hecton8.Physics.Exosuit
             _pendingDisableTeardown = true;
             TryUnregisterPostFixed();
             TryUnregisterFixed();
+            TryUnregisterHotSwapListener();
 
             CompletePendingJob();
             if (_jobScheduled)
@@ -492,21 +501,21 @@ namespace Hecton8.Physics.Exosuit
 
         private void AllocateVaultBuffers(IDataVault vault)
         {
-            _stateHandle = vault.GetGenerationHandle<ExosuitStateDTO>(BufferID.ShinobuExosuitState, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _inputHandle = vault.GetGenerationHandle<ExosuitFrameInputDTO>(BufferID.ShinobuExosuitFrameInput, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetGenerationHandle<ExosuitTuningDTO>(BufferID.ShinobuExosuitTuning, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _terrainHandle = vault.GetGenerationHandle<MockTerrainSDF>(BufferID.ShinobuExosuitMockTerrainSdf, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _flowHandle = vault.GetGenerationHandle<MockFlowField>(BufferID.ShinobuExosuitMockFlowField, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _crushDepthHandle = vault.GetGenerationHandle<MockCrushDepthSignal>(BufferID.ShinobuExosuitMockCrushDepth, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _outputHandle = vault.GetGenerationHandle<ExosuitSolverOutput>(BufferID.ShinobuExosuitSolverOutput, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _screenHandle = vault.GetGenerationHandle<ExoScreenDTO>(BufferID.ShinobuExosuitScreenDto, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetGenerationHandle<ExosuitTelemetryEntry>(BufferID.ShinobuExosuitTelemetryRing, TelemetryCapacity, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = vault.GetGenerationHandle<int>(BufferID.ShinobuExosuitTelemetryCursor, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _footstepAccumulatorHandle = vault.GetGenerationHandle<float>(BufferID.ShinobuExosuitFootstepAccumulator, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _hapticHandle = vault.GetGenerationHandle<MechHapticSignalDTO>(BufferID.ShinobuExosuitHapticSignals, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _siltHandle = vault.GetGenerationHandle<SiltExplosionSignal>(BufferID.ShinobuExosuitSiltSignals, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _acousticHandle = vault.GetGenerationHandle<ExosuitAcousticEchoTap>(BufferID.ShinobuExosuitAcousticTaps, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuExosuitCsvScratch, CsvScratchCapacity, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _stateHandle = vault.EnsureGenerationHandle<ExosuitStateDTO>(BufferID.ShinobuExosuitState, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _inputHandle = vault.EnsureGenerationHandle<ExosuitFrameInputDTO>(BufferID.ShinobuExosuitFrameInput, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = vault.EnsureGenerationHandle<ExosuitTuningDTO>(BufferID.ShinobuExosuitTuning, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _terrainHandle = vault.EnsureGenerationHandle<MockTerrainSDF>(BufferID.ShinobuExosuitMockTerrainSdf, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _flowHandle = vault.EnsureGenerationHandle<MockFlowField>(BufferID.ShinobuExosuitMockFlowField, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _crushDepthHandle = vault.EnsureGenerationHandle<MockCrushDepthSignal>(BufferID.ShinobuExosuitMockCrushDepth, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _outputHandle = vault.EnsureGenerationHandle<ExosuitSolverOutput>(BufferID.ShinobuExosuitSolverOutput, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _screenHandle = vault.EnsureGenerationHandle<ExoScreenDTO>(BufferID.ShinobuExosuitScreenDto, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _telemetryHandle = vault.EnsureGenerationHandle<ExosuitTelemetryEntry>(BufferID.ShinobuExosuitTelemetryRing, TelemetryCapacity, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _telemetryCursorHandle = vault.EnsureGenerationHandle<int>(BufferID.ShinobuExosuitTelemetryCursor, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _footstepAccumulatorHandle = vault.EnsureGenerationHandle<float>(BufferID.ShinobuExosuitFootstepAccumulator, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _hapticHandle = vault.EnsureGenerationHandle<MechHapticSignalDTO>(BufferID.ShinobuExosuitHapticSignals, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _siltHandle = vault.EnsureGenerationHandle<SiltExplosionSignal>(BufferID.ShinobuExosuitSiltSignals, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _acousticHandle = vault.EnsureGenerationHandle<ExosuitAcousticEchoTap>(BufferID.ShinobuExosuitAcousticTaps, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuExosuitCsvScratch, CsvScratchCapacity, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
             ExosuitKinematicAuthority.Bind(vault, in _inputHandle);
         }
 
@@ -830,6 +839,34 @@ namespace Hecton8.Physics.Exosuit
             telemetry[index] = entry;
         }
 
+        private void PatchLastTelemetryFlags(uint flags)
+        {
+            if (flags == 0u ||
+                !TryOpenHeldJobWriteBuffer(in _telemetryHandle, BufferID.ShinobuExosuitTelemetryRing, out NativeArray<ExosuitTelemetryEntry> telemetry) ||
+                !TryOpenHeldJobWriteBuffer(in _telemetryCursorHandle, BufferID.ShinobuExosuitTelemetryCursor, out NativeArray<int> cursorBuffer))
+            {
+                return;
+            }
+
+            int index = cursorBuffer[0] - 1;
+            if (index < 0)
+                index = telemetry.Length - 1;
+            if ((uint)index >= (uint)telemetry.Length)
+                return;
+
+            ExosuitTelemetryEntry entry = telemetry[index];
+            entry.Flags |= flags;
+            telemetry[index] = entry;
+        }
+
+        private void RecordSignalDrop()
+        {
+            if (_droppedSignalCount < 0x3FFFFFFF)
+                _droppedSignalCount++;
+
+            PatchLastTelemetryFlags(ExosuitStateFlags.SignalDrop);
+        }
+
         private void EmitReadbackSignals()
         {
             if (!TryResolveBuffer(in _outputHandle, out NativeArray<ExosuitSolverOutput> outputBuffer) ||
@@ -865,7 +902,8 @@ namespace Hecton8.Physics.Exosuit
             mech.Amplitude = amplitude;
             mech.Duration = math.isfinite(mech.Duration) ? math.max(0.01f, mech.Duration) : 0.01f;
             mech.Frequency = math.isfinite(mech.Frequency) ? math.max(0.0f, mech.Frequency) : 0.0f;
-            SignalBus<MechHapticSignalDTO>.Push(in mech);
+            if (!SignalBus<MechHapticSignalDTO>.TryPush(in mech))
+                RecordSignalDrop();
 
             bool lowFrequencyLoad = mech.Frequency <= 20.0f;
             HapticRequest request = default;
@@ -876,7 +914,8 @@ namespace Hecton8.Physics.Exosuit
             request.Frame = frame;
             request.Channel = lowFrequencyLoad ? HapticRequest.ChannelCrush : HapticRequest.ChannelGearScrape;
             request.Flags = lowFrequencyLoad ? HapticRequest.FlagCrush : HapticRequest.FlagLightThud;
-            SignalBus<HapticRequest>.Push(in request);
+            if (!SignalBus<HapticRequest>.TryPush(in request))
+                RecordSignalDrop();
         }
 
         private void EmitSilt()
@@ -890,7 +929,8 @@ namespace Hecton8.Physics.Exosuit
                 silt.Intensity01 = math.isfinite(silt.Intensity01) ? math.saturate(silt.Intensity01) : 0.0f;
                 if (silt.Intensity01 <= 0.0f)
                     return;
-                SignalBus<SiltExplosionSignal>.Push(in silt);
+                if (!SignalBus<SiltExplosionSignal>.TryPush(in silt))
+                    RecordSignalDrop();
             }
         }
 
@@ -905,7 +945,8 @@ namespace Hecton8.Physics.Exosuit
                 tap.Intensity01 = math.isfinite(tap.Intensity01) ? math.saturate(tap.Intensity01) : 0.0f;
                 if (tap.Intensity01 <= 0.0f)
                     return;
-                SignalBus<ExosuitAcousticEchoTap>.Push(in tap);
+                if (!SignalBus<ExosuitAcousticEchoTap>.TryPush(in tap))
+                    RecordSignalDrop();
             }
         }
 
@@ -1264,6 +1305,7 @@ namespace Hecton8.Physics.Exosuit
             }
         }
 
+#if UNITY_EDITOR
         private void TryApplyCsvOverrides(float deltaTime, bool force)
         {
             if (!force)
@@ -1588,6 +1630,7 @@ namespace Hecton8.Physics.Exosuit
                     return false;
             }
         }
+#endif
 
         private void DumpTelemetryBuffer()
         {
@@ -1665,11 +1708,14 @@ namespace Hecton8.Physics.Exosuit
                 return;
 
             SignalBus<MechHapticSignalDTO>.Configure(MechHapticExpectedSignals, MechHapticMaxFrameSignals, MechHapticMinimumQualityFrameSignals, MechHapticLaneHash);
-            SignalBus<SiltExplosionSignal>.Configure(SiltExpectedSignals, SiltMaxFrameSignals, SiltMinimumQualityFrameSignals, SiltLaneHash);
-            SignalBus<ExosuitAcousticEchoTap>.Configure(AcousticExpectedSignals, AcousticMaxFrameSignals, AcousticMinimumQualityFrameSignals, AcousticLaneHash);
             SignalBus<MechHapticSignalDTO>.EnsureInitialized();
+
+            SignalBus<SiltExplosionSignal>.Configure(SiltExpectedSignals, SiltMaxFrameSignals, SiltMinimumQualityFrameSignals, SiltLaneHash);
             SignalBus<SiltExplosionSignal>.EnsureInitialized();
+
+            SignalBus<ExosuitAcousticEchoTap>.Configure(AcousticExpectedSignals, AcousticMaxFrameSignals, AcousticMinimumQualityFrameSignals, AcousticLaneHash);
             SignalBus<ExosuitAcousticEchoTap>.EnsureInitialized();
+
             SignalBus<HapticRequest>.EnsureInitialized();
             _signalLanesReady = true;
         }
@@ -1686,7 +1732,7 @@ namespace Hecton8.Physics.Exosuit
             tuning.ClampRange = math.max(tuning.Radius, clampRange);
             tuning.HydraulicLatencySeconds = math.clamp(math.isfinite(_hydraulicLatencySeconds) ? _hydraulicLatencySeconds : 0.5f, 0.05f, 3f);
             tuning.PurgeImpulse = math.max(0f, math.isfinite(_purgeImpulseMetersPerSecond) ? _purgeImpulseMetersPerSecond : 14f);
-            tuning.GlobalQualityWeight = ExosuitMathGuards.DefaultQualityWeight;
+            tuning.GlobalQualityWeight = SanitizeQualityWeight01(_globalQualityWeight, ExosuitMathGuards.DefaultQualityWeight);
             tuning.FootstepStrideMeters = math.max(0.25f, math.isfinite(_footstepStrideMeters) ? _footstepStrideMeters : 3f);
             tuning.MaxSpeedMetersPerSecond = math.max(0.25f, math.isfinite(_maxSpeedMetersPerSecond) ? _maxSpeedMetersPerSecond : 9f);
             tuning.CrushDepthMeters = math.max(1f, math.isfinite(_crushDepthMeters) ? _crushDepthMeters : 4000f);
@@ -1713,7 +1759,7 @@ namespace Hecton8.Physics.Exosuit
 
         private static double3 ResolveRuntimeOriginAupDouble()
         {
-            var originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            var originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             return originAup.IsFinite() ? originAup.ToAbsoluteDouble3() : double3.zero;
         }
 
@@ -1767,6 +1813,9 @@ namespace Hecton8.Physics.Exosuit
 
         private static float ResolveGlobalQualityWeight01()
         {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, ExosuitMathGuards.DefaultQualityWeight);
+
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(quality) ? quality : ExosuitMathGuards.DefaultQualityWeight);
         }
@@ -1891,6 +1940,39 @@ namespace Hecton8.Physics.Exosuit
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _registeredLateFrame = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregisterPostFixed();
+            TryUnregisterFixed();
+            TryUnregisterLateFrame();
+            TryRegisterFixed();
+            TryRegisterPostFixed();
+            TryRegisterLateFrame();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static string ResolveProjectRoot()

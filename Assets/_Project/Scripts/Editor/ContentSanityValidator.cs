@@ -48,7 +48,7 @@ namespace Hecton8.Editor.Validation
             public readonly List<string> Errors = new List<string>(128);
             public readonly List<string> Warnings = new List<string>(128);
             public readonly List<string> AutoFixes = new List<string>(128);
-            public readonly HashSet<string> ProcessedPrefabPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            public readonly HashSet<string> ProcessedPrefabPaths = new HashSet<string>(256, StringComparer.OrdinalIgnoreCase);
 
             public int DataPrefabCount;
             public int ReferencedPrefabCount;
@@ -252,7 +252,7 @@ namespace Hecton8.Editor.Validation
 
         private static HashSet<string> ValidateRecipeData(ValidationResult result)
         {
-            HashSet<string> craftableItemIds = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> craftableItemIds = new HashSet<string>(128, StringComparer.Ordinal);
             HashSet<string> knownScanEntryIds = CollectKnownScanEntryIds(result);
             ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
             string[] recipeGuids = AssetDatabase.FindAssets("t:RecipeData", DataRoots);
@@ -277,7 +277,7 @@ namespace Hecton8.Editor.Validation
 
         private static HashSet<string> CollectKnownScanEntryIds(ValidationResult result)
         {
-            HashSet<string> knownScanEntryIds = new HashSet<string>(StringComparer.Ordinal)
+            HashSet<string> knownScanEntryIds = new HashSet<string>(64, StringComparer.Ordinal)
             {
                 "scan.resource_node"
             };
@@ -670,8 +670,8 @@ namespace Hecton8.Editor.Validation
         private static void ValidateToolAuthoring(ValidationResult result)
         {
             ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
-            Dictionary<ToolMetadata, string> heldPrefabByMetadata = new Dictionary<ToolMetadata, string>();
-            Dictionary<string, string> toolIdOwners = new Dictionary<string, string>(StringComparer.Ordinal);
+            Dictionary<ToolMetadata, string> heldPrefabByMetadata = new Dictionary<ToolMetadata, string>(64);
+            Dictionary<string, string> toolIdOwners = new Dictionary<string, string>(64, StringComparer.Ordinal);
 
             string[] heldPrefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { ToolHeldPrefabRoot });
             for (int i = 0; i < heldPrefabGuids.Length; i++)

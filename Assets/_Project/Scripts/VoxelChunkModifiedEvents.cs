@@ -63,6 +63,7 @@ namespace Hecton8.Caves
         public static uint DebugLastRejectedStateHash => _lastRejectedStateHash;
         public static bool DebugIsValid(in VoxelChunkModifiedEvent evt) => IsValid(in evt);
 
+        [global::System.Obsolete("Use TryPublish and handle bounded queue rejection explicitly.", true)]
         public static void Publish(in VoxelChunkModifiedEvent evt)
         {
             TryPublish(in evt);
@@ -110,6 +111,10 @@ namespace Hecton8.Caves
             if (dequeued && _pendingCount > 0)
             {
                 _pendingCount--;
+            }
+            else if (!dequeued)
+            {
+                _pendingCount = 0;
             }
 
             return dequeued;

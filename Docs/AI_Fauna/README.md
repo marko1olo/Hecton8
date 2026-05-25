@@ -1,4 +1,4 @@
-# AI Fauna Docs
+﻿# AI Fauna Docs
 
 Date: 2026-05-18
 Status: PENDING VERIFICATION

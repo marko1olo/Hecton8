@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_162
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_162_Mat_Tool_StunPistol_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_Tool_StunPistol_Placeholder_Albedo.png
+FINAL_FILENAME: Mat_Tool_StunPistol_Placeholder_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Stun pistol tool albedo for non-lethal HECTON-8 defense equipment. Create satin titanium emitter rails, off-white ceramic body plates, graphite rubber grip pads, teal charge-channel marks, amber safety windows, and pale cyan capacitor lens insets. The texture should feel controlled, compact, and scientific, closer to research safety hardware than aggression. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

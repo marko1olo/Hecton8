@@ -187,7 +187,10 @@ namespace Hecton8.Construction
                 _cachedTransform = transform;
 
             if (atmosphereSystem == null)
-                atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            {
+                if (!TryGetComponent(out atmosphereSystem))
+                    atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            }
 
             if (_cachedRoomIndex >= 0 || atmosphereSystem == null || _cachedTransform == null)
                 return;

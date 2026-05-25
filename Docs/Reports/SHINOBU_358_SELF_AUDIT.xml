@@ -1,0 +1,35 @@
+﻿<SELF_AUDIT agent="SHINOBU_358" role="BINARY_SCHEMAS_AST_VALIDATOR" status="ACTIVE_GATE_FAILS_CURRENT_SOURCE">
+  <twentyTaskReconciliation>
+    <task id="01" result="PASS">Codebase archaeology refreshed; prompt extracted to Docs/Tasks/Extract_SHINOBU_358_CURRENT.xml.</task>
+    <task id="02" result="PASS">Integrated into Tools/h8bin_validator.py; no competing validator added.</task>
+    <task id="03" result="PASS">Canonical Docs/Reports/BINARY_SCHEMA_AUDIT_REPORT.json remains SHINOBU_358 v2 output; SHINOBU_359 default collision removed.</task>
+    <task id="04" result="PASS">Python regex removed from h8bin validator; C# parsing uses deterministic token/string state paths.</task>
+    <task id="05" result="PASS_WITH_CACHE">mmap prefilter and AST cache v3 used; cold and warm full-root probes completed under the 10s watchdog.</task>
+    <task id="06" result="PASS">generate_mock_csharp_structs() remains covered by --test.</task>
+    <task id="07" result="PASS">parse_csharp_file() reconstructs explicit structs through mmap-extracted spans and tokens.</task>
+    <task id="08" result="PASS">ARM64/layout failures map to exit code 2.</task>
+    <task id="09" result="PASS">Unmanaged DTO property ban maps get/set/init and expression-bodied accessors to exit code 3.</task>
+    <task id="10" result="PASS">.h8bin mmap comparison retained.</task>
+    <task id="11" result="PASS">10 second os._exit watchdog retained.</task>
+    <task id="12" result="PASS">AUP double/float precision field and write-near cast checks retained.</task>
+    <task id="13" result="PASS">h8bin tests: 58 PASS; assembly report path tests: 11 PASS.</task>
+    <task id="14" result="PASS">JSON writes use temp file plus os.replace; no huge manual JSON string assembly.</task>
+    <task id="15" result="PASS">Metric Phi rows and CI validation log append.</task>
+    <task id="16" result="FAIL_BY_DOMAIN">Editor tuner window not implemented; it would add C# Editor/Vault authority outside the offline Python preflight lane.</task>
+    <task id="17" result="FAIL_BY_DOMAIN">CSV schema profile Vault ingestion not implemented; it requires runtime unmanaged Vault DTO ownership outside this lane.</task>
+    <task id="18" result="FAIL_BY_DOMAIN">Live AST gizmo not implemented; it would mutate SceneView/Gizmo C# surface outside this lane.</task>
+    <task id="19" result="FAIL_BY_SCOPE">OOP_AST_Scanner responsibility remains in SHINOBU_359 assembly compliance gate; not merged into h8bin validator.</task>
+    <task id="20" result="PASS_WITH_FAILURES">Self-audit and reports exist; current source fails the validator with property, AUP, layout, and payload findings, so no completion claim.</task>
+  </twentyTaskReconciliation>
+  <structLayoutVerification>
+    <primary name="H8DataBlobHeader" sizeBytes="16" alignment="8">Header fields are 4+2+2+8 bytes; final size 16 is divisible by 8 and 16.</primary>
+    <primary name="H8DataBlobDirectory" sizeBytes="64" alignment="8">Directory DTO occupies one 64-byte cache line when present; 64 is divisible by 8, 16, 32, and 64.</primary>
+    <primary name="H8DataSectionEntry" sizeBytes="16" alignment="4">Section entry fields are four uint lanes; final size 16 is divisible by 8 and 16.</primary>
+    <currentFailure findings="529" propertyFindings="41">Current source includes unmanaged explicit-layout properties and additional AUP/layout/payload findings; ABI is not green. Parser false-positive classes FIELD_OFFSET_MISSING, FIELD_DECL_UNPARSED, and STRUCT_LAYOUT_MISSING are absent in the latest report.</currentFailure>
+  </structLayoutVerification>
+  <scalabilityCurve>Runtime GlobalQualityWeight is not consumed. This offline CI tool scales by source scope, cache warmth, sample percent, and --thorough record sampling only. It never changes gameplay truth ownership, DTO layout, save identity, or authority route.</scalabilityCurve>
+  <hPhiVaultStatus privateNativeArrays="0" vaultBufferHandles="0">No GlobalDataVault ownership. OS mmap only. Cache is a disposable Docs/Reports proof accelerator.</hPhiVaultStatus>
+  <pointerAliasingAndDependencyGraph burstJobs="0" jobHandlesConsumed="0" jobHandlesProduced="0" noAliasRequired="false">No Burst jobs, no NativeArray job fields, no Complete calls.</pointerAliasingAndDependencyGraph>
+  <compileGuard>No C# asmdef reference was added. No runtime assembly reference was changed. dotnet/Unity build was not launched.</compileGuard>
+  <dearLie>Static byte/token validation replaces runtime load-crash discovery. Before: discover schema faults during Unity load or device execution. After: O(source bytes + h8bin bytes) offline gate, latest warm-cache full run measured 253362 microseconds.</dearLie>
+</SELF_AUDIT>

@@ -225,7 +225,7 @@ namespace Hecton8.EditorTools
                     if (!IsRenderableSourceFilter(filter))
                         continue;
 
-                    MeshRenderer sourceRenderer = filter.GetComponent<MeshRenderer>();
+                    filter.TryGetComponent(out MeshRenderer sourceRenderer);
                     sourceRenderer.shadowCastingMode = ShadowCastingMode.Off;
                     int sourceTriangles = HectonEditorMeshUtility.CountTriangles(filter.sharedMesh);
                     int meshBudget = Mathf.Max(1, Mathf.RoundToInt(ShadowProxyTriangleBudget * (sourceTriangles / (float)totalTriangles)));
@@ -577,8 +577,7 @@ namespace Hecton8.EditorTools
                 for (int i = 0; i < filters.Length; i++)
                 {
                     MeshFilter filter = filters[i];
-                    MeshRenderer renderer = filter != null ? filter.GetComponent<MeshRenderer>() : null;
-                    if (filter == null || renderer == null || filter.sharedMesh == null)
+                    if (filter == null || !filter.TryGetComponent(out MeshRenderer renderer) || filter.sharedMesh == null)
                         continue;
 
                     if (!TryResolveAtlasRect(renderer.sharedMaterials, textureRectLookup, out Rect rect, out int materialIndex))
@@ -720,8 +719,7 @@ namespace Hecton8.EditorTools
             if (filter.gameObject.name.StartsWith("__ShadowProxy_", StringComparison.Ordinal))
                 return false;
 
-            MeshRenderer renderer = filter.GetComponent<MeshRenderer>();
-            return renderer != null && renderer.enabled;
+            return filter.TryGetComponent(out MeshRenderer renderer) && renderer.enabled;
         }
 
         private static void RemoveExistingShadowProxies(Transform root)

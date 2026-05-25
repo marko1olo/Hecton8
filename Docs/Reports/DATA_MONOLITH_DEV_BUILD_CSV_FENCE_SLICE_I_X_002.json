@@ -1,0 +1,41 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_DEV_BUILD_CSV_FENCE_SLICE_V1",
+    "agent":  "X_002",
+    "status":  "CORE_BUILD_PASS_AFTER_DEV_BUILD_STATIC_CONFIG_CSV_FENCE_SLICE_I",
+    "generatedUtc":  "2026-05-24T05:35:12.8879879Z",
+    "policy":  "Development player static-config CSV parser routes must be editor-only. Release/dev scanner now models DEVELOPMENT_BUILD explicitly and writes separate reports.",
+    "filesChangedBySlice":  [
+                                "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs",
+                                "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs",
+                                "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs",
+                                "Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs",
+                                "Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs",
+                                "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs",
+                                "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs"
+                            ],
+    "changeSummary":  [
+                          "Release build gate now evaluates DEVELOPMENT_BUILD=true for development scans instead of treating it as release false.",
+                          "Release and development gate reports no longer overwrite each other.",
+                          "GlobalTelemetryBus telemetry flag CSV bridge is UNITY_EDITOR only.",
+                          "GlobalDataVault memory budget CSV parser and helper parser functions are UNITY_EDITOR only.",
+                          "Rollback netcode CSV profile path, hashes, scratch handle allocation, poll, and parser are UNITY_EDITOR only.",
+                          "Save entity/voxel compression CSV parser jobs and Merkle CSV override parser are UNITY_EDITOR only.",
+                          "Wal integrity CSV fuzzer core is UNITY_EDITOR only; SHINOBU357 partial already was editor-only."
+                      ],
+    "touchedFileBroadDevelopmentCsvGuards":  0,
+    "preprocessorBalance":  "PASS_8_FILES_BALANCE_0_MIN_0",
+    "nonDevFolderBroadDevelopmentCandidateCount":  4,
+    "staticConfigCandidateCountAfterSlice":  0,
+    "remainingNonDevBroadDevelopmentCandidateClasses":  [
+                                                         "Core/DodReplayRecorder: dev replay stream, not static-config parser",
+                                                         "SaveBinaryStorage/SaveRecoverySmokeTester: persistence/checksum recovery paths, not Data Monolith static-config",
+                                                         "VisualOmegaSmokeTester: dev smoke text read"
+                                                     ],
+    "devFolderSmokeCandidateClasses":  [
+                                           "Dev/BotController: dev telemetry CSV writer, not config parser",
+                                           "Dev/NarrativeProgressionSmokeTester: dev smoke text read"
+                                       ],
+    "compileStatus":  "PASS_CORE_DOTNET_BUILD_0_WARNINGS_0_ERRORS_58_77S",
+    "runtimeProfilerProof":  "PENDING_UNITY_PLAYER_PROFILER"
+}

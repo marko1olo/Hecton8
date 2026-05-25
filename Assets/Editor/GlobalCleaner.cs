@@ -24,9 +24,7 @@ public class GlobalCleaner : EditorWindow
         };
 
         int moveCount = 0;
-        string[] allFiles = Directory.GetFiles("Assets", "*.*", SearchOption.AllDirectories);
-
-        foreach (var file in allFiles)
+        foreach (var file in Directory.EnumerateFiles("Assets", "*.*", SearchOption.AllDirectories))
         {
             string path = file.Replace("\\", "/");
 

@@ -1,4 +1,4 @@
-Shader "Hidden/Hecton8/VisorWounds"
+Shader "Hidden/Hecton8/VisorTraumaLegacy"
 {
     SubShader
     {
@@ -26,11 +26,11 @@ Shader "Hidden/Hecton8/VisorWounds"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
-            #define VISOR_WOUND_BLOOD 1u
-            #define VISOR_WOUND_ACID 2u
-            #define VISOR_WOUND_HULL_DENT 3u
-            #define VISOR_WOUND_GLASS_CRACK 4u
-            #define VISOR_WOUND_BURN 5u
+            #define VISOR_TRAUMA_BLOOD 1u
+            #define VISOR_TRAUMA_ACID 2u
+            #define VISOR_TRAUMA_HULL_DENT 3u
+            #define VISOR_TRAUMA_GLASS_CRACK 4u
+            #define VISOR_TRAUMA_BURN 5u
 
             struct Attributes
             {
@@ -43,7 +43,7 @@ Shader "Hidden/Hecton8/VisorWounds"
                 float2 screenUV : TEXCOORD0;
             };
 
-            struct VisorWoundData
+            struct TraumaDecalData
             {
                 float4 LocalToWorldC0;
                 float4 LocalToWorldC1;
@@ -56,15 +56,15 @@ Shader "Hidden/Hecton8/VisorWounds"
             };
 
             TEXTURE2D_X(_BlitTexture);
-            TEXTURE2D_ARRAY(_GlobalVisorWoundAtlas);
-            SAMPLER(sampler_GlobalVisorWoundAtlas);
+            TEXTURE2D_ARRAY(_GlobalVisorTraumaAtlas);
+            SAMPLER(sampler_GlobalVisorTraumaAtlas);
 
-            StructuredBuffer<VisorWoundData> _GlobalVisorWounds;
-            int _GlobalVisorWoundCount;
-            float4 _GlobalVisorWoundParams; // x atlas slices, y quality, z intensity, w atlas enabled
-            float4 _GlobalVisorWoundRefractionParams; // x normal refraction intensity, y max active, z thermal, w spare
-            float4 _GlobalVisorWoundTint;
-            float4 _GlobalVisorWoundCameraWS;
+            StructuredBuffer<TraumaDecalData> _GlobalVisorTrauma;
+            int _GlobalVisorTraumaCount;
+            float4 _GlobalVisorTraumaParams; // x atlas slices, y quality, z intensity, w atlas enabled
+            float4 _GlobalVisorTraumaRefractionParams; // x normal refraction intensity, y max active, z thermal, w spare
+            float4 _GlobalVisorTraumaTint;
+            float4 _GlobalVisorTraumaCameraWS;
 
             Varyings Vert(Attributes input)
             {
@@ -95,13 +95,13 @@ Shader "Hidden/Hecton8/VisorWounds"
                 return true;
             }
 
-            float3 ResolveWoundLocalPosition(VisorWoundData wound, float3 cameraRelativePosition)
+            float3 ResolveTraumaLocalPosition(TraumaDecalData trauma, float3 cameraRelativePosition)
             {
-                float3 origin = wound.LocalToWorldC3.xyz;
+                float3 origin = trauma.LocalToWorldC3.xyz;
                 float3 relative = cameraRelativePosition - origin;
-                float3 xAxis = wound.LocalToWorldC0.xyz;
-                float3 yAxis = wound.LocalToWorldC1.xyz;
-                float3 zAxis = wound.LocalToWorldC2.xyz;
+                float3 xAxis = trauma.LocalToWorldC0.xyz;
+                float3 yAxis = trauma.LocalToWorldC1.xyz;
+                float3 zAxis = trauma.LocalToWorldC2.xyz;
                 float xLenSq = max(dot(xAxis, xAxis), 0.0001);
                 float yLenSq = max(dot(yAxis, yAxis), 0.0001);
                 float zLenSq = max(dot(zAxis, zAxis), 0.0001);
@@ -111,15 +111,15 @@ Shader "Hidden/Hecton8/VisorWounds"
                     dot(relative, zAxis) / zLenSq);
             }
 
-            half4 SampleProceduralVisorWound(VisorWoundData wound, float3 localPosition)
+            half4 SampleProceduralVisorTrauma(TraumaDecalData trauma, float3 localPosition)
             {
                 float2 projectorUv = localPosition.xy + 0.5;
                 float2 centered = projectorUv * 2.0 - 1.0;
                 float radial = saturate(1.0 - dot(centered, centered));
-                float quality = saturate(_GlobalVisorWoundParams.y);
-                uint packedPayload = wound.DecalTypeHash & 255u;
-                uint woundType = packedPayload & 15u;
-                float birthPhase = frac(wound.BirthTime * 0.000244140625) * 4096.0;
+                float quality = saturate(_GlobalVisorTraumaParams.y);
+                uint packedPayload = trauma.DecalTypeHash & 255u;
+                uint traumaType = packedPayload & 15u;
+                float birthPhase = frac(trauma.BirthTime * 0.000244140625) * 4096.0;
 
                 float branchNoise = sin(centered.x * 43.0 + centered.y * 17.0 + birthPhase * 0.13);
                 float ringNoise = 0.72 + 0.28 * sin(centered.x * 37.0 + centered.y * 19.0 + packedPayload * 1.71);
@@ -136,71 +136,71 @@ Shader "Hidden/Hecton8/VisorWounds"
                 half3 glass = half3(0.72h, 0.86h, 0.92h);
                 half3 burn = half3(0.13h, 0.045h, 0.018h);
 
-                if (woundType == VISOR_WOUND_GLASS_CRACK)
+                if (traumaType == VISOR_TRAUMA_GLASS_CRACK)
                     return half4(glass, half(saturate(crackAlpha + tornEdge * 0.16)));
 
-                if (woundType == VISOR_WOUND_BLOOD)
+                if (traumaType == VISOR_TRAUMA_BLOOD)
                     return half4(blood, half(bloodAlpha));
 
-                if (woundType == VISOR_WOUND_ACID)
+                if (traumaType == VISOR_TRAUMA_ACID)
                     return half4(acid, half(bloodAlpha * 0.92 + tornEdge * 0.2));
 
-                if (woundType == VISOR_WOUND_HULL_DENT)
+                if (traumaType == VISOR_TRAUMA_HULL_DENT)
                     return half4(dent, half(tornEdge * 0.7));
 
-                if (woundType == VISOR_WOUND_BURN)
+                if (traumaType == VISOR_TRAUMA_BURN)
                     return half4(burn, half(bloodAlpha * 0.8 + tornEdge * 0.35));
 
                 return half4(scorch, half(bloodAlpha));
             }
 
-            half4 SampleVisorWound(VisorWoundData wound, float3 localPosition)
+            half4 SampleVisorTrauma(TraumaDecalData trauma, float3 localPosition)
             {
                 float2 projectorUv = localPosition.xy + 0.5;
-                if (_GlobalVisorWoundParams.w > 0.5)
+                if (_GlobalVisorTraumaParams.w > 0.5)
                 {
-                    uint sliceCount = (uint)max(_GlobalVisorWoundParams.x, 1.0);
-                    uint packedPayload = wound.DecalTypeHash & 255u;
+                    uint sliceCount = (uint)max(_GlobalVisorTraumaParams.x, 1.0);
+                    uint packedPayload = trauma.DecalTypeHash & 255u;
                     uint slice = ((packedPayload >> 4) & 15u) % sliceCount;
-                    return SAMPLE_TEXTURE2D_ARRAY(_GlobalVisorWoundAtlas, sampler_GlobalVisorWoundAtlas, projectorUv, slice);
+                    return SAMPLE_TEXTURE2D_ARRAY(_GlobalVisorTraumaAtlas, sampler_GlobalVisorTraumaAtlas, projectorUv, slice);
                 }
 
-                return SampleProceduralVisorWound(wound, localPosition);
+                return SampleProceduralVisorTrauma(trauma, localPosition);
             }
 
-            void ProjectVisorWounds(float3 scenePositionWS, out half3 accumulated, out float2 refractOffset)
+            void ProjectVisorTrauma(float3 scenePositionWS, out half3 accumulated, out float2 refractOffset)
             {
                 accumulated = half3(0.0h, 0.0h, 0.0h);
                 refractOffset = float2(0.0, 0.0);
-                float3 cameraRelativePosition = scenePositionWS - _GlobalVisorWoundCameraWS.xyz;
-                float quality = saturate(_GlobalVisorWoundParams.y);
+                float3 cameraRelativePosition = scenePositionWS - _GlobalVisorTraumaCameraWS.xyz;
+                float quality = saturate(_GlobalVisorTraumaParams.y);
 
                 [loop]
-                for (int woundIndex = 0; woundIndex < 128; woundIndex++)
+                for (int traumaIndex = 0; traumaIndex < 128; traumaIndex++)
                 {
-                    if (woundIndex >= _GlobalVisorWoundCount)
+                    if (traumaIndex >= _GlobalVisorTraumaCount)
                         break;
 
-                    VisorWoundData wound = _GlobalVisorWounds[woundIndex];
-                    if ((wound.Flags & 1u) == 0u || wound.Opacity01 <= 0.0001)
+                    TraumaDecalData trauma = _GlobalVisorTrauma[traumaIndex];
+                    if ((trauma.Flags & 1u) == 0u || trauma.Opacity01 <= 0.0001)
                         continue;
 
-                    float3 localPosition = ResolveWoundLocalPosition(wound, cameraRelativePosition);
+                    float3 localPosition = ResolveTraumaLocalPosition(trauma, cameraRelativePosition);
                     if (any(abs(localPosition) > float3(0.5, 0.5, 0.5)))
                         continue;
 
-                    half4 woundSample = SampleVisorWound(wound, localPosition);
+                    half4 traumaSample = SampleVisorTrauma(trauma, localPosition);
                     half depthWeight = lerp(1.15h, 2.0h, half(quality));
                     half depthFade = saturate(1.0h - abs(localPosition.z) * depthWeight);
-                    half weight = woundSample.a * half(wound.Opacity01) * depthFade * half(_GlobalVisorWoundParams.z);
-                    half4 woundTint = half4(_GlobalVisorWoundTint);
-                    accumulated += woundSample.rgb * woundTint.rgb * (weight * woundTint.a);
+                    half weight = traumaSample.a * half(trauma.Opacity01) * depthFade * half(_GlobalVisorTraumaParams.z);
+                    half4 traumaTint = half4(_GlobalVisorTraumaTint);
+                    accumulated += traumaSample.rgb * traumaTint.rgb * (weight * traumaTint.a);
 
-                    if ((wound.DecalTypeHash & 15u) == VISOR_WOUND_GLASS_CRACK)
+                    if ((trauma.DecalTypeHash & 15u) == VISOR_TRAUMA_GLASS_CRACK)
                     {
                         float2 fractureSeed = localPosition.xy + float2(0.0003, -0.0007);
                         float2 fractureNormal = fractureSeed * rsqrt(max(dot(fractureSeed, fractureSeed), 0.0001));
-                        float refractionGain = max(0.0, _GlobalVisorWoundRefractionParams.x);
+                        float refractionGain = max(0.0, _GlobalVisorTraumaRefractionParams.x);
                         refractOffset += fractureNormal * (float)weight * refractionGain * lerp(0.0015, 0.0065, quality);
                     }
                 }
@@ -209,13 +209,13 @@ Shader "Hidden/Hecton8/VisorWounds"
             half4 Frag(Varyings input) : SV_Target
             {
                 half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
-                if (_GlobalVisorWoundCount <= 0)
+                if (_GlobalVisorTraumaCount <= 0)
                     return sourceColor;
 
                 if (!TryResolveScenePosition(input.screenUV, out float3 scenePositionWS))
                     return sourceColor;
 
-                ProjectVisorWounds(scenePositionWS, out half3 woundColor, out float2 refractOffset);
+                ProjectVisorTrauma(scenePositionWS, out half3 traumaColor, out float2 refractOffset);
                 float refractWeight = saturate(length(refractOffset) * 180.0);
                 if (refractWeight > 0.001)
                 {
@@ -224,7 +224,7 @@ Shader "Hidden/Hecton8/VisorWounds"
                     sourceColor.rgb = lerp(sourceColor.rgb, refractedColor, half(refractWeight));
                 }
 
-                return half4(sourceColor.rgb + woundColor, sourceColor.a);
+                return half4(sourceColor.rgb + traumaColor, sourceColor.a);
             }
             ENDHLSL
         }

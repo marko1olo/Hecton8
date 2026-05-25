@@ -10,7 +10,7 @@ namespace Hecton8.Interaction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Interaction/LifePod Seat Strap Latch")]
-    public sealed class LifePodSeatStrapLatch : MonoBehaviour, IInteractable, IPhysicalPanelButtonReceiver, IUpdatable
+    public sealed class LifePodSeatStrapLatch : MonoBehaviour, IInteractable, IInteractableTextProvider, IPhysicalPanelButtonReceiver, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float MinimumHoldSeconds = 0.01f;
         private const float MaximumHoldSeconds = 2.0f;
@@ -62,6 +62,7 @@ namespace Hecton8.Interaction
         private bool _latched;
         private bool _registeredReceiver;
         private bool _registeredTick;
+        private bool _registeredHotSwap;
         private bool _tickDormant;
         private bool _contactThisTick;
         private float _holdProgressSeconds;
@@ -101,17 +102,35 @@ namespace Hecton8.Interaction
             CacheScalarConfig();
             CacheColdReferences();
             CacheLatchedVisualRotation();
+            TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             RegisterReceiver();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             UnregisterReceiver();
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
             _contactThisTick = false;
             _holdProgressSeconds = 0f;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            bool shouldRestoreTick = (_registeredTick && !_tickDormant) || ShouldRunLatchTick();
+            TryUnregisterTick();
+            if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
+                TryRegisterTick();
         }
 
         /// <inheritdoc />
@@ -155,6 +174,11 @@ namespace Hecton8.Interaction
         public string GetInteractText()
         {
             return _latched ? lockedPrompt : availablePrompt;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(_latched ? lockedPrompt : availablePrompt, destination, out length);
         }
 
         /// <inheritdoc />
@@ -346,6 +370,28 @@ namespace Hecton8.Interaction
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
             _tickDormant = false;
+        }
+
+        private bool ShouldRunLatchTick()
+        {
+            return !_latched && (_contactThisTick || _holdProgressSeconds > 0f);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private static bool IsFinite(Vector3 value)

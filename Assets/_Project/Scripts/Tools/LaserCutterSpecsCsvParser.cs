@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 namespace Hecton8.Tools
 {
     using System;
@@ -240,3 +241,4 @@ namespace Hecton8.Tools
         }
     }
 }
+#endif

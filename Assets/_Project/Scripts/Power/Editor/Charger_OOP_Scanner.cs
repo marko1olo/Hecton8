@@ -179,7 +179,7 @@ namespace Hecton8.Power.Editor
                         scanText.IndexOf("BatteryChargerLogisticsBufferIds.MockInventorySlots", StringComparison.Ordinal) >= 0;
                     runtimeSharedInventoryAllocationHits =
                         CountToken(scanText, "GetBufferHandle<InventorySlotDTO>") > 0 ||
-                        CountToken(scanText, "GetGenerationHandle<InventorySlotDTO>") > 0;
+                        CountToken(scanText, "EnsureGenerationHandle<InventorySlotDTO>") > 0;
                     int mockGateIndex = scanText.IndexOf("private static bool AllowEmergencyMockNetwork()", StringComparison.Ordinal);
                     int mockGateEditorIndex = mockGateIndex >= 0 ? scanText.IndexOf("#if UNITY_EDITOR || DEVELOPMENT_BUILD", mockGateIndex, StringComparison.Ordinal) : -1;
                     int mockGateElseIndex = mockGateEditorIndex >= 0 ? scanText.IndexOf("#else", mockGateEditorIndex, StringComparison.Ordinal) : -1;

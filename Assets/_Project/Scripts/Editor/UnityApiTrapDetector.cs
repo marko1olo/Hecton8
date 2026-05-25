@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -53,12 +54,12 @@ namespace Hecton8.Editor
             if (!Directory.Exists(SourceRoot))
                 return 0;
 
-            string[] paths = Directory.GetFiles(SourceRoot, "*.cs", SearchOption.AllDirectories);
-            Array.Sort(paths, StringComparer.Ordinal);
+            List<string> paths = new List<string>(Directory.EnumerateFiles(SourceRoot, "*.cs", SearchOption.AllDirectories));
+            paths.Sort(StringComparer.Ordinal);
 
             int violations = 0;
             int reported = 0;
-            for (int pathIndex = 0; pathIndex < paths.Length; pathIndex++)
+            for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
             {
                 string path = paths[pathIndex];
                 if (!IsRuntimeScriptPath(path))

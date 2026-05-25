@@ -1,4 +1,4 @@
-# HECTON-8 Wishlist Conversion And Steam Page Iteration Plan
+﻿# HECTON-8 Wishlist Conversion And Steam Page Iteration Plan
 
 Status: pre-page conversion plan
 Owner lane: SHINOBU_81 / Steam conversion

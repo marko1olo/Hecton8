@@ -12,12 +12,12 @@ namespace Hecton8.Editor
             bool passed = FaunaRuntimeSmokeTester.RunHeadlessAupDriftAssertion(out double distanceErrorMeters);
             if (passed)
             {
-                Debug.Log("FaunaRuntimeSmokeTester headless AUP drift assertion passed. distanceErrorMeters=" + distanceErrorMeters.ToString("R"));
+                Debug.Log("FaunaRuntimeSmokeTester headless AUP drift assertion passed. distanceErrorMeters=" + distanceErrorMeters.ToString("R", CultureInfo.InvariantCulture));
                 EditorApplication.Exit(0);
                 return;
             }
 
-            Debug.LogError("FaunaRuntimeSmokeTester headless AUP drift assertion failed. distanceErrorMeters=" + distanceErrorMeters.ToString("R"));
+            Debug.LogError("FaunaRuntimeSmokeTester headless AUP drift assertion failed. distanceErrorMeters=" + distanceErrorMeters.ToString("R", CultureInfo.InvariantCulture));
             EditorApplication.Exit(1);
         }
 

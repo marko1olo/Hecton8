@@ -138,9 +138,7 @@ namespace Hecton8.World
         {
             get
             {
-                return Enum.TryParse(archetype, out WorldGenerativeGeologyProfile.ShapeArchetype resolvedArchetype)
-                    ? resolvedArchetype
-                    : WorldGenerativeGeologyProfile.ShapeArchetype.ComplexRock;
+                return ResolveShapeArchetype(archetype);
             }
         }
 
@@ -148,9 +146,7 @@ namespace Hecton8.World
         {
             get
             {
-                return Enum.TryParse(terrainSeam, out WorldGenerativeGeologyProfile.TerrainSeamMode resolvedMode)
-                    ? resolvedMode
-                    : WorldGenerativeGeologyProfile.TerrainSeamMode.None;
+                return ResolveTerrainSeamMode(terrainSeam);
             }
         }
 
@@ -158,9 +154,7 @@ namespace Hecton8.World
         {
             get
             {
-                return Enum.TryParse(caveBlend, out WorldGenerativeGeologyProfile.CaveBlendMode resolvedMode)
-                    ? resolvedMode
-                    : WorldGenerativeGeologyProfile.CaveBlendMode.None;
+                return ResolveCaveBlendMode(caveBlend);
             }
         }
 
@@ -384,6 +378,48 @@ namespace Hecton8.World
                 WorldGenerativeGeologyProfile.CaveBlendMode.CarvePortal => CaveBlendCarvePortalLabel,
                 _ => CaveBlendNoneLabel
             };
+        }
+
+        private static WorldGenerativeGeologyProfile.ShapeArchetype ResolveShapeArchetype(string value)
+        {
+            if (string.Equals(value, ArchetypeArchLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.ShapeArchetype.Arch;
+            if (string.Equals(value, ArchetypeCanopyLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.ShapeArchetype.Canopy;
+            if (string.Equals(value, ArchetypeArchClusterLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.ShapeArchetype.ArchCluster;
+            if (string.Equals(value, ArchetypeReefPackLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.ShapeArchetype.ReefPack;
+            if (string.Equals(value, ArchetypeCaveBridgeLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge;
+
+            return WorldGenerativeGeologyProfile.ShapeArchetype.ComplexRock;
+        }
+
+        private static WorldGenerativeGeologyProfile.TerrainSeamMode ResolveTerrainSeamMode(string value)
+        {
+            if (string.Equals(value, TerrainSeamHeightBlendLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.TerrainSeamMode.HeightBlend;
+            if (string.Equals(value, TerrainSeamSdfBlendLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.TerrainSeamMode.SdfBlend;
+            if (string.Equals(value, TerrainSeamDebrisBridgeLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.TerrainSeamMode.DebrisBridge;
+            if (string.Equals(value, TerrainSeamCarveAndDebrisLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.TerrainSeamMode.CarveAndDebris;
+
+            return WorldGenerativeGeologyProfile.TerrainSeamMode.None;
+        }
+
+        private static WorldGenerativeGeologyProfile.CaveBlendMode ResolveCaveBlendMode(string value)
+        {
+            if (string.Equals(value, CaveBlendProbeOnlyLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.CaveBlendMode.ProbeOnly;
+            if (string.Equals(value, CaveBlendSdfBlendLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.CaveBlendMode.SdfBlend;
+            if (string.Equals(value, CaveBlendCarvePortalLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.CaveBlendMode.CarvePortal;
+
+            return WorldGenerativeGeologyProfile.CaveBlendMode.None;
         }
 
         public void Configure(
@@ -880,7 +916,18 @@ namespace Hecton8.World
             if (string.IsNullOrEmpty(name) || name.Length <= 3 || !name.StartsWith("LOD"))
                 return false;
 
-            return int.TryParse(name.Substring(3), out lodIndex);
+            int value = 0;
+            for (int i = 3; i < name.Length; i++)
+            {
+                char c = name[i];
+                if (c < '0' || c > '9')
+                    return false;
+
+                value = (value * 10) + (c - '0');
+            }
+
+            lodIndex = value;
+            return true;
         }
 
         private static void ActivateTransform(Transform target)

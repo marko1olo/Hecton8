@@ -223,12 +223,12 @@ namespace Hecton8.VFX
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            vault.GetGenerationHandle<FoamComputeParamsDTO>(BufferID.JacobianFoamParams, 1, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
-            vault.GetGenerationHandle<FoamTuningDTO>(BufferID.JacobianFoamTuning, 1, SystemID.Vfx, NativeArrayOptions.ClearMemory);
-            vault.GetGenerationHandle<FoamWakeImpactDTO>(BufferID.JacobianFoamWakeImpacts, WakeImpactCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
-            vault.GetGenerationHandle<FoamRenderTelemetryEntry>(BufferID.JacobianFoamTelemetryRing, TelemetryCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
-            vault.GetGenerationHandle<FoamAestheticProfileDTO>(BufferID.JacobianFoamProfiles, ProfileCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
-            vault.GetGenerationHandle<byte>(BufferID.JacobianFoamCsvScratch, CsvScratchBytes, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+            vault.EnsureGenerationHandle<FoamComputeParamsDTO>(BufferID.JacobianFoamParams, 1, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+            vault.EnsureGenerationHandle<FoamTuningDTO>(BufferID.JacobianFoamTuning, 1, SystemID.Vfx, NativeArrayOptions.ClearMemory);
+            vault.EnsureGenerationHandle<FoamWakeImpactDTO>(BufferID.JacobianFoamWakeImpacts, WakeImpactCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
+            vault.EnsureGenerationHandle<FoamRenderTelemetryEntry>(BufferID.JacobianFoamTelemetryRing, TelemetryCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
+            vault.EnsureGenerationHandle<FoamAestheticProfileDTO>(BufferID.JacobianFoamProfiles, ProfileCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
+            vault.EnsureGenerationHandle<byte>(BufferID.JacobianFoamCsvScratch, CsvScratchBytes, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
             return true;
         }
 
@@ -356,6 +356,7 @@ namespace Hecton8.VFX
         }
     }
 
+    #if UNITY_EDITOR
     public static class FoamAestheticProfileCsvParser
     {
         private const uint FnvOffset = 2166136261u;
@@ -556,6 +557,7 @@ namespace Hecton8.VFX
             }
         }
     }
+    #endif
 
     public static unsafe class FoamTelemetryDump
     {

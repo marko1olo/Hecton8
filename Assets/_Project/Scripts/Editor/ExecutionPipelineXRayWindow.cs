@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using UnityEditor;
 using UnityEngine;
@@ -140,9 +141,9 @@ namespace Hecton8.Editor
 
             float quality = HomeostasisBrain.GlobalQualityWeight;
             _qualityLabel.text =
-                "QUALITY " + quality.ToString("0.000") +
-                " | TIME SLICE " + TimeSliceScheduler.CurrentBudgetMs.ToString("0.000") +
-                " ms | USED " + TimeSliceScheduler.ConsumedMs.ToString("0.000") + " ms";
+                "QUALITY " + quality.ToString("0.000", CultureInfo.InvariantCulture) +
+                " | TIME SLICE " + TimeSliceScheduler.CurrentBudgetMs.ToString("0.000", CultureInfo.InvariantCulture) +
+                " ms | USED " + TimeSliceScheduler.ConsumedMs.ToString("0.000", CultureInfo.InvariantCulture) + " ms";
 
             if (!SystemDispatcher.TryGetExecutionPipelineXRaySnapshot(_phaseMs, _bucketLoads, out DispatcherStateDTO state))
             {
@@ -163,7 +164,7 @@ namespace Hecton8.Editor
                 " | Bucket " + state.ActiveBucket +
                 " | Systems " + state.SortedSystemCount +
                 " | Disabled " + state.DisabledSystemCount +
-                " | Flags 0x" + state.Flags.ToString("X8");
+                " | Flags 0x" + state.Flags.ToString("X8", CultureInfo.InvariantCulture);
 
             UpdateBucketGrid();
             UpdateDependencyGraph();
@@ -186,7 +187,7 @@ namespace Hecton8.Editor
             rail.style.flexGrow = 1;
             rail.style.height = 18;
             rail.style.backgroundColor = new Color(0.11f, 0.12f, 0.125f, 1f);
-            rail.tooltip = "Budget " + budgetMs.ToString("0.00") + " ms";
+            rail.tooltip = "Budget " + budgetMs.ToString("0.00", CultureInfo.InvariantCulture) + " ms";
 
             VisualElement fill = new VisualElement();
             fill.style.height = 18;
@@ -219,9 +220,9 @@ namespace Hecton8.Editor
                 cell.style.marginRight = 4;
                 cell.style.marginBottom = 4;
                 cell.style.backgroundColor = new Color(0.05f, 0.16f, 0.16f, 1f);
-                cell.tooltip = "Bucket " + i.ToString();
+                cell.tooltip = "Bucket " + i.ToString(CultureInfo.InvariantCulture);
 
-                Label label = CreateSmallLabel(i.ToString());
+                Label label = CreateSmallLabel(i.ToString(CultureInfo.InvariantCulture));
                 label.style.unityTextAlign = TextAnchor.MiddleCenter;
                 label.style.fontSize = 9;
                 label.style.flexGrow = 1;
@@ -241,7 +242,7 @@ namespace Hecton8.Editor
             _phaseFills[index].style.backgroundColor = valueMs > budgetMs
                 ? new Color(0.95f, 0.08f, 0.04f, 1f)
                 : new Color(0.10f, 0.62f, 0.86f, 1f);
-            _phaseValueLabels[index].text = valueMs.ToString("0.00") + " ms";
+            _phaseValueLabels[index].text = valueMs.ToString("0.00", CultureInfo.InvariantCulture) + " ms";
         }
 
         private void UpdateBucketGrid()
@@ -260,7 +261,7 @@ namespace Hecton8.Editor
                     new Color(0.05f, 0.16f, 0.16f, 1f),
                     new Color(0.91f, 0.42f, 0.08f, 1f),
                     load01);
-                _bucketLabels[i].text = i.ToString();
+                _bucketLabels[i].text = i.ToString(CultureInfo.InvariantCulture);
             }
         }
 
@@ -296,8 +297,8 @@ namespace Hecton8.Editor
                 label.style.display = DisplayStyle.Flex;
                 label.text =
                     "P" + _edgePhaseIds[i] +
-                    " 0x" + _edgeSystemHashes[i].ToString("X8") +
-                    " <- 0x" + _edgeDependencyHashes[i].ToString("X8");
+                    " 0x" + _edgeSystemHashes[i].ToString("X8", CultureInfo.InvariantCulture) +
+                    " <- 0x" + _edgeDependencyHashes[i].ToString("X8", CultureInfo.InvariantCulture);
             }
 
             for (int i = rowCount; i < _graphLabels.Length; i++)
@@ -322,8 +323,8 @@ namespace Hecton8.Editor
                 Label label = _jobLabels[i];
                 label.style.display = DisplayStyle.Flex;
                 label.text =
-                    "0x" + _jobSystemHashes[i].ToString("X8") +
-                    " handle 0x" + _jobHandleBits[i].ToString("X16");
+                    "0x" + _jobSystemHashes[i].ToString("X8", CultureInfo.InvariantCulture) +
+                    " handle 0x" + _jobHandleBits[i].ToString("X16", CultureInfo.InvariantCulture);
             }
 
             for (int i = rowCount; i < _jobLabels.Length; i++)
@@ -344,10 +345,10 @@ namespace Hecton8.Editor
             _fenceLabel.text =
                 "FENCE frame " + entry.FrameId +
                 " | jobs " + entry.ScheduledJobCount +
-                " | sim wait " + entry.SimulationWaitMs.ToString("0.00") + " ms" +
-                " | fixed wait " + entry.FixedWaitMs.ToString("0.00") + " ms" +
-                " | AUP " + entry.AupHardFenceMs.ToString("0.00") + " ms" +
-                " | domains 0x" + entry.DomainMask.ToString("X2");
+                " | sim wait " + entry.SimulationWaitMs.ToString("0.00", CultureInfo.InvariantCulture) + " ms" +
+                " | fixed wait " + entry.FixedWaitMs.ToString("0.00", CultureInfo.InvariantCulture) + " ms" +
+                " | AUP " + entry.AupHardFenceMs.ToString("0.00", CultureInfo.InvariantCulture) + " ms" +
+                " | domains 0x" + entry.DomainMask.ToString("X2", CultureInfo.InvariantCulture);
         }
 
         private void ClearGraphRows()

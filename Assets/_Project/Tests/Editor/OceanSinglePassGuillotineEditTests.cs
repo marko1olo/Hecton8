@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -150,18 +151,13 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void CrestCameraConstructors_AreCutAtKnownOceanPaths()
         {
-            string depthCache = ReadProjectFile("Assets/Crest/Crest/Scripts/LodData/OceanDepthCache.cs");
-            string reflections = ReadProjectFile("Assets/Crest/Crest/Scripts/Reflection/OceanPlanarReflection.cs");
-            string runtimeBridge = ReadProjectFile("Assets/_Project/Scripts/Plugins/Crest/HectonCrestOceanDepthCacheRuntimeBridge.cs");
-            string prefab = ReadProjectFile("Assets/_Project/Prefabs/Ocean_Crest.prefab");
-
-            Assert.IsTrue(depthCache.Contains("HectonRealtimeDepthCacheDisabled = true"));
-            Assert.IsTrue(reflections.Contains("HectonPlanarReflectionDisabled = true"));
-            Assert.IsTrue(runtimeBridge.Contains("HectonRuntimeDepthCacheCameraDisabled = true"));
-            Assert.IsFalse(depthCache.Contains("AddComponent<Camera>"));
-            Assert.IsFalse(reflections.Contains("AddComponent<Camera>"));
-            Assert.IsTrue(prefab.Contains("_createSeaFloorDepthData: 0"));
-            Assert.IsTrue(prefab.Contains("_createFoamSim: 0"));
+            AssertProjectFileContains("Assets/Crest/Crest/Scripts/LodData/OceanDepthCache.cs", "HectonRealtimeDepthCacheDisabled = true");
+            AssertProjectFileContains("Assets/Crest/Crest/Scripts/Reflection/OceanPlanarReflection.cs", "HectonPlanarReflectionDisabled = true");
+            AssertProjectFileContains("Assets/_Project/Scripts/Plugins/Crest/HectonCrestOceanDepthCacheRuntimeBridge.cs", "HectonRuntimeDepthCacheCameraDisabled = true");
+            AssertProjectFileDoesNotContain("Assets/Crest/Crest/Scripts/LodData/OceanDepthCache.cs", "AddComponent<Camera>");
+            AssertProjectFileDoesNotContain("Assets/Crest/Crest/Scripts/Reflection/OceanPlanarReflection.cs", "AddComponent<Camera>");
+            AssertProjectFileContains("Assets/_Project/Prefabs/Ocean_Crest.prefab", "_createSeaFloorDepthData: 0");
+            AssertProjectFileContains("Assets/_Project/Prefabs/Ocean_Crest.prefab", "_createFoamSim: 0");
         }
 
         [Test]
@@ -175,10 +171,33 @@ namespace Hecton8.Tests.Editor
             Assert.AreNotEqual((int)BufferID.ShinobuNetcodeFuzzerSnapshotRing, (int)OceanSinglePassConstants.VisualOverridesBuffer);
         }
 
-        private static string ReadProjectFile(string relativePath)
+        private static void AssertProjectFileContains(string relativePath, string token)
+        {
+            string path = ToProjectPath(relativePath);
+            Assert.IsTrue(FileContains(path, token), relativePath + " missing token: " + token);
+        }
+
+        private static void AssertProjectFileDoesNotContain(string relativePath, string token)
+        {
+            string path = ToProjectPath(relativePath);
+            Assert.IsFalse(FileContains(path, token), relativePath + " contains forbidden token: " + token);
+        }
+
+        private static bool FileContains(string path, string token)
+        {
+            foreach (string line in File.ReadLines(path))
+            {
+                if (line.IndexOf(token, StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static string ToProjectPath(string relativePath)
         {
             string projectRoot = Directory.GetParent(Application.dataPath).FullName;
-            return File.ReadAllText(Path.Combine(projectRoot, relativePath));
+            return Path.Combine(projectRoot, relativePath);
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct

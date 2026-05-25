@@ -7,7 +7,6 @@
 namespace Hecton8.Gameplay
 {
     using Hecton8.Core;
-    using Hecton8.Input;
     using Hecton8.Interaction;
     using Hecton8.Items;
     using Hecton8.Tools;
@@ -17,7 +16,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Flashlight Tool")]
-    public sealed class FlashlightTool : PlayerTool, IBatteryTool
+    public sealed class FlashlightTool : PlayerTool, IBatteryTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private readonly struct LampAssessment
         {
@@ -97,6 +96,8 @@ namespace Hecton8.Gameplay
         private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
         private static readonly int _ToolBatteryNormalizedID = Shader.PropertyToID("_ToolBatteryNormalized");
+        private bool _powerIndicatorDirty;
+        private bool _lateFrameRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool IMPLEMENTATION
@@ -125,7 +126,7 @@ namespace Hecton8.Gameplay
 
             SetRuntimeBatteryNormalized(0f);
             UpdateBatteryVisuals();
-            UpdatePowerIndicator();
+            QueuePowerIndicatorUpdate();
 
             return removed;
         }
@@ -142,7 +143,7 @@ namespace Hecton8.Gameplay
             _batteryCharge = math.saturate(charge);
             SetRuntimeBatteryNormalized(_batteryCharge);
             UpdateBatteryVisuals();
-            UpdatePowerIndicator();
+            QueuePowerIndicatorUpdate();
 
             return true;
         }
@@ -218,7 +219,7 @@ namespace Hecton8.Gameplay
             _primaryLatched = false;
             _secondaryLatched = false;
             AdvanceEvaluationStamps();
-            UpdatePowerIndicator();
+            QueuePowerIndicatorUpdate();
             InvalidateSnapshotCache();
         }
 
@@ -260,7 +261,22 @@ namespace Hecton8.Gameplay
 
             _flashlight = null;
             AdvanceEvaluationStamps();
+            _powerIndicatorDirty = false;
+            TryUnregisterLateFrameTick();
             base.OnDespawn();
+        }
+
+        protected override void OnToolRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            base.OnToolRegistryServiceReplaced(serviceSlot, previousService, currentService);
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled || !_lateFrameRegistered)
+                return;
+
+            TryUnregisterLateFrameTick();
+            TryRegisterLateFrameTick();
         }
 
         private void SyncFlashlightChargeMirrorFromCentral()
@@ -351,7 +367,7 @@ namespace Hecton8.Gameplay
 
         public override void ToolTick(float deltaTime)
         {
-            UpdatePowerIndicator();
+            QueuePowerIndicatorUpdate();
 
             PlayerInputState inputState = TryGetInputService(out IInputService inputService) && inputService.IsPlayerInputEnabled
                 ? inputService.GetState()
@@ -371,7 +387,7 @@ namespace Hecton8.Gameplay
             if (_flashlight.IsOn && !HasToolEnergyOrWirelessPath())
             {
                 _flashlight.TurnOff();
-                UpdatePowerIndicator();
+                QueuePowerIndicatorUpdate();
                 AdvanceEvaluationStamps();
                 InvalidateSnapshotCache();
                 return;
@@ -380,7 +396,7 @@ namespace Hecton8.Gameplay
             if (_flashlight.IsOn)
             {
                 bool hadEnergy = MarkFlashlightActiveForCentralSolver();
-                UpdatePowerIndicator();
+                QueuePowerIndicatorUpdate();
                 InvalidateSnapshotCache();
 
                 if (!hadEnergy)
@@ -399,6 +415,41 @@ namespace Hecton8.Gameplay
             }
 
             AdvanceEvaluationStamps();
+        }
+
+        public void LateFrameTick()
+        {
+            if (_powerIndicatorDirty)
+            {
+                _powerIndicatorDirty = false;
+                UpdatePowerIndicator();
+            }
+
+            if (!IsEquipped && !_powerIndicatorDirty)
+                TryUnregisterLateFrameTick();
+        }
+
+        private void QueuePowerIndicatorUpdate()
+        {
+            _powerIndicatorDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
         }
 
         private void AdvanceEvaluationStamps()

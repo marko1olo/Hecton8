@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Hecton8.Core;
 
 namespace Hecton8.EditorTools
 {
@@ -89,7 +90,7 @@ namespace Hecton8.EditorTools
             bool wakeTelemetryValid = FloraInteractionManager.ValidateConsumedWakeTelemetryLayout(out int wakeTelemetrySize, out int wakeBudgetOffset);
             if (!dtoValid || !telemetryValid || !wakeSourceValid || !wakeTelemetryValid)
             {
-                Debug.LogError(
+                H8Debug.LogError(
                     "Flora sway DTO layout invalid. FloraDisplacementDTO size=" + dtoSize +
                     " forceOffset=" + forceOffset +
                     " decayOffset=" + decayOffset +

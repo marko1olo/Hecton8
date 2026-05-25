@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_054
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_054_Mat_Tool_Flashlight_Placeholder_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\Mat_Tool_Flashlight_Placeholder_Albedo.png
+FINAL_FILENAME: Mat_Tool_Flashlight_Placeholder_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Placeholder replacement albedo for a HECTON-8 field flashlight tool used in mineral survey spaces. Create a premium handheld equipment material: satin graphite polymer body, warm off-white ceramic grip panels, teal lens gasket, tiny amber locator notch, brushed titanium screw collars, and clean pressure-rated seams. The texture should feel expensive, compact, and practical, like NASA dive hardware carried through an abyssal cave. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

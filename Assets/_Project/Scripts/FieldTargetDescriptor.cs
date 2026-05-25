@@ -91,7 +91,8 @@ namespace Hecton8.Gameplay
             if (source == null)
                 return false;
 
-            descriptor = source.GetComponent<FieldTargetDescriptor>() ?? source.GetComponentInParent<FieldTargetDescriptor>();
+            if (!source.TryGetComponent(out descriptor))
+                descriptor = source.GetComponentInParent<FieldTargetDescriptor>();
             return descriptor != null;
         }
 

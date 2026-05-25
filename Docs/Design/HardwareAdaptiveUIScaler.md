@@ -1,4 +1,4 @@
-# Hardware Adaptive UI Scaler
+﻿# Hardware Adaptive UI Scaler
 
 Date: 2026-05-17
 Status: STATIC UI SCALE PROFILE AUTHORED / PY ARTIFACTS ABSENT IN R12 CHECK / PENDING UNITY PROFILER

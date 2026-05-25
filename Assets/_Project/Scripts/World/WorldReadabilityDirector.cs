@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -77,7 +78,7 @@ namespace Hecton8.World
         private int _pendingSeverity;
         private bool _hasPendingMessage;
         private bool _hotSwapRegistered;
-        private FirstHourDirector _firstHourDirector;
+        private IFirstHourReadModel _firstHourDirector;
         private DepthZoneDirector _cachedDepthZoneDirector;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private float _nextNotificationTime;
@@ -138,8 +139,7 @@ namespace Hecton8.World
             if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -161,7 +161,7 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
-                    _firstHourDirector = currentService as FirstHourDirector;
+                    _firstHourDirector = currentService as IFirstHourReadModel;
                     break;
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
                     _cachedDepthZoneDirector = currentService as DepthZoneDirector;
@@ -173,7 +173,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _firstHourDirector = GlobalRegistry.FirstHour;
+            _firstHourDirector = GlobalRegistry.FirstHourReadModel;
             _cachedDepthZoneDirector = GlobalRegistry.DepthZone;
         }
 
@@ -263,11 +263,11 @@ namespace Hecton8.World
 
         private bool CanPublishReadability()
         {
-            FirstHourDirector firstHourDirector = _firstHourDirector;
+            IFirstHourReadModel firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
-            return firstHourDirector.IsMilestoneComplete(minimumMilestoneToPublish);
+            return firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestoneToPublish);
         }
 
         private void ResolveReferences(bool force = false)
@@ -427,13 +427,13 @@ namespace Hecton8.World
             switch (severity)
             {
                 case SeverityCritical:
-                    NotificationEvents.PushCritical(message);
+                    NotificationEvents.TryPushCritical(message.AsSpan());
                     break;
                 case SeverityWarning:
-                    NotificationEvents.PushWarning(message);
+                    NotificationEvents.TryPushWarning(message.AsSpan());
                     break;
                 default:
-                    NotificationEvents.PushInfo(message);
+                    NotificationEvents.TryPushInfo(message.AsSpan());
                     break;
             }
 

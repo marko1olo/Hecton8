@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_048
+ROLE: ALBEDO
+CATEGORY: GEOLOGY_TRIPLANAR
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_048_mat_Rock_Shared_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\GEOLOGY_TRIPLANAR\mat_Rock_Shared_Albedo.png
+FINAL_FILENAME: mat_Rock_Shared_Albedo.png
+REFERENCES: surface_diff.png; surface_norm.png or surface_spec.png; approved geology output
+
+PROMPT:
+Shared Hecton rock albedo for broad triplanar use across multiple meshes. Make a versatile premium abyssal basalt with blue-gray plates, pale opal mineral cracks, pearl sediment dusting, subtle violet pressure bands, and small teal crystalline speckles. The material must support cliffs, shelves, cave lips, and props without looking repetitive, using large calm shapes plus refined microdetail. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

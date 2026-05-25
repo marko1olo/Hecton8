@@ -140,7 +140,7 @@ namespace Hecton8.Gameplay
                 if (salvagePass && cutterPass)
                 {
                     _debugLastPhase = "Complete";
-                    Debug.Log("[FieldToolSmoke] PASS salvage=True cutter=True");
+                    Hecton8.Core.H8Debug.Log("[FieldToolSmoke] PASS salvage=True cutter=True");
                 }
                 else
                 {
@@ -244,7 +244,7 @@ namespace Hecton8.Gameplay
                     return false;
                 }
 
-                Debug.Log($"[FieldToolSmoke] PASS salvage item={salvageProbeItem.itemName} inventory={beforeCount}->{afterCount}");
+                Hecton8.Core.H8Debug.Log($"[FieldToolSmoke] PASS salvage item={salvageProbeItem.itemName} inventory={beforeCount}->{afterCount}");
                 return true;
             }
             finally
@@ -349,7 +349,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            Debug.Log($"[FieldToolSmoke] PASS cutter registry={beforeModuleCount}->{afterModuleCount}");
+            Hecton8.Core.H8Debug.Log($"[FieldToolSmoke] PASS cutter registry={beforeModuleCount}->{afterModuleCount}");
             return true;
         }
 
@@ -367,7 +367,7 @@ namespace Hecton8.Gameplay
             PickupItem pickup = probe.AddComponent<PickupItem>();
             pickup.Configure(salvageProbeItem, 1);
 
-            Renderer renderer = probe.GetComponent<Renderer>();
+            probe.TryGetComponent(out Renderer renderer);
             if (renderer != null && renderer.sharedMaterial != null)
                 renderer.sharedMaterial.color = new Color(0.56f, 0.72f, 0.84f, 1f);
 
@@ -503,11 +503,11 @@ namespace Hecton8.Gameplay
         private void AutoResolveSceneReferences()
         {
             if (toolManager == null)
-                toolManager = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager : null);
+                toolManager = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null);
             if (playerInventory == null)
-                playerInventory = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory : null);
+                playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
             if (playerBuilder == null)
-                playerBuilder = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerBuilder : null);
+                playerBuilder = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.PlayerBuilder : null);
             if (constructionManager == null)
                 constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             if (loadoutProvisioner == null)
@@ -528,7 +528,7 @@ namespace Hecton8.Gameplay
         private void LogVerbose(string message)
         {
             if (verboseLogging)
-                Debug.Log($"[FieldToolSmoke] {message}");
+                Hecton8.Core.H8Debug.Log($"[FieldToolSmoke] {message}");
         }
 
 #if UNITY_EDITOR

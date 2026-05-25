@@ -88,7 +88,7 @@ namespace Hecton8.EditorTools
             EditorGUILayout.BeginHorizontal();
             _target = (HectonIndirectVegetationRenderer)EditorGUILayout.ObjectField("Renderer", _target, typeof(HectonIndirectVegetationRenderer), true);
             if (GUILayout.Button("Find", GUILayout.Width(64f)))
-                _target = UnityEngine.Object.FindFirstObjectByType<HectonIndirectVegetationRenderer>();
+                _target = UnityEngine.Object.FindAnyObjectByType<HectonIndirectVegetationRenderer>();
             EditorGUILayout.EndHorizontal();
         }
 

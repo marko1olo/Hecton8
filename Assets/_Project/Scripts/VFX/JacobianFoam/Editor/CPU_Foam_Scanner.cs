@@ -430,9 +430,9 @@ namespace Hecton8.EditorTools
             public int ForbiddenHits;
             public bool SuperfluousCpuParticlesEradicated;
             public string Output;
-            public readonly List<string> MissingPaths = new List<string>();
-            public readonly List<string> Hits = new List<string>();
-            public readonly List<string> ForbiddenHitsDetailed = new List<string>();
+            public readonly List<string> MissingPaths = new List<string>(16);
+            public readonly List<string> Hits = new List<string>(64);
+            public readonly List<string> ForbiddenHitsDetailed = new List<string>(64);
         }
     }
 }

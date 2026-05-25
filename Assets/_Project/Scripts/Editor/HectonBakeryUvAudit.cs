@@ -28,6 +28,8 @@ namespace Hecton8.EditorTools
         private static readonly List<Vector2> s_Uv2Scratch = new List<Vector2>(UvScratchInitialCapacity);
         private static readonly List<Vector2> s_Uv0Scratch = new List<Vector2>(UvScratchInitialCapacity);
         private static readonly List<int> s_IndexScratch = new List<int>(IndexScratchInitialCapacity);
+        private static readonly List<MeshFilter> s_MeshFilterScratch = new List<MeshFilter>(32);
+        private static readonly List<SkinnedMeshRenderer> s_SkinnedRendererScratch = new List<SkinnedMeshRenderer>(16);
         // COLD ALLOC: uint[2048] - 256x256 UV overlap raster bitset - owner: HectonBakeryUvAudit
         private static readonly uint[] s_UvOverlapRasterBits = new uint[UvOverlapRasterWordCount];
 
@@ -162,18 +164,20 @@ namespace Hecton8.EditorTools
             if (importedRoot == null)
                 return false;
 
-            MeshFilter[] filters = importedRoot.GetComponentsInChildren<MeshFilter>(true);
-            for (int i = 0; i < filters.Length; i++)
+            s_MeshFilterScratch.Clear();
+            importedRoot.GetComponentsInChildren(true, s_MeshFilterScratch);
+            for (int i = 0; i < s_MeshFilterScratch.Count; i++)
             {
-                Mesh mesh = filters[i] != null ? filters[i].sharedMesh : null;
+                Mesh mesh = s_MeshFilterScratch[i] != null ? s_MeshFilterScratch[i].sharedMesh : null;
                 if (TryValidateMeshUv2(mesh, modelPath, out reason))
                     return true;
             }
 
-            SkinnedMeshRenderer[] skinnedRenderers = importedRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            for (int i = 0; i < skinnedRenderers.Length; i++)
+            s_SkinnedRendererScratch.Clear();
+            importedRoot.GetComponentsInChildren(true, s_SkinnedRendererScratch);
+            for (int i = 0; i < s_SkinnedRendererScratch.Count; i++)
             {
-                Mesh mesh = skinnedRenderers[i] != null ? skinnedRenderers[i].sharedMesh : null;
+                Mesh mesh = s_SkinnedRendererScratch[i] != null ? s_SkinnedRendererScratch[i].sharedMesh : null;
                 if (TryValidateMeshUv2(mesh, modelPath, out reason))
                     return true;
             }

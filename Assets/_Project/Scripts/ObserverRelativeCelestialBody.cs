@@ -20,7 +20,7 @@ namespace Hecton8.Celestial
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(2000)]
-    public sealed class ObserverRelativeCelestialBody : MonoBehaviour, ITickable, IOriginShiftListener
+    public sealed class ObserverRelativeCelestialBody : MonoBehaviour, ITickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         /// <summary>
         /// Placement solve mode for this body.
@@ -109,6 +109,9 @@ namespace Hecton8.Celestial
         private Vector3 _capturedDirection = Vector3.forward;
         private bool _hasCapturedDirection;
         private bool _registeredToTickManager;
+        private bool _registeredToLateFrame;
+        private bool _hotSwapRegistered;
+        private bool _pendingPlacementVisualSync;
         private ObserverRelativeCelestialBody _parentObserverRelativeBody;
         private bool _editorPreviewDirty = true;
         private Vector3 _editorLastObserverPosition;
@@ -149,6 +152,7 @@ namespace Hecton8.Celestial
 
             if (Application.isPlaying)
             {
+                TryRegisterHotSwapListener();
                 TryRegister();
             }
 #if UNITY_EDITOR
@@ -167,6 +171,7 @@ namespace Hecton8.Celestial
             if (Application.isPlaying)
             {
                 TryUnregister();
+                TryUnregisterHotSwapListener();
             }
 #if UNITY_EDITOR
             else
@@ -176,12 +181,30 @@ namespace Hecton8.Celestial
 #endif
         }
 
+        private void OnDestroy()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            TryUnregister();
+            TryUnregisterHotSwapListener();
+        }
+
         /// <summary>
         /// Applies observer-relative placement on the project tick cadence.
         /// </summary>
         /// <param name="dt">Unused tick delta. The body resolves against the shared owner time.</param>
         public void Tick(float dt)
         {
+            _pendingPlacementVisualSync = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingPlacementVisualSync)
+                return;
+
+            _pendingPlacementVisualSync = false;
             ApplyPlacement();
         }
 
@@ -192,7 +215,7 @@ namespace Hecton8.Celestial
             if (shiftData.ShiftOffset.sqrMagnitude <= DirectionEpsilon)
                 return;
 
-            ApplyPlacement();
+            QueuePlacementVisualSync();
         }
 
         /// <summary>
@@ -207,7 +230,7 @@ namespace Hecton8.Celestial
             fixedDirection = direction.normalized;
             _capturedDirection = fixedDirection;
             _hasCapturedDirection = true;
-            ApplyPlacement();
+            QueuePlacementVisualSync();
         }
 
         /// <summary>
@@ -229,24 +252,74 @@ namespace Hecton8.Celestial
 
         private void TryRegister()
         {
-            if (_registeredToTickManager || !Application.isPlaying)
+            if ((_registeredToTickManager && _registeredToLateFrame) || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            if (!_registeredToTickManager)
+            {
+                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            }
+
+            if (!_registeredToLateFrame)
+                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registeredToTickManager)
+            if (!_registeredToTickManager && !_registeredToLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            if (_registeredToTickManager)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            if (_registeredToLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
+            _registeredToLateFrame = false;
+            _pendingPlacementVisualSync = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryUnregister();
+            TryRegister();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void QueuePlacementVisualSync()
+        {
+            if (Application.isPlaying)
+            {
+                _pendingPlacementVisualSync = true;
+                return;
+            }
+
+            ApplyPlacement();
         }
 
         private void ApplyPlacement()
@@ -364,7 +437,7 @@ namespace Hecton8.Celestial
 
             if (orbitPlaneLongitudeDegrees != 0f)
             {
-                Quaternion orbitPlaneRotation = Quaternion.AngleAxis(orbitPlaneLongitudeDegrees, parentDirection);
+                Quaternion orbitPlaneRotation = ApproximateAngleAxisDegreesNoTrig(orbitPlaneLongitudeDegrees, parentDirection);
                 tangent = orbitPlaneRotation * tangent;
                 bitangent = orbitPlaneRotation * bitangent;
             }
@@ -374,12 +447,13 @@ namespace Hecton8.Celestial
                 orbitAngleDegrees += (timeSeconds / orbitalPeriodSeconds) * 360f;
 
             float orbitAngleRad = orbitAngleDegrees * Mathf.Deg2Rad;
-            float inclinationCos = Mathf.Cos(orbitalInclinationDegrees * Mathf.Deg2Rad);
-            float orbitRadiusTan = Mathf.Tan(apparentOrbitRadiusDegrees * Mathf.Deg2Rad);
+            float inclinationCos = MathLodApproximation.ApproxCosBhaskara(orbitalInclinationDegrees * Mathf.Deg2Rad);
+            float orbitRadiusTan = MathLodApproximation.ApproxTanClamped(apparentOrbitRadiusDegrees * Mathf.Deg2Rad, 4096f);
+            MathLodApproximation.ApproxSinCosBhaskara(orbitAngleRad, out float orbitSin, out float orbitCos);
 
             Vector3 offset =
-                tangent * (Mathf.Cos(orbitAngleRad) * orbitRadiusTan) +
-                bitangent * (Mathf.Sin(orbitAngleRad) * orbitRadiusTan * inclinationCos);
+                tangent * (orbitCos * orbitRadiusTan) +
+                bitangent * (orbitSin * orbitRadiusTan * inclinationCos);
 
             Vector3 orbitDirection = parentDirection + offset;
             if (orbitDirection.sqrMagnitude <= DirectionEpsilon)
@@ -393,7 +467,7 @@ namespace Hecton8.Celestial
             Vector3 horizonParentDirection = equatorialParentDirection;
             if (orbitPlaneLongitudeDegrees != 0f)
             {
-                Quaternion longitudeRotation = Quaternion.AngleAxis(orbitPlaneLongitudeDegrees, Vector3.up);
+                Quaternion longitudeRotation = ApproximateAngleAxisDegreesNoTrig(orbitPlaneLongitudeDegrees, Vector3.up);
                 horizonParentDirection = longitudeRotation * horizonParentDirection;
             }
 
@@ -408,13 +482,14 @@ namespace Hecton8.Celestial
                 orbitAngleDegrees += (timeSeconds / orbitalPeriodSeconds) * 360f;
 
             float orbitAngleRad = orbitAngleDegrees * Mathf.Deg2Rad;
-            float orbitRadiusTan = Mathf.Tan(apparentOrbitRadiusDegrees * Mathf.Deg2Rad);
-            float inclinationAmplitude = Mathf.Sin(orbitalInclinationDegrees * Mathf.Deg2Rad) * equatorialBandInclinationScale;
+            float orbitRadiusTan = MathLodApproximation.ApproxTanClamped(apparentOrbitRadiusDegrees * Mathf.Deg2Rad, 4096f);
+            float inclinationAmplitude = MathLodApproximation.ApproxSinBhaskara(orbitalInclinationDegrees * Mathf.Deg2Rad) * equatorialBandInclinationScale;
+            MathLodApproximation.ApproxSinCosBhaskara(orbitAngleRad, out float orbitSin, out float orbitCos);
 
             Vector3 orbitDirection =
                 horizonParentDirection +
-                horizonTangent * (Mathf.Cos(orbitAngleRad) * orbitRadiusTan) +
-                Vector3.up * ((Mathf.Sin(orbitAngleRad) * orbitRadiusTan * inclinationAmplitude) + (equatorialBandVerticalBias * orbitRadiusTan));
+                horizonTangent * (orbitCos * orbitRadiusTan) +
+                Vector3.up * ((orbitSin * orbitRadiusTan * inclinationAmplitude) + (equatorialBandVerticalBias * orbitRadiusTan));
 
             if (orbitDirection.sqrMagnitude <= DirectionEpsilon)
                 return horizonParentDirection;
@@ -479,7 +554,7 @@ namespace Hecton8.Celestial
                 MinAngularDiameter,
                 MaxAngularDiameter);
 
-            float radiusWorld = Mathf.Tan(safeAngularDiameter * Mathf.Deg2Rad * 0.5f) * safeAnchorDistance;
+            float radiusWorld = MathLodApproximation.ApproxTanClamped(safeAngularDiameter * Mathf.Deg2Rad * 0.5f, 4096f) * safeAnchorDistance;
             return radiusWorld / Mathf.Max(_meshRadius, MinMeshRadius);
         }
 
@@ -493,8 +568,39 @@ namespace Hecton8.Celestial
                 axialRotationOffsetDegrees +
                 (timeSeconds / axialRotationPeriodSeconds) * 360f;
 
-            Quaternion spinRotation = Quaternion.AngleAxis(spinAngleDegrees, Vector3.up);
+            Quaternion spinRotation = ApproximateAngleAxisDegreesNoTrig(spinAngleDegrees, Vector3.up);
             return tiltRotation * spinRotation;
+        }
+
+        private static Quaternion ApproximateAngleAxisDegreesNoTrig(float angleDegrees, Vector3 axis)
+        {
+            float axisLengthSq = axis.sqrMagnitude;
+            if (axisLengthSq > 0.000001f && float.IsFinite(axisLengthSq))
+            {
+                Vector3 safeAxis = axis * (1f / Mathf.Sqrt(axisLengthSq));
+                MathLodApproximation.ApproxSinCosBhaskara(angleDegrees * Mathf.Deg2Rad * 0.5f, out float sinHalf, out float cosHalf);
+                return NormalizeQuaternion(new Quaternion(
+                    safeAxis.x * sinHalf,
+                    safeAxis.y * sinHalf,
+                    safeAxis.z * sinHalf,
+                    cosHalf));
+            }
+
+            return Quaternion.identity;
+        }
+
+        private static Quaternion NormalizeQuaternion(Quaternion value)
+        {
+            float lengthSq =
+                (value.x * value.x) +
+                (value.y * value.y) +
+                (value.z * value.z) +
+                (value.w * value.w);
+            if (!float.IsFinite(lengthSq) || lengthSq <= 0.000001f)
+                return Quaternion.identity;
+
+            float invLength = 1f / Mathf.Sqrt(lengthSq);
+            return new Quaternion(value.x * invLength, value.y * invLength, value.z * invLength, value.w * invLength);
         }
 
         private void TryCaptureInitialDirection()
@@ -555,8 +661,8 @@ namespace Hecton8.Celestial
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                Camera playerCamera = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null
-                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera
+                Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
+                    ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
                     : ResolveComponentOnTransform<Camera>(playerTransform);
                 if (playerCamera != null)
                     observerTransform = playerCamera.transform;

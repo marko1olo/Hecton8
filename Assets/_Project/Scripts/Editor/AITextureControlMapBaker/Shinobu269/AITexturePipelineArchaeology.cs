@@ -47,10 +47,9 @@ namespace Hecton8.Editor.AITextureControlMaps
                 if (!Directory.Exists(root))
                     continue;
 
-                string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                foreach (string discoveredFile in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
                 {
-                    string path = files[fileIndex].Replace('\\', '/');
+                    string path = discoveredFile.Replace('\\', '/');
                     if (path.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
                         continue;
 

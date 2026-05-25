@@ -11,7 +11,7 @@ namespace Hecton8.Visor
         private void OnDrawGizmos()
         {
             if (!drawDecalVolumes ||
-                !DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<VisorDecalDTO>.ReadOnly decals, out _, out Vector3 cameraWorldPosition))
+                !DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<TraumaDecalDTO>.ReadOnly decals, out _, out Vector3 cameraWorldPosition))
             {
                 return;
             }
@@ -23,7 +23,7 @@ namespace Hecton8.Visor
                 int drawn = 0;
                 for (int i = 0; i < decals.Length && drawn < maxDrawnVolumes; i++)
                 {
-                    VisorDecalDTO decal = decals[i];
+                    TraumaDecalDTO decal = decals[i];
                     if ((decal.Flags & DynamicDecalFlags.Active) == 0u || decal.Opacity01 <= 0.0001f)
                         continue;
 

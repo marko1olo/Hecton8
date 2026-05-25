@@ -92,7 +92,7 @@ namespace Hecton8.World.ProceduralWreckage
                 return false;
 
             Shader.SetGlobalBuffer(_WreckageMatricesId, matrixBuffer);
-            Graphics.DrawProceduralIndirect(
+            UnityEngine.Graphics.DrawProceduralIndirect(
                 material,
                 bounds,
                 topology,

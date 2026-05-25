@@ -261,10 +261,12 @@ namespace Hecton8.Core
                 float phase = (tick & 1023u) * 0.017453292f;
                 float jitterX = (((jitterBits >> 8) & 255u) * (1f / 127.5f)) - 1f;
                 float jitterY = (((jitterBits >> 16) & 255u) * (1f / 127.5f)) - 1f;
+                float phaseSin = MathLodApproximation.ApproxSinBhaskara(phase);
+                float phaseCos = MathLodApproximation.ApproxCosBhaskara(phase * 1.37f);
 
                 PredictedInputDTO input = default;
                 input.TickNumber = tick;
-                input.LocalMoveVector = math.normalizesafe(new float3(math.sin(phase) + (jitterX * 0.35f), 0f, math.cos(phase * 1.37f) + (jitterY * 0.35f)));
+                input.LocalMoveVector = math.normalizesafe(new float3(phaseSin + (jitterX * 0.35f), 0f, phaseCos + (jitterY * 0.35f)));
                 input.LookDelta = new float2(jitterY * 18.5f, jitterX * 12.25f);
                 input.ActionButtonsMask = ((jitterBits & 7u) == 0u ? 1u : 0u) | ((jitterBits & 31u) == 0u ? 4u : 0u);
                 input._pad0 = PredictedInputFlags.Local | PredictedInputFlags.MockGenerated | PredictedInputFlags.Valid;

@@ -1,5 +1,7 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
@@ -57,7 +59,7 @@ namespace Hecton8.Core.Memory
         [FieldOffset(24)] public ulong _pad1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref ValidationStateDTO ElementAt(void* basePointer, int index)
+        internal static ref ValidationStateDTO ElementAt(void* basePointer, int index)
         {
             return ref UnsafeUtility.AsRef<ValidationStateDTO>(
                 (byte*)basePointer + (index * UnsafeUtility.SizeOf<ValidationStateDTO>()));
@@ -78,7 +80,7 @@ namespace Hecton8.Core.Memory
         [FieldOffset(36)] public float Criticality01;
         [FieldOffset(40)] public uint ModdedGameMask;
         [FieldOffset(44)] public int BufferId;
-        [FieldOffset(48)] public ulong FunctionPointerHash;
+        [FieldOffset(48)] public ulong TargetMemoryFingerprint;
         [FieldOffset(56)] public ulong _pad1;
     }
 
@@ -211,12 +213,44 @@ namespace Hecton8.Core.Memory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ComputeXXHash3Folded(ReadOnlySpan<byte> bytes)
+        {
+            fixed (byte* ptr = bytes)
+                return ComputeXXHash3Folded(ptr, bytes.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ComputeXXHash3Folded(NativeArray<byte> bytes)
+        {
+            if (!bytes.IsCreated)
+                return 0u;
+
+            return ComputeXXHash3Folded(bytes.GetUnsafeReadOnlyPtr(), bytes.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ComputeXXHash3Folded(void* ptr, int byteLength)
         {
             if (ptr == null || byteLength <= 0)
                 return 0u;
 
             return FoldHash64(xxHash3.Hash64(ptr, (long)byteLength));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ComputeXXHash3Full64(ReadOnlySpan<byte> bytes)
+        {
+            fixed (byte* ptr = bytes)
+                return ComputeXXHash3Full64(ptr, bytes.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ComputeXXHash3Full64(NativeArray<byte> bytes)
+        {
+            if (!bytes.IsCreated)
+                return 0UL;
+
+            return ComputeXXHash3Full64(bytes.GetUnsafeReadOnlyPtr(), bytes.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -255,6 +289,22 @@ namespace Hecton8.Core.Memory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool HasModPrefix(ReadOnlySpan<byte> bytes)
+        {
+            fixed (byte* ptr = bytes)
+                return HasModPrefix(ptr, bytes.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool HasModPrefix(NativeArray<byte> bytes)
+        {
+            if (!bytes.IsCreated)
+                return false;
+
+            return HasModPrefix((byte*)bytes.GetUnsafeReadOnlyPtr(), bytes.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool HasModPrefix(byte* ptr, int byteLength)
         {
             if (ptr == null || byteLength < 2)
@@ -282,6 +332,7 @@ namespace Hecton8.Core.Memory
         [ReadOnly, NoAlias] public NativeArray<MemorySentinelTargetDTO> Targets;
         [NoAlias] public NativeArray<MemorySentinelResultDTO> Results;
         public NativeQueue<MemoryDesyncSignal>.ParallelWriter DesyncWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> DesyncWriterBudget;
         public uint Frame;
         public float GlobalQualityWeight;
 
@@ -307,15 +358,13 @@ namespace Hecton8.Core.Memory
             }
 
             float minQuality = math.saturate(target.MinQualityWeight);
-            float qualityGate = math.step(minQuality, GlobalQualityWeight + 0.0001f);
-            if (qualityGate < 0.5f)
-            {
-                result.Flags |= MemorySentinelConstants.ResultFlagSkippedQuality;
-                Results[index] = result;
-                return;
-            }
+            float quality = math.saturate(math.select(0f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float qualityDeficit = math.saturate((minQuality - quality) * math.rcp(math.max(0.0001f, minQuality + 0.0001f)));
+            qualityDeficit = qualityDeficit * qualityDeficit * (3f - 2f * qualityDeficit);
 
             uint interval = math.max(1u, math.max(state.CheckInterval, target.CheckInterval));
+            uint qualityInterval = (uint)math.clamp((int)math.round(math.lerp(1f, 64f, qualityDeficit)), 1, 64);
+            interval = math.max(interval, qualityInterval);
             if (state.ExpectedHash != 0u && interval > 1u)
             {
                 uint cadencePhase = target.TargetHash == 0u ? 0u : target.TargetHash % interval;
@@ -343,7 +392,7 @@ namespace Hecton8.Core.Memory
                 pointer,
                 target.ByteLength,
                 target.BufferId);
-            if (target.FunctionPointerHash != 0UL && target.FunctionPointerHash != fingerprint)
+            if (target.TargetMemoryFingerprint != 0UL && target.TargetMemoryFingerprint != fingerprint)
                 result.Flags |= MemorySentinelConstants.ResultFlagPointerFingerprintMismatch;
 
             byte* ptr = (byte*)pointer;
@@ -404,7 +453,7 @@ namespace Hecton8.Core.Memory
             signal.Frame = Frame;
             signal.BufferId = target.BufferId;
             signal.ByteLength = target.ByteLength;
-            signal.TargetMemoryPointer = target.TargetMemoryPointer;
+            signal.TargetMemoryFingerprint = target.TargetMemoryFingerprint;
             signal.FullHash64 = fullHash;
             signal.GlobalQualityWeight = GlobalQualityWeight;
             signal.Severity01 = math.saturate(target.Criticality01);
@@ -418,7 +467,28 @@ namespace Hecton8.Core.Memory
                 signal.Flags |= MemoryDesyncSignal.FlagPointerMismatch;
             }
 
-            DesyncWriter.Enqueue(signal);
+            TryEnqueueDesyncBounded(DesyncWriter, DesyncWriterBudget, in signal);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe bool TryEnqueueDesyncBounded(
+            NativeQueue<MemoryDesyncSignal>.ParallelWriter writer,
+            NativeArray<int> writerBudget,
+            in MemoryDesyncSignal signal)
+        {
+            if (!writerBudget.IsCreated || writerBudget.Length < 2)
+                return false;
+
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
+            int remainingAfterClaim = Interlocked.Decrement(ref budget[0]);
+            if (remainingAfterClaim < 0)
+            {
+                Interlocked.Increment(ref budget[1]);
+                return false;
+            }
+
+            writer.Enqueue(signal);
+            return true;
         }
     }
 

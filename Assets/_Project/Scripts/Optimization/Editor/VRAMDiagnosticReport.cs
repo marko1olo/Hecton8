@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Hecton8.Core.Contracts;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,7 +25,7 @@ namespace Hecton8.Optimization.Editor
                 return;
             }
             
-            if (Hecton8.Core.GlobalRegistry.VRAMMonitor == null || Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
+            if (Hecton8.Core.GlobalRegistry.VRAMMonitor == null || Hecton8.Core.GlobalRegistry.RenderTextureLifecycleService == null)
             {
                 EditorUtility.DisplayDialog("Error", "VRAM Optimization System not initialized.", "OK");
                 return;
@@ -142,9 +143,9 @@ namespace Hecton8.Optimization.Editor
             report.AppendLine("## RenderTexture Pool Statistics");
             report.AppendLine();
             
-            if (Hecton8.Core.GlobalRegistry.RenderTexturePool != null)
+            if (Hecton8.Core.GlobalRegistry.RenderTexturePoolService != null)
             {
-                var pool = Hecton8.Core.GlobalRegistry.RenderTexturePool;
+                IRenderTexturePoolService pool = Hecton8.Core.GlobalRegistry.RenderTexturePoolService;
                 
                 report.AppendLine($"**Hit Rate:** {pool.PoolHitRate * 100f:F1}%");
                 report.AppendLine($"**Total Pooled RTs:** {pool.TotalPooledCount}");
@@ -165,7 +166,7 @@ namespace Hecton8.Optimization.Editor
             report.AppendLine("## RenderTexture Lifecycle Audit");
             report.AppendLine();
             
-            var tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycle;
+            IRenderTextureLifecycleService tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycleService;
             
             report.AppendLine($"**Tracked RenderTextures:** {tracker.TrackedRenderTextureCount}");
             report.AppendLine($"**Total Memory:** {tracker.TrackedRenderTextureMemoryBytes / (1024f * 1024f):F2} MB");
@@ -193,8 +194,8 @@ namespace Hecton8.Optimization.Editor
             }
             
             long totalSavings = 0L;
-            foreach (var rec in recommendations)
-                totalSavings += rec.MemorySavingsBytes;
+            for (int i = 0; i < recommendations.Count; i++)
+                totalSavings += recommendations[i].MemorySavingsBytes;
             
             report.AppendLine($"**Total Recommendations:** {recommendations.Count}");
             report.AppendLine($"**Total Potential Savings:** {totalSavings / (1024f * 1024f):F2} MB");
@@ -203,8 +204,9 @@ namespace Hecton8.Optimization.Editor
             report.AppendLine("| RT Name | Owner | Current Format | Recommended Format | Savings |");
             report.AppendLine("|---------|-------|----------------|-------------------|---------|");
             
-            foreach (var rec in recommendations)
+            for (int i = 0; i < recommendations.Count; i++)
             {
+                FormatOptimizationRecommendation rec = recommendations[i];
                 report.AppendLine($"| {rec.RenderTexture.name} | {(rec.Owner != null ? rec.Owner.name : "NULL")} | {rec.CurrentFormat} | {rec.RecommendedFormat} | {rec.MemorySavingsBytes / (1024f * 1024f):F2} MB |");
             }
             
@@ -226,8 +228,8 @@ namespace Hecton8.Optimization.Editor
             }
             
             long totalSavings = 0L;
-            foreach (var rec in recommendations)
-                totalSavings += rec.MemorySavingsBytes;
+            for (int i = 0; i < recommendations.Count; i++)
+                totalSavings += recommendations[i].MemorySavingsBytes;
             
             report.AppendLine($"**Total Recommendations:** {recommendations.Count}");
             report.AppendLine($"**Total Potential Savings:** {totalSavings / (1024f * 1024f):F2} MB");
@@ -236,8 +238,9 @@ namespace Hecton8.Optimization.Editor
             report.AppendLine("| RT Name | Owner | Current Resolution | Recommended Resolution | Scale | RMSE | Savings | Priority |");
             report.AppendLine("|---------|-------|-------------------|----------------------|-------|------|---------|----------|");
             
-            foreach (var rec in recommendations)
+            for (int i = 0; i < recommendations.Count; i++)
             {
+                ResolutionOptimizationRecommendation rec = recommendations[i];
                 report.AppendLine($"| {rec.RenderTexture.name} | {(rec.Owner != null ? rec.Owner.name : "NULL")} | {rec.CurrentWidth}x{rec.CurrentHeight} | {rec.RecommendedWidth}x{rec.RecommendedHeight} | {rec.Scale:F2}x | {rec.RMSE:F1}% | {rec.MemorySavingsBytes / (1024f * 1024f):F2} MB | {rec.Priority} |");
             }
             

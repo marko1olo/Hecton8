@@ -50,7 +50,7 @@ namespace Hecton8.World
             float dz = (hNorth - hSouth) * invDoubleCellSize;
             float2 gradient = new float2(dx, dz);
             float gradientLength = FastMagnitudeApprox(gradient);
-            float slopeDegrees = math.degrees(math.atan(gradientLength));
+            float slopeDegrees = math.degrees(global::Hecton8.Core.MathLodApproximation.ApproxAtanFast(gradientLength));
             float cliff01 = math.saturate((slopeDegrees - SlopeThresholdDegrees) * math.rcp(math.max(1f, 89f - SlopeThresholdDegrees)));
             if (cliff01 <= 0.0001f)
             {

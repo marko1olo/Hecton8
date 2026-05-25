@@ -16,7 +16,6 @@ using Hecton8.World;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Input;
 using TMPro;
 using Unity.Collections;
 using UnityEngine;
@@ -36,7 +35,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Inventory Tab")]
-    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, IPDAEventListener, ILocalizationCorruptionVisualStateListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, ILateFrameTickable, IPDAEventListener, ILocalizationCorruptionVisualStateListener, IGlobalRegistryHotSwapListener
     {
         private static readonly char[] StackCountTemplateChars = "×{0}".ToCharArray();
         private static readonly char[] DetailWeightStackTemplateChars = "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".ToCharArray();
@@ -65,6 +64,8 @@ namespace Hecton8.UI
         private static readonly char[] FilterEmptyLabelComponentsChars = "COMPONENTS".ToCharArray();
         private static readonly char[] PageDigestPrefixChars = "PAGE ".ToCharArray();
         private static readonly char[] EmptyTextChars = new char[1];
+        private const int MaxDynamicTextBufferChars = 4096;
+        private static readonly char[] SharedOversizedTextBuffer = new char[MaxDynamicTextBufferChars]; // COLD ALLOC: char[4096] - no-GC fallback for unusually long PDA strings - owner: PDAInventoryTab
         // COLD ALLOC: string[4] — cached PDA tool-slot key labels — owner: PDAInventoryTab
         private static readonly string[] ToolSlotKeyLabels = { "1", "2", "3", "4" };
         // COLD ALLOC: string[5] — cached PDA tab bar labels — owner: PDAInventoryTab
@@ -243,6 +244,7 @@ namespace Hecton8.UI
         private char[] _filterSummaryBuffer;
         private char[] _pageSummaryBuffer;
         private char[] _detailTextBuffer;
+        private char[] _descriptionTextBuffer;
         private char[] _loadoutAssignTextBuffer;
         private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - inventory HUD notification staging buffer - owner: PDAInventoryTab
         private int[] _filteredAnchorIndices;
@@ -255,9 +257,12 @@ namespace Hecton8.UI
         private uint _lastToolLoadoutSignalSequence;
 
         private bool _registeredToUpdateLoop;
+        private bool _registeredToLateFrameLoop;
+        private bool _pendingInventoryParallaxDirty;
+        private bool _pendingInventoryParallaxClear;
         private Transform _dropOrigin;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private InputManager _nativeInputManager;
+        private INativeInputManagerRuntime _nativeInputManager;
         private IAudioService _audioService;
         private bool _hotSwapRegistered;
 
@@ -278,6 +283,7 @@ namespace Hecton8.UI
             _filterSummaryBuffer = new char[80]; // COLD ALLOC: char[80] - filter digest staging buffer - owner: PDAInventoryTab
             _pageSummaryBuffer = new char[32]; // COLD ALLOC: char[32] - page digest staging buffer - owner: PDAInventoryTab
             _detailTextBuffer = new char[384]; // COLD ALLOC: char[384] - selected item detail text staging buffer - owner: PDAInventoryTab
+            _descriptionTextBuffer = new char[384]; // COLD ALLOC: char[384] - selected item description corruption staging buffer - owner: PDAInventoryTab
             _loadoutAssignTextBuffer = new char[32]; // COLD ALLOC: char[32] - loadout assign label staging buffer - owner: PDAInventoryTab
             _filteredAnchorIndices = new int[MaxItems]; // COLD ALLOC: int[MaxItems] - filtered anchor page index buffer - owner: PDAInventoryTab
         }
@@ -315,42 +321,70 @@ namespace Hecton8.UI
         {
             if (!IsTabActive)
             {
-                Shader.SetGlobalVector(PdaInventoryParallaxId, Vector4.zero);
+                _pendingInventoryParallaxClear = true;
+                _pendingInventoryParallaxDirty = true;
                 return;
             }
 
-            bool signalDirty = false;
             if (ConsumeInventoryChangedSignals())
             {
                 MarkInventoryDirty();
-                signalDirty = true;
             }
 
             if (ConsumeToolLoadoutChangedSignals())
             {
                 MarkToolLoadoutDirty();
-                signalDirty = true;
             }
 
-            if (signalDirty)
+            _pendingInventoryParallaxClear = false;
+            _pendingInventoryParallaxDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            bool refreshDirty = _gridDirty || _detailsDirty || _toolStripDirty;
+            if (refreshDirty)
                 FlushPendingRefresh();
+
+            if (!_pendingInventoryParallaxDirty)
+                return;
+
+            bool clearParallax = _pendingInventoryParallaxClear || !IsTabActive;
+            _pendingInventoryParallaxDirty = false;
+            _pendingInventoryParallaxClear = false;
+            if (clearParallax)
+            {
+                Shader.SetGlobalVector(PdaInventoryParallaxId, Vector4.zero);
+                return;
+            }
 
             PublishInventoryUiParallax();
         }
 
         private void TryRegisterTick()
         {
-            if (_registeredToUpdateLoop || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToUpdateLoop = GlobalRegistry.Updatables.Contains(this);
+            if (!_registeredToUpdateLoop)
+            {
+                _registeredToUpdateLoop = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            }
+
+            if (!_registeredToLateFrameLoop)
+                _registeredToLateFrameLoop = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTick()
         {
+            if (_registeredToLateFrameLoop)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredToLateFrameLoop = false;
+            }
+
             if (!_registeredToUpdateLoop)
                 return;
 
@@ -370,10 +404,16 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime ||
-                serviceSlot == GlobalRegistryServiceSlot.Input)
+            if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
             {
-                _nativeInputManager = currentService as InputManager ?? GlobalRegistry.NativeInputManager;
+                _nativeInputManager = currentService as INativeInputManagerRuntime;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Input &&
+                currentService is INativeInputManagerRuntime nativeInputManager)
+            {
+                _nativeInputManager = nativeInputManager;
                 return;
             }
 
@@ -400,9 +440,9 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _nativeInputManager = GlobalRegistry.NativeInputManager;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _nativeInputManager = GlobalRegistry.NativeInputRuntime;
+            _audioService = GlobalRegistry.Audio;
         }
 
         private void ClearCachedRegistryServices()
@@ -475,7 +515,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            InputManager inputManager = _nativeInputManager;
+            INativeInputManagerRuntime inputManager = _nativeInputManager;
             Vector2 pointerPosition = inputManager != null && inputManager.TryReadUiPoint(out Vector2 uiPoint)
                 ? uiPoint
                 : new Vector2(screenWidth * 0.5f, screenHeight * 0.5f);
@@ -608,7 +648,7 @@ namespace Hecton8.UI
         private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
         {
             return manager != null && manager.gameObject != null
-                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
                 : 0u;
         }
 
@@ -1651,7 +1691,7 @@ namespace Hecton8.UI
             if (_detailDesc != null)
                 SetSelectedDescriptionText(_detailDesc);
 
-            LocalizationManager localizationManager = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
             if (_detailDescMadnessFx != null)
                 _detailDescMadnessFx.SetEffectActive(localizationManager != null && localizationManager.IsMadnessWhisperVisualActive());
 
@@ -1733,7 +1773,7 @@ namespace Hecton8.UI
                 _toolSlotBgs[i].color = isActive ? ToolSlotActive : ToolSlotBg;
 
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                if (prefab != null && prefab.TryGetComponent<PlayerTool>(out var tool)
+                if (prefab != null && prefab.TryGetComponent<IPlayerToolDataReadModel>(out var tool)
                     && tool.ToolData != null && tool.ToolData.icon != null)
                 {
                     _toolSlotIcons[i].sprite = tool.ToolData.icon;
@@ -1969,7 +2009,7 @@ namespace Hecton8.UI
             Transform dropOrigin = ResolveDropOrigin();
             if (dropOrigin == null)
             {
-                NotifyWarning("DROP BLOCKED - NO PLAYER VIEW ORIGIN");
+                NotifyWarning("DROP BLOCKED - NO PLAYER VIEW ORIGIN".AsSpan());
                 return;
             }
 
@@ -1985,7 +2025,7 @@ namespace Hecton8.UI
                     dropOrigin,
                     out _))
             {
-                NotifyWarning("DROP BLOCKED - WORLD SPAWN FAILED");
+                NotifyWarning("DROP BLOCKED - WORLD SPAWN FAILED".AsSpan());
                 return;
             }
 
@@ -2519,8 +2559,9 @@ namespace Hecton8.UI
             }
 
             EnsureCharCapacity(ref _detailTextBuffer, value.Length);
-            value.AsSpan().CopyTo(_detailTextBuffer.AsSpan());
-            ApplyDynamicBuffer(label, _detailTextBuffer, value.Length);
+            int writeLength = Mathf.Min(value.Length, _detailTextBuffer.Length);
+            value.AsSpan(0, writeLength).CopyTo(_detailTextBuffer.AsSpan());
+            ApplyDynamicBuffer(label, _detailTextBuffer, writeLength);
         }
 
         private static void ClearText(TMP_Text label)
@@ -2543,10 +2584,11 @@ namespace Hecton8.UI
             }
 
             EnsureCharCapacity(ref buffer, value.Length);
-            for (int i = 0; i < value.Length; i++)
-                buffer[i] = char.ToUpperInvariant(value[i]);
+            int writeLength = Mathf.Min(value.Length, buffer.Length);
+            for (int i = 0; i < writeLength; i++)
+                buffer[i] = ToUpperAscii(value[i]);
 
-            label.SetCharArray(buffer, 0, value.Length);
+            label.SetCharArray(buffer, 0, writeLength);
         }
 
         private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
@@ -2554,11 +2596,7 @@ namespace Hecton8.UI
             if (buffer != null && buffer.Length >= requiredLength)
                 return;
 
-            int capacity = buffer == null ? 32 : buffer.Length;
-            while (capacity < requiredLength)
-                capacity <<= 1;
-
-            buffer = new char[capacity]; // COLD ALLOC: char[capacity] - expanded inventory tab text staging buffer - owner: PDAInventoryTab
+            buffer = SharedOversizedTextBuffer;
         }
 
         private static bool TryWriteCargoDigest(
@@ -2747,7 +2785,7 @@ namespace Hecton8.UI
             return string.IsNullOrEmpty(value) || buffer.Append(value.AsSpan());
         }
 
-        private static bool AppendUpperInvariant(ref FixedCharBuffer buffer, string value)
+        private static bool AppendUpperAscii(ref FixedCharBuffer buffer, string value)
         {
             if (string.IsNullOrEmpty(value))
                 return true;
@@ -2755,12 +2793,19 @@ namespace Hecton8.UI
             Span<char> scratch = stackalloc char[1];
             for (int i = 0; i < value.Length; i++)
             {
-                scratch[0] = char.ToUpperInvariant(value[i]);
+                scratch[0] = ToUpperAscii(value[i]);
                 if (!buffer.Append(scratch))
                     return false;
             }
 
             return true;
+        }
+
+        private static char ToUpperAscii(char value)
+        {
+            return value >= 'a' && value <= 'z'
+                ? (char)(value - 32)
+                : value;
         }
 
         private static Color A(Color c, float a) { c.a = a; return c; }
@@ -2931,14 +2976,6 @@ namespace Hecton8.UI
             NotifyLoadoutUpdated(slotIndex);
         }
 
-        private void NotifyInfo(string message)
-        {
-            if (hudNotification == null)
-                HUDNotification.TryGetActive(out hudNotification);
-
-            hudNotification?.ShowInfo(message);
-        }
-
         private void NotifyInfo(in FixedCharBuffer messageBuffer)
         {
             if (hudNotification == null)
@@ -2956,7 +2993,7 @@ namespace Hecton8.UI
             return _dropOrigin;
         }
 
-        private void NotifyWarning(string message)
+        private void NotifyWarning(ReadOnlySpan<char> message)
         {
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
@@ -2976,7 +3013,7 @@ namespace Hecton8.UI
         {
             _notificationBuffer.Clear();
             AppendText(ref _notificationBuffer, "NO HELD PREFAB REGISTERED FOR ");
-            AppendUpperInvariant(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
+            AppendUpperAscii(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
             NotifyWarning(in _notificationBuffer);
         }
 
@@ -2984,7 +3021,7 @@ namespace Hecton8.UI
         {
             _notificationBuffer.Clear();
             AppendText(ref _notificationBuffer, "LOADOUT HOLSTERED - ");
-            AppendUpperInvariant(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
+            AppendUpperAscii(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
             NotifyInfo(in _notificationBuffer);
         }
 
@@ -3002,7 +3039,7 @@ namespace Hecton8.UI
             AppendText(ref _notificationBuffer, "LOADOUT UPDATED - SLOT ");
             _notificationBuffer.AppendInt(slotIndex + 1);
             AppendText(ref _notificationBuffer, ": ");
-            AppendUpperInvariant(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
+            AppendUpperAscii(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
             NotifyInfo(in _notificationBuffer);
         }
 
@@ -3035,13 +3072,13 @@ namespace Hecton8.UI
                 return;
             }
 
-            string desc = string.IsNullOrEmpty(_selectedItem.description)
-                ? ResolveLocalized(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.")
-                : _selectedItem.description;
-            desc = ResolveStressReactiveItemDescription(_selectedItem, desc);
-            ReadOnlySpan<char> descSpan = ReadOnlySpan<char>.Empty;
-            if (!string.IsNullOrEmpty(desc))
-                descSpan = desc.AsSpan();
+            LocalizationManager localization = GlobalRegistry.Localization;
+            ReadOnlySpan<char> descSpan = _selectedItem.GetDescriptionSpan(localization);
+            if (descSpan.IsEmpty)
+                descSpan = ResolveLocalizedSpan(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.");
+            descSpan = ResolveStressReactiveItemDescriptionSpan(_selectedItem, descSpan, localization);
+            if (descSpan.Length > MaxDynamicTextBufferChars - 64)
+                descSpan = descSpan.Slice(0, MaxDynamicTextBufferChars - 64);
 
             EnsureCharCapacity(ref _detailTextBuffer, descSpan.Length + 48);
             int length;
@@ -3157,7 +3194,7 @@ namespace Hecton8.UI
             if (IsSelectedItemAssignableTool())
             {
                 GameObject prefab = toolManager != null ? toolManager.GetKnownToolPrefabForItem(_selectedItem) : null;
-                PlayerTool tool = null;
+                IPlayerToolDataReadModel tool = null;
                 if (prefab != null)
                     prefab.TryGetComponent(out tool);
                 if (tool != null && tool.Metadata != null)
@@ -3448,18 +3485,16 @@ namespace Hecton8.UI
                     return i;
             }
 
-            string itemName = _selectedItem.itemName != null
-                ? _selectedItem.itemName.ToLowerInvariant()
-                : string.Empty;
+            string itemName = _selectedItem.itemName;
 
             int preferredSlot = -1;
-            if (itemName.Contains("scanner"))
+            if (ContainsOrdinalIgnoreCase(itemName, "scanner"))
                 preferredSlot = 0;
-            else if (itemName.Contains("repair"))
+            else if (ContainsOrdinalIgnoreCase(itemName, "repair"))
                 preferredSlot = 1;
-            else if (itemName.Contains("light") || itemName.Contains("flash"))
+            else if (ContainsOrdinalIgnoreCase(itemName, "light") || ContainsOrdinalIgnoreCase(itemName, "flash"))
                 preferredSlot = 2;
-            else if (itemName.Contains("builder") || itemName.Contains("cutter"))
+            else if (ContainsOrdinalIgnoreCase(itemName, "builder") || ContainsOrdinalIgnoreCase(itemName, "cutter"))
                 preferredSlot = 3;
 
             if (preferredSlot >= 0)
@@ -3484,6 +3519,13 @@ namespace Hecton8.UI
             return 0;
         }
 
+        private static bool ContainsOrdinalIgnoreCase(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   !string.IsNullOrEmpty(token) &&
+                   source.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private void ClearChildren(RectTransform root)
         {
             for (int i = root.childCount - 1; i >= 0; i--)
@@ -3494,29 +3536,56 @@ namespace Hecton8.UI
             }
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            return Hecton.Localization.LocalizationManager.ActiveRuntimeInstance != null
-                ? Hecton.Localization.LocalizationManager.ActiveRuntimeInstance.GetOrFallback(Hecton.Localization.LocalizationManager.ActiveRuntimeInstance.CurrentLanguage, key, fallback)
-                : fallback;
+            LocalizationManager manager = GlobalRegistry.Localization;
+            return manager != null
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
-        private static string ResolveStressReactiveItemDescription(Hecton8.Items.ItemData item, string text)
+        private ReadOnlySpan<char> ResolveStressReactiveItemDescriptionSpan(
+            Hecton8.Items.ItemData item,
+            ReadOnlySpan<char> text,
+            LocalizationManager manager)
         {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
+            if (text.IsEmpty)
+                return ReadOnlySpan<char>.Empty;
 
-            LocalizationManager manager = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             if (manager == null)
                 return text;
 
-            if (item == null)
-                return manager.ApplyHullStressCorruptionIfNeeded(text);
+            int maxLength = MaxDynamicTextBufferChars - 64;
+            EnsureCharCapacity(ref _descriptionTextBuffer, Mathf.Clamp(text.Length, 1, maxLength));
+            int sourceHash = ResolvePdaLoreSourceHash(item);
+            int length;
 
-            string token = !string.IsNullOrWhiteSpace(item.DescriptionTableKey)
-                ? item.DescriptionTableKey
-                : item.PersistentId;
-            return manager.ApplyPdaLoreCorruptionIfNeeded(token, text);
+            while (!manager.TryApplyPdaLoreCorruptionIfNeeded(sourceHash, text, _descriptionTextBuffer, out length))
+            {
+                if (_descriptionTextBuffer.Length >= maxLength)
+                    return text.Slice(0, Mathf.Min(text.Length, maxLength));
+
+                int nextLength = Mathf.Min(maxLength, Mathf.Max(_descriptionTextBuffer.Length + 1, _descriptionTextBuffer.Length << 1));
+                EnsureCharCapacity(ref _descriptionTextBuffer, nextLength);
+            }
+
+            if (length <= 0)
+                return ReadOnlySpan<char>.Empty;
+
+            return _descriptionTextBuffer.AsSpan(0, Mathf.Min(length, maxLength));
+        }
+
+        private static int ResolvePdaLoreSourceHash(Hecton8.Items.ItemData item)
+        {
+            if (item == null)
+                return LocHash.Compute("PDAInventoryTab.ItemDescription".AsSpan());
+
+            if (!string.IsNullOrWhiteSpace(item.DescriptionTableKey))
+                return LocHash.Compute(item.DescriptionTableKey.AsSpan());
+
+            return item.PersistentHashId != 0
+                ? item.PersistentHashId
+                : LocHash.Compute("PDAInventoryTab.ItemDescription".AsSpan());
         }
 
     }

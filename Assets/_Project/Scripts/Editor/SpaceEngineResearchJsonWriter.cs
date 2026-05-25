@@ -12,6 +12,8 @@ namespace Hecton8.EditorTools
 {
     internal static class SpaceEngineResearchJsonWriter
     {
+        private static readonly Encoding ArtifactEncoding = new UTF8Encoding(false);
+
         public static string Write(SpaceEngineResearchAuditResult result)
         {
             StringBuilder builder = new StringBuilder(4096);
@@ -48,7 +50,7 @@ namespace Hecton8.EditorTools
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllText(outputPath, json, Encoding.UTF8);
+            File.WriteAllText(outputPath, json, ArtifactEncoding);
         }
 
         private static void AppendAudit(StringBuilder builder, SpaceEngineResearchAuditResult result)

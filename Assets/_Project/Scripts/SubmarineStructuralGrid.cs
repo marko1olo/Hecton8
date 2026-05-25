@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
@@ -34,6 +34,12 @@ namespace Hecton8.Physics
         /// <summary>Current active local-space breach count available for visual repair coupling.</summary>
         int ActiveBreachCount { get; }
 
+        /// <summary>Current normalized structural fatigue peak for non-owning presentation consumers.</summary>
+        float FatiguePeakNormalized { get; }
+
+        /// <summary>Current normalized transient impact severity for non-owning presentation consumers.</summary>
+        float RecentImpactSeverityNormalized { get; }
+
         /// <summary>Returns one published 64-bit word from the hull breach mask. Invalid indices return zero.</summary>
         ulong GetHullBreachMaskWord(int wordIndex);
 
@@ -49,7 +55,7 @@ namespace Hecton8.Physics
     /// </summary>
     public interface ISubmarineDamageControlTarget
     {
-        /// <summary>Queues a repair hit resolved by the RaycastCommand interaction lane.</summary>
+        /// <summary>Queues a repair hit resolved by the interaction probe lane.</summary>
         bool TryQueueRepairHit(Vector3 worldHitPoint, float deltaTime, float repairUnitsPerSecond, float intensity01);
     }
 
@@ -67,7 +73,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
-    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget, ISubmarineRepairRoomResolver
+    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget, ISubmarineRepairRoomResolver, IGlobalRegistryHotSwapListener
     {
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
@@ -520,6 +526,7 @@ namespace Hecton8.Physics
         private int _activeBreachGpuBufferIndex;
         private int _damageControlTelemetryHead;
         private int _deferredBreachAddCount;
+        private int _droppedSignalCount;
 
         private float _cellBreachAreaSquareMeters;
         private float _fatiguePeakNormalized;
@@ -529,6 +536,8 @@ namespace Hecton8.Physics
         private float3 _pendingRepairLocalPoint;
         private float _leakAudioTimer;
         private float _leakPlumeClockSeconds;
+        private float _pendingLeakPlumeDeltaSeconds;
+        private float _pendingFakeCrushDepthMeters;
         private float _criticalBreachWarningTimer;
         private float _debugCompressionScale = 1f;
         private Vector4 _publishedCrushCenterRadius = new Vector4(float.NaN, 0f, 0f, 0f);
@@ -543,6 +552,12 @@ namespace Hecton8.Physics
         private ParticleSystem _hullImpactSparkParticles;
         private ParticleSystemRenderer _hullImpactSparkRenderer;
         private ParticleSystem.EmitParams _hullImpactSparkEmitParams;
+        private readonly HullImpactDecalRequest[] _pendingHullImpactDecals = new HullImpactDecalRequest[MaxQueuedImpacts]; // COLD ALLOC: HullImpactDecalRequest[16] - visual-sync hull impact decal queue - owner: SubmarineStructuralGrid
+        private readonly HullImpactSparkRequest[] _pendingHullImpactSparks = new HullImpactSparkRequest[MaxQueuedImpacts]; // COLD ALLOC: HullImpactSparkRequest[16] - visual-sync spark burst queue - owner: SubmarineStructuralGrid
+        private int _pendingHullImpactDecalCount;
+        private int _pendingHullImpactSparkCount;
+        private readonly BreachPressureSprayRequest[] _pendingBreachPressureSprays = new BreachPressureSprayRequest[MaxQueuedImpacts]; // COLD ALLOC: BreachPressureSprayRequest[16] - visual-sync breach spray queue - owner: SubmarineStructuralGrid
+        private int _pendingBreachPressureSprayCount;
         private MaterialPropertyBlock _leakPlumeDrawProperties;
         private IDataVault _dataVault;
         private VaultGenerationHandle<float4> _breachesHandle;
@@ -551,6 +566,9 @@ namespace Hecton8.Physics
         private bool _pendingRepairQueued;
         private bool _breachGpuDirty;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) - local component search scratch for interface-only wiring - owner: SubmarineStructuralGrid
+
+        /// <summary>Signals refused by bounded downstream lanes since this runtime was enabled.</summary>
+        public int DroppedSignalCount => _droppedSignalCount;
 
         private NativeArray<byte> _cellIntegrityFront;
         private NativeArray<byte> _cellIntegrityBack;
@@ -573,8 +591,34 @@ namespace Hecton8.Physics
         private GraphicsBuffer _leakPlumeParticleBuffer;
         private bool _mappingJobRunning;
         private bool _fatigueJobRunning;
+        private bool _leakPlumeVisualDirty;
+        private bool _fakeCrushDepthVisualDirty;
         // COLD ALLOC: float[8] - previous compartment pressures used to detect fatigue cycles - owner: SubmarineStructuralGrid
         private readonly float[] _previousCompartmentPressuresKPa = new float[CompartmentCapacity];
+
+        private struct HullImpactSparkRequest
+        {
+            public Vector3 WorldPoint;
+            public Vector3 OutwardNormal;
+            public float Severity01;
+        }
+
+        private struct HullImpactDecalRequest
+        {
+            public float3 LocalPoint;
+            public float3 LocalNormal;
+            public Vector3 WorldPoint;
+            public Vector3 OutwardNormal;
+            public float ImpactSpeed;
+            public float Severity01;
+            public byte UseLocalSpace;
+        }
+
+        private struct BreachPressureSprayRequest
+        {
+            public float3 LocalPoint;
+            public float Severity01;
+        }
 
         /// <inheritdoc />
         public bool IsReady => _nativeStateReady && _cellIntegrityFront.IsCreated;
@@ -587,8 +631,8 @@ namespace Hecton8.Physics
             ? math.min(_activeBreachCount, breaches.Length)
             : 0;
 
-        internal float FatiguePeakNormalized => _fatiguePeakNormalized;
-        internal float RecentImpactSeverityNormalized => _recentImpactSeverityNormalized;
+        public float FatiguePeakNormalized => _fatiguePeakNormalized;
+        public float RecentImpactSeverityNormalized => _recentImpactSeverityNormalized;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -618,11 +662,15 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
+            _droppedSignalCount = 0;
             CacheReferences();
             ResolveGridBounds();
             EnsureNativeState();
             SeedStructuralState();
             GlobalRegistry.RegisterSubmarineHullBreach(this);
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+
             TryRegister();
             TryRegisterDamageReceiver();
             EnsureHullImpactSparkParticles();
@@ -633,6 +681,7 @@ namespace Hecton8.Physics
             StopHullImpactSparkParticles();
             TryUnregisterDamageReceiver();
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
             ResetFakeCrushDepthGlobals();
@@ -645,6 +694,7 @@ namespace Hecton8.Physics
             StopHullImpactSparkParticles();
             TryUnregisterDamageReceiver();
             TryUnregister();
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
             ResetFakeCrushDepthGlobals();
@@ -693,12 +743,17 @@ namespace Hecton8.Physics
             FlushDeferredBreachAdds();
             CompactInactiveBreaches();
             PushDamageControlCoupling(fixedDeltaTime);
-            DispatchLeakPlumeCompute(fixedDeltaTime);
+            QueueLeakPlumeVisualSync(fixedDeltaTime);
             WriteDamageControlTelemetry(0u);
         }
 
         public void LateFrameTick()
         {
+            FlushFakeCrushDepthGlobals();
+            FlushQueuedHullImpactDecals();
+            FlushQueuedHullImpactSparks();
+            FlushQueuedBreachScreenSpaceFeedback();
+            FlushLeakPlumeVisualSync();
             RenderLeakPlumeParticles();
         }
 
@@ -729,18 +784,27 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
+        /// Queues a hull-impact feedback DTO for the visual-sync lane without touching scene presentation.
+        /// </summary>
+        public void QueueHullImpactFeedbackLocal(float3 localPoint, float3 localNormal, float impactSpeed, float severity01)
+        {
+            QueueHullImpactDecalLocal(localPoint, localNormal, impactSpeed, severity01);
+        }
+
+        /// <summary>
         /// Queues one visual impact decal in hull-local space without spawning projector objects or mutating hull mesh data.
         /// </summary>
         public void QueueHullImpactDecalLocal(float3 localPoint, float3 localNormal, float impactSpeed, float severity01)
         {
-            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
-            _cachedTransform = cachedTransform;
-            Vector3 localPointVector = new Vector3(localPoint.x, localPoint.y, localPoint.z);
-            Vector3 localNormalVector = new Vector3(localNormal.x, localNormal.y, localNormal.z);
-            Vector3 worldPoint = cachedTransform.TransformPoint(localPointVector);
-            Vector3 worldNormal = cachedTransform.TransformDirection(localNormalVector);
-            SpawnHullImpactSparks(worldPoint, worldNormal, severity01);
-            EnqueueHullImpactDecal(worldPoint, worldNormal, impactSpeed, severity01);
+            QueueHullImpactDecalRequest(
+                new HullImpactDecalRequest
+                {
+                    LocalPoint = localPoint,
+                    LocalNormal = localNormal,
+                    ImpactSpeed = math.max(0f, impactSpeed),
+                    Severity01 = math.saturate(severity01),
+                    UseLocalSpace = 1
+                });
         }
 
         /// <summary>
@@ -748,12 +812,15 @@ namespace Hecton8.Physics
         /// </summary>
         public void QueueHullImpactDecalWorld(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
         {
-            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
-            _cachedTransform = cachedTransform;
-            float severity = math.saturate(severity01);
-            Vector3 normal = ResolveSafeDirection(outwardNormal, cachedTransform.up);
-            EnqueueHullImpactDecal(worldPoint, normal, impactSpeed, severity);
-            TriggerHullImpactCameraShake(severity, worldPoint, normal);
+            QueueHullImpactDecalRequest(
+                new HullImpactDecalRequest
+                {
+                    WorldPoint = worldPoint,
+                    OutwardNormal = outwardNormal,
+                    ImpactSpeed = math.max(0f, impactSpeed),
+                    Severity01 = math.saturate(severity01),
+                    UseLocalSpace = 0
+                });
         }
 
         internal static float DebugResolveHullImpactDentDecalSize(
@@ -792,7 +859,80 @@ namespace Hecton8.Physics
             _hullImpactSparkParticles.Emit(_hullImpactSparkEmitParams, burstCount);
         }
 
-        private void EnqueueHullImpactDecal(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
+        private void QueueHullImpactSparks(Vector3 worldPoint, Vector3 outwardNormal, float severity01)
+        {
+            if (_pendingHullImpactSparkCount >= _pendingHullImpactSparks.Length)
+                return;
+
+            _pendingHullImpactSparks[_pendingHullImpactSparkCount++] = new HullImpactSparkRequest
+            {
+                WorldPoint = worldPoint,
+                OutwardNormal = outwardNormal,
+                Severity01 = math.saturate(severity01)
+            };
+        }
+
+        private void QueueHullImpactDecalRequest(in HullImpactDecalRequest request)
+        {
+            if (_pendingHullImpactDecalCount >= _pendingHullImpactDecals.Length)
+                return;
+
+            _pendingHullImpactDecals[_pendingHullImpactDecalCount++] = request;
+        }
+
+        private void FlushQueuedHullImpactDecals()
+        {
+            int count = _pendingHullImpactDecalCount;
+            if (count <= 0)
+                return;
+
+            _pendingHullImpactDecalCount = 0;
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            Vector3 fallbackNormal = cachedTransform.up;
+            for (int i = 0; i < count; i++)
+            {
+                HullImpactDecalRequest request = _pendingHullImpactDecals[i];
+                _pendingHullImpactDecals[i] = default;
+
+                Vector3 worldPoint;
+                Vector3 worldNormal;
+                if (request.UseLocalSpace != 0)
+                {
+                    Vector3 localPoint = new Vector3(request.LocalPoint.x, request.LocalPoint.y, request.LocalPoint.z);
+                    Vector3 localNormal = new Vector3(request.LocalNormal.x, request.LocalNormal.y, request.LocalNormal.z);
+                    worldPoint = cachedTransform.TransformPoint(localPoint);
+                    worldNormal = cachedTransform.TransformDirection(localNormal);
+                }
+                else
+                {
+                    worldPoint = request.WorldPoint;
+                    worldNormal = request.OutwardNormal;
+                }
+
+                Vector3 normal = ResolveSafeDirection(worldNormal, fallbackNormal);
+                QueueHullImpactSparks(worldPoint, normal, request.Severity01);
+                EnqueueHullImpactDecal(worldPoint, normal, request.ImpactSpeed, request.Severity01);
+                TriggerHullImpactCameraShake(request.Severity01, worldPoint, normal);
+            }
+        }
+
+        private void FlushQueuedHullImpactSparks()
+        {
+            int count = _pendingHullImpactSparkCount;
+            if (count <= 0)
+                return;
+
+            _pendingHullImpactSparkCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                HullImpactSparkRequest request = _pendingHullImpactSparks[i];
+                _pendingHullImpactSparks[i] = default;
+                SpawnHullImpactSparks(request.WorldPoint, request.OutwardNormal, request.Severity01);
+            }
+        }
+
+        private bool EnqueueHullImpactDecal(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
         {
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
@@ -812,7 +952,8 @@ namespace Hecton8.Physics
             signal.Direction = direction;
             signal.Magnitude = math.max(size * 18f, impactSpeed * 0.2f);
             signal.DamageType = HullDentVisualDamageType;
-            signal.TargetHash = unchecked((uint)math.max(1, GetInstanceID()));
+            uint targetHash = Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+            signal.TargetHash = targetHash != 0u ? targetHash : 1u;
             signal.SourceHash = HullDentVisualSourceHash;
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.SourceId = 0;
@@ -820,12 +961,16 @@ namespace Hecton8.Physics
             signal.Channel = 0;
             signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
             signal.IntegrityDelta = (byte)math.clamp(math.round(math.saturate(severity01) * 255f), 0f, 255f);
-            GlobalSignals.Publish(in signal);
+            bool accepted = SignalBus<CombatDamageSignal>.TryPush(in signal);
+            if (!accepted)
+                IncrementDroppedSignalCount();
+            return accepted;
         }
 
-        private static void TriggerHullImpactCameraShake(float severity01, Vector3 worldPoint, Vector3 worldNormal)
+        private void TriggerHullImpactCameraShake(float severity01, Vector3 worldPoint, Vector3 worldNormal)
         {
-            CameraJuiceSignals.PublishImpact(severity01, worldPoint, -worldNormal);
+            if (!CameraJuiceSignals.TryPublishImpact(severity01, worldPoint, -worldNormal))
+                IncrementDroppedSignalCount();
         }
 
         private void EnsureHullImpactSparkParticles()
@@ -1139,19 +1284,63 @@ namespace Hecton8.Physics
 
         private void RegisterBreachScreenSpaceFeedback(float3 localPoint, float severity01)
         {
+            if (!math.all(math.isfinite(localPoint)))
+                return;
+
+            BreachPressureSprayRequest request = new BreachPressureSprayRequest
+            {
+                LocalPoint = localPoint,
+                Severity01 = math.saturate(severity01)
+            };
+
+            if (_pendingBreachPressureSprayCount < _pendingBreachPressureSprays.Length)
+            {
+                _pendingBreachPressureSprays[_pendingBreachPressureSprayCount++] = request;
+                return;
+            }
+
+            int weakestIndex = 0;
+            float weakestSeverity = _pendingBreachPressureSprays[0].Severity01;
+            for (int i = 1; i < _pendingBreachPressureSprays.Length; i++)
+            {
+                float severity = _pendingBreachPressureSprays[i].Severity01;
+                if (severity >= weakestSeverity)
+                    continue;
+
+                weakestSeverity = severity;
+                weakestIndex = i;
+            }
+
+            if (request.Severity01 > weakestSeverity)
+                _pendingBreachPressureSprays[weakestIndex] = request;
+        }
+
+        private void FlushQueuedBreachScreenSpaceFeedback()
+        {
+            int count = _pendingBreachPressureSprayCount;
+            if (count <= 0)
+                return;
+
+            _pendingBreachPressureSprayCount = 0;
             AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
             if (fluidDecals == null)
                 return;
 
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
-            Vector3 local = new Vector3(localPoint.x, localPoint.y, localPoint.z);
-            Vector3 worldPoint = cachedTransform.TransformPoint(local);
-            Vector3 inward = cachedTransform.position - worldPoint;
-            if (inward.sqrMagnitude <= Epsilon)
-                inward = -cachedTransform.up;
+            Vector3 fallbackDirection = -cachedTransform.up;
+            for (int i = 0; i < count; i++)
+            {
+                BreachPressureSprayRequest request = _pendingBreachPressureSprays[i];
+                _pendingBreachPressureSprays[i] = default;
+                Vector3 local = new Vector3(request.LocalPoint.x, request.LocalPoint.y, request.LocalPoint.z);
+                Vector3 worldPoint = cachedTransform.TransformPoint(local);
+                Vector3 inward = cachedTransform.position - worldPoint;
+                if (inward.sqrMagnitude <= Epsilon)
+                    inward = fallbackDirection;
 
-            fluidDecals.RegisterPressureSpray(worldPoint, ResolveSafeDirection(inward, -cachedTransform.up), math.saturate(severity01));
+                fluidDecals.RegisterPressureSpray(worldPoint, ResolveSafeDirection(inward, fallbackDirection), request.Severity01);
+            }
         }
 
         private void ScheduleBreachRepairJob()
@@ -1279,12 +1468,12 @@ namespace Hecton8.Physics
             return (depthMeters * HectonPhysicsContract.HydrostaticPressureKPaPerMeter) + HectonSurvivalContract.KPaPerAtmosphere;
         }
 
-        private void PublishLeakImpactSignal(float severitySum, float ambientPressureKPa)
+        private bool PublishLeakImpactSignal(float severitySum, float ambientPressureKPa)
         {
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
             if (!TryResolveAupFromRuntimeOrigin(cachedTransform.position, out double3 absolute))
-                return;
+                return false;
 
             Rigidbody hullBody = ResolveHullRigidbody();
             ImpactSignal signal = new ImpactSignal
@@ -1298,7 +1487,10 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = LeakImpactFlags
             };
-            GlobalSignals.Publish(in signal);
+            bool accepted = SignalBus<ImpactSignal>.TryPush(in signal);
+            if (!accepted)
+                IncrementDroppedSignalCount();
+            return accepted;
         }
 
         private float ResolvePeakBreachSeverity()
@@ -1314,7 +1506,7 @@ namespace Hecton8.Physics
             return peak;
         }
 
-        private void PublishCriticalBreachWarning(float severity01)
+        private bool PublishCriticalBreachWarning(float severity01)
         {
             Rigidbody hullBody = ResolveHullRigidbody();
             VocalWarningSignal warning = new VocalWarningSignal
@@ -1326,7 +1518,16 @@ namespace Hecton8.Physics
                 Priority = (byte)VocalWarningId.HullBreach,
                 Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
             };
-            GlobalSignals.Publish(in warning);
+            bool accepted = SignalBus<VocalWarningSignal>.TryPush(in warning);
+            if (!accepted)
+                IncrementDroppedSignalCount();
+            return accepted;
+        }
+
+        private void IncrementDroppedSignalCount()
+        {
+            if (_droppedSignalCount < 0x3FFFFFFF)
+                _droppedSignalCount++;
         }
 
         private void DispatchLeakPlumeCompute(float fixedDeltaTime)
@@ -1377,6 +1578,26 @@ namespace Hecton8.Physics
             leakPlumeCompute.Dispatch(_leakPlumeKernelIndex, 1, 1, 1);
             Shader.SetGlobalBuffer(_LeakParticleBufferId, _leakPlumeParticleBuffer);
             Shader.SetGlobalInt(_LeakVisibleBreachCountId, _visibleBreachCount);
+        }
+
+        private void QueueLeakPlumeVisualSync(float fixedDeltaTime)
+        {
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime)
+                ? math.max(0f, fixedDeltaTime)
+                : 0f;
+            _pendingLeakPlumeDeltaSeconds = math.min(LeakPlumeClockMaxSeconds, _pendingLeakPlumeDeltaSeconds + safeFixedDeltaTime);
+            _leakPlumeVisualDirty = true;
+        }
+
+        private void FlushLeakPlumeVisualSync()
+        {
+            if (!_leakPlumeVisualDirty)
+                return;
+
+            float deltaSeconds = _pendingLeakPlumeDeltaSeconds;
+            _pendingLeakPlumeDeltaSeconds = 0f;
+            _leakPlumeVisualDirty = false;
+            DispatchLeakPlumeCompute(deltaSeconds);
         }
 
         private void AdvanceLeakPlumeClock(float deltaTime)
@@ -1443,7 +1664,7 @@ namespace Hecton8.Physics
 
         private static Camera ResolvePlayerCamera()
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             return playerContext != null ? playerContext.PlayerCamera : null;
         }
 
@@ -1711,7 +1932,7 @@ namespace Hecton8.Physics
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -1828,9 +2049,16 @@ namespace Hecton8.Physics
 
         private void PublishFakeCrushDepthGlobals(float depthMeters)
         {
+            _pendingFakeCrushDepthMeters = math.max(0f, depthMeters);
+            _fakeCrushDepthVisualDirty = true;
+        }
+
+        private void FlushFakeCrushDepthGlobals()
+        {
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
             Vector3 center = cachedTransform.position;
+            float depthMeters = _pendingFakeCrushDepthMeters;
             Vector4 centerRadius = new Vector4(
                 center.x,
                 center.y,
@@ -1842,12 +2070,14 @@ namespace Hecton8.Physics
                 math.max(0f, fakeCrushMaxVertexDisplacementMeters),
                 math.max(0.001f, fakeCrushVoronoiScale));
 
-            if (Approximately(_publishedCrushCenterRadius, centerRadius) &&
+            if (!_fakeCrushDepthVisualDirty &&
+                Approximately(_publishedCrushCenterRadius, centerRadius) &&
                 Approximately(_publishedCrushDepthParams, depthParams))
             {
                 return;
             }
 
+            _fakeCrushDepthVisualDirty = false;
             Shader.SetGlobalVector(_ShaderCrushCenterRadiusId, centerRadius);
             Shader.SetGlobalVector(_ShaderCrushDepthParamsId, depthParams);
             _publishedCrushCenterRadius = centerRadius;
@@ -1856,6 +2086,8 @@ namespace Hecton8.Physics
 
         private void ResetFakeCrushDepthGlobals()
         {
+            _fakeCrushDepthVisualDirty = false;
+            _pendingFakeCrushDepthMeters = 0f;
             Vector4 zero = Vector4.zero;
             Shader.SetGlobalVector(_ShaderCrushCenterRadiusId, zero);
             Shader.SetGlobalVector(_ShaderCrushDepthParamsId, zero);
@@ -1914,7 +2146,7 @@ namespace Hecton8.Physics
                 }
                 else
                 {
-                    _breachesHandle = vault.GetGenerationHandle<float4>(
+                    _breachesHandle = vault.EnsureGenerationHandle<float4>(
                         BufferID.SubmarineStructuralBreaches,
                         MaxActiveBreaches,
                         SystemID.VehiclesPhysics,
@@ -1931,7 +2163,7 @@ namespace Hecton8.Physics
                 }
                 else
                 {
-                    _damageControlTelemetryHandle = vault.GetGenerationHandle<DamageControlTelemetryEntry>(
+                    _damageControlTelemetryHandle = vault.EnsureGenerationHandle<DamageControlTelemetryEntry>(
                         BufferID.SubmarineDamageControlBlackBox,
                         DamageControlTelemetryCapacity,
                         SystemID.VehiclesPhysics,
@@ -2267,9 +2499,9 @@ namespace Hecton8.Physics
 
             if (!_registered)
             {
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-                GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-                _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
+                bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+                bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+                _registered = fixedRegistered || postFixedRegistered;
             }
 
             if (!_registeredLateFrame)
@@ -2293,6 +2525,15 @@ namespace Hecton8.Physics
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void TryRegisterDamageReceiver()

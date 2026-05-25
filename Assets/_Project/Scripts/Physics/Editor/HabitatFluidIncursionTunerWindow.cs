@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -109,7 +110,10 @@ namespace Hecton8.Physics.Editor
             SetValueWithoutNotify(_waterDensity, dto.WaterDensityKgPerM3);
             SetValueWithoutNotify(_visualWobble, dto.VisualWobbleScalar);
             SetValueWithoutNotify(_acousticGain, dto.AcousticMuffleGain);
-            _readout.text = $"q={dto.GlobalQualityWeight:0.000} iter={dto.SolverIterations} rooms={dto.CompartmentCount} edges={dto.EdgeCount}";
+            _readout.text = "q=" + dto.GlobalQualityWeight.ToString("0.000", CultureInfo.InvariantCulture) +
+                " iter=" + dto.SolverIterations +
+                " rooms=" + dto.CompartmentCount +
+                " edges=" + dto.EdgeCount;
         }
 
         private void BuildVolumeBars()
@@ -123,7 +127,7 @@ namespace Hecton8.Physics.Editor
                 row.style.height = 8;
                 row.style.marginBottom = 2;
 
-                Label label = new Label(i.ToString("00"));
+                Label label = new Label(i.ToString("00", CultureInfo.InvariantCulture));
                 label.style.width = 28;
                 label.style.fontSize = 8;
                 row.Add(label);

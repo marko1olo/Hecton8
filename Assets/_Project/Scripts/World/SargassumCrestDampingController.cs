@@ -11,7 +11,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class SargassumCrestDampingController : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class SargassumCrestDampingController : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private struct LegacyInputState
         {
@@ -115,8 +115,15 @@ namespace Hecton8.World
         private bool _usesCrest4LegacyInputs;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
         private bool _registeredHotSwap;
         private bool _hasPublishedFacadeData;
+        private bool _facadeGlobalsDirty;
+        private bool _pendingFacadeGlobalsActive;
+        private bool _pendingFacadeGlobalsForceClear;
+        private bool _legacyInputDisableDirty;
+        private bool _facadeRefreshRequested;
+        private bool _facadeRefreshForce;
         private LegacyInputState _wavesInputState;
         private LegacyInputState _foamInputState;
         private LegacyInputState _oilFilmInputState;
@@ -164,7 +171,7 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             RestoreLegacyInputs();
             ReleaseFacadeResources();
-            PublishGlobals(active: false, forceClear: true);
+            FlushFacadeGlobals(active: false, forceClear: true);
         }
 
         private void OnDestroy()
@@ -174,7 +181,7 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
             RestoreLegacyInputs();
             ReleaseFacadeResources();
-            PublishGlobals(active: false, forceClear: true);
+            FlushFacadeGlobals(active: false, forceClear: true);
         }
 
         /// <summary>
@@ -184,11 +191,11 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             ResolveDependencies();
-            DisableLegacyInputs();
+            QueueLegacyInputDisable();
 
             if (dragManager == null)
             {
-                PublishGlobals(active: false);
+                QueueFacadeGlobals(active: false);
                 return;
             }
 
@@ -198,7 +205,7 @@ namespace Hecton8.World
                 _activeDensityTexture = null;
                 _activeDensityWorldRect = Vector4.zero;
                 _activeFieldRevision = dragManager.FieldRevision;
-                PublishGlobals(active: false);
+                QueueFacadeGlobals(active: false);
                 return;
             }
 
@@ -215,7 +222,7 @@ namespace Hecton8.World
             if (!fieldChanged && !driftChanged && !cutRectChanged && cutManager == null)
                 return;
 
-            RefreshFacadeTextures(force: fieldChanged || driftChanged || cutRectChanged || cutManager != null);
+            QueueFacadeRefresh(force: fieldChanged || driftChanged || cutRectChanged || cutManager != null);
         }
 
         /// <summary>
@@ -224,8 +231,35 @@ namespace Hecton8.World
         public void SlowTick()
         {
             ResolveDependencies();
-            DisableLegacyInputs();
-            RefreshFacadeTextures(force: true);
+            QueueLegacyInputDisable();
+            QueueFacadeRefresh(force: true);
+        }
+
+        /// <summary>
+        /// Flushes facade shader globals after simulation and sargassum mask state are stable.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            if (_legacyInputDisableDirty)
+            {
+                DisableLegacyInputs();
+                _legacyInputDisableDirty = false;
+            }
+
+            if (_facadeRefreshRequested)
+            {
+                bool force = _facadeRefreshForce;
+                _facadeRefreshRequested = false;
+                _facadeRefreshForce = false;
+                RefreshFacadeTextures(force);
+            }
+
+            if (!_facadeGlobalsDirty)
+                return;
+
+            FlushFacadeGlobals(_pendingFacadeGlobalsActive, _pendingFacadeGlobalsForceClear);
+            _facadeGlobalsDirty = false;
+            _pendingFacadeGlobalsForceClear = false;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -275,7 +309,7 @@ namespace Hecton8.World
         {
             if (dragManager == null)
             {
-                PublishGlobals(active: false);
+                QueueFacadeGlobals(active: false);
                 return;
             }
 
@@ -285,7 +319,7 @@ namespace Hecton8.World
                 _activeDensityWorldRect = Vector4.zero;
                 _activeCutMaskWorldRect = Vector4.zero;
                 _activeFieldRevision = dragManager.FieldRevision;
-                PublishGlobals(active: false);
+                QueueFacadeGlobals(active: false);
                 return;
             }
 
@@ -301,7 +335,7 @@ namespace Hecton8.World
             _activeFieldRevision = dragManager.FieldRevision;
 
             DispatchFacadeBake(densityTexture, cutMaskTexture, densityWorldRect, cutMaskWorldRect, cutMaskAvailable);
-            PublishGlobals(active: true);
+            QueueFacadeGlobals(active: true);
         }
 
         private void DispatchFacadeBake(
@@ -408,7 +442,14 @@ namespace Hecton8.World
             texture = null;
         }
 
-        private void PublishGlobals(bool active, bool forceClear = false)
+        private void QueueFacadeGlobals(bool active, bool forceClear = false)
+        {
+            _pendingFacadeGlobalsActive = active;
+            _pendingFacadeGlobalsForceClear |= forceClear;
+            _facadeGlobalsDirty = true;
+        }
+
+        private void FlushFacadeGlobals(bool active, bool forceClear = false)
         {
             if (!active || _waveDampingMask == null || _oilFilmMask == null)
             {
@@ -447,7 +488,18 @@ namespace Hecton8.World
             _debugAppliedDriftOffset += runtimeOffset;
 
             if (_hasPublishedFacadeData)
-                PublishGlobals(active: true);
+                QueueFacadeGlobals(active: true);
+        }
+
+        private void QueueLegacyInputDisable()
+        {
+            _legacyInputDisableDirty = true;
+        }
+
+        private void QueueFacadeRefresh(bool force)
+        {
+            _facadeRefreshRequested = true;
+            _facadeRefreshForce |= force;
         }
 
         private static Vector4 TranslateWorldRectXZ(Vector4 worldRect, Vector3 runtimeOffset)
@@ -533,14 +585,17 @@ namespace Hecton8.World
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            }
+
+            if (!_registeredLateFrameTick)
+            {
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
         }
 
@@ -557,6 +612,12 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
             }
         }
 

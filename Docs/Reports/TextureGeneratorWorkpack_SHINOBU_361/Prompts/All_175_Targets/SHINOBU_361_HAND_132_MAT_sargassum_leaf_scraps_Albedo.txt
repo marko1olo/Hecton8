@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_132
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_132_MAT_sargassum_leaf_scraps_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_sargassum_leaf_scraps_Albedo.png
+FINAL_FILENAME: MAT_sargassum_leaf_scraps_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Sargassum leaf scraps albedo for floating and collected plant fragments. Create elegant olive-teal leaf pieces, cyan translucent edges, honey-amber buoyancy beads, pearl salt dust, and pale violet stress freckles. The scraps should feel light, clean, and beautiful, useful for overlays, particles, or debris fields without losing botanical identity. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

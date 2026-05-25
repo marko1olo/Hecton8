@@ -1,0 +1,52 @@
+﻿# [ARCHIVE] Pre-Line-Split Architecture Snapshot
+
+Date: 2026-05-24
+Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
+Original: Docs/ARCHITECTURE/BIOTA_DENSITY_MAP_BAKER_SHINOBU_308.md
+Rule: historical snapshot only; not active doctrine.
+
+# Biota Density Map Baker SHINOBU_308
+
+Status: DOMAIN ASMDEF COMPILED / GLOBAL COMPILE WALL BLOCKS EDITOR BAKE / AWAITABLE POLISH STATIC / ASYNC SIGNATURE FIX STATIC / DTO_LAYOUT_RLE_CLAMP STATIC / RULE_FALLBACK_HARDENED STATIC / H8BIN_READBACK_VALIDATOR STATIC / ATOMIC_TEXT_EVIDENCE STATIC / BATCHMODE_FAIL_FAST STATIC / SUBAGENT_AUDIT_HARDENED STATIC / REQUESTED_RULECOUNT_FALLBACK STATIC / NAN_HASH_HARDENED STATIC / SYNC_BATCH_BLACKBOX_RING STATIC / LEXICAL_SCANNER_HARDENED STATIC / EFFECTIVE_RULE_REPORT_HARDENED STATIC / CODE_CONTEXT_SCANNER_HARDENED STATIC / CONFIG_SCALAR_SANITIZED STATIC
+Evidence class: UNITY_DOMAIN_COMPILE + STATIC_SOURCE
+
+## Route
+
+Authoring source: `Assets/_SourceData/Biota/biota_spawning_rules.csv`
+
+Editor pipeline: `Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor`
+
+Binary output: `Assets/StreamingAssets/Hecton8/Biota/biota_density_SHINOBU_308.h8bin`
+
+Runtime route: immutable static environment payload. Future SpawnDirector loads density bytes and applies continuous `GlobalQualityWeight` to spawn count/cadence. Runtime must not re-evaluate depth/slope/temperature/silt rules and must not use `Physics.Raycast` for biota floor placement.
+
+Forge preview route: non-authoritative preview resolution scales continuously from `96x96` to `256x256` through `smoothstep(GlobalQualityWeight)`. Final `.h8bin` density truth is not quality-gated.
+
+## Binary Contract
+
+- Header: 128 bytes, little-endian, magic `H8BD`, version `1`.
+- Header float/double lanes are written with `math.asuint` / `math.asulong` and fixed little-endian byte shifts, not host-endian `BitConverter.GetBytes`.
+- Primary rule DTO: `BiotaSpawnRuleDTO`, explicit 32 bytes.
+- Density payload: RLE stream of 8-byte `BiotaDensityRleRunDTO` records.
+- Async write lifetime: completed TempJob working buffers are disposed before Unity `Awaitable` background file I/O; only method-local Persistent RLE/telemetry buffers survive the await and are disposed in `finally`. RLE storage is exact-capacity after a Burst count pass, not raw-byte upper-bound preallocation. Emitted RLE count is clamped to allocated `runs.Length` before header/payload serialization. The temp writer uses asynchronous/write-through FileStream flags, `Flush(true)`, and temp cleanup on failure. Promotion uses `PromoteTempFileOrThrow`, so a failed replace/move cannot delete the previous final artifact. Managed task-returning async routes, async-void handlers, and byref Awaitable writer parameters are not used in SHINOBU_308 source.
+- Layout gate: `ValidateLayoutsOrThrow` checks size/offset contracts for `BiotaSpawnRuleDTO=32`, `BiotaRuleWeightDTO=32`, `BiotaDensityBakeConfigDTO=128`, `BiotaThermalVentDTO=32`, `BiotaDensityRleRunDTO=8`, and `BiotaDensityBakeTelemetryEntry=64` before any bake writes a payload, including padding and late-field offsets for the 128-byte config and 64-byte telemetry lanes.
+- Rule staging: `SanitizeConfig` honors nonzero public `config.RuleCount`, falls back to source row count only when `RuleCount == 0`, and then falls back to `DefaultRuleCount=5` for empty public calls. It also clamps non-finite or impossible AUP origin coordinates to the default sector origin before jobs run. Scalar bake controls route through finite-select defaults plus broad clamps for cell size, noise frequency/offset, density multiplier, thermal falloff, base temperature, depth scale, slope softness, temperature softness, and `GlobalQualityWeight`. Public Editor API calls with `requestedCount > source.Length` are hardened by populating default rule/weight tables before fallback rows are copied into NativeArrays. This prevents a modulo-by-zero bake abort while preserving supplied CSV rows first and keeping all five default rows reachable. Default string species hashes lower ASCII to match CSV parser hash identity.
+- NaN gate: density packing selects non-finite raw layer weights to zero before byte conversion; `NaN * 0` is not trusted as a sanitizer. Direct Forge preview quality calls also sanitize `GlobalQualityWeight` before `smoothstep`.
+- Post-write validation: after temp promotion, `ValidateWrittenBinaryOrThrow` reads the generated `.h8bin` back before report/self-audit emission. It validates header identity/metrics, payload length, nonzero file-level and record-level RLE counts, layer bounds, and exact `PixelCount` reconstructed samples per layer without allocating a decompressed map. The stackalloc per-layer accumulator is explicitly cleared before use. Reported `FileBytes` is the same validated stream length.
+- Evidence text output: `BIOTA_BAKE_REPORT.json`, generated self-audit, and the SHINOBU scanner upsert route through `WriteUtf8TextAtomic`. Text evidence is encoded once to UTF-8, written to temp with `FileOptions.WriteThrough`, flushed with `Flush(true)`, then promoted by replace/move. The bake report records effective `rulesLoaded=config.RuleCount`, `sourceRuleRows`, and `fallbackRuleRowsUsed` so fallback-filled bakes cannot claim zero rules. The generated self-audit labels itself as generated-bake evidence and is written only after `.h8bin` readback validation. The shared `WORLD_OPTIMIZATION_REPORT.json` read/merge/write path is guarded by a `.lock` FileStream with bounded retry. Direct `File.WriteAllText` is not used in SHINOBU_308 scope.
+- Batchmode route: `BakeDefaultMenu` uses `BakeMockSectorBlocking` and `WriteCompressedBinaryBlocking`. The UI Forge path uses Awaitable background I/O; the executeMethod/menu path does not block on an Awaitable state machine.
+- Scanner route: `Runtime_Spawner_Scanner` strips comments, strings, verbatim strings, and char literals before classifying runtime raycast, trigger-zone, and managed scene-instantiation evidence. It builds a code-stripped line cache per file and uses that cache for spawn/exclusion context windows; raw source remains only as human-readable finding context. It records scanned file/line counts, filtered comment/string hits, and cold/pool-guarded instantiation exclusions so world scatter/editor guarded paths do not masquerade as biota placement blockers. The generated self-audit includes the same scanner proof fields after a successful bake.
+- Layers: byte density masks. Current default lanes are kelp canopy, silt weed, ghost-ray prey, abyssal predator, and vent tube worm.
+- AUP: sector origin is stored as `double3`; generation uses absolute XZ for noise and thermal gradients.
+- Seams: mock bake and preview generate west/east/south/north edge depth buffers from one-cell-outside `double3` AUP samples before central-difference slope evaluation.
+- Rollback: header flags include `RollbackExcludedFlag`. Density maps are immutable environmental data and must not enter `StateRingBuffer`, Merkle hashing, save deltas, or rollback truth. Spawned entities are the synchronized state, not the map.
+
+## Verification Artifacts
+
+- Unity compile log: `Docs/AgentLogs/Unity_SHINOBU_308_bake.log` (`Hecton8.World.BiotaDensityMapBaker.Editor.dll` reached `Csc`, `ILPostProcess`, and `CopyFiles`)
+- Bake report: `Docs/Reports/BIOTA_BAKE_REPORT.json` (written only after successful Editor bake; blocked by unrelated global compiler errors in this session)
+- Scanner report: `Docs/Reports/WORLD_OPTIMIZATION_REPORT.json` section `shinobu_308_biota_density_map_baker` (`runtimeRaycastSpawnersEradicated=true`, `blockerCount=0`, `scannedFiles=1677` before lexical scanner hardening); existing root report content is preserved. The hardened scanner source is static pending the next Unity import/run.
+- Self-audit: `Docs/Reports/BIOTA_DENSITY_SELF_AUDIT_SHINOBU_308.md` (written only after successful Editor bake; pending in this session)
+- Blackbox dump on fault: `Docs/AgentLogs/Dump_SHINOBU_308.bin` (written on bake fault/nonfinite detection through write-through temp output and `Flush(true)`; telemetry allocation occurs before layout/sanitize gates and records through a monotonic 300-slot cursor)
+
+SHINOBU_308 domain import/compile proof exists for the pre-Awaitable code path. Runtime bake execution, post-Awaitable/signature-fix/RLE-clamp/layout-gate/rule-fallback/readback-validator/atomic-text-evidence/batchmode-fail-fast/subagent-audit-hardening/requested-rulecount-fallback/nan-hash-hardening/sync-batch-blackbox-ring/lexical-scanner-hardening/effective-rule-report-hardening/code-context-scanner-hardening/config-scalar-sanitizer Unity import, Burst Inspector, profiler, GCMonitor, actual `.h8bin` generation, hardened scanner report refresh, and SpawnDirector readback proof remain `PENDING VERIFICATION` because global project compile failed before `executeMethod` and the current editor lock / Unity dotnet process blocks a second batchmode import.

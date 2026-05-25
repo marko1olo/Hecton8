@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_030
+ROLE: ALBEDO
+CATEGORY: FLORA_EPIDERMIS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_030_MAT_family_kelp_tall_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\FLORA_EPIDERMIS\MAT_family_kelp_tall_Albedo.png
+FINAL_FILENAME: MAT_family_kelp_tall_Albedo.png
+REFERENCES: TX_ProceduralBio_Shallows_AlbedoAtlas.png; matching imported kelp/coral albedo; approved same-family output
+
+PROMPT:
+Tall kelp epidermis albedo for hero fronds and vertical underwater silhouettes. Create long elegant bands of blue-green plant membrane, satin olive ribbing, translucent cyan margins, and small amber pressure bladders placed with design restraint. The texture should look premium and cinematic when stretched on tall geometry, with strong vertical language, soft biological variation, and clean plant tissue readability. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

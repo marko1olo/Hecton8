@@ -1,0 +1,127 @@
+﻿{
+  "aggregate": {
+    "findingCount": 18,
+    "findings": [
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 89,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 256,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 313,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 343,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 348,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 325,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 329,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 332,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 343,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 1393,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Editor/ContentSanityValidator.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 1472,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Editor/ContentSanityValidator.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 459,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/Editor/WorldStreamingWiringValidator.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 31,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/ToolTrialRangeRuntimeSmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 82,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 119,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 133,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 147,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs"
+      },
+      {
+        "kind": "WORLD_TEST_GAMEOBJECT_INSTANTIATION",
+        "line": 161,
+        "message": "World test source instantiates GameObject instead of isolated data fixture.",
+        "path": "Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs"
+      }
+    ],
+    "gameObjectInstantiationHits": 18,
+    "physicsApiHits": 0,
+    "summary": "OOP Tests Present",
+    "worldTestCandidateFiles": 15
+  },
+  "schema": "hecton8.qa_oop_test_audit_cache.v1",
+  "sourceRoot": "Assets/_Project/Scripts",
+  "treeStamp": {
+    "fileCount": 2368,
+    "hash": "0x88977717",
+    "totalMtimeNs": 6556790196447293052,
+    "totalSize": 74848040
+  }
+}

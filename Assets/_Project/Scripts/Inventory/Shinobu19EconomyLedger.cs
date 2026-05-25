@@ -576,7 +576,7 @@ namespace Hecton8.Inventory
                 return TryOpenEconomyVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GameplayPlayer,
@@ -790,14 +790,23 @@ namespace Hecton8.Inventory
         public static void WarmSignalLanes()
         {
             SignalBus<MockItemAcquiredSignal>.Configure(64, 64, 16, 0x53493141u);
+            SignalBus<MockItemAcquiredSignal>.EnsureInitialized();
             SignalBus<MockCraftingRequestSignal>.Configure(64, 64, 16, 0x53493143u);
+            SignalBus<MockCraftingRequestSignal>.EnsureInitialized();
             SignalBus<MockConsumeSignal>.Configure(32, 32, 8, 0x5349314Eu);
+            SignalBus<MockConsumeSignal>.EnsureInitialized();
             SignalBus<MockToolUsedSignal>.Configure(32, 32, 8, 0x53493154u);
+            SignalBus<MockToolUsedSignal>.EnsureInitialized();
             SignalBus<ToolBrokenSignal>.Configure(32, 32, 8, 0x53493142u);
+            SignalBus<ToolBrokenSignal>.EnsureInitialized();
             SignalBus<EncumbranceSignal>.Configure(16, 16, 4, 0x53493145u);
+            SignalBus<EncumbranceSignal>.EnsureInitialized();
             SignalBus<EquipItemSignal>.Configure(16, 16, 4, 0x53493151u);
+            SignalBus<EquipItemSignal>.EnsureInitialized();
             SignalBus<MockHotbarSelectSignal>.Configure(16, 16, 4, 0x53493148u);
+            SignalBus<MockHotbarSelectSignal>.EnsureInitialized();
             SignalBus<DebrisDestroyedSignal>.Configure(64, 64, 16, 0x53493144u);
+            SignalBus<DebrisDestroyedSignal>.EnsureInitialized();
         }
 
         public static void ClearLedgerSlots(NativeArray<uint> hashes, NativeArray<int> quantities, NativeArray<float> durabilities, int startIndex, int count)
@@ -1309,6 +1318,7 @@ namespace Hecton8.Inventory
             return ExportRle(hashes, quantities, durabilities, destination, out bytesWritten);
         }
 
+#if UNITY_EDITOR
         public static bool TryApplyCsvOverrideLine(ReadOnlySpan<char> line, NativeArray<ItemPhysicalConstantsDTO> constants)
         {
             if (!constants.IsCreated)
@@ -1366,6 +1376,7 @@ namespace Hecton8.Inventory
             };
             return true;
         }
+#endif
 
         public static void RecordTelemetry(
             NativeArray<EconomyTelemetryEntry> telemetry,

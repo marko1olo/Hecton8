@@ -8,6 +8,11 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class FloraDataTemplateLayout
+    {
+        public const int RuntimeDescriptorStrideBytes = 56;
+    }
+
     /// <summary>
     /// Authored flora contract that links indirect-vegetation species selection to harvest and shader payload data.
     /// </summary>
@@ -65,7 +70,7 @@ namespace Hecton8.World
             Fan = 4
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 56)]
+        [StructLayout(LayoutKind.Explicit, Size = FloraDataTemplateLayout.RuntimeDescriptorStrideBytes)]
         public struct RuntimeDescriptor
         {
             [FieldOffset(0)]

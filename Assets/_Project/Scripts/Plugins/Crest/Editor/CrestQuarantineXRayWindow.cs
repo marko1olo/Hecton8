@@ -67,8 +67,7 @@ namespace Hecton8.Editor
                 return;
 
             CrestOceanRuntimeAdapter[] adapters = Object.FindObjectsByType<CrestOceanRuntimeAdapter>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
             _statusLabel.text = "Crest bridge assembly active. Crest 5 package must remain outside Assets/Packages.";
             _activeAdapterLabel.text = "Crest runtime adapters in open scenes: " + adapters.Length;
             _telemetryLabel.text = ReadTelemetrySummary();

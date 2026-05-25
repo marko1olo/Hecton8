@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using Hecton8.Gameplay;
 using UnityEditor;
 using UnityEngine;
@@ -11,6 +12,8 @@ namespace Hecton8.Editor
     [CustomEditor(typeof(SubmarineCompoundColliderAuthoring))]
     public sealed class SubmarineCompoundColliderAuthoringEditor : UnityEditor.Editor
     {
+        private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(32);
+
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector();
@@ -34,17 +37,18 @@ namespace Hecton8.Editor
             if (authoring == null)
                 return;
 
-            Renderer[] renderers = authoring.GetComponentsInChildren<Renderer>(true);
-            if (renderers == null || renderers.Length <= 0)
+            s_RendererScratch.Clear();
+            authoring.GetComponentsInChildren(true, s_RendererScratch);
+            if (s_RendererScratch.Count <= 0)
             {
                 Debug.LogWarning("[SubmarineCompoundColliderAuthoring] No renderers found to seed collider bounds.", authoring);
                 return;
             }
 
-            Bounds combinedBounds = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++)
+            Bounds combinedBounds = s_RendererScratch[0].bounds;
+            for (int i = 1; i < s_RendererScratch.Count; i++)
             {
-                Renderer renderer = renderers[i];
+                Renderer renderer = s_RendererScratch[i];
                 if (renderer == null)
                     continue;
 

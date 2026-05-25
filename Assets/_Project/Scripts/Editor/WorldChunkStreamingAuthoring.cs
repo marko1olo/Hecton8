@@ -1,6 +1,7 @@
 using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.EditorTools
 {
@@ -46,7 +47,7 @@ namespace Hecton8.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[WorldChunkStreamingAuthoring] Built chunk streaming profile: {ProfilePath}");
+            H8Debug.Log($"[WorldChunkStreamingAuthoring] Built chunk streaming profile: {ProfilePath}");
         }
 
         private static void EnsureFolder(string path)

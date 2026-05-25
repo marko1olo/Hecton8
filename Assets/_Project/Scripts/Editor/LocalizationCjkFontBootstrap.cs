@@ -308,7 +308,7 @@ namespace Hecton8.Editor
         private static string BuildLocalizedCharacterSeed(string tableAssetPath, string authoredSeed)
         {
             // COLD ALLOC: HashSet<char>[estimated localization glyph set] — unique seeded localization glyphs — owner: LocalizationCjkFontBootstrap
-            var characters = new HashSet<char>();
+            var characters = new HashSet<char>(4096);
             AppendSeedCharacters(authoredSeed, characters);
 
             string fullPath = ResolveProjectPath(tableAssetPath);

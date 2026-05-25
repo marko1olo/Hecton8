@@ -1,0 +1,60 @@
+{
+  "schema": "hecton8.architecture_density_audit.v1",
+  "agentId": "X_012",
+  "loop": 19,
+  "scope": "Docs/ARCHITECTURE/**/*.md, Docs/ARCHITECTURE/**/*.txt",
+  "evidence": [
+    "STATIC_DOC",
+    "STATIC_SOURCE",
+    "STATIC_FILESYSTEM",
+    "OFFLINE_VALIDATOR"
+  ],
+  "manualRewriteOnly": true,
+  "scriptUse": "discovery_validation_and_machine_proof_only",
+  "thresholdWords": 33,
+  "scannerFailureThresholdWords": 32,
+  "initialOffenderCountAtOrAbove33Words": 88,
+  "intermediateResidualCountAtOrAbove33Words": 57,
+  "finalOffenderCountAtOrAbove33Words": 0,
+  "finalArchitectureMarkerHits": 0,
+  "sourceConstants": {
+    "saveBinaryCurrentVersion": "0x000B",
+    "saveBinaryCurrentHeaderSizeBytes": 56,
+    "signalBusRuntimeLaneCapacity": 512,
+    "promptExampleSignalBusCapacity256": "stale_against_source",
+    "dataMonolithHeaderSizeBytes": 64,
+    "staticDataBinPath": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+    "staticDataBinBytes": 1064384
+  },
+  "oopScanner": {
+    "path": "Tools/OOP_Doc_Scanner.py",
+    "architectureParagraphWordLimit": 32,
+    "architectureSentenceWordLimit": 32,
+    "architectureStructuredLineWordLimit": 32,
+    "finalPass": true,
+    "activeFileCount": 591,
+    "activeWordCount": 539843,
+    "architectureWordCount": 165144,
+    "activeStaleParameterFiles": 0,
+    "sourceSyncPass": true,
+    "wordReductionPercent": 54.90493032456174,
+    "report": "Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json"
+  },
+  "structureValidator": {
+    "path": "Tools/VerifyDocStructure.py",
+    "pass": true,
+    "activeDocCount": 591,
+    "rootTextDocCount": 3,
+    "duplicateHeaderFiles": 0,
+    "brokenLinkFiles": 0,
+    "fenceIssueFiles": 0,
+    "staleParameterFiles": 0,
+    "encodingWithoutUtf8Sig": 0,
+    "report": "Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json"
+  },
+  "compilePolicy": {
+    "csharpRuntimeSourceTouched": false,
+    "dotnetBuildLaunched": false,
+    "reason": "documentation/tooling-only gate; build would be fake proof under CPU/compiler guard"
+  }
+}

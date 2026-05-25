@@ -102,10 +102,10 @@ namespace Hecton8.Editor
                 return "managers_missing";
             }
 
-            if (managersRoot.GetComponent<WorldReadabilityDirector>() == null)
+            if (!managersRoot.TryGetComponent(out WorldReadabilityDirector _))
                 managersRoot.AddComponent<WorldReadabilityDirector>();
 
-            if (managersRoot.GetComponent<EmergencyServiceRelayDirector>() == null)
+            if (!managersRoot.TryGetComponent(out EmergencyServiceRelayDirector _))
                 managersRoot.AddComponent<EmergencyServiceRelayDirector>();
 
             SuitHUDV4CanvasOverlay overlay = ResolvePreferredOverlay();
@@ -154,7 +154,8 @@ namespace Hecton8.Editor
                     return;
                 }
 
-                RelayHUDElement marker = ResolveOverlayMarker(prefabRoot.GetComponent<SuitHUDV4CanvasOverlay>());
+                prefabRoot.TryGetComponent(out SuitHUDV4CanvasOverlay prefabOverlay);
+                RelayHUDElement marker = ResolveOverlayMarker(prefabOverlay);
                 if (marker != null && marker.transform.parent != parent)
                     marker.transform.SetParent(parent, false);
 
@@ -178,8 +179,8 @@ namespace Hecton8.Editor
             }
 
             Transform player = GameObject.Find("Player")?.transform;
-            EmergencyServiceRelay relayOne = GameObject.Find(RelayOneName)?.GetComponent<EmergencyServiceRelay>();
-            EmergencyServiceRelay relayTwo = GameObject.Find(RelayTwoName)?.GetComponent<EmergencyServiceRelay>();
+            EmergencyServiceRelay relayOne = TryFindComponent<EmergencyServiceRelay>(RelayOneName);
+            EmergencyServiceRelay relayTwo = TryFindComponent<EmergencyServiceRelay>(RelayTwoName);
             SuitHUDV4CanvasOverlay overlay = ResolvePreferredOverlay();
             RelayHUDElement marker = ResolveOverlayMarker(overlay);
             EmergencyServiceRelayDirector director = EmergencyServiceRelayDirector.ActiveRuntimeInstance;
@@ -194,7 +195,7 @@ namespace Hecton8.Editor
             relayOne.Interact(player);
             marker.LateFrameTick();
 
-            CanvasGroup canvasGroup = marker.GetComponent<CanvasGroup>();
+            marker.TryGetComponent(out CanvasGroup canvasGroup);
             EmergencyServiceRelay activeTarget = director.GetActiveRouteTarget();
             bool ok = activeTarget == relayTwo && canvasGroup != null && canvasGroup.alpha > 0.5f;
             Debug.Log(
@@ -292,7 +293,7 @@ namespace Hecton8.Editor
             GameObject markerLayerObject = new GameObject(MarkerLayerName, typeof(RectTransform));
             markerLayerObject.transform.SetParent(overlayRect, false);
 
-            RectTransform markerLayer = markerLayerObject.GetComponent<RectTransform>();
+            markerLayerObject.TryGetComponent(out RectTransform markerLayer);
             markerLayer.anchorMin = Vector2.zero;
             markerLayer.anchorMax = Vector2.one;
             markerLayer.offsetMin = Vector2.zero;
@@ -356,11 +357,12 @@ namespace Hecton8.Editor
 
             relayObject.transform.position = position;
 
-            SphereCollider collider = relayObject.GetComponent<SphereCollider>();
+            relayObject.TryGetComponent(out SphereCollider collider);
             collider.isTrigger = true;
             collider.radius = 1.8f;
 
-            return relayObject.GetComponent<EmergencyServiceRelay>();
+            relayObject.TryGetComponent(out EmergencyServiceRelay relay);
+            return relay;
         }
 
         private static void ConfigureRelay(
@@ -398,18 +400,18 @@ namespace Hecton8.Editor
                 typeof(RelayHUDElement));
             markerRoot.transform.SetParent(parent, false);
 
-            RectTransform rootRect = markerRoot.GetComponent<RectTransform>();
+            markerRoot.TryGetComponent(out RectTransform rootRect);
             rootRect.anchorMin = new Vector2(0.5f, 0.5f);
             rootRect.anchorMax = new Vector2(0.5f, 0.5f);
             rootRect.pivot = new Vector2(0.5f, 0.5f);
             rootRect.sizeDelta = new Vector2(260f, 72f);
 
-            CanvasGroup canvasGroup = markerRoot.GetComponent<CanvasGroup>();
+            markerRoot.TryGetComponent(out CanvasGroup canvasGroup);
             canvasGroup.alpha = 0f;
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
 
-            Image background = markerRoot.GetComponent<Image>();
+            markerRoot.TryGetComponent(out Image background);
             background.color = new Color(0.02f, 0.08f, 0.12f, 0.18f);
             background.raycastTarget = false;
 
@@ -420,7 +422,7 @@ namespace Hecton8.Editor
             labelText.text = "EMERGENCY SERVICE RELAY";
             distanceText.text = "0M";
 
-            RelayHUDElement marker = markerRoot.GetComponent<RelayHUDElement>();
+            markerRoot.TryGetComponent(out RelayHUDElement marker);
             marker.ConfigureRuntimeBindings(markerIcon, distanceText, labelText);
             return marker;
         }
@@ -458,7 +460,7 @@ namespace Hecton8.Editor
             GameObject child = new GameObject(name, typeof(RectTransform));
             child.transform.SetParent(parent, false);
 
-            RectTransform rect = child.GetComponent<RectTransform>();
+            child.TryGetComponent(out RectTransform rect);
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
@@ -475,6 +477,17 @@ namespace Hecton8.Editor
 
             TextMeshProUGUI existingText = parent.GetComponentInChildren<TextMeshProUGUI>(true);
             return existingText != null ? existingText.font : null;
+        }
+
+        private static T TryFindComponent<T>(string objectName)
+            where T : Component
+        {
+            GameObject found = GameObject.Find(objectName);
+            if (found == null)
+                return null;
+
+            found.TryGetComponent(out T component);
+            return component;
         }
     }
 }

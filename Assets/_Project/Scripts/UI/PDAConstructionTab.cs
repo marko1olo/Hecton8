@@ -21,7 +21,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Construction Tab")]
-    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IQuestEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPDAEventListener, IQuestEventListener, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -92,6 +92,9 @@ namespace Hecton8.UI
         // COLD ALLOC: char[96] - construction action label TMP staging buffer - owner: PDAConstructionTab
         private readonly char[] _actionLabelBuffer = new char[96];
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
+        private bool _refreshPending;
+        private bool _refreshImmediatePending;
         private bool _pdaEventsRegistered;
         private bool _summaryDirty;
         private bool _catalogDirty;
@@ -125,6 +128,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IEnvironmentRuntimeContext _cachedEnvironmentContext;
+        private IQuestSystem _cachedQuestSystem;
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -273,8 +277,22 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.QuestSystem)
+            {
+                _cachedQuestSystem = currentService as IQuestSystem;
+                MarkAllDirty();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
             {
+                if (currentService == null)
+                {
+                    _tickRegistered = false;
+                    return;
+                }
+
+                UnregisterTick();
                 RegisterTick();
             }
         }
@@ -298,8 +316,9 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedEnvironmentContext = GlobalRegistry.Environment;
+            _cachedQuestSystem = GlobalRegistry.QuestSystem;
         }
 
         private void ApplyCachedPlayerContext(bool forceAssign)
@@ -466,7 +485,7 @@ namespace Hecton8.UI
         private static uint ResolveToolLoadoutSignalSourceId(Hecton8.Gameplay.PlayerToolManager manager)
         {
             return manager != null && manager.gameObject != null
-                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
                 : 0u;
         }
 
@@ -550,7 +569,18 @@ namespace Hecton8.UI
             }
 
             if (_summaryDirty || _catalogDirty)
-                Refresh();
+                QueueRefresh(false);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_refreshPending)
+                return;
+
+            bool immediate = _refreshImmediatePending;
+            _refreshPending = false;
+            _refreshImmediatePending = false;
+            Refresh(immediate);
         }
 
         private void EnsureBuilt()
@@ -701,7 +731,7 @@ namespace Hecton8.UI
 
             for (int i = 0; i < maxVisibleCards; i++)
             {
-                RectTransform card = CreateRect(right, "Card_" + i);
+                RectTransform card = CreateRect(right, "Card");
                 card.anchorMin = new Vector2(0f, 1f);
                 card.anchorMax = new Vector2(1f, 1f);
                 card.pivot = new Vector2(0.5f, 1f);
@@ -850,18 +880,33 @@ namespace Hecton8.UI
         private void RegisterTick()
         {
             if (_tickRegistered || !Application.isPlaying)
+            {
+                if (!_lateFrameRegistered && GlobalRegistry.Dispatcher != null)
+                    _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
                 return;
+            }
 
             _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
         {
-            if (!_tickRegistered)
-                return;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = false;
+            if (_tickRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _tickRegistered = false;
+            }
+
+            _refreshPending = false;
+            _refreshImmediatePending = false;
         }
 
         private void RefreshSummary()
@@ -876,7 +921,7 @@ namespace Hecton8.UI
             bool canPlace = playerBuilder != null && playerBuilder.CanPlaceActiveBuildable;
             bool snapped = playerBuilder != null && playerBuilder.IsSnapped;
             BuildableData next = playerBuilder != null ? playerBuilder.GetRelativeBuildable(1) : null;
-            int activeViewableIndex = catalog != null ? catalog.IndexOfViewable(active) : -1;
+            int activeViewableIndex = catalog != null ? catalog.IndexOfViewable(active, _cachedQuestSystem) : -1;
             int builderSlot = toolManager != null ? toolManager.FindAssignedSlotForToolType<Hecton8.Gameplay.BuilderTool>() : -1;
             bool builderActive = toolManager != null && toolManager.CurrentTool is Hecton8.Gameplay.BuilderTool;
             bool builderReady = builderSlot >= 0 && toolManager != null && toolManager.IsToolAvailableInSlot(builderSlot);
@@ -974,19 +1019,26 @@ namespace Hecton8.UI
             RefreshFieldAction(active, hasResources, canPlace, builderSlot, builderReady, builderActive, hasPreview);
         }
 
+        private void QueueRefresh(bool immediate)
+        {
+            _refreshPending = true;
+            _refreshImmediatePending |= immediate;
+        }
+
         private void RefreshCatalogCache(ModuleCatalog catalog)
         {
-            _cachedCatalogCount = catalog != null ? catalog.ViewableCount : 0;
-            _cachedGeneratorCount = CountModulesByPowerRole(catalog, 1);
-            _cachedConsumerCount = CountModulesByPowerRole(catalog, -1);
-            _cachedPassiveCount = CountModulesByPowerRole(catalog, 0);
-            _cachedStructureCount = CountModulesByFamily(catalog, BuildableFamily.Structure);
-            _cachedHabitatCount = CountModulesByFamily(catalog, BuildableFamily.Habitat);
-            _cachedUtilityCount = CountModulesByFamily(catalog, BuildableFamily.Utility);
-            _cachedLogisticsCount = CountModulesByFamily(catalog, BuildableFamily.Logistics);
-            _cachedFabricationCount = CountModulesByFamily(catalog, BuildableFamily.Fabrication);
-            _cachedDefenseCount = CountModulesByFamily(catalog, BuildableFamily.Defense);
-            _cachedLockedBlueprintCount = CountLockedBlueprintModules(catalog);
+            IQuestSystem questSystem = _cachedQuestSystem;
+            _cachedCatalogCount = catalog != null ? catalog.GetViewableCount(questSystem) : 0;
+            _cachedGeneratorCount = CountModulesByPowerRole(catalog, 1, questSystem);
+            _cachedConsumerCount = CountModulesByPowerRole(catalog, -1, questSystem);
+            _cachedPassiveCount = CountModulesByPowerRole(catalog, 0, questSystem);
+            _cachedStructureCount = CountModulesByFamily(catalog, BuildableFamily.Structure, questSystem);
+            _cachedHabitatCount = CountModulesByFamily(catalog, BuildableFamily.Habitat, questSystem);
+            _cachedUtilityCount = CountModulesByFamily(catalog, BuildableFamily.Utility, questSystem);
+            _cachedLogisticsCount = CountModulesByFamily(catalog, BuildableFamily.Logistics, questSystem);
+            _cachedFabricationCount = CountModulesByFamily(catalog, BuildableFamily.Fabrication, questSystem);
+            _cachedDefenseCount = CountModulesByFamily(catalog, BuildableFamily.Defense, questSystem);
+            _cachedLockedBlueprintCount = CountLockedBlueprintModules(catalog, questSystem);
         }
 
         private void RefreshCatalog(ModuleCatalog catalog, BuildableData active, int count)
@@ -998,7 +1050,7 @@ namespace Hecton8.UI
                 if (!visible)
                     continue;
 
-                BuildableData data = catalog.GetViewableAt(i);
+                BuildableData data = catalog.GetViewableAt(i, _cachedQuestSystem);
                 bool isActive = ReferenceEquals(active, data);
                 bool hasCost = data != null && playerInventory != null && HasCost(data);
                 bool canSelect = data != null;
@@ -1030,13 +1082,13 @@ namespace Hecton8.UI
                 return;
 
             ModuleCatalog catalog = constructionManager.Catalog;
-            BuildableData data = catalog != null ? catalog.GetViewableAt(index) : null;
+            BuildableData data = catalog != null ? catalog.GetViewableAt(index, _cachedQuestSystem) : null;
             if (data == null)
                 return;
 
-            if (!data.IsBlueprintViewable())
+            if (!data.IsBlueprintViewable(_cachedQuestSystem))
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - BLUEPRINT LOCKED");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - BLUEPRINT LOCKED".AsSpan());
                 MarkAllDirty();
                 Refresh(true);
                 return;
@@ -1052,7 +1104,7 @@ namespace Hecton8.UI
         {
             if (toolManager == null)
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX — TOOL MANAGER OFFLINE");
+                ShowConstructionWarning("CONSTRUCTION MATRIX — TOOL MANAGER OFFLINE".AsSpan());
                 return;
             }
 
@@ -1062,7 +1114,7 @@ namespace Hecton8.UI
             if (builderActive)
             {
                 toolManager.Holster();
-                hudNotification?.ShowInfo("CONSTRUCTION MATRIX — BUILDER HOLSTERED");
+                ShowConstructionInfo("CONSTRUCTION MATRIX — BUILDER HOLSTERED".AsSpan());
                 MarkSummaryDirty();
                 Refresh();
                 return;
@@ -1086,7 +1138,7 @@ namespace Hecton8.UI
             GameObject builderPrefab = toolManager.GetKnownToolPrefabForToolType<Hecton8.Gameplay.BuilderTool>();
             if (builderPrefab == null)
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX — NO BUILDER PREFAB REGISTERED");
+                ShowConstructionWarning("CONSTRUCTION MATRIX — NO BUILDER PREFAB REGISTERED".AsSpan());
                 return;
             }
 
@@ -1101,19 +1153,19 @@ namespace Hecton8.UI
         {
             if (playerBuilder == null)
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - BUILDER LOGIC OFFLINE");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - BUILDER LOGIC OFFLINE".AsSpan());
                 return;
             }
 
             if (playerBuilder.ActiveBuildable == null)
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - NO ACTIVE MODULE");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - NO ACTIVE MODULE".AsSpan());
                 return;
             }
 
             if (toolManager == null)
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - TOOL MANAGER OFFLINE");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - TOOL MANAGER OFFLINE".AsSpan());
                 return;
             }
 
@@ -1128,7 +1180,7 @@ namespace Hecton8.UI
                     if (playerBuilder.TryDeployActiveBuildableFromPreview())
                         ShowConstructionInfoWithModule("CONSTRUCTION MATRIX - ", playerBuilder.ActiveBuildable.moduleName, " DEPLOYED");
                     else
-                        hudNotification?.ShowWarning("CONSTRUCTION MATRIX - DEPLOY FAILED");
+                        ShowConstructionWarning("CONSTRUCTION MATRIX - DEPLOY FAILED".AsSpan());
 
                     MarkAllDirty();
                     Refresh(true);
@@ -1136,7 +1188,7 @@ namespace Hecton8.UI
                 }
 
                 QueueClosePDACommand();
-                hudNotification?.ShowInfo("CONSTRUCTION MATRIX - FIELD PREVIEW ACTIVE");
+                ShowConstructionInfo("CONSTRUCTION MATRIX - FIELD PREVIEW ACTIVE".AsSpan());
                 return;
             }
 
@@ -1145,7 +1197,7 @@ namespace Hecton8.UI
                 GameObject builderPrefab = toolManager.GetKnownToolPrefabForToolType<Hecton8.Gameplay.BuilderTool>();
                 if (builderPrefab == null)
                 {
-                    hudNotification?.ShowWarning("CONSTRUCTION MATRIX - NO BUILDER PREFAB REGISTERED");
+                    ShowConstructionWarning("CONSTRUCTION MATRIX - NO BUILDER PREFAB REGISTERED".AsSpan());
                     return;
                 }
 
@@ -1172,7 +1224,7 @@ namespace Hecton8.UI
         private static void QueueClosePDACommand()
         {
             EntityCommand command = EntityCommand.CreateClosePDA();
-            ThreadSafeCommandQueue.Enqueue(in command);
+            ThreadSafeCommandQueue.TryEnqueue(in command);
         }
 
         private void ShowConstructionInfoWithModule(ReadOnlySpan<char> prefix, string moduleName, ReadOnlySpan<char> suffix)
@@ -1202,6 +1254,24 @@ namespace Hecton8.UI
             hudNotification.ShowWarning(in _notificationBuffer);
         }
 
+        private void ShowConstructionInfo(ReadOnlySpan<char> message)
+        {
+            if (hudNotification == null || message.Length <= 0)
+                return;
+
+            WriteLiteralNotification(message);
+            hudNotification.ShowInfo(in _notificationBuffer);
+        }
+
+        private void ShowConstructionWarning(ReadOnlySpan<char> message)
+        {
+            if (hudNotification == null || message.Length <= 0)
+                return;
+
+            WriteLiteralNotification(message);
+            hudNotification.ShowWarning(in _notificationBuffer);
+        }
+
         private void WriteModuleNotification(ReadOnlySpan<char> prefix, string moduleName, ReadOnlySpan<char> suffix)
         {
             _notificationBuffer.Clear();
@@ -1218,29 +1288,35 @@ namespace Hecton8.UI
             _notificationBuffer.Append(suffix);
         }
 
+        private void WriteLiteralNotification(ReadOnlySpan<char> message)
+        {
+            _notificationBuffer.Clear();
+            _notificationBuffer.Append(message);
+        }
+
         internal void InvokeDeployAction()
         {
             if (toolManager == null || playerBuilder == null)
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - SYSTEM OFFLINE");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - SYSTEM OFFLINE".AsSpan());
                 return;
             }
 
             if (!(toolManager.CurrentTool is Hecton8.Gameplay.BuilderTool))
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - BUILDER NOT ACTIVE");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - BUILDER NOT ACTIVE".AsSpan());
                 return;
             }
 
             if (playerBuilder.ActiveBuildable == null)
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - NO MODULE SELECTED");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - NO MODULE SELECTED".AsSpan());
                 return;
             }
 
             if (!playerBuilder.CanPlaceActiveBuildable)
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - CANNOT PLACE HERE");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - CANNOT PLACE HERE".AsSpan());
                 return;
             }
 
@@ -1252,7 +1328,7 @@ namespace Hecton8.UI
             }
             else
             {
-                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - DEPLOY FAILED");
+                ShowConstructionWarning("CONSTRUCTION MATRIX - DEPLOY FAILED".AsSpan());
             }
         }
 
@@ -1479,7 +1555,7 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static int CountModulesByFamily(ModuleCatalog catalog, BuildableFamily family)
+        private static int CountModulesByFamily(ModuleCatalog catalog, BuildableFamily family, IQuestSystem questSystem)
         {
             if (catalog == null)
                 return 0;
@@ -1489,7 +1565,7 @@ namespace Hecton8.UI
             for (int i = 0; i < catalogCount; i++)
             {
                 BuildableData data = catalog.GetAt(i);
-                if (data != null && data.IsBlueprintViewable() && data.family == family)
+                if (data != null && data.IsBlueprintViewable(questSystem) && data.family == family)
                     count++;
             }
 
@@ -1782,7 +1858,7 @@ namespace Hecton8.UI
 
         private static char ToAsciiUpperInvariant(char value)
         {
-            return value >= 'a' && value <= 'z' ? (char)(value - 32) : char.ToUpperInvariant(value);
+            return value >= 'a' && value <= 'z' ? (char)(value - 32) : value;
         }
 
         private static void AppendUpperInvariant(ref FixedCharBuffer buffer, string value)
@@ -1868,7 +1944,7 @@ namespace Hecton8.UI
             return length;
         }
 
-        private static int CountModulesByPowerRole(ModuleCatalog catalog, int mode)
+        private static int CountModulesByPowerRole(ModuleCatalog catalog, int mode, IQuestSystem questSystem)
         {
             if (catalog == null || catalog.Count <= 0)
                 return 0;
@@ -1880,7 +1956,7 @@ namespace Hecton8.UI
                 BuildableData data = catalog.GetAt(i);
                 if (data == null)
                     continue;
-                if (!data.IsBlueprintViewable())
+                if (!data.IsBlueprintViewable(questSystem))
                     continue;
 
                 bool matches = mode > 0 ? data.IsGenerator : mode < 0 ? data.IsConsumer : (!data.IsGenerator && !data.IsConsumer);
@@ -1891,7 +1967,7 @@ namespace Hecton8.UI
             return count;
         }
 
-        private static int CountLockedBlueprintModules(ModuleCatalog catalog)
+        private static int CountLockedBlueprintModules(ModuleCatalog catalog, IQuestSystem questSystem)
         {
             if (catalog == null || catalog.Count <= 0)
                 return 0;
@@ -1901,7 +1977,7 @@ namespace Hecton8.UI
             for (int i = 0; i < catalogCount; i++)
             {
                 BuildableData data = catalog.GetAt(i);
-                if (data != null && data.RequiresBlueprintQuestFlag && !data.IsBlueprintViewable())
+                if (data != null && data.RequiresBlueprintQuestFlag && !data.IsBlueprintViewable(questSystem))
                     count++;
             }
 
@@ -2103,7 +2179,7 @@ namespace Hecton8.UI
 
         private static TextMeshProUGUI CreateSectionHeader(RectTransform parent, string text)
         {
-            TextMeshProUGUI header = CreateText(parent, "Header_" + text, TMP_Settings.defaultFontAsset, 11f, FontStyles.Bold, TextAlignmentOptions.Left);
+            TextMeshProUGUI header = CreateText(parent, "Header", TMP_Settings.defaultFontAsset, 11f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(header.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(14f, -12f), new Vector2(-14f, 18f));
             header.color = DimLow;
@@ -2121,7 +2197,7 @@ namespace Hecton8.UI
 
         private static void CreateRule(RectTransform parent, float y)
         {
-            RectTransform rule = CreateRect(parent, "Rule_" + y);
+            RectTransform rule = CreateRect(parent, "Rule");
             rule.anchorMin = new Vector2(0f, 1f);
             rule.anchorMax = new Vector2(1f, 1f);
             rule.pivot = new Vector2(0.5f, 1f);

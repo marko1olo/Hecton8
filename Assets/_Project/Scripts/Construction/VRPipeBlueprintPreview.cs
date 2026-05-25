@@ -16,7 +16,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Construction/VR Pipe Blueprint Preview")]
-    public sealed class VRPipeBlueprintPreview : MonoBehaviour, ILateFrameTickable, IRenderable
+    public sealed class VRPipeBlueprintPreview : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener
     {
         private const int ControlPointCount = 4;
         private const int MaxPreviewInstances = 64;
@@ -73,6 +73,7 @@ namespace Hecton8.Construction
         private uint _stateFlags = StateMatricesDirty;
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
+        private bool _registeredHotSwap;
         private bool _pendingBuildScheduled;
         private bool _pendingBuildDiscard;
         private bool _drawBoundsValid;
@@ -117,6 +118,7 @@ namespace Hecton8.Construction
             CacheRuntimeReferences();
             HectonXRRuntimeState.XRActiveChanged -= _xrActiveChangedHandler;
             HectonXRRuntimeState.XRActiveChanged += _xrActiveChangedHandler;
+            TryRegisterHotSwapListener();
             EnsureBuffersCold();
             EnsureMaterial();
             EnsureGraphicsBuffers();
@@ -127,9 +129,58 @@ namespace Hecton8.Construction
         {
             if (_xrActiveChangedHandler != null)
                 HectonXRRuntimeState.XRActiveChanged -= _xrActiveChangedHandler;
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
             CompletePendingBuildForTeardown();
             ClearPreparedPreview();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            {
+                if (_registeredLateFrame)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                    _registeredLateFrame = false;
+                }
+
+                TryRegisterRuntime();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault && currentService != null)
+            {
+                _vault = currentService as IDataVault;
+                _stateHandle = default;
+                _visualHandle = default;
+                _argsHandle = default;
+                _stateFlags |= StateMatricesDirty;
+                EnsureBuffersCold();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void OnDestroy()
@@ -347,7 +398,7 @@ namespace Hecton8.Construction
                 _boundVisualBuffer = visualBuffer;
             }
 
-            Graphics.DrawProceduralIndirect(
+            UnityEngine.Graphics.DrawProceduralIndirect(
                 previewMaterial,
                 _drawBounds,
                 MeshTopology.Triangles,
@@ -481,17 +532,17 @@ namespace Hecton8.Construction
                 return;
             }
 
-            _stateHandle = vault.GetGenerationHandle<BuilderGhostStateDTO>(
+            _stateHandle = vault.EnsureGenerationHandle<BuilderGhostStateDTO>(
                 PipeStateBufferId,
                 MaxPreviewInstances,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _visualHandle = vault.GetGenerationHandle<BuilderGhostVisualDTO>(
+            _visualHandle = vault.EnsureGenerationHandle<BuilderGhostVisualDTO>(
                 PipeVisualBufferId,
                 MaxPreviewInstances,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _argsHandle = vault.GetGenerationHandle<BuilderGhostIndirectArgsDTO>(
+            _argsHandle = vault.EnsureGenerationHandle<BuilderGhostIndirectArgsDTO>(
                 PipeIndirectArgsBufferId,
                 1,
                 SystemID.Construction,
@@ -670,8 +721,7 @@ namespace Hecton8.Construction
 
             if (!_registeredLateFrame && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-                _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
             }
 
             if (!_registeredRenderable)

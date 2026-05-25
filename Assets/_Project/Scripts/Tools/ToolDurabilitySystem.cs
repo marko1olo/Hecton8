@@ -19,7 +19,7 @@ namespace Hecton8.Tools
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Tools/Tool Durability System")]
-    public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable, IToolDurabilityService, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int MaxTrackedTools = 32;
         private const int MaxQueuedDurabilityCommands = 32;
@@ -78,6 +78,8 @@ namespace Hecton8.Tools
         private readonly bool[] _slotUsed = new bool[MaxTrackedTools];
         // COLD ALLOC: PendingDurabilityCommand[32] - one-frame native-job mutation queue - owner: ToolDurabilitySystem
         private readonly PendingDurabilityCommand[] _queuedDurabilityCommands = new PendingDurabilityCommand[MaxQueuedDurabilityCommands];
+        // COLD ALLOC: string[32] - owner-local command id sidecar; keeps PendingDurabilityCommand blittable
+        private readonly string[] _queuedDurabilityCommandToolIds = new string[MaxQueuedDurabilityCommands];
         private VaultGenerationHandle<ItemState> _itemStatesHandle;
         private VaultGenerationHandle<float> _pendingDecayDtHandle;
         private VaultGenerationHandle<float> _wearMultipliersHandle;
@@ -176,13 +178,32 @@ namespace Hecton8.Tools
         }
 
 #pragma warning disable 0649 // Assigned through object initializers before queued drain; compiler does not track array-backed command staging.
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct PendingDurabilityCommand
         {
-            public string ToolId;
+            [FieldOffset(0)]
             public float Amount;
+
+            [FieldOffset(4)]
             public float MaxDurability;
+
+            [FieldOffset(8)]
             public uint ItemHashId;
+
+            [FieldOffset(12)]
+            public uint ToolHashId;
+
+            [FieldOffset(16)]
             public DurabilityCommandKind Kind;
+
+            [FieldOffset(17)]
+            private byte _pad0;
+
+            [FieldOffset(18)]
+            private ushort _pad1;
+
+            [FieldOffset(20)]
+            private uint _pad2;
         }
 #pragma warning restore 0649
 
@@ -982,7 +1003,7 @@ namespace Hecton8.Tools
                 Flags = flags,
                 BiomeHash = 0u
             };
-            SignalBus<ItemDurabilityChangedSignal>.Push(in signal);
+            SignalBus<ItemDurabilityChangedSignal>.TryPush(in signal);
         }
 
         private uint NextDurabilitySignalFrame()
@@ -1064,7 +1085,7 @@ namespace Hecton8.Tools
             }
 
             ReleaseDurabilityHandle(vault, ref handle);
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 MaxTrackedTools,
                 SystemID.GameplayTools,
@@ -1187,40 +1208,43 @@ namespace Hecton8.Tools
             if (TryMergeQueuedDurabilityCommand(kind, toolID, amount, maxDurability, itemHashId))
                 return;
 
-            PendingDurabilityCommand command = CreatePendingDurabilityCommand(kind, toolID, amount, maxDurability, itemHashId);
+            uint toolHashId = itemHashId != 0u ? itemHashId : unchecked((uint)Animator.StringToHash(toolID));
+            PendingDurabilityCommand command = CreatePendingDurabilityCommand(kind, amount, maxDurability, itemHashId, toolHashId);
             if (_queuedDurabilityCommandCount >= MaxQueuedDurabilityCommands)
             {
                 if (TryCompleteDecayJobIfScheduled(forceComplete: false))
                 {
-                    ApplyDurabilityCommand(in command);
+                    ApplyDurabilityCommand(in command, toolID);
                     return;
                 }
 
-                TryReplaceQueuedDurabilityCommand(in command);
+                TryReplaceQueuedDurabilityCommand(in command, toolID);
                 return;
             }
 
-            _queuedDurabilityCommands[_queuedDurabilityCommandCount++] = command;
+            _queuedDurabilityCommands[_queuedDurabilityCommandCount] = command;
+            _queuedDurabilityCommandToolIds[_queuedDurabilityCommandCount] = toolID;
+            _queuedDurabilityCommandCount++;
         }
 
         private static PendingDurabilityCommand CreatePendingDurabilityCommand(
             DurabilityCommandKind kind,
-            string toolID,
             float amount,
             float maxDurability,
-            uint itemHashId)
+            uint itemHashId,
+            uint toolHashId)
         {
             return new PendingDurabilityCommand
             {
-                ToolId = toolID,
                 Amount = ClampFiniteNonNegative(amount),
                 MaxDurability = ResolveSafeMaxDurability(maxDurability),
                 ItemHashId = itemHashId,
+                ToolHashId = toolHashId,
                 Kind = kind
             };
         }
 
-        private bool TryReplaceQueuedDurabilityCommand(in PendingDurabilityCommand command)
+        private bool TryReplaceQueuedDurabilityCommand(in PendingDurabilityCommand command, string toolID)
         {
             if (command.Kind != DurabilityCommandKind.Break &&
                 command.Kind != DurabilityCommandKind.Reset &&
@@ -1232,13 +1256,14 @@ namespace Hecton8.Tools
             for (int i = 0; i < _queuedDurabilityCommandCount; i++)
             {
                 PendingDurabilityCommand existing = _queuedDurabilityCommands[i];
-                if (!string.Equals(existing.ToolId, command.ToolId, StringComparison.Ordinal) ||
+                if (!string.Equals(_queuedDurabilityCommandToolIds[i], toolID, StringComparison.Ordinal) ||
                     !IsWearCommand(existing.Kind))
                 {
                     continue;
                 }
 
                 _queuedDurabilityCommands[i] = command;
+                _queuedDurabilityCommandToolIds[i] = toolID;
                 return true;
             }
 
@@ -1248,6 +1273,7 @@ namespace Hecton8.Tools
                     continue;
 
                 _queuedDurabilityCommands[i] = command;
+                _queuedDurabilityCommandToolIds[i] = toolID;
                 return true;
             }
 
@@ -1262,7 +1288,7 @@ namespace Hecton8.Tools
             for (int index = _queuedDurabilityCommandCount - 1; index >= 0; index--)
             {
                 PendingDurabilityCommand queued = _queuedDurabilityCommands[index];
-                if (!string.Equals(queued.ToolId, toolID, StringComparison.Ordinal))
+                if (!string.Equals(_queuedDurabilityCommandToolIds[index], toolID, StringComparison.Ordinal))
                     continue;
 
                 if (queued.Kind != kind)
@@ -1354,8 +1380,10 @@ namespace Hecton8.Tools
             for (int i = 0; i < count; i++)
             {
                 PendingDurabilityCommand command = _queuedDurabilityCommands[i];
+                string toolID = _queuedDurabilityCommandToolIds[i];
                 _queuedDurabilityCommands[i] = default;
-                ApplyDurabilityCommand(command);
+                _queuedDurabilityCommandToolIds[i] = null;
+                ApplyDurabilityCommand(command, toolID);
             }
         }
 
@@ -1364,33 +1392,36 @@ namespace Hecton8.Tools
             int count = _queuedDurabilityCommandCount;
             _queuedDurabilityCommandCount = 0;
             for (int i = 0; i < count; i++)
+            {
                 _queuedDurabilityCommands[i] = default;
+                _queuedDurabilityCommandToolIds[i] = null;
+            }
         }
 
-        private void ApplyDurabilityCommand(in PendingDurabilityCommand command)
+        private void ApplyDurabilityCommand(in PendingDurabilityCommand command, string toolID)
         {
-            if (string.IsNullOrEmpty(command.ToolId))
+            if (string.IsNullOrEmpty(toolID))
                 return;
 
             switch (command.Kind)
             {
                 case DurabilityCommandKind.Repair:
                     if (command.Amount > 0f)
-                        ApplyRepairTool(command.ToolId, command.Amount, command.MaxDurability);
+                        ApplyRepairTool(toolID, command.Amount, command.MaxDurability);
                     break;
                 case DurabilityCommandKind.Break:
-                    ApplyBreakTool(command.ToolId);
+                    ApplyBreakTool(toolID);
                     break;
                 case DurabilityCommandKind.Reset:
-                    ApplyResetDurability(command.ToolId, command.MaxDurability);
+                    ApplyResetDurability(toolID, command.MaxDurability);
                     break;
                 case DurabilityCommandKind.Drain:
                     if (command.Amount > 0f)
-                        ApplyDrainDurability(command.ToolId, command.Amount, command.MaxDurability);
+                        ApplyDrainDurability(toolID, command.Amount, command.MaxDurability);
                     break;
                 case DurabilityCommandKind.DrainByTime:
                     if (command.Amount > 0f)
-                        ApplyDrainDurabilityByTime(command.ToolId, command.ItemHashId, command.Amount, command.MaxDurability);
+                        ApplyDrainDurabilityByTime(toolID, command.ItemHashId, command.Amount, command.MaxDurability);
                     break;
             }
         }
@@ -1476,7 +1507,7 @@ namespace Hecton8.Tools
         {
             _dataVault = GlobalRegistry.DataVault;
             _saveService = GlobalRegistry.Save;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = GlobalRegistry.Player;
             _brineDensityReadModel = GlobalRegistry.BrineFluidDensity;
         }
 

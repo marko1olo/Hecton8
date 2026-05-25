@@ -301,6 +301,7 @@ namespace Hecton8.Rendering
             return runtime.TrySetTuningInternal(chromaticDispersion, noiseScale, flowSpeedMultiplier, maxDepthMeters);
         }
 
+#if UNITY_EDITOR
         public static bool TryLoadLightingProfilesCsv(string projectRelativePath)
         {
             AbyssalDeferredCausticsRuntime runtime = s_publishedRuntime;
@@ -331,6 +332,7 @@ namespace Hecton8.Rendering
             _profilesSeeded = true;
             return true;
         }
+#endif
 
         private void Awake()
         {
@@ -921,6 +923,7 @@ namespace Hecton8.Rendering
             return math.max(0f, math.select(value, fallback, !math.isfinite(value)));
         }
 
+#if UNITY_EDITOR
         private static int LoadFileBytesIntoScratch(string fullPath, NativeArray<byte> csvScratch)
         {
             if (string.IsNullOrEmpty(fullPath) || !File.Exists(fullPath) || !csvScratch.IsCreated)
@@ -1215,6 +1218,7 @@ namespace Hecton8.Rendering
 
             return Path.Combine(root, projectRelativePath);
         }
+#endif
 
         private void TryRegisterUpdate()
         {
@@ -1290,7 +1294,7 @@ namespace Hecton8.Rendering
             if (forceRefresh || _dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
             if (forceRefresh || _playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContext = GlobalRegistry.Player;
             if (forceRefresh || _weatherService == null)
                 _weatherService = GlobalRegistry.Weather;
         }
@@ -1380,7 +1384,7 @@ namespace Hecton8.Rendering
             if (IsVaultHandleCreated(in handle))
                 ReleaseVaultHandle(vault, ref handle);
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
             return IsVaultHandleCreated(in handle) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&

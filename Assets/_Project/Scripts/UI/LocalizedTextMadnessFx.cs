@@ -99,8 +99,20 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            if (currentService == null)
+            {
+                _registered = false;
+                return;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                UnregisterFromTickManager();
                 RegisterToTickManager();
+            }
         }
 
         /// <inheritdoc />

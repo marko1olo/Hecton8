@@ -15,7 +15,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Construction/Fluid Pipe Graph Runtime")]
-    public sealed class FluidPipeGraphRuntime : MonoBehaviour, IFluidPipeGraphService, ISlowTickable, ILateFrameTickable, IServiceShutdown
+    public sealed class FluidPipeGraphRuntime : MonoBehaviour, IFluidPipeGraphService, ISlowTickable, ILateFrameTickable, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const string NativeMemoryOwner = nameof(FluidPipeGraphRuntime);
         private const float SlowTickStepSeconds = 0.1f;
@@ -52,6 +52,7 @@ namespace Hecton8.Construction
         private NativeArray<AbsoluteUniversePosition> _pipeAups;
         private NativeArray<FluidPipeTelemetryEntry> _telemetryRing;
         private NativeArray<FluidPipeRuptureRecord> _ruptureTelemetryRing;
+        private NativeArray<int> _ruptureQueueBudget;
         private NativeParallelMultiHashMap<int, int> _pipeConnections;
         private NativeQueue<FluidPipeRuptureRecord> _ruptureQueue;
 
@@ -60,6 +61,7 @@ namespace Hecton8.Construction
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _registeredService;
+        private bool _registeredHotSwap;
         private bool _initialized;
         private bool _atmosphereResolveAttempted;
         private bool _blackBoxDumped;
@@ -82,11 +84,13 @@ namespace Hecton8.Construction
         {
             ResolveAtmosphereSystem(force: true);
             EnsureNativeState();
+            TryRegisterHotSwapListener();
             RegisterRuntime();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterRuntime();
             CompleteSolve(force: true);
         }
@@ -98,8 +102,32 @@ namespace Hecton8.Construction
 
         public void OnServiceShutdown()
         {
+            TryUnregisterHotSwapListener();
             UnregisterRuntime();
             DisposeNativeState();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+                return;
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            RegisterRuntime();
         }
 
         public void SlowTick()
@@ -289,8 +317,10 @@ namespace Hecton8.Construction
             _pipeAups = new NativeArray<AbsoluteUniversePosition>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _telemetryRing = new NativeArray<FluidPipeTelemetryEntry>(FluidPipeGraphConstants.BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _ruptureTelemetryRing = new NativeArray<FluidPipeRuptureRecord>(FluidPipeGraphConstants.BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _ruptureQueueBudget = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _pipeConnections = new NativeParallelMultiHashMap<int, int>(connectionCapacity, Allocator.Persistent);
             _ruptureQueue = new NativeQueue<FluidPipeRuptureRecord>(DataVaultExemptSceneScratchAllocator);
+            PrewarmQueue(ref _ruptureQueue, nodeCapacity);
 
             RegisterNativeMemory();
             _initialized = true;
@@ -315,6 +345,7 @@ namespace Hecton8.Construction
             NativeMemorySentinel.RegisterNativeArray(_pipeAups, NativeMemoryOwner, nameof(_pipeAups), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeArray(_ruptureTelemetryRing, NativeMemoryOwner, nameof(_ruptureTelemetryRing), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_ruptureQueueBudget, NativeMemoryOwner, nameof(_ruptureQueueBudget), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_pipeConnections, NativeMemoryOwner, nameof(_pipeConnections), NativeAllocationLifetime.Scene);
             NativeMemorySentinel.RegisterNativeQueue(_ruptureQueue, nodeCapacity, NativeMemoryOwner, nameof(_ruptureQueue), NativeAllocationLifetime.Scene);
         }
@@ -341,6 +372,7 @@ namespace Hecton8.Construction
             DisposeArray(ref _pipeAups);
             DisposeArray(ref _telemetryRing);
             DisposeArray(ref _ruptureTelemetryRing);
+            DisposeArray(ref _ruptureQueueBudget);
 
             if (_pipeConnections.IsCreated)
             {
@@ -378,6 +410,23 @@ namespace Hecton8.Construction
                 _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void UnregisterRuntime()
         {
             if (_registeredLateFrameTick)
@@ -404,6 +453,7 @@ namespace Hecton8.Construction
         {
             if (_ruptureQueue.IsCreated)
                 _ruptureQueue.Clear();
+            ResetRuptureQueueBudget();
 
             FluidPipePressureSolveJob job = new FluidPipePressureSolveJob
             {
@@ -428,11 +478,21 @@ namespace Hecton8.Construction
                 PipeRoomExchangeContents = _pipeRoomExchangeContents,
                 TelemetryRing = _telemetryRing,
                 RuptureTelemetryRing = _ruptureTelemetryRing,
-                Ruptures = _ruptureQueue.AsParallelWriter()
+                Ruptures = _ruptureQueue.AsParallelWriter(),
+                RuptureBudget = _ruptureQueueBudget
             };
 
             _solveHandle = job.Schedule();
             _solveScheduled = true;
+        }
+
+        private void ResetRuptureQueueBudget()
+        {
+            if (!_ruptureQueueBudget.IsCreated || _ruptureQueueBudget.Length < 2)
+                return;
+
+            _ruptureQueueBudget[0] = math.max(1, math.min(nodeCapacity, math.max(0, _nodeCount)));
+            _ruptureQueueBudget[1] = 0;
         }
 
         private bool CompleteSolve(bool force)
@@ -470,7 +530,7 @@ namespace Hecton8.Construction
 
         private void ApplyPumpInputs(float deltaTime)
         {
-            // SHINOBU_222: object/BaseModule pump drainage is retired.
+            // SHINOBU_340: object/BaseModule pump drainage is retired.
             // SumpPumpPipeGridRuntime drains Fluid Incursion Vault buffers through CSR/Jacobi math.
         }
 
@@ -556,7 +616,7 @@ namespace Hecton8.Construction
                 Flags = rupture.Flags,
                 RoomIndex = roomIndex
             };
-            GlobalSignals.Publish(in pipeSignal);
+            SignalBus<PipeRuptureSignal>.TryPush(in pipeSignal);
 
             ImpactSignal impactSignal = new ImpactSignal
             {
@@ -567,7 +627,7 @@ namespace Hecton8.Construction
                 WeightClass = 1,
                 Flags = 1
             };
-            GlobalSignals.Publish(in impactSignal);
+            SignalBus<ImpactSignal>.TryPush(in impactSignal);
             ConnectionSplineBatchRenderer.SetPipeNodeRuptured((uint)math.max(0, rupture.NodeIndex), true);
 
             if (rupture.ContentKind == (byte)FluidPipeContentKind.Water)
@@ -608,7 +668,7 @@ namespace Hecton8.Construction
                 FlowRate01 = math.saturate(amount),
                 Flags = 1
             };
-            GlobalSignals.Publish(in incursionSignal);
+            SignalBus<FluidIncursionSignal>.TryPush(in incursionSignal);
         }
 
         private FluidPipeTelemetryEntry ReadLatestTelemetry()
@@ -675,7 +735,7 @@ namespace Hecton8.Construction
             }
             catch (Exception exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
                 Debug.LogError("[FluidPipeGraphRuntime] Failed to dump pipe black box: " + exception.Message);
 #endif
             }
@@ -734,6 +794,20 @@ namespace Hecton8.Construction
             if (value > short.MaxValue)
                 return short.MaxValue;
             return (short)value;
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private static void DisposeArray<T>(ref NativeArray<T> array) where T : struct

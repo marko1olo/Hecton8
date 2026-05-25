@@ -124,6 +124,7 @@ Shader "HECTON/Terrain/TerrainMaster"
         TEXTURE2D_ARRAY(_HectonBiomeGroundArray); SAMPLER(sampler_HectonBiomeGroundArray);
         TEXTURE2D(_HectonDistantTerrainShadowMask); SAMPLER(sampler_HectonDistantTerrainShadowMask);
         TEXTURE2D(_HectonVoxelBlendMask); SAMPLER(sampler_HectonVoxelBlendMask);
+        TEXTURE3D(_HectonDamageVolumeTex); SAMPLER(sampler_HectonDamageVolumeTex);
         float4 _SargassumCanopyShadowParams;
         float4 _SargassumCanopyLightingParams;
         float4 _HectonBiomeHeatmapRect;
@@ -136,6 +137,9 @@ Shader "HECTON/Terrain/TerrainMaster"
         float4 _HectonDistantTerrainShadowParams;
         float4 _HectonVoxelBlendMaskRect;
         float4 _HectonVoxelBlendMaskParams;
+        float4 _HectonDamageVolumeWorldMin;
+        float4 _HectonDamageVolumeInvSize;
+        float _HectonDamageVolumeActive;
 
         half3 HectonDominantAxisDirection(float3 value)
         {
@@ -212,6 +216,26 @@ Shader "HECTON/Terrain/TerrainMaster"
                 step((half)uv.x, 1.0h) * step((half)uv.y, 1.0h);
             half mask = SAMPLE_TEXTURE2D(_HectonVoxelBlendMask, sampler_HectonVoxelBlendMask, saturate(uv)).r;
             return saturate(mask * (half)_HectonVoxelBlendMaskParams.y * enabled * inside);
+        }
+
+        half EvaluateHectonDearLieDamageVolume(float3 positionWS)
+        {
+            if (_HectonDamageVolumeActive < 0.5)
+                return 0.0h;
+
+            float3 uvw = (positionWS - _HectonDamageVolumeWorldMin.xyz) * _HectonDamageVolumeInvSize.xyz;
+            if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0)
+                return 0.0h;
+
+            return SAMPLE_TEXTURE3D_LOD(_HectonDamageVolumeTex, sampler_HectonDamageVolumeTex, uvw, 0).r;
+        }
+
+        void ApplyHectonDearLieTerrainClip(float3 positionWS, float2 positionCS)
+        {
+            half damageMask = saturate(EvaluateHectonDearLieDamageVolume(positionWS));
+            half clipStrength = saturate((damageMask - 0.45h) * 1.8181818h);
+            half coverage = saturate(1.0h - clipStrength);
+            clip(coverage - HectonInterleavedGradientNoise(positionCS) * 0.125h);
         }
 
         half HectonCellNoise2D(float2 position)
@@ -419,6 +443,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+                ApplyHectonDearLieTerrainClip(IN.positionWS, IN.positionCS.xy);
 
                 // ---- Unpack Vertex Colors ----
                 half depth = IN.vColor.g;
@@ -661,6 +686,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             struct ShadowVary
             {
                 float4 positionCS : SV_POSITION;
+                float3 positionWS : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -691,11 +717,15 @@ Shader "HECTON/Terrain/TerrainMaster"
                 #endif
 
                 OUT.positionCS = posCS;
+                OUT.positionWS = posWS;
                 return OUT;
             }
 
             half4 ShadowFrag(ShadowVary IN) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+                ApplyHectonDearLieTerrainClip(IN.positionWS, IN.positionCS.xy);
                 return 0;
             }
 
@@ -731,6 +761,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             struct DepthVary
             {
                 float4 positionCS : SV_POSITION;
+                float3 positionWS : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -741,12 +772,16 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
-                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
+                OUT.positionCS = TransformWorldToHClip(OUT.positionWS);
                 return OUT;
             }
 
             half4 DepthFrag(DepthVary IN) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+                ApplyHectonDearLieTerrainClip(IN.positionWS, IN.positionCS.xy);
                 return 0;
             }
 
@@ -786,6 +821,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             {
                 float4 positionCS  : SV_POSITION;
                 float3 normalWS    : TEXCOORD0;
+                float3 positionWS  : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -800,6 +836,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
 
                 OUT.positionCS = posInputs.positionCS;
+                OUT.positionWS = posInputs.positionWS;
                 OUT.normalWS   = TransformObjectToWorldNormal(IN.normalOS);
 
                 return OUT;
@@ -809,6 +846,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+                ApplyHectonDearLieTerrainClip(IN.positionWS, IN.positionCS.xy);
 
                 float3 finalN = HectonDominantAxisDirection(IN.normalWS);
 

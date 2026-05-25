@@ -161,7 +161,7 @@ namespace Hecton8.Habitat.Deformation.Editor
 
         public void Execute(int index)
         {
-            HabitatDamageSourceVertex vertex;
+            HabitatDamageSourceVertex vertex = default;
             vertex.Position = ReadFloat3(PositionBytes, PositionOffset, PositionStride, index, float3.zero);
             vertex.Normal = HasNormal != 0
                 ? math.normalizesafe(ReadFloat3(NormalBytes, NormalOffset, NormalStride, index, new float3(0f, 1f, 0f)), new float3(0f, 1f, 0f))
@@ -318,8 +318,10 @@ namespace Hecton8.Habitat.Deformation.Editor
             float lengthDenominator = math.max(1f, lengthCount - 1f);
             float angle = segment * (math.PI * 2f / radialCount);
             float z = ((ring / lengthDenominator) - 0.5f) * LengthMeters;
-            float2 radial = new float2(math.cos(angle), math.sin(angle));
-            float rib = math.sin(z * 3.7f + radial.x * 2.1f) * 0.5f + 0.5f;
+            float2 radial = new float2(
+                Hecton8.Core.MathLodApproximation.ApproxCosBhaskara(angle),
+                Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle));
+            float rib = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(z * 3.7f + radial.x * 2.1f) * 0.5f + 0.5f;
             float crush = math.saturate(PressureIntensity) * math.lerp(0.04f, 0.28f, rib);
             float radius = math.max(0.01f, RadiusMeters * (1f - crush));
             float3 position = new float3(radial.x * radius, radial.y * radius, z);
@@ -361,14 +363,14 @@ namespace Hecton8.Habitat.Deformation.Editor
             float stage = math.saturate(DamageStage01);
             float quality = math.saturate(GlobalQualityWeight);
             float yieldStrength = math.max(0.01f, math.isfinite(MaterialYieldStrength) ? MaterialYieldStrength : 1f);
-            float depthWave = math.sin((float)DepthMeters * 0.0073f + original.y * 1.618f + original.x * 0.271f);
-            float ribWave = math.sin(original.z * 2.37f + original.x * 0.41f);
+            float depthWave = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara((float)DepthMeters * 0.0073f + original.y * 1.618f + original.x * 0.271f);
+            float ribWave = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(original.z * 2.37f + original.x * 0.41f);
             float buckleMask = (depthWave * 0.5f + 0.5f) * (ribWave * 0.5f + 0.5f);
             float inward = pressure * stage * math.rcp(yieldStrength) * math.lerp(0.035f, 0.42f, buckleMask);
             inward *= math.lerp(0.65f, 1.35f, quality);
             position.x -= radialDirection.x * inward;
             position.y -= radialDirection.y * inward;
-            position.z += math.sin(original.x * 0.91f + original.z * 0.57f) * pressure * stage * math.lerp(0.015f, 0.045f, quality);
+            position.z += Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(original.x * 0.91f + original.z * 0.57f) * pressure * stage * math.lerp(0.015f, 0.045f, quality);
 
             if (!math.all(math.isfinite(position)))
                 position = original;
@@ -397,8 +399,8 @@ namespace Hecton8.Habitat.Deformation.Editor
             HabitatDamageWorkingVertex* ptr = (HabitatDamageWorkingVertex*)NativeArrayUnsafeUtility.GetUnsafePtr(Vertices);
             ref HabitatDamageWorkingVertex vertex = ref UnsafeUtility.AsRef<HabitatDamageWorkingVertex>(ptr + index);
             float3 original = vertex.OriginalPosition;
-            float seamA = math.abs(math.sin(original.x * 0.73f + original.y * 1.91f));
-            float seamB = math.abs(math.sin(original.z * 0.61f - original.y * 1.17f));
+            float seamA = math.abs(Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(original.x * 0.73f + original.y * 1.91f));
+            float seamB = math.abs(Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(original.z * 0.61f - original.y * 1.17f));
             float seam = math.min(seamA, seamB);
             float threshold = math.saturate(TearThreshold);
             float stage = math.saturate(DamageStage01);
@@ -451,8 +453,8 @@ namespace Hecton8.Habitat.Deformation.Editor
 
             float3 center = (Vertices[(int)i0].OriginalPosition + Vertices[(int)i1].OriginalPosition + Vertices[(int)i2].OriginalPosition) * (1f / 3f);
             float seam = math.min(
-                math.abs(math.sin(center.x * 0.73f + center.y * 1.91f)),
-                math.abs(math.sin(center.z * 0.61f - center.y * 1.17f)));
+                math.abs(Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(center.x * 0.73f + center.y * 1.91f)),
+                math.abs(Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(center.z * 0.61f - center.y * 1.17f)));
             float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
             float qualityCurve = math.smoothstep(0f, 1f, quality);
             float pressureGate = math.lerp(0.72f, 0.48f, qualityCurve);

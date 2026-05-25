@@ -9,7 +9,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Physical Panel Dial")]
-    public sealed class PhysicalPanelDial : MonoBehaviour, IPanelInteractable
+    public sealed class PhysicalPanelDial : MonoBehaviour, IPanelInteractable, IGlobalRegistryHotSwapListener
     {
         private const float MinimumAxisLengthSq = 0.0001f;
         private const float MinimumScrollSq = 0.000001f;
@@ -57,7 +57,9 @@ namespace Hecton8.UI
 
         private Quaternion _baseLocalRotation;
         private float _currentDegrees;
+        private IAudioService _cachedAudioService;
         private bool _baseRotationCached;
+        private bool _hotSwapListenerRegistered;
 
         /// <summary>Current clamped dial angle in degrees.</summary>
         public float CurrentDegrees => _currentDegrees;
@@ -70,6 +72,27 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             CacheBaseRotation();
+            _cachedAudioService = GlobalRegistry.Audio;
+            TryRegisterHotSwapListener();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                _cachedAudioService = currentService as IAudioService;
         }
 
         /// <inheritdoc />
@@ -201,7 +224,7 @@ namespace Hecton8.UI
 
         private void QueueScrollAudio()
         {
-            IAudioService audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            IAudioService audio = _cachedAudioService;
             if (!emitScrollAudio || scrollAudioEventId == 0u || audio == null || !audio.IsInitialized)
                 return;
 
@@ -215,6 +238,23 @@ namespace Hecton8.UI
                 math.saturate(scrollAudioVolume),
                 math.clamp(scrollAudioPitch, 0.25f, 2.5f));
             audio.QueueAudioEvent(in audioEvent);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
 #if UNITY_EDITOR

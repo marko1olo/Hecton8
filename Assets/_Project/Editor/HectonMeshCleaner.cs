@@ -30,13 +30,13 @@ public class HectonMeshCleaner : EditorWindow
     // ===================================================================
     private ulong analyzedObjectEntityId = 0UL;
     private string analyzedObjectPath = "";
-    private Dictionary<ulong, PerMeshAnalysis> perMeshAnalysis = new Dictionary<ulong, PerMeshAnalysis>();
+    private Dictionary<ulong, PerMeshAnalysis> perMeshAnalysis = new Dictionary<ulong, PerMeshAnalysis>(64);
     private bool analysisReady = false;
     private Mesh previewSourceMesh;
     private GameObject previewTarget;
-    private HashSet<int> previewHiddenTris = new HashSet<int>();
+    private HashSet<int> previewHiddenTris = new HashSet<int>(4096);
     private Vector2 scrollPos;
-    private List<LODResult> lodResults = new List<LODResult>();
+    private List<LODResult> lodResults = new List<LODResult>(8);
     private double lastTime = 0;
     private string lastStatus = "";
     private MessageType lastStatusType = MessageType.None;
@@ -576,11 +576,11 @@ public class HectonMeshCleaner : EditorWindow
             Undo.RecordObject(mf, "Clean Mesh");
             mf.sharedMesh = cleaned;
 
-            MeshCollider mc = mf.GetComponent<MeshCollider>();
+            mf.TryGetComponent(out MeshCollider mc);
             if (mc != null) { Undo.RecordObject(mc, "Update Collider"); mc.sharedMesh = cleaned; }
 
             // Also update MeshColliders on sibling/child objects referencing same mesh
-            var renderer = mf.GetComponent<MeshRenderer>();
+            mf.TryGetComponent(out MeshRenderer renderer);
             if (renderer != null) EditorUtility.SetDirty(renderer);
 
             totalRemoved += analysis.hiddenTris.Count;
@@ -1011,7 +1011,7 @@ public class HectonMeshCleaner : EditorWindow
         }
         else
         {
-            var mf = targetObject.GetComponent<MeshFilter>();
+            targetObject.TryGetComponent(out MeshFilter mf);
             if (mf != null && mf.sharedMesh != null && mf.sharedMesh.isReadable) list.Add(mf);
         }
     }

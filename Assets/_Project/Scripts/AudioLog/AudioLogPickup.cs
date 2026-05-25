@@ -3,6 +3,7 @@
 // Interactive colony audio-log pickup.
 // ============================================================================
 
+using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -15,7 +16,7 @@ namespace Hecton8.Narrative
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class AudioLogPickup : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class AudioLogPickup : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const uint WfcOutpostDatapadSourceHash = 0x57464341u; // WFCA
         private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
@@ -26,6 +27,8 @@ namespace Hecton8.Narrative
         private const string DefaultTextVerbEn = "Open Log";
         private const string DefaultArchiveVerbRu = "Otkryt arhiv";
         private const string DefaultArchiveVerbEn = "Open Archive";
+        private const string DefaultReplaySuffix = "(Replay)";
+        private const int InteractTextCapacity = 96;
         private static readonly uint _defaultPlaybackVerbRuHash = QuestFlagHashKernel.ComputeStableHash(DefaultPlaybackVerbRu);
         private static readonly uint _defaultPlaybackVerbEnHash = QuestFlagHashKernel.ComputeStableHash(DefaultPlaybackVerbEn);
         private static readonly uint _defaultTextVerbRuHash = QuestFlagHashKernel.ComputeStableHash(DefaultTextVerbRu);
@@ -50,13 +53,18 @@ namespace Hecton8.Narrative
         [Tooltip("Hover highlight object.")]
         [SerializeField] private GameObject highlightObject;
 
-        private string _cachedInteractText;
+        private string _legacyInteractText = DefaultPlaybackVerbEn;
+        private readonly char[] _cachedInteractText = new char[InteractTextCapacity];
+        private int _cachedInteractTextLength;
         private bool _alreadyDiscovered;
         private bool _pickupTemplateRegistered;
         private ulong _wfcOutpostSectorHash;
         private ushort _wfcOutpostCellIndex;
         private byte _wfcOutpostFlags;
         private bool _wfcOutpostPersistenceConfigured;
+        private bool _hotSwapListenerRegistered;
+        private IAudioLogRuntime _cachedAudioLogSystem;
+        private ILocalizationTextReadModel _cachedLocalization;
 
         internal static int RegisteredPickupTemplateCount => _registeredPickupTemplates.Count;
 
@@ -93,7 +101,10 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterPickupTemplate();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             _alreadyDiscovered = false;
 
@@ -107,9 +118,10 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            if (logData != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
+            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            if (logData != null && audioLogSystem != null)
             {
-                _alreadyDiscovered = Hecton8.Core.GlobalRegistry.AudioLogs.IsDiscovered(logData.logId);
+                _alreadyDiscovered = audioLogSystem.IsAudioLogDiscovered(logData.logId);
 
                 if (_alreadyDiscovered && deactivateAfterPickup)
                 {
@@ -124,8 +136,10 @@ namespace Hecton8.Narrative
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             ClearWfcOutpostPersistence();
             TryUnregisterPickupTemplate();
+            TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
 
             if (highlightObject != null)
@@ -134,44 +148,76 @@ namespace Hecton8.Narrative
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterPickupTemplate();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.AudioLogRuntime:
+                    _cachedAudioLogSystem = currentService as IAudioLogRuntime;
+                    RefreshDiscoveryStateFromAudioLogSystem();
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as ILocalizationTextReadModel;
+                    BuildCache();
+                    break;
+            }
         }
 
         private void BuildCache()
         {
             if (logData == null)
             {
-                _cachedInteractText = ResolveInteractVerb();
+                CacheInteractText(ResolveInteractVerbSpan(out string legacyVerb), legacyVerb);
                 return;
             }
 
-            string title = logData.DisplayTitleOrFallback;
-            string resolvedVerb = ResolveInteractVerb();
             if (_alreadyDiscovered)
             {
-                _cachedInteractText = resolvedVerb + ": " + title + " " +
-                                      ResolveLocalized(LocalizationKeys.INTERACT_REPLAY_SUFFIX, "(Replay)");
+                CacheInteractText(
+                    ResolveLocalizedSpan(LocalizationKeys.INTERACT_REPLAY_SUFFIX, DefaultReplaySuffix),
+                    DefaultReplaySuffix);
                 return;
             }
 
-            _cachedInteractText = resolvedVerb + ": " + title;
+            CacheInteractText(ResolveInteractVerbSpan(out string resolvedLegacyVerb), resolvedLegacyVerb);
         }
 
-        private string ResolveInteractVerb()
+        private ReadOnlySpan<char> ResolveInteractVerbSpan(out string legacyVerb)
         {
             if (HasCustomInteractVerb())
-                return interactVerb;
+            {
+                legacyVerb = interactVerb;
+                return interactVerb.AsSpan();
+            }
 
             if (logData == null)
-                return ResolveLocalized(LocalizationKeys.INTERACT_PLAY_LOG, DefaultPlaybackVerbEn);
+            {
+                legacyVerb = DefaultPlaybackVerbEn;
+                return ResolveLocalizedSpan(LocalizationKeys.INTERACT_PLAY_LOG, DefaultPlaybackVerbEn);
+            }
 
             if (logData.IsTextOnlyPlayback)
-                return ResolveLocalized(LocalizationKeys.INTERACT_OPEN_LOG, DefaultTextVerbEn);
+            {
+                legacyVerb = DefaultTextVerbEn;
+                return ResolveLocalizedSpan(LocalizationKeys.INTERACT_OPEN_LOG, DefaultTextVerbEn);
+            }
 
             if (!logData.HasPlaybackPayload && logData.HasVisibleContent)
-                return ResolveLocalized(LocalizationKeys.INTERACT_OPEN_ARCHIVE, DefaultArchiveVerbEn);
+            {
+                legacyVerb = DefaultArchiveVerbEn;
+                return ResolveLocalizedSpan(LocalizationKeys.INTERACT_OPEN_ARCHIVE, DefaultArchiveVerbEn);
+            }
 
-            return ResolveLocalized(LocalizationKeys.INTERACT_PLAY_LOG, DefaultPlaybackVerbEn);
+            legacyVerb = DefaultPlaybackVerbEn;
+            return ResolveLocalizedSpan(LocalizationKeys.INTERACT_PLAY_LOG, DefaultPlaybackVerbEn);
         }
 
         public void OnHoverStart()
@@ -196,27 +242,40 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
+            IAudioLogRuntime system = _cachedAudioLogSystem;
             if (system == null)
             {
 #if UNITY_EDITOR
-                Debug.LogWarning("[AudioLogPickup] Hecton8.Core.GlobalRegistry.AudioLogs is null.");
+                Debug.LogWarning("[AudioLogPickup] AudioLogSystem service is not cached.");
 #endif
                 return;
             }
 
             bool wasDiscovered = _alreadyDiscovered;
-            system.PlayLog(logData);
+            system.TryPlayAudioLog(logData.logId);
             _alreadyDiscovered = true;
             BuildCache();
             if (!wasDiscovered)
-                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDatapadLootedFlag), (uint)Time.frameCount);
+                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDatapadLootedFlag), (uint)SystemDispatcher.CurrentFrameIndex);
 
             if (deactivateAfterPickup)
                 gameObject.SetActive(false);
         }
 
-        public string GetInteractText() => _cachedInteractText;
+        public string GetInteractText() => _legacyInteractText;
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            length = _cachedInteractTextLength;
+            if (length <= 0 || destination.Length < length)
+            {
+                length = 0;
+                return InteractableTextCopy.TryCopy(_legacyInteractText, destination, out length);
+            }
+
+            _cachedInteractText.AsSpan(0, length).CopyTo(destination);
+            return true;
+        }
 
         private void ApplyWfcOutpostDatapadLootedState()
         {
@@ -264,7 +323,7 @@ namespace Hecton8.Narrative
                 SourceHash = WfcOutpostDatapadSourceHash,
                 Flags = 0
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<WfcOutpostStateChangedSignal>.TryPush(in signal);
         }
 
 #if UNITY_EDITOR
@@ -281,12 +340,12 @@ namespace Hecton8.Narrative
 
         {
 
-            HandleLanguageChanged((GameLanguage)payload.Language);
+            HandleLanguageChanged();
 
         }
 
 
-        private void HandleLanguageChanged(GameLanguage language)
+        private void HandleLanguageChanged()
         {
             BuildCache();
         }
@@ -310,12 +369,59 @@ namespace Hecton8.Narrative
                    verbHash == _defaultArchiveVerbEnHash;
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextReadModel manager = _cachedLocalization;
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
+                : fallback.AsSpan();
+        }
+
+        private void CacheInteractText(ReadOnlySpan<char> text, string legacyText)
+        {
+            _legacyInteractText = string.IsNullOrEmpty(legacyText) ? DefaultPlaybackVerbEn : legacyText;
+            _cachedInteractTextLength = 0;
+
+            if (text.IsEmpty || text.Length > _cachedInteractText.Length)
+                return;
+
+            text.CopyTo(_cachedInteractText);
+            _cachedInteractTextLength = text.Length;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogRuntime;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
+        }
+
+        private void RefreshDiscoveryStateFromAudioLogSystem()
+        {
+            if (_wfcOutpostPersistenceConfigured || logData == null)
+                return;
+
+            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            _alreadyDiscovered = audioLogSystem != null && audioLogSystem.IsAudioLogDiscovered(logData.logId);
+            BuildCache();
+            if (_alreadyDiscovered && deactivateAfterPickup && isActiveAndEnabled)
+                gameObject.SetActive(false);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         internal void ConfigureRecoveryPickup(AudioLogData data, bool deactivateAfterUse)

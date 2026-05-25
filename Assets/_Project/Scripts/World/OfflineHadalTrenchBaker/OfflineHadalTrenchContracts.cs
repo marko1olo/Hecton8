@@ -3,6 +3,18 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.OfflineHadalTrenchBaker
 {
+    internal static class OfflineHadalTrenchContractsLayout
+    {
+        public const int FaultLineParamsDTOStrideBytes = 64;
+        public const int ThermalVentSpawnDTOStrideBytes = 64;
+        public const int HadalTrenchBakeConfigDTOStrideBytes = 160;
+        public const int HadalTrenchChunkHeaderDTOStrideBytes = 160;
+        public const int HadalTrenchRleRunDTOStrideBytes = 16;
+        public const int HadalTrenchAdaptiveBlockDTOStrideBytes = 32;
+        public const int HadalTrenchBakeTelemetryEntryStrideBytes = 64;
+        public const int HadalTrenchRollbackExclusionDTOStrideBytes = 32;
+    }
+
     public static class HadalTrenchBakeConstants
     {
         public const int TelemetryFrames = 300;
@@ -34,7 +46,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker
         RleLz4Block = 2u
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalTrenchContractsLayout.FaultLineParamsDTOStrideBytes)]
     public struct FaultLineParamsDTO
     {
         [FieldOffset(0)] public double3 StartAUP;
@@ -45,7 +57,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker
         [FieldOffset(60)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalTrenchContractsLayout.ThermalVentSpawnDTOStrideBytes)]
     public struct ThermalVentSpawnDTO
     {
         [FieldOffset(0)] public double3 PositionAUP;
@@ -59,7 +71,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker
         [FieldOffset(56)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 160)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalTrenchContractsLayout.HadalTrenchBakeConfigDTOStrideBytes)]
     public struct HadalTrenchBakeConfigDTO
     {
         [FieldOffset(0)] public double3 SectorOriginAUP;
@@ -84,7 +96,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker
         [FieldOffset(152)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 160)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalTrenchContractsLayout.HadalTrenchChunkHeaderDTOStrideBytes)]
     public struct HadalTrenchChunkHeaderDTO
     {
         [FieldOffset(0)] public uint Magic;
@@ -115,7 +127,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker
         [FieldOffset(156)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalTrenchContractsLayout.HadalTrenchRleRunDTOStrideBytes)]
     public struct HadalTrenchRleRunDTO
     {
         [FieldOffset(0)] public uint StartVoxel;
@@ -126,7 +138,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker
         [FieldOffset(12)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalTrenchContractsLayout.HadalTrenchAdaptiveBlockDTOStrideBytes)]
     public struct HadalTrenchAdaptiveBlockDTO
     {
         [FieldOffset(0)] public int3 MinVoxel;
@@ -140,7 +152,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker
         [FieldOffset(28)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalTrenchContractsLayout.HadalTrenchBakeTelemetryEntryStrideBytes)]
     public struct HadalTrenchBakeTelemetryEntry
     {
         [FieldOffset(0)] public double3 SectorOriginAUP;
@@ -156,7 +168,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker
         [FieldOffset(60)] public uint Stage;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = OfflineHadalTrenchContractsLayout.HadalTrenchRollbackExclusionDTOStrideBytes)]
     public struct HadalTrenchRollbackExclusionDTO
     {
         [FieldOffset(0)] public uint StaticVoxelHash;

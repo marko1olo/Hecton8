@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/UI Particle Effect")]
-    public sealed class UIParticleEffect : MonoBehaviour, IPoolable
+    public sealed class UIParticleEffect : MonoBehaviour, IPoolable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -36,6 +36,9 @@ namespace Hecton8.UI
         private bool _initialized;
         private GameObject _particleInstance;
         private bool _particleInstanceOwnedByPool;
+        private IObjectPoolService _cachedObjectPool;
+        private IObjectPoolService _particlePoolOwner;
+        private bool _hotSwapListenerRegistered;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -43,19 +46,33 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             Initialize();
+        }
+
+        private void OnEnable()
+        {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             if (!_particleInstanceOwnedByPool || _particleInstance == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _particlePoolOwner;
             if (pool != null && _particleInstance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
                 pool.Despawn(_particleInstance);
 
             _particleInstance = null;
+            _particlePoolOwner = null;
             _particleInstanceOwnedByPool = false;
         }
 
@@ -115,7 +132,7 @@ namespace Hecton8.UI
             // Create particle system if prefab provided
             if (particlePrefab != null)
             {
-                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                IObjectPoolService pool = _cachedObjectPool;
                 if (pool != null)
                 {
                     _particleInstance = pool.Spawn(particlePrefab, transform.position, transform.rotation);
@@ -124,6 +141,7 @@ namespace Hecton8.UI
                         _particleInstance.transform.SetParent(transform, false);
                         _particleInstance.TryGetComponent(out _particleSystem);
                         _particleInstanceOwnedByPool = _particleInstance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
+                        _particlePoolOwner = _particleInstanceOwnedByPool ? pool : null;
                     }
                 }
             }
@@ -136,12 +154,44 @@ namespace Hecton8.UI
                 _particleSystem = particleObj.AddComponent<ParticleSystem>();
                 _particleInstance = particleObj;
                 _particleInstanceOwnedByPool = false;
+                _particlePoolOwner = null;
                 ConfigureDefaultParticleSystem();
             }
 
             _mainModule = _particleSystem.main;
             _emissionModule = _particleSystem.emission;
             _initialized = true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
+                _cachedObjectPool = currentService as IObjectPoolService;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void ConfigureDefaultParticleSystem()

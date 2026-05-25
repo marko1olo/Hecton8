@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton.Localization;
 using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
@@ -15,6 +16,8 @@ namespace Hecton8.Quest
     internal sealed class QuestStateManager : IDisposable
     {
         private const int ProceduralQuestCapacity = 8;
+        private const int QuestTitleCharCapacity = 128;
+        private const int QuestDescriptionCharCapacity = 512;
         private const int WordCapacity = 320;
         private const int WordStride = 32;
         private const int QuestWordStart = 0;
@@ -65,8 +68,10 @@ namespace Hecton8.Quest
         private uint[] _markerTargetHashesByQuestIndex;
         private Vector3[] _markerWorldPositionsByQuestIndex;
         private float[] _markerHeightOffsetsByQuestIndex;
-        private string[] _questTitlesByQuestIndex;
-        private string[] _questDescriptionsByQuestIndex;
+        private char[][] _questTitleBuffersByQuestIndex;
+        private char[][] _questDescriptionBuffersByQuestIndex;
+        private int[] _questTitleLengthsByQuestIndex;
+        private int[] _questDescriptionLengthsByQuestIndex;
         private int[] _proceduralNodeIndexByQuestIndex;
         private QuestRevertDescriptor[] _revertDescriptors;
         private QuestBitAddress _abyssalPhaseAddress;
@@ -74,13 +79,16 @@ namespace Hecton8.Quest
         private ThresholdFlag[] _depthThresholdFlags;
         private int _authoredQuestCount;
         private string _compileErrorSummary = string.Empty;
+        private int _compileErrorCount;
         private uint _stateVersion;
         private uint _stateChecksum;
         private bool _isInitialized;
 
-        public bool HasCompileErrors => !string.IsNullOrEmpty(_compileErrorSummary);
+        public bool HasCompileErrors => _compileErrorCount > 0;
 
         public string CompileErrorSummary => _compileErrorSummary;
+
+        public int CompileErrorCount => _compileErrorCount;
 
         public int WordCount => WordCapacity;
 
@@ -157,8 +165,10 @@ namespace Hecton8.Quest
             _markerTargetHashesByQuestIndex = null;
             _markerWorldPositionsByQuestIndex = null;
             _markerHeightOffsetsByQuestIndex = null;
-            _questTitlesByQuestIndex = null;
-            _questDescriptionsByQuestIndex = null;
+            _questTitleBuffersByQuestIndex = null;
+            _questDescriptionBuffersByQuestIndex = null;
+            _questTitleLengthsByQuestIndex = null;
+            _questDescriptionLengthsByQuestIndex = null;
             _proceduralNodeIndexByQuestIndex = null;
             _revertDescriptors = null;
             _abyssalPhaseAddress = default;
@@ -166,6 +176,7 @@ namespace Hecton8.Quest
             _depthThresholdFlags = null;
             _authoredQuestCount = 0;
             _compileErrorSummary = string.Empty;
+            _compileErrorCount = 0;
             _stateVersion = 0u;
             _stateChecksum = 0u;
             _isInitialized = false;
@@ -193,8 +204,10 @@ namespace Hecton8.Quest
             _markerTargetHashesByQuestIndex = new uint[questArrayLength]; // COLD ALLOC: uint[questArrayLength] - quest marker target hash cache for authored and procedural directives - owner: QuestStateManager
             _markerWorldPositionsByQuestIndex = new Vector3[questArrayLength]; // COLD ALLOC: Vector3[questArrayLength] - quest marker fallback positions - owner: QuestStateManager
             _markerHeightOffsetsByQuestIndex = new float[questArrayLength]; // COLD ALLOC: float[questArrayLength] - quest marker height offsets - owner: QuestStateManager
-            _questTitlesByQuestIndex = new string[questArrayLength]; // COLD ALLOC: string[questArrayLength] - quest title cache for authored and procedural presentation - owner: QuestStateManager
-            _questDescriptionsByQuestIndex = new string[questArrayLength]; // COLD ALLOC: string[questArrayLength] - quest description cache for authored and procedural presentation - owner: QuestStateManager
+            _questTitleBuffersByQuestIndex = CreateQuestTextBuffers(questArrayLength, QuestTitleCharCapacity); // COLD ALLOC: char[questArrayLength][128] - quest title presentation cache - owner: QuestStateManager
+            _questDescriptionBuffersByQuestIndex = CreateQuestTextBuffers(questArrayLength, QuestDescriptionCharCapacity); // COLD ALLOC: char[questArrayLength][512] - quest description presentation cache - owner: QuestStateManager
+            _questTitleLengthsByQuestIndex = new int[questArrayLength]; // COLD ALLOC: int[questArrayLength] - quest title presentation lengths - owner: QuestStateManager
+            _questDescriptionLengthsByQuestIndex = new int[questArrayLength]; // COLD ALLOC: int[questArrayLength] - quest description presentation lengths - owner: QuestStateManager
             _proceduralNodeIndexByQuestIndex = new int[questArrayLength]; // COLD ALLOC: int[questArrayLength] - procedural completion-node slot mapping - owner: QuestStateManager
 
             // COLD ALLOC: List<QuestNodeDescriptor>[questArrayLength*2] - compiled quest DAG nodes - owner: QuestStateManager
@@ -220,7 +233,7 @@ namespace Hecton8.Quest
                 uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
                 if (questHash == 0u)
                 {
-                    RegisterCompileError(string.Concat("Quest '", questData.name, "' resolved to hash 0. Stable IDs are required."));
+                    RegisterCompileError("Quest hash resolved to zero. Stable IDs are required.");
                     continue;
                 }
 
@@ -234,21 +247,20 @@ namespace Hecton8.Quest
                 _questIndexByHash[questHash] = questIndex;
                 _questHashesByQuestIndex[questIndex] = questHash;
                 _phaseGateMasksByQuestIndex[questIndex] = ResolvePhaseGateMask(questData.phaseGate);
-                _questTitlesByQuestIndex[questIndex] = questData.DisplayTitleOrFallback;
-                _questDescriptionsByQuestIndex[questIndex] = questData.DescriptionOrFallback;
+                CopyAuthoredQuestPresentation(questData, questIndex);
                 _markerTargetHashesByQuestIndex[questIndex] = QuestFlagHashKernel.ComputeStableHash(questData.markerTargetId);
                 _markerWorldPositionsByQuestIndex[questIndex] = questData.markerWorldPosition;
                 _markerHeightOffsetsByQuestIndex[questIndex] = math.max(0f, questData.markerHeightOffset);
                 _activeAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(questHash, ActiveFlagSalt),
                     QuestStateBand.Quest,
-                    string.Concat("quest-active:", questData.questId),
+                    "quest-active",
                     hashLabels,
                     bandBitUsage);
                 _completedAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(questHash, CompletedFlagSalt),
                     QuestStateBand.Quest,
-                    string.Concat("quest-complete:", questData.questId),
+                    "quest-complete",
                     hashLabels,
                     bandBitUsage);
             }
@@ -456,8 +468,7 @@ namespace Hecton8.Quest
 
             _questHashesByQuestIndex[questIndex] = questHash;
             _phaseGateMasksByQuestIndex[questIndex] = ResolvePhaseGateMask(phaseGate);
-            _questTitlesByQuestIndex[questIndex] = string.IsNullOrWhiteSpace(title) ? "ATLAS-6 DIRECTIVE" : title;
-            _questDescriptionsByQuestIndex[questIndex] = description ?? string.Empty;
+            CopyProceduralQuestPresentation(questIndex, title, description);
             _markerTargetHashesByQuestIndex[questIndex] = markerTargetHash;
             _markerWorldPositionsByQuestIndex[questIndex] = markerWorldPosition;
             _markerHeightOffsetsByQuestIndex[questIndex] = math.max(0f, markerHeightOffset);
@@ -502,12 +513,6 @@ namespace Hecton8.Quest
             if (!TryGetQuestIndex(questHash, out int questIndex))
                 return false;
 
-            title = _questTitlesByQuestIndex != null && questIndex < _questTitlesByQuestIndex.Length
-                ? _questTitlesByQuestIndex[questIndex]
-                : string.Empty;
-            description = _questDescriptionsByQuestIndex != null && questIndex < _questDescriptionsByQuestIndex.Length
-                ? _questDescriptionsByQuestIndex[questIndex]
-                : string.Empty;
             markerTargetHash = _markerTargetHashesByQuestIndex != null && questIndex < _markerTargetHashesByQuestIndex.Length
                 ? _markerTargetHashesByQuestIndex[questIndex]
                 : 0u;
@@ -517,7 +522,149 @@ namespace Hecton8.Quest
             markerHeightOffset = _markerHeightOffsetsByQuestIndex != null && questIndex < _markerHeightOffsetsByQuestIndex.Length
                 ? _markerHeightOffsetsByQuestIndex[questIndex]
                 : 0f;
-            return !string.IsNullOrWhiteSpace(title) || markerTargetHash != 0u || markerWorldPosition.sqrMagnitude > 0.0001f;
+            return HasCachedQuestTitle(questIndex) || markerTargetHash != 0u || markerWorldPosition.sqrMagnitude > 0.0001f;
+        }
+
+        public bool TryCopyQuestPresentation(
+            uint questHash,
+            char[] titleDestination,
+            out int titleLength,
+            char[] descriptionDestination,
+            out int descriptionLength,
+            out uint markerTargetHash,
+            out Vector3 markerWorldPosition,
+            out float markerHeightOffset)
+        {
+            titleLength = 0;
+            descriptionLength = 0;
+            markerTargetHash = 0u;
+            markerWorldPosition = default;
+            markerHeightOffset = 0f;
+
+            if (!TryGetQuestIndex(questHash, out int questIndex))
+                return false;
+
+            TryCopyCachedQuestText(
+                _questTitleBuffersByQuestIndex,
+                _questTitleLengthsByQuestIndex,
+                questIndex,
+                titleDestination,
+                out titleLength);
+            TryCopyCachedQuestText(
+                _questDescriptionBuffersByQuestIndex,
+                _questDescriptionLengthsByQuestIndex,
+                questIndex,
+                descriptionDestination,
+                out descriptionLength);
+            markerTargetHash = _markerTargetHashesByQuestIndex != null && questIndex < _markerTargetHashesByQuestIndex.Length
+                ? _markerTargetHashesByQuestIndex[questIndex]
+                : 0u;
+            markerWorldPosition = _markerWorldPositionsByQuestIndex != null && questIndex < _markerWorldPositionsByQuestIndex.Length
+                ? _markerWorldPositionsByQuestIndex[questIndex]
+                : default;
+            markerHeightOffset = _markerHeightOffsetsByQuestIndex != null && questIndex < _markerHeightOffsetsByQuestIndex.Length
+                ? _markerHeightOffsetsByQuestIndex[questIndex]
+                : 0f;
+            return titleLength > 0 || markerTargetHash != 0u || markerWorldPosition.sqrMagnitude > 0.0001f;
+        }
+
+        private static char[][] CreateQuestTextBuffers(int count, int capacity)
+        {
+            char[][] buffers = new char[count][];
+            for (int i = 0; i < count; i++)
+                buffers[i] = new char[capacity];
+
+            return buffers;
+        }
+
+        private void CopyAuthoredQuestPresentation(QuestData questData, int questIndex)
+        {
+            if (questData == null || !IsQuestTextIndexValid(questIndex))
+                return;
+
+            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
+            char[] titleBuffer = _questTitleBuffersByQuestIndex[questIndex];
+            if (questData.TryWriteDisplayTitleOrFallback(manager, titleBuffer, out int titleLength))
+                _questTitleLengthsByQuestIndex[questIndex] = math.min(titleLength, titleBuffer.Length);
+            else
+                _questTitleLengthsByQuestIndex[questIndex] = CopySpanToBuffer("UNKNOWN OBJECTIVE".AsSpan(), titleBuffer);
+
+            char[] descriptionBuffer = _questDescriptionBuffersByQuestIndex[questIndex];
+            if (questData.TryWriteDescriptionOrFallback(manager, descriptionBuffer, out int descriptionLength))
+                _questDescriptionLengthsByQuestIndex[questIndex] = math.min(descriptionLength, descriptionBuffer.Length);
+            else
+                _questDescriptionLengthsByQuestIndex[questIndex] = 0;
+        }
+
+        private void CopyProceduralQuestPresentation(int questIndex, string title, string description)
+        {
+            if (!IsQuestTextIndexValid(questIndex))
+                return;
+
+            _questTitleLengthsByQuestIndex[questIndex] = CopySpanToBuffer(
+                string.IsNullOrWhiteSpace(title) ? "ATLAS-6 DIRECTIVE".AsSpan() : title.AsSpan(),
+                _questTitleBuffersByQuestIndex[questIndex]);
+            _questDescriptionLengthsByQuestIndex[questIndex] = CopySpanToBuffer(
+                string.IsNullOrEmpty(description) ? ReadOnlySpan<char>.Empty : description.AsSpan(),
+                _questDescriptionBuffersByQuestIndex[questIndex]);
+        }
+
+        private bool IsQuestTextIndexValid(int questIndex)
+        {
+            return _questTitleBuffersByQuestIndex != null &&
+                   _questDescriptionBuffersByQuestIndex != null &&
+                   _questTitleLengthsByQuestIndex != null &&
+                   _questDescriptionLengthsByQuestIndex != null &&
+                   (uint)questIndex < (uint)_questTitleBuffersByQuestIndex.Length &&
+                   (uint)questIndex < (uint)_questDescriptionBuffersByQuestIndex.Length &&
+                   (uint)questIndex < (uint)_questTitleLengthsByQuestIndex.Length &&
+                   (uint)questIndex < (uint)_questDescriptionLengthsByQuestIndex.Length;
+        }
+
+        private bool HasCachedQuestTitle(int questIndex)
+        {
+            return _questTitleLengthsByQuestIndex != null &&
+                   (uint)questIndex < (uint)_questTitleLengthsByQuestIndex.Length &&
+                   _questTitleLengthsByQuestIndex[questIndex] > 0;
+        }
+
+        private static bool TryCopyCachedQuestText(
+            char[][] buffers,
+            int[] lengths,
+            int questIndex,
+            char[] destination,
+            out int length)
+        {
+            length = 0;
+            if (buffers == null ||
+                lengths == null ||
+                destination == null ||
+                destination.Length == 0 ||
+                (uint)questIndex >= (uint)buffers.Length ||
+                (uint)questIndex >= (uint)lengths.Length)
+            {
+                return false;
+            }
+
+            char[] source = buffers[questIndex];
+            int sourceLength = math.min(lengths[questIndex], source != null ? source.Length : 0);
+            if (sourceLength <= 0)
+                return true;
+
+            length = CopySpanToBuffer(source.AsSpan(0, sourceLength), destination);
+            return length == sourceLength;
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> source, char[] destination)
+        {
+            if (destination == null || destination.Length == 0 || source.Length == 0)
+                return 0;
+
+            int length = math.min(source.Length, destination.Length);
+            for (int i = 0; i < length; i++)
+                destination[i] = source[i];
+
+            return length;
         }
 
         public bool TryGetQuestHash(int questIndex, out uint questHash)
@@ -1196,161 +1343,42 @@ namespace Hecton8.Quest
 
         private static string BuildQuestHashCollisionError(string questId, int existingQuestIndex, int questIndex, uint questHash)
         {
-            questId ??= string.Empty;
-
-            const string prefix = "Quest hash collision for '";
-            const string middleA = "'. Source indices ";
-            const string middleB = " and ";
-            const string middleC = " resolve to 0x";
-            const string suffix = ".";
-            int length = prefix.Length + questId.Length + middleA.Length + CountIntDigits(existingQuestIndex) +
-                         middleB.Length + CountIntDigits(questIndex) + middleC.Length + 8 + suffix.Length;
-
-            return string.Create(length, (questId, existingQuestIndex, questIndex, questHash), (buffer, state) =>
-            {
-                int write = 0;
-                write = CopyString(prefix, buffer, write);
-                write = CopyString(state.questId, buffer, write);
-                write = CopyString(middleA, buffer, write);
-                write = WriteInt(state.existingQuestIndex, buffer, write);
-                write = CopyString(middleB, buffer, write);
-                write = WriteInt(state.questIndex, buffer, write);
-                write = CopyString(middleC, buffer, write);
-                write = WriteHex8(state.questHash, buffer, write);
-                CopyString(suffix, buffer, write);
-            });
+            return "Quest hash collision.";
         }
 
         private static string BuildQuestHashLabel(string prefix, string questId, uint hash)
         {
-            prefix ??= string.Empty;
-            questId ??= string.Empty;
-
-            int length = prefix.Length + questId.Length + 1 + 8;
-            return string.Create(length, (prefix, questId, hash), (buffer, state) =>
-            {
-                int write = 0;
-                write = CopyString(state.prefix, buffer, write);
-                write = CopyString(state.questId, buffer, write);
-                buffer[write++] = ':';
-                WriteHex8(state.hash, buffer, write);
-            });
+            return string.IsNullOrEmpty(prefix) ? "quest-bit" : prefix;
         }
 
         private static string BuildProceduralQuestLabel(string prefix, int proceduralOffset)
         {
-            prefix ??= string.Empty;
-            int length = prefix.Length + CountIntDigits(proceduralOffset);
-            return string.Create(length, (prefix, proceduralOffset), (buffer, state) =>
-            {
-                int write = CopyString(state.prefix, buffer, 0);
-                WriteInt(state.proceduralOffset, buffer, write);
-            });
+            return string.IsNullOrEmpty(prefix) ? "quest-procedural" : prefix;
         }
 
         private static string BuildUnknownPrerequisiteError(string questId, string prerequisiteQuestId)
         {
-            questId ??= string.Empty;
-            prerequisiteQuestId ??= string.Empty;
-
-            const string prefix = "Quest '";
-            const string middle = "' references unknown prerequisite quest '";
-            const string suffix = "'.";
-            int length = prefix.Length + questId.Length + middle.Length + prerequisiteQuestId.Length + suffix.Length;
-
-            return string.Create(length, (questId, prerequisiteQuestId), (buffer, state) =>
-            {
-                int write = 0;
-                write = CopyString(prefix, buffer, write);
-                write = CopyString(state.questId, buffer, write);
-                write = CopyString(middle, buffer, write);
-                write = CopyString(state.prerequisiteQuestId, buffer, write);
-                CopyString(suffix, buffer, write);
-            });
+            return "Quest references unknown prerequisite.";
         }
 
         private static string BuildSignalDebugLabel(QuestSignalKind signalKind, string signalId, float signalValue)
         {
-            string signalKindLabel = ResolveQuestSignalKindLabel(signalKind);
-            signalId ??= string.Empty;
-            int valueLength = CountFloatChars(signalValue);
-            int length = signalKindLabel.Length + 1 + signalId.Length + 1 + valueLength;
-
-            return string.Create(length, (signalKindLabel, signalId, signalValue), (buffer, state) =>
-            {
-                int write = 0;
-                write = CopyString(state.signalKindLabel, buffer, write);
-                buffer[write++] = ':';
-                write = CopyString(state.signalId, buffer, write);
-                buffer[write++] = ':';
-                WriteFloat(state.signalValue, buffer, write);
-            });
+            return ResolveQuestSignalKindLabel(signalKind);
         }
 
         private static string BuildQuestBitCollisionError(string existingLabel, string debugLabel, uint bitHash)
         {
-            existingLabel ??= string.Empty;
-            debugLabel ??= string.Empty;
-
-            const string prefix = "Quest bit collision between '";
-            const string middle = "' and '";
-            const string suffixA = "' at 0x";
-            const string suffixB = ".";
-            int length = prefix.Length + existingLabel.Length + middle.Length + debugLabel.Length + suffixA.Length + 8 + suffixB.Length;
-
-            return string.Create(length, (existingLabel, debugLabel, bitHash), (buffer, state) =>
-            {
-                int write = 0;
-                write = CopyString(prefix, buffer, write);
-                write = CopyString(state.existingLabel, buffer, write);
-                write = CopyString(middle, buffer, write);
-                write = CopyString(state.debugLabel, buffer, write);
-                write = CopyString(suffixA, buffer, write);
-                write = WriteHex8(state.bitHash, buffer, write);
-                CopyString(suffixB, buffer, write);
-            });
+            return "Quest bit collision.";
         }
 
         private static string BuildQuestBandCapacityError(QuestStateBand band, int bandCapacity)
         {
-            string bandLabel = ResolveQuestStateBandLabel(band);
-            const string prefix = "Quest state band '";
-            const string middle = "' exceeded its ";
-            const string suffix = " bit ceiling.";
-            int length = prefix.Length + bandLabel.Length + middle.Length + CountIntDigits(bandCapacity) + suffix.Length;
-
-            return string.Create(length, (bandLabel, bandCapacity), (buffer, state) =>
-            {
-                int write = 0;
-                write = CopyString(prefix, buffer, write);
-                write = CopyString(state.bandLabel, buffer, write);
-                write = CopyString(middle, buffer, write);
-                write = WriteInt(state.bandCapacity, buffer, write);
-                CopyString(suffix, buffer, write);
-            });
+            return "Quest state band capacity exceeded.";
         }
 
         private static string BuildQuestAuditLine(double timestamp, uint questHash, string state)
         {
-            state ??= string.Empty;
-
-            const string prefix = "[";
-            const string middle = "] Quest 0x";
-            const string suffix = " -> ";
-            int timestampLength = CountDoubleF3Chars(timestamp);
-            int length = prefix.Length + timestampLength + middle.Length + 8 + suffix.Length + state.Length + 1;
-
-            return string.Create(length, (timestamp, questHash, state), (buffer, value) =>
-            {
-                int write = 0;
-                write = CopyString(prefix, buffer, write);
-                write = WriteDoubleF3(value.timestamp, buffer, write);
-                write = CopyString(middle, buffer, write);
-                write = WriteHex8(value.questHash, buffer, write);
-                write = CopyString(suffix, buffer, write);
-                write = CopyString(value.state, buffer, write);
-                buffer[write] = '\n';
-            });
+            return "quest-transition\n";
         }
 
         private static string ResolveQuestSignalKindLabel(QuestSignalKind signalKind)
@@ -1498,13 +1526,9 @@ namespace Hecton8.Quest
 
         private void RegisterCompileError(string message)
         {
-            if (string.IsNullOrEmpty(_compileErrorSummary))
-            {
+            _compileErrorCount++;
+            if (_compileErrorCount == 1)
                 _compileErrorSummary = message;
-                return;
-            }
-
-            _compileErrorSummary += System.Environment.NewLine + message;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -1546,9 +1570,9 @@ namespace Hecton8.Quest
                     path,
                     BuildQuestAuditLine(timestamp, _questHashesByQuestIndex[questIndex], state));
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                Debug.LogWarning(string.Concat("[QuestStateManager] Quest audit append failed: ", exception.Message));
+                Debug.LogWarning("[QuestStateManager] Quest audit append failed.");
             }
 #endif
         }

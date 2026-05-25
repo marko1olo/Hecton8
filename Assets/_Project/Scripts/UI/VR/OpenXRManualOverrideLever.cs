@@ -3,13 +3,12 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Input.Universal;
+using Hecton8.Core.Memory;
 using Hecton8.Interaction;
 using Hecton8.Tools;
 using Hecton8.UI.VR.Contracts;
 using Hecton8.World;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -29,7 +28,11 @@ namespace Hecton8.UI.VR
         private const int BlackBoxFrameCount = 300;
         private const float MaxDeltaSeconds = 0.05f;
         private const float MinAxisLengthSq = 0.000001f;
+        private const float DegreesToRadians = 0.01745329252f;
         private const float DegreesPerRadian = 57.29578f;
+        private const float TwoPi = 6.28318530718f;
+        private const float HalfPi = 1.57079632679f;
+        private const float Pi = 3.14159265359f;
         private const uint SourceHash = PrologueSignalSourceHashes.ManualOverrideLever;
         private const uint GripActionMask = (uint)PlayerInputAction.Interact | (uint)PlayerInputAction.SecondaryFire;
         private const byte HapticPriorityCritical = 3;
@@ -37,7 +40,8 @@ namespace Hecton8.UI.VR
         private const byte HapticRightHandMask = 0b0010;
         private const byte HapticBothHandsMask = HapticLeftHandMask | HapticRightHandMask;
         private const int MaxStaleGrabFrames = 3;
-        private const string NativeMemoryOwner = nameof(OpenXRManualOverrideLever);
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
+        private const BufferID BlackBoxBufferId = BufferID.OpenXrManualOverrideLeverBlackBox;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin";
 
         [Header("References")]
@@ -65,11 +69,8 @@ namespace Hecton8.UI.VR
         [SerializeField, Range(0f, 1f)] private float maximumQualityIkBlend = 0.85f;
         [SerializeField] private bool emitPrologueComplete = true;
 
-        private NativeArray<float> _leverAngles;
-        private NativeArray<float> _leverVelocities;
-        private NativeArray<float> _leverTargets;
-        private NativeArray<float3> _leverPivots;
-        private NativeArray<ManualOverrideLeverTelemetryEntry> _blackBox;
+        private VaultGenerationHandle<ManualOverrideLeverTelemetryEntry> _blackBoxHandle;
+        private IDataVault _dataVault;
 
         private Transform _cachedTransform;
         private Transform _resolvedVisual;
@@ -78,11 +79,15 @@ namespace Hecton8.UI.VR
         private Vector3 _referenceLocalVector = Vector3.forward;
         private float3 _axisLocalFloat = new float3(1f, 0f, 0f);
         private float3 _referenceLocalFloat = new float3(0f, 0f, 1f);
+        private float3 _leverPivot;
         private float3 _lastHandLocalPosition;
         private PhysicalHandSide _lastHandSide;
         private UniversalInputStateSignal _lastInputSignal;
         private IInputService _inputService;
         private Collider _registeredActivationVolume;
+        private float _leverAngle;
+        private float _leverVelocity;
+        private float _leverTarget;
         private float _grabRadiusSq;
         private float _nonVrHold01;
         private int _frameThisTick;
@@ -91,7 +96,6 @@ namespace Hecton8.UI.VR
         private int _lastRatchetStep = -1;
         private uint _inputSequence;
         private ushort _signalSequence;
-        private JobHandle _disposeHandle;
         private bool _registeredTick;
         private bool _registeredHotSwapListener;
         private bool _receiverRegistered;
@@ -107,13 +111,13 @@ namespace Hecton8.UI.VR
         private byte _latchedHandSide;
 
         /// <inheritdoc />
-        public float AngleDegrees => _nativeAllocated ? _leverAngles[0] : minAngleDegrees;
+        public float AngleDegrees => _nativeAllocated ? _leverAngle : minAngleDegrees;
 
         /// <inheritdoc />
-        public float Normalized01 => _nativeAllocated ? ResolveNormalized01(_leverAngles[0]) : 0f;
+        public float Normalized01 => _nativeAllocated ? ResolveNormalized01(_leverAngle) : 0f;
 
         /// <inheritdoc />
-        public float VelocityDegreesPerSecond => _nativeAllocated ? _leverVelocities[0] : 0f;
+        public float VelocityDegreesPerSecond => _nativeAllocated ? _leverVelocity : 0f;
 
         /// <inheritdoc />
         public bool IsGrabbed => _grabbed;
@@ -180,7 +184,7 @@ namespace Hecton8.UI.VR
             if (!_nativeAllocated)
                 return;
 
-            _frameThisTick = Time.frameCount;
+            _frameThisTick = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             float dt = SanitizeDeltaSeconds(deltaTime);
             RefreshQualityPolicy();
             _lastInputSignal = BuildUniversalInputSignal();
@@ -192,7 +196,7 @@ namespace Hecton8.UI.VR
             {
                 _grabbed = false;
                 _projectionSingular = false;
-                _leverTargets[0] = maxAngleDegrees;
+                _leverTarget = maxAngleDegrees;
             }
             else if (_xrActiveThisFrame)
             {
@@ -204,12 +208,12 @@ namespace Hecton8.UI.VR
             }
 
             IntegrateSpring(dt);
-            float currentAngle = _leverAngles[0];
+            float currentAngle = _leverAngle;
             ApplyLeverVisual(currentAngle);
             UpdateIkTarget(dt);
             EmitRatchetHaptic(currentAngle);
             TryLatch(currentAngle);
-            currentAngle = _leverAngles[0];
+            currentAngle = _leverAngle;
             WriteBlackBoxFrame(currentAngle);
         }
 
@@ -234,7 +238,7 @@ namespace Hecton8.UI.VR
             if (!_nativeAllocated || _latched || !IsFiniteVector(handPosition))
                 return false;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : currentFrame;
             if (resolvedSampleFrame > currentFrame || resolvedSampleFrame < _lastHandFrame)
                 return false;
@@ -243,7 +247,7 @@ namespace Hecton8.UI.VR
             if (!IsFiniteFloat3(localHand))
                 return false;
 
-            float pivotDistanceSq = math.lengthsq(localHand - _leverPivots[0]);
+            float pivotDistanceSq = math.lengthsq(localHand - _leverPivot);
             if (pivotDistanceSq > _grabRadiusSq)
             {
                 float handleDistanceSq = math.lengthsq(localHand - ResolveHandleLocalPosition());
@@ -263,7 +267,7 @@ namespace Hecton8.UI.VR
             {
                 _grabbed = false;
                 _projectionSingular = false;
-                _leverTargets[0] = minAngleDegrees;
+                _leverTarget = minAngleDegrees;
                 return;
             }
 
@@ -271,7 +275,7 @@ namespace Hecton8.UI.VR
             {
                 _grabbed = false;
                 _projectionSingular = false;
-                _leverTargets[0] = minAngleDegrees;
+                _leverTarget = minAngleDegrees;
                 return;
             }
 
@@ -279,22 +283,22 @@ namespace Hecton8.UI.VR
             {
                 _projectionSingular = false;
                 if (_grabbed)
-                    _leverTargets[0] = _leverAngles[0];
+                    _leverTarget = _leverAngle;
 
                 return;
             }
 
             _grabbed = true;
             _latchedHandSide = ResolveSignalHandSide(_lastHandSide);
-            if (TrySolveAngleFromHand(_lastHandLocalPosition, _leverPivots[0], _axisLocalFloat, _referenceLocalFloat, minAngleDegrees, maxAngleDegrees, out float targetAngle))
+            if (TrySolveAngleFromHand(_lastHandLocalPosition, _leverPivot, _axisLocalFloat, _referenceLocalFloat, minAngleDegrees, maxAngleDegrees, out float targetAngle))
             {
                 _projectionSingular = false;
-                _leverTargets[0] = targetAngle;
+                _leverTarget = targetAngle;
             }
             else
             {
                 _projectionSingular = true;
-                _leverTargets[0] = _leverAngles[0];
+                _leverTarget = _leverAngle;
             }
         }
 
@@ -305,21 +309,21 @@ namespace Hecton8.UI.VR
             if (gripHeld)
             {
                 _nonVrHold01 = math.saturate(_nonVrHold01 + dt * math.rcp(math.max(0.05f, nonVrPullSeconds)));
-                _leverTargets[0] = math.lerp(minAngleDegrees, maxAngleDegrees, _nonVrHold01);
+                _leverTarget = math.lerp(minAngleDegrees, maxAngleDegrees, _nonVrHold01);
                 _latchedHandSide = ManualOverridePulledSignal.HandUnknown;
             }
             else if (!_latched)
             {
                 _nonVrHold01 = math.saturate(_nonVrHold01 - dt);
-                _leverTargets[0] = math.lerp(minAngleDegrees, maxAngleDegrees, _nonVrHold01);
+                _leverTarget = math.lerp(minAngleDegrees, maxAngleDegrees, _nonVrHold01);
             }
         }
 
         private void IntegrateSpring(float dt)
         {
-            float current = _leverAngles[0];
-            float target = math.clamp(_leverTargets[0], minAngleDegrees, maxAngleDegrees);
-            float velocity = _leverVelocities[0];
+            float current = _leverAngle;
+            float target = math.clamp(_leverTarget, minAngleDegrees, maxAngleDegrees);
+            float velocity = _leverVelocity;
             velocity += (target - current) * math.max(0f, springStiffness) * dt;
             velocity *= math.rcp(1f + math.max(0f, springDamping) * dt);
             velocity = math.clamp(velocity, -maxVelocityDegreesPerSecond, maxVelocityDegreesPerSecond);
@@ -333,9 +337,9 @@ namespace Hecton8.UI.VR
                 target = minAngleDegrees;
             }
 
-            _leverAngles[0] = current;
-            _leverVelocities[0] = velocity;
-            _leverTargets[0] = target;
+            _leverAngle = current;
+            _leverVelocity = velocity;
+            _leverTarget = target;
         }
 
         private void ApplyLeverVisual(float angleDegrees)
@@ -343,7 +347,7 @@ namespace Hecton8.UI.VR
             if (_resolvedVisual == null || !math.isfinite(angleDegrees))
                 return;
 
-            Quaternion targetRotation = _closedLocalRotation * Quaternion.AngleAxis(angleDegrees, _resolvedLocalAxis);
+            Quaternion targetRotation = _closedLocalRotation * ApproximateRotationDegreesNoTrig(angleDegrees, _resolvedLocalAxis);
             if (IsFiniteQuaternion(targetRotation))
                 _resolvedVisual.localRotation = targetRotation;
         }
@@ -403,9 +407,9 @@ namespace Hecton8.UI.VR
             request.SourceHash = SourceHash;
             request.Frame = unchecked((uint)_frameThisTick);
             request.Channel = HapticRequest.ChannelGearScrape;
-            GlobalSignals.Publish(in request);
+            SignalBus<HapticRequest>.TryPush(in request);
             byte motorMask = _grabbed ? ResolveHapticMotorMask(_lastHandSide) : HapticBothHandsMask;
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(0.18f, 0.28f, 0.025f, 28f, HapticPriorityCritical, motorMask);
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(0.18f, 0.28f, 0.025f, 28f, HapticPriorityCritical, motorMask);
         }
 
         private void TryLatch(float currentAngle)
@@ -413,12 +417,12 @@ namespace Hecton8.UI.VR
             if (_latched || currentAngle < latchAngleDegrees)
                 return;
 
-            float latchVelocityDegreesPerSecond = _leverVelocities[0];
+            float latchVelocityDegreesPerSecond = _leverVelocity;
             _latched = true;
             _grabbed = false;
-            _leverAngles[0] = maxAngleDegrees;
-            _leverTargets[0] = maxAngleDegrees;
-            _leverVelocities[0] = 0f;
+            _leverAngle = maxAngleDegrees;
+            _leverTarget = maxAngleDegrees;
+            _leverVelocity = 0f;
             ApplyLeverVisual(maxAngleDegrees);
             PublishManualOverrideSignal(latchVelocityDegreesPerSecond);
             PublishLatchHaptic();
@@ -435,8 +439,8 @@ namespace Hecton8.UI.VR
         {
             ManualOverridePulledSignal signal = default;
             signal.LeverLocalPosition = ResolveHandleLocalPosition();
-            signal.PivotLocalPosition = _leverPivots[0];
-            signal.AngleDegrees = _leverAngles[0];
+            signal.PivotLocalPosition = _leverPivot;
+            signal.AngleDegrees = _leverAngle;
             signal.GripStrength01 = (_lastInputSignal.ActionsBitmask & GripActionMask) != 0u ? 1f : 0f;
             signal.SourceHash = SourceHash;
             signal.Frame = unchecked((uint)_frameThisTick);
@@ -447,17 +451,17 @@ namespace Hecton8.UI.VR
             signal.Flags |= _xrActiveThisFrame
                 ? ManualOverridePulledSignal.FlagVrGrip
                 : ManualOverridePulledSignal.FlagNonVrFallback;
-            GlobalSignals.Publish(in signal);
+            SignalBus<ManualOverridePulledSignal>.TryPush(in signal);
         }
 
         private float3 ResolveHandleLocalPosition()
         {
             if (handleAnchor == null || _cachedTransform == null)
-                return _leverPivots[0];
+                return _leverPivot;
 
             Vector3 local = _cachedTransform.InverseTransformPoint(handleAnchor.position);
             float3 handleLocal = new float3(local.x, local.y, local.z);
-            return IsFiniteFloat3(handleLocal) ? handleLocal : _leverPivots[0];
+            return IsFiniteFloat3(handleLocal) ? handleLocal : _leverPivot;
         }
 
         private void PublishPrologueCompleteSignal()
@@ -470,7 +474,7 @@ namespace Hecton8.UI.VR
             signal.Sequence = _signalSequence;
             signal.Flags = PrologueCompleteSignal.FlagForceWhiteout;
             signal.Phase = PrologueCompleteSignal.PhaseOceanHandoff;
-            GlobalSignals.Publish(in signal);
+            SignalBus<PrologueCompleteSignal>.TryPush(in signal);
         }
 
         private void PublishLatchHaptic()
@@ -482,9 +486,9 @@ namespace Hecton8.UI.VR
             request.SourceHash = SourceHash;
             request.Frame = unchecked((uint)_frameThisTick);
             request.Channel = HapticRequest.ChannelVehicleCritical;
-            GlobalSignals.Publish(in request);
+            SignalBus<HapticRequest>.TryPush(in request);
             byte motorMask = ResolveHapticMotorMask(_latchedHandSide);
-            ToolHapticsRuntime.EnqueueSinusoidalCommand(0.75f, 0.95f, 0.11f, 42f, HapticPriorityCritical, motorMask);
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(0.75f, 0.95f, 0.11f, 42f, HapticPriorityCritical, motorMask);
         }
 
         private UniversalInputStateSignal BuildUniversalInputSignal()
@@ -531,14 +535,21 @@ namespace Hecton8.UI.VR
                 TryRegisterTick();
                 TryRegisterReceiver();
             }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                DisposeNativeState();
+                _dataVault = currentService as IDataVault;
+                EnsureNativeStateForLifecycle();
+            }
         }
 
         private void WriteBlackBoxFrame(float angleDegrees)
         {
-            float velocity = _leverVelocities[0];
-            float target = _leverTargets[0];
+            float velocity = _leverVelocity;
+            float target = _leverTarget;
             float3 handLocal = _lastHandLocalPosition;
-            float3 pivotLocal = _leverPivots[0];
+            float3 pivotLocal = _leverPivot;
             if (!math.isfinite(angleDegrees) || !math.isfinite(velocity) || !math.isfinite(target) || !IsFiniteFloat3(handLocal) || !IsFiniteFloat3(pivotLocal))
             {
                 DumpBlackBox();
@@ -553,7 +564,19 @@ namespace Hecton8.UI.VR
             entry.VelocityDegreesPerSecond = velocity;
             entry.Frame = unchecked((uint)_frameThisTick);
             entry.Flags = BuildTelemetryFlags();
-            _blackBox[_blackBoxWriteIndex] = entry;
+
+            if (!TryAcquireBlackBoxWriteBuffer(out NativeArray<ManualOverrideLeverTelemetryEntry> blackBox))
+                return;
+
+            try
+            {
+                blackBox[_blackBoxWriteIndex] = entry;
+            }
+            finally
+            {
+                ReleaseBlackBoxWriteBuffer();
+            }
+
             _blackBoxWriteIndex++;
             if (_blackBoxWriteIndex >= BlackBoxFrameCount)
                 _blackBoxWriteIndex = 0;
@@ -583,6 +606,9 @@ namespace Hecton8.UI.VR
                 return;
 
             _blackBoxDumped = true;
+            if (!TryReadBlackBox(out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly blackBox))
+                return;
+
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -598,7 +624,7 @@ namespace Hecton8.UI.VR
                     writer.Write(_blackBoxWriteIndex);
                     for (int i = 0; i < BlackBoxFrameCount; i++)
                     {
-                        ManualOverrideLeverTelemetryEntry entry = _blackBox[i];
+                        ManualOverrideLeverTelemetryEntry entry = blackBox[i];
                         writer.Write(entry.HandLocalPosition.x);
                         writer.Write(entry.HandLocalPosition.y);
                         writer.Write(entry.HandLocalPosition.z);
@@ -652,7 +678,7 @@ namespace Hecton8.UI.VR
             _referenceLocalVector = ResolveReferenceVector();
             _referenceLocalFloat = ToFloat3(_referenceLocalVector);
             if (_nativeAllocated)
-                _leverPivots[0] = ToFloat3(pivotLocalPosition);
+                _leverPivot = ToFloat3(pivotLocalPosition);
         }
 
         private Vector3 ResolveReferenceVector()
@@ -679,24 +705,13 @@ namespace Hecton8.UI.VR
 
         private void AllocateNativeState()
         {
-            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
-            if (!_disposeHandle.IsCompleted)
-                return;
-
             if (_nativeAllocated)
                 return;
 
-            _leverAngles = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - lever angle state - owner: OpenXRManualOverrideLever
-            _leverVelocities = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - lever spring velocity state - owner: OpenXRManualOverrideLever
-            _leverTargets = new NativeArray<float>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - lever target angle state - owner: OpenXRManualOverrideLever
-            _leverPivots = new NativeArray<float3>(LeverCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[1] - local pivot state - owner: OpenXRManualOverrideLever
-            _blackBox = new NativeArray<ManualOverrideLeverTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ManualOverrideLeverTelemetryEntry>[300] - crash telemetry ring - owner: OpenXRManualOverrideLever
-            NativeMemorySentinel.RegisterNativeArray(_leverAngles, NativeMemoryOwner, nameof(_leverAngles), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_leverVelocities, NativeMemoryOwner, nameof(_leverVelocities), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_leverTargets, NativeMemoryOwner, nameof(_leverTargets), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_leverPivots, NativeMemoryOwner, nameof(_leverPivots), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_blackBox, NativeMemoryOwner, nameof(_blackBox), NativeAllocationLifetime.Scene);
-            _leverPivots[0] = ToFloat3(pivotLocalPosition);
+            if (!EnsureBlackBoxVaultBuffer())
+                return;
+
+            _leverPivot = ToFloat3(pivotLocalPosition);
             _nativeAllocated = true;
         }
 
@@ -719,9 +734,9 @@ namespace Hecton8.UI.VR
                 return;
 
             float initialAngle = math.clamp(minAngleDegrees, math.min(minAngleDegrees, maxAngleDegrees), math.max(minAngleDegrees, maxAngleDegrees));
-            _leverAngles[0] = initialAngle;
-            _leverVelocities[0] = 0f;
-            _leverTargets[0] = initialAngle;
+            _leverAngle = initialAngle;
+            _leverVelocity = 0f;
+            _leverTarget = initialAngle;
             _blackBoxWriteIndex = 0;
             _lastRatchetStep = -1;
             _blackBoxDumped = false;
@@ -733,34 +748,96 @@ namespace Hecton8.UI.VR
             if (!_nativeAllocated)
                 return;
 
-            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
-            bool hasPendingDispose = !_disposeHandle.IsCompleted;
-            JobHandle disposeHandle = hasPendingDispose ? _disposeHandle : default;
-            bool scheduledDispose = false;
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactBlackBoxHandle())
+                vault.ReleaseBuffer(in _blackBoxHandle);
 
-            DisposeNativeArray(ref _leverAngles, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _leverVelocities, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _leverTargets, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _leverPivots, ref disposeHandle, ref scheduledDispose);
-            DisposeNativeArray(ref _blackBox, ref disposeHandle, ref scheduledDispose);
+            _blackBoxHandle = default;
+            _leverAngle = minAngleDegrees;
+            _leverVelocity = 0f;
+            _leverTarget = minAngleDegrees;
+            _leverPivot = default;
             _nativeAllocated = false;
-
-            if (!scheduledDispose)
-                return;
-
-            _disposeHandle = disposeHandle;
-            JobHandle.ScheduleBatchedJobs();
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle disposeHandle, ref bool scheduledDispose) where T : struct
+        private IDataVault CacheDataVaultCold()
         {
-            if (!array.IsCreated)
-                return;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            disposeHandle = array.Dispose(disposeHandle);
-            array = default;
-            scheduledDispose = true;
+            return _dataVault;
+        }
+
+        private bool EnsureBlackBoxVaultBuffer()
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return false;
+
+            if (IsExactBlackBoxHandle() &&
+                vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= BlackBoxFrameCount)
+            {
+                return true;
+            }
+
+            if (_blackBoxHandle.BufferID != 0u && _blackBoxHandle.Generation != 0u)
+                vault.ReleaseBuffer(in _blackBoxHandle);
+
+            _blackBoxHandle = vault.EnsureGenerationHandle<ManualOverrideLeverTelemetryEntry>(
+                BlackBoxBufferId,
+                BlackBoxFrameCount,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+
+            return IsExactBlackBoxHandle() &&
+                   vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly resolved) &&
+                   resolved.IsCreated &&
+                   resolved.Length >= BlackBoxFrameCount;
+        }
+
+        private bool TryAcquireBlackBoxWriteBuffer(out NativeArray<ManualOverrideLeverTelemetryEntry> blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactBlackBoxHandle() ||
+                !vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out blackBox))
+            {
+                return false;
+            }
+
+            if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
+                return true;
+
+            vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+            blackBox = default;
+            return false;
+        }
+
+        private void ReleaseBlackBoxWriteBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactBlackBoxHandle())
+                vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+        }
+
+        private bool TryReadBlackBox(out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactBlackBoxHandle() &&
+                   vault.TryReadOnlyHandle(in _blackBoxHandle, out blackBox) &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxFrameCount;
+        }
+
+        private bool IsExactBlackBoxHandle()
+        {
+            return _blackBoxHandle.BufferID == unchecked((uint)(int)BlackBoxBufferId) &&
+                   _blackBoxHandle.Generation != 0u;
         }
 
         private void TryRegisterReceiver()
@@ -888,7 +965,7 @@ namespace Hecton8.UI.VR
             }
 
             projected *= math.rsqrt(projectedLengthSq);
-            float signed = math.atan2(math.dot(axisLocal, math.cross(referenceLocal, projected)), math.dot(referenceLocal, projected)) * DegreesPerRadian;
+            float signed = MathLodApproximation.ApproxAtan2Fast(math.dot(axisLocal, math.cross(referenceLocal, projected)), math.dot(referenceLocal, projected)) * DegreesPerRadian;
             angle = math.clamp(signed, minimum, maximum);
             return math.isfinite(angle);
         }
@@ -940,6 +1017,48 @@ namespace Hecton8.UI.VR
         {
             float4 q = new float4(value.x, value.y, value.z, value.w);
             return math.all(math.isfinite(q)) && math.lengthsq(q) > MinAxisLengthSq;
+        }
+
+        private static Quaternion ApproximateRotationDegreesNoTrig(float angleDegrees, Vector3 normalizedAxis)
+        {
+            ApproximateSinCosFullNoTrig(math.select(0f, angleDegrees, math.isfinite(angleDegrees)) * DegreesToRadians * 0.5f, out float sinHalf, out float cosHalf);
+            Quaternion rotation = new Quaternion(
+                normalizedAxis.x * sinHalf,
+                normalizedAxis.y * sinHalf,
+                normalizedAxis.z * sinHalf,
+                cosHalf);
+            return NormalizeQuaternion(rotation);
+        }
+
+        private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float cosSign = 1f;
+            if (x > HalfPi)
+            {
+                x = Pi - x;
+                cosSign = -1f;
+            }
+            else if (x < -HalfPi)
+            {
+                x = -Pi - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
+        private static Quaternion NormalizeQuaternion(Quaternion value)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            float lengthSq = math.lengthsq(q);
+            if (!math.isfinite(lengthSq) || lengthSq < MinAxisLengthSq)
+                return Quaternion.identity;
+
+            q *= math.rsqrt(lengthSq);
+            return new Quaternion(q.x, q.y, q.z, q.w);
         }
 
         private static Quaternion ApproximateNlerp(Quaternion from, Quaternion to, float t)

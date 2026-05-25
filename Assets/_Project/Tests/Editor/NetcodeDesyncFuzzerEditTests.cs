@@ -291,8 +291,10 @@ namespace Hecton8.Tests.Editor
                 AssertDispatcherPhaseTrace(hostDispatcherState, clientDispatcherState);
 
                 s_lastResult = final;
-                s_lastHostAup = FuzzerMath.ComposeAup(in hostKinematics[0]);
-                s_lastClientAup = FuzzerMath.ComposeAup(in clientKinematics[0]);
+                FuzzerKinematicStateDTO hostState = hostKinematics[0];
+                FuzzerKinematicStateDTO clientState = clientKinematics[0];
+                s_lastHostAup = FuzzerMath.ComposeAup(in hostState);
+                s_lastClientAup = FuzzerMath.ComposeAup(in clientState);
                 s_lastRunCompleted = true;
 
                 if (final.ErrorFlags != 0u)
@@ -346,7 +348,7 @@ namespace Hecton8.Tests.Editor
             NativeArray<DispatcherStateDTO> clientDispatcherState)
         {
             InitializeMockDispatcherTrace(hostDispatcherState, clientDispatcherState);
-            StampDualMockDispatchers(hostDispatcherState, clientDispatcherState, 0, DispatcherPhase.PreSimulation, 0u, 0x50726553u);
+            StampDualMockDispatchers(hostDispatcherState, clientDispatcherState, 0, DispatcherPhase.PreSimulation, 0, 0x50726553u);
             JobHandle injectHandle = inject.Schedule(FrameCount, 64);
             JobHandle transportHandle = transport.Schedule(injectHandle);
             StampDualMockDispatchers(hostDispatcherState, clientDispatcherState, 1, DispatcherPhase.Simulation, FrameCount, 0x53696D75u);
@@ -367,7 +369,7 @@ namespace Hecton8.Tests.Editor
             NativeArray<DispatcherStateDTO> clientDispatcherState)
         {
             InitializeMockDispatcherTrace(hostDispatcherState, clientDispatcherState);
-            StampDualMockDispatchers(hostDispatcherState, clientDispatcherState, 0, DispatcherPhase.PreSimulation, 0u, 0x50726553u);
+            StampDualMockDispatchers(hostDispatcherState, clientDispatcherState, 0, DispatcherPhase.PreSimulation, 0, 0x50726553u);
             for (int i = 0; i < FrameCount; i++)
                 inject.Execute(i);
             transport.Execute();
@@ -489,7 +491,7 @@ namespace Hecton8.Tests.Editor
             NativeArrayOptions options) where T : struct
         {
             Assert.NotNull(vault);
-            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 RollbackNetcodeFuzzerOwner.System,
@@ -1235,14 +1237,16 @@ namespace Hecton8.Tests.Editor
 
             public void Execute(int index)
             {
+                if (!Inputs.IsCreated || (uint)index >= (uint)Inputs.Length)
+                    return;
+
                 uint frame = (uint)index;
                 uint seed = FuzzerMath.Mix32(WorldSeed ^ frame ^ 0x51ED270Bu);
-                Unity.Mathematics.Random rng = Unity.Mathematics.Random.CreateFromIndex(seed);
-                float moveX = rng.NextFloat(-1f, 1f);
-                float moveY = rng.NextFloat(-1f, 1f);
-                float lookX = rng.NextFloat(-3.5f, 3.5f);
-                float lookY = rng.NextFloat(-3.5f, 3.5f);
-                uint buttonBits = rng.NextUInt();
+                float moveX = FuzzerMath.SignedUnit(seed ^ 0xA341316Cu);
+                float moveY = FuzzerMath.SignedUnit(seed ^ 0xC8013EA4u);
+                float lookX = FuzzerMath.SignedUnit(seed ^ 0xAD90777Du) * 3.5f;
+                float lookY = FuzzerMath.SignedUnit(seed ^ 0x7E95761Eu) * 3.5f;
+                uint buttonBits = FuzzerMath.Mix32(seed ^ 0x9E3779B9u);
 
                 InputStateDTO input = default;
                 input.MoveAxis = new float2(moveX, moveY);

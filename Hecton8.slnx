@@ -58,7 +58,6 @@
   <Project Path="MapMagic.Settings.csproj" />
   <Project Path="MapMagic.MicroSplat.Editor.csproj" />
   <Project Path="Hecton8.World.Dots.csproj" />
-  <Project Path="Hecton8.Input.csproj" />
   <Project Path="Hecton8.Input.Generated.csproj" />
   <Project Path="Tayx.Graphy.Editor.csproj" />
   <Project Path="MapMagic.MicroSplat.csproj" />

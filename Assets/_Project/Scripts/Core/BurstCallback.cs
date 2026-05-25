@@ -5,6 +5,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
@@ -37,13 +38,16 @@ namespace Hecton8.Core
     public unsafe struct BurstCallbackQueue : IDisposable
     {
         private const string BudgetOwner = nameof(BurstCallbackQueue);
+        private const int PendingCountIndex = 0;
+        private const int DroppedCountIndex = 1;
+        private const int CounterLength = 2;
 
         private NativeQueue<int> _events;
-        private NativeArray<int> _pendingCount;
+        private NativeArray<int> _counters;
         private int _capacity;
         private int _counterSentinelId;
 
-        public bool IsCreated => _events.IsCreated && _pendingCount.IsCreated;
+        public bool IsCreated => _events.IsCreated && _counters.IsCreated;
         public int Capacity => _capacity;
         public int PendingCount
         {
@@ -52,13 +56,14 @@ namespace Hecton8.Core
                 if (!IsCreated)
                     return 0;
 
-                int pending = _pendingCount[0];
+                int pending = _counters[PendingCountIndex];
                 if (pending <= 0)
                     return 0;
 
                 return pending < _capacity ? pending : _capacity;
             }
         }
+        public int DroppedCount => IsCreated ? math.max(0, _counters[DroppedCountIndex]) : 0;
         /// <summary>Compatibility property for a low-frequency Burst callback writer. Prefer <see cref="OpenParallelWriter"/>.</summary>
         public ParallelEventWriter ParallelWriter => OpenParallelWriter();
 
@@ -69,15 +74,15 @@ namespace Hecton8.Core
         public ParallelEventWriter OpenParallelWriter()
         {
             NativeQueue<int>.ParallelWriter writer = _events.IsCreated ? _events.AsParallelWriter() : default;
-            return new ParallelEventWriter(writer, _pendingCount, _capacity);
+            return new ParallelEventWriter(writer, _counters, _capacity);
         }
 
         public BurstCallbackQueue(int expectedCapacity)
         {
             _capacity = expectedCapacity <= 0 ? 1 : expectedCapacity;
             _events = new NativeQueue<int>(Allocator.Persistent);
-            _pendingCount = Hecton8.Core.Memory.H8Memory.Allocate<int>(
-                1,
+            _counters = Hecton8.Core.Memory.H8Memory.Allocate<int>(
+                CounterLength,
                 Hecton8.Core.Memory.SystemID.CoreDiagnostics,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
@@ -87,7 +92,7 @@ namespace Hecton8.Core
                 nameof(BurstCallbackQueue),
                 nameof(_events),
                 NativeAllocationLifetime.Session);
-            if (!_pendingCount.IsCreated)
+            if (!_counters.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
                 _events.Dispose();
@@ -98,12 +103,12 @@ namespace Hecton8.Core
             }
 
             _counterSentinelId = NativeMemorySentinel.RegisterNativeArray(
-                _pendingCount,
+                _counters,
                 nameof(BurstCallbackQueue),
-                nameof(_pendingCount),
+                nameof(_counters),
                 NativeAllocationLifetime.Session);
 
-            int bytes = sizeof(int) * (_capacity + 1);
+            int bytes = sizeof(int) * (_capacity + CounterLength);
             MemoryBudgetTracker.Register(BudgetOwner, bytes, bytes);
             Prewarm();
         }
@@ -118,12 +123,17 @@ namespace Hecton8.Core
             if (!IsCreated)
                 return false;
 
-            int index = _pendingCount[0];
+            int index = _counters[PendingCountIndex];
             if ((uint)index >= (uint)_capacity)
+            {
+                int dropped = _counters[DroppedCountIndex];
+                if (dropped < int.MaxValue)
+                    _counters[DroppedCountIndex] = dropped + 1;
                 return false;
+            }
 
             _events.Enqueue(eventId);
-            _pendingCount[0] = index + 1;
+            _counters[PendingCountIndex] = index + 1;
             return true;
         }
 
@@ -137,12 +147,12 @@ namespace Hecton8.Core
 
             if (!_events.TryDequeue(out eventId))
             {
-                _pendingCount[0] = 0;
+                _counters[PendingCountIndex] = 0;
                 return false;
             }
 
-            int pending = _pendingCount[0] - 1;
-            _pendingCount[0] = pending > 0 ? pending : 0;
+            int pending = _counters[PendingCountIndex] - 1;
+            _counters[PendingCountIndex] = pending > 0 ? pending : 0;
             return true;
         }
 
@@ -163,7 +173,8 @@ namespace Hecton8.Core
                 drained++;
             }
 
-            _pendingCount[0] = 0;
+            int remaining = pending - drained;
+            _counters[PendingCountIndex] = remaining > 0 ? remaining : 0;
             return drained;
         }
 
@@ -176,7 +187,7 @@ namespace Hecton8.Core
             {
             }
 
-            _pendingCount[0] = 0;
+            _counters[PendingCountIndex] = 0;
         }
 
         public void Dispose()
@@ -196,7 +207,7 @@ namespace Hecton8.Core
             MemoryBudgetTracker.Unregister(BudgetOwner);
             _events.Dispose();
             Hecton8.Core.Memory.H8Memory.Release(
-                ref _pendingCount,
+                ref _counters,
                 Hecton8.Core.Memory.SystemID.CoreDiagnostics);
             _capacity = 0;
         }
@@ -217,7 +228,7 @@ namespace Hecton8.Core
             MemoryBudgetTracker.Unregister(BudgetOwner);
             JobHandle eventsDisposeHandle = _events.Dispose(inputDeps);
             JobHandle counterDisposeHandle = Hecton8.Core.Memory.H8Memory.Release(
-                ref _pendingCount,
+                ref _counters,
                 inputDeps,
                 Hecton8.Core.Memory.SystemID.CoreDiagnostics);
             _events = default;
@@ -238,25 +249,30 @@ namespace Hecton8.Core
         public struct ParallelEventWriter
         {
             private NativeQueue<int>.ParallelWriter _events;
-            [NativeDisableUnsafePtrRestriction] private readonly int* _pendingCount;
+            [NativeDisableUnsafePtrRestriction] private readonly int* _counters;
             private readonly int _capacity;
 
-            internal ParallelEventWriter(NativeQueue<int>.ParallelWriter events, NativeArray<int> pendingCount, int capacity)
+            internal ParallelEventWriter(NativeQueue<int>.ParallelWriter events, NativeArray<int> counters, int capacity)
             {
                 _events = events;
-                _pendingCount = pendingCount.IsCreated ? (int*)NativeArrayUnsafeUtility.GetUnsafePtr(pendingCount) : null;
+                _counters = counters.IsCreated ? (int*)NativeArrayUnsafeUtility.GetUnsafePtr(counters) : null;
                 _capacity = capacity;
             }
 
             public bool TryEnqueue(int eventId)
             {
-                if (_pendingCount == null || _capacity <= 0)
+                if (_counters == null || _capacity <= 0)
                     return false;
 
-                ref int pendingCount = ref UnsafeUtility.AsRef<int>(_pendingCount);
+                ref int pendingCount = ref UnsafeUtility.AsRef<int>(_counters + PendingCountIndex);
                 int index = Interlocked.Increment(ref pendingCount) - 1;
                 if ((uint)index >= (uint)_capacity)
+                {
+                    Interlocked.Decrement(ref pendingCount);
+                    ref int droppedCount = ref UnsafeUtility.AsRef<int>(_counters + DroppedCountIndex);
+                    Interlocked.Increment(ref droppedCount);
                     return false;
+                }
 
                 _events.Enqueue(eventId);
                 return true;

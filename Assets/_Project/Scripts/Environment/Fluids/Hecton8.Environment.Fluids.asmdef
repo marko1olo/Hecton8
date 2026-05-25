@@ -2,6 +2,7 @@
     "name": "Hecton8.Environment.Fluids",
     "rootNamespace": "Hecton8.Environment.Fluids",
     "references": [
+        "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",
         "Hecton8.Environment.Fluids.Contracts",
         "Unity.Burst",

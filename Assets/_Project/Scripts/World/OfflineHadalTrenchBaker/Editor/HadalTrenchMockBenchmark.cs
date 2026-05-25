@@ -60,7 +60,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             builder.Append("  \"elapsedMs\": ").Append(milliseconds.ToString("0.###", CultureInfo.InvariantCulture)).Append(",\n");
             builder.Append("  \"runtimeGameplayCostUs\": 0\n");
             builder.Append("}\n");
-            File.WriteAllText(ReportPath, builder.ToString());
+            File.WriteAllText(ReportPath, builder.ToString(), new UTF8Encoding(false));
             AssetDatabase.Refresh();
         }
     }

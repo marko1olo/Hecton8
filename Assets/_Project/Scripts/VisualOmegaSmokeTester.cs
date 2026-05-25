@@ -33,13 +33,13 @@ namespace Hecton8.Dev
         [SerializeField] private int _debugCheckCount;
         [Tooltip("Number of failed checks in the last source audit.")]
         [SerializeField] private int _debugFailureCount;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         [Tooltip("Last JSON smoke result emitted by the audit.")]
         [SerializeField] private string _debugLastJson = string.Empty;
 #endif
 #pragma warning restore CS0414
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         // COLD ALLOC: StringBuilder[1024] - source-audit issue buffer - owner: VisualOmegaSmokeTester
         private readonly StringBuilder _issueBuilder = new StringBuilder(1024);
         // COLD ALLOC: StringBuilder[512] - source-audit JSON report - owner: VisualOmegaSmokeTester
@@ -48,7 +48,7 @@ namespace Hecton8.Dev
 
         private void Start()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (runOnStart)
                 RunSmokePass();
 #endif
@@ -59,7 +59,7 @@ namespace Hecton8.Dev
         /// </summary>
         public static void RunBatchModeSmokeTest()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             VisualOmegaSmokeTester tester = new GameObject(TesterName).AddComponent<VisualOmegaSmokeTester>();
             bool pass = tester.RunSmokePass();
             if (Application.isBatchMode)
@@ -76,7 +76,7 @@ namespace Hecton8.Dev
         [ContextMenu("Run Visual Omega Smoke Pass")]
         public bool RunSmokePass()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _issueBuilder.Clear();
             _debugCheckCount = 0;
             _debugFailureCount = 0;
@@ -100,11 +100,11 @@ namespace Hecton8.Dev
             string visorFluidShaderSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader");
             string scooterShaftSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader");
 
-            CheckContains(flashlightSource, "NativeMemorySentinel.RegisterNativeArray(", "flashlight-nativearray-registered");
-            CheckContains(flashlightSource, "nameof(_occupancyVolume)", "flashlight-occupancy-sentinel-owner");
-            CheckContains(flashlightSource, "nameof(_sdfVolume)", "flashlight-sdf-sentinel-owner");
-            CheckContains(flashlightSource, "PublishPerformanceWarningRateLimited", "flashlight-telemetry-warning-hook");
-            CheckContains(flashlightSource, "ResolveNoirSignalInstability", "flashlight-noir-instability-polish");
+            CheckContains(flashlightSource, "RuntimeVoxelShadowProviderEnabled = false", "flashlight-voxel-provider-runtime-disabled");
+            CheckContains(flashlightSource, "PublishInactiveGlobals", "flashlight-legacy-provider-fails-closed");
+            CheckNotContains(flashlightSource, "new NativeArray", "flashlight-provider-nativearray-evicted");
+            CheckNotContains(flashlightSource, "OverlapBoxNonAlloc", "flashlight-provider-physics-scan-evicted");
+            CheckNotContains(flashlightSource, "RegisterUpdatable", "flashlight-provider-update-loop-evicted");
             CheckNotContains(atmosphereSource, "_instance", "atmosphere-static-instance-removed");
             CheckNotContains(mapMagicSource, "_instance", "mapmagic-static-instance-removed");
             CheckContains(mapMagicSource, "return GlobalRegistry.MapMagic;", "mapmagic-instance-globalregistry-facade");
@@ -140,7 +140,7 @@ namespace Hecton8.Dev
             _debugLastPass = _debugFailureCount == 0;
             _debugLastJson = BuildJsonReport();
             if (verboseLogging || !_debugLastPass || Application.isBatchMode)
-                Debug.Log(_debugLastJson, this);
+                Hecton8.Core.H8Debug.Log(_debugLastJson, this);
 
             return _debugLastPass;
 #else
@@ -151,7 +151,7 @@ namespace Hecton8.Dev
 #endif
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private void CheckContains(string source, string requiredToken, string checkName)
         {
             _debugCheckCount++;

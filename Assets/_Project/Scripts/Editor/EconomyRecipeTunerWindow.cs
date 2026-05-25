@@ -493,7 +493,7 @@ namespace Hecton8.EditorTools
                 return TryOpenEconomyVaultBufferForEditor(vault, in handle, bufferId, requiredLength, out buffer);
             }
 
-            handle = vault.GetGenerationHandle<T>(
+            handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.GameplayPlayer,

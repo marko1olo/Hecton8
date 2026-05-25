@@ -35,12 +35,14 @@ namespace Hecton8.World.VoxelSurfaceNets
         private NativeArray<VoxelSurfaceIndirectArgsDTO> _lockedIndirectArgs;
         private GraphicsBuffer _pendingVertexBuffer;
         private GraphicsBuffer _pendingIndexBuffer;
+        private JobHandle _pendingUploadDependency;
         private int _pendingUploadSet;
         private int _pendingChunkIndex;
         private int _pendingVertexCount;
         private int _pendingIndexCount;
         private uint _pendingChunkHash;
         private uint _pendingVersion;
+        private bool _releaseRequested;
 
         public bool Initialize(int maxVertices, int maxIndices)
         {
@@ -49,7 +51,12 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (_vertexFront != null && _maxVertices == vertexCapacity && _maxIndices == indexCapacity)
                 return true;
 
-            Release();
+            if (_releaseRequested && !TryRelease())
+                return false;
+
+            if (!TryRelease())
+                return false;
+
             _vertexFront = CreateLockBuffer(GraphicsBuffer.Target.Structured, vertexCapacity, UnsafeUtility.SizeOf<VoxelVertexDTO>());
             _vertexBack = CreateLockBuffer(GraphicsBuffer.Target.Structured, vertexCapacity, UnsafeUtility.SizeOf<VoxelVertexDTO>());
             _indexFront = CreateLockBuffer(GraphicsBuffer.Target.Index, indexCapacity, UnsafeUtility.SizeOf<uint>());
@@ -97,10 +104,17 @@ namespace Hecton8.World.VoxelSurfaceNets
         {
             uploadState = default;
             uploadDependency = inputDependency;
+            if (_releaseRequested)
+            {
+                TryRelease();
+                return false;
+            }
+
             if (!IsInitialized() ||
                 _uploadInFlight ||
                 !buffers.Vertices.IsCreated ||
                 !buffers.Indices.IsCreated ||
+                !buffers.IndirectArgs.IsCreated ||
                 !buffers.States.IsCreated ||
                 (uint)chunkIndex >= (uint)buffers.States.Length)
             {
@@ -115,31 +129,72 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
             }
 
-            int vertexCount = math.min(state.VertexCount, math.min(buffers.Vertices.Length, _maxVertices));
-            int indexCount = math.min(state.IndexCount, math.min(buffers.Indices.Length, _maxIndices));
+            if (state.VertexCount > buffers.Vertices.Length ||
+                state.VertexCount > _maxVertices ||
+                state.IndexCount > buffers.Indices.Length ||
+                state.IndexCount > _maxIndices)
+            {
+                state.Stage = (byte)VoxelMeshingStage.Fault;
+                state.Flags = (byte)(state.Flags | VoxelMeshingFlags.CapacityClamped);
+                buffers.States[chunkIndex] = state;
+                return false;
+            }
+
+            int vertexCount = state.VertexCount;
+            int indexCount = state.IndexCount;
             if (vertexCount <= 0 || indexCount <= 0)
                 return false;
 
             GraphicsBuffer vertexBuffer = _activeSet == 0 ? _vertexBack : _vertexFront;
             GraphicsBuffer indexBuffer = _activeSet == 0 ? _indexBack : _indexFront;
             int uploadSet = 1 - _activeSet;
+
+            bool vertexLocked = false;
+            bool indexLocked = false;
+            bool indirectArgsLocked = false;
+            try
+            {
+                _lockedVertices = vertexBuffer.LockBufferForWrite<VoxelVertexDTO>(0, vertexCount);
+                vertexLocked = true;
+                _lockedIndices = indexBuffer.LockBufferForWrite<uint>(0, indexCount);
+                indexLocked = true;
+                _lockedIndirectArgs = _indirectArgs.LockBufferForWrite<VoxelSurfaceIndirectArgsDTO>(0, 1);
+                indirectArgsLocked = true;
+
+                VoxelSurfaceGpuUploadCopyJob copyJob = default;
+                copyJob.SourceVertices = buffers.Vertices;
+                copyJob.SourceIndices = buffers.Indices;
+                copyJob.SourceIndirectArgs = buffers.IndirectArgs;
+                copyJob.DestinationVertices = _lockedVertices;
+                copyJob.DestinationIndices = _lockedIndices;
+                copyJob.DestinationIndirectArgs = _lockedIndirectArgs;
+                copyJob.VertexCount = vertexCount;
+                copyJob.IndexCount = indexCount;
+                uploadDependency = copyJob.Schedule(inputDependency);
+                _pendingUploadDependency = uploadDependency;
+            }
+            catch
+            {
+                if (indirectArgsLocked && _indirectArgs != null)
+                    _indirectArgs.UnlockBufferAfterWrite<VoxelSurfaceIndirectArgsDTO>(1);
+
+                if (indexLocked && indexBuffer != null)
+                    indexBuffer.UnlockBufferAfterWrite<uint>(indexCount);
+
+                if (vertexLocked && vertexBuffer != null)
+                    vertexBuffer.UnlockBufferAfterWrite<VoxelVertexDTO>(vertexCount);
+
+                _lockedVertices = default;
+                _lockedIndices = default;
+                _lockedIndirectArgs = default;
+                state.Stage = (byte)VoxelMeshingStage.Fault;
+                buffers.States[chunkIndex] = state;
+                uploadDependency = inputDependency;
+                return false;
+            }
+
             state.Stage = (byte)VoxelMeshingStage.Uploading;
             buffers.States[chunkIndex] = state;
-
-            _lockedVertices = vertexBuffer.LockBufferForWrite<VoxelVertexDTO>(0, vertexCount);
-            _lockedIndices = indexBuffer.LockBufferForWrite<uint>(0, indexCount);
-            _lockedIndirectArgs = _indirectArgs.LockBufferForWrite<VoxelSurfaceIndirectArgsDTO>(0, 1);
-
-            VoxelSurfaceGpuUploadCopyJob copyJob = default;
-            copyJob.SourceVertices = buffers.Vertices;
-            copyJob.SourceIndices = buffers.Indices;
-            copyJob.SourceIndirectArgs = buffers.IndirectArgs;
-            copyJob.DestinationVertices = _lockedVertices;
-            copyJob.DestinationIndices = _lockedIndices;
-            copyJob.DestinationIndirectArgs = _lockedIndirectArgs;
-            copyJob.VertexCount = vertexCount;
-            copyJob.IndexCount = indexCount;
-            uploadDependency = copyJob.Schedule(inputDependency);
 
             uploadState.VertexBuffer = vertexBuffer;
             uploadState.IndexBuffer = indexBuffer;
@@ -168,12 +223,16 @@ namespace Hecton8.World.VoxelSurfaceNets
             out VoxelSurfaceGpuUploadState uploadState)
         {
             uploadState = default;
-            if (!_uploadInFlight || !uploadDependency.IsCompleted)
+            if (!_uploadInFlight ||
+                !uploadDependency.IsCompleted ||
+                !_pendingUploadDependency.IsCompleted)
+            {
                 return false;
+            }
 
-            _pendingVertexBuffer.UnlockBufferAfterWrite<VoxelVertexDTO>(_pendingVertexCount);
-            _pendingIndexBuffer.UnlockBufferAfterWrite<uint>(_pendingIndexCount);
-            _indirectArgs.UnlockBufferAfterWrite<VoxelSurfaceIndirectArgsDTO>(1);
+            _pendingUploadDependency.Complete();
+
+            UnlockPendingUploadBuffers();
 
             _activeSet = _pendingUploadSet;
             if (buffers.States.IsCreated && (uint)_pendingChunkIndex < (uint)buffers.States.Length)
@@ -196,18 +255,36 @@ namespace Hecton8.World.VoxelSurfaceNets
             uploadState.Version = _pendingVersion;
             uploadState.BufferSet = _pendingUploadSet;
             ClearPendingUploadState();
+            if (_releaseRequested)
+            {
+                uploadState = default;
+                TryRelease();
+                return false;
+            }
+
             return true;
         }
 
         public void Release()
         {
+            _releaseRequested = true;
             TryRelease();
         }
 
         public bool TryRelease()
         {
             if (_uploadInFlight)
-                return false;
+            {
+                if (!_pendingUploadDependency.IsCompleted)
+                {
+                    _releaseRequested = true;
+                    return false;
+                }
+
+                _pendingUploadDependency.Complete();
+                UnlockPendingUploadBuffers();
+                ClearPendingUploadState();
+            }
 
             if (_vertexFront != null)
             {
@@ -243,6 +320,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             _maxVertices = 0;
             _maxIndices = 0;
             ClearPendingUploadState();
+            _releaseRequested = false;
             return true;
         }
 
@@ -258,6 +336,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             _lockedIndirectArgs = default;
             _pendingVertexBuffer = null;
             _pendingIndexBuffer = null;
+            _pendingUploadDependency = default;
             _pendingUploadSet = 0;
             _pendingChunkIndex = -1;
             _pendingVertexCount = 0;
@@ -265,6 +344,18 @@ namespace Hecton8.World.VoxelSurfaceNets
             _pendingChunkHash = 0u;
             _pendingVersion = 0u;
             _uploadInFlight = false;
+        }
+
+        private void UnlockPendingUploadBuffers()
+        {
+            if (_pendingVertexBuffer != null && _pendingVertexCount > 0)
+                _pendingVertexBuffer.UnlockBufferAfterWrite<VoxelVertexDTO>(_pendingVertexCount);
+
+            if (_pendingIndexBuffer != null && _pendingIndexCount > 0)
+                _pendingIndexBuffer.UnlockBufferAfterWrite<uint>(_pendingIndexCount);
+
+            if (_indirectArgs != null)
+                _indirectArgs.UnlockBufferAfterWrite<VoxelSurfaceIndirectArgsDTO>(1);
         }
     }
 }

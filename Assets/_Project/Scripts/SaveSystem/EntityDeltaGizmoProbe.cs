@@ -8,6 +8,7 @@ using UnityEngine;
 namespace Hecton8.SaveSystem
 {
     [ExecuteAlways]
+    [DisallowMultipleComponent]
     public sealed class EntityDeltaGizmoProbe : MonoBehaviour
     {
         public bool DrawHeatmap = true;

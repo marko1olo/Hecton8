@@ -1,11 +1,11 @@
 using Hecton8.Core;
 using Hecton8.Audio;
+using Hecton8.Atmosphere;
 using Hecton8.Construction;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.World;
 using Hecton.Localization;
-using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -17,8 +17,9 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HectonSurvivalSystem))]
     [RequireComponent(typeof(HectonPlayerMovement))]
-    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IDamageSignalReceiver, IModuleStatusEventListener, IElectromagneticPulseEventListener
+    public sealed class TraumaDispatcher : MonoBehaviour, ISlowTickable, IDamageSignalReceiver, IModuleStatusEventListener, IElectromagneticPulseEventListener, IGlobalRegistryHotSwapListener
     {
+        private const float TraumaSlowTickDeltaSeconds = 0.1f;
         private const float IntegrityChannelDecayPerSecond = 0.35f;
         private const float PowerChannelDecayPerSecond = 0.28f;
         private const float ClarityChannelDecayPerSecond = 0.75f;
@@ -34,14 +35,17 @@ namespace Hecton8.Gameplay
         private const float EmpStressTransfer01 = 0.92f;
         private const float ParasiteSporeDamagePerSecond = 5f;
         private const float ParasiteSporeDamageIntervalSeconds = 1f;
+        private const float ParasiteSporeStatusDurationSeconds = 4f;
+        private const float ParasiteSporeToxemiaScale = 0.06f;
         private const float ParasiteSporeSealedResistanceThreshold = 500f;
-        private const int ParasiteSporeLosQueryCapacity = 1;
         private const float ParasiteSporeLosMinimumDistance = 0.05f;
+        private const uint ParasiteSporeChemicalHash = 0x50535052u; // PSPR
 
         private HectonSurvivalSystem _survivalSystem;
+        private HectonPlayerHealth _playerHealth;
         private HectonPlayerMovement _playerMovement;
         private PlayerTransportCoordinator _playerTransportCoordinator;
-        private bool _registered;
+        private bool _registeredSlowTick;
         private float _integrityChannel01;
         private float _powerChannel01;
         private float _clarityChannel01;
@@ -62,18 +66,11 @@ namespace Hecton8.Gameplay
         private float _empSensorBlindTimer;
         private float _parasiteSporeDamageAccumulator;
         private int _lastPublishedParasiteAudioCount = int.MinValue;
-        private NativeArray<RaycastCommand> _parasiteSporeLosCommands;
-        private NativeArray<RaycastHit> _parasiteSporeLosHits;
-        private JobHandle _parasiteSporeLosHandle;
-        private JobHandle _parasiteSporeDisposeHandle;
-        private bool _lateFrameRegistered;
-        private bool _parasiteSporeLosScheduled;
-        private bool _pendingParasiteSporeLosQuery;
         private bool _parasiteSporeLosResultValid;
         private bool _parasiteSporeLosBlocked;
-        private Vector3 _pendingParasiteSporeLosOrigin;
-        private Vector3 _pendingParasiteSporeLosDirection;
-        private float _pendingParasiteSporeLosDistance;
+        private bool _hotSwapRegistered;
+        private ISpatialAudioEnvironmentModulationSink _spatialAudioSink;
+        private IPdaCorrosionPresentationSink _pdaCorrosionSink;
 
         /// <summary>Current integrity trauma channel intensity.</summary>
         public float IntegrityChannel01 => _integrityChannel01;
@@ -134,14 +131,15 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             ResolveReferences();
-            InitializeParasiteSporeLosBuffers();
         }
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
             ResolveReferences();
-            InitializeParasiteSporeLosBuffers();
             ModuleStatusEvents.Register(this);
             PhysicsEventBus.Register((IElectromagneticPulseEventListener)this);
 
@@ -149,7 +147,6 @@ namespace Hecton8.Gameplay
                 _playerTransportCoordinator.ActiveTransportLifecycleChanged += HandleTransportLifecycleChanged;
 
             TryRegister();
-            TryRegisterLateFrame();
 
             if (_playerTransportCoordinator != null &&
                 _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out IPlayerTransportLifecycleOwner lifecycleOwner))
@@ -169,83 +166,27 @@ namespace Hecton8.Gameplay
             ClearHabitatBinding();
             ClearTransportBinding();
             TryUnregister();
-            TryUnregisterLateFrame();
-            DisposeParasiteSporeLosBuffers();
+            TryUnregisterHotSwapListener();
             ResetChannels();
             PublishSignals(true);
         }
 
         private void OnDestroy()
         {
-            TryUnregisterLateFrame();
-            DisposeParasiteSporeLosBuffers();
+            TryUnregisterHotSwapListener();
         }
 
         /// <summary>
-        /// Decays trauma channels and guards destroyed ownership references without polling the damage path itself.
+        /// Applies physiology-affecting radiation and toxic damage on the dispatcher-owned 10Hz cadence.
         /// </summary>
-        public void Tick(float deltaTime)
+        public void SlowTick()
         {
-            _integrityChannel01 = DecayChannel(_integrityChannel01, IntegrityChannelDecayPerSecond, deltaTime);
-            _powerChannel01 = DecayChannel(_powerChannel01, PowerChannelDecayPerSecond, deltaTime);
-            _clarityChannel01 = DecayChannel(_clarityChannel01, ClarityChannelDecayPerSecond, deltaTime);
-            _hazardRadiationSignal01 = DecayChannel(_hazardRadiationSignal01, HazardSignalDecayPerSecond, deltaTime);
-            _hazardThermalSignal01 = DecayChannel(_hazardThermalSignal01, HazardSignalDecayPerSecond, deltaTime);
-            _hazardToxicSignal01 = DecayChannel(_hazardToxicSignal01, HazardSignalDecayPerSecond, deltaTime);
-            _empSensorBlindTimer = math.max(0f, _empSensorBlindTimer - math.max(0f, deltaTime));
+            float deltaTime = TraumaSlowTickDeltaSeconds;
+            AdvanceTraumaReadModel(deltaTime);
             UpdateRadiationFatigue(deltaTime);
             UpdateActiveParasiteSporeHazard(deltaTime);
             UpdateActiveParasiteAudioState();
-
-            if (IsEmpSensorBlindActive)
-                PromoteChannel(ref _clarityChannel01, 1f);
-
-            if (_activeTransportOwner != null)
-            {
-                _activeTransportChargeNormalized = math.saturate(_activeTransportOwner.TransportChargeNormalized);
-                _activeTransportIntegrityNormalized = math.saturate(_activeTransportOwner.TransportIntegrityNormalized);
-            }
-
-            if ((object)_activeHabitatEmitterBehaviour != null && _activeHabitatEmitterBehaviour == null)
-                ClearHabitatBinding();
-
-            if ((object)_activeTransportEmitterBehaviour != null && _activeTransportEmitterBehaviour == null)
-                ClearTransportBinding();
-
             PublishSignals(false);
-        }
-
-        public void LateFrameTick()
-        {
-            CompleteParasiteSporeLosQuery(false);
-            if (!_parasiteSporeLosCommands.IsCreated || !_parasiteSporeLosHits.IsCreated)
-                InitializeParasiteSporeLosBuffers();
-
-            if (!_pendingParasiteSporeLosQuery ||
-                _parasiteSporeLosScheduled ||
-                !_parasiteSporeLosCommands.IsCreated ||
-                !_parasiteSporeLosHits.IsCreated)
-            {
-                return;
-            }
-
-            QueryParameters queryParameters = new QueryParameters(
-                HectonLayerMasks.BaseModuleLayerMask,
-                false,
-                QueryTriggerInteraction.Ignore);
-            _parasiteSporeLosCommands[0] = new RaycastCommand(
-                _pendingParasiteSporeLosOrigin,
-                _pendingParasiteSporeLosDirection,
-                queryParameters,
-                _pendingParasiteSporeLosDistance);
-            _parasiteSporeLosHits[0] = default;
-            _parasiteSporeLosHandle = RaycastCommand.ScheduleBatch(
-                _parasiteSporeLosCommands,
-                _parasiteSporeLosHits,
-                ParasiteSporeLosQueryCapacity,
-                default);
-            _parasiteSporeLosScheduled = true;
-            _pendingParasiteSporeLosQuery = false;
         }
 
         /// <summary>
@@ -369,6 +310,9 @@ namespace Hecton8.Gameplay
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
 
+            if (_playerHealth == null)
+                TryGetComponent(out _playerHealth);
+
             if (_playerMovement == null)
                 TryGetComponent(out _playerMovement);
 
@@ -378,38 +322,64 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered)
-                return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-        }
-
-        private void TryRegisterLateFrame()
-        {
-            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registered = false;
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlowTick = false;
+            }
         }
 
-        private void TryUnregisterLateFrame()
+        private void CacheRegistryServicesCold()
         {
-            if (!_lateFrameRegistered)
+            _spatialAudioSink = GlobalRegistry.Audio as ISpatialAudioEnvironmentModulationSink;
+            _pdaCorrosionSink = GlobalRegistry.PdaCorrosionPresentationSink;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
-            _lateFrameRegistered = false;
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _spatialAudioSink = currentService as ISpatialAudioEnvironmentModulationSink;
+                    PublishParasiteAudioLoad(_activeHabitatModule != null ? _activeHabitatModule.AttachedParasiteCount : 0);
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _pdaCorrosionSink = currentService as IPdaCorrosionPresentationSink;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        TryRegister();
+                    break;
+            }
         }
 
         private void BindHabitat(HabitatIntegrityManager habitatManager)
@@ -531,7 +501,7 @@ namespace Hecton8.Gameplay
             if (force || traumaSignature != _lastPublishedTraumaSignature)
             {
                 _lastPublishedTraumaSignature = traumaSignature;
-                PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(
+                PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal(
                     glitchIntensity,
                     recoilScalar,
                     _activeTransportChargeNormalized,
@@ -551,7 +521,7 @@ namespace Hecton8.Gameplay
             if (force || interactionSignature != _lastPublishedInteractionSignature)
             {
                 _lastPublishedInteractionSignature = interactionSignature;
-                PlayerSignalEvents.RaiseInteractionSignal(new PlayerInteractionStressSignal(
+                PlayerSignalEvents.TryRaiseInteractionSignal(new PlayerInteractionStressSignal(
                     stress01,
                     volume01,
                     pitchScale,
@@ -587,6 +557,39 @@ namespace Hecton8.Gameplay
         private static float DecayChannel(float current, float decayPerSecond, float deltaTime)
         {
             return math.max(0f, current - decayPerSecond * math.max(0f, deltaTime));
+        }
+
+        private void AdvanceTraumaReadModel(float deltaTime)
+        {
+            _integrityChannel01 = DecayChannel(_integrityChannel01, IntegrityChannelDecayPerSecond, deltaTime);
+            _powerChannel01 = DecayChannel(_powerChannel01, PowerChannelDecayPerSecond, deltaTime);
+            _clarityChannel01 = DecayChannel(_clarityChannel01, ClarityChannelDecayPerSecond, deltaTime);
+            _hazardRadiationSignal01 = DecayChannel(_hazardRadiationSignal01, HazardSignalDecayPerSecond, deltaTime);
+            _hazardThermalSignal01 = DecayChannel(_hazardThermalSignal01, HazardSignalDecayPerSecond, deltaTime);
+            _hazardToxicSignal01 = DecayChannel(_hazardToxicSignal01, HazardSignalDecayPerSecond, deltaTime);
+            _empSensorBlindTimer = math.max(0f, _empSensorBlindTimer - math.max(0f, deltaTime));
+
+            if (IsEmpSensorBlindActive)
+                PromoteChannel(ref _clarityChannel01, 1f);
+
+            if (_activeTransportOwner != null)
+            {
+                _activeTransportChargeNormalized = math.saturate(_activeTransportOwner.TransportChargeNormalized);
+                _activeTransportIntegrityNormalized = math.saturate(_activeTransportOwner.TransportIntegrityNormalized);
+            }
+
+            if ((object)_activeHabitatEmitterBehaviour != null && _activeHabitatEmitterBehaviour == null)
+                ClearHabitatBinding();
+
+            if ((object)_activeTransportEmitterBehaviour != null && _activeTransportEmitterBehaviour == null)
+                ClearTransportBinding();
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
 
         private static void PromoteChannel(ref float channel, float candidate)
@@ -630,7 +633,7 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 playerPosition = transform.position;
-            QueueParasiteSporeLosQuery(hazardCenter, playerPosition);
+            ResolveParasiteSporeOcclusion(hazardCenter, playerPosition);
             if (!_parasiteSporeLosResultValid || _parasiteSporeLosBlocked)
             {
                 _parasiteSporeDamageAccumulator = 0f;
@@ -652,109 +655,81 @@ namespace Hecton8.Gameplay
 
             int intervals = (int)math.floor(_parasiteSporeDamageAccumulator / ParasiteSporeDamageIntervalSeconds);
             _parasiteSporeDamageAccumulator -= intervals * ParasiteSporeDamageIntervalSeconds;
-            _survivalSystem.TakeDamage(ParasiteSporeDamagePerSecond * hazardIntensity * intervals);
+            PublishParasiteSporePoisonStatus(hazardIntensity, intervals);
         }
 
-        private void InitializeParasiteSporeLosBuffers()
+        private void PublishParasiteSporePoisonStatus(float hazardIntensity, int intervals)
         {
-            DispatcherJobSwap.TryFinalizeCompleted(ref _parasiteSporeDisposeHandle);
-            if (!_parasiteSporeDisposeHandle.IsCompleted)
+            if (intervals <= 0)
                 return;
 
-            if (!_parasiteSporeLosCommands.IsCreated)
+            if (_playerHealth == null)
+                TryGetComponent(out _playerHealth);
+
+            int targetId = _playerHealth != null
+                ? CombatDamageRuntime.ResolveTargetId(_playerHealth.gameObject)
+                : CombatDamageRuntime.ResolveTargetId(gameObject);
+            if (targetId == 0)
+                return;
+
+            float severity01 = math.saturate(hazardIntensity);
+            float magnitude = ParasiteSporeDamagePerSecond * severity01 * intervals;
+            if (CombatDamageRuntime.IsTargetRegistered(targetId))
             {
-                _parasiteSporeLosCommands = new NativeArray<RaycastCommand>(ParasiteSporeLosQueryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] — parasite spore line-of-sight command buffer — owner: TraumaDispatcher
-                _parasiteSporeLosHits = new NativeArray<RaycastHit>(ParasiteSporeLosQueryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] — parasite spore line-of-sight result buffer — owner: TraumaDispatcher
-                NativeMemorySentinel.RegisterNativeArray(
-                    _parasiteSporeLosCommands,
-                    nameof(TraumaDispatcher),
-                    nameof(_parasiteSporeLosCommands),
-                    NativeAllocationLifetime.Scene);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _parasiteSporeLosHits,
-                    nameof(TraumaDispatcher),
-                    nameof(_parasiteSporeLosHits),
-                    NativeAllocationLifetime.Scene);
+                CombatDamageRuntime.TryQueueStatusEffect(
+                    targetId,
+                    CombatStatusBits.Poisoned64,
+                    ParasiteSporeStatusDurationSeconds * math.max(0.25f, severity01),
+                    DamageSourceIds.EnvironmentHazard,
+                    magnitude);
             }
+
+            if (_playerMovement == null || !_playerMovement.CurrentAup.IsFinite())
+                return;
+
+            ToxicityExposureSignal signal = default;
+            signal.AUP = _playerMovement.CurrentAup.ToAbsoluteDouble3();
+            signal.Exposure01 = severity01;
+            signal.ToxemiaDelta = math.saturate(severity01 * intervals * ParasiteSporeToxemiaScale);
+            signal.EntityId = unchecked((uint)targetId);
+            signal.ChemicalHash = ParasiteSporeChemicalHash;
+            signal.Frame = TimeSliceScheduler.CurrentFrameId;
+            signal.Flags = 1;
+            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
         }
 
-        private void QueueParasiteSporeLosQuery(Vector3 hazardCenter, Vector3 playerPosition)
+        private void ResolveParasiteSporeOcclusion(Vector3 hazardCenter, Vector3 playerPosition)
         {
+            _parasiteSporeLosResultValid = false;
+            _parasiteSporeLosBlocked = true;
+
+            if (!IsFinite(hazardCenter) || !IsFinite(playerPosition))
+                return;
+
             Vector3 delta = playerPosition - hazardCenter;
             float distanceSq = delta.sqrMagnitude;
             float minimumDistanceSq = ParasiteSporeLosMinimumDistance * ParasiteSporeLosMinimumDistance;
             if (distanceSq <= minimumDistanceSq)
             {
-                _pendingParasiteSporeLosQuery = false;
                 _parasiteSporeLosResultValid = true;
                 _parasiteSporeLosBlocked = false;
                 return;
             }
 
-            float inverseDistance = math.rsqrt(distanceSq);
-            float distance = distanceSq * inverseDistance;
-            _pendingParasiteSporeLosOrigin = hazardCenter;
-            _pendingParasiteSporeLosDirection = delta * inverseDistance;
-            _pendingParasiteSporeLosDistance = distance;
-            _pendingParasiteSporeLosQuery = true;
-        }
-
-        private void CompleteParasiteSporeLosQuery(bool force)
-        {
-            if (!_parasiteSporeLosScheduled)
+            BaseModule module = _activeHabitatModule;
+            if (module == null)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _parasiteSporeLosHandle, force))
-                return;
-
-            _parasiteSporeLosScheduled = false;
-            RaycastHit hit = _parasiteSporeLosHits[0];
-            _parasiteSporeLosBlocked = hit.collider != null &&
-                                       hit.collider.gameObject.layer == HectonLayerMasks.BaseModule;
+            bool hazardInside = module.TryContainsInteriorRuntimePoint(hazardCenter);
+            bool playerInside = module.TryContainsInteriorRuntimePoint(playerPosition);
             _parasiteSporeLosResultValid = true;
+            _parasiteSporeLosBlocked = !(hazardInside && playerInside);
         }
 
         private void ResetParasiteSporeLosState()
         {
-            _pendingParasiteSporeLosQuery = false;
             _parasiteSporeLosResultValid = false;
             _parasiteSporeLosBlocked = false;
-        }
-
-        private void DisposeParasiteSporeLosBuffers()
-        {
-            DispatcherJobSwap.TryFinalizeCompleted(ref _parasiteSporeDisposeHandle);
-            bool disposeAfterScheduledQuery = _parasiteSporeLosScheduled;
-            JobHandle disposeDependency = _parasiteSporeLosHandle;
-            bool scheduledDispose = false;
-
-            if (_parasiteSporeLosCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_parasiteSporeLosCommands);
-                disposeDependency = _parasiteSporeLosCommands.Dispose(disposeAfterScheduledQuery ? disposeDependency : default);
-                scheduledDispose = true;
-
-                _parasiteSporeLosCommands = default;
-            }
-
-            if (_parasiteSporeLosHits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_parasiteSporeLosHits);
-                disposeDependency = _parasiteSporeLosHits.Dispose(disposeDependency);
-                scheduledDispose = true;
-
-                _parasiteSporeLosHits = default;
-            }
-
-            if (scheduledDispose)
-            {
-                _parasiteSporeDisposeHandle = disposeDependency;
-                JobHandle.ScheduleBatchedJobs();
-            }
-
-            _parasiteSporeLosHandle = default;
-            _parasiteSporeLosScheduled = false;
-            ResetParasiteSporeLosState();
         }
 
         private void UpdateActiveParasiteAudioState()
@@ -767,10 +742,10 @@ namespace Hecton8.Gameplay
             PublishParasiteAudioLoad(parasiteCount);
         }
 
-        private static void PublishParasiteAudioLoad(int parasiteCount)
+        private void PublishParasiteAudioLoad(int parasiteCount)
         {
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is SpatialAudioManager spatialAudioManager)
-                spatialAudioManager.SetParasiteRoomAcousticLoad(parasiteCount);
+            if (_spatialAudioSink != null)
+                _spatialAudioSink.SetParasiteRoomAcousticLoad(parasiteCount);
         }
 
         private bool HasSealedHelmetProtection()
@@ -826,9 +801,7 @@ namespace Hecton8.Gameplay
             if (_activeTransportOwner is MantaScooter mantaScooter)
                 mantaScooter.ApplyEmpDisruption(durationSeconds);
 
-            Hecton.Localization.LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            if (manager != null)
-                manager.RequestExternalPdaCorrosion(claritySuppression01, durationSeconds);
+            _pdaCorrosionSink?.RequestExternalPdaCorrosion(claritySuppression01, durationSeconds);
         }
 
         private bool IsPulseRelevantToPlayer(in ElectromagneticPulseEvent pulseEvent)

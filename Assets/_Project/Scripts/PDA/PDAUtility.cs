@@ -1,4 +1,4 @@
-using Hecton8.SaveSystem;
+using Hecton8.Core;
 using Hecton8.Atmosphere;
 using Unity.Mathematics;
 using UnityEngine;
@@ -129,8 +129,8 @@ namespace Hecton8.PDA
 
         public static void CaptureStamp(out int dayIndex, out float dayTimeHours, out float playTimeSeconds)
         {
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
-            playTimeSeconds = saveManager != null ? saveManager.CurrentPlayTimeSeconds : 0f;
+            ISaveService saveService = Hecton8.Core.GlobalRegistry.Save;
+            playTimeSeconds = saveService != null ? saveService.CurrentPlayTimeSeconds : 0f;
 
             HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
             if (atmosphereManager != null)

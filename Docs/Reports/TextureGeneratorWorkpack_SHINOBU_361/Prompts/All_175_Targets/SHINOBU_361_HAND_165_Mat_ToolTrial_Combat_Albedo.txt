@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_165
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_165_Mat_ToolTrial_Combat_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\Mat_ToolTrial_Combat_Albedo.png
+FINAL_FILENAME: Mat_ToolTrial_Combat_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Tool trial combat albedo for prototype defensive equipment surfaces. Create satin titanium reinforcement strips, pearl ceramic impact panels, graphite grip fields, coral-red safety bands, teal alignment ticks, and amber readiness dots. The material should communicate controlled field testing and safety discipline, not uncontrolled aggression, with clean AAA material separation. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

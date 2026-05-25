@@ -102,6 +102,8 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private Camera _cachedMainCamera; // Cache resolved gameplay camera
         private VolumeProfile _cachedVolumeProfile; // Cache Volume profile lookup
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private bool _mainCameraResolvedFromPlayer;
         private bool _graphicsBindingStandby;
         private bool _audioBindingStandby;
         private bool _pendingFieldOfViewApply;
@@ -147,6 +149,7 @@ namespace Hecton8.UI
             if (Application.isPlaying)
                 GameBootstrapper.PersistRuntimeService(this);
 
+            CachePlayerRuntimeContextCold();
             TryRefreshPersistenceReference(out _);
 
             TryResolveMainCameraReference();
@@ -160,6 +163,7 @@ namespace Hecton8.UI
         {
             TryRegisterToGlobalRegistry();
             TryRegisterHotSwapListener();
+            CachePlayerRuntimeContextCold();
             TryRefreshPersistenceReference(out _);
         }
 
@@ -172,6 +176,7 @@ namespace Hecton8.UI
         {
             TryUnregisterHotSwapListener();
             UnregisterFromGlobalRegistry();
+            _playerRuntimeContext = null;
         }
 
         private void OnDestroy()
@@ -204,6 +209,9 @@ namespace Hecton8.UI
                 ApplyAllSettings();
                 return;
             }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                RebindPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
 
             if (!ShouldRetryStandbyBindings(serviceSlot) || !isActiveAndEnabled)
                 return;
@@ -634,7 +642,7 @@ namespace Hecton8.UI
             if (_persistence != null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[SettingsManager] Clearing all settings keys from options.h8cfg...");
+                H8Debug.Log("[SettingsManager] Clearing all settings keys from options.h8cfg...");
 #endif
                 _persistence.DeleteKey(QualityLevelKey);
                 _persistence.DeleteKey(MasterVolumeKey);
@@ -662,7 +670,7 @@ namespace Hecton8.UI
                 _persistence.Save();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[SettingsManager] All settings keys cleared. Applying defaults...");
+                H8Debug.Log("[SettingsManager] All settings keys cleared. Applying defaults...");
 #endif
             }
 
@@ -699,7 +707,7 @@ namespace Hecton8.UI
             {
                 _persistence.Save();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[SettingsManager] Default settings applied and saved.");
+                H8Debug.Log("[SettingsManager] Default settings applied and saved.");
 #endif
             }
         }
@@ -762,7 +770,7 @@ namespace Hecton8.UI
 
                 default:
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning($"[SettingsManager] Invalid preset: {preset}. Valid range: 0-3.");
+                    Debug.LogWarning("[SettingsManager] Invalid preset. Valid range: 0-3.");
 #endif
                     break;
             }
@@ -820,7 +828,7 @@ namespace Hecton8.UI
             if (value < 0 || value > maxLevel)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid quality level {value}, clamping to [0, {maxLevel}]");
+                Debug.LogWarning("[SettingsManager] Invalid quality level; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, maxLevel);
             }
@@ -832,7 +840,7 @@ namespace Hecton8.UI
             if (value < 0f || value > 1f)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid volume {value}, clamping to [0, 1]");
+                Debug.LogWarning("[SettingsManager] Invalid volume; clamping.");
 #endif
                 return Mathf.Clamp01(value);
             }
@@ -844,7 +852,7 @@ namespace Hecton8.UI
             if (value < min || value > max)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid resolution dimension {value}, clamping to [{min}, {max}]");
+                Debug.LogWarning("[SettingsManager] Invalid resolution dimension; clamping.");
 #endif
                 return Mathf.Clamp(value, min, max);
             }
@@ -856,7 +864,7 @@ namespace Hecton8.UI
             if (value < 60f || value > 110f)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid FOV {value}, clamping to [60, 110]");
+                Debug.LogWarning("[SettingsManager] Invalid FOV; clamping.");
 #endif
                 return Mathf.Clamp(value, 60f, 110f);
             }
@@ -868,7 +876,7 @@ namespace Hecton8.UI
             if (value < 0 || value > 3)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid shadow quality {value}, clamping to [0, 3]");
+                Debug.LogWarning("[SettingsManager] Invalid shadow quality; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
             }
@@ -880,7 +888,7 @@ namespace Hecton8.UI
             if (value < 50f || value > 300f)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid shadow distance {value}, clamping to [50, 300]");
+                Debug.LogWarning("[SettingsManager] Invalid shadow distance; clamping.");
 #endif
                 return Mathf.Clamp(value, 50f, 300f);
             }
@@ -892,7 +900,7 @@ namespace Hecton8.UI
             if (value < 0 || value > 3)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid anti-aliasing {value}, clamping to [0, 3]");
+                Debug.LogWarning("[SettingsManager] Invalid anti-aliasing; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
             }
@@ -904,7 +912,7 @@ namespace Hecton8.UI
             if (value < 0 || value > 3)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid texture quality {value}, clamping to [0, 3]");
+                Debug.LogWarning("[SettingsManager] Invalid texture quality; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
             }
@@ -916,7 +924,7 @@ namespace Hecton8.UI
             if (value < 0 || value > 3)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SettingsManager] Invalid graphics preset {value}, clamping to [0, 3]");
+                Debug.LogWarning("[SettingsManager] Invalid graphics preset; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
             }
@@ -1020,7 +1028,7 @@ namespace Hecton8.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (failureCount > 0)
             {
-                Debug.LogWarning($"[SettingsManager] Applied settings with {failureCount} failure(s). Check warnings above.");
+                Debug.LogWarning("[SettingsManager] Applied settings with failures. Check warnings above.");
             }
 #endif
 
@@ -1210,7 +1218,7 @@ namespace Hecton8.UI
         private static void LogApplyQualityLevelFailed(int level, System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SettingsManager] Failed to apply quality level {level}: {exception.Message}");
+            Debug.LogError("[SettingsManager] Failed to apply quality level.");
 #endif
         }
 
@@ -1219,7 +1227,7 @@ namespace Hecton8.UI
         private static void LogApplyVSyncFailed(System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SettingsManager] Failed to apply VSync: {exception.Message}");
+            Debug.LogError("[SettingsManager] Failed to apply VSync.");
 #endif
         }
 
@@ -1228,7 +1236,7 @@ namespace Hecton8.UI
         private static void LogApplyFullscreenFailed(System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SettingsManager] Failed to apply fullscreen: {exception.Message}");
+            Debug.LogError("[SettingsManager] Failed to apply fullscreen.");
 #endif
         }
 
@@ -1237,7 +1245,7 @@ namespace Hecton8.UI
         private static void LogApplyResolutionFailed(int width, int height, System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SettingsManager] Failed to apply resolution {width}x{height}: {exception.Message}");
+            Debug.LogError("[SettingsManager] Failed to apply resolution.");
 #endif
         }
 
@@ -1246,7 +1254,7 @@ namespace Hecton8.UI
         private static void LogApplyShadowDistanceFailed(System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SettingsManager] Failed to apply shadow distance: {exception.Message}");
+            Debug.LogError("[SettingsManager] Failed to apply shadow distance.");
 #endif
         }
 
@@ -1255,12 +1263,13 @@ namespace Hecton8.UI
         private static void LogApplyTextureQualityFailed(System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SettingsManager] Failed to apply texture quality: {exception.Message}");
+            Debug.LogError("[SettingsManager] Failed to apply texture quality.");
 #endif
         }
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            CachePlayerRuntimeContextCold();
             _cachedMainCamera = null;
             _cachedVolumeProfile = null;
 
@@ -1281,6 +1290,26 @@ namespace Hecton8.UI
                 serviceSlot == GlobalRegistryServiceSlot.DynamicResolutionRuntime ||
                 serviceSlot == GlobalRegistryServiceSlot.Audio ||
                 serviceSlot == GlobalRegistryServiceSlot.CullingRuntime;
+        }
+
+        private void CachePlayerRuntimeContextCold()
+        {
+            RebindPlayerRuntimeContext(GlobalRegistry.Player);
+        }
+
+        private void RebindPlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            if (ReferenceEquals(_playerRuntimeContext, playerRuntimeContext))
+                return;
+
+            _playerRuntimeContext = playerRuntimeContext;
+            _cachedMainCamera = null;
+            _cachedVolumeProfile = null;
+            if (_mainCameraResolvedFromPlayer)
+            {
+                mainCamera = null;
+                _mainCameraResolvedFromPlayer = false;
+            }
         }
 
         private void RetryStandbyBindings()
@@ -1381,6 +1410,7 @@ namespace Hecton8.UI
 
             if (mainCamera != null)
             {
+                _mainCameraResolvedFromPlayer = false;
                 _cachedMainCamera = mainCamera;
                 return true;
             }
@@ -1392,15 +1422,17 @@ namespace Hecton8.UI
                 {
                     mainCamera = playerOwnedCamera;
                     _cachedMainCamera = playerOwnedCamera;
+                    _mainCameraResolvedFromPlayer = true;
                     return true;
                 }
 
-                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 Camera playerChildCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 if (playerChildCamera != null)
                 {
                     mainCamera = playerChildCamera;
                     _cachedMainCamera = playerChildCamera;
+                    _mainCameraResolvedFromPlayer = true;
                     return true;
                 }
             }
@@ -1409,6 +1441,7 @@ namespace Hecton8.UI
             {
                 mainCamera = localCamera;
                 _cachedMainCamera = localCamera;
+                _mainCameraResolvedFromPlayer = false;
                 return true;
             }
 
@@ -1417,6 +1450,7 @@ namespace Hecton8.UI
             {
                 mainCamera = childCamera;
                 _cachedMainCamera = childCamera;
+                _mainCameraResolvedFromPlayer = false;
                 return true;
             }
 
@@ -1427,6 +1461,7 @@ namespace Hecton8.UI
 
                 mainCamera = parentCamera;
                 _cachedMainCamera = parentCamera;
+                _mainCameraResolvedFromPlayer = false;
                 return true;
             }
 
@@ -1454,9 +1489,10 @@ namespace Hecton8.UI
                 return true;
             }
 
-            if (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null &&
-                Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null &&
-                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera.transform)))
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.PlayerCamera != null &&
+                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(playerContext.PlayerCamera.transform)))
             {
                 return true;
             }
@@ -1518,16 +1554,16 @@ namespace Hecton8.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (!success)
                 {
-                    Debug.LogWarning($"[SettingsManager] AudioMixer parameter '{parameterName}' not found or not exposed.");
+                    Debug.LogWarning("[SettingsManager] AudioMixer parameter not found or not exposed.");
                 }
 #endif
                 
                 return success;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[SettingsManager] Failed to set AudioMixer parameter '{parameterName}': {ex.Message}");
+                Debug.LogError("[SettingsManager] Failed to set AudioMixer parameter.");
 #endif
                 return false;
             }

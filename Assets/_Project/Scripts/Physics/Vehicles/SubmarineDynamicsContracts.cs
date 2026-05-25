@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts.Signals;
@@ -18,11 +19,19 @@ namespace Hecton8.Physics.Vehicles
         public const int BlackBoxFrames = 300;
         public const int CacheLineBytes = 64;
         public const int IntegratorBatchSize = 4;
+        public const int GyroTuningBytes = 32;
+        public const int GyroErrorBytes = 64;
+        public const int GyroForcePacketBytes = 128;
+        public const int GyroTelemetryBytes = 64;
+        public const int GyroVisualStateBytes = 64;
+        public const int GyroProfileBytes = 64;
+        public const int GyroCounterBytes = 64;
         public const float Gravity = 9.80665f;
         public const uint SourceHashMock = 0x4B425553u; // SUBK
         public const uint SourceHashLegacy = 0x4F485355u; // USHO
         public const uint SourceHashCsv = 0x43535653u; // SVSC
         public const uint SourceHashAddedMass = 0x414D3235u; // AM25
+        public const uint SourceHashGyro = 0x47333332u; // G332
         public const uint StateFlagInitialized = 1u << 0;
         public const uint StateFlagFatalNan = 1u << 1;
         public const uint StateFlagGyroSuppressed = 1u << 2;
@@ -31,6 +40,13 @@ namespace Hecton8.Physics.Vehicles
         public const uint HydroFlagFloodMassInjected = 1u << 2;
         public const uint ForceFlagImpact = 1u << 0;
         public const uint ForceFlagImpactNormalLocal = 1u << 1;
+        public const uint ForceFlagGyroCorrection = 1u << 2;
+        public const uint GyroFlagAutoLevelEnabled = 1u << 0;
+        public const uint GyroFlagPacketQueued = 1u << 1;
+        public const uint GyroFlagTensorFallback = 1u << 2;
+        public const uint GyroFlagTorqueClamped = 1u << 3;
+        public const uint GyroFlagSuppressed = 1u << 4;
+        public const uint GyroFlagNonFinite = 1u << 31;
         public const byte ConfigFlagThermalDilation = 1 << 0;
         public const byte ConfigFlagLegacyProfile = 1 << 1;
         public const byte ConfigFlagCsvOverride = 1 << 2;
@@ -197,6 +213,7 @@ namespace Hecton8.Physics.Vehicles
         [FieldOffset(60)] public float GyroDamping;
         [FieldOffset(64)] public float MaxThrustN;
         [FieldOffset(68)] public float MaxTorqueNm;
+        [Obsolete("Deprecated ABI residue. SHINOBU_333 ballast force owns ballast truth; Submarine6DIntegratorJob ignores this scalar.")]
         [FieldOffset(72)] public float BallastLiftN;
         [FieldOffset(76)] public float CavitationDepthMeters;
         [FieldOffset(80)] public float CavitationThreshold;
@@ -304,6 +321,130 @@ namespace Hecton8.Physics.Vehicles
         [FieldOffset(56)] private ulong _pad2;
     }
 
+    /// <summary>Vault-backed pitch/roll auto-level tuning. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = SubmarineDynamicsConstants.GyroTuningBytes)]
+    public struct SubmarineGyroDTO
+    {
+        [FieldOffset(0)] public float ProportionalGainPitch;
+        [FieldOffset(4)] public float DerivativeGainPitch;
+        [FieldOffset(8)] public float ProportionalGainRoll;
+        [FieldOffset(12)] public float DerivativeGainRoll;
+        [FieldOffset(16)] public float MaxCorrectionTorque;
+        [FieldOffset(20)] public uint AutoLevelEnabledFlag;
+        [FieldOffset(24)] private uint _pad0;
+        [FieldOffset(28)] private uint _pad1;
+    }
+
+    /// <summary>Quaternion-derived leveling error. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = SubmarineDynamicsConstants.GyroErrorBytes)]
+    public struct SubmarineGyroErrorDTO
+    {
+        [FieldOffset(0)] public double3 CurrentAup;
+        [FieldOffset(24)] public float3 ErrorVector;
+        [FieldOffset(36)] public float3 CurrentUp;
+        [FieldOffset(48)] public float ErrorMagnitude;
+        [FieldOffset(52)] public uint TargetEntityHash;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public uint Flags;
+    }
+
+    /// <summary>Auto-level force handoff packet. Size: 128 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = SubmarineDynamicsConstants.GyroForcePacketBytes)]
+    public struct SubmarineGyroForcePacketDTO
+    {
+        [FieldOffset(0)] public double3 CurrentAup;
+        [FieldOffset(24)] public float3 CorrectiveTorque;
+        [FieldOffset(36)] public float3 CorrectiveAngularAcceleration;
+        [FieldOffset(48)] public float3 ErrorVector;
+        [FieldOffset(60)] public float3 AngularVelocityWorld;
+        [FieldOffset(72)] public uint TargetEntityHash;
+        [FieldOffset(76)] public int StateIndex;
+        [FieldOffset(80)] public uint Frame;
+        [FieldOffset(84)] public uint Flags;
+        [FieldOffset(88)] public float TorqueMagnitude;
+        [FieldOffset(92)] public float MatrixBlend01;
+        [FieldOffset(96)] public float PitchError;
+        [FieldOffset(100)] public float RollError;
+        [FieldOffset(104)] public float PitchOmega;
+        [FieldOffset(108)] public float RollOmega;
+        [FieldOffset(112)] private ulong _pad0;
+        [FieldOffset(120)] private ulong _pad1;
+    }
+
+    /// <summary>300-frame auto-level blackbox entry. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = SubmarineDynamicsConstants.GyroTelemetryBytes)]
+    public struct GyroTelemetryEntry
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public int ActiveControllers;
+        [FieldOffset(8)] public float AveragePitchError;
+        [FieldOffset(12)] public float AverageRollError;
+        [FieldOffset(16)] public float MaxCorrectiveTorque;
+        [FieldOffset(20)] public float BurstElapsedUs;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint StateHash;
+        [FieldOffset(32)] public float MaxErrorMagnitude;
+        [FieldOffset(36)] public float GlobalQualityWeight;
+        [FieldOffset(40)] public uint NonFiniteCount;
+        [FieldOffset(44)] public uint LastTargetEntityHash;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
+    }
+
+    /// <summary>GPU-facing artificial horizon payload. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = SubmarineDynamicsConstants.GyroVisualStateBytes)]
+    public struct SubmarineGyroVisualStateDTO
+    {
+        [FieldOffset(0)] public float3 ErrorVector;
+        [FieldOffset(12)] public float Effort01;
+        [FieldOffset(16)] public float HorizonRollRadians;
+        [FieldOffset(20)] public float HorizonPitchRadians;
+        [FieldOffset(24)] public float3 CorrectiveTorque;
+        [FieldOffset(36)] public uint TargetEntityHash;
+        [FieldOffset(40)] public uint Frame;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
+    }
+
+    /// <summary>Cold CSV gyro profile row. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = SubmarineDynamicsConstants.GyroProfileBytes)]
+    public struct SubmarineGyroProfileDTO
+    {
+        [FieldOffset(0)] public uint ProfileHash;
+        [FieldOffset(4)] public float ProportionalGainPitch;
+        [FieldOffset(8)] public float DerivativeGainPitch;
+        [FieldOffset(12)] public float ProportionalGainRoll;
+        [FieldOffset(16)] public float DerivativeGainRoll;
+        [FieldOffset(20)] public float MaxCorrectionTorque;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(32)] private ulong _pad1;
+        [FieldOffset(40)] private ulong _pad2;
+        [FieldOffset(48)] private ulong _pad3;
+        [FieldOffset(56)] private ulong _pad4;
+    }
+
+    /// <summary>Frame-local gyro packet counters and reductions. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = SubmarineDynamicsConstants.GyroCounterBytes)]
+    public struct SubmarineGyroCounterDTO
+    {
+        [FieldOffset(0)] public int PacketCount;
+        [FieldOffset(4)] public int ActiveControllers;
+        [FieldOffset(8)] public int NonFiniteCount;
+        [FieldOffset(12)] public int ReservedCount;
+        [FieldOffset(16)] public float AveragePitchError;
+        [FieldOffset(20)] public float AverageRollError;
+        [FieldOffset(24)] public float MaxCorrectiveTorque;
+        [FieldOffset(28)] public float MaxErrorMagnitude;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint StateHash;
+        [FieldOffset(40)] public uint Frame;
+        [FieldOffset(44)] public uint LastTargetEntityHash;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
+    }
+
     /// <summary>Fallback flood signal used when the real flood domain is unavailable. Size: 64 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockFloodSignal : ISignal
@@ -400,6 +541,22 @@ namespace Hecton8.Physics.Vehicles
             lenSq = math.lengthsq(source);
             bool fallbackValid = math.all(math.isfinite(source)) & math.isfinite(lenSq) & lenSq > 0.0001f;
             return math.select(float3.zero, source * math.rsqrt(math.max(lenSq, 0.0001f)), fallbackValid);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion IntegrateAngularVelocityNoTrig(float3 angularVelocity, float dt)
+        {
+            float safeDt = math.max(0f, math.select(0f, dt, math.isfinite(dt)));
+            float3 safeAngularVelocity = math.select(float3.zero, angularVelocity, new bool3(math.all(math.isfinite(angularVelocity))));
+            float thetaSq = math.lengthsq(safeAngularVelocity) * safeDt * safeDt;
+            float halfThetaSq = thetaSq * 0.25f;
+            float sinc = 1f + (halfThetaSq * (-0.1666666716f + (halfThetaSq * 0.0083333338f)));
+            float cosHalf = 1f + (halfThetaSq * (-0.5f + (halfThetaSq * 0.0416666679f)));
+            float4 delta = new float4(safeAngularVelocity * (0.5f * safeDt * sinc), cosHalf);
+            float lenSq = math.lengthsq(delta);
+            bool valid = math.all(math.isfinite(delta)) & math.isfinite(lenSq) & lenSq > 0.0001f & thetaSq > 0.00000001f;
+            float4 normalized = delta * math.rsqrt(math.max(lenSq, 0.0001f));
+            return new quaternion(math.select(quaternion.identity.value, normalized, new bool4(valid)));
         }
     }
 
@@ -678,6 +835,421 @@ namespace Hecton8.Physics.Vehicles
         {
             hash ^= value;
             return hash * 16777619u;
+        }
+    }
+
+    internal static class SubmarineGyroMath
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SubmarineGyroDTO DefaultGyro()
+        {
+            SubmarineGyroDTO gyro = default;
+            gyro.ProportionalGainPitch = 54000f;
+            gyro.DerivativeGainPitch = 11000f;
+            gyro.ProportionalGainRoll = 62000f;
+            gyro.DerivativeGainRoll = 13000f;
+            gyro.MaxCorrectionTorque = 85000f;
+            gyro.AutoLevelEnabledFlag = SubmarineDynamicsConstants.GyroFlagAutoLevelEnabled;
+            return gyro;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SubmarineGyroDTO Sanitize(in SubmarineGyroDTO source)
+        {
+            SubmarineGyroDTO fallback = DefaultGyro();
+            SubmarineGyroDTO safe = default;
+            safe.ProportionalGainPitch = SafeNonNegative(source.ProportionalGainPitch, fallback.ProportionalGainPitch);
+            safe.DerivativeGainPitch = SafeNonNegative(source.DerivativeGainPitch, fallback.DerivativeGainPitch);
+            safe.ProportionalGainRoll = SafeNonNegative(source.ProportionalGainRoll, fallback.ProportionalGainRoll);
+            safe.DerivativeGainRoll = SafeNonNegative(source.DerivativeGainRoll, fallback.DerivativeGainRoll);
+            safe.MaxCorrectionTorque = math.clamp(SafePositive(source.MaxCorrectionTorque, fallback.MaxCorrectionTorque), 1f, 10000000f);
+            safe.AutoLevelEnabledFlag = source.AutoLevelEnabledFlag;
+            return safe;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 SafeFinite(float3 value, float3 fallback)
+        {
+            return math.all(math.isfinite(value)) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double3 SafeFinite(double3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : double3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ResolveEntityHash(in SubmarineKinematicState state, int index)
+        {
+            uint entity = state.EntityId;
+            return entity != 0u ? entity : SubmarineDynamicsConstants.SourceHashGyro ^ ((uint)index + 1u);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SafePositive(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SafeNonNegative(float value, float fallback)
+        {
+            return math.isfinite(value) && value >= 0f ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ClampMagnitude(float3 value, float maxMagnitude, out bool clamped)
+        {
+            float max = SafePositive(maxMagnitude, 1f);
+            float lengthSq = math.lengthsq(value);
+            bool valid = math.all(math.isfinite(value)) & math.isfinite(lengthSq);
+            if (!valid || lengthSq <= 0.000001f)
+            {
+                clamped = false;
+                return float3.zero;
+            }
+
+            float maxSq = max * max;
+            clamped = lengthSq > maxSq;
+            return clamped ? value * (max * math.rsqrt(math.max(lengthSq, 0.000001f))) : value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint HashState(in SubmarineGyroForcePacketDTO packet)
+        {
+            uint hash = 2166136261u;
+            hash = Mix(hash, packet.TargetEntityHash);
+            hash = Mix(hash, math.asuint(packet.CorrectiveTorque.x));
+            hash = Mix(hash, math.asuint(packet.CorrectiveTorque.y));
+            hash = Mix(hash, math.asuint(packet.CorrectiveTorque.z));
+            hash = Mix(hash, math.asuint(packet.ErrorVector.x));
+            hash = Mix(hash, math.asuint(packet.ErrorVector.y));
+            hash = Mix(hash, math.asuint(packet.ErrorVector.z));
+            hash = Mix(hash, packet.Flags);
+            return hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint Mix(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct GenerateMockTurbulenceJob : IJobParallelFor
+    {
+        [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineKinematicState* States;
+        public float AmplitudeRadiansPerSecond;
+        public uint Frame;
+        public int StateLength;
+        public int VehicleCount;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)VehicleCount ||
+                (uint)index >= (uint)StateLength ||
+                States == null)
+            {
+                return;
+            }
+
+            float amplitude = math.max(0f, math.isfinite(AmplitudeRadiansPerSecond) ? AmplitudeRadiansPerSecond : 0f);
+            if (amplitude <= 0.0001f)
+                return;
+
+            SubmarineKinematicState state = States[index];
+            uint seed = SubmarineGyroMath.Mix(Frame * 747796405u, (uint)index + 0x9E3779B9u);
+            float t0 = ((seed & 1023u) * (1f / 1023f) - 0.5f) * 2f;
+            float t1 = (((seed >> 10) & 1023u) * (1f / 1023f) - 0.5f) * 2f;
+            float t2 = (((seed >> 20) & 1023u) * (1f / 1023f) - 0.5f) * 2f;
+            float3 spike = new float3(t0, t1 * 0.35f, t2) * amplitude;
+            state.AngularVelocity = SubmarineGyroMath.SafeFinite(state.AngularVelocity + spike, float3.zero);
+            States[index] = state;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct CalculateGyroscopicErrorJob : IJobParallelFor
+    {
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public SubmarineKinematicState* States;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineGyroErrorDTO* Errors;
+        public uint Frame;
+        public int StateLength;
+        public int ErrorLength;
+        public int VehicleCount;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)VehicleCount ||
+                (uint)index >= (uint)StateLength ||
+                (uint)index >= (uint)ErrorLength ||
+                States == null ||
+                Errors == null)
+            {
+                return;
+            }
+
+            SubmarineKinematicState state = States[index];
+            quaternion rotation = SubmarineAddedMassMath.NormalizeSafe(state.Rotation);
+            float3 currentUp = math.mul(rotation, new float3(0f, 1f, 0f));
+            currentUp = SubmarineDynamicsSimdMath.NormalizeOrFallback(currentUp, new float3(0f, 1f, 0f));
+            float3 error = math.cross(currentUp, new float3(0f, 1f, 0f));
+            float magnitudeSq = math.lengthsq(error);
+            bool finite = math.all(math.isfinite(error)) & math.all(math.isfinite(currentUp)) & math.isfinite(magnitudeSq);
+
+            SubmarineGyroErrorDTO dto = default;
+            dto.CurrentAup = SubmarineGyroMath.SafeFinite(state.Aup);
+            dto.CurrentUp = finite ? currentUp : new float3(0f, 1f, 0f);
+            dto.ErrorVector = finite ? error : float3.zero;
+            dto.ErrorMagnitude = finite ? SubmarineDynamicsSimdMath.LengthFromSq(magnitudeSq) : 0f;
+            dto.TargetEntityHash = SubmarineGyroMath.ResolveEntityHash(in state, index);
+            dto.Frame = Frame;
+            dto.Flags = finite ? 0u : SubmarineDynamicsConstants.GyroFlagNonFinite;
+            Errors[index] = dto;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct EvaluatePdControllerJob : IJobParallelFor
+    {
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public SubmarineKinematicState* States;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public SubmarineGyroDTO* Gyros;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public SubmarineGyroErrorDTO* Errors;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public AddedMassProfileDTO* AddedMassProfiles;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public SubmarineAddedMassTuningDTO* AddedMassTuning;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineForceAccumulator* Forces;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineGyroForcePacketDTO* Packets;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineGyroVisualStateDTO* VisualStates;
+        public float GlobalQualityWeight;
+        public uint Frame;
+        public int StateLength;
+        public int GyroLength;
+        public int ErrorLength;
+        public int AddedMassLength;
+        public int TuningLength;
+        public int ForceLength;
+        public int PacketLength;
+        public int VisualLength;
+        public int VehicleCount;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)VehicleCount ||
+                (uint)index >= (uint)StateLength ||
+                (uint)index >= (uint)GyroLength ||
+                (uint)index >= (uint)ErrorLength ||
+                (uint)index >= (uint)AddedMassLength ||
+                (uint)index >= (uint)ForceLength ||
+                (uint)index >= (uint)PacketLength ||
+                (uint)index >= (uint)VisualLength ||
+                States == null ||
+                Gyros == null ||
+                Errors == null ||
+                AddedMassProfiles == null ||
+                Forces == null ||
+                Packets == null ||
+                VisualStates == null)
+            {
+                return;
+            }
+
+            SubmarineKinematicState state = States[index];
+            SubmarineGyroDTO rawGyro = Gyros[index];
+            SubmarineGyroDTO gyro = SubmarineGyroMath.Sanitize(in rawGyro);
+            SubmarineGyroErrorDTO error = Errors[index];
+            AddedMassProfileDTO profile = AddedMassProfiles[index];
+            SubmarineForceAccumulator force = Forces[index];
+            SubmarineAddedMassTuningDTO tuning = SubmarineAddedMassMath.DefaultTuning();
+            if (TuningLength > 0 && AddedMassTuning != null)
+            {
+                SubmarineAddedMassTuningDTO rawTuning = AddedMassTuning[0];
+                tuning = SubmarineAddedMassMath.SanitizeTuning(in rawTuning);
+            }
+
+            bool enabled = (gyro.AutoLevelEnabledFlag & SubmarineDynamicsConstants.GyroFlagAutoLevelEnabled) != 0u;
+            bool suppressed = state.GyroDisabledSeconds > 0f;
+            bool nonFinite = (error.Flags & SubmarineDynamicsConstants.GyroFlagNonFinite) != 0u ||
+                             !math.all(math.isfinite(state.AngularVelocity)) ||
+                             !SubmarineAddedMassMath.IsFinite(in profile);
+
+            quaternion rotation = SubmarineAddedMassMath.NormalizeSafe(state.Rotation);
+            float3 right = SubmarineDynamicsSimdMath.NormalizeOrFallback(math.mul(rotation, new float3(1f, 0f, 0f)), new float3(1f, 0f, 0f));
+            float3 forward = SubmarineDynamicsSimdMath.NormalizeOrFallback(math.mul(rotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
+            float3 errorVector = SubmarineGyroMath.SafeFinite(error.ErrorVector, float3.zero);
+            float3 angularVelocity = SubmarineGyroMath.SafeFinite(state.AngularVelocity, float3.zero);
+            float pitchError = math.dot(errorVector, right);
+            float rollError = math.dot(errorVector, forward);
+            float pitchOmega = math.dot(angularVelocity, right);
+            float rollOmega = math.dot(angularVelocity, forward);
+
+            float3 torque = float3.zero;
+            uint flags = 0u;
+            if (enabled && !suppressed && !nonFinite)
+            {
+                float pitchTorque = (pitchError * gyro.ProportionalGainPitch) - (pitchOmega * gyro.DerivativeGainPitch);
+                float rollTorque = (rollError * gyro.ProportionalGainRoll) - (rollOmega * gyro.DerivativeGainRoll);
+                torque = (right * pitchTorque) + (forward * rollTorque);
+                torque = SubmarineGyroMath.ClampMagnitude(torque, gyro.MaxCorrectionTorque, out bool clamped);
+                flags |= clamped ? SubmarineDynamicsConstants.GyroFlagTorqueClamped : 0u;
+                flags |= SubmarineDynamicsConstants.GyroFlagPacketQueued;
+            }
+            else
+            {
+                flags |= suppressed ? SubmarineDynamicsConstants.GyroFlagSuppressed : 0u;
+                flags |= nonFinite ? SubmarineDynamicsConstants.GyroFlagNonFinite : 0u;
+            }
+
+            float matrixBlend = SubmarineAddedMassMath.ResolveTensorBlend(GlobalQualityWeight, state.GyroDisabledSeconds, tuning.MatrixBlendBias);
+            flags |= matrixBlend <= 0.001f ? SubmarineDynamicsConstants.GyroFlagTensorFallback : 0u;
+            float3 angularAcceleration = SubmarineAddedMassMath.ResolveAngularAcceleration(
+                torque,
+                math.max(state.InertiaTensor, new float3(1f)),
+                in profile,
+                matrixBlend);
+            angularAcceleration = SubmarineGyroMath.SafeFinite(angularAcceleration, float3.zero);
+            float torqueMagnitude = SubmarineDynamicsSimdMath.LengthFromSq(math.lengthsq(torque));
+            bool outputFinite = math.all(math.isfinite(torque)) &&
+                                math.all(math.isfinite(angularAcceleration)) &&
+                                math.isfinite(torqueMagnitude) &&
+                                math.isfinite(pitchError) &&
+                                math.isfinite(rollError) &&
+                                math.isfinite(pitchOmega) &&
+                                math.isfinite(rollOmega);
+            if (!outputFinite)
+            {
+                torque = float3.zero;
+                angularAcceleration = float3.zero;
+                torqueMagnitude = 0f;
+                flags |= SubmarineDynamicsConstants.GyroFlagNonFinite;
+            }
+
+            force.TorqueWorld = torque;
+            if (torqueMagnitude > 0.0001f)
+                force.Flags |= SubmarineDynamicsConstants.ForceFlagGyroCorrection;
+            else
+                force.Flags &= ~SubmarineDynamicsConstants.ForceFlagGyroCorrection;
+            force.Frame = Frame;
+            Forces[index] = force;
+
+            SubmarineGyroForcePacketDTO packet = default;
+            packet.CurrentAup = error.CurrentAup;
+            packet.CorrectiveTorque = torque;
+            packet.CorrectiveAngularAcceleration = angularAcceleration;
+            packet.ErrorVector = errorVector;
+            packet.AngularVelocityWorld = angularVelocity;
+            packet.TargetEntityHash = error.TargetEntityHash;
+            packet.StateIndex = index;
+            packet.Frame = Frame;
+            packet.Flags = flags;
+            packet.TorqueMagnitude = torqueMagnitude;
+            packet.MatrixBlend01 = matrixBlend;
+            packet.PitchError = pitchError;
+            packet.RollError = rollError;
+            packet.PitchOmega = pitchOmega;
+            packet.RollOmega = rollOmega;
+            Packets[index] = packet;
+
+            SubmarineGyroVisualStateDTO visual = default;
+            visual.ErrorVector = errorVector;
+            visual.Effort01 = math.saturate(torqueMagnitude / math.max(1f, gyro.MaxCorrectionTorque));
+            visual.HorizonRollRadians = rollError;
+            visual.HorizonPitchRadians = pitchError;
+            visual.CorrectiveTorque = torque;
+            visual.TargetEntityHash = error.TargetEntityHash;
+            visual.Frame = Frame;
+            visual.Flags = flags;
+            VisualStates[index] = visual;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct RecordGyroTelemetryJob : IJob
+    {
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public SubmarineGyroForcePacketDTO* Packets;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public GyroTelemetryEntry* Telemetry;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineGyroCounterDTO* Counters;
+        public float GlobalQualityWeight;
+        public uint Frame;
+        public int PacketLength;
+        public int TelemetryLength;
+        public int CounterLength;
+        public int VehicleCount;
+
+        public void Execute()
+        {
+            if (Packets == null ||
+                Telemetry == null ||
+                Counters == null ||
+                TelemetryLength <= 0 ||
+                CounterLength <= 0 ||
+                PacketLength <= 0)
+            {
+                return;
+            }
+
+            int count = math.min(math.max(0, VehicleCount), PacketLength);
+            int active = 0;
+            int nonFinite = 0;
+            float pitchSum = 0f;
+            float rollSum = 0f;
+            float maxTorque = 0f;
+            float maxError = 0f;
+            uint flags = 0u;
+            uint hash = 2166136261u;
+            uint lastTarget = 0u;
+
+            for (int i = 0; i < count; i++)
+            {
+                SubmarineGyroForcePacketDTO packet = Packets[i];
+                if (packet.Frame != Frame)
+                    continue;
+
+                bool packetActive = (packet.Flags & SubmarineDynamicsConstants.GyroFlagPacketQueued) != 0u;
+                active += packetActive ? 1 : 0;
+                nonFinite += (packet.Flags & SubmarineDynamicsConstants.GyroFlagNonFinite) != 0u ? 1 : 0;
+                pitchSum += math.abs(math.isfinite(packet.PitchError) ? packet.PitchError : 0f);
+                rollSum += math.abs(math.isfinite(packet.RollError) ? packet.RollError : 0f);
+                maxTorque = math.max(maxTorque, math.isfinite(packet.TorqueMagnitude) ? packet.TorqueMagnitude : 0f);
+                maxError = math.max(maxError, SubmarineDynamicsSimdMath.LengthFromSq(math.lengthsq(SubmarineGyroMath.SafeFinite(packet.ErrorVector, float3.zero))));
+                flags |= packet.Flags;
+                hash = SubmarineGyroMath.Mix(hash, SubmarineGyroMath.HashState(in packet));
+                lastTarget = packet.TargetEntityHash != 0u ? packet.TargetEntityHash : lastTarget;
+            }
+
+            float divisor = math.max(1f, count);
+            GyroTelemetryEntry entry = default;
+            entry.Frame = Frame;
+            entry.ActiveControllers = active;
+            entry.AveragePitchError = pitchSum / divisor;
+            entry.AverageRollError = rollSum / divisor;
+            entry.MaxCorrectiveTorque = maxTorque;
+            entry.BurstElapsedUs = 0f;
+            entry.Flags = flags;
+            entry.StateHash = hash;
+            entry.MaxErrorMagnitude = maxError;
+            entry.GlobalQualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+            entry.NonFiniteCount = (uint)math.max(0, nonFinite);
+            entry.LastTargetEntityHash = lastTarget;
+
+            int telemetryIndex = (int)(Frame % (uint)math.max(1, TelemetryLength));
+            Telemetry[telemetryIndex] = entry;
+
+            SubmarineGyroCounterDTO counter = default;
+            counter.PacketCount = count;
+            counter.ActiveControllers = active;
+            counter.NonFiniteCount = nonFinite;
+            counter.AveragePitchError = entry.AveragePitchError;
+            counter.AverageRollError = entry.AverageRollError;
+            counter.MaxCorrectiveTorque = maxTorque;
+            counter.MaxErrorMagnitude = maxError;
+            counter.Flags = flags;
+            counter.StateHash = hash;
+            counter.Frame = Frame;
+            counter.LastTargetEntityHash = lastTarget;
+            Counters[0] = counter;
         }
     }
 
@@ -993,6 +1565,7 @@ namespace Hecton8.Physics.Vehicles
         // can still execute. The job only enqueues finite payloads and never reads queue state.
         [NoAlias, NativeDisableContainerSafetyRestriction]
         public NativeQueue<CavitationAcousticSignal>.ParallelWriter CavitationWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> CavitationWriterBudget;
         public float FixedDeltaTime;
         public float GlobalQualityWeight;
         public uint Frame;
@@ -1122,7 +1695,7 @@ namespace Hecton8.Physics.Vehicles
                 signal.FrequencyHz = 80f + 420f * signal.Intensity01;
                 signal.Frame = Frame;
                 signal.Flags = 1;
-                CavitationWriter.Enqueue(signal);
+                SignalBus<CavitationAcousticSignal>.TryEnqueueBounded(CavitationWriter, CavitationWriterBudget, signal);
             }
 
             float dragCoefficient = SampleDragLut(speedSq, in DragLut) * SafePositive(config.DragScale, 0.01f);
@@ -1137,13 +1710,15 @@ namespace Hecton8.Physics.Vehicles
                 config.FluidDensityKgPerM3,
                 Frame,
                 GlobalQualityWeight);
-            float ballastLift = SafeNonNegative(config.BallastLiftN);
             float buoyancyN = hullVolume * fluidDensity * SubmarineDynamicsConstants.Gravity * buoyancyEase;
-            buoyancyN += math.lerp(-ballastLift, ballastLift, state.BallastRatio01) + pidOutput;
+            buoyancyN += pidOutput;
             float3 buoyancyWorld = new float3(0f, buoyancyN, 0f);
             float3 gravityWorld = new float3(0f, -SubmarineDynamicsConstants.Gravity * totalMass, 0f);
 
-            float3 torqueWorld = math.mul(rotation, control.TorqueLocal * config.MaxTorqueNm);
+            float3 torqueWorld = ((force.Flags & SubmarineDynamicsConstants.ForceFlagGyroCorrection) != 0u && force.Frame == Frame)
+                ? SafeFinite(force.TorqueWorld, float3.zero)
+                : float3.zero;
+            torqueWorld += math.mul(rotation, control.TorqueLocal * config.MaxTorqueNm);
             float3 comWorld = math.mul(rotation, centerOfMassLocal);
             float3 cobWorld = math.mul(rotation, centerOfBuoyancyLocal);
             torqueWorld += math.cross(comWorld, gravityWorld) + math.cross(cobWorld, buoyancyWorld);
@@ -1156,9 +1731,6 @@ namespace Hecton8.Physics.Vehicles
             else
             {
                 state.Flags &= ~SubmarineDynamicsConstants.StateFlagGyroSuppressed;
-                float3 up = math.mul(rotation, new float3(0f, 1f, 0f));
-                torqueWorld += math.cross(up, new float3(0f, 1f, 0f)) * config.GyroStrength;
-                torqueWorld += -state.AngularVelocity * config.GyroDamping;
             }
 
             if ((force.Flags & SubmarineDynamicsConstants.ForceFlagImpact) != 0u && force.ImpactMagnitude > 0f)
@@ -1187,12 +1759,8 @@ namespace Hecton8.Physics.Vehicles
             float rotationalDamping = SubmarineAddedMassMath.ResolveRotationalDamping(in addedMassProfile, totalMass, GlobalQualityWeight, tuning.RotationalDampingScalar);
             state.AngularVelocity = SubmarineAddedMassMath.ApplyAngularDamping(state.AngularVelocity, rotationalDamping, dt);
             state.AngularVelocity = math.clamp(state.AngularVelocity, new float3(-2.8f), new float3(2.8f));
-            float angularSpeed = SubmarineDynamicsSimdMath.LengthFromSq(math.lengthsq(state.AngularVelocity));
-            if (angularSpeed > 0.0001f)
-            {
-                quaternion deltaRotation = quaternion.AxisAngle(state.AngularVelocity / angularSpeed, angularSpeed * dt);
-                rotation = NormalizeSafe(math.mul(deltaRotation, rotation));
-            }
+            quaternion deltaRotation = SubmarineDynamicsSimdMath.IntegrateAngularVelocityNoTrig(state.AngularVelocity, dt);
+            rotation = NormalizeSafe(math.mul(deltaRotation, rotation));
 
             state.Rotation = rotation;
             state.InertiaTensor = ResolveInertiaTensor(totalMass, centerOfMassLocal, mass.FloodMassKg, in config);
@@ -1274,12 +1842,8 @@ namespace Hecton8.Physics.Vehicles
             state.LocalPosition = SafeFinite(state.LocalPosition + (state.LinearVelocity * dt), float3.zero);
             state.Aup = SafeAup(config.LocalOriginAup) + new double3(state.LocalPosition);
             quaternion rotation = NormalizeSafe(state.Rotation);
-            float angularSpeed = SubmarineDynamicsSimdMath.LengthFromSq(math.lengthsq(state.AngularVelocity));
-            if (angularSpeed > 0.0001f)
-            {
-                quaternion deltaRotation = quaternion.AxisAngle(state.AngularVelocity / angularSpeed, angularSpeed * dt);
-                rotation = NormalizeSafe(math.mul(deltaRotation, rotation));
-            }
+            quaternion deltaRotation = SubmarineDynamicsSimdMath.IntegrateAngularVelocityNoTrig(state.AngularVelocity, dt);
+            rotation = NormalizeSafe(math.mul(deltaRotation, rotation));
 
             state.Rotation = rotation;
             state.Flags |= SubmarineDynamicsConstants.StateFlagInitialized;

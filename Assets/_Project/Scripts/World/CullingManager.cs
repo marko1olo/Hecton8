@@ -49,7 +49,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-140)] // Run after LODSystemManager
-    public sealed class CullingManager : MonoBehaviour, ISlowTickable
+    public sealed class CullingManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -123,6 +123,8 @@ namespace Hecton8.World
             public float CullDistanceSq;
             public float ReactivateDistanceSq;
             public bool IsActive;
+            public bool ForceRenderingOffDirty;
+            public bool PendingForceRenderingOff;
         }
 
         // COLD ALLOC: List<CullableObject>[1000] — registered cullable objects — owner: CullingManager
@@ -140,9 +142,14 @@ namespace Hecton8.World
         private readonly List<Renderer> _rendererScratch = new List<Renderer>(32);
 
         private Camera _mainCamera;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private IPlayerSensoryService _playerSensoryService;
         private bool _layerCullDistancesApplied;
+        private bool _layerCullDistancesDirty;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _serviceRegistered;
+        private bool _registeredHotSwap;
 
         private int _frustumCulledCount;
         private int _distanceCulledCount;
@@ -194,7 +201,7 @@ namespace Hecton8.World
             }
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[CullingManager] Initialized.");
+            Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
             #endif
         }
 
@@ -206,20 +213,32 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CachePlayerSensoryService(GlobalRegistry.PlayerSensory);
             TryRegisterService();
+            TryRegisterHotSwapListener();
             TryRegister();
+            TryRegisterLateFrame();
         }
 
         private void OnDisable()
         {
             RestoreTrackedCullStates();
+            TryUnregisterHotSwapListener();
+            TryUnregisterLateFrame();
             TryUnregister();
             TryUnregisterService();
+            _playerRuntimeContext = null;
+            _playerSensoryService = null;
+            _mainCamera = null;
+            _layerCullDistancesApplied = false;
         }
 
         private void OnDestroy()
         {
             RestoreTrackedCullStates();
+            TryUnregisterHotSwapListener();
+            TryUnregisterLateFrame();
             TryUnregister();
             TryUnregisterService();
 
@@ -230,8 +249,7 @@ namespace Hecton8.World
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -242,6 +260,23 @@ namespace Hecton8.World
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registered = false;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterService()
@@ -271,6 +306,63 @@ namespace Hecton8.World
             _serviceRegistered = false;
         }
 
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            _playerRuntimeContext = playerRuntimeContext;
+        }
+
+        private void CachePlayerSensoryService(IPlayerSensoryService playerSensoryService)
+        {
+            _playerSensoryService = playerSensoryService;
+        }
+
+        private void InvalidateCameraBinding()
+        {
+            if (_cameraReference == null)
+                _mainCamera = null;
+
+            _layerCullDistancesApplied = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    InvalidateCameraBinding();
+                    break;
+                case GlobalRegistryServiceSlot.PlayerSensory:
+                    CachePlayerSensoryService(currentService as IPlayerSensoryService);
+                    InvalidateCameraBinding();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        TryRegister();
+                    break;
+            }
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ISLOWTICABLE IMPLEMENTATION
         // ══════════════════════════════════════════════════════════
@@ -292,7 +384,7 @@ namespace Hecton8.World
 
             if (!_layerCullDistancesApplied)
             {
-                ApplyLayerCullDistances();
+                _layerCullDistancesDirty = true;
             }
 
             // Update frustum planes
@@ -308,8 +400,6 @@ namespace Hecton8.World
                 CullableObject obj = _cullableObjects[i];
                 Transform objTransform = obj.Transform;
                 if (obj.GameObject == null || objTransform == null) continue;
-
-                obj.Bounds = CalculateBounds(obj.GameObject, obj.ManagedRenderers);
 
                 // Calculate squared distance (avoid sqrt)
                 Vector3 delta = objTransform.position - camPos;
@@ -350,6 +440,30 @@ namespace Hecton8.World
 
             long endTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             _slowTickCPUTime = (endTicks - startTicks) / (float)System.Diagnostics.Stopwatch.Frequency * 1000f;
+        }
+
+        public void LateFrameTick()
+        {
+            if (_layerCullDistancesDirty || !_layerCullDistancesApplied)
+            {
+                _layerCullDistancesDirty = false;
+                ApplyLayerCullDistances();
+            }
+
+            for (int i = 0; i < _cullableObjects.Count; i++)
+            {
+                CullableObject obj = _cullableObjects[i];
+                if (obj.GameObject != null)
+                    obj.Bounds = CalculateBounds(obj.GameObject, obj.ManagedRenderers);
+
+                if (obj.ForceRenderingOffDirty)
+                {
+                    ApplyCullVisualState(ref obj, obj.PendingForceRenderingOff);
+                    obj.ForceRenderingOffDirty = false;
+                }
+
+                _cullableObjects[i] = obj;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -516,7 +630,7 @@ namespace Hecton8.World
             _layerCullDistancesApplied = true;
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[CullingManager] Layer cull distances applied.");
+            Hecton8.Core.H8Debug.Log("[CullingManager] Layer cull distances applied.");
             #endif
         }
 
@@ -525,10 +639,16 @@ namespace Hecton8.World
             if (_cameraReference != null)
                 return _cameraReference;
 
-            if (Hecton8.Core.GlobalRegistry.PlayerSensory != null &&
-                Hecton8.Core.GlobalRegistry.PlayerSensory.PlayerCamera != null)
+            IPlayerSensoryService playerSensoryService = _playerSensoryService;
+            if (playerSensoryService != null && playerSensoryService.PlayerCamera != null)
             {
-                return Hecton8.Core.GlobalRegistry.PlayerSensory.PlayerCamera;
+                return playerSensoryService.PlayerCamera;
+            }
+
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null && playerContext.PlayerCamera != null)
+            {
+                return playerContext.PlayerCamera;
             }
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
@@ -536,9 +656,6 @@ namespace Hecton8.World
             {
                 if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
                     return playerOwnedCamera;
-
-                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-                return playerContext != null ? playerContext.PlayerCamera : null;
             }
 
             return null;
@@ -642,6 +759,16 @@ namespace Hecton8.World
             if (obj.ManagedRenderers == null)
                 return;
 
+            obj.PendingForceRenderingOff = isCulled;
+            obj.ForceRenderingOffDirty = true;
+            obj.IsActive = !isCulled;
+        }
+
+        private static void ApplyCullVisualState(ref CullableObject obj, bool isCulled)
+        {
+            if (obj.ManagedRenderers == null)
+                return;
+
             for (int i = 0; i < obj.ManagedRenderers.Length; i++)
             {
                 Renderer renderer = obj.ManagedRenderers[i];
@@ -650,8 +777,6 @@ namespace Hecton8.World
 
                 renderer.forceRenderingOff = isCulled;
             }
-
-            obj.IsActive = !isCulled;
         }
 
         private static void RestoreCullState(ref CullableObject obj)

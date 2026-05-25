@@ -10,7 +10,7 @@ using UnityEditor;
 [DisallowMultipleComponent]
 [ExecuteAlways]
 [AddComponentMenu("Hecton8/HUD/Suit HUD Extensions")]
-public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatable
+public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
 {
     // COLD ALLOC: List<HectonSuitHUD_v4>[4] — legacy HUD resolver scratch — owner: HectonSuitHUDExtensions
     private static readonly List<HectonSuitHUD_v4> s_hudResolveBuffer = new List<HectonSuitHUD_v4>(4);
@@ -28,6 +28,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
     private float _nextAutoResolveAt;
     private bool _tickRegistered;
+    private bool _hotSwapRegistered;
     private bool _referencesResolved;
     private Transform _cachedRoot;
 
@@ -39,12 +40,26 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 #endif
 
         AutoResolveReferences(force: true);
+        TryRegisterHotSwapListener();
         RegisterTick();
     }
 
     private void OnDisable()
     {
         UnregisterTick();
+        TryUnregisterHotSwapListener();
+    }
+
+    public void OnGlobalRegistryServiceReplaced(
+        GlobalRegistryServiceSlot serviceSlot,
+        object previousService,
+        object currentService)
+    {
+        if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            return;
+
+        UnregisterTick();
+        RegisterTick();
     }
 
     public void Tick(float deltaTime)
@@ -66,7 +81,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
         if (primaryHud == null)
         {
-            primaryHud = GetComponent<HectonSuitHUD_v4>();
+            TryGetComponent(out primaryHud);
             if (primaryHud == null)
             {
                 HectonSuitHUD_v4.CopyActiveHudsTo(s_hudResolveBuffer);
@@ -77,7 +92,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
         if (canvasOverlay == null)
         {
-            canvasOverlay = GetComponent<SuitHUDV4CanvasOverlay>();
+            TryGetComponent(out canvasOverlay);
             if (canvasOverlay == null)
             {
                 SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
@@ -88,7 +103,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
         if (hudCamera == null)
         {
-            hudCamera = GetComponent<Camera>();
+            TryGetComponent(out hudCamera);
             if (hudCamera == null && primaryHud != null)
                 hudCamera = primaryHud.HudCamera;
             if (hudCamera == null && canvasOverlay != null)
@@ -114,8 +129,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
         if (GlobalRegistry.Dispatcher == null)
             return;
 
-        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-        _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+        _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
     }
 
     private void UnregisterTick()
@@ -125,6 +139,23 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
         GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
         _tickRegistered = false;
+    }
+
+    private void TryRegisterHotSwapListener()
+    {
+        if (_hotSwapRegistered || !Application.isPlaying)
+            return;
+
+        _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+    }
+
+    private void TryUnregisterHotSwapListener()
+    {
+        if (!_hotSwapRegistered)
+            return;
+
+        GlobalRegistry.TryUnregisterHotSwapListener(this);
+        _hotSwapRegistered = false;
     }
 
     private static HectonSuitHUD_v4 FindHudForRoot(List<HectonSuitHUD_v4> huds, Transform preferredRoot)

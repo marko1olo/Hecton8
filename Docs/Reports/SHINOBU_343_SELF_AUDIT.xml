@@ -1,0 +1,128 @@
+﻿<SELF_AUDIT agent="SHINOBU_343" domain="HATCH_ALIGNMENT_MODULAR_DOOR_LOCKS_FSM" status="STATIC_SOURCE_R15_PENDING_FRESH_GUARDED_BUILD">
+  <TASK_CHECK>
+    <TASK id="01" status="PASS">Archaeology scan completed across Habitat, Interaction, Construction, plus broad door tokens.</TASK>
+    <TASK id="02" status="PASS">Existing BulkheadContainmentRuntime extended through partial class; no competing door manager.</TASK>
+    <TASK id="03" status="PASS">MovementAcousticSignal existing lane adopted; no DoorSlammedSignal invented.</TASK>
+    <TASK id="04" status="PASS">No target-domain MonoBehaviour Update door lock scripts found; unrelated non-pressure Gameplay/SealedDoor left untouched.</TASK>
+    <TASK id="05" status="PASS">No dynamic pressure-lock UI string route found; SHINOBU_343 state is bitmask-only.</TASK>
+    <TASK id="06" status="PASS">GenerateMockHatchPressureJob writes paired mock FluidCompartmentDTO rows.</TASK>
+    <TASK id="07" status="PASS">EvaluateHatchPressureJob writes PressureDifferentialATM from fluid compartment hashes, using paired mock-room indexes before sparse scan.</TASK>
+    <TASK id="08" status="PASS">UpdateHatchFsmJob uses bitwise FsmStateMask transitions.</TASK>
+    <TASK id="09" status="PASS">Bootstrap prewarms hatch GraphicsBuffers or disables hatch shader upload without blocking simulation; VisualSyncHatchLocks uploads changed HatchStateDTO rows to _GlobalHatchLockStates without allocating buffers.</TASK>
+    <TASK id="10" status="PASS">Structural jam reads Agent 218 structural state through the contracts assembly when present, with module-integrity fallback; jam truth is full deterministic scan on slow cadence with threshold early-exit, not quality-scaled coverage.</TASK>
+    <TASK id="11" status="PASS">Cadence uses lerp(0.016, 0.2, 1 - GlobalQualityWeight).</TASK>
+    <TASK id="12" status="PASS">MovementAcousticSignal is constructed in the FSM job from double3 AUP packed to AbsoluteUniversePosition.</TASK>
+    <TASK id="13" status="PASS">Burst jobs use FloatMode.Deterministic and FloatPrecision.Standard.</TASK>
+    <TASK id="14" status="PASS">SHINOBU_343 Vault buffers use NativeArrayOptions.UninitializedMemory.</TASK>
+    <TASK id="15" status="PASS">HatchTelemetryEntry 300-frame ring and Dump_SHINOBU_343.bin fault path implemented; schedule timing is explicitly flagged ScheduleTimeOnly.</TASK>
+    <TASK id="16" status="PASS">Containment Lock FSM Tuner UI Toolkit window implemented under UNITY_EDITOR.</TASK>
+    <TASK id="17" status="PASS">Cold CSV parser uses ReadOnlySpan byte slicing, FNV-style hashes, custom float parser, one-shot owner bootstrap attempt, explicit editor reload fenced from default bootstrap CSV probing, parsed-row count protection for UninitializedMemory profile rows, and conservative hardware-profile envelope folding into HatchTuningDTO.</TASK>
+    <TASK id="18" status="PASS">Scene View live gizmo draws green/yellow/red crosses from raw hatch masks.</TASK>
+    <TASK id="19" status="PASS">OOP_Door_Scanner now uses Roslyn CSharpSyntaxTree AST parsing with lexical fallback only on parse exception; static mirror found 0 hits across 89 files and generated reports record the parser route.</TASK>
+    <TASK id="20" status="PASS">Self-audit generated with DTO layout, Vault, dependency graph, compile guard, Dear Lie, and build-gate proof.</TASK>
+  </TASK_CHECK>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="HatchStateDTO" size="32">
+      <FIELD name="RoomAHashID" offset="0" size="4" type="uint" />
+      <FIELD name="RoomBHashID" offset="4" size="4" type="uint" />
+      <FIELD name="PressureDifferentialATM" offset="8" size="4" type="float" />
+      <FIELD name="FsmStateMask" offset="12" size="4" type="uint" />
+      <FIELD name="_pad0" offset="16" size="4" type="uint" />
+      <FIELD name="_pad1" offset="20" size="4" type="uint" />
+      <FIELD name="_pad2" offset="24" size="4" type="uint" />
+      <FIELD name="_pad3" offset="28" size="4" type="uint" />
+      <MATH>4+4+4+4+16=32 bytes; 32 is divisible by 8 and 16; no Pack=1; no managed references.</MATH>
+    </DTO>
+    <DTO name="HatchTelemetryEntry" size="64">
+      <FIELD name="Frame" offset="0" size="4" />
+      <FIELD name="ActiveCount" offset="4" size="4" />
+      <FIELD name="PressureLockedCount" offset="8" size="4" />
+      <FIELD name="JammedCount" offset="12" size="4" />
+      <FIELD name="CatastrophicFloodCount" offset="16" size="4" />
+      <FIELD name="MaxPressureDifferentialATM" offset="20" size="4" />
+      <FIELD name="AveragePressureDifferentialATM" offset="24" size="4" />
+      <FIELD name="LastScheduleMicroseconds" offset="28" size="4" />
+      <FIELD name="StateHash" offset="32" size="4" />
+      <FIELD name="LastFaultRoomHash" offset="36" size="4" />
+      <FIELD name="Flags" offset="40" size="4" />
+      <FIELD name="GlobalQualityWeight" offset="44" size="4" />
+      <FIELD name="TickIntervalSeconds" offset="48" size="4" />
+      <FIELD name="EvaluatedCount" offset="52" size="4" />
+      <FIELD name="Reserved0" offset="56" size="4" />
+      <FIELD name="Reserved1" offset="60" size="4" />
+      <MATH>56 bytes scalar payload + two 4-byte reserved fields = 64 bytes; one cache line for black-box rows and no trailing 8-byte field after 4-byte scalars.</MATH>
+    </DTO>
+    <DTO name="HatchTuningDTO" size="32" />
+    <DTO name="HatchHardwareProfileDTO" size="32" />
+  </STRUCT_LAYOUT_VERIFICATION>
+  <ZERO_GC_CHECK>
+    <HOT_PATH>Hatch jobs use raw pointers, NativeArray views, NativeQueue ParallelWriter, and no LINQ/foreach/coroutines/GetComponent/FindObjectsOfType.</HOT_PATH>
+    <STATIC_SCAN>No hot SHINOBU_343 runtime file contains DTO auto-properties, new NativeArray, NativeList, NativeHashMap, LINQ, foreach, hidden Complete, Pack=1, UnityEngine.Random, string.Format, or string.Split. Schedule path no longer calls hatch Vault ensure or default CSV probing. Layout offset reflection is fenced behind UNITY_EDITOR; player validation is size-only.</STATIC_SCAN>
+    <EDITOR_ONLY>UI Toolkit, scanner File IO, Debug.Log, and JSON/markdown writing are confined to UNITY_EDITOR or cold report paths.</EDITOR_ONLY>
+  </ZERO_GC_CHECK>
+  <AUP_CHECK>
+    <ROUTE>double3 hatch AUP stays double until HatchLockMath.PackAup converts to AbsoluteUniversePosition grid/local payload for MovementAcousticSignal.</ROUTE>
+    <FORBIDDEN_CAST>Absolute AUP is not cast to float3 before acoustic signal construction.</FORBIDDEN_CAST>
+  </AUP_CHECK>
+  <SCALABILITY_CURVE>
+    <CADENCE>tickInterval = lerp(0.016, 0.2, 1 - GlobalQualityWeight). q=0 evaluates near 5 Hz; q=1 evaluates near frame cadence.</CADENCE>
+    <STRUCTURAL_SCAN>Structural read coverage is not quality-scaled. Once a hatch slow tick runs, Agent 218 structural rows are scanned deterministically with early-exit only after health falls below the jam threshold; this preserves gameplay truth across Low/Middle/High/Ultra.</STRUCTURAL_SCAN>
+    <FAIL_CLOSED>No real/mock FluidCompartmentDTO buffer schedules MarkHatchFluidUnavailableJob, marking intact hatches MissingCompartment | PressureLocked | Closed and setting AssociatedLock instead of failing open; destroyed/catastrophic flood hatches preserve the open flood route.</FAIL_CLOSED>
+    <PRESENTATION>Quality affects cadence plus shader/acoustic scalar richness only; saved ALU feeds shader-side emissive pulse and acoustic edge intensity via scalar payloads.</PRESENTATION>
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_ARRAYS>SHINOBU_343 declares zero private persistent NativeArray, NativeList, or NativeHashMap fields.</PRIVATE_ARRAYS>
+    <BUFFER id="72024" name="Shinobu343HatchStates" />
+    <BUFFER id="72025" name="Shinobu343HatchTelemetryRing" />
+    <BUFFER id="72026" name="Shinobu343HatchTelemetryCursor" />
+    <BUFFER id="72027" name="Shinobu343HatchTuning" />
+    <BUFFER id="72028" name="Shinobu343HatchProfiles" />
+    <BUFFER id="72029" name="Shinobu343HatchCsvScratch" />
+    <BUFFER id="72031" name="Shinobu343HatchMockFluidCompartments" />
+    <RETIRED_BUFFER id="72030" name="Shinobu343HatchShaderUpload" status="reserved enum only; not requested by R14 runtime" />
+    <LIFECYCLE>EnsureGenerationHandle at owner bootstrap with UninitializedMemory; ReleaseBuffer on owner shutdown/rebind; schedule resolves already-created handles only; external fluid and structural buffers are read through generation handles only.</LIFECYCLE>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <NO_ALIAS>Hatches, Bulkheads, ModuleIntegrity01, StructuralStates, HatchAups, Telemetry, and Cursor job fields carry NoAlias where applicable and are passed as non-overlapping Vault/native views. AcousticWriter no longer carries an unnecessary NativeDisableContainerSafetyRestriction.</NO_ALIAS>
+    <GRAPH>input dependency -> SyncHatchRowsFromBulkheadsJob -> optional GenerateMockHatchPressureJob -> EvaluateHatchPressureJob with paired-index fast path or MarkHatchFluidUnavailableJob -> UpdateHatchFsmJob when Fluid data exists -> RecordHatchTelemetryJob -> returned JobHandle to BulkheadContainmentRuntime owner pipeline.</GRAPH>
+    <NO_BLOCKING>No SHINOBU_343 hot job route calls JobHandle.Complete; exact wall time is left to profiler/dispatched completion windows.</NO_BLOCKING>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    <ASMDEF>Hecton8.Core.asmdef now references Hecton8.Habitat.Deformation.Contracts only; no direct Hecton8.Habitat.Deformation runtime reference was added.</ASMDEF>
+    <META>New SHINOBU_343 C# assets have committed Unity .meta GUIDs.</META>
+    <REFLECTION>HatchLockLayoutGuard uses FieldOffset source truth plus SizeOf in player builds; FieldInfo offset checks compile only for UNITY_EDITOR.</REFLECTION>
+    <ROSLYN>Editor scanner Roslyn imports are covered by existing Hecton8.Core.csproj references to Assets/Plugins/Roslyn/Microsoft.CodeAnalysis*.dll, System.Collections.Immutable.dll, and System.Reflection.Metadata.dll; no new asmdef edge was added.</ROSLYN>
+    <ROOT_SURFACE>Assets/_Project/Scripts/Construction has no local asmdef; SHINOBU_343 remains in the root Hecton8.Core compile surface. FluidCompartmentDTO and AUP root World types are existing root/Core symbols.</ROOT_SURFACE>
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    <BEFORE>Per-door MonoBehaviour Update plus Animator/material/UI prompt model is O(N doors) managed dispatch with execution-order risk and presentation-state duplication.</BEFORE>
+    <AFTER>Burst FSM writes one uint bitmask per hatch; VisualSync uploads changed rows to _GlobalHatchLockStates; shader/material code animates warning light pulse from raw bits.</AFTER>
+    <COMPLEXITY>Gameplay truth remains O(active hatches + structural state scan on slow cadence, with threshold early-exit); CPU presentation animation cost is O(changed upload rows) instead of O(door objects * per-frame animator/material churn).</COMPLEXITY>
+  </DEAR_LIE_CONFIRMATION>
+  <COMPILE_GATE status="PENDING_FRESH_GUARDED_BUILD">
+    <PRIOR_ATTEMPT>R13 targeted build was prose-recorded as failed externally after CPU gate cleared, with no SHINOBU_343 diagnostics. The raw compiler output was not persisted to a build log file. Neighboring agents later added the previously missing symbols to the project graph, so that external-wall evidence is stale and cannot be reported as current.</PRIOR_ATTEMPT>
+    <STATIC_CHECK>R14 target hot-path scan is clean for SHINOBU_343 runtime files; build remains pending until CPU &lt;=50 and no active dotnet/csc process.</STATIC_CHECK>
+  </COMPILE_GATE>
+  <NAN_VACCINATION>
+    <PRESSURE_PROXY>PressureProxyATM validates FluidCompartmentDTO CurrentWaterVolume, MaxWaterVolume, and WaterLevelHeight01 before denominator, division, saturate, and fill merge math; invalid rows return 1 ATM fallback with NonFinite mask.</PRESSURE_PROXY>
+  </NAN_VACCINATION>
+  <SCANNER_PROOF>
+    <ROUTE>OOP_Door_Scanner primary path parses Roslyn CSharpSyntaxTree and inspects MethodDeclarationSyntax and SwitchStatementSyntax nodes.</ROUTE>
+    <FALLBACK>Lexical fallback exists only for parse exceptions and is counted in generated report fields.</FALLBACK>
+  </SCANNER_PROOF>
+  <CSV_PROFILE_PROOF>
+    <ROUTE>Default hatch_hardware_profiles.csv load is attempted once from owner bootstrap after Vault handles exist; explicit editor reload resolves Vault handles with allowDefaultProfileLoad=false.</ROUTE>
+    <NO_HOT_POLLING>Absent CSV no longer causes repeated File.Exists/FileInfo checks from schedule, refresh, or visual-sync paths; VisualSyncHatchLocks cannot initiate default CSV discovery.</NO_HOT_POLLING>
+    <ENVELOPE>Successful parses set _hatchProfileRowCount and only rows [0, parsedCount) are folded into active HatchTuningDTO. The fold uses minimum safe pressure, maximum structural jam threshold, and minimum catastrophic pressure with catastrophic &gt;= safe, because no existing hatch row owns a per-hatch profile/type hash.</ENVELOPE>
+  </CSV_PROFILE_PROOF>
+  <R15_SOURCE_AUDIT>
+    <PROFILE_ROWS>Uninitialized HatchHardwareProfileDTO rows beyond the parsed count are never consumed.</PROFILE_ROWS>
+    <EDITOR_READBACK>TryReadHatchEditorState reports the effective Vault tuning row after profile folding.</EDITOR_READBACK>
+    <SOURCEGRAPH>Ignored/generated local Hecton8.Core.csproj now includes SHINOBU_343 runtime/editor source files so the next guarded dotnet build covers this patch surface.</SOURCEGRAPH>
+  </R15_SOURCE_AUDIT>
+  <R14_SOURCE_AUDIT>
+    <SCHEDULE>ScheduleHatchLockPipeline resolves created handles only and cannot call EnsureGenerationHandle.</SCHEDULE>
+    <VISUAL_SYNC>VisualSyncHatchLocks requires prewarmed GraphicsBuffers and cannot allocate them or refresh tuning; bootstrap failure disables only hatch shader upload.</VISUAL_SYNC>
+    <MOCK_FAST_PATH>EvaluateHatchPressureJob probes paired mock FluidCompartmentDTO rows before sparse hash scan.</MOCK_FAST_PATH>
+  </R14_SOURCE_AUDIT>
+</SELF_AUDIT>

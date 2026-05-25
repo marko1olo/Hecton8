@@ -1,0 +1,61 @@
+﻿<SELF_AUDIT agent="SHINOBU_338" domain="AIRLOCK_PRESSURIZATION_GAS_EXCHANGE" date="2026-05-23" status="STATIC_OWNER_ROUTE_ROLLBACK_KCC_ROUTED_SOURCEGRAPH_BRIDGED_BUILD_GUARDED_CPU">
+  <TASK_CHECK>
+    <Task id="01" status="PASS_STATIC">No AirlockSequence.cs found; BaseAirlock fixed equalization fallback replaced by pressure/flow estimate.</Task>
+    <Task id="02" status="PASS_STATIC">Airlock-relevant non-editor scan found zero trigger/collider wetting hits.</Task>
+    <Task id="03" status="PASS_STATIC">Hot DTOs expose raw unmanaged fields only.</Task>
+    <Task id="04" status="PASS_STATIC">AirlockStateDTO layout is explicit 32 bytes with offsets 0,4,8,12,16,20 and tail padding; self-audit uses UnsafeUtility.SizeOf plus constant offset proof, not runtime Marshal.OffsetOf.</Task>
+    <Task id="05" status="PASS_STATIC">GenerateMockAirlockCycleJob implemented.</Task>
+    <Task id="06" status="PASS_STATIC">EvaluateAirlockCyclesJob implemented with pump, pressure, Torricelli, finite guards.</Task>
+    <Task id="07" status="PASS_STATIC">IntegrateAirlockExchangeJob implemented as deterministic ascending-index IJob with CAS float-bit exchange, atomic derived side writes for shared waterline/gas/flags, tuned chamber volume, and saturated-target source restoration.</Task>
+    <Task id="08" status="PASS_STATIC">BubbleSpawnSignal route implemented; no particle instantiation in solver; owner flush consumes and clears signal rows to prevent replay.</Task>
+    <Task id="09" status="PASS_STATIC">Catastrophic override flags and stress spike implemented.</Task>
+    <Task id="10" status="PASS_STATIC">Continuous GlobalQualityWeight tick cadence implemented.</Task>
+    <Task id="11" status="PASS_STATIC">MovementAcousticSignal uses preserved AUP.</Task>
+    <Task id="12" status="PASS_STATIC">CollisionBlocked and BulkheadContainmentIntentDTO route implemented; Construction owns the final BulkheadCollisionResultDTO consumed by KCC.</Task>
+    <Task id="13" status="PASS_STATIC">Burst deterministic float mode and finite clamps implemented.</Task>
+    <Task id="14" status="PASS_STATIC">Vault buffers use UninitializedMemory except telemetry cursor.</Task>
+    <Task id="15" status="PASS_STATIC">300-frame telemetry ring, Vault dump latch 73392, and raw dump writer implemented.</Task>
+    <Task id="16" status="PASS_STATIC">UI Toolkit tuner implemented editor-only.</Task>
+    <Task id="17" status="PASS_STATIC">ReadOnlySpan byte CSV parser implemented.</Task>
+    <Task id="18" status="PASS_STATIC">SceneView exchange gizmo implemented editor-only.</Task>
+    <Task id="19" status="PASS_STATIC">OOP_Airlock_Scanner implemented; CLI mirror found zero forbidden hits.</Task>
+    <Task id="20" status="PASS_STATIC_BUILD_GUARDED_CPU">Self-audit routine, dispatcher-facing ScheduleSimulation route, mutable owner view resolution, and explicit completion-gated FlushCompletedOutputs route implemented; guarded compile failed in external Core files with no SHINOBU_338 diagnostics, then existing missing external source files were bridged into the local generated project; follow-up build was withheld by CPU guard.</Task>
+  </TASK_CHECK>
+  <ARM64_CHECK>
+    <AirlockStateDTO size="32">
+      <Field name="InnerRoomHashID" offset="0" size="4" />
+      <Field name="OuterRoomHashID" offset="4" size="4" />
+      <Field name="CurrentWaterVolumeLiters" offset="8" size="4" />
+      <Field name="CurrentPressureATM" offset="12" size="4" />
+      <Field name="CycleStateFlags" offset="16" size="4" />
+      <Field name="CycleTimer" offset="20" size="4" />
+      <Field name="_pad0" offset="24" size="4" />
+      <Field name="_pad1" offset="28" size="4" />
+    </AirlockStateDTO>
+    <AirlockPressurizationScheduleState size="64">
+      <Field name="TickAccumulatorSeconds" offset="0" size="4" />
+      <Field name="LastAdmittedDeltaSeconds" offset="4" size="4" />
+      <Field name="LastTickIntervalSeconds" offset="8" size="4" />
+      <Field name="GlobalQualityWeight" offset="12" size="4" />
+      <Field name="LastFrame" offset="16" size="4" />
+      <Field name="ScheduledFrameCount" offset="20" size="4" />
+      <Field name="SkippedFrameCount" offset="24" size="4" />
+      <Field name="Flags" offset="28" size="4" />
+      <Field name="private padding" offset="32" size="32" />
+    </AirlockPressurizationScheduleState>
+  </ARM64_CHECK>
+  <ZERO_GC_CHECK hotPath="PASS_STATIC">
+    Evaluate, integrate, mock, and telemetry jobs operate over NativeArray or raw pointer fields. No coroutine, LINQ, ParticleSystem, GameObject.Find, runtime Marshal.OffsetOf, reflection token, or managed hierarchy query appears in the AirlockPressurization runtime path.
+  </ZERO_GC_CHECK>
+  <AUP_CHECK status="PASS_STATIC">
+    VFX and acoustic signal DTOs preserve AbsoluteUniversePosition. Editor gizmo localizes by double-origin subtraction before float rendering.
+  </AUP_CHECK>
+  <SCALABILITY_CURVE status="PASS_STATIC">GlobalQualityWeight drives math cadence with math.lerp(0.016,0.1,1-weight); VFX/audio modulo periods also lerp continuously. Below 0.3 the route admits fewer solver frames and emits sparse Dear Lie signals while preserving integrated dt and volume truth.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS status="PASS_STATIC">No private persistent NativeArray fields in the SHINOBU airlock route. Owner/write views open DataVault generation descriptors through TryResolveHandle for BufferIDs 73380..73392; public/editor read accessors remain pure TryReadHandle. Lane 73385 is BulkheadContainmentIntentDTO scratch, not the Construction-owned KCC collision result buffer.</H_PHI_VAULT_STATUS>
+  <DEPENDENCY_GRAPH status="PASS_STATIC">inputDependency -> EvaluateAirlockCyclesJob parallel batch -> optional deterministic ascending-index IntegrateAirlockExchangeJob when Fluid or Atmosphere input exists -> RecordAirlockTelemetryJob -> outputDependency. No .Complete() in owned route; output registered via H8Memory.RegisterActiveJob(SystemID.HabitatAtmosphere). Shared Fluid/Atmosphere side fields are updated through atomic read/max/or/CAS helpers, with atomic CAS-read in blend/add helpers. Completed owner flush requires dispatcherCompletionConfirmed=true, publishes BulkheadContainmentIntentDTO rows through BulkheadContainmentIntentBus, then consumes and clears VFX/acoustic signal rows before SignalBus publish.</DEPENDENCY_GRAPH>
+  <KCC_ROUTE status="PASS_STATIC">SHINOBU writes lock/unlock intent rows only. BulkheadContainmentRuntime owns BufferID.Shinobu220BulkheadCollisionResults; PlayerKinematicsRuntime consumes that existing collision result lane to physically resolve KCC position/velocity.</KCC_ROUTE>
+  <DEAR_LIE status="PASS_STATIC">Gameplay truth is scalar water/pressure/gas; bubbles, fog, and pump hum are SignalBus payloads for GPU/audio owners. CPU turbulence complexity remains O(activeAirlocks), not O(particles). Signal row clearing prevents duplicate presentation without adding managed replay state.</DEAR_LIE>
+  <VAULT_BUFFER_IDS ownerSystem="HabitatAtmosphere" range="73380..73392" />
+  <SOURCE_IMPORT_CHECK status="PASS_STATIC">Unity .meta files added for owned AirlockPressurization assets; local ignored/generated Hecton8.Core.csproj has temporary Compile Include rows for owned files, referenced Core/Atmosphere/Physics contract files, and existing external files required by the last guarded build (`HapticPulseSignal.cs`, `HectonNarrativeDirector_PoiTriggers.cs`, `PowerGridSolarContracts.cs`) pending Unity regeneration.</SOURCE_IMPORT_CHECK>
+  <COMPILE_CHECK status="GUARDED_CPU_BLOCKED">Guard passed earlier with no active dotnet/csc/VBCSCompiler and CPU samples 24.53/18.21/26.85/49.92/35.13 percent. Command `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -m:1 /nr:false` failed outside SHINOBU_338 with no SHINOBU diagnostics. Follow-up source search found the missing symbols/methods existed in files omitted from the local generated project, so those files were bridged. Follow-up build wrappers skipped launch because CPU samples were 76.83/83.21/98.07/96.33/92.68 and 43.74/58.77/72.56/56.48/46.04 percent. No green compile claim was made.</COMPILE_CHECK>
+</SELF_AUDIT>

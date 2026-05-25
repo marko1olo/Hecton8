@@ -44,7 +44,7 @@ namespace Hecton8.World
             runtimeDirector.ApplyRuntimeDependencies(runtimeWorldZoneDirector, runtimeBiomeMatrixDirector);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 "[WorldReadabilityRuntimeBootstrap] Spawned WorldReadabilityDirector at runtime because the active scene had none. " +
                 "Owner='" + runtimeOwner.name + "'. This is a fail-safe, not a substitute for authored setup.");
 #endif
@@ -62,7 +62,7 @@ namespace Hecton8.World
             runtimeOwner.AddComponent<EmergencyServiceRelayDirector>();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 "[WorldReadabilityRuntimeBootstrap] Spawned EmergencyServiceRelayDirector at runtime because the active scene had none. " +
                 "Owner='" + runtimeOwner.name + "'. This is a fail-safe, not a substitute for authored setup.");
 #endif

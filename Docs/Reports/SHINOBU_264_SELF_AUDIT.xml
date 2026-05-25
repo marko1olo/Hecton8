@@ -1,4 +1,4 @@
-<SELF_AUDIT agent="SHINOBU_264" domain="ASYNC_BUOYANCY_READBACK_ENGINEER" generated="2026-05-21">
+﻿<SELF_AUDIT agent="SHINOBU_264" domain="ASYNC_BUOYANCY_READBACK_ENGINEER" generated="2026-05-21">
   <TASK_RECONCILIATION>
     <TASK id="01" name="SYNCHRONOUS_READBACK_INQUISITION" status="PASS" proof="Physics/Vehicles scan plus Roslyn scanner route; no hot synchronous GPU readback route added." />
     <TASK id="02" name="MONOBEHAVIOUR_SAMPLING_PURGE" status="PASS" proof="Central AsyncBuoyancyReadbackRuntime batches one request buffer and one AsyncGPUReadback request per frame." />

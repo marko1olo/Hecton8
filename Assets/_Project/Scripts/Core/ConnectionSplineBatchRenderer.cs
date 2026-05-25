@@ -13,7 +13,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("")]
-    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, IConnectionSplineBatchRendererService, IServiceHeartbeat, IServiceShutdown, ILateFrameTickable, IOriginShiftListener
+    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, IConnectionSplineBatchRendererService, IServiceHeartbeat, IServiceShutdown, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int DefaultBatchCapacity = 100;
         private const int MaxRenderedLinksPerBatch = 64;
@@ -30,6 +30,7 @@ namespace Hecton8.Core
         private static readonly int s_MetallicId = Shader.PropertyToID("_Metallic");
         private static readonly int s_LogisticsPathHighlightId = Shader.PropertyToID("_HectonLogisticsPathHighlight");
         private static Mesh s_staticCylinderMesh;
+        private static IConnectionSplineBatchRendererService s_activeService;
 
         private enum BatchKind : byte
         {
@@ -52,25 +53,26 @@ namespace Hecton8.Core
         private sealed class BatchState
         {
             // COLD ALLOC: Dictionary<long,SplineDescriptor>[100] - active link registry per visual batch - owner: ConnectionSplineBatchRenderer.BatchState
-            public readonly Dictionary<long, SplineDescriptor> Registrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
+            internal readonly Dictionary<long, SplineDescriptor> Registrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
 
-            public Mesh Mesh;
-            public Material Material;
-            public NativeArray<SplineDescriptor> Descriptors;
-            public NativeArray<FlexiblePipeInstanceGpuData> InstanceData;
-            public GraphicsBuffer InstanceBuffer;
-            public Bounds WorldBounds;
-            public bool Dirty;
-            public bool MaterialColorDirty;
-            public int InstanceCount;
-            public Color Color;
-            public Color AppliedColor;
-            public float Radius;
-            public BatchKind Kind;
+            internal Mesh Mesh;
+            internal Material Material;
+            internal NativeArray<SplineDescriptor> Descriptors;
+            internal NativeArray<FlexiblePipeInstanceGpuData> InstanceData;
+            internal GraphicsBuffer InstanceBuffer;
+            internal Bounds WorldBounds;
+            internal bool Dirty;
+            internal bool MaterialColorDirty;
+            internal int InstanceCount;
+            internal Color Color;
+            internal Color AppliedColor;
+            internal float Radius;
+            internal BatchKind Kind;
         }
 
         private bool _registeredLateFrameTick;
         private bool _registeredOriginShiftListener;
+        private bool _registeredHotSwapListener;
         private bool _serviceRegistered;
         private bool _shutdownComplete;
 
@@ -165,7 +167,7 @@ namespace Hecton8.Core
 
         private static IConnectionSplineBatchRendererService ResolveService()
         {
-            return GlobalRegistry.TryGet(out IConnectionSplineBatchRendererService renderer) ? renderer : null;
+            return s_activeService;
         }
 
         private void Awake()
@@ -193,6 +195,8 @@ namespace Hecton8.Core
             _shutdownComplete = false;
             GlobalRegistry.RegisterConnectionSplineBatchRendererRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ConnectionSplineBatchRenderer, this);
+            if (_serviceRegistered)
+                s_activeService = this;
             EnsureRuntimeRegistrations();
         }
 
@@ -205,6 +209,20 @@ namespace Hecton8.Core
         {
             TryUnregisterOriginShiftListener();
             TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterLateFrameTickable();
+            if (currentService != null && isActiveAndEnabled)
+                RefreshLateFrameTickRegistration();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -226,6 +244,7 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return;
 
+            TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
             RefreshLateFrameTickRegistration();
         }
@@ -235,8 +254,7 @@ namespace Hecton8.Core
             if (_registeredLateFrameTick || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -264,6 +282,23 @@ namespace Hecton8.Core
 
             HectonFloatingOrigin.UnregisterListener(this);
             _registeredOriginShiftListener = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         void IConnectionSplineBatchRendererService.SubmitPipeLink(long linkId, SplineDescriptor descriptor, Color color)
@@ -341,6 +376,7 @@ namespace Hecton8.Core
 
             TryUnregisterOriginShiftListener();
             TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
 
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 DisposeBatch(_batches[batchIndex]);
@@ -351,6 +387,9 @@ namespace Hecton8.Core
 
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.ConnectionSplineBatchRenderer, this))
                 GlobalRegistry.UnregisterConnectionSplineBatchRendererRuntime(this);
+
+            if (ReferenceEquals(s_activeService, this))
+                s_activeService = null;
 
             _serviceRegistered = false;
             _shutdownComplete = true;

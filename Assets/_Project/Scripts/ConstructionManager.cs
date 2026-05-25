@@ -28,6 +28,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -65,9 +66,12 @@ namespace Hecton8.Construction
         private const byte ModuleDeconstructFlagDfsSkippedLowTier = 1 << 1;
         private const byte DeconstructionDebrisKindDisintegrate = 10;
         private const int DeconstructionDfsResultLength = 4;
-        private const int DeconstructionRaycastCapacity = 1;
         private const int DeconstructionBlackBoxCapacity = 300;
+        private const int DeconstructionTransactionCapacity = HabitatDeconstructionTransactionKernel.MaxTeardownsUltra;
+        private const int DeconstructionRefundCommandCapacity = DeconstructionTransactionCapacity * HabitatDeconstructionTransactionKernel.MaxCostPairs;
+        private const int DeconstructionLootCacheCapacity = DeconstructionRefundCommandCapacity;
         private const string DeconstructionDumpRelativePath = "Docs/AgentLogs/Dump_BASE_DECONSTRUCTION_SYS.bin";
+        private const string Shinobu336DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_336.bin";
         private const string NativeMemoryOwner = nameof(ConstructionManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
@@ -151,7 +155,11 @@ namespace Hecton8.Construction
         private bool _hotSwapListenerRegistered;
         private bool _originShiftListenerRegistered;
         private bool _randomEventListenerRegistered;
+        private ISaveService _cachedSaveService;
         private ISaveService _registeredSaveService;
+        private IObjectPoolService _cachedObjectPool;
+        private IPlayerInventoryService _cachedPlayerInventoryService;
+        private IDataVault _cachedDataVault;
         private bool _isInitialized;
         private bool _habitatGraphDirty;
         private float _slowTickAccumulator;
@@ -165,13 +173,28 @@ namespace Hecton8.Construction
         private NativeParallelHashSet<long> _deconstructionDfsVisited;
         private NativeArray<int> _deconstructionDfsResult;
         private NativeArray<HabitatDeconstructionTelemetryEntry> _deconstructionBlackBox;
-        private NativeArray<RaycastCommand> _deconstructionRaycastCommands;
-        private NativeArray<RaycastHit> _deconstructionRaycastHits;
-        private DeconstructRequestSignal _pendingDeconstructionRequest;
-        private BaseModule _pendingDeconstructionModule;
-        private JobHandle _deconstructionRaycastHandle;
+        private NativeArray<DeconstructionTransactionDTO> _deconstructionTransactions;
+        private NativeArray<ModuleCostDTO> _deconstructionFallbackCosts;
+        private NativeArray<RefundCommandDTO> _deconstructionRefundCommands;
+        private NativeArray<int> _deconstructionRefundCommandCount;
+        private NativeArray<LootCacheDTO> _deconstructionLootCaches;
+        private NativeArray<int> _deconstructionLootCacheCount;
+        private VaultGenerationHandle<TeardownTelemetryEntry> _deconstructionTelemetryHandle;
+        private VaultGenerationHandle<int> _deconstructionTelemetryCursorHandle;
+        private VaultGenerationHandle<RefundProfileDTO> _deconstructionRefundProfilesHandle;
+#if UNITY_EDITOR
+        private VaultGenerationHandle<byte> _deconstructionCsvScratchHandle;
+#endif
         private int _deconstructionBlackBoxCursor;
-        private bool _deconstructionRaycastScheduled;
+        private int _lastShinobu336RefundedResources;
+        private int _lastShinobu336OverflowCaches;
+        private int _lastShinobu336SeveredEdges;
+        private int _lastShinobu336NodeIndex;
+        private float _lastShinobu336BurstMicroseconds;
+        private Vector3 _lastShinobu336TargetRuntimePosition;
+        private uint _deconstructionSequence;
+        private uint _lastShinobu336StateHash;
+        private uint _lastShinobu336FaultFlags;
 
         // CONSTANTS - DEFAULT MODULE STATE
 
@@ -227,6 +250,42 @@ namespace Hecton8.Construction
         /// <summary>Number of placed modules.</summary>
         public int ModuleCount => _spawnedModules != null ? _spawnedModules.Count : 0;
 
+#if UNITY_EDITOR
+        public static bool TryReadShinobu336EditorState(
+            out int refundedResources,
+            out int overflowCaches,
+            out int severedEdges,
+            out int targetNodeIndex,
+            out Vector3 targetRuntimePosition,
+            out float burstMicroseconds,
+            out uint stateHash,
+            out uint faultFlags)
+        {
+            refundedResources = 0;
+            overflowCaches = 0;
+            severedEdges = 0;
+            targetNodeIndex = -1;
+            targetRuntimePosition = default;
+            burstMicroseconds = 0f;
+            stateHash = 0u;
+            faultFlags = 0u;
+
+            ConstructionManager instance = ActiveRuntimeInstance;
+            if (instance == null)
+                return false;
+
+            refundedResources = instance._lastShinobu336RefundedResources;
+            overflowCaches = instance._lastShinobu336OverflowCaches;
+            severedEdges = instance._lastShinobu336SeveredEdges;
+            targetNodeIndex = instance._lastShinobu336NodeIndex;
+            targetRuntimePosition = instance._lastShinobu336TargetRuntimePosition;
+            burstMicroseconds = instance._lastShinobu336BurstMicroseconds;
+            stateHash = instance._lastShinobu336StateHash;
+            faultFlags = instance._lastShinobu336FaultFlags;
+            return true;
+        }
+#endif
+
         /// <summary>Read-only access to placed modules for UI and minimap consumers.</summary>
         public IReadOnlyList<GameObject> SpawnedModules => _spawnedModules;
 
@@ -255,7 +314,7 @@ namespace Hecton8.Construction
         /// <summary>
         /// True once the logistics owner is registered in the global registry.
         /// </summary>
-        public bool IsInitialized => _isInitialized && ReferenceEquals(GlobalRegistry.Logistics, this);
+        public bool IsInitialized => _isInitialized && _logisticsServiceRegistered;
 
         /// <inheritdoc />
         public ServiceHeartbeatState HeartbeatState => IsInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -268,6 +327,7 @@ namespace Hecton8.Construction
         /// </summary>
         public void InitializeService()
         {
+            CacheRegistryServicesCold();
             EnsureRuntimeStorage();
             _isInitialized = true;
             TryRegisterLogisticsService();
@@ -289,6 +349,7 @@ namespace Hecton8.Construction
         {
             // Service storage.
             // Pre-allocate runtime lists.
+            CacheRegistryServicesCold();
             EnsureRuntimeStorage();
             _ambientAccidentTimer = 0f;
         }
@@ -306,6 +367,7 @@ namespace Hecton8.Construction
                 _habitatGraphManager = new HabitatGraphManager(capacity); // COLD ALLOC: HabitatGraphManager[1] - persistent placed-module CSR adjacency owner - owner: ConstructionManager
 
             EnsureDeconstructionNativeBuffers(capacity);
+            TryEnsureDeconstructionVaultBuffers();
 
             int jointCapacity = Mathf.Max(InitialJointRecoveryCapacity, capacity);
             if (_jointRecoveryBuffer == null)
@@ -320,9 +382,26 @@ namespace Hecton8.Construction
             }
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
+            _cachedPlayerInventoryService = GlobalRegistry.PlayerInventory;
+            _cachedDataVault = GlobalRegistry.DataVault;
+            _cachedSaveService = GlobalRegistry.Save;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _cachedObjectPool = null;
+            _cachedPlayerInventoryService = null;
+            _cachedDataVault = null;
+            _cachedSaveService = null;
+        }
+
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            CacheRegistryServicesCold();
             EnsureRuntimeStorage();
             _slowTickAccumulator = 0f;
             if (!_isInitialized)
@@ -344,6 +423,7 @@ namespace Hecton8.Construction
             if (!_isInitialized)
                 return;
 
+            CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
             TryRegisterOriginShiftListener();
@@ -369,6 +449,7 @@ namespace Hecton8.Construction
         {
             UnregisterRuntimeHooks();
             _isInitialized = false;
+            ClearCachedRegistryServices();
             _spawnedModules?.Clear();
             _spawnedBaseModules?.Clear();
             if (_habitatGraphManager != null)
@@ -394,6 +475,7 @@ namespace Hecton8.Construction
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             TryUnregisterRandomEventListener();
+            ClearCachedRegistryServices();
         }
 
         public void Tick(float deltaTime)
@@ -417,7 +499,7 @@ namespace Hecton8.Construction
             if (_habitatGraphDirty)
                 RefreshHabitatGraph();
 
-            FinalizeDeferredDeconstructionRaycast();
+            _habitatGraphManager?.FlushVisualSync();
             DrainDeconstructionRequests();
         }
 
@@ -530,8 +612,8 @@ namespace Hecton8.Construction
 
             UnregisterModule(module);
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            DespawnOrDestroyModuleInstance(module, pool);
+            IObjectPoolService pool = _cachedObjectPool;
+            RetireModuleInstanceWithoutDestroy(module, pool);
         }
 
         /// <inheritdoc />
@@ -540,7 +622,7 @@ namespace Hecton8.Construction
             if (!_isInitialized || !Application.isPlaying)
                 return false;
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<DeconstructRequestSignal>.TryPush(in signal);
             return true;
         }
 
@@ -560,14 +642,14 @@ namespace Hecton8.Construction
 
         private void DrainDeconstructionRequests()
         {
-            if (_deconstructionRaycastScheduled)
-                return;
-
-            while (GlobalSignals.TryDequeueDeconstructRequest(out DeconstructRequestSignal request))
+            int remainingThisFrame = HabitatDeconstructionTransactionKernel.ResolveMaxTeardownsPerFrame(HomeostasisBrain.GlobalQualityWeight);
+            while (SignalBus<DeconstructRequestSignal>.TryConsumeFrame(out DeconstructRequestSignal request))
             {
                 ProcessDeconstructionRequest(in request);
-                if (_deconstructionRaycastScheduled)
+                remainingThisFrame--;
+                if (remainingThisFrame <= 0)
                     break;
+
             }
         }
 
@@ -589,9 +671,11 @@ namespace Hecton8.Construction
 
             if (request.MaxDistance > 0f)
             {
-                if (!TryScheduleDeferredDeconstructionRaycast(in request, module))
+                if (!ValidateDeconstructionProbe(in request, module))
+                {
                     RejectDeconstruction(in request, DeconstructReasonRayMismatch, 0, 0, 0);
-                return;
+                    return;
+                }
             }
 
             ProcessDeconstructionRequestAfterRayValidated(in request, module);
@@ -599,7 +683,7 @@ namespace Hecton8.Construction
 
         private void ProcessDeconstructionRequestAfterRayValidated(in DeconstructRequestSignal request, BaseModule module)
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _cachedObjectPool;
             if (pool == null || !pool.CanDespawnWithoutDestroy(module.gameObject))
             {
                 RejectDeconstruction(in request, DeconstructReasonPoolUnavailable, 0, 0, 0);
@@ -625,20 +709,25 @@ namespace Hecton8.Construction
 
             PlayerInventory inventory = ResolvePlayerInventory();
             BuildableData buildData = ResolveBuildData(module);
-            if (!CanRefundToInventory(buildData, inventory, out ushort refundItemCount))
-            {
-                RejectDeconstruction(in request, DeconstructReasonInventoryFull, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
-                PublishDeconstructionHudNotification(request.TargetEntityId, DeconstructReasonInventoryFull);
-                return;
-            }
-
             if (!module.TryBeginAuthoritativeDeconstruction())
             {
                 RejectDeconstruction(in request, DeconstructReasonAlreadyActive, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
                 return;
             }
 
-            if (!ApplyInventoryRefund(in request, buildData, inventory, out refundItemCount))
+            uint moduleHash = unchecked((uint)ResolveModuleHashId(module));
+            if (moduleHash == 0u && buildData != null)
+                moduleHash = unchecked((uint)buildData.ModuleHashId);
+            ushort nodeId = (ushort)Mathf.Clamp(ResolveRegisteredModuleIndex(module.gameObject), 0, ushort.MaxValue);
+            if (!ExecuteDeconstructionTransaction(
+                    in request,
+                    module,
+                    buildData,
+                    inventory,
+                    moduleHash,
+                    out ushort refundItemCount,
+                    out int severedEdgeCount,
+                    out int targetNodeIndex))
             {
                 module.CancelAuthoritativeDeconstruction();
                 RejectDeconstruction(in request, DeconstructReasonInventoryFull, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
@@ -646,8 +735,9 @@ namespace Hecton8.Construction
                 return;
             }
 
-            uint moduleHash = unchecked((uint)ResolveModuleHashId(module));
-            ushort nodeId = (ushort)Mathf.Clamp(ResolveRegisteredModuleIndex(module.gameObject), 0, ushort.MaxValue);
+            if (targetNodeIndex >= 0)
+                severedEdgeCount = math.max(severedEdgeCount, _habitatGraphManager != null ? _habitatGraphManager.MarkDeconstructionEdgesSevered(targetNodeIndex) : 0);
+            _lastShinobu336SeveredEdges = severedEdgeCount;
 
             PublishDeconstructionVfx(in request);
             module.EjectHostedContentsForDeconstruction(inventory, pool);
@@ -727,8 +817,8 @@ namespace Hecton8.Construction
             int moduleIndex = ResolveRegisteredModuleIndex(module);
             AbsoluteUniversePosition positionAup = TryResolveAupFromRuntimeOrigin(module.transform.position, out AbsoluteUniversePosition resolvedPositionAup)
                 ? resolvedPositionAup
-                : GlobalSignals.CurrentRuntimeOriginAup();
-            GlobalSignals.Publish(new HabitatConstructionSignal
+                : RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            SignalBus<HabitatConstructionSignal>.TryPush(new HabitatConstructionSignal
             {
                 PositionAup = positionAup,
                 ModuleHash = moduleHash,
@@ -752,7 +842,7 @@ namespace Hecton8.Construction
             if (dfsSkipped)
                 flags |= ModuleDeconstructFlagDfsSkippedLowTier;
 
-            GlobalSignals.Publish(new ModuleDeconstructSignal
+            SignalBus<ModuleDeconstructSignal>.TryPush(new ModuleDeconstructSignal
             {
                 PositionAup = request.TargetAup,
                 ModuleHash = moduleHash,
@@ -766,7 +856,7 @@ namespace Hecton8.Construction
 
         private void PublishDeconstructionVfx(in DeconstructRequestSignal request)
         {
-            GlobalSignals.Publish(new DebrisSpawnSignal
+            SignalBus<DebrisSpawnSignal>.TryPush(new DebrisSpawnSignal
             {
                 PositionAup = request.TargetAup,
                 SpeciesHash = 0u,
@@ -801,7 +891,7 @@ namespace Hecton8.Construction
             byte reason,
             ushort refundItemCount)
         {
-            GlobalSignals.Publish(new DeconstructResultSignal
+            SignalBus<DeconstructResultSignal>.TryPush(new DeconstructResultSignal
             {
                 TargetAup = request.TargetAup,
                 TargetEntityId = request.TargetEntityId,
@@ -815,7 +905,7 @@ namespace Hecton8.Construction
 
         private static void PublishDeconstructionHudNotification(uint sourceId, byte reason)
         {
-            GlobalSignals.Publish(new HUDNotificationSignal
+            SignalBus<HUDNotificationSignal>.TryPush(new HUDNotificationSignal
             {
                 MessageHash = 0xD3C04A11u,
                 ContextHash = reason,
@@ -861,110 +951,42 @@ namespace Hecton8.Construction
             return distanceSq <= 9f;
         }
 
-        private bool TryScheduleDeferredDeconstructionRaycast(in DeconstructRequestSignal request, BaseModule module)
+        private static bool ValidateDeconstructionProbe(in DeconstructRequestSignal request, BaseModule module)
         {
-            if (module == null || _deconstructionRaycastScheduled)
+            if (module == null || request.MaxDistance <= 0f)
                 return false;
 
-            if (!_deconstructionRaycastCommands.IsCreated || !_deconstructionRaycastHits.IsCreated)
-                EnsureDeconstructionNativeBuffers(Mathf.Max(initialCapacity, ModuleCount));
-
-            if (!_deconstructionRaycastCommands.IsCreated ||
-                !_deconstructionRaycastHits.IsCreated ||
-                !TryCreateDeferredDeconstructionRaycastCommand(in request, out RaycastCommand command))
-            {
-                return false;
-            }
-
-            _deconstructionRaycastCommands[0] = command;
-            _deconstructionRaycastHits[0] = default;
-            _pendingDeconstructionRequest = request;
-            _pendingDeconstructionModule = module;
-            _deconstructionRaycastHandle = RaycastCommand.ScheduleBatch(
-                _deconstructionRaycastCommands,
-                _deconstructionRaycastHits,
-                DeconstructionRaycastCapacity,
-                default);
-            _deconstructionRaycastScheduled = true;
-            return true;
-        }
-
-        private static bool TryCreateDeferredDeconstructionRaycastCommand(
-            in DeconstructRequestSignal request,
-            out RaycastCommand command)
-        {
-            command = default;
             float3 direction = request.RayDirection;
             float directionLengthSq = math.lengthsq(direction);
-            if (!math.all(math.isfinite(direction)) || directionLengthSq <= 0.0001f)
-                return false;
-
-            direction *= math.rsqrt(math.max(directionLengthSq, 0.0001f));
-            float3 origin3 = request.RayOriginAup.ToRuntimeFloat3();
-            if (!math.all(math.isfinite(origin3)))
-                return false;
-
-            command = new RaycastCommand
+            float3 origin = request.RayOriginAup.ToRuntimeFloat3();
+            float3 target = request.TargetAup.ToRuntimeFloat3();
+            Vector3 modulePosition = module.transform.position;
+            float3 moduleRuntime = new float3(modulePosition.x, modulePosition.y, modulePosition.z);
+            if (!math.all(math.isfinite(direction)) ||
+                !math.all(math.isfinite(origin)) ||
+                !math.all(math.isfinite(target)) ||
+                !math.all(math.isfinite(moduleRuntime)) ||
+                directionLengthSq <= 0.0001f)
             {
-                from = new Vector3(origin3.x, origin3.y, origin3.z),
-                direction = new Vector3(direction.x, direction.y, direction.z),
-                distance = math.max(0.001f, request.MaxDistance),
-                queryParameters = new QueryParameters
-                {
-                    layerMask = HectonLayerMasks.ConstructionSurfaceLayerMask,
-                    hitTriggers = QueryTriggerInteraction.Ignore,
-                    hitBackfaces = false,
-                    hitMultipleFaces = false
-                }
-            };
-            return true;
-        }
-
-        private void FinalizeDeferredDeconstructionRaycast()
-        {
-            if (!_deconstructionRaycastScheduled ||
-                !DispatcherJobSwap.TryFinalizeCompleted(ref _deconstructionRaycastHandle))
-            {
-                return;
+                return false;
             }
 
-            _deconstructionRaycastScheduled = false;
-            DeconstructRequestSignal request = _pendingDeconstructionRequest;
-            BaseModule module = _pendingDeconstructionModule;
-            _pendingDeconstructionRequest = default;
-            _pendingDeconstructionModule = null;
-
-            if (module == null || !ReferenceEquals(module, ResolveBaseModuleByEntityId(request.TargetEntityId)))
-            {
-                RejectDeconstruction(in request, DeconstructReasonNoTarget, 0, 0, 0);
-                return;
-            }
-
-            if (!IsDeferredDeconstructionRaycastOwnedBy(module))
-            {
-                RejectDeconstruction(in request, DeconstructReasonRayMismatch, 0, 0, 0);
-                return;
-            }
-
-            ProcessDeconstructionRequestAfterRayValidated(in request, module);
-        }
-
-        private bool IsDeferredDeconstructionRaycastOwnedBy(BaseModule module)
-        {
-            if (!_deconstructionRaycastHits.IsCreated || _deconstructionRaycastHits.Length == 0 || module == null)
+            float maxDistance = math.max(0.001f, request.MaxDistance);
+            direction *= math.rsqrt(directionLengthSq);
+            float3 toModule = moduleRuntime - origin;
+            float axialDistance = math.dot(toModule, direction);
+            if (axialDistance < -0.01f || axialDistance > maxDistance + 0.25f)
                 return false;
 
-            Collider hitCollider = _deconstructionRaycastHits[0].collider;
-            if (hitCollider == null)
-                return false;
-
-            BaseModule hitModule = hitCollider.GetComponentInParent<BaseModule>();
-            return ReferenceEquals(hitModule, module);
+            float3 closest = origin + direction * math.clamp(axialDistance, 0f, maxDistance);
+            float lateralDistanceSq = math.lengthsq(moduleRuntime - closest);
+            float targetDistanceSq = math.lengthsq(moduleRuntime - target);
+            return lateralDistanceSq <= 9f && targetDistanceSq <= 9f;
         }
 
-        private static PlayerInventory ResolvePlayerInventory()
+        private PlayerInventory ResolvePlayerInventory()
         {
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService inventoryService = _cachedPlayerInventoryService;
             return inventoryService != null ? inventoryService.Inventory : null;
         }
 
@@ -987,117 +1009,223 @@ namespace Hecton8.Construction
             return catalog != null ? catalog.FindDataByHashId(moduleHashId) : null;
         }
 
-        private static bool CanRefundToInventory(
-            BuildableData buildData,
-            PlayerInventory inventory,
-            out ushort refundItemCount)
-        {
-            refundItemCount = 0;
-            List<InventoryCost> buildCost = buildData != null ? buildData.buildCost : null;
-            if (buildCost == null || buildCost.Count == 0)
-                return true;
-
-            if (inventory == null || inventory.Grid == null)
-                return false;
-
-            int costCount = buildCost.Count;
-            Span<int> refundItemHashIds = stackalloc int[costCount];
-            Span<int> refundQuantities = stackalloc int[costCount];
-            int groupCount = BuildRefundGroups(buildCost, refundItemHashIds, refundQuantities, out int totalRefund);
-            if (groupCount < 0)
-                return false;
-
-            if (groupCount > 0 && !inventory.CanAcceptItemQuantityBatch(refundItemHashIds, refundQuantities, groupCount))
-                return false;
-
-            refundItemCount = (ushort)totalRefund;
-            return true;
-        }
-
-        private static bool ApplyInventoryRefund(
+        private bool ExecuteDeconstructionTransaction(
             in DeconstructRequestSignal request,
+            BaseModule module,
             BuildableData buildData,
             PlayerInventory inventory,
+            uint moduleHash,
             out ushort refundItemCount)
         {
+            return ExecuteDeconstructionTransaction(
+                in request,
+                module,
+                buildData,
+                inventory,
+                moduleHash,
+                out refundItemCount,
+                out _,
+                out _);
+        }
+
+        private bool ExecuteDeconstructionTransaction(
+            in DeconstructRequestSignal request,
+            BaseModule module,
+            BuildableData buildData,
+            PlayerInventory inventory,
+            uint moduleHash,
+            out ushort refundItemCount,
+            out int severedEdgeCount,
+            out int targetNodeIndex)
+        {
             refundItemCount = 0;
-            List<InventoryCost> buildCost = buildData != null ? buildData.buildCost : null;
-            if (buildCost == null || buildCost.Count == 0)
-                return true;
-
-            if (inventory == null || inventory.Grid == null)
-                return false;
-
-            int costCount = buildCost.Count;
-            Span<int> refundItemHashIds = stackalloc int[costCount];
-            Span<int> refundQuantities = stackalloc int[costCount];
-            int groupCount = BuildRefundGroups(buildCost, refundItemHashIds, refundQuantities, out int totalRefund);
-            if (groupCount < 0)
-                return false;
-
-            for (int i = 0; i < groupCount; i++)
+            severedEdgeCount = 0;
+            targetNodeIndex = -1;
+            if (!HabitatDeconstructionTransactionKernel.RuntimeLayoutValid() ||
+                !_deconstructionTransactions.IsCreated ||
+                !_deconstructionRefundCommands.IsCreated ||
+                !_deconstructionRefundCommandCount.IsCreated ||
+                !_deconstructionLootCaches.IsCreated ||
+                !_deconstructionLootCacheCount.IsCreated)
             {
-                int itemHashId = refundItemHashIds[i];
-                int refundAmount = refundQuantities[i];
-                if (!inventory.TryAddItem(itemHashId, refundAmount))
-                    return false;
-
-                ushort publishedQuantity = (ushort)Mathf.Clamp(refundAmount, 0, ushort.MaxValue);
-                GlobalSignals.Publish(new ItemAcquiredSignal
-                {
-                    PositionAup = request.TargetAup,
-                    ItemHash = unchecked((uint)itemHashId),
-                    OreHash = 0u,
-                    Quantity = publishedQuantity,
-                    SourceKind = 4,
-                    Flags = 0,
-                    Frame = (uint)Mathf.Max(0, Time.frameCount)
-                });
-
+                return false;
             }
 
-            refundItemCount = (ushort)totalRefund;
+            if (moduleHash == 0u || !TryBuildDeconstructionTransaction(in request, moduleHash, out DeconstructionTransactionDTO transaction))
+                return false;
+
+            _deconstructionTransactions[0] = transaction;
+            _deconstructionRefundCommandCount[0] = 0;
+            _deconstructionLootCacheCount[0] = 0;
+
+            NativeArray<int> edgeOffsets = default;
+            NativeArray<int> edgeDestinations = default;
+            NativeArray<float> edgeStrength = default;
+            NativeArray<byte> edgeFlags = default;
+            int nodeCount = 0;
+            int edgeCount = 0;
+            if (_habitatGraphManager != null)
+            {
+                _habitatGraphManager.TryGetDeconstructionCsrLanes(
+                    module,
+                    out edgeOffsets,
+                    out edgeDestinations,
+                    out edgeStrength,
+                    out edgeFlags,
+                    out targetNodeIndex,
+                    out nodeCount,
+                    out edgeCount);
+            }
+
+            if (!TryResolveModuleCostSource(buildData, moduleHash, out NativeArray<ModuleCostDTO> moduleCosts, out int moduleCostCount))
+            {
+                moduleCosts = _deconstructionFallbackCosts;
+                moduleCostCount = 0;
+            }
+
+            IDataVault vault = _cachedDataVault;
+            TryEnsureDeconstructionVaultBuffers();
+            bool telemetryLocked = TryAcquireDeconstructionTelemetry(
+                vault,
+                out NativeArray<TeardownTelemetryEntry> telemetryRing,
+                out NativeArray<int> telemetryCursor);
+
+            long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            ExecuteModuleTeardownJob job = new ExecuteModuleTeardownJob
+            {
+                Transactions = _deconstructionTransactions,
+                ModuleCosts = moduleCosts,
+                EdgeOffsets = edgeOffsets,
+                EdgeDestinations = edgeDestinations,
+                EdgeStrength = edgeStrength,
+                EdgeFlags = edgeFlags,
+                RefundCommands = _deconstructionRefundCommands,
+                RefundCommandCount = _deconstructionRefundCommandCount,
+                LootCaches = _deconstructionLootCaches,
+                LootCacheCount = _deconstructionLootCacheCount,
+                TelemetryRing = telemetryRing,
+                TelemetryCursor = telemetryCursor,
+                TransactionCount = 1,
+                ModuleCostCount = moduleCostCount,
+                TargetNodeIndex = targetNodeIndex,
+                NodeCount = nodeCount,
+                EdgeCount = edgeCount,
+                MaxTeardownsPerFrame = HabitatDeconstructionTransactionKernel.ResolveMaxTeardownsPerFrame(HomeostasisBrain.GlobalQualityWeight),
+                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                SequenceBase = ++_deconstructionSequence,
+                LayoutValid = 1u,
+                GlobalQualityWeight = HomeostasisBrain.GlobalQualityWeight
+            };
+            job.Execute(); // COLD SYNC JOB: player-triggered teardown transaction, bounded to <= 4 refund pairs.
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
+            float burstMicroseconds = (float)(elapsedTicks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
+
+            int refundCommandCount = _deconstructionRefundCommandCount[0];
+            int returnedCount = ApplyRefundCommandsOrOverflow(in request, inventory, refundCommandCount);
+            PublishOverflowLootCaches();
+            refundItemCount = (ushort)Mathf.Clamp(returnedCount, 0, ushort.MaxValue);
+
+            ReadLastDeconstructionTelemetry(
+                telemetryRing,
+                telemetryCursor,
+                burstMicroseconds,
+                returnedCount,
+                _deconstructionLootCacheCount.IsCreated && _deconstructionLootCacheCount.Length > 0 ? _deconstructionLootCacheCount[0] : 0,
+                out severedEdgeCount,
+                out uint faultFlags,
+                out uint stateHash);
+            _lastShinobu336BurstMicroseconds = burstMicroseconds;
+            _lastShinobu336RefundedResources = returnedCount;
+            _lastShinobu336OverflowCaches = _deconstructionLootCacheCount.IsCreated && _deconstructionLootCacheCount.Length > 0 ? _deconstructionLootCacheCount[0] : 0;
+            _lastShinobu336NodeIndex = targetNodeIndex;
+            float3 targetRuntime = request.TargetAup.ToRuntimeFloat3();
+            _lastShinobu336TargetRuntimePosition = math.all(math.isfinite(targetRuntime))
+                ? new Vector3(targetRuntime.x, targetRuntime.y, targetRuntime.z)
+                : (module != null ? module.transform.position : default);
+            _lastShinobu336StateHash = stateHash;
+            _lastShinobu336FaultFlags = faultFlags;
+
+            if (telemetryLocked)
+                ReleaseDeconstructionTelemetry(vault);
+
+            if ((faultFlags & HabitatDeconstructionTransactionKernel.FaultNaN) != 0u || burstMicroseconds > 500f)
+                DumpShinobu336BlackBox();
+
             return true;
         }
 
-        private static int BuildRefundGroups(
-            List<InventoryCost> buildCost,
-            Span<int> itemHashIds,
-            Span<int> quantities,
-            out int totalRefund)
+        private static bool TryBuildDeconstructionTransaction(
+            in DeconstructRequestSignal request,
+            uint moduleHash,
+            out DeconstructionTransactionDTO transaction)
         {
-            totalRefund = 0;
-            int groupCount = 0;
-            int costCount = buildCost != null ? buildCost.Count : 0;
-            if (itemHashIds.Length < costCount || quantities.Length < costCount)
-                return -1;
+            transaction = default;
+            if (moduleHash == 0u || !request.TargetAup.IsFinite())
+                return false;
 
-            itemHashIds.Slice(0, costCount).Clear();
-            quantities.Slice(0, costCount).Clear();
+            transaction.TargetModuleHash = moduleHash;
+            transaction.InitiatorEntityHash = request.RequesterEntityId;
+            transaction.OriginalAUP = request.TargetAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(transaction.OriginalAUP));
+        }
 
-            for (int i = 0; i < costCount; i++)
+        private bool TryResolveModuleCostSource(
+            BuildableData buildData,
+            uint moduleHash,
+            out NativeArray<ModuleCostDTO> moduleCosts,
+            out int moduleCostCount)
+        {
+            moduleCosts = default;
+            moduleCostCount = 0;
+            IDataVault vault = _cachedDataVault;
+            if (vault != null &&
+                BaseModuleCatalogRuntime.TryResolveViews(vault, out ModuleCatalogViews views) &&
+                views.State.IsCreated &&
+                views.State.Length > 0 &&
+                views.Costs.IsCreated)
             {
-                InventoryCost cost = buildCost[i];
-                int itemHashId = ResolveRefundCostItemHash(cost);
-                if (itemHashId == 0)
-                    continue;
-
-                int refundAmount = Mathf.Max(0, cost.amount) >> 1;
-                if (refundAmount <= 0)
-                    continue;
-
-                int groupIndex = FindRefundGroupIndex(itemHashIds, groupCount, itemHashId);
-                if (groupIndex < 0)
-                {
-                    groupIndex = groupCount++;
-                    itemHashIds[groupIndex] = itemHashId;
-                }
-
-                quantities[groupIndex] = Mathf.Min(ushort.MaxValue, quantities[groupIndex] + refundAmount);
-                totalRefund = Mathf.Min(ushort.MaxValue, totalRefund + refundAmount);
+                moduleCosts = views.Costs;
+                moduleCostCount = (int)math.min(views.State[0].CostCount, (uint)views.Costs.Length);
+                if (moduleCostCount > 0)
+                    return true;
             }
 
-            return groupCount;
+            if (!_deconstructionFallbackCosts.IsCreated ||
+                !TryBuildFallbackCostDto(buildData, moduleHash, out ModuleCostDTO fallbackCost))
+            {
+                return false;
+            }
+
+            _deconstructionFallbackCosts[0] = fallbackCost;
+            moduleCosts = _deconstructionFallbackCosts;
+            moduleCostCount = 1;
+            return true;
+        }
+
+        private static bool TryBuildFallbackCostDto(BuildableData buildData, uint moduleHash, out ModuleCostDTO cost)
+        {
+            cost = default;
+            if (buildData == null || buildData.buildCost == null || moduleHash == 0u)
+                return false;
+
+            cost.PrefabHashID = moduleHash;
+            int written = 0;
+            List<InventoryCost> buildCost = buildData.buildCost;
+            int count = buildCost.Count;
+            for (int i = 0; i < count && written < HabitatDeconstructionTransactionKernel.MaxCostPairs; i++)
+            {
+                InventoryCost entry = buildCost[i];
+                int itemHashId = ResolveRefundCostItemHash(entry);
+                int quantity = entry != null ? Mathf.Max(0, entry.amount) : 0;
+                if (itemHashId == 0 || quantity <= 0)
+                    continue;
+
+                WriteFallbackCostPair(ref cost, written, unchecked((uint)itemHashId), quantity);
+                written++;
+            }
+
+            cost.CostCount = (uint)written;
+            return written > 0;
         }
 
         private static int ResolveRefundCostItemHash(InventoryCost cost)
@@ -1108,15 +1236,276 @@ namespace Hecton8.Construction
             return Hecton.Localization.LocHash.Compute(cost.item.PersistentId);
         }
 
-        private static int FindRefundGroupIndex(Span<int> itemHashIds, int groupCount, int itemHashId)
+        private static void WriteFallbackCostPair(ref ModuleCostDTO cost, int index, uint itemHash, int quantity)
         {
-            for (int i = 0; i < groupCount; i++)
+            switch (index)
             {
-                if (itemHashIds[i] == itemHashId)
-                    return i;
+                case 0:
+                    cost.ItemHash0 = itemHash;
+                    cost.Quantity0 = quantity;
+                    break;
+                case 1:
+                    cost.ItemHash1 = itemHash;
+                    cost.Quantity1 = quantity;
+                    break;
+                case 2:
+                    cost.ItemHash2 = itemHash;
+                    cost.Quantity2 = quantity;
+                    break;
+                default:
+                    cost.ItemHash3 = itemHash;
+                    cost.Quantity3 = quantity;
+                    break;
+            }
+        }
+
+        private bool TryAcquireDeconstructionTelemetry(
+            IDataVault vault,
+            out NativeArray<TeardownTelemetryEntry> telemetryRing,
+            out NativeArray<int> telemetryCursor)
+        {
+            telemetryRing = default;
+            telemetryCursor = default;
+            if (vault == null ||
+                _deconstructionTelemetryHandle.Generation == 0u ||
+                _deconstructionTelemetryCursorHandle.Generation == 0u)
+            {
+                return false;
             }
 
-            return -1;
+            if (!vault.TryAcquireWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction, out telemetryRing))
+                return false;
+
+            if (vault.TryAcquireWriteLock(in _deconstructionTelemetryCursorHandle, SystemID.Construction, out telemetryCursor))
+                return true;
+
+            vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
+            telemetryRing = default;
+            telemetryCursor = default;
+            return false;
+        }
+
+        private void ReleaseDeconstructionTelemetry(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            if (_deconstructionTelemetryCursorHandle.Generation != 0u)
+                vault.ReleaseWriteLock(in _deconstructionTelemetryCursorHandle, SystemID.Construction);
+            if (_deconstructionTelemetryHandle.Generation != 0u)
+                vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
+        }
+
+        private int ApplyRefundCommandsOrOverflow(
+            in DeconstructRequestSignal request,
+            PlayerInventory inventory,
+            int refundCommandCount)
+        {
+            int returnedQuantity = 0;
+            int safeCount = math.min(math.max(0, refundCommandCount), _deconstructionRefundCommands.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                RefundCommandDTO command = _deconstructionRefundCommands[i];
+                if (command.ItemHash == 0u || command.Quantity <= 0)
+                    continue;
+
+                bool added = inventory != null && inventory.TryAddItem(unchecked((int)command.ItemHash), command.Quantity);
+                if (added)
+                {
+                    returnedQuantity = Mathf.Min(ushort.MaxValue, returnedQuantity + command.Quantity);
+                    PublishDeconstructionItemAcquired(in request, command.ItemHash, command.Quantity);
+                    command.Status = HabitatDeconstructionTransactionKernel.RefundStatusPendingInventory;
+                    _deconstructionRefundCommands[i] = command;
+                    continue;
+                }
+
+                command.Status = HabitatDeconstructionTransactionKernel.RefundStatusOverflowLootCache;
+                _deconstructionRefundCommands[i] = command;
+                if (AppendOverflowLootCache(in request, in command))
+                    returnedQuantity = Mathf.Min(ushort.MaxValue, returnedQuantity + command.Quantity);
+            }
+
+            return returnedQuantity;
+        }
+
+        private static void PublishDeconstructionItemAcquired(
+            in DeconstructRequestSignal request,
+            uint itemHash,
+            int quantity)
+        {
+            SignalBus<ItemAcquiredSignal>.TryPush(new ItemAcquiredSignal
+            {
+                PositionAup = request.TargetAup,
+                ItemHash = itemHash,
+                OreHash = 0u,
+                Quantity = (ushort)Mathf.Clamp(quantity, 0, ushort.MaxValue),
+                SourceKind = 4,
+                Flags = 0,
+                Frame = (uint)Mathf.Max(0, Time.frameCount)
+            });
+        }
+
+        private bool AppendOverflowLootCache(
+            in DeconstructRequestSignal request,
+            in RefundCommandDTO command)
+        {
+            if (!_deconstructionLootCaches.IsCreated ||
+                !_deconstructionLootCacheCount.IsCreated ||
+                _deconstructionLootCacheCount.Length == 0)
+            {
+                return false;
+            }
+
+            int index = _deconstructionLootCacheCount[0];
+            if (index < 0 || index >= _deconstructionLootCaches.Length)
+                return false;
+
+            float q = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float radius = math.lerp(0.35f, 0.95f, q);
+            float3 offset = ResolveOverflowCacheOffset(command.Sequence, command.PairIndex, radius);
+            double3 origin = request.TargetAup.ToAbsoluteDouble3();
+            _deconstructionLootCaches[index] = new LootCacheDTO
+            {
+                PositionAup = origin + new double3(offset.x, offset.y, offset.z),
+                LocalOffset = offset,
+                ItemHash = command.ItemHash,
+                Quantity = command.Quantity,
+                SourceModuleHash = command.TargetModuleHash,
+                Sequence = command.Sequence,
+                Flags = 0u
+            };
+            _deconstructionLootCacheCount[0] = index + 1;
+            return true;
+        }
+
+        private static float3 ResolveOverflowCacheOffset(uint sequence, byte pairIndex, float radius)
+        {
+            uint hash = sequence ^ ((uint)pairIndex * 0x9E3779B9u);
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            float angle = (hash & 1023u) * (6.28318530718f / 1024f);
+            MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
+            return new float3(cos * radius, 0.45f, sin * radius);
+        }
+
+        private void PublishOverflowLootCaches()
+        {
+            if (!_deconstructionLootCaches.IsCreated ||
+                !_deconstructionLootCacheCount.IsCreated ||
+                _deconstructionLootCacheCount.Length == 0)
+            {
+                return;
+            }
+
+            int count = math.min(math.max(0, _deconstructionLootCacheCount[0]), _deconstructionLootCaches.Length);
+            for (int i = 0; i < count; i++)
+            {
+                LootCacheDTO cache = _deconstructionLootCaches[i];
+                if (cache.ItemHash == 0u || cache.Quantity <= 0)
+                    continue;
+
+                InventoryDeathLootCacheSignal signal = new InventoryDeathLootCacheSignal
+                {
+                    PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(cache.PositionAup),
+                    GeneticsMask = 0UL,
+                    InventoryHash = cache.SourceModuleHash,
+                    ItemHash = cache.ItemHash,
+                    Sequence = cache.Sequence,
+                    Frame = (uint)Mathf.Max(0, Time.frameCount),
+                    Quantity = (ushort)Mathf.Clamp(cache.Quantity, 0, ushort.MaxValue),
+                    QualityMilli = 1000,
+                    Flags = cache.Flags,
+                    StateFlags = 0
+                };
+                SignalBus<InventoryDeathLootCacheSignal>.TryPush(in signal);
+            }
+        }
+
+        private void ReadLastDeconstructionTelemetry(
+            NativeArray<TeardownTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor,
+            float burstMicroseconds,
+            int returnedQuantity,
+            int overflowLootCaches,
+            out int severedEdgeCount,
+            out uint faultFlags,
+            out uint stateHash)
+        {
+            severedEdgeCount = 0;
+            faultFlags = 0u;
+            stateHash = 0u;
+            if (!telemetryRing.IsCreated ||
+                !telemetryCursor.IsCreated ||
+                telemetryRing.Length == 0 ||
+                telemetryCursor.Length == 0)
+            {
+                return;
+            }
+
+            int cursor = telemetryCursor[0] - 1;
+            if (cursor < 0)
+                cursor += telemetryRing.Length;
+
+            int index = cursor % telemetryRing.Length;
+            TeardownTelemetryEntry entry = telemetryRing[index];
+            entry.BurstMicroseconds = burstMicroseconds;
+            entry.ResourcesRefunded = returnedQuantity;
+            entry.OverflowLootCaches = overflowLootCaches;
+            if (burstMicroseconds > 500f)
+                entry.FaultFlags |= HabitatDeconstructionTransactionKernel.FaultBudgetExceeded;
+
+            telemetryRing[index] = entry;
+            severedEdgeCount = entry.EdgesSevered;
+            faultFlags = entry.FaultFlags;
+            stateHash = entry.StateHash;
+        }
+
+        private void DumpShinobu336BlackBox()
+        {
+            IDataVault vault = _cachedDataVault;
+            if (vault == null ||
+                _deconstructionTelemetryHandle.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction, out NativeArray<TeardownTelemetryEntry> telemetryRing))
+            {
+                return;
+            }
+
+            try
+            {
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", Shinobu336DumpRelativePath));
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(HabitatDeconstructionTransactionKernel.SystemHash);
+                    writer.Write(telemetryRing.Length);
+                    for (int i = 0; i < telemetryRing.Length; i++)
+                    {
+                        TeardownTelemetryEntry entry = telemetryRing[i];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.TargetModuleHash);
+                        writer.Write(entry.InitiatorEntityHash);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.ModulesProcessed);
+                        writer.Write(entry.ResourcesRefunded);
+                        writer.Write(entry.OverflowLootCaches);
+                        writer.Write(entry.EdgesSevered);
+                        writer.Write(entry.BurstMicroseconds);
+                        writer.Write(entry.GlobalQualityWeight);
+                        writer.Write(entry.FaultFlags);
+                        writer.Write(entry.TargetNodeIndex);
+                        writer.Write(entry.AupLocalMagnitude);
+                    }
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _deconstructionTelemetryHandle, SystemID.Construction);
+            }
         }
 
         private void EnsureDeconstructionNativeBuffers(int requestedCapacity)
@@ -1164,29 +1553,93 @@ namespace Hecton8.Construction
                 NativeMemorySentinel.RegisterNativeArray(_deconstructionBlackBox, NativeMemoryOwner, nameof(_deconstructionBlackBox), NativeMemoryLifetime);
             }
 
-            if (!_deconstructionRaycastCommands.IsCreated)
+            if (!_deconstructionTransactions.IsCreated)
             {
-                _deconstructionRaycastCommands = new NativeArray<RaycastCommand>(
-                    DeconstructionRaycastCapacity,
+                _deconstructionTransactions = new NativeArray<DeconstructionTransactionDTO>(
+                    DeconstructionTransactionCapacity,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] - deferred deconstruction ownership query - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionRaycastCommands, NativeMemoryOwner, nameof(_deconstructionRaycastCommands), NativeMemoryLifetime);
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<DeconstructionTransactionDTO>[50] - SHINOBU_336 teardown transaction staging - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionTransactions, NativeMemoryOwner, nameof(_deconstructionTransactions), NativeMemoryLifetime);
             }
 
-            if (!_deconstructionRaycastHits.IsCreated)
+            if (!_deconstructionFallbackCosts.IsCreated)
             {
-                _deconstructionRaycastHits = new NativeArray<RaycastHit>(
-                    DeconstructionRaycastCapacity,
+                _deconstructionFallbackCosts = new NativeArray<ModuleCostDTO>(
+                    1,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] - deferred deconstruction ownership result - owner: ConstructionManager
-                NativeMemorySentinel.RegisterNativeArray(_deconstructionRaycastHits, NativeMemoryOwner, nameof(_deconstructionRaycastHits), NativeMemoryLifetime);
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ModuleCostDTO>[1] - SHINOBU_336 DataMonolith fallback staging - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionFallbackCosts, NativeMemoryOwner, nameof(_deconstructionFallbackCosts), NativeMemoryLifetime);
             }
+
+            if (!_deconstructionRefundCommands.IsCreated)
+            {
+                _deconstructionRefundCommands = new NativeArray<RefundCommandDTO>(
+                    DeconstructionRefundCommandCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RefundCommandDTO>[200] - SHINOBU_336 refund output commands - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionRefundCommands, NativeMemoryOwner, nameof(_deconstructionRefundCommands), NativeMemoryLifetime);
+            }
+
+            if (!_deconstructionRefundCommandCount.IsCreated)
+            {
+                _deconstructionRefundCommandCount = new NativeArray<int>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - SHINOBU_336 refund command count - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionRefundCommandCount, NativeMemoryOwner, nameof(_deconstructionRefundCommandCount), NativeMemoryLifetime);
+            }
+
+            if (!_deconstructionLootCaches.IsCreated)
+            {
+                _deconstructionLootCaches = new NativeArray<LootCacheDTO>(
+                    DeconstructionLootCacheCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<LootCacheDTO>[200] - SHINOBU_336 overflow loot cache staging - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionLootCaches, NativeMemoryOwner, nameof(_deconstructionLootCaches), NativeMemoryLifetime);
+            }
+
+            if (!_deconstructionLootCacheCount.IsCreated)
+            {
+                _deconstructionLootCacheCount = new NativeArray<int>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - SHINOBU_336 overflow loot cache count - owner: ConstructionManager
+                NativeMemorySentinel.RegisterNativeArray(_deconstructionLootCacheCount, NativeMemoryOwner, nameof(_deconstructionLootCacheCount), NativeMemoryLifetime);
+            }
+        }
+
+        private void TryEnsureDeconstructionVaultBuffers()
+        {
+            IDataVault vault = _cachedDataVault;
+            if (vault == null)
+                return;
+
+            _deconstructionTelemetryHandle = vault.EnsureGenerationHandle<TeardownTelemetryEntry>(
+                BufferID.Shinobu336TelemetryRing,
+                HabitatDeconstructionTransactionKernel.TelemetryCapacity,
+                SystemID.Construction,
+                NativeArrayOptions.ClearMemory);
+            _deconstructionTelemetryCursorHandle = vault.EnsureGenerationHandle<int>(
+                BufferID.Shinobu336TelemetryCursor,
+                1,
+                SystemID.Construction,
+                NativeArrayOptions.ClearMemory);
+            _deconstructionRefundProfilesHandle = vault.EnsureGenerationHandle<RefundProfileDTO>(
+                BufferID.Shinobu336RefundProfiles,
+                HabitatDeconstructionTransactionKernel.RefundProfileCapacity,
+                SystemID.Construction,
+                NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
+            _deconstructionCsvScratchHandle = vault.EnsureGenerationHandle<byte>(
+                BufferID.Shinobu336CsvScratch,
+                HabitatDeconstructionTransactionKernel.CsvScratchBytes,
+                SystemID.Construction,
+                NativeArrayOptions.ClearMemory);
+#endif
         }
 
         private void DisposeDeconstructionNativeBuffers()
         {
-            CompleteDeferredDeconstructionRaycastForTeardown();
-
             if (_deconstructionDfsStack.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_deconstructionDfsStack));
@@ -1215,34 +1668,64 @@ namespace Hecton8.Construction
                 _deconstructionBlackBox = default;
             }
 
-            if (_deconstructionRaycastCommands.IsCreated)
+            if (_deconstructionTransactions.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionRaycastCommands);
-                _deconstructionRaycastCommands.Dispose();
-                _deconstructionRaycastCommands = default;
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionTransactions);
+                _deconstructionTransactions.Dispose();
+                _deconstructionTransactions = default;
             }
 
-            if (_deconstructionRaycastHits.IsCreated)
+            if (_deconstructionFallbackCosts.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_deconstructionRaycastHits);
-                _deconstructionRaycastHits.Dispose();
-                _deconstructionRaycastHits = default;
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionFallbackCosts);
+                _deconstructionFallbackCosts.Dispose();
+                _deconstructionFallbackCosts = default;
+            }
+
+            if (_deconstructionRefundCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionRefundCommands);
+                _deconstructionRefundCommands.Dispose();
+                _deconstructionRefundCommands = default;
+            }
+
+            if (_deconstructionRefundCommandCount.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionRefundCommandCount);
+                _deconstructionRefundCommandCount.Dispose();
+                _deconstructionRefundCommandCount = default;
+            }
+
+            if (_deconstructionLootCaches.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionLootCaches);
+                _deconstructionLootCaches.Dispose();
+                _deconstructionLootCaches = default;
+            }
+
+            if (_deconstructionLootCacheCount.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_deconstructionLootCacheCount);
+                _deconstructionLootCacheCount.Dispose();
+                _deconstructionLootCacheCount = default;
             }
 
             _deconstructionBlackBoxCursor = 0;
-            _pendingDeconstructionRequest = default;
-            _pendingDeconstructionModule = null;
-        }
-
-        private void CompleteDeferredDeconstructionRaycastForTeardown()
-        {
-            if (!_deconstructionRaycastScheduled)
-                return;
-
-            DispatcherJobFence.TryComplete(ref _deconstructionRaycastHandle, forceComplete: true);
-            _deconstructionRaycastScheduled = false;
-            _pendingDeconstructionRequest = default;
-            _pendingDeconstructionModule = null;
+            _deconstructionTelemetryHandle = default;
+            _deconstructionTelemetryCursorHandle = default;
+            _deconstructionRefundProfilesHandle = default;
+#if UNITY_EDITOR
+            _deconstructionCsvScratchHandle = default;
+#endif
+            _deconstructionSequence = 0u;
+            _lastShinobu336RefundedResources = 0;
+            _lastShinobu336OverflowCaches = 0;
+            _lastShinobu336SeveredEdges = 0;
+            _lastShinobu336NodeIndex = -1;
+            _lastShinobu336BurstMicroseconds = 0f;
+            _lastShinobu336TargetRuntimePosition = default;
+            _lastShinobu336StateHash = 0u;
+            _lastShinobu336FaultFlags = 0u;
         }
 
         private int ReadDfsVisitedCount()
@@ -1355,7 +1838,7 @@ namespace Hecton8.Construction
         /// </summary>
         public void ClearAllModules()
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _cachedObjectPool;
 
             // Iterate backwards while the list can be modified by despawn callbacks.
             for (int i = _spawnedModules.Count - 1; i >= 0; i--)
@@ -1364,7 +1847,7 @@ namespace Hecton8.Construction
 
                 if (module == null) continue; // already destroyed
 
-                DespawnOrDestroyModuleInstance(module, pool);
+                RetireModuleInstanceWithoutDestroy(module, pool);
             }
 
             _spawnedModules.Clear();
@@ -1460,7 +1943,7 @@ namespace Hecton8.Construction
                 graphNodeDto.moduleHashId = marker.Data != null ? marker.Data.ModuleHashId : 0;
                 graphNodeDto.SetAup(TryResolveAupFromRuntimeOrigin(t.position, out AbsoluteUniversePosition moduleAup)
                     ? moduleAup
-                    : GlobalSignals.CurrentRuntimeOriginAup());
+                    : RuntimeOriginRoute.CurrentRuntimeOriginAup());
                 graphNodeDto.SetRotation(t.rotation);
 
                 // Serialize dynamic state.
@@ -1569,12 +2052,12 @@ namespace Hecton8.Construction
                 (hasGraphTopology && dto.graphNodeCount <= 0))
             {
                 ClearAllModules();
-                Debug.Log("[ConstructionManager] No construction data to load.");
+                Hecton8.Core.H8Debug.Log("[ConstructionManager] No construction data to load.");
                 return;
             }
 
             // 2. Respawn modules from save.
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            IObjectPoolService pool = _cachedObjectPool;
             ClearAllModules();
             int count = hasGraphTopology
                 ? Mathf.Min(dto.graphNodeCount, dto.graphNodes.Length)
@@ -1755,7 +2238,7 @@ namespace Hecton8.Construction
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 $"[ConstructionManager] Loaded {loadedCount} modules" +
                 (skippedCount > 0 ? $", skipped {skippedCount}." : "."));
 #endif
@@ -1869,26 +2352,24 @@ namespace Hecton8.Construction
             dto.graphEdgeCount = edgeWriteIndex;
         }
 
-        private static void DespawnOrDestroyModuleInstance(GameObject module, ObjectPoolManager pool)
+        private static void RetireModuleInstanceWithoutDestroy(GameObject module, IObjectPoolService pool)
         {
             if (module == null)
                 return;
 
-            if (module.GetComponent("ConstructionRuntimeProxyTag") != null)
+            if (pool != null && pool.CanDespawnWithoutDestroy(module))
             {
-                Destroy(module);
+                pool.Despawn(module);
                 return;
             }
 
-            if (pool != null)
-                pool.Despawn(module);
-            else
-                Destroy(module);
+            module.transform.SetParent(null, false);
+            module.SetActive(false);
         }
 
-        private static ItemCatalog ResolvePlayerItemCatalog()
+        private ItemCatalog ResolvePlayerItemCatalog()
         {
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService inventoryService = _cachedPlayerInventoryService;
             PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : null;
             return inventory != null ? inventory.ItemCatalog : null;
         }
@@ -2028,8 +2509,7 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterLateFrameTick()
@@ -2040,8 +2520,7 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _lateFrameTickRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
@@ -2077,21 +2556,33 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Save)
-                return;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Save:
+                    if (_registeredSaveService != null)
+                        TryUnregisterSaveParticipant();
 
-            if (_registeredSaveService != null)
-                TryUnregisterSaveParticipant();
-
-            if (!_isInitialized || !isActiveAndEnabled)
-                return;
-
-            TryRegisterSaveParticipant(currentService as ISaveService);
+                    _cachedSaveService = currentService as ISaveService;
+                    if (_isInitialized && isActiveAndEnabled)
+                        TryRegisterSaveParticipant();
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _cachedObjectPool = currentService as IObjectPoolService;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _cachedPlayerInventoryService = currentService as IPlayerInventoryService;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    _cachedDataVault = currentService as IDataVault;
+                    if (_isInitialized && isActiveAndEnabled)
+                        TryEnsureDeconstructionVaultBuffers();
+                    break;
+            }
         }
 
         private void TryRegisterSaveParticipant()
         {
-            TryRegisterSaveParticipant(Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance);
+            TryRegisterSaveParticipant(_cachedSaveService);
         }
 
         private void TryRegisterSaveParticipant(ISaveService saveService)
@@ -2246,7 +2737,6 @@ namespace Hecton8.Construction
             }
 
             RestoreCapturedJointBodyVelocities(capturedBodyCount);
-            UnityEngine.Physics.SyncTransforms();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (capacityOverflow)
                 Debug.LogWarning("[ConstructionManager] AUP joint recovery body cache exhausted; increase initialCapacity.", this);
@@ -2281,8 +2771,8 @@ namespace Hecton8.Construction
                 Rigidbody body = _jointRecoveryBodies[i];
                 if (body != null)
                 {
-                    body.linearVelocity = _jointRecoveryLinearVelocities[i];
-                    body.angularVelocity = _jointRecoveryAngularVelocities[i];
+                    Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(body, _jointRecoveryLinearVelocities[i]);
+                    Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, _jointRecoveryAngularVelocities[i]);
                 }
 
                 _jointRecoveryBodies[i] = null;
@@ -2302,7 +2792,7 @@ namespace Hecton8.Construction
             if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             double3 localDelta = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             positionAup = AbsoluteUniversePosition.OffsetMeters(in originAup, localDelta);
             return positionAup.IsFinite();

@@ -685,10 +685,13 @@ namespace Hecton8.Scavenging
         [ReadOnly, NoAlias] public NativeArray<ScavengingResolvedYieldDTO> ResolvedYields;
         public int YieldCount;
         public NativeQueue<ItemAcquiredSignal>.ParallelWriter ItemWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> ItemWriterBudget;
         public NativeQueue<VisualScavengeSignal>.ParallelWriter VisualWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> VisualWriterBudget;
         public NativeQueue<ResourceDepletionDeltaSignal>.ParallelWriter DepletionWriter;
+        [NativeDisableParallelForRestriction] public NativeArray<int> DepletionWriterBudget;
         public NativeQueue<HUDNotificationSignal>.ParallelWriter HudWriter;
-
+        [NativeDisableParallelForRestriction] public NativeArray<int> HudWriterBudget;
         public void Execute()
         {
             if (!ResolvedYields.IsCreated)
@@ -707,7 +710,7 @@ namespace Hecton8.Scavenging
                     hudSignal.Frame = yield.Frame;
                     hudSignal.Severity = ScavengingLootOracleConstants.HudSeverityWarning;
                     hudSignal.Flags = 0;
-                    HudWriter.Enqueue(hudSignal);
+                    SignalBus<HUDNotificationSignal>.TryEnqueueBounded(HudWriter, HudWriterBudget, hudSignal);
                     continue;
                 }
 
@@ -725,7 +728,7 @@ namespace Hecton8.Scavenging
                     ? ScavengingLootOracleConstants.ItemSignalFlagQuantityClamped
                     : 0);
                 itemSignal.Frame = yield.Frame;
-                ItemWriter.Enqueue(itemSignal);
+                SignalBus<ItemAcquiredSignal>.TryEnqueueBounded(ItemWriter, ItemWriterBudget, itemSignal);
 
                 VisualScavengeSignal visualSignal = default;
                 visualSignal.PositionAup = ToVisualSignalAup(in yield.NodeAup);
@@ -738,7 +741,7 @@ namespace Hecton8.Scavenging
                 visualSignal.SourceKind = ScavengingLootOracleConstants.VisualSourceKind;
                 visualSignal.Flags = yield.Flags;
                 visualSignal._pad0 = 0;
-                VisualWriter.Enqueue(visualSignal);
+                SignalBus<VisualScavengeSignal>.TryEnqueueBounded(VisualWriter, VisualWriterBudget, visualSignal);
 
                 if (((uint)yield.Flags & ScavengingLootOracleConstants.ResultFlagSuppressDepletionDelta) != 0u)
                     continue;
@@ -751,7 +754,7 @@ namespace Hecton8.Scavenging
                 depletionSignal.WordIndex = yield.DepletionWordIndex;
                 depletionSignal.Operation = 1;
                 depletionSignal.Flags = 0;
-                DepletionWriter.Enqueue(depletionSignal);
+                SignalBus<ResourceDepletionDeltaSignal>.TryEnqueueBounded(DepletionWriter, DepletionWriterBudget, depletionSignal);
             }
         }
 
@@ -883,6 +886,7 @@ namespace Hecton8.Scavenging
         }
     }
 
+#if UNITY_EDITOR
     public static class ScavengingLootOracleCsvParser
     {
         public static int ParseLootDistributionCsvBytes(NativeArray<byte> csvBytes, NativeArray<LootTableEntryDTO> destination)
@@ -1015,6 +1019,7 @@ namespace Hecton8.Scavenging
             return hash;
         }
     }
+#endif
 
     public sealed class ScavengingLootOracleRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
@@ -1164,6 +1169,7 @@ namespace Hecton8.Scavenging
             return true;
         }
 
+#if UNITY_EDITOR
         public static bool TryIngestLootDistributionCsvBytes(NativeArray<byte> csvBytes, out int entryCount)
         {
             entryCount = 0;
@@ -1179,6 +1185,7 @@ namespace Hecton8.Scavenging
             host._emergencyTableGenerated = entryCount > 0;
             return entryCount > 0;
         }
+#endif
 
 #if UNITY_EDITOR
         public static bool TryApplyEditorTuning(float biomeScalar, float toolYieldBonus, float rareDropRate, out int entryCount, out int modifierCount)
@@ -1478,9 +1485,13 @@ namespace Hecton8.Scavenging
             publishJob.ResolvedYields = views.ResolvedYields;
             publishJob.YieldCount = count;
             publishJob.ItemWriter = SignalBus<ItemAcquiredSignal>.ParallelWriter;
+            publishJob.ItemWriterBudget = SignalBus<ItemAcquiredSignal>.ParallelWriterBudget;
             publishJob.VisualWriter = SignalBus<VisualScavengeSignal>.ParallelWriter;
+            publishJob.VisualWriterBudget = SignalBus<VisualScavengeSignal>.ParallelWriterBudget;
             publishJob.DepletionWriter = SignalBus<ResourceDepletionDeltaSignal>.ParallelWriter;
+            publishJob.DepletionWriterBudget = SignalBus<ResourceDepletionDeltaSignal>.ParallelWriterBudget;
             publishJob.HudWriter = SignalBus<HUDNotificationSignal>.ParallelWriter;
+            publishJob.HudWriterBudget = SignalBus<HUDNotificationSignal>.ParallelWriterBudget;
 
             JobHandle publishHandle = publishJob.Schedule(resolveHandle);
             _pendingPublishHandle = publishHandle;
@@ -1766,7 +1777,7 @@ namespace Hecton8.Scavenging
             if (TryResolveScavengingVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
                 return true;
 
-            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
             return TryResolveScavengingVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
         }
 

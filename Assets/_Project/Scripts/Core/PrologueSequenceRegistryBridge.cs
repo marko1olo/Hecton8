@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -322,7 +322,7 @@ namespace Hecton8.Core
             signal.Paused = paused ? (byte)1 : (byte)0;
             signal.Flags = (byte)flags;
             signal.RestoreScalar = 1f;
-            GlobalSignals.Publish(in signal);
+            SignalBus<SystemPauseSignal>.TryPush(in signal);
         }
 
         public void PublishMuffledBreathing(float intensity01, float durationSeconds)
@@ -335,16 +335,16 @@ namespace Hecton8.Core
             mixer.DuckingDb = -18f * safeIntensity;
             mixer.Frame = CurrentFrame;
             mixer.Flags = 1;
-            GlobalSignals.Publish(in mixer);
+            SignalBus<MixerStateSignal>.TryPush(in mixer);
 
             AcousticPingSignal ping = default;
-            ping.PositionAup = GlobalSignals.CurrentRuntimeOriginAup();
+            ping.PositionAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             ping.RadiusMeters = math.max(8f, durationSeconds * 12f);
             ping.Intensity01 = safeIntensity;
             ping.SourceId = MuffledBreathingHash;
             ping.Channel = AcousticPingSignal.ChannelFabricScrape;
             ping.Flags = AcousticPingSignal.FlagFabricScrape;
-            GlobalSignals.Publish(in ping);
+            SignalBus<AcousticPingSignal>.TryPush(in ping);
         }
 
         public void PublishHullTempCriticalWarning(float severity01)
@@ -355,7 +355,7 @@ namespace Hecton8.Core
             signal.Severity01 = math.saturate(severity01);
             signal.CooldownSeconds = 2f;
             signal.Priority = 1;
-            GlobalSignals.Publish(in signal);
+            SignalBus<VocalWarningSignal>.TryPush(in signal);
         }
 
         public void PublishHeavyRumble(float intensity01, float durationSeconds)
@@ -367,7 +367,7 @@ namespace Hecton8.Core
             signal.SourceHash = SourceHash;
             signal.Frame = CurrentFrame;
             signal.Channel = HapticRequest.ChannelVehicleCritical;
-            GlobalSignals.Publish(in signal);
+            SignalBus<HapticRequest>.TryPush(in signal);
         }
 
         public void PublishManualReleasePrompt()
@@ -380,7 +380,7 @@ namespace Hecton8.Core
             diegetic.PromptKind = DiegeticHudSignal.PromptManualRelease;
             diegetic.Priority = 3;
             diegetic.Flags = DiegeticHudSignal.FlagPersistent;
-            GlobalSignals.Publish(in diegetic);
+            SignalBus<DiegeticHudSignal>.TryPush(in diegetic);
 
             HUDNotificationSignal hud = default;
             hud.MessageHash = ManualReleaseHash;
@@ -389,25 +389,25 @@ namespace Hecton8.Core
             hud.Frame = CurrentFrame;
             hud.Severity = 2;
             hud.Flags = 1;
-            GlobalSignals.Publish(in hud);
+            SignalBus<HUDNotificationSignal>.TryPush(in hud);
         }
 
         public void PublishMassiveImpact()
         {
-            CameraJuiceSignals.PublishImpact(MassiveImpactSeverity, Vector3.zero, Vector3.down);
+            CameraJuiceSignals.TryPublishImpact(MassiveImpactSeverity, Vector3.zero, Vector3.down);
         }
 
         public void PublishOceanHandoff()
         {
             PrologueCompleteSignal signal = default;
-            signal.CapsuleAup = GlobalSignals.CurrentRuntimeOriginAup();
+            signal.CapsuleAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             signal.Frame = CurrentFrame;
             signal.SourceHash = SourceHash;
             signal.Sequence = unchecked(++_sequence);
             signal.WhiteoutHoldSeconds = 0.12f;
             signal.Flags = PrologueCompleteSignal.FlagForceWhiteout;
             signal.Phase = PrologueCompleteSignal.PhaseOceanHandoff;
-            GlobalSignals.Publish(in signal);
+            SignalBus<PrologueCompleteSignal>.TryPush(in signal);
         }
 
         public void ZeroUniverseVelocity()
@@ -422,13 +422,13 @@ namespace Hecton8.Core
             _observedProxySurfaceReady = true;
 
             SectorResidencyHydratedSignal signal = default;
-            signal.CenterAup = GlobalSignals.CurrentRuntimeOriginAup();
+            signal.CenterAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             signal.ChunkId = oceanSurfaceChunkId != 0 ? oceanSurfaceChunkId : ShallowWaterChunkHash;
             signal.Frame = CurrentFrame;
             signal.RadiusMetersQ = 64;
             signal.Flags = SectorResidencyHydratedSignal.FlagPinned | SectorResidencyHydratedSignal.FlagProxyFallback;
             signal.ResidencyState = 1;
-            SignalBus<SectorResidencyHydratedSignal>.Push(in signal);
+            SignalBus<SectorResidencyHydratedSignal>.TryPush(in signal);
         }
 
         public void PushTelemetry(PrologueStage stage, uint stateHash, byte flags)

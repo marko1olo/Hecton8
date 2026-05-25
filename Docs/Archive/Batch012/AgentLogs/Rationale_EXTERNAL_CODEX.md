@@ -161,4 +161,249 @@ Rejected Alternatives: Registering every pickup instance as a hot-swap listener,
 Scalability potential: Low/Middle/High/Ultra keep identical pickup, inventory, buoyancy, and pooling behavior; service identity is stable across all tiers.
 Hardware Impact: Prevents stale service pointers without adding per-pickup listener cost. Avoids per-interaction registry polling; estimated saving is 1-2 us per pickup interaction/preview on low-end CPUs, with one rare listener callback per service replacement.
 
+## 2026-05-23 Player Tool Runtime Context And VR Contract Cleanup
+Problem: `PlayerToolManager` mixed a concrete `PlayerRuntimeContext` field with interface consumers and could fail after player service replacement. The generated Core project also omitted existing VR interaction contract sources, blocking verification once the player-tool split was fixed.
+Solution: Added a cached `IPlayerRuntimeContext` service route for consumers while preserving the concrete runtime context only for interaction-state publication. Patched the local generated `Hecton8.Core.csproj` to include `VRInteractionBridgeContracts.cs` for verification.
+Rejected Alternatives: Casting interface consumers back to concrete `PlayerRuntimeContext`, changing interaction DTO layout, or rewriting VR interaction contracts into gameplay files were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical tool, interaction, and VR bridge semantics; this only repairs ownership and generated graph visibility.
+Hardware Impact: Removes stale player context risk without adding per-frame registry reads. Runtime frame impact 0 us; service replacement callback cost is rare and below 10 us.
+
+## 2026-05-23 PDA Spectrum And Physical Terminal Service Rebind Cleanup
+Problem: `PDASpectrumTab` read `GlobalRegistry.Player` while resolving last-loss/player AUP text. `PhysicalTerminalKeyboard` and `PhysicalPanelDial` read `GlobalRegistry.Audio` directly during press/scroll input. The next compile wall exposed stale generated Core graph state for `PlayerHandIkContracts.cs` and a missing World namespace import in `PlayerKinematicsRuntime_HandIK.cs`.
+Solution: Added hot-swap Player caching to `PDASpectrumTab`; added hot-swap Audio caching to the physical terminal keyboard and dial; patched the local generated Core project to include `PlayerHandIkContracts.cs`; added `using Hecton8.World;` to the hand IK partial.
+Rejected Alternatives: Per-input registry reads, scene searches, duplicating hand IK constants, or removing published hand IK state were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical PDA diagnostics, terminal input, audio event payloads, and hand IK DTO layout. Quality scaling remains continuous and separate from service ownership.
+Hardware Impact: Removes PDA/player registry reads during loss label refresh and Audio registry reads from physical terminal press/scroll actions, estimated 1-3 us per affected UI refresh/input burst on low-end CPUs. Generated graph/source import repairs are build-only.
+
 Residual Risk: The ignored local generated `Hecton8.Core.csproj` was patched only to verify the current checkout. Durable graph correctness still depends on Unity/project generation preserving local asmdef script-assembly references, which is covered by the tracked pruner fix and EditMode regression test.
+
+## 2026-05-23 Documentation Boundary Sync
+Problem: Stable root/architecture docs did not carry the latest EXTERNAL_CODEX CLI compile slice and registry hot-swap cleanup boundary, leaving the current evidence split buried in status/log files.
+Solution: Updated concise boundary notes in the root docs, runtime execution plan, and global-authority architecture docs. Marked the build as CLI_COMPILE only, named the artifact, and preserved Unity/runtime/profiler/GC gaps.
+Rejected Alternatives: Creating a large new dated report would bloat the active documentation surface; editing archived batch docs would violate batch hygiene; claiming runtime proof from CLI build would be false.
+Scalability potential: Low/Middle/High/Ultra all benefit from clearer global-authority burn-down state; no quality route or gameplay truth changed.
+Hardware Impact: Runtime 0 us. Documentation reduces repeated agent discovery/triage time, estimated 20,000-60,000 us per future handoff on low-end editor machines.
+
+## 2026-05-23 Root Anchor Boundary Sync
+Problem: `AGENTS.md`, root release/playtest ledgers, and root/report indexes still exposed R51-only wording after the EXTERNAL_CODEX CLI compile slice was promoted into stable docs.
+Solution: Added one-line CLI_COMPILE boundary notes to the root anchors and indexes without changing runtime or product acceptance status.
+Rejected Alternatives: Rewriting historical roadmap/playtest entries would bloat high-churn ledgers and risk changing capture-time evidence; leaving root anchors stale would mislead new agents.
+Scalability potential: Low/Middle/High/Ultra unaffected; this is documentation routing only.
+Hardware Impact: Runtime 0 us. Handoff lookup saving estimated 10,000-30,000 us per agent because the primary root files now name the current compile artifact.
+
+## 2026-05-23 UI Audio Playback Service Rebind Cleanup
+Problem: `UIButtonAudioTrigger` refreshed `GlobalRegistry.Audio` on click when the cached audio service was missing. `UIAudioFeedback.PlaySound()` also had a playback-time Audio registry fallback, and `SuitAdvisoryController.PlayUiClip()` resolved Audio directly for warning/critical clips.
+Solution: Added hot-swap Audio caching to `UIButtonAudioTrigger` and `SuitAdvisoryController`; removed playback-time fallback in `UIAudioFeedback`; kept existing cold service seeding during lifecycle.
+Rejected Alternatives: Per-click/per-warning registry reads, adding scene audio lookup, or routing button audio through a new service slot were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical UI audio clip identity and volume behavior; this only stabilizes service ownership.
+Hardware Impact: Removes playback-time Audio registry reads from click, hover, slider/toggle, and suit advisory paths, estimated 1-3 us per UI audio burst on low-end CPUs. Hot-swap callback cost is rare and below 10 us.
+
+## 2026-05-23 Verifier Pointer Documentation Sync
+Problem: Stable docs promoted the EXTERNAL_CODEX boundary but still pointed at `Build_EXTERNAL_CODEX_hotpath_cleanup16_retry2.log`, while current status recorded `Build_EXTERNAL_CODEX_hotpath_cleanup17.log` after UI audio service rebind cleanup.
+Solution: Updated root/docs/architecture pointers to `cleanup17` and added UI audio feedback to the global-authority migration surface.
+Rejected Alternatives: Keeping mixed verifier pointers would make future agents read stale evidence; creating another report would add noise without new proof.
+Scalability potential: Low/Middle/High/Ultra unaffected; documentation routing only.
+Hardware Impact: Runtime 0 us. Handoff lookup saving estimated 5,000-15,000 us per agent.
+
+## 2026-05-23 Active Doc Header Actuality Sync
+Problem: Active entry docs had 2026-05-14/15/18/19/20/21 headers after 2026-05-23 EXTERNAL_CODEX facts were promoted into their bodies.
+Solution: Updated edited root/docs/architecture headers to 2026-05-23 and marked CLI_COMPILE as valid only where an artifact path is cited.
+Rejected Alternatives: Leaving stale headers would mislead read-order triage; mass-updating untouched subsystem docs would create noise.
+Scalability potential: Low/Middle/High/Ultra unaffected; documentation metadata only.
+Hardware Impact: Runtime 0 us. Handoff lookup saving estimated 5,000-10,000 us per agent.
+
+## 2026-05-23 Runtime Service Rebind Cleanup 25
+Problem: Several active runtime routes still mixed cold registry bootstrap with stale service ownership. `BuoyancyObject` missed late `HectonFluidEngine` registration; `PickupItem` static Player/Inventory/Physics/ObjectPool caches did not hot-swap; `WorldSliceDirector` and `WorldProceduralScatterDirector` read Player through registry-backed fallback routes; scatter spawning/destruction re-read ObjectPool; `SubtitleManager` resolved Player during audio-log sensory pulses; `TerminalOsRuntime` retried DataVault through registry when native buffers were missing.
+Solution: Added hot-swap service caching where the class already owns the runtime route. Buoyancy now rebinds to `FluidRuntime`; pickups use one static hot-swap listener like `HectonItem`; world slice/scatter cache Player and scatter ObjectPool; subtitles cache Player; terminal native allocation consumes cached DataVault and resets handles on DataVault replacement.
+Rejected Alternatives: Per-frame/per-input registry polling, scene searches, registering every pickup instance as a hot-swap listener, changing terminal DTO layouts, or moving scatter pool ownership into a new global service were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical buoyancy math, pickup identity, scatter placement, subtitle impulse, and terminal native DTO behavior. This only stabilizes owner routing; continuous quality routes and visual budgets are unchanged.
+Hardware Impact: Removes registry lookups from world scatter warmup/spawn/destroy, slice/scatter observer resolution, subtitle cue pulses, terminal vault retry, and pickup interaction helpers. Estimated low-end saving is 1-6 us per affected action/pass; late hot-swap callbacks are rare and below 10 us. The compile retry exposed one static/instance fallout and was fixed before accepting the loop.
+
+## 2026-05-23 UI Loading Preview Pool Rebind Cleanup
+Problem: UI loading and preview helpers still had direct runtime service fallbacks. `LoadingScreenController.Show()` performed a dead Audio registry read; `SaveSlotHoverPreview.PopulatePreviewMetadata()` pulled Localization and SaveRuntime during hover display; `LoadingTipsDisplay.LoadTips()` pulled Localization on language reload; `UIParticleEffect` despawned pooled particles through the current ObjectPool instead of the pool that created the instance.
+Solution: Removed the dead loading Audio read; added hot-swap cached Localization/SaveRuntime to save-slot preview; added hot-swap cached Localization to loading tips; cached ObjectPool for UI particle spawn and stored the owning pool for despawn.
+Rejected Alternatives: Keeping hover/loading registry reads, treating language events as sufficient for Localization replacement, despawning pooled particles through whatever ObjectPool is currently registered, or adding a new UI-only pool route were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical loading text, save metadata, tip selection, particle count/lifetime/speed/color, and pool semantics. Continuous quality behavior is unchanged.
+Hardware Impact: Removes registry reads from hover metadata refresh and loading-tip localization reload, and prevents wrong-pool despawn after ObjectPool replacement. Estimated saving is 1-3 us per UI refresh/particle lifecycle on low-end CPUs; hot-swap callback cost is rare and below 10 us. First build attempt failed before compile due a concurrent log-file lock, then retry compiled clean.
+
+## 2026-05-23 World Spatial/Wreck/Vegetation Owner Route Cleanup
+Problem: `WorldSpatialHashGrid` read Player through `GlobalRegistry` in far-unload and acoustic-density runtime helpers. `WreckMaterialRegistry` read Player for PDA signal distance and view-camera culling. `HectonMapMagicVegetationBridge`/`VegetationFlowFieldIntegrator` read Weather directly while scheduling flow/thermal jobs and registering biolume surges.
+Solution: Routed spatial hash and wreck AUP/camera queries through `PlayerRuntimeContextService.TryGetActiveRuntimeContext`. Cached `IWeatherService` in vegetation bridge during cold enable and updated it through `IGlobalRegistryHotSwapListener`; flow/thermal scheduling and biolume surge registration now consume the cached owner.
+Rejected Alternatives: Keeping slow/update helper registry reads, adding scene camera fallbacks, creating new global slots, or changing flow-field/weather DTO payloads were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical far-unload thresholds, acoustic density cells, BRG culling behavior, flow-field math, and weather bias. Continuous `GlobalQualityWeight` remains a fidelity/cadence control only.
+Hardware Impact: Removes Player/Weather registry lookups from affected world runtime passes, estimated 1-5 us per far-unload/acoustic/wreck/vegetation pass on i3/MX350-class CPUs. Hot-swap callback cost is rare and below 10 us.
+
+## 2026-05-23 Concurrent Verifier Pointer Sync
+Problem: Another active slice verified after the world-owner build and produced `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup19_retry1.log` with 0 warning/error text matches.
+Solution: Promoted root/architecture CLI_COMPILE pointers from `cleanup19.log` to `cleanup19_retry1.log` without changing world-owner code claims.
+Rejected Alternatives: Leaving root docs on an older clean verifier while status marked a newer clean verifier as current would mislead handoff.
+Scalability potential: Documentation-only; Low/Middle/High/Ultra runtime behavior unchanged.
+Hardware Impact: Runtime 0 us. Handoff lookup saving estimated 2,000-5,000 us per future agent.
+
+## 2026-05-23 Beacon Acoustic Pause Service Rebind Cleanup
+Problem: Several action/runtime paths still used direct registry fallback for replaceable services: beacon pool/localization, acoustic audio service, builder camera owner, beacon HUD localization, death-dump localization, and pause-menu Save/Localization/Player routes.
+Solution: Added cold service seeding plus `IGlobalRegistryHotSwapListener` refresh where the owner already owns the lifecycle. Beacon despawn now uses the pool that spawned the beacon. Builder camera binding uses the active player runtime context route. Pause save/language actions consume cached SaveManager/Localization/Player context.
+Rejected Alternatives: Per-action registry reads, scene camera searches, new global slots, changing save DTOs, or despawning beacons through the currently registered pool were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical beacon labels, pause save behavior, localized UI text, acoustic mix payloads, and quality-weight semantics. This only repairs ownership and replacement behavior.
+Hardware Impact: Removes registry reads from beacon spawn/despawn/localization, pause save/language modal paths, acoustic playback resolution, and HUD/death-dump localization refresh. Estimated saving is 1-5 us per affected UI/audio/spawn action on i3/MX350-class CPUs; hot-swap callback cost is rare and below 10 us.
+
+## 2026-05-23 Resource/Ecosystem/Voxel Streaming Player Route Cleanup
+Problem: `ResourceDistributionDirector`, `EcosystemDirector`, and `HectonVoxelStreamingBridge` still had Player reads through direct `GlobalRegistry.Player` runtime helpers. These routes run from slow/runtime residency, ecosystem stress/AUP, and voxel streaming passes, so they could poll the cold registry or miss service replacement.
+Solution: Cached `IPlayerRuntimeContext` in resource distribution and ecosystem lifecycle/hot-swap paths, handled `GlobalRegistryServiceSlot.Player`, cleared owner state on shutdown, and routed voxel streaming through `PlayerRuntimeContextService.TryGetActiveRuntimeContext`.
+Rejected Alternatives: Polling `GlobalRegistry.Player` inside slow/runtime helper methods, adding a new global slot, or removing existing deterministic transform fallback in voxel streaming were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical resource sector residency, ecosystem spawn/stress, and voxel streaming distance math. Quality weight remains a cadence/fidelity control only.
+Hardware Impact: Removes Player registry reads from affected resource/ecosystem/voxel streaming passes, estimated 1-4 us per pass on i3/MX350-class CPUs. Hot-swap callback cost is rare and below 10 us.
+
+## 2026-05-23 Biome Boundary And Thermal Grid Quality Cleanup
+Problem: `BiomeBoundarySdfRuntime` cached Player only from cold registry calls and could miss late Player replacement, while `AbyssalThermalManager.UsesThermalGrid()` used a binary `Low/Mx350` tier branch to disable the 32^3 thermal grid.
+Solution: Added Player/Dispatcher hot-swap binding to the biome boundary SDF runtime. Replaced the thermal-grid tier branch with continuous `HomeostasisBrain.GlobalQualityWeight` multiplied by a smooth VRAM weight from 1024 MB to 3072 MB.
+Rejected Alternatives: Polling `GlobalRegistry.Player` in the biome slow tick, adding a new global slot, preserving the binary thermal tier switch, or changing thermal DTO/save layout were rejected.
+Scalability potential: Weak devices fade the expensive thermal grid out through low quality/VRAM weight; middle devices cross the threshold naturally; high/ultra keep the grid and can spend the saved budget on visuals. Gameplay truth, save identity, and DTO layout do not change.
+Hardware Impact: Biome SDF avoids stale/missing Player context without slow-tick registry reads, estimated 1-2 us per recovery pass. Thermal grid avoids allocating/running the 32^3 diffusion/readback path when continuous quality and VRAM budget do not justify it; low-end i3/MX350-class gain is workload-dependent and can be milliseconds when the grid stays disabled.
+
+## 2026-05-23 Proxy Light Continuous Math Cleanup
+Problem: `ProxyLightRegistry.GetVisibleLightsBatch()` read `GlobalRegistry.ScalabilityTier` in the visible-light batch and selected `DistanceMath.Normalize` through a binary tier path.
+Solution: Replaced the hot registry tier read with `HomeostasisBrain.GlobalQualityWeight` and blended dominant-axis approximation with precise normalization by continuous quality and distance.
+Rejected Alternatives: Keeping binary low/high math LOD, adding a listener to a static registry, or forcing precise normalization for every low-tier distant proxy light were rejected.
+Scalability potential: Weak devices keep dominant-axis cheap math for distant/low-quality lights; middle tiers blend; high/ultra get precise near-light forward gating. Light identity and visibility authority remain unchanged.
+Hardware Impact: Removes one `GlobalRegistry.ScalabilityTier` read per proxy-light batch and avoids precise normalize on low-quality distant gates. Estimated saving is 1-3 us per dense proxy-light query on i3/MX350-class CPUs.
+
+## 2026-05-23 Active Architecture Verifier Pointer Repair
+Problem: `GLOBAL_AUTHORITY_BOUNDARIES.md` and `GLOBAL_AUTHORITY_OPERATING_MODEL.md` still named `cleanup21_beacon_pause` after proxy-light cleanup produced the newer `cleanup21` verifier artifact.
+Solution: Moved both active authority docs to `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup21.log`.
+Rejected Alternatives: Keeping mixed active verifier pointers or rewriting historical log entries were rejected.
+Scalability potential: Documentation-only; all runtime tiers unchanged.
+Hardware Impact: Runtime 0 us. Future handoff lookup saving estimated 1,000-3,000 us.
+
+## 2026-05-23 Audio Log Service Rebind Cleanup
+Problem: `AudioLogPickup` resolved AudioLogRuntime and Localization through registry in enable/interact/localization paths. `AudioLogSystem` registered/unregistered against `SaveRuntime` through direct registry reads and did not update on Save service replacement.
+Solution: Added cached AudioLogRuntime/Localization to pickups with hot-swap refresh, and cached SaveManager in `AudioLogSystem` with replacement-time unregister/register. Existing audio/player cache handling stayed intact.
+Rejected Alternatives: Per-interact registry reads, new audio-log global route, scene search, or leaving saveable registration pinned to a stale SaveManager were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical log discovery, pickup deactivation, playback, save mask layout, and localization behavior. This only repairs owner routing.
+Hardware Impact: Removes registry reads from audio-log pickup enable/interact/localization and SaveRuntime lifecycle registration. Estimated saving is 1-3 us per pickup interaction/enable on low-end CPUs; hot-swap callback cost is rare and below 10 us.
+
+## 2026-05-23 Flora Genome Continuous Quality Cleanup
+Problem: `FloraGenomeVaultRuntime.ResolveHardwareTier()` read `GlobalRegistry.ScalabilityTier` when scheduling plant L-system generation.
+Solution: Replaced the registry tier read with finite/saturated `HomeostasisBrain.GlobalQualityWeight` and four cost bands: weak, middle, high, ultra.
+Rejected Alternatives: Keeping binary hardware-tier switch, adding a new registry slot, or changing `FloraPlantSeedDTO` layout were rejected.
+Scalability potential: Weak devices cap L-system expansion and matrix output cheaply; middle/high tiers scale up; ultra keeps full branch matrix budget. Save identity and DTO layout remain unchanged.
+Hardware Impact: Removes one registry tier read per plant generation schedule and keeps low-end plant jobs in cheaper matrix/iteration caps. Estimated saving is 1-4 us per dense generation scheduling burst plus reduced job work on low quality.
+
+## 2026-05-23 Resource Scarcity Service Rebind Cleanup
+Problem: `ResourceScarcityDirector` registered directly against `GlobalRegistry.SaveRuntime` and read Quest/PlayerInventory/Player through registry inside scarcity slow-tick and collection paths.
+Solution: Added cached SaveManager, QuestManager, PlayerInventory service, and Player runtime context; added `IGlobalRegistryHotSwapListener`; Save replacement unregisters/registers through the cached owner; scarcity evaluation and player AUP resolution consume cached services.
+Rejected Alternatives: Per-slow-tick registry reads, static player AUP lookup, adding a new scarcity global route, or changing scarcity save DTOs were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical directive thresholds, sector extraction math, quest hashes, and save layout. This only repairs service ownership and replacement behavior.
+Hardware Impact: Removes Quest/Inventory/Player registry reads from scarcity slow-tick and collection event evaluation. Estimated saving is 1-3 us per scarcity pass on i3/MX350-class CPUs; hot-swap callback cost is rare and below 10 us. Compile proof is now covered by `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality_retry2.log`.
+
+## 2026-05-23 Marauder Outpost Continuous Quality Cleanup
+Problem: `MarauderOutpostGenerationService.ResolveQualityTier()` read `GlobalRegistry.ScalabilityTier` while choosing outpost WFC/job cost.
+Solution: Replaced the registry tier read with finite/saturated `HomeostasisBrain.GlobalQualityWeight` and weak/middle/high/ultra thresholds.
+Rejected Alternatives: Keeping hardware-tier registry reads, adding quality to outpost snapshot/persistence DTOs, or collapsing to a binary low/high quality switch were rejected.
+Scalability potential: Weak devices keep smaller outpost solve dimensions and job work; middle/high scale naturally; ultra keeps the full WFC budget. Gameplay truth, save identity, and DTO layout remain unchanged.
+Hardware Impact: Removes one registry tier read per outpost generation schedule and keeps low-end WFC work in cheaper caps. Estimated saving is 1-5 us per generation scheduling path plus reduced job work on low quality.
+
+## 2026-05-23 Soundscape Continuous Quality Cleanup
+Problem: `SoundscapeSystem` seeded impact-signal policy from `GlobalRegistry.ScalabilityTier` and kept a binary `ScalabilityChangedEvent` subscription for drain budget and dynamic pitch.
+Solution: Removed the tier cache/event route for this presentation policy. Signal drain budget and impact pitch now derive from finite/saturated `HomeostasisBrain.GlobalQualityWeight` with smooth continuous scaling.
+Rejected Alternatives: Keeping binary tier events, adding a new registry slot, or preserving a high/low dynamic-pitch switch were rejected.
+Scalability potential: Weak devices drain fewer impact signals and keep flatter clang pitch; middle/high scale continuously; ultra spends budget on more signal detail and stronger pitch variation. Audio event identity and gameplay truth remain unchanged.
+Hardware Impact: Removes scalability event listener maintenance and one cold registry tier seed; low quality drains fewer impact signals. Estimated saving is 1-4 us per soundscape slow tick under dense impact traffic.
+
+## 2026-05-23 Save Thumbnail Continuous Quality Cleanup
+Problem: `SaveThumbnailSystem.ShouldSkipScreenshotForCurrentTier()` read `GlobalRegistry.ScalabilityTier` to skip captures on Low/Mx350.
+Solution: Replaced the tier read with finite/saturated `HomeostasisBrain.GlobalQualityWeight` and a continuous threshold that preserves low-quality skip behavior.
+Rejected Alternatives: Keeping binary hardware-tier gate, changing thumbnail dimensions/file format, or adding save-slot quality metadata were rejected.
+Scalability potential: Weak devices keep cheap fallback thumbnail reuse; middle/high/ultra capture thumbnails normally. Save identity, thumbnail path, and cache layout remain unchanged.
+Hardware Impact: Removes one registry tier read per thumbnail request and avoids GPU readback/encode below quality threshold. Estimated saving is 1-3 us per request plus full skipped capture cost on weak devices.
+
+## 2026-05-23 Contextual Physical IK Continuous Quality Cleanup
+Problem: `ContextualPhysicalIkRig` kept a binary `GlobalRegistry.ScalabilityTier` cache and `ScalabilityChangedEvent` subscription for lower-body IK, wall touch, breathing wave, and spine target policy.
+Solution: Removed the tier cache/listener. `HomeostasisBrain.GlobalQualityWeight` now continuously scales IK cadence distance bias, foot/hand probe and contact weights, wall-touch influence, breathing rate/amplitude/jitter, and triangle-to-fast-sine spine motion without changing `ContextualPhysicalIkEntityState` or target-frame layout.
+Rejected Alternatives: Keeping Low/Mx350 feature switches, adding a new registry slot, changing runtime DTO layout, or forcing high-cost sine/long probe distances on weak devices were rejected.
+Scalability potential: Weak devices keep reduced IK influence, shorter hand/foot probe work, flatter breathing, and earlier cadence throttling; middle devices interpolate; high/ultra keep fuller wall touch/spine motion. Gameplay truth, save identity, and IK DTO layout remain unchanged.
+Hardware Impact: Removes one cold tier read and one scalability event listener per rig. Low quality reduces ray distances/influence and pushes throttle bands earlier; estimated saving is 2-9 us per dense rig capture/raycast scheduling slice on i3/MX350-class CPUs.
+
+## 2026-05-23 Procedural Wreck Continuous Quality And Signal Lane Cleanup
+Problem: `ProceduralWreckGenerator` still used a binary scalability listener for WFC grid/placement, BRG fragment, debris, and debris-gravity budgets. The next compile also exposed mismatched signal-lane writes: compliance, crush warning, simulation pause, and brownout payloads were pushed through unrelated or wrong generic lanes.
+Solution: Wreck budgets now read finite/saturated `HomeostasisBrain.GlobalQualityWeight` and map continuously to power-of-two grid cap, placement cap, BRG cap, debris budget, and gravity slice. Removed the wreck scalability listener. Signal producers now publish through the payload owner route: `GlobalSignals.Publish(in payload)`.
+Rejected Alternatives: Keeping tier/event caches, changing wreck save/render DTO layout, adding a new registry slot, or casting payloads into unrelated `SignalBus<T>` lanes were rejected.
+Scalability potential: Weak devices keep smaller wreck solve grids, fewer placements/fragments/debris records, and smaller gravity slices; middle/high interpolate; ultra keeps full authored wreck density. Gameplay identity, AUP seed, save layout, and signal payload layouts remain unchanged.
+Hardware Impact: Removes one scalability event listener from each wreck generator and avoids tier cache maintenance. Low quality cuts WFC/debris/BRG work before allocation-heavy paths. Estimated saving is 3-14 us per wreck setup/slow slice plus larger job/render work avoidance on low-end i3/MX350-class CPUs.
+
+## 2026-05-23 Acoustic Service Rebind Cleanup
+Problem: `AcousticZoneController` still resolved `SoundscapeSystem` and `HectonAtmosphereManager` through `GlobalRegistry` in resolver paths reached by tick/update flow.
+Solution: Added cached Soundscape/Atmosphere owner fields seeded in cold enable and refreshed through `IGlobalRegistryHotSwapListener`. Runtime resolvers now return cached owners only; service replacement refreshes soundscape tier and atmosphere zone caches.
+Rejected Alternatives: Keeping timed registry retry inside soundscape/atmosphere resolvers, adding scene search fallback, or changing acoustic transition DTO/signal layout were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical acoustic snapshots, storm/vegetation overlays, soundscape tier scalars, and atmosphere zone semantics. This only repairs owner routing.
+Hardware Impact: Removes Soundscape/Atmosphere registry reads from acoustic tick-dependent resolver paths. Estimated saving is 1-2 us per acoustic context refresh on i3/MX350-class CPUs; hot-swap callbacks are rare and below 10 us. Direct acoustic build attempts hit stale concurrent source in other files; later compile proof is covered by `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup28_ui_quality.log`.
+
+## 2026-05-23 UI And Vegetation Continuous Quality Cleanup
+Problem: `HectonIndirectVegetationRenderer` consumed binary scalability profile snapshots for density decimation. `DiegeticPanelController`, `SuitHUDV4CanvasOverlay`, and `DiegeticTooltipSystem` kept `ScalabilityChangedEvent` listener state for presentation-only quality policy.
+Solution: Replaced those routes with finite/saturated `HomeostasisBrain.GlobalQualityWeight`. Vegetation density now maps quality pressure to decimation step. Diegetic panel refreshes RT/phosphor/material policy from continuous quality during runtime ticks. Suit HUD and tooltip update cadence/fade/dither from continuous quality without scalability event subscription.
+Rejected Alternatives: Keeping binary profile/event listeners, changing UI signal DTOs, changing vegetation instance payload layout, or editing dirty unrelated runtime files were rejected.
+Scalability potential: Weak devices raise vegetation decimation and reduce UI presentation cadence/fade/dither cost; middle/high interpolate; ultra keeps dense vegetation, full HUD cadence, and richer tooltip/panel presentation. Gameplay truth, input identity, save state, and render DTO layouts remain unchanged.
+Hardware Impact: Removes four scalability listener routes and one vegetation profile snapshot drain. Estimated low-end i3/MX350-class saving is 1-8 us across dense UI/vegetation presentation slices, plus reduced indirect vegetation culling/draw pressure at low quality. Compile proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup28_ui_quality.log`, 0 warning/error text matches.
+
+## 2026-05-23 Battery Charger Service Rebind And Physics Fauna Contract Cleanup
+Problem: `BatteryCharger` resolved Player/Audio through `GlobalRegistry` in interaction/insert paths. The next owned compile also exposed a concrete physics dependency on `Hecton8.AI.FaunaBrain` inside `GlobalPhysicsStateManager`.
+Solution: `BatteryCharger` now cold-caches Player runtime context and Audio service, refreshes both through `IGlobalRegistryHotSwapListener`, and force-resets player-owned tool/inventory caches on Player replacement. `GlobalPhysicsStateManager` classifies fauna rigidbodies through `IScannerFaunaScientificContact` instead of the AI concrete.
+Rejected Alternatives: Keeping per-interact registry reads, preserving stale tool/inventory cache across Player replacement, or adding AI concrete includes to physics were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical charger transaction semantics and physics clamp values. This only repairs owner routing and cross-domain coupling.
+Hardware Impact: Removes Player/Audio registry reads from charger interaction/insert paths and removes one physics->AI concrete compile dependency. Estimated runtime saving is 1-2 us per charger interaction on i3/MX350-class CPUs. Compile proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry3.log`, 0 warning/error text matches.
+
+## 2026-05-23 UI/Vegetation Smoke Regression Gate And Compile Wall Repair
+Problem: Cleanup42 removed binary scalability routes, but no source smoke gate prevented their return. The next guarded compile exposed dirty-file walls in Fauna acoustic imports, DataMonolith native import attributes, and MessageTerminal late-frame interface binding.
+Solution: `AdvancedAcousticsSmokeTester` now asserts indirect vegetation and diegetic UI use `HomeostasisBrain.GlobalQualityWeight` and reject `ScalabilityChangedEvent`/binary profile routes. Restored minimal import/interface links in the dirty files only.
+Rejected Alternatives: Leaving cleanup42 as chat/documentation proof, editing core legacy scalability bridge, changing fauna acoustic DTOs, or rewriting DataMonolith native read logic were rejected.
+Scalability potential: Weak/Middle/High/Ultra runtime behavior stays unchanged; the new editor gate protects continuous quality routing and blocks binary regression in UI/vegetation presentation.
+Hardware Impact: Runtime 0 us for the smoke gate. Compile-wall repairs are semantic/no-cost. Future regression lookup saving estimated 1,000-3,000 us.
+
+## 2026-05-23 Loot Magnet Continuous Quality Cleanup
+Problem: `LootMagnetSystem` read `GlobalRegistry.ScalabilityTierProfileByte` to choose acoustic, wake, and fluid impulse presentation budgets.
+Solution: Replaced the binary tier byte with finite/saturated `HomeostasisBrain.GlobalQualityWeight`, slow-tick hysteresis, continuous budget interpolation, and smooth fluid impulse radius/lifetime/intensity.
+Rejected Alternatives: Keeping hard low/default/high/ultra tier branches, changing loot acquisition truth, changing DataVault buffer layouts, or touching unrelated death-cache edits were rejected.
+Scalability potential: Weak devices emit fewer/softer loot presentation signals; middle/high interpolate; ultra spends budget on stronger wake/acoustic/fluid feedback. Item acquisition truth, inventory commits, signal DTOs, and save identity remain unchanged.
+Hardware Impact: Removes one scalability registry read per dependency refresh and avoids hard tier gates in loot presentation. Estimated saving is 1-3 us per dense loot commit slice on i3/MX350-class CPUs plus lower presentation signal pressure at weak quality.
+
+## 2026-05-23 Base Airlock Service Rebind Cleanup
+Problem: `BaseAirlock` resolved Audio through `GlobalRegistry` when a cycle started/ended and resolved NativeInputManager through `GlobalRegistry` when capturing the cycle input lock.
+Solution: Added cached Audio and NativeInputManager owner fields seeded during enable and refreshed through `IGlobalRegistryHotSwapListener`. Cycle audio and input lock now consume cached owner references only.
+Rejected Alternatives: Keeping per-cycle registry reads, adding scene-search fallbacks, or changing airlock equalization/snap/teleport semantics were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical airlock timing, pressure estimate, teleport snap, and audio clip semantics. This only repairs owner routing.
+Hardware Impact: Removes two Audio registry reads per airlock cycle and one NativeInputManager registry read per input lock. Estimated saving is 1-2 us per cycle on i3/MX350-class CPUs. Compile proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup49_service_rebind.log`, 0 warning/error text matches.
+
+## 2026-05-23 Continuous Quality Tail And Compile Wall Cleanup
+Problem: `FloraInteractionManager`, `DestructibleOrganicManager`, `TradeMarauderRuntime`, and `SpectrumSystem` still used binary scalability profile/tier state in presentation/economy policy. The guarded compile also exposed small dirty-file walls in physics impact interface shape, vocal warning helper scope, armor grid aliases, and PDA haptics namespace resolution.
+Solution: Replaced those quality tails with finite/saturated `HomeostasisBrain.GlobalQualityWeight` and neutral `0.5f` fallback. Removed the duplicate inherited impact-material property, qualified the nested vocal warning helper call, restored armor grid row/column aliases to the penetration LUT table, and added the PDA haptics namespace route.
+Rejected Alternatives: Keeping hard Low/Mx350 gates, changing save/DTO/layout identity, broad rewrites in dirty systems, or adding new global quality slots were rejected.
+Scalability potential: Weak devices reduce sway, fracture, economy route solve, and active sonar shader pressure continuously; middle/high interpolate; ultra keeps fuller presentation and solver budgets. Gameplay truth and data layouts stay unchanged.
+Hardware Impact: Removes binary registry quality reads from four active systems and repairs compile-only walls with no runtime cost. Estimated low-end saving is 1-8 us across dense presentation/economy slices. Compile proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup49_service_rebind.log`, 0 warning/error text matches.
+
+## 2026-05-23 Charger Module And PDA Shell Service Rebind Cleanup
+Problem: `BatteryChargerModule` used `GlobalRegistry.Player` as an interaction fallback, and `PDAShellChrome` resolved Player and NativeInput through direct registry reads after lifecycle.
+Solution: Added cached Player owner state and `IGlobalRegistryHotSwapListener` to `BatteryChargerModule`. Added cached Player context to `PDAShellChrome`, updated Player replacement to clear stale PDA/player-owned refs before rebinding, and changed NativeInput replacement to consume the rebound service instance.
+Rejected Alternatives: Polling Player/NativeInput from interaction/PDA-open paths, scene searches for player-owned state, or changing PDA/inventory/tool DTOs were rejected.
+Scalability potential: Low/Middle/High/Ultra keep identical dock semantics, PDA footer state, reboot binding display, and intrusion chrome. This only repairs owner routing.
+Hardware Impact: Removes one Player registry read from dock fallback and Player/NativeInput registry reads from PDA chrome binding paths. Estimated saving is 1-3 us per affected interaction/open/rebind path on i3/MX350-class CPUs. Compile proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup49_service_rebind.log`, 0 warning/error text matches.
+
+## 2026-05-23 Seismic Shader Shake Continuous Quality Cleanup
+Problem: `HectonSeismicTideDirector.RefreshCachedRuntimeState()` disabled shader shake through a hard `GlobalRegistry.ScalabilityTier` Low/Mx350/Unknown gate.
+Solution: Removed the cached tier field and registry tier read. Shader-shake disable now consumes the existing filtered `HomeostasisBrain.GlobalQualityWeight`, while still respecting low-memory and low math-precision modes.
+Rejected Alternatives: Keeping binary tier disables, adding a second seismic quality owner, or changing seismic/celestial DTO layouts were rejected.
+Scalability potential: Weak devices fade shader shake off through continuous quality pressure; middle/high can keep it when budget allows; ultra keeps full shader shake unless memory/math policy explicitly forbids it.
+Hardware Impact: Removes one tier registry read from seismic refresh and avoids hard profile discontinuity. Estimated saving is below 1 us per refresh; real value is deterministic continuous LOD behavior. Compile proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup49_service_rebind.log`, 0 warning/error text matches.
+
+## 2026-05-23 GPU Scatter Continuous Quality Cleanup
+Problem: `GPUScatterDirector` and `GpuScatterLodManager` still carried binary scalability event/tier state for scatter LOD, cull distance, material payload, and shader scalar policy.
+Solution: Removed `ScalabilityChangedEvent` listeners and `GlobalRegistry.ScalabilityTier` seeding. Scatter policy now reads finite/saturated `HomeostasisBrain.GlobalQualityWeight`; cull distance, payload strength, transition range, and material scalars scale continuously. Authored low/high material variant remains a discrete asset boundary derived from quality threshold only.
+Rejected Alternatives: Keeping binary Low/High switches, adding quality into DataVault scatter DTOs, or changing scatter generation identity were rejected.
+Scalability potential: Weak devices keep shorter cull distance and cheaper visual payload; middle/high interpolate; ultra spends budget on full scatter distance, richer transition, and shader payload strength without changing gameplay truth.
+Hardware Impact: Removes scalability listener maintenance and one tier registry seed path. Estimated saving is 2-7 us per scatter policy refresh on i3/MX350-class CPUs, plus lower GPU scatter pressure at weak quality. Compile proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup49_service_rebind.log`, 0 warning/error text matches.
+
+## 2026-05-23 Cultivation Inventory Rebind And Geology Compile Wall Cleanup
+Problem: `BotanyPlanterModule.CopyBufferSnapshot()` and `CultivationManager.ResolveItemCatalog()` read `GlobalRegistry.PlayerInventory` on runtime/UI paths. The guarded build then exposed generated-Core drift (`GlobalSignalPayloads.UiSaveWorld.cs` omitted), a duplicate `CoreContractsAssemblyMarker.cs` include, and a same-file geology parser-helper ownership error.
+Solution: Added cached `IPlayerInventoryService` fields and `IGlobalRegistryHotSwapListener` rebinding to planter/cultivation. Added the missing UI/save/world signal payload file to the local generated Core project, removed the duplicate explicit Core contracts marker include because `Directory.Build.targets` already injects it, and moved geology parser helpers back into `WorldGenerativeGeologyBinding`, where the private labels and getters live.
+Rejected Alternatives: Per-snapshot/per-catalog registry polling, warning suppression for CS2002, duplicating geology labels into the service class, changing generation math, or changing inventory/save DTOs were rejected.
+Scalability potential: Weak/Middle/High/Ultra keep identical cultivation item truth and geology generation output. The fix only repairs owner routing and compile graph hygiene; quality policy remains continuous and separate.
+Hardware Impact: Removes PlayerInventory registry reads from planter snapshot/catalog resolution paths, estimated 1-2 us per affected UI/cultivation refresh on i3/MX350-class CPUs. Geology helper relocation and generated-project graph repair are runtime 0 us. Compile proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry4.log`, 0 warning/error text matches. MSBuild shutdown succeeded; orphan `VBCSCompiler.exe` was force-stopped after its shutdown command failed.

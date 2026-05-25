@@ -16,6 +16,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
         private const int RootCount = 6;
         private const int ForbiddenPatternCount = 6;
         private const int ContextKeywordCount = 7;
+        private static readonly Encoding TextEncoding = new UTF8Encoding(false);
 
         [MenuItem("HECTON-8/Voxel Terrain Seam Binder/Scan Runtime Seam Mutation")]
         public static void ScanMenu()
@@ -48,11 +49,10 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
                 }
 
                 AppendRoot(roots, rootName, "SCANNED_DIRECTORY");
-                using (var files = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories).GetEnumerator())
-                {
-                    while (files.MoveNext())
-                        ScanFile(projectRoot, files.Current, findings, ref findingCount, ref parserFailures);
-                }
+                string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
+                Array.Sort(files, StringComparer.Ordinal);
+                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                    ScanFile(projectRoot, files[fileIndex], findings, ref findingCount, ref parserFailures);
             }
 
             WriteReport(projectRoot, roots, findings, findingCount, parserFailures);
@@ -66,7 +66,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
             if (normalized.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0)
                 return;
 
-            string text = File.ReadAllText(file);
+            string text = File.ReadAllText(file, TextEncoding);
             string relative = Relative(projectRoot, normalized);
             try
             {
@@ -286,7 +286,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
                 Directory.CreateDirectory(directory);
 
             string temp = BuildTempPath(path);
-            File.WriteAllText(temp, text, Encoding.UTF8);
+            File.WriteAllText(temp, text, TextEncoding);
             if (File.Exists(path))
                 File.Delete(path);
             File.Move(temp, path);

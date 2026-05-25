@@ -42,6 +42,7 @@ namespace Hecton8.EditorTools
         private const string PackingReportPath = "Docs/Reports/TEXTURE_PACKING_REPORT.json";
         private const string LayoutReportPath = "Docs/Reports/TEXTURE_PACKER_LAYOUT_REPORT.json";
         private const string MockReportPath = "Docs/Reports/TEXTURE_PACKER_MOCK_BENCHMARK.json";
+        private static readonly Encoding TextEncoding = new UTF8Encoding(false);
         private const int DefaultMaxTextureSize = 2048;
         private const int JobBatchSize = 128;
         private const int MockResolution = 4096;
@@ -771,7 +772,7 @@ namespace Hecton8.EditorTools
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
-            File.WriteAllText(path, text, Encoding.UTF8);
+            File.WriteAllText(path, text, TextEncoding);
         }
 
         private static string BuildPackingReportJson(in TexturePackerRunMetrics metrics)
@@ -1379,7 +1380,7 @@ namespace Hecton8.EditorTools
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
             if (!string.IsNullOrEmpty(reason))
-                File.WriteAllText(DumpPath + ".reason.txt", reason, Encoding.UTF8);
+                File.WriteAllText(DumpPath + ".reason.txt", reason, new UTF8Encoding(false));
 
             using (FileStream stream = new FileStream(DumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             {

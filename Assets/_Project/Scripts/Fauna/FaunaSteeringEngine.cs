@@ -40,6 +40,7 @@ namespace Hecton8.AI
         private Rigidbody _body;
         private Transform _selfTransform;
         private FaunaSpeciesProfile _speciesProfile;
+        private IPhysicsService _physicsService;
         private float _lastBankingRoll;
         private Vector3 _smoothedSteerDirection;
 
@@ -55,10 +56,16 @@ namespace Hecton8.AI
             _body = rb;
             _selfTransform = self;
             _speciesProfile = profile;
+            _physicsService = GlobalRegistry.Physics;
             currentDirection = self.forward;
             _smoothedSteerDirection = ResolveDominantAxisDirection(currentDirection, Vector3.forward);
             velocity = rb != null ? rb.linearVelocity : Vector3.zero;
             currentSpeed = ResolveSpeedBucket(velocity.sqrMagnitude);
+        }
+
+        public void BindPhysicsService(IPhysicsService physicsService)
+        {
+            _physicsService = physicsService;
         }
 
         /// <summary>
@@ -129,7 +136,9 @@ namespace Hecton8.AI
             if (!IsFinite(currentVelocity))
                 currentVelocity = Vector3.zero;
 
-            _body.linearVelocity = currentVelocity;
+            IPhysicsService physicsService = _physicsService;
+            if (physicsService != null)
+                physicsService.QueueLinearVelocitySet(_body, currentVelocity);
             velocity = currentVelocity;
             currentSpeed = ResolveSpeedBucket(currentVelocity.sqrMagnitude);
 

@@ -3,6 +3,17 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.VoxelTerrainSeamBinder
 {
+    internal static class VoxelTerrainSeamBinderContractsLayout
+    {
+        public const int SeamBindVertex32StrideBytes = 32;
+        public const int SeamBoundaryVertex64StrideBytes = 64;
+        public const int SeamSnapResult64StrideBytes = 64;
+        public const int SeamBindingProfileDTOStrideBytes = 64;
+        public const int SeamBindCounters64StrideBytes = 64;
+        public const int SeamBindTelemetryEntryStrideBytes = 64;
+        public const int SeamMeshRollbackFenceDTOStrideBytes = 32;
+    }
+
     /// <summary>
     /// Static constants for offline voxel/heightmap seam binding.
     /// Runtime uses baked meshes only.
@@ -29,7 +40,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder
     /// Interleaved ARM64/GPU-safe vertex record. Size: 32 bytes.
     /// Layout: position 12, normal 12, Color32 4, UV0 UNorm16x2 4.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelTerrainSeamBinderContractsLayout.SeamBindVertex32StrideBytes)]
     public struct SeamBindVertex32
     {
         [FieldOffset(0)] public float3 Position;
@@ -41,7 +52,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder
     /// <summary>
     /// Boundary vertex payload inserted into the spatial hash. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelTerrainSeamBinderContractsLayout.SeamBoundaryVertex64StrideBytes)]
     public struct SeamBoundaryVertex64
     {
         [FieldOffset(0)] public double3 Aup;
@@ -57,7 +68,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder
     /// Terrain-side snap result. VoxelVertexIndex below zero means no seam candidate was accepted.
     /// Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelTerrainSeamBinderContractsLayout.SeamSnapResult64StrideBytes)]
     public struct SeamSnapResult64
     {
         [FieldOffset(0)] public float3 OriginalLocalPosition;
@@ -73,7 +84,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder
     /// <summary>
     /// Designer-authored seam recipe parsed from seam_binding_profiles.csv. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelTerrainSeamBinderContractsLayout.SeamBindingProfileDTOStrideBytes)]
     public struct SeamBindingProfileDTO
     {
         [FieldOffset(0)] public uint ProfileHash;
@@ -93,7 +104,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder
     /// <summary>
     /// Aggregated per-LOD bake counters. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelTerrainSeamBinderContractsLayout.SeamBindCounters64StrideBytes)]
     public struct SeamBindCounters64
     {
         [FieldOffset(0)] public int TerrainVertexCount;
@@ -114,7 +125,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder
     /// <summary>
     /// Fixed black-box telemetry entry for the last 300 offline bake stages. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelTerrainSeamBinderContractsLayout.SeamBindTelemetryEntryStrideBytes)]
     public struct SeamBindTelemetryEntry
     {
         [FieldOffset(0)] public double3 TerrainRootAup;
@@ -133,7 +144,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder
     /// <summary>
     /// Immutable mesh mapping record documenting rollback/netcode exclusion for baked geometry. Size: 32 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = VoxelTerrainSeamBinderContractsLayout.SeamMeshRollbackFenceDTOStrideBytes)]
     public struct SeamMeshRollbackFenceDTO
     {
         [FieldOffset(0)] public uint TerrainMeshHash;

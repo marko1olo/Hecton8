@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_114
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_114_MAT_LightningBolt_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_LightningBolt_Albedo.png
+FINAL_FILENAME: MAT_LightningBolt_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Lightning bolt albedo source for stylized energy decals in HECTON-8. Create clean branching energy ribbons in pale cyan, white-hot pearl, teal corona edges, and tiny amber capacitor sparks on a neutral flat base. The shape language should be sharp and elegant, suitable for masks, VFX cards, and diagnostic arcs. Keep it graphic, crisp, and non-scenic. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

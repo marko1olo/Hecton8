@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Globalization;
 using Hecton8.UI;
 using UnityEditor;
@@ -63,7 +64,7 @@ namespace Hecton8.UI.Editor
             if (_target != null)
                 return _target;
 
-            _target = FindObjectOfType<PDAEncyclopediaStreamer>();
+            _target = FindAnyObjectByType<PDAEncyclopediaStreamer>();
             return _target;
         }
 
@@ -154,7 +155,7 @@ namespace Hecton8.UI.Editor
             if (streamer == null || !TryParseHash(_hashField.value, out uint hash))
                 return;
 
-            if (streamer.EditorTryWriteRawUtf8Hex(hash, _rawBuffer.AsSpan(), out int written))
+            if (streamer.EditorTryWriteRawUtf8Hex(hash, new Span<char>(_rawBuffer), out int written))
                 _rawLabel.text = new string(_rawBuffer, 0, written);
             else
                 _rawLabel.text = "Raw UTF-8 x-ray unavailable for this hash.";

@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_135
+ROLE: ALBEDO
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_135_MAT_SargassumOilFilm_Albedo
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\MAT_SargassumOilFilm_Albedo.png
+FINAL_FILENAME: MAT_SargassumOilFilm_Albedo.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Sargassum oil film albedo for subtle biological surface sheen. Create translucent teal-green oil ribbons, pearlescent cyan edges, soft amber nutrient shimmer, pale violet interference bands, and tiny olive plant flecks. The texture should feel like refined organic film useful for shader overlays, not a heavy pollution layer. Keep it thin, elegant, and tileable. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no border, no perspective object scene.

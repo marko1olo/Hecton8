@@ -110,62 +110,62 @@ namespace Hecton8.Tools
                 toolModuleRuleCapacity);
             return new UpgradeMatrixVaultHandles
             {
-                Masks = vault.GetGenerationHandle<UpgradeMaskDTO>(
+                Masks = vault.EnsureGenerationHandle<UpgradeMaskDTO>(
                     UpgradeMatrixConstants.UpgradeMasksBuffer,
                     safeEquipmentCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                BaseStats = vault.GetGenerationHandle<UpgradeStatVectorDTO>(
+                BaseStats = vault.EnsureGenerationHandle<UpgradeStatVectorDTO>(
                     UpgradeMatrixConstants.UpgradeBaseStatsBuffer,
                     safeEquipmentCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                CompiledStats = vault.GetGenerationHandle<UpgradeStatVectorDTO>(
+                CompiledStats = vault.EnsureGenerationHandle<UpgradeStatVectorDTO>(
                     UpgradeMatrixConstants.UpgradeCompiledStatsBuffer,
                     safeEquipmentCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                Lut = vault.GetGenerationHandle<UpgradeLutEntryDTO>(
+                Lut = vault.EnsureGenerationHandle<UpgradeLutEntryDTO>(
                     UpgradeMatrixConstants.UpgradeLutBuffer,
                     safeLutCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                Rules = vault.GetGenerationHandle<UpgradeBitRuleDTO>(
+                Rules = vault.EnsureGenerationHandle<UpgradeBitRuleDTO>(
                     UpgradeMatrixConstants.UpgradeRulesBuffer,
                     safeRuleCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                ToolModuleRules = vault.GetGenerationHandle<ToolUpgradeModuleRuleDTO>(
+                ToolModuleRules = vault.EnsureGenerationHandle<ToolUpgradeModuleRuleDTO>(
                     UpgradeMatrixConstants.UpgradeToolModuleRulesBuffer,
                     safeToolRuleCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                ToolProfiles = vault.GetGenerationHandle<ToolRuntimeProfile>(
+                ToolProfiles = vault.EnsureGenerationHandle<ToolRuntimeProfile>(
                     UpgradeMatrixConstants.UpgradeToolProfilesBuffer,
                     safeEquipmentCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                TelemetryRing = vault.GetGenerationHandle<UpgradeTelemetryEntry>(
+                TelemetryRing = vault.EnsureGenerationHandle<UpgradeTelemetryEntry>(
                     UpgradeMatrixConstants.UpgradeTelemetryRingBuffer,
                     UpgradeMatrixConstants.TelemetryFrameCount,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                TelemetryCursor = vault.GetGenerationHandle<int>(
+                TelemetryCursor = vault.EnsureGenerationHandle<int>(
                     UpgradeMatrixConstants.UpgradeTelemetryCursorBuffer,
                     1,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                InventorySlots = vault.GetGenerationHandle<InventoryUpgradeSlotDTO>(
+                InventorySlots = vault.EnsureGenerationHandle<InventoryUpgradeSlotDTO>(
                     UpgradeMatrixConstants.UpgradeInventorySlotsBuffer,
                     safeSlotCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                ItemMap = vault.GetGenerationHandle<UpgradeItemMapDTO>(
+                ItemMap = vault.EnsureGenerationHandle<UpgradeItemMapDTO>(
                     UpgradeMatrixConstants.UpgradeItemMapBuffer,
                     safeItemMapCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                VisualStates = vault.GetGenerationHandle<UpgradeVisualStateDTO>(
+                VisualStates = vault.EnsureGenerationHandle<UpgradeVisualStateDTO>(
                     UpgradeMatrixConstants.UpgradeVisualFlagsBuffer,
                     safeEquipmentCapacity,
                     SystemID.GameplayTools,
@@ -1303,6 +1303,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Cold boot CSV ingestor for upgrade-chip matrix rows.
     /// </summary>
+    #if UNITY_EDITOR
     public static class UpgradeMatrixCsvParser
     {
         private const uint FnvOffset = 2166136261u;
@@ -1500,4 +1501,5 @@ namespace Hecton8.Tools
             return value == (byte)' ' || value == (byte)'\t';
         }
     }
+    #endif
 }

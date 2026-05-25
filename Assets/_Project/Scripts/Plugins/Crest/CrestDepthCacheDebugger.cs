@@ -28,7 +28,7 @@ namespace Hecton8.World
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogDepthDump(bool saved)
         {
-            UnityEngine.Debug.Log($"[CrestDepthCacheDebugger] SavedDepthDebug={saved} Path={DepthDebugOutputPath}");
+            Hecton8.Core.H8Debug.Log($"[CrestDepthCacheDebugger] SavedDepthDebug={saved} Path={DepthDebugOutputPath}");
         }
     }
 }

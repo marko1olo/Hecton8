@@ -1,4 +1,4 @@
-# key,value
+﻿# key,value
 # SHINOBU_135 cold-tuned procedural music preset. Parser is key/value FNV-1a, no managed strings in runtime parser.
 preset_hash,abyssal_default
 biome_hash,abyss

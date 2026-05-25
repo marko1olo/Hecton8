@@ -50,7 +50,7 @@ namespace Hecton8.Core.Scheduling
             if (vault == null)
                 return;
 
-            _profilesHandle = vault.GetGenerationHandle<JobSchedulingProfileDTO>(
+            _profilesHandle = vault.EnsureGenerationHandle<JobSchedulingProfileDTO>(
                 BufferID.SystemDispatcherJobSchedulingProfiles,
                 Capacity,
                 SystemID.SystemDispatcher,
@@ -59,7 +59,7 @@ namespace Hecton8.Core.Scheduling
             if (!vault.TryResolveHandle(in _profilesHandle, out NativeArray<JobSchedulingProfileDTO> profiles))
                 return;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!File.Exists(path))
                 return;
 
@@ -69,6 +69,7 @@ namespace Hecton8.Core.Scheduling
 #endif
         }
 
+#if UNITY_EDITOR
         private static void ParseProfileCsvFile(string path, NativeArray<JobSchedulingProfileDTO> profiles)
         {
             try
@@ -196,6 +197,7 @@ namespace Hecton8.Core.Scheduling
 
             return count;
         }
+#endif
 
         public static bool TryResolveBatchBounds(uint jobHash, out int minBatch, out int maxBatch)
         {
@@ -207,7 +209,7 @@ namespace Hecton8.Core.Scheduling
             if (_vault == null || _profilesHandle.BufferID == 0u)
                 return false;
 
-            if (!_vault.TryResolveHandle(in _profilesHandle, out NativeArray<JobSchedulingProfileDTO> profiles))
+            if (!_vault.TryReadOnlyHandle(in _profilesHandle, out NativeArray<JobSchedulingProfileDTO>.ReadOnly profiles))
                 return false;
 
             for (int i = 0; i < _count; i++)

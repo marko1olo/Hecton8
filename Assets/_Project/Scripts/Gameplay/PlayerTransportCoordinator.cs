@@ -14,7 +14,7 @@ namespace Hecton8.Gameplay
     /// </remarks>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Transport Coordinator")]
-    public sealed class PlayerTransportCoordinator : MonoBehaviour, IUpdatable
+    public sealed class PlayerTransportCoordinator : MonoBehaviour, IUpdatable, IPlayerTransportLifecycleResolver, IGlobalRegistryHotSwapListener
     {
         private const float DefaultTransportPropulsionReference = 800f;
 
@@ -28,6 +28,7 @@ namespace Hecton8.Gameplay
         private IPlayerTransportLifecycleOwner _externalTransportLifecycleOwner;
         private IPlayerTransportLifecycleOwner _publishedLifecycleOwner;
         private bool _registered;
+        private bool _registeredHotSwap;
         private uint _toolLoadoutSignalSourceId;
         private uint _lastToolLoadoutSignalSequence;
 
@@ -45,6 +46,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveReferences();
+            TryRegisterHotSwapListener();
             TryRegister();
             PublishActiveTransportLifecycleChanged();
         }
@@ -52,17 +54,29 @@ namespace Hecton8.Gameplay
         private void Start()
         {
             ResolveReferences();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void OnDisable()
         {
-            if (_registered)
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-
-            _registered = false;
+            TryUnregisterTick();
+            TryUnregisterHotSwapListener();
             _publishedLifecycleOwner = null;
             _lastToolLoadoutSignalSequence = 0u;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterTick();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         /// <inheritdoc />
@@ -333,6 +347,32 @@ namespace Hecton8.Gameplay
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
+        private void TryUnregisterTick()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void ConsumeToolLoadoutChangedSignals()
         {
             ResolveReferences();
@@ -365,7 +405,7 @@ namespace Hecton8.Gameplay
             if (_toolLoadoutSignalSourceId == 0u && playerToolManager != null && playerToolManager.gameObject != null)
             {
                 _toolLoadoutSignalSourceId =
-                    GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(playerToolManager.gameObject.GetEntityId()));
+                    RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(playerToolManager.gameObject.GetEntityId()));
             }
 
             return _toolLoadoutSignalSourceId;

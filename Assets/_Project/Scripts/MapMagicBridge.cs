@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Environment;
 using Hecton8.World;
 using Unity.Burst;
@@ -37,9 +38,11 @@ namespace Hecton8.Core
         private static int _listenerCount;
         private static int _pendingBiomeIdCount;
         private static int _nextFrameBiomeIdCount;
+        private static int _droppedBiomeIdCount;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingBiomeIdCount + _nextFrameBiomeIdCount;
+        public static int DroppedCount => _droppedBiomeIdCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -60,6 +63,7 @@ namespace Hecton8.Core
 
             _pendingBiomeIdCount = 0;
             _nextFrameBiomeIdCount = 0;
+            _droppedBiomeIdCount = 0;
             _isDispatching = false;
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -79,21 +83,31 @@ namespace Hecton8.Core
                 TryUnregisterImmediate(listener);
         }
 
+        [Obsolete("Use TryRaiseBiomeChanged(int) so bounded enqueue refusal is visible.", true)]
         public static void RaiseBiomeChanged(int biomeId)
+        {
+            TryRaiseBiomeChanged(biomeId);
+        }
+
+        public static bool TryRaiseBiomeChanged(int biomeId)
         {
             EnsureInitialized();
             if (_pendingBiomeIdCount + _nextFrameBiomeIdCount >= ExpectedPendingBiomeEventCapacity)
-                return;
+            {
+                _droppedBiomeIdCount++;
+                return false;
+            }
 
             if (_isDispatching)
             {
                 _nextFrameBiomeIds.Enqueue(biomeId);
                 _nextFrameBiomeIdCount++;
-                return;
+                return true;
             }
 
             _pendingBiomeIds.Enqueue(biomeId);
             _pendingBiomeIdCount++;
+            return true;
         }
 
         public static void FlushPending()
@@ -109,7 +123,10 @@ namespace Hecton8.Core
                     return;
 
                 if (!_pendingBiomeIds.TryDequeue(out int biomeId))
+                {
+                    _pendingBiomeIdCount = 0;
                     break;
+                }
 
                 if (_pendingBiomeIdCount > 0)
                     _pendingBiomeIdCount--;
@@ -256,6 +273,20 @@ namespace Hecton8.Core
     public static class MapMagicTerrainTileEvents
     {
         private const int ListenerCapacity = 8;
+        private const int PendingEventCapacity = 16;
+        private const int SnapshotSlotCapacity = 16;
+        private const byte TileAppliedEventType = 1;
+        private const byte TileMovedEventType = 2;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
+        private struct MapMagicTerrainTileEventPayload
+        {
+            [FieldOffset(0)] public byte EventType;
+            [FieldOffset(1)] private byte _pad0;
+            [FieldOffset(2)] private ushort _pad1;
+            [FieldOffset(4)] public int SnapshotSlot;
+        }
 
         private struct ListenerSlot
         {
@@ -269,15 +300,54 @@ namespace Hecton8.Core
 
         // COLD ALLOC: ListenerSlot[8] - MapMagic terrain tile listeners without interface array dispatch - owner: MapMagicTerrainTileEvents
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: MapMagicTerrainTileSnapshot[16] - fixed sidecar for managed MapMagic tile references during deferred dispatch - owner: MapMagicTerrainTileEvents
+        private static readonly MapMagicTerrainTileSnapshot[] _snapshotSlots = new MapMagicTerrainTileSnapshot[SnapshotSlotCapacity];
+        // COLD ALLOC: bool[16] - sidecar occupancy map for deferred tile snapshots - owner: MapMagicTerrainTileEvents
+        private static readonly bool[] _snapshotSlotOccupied = new bool[SnapshotSlotCapacity];
+        private static NativeQueue<MapMagicTerrainTileEventPayload> _pendingEvents;
+        private static NativeQueue<MapMagicTerrainTileEventPayload> _nextFrameEvents;
         private static int _listenerCount;
+        private static int _snapshotWriteIndex;
+        private static int _snapshotPendingCount;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static int _droppedEventCount;
+        private static int _droppedSnapshotSlotCount;
+        private static bool _isDispatching;
+
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DroppedSnapshotSlotCount => _droppedSnapshotSlotCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicTerrainTileEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicTerrainTileEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
 
             _listenerCount = 0;
+            ClearSnapshotSlots();
+            _snapshotWriteIndex = 0;
+            _snapshotPendingCount = 0;
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _droppedEventCount = 0;
+            _droppedSnapshotSlotCount = 0;
+            _isDispatching = false;
         }
 
         public static void Register(IMapMagicTerrainTileEventListener listener)
@@ -292,11 +362,99 @@ namespace Hecton8.Core
                 TryUnregisterImmediate(listener);
         }
 
+        [Obsolete("Use TryRaiseTileApplied(in MapMagicTerrainTileSnapshot) so deferred bounded enqueue refusal is visible.", true)]
         public static void RaiseTileApplied(in MapMagicTerrainTileSnapshot snapshot)
         {
-            if (!snapshot.IsValid)
-                return;
+            TryRaiseTileApplied(in snapshot);
+        }
 
+        public static bool TryRaiseTileApplied(in MapMagicTerrainTileSnapshot snapshot)
+        {
+            if (!snapshot.IsValid)
+                return false;
+
+            bool signalQueued = TryPublishTerrainChunkGenerated(in snapshot);
+            if (_listenerCount <= 0)
+                return signalQueued;
+
+            return Enqueue(TileAppliedEventType, in snapshot) && signalQueued;
+        }
+
+        [Obsolete("Use TryRaiseTileMoved(in MapMagicTerrainTileSnapshot) so deferred bounded enqueue refusal is visible.", true)]
+        public static void RaiseTileMoved(in MapMagicTerrainTileSnapshot snapshot)
+        {
+            TryRaiseTileMoved(in snapshot);
+        }
+
+        public static bool TryRaiseTileMoved(in MapMagicTerrainTileSnapshot snapshot)
+        {
+            if (!snapshot.IsValid)
+                return false;
+
+            if (_listenerCount <= 0)
+                return false;
+
+            return Enqueue(TileMovedEventType, in snapshot);
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listenerCount <= 0)
+            {
+                DropPendingAmbient();
+                return;
+            }
+
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out MapMagicTerrainTileEventPayload payload))
+                {
+                    _pendingEventCount = 0;
+                    break;
+                }
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                if (!TryResolveSnapshot(payload.SnapshotSlot, out MapMagicTerrainTileSnapshot snapshot))
+                {
+                    ReleaseSnapshotSlot(payload.SnapshotSlot);
+                    continue;
+                }
+
+                _isDispatching = true;
+                try
+                {
+                    Dispatch(payload.EventType, in snapshot);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+
+                ReleaseSnapshotSlot(payload.SnapshotSlot);
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
+        }
+
+        public static void DropPendingAmbient()
+        {
+            DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount);
+            DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool TryPublishTerrainChunkGenerated(in MapMagicTerrainTileSnapshot snapshot)
+        {
             Terrain terrain = snapshot.Terrain;
             TerrainData terrainData = terrain.terrainData;
             TerrainChunkGeneratedSignal signal = new TerrainChunkGeneratedSignal
@@ -311,27 +469,189 @@ namespace Hecton8.Core
                 Frame = (uint)Time.frameCount,
                 Flags = 1
             };
-            TerrainChunkGeneratedEvents.TryPublish(in signal);
 
-            int count = _listenerCount;
-            for (int i = count - 1; i >= 0; i--)
+            return TerrainChunkGeneratedEvents.TryPublish(in signal);
+        }
+
+        private static bool Enqueue(byte eventType, in MapMagicTerrainTileSnapshot snapshot)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
-                IMapMagicTerrainTileEventListener listener = _listeners[i].Listener;
-                if (listener != null)
-                    listener.OnMapMagicTerrainTileApplied(in snapshot);
+                _droppedEventCount++;
+                return false;
+            }
+
+            if (!TryReserveSnapshotSlot(in snapshot, out int snapshotSlot))
+            {
+                _droppedSnapshotSlotCount++;
+                return false;
+            }
+
+            MapMagicTerrainTileEventPayload payload = new MapMagicTerrainTileEventPayload
+            {
+                EventType = eventType,
+                SnapshotSlot = snapshotSlot
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return true;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<MapMagicTerrainTileEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MapMagicTerrainTileEventPayload>[16] - deferred MapMagic tile events flushed by SystemDispatcher - owner: MapMagicTerrainTileEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(MapMagicTerrainTileEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<MapMagicTerrainTileEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MapMagicTerrainTileEventPayload>[16] - next-frame MapMagic tile events prevent same-frame reentrant dispatch - owner: MapMagicTerrainTileEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(MapMagicTerrainTileEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
         }
 
-        public static void RaiseTileMoved(in MapMagicTerrainTileSnapshot snapshot)
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
         {
-            if (!snapshot.IsValid)
+            if (!queue.IsCreated || capacity <= 0)
                 return;
 
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<MapMagicTerrainTileEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
+
+        private static bool TryReserveSnapshotSlot(in MapMagicTerrainTileSnapshot snapshot, out int snapshotSlot)
+        {
+            snapshotSlot = -1;
+            if (_snapshotPendingCount >= SnapshotSlotCapacity)
+                return false;
+
+            for (int probe = 0; probe < SnapshotSlotCapacity; probe++)
+            {
+                int candidateSlot = _snapshotWriteIndex;
+                _snapshotWriteIndex++;
+                if (_snapshotWriteIndex >= SnapshotSlotCapacity)
+                    _snapshotWriteIndex = 0;
+
+                if (_snapshotSlotOccupied[candidateSlot])
+                    continue;
+
+                snapshotSlot = candidateSlot;
+                _snapshotSlotOccupied[snapshotSlot] = true;
+                _snapshotSlots[snapshotSlot] = snapshot;
+                _snapshotPendingCount++;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveSnapshot(int snapshotSlot, out MapMagicTerrainTileSnapshot snapshot)
+        {
+            if ((uint)snapshotSlot >= SnapshotSlotCapacity || !_snapshotSlotOccupied[snapshotSlot])
+            {
+                snapshot = default;
+                return false;
+            }
+
+            snapshot = _snapshotSlots[snapshotSlot];
+            return snapshot.IsValid;
+        }
+
+        private static void ReleaseSnapshotSlot(int snapshotSlot)
+        {
+            if ((uint)snapshotSlot >= SnapshotSlotCapacity || !_snapshotSlotOccupied[snapshotSlot])
+                return;
+
+            _snapshotSlots[snapshotSlot] = default;
+            _snapshotSlotOccupied[snapshotSlot] = false;
+            if (_snapshotPendingCount > 0)
+                _snapshotPendingCount--;
+        }
+
+        private static void ClearSnapshotSlots()
+        {
+            for (int i = 0; i < SnapshotSlotCapacity; i++)
+            {
+                _snapshotSlots[i] = default;
+                _snapshotSlotOccupied[i] = false;
+            }
+        }
+
+        private static void DrainQueueWithoutDispatch(
+            ref NativeQueue<MapMagicTerrainTileEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+            {
+                pendingCount = 0;
+                return;
+            }
+
+            int drainBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (drainBudget-- > 0 && queue.TryDequeue(out MapMagicTerrainTileEventPayload payload))
+                ReleaseSnapshotSlot(payload.SnapshotSlot);
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+        }
+
+        private static void Dispatch(byte eventType, in MapMagicTerrainTileSnapshot snapshot)
+        {
             int count = _listenerCount;
             for (int i = count - 1; i >= 0; i--)
             {
                 IMapMagicTerrainTileEventListener listener = _listeners[i].Listener;
-                if (listener != null)
+                if (listener == null)
+                    continue;
+
+                if (eventType == TileAppliedEventType)
+                    listener.OnMapMagicTerrainTileApplied(in snapshot);
+                else if (eventType == TileMovedEventType)
                     listener.OnMapMagicTerrainTileMoved(in snapshot);
             }
         }

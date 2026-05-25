@@ -126,16 +126,16 @@ namespace Hecton8.UI
         private void LogResults()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.Log($"[SettingsPanelProfiler] Apply Time: {_lastApplyTimeMs:F2} ms | GC Alloc: {_lastGcAlloc} B | Memory Delta: {_lastMemoryDelta / 1024} KB | Target: {targetApplyTimeMs} ms");
+            Hecton8.Core.H8Debug.Log("[SettingsPanelProfiler] Apply metrics captured.");
 
             if (_lastApplyTimeMs > targetApplyTimeMs)
             {
-                UnityEngine.Debug.LogWarning($"[SettingsPanelProfiler] Apply time exceeded target! {_lastApplyTimeMs:F2} ms > {targetApplyTimeMs} ms");
+                UnityEngine.Debug.LogWarning("[SettingsPanelProfiler] Apply time exceeded target.");
             }
 
             if (_lastGcAlloc > 0)
             {
-                UnityEngine.Debug.LogWarning($"[SettingsPanelProfiler] GC allocation detected: {_lastGcAlloc} B");
+                UnityEngine.Debug.LogWarning("[SettingsPanelProfiler] GC allocation detected.");
             }
 #endif
         }

@@ -53,25 +53,28 @@ namespace Hecton8.Physics.Editor
                 if (!File.Exists(fullPath))
                     continue;
 
-                string text = File.ReadAllText(fullPath);
-                for (int p = 0; p < Patterns.Length; p++)
+                int lineNumber = 0;
+                foreach (string lineText in File.ReadLines(fullPath))
                 {
-                    int index = text.IndexOf(Patterns[p], StringComparison.Ordinal);
-                    while (index >= 0)
+                    lineNumber++;
+                    for (int p = 0; p < Patterns.Length; p++)
                     {
-                        int line = ResolveLine(text, index);
-                        if (Patterns[p].Contains("OceanRenderer"))
+                        int index = lineText.IndexOf(Patterns[p], StringComparison.Ordinal);
+                        while (index >= 0)
                         {
-                            directOceanRendererLookups++;
-                        }
-                        else
-                        {
-                            managedWaterQueries++;
-                            AppendUniqueJsonString(legacyManagedCallers, assetPath);
-                        }
+                            if (Patterns[p].Contains("OceanRenderer"))
+                            {
+                                directOceanRendererLookups++;
+                            }
+                            else
+                            {
+                                managedWaterQueries++;
+                                AppendUniqueJsonString(legacyManagedCallers, assetPath);
+                            }
 
-                        AppendFinding(findings, assetPath, line, Patterns[p]);
-                        index = text.IndexOf(Patterns[p], index + Patterns[p].Length, StringComparison.Ordinal);
+                            AppendFinding(findings, assetPath, lineNumber, Patterns[p]);
+                            index = lineText.IndexOf(Patterns[p], index + Patterns[p].Length, StringComparison.Ordinal);
+                        }
                     }
                 }
             }
@@ -207,18 +210,6 @@ namespace Hecton8.Physics.Editor
             builder.Append("    \"");
             builder.Append(escaped);
             builder.Append("\"");
-        }
-
-        private static int ResolveLine(string text, int index)
-        {
-            int line = 1;
-            for (int i = 0; i < index && i < text.Length; i++)
-            {
-                if (text[i] == '\n')
-                    line++;
-            }
-
-            return line;
         }
 
         private static string UpsertRootReport(string rootJson, string entryJson)

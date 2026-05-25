@@ -390,7 +390,10 @@ namespace Hecton8.Gameplay
                     return;
 
                 if (!_pendingEvents.TryDequeue(out SubmarineOsEventPayload payload))
+                {
+                    _pendingEventCount = 0;
                     break;
+                }
 
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
@@ -405,7 +408,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        public static void RaiseSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
+        public static bool TryRaiseSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
         {
             uint statusBits = (uint)snapshot.SubsystemStatus;
             if (HectonSubmarineOsSnapshot.HasLowPowerMode(snapshot.StatusFlags))
@@ -417,7 +420,7 @@ namespace Hecton8.Gameplay
             if (HectonSubmarineOsSnapshot.HasSubOsPowered(snapshot.StatusFlags))
                 statusBits |= SubOsPoweredStatusBit;
 
-            Enqueue(new SubmarineOsEventPayload
+            return Enqueue(new SubmarineOsEventPayload
             {
                 PowerNormalized = snapshot.PowerNormalized,
                 OxygenNormalized = snapshot.OxygenNormalized,
@@ -437,9 +440,12 @@ namespace Hecton8.Gameplay
             });
         }
 
-        public static void RaiseLogRequested(in HectonSubmarineOsLogRequest request)
+        [System.Obsolete("Use TryRaiseSnapshotUpdated so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot) => TryRaiseSnapshotUpdated(in snapshot);
+
+        public static bool TryRaiseLogRequested(in HectonSubmarineOsLogRequest request)
         {
-            Enqueue(new SubmarineOsEventPayload
+            return Enqueue(new SubmarineOsEventPayload
             {
                 PowerNormalized = 0f,
                 OxygenNormalized = 0f,
@@ -458,6 +464,9 @@ namespace Hecton8.Gameplay
                 VocalWarningFlags = 0
             });
         }
+
+        [System.Obsolete("Use TryRaiseLogRequested so bounded queue refusal is visible at the producer.", true)]
+        public static void RaiseLogRequested(in HectonSubmarineOsLogRequest request) => TryRaiseLogRequested(in request);
 
         public static bool TryBuildSnapshot(in SubmarineOsEventPayload payload, out HectonSubmarineOsSnapshot snapshot)
         {
@@ -537,21 +546,22 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void Enqueue(in SubmarineOsEventPayload payload)
+        private static bool Enqueue(in SubmarineOsEventPayload payload)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return;
+                return false;
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
         private static void DispatchRegisteredListeners(in SubmarineOsEventPayload payload)
@@ -606,7 +616,10 @@ namespace Hecton8.Gameplay
                     return false;
 
                 if (!queue.TryDequeue(out _))
+                {
+                    pendingCount = 0;
                     break;
+                }
 
                 if (pendingCount > 0)
                     pendingCount--;
@@ -642,7 +655,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineCoreDirector))]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Hecton Submarine OS")]
-    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, IGlobalRegistryHotSwapListener
     {
         private const float DefaultReferencePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float LowPowerThreshold01 = 0.20f;
@@ -674,21 +687,21 @@ namespace Hecton8.Gameplay
         private const float EngineHeatQuantizeInv = 0.0322580645f;
         private const float SonarSweepDecayPerSecond = 1.75f;
         private const float VwsRepeatCooldownSeconds = 8f;
+        private const float VwsCaptionDurationSeconds = 2.5f;
         private const float BrownoutBlinkFrequency = 8f;
         private const byte LogPriorityNormal = 1;
         private const byte LogPriorityWarning = 2;
         private const byte LogPriorityCritical = 3;
-        private const string LowPowerCaptionText = "SUBMARINE LOW POWER";
-        private const string LifeSupportCaptionText = "LIFE SUPPORT CRITICAL";
-        private const string MultiFailureCaptionText = "MULTIPLE SYSTEM FAILURES";
-        private const string EmergencyDangerCaptionText = "EMERGENCY LEVEL DANGER";
-        private const string AbandonShipCaptionText = "ABANDON SHIP";
-        private const string HostileDroneCaptionText = "HOSTILE DRONE DETECTED";
-        private const string OxygenLowCaptionText = "OXYGEN LOW";
-        private const string OxygenCriticalCaptionText = "OXYGEN CRITICAL";
-        private const string HullBreachCaptionText = "HULL BREACH";
-        private const string PressureHighCaptionText = "HULL PRESSURE HIGH";
-        private const string ThermalStressCaptionText = "THERMAL STRESS";
+        private static readonly uint LowPowerCaptionHash = AudioCaptionEvents.LowPowerCaptionHash;
+        private static readonly uint MultiFailureCaptionHash = AudioCaptionEvents.MultiFailureCaptionHash;
+        private static readonly uint EmergencyDangerCaptionHash = AudioCaptionEvents.EmergencyDangerCaptionHash;
+        private static readonly uint AbandonShipCaptionHash = AudioCaptionEvents.AbandonShipCaptionHash;
+        private static readonly uint HostileDroneCaptionHash = AudioCaptionEvents.HostileDroneCaptionHash;
+        private static readonly uint OxygenLowCaptionHash = AudioCaptionEvents.OxygenLowCaptionHash;
+        private static readonly uint OxygenCriticalCaptionHash = AudioCaptionEvents.OxygenCriticalCaptionHash;
+        private static readonly uint HullBreachCaptionHash = AudioCaptionEvents.HullBreachCaptionHash;
+        private static readonly uint PressureHighCaptionHash = AudioCaptionEvents.PressureHighCaptionHash;
+        private static readonly uint ThermalStressCaptionHash = AudioCaptionEvents.ThermalStressCaptionHash;
         private static readonly int _HectonBrownoutPulseId = Shader.PropertyToID("_HectonBrownoutPulse");
         private static readonly int _HectonSubOsLightingStateId = Shader.PropertyToID("_HectonSubOsLightingState");
         private static readonly int _SubInteriorLightingStateId = Shader.PropertyToID("_SubInteriorLightingState");
@@ -711,12 +724,6 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Optional VWS clip for oxygen low. Falls back to life-support warning when unset.")]
         [SerializeField] private AudioClip oxygenLowWarningClip;
-
-        [Tooltip("Optional VWS clip for hull breach. Falls back to multi-system warning when unset.")]
-        [SerializeField] private AudioClip hullBreachWarningClip;
-
-        [Tooltip("Optional VWS clip for hull pressure/thermal stress. Falls back to multi-system warning when unset.")]
-        [SerializeField] private AudioClip hullStressWarningClip;
 
         [Header("Queued Audio Event IDs")]
         [Tooltip("One-based SpatialAudioManager event table ID for low-power VWS. Zero disables queued audio.")]
@@ -780,12 +787,12 @@ namespace Hecton8.Gameplay
         private bool _registeredUpdatable;
         private bool _registeredRenderable;
         private bool _registeredSlowTick;
-        private bool _registeredScalabilityListener;
         private bool _registeredHotSwapListener;
         private bool _runtimeDispatcherReady;
         private bool _runtimeLifecycleStarted;
         private bool _stationKeepingStateCached;
-        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Low;
+        private float _cachedSonarQualityWeight01 = 1f;
+        private float _lastAppliedSonarQualityWeight01 = -1f;
         private float _brownoutPulsePhase;
         private int _hostileDroneAlarmCount;
         private SubmarineVwsFlags _vwsActiveFlags;
@@ -798,6 +805,13 @@ namespace Hecton8.Gameplay
         private double _nextThermalStressVwsTime;
         private double _nextMultiFailureVwsTime;
         private HectonDroneFleetSnapshot _fleetSnapshot;
+        private bool _subOsShaderResetDirty;
+        private bool _navigationShaderGlobalDirty;
+        private bool _engineDiagnosticsShaderGlobalDirty;
+        private bool _brownoutPulseShaderGlobalDirty;
+        private Vector4 _pendingNavigationShaderGlobal;
+        private Vector4 _pendingEngineDiagnosticsShaderGlobal;
+        private float _pendingBrownoutPulseShaderGlobal;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstalled()
@@ -851,8 +865,8 @@ namespace Hecton8.Gameplay
         {
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
-            RefreshCachedScalabilityTier();
-            TryRegisterScalabilityListener();
+            RefreshCachedSonarQualityWeight();
+            ApplySonarLodShaderGlobal(true);
             TryStartRuntimeLifecycle();
         }
 
@@ -867,13 +881,12 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterHotSwapListener();
 
-            if (!_runtimeLifecycleStarted && !_registeredUpdatable && !_registeredSlowTick && !_registeredRenderable && !_registeredScalabilityListener)
+            if (!_runtimeLifecycleStarted && !_registeredUpdatable && !_registeredSlowTick && !_registeredRenderable)
                 return;
 
             _runtimeLifecycleStarted = false;
             PublishShutdownSnapshot();
             Unsubscribe();
-            TryUnregisterScalabilityListener();
             TryUnregister();
             SetLowPowerMode(false);
             SetCascadingBrownout(false);
@@ -885,7 +898,6 @@ namespace Hecton8.Gameplay
             _runtimeLifecycleStarted = false;
             Unsubscribe();
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             TryUnregister();
             RestoreBrownoutVisualsImmediate();
         }
@@ -902,7 +914,8 @@ namespace Hecton8.Gameplay
             _diagnosticsRefreshAccumulator += safeDeltaTime;
 
             bool publishSnapshot = false;
-            if (_navigationRefreshAccumulator >= ResolveSonarRefreshIntervalSeconds(_cachedScalabilityTier))
+            float sonarQualityWeight01 = RefreshCachedSonarQualityWeight();
+            if (_navigationRefreshAccumulator >= ResolveSonarRefreshIntervalSeconds(sonarQualityWeight01))
             {
                 _navigationRefreshAccumulator = 0f;
                 RefreshNavigationTelemetry();
@@ -944,7 +957,12 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Render(float deltaTime)
         {
-            if (!CanUseRuntimeDispatcher() || !_subOsPowered)
+            if (!CanUseRuntimeDispatcher())
+                return;
+
+            FlushQueuedSubOsShaderGlobals();
+
+            if (!_subOsPowered)
                 return;
 
             float safeDeltaTime = math.max(0f, deltaTime);
@@ -1009,7 +1027,7 @@ namespace Hecton8.Gameplay
             _runtimeDispatcherReady = GlobalRegistry.Dispatcher != null;
             _powerGridService = GlobalRegistry.PowerGrid;
             _spectrumRuntime = GlobalRegistry.Spectrum;
-            _playerRuntime = PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
         }
 
         private void Subscribe()
@@ -1068,7 +1086,7 @@ namespace Hecton8.Gameplay
             PublishLog(HectonSubmarineOsLogCode.HostileDroneDetected, LogPriorityCritical);
             QueueVoiceAlarm(
                 multiSystemFailureEventId,
-                HostileDroneCaptionText,
+                HostileDroneCaptionHash,
                 1f,
                 (byte)VocalWarningId.HullBreach,
                 VocalWarningSignalFlags.HabitatIntegrityCompromised);
@@ -1127,35 +1145,6 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.Renderables.Unregister(this);
                 _registeredRenderable = false;
             }
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _cachedScalabilityTier = payload.CurrentQualityTier;
-            ApplySonarLodShaderGlobal();
-        }
-
-        private void RefreshCachedScalabilityTier()
-        {
-            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1233,12 +1222,13 @@ namespace Hecton8.Gameplay
 
         private void ResetSubOsShaderGlobals()
         {
-            Shader.SetGlobalFloat(_HectonBrownoutPulseId, 0f);
-            Shader.SetGlobalVector(_HectonSubOsLightingStateId, Vector4.zero);
-            Shader.SetGlobalVector(_SubInteriorLightingStateId, Vector4.zero);
-            Shader.SetGlobalVector(_HectonSubOsSonarSweepId, Vector4.zero);
-            Shader.SetGlobalVector(_HectonSubOsNavigationId, Vector4.zero);
-            Shader.SetGlobalVector(_HectonSubOsEngineDiagnosticsId, Vector4.zero);
+            _subOsShaderResetDirty = true;
+            _pendingBrownoutPulseShaderGlobal = 0f;
+            _brownoutPulseShaderGlobalDirty = true;
+            _pendingNavigationShaderGlobal = Vector4.zero;
+            _pendingEngineDiagnosticsShaderGlobal = Vector4.zero;
+            _navigationShaderGlobalDirty = false;
+            _engineDiagnosticsShaderGlobalDirty = false;
         }
 
         private void RefreshTelemetryFromServices()
@@ -1396,47 +1386,59 @@ namespace Hecton8.Gameplay
                 new Vector4(_sonarSweepPhase, _sonarPingIntensity, _sonarContactCount, SonarMonitorRadiusMeters));
         }
 
-        private static float ResolveSonarRefreshIntervalSeconds(HectonQualityTier tier)
+        private float RefreshCachedSonarQualityWeight()
         {
-            switch (tier)
-            {
-                case HectonQualityTier.High:
-                case HectonQualityTier.Ultra:
-                    return HighTierSonarRefreshIntervalSeconds;
-                case HectonQualityTier.Mid:
-                    return MidTierSonarRefreshIntervalSeconds;
-                default:
-                    return LowTierSonarRefreshIntervalSeconds;
-            }
+            float qualityWeight01 = HomeostasisBrain.GlobalQualityWeight;
+            if (math.isfinite(qualityWeight01))
+                _cachedSonarQualityWeight01 = math.saturate(qualityWeight01);
+
+            return _cachedSonarQualityWeight01;
         }
 
-        private static bool ResolveSonarInterpolationEnabled(HectonQualityTier tier)
+        private static float SmoothQuality01(float value)
         {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+            float t = math.saturate(math.select(1f, value, math.isfinite(value)));
+            return t * t * (3f - (2f * t));
         }
 
-        private void ApplySonarLodShaderGlobal()
+        private static float ResolveSonarRefreshIntervalSeconds(float qualityWeight01)
         {
-            HectonQualityTier tier = _cachedScalabilityTier;
-            float refreshInterval = ResolveSonarRefreshIntervalSeconds(tier);
-            float interpolationEnabled = ResolveSonarInterpolationEnabled(tier) ? 1f : 0f;
+            float quality = SmoothQuality01(qualityWeight01);
+            if (quality < 0.5f)
+                return math.lerp(LowTierSonarRefreshIntervalSeconds, MidTierSonarRefreshIntervalSeconds, quality * 2f);
+
+            return math.lerp(MidTierSonarRefreshIntervalSeconds, HighTierSonarRefreshIntervalSeconds, (quality - 0.5f) * 2f);
+        }
+
+        private static float ResolveSonarInterpolationWeight(float qualityWeight01)
+        {
+            return SmoothQuality01((qualityWeight01 - 0.5f) * 2f);
+        }
+
+        private void ApplySonarLodShaderGlobal(bool force = false)
+        {
+            float qualityWeight01 = RefreshCachedSonarQualityWeight();
+            if (!force && math.abs(qualityWeight01 - _lastAppliedSonarQualityWeight01) < 0.001f)
+                return;
+
+            float refreshInterval = ResolveSonarRefreshIntervalSeconds(qualityWeight01);
+            float interpolationWeight = ResolveSonarInterpolationWeight(qualityWeight01);
             Shader.SetGlobalVector(
                 _HectonSubOsSonarLodId,
-                new Vector4(refreshInterval, math.rcp(math.max(0.0001f, refreshInterval)), interpolationEnabled, (float)tier));
+                new Vector4(refreshInterval, math.rcp(math.max(0.0001f, refreshInterval)), interpolationWeight, qualityWeight01));
+            _lastAppliedSonarQualityWeight01 = qualityWeight01;
         }
 
         private void ApplyNavigationShaderGlobal()
         {
-            Shader.SetGlobalVector(
-                _HectonSubOsNavigationId,
-                new Vector4(_speedKnots, _sonarContactCount, _nearestSonarContactMeters, _subOsPowered ? 1f : 0f));
+            _pendingNavigationShaderGlobal = new Vector4(_speedKnots, _sonarContactCount, _nearestSonarContactMeters, _subOsPowered ? 1f : 0f);
+            _navigationShaderGlobalDirty = true;
         }
 
         private void ApplyEngineDiagnosticsShaderGlobal()
         {
-            Shader.SetGlobalVector(
-                _HectonSubOsEngineDiagnosticsId,
-                new Vector4(_engineHeat01, _powerSupplyRatio, _powerNormalized, _subOsPowered ? 1f : 0f));
+            _pendingEngineDiagnosticsShaderGlobal = new Vector4(_engineHeat01, _powerSupplyRatio, _powerNormalized, _subOsPowered ? 1f : 0f);
+            _engineDiagnosticsShaderGlobalDirty = true;
         }
 
         private void ApplyLightingStateGlobal(float deltaTime)
@@ -1744,7 +1746,7 @@ namespace Hecton8.Gameplay
                         risingFlags,
                         flag,
                         lowPowerWarningEventId,
-                        LowPowerCaptionText,
+                        LowPowerCaptionHash,
                         0.8f,
                         (byte)VocalWarningId.PowerLow,
                         0,
@@ -1756,7 +1758,7 @@ namespace Hecton8.Gameplay
                         risingFlags,
                         flag,
                         oxygenLowWarningEventId != 0u ? oxygenLowWarningEventId : lifeSupportCriticalEventId,
-                        OxygenLowCaptionText,
+                        OxygenLowCaptionHash,
                         0.85f,
                         (byte)VocalWarningId.OxygenLow,
                         0,
@@ -1768,7 +1770,7 @@ namespace Hecton8.Gameplay
                         risingFlags,
                         flag,
                         lifeSupportCriticalEventId != 0u ? lifeSupportCriticalEventId : oxygenLowWarningEventId,
-                        OxygenCriticalCaptionText,
+                        OxygenCriticalCaptionHash,
                         1f,
                         (byte)VocalWarningId.OxygenLow,
                         0,
@@ -1780,7 +1782,7 @@ namespace Hecton8.Gameplay
                         risingFlags,
                         flag,
                         hullBreachWarningEventId != 0u ? hullBreachWarningEventId : multiSystemFailureEventId,
-                        HullBreachCaptionText,
+                        HullBreachCaptionHash,
                         1f,
                         (byte)VocalWarningId.HullBreach,
                         VocalWarningSignalFlags.HabitatIntegrityCompromised,
@@ -1792,7 +1794,7 @@ namespace Hecton8.Gameplay
                         risingFlags,
                         flag,
                         hullStressWarningEventId != 0u ? hullStressWarningEventId : multiSystemFailureEventId,
-                        PressureHighCaptionText,
+                        PressureHighCaptionHash,
                         0.85f,
                         (byte)VocalWarningId.CrushDepth,
                         VocalWarningSignalFlags.HabitatIntegrityCompromised,
@@ -1804,7 +1806,7 @@ namespace Hecton8.Gameplay
                         risingFlags,
                         flag,
                         abandonShipAlarmEventId != 0u ? abandonShipAlarmEventId : multiSystemFailureEventId,
-                        AbandonShipCaptionText,
+                        AbandonShipCaptionHash,
                         1f,
                         (byte)VocalWarningId.CrushDepth,
                         VocalWarningSignalFlags.HabitatIntegrityCompromised,
@@ -1816,7 +1818,7 @@ namespace Hecton8.Gameplay
                         risingFlags,
                         flag,
                         hullStressWarningEventId != 0u ? hullStressWarningEventId : multiSystemFailureEventId,
-                        ThermalStressCaptionText,
+                        ThermalStressCaptionHash,
                         0.75f,
                         (byte)VocalWarningId.Radiation,
                         0,
@@ -1828,7 +1830,7 @@ namespace Hecton8.Gameplay
                         risingFlags,
                         flag,
                         multiSystemFailureEventId,
-                        MultiFailureCaptionText,
+                        MultiFailureCaptionHash,
                         1f,
                         (byte)VocalWarningId.HullBreach,
                         VocalWarningSignalFlags.HabitatIntegrityCompromised,
@@ -1842,7 +1844,7 @@ namespace Hecton8.Gameplay
             SubmarineVwsFlags risingFlags,
             SubmarineVwsFlags flag,
             uint eventId,
-            string captionText,
+            uint captionHashId,
             float intensity,
             byte warningId,
             byte warningFlags,
@@ -1853,7 +1855,7 @@ namespace Hecton8.Gameplay
             if (!rising && now < nextAllowedTime)
                 return;
 
-            QueueVoiceAlarm(eventId, captionText, intensity, warningId, warningFlags);
+            QueueVoiceAlarm(eventId, captionHashId, intensity, warningId, warningFlags);
             nextAllowedTime = now + VwsRepeatCooldownSeconds;
         }
 
@@ -1866,7 +1868,7 @@ namespace Hecton8.Gameplay
                         abandonShipAlarmEventId != 0u
                             ? abandonShipAlarmEventId
                             : (lifeSupportCriticalEventId != 0u ? lifeSupportCriticalEventId : multiSystemFailureEventId),
-                        AbandonShipCaptionText,
+                        AbandonShipCaptionHash,
                         1f,
                         (byte)VocalWarningId.CrushDepth,
                         VocalWarningSignalFlags.HabitatIntegrityCompromised);
@@ -1875,7 +1877,7 @@ namespace Hecton8.Gameplay
                 case SubmarineEmergencyLevel.Danger:
                     QueueVoiceAlarm(
                         multiSystemFailureEventId != 0u ? multiSystemFailureEventId : lifeSupportCriticalEventId,
-                        EmergencyDangerCaptionText,
+                        EmergencyDangerCaptionHash,
                         1f,
                         (byte)VocalWarningId.HullBreach,
                         VocalWarningSignalFlags.HabitatIntegrityCompromised);
@@ -1892,7 +1894,8 @@ namespace Hecton8.Gameplay
             if (!active)
             {
                 _brownoutPulsePhase = 0f;
-                Shader.SetGlobalFloat(_HectonBrownoutPulseId, 0f);
+                _pendingBrownoutPulseShaderGlobal = 0f;
+                _brownoutPulseShaderGlobalDirty = true;
             }
         }
 
@@ -1910,7 +1913,43 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalFloat(_HectonBrownoutPulseId, 0f);
         }
 
-        private void QueueVoiceAlarm(uint eventId, string captionText, float intensity, byte warningId, byte warningFlags)
+        private void FlushQueuedSubOsShaderGlobals()
+        {
+            if (_subOsShaderResetDirty)
+            {
+                _subOsShaderResetDirty = false;
+                Shader.SetGlobalFloat(_HectonBrownoutPulseId, 0f);
+                Shader.SetGlobalVector(_HectonSubOsLightingStateId, Vector4.zero);
+                Shader.SetGlobalVector(_SubInteriorLightingStateId, Vector4.zero);
+                Shader.SetGlobalVector(_HectonSubOsSonarSweepId, Vector4.zero);
+                Shader.SetGlobalVector(_HectonSubOsNavigationId, Vector4.zero);
+                Shader.SetGlobalVector(_HectonSubOsEngineDiagnosticsId, Vector4.zero);
+                _brownoutPulseShaderGlobalDirty = false;
+                _navigationShaderGlobalDirty = false;
+                _engineDiagnosticsShaderGlobalDirty = false;
+                return;
+            }
+
+            if (_navigationShaderGlobalDirty)
+            {
+                _navigationShaderGlobalDirty = false;
+                Shader.SetGlobalVector(_HectonSubOsNavigationId, _pendingNavigationShaderGlobal);
+            }
+
+            if (_engineDiagnosticsShaderGlobalDirty)
+            {
+                _engineDiagnosticsShaderGlobalDirty = false;
+                Shader.SetGlobalVector(_HectonSubOsEngineDiagnosticsId, _pendingEngineDiagnosticsShaderGlobal);
+            }
+
+            if (_brownoutPulseShaderGlobalDirty)
+            {
+                _brownoutPulseShaderGlobalDirty = false;
+                Shader.SetGlobalFloat(_HectonBrownoutPulseId, _pendingBrownoutPulseShaderGlobal);
+            }
+        }
+
+        private void QueueVoiceAlarm(uint eventId, uint captionHashId, float intensity, byte warningId, byte warningFlags)
         {
             byte normalizedWarningId = warningId >= (byte)VocalWarningId.CrushDepth && warningId <= (byte)VocalWarningId.PowerLow
                 ? warningId
@@ -1927,8 +1966,8 @@ namespace Hecton8.Gameplay
                 Priority = normalizedWarningId,
                 Flags = warningFlags
             };
-            GlobalSignals.Publish(in signal);
-            _ = captionText;
+            SignalBus<VocalWarningSignal>.TryPush(in signal);
+            AudioCaptionEvents.TryRaiseHash(captionHashId, transform.position, VwsCaptionDurationSeconds, intensity);
         }
 
         private void PublishCurrentSnapshotIfChanged()
@@ -1954,7 +1993,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _lastPublishedSnapshot = nextSnapshot;
-            HectonSubmarineOsEvents.RaiseSnapshotUpdated(in nextSnapshot);
+            HectonSubmarineOsEvents.TryRaiseSnapshotUpdated(in nextSnapshot);
         }
 
         private void PublishShutdownSnapshot()
@@ -1976,13 +2015,13 @@ namespace Hecton8.Gameplay
                 false,
                 false);
             _lastPublishedSnapshot = shutdownSnapshot;
-            HectonSubmarineOsEvents.RaiseSnapshotUpdated(in shutdownSnapshot);
+            HectonSubmarineOsEvents.TryRaiseSnapshotUpdated(in shutdownSnapshot);
         }
 
         private void PublishLog(HectonSubmarineOsLogCode code, byte priority)
         {
             HectonSubmarineOsLogRequest request = new HectonSubmarineOsLogRequest(code, priority);
-            HectonSubmarineOsEvents.RaiseLogRequested(in request);
+            HectonSubmarineOsEvents.TryRaiseLogRequested(in request);
         }
 
         private static float ResolveSupplyRatio(float totalGeneration, float totalConsumption)

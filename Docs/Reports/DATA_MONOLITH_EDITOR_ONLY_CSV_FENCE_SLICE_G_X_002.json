@@ -1,0 +1,27 @@
+{
+  "agentId": "X_002",
+  "status": "PATCHED_STATIC_CONFIG_DEV_GUARD_SLICE_G_CORE_COMPILE_PASS",
+  "scope": "strict editor-only world CSV/profile parser bridge closure",
+  "targetFiles": 4,
+  "codeDiffFiles": 4,
+  "guardReplacements": 5,
+  "additionalHelperFences": 1,
+  "files": [
+    "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+    "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+    "Assets/_Project/Scripts/World/ShinobuStreamingRuntime.cs",
+    "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs"
+  ],
+  "fixes": [
+    "Biome atmosphere CSV ingest job is editor-only.",
+    "Flora stiffness CSV reload bridge and byte parser helpers are editor-only.",
+    "World streaming profile CSV parser is editor-only.",
+    "Flora ambient sway biome profile parser is editor-only, including helper functions that were still compiling in player assemblies."
+  ],
+  "verification": {
+    "touchedParserBridgeBroadDevGuards": 0,
+    "remainingBroadGuardInTouchedFiles": "Assets/_Project/Scripts/World/FloraInteractionManager.cs:7292 debug log only",
+    "gitDiffCheck": "PASS_WITH_LF_CRLF_WARNINGS_ONLY",
+    "coreCompile": "PASS_HECTON8_CORE_0_WARNINGS_0_ERRORS_108340MS"
+  }
+}

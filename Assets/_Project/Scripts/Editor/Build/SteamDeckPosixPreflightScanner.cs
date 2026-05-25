@@ -324,12 +324,12 @@ namespace Hecton8.Editor.Build
 
         private static Dictionary<string, string> BuildAssetPathMap(string projectRoot)
         {
-            Dictionary<string, string> map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             string assetsRoot = Path.Combine(projectRoot, "Assets");
             if (!Directory.Exists(assetsRoot))
-                return map;
+                return new Dictionary<string, string>(0, StringComparer.OrdinalIgnoreCase);
 
             string[] files = Directory.GetFiles(assetsRoot, "*", SearchOption.AllDirectories);
+            Dictionary<string, string> map = new Dictionary<string, string>(files.Length, StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < files.Length; i++)
             {
                 if (files[i].EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
@@ -345,7 +345,7 @@ namespace Hecton8.Editor.Build
 
         private static Dictionary<string, string> BuildResourcesPathMap(Dictionary<string, string> assetPathMap)
         {
-            Dictionary<string, string> map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> map = new Dictionary<string, string>(assetPathMap.Count, StringComparer.OrdinalIgnoreCase);
             foreach (KeyValuePair<string, string> pair in assetPathMap)
             {
                 string path = pair.Value;

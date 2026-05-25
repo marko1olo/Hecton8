@@ -19,7 +19,13 @@ using UnityEngine;
 
 namespace Hecton8.UI
 {
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal static class PdaH8lrLoreStoreLayout
+    {
+        public const int PdaH8lrHeaderDTOStrideBytes = 16;
+        public const int PdaH8lrRecordDTOStrideBytes = 16;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = PdaH8lrLoreStoreLayout.PdaH8lrHeaderDTOStrideBytes)]
     internal struct PdaH8lrHeaderDTO
     {
         [FieldOffset(0)] public uint Magic;
@@ -28,7 +34,7 @@ namespace Hecton8.UI
         [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = PdaH8lrLoreStoreLayout.PdaH8lrRecordDTOStrideBytes)]
     internal struct PdaH8lrRecordDTO
     {
         [FieldOffset(0)] public uint Hash;

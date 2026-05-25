@@ -216,12 +216,12 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            string[] files = Directory.GetFiles(folder, "*.*", SearchOption.TopDirectoryOnly);
-            Array.Sort(files, StringComparer.OrdinalIgnoreCase);
-            result.ReferenceKernelFileCount = files.Length;
+            List<string> files = new List<string>(Directory.EnumerateFiles(folder, "*.*", SearchOption.TopDirectoryOnly));
+            files.Sort(StringComparer.OrdinalIgnoreCase);
+            result.ReferenceKernelFileCount = files.Count;
 
             StringBuilder builder = new StringBuilder(4096);
-            for (int i = 0; i < files.Length; i++)
+            for (int i = 0; i < files.Count; i++)
                 builder.Append(File.ReadAllText(files[i]));
 
             string text = builder.ToString();
@@ -324,13 +324,12 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            string[] files = Directory.GetFiles(researchFolder, "*.*", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            foreach (string file in Directory.EnumerateFiles(researchFolder, "*.*", SearchOption.AllDirectories))
             {
-                if (!IsOwnedResearchAuditFile(researchFolder, files[i]))
+                if (!IsOwnedResearchAuditFile(researchFolder, file))
                     continue;
 
-                string extension = Path.GetExtension(files[i]);
+                string extension = Path.GetExtension(file);
                 if (!string.Equals(extension, ".cs", StringComparison.OrdinalIgnoreCase) &&
                     !string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase) &&
                     !string.Equals(extension, ".hlsl", StringComparison.OrdinalIgnoreCase))
@@ -338,7 +337,7 @@ namespace Hecton8.EditorTools
                     continue;
                 }
 
-                string text = File.ReadAllText(files[i]);
+                string text = File.ReadAllText(file);
                 result.NativeCollectionTokenCount += CountToken(text, "NativeArray") + CountToken(text, "NativeList") + CountToken(text, "NativeQueue");
                 result.JobBarrierTokenCount += CountToken(text, ".Complete()") + CountToken(text, ".Run()");
                 result.StaticInstanceTokenCount += CountToken(text, "private static") + CountToken(text, "DontDestroyOnLoad");

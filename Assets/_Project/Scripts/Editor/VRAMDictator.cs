@@ -76,8 +76,8 @@ namespace Hecton8.EditorTools
                 int expectedMaxSize = HectonTextureImportDictator.ResolveMaxTextureSize(assetPath);
                 bool oversizedNonAtlas = (width > expectedMaxSize || height > expectedMaxSize) && !atlas;
                 bool uncompressedRgba = IsUncompressedRgba(formatLabel, importer);
-                bool nonBc7 = !normalMap && !formatLabel.Contains("BC7");
-                bool normalNotBc5 = normalMap && !formatLabel.Contains("BC5");
+                bool nonBc7 = !normalMap && !ContainsOrdinal(formatLabel, "BC7");
+                bool normalNotBc5 = normalMap && !ContainsOrdinal(formatLabel, "BC5");
                 bool runtimeFormatViolation = texture != null && !IsExpectedRuntimeFormat(texture.format, normalMap);
 
                 if (oversizedNonAtlas)
@@ -205,13 +205,18 @@ namespace Hecton8.EditorTools
                 return true;
 
             string lowerPath = assetPath.ToLowerInvariant();
-            return lowerPath.Contains("normal") || lowerPath.Contains("_n.") || lowerPath.Contains("_n_") || lowerPath.Contains("nrm");
+            return ContainsOrdinal(lowerPath, "normal") ||
+                   ContainsOrdinal(lowerPath, "_n.") ||
+                   ContainsOrdinal(lowerPath, "_n_") ||
+                   ContainsOrdinal(lowerPath, "nrm");
         }
 
         private static bool IsAtlasTexturePath(string assetPath)
         {
             string lowerPath = assetPath.ToLowerInvariant();
-            return lowerPath.Contains("atlas") || lowerPath.Contains("sheet") || lowerPath.Contains("flipbook");
+            return ContainsOrdinal(lowerPath, "atlas") ||
+                   ContainsOrdinal(lowerPath, "sheet") ||
+                   ContainsOrdinal(lowerPath, "flipbook");
         }
 
         private static bool IsUncompressedRgba(string formatLabel, TextureImporter importer)
@@ -222,13 +227,13 @@ namespace Hecton8.EditorTools
             if (importer.textureCompression == TextureImporterCompression.Uncompressed && formatLabel == "Uncompressed")
                 return true;
 
-            return formatLabel.Contains("RGBA32") ||
-                   formatLabel.Contains("ARGB32") ||
-                   formatLabel.Contains("RGB24") ||
-                   formatLabel.Contains("RGBAHalf") ||
-                   formatLabel.Contains("RGBAFloat") ||
-                   formatLabel.Contains("R8G8B8A8") ||
-                   formatLabel.Contains("R16G16B16A16");
+            return ContainsOrdinal(formatLabel, "RGBA32") ||
+                   ContainsOrdinal(formatLabel, "ARGB32") ||
+                   ContainsOrdinal(formatLabel, "RGB24") ||
+                   ContainsOrdinal(formatLabel, "RGBAHalf") ||
+                   ContainsOrdinal(formatLabel, "RGBAFloat") ||
+                   ContainsOrdinal(formatLabel, "R8G8B8A8") ||
+                   ContainsOrdinal(formatLabel, "R16G16B16A16");
         }
 
         private static bool IsExpectedRuntimeFormat(TextureFormat format, bool normalMap)
@@ -360,17 +365,20 @@ namespace Hecton8.EditorTools
 
         private static bool TryResolveBlockCompressedBytes(string formatLabel, out int blockBytes)
         {
-            if (formatLabel.Contains("BC1") || formatLabel.Contains("DXT1") || formatLabel.Contains("ETC_RGB4") || formatLabel.Contains("EAC_R"))
+            if (ContainsOrdinal(formatLabel, "BC1") ||
+                ContainsOrdinal(formatLabel, "DXT1") ||
+                ContainsOrdinal(formatLabel, "ETC_RGB4") ||
+                ContainsOrdinal(formatLabel, "EAC_R"))
             {
                 blockBytes = 8;
                 return true;
             }
 
-            if (formatLabel.Contains("BC") ||
-                formatLabel.Contains("DXT5") ||
-                formatLabel.Contains("ETC2") ||
-                formatLabel.Contains("EAC_RG") ||
-                formatLabel.Contains("ASTC"))
+            if (ContainsOrdinal(formatLabel, "BC") ||
+                ContainsOrdinal(formatLabel, "DXT5") ||
+                ContainsOrdinal(formatLabel, "ETC2") ||
+                ContainsOrdinal(formatLabel, "EAC_RG") ||
+                ContainsOrdinal(formatLabel, "ASTC"))
             {
                 blockBytes = 16;
                 return true;
@@ -382,27 +390,33 @@ namespace Hecton8.EditorTools
 
         private static int ResolveBytesPerPixel(string formatLabel)
         {
-            if (formatLabel.Contains("RGBAFloat"))
+            if (ContainsOrdinal(formatLabel, "RGBAFloat"))
                 return 16;
 
-            if (formatLabel.Contains("RGBAHalf") || formatLabel.Contains("R16G16B16A16"))
+            if (ContainsOrdinal(formatLabel, "RGBAHalf") || ContainsOrdinal(formatLabel, "R16G16B16A16"))
                 return 8;
 
-            if (formatLabel.Contains("RGBA32") ||
-                formatLabel.Contains("ARGB32") ||
-                formatLabel.Contains("BGRA32") ||
-                formatLabel.Contains("R8G8B8A8"))
+            if (ContainsOrdinal(formatLabel, "RGBA32") ||
+                ContainsOrdinal(formatLabel, "ARGB32") ||
+                ContainsOrdinal(formatLabel, "BGRA32") ||
+                ContainsOrdinal(formatLabel, "R8G8B8A8"))
             {
                 return 4;
             }
 
-            if (formatLabel.Contains("RGB24"))
+            if (ContainsOrdinal(formatLabel, "RGB24"))
                 return 3;
 
-            if (formatLabel.Contains("R16") || formatLabel.Contains("RG16"))
+            if (ContainsOrdinal(formatLabel, "R16") || ContainsOrdinal(formatLabel, "RG16"))
                 return 2;
 
             return 1;
+        }
+
+        private static bool ContainsOrdinal(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   source.IndexOf(token, System.StringComparison.Ordinal) >= 0;
         }
 
         internal readonly struct DictatorResult

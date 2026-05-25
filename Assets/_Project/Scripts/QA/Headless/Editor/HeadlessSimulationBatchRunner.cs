@@ -160,8 +160,16 @@ namespace Hecton8.QA.Headless.Editor
             exitCode = 1;
             try
             {
-                string result = File.ReadAllText(resultPath);
-                exitCode = result.IndexOf("\"exitCode\":0", StringComparison.Ordinal) >= 0 ? 0 : 1;
+                exitCode = 1;
+                foreach (string line in File.ReadLines(resultPath))
+                {
+                    if (line.IndexOf("\"exitCode\":0", StringComparison.Ordinal) >= 0)
+                    {
+                        exitCode = 0;
+                        break;
+                    }
+                }
+
                 return true;
             }
             catch (IOException)

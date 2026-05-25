@@ -7,6 +7,11 @@ using UnityEngine;
 
 namespace Hecton8.AI
 {
+    public interface IFaunaNoiseSignalReceiver
+    {
+        void ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal signal);
+    }
+
     /// <summary>
     /// Global player-noise snapshot consumed by fauna and other awareness systems.
     /// </summary>
@@ -255,7 +260,7 @@ namespace Hecton8.AI
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!AbsoluteUniversePosition.IsFinite(in originAup))
                 return false;
 
@@ -308,8 +313,8 @@ namespace Hecton8.AI
 
             for (int i = 0; i < count; i++)
             {
-                if (_playerNoiseListenerBuffer[i].Owner is FaunaBrain brain)
-                    brain.ReceivePlayerNoiseSignal(signal);
+                if (_playerNoiseListenerBuffer[i].Owner is IFaunaNoiseSignalReceiver receiver)
+                    receiver.ReceivePlayerNoiseSignal(signal);
             }
         }
 
@@ -328,7 +333,7 @@ namespace Hecton8.AI
             for (int i = 0; i < count; i++)
             {
                 SpatialQueryHit listener = _playerNoiseListenerBuffer[i];
-                if (!(listener.Owner is FaunaBrain brain) || listener.Transform == null)
+                if (!(listener.Owner is IFaunaNoiseSignalReceiver receiver) || listener.Transform == null)
                     continue;
 
                 AcousticOcclusionResult occlusion = AcousticOcclusionUtility.EvaluateOcclusionPath(
@@ -353,7 +358,7 @@ namespace Hecton8.AI
                     occlusion.Transmission01,
                     occlusion.LowPassCutoffHz,
                     ActiveSonarDetectionRadius);
-                brain.ReceivePlayerNoiseSignal(transmittedSignal);
+                receiver.ReceivePlayerNoiseSignal(transmittedSignal);
             }
         }
 

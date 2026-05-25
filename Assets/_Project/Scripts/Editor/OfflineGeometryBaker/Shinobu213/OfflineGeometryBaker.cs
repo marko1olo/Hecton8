@@ -199,7 +199,9 @@ namespace Hecton8.Editor.OfflineGeometry
                 for (int filterIndex = 0; filterIndex < filters.Length; filterIndex++)
                 {
                     MeshFilter sourceFilter = filters[filterIndex];
-                    MeshRenderer sourceRenderer = sourceFilter != null ? sourceFilter.GetComponent<MeshRenderer>() : null;
+                    MeshRenderer sourceRenderer = null;
+                    if (sourceFilter != null)
+                        sourceRenderer = sourceFilter.TryGetComponent(out MeshRenderer resolvedSourceRenderer) ? resolvedSourceRenderer : null;
                     Mesh sourceMesh = sourceFilter != null ? sourceFilter.sharedMesh : null;
                     if (sourceFilter == null || sourceRenderer == null || sourceMesh == null)
                         continue;

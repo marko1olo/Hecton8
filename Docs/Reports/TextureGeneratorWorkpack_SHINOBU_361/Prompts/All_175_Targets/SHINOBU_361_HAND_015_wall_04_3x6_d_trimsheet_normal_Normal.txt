@@ -1,0 +1,10 @@
+﻿JOB_ID: SHINOBU_361_HAND_015
+ROLE: NORMAL_OR_HEIGHT_SOURCE
+CATEGORY: HABITAT_INTERIORS
+SAVE_CANDIDATES_DIR: C:\hades\Hecton8\Docs\ArtDrop\SHINOBU_361\All_175_Targets\SHINOBU_361_HAND_015_wall_04_3x6_d_trimsheet_normal_Normal
+FINAL_TARGET_PATH: C:\hades\Hecton8\Assets\_Project\Art\TEXTURES\Generated\SHINOBU_361\HABITAT_INTERIORS\wall_04_3x6_d_trimsheet_normal_Normal.png
+FINAL_FILENAME: wall_04_3x6_d_trimsheet_normal_Normal.png
+REFERENCES: LOOKDEV_APPROVED_REF_SEED_001.png; approved floor/wall style anchor; function-specific seed if needed
+
+PROMPT:
+Create a tall 3x6 meter habitat wall trim sheet heightfield source for a premium underwater research module. Build elegant vertical pressure-wall structure: long satin titanium ribs, broad calm pressure skin fields, recessed life-support conduit covers, slim graphite gasket seams, circular diagnostic pass-through collars, mounting rail grooves, shallow service hatch outlines, and soft rib-edge wear. Avoid bathroom-tile panel repetition; this is a layered architectural wall base that later receives visible instruments, cable trays, and tools. The surface should feel tall, calm, heavy, and expensive, with enough open space between details for clean lighting response. Add only refined maintained wear: slight mineral dust in lower seams, gentle access-panel scuffs, and softened titanium rib edges. Use flat, top-down, orthogonal orthographic view, completely uniform diffuse lighting, zero directional shadows, perfect seamless tiling, no text watermark, no letters, no numbers, no logo, no border, no perspective object scene.

@@ -9,7 +9,6 @@ namespace Hecton8.Interaction
     using System;
     using Hecton.Localization;
     using Hecton8.Core;
-    using Hecton8.Input;
     using Hecton8.UI;
     using TMPro;
     using Unity.Mathematics;
@@ -34,8 +33,8 @@ namespace Hecton8.Interaction
         private int _cachedInteractPrefixLength;
         private CanvasGroup _promptCanvasGroup;
         private IInputBindingService _subscribedInputBindingService;
-        private InputManager _subscribedInputManager;
-        private LocalizationManager _localizationManager;
+        private INativeInputManagerRuntime _subscribedInputManager;
+        private ILocalizationTextReadModel _localizationManager;
         private bool _localizationColdResolved;
         private bool _hotSwapListenerRegistered;
 
@@ -43,6 +42,8 @@ namespace Hecton8.Interaction
         private readonly char[] _charBuffer = new char[192];
         // COLD ALLOC: char[96] — cached interaction prefix staging buffer — owner: InteractionUI
         private readonly char[] _prefixBuffer = new char[96];
+        // COLD ALLOC: char[96] - optional IInteractableTextProvider staging buffer - owner: InteractionUI
+        private readonly char[] _bodyBuffer = new char[96];
 
         private void Awake()
         {
@@ -166,7 +167,7 @@ namespace Hecton8.Interaction
             RefreshCurrentPrompt();
         }
 
-        private void HandleInputDisplayStyleChanged(InputDisplayStyle displayStyle)
+        private void HandleInputDisplayStyleChanged(byte displayStyleCode)
         {
             RefreshInteractPrefixCache();
             RefreshCurrentPrompt();
@@ -200,18 +201,24 @@ namespace Hecton8.Interaction
         {
             if (promptLabel != null)
             {
-                string interactText = target.GetInteractText();
-                LocalizationManager localizationManager = ResolveLocalizationManager();
-                if (localizationManager != null && ContainsExpansionToken(interactText))
-                    interactText = localizationManager.ExpandText(interactText);
-
-                int totalLength = WriteToBuffer(
-                    _prefixBuffer.AsSpan(0, _cachedInteractPrefixLength),
-                    interactText.AsSpan());
+                ReadOnlySpan<char> interactText = ResolveInteractTextSpan(target);
+                int totalLength = WriteToBuffer(_prefixBuffer.AsSpan(0, _cachedInteractPrefixLength), interactText);
                 promptLabel.SetCharArray(_charBuffer, 0, totalLength);
             }
 
             SetPromptVisible(true);
+        }
+
+        private ReadOnlySpan<char> ResolveInteractTextSpan(IInteractable target)
+        {
+            if (target is IInteractableTextProvider textProvider &&
+                textProvider.TryCopyInteractText(_bodyBuffer, out int bodyLength) &&
+                bodyLength > 0)
+            {
+                return _bodyBuffer.AsSpan(0, math.min(bodyLength, _bodyBuffer.Length));
+            }
+
+            return ReadOnlySpan<char>.Empty;
         }
 
         private void HidePrompt()
@@ -225,11 +232,10 @@ namespace Hecton8.Interaction
         {
             if (!Application.isPlaying)
             {
-                LocalizationManager manager = ResolveLocalizationManager();
-                string template = manager != null
-                    ? manager.GetExpandedOrFallback(manager.CurrentLanguage, LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT, inputPrefix + "{0} {1}")
-                    : inputPrefix + "{0} {1}";
-                CachePrefixFromTemplate(template);
+                if (CacheLocalizedPrefixTemplate(ResolveLocalizationManager()))
+                    return;
+
+                CachePrefixLiteral(inputPrefix.AsSpan(), appendTrailingSpace: false);
                 return;
             }
 
@@ -237,16 +243,9 @@ namespace Hecton8.Interaction
             if (_subscribedInputManager != null && CacheInteractBindingMarkup(_subscribedInputManager))
                 return;
 
-            LocalizationManager localizationManager = ResolveLocalizationManager();
-            if (localizationManager != null)
-            {
-                string template = localizationManager.GetExpandedOrFallback(
-                    localizationManager.CurrentLanguage,
-                    LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT,
-                    inputPrefix + "{0} {1}");
-                CachePrefixFromTemplate(template);
+            ILocalizationTextReadModel localizationManager = ResolveLocalizationManager();
+            if (CacheLocalizedPrefixTemplate(localizationManager))
                 return;
-            }
 
             CachePrefixLiteral(inputPrefix.AsSpan(), appendTrailingSpace: false);
         }
@@ -295,19 +294,45 @@ namespace Hecton8.Interaction
             _promptCanvasGroup.interactable = false;
         }
 
-        private void CachePrefixFromTemplate(string template)
+        private bool CacheLocalizedPrefixTemplate(ILocalizationTextReadModel manager)
         {
-            if (string.IsNullOrEmpty(template))
+            if (manager == null)
+                return false;
+
+            ReadOnlySpan<char> template = manager.GetRawSpanOrFallback(
+                LocHash.Compute(LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT),
+                ReadOnlySpan<char>.Empty);
+            if (template.Length <= 0)
+                return false;
+
+            CachePrefixFromTemplate(template);
+            return true;
+        }
+
+        private void CachePrefixFromTemplate(ReadOnlySpan<char> template)
+        {
+            if (template.Length <= 0)
             {
                 _cachedInteractPrefixLength = 0;
                 return;
             }
 
-            int placeholderIndex = template.IndexOf("{0}", StringComparison.Ordinal);
+            int placeholderIndex = IndexOfFirstPromptPlaceholder(template);
             ReadOnlySpan<char> prefixSpan = placeholderIndex <= 0
-                ? template.AsSpan()
-                : template.AsSpan(0, placeholderIndex);
+                ? template
+                : template.Slice(0, placeholderIndex);
             CachePrefixLiteral(prefixSpan, appendTrailingSpace: false);
+        }
+
+        private static int IndexOfFirstPromptPlaceholder(ReadOnlySpan<char> template)
+        {
+            for (int i = 0; i <= template.Length - 3; i++)
+            {
+                if (template[i] == '{' && template[i + 1] == '0' && template[i + 2] == '}')
+                    return i;
+            }
+
+            return -1;
         }
 
         private void CachePrefixLiteral(ReadOnlySpan<char> prefix, bool appendTrailingSpace)
@@ -328,12 +353,12 @@ namespace Hecton8.Interaction
             if (_subscribedInputManager != null)
                 return;
 
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
             if (inputManager == null)
                 return;
 
             _subscribedInputManager = inputManager;
-            _subscribedInputManager.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+            _subscribedInputManager.OnInputDisplayStyleCodeChanged += HandleInputDisplayStyleChanged;
         }
 
         private void SubscribeInputBindingServiceIfAvailable()
@@ -361,7 +386,7 @@ namespace Hecton8.Interaction
             if (_subscribedInputManager == null)
                 return;
 
-            _subscribedInputManager.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+            _subscribedInputManager.OnInputDisplayStyleCodeChanged -= HandleInputDisplayStyleChanged;
             _subscribedInputManager = null;
         }
 
@@ -398,7 +423,7 @@ namespace Hecton8.Interaction
                     break;
 
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localizationManager = currentService as LocalizationManager;
+                    _localizationManager = currentService as ILocalizationTextReadModel;
                     _localizationColdResolved = _localizationManager != null;
                     break;
 
@@ -432,17 +457,17 @@ namespace Hecton8.Interaction
             if (!forceRefresh && _localizationColdResolved && _localizationManager != null)
                 return;
 
-            _localizationManager = Hecton8.Core.GlobalRegistry.Localization;
+            _localizationManager = Hecton8.Core.GlobalRegistry.LocalizationText;
             _localizationColdResolved = _localizationManager != null;
         }
 
-        private LocalizationManager ResolveLocalizationManager()
+        private ILocalizationTextReadModel ResolveLocalizationManager()
         {
             CacheLocalizationCold();
             return _localizationManager;
         }
 
-        private bool CacheInteractBindingMarkup(InputManager inputManager)
+        private bool CacheInteractBindingMarkup(INativeInputManagerRuntime inputManager)
         {
             int offset = 0;
             if (!TryAppendPrefixLiteral("<b><color=#AEE8FF>".AsSpan(), ref offset))
@@ -451,7 +476,7 @@ namespace Hecton8.Interaction
             if (offset >= _prefixBuffer.Length)
                 return false;
 
-            _prefixBuffer[offset++] = inputManager.CurrentDisplayStyle == InputDisplayStyle.Gamepad
+            _prefixBuffer[offset++] = inputManager.CurrentDisplayStyleCode == NativeInputDisplayStyle.Gamepad
                 ? '\u25C6'
                 : '\u2328';
 

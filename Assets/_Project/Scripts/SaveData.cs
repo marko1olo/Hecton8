@@ -1133,7 +1133,7 @@ namespace Hecton8.SaveSystem
         public const int MortonMaskBitCount = MortonMaskAxisLength * MortonMaskAxisLength * MortonMaskAxisLength;
         public const int MortonMaskWordCount = MortonMaskBitCount >> 6;
         public const int MortonMaskByteCount = MortonMaskBitCount >> 3;
-        public const int CartographyCellSizeMeters = 50;
+        public const int CartographyCellSizeMeters = 10;
         public const int CartographyMaskAxisBits = 7;
         public const int CartographyMaskAxisLength = 1 << CartographyMaskAxisBits;
         public const int CartographyMaskOriginOffset = CartographyMaskAxisLength >> 1;

@@ -40,21 +40,21 @@ namespace Hecton8.Dev
         private void Awake()
         {
             AutoResolve();
-            LogVerbose($"AWAKE runOnStart={runOnStart} refs={DescribeRefs()}");
+            LogVerbose("[UISmoke] Awake.");
         }
 
         private void OnEnable()
         {
-            LogVerbose($"ON_ENABLE runOnStart={runOnStart} isRunning={_isRunning}");
+            LogVerbose("[UISmoke] Enabled.");
         }
 
         private void Start()
         {
-            LogVerbose($"START runOnStart={runOnStart} isRunning={_isRunning} refs={DescribeRefs()}");
+            LogVerbose("[UISmoke] Start.");
             if (!runOnStart || _isRunning)
                 return;
 
-            LogVerbose("START scheduling UI smoke pass.");
+            LogVerbose("[UISmoke] Scheduling UI smoke pass.");
             _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
@@ -85,7 +85,7 @@ namespace Hecton8.Dev
                 return;
 
             AutoResolve();
-            LogVerbose($"RUN begin refs={DescribeRefs()}");
+            LogVerbose("[UISmoke] Run begin.");
             if (playerPDA == null || pauseMenu == null)
             {
                 Debug.LogWarning("[UISmoke] Missing PlayerPDA or PauseMenuController.");
@@ -104,7 +104,7 @@ namespace Hecton8.Dev
                 if (startupDelay > 0f)
                     await DelayRealtimeAsync(startupDelay, cancellationToken);
 
-                Debug.Log("[UISmoke] Starting UI runtime smoke pass.");
+                Hecton8.Core.H8Debug.Log("[UISmoke] Starting UI runtime smoke pass.");
 
                 LogVerbose("STEP open PDA inventory");
                 pdaOk = false;
@@ -213,7 +213,7 @@ namespace Hecton8.Dev
             }
             catch (Exception exception)
             {
-                Debug.LogError($"[UISmoke] EXCEPTION smoke pass: {exception.Message}");
+                Debug.LogError("[UISmoke] EXCEPTION smoke pass.");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogException(exception);
 #endif
@@ -229,7 +229,7 @@ namespace Hecton8.Dev
             }
 
             if (completed)
-                Debug.Log($"[UISmoke] COMPLETE pda={pdaOk} pause={pauseOk} builder={builderOk}");
+                Hecton8.Core.H8Debug.Log("[UISmoke] Complete.");
         }
 
         private async Awaitable<bool> WaitUntilAsync(Func<bool> predicate, float timeout, string label, CancellationToken cancellationToken)
@@ -244,22 +244,22 @@ namespace Hecton8.Dev
                 {
                     success = predicate();
                 }
-                catch (System.Exception ex)
+                catch (System.Exception)
                 {
-                    Debug.LogError($"[UISmoke] EXCEPTION {label}: {ex}");
+                    Debug.LogError("[UISmoke] Exception in wait predicate.");
                     return false;
                 }
 
                 if (success)
                 {
-                    LogVerbose($"PASS {label}");
+                    LogVerbose("[UISmoke] Wait predicate passed.");
                     return true;
                 }
 
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
             }
 
-            Debug.LogWarning($"[UISmoke] TIMEOUT {label} after {timeout:0.00}s");
+            Debug.LogWarning("[UISmoke] Wait predicate timed out.");
             return false;
         }
 
@@ -300,11 +300,6 @@ namespace Hecton8.Dev
                 constructionTab = FindSceneObjectIncludingInactive<PDAConstructionTab>();
             if (toolManager == null)
                 toolManager = FindSceneObjectIncludingInactive<PlayerToolManager>();
-        }
-
-        private string DescribeRefs()
-        {
-            return $"pda={(playerPDA != null ? "Y" : "N")} pause={(pauseMenu != null ? "Y" : "N")} ctorTab={(constructionTab != null ? "Y" : "N")} tools={(toolManager != null ? "Y" : "N")}";
         }
 
         private static T FindSceneObjectIncludingInactive<T>() where T : Component
@@ -372,7 +367,7 @@ namespace Hecton8.Dev
         private void LogVerbose(string message)
         {
             if (verboseLogging)
-                Debug.Log("[UISmoke] " + message);
+                Hecton8.Core.H8Debug.Log(message);
         }
 
         private static T FindComponentInChildrenIncludingInactive<T>(Transform root) where T : Component

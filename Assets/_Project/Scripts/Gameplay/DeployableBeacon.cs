@@ -20,6 +20,7 @@ using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.World;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
@@ -34,7 +35,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Gameplay/Deployable Beacon")]
-    public sealed class DeployableBeacon : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IFixedTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class DeployableBeacon : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const ulong BeaconIdFnvOffset = 1469598103934665603UL;
         private const ulong BeaconIdFnvPrime = 1099511628211UL;
@@ -113,12 +114,16 @@ namespace Hecton8.Gameplay
         private bool _isStabilized;
         private bool _registered;
         private bool _registeredFixed;
+        private bool _registeredLateFrame;
         private bool _registeredBeacon;
         private bool _hotSwapRegistered;
+        private bool _beaconLightDirty;
+        private bool _pendingDeployAudio;
+        private bool _pendingInteractAudio;
         private AbsoluteUniversePosition _cachedAup;
         private int _emissionPropertyId;
         private IAudioService _audioService;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
 
         // Cached references
         private Transform _cachedTransform;
@@ -127,7 +132,9 @@ namespace Hecton8.Gameplay
 
         // Pre-cached interaction text
         private const string DefaultInteractText = "Configure Beacon";
-        private string _cachedInteractText;
+        private const int InteractTextBufferCapacity = 96;
+        private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
+        private int _cachedInteractTextLength;
 
         // ==========================================================
         //  PUBLIC PROPERTIES
@@ -157,7 +164,7 @@ namespace Hecton8.Gameplay
             set
             {
                 beaconColor = value;
-                UpdateBeaconLight();
+                QueueBeaconLightUpdate();
                 OnColorChanged?.Invoke(beaconColor);
             }
         }
@@ -236,6 +243,7 @@ namespace Hecton8.Gameplay
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegisterTickSystems();
 
@@ -243,17 +251,14 @@ namespace Hecton8.Gameplay
 
             RefreshCachedAup();
             RebuildLocalizedTextCache();
-            UpdateBeaconLight();
+            QueueBeaconLightUpdate();
 
-            // Play deploy sound
-            if (deploySound != null && _audioService != null)
-            {
-                _audioService.PlayAtPoint(deploySound, _cachedTransform.position);
-            }
+            _pendingDeployAudio = deploySound != null;
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregisterBeacon();
@@ -262,6 +267,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             TryUnregisterBeacon();
             TryUnregisterTickSystems();
@@ -285,8 +291,32 @@ namespace Hecton8.Gameplay
                 {
                     _blinkTimer = 0f;
                     _blinkOn = !_blinkOn;
-                    UpdateBeaconLight();
+                    QueueBeaconLightUpdate();
                 }
+            }
+        }
+
+        public void LateFrameTick()
+        {
+            if (_beaconLightDirty)
+            {
+                _beaconLightDirty = false;
+                UpdateBeaconLight();
+            }
+
+            IAudioService audioService = _audioService;
+            if (_pendingDeployAudio)
+            {
+                _pendingDeployAudio = false;
+                if (deploySound != null && audioService != null)
+                    audioService.PlayAtPoint(deploySound, _cachedTransform.position);
+            }
+
+            if (_pendingInteractAudio)
+            {
+                _pendingInteractAudio = false;
+                if (interactSound != null && audioService != null)
+                    audioService.PlayStatic2D(interactSound, 0.7f);
             }
         }
 
@@ -367,11 +397,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Interact(Transform interactor)
         {
-            // Play interact sound
-            if (interactSound != null && _audioService != null)
-            {
-                _audioService.PlayStatic2D(interactSound, 0.7f);
-            }
+            _pendingInteractAudio = interactSound != null;
 
             // Fire rename requested event
             OnRenameRequested?.Invoke(this);
@@ -382,12 +408,12 @@ namespace Hecton8.Gameplay
         /// </summary>
         public string GetInteractText()
         {
-            return _cachedInteractText;
+            return DefaultInteractText;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
         {
-            return InteractableTextCopy.TryCopy(_cachedInteractText, destination, out length);
+            return InteractableTextCopy.TryCopy(_cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength), destination, out length);
         }
 
         // ==========================================================
@@ -516,6 +542,11 @@ namespace Hecton8.Gameplay
             beaconLight.SetPropertyBlock(_mpb);
         }
 
+        private void QueueBeaconLightUpdate()
+        {
+            _beaconLightDirty = true;
+        }
+
         // ==========================================================
         //  EDITOR
         // ==========================================================
@@ -534,6 +565,11 @@ namespace Hecton8.Gameplay
             {
                 _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             }
+
+            if (!_registeredLateFrame)
+            {
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            }
         }
 
         private void TryUnregisterTickSystems()
@@ -544,8 +580,15 @@ namespace Hecton8.Gameplay
             if (_registeredFixed)
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
 
+            if (_registeredLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
             _registered = false;
             _registeredFixed = false;
+            _registeredLateFrame = false;
+            _beaconLightDirty = false;
+            _pendingDeployAudio = false;
+            _pendingInteractAudio = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -559,7 +602,7 @@ namespace Hecton8.Gameplay
                     _audioService = currentService as IAudioService;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
+                    _localization = currentService as ILocalizationTextReadModel;
                     RebuildLocalizedTextCache();
                     if (!string.IsNullOrWhiteSpace(localizedLabelTableKey))
                         OnLabelChanged?.Invoke(DisplayLabel);
@@ -569,8 +612,8 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _localization = LocalizationManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
+            _localization = GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterHotSwapListener()
@@ -620,7 +663,11 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            _cachedInteractText = ResolveLocalized(LocalizationKeys.INTERACT_CONFIGURE_BEACON, DefaultInteractText);
+            _cachedInteractTextLength = InteractableTextCopy.CopyLocalizedTruncated(
+                _localization,
+                LocalizationKeys.INTERACT_CONFIGURE_BEACON,
+                DefaultInteractText,
+                _cachedInteractTextBuffer);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -641,22 +688,7 @@ namespace Hecton8.Gameplay
 
         private string ResolveDisplayLabel()
         {
-            if (!string.IsNullOrWhiteSpace(localizedLabelTableKey))
-            {
-                LocalizationManager manager = _localization;
-                if (manager != null && manager.TryGet(manager.CurrentLanguage, localizedLabelTableKey, out string localizedLabel))
-                    return localizedLabel;
-            }
-
             return string.IsNullOrWhiteSpace(beaconLabel) ? "Beacon" : beaconLabel;
-        }
-
-        private string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager manager = _localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
         }
     }
 }
